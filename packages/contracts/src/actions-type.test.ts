@@ -37,7 +37,9 @@ describe('Actions', () => {
       movePage: true,
       getPage: true,
       listPageChildren: true,
-      listPageTree: true
+      listPageTree: true,
+      setPageProperties: true,
+      listTags: true
     }
     expect(Object.keys(names).sort()).toEqual(ACTIONS.map((a) => a.name).sort())
   })

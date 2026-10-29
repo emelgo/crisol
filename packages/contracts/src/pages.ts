@@ -2,6 +2,25 @@ import { z } from 'zod'
 import { defineAction } from './action.ts'
 
 const pageTitle = z.string().trim().min(1).max(200)
+/** Un emoji (con sus modificadores y uniones), o una bandera */
+const pageIcon = z
+  .string()
+  .max(16)
+  .regex(
+    /^(?:\p{Extended_Pictographic}|\p{Regional_Indicator})(?:\p{Extended_Pictographic}|\p{Regional_Indicator}|\p{Emoji_Modifier}|\u200d|\ufe0f)*$/u
+  )
+
+const propertyName = z.string().trim().min(1).max(60)
+/** Una propiedad con su tipo. alias y etiquetas son listas y resumen es texto (lo comprueba el servidor) */
+export const pageProperty = z.discriminatedUnion('type', [
+  z.object({ name: propertyName, type: z.literal('text'), value: z.string().max(5000) }),
+  z.object({ name: propertyName, type: z.literal('number'), value: z.number().finite() }),
+  z.object({ name: propertyName, type: z.literal('boolean'), value: z.boolean() }),
+  z.object({ name: propertyName, type: z.literal('list'), value: z.array(z.string().trim().min(1).max(200)).max(200) }),
+  z.object({ name: propertyName, type: z.literal('pages'), value: z.array(z.uuid()).max(200) })
+])
+
+export type PageProperty = z.infer<typeof pageProperty>
 
 /** Una página tal como sale en el árbol */
 export const pageSummary = z.object({
@@ -18,6 +37,7 @@ export type PageSummary = z.infer<typeof pageSummary>
 
 /** Una página abierta: lo que no es su cuerpo, con su ruta desde el primer nivel (ella incluida) */
 export const page = pageSummary.extend({
+  properties: z.array(pageProperty),
   locked: z.boolean(),
   path: z.array(z.object({ id: z.uuid(), title: z.string() })),
   updatedAt: z.string()
@@ -51,9 +71,31 @@ export const createPage = defineAction({
 export const updatePage = defineAction({
   name: 'updatePage',
   kind: 'write',
-  description: 'Cambia el título de una página',
-  input: z.object({ pageId: z.uuid(), title: pageTitle }),
+  description: 'Cambia el título de una página o su icono (un emoji; null, sin icono)',
+  input: z
+    .object({ pageId: z.uuid(), title: pageTitle.optional(), icon: pageIcon.nullable().optional() })
+    .refine((input) => input.title !== undefined || input.icon !== undefined, { message: 'title o icon' }),
   output: page
+})
+
+export const setPageProperties = defineAction({
+  name: 'setPageProperties',
+  kind: 'write',
+  description:
+    'Deja las propiedades de una página como se dan, en ese orden. Reservadas: alias (lista de otros nombres), etiquetas (lista, con jerarquía por «/») y resumen (texto)',
+  input: z.object({ pageId: z.uuid(), properties: z.array(pageProperty).max(100) }),
+  output: page
+})
+
+export const listTags = defineAction({
+  name: 'listTags',
+  kind: 'read',
+  description:
+    'Las etiquetas de la wiki de un mundo con cuántas páginas tiene cada una (la madre cuenta las de sus hijas)',
+  input: z.object({ worldId: z.uuid() }),
+  output: z.object({
+    tags: z.array(z.object({ tag: z.string(), depth: z.number().int(), count: z.number().int() }))
+  })
 })
 
 export const movePage = defineAction({

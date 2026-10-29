@@ -1,5 +1,5 @@
 import { keyBetween } from '@crisol/domain'
-import { and, eq, isNull, ne, type SQL, sql } from 'drizzle-orm'
+import { and, eq, inArray, isNull, ne, type SQL, sql } from 'drizzle-orm'
 import type { Database } from '../client.ts'
 import { type OperationContext, operation, type Transaction } from '../operation.ts'
 import { pages } from '../schema/pages.ts'
@@ -158,8 +158,31 @@ export function createPage(
   })
 }
 
-export function updatePage(db: Database, context: OperationContext, pageId: string, patch: { title?: string }) {
+export function updatePage(
+  db: Database,
+  context: OperationContext,
+  pageId: string,
+  patch: { title?: string; icon?: string | null; properties?: unknown[] }
+) {
   return operation(db, context, (w) => w.update(pages, pageId, patch))
+}
+
+/** Cuáles de estas páginas son del mundo y no están en la papelera (para las propiedades que enlazan páginas) */
+export async function existingPages(db: Database, worldId: string, pageIds: readonly string[]) {
+  if (pageIds.length === 0) return new Set<string>()
+  const rows = await db
+    .select({ id: pages.id })
+    .from(pages)
+    .where(and(eq(pages.worldId, worldId), isNull(pages.deletedAt), inArray(pages.id, [...pageIds])))
+  return new Set(rows.map((row) => row.id))
+}
+
+/** Las propiedades de las páginas del mundo que tienen alguna (para las etiquetas) */
+export function listProperties(db: Database, worldId: string) {
+  return db
+    .select({ id: pages.id, properties: pages.properties })
+    .from(pages)
+    .where(and(eq(pages.worldId, worldId), isNull(pages.deletedAt), sql`${pages.properties} <> '[]'::jsonb`))
 }
 
 export function movePage(

@@ -241,4 +241,99 @@ describe('la wiki: páginas y árbol', () => {
     expect((await call('createPage', { worldId, title: 'X', parentId: theirs.id })).statusCode).toBe(404)
     expect((await call('movePage', { pageId: page.id, parentId: theirs.id })).statusCode).toBe(404)
   })
+
+  describe('propiedades, icono y etiquetas', () => {
+    it('el icono es un emoji y se quita con null; el historial dice qué cambió', async () => {
+      const page = await create('Puerto Ceniza')
+      expect((await call('updatePage', { pageId: page.id, icon: '⚓' })).json()).toMatchObject({
+        icon: '⚓',
+        version: 2
+      })
+      expect((await call('updatePage', { pageId: page.id, icon: '🏴‍☠️' })).json().icon).toBe('🏴‍☠️')
+      expect((await call('updatePage', { pageId: page.id, icon: 'x' })).statusCode).toBe(400)
+      expect((await call('updatePage', { pageId: page.id, icon: null })).json().icon).toBeNull()
+      expect((await call('updatePage', { pageId: page.id })).statusCode).toBe(400)
+      expect((await historyOf()).find((e) => e.action === 'updatePage')?.details).toEqual({
+        title: 'Puerto Ceniza',
+        icon: null
+      })
+    })
+
+    it('las propiedades se guardan con su tipo y en su orden, y deshacer las devuelve', async () => {
+      const coast = await create('Costa Gris')
+      const page = await create('Puerto Ceniza')
+      const properties = [
+        { name: 'Región', type: 'pages', value: [coast.id] },
+        { name: 'Población', type: 'number', value: 4200 },
+        { name: 'Libre', type: 'boolean', value: true },
+        { name: 'alias', type: 'list', value: ['El Puerto', 'La Ceniza'] },
+        { name: 'etiquetas', type: 'list', value: ['lugar/ciudad', 'costa'] },
+        { name: 'resumen', type: 'text', value: 'La última ciudad libre de la Costa Gris' }
+      ]
+      const saved = (await call('setPageProperties', { pageId: page.id, properties })).json()
+      expect(saved.properties).toEqual(properties)
+      expect((await call('getPage', { pageId: page.id })).json().properties).toEqual(properties)
+      const entry = (await historyOf()).find((e) => e.action === 'setPageProperties')
+      expect(entry?.details).toMatchObject({ title: 'Puerto Ceniza' })
+      expect(((entry?.details.changed ?? []) as string[]).sort()).toEqual(
+        ['región', 'población', 'libre', 'alias', 'etiquetas', 'resumen'].sort()
+      )
+
+      await call('setPageProperties', { pageId: page.id, properties: properties.slice(1, 2) })
+      const last = (await historyOf()).find((e) => e.action === 'setPageProperties')
+      expect((await call('undoOperation', { operationId: last?.id })).json().status).toBe('undone')
+      expect((await call('getPage', { pageId: page.id })).json().properties).toEqual(properties)
+    })
+
+    it('no se repite un nombre, las reservadas tienen su tipo y las etiquetas, su forma', async () => {
+      const page = await create('Puerto Ceniza')
+      const set = async (properties: object[]) =>
+        (await call('setPageProperties', { pageId: page.id, properties })).json()
+      expect(
+        await set([
+          { name: 'Región', type: 'text', value: 'a' },
+          { name: 'región', type: 'text', value: 'b' }
+        ])
+      ).toEqual({ code: 'DUPLICATE_PROPERTY' })
+      expect(await set([{ name: 'alias', type: 'text', value: 'El Puerto' }])).toEqual({
+        code: 'RESERVED_PROPERTY_TYPE'
+      })
+      expect(await set([{ name: 'etiquetas', type: 'list', value: ['lugar /ciudad'] }])).toEqual({ code: 'BAD_TAG' })
+      expect((await call('getPage', { pageId: page.id })).json().properties).toEqual([])
+    })
+
+    it('una propiedad de páginas solo enlaza páginas de la misma wiki, fuera de la papelera', async () => {
+      const page = await create('Puerto Ceniza')
+      const property = (id: string) => [{ name: 'Región', type: 'pages', value: [id] }]
+      const unknown = crypto.randomUUID()
+      expect((await call('setPageProperties', { pageId: page.id, properties: property(unknown) })).json()).toEqual({
+        code: 'BAD_PROPERTY'
+      })
+      const other = (await call('createWorld', { name: 'Otro' })).json()
+      const foreign = (await call('createPage', { worldId: other.id, title: 'De otro mundo' })).json()
+      expect((await call('setPageProperties', { pageId: page.id, properties: property(foreign.id) })).json()).toEqual({
+        code: 'BAD_PROPERTY'
+      })
+    })
+
+    it('las etiquetas, con cuántas páginas tiene cada una', async () => {
+      const tag = async (title: string, tags: string[]) => {
+        const page = await create(title)
+        await call('setPageProperties', {
+          pageId: page.id,
+          properties: [{ name: 'etiquetas', type: 'list', value: tags }]
+        })
+      }
+      await tag('Puerto Ceniza', ['lugar/ciudad', 'costa'])
+      await tag('Velaria', ['lugar/ciudad'])
+      await tag('Montes de Hierro', ['Lugar/Montaña'])
+      await create('Sin etiquetas')
+      expect((await call('listTags', { worldId })).json().tags).toEqual([
+        { tag: 'costa', depth: 0, count: 1 },
+        { tag: 'lugar', depth: 0, count: 3 },
+        { tag: 'lugar/ciudad', depth: 1, count: 2 },
+        { tag: 'lugar/montaña', depth: 1, count: 1 }
+      ])
+    })
+  })
 })

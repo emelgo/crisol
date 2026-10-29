@@ -1,6 +1,25 @@
-import { createPage, getPage, listPageChildren, listPageTree, movePage, type Page, updatePage } from '@crisol/contracts'
+import {
+  createPage,
+  getPage,
+  listPageChildren,
+  listPageTree,
+  listTags,
+  movePage,
+  type Page,
+  pageProperty,
+  setPageProperties,
+  updatePage
+} from '@crisol/contracts'
 import { pagesRepo } from '@crisol/db'
-import { compareKeys, moveBlocker, NotFoundError } from '@crisol/domain'
+import {
+  compareKeys,
+  moveBlocker,
+  NotFoundError,
+  propertiesProblem,
+  propertyKey,
+  reservedList,
+  tagCounts
+} from '@crisol/domain'
 import { pagesChanged } from '../realtime/events.ts'
 import { authorizedPage, authorizedWiki, type WikiTarget } from './access.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
@@ -18,10 +37,19 @@ async function pageView(ctx: ActionContext, pageId: string): Promise<Page> {
     icon: found.icon,
     hasChildren: found.hasChildren,
     version: found.version,
+    properties: propertiesOf(found.properties),
     locked: found.locked,
     path: await pagesRepo.pagePath(ctx.db, pageId),
     updatedAt: found.updatedAt.toISOString()
   }
+}
+
+/** Las propiedades guardadas, tal como las da la API (lo que no encaje en el contrato no sale) */
+function propertiesOf(stored: unknown[]) {
+  return stored.flatMap((item) => {
+    const parsed = pageProperty.safeParse(item)
+    return parsed.success ? [parsed.data] : []
+  })
 }
 
 /** La madre (sin ella, el primer nivel): tiene que ser de la misma wiki y no estar en la papelera */
@@ -79,18 +107,49 @@ export const pageActions = [
     return pageView(ctx, created.id)
   }),
 
-  implement(updatePage, async (ctx, { pageId, title }) => {
+  implement(updatePage, async (ctx, { pageId, title, icon }) => {
     const { page, wiki } = await authorizedPage(ctx, 'page.write', pageId)
+    // Lo que cambió, para la frase del historial: renombrar, o cambiar el icono
+    const details = {
+      ...(title !== undefined ? { from: page.title, to: title } : { title: page.title }),
+      ...(icon !== undefined ? { icon } : {})
+    }
+    await pagesRepo.updatePage(ctx.db, historyContext(ctx, 'updatePage', details, wiki), pageId, {
+      ...(title !== undefined ? { title } : {}),
+      ...(icon !== undefined ? { icon } : {})
+    })
+    ctx.realtime.publish(pagesChanged(wiki))
+    return pageView(ctx, pageId)
+  }),
+
+  implement(setPageProperties, async (ctx, { pageId, properties }) => {
+    const { page, wiki } = await authorizedPage(ctx, 'page.write', pageId)
+    const problem = propertiesProblem(properties)
+    if (problem) throw new InvalidRequestError(problem)
+    // Las que enlazan páginas, a páginas de la misma wiki
+    const linked = properties.flatMap((p) => (p.type === 'pages' ? p.value : []))
+    const existing = await pagesRepo.existingPages(ctx.db, wiki.worldId, linked)
+    if (linked.some((id) => !existing.has(id))) throw new InvalidRequestError('BAD_PROPERTY')
+    const before = new Map(propertiesOf(page.properties).map((p) => [propertyKey(p.name), JSON.stringify(p)]))
+    const after = new Map(properties.map((p) => [propertyKey(p.name), JSON.stringify(p)]))
+    const changed = [...new Set([...before.keys(), ...after.keys()])].filter(
+      (key) => before.get(key) !== after.get(key)
+    )
     await pagesRepo.updatePage(
       ctx.db,
-      historyContext(ctx, 'updatePage', { from: page.title, to: title }, wiki),
+      historyContext(ctx, 'setPageProperties', { title: page.title, changed }, wiki),
       pageId,
-      {
-        title
-      }
+      { properties }
     )
     ctx.realtime.publish(pagesChanged(wiki))
     return pageView(ctx, pageId)
+  }),
+
+  implement(listTags, async (ctx, { worldId }) => {
+    await authorizedWiki(ctx, 'page.read', worldId)
+    const rows = await pagesRepo.listProperties(ctx.db, worldId)
+    const pages = rows.map((row) => ({ pageId: row.id, tags: reservedList(propertiesOf(row.properties), 'etiquetas') }))
+    return { tags: tagCounts(pages) }
   }),
 
   implement(movePage, async (ctx, input) => {

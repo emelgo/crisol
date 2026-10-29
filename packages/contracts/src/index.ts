@@ -4,7 +4,16 @@ import { listHistory, undoOperation } from './history.ts'
 import { getInvitation, regenerateInvitation, setInvitationsOpen } from './invitations.ts'
 import { leaveCampaign, listMembers, removeMember } from './members.ts'
 import { listOrganizations } from './organizations.ts'
-import { createPage, getPage, listPageChildren, listPageTree, movePage, updatePage } from './pages.ts'
+import {
+  createPage,
+  getPage,
+  listPageChildren,
+  listPageTree,
+  listTags,
+  movePage,
+  setPageProperties,
+  updatePage
+} from './pages.ts'
 import { deleteCampaign, deleteWorld, listTrash, restoreCampaign, restoreWorld } from './trash.ts'
 import { createWorld, listWorlds, renameWorld } from './worlds.ts'
 
@@ -55,7 +64,9 @@ export const ACTIONS = [
   movePage,
   getPage,
   listPageChildren,
-  listPageTree
+  listPageTree,
+  setPageProperties,
+  listTags
 ]
 
 /** Las acciones por nombre, solo como tipo: la web las usa sin cargar zod */
@@ -93,4 +104,6 @@ export type Actions = {
   getPage: typeof getPage
   listPageChildren: typeof listPageChildren
   listPageTree: typeof listPageTree
+  setPageProperties: typeof setPageProperties
+  listTags: typeof listTags
 }
