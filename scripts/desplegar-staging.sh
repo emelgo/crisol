@@ -8,6 +8,13 @@ REPO="$(cd "$(dirname "$0")/.." && pwd)"
 DESTINO="${CRISOL_STAGING_DIR:-$HOME/crisol-staging}"
 PUERTO="${CRISOL_PORT:-8140}"
 
+# Un solo despliegue a la vez: dos migraciones simultáneas se pisan
+exec 9>"$DESTINO.lock"
+if ! flock -n 9; then
+  echo "Ya hay un despliegue en marcha" >&2
+  exit 1
+fi
+
 # Copia de main, aparte del repo de desarrollo
 if [ ! -d "$DESTINO/.git" ]; then
   git clone --quiet "$(git -C "$REPO" remote get-url origin)" "$DESTINO"
