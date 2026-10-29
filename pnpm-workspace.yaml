@@ -1,0 +1,25 @@
+packages:
+  - apps/*
+  - packages/*
+  - scripts
+
+# Versiones compartidas por todos los paquetes (se usan con "catalog:")
+catalog:
+  "@biomejs/biome": 2.6.4
+  "@types/node": ^24.10.0
+  turbo: ^2.11.10
+  typescript: ^7.0.2
+  vitest: ^5.0.5
+
+minimumReleaseAgeExclude:
+  - "@biomejs/biome@2.6.4"
+  - "@biomejs/cli-android-arm64@2.6.4"
+  - "@biomejs/cli-android-x64@2.6.4"
+  - "@biomejs/cli-darwin-arm64@2.6.4"
+  - "@biomejs/cli-darwin-x64@2.6.4"
+  - "@biomejs/cli-linux-arm64-musl@2.6.4"
+  - "@biomejs/cli-linux-arm64@2.6.4"
+  - "@biomejs/cli-linux-x64-musl@2.6.4"
+  - "@biomejs/cli-linux-x64@2.6.4"
+  - "@biomejs/cli-win32-arm64@2.6.4"
+  - "@biomejs/cli-win32-x64@2.6.4"

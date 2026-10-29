@@ -1,0 +1,107 @@
+/**
+ * Licencias de las dependencias frente a la lista permitida de CONSTRAINTS.md.
+ * Producción: solo permisivas. Desarrollo: además copyleft débil (MPL, LGPL), nunca GPL ni AGPL.
+ */
+import { execFileSync } from 'node:child_process'
+
+export type Policy = ReadonlySet<string>
+
+export interface Violation {
+  name: string
+  versions: string[]
+  license: string
+}
+
+/** Lo que devuelve `pnpm licenses list --json`: licencia → paquetes */
+type Report = Record<string, Array<{ name: string; versions: string[] }>>
+
+const PERMISSIVE = [
+  'MIT',
+  'ISC',
+  'BSD-2-Clause',
+  'BSD-3-Clause',
+  'Apache-2.0',
+  '0BSD',
+  'CC0-1.0',
+  'Unlicense',
+  'BlueOak-1.0.0',
+  'CC-BY-4.0'
+]
+const WEAK_COPYLEFT = ['MPL-2.0', 'LGPL-2.1-only', 'LGPL-2.1-or-later', 'LGPL-3.0-only', 'LGPL-3.0-or-later']
+
+export const PROD_POLICY: Policy = new Set(PERMISSIVE)
+export const DEV_POLICY: Policy = new Set([...PERMISSIVE, ...WEAK_COPYLEFT])
+
+/** Evalúa una expresión SPDX: alternativas OR de conjunciones AND, con paréntesis y excepciones WITH */
+export function isAllowed(expression: string, policy: Policy): boolean {
+  const tokens = expression.replace(/[()]/g, ' $& ').split(/\s+/).filter(Boolean)
+  let pos = 0
+  let malformed = false
+
+  const parseAtom = (): boolean => {
+    const token = tokens[pos++]
+    if (token === '(') {
+      const allowed = parseOr()
+      if (tokens[pos++] !== ')') malformed = true
+      return allowed
+    }
+    if (token === undefined) {
+      malformed = true
+      return false
+    }
+    // La excepción no cambia el carácter de la licencia base
+    if (tokens[pos] === 'WITH') pos += 2
+    return policy.has(token)
+  }
+  const parseAnd = (): boolean => {
+    let allowed = parseAtom()
+    while (tokens[pos] === 'AND') {
+      pos++
+      const next = parseAtom()
+      allowed = allowed && next
+    }
+    return allowed
+  }
+  const parseOr = (): boolean => {
+    let allowed = parseAnd()
+    while (tokens[pos] === 'OR') {
+      pos++
+      const next = parseAnd()
+      allowed = allowed || next
+    }
+    return allowed
+  }
+
+  if (tokens.length === 0) return false
+  const allowed = parseOr()
+  return allowed && !malformed && pos === tokens.length
+}
+
+/** Paquetes del informe con licencia no permitida (los del propio monorepo no cuentan) */
+export function findViolations(report: Report, policy: Policy): Violation[] {
+  return Object.entries(report).flatMap(([license, packages]) =>
+    isAllowed(license, policy)
+      ? []
+      : packages
+          .filter(({ name }) => name !== 'crisol' && !name.startsWith('@crisol/'))
+          .map(({ name, versions }) => ({ name, versions, license }))
+  )
+}
+
+function readReport(scope: '--prod' | '--dev'): Report {
+  return JSON.parse(execFileSync('pnpm', ['licenses', 'list', '--json', scope], { encoding: 'utf8' })) as Report
+}
+
+if (import.meta.main) {
+  const problems = [
+    ...findViolations(readReport('--prod'), PROD_POLICY).map((v) => ({ ...v, scope: 'producción' })),
+    ...findViolations(readReport('--dev'), DEV_POLICY).map((v) => ({ ...v, scope: 'desarrollo' }))
+  ]
+  for (const p of problems) console.error(`${p.scope}: ${p.name}@${p.versions.join(', ')} tiene licencia ${p.license}`)
+  if (problems.length > 0) {
+    console.error('Hay licencias fuera de la lista permitida (CONSTRAINTS.md)')
+    process.exitCode = 1
+  } else {
+    console.log('Licencias en regla')
+  }
+}
