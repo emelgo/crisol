@@ -46,7 +46,7 @@ Comprobación local al acabar cada tarea: `pnpm lint && pnpm typecheck && pnpm t
   - Archivos: `apps/web/src/{main,router,i18n}.tsx`, `apps/web/src/estilos/tokens.css`, `apps/server/src/web.ts`,
     `e2e/inicio.spec.ts`.
 
-- [ ] **5. Imagen Docker y staging** — **pide permiso para Caddy antes de tocarlo**
+- [x] **5. Imagen Docker y staging** — permiso de Caddy dado por Enrique el 2026-10-29
   - Acepta:
     - Imagen de varias etapas.
     - `compose.prod.yaml` con la app, Postgres y Valkey solo en loopback y con límites de memoria.
