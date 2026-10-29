@@ -1,0 +1,78 @@
+/* El icono de la página, junto a su título; la caja se abre debajo */
+.wrapper {
+  position: relative;
+  align-self: center;
+}
+
+.trigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 3.25rem;
+  block-size: 3.25rem;
+  padding: 0;
+  border: 1px dashed transparent;
+  background: none;
+  font-size: 2.25rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.trigger:hover,
+.trigger[aria-expanded="true"] {
+  border-color: var(--color-field-border);
+}
+
+/* Sin icono: un hueco que se ve al pasar o al llegar con el tabulador */
+.placeholder {
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
+  border: 2px dashed var(--color-field-border);
+  opacity: 0.6;
+}
+
+.panel {
+  composes: frame from "../components/frame.module.css";
+  position: absolute;
+  inset-block-start: calc(100% + var(--space-1));
+  inset-inline-start: 0;
+  z-index: 5;
+  inline-size: min(20rem, 90vw);
+  padding: var(--space-3) var(--space-4) var(--space-4);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: var(--space-1);
+  margin: 0 0 var(--space-3);
+  padding: 0;
+  list-style: none;
+}
+
+.choice {
+  inline-size: 100%;
+  aspect-ratio: 1;
+  min-block-size: var(--target);
+  padding: 0;
+  border: 1px solid transparent;
+  background: none;
+  font-size: 1.375rem;
+  cursor: pointer;
+}
+
+.choice:hover,
+.choice[aria-pressed="true"] {
+  border-color: var(--color-accent);
+}
+
+.other {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0 var(--space-2);
+}
+
+.other > div {
+  flex: 1 1 8rem;
+}

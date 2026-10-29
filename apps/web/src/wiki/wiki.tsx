@@ -14,6 +14,8 @@ import form from '../components/form.module.css'
 import list from '../components/list.module.css'
 import { failed, LoadError } from '../components/load-error.tsx'
 import { PageTitle } from '../components/page-title.tsx'
+import { PageIcon } from './icon.tsx'
+import { PageProperties } from './properties.tsx'
 import { childrenKey, PageTree } from './tree.tsx'
 import styles from './wiki.module.css'
 
@@ -51,7 +53,7 @@ function useCreatePage(worldId: string) {
  * La wiki de un mundo: el árbol a un lado y la página al otro. En el móvil, el árbol va en un cajón que se abre con
  * «Páginas». Solo para quien administra el mundo (hasta el módulo 5)
  */
-function WikiLayout({
+export function WikiLayout({
   worldId,
   current,
   children
@@ -137,6 +139,11 @@ function WikiLayout({
         </div>
         <FormError message={create.error ? errorText(create.error) : null} />
         <PageTree worldId={worldId} currentId={current?.id} path={current?.path} onNavigate={() => close(false)} />
+        <nav aria-label={t('wiki.more')} className={styles.more}>
+          <Link to="/mundos/$worldId/etiquetas" params={{ worldId }} onClick={() => close(false)}>
+            {t('tags.title')}
+          </Link>
+        </nav>
       </aside>
       <div className={styles.content}>{children(world)}</div>
     </div>
@@ -246,6 +253,7 @@ function PageHeading({ page, startEditing }: { page: Page; startEditing: boolean
   }
   return (
     <div className={styles.heading}>
+      <PageIcon page={page} />
       <PageTitle>{page.title}</PageTitle>
       <button type="button" ref={renameButton.ref} className={list.secondary} onClick={() => setEditing(true)}>
         {t('wiki.rename')}
@@ -324,6 +332,7 @@ export function WikiPage() {
           <article>
             <Breadcrumbs worldId={worldId} world={world.name} path={page.data.path} />
             <PageHeading key={`${page.data.id}-${nuevo ?? false}`} page={page.data} startEditing={nuevo === true} />
+            <PageProperties key={page.data.id} page={page.data} />
             <Subpages page={page.data} />
           </article>
         )

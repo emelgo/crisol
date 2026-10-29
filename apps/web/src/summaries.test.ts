@@ -21,6 +21,15 @@ describe('las frases de la wiki', () => {
     expect(summaryOf(t, { action: 'movePage', details: { title: 'Lugares', parent: null } })).toBe(
       'movió «Lugares» al primer nivel'
     )
+    expect(summaryOf(t, { action: 'updatePage', details: { title: 'Puerto', icon: '⚓' } })).toBe(
+      'cambió el icono de «Puerto»'
+    )
+    expect(summaryOf(t, { action: 'updatePage', details: { title: 'Puerto', icon: null } })).toBe(
+      'quitó el icono de «Puerto»'
+    )
+    expect(summaryOf(t, { action: 'setPageProperties', details: { title: 'Puerto', changed: ['alias'] } })).toBe(
+      'cambió las propiedades de «Puerto»'
+    )
   })
 
   it('lo que pide Claude, con los títulos de lo que toca', () => {
@@ -41,6 +50,16 @@ describe('las frases de la wiki', () => {
         details: { page: 'Puerto' }
       })
     ).toBe('renombrar la página «Puerto» a «Puerto Ceniza»')
+    expect(
+      requestSummary(t, { action: 'updatePage', input: { pageId: 'p', icon: '⚓' }, details: { page: 'Puerto' } })
+    ).toBe('cambiar el icono de «Puerto»')
+    expect(
+      requestSummary(t, {
+        action: 'setPageProperties',
+        input: { pageId: 'p', properties: [] },
+        details: { page: 'Puerto' }
+      })
+    ).toBe('cambiar las propiedades de «Puerto»')
     expect(
       requestSummary(t, {
         action: 'createPage',

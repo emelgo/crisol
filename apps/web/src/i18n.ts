@@ -122,7 +122,50 @@ export const es = {
     subpages: 'Subpáginas',
     noSubpages: 'No tiene subpáginas.',
     notFound: 'Esta wiki no existe',
-    pageNotFound: 'Esta página no existe'
+    pageNotFound: 'Esta página no existe',
+    more: 'Más de la wiki'
+  },
+  properties: {
+    title: 'Propiedades',
+    add: 'Añadir propiedades',
+    edit: 'Editar propiedades',
+    none: 'Sin propiedades.',
+    addOne: 'Añadir propiedad',
+    numbered: 'propiedad {{n}}',
+    name: 'Nombre de la propiedad {{n}}',
+    type: 'Tipo de la propiedad {{n}}',
+    value: 'Valor de la propiedad {{n}}',
+    up: 'Subir',
+    down: 'Bajar',
+    removeShort: 'Quitar',
+    moveUp: 'Subir {{name}}',
+    moveDown: 'Bajar {{name}}',
+    remove: 'Quitar {{name}}',
+    removePage: 'Quitar {{title}}',
+    listHint: 'Separa con comas',
+    pagesHint: 'Escribe el título y elige la página',
+    unknownPage: 'Página',
+    badNumber: '«{{name}}» tiene que ser un número',
+    yes: 'Sí',
+    no: 'No',
+    types: { text: 'Texto', number: 'Número', boolean: 'Sí o no', list: 'Lista', pages: 'Páginas' },
+    reserved: { alias: 'Alias', etiquetas: 'Etiquetas', resumen: 'Resumen' }
+  },
+  icon: {
+    add: 'Añadir icono',
+    change: 'Icono {{icon}}: cambiarlo',
+    common: 'Iconos',
+    use: 'Usar {{icon}}',
+    other: 'Otro emoji',
+    useOther: 'Usar',
+    remove: 'Quitar el icono'
+  },
+  tags: {
+    title: 'Etiquetas',
+    worldTitle: 'Etiquetas de {{world}}',
+    empty: 'Aún no hay etiquetas: se ponen en las propiedades de cada página.',
+    count_one: '{{count}} página',
+    count_other: '{{count}} páginas'
   },
   history: {
     title: 'Historial',
@@ -166,6 +209,9 @@ export const es = {
       updatePage: 'renombró la página «{{from}}» a «{{to}}»',
       movePage: 'movió «{{title}}» dentro de «{{parent}}»',
       movePageToTop: 'movió «{{title}}» al primer nivel',
+      setPageIcon: 'cambió el icono de «{{title}}»',
+      removePageIcon: 'quitó el icono de «{{title}}»',
+      setPageProperties: 'cambió las propiedades de «{{title}}»',
       unknown: 'hizo un cambio ({{action}})'
     }
   },
@@ -216,6 +262,9 @@ export const es = {
       updatePage: 'renombrar la página «{{from}}» a «{{to}}»',
       movePage: 'mover «{{title}}» dentro de «{{parent}}»',
       movePageToTop: 'mover «{{title}}» al primer nivel',
+      setPageIcon: 'cambiar el icono de «{{title}}»',
+      removePageIcon: 'quitar el icono de «{{title}}»',
+      setPageProperties: 'cambiar las propiedades de «{{title}}»',
       unknown: 'hacer un cambio ({{action}})'
     }
   },
@@ -294,6 +343,10 @@ export const es = {
     CYCLE: 'Una página no puede ir dentro de sí misma ni de sus subpáginas',
     TOO_DEEP: 'No caben más niveles de subpáginas',
     BAD_PLACEMENT: 'Ahí no se puede poner',
+    DUPLICATE_PROPERTY: 'Hay dos propiedades con el mismo nombre',
+    RESERVED_PROPERTY_TYPE: 'Alias y etiquetas son listas, y resumen es texto',
+    BAD_TAG: 'Una etiqueta no lleva espacios; para la jerarquía, «/»',
+    BAD_PROPERTY: 'Alguna página de las propiedades ya no está en la wiki',
     INVALID_CREDENTIALS: 'Email o contraseña incorrectos',
     TOO_MANY_REQUESTS: 'Demasiados intentos. Espera un minuto.',
     EMAIL_TAKEN: 'Ese email ya tiene cuenta',
