@@ -41,12 +41,19 @@ export interface OperationContext {
   /** La acción que se hizo (createWorld…) y sus datos, para el texto del historial */
   action: string
   details?: Record<string, unknown>
+  /** La operación que deshace esta: quedan enlazadas en las dos direcciones */
+  undoes?: string
 }
 
 export interface Writer {
   insert<T extends TrackedTable>(table: T, values: Values<T>): Promise<InferSelectModel<T>>
   update<T extends TrackedTable>(table: T, id: string, patch: Partial<Values<T>>): Promise<InferSelectModel<T>>
   remove(table: TrackedTable, id: string): Promise<void>
+  /**
+   * Deja una fila como la guarda el historial (to_jsonb, con su id y su versión): la actualiza si existe o la vuelve
+   * a poner si no. Para deshacer
+   */
+  restore(table: TrackedTable, row: Json): Promise<void>
   /** Para leer dentro de la misma transacción (y escribir tablas que no son de dominio) */
   read: Transaction
 }
@@ -111,6 +118,34 @@ export async function operation<R>(
         const before = await existing(name, id)
         await tx.delete(table).where(eq(table.id, id))
         recorded.push({ tableName: name, rowId: id, before, after: null })
+      },
+      async restore(table, row) {
+        const name = getTableName(table)
+        const id = String(row.id)
+        const before = await snapshot(name, id, true)
+        // Quien lo deja así es quien deshace, ahora; lo demás (versión incluida) es la fila tal como estaba
+        const values = JSON.stringify({ ...row, updated_by: context.actorId, updated_at: new Date().toISOString() })
+        const target = sql.identifier(name)
+        if (before) {
+          const columns = Object.keys(row).filter((column) => column !== 'id')
+          columns.push(...['updated_by', 'updated_at'].filter((column) => !columns.includes(column)))
+          const list = (alias: string) =>
+            sql.join(
+              columns.map((column) => sql`${sql.identifier(alias)}.${sql.identifier(column)}`),
+              sql`, `
+            )
+          await tx.execute(
+            sql`update ${target} t set (${sql.join(
+              columns.map((column) => sql.identifier(column)),
+              sql`, `
+            )}) = (select ${list('r')} from jsonb_populate_record(null::${target}, ${values}::jsonb) r) where t.id = ${id}`
+          )
+        } else {
+          await tx.execute(
+            sql`insert into ${target} select * from jsonb_populate_record(null::${target}, ${values}::jsonb)`
+          )
+        }
+        recorded.push({ tableName: name, rowId: id, before, after: await snapshot(name, id) })
       }
     }
 
@@ -127,10 +162,12 @@ export async function operation<R>(
         via: context.via,
         tool: context.tool ?? null,
         action: context.action,
-        details: context.details ?? {}
+        details: context.details ?? {},
+        undoesId: context.undoes ?? null
       })
       .returning({ id: operations.id })
     if (!op) throw new Error('No se pudo guardar la operación')
+    if (context.undoes) await tx.update(operations).set({ undoneById: op.id }).where(eq(operations.id, context.undoes))
     await tx
       .insert(changes)
       .values(recorded.map((change, index) => ({ ...change, operationId: op.id, seq: index + 1 })))

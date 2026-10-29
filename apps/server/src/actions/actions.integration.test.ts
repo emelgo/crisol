@@ -362,7 +362,9 @@ describe('POST /api/actions/:name', () => {
         tool: null,
         action: 'createCampaign',
         details: { name: 'La Marca', world: 'Eana' },
-        worldId: world.id
+        worldId: world.id,
+        undoneBy: null,
+        undoes: null
       })
     })
 
@@ -389,6 +391,100 @@ describe('POST /api/actions/:name', () => {
       const other = await organizationWithOwner('Otra', 'otra@crisol.test')
       expect((await call('listHistory', { worldId: world.id }, other.cookie)).statusCode).toBe(404)
       expect((await call('listHistory', { organizationId }, other.cookie)).statusCode).toBe(404)
+    })
+  })
+
+  describe('deshacer', () => {
+    const historyOf = async (worldId: string) =>
+      (await call('listHistory', { worldId }, owner.cookie)).json().entries as Array<{
+        id: string
+        action: string
+        undoneBy: string | null
+        undoes: string | null
+        details: Record<string, unknown>
+      }>
+
+    it('el máster deshace crear una campaña; el historial lo cuenta y se puede rehacer', async () => {
+      const world = (await call('createWorld', { name: 'Eana' }, owner.cookie)).json()
+      await call('createCampaign', { worldId: world.id, name: 'La Marca' }, owner.cookie)
+      const created = (await historyOf(world.id))[0]
+      const undone = (await call('undoOperation', { operationId: created?.id }, owner.cookie)).json()
+      expect(undone).toMatchObject({
+        status: 'undone',
+        entry: {
+          action: 'undoOperation',
+          undoes: created?.id,
+          actor: { name: 'Enrique' },
+          details: { action: 'createCampaign', details: { name: 'La Marca', world: 'Eana' } }
+        }
+      })
+      expect((await call('listCampaigns', { worldId: world.id }, owner.cookie)).json().campaigns).toEqual([])
+      const [undo, original] = await historyOf(world.id)
+      expect(original).toMatchObject({ id: created?.id, undoneBy: undo?.id })
+
+      const redone = (await call('undoOperation', { operationId: undo?.id }, owner.cookie)).json()
+      expect(redone.status).toBe('undone')
+      expect((await call('listCampaigns', { worldId: world.id }, owner.cookie)).json().campaigns).toHaveLength(1)
+    })
+
+    it('si algo cambió después, no deshace y dice qué operación fue', async () => {
+      const world = (await call('createWorld', { name: 'Eana' }, owner.cookie)).json()
+      const campaign = (await call('createCampaign', { worldId: world.id, name: 'La Marca' }, owner.cookie)).json()
+      await call('renameCampaign', { campaignId: campaign.id, name: 'La Marca del Este' }, owner.cookie)
+      const created = (await historyOf(world.id)).find((e) => e.action === 'createCampaign')
+      const result = (await call('undoOperation', { operationId: created?.id }, owner.cookie)).json()
+      expect(result).toMatchObject({
+        status: 'conflict',
+        by: { action: 'renameCampaign', details: { from: 'La Marca', to: 'La Marca del Este' } }
+      })
+      expect((await call('listCampaigns', { worldId: world.id }, owner.cookie)).json().campaigns).toHaveLength(1)
+    })
+
+    it('deshacer una entrada saca al jugador al momento', async () => {
+      const world = (await call('createWorld', { name: 'Eana' }, owner.cookie)).json()
+      const campaign = (await call('createCampaign', { worldId: world.id, name: 'La Marca' }, owner.cookie)).json()
+      const url = (await call('getInvitation', { campaignId: campaign.id }, owner.cookie)).json().url as string
+      const player = await signUpTestUser(auth, { name: 'Jugadora', email: 'jugadora@crisol.test' })
+      await app.inject({
+        method: 'POST',
+        url: '/api/join',
+        payload: { secret: url.split('/unirse/')[1] },
+        headers: { origin: BASE_URL, cookie: player.cookie }
+      })
+      expect((await call('listMembers', { campaignId: campaign.id }, player.cookie)).statusCode).toBe(200)
+      const joined = (await historyOf(world.id)).find((e) => e.action === 'joinCampaign')
+      expect((await call('undoOperation', { operationId: joined?.id }, owner.cookie)).json().status).toBe('undone')
+      expect((await call('listMembers', { campaignId: campaign.id }, player.cookie)).statusCode).toBe(404)
+    })
+
+    it('un jugador no deshace; alguien de fuera, ni sabe que existe; nada se deshace dos veces', async () => {
+      const world = (await call('createWorld', { name: 'Eana' }, owner.cookie)).json()
+      const campaign = (await call('createCampaign', { worldId: world.id, name: 'La Marca' }, owner.cookie)).json()
+      const player = await signUpTestUser(auth, { name: 'Jugadora', email: 'jugadora@crisol.test' })
+      await conn.db.insert(schema.organizationMembers).values({ organizationId, userId: player.userId, role: 'member' })
+      await conn.db
+        .insert(schema.campaignMembers)
+        .values({ campaignId: campaign.id, userId: player.userId, role: 'player' })
+      const [created] = await historyOf(world.id)
+      const undo = (cookie: string, operationId = created?.id) => call('undoOperation', { operationId }, cookie)
+
+      expect((await undo(player.cookie)).statusCode).toBe(403)
+      const other = await organizationWithOwner('Otra', 'otra@crisol.test')
+      expect((await undo(other.cookie)).statusCode).toBe(404)
+      expect((await undo(owner.cookie, '00000000-0000-4000-8000-000000000000')).statusCode).toBe(404)
+
+      await call('renameCampaign', { campaignId: campaign.id, name: 'X' }, owner.cookie)
+      const [renamed] = await historyOf(world.id)
+      expect((await undo(owner.cookie, renamed?.id)).json().status).toBe('undone')
+      expect((await undo(owner.cookie, renamed?.id)).json()).toEqual({ code: 'ALREADY_UNDONE' })
+    })
+
+    it('lo del sistema no se deshace', async () => {
+      await conn.db.insert(schema.operations).values({ organizationId, actorId: null, via: 'system', action: 'seed' })
+      const [seed] = (await call('listHistory', {}, owner.cookie)).json().entries
+      expect((await call('undoOperation', { operationId: seed.id }, owner.cookie)).json()).toEqual({
+        code: 'NOT_UNDOABLE'
+      })
     })
   })
 

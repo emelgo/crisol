@@ -201,7 +201,7 @@ Comprobación local al acabar cada tarea: `pnpm lint && pnpm typecheck && pnpm t
   - Archivos: `packages/contracts/src/historial.ts`, `apps/server/src/servicios/historial.ts`,
     `apps/web/src/rutas/historial.tsx`.
 
-- [ ] **20. Deshacer una operación**
+- [x] **20. Deshacer una operación**
   - Acepta:
     - Aplica los cambios inversos como una operación nueva (que a su vez se puede deshacer).
     - Si hay conflicto de versión, no toca nada y dice qué operación posterior lo causó.

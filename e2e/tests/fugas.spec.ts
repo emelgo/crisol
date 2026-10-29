@@ -37,7 +37,7 @@ test('@fugas una jugadora no recibe nada de lo que no puede ver: ni la campaña 
   if (!seen) throw new Error('sin captura')
   const captured = seen
 
-  // El máster, mientras tanto: crea la campaña B, regenera los dos enlaces, cierra y abre las invitaciones
+  // El máster, mientras tanto: crea la campaña B, regenera los dos enlaces, cierra y abre las invitaciones y deshace
   await page.getByRole('link', { name: 'Eana' }).click()
   await page.getByLabel('Nombre de la campaña').fill(SECRET_CAMPAIGN)
   await page.getByRole('button', { name: 'Crear la campaña' }).click()
@@ -62,6 +62,12 @@ test('@fugas una jugadora no recibe nada de lo que no puede ver: ni la campaña 
   await page.getByLabel(`Nuevo nombre de ${SECRET_CAMPAIGN}`).fill(RENAMED_CAMPAIGN)
   await page.getByRole('button', { name: 'Guardar' }).click()
   await expect(page.getByRole('link', { name: RENAMED_CAMPAIGN })).toBeVisible()
+  // Y deshace el renombrado de B desde el historial
+  await page.getByRole('link', { name: 'Historial' }).click()
+  await page
+    .getByRole('button', { name: `Deshacer: renombró la campaña «${SECRET_CAMPAIGN}» a «${RENAMED_CAMPAIGN}»` })
+    .click()
+  await expect(page.getByRole('list', { name: 'Operaciones' }).getByRole('listitem').first()).toHaveText(/deshizo/)
   await page.goto('/mundos')
   await page.getByRole('button', { name: 'Renombrar Eana' }).click()
   await page.getByLabel('Nuevo nombre de Eana').fill('Eana (Fateforge)')
@@ -100,7 +106,7 @@ test('@fugas una jugadora no recibe nada de lo que no puede ver: ni la campaña 
     expect(everything).not.toContain(leak)
   }
   // Ni rastro del historial
-  for (const leak of ['createCampaign', 'regenerateInvitation', 'setInvitationsOpen', 'operationId']) {
+  for (const leak of ['createCampaign', 'regenerateInvitation', 'setInvitationsOpen', 'undoOperation', 'operationId']) {
     expect(everything).not.toContain(leak)
   }
   await player.close()

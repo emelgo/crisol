@@ -15,6 +15,7 @@
     "generate": "drizzle-kit generate"
   },
   "dependencies": {
+    "@crisol/domain": "workspace:*",
     "drizzle-orm": "catalog:",
     "postgres": "catalog:"
   },

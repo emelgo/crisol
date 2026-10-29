@@ -1,4 +1,4 @@
-import { and, asc, eq } from 'drizzle-orm'
+import { and, asc, eq, sql } from 'drizzle-orm'
 import type { Database } from '../client.ts'
 import { type OperationContext, operation, type Writer } from '../operation.ts'
 import { user } from '../schema/auth.ts'
@@ -111,7 +111,12 @@ export function joinCampaign(
         role: 'member'
       })
     }
-    await w.update(invitationLinks, link.id, { joins: link.joins + 1 })
+    // El contador no pasa por el historial: es una estadística, y si cambiara la fila del enlace, cada entrada
+    // impediría deshacer las anteriores
+    await w.read
+      .update(invitationLinks)
+      .set({ joins: sql`${invitationLinks.joins} + 1` })
+      .where(eq(invitationLinks.id, link.id))
     return { status: 'joined' }
   })
 }

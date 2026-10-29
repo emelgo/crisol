@@ -14,7 +14,7 @@ test('el propietario ve en el historial lo que ha hecho, en el mundo y en toda l
   await expect(page.getByRole('heading', { level: 1, name: 'Historial de Eana' })).toBeVisible()
   const entries = page.getByRole('list', { name: 'Operaciones' }).getByRole('listitem')
   await expect(entries).toHaveText([
-    /^Enrique renombró la campaña «La Marca» a «La Marca del Este».*web$/,
+    /^Enrique renombró la campaña «La Marca» a «La Marca del Este».*· web/,
     /^Enrique generó un enlace nuevo para La Marca/,
     /^Enrique creó la campaña «La Marca» en Eana/,
     /^Enrique creó el mundo «Eana»/
@@ -25,4 +25,33 @@ test('el propietario ve en el historial lo que ha hecho, en el mundo y en toda l
   await expect(entries).toHaveCount(6)
   await expect(entries.last()).toHaveText(/^Crisol creó la organización «Fateforge»/)
   await expect(entries.nth(4)).toHaveText(/^Enrique entró como propietario/)
+})
+
+test('el máster deshace crear una campaña y lo rehace; si algo cambió después, se le dice qué', async ({ page }) => {
+  await campaignLink(page)
+  await page.getByRole('link', { name: 'Eana' }).click()
+  await page.getByRole('link', { name: 'Historial' }).click()
+  await page.getByRole('button', { name: 'Deshacer: creó la campaña «La Marca» en Eana' }).click()
+  const entries = page.getByRole('list', { name: 'Operaciones' }).getByRole('listitem')
+  await expect(entries.first()).toHaveText(/^Enrique deshizo: creó la campaña «La Marca» en Eana/)
+  await page.getByRole('link', { name: 'Eana' }).click()
+  await expect(page.getByText('Aún no hay campañas')).toBeVisible()
+
+  // Rehacer: deshacer el deshacer
+  await page.getByRole('link', { name: 'Historial' }).click()
+  await page.getByRole('button', { name: 'Deshacer: deshizo: creó la campaña «La Marca» en Eana' }).click()
+  await page.getByRole('link', { name: 'Eana' }).click()
+  await expect(page.getByRole('link', { name: 'La Marca' })).toBeVisible()
+
+  // Con un cambio posterior, el deshacer de la creación se niega y dice cuál
+  await page.getByRole('button', { name: 'Renombrar La Marca' }).click()
+  await page.getByLabel('Nuevo nombre de La Marca').fill('La Marca del Este')
+  await page.getByRole('button', { name: 'Guardar' }).click()
+  await page.getByRole('link', { name: 'Historial' }).click()
+  await page.getByRole('button', { name: 'Deshacer: deshizo: deshizo: creó la campaña «La Marca» en Eana' }).click()
+  await expect(
+    page.getByText(
+      'No se puede deshacer: después, Enrique renombró la campaña «La Marca» a «La Marca del Este». Deshaz eso antes.'
+    )
+  ).toBeVisible()
 })

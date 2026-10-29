@@ -185,6 +185,24 @@ describe('el canal en tiempo real', () => {
     expect((await call('listMembers', { campaignId: campaign.id }, player.cookie)).status).toBe(404)
   })
 
+  it('si el máster deshace su entrada, a la jugadora le llega el aviso al momento', async () => {
+    const world = (await call('createWorld', { name: 'Eana' }, owner.cookie)).body
+    const campaign = (await call('createCampaign', { worldId: world.id, name: 'La Marca' }, owner.cookie)).body
+    const url = (await call('getInvitation', { campaignId: campaign.id }, owner.cookie)).body.url as string
+    const player = await signUpTestUser(auth, { name: 'Jugadora', email: 'jugadora@crisol.test' })
+    await app.inject({
+      method: 'POST',
+      url: '/api/join',
+      payload: { secret: url.split('/unirse/')[1] },
+      headers: { origin: BASE_URL, cookie: player.cookie }
+    })
+    const playerInbox = inbox(await open(player.cookie))
+    const history = (await call('listHistory', { worldId: world.id }, owner.cookie)).body
+    const joined = history.entries.find((e: { action: string }) => e.action === 'joinCampaign')
+    await call('undoOperation', { operationId: joined.id }, owner.cookie)
+    expect(await playerInbox.next()).toEqual({ type: 'revoked', worldId: world.id, campaignId: campaign.id })
+  })
+
   it('al dejar la campaña, el aviso llega a sus otras pestañas', async () => {
     const { world, campaign, player } = await worldWithPlayer()
     const tab = inbox(await open(player.cookie))

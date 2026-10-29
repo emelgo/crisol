@@ -38,3 +38,47 @@ export const memberJoined = (
   to: { capability: 'campaign.removeMember', target: scope },
   message: { type: 'joined', ...scope, campaign, member }
 })
+
+/** Lo que el deshacer cambió, en avisos: la misma fila de antes o de después dice de qué se trata */
+type Applied = {
+  tableName: string
+  rowId: string
+  before: Record<string, unknown> | null
+  after: Record<string, unknown> | null
+}
+type UndoEvent = RealtimeEvent | { revoke: string; scope: CampaignScope }
+
+export function undoEvents(applied: readonly Applied[], context: { worldId: string | null; actorId: string }) {
+  const events: UndoEvent[] = [
+    // Sus otras pestañas, aunque ya no vea lo que deshizo (un mundo quitado)
+    { to: { userId: context.actorId }, message: { type: 'changed', what: 'worlds' } }
+  ]
+  for (const change of applied) {
+    const row = change.after ?? change.before ?? {}
+    const worldId = String(row.world_id ?? context.worldId ?? '')
+    const campaignScope = { campaignId: String(row.campaign_id ?? ''), worldId }
+    switch (change.tableName) {
+      case 'worlds':
+        events.push(worldsChanged(change.rowId))
+        break
+      case 'world_members':
+        events.push(worldsChanged(worldId))
+        break
+      case 'campaigns':
+        events.push(campaignsChanged({ campaignId: change.rowId, worldId }))
+        break
+      case 'invitation_links':
+        events.push(invitationChanged(campaignScope))
+        break
+      case 'campaign_members': {
+        const userId = String(row.user_id ?? '')
+        events.push(membersChanged(campaignScope))
+        // Quitada: deja de estar al momento; puesta otra vez: tiene un mundo más
+        if (change.after === null) events.push({ revoke: userId, scope: campaignScope })
+        else if (change.before === null) events.push({ to: { userId }, message: { type: 'changed', what: 'worlds' } })
+        break
+      }
+    }
+  }
+  return events
+}

@@ -1,8 +1,8 @@
 import type { HistoryEntry } from '@crisol/contracts'
-import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getRouteApi, Link, Navigate } from '@tanstack/react-router'
 import type { TFunction } from 'i18next'
-import type { ReactNode } from 'react'
+import { type ReactNode, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
@@ -67,14 +67,7 @@ function HistoryPage({ title, back, scope }: { title: string; back: ReactNode; s
         ) : (
           <ul className={styles.list} aria-label={t('history.listLabel')}>
             {entries.map((entry) => (
-              <li key={entry.id} className={styles.item}>
-                <span className={styles.name}>
-                  <strong>{actorOf(t, entry)}</strong> {summaryOf(t, entry)}
-                </span>
-                <span className={styles.role}>
-                  <time dateTime={entry.at}>{date.format(new Date(entry.at))}</time> · {viaOf(t, entry)}
-                </span>
-              </li>
+              <HistoryItem key={entry.id} entry={entry} date={date} />
             ))}
           </ul>
         ))}
@@ -92,6 +85,60 @@ function HistoryPage({ title, back, scope }: { title: string; back: ReactNode; s
   )
 }
 
+/** Una operación, con «Deshacer» si se puede (no está deshecha ni es del sistema) */
+function HistoryItem({ entry, date }: { entry: HistoryEntry; date: Intl.DateTimeFormat }) {
+  const { t } = useTranslation()
+  const api = useApi()
+  const queryClient = useQueryClient()
+  const errorText = useErrorText()
+  const [conflict, setConflict] = useState<string | null>(null)
+  const undo = useMutation({
+    mutationFn: () => api.call('undoOperation', { operationId: entry.id }),
+    onSuccess: async (result) => {
+      if (result.status === 'conflict') {
+        setConflict(
+          result.by
+            ? t('history.conflict', { actor: actorOf(t, result.by), what: summaryOf(t, result.by) })
+            : t('history.conflictUnknown')
+        )
+        return
+      }
+      // Lo deshecho puede tocar cualquier cosa de lo que se ve
+      await queryClient.invalidateQueries()
+    }
+  })
+  const summary = summaryOf(t, entry)
+  const undoable = !entry.undoneBy && entry.via !== 'system'
+
+  return (
+    <li className={styles.item}>
+      <span className={styles.name}>
+        <strong>{actorOf(t, entry)}</strong> {summary}
+      </span>
+      <span className={styles.role}>
+        <time dateTime={entry.at}>{date.format(new Date(entry.at))}</time> · {viaOf(t, entry)}
+        {entry.undoneBy && ` · ${t('history.undone')}`}
+      </span>
+      {undoable && (
+        <button
+          type="button"
+          className={styles.secondary}
+          aria-label={t('history.undoButton', { what: summary })}
+          disabled={undo.isPending}
+          onClick={() => {
+            setConflict(null)
+            undo.mutate()
+          }}
+        >
+          {t('history.undo')}
+        </button>
+      )}
+      {conflict && <p className={styles.confirm}>{conflict}</p>}
+      <FormError message={undo.error ? errorText(undo.error) : null} />
+    </li>
+  )
+}
+
 function actorOf(t: TFunction, entry: HistoryEntry) {
   if (entry.actor) return entry.actor.name
   return entry.via === 'system' ? t('history.system') : t('history.deletedAccount')
@@ -103,9 +150,13 @@ function viaOf(t: TFunction, entry: HistoryEntry) {
 }
 
 /** La frase de cada acción, con sus datos; una que la web aún no conoce se dice tal cual */
-function summaryOf(t: TFunction, { action, details }: HistoryEntry) {
+function summaryOf(t: TFunction, { action, details }: Pick<HistoryEntry, 'action' | 'details'>): string {
   const text = (value: unknown) => String(value ?? '')
   switch (action) {
+    case 'undoOperation': {
+      const original = { action: text(details.action), details: (details.details ?? {}) as Record<string, unknown> }
+      return t('history.actions.undoOperation', { what: summaryOf(t, original) })
+    }
     case 'createOrganization':
       return t('history.actions.createOrganization', { name: text(details.name) })
     case 'bootstrapOwner':
