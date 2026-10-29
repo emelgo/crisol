@@ -20,6 +20,18 @@ export interface BootstrapInput {
   password: string
 }
 
+/** Lo que enseña la página de un enlace de invitación */
+export interface InvitationInfo {
+  campaignName: string
+  worldName: string
+  masterName: string | null
+}
+
+/** Al unirse: joined (entra ahora), member (ya estaba), master (es su máster); y adónde lleva */
+export type JoinResult =
+  | { ok: true; status: 'joined' | 'member' | 'master'; worldId: string; campaignId: string }
+  | { ok: false; code: string }
+
 export interface AccountClient {
   useAccount(): { account: Account | null; pending: boolean }
   signIn(email: string, password: string): Promise<Result>
@@ -30,6 +42,12 @@ export interface AccountClient {
   oauthClientName(clientId: string): Promise<string | null>
   /** Permite o no la conexión de la página de consentimiento y vuelve a la aplicación */
   consent(accept: boolean): Promise<Result>
+  /** La invitación de un enlace, o null si no vale (desconocido, cambiado o cerrado) */
+  invitationInfo(secret: string): Promise<InvitationInfo | null>
+  /** Unirse con sesión */
+  join(secret: string): Promise<JoinResult>
+  /** Crear la cuenta y unirse en la misma petición */
+  signUpAndJoin(input: BootstrapInput): Promise<JoinResult>
   redeemBootstrap(input: BootstrapInput): Promise<Result>
 }
 
@@ -43,6 +61,17 @@ export function errorCode(status: number | undefined): string {
 /** Respuesta de Better Auth cuando hay que seguir en otra dirección (un flujo OAuth) */
 const redirectUrl = (data: unknown) =>
   data && typeof data === 'object' && 'url' in data && typeof data.url === 'string' ? data.url : null
+
+async function joinRequest(url: string, body: object): Promise<JoinResult> {
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(body)
+  })
+  const data = (await response.json().catch(() => ({}))) as { code?: string } & Partial<JoinResult>
+  if (!response.ok) return { ok: false, code: data.code ?? errorCode(response.status) }
+  return { ...(data as Extract<JoinResult, { ok: true }>), ok: true }
+}
 
 export function createAccountClient(): AccountClient {
   // El plugin añade la consulta firmada de la página (oauth_query) a las peticiones de entrar y de consentir
@@ -83,6 +112,19 @@ export function createAccountClient(): AccountClient {
       const next = redirectUrl(data)
       if (next) window.location.assign(next)
       return { ok: true, redirected: Boolean(next) }
+    },
+    async invitationInfo(secret) {
+      const response = await fetch(`/api/join/${encodeURIComponent(secret)}`)
+      return response.ok ? ((await response.json()) as InvitationInfo) : null
+    },
+    async join(secret) {
+      return joinRequest('/api/join', { secret })
+    },
+    async signUpAndJoin(input) {
+      const result = await joinRequest('/api/join/signup', input)
+      // La cookie de sesión ya está puesta: que el cliente vuelva a leer la sesión
+      if (result.ok) auth.$store.notify('$sessionSignal')
+      return result
     },
     async redeemBootstrap(input) {
       const response = await fetch('/api/bootstrap', {

@@ -46,6 +46,22 @@ export const es = {
   campaign: {
     notFound: 'Esta campaña no existe'
   },
+  join: {
+    title: 'Te invitan a {{campaign}}',
+    byMaster: '{{world}} · máster: {{master}}',
+    confirm: 'Entrar en {{campaign}} como jugador',
+    isMaster: 'Ya eres el máster de esta campaña.',
+    signUpTitle: 'Crea tu cuenta',
+    signUp: 'Crear la cuenta y entrar',
+    hasAccount: 'Ya tengo cuenta',
+    signInTitle: 'Entra con tu cuenta',
+    invalidTitle: 'Este enlace no vale',
+    invalidBody: 'Puede que lo hayan cambiado o que las invitaciones estén cerradas. Pide otro al máster.',
+    errors: {
+      EMAIL_TAKEN: 'Ese email ya tiene cuenta: entra con ella más abajo',
+      INVALID_LINK: 'Este enlace ya no vale. Pide otro al máster.'
+    }
+  },
   invitation: {
     title: 'Invitación',
     link: 'Enlace de invitación',
@@ -75,7 +91,9 @@ export const es = {
     history: 'Lo que haga quedará en el historial y podrás deshacerlo.',
     ownerOnly: 'De momento solo el propietario puede conectar Claude.',
     allow: 'Permitir',
-    deny: 'No permitir'
+    deny: 'No permitir',
+    expiredTitle: 'Tu sesión ha caducado',
+    expiredBody: 'Vuelve a conectar desde la aplicación que lo pedía.'
   },
   roles: {
     master: 'Máster',

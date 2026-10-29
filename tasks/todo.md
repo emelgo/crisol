@@ -144,7 +144,7 @@ Comprobación local al acabar cada tarea: `pnpm lint && pnpm typecheck && pnpm t
   - Archivos: `packages/contracts/src/invitaciones.ts`, `packages/db/src/schema/invitaciones.ts`,
     `apps/server/src/servicios/invitaciones.ts`, `apps/web/src/rutas/campana.tsx`.
 
-- [ ] **14. Unirse con el enlace**
+- [x] **14. Unirse con el enlace** — crear la cuenta une en la misma petición (el enlace es el pase de alta); el pase por cookie solo hará falta para Google y Discord (tarea 15)
   - Acepta:
     - `/unirse/:secreto` no cambia nada al abrirse (GET); vista previa genérica y `noindex`.
     - Confirmar es un POST.

@@ -37,6 +37,7 @@ catalog:
   drizzle-orm: ^0.45.4
   fastify: ^5.12.7
   happy-dom: ^21.0.4
+  "@fastify/rate-limit": ^11.2.1
   "@fastify/static": ^10.1.8
   i18next: ^26.5.11
   ioredis: ^6.0.0
