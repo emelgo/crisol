@@ -18,13 +18,24 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
     entero y oculta en la interfaz) y no tiene historial; D&D Beyond ata la pertenencia al personaje.
   - Spec `docs/specs/fundacion.md` **aprobada**; ADR-0002 (Better Auth solo para identidad; inquilinos e invitaciones
     en tablas propias); prueba de fugas añadida a `CONSTRAINTS.md`.
-  - Plan en `tasks/plan.md` y 25 tareas en `tasks/todo.md`, **pendientes de que Enrique los apruebe**.
-- **Siguiente paso**: aprobar el plan → `/build` desde la tarea 1 (esqueleto del monorepo), una rama y un PR por
-  tarea. Preguntas 1 y 2 de la spec (correo y Google) antes de la tarea 15.
+  - Plan aprobado: `tasks/plan.md` y 25 tareas en `tasks/todo.md`.
+- **2026-10-29 — Módulo 0 en curso: tareas 1 a 4 hechas, la 5 a falta de permiso** (PR #2 a #6).
+  - Monorepo (pnpm 12, Turborepo, Biome, TypeScript 7, Vitest 5), CI con todo el listón (4 trabajos), servidor
+    Fastify con `/api/health`, `@crisol/db` con Drizzle, web mínima (React, TanStack, i18next, temas) servida por el
+    servidor, e2e con Playwright y axe. Imagen Docker (300 MB) y `scripts/desplegar-staging.sh` probados en local.
+  - GitHub gratis no protege ramas de repos privados: se fusiona solo con
+    `gh pr checks --watch --fail-fast && gh pr merge`.
+  - MIT-0 admitida en `CONSTRAINTS.md` (la traen dependencias de Vitest).
+  - Puertos: desarrollo 8130 (servidor), 5173 (Vite), 54330 (Postgres), 63790 (Valkey), 10250/8250 (Mailpit);
+    e2e 8131; staging 8140.
+- **Siguiente paso**: con el permiso de Enrique, sitio de Caddy y staging en marcha (cierra la tarea 5 y el punto de
+  control 1); luego la tarea 6 (arranque y cuenta del propietario). Preguntas 1 y 2 de la spec (correo y Google)
+  antes de la tarea 15.
 - **Antes del módulo 1**: ADR sobre Yjs y secretos. Yjs no puede proyectar por usuario, así que el contenido con otra
   visibilidad tiene que ir en documentos o subdocumentos aparte (ver la nota de sincronización de Foundry).
 - **Pendientes de permiso de Enrique:**
-  - Sitio de Caddy `neo.crisol.144-91-122-245.sslip.io` (cuando haya algo que desplegar).
+  - Sitio de Caddy `neo.crisol.144-91-122-245.sslip.io` → `127.0.0.1:8140`, y dejar en marcha el Compose de
+    staging (`crisol-staging`, con reinicio automático).
   - Servicio de systemd para Foundry: ahora corre como proceso de la sesión y se para al cerrarla; se arranca con el
     comando de `research/foundry/entorno.md`.
 - **D&D Beyond:**

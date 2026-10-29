@@ -41,6 +41,11 @@ describe('la web compilada', () => {
     expect(response.body).toContain('<title>Crisol</title>')
   })
 
+  it('responde a HEAD en una ruta de la app como a GET', async () => {
+    const response = await app().inject({ method: 'HEAD', url: '/mundos/eana' })
+    expect(response.statusCode).toBe(200)
+  })
+
   it('una ruta de la API que no existe da 404 en JSON, no la web', async () => {
     const response = await app().inject({ method: 'GET', url: '/api/no-existe' })
     expect(response.statusCode).toBe(404)
