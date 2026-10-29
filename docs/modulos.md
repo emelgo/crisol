@@ -213,8 +213,9 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   4. ~~Diseño~~: aprobado.
   5. ~~`/plan`~~: aprobado.
   6. **`/build` tarea a tarea** (`tasks/todo.md`), con `/agent-skills:review` y `/ship`, como en el módulo 0. Hechas de
-     la 1 a la 6. **Punto de control 1 pedido a Enrique** (el árbol, las propiedades, la papelera, las pestañas y los
-     marcadores, en staging): lo que diga se apunta. **Sigue la 7** (el editor en la web).
+     la 1 a la 7. **Punto de control 1 pedido a Enrique** (el árbol, las propiedades, la papelera, las pestañas y los
+     marcadores, en staging): lo que diga se apunta. **Sigue la 8** (secretos y notas ocultas, lo arriesgado), con su
+     punto de control 2.
 - **2026-10-29 — Módulo 1, tarea 1: páginas y árbol en la API.**
   - La tabla `pages` tiene historial y su orden es una clave fraccionaria (`packages/domain/src/order.ts`, collation
     "C"). Mover solo escribe la fila que se mueve.
@@ -314,6 +315,27 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
     - Se cierra al ir a la papelera, y cortan los límites.
   - `@fugas` en el navegador llegará con el editor (tarea 7): con el máster escribiendo, a la jugadora no le debe llegar
     nada.
+- **2026-10-29 — Módulo 1, tarea 7: el editor en la web.** Desplegada la 6 en staging (health 200, sin errores).
+  - `packages/editor` es el esquema del editor, sin React (dependency-cruiser lo comprueba). Usa TipTap 3.32.1, con
+    todos sus paquetes en la misma versión exacta. Por ahora lleva la base: texto, títulos, listas, casillas, cita,
+    código, separador y las marcas; los enlaces llegan en la tarea 13.
+    - Los títulos del cuerpo van del 1 al 3 y se pintan como `h2` a `h4`, porque el `h1` es el título de la página. Al
+      pegar se leen al revés, para que copiar dentro del editor no cambie su nivel.
+    - La etiqueta de las casillas la pasa la web ya traducida («Por hacer: …»); la de TipTap sale en inglés.
+  - En la web, `App` recibe un `collab` (en `main.tsx`, `createCollabClient()`); sin él, que es lo que pasa en las
+    pruebas de componentes, el cuerpo no se abre.
+    - La wiki abre un WebSocket por pestaña (`CollabSocket`), y cada página abre su `page:<id>` con un proveedor de
+      Hocuspocus enganchado a ese socket.
+    - Los cursores de otras cuentas llevan su nombre y su color.
+    - Sin conexión sale «Sin conexión: se guardará al volver.».
+  - El candado va en `updatePage` con `locked`: pone el editor en lectura sin volver a abrir el documento, y el
+    historial lo cuenta.
+  - E2e:
+    - lo escrito sigue al recargar;
+    - dos pestañas convergen;
+    - sin red se sigue escribiendo y llega al volver (con `routeWebSocket`: `setOffline` no corta un WebSocket abierto);
+    - el candado.
+  - `@fugas`: con el máster escribiendo en el cuerpo, a la jugadora no le llega ni una palabra.
 - Queda una ventana pequeña en el tiempo real: lo que cambie entre la primera carga de una página y la conexión del
   canal no se ve hasta volver a la pestaña. Taparla costaría volver a pedirlo todo al conectar la primera vez.
 - **Pendientes de permiso de Enrique:**
@@ -336,7 +358,7 @@ Estados: pendiente · en curso · hecho · descartado.
 | # | Módulo | Estado | REA principal |
 |---|---|---|---|
 | 0 | **Fundación**: monorepo, CI, despliegue, cuentas, organizaciones, mundos, campañas, roles, historial y deshacer, esqueleto del MCP | **hecho** (2026-10-29; Discord y Google, pospuestos) | Foundry: modelo de documentos y permisos; DDB: campañas e invitaciones |
-| 1 | **Wiki**: páginas y subpáginas, editor de bloques, enlaces, menciones, vista previa, propiedades, secretos, búsqueda, marcadores, etiquetas, versiones, recursos y archivos, **hojas con estilo** (tipo Homebrewery, con PDF), exportación MD, sus herramientas MCP | en curso (construcción: tareas 1 a 6 de 26 hechas) | Foundry: Journal; DDB: contenido y referencias; Homebrewery (MIT): formato de hoja y descarga |
+| 1 | **Wiki**: páginas y subpáginas, editor de bloques, enlaces, menciones, vista previa, propiedades, secretos, búsqueda, marcadores, etiquetas, versiones, recursos y archivos, **hojas con estilo** (tipo Homebrewery, con PDF), exportación MD, sus herramientas MCP | en curso (construcción: tareas 1 a 7 de 26 hechas) | Foundry: Journal; DDB: contenido y referencias; Homebrewery (MIT): formato de hoja y descarga |
 | 2 | Tipos de página, plantillas y formularios nativos; consultas (en lugar de Dataview y Bases) | pendiente | Foundry: tipos de documento |
 | 3 | Sistemas de reglas, fichas de personaje (creación, subida de nivel), dados y dados 3D | pendiente | DDB: creador y hoja; Foundry: dnd5e, DataModel e instalar y crear sistemas |
 | 4 | Compendios, bestiario, statblocks, biblioteca | pendiente | Foundry: compendium packs; DDB: listados |
