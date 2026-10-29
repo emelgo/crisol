@@ -15,8 +15,15 @@ export interface Actor {
   campaigns: ReadonlyMap<string, { worldId: string; role: CampaignRole }>
 }
 
-/** Sobre qué: una organización, un mundo o una campaña (con su mundo) */
-export type Target = { organizationId: string } | { worldId: string } | { campaignId: string; worldId: string }
+/**
+ * Sobre qué: una organización, un mundo, una campaña (con su mundo) o la wiki de un mundo. La wiki lleva la
+ * organización del mundo (la de su fila, nunca la que diga quien pide), porque también la ve su propietario
+ */
+export type Target =
+  | { organizationId: string }
+  | { worldId: string }
+  | { campaignId: string; worldId: string }
+  | { worldId: string; organizationId: string }
 
 type Predicate = (actor: Actor, target: Target) => boolean
 
@@ -43,6 +50,8 @@ const any =
 const seesWorld = any(isWorldMaster, playsInWorld)
 /** Ve la campaña: administra su mundo o está en ella */
 const seesCampaign = any(isWorldMaster, isCampaignMember)
+/** La wiki, hasta el módulo 5: el máster del mundo y el propietario de su organización */
+const managesWiki = any(isWorldMaster, isOrganizationOwner)
 
 const RULES = {
   'world.create': { sees: isOrganizationMember, allows: isOrganizationOwner },
@@ -67,7 +76,10 @@ const RULES = {
   'world.delete': { sees: seesWorld, allows: isWorldMaster },
   'campaign.delete': { sees: seesCampaign, allows: any(isWorldMaster, isCampaignMaster) },
   'world.trash': { sees: seesWorld, allows: isWorldMaster },
-  'organization.trash': { sees: isOrganizationMember, allows: isOrganizationOwner }
+  'organization.trash': { sees: isOrganizationMember, allows: isOrganizationOwner },
+  // La wiki de un mundo: los jugadores no la ven hasta el módulo 5
+  'page.read': { sees: managesWiki, allows: managesWiki },
+  'page.write': { sees: managesWiki, allows: managesWiki }
 } satisfies Record<string, { sees: Predicate; allows: Predicate }>
 
 export type Capability = keyof typeof RULES
