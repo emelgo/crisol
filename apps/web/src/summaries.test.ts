@@ -30,6 +30,8 @@ describe('las frases de la wiki', () => {
     expect(summaryOf(t, { action: 'setPageProperties', details: { title: 'Puerto', changed: ['alias'] } })).toBe(
       'cambió las propiedades de «Puerto»'
     )
+    expect(summaryOf(t, { action: 'deletePage', details: { title: 'Puerto' } })).toBe('borró la página «Puerto»')
+    expect(summaryOf(t, { action: 'restorePage', details: { title: 'Puerto' } })).toBe('restauró la página «Puerto»')
   })
 
   it('lo que pide Claude, con los títulos de lo que toca', () => {

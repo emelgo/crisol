@@ -81,10 +81,11 @@ function TrashEntry({ item }: { item: TrashItem }) {
   // Al restaurarlo, sale de la papelera: el foco irá al siguiente o al título de la página
   const refocus = useRef(() => {})
   const restore = useMutation({
-    mutationFn: () =>
-      item.kind === 'world'
-        ? api.call('restoreWorld', { worldId: item.id })
-        : api.call('restoreCampaign', { campaignId: item.id }),
+    mutationFn: () => {
+      if (item.kind === 'world') return api.call('restoreWorld', { worldId: item.id })
+      if (item.kind === 'page') return api.call('restorePage', { pageId: item.id })
+      return api.call('restoreCampaign', { campaignId: item.id })
+    },
     onMutate: () => {
       refocus.current = focusAfterRemoving(entry.current)
     },
@@ -100,8 +101,12 @@ function TrashEntry({ item }: { item: TrashItem }) {
     <li ref={entry} className={styles.item}>
       <span className={`${styles.name} ${styles.entity}`}>{item.name}</span>
       <span className={styles.role}>
-        {item.kind === 'world' ? t('trash.world') : t('trash.campaignOf', { world: item.worldName })} ·{' '}
-        {t('trash.purgeAt', { date })}
+        {item.kind === 'world'
+          ? t('trash.world')
+          : item.kind === 'page'
+            ? t('trash.pageOf', { world: item.worldName, count: item.subpages ?? 0 })
+            : t('trash.campaignOf', { world: item.worldName })}{' '}
+        · {t('trash.purgeAt', { date })}
       </span>
       <BusyButton
         className={styles.secondary}

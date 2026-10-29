@@ -54,6 +54,7 @@ export function fakeApi(
     deletedAt: new Date().toISOString(),
     purgeAt: new Date(Date.now() + 30 * DAY).toISOString()
   })
+
   const members = new Map(Object.entries(options.members ?? {}).map(([id, list]) => [id, [...list]]))
   const membersOf = (campaignId: string) => ({ members: (members.get(campaignId) ?? []).map((m) => ({ ...m })) })
   const calls: string[] = []
@@ -101,6 +102,8 @@ export function fakeApi(
     properties: page.properties ?? [],
     version: 1
   }))
+  // Las páginas borradas, cada una con las subpáginas que se fueron con ella (todas siguen en la lista, apartadas)
+  const trashedPages: Array<{ root: StoredPage; below: StoredPage[] }> = []
   const pageById = (pageId: string) => {
     const found = pages.find((page) => page.id === pageId)
     if (!found) throw new ApiError('NOT_FOUND', 404)
@@ -265,13 +268,26 @@ export function fakeApi(
     },
     // Como el servidor: las campañas de un mundo borrado no salen sueltas, vuelven con él
     listTrash: ({ worldId }) => ({
-      items: trash
-        .map((t) => ({ ...t.item }))
-        .filter((item) =>
-          worldId
-            ? item.kind === 'campaign' && item.worldId === worldId
-            : item.kind === 'world' || worlds.some((w) => w.id === item.worldId)
-        )
+      items: [
+        ...trashedPages
+          .filter((t) => !worldId || t.root.worldId === worldId)
+          .map((t) => ({
+            ...trashed(
+              'page',
+              t.root.id,
+              t.root.title,
+              worlds.find((w) => w.id === t.root.worldId)
+            ),
+            subpages: t.below.length
+          })),
+        ...trash
+          .map((t) => ({ ...t.item }))
+          .filter((item) =>
+            worldId
+              ? item.kind === 'campaign' && item.worldId === worldId
+              : item.kind === 'world' || worlds.some((w) => w.id === item.worldId)
+          )
+      ]
     }),
     restoreWorld: ({ worldId }) => {
       const index = trash.findIndex((t) => t.world?.id === worldId)
@@ -365,6 +381,28 @@ export function fakeApi(
       return pageView(page)
     },
     getPage: ({ pageId }) => pageView(pageById(pageId)),
+    deletePage: ({ pageId }) => {
+      const root = pageById(pageId)
+      const below: StoredPage[] = []
+      const collect = (id: string) => {
+        for (const child of pages.filter((p) => p.parentId === id)) {
+          below.push(child)
+          collect(child.id)
+        }
+      }
+      collect(pageId)
+      for (const page of [root, ...below]) pages.splice(pages.indexOf(page), 1)
+      trashedPages.push({ root, below })
+      return { subpages: below.length }
+    },
+    restorePage: ({ pageId }) => {
+      const index = trashedPages.findIndex((t) => t.root.id === pageId)
+      const found = trashedPages[index]
+      if (!found) throw new ApiError('NOT_FOUND', 404)
+      trashedPages.splice(index, 1)
+      pages.push(found.root, ...found.below)
+      return { id: found.root.id, name: found.root.title }
+    },
     listPageChildren: ({ worldId, parentId }) => ({ pages: childrenOf(worldId, parentId ?? null).map(summary) }),
     listPageTree: ({ worldId, parentId, levels }) => {
       const tree: Array<ReturnType<typeof summary> & { level: number }> = []

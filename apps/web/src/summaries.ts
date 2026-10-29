@@ -67,6 +67,10 @@ export function summaryOf(
     }
     case 'setPageProperties':
       return say('setPageProperties', { title: text(details.title ?? details.page) })
+    case 'deletePage':
+      return say('deletePage', { title: text(details.title ?? details.page) })
+    case 'restorePage':
+      return say('restorePage', { title: text(details.title ?? details.page) })
     case 'movePage': {
       const title = text(details.page ?? details.title)
       return details.parent ? say('movePage', { title, parent: text(details.parent) }) : say('movePageToTop', { title })
