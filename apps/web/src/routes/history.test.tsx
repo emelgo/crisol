@@ -67,7 +67,11 @@ describe('el historial', () => {
       entry('renameWorld', { from: 'Eana', to: 'Eana (Fateforge)' }),
       entry('joinCampaign', { campaign: 'La Marca', world: 'Eana' }, { actor: { id: 'u2', name: 'Pepe' } }),
       entry('createOrganization', { name: 'Fateforge' }, { actor: null, via: 'system' }),
-      entry('algoNuevo', {}, { actor: null })
+      entry('algoNuevo', {}, { actor: null }),
+      entry('deleteCampaign', { name: 'La Marca', world: 'Eana' }),
+      entry('restoreWorld', { name: 'Eana' }),
+      entry('deleteWorld', { name: 'Otro' }),
+      entry('restoreCampaign', { name: 'La Marca', world: 'Eana' })
     ])
     expect(await screen.findByRole('heading', { level: 1, name: 'Historial de Eana' })).toBeDefined()
     expect(lines()).toEqual([
@@ -77,7 +81,11 @@ describe('el historial', () => {
       expect.stringMatching(/^Enrique renombró el mundo «Eana» a «Eana \(Fateforge\)»/),
       expect.stringMatching(/^Pepe entró en La Marca/),
       expect.stringMatching(/^Crisol creó la organización «Fateforge».*Crisol$/),
-      expect.stringMatching(/^Una cuenta borrada hizo un cambio \(algoNuevo\)/)
+      expect.stringMatching(/^Una cuenta borrada hizo un cambio \(algoNuevo\)/),
+      expect.stringMatching(/^Enrique borró la campaña «La Marca» de Eana/),
+      expect.stringMatching(/^Enrique restauró el mundo «Eana»/),
+      expect.stringMatching(/^Enrique borró el mundo «Otro»/),
+      expect.stringMatching(/^Enrique restauró la campaña «La Marca» de Eana/)
     ])
   })
 

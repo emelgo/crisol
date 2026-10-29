@@ -1,10 +1,13 @@
-import { and, asc, eq } from 'drizzle-orm'
+import { and, asc, eq, isNull } from 'drizzle-orm'
 import type { Database } from '../client.ts'
 import { campaignMembers, campaigns } from '../schema/campaigns.ts'
 import { organizationMembers, organizations } from '../schema/organizations.ts'
 import { worldMembers, worlds } from '../schema/worlds.ts'
 
-/** Las pertenencias de una cuenta: se leen en cada petición para que revocar sea inmediato */
+/**
+ * Las pertenencias de una cuenta: se leen en cada petición para que revocar sea inmediato. Lo que está en la papelera
+ * no cuenta: para todos es como si no existiera
+ */
 export async function loadMemberships(db: Database, userId: string) {
   const [organizations, worldRoles, campaignRoles] = await Promise.all([
     db
@@ -15,12 +18,13 @@ export async function loadMemberships(db: Database, userId: string) {
       .select({ worldId: worldMembers.worldId, organizationId: worlds.organizationId, role: worldMembers.role })
       .from(worldMembers)
       .innerJoin(worlds, eq(worlds.id, worldMembers.worldId))
-      .where(eq(worldMembers.userId, userId)),
+      .where(and(eq(worldMembers.userId, userId), isNull(worlds.deletedAt))),
     db
       .select({ campaignId: campaignMembers.campaignId, worldId: campaigns.worldId, role: campaignMembers.role })
       .from(campaignMembers)
       .innerJoin(campaigns, eq(campaigns.id, campaignMembers.campaignId))
-      .where(eq(campaignMembers.userId, userId))
+      .innerJoin(worlds, eq(worlds.id, campaigns.worldId))
+      .where(and(eq(campaignMembers.userId, userId), isNull(campaigns.deletedAt), isNull(worlds.deletedAt)))
   ])
   return { organizations, worlds: worldRoles, campaigns: campaignRoles }
 }

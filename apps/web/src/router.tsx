@@ -8,6 +8,7 @@ import { Join } from './routes/join.tsx'
 import { Profile } from './routes/profile.tsx'
 import { NotFound, RootLayout } from './routes/root.tsx'
 import { SignIn } from './routes/sign-in.tsx'
+import { OrganizationTrash, WorldTrash } from './routes/trash.tsx'
 import { WorldPage } from './routes/world.tsx'
 import { Worlds } from './routes/worlds.tsx'
 
@@ -34,6 +35,12 @@ const historyRoute = createRoute({
   path: '/historial',
   component: OrganizationHistory
 })
+const worldTrashRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/mundos/$worldId/papelera',
+  component: WorldTrash
+})
+const trashRoute = createRoute({ getParentRoute: () => rootRoute, path: '/papelera', component: OrganizationTrash })
 const consentRoute = createRoute({ getParentRoute: () => rootRoute, path: '/oauth/consentimiento', component: Consent })
 const joinRoute = createRoute({ getParentRoute: () => rootRoute, path: '/unirse/$secret', component: Join })
 const bootstrapRoute = createRoute({ getParentRoute: () => rootRoute, path: '/arranque/$secret', component: Bootstrap })
@@ -47,6 +54,8 @@ const routeTree = rootRoute.addChildren([
   campaignRoute,
   worldHistoryRoute,
   historyRoute,
+  worldTrashRoute,
+  trashRoute,
   consentRoute,
   bootstrapRoute,
   joinRoute

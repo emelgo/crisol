@@ -211,7 +211,7 @@ Comprobación local al acabar cada tarea: `pnpm lint && pnpm typecheck && pnpm t
   - Archivos: `packages/domain/src/deshacer.ts` (+ prueba), `packages/db/src/operacion.ts`,
     `apps/web/src/rutas/historial.tsx`.
 
-- [ ] **21. Papelera y purgas**
+- [x] **21. Papelera y purgas**
   - Acepta:
     - Borrar un mundo o una campaña es un borrado blando que desaparece de las vistas.
     - Papelera con «Restaurar» (la misma fila).

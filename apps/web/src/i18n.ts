@@ -119,6 +119,10 @@ export const es = {
       removeMember: 'expulsó a {{member}} de {{campaign}}',
       leaveCampaign: 'dejó {{campaign}}',
       undoOperation: 'deshizo: {{what}}',
+      deleteWorld: 'borró el mundo «{{name}}»',
+      deleteCampaign: 'borró la campaña «{{name}}» de {{world}}',
+      restoreWorld: 'restauró el mundo «{{name}}»',
+      restoreCampaign: 'restauró la campaña «{{name}}» de {{world}}',
       unknown: 'hizo un cambio ({{action}})'
     }
   },
@@ -135,7 +139,21 @@ export const es = {
     renameButton: 'Renombrar {{name}}',
     renameLabel: 'Nuevo nombre de {{name}}',
     save: 'Guardar',
-    cancel: 'Cancelar'
+    cancel: 'Cancelar',
+    delete: 'Borrar',
+    deleteButton: 'Borrar {{name}}',
+    deleteWarning: '¿Borrar {{name}}? Irá a la papelera: se puede restaurar durante 30 días.'
+  },
+  trash: {
+    title: 'Papelera',
+    worldTitle: 'Papelera de {{world}}',
+    listLabel: 'En la papelera',
+    empty: 'La papelera está vacía',
+    world: 'Mundo',
+    campaignOf: 'Campaña de {{world}}',
+    purgeAt: 'Se borra del todo el {{date}}',
+    restore: 'Restaurar',
+    restoreButton: 'Restaurar {{name}}'
   },
   consent: {
     title: 'Conectar {{client}}',
@@ -169,6 +187,7 @@ export const es = {
     ORGANIZATION_REQUIRED: 'Necesitas ser propietario de una organización',
     ALREADY_UNDONE: 'Ya está deshecho',
     NOT_UNDOABLE: 'Esto no se puede deshacer',
+    WORLD_IN_TRASH: 'Restaura antes su mundo',
     MASTER_NOT_REMOVABLE: 'Al máster no se le puede expulsar',
     UNKNOWN: 'Algo ha fallado. Vuelve a intentarlo.'
   },

@@ -29,6 +29,7 @@
     "@fastify/websocket": "catalog:",
     "@modelcontextprotocol/server": "catalog:",
     "better-auth": "catalog:",
+    "bullmq": "catalog:",
     "drizzle-orm": "catalog:",
     "fastify": "catalog:",
     "ioredis": "catalog:",

@@ -1,5 +1,5 @@
 /** API en memoria para las pruebas de componentes: mundos, campañas y sus miembros de una organización */
-import type { Campaign, HistoryEntry, Invitation, Member, Organization, World } from '@crisol/contracts'
+import type { Campaign, HistoryEntry, Invitation, Member, Organization, TrashItem, World } from '@crisol/contracts'
 import { type ActionInput, type ActionName, type ActionOutput, type ApiClient, ApiError } from './client.ts'
 
 export function fakeApi(
@@ -19,6 +19,18 @@ export function fakeApi(
   const worlds = [...(options.worlds ?? [])]
   const campaigns = [...(options.campaigns ?? [])]
   const history = [...(options.history ?? [])]
+  // Lo borrado, con lo que hace falta para devolverlo
+  const trash: Array<{ item: TrashItem; world?: World; campaign?: Campaign }> = []
+  const DAY = 24 * 60 * 60 * 1000
+  const trashed = (kind: TrashItem['kind'], id: string, name: string, world: World | undefined): TrashItem => ({
+    kind,
+    id,
+    name,
+    worldId: world?.id ?? '',
+    worldName: world?.name ?? '',
+    deletedAt: new Date().toISOString(),
+    purgeAt: new Date(Date.now() + 30 * DAY).toISOString()
+  })
   const members = new Map(Object.entries(options.members ?? {}).map(([id, list]) => [id, [...list]]))
   const membersOf = (campaignId: string) => ({ members: (members.get(campaignId) ?? []).map((m) => ({ ...m })) })
   const calls: string[] = []
@@ -128,6 +140,51 @@ export function fakeApi(
       original.undoneBy = undo.id
       history.unshift(undo)
       return { status: 'undone' as const, entry: { ...undo } }
+    },
+    deleteWorld: ({ worldId }) => {
+      const index = worlds.findIndex((w) => w.id === worldId)
+      const world = worlds[index]
+      if (!world) throw new ApiError('NOT_FOUND', 404)
+      if (world.role !== 'master') throw new ApiError('FORBIDDEN', 403)
+      worlds.splice(index, 1)
+      trash.unshift({ item: trashed('world', world.id, world.name, world), world })
+      return {}
+    },
+    deleteCampaign: ({ campaignId }) => {
+      const index = campaigns.findIndex((c) => c.id === campaignId)
+      const campaign = campaigns[index]
+      if (!campaign) throw new ApiError('NOT_FOUND', 404)
+      campaigns.splice(index, 1)
+      const world = worlds.find((w) => w.id === campaign.worldId)
+      trash.unshift({ item: trashed('campaign', campaign.id, campaign.name, world), campaign })
+      return {}
+    },
+    // Como el servidor: las campañas de un mundo borrado no salen sueltas, vuelven con él
+    listTrash: ({ worldId }) => ({
+      items: trash
+        .map((t) => ({ ...t.item }))
+        .filter((item) =>
+          worldId
+            ? item.kind === 'campaign' && item.worldId === worldId
+            : item.kind === 'world' || worlds.some((w) => w.id === item.worldId)
+        )
+    }),
+    restoreWorld: ({ worldId }) => {
+      const index = trash.findIndex((t) => t.world?.id === worldId)
+      const found = trash[index]
+      if (!found?.world) throw new ApiError('NOT_FOUND', 404)
+      trash.splice(index, 1)
+      worlds.push(found.world)
+      return { id: found.world.id, name: found.world.name }
+    },
+    restoreCampaign: ({ campaignId }) => {
+      const index = trash.findIndex((t) => t.campaign?.id === campaignId)
+      const found = trash[index]
+      if (!found?.campaign) throw new ApiError('NOT_FOUND', 404)
+      if (!worlds.some((w) => w.id === found.campaign?.worldId)) throw new ApiError('WORLD_IN_TRASH', 400)
+      trash.splice(index, 1)
+      campaigns.push(found.campaign)
+      return { id: found.campaign.id, name: found.campaign.name }
     },
     // Quien sale deja de ver la campaña
     leaveCampaign: ({ campaignId }) => {

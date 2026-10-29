@@ -1,4 +1,4 @@
-import { and, eq, sql } from 'drizzle-orm'
+import { and, eq, isNull, sql } from 'drizzle-orm'
 import type { Database } from '../client.ts'
 import { type OperationContext, operation } from '../operation.ts'
 import { campaignMembers, campaigns } from '../schema/campaigns.ts'
@@ -18,20 +18,30 @@ export async function listMemberWorlds(db: Database, userId: string) {
       .select({ ...worldColumns, role: sql<'master' | 'player'>`${worldMembers.role}` })
       .from(worldMembers)
       .innerJoin(worlds, eq(worlds.id, worldMembers.worldId))
-      .where(eq(worldMembers.userId, userId)),
+      .where(and(eq(worldMembers.userId, userId), isNull(worlds.deletedAt))),
     db
       .selectDistinct({ ...worldColumns, role: sql<'master' | 'player'>`'player'` })
       .from(campaignMembers)
       .innerJoin(campaigns, eq(campaigns.id, campaignMembers.campaignId))
       .innerJoin(worlds, eq(worlds.id, campaigns.worldId))
-      .where(and(eq(campaignMembers.userId, userId), eq(campaignMembers.role, 'player')))
+      .where(
+        and(
+          eq(campaignMembers.userId, userId),
+          eq(campaignMembers.role, 'player'),
+          isNull(campaigns.deletedAt),
+          isNull(worlds.deletedAt)
+        )
+      )
   ])
   const masteredIds = new Set(mastered.map((w) => w.id))
   return [...mastered, ...played.filter((w) => !masteredIds.has(w.id))].sort((a, b) => a.name.localeCompare(b.name))
 }
 
 export async function findWorld(db: Database, worldId: string) {
-  const [found] = await db.select(worldColumns).from(worlds).where(eq(worlds.id, worldId))
+  const [found] = await db
+    .select(worldColumns)
+    .from(worlds)
+    .where(and(eq(worlds.id, worldId), isNull(worlds.deletedAt)))
   return found ?? null
 }
 

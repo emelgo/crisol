@@ -52,6 +52,10 @@ export function WorldPage() {
           <Link to="/mundos/$worldId/historial" params={{ worldId }}>
             {t('history.title')}
           </Link>
+          {' · '}
+          <Link to="/mundos/$worldId/papelera" params={{ worldId }}>
+            {t('trash.title')}
+          </Link>
         </p>
       )}
       <h2>{t('campaigns.title')}</h2>
@@ -69,7 +73,8 @@ export function WorldPage() {
                 {...(campaign.role === 'master'
                   ? {
                       onRename: (name: string) =>
-                        api.call('renameCampaign', { campaignId: campaign.id, name }).then(refresh)
+                        api.call('renameCampaign', { campaignId: campaign.id, name }).then(refresh),
+                      onDelete: () => api.call('deleteCampaign', { campaignId: campaign.id }).then(refresh)
                     }
                   : {})}
               />

@@ -13,9 +13,9 @@ const NoticesContext = createContext<{ notices: JoinNotice[]; dismiss(id: string
   newVersion: false
 })
 
-/** Qué consultas de la web hay que volver a pedir con cada aviso. El historial, con cualquier cambio */
+/** Qué consultas de la web hay que volver a pedir con cada aviso. El historial y la papelera, con cualquier cambio */
 export function queriesFor(message: RealtimeMessage): QueryKey[] {
-  return message.type === 'hello' ? [] : [...changedBy(message), ['history']]
+  return message.type === 'hello' ? [] : [...changedBy(message), ['history'], ['trash']]
 }
 
 function changedBy(message: RealtimeMessage): QueryKey[] {

@@ -181,6 +181,14 @@ function summaryOf(t: TFunction, { action, details }: Pick<HistoryEntry, 'action
       return t('history.actions.removeMember', { member: text(details.member), campaign: text(details.campaign) })
     case 'leaveCampaign':
       return t('history.actions.leaveCampaign', { campaign: text(details.campaign) })
+    case 'deleteWorld':
+      return t('history.actions.deleteWorld', { name: text(details.name) })
+    case 'deleteCampaign':
+      return t('history.actions.deleteCampaign', { name: text(details.name), world: text(details.world) })
+    case 'restoreWorld':
+      return t('history.actions.restoreWorld', { name: text(details.name) })
+    case 'restoreCampaign':
+      return t('history.actions.restoreCampaign', { name: text(details.name), world: text(details.world) })
     default:
       return t('history.actions.unknown', { action })
   }

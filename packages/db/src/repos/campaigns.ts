@@ -1,4 +1,4 @@
-import { and, asc, eq, isNotNull, type SQL, sql } from 'drizzle-orm'
+import { and, asc, eq, isNotNull, isNull, type SQL, sql } from 'drizzle-orm'
 import type { Database } from '../client.ts'
 import { type OperationContext, operation } from '../operation.ts'
 import { campaignMembers, campaigns } from '../schema/campaigns.ts'
@@ -11,7 +11,7 @@ import { type PreparedSecret, writeInvitation } from './invitations.ts'
  */
 export function listCampaigns(db: Database, query: { worldId: string; userId: string; onlyMember: boolean }) {
   const membership = and(eq(campaignMembers.campaignId, campaigns.id), eq(campaignMembers.userId, query.userId))
-  const filters: SQL[] = [eq(campaigns.worldId, query.worldId)]
+  const filters: SQL[] = [eq(campaigns.worldId, query.worldId), isNull(campaigns.deletedAt)]
   if (query.onlyMember) filters.push(isNotNull(campaignMembers.id))
   return db
     .select({
@@ -27,7 +27,7 @@ export function listCampaigns(db: Database, query: { worldId: string; userId: st
     .orderBy(asc(campaigns.name))
 }
 
-/** La campaña con su mundo y su organización (para decidir permisos e historial) */
+/** La campaña con su mundo y su organización (para decidir permisos e historial). En la papelera, no existe */
 export async function findCampaign(db: Database, campaignId: string) {
   const [found] = await db
     .select({
@@ -39,7 +39,7 @@ export async function findCampaign(db: Database, campaignId: string) {
     })
     .from(campaigns)
     .innerJoin(worlds, eq(worlds.id, campaigns.worldId))
-    .where(eq(campaigns.id, campaignId))
+    .where(and(eq(campaigns.id, campaignId), isNull(campaigns.deletedAt), isNull(worlds.deletedAt)))
   return found ?? null
 }
 

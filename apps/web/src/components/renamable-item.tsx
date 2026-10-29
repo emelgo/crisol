@@ -13,20 +13,24 @@ interface Props {
   role: string
   /** Sin onRename, no se ofrece renombrar */
   onRename?: (name: string) => Promise<unknown>
+  /** Sin onDelete, no se ofrece borrar (a la papelera, tras confirmar) */
+  onDelete?: () => Promise<unknown>
   /** Adónde lleva el nombre, si lleva a algún sitio */
   link?: { to: string; params?: Record<string, string> }
   children?: ReactNode
 }
 
-/** Un elemento de una lista (mundo, campaña) con su rol y, si se puede, renombrar en el sitio */
-export function RenamableItem({ name, role, onRename, link }: Props) {
+/** Un elemento de una lista (mundo, campaña) con su rol y, si se puede, renombrar en el sitio y borrar */
+export function RenamableItem({ name, role, onRename, onDelete, link }: Props) {
   const { t } = useTranslation()
   const errorText = useErrorText()
   const [editing, setEditing] = useState(false)
+  const [confirmingDelete, setConfirmingDelete] = useState(false)
   const rename = useMutation({
     mutationFn: async (next: string) => onRename?.(next),
     onSuccess: () => setEditing(false)
   })
+  const remove = useMutation({ mutationFn: async () => onDelete?.() })
 
   if (editing) {
     return (
@@ -72,6 +76,30 @@ export function RenamableItem({ name, role, onRename, link }: Props) {
         >
           {t('list.rename')}
         </button>
+      )}
+      {onDelete && !confirmingDelete && (
+        <button
+          type="button"
+          className={styles.secondary}
+          aria-label={t('list.deleteButton', { name })}
+          onClick={() => setConfirmingDelete(true)}
+        >
+          {t('list.delete')}
+        </button>
+      )}
+      {confirmingDelete && (
+        <div className={styles.confirm}>
+          <p>{t('list.deleteWarning', { name })}</p>
+          <div className={styles.actions}>
+            <button type="button" className={form.button} disabled={remove.isPending} onClick={() => remove.mutate()}>
+              {t('list.delete')}
+            </button>
+            <button type="button" className={styles.secondary} onClick={() => setConfirmingDelete(false)}>
+              {t('list.cancel')}
+            </button>
+          </div>
+          <FormError message={remove.error ? errorText(remove.error) : null} />
+        </div>
       )}
     </li>
   )

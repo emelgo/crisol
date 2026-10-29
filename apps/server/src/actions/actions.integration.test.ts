@@ -488,6 +488,102 @@ describe('POST /api/actions/:name', () => {
     })
   })
 
+  describe('papelera', () => {
+    /** Eana con La Marca y una jugadora dentro (que entró con el enlace) */
+    const worldWithPlayer = async () => {
+      const world = (await call('createWorld', { name: 'Eana' }, owner.cookie)).json()
+      const campaign = (await call('createCampaign', { worldId: world.id, name: 'La Marca' }, owner.cookie)).json()
+      const url = (await call('getInvitation', { campaignId: campaign.id }, owner.cookie)).json().url as string
+      const secret = url.split('/unirse/')[1] ?? ''
+      const player = await signUpTestUser(auth, { name: 'Jugadora', email: 'jugadora@crisol.test' })
+      await app.inject({
+        method: 'POST',
+        url: '/api/join',
+        payload: { secret },
+        headers: { origin: BASE_URL, cookie: player.cookie }
+      })
+      return { world, campaign, player, secret }
+    }
+
+    it('el máster borra una campaña: desaparece para todos y su enlace no vale; la restaura y vuelve', async () => {
+      const { world, campaign, player, secret } = await worldWithPlayer()
+      expect((await call('deleteCampaign', { campaignId: campaign.id }, owner.cookie)).json()).toEqual({})
+      expect((await call('listCampaigns', { worldId: world.id }, owner.cookie)).json().campaigns).toEqual([])
+      expect((await call('listWorlds', {}, player.cookie)).json().worlds).toEqual([])
+      expect((await app.inject({ method: 'GET', url: `/api/join/${secret}` })).statusCode).toBe(404)
+      expect((await call('renameCampaign', { campaignId: campaign.id, name: 'X' }, owner.cookie)).statusCode).toBe(404)
+
+      const trash = (await call('listTrash', { worldId: world.id }, owner.cookie)).json()
+      expect(trash.items).toEqual([
+        {
+          kind: 'campaign',
+          id: campaign.id,
+          name: 'La Marca',
+          worldId: world.id,
+          worldName: 'Eana',
+          deletedAt: expect.any(String),
+          purgeAt: expect.any(String)
+        }
+      ])
+      const { deletedAt, purgeAt } = trash.items[0]
+      expect(new Date(purgeAt).getTime() - new Date(deletedAt).getTime()).toBe(30 * 24 * 60 * 60 * 1000)
+
+      expect((await call('restoreCampaign', { campaignId: campaign.id }, owner.cookie)).json()).toEqual({
+        id: campaign.id,
+        name: 'La Marca'
+      })
+      expect((await call('listWorlds', {}, player.cookie)).json().worlds).toHaveLength(1)
+      expect((await app.inject({ method: 'GET', url: `/api/join/${secret}` })).statusCode).toBe(200)
+      const actions = (await call('listHistory', { worldId: world.id }, owner.cookie))
+        .json()
+        .entries.map((e: { action: string; details: object }) => [e.action, e.details])
+      expect(actions.slice(0, 2)).toEqual([
+        ['restoreCampaign', { name: 'La Marca', world: 'Eana' }],
+        ['deleteCampaign', { name: 'La Marca', world: 'Eana' }]
+      ])
+    })
+
+    it('borrar un mundo se lleva sus campañas; el propietario lo restaura desde la papelera de la organización', async () => {
+      const { world, player } = await worldWithPlayer()
+      await call('deleteWorld', { worldId: world.id }, owner.cookie)
+      expect((await call('listWorlds', {}, owner.cookie)).json().worlds).toEqual([])
+      expect((await call('listWorlds', {}, player.cookie)).json().worlds).toEqual([])
+      expect((await call('listTrash', {}, owner.cookie)).json().items).toMatchObject([
+        { kind: 'world', id: world.id, name: 'Eana' }
+      ])
+      expect((await call('restoreWorld', { worldId: world.id }, owner.cookie)).json()).toEqual({
+        id: world.id,
+        name: 'Eana'
+      })
+      expect((await call('listWorlds', {}, player.cookie)).json().worlds).toHaveLength(1)
+    })
+
+    it('una campaña de un mundo en la papelera vuelve con el mundo, no sola', async () => {
+      const { world, campaign } = await worldWithPlayer()
+      await call('deleteCampaign', { campaignId: campaign.id }, owner.cookie)
+      await call('deleteWorld', { worldId: world.id }, owner.cookie)
+      expect((await call('restoreCampaign', { campaignId: campaign.id }, owner.cookie)).json()).toEqual({
+        code: 'WORLD_IN_TRASH'
+      })
+    })
+
+    it('un jugador no borra ni ve la papelera; alguien de fuera, ni sabe que existe', async () => {
+      const { world, campaign, player } = await worldWithPlayer()
+      expect((await call('deleteCampaign', { campaignId: campaign.id }, player.cookie)).statusCode).toBe(403)
+      expect((await call('deleteWorld', { worldId: world.id }, player.cookie)).statusCode).toBe(403)
+      expect((await call('listTrash', { worldId: world.id }, player.cookie)).statusCode).toBe(403)
+      await call('deleteCampaign', { campaignId: campaign.id }, owner.cookie)
+      // Su única campaña está en la papelera: ya no ve el mundo, así que para ella no existe
+      expect((await call('restoreCampaign', { campaignId: campaign.id }, player.cookie)).statusCode).toBe(404)
+
+      const other = await organizationWithOwner('Otra', 'otra@crisol.test')
+      expect((await call('restoreCampaign', { campaignId: campaign.id }, other.cookie)).statusCode).toBe(404)
+      expect((await call('listTrash', { worldId: world.id }, other.cookie)).statusCode).toBe(404)
+      expect((await call('deleteWorld', { worldId: world.id }, other.cookie)).statusCode).toBe(404)
+      expect((await call('restoreWorld', { worldId: world.id }, other.cookie)).statusCode).toBe(404)
+    })
+  })
+
   it('GET /api/openapi.json describe las acciones', async () => {
     const doc = (await app.inject({ method: 'GET', url: '/api/openapi.json' })).json()
     expect(Object.keys(doc.paths)).toContain('/api/actions/createWorld')

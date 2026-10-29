@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm'
-import { check, index, pgTable, text, unique, uuid } from 'drizzle-orm/pg-core'
+import { check, index, pgTable, text, timestamp, unique, uuid } from 'drizzle-orm/pg-core'
 import { user } from './auth.ts'
 import { organizations } from './organizations.ts'
 import { trackedColumns } from './tracked.ts'
@@ -11,9 +11,11 @@ export const worlds = pgTable(
     organizationId: uuid()
       .notNull()
       .references(() => organizations.id, { onDelete: 'cascade' }),
-    name: text().notNull()
+    name: text().notNull(),
+    /** En la papelera desde entonces: no sale en ninguna vista y a los 30 días se purga */
+    deletedAt: timestamp({ withTimezone: true })
   },
-  (t) => [index().on(t.organizationId)]
+  (t) => [index().on(t.organizationId), index().on(t.deletedAt)]
 )
 
 /** master: lo administra. Reservado para más adelante: comaster */
