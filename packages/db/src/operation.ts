@@ -163,7 +163,10 @@ export async function operation<R>(
         tool: context.tool ?? null,
         action: context.action,
         details: context.details ?? {},
-        undoesId: context.undoes ?? null
+        undoesId: context.undoes ?? null,
+        // La hora de ahora, no la del principio de la transacción: una que esperó a un bloqueo queda detrás de la que
+        // lo tenía, y así el historial (y deshacer, que busca lo posterior) va en el orden en que pasaron las cosas
+        createdAt: sql`clock_timestamp()`
       })
       .returning({ id: operations.id })
     if (!op) throw new Error('No se pudo guardar la operación')

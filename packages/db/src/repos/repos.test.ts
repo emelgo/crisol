@@ -218,7 +218,7 @@ describe('repositorios', () => {
         return invitationsRepo.joinCampaign(
           conn.db,
           { actorId: userId, via: 'ui', action: 'joinCampaign', organizationId },
-          { invitationId: link.id, campaignId: c.id, organizationId, userId }
+          { invitationId: link.id, tokenHash: link.tokenHash, campaignId: c.id, organizationId, userId }
         )
       }
 
@@ -245,6 +245,33 @@ describe('repositorios', () => {
         const { campaign: c } = await campaign()
         expect(await join(c, 'u1')).toEqual({ status: 'master' })
         expect((await invitationsRepo.findInvitation(conn.db, c.id))?.joins).toBe(0)
+      })
+
+      it('si el enlace se regenera entre buscarlo y entrar, con el viejo no se entra', async () => {
+        const { campaign: c } = await campaign()
+        const old = await invitationsRepo.findInvitation(conn.db, c.id)
+        if (!old) throw new Error('sin enlace')
+        await invitationsRepo.regenerateInvitation(conn.db, ui('regenerateInvitation'), c.id, prepared())
+        const result = await invitationsRepo.joinCampaign(
+          conn.db,
+          { actorId: 'u2', via: 'ui', action: 'joinCampaign', organizationId },
+          { invitationId: old.id, tokenHash: old.tokenHash, campaignId: c.id, organizationId, userId: 'u2' }
+        )
+        expect(result).toEqual({ status: 'closed' })
+        expect((await loadMemberships(conn.db, 'u2')).campaigns).toEqual([])
+      })
+
+      it('si la campaña va a la papelera entre buscar el enlace y entrar, no se entra', async () => {
+        const { campaign: c } = await campaign()
+        await conn.sql`update campaigns set deleted_at = now() where id = ${c.id}`
+        expect(await join(c, 'u2')).toEqual({ status: 'closed' })
+      })
+
+      it('la misma cuenta entrando a la vez en dos campañas de la organización entra en las dos', async () => {
+        const { campaign: a } = await campaign()
+        const { campaign: b } = await campaign()
+        expect(await Promise.all([join(a, 'u2'), join(b, 'u2')])).toEqual([{ status: 'joined' }, { status: 'joined' }])
+        expect((await loadMemberships(conn.db, 'u2')).organizations).toEqual([{ organizationId, role: 'member' }])
       })
 
       it('con las invitaciones cerradas nadie entra', async () => {
@@ -283,7 +310,7 @@ describe('repositorios', () => {
       await invitationsRepo.joinCampaign(
         conn.db,
         { actorId: userId, via: 'ui', action: 'joinCampaign', organizationId },
-        { invitationId: link.id, campaignId, organizationId, userId }
+        { invitationId: link.id, tokenHash: link.tokenHash, campaignId, organizationId, userId }
       )
     }
     const remove = (campaignId: string, userId: string) =>

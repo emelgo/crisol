@@ -35,3 +35,19 @@ export function openSecret(sealed: string, key: Buffer): string {
   decipher.setAuthTag(Buffer.from(tag, 'base64url'))
   return Buffer.concat([decipher.update(Buffer.from(encrypted, 'base64url')), decipher.final()]).toString('utf8')
 }
+
+/** Algo que puede llevar secretos (lo que devolvió una acción: un enlace de invitación), cifrado para guardarlo */
+export function sealJson(value: unknown, key: Buffer): { sealed: string } {
+  return { sealed: sealSecret(JSON.stringify(value), key) }
+}
+
+/** Lo guardado con sealJson; lo que no lo está (o no se puede abrir con esta clave) no se devuelve */
+export function openJson(stored: unknown, key: Buffer): Record<string, unknown> {
+  const sealed = (stored as { sealed?: unknown } | null)?.sealed
+  if (typeof sealed !== 'string') return {}
+  try {
+    return JSON.parse(openSecret(sealed, key)) as Record<string, unknown>
+  } catch {
+    return {}
+  }
+}

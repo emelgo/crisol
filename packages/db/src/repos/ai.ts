@@ -1,5 +1,5 @@
 import { type AiMode, approvalExpiresAt, DEFAULT_AI_MODE } from '@crisol/domain'
-import { and, asc, desc, eq, gt, lte, ne, or } from 'drizzle-orm'
+import { and, asc, desc, eq, gt, lt, lte, ne, or } from 'drizzle-orm'
 import type { Database } from '../client.ts'
 import { aiSettings, approvals } from '../schema/ai.ts'
 
@@ -105,4 +105,17 @@ export async function listApprovals(db: Database, userId: string, now: Date, rec
       .limit(recentLimit)
   ])
   return { pending, recent }
+}
+
+/**
+ * Lo aprobado que se quedó haciéndose (el servidor se reinició a medias): pasa a fallido, y la cuenta lo ve. Solo lo
+ * aprobado antes de `before`, para no tocar lo que se está haciendo ahora
+ */
+export async function failInterruptedApprovals(db: Database, before: Date): Promise<number> {
+  const failed = await db
+    .update(approvals)
+    .set({ status: 'failed', error: 'INTERRUPTED' })
+    .where(and(eq(approvals.status, 'approved'), lt(approvals.decidedAt, before)))
+    .returning({ id: approvals.id })
+  return failed.length
 }

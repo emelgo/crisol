@@ -19,7 +19,7 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   - Spec `docs/specs/fundacion.md` **aprobada**; ADR-0002 (Better Auth solo para identidad; inquilinos e invitaciones
     en tablas propias); prueba de fugas añadida a `CONSTRAINTS.md`.
   - Plan aprobado: `tasks/plan.md` y 25 tareas en `tasks/todo.md`.
-- **2026-10-29 — Módulo 0 en curso: tareas 1 a 14 y 16 a 24 hechas** (PR #2 a #29). Staging en
+- **2026-10-29 — Módulo 0 en curso: tareas 1 a 14 y 16 a 24 hechas; la 25 (cierre), a medias** (PR #2 a #32). Staging en
   https://neo.crisol.144-91-122-245.sslip.io (Compose `crisol-staging` en `~/crisol-staging`, puerto 8140; copia del
   Caddyfile en `/etc/caddy/Caddyfile.bak-20261029-104936-neo-crisol`). Desplegar tras cada merge:
   `scripts/desplegar-staging.sh` (con cerrojo).
@@ -79,6 +79,14 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
     conector, el modo y cómo acabaron las últimas peticiones. La e2e (`e2e/tests/aprobaciones.spec.ts`) conecta
     «Claude» por OAuth con la ayuda `connectClaude` y llama al MCP sin cookies, como claude.ai; la prueba de fugas
     comprueba que la cola del máster no le llega a la jugadora.
+  - Enrique probó en staging los criterios 4 a 6 con claude.ai: «funciona perfecto». Pidió un historial más claro
+    al deshacer (PR #30: lo deshecho, tachado; deshacer un deshacer es «Rehacer» y se cuenta «rehízo»; un solo botón
+    por cadena). Decidió que el máster sí puede deshacer que alguien saliera de su campaña (PR #32).
+  - Cierre (25), lo hecho:
+    - LCP de `/entrar` en staging, mediana de 5 cargas en frío: 0,27 s en escritorio y 1,9 s en móvil con 4G lenta y
+      CPU ×4 (medido desde el VPS).
+    - Tres revisiones: seguridad, servidor y web. Lo de seguridad y servidor está arreglado (PR #31): ver su
+      descripción.
   - Discord, Google y el correo (tarea 15), **pospuestos** por Enrique: de momento solo email y contraseña. Sin correo
     no hay «recuperar la contraseña»; las variables están comentadas en `.env.example`.
   - Puntos de control 1 y 2 superados: Enrique tiene su cuenta de propietario en staging (organización
@@ -88,10 +96,18 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   - MIT-0 admitida en `CONSTRAINTS.md`.
   - Puertos: desarrollo 8130 (servidor), 5173 (Vite), 54330 (Postgres), 63790 (Valkey), 10250/8250 (Mailpit);
     e2e 8131; prueba del MCP 8132; staging 8140.
-- **Siguiente paso: tarea 25** (cierre): recorrer con Enrique en staging los 8 criterios de éxito con claude.ai de
-  verdad (el 3, salvo Discord, pospuesto), medir el LCP de la entrada, `/agent-skills:review` sin hallazgos altos y
-  marcar el módulo 0 como hecho. Para eso Enrique tiene que reconectar el conector en claude.ai, porque las
-  herramientas han cambiado. El criterio 5 (deshacer lo que creó Claude) ya se puede probar desde claude.ai.
+- **Siguiente paso: acabar la 25.**
+  - **Arreglos de la web de la revisión** (el hallazgo alto: al salir, la caché seguía a la vista para la siguiente
+    cuenta; además foco, regiones vivas, títulos por pantalla, contraste de bordes, sesión acabada, pantalla de
+    permiso con el dominio del cliente, «Entras como…» al unirse). Los hacía una sesión aparte en el worktree
+    `.claude/worktrees/agent-a89efcef80c1ab573`, rama `worktree-agent-a89efcef80c1ab573` (sin subir). Hay que:
+    1. Revisar su diff contra `main` y pasar `pnpm lint`, `pnpm typecheck`, `pnpm test` y `pnpm e2e`.
+    2. Fusionar `main` en ella si hace falta y abrir el PR.
+    3. Añadir `errors.INTERRUPTED` a i18n: es el error de lo aprobado que se cortó por un reinicio.
+  - Después: marcar el módulo 0 como hecho aquí y en `tasks/todo.md` (punto de control final), con los criterios
+    recorridos. El 3 (entrar con Discord) va pospuesto.
+- **Luego, la fase de diseño** (ver «Entre el 0 y el 1» más abajo): Enrique instala `example-skills` de Anthropic y
+  se copian las cuatro skills de Vercel al proyecto.
 - **Antes del módulo 1**: ADR sobre Yjs y secretos. Yjs no puede proyectar por usuario, así que el contenido con otra
   visibilidad tiene que ir en documentos o subdocumentos aparte (ver la nota de sincronización de Foundry).
 - **Pendientes de permiso de Enrique:**
@@ -121,6 +137,23 @@ Estados: pendiente · en curso · hecho · descartado.
 | 11 | Pagos y planes del SaaS | pendiente | — |
 
 Cada módulo nace con su API y sus herramientas MCP.
+
+**Entre el 0 y el 1, fase de diseño** (decidido con Enrique, 2026-10-29). La interfaz del módulo 0 funciona y es
+accesible, pero no tiene un diseño visual pensado. Antes de la wiki, que es lo más visual:
+- Identidad (tipografía, paleta, tono).
+- Kit de componentes.
+- Repaso de las pantallas del 0.
+
+Se hace con la skill `frontend-design` de Anthropic (Apache-2.0). Enrique la instala en Claude Code con
+`/plugin marketplace add anthropics/skills` y `/plugin install example-skills@anthropic-agent-skills`.
+
+De las de Vercel (`vercel-labs/agent-skills`, MIT) sirven cuatro, que se copian al proyecto al empezar la fase:
+- `web-design-guidelines`: revisar la interfaz contra sus Web Interface Guidelines.
+- `react-best-practices` y `composition-patterns`: rendimiento y forma de los componentes de React.
+- `react-view-transitions`: animaciones entre pantallas, más adelante.
+
+Las de desplegar en Vercel y React Native no aplican. Desde entonces, cada módulo lleva un paso de diseño entre la spec
+y el plan (ver `CLAUDE.md`).
 
 ## Decisiones por módulo
 

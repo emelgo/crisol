@@ -119,8 +119,13 @@ describe('el canal en tiempo real', () => {
     expect(await hello).toEqual({ type: 'hello', build: null })
   })
 
-  it('sin sesión, o desde otra web aunque traiga la cookie, no se abre', async () => {
-    await expect(open()).rejects.toThrow('401')
+  it('sin sesión se cierra al momento diciendo que acabó la sesión; desde otra web, ni se abre', async () => {
+    const anonymous = await open()
+    const closed = new Promise<number>((resolve) => anonymous.once('close', (code: number) => resolve(code)))
+    const received: string[] = []
+    anonymous.on('message', (data: Buffer) => received.push(String(data)))
+    expect(await closed).toBe(CLOSE_SESSION_ENDED)
+    expect(received).toEqual([])
     await expect(open(owner.cookie, 'https://malo.example')).rejects.toThrow('403')
   })
 

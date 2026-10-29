@@ -25,3 +25,11 @@ export function registerOriginGuard(app: FastifyInstance, publicUrl: string) {
     if (origin !== undefined && origin !== allowed) return reply.code(403).send({ code: 'BAD_ORIGIN' })
   })
 }
+
+/** Las rutas que llevan un secreto en la propia URL: el enlace de invitación y el de arranque */
+const SECRET_PATHS = /\/(unirse|arranque|api\/join|api\/bootstrap)\/[^/?#]+/g
+
+/** La URL para el registro, sin los secretos que lleve (quien lea los registros no debe poder entrar con ellos) */
+export function redactSecrets(url: string): string {
+  return url.replace(SECRET_PATHS, '/$1/…')
+}

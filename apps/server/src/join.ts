@@ -3,7 +3,7 @@
  * Discord lo abren. Unirse es un POST, con sesión o creando la cuenta en la misma petición (el enlace es el pase de
  * alta; el registro sigue cerrado para todo lo demás).
  */
-import { invitationsRepo } from '@crisol/db'
+import { bootstrapRepo, invitationsRepo } from '@crisol/db'
 import type { FastifyInstance, FastifyRequest } from 'fastify'
 import { z } from 'zod'
 import type { ActionEnv } from './actions/context.ts'
@@ -37,6 +37,7 @@ async function join(env: ActionEnv, link: Link, user: { id: string; name: string
     },
     {
       invitationId: link.invitation.id,
+      tokenHash: link.invitation.tokenHash,
       campaignId: link.invitation.campaignId,
       organizationId: link.organizationId,
       userId
@@ -71,6 +72,14 @@ const clientIp = (request: FastifyRequest) => {
 const limited = { rateLimit: { max: 30, timeWindow: '1 minute', keyGenerator: clientIp } }
 
 export function registerJoinRoutes(app: FastifyInstance, env: ActionEnv, auth: Auth) {
+  // Con sesión, además, por cuenta (la spec pide los dos): cambiar de IP no da más intentos. Se mira en la ruta, con la
+  // sesión ya leída (la librería solo aplica un límite por petición)
+  const accountOf = new WeakMap<FastifyRequest, string>()
+  const perAccount = app.createRateLimit({
+    max: 30,
+    timeWindow: '1 minute',
+    keyGenerator: (request) => `cuenta:${accountOf.get(request) ?? ''}`
+  })
   app.get<{ Params: { secret: string } }>('/api/join/:secret', { config: limited }, async (request, reply) => {
     const link = await validLink(env, request.params.secret)
     if (!link) return reply.code(404).send(INVALID)
@@ -86,6 +95,9 @@ export function registerJoinRoutes(app: FastifyInstance, env: ActionEnv, auth: A
     if (!secret.success) return reply.code(400).send({ code: 'INVALID_INPUT' })
     const session = await auth.api.getSession({ headers: toHeaders(request.headers) })
     if (!session) return reply.code(401).send({ code: 'UNAUTHENTICATED' })
+    accountOf.set(request, session.user.id)
+    const limit = await perAccount(request)
+    if (!limit.isAllowed && limit.isExceeded) return reply.code(429).send({ code: 'TOO_MANY_REQUESTS' })
     const link = await validLink(env, secret.data.secret)
     if (!link) return reply.code(404).send(INVALID)
     const result = await join(env, link, session.user)
@@ -102,8 +114,17 @@ export function registerJoinRoutes(app: FastifyInstance, env: ActionEnv, auth: A
     const { name, email, password } = input.data
     const created = await signUpAllowed(auth, { name, email, password })
     if (!created) return reply.code(409).send({ code: 'EMAIL_TAKEN' })
-    const result = await join(env, link, created.response.user)
-    if (result.status === 'closed') return reply.code(404).send(INVALID)
+    // Sin entrar no hay alta (el registro está cerrado): si el enlace dejó de valer mientras se creaba la cuenta, o
+    // algo falla al unirla, la cuenta se borra
+    const drop = () => bootstrapRepo.deleteUser(env.db, created.response.user.id)
+    const result = await join(env, link, created.response.user).catch(async (error: unknown) => {
+      await drop()
+      throw error
+    })
+    if (result.status === 'closed') {
+      await drop()
+      return reply.code(404).send(INVALID)
+    }
     const cookies = created.headers.getSetCookie()
     if (cookies.length > 0) reply.header('set-cookie', cookies)
     return reply.code(201).send(result)

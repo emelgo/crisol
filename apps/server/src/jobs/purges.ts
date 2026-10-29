@@ -41,13 +41,16 @@ export async function startPurges(options: {
     queue,
     prefix,
     async runNow() {
-      const events = new QueueEvents(QUEUE, { connection: connection.duplicate(), prefix })
+      // Su propia conexión (escucha bloqueando), que se cierra al acabar
+      const listening = connection.duplicate()
+      const events = new QueueEvents(QUEUE, { connection: listening, prefix })
       try {
         await events.waitUntilReady()
         const job = await queue.add('purgar', {})
         return (await job.waitUntilFinished(events)) as PurgeResult
       } finally {
         await events.close()
+        listening.disconnect()
       }
     },
     async close({ obliterate = false } = {}) {

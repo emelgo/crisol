@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { type Row, type RowChange, staleChange, undoBlocker, undoSteps } from './undo.ts'
+import { type Row, type RowChange, restoredRow, staleChange, undoBlocker, undoSteps } from './undo.ts'
 
 const world = (version: number, name: string): Row => ({ id: 'w1', name, version })
 const member = (version = 1): Row => ({ id: 'm1', campaign_id: 'c1', user_id: 'u2', role: 'player', version })
@@ -40,17 +40,36 @@ describe('deshacer', () => {
     })
 
     it('renombrar se deshace dejando la fila como estaba, con su versión', () => {
-      expect(undoSteps([rename])).toEqual([{ kind: 'restore', tableName: 'worlds', row: world(1, 'Eana') }])
+      expect(undoSteps([rename])).toEqual([
+        { kind: 'restore', tableName: 'worlds', row: world(1, 'Eana'), after: world(2, 'Eana 2') }
+      ])
     })
 
     it('expulsar se deshace volviendo a poner la misma fila, con el mismo id', () => {
-      expect(undoSteps([expel])).toEqual([{ kind: 'restore', tableName: 'campaign_members', row: member() }])
+      expect(undoSteps([expel])).toEqual([
+        { kind: 'restore', tableName: 'campaign_members', row: member(), after: null }
+      ])
     })
 
     it('deshacer lo deshecho vuelve a aplicarlo: los pasos de un deshacer son los del original', () => {
       // El deshacer de un renombrado cambió la fila de v2 a v1; deshacerlo la deja otra vez en v2
       const undo: RowChange = { tableName: 'worlds', rowId: 'w1', before: world(2, 'Eana 2'), after: world(1, 'Eana') }
-      expect(undoSteps([undo])).toEqual([{ kind: 'restore', tableName: 'worlds', row: world(2, 'Eana 2') }])
+      expect(undoSteps([undo])).toEqual([
+        { kind: 'restore', tableName: 'worlds', row: world(2, 'Eana 2'), after: world(1, 'Eana') }
+      ])
+    })
+
+    it('al devolver una fila, solo se toca lo que cambió la operación: lo que lleva su propia cuenta se queda', () => {
+      // Abrir las invitaciones; luego entraron dos (el contador va fuera del historial, sin cambiar la versión)
+      const before = { id: 'l1', open: false, joins: 0, version: 1 }
+      const after = { id: 'l1', open: true, joins: 0, version: 2 }
+      const now = { id: 'l1', open: true, joins: 2, version: 2 }
+      expect(restoredRow(now, before, after)).toEqual({ id: 'l1', open: false, joins: 2, version: 1 })
+    })
+
+    it('si la fila ya no está (o la operación la quitó), vuelve entera como estaba', () => {
+      expect(restoredRow(null, member(), member(2))).toEqual(member())
+      expect(restoredRow(member(3), member(), null)).toEqual(member())
     })
   })
 

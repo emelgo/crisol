@@ -22,8 +22,10 @@ español con Enrique.
 ## Ciclo de cada módulo
 
 Skills de agent-skills (plugin del proyecto): `interview-me` con Enrique frente al inventario → REA dirigido a las
-preguntas del módulo → `/spec` → `/plan` → `/build` en porciones verticales con TDD → `/agent-skills:review` → `/ship`
-a staging. Cada módulo nace con su API y sus herramientas MCP.
+preguntas del módulo → `/spec` → diseño de pantallas y flujos con la skill `frontend-design` de Anthropic (plugin
+`example-skills@anthropic-agent-skills`): prototipos que Enrique abre, prueba y aprueba → `/plan` → `/build` en
+porciones verticales con TDD → `/agent-skills:review` (la interfaz, también con `web-design-guidelines` de Vercel) →
+`/ship` a staging. Cada módulo nace con su API y sus herramientas MCP.
 
 ## Normas
 

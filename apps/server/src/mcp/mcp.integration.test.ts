@@ -206,6 +206,33 @@ describe('conector MCP con OAuth', () => {
     expect(clients.some((c) => c.redirectUris?.includes('https://malo.example/cb'))).toBe(false)
   })
 
+  it('un cliente que se registra solo (CIMD) desde otro dominio no llega a pedir permiso', async () => {
+    const owner = await account('owner')
+    const authorize = new URL('/api/auth/oauth2/authorize', BASE)
+    authorize.search = new URLSearchParams({
+      response_type: 'code',
+      client_id: 'https://malo.example/oauth/client.json',
+      redirect_uri: 'https://malo.example/callback',
+      scope: 'openid profile offline_access',
+      state: 'estado',
+      code_challenge: createHash('sha256').update(randomBytes(32).toString('base64url')).digest('base64url'),
+      code_challenge_method: 'S256',
+      resource: `${BASE}/mcp`
+    }).toString()
+    const response = await fetch(authorize, {
+      headers: { cookie: owner.cookie, accept: 'text/html' },
+      redirect: 'manual'
+    })
+    // Se rechaza por el dominio, antes de ir a buscar sus metadatos
+    expect(response.status).toBe(400)
+    expect(await response.json()).toMatchObject({
+      error: 'invalid_client',
+      error_description: expect.stringContaining('not permitted')
+    })
+    const clients = await conn.db.select().from(schema.oauthClient)
+    expect(clients.some((c) => c.clientId === 'https://malo.example/oauth/client.json')).toBe(false)
+  })
+
   it('un token falso no sirve', async () => {
     expect((await rpc('no-es-un-token', 'tools/list')).status).toBe(401)
   })

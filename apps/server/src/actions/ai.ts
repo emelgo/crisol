@@ -2,6 +2,7 @@ import { type Approval, approve, getAiSettings, listApprovals, reject, setAiMode
 import { aiRepo } from '@crisol/db'
 import { type AiMode, approvalStatus, ForbiddenError, NotFoundError } from '@crisol/domain'
 import { approvalsChanged } from '../realtime/events.ts'
+import { sealJson } from '../secrets.ts'
 import { type ActionContext, errorCode, InvalidRequestError } from './context.ts'
 import { implement } from './registry.ts'
 
@@ -45,7 +46,8 @@ async function execute(ctx: ActionContext, row: aiRepo.Approval): Promise<aiRepo
     if (!impl) throw new InvalidRequestError('UNKNOWN_ACTION')
     const input = impl.action.input.parse(row.input)
     const output = impl.action.output.parse(await impl.handler({ ...ctx, via: 'ai', tool: row.tool }, input))
-    outcome = { status: 'done', result: output as Record<string, unknown> }
+    // Cifrado: puede llevar un enlace de invitación, y una copia de la base de datos no debe dar enlaces válidos
+    outcome = { status: 'done', result: sealJson(output, ctx.sealKey) }
   } catch (error) {
     const code = errorCode(error)
     if (code === null) unexpected = error
