@@ -1,60 +1,137 @@
+/* Una lista suelta es una caja de la hoja; dentro de una sección ya enmarcada, solo sus filas */
 .list {
+  position: relative;
+  isolation: isolate;
   list-style: none;
+  margin: 0 0 var(--space-8);
+  padding: var(--space-1) var(--space-6);
+  background: var(--color-frame);
+  clip-path: var(--cut);
+}
+
+.list::before {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  z-index: -1;
+  background: var(--color-surface);
+  clip-path: var(--cut-inner);
+}
+
+section[aria-labelledby] .list {
+  margin-block-end: 0;
   padding: 0;
-  margin: 0 0 var(--space-6);
-  display: grid;
-  gap: var(--space-2);
+  background: none;
+  clip-path: none;
+}
+
+section[aria-labelledby] .list::before {
+  content: none;
 }
 
 .item {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-3) var(--space-4);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  background: var(--color-surface);
+  gap: var(--space-2) var(--space-4);
+  min-block-size: 3.5rem;
+  padding-block: var(--space-1);
+  border-block-end: 1px solid var(--color-border);
 }
 
+.item:last-child {
+  border-block-end: 0;
+}
+
+/* Si no cabe con sus acciones, el nombre se queda la fila y las acciones bajan */
 .name {
+  flex: 1 1 10rem;
+  min-inline-size: 0;
+}
+
+/* Un mundo, una campaña o una persona */
+.entity {
+  font-size: 1.0625rem;
   font-weight: 600;
-  flex: 1;
+  text-decoration: none;
+  overflow-wrap: break-word;
 }
 
 .role {
   color: var(--color-muted);
+  font-size: 0.9375rem;
+}
+
+/* El papel de alguien: un rótulo con marco, como en la hoja */
+.tag {
+  padding: 0.0625rem 0.5625rem;
+  border: 1px solid var(--color-field-border);
+  font-family: var(--font-display);
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .rename {
   display: grid;
   gap: var(--space-3);
   flex: 1;
+  padding-block: var(--space-3);
 }
 
+/* Abajo: un botón junto a un campo con su etiqueta encima queda a la altura del campo */
 .actions {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-2);
+  align-items: flex-end;
+  gap: var(--space-2) var(--space-3);
 }
 
 /* Confirmación dentro de un elemento de la lista: ocupa toda la fila */
 .confirm {
   flex-basis: 100%;
+  padding-block: var(--space-2) var(--space-3);
 }
 
 .confirm p {
-  margin: 0 0 var(--space-2);
+  margin: 0 0 var(--space-3);
 }
 
 .secondary {
-  font: inherit;
-  padding: var(--space-1) var(--space-3);
-  border: 1px solid var(--color-border);
+  min-block-size: var(--target);
+  padding: 0 var(--space-6);
+  border: 1px solid var(--color-field-border);
   border-radius: var(--radius);
-  background: transparent;
+  background: none;
   color: var(--color-text);
+  font-family: var(--font-display);
+  font-size: 1.0625rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
   cursor: pointer;
+}
+
+.secondary:hover {
+  border-color: var(--color-accent-text);
+  color: var(--color-accent-text);
+}
+
+/* En la fila, las acciones son discretas: texto en rojo que no compite con el nombre */
+.item > .secondary {
+  padding-inline: var(--space-2);
+  border-color: transparent;
+  color: var(--color-accent-text);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.item > .secondary:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 /* aria-disabled: ocupado, pero sigue con el foco */
@@ -69,15 +146,18 @@
   gap: var(--space-1);
   flex: 1;
   min-inline-size: min(100%, 20rem);
+  font-weight: 600;
 }
 
 .linkField input {
-  font: inherit;
-  padding: var(--space-2) var(--space-3);
+  min-block-size: var(--target);
+  padding: 0 var(--space-3);
   border: 1px solid var(--color-field-border);
   border-radius: var(--radius);
-  background: var(--color-surface);
+  background: var(--color-bg);
   color: var(--color-text);
+  font-size: 0.9375rem;
+  font-weight: 400;
 }
 
 /* Los datos de una petición, tal cual: que no ensanchen la página */
@@ -89,7 +169,6 @@
 
 /* Lo que ya no está (deshecho): tachado y atenuado; el texto «deshecho» lo dice también */
 .undone {
-  font-weight: 400;
   color: var(--color-muted);
   text-decoration: line-through;
 }

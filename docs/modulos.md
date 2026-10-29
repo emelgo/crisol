@@ -111,8 +111,16 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
     e2e 8131; prueba del MCP 8132; staging 8140.
 - **2026-10-29 — Fase de diseño empezada** (ver «Entre el 0 y el 1» más abajo). Skills listas: `frontend-design`
   como plugin del proyecto (estaba en el marketplace oficial ya añadido) y las cuatro de Vercel en `.claude/skills/`.
-- **Siguiente paso**: identidad visual, kit de componentes y repaso de las pantallas del módulo 0, con prototipos que
-  Enrique aprueba.
+  - Enrique desechó el aspecto del Crisol actual. Siete direcciones en un lienzo privado de claude.ai
+    (https://claude.ai/artifact/1vbb4SGJvuqKQniFZ2acyG; fuentes en `out/lienzo-diseno/`, fuera de git): Imprenta,
+    Fragua, Baraja, Cianotipia, Bosque, Grimorio y Hoja. Eligió **Hoja** («es más rol»): interfaz de hoja de
+    personaje, solo el aire del género (sala limpia).
+  - Identidad aplicada a la web (PR #35): Barlow y Barlow Condensed servidas desde Crisol (OFL-1.1, admitida solo
+    para tipografías de `@fontsource`), tokens en `apps/web/src/styles/tokens.css` con sus contrastes probados,
+    barra oscura, cajas con las esquinas cortadas (`--cut`), rótulos en rojo, botones condensados. Lo de Claude, en
+    azul.
+- **Siguiente paso**: la barra de secciones (Mis mundos, Historial, Papelera, IA) y la franja de mundo y campaña con
+  sus casillas, como en el prototipo de Hoja; luego el kit y el repaso del resto de pantallas.
   - Luego, el módulo 1 (wiki) con su entrevista.
 - Queda una ventana pequeña en el tiempo real: lo que cambie entre la primera carga de una página y la conexión del
   canal no se ve hasta volver a la pestaña. Taparla costaría volver a pedirlo todo al conectar la primera vez.
@@ -160,6 +168,10 @@ su `README.md`):
 - `web-design-guidelines`: revisar la interfaz contra sus Web Interface Guidelines.
 - `react-best-practices` y `composition-patterns`: rendimiento y forma de los componentes de React.
 - `react-view-transitions`: animaciones entre pantallas, más adelante.
+
+Identidad elegida (2026-10-29): **Hoja**, la séptima del lienzo, pedida como «rollo dndbeyond». Del género se toma
+el aire (cajas de hoja de personaje, títulos condensados en mayúsculas, rojo fuerte), nunca colores, letras ni piezas
+de D&D Beyond. Oscuro o claro según el sistema, con el botón para cambiarlo.
 
 Las de desplegar en Vercel y React Native no aplican. Desde entonces, cada módulo lleva un paso de diseño entre la spec
 y el plan (ver `CLAUDE.md`).

@@ -77,13 +77,13 @@ export function RenamableItem({ name, role, onRename, onDelete, link }: Props) {
   return (
     <li className={styles.item} ref={item}>
       {link ? (
-        <Link to={link.to} params={link.params} className={styles.name}>
+        <Link to={link.to} params={link.params} className={`${styles.name} ${styles.entity}`}>
           {name}
         </Link>
       ) : (
-        <span className={styles.name}>{name}</span>
+        <span className={`${styles.name} ${styles.entity}`}>{name}</span>
       )}
-      <span className={styles.role}>{role}</span>
+      <span className={`${styles.role} ${styles.tag}`}>{role}</span>
       {onRename && (
         <button
           type="button"

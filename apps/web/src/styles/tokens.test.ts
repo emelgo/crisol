@@ -25,6 +25,28 @@ describe('los tokens de color', () => {
     ['claro', ':root'],
     ['oscuro', ':root[data-theme="dark"]']
   ] as const) {
+    it(`en el tema ${theme}, el texto, el atenuado y el acento llegan a 4,5:1 con el fondo y la superficie`, () => {
+      const c = colors(selector)
+      for (const text of ['color-text', 'color-muted', 'color-accent-text', 'color-ai']) {
+        expect(contrast(c[text], c['color-bg'])).toBeGreaterThanOrEqual(4.5)
+        expect(contrast(c[text], c['color-surface'])).toBeGreaterThanOrEqual(4.5)
+        expect(contrast(c[text], c['color-raised'])).toBeGreaterThanOrEqual(4.5)
+      }
+      expect(contrast(c['color-on-accent'], c['color-accent'])).toBeGreaterThanOrEqual(4.5)
+    })
+
+    it(`en el tema ${theme}, la barra de arriba se lee: su texto, el atenuado y el acento a 4,5:1`, () => {
+      const c = colors(selector)
+      for (const text of ['color-chrome-text', 'color-chrome-muted', 'color-chrome-accent']) {
+        expect(contrast(c[text], c['color-chrome'])).toBeGreaterThanOrEqual(4.5)
+      }
+    })
+
+    it(`en el tema ${theme}, el foco llega a 3:1 con el fondo`, () => {
+      const c = colors(selector)
+      expect(contrast(c['color-focus'], c['color-bg'])).toBeGreaterThanOrEqual(3)
+    })
+
     it(`en el tema ${theme}, el borde de los campos llega a 3:1 con el fondo y la superficie`, () => {
       const c = colors(selector)
       expect(c['color-field-border']).toMatch(/^#/)

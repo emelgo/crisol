@@ -13,6 +13,8 @@
   "dependencies": {
     "@better-auth/oauth-provider": "catalog:",
     "@crisol/contracts": "workspace:*",
+    "@fontsource/barlow": "catalog:",
+    "@fontsource/barlow-condensed": "catalog:",
     "@tanstack/react-query": "catalog:",
     "@tanstack/react-router": "catalog:",
     "better-auth": "catalog:",

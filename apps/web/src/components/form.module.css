@@ -1,43 +1,82 @@
+/* Un formulario es una caja de la hoja, con su rótulo dentro */
 .form {
+  position: relative;
+  isolation: isolate;
   display: grid;
   gap: var(--space-4);
-  max-inline-size: 24rem;
+  max-inline-size: 28rem;
+  margin-block-end: var(--space-8);
+  padding: var(--space-4) var(--space-6) var(--space-6);
+  background: var(--color-frame);
+  clip-path: var(--cut);
+}
+
+.form::before {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  z-index: -1;
+  background: var(--color-surface);
+  clip-path: var(--cut-inner);
+}
+
+.form > h2:first-child {
+  margin-block-start: 0;
 }
 
 .field {
   display: grid;
   gap: var(--space-1);
+  font-weight: 600;
 }
 
 .field input {
-  font: inherit;
-  padding: var(--space-2) var(--space-3);
+  min-block-size: 3rem;
+  padding: 0 var(--space-3);
   border: 1px solid var(--color-field-border);
   border-radius: var(--radius);
-  background: var(--color-surface);
+  background: var(--color-bg);
   color: var(--color-text);
+  font-weight: 400;
 }
 
 .hint {
   color: var(--color-muted);
+  font-size: 0.875rem;
+  font-weight: 400;
 }
 
 .error {
   margin: 0;
-  color: var(--color-accent);
+  color: var(--color-accent-text);
   font-weight: 600;
 }
 
+/* La acción principal: rojo, condensada y con las esquinas cortadas */
 .button {
   justify-self: start;
-  font: inherit;
-  font-weight: 600;
-  padding: var(--space-2) var(--space-4);
+  min-block-size: var(--target);
+  padding: 0 var(--space-6);
   border: 0;
-  border-radius: var(--radius);
   background: var(--color-accent);
   color: var(--color-on-accent);
+  font-family: var(--font-display);
+  font-size: 1.0625rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  clip-path: var(--cut-button);
   cursor: pointer;
+}
+
+.button:hover {
+  filter: brightness(1.1);
+}
+
+/* El recorte taparía el anillo del foco: dentro del botón, en su color de texto */
+.button:focus-visible {
+  outline: 2px solid var(--color-on-accent);
+  outline-offset: -5px;
 }
 
 /* aria-disabled: ocupado, pero sigue con el foco */
