@@ -267,6 +267,10 @@ export const es = {
     UNAUTHENTICATED: 'Tu sesión ha acabado. Vuelve a entrar.',
     UNKNOWN: 'Algo ha fallado. Vuelve a intentarlo.'
   },
+  load: {
+    title: 'No se ha podido cargar',
+    retry: 'Reintentar'
+  },
   theme: {
     toDark: 'Cambiar a tema oscuro',
     toLight: 'Cambiar a tema claro'

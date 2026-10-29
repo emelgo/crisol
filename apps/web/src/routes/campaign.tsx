@@ -13,6 +13,7 @@ import { FormError } from '../components/field.tsx'
 import { focusAfterRemoving, focusOnMount, useReturnFocus } from '../components/focus.ts'
 import form from '../components/form.module.css'
 import styles from '../components/list.module.css'
+import { failed, LoadError } from '../components/load-error.tsx'
 import { PageTitle } from '../components/page-title.tsx'
 import { RemovedMessage, RemoveMemberConfirm, useRemoveMember } from '../components/remove-member.tsx'
 
@@ -39,7 +40,11 @@ export function CampaignPage() {
 
   if (pending) return null
   if (!account) return <Navigate to="/entrar" replace />
-  if (worlds.isPending || (world && campaigns.isPending)) return null
+  // Sin las listas no se sabe si existe: mientras llegan, nada; si fallan, el error (no «no existe»)
+  if (!worlds.data) return failed(worlds) ? <LoadError error={worlds.error} onRetry={() => worlds.refetch()} /> : null
+  if (world && !campaigns.data) {
+    return failed(campaigns) ? <LoadError error={campaigns.error} onRetry={() => campaigns.refetch()} /> : null
+  }
   if (!world || !campaign) {
     return (
       <section>

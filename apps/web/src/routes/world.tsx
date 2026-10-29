@@ -3,8 +3,11 @@ import { getRouteApi, Link, Navigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
+import { useErrorText } from '../api/errors.ts'
 import { CreateForm } from '../components/create-form.tsx'
+import { FormError } from '../components/field.tsx'
 import styles from '../components/list.module.css'
+import { failed, LoadError } from '../components/load-error.tsx'
 import { PageTitle } from '../components/page-title.tsx'
 import { RenamableItem } from '../components/renamable-item.tsx'
 
@@ -16,6 +19,7 @@ export function WorldPage() {
   const { worldId } = route.useParams()
   const api = useApi()
   const queryClient = useQueryClient()
+  const errorText = useErrorText()
   const { account, pending } = useAccounts().useAccount()
   const worlds = useQuery({
     queryKey: ['worlds'],
@@ -32,7 +36,8 @@ export function WorldPage() {
 
   if (pending) return null
   if (!account) return <Navigate to="/entrar" replace />
-  if (worlds.isPending) return null
+  // Sin la lista no se sabe si existe: mientras llega, nada; si falla, el error (no «no existe»)
+  if (!worlds.data) return failed(worlds) ? <LoadError error={worlds.error} onRetry={() => worlds.refetch()} /> : null
   if (!world) {
     return (
       <section>
@@ -60,6 +65,7 @@ export function WorldPage() {
         </p>
       )}
       <h2>{t('campaigns.title')}</h2>
+      <FormError message={failed(campaigns) ? errorText(campaigns.error) : null} />
       {campaigns.data &&
         (campaigns.data.campaigns.length === 0 ? (
           <p>{t('campaigns.empty')}</p>
