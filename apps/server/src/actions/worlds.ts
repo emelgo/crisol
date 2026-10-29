@@ -13,11 +13,15 @@ export const worldActions = [
     const target = organizationId ?? (owned.length === 1 ? owned[0] : undefined)
     if (!target) throw new InvalidRequestError('ORGANIZATION_REQUIRED')
     authorize(ctx.actor, 'world.create', { organizationId: target })
-    const world = await worldsRepo.createWorldWithMaster(ctx.db, historyContext(ctx, 'createWorld', { name }, target), {
-      organizationId: target,
-      name,
-      masterId: ctx.actor.userId
-    })
+    const world = await worldsRepo.createWorldWithMaster(
+      ctx.db,
+      historyContext(ctx, 'createWorld', { name }, { organizationId: target }),
+      {
+        organizationId: target,
+        name,
+        masterId: ctx.actor.userId
+      }
+    )
     return { ...world, role: 'master' as const }
   }),
 
@@ -28,7 +32,7 @@ export const worldActions = [
     if (!current || !role) throw new NotFoundError('world')
     const world = await worldsRepo.renameWorld(
       ctx.db,
-      historyContext(ctx, 'renameWorld', { from: current.name, to: name }, current.organizationId),
+      historyContext(ctx, 'renameWorld', { from: current.name, to: name }, current),
       worldId,
       name
     )

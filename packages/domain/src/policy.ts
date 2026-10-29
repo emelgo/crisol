@@ -31,6 +31,8 @@ const playsInWorld: Predicate = (actor, target) =>
 const isCampaignMember: Predicate = (actor, target) => 'campaignId' in target && actor.campaigns.has(target.campaignId)
 const isCampaignMaster: Predicate = (actor, target) =>
   'campaignId' in target && actor.campaigns.get(target.campaignId)?.role === 'master'
+const isCampaignPlayer: Predicate = (actor, target) =>
+  'campaignId' in target && actor.campaigns.get(target.campaignId)?.role === 'player'
 
 const any =
   (...predicates: Predicate[]): Predicate =>
@@ -50,7 +52,10 @@ const RULES = {
   'campaign.read': { sees: seesCampaign, allows: seesCampaign },
   'campaign.rename': { sees: seesCampaign, allows: any(isWorldMaster, isCampaignMaster) },
   // El enlace de invitación: verlo, regenerarlo, abrir o cerrar las invitaciones
-  'campaign.invite': { sees: seesCampaign, allows: any(isWorldMaster, isCampaignMaster) }
+  'campaign.invite': { sees: seesCampaign, allows: any(isWorldMaster, isCampaignMaster) },
+  'campaign.removeMember': { sees: seesCampaign, allows: any(isWorldMaster, isCampaignMaster) },
+  // Solo sale quien juega: el máster no deja la campaña sin máster
+  'campaign.leave': { sees: seesCampaign, allows: isCampaignPlayer }
 } satisfies Record<string, { sees: Predicate; allows: Predicate }>
 
 export type Capability = keyof typeof RULES

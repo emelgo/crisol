@@ -1,7 +1,8 @@
 import { getInvitation, type Invitation, regenerateInvitation, setInvitationsOpen } from '@crisol/contracts'
-import { campaignsRepo, invitationsRepo } from '@crisol/db'
-import { authorize, NotFoundError } from '@crisol/domain'
+import { invitationsRepo } from '@crisol/db'
+import { NotFoundError } from '@crisol/domain'
 import { hashSecret, newSecret, openSecret, sealSecret } from '../secrets.ts'
+import { authorizedCampaign } from './access.ts'
 import { type ActionContext, historyContext } from './context.ts'
 import { implement } from './registry.ts'
 
@@ -26,12 +27,8 @@ function view(ctx: ActionContext, campaignId: string, row: Row): Invitation {
 }
 
 /** La campaña, si la cuenta puede gestionar su enlace */
-async function managedCampaign(ctx: ActionContext, campaignId: string) {
-  const campaign = await campaignsRepo.findCampaign(ctx.db, campaignId)
-  authorize(ctx.actor, 'campaign.invite', { campaignId, worldId: campaign?.worldId ?? '' })
-  if (!campaign) throw new NotFoundError('campaign')
-  return campaign
-}
+const managedCampaign = (ctx: ActionContext, campaignId: string) =>
+  authorizedCampaign(ctx, 'campaign.invite', campaignId)
 
 export const invitationActions = [
   implement(getInvitation, async (ctx, { campaignId }) => {
@@ -43,7 +40,7 @@ export const invitationActions = [
     const campaign = await managedCampaign(ctx, campaignId)
     const row = await invitationsRepo.regenerateInvitation(
       ctx.db,
-      historyContext(ctx, 'regenerateInvitation', { campaign: campaign.name }, campaign.organizationId),
+      historyContext(ctx, 'regenerateInvitation', { campaign: campaign.name }, campaign),
       campaignId,
       prepareSecret(ctx.sealKey)
     )
@@ -54,7 +51,7 @@ export const invitationActions = [
     const campaign = await managedCampaign(ctx, campaignId)
     const row = await invitationsRepo.setInvitationsOpen(
       ctx.db,
-      historyContext(ctx, 'setInvitationsOpen', { campaign: campaign.name, open }, campaign.organizationId),
+      historyContext(ctx, 'setInvitationsOpen', { campaign: campaign.name, open }, campaign),
       campaignId,
       open
     )

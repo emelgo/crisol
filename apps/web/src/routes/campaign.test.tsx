@@ -1,4 +1,4 @@
-import type { Campaign, World } from '@crisol/contracts'
+import type { Campaign, Member, World } from '@crisol/contracts'
 import { createMemoryHistory } from '@tanstack/react-router'
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -19,8 +19,14 @@ const campaign = (role: Campaign['role'] = 'master'): Campaign => ({
   version: 1
 })
 
+const members: Member[] = [
+  { userId: 'u1', name: 'Enrique', role: 'master' },
+  { userId: 'u2', name: 'Ana', role: 'player' },
+  { userId: 'u3', name: 'Jugadora', role: 'player' }
+]
+
 const renderCampaign = (c: Campaign, w: World = world) => {
-  const api = fakeApi({ organizations: [ORG], worlds: [w], campaigns: [c] })
+  const api = fakeApi({ organizations: [ORG], worlds: [w], campaigns: [c], members: { [c.id]: members } })
   const router = createAppRouter(createMemoryHistory({ initialEntries: [`/mundos/${w.id}/campanas/${c.id}`] }))
   render(
     <App
@@ -116,5 +122,84 @@ describe('una campaña y su enlace de invitación', () => {
       />
     )
     expect(await within(view.container).findByRole('heading', { name: 'Esta campaña no existe' })).toBeDefined()
+  })
+})
+
+describe('los miembros de una campaña', () => {
+  const memberNames = () =>
+    within(screen.getByRole('list', { name: 'Miembros' }))
+      .getAllByRole('listitem')
+      .map((item) => item.textContent)
+
+  it('el máster ve quién está, con su rol, y expulsa a un jugador tras avisar de que el enlace aún le vale', async () => {
+    const { api } = renderCampaign(campaign())
+    await screen.findByRole('list', { name: 'Miembros' })
+    expect(memberNames()[0]).toContain('Enrique')
+    expect(memberNames()[0]).toContain('Máster')
+    expect(screen.queryByRole('button', { name: 'Expulsar a Enrique' })).toBeNull()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Expulsar a Jugadora' }))
+    expect(screen.getByText('Con el enlace actual, Jugadora podría volver a entrar.')).toBeDefined()
+    await userEvent.click(screen.getByRole('button', { name: 'Expulsar' }))
+    expect(await screen.findByText('Jugadora ya no está en la campaña.')).toBeDefined()
+    expect(memberNames()).toHaveLength(2)
+    expect(api.calls).not.toContain('regenerateInvitation')
+  })
+
+  it('el máster puede expulsar y cambiar el enlace a la vez', async () => {
+    const { api } = renderCampaign(campaign())
+    const before = ((await screen.findByLabelText('Enlace de invitación')) as HTMLInputElement).value
+    await userEvent.click(await screen.findByRole('button', { name: 'Expulsar a Ana' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Expulsar y cambiar el enlace' }))
+    expect(await screen.findByText('Ana ya no está en la campaña.')).toBeDefined()
+    expect(api.calls).toContain('regenerateInvitation')
+    expect((screen.getByLabelText('Enlace de invitación') as HTMLInputElement).value).not.toBe(before)
+  })
+
+  it('cancelar no expulsa a nadie', async () => {
+    const { api } = renderCampaign(campaign())
+    await userEvent.click(await screen.findByRole('button', { name: 'Expulsar a Ana' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
+    expect(memberNames()).toHaveLength(3)
+    expect(api.calls).not.toContain('removeMember')
+  })
+
+  it('un jugador ve a sus compañeros, no expulsa y puede dejar la campaña', async () => {
+    const c = campaign('player')
+    const { api, router } = renderCampaign(c, { ...world, role: 'player' })
+    await screen.findByRole('list', { name: 'Miembros' })
+    expect(memberNames()).toHaveLength(3)
+    expect(screen.queryByRole('button', { name: /^Expulsar/ })).toBeNull()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Dejar la campaña' }))
+    expect(screen.getByText('Para volver, el máster tendrá que pasarte el enlace.')).toBeDefined()
+    await userEvent.click(screen.getByRole('button', { name: 'Dejarla' }))
+    await vi.waitFor(() => expect(router.state.location.pathname).toBe('/mundos'))
+    expect(api.calls).toContain('leaveCampaign')
+  })
+
+  it('al dejar su única campaña del mundo, va a sus mundos sin esperar a que falle la campaña', async () => {
+    const c = campaign('player')
+    const { api, router } = renderCampaign(c, { ...world, role: 'player' })
+    // Como el servidor: después de salir, ni el mundo ni sus campañas existen para ella
+    const original = api.client.call
+    let left = false
+    api.client.call = async (name, input) => {
+      if (left && name === 'listWorlds') return { worlds: [] } as never
+      if (left && name === 'listCampaigns') throw new ApiError('NOT_FOUND', 404)
+      const result = await original(name, input)
+      if (name === 'leaveCampaign') left = true
+      return result
+    }
+    await userEvent.click(await screen.findByRole('button', { name: 'Dejar la campaña' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Dejarla' }))
+    await vi.waitFor(() => expect(router.state.location.pathname).toBe('/mundos'), { timeout: 500 })
+    expect(await screen.findByText('Aún no tienes mundos')).toBeDefined()
+  })
+
+  it('el máster no ve «Dejar la campaña»', async () => {
+    renderCampaign(campaign())
+    await screen.findByRole('list', { name: 'Miembros' })
+    expect(screen.queryByRole('button', { name: 'Dejar la campaña' })).toBeNull()
   })
 })

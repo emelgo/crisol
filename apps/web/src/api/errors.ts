@@ -9,3 +9,9 @@ export function useErrorText() {
     return t(`errors.${code}`, { defaultValue: t('errors.UNKNOWN') })
   }
 }
+
+/** Las consultas solo se repiten si falla el servidor o la red: un 404 o un 403 no cambian por repetirlos */
+export function shouldRetry(failureCount: number, error: unknown) {
+  if (error instanceof ApiError && error.status < 500) return false
+  return failureCount < 3
+}

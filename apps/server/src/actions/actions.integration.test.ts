@@ -229,7 +229,10 @@ describe('POST /api/actions/:name', () => {
         await conn.sql`select 1 from invitation_links where token_hash = encode(sha256(${secretOf(before.url)}::bytea), 'hex')`
       expect(old).toHaveLength(0)
       const ops = await conn.db.select().from(schema.operations)
-      expect(ops.find((op) => op.action === 'regenerateInvitation')?.details).toEqual({ campaign: 'La Marca' })
+      expect(ops.find((op) => op.action === 'regenerateInvitation')).toMatchObject({
+        worldId: campaign.worldId,
+        details: { campaign: 'La Marca' }
+      })
     })
 
     it('se cierran y se abren las invitaciones sin cambiar el enlace', async () => {
@@ -274,6 +277,67 @@ describe('POST /api/actions/:name', () => {
       expect((await call('regenerateInvitation', { campaignId: campaign.id }, owner.cookie)).json().url).toMatch(
         /\/unirse\//
       )
+    })
+  })
+
+  describe('miembros', () => {
+    /** Eana con La Marca y una jugadora dentro */
+    const campaignWithPlayer = async () => {
+      const world = (await call('createWorld', { name: 'Eana' }, owner.cookie)).json()
+      const campaign = (await call('createCampaign', { worldId: world.id, name: 'La Marca' }, owner.cookie)).json()
+      const player = await signUpTestUser(auth, { name: 'Jugadora', email: 'jugadora@crisol.test' })
+      await conn.db.insert(schema.organizationMembers).values({ organizationId, userId: player.userId, role: 'member' })
+      await conn.db
+        .insert(schema.campaignMembers)
+        .values({ campaignId: campaign.id, userId: player.userId, role: 'player' })
+      return { world, campaign, player }
+    }
+
+    it('el máster y los jugadores ven quién está; nadie más sabe que la campaña existe', async () => {
+      const { campaign, player } = await campaignWithPlayer()
+      const members = [
+        { userId: owner.userId, name: 'Enrique', role: 'master' },
+        { userId: player.userId, name: 'Jugadora', role: 'player' }
+      ]
+      expect((await call('listMembers', { campaignId: campaign.id }, owner.cookie)).json()).toEqual({ members })
+      expect((await call('listMembers', { campaignId: campaign.id }, player.cookie)).json()).toEqual({ members })
+      const other = await organizationWithOwner('Otra', 'otra@crisol.test')
+      expect((await call('listMembers', { campaignId: campaign.id }, other.cookie)).statusCode).toBe(404)
+    })
+
+    it('el máster expulsa: el jugador deja de ver la campaña y la organización; queda en el historial del mundo', async () => {
+      const { world, campaign, player } = await campaignWithPlayer()
+      const response = await call('removeMember', { campaignId: campaign.id, userId: player.userId }, owner.cookie)
+      expect(response.json()).toEqual({ members: [{ userId: owner.userId, name: 'Enrique', role: 'master' }] })
+
+      expect((await call('listMembers', { campaignId: campaign.id }, player.cookie)).statusCode).toBe(404)
+      expect((await call('listWorlds', {}, player.cookie)).json()).toEqual({ worlds: [] })
+      expect((await call('listOrganizations', {}, player.cookie)).json()).toEqual({ organizations: [] })
+      const op = (await conn.db.select().from(schema.operations)).find((o) => o.action === 'removeMember')
+      expect(op).toMatchObject({ worldId: world.id, details: { campaign: 'La Marca', member: 'Jugadora' } })
+    })
+
+    it('un jugador no expulsa, el máster no se expulsa y a quien no está no se le encuentra', async () => {
+      const { campaign, player } = await campaignWithPlayer()
+      const remove = (userId: string, cookie: string) =>
+        call('removeMember', { campaignId: campaign.id, userId }, cookie)
+      expect((await remove(owner.userId, player.cookie)).statusCode).toBe(403)
+      expect((await remove(owner.userId, owner.cookie)).json()).toEqual({ code: 'MASTER_NOT_REMOVABLE' })
+      expect((await remove('nadie', owner.cookie)).statusCode).toBe(404)
+      expect((await call('listMembers', { campaignId: campaign.id }, owner.cookie)).json().members).toHaveLength(2)
+    })
+
+    it('un jugador sale de la campaña; el máster no puede salir de la suya', async () => {
+      const { world, campaign, player } = await campaignWithPlayer()
+      const left = await call('leaveCampaign', { campaignId: campaign.id }, player.cookie)
+      expect(left.statusCode).toBe(200)
+      expect(left.json()).toEqual({})
+      expect((await call('listCampaigns', { worldId: world.id }, player.cookie)).statusCode).toBe(404)
+      const op = (await conn.db.select().from(schema.operations)).find((o) => o.action === 'leaveCampaign')
+      expect(op).toMatchObject({ actorId: player.userId, worldId: world.id, details: { campaign: 'La Marca' } })
+
+      expect((await call('leaveCampaign', { campaignId: campaign.id }, owner.cookie)).statusCode).toBe(403)
+      expect((await call('leaveCampaign', { campaignId: campaign.id }, player.cookie)).statusCode).toBe(404)
     })
   })
 

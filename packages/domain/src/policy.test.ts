@@ -35,6 +35,11 @@ const player = actor({
   organizations: new Map([[ORG, 'member']]),
   campaigns: new Map([[CAMPAIGN, { worldId: WORLD, role: 'player' }]])
 })
+// Dirige la campaña sin administrar el mundo (más adelante, con los comásteres)
+const master = actor({
+  organizations: new Map([[ORG, 'member']]),
+  campaigns: new Map([[CAMPAIGN, { worldId: WORLD, role: 'master' }]])
+})
 const campaign = { campaignId: CAMPAIGN, worldId: WORLD }
 const otherCampaign = { campaignId: OTHER_CAMPAIGN, worldId: WORLD }
 
@@ -74,7 +79,27 @@ describe('authorize', () => {
     ['un miembro sin campaña no ve las campañas', member, 'campaign.read', campaign, 'no lo ve'],
     ['el máster gestiona el enlace de invitación', owner, 'campaign.invite', campaign, 'permite'],
     ['un jugador no ve el enlace de su campaña', player, 'campaign.invite', campaign, 'prohíbe'],
-    ['nadie gestiona el enlace de una campaña ajena', outsider, 'campaign.invite', campaign, 'no lo ve']
+    ['nadie gestiona el enlace de una campaña ajena', outsider, 'campaign.invite', campaign, 'no lo ve'],
+    ['el máster expulsa en sus campañas', owner, 'campaign.removeMember', campaign, 'permite'],
+    [
+      'el máster de la campaña expulsa aunque no administre el mundo',
+      master,
+      'campaign.removeMember',
+      campaign,
+      'permite'
+    ],
+    ['un jugador no expulsa', player, 'campaign.removeMember', campaign, 'prohíbe'],
+    ['nadie expulsa en una campaña ajena', outsider, 'campaign.removeMember', campaign, 'no lo ve'],
+    ['un jugador sale de su campaña', player, 'campaign.leave', campaign, 'permite'],
+    ['el máster de la campaña no sale de ella', master, 'campaign.leave', campaign, 'prohíbe'],
+    [
+      'quien administra el mundo no sale de una campaña en la que no está',
+      owner,
+      'campaign.leave',
+      campaign,
+      'prohíbe'
+    ],
+    ['nadie sale de una campaña que no ve', player, 'campaign.leave', otherCampaign, 'no lo ve']
   ]
 
   it.each(cases)('%s', (_, who, capability, target, expected) => {

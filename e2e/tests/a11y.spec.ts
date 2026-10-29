@@ -1,5 +1,5 @@
 import AxeBuilder from '@axe-core/playwright'
-import { connect } from '@crisol/db'
+import { connect, schema } from '@crisol/db'
 import { resetDatabase } from '@crisol/db/testing'
 import { issueBootstrap } from '@crisol/server/bootstrap'
 import { expect, test } from '@playwright/test'
@@ -61,6 +61,15 @@ test('arranque, perfil, mundos, campañas y consentimiento, en los dos temas @a1
     await expect(page.getByLabel('Enlace de invitación')).toBeVisible()
     const invitationLink = await page.getByLabel('Enlace de invitación').inputValue()
     await page.getByRole('button', { name: 'Nuevo enlace' }).click()
+    await check()
+    // Con una jugadora: la lista de miembros y la confirmación de expulsar
+    await conn.db.insert(schema.user).values({ id: 'ana', name: 'Ana', email: 'ana@crisol.test' })
+    const [campaign] = await conn.db.select().from(schema.campaigns)
+    await conn.db
+      .insert(schema.campaignMembers)
+      .values({ campaignId: campaign?.id ?? '', userId: 'ana', role: 'player' })
+    await page.reload()
+    await page.getByRole('button', { name: 'Expulsar a Ana' }).click()
     await check()
     // La página de consentimiento sin consulta firmada: se ve igual, aunque permitir fallaría
     await page.goto(`/oauth/consentimiento?client_id=${encodeURIComponent('https://claude.ai/oauth/metadatos')}`)

@@ -1,3 +1,4 @@
+import { eq } from 'drizzle-orm'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { connect } from '../client.ts'
 import { user } from '../schema/auth.ts'
@@ -8,6 +9,7 @@ import { freshTestDatabase, resetDatabase } from '../testing.ts'
 import * as bootstrap from './bootstrap.ts'
 import * as campaignsRepo from './campaigns.ts'
 import * as invitationsRepo from './invitations.ts'
+import * as membersRepo from './members.ts'
 import { isOwner, listMemberOrganizations, loadMemberships } from './memberships.ts'
 import * as worldsRepo from './worlds.ts'
 
@@ -260,6 +262,103 @@ describe('repositorios', () => {
       })
       await conn.sql`delete from invitation_links`
       expect(await invitationsRepo.setInvitationsOpen(conn.db, ui('setInvitationsOpen'), c.id, true)).toBeNull()
+    })
+  })
+
+  describe('miembros de una campaña', () => {
+    let worldId: string
+    const campaignNamed = async (name: string) => {
+      const c = await campaignsRepo.createCampaignWithMaster(conn.db, ui('createCampaign'), {
+        worldId,
+        name,
+        masterId: 'u1',
+        invitation: prepared()
+      })
+      return c.id
+    }
+    const join = async (campaignId: string, userId: string) => {
+      const link = await invitationsRepo.findInvitation(conn.db, campaignId)
+      if (!link) throw new Error('sin enlace')
+      await invitationsRepo.joinCampaign(
+        conn.db,
+        { actorId: userId, via: 'ui', action: 'joinCampaign', organizationId },
+        { invitationId: link.id, campaignId, organizationId, userId }
+      )
+    }
+    const remove = (campaignId: string, userId: string) =>
+      membersRepo.removeCampaignMember(
+        conn.db,
+        { actorId: 'u1', via: 'ui', action: 'removeMember', organizationId, worldId },
+        { campaignId, organizationId, userId }
+      )
+
+    beforeEach(async () => {
+      await conn.db.insert(user).values({ id: 'u3', name: 'Ana', email: 'a@crisol.test' })
+      const w = await worldsRepo.createWorldWithMaster(conn.db, ui('createWorld'), {
+        organizationId,
+        name: 'Eana',
+        masterId: 'u1'
+      })
+      worldId = w.id
+    })
+
+    it('la lista sale con el máster primero y luego por nombre, con su rol', async () => {
+      const c = await campaignNamed('La Marca')
+      await join(c, 'u2')
+      await join(c, 'u3')
+      expect(await membersRepo.listCampaignMembers(conn.db, c)).toEqual([
+        { userId: 'u1', name: 'Enrique', role: 'master' },
+        { userId: 'u3', name: 'Ana', role: 'player' },
+        { userId: 'u2', name: 'Otra', role: 'player' }
+      ])
+      expect(await membersRepo.findCampaignMember(conn.db, c, 'u2')).toEqual({ name: 'Otra', role: 'player' })
+      expect(await membersRepo.findCampaignMember(conn.db, c, 'nadie')).toBeNull()
+    })
+
+    it('sin ninguna campaña más en la organización, deja de ser miembro de ella; queda en el historial del mundo', async () => {
+      const c = await campaignNamed('La Marca')
+      await join(c, 'u2')
+      expect(await remove(c, 'u2')).toEqual({ status: 'removed', leftOrganization: true })
+      expect(await loadMemberships(conn.db, 'u2')).toEqual({ organizations: [], worlds: [], campaigns: [] })
+      const op = (await conn.db.select().from(operations)).find((o) => o.action === 'removeMember')
+      expect(op).toMatchObject({ organizationId, worldId })
+      const removed = await conn.db
+        .select()
+        .from(changes)
+        .where(eq(changes.operationId, op?.id ?? ''))
+      expect(removed.map((c) => [c.tableName, c.after])).toEqual([
+        ['campaign_members', null],
+        ['organization_members', null]
+      ])
+    })
+
+    it('si le queda otra campaña en la organización, sigue en ella', async () => {
+      const a = await campaignNamed('A')
+      const b = await campaignNamed('B')
+      await join(a, 'u2')
+      await join(b, 'u2')
+      expect(await remove(a, 'u2')).toEqual({ status: 'removed', leftOrganization: false })
+      expect(await loadMemberships(conn.db, 'u2')).toMatchObject({
+        organizations: [{ organizationId, role: 'member' }],
+        campaigns: [{ campaignId: b }]
+      })
+    })
+
+    it('al propietario no se le quita de la organización', async () => {
+      await conn.db.insert(organizationMembers).values({ organizationId, userId: 'u2', role: 'owner' })
+      const c = await campaignNamed('La Marca')
+      await join(c, 'u2')
+      expect(await remove(c, 'u2')).toEqual({ status: 'removed', leftOrganization: false })
+      expect((await loadMemberships(conn.db, 'u2')).organizations).toEqual([{ organizationId, role: 'owner' }])
+    })
+
+    it('al máster no se le quita, y quien no está no cambia nada', async () => {
+      const c = await campaignNamed('La Marca')
+      const before = (await conn.db.select().from(operations)).length
+      expect(await remove(c, 'u1')).toEqual({ status: 'master' })
+      expect(await remove(c, 'u2')).toEqual({ status: 'not-member' })
+      expect(await conn.db.select().from(operations)).toHaveLength(before)
+      expect(await membersRepo.listCampaignMembers(conn.db, c)).toHaveLength(1)
     })
   })
 

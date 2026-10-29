@@ -102,7 +102,11 @@ describe('unirse con el enlace', () => {
       expect.objectContaining({ id: campaign.id, role: 'player' })
     ])
     const op = (await conn.db.select().from(schema.operations)).find((o) => o.action === 'joinCampaign')
-    expect(op).toMatchObject({ actorId: player.userId, details: { campaign: 'La Marca', world: 'Eana' } })
+    expect(op).toMatchObject({
+      actorId: player.userId,
+      worldId: campaign.worldId,
+      details: { campaign: 'La Marca', world: 'Eana' }
+    })
   })
 
   it('sin sesión, entrar pide sesión', async () => {

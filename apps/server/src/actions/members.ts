@@ -1,0 +1,37 @@
+import { leaveCampaign, listMembers, removeMember } from '@crisol/contracts'
+import { membersRepo } from '@crisol/db'
+import { NotFoundError } from '@crisol/domain'
+import { authorizedCampaign } from './access.ts'
+import { historyContext, InvalidRequestError } from './context.ts'
+import { implement } from './registry.ts'
+
+export const memberActions = [
+  implement(listMembers, async (ctx, { campaignId }) => {
+    await authorizedCampaign(ctx, 'campaign.read', campaignId)
+    return { members: await membersRepo.listCampaignMembers(ctx.db, campaignId) }
+  }),
+
+  implement(removeMember, async (ctx, { campaignId, userId }) => {
+    const campaign = await authorizedCampaign(ctx, 'campaign.removeMember', campaignId)
+    const member = await membersRepo.findCampaignMember(ctx.db, campaignId, userId)
+    if (!member) throw new NotFoundError('member')
+    if (member.role === 'master') throw new InvalidRequestError('MASTER_NOT_REMOVABLE')
+    // Si entretanto ha salido, el resultado es el mismo: ya no está
+    await membersRepo.removeCampaignMember(
+      ctx.db,
+      historyContext(ctx, 'removeMember', { campaign: campaign.name, member: member.name }, campaign),
+      { campaignId, organizationId: campaign.organizationId, userId }
+    )
+    return { members: await membersRepo.listCampaignMembers(ctx.db, campaignId) }
+  }),
+
+  implement(leaveCampaign, async (ctx, { campaignId }) => {
+    const campaign = await authorizedCampaign(ctx, 'campaign.leave', campaignId)
+    await membersRepo.removeCampaignMember(
+      ctx.db,
+      historyContext(ctx, 'leaveCampaign', { campaign: campaign.name }, campaign),
+      { campaignId, organizationId: campaign.organizationId, userId: ctx.actor.userId }
+    )
+    return {}
+  })
+]
