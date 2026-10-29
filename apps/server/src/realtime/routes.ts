@@ -50,6 +50,11 @@ export function registerRealtimeRoutes(app: FastifyInstance, options: RealtimeRo
       const userId = users.get(request)
       if (!userId) return socket.close(CLOSE_SESSION_ENDED)
       socket.send(JSON.stringify({ type: 'hello', build: options.build ?? null } satisfies RealtimeMessage))
+      // El canal no escucha: un cliente que manda algo más que un latido se corta (el WebSocket admite hasta 1 MB por
+      // la edición en vivo)
+      socket.on('message', (data: Buffer) => {
+        if (data.byteLength > 1024) socket.close(1009, 'Demasiado grande')
+      })
       const disconnect = realtime.connect(userId, socket)
       const headers = toHeaders(request.headers)
       const sessionCheck = setInterval(async () => {

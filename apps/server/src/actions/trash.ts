@@ -35,6 +35,7 @@ export const trashActions = [
     await trashRepo.deleteWorld(ctx.db, historyContext(ctx, 'deleteWorld', { name: world.name }, world), worldId)
     // Los de sus campañas dejan de estar en ellas al momento
     for (const { userId, campaignId } of people) if (campaignId) ctx.realtime.revoke(userId, { worldId, campaignId })
+    ctx.collab?.closeWorld(worldId)
     tellPeople(ctx, people)
     return {}
   }),
@@ -56,13 +57,15 @@ export const trashActions = [
 
   implement(deletePage, async (ctx, { pageId }) => {
     const { page, wiki } = await authorizedPage(ctx, 'page.write', pageId)
-    const subpages = await pagesRepo.deletePageTree(
+    const below = await pagesRepo.deletePageTree(
       ctx.db,
       historyContext(ctx, 'deletePage', { title: page.title }, wiki),
       pageId
     )
+    // Quien las tenga abiertas deja de editarlas
+    ctx.collab?.closePages([pageId, ...below])
     ctx.realtime.publish(pagesChanged(wiki))
-    return { subpages }
+    return { subpages: below.length }
   }),
 
   implement(restorePage, async (ctx, { pageId }) => {

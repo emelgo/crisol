@@ -126,6 +126,8 @@ describe('operation', () => {
     notTracked.add('ai_settings').add('approvals')
     // Las pestañas y los marcadores de cada cuenta en la wiki: son suyos, no datos del mundo
     notTracked.add('wiki_preferences')
+    // El estado de Yjs de cada documento: lo que cambia el texto lo cuentan las sesiones de edición (ADR-0003)
+    notTracked.add('documents')
     const tables = await conn.sql<
       { name: string }[]
     >`select tablename as name from pg_tables where schemaname = 'public'`

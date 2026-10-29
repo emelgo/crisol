@@ -9,6 +9,8 @@ import { registerActionRoutes } from './actions/routes.ts'
 import type { Auth } from './auth/auth.ts'
 import { registerAuthRoutes } from './auth/routes.ts'
 import { registerBootstrapRoutes } from './bootstrap.ts'
+import { registerCollabRoutes } from './collab/routes.ts'
+import { createCollab, MAX_MESSAGE_BYTES } from './collab/server.ts'
 import { type HealthChecks, registerHealth } from './health.ts'
 import { redactSecrets, registerOriginGuard } from './http.ts'
 import { registerJoinRoutes } from './join.ts'
@@ -48,11 +50,13 @@ export function buildApp(deps: AppDeps): FastifyInstance {
       async (userId) => actorFrom(userId, await loadMemberships(db, userId)),
       (error) => app.log.error(error)
     )
-    const env: ActionEnv = { db, publicUrl, sealKey, realtime, actions: implementationsByName }
+    // Los documentos de Yjs de la wiki (ADR-0003)
+    const collab = createCollab({ db, onError: (error) => app.log.error(error) })
+    const env: ActionEnv = { db, publicUrl, sealKey, realtime, collab, actions: implementationsByName }
     // Límite de intentos solo donde se pide (las rutas de Better Auth tienen el suyo)
     app.register(fastifyRateLimit, { global: false })
-    // Los mensajes del cliente no se usan: se corta cualquier cosa grande
-    app.register(fastifyWebsocket, { options: { maxPayload: 1024 } })
+    // Lo más que manda un cliente: un cambio de un documento (el canal en tiempo real corta antes: no escucha)
+    app.register(fastifyWebsocket, { options: { maxPayload: MAX_MESSAGE_BYTES } })
     registerOriginGuard(app, publicUrl)
     registerAuthRoutes(app, auth)
     registerBootstrapRoutes(app, db, auth)
@@ -63,6 +67,7 @@ export function buildApp(deps: AppDeps): FastifyInstance {
     app.register(async (scope) =>
       registerRealtimeRoutes(scope, { auth, publicUrl, realtime, build, ...deps.realtimeTimers })
     )
+    app.register(async (scope) => registerCollabRoutes(scope, { auth, publicUrl, collab }))
     if (deps.mcpJwksUrl) {
       const wait = deps.approvalWaitMs ? { approvalWaitMs: deps.approvalWaitMs } : {}
       registerMcpRoutes(app, { ...env, auth, jwksUrl: deps.mcpJwksUrl, ...wait })
