@@ -169,11 +169,24 @@ export const es = {
     body: 'Texto de la página',
     label: 'Texto de la página',
     offline: 'Sin conexión: se guardará al volver.',
+    toolbar: 'Insertar en el texto',
     task: 'Por hacer: {{text}}',
     taskDone: 'Hecho: {{text}}',
     lock: 'Poner en lectura',
     unlock: 'Quitar el candado',
     locked: 'En lectura: quita el candado para editar.'
+  },
+  separate: {
+    secret: 'Secreto',
+    note: 'Nota oculta',
+    secretHint: 'Secreto · solo lo ves tú',
+    noteHint: 'Nota oculta · para ti',
+    secretText: 'Texto del secreto',
+    noteText: 'Texto de la nota oculta',
+    unwrap: 'Convertir en texto normal',
+    copying: 'Copiando…',
+    makeSecret: 'Secreto',
+    makeNote: 'Nota oculta'
   },
   tabs: {
     title: 'Páginas abiertas',

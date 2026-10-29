@@ -249,6 +249,10 @@ test('@fugas la wiki es solo del máster: a la jugadora no le llegan ni sus pág
   await body.click()
   await page.keyboard.type('El faro guarda el mapa de las corrientes.')
   await expect(body.getByText('El faro guarda el mapa de las corrientes.')).toBeVisible()
+  // Y un secreto, que va en su propio documento
+  await page.getByRole('toolbar', { name: 'Insertar en el texto' }).getByRole('button', { name: 'Secreto' }).click()
+  await page.getByRole('textbox', { name: 'Texto del secreto' }).click()
+  await page.keyboard.type('La Hermandad paga a los guardias.')
   await page.waitForTimeout(2500)
 
   for (const [name, data] of [
@@ -269,6 +273,7 @@ test('@fugas la wiki es solo del máster: a la jugadora no le llegan ni sus pág
     'La Torre Escondida',
     'La Sala de los Mapas',
     'mapa de las corrientes',
+    'paga a los guardias',
     tower.id,
     room.id,
     '"pages"'

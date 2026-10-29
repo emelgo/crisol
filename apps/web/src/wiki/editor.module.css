@@ -103,3 +103,30 @@
   border: 1px dashed var(--color-field-border);
   color: var(--color-muted);
 }
+
+/* Lo que se puede meter en el cuerpo (hasta que llegue el menú «/») */
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-block-end: var(--space-2);
+}
+
+.tool {
+  min-block-size: 2.25rem;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-field-border);
+  border-radius: var(--radius);
+  background: none;
+  color: inherit;
+  font-family: var(--font-display);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.tool:hover {
+  color: var(--color-accent-text);
+}
