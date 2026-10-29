@@ -1,6 +1,6 @@
 import { ACTIONS } from '@crisol/contracts'
 import { describe, expect, it } from 'vitest'
-import { IMPLEMENTATIONS } from './routes.ts'
+import { IMPLEMENTATIONS } from './implementations.ts'
 
 describe('registro de acciones', () => {
   it('cada acción del contrato tiene su servicio y no hay servicios sin contrato', () => {

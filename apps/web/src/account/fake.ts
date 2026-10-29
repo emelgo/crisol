@@ -2,7 +2,9 @@
 import { useSyncExternalStore } from 'react'
 import type { Account, AccountClient, Result } from './client.ts'
 
-export function fakeAccountClient(options: { account?: Account | null; bootstrap?: Record<string, string> } = {}) {
+export function fakeAccountClient(
+  options: { account?: Account | null; bootstrap?: Record<string, string>; oauthClients?: Record<string, string> } = {}
+) {
   let account = options.account ?? null
   const listeners = new Set<() => void>()
   const set = (next: Account | null) => {
@@ -40,6 +42,13 @@ export function fakeAccountClient(options: { account?: Account | null; bootstrap
     async bootstrapInfo(secret) {
       const organizationName = options.bootstrap?.[secret]
       return organizationName ? { organizationName } : null
+    },
+    async oauthClientName(clientId) {
+      return options.oauthClients?.[clientId] ?? null
+    },
+    async consent(accept): Promise<Result> {
+      calls.push(`consent ${accept}`)
+      return { ok: true }
     },
     async redeemBootstrap({ secret, name, email, password }): Promise<Result> {
       if (!options.bootstrap?.[secret]) return { ok: false, code: 'INVALID_LINK' }

@@ -5,7 +5,7 @@ import { changes, operations } from '../schema/history.ts'
 import { bootstrapTokens, organizationMembers, organizations } from '../schema/organizations.ts'
 import { freshTestDatabase, resetDatabase } from '../testing.ts'
 import * as bootstrap from './bootstrap.ts'
-import { listMemberOrganizations, loadMemberships } from './memberships.ts'
+import { isOwner, listMemberOrganizations, loadMemberships } from './memberships.ts'
 import * as worldsRepo from './worlds.ts'
 
 const DAY = 24 * 60 * 60 * 1000
@@ -94,6 +94,12 @@ describe('repositorios', () => {
       { id: organizationId, name: 'Fateforge', role: 'owner' }
     ])
     expect(await listMemberOrganizations(conn.db, 'u2')).toEqual([])
+  })
+
+  it('isOwner dice si la cuenta es propietaria de alguna organización', async () => {
+    await conn.db.insert(organizationMembers).values({ organizationId, userId: 'u2', role: 'member' })
+    expect(await isOwner(conn.db, 'u1')).toBe(true)
+    expect(await isOwner(conn.db, 'u2')).toBe(false)
   })
 
   describe('arranque', () => {
