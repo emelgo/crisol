@@ -231,7 +231,12 @@ function InvitationPanel({ campaignId }: { campaignId: string }) {
         <button
           type="button"
           className={styles.secondary}
-          onClick={() => (url ? setConfirming(true) : regenerate.mutate())}
+          // Mientras se genera no hace nada, pero sigue con el foco (disabled lo perdería)
+          aria-disabled={regenerate.isPending || undefined}
+          onClick={() => {
+            if (url) setConfirming(true)
+            else if (!regenerate.isPending) regenerate.mutate()
+          }}
         >
           {url ? t('invitation.regenerate') : t('invitation.create')}
         </button>
@@ -243,8 +248,9 @@ function InvitationPanel({ campaignId }: { campaignId: string }) {
             <input
               type="checkbox"
               checked={open}
-              disabled={setOpen.isPending}
               onChange={(event) => {
+                // Mientras se guarda, se ignora: deshabilitarla sacaría el foco de la casilla
+                if (setOpen.isPending) return
                 const value = event.currentTarget.checked
                 setPendingOpen(value)
                 setOpen.mutate(value)

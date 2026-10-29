@@ -1,6 +1,6 @@
 import type { Campaign, Member, World } from '@crisol/contracts'
 import { createMemoryHistory } from '@tanstack/react-router'
-import { render, screen, within } from '@testing-library/react'
+import { act, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { fakeAccountClient } from '../account/fake.ts'
@@ -106,6 +106,59 @@ describe('una campaña y su enlace de invitación', () => {
     await userEvent.click(toggle)
     expect((await screen.findByRole('alert')).textContent).toBe('No tienes permiso')
     expect((toggle as HTMLInputElement).checked).toBe(true)
+  })
+
+  it('mientras se guarda, la casilla sigue activa y con el foco; otro clic entretanto se ignora', async () => {
+    const { api } = renderCampaign(campaign())
+    const original = api.client.call
+    const saving: boolean[] = []
+    let release = () => {}
+    api.client.call = async (name, input) => {
+      if (name === 'setInvitationsOpen') {
+        saving.push((input as { open: boolean }).open)
+        await new Promise<void>((resolve) => {
+          release = resolve
+        })
+      }
+      return original(name, input)
+    }
+    const toggle = await screen.findByRole<HTMLInputElement>('checkbox', { name: 'Invitaciones abiertas' })
+    await userEvent.click(toggle)
+    expect(toggle.disabled).toBe(false)
+    expect(document.activeElement).toBe(toggle)
+    await userEvent.click(toggle)
+    expect(saving).toEqual([false])
+    expect(toggle.checked).toBe(false)
+    act(release)
+    expect(await inMain().findByText('Ahora nadie puede entrar con el enlace.')).toBeDefined()
+  })
+
+  it('sin enlace, «Generar enlace» lo genera una sola vez aunque se pulse de nuevo, y no pierde el foco', async () => {
+    const { api } = renderCampaign(campaign())
+    const original = api.client.call
+    let generated = 0
+    let release = () => {}
+    api.client.call = async (name, input) => {
+      if (name === 'getInvitation' && generated === 0) {
+        return { ...(await original(name, input)), url: null, issuedAt: null } as never
+      }
+      if (name === 'regenerateInvitation') {
+        generated++
+        await new Promise<void>((resolve) => {
+          release = resolve
+        })
+      }
+      return original(name, input)
+    }
+    const create = await screen.findByRole('button', { name: 'Generar enlace' })
+    expect(screen.getByText('Aún no hay enlace.')).toBeDefined()
+    await userEvent.click(create)
+    expect(create.getAttribute('aria-disabled')).toBe('true')
+    await userEvent.click(create)
+    expect(generated).toBe(1)
+    act(release)
+    expect(await screen.findByLabelText('Enlace de invitación')).toBeDefined()
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Nuevo enlace' }))
   })
 
   it('un jugador ve su campaña pero no el enlace', async () => {

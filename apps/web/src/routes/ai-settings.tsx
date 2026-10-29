@@ -68,8 +68,9 @@ export function AiSettings() {
                   name="mode"
                   value={option}
                   checked={mode === option}
-                  disabled={setMode.isPending}
                   onChange={() => {
+                    // Mientras se guarda otro, se ignora: deshabilitarlas sacaría el foco y no se podría seguir con flechas
+                    if (setMode.isPending) return
                     setPendingMode(option)
                     setMode.mutate(option)
                   }}
