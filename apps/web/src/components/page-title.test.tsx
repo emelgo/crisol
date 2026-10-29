@@ -1,6 +1,6 @@
 import type { Campaign, World } from '@crisol/contracts'
 import { createMemoryHistory } from '@tanstack/react-router'
-import { render, screen, waitFor } from '@testing-library/react'
+import { act, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import { fakeAccountClient } from '../account/fake.ts'
@@ -38,7 +38,7 @@ describe('el título de cada página', () => {
       ['/historial', 'Historial · Crisol'],
       ['/no-existe', 'Página no encontrada · Crisol']
     ] as const) {
-      await router.navigate({ to: path })
+      act(() => router.history.push(path))
       await waitFor(() => expect(document.title).toBe(title))
     }
   })
