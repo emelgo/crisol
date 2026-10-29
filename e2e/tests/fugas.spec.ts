@@ -1,7 +1,7 @@
 import { createHash, randomBytes } from 'node:crypto'
 import { expect, type Page, test } from '@playwright/test'
 import { E2E_PORT } from '../servidor.ts'
-import { campaignLink, connectClaude, newPlayer } from './ayudas.ts'
+import { campaignLink, connectClaude, gotoLive, newPlayer } from './ayudas.ts'
 
 const BASE = `http://127.0.0.1:${E2E_PORT}`
 const REDIRECT = 'https://cliente.example/callback'
@@ -172,7 +172,7 @@ test('@fugas lo que pide la IA del máster solo le llega a él: la cola, sus avi
 
   // Claude pide regenerar el enlace de B (el máster lo aprueba) y cerrar las invitaciones de A (lo rechaza)
   const claude = await connectClaude(page)
-  await page.goto('/mundos')
+  await gotoLive(page, '/mundos')
   const queue = page.getByRole('region', { name: 'Claude espera tu aprobación' })
   const regenerate = claude.call('enlace_invitacion', { campaignId: idB, change: 'regenerate' })
   await queue.getByRole('button', { name: `Aprobar: generar un enlace nuevo para ${SECRET_CAMPAIGN}` }).click()

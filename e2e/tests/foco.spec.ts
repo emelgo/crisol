@@ -5,13 +5,19 @@ test('con el teclado: el modo de IA con flechas y las invitaciones con espacio, 
   page
 }) => {
   await campaignLink(page)
+  // Cada cambio, guardado antes del siguiente (mientras se guarda uno, otro se ignora)
+  const saved = (action: string) => page.waitForResponse(`**/api/actions/${action}`)
   const toggle = page.getByRole('checkbox', { name: 'Invitaciones abiertas' })
   await toggle.focus()
+  let saving = saved('setInvitationsOpen')
   await page.keyboard.press('Space')
-  await expect(page.getByText('Ahora nadie puede entrar con el enlace.')).toBeVisible()
   await expect(toggle).toBeFocused()
   await expect(toggle).toBeEnabled()
+  await saving
+  await expect(page.getByText('Ahora nadie puede entrar con el enlace.')).toBeVisible()
+  saving = saved('setInvitationsOpen')
   await page.keyboard.press('Space')
+  await saving
   await expect(toggle).toBeChecked()
   await expect(toggle).toBeFocused()
 
@@ -20,12 +26,14 @@ test('con el teclado: el modo de IA con flechas y las invitaciones con espacio, 
   await expect(copilot).toBeChecked()
   await copilot.focus()
   for (const name of [/^Asistente/, /^Solo lectura/]) {
+    saving = saved('setAiMode')
     await page.keyboard.press('ArrowUp')
     const option = page.getByRole('radio', { name })
     await expect(option).toBeFocused()
     await expect(option).toBeChecked()
-    await expect(page.getByRole('status')).toHaveText('Guardado')
     await expect(option).toBeEnabled()
+    await saving
+    await expect(page.getByRole('status')).toHaveText('Guardado')
   }
   await page.reload()
   await expect(page.getByRole('radio', { name: /^Solo lectura/ })).toBeChecked()

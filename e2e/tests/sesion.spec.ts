@@ -1,5 +1,5 @@
 import { expect, type Page, test } from '@playwright/test'
-import { campaignLink, connectClaude, freshOwner, newPlayer } from './ayudas.ts'
+import { campaignLink, connectClaude, freshOwner, gotoLive, newPlayer } from './ayudas.ts'
 
 /**
  * Retiene las respuestas de la API (todas, o las de esas acciones) hasta soltarlas: así se ve qué se pinta mientras
@@ -29,7 +29,7 @@ test('al salir no queda nada del máster en la pestaña, tampoco para la jugador
   await campaignLink(page)
   const campaignId = new URL(page.url()).pathname.split('/').at(-1) ?? ''
   const claude = await connectClaude(page)
-  await page.goto('/mundos')
+  await gotoLive(page, '/mundos')
   await page.getByLabel('Nombre del mundo').fill('Otro')
   await page.getByRole('button', { name: 'Crear el mundo' }).click()
   await expect(page.getByRole('link', { name: 'Otro' })).toBeVisible()
