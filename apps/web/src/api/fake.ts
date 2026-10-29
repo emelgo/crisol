@@ -104,6 +104,27 @@ export function fakeApi(
   }))
   // Las páginas borradas, cada una con las subpáginas que se fueron con ella (todas siguen en la lista, apartadas)
   const trashedPages: Array<{ root: StoredPage; below: StoredPage[] }> = []
+  // Pestañas y marcadores de la cuenta, por mundo
+  type Stored = { tabs: { pageId: string; pinned: boolean }[]; bookmarks: { name: string; pages: string[] }[] }
+  const preferences = new Map<string, Stored>()
+  const preferencesOf = (worldId: string): Stored => preferences.get(worldId) ?? { tabs: [], bookmarks: [] }
+  const preferencesView = (worldId: string) => {
+    const stored = preferencesOf(worldId)
+    const titleOf = (id: string) => pages.find((p) => p.id === id)?.title
+    return {
+      tabs: stored.tabs.flatMap((tab) => {
+        const title = titleOf(tab.pageId)
+        return title === undefined ? [] : [{ ...tab, title }]
+      }),
+      bookmarks: stored.bookmarks.map((group) => ({
+        name: group.name,
+        pages: group.pages.flatMap((id) => {
+          const title = titleOf(id)
+          return title === undefined ? [] : [{ id, title }]
+        })
+      }))
+    }
+  }
   const pageById = (pageId: string) => {
     const found = pages.find((page) => page.id === pageId)
     if (!found) throw new ApiError('NOT_FOUND', 404)
@@ -394,6 +415,15 @@ export function fakeApi(
       for (const page of [root, ...below]) pages.splice(pages.indexOf(page), 1)
       trashedPages.push({ root, below })
       return { subpages: below.length }
+    },
+    getWikiPreferences: ({ worldId }) => preferencesView(worldId),
+    setWikiTabs: ({ worldId, tabs }) => {
+      preferences.set(worldId, { ...preferencesOf(worldId), tabs: tabs.map((tab) => ({ ...tab })) })
+      return preferencesView(worldId)
+    },
+    setBookmarks: ({ worldId, bookmarks }) => {
+      preferences.set(worldId, { ...preferencesOf(worldId), bookmarks: bookmarks.map((g) => ({ ...g })) })
+      return preferencesView(worldId)
     },
     restorePage: ({ pageId }) => {
       const index = trashedPages.findIndex((t) => t.root.id === pageId)

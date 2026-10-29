@@ -117,6 +117,31 @@ test('borrar una página con sus subpáginas, y restaurarla desde la papelera de
   await expect(tree(page).getByRole('treeitem', { name: 'Costa Gris' })).toBeVisible()
 })
 
+test('pestañas y marcadores siguen al recargar; en el móvil, las abiertas van en el cajón', async ({ page }) => {
+  await openWiki(page)
+  await newPage(page, 'Puerto Ceniza')
+  await newPage(page, 'Maela Varn')
+  const tabs = page.getByRole('navigation', { name: 'Páginas abiertas' })
+  await expect(tabs.getByRole('link')).toHaveText(['Puerto Ceniza', 'Maela Varn'])
+  await tabs.getByRole('button', { name: 'Fijar Maela Varn' }).click()
+  await expect(tabs.getByRole('link')).toHaveText(['Maela Varn', 'Puerto Ceniza'])
+  await page.getByRole('button', { name: 'Marcar' }).click()
+  await expect(page.getByRole('region', { name: 'Marcadores' }).getByRole('link', { name: 'Maela Varn' })).toBeVisible()
+
+  await page.reload()
+  await expect(tabs.getByRole('link')).toHaveText(['Maela Varn', 'Puerto Ceniza'])
+  await expect(page.getByRole('region', { name: 'Marcadores' }).getByRole('link', { name: 'Maela Varn' })).toBeVisible()
+  await expect(page.getByRole('navigation', { name: 'Páginas hermanas' }).getByRole('link')).toHaveText(/Puerto Ceniza/)
+
+  await page.setViewportSize({ width: 390, height: 844 })
+  await expect(tabs).toBeHidden()
+  await page.getByRole('button', { name: 'Páginas' }).click()
+  await expect(page.getByRole('navigation', { name: 'Abiertas' }).getByRole('link')).toHaveText([
+    'Maela Varn',
+    'Puerto Ceniza'
+  ])
+})
+
 test('en el móvil el árbol va en un cajón, que se cierra al abrir una página', async ({ page }) => {
   await openWiki(page)
   await newPage(page, 'Lugares')
@@ -164,6 +189,12 @@ test('la wiki, en los dos temas y en el móvil @a11y', async ({ page }) => {
   await page.getByRole('button', { name: 'Guardar' }).click()
   await expect(page.getByRole('region', { name: 'Propiedades' }).getByText('lugar')).toBeVisible()
   await check()
+  await page.getByRole('button', { name: 'Marcar' }).click()
+  await newPage(page, 'Personajes')
+  await page.getByRole('button', { name: 'Marcar' }).click()
+  await expect(page.getByLabel('O en un grupo nuevo')).toBeVisible()
+  await check()
+  await page.keyboard.press('Escape')
   await page.getByRole('link', { name: 'Etiquetas' }).click()
   await expect(page.getByRole('list', { name: 'Etiquetas' })).toBeVisible()
   await check()
