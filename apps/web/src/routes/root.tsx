@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
+import { AccountMenu } from '../components/account-menu.tsx'
 import { ApprovalQueue } from '../components/approval-queue.tsx'
 import { Notices } from '../components/notices.tsx'
 import { PageTitle, useFocusHeading } from '../components/page-title.tsx'
@@ -76,30 +77,6 @@ function SectionsNav() {
         </>
       )}
     </nav>
-  )
-}
-
-function AccountMenu() {
-  const { t } = useTranslation()
-  const accounts = useAccounts()
-  const { account, pending } = accounts.useAccount()
-  const navigate = useNavigate()
-  if (pending) return null
-  if (!account) return <Link to="/entrar">{t('account.signIn')}</Link>
-  return (
-    <>
-      <Link to="/perfil">{account.name}</Link>
-      <button
-        type="button"
-        className={styles.signOut}
-        onClick={async () => {
-          await accounts.signOut()
-          await navigate({ to: '/entrar' })
-        }}
-      >
-        {t('account.signOut')}
-      </button>
-    </>
   )
 }
 

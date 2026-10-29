@@ -8,7 +8,7 @@ import { ApiError } from '../api/client.ts'
 import { fakeApi } from '../api/fake.ts'
 import { App } from '../app.tsx'
 import { createAppRouter } from '../router.tsx'
-import { announced, inMain } from '../testing.ts'
+import { announced, inMain, signOut } from '../testing.ts'
 import { fakeRealtime } from './fake.ts'
 
 const ORG = { id: crypto.randomUUID(), name: 'Fateforge', role: 'owner' as const }
@@ -53,7 +53,7 @@ describe('el canal en tiempo real en la web', () => {
     const { realtime } = renderAt('/mundos')
     await screen.findByRole('heading', { name: 'Mis mundos' })
     expect(realtime.connections()).toBe(1)
-    await userEvent.click(screen.getByRole('button', { name: 'Salir' }))
+    await signOut()
     await vi.waitFor(() => expect(realtime.connections()).toBe(0))
   })
 

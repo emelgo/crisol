@@ -130,6 +130,12 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
     - La invitación lleva su franja, la portada es una portada y el permiso de Claude va en su caja.
     - Revisión con `web-design-guidelines`, con lo que salió arreglado: «Saltar al contenido», `theme-color`, el
       email sin corrector, `autocomplete` en los nombres, `touch-action` y títulos largos que no desbordan.
+  - Lo que pidió Enrique al verlo:
+    - El saludo de la portada, en la letra de los títulos.
+    - La cuenta, en un desplegable (PR #38): el nombre abre una caja con el email, «Perfil» y «Cerrar sesión», con
+      la letra de las secciones. Se cierra con Escape, al pulsar fuera o al salir con el tabulador
+      (`components/account-menu.tsx`).
+    - Las pruebas cierran sesión con `signOut()` (en `testing.ts` y en `e2e/tests/ayudas.ts`).
 - **Siguiente paso**: que Enrique pruebe «Hoja» en staging y diga qué cambiar. Después, el módulo 1 (wiki) con su
   entrevista; antes, el ADR sobre Yjs y secretos.
   - Luego, el módulo 1 (wiki) con su entrevista.

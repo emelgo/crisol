@@ -1,7 +1,7 @@
 import { connect, schema } from '@crisol/db'
 import { expect, test } from '@playwright/test'
 import { e2eDatabaseUrl } from '../servidor.ts'
-import { campaignLink } from './ayudas.ts'
+import { campaignLink, signOut } from './ayudas.ts'
 
 const players = async () => {
   const conn = connect(e2eDatabaseUrl(), { max: 1 })
@@ -60,7 +60,7 @@ test('con cuenta: entra y vuelve a la confirmación; con el enlace cerrado o cam
   await player.getByLabel('Contraseña').fill('una-clave-larga')
   await player.getByRole('button', { name: 'Crear la cuenta y entrar' }).click()
   await expect(player.getByRole('heading', { level: 1, name: 'La Marca', exact: true })).toBeVisible()
-  await player.getByRole('button', { name: 'Salir' }).click()
+  await signOut(player)
 
   await player.goto(link)
   await player.getByRole('button', { name: 'Ya tengo cuenta' }).click()

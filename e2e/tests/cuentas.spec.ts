@@ -3,6 +3,7 @@ import { resetDatabase } from '@crisol/db/testing'
 import { issueBootstrap } from '@crisol/server/bootstrap'
 import { expect, test } from '@playwright/test'
 import { e2eDatabaseUrl } from '../servidor.ts'
+import { openProfile, signOut } from './ayudas.ts'
 
 const owner = { name: 'Enrique', email: 'enrique@crisol.test', password: 'una-clave-larga' }
 
@@ -33,9 +34,9 @@ test('el propietario crea su cuenta con el enlace de arranque, sale y vuelve a e
   await page.reload()
   await expect(page.getByText('Hola, Enrique')).toBeVisible()
 
-  await page.getByRole('button', { name: 'Salir' }).click()
+  await signOut(page)
   await expect(page).toHaveURL('/entrar')
-  await expect(page.getByRole('link', { name: 'Enrique' })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Enrique', exact: true })).toHaveCount(0)
 
   await page.getByLabel('Email').fill(owner.email)
   await page.getByLabel('Contraseña').fill(owner.password)
@@ -59,10 +60,11 @@ test('el propietario cambia su nombre en el perfil', async ({ page }) => {
   await page.getByLabel('Email').fill(owner.email)
   await page.getByLabel('Contraseña').fill(owner.password)
   await page.getByRole('button', { name: 'Entrar' }).click()
-  await page.getByRole('link', { name: 'Enrique' }).click()
+  await openProfile(page)
   await page.getByLabel('Nombre').fill('Enrique M.')
   await page.getByRole('button', { name: 'Guardar' }).click()
   await expect(page.getByRole('status')).toHaveText('Guardado')
   await page.reload()
-  await expect(page.getByRole('link', { name: 'Enrique M.' })).toBeVisible()
+  // El nombre nuevo, en el menú de la cuenta
+  await expect(page.getByRole('button', { name: 'Enrique M.', exact: true })).toBeVisible()
 })

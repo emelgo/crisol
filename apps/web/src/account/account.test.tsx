@@ -6,7 +6,7 @@ import { ApiError } from '../api/client.ts'
 import { fakeApi } from '../api/fake.ts'
 import { App } from '../app.tsx'
 import { createAppRouter } from '../router.tsx'
-import { announced, inMain } from '../testing.ts'
+import { announced, inMain, signOut } from '../testing.ts'
 import { fakeAccountClient } from './fake.ts'
 
 const renderAt = (path: string, fake = fakeAccountClient()) => {
@@ -80,12 +80,13 @@ describe('perfil y salir', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Guardar' }))
     expect(await inMain().findByText('Guardado')).toBeDefined()
     expect(announced()).toBe('Guardado')
-    expect(screen.getByRole('link', { name: 'Enrique M.' })).toBeDefined()
+    // El nombre nuevo, en el menú de la cuenta
+    expect(screen.getByRole('button', { name: 'Enrique M.', expanded: false })).toBeDefined()
   })
 
   it('salir cierra la sesión y lleva a entrar', async () => {
     const { router, fake } = renderAt('/', signedIn())
-    await userEvent.click(await screen.findByRole('button', { name: 'Salir' }))
+    await signOut()
     expect(fake.calls).toContain('signOut')
     expect(await screen.findByRole('heading', { name: 'Entrar' })).toBeDefined()
     expect(router.state.location.pathname).toBe('/entrar')

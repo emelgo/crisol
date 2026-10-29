@@ -8,6 +8,7 @@ import { fakeApi } from '../api/fake.ts'
 import { App } from '../app.tsx'
 import { fakeRealtime } from '../realtime/fake.ts'
 import { createAppRouter } from '../router.tsx'
+import { signOut } from '../testing.ts'
 import { fakeAccountClient } from './fake.ts'
 
 const ORG = { id: crypto.randomUUID(), name: 'Fateforge', role: 'owner' as const }
@@ -92,7 +93,7 @@ describe('al cambiar de cuenta en la misma pestaña', () => {
     )
     await within(screen.getByRole('main')).findByText('Bea ha entrado en La Marca.')
 
-    await userEvent.click(screen.getByRole('button', { name: 'Salir' }))
+    await signOut()
     await screen.findByRole('heading', { level: 1, name: 'Entrar' })
     expect(screen.queryByText(/Hecho:/)).toBeNull()
     expect(screen.queryByText(/Bea/)).toBeNull()
@@ -118,7 +119,7 @@ describe('al cambiar de cuenta en la misma pestaña', () => {
     const path = `/mundos/${eana.id}/campanas/${marca.id}`
     const { router, signInAsPlayer, release } = setup(path)
     await screen.findByLabelText('Enlace de invitación')
-    await userEvent.click(screen.getByRole('button', { name: 'Salir' }))
+    await signOut()
     await signInAsPlayer()
     await act(() => router.navigate({ to: path }))
     expect(screen.queryByLabelText('Enlace de invitación')).toBeNull()

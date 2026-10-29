@@ -111,19 +111,6 @@
   text-decoration: none;
 }
 
-.signOut {
-  min-block-size: var(--target);
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--color-chrome-muted);
-  cursor: pointer;
-}
-
-.signOut:hover {
-  color: var(--color-chrome-accent);
-}
-
 /* Estrecho: la marca y la cuenta arriba, las secciones en su propia fila debajo */
 @media (max-width: 48rem) {
   .sections {

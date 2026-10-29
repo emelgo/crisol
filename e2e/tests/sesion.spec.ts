@@ -1,5 +1,5 @@
 import { expect, type Page, test } from '@playwright/test'
-import { campaignLink, connectClaude, freshOwner, gotoLive, newPlayer } from './ayudas.ts'
+import { campaignLink, connectClaude, freshOwner, gotoLive, newPlayer, signOut } from './ayudas.ts'
 
 /**
  * Retiene las respuestas de la API (todas, o las de esas acciones) hasta soltarlas: así se ve qué se pinta mientras
@@ -44,7 +44,7 @@ test('al salir no queda nada del máster en la pestaña, tampoco para la jugador
   await expect(main.getByText('Jugadora ha entrado en La Marca.')).toBeVisible()
   await player.close()
 
-  await page.getByRole('button', { name: 'Salir' }).click()
+  await signOut(page)
   await expect(page).toHaveURL('/entrar')
   await expect(page.getByText(/^Hecho:/)).toHaveCount(0)
   await expect(page.getByText(/ha entrado en La Marca/)).toHaveCount(0)
@@ -90,7 +90,7 @@ test('si sale desde otra pestaña, esta deja de enseñar lo suyo y lleva a entra
 
   const other = await page.context().newPage()
   await other.goto('/')
-  await other.getByRole('button', { name: 'Salir' }).click()
+  await signOut(other)
   await expect(other).toHaveURL('/entrar')
 
   await expect(page).toHaveURL('/entrar')
