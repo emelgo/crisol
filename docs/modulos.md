@@ -68,9 +68,9 @@ Estados: pendiente · en curso · hecho · descartado.
 | # | Módulo | Estado | REA principal |
 |---|---|---|---|
 | 0 | **Fundación**: monorepo, CI, despliegue, cuentas, organizaciones, mundos, campañas, roles, historial y deshacer, esqueleto del MCP | pendiente | Foundry: modelo de documentos y permisos; DDB: campañas e invitaciones |
-| 1 | **Wiki**: páginas y subpáginas, editor de bloques, enlaces, menciones, vista previa, propiedades, secretos, búsqueda, marcadores, etiquetas, versiones, recursos y archivos, **importador de Eana**, exportación MD | pendiente | Foundry: Journal; DDB: contenido y referencias |
+| 1 | **Wiki**: páginas y subpáginas, editor de bloques, enlaces, menciones, vista previa, propiedades, secretos, búsqueda, marcadores, etiquetas, versiones, recursos y archivos, **importador de Eana**, exportación MD | pendiente | Foundry: Journal; DDB: contenido y referencias; Homebrewery (MIT): formato de hoja y descarga |
 | 2 | Tipos de página, plantillas y formularios nativos; consultas (en lugar de Dataview y Bases) | pendiente | Foundry: tipos de documento |
-| 3 | Sistemas de reglas, fichas de personaje (creación, subida de nivel), dados y dados 3D | pendiente | DDB: creador y hoja; Foundry: dnd5e y DataModel |
+| 3 | Sistemas de reglas, fichas de personaje (creación, subida de nivel), dados y dados 3D | pendiente | DDB: creador y hoja; Foundry: dnd5e, DataModel e instalar y crear sistemas |
 | 4 | Compendios, bestiario, statblocks, biblioteca | pendiente | Foundry: compendium packs; DDB: listados |
 | 5 | Visibilidad por campaña: conocimiento de los jugadores, revelar, compartir | pendiente | Foundry: ownership |
 | 6 | **Mesa**: escenas, rejilla, fichas, medir y plantillas, niebla, muros, puertas, luz, visión, iniciativa, instantáneas, encuentros, UVTT | pendiente | Foundry: canvas, visión y muros; DDB Maps |
@@ -105,3 +105,23 @@ Cada módulo nace con su API y sus herramientas MCP.
   organizaciones en la interfaz, pagos, versiones de página, Claude de los jugadores, prompts/recursos/skills MCP.
 - **Hecho cuando**: Enrique crea Eana y dos campañas; un jugador entra con el enlace y solo está en la suya; Claude
   crea una campaña desde claude.ai y Enrique la deshace; todo desplegado en `neo.crisol…` con la CI en verde.
+
+### Ideas de Enrique para módulos siguientes (2026-10-29, para repasar en su entrevista)
+
+- **Sistemas (módulo 3)**: al crear un mundo se elige su sistema, como en Foundry. Los sistemas se instalan antes y
+  también se pueden crear, con una forma parecida a la de Foundry (un paquete con su manifiesto y su modelo de datos).
+  - Toca lo ya hecho en el módulo 0: crear un mundo pedirá el sistema, y los mundos que ya existan tendrán uno por
+    defecto.
+  - Sala limpia: de Foundry se estudia cómo lo resuelve (manifiesto, DataModel, instalación, actualizaciones). Si nos
+    conviene ser compatibles con su formato de sistemas se decide en la entrevista; su código no entra, ni los sistemas
+    de su comunidad, que llevan cada uno su licencia y están escritos contra su API.
+  - El Crisol actual ya guarda el sistema como datos (`.crisol/sistema.json`, con herramientas para crearlo, validarlo y
+    probar tiradas): repasarlo en `docs/inventario.md` § 5.
+- **Hojas con estilo (módulo 1)**: que las páginas de la wiki tengan el formato de las hojas de rol (dos columnas,
+  pergamino, statblocks, notas al margen) y se puedan descargar, al estilo de
+  [Homebrewery](https://github.com/naturalcrit/homebrewery).
+  - Homebrewery tiene licencia MIT: su código se puede leer directamente y aprovechar con su atribución. REA sirve para
+    ver en la web cómo pagina e imprime.
+  - Cuidado con su tema 5e: las fuentes y las imágenes llevan licencias propias (varias CC BY-SA, que `CONSTRAINTS.md`
+    no admite) e imitan el aspecto de los libros de WotC. Para un producto de pago, un tema propio con ese aire,
+    fuentes libres (OFL) y descarga en PDF y para imprimir.
