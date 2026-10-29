@@ -57,14 +57,15 @@ Orden: `plataforma` → `cuentas` → `inquilinos` → `historial` → `ia`.
 ### `cuentas`
 
 - Better Auth con email + contraseña, Google y Discord. Cada proveedor social se activa solo si sus credenciales están
-  en `.env`.
+  en `.env`. **Pospuesto** (Enrique, 2026-10-29): en el módulo 0 solo email y contraseña; Google, Discord y el correo
+  saliente llegan cuando haya apps OAuth y correo (preguntas 1 y 2).
 - **No hay registro abierto.** Solo se crea cuenta desde un enlace de invitación válido (o con el arranque del
   propietario). Quien ya tiene cuenta entra siempre.
 - **Arranque**: un comando en el servidor crea la organización y un enlace de un solo uso para que Enrique cree su
   cuenta de propietario. Sin comando, nadie puede crear la primera cuenta.
 - Sesión por cookie (`HttpOnly`, `Secure`, `SameSite=Lax`) de 30 días que se renueva con el uso; cerrar sesión.
   Límite de intentos de entrada.
-- Recuperar contraseña por email (SMTP; Mailpit en desarrollo). Ver «Preguntas abiertas».
+- Recuperar contraseña por email (SMTP; Mailpit en desarrollo). Pospuesto con lo anterior. Ver «Preguntas abiertas».
 - Perfil mínimo: nombre visible editable.
 
 ### `inquilinos`
@@ -290,7 +291,7 @@ export const createCampaignService: Service<typeof createCampaign> = async (ctx,
    la prueba de aislamiento.
 3. Tras regenerar el enlace, el anterior deja de funcionar al momento; con las invitaciones cerradas nadie entra.
    Abrir el enlace sin confirmar (como hace un bot de vista previa) no une a nadie. Un jugador sin cuenta que entra
-   con Discord vuelve sola a la confirmación.
+   con Discord vuelve sola a la confirmación (pospuesto con Discord).
 4. Desde claude.ai, con el conector y en modo copiloto, Claude crea una campaña sin preguntar, y la petición de
    regenerar el enlace aparece en la cola en menos de 2 s; al aprobarla se hace.
 5. Enrique deshace la creación de esa campaña desde el historial. Si alguien la cambió después, el deshacer se niega

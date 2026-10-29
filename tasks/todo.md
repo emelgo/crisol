@@ -154,7 +154,9 @@ Comprobación local al acabar cada tarea: `pnpm lint && pnpm typecheck && pnpm t
   - Comprueba: e2e de jugador nuevo con email; un GET como el de un bot no une a nadie; enlace cerrado o regenerado.
   - Archivos: `apps/server/src/servicios/unirse.ts`, `apps/web/src/rutas/unirse.tsx`, `e2e/unirse.spec.ts`.
 
-- [ ] **15. Discord y Google, vinculación de cuentas** — **necesita las apps OAuth de Enrique y las preguntas 1 y 2**
+- [ ] **15. Discord y Google, vinculación de cuentas** — **pospuesta** (Enrique, 2026-10-29): en el módulo 0 se
+  entra solo con email y contraseña. Queda para cuando haya apps OAuth y correo (preguntas 1 y 2); las variables
+  están comentadas en `.env.example`
   - Acepta:
     - Cada proveedor se activa por `.env`.
     - Se vincula solo con emails verificados en los dos lados.
@@ -190,7 +192,7 @@ Comprobación local al acabar cada tarea: `pnpm lint && pnpm typecheck && pnpm t
   - Archivos: `e2e/fugas.spec.ts`, `.github/workflows/ci.yml`.
 
 ### Punto de control 3
-- [x] Criterios 2 y 3 de la spec, en staging (2026-10-29, salvo entrar con Discord, que llega con la 15).
+- [x] Criterios 2 y 3 de la spec, en staging (2026-10-29, salvo entrar con Discord, pospuesto con la 15).
 
 ## Fase 4: Historial
 
