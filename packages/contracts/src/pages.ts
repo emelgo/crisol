@@ -152,3 +152,41 @@ export const listPageTree = defineAction({
     )
   })
 })
+
+/** Lo que la cuenta tiene a mano en la wiki de un mundo: sus pestañas y sus marcadores, con los títulos de ahora */
+export const wikiPreferences = z.object({
+  tabs: z.array(z.object({ pageId: z.uuid(), title: z.string(), pinned: z.boolean() })),
+  bookmarks: z.array(z.object({ name: z.string(), pages: z.array(z.object({ id: z.uuid(), title: z.string() })) }))
+})
+
+export type WikiPreferences = z.infer<typeof wikiPreferences>
+
+export const getWikiPreferences = defineAction({
+  name: 'getWikiPreferences',
+  kind: 'read',
+  description: 'Las pestañas abiertas y los marcadores de la cuenta en la wiki de un mundo',
+  input: z.object({ worldId: z.uuid() }),
+  output: wikiPreferences
+})
+
+export const setWikiTabs = defineAction({
+  name: 'setWikiTabs',
+  kind: 'write',
+  description: 'Guarda las pestañas abiertas de la cuenta en la wiki de un mundo (no va al historial)',
+  input: z.object({
+    worldId: z.uuid(),
+    tabs: z.array(z.object({ pageId: z.uuid(), pinned: z.boolean() })).max(20)
+  }),
+  output: wikiPreferences
+})
+
+export const setBookmarks = defineAction({
+  name: 'setBookmarks',
+  kind: 'write',
+  description: 'Guarda los marcadores de la cuenta en la wiki de un mundo, por grupos (no va al historial)',
+  input: z.object({
+    worldId: z.uuid(),
+    bookmarks: z.array(z.object({ name: z.string().trim().min(1).max(60), pages: z.array(z.uuid()).max(200) })).max(20)
+  }),
+  output: wikiPreferences
+})

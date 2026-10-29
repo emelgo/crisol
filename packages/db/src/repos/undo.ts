@@ -59,7 +59,10 @@ async function creatorOf(tx: Transaction, { tableName, rowId }: Ref) {
   return rows[0]?.id ?? null
 }
 
-/** Una fila que apunta a esta (clave ajena): quitarla se la llevaría por delante */
+/**
+ * Una fila de dominio que apunta a esta (clave ajena): quitarla se la llevaría por delante. Las de fuera del historial
+ * (preferencias, estado de Yjs, índices) cuelgan con borrado en cascada y no cuentan: se van con ella (ADR-0003)
+ */
 async function dependentRow(tx: Transaction, { tableName, rowId }: Ref): Promise<Ref | null> {
   const references = await tx.execute<{ table_name: string; column_name: string }>(sql`
     select cl.relname as table_name, a.attname as column_name
@@ -68,6 +71,7 @@ async function dependentRow(tx: Transaction, { tableName, rowId }: Ref): Promise
     join pg_attribute a on a.attrelid = c.conrelid and a.attnum = c.conkey[1]
     where c.contype = 'f' and c.confrelid = ${tableName}::regclass and array_length(c.conkey, 1) = 1`)
   for (const reference of references) {
+    if (!(reference.table_name in TRACKED_TABLES)) continue
     const rows = await tx.execute<{ id: string }>(sql`
       select to_jsonb(x)->>'id' as id from ${sql.identifier(reference.table_name)} x
       where x.${sql.identifier(reference.column_name)} = ${rowId} limit 1`)

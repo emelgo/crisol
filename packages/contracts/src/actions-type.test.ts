@@ -41,7 +41,10 @@ describe('Actions', () => {
       setPageProperties: true,
       listTags: true,
       deletePage: true,
-      restorePage: true
+      restorePage: true,
+      getWikiPreferences: true,
+      setWikiTabs: true,
+      setBookmarks: true
     }
     expect(Object.keys(names).sort()).toEqual(ACTIONS.map((a) => a.name).sort())
   })

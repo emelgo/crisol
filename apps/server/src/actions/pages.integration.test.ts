@@ -408,4 +408,63 @@ describe('la wiki: páginas y árbol', () => {
       expect((await call('listTrash', { worldId }, player.cookie)).statusCode).toBe(403)
     })
   })
+
+  describe('pestañas y marcadores', () => {
+    it('se guardan por cuenta, con los títulos de ahora, y no van al historial', async () => {
+      const port = await create('Puerto Ceniza')
+      const maela = await create('Maela Varn')
+      const before = (await historyOf()).length
+      const tabs = await call('setWikiTabs', {
+        worldId,
+        tabs: [
+          { pageId: port.id, pinned: true },
+          { pageId: maela.id, pinned: false },
+          { pageId: maela.id, pinned: true },
+          { pageId: crypto.randomUUID(), pinned: false }
+        ]
+      })
+      expect(tabs.json().tabs).toEqual([
+        { pageId: port.id, title: 'Puerto Ceniza', pinned: true },
+        { pageId: maela.id, title: 'Maela Varn', pinned: false }
+      ])
+      await call('setBookmarks', { worldId, bookmarks: [{ name: 'Sesión 5', pages: [maela.id, port.id] }] })
+      await call('updatePage', { pageId: maela.id, title: 'Maela Varn, la contrabandista' })
+      expect((await call('getWikiPreferences', { worldId })).json()).toEqual({
+        tabs: [
+          { pageId: port.id, title: 'Puerto Ceniza', pinned: true },
+          { pageId: maela.id, title: 'Maela Varn, la contrabandista', pinned: false }
+        ],
+        bookmarks: [
+          {
+            name: 'Sesión 5',
+            pages: [
+              { id: maela.id, title: 'Maela Varn, la contrabandista' },
+              { id: port.id, title: 'Puerto Ceniza' }
+            ]
+          }
+        ]
+      })
+      // Solo el renombrado
+      expect((await historyOf()).length).toBe(before + 1)
+    })
+
+    it('lo que está en la papelera no sale, y vuelve si se restaura', async () => {
+      const port = await create('Puerto Ceniza')
+      await call('setWikiTabs', { worldId, tabs: [{ pageId: port.id, pinned: false }] })
+      await call('deletePage', { pageId: port.id })
+      expect((await call('getWikiPreferences', { worldId })).json().tabs).toEqual([])
+      await call('restorePage', { pageId: port.id })
+      expect((await call('getWikiPreferences', { worldId })).json().tabs).toHaveLength(1)
+    })
+
+    it('las de otra cuenta son suyas, y quien no ve la wiki no tiene', async () => {
+      const port = await create('Puerto Ceniza')
+      await call('setWikiTabs', { worldId, tabs: [{ pageId: port.id, pinned: false }] })
+      const other = await signUpTestUser(auth, { name: 'Ana', email: 'ana@crisol.test' })
+      await conn.db.insert(schema.organizationMembers).values({ organizationId, userId: other.userId, role: 'member' })
+      expect((await call('getWikiPreferences', { worldId }, other.cookie)).statusCode).toBe(404)
+      await conn.db.insert(schema.worldMembers).values({ worldId, userId: other.userId, role: 'master' })
+      expect((await call('getWikiPreferences', { worldId }, other.cookie)).json()).toEqual({ tabs: [], bookmarks: [] })
+    })
+  })
 })

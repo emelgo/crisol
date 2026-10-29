@@ -178,6 +178,16 @@ export async function existingPages(db: Database, worldId: string, pageIds: read
   return new Set(rows.map((row) => row.id))
 }
 
+/** Los títulos de estas páginas del mundo que siguen fuera de la papelera */
+export async function titlesOf(db: Database, worldId: string, pageIds: readonly string[]) {
+  if (pageIds.length === 0) return new Map<string, string>()
+  const rows = await db
+    .select({ id: pages.id, title: pages.title })
+    .from(pages)
+    .where(and(eq(pages.worldId, worldId), isNull(pages.deletedAt), inArray(pages.id, [...new Set(pageIds)])))
+  return new Map(rows.map((row) => [row.id, row.title]))
+}
+
 /** Las propiedades de las páginas del mundo que tienen alguna (para las etiquetas) */
 export function listProperties(db: Database, worldId: string) {
   return db
