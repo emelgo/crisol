@@ -54,7 +54,8 @@ export const MCP_TOOLS: Record<string, McpTool> = {
   deshacer: { action: 'undoOperation' },
   pendientes: { action: 'listApprovals' },
   ver_arbol: { action: 'listPageTree' },
-  mover_pagina: { action: 'movePage' }
+  mover_pagina: { action: 'movePage' },
+  borrar_pagina: { action: 'deletePage' }
 }
 
 const INSTRUCTIONS =

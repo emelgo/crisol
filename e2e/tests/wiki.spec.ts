@@ -95,6 +95,28 @@ test('propiedades, icono y etiquetas: se guardan, siguen al recargar y cuentan e
   ])
 })
 
+test('borrar una página con sus subpáginas, y restaurarla desde la papelera del mundo', async ({ page }) => {
+  await openWiki(page)
+  await newPage(page, 'Lugares')
+  await newPage(page, 'Costa Gris', 'Nueva subpágina')
+  await newPage(page, 'Puerto Ceniza', 'Nueva subpágina')
+  await tree(page).getByRole('treeitem', { name: 'Lugares' }).click()
+  await page.getByRole('button', { name: 'Borrar' }).click()
+  await page.getByRole('button', { name: 'Borrar' }).click()
+  await expect(page.getByRole('heading', { level: 1, name: 'Wiki de Eana' })).toBeVisible()
+  await expect(page.getByText('Aún no hay páginas.')).toBeVisible()
+
+  await page.goto(new URL(page.url()).pathname.replace(/\/wiki$/, '/papelera'))
+  const trash = page.getByRole('list', { name: 'En la papelera' })
+  await expect(trash.getByText('Página de Eana, con 2 subpáginas', { exact: false })).toBeVisible()
+  await trash.getByRole('button', { name: 'Restaurar Lugares' }).click()
+  await expect(page.getByText('La papelera está vacía')).toBeVisible()
+  await page.goBack()
+  await tree(page).getByRole('treeitem', { name: 'Lugares' }).focus()
+  await page.keyboard.press('ArrowRight')
+  await expect(tree(page).getByRole('treeitem', { name: 'Costa Gris' })).toBeVisible()
+})
+
 test('en el móvil el árbol va en un cajón, que se cierra al abrir una página', async ({ page }) => {
   await openWiki(page)
   await newPage(page, 'Lugares')

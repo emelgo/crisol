@@ -14,7 +14,15 @@ import {
   setPageProperties,
   updatePage
 } from './pages.ts'
-import { deleteCampaign, deleteWorld, listTrash, restoreCampaign, restoreWorld } from './trash.ts'
+import {
+  deleteCampaign,
+  deletePage,
+  deleteWorld,
+  listTrash,
+  restoreCampaign,
+  restorePage,
+  restoreWorld
+} from './trash.ts'
 import { createWorld, listWorlds, renameWorld } from './worlds.ts'
 
 export * from './action.ts'
@@ -66,7 +74,9 @@ export const ACTIONS = [
   listPageChildren,
   listPageTree,
   setPageProperties,
-  listTags
+  listTags,
+  deletePage,
+  restorePage
 ]
 
 /** Las acciones por nombre, solo como tipo: la web las usa sin cargar zod */
@@ -106,4 +116,6 @@ export type Actions = {
   listPageTree: typeof listPageTree
   setPageProperties: typeof setPageProperties
   listTags: typeof listTags
+  deletePage: typeof deletePage
+  restorePage: typeof restorePage
 }

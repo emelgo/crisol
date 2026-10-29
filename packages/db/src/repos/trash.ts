@@ -5,6 +5,7 @@ import { type OperationContext, operation } from '../operation.ts'
 import { approvals } from '../schema/ai.ts'
 import { campaignMembers, campaigns } from '../schema/campaigns.ts'
 import { operations } from '../schema/history.ts'
+import { pages } from '../schema/pages.ts'
 import { worldMembers, worlds } from '../schema/worlds.ts'
 
 /** Borrar manda a la papelera: la misma fila, marcada. Deshacerlo o restaurarla la deja como estaba */
@@ -87,9 +88,36 @@ export async function listTrash(db: Database, scope: TrashScope) {
           .from(worlds)
           .where(and(eq(worlds.organizationId, scope.organizationId), isNotNull(worlds.deletedAt)))
       : []
+  // De las páginas, solo la de arriba de cada borrado: sus subpáginas vuelven con ella
+  const trashedPages = await db.execute<{
+    id: string
+    name: string
+    world_id: string
+    world_name: string
+    deleted_at: string
+    subpages: number
+  }>(sql`
+    select p.id, p.title as name, p.world_id, w.name as world_name, p.deleted_at,
+      (select count(*)::int from pages c
+        where c.world_id = p.world_id and c.deleted_at = p.deleted_at and c.id <> p.id) as subpages
+    from pages p
+    join worlds w on w.id = p.world_id
+    left join pages parent on parent.id = p.parent_id
+    where p.deleted_at is not null and w.deleted_at is null
+      and (parent.id is null or parent.deleted_at is null or parent.deleted_at <> p.deleted_at)
+      and ${'worldId' in scope ? sql`p.world_id = ${scope.worldId}` : sql`w.organization_id = ${scope.organizationId}`}`)
   return [
     ...trashedWorlds.map((item) => ({ kind: 'world' as const, ...item, deletedAt: item.deletedAt as Date })),
-    ...trashedCampaigns.map((item) => ({ kind: 'campaign' as const, ...item, deletedAt: item.deletedAt as Date }))
+    ...trashedCampaigns.map((item) => ({ kind: 'campaign' as const, ...item, deletedAt: item.deletedAt as Date })),
+    ...[...trashedPages].map((item) => ({
+      kind: 'page' as const,
+      id: item.id,
+      name: item.name,
+      worldId: item.world_id,
+      worldName: item.world_name,
+      deletedAt: new Date(item.deleted_at),
+      subpages: item.subpages
+    }))
   ].sort((a, b) => b.deletedAt.getTime() - a.deletedAt.getTime())
 }
 
@@ -128,6 +156,8 @@ export function purge(db: Database, now: Date) {
       .delete(campaigns)
       .where(lt(campaigns.deletedAt, cutoff))
       .returning({ id: campaigns.id })
+    // Una página purgada se lleva sus subpáginas (clave ajena en cascada)
+    const purgedPages = await tx.delete(pages).where(lt(pages.deletedAt, cutoff)).returning({ id: pages.id })
     const memberships = await tx.execute<{ id: string }>(sql`
       delete from organization_members om
       where om.role = 'member'
@@ -158,6 +188,7 @@ export function purge(db: Database, now: Date) {
     return {
       worlds: purgedWorlds.length,
       campaigns: purgedCampaigns.length,
+      pages: purgedPages.length,
       memberships: memberships.length,
       operations: purgedOperations.length,
       approvals: purgedApprovals.length,

@@ -123,7 +123,12 @@ export const es = {
     noSubpages: 'No tiene subpáginas.',
     notFound: 'Esta wiki no existe',
     pageNotFound: 'Esta página no existe',
-    more: 'Más de la wiki'
+    more: 'Más de la wiki',
+    delete: 'Borrar',
+    deleteWarning: '¿Borrar «{{title}}»? Irá a la papelera y se puede restaurar durante 30 días.',
+    deleteWarningWithSubpages:
+      '¿Borrar «{{title}}» y sus subpáginas? Irán a la papelera y se pueden restaurar durante 30 días.',
+    deleted: '«{{title}}» está en la papelera'
   },
   properties: {
     title: 'Propiedades',
@@ -212,6 +217,8 @@ export const es = {
       setPageIcon: 'cambió el icono de «{{title}}»',
       removePageIcon: 'quitó el icono de «{{title}}»',
       setPageProperties: 'cambió las propiedades de «{{title}}»',
+      deletePage: 'borró la página «{{title}}»',
+      restorePage: 'restauró la página «{{title}}»',
       unknown: 'hizo un cambio ({{action}})'
     }
   },
@@ -265,6 +272,8 @@ export const es = {
       setPageIcon: 'cambiar el icono de «{{title}}»',
       removePageIcon: 'quitar el icono de «{{title}}»',
       setPageProperties: 'cambiar las propiedades de «{{title}}»',
+      deletePage: 'borrar la página «{{title}}»',
+      restorePage: 'restaurar la página «{{title}}»',
       unknown: 'hacer un cambio ({{action}})'
     }
   },
@@ -314,6 +323,9 @@ export const es = {
     empty: 'La papelera está vacía',
     world: 'Mundo',
     campaignOf: 'Campaña de {{world}}',
+    pageOf_zero: 'Página de {{world}}',
+    pageOf_one: 'Página de {{world}}, con {{count}} subpágina',
+    pageOf_other: 'Página de {{world}}, con {{count}} subpáginas',
     purgeAt: 'Se borra del todo el {{date}}',
     restore: 'Restaurar',
     restoreButton: 'Restaurar {{name}}'
@@ -347,6 +359,7 @@ export const es = {
     RESERVED_PROPERTY_TYPE: 'Alias y etiquetas son listas, y resumen es texto',
     BAD_TAG: 'Una etiqueta no lleva espacios; para la jerarquía, «/»',
     BAD_PROPERTY: 'Alguna página de las propiedades ya no está en la wiki',
+    PARENT_IN_TRASH: 'Su página madre también está en la papelera: restáurala antes',
     INVALID_CREDENTIALS: 'Email o contraseña incorrectos',
     TOO_MANY_REQUESTS: 'Demasiados intentos. Espera un minuto.',
     EMAIL_TAKEN: 'Ese email ya tiene cuenta',

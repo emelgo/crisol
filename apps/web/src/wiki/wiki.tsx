@@ -7,9 +7,10 @@ import { useAccounts } from '../account/context.tsx'
 import { ApiError } from '../api/client.ts'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
+import { useAnnounce } from '../components/announcer.tsx'
 import { BusyButton } from '../components/busy-button.tsx'
 import { Field, FormError } from '../components/field.tsx'
-import { useReturnFocus } from '../components/focus.ts'
+import { focusOnMount, useReturnFocus } from '../components/focus.ts'
 import form from '../components/form.module.css'
 import list from '../components/list.module.css'
 import { failed, LoadError } from '../components/load-error.tsx'
@@ -255,9 +256,74 @@ function PageHeading({ page, startEditing }: { page: Page; startEditing: boolean
     <div className={styles.heading}>
       <PageIcon page={page} />
       <PageTitle>{page.title}</PageTitle>
-      <button type="button" ref={renameButton.ref} className={list.secondary} onClick={() => setEditing(true)}>
-        {t('wiki.rename')}
+      <div className={list.actions}>
+        <button type="button" ref={renameButton.ref} className={list.secondary} onClick={() => setEditing(true)}>
+          {t('wiki.rename')}
+        </button>
+        <DeletePage page={page} />
+      </div>
+    </div>
+  )
+}
+
+/** Borrar: tras confirmar, la página (con sus subpáginas) va a la papelera y se vuelve a su madre */
+function DeletePage({ page }: { page: Page }) {
+  const { t } = useTranslation()
+  const api = useApi()
+  const queryClient = useQueryClient()
+  const navigate = useNavigate()
+  const announce = useAnnounce()
+  const errorText = useErrorText()
+  const button = useReturnFocus()
+  const warningId = useId()
+  const [confirming, setConfirming] = useState(false)
+  const remove = useMutation({
+    mutationFn: () => api.call('deletePage', { pageId: page.id }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['pages', page.worldId] })
+      announce(t('wiki.deleted', { title: page.title }))
+      const parent = page.path.at(-2)
+      await navigate(
+        parent
+          ? { to: '/mundos/$worldId/wiki/$pageId', params: { worldId: page.worldId, pageId: parent.id } }
+          : { to: '/mundos/$worldId/wiki', params: { worldId: page.worldId } }
+      )
+    }
+  })
+  if (!confirming) {
+    return (
+      <button type="button" ref={button.ref} className={list.secondary} onClick={() => setConfirming(true)}>
+        {t('wiki.delete')}
       </button>
+    )
+  }
+  return (
+    <div className={list.confirm}>
+      <p id={warningId}>
+        {t(page.hasChildren ? 'wiki.deleteWarningWithSubpages' : 'wiki.deleteWarning', { title: page.title })}
+      </p>
+      <div className={list.actions}>
+        <BusyButton
+          ref={focusOnMount}
+          className={form.button}
+          aria-describedby={warningId}
+          busy={remove.isPending}
+          onClick={() => remove.mutate()}
+        >
+          {t('wiki.delete')}
+        </BusyButton>
+        <button
+          type="button"
+          className={list.secondary}
+          onClick={() => {
+            button.back()
+            setConfirming(false)
+          }}
+        >
+          {t('list.cancel')}
+        </button>
+      </div>
+      <FormError message={remove.error ? errorText(remove.error) : null} />
     </div>
   )
 }

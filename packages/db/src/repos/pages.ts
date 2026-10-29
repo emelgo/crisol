@@ -1,5 +1,6 @@
 import { keyBetween } from '@crisol/domain'
-import { and, eq, inArray, isNull, ne, type SQL, sql } from 'drizzle-orm'
+import { and, eq, inArray, isNotNull, isNull, ne, type SQL, sql } from 'drizzle-orm'
+import { alias } from 'drizzle-orm/pg-core'
 import type { Database } from '../client.ts'
 import { type OperationContext, operation, type Transaction } from '../operation.ts'
 import { pages } from '../schema/pages.ts'
@@ -194,5 +195,62 @@ export function movePage(
   return operation(db, context, async (w) => {
     const position = await placeKey(w.read, input.worldId, input.placement, pageId)
     return w.update(pages, pageId, { parentId: input.placement.parentId, position })
+  })
+}
+
+/**
+ * Las subpáginas de una página, a cualquier profundidad, que están como ella: fuera de la papelera si ella lo está, o
+ * borradas en el mismo momento si está en la papelera (las que se fueron con ella)
+ */
+async function sameStateBelow(db: Database | Transaction, pageId: string) {
+  const rows = await db.execute<{ id: string }>(sql`
+    with recursive down as (
+      select id, deleted_at, 0 as depth from pages where parent_id = ${pageId}
+      union all
+      select p.id, p.deleted_at, down.depth + 1 from pages p join down on p.parent_id = down.id where down.depth < 64
+    )
+    select id from down
+    where deleted_at is not distinct from (select deleted_at from pages where id = ${pageId})`)
+  return rows.map((row) => row.id)
+}
+
+/**
+ * Manda la página a la papelera con las subpáginas que no lo estaban, en una sola operación y con el mismo momento:
+ * así vuelven juntas. Devuelve cuántas subpáginas se fueron con ella
+ */
+export function deletePageTree(db: Database, context: OperationContext, pageId: string) {
+  return operation(db, context, async (w) => {
+    const now = new Date()
+    const below = await sameStateBelow(w.read, pageId)
+    await w.update(pages, pageId, { deletedAt: now })
+    for (const id of below) await w.update(pages, id, { deletedAt: now })
+    return below.length
+  })
+}
+
+/** Una página de la papelera, y si su madre también está en ella (entonces se restaura la madre) */
+export async function findTrashedPage(db: Database, pageId: string) {
+  const parent = alias(pages, 'parent')
+  const [found] = await db
+    .select({
+      id: pages.id,
+      worldId: pages.worldId,
+      title: pages.title,
+      deletedAt: pages.deletedAt,
+      parentInTrash: sql<boolean>`${parent.deletedAt} is not null`
+    })
+    .from(pages)
+    .leftJoin(parent, eq(parent.id, pages.parentId))
+    .where(and(eq(pages.id, pageId), isNotNull(pages.deletedAt)))
+  return found ?? null
+}
+
+/** Saca de la papelera la página y las subpáginas que se fueron con ella (las del mismo momento), en una operación */
+export function restorePageTree(db: Database, context: OperationContext, pageId: string) {
+  return operation(db, context, async (w) => {
+    const together = await sameStateBelow(w.read, pageId)
+    await w.update(pages, pageId, { deletedAt: null })
+    for (const id of together) await w.update(pages, id, { deletedAt: null })
+    return together.length
   })
 }

@@ -213,8 +213,8 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   4. ~~Diseño~~: aprobado.
   5. ~~`/plan`~~: aprobado.
   6. **`/build` tarea a tarea** (`tasks/todo.md`), con `/agent-skills:review` y `/ship`, como en el módulo 0. Hechas de
-     la 1 a la 3; **siguen la 4** (papelera) **y la 5** (pestañas, marcadores y navegación). Después, el punto de control
-     1 con Enrique en staging.
+     la 1 a la 4; **sigue la 5** (pestañas, marcadores y navegación). Después, el punto de control 1 con Enrique en
+     staging.
 - **2026-10-29 — Módulo 1, tarea 1: páginas y árbol en la API.**
   - La tabla `pages` tiene historial y su orden es una clave fraccionaria (`packages/domain/src/order.ts`, collation
     "C"). Mover solo escribe la fila que se mueve.
@@ -264,6 +264,17 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
     - las de tipo páginas se eligen por el título, con los títulos de `listPageTree` hasta 6 niveles, hasta que lleguen
       los enlaces (tarea 13).
   - Los desplegables y las áreas de texto de los formularios tienen ya el estilo de los campos.
+- **2026-10-29 — Módulo 1, tarea 4: papelera de páginas.** Desplegada la 3 en staging (health 200, sin errores).
+  - `deletePage` manda a la papelera la página y las subpáginas que no lo estaban, todas en una operación y con el
+    mismo momento. MCP: `borrar_pagina`, de tipo `delete`.
+  - `restorePage` las devuelve juntas: las que se borraron antes por su cuenta se quedan en la papelera. Mientras la
+    madre siga en la papelera no se restaura (`PARENT_IN_TRASH`).
+  - En la papelera sale solo la página de arriba de cada borrado, con cuántas subpáginas se fueron con ella.
+  - La purga de 30 días se lleva las páginas con sus subpáginas (clave ajena en cascada).
+  - En la web, «Borrar» pide confirmar y vuelve a la madre (o a la portada de la wiki). Lo de la papelera se restaura
+    desde la del mundo.
+  - De paso se arregló un fallo que venía de la tarea 1: pedir una página que no existe o que está en la papelera daba
+    500 en vez de 404, porque se buscaba el mundo con un id vacío.
 - Queda una ventana pequeña en el tiempo real: lo que cambie entre la primera carga de una página y la conexión del
   canal no se ve hasta volver a la pestaña. Taparla costaría volver a pedirlo todo al conectar la primera vez.
 - **Pendientes de permiso de Enrique:**
@@ -286,7 +297,7 @@ Estados: pendiente · en curso · hecho · descartado.
 | # | Módulo | Estado | REA principal |
 |---|---|---|---|
 | 0 | **Fundación**: monorepo, CI, despliegue, cuentas, organizaciones, mundos, campañas, roles, historial y deshacer, esqueleto del MCP | **hecho** (2026-10-29; Discord y Google, pospuestos) | Foundry: modelo de documentos y permisos; DDB: campañas e invitaciones |
-| 1 | **Wiki**: páginas y subpáginas, editor de bloques, enlaces, menciones, vista previa, propiedades, secretos, búsqueda, marcadores, etiquetas, versiones, recursos y archivos, **hojas con estilo** (tipo Homebrewery, con PDF), exportación MD, sus herramientas MCP | en curso (construcción: tareas 1 a 3 de 26 hechas) | Foundry: Journal; DDB: contenido y referencias; Homebrewery (MIT): formato de hoja y descarga |
+| 1 | **Wiki**: páginas y subpáginas, editor de bloques, enlaces, menciones, vista previa, propiedades, secretos, búsqueda, marcadores, etiquetas, versiones, recursos y archivos, **hojas con estilo** (tipo Homebrewery, con PDF), exportación MD, sus herramientas MCP | en curso (construcción: tareas 1 a 4 de 26 hechas) | Foundry: Journal; DDB: contenido y referencias; Homebrewery (MIT): formato de hoja y descarga |
 | 2 | Tipos de página, plantillas y formularios nativos; consultas (en lugar de Dataview y Bases) | pendiente | Foundry: tipos de documento |
 | 3 | Sistemas de reglas, fichas de personaje (creación, subida de nivel), dados y dados 3D | pendiente | DDB: creador y hoja; Foundry: dnd5e, DataModel e instalar y crear sistemas |
 | 4 | Compendios, bestiario, statblocks, biblioteca | pendiente | Foundry: compendium packs; DDB: listados |

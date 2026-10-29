@@ -15,6 +15,7 @@ describe('herramientas MCP', () => {
 
   it('las del módulo 0 y las de la wiki que ya hay', () => {
     expect(Object.keys(MCP_TOOLS).sort()).toEqual([
+      'borrar_pagina',
       'crear_campana',
       'crear_mundo',
       'deshacer',

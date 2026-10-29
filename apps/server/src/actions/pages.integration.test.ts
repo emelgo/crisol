@@ -1,4 +1,4 @@
-import { connect, schema } from '@crisol/db'
+import { connect, schema, trashRepo } from '@crisol/db'
 import { freshTestDatabase, resetDatabase } from '@crisol/db/testing'
 import { MAX_PAGE_DEPTH } from '@crisol/domain'
 import { and, eq } from 'drizzle-orm'
@@ -235,6 +235,7 @@ describe('la wiki: páginas y árbol', () => {
       .insert(schema.organizationMembers)
       .values({ organizationId: org.id, userId: stranger.userId, role: 'owner' })
     expect((await call('getPage', { pageId: page.id }, stranger.cookie)).statusCode).toBe(404)
+    expect((await call('getPage', { pageId: crypto.randomUUID() })).statusCode).toBe(404)
     expect((await call('listPageChildren', { worldId }, stranger.cookie)).statusCode).toBe(404)
     const mine = (await call('createWorld', { name: 'Suyo' }, stranger.cookie)).json()
     const theirs = (await call('createPage', { worldId: mine.id, title: 'Suya' }, stranger.cookie)).json()
@@ -334,6 +335,77 @@ describe('la wiki: páginas y árbol', () => {
         { tag: 'lugar/ciudad', depth: 1, count: 2 },
         { tag: 'lugar/montaña', depth: 1, count: 1 }
       ])
+    })
+  })
+
+  describe('papelera', () => {
+    const trash = async () =>
+      (await call('listTrash', { worldId })).json().items as Array<{ kind: string; name: string; subpages?: number }>
+
+    it('borrar se lleva la rama entera en una operación; sale una vez en la papelera y vuelve entera', async () => {
+      const places = await create('Lugares')
+      const coast = await create('Costa Gris', { parentId: places.id })
+      await create('Puerto Ceniza', { parentId: coast.id })
+      await create('Personajes')
+      expect((await call('deletePage', { pageId: places.id })).json()).toEqual({ subpages: 2 })
+      expect(await titles()).toEqual(['Personajes'])
+      expect((await call('getPage', { pageId: coast.id })).statusCode).toBe(404)
+      expect(await trash()).toEqual([expect.objectContaining({ kind: 'page', name: 'Lugares', subpages: 2 })])
+      expect((await historyOf())[0]).toMatchObject({ action: 'deletePage', details: { title: 'Lugares' } })
+
+      expect((await call('restorePage', { pageId: places.id })).json()).toEqual({ id: places.id, name: 'Lugares' })
+      expect(await titles()).toEqual(['Lugares', 'Personajes'])
+      expect(await titles(coast.id)).toEqual(['Puerto Ceniza'])
+      expect(await trash()).toEqual([])
+    })
+
+    it('deshacer el borrado devuelve la rama', async () => {
+      const places = await create('Lugares')
+      await create('Costa Gris', { parentId: places.id })
+      await call('deletePage', { pageId: places.id })
+      const deleted = (await historyOf())[0]
+      expect((await call('undoOperation', { operationId: deleted?.id })).json().status).toBe('undone')
+      expect(await titles(places.id)).toEqual(['Costa Gris'])
+    })
+
+    it('una subpágina borrada antes no vuelve con su madre; y no se restaura mientras la madre esté en la papelera', async () => {
+      const places = await create('Lugares')
+      const coast = await create('Costa Gris', { parentId: places.id })
+      await create('Montes de Hierro', { parentId: places.id })
+      await call('deletePage', { pageId: coast.id })
+      await call('deletePage', { pageId: places.id })
+      expect((await trash()).map((item) => [item.name, item.subpages])).toEqual([
+        ['Lugares', 1],
+        ['Costa Gris', 0]
+      ])
+      expect((await call('restorePage', { pageId: coast.id })).json()).toEqual({ code: 'PARENT_IN_TRASH' })
+      await call('restorePage', { pageId: places.id })
+      expect(await titles(places.id)).toEqual(['Montes de Hierro'])
+      expect((await call('restorePage', { pageId: coast.id })).statusCode).toBe(200)
+      expect(await titles(places.id)).toEqual(['Costa Gris', 'Montes de Hierro'])
+    })
+
+    it('a los 30 días se purga, con sus subpáginas', async () => {
+      const places = await create('Lugares')
+      await create('Costa Gris', { parentId: places.id })
+      await call('deletePage', { pageId: places.id })
+      const result = await trashRepo.purge(conn.db, new Date(Date.now() + 31 * 24 * 60 * 60 * 1000))
+      expect(result).toMatchObject({ pages: 2 })
+      expect(await conn.db.select().from(schema.pages)).toEqual([])
+    })
+
+    it('un jugador no borra ni restaura páginas', async () => {
+      const page = await create('Lugares')
+      const campaign = (await call('createCampaign', { worldId, name: 'La Marca' })).json()
+      const player = await signUpTestUser(auth, { name: 'Jugadora', email: 'jugadora@crisol.test' })
+      await conn.db.insert(schema.organizationMembers).values({ organizationId, userId: player.userId, role: 'member' })
+      await conn.db
+        .insert(schema.campaignMembers)
+        .values({ campaignId: campaign.id, userId: player.userId, role: 'player' })
+      expect((await call('deletePage', { pageId: page.id }, player.cookie)).statusCode).toBe(404)
+      await call('deletePage', { pageId: page.id })
+      expect((await call('restorePage', { pageId: page.id }, player.cookie)).statusCode).toBe(404)
+      expect((await call('listTrash', { worldId }, player.cookie)).statusCode).toBe(403)
     })
   })
 })

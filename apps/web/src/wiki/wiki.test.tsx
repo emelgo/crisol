@@ -158,6 +158,40 @@ describe('el árbol de la wiki', () => {
     expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Renombrar' }))
   })
 
+  it('borrar pide confirmar, vuelve a la madre y la rama sale una vez en la papelera, de donde se restaura', async () => {
+    const router = renderAt(`/mundos/${WORLD.id}/wiki/${ids.coast}`)
+    await userEvent.click(await screen.findByRole('button', { name: 'Borrar' }))
+    expect(
+      screen.getByText(
+        '¿Borrar «Costa Gris» y sus subpáginas? Irán a la papelera y se pueden restaurar durante 30 días.'
+      )
+    ).toBeDefined()
+    // La confirmación lleva el foco a su botón
+    expect(document.activeElement?.textContent).toBe('Borrar')
+    await userEvent.click(screen.getByRole('button', { name: 'Borrar' }))
+    expect(await screen.findByRole('heading', { level: 1, name: 'Lugares' })).toBeDefined()
+    expect(router.state.location.pathname).toBe(`/mundos/${WORLD.id}/wiki/${ids.places}`)
+    await waitFor(() => expect(screen.queryByRole('treeitem', { name: 'Costa Gris' })).toBeNull())
+    expect(screen.getByText('«Costa Gris» está en la papelera')).toBeDefined()
+
+    await router.navigate({ to: '/mundos/$worldId/papelera', params: { worldId: WORLD.id } })
+    const trash = within(await screen.findByRole('list', { name: 'En la papelera' }))
+    expect(trash.getByText('Costa Gris')).toBeDefined()
+    expect(trash.getByText(/Página de Eana, con 1 subpágina/)).toBeDefined()
+    await userEvent.click(trash.getByRole('button', { name: 'Restaurar Costa Gris' }))
+    expect(await screen.findByText('La papelera está vacía')).toBeDefined()
+  })
+
+  it('cancelar el borrado devuelve el foco a «Borrar»', async () => {
+    renderAt(`/mundos/${WORLD.id}/wiki/${ids.rules}`)
+    await userEvent.click(await screen.findByRole('button', { name: 'Borrar' }))
+    expect(
+      screen.getByText('¿Borrar «Reglas de la casa»? Irá a la papelera y se puede restaurar durante 30 días.')
+    ).toBeDefined()
+    await userEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Borrar' }))
+  })
+
   it('un jugador no tiene wiki', async () => {
     renderAt(`/mundos/${WORLD.id}/wiki`, wikiApi({ ...WORLD, role: 'player' }))
     expect(await screen.findByRole('heading', { level: 1, name: 'Esta wiki no existe' })).toBeDefined()
