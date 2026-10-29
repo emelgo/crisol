@@ -2,6 +2,7 @@ import { createRootRoute, createRoute, createRouter, type RouterHistory } from '
 import { Bootstrap } from './routes/bootstrap.tsx'
 import { CampaignPage } from './routes/campaign.tsx'
 import { Consent } from './routes/consent.tsx'
+import { OrganizationHistory, WorldHistory } from './routes/history.tsx'
 import { Home } from './routes/home.tsx'
 import { Join } from './routes/join.tsx'
 import { Profile } from './routes/profile.tsx'
@@ -23,6 +24,16 @@ const campaignRoute = createRoute({
   path: '/mundos/$worldId/campanas/$campaignId',
   component: CampaignPage
 })
+const worldHistoryRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/mundos/$worldId/historial',
+  component: WorldHistory
+})
+const historyRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/historial',
+  component: OrganizationHistory
+})
 const consentRoute = createRoute({ getParentRoute: () => rootRoute, path: '/oauth/consentimiento', component: Consent })
 const joinRoute = createRoute({ getParentRoute: () => rootRoute, path: '/unirse/$secret', component: Join })
 const bootstrapRoute = createRoute({ getParentRoute: () => rootRoute, path: '/arranque/$secret', component: Bootstrap })
@@ -34,6 +45,8 @@ const routeTree = rootRoute.addChildren([
   worldsRoute,
   worldRoute,
   campaignRoute,
+  worldHistoryRoute,
+  historyRoute,
   consentRoute,
   bootstrapRoute,
   joinRoute

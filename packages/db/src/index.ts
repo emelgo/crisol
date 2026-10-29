@@ -10,6 +10,7 @@ export {
 } from './operation.ts'
 export * as bootstrapRepo from './repos/bootstrap.ts'
 export * as campaignsRepo from './repos/campaigns.ts'
+export * as historyRepo from './repos/history.ts'
 export * as invitationsRepo from './repos/invitations.ts'
 export * as membersRepo from './repos/members.ts'
 export { isOwner, listMemberOrganizations, loadMemberships, type Memberships } from './repos/memberships.ts'

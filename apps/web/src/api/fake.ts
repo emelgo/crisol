@@ -1,5 +1,5 @@
 /** API en memoria para las pruebas de componentes: mundos, campañas y sus miembros de una organización */
-import type { Campaign, Invitation, Member, Organization, World } from '@crisol/contracts'
+import type { Campaign, HistoryEntry, Invitation, Member, Organization, World } from '@crisol/contracts'
 import { type ActionInput, type ActionName, type ActionOutput, type ApiClient, ApiError } from './client.ts'
 
 export function fakeApi(
@@ -9,11 +9,14 @@ export function fakeApi(
     campaigns?: Campaign[]
     /** Por campaña */
     members?: Record<string, Member[]>
+    /** De lo más reciente a lo más antiguo */
+    history?: HistoryEntry[]
   } = {}
 ) {
   const organizations = options.organizations ?? []
   const worlds = [...(options.worlds ?? [])]
   const campaigns = [...(options.campaigns ?? [])]
+  const history = [...(options.history ?? [])]
   const members = new Map(Object.entries(options.members ?? {}).map(([id, list]) => [id, [...list]]))
   const membersOf = (campaignId: string) => ({ members: (members.get(campaignId) ?? []).map((m) => ({ ...m })) })
   const calls: string[] = []
@@ -94,6 +97,15 @@ export function fakeApi(
       )
       return membersOf(campaignId)
     },
+    // Como el servidor: el de un mundo, para su máster; el de la organización, para su propietario
+    listHistory: ({ worldId, before, limit = 50 }) => {
+      if (worldId && worlds.find((w) => w.id === worldId)?.role !== 'master') throw new ApiError('FORBIDDEN', 403)
+      if (!worldId && !organizations.some((o) => o.role === 'owner')) throw new ApiError('ORGANIZATION_REQUIRED', 400)
+      const scoped = history.filter((e) => !worldId || e.worldId === worldId)
+      const start = before ? scoped.findIndex((e) => e.id === before) + 1 : 0
+      const entries = scoped.slice(start, start + limit).map((e) => ({ ...e }))
+      return { entries, next: start + limit < scoped.length ? (entries.at(-1)?.id ?? null) : null }
+    },
     // Quien sale deja de ver la campaña
     leaveCampaign: ({ campaignId }) => {
       const index = campaigns.findIndex((c) => c.id === campaignId)
@@ -109,5 +121,5 @@ export function fakeApi(
       return handlers[name](input as never) as never
     }
   }
-  return { client, calls, worlds, campaigns }
+  return { client, calls, worlds, campaigns, history }
 }

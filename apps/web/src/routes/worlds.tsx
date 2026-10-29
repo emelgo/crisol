@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Navigate } from '@tanstack/react-router'
+import { Link, Navigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
@@ -31,6 +31,11 @@ export function Worlds() {
   return (
     <section>
       <h1>{t('worlds.title')}</h1>
+      {canCreate && (
+        <p>
+          <Link to="/historial">{t('history.organizationLink')}</Link>
+        </p>
+      )}
       {worlds.data &&
         (worlds.data.worlds.length === 0 ? (
           <p>{t('worlds.empty')}</p>

@@ -47,6 +47,13 @@ export function WorldPage() {
         <Link to="/mundos">{t('worlds.title')}</Link>
       </p>
       <h1>{world.name}</h1>
+      {world.role === 'master' && (
+        <p>
+          <Link to="/mundos/$worldId/historial" params={{ worldId }}>
+            {t('history.title')}
+          </Link>
+        </p>
+      )}
       <h2>{t('campaigns.title')}</h2>
       {campaigns.data &&
         (campaigns.data.campaigns.length === 0 ? (

@@ -100,7 +100,25 @@ describe('authorize', () => {
       campaign,
       'prohíbe'
     ],
-    ['nadie sale de una campaña que no ve', player, 'campaign.leave', otherCampaign, 'no lo ve']
+    ['nadie sale de una campaña que no ve', player, 'campaign.leave', otherCampaign, 'no lo ve'],
+    ['el máster ve el historial de su mundo', owner, 'world.history', { worldId: WORLD }, 'permite'],
+    ['un jugador no ve el historial del mundo en el que juega', player, 'world.history', { worldId: WORLD }, 'prohíbe'],
+    ['nadie ve el historial de un mundo ajeno', outsider, 'world.history', { worldId: WORLD }, 'no lo ve'],
+    [
+      'el propietario ve el historial de la organización',
+      owner,
+      'organization.history',
+      { organizationId: ORG },
+      'permite'
+    ],
+    [
+      'un miembro no ve el historial de la organización',
+      member,
+      'organization.history',
+      { organizationId: ORG },
+      'prohíbe'
+    ],
+    ['nadie ve el de otra organización', outsider, 'organization.history', { organizationId: ORG }, 'no lo ve']
   ]
 
   it.each(cases)('%s', (_, who, capability, target, expected) => {

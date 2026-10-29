@@ -13,8 +13,12 @@ const NoticesContext = createContext<{ notices: JoinNotice[]; dismiss(id: string
   newVersion: false
 })
 
-/** Qué consultas de la web hay que volver a pedir con cada aviso */
+/** Qué consultas de la web hay que volver a pedir con cada aviso. El historial, con cualquier cambio */
 export function queriesFor(message: RealtimeMessage): QueryKey[] {
+  return message.type === 'hello' ? [] : [...changedBy(message), ['history']]
+}
+
+function changedBy(message: RealtimeMessage): QueryKey[] {
   switch (message.type) {
     case 'changed':
       if (message.what === 'worlds') return [['worlds']]

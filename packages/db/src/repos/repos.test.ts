@@ -8,6 +8,7 @@ import { bootstrapTokens, organizationMembers, organizations } from '../schema/o
 import { freshTestDatabase, resetDatabase } from '../testing.ts'
 import * as bootstrap from './bootstrap.ts'
 import * as campaignsRepo from './campaigns.ts'
+import * as historyRepo from './history.ts'
 import * as invitationsRepo from './invitations.ts'
 import * as membersRepo from './members.ts'
 import { isOwner, listMemberOrganizations, loadMemberships } from './memberships.ts'
@@ -359,6 +360,61 @@ describe('repositorios', () => {
       expect(await remove(c, 'u2')).toEqual({ status: 'not-member' })
       expect(await conn.db.select().from(operations)).toHaveLength(before)
       expect(await membersRepo.listCampaignMembers(conn.db, c)).toHaveLength(1)
+    })
+  })
+
+  describe('historial', () => {
+    /** Dos mundos con unas cuantas operaciones, en orden */
+    const setup = async () => {
+      const eana = await worldsRepo.createWorldWithMaster(conn.db, ui('createWorld'), {
+        organizationId,
+        name: 'Eana',
+        masterId: 'u1'
+      })
+      const other = await worldsRepo.createWorldWithMaster(conn.db, ui('createWorld'), {
+        organizationId,
+        name: 'Otro',
+        masterId: 'u1'
+      })
+      for (const name of ['Eana 2', 'Eana 3']) {
+        await worldsRepo.renameWorld(conn.db, { ...ui('renameWorld'), details: { to: name } }, eana.id, name)
+      }
+      return { eana, other }
+    }
+
+    it('las operaciones de un mundo, de la más reciente a la más antigua, con quién las hizo', async () => {
+      const { eana } = await setup()
+      const ops = await historyRepo.listOperations(conn.db, { worldId: eana.id, limit: 10 })
+      expect(ops.map((op) => op.action)).toEqual(['renameWorld', 'renameWorld', 'createWorld'])
+      expect(ops[0]).toMatchObject({ actorId: 'u1', actorName: 'Enrique', via: 'ui', tool: null, worldId: eana.id })
+      expect(ops[0]?.details).toEqual({ to: 'Eana 3' })
+    })
+
+    it('las de la organización incluyen todos sus mundos', async () => {
+      await setup()
+      const ops = await historyRepo.listOperations(conn.db, { organizationId, limit: 10 })
+      expect(ops).toHaveLength(4)
+    })
+
+    it('se pagina con la última que se vio, sin repetir ni saltarse ninguna', async () => {
+      const { eana } = await setup()
+      const first = await historyRepo.listOperations(conn.db, { worldId: eana.id, limit: 2 })
+      const rest = await historyRepo.listOperations(conn.db, {
+        worldId: eana.id,
+        limit: 2,
+        before: first.at(-1)?.id ?? ''
+      })
+      expect([...first, ...rest].map((op) => op.id)).toEqual(
+        (await historyRepo.listOperations(conn.db, { worldId: eana.id, limit: 10 })).map((op) => op.id)
+      )
+      expect(rest).toHaveLength(1)
+    })
+
+    it('las del sistema y las de una cuenta borrada salen sin nombre', async () => {
+      const { eana } = await setup()
+      await conn.db.delete(user).where(eq(user.id, 'u1'))
+      const ops = await historyRepo.listOperations(conn.db, { worldId: eana.id, limit: 1 })
+      expect(ops[0]).toMatchObject({ actorId: null, actorName: null })
     })
   })
 
