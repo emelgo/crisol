@@ -1,279 +1,332 @@
-# Tareas: Módulo 0 — Fundación
+# Tareas: Módulo 1 — Wiki
 
-Plan: `tasks/plan.md` · Spec: `docs/specs/fundacion.md`. Cada tarea: rama corta → TDD → PR → merge con CI verde.
-Comprobación local al acabar cada tarea: `pnpm lint && pnpm typecheck && pnpm test` (+ `pnpm e2e` si toca interfaz).
+Plan: `tasks/plan.md` · Spec: `docs/specs/wiki.md` · ADR-0003. Cada tarea: rama corta → TDD → PR → merge con la CI en
+verde → `scripts/desplegar-staging.sh` → «Dónde estamos» al día.
 
-## Fase 1: Plataforma
+Comprobación local al acabar cada tarea: `pnpm lint && pnpm typecheck && pnpm test`, y `pnpm e2e` si toca la interfaz.
+Cada vía nueva por la que salen datos amplía `@fugas` en la misma tarea.
 
-- [x] **1. Esqueleto del monorepo con sala limpia y licencias**
+## Fase 1: Páginas
+
+- [ ] **1. Páginas y árbol en la API**
   - Acepta:
-    - `pnpm install && pnpm lint && pnpm typecheck && pnpm test` en verde.
-    - La prueba de sala limpia falla con un fichero de ejemplo que importa `research/`.
-    - El script de licencias falla con un paquete GPL de ejemplo.
-  - Comprueba: los comandos anteriores, con los dos casos de fallo cubiertos por pruebas.
-  - Archivos:
-    - `package.json`, `pnpm-workspace.yaml`, `turbo.json`.
-    - `biome.json`, `tsconfig.base.json`.
-    - `scripts/licencias.ts` (+ prueba), `scripts/sala-limpia.test.ts`.
+    - La tabla `pages` está en `TRACKED_TABLES` (mundo, padre, orden, título, icono, portada, propiedades, candado,
+      hoja, `deleted_at`).
+    - Acciones `createPage`, `updatePage` (título), `movePage`, `getPage`, `listPageChildren` y `getPagePath`.
+      Mover nunca deja una página dentro de sí misma y el orden usa claves fraccionarias.
+    - Solo leen y escriben el máster del mundo y el propietario. El canal avisa con `changed pages`.
+    - MCP: `ver_arbol` y `mover_pagina`.
+  - Comprueba:
+    - dominio: claves de orden y ciclos;
+    - integración: crear, mover y deshacer;
+    - MCP: las dos herramientas en cada modo;
+    - `@fugas`: un jugador no lista ni lee páginas.
+  - Archivos: `packages/db/src/schema/pages.ts` (+ migración), `packages/domain/src/{tree,order}.ts`,
+    `packages/contracts/src/pages.ts`, `apps/server/src/actions/pages.ts`, `apps/server/src/mcp/tools.ts`.
 
-- [x] **2. CI con todo el listón**
+- [ ] **2. El árbol en la web**
   - Acepta:
-    - Un PR muestra: Biome, `tsc`, Vitest con cobertura, gitleaks, licencias, sala limpia, semgrep, osv-scanner y
-      dependency-cruiser.
-    - Las comprobaciones que avisan pasan a bloquear solas a partir del 2026-11-12.
-    - Reglas de límites: el cliente no importa el servidor; el dominio no importa React ni Fastify; nada importa
-      `research/`.
-  - Comprueba: un PR de prueba con un fallo a propósito queda en rojo; quitándolo, en verde.
-  - Archivos: `.github/workflows/ci.yml`, `.dependency-cruiser.cjs`, `scripts/cobertura-diff.ts`.
-  - Pide a Enrique: proteger `main`.
+    - `/mundos/:worldId/wiki/:pageId?` con el árbol a la izquierda. Carga por ramas, está virtualizado y sigue el
+      patrón ARIA de árbol.
+    - Crear una página o una subpágina, y el título en línea.
+    - Recolocar arrastrando y con Alt + flechas.
+    - En el móvil, el árbol va en un cajón. Se pone al día con `changed pages`.
+  - Comprueba: pruebas de componentes (teclado y ARIA) y e2e (crear, renombrar, mover) con axe.
+  - Archivos: `apps/web/src/wiki/{tree,page}.tsx` (+ módulos CSS), `apps/web/src/router.tsx`, `apps/web/src/i18n.ts`,
+    `e2e/tests/wiki.spec.ts`.
 
-- [x] **3. Servidor, base de datos y Compose de desarrollo**
+- [ ] **3. Propiedades, alias, etiquetas e icono**
   - Acepta:
-    - `pnpm dev` levanta Postgres 17, Valkey y Mailpit (en loopback), y el servidor.
-    - `GET /api/health` da 200 si Postgres y Valkey responden, y 503 si no.
-    - La configuración se valida con zod al arrancar.
-    - La primera migración activa `unaccent` y `pg_trgm`.
-  - Comprueba: prueba de integración contra Postgres real, en local y en la CI (contenedores de servicio).
-  - Archivos: `compose.yaml`, `apps/server/src/{app,config}.ts`, `packages/db/{drizzle.config.ts,src/client.ts}`,
-    `.env.example`.
+    - Las propiedades son de tipo texto, número, sí/no, lista o enlace a página, y se ordenan a mano. `alias`,
+      `etiquetas` (con jerarquía por «/») y `resumen` son reservadas.
+    - El icono es un emoji.
+    - El panel de etiquetas (`/mundos/:worldId/etiquetas`) dice cuántas páginas tiene cada una.
+  - Comprueba: zod de cada tipo, integración (cambiar y deshacer propiedades) y e2e.
+  - Archivos: `packages/contracts/src/pages.ts`, `packages/domain/src/properties.ts`,
+    `apps/web/src/wiki/properties.tsx`, `apps/web/src/routes/tags.tsx`.
 
-- [x] **4. Web mínima servida por el servidor, e2e y axe**
+- [ ] **4. Papelera de páginas**
   - Acepta:
-    - React + TanStack Router y Query + i18next (español) + temas claro y oscuro.
-    - En producción la sirve el servidor, con vuelta al SPA.
-    - La e2e abre `/` en los dos temas y axe no da fallos críticos ni graves.
-  - Comprueba: `pnpm e2e` en local y en la CI.
-  - Archivos: `apps/web/src/{main,router,i18n}.tsx`, `apps/web/src/estilos/tokens.css`, `apps/server/src/web.ts`,
-    `e2e/inicio.spec.ts`.
+    - Borrar manda a la papelera la página y sus subpáginas en una sola operación, y deshacer las devuelve.
+    - Las páginas salen en la papelera del mundo y se restauran desde ahí.
+    - La purga de 30 días las incluye.
+    - MCP: `borrar_pagina`, de tipo `delete`.
+  - Comprueba: integración (borrar una rama, restaurar, purgar con el reloj simulado) y e2e.
+  - Archivos: `apps/server/src/actions/{pages,trash}.ts`, `apps/server/src/jobs/purges.ts`,
+    `apps/web/src/routes/trash.tsx`.
 
-- [x] **5. Imagen Docker y staging** — permiso de Caddy dado por Enrique el 2026-10-29
+- [ ] **5. Pestañas, marcadores y navegación**
   - Acepta:
-    - Imagen de varias etapas.
-    - `compose.prod.yaml` con la app, Postgres y Valkey solo en loopback y con límites de memoria.
-    - `scripts/desplegar-staging.sh` construye, migra, reinicia y comprueba `/api/health`.
-    - El sitio de Caddy sirve `https://neo.crisol.144-91-122-245.sslip.io`.
-  - Comprueba: `/api/health` desde fuera; `ss -ltnp` sin puertos nuevos expuestos; desplegar dos veces seguidas no
-    rompe nada.
-  - Archivos: `Dockerfile`, `compose.prod.yaml`, `scripts/desplegar-staging.sh`, sitio de Caddy (fuera del repo).
+    - Pestañas que se pueden fijar, y marcadores con grupos. Se guardan en `wiki_preferences`, por cuenta y mundo, y
+      no van al historial.
+    - Migas de pan, y anterior y siguiente entre páginas hermanas.
+    - En el móvil, la lista de recientes en lugar de pestañas.
+  - Comprueba: integración de las preferencias, pruebas de componentes y e2e.
+  - Archivos: `packages/db/src/schema/wiki-preferences.ts`, `apps/server/src/actions/preferences.ts`,
+    `apps/web/src/wiki/{tabs,bookmarks,breadcrumbs}.tsx`.
 
 ### Punto de control 1
-- [ ] CI en verde; staging responde; Enrique lo ha visto.
 
-## Fase 2: Cuentas
+- [ ] CI en verde. En staging, Enrique crea un árbol, lo recoloca, le pone propiedades y lo manda a la papelera.
 
-- [x] **6. Arranque y cuenta del propietario (servidor)** — el registro ya queda cerrado aquí (puerta en `auth/signup-gate.ts`)
+## Fase 2: Editor
+
+- [ ] **6. Documentos de Yjs en el servidor**
   - Acepta:
-    - Better Auth con Drizzle, sesiones en Postgres (30 días que se renuevan), cookies `HttpOnly`, `Secure` y
-      `SameSite=Lax`, y límite de intentos.
-    - `pnpm crisol arranque --org "…"` crea la organización y un enlace de un solo uso (hash, 24 h).
-    - Con ese enlace se crea la cuenta y queda como `propietario`.
-    - El enlace no sirve dos veces.
-  - Comprueba: pruebas de integración (arranque, alta, reutilización rechazada, la sesión sobrevive a un reinicio).
-  - Archivos: `packages/db/src/schema/{auth,organizaciones}.ts`, `apps/server/src/auth.ts`,
-    `apps/server/src/cli/arranque.ts`.
-
-- [x] **7. Entrar, salir y arranque en la web**
-  - Acepta:
-    - Páginas de entrar, de arranque y de perfil (nombre visible); botón de salir.
-    - Errores claros y sin decir si el email existe.
-  - Comprueba: e2e de arranque → crear cuenta → salir → entrar; axe.
-  - Archivos: `apps/web/src/rutas/{entrar,arranque,perfil}.tsx`, `e2e/cuentas.spec.ts`.
-
-- [x] **8. Registro cerrado: pase de alta** — la puerta se hizo en la tarea 6; el pase por cookie (alta social e invitaciones) va con las tareas 14 y 15
-  - Acepta:
-    - Un gancho de Better Auth rechaza crear usuarios sin un «pase de alta», una cookie firmada de vida corta que se
-      pone al abrir un enlace válido (de arranque o de invitación).
-    - Cubre el alta por email y la social.
-  - Comprueba: una prueba por cada vía de alta, con y sin pase.
-  - Archivos: `apps/server/src/auth/pase-de-alta.ts` (+ prueba), `apps/server/src/auth.ts`.
-  - Antes: confirmar en la documentación de Better Auth que el gancho ve la petición también en el alta social (si no,
-    alta social implícita desactivada).
-
-## Fase 3: Inquilinos (con historial desde la primera escritura)
-
-- [x] **9. Núcleo de escritura: políticas, operaciones y mundos**
-  - Acepta:
-    - `defineAction` en `contracts` y la ruta genérica `POST /api/actions/:name` con OpenAPI.
-    - Tabla de capacidades → roles por ámbito en `domain`, y el actor cargado en cada petición.
-    - `operation()` en `db`: transacción, cambios con antes y después, `version` y autoría en cada fila.
-    - Acciones `createWorld` y `renameWorld`.
-    - El arranque (tarea 6) pasa también por `operation()`: crea organización y pertenencia.
+    - Hocuspocus 4 en `/api/collab`: comprueba el origen y la sesión, y la política de cada documento. Sin permiso de
+      escritura, abre en solo lectura; si la página está en la papelera, no abre.
+    - La tabla `documents` guarda el estado. Guardar es fusionar con `Y.mergeUpdates`, con espera y un máximo.
+    - Límites: 4 MB por estado y 1 MB por mensaje.
+    - Las conexiones se cierran al perder el permiso. `dependentRow` mira solo `TRACKED_TABLES`.
   - Comprueba:
-    - Matriz de políticas (propietario, miembro, máster, jugador y ajeno × acción × misma u otra organización).
-    - Crear un mundo da 1 operación con 2 cambios.
-    - Un fallo a mitad no deja nada.
-    - Ninguna escritura de Drizzle fuera de `db` (dependency-cruiser).
-  - Archivos: `packages/contracts/src/{acciones,mundos}.ts`, `packages/domain/src/politicas.ts`,
-    `packages/db/src/{operacion.ts,schema/mundos.ts}`, `apps/server/src/acciones.ts`.
+    - integración con dos `HocuspocusProvider` en Node y una conexión directa: convergen, y guardar en cualquier
+      orden no pierde nada;
+    - `@fugas`: un jugador no abre ningún documento.
+  - Archivos: `packages/db/src/schema/documents.ts`, `apps/server/src/collab/{server,auth,persistence}.ts`,
+    `packages/db/src/repos/undo.ts`, `e2e/tests/fugas.spec.ts`.
 
-- [x] **10. Mundos en la interfaz**
-  - Acepta: «Mis mundos» con crear y renombrar, desde un cliente tipado sacado de los contratos.
-  - Comprueba: e2e + axe.
-  - Archivos: `apps/web/src/{cliente.ts,rutas/mundos.tsx}`, `e2e/mundos.spec.ts`.
-
-- [x] **11. MCP con OAuth y `listar_mundos`, probado desde claude.ai** — falta que Enrique lo conecte (punto de control 2)
+- [ ] **7. El editor en la web**
   - Acepta:
-    - Plugins `mcp`, `jwt` y `cimd` de Better Auth, con páginas de entrar y de consentimiento.
-    - `/mcp` con Streamable HTTP; sin token responde 401 con los metadatos del recurso.
-    - Solo el propietario puede autorizar.
-    - La herramienta sale del contrato y pasa por la proyección.
+    - `packages/editor` con el esquema base: texto, títulos, listas, casillas, cita, código y separador.
+    - El cuerpo de la página, editable con TipTap y Collaboration, con los cursores con nombre.
+    - El candado pone el editor en lectura.
+    - Sin conexión, sale «Sin conexión: se guardará al volver».
+  - Comprueba: e2e con dos pestañas que convergen y con el aviso al cortar la red.
+  - Archivos: `packages/editor/src/{schema,index}.ts`, `apps/web/src/wiki/{editor,collab}.tsx`,
+    `.dependency-cruiser.cjs`.
+
+- [ ] **8. Secretos y notas ocultas (riesgo)**
+  - Acepta:
+    - Cada secreto y cada nota oculta es su documento aparte (`documents` de tipo `secret` o `note`), con un editor
+      anidado.
+    - Se ven marcados. Se convierten en bloque normal y al revés. Copiarlos a otra página crea otro documento.
+    - Ctrl+Z va por documento.
+    - Una prueba garantiza que el estado guardado del cuerpo nunca lleva el texto de sus secretos.
   - Comprueba:
-    - Prueba con un cliente del SDK (OAuth + herramienta).
-    - Un no propietario recibe un rechazo.
-    - **Enrique añade el conector en claude.ai y le pide los mundos.**
-  - Archivos: `apps/server/src/mcp/{servidor,herramientas}.ts`, `apps/server/src/auth.ts`,
-    `apps/web/src/rutas/consentimiento.tsx`.
+    - e2e de una página con dos secretos mientras una conexión directa escribe en ella, como hará Claude;
+    - foco y teclado al entrar y salir del secreto.
+  - Archivos: `packages/editor/src/nodes/secret.ts`, `apps/web/src/wiki/nodes/secret.tsx`,
+    `apps/server/src/collab/documents.ts`, `apps/server/src/actions/secrets.ts`.
 
-### Punto de control 2
-- [x] Claude lista los mundos desde claude.ai; el historial registra cada escritura. (Enrique, 2026-10-29: cliente CIMD de claude.ai)
+### Punto de control 2 (riesgo)
 
-- [x] **12. Campañas**
-  - Acepta: `createCampaign` y `renameCampaign`; quien la crea queda como `master` en `campaign_members`; página del
-    mundo con sus campañas.
-  - Comprueba: políticas, integración y e2e.
-  - Archivos: `packages/contracts/src/campanas.ts`, `packages/db/src/schema/campanas.ts`,
-    `apps/server/src/servicios/campanas.ts`, `apps/web/src/rutas/mundo.tsx`.
+- [ ] Enrique prueba el editor y los secretos en staging. Si el editor anidado no va bien, se para y se decide con él
+  el plan B del plan: editar el secreto en un panel propio.
 
-- [x] **13. Enlace de invitación: gestión** — el secreto se guarda cifrado además del hash, para poder verlo siempre (decidido con Enrique)
+- [ ] **9. Todos los bloques y marcas**
   - Acepta:
-    - Secreto de 256 bits y solo su hash en la base de datos, uno activo por campaña.
-    - Ver el enlace, «Nuevo enlace» (con aviso) y abrir o cerrar las invitaciones.
-    - La fecha y el número de entradas a la vista.
-    - Un jugador no ve el enlace.
-  - Comprueba: regenerar invalida el anterior; nada en claro en la base de datos; políticas.
-  - Archivos: `packages/contracts/src/invitaciones.ts`, `packages/db/src/schema/invitaciones.ts`,
-    `apps/server/src/servicios/invitaciones.ts`, `apps/web/src/rutas/campana.tsx`.
+    - El menú «/» con filtro y todos los bloques de la spec, menos imagen, archivo e incrustado (llegan en las
+      tareas 19 y 15).
+    - Las marcas, los atajos de Markdown, la barra al seleccionar y el asa de arrastre con su menú.
+    - Ids de bloque estables (`unique-id`).
+    - Pegar HTML pasa por el esquema.
+  - Comprueba: pruebas del esquema (pegar HTML sucio) y e2e del menú «/» con el teclado.
+  - Archivos: `packages/editor/src/nodes/*.ts`, `apps/web/src/wiki/{slash-menu,bubble-menu,drag-handle}.tsx`.
 
-- [x] **14. Unirse con el enlace** — crear la cuenta une en la misma petición (el enlace es el pase de alta); el pase por cookie solo hará falta para Google y Discord (tarea 15)
-  - Acepta:
-    - `/unirse/:secreto` no cambia nada al abrirse (GET); vista previa genérica y `noindex`.
-    - Confirmar es un POST.
-    - Sin sesión: alta o entrada con pase y vuelta sola a la confirmación.
-    - Si ya es miembro, a la campaña; si es el máster, aviso.
-    - El mismo error para un enlace desconocido, anulado o cerrado, con límite de intentos.
-  - Comprueba: e2e de jugador nuevo con email; un GET como el de un bot no une a nadie; enlace cerrado o regenerado.
-  - Archivos: `apps/server/src/servicios/unirse.ts`, `apps/web/src/rutas/unirse.tsx`, `e2e/unirse.spec.ts`.
+## Fase 3: Markdown y Claude
 
-- [ ] **15. Discord y Google, vinculación de cuentas** — **pospuesta** (Enrique, 2026-10-29): en el módulo 0 se
-  entra solo con email y contraseña. Queda para cuando haya apps OAuth y correo (preguntas 1 y 2); las variables
-  están comentadas en `.env.example`
+- [ ] **10. El Markdown, de ida y vuelta**
   - Acepta:
-    - Cada proveedor se activa por `.env`.
-    - Se vincula solo con emails verificados en los dos lados.
-    - Se vuelve a la confirmación tras OAuth.
-    - Aviso de navegador integrado con «Abrir en el navegador».
-  - Comprueba: pruebas de las reglas de vinculación y de detección del navegador integrado; prueba manual en staging
-    con Discord.
-  - Archivos: `apps/server/src/auth.ts`, `apps/web/src/componentes/navegador-integrado.tsx` (+ prueba).
+    - Cada nodo y marca declara su forma en Markdown (la tabla de la spec), con `@tiptap/markdown` en el servidor.
+    - Al leer, `> [!secreto]` y `%%…%%` devuelven el cuerpo y aparte los documentos de sus secretos.
+    - Las propiedades van en YAML.
+  - Comprueba: la prueba de ida y vuelta de cada nodo y marca. Un nodo sin su forma en Markdown hace fallar la prueba.
+  - Archivos: `packages/editor/src/markdown/{serialize,parse,frontmatter}.ts` (+ pruebas).
 
-- [x] **16. Miembros: ver, expulsar y salir**
+- [ ] **11. Claude lee y escribe páginas**
   - Acepta:
-    - El máster ve los miembros y expulsa; el jugador ve a sus compañeros y puede salir.
-    - Si a alguien no le queda ninguna campaña en la organización, deja de ser miembro de ella.
-  - Comprueba: políticas, integración y e2e.
-  - Archivos: `packages/contracts/src/miembros.ts`, `apps/server/src/servicios/miembros.ts`,
-    `apps/web/src/rutas/campana.tsx`.
-
-- [x] **17. Canal en tiempo real proyectado y revocación**
-  - Acepta:
-    - WebSocket por sesión, con un bus en el proceso; cada evento pasa la política de su destinatario.
-    - Expulsar, salir o cambiar un rol cierra las suscripciones de esa cuenta en ese ámbito.
-    - El máster recibe el aviso «X ha entrado» y el cliente invalida sus consultas.
-  - Comprueba: un expulsado con el socket abierto deja de recibir y de poder escribir; aviso de entrada.
-  - Archivos: `apps/server/src/tiempo-real.ts` (+ prueba), `apps/web/src/tiempo-real.ts`.
-
-- [x] **18. Prueba de fugas en la CI** — sin «deshace»: llega con la 20, que amplía la prueba
-  - Acepta:
-    - Un jugador captura las respuestas HTTP y los mensajes del WebSocket mientras el máster crea la campaña B,
-      regenera enlaces y deshace.
-    - No aparecen ni el nombre ni el id de B, ni secretos de enlace, ni el historial.
-    - Un jugador no puede autorizar el MCP.
-  - Comprueba: la prueba bloquea en la CI y falla si se mete una fuga a propósito.
-  - Archivos: `e2e/fugas.spec.ts`, `.github/workflows/ci.yml`.
+    - MCP: `leer_pagina`, `crear_paginas` (hasta 50, anidables, en una operación) y `editar_pagina` (añadir, un
+      bloque o una sección, todo el cuerpo, título y propiedades).
+    - Si la página está abierta, el cambio entra en vivo por una conexión directa y se resalta.
+    - Lo que espera aprobación guarda su huella de partida. Si ya no se puede aplicar, queda `failed`.
+  - Comprueba:
+    - MCP: cada herramienta en cada modo;
+    - e2e: Claude edita una sección de una página abierta y se ve sin recargar;
+    - `@fugas` del MCP.
+  - Archivos: `apps/server/src/wiki/{write,apply}.ts`, `apps/server/src/mcp/tools.ts`,
+    `packages/contracts/src/pages.ts`, `e2e/tests/claude-wiki.spec.ts`.
 
 ### Punto de control 3
-- [x] Criterios 2 y 3 de la spec, en staging (2026-10-29, salvo entrar con Discord, pospuesto con la 15).
 
-## Fase 4: Historial
+- [ ] Desde claude.ai, Claude crea varias páginas con secretos y edita una que Enrique tiene abierta.
 
-- [x] **19. Ver el historial**
-  - Acepta: lista de operaciones (quién, cuándo, por dónde, herramienta, resumen) por mundo para su máster y de toda
-    la organización para el propietario, con paginación.
-  - Comprueba: políticas (un jugador no lo ve), integración y e2e.
-  - Archivos: `packages/contracts/src/historial.ts`, `apps/server/src/servicios/historial.ts`,
-    `apps/web/src/rutas/historial.tsx`.
-
-- [x] **20. Deshacer una operación**
+- [ ] **12. Exportar**
   - Acepta:
-    - Aplica los cambios inversos como una operación nueva (que a su vez se puede deshacer).
-    - Si hay conflicto de versión, no toca nada y dice qué operación posterior lo causó.
-    - Pasa por la política con los permisos actuales.
-  - Comprueba: pruebas de dominio (crear, renombrar, unir o expulsar, deshacer lo deshecho, conflicto) y e2e. Amplía
-    `e2e/tests/fugas.spec.ts`: el máster deshace mientras la jugadora escucha.
-  - Archivos: `packages/domain/src/deshacer.ts` (+ prueba), `packages/db/src/operacion.ts`,
-    `apps/web/src/rutas/historial.tsx`.
+    - Exportar una página, una rama o el mundo entero en .zip (`Página/Página.md`), con `fflate`.
+    - Los enlaces salen con el título del momento, con la ruta si dos se llaman igual.
+    - Pasa por la proyección.
+  - Comprueba: integración (exportar un mundo de prueba y volver a leerlo da lo mismo) y e2e de la descarga.
+  - Archivos: `apps/server/src/wiki/export.ts`, `packages/contracts/src/pages.ts`, `apps/web/src/wiki/export.tsx`.
 
-- [x] **21. Papelera y purgas**
+## Fase 4: Enlaces
+
+- [ ] **13. Enlaces por id, sin resolver y rotos**
   - Acepta:
-    - Borrar un mundo o una campaña es un borrado blando que desaparece de las vistas.
-    - Papelera con «Restaurar» (la misma fila).
-    - Trabajos diarios de BullMQ: purgar la papelera pasados 30 días y las operaciones pasados 90.
-  - Comprueba: pruebas con reloj simulado; e2e de borrar y restaurar.
-  - Archivos: `apps/server/src/servicios/papelera.ts`, `apps/server/src/trabajos/purgas.ts` (+ prueba),
-    `apps/web/src/rutas/papelera.tsx`.
+    - `[[` sugiere por título y alias, con erratas, y ofrece «Crear página «X»».
+    - Los enlaces van a una página, una sección o un bloque, por id.
+    - Lo que no existe queda sin resolver y se resuelve solo al crear, renombrar o poner un alias. Lo que está en la
+      papelera se ve roto.
+    - `page_links` se rehace al guardar, con el documento de origen.
+  - Comprueba: dominio (resolución con repetidos y alias), integración (orden cualquiera) y e2e.
+  - Archivos: `packages/editor/src/nodes/link.ts`, `packages/domain/src/links.ts`, `apps/server/src/wiki/links.ts`,
+    `apps/web/src/wiki/link-suggest.tsx`.
+
+- [ ] **14. Entrantes, menciones y aviso al borrar**
+  - Acepta:
+    - Un panel con los entrantes (con su fragmento) y las menciones sin enlazar, con «Enlazar» de un clic.
+    - Borrar avisa: «La enlazan N páginas».
+    - MCP: `enlaces_pagina`, con los enlaces sin resolver del mundo.
+  - Comprueba: integración, MCP y e2e.
+  - Archivos: `apps/server/src/actions/links.ts`, `apps/web/src/wiki/backlinks.tsx`, `apps/server/src/mcp/tools.ts`.
+
+- [ ] **15. Vista previa e incrustados**
+  - Acepta:
+    - La vista previa sale a los 300 ms o con el foco, anclada, y se puede entrar en ella. Escape la cierra. En el
+      móvil, en una hoja inferior. Si el enlace va a una sección, enseña esa sección.
+    - Los incrustados van en solo lectura, hasta 3 niveles, con aviso de ciclo.
+    - Las dos salen de la API, que proyecta, con caché hasta el aviso del canal.
+  - Comprueba: pruebas de componentes (teclado y Escape), e2e en escritorio y en el móvil, y `@fugas` de la vista
+    previa.
+  - Archivos: `apps/server/src/actions/preview.ts`, `apps/web/src/wiki/{preview,embed}.tsx`,
+    `packages/editor/src/nodes/embed.ts`.
+
+## Fase 5: Versiones
+
+- [ ] **16. Sesiones de edición en el historial**
+  - Acepta:
+    - La sesión se abre con el primer cambio y se cierra por inactividad, a los 15 minutos, al cerrar la última
+      pestaña o antes de una operación del servidor.
+    - Al cerrarse, una operación `editPage` sobre `page_bodies` y una versión (`page_versions`, `version_documents`,
+      `snapshots`).
+    - Deshacer aplica la versión anterior hacia delante y detecta los conflictos.
+    - Si el servidor se paró con una sesión abierta, al cargar se cierra a nombre del último que escribió.
+  - Comprueba: integración con dos cuentas y Claude a la vez, deshacer con un editor abierto sin que vuelva lo viejo, y
+    la recuperación tras parar el servidor.
+  - Archivos: `packages/db/src/schema/versions.ts`, `apps/server/src/collab/sessions.ts`,
+    `packages/domain/src/undo.ts`, `packages/db/src/repos/undo.ts`, `apps/web/src/summaries.ts`.
+
+- [ ] **17. Versiones de página**
+  - Acepta:
+    - Un panel con la lista (quién, persona o Claude, y cuándo), «Ver» en solo lectura y «Restaurar», que también se
+      deshace.
+    - Se guardan 90 días, más las 40 últimas de cada página siempre.
+    - MCP: `versiones_pagina` y `restaurar_version`.
+  - Comprueba: integración (restaurar y purgar con el reloj simulado), MCP y e2e.
+  - Archivos: `apps/server/src/actions/versions.ts`, `apps/server/src/jobs/purges.ts`,
+    `apps/web/src/wiki/versions.tsx`.
 
 ### Punto de control 4
-- [x] Criterios 5 y 6 de la spec (Enrique, en staging el 2026-10-29; el 5 con `crear_campana` desde claude.ai).
 
-## Fase 5: IA
+- [ ] Enrique enlaza, ve la vista previa, restaura una versión y deshace lo que hizo Claude.
 
-- [x] **22. Modos de IA y cola de aprobación (servidor)** — la herramienta espera escuchando el bus del proceso; aprobar,
-  rechazar y cambiar el modo solo desde la interfaz; la caducidad se decide con la hora (no se guarda)
+## Fase 6: Archivos
+
+- [ ] **18. Archivos del mundo**
   - Acepta:
-    - Modo por usuario (copiloto por defecto) y la decisión según modo y tipo de acción.
-    - Aprobaciones en Postgres.
-    - La herramienta espera 15 s y luego contesta «esperando la aprobación»; caduca a las 24 h.
-    - Al aprobarse se ejecuta con la identidad del usuario y queda en el historial como hecho por la IA.
-  - Comprueba: pruebas de cada modo × tipo, de espera, caducidad (reloj simulado), aprobar y rechazar.
-  - Archivos: `packages/domain/src/modos-ia.ts`, `packages/db/src/schema/aprobaciones.ts`,
-    `apps/server/src/mcp/aprobaciones.ts`.
+    - Subir un archivo, varios o una carpeta, de hasta 250 MB, en streaming. `files` está en `TRACKED_TABLES` y el
+      disco va tras `Storage`.
+    - Se sirven en `/api/files/:id` con permiso, con caché privada y CSP `sandbox` para SVG.
+    - La pantalla `/mundos/:worldId/archivos` los ordena en carpetas por tipo, y deja renombrar, reemplazar y mandar a
+      la papelera.
+    - MCP: `listar_archivos`.
+  - Comprueba: integración (límite, permiso y papelera), `@fugas` de los archivos y e2e de la subida.
+  - Archivos: `packages/db/src/schema/files.ts`, `apps/server/src/files/{storage,routes}.ts`,
+    `apps/server/src/actions/files.ts`, `apps/web/src/routes/files.tsx`.
 
-- [x] **23. Cola y ajustes de IA en la interfaz** — la e2e pide por el MCP de verdad (ayuda `connectClaude`); la prueba de
-  fugas comprueba que la cola del máster no llega a la jugadora
+- [ ] **19. Archivos en las páginas**
   - Acepta:
-    - Ajustes de IA (modo y dirección del conector).
-    - Cola siempre a mano cuando hay algo pendiente, en menos de 2 s y sin recargar, con el detalle.
-    - Aprobar o rechazar.
-  - Comprueba: e2e (una acción de la IA pendiente aparece; se aprueba y se hace) + axe.
-  - Archivos: `apps/web/src/rutas/ajustes-ia.tsx`, `apps/web/src/componentes/cola-aprobacion.tsx`,
-    `e2e/aprobaciones.spec.ts`.
+    - El bloque de imagen, con pie, ancho, texto alternativo y caja de luz. Pegar o arrastrar una imagen la sube.
+    - La portada, con su encuadre.
+    - El bloque de archivo, con el visor de PDF (`pdfjs-dist`, cargado al hacer falta, con `#page`).
+    - Exportar lleva los archivos en `_archivos/`.
+  - Comprueba: e2e (pegar una imagen, abrir un PDF por la página 3) y la ida y vuelta de `![[…]]`.
+  - Archivos: `packages/editor/src/nodes/{image,file}.ts`, `apps/web/src/wiki/nodes/{image,file,pdf-viewer}.tsx`,
+    `apps/server/src/wiki/export.ts`.
 
-- [x] **24. Resto de herramientas MCP** — hecha antes que la 23, para que su e2e pase por el MCP de verdad. Dos acciones
-  nuevas: `listWorldsWithCampaigns` (`listar_mundos`) y `getCampaign` (`ver_campana`); `enlace_invitacion` lleva a una de
-  tres según `change`
-  - Acepta: `ver_campana`, `crear_mundo`, `crear_campana`, `enlace_invitacion`, `ver_historial`, `deshacer` y
-    `pendientes`, sacadas de los contratos y con su tipo.
-  - Comprueba: prueba con el cliente del SDK por herramienta × modo, y la proyección (lo que no se ve no sale).
-  - Archivos: `apps/server/src/mcp/herramientas.ts`, `packages/contracts/src/*.ts`.
+## Fase 7: Búsqueda
 
-- [x] **25. Cierre: criterios de éxito en staging, revisión y entrega** — revisión en tres partes (seguridad, servidor,
-  web); lo alto (la caché de una cuenta a la vista de la siguiente) y lo medio, arreglado (PR #31 y #33)
+- [ ] **20. Búsqueda en español**
   - Acepta:
-    - Los 8 criterios de la spec recorridos con Enrique en staging (claude.ai real) y el LCP medido.
-    - `/agent-skills:review` sin hallazgos altos.
-    - `docs/modulos.md` al día.
-  - Comprueba: lista de criterios marcada en este archivo.
-  - Archivos: `docs/modulos.md`, `README.md`.
+    - `search_documents` por documento, con `es_unaccent` y trigramas.
+    - Agrupa por página, con secciones y extracto. Filtra por etiqueta y rama, va paginada y marca lo que sale de un
+      secreto.
+    - La pantalla `/mundos/:worldId/buscar`.
+    - MCP: `buscar_paginas`.
+  - Comprueba:
+    - integración: «dragon» y «dargón» encuentran «Dragón»;
+    - rendimiento: el 95 % de las búsquedas, por debajo de 300 ms con 5.000 páginas sintéticas;
+    - `@fugas` de la búsqueda.
+  - Archivos: `packages/db/src/schema/search.ts` (+ migración de `es_unaccent`), `apps/server/src/wiki/search.ts`,
+    `apps/server/src/actions/search.ts`, `apps/web/src/routes/search.tsx`.
+
+- [ ] **21. Selector rápido, órdenes y buscar en la página**
+  - Acepta:
+    - Ctrl+K abre el selector: títulos y alias a los 250 ms, primero los recientes, y «Ver todos».
+    - «>» al principio pasa a la paleta de órdenes.
+    - Buscar en la página abierta resalta lo encontrado en el texto.
+  - Comprueba: pruebas de componentes (teclado y foco del diálogo) y e2e.
+  - Archivos: `apps/web/src/wiki/{quick-switcher,commands,find-in-page}.tsx`.
+
+### Punto de control 5
+
+- [ ] Enrique sube archivos, los usa en páginas, abre un PDF y busca en español.
+
+## Fase 8: Hojas
+
+- [ ] **22. Bloques de hoja**
+  - Acepta:
+    - Salto de página, salto de columna, statblock, nota lateral, el atributo «a lo ancho» e índice de contenidos,
+      cada uno con su forma en la vista sencilla y en Markdown (tabla de la spec).
+    - Un grupo «Hoja» en el menú «/».
+  - Comprueba: la ida y vuelta de cada uno y pruebas de componentes.
+  - Archivos: `packages/editor/src/nodes/sheet/*.ts`, `apps/web/src/wiki/nodes/sheet/*.tsx`.
+
+- [ ] **23. Vista de hoja: paginar y temas**
+  - Acepta:
+    - «Ver como hoja» y sus ajustes en la fila: papel, tema, numeración y pie.
+    - Quien lee puede volver a la sencilla; se recuerda en `wiki_preferences`. En pantallas estrechas abre la sencilla.
+    - Paginación automática por bloques: no parte bloques, no deja títulos sueltos, guiona en español y avisa si un
+      bloque no cabe.
+    - Temas Pergamino y Neutro con variables `--sheet-…` y `@fontsource/alegreya`. En escritorio ancho, la hoja al
+      lado del editor, sincronizada por bloque.
+  - Comprueba: dominio (el paginador con alturas simuladas y la página de 518 KB) y e2e de cambiar de vista y de tema.
+  - Archivos: `packages/domain/src/paginate.ts`, `apps/web/src/wiki/sheet/{sheet,paginate,themes}.tsx`,
+    `apps/web/src/wiki/sheet/sheet.module.css`.
+
+- [ ] **24. Imprimir y PDF**
+  - Acepta:
+    - La ruta de impresión con `@page` del papel elegido.
+    - En el papel no sale nada de la interfaz ni ningún bloque partido.
+    - Los secretos solo salen si se marca «Incluir secretos», y las notas ocultas nunca.
+  - Comprueba: e2e con `page.pdf()` sobre la ruta de impresión (número de páginas y que no haya interfaz) y una prueba
+    a mano en Chrome, Firefox y Safari.
+  - Archivos: `apps/web/src/routes/print.tsx`, `apps/web/src/wiki/sheet/print.module.css`, `e2e/tests/hoja.spec.ts`.
+
+### Punto de control 6
+
+- [ ] Enrique saca el PDF de una hoja con un statblock, una nota lateral y una tabla.
+
+## Fase 9: Cierre
+
+- [ ] **25. A la escala de Eana**
+  - Acepta:
+    - Un mundo sintético del tamaño de Eana (2.400 páginas con enlaces cruzados, secretos y alias), creado solo por el
+      MCP con `crear_paginas`.
+    - Cada llamada de 50 páginas tarda menos de 3 s, y todos los enlaces quedan resueltos.
+    - Se repasan las descripciones de las herramientas pensando en la migración.
+  - Comprueba: una prueba de rendimiento fuera de la CI normal, con sus números en el PR, y la búsqueda y el árbol en
+    ese mundo.
+  - Archivos: `apps/server/src/mcp/escala.integration.test.ts`, `apps/server/src/mcp/tools.ts`.
+
+- [ ] **26. Cierre del módulo**
+  - Acepta:
+    - Revisiones de seguridad, servidor y web (esta con `web-design-guidelines`), con lo alto arreglado.
+    - `@fugas` completa para la wiki.
+    - Una página mediana se abre lista para escribir en menos de 1 s en staging.
+    - `docs/modulos.md` y la tabla de módulos, al día.
+  - Comprueba: los 8 criterios de éxito de la spec, uno a uno, con Enrique en staging.
+  - Archivos: los que salgan de las revisiones y `docs/modulos.md`.
 
 ### Punto de control final
-- [x] Todos los criterios de éxito; módulo 0 marcado como hecho en `docs/modulos.md` (2026-10-29):
-  1. [x] Enrique arrancó el propietario y creó «Eana» y sus campañas en staging.
-  2. [x] Un jugador entra con el enlace de A y no ve B (e2e y prueba de fugas; Enrique, punto de control 3).
-  3. [x] Regenerar y cerrar el enlace, y abrirlo sin confirmar, como se pide; entrar con Discord, pospuesto (tarea 15).
-  4. [x] Desde claude.ai, en copiloto, Claude crea una campaña sin preguntar y regenerar el enlace espera en la cola;
-     al aprobarlo se hace (Enrique, en staging; e2e `aprobaciones.spec.ts`).
-  5. [x] Enrique deshace desde el historial lo que creó Claude; con un cambio posterior, se niega y dice por qué.
-  6. [x] Una campaña borrada se restaura desde la papelera (Enrique); purgas probadas con el reloj simulado.
-  7. [x] CI en verde con todo `CONSTRAINTS.md`, sin supresiones nuevas.
-  8. [x] axe sin fallos críticos ni graves en ninguna pantalla; LCP de la entrada 0,27 s (escritorio) y 1,9 s (móvil
-     con 4G lenta), por debajo de 2,5 s.
+
+- [ ] Los criterios de éxito de `docs/specs/wiki.md`, en staging y con Enrique.
