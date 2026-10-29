@@ -3,6 +3,7 @@ import { Bootstrap } from './routes/bootstrap.tsx'
 import { CampaignPage } from './routes/campaign.tsx'
 import { Consent } from './routes/consent.tsx'
 import { Home } from './routes/home.tsx'
+import { Join } from './routes/join.tsx'
 import { Profile } from './routes/profile.tsx'
 import { NotFound, RootLayout } from './routes/root.tsx'
 import { SignIn } from './routes/sign-in.tsx'
@@ -23,6 +24,7 @@ const campaignRoute = createRoute({
   component: CampaignPage
 })
 const consentRoute = createRoute({ getParentRoute: () => rootRoute, path: '/oauth/consentimiento', component: Consent })
+const joinRoute = createRoute({ getParentRoute: () => rootRoute, path: '/unirse/$secret', component: Join })
 const bootstrapRoute = createRoute({ getParentRoute: () => rootRoute, path: '/arranque/$secret', component: Bootstrap })
 
 const routeTree = rootRoute.addChildren([
@@ -33,7 +35,8 @@ const routeTree = rootRoute.addChildren([
   worldRoute,
   campaignRoute,
   consentRoute,
-  bootstrapRoute
+  bootstrapRoute,
+  joinRoute
 ])
 
 /** Sin historia, usa la del navegador */

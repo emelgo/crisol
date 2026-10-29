@@ -99,3 +99,33 @@ describe('OAuth con la API real', () => {
     expect(await createAccountClient().consent(true)).toEqual({ ok: false, code: 'UNKNOWN' })
   })
 })
+
+describe('unirse con la API real', () => {
+  const input = { secret: 'abc', name: 'Jugadora', email: 'j@crisol.test', password: 'una-clave-larga' }
+
+  it('invitationInfo da la invitación o null', async () => {
+    vi.stubGlobal('fetch', respond(200, { campaignName: 'La Marca', worldName: 'Eana', masterName: 'Enrique' }))
+    expect(await createAccountClient().invitationInfo('abc')).toMatchObject({ campaignName: 'La Marca' })
+    vi.stubGlobal('fetch', respond(404, { code: 'INVALID_LINK' }))
+    expect(await createAccountClient().invitationInfo('abc')).toBeNull()
+  })
+
+  it('join devuelve adónde ir o el código del error', async () => {
+    vi.stubGlobal('fetch', respond(200, { status: 'joined', worldId: 'w1', campaignId: 'c1' }))
+    expect(await createAccountClient().join('abc')).toEqual({
+      ok: true,
+      status: 'joined',
+      worldId: 'w1',
+      campaignId: 'c1'
+    })
+    vi.stubGlobal('fetch', respond(404, { code: 'INVALID_LINK' }))
+    expect(await createAccountClient().join('abc')).toEqual({ ok: false, code: 'INVALID_LINK' })
+  })
+
+  it('signUpAndJoin crea la cuenta y se une; si falla, da el código', async () => {
+    vi.stubGlobal('fetch', respond(201, { status: 'joined', worldId: 'w1', campaignId: 'c1' }))
+    expect(await createAccountClient().signUpAndJoin(input)).toMatchObject({ ok: true, campaignId: 'c1' })
+    vi.stubGlobal('fetch', respond(409, { code: 'EMAIL_TAKEN' }))
+    expect(await createAccountClient().signUpAndJoin(input)).toEqual({ ok: false, code: 'EMAIL_TAKEN' })
+  })
+})

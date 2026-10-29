@@ -24,6 +24,7 @@
     "@crisol/contracts": "workspace:*",
     "@crisol/db": "workspace:*",
     "@crisol/domain": "workspace:*",
+    "@fastify/rate-limit": "catalog:",
     "@fastify/static": "catalog:",
     "@modelcontextprotocol/server": "catalog:",
     "better-auth": "catalog:",

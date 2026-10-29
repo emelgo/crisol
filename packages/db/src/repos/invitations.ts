@@ -1,8 +1,10 @@
-import { eq } from 'drizzle-orm'
+import { and, asc, eq } from 'drizzle-orm'
 import type { Database } from '../client.ts'
 import { type OperationContext, operation, type Writer } from '../operation.ts'
-import { campaigns } from '../schema/campaigns.ts'
+import { user } from '../schema/auth.ts'
+import { campaignMembers, campaigns } from '../schema/campaigns.ts'
 import { invitationLinks } from '../schema/invitations.ts'
+import { organizationMembers } from '../schema/organizations.ts'
 import { worlds } from '../schema/worlds.ts'
 
 /** Un secreto nuevo ya preparado por el servidor: su hash y su cifrado */
@@ -55,4 +57,59 @@ export async function setInvitationsOpen(db: Database, context: OperationContext
   const current = await findInvitation(db, campaignId)
   if (!current) return null
   return operation(db, context, (w) => w.update(invitationLinks, current.id, { open }))
+}
+
+/** El nombre de quien dirige la campaña (para la página de invitación) */
+export async function campaignMasterName(db: Database, campaignId: string) {
+  const [found] = await db
+    .select({ name: user.name })
+    .from(campaignMembers)
+    .innerJoin(user, eq(user.id, campaignMembers.userId))
+    .where(and(eq(campaignMembers.campaignId, campaignId), eq(campaignMembers.role, 'master')))
+    .orderBy(asc(campaignMembers.createdAt))
+    .limit(1)
+  return found?.name ?? null
+}
+
+export type JoinResult = { status: 'joined' } | { status: 'member' } | { status: 'master' } | { status: 'closed' }
+
+/**
+ * La cuenta entra en la campaña como jugadora con el enlace, en una sola operación: su pertenencia a la campaña, la
+ * de la organización si no la tenía y una entrada más en el enlace. Si ya estaba, no cambia nada.
+ */
+export function joinCampaign(
+  db: Database,
+  context: OperationContext,
+  input: { invitationId: string; campaignId: string; organizationId: string; userId: string }
+): Promise<JoinResult> {
+  return operation(db, context, async (w) => {
+    // El enlace se bloquea mientras dura la operación: un cierre o un cambio a la vez no se cuela
+    const [link] = await w.read
+      .select()
+      .from(invitationLinks)
+      .where(eq(invitationLinks.id, input.invitationId))
+      .for('update')
+    if (!link?.open) return { status: 'closed' }
+    const [existing] = await w.read
+      .select({ role: campaignMembers.role })
+      .from(campaignMembers)
+      .where(and(eq(campaignMembers.campaignId, input.campaignId), eq(campaignMembers.userId, input.userId)))
+    if (existing) return { status: existing.role === 'master' ? 'master' : 'member' }
+    await w.insert(campaignMembers, { campaignId: input.campaignId, userId: input.userId, role: 'player' })
+    const [orgMember] = await w.read
+      .select({ id: organizationMembers.id })
+      .from(organizationMembers)
+      .where(
+        and(eq(organizationMembers.organizationId, input.organizationId), eq(organizationMembers.userId, input.userId))
+      )
+    if (!orgMember) {
+      await w.insert(organizationMembers, {
+        organizationId: input.organizationId,
+        userId: input.userId,
+        role: 'member'
+      })
+    }
+    await w.update(invitationLinks, link.id, { joins: link.joins + 1 })
+    return { status: 'joined' }
+  })
 }

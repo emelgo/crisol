@@ -9,7 +9,7 @@ import { e2eDatabaseUrl } from '../servidor.ts'
 const WCAG = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']
 
 for (const colorScheme of ['light', 'dark'] as const) {
-  for (const path of ['/', '/no-existe', '/entrar', '/arranque/no-vale']) {
+  for (const path of ['/', '/no-existe', '/entrar', '/arranque/no-vale', '/unirse/no-vale']) {
     test(`${path} en tema ${colorScheme === 'light' ? 'claro' : 'oscuro'} @a11y`, async ({ page }) => {
       await page.emulateMedia({ colorScheme })
       await page.goto(path)
@@ -59,11 +59,20 @@ test('arranque, perfil, mundos, campañas y consentimiento, en los dos temas @a1
     await check()
     await page.getByRole('link', { name: 'La Marca' }).click()
     await expect(page.getByLabel('Enlace de invitación')).toBeVisible()
+    const invitationLink = await page.getByLabel('Enlace de invitación').inputValue()
     await page.getByRole('button', { name: 'Nuevo enlace' }).click()
     await check()
     // La página de consentimiento sin consulta firmada: se ve igual, aunque permitir fallaría
     await page.goto(`/oauth/consentimiento?client_id=${encodeURIComponent('https://claude.ai/oauth/metadatos')}`)
     await expect(page.getByRole('heading', { name: 'Conectar claude.ai' })).toBeVisible()
+    await check()
+    // La página de unirse: con sesión (el máster) y sin ella
+    await page.goto(invitationLink)
+    await expect(page.getByRole('button', { name: 'Entrar en La Marca como jugador' })).toBeVisible()
+    await check()
+    await page.getByRole('button', { name: 'Salir' }).click()
+    await page.goto(invitationLink)
+    await expect(page.getByRole('button', { name: 'Crear la cuenta y entrar' })).toBeVisible()
     await check()
   } finally {
     await conn.close()

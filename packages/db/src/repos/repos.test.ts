@@ -202,6 +202,56 @@ describe('repositorios', () => {
       })
     })
 
+    it('el nombre del máster de la campaña', async () => {
+      const { campaign: c } = await campaign()
+      expect(await invitationsRepo.campaignMasterName(conn.db, c.id)).toBe('Enrique')
+      expect(await invitationsRepo.campaignMasterName(conn.db, '00000000-0000-4000-8000-000000000000')).toBeNull()
+    })
+
+    describe('entrar con el enlace', () => {
+      const join = async (c: { id: string }, userId: string) => {
+        const link = await invitationsRepo.findInvitation(conn.db, c.id)
+        if (!link) throw new Error('sin enlace')
+        return invitationsRepo.joinCampaign(
+          conn.db,
+          { actorId: userId, via: 'ui', action: 'joinCampaign', organizationId },
+          { invitationId: link.id, campaignId: c.id, organizationId, userId }
+        )
+      }
+
+      it('una cuenta nueva entra como jugadora y miembro de la organización, y el enlace suma una entrada', async () => {
+        const { campaign: c } = await campaign()
+        expect(await join(c, 'u2')).toEqual({ status: 'joined' })
+        expect(await loadMemberships(conn.db, 'u2')).toMatchObject({
+          organizations: [{ organizationId, role: 'member' }],
+          campaigns: [{ campaignId: c.id, role: 'player' }]
+        })
+        expect((await invitationsRepo.findInvitation(conn.db, c.id))?.joins).toBe(1)
+        const op = (await conn.db.select().from(operations)).find((o) => o.action === 'joinCampaign')
+        expect(op).toMatchObject({ actorId: 'u2', organizationId })
+      })
+
+      it('si ya estaba, no cambia nada', async () => {
+        const { campaign: c } = await campaign()
+        await join(c, 'u2')
+        expect(await join(c, 'u2')).toEqual({ status: 'member' })
+        expect((await invitationsRepo.findInvitation(conn.db, c.id))?.joins).toBe(1)
+      })
+
+      it('el máster no entra como jugador', async () => {
+        const { campaign: c } = await campaign()
+        expect(await join(c, 'u1')).toEqual({ status: 'master' })
+        expect((await invitationsRepo.findInvitation(conn.db, c.id))?.joins).toBe(0)
+      })
+
+      it('con las invitaciones cerradas nadie entra', async () => {
+        const { campaign: c } = await campaign()
+        await invitationsRepo.setInvitationsOpen(conn.db, ui('setInvitationsOpen'), c.id, false)
+        expect(await join(c, 'u2')).toEqual({ status: 'closed' })
+        expect((await loadMemberships(conn.db, 'u2')).campaigns).toEqual([])
+      })
+    })
+
     it('se pueden cerrar y abrir las invitaciones sin cambiar el enlace', async () => {
       const { campaign: c, secret } = await campaign()
       expect(await invitationsRepo.setInvitationsOpen(conn.db, ui('setInvitationsOpen'), c.id, false)).toMatchObject({

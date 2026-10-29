@@ -3,11 +3,10 @@
  * Sin ese enlace nadie puede crear la primera cuenta (el registro está cerrado).
  */
 import { bootstrapRepo, type Database } from '@crisol/db'
-import { APIError } from 'better-auth/api'
 import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 import type { Auth } from './auth/auth.ts'
-import { allowSignup } from './auth/signup-gate.ts'
+import { signUpAllowed } from './auth/signup.ts'
 import { hashSecret, newSecret } from './secrets.ts'
 
 const DAY = 24 * 60 * 60 * 1000
@@ -61,15 +60,16 @@ export async function redeemBootstrap(db: Database, auth: Auth, input: z.infer<t
   const token = await bootstrapRepo.consumeBootstrap(db, hashSecret(input.secret), now)
   if (!token) throw new BootstrapError('INVALID_LINK')
 
-  let created: Awaited<ReturnType<typeof signUp>>
+  let created: Awaited<ReturnType<typeof signUpAllowed>>
   try {
-    created = await signUp(auth, input)
+    created = await signUpAllowed(auth, { name: input.name, email: input.email, password: input.password })
   } catch (error) {
     await bootstrapRepo.releaseBootstrap(db, token.id)
-    if (error instanceof APIError && error.body?.code === 'USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL') {
-      throw new BootstrapError('EMAIL_TAKEN')
-    }
     throw error
+  }
+  if (!created) {
+    await bootstrapRepo.releaseBootstrap(db, token.id)
+    throw new BootstrapError('EMAIL_TAKEN')
   }
   const userId = created.response.user.id
   try {
@@ -81,10 +81,6 @@ export async function redeemBootstrap(db: Database, auth: Auth, input: z.infer<t
     throw error
   }
   return { headers: created.headers, userId, organizationId: token.organizationId }
-}
-
-function signUp(auth: Auth, { name, email, password }: { name: string; email: string; password: string }) {
-  return allowSignup(() => auth.api.signUpEmail({ body: { name, email, password }, returnHeaders: true }))
 }
 
 const STATUS: Record<BootstrapErrorCode, number> = {

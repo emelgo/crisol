@@ -25,7 +25,7 @@ export function Consent() {
   const { t } = useTranslation()
   const accounts = useAccounts()
   const api = useApi()
-  const { account } = accounts.useAccount()
+  const { account, pending } = accounts.useAccount()
   // La consulta tal cual llegó: lleva la firma de Better Auth
   const clientId = new URLSearchParams(useLocation().searchStr).get('client_id') ?? ''
   const name = useQuery({ queryKey: ['oauth-client', clientId], queryFn: () => accounts.oauthClientName(clientId) })
@@ -37,6 +37,16 @@ export function Consent() {
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
+  if (pending) return null
+  if (!account) {
+    // Sin sesión aquí: caducó durante la autorización. La consulta firmada no sirve fuera de este flujo
+    return (
+      <section>
+        <h1>{t('consent.expiredTitle')}</h1>
+        <p>{t('consent.expiredBody')}</p>
+      </section>
+    )
+  }
   if (name.isPending || organizations.isPending) return null
   const client = name.data ?? fallbackName(clientId)
   const isOwner = organizations.data?.organizations.some((o) => o.role === 'owner') ?? false
