@@ -36,6 +36,8 @@ export interface AccountClient {
   useAccount(): { account: Account | null; pending: boolean }
   signIn(email: string, password: string): Promise<Result>
   signOut(): Promise<void>
+  /** Vuelve a pedir la sesión al servidor (cuando algo dice que ya no la hay) */
+  refreshSession(): void
   rename(name: string): Promise<Result>
   bootstrapInfo(secret: string): Promise<{ organizationName: string } | null>
   /** El nombre de una aplicación OAuth (Claude…), para la página de consentimiento */
@@ -91,6 +93,9 @@ export function createAccountClient(): AccountClient {
     },
     async signOut() {
       await auth.signOut()
+    },
+    refreshSession() {
+      auth.$store.notify('$sessionSignal')
     },
     async rename(name) {
       const { error } = await auth.updateUser({ name })

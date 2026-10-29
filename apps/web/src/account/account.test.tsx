@@ -2,6 +2,7 @@ import { createMemoryHistory } from '@tanstack/react-router'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
+import { ApiError } from '../api/client.ts'
 import { fakeApi } from '../api/fake.ts'
 import { App } from '../app.tsx'
 import { createAppRouter } from '../router.tsx'
@@ -86,6 +87,36 @@ describe('perfil y salir', () => {
     expect(fake.calls).toContain('signOut')
     expect(await screen.findByRole('heading', { name: 'Entrar' })).toBeDefined()
     expect(router.state.location.pathname).toBe('/entrar')
+  })
+
+  it('si la API dice que ya no hay sesión, la vuelve a pedir y, sin ella, lleva a entrar', async () => {
+    const fake = signedIn()
+    const api = fakeApi()
+    api.client.call = async () => {
+      fake.endSession()
+      throw new ApiError('UNAUTHENTICATED', 401)
+    }
+    const router = createAppRouter(createMemoryHistory({ initialEntries: ['/mundos'] }))
+    render(<App router={router} accounts={fake.client} api={api.client} />)
+    expect(await screen.findByRole('heading', { name: 'Entrar' })).toBeDefined()
+    expect(fake.calls).toContain('refreshSession')
+    expect(router.state.location.pathname).toBe('/entrar')
+  })
+
+  it('un 401 al hacer algo lo dice y vuelve a pedir la sesión', async () => {
+    const fake = signedIn()
+    const api = fakeApi({ organizations: [{ id: 'o1', name: 'Fateforge', role: 'owner' }] })
+    const original = api.client.call
+    api.client.call = async (name, input) => {
+      if (name === 'createWorld') throw new ApiError('UNAUTHENTICATED', 401)
+      return original(name, input)
+    }
+    const router = createAppRouter(createMemoryHistory({ initialEntries: ['/mundos'] }))
+    render(<App router={router} accounts={fake.client} api={api.client} />)
+    await fill('Nombre del mundo', 'Eana')
+    await userEvent.click(screen.getByRole('button', { name: 'Crear el mundo' }))
+    expect((await screen.findByRole('alert')).textContent).toBe('Tu sesión ha acabado. Vuelve a entrar.')
+    expect(fake.calls).toContain('refreshSession')
   })
 
   it('el perfil sin sesión lleva a entrar', async () => {

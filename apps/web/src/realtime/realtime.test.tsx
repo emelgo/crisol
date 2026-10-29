@@ -41,7 +41,7 @@ function renderAt(path: string, options: { role?: Campaign['role'] } = {}) {
     const start = api.calls.length
     return () => api.calls.slice(start)
   }
-  return { api, realtime, callsFrom }
+  return { api, accounts, realtime, router, callsFrom }
 }
 
 const campaignPath = `/mundos/${world.id}/campanas/${campaign.id}`
@@ -124,5 +124,16 @@ describe('el canal en tiempo real en la web', () => {
     api.campaigns.splice(0)
     act(() => realtime.emit({ type: 'revoked', worldId: world.id, campaignId: campaign.id }))
     expect(await screen.findByRole('heading', { name: 'Esta campaña no existe' })).toBeDefined()
+  })
+
+  it('si la sesión acaba con la pestaña abierta, la vuelve a pedir y, sin ella, lleva a entrar', async () => {
+    const { accounts, realtime, router } = renderAt(campaignPath)
+    await screen.findByRole('list', { name: 'Miembros' })
+    accounts.endSession()
+    act(() => realtime.sessionEnded())
+    expect(accounts.calls).toContain('refreshSession')
+    expect(await screen.findByRole('heading', { level: 1, name: 'Entrar' })).toBeDefined()
+    expect(router.state.location.pathname).toBe('/entrar')
+    expect(screen.queryByText('La Marca')).toBeNull()
   })
 })

@@ -41,7 +41,8 @@ function changedBy(message: RealtimeMessage): QueryKey[] {
 /** Abre el canal mientras haya sesión: vuelve a pedir lo que cambia y guarda los avisos de entrada */
 export function RealtimeProvider({ client, children }: { client: RealtimeClient; children: ReactNode }) {
   const queryClient = useQueryClient()
-  const { account } = useAccounts().useAccount()
+  const accounts = useAccounts()
+  const { account } = accounts.useAccount()
   const [notices, setNotices] = useState<JoinNotice[]>([])
   const [newVersion, setNewVersion] = useState(false)
   // Otra cuenta, otro canal (y los avisos de la anterior se van con AccountScope)
@@ -56,9 +57,11 @@ export function RealtimeProvider({ client, children }: { client: RealtimeClient;
       },
       // Tras un corte pudo perderse algo: se vuelve a pedir todo lo que está a la vista
       onReconnect: () => void queryClient.invalidateQueries(),
-      onNewVersion: () => setNewVersion(true)
+      onNewVersion: () => setNewVersion(true),
+      // Se vuelve a pedir la sesión: sin ella, AccountScope lo quita todo y las páginas llevan a entrar
+      onSessionEnded: () => accounts.refreshSession()
     })
-  }, [client, queryClient, signedIn])
+  }, [client, queryClient, accounts, signedIn])
 
   const dismiss = useCallback((id: string) => setNotices((current) => current.filter((n) => n.id !== id)), [])
   const value = useMemo(() => ({ notices, dismiss, newVersion }), [notices, dismiss, newVersion])
