@@ -19,20 +19,23 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   - Spec `docs/specs/fundacion.md` **aprobada**; ADR-0002 (Better Auth solo para identidad; inquilinos e invitaciones
     en tablas propias); prueba de fugas añadida a `CONSTRAINTS.md`.
   - Plan aprobado: `tasks/plan.md` y 25 tareas en `tasks/todo.md`.
-- **2026-10-29 — Módulo 0 en curso: tareas 1 a 5 hechas** (PR #2 a #7). Staging en
+- **2026-10-29 — Módulo 0 en curso: tareas 1 a 11 hechas** (PR #2 a #13). Staging en
   https://neo.crisol.144-91-122-245.sslip.io (Compose `crisol-staging` en `~/crisol-staging`, puerto 8140; copia del
-  Caddyfile en `/etc/caddy/Caddyfile.bak-20261029-104936-neo-crisol`).
-  - Monorepo (pnpm 12, Turborepo, Biome, TypeScript 7, Vitest 5), CI con todo el listón (4 trabajos), servidor
-    Fastify con `/api/health`, `@crisol/db` con Drizzle, web mínima (React, TanStack, i18next, temas) servida por el
-    servidor, e2e con Playwright y axe. Imagen Docker (300 MB) y `scripts/desplegar-staging.sh` probados en local.
-  - GitHub gratis no protege ramas de repos privados: se fusiona solo con
-    `gh pr checks --watch --fail-fast && gh pr merge`.
-  - MIT-0 admitida en `CONSTRAINTS.md` (la traen dependencias de Vitest).
+  Caddyfile en `/etc/caddy/Caddyfile.bak-20261029-104936-neo-crisol`). Desplegar tras cada merge:
+  `scripts/desplegar-staging.sh` (con cerrojo).
+  - Plataforma (1-5), cuentas con registro cerrado y arranque (6-8), núcleo de escritura con historial (9), mis
+    mundos (10) y conector MCP con OAuth 2.1 + CIMD y `listar_mundos` (11).
+  - Enlace de arranque de Enrique en staging para la organización «Fateforge»: caduca el 2026-10-30 a las 11:17; si
+    caduca, se repite con la orden del README (reutiliza la organización).
+  - GitHub gratis no protege ramas privadas: se fusiona solo con los 4 check-runs del commit en verde, esperando con
+    un bucle con tope (un runner colgado dejó `gh pr checks --watch` esperando sin fin; ahora hay timeout-minutes).
+  - MIT-0 admitida en `CONSTRAINTS.md`.
   - Puertos: desarrollo 8130 (servidor), 5173 (Vite), 54330 (Postgres), 63790 (Valkey), 10250/8250 (Mailpit);
-    e2e 8131; staging 8140.
-- **Siguiente paso**: punto de control 1 con Enrique (que vea staging) y la tarea 6 (arranque y cuenta del
-  propietario). Para actualizar staging tras cada merge: `scripts/desplegar-staging.sh`. Preguntas 1 y 2 de la spec (correo y Google)
-  antes de la tarea 15.
+    e2e 8131; prueba del MCP 8132; staging 8140.
+- **Siguiente paso: punto de control 2 con Enrique**: que cree su cuenta con el enlace de arranque, cree un mundo en
+  «Mis mundos» y añada en claude.ai el conector `https://neo.crisol.144-91-122-245.sslip.io/mcp` (le pedirá entrar y
+  «Permitir»); luego pedir a Claude que liste sus mundos. Después, tarea 12 (campañas). Preguntas 1 y 2 de la spec
+  (correo y Google) antes de la tarea 15.
 - **Antes del módulo 1**: ADR sobre Yjs y secretos. Yjs no puede proyectar por usuario, así que el contenido con otra
   visibilidad tiene que ir en documentos o subdocumentos aparte (ver la nota de sincronización de Foundry).
 - **Pendientes de permiso de Enrique:**
