@@ -4,6 +4,7 @@
  */
 import { eq, getTableName, type InferInsertModel, type InferSelectModel, sql } from 'drizzle-orm'
 import type { Database } from './client.ts'
+import { campaignMembers, campaigns } from './schema/campaigns.ts'
 import { changes, operations } from './schema/history.ts'
 import { organizationMembers, organizations } from './schema/organizations.ts'
 import { worldMembers, worlds } from './schema/worlds.ts'
@@ -13,7 +14,9 @@ export const TRACKED_TABLES = {
   organizations,
   organization_members: organizationMembers,
   worlds,
-  world_members: worldMembers
+  world_members: worldMembers,
+  campaigns,
+  campaign_members: campaignMembers
 }
 
 export type TrackedTable = (typeof TRACKED_TABLES)[keyof typeof TRACKED_TABLES]

@@ -13,11 +13,14 @@ const ORG = 'org-1'
 const OTHER_ORG = 'org-2'
 const WORLD = 'world-1'
 const OTHER_WORLD = 'world-2'
+const CAMPAIGN = 'campaign-1'
+const OTHER_CAMPAIGN = 'campaign-2'
 
 const actor = (overrides: Partial<Actor>): Actor => ({
   userId: 'u1',
   organizations: new Map(),
   worlds: new Map(),
+  campaigns: new Map(),
   ...overrides
 })
 
@@ -28,6 +31,12 @@ const owner = actor({
 })
 const member = actor({ organizations: new Map([[ORG, 'member']]) })
 const outsider = actor({ organizations: new Map([[OTHER_ORG, 'owner']]) })
+const player = actor({
+  organizations: new Map([[ORG, 'member']]),
+  campaigns: new Map([[CAMPAIGN, { worldId: WORLD, role: 'player' }]])
+})
+const campaign = { campaignId: CAMPAIGN, worldId: WORLD }
+const otherCampaign = { campaignId: OTHER_CAMPAIGN, worldId: WORLD }
 
 type Outcome = 'permite' | 'prohíbe' | 'no lo ve'
 
@@ -52,7 +61,17 @@ describe('authorize', () => {
     ['un miembro sin campaña no ve el mundo', member, 'world.read', { worldId: WORLD }, 'no lo ve'],
     ['un miembro sin campaña no renombra el mundo', member, 'world.rename', { worldId: WORLD }, 'no lo ve'],
     ['nadie ve un mundo ajeno', outsider, 'world.read', { worldId: WORLD }, 'no lo ve'],
-    ['ni el máster ve un mundo que no es suyo', owner, 'world.rename', { worldId: OTHER_WORLD }, 'no lo ve']
+    ['ni el máster ve un mundo que no es suyo', owner, 'world.rename', { worldId: OTHER_WORLD }, 'no lo ve'],
+    ['el máster crea campañas en su mundo', owner, 'campaign.create', { worldId: WORLD }, 'permite'],
+    ['el máster del mundo ve y renombra sus campañas', owner, 'campaign.rename', campaign, 'permite'],
+    ['un jugador ve el mundo en el que juega', player, 'world.read', { worldId: WORLD }, 'permite'],
+    ['un jugador no renombra el mundo en el que juega', player, 'world.rename', { worldId: WORLD }, 'prohíbe'],
+    ['un jugador no crea campañas', player, 'campaign.create', { worldId: WORLD }, 'prohíbe'],
+    ['un jugador ve su campaña', player, 'campaign.read', campaign, 'permite'],
+    ['un jugador no renombra su campaña', player, 'campaign.rename', campaign, 'prohíbe'],
+    ['un jugador no ve otra campaña del mismo mundo', player, 'campaign.read', otherCampaign, 'no lo ve'],
+    ['nadie ve campañas de un mundo ajeno', outsider, 'campaign.read', campaign, 'no lo ve'],
+    ['un miembro sin campaña no ve las campañas', member, 'campaign.read', campaign, 'no lo ve']
   ]
 
   it.each(cases)('%s', (_, who, capability, target, expected) => {
@@ -67,9 +86,11 @@ describe('actorFrom', () => {
         { organizationId: ORG, role: 'owner' },
         { organizationId: OTHER_ORG, role: 'member' }
       ],
-      worlds: [{ worldId: WORLD, organizationId: ORG, role: 'master' }]
+      worlds: [{ worldId: WORLD, organizationId: ORG, role: 'master' }],
+      campaigns: [{ campaignId: CAMPAIGN, worldId: WORLD, role: 'master' }]
     })
     expect(built.userId).toBe('u1')
+    expect(built.campaigns.get(CAMPAIGN)).toEqual({ worldId: WORLD, role: 'master' })
     expect(built.organizations.get(OTHER_ORG)).toBe('member')
     expect(built.worlds.get(WORLD)).toEqual({ organizationId: ORG, role: 'master' })
   })
@@ -80,7 +101,8 @@ describe('actorFrom', () => {
         { organizationId: ORG, role: 'owner' },
         { organizationId: OTHER_ORG, role: 'member' }
       ],
-      worlds: []
+      worlds: [],
+      campaigns: []
     })
     expect(ownedOrganizations(built)).toEqual([ORG])
   })

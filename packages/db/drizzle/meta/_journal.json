@@ -29,6 +29,13 @@
       "when": 1793270662016,
       "tag": "0003_oauth-mcp",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793273556413,
+      "tag": "0004_campanas",
+      "breakpoints": true
     }
   ]
 }

@@ -6,7 +6,7 @@ import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
 import { FormError } from '../components/field.tsx'
 import form from '../components/form.module.css'
-import styles from './worlds.module.css'
+import styles from '../components/list.module.css'
 
 /** Sin nombre, el dominio del cliente (los clientes CIMD se identifican por una URL) */
 function fallbackName(clientId: string) {

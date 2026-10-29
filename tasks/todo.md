@@ -125,9 +125,9 @@ Comprobación local al acabar cada tarea: `pnpm lint && pnpm typecheck && pnpm t
     `apps/web/src/rutas/consentimiento.tsx`.
 
 ### Punto de control 2
-- [ ] Claude lista los mundos desde claude.ai; el historial registra cada escritura.
+- [x] Claude lista los mundos desde claude.ai; el historial registra cada escritura. (Enrique, 2026-10-29: cliente CIMD de claude.ai)
 
-- [ ] **12. Campañas**
+- [x] **12. Campañas**
   - Acepta: `createCampaign` y `renameCampaign`; quien la crea queda como `master` en `campaign_members`; página del
     mundo con sus campañas.
   - Comprueba: políticas, integración y e2e.

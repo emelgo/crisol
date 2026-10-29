@@ -18,7 +18,7 @@ test('el tema elegido se mantiene al recargar', async ({ page }) => {
 })
 
 test('una dirección de la app que no existe lo dice y deja volver', async ({ page }) => {
-  await page.goto('/mundos/eana')
+  await page.goto('/esto/no-existe')
   await expect(page.getByRole('heading', { name: 'Página no encontrada' })).toBeVisible()
   await page.getByRole('link', { name: 'Volver al inicio' }).click()
   await expect(page).toHaveURL('/')

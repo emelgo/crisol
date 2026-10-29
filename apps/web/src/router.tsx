@@ -5,6 +5,7 @@ import { Home } from './routes/home.tsx'
 import { Profile } from './routes/profile.tsx'
 import { NotFound, RootLayout } from './routes/root.tsx'
 import { SignIn } from './routes/sign-in.tsx'
+import { WorldPage } from './routes/world.tsx'
 import { Worlds } from './routes/worlds.tsx'
 
 const rootRoute = createRootRoute({ component: RootLayout, notFoundComponent: NotFound })
@@ -14,6 +15,7 @@ const homeRoute = createRoute({ getParentRoute: () => rootRoute, path: '/', comp
 const signInRoute = createRoute({ getParentRoute: () => rootRoute, path: '/entrar', component: SignIn })
 const profileRoute = createRoute({ getParentRoute: () => rootRoute, path: '/perfil', component: Profile })
 const worldsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/mundos', component: Worlds })
+const worldRoute = createRoute({ getParentRoute: () => rootRoute, path: '/mundos/$worldId', component: WorldPage })
 const consentRoute = createRoute({ getParentRoute: () => rootRoute, path: '/oauth/consentimiento', component: Consent })
 const bootstrapRoute = createRoute({ getParentRoute: () => rootRoute, path: '/arranque/$secret', component: Bootstrap })
 
@@ -22,6 +24,7 @@ const routeTree = rootRoute.addChildren([
   signInRoute,
   profileRoute,
   worldsRoute,
+  worldRoute,
   consentRoute,
   bootstrapRoute
 ])
