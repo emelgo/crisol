@@ -88,6 +88,28 @@ describe('el cliente del canal en tiempo real', () => {
     expect(FakeSocket.all).toHaveLength(11)
   })
 
+  it('el saludo del servidor no es un aviso: si su versión de la web es otra, lo dice', () => {
+    const onMessage = vi.fn()
+    const onNewVersion = vi.fn()
+    const connect = (build: string | null) =>
+      createRealtimeClient({ url: 'ws://crisol.test/api/realtime', WebSocket: FakeSocket as never, build }).connect({
+        onMessage,
+        onNewVersion
+      })
+    connect('/assets/index-a.js')
+    last().receive({ type: 'hello', build: '/assets/index-a.js' })
+    expect(onNewVersion).not.toHaveBeenCalled()
+    last().receive({ type: 'hello', build: '/assets/index-b.js' })
+    expect(onNewVersion).toHaveBeenCalledOnce()
+    // Sin versión en uno de los dos lados (desarrollo), no se compara
+    connect(null)
+    last().receive({ type: 'hello', build: '/assets/index-b.js' })
+    connect('/assets/index-a.js')
+    last().receive({ type: 'hello', build: null })
+    expect(onNewVersion).toHaveBeenCalledOnce()
+    expect(onMessage).not.toHaveBeenCalled()
+  })
+
   it('si el servidor cierra porque acabó la sesión, no reconecta', () => {
     client().connect({ onMessage: vi.fn() })
     last().open()

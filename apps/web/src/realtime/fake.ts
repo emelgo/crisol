@@ -18,6 +18,9 @@ export function fakeRealtime() {
     reconnect: () => {
       for (const handlers of listeners) handlers.onReconnect?.()
     },
+    newVersion: () => {
+      for (const handlers of listeners) handlers.onNewVersion?.()
+    },
     connections: () => listeners.size
   }
 }

@@ -7,9 +7,10 @@ import type { RealtimeClient } from './client.ts'
 /** Alguien ha entrado en una campaña del máster */
 export type JoinNotice = Extract<RealtimeMessage, { type: 'joined' }> & { id: string }
 
-const NoticesContext = createContext<{ notices: JoinNotice[]; dismiss(id: string): void }>({
+const NoticesContext = createContext<{ notices: JoinNotice[]; dismiss(id: string): void; newVersion: boolean }>({
   notices: [],
-  dismiss: () => {}
+  dismiss: () => {},
+  newVersion: false
 })
 
 /** Qué consultas de la web hay que volver a pedir con cada aviso */
@@ -27,6 +28,9 @@ export function queriesFor(message: RealtimeMessage): QueryKey[] {
     // Ya no está en la campaña: puede que tampoco en el mundo ni en la organización
     case 'revoked':
       return [['worlds'], ['organizations'], ['campaigns', message.worldId]]
+    // El saludo lo atiende el cliente; uno que no se conoce (de una versión más nueva), nada
+    default:
+      return []
   }
 }
 
@@ -35,6 +39,7 @@ export function RealtimeProvider({ client, children }: { client: RealtimeClient;
   const queryClient = useQueryClient()
   const { account } = useAccounts().useAccount()
   const [notices, setNotices] = useState<JoinNotice[]>([])
+  const [newVersion, setNewVersion] = useState(false)
   // Otra cuenta, otro canal
   const signedIn = account?.email ?? null
 
@@ -47,12 +52,13 @@ export function RealtimeProvider({ client, children }: { client: RealtimeClient;
         if (message.type === 'joined') setNotices((current) => [...current, { ...message, id: crypto.randomUUID() }])
       },
       // Tras un corte pudo perderse algo: se vuelve a pedir todo lo que está a la vista
-      onReconnect: () => void queryClient.invalidateQueries()
+      onReconnect: () => void queryClient.invalidateQueries(),
+      onNewVersion: () => setNewVersion(true)
     })
   }, [client, queryClient, signedIn])
 
   const dismiss = useCallback((id: string) => setNotices((current) => current.filter((n) => n.id !== id)), [])
-  const value = useMemo(() => ({ notices, dismiss }), [notices, dismiss])
+  const value = useMemo(() => ({ notices, dismiss, newVersion }), [notices, dismiss, newVersion])
   return <NoticesContext.Provider value={value}>{children}</NoticesContext.Provider>
 }
 

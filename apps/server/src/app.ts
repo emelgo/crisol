@@ -14,7 +14,7 @@ import { registerJoinRoutes } from './join.ts'
 import { registerMcpRoutes } from './mcp/routes.ts'
 import { createRealtime } from './realtime/hub.ts'
 import { type RealtimeRouteOptions, registerRealtimeRoutes } from './realtime/routes.ts'
-import { registerWeb } from './web.ts'
+import { registerWeb, webBuild } from './web.ts'
 
 export interface AppDeps {
   checks: HealthChecks
@@ -52,7 +52,10 @@ export function buildApp(deps: AppDeps): FastifyInstance {
     registerActionRoutes(app, env, auth)
     // Dentro de register: así se añaden después de cargar los plugins que usan (límite de intentos, WebSocket)
     app.register(async (scope) => registerJoinRoutes(scope, env, auth))
-    app.register(async (scope) => registerRealtimeRoutes(scope, { auth, publicUrl, realtime, ...deps.realtimeTimers }))
+    const build = deps.webDir ? webBuild(deps.webDir) : null
+    app.register(async (scope) =>
+      registerRealtimeRoutes(scope, { auth, publicUrl, realtime, build, ...deps.realtimeTimers })
+    )
     if (deps.mcpJwksUrl) registerMcpRoutes(app, { ...env, auth, jwksUrl: deps.mcpJwksUrl })
   }
   if (deps.webDir) registerWeb(app, deps.webDir)

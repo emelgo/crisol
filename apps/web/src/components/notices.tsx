@@ -10,9 +10,17 @@ import { RemoveMemberConfirm, useRemoveMember } from './remove-member.tsx'
 /** Los avisos al máster («Ana ha entrado en La Marca»), con «Expulsar» a mano. Siempre en la página para que se lean */
 export function Notices() {
   const { t } = useTranslation()
-  const { notices: list } = useNotices()
+  const { notices: list, newVersion } = useNotices()
   return (
     <section aria-label={t('notices.title')} aria-live="polite" className={notices.region}>
+      {newVersion && (
+        <p className={notices.version}>
+          {t('notices.newVersion')}{' '}
+          <button type="button" className={styles.secondary} onClick={() => window.location.reload()}>
+            {t('notices.reload')}
+          </button>
+        </p>
+      )}
       {list.length > 0 && (
         <ul className={styles.list}>
           {list.map((notice) => (

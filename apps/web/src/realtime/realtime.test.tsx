@@ -105,6 +105,19 @@ describe('el canal en tiempo real en la web', () => {
     await vi.waitFor(() => expect(calls()).toEqual(expect.arrayContaining(['listWorlds', 'listMembers'])))
   })
 
+  it('si hay una versión nueva de la web, lo avisa y ofrece recargar', async () => {
+    const reload = vi.fn()
+    vi.stubGlobal('location', { ...window.location, reload })
+    const { realtime } = renderAt('/mundos')
+    await screen.findByRole('heading', { name: 'Mis mundos' })
+    expect(screen.queryByText('Hay una versión nueva de Crisol.')).toBeNull()
+    act(() => realtime.newVersion())
+    expect(await screen.findByText('Hay una versión nueva de Crisol.')).toBeDefined()
+    await userEvent.click(screen.getByRole('button', { name: 'Recargar' }))
+    expect(reload).toHaveBeenCalledOnce()
+    vi.unstubAllGlobals()
+  })
+
   it('si la expulsan con la campaña abierta, deja de verla', async () => {
     const { api, realtime } = renderAt(campaignPath, { role: 'player' })
     await screen.findByRole('list', { name: 'Miembros' })

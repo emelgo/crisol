@@ -12,12 +12,13 @@ const BASE_URL = 'https://crisol.test'
 type WebSocket = Awaited<ReturnType<FastifyInstance['injectWS']>>
 const ok = async () => undefined
 
-/** Los mensajes de una conexión, en orden; next() espera al siguiente */
+/** Los mensajes de una conexión, en orden; next() espera al siguiente. El saludo del principio se prueba aparte */
 function inbox(ws: WebSocket) {
   const queued: RealtimeMessage[] = []
   let waiting: ((message: RealtimeMessage) => void) | null = null
   ws.on('message', (data: Buffer) => {
     const message = JSON.parse(String(data)) as RealtimeMessage
+    if (message.type === 'hello') return
     if (waiting) waiting(message)
     else queued.push(message)
   })
@@ -102,6 +103,20 @@ describe('el canal en tiempo real', () => {
 
   afterAll(async () => {
     await conn?.close()
+  })
+
+  it('al conectar saluda con la versión de la web que sirve (sin web, ninguna)', async () => {
+    // Se escucha desde antes de abrir, como el navegador: el saludo sale nada más conectar
+    const hello = new Promise<RealtimeMessage>((resolve) => {
+      void app
+        .injectWS(
+          '/api/realtime',
+          { headers: { origin: BASE_URL, cookie: owner.cookie } },
+          { onInit: (ws) => ws.once('message', (data: Buffer) => resolve(JSON.parse(String(data)))) }
+        )
+        .then((ws) => sockets.push(ws))
+    })
+    expect(await hello).toEqual({ type: 'hello', build: null })
   })
 
   it('sin sesión, o desde otra web aunque traiga la cookie, no se abre', async () => {

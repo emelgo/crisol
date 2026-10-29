@@ -5,6 +5,8 @@ export interface RealtimeHandlers {
   onMessage(message: RealtimeMessage): void
   /** Ha vuelto tras un corte: pudo perderse algún aviso */
   onReconnect?(): void
+  /** El servidor sirve otra versión de la web (hubo un despliegue): hay que recargar */
+  onNewVersion?(): void
 }
 
 export interface RealtimeClient {
@@ -14,6 +16,12 @@ export interface RealtimeClient {
 
 /** El servidor cierra así cuando ya no hay sesión: no tiene sentido reconectar */
 const SESSION_ENDED = 4401
+/** La versión de esta pestaña: el script de entrada con el que se cargó (null en desarrollo, sin huella) */
+export function pageBuild(): string | null {
+  const src = document.querySelector<HTMLScriptElement>('script[type="module"][src*="/assets/"]')?.src
+  return src ? new URL(src).pathname : null
+}
+
 const FIRST_WAIT_MS = 1000
 const MAX_WAIT_MS = 30_000
 
@@ -24,8 +32,9 @@ type SocketLike = Pick<WebSocket, 'close'> & {
 }
 
 export function createRealtimeClient(
-  options: { url?: string; WebSocket?: new (url: string) => SocketLike } = {}
+  options: { url?: string; WebSocket?: new (url: string) => SocketLike; build?: string | null } = {}
 ): RealtimeClient {
+  const build = options.build === undefined ? pageBuild() : options.build
   const url = options.url ?? `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/api/realtime`
   // El del navegador cumple SocketLike (sus manejadores reciben eventos más completos)
   const Socket = (options.WebSocket ?? WebSocket) as new (url: string) => SocketLike
@@ -47,7 +56,9 @@ export function createRealtimeClient(
         }
         current.onmessage = (event) => {
           try {
-            handlers.onMessage(JSON.parse(String(event.data)) as RealtimeMessage)
+            const message = JSON.parse(String(event.data)) as RealtimeMessage
+            if (message.type !== 'hello') return handlers.onMessage(message)
+            if (build && message.build && message.build !== build) handlers.onNewVersion?.()
           } catch {
             // Un mensaje que no se entiende se ignora
           }

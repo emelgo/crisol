@@ -39,6 +39,11 @@ export function Join() {
   /** Tras unirse: a la campaña (o, si es su máster, decirlo) */
   const after = async (result: JoinResult) => {
     setBusy(false)
+    // El enlace dejó de valer con la página abierta: se dice, en vez de seguir ofreciéndolo
+    if (!result.ok && result.code === 'INVALID_LINK') {
+      queryClient.setQueryData(['invitation-info', secret], null)
+      return
+    }
     if (!result.ok) {
       setError(
         t(`join.errors.${result.code}`, {

@@ -1,3 +1,4 @@
+import type { RealtimeMessage } from '@crisol/contracts'
 import type { FastifyInstance, FastifyRequest } from 'fastify'
 import type { Auth } from '../auth/auth.ts'
 import { toHeaders } from '../http.ts'
@@ -7,6 +8,8 @@ export interface RealtimeRouteOptions {
   auth: Auth
   publicUrl: string
   realtime: Realtime
+  /** La versión de la web que se sirve (ver webBuild), para que una pestaña vieja sepa que tiene que recargar */
+  build?: string | null
   /** Cada cuánto se vuelve a comprobar la sesión (si caduca o se cierra, el canal también) */
   sessionCheckMs?: number
   /** Cada cuánto se manda el latido; sin respuesta, la conexión se da por perdida */
@@ -45,6 +48,7 @@ export function registerRealtimeRoutes(app: FastifyInstance, options: RealtimeRo
     (socket, request) => {
       const userId = users.get(request)
       if (!userId) return socket.close(CLOSE_SESSION_ENDED)
+      socket.send(JSON.stringify({ type: 'hello', build: options.build ?? null } satisfies RealtimeMessage))
       const disconnect = realtime.connect(userId, socket)
       const headers = toHeaders(request.headers)
       const sessionCheck = setInterval(async () => {
