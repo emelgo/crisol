@@ -24,7 +24,12 @@ describe('Actions', () => {
       deleteCampaign: true,
       listTrash: true,
       restoreWorld: true,
-      restoreCampaign: true
+      restoreCampaign: true,
+      getAiSettings: true,
+      setAiMode: true,
+      listApprovals: true,
+      approve: true,
+      reject: true
     }
     expect(Object.keys(names).sort()).toEqual(ACTIONS.map((a) => a.name).sort())
   })

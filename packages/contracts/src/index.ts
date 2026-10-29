@@ -1,3 +1,4 @@
+import { approve, getAiSettings, listApprovals, reject, setAiMode } from './ai.ts'
 import { createCampaign, listCampaigns, renameCampaign } from './campaigns.ts'
 import { listHistory, undoOperation } from './history.ts'
 import { getInvitation, regenerateInvitation, setInvitationsOpen } from './invitations.ts'
@@ -7,6 +8,7 @@ import { deleteCampaign, deleteWorld, listTrash, restoreCampaign, restoreWorld }
 import { createWorld, listWorlds, renameWorld } from './worlds.ts'
 
 export * from './action.ts'
+export * from './ai.ts'
 export * from './campaigns.ts'
 export * from './history.ts'
 export * from './invitations.ts'
@@ -38,7 +40,12 @@ export const ACTIONS = [
   deleteCampaign,
   listTrash,
   restoreWorld,
-  restoreCampaign
+  restoreCampaign,
+  getAiSettings,
+  setAiMode,
+  listApprovals,
+  approve,
+  reject
 ]
 
 /** Las acciones por nombre, solo como tipo: la web las usa sin cargar zod */
@@ -63,4 +70,9 @@ export type Actions = {
   listTrash: typeof listTrash
   restoreWorld: typeof restoreWorld
   restoreCampaign: typeof restoreCampaign
+  getAiSettings: typeof getAiSettings
+  setAiMode: typeof setAiMode
+  listApprovals: typeof listApprovals
+  approve: typeof approve
+  reject: typeof reject
 }

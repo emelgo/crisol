@@ -122,6 +122,8 @@ describe('operation', () => {
     // Las que no: cuentas y sesiones (Better Auth), el propio historial, el arranque y las migraciones
     const notTracked = new Set(['user', 'session', 'account', 'verification', 'rate_limit', 'operations', 'changes'])
     notTracked.add('bootstrap_tokens')
+    // Los ajustes y la cola de la IA: lo que se aprueba pasa por el historial al hacerse
+    notTracked.add('ai_settings').add('approvals')
     const tables = await conn.sql<
       { name: string }[]
     >`select tablename as name from pg_tables where schemaname = 'public'`

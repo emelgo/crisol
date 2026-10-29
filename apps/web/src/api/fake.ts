@@ -1,5 +1,15 @@
 /** API en memoria para las pruebas de componentes: mundos, campañas y sus miembros de una organización */
-import type { Campaign, HistoryEntry, Invitation, Member, Organization, TrashItem, World } from '@crisol/contracts'
+import type {
+  AiMode,
+  Approval,
+  Campaign,
+  HistoryEntry,
+  Invitation,
+  Member,
+  Organization,
+  TrashItem,
+  World
+} from '@crisol/contracts'
 import { type ActionInput, type ActionName, type ActionOutput, type ApiClient, ApiError } from './client.ts'
 
 export function fakeApi(
@@ -13,6 +23,8 @@ export function fakeApi(
     history?: HistoryEntry[]
     /** Las operaciones que no se pueden deshacer, con la que lo impide */
     conflicts?: Record<string, HistoryEntry | null>
+    /** Lo que pidió la IA de la cuenta */
+    approvals?: Approval[]
   } = {}
 ) {
   const organizations = options.organizations ?? []
@@ -34,6 +46,17 @@ export function fakeApi(
   const members = new Map(Object.entries(options.members ?? {}).map(([id, list]) => [id, [...list]]))
   const membersOf = (campaignId: string) => ({ members: (members.get(campaignId) ?? []).map((m) => ({ ...m })) })
   const calls: string[] = []
+  let aiMode: AiMode = 'copilot'
+  const approvals = [...(options.approvals ?? [])]
+  const aiSettings = () => ({ mode: aiMode, connectorUrl: 'https://crisol.test/mcp' })
+  // Como el servidor: lo aprobado se hace (aquí, sin más) y lo rechazado no
+  const decide = (approvalId: string, status: 'done' | 'rejected') => {
+    const found = approvals.find((a) => a.id === approvalId)
+    if (!found) throw new ApiError('NOT_FOUND', 404)
+    if (found.status !== 'pending') throw new ApiError('ALREADY_DECIDED', 400)
+    Object.assign(found, { status, decidedAt: new Date().toISOString() })
+    return { ...found }
+  }
   const invitations = new Map<string, Invitation>()
   const link = () => `https://crisol.test/unirse/${crypto.randomUUID()}`
   const invitationOf = (campaignId: string) => {
@@ -186,6 +209,17 @@ export function fakeApi(
       campaigns.push(found.campaign)
       return { id: found.campaign.id, name: found.campaign.name }
     },
+    getAiSettings: () => aiSettings(),
+    setAiMode: ({ mode }) => {
+      aiMode = mode
+      return aiSettings()
+    },
+    listApprovals: () => ({
+      pending: approvals.filter((a) => a.status === 'pending').map((a) => ({ ...a })),
+      recent: approvals.filter((a) => a.status !== 'pending').map((a) => ({ ...a }))
+    }),
+    approve: ({ approvalId }) => decide(approvalId, 'done'),
+    reject: ({ approvalId }) => decide(approvalId, 'rejected'),
     // Quien sale deja de ver la campaña
     leaveCampaign: ({ campaignId }) => {
       const index = campaigns.findIndex((c) => c.id === campaignId)
@@ -201,5 +235,5 @@ export function fakeApi(
       return handlers[name](input as never) as never
     }
   }
-  return { client, calls, worlds, campaigns, history }
+  return { client, calls, worlds, campaigns, history, approvals }
 }

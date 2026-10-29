@@ -19,7 +19,7 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   - Spec `docs/specs/fundacion.md` **aprobada**; ADR-0002 (Better Auth solo para identidad; inquilinos e invitaciones
     en tablas propias); prueba de fugas añadida a `CONSTRAINTS.md`.
   - Plan aprobado: `tasks/plan.md` y 25 tareas en `tasks/todo.md`.
-- **2026-10-29 — Módulo 0 en curso: tareas 1 a 14 y 16 a 21 hechas** (PR #2 a #26). Staging en
+- **2026-10-29 — Módulo 0 en curso: tareas 1 a 14 y 16 a 22 hechas** (PR #2 a #27). Staging en
   https://neo.crisol.144-91-122-245.sslip.io (Compose `crisol-staging` en `~/crisol-staging`, puerto 8140; copia del
   Caddyfile en `/etc/caddy/Caddyfile.bak-20261029-104936-neo-crisol`). Desplegar tras cada merge:
   `scripts/desplegar-staging.sh` (con cerrojo).
@@ -57,6 +57,17 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
     Purga diaria a las 4:00 de Madrid con BullMQ 6.3.15 (`apps/server/src/jobs/purges.ts`): lo de más de 30 días en
     la papelera y las operaciones de más de 90; quien se queda sin nada deja de ser miembro. `msgpackr-extract`
     (acelerador nativo opcional) no ejecuta su script de instalación.
+  - Modos de IA y cola (22): modo por cuenta (`ai_settings`; copiloto si no hay fila) y la decisión por modo × tipo
+    de acción en `packages/domain/src/ai-modes.ts`. Lo que espera va a `approvals` (Postgres, fuera del historial):
+    `apps/server/src/mcp/approvals.ts` lo apunta con los nombres de lo que toca (solo si la cuenta lo ve), avisa por
+    el canal y espera hasta 15 s escuchando el bus del proceso (una conexión más de la cuenta en el hub); si no hay
+    decisión, contesta `PENDING_APPROVAL`. `approve` lo hace con la cuenta y sus permisos de ahora, como hecho por la
+    IA con su herramienta; si ya no se puede, queda `failed` con el código. Aprobar, rechazar y cambiar el modo solo
+    desde la interfaz (`UI_ONLY`). Las herramientas que no son de leer no anuncian `outputSchema` (pueden contestar
+    «esperando»). La caducidad (24 h) se decide con la hora, no se guarda; la purga diaria se lleva las peticiones de
+    más de 90 días.
+  - Discord, Google y el correo (tarea 15), **pospuestos** por Enrique: de momento solo email y contraseña. Sin correo
+    no hay «recuperar la contraseña»; las variables están comentadas en `.env.example`.
   - Puntos de control 1 y 2 superados: Enrique tiene su cuenta de propietario en staging (organización
     «Fateforge», mundo «Eana») y conectó claude.ai (cliente CIMD `https://claude.ai/oauth/mcp-oauth-client-metadata`).
   - GitHub gratis no protege ramas privadas: se fusiona solo con los 4 check-runs del commit en verde, esperando con
@@ -64,10 +75,10 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   - MIT-0 admitida en `CONSTRAINTS.md`.
   - Puertos: desarrollo 8130 (servidor), 5173 (Vite), 54330 (Postgres), 63790 (Valkey), 10250/8250 (Mailpit);
     e2e 8131; prueba del MCP 8132; staging 8140.
-- **Siguiente paso: punto de control 4 con Enrique** (criterio 6: borrar una campaña y restaurarla desde la
-  papelera; el 5, deshacer lo que creó Claude, se completa con la tarea 24, que trae `crear_campana`). Después, la
-  **22** (modos de IA y cola de aprobación en el servidor) o la **15** (Discord y Google) si Enrique ya tiene las apps
-  OAuth y ha decidido el correo.
+- **Siguiente paso: tarea 23** (cola y ajustes de IA en la interfaz: la cola siempre a mano cuando hay algo
+  pendiente, con el aviso `changed approvals` del canal; ya está en `queriesFor` como `['approvals']`). Luego la 24
+  (resto de herramientas MCP) y la 25 (cierre). El punto de control 4 con Enrique sigue pendiente (criterio 6: borrar
+  una campaña y restaurarla; el 5 se completa con la 24, que trae `crear_campana`).
 - **Antes del módulo 1**: ADR sobre Yjs y secretos. Yjs no puede proyectar por usuario, así que el contenido con otra
   visibilidad tiene que ir en documentos o subdocumentos aparte (ver la nota de sincronización de Foundry).
 - **Pendientes de permiso de Enrique:**

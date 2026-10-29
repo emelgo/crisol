@@ -29,6 +29,12 @@ export const invitationChanged = (scope: CampaignScope): RealtimeEvent => ({
   message: { type: 'changed', what: 'invitation', campaignId: scope.campaignId }
 })
 
+/** La cola de la IA de una cuenta: solo a ella */
+export const approvalsChanged = (userId: string): RealtimeEvent => ({
+  to: { userId },
+  message: { type: 'changed', what: 'approvals' }
+})
+
 /** Alguien ha entrado con el enlace: a quien puede expulsarlo */
 export const memberJoined = (
   scope: CampaignScope,
