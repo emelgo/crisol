@@ -1,6 +1,6 @@
 # Listón de calidad
 
-Revisado: 2026-10-29 con Enrique. Este archivo no se rebaja para que algo pase: cambiarlo exige su visto bueno en el PR.
+Revisado: 2026-10-29 con Enrique (prueba de fugas añadida con el módulo 0). Este archivo no se rebaja para que algo pase: cambiarlo exige su visto bueno en el PR.
 
 ## Suelo (siempre, bloquea)
 
@@ -24,6 +24,7 @@ Revisado: 2026-10-29 con Enrique. Este archivo no se rebaja para que algo pase: 
 | Secretos | Ninguno | `gitleaks` | CI | Bloquea |
 | Licencias | Solo la lista permitida (MIT, ISC, BSD, Apache-2.0, 0BSD, CC0, Unlicense, BlueOak, CC BY 4.0 para datos) | script de licencias sobre `pnpm licenses list` | CI | Bloquea |
 | Sala limpia | Sin imports de `research/` | prueba propia | CI | Bloquea |
+| Fugas | Un jugador no recibe nada que no pueda ver (API, WebSocket, MCP) | prueba e2e de fugas, que cada módulo amplía | CI | Bloquea |
 | Cobertura | ≥ 80 % de las líneas nuevas o cambiadas | `vitest --coverage` + diff | CI | Avisa hasta el 2026-11-12, luego bloquea |
 | Seguridad: código | Ningún hallazgo alto | `semgrep` (reglas por defecto) | CI | Avisa hasta el 2026-11-12, luego bloquea |
 | Seguridad: dependencias | Nada alto o crítico | `osv-scanner` | CI | Avisa hasta el 2026-11-12, luego bloquea |

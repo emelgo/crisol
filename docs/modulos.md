@@ -11,16 +11,16 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   - Repo, normas (`CLAUDE.md`, `CONSTRAINTS.md`), inventario, ADR-0001 y skills de agent-skills en el proyecto.
   - REA arreglado (navegador).
   - Foundry 14.369 instalado para el REA (`research/foundry/entorno.md`).
-- **2026-10-29 — Módulo 0 repasado, REA hecho, spec en borrador** (rama `fundacion/repaso-y-spec`).
+- **2026-10-29 — Módulo 0 repasado, REA hecho, spec aprobada, plan escrito** (rama `fundacion/repaso-y-spec`).
   - Decisiones en «Decisiones por módulo» más abajo.
   - REA: `research/foundry/usuarios-y-permisos.md`, `research/foundry/sincronizacion-e-historial.md` y
     `research/dndbeyond/campanas-e-invitaciones.md`. Lo gordo: Foundry no proyecta nada por usuario (manda el mundo
     entero y oculta en la interfaz) y no tiene historial; D&D Beyond ata la pertenencia al personaje.
-  - Spec: `docs/specs/fundacion.md`, **pendiente de que Enrique la apruebe** y de sus 4 preguntas abiertas (SMTP,
-    Google con sslip.io, despliegue manual o automático, prueba de fugas en `CONSTRAINTS.md`).
-- **Siguiente paso**: aprobar la spec → ADR-0002 (Better Auth solo para identidad; inquilinos e invitaciones en
-  tablas propias) → `/plan` → `/build`. La primera porción es el monorepo con la CI, para que los PR tengan
-  comprobaciones.
+  - Spec `docs/specs/fundacion.md` **aprobada**; ADR-0002 (Better Auth solo para identidad; inquilinos e invitaciones
+    en tablas propias); prueba de fugas añadida a `CONSTRAINTS.md`.
+  - Plan en `tasks/plan.md` y 25 tareas en `tasks/todo.md`, **pendientes de que Enrique los apruebe**.
+- **Siguiente paso**: aprobar el plan → `/build` desde la tarea 1 (esqueleto del monorepo), una rama y un PR por
+  tarea. Preguntas 1 y 2 de la spec (correo y Google) antes de la tarea 15.
 - **Antes del módulo 1**: ADR sobre Yjs y secretos. Yjs no puede proyectar por usuario, así que el contenido con otra
   visibilidad tiene que ir en documentos o subdocumentos aparte (ver la nota de sincronización de Foundry).
 - **Pendientes de permiso de Enrique:**

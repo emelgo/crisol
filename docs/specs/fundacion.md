@@ -1,6 +1,6 @@
 # Spec: Módulo 0 — Fundación
 
-Estado: borrador para revisar con Enrique · Fecha: 2026-10-29 · Decisiones de partida: `docs/modulos.md` § «0.
+Estado: aprobada por Enrique · Fecha: 2026-10-29 · Decisiones de partida: `docs/modulos.md` § «0.
 Fundación» · Arquitectura: `docs/adr/0001-arquitectura.md` · REA: `research/foundry/usuarios-y-permisos.md`,
 `research/foundry/sincronizacion-e-historial.md`, `research/dndbeyond/campanas-e-invitaciones.md`
 
@@ -203,7 +203,7 @@ La del ADR-0001. Del módulo 0: Node 24, pnpm 12, Turborepo, TypeScript, Fastify
 `@modelcontextprotocol/sdk`, React 19 + Vite, TanStack Router/Query, i18next, Biome, Vitest, Playwright. Antes de
 añadir cada dependencia se comprueba su licencia.
 
-**Decisión que irá en el ADR-0002:** Better Auth se usa para la **identidad** (cuentas, sesiones, proveedores,
+**Decisión (ADR-0002):** Better Auth se usa para la **identidad** (cuentas, sesiones, proveedores,
 OAuth/MCP), pero **no** su plugin de organizaciones. Sus invitaciones van atadas a un email y sus roles son de
 organización, y nosotros queremos enlaces por campaña y una sola capa de políticas. Organizaciones, mundos, campañas,
 pertenencias e invitaciones van en tablas propias.
@@ -313,12 +313,12 @@ export const createCampaignService: Service<typeof createCampaign> = async (ctx,
 ## Preguntas abiertas
 
 1. **Correo en staging** (recuperar contraseña): ¿un SMTP de un proveedor transaccional con plan gratuito, o Gmail
-   con contraseña de aplicación? Sin correo, quien use email y contraseña no puede recuperarla.
+   con contraseña de aplicación? Sin correo, quien use email y contraseña no puede recuperarla ni
+   verificar su email, y sin email verificado no se le puede vincular con seguridad otra forma de entrar (ADR-0002).
 2. **Google y Discord**: hay que crear una aplicación OAuth en cada uno con la dirección de staging. Discord acepta
    cualquier HTTPS. Google podría no aceptar un dominio `sslip.io`; si no lo acepta, Google se queda para cuando haya
    dominio propio.
-3. **Despliegue**: ¿script manual en el VPS por ahora (propuesta) o automático desde GitHub Actions (necesita una
-   clave SSH del VPS en GitHub)?
-4. **Prueba de fugas en `CONSTRAINTS.md`**: propongo añadirla al listón como comprobación que bloquea en la CI, para
-   que cada módulo la amplíe con lo suyo (secretos de la wiki, niebla de la mesa…). Cambiar `CONSTRAINTS.md` requiere
-   tu visto bueno.
+3. ~~Despliegue~~: decidido, script manual en el VPS por ahora.
+4. ~~Prueba de fugas en `CONSTRAINTS.md`~~: decidido, añadida como comprobación que bloquea.
+
+Las preguntas 1 y 2 se deciden antes de la porción de despliegue con cuentas sociales; no bloquean lo anterior.
