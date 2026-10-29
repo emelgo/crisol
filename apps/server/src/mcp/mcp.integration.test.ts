@@ -1,10 +1,14 @@
 import { createHash, randomBytes, randomUUID } from 'node:crypto'
-import { connect, schema } from '@crisol/db'
+import type { Approval, Campaign, HistoryEntry, Invitation, World } from '@crisol/contracts'
+import { aiRepo, connect, schema } from '@crisol/db'
 import { freshTestDatabase } from '@crisol/db/testing'
 import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/client'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { startServer } from '../server.ts'
 import { signUpTestUser, TEST_AUTH_SECRET } from '../testing.ts'
+
+type History = { entries: HistoryEntry[] }
+type Approvals = { pending: Approval[]; recent: Approval[] }
 
 // Puerto fijo: el recurso y el emisor de los tokens salen de PUBLIC_URL, que tiene que ser la dirección real
 const PORT = 8132
@@ -19,15 +23,19 @@ describe('conector MCP con OAuth', () => {
   beforeAll(async () => {
     const url = await freshTestDatabase('crisol_test_mcp')
     conn = connect(url, { max: 2 })
-    server = await startServer({
-      NODE_ENV: 'test',
-      HOST: '127.0.0.1',
-      PORT,
-      DATABASE_URL: url,
-      VALKEY_URL: process.env.TEST_VALKEY_URL ?? 'redis://127.0.0.1:63790',
-      AUTH_SECRET: TEST_AUTH_SECRET,
-      PUBLIC_URL: BASE
-    })
+    server = await startServer(
+      {
+        NODE_ENV: 'test',
+        HOST: '127.0.0.1',
+        PORT,
+        DATABASE_URL: url,
+        VALKEY_URL: process.env.TEST_VALKEY_URL ?? 'redis://127.0.0.1:63790',
+        AUTH_SECRET: TEST_AUTH_SECRET,
+        PUBLIC_URL: BASE
+      },
+      // Lo que espera aprobación contesta enseguida: aquí no se aprueba durante la espera
+      { approvalWaitMs: 50 }
+    )
   })
 
   afterAll(async () => {
@@ -200,5 +208,145 @@ describe('conector MCP con OAuth', () => {
 
   it('un token falso no sirve', async () => {
     expect((await rpc('no-es-un-token', 'tools/list')).status).toBe(401)
+  })
+
+  /** El cliente oficial con el token de un propietario recién conectado */
+  const connected = async () => {
+    const owner = await account('owner')
+    const token = await accessToken(owner.cookie, await oauthClient(owner.cookie))
+    const client = new Client({ name: 'pruebas', version: '1' })
+    await client.connect(
+      new StreamableHTTPClientTransport(new URL('/mcp', BASE), {
+        requestInit: { headers: { authorization: `Bearer ${token}` } }
+      })
+    )
+    clients.push(client)
+    /** Llama a una herramienta: devuelve lo que contesta y su texto */
+    const call = async <T = Record<string, unknown>>(name: string, args: Record<string, unknown> = {}) => {
+      const result = await client.callTool({ name, arguments: args })
+      const text = (result.content as Array<{ text?: string }>).map((c) => c.text ?? '').join('\n')
+      return { ...result, text, data: result.structuredContent as T }
+    }
+    return { ...owner, call }
+  }
+  const clients: Client[] = []
+  afterAll(async () => {
+    await Promise.all(clients.map((client) => client.close()))
+  })
+
+  it('cada herramienta en cada modo: leer siempre; lo demás se hace, espera o no se hace', async () => {
+    const { userId, call } = await connected()
+    const world = (await call<World>('crear_mundo', { name: 'Eana' })).data
+    const campaign = (await call<Campaign>('crear_campana', { worldId: world.id, name: 'La Marca' })).data
+    const history = (await call<History>('ver_historial', { worldId: world.id })).data
+    const operationId = history.entries[0]?.id
+    const cases: Array<[string, Record<string, unknown>, 'read' | 'write' | 'players' | 'delete']> = [
+      ['listar_mundos', {}, 'read'],
+      ['ver_campana', { campaignId: campaign.id }, 'read'],
+      ['ver_historial', { worldId: world.id }, 'read'],
+      ['pendientes', {}, 'read'],
+      ['enlace_invitacion', { campaignId: campaign.id }, 'read'],
+      ['crear_mundo', { name: 'Otro' }, 'write'],
+      ['crear_campana', { worldId: world.id, name: 'Otra' }, 'write'],
+      ['enlace_invitacion', { campaignId: campaign.id, change: 'regenerate' }, 'players'],
+      ['enlace_invitacion', { campaignId: campaign.id, change: 'close' }, 'players'],
+      ['deshacer', { operationId }, 'delete']
+    ]
+    const expected = {
+      readOnly: { read: 'run', write: 'refuse', players: 'refuse', delete: 'refuse' },
+      assistant: { read: 'run', write: 'ask', players: 'ask', delete: 'ask' },
+      copilot: { read: 'run', write: 'run', players: 'ask', delete: 'ask' }
+    } as const
+    for (const mode of ['readOnly', 'assistant', 'copilot'] as const) {
+      await aiRepo.setAiMode(conn.db, userId, mode)
+      for (const [tool, args, kind] of cases) {
+        const result = await call(tool, args)
+        const outcome = result.text.startsWith('READ_ONLY')
+          ? 'refuse'
+          : result.text.startsWith('PENDING_APPROVAL')
+            ? 'ask'
+            : result.isError
+              ? `error: ${result.text}`
+              : 'run'
+        expect(`${mode} ${tool} ${kind}: ${outcome}`).toBe(`${mode} ${tool} ${kind}: ${expected[mode][kind]}`)
+      }
+    }
+  })
+
+  it('en copiloto, Claude crea una campaña sin preguntar y regenerar el enlace espera; al aprobarlo se hace', async () => {
+    const { cookie, call } = await connected()
+    const world = (await call<World>('crear_mundo', { name: 'Eana' })).data
+    const campaign = (await call<Campaign>('crear_campana', { worldId: world.id, name: 'Los Cuervos' })).data
+    expect((await call('ver_campana', { campaignId: campaign.id })).data).toMatchObject({
+      campaign: { name: 'Los Cuervos', role: 'master' },
+      world: { id: world.id, name: 'Eana' },
+      members: [{ name: 'Enrique', role: 'master' }]
+    })
+    const before = (await call<Invitation>('enlace_invitacion', { campaignId: campaign.id })).data.url
+
+    const asked = await call('enlace_invitacion', { campaignId: campaign.id, change: 'regenerate' })
+    expect(asked.text).toMatch(/^PENDING_APPROVAL/)
+    const { pending } = (await call<Approvals>('pendientes')).data
+    expect(pending).toEqual([
+      expect.objectContaining({
+        tool: 'enlace_invitacion',
+        action: 'regenerateInvitation',
+        details: { campaign: 'Los Cuervos' },
+        status: 'pending'
+      })
+    ])
+
+    // El máster lo aprueba en Crisol (con su sesión)
+    const approved = await fetch(new URL('/api/actions/approve', BASE), {
+      method: 'POST',
+      headers: { cookie, origin: BASE, 'content-type': 'application/json' },
+      body: JSON.stringify({ approvalId: pending[0]?.id })
+    })
+    expect(await approved.json()).toMatchObject({ status: 'done' })
+    expect((await call<Invitation>('enlace_invitacion', { campaignId: campaign.id })).data.url).not.toBe(before)
+    expect((await call('pendientes')).data).toMatchObject({ pending: [], recent: [{ status: 'done' }] })
+    const { entries } = (await call<History>('ver_historial', { worldId: world.id })).data
+    expect(entries.map((e) => [e.action, e.via, e.tool])).toEqual([
+      ['regenerateInvitation', 'ai', 'enlace_invitacion'],
+      ['createCampaign', 'ai', 'crear_campana'],
+      ['createWorld', 'ai', 'crear_mundo']
+    ])
+  })
+
+  it('lo de otra organización no existe para Claude: ni se ve, ni se pide, ni se deshace', async () => {
+    const mine = await connected()
+    const other = await connected()
+    const theirWorld = (await other.call<World>('crear_mundo', { name: 'Ajeno' })).data
+    const theirCampaign = (await other.call<Campaign>('crear_campana', { worldId: theirWorld.id, name: 'Secreta' }))
+      .data
+    const theirOperation = (await other.call<History>('ver_historial', { worldId: theirWorld.id })).data.entries[0]?.id
+
+    expect(JSON.stringify((await mine.call('listar_mundos')).data)).not.toMatch(/Ajeno|Secreta/)
+    for (const [tool, args] of [
+      ['ver_campana', { campaignId: theirCampaign.id }],
+      ['enlace_invitacion', { campaignId: theirCampaign.id }],
+      ['enlace_invitacion', { campaignId: theirCampaign.id, change: 'regenerate' }],
+      ['crear_campana', { worldId: theirWorld.id, name: 'Intrusa' }],
+      ['ver_historial', { worldId: theirWorld.id }],
+      ['deshacer', { operationId: theirOperation }]
+    ] as const) {
+      const result = await mine.call(tool, args)
+      expect(`${tool}: ${result.text}`).toMatch(new RegExp(`^${tool}: NOT_FOUND`))
+    }
+    expect((await mine.call('pendientes')).data).toEqual({ pending: [], recent: [] })
+  })
+
+  it('lo de la papelera no sale en listar_mundos', async () => {
+    const { cookie, call } = await connected()
+    const world = (await call<World>('crear_mundo', { name: 'Eana' })).data
+    const campaign = (await call<Campaign>('crear_campana', { worldId: world.id, name: 'Borrada' })).data
+    await fetch(new URL('/api/actions/deleteCampaign', BASE), {
+      method: 'POST',
+      headers: { cookie, origin: BASE, 'content-type': 'application/json' },
+      body: JSON.stringify({ campaignId: campaign.id })
+    })
+    expect((await call('listar_mundos')).data).toEqual({
+      worlds: [expect.objectContaining({ name: 'Eana', role: 'master', campaigns: [] })]
+    })
   })
 })

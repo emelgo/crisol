@@ -12,6 +12,8 @@ describe('Actions', () => {
       listCampaigns: true,
       createCampaign: true,
       renameCampaign: true,
+      listWorldsWithCampaigns: true,
+      getCampaign: true,
       getInvitation: true,
       regenerateInvitation: true,
       setInvitationsOpen: true,

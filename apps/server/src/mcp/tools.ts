@@ -4,35 +4,96 @@
  */
 import { APPROVAL_WAIT_MS } from '@crisol/domain'
 import { McpServer } from '@modelcontextprotocol/server'
+import { z } from 'zod'
 import type { ActionEnv, Implementation } from '../actions/context.ts'
 import { implementationsByName } from '../actions/implementations.ts'
 import { callAsAi } from './approvals.ts'
 
-/** Herramienta → acción del contrato */
-export const MCP_TOOLS: Record<string, string> = {
-  listar_mundos: 'listWorlds'
+/** Qué acción del contrato hace la herramienta, y con qué entrada */
+type Route = { action: string; input: Record<string, unknown> }
+
+/** Una herramienta: una acción del contrato tal cual, o una de varias según lo que se pida */
+export type McpTool =
+  | { action: string }
+  | {
+      description: string
+      input: z.ZodObject
+      /** Las acciones a las que puede llevar */
+      actions: readonly string[]
+      route: (input: Record<string, unknown>) => Route
+    }
+
+const invitationInput = z.object({
+  campaignId: z.uuid(),
+  change: z
+    .enum(['regenerate', 'open', 'close'])
+    .optional()
+    .describe(
+      'Sin change, solo lo devuelve. regenerate: un enlace nuevo; open o close: abrir o cerrar las invitaciones'
+    )
+})
+
+export const MCP_TOOLS: Record<string, McpTool> = {
+  listar_mundos: { action: 'listWorldsWithCampaigns' },
+  ver_campana: { action: 'getCampaign' },
+  crear_mundo: { action: 'createWorld' },
+  crear_campana: { action: 'createCampaign' },
+  enlace_invitacion: {
+    description:
+      'El enlace de invitación de una campaña y si las invitaciones están abiertas. Con change, lo regenera (el anterior deja de valer) o abre o cierra las invitaciones: eso afecta a los jugadores y puede esperar la aprobación del máster',
+    input: invitationInput,
+    actions: ['getInvitation', 'regenerateInvitation', 'setInvitationsOpen'],
+    route: (input) => {
+      const { campaignId, change } = invitationInput.parse(input)
+      if (change === 'regenerate') return { action: 'regenerateInvitation', input: { campaignId } }
+      if (change) return { action: 'setInvitationsOpen', input: { campaignId, open: change === 'open' } }
+      return { action: 'getInvitation', input: { campaignId } }
+    }
+  },
+  ver_historial: { action: 'listHistory' },
+  deshacer: { action: 'undoOperation' },
+  pendientes: { action: 'listApprovals' }
 }
 
 const INSTRUCTIONS =
-  'Crisol: mundos de rol y su mesa virtual. Habla siempre en español. Los mundos tienen campañas; ' +
-  'lo que cambies queda en el historial de Crisol y el máster puede deshacerlo. Según el modo de IA que elija el ' +
-  'máster, algunas acciones esperan su aprobación en Crisol; si rechaza una, no insistas.'
+  'Crisol: mundos de rol y su mesa virtual. Habla siempre en español. Una organización tiene mundos, y cada mundo, ' +
+  'campañas con su máster y sus jugadores; a una campaña se entra con su enlace de invitación. Lo que cambies queda ' +
+  'en el historial de Crisol y el máster puede deshacerlo. Según el modo de IA que elija el máster, algunas acciones ' +
+  'esperan su aprobación en Crisol: no las repitas, mira cómo acabaron con pendientes; si rechaza una, no insistas.'
 
-/** Lo que se anuncia de una herramienta. Solo las de leer dicen qué devuelven: las demás pueden quedar esperando */
-export function toolConfig(impl: Implementation) {
-  const { description, input, output, kind } = impl.action
+function implementation(name: string): Implementation {
+  const impl = implementationsByName.get(name)
+  if (!impl) throw new Error(`Una herramienta apunta a una acción que no existe: ${name}`)
+  return impl
+}
+
+/** Las acciones a las que puede llevar una herramienta */
+export const toolActions = (tool: McpTool) => ('route' in tool ? tool.actions : [tool.action]).map(implementation)
+
+/**
+ * Lo que se anuncia de una herramienta. Solo las de leer de una sola acción dicen qué devuelven: las demás pueden
+ * quedar esperando la aprobación, o devolver cosas distintas según lo que se pida
+ */
+export function toolConfig(tool: McpTool) {
+  if ('route' in tool) return { description: tool.description, inputSchema: tool.input }
+  const { description, input, output, kind } = implementation(tool.action).action
   return { description, inputSchema: input, ...(kind === 'read' ? { outputSchema: output } : {}) }
+}
+
+/** La acción y su entrada (validada con su contrato) para lo que pide la IA */
+export function routeCall(tool: McpTool, input: Record<string, unknown>) {
+  const route = 'route' in tool ? tool.route(input) : { action: tool.action, input }
+  const impl = implementation(route.action)
+  return { impl, input: impl.action.input.parse(route.input) as Record<string, unknown> }
 }
 
 /** El servidor MCP de una petición, con las herramientas de la cuenta del token */
 export function buildMcpServer(env: ActionEnv, userId: string, options: { approvalWaitMs?: number } = {}): McpServer {
   const server = new McpServer({ name: 'crisol', version: '0.0.0' }, { instructions: INSTRUCTIONS })
   const waitMs = options.approvalWaitMs ?? APPROVAL_WAIT_MS
-  for (const [tool, actionName] of Object.entries(MCP_TOOLS)) {
-    const impl = implementationsByName.get(actionName)
-    if (!impl) throw new Error(`La herramienta ${tool} apunta a una acción que no existe: ${actionName}`)
-    server.registerTool(tool, toolConfig(impl), (input) =>
-      callAsAi(env, { userId, tool, impl, input: input as Record<string, unknown>, waitMs })
+  for (const [name, tool] of Object.entries(MCP_TOOLS)) {
+    server.registerTool(name, toolConfig(tool), (args) =>
+      callAsAi(env, { userId, tool: name, ...routeCall(tool, args as Record<string, unknown>), waitMs })
     )
   }
   return server

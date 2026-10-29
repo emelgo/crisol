@@ -223,7 +223,8 @@ Comprobación local al acabar cada tarea: `pnpm lint && pnpm typecheck && pnpm t
     `apps/web/src/rutas/papelera.tsx`.
 
 ### Punto de control 4
-- [ ] Criterios 5 y 6 de la spec.
+- [ ] Criterios 5 y 6 de la spec. (6, superado por Enrique en staging el 2026-10-29; el 5 se prueba con la 24, que trae
+  `crear_campana`.)
 
 ## Fase 5: IA
 
@@ -247,7 +248,9 @@ Comprobación local al acabar cada tarea: `pnpm lint && pnpm typecheck && pnpm t
   - Archivos: `apps/web/src/rutas/ajustes-ia.tsx`, `apps/web/src/componentes/cola-aprobacion.tsx`,
     `e2e/aprobaciones.spec.ts`.
 
-- [ ] **24. Resto de herramientas MCP**
+- [x] **24. Resto de herramientas MCP** — hecha antes que la 23, para que su e2e pase por el MCP de verdad. Dos acciones
+  nuevas: `listWorldsWithCampaigns` (`listar_mundos`) y `getCampaign` (`ver_campana`); `enlace_invitacion` lleva a una de
+  tres según `change`
   - Acepta: `ver_campana`, `crear_mundo`, `crear_campana`, `enlace_invitacion`, `ver_historial`, `deshacer` y
     `pendientes`, sacadas de los contratos y con su tipo.
   - Comprueba: prueba con el cliente del SDK por herramienta × modo, y la proyección (lo que no se ve no sale).

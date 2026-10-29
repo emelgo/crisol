@@ -1,5 +1,5 @@
 import { approve, getAiSettings, listApprovals, reject, setAiMode } from './ai.ts'
-import { createCampaign, listCampaigns, renameCampaign } from './campaigns.ts'
+import { createCampaign, getCampaign, listCampaigns, listWorldsWithCampaigns, renameCampaign } from './campaigns.ts'
 import { listHistory, undoOperation } from './history.ts'
 import { getInvitation, regenerateInvitation, setInvitationsOpen } from './invitations.ts'
 import { leaveCampaign, listMembers, removeMember } from './members.ts'
@@ -28,6 +28,8 @@ export const ACTIONS = [
   listCampaigns,
   createCampaign,
   renameCampaign,
+  listWorldsWithCampaigns,
+  getCampaign,
   getInvitation,
   regenerateInvitation,
   setInvitationsOpen,
@@ -57,6 +59,8 @@ export type Actions = {
   listCampaigns: typeof listCampaigns
   createCampaign: typeof createCampaign
   renameCampaign: typeof renameCampaign
+  listWorldsWithCampaigns: typeof listWorldsWithCampaigns
+  getCampaign: typeof getCampaign
   getInvitation: typeof getInvitation
   regenerateInvitation: typeof regenerateInvitation
   setInvitationsOpen: typeof setInvitationsOpen
