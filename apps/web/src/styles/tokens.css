@@ -6,6 +6,8 @@
   --color-text: #1f1a17;
   --color-muted: #5a5048;
   --color-border: #d9cfc2;
+  /* El borde de los campos: 3:1 con el fondo y la superficie (WCAG 1.4.11). --color-border es solo decorativo */
+  --color-field-border: #857869;
   --color-accent: #9b1c1c;
   --color-on-accent: #ffffff;
   --color-focus: #1d4ed8;
@@ -26,6 +28,7 @@
   --color-text: #ece8e1;
   --color-muted: #a8a19a;
   --color-border: #363a45;
+  --color-field-border: #737a8a;
   --color-accent: #f0726a;
   --color-on-accent: #15171c;
   --color-focus: #93b4ff;

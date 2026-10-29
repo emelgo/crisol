@@ -12,7 +12,8 @@ export default defineConfig({
   test: {
     environment: 'happy-dom',
     setupFiles: ['./src/test-setup.ts'],
-    css: { modules: { classNameStrategy: 'non-scoped' } },
+    // tokens.css, de verdad: su prueba comprueba los contrastes
+    css: { include: [/tokens\.css/], modules: { classNameStrategy: 'non-scoped' } },
     coverage: {
       provider: 'v8',
       include: ['src/**/*.{ts,tsx}'],
