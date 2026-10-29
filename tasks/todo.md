@@ -5,7 +5,7 @@ Comprobación local al acabar cada tarea: `pnpm lint && pnpm typecheck && pnpm t
 
 ## Fase 1: Plataforma
 
-- [ ] **1. Esqueleto del monorepo con sala limpia y licencias**
+- [x] **1. Esqueleto del monorepo con sala limpia y licencias**
   - Acepta:
     - `pnpm install && pnpm lint && pnpm typecheck && pnpm test` en verde.
     - La prueba de sala limpia falla con un fichero de ejemplo que importa `research/`.
