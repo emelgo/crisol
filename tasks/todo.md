@@ -27,7 +27,7 @@ Comprobación local al acabar cada tarea: `pnpm lint && pnpm typecheck && pnpm t
   - Archivos: `.github/workflows/ci.yml`, `.dependency-cruiser.cjs`, `scripts/cobertura-diff.ts`.
   - Pide a Enrique: proteger `main`.
 
-- [ ] **3. Servidor, base de datos y Compose de desarrollo**
+- [x] **3. Servidor, base de datos y Compose de desarrollo**
   - Acepta:
     - `pnpm dev` levanta Postgres 17, Valkey y Mailpit (en loopback), y el servidor.
     - `GET /api/health` da 200 si Postgres y Valkey responden, y 503 si no.
