@@ -41,6 +41,7 @@ porciones verticales con TDD → `/agent-skills:review` (la interfaz, también c
   Commits pequeños, en español, cuando algo funciona, terminados en
   `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
 - Pide permiso antes de instalar paquetes del sistema, abrir puertos, tocar Caddy o crear servicios.
-- No toques el Crisol actual ni sus datos (`~/crisol-app`, `~/CrisolVTT`, `~/crisol-data`): el importador trabaja
-  sobre una copia en `datos-locales/` (fuera de git).
+- No toques el Crisol actual ni sus datos (`~/crisol-app`, `~/CrisolVTT`, `~/crisol-data`). No hay importador: Eana se
+  pasará con Claude por el MCP cuando la app esté terminada. Si hiciera falta una copia, va en `datos-locales/` (fuera
+  de git).
 - Secretos solo en `.env` (fuera de git); `.env.example` documenta las variables.
