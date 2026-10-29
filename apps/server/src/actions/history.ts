@@ -44,11 +44,6 @@ export const historyActions = [
     // que ya no ve ni su máster); el máster, lo de su mundo
     authorizeUndo(ctx, target ?? { organizationId: '', worldId: null })
     if (!target) throw new NotFoundError('operation')
-    // Salir de una campaña es decisión de quien sale: solo esa cuenta lo deshace (si no, el máster lo metería sin
-    // enlace)
-    if (target.action === 'leaveCampaign' && target.actorId !== ctx.actor.userId) {
-      throw new InvalidRequestError('NOT_UNDOABLE')
-    }
 
     const result = await undoRepo.undoOperation(ctx.db, historyContext(ctx, 'undoOperation', {}), operationId)
     if (result.status === 'not-found') throw new NotFoundError('operation')
