@@ -7,6 +7,10 @@ describe('isAllowed', () => {
     expect(isAllowed('MIT', PROD_POLICY)).toBe(true)
   })
 
+  it('admite MIT-0 (MIT sin obligación de atribución; aprobada por Enrique el 2026-10-29)', () => {
+    expect(isAllowed('MIT-0', PROD_POLICY)).toBe(true)
+  })
+
   it('rechaza una licencia copyleft', () => {
     expect(isAllowed('GPL-3.0-only', PROD_POLICY)).toBe(false)
   })

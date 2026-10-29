@@ -16,10 +16,12 @@
     "sala-limpia": "node scripts/sala-limpia.ts",
     "test:coverage": "turbo run test:coverage",
     "cobertura-diff": "node scripts/cobertura-diff.ts",
-    "limites": "depcruise --config .dependency-cruiser.cjs apps packages scripts",
+    "limites": "depcruise --config .dependency-cruiser.cjs apps packages scripts e2e",
     "servicios": "docker compose up -d --wait",
     "dev": "docker compose up -d --wait && turbo run dev",
-    "db:migrate": "pnpm --filter @crisol/db migrate"
+    "db:migrate": "pnpm --filter @crisol/db migrate",
+    "build": "turbo run build",
+    "e2e": "pnpm --filter @crisol/web build && pnpm --filter @crisol/e2e e2e && pnpm --filter @crisol/e2e e2e:a11y"
   },
   "devDependencies": {
     "@biomejs/biome": "catalog:",

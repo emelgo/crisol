@@ -8,7 +8,11 @@ import { serviceChecks } from './services.ts'
 export async function startServer(config: Config, options: { logger?: boolean } = {}) {
   const db = connect(config.DATABASE_URL)
   const valkey = new Redis(config.VALKEY_URL, { maxRetriesPerRequest: 2 })
-  const app = buildApp({ checks: serviceChecks(db, valkey), logger: options.logger ?? false })
+  const app = buildApp({
+    checks: serviceChecks(db, valkey),
+    logger: options.logger ?? false,
+    ...(config.WEB_DIR ? { webDir: config.WEB_DIR } : {})
+  })
   await app.listen({ host: config.HOST, port: config.PORT })
   return {
     app,

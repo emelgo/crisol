@@ -3,6 +3,9 @@
   "private": true,
   "license": "UNLICENSED",
   "type": "module",
+  "exports": {
+    "./server": "./src/server.ts"
+  },
   "scripts": {
     "dev": "node --env-file-if-exists=../../.env --watch src/main.ts",
     "start": "node src/main.ts",
@@ -12,6 +15,7 @@
   },
   "dependencies": {
     "@crisol/db": "workspace:*",
+    "@fastify/static": "catalog:",
     "fastify": "catalog:",
     "ioredis": "catalog:",
     "zod": "catalog:"

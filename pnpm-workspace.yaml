@@ -2,6 +2,7 @@ packages:
   - apps/*
   - packages/*
   - scripts
+  - e2e
 
 # Scripts de instalación: ninguno hace falta (los binarios llegan como dependencias opcionales)
 allowBuilds:
@@ -11,17 +12,33 @@ allowBuilds:
 # Versiones compartidas por todos los paquetes (se usan con "catalog:")
 catalog:
   "@biomejs/biome": 2.6.4
+  "@axe-core/playwright": ^4.14.0
+  "@playwright/test": ^1.64.1
   "@swc/core": ^1.16.20
+  "@tanstack/react-query": ^5.105.0
+  "@tanstack/react-router": ^1.170.46
+  "@testing-library/react": ^16.3.3
+  "@testing-library/user-event": ^14.6.8
   "@types/node": ^24.10.0
+  "@types/react": ^19.3.0
+  "@types/react-dom": ^19.3.0
+  "@vitejs/plugin-react": ^6.1.2
   "@vitest/coverage-v8": ^5.0.5
   dependency-cruiser: ^18.7.0
   drizzle-kit: ^0.31.11
   drizzle-orm: ^0.45.4
   fastify: ^5.12.7
+  happy-dom: ^21.0.4
+  "@fastify/static": ^10.1.8
+  i18next: ^26.5.11
   ioredis: ^6.0.0
   postgres: ^3.4.9
+  react: ^19.3.1
+  react-dom: ^19.3.1
+  react-i18next: ^17.1.9
   turbo: ^2.11.10
   typescript: ^7.0.2
+  vite: ^8.3.5
   vitest: ^5.0.5
   zod: ^4.6.7
 

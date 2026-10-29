@@ -68,6 +68,53 @@ jobs:
       - name: Límites entre módulos
         run: node scripts/avisa-hasta.ts "$AVISA_HASTA" pnpm limites
 
+  e2e:
+    name: Extremo a extremo y accesibilidad
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: crisol
+          POSTGRES_PASSWORD: crisol
+          POSTGRES_DB: crisol
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U crisol" --health-interval 2s --health-timeout 3s --health-retries 30
+      valkey:
+        image: valkey/valkey:9-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "valkey-cli ping" --health-interval 2s --health-timeout 3s --health-retries 30
+    env:
+      TEST_DATABASE_URL: postgres://crisol:crisol@localhost:5432/crisol
+      TEST_VALKEY_URL: redis://localhost:6379
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Navegador de Playwright
+        run: pnpm --filter @crisol/e2e exec playwright install --with-deps chromium
+      - name: Web compilada
+        run: pnpm --filter @crisol/web build
+      - name: Extremo a extremo
+        run: pnpm --filter @crisol/e2e e2e
+      - name: Accesibilidad (WCAG 2.1 AA con axe)
+        run: node scripts/avisa-hasta.ts "$AVISA_HASTA" pnpm --filter @crisol/e2e e2e:a11y
+      - name: Trazas de las pruebas que fallen
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: trazas-e2e
+          path: e2e/test-results/
+          retention-days: 7
+
   secretos:
     name: Secretos
     runs-on: ubuntu-24.04
