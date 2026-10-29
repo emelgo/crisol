@@ -4,7 +4,7 @@ export interface Io {
   err(text: string): void
 }
 
-export const consoleIo: Io = {
+export const consoleIo: Io = {;
   out: (text) => console.log(text),
   err: (text) => console.error(text)
 }
