@@ -7,6 +7,10 @@
     "test": {
       "dependsOn": ["^typecheck"],
       "outputs": ["coverage/**"]
+    },
+    "test:coverage": {
+      "dependsOn": ["^typecheck"],
+      "outputs": ["coverage/**"]
     }
   }
 }
