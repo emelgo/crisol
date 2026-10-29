@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { highFindings } from './osv-altos.ts'
+import { memoryIo } from './io.ts'
+import { checkOsv, highFindings } from './osv-altos.ts'
 
 const report = (groups: Array<{ ids: string[]; max_severity: string }>) => ({
   results: [
@@ -27,5 +28,19 @@ describe('highFindings', () => {
 
   it('no encuentra nada en un informe vacío', () => {
     expect(highFindings({ results: [] })).toEqual([])
+  })
+})
+
+describe('checkOsv', () => {
+  it('termina en rojo con las vulnerabilidades altas', () => {
+    const { io, err } = memoryIo()
+    expect(checkOsv(JSON.stringify(report([{ ids: ['GHSA-alto'], max_severity: '9.8' }])), io)).toBe(1)
+    expect(err[0]).toBe('lodash@4.17.15: GHSA-alto (CVSS 9.8)')
+  })
+
+  it('termina en verde sin vulnerabilidades altas', () => {
+    const { io, out } = memoryIo()
+    expect(checkOsv(JSON.stringify({ results: [] }), io)).toBe(0)
+    expect(out).toEqual(['Sin vulnerabilidades altas ni críticas'])
   })
 })

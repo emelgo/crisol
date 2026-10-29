@@ -3,6 +3,7 @@
  * Uso: node scripts/osv-altos.ts informe.json
  */
 import { readFileSync } from 'node:fs'
+import { consoleIo, type Io } from './io.ts'
 
 interface OsvReport {
   results: Array<{
@@ -36,15 +37,20 @@ export function highFindings(report: OsvReport): Finding[] {
   )
 }
 
+/** Revisa el informe JSON de osv-scanner; devuelve el código de salida */
+export function checkOsv(json: string, io: Io): number {
+  const findings = highFindings(JSON.parse(json) as OsvReport)
+  for (const f of findings) io.err(`${f.package}: ${f.ids.join(', ')} (CVSS ${f.severity})`)
+  if (findings.length > 0) {
+    io.err('Hay vulnerabilidades altas o críticas en las dependencias')
+    return 1
+  }
+  io.out('Sin vulnerabilidades altas ni críticas')
+  return 0
+}
+
 if (import.meta.main) {
   const [file] = process.argv.slice(2)
   if (!file) throw new Error('Uso: node scripts/osv-altos.ts informe.json')
-  const findings = highFindings(JSON.parse(readFileSync(file, 'utf8')) as OsvReport)
-  for (const f of findings) console.error(`${f.package}: ${f.ids.join(', ')} (CVSS ${f.severity})`)
-  if (findings.length > 0) {
-    console.error('Hay vulnerabilidades altas o críticas en las dependencias')
-    process.exitCode = 1
-  } else {
-    console.log('Sin vulnerabilidades altas ni críticas')
-  }
+  process.exitCode = checkOsv(readFileSync(file, 'utf8'), consoleIo)
 }

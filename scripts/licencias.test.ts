@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { DEV_POLICY, findViolations, isAllowed, PROD_POLICY } from './licencias.ts'
+import { memoryIo } from './io.ts'
+import { checkLicenses, DEV_POLICY, findViolations, isAllowed, PROD_POLICY, type Report } from './licencias.ts'
 
 describe('isAllowed', () => {
   it('admite una licencia permisiva de la lista', () => {
@@ -52,5 +53,23 @@ describe('findViolations', () => {
   it('ignora los paquetes propios del monorepo', () => {
     const report = { UNLICENSED: [{ name: '@crisol/db', versions: ['0.0.0'] }] }
     expect(findViolations(report, PROD_POLICY)).toEqual([])
+  })
+})
+
+describe('checkLicenses', () => {
+  const clean: Report = { MIT: [{ name: 'bueno', versions: ['1.0.0'] }] }
+
+  it('termina en verde si producción y desarrollo están en regla', () => {
+    const { io, out } = memoryIo()
+    expect(checkLicenses(() => clean, io)).toBe(0)
+    expect(out).toEqual(['Licencias en regla'])
+  })
+
+  it('termina en rojo y dice qué paquete y de qué ámbito falla', () => {
+    const { io, err } = memoryIo()
+    const read = (scope: '--prod' | '--dev'): Report =>
+      scope === '--dev' ? { 'GPL-3.0-only': [{ name: 'malo', versions: ['1.0.0'] }] } : clean
+    expect(checkLicenses(read, io)).toBe(1)
+    expect(err[0]).toBe('desarrollo: malo@1.0.0 tiene licencia GPL-3.0-only')
   })
 })

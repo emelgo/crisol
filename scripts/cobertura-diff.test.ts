@@ -1,5 +1,9 @@
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { changedLines, diffCoverage, parseLcov } from './cobertura-diff.ts'
+import { changedLines, checkDiffCoverage, diffCoverage, parseLcov, ranges } from './cobertura-diff.ts'
+import { memoryIo } from './io.ts'
 
 describe('parseLcov', () => {
   it('lee las líneas ejecutables y sus pasadas, con rutas relativas al repo', () => {
@@ -63,5 +67,55 @@ describe('diffCoverage', () => {
   it('no cuenta los archivos que no están en el informe (pruebas, configuración)', () => {
     const result = diffCoverage(coverage, new Map([['a.test.ts', new Set([1])]]))
     expect(result.total).toBe(0)
+  })
+})
+
+describe('ranges', () => {
+  it('agrupa las líneas seguidas en tramos', () => {
+    expect(ranges([7, 1, 3, 2])).toEqual([
+      [1, 3],
+      [7, 7]
+    ])
+  })
+})
+
+describe('checkDiffCoverage', () => {
+  // Repo de prueba con el lcov de un paquete: líneas 1 y 2 cubiertas, 3 a 5 sin cubrir
+  const withRepo = (test: (root: string) => void) => {
+    const root = mkdtempSync(join(tmpdir(), 'cobertura-'))
+    try {
+      mkdirSync(join(root, 'packages', 'db', 'coverage'), { recursive: true })
+      const lcov = ['SF:src/a.ts', 'DA:1,1', 'DA:2,1', 'DA:3,0', 'DA:4,0', 'DA:5,0', 'end_of_record'].join('\n')
+      writeFileSync(join(root, 'packages', 'db', 'coverage', 'lcov.info'), lcov)
+      test(root)
+    } finally {
+      rmSync(root, { recursive: true, force: true })
+    }
+  }
+  const diffOf = (start: number, count: number) => () =>
+    ['+++ b/packages/db/src/a.ts', `@@ -0,0 +${start},${count} @@`].join('\n')
+
+  it('termina en verde si lo cambiado está cubierto', () => {
+    withRepo((root) => {
+      const { io, out } = memoryIo()
+      expect(checkDiffCoverage(root, 'origin/main', diffOf(1, 2), io)).toBe(0)
+      expect(out).toEqual(['Cobertura de lo cambiado: 100.0 % (2/2)'])
+    })
+  })
+
+  it('termina en rojo por debajo del 80 % y avisa de cada tramo sin cubrir', () => {
+    withRepo((root) => {
+      const { io, out } = memoryIo()
+      expect(checkDiffCoverage(root, 'origin/main', diffOf(1, 5), io)).toBe(1)
+      expect(out[0]).toBe('::warning file=packages/db/src/a.ts,line=3,endLine=5::Sin cubrir por las pruebas')
+    })
+  })
+
+  it('pasa si no cambia ninguna línea ejecutable', () => {
+    withRepo((root) => {
+      const { io, out } = memoryIo()
+      expect(checkDiffCoverage(root, 'origin/main', diffOf(9, 1), io)).toBe(0)
+      expect(out).toEqual(['No hay líneas ejecutables cambiadas'])
+    })
   })
 })

@@ -2,7 +2,8 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { findCleanRoomViolations } from './sala-limpia.ts'
+import { memoryIo } from './io.ts'
+import { checkCleanRoom, findCleanRoomViolations } from './sala-limpia.ts'
 
 describe('findCleanRoomViolations', () => {
   let root: string
@@ -47,5 +48,24 @@ describe('findCleanRoomViolations', () => {
 
   it('el repo real cumple la sala limpia', () => {
     expect(findCleanRoomViolations(join(import.meta.dirname, '..'))).toEqual([])
+  })
+})
+
+describe('checkCleanRoom', () => {
+  it('termina en rojo con cada violación y en verde sin ninguna', () => {
+    const root = mkdtempSync(join(tmpdir(), 'sala-limpia-'))
+    try {
+      const clean = memoryIo()
+      expect(checkCleanRoom(root, clean.io)).toBe(0)
+      expect(clean.out).toEqual(['Sala limpia en regla'])
+
+      mkdirSync(join(root, 'apps', 'web'), { recursive: true })
+      writeFileSync(join(root, 'apps', 'web', 'a.ts'), "import '../../research/x.md'\n")
+      const dirty = memoryIo()
+      expect(checkCleanRoom(root, dirty.io)).toBe(1)
+      expect(dirty.err[0]).toBe("apps/web/a.ts:1: import '../../research/x.md'")
+    } finally {
+      rmSync(root, { recursive: true, force: true })
+    }
   })
 })

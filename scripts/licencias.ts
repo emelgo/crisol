@@ -3,6 +3,7 @@
  * Producción: solo permisivas. Desarrollo: además copyleft débil (MPL, LGPL), nunca GPL ni AGPL.
  */
 import { execFileSync } from 'node:child_process'
+import { consoleIo, type Io } from './io.ts'
 
 export type Policy = ReadonlySet<string>
 
@@ -13,7 +14,7 @@ export interface Violation {
 }
 
 /** Lo que devuelve `pnpm licenses list --json`: licencia → paquetes */
-type Report = Record<string, Array<{ name: string; versions: string[] }>>
+export type Report = Record<string, Array<{ name: string; versions: string[] }>>
 
 const PERMISSIVE = [
   'MIT',
@@ -88,20 +89,24 @@ export function findViolations(report: Report, policy: Policy): Violation[] {
   )
 }
 
-function readReport(scope: '--prod' | '--dev'): Report {
-  return JSON.parse(execFileSync('pnpm', ['licenses', 'list', '--json', scope], { encoding: 'utf8' })) as Report
+export type ReadReport = (scope: '--prod' | '--dev') => Report
+
+/** Revisa producción y desarrollo; devuelve el código de salida */
+export function checkLicenses(read: ReadReport, io: Io): number {
+  const problems = [
+    ...findViolations(read('--prod'), PROD_POLICY).map((v) => ({ ...v, scope: 'producción' })),
+    ...findViolations(read('--dev'), DEV_POLICY).map((v) => ({ ...v, scope: 'desarrollo' }))
+  ]
+  for (const p of problems) io.err(`${p.scope}: ${p.name}@${p.versions.join(', ')} tiene licencia ${p.license}`)
+  if (problems.length > 0) {
+    io.err('Hay licencias fuera de la lista permitida (CONSTRAINTS.md)')
+    return 1
+  }
+  io.out('Licencias en regla')
+  return 0
 }
 
-if (import.meta.main) {
-  const problems = [
-    ...findViolations(readReport('--prod'), PROD_POLICY).map((v) => ({ ...v, scope: 'producción' })),
-    ...findViolations(readReport('--dev'), DEV_POLICY).map((v) => ({ ...v, scope: 'desarrollo' }))
-  ]
-  for (const p of problems) console.error(`${p.scope}: ${p.name}@${p.versions.join(', ')} tiene licencia ${p.license}`)
-  if (problems.length > 0) {
-    console.error('Hay licencias fuera de la lista permitida (CONSTRAINTS.md)')
-    process.exitCode = 1
-  } else {
-    console.log('Licencias en regla')
-  }
-}
+const readReport: ReadReport = (scope) =>
+  JSON.parse(execFileSync('pnpm', ['licenses', 'list', '--json', scope], { encoding: 'utf8' })) as Report
+
+if (import.meta.main) process.exitCode = checkLicenses(readReport, consoleIo)

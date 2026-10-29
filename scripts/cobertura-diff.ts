@@ -6,6 +6,7 @@
 import { execFileSync } from 'node:child_process'
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { isAbsolute, join, relative, resolve, sep } from 'node:path'
+import { consoleIo, type Io } from './io.ts'
 
 /** archivo (relativo al repo) → línea → veces que se ejecutó */
 export type Coverage = Map<string, Map<number, number>>
@@ -70,6 +71,17 @@ export function diffCoverage(coverage: Coverage, changes: Changes) {
   return { covered, total, uncovered }
 }
 
+/** Agrupa líneas en tramos seguidos: [1, 2, 3, 7] → [[1, 3], [7, 7]] */
+export function ranges(lines: number[]): Array<[number, number]> {
+  const result: Array<[number, number]> = []
+  for (const line of [...lines].sort((a, b) => a - b)) {
+    const last = result.at(-1)
+    if (last && line === last[1] + 1) last[1] = line
+    else result.push([line, line])
+  }
+  return result
+}
+
 /** Los lcov de cada paquete del monorepo, con la carpeta del paquete */
 function* lcovFiles(repoRoot: string): Generator<{ packageDir: string; file: string }> {
   const candidates = ['scripts']
@@ -83,28 +95,46 @@ function* lcovFiles(repoRoot: string): Generator<{ packageDir: string; file: str
   }
 }
 
-if (import.meta.main) {
-  const base = process.argv[2] ?? 'origin/main'
-  const repoRoot = resolve(import.meta.dirname, '..')
+/** Devuelve el diff sin contexto entre la rama base y HEAD */
+export type GitDiff = (base: string) => string
+
+/** Devuelve el código de salida */
+export function checkDiffCoverage(repoRoot: string, base: string, gitDiff: GitDiff, io: Io): number {
   const coverage: Coverage = new Map()
   for (const { packageDir, file } of lcovFiles(repoRoot)) {
     for (const [path, lines] of parseLcov(readFileSync(file, 'utf8'), packageDir, repoRoot)) coverage.set(path, lines)
   }
-  const diff = execFileSync('git', ['diff', '--unified=0', '--no-color', `${base}...HEAD`], {
-    cwd: repoRoot,
+  const { covered, total, uncovered } = diffCoverage(coverage, changedLines(gitDiff(base)))
+  const byFile = Map.groupBy(uncovered, ({ file }) => file)
+  for (const [file, lines] of byFile) {
+    for (const [start, end] of ranges(lines.map(({ line }) => line))) {
+      io.out(`::warning file=${file},line=${start},endLine=${end}::Sin cubrir por las pruebas`)
+    }
+  }
+  if (total === 0) {
+    io.out('No hay líneas ejecutables cambiadas')
+    return 0
+  }
+  const ratio = covered / total
+  io.out(`Cobertura de lo cambiado: ${(ratio * 100).toFixed(1)} % (${covered}/${total})`)
+  if (ratio < MINIMUM) {
+    io.err(`Por debajo del ${MINIMUM * 100} % (CONSTRAINTS.md)`)
+    return 1
+  }
+  return 0
+}
+
+const gitDiff: GitDiff = (base) =>
+  execFileSync('git', ['diff', '--unified=0', '--no-color', `${base}...HEAD`], {
     encoding: 'utf8',
     maxBuffer: 64 * 1024 * 1024
   })
-  const { covered, total, uncovered } = diffCoverage(coverage, changedLines(diff))
-  for (const { file, line } of uncovered) console.log(`::warning file=${file},line=${line}::Línea sin cubrir`)
-  if (total === 0) {
-    console.log('No hay líneas ejecutables cambiadas')
-  } else {
-    const ratio = covered / total
-    console.log(`Cobertura de lo cambiado: ${(ratio * 100).toFixed(1)} % (${covered}/${total})`)
-    if (ratio < MINIMUM) {
-      console.error(`Por debajo del ${MINIMUM * 100} % (CONSTRAINTS.md)`)
-      process.exitCode = 1
-    }
-  }
+
+if (import.meta.main) {
+  process.exitCode = checkDiffCoverage(
+    resolve(import.meta.dirname, '..'),
+    process.argv[2] ?? 'origin/main',
+    gitDiff,
+    consoleIo
+  )
 }
