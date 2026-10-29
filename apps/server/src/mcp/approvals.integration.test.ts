@@ -206,6 +206,25 @@ describe('la IA según el modo, y la cola de aprobación', () => {
     expect(await pending()).toHaveLength(1)
   })
 
+  it('en copiloto, deshacer espera, con lo que deshace en el resumen; aprobado, se deshace', async () => {
+    const created = (await operations()).find((op) => op.action === 'createCampaign')
+    const result = await ai('deshacer', 'undoOperation', { operationId: created?.id })
+    expect(textOf(result)).toMatch(/^PENDING_APPROVAL/)
+    const listed = (await run('listApprovals', {})) as { pending: Array<{ id: string; details: object }> }
+    expect(listed.pending).toEqual([
+      expect.objectContaining({
+        details: { operation: { action: 'createCampaign', details: { name: 'La Marca', world: 'Eana' } } }
+      })
+    ])
+    expect(await run('approve', { approvalId: listed.pending[0]?.id })).toMatchObject({ status: 'done' })
+    expect(await run('listCampaigns', { worldId: world.id })).toEqual({ campaigns: [] })
+    expect((await operations()).find((op) => op.action === 'undoOperation')).toMatchObject({
+      via: 'ai',
+      tool: 'deshacer',
+      undoesId: created?.id
+    })
+  })
+
   it('los ajustes dicen el modo y la dirección del conector', async () => {
     expect(await run('getAiSettings', {})).toEqual({ mode: 'copilot', connectorUrl: `${BASE_URL}/mcp` })
     expect(await run('setAiMode', { mode: 'assistant' })).toEqual({

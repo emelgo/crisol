@@ -227,7 +227,8 @@ Comprobación local al acabar cada tarea: `pnpm lint && pnpm typecheck && pnpm t
 
 ## Fase 5: IA
 
-- [ ] **22. Modos de IA y cola de aprobación (servidor)**
+- [x] **22. Modos de IA y cola de aprobación (servidor)** — la herramienta espera escuchando el bus del proceso; aprobar,
+  rechazar y cambiar el modo solo desde la interfaz; la caducidad se decide con la hora (no se guarda)
   - Acepta:
     - Modo por usuario (copiloto por defecto) y la decisión según modo y tipo de acción.
     - Aprobaciones en Postgres.
