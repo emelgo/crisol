@@ -1,11 +1,29 @@
 /* Encima del contenido de la página; vacía no ocupa nada */
 .region:not(:empty) {
-  margin-block-end: var(--space-6);
+  margin-block-end: var(--space-8);
+}
+
+/* Lo que Claude espera que decidas: la caja, con el marco y el rótulo en su azul */
+main section[aria-labelledby].panel {
+  background: var(--color-ai);
+}
+
+main section[aria-labelledby].panel::before {
+  inset: 2px;
+}
+
+.panel h2 {
+  border-block-end-color: var(--color-ai);
+  color: var(--color-ai);
 }
 
 .version {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
   padding: var(--space-3) var(--space-4);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-field-border);
   border-radius: var(--radius);
   background: var(--color-surface);
 }

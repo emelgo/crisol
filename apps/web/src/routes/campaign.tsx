@@ -197,8 +197,8 @@ function MemberItem(props: {
   const opener = useReturnFocus()
   return (
     <li ref={item} className={styles.item}>
-      <span className={styles.name}>{member.name}</span>
-      <span className={styles.role}>{t(`roles.${member.role}`)}</span>
+      <span className={`${styles.name} ${styles.entity}`}>{member.name}</span>
+      <span className={`${styles.role} ${styles.tag}`}>{t(`roles.${member.role}`)}</span>
       {props.removable && !props.confirming && (
         <button
           type="button"

@@ -98,7 +98,7 @@ function TrashEntry({ item }: { item: TrashItem }) {
 
   return (
     <li ref={entry} className={styles.item}>
-      <span className={styles.name}>{item.name}</span>
+      <span className={`${styles.name} ${styles.entity}`}>{item.name}</span>
       <span className={styles.role}>
         {item.kind === 'world' ? t('trash.world') : t('trash.campaignOf', { world: item.worldName })} ·{' '}
         {t('trash.purgeAt', { date })}

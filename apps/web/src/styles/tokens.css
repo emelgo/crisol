@@ -1,35 +1,99 @@
-/* Tokens de diseño. Claro por defecto; oscuro con data-theme="dark". Contrastes AA comprobados con axe */
+/*
+ * Tokens de diseño: «Hoja» (decidida con Enrique, 2026-10-29: «es más rol»). La interfaz como una hoja de
+ * personaje: barra oscura, marcos de esquinas cortadas, títulos condensados y el rojo para lo que se hace.
+ * Lo de Claude, en azul. Oscuro o claro según el sistema; los contrastes los comprueba tokens.test.ts
+ */
+@import "@fontsource/barlow/400.css";
+@import "@fontsource/barlow/600.css";
+@import "@fontsource/barlow/700.css";
+@import "@fontsource/barlow-condensed/600.css";
+@import "@fontsource/barlow-condensed/700.css";
+@import "@fontsource/barlow-condensed/800.css";
+
 :root {
   color-scheme: light;
-  --color-bg: #f7f3ec;
+  /* La barra de arriba es oscura en los dos temas */
+  --color-chrome: #1b1d22;
+  --color-chrome-text: #edebe7;
+  --color-chrome-muted: #a9adb5;
+  --color-chrome-accent: #f27470;
+  --color-bg: #e9eaed;
   --color-surface: #ffffff;
-  --color-text: #1f1a17;
-  --color-muted: #5a5048;
-  --color-border: #d9cfc2;
+  --color-raised: #f4f4f6;
+  --color-frame: #b7bbc3;
+  --color-text: #1b1d22;
+  --color-muted: #555a63;
+  --color-border: #d8dbe0;
   /* El borde de los campos: 3:1 con el fondo y la superficie (WCAG 1.4.11). --color-border es solo decorativo */
-  --color-field-border: #857869;
-  --color-accent: #9b1c1c;
+  --color-field-border: #7a7f89;
+  /* El acento de fondo (botones) y el de texto no son el mismo: el de fondo no siempre llega a 4,5:1 como texto */
+  --color-accent: #b8282a;
   --color-on-accent: #ffffff;
-  --color-focus: #1d4ed8;
+  --color-accent-text: #a82326;
+  --color-ai: #1f6e99;
+  --color-focus: #a82326;
 
-  --font-body: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --radius: 0.5rem;
+  --font-body: "Barlow", system-ui, sans-serif;
+  --font-display: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --radius: 2px;
+  /* Esquinas cortadas: el marco, su interior (1px dentro) y los botones */
+  --cut: polygon(
+    12px 0,
+    calc(100% - 12px) 0,
+    100% 12px,
+    100% calc(100% - 12px),
+    calc(100% - 12px) 100%,
+    12px 100%,
+    0 calc(100% - 12px),
+    0 12px
+  );
+  --cut-inner: polygon(
+    11px 0,
+    calc(100% - 11px) 0,
+    100% 11px,
+    100% calc(100% - 11px),
+    calc(100% - 11px) 100%,
+    11px 100%,
+    0 calc(100% - 11px),
+    0 11px
+  );
+  --cut-button: polygon(
+    6px 0,
+    calc(100% - 6px) 0,
+    100% 6px,
+    100% calc(100% - 6px),
+    calc(100% - 6px) 100%,
+    6px 100%,
+    0 calc(100% - 6px),
+    0 6px
+  );
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
   --space-4: 1rem;
   --space-6: 1.5rem;
+  --space-8: 2rem;
+  /* Lo mínimo que se toca con el dedo */
+  --target: 2.75rem;
 }
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --color-bg: #15171c;
-  --color-surface: #1e2128;
-  --color-text: #ece8e1;
-  --color-muted: #a8a19a;
-  --color-border: #363a45;
-  --color-field-border: #737a8a;
-  --color-accent: #f0726a;
-  --color-on-accent: #15171c;
-  --color-focus: #93b4ff;
+  --color-chrome: #111317;
+  --color-chrome-text: #edebe7;
+  --color-chrome-muted: #a9adb5;
+  --color-chrome-accent: #f27470;
+  --color-bg: #1b1d22;
+  --color-surface: #24272d;
+  --color-raised: #2c3037;
+  --color-frame: #4a4f59;
+  --color-text: #edebe7;
+  --color-muted: #a9adb5;
+  --color-border: #393d46;
+  --color-field-border: #80858f;
+  --color-accent: #c9302c;
+  --color-on-accent: #ffffff;
+  --color-accent-text: #f27470;
+  --color-ai: #7cc4e8;
+  --color-focus: #f27470;
 }

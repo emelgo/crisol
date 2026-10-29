@@ -54,6 +54,24 @@ describe('findViolations', () => {
     ])
   })
 
+  it('admite OFL-1.1 solo en los paquetes de tipografías (aprobada por Enrique el 2026-10-29)', () => {
+    const report = {
+      'OFL-1.1': [
+        { name: '@fontsource/barlow', versions: ['5.3.0'] },
+        { name: '@fontsource-variable/una-variable', versions: ['5.3.0'] },
+        { name: 'libreria-cualquiera', versions: ['1.0.0'] }
+      ]
+    }
+    expect(findViolations(report, PROD_POLICY)).toEqual([
+      { name: 'libreria-cualquiera', versions: ['1.0.0'], license: 'OFL-1.1' }
+    ])
+  })
+
+  it('una tipografía sigue sin poder ser GPL', () => {
+    const report = { 'GPL-3.0-only': [{ name: '@fontsource/una-fuente', versions: ['1.0.0'] }] }
+    expect(findViolations(report, PROD_POLICY)).toHaveLength(1)
+  })
+
   it('ignora los paquetes propios del monorepo', () => {
     const report = { UNLICENSED: [{ name: '@crisol/db', versions: ['0.0.0'] }] }
     expect(findViolations(report, PROD_POLICY)).toEqual([])

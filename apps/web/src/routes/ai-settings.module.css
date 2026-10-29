@@ -1,18 +1,42 @@
+/* Los modos: una caja de la hoja, con la leyenda como rótulo */
 .modes {
+  position: relative;
+  isolation: isolate;
   display: grid;
-  gap: var(--space-3);
-  margin: 0 0 var(--space-4);
-  padding: var(--space-4);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
+  gap: var(--space-4);
+  margin: var(--space-6) 0 var(--space-4);
+  padding: var(--space-4) var(--space-6) var(--space-6);
+  border: 0;
+  background: var(--color-frame);
+  clip-path: var(--cut);
 }
 
+.modes::before {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  z-index: -1;
+  background: var(--color-surface);
+  clip-path: var(--cut-inner);
+}
+
+/* La leyenda hace de rótulo de sección, como los h2 */
 .modes legend {
-  font-weight: 600;
-  padding-inline: var(--space-1);
+  float: left;
+  inline-size: 100%;
+  margin-block-end: var(--space-1);
+  padding: 0 0 var(--space-2);
+  border-block-end: 2px solid var(--color-accent);
+  color: var(--color-accent-text);
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  text-transform: uppercase;
 }
 
-/* La opción con su explicación debajo */
+/* La opción con su explicación debajo; toda la fila se pulsa */
 .mode {
   display: flex;
   align-items: start;
@@ -26,5 +50,8 @@
 }
 
 .mode input {
-  margin-block-start: 0.3em;
+  inline-size: 1.25rem;
+  block-size: 1.25rem;
+  margin: 0.15em 0 0;
+  accent-color: var(--color-accent);
 }

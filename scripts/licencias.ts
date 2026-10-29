@@ -34,6 +34,10 @@ const WEAK_COPYLEFT = ['MPL-2.0', 'LGPL-2.1-only', 'LGPL-2.1-or-later', 'LGPL-3.
 export const PROD_POLICY: Policy = new Set(PERMISSIVE)
 export const DEV_POLICY: Policy = new Set([...PERMISSIVE, ...WEAK_COPYLEFT])
 
+// Tipografías: además OFL-1.1, que solo obliga sobre los archivos de la fuente (aprobada por Enrique el 2026-10-29)
+const FONT_LICENSES = ['OFL-1.1']
+const isFontPackage = (name: string) => /^@fontsource(-variable)?\//.test(name)
+
 /** Evalúa una expresión SPDX: alternativas OR de conjunciones AND, con paréntesis y excepciones WITH */
 export function isAllowed(expression: string, policy: Policy): boolean {
   const tokens = expression.replace(/[()]/g, ' $& ').split(/\s+/).filter(Boolean)
@@ -81,12 +85,12 @@ export function isAllowed(expression: string, policy: Policy): boolean {
 
 /** Paquetes del informe con licencia no permitida (los del propio monorepo no cuentan) */
 export function findViolations(report: Report, policy: Policy): Violation[] {
+  const fonts: Policy = new Set([...policy, ...FONT_LICENSES])
   return Object.entries(report).flatMap(([license, packages]) =>
-    isAllowed(license, policy)
-      ? []
-      : packages
-          .filter(({ name }) => name !== 'crisol' && !name.startsWith('@crisol/'))
-          .map(({ name, versions }) => ({ name, versions, license }))
+    packages
+      .filter(({ name }) => name !== 'crisol' && !name.startsWith('@crisol/'))
+      .filter(({ name }) => !isAllowed(license, isFontPackage(name) ? fonts : policy))
+      .map(({ name, versions }) => ({ name, versions, license }))
   )
 }
 

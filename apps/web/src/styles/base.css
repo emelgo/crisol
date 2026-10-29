@@ -7,16 +7,92 @@
 body {
   margin: 0;
   font-family: var(--font-body);
+  font-size: 1rem;
   line-height: 1.5;
   background: var(--color-bg);
   color: var(--color-text);
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Los títulos, condensados y en mayúsculas, como en una hoja de personaje */
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  line-height: 1;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+
+h1 {
+  margin: 0 0 var(--space-8);
+  font-size: clamp(2.5rem, 6vw, 3.75rem);
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+
+/* Un h2 es el rótulo de una sección: en rojo y con su raya debajo */
+h2 {
+  margin: var(--space-8) 0 var(--space-3);
+  padding-block-end: var(--space-2);
+  border-block-end: 2px solid var(--color-accent);
+  color: var(--color-accent-text);
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+h3 {
+  margin: var(--space-6) 0 var(--space-2);
+  font-size: 1.125rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+p {
+  text-wrap: pretty;
 }
 
 a {
-  color: var(--color-accent);
+  color: inherit;
+  text-underline-offset: 3px;
+}
+
+a:hover {
+  color: var(--color-accent-text);
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
 }
 
 :focus-visible {
-  outline: 3px solid var(--color-focus);
+  outline: 2px solid var(--color-focus);
   outline-offset: 2px;
+}
+
+/* Una sección con título es una caja de la hoja: marco de 1px con las esquinas cortadas */
+main section[aria-labelledby] {
+  position: relative;
+  isolation: isolate;
+  margin-block: var(--space-6);
+  padding: var(--space-4) var(--space-6) var(--space-6);
+  background: var(--color-frame);
+  clip-path: var(--cut);
+}
+
+main section[aria-labelledby]::before {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  z-index: -1;
+  background: var(--color-surface);
+  clip-path: var(--cut-inner);
+}
+
+main section[aria-labelledby] > h2:first-child {
+  margin-block-start: 0;
 }

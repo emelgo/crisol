@@ -60,7 +60,7 @@ export function ApprovalQueue() {
   return (
     <>
       {pending.length > 0 && (
-        <section aria-labelledby={titleId} className={notices.region}>
+        <section aria-labelledby={titleId} className={`${notices.region} ${notices.panel}`}>
           <h2 id={titleId}>{t('approvals.title')}</h2>
           <ul className={styles.list} aria-label={t('approvals.listLabel')}>
             {pending.map((approval) => (
