@@ -1,0 +1,54 @@
+# Staging y producción en el VPS: todo en una red propia; solo la app escucha, y solo en loopback (delante va Caddy).
+# Lo arranca scripts/desplegar-staging.sh, con las variables de .env.staging (fuera de git).
+name: crisol-staging
+
+services:
+  app:
+    build: .
+    image: crisol:staging
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgres://crisol:${POSTGRES_PASSWORD:?falta POSTGRES_PASSWORD}@postgres:5432/crisol
+      VALKEY_URL: redis://valkey:6379
+    ports:
+      - 127.0.0.1:${CRISOL_PORT:-8140}:8130
+    depends_on:
+      postgres:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+    restart: unless-stopped
+    mem_limit: 512m
+
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: crisol
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?falta POSTGRES_PASSWORD}
+      POSTGRES_DB: crisol
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U crisol]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    restart: unless-stopped
+    mem_limit: 512m
+
+  valkey:
+    image: valkey/valkey:9-alpine
+    command: [valkey-server, --appendonly, "yes"]
+    volumes:
+      - valkey:/data
+    healthcheck:
+      test: [CMD, valkey-cli, ping]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    restart: unless-stopped
+    mem_limit: 128m
+
+volumes:
+  postgres:
+  valkey:
