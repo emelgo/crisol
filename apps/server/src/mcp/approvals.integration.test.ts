@@ -225,6 +225,23 @@ describe('la IA según el modo, y la cola de aprobación', () => {
     })
   })
 
+  it('lo que devolvió lo aprobado se guarda cifrado: el enlace no queda en claro en la base de datos', async () => {
+    const call = ai('enlace_invitacion', 'regenerateInvitation', { campaignId: campaign.id }, 5000)
+    await run('approve', { approvalId: (await queued()).id })
+    const url = String((await call).structuredContent?.url)
+    const [row] = await conn.db.select().from(schema.approvals)
+    expect(JSON.stringify(row?.result)).not.toContain(url.split('/unirse/')[1])
+    expect(row?.result).toEqual({ sealed: expect.any(String) })
+  })
+
+  it('con 20 peticiones esperando, no entra otra', async () => {
+    for (let i = 0; i < 20; i++) await ai('enlace_invitacion', 'regenerateInvitation', { campaignId: campaign.id }, 1)
+    const result = await ai('enlace_invitacion', 'regenerateInvitation', { campaignId: campaign.id }, 1)
+    expect(result.isError).toBe(true)
+    expect(textOf(result)).toMatch(/^TOO_MANY_PENDING/)
+    expect(await pending()).toHaveLength(20)
+  })
+
   it('los ajustes dicen el modo y la dirección del conector', async () => {
     expect(await run('getAiSettings', {})).toEqual({ mode: 'copilot', connectorUrl: `${BASE_URL}/mcp` })
     expect(await run('setAiMode', { mode: 'assistant' })).toEqual({

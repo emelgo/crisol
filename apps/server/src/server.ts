@@ -1,4 +1,4 @@
-import { connect } from '@crisol/db'
+import { aiRepo, connect } from '@crisol/db'
 import { Redis } from 'ioredis'
 import { buildApp } from './app.ts'
 import { createAuth } from './auth/auth.ts'
@@ -23,6 +23,8 @@ export async function startServer(
     mcpJwksUrl: `http://127.0.0.1:${config.PORT}/api/auth/jwks`,
     ...(options.approvalWaitMs ? { approvalWaitMs: options.approvalWaitMs } : {})
   })
+  // Lo aprobado que se quedó haciéndose al pararse el anterior ya no se va a acabar
+  await aiRepo.failInterruptedApprovals(db.db, new Date(Date.now() - 60_000))
   await app.listen({ host: config.HOST, port: config.PORT })
   // La purga diaria de la papelera y del historial
   const purges = await startPurges({

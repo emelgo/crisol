@@ -15,3 +15,6 @@ coverage/
 datos-locales/
 test-results/
 playwright-report/
+
+# Worktrees de las sesiones de Claude Code
+.claude/worktrees/

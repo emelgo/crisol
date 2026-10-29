@@ -5,10 +5,11 @@
  */
 import type { RealtimeMessage } from '@crisol/contracts'
 import { aiRepo, historyRepo, loadMemberships, worldsRepo } from '@crisol/db'
-import { actorFrom, aiDecision, authorize, NotFoundError } from '@crisol/domain'
+import { actorFrom, aiDecision, authorize, MAX_PENDING_APPROVALS, NotFoundError } from '@crisol/domain'
 import { authorizedCampaign } from '../actions/access.ts'
 import { type ActionContext, type ActionEnv, errorCode, type Implementation } from '../actions/context.ts'
 import { approvalsChanged } from '../realtime/events.ts'
+import { openJson } from '../secrets.ts'
 
 /** Lo que contesta una herramienta */
 export interface ToolResult {
@@ -30,6 +31,7 @@ const READ_ONLY =
 const REJECTED = 'REJECTED: el máster lo ha rechazado. No insistas: pregúntale qué prefiere'
 const PENDING =
   'PENDING_APPROVAL: espera la aprobación del máster en Crisol. Se hará en cuanto la apruebe (caduca a las 24 h): no lo repitas'
+const TOO_MANY = `TOO_MANY_PENDING: ya hay ${MAX_PENDING_APPROVALS} peticiones esperando la aprobación del máster. Espera a que las decida`
 
 /** Texto del error para la IA (los códigos son los de la API); un fallo inesperado se relanza */
 export function errorText(error: unknown): string {
@@ -61,15 +63,12 @@ export async function callAsAi(env: ActionEnv, call: AiCall): Promise<ToolResult
     if (decision === 'run') {
       return success(impl.action.output.parse(await impl.handler(ctx, input)) as Record<string, unknown>)
     }
-    const request = await aiRepo.createApproval(db, {
-      userId,
-      tool,
-      action: impl.action.name,
-      input,
-      details: await describe(ctx, input),
-      now: new Date()
-    })
-    return answer(await waitForDecision(env, request, call.waitMs))
+    const details = await describe(ctx, input)
+    const now = new Date()
+    const { pending } = await aiRepo.listApprovals(db, userId, now)
+    if (pending.length >= MAX_PENDING_APPROVALS) return failure(TOO_MANY)
+    const request = await aiRepo.createApproval(db, { userId, tool, action: impl.action.name, input, details, now })
+    return answer(await waitForDecision(env, request, call.waitMs), env.sealKey)
   } catch (error) {
     return failure(errorText(error))
   }
@@ -147,8 +146,8 @@ function waitForDecision(env: ActionEnv, request: aiRepo.Approval, waitMs: numbe
 }
 
 /** Lo que contesta la herramienta según cómo quedó la petición */
-function answer(row: aiRepo.Approval): ToolResult {
-  if (row.status === 'done') return success(row.result ?? {})
+function answer(row: aiRepo.Approval, sealKey: Buffer): ToolResult {
+  if (row.status === 'done') return success(openJson(row.result, sealKey))
   if (row.status === 'failed') return failure(`${row.error}: se aprobó, pero no se pudo hacer`)
   if (row.status === 'rejected') return failure(REJECTED)
   return {
