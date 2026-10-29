@@ -13,9 +13,14 @@ export async function runMigrations(url: string): Promise<void> {
   }
 }
 
-if (import.meta.main) {
-  const url = process.env.DATABASE_URL
+/** Aplica las migraciones a la base de DATABASE_URL */
+export async function migrateFromEnv(env: Record<string, string | undefined>): Promise<void> {
+  const url = env.DATABASE_URL
   if (!url) throw new Error('Falta DATABASE_URL')
   await runMigrations(url)
+}
+
+if (import.meta.main) {
+  await migrateFromEnv(process.env)
   console.log('Migraciones aplicadas')
 }

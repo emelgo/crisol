@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { connect } from './client.ts'
-import { runMigrations } from './migrate.ts'
+import { migrateFromEnv, runMigrations } from './migrate.ts'
 import { freshTestDatabase } from './testing.ts'
 
 describe('migraciones', () => {
@@ -23,6 +23,17 @@ describe('migraciones', () => {
 
   it('se pueden aplicar otra vez sin cambiar nada', async () => {
     await expect(runMigrations(url)).resolves.toBeUndefined()
+  })
+})
+
+describe('migrateFromEnv', () => {
+  it('usa DATABASE_URL', async () => {
+    const url = await freshTestDatabase('crisol_test_db_env')
+    await expect(migrateFromEnv({ DATABASE_URL: url })).resolves.toBeUndefined()
+  })
+
+  it('falla diciendo que falta DATABASE_URL', async () => {
+    await expect(migrateFromEnv({})).rejects.toThrow('Falta DATABASE_URL')
   })
 })
 
