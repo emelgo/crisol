@@ -26,6 +26,15 @@ catalog:
   "@tanstack/react-router": ^1.170.46
   "@tanstack/react-virtual": ~3.14.19
   "@testing-library/react": ^16.3.3
+  "@tiptap/core": 3.32.1
+  "@tiptap/extension-collaboration": 3.32.1
+  "@tiptap/extension-collaboration-caret": 3.32.1
+  "@tiptap/extension-heading": 3.32.1
+  "@tiptap/extension-list": 3.32.1
+  "@tiptap/pm": 3.32.1
+  "@tiptap/react": 3.32.1
+  "@tiptap/starter-kit": 3.32.1
+  "@tiptap/y-tiptap": ^3.0.11
   "@testing-library/user-event": ^14.6.8
   "@types/node": ^24.10.0
   auth: 1.7.14

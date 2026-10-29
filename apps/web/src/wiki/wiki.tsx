@@ -15,6 +15,8 @@ import form from '../components/form.module.css'
 import list from '../components/list.module.css'
 import { failed, LoadError } from '../components/load-error.tsx'
 import { PageTitle } from '../components/page-title.tsx'
+import { CollabSocket } from './collab.tsx'
+import { PageBody } from './editor.tsx'
 import { PageIcon } from './icon.tsx'
 import { BookmarkButton, Bookmarks, OpenTabs, SiblingNav } from './navigation.tsx'
 import { PageProperties } from './properties.tsx'
@@ -151,7 +153,7 @@ export function WikiLayout({
       </aside>
       <div className={styles.content}>
         <OpenTabs worldId={worldId} current={current} />
-        {children(world)}
+        <CollabSocket>{children(world)}</CollabSocket>
       </div>
     </div>
   )
@@ -266,10 +268,33 @@ function PageHeading({ page, startEditing }: { page: Page; startEditing: boolean
         <button type="button" ref={renameButton.ref} className={list.secondary} onClick={() => setEditing(true)}>
           {t('wiki.rename')}
         </button>
+        <LockButton page={page} />
         <BookmarkButton page={page} />
         <DeletePage page={page} />
       </div>
+      {page.locked && <p className={styles.locked}>{t('editor.locked')}</p>}
     </div>
+  )
+}
+
+/** El candado: pone el editor en lectura (no es un permiso: quien escribe puede quitarlo) */
+function LockButton({ page }: { page: Page }) {
+  const { t } = useTranslation()
+  const api = useApi()
+  const queryClient = useQueryClient()
+  const toggle = useMutation({
+    mutationFn: () => api.call('updatePage', { pageId: page.id, locked: !page.locked }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['pages', page.worldId] })
+  })
+  return (
+    <BusyButton
+      className={list.secondary}
+      aria-pressed={page.locked}
+      busy={toggle.isPending}
+      onClick={() => toggle.mutate()}
+    >
+      {t(page.locked ? 'editor.unlock' : 'editor.lock')}
+    </BusyButton>
   )
 }
 
@@ -406,6 +431,7 @@ export function WikiPage() {
             <Breadcrumbs worldId={worldId} world={world.name} path={page.data.path} />
             <PageHeading key={`${page.data.id}-${nuevo ?? false}`} page={page.data} startEditing={nuevo === true} />
             <PageProperties key={page.data.id} page={page.data} />
+            <PageBody page={page.data} />
             <Subpages page={page.data} />
             <SiblingNav page={page.data} />
           </article>

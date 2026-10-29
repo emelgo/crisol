@@ -243,6 +243,14 @@ test('@fugas la wiki es solo del máster: a la jugadora no le llegan ni sus pág
   const [lastMove] = (await master('listHistory', { worldId })).entries
   await master('undoOperation', { operationId: lastMove.id })
 
+  // Y escribe en el cuerpo de la página, que va por /api/collab
+  await page.goto(`/mundos/${worldId}/wiki/${tower.id}`)
+  const body = page.getByRole('textbox', { name: 'Texto de la página' })
+  await body.click()
+  await page.keyboard.type('El faro guarda el mapa de las corrientes.')
+  await expect(body.getByText('El faro guarda el mapa de las corrientes.')).toBeVisible()
+  await page.waitForTimeout(2500)
+
   for (const [name, data] of [
     ['listPageChildren', { worldId }],
     ['listPageTree', { worldId }],
@@ -256,7 +264,15 @@ test('@fugas la wiki es solo del máster: a la jugadora no le llegan ni sus pág
 
   const everything = await captured.all()
   expect(everything.length).toBeGreaterThan(0)
-  for (const leak of ['La Torre Secreta', 'La Torre Escondida', 'La Sala de los Mapas', tower.id, room.id, '"pages"']) {
+  for (const leak of [
+    'La Torre Secreta',
+    'La Torre Escondida',
+    'La Sala de los Mapas',
+    'mapa de las corrientes',
+    tower.id,
+    room.id,
+    '"pages"'
+  ]) {
     expect(everything).not.toContain(leak)
   }
   await player.close()

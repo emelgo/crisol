@@ -31,6 +31,12 @@ describe('las frases de la wiki', () => {
       'cambió las propiedades de «Puerto»'
     )
     expect(summaryOf(t, { action: 'deletePage', details: { title: 'Puerto' } })).toBe('borró la página «Puerto»')
+    expect(summaryOf(t, { action: 'updatePage', details: { title: 'Puerto', locked: true } })).toBe(
+      'puso «Puerto» en lectura'
+    )
+    expect(summaryOf(t, { action: 'updatePage', details: { title: 'Puerto', locked: false } })).toBe(
+      'quitó el candado de «Puerto»'
+    )
     expect(summaryOf(t, { action: 'restorePage', details: { title: 'Puerto' } })).toBe('restauró la página «Puerto»')
   })
 

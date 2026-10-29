@@ -192,6 +192,18 @@ describe('el árbol de la wiki', () => {
     expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Borrar' }))
   })
 
+  it('el candado pone la página en lectura y se quita', async () => {
+    renderAt(`/mundos/${WORLD.id}/wiki/${ids.rules}`)
+    const lock = await screen.findByRole('button', { name: 'Poner en lectura' })
+    expect(lock.getAttribute('aria-pressed')).toBe('false')
+    await userEvent.click(lock)
+    const unlock = await screen.findByRole('button', { name: 'Quitar el candado' })
+    expect(unlock.getAttribute('aria-pressed')).toBe('true')
+    expect(screen.getByText('En lectura: quita el candado para editar.')).toBeDefined()
+    await userEvent.click(unlock)
+    expect(await screen.findByRole('button', { name: 'Poner en lectura' })).toBeDefined()
+  })
+
   it('un jugador no tiene wiki', async () => {
     renderAt(`/mundos/${WORLD.id}/wiki`, wikiApi({ ...WORLD, role: 'player' }))
     expect(await screen.findByRole('heading', { level: 1, name: 'Esta wiki no existe' })).toBeDefined()

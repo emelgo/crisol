@@ -89,7 +89,8 @@ Cada vía nueva por la que salen datos amplía `@fugas` en la misma tarea.
   - Archivos: `packages/db/src/schema/documents.ts`, `apps/server/src/collab/{server,auth,persistence}.ts`,
     `packages/db/src/repos/undo.ts`, `e2e/tests/fugas.spec.ts`.
 
-- [ ] **7. El editor en la web**
+- [x] **7. El editor en la web** — hecha. Las casillas se anuncian en español (`checkboxLabel`); `@fugas` cubre lo
+  que se escribe.
   - Acepta:
     - `packages/editor` con el esquema base: texto, títulos, listas, casillas, cita, código y separador.
     - El cuerpo de la página, editable con TipTap y Collaboration, con los cursores con nombre.

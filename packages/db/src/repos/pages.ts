@@ -163,7 +163,7 @@ export function updatePage(
   db: Database,
   context: OperationContext,
   pageId: string,
-  patch: { title?: string; icon?: string | null; properties?: unknown[] }
+  patch: { title?: string; icon?: string | null; properties?: unknown[]; locked?: boolean }
 ) {
   return operation(db, context, (w) => w.update(pages, pageId, patch))
 }

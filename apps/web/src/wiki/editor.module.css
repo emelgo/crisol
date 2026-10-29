@@ -1,0 +1,105 @@
+/* El cuerpo de la página: el texto que se escribe, con el aire de la hoja */
+.body {
+  margin-block: var(--space-6);
+}
+
+.prose {
+  min-block-size: 12rem;
+  padding: var(--space-2) 0;
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  outline: none;
+  overflow-wrap: break-word;
+}
+
+.prose:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: var(--space-2);
+}
+
+.prose > * + * {
+  margin-block-start: var(--space-3);
+}
+
+.prose p {
+  margin: 0;
+}
+
+.prose blockquote {
+  margin-inline: 0;
+  padding: var(--space-2) var(--space-4);
+  border-inline-start: 3px solid var(--color-frame);
+  color: var(--color-muted);
+}
+
+.prose pre {
+  padding: var(--space-3) var(--space-4);
+  overflow-x: auto;
+  background: var(--color-raised);
+  font-size: 0.9375rem;
+}
+
+.prose code {
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+
+.prose hr {
+  border: 0;
+  border-block-start: 2px solid var(--color-border);
+}
+
+.prose ul[data-type="taskList"] {
+  padding-inline-start: 0;
+  list-style: none;
+}
+
+.prose ul[data-type="taskList"] li {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.prose ul[data-type="taskList"] input {
+  inline-size: 1.125rem;
+  block-size: 1.125rem;
+  margin-block-start: 0.3rem;
+  accent-color: var(--color-accent);
+}
+
+/* Lo vacío, con su indicación (la pone la extensión de TipTap al primer párrafo) */
+.prose p:global(.is-editor-empty):first-child::before {
+  content: attr(data-placeholder);
+  float: inline-start;
+  block-size: 0;
+  color: var(--color-muted);
+  pointer-events: none;
+}
+
+/* Los cursores de otras cuentas, con su nombre */
+.prose :global(.collaboration-carets__caret) {
+  position: relative;
+  margin-inline: -1px;
+  border-inline: 1px solid;
+  word-break: normal;
+  pointer-events: none;
+}
+
+.prose :global(.collaboration-carets__label) {
+  position: absolute;
+  inset-block-start: -1.4em;
+  inset-inline-start: -1px;
+  padding: 0 var(--space-1);
+  border-radius: var(--radius);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.offline {
+  margin: 0 0 var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1px dashed var(--color-field-border);
+  color: var(--color-muted);
+}

@@ -81,6 +81,12 @@
   min-inline-size: 0;
 }
 
+.locked {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--color-muted);
+}
+
 .rename {
   margin-block-end: var(--space-6);
 }

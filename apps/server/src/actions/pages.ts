@@ -107,16 +107,18 @@ export const pageActions = [
     return pageView(ctx, created.id)
   }),
 
-  implement(updatePage, async (ctx, { pageId, title, icon }) => {
+  implement(updatePage, async (ctx, { pageId, title, icon, locked }) => {
     const { page, wiki } = await authorizedPage(ctx, 'page.write', pageId)
-    // Lo que cambió, para la frase del historial: renombrar, o cambiar el icono
+    // Lo que cambió, para la frase del historial: renombrar, el icono o el candado
     const details = {
       ...(title !== undefined ? { from: page.title, to: title } : { title: page.title }),
-      ...(icon !== undefined ? { icon } : {})
+      ...(icon !== undefined ? { icon } : {}),
+      ...(locked !== undefined ? { locked } : {})
     }
     await pagesRepo.updatePage(ctx.db, historyContext(ctx, 'updatePage', details, wiki), pageId, {
       ...(title !== undefined ? { title } : {}),
-      ...(icon !== undefined ? { icon } : {})
+      ...(icon !== undefined ? { icon } : {}),
+      ...(locked !== undefined ? { locked } : {})
     })
     ctx.realtime.publish(pagesChanged(wiki))
     return pageView(ctx, pageId)

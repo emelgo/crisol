@@ -71,10 +71,18 @@ export const createPage = defineAction({
 export const updatePage = defineAction({
   name: 'updatePage',
   kind: 'write',
-  description: 'Cambia el título de una página o su icono (un emoji; null, sin icono)',
+  description:
+    'Cambia el título de una página, su icono (un emoji; null, sin icono) o su candado (locked: el editor, en lectura)',
   input: z
-    .object({ pageId: z.uuid(), title: pageTitle.optional(), icon: pageIcon.nullable().optional() })
-    .refine((input) => input.title !== undefined || input.icon !== undefined, { message: 'title o icon' }),
+    .object({
+      pageId: z.uuid(),
+      title: pageTitle.optional(),
+      icon: pageIcon.nullable().optional(),
+      locked: z.boolean().optional()
+    })
+    .refine((input) => input.title !== undefined || input.icon !== undefined || input.locked !== undefined, {
+      message: 'title, icon o locked'
+    }),
   output: page
 })
 

@@ -17,10 +17,10 @@ module.exports = {
     },
     {
       name: 'dominio-sin-frameworks',
-      comment: 'El dominio y los contratos no dependen de React ni de Fastify',
+      comment: 'El dominio, los contratos y el esquema del editor no dependen de React ni de Fastify',
       severity: 'error',
-      from: { path: '^packages/(domain|contracts)/' },
-      to: { path: 'node_modules/(react|react-dom|fastify|@fastify)/' }
+      from: { path: '^packages/(domain|contracts|editor)/' },
+      to: { path: 'node_modules/(react|react-dom|fastify|@fastify|@tiptap/react)/' }
     },
     {
       name: 'drizzle-solo-en-db',
