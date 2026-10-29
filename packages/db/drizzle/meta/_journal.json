@@ -78,6 +78,13 @@
       "when": 1793311516422,
       "tag": "0010_preferencias-de-la-wiki",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1793312867616,
+      "tag": "0011_documentos-de-yjs",
+      "breakpoints": true
     }
   ]
 }

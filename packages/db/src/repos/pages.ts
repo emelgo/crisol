@@ -226,7 +226,7 @@ async function sameStateBelow(db: Database | Transaction, pageId: string) {
 
 /**
  * Manda la página a la papelera con las subpáginas que no lo estaban, en una sola operación y con el mismo momento:
- * así vuelven juntas. Devuelve cuántas subpáginas se fueron con ella
+ * así vuelven juntas. Devuelve las subpáginas que se fueron con ella
  */
 export function deletePageTree(db: Database, context: OperationContext, pageId: string) {
   return operation(db, context, async (w) => {
@@ -234,7 +234,7 @@ export function deletePageTree(db: Database, context: OperationContext, pageId: 
     const below = await sameStateBelow(w.read, pageId)
     await w.update(pages, pageId, { deletedAt: now })
     for (const id of below) await w.update(pages, id, { deletedAt: now })
-    return below.length
+    return below
   })
 }
 

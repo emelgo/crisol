@@ -129,6 +129,13 @@ describe('el canal en tiempo real', () => {
     await expect(open(owner.cookie, 'https://malo.example')).rejects.toThrow('403')
   })
 
+  it('el canal no escucha: quien le manda algo grande se corta', async () => {
+    const ws = await open(owner.cookie)
+    const closed = new Promise<number>((resolve) => ws.once('close', (code: number) => resolve(code)))
+    ws.send(Buffer.alloc(2048))
+    expect(await closed).toBe(1009)
+  })
+
   it('a la jugadora no le llega la campaña nueva en la que no está, pero sí lo del mundo en el que juega', async () => {
     const { world, player } = await worldWithPlayer()
     const master = inbox(await open(owner.cookie))

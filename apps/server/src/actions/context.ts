@@ -1,6 +1,7 @@
 import type { ActionDefinition } from '@crisol/contracts'
 import type { Database, OperationContext } from '@crisol/db'
 import { type Actor, ForbiddenError, NotFoundError } from '@crisol/domain'
+import type { Collab } from '../collab/server.ts'
 import type { Realtime } from '../realtime/hub.ts'
 
 /** Una acción del contrato con su servicio */
@@ -18,6 +19,8 @@ export interface ActionEnv {
   sealKey: Buffer
   /** Para avisar en tiempo real de lo que cambia, a quien pueda verlo */
   realtime: Realtime
+  /** Los documentos de Yjs abiertos: para cerrarlos si su página o su mundo van a la papelera */
+  collab?: Collab
   /** Las acciones por su nombre: al aprobarse, lo que pidió la IA se hace con la suya */
   actions: ReadonlyMap<string, Implementation>
 }
