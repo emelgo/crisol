@@ -180,10 +180,22 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
     - La búsqueda llega a las secciones de los libros.
     - No hay wiki ni secretos por bloque.
   - `research/README.md` admite Homebrewery como fuente: su código, MIT, se puede aprovechar con atribución.
+- **2026-10-29 — Módulo 1: spec escrita**, pendiente de Enrique (`docs/specs/wiki.md`; el PR no se fusiona hasta que
+  la apruebe).
+  - Nueve capacidades: `paginas`, `editor`, `markdown`, `enlaces`, `versiones`, `archivos`, `busqueda`, `hojas` e
+    `ia`.
+  - Lo más arriesgado va primero: el editor anidado de los secretos.
+  - Dimensionada con Eana, contada sin abrirla: 2.384 páginas, la mediana de 1,3 KB y 99 archivos (710 MB, casi todos
+    PDF, el mayor de 204 MB).
+  - Preguntas abiertas, cada una con su propuesta:
+    - los archivos los sube Enrique y Claude los enlaza;
+    - el PDF, imprimiendo desde el navegador;
+    - la hoja se pagina sola;
+    - los tipos de propiedad.
 - **Siguiente paso: módulo 1**, en este orden, cada uno con su PR de documentación (rama corta → CI → merge):
   1. ~~ADR-0003, Yjs y secretos~~: hecho.
   2. ~~REA dirigido~~: hecho (Homebrewery, Foundry Journal y D&D Beyond).
-  3. **Spec** `docs/specs/wiki.md` con `/spec` (skill `spec-driven-development`), para que Enrique la apruebe.
+  3. **Spec** `docs/specs/wiki.md`: escrita, falta que Enrique la apruebe.
   4. **Diseño** con `frontend-design`: prototipos en el lienzo de claude.ai (el de las direcciones u otro nuevo) del
      árbol, la página en vista sencilla y en hoja, el editor y la búsqueda. Enrique los aprueba.
   5. `/plan` con tareas en `tasks/`, y luego `/build`, `/agent-skills:review` y `/ship`, como en el módulo 0.
