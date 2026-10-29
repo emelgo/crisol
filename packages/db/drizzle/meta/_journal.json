@@ -15,6 +15,13 @@
       "when": 1793267786224,
       "tag": "0001_cuentas-y-organizaciones",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793269287094,
+      "tag": "0002_historial-y-mundos",
+      "breakpoints": true
     }
   ]
 }

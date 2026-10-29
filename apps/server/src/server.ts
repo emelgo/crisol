@@ -13,7 +13,11 @@ export async function startServer(config: Config, options: { logger?: boolean } 
     checks: serviceChecks(db, valkey),
     logger: options.logger ?? false,
     ...(config.WEB_DIR ? { webDir: config.WEB_DIR } : {}),
-    accounts: { auth: createAuth({ db: db.db, secret: config.AUTH_SECRET, baseURL: config.PUBLIC_URL }), db: db.db }
+    accounts: {
+      auth: createAuth({ db: db.db, secret: config.AUTH_SECRET, baseURL: config.PUBLIC_URL }),
+      db: db.db,
+      publicUrl: config.PUBLIC_URL
+    }
   })
   await app.listen({ host: config.HOST, port: config.PORT })
   return {

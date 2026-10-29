@@ -20,7 +20,7 @@ describe('arranque del propietario', () => {
 
   const newApp = () => {
     const auth = createTestAuth(conn.db, BASE_URL)
-    return buildApp({ checks: { postgres: ok, valkey: ok }, accounts: { auth, db: conn.db } })
+    return buildApp({ checks: { postgres: ok, valkey: ok }, accounts: { auth, db: conn.db, publicUrl: BASE_URL } })
   }
   const post = (url: string, payload: object, cookie?: string) =>
     app.inject({ method: 'POST', url, payload, headers: { origin: BASE_URL, ...(cookie ? { cookie } : {}) } })

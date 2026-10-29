@@ -1,4 +1,5 @@
 import type { FastifyInstance } from 'fastify'
+import { toHeaders } from '../http.ts'
 import type { Auth } from './auth.ts'
 
 /** Monta Better Auth en /api/auth/* (sus rutas reciben y devuelven Fetch Request/Response) */
@@ -7,11 +8,7 @@ export function registerAuthRoutes(app: FastifyInstance, auth: Auth) {
     method: ['GET', 'POST'],
     url: '/api/auth/*',
     handler: async (request, reply) => {
-      const headers = new Headers()
-      for (const [key, value] of Object.entries(request.headers)) {
-        if (typeof value === 'string') headers.set(key, value)
-        else if (value) for (const v of value) headers.append(key, v)
-      }
+      const headers = toHeaders(request.headers)
       const response = await auth.handler(
         new Request(new URL(request.url, `http://${request.headers.host}`), {
           method: request.method,

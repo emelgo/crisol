@@ -91,7 +91,7 @@ Comprobación local al acabar cada tarea: `pnpm lint && pnpm typecheck && pnpm t
 
 ## Fase 3: Inquilinos (con historial desde la primera escritura)
 
-- [ ] **9. Núcleo de escritura: políticas, operaciones y mundos**
+- [x] **9. Núcleo de escritura: políticas, operaciones y mundos**
   - Acepta:
     - `defineAction` en `contracts` y la ruta genérica `POST /api/actions/:name` con OpenAPI.
     - Tabla de capacidades → roles por ámbito en `domain`, y el actor cargado en cada petición.
