@@ -1,15 +1,17 @@
 import {
   deleteCampaign,
+  deletePage,
   deleteWorld,
   listTrash,
   type RealtimeMessage,
   restoreCampaign,
+  restorePage,
   restoreWorld
 } from '@crisol/contracts'
-import { trashRepo, worldsRepo } from '@crisol/db'
+import { pagesRepo, trashRepo, worldsRepo } from '@crisol/db'
 import { authorize, NotFoundError, purgeAt } from '@crisol/domain'
-import { campaignsChanged } from '../realtime/events.ts'
-import { authorizedCampaign, targetOrganization } from './access.ts'
+import { campaignsChanged, pagesChanged } from '../realtime/events.ts'
+import { authorizedCampaign, authorizedPage, authorizedWiki, targetOrganization } from './access.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
 import { implement } from './registry.ts'
 
@@ -50,6 +52,28 @@ export const trashActions = [
     for (const { userId } of people) ctx.realtime.revoke(userId, scope)
     ctx.realtime.publish(campaignsChanged(scope))
     return {}
+  }),
+
+  implement(deletePage, async (ctx, { pageId }) => {
+    const { page, wiki } = await authorizedPage(ctx, 'page.write', pageId)
+    const subpages = await pagesRepo.deletePageTree(
+      ctx.db,
+      historyContext(ctx, 'deletePage', { title: page.title }, wiki),
+      pageId
+    )
+    ctx.realtime.publish(pagesChanged(wiki))
+    return { subpages }
+  }),
+
+  implement(restorePage, async (ctx, { pageId }) => {
+    const page = await pagesRepo.findTrashedPage(ctx.db, pageId)
+    const wiki = await authorizedWiki(ctx, 'page.write', page?.worldId ?? '')
+    if (!page) throw new NotFoundError('page')
+    // Si su madre también está en la papelera, volvería sin sitio en el árbol: se restaura la madre
+    if (page.parentInTrash) throw new InvalidRequestError('PARENT_IN_TRASH')
+    await pagesRepo.restorePageTree(ctx.db, historyContext(ctx, 'restorePage', { title: page.title }, wiki), pageId)
+    ctx.realtime.publish(pagesChanged(wiki))
+    return { id: page.id, name: page.title }
   }),
 
   implement(listTrash, async (ctx, { worldId, organizationId }) => {

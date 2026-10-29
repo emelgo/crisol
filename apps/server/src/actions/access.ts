@@ -26,7 +26,8 @@ export interface WikiTarget {
 
 /** La wiki del mundo, si la cuenta puede hacer eso en ella. Un mundo que no existe (o en la papelera): 404 */
 export async function authorizedWiki(ctx: ActionContext, capability: Capability, worldId: string): Promise<WikiTarget> {
-  const world = await worldsRepo.findWorld(ctx.db, worldId)
+  // Sin mundo (una página que no existe) no hay nada que buscar: se decide como si nadie la viera
+  const world = worldId ? await worldsRepo.findWorld(ctx.db, worldId) : null
   const target = { worldId, organizationId: world?.organizationId ?? '' }
   authorize(ctx.actor, capability, target)
   if (!world) throw new NotFoundError('world')

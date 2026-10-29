@@ -3,7 +3,9 @@ import { defineAction } from './action.ts'
 
 /** Algo en la papelera: se puede restaurar hasta purgeAt; luego se borra del todo */
 export const trashItem = z.object({
-  kind: z.enum(['world', 'campaign']),
+  kind: z.enum(['world', 'campaign', 'page']),
+  /** De una página: cuántas subpáginas se fueron con ella (vuelven con ella) */
+  subpages: z.number().int().optional(),
   id: z.uuid(),
   name: z.string(),
   worldId: z.uuid(),
@@ -33,11 +35,19 @@ export const deleteCampaign = defineAction({
   output: z.object({})
 })
 
+export const deletePage = defineAction({
+  name: 'deletePage',
+  kind: 'delete',
+  description: 'Manda una página de la wiki a la papelera con sus subpáginas: se puede restaurar 30 días',
+  input: z.object({ pageId: z.uuid() }),
+  output: z.object({ subpages: z.number().int() })
+})
+
 export const listTrash = defineAction({
   name: 'listTrash',
   kind: 'read',
   description:
-    'Lo que hay en la papelera: las campañas borradas de un mundo (para su máster) o, en la de la organización (para el propietario), también los mundos',
+    'Lo que hay en la papelera: las campañas y las páginas borradas de un mundo (para su máster) o, en la de la organización (para el propietario), también los mundos',
   input: z.object({ worldId: z.uuid().optional(), organizationId: z.uuid().optional() }),
   output: z.object({ items: z.array(trashItem) })
 })
@@ -55,5 +65,14 @@ export const restoreCampaign = defineAction({
   kind: 'write',
   description: 'Saca una campaña de la papelera (si su mundo también está en ella, hay que restaurar el mundo)',
   input: z.object({ campaignId: z.uuid() }),
+  output: restored
+})
+
+export const restorePage = defineAction({
+  name: 'restorePage',
+  kind: 'write',
+  description:
+    'Saca una página de la papelera con las subpáginas que se fueron con ella (si su madre también está en ella, hay que restaurar la madre)',
+  input: z.object({ pageId: z.uuid() }),
   output: restored
 })
