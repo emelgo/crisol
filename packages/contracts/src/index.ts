@@ -10,6 +10,7 @@ export * from './invitations.ts'
 export * from './members.ts'
 export * from './openapi.ts'
 export * from './organizations.ts'
+export type * from './realtime.ts'
 export * from './worlds.ts'
 
 /** Todas las acciones de la API */

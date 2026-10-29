@@ -164,7 +164,7 @@ Comprobación local al acabar cada tarea: `pnpm lint && pnpm typecheck && pnpm t
     con Discord.
   - Archivos: `apps/server/src/auth.ts`, `apps/web/src/componentes/navegador-integrado.tsx` (+ prueba).
 
-- [ ] **16. Miembros: ver, expulsar y salir**
+- [x] **16. Miembros: ver, expulsar y salir**
   - Acepta:
     - El máster ve los miembros y expulsa; el jugador ve a sus compañeros y puede salir.
     - Si a alguien no le queda ninguna campaña en la organización, deja de ser miembro de ella.
@@ -172,7 +172,7 @@ Comprobación local al acabar cada tarea: `pnpm lint && pnpm typecheck && pnpm t
   - Archivos: `packages/contracts/src/miembros.ts`, `apps/server/src/servicios/miembros.ts`,
     `apps/web/src/rutas/campana.tsx`.
 
-- [ ] **17. Canal en tiempo real proyectado y revocación**
+- [x] **17. Canal en tiempo real proyectado y revocación**
   - Acepta:
     - WebSocket por sesión, con un bus en el proceso; cada evento pasa la política de su destinatario.
     - Expulsar, salir o cambiar un rol cierra las suscripciones de esa cuenta en ese ámbito.

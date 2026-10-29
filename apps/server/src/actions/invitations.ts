@@ -1,6 +1,7 @@
 import { getInvitation, type Invitation, regenerateInvitation, setInvitationsOpen } from '@crisol/contracts'
 import { invitationsRepo } from '@crisol/db'
 import { NotFoundError } from '@crisol/domain'
+import { invitationChanged } from '../realtime/events.ts'
 import { hashSecret, newSecret, openSecret, sealSecret } from '../secrets.ts'
 import { authorizedCampaign } from './access.ts'
 import { type ActionContext, historyContext } from './context.ts'
@@ -44,6 +45,7 @@ export const invitationActions = [
       campaignId,
       prepareSecret(ctx.sealKey)
     )
+    ctx.realtime.publish(invitationChanged({ campaignId, worldId: campaign.worldId }))
     return view(ctx, campaignId, row)
   }),
 
@@ -56,6 +58,7 @@ export const invitationActions = [
       open
     )
     if (!row) throw new NotFoundError('invitation')
+    ctx.realtime.publish(invitationChanged({ campaignId, worldId: campaign.worldId }))
     return view(ctx, campaignId, row)
   })
 ]

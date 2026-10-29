@@ -26,6 +26,7 @@
     "@crisol/domain": "workspace:*",
     "@fastify/rate-limit": "catalog:",
     "@fastify/static": "catalog:",
+    "@fastify/websocket": "catalog:",
     "@modelcontextprotocol/server": "catalog:",
     "better-auth": "catalog:",
     "drizzle-orm": "catalog:",

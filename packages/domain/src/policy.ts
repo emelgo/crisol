@@ -76,6 +76,12 @@ export function authorize(actor: Actor, capability: Capability, target: Target):
   if (!rule.allows(actor, target)) throw new ForbiddenError(capability)
 }
 
+/** Si la cuenta puede hacer eso, sin lanzar: para decidir a quién le llega un evento en tiempo real */
+export function can(actor: Actor, capability: Capability, target: Target): boolean {
+  const rule = RULES[capability]
+  return rule.sees(actor, target) && rule.allows(actor, target)
+}
+
 /** Construye el actor a partir de sus pertenencias (tal como las lee la base de datos) */
 export function actorFrom(
   userId: string,

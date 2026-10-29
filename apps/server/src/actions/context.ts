@@ -1,5 +1,6 @@
 import type { Database, OperationContext } from '@crisol/db'
 import type { Actor } from '@crisol/domain'
+import type { Realtime } from '../realtime/hub.ts'
 
 /** Lo que las acciones necesitan del servidor, además de la base de datos */
 export interface ActionEnv {
@@ -8,6 +9,8 @@ export interface ActionEnv {
   publicUrl: string
   /** Para cifrar y descifrar los secretos de los enlaces */
   sealKey: Buffer
+  /** Para avisar en tiempo real de lo que cambia, a quien pueda verlo */
+  realtime: Realtime
 }
 
 /** Con qué se ejecuta una acción: el servidor y quién la pide, por dónde */

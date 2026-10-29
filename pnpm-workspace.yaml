@@ -39,6 +39,7 @@ catalog:
   happy-dom: ^21.0.4
   "@fastify/rate-limit": ^11.2.1
   "@fastify/static": ^10.1.8
+  "@fastify/websocket": ^11.3.4
   i18next: ^26.5.11
   ioredis: ^6.0.0
   postgres: ^3.4.9

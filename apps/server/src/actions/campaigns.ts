@@ -1,6 +1,7 @@
 import { createCampaign, listCampaigns, renameCampaign } from '@crisol/contracts'
 import { campaignsRepo, worldsRepo } from '@crisol/db'
 import { authorize, NotFoundError } from '@crisol/domain'
+import { campaignsChanged } from '../realtime/events.ts'
 import { authorizedCampaign } from './access.ts'
 import { historyContext } from './context.ts'
 import { prepareSecret } from './invitations.ts'
@@ -23,6 +24,7 @@ export const campaignActions = [
       historyContext(ctx, 'createCampaign', { name, world: world.name }, world),
       { worldId, name, masterId: ctx.actor.userId, invitation: prepareSecret(ctx.sealKey) }
     )
+    ctx.realtime.publish(campaignsChanged({ campaignId: campaign.id, worldId }))
     return { ...campaign, role: 'master' as const }
   }),
 
@@ -34,6 +36,7 @@ export const campaignActions = [
       campaignId,
       name
     )
+    ctx.realtime.publish(campaignsChanged({ campaignId, worldId: current.worldId }))
     return { ...campaign, role: ctx.actor.campaigns.get(campaignId)?.role ?? ('master' as const) }
   })
 ]

@@ -7,7 +7,7 @@ export default defineConfig({
     host: '127.0.0.1',
     port: 5173,
     // En desarrollo la API la sirve el servidor de apps/server
-    proxy: { '/api': 'http://127.0.0.1:8130' }
+    proxy: { '/api': { target: 'http://127.0.0.1:8130', ws: true } }
   },
   test: {
     environment: 'happy-dom',

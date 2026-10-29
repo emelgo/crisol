@@ -10,6 +10,7 @@ import type { ActionEnv } from './actions/context.ts'
 import type { Auth } from './auth/auth.ts'
 import { signUpAllowed } from './auth/signup.ts'
 import { toHeaders } from './http.ts'
+import { invitationChanged, memberJoined, membersChanged } from './realtime/events.ts'
 import { hashSecret } from './secrets.ts'
 
 const INVALID = { code: 'INVALID_LINK' } as const
@@ -22,7 +23,8 @@ async function validLink(env: ActionEnv, secret: string) {
 
 type Link = NonNullable<Awaited<ReturnType<typeof validLink>>>
 
-async function join(env: ActionEnv, link: Link, userId: string) {
+async function join(env: ActionEnv, link: Link, user: { id: string; name: string }) {
+  const userId = user.id
   const result = await invitationsRepo.joinCampaign(
     env.db,
     {
@@ -40,6 +42,16 @@ async function join(env: ActionEnv, link: Link, userId: string) {
       userId
     }
   )
+  if (result.status === 'joined') {
+    const scope = { campaignId: link.invitation.campaignId, worldId: link.worldId }
+    env.realtime.publish(
+      memberJoined(scope, link.campaignName, { userId, name: user.name }),
+      membersChanged(scope),
+      invitationChanged(scope),
+      // Sus otras pestañas: tiene un mundo más
+      { to: { userId }, message: { type: 'changed', what: 'worlds' } }
+    )
+  }
   return { ...result, campaignId: link.invitation.campaignId, worldId: link.worldId }
 }
 
@@ -76,7 +88,7 @@ export function registerJoinRoutes(app: FastifyInstance, env: ActionEnv, auth: A
     if (!session) return reply.code(401).send({ code: 'UNAUTHENTICATED' })
     const link = await validLink(env, secret.data.secret)
     if (!link) return reply.code(404).send(INVALID)
-    const result = await join(env, link, session.user.id)
+    const result = await join(env, link, session.user)
     if (result.status === 'closed') return reply.code(404).send(INVALID)
     return result
   })
@@ -90,7 +102,7 @@ export function registerJoinRoutes(app: FastifyInstance, env: ActionEnv, auth: A
     const { name, email, password } = input.data
     const created = await signUpAllowed(auth, { name, email, password })
     if (!created) return reply.code(409).send({ code: 'EMAIL_TAKEN' })
-    const result = await join(env, link, created.response.user.id)
+    const result = await join(env, link, created.response.user)
     if (result.status === 'closed') return reply.code(404).send(INVALID)
     const cookies = created.headers.getSetCookie()
     if (cookies.length > 0) reply.header('set-cookie', cookies)
