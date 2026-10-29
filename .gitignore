@@ -1,0 +1,15 @@
+node_modules/
+dist/
+out/
+coverage/
+.turbo/
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+# Caché de las skills (sdd-cache) y ajustes locales de Claude
+.claude/sdd-cache/
+.claude/settings.local.json
+# Copias de mundos para el importador: nunca al repo
+datos-locales/
