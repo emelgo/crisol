@@ -43,6 +43,25 @@ export const es = {
     name: 'Nombre de la campaña',
     create: 'Crear la campaña'
   },
+  campaign: {
+    notFound: 'Esta campaña no existe'
+  },
+  invitation: {
+    title: 'Invitación',
+    link: 'Enlace de invitación',
+    copy: 'Copiar',
+    copied: 'Copiado',
+    issued: 'Enlace del {{date}}.',
+    joins_one: 'Ha entrado {{count}} con este enlace',
+    joins_other: 'Han entrado {{count}} con este enlace',
+    none: 'Aún no hay enlace.',
+    create: 'Generar enlace',
+    regenerate: 'Nuevo enlace',
+    warning: 'Quien aún no haya entrado necesitará el nuevo.',
+    confirm: 'Generar el nuevo',
+    open: 'Invitaciones abiertas',
+    closed: 'Ahora nadie puede entrar con el enlace.'
+  },
   list: {
     rename: 'Renombrar',
     renameButton: 'Renombrar {{name}}',

@@ -1,5 +1,6 @@
 import { createRootRoute, createRoute, createRouter, type RouterHistory } from '@tanstack/react-router'
 import { Bootstrap } from './routes/bootstrap.tsx'
+import { CampaignPage } from './routes/campaign.tsx'
 import { Consent } from './routes/consent.tsx'
 import { Home } from './routes/home.tsx'
 import { Profile } from './routes/profile.tsx'
@@ -16,6 +17,11 @@ const signInRoute = createRoute({ getParentRoute: () => rootRoute, path: '/entra
 const profileRoute = createRoute({ getParentRoute: () => rootRoute, path: '/perfil', component: Profile })
 const worldsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/mundos', component: Worlds })
 const worldRoute = createRoute({ getParentRoute: () => rootRoute, path: '/mundos/$worldId', component: WorldPage })
+const campaignRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/mundos/$worldId/campanas/$campaignId',
+  component: CampaignPage
+})
 const consentRoute = createRoute({ getParentRoute: () => rootRoute, path: '/oauth/consentimiento', component: Consent })
 const bootstrapRoute = createRoute({ getParentRoute: () => rootRoute, path: '/arranque/$secret', component: Bootstrap })
 
@@ -25,6 +31,7 @@ const routeTree = rootRoute.addChildren([
   profileRoute,
   worldsRoute,
   worldRoute,
+  campaignRoute,
   consentRoute,
   bootstrapRoute
 ])

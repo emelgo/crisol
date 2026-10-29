@@ -57,6 +57,10 @@ test('arranque, perfil, mundos, campañas y consentimiento, en los dos temas @a1
     await page.getByRole('button', { name: 'Crear la campaña' }).click()
     await expect(page.getByRole('list', { name: 'Campañas' })).toBeVisible()
     await check()
+    await page.getByRole('link', { name: 'La Marca' }).click()
+    await expect(page.getByLabel('Enlace de invitación')).toBeVisible()
+    await page.getByRole('button', { name: 'Nuevo enlace' }).click()
+    await check()
     // La página de consentimiento sin consulta firmada: se ve igual, aunque permitir fallaría
     await page.goto(`/oauth/consentimiento?client_id=${encodeURIComponent('https://claude.ai/oauth/metadatos')}`)
     await expect(page.getByRole('heading', { name: 'Conectar claude.ai' })).toBeVisible()

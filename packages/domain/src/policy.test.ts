@@ -71,7 +71,10 @@ describe('authorize', () => {
     ['un jugador no renombra su campaña', player, 'campaign.rename', campaign, 'prohíbe'],
     ['un jugador no ve otra campaña del mismo mundo', player, 'campaign.read', otherCampaign, 'no lo ve'],
     ['nadie ve campañas de un mundo ajeno', outsider, 'campaign.read', campaign, 'no lo ve'],
-    ['un miembro sin campaña no ve las campañas', member, 'campaign.read', campaign, 'no lo ve']
+    ['un miembro sin campaña no ve las campañas', member, 'campaign.read', campaign, 'no lo ve'],
+    ['el máster gestiona el enlace de invitación', owner, 'campaign.invite', campaign, 'permite'],
+    ['un jugador no ve el enlace de su campaña', player, 'campaign.invite', campaign, 'prohíbe'],
+    ['nadie gestiona el enlace de una campaña ajena', outsider, 'campaign.invite', campaign, 'no lo ve']
   ]
 
   it.each(cases)('%s', (_, who, capability, target, expected) => {

@@ -7,7 +7,7 @@ import { buildApp } from './app.ts'
 import { allowSignup } from './auth/signup-gate.ts'
 import { BootstrapError, issueBootstrap } from './bootstrap.ts'
 import { hashSecret } from './secrets.ts'
-import { createTestAuth } from './testing.ts'
+import { createTestAuth, TEST_SEAL_KEY } from './testing.ts'
 
 const BASE_URL = 'https://crisol.test'
 const DAY = 24 * 60 * 60 * 1000
@@ -20,7 +20,10 @@ describe('arranque del propietario', () => {
 
   const newApp = () => {
     const auth = createTestAuth(conn.db, BASE_URL)
-    return buildApp({ checks: { postgres: ok, valkey: ok }, accounts: { auth, db: conn.db, publicUrl: BASE_URL } })
+    return buildApp({
+      checks: { postgres: ok, valkey: ok },
+      accounts: { auth, db: conn.db, publicUrl: BASE_URL, sealKey: TEST_SEAL_KEY }
+    })
   }
   const post = (url: string, payload: object, cookie?: string) =>
     app.inject({ method: 'POST', url, payload, headers: { origin: BASE_URL, ...(cookie ? { cookie } : {}) } })

@@ -9,6 +9,7 @@ import { buildMcpServer } from './tools.ts'
 
 export interface McpDeps {
   db: Database
+  sealKey: Buffer
   auth: Auth
   publicUrl: string
   /** El JWKS del propio servidor por loopback: verificar tokens no da la vuelta por Caddy */
@@ -25,8 +26,10 @@ const forbidden = () =>
  * POST /mcp: Streamable HTTP. Atiende el protocolo 2026-07-28 y, sin sesión, el de 2025 (claude.ai puede usar
  * cualquiera de los dos). Cada petición trae un token OAuth de Better Auth atado a este recurso.
  */
-export function registerMcpRoutes(app: FastifyInstance, { db, auth, publicUrl, jwksUrl }: McpDeps) {
-  const handler = createMcpHandler(({ authInfo }) => buildMcpServer(db, String(authInfo?.extra?.userId)))
+export function registerMcpRoutes(app: FastifyInstance, { db, auth, publicUrl, jwksUrl, sealKey }: McpDeps) {
+  const handler = createMcpHandler(({ authInfo }) =>
+    buildMcpServer({ db, publicUrl, sealKey }, String(authInfo?.extra?.userId))
+  )
   const protect = requireMcpAuth(
     auth,
     async (request, claims) => {

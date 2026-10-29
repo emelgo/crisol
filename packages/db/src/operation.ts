@@ -6,6 +6,7 @@ import { eq, getTableName, type InferInsertModel, type InferSelectModel, sql } f
 import type { Database } from './client.ts'
 import { campaignMembers, campaigns } from './schema/campaigns.ts'
 import { changes, operations } from './schema/history.ts'
+import { invitationLinks } from './schema/invitations.ts'
 import { organizationMembers, organizations } from './schema/organizations.ts'
 import { worldMembers, worlds } from './schema/worlds.ts'
 
@@ -16,7 +17,8 @@ export const TRACKED_TABLES = {
   worlds,
   world_members: worldMembers,
   campaigns,
-  campaign_members: campaignMembers
+  campaign_members: campaignMembers,
+  invitation_links: invitationLinks
 }
 
 export type TrackedTable = (typeof TRACKED_TABLES)[keyof typeof TRACKED_TABLES]

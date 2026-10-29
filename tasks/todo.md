@@ -134,7 +134,7 @@ Comprobación local al acabar cada tarea: `pnpm lint && pnpm typecheck && pnpm t
   - Archivos: `packages/contracts/src/campanas.ts`, `packages/db/src/schema/campanas.ts`,
     `apps/server/src/servicios/campanas.ts`, `apps/web/src/rutas/mundo.tsx`.
 
-- [ ] **13. Enlace de invitación: gestión**
+- [x] **13. Enlace de invitación: gestión** — el secreto se guarda cifrado además del hash, para poder verlo siempre (decidido con Enrique)
   - Acepta:
     - Secreto de 256 bits y solo su hash en la base de datos, uno activo por campaña.
     - Ver el enlace, «Nuevo enlace» (con aviso) y abrir o cerrar las invitaciones.

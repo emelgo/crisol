@@ -1,9 +1,17 @@
 import type { Database, OperationContext } from '@crisol/db'
 import type { Actor } from '@crisol/domain'
 
-/** Con qué se ejecuta una acción: la base de datos y quién la pide, por dónde */
-export interface ActionContext {
+/** Lo que las acciones necesitan del servidor, además de la base de datos */
+export interface ActionEnv {
   db: Database
+  /** Para componer enlaces (invitaciones) */
+  publicUrl: string
+  /** Para cifrar y descifrar los secretos de los enlaces */
+  sealKey: Buffer
+}
+
+/** Con qué se ejecuta una acción: el servidor y quién la pide, por dónde */
+export interface ActionContext extends ActionEnv {
   actor: Actor
   via: 'ui' | 'ai'
   /** La herramienta MCP, si la pide la IA */

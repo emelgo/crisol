@@ -17,7 +17,7 @@ export interface AppDeps {
   /** La web compilada; sin ella, el servidor solo da la API */
   webDir?: string
   /** Cuentas y arranque; sin ellas el servidor solo da la salud y la web */
-  accounts?: { auth: Auth; db: Database; publicUrl: string }
+  accounts?: { auth: Auth; db: Database; publicUrl: string; sealKey: Buffer }
   /** El JWKS del propio servidor: con él se monta /mcp */
   mcpJwksUrl?: string
 }
@@ -29,7 +29,7 @@ export function buildApp(deps: AppDeps): FastifyInstance {
     registerOriginGuard(app, deps.accounts.publicUrl)
     registerAuthRoutes(app, deps.accounts.auth)
     registerBootstrapRoutes(app, deps.accounts.db, deps.accounts.auth)
-    registerActionRoutes(app, deps.accounts.db, deps.accounts.auth)
+    registerActionRoutes(app, deps.accounts, deps.accounts.auth)
     if (deps.mcpJwksUrl) registerMcpRoutes(app, { ...deps.accounts, jwksUrl: deps.mcpJwksUrl })
   }
   if (deps.webDir) registerWeb(app, deps.webDir)

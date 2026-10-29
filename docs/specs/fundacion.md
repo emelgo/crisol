@@ -103,7 +103,9 @@ Modelo:
 - **Enlace de invitación** (lo aprendido de los fallos de D&D Beyond, en `research/dndbeyond/`):
   - **Forma**:
     - `/unirse/<secreto>`: distinta de la URL de la campaña, para que no se confundan.
-    - Secreto aleatorio de 256 bits sin relación con la campaña; en la base de datos solo se guarda su hash.
+    - Secreto aleatorio de 256 bits sin relación con la campaña. Se busca por su hash y se guarda cifrado
+      (AES-256-GCM, clave derivada de `AUTH_SECRET`) para que el máster pueda verlo y copiarlo siempre: una
+      filtración solo de la base de datos no da enlaces válidos. Decidido con Enrique el 2026-10-29.
     - Uno activo por campaña.
     - Sin caducidad ni límite de usos en el módulo 0: si se filtra, se regenera o se cierra.
   - **Gestión**:

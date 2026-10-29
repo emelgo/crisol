@@ -11,7 +11,10 @@ describe('Actions', () => {
       renameWorld: true,
       listCampaigns: true,
       createCampaign: true,
-      renameCampaign: true
+      renameCampaign: true,
+      getInvitation: true,
+      regenerateInvitation: true,
+      setInvitationsOpen: true
     }
     expect(Object.keys(names).sort()).toEqual(ACTIONS.map((a) => a.name).sort())
   })
