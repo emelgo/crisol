@@ -4,6 +4,7 @@ import { act, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { fakeAccountClient } from '../account/fake.ts'
+import { ApiError } from '../api/client.ts'
 import { fakeApi } from '../api/fake.ts'
 import { App } from '../app.tsx'
 import { createAppRouter } from '../router.tsx'
@@ -72,6 +73,23 @@ describe('el canal en tiempo real en la web', () => {
     expect(api.calls).toContain('removeMember')
     await userEvent.click(screen.getByRole('button', { name: 'Cerrar el aviso de Jugadora' }))
     expect(inMain().queryByText('Jugadora ya no está en la campaña.')).toBeNull()
+  })
+
+  it('desde el aviso, si la expulsa pero el enlace no cambia, lo dice', async () => {
+    const { api, realtime } = renderAt('/mundos')
+    const original = api.client.call
+    api.client.call = async (name, input) => {
+      if (name === 'regenerateInvitation') throw new ApiError('UNKNOWN', 500)
+      return original(name, input)
+    }
+    await screen.findByRole('heading', { name: 'Mis mundos' })
+    act(() => realtime.emit(joined))
+    await userEvent.click(await screen.findByRole('button', { name: 'Expulsar a Jugadora' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Expulsar y cambiar el enlace' }))
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'Jugadora ya no está en la campaña, pero el enlace no ha cambiado. Genera uno nuevo.'
+    )
+    expect(api.calls).toContain('removeMember')
   })
 
   it('cancelar en el aviso no expulsa; cerrarlo sin más tampoco', async () => {

@@ -217,6 +217,23 @@ describe('los miembros de una campaña', () => {
     expect((screen.getByLabelText('Enlace de invitación') as HTMLInputElement).value).not.toBe(before)
   })
 
+  it('si la expulsa pero el enlace no cambia, lo dice: ya no está, pero el enlace es el de antes', async () => {
+    const { api } = renderCampaign(campaign())
+    const original = api.client.call
+    api.client.call = async (name, input) => {
+      if (name === 'regenerateInvitation') throw new ApiError('UNKNOWN', 500)
+      return original(name, input)
+    }
+    const before = ((await screen.findByLabelText('Enlace de invitación')) as HTMLInputElement).value
+    await userEvent.click(await screen.findByRole('button', { name: 'Expulsar a Ana' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Expulsar y cambiar el enlace' }))
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'Ana ya no está en la campaña, pero el enlace no ha cambiado. Genera uno nuevo.'
+    )
+    expect(memberNames()).toHaveLength(2)
+    expect((screen.getByLabelText('Enlace de invitación') as HTMLInputElement).value).toBe(before)
+  })
+
   it('cancelar no expulsa a nadie', async () => {
     const { api } = renderCampaign(campaign())
     await userEvent.click(await screen.findByRole('button', { name: 'Expulsar a Ana' }))

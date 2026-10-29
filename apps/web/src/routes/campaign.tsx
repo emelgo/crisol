@@ -14,7 +14,7 @@ import { focusAfterRemoving, focusOnMount, useReturnFocus } from '../components/
 import form from '../components/form.module.css'
 import styles from '../components/list.module.css'
 import { PageTitle } from '../components/page-title.tsx'
-import { RemoveMemberConfirm, useRemoveMember } from '../components/remove-member.tsx'
+import { RemovedMessage, RemoveMemberConfirm, useRemoveMember } from '../components/remove-member.tsx'
 
 const route = getRouteApi('/mundos/$worldId/campanas/$campaignId')
 
@@ -74,7 +74,7 @@ function MembersPanel({ campaign }: { campaign: Campaign }) {
   const key = ['members', campaignId]
   const members = useQuery({ queryKey: key, queryFn: () => api.call('listMembers', { campaignId }) })
   const [confirmingRemove, setConfirmingRemove] = useState<string | null>(null)
-  const [removedName, setRemovedName] = useState<string | null>(null)
+  const [removed, setRemoved] = useState<{ name: string; linkFailed: boolean } | null>(null)
   const [confirmingLeave, setConfirmingLeave] = useState(false)
   const leaveButton = useReturnFocus()
   const leaveWarningId = useId()
@@ -108,17 +108,18 @@ function MembersPanel({ campaign }: { campaign: Campaign }) {
             busy={remove.isPending}
             onStart={() => {
               setConfirmingRemove(member.userId)
-              setRemovedName(null)
+              setRemoved(null)
             }}
             onCancel={() => setConfirmingRemove(null)}
             onRemove={(newLink, refocus) =>
               remove.mutate(
                 { userId: member.userId, newLink },
                 {
-                  onSuccess: () => {
+                  onSuccess: ({ linkFailed }) => {
                     setConfirmingRemove(null)
-                    setRemovedName(member.name)
-                    announce(t('members.removed', { name: member.name }))
+                    setRemoved({ name: member.name, linkFailed })
+                    // Si el enlace no cambió, lo dice el aviso (alert)
+                    if (!linkFailed) announce(t('members.removed', { name: member.name }))
                     refocus()
                   }
                 }
@@ -127,7 +128,11 @@ function MembersPanel({ campaign }: { campaign: Campaign }) {
           />
         ))}
       </ul>
-      {removedName && <p>{t('members.removed', { name: removedName })}</p>}
+      {removed && (
+        <p>
+          <RemovedMessage {...removed} />
+        </p>
+      )}
 
       {campaign.role === 'player' &&
         (confirmingLeave ? (

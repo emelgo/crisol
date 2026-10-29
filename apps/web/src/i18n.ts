@@ -87,6 +87,7 @@ export const es = {
     removeConfirm: 'Expulsar',
     removeAndRegenerate: 'Expulsar y cambiar el enlace',
     removed: '{{name}} ya no está en la campaña.',
+    removedLinkFailed: '{{name}} ya no está en la campaña, pero el enlace no ha cambiado. Genera uno nuevo.',
     leave: 'Dejar la campaña',
     leaveWarning: 'Para volver, el máster tendrá que pasarte el enlace.',
     leaveConfirm: 'Dejarla'

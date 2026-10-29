@@ -7,7 +7,7 @@ import { FormError } from './field.tsx'
 import { focusAfterRemoving, useReturnFocus } from './focus.ts'
 import styles from './list.module.css'
 import notices from './notices.module.css'
-import { RemoveMemberConfirm, useRemoveMember } from './remove-member.tsx'
+import { RemovedMessage, RemoveMemberConfirm, useRemoveMember } from './remove-member.tsx'
 
 /** Los avisos al máster («Ana ha entrado en La Marca»), con «Expulsar» a mano. Se anuncian al llegar */
 export function Notices() {
@@ -65,9 +65,11 @@ function NoticeItem({ notice }: { notice: JoinNotice }) {
   return (
     <li ref={item} className={styles.item}>
       <span className={styles.name}>
-        {remove.isSuccess
-          ? t('members.removed', { name })
-          : t('notices.joined', { member: name, campaign: notice.campaign })}
+        {remove.data ? (
+          <RemovedMessage name={name} linkFailed={remove.data.linkFailed} />
+        ) : (
+          t('notices.joined', { member: name, campaign: notice.campaign })
+        )}
       </span>
       {!remove.isSuccess && !confirming && (
         <button
@@ -102,8 +104,8 @@ function NoticeItem({ notice }: { notice: JoinNotice }) {
               { userId: notice.member.userId, newLink },
               {
                 // El aviso se queda («ya no está»): el foco, a su «Cerrar»
-                onSuccess: () => {
-                  announce(t('members.removed', { name }))
+                onSuccess: ({ linkFailed }) => {
+                  if (!linkFailed) announce(t('members.removed', { name }))
                   dismissButton.current?.focus()
                 }
               }
