@@ -96,4 +96,18 @@ describe('si no llega lo que necesita una página', () => {
     expect((await screen.findByRole('alert')).textContent).toBe('Algo ha fallado. Vuelve a intentarlo.')
     expect(screen.getByRole('heading', { level: 1, name: 'Eana' })).toBeDefined()
   })
+
+  it('en la campaña, los miembros: el error, en vez de nada', async () => {
+    renderAt(`/mundos/${world.id}/campanas/${campaign.id}`, 'listMembers')
+    await afterRetries()
+    expect((await screen.findByRole('alert')).textContent).toBe('Algo ha fallado. Vuelve a intentarlo.')
+    expect(screen.getByRole('heading', { level: 1, name: 'La Marca' })).toBeDefined()
+  })
+
+  it('y el enlace de invitación: el error, bajo los miembros', async () => {
+    renderAt(`/mundos/${world.id}/campanas/${campaign.id}`, 'getInvitation')
+    await afterRetries()
+    expect((await screen.findByRole('alert')).textContent).toBe('Algo ha fallado. Vuelve a intentarlo.')
+    expect(screen.getByRole('list', { name: 'Miembros' })).toBeDefined()
+  })
 })

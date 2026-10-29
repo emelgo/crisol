@@ -96,7 +96,7 @@ function MembersPanel({ campaign }: { campaign: Campaign }) {
     }
   })
 
-  if (!members.data) return null
+  if (!members.data) return <FormError message={failed(members) ? errorText(members.error) : null} />
   const canRemove = campaign.role === 'master'
   const error = remove.error ?? leave.error
 
@@ -256,7 +256,7 @@ function InvitationPanel({ campaignId }: { campaignId: string }) {
     onError: () => setPendingOpen(null)
   })
 
-  if (!invitation.data) return null
+  if (!invitation.data) return <FormError message={failed(invitation) ? errorText(invitation.error) : null} />
   const { url, issuedAt, joins } = invitation.data
   const open = pendingOpen ?? invitation.data.open
   const error = regenerate.error ?? setOpen.error
