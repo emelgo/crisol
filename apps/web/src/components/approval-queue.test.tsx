@@ -70,6 +70,39 @@ describe('la cola de aprobación', () => {
     expect(screen.getByText(new RegExp(campaign.id))).toBeDefined()
   })
 
+  it('si el aviso llega mientras aún se pide la cola por primera vez, se vuelve a pedir', async () => {
+    const api = fakeApi({ organizations: [ORG], worlds: [world], campaigns: [campaign] })
+    const realtime = fakeRealtime()
+    const original = api.client.call
+    let release = () => {}
+    const asked: string[] = []
+    api.client.call = async (name, input) => {
+      if (name !== 'listApprovals') return original(name, input)
+      asked.push(name)
+      // La primera sale antes de que Claude pida nada, y tarda en volver
+      const answer = await original(name, input)
+      if (asked.length === 1) {
+        await new Promise<void>((resolve) => {
+          release = resolve
+        })
+      }
+      return answer
+    }
+    render(
+      <App
+        router={createAppRouter(createMemoryHistory({ initialEntries: ['/mundos'] }))}
+        accounts={fakeAccountClient({ account: { name: 'Enrique', email: 'e@crisol.test' } }).client}
+        api={api.client}
+        realtime={realtime.client}
+      />
+    )
+    await vi.waitFor(() => expect(asked).toHaveLength(1))
+    api.approvals.push(request())
+    act(() => realtime.emit({ type: 'changed', what: 'approvals' }))
+    act(release)
+    expect(await screen.findByRole('heading', { name: 'Claude espera tu aprobación' })).toBeDefined()
+  })
+
   it('aprobar: se hace, lo dice y la cola desaparece', async () => {
     const { api } = renderAt(`/mundos/${world.id}`, [request()])
     await userEvent.click(await screen.findByRole('button', { name: 'Aprobar: generar un enlace nuevo para La Marca' }))
