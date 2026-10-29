@@ -52,6 +52,13 @@ const renderAt = (
   return { api, realtime, router }
 }
 
+/** Las líneas tachadas (lo deshecho) */
+const struck = () =>
+  within(screen.getByRole('list', { name: 'Operaciones' }))
+    .getAllByRole('listitem')
+    .map((item) => item.querySelector('[class*="undone"]')?.textContent)
+    .filter(Boolean)
+
 const lines = () =>
   within(screen.getByRole('list', { name: 'Operaciones' }))
     .getAllByRole('listitem')
@@ -127,16 +134,44 @@ describe('el historial', () => {
     expect(router.state.location.pathname).toBe('/historial')
   })
 
-  it('deshace una operación: la marca como deshecha y el deshacer queda arriba, también deshacible', async () => {
+  it('deshace una operación: la tacha como deshecha y el deshacer queda arriba, con «Rehacer»', async () => {
     const rename = entry('renameWorld', { from: 'Eana', to: 'Eana 2' })
     const { api } = renderAt('/historial', [rename, entry('createWorld', { name: 'Eana' })])
     await userEvent.click(await screen.findByRole('button', { name: 'Deshacer: renombró el mundo «Eana» a «Eana 2»' }))
     await vi.waitFor(() => expect(lines()).toHaveLength(3))
     expect(lines()[0]).toMatch(/^Enrique deshizo: renombró el mundo «Eana» a «Eana 2»/)
     expect(lines()[1]).toMatch(/deshecho$/)
+    expect(struck()).toEqual(['Enrique renombró el mundo «Eana» a «Eana 2»'])
     expect(screen.queryByRole('button', { name: 'Deshacer: renombró el mundo «Eana» a «Eana 2»' })).toBeNull()
-    expect(screen.getByRole('button', { name: 'Deshacer: deshizo: renombró el mundo «Eana» a «Eana 2»' })).toBeDefined()
+    expect(screen.getByRole('button', { name: 'Rehacer: renombró el mundo «Eana» a «Eana 2»' })).toBeDefined()
     expect(api.calls).toContain('undoOperation')
+  })
+
+  it('rehacer: lo de antes vuelve a estar, sin tachar, y se puede volver a deshacer', async () => {
+    const rename = entry('renameWorld', { from: 'Eana', to: 'Eana 2' })
+    renderAt('/historial', [rename])
+    await userEvent.click(await screen.findByRole('button', { name: 'Deshacer: renombró el mundo «Eana» a «Eana 2»' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Rehacer: renombró el mundo «Eana» a «Eana 2»' }))
+    await vi.waitFor(() => expect(lines()).toHaveLength(3))
+    expect(lines()[0]).toMatch(/^Enrique rehízo: renombró el mundo «Eana» a «Eana 2»/)
+    expect(lines()[1]).toMatch(/^Enrique deshizo: .*deshecho$/)
+    expect(lines()[2]).not.toMatch(/deshecho/)
+    expect(struck()).toEqual(['Enrique deshizo: renombró el mundo «Eana» a «Eana 2»'])
+    // Un solo botón, en la última de la cadena
+    expect(
+      screen.getAllByRole('button', { name: /^(Deshacer|Rehacer):/ }).map((b) => b.getAttribute('aria-label'))
+    ).toEqual(['Deshacer: renombró el mundo «Eana» a «Eana 2»'])
+  })
+
+  it('si no se puede rehacer, lo dice', async () => {
+    const create = entry('createWorld', { name: 'Eana' }, { undoneBy: 'u' })
+    const undo = entry('undoOperation', { action: 'createWorld', details: { name: 'Eana' } }, { undoes: create.id })
+    const later = entry('createWorld', { name: 'Eana' })
+    renderAt('/historial', [{ ...undo, id: 'u' }, create], { conflicts: { u: later } })
+    await userEvent.click(await screen.findByRole('button', { name: 'Rehacer: creó el mundo «Eana»' }))
+    expect(
+      await screen.findByText('No se puede rehacer: después, Enrique creó el mundo «Eana». Deshaz eso antes.')
+    ).toBeDefined()
   })
 
   it('si no se puede deshacer, dice qué operación posterior lo impide', async () => {

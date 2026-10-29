@@ -79,3 +79,10 @@
   overflow-x: auto;
   font-size: 0.875rem;
 }
+
+/* Lo que ya no está (deshecho): tachado y atenuado; el texto «deshecho» lo dice también */
+.undone {
+  font-weight: 400;
+  color: var(--color-muted);
+  text-decoration: line-through;
+}
