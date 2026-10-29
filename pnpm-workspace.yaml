@@ -6,6 +6,7 @@ packages:
 # Scripts de instalación: ninguno hace falta (los binarios llegan como dependencias opcionales)
 allowBuilds:
   "@swc/core": false
+  esbuild: false
 
 # Versiones compartidas por todos los paquetes (se usan con "catalog:")
 catalog:
@@ -14,9 +15,15 @@ catalog:
   "@types/node": ^24.10.0
   "@vitest/coverage-v8": ^5.0.5
   dependency-cruiser: ^18.7.0
+  drizzle-kit: ^0.31.11
+  drizzle-orm: ^0.45.4
+  fastify: ^5.12.7
+  ioredis: ^6.0.0
+  postgres: ^3.4.9
   turbo: ^2.11.10
   typescript: ^7.0.2
   vitest: ^5.0.5
+  zod: ^4.6.7
 
 minimumReleaseAgeExclude:
   - "@biomejs/biome@2.6.4"

@@ -20,6 +20,27 @@ jobs:
   calidad:
     name: Lint, tipos, pruebas, licencias y límites
     runs-on: ubuntu-24.04
+    # Postgres y Valkey para las pruebas de integración (cada paquete crea su base desde cero)
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: crisol
+          POSTGRES_PASSWORD: crisol
+          POSTGRES_DB: crisol
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U crisol" --health-interval 2s --health-timeout 3s --health-retries 30
+      valkey:
+        image: valkey/valkey:9-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "valkey-cli ping" --health-interval 2s --health-timeout 3s --health-retries 30
+    env:
+      TEST_DATABASE_URL: postgres://crisol:crisol@localhost:5432/crisol
+      TEST_VALKEY_URL: redis://localhost:6379
     steps:
       - uses: actions/checkout@v7
         with:

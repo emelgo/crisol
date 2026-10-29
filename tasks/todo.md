@@ -27,10 +27,10 @@ Comprobación local al acabar cada tarea: `pnpm lint && pnpm typecheck && pnpm t
   - Archivos: `.github/workflows/ci.yml`, `.dependency-cruiser.cjs`, `scripts/cobertura-diff.ts`.
   - Pide a Enrique: proteger `main`.
 
-- [ ] **3. Servidor, base de datos y Compose de desarrollo**
+- [x] **3. Servidor, base de datos y Compose de desarrollo**
   - Acepta:
     - `pnpm dev` levanta Postgres 17, Valkey y Mailpit (en loopback), y el servidor.
-    - `GET /api/salud` da 200 si Postgres y Valkey responden, y 503 si no.
+    - `GET /api/health` da 200 si Postgres y Valkey responden, y 503 si no.
     - La configuración se valida con zod al arrancar.
     - La primera migración activa `unaccent` y `pg_trgm`.
   - Comprueba: prueba de integración contra Postgres real, en local y en la CI (contenedores de servicio).
@@ -50,9 +50,9 @@ Comprobación local al acabar cada tarea: `pnpm lint && pnpm typecheck && pnpm t
   - Acepta:
     - Imagen de varias etapas.
     - `compose.prod.yaml` con la app, Postgres y Valkey solo en loopback y con límites de memoria.
-    - `scripts/desplegar-staging.sh` construye, migra, reinicia y comprueba `/api/salud`.
+    - `scripts/desplegar-staging.sh` construye, migra, reinicia y comprueba `/api/health`.
     - El sitio de Caddy sirve `https://neo.crisol.144-91-122-245.sslip.io`.
-  - Comprueba: `/api/salud` desde fuera; `ss -ltnp` sin puertos nuevos expuestos; desplegar dos veces seguidas no
+  - Comprueba: `/api/health` desde fuera; `ss -ltnp` sin puertos nuevos expuestos; desplegar dos veces seguidas no
     rompe nada.
   - Archivos: `Dockerfile`, `compose.prod.yaml`, `scripts/desplegar-staging.sh`, sitio de Caddy (fuera del repo).
 
@@ -93,7 +93,7 @@ Comprobación local al acabar cada tarea: `pnpm lint && pnpm typecheck && pnpm t
 
 - [ ] **9. Núcleo de escritura: políticas, operaciones y mundos**
   - Acepta:
-    - `defineAction` en `contracts` y la ruta genérica `POST /api/acciones/:nombre` con OpenAPI.
+    - `defineAction` en `contracts` y la ruta genérica `POST /api/actions/:name` con OpenAPI.
     - Tabla de capacidades → roles por ámbito en `domain`, y el actor cargado en cada petición.
     - `operation()` en `db`: transacción, cambios con antes y después, `version` y autoría en cada fila.
     - Acciones `createWorld` y `renameWorld`.

@@ -16,7 +16,10 @@
     "sala-limpia": "node scripts/sala-limpia.ts",
     "test:coverage": "turbo run test:coverage",
     "cobertura-diff": "node scripts/cobertura-diff.ts",
-    "limites": "depcruise --config .dependency-cruiser.cjs scripts"
+    "limites": "depcruise --config .dependency-cruiser.cjs apps packages scripts",
+    "servicios": "docker compose up -d --wait",
+    "dev": "docker compose up -d --wait && turbo run dev",
+    "db:migrate": "pnpm --filter @crisol/db migrate"
   },
   "devDependencies": {
     "@biomejs/biome": "catalog:",
