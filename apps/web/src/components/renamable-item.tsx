@@ -55,6 +55,7 @@ export function RenamableItem({ name, role, onRename, onDelete, link }: Props) {
           <Field
             label={t('list.renameLabel', { name })}
             name="name"
+            autoComplete="off"
             defaultValue={name}
             maxLength={120}
             required

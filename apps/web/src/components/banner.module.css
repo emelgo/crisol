@@ -27,6 +27,7 @@
 }
 
 .crumb {
+  color: var(--color-muted);
   font-family: var(--font-display);
   font-weight: 600;
   letter-spacing: 0.06em;
@@ -34,7 +35,7 @@
 }
 
 .crumb a {
-  color: var(--color-muted);
+  color: inherit;
   text-decoration: none;
 }
 
@@ -55,24 +56,12 @@
 
 /* Una casilla, como las de características: el número grande y su rótulo debajo */
 .stat {
-  position: relative;
-  isolation: isolate;
+  composes: frame from "./frame.module.css";
   display: flex;
   flex-direction: column-reverse;
   align-items: center;
   inline-size: 7rem;
   padding: var(--space-2) var(--space-2) var(--space-3);
-  background: var(--color-frame);
-  clip-path: var(--cut);
-}
-
-.stat::before {
-  content: "";
-  position: absolute;
-  inset: 1px;
-  z-index: -1;
-  background: var(--color-surface);
-  clip-path: var(--cut-inner);
 }
 
 .stat dt {

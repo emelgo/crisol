@@ -25,7 +25,7 @@ test('una jugadora nueva abre el enlace, crea su cuenta y queda en la campaña',
   const player = await browser.newPage()
   await player.goto(link)
   await expect(player.getByRole('heading', { name: 'Te invitan a La Marca' })).toBeVisible()
-  await expect(player.getByText('Eana · máster: Enrique')).toBeVisible()
+  await expect(player.getByText('Máster: Enrique')).toBeVisible()
   await player.getByLabel('Nombre').fill('Jugadora')
   await player.getByLabel('Email').fill('jugadora@crisol.test')
   await player.getByLabel('Contraseña').fill('una-clave-larga')

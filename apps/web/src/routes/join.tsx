@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import type { JoinResult } from '../account/client.ts'
 import { useAccounts } from '../account/context.tsx'
 import { useAnnounce } from '../components/announcer.tsx'
+import { Banner } from '../components/banner.tsx'
 import { BusyButton } from '../components/busy-button.tsx'
 import { Field, FormError } from '../components/field.tsx'
 import { focusOnMount } from '../components/focus.ts'
@@ -72,8 +73,12 @@ export function Join() {
   const { campaignName, worldName, masterName } = info.data
   return (
     <section>
-      <PageTitle>{t('join.title', { campaign: campaignName })}</PageTitle>
-      <p>{masterName ? t('join.byMaster', { world: worldName, master: masterName }) : worldName}</p>
+      <Banner
+        crumb={worldName}
+        title={t('join.title', { campaign: campaignName })}
+        detail={masterName ? t('join.byMaster', { master: masterName }) : undefined}
+        stats={[]}
+      />
       <FormError message={error} />
       {account ? (
         <>

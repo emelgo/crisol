@@ -24,8 +24,11 @@ export function RootLayout() {
   )
   return (
     <div className={styles.shell}>
+      <a href="#contenido" className={styles.skip}>
+        {t('app.skipToContent')}
+      </a>
       <header className={styles.header}>
-        <Link to="/" className={styles.brand}>
+        <Link to="/" className={styles.brand} translate="no">
           {t('app.name')}
         </Link>
         <SectionsNav />
@@ -34,7 +37,7 @@ export function RootLayout() {
           <ThemeToggle />
         </nav>
       </header>
-      <main className={styles.main}>
+      <main id="contenido" className={styles.main}>
         <ApprovalQueue />
         <Notices />
         <Outlet />

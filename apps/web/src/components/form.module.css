@@ -1,23 +1,11 @@
 /* Un formulario es una caja de la hoja, con su rótulo dentro */
 .form {
-  position: relative;
-  isolation: isolate;
+  composes: frame from "./frame.module.css";
   display: grid;
   gap: var(--space-4);
   max-inline-size: 28rem;
   margin-block-end: var(--space-8);
   padding: var(--space-4) var(--space-6) var(--space-6);
-  background: var(--color-frame);
-  clip-path: var(--cut);
-}
-
-.form::before {
-  content: "";
-  position: absolute;
-  inset: 1px;
-  z-index: -1;
-  background: var(--color-surface);
-  clip-path: var(--cut-inner);
 }
 
 .form > h2:first-child {
@@ -54,6 +42,9 @@
 
 /* La acción principal: rojo, condensada y con las esquinas cortadas */
 .button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   justify-self: start;
   min-block-size: var(--target);
   padding: 0 var(--space-6);
@@ -66,6 +57,7 @@
   letter-spacing: 0.05em;
   text-transform: uppercase;
   clip-path: var(--cut-button);
+  text-decoration: none;
   cursor: pointer;
 }
 

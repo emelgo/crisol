@@ -125,8 +125,13 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
     - El mundo y la campaña llevan una franja (`components/banner.tsx`) con su papel y sus casillas: campañas;
       jugadores; y, para el máster, cuántos han entrado. Comparte las consultas con los paneles de abajo.
     - Los enlaces del mundo se llaman «Historial de Eana» y «Papelera de Eana».
-- **Siguiente paso**: que Enrique pruebe «Hoja» en staging; después el kit y el repaso del resto de pantallas
-  (entrar, unirse, permiso, perfil, historial, papelera, IA), y luego el módulo 1 (wiki) con su entrevista.
+  - Repaso (PR #37):
+    - El marco de la hoja es una pieza (`components/frame.module.css`, con `composes`).
+    - La invitación lleva su franja, la portada es una portada y el permiso de Claude va en su caja.
+    - Revisión con `web-design-guidelines`, con lo que salió arreglado: «Saltar al contenido», `theme-color`, el
+      email sin corrector, `autocomplete` en los nombres, `touch-action` y títulos largos que no desbordan.
+- **Siguiente paso**: que Enrique pruebe «Hoja» en staging y diga qué cambiar. Después, el módulo 1 (wiki) con su
+  entrevista; antes, el ADR sobre Yjs y secretos.
   - Luego, el módulo 1 (wiki) con su entrevista.
 - Queda una ventana pequeña en el tiempo real: lo que cambie entre la primera carga de una página y la conexión del
   canal no se ve hasta volver a la pestaña. Taparla costaría volver a pedirlo todo al conectar la primera vez.
