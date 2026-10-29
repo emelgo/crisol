@@ -212,8 +212,9 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   3. ~~Spec~~: aprobada.
   4. ~~Diseño~~: aprobado.
   5. ~~`/plan`~~: aprobado.
-  6. **`/build` tarea a tarea** (`tasks/todo.md`), con `/agent-skills:review` y `/ship`, como en el módulo 0. Hecha la 1;
-     **sigue la 2** (el árbol en la web).
+  6. **`/build` tarea a tarea** (`tasks/todo.md`), con `/agent-skills:review` y `/ship`, como en el módulo 0. Hechas la
+     1 y la 2; **siguen la 3** (propiedades, alias, etiquetas e icono), **la 4** (papelera) **y la 5** (pestañas,
+     marcadores y navegación). Después, el punto de control 1 con Enrique en staging.
 - **2026-10-29 — Módulo 1, tarea 1: páginas y árbol en la API.**
   - La tabla `pages` tiene historial y su orden es una clave fraccionaria (`packages/domain/src/order.ts`, collation
     "C"). Mover solo escribe la fila que se mueve.
@@ -225,6 +226,26 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   - Herramientas MCP `ver_arbol` y `mover_pagina`; en la cola salen los títulos de las páginas.
   - `@fugas` amplía la prueba: la jugadora no recibe nada de la wiki. Se comprobó que falla si el aviso llegara a
     todos los del mundo.
+- **2026-10-29 — Módulo 1, tarea 2: el árbol en la web.** Desplegada la 1 en staging (health 200, sin errores).
+  - Rutas `/mundos/:worldId/wiki` y `/mundos/:worldId/wiki/:pageId` (`apps/web/src/wiki/`). En la wiki, el `main` es
+    más ancho (90rem).
+  - El árbol sigue el patrón ARIA de árbol de navegación:
+    - las filas son enlaces con `role="treeitem"`, con su nivel y su posición;
+    - hay una sola parada del tabulador;
+    - las flechas se mueven, despliegan y pliegan; Inicio y Fin van al principio y al final;
+    - Alt y las flechas recolocan;
+    - también se recoloca arrastrando: el cuarto de arriba pone delante, el de abajo detrás y el centro dentro.
+  - La flecha de desplegar es un dibujo dentro de la fila: un botón entre las filas no lo admite axe
+    (`aria-required-children`).
+  - Cada rama se pide al desplegarla, y la rama de la página abierta se despliega sola.
+  - Con más de 300 filas visibles, solo se pintan las que se ven (`@tanstack/react-virtual` 3.14).
+  - «Página nueva» y «Nueva subpágina» crean con «Sin título» y abren el título con el texto elegido, para escribir
+    encima (`?nuevo=true`). Se renombra en el sitio, y Escape cancela.
+  - Hay migas de pan y la lista de subpáginas.
+  - En el móvil, el árbol va en un cajón: el foco entra al abrirlo y vuelve a «Páginas» al cerrarlo.
+  - Desde el mundo hay un enlace «Wiki de Eana».
+  - Hay e2e de crear, renombrar, recolocar con el teclado y arrastrando, y recargar. Otra comprueba el cajón, y otra
+    pasa axe en los dos temas y en el móvil.
 - Queda una ventana pequeña en el tiempo real: lo que cambie entre la primera carga de una página y la conexión del
   canal no se ve hasta volver a la pestaña. Taparla costaría volver a pedirlo todo al conectar la primera vez.
 - **Pendientes de permiso de Enrique:**
@@ -247,7 +268,7 @@ Estados: pendiente · en curso · hecho · descartado.
 | # | Módulo | Estado | REA principal |
 |---|---|---|---|
 | 0 | **Fundación**: monorepo, CI, despliegue, cuentas, organizaciones, mundos, campañas, roles, historial y deshacer, esqueleto del MCP | **hecho** (2026-10-29; Discord y Google, pospuestos) | Foundry: modelo de documentos y permisos; DDB: campañas e invitaciones |
-| 1 | **Wiki**: páginas y subpáginas, editor de bloques, enlaces, menciones, vista previa, propiedades, secretos, búsqueda, marcadores, etiquetas, versiones, recursos y archivos, **hojas con estilo** (tipo Homebrewery, con PDF), exportación MD, sus herramientas MCP | en curso (construcción: tarea 1 de 26 hecha) | Foundry: Journal; DDB: contenido y referencias; Homebrewery (MIT): formato de hoja y descarga |
+| 1 | **Wiki**: páginas y subpáginas, editor de bloques, enlaces, menciones, vista previa, propiedades, secretos, búsqueda, marcadores, etiquetas, versiones, recursos y archivos, **hojas con estilo** (tipo Homebrewery, con PDF), exportación MD, sus herramientas MCP | en curso (construcción: tareas 1 y 2 de 26 hechas) | Foundry: Journal; DDB: contenido y referencias; Homebrewery (MIT): formato de hoja y descarga |
 | 2 | Tipos de página, plantillas y formularios nativos; consultas (en lugar de Dataview y Bases) | pendiente | Foundry: tipos de documento |
 | 3 | Sistemas de reglas, fichas de personaje (creación, subida de nivel), dados y dados 3D | pendiente | DDB: creador y hoja; Foundry: dnd5e, DataModel e instalar y crear sistemas |
 | 4 | Compendios, bestiario, statblocks, biblioteca | pendiente | Foundry: compendium packs; DDB: listados |
