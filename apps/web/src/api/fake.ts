@@ -8,6 +8,7 @@ import type {
   Member,
   Organization,
   Page,
+  PageProperty,
   TrashItem,
   World
 } from '@crisol/contracts'
@@ -27,7 +28,14 @@ export function fakeApi(
     /** Lo que pidió la IA de la cuenta */
     approvals?: Approval[]
     /** Las páginas de la wiki, en su orden entre hermanas */
-    pages?: Array<{ id?: string; worldId: string; parentId?: string | null; title: string }>
+    pages?: Array<{
+      id?: string
+      worldId: string
+      parentId?: string | null
+      title: string
+      icon?: string | null
+      properties?: PageProperty[]
+    }>
   } = {}
 ) {
   const organizations = options.organizations ?? []
@@ -75,12 +83,22 @@ export function fakeApi(
   }
 
   // La wiki: el orden entre hermanas es el de la lista
-  type StoredPage = { id: string; worldId: string; parentId: string | null; title: string; version: number }
+  type StoredPage = {
+    id: string
+    worldId: string
+    parentId: string | null
+    title: string
+    icon: string | null
+    properties: PageProperty[]
+    version: number
+  }
   const pages: StoredPage[] = (options.pages ?? []).map((page) => ({
     id: page.id ?? crypto.randomUUID(),
     worldId: page.worldId,
     parentId: page.parentId ?? null,
     title: page.title,
+    icon: page.icon ?? null,
+    properties: page.properties ?? [],
     version: 1
   }))
   const pageById = (pageId: string) => {
@@ -95,7 +113,7 @@ export function fakeApi(
     worldId: page.worldId,
     parentId: page.parentId,
     title: page.title,
-    icon: null,
+    icon: page.icon,
     hasChildren: childrenOf(page.worldId, page.id).length > 0,
     version: page.version
   })
@@ -104,7 +122,13 @@ export function fakeApi(
     for (let at: StoredPage | undefined = page; at; at = pages.find((p) => p.id === at?.parentId)) {
       path.unshift({ id: at.id, title: at.title })
     }
-    return { ...summary(page), locked: false, path, updatedAt: new Date().toISOString() }
+    return {
+      ...summary(page),
+      properties: page.properties.map((p) => ({ ...p })) as PageProperty[],
+      locked: false,
+      path,
+      updatedAt: new Date().toISOString()
+    }
   }
   /** La pone en la lista delante o detrás de su vecina, o detrás de la última de sus hermanas */
   const place = (page: StoredPage, before?: string, after?: string) => {
@@ -286,14 +310,49 @@ export function fakeApi(
     },
     createPage: ({ worldId, title, parentId, before, after }) => {
       if (parentId) pageById(parentId)
-      const page = { id: crypto.randomUUID(), worldId, parentId: parentId ?? null, title, version: 1 }
+      const page = {
+        id: crypto.randomUUID(),
+        worldId,
+        parentId: parentId ?? null,
+        title,
+        icon: null,
+        properties: [],
+        version: 1
+      }
       place(page, before, after)
       return pageView(page)
     },
-    updatePage: ({ pageId, title }) => {
+    updatePage: ({ pageId, title, icon }) => {
       const page = pageById(pageId)
-      Object.assign(page, { title, version: page.version + 1 })
+      Object.assign(page, {
+        ...(title !== undefined ? { title } : {}),
+        ...(icon !== undefined ? { icon } : {}),
+        version: page.version + 1
+      })
       return pageView(page)
+    },
+    setPageProperties: ({ pageId, properties }) => {
+      const page = pageById(pageId)
+      Object.assign(page, { properties: properties.map((p) => ({ ...p })), version: page.version + 1 })
+      return pageView(page)
+    },
+    listTags: ({ worldId }) => {
+      const counts = new Map<string, Set<string>>()
+      for (const page of pages.filter((p) => p.worldId === worldId)) {
+        const tags = page.properties.find((p) => p.name.toLowerCase() === 'etiquetas')
+        for (const tag of tags?.type === 'list' ? tags.value : []) {
+          const parts = tag.toLowerCase().split('/')
+          parts.forEach((_, i) => {
+            const prefix = parts.slice(0, i + 1).join('/')
+            counts.set(prefix, (counts.get(prefix) ?? new Set()).add(page.id))
+          })
+        }
+      }
+      return {
+        tags: [...counts]
+          .sort(([a], [b]) => a.localeCompare(b, 'es'))
+          .map(([tag, ids]) => ({ tag, depth: tag.split('/').length - 1, count: ids.size }))
+      }
     },
     movePage: ({ pageId, parentId, before, after }) => {
       const page = pageById(pageId)

@@ -62,6 +62,39 @@ test('el máster crea páginas y subpáginas, las renombra y las recoloca; todo 
   await expect(titles(page)).toHaveText(['Lugares', 'Costa Gris', 'Personajes', 'Reglas de la casa'])
 })
 
+test('propiedades, icono y etiquetas: se guardan, siguen al recargar y cuentan en el panel', async ({ page }) => {
+  await openWiki(page)
+  await newPage(page, 'Costa Gris')
+  await newPage(page, 'Puerto Ceniza')
+  await page.getByRole('button', { name: 'Añadir icono' }).click()
+  await page.getByRole('button', { name: 'Usar ⚓' }).click()
+  await expect(page.getByRole('button', { name: 'Icono ⚓: cambiarlo' })).toBeVisible()
+
+  await page.getByRole('button', { name: 'Añadir propiedades' }).click()
+  const editor = page.getByRole('form', { name: 'Propiedades' })
+  await editor.getByRole('button', { name: 'Etiquetas' }).click()
+  await editor.getByLabel('Valor de la propiedad 1').fill('lugar/ciudad, costa')
+  await editor.getByRole('button', { name: 'Añadir propiedad' }).click()
+  await editor.getByLabel('Nombre de la propiedad 2').fill('Región')
+  await editor.getByLabel('Tipo de la propiedad 2').selectOption({ label: 'Páginas' })
+  await editor.getByLabel('Valor de la propiedad 2').fill('Costa Gris')
+  await expect(editor.getByRole('button', { name: 'Quitar Costa Gris' })).toBeVisible()
+  await editor.getByRole('button', { name: 'Guardar' }).click()
+
+  await page.reload()
+  const properties = page.getByRole('region', { name: 'Propiedades' })
+  await expect(properties.getByText('costa', { exact: true })).toBeVisible()
+  await expect(properties.getByRole('link', { name: 'Costa Gris' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Icono ⚓: cambiarlo' })).toBeVisible()
+
+  await page.getByRole('link', { name: 'Etiquetas' }).click()
+  await expect(page.getByRole('list', { name: 'Etiquetas' }).getByRole('listitem')).toHaveText([
+    'costa1 página',
+    'lugar1 página',
+    'ciudad1 página'
+  ])
+})
+
 test('en el móvil el árbol va en un cajón, que se cierra al abrir una página', async ({ page }) => {
   await openWiki(page)
   await newPage(page, 'Lugares')
@@ -98,6 +131,21 @@ test('la wiki, en los dos temas y en el móvil @a11y', async ({ page }) => {
   await page.getByRole('button', { name: 'Renombrar' }).click()
   await check()
   await page.getByRole('button', { name: 'Cancelar' }).click()
+  await page.getByRole('button', { name: 'Añadir icono' }).click()
+  await check()
+  await page.keyboard.press('Escape')
+  await page.getByRole('button', { name: 'Añadir propiedades' }).click()
+  await page.getByRole('button', { name: 'Etiquetas' }).click()
+  await page.getByRole('button', { name: 'Añadir propiedad' }).click()
+  await check()
+  await page.getByLabel('Valor de la propiedad 1').fill('lugar')
+  await page.getByRole('button', { name: 'Guardar' }).click()
+  await expect(page.getByRole('region', { name: 'Propiedades' }).getByText('lugar')).toBeVisible()
+  await check()
+  await page.getByRole('link', { name: 'Etiquetas' }).click()
+  await expect(page.getByRole('list', { name: 'Etiquetas' })).toBeVisible()
+  await check()
+  await page.getByRole('tree').getByRole('treeitem', { name: 'Lugares' }).click()
   await page.setViewportSize({ width: 390, height: 844 })
   await page.getByRole('button', { name: 'Páginas' }).click()
   await expect(tree(page)).toBeVisible()

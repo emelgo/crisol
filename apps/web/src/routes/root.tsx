@@ -16,7 +16,7 @@ export function RootLayout() {
   const router = useRouter()
   const focusHeading = useFocusHeading()
   // La wiki necesita más ancho: el árbol y la página, uno al lado del otro
-  const wide = useRouterState({ select: (state) => /^\/mundos\/[^/]+\/wiki/.test(state.location.pathname) })
+  const wide = useRouterState({ select: (state) => /^\/mundos\/[^/]+\/(wiki|etiquetas)/.test(state.location.pathname) })
   // Al llegar a otra página (no al cargar la primera), el foco va a su título
   useEffect(
     () =>

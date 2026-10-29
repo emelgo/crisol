@@ -57,8 +57,16 @@ export function summaryOf(
       return details.parent
         ? say('createSubpage', { title: text(details.title), parent: text(details.parent) })
         : say('createPage', { title: text(details.title) })
-    case 'updatePage':
+    case 'updatePage': {
+      // Renombrar (hecho: from y to; pedido: el título nuevo y el de ahora) o, si no, cambiar el icono
+      const renames = details.to !== undefined || (details.page !== undefined && details.title !== undefined)
+      if (!renames && 'icon' in details) {
+        return say(details.icon ? 'setPageIcon' : 'removePageIcon', { title: text(details.page ?? details.title) })
+      }
       return say('updatePage', { from: text(details.from ?? details.page), to: text(details.to ?? details.title) })
+    }
+    case 'setPageProperties':
+      return say('setPageProperties', { title: text(details.title ?? details.page) })
     case 'movePage': {
       const title = text(details.page ?? details.title)
       return details.parent ? say('movePage', { title, parent: text(details.parent) }) : say('movePageToTop', { title })
