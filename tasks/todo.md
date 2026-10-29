@@ -106,7 +106,7 @@ Comprobación local al acabar cada tarea: `pnpm lint && pnpm typecheck && pnpm t
   - Archivos: `packages/contracts/src/{acciones,mundos}.ts`, `packages/domain/src/politicas.ts`,
     `packages/db/src/{operacion.ts,schema/mundos.ts}`, `apps/server/src/acciones.ts`.
 
-- [ ] **10. Mundos en la interfaz**
+- [x] **10. Mundos en la interfaz**
   - Acepta: «Mis mundos» con crear y renombrar, desde un cliente tipado sacado de los contratos.
   - Comprueba: e2e + axe.
   - Archivos: `apps/web/src/{cliente.ts,rutas/mundos.tsx}`, `e2e/mundos.spec.ts`.

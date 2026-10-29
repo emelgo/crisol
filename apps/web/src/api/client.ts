@@ -1,0 +1,42 @@
+/**
+ * Cliente de las acciones de la API (POST /api/actions/<name>). De los contratos solo se importan tipos: zod no entra
+ * en el navegador, la entrada y la salida ya las valida el servidor.
+ */
+import type { Actions } from '@crisol/contracts'
+import type { z } from 'zod'
+
+export type ActionName = keyof Actions
+export type ActionInput<N extends ActionName> = z.input<Actions[N]['input']>
+export type ActionOutput<N extends ActionName> = z.output<Actions[N]['output']>
+
+/** Fallo de una acción, con el código que da el servidor (NOT_FOUND, FORBIDDEN…) */
+export class ApiError extends Error {
+  readonly code: string
+  readonly status: number
+
+  constructor(code: string, status: number) {
+    super(code)
+    this.code = code
+    this.status = status
+    this.name = 'ApiError'
+  }
+}
+
+export interface ApiClient {
+  call<N extends ActionName>(name: N, input: ActionInput<N>): Promise<ActionOutput<N>>
+}
+
+export function createApiClient(): ApiClient {
+  return {
+    async call(name, input) {
+      const response = await fetch(`/api/actions/${name}`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(input)
+      })
+      const body = (await response.json().catch(() => ({}))) as { code?: string }
+      if (!response.ok) throw new ApiError(body.code ?? 'UNKNOWN', response.status)
+      return body as never
+    }
+  }
+}

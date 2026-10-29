@@ -5,7 +5,7 @@ import { changes, operations } from '../schema/history.ts'
 import { bootstrapTokens, organizationMembers, organizations } from '../schema/organizations.ts'
 import { freshTestDatabase, resetDatabase } from '../testing.ts'
 import * as bootstrap from './bootstrap.ts'
-import { loadMemberships } from './memberships.ts'
+import { listMemberOrganizations, loadMemberships } from './memberships.ts'
 import * as worldsRepo from './worlds.ts'
 
 const DAY = 24 * 60 * 60 * 1000
@@ -87,6 +87,13 @@ describe('repositorios', () => {
       worlds: [{ worldId: world.id, organizationId, role: 'master' }]
     })
     expect(await loadMemberships(conn.db, 'u2')).toEqual({ organizations: [], worlds: [] })
+  })
+
+  it('las organizaciones de la cuenta salen con su nombre y su rol', async () => {
+    expect(await listMemberOrganizations(conn.db, 'u1')).toEqual([
+      { id: organizationId, name: 'Fateforge', role: 'owner' }
+    ])
+    expect(await listMemberOrganizations(conn.db, 'u2')).toEqual([])
   })
 
   describe('arranque', () => {

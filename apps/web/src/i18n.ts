@@ -24,6 +24,24 @@ export const es = {
     invalidTitle: 'Este enlace no vale',
     invalidBody: 'Puede que ya se haya usado o que haya caducado.'
   },
+  worlds: {
+    title: 'Mis mundos',
+    empty: 'Aún no tienes mundos',
+    listLabel: 'Mundos',
+    newTitle: 'Nuevo mundo',
+    name: 'Nombre del mundo',
+    create: 'Crear el mundo',
+    rename: 'Renombrar',
+    renameButton: 'Renombrar {{name}}',
+    renameLabel: 'Nuevo nombre de {{name}}',
+    save: 'Guardar',
+    cancel: 'Cancelar'
+  },
+  roles: {
+    master: 'Máster',
+    owner: 'Propietario',
+    member: 'Miembro'
+  },
   profile: {
     title: 'Perfil',
     save: 'Guardar',
@@ -35,6 +53,9 @@ export const es = {
     EMAIL_TAKEN: 'Ese email ya tiene cuenta',
     INVALID_LINK: 'Este enlace no vale',
     INVALID_INPUT: 'Revisa los datos',
+    FORBIDDEN: 'No tienes permiso',
+    NOT_FOUND: 'Ya no existe',
+    ORGANIZATION_REQUIRED: 'Necesitas ser propietario de una organización',
     UNKNOWN: 'Algo ha fallado. Vuelve a intentarlo.'
   },
   theme: {

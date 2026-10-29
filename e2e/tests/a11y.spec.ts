@@ -21,7 +21,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
   }
 }
 
-test('formulario de arranque y perfil, en los dos temas @a11y', async ({ page }) => {
+test('arranque, perfil y mundos, en los dos temas @a11y', async ({ page }) => {
   const conn = connect(e2eDatabaseUrl(), { max: 1 })
   try {
     await resetDatabase(conn.sql)
@@ -43,6 +43,13 @@ test('formulario de arranque y perfil, en los dos temas @a11y', async ({ page })
     await page.getByRole('button', { name: 'Crear la cuenta' }).click()
     await page.getByRole('link', { name: 'Enrique' }).click()
     await expect(page.getByRole('heading', { name: 'Perfil' })).toBeVisible()
+    await check()
+    await page.goto('/mundos')
+    await page.getByLabel('Nombre del mundo').fill('Eana')
+    await page.getByRole('button', { name: 'Crear el mundo' }).click()
+    await expect(page.getByRole('list', { name: 'Mundos' })).toBeVisible()
+    await check()
+    await page.getByRole('button', { name: 'Renombrar Eana' }).click()
     await check()
   } finally {
     await conn.close()

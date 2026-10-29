@@ -2,13 +2,14 @@ import { createMemoryHistory } from '@tanstack/react-router'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
+import { fakeApi } from '../api/fake.ts'
 import { App } from '../app.tsx'
 import { createAppRouter } from '../router.tsx'
 import { fakeAccountClient } from './fake.ts'
 
 const renderAt = (path: string, fake = fakeAccountClient()) => {
   const router = createAppRouter(createMemoryHistory({ initialEntries: [path] }))
-  render(<App router={router} accounts={fake.client} />)
+  render(<App router={router} accounts={fake.client} api={fakeApi().client} />)
   return { router, fake }
 }
 const fill = async (label: string, value: string) => {
