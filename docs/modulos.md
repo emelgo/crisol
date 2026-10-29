@@ -213,8 +213,8 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   4. ~~Diseño~~: aprobado.
   5. ~~`/plan`~~: aprobado.
   6. **`/build` tarea a tarea** (`tasks/todo.md`), con `/agent-skills:review` y `/ship`, como en el módulo 0. Hechas de
-     la 1 a la 5 (fase 1, páginas). **Ahora, el punto de control 1**: Enrique prueba en staging el árbol, las
-     propiedades, la papelera, las pestañas y los marcadores. Después, la tarea 6 (documentos de Yjs en el servidor).
+     la 1 a la 6. **Punto de control 1 pedido a Enrique** (el árbol, las propiedades, la papelera, las pestañas y los
+     marcadores, en staging): lo que diga se apunta. **Sigue la 7** (el editor en la web).
 - **2026-10-29 — Módulo 1, tarea 1: páginas y árbol en la API.**
   - La tabla `pages` tiene historial y su orden es una clave fraccionaria (`packages/domain/src/order.ts`, collation
     "C"). Mover solo escribe la fila que se mueve.
@@ -289,6 +289,31 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   - Marcadores por grupos, junto al árbol. El primero va de un clic a «Marcadores»; después se elige el grupo o se
     crea otro. «Quitar el marcador» la quita de todos.
   - Anterior y siguiente entre hermanas, al pie de la página. El índice del documento llega con el cuerpo (fase 2).
+- **2026-10-29 — Módulo 1, tarea 6: documentos de Yjs en el servidor.** Desplegada la 5 en staging (health 200, sin
+  errores).
+  - Por el camino, una prueba del módulo 0 fallaba al azar (1 vez de cada 64) en la CI del PR #48: la del cifrado
+    alterado de los enlaces no siempre alteraba el carácter. Arreglada.
+  - Hocuspocus 4.8 corre dentro del servidor (`apps/server/src/collab/`), en `/api/collab`.
+    - Comprueba el origen y la sesión, como el canal, y la vuelve a mirar cada minuto.
+    - Un WebSocket por pestaña lleva todos sus documentos; hay que pasarle a mano los mensajes, los pong y el cierre.
+  - El cuerpo de una página es el documento `page:<id>`. Al abrir cada documento se comprueban `page.read` y
+    `page.write` con las pertenencias de ese momento; sin escritura, se abre en solo lectura.
+  - La tabla `documents` (sin historial; migración 0011) guarda el estado de Yjs. Hay un solo cuerpo por página, y las
+    filas de tipo `secret` y `note` llegarán en la tarea 8.
+    - Guardar es fusionar (`Y.mergeUpdates`) con la fila bloqueada, unos 2 s después del último cambio y como mucho a
+      los 10 s.
+    - Si el estado pasa de 4 MB no se guarda, y se cierran sus conexiones.
+  - Un mensaje de más de 1 MB corta la conexión. El tope del WebSocket pasó de 1 KB a 1 MB, así que el canal en tiempo
+    real ahora corta él mismo lo que pase de 1 KB.
+  - Al mandar una página a la papelera (con sus subpáginas) o un mundo, se cierran sus documentos abiertos y ya no se
+    vuelven a abrir.
+  - Las pruebas de integración usan clientes reales de Hocuspocus en Node: el WebSocket de Node manda la cookie y el
+    origen, sin dependencias nuevas.
+    - Dos pestañas convergen, lo guardado vuelve, y guardar fusiona con lo de fuera.
+    - Una jugadora no abre ningún documento, ni tampoco un nombre desconocido o una conexión desde otro origen.
+    - Se cierra al ir a la papelera, y cortan los límites.
+  - `@fugas` en el navegador llegará con el editor (tarea 7): con el máster escribiendo, a la jugadora no le debe llegar
+    nada.
 - Queda una ventana pequeña en el tiempo real: lo que cambie entre la primera carga de una página y la conexión del
   canal no se ve hasta volver a la pestaña. Taparla costaría volver a pedirlo todo al conectar la primera vez.
 - **Pendientes de permiso de Enrique:**
@@ -311,7 +336,7 @@ Estados: pendiente · en curso · hecho · descartado.
 | # | Módulo | Estado | REA principal |
 |---|---|---|---|
 | 0 | **Fundación**: monorepo, CI, despliegue, cuentas, organizaciones, mundos, campañas, roles, historial y deshacer, esqueleto del MCP | **hecho** (2026-10-29; Discord y Google, pospuestos) | Foundry: modelo de documentos y permisos; DDB: campañas e invitaciones |
-| 1 | **Wiki**: páginas y subpáginas, editor de bloques, enlaces, menciones, vista previa, propiedades, secretos, búsqueda, marcadores, etiquetas, versiones, recursos y archivos, **hojas con estilo** (tipo Homebrewery, con PDF), exportación MD, sus herramientas MCP | en curso (construcción: tareas 1 a 5 de 26 hechas) | Foundry: Journal; DDB: contenido y referencias; Homebrewery (MIT): formato de hoja y descarga |
+| 1 | **Wiki**: páginas y subpáginas, editor de bloques, enlaces, menciones, vista previa, propiedades, secretos, búsqueda, marcadores, etiquetas, versiones, recursos y archivos, **hojas con estilo** (tipo Homebrewery, con PDF), exportación MD, sus herramientas MCP | en curso (construcción: tareas 1 a 6 de 26 hechas) | Foundry: Journal; DDB: contenido y referencias; Homebrewery (MIT): formato de hoja y descarga |
 | 2 | Tipos de página, plantillas y formularios nativos; consultas (en lugar de Dataview y Bases) | pendiente | Foundry: tipos de documento |
 | 3 | Sistemas de reglas, fichas de personaje (creación, subida de nivel), dados y dados 3D | pendiente | DDB: creador y hoja; Foundry: dnd5e, DataModel e instalar y crear sistemas |
 | 4 | Compendios, bestiario, statblocks, biblioteca | pendiente | Foundry: compendium packs; DDB: listados |

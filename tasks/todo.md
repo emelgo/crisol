@@ -70,10 +70,12 @@ Cada vía nueva por la que salen datos amplía `@fugas` en la misma tarea.
 ### Punto de control 1
 
 - [ ] CI en verde. En staging, Enrique crea un árbol, lo recoloca, le pone propiedades y lo manda a la papelera.
+  (Pedido el 2026-10-29 tras la tarea 5.)
 
 ## Fase 2: Editor
 
-- [ ] **6. Documentos de Yjs en el servidor**
+- [x] **6. Documentos de Yjs en el servidor** — hecha. `dependentRow` ya se cambió en la 5. `@fugas` en el navegador
+  llega con el editor (tarea 7).
   - Acepta:
     - Hocuspocus 4 en `/api/collab`: comprueba el origen y la sesión, y la política de cada documento. Sin permiso de
       escritura, abre en solo lectura; si la página está en la papelera, no abre.
