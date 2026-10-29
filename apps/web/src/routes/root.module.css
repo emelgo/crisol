@@ -99,6 +99,10 @@
   padding: var(--space-8) var(--space-6);
 }
 
+.wide {
+  inline-size: min(100%, 90rem);
+}
+
 .nav {
   display: flex;
   flex-wrap: wrap;

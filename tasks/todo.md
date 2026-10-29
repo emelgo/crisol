@@ -25,7 +25,8 @@ Cada vía nueva por la que salen datos amplía `@fugas` en la misma tarea.
   - Archivos: `packages/db/src/schema/pages.ts` (+ migración), `packages/domain/src/{tree,order}.ts`,
     `packages/contracts/src/pages.ts`, `apps/server/src/actions/pages.ts`, `apps/server/src/mcp/tools.ts`.
 
-- [ ] **2. El árbol en la web**
+- [x] **2. El árbol en la web** — hecha. La flecha de desplegar va dentro de la fila (axe no admite botones entre
+  las filas de un árbol).
   - Acepta:
     - `/mundos/:worldId/wiki/:pageId?` con el árbol a la izquierda. Carga por ramas, está virtualizado y sigue el
       patrón ARIA de árbol.

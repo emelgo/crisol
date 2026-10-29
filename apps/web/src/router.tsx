@@ -12,6 +12,7 @@ import { SignIn } from './routes/sign-in.tsx'
 import { OrganizationTrash, WorldTrash } from './routes/trash.tsx'
 import { WorldPage } from './routes/world.tsx'
 import { Worlds } from './routes/worlds.tsx'
+import { WikiHome, WikiPage } from './wiki/wiki.tsx'
 
 const rootRoute = createRootRoute({ component: RootLayout, notFoundComponent: NotFound })
 const homeRoute = createRoute({ getParentRoute: () => rootRoute, path: '/', component: Home })
@@ -25,6 +26,15 @@ const campaignRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/mundos/$worldId/campanas/$campaignId',
   component: CampaignPage
+})
+const wikiRoute = createRoute({ getParentRoute: () => rootRoute, path: '/mundos/$worldId/wiki', component: WikiHome })
+const wikiPageRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/mundos/$worldId/wiki/$pageId',
+  component: WikiPage,
+  // ?nuevo=true: la página se acaba de crear y se abre con su título por poner
+  validateSearch: (search: Record<string, unknown>): { nuevo?: true } =>
+    search.nuevo === true || search.nuevo === 'true' ? { nuevo: true } : {}
 })
 const worldHistoryRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -54,6 +64,8 @@ const routeTree = rootRoute.addChildren([
   worldsRoute,
   worldRoute,
   campaignRoute,
+  wikiRoute,
+  wikiPageRoute,
   worldHistoryRoute,
   historyRoute,
   worldTrashRoute,
