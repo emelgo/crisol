@@ -103,6 +103,27 @@ export const es = {
     leaveWarning: 'Para volver, el máster tendrá que pasarte el enlace.',
     leaveConfirm: 'Dejarla'
   },
+  wiki: {
+    title: 'Wiki de {{world}}',
+    link: 'Wiki de {{world}}',
+    pick: 'Elige una página en el árbol o crea una nueva.',
+    pages: 'Páginas',
+    newPage: 'Página nueva',
+    newSubpage: 'Nueva subpágina',
+    closePages: 'Cerrar',
+    untitled: 'Sin título',
+    empty: 'Aún no hay páginas.',
+    moveHint: 'Arrastra para recolocar, o usa Alt y las flechas.',
+    movedInto: '«{{title}}» va ahora dentro de «{{parent}}»',
+    movedToTop: '«{{title}}» va ahora en el primer nivel',
+    breadcrumbs: 'Migas de pan',
+    rename: 'Renombrar',
+    titleLabel: 'Título de la página',
+    subpages: 'Subpáginas',
+    noSubpages: 'No tiene subpáginas.',
+    notFound: 'Esta wiki no existe',
+    pageNotFound: 'Esta página no existe'
+  },
   history: {
     title: 'Historial',
     worldTitle: 'Historial de {{world}}',
@@ -270,6 +291,9 @@ export const es = {
     saved: 'Guardado'
   },
   errors: {
+    CYCLE: 'Una página no puede ir dentro de sí misma ni de sus subpáginas',
+    TOO_DEEP: 'No caben más niveles de subpáginas',
+    BAD_PLACEMENT: 'Ahí no se puede poner',
     INVALID_CREDENTIALS: 'Email o contraseña incorrectos',
     TOO_MANY_REQUESTS: 'Demasiados intentos. Espera un minuto.',
     EMAIL_TAKEN: 'Ese email ya tiene cuenta',

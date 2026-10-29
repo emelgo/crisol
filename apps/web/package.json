@@ -17,6 +17,7 @@
     "@fontsource/barlow-condensed": "catalog:",
     "@tanstack/react-query": "catalog:",
     "@tanstack/react-router": "catalog:",
+    "@tanstack/react-virtual": "catalog:",
     "better-auth": "catalog:",
     "i18next": "catalog:",
     "react": "catalog:",

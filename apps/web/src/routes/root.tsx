@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { Link, Outlet, useRouter } from '@tanstack/react-router'
+import { Link, Outlet, useRouter, useRouterState } from '@tanstack/react-router'
 import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
@@ -15,6 +15,8 @@ export function RootLayout() {
   const { t } = useTranslation()
   const router = useRouter()
   const focusHeading = useFocusHeading()
+  // La wiki necesita más ancho: el árbol y la página, uno al lado del otro
+  const wide = useRouterState({ select: (state) => /^\/mundos\/[^/]+\/wiki/.test(state.location.pathname) })
   // Al llegar a otra página (no al cargar la primera), el foco va a su título
   useEffect(
     () =>
@@ -38,7 +40,7 @@ export function RootLayout() {
           <ThemeToggle />
         </nav>
       </header>
-      <main id="contenido" className={styles.main}>
+      <main id="contenido" className={wide ? `${styles.main} ${styles.wide}` : styles.main}>
         <ApprovalQueue />
         <Notices />
         <Outlet />

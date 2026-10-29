@@ -58,6 +58,10 @@ export function WorldPage() {
       />
       {world.role === 'master' && (
         <p>
+          <Link to="/mundos/$worldId/wiki" params={{ worldId }}>
+            {t('wiki.link', { world: world.name })}
+          </Link>
+          {' · '}
           <Link to="/mundos/$worldId/historial" params={{ worldId }}>
             {t('history.worldTitle', { world: world.name })}
           </Link>
