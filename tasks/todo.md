@@ -180,7 +180,7 @@ Comprobación local al acabar cada tarea: `pnpm lint && pnpm typecheck && pnpm t
   - Comprueba: un expulsado con el socket abierto deja de recibir y de poder escribir; aviso de entrada.
   - Archivos: `apps/server/src/tiempo-real.ts` (+ prueba), `apps/web/src/tiempo-real.ts`.
 
-- [ ] **18. Prueba de fugas en la CI**
+- [x] **18. Prueba de fugas en la CI** — sin «deshace»: llega con la 20, que amplía la prueba
   - Acepta:
     - Un jugador captura las respuestas HTTP y los mensajes del WebSocket mientras el máster crea la campaña B,
       regenera enlaces y deshace.
@@ -206,7 +206,8 @@ Comprobación local al acabar cada tarea: `pnpm lint && pnpm typecheck && pnpm t
     - Aplica los cambios inversos como una operación nueva (que a su vez se puede deshacer).
     - Si hay conflicto de versión, no toca nada y dice qué operación posterior lo causó.
     - Pasa por la política con los permisos actuales.
-  - Comprueba: pruebas de dominio (crear, renombrar, unir o expulsar, deshacer lo deshecho, conflicto) y e2e.
+  - Comprueba: pruebas de dominio (crear, renombrar, unir o expulsar, deshacer lo deshecho, conflicto) y e2e. Amplía
+    `e2e/tests/fugas.spec.ts`: el máster deshace mientras la jugadora escucha.
   - Archivos: `packages/domain/src/deshacer.ts` (+ prueba), `packages/db/src/operacion.ts`,
     `apps/web/src/rutas/historial.tsx`.
 

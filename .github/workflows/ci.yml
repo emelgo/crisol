@@ -107,6 +107,9 @@ jobs:
         run: pnpm --filter @crisol/web build
       - name: Extremo a extremo
         run: pnpm --filter @crisol/e2e e2e
+      # CONSTRAINTS.md: un jugador no recibe nada que no pueda ver (API, WebSocket, MCP). Bloquea
+      - name: Prueba de fugas
+        run: pnpm --filter @crisol/e2e e2e:fugas
       - name: Accesibilidad (WCAG 2.1 AA con axe)
         run: node scripts/avisa-hasta.ts "$AVISA_HASTA" pnpm --filter @crisol/e2e e2e:a11y
       - name: Trazas de las pruebas que fallen

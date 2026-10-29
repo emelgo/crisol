@@ -4,7 +4,8 @@
   "license": "UNLICENSED",
   "type": "module",
   "scripts": {
-    "e2e": "playwright test --grep-invert @a11y",
+    "e2e": "playwright test --grep-invert '@a11y|@fugas'",
+    "e2e:fugas": "playwright test --grep @fugas",
     "e2e:a11y": "playwright test --grep @a11y",
     "typecheck": "tsc -p ."
   },

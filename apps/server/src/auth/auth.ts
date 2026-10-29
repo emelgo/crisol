@@ -4,7 +4,7 @@ import { drizzleAdapter } from '@better-auth/drizzle-adapter'
 import { mcp } from '@better-auth/mcp'
 import { authSchema, type Database, isOwner } from '@crisol/db'
 import { betterAuth } from 'better-auth'
-import { APIError } from 'better-auth/api'
+import { APIError, createAuthMiddleware, getSessionFromCtx } from 'better-auth/api'
 import { jwt } from 'better-auth/plugins'
 import { signupAllowed } from './signup-gate.ts'
 
@@ -55,6 +55,16 @@ export function createAuth({ db, secret, baseURL, trustedOrigins = [] }: AuthOpt
       }),
       cimd({ fetchClientMetadataResource, metadataProfile: 'mcp-2026-07-28' })
     ],
+    hooks: {
+      // Módulo 0: solo el propietario autoriza el conector (y /mcp lo vuelve a mirar en cada petición)
+      before: createAuthMiddleware(async (ctx) => {
+        if (ctx.path !== '/oauth2/consent' || ctx.body?.accept !== true) return
+        const session = await getSessionFromCtx(ctx)
+        if (!session || !(await isOwner(db, session.user.id))) {
+          throw new APIError('FORBIDDEN', { message: 'Solo el propietario puede conectar Claude', code: 'OWNER_ONLY' })
+        }
+      })
+    },
     databaseHooks: {
       user: {
         create: {
