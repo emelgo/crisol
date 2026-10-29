@@ -61,7 +61,7 @@ Comprobación local al acabar cada tarea: `pnpm lint && pnpm typecheck && pnpm t
 
 ## Fase 2: Cuentas
 
-- [ ] **6. Arranque y cuenta del propietario (servidor)**
+- [x] **6. Arranque y cuenta del propietario (servidor)** — el registro ya queda cerrado aquí (puerta en `auth/signup-gate.ts`)
   - Acepta:
     - Better Auth con Drizzle, sesiones en Postgres (30 días que se renuevan), cookies `HttpOnly`, `Secure` y
       `SameSite=Lax`, y límite de intentos.
@@ -97,6 +97,7 @@ Comprobación local al acabar cada tarea: `pnpm lint && pnpm typecheck && pnpm t
     - Tabla de capacidades → roles por ámbito en `domain`, y el actor cargado en cada petición.
     - `operation()` en `db`: transacción, cambios con antes y después, `version` y autoría en cada fila.
     - Acciones `createWorld` y `renameWorld`.
+    - El arranque (tarea 6) pasa también por `operation()`: crea organización y pertenencia.
   - Comprueba:
     - Matriz de políticas (propietario, miembro, máster, jugador y ajeno × acción × misma u otra organización).
     - Crear un mundo da 1 operación con 2 cambios.

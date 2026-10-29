@@ -1,6 +1,7 @@
 import { connect } from '@crisol/db'
 import { Redis } from 'ioredis'
 import { buildApp } from './app.ts'
+import { createAuth } from './auth/auth.ts'
 import type { Config } from './config.ts'
 import { serviceChecks } from './services.ts'
 
@@ -11,7 +12,8 @@ export async function startServer(config: Config, options: { logger?: boolean } 
   const app = buildApp({
     checks: serviceChecks(db, valkey),
     logger: options.logger ?? false,
-    ...(config.WEB_DIR ? { webDir: config.WEB_DIR } : {})
+    ...(config.WEB_DIR ? { webDir: config.WEB_DIR } : {}),
+    accounts: { auth: createAuth({ db: db.db, secret: config.AUTH_SECRET, baseURL: config.PUBLIC_URL }), db: db.db }
   })
   await app.listen({ host: config.HOST, port: config.PORT })
   return {

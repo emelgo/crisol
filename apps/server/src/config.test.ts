@@ -3,7 +3,9 @@ import { loadConfig } from './config.ts'
 
 const minimal = {
   DATABASE_URL: 'postgres://crisol:crisol@127.0.0.1:54330/crisol',
-  VALKEY_URL: 'redis://127.0.0.1:63790'
+  VALKEY_URL: 'redis://127.0.0.1:63790',
+  AUTH_SECRET: 'a'.repeat(32),
+  PUBLIC_URL: 'http://127.0.0.1:5173'
 }
 
 describe('loadConfig', () => {
@@ -16,7 +18,12 @@ describe('loadConfig', () => {
   })
 
   it('falla diciendo qué variable falta', () => {
-    expect(() => loadConfig({ VALKEY_URL: minimal.VALKEY_URL })).toThrow('DATABASE_URL')
+    const { DATABASE_URL: _, ...withoutDatabase } = minimal
+    expect(() => loadConfig(withoutDatabase)).toThrow('DATABASE_URL')
+  })
+
+  it('exige un secreto de sesiones largo', () => {
+    expect(() => loadConfig({ ...minimal, AUTH_SECRET: 'corto' })).toThrow('AUTH_SECRET')
   })
 
   it('rechaza una URL de base de datos que no es de Postgres', () => {
