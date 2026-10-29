@@ -19,7 +19,7 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   - Spec `docs/specs/fundacion.md` **aprobada**; ADR-0002 (Better Auth solo para identidad; inquilinos e invitaciones
     en tablas propias); prueba de fugas añadida a `CONSTRAINTS.md`.
   - Plan aprobado: `tasks/plan.md` y 25 tareas en `tasks/todo.md`.
-- **2026-10-29 — Módulo 0 en curso: tareas 1 a 14, 16 a 22 y 24 hechas** (PR #2 a #28). Staging en
+- **2026-10-29 — Módulo 0 en curso: tareas 1 a 14 y 16 a 24 hechas** (PR #2 a #29). Staging en
   https://neo.crisol.144-91-122-245.sslip.io (Compose `crisol-staging` en `~/crisol-staging`, puerto 8140; copia del
   Caddyfile en `/etc/caddy/Caddyfile.bak-20261029-104936-neo-crisol`). Desplegar tras cada merge:
   `scripts/desplegar-staging.sh` (con cerrojo).
@@ -72,6 +72,13 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
     una acción del contrato o una ruta a varias. Probadas con el cliente del SDK: cada herramienta en cada modo, el
     criterio 4 (crear sin preguntar, regenerar espera y al aprobarlo se hace) y la proyección (lo de otra
     organización da `NOT_FOUND` y no entra en la cola).
+  - Cola y ajustes de IA en la web (23): la cola (`components/approval-queue.tsx`) está en el marco de todas las
+    páginas y solo se ve si hay algo pendiente; aparece sola con el aviso `changed approvals`. Cada petición dice en
+    una frase lo que Claude quiere (`summaries.ts`: las mismas frases que el historial, por hacer), con su detalle,
+    «Aprobar» y «Rechazar». Ajustes en `/ia` (enlace «IA» en la cabecera, solo para el propietario): la dirección del
+    conector, el modo y cómo acabaron las últimas peticiones. La e2e (`e2e/tests/aprobaciones.spec.ts`) conecta
+    «Claude» por OAuth con la ayuda `connectClaude` y llama al MCP sin cookies, como claude.ai; la prueba de fugas
+    comprueba que la cola del máster no le llega a la jugadora.
   - Discord, Google y el correo (tarea 15), **pospuestos** por Enrique: de momento solo email y contraseña. Sin correo
     no hay «recuperar la contraseña»; las variables están comentadas en `.env.example`.
   - Puntos de control 1 y 2 superados: Enrique tiene su cuenta de propietario en staging (organización
@@ -81,10 +88,10 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   - MIT-0 admitida en `CONSTRAINTS.md`.
   - Puertos: desarrollo 8130 (servidor), 5173 (Vite), 54330 (Postgres), 63790 (Valkey), 10250/8250 (Mailpit);
     e2e 8131; prueba del MCP 8132; staging 8140.
-- **Siguiente paso: tarea 23** (cola y ajustes de IA en la web: la cola siempre a mano cuando hay algo pendiente, con
-  el aviso `changed approvals` del canal, ya en `queriesFor` como `['approvals']`). Su e2e pide por el MCP de verdad
-  (OAuth como en `e2e/tests/conector.spec.ts`). Luego la 25 (cierre). Punto de control 4: Enrique comprobó el criterio
-  6 (borrar y restaurar una campaña); el 5 (deshacer lo que creó Claude) ya se puede probar desde claude.ai.
+- **Siguiente paso: tarea 25** (cierre): recorrer con Enrique en staging los 8 criterios de éxito con claude.ai de
+  verdad (el 3, salvo Discord, pospuesto), medir el LCP de la entrada, `/agent-skills:review` sin hallazgos altos y
+  marcar el módulo 0 como hecho. Para eso Enrique tiene que reconectar el conector en claude.ai, porque las
+  herramientas han cambiado. El criterio 5 (deshacer lo que creó Claude) ya se puede probar desde claude.ai.
 - **Antes del módulo 1**: ADR sobre Yjs y secretos. Yjs no puede proyectar por usuario, así que el contenido con otra
   visibilidad tiene que ir en documentos o subdocumentos aparte (ver la nota de sincronización de Foundry).
 - **Pendientes de permiso de Enrique:**

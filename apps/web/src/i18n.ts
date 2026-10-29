@@ -126,6 +126,71 @@ export const es = {
       unknown: 'hizo un cambio ({{action}})'
     }
   },
+  approvals: {
+    title: 'Claude espera tu aprobación',
+    listLabel: 'Peticiones de Claude',
+    request: 'Claude quiere {{what}}',
+    detail: 'Detalle',
+    tool: 'Herramienta: {{tool}}',
+    requestedAt: 'Lo pidió el {{date}}. Caduca el {{expires}}.',
+    approve: 'Aprobar',
+    approveButton: 'Aprobar: {{what}}',
+    reject: 'Rechazar',
+    rejectButton: 'Rechazar: {{what}}',
+    done: 'Hecho: {{what}}',
+    rejected: 'Rechazado: {{what}}',
+    failed: 'No se pudo {{what}}: {{error}}',
+    status: {
+      pending: 'esperando',
+      approved: 'aprobado',
+      done: 'hecho',
+      failed: 'no se pudo',
+      rejected: 'rechazado',
+      expired: 'caducado'
+    },
+    // Lo mismo que history.actions, por hacer
+    actions: {
+      createOrganization: 'crear la organización «{{name}}»',
+      bootstrapOwner: 'entrar como propietario',
+      createWorld: 'crear el mundo «{{name}}»',
+      renameWorld: 'renombrar el mundo «{{from}}» a «{{to}}»',
+      createCampaign: 'crear la campaña «{{name}}» en {{world}}',
+      renameCampaign: 'renombrar la campaña «{{from}}» a «{{to}}»',
+      regenerateInvitation: 'generar un enlace nuevo para {{campaign}}',
+      openInvitations: 'abrir las invitaciones de {{campaign}}',
+      closeInvitations: 'cerrar las invitaciones de {{campaign}}',
+      joinCampaign: 'entrar en {{campaign}}',
+      removeMember: 'expulsar a {{member}} de {{campaign}}',
+      leaveCampaign: 'dejar {{campaign}}',
+      undoOperation: 'deshacer: {{what}}',
+      deleteWorld: 'borrar el mundo «{{name}}»',
+      deleteCampaign: 'borrar la campaña «{{name}}» de {{world}}',
+      restoreWorld: 'restaurar el mundo «{{name}}»',
+      restoreCampaign: 'restaurar la campaña «{{name}}» de {{world}}',
+      unknown: 'hacer un cambio ({{action}})'
+    }
+  },
+  ai: {
+    link: 'IA',
+    title: 'Ajustes de IA',
+    connectorTitle: 'Conectar Claude',
+    connector: 'Dirección del conector',
+    connectorHint: 'En claude.ai, añade un conector con esta dirección.',
+    modeTitle: 'Modo',
+    modes: {
+      readOnly: 'Solo lectura',
+      assistant: 'Asistente',
+      copilot: 'Copiloto'
+    },
+    modeHints: {
+      readOnly: 'Consulta, pero no cambia nada.',
+      assistant: 'Consulta; lo demás espera tu aprobación.',
+      copilot: 'Hace cambios; borrar y lo que afecta a los jugadores espera tu aprobación.'
+    },
+    saved: 'Guardado',
+    recentTitle: 'Últimas peticiones',
+    recentEmpty: 'Aún no ha pedido nada que esperase tu aprobación.'
+  },
   notices: {
     title: 'Avisos',
     joined: '{{member}} ha entrado en {{campaign}}.',
@@ -189,6 +254,8 @@ export const es = {
     NOT_UNDOABLE: 'Esto no se puede deshacer',
     WORLD_IN_TRASH: 'Restaura antes su mundo',
     MASTER_NOT_REMOVABLE: 'Al máster no se le puede expulsar',
+    APPROVAL_EXPIRED: 'Ya ha caducado',
+    ALREADY_DECIDED: 'Ya está decidido',
     UNKNOWN: 'Algo ha fallado. Vuelve a intentarlo.'
   },
   theme: {

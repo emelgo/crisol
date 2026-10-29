@@ -1,7 +1,7 @@
 import { createHash, randomBytes } from 'node:crypto'
 import { expect, type Page, test } from '@playwright/test'
 import { E2E_PORT } from '../servidor.ts'
-import { campaignLink, newPlayer } from './ayudas.ts'
+import { campaignLink, connectClaude, newPlayer } from './ayudas.ts'
 
 const BASE = `http://127.0.0.1:${E2E_PORT}`
 const REDIRECT = 'https://cliente.example/callback'
@@ -149,5 +149,63 @@ test('@fugas una jugadora no puede conectar Claude: no se le ofrece y, aunque fu
     return response.status
   })
   expect(status).toBe(403)
+  await player.close()
+})
+
+test('@fugas lo que pide la IA del máster solo le llega a él: la cola, sus avisos y lo que se hace al aprobarlo', async ({
+  page,
+  browser
+}) => {
+  const link = await campaignLink(page)
+  let seen: ReturnType<typeof capture> | undefined
+  const player = await newPlayer(browser, link, 'Jugadora', (p) => {
+    seen = capture(p)
+  })
+  if (!seen) throw new Error('sin captura')
+  const captured = seen
+  await page.getByRole('link', { name: 'Eana' }).click()
+  await page.getByLabel('Nombre de la campaña').fill(SECRET_CAMPAIGN)
+  await page.getByRole('button', { name: 'Crear la campaña' }).click()
+  await page.getByRole('link', { name: SECRET_CAMPAIGN }).click()
+  const idB = new URL(page.url()).pathname.split('/').at(-1) ?? ''
+  const linkB = await page.getByLabel('Enlace de invitación').inputValue()
+
+  // Claude pide regenerar el enlace de B (el máster lo aprueba) y cerrar las invitaciones de A (lo rechaza)
+  const claude = await connectClaude(page)
+  await page.goto('/mundos')
+  const queue = page.getByRole('region', { name: 'Claude espera tu aprobación' })
+  const regenerate = claude.call('enlace_invitacion', { campaignId: idB, change: 'regenerate' })
+  await queue.getByRole('button', { name: `Aprobar: generar un enlace nuevo para ${SECRET_CAMPAIGN}` }).click()
+  const newLinkB = String((await regenerate).structuredContent?.url)
+  const { worlds } = (await claude.call('listar_mundos')).structuredContent as {
+    worlds: Array<{ campaigns: Array<{ id: string; name: string }> }>
+  }
+  const idA = worlds[0]?.campaigns.find((c) => c.name === 'La Marca')?.id
+  const close = claude.call('enlace_invitacion', { campaignId: idA, change: 'close' })
+  await queue.getByRole('button', { name: 'Rechazar: cerrar las invitaciones de La Marca' }).click()
+  await close
+  const approvals = (await (await page.request.post('/api/actions/listApprovals', { data: {} })).json()) as {
+    recent: Array<{ id: string }>
+  }
+
+  // La jugadora: su cola está vacía y la del máster no existe para ella
+  await player.goto('/mundos')
+  await expect(player.getByRole('heading', { level: 1, name: 'Mis mundos' })).toBeVisible()
+  expect(await (await player.request.post('/api/actions/listApprovals', { data: {} })).json()).toEqual({
+    pending: [],
+    recent: []
+  })
+  for (const { id } of approvals.recent) {
+    for (const name of ['approve', 'reject']) {
+      const response = await player.request.post(`/api/actions/${name}`, { data: { approvalId: id } })
+      expect(response.status(), name).toBe(404)
+    }
+  }
+
+  const everything = await captured.all()
+  expect(everything.length).toBeGreaterThan(0)
+  for (const leak of [SECRET_CAMPAIGN, idB, secretOf(linkB), secretOf(newLinkB), 'enlace_invitacion', 'approvals']) {
+    expect(everything).not.toContain(leak)
+  }
   await player.close()
 })

@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
+import { CopyField } from '../components/copy-field.tsx'
 import { FormError } from '../components/field.tsx'
 import form from '../components/form.module.css'
 import styles from '../components/list.module.css'
@@ -160,7 +161,6 @@ function InvitationPanel({ campaignId }: { campaignId: string }) {
   const queryClient = useQueryClient()
   const errorText = useErrorText()
   const [confirming, setConfirming] = useState(false)
-  const [copied, setCopied] = useState(false)
   const key = ['invitation', campaignId]
   const invitation = useQuery({ queryKey: key, queryFn: () => api.call('getInvitation', { campaignId }) })
   const update = (data: Awaited<ReturnType<typeof api.call<'getInvitation'>>>) => queryClient.setQueryData(key, data)
@@ -169,7 +169,6 @@ function InvitationPanel({ campaignId }: { campaignId: string }) {
     onSuccess: (data) => {
       update(data)
       setConfirming(false)
-      setCopied(false)
     }
   })
   // Optimista: la casilla cambia en el mismo clic (estado local) y vuelve atrás si el servidor falla
@@ -193,23 +192,7 @@ function InvitationPanel({ campaignId }: { campaignId: string }) {
       <h2 id="invitacion">{t('invitation.title')}</h2>
       {url ? (
         <>
-          <div className={styles.actions}>
-            <label className={styles.linkField}>
-              <span>{t('invitation.link')}</span>
-              <input readOnly value={url} onFocus={(event) => event.currentTarget.select()} />
-            </label>
-            <button
-              type="button"
-              className={form.button}
-              onClick={async () => {
-                await navigator.clipboard.writeText(url)
-                setCopied(true)
-              }}
-            >
-              {t('invitation.copy')}
-            </button>
-          </div>
-          {copied && <p role="status">{t('invitation.copied')}</p>}
+          <CopyField label={t('invitation.link')} value={url} />
           {issuedAt && (
             <p className={styles.role}>
               {t('invitation.issued', {

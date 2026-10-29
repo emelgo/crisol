@@ -72,3 +72,10 @@
   background: var(--color-surface);
   color: var(--color-text);
 }
+
+/* Los datos de una petición, tal cual: que no ensanchen la página */
+.detail {
+  margin: 0;
+  overflow-x: auto;
+  font-size: 0.875rem;
+}
