@@ -35,6 +35,14 @@ describe('los tokens de color', () => {
       expect(contrast(c['color-on-accent'], c['color-accent'])).toBeGreaterThanOrEqual(4.5)
     })
 
+    it(`en el tema ${theme}, un secreto se lee: su rótulo y el texto a 4,5:1 sobre su fondo, y su borde a 3:1`, () => {
+      const c = colors(selector)
+      expect(contrast(c['color-secret-text'], c['color-secret'])).toBeGreaterThanOrEqual(4.5)
+      expect(contrast(c['color-text'], c['color-secret'])).toBeGreaterThanOrEqual(4.5)
+      expect(contrast(c['color-secret-rule'], c['color-secret'])).toBeGreaterThanOrEqual(3)
+      expect(contrast(c['color-secret-rule'], c['color-surface'])).toBeGreaterThanOrEqual(3)
+    })
+
     it(`en el tema ${theme}, la barra de arriba se lee: su texto, el atenuado y el acento a 4,5:1`, () => {
       const c = colors(selector)
       for (const text of ['color-chrome-text', 'color-chrome-muted', 'color-chrome-accent']) {

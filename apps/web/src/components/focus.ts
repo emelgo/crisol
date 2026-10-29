@@ -25,16 +25,22 @@ export function focusAfterRemoving(item: Element | null | undefined) {
   }
 }
 
+/** Si el foco se ha perdido (quedó en body al quitar lo que lo tenía): solo entonces se lleva a otro sitio */
+export function focusIsLost() {
+  return !document.activeElement || document.activeElement === document.body
+}
+
 /**
  * Para el botón que abre algo (una confirmación, un formulario) y desaparece mientras está abierto: `ref`, para el
- * botón, y `back()` al cerrarlo, para que el foco vuelva a él en cuanto reaparezca
+ * botón, y `back()` al cerrarlo, para que el foco vuelva a él en cuanto reaparezca. Si mientras tanto la persona ya ha
+ * llevado el foco a otro sitio (a escribir en el cuerpo de la página), no se le quita
  */
 export function useReturnFocus() {
   const pending = useRef(false)
   const ref = useCallback((element: HTMLElement | null) => {
     if (!element || !pending.current) return
     pending.current = false
-    element.focus()
+    if (focusIsLost()) element.focus()
   }, [])
   const back = useCallback(() => {
     pending.current = true

@@ -100,7 +100,8 @@ Cada vía nueva por la que salen datos amplía `@fugas` en la misma tarea.
   - Archivos: `packages/editor/src/{schema,index}.ts`, `apps/web/src/wiki/{editor,collab}.tsx`,
     `.dependency-cruiser.cjs`.
 
-- [ ] **8. Secretos y notas ocultas (riesgo)**
+- [x] **8. Secretos y notas ocultas (riesgo)** — hecha. El editor anidado funciona: no hace falta el plan B. La prueba
+  con «otra conexión escribiendo» usa otra pestaña; la conexión directa del servidor llega con la tarea 11.
   - Acepta:
     - Cada secreto y cada nota oculta es su documento aparte (`documents` de tipo `secret` o `note`), con un editor
       anidado.

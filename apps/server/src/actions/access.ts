@@ -36,7 +36,8 @@ export async function authorizedWiki(ctx: ActionContext, capability: Capability,
 
 /** La página (fuera de la papelera) y su wiki, si la cuenta puede hacer eso en ella. Si no, 404 */
 export async function authorizedPage(ctx: ActionContext, capability: Capability, pageId: string) {
-  const page = await pagesRepo.findPage(ctx.db, pageId)
+  // Sin id (lo que no existe) no hay nada que buscar
+  const page = pageId ? await pagesRepo.findPage(ctx.db, pageId) : null
   const wiki = await authorizedWiki(ctx, capability, page?.worldId ?? '')
   if (!page) throw new NotFoundError('page')
   return { page, wiki }

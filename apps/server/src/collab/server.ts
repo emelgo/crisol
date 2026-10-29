@@ -18,13 +18,22 @@ export interface CollabContext {
   worldId?: string
 }
 
-/** page:<id> es el cuerpo de esa página; null si el nombre no es de ningún documento */
-export function parseDocumentName(name: string): { kind: 'body'; pageId: string } | null {
-  const match = /^page:([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/.exec(name)
-  return match?.[1] ? { kind: 'body', pageId: match[1] } : null
+const UUID = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
+type Target = { kind: 'body'; pageId: string } | { kind: 'separate'; documentId: string }
+
+/**
+ * page:<id> es el cuerpo de esa página; doc:<id>, un secreto o una nota oculta (su propio documento); null si el nombre
+ * no es de ningún documento
+ */
+export function parseDocumentName(name: string): Target | null {
+  const body = new RegExp(`^page:(${UUID})$`).exec(name)
+  if (body?.[1]) return { kind: 'body', pageId: body[1] }
+  const separate = new RegExp(`^doc:(${UUID})$`).exec(name)
+  return separate?.[1] ? { kind: 'separate', documentId: separate[1] } : null
 }
 
 export const bodyName = (pageId: string) => `page:${pageId}`
+export const separateName = (documentId: string) => `doc:${documentId}`
 
 export class DocumentTooLargeError extends Error {
   override name = 'DocumentTooLargeError'
@@ -32,38 +41,50 @@ export class DocumentTooLargeError extends Error {
 
 export interface Collab {
   hocuspocus: Hocuspocus<CollabContext>
-  /** Cierra las conexiones a los cuerpos de estas páginas (a la papelera): al reconectar, ya no se abren */
+  /** Cierra las conexiones a los documentos de estas páginas (a la papelera): al reconectar, ya no se abren */
   closePages(pageIds: Iterable<string>): void
   /** Las de toda la wiki de un mundo (el mundo, a la papelera) */
   closeWorld(worldId: string): void
 }
 
 export function createCollab({ db, onError }: { db: Database; onError: (error: unknown) => void }): Collab {
-  // De qué mundo es cada documento abierto, para cerrarlos todos si el mundo se va
-  const worldOf = new Map<string, string>()
+  // De qué página y mundo es cada documento abierto, para cerrarlos si se van a la papelera
+  const opened = new Map<string, { pageId: string; worldId: string }>()
+  /** De qué página es lo que se abre: la del cuerpo, o la del secreto o la nota oculta */
+  const pageOf = async (target: Target) => {
+    if (target.kind === 'body') return target.pageId
+    const separate = await documentsRepo.findSeparate(db, target.documentId)
+    return separate?.pageId ?? null
+  }
 
   const hocuspocus = new Hocuspocus<CollabContext>({
     quiet: true,
     debounce: 2000,
     maxDebounce: 10_000,
 
-    // Cada documento, con la sesión de la conexión y las pertenencias de ahora. Sin escribir, en solo lectura
+    // Cada documento, con la sesión de la conexión y las pertenencias de ahora. Sin escribir, en solo lectura. Un
+    // secreto tiene su propio permiso: ahora, el de su página; en el módulo 5, el suyo
     async onAuthenticate({ documentName, context, connectionConfig }) {
       const target = parseDocumentName(documentName)
-      const page = target ? await pagesRepo.findPage(db, target.pageId) : null
+      const pageId = target ? await pageOf(target) : null
+      const page = pageId ? await pagesRepo.findPage(db, pageId) : null
       const world = page ? await worldsRepo.findWorld(db, page.worldId) : null
       const wiki = { worldId: world?.id ?? '', organizationId: world?.organizationId ?? '' }
       const actor = actorFrom(context.userId, await loadMemberships(db, context.userId))
       authorize(actor, 'page.read', wiki)
       if (!page || !world) throw new NotFoundError('page')
       connectionConfig.readOnly = !can(actor, 'page.write', wiki)
-      worldOf.set(documentName, world.id)
+      opened.set(documentName, { pageId: page.id, worldId: world.id })
       return { pageId: page.id, worldId: world.id }
     },
 
     async onLoadDocument({ documentName, document }) {
       const target = parseDocumentName(documentName)
-      const stored = target ? await documentsRepo.findBody(db, target.pageId) : null
+      if (!target) return
+      const stored =
+        target.kind === 'body'
+          ? await documentsRepo.findBody(db, target.pageId)
+          : await documentsRepo.findSeparate(db, target.documentId)
       if (stored) Y.applyUpdate(document, stored.state)
     },
 
@@ -73,19 +94,21 @@ export function createCollab({ db, onError }: { db: Database; onError: (error: u
 
     async onStoreDocument({ documentName, document, lastContext }) {
       const target = parseDocumentName(documentName)
-      const worldId = worldOf.get(documentName) ?? lastContext?.worldId
-      if (!target || !worldId) return
+      const place = opened.get(documentName) ?? lastContext
+      if (!target || !place?.worldId || !place.pageId) return
       const current = Y.encodeStateAsUpdate(document)
+      const merge = (stored: Uint8Array | null) => {
+        const merged = stored ? Y.mergeUpdates([stored, current]) : current
+        if (merged.byteLength > MAX_STATE_BYTES) throw new DocumentTooLargeError(documentName)
+        return merged
+      }
+      const userId = lastContext?.userId ?? null
       try {
-        await documentsRepo.mergeBody(
-          db,
-          { pageId: target.pageId, worldId, userId: lastContext?.userId ?? null },
-          (stored) => {
-            const merged = stored ? Y.mergeUpdates([stored, current]) : current
-            if (merged.byteLength > MAX_STATE_BYTES) throw new DocumentTooLargeError(documentName)
-            return merged
-          }
-        )
+        if (target.kind === 'body') {
+          await documentsRepo.mergeBody(db, { pageId: target.pageId, worldId: place.worldId, userId }, merge)
+        } else {
+          await documentsRepo.mergeSeparate(db, target.documentId, userId, merge)
+        }
       } catch (error) {
         onError(error)
         // Lo que no cabe no se guarda: se cierra, y al volver se carga lo último guardado
@@ -95,17 +118,18 @@ export function createCollab({ db, onError }: { db: Database; onError: (error: u
     },
 
     async afterUnloadDocument({ documentName }) {
-      worldOf.delete(documentName)
+      opened.delete(documentName)
     }
   })
 
   return {
     hocuspocus,
     closePages(pageIds) {
-      for (const pageId of pageIds) hocuspocus.closeConnections(bodyName(pageId))
+      const gone = new Set(pageIds)
+      for (const [name, place] of opened) if (gone.has(place.pageId)) hocuspocus.closeConnections(name)
     },
     closeWorld(worldId) {
-      for (const [name, world] of worldOf) if (world === worldId) hocuspocus.closeConnections(name)
+      for (const [name, place] of opened) if (place.worldId === worldId) hocuspocus.closeConnections(name)
     }
   }
 }

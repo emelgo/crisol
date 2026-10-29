@@ -1,0 +1,92 @@
+/* Los secretos y las notas ocultas: aparte, con su borde de rayas y su rótulo */
+.secret,
+.note {
+  margin-block: var(--space-3);
+  padding: var(--space-1) var(--space-4) var(--space-3);
+  border: 1px dashed var(--color-secret-rule);
+  background: var(--color-secret);
+}
+
+.note {
+  border-style: dotted;
+}
+
+.secret[data-selected],
+.note[data-selected] {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-1) var(--space-3);
+  user-select: none;
+}
+
+.label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-secret-text);
+  font-family: var(--font-display);
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.label svg {
+  inline-size: 1rem;
+  block-size: 1rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.unwrap {
+  min-block-size: 2.25rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-secret-text);
+  font: inherit;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.unwrap[aria-disabled="true"] {
+  cursor: progress;
+  opacity: 0.6;
+}
+
+.prose {
+  min-block-size: 1.6em;
+  outline: none;
+  overflow-wrap: break-word;
+}
+
+.prose:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: var(--space-1);
+}
+
+.prose > * + * {
+  margin-block-start: var(--space-2);
+}
+
+.prose p {
+  margin: 0;
+}
+
+.copying {
+  margin: 0;
+  color: var(--color-secret-text);
+}

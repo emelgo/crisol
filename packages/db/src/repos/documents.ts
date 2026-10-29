@@ -1,4 +1,4 @@
-import { and, eq, sql } from 'drizzle-orm'
+import { and, eq, inArray, sql } from 'drizzle-orm'
 import type { Database } from '../client.ts'
 import { documents } from '../schema/documents.ts'
 
@@ -44,4 +44,64 @@ export function mergeBody(
     }
     return state.byteLength
   })
+}
+
+/** Un secreto o una nota oculta, con su página y su mundo */
+export async function findSeparate(db: Database, documentId: string) {
+  const [found] = await db
+    .select({
+      id: documents.id,
+      pageId: documents.pageId,
+      worldId: documents.worldId,
+      kind: documents.kind,
+      state: documents.state
+    })
+    .from(documents)
+    .where(and(eq(documents.id, documentId), inArray(documents.kind, ['secret', 'note'])))
+  return found ?? null
+}
+
+/** Crea el documento de un secreto o una nota oculta de una página, vacío o con el estado de otro */
+export async function createSeparate(
+  db: Database,
+  input: { pageId: string; worldId: string; kind: 'secret' | 'note'; state: Uint8Array; userId: string }
+) {
+  const [created] = await db
+    .insert(documents)
+    .values({ ...input, updatedBy: input.userId })
+    .returning({ id: documents.id })
+  if (!created) throw new Error('No se pudo crear el documento')
+  return created.id
+}
+
+/** Guarda un secreto o una nota oculta fusionando, como el cuerpo (la fila bloqueada mientras tanto) */
+export function mergeSeparate(
+  db: Database,
+  documentId: string,
+  userId: string | null,
+  merge: (stored: Uint8Array) => Uint8Array
+) {
+  return db.transaction(async (tx) => {
+    const [stored] = await tx
+      .select({ state: documents.state })
+      .from(documents)
+      .where(eq(documents.id, documentId))
+      .for('update')
+    if (!stored) return 0
+    const state = merge(stored.state)
+    await tx
+      .update(documents)
+      .set({ state, updatedBy: userId, updatedAt: new Date() })
+      .where(eq(documents.id, documentId))
+    return state.byteLength
+  })
+}
+
+/** Los documentos de estas páginas (para cerrar los que estén abiertos) */
+export async function documentsOfPages(db: Database, pageIds: readonly string[]) {
+  if (pageIds.length === 0) return []
+  return db
+    .select({ id: documents.id, kind: documents.kind })
+    .from(documents)
+    .where(inArray(documents.pageId, [...pageIds]))
 }

@@ -32,6 +32,10 @@
   --color-accent-text: #a82326;
   --color-ai: #1f6e99;
   --color-focus: #a82326;
+  /* Los secretos y las notas ocultas: aparte, en morado, con su borde de rayas */
+  --color-secret: #f3eff9;
+  --color-secret-rule: #6b5494;
+  --color-secret-text: #553f7a;
 
   --font-body: "Barlow", system-ui, sans-serif;
   --font-display: "Barlow Condensed", "Arial Narrow", sans-serif;
@@ -96,4 +100,7 @@
   --color-accent-text: #f27470;
   --color-ai: #7cc4e8;
   --color-focus: #f27470;
+  --color-secret: #2a2530;
+  --color-secret-rule: #8e7bb0;
+  --color-secret-text: #c9b8e8;
 }

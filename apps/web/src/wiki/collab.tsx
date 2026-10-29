@@ -1,5 +1,6 @@
-import { HocuspocusProviderWebsocket } from '@hocuspocus/provider'
+import { HocuspocusProvider, HocuspocusProviderWebsocket } from '@hocuspocus/provider'
 import { createContext, type ReactNode, useContext, useEffect, useState } from 'react'
+import * as Y from 'yjs'
 
 /** Con qué abrir el WebSocket de la edición en vivo (las pruebas de componentes no lo abren) */
 export interface CollabClient {
@@ -45,4 +46,39 @@ export function CollabSocket({ children }: { children: ReactNode }) {
 /** El WebSocket de la wiki, o null sin edición en vivo (o mientras se abre) */
 export function useCollabSocket() {
   return useContext(SocketContext)
+}
+
+/**
+ * Un documento de Yjs abierto por el WebSocket de la wiki mientras se usa: el cuerpo de una página (page:<id>) o un
+ * secreto o una nota oculta (doc:<id>). null: aún no (o sin nombre)
+ */
+export function useCollabDocument(name: string | null) {
+  const socket = useCollabSocket()
+  const [session, setSession] = useState<{ document: Y.Doc; provider: HocuspocusProvider } | null>(null)
+  const [state, setState] = useState({ synced: false, offline: false })
+  useEffect(() => {
+    if (!socket || !name) return
+    const document = new Y.Doc()
+    const provider = new HocuspocusProvider({
+      websocketProvider: socket,
+      name,
+      document,
+      // La sesión va en la cookie; el servidor pide un token para comprobar cada documento
+      token: 'sesion',
+      onSynced: () => setState((current) => ({ ...current, synced: true }))
+    })
+    const onStatus = ({ status }: { status: string }) =>
+      setState((current) => ({ ...current, offline: status === 'disconnected' }))
+    socket.on('status', onStatus)
+    provider.attach()
+    setSession({ document, provider })
+    return () => {
+      socket.off('status', onStatus)
+      provider.destroy()
+      document.destroy()
+      setSession(null)
+      setState({ synced: false, offline: false })
+    }
+  }, [socket, name])
+  return { session, ...state }
 }

@@ -174,6 +174,11 @@ test('la wiki, en los dos temas y en el móvil @a11y', async ({ page }) => {
       expect(serious.map((v) => `${colorScheme} ${v.id}: ${v.help}`)).toEqual([])
     }
   }
+  // El cuerpo con un secreto
+  await page.getByRole('textbox', { name: 'Texto de la página' }).click()
+  await page.getByRole('toolbar', { name: 'Insertar en el texto' }).getByRole('button', { name: 'Secreto' }).click()
+  await page.getByRole('textbox', { name: 'Texto del secreto' }).click()
+  await page.keyboard.type('El faro no fue un accidente.')
   await check()
   await page.getByRole('button', { name: 'Renombrar' }).click()
   await check()

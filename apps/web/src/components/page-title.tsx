@@ -1,5 +1,6 @@
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
+import { focusIsLost } from './focus.ts'
 
 /** Si hay que llevar el foco al título de la página en cuanto aparezca */
 const FocusRequest = createContext<{ current: boolean }>({ current: false })
@@ -39,7 +40,8 @@ export function PageTitle({ children }: { children: string }) {
     (heading: HTMLHeadingElement | null) => {
       if (!heading || !request.current) return
       request.current = false
-      heading.focus()
+      // Si mientras llegaba el título la persona ya está en otro sitio, no se le quita el foco
+      if (focusIsLost()) heading.focus()
     },
     [request]
   )

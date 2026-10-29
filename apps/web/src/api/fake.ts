@@ -404,6 +404,11 @@ export function fakeApi(
       return pageView(page)
     },
     getPage: ({ pageId }) => pageView(pageById(pageId)),
+    // Sin edición en vivo en estas pruebas: solo el id
+    createPageDocument: ({ pageId }) => {
+      pageById(pageId)
+      return { id: crypto.randomUUID() }
+    },
     deletePage: ({ pageId }) => {
       const root = pageById(pageId)
       const below: StoredPage[] = []
