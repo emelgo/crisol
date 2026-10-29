@@ -4,6 +4,7 @@
  */
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join, relative, sep } from 'node:path'
+import { consoleIo, type Io } from './io.ts'
 
 export interface Violation {
   file: string
@@ -53,13 +54,16 @@ export function findCleanRoomViolations(root: string): Violation[] {
   return violations
 }
 
-if (import.meta.main) {
-  const violations = findCleanRoomViolations(join(import.meta.dirname, '..'))
-  for (const v of violations) console.error(`${v.file}:${v.line}: ${v.text}`)
+/** Devuelve el código de salida */
+export function checkCleanRoom(root: string, io: Io): number {
+  const violations = findCleanRoomViolations(root)
+  for (const v of violations) io.err(`${v.file}:${v.line}: ${v.text}`)
   if (violations.length > 0) {
-    console.error('El código no puede importar ni leer research/ (sala limpia)')
-    process.exitCode = 1
-  } else {
-    console.log('Sala limpia en regla')
+    io.err('El código no puede importar ni leer research/ (sala limpia)')
+    return 1
   }
+  io.out('Sala limpia en regla')
+  return 0
 }
+
+if (import.meta.main) process.exitCode = checkCleanRoom(join(import.meta.dirname, '..'), consoleIo)

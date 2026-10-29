@@ -1,0 +1,78 @@
+# Listón de calidad de CONSTRAINTS.md. Lo que «avisa» pasa a bloquear solo el 2026-11-12 (scripts/avisa-hasta.ts).
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  AVISA_HASTA: "2026-11-12"
+
+jobs:
+  calidad:
+    name: Lint, tipos, pruebas, licencias y límites
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # La cobertura de lo cambiado compara con la rama base
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Lint y formato
+        run: pnpm lint
+      - name: Tipos
+        run: pnpm typecheck
+      - name: Pruebas con cobertura
+        run: pnpm test:coverage
+      - name: Licencias
+        run: pnpm licencias
+      - name: Sala limpia
+        run: pnpm sala-limpia
+      - name: Cobertura de lo cambiado (≥ 80 %)
+        if: github.event_name == 'pull_request'
+        run: node scripts/avisa-hasta.ts "$AVISA_HASTA" node scripts/cobertura-diff.ts "origin/${{ github.base_ref }}"
+      - name: Límites entre módulos
+        run: node scripts/avisa-hasta.ts "$AVISA_HASTA" pnpm limites
+
+  secretos:
+    name: Secretos
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: gitleaks (todo el historial)
+        run: docker run --rm -v "$PWD:/repo:ro" ghcr.io/gitleaks/gitleaks:v8.30.1 git --redact --no-banner /repo
+
+  seguridad:
+    name: Seguridad del código y de las dependencias
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - name: semgrep (hallazgos altos)
+        run: >
+          node scripts/avisa-hasta.ts "$AVISA_HASTA"
+          docker run --rm -v "$PWD:/src:ro" -w /src semgrep/semgrep:1.182.0
+          semgrep scan --config p/default --severity ERROR --error --metrics off --quiet
+      - name: osv-scanner (altas o críticas)
+        run: |
+          # osv-scanner sale con error ante cualquier vulnerabilidad; el filtro por gravedad lo hace osv-altos.ts
+          docker run --rm -v "$PWD:/src" ghcr.io/google/osv-scanner:v2.7.0 \
+            scan source --lockfile /src/pnpm-lock.yaml --format json --output /src/osv.json || true
+          node scripts/avisa-hasta.ts "$AVISA_HASTA" node scripts/osv-altos.ts osv.json

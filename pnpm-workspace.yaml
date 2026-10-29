@@ -3,10 +3,17 @@ packages:
   - packages/*
   - scripts
 
+# Scripts de instalación: ninguno hace falta (los binarios llegan como dependencias opcionales)
+allowBuilds:
+  "@swc/core": false
+
 # Versiones compartidas por todos los paquetes (se usan con "catalog:")
 catalog:
   "@biomejs/biome": 2.6.4
+  "@swc/core": ^1.16.20
   "@types/node": ^24.10.0
+  "@vitest/coverage-v8": ^5.0.5
+  dependency-cruiser: ^18.7.0
   turbo: ^2.11.10
   typescript: ^7.0.2
   vitest: ^5.0.5
