@@ -23,11 +23,22 @@ const entry = (action: string, details: Record<string, unknown>, extra: Partial<
   action,
   details,
   worldId: world.id,
+  undoneBy: null,
+  undoes: null,
   ...extra
 })
 
-const renderAt = (path: string, history: HistoryEntry[], options: { role?: World['role'] } = {}) => {
-  const api = fakeApi({ organizations: [ORG], worlds: [{ ...world, role: options.role ?? 'master' }], history })
+const renderAt = (
+  path: string,
+  history: HistoryEntry[],
+  options: { role?: World['role']; conflicts?: Record<string, HistoryEntry | null> } = {}
+) => {
+  const api = fakeApi({
+    organizations: [ORG],
+    worlds: [{ ...world, role: options.role ?? 'master' }],
+    history,
+    ...(options.conflicts ? { conflicts: options.conflicts } : {})
+  })
   const realtime = fakeRealtime()
   const router = createAppRouter(createMemoryHistory({ initialEntries: [path] }))
   render(
@@ -60,9 +71,9 @@ describe('el historial', () => {
     ])
     expect(await screen.findByRole('heading', { level: 1, name: 'Historial de Eana' })).toBeDefined()
     expect(lines()).toEqual([
-      expect.stringMatching(/^Enrique expulsó a Pepe de La Marca.*29 oct 2026.*web$/),
+      expect.stringMatching(/^Enrique expulsó a Pepe de La Marca.*29 oct 2026.*· web/),
       expect.stringMatching(/^Enrique cerró las invitaciones de La Marca/),
-      expect.stringMatching(/^Enrique creó la campaña «La Marca» en Eana.*Claude \(crear_campana\)$/),
+      expect.stringMatching(/^Enrique creó la campaña «La Marca» en Eana.*· Claude \(crear_campana\)/),
       expect.stringMatching(/^Enrique renombró el mundo «Eana» a «Eana \(Fateforge\)»/),
       expect.stringMatching(/^Pepe entró en La Marca/),
       expect.stringMatching(/^Crisol creó la organización «Fateforge».*Crisol$/),
@@ -106,6 +117,46 @@ describe('el historial', () => {
     await router.navigate({ to: '/mundos' })
     await userEvent.click(await screen.findByRole('link', { name: 'Historial de la organización' }))
     expect(router.state.location.pathname).toBe('/historial')
+  })
+
+  it('deshace una operación: la marca como deshecha y el deshacer queda arriba, también deshacible', async () => {
+    const rename = entry('renameWorld', { from: 'Eana', to: 'Eana 2' })
+    const { api } = renderAt('/historial', [rename, entry('createWorld', { name: 'Eana' })])
+    await userEvent.click(await screen.findByRole('button', { name: 'Deshacer: renombró el mundo «Eana» a «Eana 2»' }))
+    await vi.waitFor(() => expect(lines()).toHaveLength(3))
+    expect(lines()[0]).toMatch(/^Enrique deshizo: renombró el mundo «Eana» a «Eana 2»/)
+    expect(lines()[1]).toMatch(/deshecho$/)
+    expect(screen.queryByRole('button', { name: 'Deshacer: renombró el mundo «Eana» a «Eana 2»' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Deshacer: deshizo: renombró el mundo «Eana» a «Eana 2»' })).toBeDefined()
+    expect(api.calls).toContain('undoOperation')
+  })
+
+  it('si no se puede deshacer, dice qué operación posterior lo impide', async () => {
+    const rename = entry('renameWorld', { from: 'Eana 2', to: 'Eana 3' })
+    const create = entry('createWorld', { name: 'Eana' })
+    renderAt('/historial', [rename, create], { conflicts: { [create.id]: rename } })
+    await userEvent.click(await screen.findByRole('button', { name: 'Deshacer: creó el mundo «Eana»' }))
+    expect(
+      await screen.findByText(
+        'No se puede deshacer: después, Enrique renombró el mundo «Eana 2» a «Eana 3». Deshaz eso antes.'
+      )
+    ).toBeDefined()
+  })
+
+  it('si no se sabe qué lo impide, lo dice igual', async () => {
+    const create = entry('createWorld', { name: 'Eana' })
+    renderAt('/historial', [create], { conflicts: { [create.id]: null } })
+    await userEvent.click(await screen.findByRole('button', { name: 'Deshacer: creó el mundo «Eana»' }))
+    expect(await screen.findByText('No se puede deshacer: algo de lo que cambió se ha cambiado después.')).toBeDefined()
+  })
+
+  it('lo ya deshecho y lo del sistema no se ofrecen para deshacer', async () => {
+    renderAt('/historial', [
+      entry('createWorld', { name: 'Eana' }, { undoneBy: crypto.randomUUID() }),
+      entry('createOrganization', { name: 'Fateforge' }, { actor: null, via: 'system' })
+    ])
+    await screen.findByRole('list', { name: 'Operaciones' })
+    expect(screen.queryByRole('button', { name: /^Deshacer/ })).toBeNull()
   })
 
   it('un jugador no ve el enlace al historial del mundo', async () => {

@@ -1,5 +1,5 @@
 import { createCampaign, listCampaigns, renameCampaign } from './campaigns.ts'
-import { listHistory } from './history.ts'
+import { listHistory, undoOperation } from './history.ts'
 import { getInvitation, regenerateInvitation, setInvitationsOpen } from './invitations.ts'
 import { leaveCampaign, listMembers, removeMember } from './members.ts'
 import { listOrganizations } from './organizations.ts'
@@ -30,7 +30,8 @@ export const ACTIONS = [
   listMembers,
   removeMember,
   leaveCampaign,
-  listHistory
+  listHistory,
+  undoOperation
 ]
 
 /** Las acciones por nombre, solo como tipo: la web las usa sin cargar zod */
@@ -49,4 +50,5 @@ export type Actions = {
   removeMember: typeof removeMember
   leaveCampaign: typeof leaveCampaign
   listHistory: typeof listHistory
+  undoOperation: typeof undoOperation
 }

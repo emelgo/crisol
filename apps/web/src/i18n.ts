@@ -97,6 +97,11 @@ export const es = {
     listLabel: 'Operaciones',
     empty: 'Aún no hay nada en el historial',
     more: 'Ver más',
+    undo: 'Deshacer',
+    undoButton: 'Deshacer: {{what}}',
+    undone: 'deshecho',
+    conflict: 'No se puede deshacer: después, {{actor}} {{what}}. Deshaz eso antes.',
+    conflictUnknown: 'No se puede deshacer: algo de lo que cambió se ha cambiado después.',
     system: 'Crisol',
     deletedAccount: 'Una cuenta borrada',
     via: { ui: 'web', ai: 'Claude', aiTool: 'Claude ({{tool}})', system: 'Crisol' },
@@ -113,6 +118,7 @@ export const es = {
       joinCampaign: 'entró en {{campaign}}',
       removeMember: 'expulsó a {{member}} de {{campaign}}',
       leaveCampaign: 'dejó {{campaign}}',
+      undoOperation: 'deshizo: {{what}}',
       unknown: 'hizo un cambio ({{action}})'
     }
   },
@@ -161,6 +167,8 @@ export const es = {
     FORBIDDEN: 'No tienes permiso',
     NOT_FOUND: 'Ya no existe',
     ORGANIZATION_REQUIRED: 'Necesitas ser propietario de una organización',
+    ALREADY_UNDONE: 'Ya está deshecho',
+    NOT_UNDOABLE: 'Esto no se puede deshacer',
     MASTER_NOT_REMOVABLE: 'Al máster no se le puede expulsar',
     UNKNOWN: 'Algo ha fallado. Vuelve a intentarlo.'
   },

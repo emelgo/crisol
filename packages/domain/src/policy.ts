@@ -58,7 +58,10 @@ const RULES = {
   'campaign.leave': { sees: seesCampaign, allows: isCampaignPlayer },
   // El historial: el de un mundo, para su máster; el de toda la organización, para el propietario
   'world.history': { sees: seesWorld, allows: isWorldMaster },
-  'organization.history': { sees: isOrganizationMember, allows: isOrganizationOwner }
+  'organization.history': { sees: isOrganizationMember, allows: isOrganizationOwner },
+  // Deshacer: quien ve el historial, con sus permisos de ahora
+  'world.undo': { sees: seesWorld, allows: isWorldMaster },
+  'organization.undo': { sees: isOrganizationMember, allows: isOrganizationOwner }
 } satisfies Record<string, { sees: Predicate; allows: Predicate }>
 
 export type Capability = keyof typeof RULES

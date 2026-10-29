@@ -478,6 +478,9 @@ importers:
 
   packages/db:
     dependencies:
+      '@crisol/domain':
+        specifier: workspace:*
+        version: link:../domain
       drizzle-orm:
         specifier: 'catalog:'
         version: 0.45.4(kysely@0.29.7)(postgres@3.4.9)

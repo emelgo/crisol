@@ -11,6 +11,8 @@ export function fakeApi(
     members?: Record<string, Member[]>
     /** De lo más reciente a lo más antiguo */
     history?: HistoryEntry[]
+    /** Las operaciones que no se pueden deshacer, con la que lo impide */
+    conflicts?: Record<string, HistoryEntry | null>
   } = {}
 ) {
   const organizations = options.organizations ?? []
@@ -105,6 +107,27 @@ export function fakeApi(
       const start = before ? scoped.findIndex((e) => e.id === before) + 1 : 0
       const entries = scoped.slice(start, start + limit).map((e) => ({ ...e }))
       return { entries, next: start + limit < scoped.length ? (entries.at(-1)?.id ?? null) : null }
+    },
+    undoOperation: ({ operationId }) => {
+      const original = history.find((e) => e.id === operationId)
+      if (!original) throw new ApiError('NOT_FOUND', 404)
+      if (original.undoneBy) throw new ApiError('ALREADY_UNDONE', 400)
+      if (options.conflicts && operationId in options.conflicts) {
+        const by = options.conflicts[operationId] ?? null
+        return { status: 'conflict' as const, by: by ? { ...by } : null }
+      }
+      const undo: HistoryEntry = {
+        ...original,
+        id: crypto.randomUUID(),
+        at: new Date().toISOString(),
+        action: 'undoOperation',
+        details: { action: original.action, details: original.details },
+        undoneBy: null,
+        undoes: original.id
+      }
+      original.undoneBy = undo.id
+      history.unshift(undo)
+      return { status: 'undone' as const, entry: { ...undo } }
     },
     // Quien sale deja de ver la campaña
     leaveCampaign: ({ campaignId }) => {

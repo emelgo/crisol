@@ -118,7 +118,12 @@ describe('authorize', () => {
       { organizationId: ORG },
       'prohíbe'
     ],
-    ['nadie ve el de otra organización', outsider, 'organization.history', { organizationId: ORG }, 'no lo ve']
+    ['nadie ve el de otra organización', outsider, 'organization.history', { organizationId: ORG }, 'no lo ve'],
+    ['el máster deshace en su mundo', owner, 'world.undo', { worldId: WORLD }, 'permite'],
+    ['un jugador no deshace en el mundo en el que juega', player, 'world.undo', { worldId: WORLD }, 'prohíbe'],
+    ['nadie deshace en un mundo ajeno', outsider, 'world.undo', { worldId: WORLD }, 'no lo ve'],
+    ['el propietario deshace en la organización', owner, 'organization.undo', { organizationId: ORG }, 'permite'],
+    ['un miembro no deshace en la organización', member, 'organization.undo', { organizationId: ORG }, 'prohíbe']
   ]
 
   it.each(cases)('%s', (_, who, capability, target, expected) => {

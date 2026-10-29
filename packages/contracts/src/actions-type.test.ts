@@ -18,7 +18,8 @@ describe('Actions', () => {
       listMembers: true,
       removeMember: true,
       leaveCampaign: true,
-      listHistory: true
+      listHistory: true,
+      undoOperation: true
     }
     expect(Object.keys(names).sort()).toEqual(ACTIONS.map((a) => a.name).sort())
   })
