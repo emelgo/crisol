@@ -1,6 +1,7 @@
 # Spec: Módulo 1 — Wiki
 
-Estado: **borrador, pendiente de Enrique** · Fecha: 2026-10-29
+Estado: aprobada por Enrique («vamos», 2026-10-29), con las cuatro propuestas de «Preguntas abiertas» ·
+Fecha: 2026-10-29
 
 Fuentes:
 - Decisiones de partida: `docs/modulos.md` § «1. Wiki».
@@ -456,14 +457,14 @@ definición, para que la prueba de ida y vuelta lo encuentre.
 
 ## Preguntas abiertas
 
-Las cuatro tienen una propuesta. Si Enrique no dice lo contrario, va la propuesta.
+Decididas: Enrique aprobó las cuatro propuestas (2026-10-29).
 
-1. **Los archivos de Eana**: los sube Enrique desde la interfaz, arrastrando las carpetas, y Claude solo los enlaza por
-   su nombre. Claude no puede pasar 710 MB por el chat. **Propuesta: así, con un límite de 250 MB por archivo.**
-2. **El PDF**: en el módulo 1 basta «Imprimir → Guardar como PDF» del navegador. «Descargar PDF» generado en el
-   servidor necesita Chromium en el contenedor de staging, y eso pide permiso. **Propuesta: imprimir ahora y dejar
+1. ~~**Los archivos de Eana**~~: los sube Enrique desde la interfaz, arrastrando las carpetas, y Claude solo los enlaza por
+   su nombre. Claude no puede pasar 710 MB por el chat. **Decidido: así, con un límite de 250 MB por archivo.**
+2. ~~**El PDF**~~: en el módulo 1 basta «Imprimir → Guardar como PDF» del navegador. «Descargar PDF» generado en el
+   servidor necesita Chromium en el contenedor de staging, y eso pide permiso. **Decidido: imprimir ahora y dejar
    preparada la ruta de impresión para el servidor.**
-3. **La paginación de la hoja**: automática, con saltos opcionales, o solo a mano como Homebrewery. **Propuesta:
+3. ~~**La paginación de la hoja**~~: automática, con saltos opcionales, o solo a mano como Homebrewery. **Decidido:
    automática.** Con saltos solo a mano, una página que se pasa a hoja sería una sola página desbordada.
-4. **Los tipos de propiedad**: texto, número, sí/no, lista y enlace a página. **Propuesta: estos.** Las fechas del
+4. ~~**Los tipos de propiedad**~~: texto, número, sí/no, lista y enlace a página. **Decidido: estos.** Las fechas del
    mundo llegan con el calendario (módulo 8); hasta entonces, como texto.
