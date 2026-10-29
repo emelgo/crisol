@@ -18,8 +18,8 @@ const INSTRUCTIONS =
   'Crisol: mundos de rol y su mesa virtual. Habla siempre en español. Los mundos tienen campañas; ' +
   'lo que cambies queda en el historial de Crisol y el máster puede deshacerlo.'
 
-/** Texto del error para la IA (los códigos son los de la API) */
-function errorText(error: unknown): string {
+/** Texto del error para la IA (los códigos son los de la API); un fallo inesperado se relanza */
+export function errorText(error: unknown): string {
   if (error instanceof NotFoundError) return 'NOT_FOUND: no existe o no lo puedes ver'
   if (error instanceof ForbiddenError) return 'FORBIDDEN: no tienes permiso'
   if (error instanceof InvalidRequestError) return error.code

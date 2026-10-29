@@ -43,6 +43,13 @@ describe('consentimiento OAuth', () => {
     expect(await screen.findByRole('heading', { name: 'Conectar claude.ai' })).toBeDefined()
   })
 
+  it('si el cliente no es una URL, enseña su identificador tal cual', async () => {
+    const accounts = fakeAccountClient({ account: { name: 'Enrique', email: 'enrique@crisol.test' } })
+    const router = createAppRouter(createMemoryHistory({ initialEntries: ['/oauth/consentimiento?client_id=abc123'] }))
+    render(<App router={router} accounts={accounts.client} api={fakeApi({ organizations: [ORG] }).client} />)
+    expect(await screen.findByRole('heading', { name: 'Conectar abc123' })).toBeDefined()
+  })
+
   it('quien no es propietario no puede permitirlo (módulo 0)', async () => {
     renderConsent('member')
     expect((await screen.findByRole('alert')).textContent).toBe('De momento solo el propietario puede conectar Claude.')
