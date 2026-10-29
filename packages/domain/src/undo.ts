@@ -14,10 +14,13 @@ export interface RowChange {
   after: Row | null
 }
 
-/** Un paso del deshacer: quitar una fila, o dejarla como estaba (la misma fila, con el mismo id y su versión) */
+/**
+ * Un paso del deshacer: quitar una fila, o dejarla como estaba (la misma fila, con el mismo id y su versión). after: como
+ * la dejó la operación (null si la quitó), para devolver solo lo que ella cambió
+ */
 export type UndoStep =
   | { kind: 'remove'; tableName: string; rowId: string }
-  | { kind: 'restore'; tableName: string; row: Row }
+  | { kind: 'restore'; tableName: string; row: Row; after: Row | null }
 
 /** Por qué no se puede deshacer una operación, sin mirar sus filas; null si se puede */
 export function undoBlocker(operation: {
@@ -54,6 +57,19 @@ export function undoSteps(changes: readonly RowChange[]): UndoStep[] {
     .map((change) =>
       change.before === null
         ? { kind: 'remove', tableName: change.tableName, rowId: change.rowId }
-        : { kind: 'restore', tableName: change.tableName, row: change.before }
+        : { kind: 'restore', tableName: change.tableName, row: change.before, after: change.after }
     )
+}
+
+/**
+ * La fila que deja un paso de deshacer: si sigue ahí, la de ahora con las columnas que cambió la operación como estaban
+ * antes; lo demás no se toca (un contador que lleva su propia cuenta fuera del historial, como las entradas del enlace).
+ * Si ya no está, la de antes entera
+ */
+export function restoredRow(current: Row | null, before: Row, after: Row | null): Row {
+  if (!current || !after) return before
+  const changed = Object.keys(before).filter(
+    (column) => JSON.stringify(before[column]) !== JSON.stringify(after[column])
+  )
+  return { ...current, ...Object.fromEntries(changed.map((column) => [column, before[column]])) }
 }

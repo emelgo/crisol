@@ -558,6 +558,31 @@ describe('POST /api/actions/:name', () => {
       expect((await call('listWorlds', {}, player.cookie)).json().worlds).toHaveLength(1)
     })
 
+    it('el propietario deshace el borrado de un mundo desde el historial de la organización', async () => {
+      const { world, player } = await worldWithPlayer()
+      await call('deleteWorld', { worldId: world.id }, owner.cookie)
+      const entries = (await call('listHistory', {}, owner.cookie)).json().entries as Array<{
+        id: string
+        action: string
+      }>
+      const deleted = entries.find((e) => e.action === 'deleteWorld')
+      expect((await call('undoOperation', { operationId: deleted?.id }, owner.cookie)).json().status).toBe('undone')
+      expect((await call('listWorlds', {}, player.cookie)).json().worlds).toHaveLength(1)
+    })
+
+    it('salir de una campaña solo lo deshace quien salió: el máster no lo mete sin enlace', async () => {
+      const { world, campaign, player } = await worldWithPlayer()
+      await call('leaveCampaign', { campaignId: campaign.id }, player.cookie)
+      const entries = (await call('listHistory', { worldId: world.id }, owner.cookie)).json().entries as Array<{
+        id: string
+        action: string
+      }>
+      const left = entries.find((e) => e.action === 'leaveCampaign')
+      const byMaster = await call('undoOperation', { operationId: left?.id }, owner.cookie)
+      expect([byMaster.statusCode, byMaster.json().code]).toEqual([400, 'NOT_UNDOABLE'])
+      expect((await call('listWorlds', {}, player.cookie)).json().worlds).toEqual([])
+    })
+
     it('una campaña de un mundo en la papelera vuelve con el mundo, no sola', async () => {
       const { world, campaign } = await worldWithPlayer()
       await call('deleteCampaign', { campaignId: campaign.id }, owner.cookie)

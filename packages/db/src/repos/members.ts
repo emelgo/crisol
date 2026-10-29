@@ -5,6 +5,7 @@ import { user } from '../schema/auth.ts'
 import { campaignMembers, campaigns } from '../schema/campaigns.ts'
 import { organizationMembers } from '../schema/organizations.ts'
 import { worldMembers, worlds } from '../schema/worlds.ts'
+import { lockMembership } from './invitations.ts'
 
 /** Quiénes están en la campaña: el máster primero y luego por nombre */
 export function listCampaignMembers(db: Database, campaignId: string) {
@@ -42,6 +43,7 @@ export function removeCampaignMember(
   input: { campaignId: string; organizationId: string; userId: string }
 ): Promise<RemoveResult> {
   return operation(db, context, async (w) => {
+    await lockMembership(w, input.organizationId, input.userId)
     const [member] = await w.read
       .select({ id: campaignMembers.id, role: campaignMembers.role })
       .from(campaignMembers)
@@ -51,7 +53,7 @@ export function removeCampaignMember(
     if (member.role === 'master') return { status: 'master' }
     await w.remove(campaignMembers, member.id)
 
-    // Se bloquea antes de contar lo que le queda: si a la vez entra en otra campaña, una de las dos espera
+    // Con la cuenta en fila (lockMembership), lo que le queda no cambia mientras se cuenta
     const [orgMember] = await w.read
       .select({ id: organizationMembers.id, role: organizationMembers.role })
       .from(organizationMembers)

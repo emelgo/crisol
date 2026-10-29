@@ -41,6 +41,7 @@ describe('deshacer una operación', () => {
     const link = await invitationsRepo.findInvitation(conn.db, campaignId)
     return invitationsRepo.joinCampaign(conn.db, ctx('joinCampaign', userId), {
       invitationId: link?.id ?? '',
+      tokenHash: link?.tokenHash ?? '',
       campaignId,
       organizationId,
       userId
@@ -169,6 +170,48 @@ describe('deshacer una operación', () => {
     await join(c.id, 'u2')
     const rejoined = await lastOperation('joinCampaign')
     expect(await undo(expelled.id)).toEqual({ status: 'conflict', by: rejoined.id })
+  })
+
+  it('deshacer una entrada no saca de la organización a quien sigue en otra campaña de ella', async () => {
+    const w = await world()
+    const a = await campaign(w.id)
+    const b = await campaign(w.id)
+    await join(a.id, 'u2')
+    const joinedA = await lastOperation('joinCampaign')
+    await join(b.id, 'u2')
+    expect(await undo(joinedA.id)).toMatchObject({ status: 'undone' })
+    const memberships = await loadMemberships(conn.db, 'u2')
+    expect(memberships.campaigns.map((c) => c.campaignId)).toEqual([b.id])
+    expect(memberships.organizations).toEqual([{ organizationId, role: 'member' }])
+  })
+
+  it('volver a poner una fila cuya fila padre ya no está es un conflicto, no un fallo', async () => {
+    const w = await world()
+    const c = await campaign(w.id)
+    await join(c.id, 'u2')
+    await membersRepo.removeCampaignMember(conn.db, ctx('removeMember'), {
+      campaignId: c.id,
+      organizationId,
+      userId: 'u2'
+    })
+    const expelled = await lastOperation('removeMember')
+    expect(await undo((await lastOperation('createCampaign')).id)).toMatchObject({ status: 'undone' })
+    const removedCampaign = await lastOperation('undo')
+    // Deshacer la expulsión pondría al jugador en una campaña que ya no existe: lo impide quien la quitó
+    expect(await undo(expelled.id)).toEqual({ status: 'conflict', by: removedCampaign.id })
+  })
+
+  it('deshacer no pisa el contador de entradas del enlace, que va fuera del historial', async () => {
+    const w = await world()
+    const c = await campaign(w.id)
+    const link = await invitationsRepo.findInvitation(conn.db, c.id)
+    await invitationsRepo.setInvitationsOpen(conn.db, ctx('setInvitationsOpen'), c.id, false)
+    await invitationsRepo.setInvitationsOpen(conn.db, ctx('setInvitationsOpen'), c.id, true)
+    const opened = await lastOperation('setInvitationsOpen')
+    await join(c.id, 'u2')
+    await join(c.id, 'u3')
+    expect(await undo(opened.id)).toMatchObject({ status: 'undone' })
+    expect(await invitationsRepo.findInvitation(conn.db, c.id)).toMatchObject({ id: link?.id, open: false, joins: 2 })
   })
 
   it('lo del sistema no se deshace, y lo que no existe tampoco', async () => {

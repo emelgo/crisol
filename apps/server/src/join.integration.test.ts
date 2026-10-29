@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { connect, schema } from '@crisol/db'
 import { freshTestDatabase, resetDatabase } from '@crisol/db/testing'
+import { eq } from 'drizzle-orm'
 import type { FastifyInstance } from 'fastify'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { buildApp } from './app.ts'
@@ -163,6 +164,34 @@ describe('unirse con el enlace', () => {
     it('el registro público sigue cerrado', async () => {
       expect((await request('POST', '/api/auth/sign-up/email', person)).statusCode).toBe(403)
     })
+
+    it('el registro cerrado no dice qué emails tienen cuenta', async () => {
+      const taken = await request('POST', '/api/auth/sign-up/email', { ...person, email: 'enrique@crisol.test' })
+      const free = await request('POST', '/api/auth/sign-up/email', person)
+      expect([taken.statusCode, taken.json().code]).toEqual([403, 'SIGNUP_CLOSED'])
+      expect([free.statusCode, free.json().code]).toEqual([403, 'SIGNUP_CLOSED'])
+    })
+
+    it('el nombre visible se comprueba también al cambiarlo', async () => {
+      const update = (body: object) => request('POST', '/api/auth/update-user', body, master.cookie)
+      expect((await update({ name: 'x'.repeat(81) })).statusCode).toBe(400)
+      expect((await update({ name: '   ' })).statusCode).toBe(400)
+      expect((await update({ image: 'https://malo.example/a.png' })).statusCode).toBe(400)
+      expect((await update({ name: '  Enrique M.  ' })).statusCode).toBe(200)
+      const [row] = await conn.db.select().from(schema.user).where(eq(schema.user.id, master.userId))
+      expect(row?.name).toBe('Enrique M.')
+    })
+  })
+
+  it('con sesión, los intentos de entrar se limitan también por cuenta, aunque cambie la IP', async () => {
+    const player = await signUpTestUser(auth, { name: 'Pepe', email: 'pepe@crisol.test' })
+    const statuses = []
+    for (let i = 0; i < 31; i++) {
+      const ip = `198.51.100.${100 + i}`
+      statuses.push((await request('POST', '/api/join', { secret: 'no-existe' }, player.cookie, ip)).statusCode)
+    }
+    expect(statuses.slice(0, 30).every((status) => status === 404)).toBe(true)
+    expect(statuses.at(-1)).toBe(429)
   })
 
   it('los intentos con enlaces se limitan por IP, sin bloquear a los demás', async () => {
