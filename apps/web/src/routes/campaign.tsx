@@ -73,22 +73,20 @@ function InvitationPanel({ campaignId }: { campaignId: string }) {
       setCopied(false)
     }
   })
-  // Optimista: la casilla cambia al momento y vuelve atrás si el servidor falla
+  // Optimista: la casilla cambia en el mismo clic (estado local) y vuelve atrás si el servidor falla
+  const [pendingOpen, setPendingOpen] = useState<boolean | null>(null)
   const setOpen = useMutation({
     mutationFn: (open: boolean) => api.call('setInvitationsOpen', { campaignId, open }),
-    onMutate: (open) => {
-      const previous = invitation.data
-      if (previous) update({ ...previous, open })
-      return previous
+    onSuccess: (data) => {
+      update(data)
+      setPendingOpen(null)
     },
-    onError: (_error, _open, previous) => {
-      if (previous) update(previous)
-    },
-    onSuccess: update
+    onError: () => setPendingOpen(null)
   })
 
   if (!invitation.data) return null
-  const { url, open, issuedAt, joins } = invitation.data
+  const { url, issuedAt, joins } = invitation.data
+  const open = pendingOpen ?? invitation.data.open
   const error = regenerate.error ?? setOpen.error
 
   return (
@@ -160,7 +158,11 @@ function InvitationPanel({ campaignId }: { campaignId: string }) {
               type="checkbox"
               checked={open}
               disabled={setOpen.isPending}
-              onChange={(event) => setOpen.mutate(event.currentTarget.checked)}
+              onChange={(event) => {
+                const value = event.currentTarget.checked
+                setPendingOpen(value)
+                setOpen.mutate(value)
+              }}
             />{' '}
             {t('invitation.open')}
           </label>
