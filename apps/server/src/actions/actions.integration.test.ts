@@ -134,6 +134,12 @@ describe('POST /api/actions/:name', () => {
     expect(Object.keys(world).sort()).toEqual(['id', 'name', 'organizationId', 'role', 'version'])
   })
 
+  it('listOrganizations da las organizaciones de la cuenta con su rol', async () => {
+    expect((await call('listOrganizations', {}, owner.cookie)).json()).toEqual({
+      organizations: [{ id: organizationId, name: 'Enrique', role: 'owner' }]
+    })
+  })
+
   it('GET /api/openapi.json describe las acciones', async () => {
     const doc = (await app.inject({ method: 'GET', url: '/api/openapi.json' })).json()
     expect(Object.keys(doc.paths)).toContain('/api/actions/createWorld')

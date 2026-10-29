@@ -11,7 +11,10 @@ export function Home() {
       <p>{t('app.tagline')}</p>
       {!pending &&
         (account ? (
-          <p>{t('account.hello', { name: account.name })}</p>
+          <>
+            <p>{t('account.hello', { name: account.name })}</p>
+            <Link to="/mundos">{t('worlds.title')}</Link>
+          </>
         ) : (
           <Link to="/entrar">{t('account.signIn')}</Link>
         ))}

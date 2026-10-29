@@ -4,6 +4,7 @@ import { Home } from './routes/home.tsx'
 import { Profile } from './routes/profile.tsx'
 import { NotFound, RootLayout } from './routes/root.tsx'
 import { SignIn } from './routes/sign-in.tsx'
+import { Worlds } from './routes/worlds.tsx'
 
 const rootRoute = createRootRoute({ component: RootLayout, notFoundComponent: NotFound })
 const homeRoute = createRoute({ getParentRoute: () => rootRoute, path: '/', component: Home })
@@ -11,9 +12,10 @@ const homeRoute = createRoute({ getParentRoute: () => rootRoute, path: '/', comp
 // Las direcciones que ve la gente van en español
 const signInRoute = createRoute({ getParentRoute: () => rootRoute, path: '/entrar', component: SignIn })
 const profileRoute = createRoute({ getParentRoute: () => rootRoute, path: '/perfil', component: Profile })
+const worldsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/mundos', component: Worlds })
 const bootstrapRoute = createRoute({ getParentRoute: () => rootRoute, path: '/arranque/$secret', component: Bootstrap })
 
-const routeTree = rootRoute.addChildren([homeRoute, signInRoute, profileRoute, bootstrapRoute])
+const routeTree = rootRoute.addChildren([homeRoute, signInRoute, profileRoute, worldsRoute, bootstrapRoute])
 
 /** Sin historia, usa la del navegador */
 export function createAppRouter(history?: RouterHistory) {

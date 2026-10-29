@@ -5,11 +5,12 @@ import type { FastifyInstance } from 'fastify'
 import type { Auth } from '../auth/auth.ts'
 import { toHeaders } from '../http.ts'
 import { InvalidRequestError } from './context.ts'
+import { organizationActions } from './organizations.ts'
 import type { Implementation } from './registry.ts'
 import { worldActions } from './worlds.ts'
 
 /** Los servicios de todas las acciones del contrato */
-export const IMPLEMENTATIONS: Implementation[] = [...worldActions]
+export const IMPLEMENTATIONS: Implementation[] = [...organizationActions, ...worldActions]
 
 export function registerActionRoutes(app: FastifyInstance, db: Database, auth: Auth) {
   const byName = new Map(IMPLEMENTATIONS.map((impl) => [impl.action.name, impl]))

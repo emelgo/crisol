@@ -1,6 +1,6 @@
-import { eq } from 'drizzle-orm'
+import { asc, eq } from 'drizzle-orm'
 import type { Database } from '../client.ts'
-import { organizationMembers } from '../schema/organizations.ts'
+import { organizationMembers, organizations } from '../schema/organizations.ts'
 import { worldMembers, worlds } from '../schema/worlds.ts'
 
 /** Las pertenencias de una cuenta: se leen en cada petición para que revocar sea inmediato */
@@ -20,3 +20,13 @@ export async function loadMemberships(db: Database, userId: string) {
 }
 
 export type Memberships = Awaited<ReturnType<typeof loadMemberships>>
+
+/** Las organizaciones de la cuenta, con su nombre y su rol */
+export function listMemberOrganizations(db: Database, userId: string) {
+  return db
+    .select({ id: organizations.id, name: organizations.name, role: organizationMembers.role })
+    .from(organizationMembers)
+    .innerJoin(organizations, eq(organizations.id, organizationMembers.organizationId))
+    .where(eq(organizationMembers.userId, userId))
+    .orderBy(asc(organizations.name))
+}
