@@ -8,6 +8,7 @@ import { type ApiClient, ApiError } from './api/client.ts'
 import { ApiProvider } from './api/context.tsx'
 import { shouldRetry } from './api/errors.ts'
 import { Announcer } from './components/announcer.tsx'
+import { HeadingFocusProvider } from './components/page-title.tsx'
 import type { RealtimeClient } from './realtime/client.ts'
 import { RealtimeProvider } from './realtime/context.tsx'
 import type { createAppRouter } from './router.tsx'
@@ -56,13 +57,15 @@ export function App({
     <QueryClientProvider client={queryClient}>
       <AccountsProvider client={accounts}>
         <ApiProvider client={api}>
-          <AccountScope>
-            <Announcer>
-              <RealtimeProvider client={realtime}>
-                <RouterProvider router={router} />
-              </RealtimeProvider>
-            </Announcer>
-          </AccountScope>
+          <HeadingFocusProvider>
+            <AccountScope>
+              <Announcer>
+                <RealtimeProvider client={realtime}>
+                  <RouterProvider router={router} />
+                </RealtimeProvider>
+              </Announcer>
+            </AccountScope>
+          </HeadingFocusProvider>
         </ApiProvider>
       </AccountsProvider>
     </QueryClientProvider>

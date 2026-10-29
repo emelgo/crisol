@@ -11,6 +11,7 @@ import { outcomeText, useApprovals } from '../components/approval-queue.tsx'
 import { CopyField } from '../components/copy-field.tsx'
 import { FormError } from '../components/field.tsx'
 import styles from '../components/list.module.css'
+import { PageTitle } from '../components/page-title.tsx'
 import settings from './ai-settings.module.css'
 
 const MODES: AiMode[] = ['readOnly', 'assistant', 'copilot']
@@ -49,7 +50,7 @@ export function AiSettings() {
 
   return (
     <section>
-      <h1>{t('ai.title')}</h1>
+      <PageTitle>{t('ai.title')}</PageTitle>
       {current.data && (
         <>
           <section aria-labelledby="conector">

@@ -5,6 +5,7 @@ import { useAccounts } from '../account/context.tsx'
 import { useAnnounce } from '../components/announcer.tsx'
 import { Field, FormError } from '../components/field.tsx'
 import styles from '../components/form.module.css'
+import { PageTitle } from '../components/page-title.tsx'
 
 export function Profile() {
   const { t } = useTranslation()
@@ -25,7 +26,7 @@ export function Profile() {
 
   return (
     <section>
-      <h1>{t('profile.title')}</h1>
+      <PageTitle>{t('profile.title')}</PageTitle>
       <p>{account.email}</p>
       <form className={styles.form} onSubmit={submit}>
         <Field label={t('account.name')} name="name" defaultValue={account.name} maxLength={80} required />

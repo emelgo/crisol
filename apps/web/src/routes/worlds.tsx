@@ -5,6 +5,7 @@ import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
 import { CreateForm } from '../components/create-form.tsx'
 import styles from '../components/list.module.css'
+import { PageTitle } from '../components/page-title.tsx'
 import { RenamableItem } from '../components/renamable-item.tsx'
 
 export function Worlds() {
@@ -30,7 +31,7 @@ export function Worlds() {
 
   return (
     <section>
-      <h1>{t('worlds.title')}</h1>
+      <PageTitle>{t('worlds.title')}</PageTitle>
       {canCreate && (
         <p>
           <Link to="/historial">{t('history.organizationLink')}</Link>

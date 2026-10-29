@@ -8,6 +8,7 @@ import { useAnnounce } from '../components/announcer.tsx'
 import { Field, FormError } from '../components/field.tsx'
 import form from '../components/form.module.css'
 import list from '../components/list.module.css'
+import { PageTitle } from '../components/page-title.tsx'
 
 const route = getRouteApi('/unirse/$secret')
 
@@ -32,7 +33,7 @@ export function Join() {
   if (!info.data) {
     return (
       <section>
-        <h1>{t('join.invalidTitle')}</h1>
+        <PageTitle>{t('join.invalidTitle')}</PageTitle>
         <p>{t('join.invalidBody')}</p>
       </section>
     )
@@ -69,7 +70,7 @@ export function Join() {
   const { campaignName, worldName, masterName } = info.data
   return (
     <section>
-      <h1>{t('join.title', { campaign: campaignName })}</h1>
+      <PageTitle>{t('join.title', { campaign: campaignName })}</PageTitle>
       <p>{masterName ? t('join.byMaster', { world: worldName, master: masterName }) : worldName}</p>
       <FormError message={error} />
       {account ? (

@@ -8,6 +8,7 @@ import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
 import { FormError } from '../components/field.tsx'
 import styles from '../components/list.module.css'
+import { PageTitle } from '../components/page-title.tsx'
 
 const worldRoute = getRouteApi('/mundos/$worldId/papelera')
 
@@ -53,7 +54,7 @@ function TrashPage({ title, back, scope }: { title: string; back: ReactNode; sco
   return (
     <section>
       <p>{back}</p>
-      <h1>{title}</h1>
+      <PageTitle>{title}</PageTitle>
       <FormError message={trash.error ? errorText(trash.error) : null} />
       {trash.data &&
         (trash.data.items.length === 0 ? (

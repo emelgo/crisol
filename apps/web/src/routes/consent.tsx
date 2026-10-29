@@ -7,6 +7,7 @@ import { useApi } from '../api/context.tsx'
 import { FormError } from '../components/field.tsx'
 import form from '../components/form.module.css'
 import styles from '../components/list.module.css'
+import { PageTitle } from '../components/page-title.tsx'
 
 /** Sin nombre, el dominio del cliente (los clientes CIMD se identifican por una URL) */
 function fallbackName(clientId: string) {
@@ -42,7 +43,7 @@ export function Consent() {
     // Sin sesión aquí: caducó durante la autorización. La consulta firmada no sirve fuera de este flujo
     return (
       <section>
-        <h1>{t('consent.expiredTitle')}</h1>
+        <PageTitle>{t('consent.expiredTitle')}</PageTitle>
         <p>{t('consent.expiredBody')}</p>
       </section>
     )
@@ -60,7 +61,7 @@ export function Consent() {
 
   return (
     <section>
-      <h1>{t('consent.title', { client })}</h1>
+      <PageTitle>{t('consent.title', { client })}</PageTitle>
       <p>{t('consent.body', { client })}</p>
       <p>{t('consent.history')}</p>
       {!isOwner && <FormError message={t('consent.ownerOnly')} />}

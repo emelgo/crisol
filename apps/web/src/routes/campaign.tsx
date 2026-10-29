@@ -11,6 +11,7 @@ import { CopyField } from '../components/copy-field.tsx'
 import { FormError } from '../components/field.tsx'
 import form from '../components/form.module.css'
 import styles from '../components/list.module.css'
+import { PageTitle } from '../components/page-title.tsx'
 import { RemoveMemberConfirm, useRemoveMember } from '../components/remove-member.tsx'
 
 const route = getRouteApi('/mundos/$worldId/campanas/$campaignId')
@@ -40,7 +41,7 @@ export function CampaignPage() {
   if (!world || !campaign) {
     return (
       <section>
-        <h1>{t('campaign.notFound')}</h1>
+        <PageTitle>{t('campaign.notFound')}</PageTitle>
         <Link to="/mundos">{t('worlds.title')}</Link>
       </section>
     )
@@ -53,7 +54,7 @@ export function CampaignPage() {
           {world.name}
         </Link>
       </p>
-      <h1>{campaign.name}</h1>
+      <PageTitle>{campaign.name}</PageTitle>
       <MembersPanel campaign={campaign} />
       {campaign.role === 'master' && <InvitationPanel campaignId={campaignId} />}
     </section>

@@ -1,5 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { Fragment, type ReactNode, useState } from 'react'
+import { useHeadingFocusRequest } from '../components/page-title.tsx'
 import { useAccounts } from './context.tsx'
 
 /**
@@ -8,6 +9,7 @@ import { useAccounts } from './context.tsx'
  */
 export function AccountScope({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient()
+  const focusRequest = useHeadingFocusRequest()
   const { account, pending } = useAccounts().useAccount()
   const email = account?.email ?? null
   // undefined: aún no se sabe cuál es (la primera vez no hay nada de otra cuenta que quitar)
@@ -17,8 +19,12 @@ export function AccountScope({ children }: { children: ReactNode }) {
   })
   if (!pending && email !== scope.email) {
     const changed = scope.email !== undefined
-    // Aquí, durante el render: lo de dentro no llega a pintarse con la caché de la cuenta anterior
-    if (changed) queryClient.clear()
+    // Aquí, durante el render: lo de dentro no llega a pintarse con la caché de la cuenta anterior. El foco, que se
+    // pierde al volver a montarlo todo, irá al título de la página
+    if (changed) {
+      queryClient.clear()
+      focusRequest.current = true
+    }
     setScope({ email, generation: scope.generation + (changed ? 1 : 0) })
   }
   return <Fragment key={scope.generation}>{children}</Fragment>

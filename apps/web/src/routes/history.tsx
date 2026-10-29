@@ -10,6 +10,7 @@ import { useErrorText } from '../api/errors.ts'
 import { useAnnounce } from '../components/announcer.tsx'
 import { FormError } from '../components/field.tsx'
 import styles from '../components/list.module.css'
+import { PageTitle } from '../components/page-title.tsx'
 import { summaryOf, undoLayers } from '../summaries.ts'
 
 const worldRoute = getRouteApi('/mundos/$worldId/historial')
@@ -62,7 +63,7 @@ function HistoryPage({ title, back, scope }: { title: string; back: ReactNode; s
   return (
     <section>
       <p>{back}</p>
-      <h1>{title}</h1>
+      <PageTitle>{title}</PageTitle>
       <FormError message={history.error ? errorText(history.error) : null} />
       {history.data &&
         (entries.length === 0 ? (

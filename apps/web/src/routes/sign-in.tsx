@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { Field, FormError } from '../components/field.tsx'
 import styles from '../components/form.module.css'
+import { PageTitle } from '../components/page-title.tsx'
 
 export function SignIn() {
   const { t } = useTranslation()
@@ -25,7 +26,7 @@ export function SignIn() {
 
   return (
     <section>
-      <h1>{t('account.signIn')}</h1>
+      <PageTitle>{t('account.signIn')}</PageTitle>
       <form className={styles.form} onSubmit={submit}>
         <Field label={t('account.email')} name="email" type="email" autoComplete="email" required />
         <Field label={t('account.password')} name="password" type="password" autoComplete="current-password" required />

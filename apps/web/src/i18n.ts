@@ -6,7 +6,8 @@ export const es = {
   app: {
     name: 'Crisol',
     tagline: 'Mundos de rol y mesa virtual',
-    accountNav: 'Cuenta'
+    accountNav: 'Cuenta',
+    pageTitle: '{{page}} · Crisol'
   },
   account: {
     signIn: 'Entrar',

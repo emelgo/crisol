@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { Field, FormError } from '../components/field.tsx'
 import styles from '../components/form.module.css'
+import { PageTitle } from '../components/page-title.tsx'
 
 const route = getRouteApi('/arranque/$secret')
 
@@ -22,7 +23,7 @@ export function Bootstrap() {
   if (!info.data) {
     return (
       <section>
-        <h1>{t('bootstrap.invalidTitle')}</h1>
+        <PageTitle>{t('bootstrap.invalidTitle')}</PageTitle>
         <p>{t('bootstrap.invalidBody')}</p>
       </section>
     )
@@ -45,7 +46,7 @@ export function Bootstrap() {
 
   return (
     <section>
-      <h1>{t('bootstrap.title')}</h1>
+      <PageTitle>{t('bootstrap.title')}</PageTitle>
       <p>
         {t('bootstrap.organization')} <strong>{info.data.organizationName}</strong>
       </p>

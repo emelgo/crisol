@@ -5,6 +5,7 @@ import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
 import { CreateForm } from '../components/create-form.tsx'
 import styles from '../components/list.module.css'
+import { PageTitle } from '../components/page-title.tsx'
 import { RenamableItem } from '../components/renamable-item.tsx'
 
 const route = getRouteApi('/mundos/$worldId')
@@ -35,7 +36,7 @@ export function WorldPage() {
   if (!world) {
     return (
       <section>
-        <h1>{t('world.notFound')}</h1>
+        <PageTitle>{t('world.notFound')}</PageTitle>
         <Link to="/mundos">{t('worlds.title')}</Link>
       </section>
     )
@@ -46,7 +47,7 @@ export function WorldPage() {
       <p>
         <Link to="/mundos">{t('worlds.title')}</Link>
       </p>
-      <h1>{world.name}</h1>
+      <PageTitle>{world.name}</PageTitle>
       {world.role === 'master' && (
         <p>
           <Link to="/mundos/$worldId/historial" params={{ worldId }}>
