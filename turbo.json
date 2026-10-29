@@ -1,5 +1,6 @@
 {
   "$schema": "https://turbo.build/schema.json",
+  "globalPassThroughEnv": ["TEST_DATABASE_URL", "TEST_VALKEY_URL"],
   "tasks": {
     "typecheck": {
       "dependsOn": ["^typecheck"]

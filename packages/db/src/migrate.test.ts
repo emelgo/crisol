@@ -13,7 +13,7 @@ describe('migraciones', () => {
   })
 
   afterAll(async () => {
-    await conn.close()
+    await conn?.close()
   })
 
   it('activan la búsqueda sin acentos y por parecido', async () => {
