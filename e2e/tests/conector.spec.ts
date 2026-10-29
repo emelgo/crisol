@@ -1,7 +1,7 @@
 import { createHash, randomBytes } from 'node:crypto'
 import { expect, test } from '@playwright/test'
 import { E2E_PORT } from '../servidor.ts'
-import { freshOwner, owner } from './ayudas.ts'
+import { freshOwner, owner, signOut } from './ayudas.ts'
 
 const BASE = `http://127.0.0.1:${E2E_PORT}`
 // Como la de claude.ai: HTTPS. La prueba la intercepta para leer el código
@@ -20,7 +20,7 @@ test('el propietario conecta una aplicación por OAuth y esta lista sus mundos p
     data: { redirect_uris: [REDIRECT], token_endpoint_auth_method: 'none', client_name: 'Claude de pruebas' }
   })
   const { client_id } = (await created.json()) as { client_id: string }
-  await page.getByRole('button', { name: 'Salir' }).click()
+  await signOut(page)
   await expect(page).toHaveURL('/entrar')
 
   let callback: URL | undefined

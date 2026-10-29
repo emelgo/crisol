@@ -8,6 +8,25 @@ import { e2eDatabaseUrl } from '../servidor.ts'
 export const owner = { name: 'Enrique', email: 'enrique@crisol.test', password: 'una-clave-larga' }
 
 /** Base de datos vacía y el propietario con su cuenta recién creada y la sesión abierta en `page` */
+/** El menú de la cuenta: se abre con el nombre, en la barra */
+async function openAccountMenu(page: Page) {
+  const account = page.getByRole('navigation', { name: 'Cuenta' })
+  await account.locator('button[aria-expanded="false"]').click()
+  return account
+}
+
+/** Cierra la sesión desde el menú de la cuenta */
+export async function signOut(page: Page) {
+  const account = await openAccountMenu(page)
+  await account.getByRole('button', { name: 'Cerrar sesión' }).click()
+}
+
+/** Va al perfil desde el menú de la cuenta */
+export async function openProfile(page: Page) {
+  const account = await openAccountMenu(page)
+  await account.getByRole('link', { name: 'Perfil' }).click()
+}
+
 export async function freshOwner(page: Page) {
   const conn = connect(e2eDatabaseUrl(), { max: 1 })
   try {

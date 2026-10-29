@@ -4,7 +4,7 @@ import { resetDatabase } from '@crisol/db/testing'
 import { issueBootstrap } from '@crisol/server/bootstrap'
 import { expect, test } from '@playwright/test'
 import { e2eDatabaseUrl } from '../servidor.ts'
-import { newPlayer } from './ayudas.ts'
+import { newPlayer, openProfile } from './ayudas.ts'
 
 // WCAG 2.1 AA: cero fallos críticos o graves (CONSTRAINTS.md)
 const WCAG = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']
@@ -47,7 +47,7 @@ test('arranque, perfil, mundos, campañas, avisos, historial, papelera y consent
     await page.getByLabel('Email').fill('enrique@crisol.test')
     await page.getByLabel('Contraseña').fill('una-clave-larga')
     await page.getByRole('button', { name: 'Crear la cuenta' }).click()
-    await page.getByRole('link', { name: 'Enrique' }).click()
+    await openProfile(page)
     await expect(page.getByRole('heading', { name: 'Perfil' })).toBeVisible()
     await check()
     await page.goto('/mundos')
@@ -102,7 +102,10 @@ test('arranque, perfil, mundos, campañas, avisos, historial, papelera y consent
     await page.goto(invitationLink)
     await expect(page.getByRole('button', { name: 'Entrar en La Marca como jugador' })).toBeVisible()
     await check()
-    await page.getByRole('button', { name: 'Salir' }).click()
+    // El menú de la cuenta, abierto
+    await page.getByRole('navigation', { name: 'Cuenta' }).locator('button[aria-expanded]').click()
+    await check()
+    await page.getByRole('button', { name: 'Cerrar sesión' }).click()
     await page.goto(invitationLink)
     await expect(page.getByRole('button', { name: 'Crear la cuenta y entrar' })).toBeVisible()
     await check()

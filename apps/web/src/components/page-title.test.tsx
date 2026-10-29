@@ -7,6 +7,7 @@ import { fakeAccountClient } from '../account/fake.ts'
 import { fakeApi } from '../api/fake.ts'
 import { App } from '../app.tsx'
 import { createAppRouter } from '../router.tsx'
+import { signOut } from '../testing.ts'
 
 const ORG = { id: crypto.randomUUID(), name: 'Fateforge', role: 'owner' as const }
 const world: World = { id: crypto.randomUUID(), organizationId: ORG.id, name: 'Eana', role: 'master', version: 1 }
@@ -56,7 +57,7 @@ describe('el título de cada página', () => {
 
   it('al salir, el foco va al título de «Entrar»', async () => {
     renderAt('/mundos')
-    await userEvent.click(await screen.findByRole('button', { name: 'Salir' }))
+    await signOut()
     await waitFor(async () => expect(document.activeElement).toBe(await h1('Entrar')))
   })
 })

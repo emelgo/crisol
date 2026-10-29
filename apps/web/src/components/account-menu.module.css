@@ -1,0 +1,101 @@
+/* La cuenta en la barra oscura: el nombre y lo de entrar, en la letra de las secciones */
+.account {
+  position: relative;
+}
+
+.trigger,
+.signIn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: var(--target);
+  padding: 0 var(--space-2);
+  border: 0;
+  background: none;
+  color: var(--color-chrome-text);
+  font-family: var(--font-display);
+  font-size: 1.0625rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.trigger:hover,
+.signIn:hover,
+.trigger[aria-expanded="true"] {
+  color: var(--color-chrome-accent);
+}
+
+.trigger svg {
+  transition: transform 120ms ease-out;
+}
+
+.trigger[aria-expanded="true"] svg {
+  transform: rotate(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trigger svg {
+    transition: none;
+  }
+}
+
+/* El desplegable: una caja de la hoja bajo el nombre, alineada a la derecha */
+.panel {
+  composes: frame from "./frame.module.css";
+  position: absolute;
+  inset-block-start: calc(100% + var(--space-2));
+  inset-inline-end: 0;
+  z-index: 10;
+  min-inline-size: 14rem;
+  padding: var(--space-3) var(--space-4) var(--space-2);
+  color: var(--color-text);
+}
+
+/* El email, en texto corriente: en mayúsculas se lee mal */
+.email {
+  margin: 0 0 var(--space-2);
+  padding-block-end: var(--space-2);
+  border-block-end: 2px solid var(--color-accent);
+  color: var(--color-muted);
+  font-size: 0.875rem;
+  overflow-wrap: anywhere;
+}
+
+.items {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.items a,
+.items button {
+  display: flex;
+  align-items: center;
+  inline-size: 100%;
+  min-block-size: var(--target);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-text);
+  font-family: var(--font-display);
+  font-size: 1.0625rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-align: start;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.items a:hover,
+.items button:hover {
+  color: var(--color-accent-text);
+}
+
+/* Dentro de la caja el fondo es la superficie: el foco, en el color del texto */
+.account .panel :focus-visible {
+  outline-color: var(--color-focus);
+}

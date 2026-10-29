@@ -13,7 +13,7 @@ export const es = {
   },
   account: {
     signIn: 'Entrar',
-    signOut: 'Salir',
+    signOut: 'Cerrar sesión',
     name: 'Nombre',
     email: 'Email',
     password: 'Contraseña',
