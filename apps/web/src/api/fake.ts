@@ -91,6 +91,7 @@ export function fakeApi(
     title: string
     icon: string | null
     properties: PageProperty[]
+    locked?: boolean
     version: number
   }
   const pages: StoredPage[] = (options.pages ?? []).map((page) => ({
@@ -149,7 +150,7 @@ export function fakeApi(
     return {
       ...summary(page),
       properties: page.properties.map((p) => ({ ...p })) as PageProperty[],
-      locked: false,
+      locked: page.locked ?? false,
       path,
       updatedAt: new Date().toISOString()
     }
@@ -359,11 +360,12 @@ export function fakeApi(
       place(page, before, after)
       return pageView(page)
     },
-    updatePage: ({ pageId, title, icon }) => {
+    updatePage: ({ pageId, title, icon, locked }) => {
       const page = pageById(pageId)
       Object.assign(page, {
         ...(title !== undefined ? { title } : {}),
         ...(icon !== undefined ? { icon } : {}),
+        ...(locked !== undefined ? { locked } : {}),
         version: page.version + 1
       })
       return pageView(page)

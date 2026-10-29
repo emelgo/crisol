@@ -5,6 +5,7 @@ import { createApiClient } from './api/client.ts'
 import { App } from './app.tsx'
 import { createRealtimeClient } from './realtime/client.ts'
 import { createAppRouter } from './router.tsx'
+import { createCollabClient } from './wiki/collab.tsx'
 
 const root = document.getElementById('root')
 if (!root) throw new Error('Falta el elemento #root')
@@ -15,6 +16,7 @@ createRoot(root).render(
       accounts={createAccountClient()}
       api={createApiClient()}
       realtime={createRealtimeClient()}
+      collab={createCollabClient()}
     />
   </StrictMode>
 )

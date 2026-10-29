@@ -13,16 +13,26 @@
   "dependencies": {
     "@better-auth/oauth-provider": "catalog:",
     "@crisol/contracts": "workspace:*",
+    "@crisol/editor": "workspace:*",
     "@fontsource/barlow": "catalog:",
     "@fontsource/barlow-condensed": "catalog:",
+    "@hocuspocus/provider": "catalog:",
     "@tanstack/react-query": "catalog:",
     "@tanstack/react-router": "catalog:",
     "@tanstack/react-virtual": "catalog:",
+    "@tiptap/core": "catalog:",
+    "@tiptap/extension-collaboration": "catalog:",
+    "@tiptap/extension-collaboration-caret": "catalog:",
+    "@tiptap/pm": "catalog:",
+    "@tiptap/react": "catalog:",
+    "@tiptap/y-tiptap": "catalog:",
     "better-auth": "catalog:",
     "i18next": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
-    "react-i18next": "catalog:"
+    "react-i18next": "catalog:",
+    "y-protocols": "catalog:",
+    "yjs": "catalog:"
   },
   "devDependencies": {
     "@testing-library/react": "catalog:",

@@ -60,6 +60,9 @@ export function summaryOf(
     case 'updatePage': {
       // Renombrar (hecho: from y to; pedido: el título nuevo y el de ahora) o, si no, cambiar el icono
       const renames = details.to !== undefined || (details.page !== undefined && details.title !== undefined)
+      if (!renames && 'locked' in details) {
+        return say(details.locked ? 'lockPage' : 'unlockPage', { title: text(details.page ?? details.title) })
+      }
       if (!renames && 'icon' in details) {
         return say(details.icon ? 'setPageIcon' : 'removePageIcon', { title: text(details.page ?? details.title) })
       }

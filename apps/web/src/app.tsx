@@ -12,6 +12,7 @@ import { HeadingFocusProvider } from './components/page-title.tsx'
 import type { RealtimeClient } from './realtime/client.ts'
 import { RealtimeProvider } from './realtime/context.tsx'
 import type { createAppRouter } from './router.tsx'
+import { type CollabClient, CollabClientProvider } from './wiki/collab.tsx'
 import './i18n.ts'
 import './styles/tokens.css'
 import './styles/base.css'
@@ -35,12 +36,15 @@ export function App({
   router,
   accounts,
   api,
-  realtime = NO_REALTIME
+  realtime = NO_REALTIME,
+  collab = null
 }: {
   router: ReturnType<typeof createAppRouter>
   accounts: AccountClient
   api: ApiClient
   realtime?: RealtimeClient
+  /** Sin él (las pruebas de componentes) no hay edición en vivo: el cuerpo de las páginas no se abre */
+  collab?: CollabClient | null
 }) {
   const [queryClient] = useState(() => {
     // La API dice que no hay sesión (caducó con la pestaña abierta): se vuelve a pedir y, sin ella, se va a entrar
@@ -61,7 +65,9 @@ export function App({
             <AccountScope>
               <Announcer>
                 <RealtimeProvider client={realtime}>
-                  <RouterProvider router={router} />
+                  <CollabClientProvider client={collab}>
+                    <RouterProvider router={router} />
+                  </CollabClientProvider>
                 </RealtimeProvider>
               </Announcer>
             </AccountScope>

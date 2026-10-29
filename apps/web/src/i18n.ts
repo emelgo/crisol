@@ -165,6 +165,16 @@ export const es = {
     useOther: 'Usar',
     remove: 'Quitar el icono'
   },
+  editor: {
+    body: 'Texto de la página',
+    label: 'Texto de la página',
+    offline: 'Sin conexión: se guardará al volver.',
+    task: 'Por hacer: {{text}}',
+    taskDone: 'Hecho: {{text}}',
+    lock: 'Poner en lectura',
+    unlock: 'Quitar el candado',
+    locked: 'En lectura: quita el candado para editar.'
+  },
   tabs: {
     title: 'Páginas abiertas',
     recent: 'Abiertas',
@@ -238,6 +248,8 @@ export const es = {
       movePageToTop: 'movió «{{title}}» al primer nivel',
       setPageIcon: 'cambió el icono de «{{title}}»',
       removePageIcon: 'quitó el icono de «{{title}}»',
+      lockPage: 'puso «{{title}}» en lectura',
+      unlockPage: 'quitó el candado de «{{title}}»',
       setPageProperties: 'cambió las propiedades de «{{title}}»',
       deletePage: 'borró la página «{{title}}»',
       restorePage: 'restauró la página «{{title}}»',
@@ -293,6 +305,8 @@ export const es = {
       movePageToTop: 'mover «{{title}}» al primer nivel',
       setPageIcon: 'cambiar el icono de «{{title}}»',
       removePageIcon: 'quitar el icono de «{{title}}»',
+      lockPage: 'poner «{{title}}» en lectura',
+      unlockPage: 'quitar el candado de «{{title}}»',
       setPageProperties: 'cambiar las propiedades de «{{title}}»',
       deletePage: 'borrar la página «{{title}}»',
       restorePage: 'restaurar la página «{{title}}»',
