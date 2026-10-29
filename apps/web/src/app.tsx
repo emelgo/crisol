@@ -3,6 +3,7 @@ import { RouterProvider } from '@tanstack/react-router'
 import { useState } from 'react'
 import type { AccountClient } from './account/client.ts'
 import { AccountsProvider } from './account/context.tsx'
+import { AccountScope } from './account/scope.tsx'
 import type { ApiClient } from './api/client.ts'
 import { ApiProvider } from './api/context.tsx'
 import { shouldRetry } from './api/errors.ts'
@@ -44,9 +45,11 @@ export function App({
     <QueryClientProvider client={queryClient}>
       <AccountsProvider client={accounts}>
         <ApiProvider client={api}>
-          <RealtimeProvider client={realtime}>
-            <RouterProvider router={router} />
-          </RealtimeProvider>
+          <AccountScope>
+            <RealtimeProvider client={realtime}>
+              <RouterProvider router={router} />
+            </RealtimeProvider>
+          </AccountScope>
         </ApiProvider>
       </AccountsProvider>
     </QueryClientProvider>

@@ -44,11 +44,10 @@ export function RealtimeProvider({ client, children }: { client: RealtimeClient;
   const { account } = useAccounts().useAccount()
   const [notices, setNotices] = useState<JoinNotice[]>([])
   const [newVersion, setNewVersion] = useState(false)
-  // Otra cuenta, otro canal
+  // Otra cuenta, otro canal (y los avisos de la anterior se van con AccountScope)
   const signedIn = account?.email ?? null
 
   useEffect(() => {
-    setNotices([])
     if (!signedIn) return
     return client.connect({
       onMessage: (message) => {

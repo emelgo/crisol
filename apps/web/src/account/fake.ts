@@ -19,6 +19,8 @@ export function fakeAccountClient(
     bootstrap?: Record<string, string>
     oauthClients?: Record<string, string>
     invitations?: Record<string, FakeInvitation>
+    /** El nombre de cada cuenta al entrar (por defecto, Enrique) */
+    names?: Record<string, string>
   } = {}
 ) {
   let account = options.account ?? null
@@ -44,7 +46,7 @@ export function fakeAccountClient(
     async signIn(email, password): Promise<Result> {
       calls.push(`signIn ${email}`)
       if (passwords.get(email) !== password) return { ok: false, code: 'INVALID_CREDENTIALS' }
-      set({ name: 'Enrique', email })
+      set({ name: options.names?.[email] ?? 'Enrique', email })
       return { ok: true }
     },
     async signOut() {
