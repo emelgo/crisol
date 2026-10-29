@@ -10,13 +10,15 @@ import form from '../components/form.module.css'
 import styles from '../components/list.module.css'
 import { PageTitle } from '../components/page-title.tsx'
 
-/** Sin nombre, el dominio del cliente (los clientes CIMD se identifican por una URL) */
-function fallbackName(clientId: string) {
-  try {
-    return new URL(clientId).hostname
-  } catch {
-    return clientId
-  }
+/**
+ * Cómo se presenta la aplicación que pide conectarse. Su nombre lo pone quien publica sus metadatos: si el cliente es
+ * una URL (CIMD, como claude.ai), va siempre con su dominio, que no se puede falsear («Claude (claude.ai)»); sin
+ * nombre, solo el dominio. Si no es una URL (un cliente que registró el propietario), su nombre o el identificador
+ */
+export function clientLabel(clientId: string, name: string | null) {
+  const host = URL.canParse(clientId) ? new URL(clientId).hostname : null
+  if (!host) return name || clientId
+  return name && name !== host ? `${name} (${host})` : host
 }
 
 /**
@@ -50,7 +52,7 @@ export function Consent() {
     )
   }
   if (name.isPending || organizations.isPending) return null
-  const client = name.data ?? fallbackName(clientId)
+  const client = clientLabel(clientId, name.data ?? null)
   const isOwner = organizations.data?.organizations.some((o) => o.role === 'owner') ?? false
 
   const answer = async (accept: boolean) => {
