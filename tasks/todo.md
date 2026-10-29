@@ -8,7 +8,8 @@ Cada vía nueva por la que salen datos amplía `@fugas` en la misma tarea.
 
 ## Fase 1: Páginas
 
-- [ ] **1. Páginas y árbol en la API**
+- [x] **1. Páginas y árbol en la API** — hecha. `getPagePath` quedó dentro de `getPage` (con la ruta), y
+  `listPageTree` es la acción de `ver_arbol`.
   - Acepta:
     - La tabla `pages` está en `TRACKED_TABLES` (mundo, padre, orden, título, icono, portada, propiedades, candado,
       hoja, `deleted_at`).
