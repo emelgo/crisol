@@ -1,5 +1,5 @@
 import { Link, useNavigate } from '@tanstack/react-router'
-import { type FocusEvent, useEffect, useId, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import styles from './account-menu.module.css'
@@ -19,14 +19,25 @@ export function AccountMenu() {
   const trigger = useRef<HTMLButtonElement>(null)
   const panelId = useId()
 
-  // Pulsar fuera lo cierra: solo se escucha mientras está abierto
+  // Mientras está abierto: pulsar fuera o llevar el foco fuera lo cierra; Escape también, y el foco vuelve al nombre
   useEffect(() => {
     if (!open) return
-    const outside = (event: PointerEvent) => {
+    const outside = (event: Event) => {
       if (!root.current?.contains(event.target as Node)) setOpen(false)
     }
+    const onEscape = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return
+      setOpen(false)
+      trigger.current?.focus()
+    }
     document.addEventListener('pointerdown', outside)
-    return () => document.removeEventListener('pointerdown', outside)
+    document.addEventListener('focusin', outside)
+    document.addEventListener('keydown', onEscape)
+    return () => {
+      document.removeEventListener('pointerdown', outside)
+      document.removeEventListener('focusin', outside)
+      document.removeEventListener('keydown', onEscape)
+    }
   }, [open])
 
   if (pending) return null
@@ -38,21 +49,8 @@ export function AccountMenu() {
     )
   }
 
-  const leave = (event: FocusEvent<HTMLDivElement>) => {
-    if (!root.current?.contains(event.relatedTarget as Node | null)) setOpen(false)
-  }
-
   return (
-    <div
-      ref={root}
-      className={styles.account}
-      onBlur={leave}
-      onKeyDown={(event) => {
-        if (event.key !== 'Escape' || !open) return
-        setOpen(false)
-        trigger.current?.focus()
-      }}
-    >
+    <div ref={root} className={styles.account}>
       <button
         ref={trigger}
         type="button"
