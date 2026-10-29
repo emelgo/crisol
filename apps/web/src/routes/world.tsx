@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
+import { Banner } from '../components/banner.tsx'
 import { CreateForm } from '../components/create-form.tsx'
 import { FormError } from '../components/field.tsx'
 import styles from '../components/list.module.css'
@@ -49,18 +50,20 @@ export function WorldPage() {
 
   return (
     <section>
-      <p>
-        <Link to="/mundos">{t('worlds.title')}</Link>
-      </p>
-      <PageTitle>{world.name}</PageTitle>
+      <Banner
+        crumb={<Link to="/mundos">{t('worlds.title')}</Link>}
+        title={world.name}
+        detail={t(world.role === 'master' ? 'world.asMaster' : 'world.asPlayer')}
+        stats={campaigns.data ? [{ label: t('campaigns.title'), value: campaigns.data.campaigns.length }] : []}
+      />
       {world.role === 'master' && (
         <p>
           <Link to="/mundos/$worldId/historial" params={{ worldId }}>
-            {t('history.title')}
+            {t('history.worldTitle', { world: world.name })}
           </Link>
           {' · '}
           <Link to="/mundos/$worldId/papelera" params={{ worldId }}>
-            {t('trash.title')}
+            {t('trash.worldTitle', { world: world.name })}
           </Link>
         </p>
       )}

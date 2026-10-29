@@ -58,7 +58,7 @@ test('al salir no queda nada del máster en la pestaña, tampoco para la jugador
 
   // Mientras llegan sus mundos, no se ven los del máster
   let release = await holdApi(page)
-  await page.getByRole('link', { name: 'Mis mundos' }).click()
+  await page.getByRole('main').getByRole('link', { name: 'Mis mundos' }).click()
   await expect(page.getByRole('heading', { level: 1, name: 'Mis mundos' })).toBeVisible()
   await expect(main.getByText('Otro')).toHaveCount(0)
   await expect(main.getByText('Eana')).toHaveCount(0)

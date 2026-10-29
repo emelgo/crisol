@@ -7,6 +7,7 @@ import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
 import { useAnnounce } from '../components/announcer.tsx'
+import { Banner, type Stat } from '../components/banner.tsx'
 import { BusyButton } from '../components/busy-button.tsx'
 import { CopyField } from '../components/copy-field.tsx'
 import { FormError } from '../components/field.tsx'
@@ -56,15 +57,46 @@ export function CampaignPage() {
 
   return (
     <section>
-      <p>
-        <Link to="/mundos/$worldId" params={{ worldId }}>
-          {world.name}
-        </Link>
-      </p>
-      <PageTitle>{campaign.name}</PageTitle>
+      <CampaignBanner campaign={campaign} worldName={world.name} />
       <MembersPanel campaign={campaign} />
       {campaign.role === 'master' && <InvitationPanel campaignId={campaignId} />}
     </section>
+  )
+}
+
+/** La franja: de qué mundo es, tu papel, cuántos juegan y, para el máster, cuántos han entrado con el enlace */
+function CampaignBanner({ campaign, worldName }: { campaign: Campaign; worldName: string }) {
+  const { t } = useTranslation()
+  const api = useApi()
+  const campaignId = campaign.id
+  const master = campaign.role === 'master'
+  // Las mismas consultas que los paneles de abajo: comparten caché y se piden una vez
+  const members = useQuery({
+    queryKey: ['members', campaignId],
+    queryFn: () => api.call('listMembers', { campaignId })
+  })
+  const invitation = useQuery({
+    queryKey: ['invitation', campaignId],
+    queryFn: () => api.call('getInvitation', { campaignId }),
+    enabled: master
+  })
+  const stats: Stat[] = []
+  if (members.data) {
+    const players = members.data.members.filter((member) => member.role === 'player').length
+    stats.push({ label: t('campaign.players'), value: players })
+  }
+  if (master && invitation.data) stats.push({ label: t('campaign.joined'), value: invitation.data.joins })
+  return (
+    <Banner
+      crumb={
+        <Link to="/mundos/$worldId" params={{ worldId: campaign.worldId }}>
+          {worldName}
+        </Link>
+      }
+      title={campaign.name}
+      detail={t(master ? 'campaign.asMaster' : 'campaign.asPlayer', { world: worldName })}
+      stats={stats}
+    />
   )
 }
 

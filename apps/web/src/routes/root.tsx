@@ -28,6 +28,7 @@ export function RootLayout() {
         <Link to="/" className={styles.brand}>
           {t('app.name')}
         </Link>
+        <SectionsNav />
         <nav className={styles.nav} aria-label={t('app.accountNav')}>
           <AccountMenu />
           <ThemeToggle />
@@ -42,24 +43,48 @@ export function RootLayout() {
   )
 }
 
-function AccountMenu() {
-  const { t } = useTranslation()
-  const accounts = useAccounts()
+/** Si la cuenta es propietaria de alguna organización: solo ella ve su historial, su papelera y la IA */
+function useIsOwner() {
   const api = useApi()
-  const { account, pending } = accounts.useAccount()
-  const navigate = useNavigate()
-  // Claude solo se conecta con la cuenta del propietario (módulo 0)
+  const { account } = useAccounts().useAccount()
   const organizations = useQuery({
     queryKey: ['organizations'],
     queryFn: () => api.call('listOrganizations', {}),
     enabled: Boolean(account)
   })
-  const isOwner = organizations.data?.organizations.some((o) => o.role === 'owner') ?? false
+  return organizations.data?.organizations.some((o) => o.role === 'owner') ?? false
+}
+
+/** Las secciones de la cuenta, con la actual marcada (aria-current, que pone el Link) */
+function SectionsNav() {
+  const { t } = useTranslation()
+  const { account } = useAccounts().useAccount()
+  const isOwner = useIsOwner()
+  if (!account) return null
+  return (
+    <nav className={styles.sections} aria-label={t('app.sectionsNav')}>
+      <Link to="/mundos">{t('worlds.title')}</Link>
+      {isOwner && (
+        <>
+          <Link to="/historial">{t('history.title')}</Link>
+          <Link to="/papelera">{t('trash.title')}</Link>
+          {/* Claude solo se conecta con la cuenta del propietario (módulo 0) */}
+          <Link to="/ia">{t('ai.link')}</Link>
+        </>
+      )}
+    </nav>
+  )
+}
+
+function AccountMenu() {
+  const { t } = useTranslation()
+  const accounts = useAccounts()
+  const { account, pending } = accounts.useAccount()
+  const navigate = useNavigate()
   if (pending) return null
   if (!account) return <Link to="/entrar">{t('account.signIn')}</Link>
   return (
     <>
-      {isOwner && <Link to="/ia">{t('ai.link')}</Link>}
       <Link to="/perfil">{account.name}</Link>
       <button
         type="button"

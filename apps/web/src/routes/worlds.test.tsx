@@ -21,7 +21,8 @@ describe('mis mundos', () => {
   it('con sesión, la portada lleva a mis mundos', async () => {
     const router = createAppRouter(createMemoryHistory({ initialEntries: ['/'] }))
     render(<App router={router} accounts={signedIn().client} api={fakeApi({ organizations: [ORG] }).client} />)
-    await userEvent.click(await screen.findByRole('link', { name: 'Mis mundos' }))
+    // El de la portada, no el de la barra de secciones
+    await userEvent.click(await within(await screen.findByRole('main')).findByRole('link', { name: 'Mis mundos' }))
     expect(await screen.findByRole('heading', { name: 'Mis mundos' })).toBeDefined()
   })
 
