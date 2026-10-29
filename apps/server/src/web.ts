@@ -8,6 +8,16 @@ const IMMUTABLE = 'public, max-age=31536000, immutable'
 /** La vista previa de un enlace de invitación (WhatsApp, Discord): genérica, sin datos de la campaña */
 const INVITATION_PREVIEW = 'Invitación a una campaña de Crisol'
 
+/**
+ * La versión de la web compilada: su script de entrada, que lleva la huella en el nombre y cambia en cada compilación
+ * con cambios. Sin web o sin script, null
+ */
+export function webBuild(webDir: string): string | null {
+  const index = join(webDir, 'index.html')
+  if (!existsSync(index)) return null
+  return /<script type="module"[^>]*\ssrc="(\/assets\/[^"]+\.js)"/.exec(readFileSync(index, 'utf8'))?.[1] ?? null
+}
+
 /** Sirve la web compilada (apps/web/dist). Las rutas de la app que no son archivos devuelven index.html */
 export function registerWeb(app: FastifyInstance, webDir: string) {
   const index = join(webDir, 'index.html')

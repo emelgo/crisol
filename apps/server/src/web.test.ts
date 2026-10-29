@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { buildApp } from './app.ts'
+import { webBuild } from './web.ts'
 
 const ok = async () => undefined
 
@@ -55,5 +56,18 @@ describe('la web compilada', () => {
   it('un recurso que falta da 404, no la web', async () => {
     const response = await app().inject({ method: 'GET', url: '/assets/no-existe.js' })
     expect(response.statusCode).toBe(404)
+  })
+
+  it('la versión de la web es el script de entrada de index.html (cambia en cada compilación con cambios)', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'web-'))
+    writeFileSync(
+      join(dir, 'index.html'),
+      '<script type="module" crossorigin src="/assets/index-Dk3x_9.js"></script><link href="/assets/index-a.css">'
+    )
+    expect(webBuild(dir)).toBe('/assets/index-Dk3x_9.js')
+    writeFileSync(join(dir, 'index.html'), '<title>sin script</title>')
+    expect(webBuild(dir)).toBeNull()
+    rmSync(dir, { recursive: true, force: true })
+    expect(webBuild(dir)).toBeNull()
   })
 })

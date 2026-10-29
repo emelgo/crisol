@@ -48,6 +48,26 @@ describe('unirse con el enlace', () => {
     expect(router.state.location.pathname).toBe('/mundos/w1/campanas/c1')
   })
 
+  it('si el enlace deja de valer con la página abierta, al volver a la ventana lo dice', async () => {
+    const invitations: Record<string, FakeInvitation> = { abc: invitation() }
+    renderJoin(fakeAccountClient({ account: { name: 'Jugadora', email: 'j@crisol.test' }, invitations }))
+    await screen.findByRole('heading', { name: 'Te invitan a La Marca' })
+    delete invitations.abc
+    // Pasar de una ventana a otra que ya estaba a la vista: no cambia la visibilidad, pero sí el foco
+    window.dispatchEvent(new Event('focus'))
+    expect(await screen.findByRole('heading', { name: 'Este enlace no vale' })).toBeDefined()
+  })
+
+  it('si al entrar el enlace ya no vale, la página lo dice en vez de seguir ofreciéndolo', async () => {
+    const invitations: Record<string, FakeInvitation> = { abc: invitation() }
+    renderJoin(fakeAccountClient({ account: { name: 'Jugadora', email: 'j@crisol.test' }, invitations }))
+    await screen.findByRole('heading', { name: 'Te invitan a La Marca' })
+    delete invitations.abc
+    await userEvent.click(screen.getByRole('button', { name: 'Entrar en La Marca como jugador' }))
+    expect(await screen.findByRole('heading', { name: 'Este enlace no vale' })).toBeDefined()
+    expect(screen.queryByRole('button', { name: 'Entrar en La Marca como jugador' })).toBeNull()
+  })
+
   it('al máster de la campaña se lo dice en vez de unirlo', async () => {
     renderJoin(
       fakeAccountClient({

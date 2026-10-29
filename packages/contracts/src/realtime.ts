@@ -3,6 +3,11 @@
  * vuelven a pedir por la API, que decide qué ve cada cuenta.
  */
 export type RealtimeMessage =
+  /**
+   * Lo primero al conectar: la versión de la web que sirve el servidor (su script de entrada; null en desarrollo). Si
+   * la pestaña tiene otra, es que hubo un despliegue: hay que recargar
+   */
+  | { type: 'hello'; build: string | null }
   /** Algo de eso ha cambiado: la web lo vuelve a pedir */
   | { type: 'changed'; what: 'worlds' }
   | { type: 'changed'; what: 'campaigns'; worldId: string }

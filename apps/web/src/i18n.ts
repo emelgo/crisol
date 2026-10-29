@@ -94,7 +94,9 @@ export const es = {
     title: 'Avisos',
     joined: '{{member}} ha entrado en {{campaign}}.',
     dismissShort: 'Cerrar',
-    dismiss: 'Cerrar el aviso de {{member}}'
+    dismiss: 'Cerrar el aviso de {{member}}',
+    newVersion: 'Hay una versión nueva de Crisol.',
+    reload: 'Recargar'
   },
   list: {
     rename: 'Renombrar',
