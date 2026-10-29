@@ -16,7 +16,7 @@ Comprobación local al acabar cada tarea: `pnpm lint && pnpm typecheck && pnpm t
     - `biome.json`, `tsconfig.base.json`.
     - `scripts/licencias.ts` (+ prueba), `scripts/sala-limpia.test.ts`.
 
-- [ ] **2. CI con todo el listón**
+- [x] **2. CI con todo el listón**
   - Acepta:
     - Un PR muestra: Biome, `tsc`, Vitest con cobertura, gitleaks, licencias, sala limpia, semgrep, osv-scanner y
       dependency-cruiser.
