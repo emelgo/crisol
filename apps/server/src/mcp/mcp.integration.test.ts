@@ -80,6 +80,7 @@ describe('conector MCP con OAuth', () => {
       headers: { cookie, origin: BASE, 'content-type': 'application/json' },
       body: JSON.stringify({ accept: true, oauth_query: consentPage.search.slice(1) })
     })
+    if (!consent.ok) throw new Error(`Permiso rechazado: ${consent.status}`)
     const { url } = (await consent.json()) as { url: string }
     const code = new URL(url).searchParams.get('code') ?? ''
 
@@ -172,12 +173,17 @@ describe('conector MCP con OAuth', () => {
     }
   })
 
-  it('un token de quien no es propietario no sirve (módulo 0)', async () => {
+  it('quien no es propietario no puede dar el permiso, aunque lo fuerce (módulo 0)', async () => {
     const owner = await account('owner')
     const member = await account('member')
-    const token = await accessToken(member.cookie, await oauthClient(owner.cookie))
-    const response = await rpc(token, 'tools/list')
-    expect(response.status).toBe(403)
+    await expect(accessToken(member.cookie, await oauthClient(owner.cookie))).rejects.toThrow('403')
+  })
+
+  it('si deja de ser propietario, su token deja de servir en la siguiente petición', async () => {
+    const owner = await account('owner')
+    const token = await accessToken(owner.cookie, await oauthClient(owner.cookie))
+    await conn.sql`update organization_members set role = 'member' where user_id = ${owner.userId}`
+    expect((await rpc(token, 'tools/list')).status).toBe(403)
   })
 
   it('quien no es propietario no puede registrar clientes OAuth', async () => {

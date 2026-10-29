@@ -36,9 +36,13 @@ export async function campaignLink(page: Page) {
   return page.getByLabel('Enlace de invitación').inputValue()
 }
 
-/** Una jugadora nueva entra con el enlace creando su cuenta; queda en la campaña, en su propia página */
-export async function newPlayer(browser: Browser, link: string, name = 'Jugadora') {
+/**
+ * Una jugadora nueva entra con el enlace creando su cuenta; queda en la campaña, en su propia página. onPage recibe la
+ * página antes de abrir nada (para escuchar lo que le llega)
+ */
+export async function newPlayer(browser: Browser, link: string, name = 'Jugadora', onPage?: (page: Page) => void) {
   const player = await browser.newPage()
+  onPage?.(player)
   await player.goto(link)
   await player.getByLabel('Nombre').fill(name)
   await player.getByLabel('Email').fill(`${name.toLowerCase()}@crisol.test`)
