@@ -16,3 +16,8 @@ Instalado 2026-10-29 con la licencia de Enrique, solo para el REA (ver `research
   `viewport` de 1920×1080. Sin GPU, el lienzo usa WebGL por software.
 - EULA (versión 11.293): permite instalar y usar, prohíbe publicar partes del software, revenderlo o alojar más de una
   instancia accesible a otros por licencia. No prohíbe estudiarlo. Por eso aquí no va ni una línea de su código.
+- Datos de prueba (REA del módulo 0, 2026-10-29): usuario «Jugador REA» (rol jugador; su contraseña no se guarda aquí),
+  entrada de diario «Secreto REA» (solo máster) y unos mensajes de chat de prueba.
+- Observar sin navegador: basta un script de Node con el cliente de socket.io que trae la propia instalación (MIT),
+  guardado fuera del repo, para entrar como cualquier usuario y ver todo lo que llega por la red. El POST de entrada
+  exige la cabecera `Origin` del mismo sitio.

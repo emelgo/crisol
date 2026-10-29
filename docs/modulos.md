@@ -11,18 +11,18 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   - Repo, normas (`CLAUDE.md`, `CONSTRAINTS.md`), inventario, ADR-0001 y skills de agent-skills en el proyecto.
   - REA arreglado (navegador).
   - Foundry 14.369 instalado para el REA (`research/foundry/entorno.md`).
-- **Siguiente paso: repaso del módulo 0 (Fundación) con Enrique**, con la skill `interview-me`, frente al inventario
-  (sección «Cuentas y multiusuario» y la 14, IA/MCP). Preguntas abiertas:
-  - Co-máster: ¿sí o no? Roles exactos.
-  - Invitaciones: ¿enlace, email o código?
-  - ¿Un jugador puede estar en varias campañas u organizaciones?
-  - Alcance del historial y el deshacer.
-  - Qué herramientas MCP mínimas entran en el módulo 0.
-- **Después**, en este orden:
-  1. REA dirigido: Foundry (modelo de documentos, permisos/ownership, usuarios, sockets) y D&D Beyond (campañas,
-     invitaciones).
-  2. `/spec` del módulo 0 en `docs/specs/fundacion.md`.
-  3. `/plan` y `/build`. La primera porción es el monorepo con la CI, para que los PR tengan comprobaciones.
+- **2026-10-29 — Módulo 0 repasado, REA hecho, spec en borrador** (rama `fundacion/repaso-y-spec`).
+  - Decisiones en «Decisiones por módulo» más abajo.
+  - REA: `research/foundry/usuarios-y-permisos.md`, `research/foundry/sincronizacion-e-historial.md` y
+    `research/dndbeyond/campanas-e-invitaciones.md`. Lo gordo: Foundry no proyecta nada por usuario (manda el mundo
+    entero y oculta en la interfaz) y no tiene historial; D&D Beyond ata la pertenencia al personaje.
+  - Spec: `docs/specs/fundacion.md`, **pendiente de que Enrique la apruebe** y de sus 4 preguntas abiertas (SMTP,
+    Google con sslip.io, despliegue manual o automático, prueba de fugas en `CONSTRAINTS.md`).
+- **Siguiente paso**: aprobar la spec → ADR-0002 (Better Auth solo para identidad; inquilinos e invitaciones en
+  tablas propias) → `/plan` → `/build`. La primera porción es el monorepo con la CI, para que los PR tengan
+  comprobaciones.
+- **Antes del módulo 1**: ADR sobre Yjs y secretos. Yjs no puede proyectar por usuario, así que el contenido con otra
+  visibilidad tiene que ir en documentos o subdocumentos aparte (ver la nota de sincronización de Foundry).
 - **Pendientes de permiso de Enrique:**
   - Sitio de Caddy `neo.crisol.144-91-122-245.sslip.io` (cuando haya algo que desplegar).
   - Servicio de systemd para Foundry: ahora corre como proceso de la sesión y se para al cerrarla; se arranca con el
