@@ -146,15 +146,19 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   - Las **hojas con estilo** (tipo Homebrewery) entran.
   - Sin editor de Markdown a mano.
   - La wiki es solo del máster hasta el módulo 5.
+- **2026-10-29 — Módulo 1: ADR-0003 escrito** (`docs/adr/0003-paginas-yjs-y-secretos.md`).
+  - La página es una fila con historial, como en el módulo 0. Solo el cuerpo es Yjs.
+  - Cada secreto y cada nota oculta es su propio documento de Yjs; el cuerpo solo lleva su id.
+  - Hocuspocus 4 va dentro del servidor, en `/api/collab`, con permiso por documento.
+  - Guardar es fusionar, y nada vuelve atrás sobrescribiendo: restaurar, deshacer y lo de Claude son cambios hacia
+    delante.
+  - Los cambios se agrupan en sesiones de edición. Cada una es una operación sobre `page_bodies` y una versión de la
+    página, y se deshace como en el módulo 0.
+  - Claude escribe en el mismo Markdown de Obsidian que se exporta, con ids de bloque, y su cambio entra en vivo en la
+    página abierta.
+  - Lo más arriesgado es el editor anidado de los secretos, y es lo primero que se prueba en el plan.
 - **Siguiente paso: módulo 1**, en este orden, cada uno con su PR de documentación (rama corta → CI → merge):
-  1. **ADR-0003, Yjs y secretos** (`docs/adr/0003-…`): cómo se guarda y sincroniza una página (TipTap + Yjs, ver
-     ADR-0001). Yjs no puede proyectar por usuario, así que lo que tenga otra visibilidad (secretos) va en documentos
-     o subdocumentos aparte desde el primer día. También:
-     - cómo encaja con el historial y deshacer del módulo 0 (`operation()`) y con las versiones de página;
-     - cómo escribe Claude por el MCP en una página abierta;
-     - cómo se exporta a Markdown.
-
-     Antes, leer `research/foundry/sincronizacion-e-historial.md`.
+  1. ~~ADR-0003, Yjs y secretos~~: hecho.
   2. **REA dirigido**, con notas en `research/` (leer antes `research/README.md`):
      - **Homebrewery** (`naturalcrit/homebrewery`, MIT): cómo maqueta la hoja (columnas, saltos de página, statblocks,
        notas al margen), cómo pagina y cómo saca el PDF o imprime. Su código se puede leer y aprovechar con
@@ -167,11 +171,8 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   4. **Diseño** con `frontend-design`: prototipos en el lienzo de claude.ai (el de las direcciones u otro nuevo) del
      árbol, la página en vista sencilla y en hoja, el editor y la búsqueda. Enrique los aprueba.
   5. `/plan` con tareas en `tasks/`, y luego `/build`, `/agent-skills:review` y `/ship`, como en el módulo 0.
-  - Luego, el módulo 1 (wiki) con su entrevista.
 - Queda una ventana pequeña en el tiempo real: lo que cambie entre la primera carga de una página y la conexión del
   canal no se ve hasta volver a la pestaña. Taparla costaría volver a pedirlo todo al conectar la primera vez.
-- **Antes del módulo 1**: ADR sobre Yjs y secretos. Yjs no puede proyectar por usuario, así que el contenido con otra
-  visibilidad tiene que ir en documentos o subdocumentos aparte (ver la nota de sincronización de Foundry).
 - **Pendientes de permiso de Enrique:**
   - Servicio de systemd para Foundry: ahora corre como proceso de la sesión y se para al cerrarla; se arranca con el
     comando de `research/foundry/entorno.md`.
