@@ -6,6 +6,7 @@ import { leaveCampaign, listMembers, removeMember } from './members.ts'
 import { listOrganizations } from './organizations.ts'
 import {
   createPage,
+  createPageDocument,
   getPage,
   getWikiPreferences,
   listPageChildren,
@@ -82,7 +83,8 @@ export const ACTIONS = [
   restorePage,
   getWikiPreferences,
   setWikiTabs,
-  setBookmarks
+  setBookmarks,
+  createPageDocument
 ]
 
 /** Las acciones por nombre, solo como tipo: la web las usa sin cargar zod */
@@ -127,4 +129,5 @@ export type Actions = {
   getWikiPreferences: typeof getWikiPreferences
   setWikiTabs: typeof setWikiTabs
   setBookmarks: typeof setBookmarks
+  createPageDocument: typeof createPageDocument
 }

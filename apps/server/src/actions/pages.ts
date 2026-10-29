@@ -1,5 +1,6 @@
 import {
   createPage,
+  createPageDocument,
   getPage,
   listPageChildren,
   listPageTree,
@@ -10,7 +11,7 @@ import {
   setPageProperties,
   updatePage
 } from '@crisol/contracts'
-import { pagesRepo } from '@crisol/db'
+import { documentsRepo, pagesRepo } from '@crisol/db'
 import {
   compareKeys,
   moveBlocker,
@@ -20,6 +21,7 @@ import {
   reservedList,
   tagCounts
 } from '@crisol/domain'
+import * as Y from 'yjs'
 import { pagesChanged } from '../realtime/events.ts'
 import { authorizedPage, authorizedWiki, type WikiTarget } from './access.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
@@ -172,6 +174,27 @@ export const pageActions = [
     )
     ctx.realtime.publish(pagesChanged(wiki))
     return pageView(ctx, page.id)
+  }),
+
+  implement(createPageDocument, async (ctx, { pageId, kind, copyOf }) => {
+    const { wiki } = await authorizedPage(ctx, 'page.write', pageId)
+    let state = Y.encodeStateAsUpdate(new Y.Doc())
+    if (copyOf) {
+      // La copia sale de un secreto que quien pega puede leer: de esta wiki o de otra que también vea
+      const source = await documentsRepo.findSeparate(ctx.db, copyOf)
+      await authorizedPage(ctx, 'page.read', source?.pageId ?? '')
+      if (!source) throw new NotFoundError('document')
+      state = source.state
+    }
+    // No va al historial: lo cuenta la sesión de edición del cuerpo, que es donde aparece el bloque
+    const id = await documentsRepo.createSeparate(ctx.db, {
+      pageId,
+      worldId: wiki.worldId,
+      kind,
+      state,
+      userId: ctx.actor.userId
+    })
+    return { id }
   }),
 
   implement(getPage, async (ctx, { pageId }) => {

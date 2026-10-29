@@ -1,6 +1,8 @@
 import { connect, documentsRepo, schema } from '@crisol/db'
 import { freshTestDatabase, resetDatabase } from '@crisol/db/testing'
+import { editorSchema } from '@crisol/editor'
 import { HocuspocusProvider, HocuspocusProviderWebsocket } from '@hocuspocus/provider'
+import { prosemirrorJSONToYXmlFragment } from '@tiptap/y-tiptap'
 import type { FastifyInstance } from 'fastify'
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import * as Y from 'yjs'
@@ -36,7 +38,7 @@ describe('la edición en vivo (/api/collab)', () => {
     ).json()
 
   /** Un cliente de Hocuspocus como el de la web: con la cookie de la sesión y nuestro origen */
-  const client = (pageId: string, cookie = owner.cookie, origin = BASE_URL) => {
+  const client = (name: string, cookie = owner.cookie, origin = BASE_URL) => {
     const document = new Y.Doc()
     const events = { synced: false, failed: '' as string, closed: 0 }
     class WithSession extends WebSocket {
@@ -47,7 +49,7 @@ describe('la edición en vivo (/api/collab)', () => {
     const socket = new HocuspocusProviderWebsocket({ url, WebSocketPolyfill: WithSession, maxAttempts: 1 })
     const provider = new HocuspocusProvider({
       websocketProvider: socket,
-      name: `page:${pageId}`,
+      name,
       document,
       token: 'sesion',
       onSynced: () => {
@@ -115,8 +117,8 @@ describe('la edición en vivo (/api/collab)', () => {
 
   it('dos pestañas del máster editan el mismo cuerpo y convergen; al cerrarlas queda guardado', async () => {
     const page = await call('createPage', { worldId, title: 'Puerto Ceniza' })
-    const a = client(page.id)
-    const b = client(page.id)
+    const a = client(`page:${page.id}`)
+    const b = client(`page:${page.id}`)
     await until(() => a.events.synced && b.events.synced, 'la sincronización')
     a.document.getText('texto').insert(0, 'Puerto Ceniza es la última ciudad libre.')
     await until(() => b.text().includes('última ciudad'), 'el cambio en la otra pestaña')
@@ -126,14 +128,14 @@ describe('la edición en vivo (/api/collab)', () => {
     b.destroy()
     await until(async () => (await stored(page.id)) === a.text(), 'el guardado al cerrar')
 
-    const again = client(page.id)
+    const again = client(`page:${page.id}`)
     await until(() => again.events.synced, 'volver a abrirla')
     expect(again.text()).toBe('Puerto Ceniza es la última ciudad libre. La gobierna el Consejo.')
   })
 
   it('guardar es fusionar: lo que ya estaba guardado no se pierde aunque el editor no lo tuviera', async () => {
     const page = await call('createPage', { worldId, title: 'Puerto Ceniza' })
-    const editor = client(page.id)
+    const editor = client(`page:${page.id}`)
     await until(() => editor.events.synced, 'la sincronización')
     // Otro cambio guardado por fuera mientras tanto (como lo que aplica el servidor por Claude)
     const outside = new Y.Doc()
@@ -155,32 +157,32 @@ describe('la edición en vivo (/api/collab)', () => {
     await conn.db
       .insert(schema.campaignMembers)
       .values({ campaignId: campaign.id, userId: player.userId, role: 'player' })
-    const writer = client(page.id)
+    const writer = client(`page:${page.id}`)
     await until(() => writer.events.synced, 'la sincronización del máster')
     writer.document.getText('texto').insert(0, 'El secreto del faro.')
 
-    const spy = client(page.id, player.cookie)
+    const spy = client(`page:${page.id}`, player.cookie)
     await until(() => spy.events.failed !== '', 'el rechazo')
     expect(spy.events.synced).toBe(false)
     expect(spy.text()).toBe('')
   })
 
   it('un nombre que no es de ningún documento, o una página que no existe, no se abren', async () => {
-    const unknown = client(crypto.randomUUID())
+    const unknown = client(`page:${crypto.randomUUID()}`)
     await until(() => unknown.events.failed !== '', 'el rechazo')
     expect(unknown.events.synced).toBe(false)
   })
 
   it('desde otro origen no se conecta, aunque traiga la cookie', async () => {
     const page = await call('createPage', { worldId, title: 'Puerto Ceniza' })
-    const foreign = client(page.id, owner.cookie, 'https://otra.test')
+    const foreign = client(`page:${page.id}`, owner.cookie, 'https://otra.test')
     await until(() => foreign.events.closed > 0, 'el cierre')
     expect(foreign.events.synced).toBe(false)
   })
 
   it('un cambio de más de 1 MB corta la conexión y no se guarda', async () => {
     const page = await call('createPage', { worldId, title: 'Puerto Ceniza' })
-    const editor = client(page.id)
+    const editor = client(`page:${page.id}`)
     await until(() => editor.events.synced, 'la sincronización')
     editor.document.getText('texto').insert(0, 'x'.repeat(1_200_000))
     await until(() => editor.events.closed > 0, 'el cierre')
@@ -190,11 +192,121 @@ describe('la edición en vivo (/api/collab)', () => {
 
   it('al mandar la página a la papelera se cierra quien la edita, y ya no se abre', async () => {
     const page = await call('createPage', { worldId, title: 'Puerto Ceniza' })
-    const editor = client(page.id)
+    const editor = client(`page:${page.id}`)
     await until(() => editor.events.synced, 'la sincronización')
     await call('deletePage', { pageId: page.id })
     await until(() => editor.events.closed > 0, 'el cierre')
-    const again = client(page.id)
+    const again = client(`page:${page.id}`)
     await until(() => again.events.failed !== '', 'el rechazo al volver')
+  })
+
+  describe('secretos y notas ocultas', () => {
+    const paragraph = (text: string) => ({ type: 'paragraph', content: [{ type: 'text', text }] })
+    /** Escribe un contenido de ProseMirror en el fragmento del documento (como hace el editor) */
+    const write = (document: Y.Doc, content: object[], nested = false) =>
+      prosemirrorJSONToYXmlFragment(
+        editorSchema({ nested }),
+        { type: 'doc', content },
+        document.getXmlFragment('default')
+      )
+    const raw = async (name: 'body' | string, pageId: string) => {
+      const row =
+        name === 'body'
+          ? await documentsRepo.findBody(conn.db, pageId)
+          : await documentsRepo.findSeparate(conn.db, name)
+      return Buffer.from(row?.state ?? new Uint8Array())
+    }
+
+    it('el texto de un secreto se guarda en su documento y nunca en el del cuerpo', async () => {
+      const page = await call('createPage', { worldId, title: 'Puerto Ceniza' })
+      const { id } = await call('createPageDocument', { pageId: page.id, kind: 'secret' })
+      const secret = client(`doc:${id}`)
+      const body = client(`page:${page.id}`)
+      await until(() => secret.events.synced && body.events.synced, 'la sincronización')
+      write(secret.document, [paragraph('El faro lo quemó la Hermandad.')], true)
+      write(body.document, [
+        paragraph('Puerto Ceniza es la última ciudad libre.'),
+        { type: 'secret', attrs: { documentId: id } },
+        paragraph('La gobierna el Consejo.')
+      ])
+      secret.destroy()
+      body.destroy()
+      await until(async () => (await raw(id, page.id)).includes('Hermandad'), 'el guardado del secreto')
+      await until(async () => (await raw('body', page.id)).includes('Consejo'), 'el guardado del cuerpo')
+      const stored = await raw('body', page.id)
+      expect(stored.includes('Hermandad')).toBe(false)
+      expect(stored.includes(id)).toBe(true)
+    })
+
+    it('dos secretos y otra pestaña escribiendo a la vez: todo converge y cada texto queda en su sitio', async () => {
+      const page = await call('createPage', { worldId, title: 'Puerto Ceniza' })
+      const one = (await call('createPageDocument', { pageId: page.id, kind: 'secret' })).id
+      const two = (await call('createPageDocument', { pageId: page.id, kind: 'note' })).id
+      const a = [client(`page:${page.id}`), client(`doc:${one}`), client(`doc:${two}`)]
+      const b = [client(`page:${page.id}`), client(`doc:${one}`), client(`doc:${two}`)]
+      await until(() => [...a, ...b].every((c) => c.events.synced), 'la sincronización')
+      write(a[0]?.document as Y.Doc, [
+        { type: 'secret', attrs: { documentId: one } },
+        { type: 'note', attrs: { documentId: two } }
+      ])
+      // Mientras, la otra pestaña escribe en los dos secretos y añade al cuerpo
+      write(b[1]?.document as Y.Doc, [paragraph('Primer secreto.')], true)
+      write(b[2]?.document as Y.Doc, [paragraph('Nota para el máster.')], true)
+      b[0]?.document.getXmlFragment('default').insert(0, [new Y.XmlElement('paragraph')])
+      const fragment = (doc: Y.Doc | undefined) => doc?.getXmlFragment('default').toString() ?? ''
+      await until(() => fragment(a[1]?.document).includes('Primer secreto.'), 'el primer secreto')
+      await until(() => fragment(a[2]?.document).includes('Nota para el máster.'), 'la nota')
+      await until(() => fragment(a[0]?.document) === fragment(b[0]?.document), 'el cuerpo igual en las dos')
+      expect(fragment(a[0]?.document)).toContain(`documentId="${one}"`)
+      for (const c of [...a, ...b]) c.destroy()
+      await until(async () => (await raw(one, page.id)).includes('Primer secreto.'), 'el guardado')
+      expect((await raw('body', page.id)).includes('Primer secreto.')).toBe(false)
+    })
+
+    it('copiar un secreto crea otro documento con el mismo texto; de otra organización, no', async () => {
+      const page = await call('createPage', { worldId, title: 'Puerto Ceniza' })
+      const other = await call('createPage', { worldId, title: 'Velaria' })
+      const { id } = await call('createPageDocument', { pageId: page.id, kind: 'secret' })
+      const secret = client(`doc:${id}`)
+      await until(() => secret.events.synced, 'la sincronización')
+      write(secret.document, [paragraph('El mapa de las corrientes.')], true)
+      secret.destroy()
+      await until(async () => (await raw(id, page.id)).includes('corrientes'), 'el guardado')
+      const copy = await call('createPageDocument', { pageId: other.id, kind: 'secret', copyOf: id })
+      expect(copy.id).not.toBe(id)
+      expect((await raw(copy.id, other.id)).includes('corrientes')).toBe(true)
+
+      const stranger = await signUpTestUser(auth, { name: 'Otra', email: 'otra@crisol.test' })
+      const [org] = await conn.db.insert(schema.organizations).values({ name: 'Otra' }).returning()
+      await conn.db
+        .insert(schema.organizationMembers)
+        .values({ organizationId: org?.id ?? '', userId: stranger.userId, role: 'owner' })
+      const theirWorld = await call('createWorld', { name: 'Suyo' }, stranger.cookie)
+      const theirPage = await call('createPage', { worldId: theirWorld.id, title: 'Suya' }, stranger.cookie)
+      expect(
+        await call('createPageDocument', { pageId: theirPage.id, kind: 'secret', copyOf: id }, stranger.cookie)
+      ).toEqual({ code: 'NOT_FOUND' })
+    })
+
+    it('un jugador no abre un secreto, y al borrar la página se cierra también el secreto', async () => {
+      const page = await call('createPage', { worldId, title: 'Puerto Ceniza' })
+      const { id } = await call('createPageDocument', { pageId: page.id, kind: 'secret' })
+      const campaign = await call('createCampaign', { worldId, name: 'La Marca' })
+      const player = await signUpTestUser(auth, { name: 'Jugadora', email: 'jugadora@crisol.test' })
+      await conn.db.insert(schema.organizationMembers).values({ organizationId, userId: player.userId, role: 'member' })
+      await conn.db
+        .insert(schema.campaignMembers)
+        .values({ campaignId: campaign.id, userId: player.userId, role: 'player' })
+      const spy = client(`doc:${id}`, player.cookie)
+      await until(() => spy.events.failed !== '', 'el rechazo')
+      expect(await call('createPageDocument', { pageId: page.id, kind: 'secret' }, player.cookie)).toEqual({
+        code: 'NOT_FOUND'
+      })
+
+      const secret = client(`doc:${id}`)
+      await until(() => secret.events.synced, 'la sincronización')
+      await call('deletePage', { pageId: page.id })
+      await until(() => secret.events.closed > 0, 'el cierre del secreto')
+    })
   })
 })

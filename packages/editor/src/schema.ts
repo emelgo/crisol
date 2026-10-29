@@ -2,10 +2,11 @@
  * El esquema del editor de la wiki: las extensiones de TipTap sin sus vistas de React. Lo usan la web (con sus vistas)
  * y el servidor (Markdown, lo que escribe Claude). Cada tarea del módulo 1 añade aquí sus bloques
  */
-import type { Extensions } from '@tiptap/core'
+import { type AnyExtension, type Extensions, getSchema, type Node } from '@tiptap/core'
 import { Heading } from '@tiptap/extension-heading'
 import { TaskItem, TaskList } from '@tiptap/extension-list'
 import { StarterKit } from '@tiptap/starter-kit'
+import { HiddenNote, Secret } from './separate.ts'
 
 /** El fragmento de Yjs que guarda el cuerpo de una página (el de siempre de la extensión de colaboración) */
 export const BODY_FIELD = 'default'
@@ -27,10 +28,14 @@ const BodyHeading = Heading.extend({
 export interface EditorOptions {
   /** La etiqueta de cada casilla para los lectores de pantalla, ya traducida (sin ella, la de TipTap, en inglés) */
   checkboxLabel?: (text: string, checked: boolean) => string
+  /** El editor de dentro de un secreto o una nota oculta: no lleva otros dentro */
+  nested?: boolean
+  /** Para darles su vista a los secretos y las notas ocultas (la web, con React) */
+  separate?: (node: Node) => AnyExtension
 }
 
 export function editorExtensions(options: EditorOptions = {}): Extensions {
-  const { checkboxLabel } = options
+  const { checkboxLabel, nested = false, separate = (node: Node) => node } = options
   return [
     StarterKit.configure({
       heading: false,
@@ -43,6 +48,10 @@ export function editorExtensions(options: EditorOptions = {}): Extensions {
     TaskItem.configure({
       nested: true,
       ...(checkboxLabel ? { a11y: { checkboxLabel: (node, checked) => checkboxLabel(node.textContent, checked) } } : {})
-    })
+    }),
+    ...(nested ? [] : [separate(Secret), separate(HiddenNote)])
   ]
 }
+
+/** El esquema de ProseMirror del cuerpo (o de un secreto, nested), para leer y escribir fuera del editor */
+export const editorSchema = (options: EditorOptions = {}) => getSchema(editorExtensions(options))

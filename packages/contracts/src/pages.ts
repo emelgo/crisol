@@ -198,3 +198,16 @@ export const setBookmarks = defineAction({
   }),
   output: wikiPreferences
 })
+
+export const createPageDocument = defineAction({
+  name: 'createPageDocument',
+  kind: 'write',
+  description:
+    'Crea el documento de un secreto o una nota oculta de una página (vacío, o copia de otro al pegarlo): su texto va aparte del cuerpo',
+  input: z.object({
+    pageId: z.uuid(),
+    kind: z.enum(['secret', 'note']),
+    copyOf: z.uuid().optional().describe('El secreto o la nota de la que se hace una copia')
+  }),
+  output: z.object({ id: z.uuid() })
+})

@@ -5,7 +5,7 @@ import { editorExtensions } from './schema.ts'
 describe('el esquema del editor', () => {
   const schema = getSchema(editorExtensions())
 
-  it('tiene los bloques de la base: texto, títulos, listas, casillas, cita, código y separador', () => {
+  it('tiene los bloques de la base, y los secretos y las notas ocultas', () => {
     expect(Object.keys(schema.nodes).sort()).toEqual(
       [
         'blockquote',
@@ -16,8 +16,10 @@ describe('el esquema del editor', () => {
         'heading',
         'horizontalRule',
         'listItem',
+        'note',
         'orderedList',
         'paragraph',
+        'secret',
         'taskItem',
         'taskList',
         'text'
@@ -58,5 +60,19 @@ describe('el esquema del editor', () => {
     expect(heading.spec.toDOM?.(node)).toEqual(['h2', {}, 0])
     const rule = heading.spec.parseDOM?.find((r) => 'tag' in r && r.tag === 'h2')
     expect(rule?.attrs).toEqual({ level: 1 })
+  })
+
+  it('un secreto solo lleva el id de su documento, nunca su texto', () => {
+    const secret = schema.nodes.secret
+    if (!secret) throw new Error('sin secretos')
+    expect(secret.isAtom).toBe(true)
+    const node = secret.create({ documentId: 'd1' })
+    expect(secret.spec.toDOM?.(node)).toEqual(['div', { 'data-type': 'secret', 'data-document': 'd1' }])
+  })
+
+  it('dentro de un secreto no hay otros secretos', () => {
+    const nested = getSchema(editorExtensions({ nested: true }))
+    expect(nested.nodes.secret).toBeUndefined()
+    expect(nested.nodes.note).toBeUndefined()
   })
 })
