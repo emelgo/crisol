@@ -9,7 +9,7 @@ import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
 import { FormError } from '../components/field.tsx'
 import styles from '../components/list.module.css'
-import { summaryOf } from '../summaries.ts'
+import { summaryOf, undoLayers } from '../summaries.ts'
 
 const worldRoute = getRouteApi('/mundos/$worldId/historial')
 
@@ -56,6 +56,7 @@ function HistoryPage({ title, back, scope }: { title: string; back: ReactNode; s
   if (!account) return <Navigate to="/entrar" replace />
   const date = new Intl.DateTimeFormat(i18n.language, { dateStyle: 'medium', timeStyle: 'short' })
   const entries = history.data?.pages.flatMap((page) => page.entries) ?? []
+  const undone = effectivelyUndone(entries)
 
   return (
     <section>
@@ -68,7 +69,7 @@ function HistoryPage({ title, back, scope }: { title: string; back: ReactNode; s
         ) : (
           <ul className={styles.list} aria-label={t('history.listLabel')}>
             {entries.map((entry) => (
-              <HistoryItem key={entry.id} entry={entry} date={date} />
+              <HistoryItem key={entry.id} entry={entry} undone={undone(entry)} date={date} />
             ))}
           </ul>
         ))}
@@ -86,52 +87,70 @@ function HistoryPage({ title, back, scope }: { title: string; back: ReactNode; s
   )
 }
 
-/** Una operación, con «Deshacer» si se puede (no está deshecha ni es del sistema) */
-function HistoryItem({ entry, date }: { entry: HistoryEntry; date: Intl.DateTimeFormat }) {
+/**
+ * Si lo que hizo una operación ya no está: la deshizo otra que no se ha deshecho a su vez (si se deshizo, se rehízo).
+ * Lo que la deshizo es más reciente, así que ya está cargado; si no lo está, se da por deshecha
+ */
+function effectivelyUndone(entries: HistoryEntry[]) {
+  const byId = new Map(entries.map((entry) => [entry.id, entry]))
+  const undone = (entry: HistoryEntry): boolean => {
+    if (!entry.undoneBy) return false
+    const by = byId.get(entry.undoneBy)
+    return !by || !undone(by)
+  }
+  return undone
+}
+
+/**
+ * Una operación. Lo deshecho, tachado. El botón, solo en la última de cada cadena (las otras ya están deshechas) y
+ * nunca en lo del sistema: en un deshacer dice «Rehacer»; en lo demás, «Deshacer»
+ */
+function HistoryItem({ entry, undone, date }: { entry: HistoryEntry; undone: boolean; date: Intl.DateTimeFormat }) {
   const { t } = useTranslation()
   const api = useApi()
   const queryClient = useQueryClient()
   const errorText = useErrorText()
   const [conflict, setConflict] = useState<string | null>(null)
+  // Lo que hay debajo de un deshacer: deshacerlo lo rehace (si las capas son impares) o lo vuelve a deshacer
+  const { depth, root } = entry.action === 'undoOperation' ? undoLayers(entry.details) : { depth: 0, root: entry }
+  const redo = depth % 2 === 1
   const undo = useMutation({
     mutationFn: () => api.call('undoOperation', { operationId: entry.id }),
     onSuccess: async (result) => {
       if (result.status === 'conflict') {
-        setConflict(
-          result.by
-            ? t('history.conflict', { actor: actorOf(t, result.by), what: summaryOf(t, result.by) })
-            : t('history.conflictUnknown')
-        )
+        const values = result.by ? { actor: actorOf(t, result.by), what: summaryOf(t, result.by) } : null
+        if (redo) setConflict(values ? t('history.redoConflict', values) : t('history.redoConflictUnknown'))
+        else setConflict(values ? t('history.conflict', values) : t('history.conflictUnknown'))
         return
       }
       // Lo deshecho puede tocar cualquier cosa de lo que se ve
       await queryClient.invalidateQueries()
     }
   })
-  const summary = summaryOf(t, entry)
+  const what = summaryOf(t, root)
   const undoable = !entry.undoneBy && entry.via !== 'system'
 
   return (
     <li className={styles.item}>
-      <span className={styles.name}>
-        <strong>{actorOf(t, entry)}</strong> {summary}
+      <span className={undone ? `${styles.name} ${styles.undone}` : styles.name}>
+        <strong>{actorOf(t, entry)}</strong> {summaryOf(t, entry)}
       </span>
       <span className={styles.role}>
         <time dateTime={entry.at}>{date.format(new Date(entry.at))}</time> · {viaOf(t, entry)}
-        {entry.undoneBy && ` · ${t('history.undone')}`}
+        {undone && ` · ${t('history.undone')}`}
       </span>
       {undoable && (
         <button
           type="button"
           className={styles.secondary}
-          aria-label={t('history.undoButton', { what: summary })}
+          aria-label={redo ? t('history.redoButton', { what }) : t('history.undoButton', { what })}
           disabled={undo.isPending}
           onClick={() => {
             setConflict(null)
             undo.mutate()
           }}
         >
-          {t('history.undo')}
+          {redo ? t('history.redo') : t('history.undo')}
         </button>
       )}
       {conflict && <p className={styles.confirm}>{conflict}</p>}

@@ -18,9 +18,9 @@ export function summaryOf(
   const text = (value: unknown) => String(value ?? '')
   switch (action) {
     case 'undoOperation': {
-      // Lo deshecho se dice como quedó en el historial
-      const original = { action: text(details.action), details: (details.details ?? {}) as Record<string, unknown> }
-      return say('undoOperation', { what: summaryOf(t, original) })
+      // Deshacer un deshacer es rehacer: se cuenta lo de debajo de todo, como quedó en el historial
+      const { depth, root } = undoLayers(details)
+      return say(depth % 2 === 1 ? 'undoOperation' : 'redoOperation', { what: summaryOf(t, root) })
     }
     case 'createOrganization':
       return say('createOrganization', { name: text(details.name) })
@@ -56,6 +56,24 @@ export function summaryOf(
       return say('unknown', { action })
   }
 }
+
+type Operation = Pick<HistoryEntry, 'action' | 'details'>
+
+/**
+ * Lo que hay dentro de un deshacer (sus datos guardan la operación que deshace, que a su vez puede ser otro deshacer):
+ * cuántas capas y la operación de debajo de todo. Impar, deshace esa operación; par, la rehace
+ */
+export function undoLayers(details: Record<string, unknown>): { depth: number; root: Operation } {
+  let depth = 1
+  let inner: Operation = { action: String(details.action ?? ''), details: asRecord(details.details) }
+  while (inner.action === 'undoOperation') {
+    depth++
+    inner = { action: String(inner.details.action ?? ''), details: asRecord(inner.details.details) }
+  }
+  return { depth, root: inner }
+}
+
+const asRecord = (value: unknown) => (value && typeof value === 'object' ? value : {}) as Record<string, unknown>
 
 /**
  * Lo que pide la IA, en una frase. Sus datos salen de su entrada y de los nombres de lo que toca (al deshacer, la

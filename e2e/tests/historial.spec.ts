@@ -39,7 +39,8 @@ test('el máster deshace crear una campaña y lo rehace; si algo cambió despué
 
   // Rehacer: deshacer el deshacer
   await page.getByRole('link', { name: 'Historial' }).click()
-  await page.getByRole('button', { name: 'Deshacer: deshizo: creó la campaña «La Marca» en Eana' }).click()
+  await page.getByRole('button', { name: 'Rehacer: creó la campaña «La Marca» en Eana' }).click()
+  await expect(entries.first()).toHaveText(/^Enrique rehízo: creó la campaña «La Marca» en Eana/)
   await page.getByRole('link', { name: 'Eana' }).click()
   await expect(page.getByRole('link', { name: 'La Marca' })).toBeVisible()
 
@@ -48,7 +49,7 @@ test('el máster deshace crear una campaña y lo rehace; si algo cambió despué
   await page.getByLabel('Nuevo nombre de La Marca').fill('La Marca del Este')
   await page.getByRole('button', { name: 'Guardar' }).click()
   await page.getByRole('link', { name: 'Historial' }).click()
-  await page.getByRole('button', { name: 'Deshacer: deshizo: deshizo: creó la campaña «La Marca» en Eana' }).click()
+  await page.getByRole('button', { name: 'Deshacer: creó la campaña «La Marca» en Eana' }).click()
   await expect(
     page.getByText(
       'No se puede deshacer: después, Enrique renombró la campaña «La Marca» a «La Marca del Este». Deshaz eso antes.'
