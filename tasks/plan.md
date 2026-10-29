@@ -13,7 +13,7 @@ arriesgado va pronto: el núcleo de escritura (políticas e historial) y la cone
 - **Acciones como contrato único**:
   - Cada acción se declara una vez en `packages/contracts` con nombre, tipo (`leer`, `escribir`, `borrar` o
     `jugadores`), entrada y salida en zod.
-  - De esa declaración salen la ruta `POST /api/acciones/<nombre>`, el cliente tipado de la web, la herramienta MCP y
+  - De esa declaración salen la ruta `POST /api/actions/<name>`, el cliente tipado de la web, la herramienta MCP y
     el OpenAPI.
   - Es estilo RPC, no REST: así casa uno a uno con el MCP.
 - **Un único camino de escritura**:

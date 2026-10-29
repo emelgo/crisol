@@ -11,6 +11,10 @@
     "test:coverage": {
       "dependsOn": ["^typecheck"],
       "outputs": ["coverage/**"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
     }
   }
 }
