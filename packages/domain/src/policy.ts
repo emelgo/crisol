@@ -48,7 +48,9 @@ const RULES = {
   'world.rename': { sees: seesWorld, allows: isWorldMaster },
   'campaign.create': { sees: seesWorld, allows: isWorldMaster },
   'campaign.read': { sees: seesCampaign, allows: seesCampaign },
-  'campaign.rename': { sees: seesCampaign, allows: any(isWorldMaster, isCampaignMaster) }
+  'campaign.rename': { sees: seesCampaign, allows: any(isWorldMaster, isCampaignMaster) },
+  // El enlace de invitación: verlo, regenerarlo, abrir o cerrar las invitaciones
+  'campaign.invite': { sees: seesCampaign, allows: any(isWorldMaster, isCampaignMaster) }
 } satisfies Record<string, { sees: Predicate; allows: Predicate }>
 
 export type Capability = keyof typeof RULES

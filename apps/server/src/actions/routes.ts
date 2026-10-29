@@ -1,13 +1,14 @@
 import { ACTIONS, openApi } from '@crisol/contracts'
-import { type Database, loadMemberships } from '@crisol/db'
+import { loadMemberships } from '@crisol/db'
 import { actorFrom, ForbiddenError, NotFoundError } from '@crisol/domain'
 import type { FastifyInstance } from 'fastify'
 import type { Auth } from '../auth/auth.ts'
 import { toHeaders } from '../http.ts'
-import { InvalidRequestError } from './context.ts'
+import { type ActionEnv, InvalidRequestError } from './context.ts'
 import { implementationsByName } from './implementations.ts'
 
-export function registerActionRoutes(app: FastifyInstance, db: Database, auth: Auth) {
+export function registerActionRoutes(app: FastifyInstance, env: ActionEnv, auth: Auth) {
+  const { db } = env
   app.get('/api/openapi.json', async () => openApi(ACTIONS))
 
   app.post<{ Params: { name: string } }>('/api/actions/:name', async (request, reply) => {
@@ -21,7 +22,7 @@ export function registerActionRoutes(app: FastifyInstance, db: Database, auth: A
     // Las pertenencias se leen en cada petición: revocar es inmediato
     const actor = actorFrom(session.user.id, await loadMemberships(db, session.user.id))
     try {
-      const output = await impl.handler({ db, actor, via: 'ui' }, input.data)
+      const output = await impl.handler({ ...env, actor, via: 'ui' }, input.data)
       // La salida pasa por el contrato: lo que no está en él no sale
       return impl.action.output.parse(output)
     } catch (error) {

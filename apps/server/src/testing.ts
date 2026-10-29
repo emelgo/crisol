@@ -3,9 +3,11 @@ import { randomBytes } from 'node:crypto'
 import type { Database } from '@crisol/db'
 import { type Auth, createAuth } from './auth/auth.ts'
 import { allowSignup } from './auth/signup-gate.ts'
+import { deriveSealKey } from './secrets.ts'
 
 /** Secreto de sesiones de usar y tirar: nada de literales que parezcan secretos en el repo */
 export const TEST_AUTH_SECRET = randomBytes(32).toString('hex')
+export const TEST_SEAL_KEY = deriveSealKey(TEST_AUTH_SECRET)
 
 export function createTestAuth(db: Database, baseURL: string) {
   return createAuth({ db, secret: TEST_AUTH_SECRET, baseURL })

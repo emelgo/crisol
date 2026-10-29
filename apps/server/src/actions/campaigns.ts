@@ -2,6 +2,7 @@ import { createCampaign, listCampaigns, renameCampaign } from '@crisol/contracts
 import { campaignsRepo, worldsRepo } from '@crisol/db'
 import { authorize, NotFoundError } from '@crisol/domain'
 import { historyContext } from './context.ts'
+import { prepareSecret } from './invitations.ts'
 import { implement } from './registry.ts'
 
 export const campaignActions = [
@@ -19,7 +20,7 @@ export const campaignActions = [
     const campaign = await campaignsRepo.createCampaignWithMaster(
       ctx.db,
       historyContext(ctx, 'createCampaign', { name, world: world.name }, world.organizationId),
-      { worldId, name, masterId: ctx.actor.userId }
+      { worldId, name, masterId: ctx.actor.userId, invitation: prepareSecret(ctx.sealKey) }
     )
     return { ...campaign, role: 'master' as const }
   }),

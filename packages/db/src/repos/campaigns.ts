@@ -3,6 +3,7 @@ import type { Database } from '../client.ts'
 import { type OperationContext, operation } from '../operation.ts'
 import { campaignMembers, campaigns } from '../schema/campaigns.ts'
 import { worlds } from '../schema/worlds.ts'
+import { type PreparedSecret, writeInvitation } from './invitations.ts'
 
 /**
  * Las campañas de un mundo con el rol de la cuenta en cada una. onlyMember: solo aquellas en las que está (un
@@ -42,15 +43,16 @@ export async function findCampaign(db: Database, campaignId: string) {
   return found ?? null
 }
 
-/** Crea la campaña y hace máster de ella a quien la crea, en una sola operación */
+/** Crea la campaña, hace máster de ella a quien la crea y le deja su enlace de invitación, en una sola operación */
 export function createCampaignWithMaster(
   db: Database,
   context: OperationContext,
-  input: { worldId: string; name: string; masterId: string }
+  input: { worldId: string; name: string; masterId: string; invitation: PreparedSecret }
 ) {
   return operation(db, context, async (w) => {
     const campaign = await w.insert(campaigns, { worldId: input.worldId, name: input.name })
     await w.insert(campaignMembers, { campaignId: campaign.id, userId: input.masterId, role: 'master' })
+    await writeInvitation(w, campaign.id, input.invitation)
     return campaign
   })
 }

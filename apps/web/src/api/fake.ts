@@ -1,5 +1,5 @@
 /** API en memoria para las pruebas de componentes: mundos y campañas de una organización */
-import type { Campaign, Organization, World } from '@crisol/contracts'
+import type { Campaign, Invitation, Organization, World } from '@crisol/contracts'
 import { type ActionInput, type ActionName, type ActionOutput, type ApiClient, ApiError } from './client.ts'
 
 export function fakeApi(options: { organizations?: Organization[]; worlds?: World[]; campaigns?: Campaign[] } = {}) {
@@ -7,6 +7,19 @@ export function fakeApi(options: { organizations?: Organization[]; worlds?: Worl
   const worlds = [...(options.worlds ?? [])]
   const campaigns = [...(options.campaigns ?? [])]
   const calls: string[] = []
+  const invitations = new Map<string, Invitation>()
+  const link = () => `https://crisol.test/unirse/${crypto.randomUUID()}`
+  const invitationOf = (campaignId: string) => {
+    const current = invitations.get(campaignId) ?? {
+      campaignId,
+      url: link(),
+      open: true,
+      issuedAt: new Date().toISOString(),
+      joins: 0
+    }
+    invitations.set(campaignId, current)
+    return { ...current }
+  }
 
   const handlers: { [N in ActionName]: (input: ActionInput<N>) => ActionOutput<N> } = {
     listOrganizations: () => ({ organizations }),
@@ -49,6 +62,15 @@ export function fakeApi(options: { organizations?: Organization[]; worlds?: Worl
       campaign.name = name.trim()
       campaign.version++
       return { ...campaign }
+    },
+    getInvitation: ({ campaignId }) => invitationOf(campaignId),
+    regenerateInvitation: ({ campaignId }) => {
+      invitations.set(campaignId, { ...invitationOf(campaignId), url: link(), joins: 0 })
+      return invitationOf(campaignId)
+    },
+    setInvitationsOpen: ({ campaignId, open }) => {
+      invitations.set(campaignId, { ...invitationOf(campaignId), open })
+      return invitationOf(campaignId)
     }
   }
 

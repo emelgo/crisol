@@ -7,10 +7,13 @@ import { bootstrapTokens, organizationMembers, organizations } from '../schema/o
 import { freshTestDatabase, resetDatabase } from '../testing.ts'
 import * as bootstrap from './bootstrap.ts'
 import * as campaignsRepo from './campaigns.ts'
+import * as invitationsRepo from './invitations.ts'
 import { isOwner, listMemberOrganizations, loadMemberships } from './memberships.ts'
 import * as worldsRepo from './worlds.ts'
 
 const DAY = 24 * 60 * 60 * 1000
+/** Un secreto ya preparado (en el servidor: hash y cifrado de verdad) */
+const prepared = () => ({ tokenHash: crypto.randomUUID(), secretSealed: 'v1.cifrado' })
 
 describe('repositorios', () => {
   let conn: ReturnType<typeof connect>
@@ -87,7 +90,8 @@ describe('repositorios', () => {
       const campaign = await campaignsRepo.createCampaignWithMaster(conn.db, ui('createCampaign'), {
         worldId: w.id,
         name: 'La Marca del Este',
-        masterId: 'u1'
+        masterId: 'u1',
+        invitation: prepared()
       })
       expect(await campaignsRepo.listCampaigns(conn.db, { worldId: w.id, userId: 'u1', onlyMember: false })).toEqual([
         { id: campaign.id, worldId: w.id, name: 'La Marca del Este', version: 1, role: 'master' }
@@ -101,12 +105,14 @@ describe('repositorios', () => {
       const mine = await campaignsRepo.createCampaignWithMaster(conn.db, ui('createCampaign'), {
         worldId: w.id,
         name: 'B',
-        masterId: 'u1'
+        masterId: 'u1',
+        invitation: prepared()
       })
       await campaignsRepo.createCampaignWithMaster(conn.db, ui('createCampaign'), {
         worldId: w.id,
         name: 'A',
-        masterId: 'u1'
+        masterId: 'u1',
+        invitation: prepared()
       })
       await conn.db.insert(campaignMembers).values({ campaignId: mine.id, userId: 'u2', role: 'player' })
 
@@ -121,7 +127,8 @@ describe('repositorios', () => {
       const campaign = await campaignsRepo.createCampaignWithMaster(conn.db, ui('createCampaign'), {
         worldId: w.id,
         name: 'Uno',
-        masterId: 'u1'
+        masterId: 'u1',
+        invitation: prepared()
       })
       expect(await campaignsRepo.renameCampaign(conn.db, ui('renameCampaign'), campaign.id, 'Dos')).toMatchObject({
         name: 'Dos',
@@ -136,6 +143,76 @@ describe('repositorios', () => {
     })
   })
 
+  describe('enlaces de invitación', () => {
+    const campaign = async () => {
+      const w = await worldsRepo.createWorldWithMaster(conn.db, ui('createWorld'), {
+        organizationId,
+        name: 'Eana',
+        masterId: 'u1'
+      })
+      const secret = prepared()
+      const c = await campaignsRepo.createCampaignWithMaster(conn.db, ui('createCampaign'), {
+        worldId: w.id,
+        name: 'La Marca',
+        masterId: 'u1',
+        invitation: secret
+      })
+      return { world: w, campaign: c, secret }
+    }
+
+    it('la campaña nace con su enlace, abierto y sin entradas', async () => {
+      const { campaign: c, secret } = await campaign()
+      expect(await invitationsRepo.findInvitation(conn.db, c.id)).toMatchObject({
+        tokenHash: secret.tokenHash,
+        role: 'player',
+        open: true,
+        joins: 0
+      })
+    })
+
+    it('por el hash se encuentra con su campaña, su mundo y su organización', async () => {
+      const { world: w, campaign: c, secret } = await campaign()
+      expect(await invitationsRepo.findInvitationByHash(conn.db, secret.tokenHash)).toMatchObject({
+        campaignName: 'La Marca',
+        worldId: w.id,
+        worldName: 'Eana',
+        organizationId,
+        invitation: { campaignId: c.id }
+      })
+      expect(await invitationsRepo.findInvitationByHash(conn.db, 'no-existe')).toBeNull()
+    })
+
+    it('regenerar sustituye el enlace: el anterior ya no se encuentra y las entradas vuelven a cero', async () => {
+      const { campaign: c, secret } = await campaign()
+      await conn.sql`update invitation_links set joins = 3`
+      const fresh = prepared()
+      const updated = await invitationsRepo.regenerateInvitation(conn.db, ui('regenerateInvitation'), c.id, fresh)
+      expect(updated).toMatchObject({ tokenHash: fresh.tokenHash, joins: 0, version: 2 })
+      expect(await invitationsRepo.findInvitationByHash(conn.db, secret.tokenHash)).toBeNull()
+    })
+
+    it('regenerar una campaña sin enlace lo crea', async () => {
+      const { campaign: c } = await campaign()
+      await conn.sql`delete from invitation_links`
+      expect(
+        await invitationsRepo.regenerateInvitation(conn.db, ui('regenerateInvitation'), c.id, prepared())
+      ).toMatchObject({
+        campaignId: c.id,
+        version: 1
+      })
+    })
+
+    it('se pueden cerrar y abrir las invitaciones sin cambiar el enlace', async () => {
+      const { campaign: c, secret } = await campaign()
+      expect(await invitationsRepo.setInvitationsOpen(conn.db, ui('setInvitationsOpen'), c.id, false)).toMatchObject({
+        open: false,
+        tokenHash: secret.tokenHash
+      })
+      await conn.sql`delete from invitation_links`
+      expect(await invitationsRepo.setInvitationsOpen(conn.db, ui('setInvitationsOpen'), c.id, true)).toBeNull()
+    })
+  })
+
   it('un jugador ve en su lista de mundos aquellos en los que juega', async () => {
     const w = await worldsRepo.createWorldWithMaster(conn.db, ui('createWorld'), {
       organizationId,
@@ -145,7 +222,8 @@ describe('repositorios', () => {
     const c = await campaignsRepo.createCampaignWithMaster(conn.db, ui('createCampaign'), {
       worldId: w.id,
       name: 'C',
-      masterId: 'u1'
+      masterId: 'u1',
+      invitation: prepared()
     })
     await conn.db.insert(campaignMembers).values({ campaignId: c.id, userId: 'u2', role: 'player' })
     expect(await worldsRepo.listMemberWorlds(conn.db, 'u2')).toEqual([
@@ -163,7 +241,8 @@ describe('repositorios', () => {
     const campaign = await campaignsRepo.createCampaignWithMaster(conn.db, ui('createCampaign'), {
       worldId: world.id,
       name: 'C',
-      masterId: 'u1'
+      masterId: 'u1',
+      invitation: prepared()
     })
     expect(await loadMemberships(conn.db, 'u1')).toEqual({
       organizations: [{ organizationId, role: 'owner' }],

@@ -4,7 +4,7 @@ import type { FastifyInstance } from 'fastify'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { buildApp } from '../app.ts'
 import type { Auth } from '../auth/auth.ts'
-import { createTestAuth, signUpTestUser } from '../testing.ts'
+import { createTestAuth, signUpTestUser, TEST_SEAL_KEY } from '../testing.ts'
 
 const BASE_URL = 'https://crisol.test'
 const ok = async () => undefined
@@ -42,7 +42,10 @@ describe('POST /api/actions/:name', () => {
   beforeEach(async () => {
     await resetDatabase(conn.sql)
     auth = createTestAuth(conn.db, BASE_URL)
-    app = buildApp({ checks: { postgres: ok, valkey: ok }, accounts: { auth, db: conn.db, publicUrl: BASE_URL } })
+    app = buildApp({
+      checks: { postgres: ok, valkey: ok },
+      accounts: { auth, db: conn.db, publicUrl: BASE_URL, sealKey: TEST_SEAL_KEY }
+    })
     const created = await organizationWithOwner('Enrique', 'enrique@crisol.test')
     owner = created
     organizationId = created.organizationId
@@ -191,6 +194,86 @@ describe('POST /api/actions/:name', () => {
         (await call('renameCampaign', { campaignId: '00000000-0000-4000-8000-000000000000', name: 'X' }, owner.cookie))
           .statusCode
       ).toBe(404)
+    })
+  })
+
+  describe('enlace de invitación', () => {
+    const campaignOf = async () => {
+      const world = (await call('createWorld', { name: 'Eana' }, owner.cookie)).json()
+      return (await call('createCampaign', { worldId: world.id, name: 'La Marca' }, owner.cookie)).json()
+    }
+    const secretOf = (url: string) => url.split('/unirse/')[1] ?? ''
+
+    it('la campaña nace con un enlace abierto en la URL pública', async () => {
+      const campaign = await campaignOf()
+      const invitation = (await call('getInvitation', { campaignId: campaign.id }, owner.cookie)).json()
+      expect(invitation).toMatchObject({ campaignId: campaign.id, open: true, joins: 0 })
+      expect(invitation.url).toMatch(/^https:\/\/crisol\.test\/unirse\/[\w-]{43}$/)
+    })
+
+    it('el secreto no está en claro en la base de datos, ni en el historial', async () => {
+      const campaign = await campaignOf()
+      const secret = secretOf((await call('getInvitation', { campaignId: campaign.id }, owner.cookie)).json().url)
+      const rows = await conn.sql`select to_jsonb(i)::text as row from invitation_links i`
+      const history = await conn.sql`select coalesce(after, before)::text as row from changes`
+      expect([...rows, ...history].some((r) => String(r.row).includes(secret))).toBe(false)
+    })
+
+    it('un enlace nuevo deja sin valor el anterior', async () => {
+      const campaign = await campaignOf()
+      const before = (await call('getInvitation', { campaignId: campaign.id }, owner.cookie)).json()
+      const after = (await call('regenerateInvitation', { campaignId: campaign.id }, owner.cookie)).json()
+      expect(after.url).not.toBe(before.url)
+      expect((await call('getInvitation', { campaignId: campaign.id }, owner.cookie)).json().url).toBe(after.url)
+      const old =
+        await conn.sql`select 1 from invitation_links where token_hash = encode(sha256(${secretOf(before.url)}::bytea), 'hex')`
+      expect(old).toHaveLength(0)
+      const ops = await conn.db.select().from(schema.operations)
+      expect(ops.find((op) => op.action === 'regenerateInvitation')?.details).toEqual({ campaign: 'La Marca' })
+    })
+
+    it('se cierran y se abren las invitaciones sin cambiar el enlace', async () => {
+      const campaign = await campaignOf()
+      const before = (await call('getInvitation', { campaignId: campaign.id }, owner.cookie)).json()
+      const closed = (await call('setInvitationsOpen', { campaignId: campaign.id, open: false }, owner.cookie)).json()
+      expect(closed).toMatchObject({ open: false, url: before.url })
+      expect(
+        (await call('setInvitationsOpen', { campaignId: campaign.id, open: true }, owner.cookie)).json().open
+      ).toBe(true)
+    })
+
+    it('un jugador de la campaña no ve ni toca el enlace; alguien de fuera, ni sabe que existe', async () => {
+      const campaign = await campaignOf()
+      const player = await signUpTestUser(auth, { name: 'Jugadora', email: 'jugadora@crisol.test' })
+      await conn.db.insert(schema.organizationMembers).values({ organizationId, userId: player.userId, role: 'member' })
+      await conn.db
+        .insert(schema.campaignMembers)
+        .values({ campaignId: campaign.id, userId: player.userId, role: 'player' })
+      for (const [name, input] of [
+        ['getInvitation', { campaignId: campaign.id }],
+        ['regenerateInvitation', { campaignId: campaign.id }],
+        ['setInvitationsOpen', { campaignId: campaign.id, open: false }]
+      ] as const) {
+        expect((await call(name, input, player.cookie)).statusCode).toBe(403)
+      }
+      const other = await organizationWithOwner('Otra', 'otra@crisol.test')
+      expect((await call('getInvitation', { campaignId: campaign.id }, other.cookie)).statusCode).toBe(404)
+    })
+
+    it('si el enlace no se puede leer (otra clave), se ofrece generar uno', async () => {
+      const campaign = await campaignOf()
+      await conn.sql`update invitation_links set secret_sealed = 'v1.AAAA.AAAA.AAAA'`
+      expect((await call('getInvitation', { campaignId: campaign.id }, owner.cookie)).json()).toMatchObject({
+        url: null
+      })
+      await conn.sql`delete from invitation_links`
+      expect((await call('getInvitation', { campaignId: campaign.id }, owner.cookie)).json()).toMatchObject({
+        url: null,
+        issuedAt: null
+      })
+      expect((await call('regenerateInvitation', { campaignId: campaign.id }, owner.cookie)).json().url).toMatch(
+        /\/unirse\//
+      )
     })
   })
 

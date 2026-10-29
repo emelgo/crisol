@@ -36,6 +36,13 @@
       "when": 1793273556413,
       "tag": "0004_campanas",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793274550325,
+      "tag": "0005_enlaces-de-invitacion",
+      "breakpoints": true
     }
   ]
 }

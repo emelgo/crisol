@@ -58,6 +58,7 @@ export function WorldPage() {
                 key={campaign.id}
                 name={campaign.name}
                 role={t(`roles.${campaign.role}`)}
+                link={{ to: '/mundos/$worldId/campanas/$campaignId', params: { worldId, campaignId: campaign.id } }}
                 {...(campaign.role === 'master'
                   ? {
                       onRename: (name: string) =>
