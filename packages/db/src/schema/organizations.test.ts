@@ -37,10 +37,14 @@ describe('organizaciones', () => {
   it('las referencias a cuentas y organizaciones están declaradas con su política de borrado', () => {
     const onDelete = (table: Parameters<typeof getTableConfig>[0]) =>
       getTableConfig(table).foreignKeys.map((fk) => [getTableConfig(fk.reference().foreignTable).name, fk.onDelete])
-    expect(onDelete(organizationMembers)).toEqual([
-      ['organizations', 'cascade'],
-      ['user', 'cascade']
-    ])
+    // Además de las de autoría (created_by, updated_by → user, set null)
+    expect(onDelete(organizationMembers)).toEqual(
+      expect.arrayContaining([
+        ['organizations', 'cascade'],
+        ['user', 'cascade'],
+        ['user', 'set null']
+      ])
+    )
     expect(onDelete(bootstrapTokens)).toEqual([
       ['organizations', 'cascade'],
       ['user', 'set null']

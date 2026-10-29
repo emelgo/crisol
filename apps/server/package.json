@@ -18,7 +18,9 @@
   },
   "dependencies": {
     "@better-auth/drizzle-adapter": "catalog:",
+    "@crisol/contracts": "workspace:*",
     "@crisol/db": "workspace:*",
+    "@crisol/domain": "workspace:*",
     "@fastify/static": "catalog:",
     "better-auth": "catalog:",
     "drizzle-orm": "catalog:",
