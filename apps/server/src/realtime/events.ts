@@ -18,6 +18,12 @@ export const campaignsChanged = (scope: CampaignScope): RealtimeEvent => ({
   message: { type: 'changed', what: 'campaigns', worldId: scope.worldId }
 })
 
+/** La wiki de un mundo: su árbol o la fila de una página. A quien la ve (el máster y el propietario) */
+export const pagesChanged = (wiki: { worldId: string; organizationId: string }): RealtimeEvent => ({
+  to: { capability: 'page.read', target: wiki },
+  message: { type: 'changed', what: 'pages', worldId: wiki.worldId }
+})
+
 export const membersChanged = (scope: CampaignScope): RealtimeEvent => ({
   to: { capability: 'campaign.read', target: scope },
   message: { type: 'changed', what: 'members', campaignId: scope.campaignId }
@@ -54,7 +60,10 @@ type Applied = {
 }
 type UndoEvent = RealtimeEvent | { revoke: string; scope: CampaignScope }
 
-export function undoEvents(applied: readonly Applied[], context: { worldId: string | null; actorId: string }) {
+export function undoEvents(
+  applied: readonly Applied[],
+  context: { worldId: string | null; organizationId: string; actorId: string }
+) {
   const events: UndoEvent[] = [
     // Sus otras pestañas, aunque ya no vea lo que deshizo (un mundo quitado)
     { to: { userId: context.actorId }, message: { type: 'changed', what: 'worlds' } }
@@ -75,6 +84,9 @@ export function undoEvents(applied: readonly Applied[], context: { worldId: stri
         break
       case 'invitation_links':
         events.push(invitationChanged(campaignScope))
+        break
+      case 'pages':
+        events.push(pagesChanged({ worldId, organizationId: context.organizationId }))
         break
       case 'campaign_members': {
         const userId = String(row.user_id ?? '')

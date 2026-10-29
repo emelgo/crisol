@@ -13,6 +13,8 @@ export type RealtimeMessage =
   /** La cola de la IA de esa cuenta */
   | { type: 'changed'; what: 'approvals' }
   | { type: 'changed'; what: 'campaigns'; worldId: string }
+  /** El árbol o la fila de alguna página de la wiki de ese mundo */
+  | { type: 'changed'; what: 'pages'; worldId: string }
   | { type: 'changed'; what: 'members' | 'invitation'; campaignId: string }
   /** Alguien ha entrado en la campaña con el enlace (al máster, con «Expulsar» a mano) */
   | { type: 'joined'; worldId: string; campaignId: string; campaign: string; member: { userId: string; name: string } }

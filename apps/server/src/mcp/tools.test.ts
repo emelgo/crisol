@@ -13,14 +13,16 @@ describe('herramientas MCP', () => {
     }
   })
 
-  it('las del módulo 0', () => {
+  it('las del módulo 0 y las de la wiki que ya hay', () => {
     expect(Object.keys(MCP_TOOLS).sort()).toEqual([
       'crear_campana',
       'crear_mundo',
       'deshacer',
       'enlace_invitacion',
       'listar_mundos',
+      'mover_pagina',
       'pendientes',
+      'ver_arbol',
       'ver_campana',
       'ver_historial'
     ])

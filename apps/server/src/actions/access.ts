@@ -1,4 +1,4 @@
-import { campaignsRepo } from '@crisol/db'
+import { campaignsRepo, pagesRepo, worldsRepo } from '@crisol/db'
 import { authorize, type Capability, NotFoundError, ownedOrganizations } from '@crisol/domain'
 import { type ActionContext, InvalidRequestError } from './context.ts'
 
@@ -16,4 +16,27 @@ export function targetOrganization(ctx: ActionContext, organizationId: string | 
   const target = organizationId ?? (owned.length === 1 ? owned[0] : undefined)
   if (!target) throw new InvalidRequestError('ORGANIZATION_REQUIRED')
   return target
+}
+
+/** La wiki de un mundo, con la organización de su fila: el máster y el propietario la ven (módulo 1) */
+export interface WikiTarget {
+  worldId: string
+  organizationId: string
+}
+
+/** La wiki del mundo, si la cuenta puede hacer eso en ella. Un mundo que no existe (o en la papelera): 404 */
+export async function authorizedWiki(ctx: ActionContext, capability: Capability, worldId: string): Promise<WikiTarget> {
+  const world = await worldsRepo.findWorld(ctx.db, worldId)
+  const target = { worldId, organizationId: world?.organizationId ?? '' }
+  authorize(ctx.actor, capability, target)
+  if (!world) throw new NotFoundError('world')
+  return target
+}
+
+/** La página (fuera de la papelera) y su wiki, si la cuenta puede hacer eso en ella. Si no, 404 */
+export async function authorizedPage(ctx: ActionContext, capability: Capability, pageId: string) {
+  const page = await pagesRepo.findPage(ctx.db, pageId)
+  const wiki = await authorizedWiki(ctx, capability, page?.worldId ?? '')
+  if (!page) throw new NotFoundError('page')
+  return { page, wiki }
 }

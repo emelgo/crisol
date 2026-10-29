@@ -31,7 +31,13 @@ describe('Actions', () => {
       setAiMode: true,
       listApprovals: true,
       approve: true,
-      reject: true
+      reject: true,
+      createPage: true,
+      updatePage: true,
+      movePage: true,
+      getPage: true,
+      listPageChildren: true,
+      listPageTree: true
     }
     expect(Object.keys(names).sort()).toEqual(ACTIONS.map((a) => a.name).sort())
   })

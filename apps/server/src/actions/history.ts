@@ -56,7 +56,11 @@ export const historyActions = [
     }
     const done = await historyRepo.getOperation(ctx.db, result.operationId)
     if (!done) throw new Error('El deshacer no quedó en el historial')
-    for (const event of undoEvents(result.applied, { worldId: target.worldId, actorId: ctx.actor.userId })) {
+    for (const event of undoEvents(result.applied, {
+      worldId: target.worldId,
+      organizationId: target.organizationId,
+      actorId: ctx.actor.userId
+    })) {
       if ('revoke' in event) ctx.realtime.revoke(event.revoke, event.scope)
       else ctx.realtime.publish(event)
     }

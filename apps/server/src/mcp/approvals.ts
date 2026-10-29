@@ -6,7 +6,7 @@
 import type { RealtimeMessage } from '@crisol/contracts'
 import { aiRepo, historyRepo, loadMemberships, worldsRepo } from '@crisol/db'
 import { actorFrom, aiDecision, authorize, MAX_PENDING_APPROVALS, NotFoundError } from '@crisol/domain'
-import { authorizedCampaign } from '../actions/access.ts'
+import { authorizedCampaign, authorizedPage } from '../actions/access.ts'
 import { type ActionContext, type ActionEnv, errorCode, type Implementation } from '../actions/context.ts'
 import { approvalsChanged } from '../realtime/events.ts'
 import { openJson } from '../secrets.ts'
@@ -76,7 +76,8 @@ export async function callAsAi(env: ActionEnv, call: AiCall): Promise<ToolResult
 
 /**
  * Los nombres de lo que toca la petición, para el resumen de la cola. Solo de lo que la cuenta ve: si no, para ella no
- * existe y no se pide nada. Cubre lo que piden las herramientas: un mundo, una campaña o una operación del historial
+ * existe y no se pide nada. Cubre lo que piden las herramientas: un mundo, una campaña, una página (y su madre) o una
+ * operación del historial
  */
 async function describe(ctx: ActionContext, input: Record<string, unknown>) {
   const details: Record<string, unknown> = {}
@@ -88,6 +89,12 @@ async function describe(ctx: ActionContext, input: Record<string, unknown>) {
   }
   if (typeof input.campaignId === 'string') {
     details.campaign = (await authorizedCampaign(ctx, 'campaign.read', input.campaignId)).name
+  }
+  if (typeof input.pageId === 'string') {
+    details.page = (await authorizedPage(ctx, 'page.read', input.pageId)).page.title
+  }
+  if (typeof input.parentId === 'string') {
+    details.parent = (await authorizedPage(ctx, 'page.read', input.parentId)).page.title
   }
   if (typeof input.operationId === 'string') {
     const operation = await historyRepo.getOperation(ctx.db, input.operationId)
