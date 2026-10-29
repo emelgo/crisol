@@ -149,12 +149,19 @@ export function purge(db: Database, now: Date) {
       .delete(approvals)
       .where(lt(approvals.createdAt, historyCutoff(now)))
       .returning({ id: approvals.id })
+    // Lo aprobado que lleva más de una hora haciéndose ya no se va a acabar
+    const interrupted = await tx
+      .update(approvals)
+      .set({ status: 'failed', error: 'INTERRUPTED' })
+      .where(and(eq(approvals.status, 'approved'), lt(approvals.decidedAt, new Date(now.getTime() - 60 * 60 * 1000))))
+      .returning({ id: approvals.id })
     return {
       worlds: purgedWorlds.length,
       campaigns: purgedCampaigns.length,
       memberships: memberships.length,
       operations: purgedOperations.length,
-      approvals: purgedApprovals.length
+      approvals: purgedApprovals.length,
+      interrupted: interrupted.length
     }
   })
 }

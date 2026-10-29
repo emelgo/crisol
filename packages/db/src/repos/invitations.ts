@@ -78,33 +78,47 @@ export type JoinResult = { status: 'joined' } | { status: 'member' } | { status:
  * La cuenta entra en la campaña como jugadora con el enlace, en una sola operación: su pertenencia a la campaña, la
  * de la organización si no la tenía y una entrada más en el enlace. Si ya estaba, no cambia nada.
  */
+/**
+ * Una cuenta a la vez en una organización: entrar en dos campañas a la vez, o entrar y salir, se ponen en fila (la fila
+ * de la organización puede no existir aún, y entonces no hay nada que bloquear)
+ */
+export async function lockMembership(w: Writer, organizationId: string, userId: string) {
+  await w.read.execute(sql`select pg_advisory_xact_lock(hashtext(${organizationId} || ':' || ${userId}))`)
+}
+
 export function joinCampaign(
   db: Database,
   context: OperationContext,
-  input: { invitationId: string; campaignId: string; organizationId: string; userId: string }
+  input: { invitationId: string; tokenHash: string; campaignId: string; organizationId: string; userId: string }
 ): Promise<JoinResult> {
   return operation(db, context, async (w) => {
-    // El enlace se bloquea mientras dura la operación: un cierre o un cambio a la vez no se cuela
+    await lockMembership(w, input.organizationId, input.userId)
+    // El enlace se bloquea mientras dura la operación: un cierre o un cambio a la vez no se cuela. Con él bloqueado se
+    // vuelve a mirar que sea el mismo (no se ha regenerado) y que la campaña no haya ido a la papelera
     const [link] = await w.read
       .select()
       .from(invitationLinks)
       .where(eq(invitationLinks.id, input.invitationId))
       .for('update')
-    if (!link?.open) return { status: 'closed' }
+    if (!link?.open || link.tokenHash !== input.tokenHash) return { status: 'closed' }
+    const [alive] = await w.read
+      .select({ id: campaigns.id })
+      .from(campaigns)
+      .innerJoin(worlds, eq(worlds.id, campaigns.worldId))
+      .where(and(eq(campaigns.id, input.campaignId), isNull(campaigns.deletedAt), isNull(worlds.deletedAt)))
+    if (!alive) return { status: 'closed' }
     const [existing] = await w.read
       .select({ role: campaignMembers.role })
       .from(campaignMembers)
       .where(and(eq(campaignMembers.campaignId, input.campaignId), eq(campaignMembers.userId, input.userId)))
     if (existing) return { status: existing.role === 'master' ? 'master' : 'member' }
     await w.insert(campaignMembers, { campaignId: input.campaignId, userId: input.userId, role: 'player' })
-    // Bloqueada: si a la vez sale de otra campaña y se queda sin ninguna, no se pierde la pertenencia
     const [orgMember] = await w.read
       .select({ id: organizationMembers.id })
       .from(organizationMembers)
       .where(
         and(eq(organizationMembers.organizationId, input.organizationId), eq(organizationMembers.userId, input.userId))
       )
-      .for('update')
     if (!orgMember) {
       await w.insert(organizationMembers, {
         organizationId: input.organizationId,

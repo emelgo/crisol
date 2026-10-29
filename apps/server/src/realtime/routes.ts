@@ -40,9 +40,10 @@ export function registerRealtimeRoutes(app: FastifyInstance, options: RealtimeRo
       // Antes de aceptar la conexión. Un WebSocket lleva las cookies aunque lo abra otra web: solo vale nuestro origen
       preValidation: async (request, reply) => {
         if (request.headers.origin !== allowed) return reply.code(403).send({ code: 'BAD_ORIGIN' })
+        // Sin sesión se acepta y se cierra al momento con 4401: un 401 al abrir el navegador lo ve como un corte de red
+        // (1006) y el cliente reintentaría sin saber que tiene que volver a entrar
         const session = await auth.api.getSession({ headers: toHeaders(request.headers) })
-        if (!session) return reply.code(401).send({ code: 'UNAUTHENTICATED' })
-        users.set(request, session.user.id)
+        if (session) users.set(request, session.user.id)
       }
     },
     (socket, request) => {

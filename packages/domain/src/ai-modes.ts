@@ -26,6 +26,9 @@ export function aiDecision(mode: AiMode, kind: ActionKind): AiDecision {
 /** Cuánto espera la herramienta a que se apruebe antes de contestar «esperando la aprobación» */
 export const APPROVAL_WAIT_MS = 15_000
 
+/** Cuántas peticiones puede tener esperando una cuenta: más no se leen, y la que importa se perdería entre ellas */
+export const MAX_PENDING_APPROVALS = 20
+
 /** Lo que nadie aprueba en 24 h caduca */
 export const APPROVAL_TTL_MS = 24 * 60 * 60 * 1000
 

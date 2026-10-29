@@ -129,6 +129,19 @@ describe('modos de IA y cola de aprobación', () => {
     expect((await aiRepo.listApprovals(conn.db, 'u1', at(3 * DAY), 1)).recent.map((a) => a.id)).toEqual([second.id])
   })
 
+  it('lo aprobado que se quedó haciéndose (un reinicio a medias) pasa a fallido', async () => {
+    const stuck = await request()
+    const recent = await request()
+    await aiRepo.decideApproval(conn.db, { userId: 'u1', approvalId: stuck.id, decision: 'approved', now })
+    await aiRepo.decideApproval(conn.db, { userId: 'u1', approvalId: recent.id, decision: 'approved', now: at(HOUR) })
+    expect(await aiRepo.failInterruptedApprovals(conn.db, at(1))).toBe(1)
+    expect(await aiRepo.findApproval(conn.db, 'u1', stuck.id)).toMatchObject({ status: 'failed', error: 'INTERRUPTED' })
+    expect((await aiRepo.findApproval(conn.db, 'u1', recent.id))?.status).toBe('approved')
+    // La purga diaria también, pasada una hora
+    expect(await purge(conn.db, at(2 * HOUR + 1))).toMatchObject({ interrupted: 1 })
+    expect((await aiRepo.findApproval(conn.db, 'u1', recent.id))?.status).toBe('failed')
+  })
+
   it('la purga diaria se lleva las peticiones de más de 90 días', async () => {
     await request({ now: new Date(now.getTime() - 91 * DAY) })
     const recent = await request({ now: new Date(now.getTime() - 89 * DAY) })

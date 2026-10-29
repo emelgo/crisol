@@ -2,7 +2,7 @@ import { type Database, loadMemberships } from '@crisol/db'
 import { actorFrom } from '@crisol/domain'
 import fastifyRateLimit from '@fastify/rate-limit'
 import fastifyWebsocket from '@fastify/websocket'
-import Fastify, { type FastifyInstance } from 'fastify'
+import Fastify, { type FastifyInstance, type FastifyRequest } from 'fastify'
 import type { ActionEnv } from './actions/context.ts'
 import { implementationsByName } from './actions/implementations.ts'
 import { registerActionRoutes } from './actions/routes.ts'
@@ -10,7 +10,7 @@ import type { Auth } from './auth/auth.ts'
 import { registerAuthRoutes } from './auth/routes.ts'
 import { registerBootstrapRoutes } from './bootstrap.ts'
 import { type HealthChecks, registerHealth } from './health.ts'
-import { registerOriginGuard } from './http.ts'
+import { redactSecrets, registerOriginGuard } from './http.ts'
 import { registerJoinRoutes } from './join.ts'
 import { registerMcpRoutes } from './mcp/routes.ts'
 import { createRealtime } from './realtime/hub.ts'
@@ -35,7 +35,11 @@ export interface AppDeps {
 }
 
 export function buildApp(deps: AppDeps): FastifyInstance {
-  const app = Fastify({ logger: deps.logger ?? false })
+  // En el registro, cada petición sin los secretos de su URL
+  const logger = {
+    serializers: { req: (request: FastifyRequest) => ({ method: request.method, url: redactSecrets(request.url) }) }
+  }
+  const app = Fastify({ logger: deps.logger ? logger : false })
   registerHealth(app, deps.checks, deps.healthTimeoutMs ?? 2000)
   if (deps.accounts) {
     const { auth, db, publicUrl, sealKey } = deps.accounts

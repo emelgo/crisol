@@ -38,6 +38,7 @@ describe('papelera', () => {
     const link = await invitationsRepo.findInvitation(conn.db, campaign.id)
     await invitationsRepo.joinCampaign(conn.db, ctx('joinCampaign', 'u2'), {
       invitationId: link?.id ?? '',
+      tokenHash,
       campaignId: campaign.id,
       organizationId,
       userId: 'u2'
