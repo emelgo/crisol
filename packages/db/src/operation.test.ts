@@ -111,6 +111,13 @@ describe('operation', () => {
     expect(ops.every((op) => op.worldId === world.id)).toBe(true)
   })
 
+  it('el mundo se puede decir cuando los cambios no lo llevan (los miembros de una campaña)', async () => {
+    const world = await operation(conn.db, ctx(), (w) => w.insert(worlds, { organizationId, name: 'Eana' }))
+    await operation(conn.db, { ...ctx(), worldId: world.id }, (w) => w.update(organizations, organizationId, {}))
+    const ops = await conn.db.select().from(operations)
+    expect(ops.map((op) => op.worldId)).toEqual([world.id, world.id])
+  })
+
   it('todas las tablas de dominio pasan por el historial', async () => {
     // Las que no: cuentas y sesiones (Better Auth), el propio historial, el arranque y las migraciones
     const notTracked = new Set(['user', 'session', 'account', 'verification', 'rate_limit', 'operations', 'changes'])

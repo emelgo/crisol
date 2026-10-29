@@ -27,6 +27,7 @@ async function join(env: ActionEnv, link: Link, userId: string) {
     env.db,
     {
       organizationId: link.organizationId,
+      worldId: link.worldId,
       actorId: userId,
       via: 'ui',
       action: 'joinCampaign',

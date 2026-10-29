@@ -1,11 +1,21 @@
-/** API en memoria para las pruebas de componentes: mundos y campañas de una organización */
-import type { Campaign, Invitation, Organization, World } from '@crisol/contracts'
+/** API en memoria para las pruebas de componentes: mundos, campañas y sus miembros de una organización */
+import type { Campaign, Invitation, Member, Organization, World } from '@crisol/contracts'
 import { type ActionInput, type ActionName, type ActionOutput, type ApiClient, ApiError } from './client.ts'
 
-export function fakeApi(options: { organizations?: Organization[]; worlds?: World[]; campaigns?: Campaign[] } = {}) {
+export function fakeApi(
+  options: {
+    organizations?: Organization[]
+    worlds?: World[]
+    campaigns?: Campaign[]
+    /** Por campaña */
+    members?: Record<string, Member[]>
+  } = {}
+) {
   const organizations = options.organizations ?? []
   const worlds = [...(options.worlds ?? [])]
   const campaigns = [...(options.campaigns ?? [])]
+  const members = new Map(Object.entries(options.members ?? {}).map(([id, list]) => [id, [...list]]))
+  const membersOf = (campaignId: string) => ({ members: (members.get(campaignId) ?? []).map((m) => ({ ...m })) })
   const calls: string[] = []
   const invitations = new Map<string, Invitation>()
   const link = () => `https://crisol.test/unirse/${crypto.randomUUID()}`
@@ -71,6 +81,25 @@ export function fakeApi(options: { organizations?: Organization[]; worlds?: Worl
     setInvitationsOpen: ({ campaignId, open }) => {
       invitations.set(campaignId, { ...invitationOf(campaignId), open })
       return invitationOf(campaignId)
+    },
+    listMembers: ({ campaignId }) => membersOf(campaignId),
+    removeMember: ({ campaignId, userId }) => {
+      const list = members.get(campaignId) ?? []
+      const member = list.find((m) => m.userId === userId)
+      if (!member) throw new ApiError('NOT_FOUND', 404)
+      if (member.role === 'master') throw new ApiError('MASTER_NOT_REMOVABLE', 400)
+      members.set(
+        campaignId,
+        list.filter((m) => m !== member)
+      )
+      return membersOf(campaignId)
+    },
+    // Quien sale deja de ver la campaña
+    leaveCampaign: ({ campaignId }) => {
+      const index = campaigns.findIndex((c) => c.id === campaignId)
+      if (index < 0) throw new ApiError('NOT_FOUND', 404)
+      campaigns.splice(index, 1)
+      return {}
     }
   }
 

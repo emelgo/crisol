@@ -78,6 +78,18 @@ export const es = {
     open: 'Invitaciones abiertas',
     closed: 'Ahora nadie puede entrar con el enlace.'
   },
+  members: {
+    title: 'Miembros',
+    remove: 'Expulsar',
+    removeButton: 'Expulsar a {{name}}',
+    removeWarning: 'Con el enlace actual, {{name}} podría volver a entrar.',
+    removeConfirm: 'Expulsar',
+    removeAndRegenerate: 'Expulsar y cambiar el enlace',
+    removed: '{{name}} ya no está en la campaña.',
+    leave: 'Dejar la campaña',
+    leaveWarning: 'Para volver, el máster tendrá que pasarte el enlace.',
+    leaveConfirm: 'Dejarla'
+  },
   list: {
     rename: 'Renombrar',
     renameButton: 'Renombrar {{name}}',
@@ -115,6 +127,7 @@ export const es = {
     FORBIDDEN: 'No tienes permiso',
     NOT_FOUND: 'Ya no existe',
     ORGANIZATION_REQUIRED: 'Necesitas ser propietario de una organización',
+    MASTER_NOT_REMOVABLE: 'Al máster no se le puede expulsar',
     UNKNOWN: 'Algo ha fallado. Vuelve a intentarlo.'
   },
   theme: {

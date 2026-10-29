@@ -1,5 +1,6 @@
+import type { Campaign } from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { getRouteApi, Link, Navigate } from '@tanstack/react-router'
+import { getRouteApi, Link, Navigate, useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
@@ -11,7 +12,7 @@ import styles from '../components/list.module.css'
 
 const route = getRouteApi('/mundos/$worldId/campanas/$campaignId')
 
-/** Una campaña: de momento, su enlace de invitación (para su máster). Los miembros llegan con la tarea 16 */
+/** Una campaña: quién está en ella y, para su máster, el enlace de invitación */
 export function CampaignPage() {
   const { t } = useTranslation()
   const { worldId, campaignId } = route.useParams()
@@ -50,7 +51,118 @@ export function CampaignPage() {
         </Link>
       </p>
       <h1>{campaign.name}</h1>
+      <MembersPanel campaign={campaign} />
       {campaign.role === 'master' && <InvitationPanel campaignId={campaignId} />}
+    </section>
+  )
+}
+
+function MembersPanel({ campaign }: { campaign: Campaign }) {
+  const { t } = useTranslation()
+  const api = useApi()
+  const queryClient = useQueryClient()
+  const navigate = useNavigate()
+  const errorText = useErrorText()
+  const campaignId = campaign.id
+  const key = ['members', campaignId]
+  const members = useQuery({ queryKey: key, queryFn: () => api.call('listMembers', { campaignId }) })
+  const [confirmingRemove, setConfirmingRemove] = useState<string | null>(null)
+  const [removedName, setRemovedName] = useState<string | null>(null)
+  const [confirmingLeave, setConfirmingLeave] = useState(false)
+  const remove = useMutation({
+    mutationFn: async ({ userId, newLink }: { userId: string; name: string; newLink: boolean }) => {
+      queryClient.setQueryData(key, await api.call('removeMember', { campaignId, userId }))
+      if (newLink) {
+        queryClient.setQueryData(['invitation', campaignId], await api.call('regenerateInvitation', { campaignId }))
+      }
+    },
+    onSuccess: (_, { name }) => {
+      setConfirmingRemove(null)
+      setRemovedName(name)
+    }
+  })
+  const leave = useMutation({
+    mutationFn: () => api.call('leaveCampaign', { campaignId }),
+    // Primero fuera de la campaña: refrescar aquí pediría lo que ya no ve
+    onSuccess: async () => {
+      await navigate({ to: '/mundos' })
+      queryClient.removeQueries({ queryKey: ['members', campaignId] })
+      queryClient.removeQueries({ queryKey: ['campaigns', campaign.worldId] })
+      await queryClient.invalidateQueries({ queryKey: ['worlds'] })
+      await queryClient.invalidateQueries({ queryKey: ['organizations'] })
+    }
+  })
+
+  if (!members.data) return null
+  const canRemove = campaign.role === 'master'
+  const error = remove.error ?? leave.error
+
+  return (
+    <section aria-labelledby="miembros">
+      <h2 id="miembros">{t('members.title')}</h2>
+      <ul className={styles.list} aria-labelledby="miembros">
+        {members.data.members.map((member) => (
+          <li key={member.userId} className={styles.item}>
+            <span className={styles.name}>{member.name}</span>
+            <span className={styles.role}>{t(`roles.${member.role}`)}</span>
+            {canRemove && member.role === 'player' && confirmingRemove !== member.userId && (
+              <button
+                type="button"
+                className={styles.secondary}
+                aria-label={t('members.removeButton', { name: member.name })}
+                onClick={() => {
+                  setConfirmingRemove(member.userId)
+                  setRemovedName(null)
+                }}
+              >
+                {t('members.remove')}
+              </button>
+            )}
+            {confirmingRemove === member.userId && (
+              <div className={styles.confirm}>
+                <p>{t('members.removeWarning', { name: member.name })}</p>
+                <div className={styles.actions}>
+                  {[false, true].map((newLink) => (
+                    <button
+                      key={String(newLink)}
+                      type="button"
+                      className={newLink ? styles.secondary : form.button}
+                      disabled={remove.isPending}
+                      onClick={() => remove.mutate({ userId: member.userId, name: member.name, newLink })}
+                    >
+                      {newLink ? t('members.removeAndRegenerate') : t('members.removeConfirm')}
+                    </button>
+                  ))}
+                  <button type="button" className={styles.secondary} onClick={() => setConfirmingRemove(null)}>
+                    {t('list.cancel')}
+                  </button>
+                </div>
+              </div>
+            )}
+          </li>
+        ))}
+      </ul>
+      {removedName && <p role="status">{t('members.removed', { name: removedName })}</p>}
+
+      {campaign.role === 'player' &&
+        (confirmingLeave ? (
+          <div>
+            <p>{t('members.leaveWarning')}</p>
+            <div className={styles.actions}>
+              <button type="button" className={form.button} disabled={leave.isPending} onClick={() => leave.mutate()}>
+                {t('members.leaveConfirm')}
+              </button>
+              <button type="button" className={styles.secondary} onClick={() => setConfirmingLeave(false)}>
+                {t('list.cancel')}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button type="button" className={styles.secondary} onClick={() => setConfirmingLeave(true)}>
+            {t('members.leave')}
+          </button>
+        ))}
+      <FormError message={error ? errorText(error) : null} />
     </section>
   )
 }

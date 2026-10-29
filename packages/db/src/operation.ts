@@ -31,6 +31,8 @@ type Values<T extends TrackedTable> = Omit<InferInsertModel<T>, Managed>
 export interface OperationContext {
   /** Si falta, se deduce de los cambios (al crear una organización, la propia) */
   organizationId?: string
+  /** Si falta, se deduce de los cambios; hay que darlo cuando no lo llevan (los miembros de una campaña) */
+  worldId?: string
   /** La cuenta que lo pidió (null: el sistema) */
   actorId: string | null
   via: 'ui' | 'ai' | 'system'
@@ -120,7 +122,7 @@ export async function operation<R>(
       .insert(operations)
       .values({
         organizationId,
-        worldId: scopeOf(recorded, 'worlds', 'world_id'),
+        worldId: context.worldId ?? scopeOf(recorded, 'worlds', 'world_id'),
         actorId: context.actorId,
         via: context.via,
         tool: context.tool ?? null,

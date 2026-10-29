@@ -1,20 +1,7 @@
 import { connect, schema } from '@crisol/db'
 import { expect, test } from '@playwright/test'
 import { e2eDatabaseUrl } from '../servidor.ts'
-import { freshOwner } from './ayudas.ts'
-
-/** El máster crea Eana y La Marca y devuelve el enlace de invitación */
-async function campaignLink(page: import('@playwright/test').Page) {
-  await freshOwner(page)
-  await page.goto('/mundos')
-  await page.getByLabel('Nombre del mundo').fill('Eana')
-  await page.getByRole('button', { name: 'Crear el mundo' }).click()
-  await page.getByRole('link', { name: 'Eana' }).click()
-  await page.getByLabel('Nombre de la campaña').fill('La Marca')
-  await page.getByRole('button', { name: 'Crear la campaña' }).click()
-  await page.getByRole('link', { name: 'La Marca' }).click()
-  return page.getByLabel('Enlace de invitación').inputValue()
-}
+import { campaignLink } from './ayudas.ts'
 
 const players = async () => {
   const conn = connect(e2eDatabaseUrl(), { max: 1 })

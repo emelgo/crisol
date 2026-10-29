@@ -96,12 +96,14 @@ export function joinCampaign(
       .where(and(eq(campaignMembers.campaignId, input.campaignId), eq(campaignMembers.userId, input.userId)))
     if (existing) return { status: existing.role === 'master' ? 'master' : 'member' }
     await w.insert(campaignMembers, { campaignId: input.campaignId, userId: input.userId, role: 'player' })
+    // Bloqueada: si a la vez sale de otra campaña y se queda sin ninguna, no se pierde la pertenencia
     const [orgMember] = await w.read
       .select({ id: organizationMembers.id })
       .from(organizationMembers)
       .where(
         and(eq(organizationMembers.organizationId, input.organizationId), eq(organizationMembers.userId, input.userId))
       )
+      .for('update')
     if (!orgMember) {
       await w.insert(organizationMembers, {
         organizationId: input.organizationId,

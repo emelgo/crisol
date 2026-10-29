@@ -5,6 +5,7 @@ import type { AccountClient } from './account/client.ts'
 import { AccountsProvider } from './account/context.tsx'
 import type { ApiClient } from './api/client.ts'
 import { ApiProvider } from './api/context.tsx'
+import { shouldRetry } from './api/errors.ts'
 import type { createAppRouter } from './router.tsx'
 import './i18n.ts'
 import './styles/tokens.css'
@@ -19,7 +20,7 @@ export function App({
   accounts: AccountClient
   api: ApiClient
 }) {
-  const [queryClient] = useState(() => new QueryClient())
+  const [queryClient] = useState(() => new QueryClient({ defaultOptions: { queries: { retry: shouldRetry } } }))
   return (
     <QueryClientProvider client={queryClient}>
       <AccountsProvider client={accounts}>

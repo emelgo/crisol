@@ -29,12 +29,15 @@ export class InvalidRequestError extends Error {
   }
 }
 
-/** Lo que una acción deja en el historial */
+/**
+ * Lo que una acción deja en el historial. El ámbito, si los cambios no lo llevan: la organización y el mundo (una
+ * campaña ya los trae)
+ */
 export function historyContext(
   ctx: ActionContext,
   action: string,
   details: Record<string, unknown>,
-  organizationId?: string
+  scope: { organizationId?: string; worldId?: string } = {}
 ): OperationContext {
   return {
     actorId: ctx.actor.userId,
@@ -42,6 +45,7 @@ export function historyContext(
     tool: ctx.tool ?? null,
     action,
     details,
-    ...(organizationId ? { organizationId } : {})
+    ...(scope.organizationId ? { organizationId: scope.organizationId } : {}),
+    ...(scope.worldId ? { worldId: scope.worldId } : {})
   }
 }

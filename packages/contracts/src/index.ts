@@ -1,11 +1,13 @@
 import { createCampaign, listCampaigns, renameCampaign } from './campaigns.ts'
 import { getInvitation, regenerateInvitation, setInvitationsOpen } from './invitations.ts'
+import { leaveCampaign, listMembers, removeMember } from './members.ts'
 import { listOrganizations } from './organizations.ts'
 import { createWorld, listWorlds, renameWorld } from './worlds.ts'
 
 export * from './action.ts'
 export * from './campaigns.ts'
 export * from './invitations.ts'
+export * from './members.ts'
 export * from './openapi.ts'
 export * from './organizations.ts'
 export * from './worlds.ts'
@@ -21,7 +23,10 @@ export const ACTIONS = [
   renameCampaign,
   getInvitation,
   regenerateInvitation,
-  setInvitationsOpen
+  setInvitationsOpen,
+  listMembers,
+  removeMember,
+  leaveCampaign
 ]
 
 /** Las acciones por nombre, solo como tipo: la web las usa sin cargar zod */
@@ -36,4 +41,7 @@ export type Actions = {
   getInvitation: typeof getInvitation
   regenerateInvitation: typeof regenerateInvitation
   setInvitationsOpen: typeof setInvitationsOpen
+  listMembers: typeof listMembers
+  removeMember: typeof removeMember
+  leaveCampaign: typeof leaveCampaign
 }
