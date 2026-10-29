@@ -122,6 +122,23 @@ Estados: pendiente · en curso · hecho · descartado.
 
 Cada módulo nace con su API y sus herramientas MCP.
 
+**Entre el 0 y el 1, fase de diseño** (decidido con Enrique, 2026-10-29). La interfaz del módulo 0 funciona y es
+accesible, pero no tiene un diseño visual pensado. Antes de la wiki, que es lo más visual:
+- Identidad (tipografía, paleta, tono).
+- Kit de componentes.
+- Repaso de las pantallas del 0.
+
+Se hace con la skill `frontend-design` de Anthropic (Apache-2.0). Enrique la instala en Claude Code con
+`/plugin marketplace add anthropics/skills` y `/plugin install example-skills@anthropic-agent-skills`.
+
+De las de Vercel (`vercel-labs/agent-skills`, MIT) sirven cuatro, que se copian al proyecto al empezar la fase:
+- `web-design-guidelines`: revisar la interfaz contra sus Web Interface Guidelines.
+- `react-best-practices` y `composition-patterns`: rendimiento y forma de los componentes de React.
+- `react-view-transitions`: animaciones entre pantallas, más adelante.
+
+Las de desplegar en Vercel y React Native no aplican. Desde entonces, cada módulo lleva un paso de diseño entre la spec
+y el plan (ver `CLAUDE.md`).
+
 ## Decisiones por módulo
 
 ### 0. Fundación (repaso con Enrique, 2026-10-29)
