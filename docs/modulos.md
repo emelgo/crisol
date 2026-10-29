@@ -19,7 +19,7 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   - Spec `docs/specs/fundacion.md` **aprobada**; ADR-0002 (Better Auth solo para identidad; inquilinos e invitaciones
     en tablas propias); prueba de fugas añadida a `CONSTRAINTS.md`.
   - Plan aprobado: `tasks/plan.md` y 25 tareas en `tasks/todo.md`.
-- **2026-10-29 — Módulo 0 en curso: tareas 1 a 14 y 16 a 20 hechas** (PR #2 a #25). Staging en
+- **2026-10-29 — Módulo 0 en curso: tareas 1 a 14 y 16 a 21 hechas** (PR #2 a #26). Staging en
   https://neo.crisol.144-91-122-245.sslip.io (Compose `crisol-staging` en `~/crisol-staging`, puerto 8140; copia del
   Caddyfile en `/etc/caddy/Caddyfile.bak-20261029-104936-neo-crisol`). Desplegar tras cada merge:
   `scripts/desplegar-staging.sh` (con cerrojo).
@@ -50,7 +50,13 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
     con otra igual. En cualquier conflicto no toca nada y dice qué operación posterior lo impide. Deshacer deja la
     versión de antes, así que tras deshacer lo posterior se puede deshacer lo anterior. El contador de entradas del
     enlace ya no pasa por el historial (si no, cada entrada impediría deshacer las anteriores). Lo del sistema no se
-    deshace.
+    deshace. Enrique probó el historial en staging: funciona.
+  - Papelera (21): borrar un mundo o una campaña marca `deleted_at` (la misma fila; deshacerlo o restaurarla la deja
+    como estaba). Lo de la papelera no cuenta en ninguna consulta de lo que ve una cuenta (pertenencias, listas,
+    enlace de invitación). Papelera del mundo (su máster) y de la organización (el propietario, también mundos).
+    Purga diaria a las 4:00 de Madrid con BullMQ 6.3.15 (`apps/server/src/jobs/purges.ts`): lo de más de 30 días en
+    la papelera y las operaciones de más de 90; quien se queda sin nada deja de ser miembro. `msgpackr-extract`
+    (acelerador nativo opcional) no ejecuta su script de instalación.
   - Puntos de control 1 y 2 superados: Enrique tiene su cuenta de propietario en staging (organización
     «Fateforge», mundo «Eana») y conectó claude.ai (cliente CIMD `https://claude.ai/oauth/mcp-oauth-client-metadata`).
   - GitHub gratis no protege ramas privadas: se fusiona solo con los 4 check-runs del commit en verde, esperando con
@@ -58,8 +64,10 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   - MIT-0 admitida en `CONSTRAINTS.md`.
   - Puertos: desarrollo 8130 (servidor), 5173 (Vite), 54330 (Postgres), 63790 (Valkey), 10250/8250 (Mailpit);
     e2e 8131; prueba del MCP 8132; staging 8140.
-- **Siguiente paso: tarea 21 (papelera y purgas)**, y con ella el punto de control 4 (criterios 5 y 6). O la **15**
-  (Discord y Google) si Enrique ya tiene las apps OAuth y ha decidido el correo (preguntas 1 y 2 de la spec).
+- **Siguiente paso: punto de control 4 con Enrique** (criterio 6: borrar una campaña y restaurarla desde la
+  papelera; el 5, deshacer lo que creó Claude, se completa con la tarea 24, que trae `crear_campana`). Después, la
+  **22** (modos de IA y cola de aprobación en el servidor) o la **15** (Discord y Google) si Enrique ya tiene las apps
+  OAuth y ha decidido el correo.
 - **Antes del módulo 1**: ADR sobre Yjs y secretos. Yjs no puede proyectar por usuario, así que el contenido con otra
   visibilidad tiene que ir en documentos o subdocumentos aparte (ver la nota de sincronización de Foundry).
 - **Pendientes de permiso de Enrique:**

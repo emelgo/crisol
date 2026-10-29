@@ -34,6 +34,8 @@ export function Worlds() {
       {canCreate && (
         <p>
           <Link to="/historial">{t('history.organizationLink')}</Link>
+          {' · '}
+          <Link to="/papelera">{t('trash.title')}</Link>
         </p>
       )}
       {worlds.data &&
@@ -48,7 +50,10 @@ export function Worlds() {
                 role={t(`roles.${world.role}`)}
                 link={{ to: '/mundos/$worldId', params: { worldId: world.id } }}
                 {...(world.role === 'master'
-                  ? { onRename: (name: string) => api.call('renameWorld', { worldId: world.id, name }).then(refresh) }
+                  ? {
+                      onRename: (name: string) => api.call('renameWorld', { worldId: world.id, name }).then(refresh),
+                      onDelete: () => api.call('deleteWorld', { worldId: world.id }).then(refresh)
+                    }
                   : {})}
               />
             ))}

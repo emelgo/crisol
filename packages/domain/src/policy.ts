@@ -61,7 +61,13 @@ const RULES = {
   'organization.history': { sees: isOrganizationMember, allows: isOrganizationOwner },
   // Deshacer: quien ve el historial, con sus permisos de ahora
   'world.undo': { sees: seesWorld, allows: isWorldMaster },
-  'organization.undo': { sees: isOrganizationMember, allows: isOrganizationOwner }
+  'organization.undo': { sees: isOrganizationMember, allows: isOrganizationOwner },
+  // Borrar manda a la papelera; desde ella se restaura: la de un mundo (sus campañas), para su máster; la de la
+  // organización (también los mundos), para el propietario
+  'world.delete': { sees: seesWorld, allows: isWorldMaster },
+  'campaign.delete': { sees: seesCampaign, allows: any(isWorldMaster, isCampaignMaster) },
+  'world.trash': { sees: seesWorld, allows: isWorldMaster },
+  'organization.trash': { sees: isOrganizationMember, allows: isOrganizationOwner }
 } satisfies Record<string, { sees: Predicate; allows: Predicate }>
 
 export type Capability = keyof typeof RULES

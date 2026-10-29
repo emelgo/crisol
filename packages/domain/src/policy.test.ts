@@ -123,7 +123,23 @@ describe('authorize', () => {
     ['un jugador no deshace en el mundo en el que juega', player, 'world.undo', { worldId: WORLD }, 'prohíbe'],
     ['nadie deshace en un mundo ajeno', outsider, 'world.undo', { worldId: WORLD }, 'no lo ve'],
     ['el propietario deshace en la organización', owner, 'organization.undo', { organizationId: ORG }, 'permite'],
-    ['un miembro no deshace en la organización', member, 'organization.undo', { organizationId: ORG }, 'prohíbe']
+    ['un miembro no deshace en la organización', member, 'organization.undo', { organizationId: ORG }, 'prohíbe'],
+    ['el máster borra su mundo', owner, 'world.delete', { worldId: WORLD }, 'permite'],
+    ['un jugador no borra el mundo en el que juega', player, 'world.delete', { worldId: WORLD }, 'prohíbe'],
+    ['el máster borra las campañas de su mundo', owner, 'campaign.delete', campaign, 'permite'],
+    ['el máster de la campaña la borra', master, 'campaign.delete', campaign, 'permite'],
+    ['un jugador no borra su campaña', player, 'campaign.delete', campaign, 'prohíbe'],
+    ['nadie borra lo de otra organización', outsider, 'campaign.delete', campaign, 'no lo ve'],
+    ['el máster ve y vacía la papelera de su mundo', owner, 'world.trash', { worldId: WORLD }, 'permite'],
+    ['un jugador no ve la papelera del mundo', player, 'world.trash', { worldId: WORLD }, 'prohíbe'],
+    [
+      'el propietario ve la papelera de la organización',
+      owner,
+      'organization.trash',
+      { organizationId: ORG },
+      'permite'
+    ],
+    ['un miembro no la ve', member, 'organization.trash', { organizationId: ORG }, 'prohíbe']
   ]
 
   it.each(cases)('%s', (_, who, capability, target, expected) => {

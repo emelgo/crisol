@@ -1,4 +1,4 @@
-import { and, asc, eq, sql } from 'drizzle-orm'
+import { and, asc, eq, isNull, sql } from 'drizzle-orm'
 import type { Database } from '../client.ts'
 import { type OperationContext, operation, type Writer } from '../operation.ts'
 import { user } from '../schema/auth.ts'
@@ -31,7 +31,8 @@ export async function findInvitationByHash(db: Database, tokenHash: string) {
     .from(invitationLinks)
     .innerJoin(campaigns, eq(campaigns.id, invitationLinks.campaignId))
     .innerJoin(worlds, eq(worlds.id, campaigns.worldId))
-    .where(eq(invitationLinks.tokenHash, tokenHash))
+    // Con la campaña o su mundo en la papelera, el enlace no vale
+    .where(and(eq(invitationLinks.tokenHash, tokenHash), isNull(campaigns.deletedAt), isNull(worlds.deletedAt)))
   return found ?? null
 }
 

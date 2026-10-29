@@ -4,6 +4,7 @@ import { invitationActions } from './invitations.ts'
 import { memberActions } from './members.ts'
 import { organizationActions } from './organizations.ts'
 import type { Implementation } from './registry.ts'
+import { trashActions } from './trash.ts'
 import { worldActions } from './worlds.ts'
 
 /** Los servicios de todas las acciones del contrato: los usan la API y el MCP */
@@ -13,7 +14,8 @@ export const IMPLEMENTATIONS: Implementation[] = [
   ...campaignActions,
   ...invitationActions,
   ...memberActions,
-  ...historyActions
+  ...historyActions,
+  ...trashActions
 ]
 
 export const implementationsByName = new Map(IMPLEMENTATIONS.map((impl) => [impl.action.name, impl]))

@@ -3,6 +3,7 @@ import { Redis } from 'ioredis'
 import { buildApp } from './app.ts'
 import { createAuth } from './auth/auth.ts'
 import type { Config } from './config.ts'
+import { startPurges } from './jobs/purges.ts'
 import { deriveSealKey } from './secrets.ts'
 import { serviceChecks } from './services.ts'
 
@@ -19,10 +20,17 @@ export async function startServer(config: Config, options: { logger?: boolean } 
     mcpJwksUrl: `http://127.0.0.1:${config.PORT}/api/auth/jwks`
   })
   await app.listen({ host: config.HOST, port: config.PORT })
+  // La purga diaria de la papelera y del historial
+  const purges = await startPurges({
+    db: db.db,
+    valkeyUrl: config.VALKEY_URL,
+    onError: (error) => app.log.error(error, 'Falló la purga diaria')
+  })
   return {
     app,
     auth,
     async stop() {
+      await purges.close()
       await app.close()
       await db.close()
       valkey.disconnect()

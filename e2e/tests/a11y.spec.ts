@@ -22,10 +22,12 @@ for (const colorScheme of ['light', 'dark'] as const) {
   }
 }
 
-test('arranque, perfil, mundos, campañas, avisos, historial y consentimiento, en los dos temas @a11y', async ({
+test('arranque, perfil, mundos, campañas, avisos, historial, papelera y consentimiento, en los dos temas @a11y', async ({
   page,
   browser
 }) => {
+  // Recorre todas las pantallas con axe en los dos temas: más largo que una prueba normal
+  test.slow()
   const conn = connect(e2eDatabaseUrl(), { max: 1 })
   try {
     await resetDatabase(conn.sql)
@@ -84,6 +86,13 @@ test('arranque, perfil, mundos, campañas, avisos, historial y consentimiento, e
     await page.goto('/historial')
     await expect(page.getByRole('list', { name: 'Operaciones' })).toBeVisible()
     await check()
+    await page.goto('/papelera')
+    await expect(page.getByText('La papelera está vacía')).toBeVisible()
+    await check()
+    await page.goto('/mundos')
+    await page.getByRole('button', { name: 'Borrar Eana' }).click()
+    await check()
+    await page.getByRole('button', { name: 'Cancelar' }).click()
     // La página de consentimiento sin consulta firmada: se ve igual, aunque permitir fallaría. El cliente no es una
     // URL: con una, el servidor iría a buscar sus metadatos (CIMD) a internet y la prueba dependería de la red
     await page.goto('/oauth/consentimiento?client_id=cliente-de-prueba')
