@@ -8,6 +8,7 @@ export const es = {
     tagline: 'Mundos de rol y mesa virtual',
     accountNav: 'Cuenta',
     sectionsNav: 'Secciones',
+    skipToContent: 'Saltar al contenido',
     pageTitle: '{{page}} · Crisol'
   },
   account: {
@@ -56,7 +57,7 @@ export const es = {
   },
   join: {
     title: 'Te invitan a {{campaign}}',
-    byMaster: '{{world}} · máster: {{master}}',
+    byMaster: 'Máster: {{master}}',
     confirm: 'Entrar en {{campaign}} como jugador',
     isMaster: 'Ya eres el máster de esta campaña.',
     signedInAs: 'Entras como {{name}} ({{email}}).',

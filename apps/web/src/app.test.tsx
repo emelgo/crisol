@@ -74,6 +74,15 @@ describe('App', () => {
     expect(screen.queryByRole('navigation', { name: 'Secciones' })).toBeNull()
   })
 
+  it('lo primero que se enfoca es «Saltar al contenido», que lleva a la página', async () => {
+    renderAt('/')
+    await screen.findByRole('heading', { level: 1, name: 'Crisol' })
+    await userEvent.tab()
+    const skip = screen.getByRole('link', { name: 'Saltar al contenido' })
+    expect(document.activeElement).toBe(skip)
+    expect(skip.getAttribute('href')).toBe(`#${screen.getByRole('main').id}`)
+  })
+
   it('dice que la página no existe y ofrece volver', async () => {
     renderAt('/no-existe')
     expect(await screen.findByRole('heading', { name: 'Página no encontrada' })).toBeDefined()

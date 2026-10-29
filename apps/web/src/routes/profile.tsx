@@ -29,7 +29,14 @@ export function Profile() {
       <PageTitle>{t('profile.title')}</PageTitle>
       <p>{account.email}</p>
       <form className={styles.form} onSubmit={submit}>
-        <Field label={t('account.name')} name="name" defaultValue={account.name} maxLength={80} required />
+        <Field
+          label={t('account.name')}
+          name="name"
+          autoComplete="name"
+          defaultValue={account.name}
+          maxLength={80}
+          required
+        />
         <FormError message={status === 'error' ? t('errors.UNKNOWN') : null} />
         {status === 'saved' && <p>{t('profile.saved')}</p>}
         <button type="submit" className={styles.button}>

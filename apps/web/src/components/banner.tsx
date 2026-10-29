@@ -7,7 +7,7 @@ export interface Stat {
   value: number
 }
 
-/** La franja de arriba de un mundo o una campaña: de dónde cuelga, su nombre, tu papel y sus casillas */
+/** La franja de arriba de un mundo, una campaña o una invitación: de dónde cuelga, su nombre, tu papel y sus casillas */
 export function Banner({
   crumb,
   title,
@@ -16,7 +16,7 @@ export function Banner({
 }: {
   crumb: ReactNode
   title: string
-  detail: string
+  detail?: string | undefined
   stats: Stat[]
 }) {
   return (
@@ -24,7 +24,7 @@ export function Banner({
       <div className={styles.heading}>
         <p className={styles.crumb}>{crumb}</p>
         <PageTitle>{title}</PageTitle>
-        <p className={styles.detail}>{detail}</p>
+        {detail && <p className={styles.detail}>{detail}</p>}
       </div>
       {stats.length > 0 && (
         <dl className={styles.stats}>

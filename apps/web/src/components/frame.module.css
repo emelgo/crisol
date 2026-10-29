@@ -1,0 +1,35 @@
+/*
+ * El marco de la hoja: 1px con las esquinas cortadas. Se usa con `composes: frame from "…/frame.module.css"`.
+ * El fondo del elemento es el color del marco; el ::before, 1px dentro, pone la superficie.
+ * (Las secciones con título lo llevan en base.css, con el mismo dibujo, porque se eligen por su marcado.)
+ */
+.frame {
+  position: relative;
+  isolation: isolate;
+  background: var(--color-frame);
+  clip-path: var(--cut);
+}
+
+.frame::before {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  z-index: -1;
+  background: var(--color-surface);
+  clip-path: var(--cut-inner);
+}
+
+/* Una caja con el marco y su relleno, para texto suelto */
+.box {
+  composes: frame;
+  margin-block: var(--space-6);
+  padding: var(--space-4) var(--space-6);
+}
+
+.box > :first-child {
+  margin-block-start: 0;
+}
+
+.box > :last-child {
+  margin-block-end: 0;
+}

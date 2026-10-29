@@ -7,7 +7,13 @@ export function Field({ label, hint, ...input }: ComponentProps<'input'> & { lab
   return (
     <div className={styles.field}>
       <label htmlFor={id}>{label}</label>
-      <input id={id} {...input} aria-describedby={hint ? `${id}-pista` : undefined} />
+      {/* Un email no es texto que corregir: sin el corrector, que lo subraya y en el móvil lo cambia */}
+      <input
+        id={id}
+        spellCheck={input.type === 'email' ? false : undefined}
+        {...input}
+        aria-describedby={hint ? `${id}-pista` : undefined}
+      />
       {hint && (
         <small id={`${id}-pista`} className={styles.hint}>
           {hint}

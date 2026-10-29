@@ -7,6 +7,7 @@ import { useApi } from '../api/context.tsx'
 import { BusyButton } from '../components/busy-button.tsx'
 import { FormError } from '../components/field.tsx'
 import form from '../components/form.module.css'
+import frame from '../components/frame.module.css'
 import styles from '../components/list.module.css'
 import { PageTitle } from '../components/page-title.tsx'
 
@@ -65,8 +66,10 @@ export function Consent() {
   return (
     <section>
       <PageTitle>{t('consent.title', { client })}</PageTitle>
-      <p>{t('consent.body', { client })}</p>
-      <p>{t('consent.history')}</p>
+      <div className={frame.box}>
+        <p>{t('consent.body', { client })}</p>
+        <p>{t('consent.history')}</p>
+      </div>
       {!isOwner && <FormError message={t('consent.ownerOnly')} />}
       <FormError message={error} />
       <div className={styles.actions}>
