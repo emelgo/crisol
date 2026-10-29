@@ -109,12 +109,10 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   - MIT-0 admitida en `CONSTRAINTS.md`.
   - Puertos: desarrollo 8130 (servidor), 5173 (Vite), 54330 (Postgres), 63790 (Valkey), 10250/8250 (Mailpit);
     e2e 8131; prueba del MCP 8132; staging 8140.
-- **Siguiente paso: la fase de diseño** (ver «Entre el 0 y el 1» más abajo).
-  - Enrique instala en Claude Code la skill de Anthropic: `/plugin marketplace add anthropics/skills` y
-    `/plugin install example-skills@anthropic-agent-skills`.
-  - Se copian al proyecto las cuatro de Vercel.
-  - Después: identidad visual, kit de componentes y repaso de las pantallas del módulo 0, con prototipos que Enrique
-    aprueba.
+- **2026-10-29 — Fase de diseño empezada** (ver «Entre el 0 y el 1» más abajo). Skills listas: `frontend-design`
+  como plugin del proyecto (estaba en el marketplace oficial ya añadido) y las cuatro de Vercel en `.claude/skills/`.
+- **Siguiente paso**: identidad visual, kit de componentes y repaso de las pantallas del módulo 0, con prototipos que
+  Enrique aprueba.
   - Luego, el módulo 1 (wiki) con su entrevista.
 - Queda una ventana pequeña en el tiempo real: lo que cambie entre la primera carga de una página y la conexión del
   canal no se ve hasta volver a la pestaña. Taparla costaría volver a pedirlo todo al conectar la primera vez.
@@ -154,10 +152,11 @@ accesible, pero no tiene un diseño visual pensado. Antes de la wiki, que es lo 
 - Kit de componentes.
 - Repaso de las pantallas del 0.
 
-Se hace con la skill `frontend-design` de Anthropic (Apache-2.0). Enrique la instala en Claude Code con
-`/plugin marketplace add anthropics/skills` y `/plugin install example-skills@anthropic-agent-skills`.
+Se hace con la skill `frontend-design` de Anthropic (Apache-2.0): plugin `frontend-design@claude-plugins-official`,
+activado en el proyecto (`.claude/settings.json`).
 
-De las de Vercel (`vercel-labs/agent-skills`, MIT) sirven cuatro, que se copian al proyecto al empezar la fase:
+De las de Vercel (`vercel-labs/agent-skills`, MIT) sirven cuatro, copiadas en `.claude/skills/` (origen y licencia en
+su `README.md`):
 - `web-design-guidelines`: revisar la interfaz contra sus Web Interface Guidelines.
 - `react-best-practices` y `composition-patterns`: rendimiento y forma de los componentes de React.
 - `react-view-transitions`: animaciones entre pantallas, más adelante.
