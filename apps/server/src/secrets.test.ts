@@ -35,7 +35,8 @@ describe('secretos de enlaces', () => {
 
   it('un cifrado alterado no se descifra', () => {
     const sealed = sealSecret(newSecret(), key)
-    const tampered = `${sealed.slice(0, -2)}${sealed.endsWith('A') ? 'B' : 'A'}${sealed.slice(-1)}`
+    // Cambia de verdad el penúltimo carácter (el último solo lleva parte de un byte en base64)
+    const tampered = `${sealed.slice(0, -2)}${sealed.at(-2) === 'A' ? 'B' : 'A'}${sealed.slice(-1)}`
     expect(() => openSecret(tampered, key)).toThrow()
   })
 

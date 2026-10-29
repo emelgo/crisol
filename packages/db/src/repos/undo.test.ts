@@ -7,6 +7,7 @@ import { campaigns } from '../schema/campaigns.ts'
 import { operations } from '../schema/history.ts'
 import { invitationLinks } from '../schema/invitations.ts'
 import { organizationMembers, organizations } from '../schema/organizations.ts'
+import { wikiPreferences } from '../schema/wiki-preferences.ts'
 import { worlds } from '../schema/worlds.ts'
 import { freshTestDatabase, resetDatabase } from '../testing.ts'
 import * as campaignsRepo from './campaigns.ts'
@@ -130,6 +131,13 @@ describe('deshacer una operación', () => {
       by: (await lastOperation('createCampaign')).id
     })
     expect(await worldsRepo.findWorld(conn.db, w.id)).not.toBeNull()
+  })
+
+  it('lo de fuera del historial (las preferencias de la wiki) no impide deshacer: se va con la fila', async () => {
+    const w = await world()
+    await conn.db.insert(wikiPreferences).values({ userId: 'u1', worldId: w.id, tabs: [] })
+    expect((await undo((await lastOperation('createWorld')).id)).status).toBe('undone')
+    expect(await conn.db.select().from(wikiPreferences)).toEqual([])
   })
 
   it('deshacer una entrada saca al jugador; que entren otros después no lo impide', async () => {

@@ -165,6 +165,28 @@ export const es = {
     useOther: 'Usar',
     remove: 'Quitar el icono'
   },
+  tabs: {
+    title: 'Páginas abiertas',
+    recent: 'Abiertas',
+    pin: 'Fijar {{title}}',
+    close: 'Cerrar {{title}}'
+  },
+  bookmarks: {
+    title: 'Marcadores',
+    defaultGroup: 'Marcadores',
+    add: 'Marcar',
+    remove: 'Quitar el marcador',
+    chooseGroup: 'En qué grupo',
+    newGroup: 'O en un grupo nuevo',
+    save: 'Marcar',
+    added: '«{{title}}» está en {{group}}',
+    removed: '«{{title}}» ya no está en los marcadores'
+  },
+  siblings: {
+    title: 'Páginas hermanas',
+    previous: 'Anterior',
+    next: 'Siguiente'
+  },
   tags: {
     title: 'Etiquetas',
     worldTitle: 'Etiquetas de {{world}}',

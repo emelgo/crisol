@@ -57,7 +57,7 @@ Cada vía nueva por la que salen datos amplía `@fugas` en la misma tarea.
   - Archivos: `apps/server/src/actions/{pages,trash}.ts`, `apps/server/src/jobs/purges.ts`,
     `apps/web/src/routes/trash.tsx`.
 
-- [ ] **5. Pestañas, marcadores y navegación**
+- [x] **5. Pestañas, marcadores y navegación** — hecha. El índice del documento llega con el cuerpo (fase 2).
   - Acepta:
     - Pestañas que se pueden fijar, y marcadores con grupos. Se guardan en `wiki_preferences`, por cuenta y mundo, y
       no van al historial.

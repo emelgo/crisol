@@ -124,6 +124,8 @@ describe('operation', () => {
     notTracked.add('bootstrap_tokens')
     // Los ajustes y la cola de la IA: lo que se aprueba pasa por el historial al hacerse
     notTracked.add('ai_settings').add('approvals')
+    // Las pestañas y los marcadores de cada cuenta en la wiki: son suyos, no datos del mundo
+    notTracked.add('wiki_preferences')
     const tables = await conn.sql<
       { name: string }[]
     >`select tablename as name from pg_tables where schemaname = 'public'`

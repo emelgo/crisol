@@ -213,8 +213,8 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   4. ~~Diseño~~: aprobado.
   5. ~~`/plan`~~: aprobado.
   6. **`/build` tarea a tarea** (`tasks/todo.md`), con `/agent-skills:review` y `/ship`, como en el módulo 0. Hechas de
-     la 1 a la 4; **sigue la 5** (pestañas, marcadores y navegación). Después, el punto de control 1 con Enrique en
-     staging.
+     la 1 a la 5 (fase 1, páginas). **Ahora, el punto de control 1**: Enrique prueba en staging el árbol, las
+     propiedades, la papelera, las pestañas y los marcadores. Después, la tarea 6 (documentos de Yjs en el servidor).
 - **2026-10-29 — Módulo 1, tarea 1: páginas y árbol en la API.**
   - La tabla `pages` tiene historial y su orden es una clave fraccionaria (`packages/domain/src/order.ts`, collation
     "C"). Mover solo escribe la fila que se mueve.
@@ -275,6 +275,20 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
     desde la del mundo.
   - De paso se arregló un fallo que venía de la tarea 1: pedir una página que no existe o que está en la papelera daba
     500 en vez de 404, porque se buscaba el mundo con un id vacío.
+- **2026-10-29 — Módulo 1, tarea 5: pestañas, marcadores y anterior/siguiente.** Desplegada la 4 en staging (health
+  200, sin errores).
+  - Las preferencias de cada cuenta en cada wiki (`wiki_preferences`) no van al historial: `getWikiPreferences`,
+    `setWikiTabs` y `setBookmarks`. Salen con los títulos de ahora, y lo que está en la papelera no sale (vuelve si se
+    restaura).
+  - Se adelantó a esta tarea el cambio de `dependentRow` que el plan dejaba para la 6: ahora mira solo
+    `TRACKED_TABLES`. Si no, las preferencias impedían deshacer la creación de un mundo.
+  - Pestañas:
+    - cada página que se abre entra, y quedan 8 sin fijar como mucho; las fijadas van delante y no se cierran;
+    - se ven en el acto y se guardan en fila, y solo cuenta la respuesta del último guardado;
+    - en el móvil, las abiertas van en el cajón del árbol.
+  - Marcadores por grupos, junto al árbol. El primero va de un clic a «Marcadores»; después se elige el grupo o se
+    crea otro. «Quitar el marcador» la quita de todos.
+  - Anterior y siguiente entre hermanas, al pie de la página. El índice del documento llega con el cuerpo (fase 2).
 - Queda una ventana pequeña en el tiempo real: lo que cambie entre la primera carga de una página y la conexión del
   canal no se ve hasta volver a la pestaña. Taparla costaría volver a pedirlo todo al conectar la primera vez.
 - **Pendientes de permiso de Enrique:**
@@ -297,7 +311,7 @@ Estados: pendiente · en curso · hecho · descartado.
 | # | Módulo | Estado | REA principal |
 |---|---|---|---|
 | 0 | **Fundación**: monorepo, CI, despliegue, cuentas, organizaciones, mundos, campañas, roles, historial y deshacer, esqueleto del MCP | **hecho** (2026-10-29; Discord y Google, pospuestos) | Foundry: modelo de documentos y permisos; DDB: campañas e invitaciones |
-| 1 | **Wiki**: páginas y subpáginas, editor de bloques, enlaces, menciones, vista previa, propiedades, secretos, búsqueda, marcadores, etiquetas, versiones, recursos y archivos, **hojas con estilo** (tipo Homebrewery, con PDF), exportación MD, sus herramientas MCP | en curso (construcción: tareas 1 a 4 de 26 hechas) | Foundry: Journal; DDB: contenido y referencias; Homebrewery (MIT): formato de hoja y descarga |
+| 1 | **Wiki**: páginas y subpáginas, editor de bloques, enlaces, menciones, vista previa, propiedades, secretos, búsqueda, marcadores, etiquetas, versiones, recursos y archivos, **hojas con estilo** (tipo Homebrewery, con PDF), exportación MD, sus herramientas MCP | en curso (construcción: tareas 1 a 5 de 26 hechas) | Foundry: Journal; DDB: contenido y referencias; Homebrewery (MIT): formato de hoja y descarga |
 | 2 | Tipos de página, plantillas y formularios nativos; consultas (en lugar de Dataview y Bases) | pendiente | Foundry: tipos de documento |
 | 3 | Sistemas de reglas, fichas de personaje (creación, subida de nivel), dados y dados 3D | pendiente | DDB: creador y hoja; Foundry: dnd5e, DataModel e instalar y crear sistemas |
 | 4 | Compendios, bestiario, statblocks, biblioteca | pendiente | Foundry: compendium packs; DDB: listados |

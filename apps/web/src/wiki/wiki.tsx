@@ -16,6 +16,7 @@ import list from '../components/list.module.css'
 import { failed, LoadError } from '../components/load-error.tsx'
 import { PageTitle } from '../components/page-title.tsx'
 import { PageIcon } from './icon.tsx'
+import { BookmarkButton, Bookmarks, OpenTabs, SiblingNav } from './navigation.tsx'
 import { PageProperties } from './properties.tsx'
 import { childrenKey, PageTree } from './tree.tsx'
 import styles from './wiki.module.css'
@@ -140,13 +141,18 @@ export function WikiLayout({
         </div>
         <FormError message={create.error ? errorText(create.error) : null} />
         <PageTree worldId={worldId} currentId={current?.id} path={current?.path} onNavigate={() => close(false)} />
+        <OpenTabs worldId={worldId} current={current} compact />
+        <Bookmarks worldId={worldId} onNavigate={() => close(false)} />
         <nav aria-label={t('wiki.more')} className={styles.more}>
           <Link to="/mundos/$worldId/etiquetas" params={{ worldId }} onClick={() => close(false)}>
             {t('tags.title')}
           </Link>
         </nav>
       </aside>
-      <div className={styles.content}>{children(world)}</div>
+      <div className={styles.content}>
+        <OpenTabs worldId={worldId} current={current} />
+        {children(world)}
+      </div>
     </div>
   )
 }
@@ -260,6 +266,7 @@ function PageHeading({ page, startEditing }: { page: Page; startEditing: boolean
         <button type="button" ref={renameButton.ref} className={list.secondary} onClick={() => setEditing(true)}>
           {t('wiki.rename')}
         </button>
+        <BookmarkButton page={page} />
         <DeletePage page={page} />
       </div>
     </div>
@@ -400,6 +407,7 @@ export function WikiPage() {
             <PageHeading key={`${page.data.id}-${nuevo ?? false}`} page={page.data} startEditing={nuevo === true} />
             <PageProperties key={page.data.id} page={page.data} />
             <Subpages page={page.data} />
+            <SiblingNav page={page.data} />
           </article>
         )
       }}
