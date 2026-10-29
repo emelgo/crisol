@@ -70,6 +70,7 @@ export const es = {
     link: 'Enlace de invitación',
     copy: 'Copiar',
     copied: 'Copiado',
+    copyManually: 'No se ha podido copiar: está seleccionado, cópialo a mano.',
     issued: 'Enlace del {{date}}.',
     joins_one: 'Ha entrado {{count}} con este enlace',
     joins_other: 'Han entrado {{count}} con este enlace',

@@ -74,6 +74,29 @@ describe('una campaña y su enlace de invitación', () => {
     expect(announced()).toBe('Copiado')
   })
 
+  it('si no se puede copiar, deja el enlace seleccionado y dice que hay que copiarlo a mano', async () => {
+    const writeText = vi.fn(async () => {
+      throw new DOMException('Sin permiso', 'NotAllowedError')
+    })
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true })
+    renderCampaign(campaign())
+    const link = await screen.findByLabelText<HTMLInputElement>('Enlace de invitación')
+    await userEvent.click(screen.getByRole('button', { name: 'Copiar' }))
+    const text = 'No se ha podido copiar: está seleccionado, cópialo a mano.'
+    expect(await inMain().findByText(text)).toBeDefined()
+    expect(announced()).toBe(text)
+    expect(document.activeElement).toBe(link)
+    expect([link.selectionStart, link.selectionEnd]).toEqual([0, link.value.length])
+    expect(inMain().queryByText('Copiado')).toBeNull()
+  })
+
+  it('sin portapapeles (fuera de HTTPS), lo mismo', async () => {
+    Object.defineProperty(navigator, 'clipboard', { value: undefined, configurable: true })
+    renderCampaign(campaign())
+    await userEvent.click(await screen.findByRole('button', { name: 'Copiar' }))
+    expect(await inMain().findByText('No se ha podido copiar: está seleccionado, cópialo a mano.')).toBeDefined()
+  })
+
   it('«Nuevo enlace» avisa antes y cambia el enlace', async () => {
     renderCampaign(campaign())
     const before = ((await screen.findByLabelText('Enlace de invitación')) as HTMLInputElement).value
