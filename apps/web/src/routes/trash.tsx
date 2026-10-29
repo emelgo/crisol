@@ -1,12 +1,14 @@
 import type { TrashItem } from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getRouteApi, Link, Navigate } from '@tanstack/react-router'
-import type { ReactNode } from 'react'
+import { type ReactNode, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
+import { BusyButton } from '../components/busy-button.tsx'
 import { FormError } from '../components/field.tsx'
+import { focusAfterRemoving } from '../components/focus.ts'
 import styles from '../components/list.module.css'
 import { PageTitle } from '../components/page-title.tsx'
 
@@ -75,32 +77,40 @@ function TrashEntry({ item }: { item: TrashItem }) {
   const api = useApi()
   const queryClient = useQueryClient()
   const errorText = useErrorText()
+  const entry = useRef<HTMLLIElement>(null)
+  // Al restaurarlo, sale de la papelera: el foco irá al siguiente o al título de la página
+  const refocus = useRef(() => {})
   const restore = useMutation({
     mutationFn: () =>
       item.kind === 'world'
         ? api.call('restoreWorld', { worldId: item.id })
         : api.call('restoreCampaign', { campaignId: item.id }),
+    onMutate: () => {
+      refocus.current = focusAfterRemoving(entry.current)
+    },
     // Vuelve a las listas: todo lo que se ve se pide otra vez
-    onSuccess: () => queryClient.invalidateQueries()
+    onSuccess: async () => {
+      await queryClient.invalidateQueries()
+      refocus.current()
+    }
   })
   const date = new Intl.DateTimeFormat(i18n.language, { dateStyle: 'long' }).format(new Date(item.purgeAt))
 
   return (
-    <li className={styles.item}>
+    <li ref={entry} className={styles.item}>
       <span className={styles.name}>{item.name}</span>
       <span className={styles.role}>
         {item.kind === 'world' ? t('trash.world') : t('trash.campaignOf', { world: item.worldName })} ·{' '}
         {t('trash.purgeAt', { date })}
       </span>
-      <button
-        type="button"
+      <BusyButton
         className={styles.secondary}
         aria-label={t('trash.restoreButton', { name: item.name })}
-        disabled={restore.isPending}
+        busy={restore.isPending}
         onClick={() => restore.mutate()}
       >
         {t('trash.restore')}
-      </button>
+      </BusyButton>
       <FormError message={restore.error ? errorText(restore.error) : null} />
     </li>
   )

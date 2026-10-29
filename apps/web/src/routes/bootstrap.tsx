@@ -3,6 +3,7 @@ import { getRouteApi, useNavigate } from '@tanstack/react-router'
 import { type FormEvent, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
+import { BusyButton } from '../components/busy-button.tsx'
 import { Field, FormError } from '../components/field.tsx'
 import styles from '../components/form.module.css'
 import { PageTitle } from '../components/page-title.tsx'
@@ -64,9 +65,9 @@ export function Bootstrap() {
           required
         />
         <FormError message={error} />
-        <button type="submit" className={styles.button} disabled={busy}>
+        <BusyButton type="submit" className={styles.button} busy={busy}>
           {t('bootstrap.create')}
-        </button>
+        </BusyButton>
       </form>
     </section>
   )

@@ -8,7 +8,9 @@ import { useApi } from '../api/context.tsx'
 import { useCodeText, useErrorText } from '../api/errors.ts'
 import { requestSummary } from '../summaries.ts'
 import { useAnnounce } from './announcer.tsx'
+import { BusyButton } from './busy-button.tsx'
 import { FormError } from './field.tsx'
+import { focusAfterRemoving } from './focus.ts'
 import form from './form.module.css'
 import styles from './list.module.css'
 import notices from './notices.module.css'
@@ -78,41 +80,49 @@ function ApprovalItem({ approval, onDecided }: { approval: Approval; onDecided: 
   const queryClient = useQueryClient()
   const errorText = useErrorText()
   const codeText = useCodeText()
+  const item = useRef<HTMLLIElement>(null)
+  // Al decidir, la petición desaparece: el foco irá a la siguiente o al título de la página
+  const refocus = useRef(() => {})
   const decide = useMutation({
     mutationFn: (decision: 'approve' | 'reject') => api.call(decision, { approvalId: approval.id }),
+    onMutate: () => {
+      refocus.current = focusAfterRemoving(item.current)
+    },
     onSuccess: async (decided) => {
       onDecided(outcomeText(t, codeText, decided))
       // Lo aprobado puede tocar cualquier cosa de lo que se ve
       await queryClient.invalidateQueries()
+      refocus.current()
     },
-    // Si ya estaba decidida o ha caducado, la cola se pone al día
-    onError: () => queryClient.invalidateQueries({ queryKey: ['approvals'] })
+    // Si ya estaba decidida o ha caducado, la cola se pone al día (y, si ya no está, el foco sigue igual que al decidir)
+    onError: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['approvals'] })
+      if (!item.current) refocus.current()
+    }
   })
   const what = requestSummary(t, approval)
   const date = new Intl.DateTimeFormat(i18n.language, { dateStyle: 'medium', timeStyle: 'short' })
 
   return (
-    <li className={styles.item}>
+    <li ref={item} className={styles.item}>
       <span className={styles.name}>{t('approvals.request', { what })}</span>
       <div className={styles.actions}>
-        <button
-          type="button"
+        <BusyButton
           className={form.button}
           aria-label={t('approvals.approveButton', { what })}
-          disabled={decide.isPending}
+          busy={decide.isPending}
           onClick={() => decide.mutate('approve')}
         >
           {t('approvals.approve')}
-        </button>
-        <button
-          type="button"
+        </BusyButton>
+        <BusyButton
           className={styles.secondary}
           aria-label={t('approvals.rejectButton', { what })}
-          disabled={decide.isPending}
+          busy={decide.isPending}
           onClick={() => decide.mutate('reject')}
         >
           {t('approvals.reject')}
-        </button>
+        </BusyButton>
       </div>
       <details className={styles.confirm}>
         <summary>{t('approvals.detail')}</summary>

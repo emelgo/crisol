@@ -1,6 +1,7 @@
 import { useMutation } from '@tanstack/react-query'
 import type { FormEvent } from 'react'
 import { useErrorText } from '../api/errors.ts'
+import { BusyButton } from './busy-button.tsx'
 import { Field, FormError } from './field.tsx'
 import form from './form.module.css'
 
@@ -27,9 +28,9 @@ export function CreateForm({ title, label, submit, onCreate }: Props) {
       <h2>{title}</h2>
       <Field label={label} name="name" maxLength={120} required />
       <FormError message={create.error ? errorText(create.error) : null} />
-      <button type="submit" className={form.button} disabled={create.isPending}>
+      <BusyButton type="submit" className={form.button} busy={create.isPending}>
         {submit}
-      </button>
+      </BusyButton>
     </form>
   )
 }

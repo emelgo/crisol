@@ -2,6 +2,7 @@ import { useNavigate } from '@tanstack/react-router'
 import { type FormEvent, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
+import { BusyButton } from '../components/busy-button.tsx'
 import { Field, FormError } from '../components/field.tsx'
 import styles from '../components/form.module.css'
 import { PageTitle } from '../components/page-title.tsx'
@@ -31,9 +32,9 @@ export function SignIn() {
         <Field label={t('account.email')} name="email" type="email" autoComplete="email" required />
         <Field label={t('account.password')} name="password" type="password" autoComplete="current-password" required />
         <FormError message={error} />
-        <button type="submit" className={styles.button} disabled={busy}>
+        <BusyButton type="submit" className={styles.button} busy={busy}>
           {t('account.signIn')}
-        </button>
+        </BusyButton>
       </form>
     </section>
   )

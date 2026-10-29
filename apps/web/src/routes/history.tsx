@@ -8,7 +8,9 @@ import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
 import { useAnnounce } from '../components/announcer.tsx'
+import { BusyButton } from '../components/busy-button.tsx'
 import { FormError } from '../components/field.tsx'
+import { focusOnMount } from '../components/focus.ts'
 import styles from '../components/list.module.css'
 import { PageTitle } from '../components/page-title.tsx'
 import { summaryOf, undoLayers } from '../summaries.ts'
@@ -53,6 +55,8 @@ function HistoryPage({ title, back, scope }: { title: string; back: ReactNode; s
     getNextPageParam: (last) => last.next,
     enabled: Boolean(account)
   })
+  // Tras deshacer o rehacer, el botón de la operación nueva (arriba): el del deshecho ya no está
+  const [focusEntry, setFocusEntry] = useState<string | null>(null)
 
   if (pending) return null
   if (!account) return <Navigate to="/entrar" replace />
@@ -71,19 +75,25 @@ function HistoryPage({ title, back, scope }: { title: string; back: ReactNode; s
         ) : (
           <ul className={styles.list} aria-label={t('history.listLabel')}>
             {entries.map((entry) => (
-              <HistoryItem key={entry.id} entry={entry} undone={undone(entry)} date={date} />
+              <HistoryItem
+                key={entry.id}
+                entry={entry}
+                undone={undone(entry)}
+                date={date}
+                focus={entry.id === focusEntry}
+                onUndone={setFocusEntry}
+              />
             ))}
           </ul>
         ))}
       {history.hasNextPage && (
-        <button
-          type="button"
+        <BusyButton
           className={styles.secondary}
-          disabled={history.isFetchingNextPage}
+          busy={history.isFetchingNextPage}
           onClick={() => history.fetchNextPage()}
         >
           {t('history.more')}
-        </button>
+        </BusyButton>
       )}
     </section>
   )
@@ -107,7 +117,15 @@ function effectivelyUndone(entries: HistoryEntry[]) {
  * Una operación. Lo deshecho, tachado. El botón, solo en la última de cada cadena (las otras ya están deshechas) y
  * nunca en lo del sistema: en un deshacer dice «Rehacer»; en lo demás, «Deshacer»
  */
-function HistoryItem({ entry, undone, date }: { entry: HistoryEntry; undone: boolean; date: Intl.DateTimeFormat }) {
+function HistoryItem(props: {
+  entry: HistoryEntry
+  undone: boolean
+  date: Intl.DateTimeFormat
+  /** Llevar el foco a su botón (es la operación que se acaba de hacer al deshacer o rehacer) */
+  focus: boolean
+  onUndone(entryId: string): void
+}) {
+  const { entry, undone, date } = props
   const { t } = useTranslation()
   const api = useApi()
   const queryClient = useQueryClient()
@@ -131,6 +149,7 @@ function HistoryItem({ entry, undone, date }: { entry: HistoryEntry; undone: boo
       }
       // Lo deshecho puede tocar cualquier cosa de lo que se ve
       await queryClient.invalidateQueries()
+      props.onUndone(result.entry.id)
     }
   })
   const what = summaryOf(t, root)
@@ -146,18 +165,18 @@ function HistoryItem({ entry, undone, date }: { entry: HistoryEntry; undone: boo
         {undone && ` · ${t('history.undone')}`}
       </span>
       {undoable && (
-        <button
-          type="button"
+        <BusyButton
+          ref={props.focus ? focusOnMount : undefined}
           className={styles.secondary}
           aria-label={redo ? t('history.redoButton', { what }) : t('history.undoButton', { what })}
-          disabled={undo.isPending}
+          busy={undo.isPending}
           onClick={() => {
             setConflict(null)
             undo.mutate()
           }}
         >
           {redo ? t('history.redo') : t('history.undo')}
-        </button>
+        </BusyButton>
       )}
       {conflict && <p className={styles.confirm}>{conflict}</p>}
       <FormError message={undo.error ? errorText(undo.error) : null} />

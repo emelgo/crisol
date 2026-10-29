@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
+import { BusyButton } from '../components/busy-button.tsx'
 import { FormError } from '../components/field.tsx'
 import form from '../components/form.module.css'
 import styles from '../components/list.module.css'
@@ -68,13 +69,13 @@ export function Consent() {
       <FormError message={error} />
       <div className={styles.actions}>
         {isOwner && (
-          <button type="button" className={form.button} disabled={busy} onClick={() => answer(true)}>
+          <BusyButton className={form.button} busy={busy} onClick={() => answer(true)}>
             {t('consent.allow')}
-          </button>
+          </BusyButton>
         )}
-        <button type="button" className={styles.secondary} disabled={busy} onClick={() => answer(false)}>
+        <BusyButton className={styles.secondary} busy={busy} onClick={() => answer(false)}>
           {t('consent.deny')}
-        </button>
+        </BusyButton>
       </div>
     </section>
   )

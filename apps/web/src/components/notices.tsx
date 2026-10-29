@@ -4,6 +4,7 @@ import { useErrorText } from '../api/errors.ts'
 import { type JoinNotice, useNotices } from '../realtime/context.tsx'
 import { useAnnounce } from './announcer.tsx'
 import { FormError } from './field.tsx'
+import { focusAfterRemoving, useReturnFocus } from './focus.ts'
 import styles from './list.module.css'
 import notices from './notices.module.css'
 import { RemoveMemberConfirm, useRemoveMember } from './remove-member.tsx'
@@ -56,10 +57,13 @@ function NoticeItem({ notice }: { notice: JoinNotice }) {
   const errorText = useErrorText()
   const remove = useRemoveMember(notice.campaignId)
   const [confirming, setConfirming] = useState(false)
+  const item = useRef<HTMLLIElement>(null)
+  const opener = useReturnFocus()
+  const dismissButton = useRef<HTMLButtonElement>(null)
   const { name } = notice.member
 
   return (
-    <li className={styles.item}>
+    <li ref={item} className={styles.item}>
       <span className={styles.name}>
         {remove.isSuccess
           ? t('members.removed', { name })
@@ -68,6 +72,7 @@ function NoticeItem({ notice }: { notice: JoinNotice }) {
       {!remove.isSuccess && !confirming && (
         <button
           type="button"
+          ref={opener.ref}
           className={styles.secondary}
           aria-label={t('members.removeButton', { name })}
           onClick={() => setConfirming(true)}
@@ -77,9 +82,14 @@ function NoticeItem({ notice }: { notice: JoinNotice }) {
       )}
       <button
         type="button"
+        ref={dismissButton}
         className={styles.secondary}
         aria-label={t('notices.dismiss', { member: name })}
-        onClick={() => dismiss(notice.id)}
+        onClick={() => {
+          // El aviso desaparece: el foco, al siguiente o al título de la página
+          focusAfterRemoving(item.current)()
+          dismiss(notice.id)
+        }}
       >
         {t('notices.dismissShort')}
       </button>
@@ -90,10 +100,19 @@ function NoticeItem({ notice }: { notice: JoinNotice }) {
           onConfirm={(newLink) =>
             remove.mutate(
               { userId: notice.member.userId, newLink },
-              { onSuccess: () => announce(t('members.removed', { name })) }
+              {
+                // El aviso se queda («ya no está»): el foco, a su «Cerrar»
+                onSuccess: () => {
+                  announce(t('members.removed', { name }))
+                  dismissButton.current?.focus()
+                }
+              }
             )
           }
-          onCancel={() => setConfirming(false)}
+          onCancel={() => {
+            opener.back()
+            setConfirming(false)
+          }}
         />
       )}
       <FormError message={remove.error ? errorText(remove.error) : null} />
