@@ -1,11 +1,13 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { getRouteApi, Link, useNavigate } from '@tanstack/react-router'
-import { type FormEvent, useState } from 'react'
+import { type FormEvent, useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { JoinResult } from '../account/client.ts'
 import { useAccounts } from '../account/context.tsx'
 import { useAnnounce } from '../components/announcer.tsx'
+import { BusyButton } from '../components/busy-button.tsx'
 import { Field, FormError } from '../components/field.tsx'
+import { focusOnMount } from '../components/focus.ts'
 import form from '../components/form.module.css'
 import list from '../components/list.module.css'
 import { PageTitle } from '../components/page-title.tsx'
@@ -75,21 +77,34 @@ export function Join() {
       <FormError message={error} />
       {account ? (
         <>
-          <button
-            type="button"
-            className={form.button}
-            disabled={busy}
-            onClick={async () => {
-              setBusy(true)
-              await after(await accounts.join(secret))
-            }}
-          >
-            {t('join.confirm', { campaign: campaignName })}
-          </button>
+          {/* Con quién se entra: que nadie se una con la cuenta de otro (una sesión que no es la suya) sin verlo */}
+          <p>{t('join.signedInAs', { name: account.name, email: account.email })}</p>
+          <div className={list.actions}>
+            <BusyButton
+              className={form.button}
+              busy={busy}
+              onClick={async () => {
+                setBusy(true)
+                await after(await accounts.join(secret))
+              }}
+            >
+              {t('join.confirm', { campaign: campaignName })}
+            </BusyButton>
+            {/* Sale y se queda en el enlace, para entrar o crear la cuenta buena */}
+            <button type="button" className={list.secondary} onClick={() => accounts.signOut()}>
+              {t('join.otherAccount')}
+            </button>
+          </div>
           {isMaster && <p>{t('join.isMaster')}</p>}
         </>
       ) : (
-        <WithoutSession secret={secret} onJoined={after} onBusy={() => setBusy(true)} busy={busy} />
+        <WithoutSession
+          secret={secret}
+          onJoined={after}
+          onBusy={() => setBusy(true)}
+          onSignIn={() => setError(null)}
+          busy={busy}
+        />
       )}
       <p>
         <Link to="/">{t('app.name')}</Link>
@@ -104,11 +119,16 @@ function WithoutSession(props: {
   busy: boolean
   onBusy: () => void
   onJoined: (r: JoinResult) => Promise<void>
+  /** Pasa a entrar con la cuenta que ya tiene: el error del alta ya no viene al caso */
+  onSignIn: () => void
 }) {
   const { t } = useTranslation()
   const accounts = useAccounts()
   const [hasAccount, setHasAccount] = useState(false)
   const [signInError, setSignInError] = useState<string | null>(null)
+  const [signingIn, setSigningIn] = useState(false)
+  const signUpTitle = useId()
+  const signInTitle = useId()
 
   const signUp = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -126,28 +146,31 @@ function WithoutSession(props: {
   const signIn = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     const data = new FormData(event.currentTarget)
+    setSigningIn(true)
     const result = await accounts.signIn(String(data.get('email')), String(data.get('password')))
+    setSigningIn(false)
     if (!result.ok) setSignInError(t(`errors.${result.code}`, { defaultValue: t('errors.UNKNOWN') }))
   }
 
+  // Al cambiar de formulario, el foco va al primer campo del nuevo (el formulario se llama como su título)
   if (hasAccount) {
     return (
-      <form className={form.form} onSubmit={signIn}>
-        <h2>{t('join.signInTitle')}</h2>
-        <Field label={t('account.email')} name="email" type="email" autoComplete="email" required />
+      <form className={form.form} aria-labelledby={signInTitle} onSubmit={signIn}>
+        <h2 id={signInTitle}>{t('join.signInTitle')}</h2>
+        <Field label={t('account.email')} name="email" type="email" autoComplete="email" required ref={focusOnMount} />
         <Field label={t('account.password')} name="password" type="password" autoComplete="current-password" required />
         <FormError message={signInError} />
-        <button type="submit" className={form.button}>
+        <BusyButton type="submit" className={form.button} busy={signingIn}>
           {t('account.signIn')}
-        </button>
+        </BusyButton>
       </form>
     )
   }
 
   return (
     <>
-      <form className={form.form} onSubmit={signUp}>
-        <h2>{t('join.signUpTitle')}</h2>
+      <form className={form.form} aria-labelledby={signUpTitle} onSubmit={signUp}>
+        <h2 id={signUpTitle}>{t('join.signUpTitle')}</h2>
         <Field label={t('account.name')} name="name" autoComplete="name" maxLength={80} required />
         <Field label={t('account.email')} name="email" type="email" autoComplete="email" required />
         <Field
@@ -160,12 +183,19 @@ function WithoutSession(props: {
           maxLength={128}
           required
         />
-        <button type="submit" className={form.button} disabled={props.busy}>
+        <BusyButton type="submit" className={form.button} busy={props.busy}>
           {t('join.signUp')}
-        </button>
+        </BusyButton>
       </form>
       <p>
-        <button type="button" className={list.secondary} onClick={() => setHasAccount(true)}>
+        <button
+          type="button"
+          className={list.secondary}
+          onClick={() => {
+            props.onSignIn()
+            setHasAccount(true)
+          }}
+        >
           {t('join.hasAccount')}
         </button>
       </p>

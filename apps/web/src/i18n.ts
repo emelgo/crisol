@@ -52,6 +52,8 @@ export const es = {
     byMaster: '{{world}} · máster: {{master}}',
     confirm: 'Entrar en {{campaign}} como jugador',
     isMaster: 'Ya eres el máster de esta campaña.',
+    signedInAs: 'Entras como {{name}} ({{email}}).',
+    otherAccount: 'Usar otra cuenta',
     signUpTitle: 'Crea tu cuenta',
     signUp: 'Crear la cuenta y entrar',
     hasAccount: 'Ya tengo cuenta',
