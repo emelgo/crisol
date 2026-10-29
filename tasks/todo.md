@@ -256,8 +256,8 @@ Comprobación local al acabar cada tarea: `pnpm lint && pnpm typecheck && pnpm t
   - Comprueba: prueba con el cliente del SDK por herramienta × modo, y la proyección (lo que no se ve no sale).
   - Archivos: `apps/server/src/mcp/herramientas.ts`, `packages/contracts/src/*.ts`.
 
-- [ ] **25. Cierre: criterios de éxito en staging, revisión y entrega** — a medias: LCP medido, revisión hecha y lo del
-  servidor arreglado (PR #31); faltan los arreglos de la web (ver «Dónde estamos»)
+- [x] **25. Cierre: criterios de éxito en staging, revisión y entrega** — revisión en tres partes (seguridad, servidor,
+  web); lo alto (la caché de una cuenta a la vista de la siguiente) y lo medio, arreglado (PR #31 y #33)
   - Acepta:
     - Los 8 criterios de la spec recorridos con Enrique en staging (claude.ai real) y el LCP medido.
     - `/agent-skills:review` sin hallazgos altos.
@@ -266,4 +266,14 @@ Comprobación local al acabar cada tarea: `pnpm lint && pnpm typecheck && pnpm t
   - Archivos: `docs/modulos.md`, `README.md`.
 
 ### Punto de control final
-- [ ] Todos los criterios de éxito; módulo 0 marcado como hecho en `docs/modulos.md`.
+- [x] Todos los criterios de éxito; módulo 0 marcado como hecho en `docs/modulos.md` (2026-10-29):
+  1. [x] Enrique arrancó el propietario y creó «Eana» y sus campañas en staging.
+  2. [x] Un jugador entra con el enlace de A y no ve B (e2e y prueba de fugas; Enrique, punto de control 3).
+  3. [x] Regenerar y cerrar el enlace, y abrirlo sin confirmar, como se pide; entrar con Discord, pospuesto (tarea 15).
+  4. [x] Desde claude.ai, en copiloto, Claude crea una campaña sin preguntar y regenerar el enlace espera en la cola;
+     al aprobarlo se hace (Enrique, en staging; e2e `aprobaciones.spec.ts`).
+  5. [x] Enrique deshace desde el historial lo que creó Claude; con un cambio posterior, se niega y dice por qué.
+  6. [x] Una campaña borrada se restaura desde la papelera (Enrique); purgas probadas con el reloj simulado.
+  7. [x] CI en verde con todo `CONSTRAINTS.md`, sin supresiones nuevas.
+  8. [x] axe sin fallos críticos ni graves en ninguna pantalla; LCP de la entrada 0,27 s (escritorio) y 1,9 s (móvil
+     con 4G lenta), por debajo de 2,5 s.

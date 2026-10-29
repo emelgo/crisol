@@ -267,6 +267,8 @@ export const es = {
     MASTER_NOT_REMOVABLE: 'Al máster no se le puede expulsar',
     APPROVAL_EXPIRED: 'Ya ha caducado',
     ALREADY_DECIDED: 'Ya está decidido',
+    INTERRUPTED: 'Se cortó mientras se hacía: vuelve a pedirlo',
+    TOO_MANY_PENDING: 'Hay demasiadas peticiones esperando',
     UNAUTHENTICATED: 'Tu sesión ha acabado. Vuelve a entrar.',
     UNKNOWN: 'Algo ha fallado. Vuelve a intentarlo.'
   },
