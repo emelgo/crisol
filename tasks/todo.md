@@ -47,7 +47,7 @@ Cada vía nueva por la que salen datos amplía `@fugas` en la misma tarea.
   - Archivos: `packages/contracts/src/pages.ts`, `packages/domain/src/properties.ts`,
     `apps/web/src/wiki/properties.tsx`, `apps/web/src/routes/tags.tsx`.
 
-- [ ] **4. Papelera de páginas**
+- [x] **4. Papelera de páginas** — hecha. Restaurar con la madre en la papelera da `PARENT_IN_TRASH`.
   - Acepta:
     - Borrar manda a la papelera la página y sus subpáginas en una sola operación, y deshacer las devuelve.
     - Las páginas salen en la papelera del mundo y se restauran desde ahí.
