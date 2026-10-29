@@ -19,23 +19,24 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   - Spec `docs/specs/fundacion.md` **aprobada**; ADR-0002 (Better Auth solo para identidad; inquilinos e invitaciones
     en tablas propias); prueba de fugas añadida a `CONSTRAINTS.md`.
   - Plan aprobado: `tasks/plan.md` y 25 tareas en `tasks/todo.md`.
-- **2026-10-29 — Módulo 0 en curso: tareas 1 a 11 hechas** (PR #2 a #13). Staging en
+- **2026-10-29 — Módulo 0 en curso: tareas 1 a 14 hechas** (PR #2 a #18). Staging en
   https://neo.crisol.144-91-122-245.sslip.io (Compose `crisol-staging` en `~/crisol-staging`, puerto 8140; copia del
   Caddyfile en `/etc/caddy/Caddyfile.bak-20261029-104936-neo-crisol`). Desplegar tras cada merge:
   `scripts/desplegar-staging.sh` (con cerrojo).
-  - Plataforma (1-5), cuentas con registro cerrado y arranque (6-8), núcleo de escritura con historial (9), mis
-    mundos (10) y conector MCP con OAuth 2.1 + CIMD y `listar_mundos` (11).
-  - Enlace de arranque de Enrique en staging para la organización «Fateforge»: caduca el 2026-10-30 a las 11:17; si
-    caduca, se repite con la orden del README (reutiliza la organización).
+  - Hecho: plataforma (1-5), cuentas con registro cerrado y arranque (6-8), núcleo de escritura con historial (9),
+    mis mundos (10), conector MCP con OAuth 2.1 + CIMD y `listar_mundos` (11), campañas (12), enlace de invitación
+    (13; el secreto se guarda cifrado además del hash para poder verlo siempre, decidido con Enrique) y unirse con
+    el enlace (14; crear la cuenta une en la misma petición).
+  - Puntos de control 1 y 2 superados: Enrique tiene su cuenta de propietario en staging (organización
+    «Fateforge», mundo «Eana») y conectó claude.ai (cliente CIMD `https://claude.ai/oauth/mcp-oauth-client-metadata`).
   - GitHub gratis no protege ramas privadas: se fusiona solo con los 4 check-runs del commit en verde, esperando con
     un bucle con tope (un runner colgado dejó `gh pr checks --watch` esperando sin fin; ahora hay timeout-minutes).
   - MIT-0 admitida en `CONSTRAINTS.md`.
   - Puertos: desarrollo 8130 (servidor), 5173 (Vite), 54330 (Postgres), 63790 (Valkey), 10250/8250 (Mailpit);
     e2e 8131; prueba del MCP 8132; staging 8140.
-- **Siguiente paso: punto de control 2 con Enrique**: que cree su cuenta con el enlace de arranque, cree un mundo en
-  «Mis mundos» y añada en claude.ai el conector `https://neo.crisol.144-91-122-245.sslip.io/mcp` (le pedirá entrar y
-  «Permitir»); luego pedir a Claude que liste sus mundos. Después, tarea 12 (campañas). Preguntas 1 y 2 de la spec
-  (correo y Google) antes de la tarea 15.
+- **Siguiente paso: tarea 15 (Discord y Google)**, que necesita a Enrique: crear la aplicación OAuth de Discord (y
+  la de Google si acepta `sslip.io`) y decidir el correo (preguntas 1 y 2 de la spec). Si aún no las tiene, se puede
+  seguir antes con la 16 (miembros: ver, expulsar y salir) y dejar la 15 para después.
 - **Antes del módulo 1**: ADR sobre Yjs y secretos. Yjs no puede proyectar por usuario, así que el contenido con otra
   visibilidad tiene que ir en documentos o subdocumentos aparte (ver la nota de sincronización de Foundry).
 - **Pendientes de permiso de Enrique:**
