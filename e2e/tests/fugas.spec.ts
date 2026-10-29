@@ -55,8 +55,14 @@ test('@fugas una jugadora no recibe nada de lo que no puede ver: ni la campaña 
   await page.getByRole('button', { name: 'Generar el nuevo' }).click()
   await expect(page.getByLabel('Enlace de invitación')).not.toHaveValue(firstLink)
   const newLinkA = await page.getByLabel('Enlace de invitación').inputValue()
-  await page.getByRole('checkbox', { name: 'Invitaciones abiertas' }).uncheck()
-  await page.getByRole('checkbox', { name: 'Invitaciones abiertas' }).check()
+  // Cada cambio, guardado antes del siguiente (mientras se guarda uno, otro clic se ignora)
+  const toggle = page.getByRole('checkbox', { name: 'Invitaciones abiertas' })
+  const closing = page.waitForResponse('**/api/actions/setInvitationsOpen')
+  await toggle.uncheck()
+  await closing
+  const opening = page.waitForResponse('**/api/actions/setInvitationsOpen')
+  await toggle.check()
+  await opening
   await page.getByRole('link', { name: 'Eana' }).click()
   await page.getByRole('button', { name: `Renombrar ${SECRET_CAMPAIGN}` }).click()
   await page.getByLabel(`Nuevo nombre de ${SECRET_CAMPAIGN}`).fill(RENAMED_CAMPAIGN)

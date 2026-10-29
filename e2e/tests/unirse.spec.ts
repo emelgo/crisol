@@ -70,7 +70,10 @@ test('con cuenta: entra y vuelve a la confirmación; con el enlace cerrado o cam
   await player.getByRole('button', { name: 'Entrar en La Marca como jugador' }).click()
   await expect(player.getByRole('heading', { level: 1, name: 'La Marca', exact: true })).toBeVisible()
 
+  // Cerradas de verdad (guardado) antes de probar el enlace
+  const closing = page.waitForResponse('**/api/actions/setInvitationsOpen')
   await page.getByRole('checkbox', { name: 'Invitaciones abiertas' }).uncheck()
+  await closing
   await player.goto(link)
   await expect(player.getByRole('heading', { name: 'Este enlace no vale' })).toBeVisible()
 
