@@ -18,6 +18,7 @@ export type Report = Record<string, Array<{ name: string; versions: string[] }>>
 
 const PERMISSIVE = [
   'MIT',
+  'MIT-0',
   'ISC',
   'BSD-2-Clause',
   'BSD-3-Clause',

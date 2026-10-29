@@ -1,6 +1,6 @@
 # Listón de calidad
 
-Revisado: 2026-10-29 con Enrique (prueba de fugas añadida con el módulo 0). Este archivo no se rebaja para que algo pase: cambiarlo exige su visto bueno en el PR.
+Revisado: 2026-10-29 con Enrique (prueba de fugas añadida con el módulo 0; MIT-0 admitida). Este archivo no se rebaja para que algo pase: cambiarlo exige su visto bueno en el PR.
 
 ## Suelo (siempre, bloquea)
 
@@ -22,7 +22,7 @@ Revisado: 2026-10-29 con Enrique (prueba de fugas añadida con el módulo 0). Es
 | Lint y formato | Cero errores con nuestra configuración | `biome check` | Cada cambio, CI | Bloquea |
 | Pruebas | Todas en verde | `vitest run`, Playwright e2e | Al acabar cada tarea, CI | Bloquea |
 | Secretos | Ninguno | `gitleaks` | CI | Bloquea |
-| Licencias | Solo la lista permitida (MIT, ISC, BSD, Apache-2.0, 0BSD, CC0, Unlicense, BlueOak, CC BY 4.0 para datos) | script de licencias sobre `pnpm licenses list` | CI | Bloquea |
+| Licencias | Solo la lista permitida (MIT, MIT-0, ISC, BSD, Apache-2.0, 0BSD, CC0, Unlicense, BlueOak, CC BY 4.0 para datos) | script de licencias sobre `pnpm licenses list` | CI | Bloquea |
 | Sala limpia | Sin imports de `research/` | prueba propia | CI | Bloquea |
 | Fugas | Un jugador no recibe nada que no pueda ver (API, WebSocket, MCP) | prueba e2e de fugas, que cada módulo amplía | CI | Bloquea |
 | Cobertura | ≥ 80 % de las líneas nuevas o cambiadas | `vitest --coverage` + diff | CI | Avisa hasta el 2026-11-12, luego bloquea |

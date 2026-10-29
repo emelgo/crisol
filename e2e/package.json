@@ -1,0 +1,19 @@
+{
+  "name": "@crisol/e2e",
+  "private": true,
+  "license": "UNLICENSED",
+  "type": "module",
+  "scripts": {
+    "e2e": "playwright test --grep-invert @a11y",
+    "e2e:a11y": "playwright test --grep @a11y",
+    "typecheck": "tsc -p ."
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "catalog:",
+    "@crisol/db": "workspace:*",
+    "@crisol/server": "workspace:*",
+    "@playwright/test": "catalog:",
+    "@types/node": "catalog:",
+    "typescript": "catalog:"
+  }
+}

@@ -6,7 +6,9 @@ const schema = z.object({
   HOST: z.string().default('127.0.0.1'),
   PORT: z.coerce.number().int().min(1).max(65535).default(8130),
   DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }),
-  VALKEY_URL: z.url({ protocol: /^rediss?$/ })
+  VALKEY_URL: z.url({ protocol: /^rediss?$/ }),
+  // Carpeta de la web compilada; en desarrollo la sirve Vite
+  WEB_DIR: z.string().optional()
 })
 
 export type Config = z.infer<typeof schema>

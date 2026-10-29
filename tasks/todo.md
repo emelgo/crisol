@@ -37,7 +37,7 @@ Comprobación local al acabar cada tarea: `pnpm lint && pnpm typecheck && pnpm t
   - Archivos: `compose.yaml`, `apps/server/src/{app,config}.ts`, `packages/db/{drizzle.config.ts,src/client.ts}`,
     `.env.example`.
 
-- [ ] **4. Web mínima servida por el servidor, e2e y axe**
+- [x] **4. Web mínima servida por el servidor, e2e y axe**
   - Acepta:
     - React + TanStack Router y Query + i18next (español) + temas claro y oscuro.
     - En producción la sirve el servidor, con vuelta al SPA.
