@@ -1,5 +1,5 @@
 import { createMemoryHistory } from '@tanstack/react-router'
-import { render, screen } from '@testing-library/react'
+import { act, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import { type FakeInvitation, fakeAccountClient } from '../account/fake.ts'
@@ -110,5 +110,60 @@ describe('unirse con el enlace', () => {
     await fill('Contraseña', 'una-clave-larga')
     await userEvent.click(screen.getByRole('button', { name: 'Entrar' }))
     expect(await screen.findByRole('button', { name: 'Entrar en La Marca como jugador' })).toBeDefined()
+  })
+
+  it('con sesión, dice con qué cuenta entra; «Usar otra cuenta» sale y se queda en el enlace', async () => {
+    const accounts = fakeAccountClient({
+      account: { name: 'Jugadora', email: 'j@crisol.test' },
+      invitations: { abc: invitation() }
+    })
+    const router = renderJoin(accounts)
+    expect(await screen.findByText('Entras como Jugadora (j@crisol.test).')).toBeDefined()
+    await userEvent.click(screen.getByRole('button', { name: 'Usar otra cuenta' }))
+    expect(accounts.calls).toContain('signOut')
+    expect(await screen.findByRole('button', { name: 'Crear la cuenta y entrar' })).toBeDefined()
+    expect(router.state.location.pathname).toBe('/unirse/abc')
+    expect(accounts.calls).not.toContain('join abc')
+  })
+
+  it('al pasar a «Ya tengo cuenta», el error del alta se va y el foco va al email del formulario nuevo', async () => {
+    const accounts = fakeAccountClient({ invitations: { abc: invitation() } })
+    accounts.passwords.set('j@crisol.test', 'una-clave-larga')
+    renderJoin(accounts)
+    await fill('Nombre', 'Jugadora')
+    await fill('Email', 'j@crisol.test')
+    await fill('Contraseña', 'otra-clave-larga')
+    await userEvent.click(screen.getByRole('button', { name: 'Crear la cuenta y entrar' }))
+    await screen.findByRole('alert')
+    await userEvent.click(screen.getByRole('button', { name: 'Ya tengo cuenta' }))
+    expect(screen.queryByRole('alert')).toBeNull()
+    expect(document.activeElement).toBe(screen.getByLabelText('Email'))
+    expect(screen.getByRole('form', { name: 'Entra con tu cuenta' })).toBeDefined()
+  })
+
+  it('mientras entra con su cuenta, «Entrar» no hace nada', async () => {
+    const accounts = fakeAccountClient({ invitations: { abc: invitation() } })
+    accounts.passwords.set('j@crisol.test', 'una-clave-larga')
+    const original = accounts.client.signIn
+    let release = () => {}
+    let attempts = 0
+    accounts.client.signIn = async (email, password) => {
+      attempts++
+      await new Promise<void>((resolve) => {
+        release = resolve
+      })
+      return original(email, password)
+    }
+    renderJoin(accounts)
+    await userEvent.click(await screen.findByRole('button', { name: 'Ya tengo cuenta' }))
+    await fill('Email', 'j@crisol.test')
+    await fill('Contraseña', 'una-clave-larga')
+    const signIn = screen.getByRole('button', { name: 'Entrar' })
+    await userEvent.click(signIn)
+    expect(signIn.getAttribute('aria-disabled')).toBe('true')
+    await userEvent.click(signIn)
+    act(release)
+    expect(await screen.findByRole('button', { name: 'Entrar en La Marca como jugador' })).toBeDefined()
+    expect(attempts).toBe(1)
   })
 })

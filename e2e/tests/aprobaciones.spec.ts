@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, type Page, test } from '@playwright/test'
-import { campaignLink, connectClaude } from './ayudas.ts'
+import { campaignLink, connectClaude, gotoLive } from './ayudas.ts'
 
 type Overview = { worlds: Array<{ id: string; name: string; campaigns: Array<{ id: string; name: string }> }> }
 
@@ -22,14 +22,14 @@ test('Claude crea una campaña sin preguntar; regenerar el enlace aparece en la 
   const { link, campaignPage, claude, worldId, campaignId } = await withClaude(page)
 
   // En copiloto, crear no espera: la campaña sale en el mundo sin recargar
-  await page.goto(`/mundos/${worldId}`)
+  await gotoLive(page, `/mundos/${worldId}`)
   await expect(page.getByRole('link', { name: 'La Marca' })).toBeVisible()
   const created = await claude.call('crear_campana', { worldId, name: 'Los Cuervos' })
   expect(created.isError).toBeFalsy()
   await expect(page.getByRole('link', { name: 'Los Cuervos' })).toBeVisible()
 
   // Regenerar el enlace afecta a los jugadores: espera, y la petición aparece en menos de 2 s
-  await page.goto(campaignPage)
+  await gotoLive(page, campaignPage)
   await expect(page.getByLabel('Enlace de invitación')).toHaveValue(link)
   const asked = claude.call('enlace_invitacion', { campaignId, change: 'regenerate' })
   const queue = page.getByRole('region', { name: 'Claude espera tu aprobación' })
@@ -38,7 +38,7 @@ test('Claude crea una campaña sin preguntar; regenerar el enlace aparece en la 
   await expect(queue.getByText('Herramienta: enlace_invitacion')).toBeVisible()
 
   await queue.getByRole('button', { name: 'Aprobar: generar un enlace nuevo para La Marca' }).click()
-  await expect(page.getByText('Hecho: generar un enlace nuevo para La Marca')).toBeVisible()
+  await expect(page.getByRole('main').getByText('Hecho: generar un enlace nuevo para La Marca')).toBeVisible()
   const result = await asked
   const url = String(result.structuredContent?.url)
   expect(url).not.toBe(link)
@@ -54,12 +54,12 @@ test('Claude crea una campaña sin preguntar; regenerar el enlace aparece en la 
 
 test('rechazado, no se hace; en solo lectura, Claude ya no cambia nada', async ({ page }) => {
   const { claude, campaignId } = await withClaude(page)
-  await page.goto('/mundos')
+  await gotoLive(page, '/mundos')
 
   const asked = claude.call('enlace_invitacion', { campaignId, change: 'close' })
   const queue = page.getByRole('region', { name: 'Claude espera tu aprobación' })
   await queue.getByRole('button', { name: 'Rechazar: cerrar las invitaciones de La Marca' }).click()
-  await expect(page.getByText('Rechazado: cerrar las invitaciones de La Marca')).toBeVisible()
+  await expect(page.getByRole('main').getByText('Rechazado: cerrar las invitaciones de La Marca')).toBeVisible()
   const rejected = await asked
   expect(rejected.isError).toBe(true)
   expect(rejected.text).toMatch(/^REJECTED/)
@@ -70,7 +70,7 @@ test('rechazado, no se hace; en solo lectura, Claude ya no cambia nada', async (
     'Rechazado: cerrar las invitaciones de La Marca'
   )
   await page.getByRole('radio', { name: /^Solo lectura/ }).check()
-  await expect(page.getByText('Guardado')).toBeVisible()
+  await expect(page.getByRole('status')).toHaveText('Guardado')
   const refused = await claude.call('crear_mundo', { name: 'Otro' })
   expect(refused.text).toMatch(/^READ_ONLY/)
   expect((await claude.call('listar_mundos')).structuredContent).toMatchObject({
@@ -90,7 +90,7 @@ test('la cola y los ajustes de IA, en los dos temas @a11y', async ({ page }) => 
       expect(serious.map((v) => `${colorScheme} ${v.id}: ${v.help}`)).toEqual([])
     }
   }
-  await page.goto('/ia')
+  await gotoLive(page, '/ia')
   await expect(page.getByRole('heading', { level: 1, name: 'Ajustes de IA' })).toBeVisible()
   const asked = claude.call('enlace_invitacion', { campaignId, change: 'regenerate' })
   const queue = page.getByRole('region', { name: 'Claude espera tu aprobación' })

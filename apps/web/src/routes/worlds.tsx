@@ -3,14 +3,19 @@ import { Link, Navigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
+import { useErrorText } from '../api/errors.ts'
 import { CreateForm } from '../components/create-form.tsx'
+import { FormError } from '../components/field.tsx'
 import styles from '../components/list.module.css'
+import { failed } from '../components/load-error.tsx'
+import { PageTitle } from '../components/page-title.tsx'
 import { RenamableItem } from '../components/renamable-item.tsx'
 
 export function Worlds() {
   const { t } = useTranslation()
   const api = useApi()
   const queryClient = useQueryClient()
+  const errorText = useErrorText()
   const { account, pending } = useAccounts().useAccount()
   const organizations = useQuery({
     queryKey: ['organizations'],
@@ -30,7 +35,7 @@ export function Worlds() {
 
   return (
     <section>
-      <h1>{t('worlds.title')}</h1>
+      <PageTitle>{t('worlds.title')}</PageTitle>
       {canCreate && (
         <p>
           <Link to="/historial">{t('history.organizationLink')}</Link>
@@ -38,6 +43,7 @@ export function Worlds() {
           <Link to="/papelera">{t('trash.title')}</Link>
         </p>
       )}
+      <FormError message={failed(worlds) ? errorText(worlds.error) : null} />
       {worlds.data &&
         (worlds.data.worlds.length === 0 ? (
           <p>{t('worlds.empty')}</p>

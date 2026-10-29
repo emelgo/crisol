@@ -1,12 +1,8 @@
-import { type InputHTMLAttributes, useId } from 'react'
+import { type ComponentProps, useId } from 'react'
 import styles from './form.module.css'
 
 /** Campo de formulario con su etiqueta y, si la hay, una pista debajo */
-export function Field({
-  label,
-  hint,
-  ...input
-}: InputHTMLAttributes<HTMLInputElement> & { label: string; hint?: string }) {
+export function Field({ label, hint, ...input }: ComponentProps<'input'> & { label: string; hint?: string }) {
   const id = useId()
   return (
     <div className={styles.field}>

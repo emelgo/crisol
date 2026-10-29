@@ -41,25 +41,33 @@ function changedBy(message: RealtimeMessage): QueryKey[] {
 /** Abre el canal mientras haya sesión: vuelve a pedir lo que cambia y guarda los avisos de entrada */
 export function RealtimeProvider({ client, children }: { client: RealtimeClient; children: ReactNode }) {
   const queryClient = useQueryClient()
-  const { account } = useAccounts().useAccount()
+  const accounts = useAccounts()
+  const { account } = accounts.useAccount()
   const [notices, setNotices] = useState<JoinNotice[]>([])
   const [newVersion, setNewVersion] = useState(false)
-  // Otra cuenta, otro canal
+  // Otra cuenta, otro canal (y los avisos de la anterior se van con AccountScope)
   const signedIn = account?.email ?? null
 
   useEffect(() => {
-    setNotices([])
     if (!signedIn) return
+    // Lo que ya se estaba pidiendo pudo salir antes del cambio: se cancela y se vuelve a pedir. Invalidar sin más no lo
+    // repite si aún no tiene datos (se queda con la respuesta en camino, la de antes del cambio)
+    const refresh = async (queryKey?: QueryKey) => {
+      await queryClient.cancelQueries({ queryKey })
+      await queryClient.invalidateQueries({ queryKey })
+    }
     return client.connect({
       onMessage: (message) => {
-        for (const queryKey of queriesFor(message)) void queryClient.invalidateQueries({ queryKey })
+        for (const queryKey of queriesFor(message)) void refresh(queryKey)
         if (message.type === 'joined') setNotices((current) => [...current, { ...message, id: crypto.randomUUID() }])
       },
       // Tras un corte pudo perderse algo: se vuelve a pedir todo lo que está a la vista
-      onReconnect: () => void queryClient.invalidateQueries(),
-      onNewVersion: () => setNewVersion(true)
+      onReconnect: () => void refresh(),
+      onNewVersion: () => setNewVersion(true),
+      // Se vuelve a pedir la sesión: sin ella, AccountScope lo quita todo y las páginas llevan a entrar
+      onSessionEnded: () => accounts.refreshSession()
     })
-  }, [client, queryClient, signedIn])
+  }, [client, queryClient, accounts, signedIn])
 
   const dismiss = useCallback((id: string) => setNotices((current) => current.filter((n) => n.id !== id)), [])
   const value = useMemo(() => ({ notices, dismiss, newVersion }), [notices, dismiss, newVersion])

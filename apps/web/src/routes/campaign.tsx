@@ -1,16 +1,21 @@
-import type { Campaign } from '@crisol/contracts'
+import type { Campaign, Member } from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getRouteApi, Link, Navigate, useNavigate } from '@tanstack/react-router'
-import { useState } from 'react'
+import { useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
+import { useAnnounce } from '../components/announcer.tsx'
+import { BusyButton } from '../components/busy-button.tsx'
 import { CopyField } from '../components/copy-field.tsx'
 import { FormError } from '../components/field.tsx'
+import { focusAfterRemoving, focusOnMount, useReturnFocus } from '../components/focus.ts'
 import form from '../components/form.module.css'
 import styles from '../components/list.module.css'
-import { RemoveMemberConfirm, useRemoveMember } from '../components/remove-member.tsx'
+import { failed, LoadError } from '../components/load-error.tsx'
+import { PageTitle } from '../components/page-title.tsx'
+import { RemovedMessage, RemoveMemberConfirm, useRemoveMember } from '../components/remove-member.tsx'
 
 const route = getRouteApi('/mundos/$worldId/campanas/$campaignId')
 
@@ -35,11 +40,15 @@ export function CampaignPage() {
 
   if (pending) return null
   if (!account) return <Navigate to="/entrar" replace />
-  if (worlds.isPending || (world && campaigns.isPending)) return null
+  // Sin las listas no se sabe si existe: mientras llegan, nada; si fallan, el error (no «no existe»)
+  if (!worlds.data) return failed(worlds) ? <LoadError error={worlds.error} onRetry={() => worlds.refetch()} /> : null
+  if (world && !campaigns.data) {
+    return failed(campaigns) ? <LoadError error={campaigns.error} onRetry={() => campaigns.refetch()} /> : null
+  }
   if (!world || !campaign) {
     return (
       <section>
-        <h1>{t('campaign.notFound')}</h1>
+        <PageTitle>{t('campaign.notFound')}</PageTitle>
         <Link to="/mundos">{t('worlds.title')}</Link>
       </section>
     )
@@ -52,7 +61,7 @@ export function CampaignPage() {
           {world.name}
         </Link>
       </p>
-      <h1>{campaign.name}</h1>
+      <PageTitle>{campaign.name}</PageTitle>
       <MembersPanel campaign={campaign} />
       {campaign.role === 'master' && <InvitationPanel campaignId={campaignId} />}
     </section>
@@ -65,12 +74,15 @@ function MembersPanel({ campaign }: { campaign: Campaign }) {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const errorText = useErrorText()
+  const announce = useAnnounce()
   const campaignId = campaign.id
   const key = ['members', campaignId]
   const members = useQuery({ queryKey: key, queryFn: () => api.call('listMembers', { campaignId }) })
   const [confirmingRemove, setConfirmingRemove] = useState<string | null>(null)
-  const [removedName, setRemovedName] = useState<string | null>(null)
+  const [removed, setRemoved] = useState<{ name: string; linkFailed: boolean } | null>(null)
   const [confirmingLeave, setConfirmingLeave] = useState(false)
+  const leaveButton = useReturnFocus()
+  const leaveWarningId = useId()
   const remove = useRemoveMember(campaignId)
   const leave = useMutation({
     mutationFn: () => api.call('leaveCampaign', { campaignId }),
@@ -84,7 +96,7 @@ function MembersPanel({ campaign }: { campaign: Campaign }) {
     }
   })
 
-  if (!members.data) return null
+  if (!members.data) return <FormError message={failed(members) ? errorText(members.error) : null} />
   const canRemove = campaign.role === 'master'
   const error = remove.error ?? leave.error
 
@@ -93,65 +105,123 @@ function MembersPanel({ campaign }: { campaign: Campaign }) {
       <h2 id="miembros">{t('members.title')}</h2>
       <ul className={styles.list} aria-labelledby="miembros">
         {members.data.members.map((member) => (
-          <li key={member.userId} className={styles.item}>
-            <span className={styles.name}>{member.name}</span>
-            <span className={styles.role}>{t(`roles.${member.role}`)}</span>
-            {canRemove && member.role === 'player' && confirmingRemove !== member.userId && (
-              <button
-                type="button"
-                className={styles.secondary}
-                aria-label={t('members.removeButton', { name: member.name })}
-                onClick={() => {
-                  setConfirmingRemove(member.userId)
-                  setRemovedName(null)
-                }}
-              >
-                {t('members.remove')}
-              </button>
-            )}
-            {confirmingRemove === member.userId && (
-              <RemoveMemberConfirm
-                name={member.name}
-                pending={remove.isPending}
-                onConfirm={(newLink) =>
-                  remove.mutate(
-                    { userId: member.userId, newLink },
-                    {
-                      onSuccess: () => {
-                        setConfirmingRemove(null)
-                        setRemovedName(member.name)
-                      }
-                    }
-                  )
+          <MemberItem
+            key={member.userId}
+            member={member}
+            removable={canRemove && member.role === 'player'}
+            confirming={confirmingRemove === member.userId}
+            busy={remove.isPending}
+            onStart={() => {
+              setConfirmingRemove(member.userId)
+              setRemoved(null)
+            }}
+            onCancel={() => setConfirmingRemove(null)}
+            onRemove={(newLink, refocus) =>
+              remove.mutate(
+                { userId: member.userId, newLink },
+                {
+                  onSuccess: ({ linkFailed }) => {
+                    setConfirmingRemove(null)
+                    setRemoved({ name: member.name, linkFailed })
+                    // Si el enlace no cambió, lo dice el aviso (alert)
+                    if (!linkFailed) announce(t('members.removed', { name: member.name }))
+                    refocus()
+                  }
                 }
-                onCancel={() => setConfirmingRemove(null)}
-              />
-            )}
-          </li>
+              )
+            }
+          />
         ))}
       </ul>
-      {removedName && <p role="status">{t('members.removed', { name: removedName })}</p>}
+      {removed && (
+        <p>
+          <RemovedMessage {...removed} />
+        </p>
+      )}
 
       {campaign.role === 'player' &&
         (confirmingLeave ? (
           <div>
-            <p>{t('members.leaveWarning')}</p>
+            <p id={leaveWarningId}>{t('members.leaveWarning')}</p>
             <div className={styles.actions}>
-              <button type="button" className={form.button} disabled={leave.isPending} onClick={() => leave.mutate()}>
+              <BusyButton
+                ref={focusOnMount}
+                className={form.button}
+                aria-describedby={leaveWarningId}
+                busy={leave.isPending}
+                onClick={() => leave.mutate()}
+              >
                 {t('members.leaveConfirm')}
-              </button>
-              <button type="button" className={styles.secondary} onClick={() => setConfirmingLeave(false)}>
+              </BusyButton>
+              <button
+                type="button"
+                className={styles.secondary}
+                onClick={() => {
+                  leaveButton.back()
+                  setConfirmingLeave(false)
+                }}
+              >
                 {t('list.cancel')}
               </button>
             </div>
           </div>
         ) : (
-          <button type="button" className={styles.secondary} onClick={() => setConfirmingLeave(true)}>
+          <button
+            type="button"
+            ref={leaveButton.ref}
+            className={styles.secondary}
+            onClick={() => setConfirmingLeave(true)}
+          >
             {t('members.leave')}
           </button>
         ))}
       <FormError message={error ? errorText(error) : null} />
     </section>
+  )
+}
+
+/** Un miembro: al abrir la confirmación de expulsar, el foco va a ella; al cancelar, vuelve a «Expulsar» */
+function MemberItem(props: {
+  member: Member
+  removable: boolean
+  confirming: boolean
+  busy: boolean
+  onStart(): void
+  onCancel(): void
+  /** refocus: con qué dejar el foco en el siguiente cuando ya no esté */
+  onRemove(newLink: boolean, refocus: () => void): void
+}) {
+  const { t } = useTranslation()
+  const { member } = props
+  const item = useRef<HTMLLIElement>(null)
+  const opener = useReturnFocus()
+  return (
+    <li ref={item} className={styles.item}>
+      <span className={styles.name}>{member.name}</span>
+      <span className={styles.role}>{t(`roles.${member.role}`)}</span>
+      {props.removable && !props.confirming && (
+        <button
+          type="button"
+          ref={opener.ref}
+          className={styles.secondary}
+          aria-label={t('members.removeButton', { name: member.name })}
+          onClick={props.onStart}
+        >
+          {t('members.remove')}
+        </button>
+      )}
+      {props.confirming && (
+        <RemoveMemberConfirm
+          name={member.name}
+          pending={props.busy}
+          onConfirm={(newLink) => props.onRemove(newLink, focusAfterRemoving(item.current))}
+          onCancel={() => {
+            opener.back()
+            props.onCancel()
+          }}
+        />
+      )}
+    </li>
   )
 }
 
@@ -161,6 +231,8 @@ function InvitationPanel({ campaignId }: { campaignId: string }) {
   const queryClient = useQueryClient()
   const errorText = useErrorText()
   const [confirming, setConfirming] = useState(false)
+  const regenerateButton = useReturnFocus()
+  const warningId = useId()
   const key = ['invitation', campaignId]
   const invitation = useQuery({ queryKey: key, queryFn: () => api.call('getInvitation', { campaignId }) })
   const update = (data: Awaited<ReturnType<typeof api.call<'getInvitation'>>>) => queryClient.setQueryData(key, data)
@@ -168,6 +240,8 @@ function InvitationPanel({ campaignId }: { campaignId: string }) {
     mutationFn: () => api.call('regenerateInvitation', { campaignId }),
     onSuccess: (data) => {
       update(data)
+      // Desde la confirmación: se cierra y el foco vuelve a «Nuevo enlace»
+      if (confirming) regenerateButton.back()
       setConfirming(false)
     }
   })
@@ -182,7 +256,7 @@ function InvitationPanel({ campaignId }: { campaignId: string }) {
     onError: () => setPendingOpen(null)
   })
 
-  if (!invitation.data) return null
+  if (!invitation.data) return <FormError message={failed(invitation) ? errorText(invitation.error) : null} />
   const { url, issuedAt, joins } = invitation.data
   const open = pendingOpen ?? invitation.data.open
   const error = regenerate.error ?? setOpen.error
@@ -208,29 +282,38 @@ function InvitationPanel({ campaignId }: { campaignId: string }) {
 
       {confirming ? (
         <div>
-          <p>{t('invitation.warning')}</p>
+          <p id={warningId}>{t('invitation.warning')}</p>
           <div className={styles.actions}>
-            <button
-              type="button"
+            <BusyButton
+              ref={focusOnMount}
               className={form.button}
-              disabled={regenerate.isPending}
+              aria-describedby={warningId}
+              busy={regenerate.isPending}
               onClick={() => regenerate.mutate()}
             >
               {t('invitation.confirm')}
-            </button>
-            <button type="button" className={styles.secondary} onClick={() => setConfirming(false)}>
+            </BusyButton>
+            <button
+              type="button"
+              className={styles.secondary}
+              onClick={() => {
+                regenerateButton.back()
+                setConfirming(false)
+              }}
+            >
               {t('list.cancel')}
             </button>
           </div>
         </div>
       ) : (
-        <button
-          type="button"
+        <BusyButton
+          ref={regenerateButton.ref}
           className={styles.secondary}
+          busy={regenerate.isPending}
           onClick={() => (url ? setConfirming(true) : regenerate.mutate())}
         >
           {url ? t('invitation.regenerate') : t('invitation.create')}
-        </button>
+        </BusyButton>
       )}
 
       {url && (
@@ -239,8 +322,9 @@ function InvitationPanel({ campaignId }: { campaignId: string }) {
             <input
               type="checkbox"
               checked={open}
-              disabled={setOpen.isPending}
               onChange={(event) => {
+                // Mientras se guarda, se ignora: deshabilitarla sacaría el foco de la casilla
+                if (setOpen.isPending) return
                 const value = event.currentTarget.checked
                 setPendingOpen(value)
                 setOpen.mutate(value)

@@ -4,17 +4,21 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
+import { BusyButton } from '../components/busy-button.tsx'
 import { FormError } from '../components/field.tsx'
 import form from '../components/form.module.css'
 import styles from '../components/list.module.css'
+import { PageTitle } from '../components/page-title.tsx'
 
-/** Sin nombre, el dominio del cliente (los clientes CIMD se identifican por una URL) */
-function fallbackName(clientId: string) {
-  try {
-    return new URL(clientId).hostname
-  } catch {
-    return clientId
-  }
+/**
+ * Cómo se presenta la aplicación que pide conectarse. Su nombre lo pone quien publica sus metadatos: si el cliente es
+ * una URL (CIMD, como claude.ai), va siempre con su dominio, que no se puede falsear («Claude (claude.ai)»); sin
+ * nombre, solo el dominio. Si no es una URL (un cliente que registró el propietario), su nombre o el identificador
+ */
+export function clientLabel(clientId: string, name: string | null) {
+  const host = URL.canParse(clientId) ? new URL(clientId).hostname : null
+  if (!host) return name || clientId
+  return name && name !== host ? `${name} (${host})` : host
 }
 
 /**
@@ -42,13 +46,13 @@ export function Consent() {
     // Sin sesión aquí: caducó durante la autorización. La consulta firmada no sirve fuera de este flujo
     return (
       <section>
-        <h1>{t('consent.expiredTitle')}</h1>
+        <PageTitle>{t('consent.expiredTitle')}</PageTitle>
         <p>{t('consent.expiredBody')}</p>
       </section>
     )
   }
   if (name.isPending || organizations.isPending) return null
-  const client = name.data ?? fallbackName(clientId)
+  const client = clientLabel(clientId, name.data ?? null)
   const isOwner = organizations.data?.organizations.some((o) => o.role === 'owner') ?? false
 
   const answer = async (accept: boolean) => {
@@ -60,20 +64,20 @@ export function Consent() {
 
   return (
     <section>
-      <h1>{t('consent.title', { client })}</h1>
+      <PageTitle>{t('consent.title', { client })}</PageTitle>
       <p>{t('consent.body', { client })}</p>
       <p>{t('consent.history')}</p>
       {!isOwner && <FormError message={t('consent.ownerOnly')} />}
       <FormError message={error} />
       <div className={styles.actions}>
         {isOwner && (
-          <button type="button" className={form.button} disabled={busy} onClick={() => answer(true)}>
+          <BusyButton className={form.button} busy={busy} onClick={() => answer(true)}>
             {t('consent.allow')}
-          </button>
+          </BusyButton>
         )}
-        <button type="button" className={styles.secondary} disabled={busy} onClick={() => answer(false)}>
+        <BusyButton className={styles.secondary} busy={busy} onClick={() => answer(false)}>
           {t('consent.deny')}
-        </button>
+        </BusyButton>
       </div>
     </section>
   )

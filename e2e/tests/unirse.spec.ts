@@ -38,6 +38,14 @@ test('una jugadora nueva abre el enlace, crea su cuenta y queda en la campaña',
   await page.reload()
   await expect(page.getByText('Ha entrado 1 con este enlace')).toBeVisible()
   await player.close()
+
+  // Con sesión, el enlace dice con qué cuenta se entra y deja cambiarla sin irse de él
+  await page.goto(link)
+  await expect(page.getByText('Entras como Enrique (enrique@crisol.test).')).toBeVisible()
+  await page.getByRole('button', { name: 'Usar otra cuenta' }).click()
+  await expect(page.getByRole('button', { name: 'Crear la cuenta y entrar' })).toBeVisible()
+  await expect(page).toHaveURL(link)
+  await expect(page.getByRole('heading', { level: 1, name: 'Te invitan a La Marca' })).toBeFocused()
 })
 
 test('con cuenta: entra y vuelve a la confirmación; con el enlace cerrado o cambiado, no entra', async ({

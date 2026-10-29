@@ -1,11 +1,14 @@
-import { focusManager, QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { focusManager, MutationCache, QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { RouterProvider } from '@tanstack/react-router'
 import { useState } from 'react'
 import type { AccountClient } from './account/client.ts'
 import { AccountsProvider } from './account/context.tsx'
-import type { ApiClient } from './api/client.ts'
+import { AccountScope } from './account/scope.tsx'
+import { type ApiClient, ApiError } from './api/client.ts'
 import { ApiProvider } from './api/context.tsx'
 import { shouldRetry } from './api/errors.ts'
+import { Announcer } from './components/announcer.tsx'
+import { HeadingFocusProvider } from './components/page-title.tsx'
 import type { RealtimeClient } from './realtime/client.ts'
 import { RealtimeProvider } from './realtime/context.tsx'
 import type { createAppRouter } from './router.tsx'
@@ -39,14 +42,30 @@ export function App({
   api: ApiClient
   realtime?: RealtimeClient
 }) {
-  const [queryClient] = useState(() => new QueryClient({ defaultOptions: { queries: { retry: shouldRetry } } }))
+  const [queryClient] = useState(() => {
+    // La API dice que no hay sesión (caducó con la pestaña abierta): se vuelve a pedir y, sin ella, se va a entrar
+    const onError = (error: unknown) => {
+      if (error instanceof ApiError && error.status === 401) accounts.refreshSession()
+    }
+    return new QueryClient({
+      queryCache: new QueryCache({ onError }),
+      mutationCache: new MutationCache({ onError }),
+      defaultOptions: { queries: { retry: shouldRetry } }
+    })
+  })
   return (
     <QueryClientProvider client={queryClient}>
       <AccountsProvider client={accounts}>
         <ApiProvider client={api}>
-          <RealtimeProvider client={realtime}>
-            <RouterProvider router={router} />
-          </RealtimeProvider>
+          <HeadingFocusProvider>
+            <AccountScope>
+              <Announcer>
+                <RealtimeProvider client={realtime}>
+                  <RouterProvider router={router} />
+                </RealtimeProvider>
+              </Announcer>
+            </AccountScope>
+          </HeadingFocusProvider>
         </ApiProvider>
       </AccountsProvider>
     </QueryClientProvider>

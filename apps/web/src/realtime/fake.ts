@@ -21,6 +21,9 @@ export function fakeRealtime() {
     newVersion: () => {
       for (const handlers of listeners) handlers.onNewVersion?.()
     },
+    sessionEnded: () => {
+      for (const handlers of listeners) handlers.onSessionEnded?.()
+    },
     connections: () => listeners.size
   }
 }

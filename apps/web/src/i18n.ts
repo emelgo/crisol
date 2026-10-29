@@ -6,7 +6,8 @@ export const es = {
   app: {
     name: 'Crisol',
     tagline: 'Mundos de rol y mesa virtual',
-    accountNav: 'Cuenta'
+    accountNav: 'Cuenta',
+    pageTitle: '{{page}} · Crisol'
   },
   account: {
     signIn: 'Entrar',
@@ -51,6 +52,8 @@ export const es = {
     byMaster: '{{world}} · máster: {{master}}',
     confirm: 'Entrar en {{campaign}} como jugador',
     isMaster: 'Ya eres el máster de esta campaña.',
+    signedInAs: 'Entras como {{name}} ({{email}}).',
+    otherAccount: 'Usar otra cuenta',
     signUpTitle: 'Crea tu cuenta',
     signUp: 'Crear la cuenta y entrar',
     hasAccount: 'Ya tengo cuenta',
@@ -67,6 +70,7 @@ export const es = {
     link: 'Enlace de invitación',
     copy: 'Copiar',
     copied: 'Copiado',
+    copyManually: 'No se ha podido copiar: está seleccionado, cópialo a mano.',
     issued: 'Enlace del {{date}}.',
     joins_one: 'Ha entrado {{count}} con este enlace',
     joins_other: 'Han entrado {{count}} con este enlace',
@@ -86,6 +90,7 @@ export const es = {
     removeConfirm: 'Expulsar',
     removeAndRegenerate: 'Expulsar y cambiar el enlace',
     removed: '{{name}} ya no está en la campaña.',
+    removedLinkFailed: '{{name}} ya no está en la campaña, pero el enlace no ha cambiado. Genera uno nuevo.',
     leave: 'Dejar la campaña',
     leaveWarning: 'Para volver, el máster tendrá que pasarte el enlace.',
     leaveConfirm: 'Dejarla'
@@ -262,7 +267,14 @@ export const es = {
     MASTER_NOT_REMOVABLE: 'Al máster no se le puede expulsar',
     APPROVAL_EXPIRED: 'Ya ha caducado',
     ALREADY_DECIDED: 'Ya está decidido',
+    INTERRUPTED: 'Se cortó mientras se hacía: vuelve a pedirlo',
+    TOO_MANY_PENDING: 'Hay demasiadas peticiones esperando',
+    UNAUTHENTICATED: 'Tu sesión ha acabado. Vuelve a entrar.',
     UNKNOWN: 'Algo ha fallado. Vuelve a intentarlo.'
+  },
+  load: {
+    title: 'No se ha podido cargar',
+    retry: 'Reintentar'
   },
   theme: {
     toDark: 'Cambiar a tema oscuro',

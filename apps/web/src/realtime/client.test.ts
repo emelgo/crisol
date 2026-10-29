@@ -110,11 +110,25 @@ describe('el cliente del canal en tiempo real', () => {
     expect(onMessage).not.toHaveBeenCalled()
   })
 
-  it('si el servidor cierra porque acabó la sesión, no reconecta', () => {
-    client().connect({ onMessage: vi.fn() })
+  it('si el servidor cierra porque acabó la sesión, lo dice y no reconecta', () => {
+    const onSessionEnded = vi.fn()
+    client().connect({ onMessage: vi.fn(), onSessionEnded })
     last().open()
     last().drop(4401)
+    expect(onSessionEnded).toHaveBeenCalledOnce()
     vi.advanceTimersByTime(60_000)
     expect(FakeSocket.all).toHaveLength(1)
+  })
+
+  it('también si la sesión ya no estaba al reconectar', () => {
+    const onSessionEnded = vi.fn()
+    client().connect({ onMessage: vi.fn(), onSessionEnded })
+    last().open()
+    last().drop()
+    vi.advanceTimersByTime(1000)
+    last().drop(4401)
+    expect(onSessionEnded).toHaveBeenCalledOnce()
+    vi.advanceTimersByTime(60_000)
+    expect(FakeSocket.all).toHaveLength(2)
   })
 })

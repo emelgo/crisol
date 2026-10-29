@@ -2,7 +2,7 @@ import { createHash, randomBytes } from 'node:crypto'
 import { connect } from '@crisol/db'
 import { resetDatabase } from '@crisol/db/testing'
 import { issueBootstrap } from '@crisol/server/bootstrap'
-import { type Browser, expect, type Page, request } from '@playwright/test'
+import { type Browser, expect, type Page } from '@playwright/test'
 import { e2eDatabaseUrl } from '../servidor.ts'
 
 export const owner = { name: 'Enrique', email: 'enrique@crisol.test', password: 'una-clave-larga' }
@@ -53,6 +53,16 @@ export async function newPlayer(browser: Browser, link: string, name = 'Jugadora
   return player
 }
 
+/**
+ * Abre `path` y espera a que el canal en tiempo real de la página esté conectado (llega su saludo): lo que pase
+ * después (lo que pide Claude, un cambio de otra pestaña) se ve sin recargar
+ */
+export async function gotoLive(page: Page, path: string) {
+  const hello = page.waitForEvent('websocket').then((socket) => socket.waitForEvent('framereceived'))
+  await page.goto(path)
+  await hello
+}
+
 const REDIRECT = 'https://cliente.example/callback'
 
 /** Lo que contesta una herramienta MCP */
@@ -96,37 +106,38 @@ export async function connectClaude(page: Page) {
   await page.getByRole('button', { name: 'Permitir', exact: true }).click()
   await expect.poll(() => callback?.searchParams.get('code')).toBeTruthy()
 
-  // Como claude.ai, desde su servidor: sin la sesión del navegador
-  const server = await request.newContext({ baseURL: base })
-  // Al cerrar la página: si el navegador ya se ha ido, no hay nada que soltar
-  page.once('close', () => void server.dispose().catch(() => undefined))
-  const token = await server.post('/api/auth/oauth2/token', {
-    form: {
+  // Como claude.ai, desde su servidor: sin la sesión del navegador. Con fetch y no con un contexto de Playwright, que
+  // habría que soltar y, soltado al cerrarse la página, chocaba con la prueba siguiente (que vuelve a trazarlos todos)
+  const token = await fetch(`${base}/api/auth/oauth2/token`, {
+    method: 'POST',
+    body: new URLSearchParams({
       grant_type: 'authorization_code',
       code: callback?.searchParams.get('code') ?? '',
       redirect_uri: REDIRECT,
       client_id,
       code_verifier: verifier,
       resource: `${base}/mcp`
-    }
+    })
   })
   const { access_token } = (await token.json()) as { access_token: string }
 
   /** Una herramienta por el protocolo de 2025, como claude.ai. La respuesta viene en JSON o en un flujo SSE */
   const call = async (name: string, args: Record<string, unknown> = {}): Promise<ToolResult & { text: string }> => {
-    const response = await server.post('/mcp', {
+    const response = await fetch(`${base}/mcp`, {
+      method: 'POST',
       headers: {
         authorization: `Bearer ${access_token}`,
         accept: 'application/json, text/event-stream',
+        'content-type': 'application/json',
         'mcp-protocol-version': '2025-06-18'
       },
-      data: { jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name, arguments: args } },
-      timeout: 30_000
+      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name, arguments: args } }),
+      signal: AbortSignal.timeout(30_000)
     })
     const body = await response.text()
     const json = body.startsWith('{') ? body : (body.split('\n').find((l) => l.startsWith('data:')) ?? '').slice(5)
     const { result, error } = JSON.parse(json) as { result?: ToolResult; error?: unknown }
-    if (!result) throw new Error(`${name}: ${response.status()} ${JSON.stringify(error ?? body)}`)
+    if (!result) throw new Error(`${name}: ${response.status} ${JSON.stringify(error ?? body)}`)
     return { ...result, text: result.content.map((c) => c.text ?? '').join('\n') }
   }
   return { call }

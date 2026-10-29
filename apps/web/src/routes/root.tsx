@@ -1,15 +1,27 @@
 import { useQuery } from '@tanstack/react-query'
-import { Link, Outlet, useNavigate } from '@tanstack/react-router'
+import { Link, Outlet, useNavigate, useRouter } from '@tanstack/react-router'
+import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
 import { ApprovalQueue } from '../components/approval-queue.tsx'
 import { Notices } from '../components/notices.tsx'
+import { PageTitle, useFocusHeading } from '../components/page-title.tsx'
 import { ThemeToggle } from '../components/theme-toggle.tsx'
 import styles from './root.module.css'
 
 export function RootLayout() {
   const { t } = useTranslation()
+  const router = useRouter()
+  const focusHeading = useFocusHeading()
+  // Al llegar a otra página (no al cargar la primera), el foco va a su título
+  useEffect(
+    () =>
+      router.subscribe('onResolved', ({ fromLocation, pathChanged }) => {
+        if (fromLocation && pathChanged) focusHeading()
+      }),
+    [router, focusHeading]
+  )
   return (
     <div className={styles.shell}>
       <header className={styles.header}>
@@ -67,7 +79,7 @@ export function NotFound() {
   const { t } = useTranslation()
   return (
     <section>
-      <h1>{t('notFound.title')}</h1>
+      <PageTitle>{t('notFound.title')}</PageTitle>
       <Link to="/">{t('notFound.back')}</Link>
     </section>
   )

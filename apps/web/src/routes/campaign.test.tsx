@@ -1,6 +1,6 @@
 import type { Campaign, Member, World } from '@crisol/contracts'
 import { createMemoryHistory } from '@tanstack/react-router'
-import { render, screen, within } from '@testing-library/react'
+import { act, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { fakeAccountClient } from '../account/fake.ts'
@@ -8,6 +8,7 @@ import { ApiError } from '../api/client.ts'
 import { fakeApi } from '../api/fake.ts'
 import { App } from '../app.tsx'
 import { createAppRouter } from '../router.tsx'
+import { announced, inMain } from '../testing.ts'
 
 const ORG = { id: crypto.randomUUID(), name: 'Fateforge', role: 'owner' as const }
 const world: World = { id: crypto.randomUUID(), organizationId: ORG.id, name: 'Eana', role: 'master', version: 1 }
@@ -64,7 +65,36 @@ describe('una campaña y su enlace de invitación', () => {
     expect(screen.getByText('Han entrado 0 con este enlace')).toBeDefined()
     await userEvent.click(screen.getByRole('button', { name: 'Copiar' }))
     expect(writeText).toHaveBeenCalledWith((link as HTMLInputElement).value)
-    expect(await screen.findByText('Copiado')).toBeDefined()
+    expect(await inMain().findByText('Copiado')).toBeDefined()
+    expect(announced()).toBe('Copiado')
+    // Otra vez: el mismo texto, en un nodo nuevo, para que se vuelva a leer
+    const first = screen.getByRole('status').firstElementChild
+    await userEvent.click(screen.getByRole('button', { name: 'Copiar' }))
+    await vi.waitFor(() => expect(screen.getByRole('status').firstElementChild).not.toBe(first))
+    expect(announced()).toBe('Copiado')
+  })
+
+  it('si no se puede copiar, deja el enlace seleccionado y dice que hay que copiarlo a mano', async () => {
+    const writeText = vi.fn(async () => {
+      throw new DOMException('Sin permiso', 'NotAllowedError')
+    })
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true })
+    renderCampaign(campaign())
+    const link = await screen.findByLabelText<HTMLInputElement>('Enlace de invitación')
+    await userEvent.click(screen.getByRole('button', { name: 'Copiar' }))
+    const text = 'No se ha podido copiar: está seleccionado, cópialo a mano.'
+    expect(await inMain().findByText(text)).toBeDefined()
+    expect(announced()).toBe(text)
+    expect(document.activeElement).toBe(link)
+    expect([link.selectionStart, link.selectionEnd]).toEqual([0, link.value.length])
+    expect(inMain().queryByText('Copiado')).toBeNull()
+  })
+
+  it('sin portapapeles (fuera de HTTPS), lo mismo', async () => {
+    Object.defineProperty(navigator, 'clipboard', { value: undefined, configurable: true })
+    renderCampaign(campaign())
+    await userEvent.click(await screen.findByRole('button', { name: 'Copiar' }))
+    expect(await inMain().findByText('No se ha podido copiar: está seleccionado, cópialo a mano.')).toBeDefined()
   })
 
   it('«Nuevo enlace» avisa antes y cambia el enlace', async () => {
@@ -99,6 +129,59 @@ describe('una campaña y su enlace de invitación', () => {
     await userEvent.click(toggle)
     expect((await screen.findByRole('alert')).textContent).toBe('No tienes permiso')
     expect((toggle as HTMLInputElement).checked).toBe(true)
+  })
+
+  it('mientras se guarda, la casilla sigue activa y con el foco; otro clic entretanto se ignora', async () => {
+    const { api } = renderCampaign(campaign())
+    const original = api.client.call
+    const saving: boolean[] = []
+    let release = () => {}
+    api.client.call = async (name, input) => {
+      if (name === 'setInvitationsOpen') {
+        saving.push((input as { open: boolean }).open)
+        await new Promise<void>((resolve) => {
+          release = resolve
+        })
+      }
+      return original(name, input)
+    }
+    const toggle = await screen.findByRole<HTMLInputElement>('checkbox', { name: 'Invitaciones abiertas' })
+    await userEvent.click(toggle)
+    expect(toggle.disabled).toBe(false)
+    expect(document.activeElement).toBe(toggle)
+    await userEvent.click(toggle)
+    expect(saving).toEqual([false])
+    expect(toggle.checked).toBe(false)
+    act(release)
+    expect(await inMain().findByText('Ahora nadie puede entrar con el enlace.')).toBeDefined()
+  })
+
+  it('sin enlace, «Generar enlace» lo genera una sola vez aunque se pulse de nuevo, y no pierde el foco', async () => {
+    const { api } = renderCampaign(campaign())
+    const original = api.client.call
+    let generated = 0
+    let release = () => {}
+    api.client.call = async (name, input) => {
+      if (name === 'getInvitation' && generated === 0) {
+        return { ...(await original(name, input)), url: null, issuedAt: null } as never
+      }
+      if (name === 'regenerateInvitation') {
+        generated++
+        await new Promise<void>((resolve) => {
+          release = resolve
+        })
+      }
+      return original(name, input)
+    }
+    const create = await screen.findByRole('button', { name: 'Generar enlace' })
+    expect(screen.getByText('Aún no hay enlace.')).toBeDefined()
+    await userEvent.click(create)
+    expect(create.getAttribute('aria-disabled')).toBe('true')
+    await userEvent.click(create)
+    expect(generated).toBe(1)
+    act(release)
+    expect(await screen.findByLabelText('Enlace de invitación')).toBeDefined()
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Nuevo enlace' }))
   })
 
   it('un jugador ve su campaña pero no el enlace', async () => {
@@ -141,7 +224,8 @@ describe('los miembros de una campaña', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Expulsar a Jugadora' }))
     expect(screen.getByText('Con el enlace actual, Jugadora podría volver a entrar.')).toBeDefined()
     await userEvent.click(screen.getByRole('button', { name: 'Expulsar' }))
-    expect(await screen.findByText('Jugadora ya no está en la campaña.')).toBeDefined()
+    expect(await inMain().findByText('Jugadora ya no está en la campaña.')).toBeDefined()
+    expect(announced()).toBe('Jugadora ya no está en la campaña.')
     expect(memberNames()).toHaveLength(2)
     expect(api.calls).not.toContain('regenerateInvitation')
   })
@@ -151,9 +235,26 @@ describe('los miembros de una campaña', () => {
     const before = ((await screen.findByLabelText('Enlace de invitación')) as HTMLInputElement).value
     await userEvent.click(await screen.findByRole('button', { name: 'Expulsar a Ana' }))
     await userEvent.click(screen.getByRole('button', { name: 'Expulsar y cambiar el enlace' }))
-    expect(await screen.findByText('Ana ya no está en la campaña.')).toBeDefined()
+    expect(await inMain().findByText('Ana ya no está en la campaña.')).toBeDefined()
     expect(api.calls).toContain('regenerateInvitation')
     expect((screen.getByLabelText('Enlace de invitación') as HTMLInputElement).value).not.toBe(before)
+  })
+
+  it('si la expulsa pero el enlace no cambia, lo dice: ya no está, pero el enlace es el de antes', async () => {
+    const { api } = renderCampaign(campaign())
+    const original = api.client.call
+    api.client.call = async (name, input) => {
+      if (name === 'regenerateInvitation') throw new ApiError('UNKNOWN', 500)
+      return original(name, input)
+    }
+    const before = ((await screen.findByLabelText('Enlace de invitación')) as HTMLInputElement).value
+    await userEvent.click(await screen.findByRole('button', { name: 'Expulsar a Ana' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Expulsar y cambiar el enlace' }))
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'Ana ya no está en la campaña, pero el enlace no ha cambiado. Genera uno nuevo.'
+    )
+    expect(memberNames()).toHaveLength(2)
+    expect((screen.getByLabelText('Enlace de invitación') as HTMLInputElement).value).toBe(before)
   })
 
   it('cancelar no expulsa a nadie', async () => {

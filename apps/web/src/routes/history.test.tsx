@@ -8,6 +8,7 @@ import { fakeApi } from '../api/fake.ts'
 import { App } from '../app.tsx'
 import { fakeRealtime } from '../realtime/fake.ts'
 import { createAppRouter } from '../router.tsx'
+import { announced, inMain } from '../testing.ts'
 
 const ORG = { id: crypto.randomUUID(), name: 'Fateforge', role: 'owner' as const }
 const world: World = { id: crypto.randomUUID(), organizationId: ORG.id, name: 'Eana', role: 'master', version: 1 }
@@ -169,9 +170,9 @@ describe('el historial', () => {
     const later = entry('createWorld', { name: 'Eana' })
     renderAt('/historial', [{ ...undo, id: 'u' }, create], { conflicts: { u: later } })
     await userEvent.click(await screen.findByRole('button', { name: 'Rehacer: creó el mundo «Eana»' }))
-    expect(
-      await screen.findByText('No se puede rehacer: después, Enrique creó el mundo «Eana». Deshaz eso antes.')
-    ).toBeDefined()
+    const text = 'No se puede rehacer: después, Enrique creó el mundo «Eana». Deshaz eso antes.'
+    expect(await inMain().findByText(text)).toBeDefined()
+    expect(announced()).toBe(text)
   })
 
   it('si no se puede deshacer, dice qué operación posterior lo impide', async () => {
@@ -179,18 +180,18 @@ describe('el historial', () => {
     const create = entry('createWorld', { name: 'Eana' })
     renderAt('/historial', [rename, create], { conflicts: { [create.id]: rename } })
     await userEvent.click(await screen.findByRole('button', { name: 'Deshacer: creó el mundo «Eana»' }))
-    expect(
-      await screen.findByText(
-        'No se puede deshacer: después, Enrique renombró el mundo «Eana 2» a «Eana 3». Deshaz eso antes.'
-      )
-    ).toBeDefined()
+    const text = 'No se puede deshacer: después, Enrique renombró el mundo «Eana 2» a «Eana 3». Deshaz eso antes.'
+    expect(await inMain().findByText(text)).toBeDefined()
+    expect(announced()).toBe(text)
   })
 
   it('si no se sabe qué lo impide, lo dice igual', async () => {
     const create = entry('createWorld', { name: 'Eana' })
     renderAt('/historial', [create], { conflicts: { [create.id]: null } })
     await userEvent.click(await screen.findByRole('button', { name: 'Deshacer: creó el mundo «Eana»' }))
-    expect(await screen.findByText('No se puede deshacer: algo de lo que cambió se ha cambiado después.')).toBeDefined()
+    const text = 'No se puede deshacer: algo de lo que cambió se ha cambiado después.'
+    expect(await inMain().findByText(text)).toBeDefined()
+    expect(announced()).toBe(text)
   })
 
   it('lo ya deshecho y lo del sistema no se ofrecen para deshacer', async () => {

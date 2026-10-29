@@ -6,10 +6,12 @@ import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
 import { useCodeText, useErrorText } from '../api/errors.ts'
+import { useAnnounce } from '../components/announcer.tsx'
 import { outcomeText, useApprovals } from '../components/approval-queue.tsx'
 import { CopyField } from '../components/copy-field.tsx'
 import { FormError } from '../components/field.tsx'
 import styles from '../components/list.module.css'
+import { PageTitle } from '../components/page-title.tsx'
 import settings from './ai-settings.module.css'
 
 const MODES: AiMode[] = ['readOnly', 'assistant', 'copilot']
@@ -21,6 +23,7 @@ export function AiSettings() {
   const queryClient = useQueryClient()
   const errorText = useErrorText()
   const codeText = useCodeText()
+  const announce = useAnnounce()
   const { account, pending } = useAccounts().useAccount()
   const current = useQuery({
     queryKey: ['aiSettings'],
@@ -32,7 +35,10 @@ export function AiSettings() {
   const [pendingMode, setPendingMode] = useState<AiMode | null>(null)
   const setMode = useMutation({
     mutationFn: (mode: AiMode) => api.call('setAiMode', { mode }),
-    onSuccess: (data) => queryClient.setQueryData(['aiSettings'], data),
+    onSuccess: (data) => {
+      queryClient.setQueryData(['aiSettings'], data)
+      announce(t('ai.saved'))
+    },
     onSettled: () => setPendingMode(null)
   })
 
@@ -44,7 +50,7 @@ export function AiSettings() {
 
   return (
     <section>
-      <h1>{t('ai.title')}</h1>
+      <PageTitle>{t('ai.title')}</PageTitle>
       {current.data && (
         <>
           <section aria-labelledby="conector">
@@ -62,8 +68,9 @@ export function AiSettings() {
                   name="mode"
                   value={option}
                   checked={mode === option}
-                  disabled={setMode.isPending}
                   onChange={() => {
+                    // Mientras se guarda otro, se ignora: deshabilitarlas sacaría el foco y no se podría seguir con flechas
+                    if (setMode.isPending) return
                     setPendingMode(option)
                     setMode.mutate(option)
                   }}
@@ -75,7 +82,7 @@ export function AiSettings() {
               </label>
             ))}
           </fieldset>
-          {setMode.isSuccess && <p role="status">{t('ai.saved')}</p>}
+          {setMode.isSuccess && <p>{t('ai.saved')}</p>}
         </>
       )}
       <FormError message={current.error || setMode.error ? errorText(current.error ?? setMode.error) : null} />

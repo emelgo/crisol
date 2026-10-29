@@ -19,12 +19,17 @@ export function fakeAccountClient(
     bootstrap?: Record<string, string>
     oauthClients?: Record<string, string>
     invitations?: Record<string, FakeInvitation>
+    /** El nombre de cada cuenta al entrar (por defecto, Enrique) */
+    names?: Record<string, string>
   } = {}
 ) {
   let account = options.account ?? null
+  // La sesión acabó en el servidor: la web se entera al volver a pedirla
+  let ended = false
   const listeners = new Set<() => void>()
   const set = (next: Account | null) => {
     account = next
+    if (next) ended = false
     for (const listener of listeners) listener()
   }
   const passwords = new Map<string, string>()
@@ -44,12 +49,16 @@ export function fakeAccountClient(
     async signIn(email, password): Promise<Result> {
       calls.push(`signIn ${email}`)
       if (passwords.get(email) !== password) return { ok: false, code: 'INVALID_CREDENTIALS' }
-      set({ name: 'Enrique', email })
+      set({ name: options.names?.[email] ?? 'Enrique', email })
       return { ok: true }
     },
     async signOut() {
       calls.push('signOut')
       set(null)
+    },
+    refreshSession() {
+      calls.push('refreshSession')
+      if (ended) set(null)
     },
     async rename(name): Promise<Result> {
       if (account) set({ ...account, name })
@@ -97,5 +106,9 @@ export function fakeAccountClient(
       return { ok: true }
     }
   }
-  return { client, calls, passwords }
+  /** La sesión caduca o se cierra en otro sitio (el servidor ya no la reconoce) */
+  const endSession = () => {
+    ended = true
+  }
+  return { client, calls, passwords, endSession }
 }

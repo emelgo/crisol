@@ -1,12 +1,13 @@
 import type { Approval, Organization } from '@crisol/contracts'
 import { createMemoryHistory } from '@tanstack/react-router'
-import { render, screen } from '@testing-library/react'
+import { act, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import { fakeAccountClient } from '../account/fake.ts'
 import { fakeApi } from '../api/fake.ts'
 import { App } from '../app.tsx'
 import { createAppRouter } from '../router.tsx'
+import { announced, inMain } from '../testing.ts'
 
 const owner: Organization = { id: crypto.randomUUID(), name: 'Fateforge', role: 'owner' }
 
@@ -56,10 +57,37 @@ describe('los ajustes de IA', () => {
   it('cambiar el modo se guarda al momento', async () => {
     const { api } = renderAt('/ia')
     await userEvent.click(await screen.findByRole('radio', { name: /^Solo lectura/ }))
-    expect(await screen.findByText('Guardado')).toBeDefined()
+    expect(await inMain().findByText('Guardado')).toBeDefined()
+    expect(announced()).toBe('Guardado')
     expect(screen.getByRole<HTMLInputElement>('radio', { name: /^Solo lectura/ }).checked).toBe(true)
     expect(api.calls).toContain('setAiMode')
     expect(await api.client.call('getAiSettings', {})).toMatchObject({ mode: 'readOnly' })
+  })
+
+  it('mientras se guarda, las opciones siguen activas y con el foco; otro cambio entretanto se ignora', async () => {
+    const { api } = renderAt('/ia')
+    const original = api.client.call
+    const saving: string[] = []
+    let release = () => {}
+    api.client.call = async (name, input) => {
+      if (name === 'setAiMode') {
+        saving.push(String((input as { mode: string }).mode))
+        await new Promise<void>((resolve) => {
+          release = resolve
+        })
+      }
+      return original(name, input)
+    }
+    const readOnly = await screen.findByRole<HTMLInputElement>('radio', { name: /^Solo lectura/ })
+    await userEvent.click(readOnly)
+    expect(readOnly.disabled).toBe(false)
+    expect(document.activeElement).toBe(readOnly)
+    await userEvent.click(screen.getByRole('radio', { name: /^Asistente/ }))
+    expect(saving).toEqual(['readOnly'])
+    expect(readOnly.checked).toBe(true)
+    act(release)
+    expect(await inMain().findByText('Guardado')).toBeDefined()
+    expect(readOnly.checked).toBe(true)
   })
 
   it('cuenta cómo acabaron las últimas peticiones', async () => {

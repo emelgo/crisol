@@ -14,7 +14,8 @@ test('el máster ve a la jugadora y la expulsa cambiando el enlace: ya no ve la 
   await expect(members.getByRole('listitem')).toHaveText([/Enrique.*Máster/, /Jugadora.*Jugador/])
   await page.getByRole('button', { name: 'Expulsar a Jugadora' }).click()
   await page.getByRole('button', { name: 'Expulsar y cambiar el enlace' }).click()
-  await expect(page.getByText('Jugadora ya no está en la campaña.')).toBeVisible()
+  await expect(page.getByRole('main').getByText('Jugadora ya no está en la campaña.')).toBeVisible()
+  await expect(page.getByRole('status')).toHaveText('Jugadora ya no está en la campaña.')
   await expect(members.getByRole('listitem')).toHaveCount(1)
   await expect(page.getByLabel('Enlace de invitación')).not.toHaveValue(link)
 

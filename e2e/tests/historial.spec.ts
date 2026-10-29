@@ -50,9 +50,8 @@ test('el máster deshace crear una campaña y lo rehace; si algo cambió despué
   await page.getByRole('button', { name: 'Guardar' }).click()
   await page.getByRole('link', { name: 'Historial' }).click()
   await page.getByRole('button', { name: 'Deshacer: creó la campaña «La Marca» en Eana' }).click()
-  await expect(
-    page.getByText(
-      'No se puede deshacer: después, Enrique renombró la campaña «La Marca» a «La Marca del Este». Deshaz eso antes.'
-    )
-  ).toBeVisible()
+  const conflict =
+    'No se puede deshacer: después, Enrique renombró la campaña «La Marca» a «La Marca del Este». Deshaz eso antes.'
+  await expect(page.getByRole('main').getByText(conflict)).toBeVisible()
+  await expect(page.getByRole('status')).toHaveText(conflict)
 })

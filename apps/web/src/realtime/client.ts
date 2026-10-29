@@ -7,6 +7,8 @@ export interface RealtimeHandlers {
   onReconnect?(): void
   /** El servidor sirve otra versión de la web (hubo un despliegue): hay que recargar */
   onNewVersion?(): void
+  /** El servidor ha cerrado porque ya no hay sesión (caducó o se cerró en otro sitio): no se reconecta */
+  onSessionEnded?(): void
 }
 
 export interface RealtimeClient {
@@ -64,7 +66,8 @@ export function createRealtimeClient(
           }
         }
         current.onclose = (event) => {
-          if (stopped || event.code === SESSION_ENDED) return
+          if (stopped) return
+          if (event.code === SESSION_ENDED) return handlers.onSessionEnded?.()
           timer = setTimeout(open, wait)
           wait = Math.min(wait * 2, MAX_WAIT_MS)
         }
