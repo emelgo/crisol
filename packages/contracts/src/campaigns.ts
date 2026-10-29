@@ -1,5 +1,7 @@
 import { z } from 'zod'
 import { defineAction } from './action.ts'
+import { member } from './members.ts'
+import { world } from './worlds.ts'
 
 const campaignName = z.string().trim().min(1).max(120)
 
@@ -36,4 +38,25 @@ export const renameCampaign = defineAction({
   description: 'Cambia el nombre de una campaña',
   input: z.object({ campaignId: z.uuid(), name: campaignName }),
   output: campaign
+})
+
+export const listWorldsWithCampaigns = defineAction({
+  name: 'listWorldsWithCampaigns',
+  kind: 'read',
+  description:
+    'Mundos de la cuenta, cada uno con las campañas que ve (el máster, todas; un jugador, las suyas) y su rol en cada uno',
+  input: z.object({}),
+  output: z.object({ worlds: z.array(world.extend({ campaigns: z.array(campaign) })) })
+})
+
+export const getCampaign = defineAction({
+  name: 'getCampaign',
+  kind: 'read',
+  description: 'Una campaña con su mundo, el rol de la cuenta en ella y quiénes están (el máster primero)',
+  input: z.object({ campaignId: z.uuid() }),
+  output: z.object({
+    campaign,
+    world: z.object({ id: z.uuid(), name: z.string() }),
+    members: z.array(member)
+  })
 })

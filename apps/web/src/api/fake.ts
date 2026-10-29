@@ -106,6 +106,18 @@ export function fakeApi(
       campaigns.push(campaign)
       return campaign
     },
+    listWorldsWithCampaigns: () => ({
+      worlds: handlers.listWorlds({}).worlds.map((w) => ({
+        ...w,
+        campaigns: handlers.listCampaigns({ worldId: w.id }).campaigns
+      }))
+    }),
+    getCampaign: ({ campaignId }) => {
+      const campaign = campaigns.find((c) => c.id === campaignId)
+      const world = worlds.find((w) => w.id === campaign?.worldId)
+      if (!campaign || !world) throw new ApiError('NOT_FOUND', 404)
+      return { campaign: { ...campaign }, world: { id: world.id, name: world.name }, ...membersOf(campaignId) }
+    },
     renameCampaign: ({ campaignId, name }) => {
       const campaign = campaigns.find((c) => c.id === campaignId)
       if (!campaign) throw new ApiError('NOT_FOUND', 404)
