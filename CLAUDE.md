@@ -23,8 +23,9 @@ español con Enrique.
 
 Skills de agent-skills (plugin del proyecto): `interview-me` con Enrique frente al inventario → REA dirigido a las
 preguntas del módulo → `/spec` → diseño de pantallas y flujos con la skill `frontend-design` de Anthropic (plugin
-`example-skills@anthropic-agent-skills`): prototipos que Enrique abre, prueba y aprueba → `/plan` → `/build` en
-porciones verticales con TDD → `/agent-skills:review` (la interfaz, también con `web-design-guidelines` de Vercel) →
+`frontend-design@claude-plugins-official`): prototipos que Enrique abre, prueba y aprueba → `/plan` → `/build` en
+porciones verticales con TDD → `/agent-skills:review` (la interfaz, también con `web-design-guidelines` de Vercel, en
+`.claude/skills/` con las otras tres) →
 `/ship` a staging. Cada módulo nace con su API y sus herramientas MCP.
 
 ## Normas
