@@ -2,6 +2,7 @@ import { historyCutoff, trashCutoff } from '@crisol/domain'
 import { and, eq, isNotNull, isNull, lt, sql } from 'drizzle-orm'
 import type { Database } from '../client.ts'
 import { type OperationContext, operation } from '../operation.ts'
+import { approvals } from '../schema/ai.ts'
 import { campaignMembers, campaigns } from '../schema/campaigns.ts'
 import { operations } from '../schema/history.ts'
 import { worldMembers, worlds } from '../schema/worlds.ts'
@@ -115,9 +116,9 @@ export async function peopleOf(db: Database, scope: { worldId: string } | { camp
 }
 
 /**
- * La purga diaria: quita del todo lo que lleva más de 30 días en la papelera (con lo que cuelga de ello) y las
- * operaciones de más de 90. No es una operación: purgar no se puede deshacer. Quien se queda sin nada en una
- * organización deja de ser miembro de ella, como al expulsarlo.
+ * La purga diaria: quita del todo lo que lleva más de 30 días en la papelera (con lo que cuelga de ello), y las
+ * operaciones y las peticiones de la IA de más de 90. No es una operación: purgar no se puede deshacer. Quien se queda
+ * sin nada en una organización deja de ser miembro de ella, como al expulsarlo.
  */
 export function purge(db: Database, now: Date) {
   return db.transaction(async (tx) => {
@@ -144,11 +145,16 @@ export function purge(db: Database, now: Date) {
       .delete(operations)
       .where(lt(operations.createdAt, historyCutoff(now)))
       .returning({ id: operations.id })
+    const purgedApprovals = await tx
+      .delete(approvals)
+      .where(lt(approvals.createdAt, historyCutoff(now)))
+      .returning({ id: approvals.id })
     return {
       worlds: purgedWorlds.length,
       campaigns: purgedCampaigns.length,
       memberships: memberships.length,
-      operations: purgedOperations.length
+      operations: purgedOperations.length,
+      approvals: purgedApprovals.length
     }
   })
 }

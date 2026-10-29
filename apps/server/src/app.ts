@@ -4,6 +4,7 @@ import fastifyRateLimit from '@fastify/rate-limit'
 import fastifyWebsocket from '@fastify/websocket'
 import Fastify, { type FastifyInstance } from 'fastify'
 import type { ActionEnv } from './actions/context.ts'
+import { implementationsByName } from './actions/implementations.ts'
 import { registerActionRoutes } from './actions/routes.ts'
 import type { Auth } from './auth/auth.ts'
 import { registerAuthRoutes } from './auth/routes.ts'
@@ -29,6 +30,8 @@ export interface AppDeps {
   mcpJwksUrl?: string
   /** Los relojes del canal en tiempo real (las pruebas los acortan) */
   realtimeTimers?: Pick<RealtimeRouteOptions, 'sessionCheckMs' | 'heartbeatMs'>
+  /** Cuánto espera una herramienta MCP la aprobación (las pruebas lo acortan) */
+  approvalWaitMs?: number
 }
 
 export function buildApp(deps: AppDeps): FastifyInstance {
@@ -41,7 +44,7 @@ export function buildApp(deps: AppDeps): FastifyInstance {
       async (userId) => actorFrom(userId, await loadMemberships(db, userId)),
       (error) => app.log.error(error)
     )
-    const env: ActionEnv = { db, publicUrl, sealKey, realtime }
+    const env: ActionEnv = { db, publicUrl, sealKey, realtime, actions: implementationsByName }
     // Límite de intentos solo donde se pide (las rutas de Better Auth tienen el suyo)
     app.register(fastifyRateLimit, { global: false })
     // Los mensajes del cliente no se usan: se corta cualquier cosa grande
@@ -56,7 +59,10 @@ export function buildApp(deps: AppDeps): FastifyInstance {
     app.register(async (scope) =>
       registerRealtimeRoutes(scope, { auth, publicUrl, realtime, build, ...deps.realtimeTimers })
     )
-    if (deps.mcpJwksUrl) registerMcpRoutes(app, { ...env, auth, jwksUrl: deps.mcpJwksUrl })
+    if (deps.mcpJwksUrl) {
+      const wait = deps.approvalWaitMs ? { approvalWaitMs: deps.approvalWaitMs } : {}
+      registerMcpRoutes(app, { ...env, auth, jwksUrl: deps.mcpJwksUrl, ...wait })
+    }
   }
   if (deps.webDir) registerWeb(app, deps.webDir)
   return app

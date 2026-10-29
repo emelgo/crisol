@@ -21,7 +21,7 @@ export function queriesFor(message: RealtimeMessage): QueryKey[] {
 function changedBy(message: RealtimeMessage): QueryKey[] {
   switch (message.type) {
     case 'changed':
-      if (message.what === 'worlds') return [['worlds']]
+      if (message.what === 'worlds' || message.what === 'approvals') return [[message.what]]
       if (message.what === 'campaigns') return [['campaigns', message.worldId]]
       return [[message.what, message.campaignId]]
     case 'joined':

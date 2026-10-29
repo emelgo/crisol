@@ -1,6 +1,13 @@
+import type { ActionDefinition } from '@crisol/contracts'
 import type { Database, OperationContext } from '@crisol/db'
-import type { Actor } from '@crisol/domain'
+import { type Actor, ForbiddenError, NotFoundError } from '@crisol/domain'
 import type { Realtime } from '../realtime/hub.ts'
+
+/** Una acción del contrato con su servicio */
+export interface Implementation {
+  action: ActionDefinition
+  handler: (ctx: ActionContext, input: unknown) => Promise<unknown>
+}
 
 /** Lo que las acciones necesitan del servidor, además de la base de datos */
 export interface ActionEnv {
@@ -11,6 +18,8 @@ export interface ActionEnv {
   sealKey: Buffer
   /** Para avisar en tiempo real de lo que cambia, a quien pueda verlo */
   realtime: Realtime
+  /** Las acciones por su nombre: al aprobarse, lo que pidió la IA se hace con la suya */
+  actions: ReadonlyMap<string, Implementation>
 }
 
 /** Con qué se ejecuta una acción: el servidor y quién la pide, por dónde */
@@ -30,6 +39,14 @@ export class InvalidRequestError extends Error {
     this.code = code
     this.name = 'InvalidRequestError'
   }
+}
+
+/** El código de la API de un error esperado (no existe, sin permiso, petición que no se puede atender); si no, null */
+export function errorCode(error: unknown): string | null {
+  if (error instanceof NotFoundError) return 'NOT_FOUND'
+  if (error instanceof ForbiddenError) return 'FORBIDDEN'
+  if (error instanceof InvalidRequestError) return error.code
+  return null
 }
 
 /**

@@ -10,6 +10,8 @@ export type RealtimeMessage =
   | { type: 'hello'; build: string | null }
   /** Algo de eso ha cambiado: la web lo vuelve a pedir */
   | { type: 'changed'; what: 'worlds' }
+  /** La cola de la IA de esa cuenta */
+  | { type: 'changed'; what: 'approvals' }
   | { type: 'changed'; what: 'campaigns'; worldId: string }
   | { type: 'changed'; what: 'members' | 'invitation'; campaignId: string }
   /** Alguien ha entrado en la campaña con el enlace (al máster, con «Expulsar» a mano) */
