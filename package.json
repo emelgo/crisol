@@ -21,7 +21,8 @@
     "dev": "docker compose up -d --wait && turbo run dev",
     "db:migrate": "pnpm --filter @crisol/db migrate",
     "build": "turbo run build",
-    "e2e": "pnpm --filter @crisol/web build && pnpm --filter @crisol/e2e e2e && pnpm --filter @crisol/e2e e2e:a11y"
+    "e2e": "pnpm --filter @crisol/web build && pnpm --filter @crisol/e2e e2e && pnpm --filter @crisol/e2e e2e:a11y",
+    "crisol": "pnpm --filter @crisol/server crisol"
   },
   "devDependencies": {
     "@biomejs/biome": "catalog:",

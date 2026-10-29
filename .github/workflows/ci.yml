@@ -109,7 +109,7 @@ jobs:
         run: node scripts/avisa-hasta.ts "$AVISA_HASTA" pnpm --filter @crisol/e2e e2e:a11y
       - name: Trazas de las pruebas que fallen
         if: failure()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: trazas-e2e
           path: e2e/test-results/

@@ -29,6 +29,9 @@ Copia `.env.example` a `.env` antes de `pnpm dev`.
 `scripts/desplegar-staging.sh` despliega `origin/main` en el VPS: copia aparte en `~/crisol-staging`, imagen de
 `Dockerfile`, `compose.prod.yaml` en loopback (puerto 8140) y Caddy delante.
 
+Cuenta del propietario (una sola vez): `pnpm crisol arranque --org "Nombre"` en desarrollo, o en staging
+`docker compose -p crisol-staging exec app node apps/server/src/cli/main.ts arranque --org "Nombre"`.
+
 ## Licencia
 
 Propietaria (`UNLICENSED`): todos los derechos reservados.

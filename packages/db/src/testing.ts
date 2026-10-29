@@ -25,3 +25,10 @@ export async function freshTestDatabase(name: string): Promise<string> {
   await runMigrations(url.toString())
   return url.toString()
 }
+
+/** Vacía todas las tablas de la aplicación (no las de las migraciones), para empezar cada prueba de cero */
+export async function resetDatabase(sql: postgres.Sql): Promise<void> {
+  const tables = await sql<{ name: string }[]>`
+    select quote_ident(tablename) as name from pg_tables where schemaname = 'public'`
+  await sql.unsafe(`truncate ${tables.map((t) => t.name).join(', ')} restart identity cascade`)
+}

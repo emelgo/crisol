@@ -10,6 +10,8 @@ services:
       NODE_ENV: production
       DATABASE_URL: postgres://crisol:${POSTGRES_PASSWORD:?falta POSTGRES_PASSWORD}@postgres:5432/crisol
       VALKEY_URL: redis://valkey:6379
+      AUTH_SECRET: ${AUTH_SECRET:?falta AUTH_SECRET}
+      PUBLIC_URL: ${PUBLIC_URL:?falta PUBLIC_URL}
     ports:
       - 127.0.0.1:${CRISOL_PORT:-8140}:8130
     depends_on:

@@ -13,6 +13,7 @@ allowBuilds:
 catalog:
   "@biomejs/biome": 2.6.4
   "@axe-core/playwright": ^4.14.0
+  "@better-auth/drizzle-adapter": 1.7.14
   "@playwright/test": ^1.64.1
   "@swc/core": ^1.16.20
   "@tanstack/react-query": ^5.105.0
@@ -20,6 +21,8 @@ catalog:
   "@testing-library/react": ^16.3.3
   "@testing-library/user-event": ^14.6.8
   "@types/node": ^24.10.0
+  auth: 1.7.14
+  better-auth: 1.7.14
   "@types/react": ^19.3.0
   "@types/react-dom": ^19.3.0
   "@vitejs/plugin-react": ^6.1.2

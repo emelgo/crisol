@@ -11,11 +11,16 @@
     "start": "node src/main.ts",
     "typecheck": "tsc -p .",
     "test": "vitest run",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "crisol": "node --env-file-if-exists=../../.env src/cli/main.ts",
+    "auth:schema": "auth generate --config better-auth.config.ts --output ../../packages/db/src/schema/auth.ts --yes"
   },
   "dependencies": {
+    "@better-auth/drizzle-adapter": "catalog:",
     "@crisol/db": "workspace:*",
     "@fastify/static": "catalog:",
+    "better-auth": "catalog:",
+    "drizzle-orm": "catalog:",
     "fastify": "catalog:",
     "ioredis": "catalog:",
     "zod": "catalog:"
@@ -23,6 +28,7 @@
   "devDependencies": {
     "@types/node": "catalog:",
     "@vitest/coverage-v8": "catalog:",
+    "auth": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
   }

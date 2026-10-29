@@ -7,6 +7,10 @@ const schema = z.object({
   PORT: z.coerce.number().int().min(1).max(65535).default(8130),
   DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }),
   VALKEY_URL: z.url({ protocol: /^rediss?$/ }),
+  // Firma las sesiones de Better Auth: largo y aleatorio (openssl rand -hex 32)
+  AUTH_SECRET: z.string().min(32),
+  // Dirección pública del sitio (en desarrollo, la de Vite)
+  PUBLIC_URL: z.url({ protocol: /^https?$/ }),
   // Carpeta de la web compilada; en desarrollo la sirve Vite
   WEB_DIR: z.string().optional()
 })

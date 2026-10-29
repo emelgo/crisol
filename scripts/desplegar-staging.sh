@@ -16,11 +16,14 @@ git -C "$DESTINO" fetch --quiet origin main
 git -C "$DESTINO" checkout --quiet --detach origin/main
 echo "Desplegando $(git -C "$DESTINO" log -1 --format='%h %s')"
 
-# Secretos de staging, fuera de git: se crean la primera vez
+# Variables de staging, fuera de git: se añaden las que falten y nunca se cambian las que ya hay
 ENV_FILE="$DESTINO/.env.staging"
-if [ ! -f "$ENV_FILE" ]; then
-  (umask 077 && printf 'POSTGRES_PASSWORD=%s\nCRISOL_PORT=%s\n' "$(openssl rand -hex 24)" "$PUERTO" >"$ENV_FILE")
-fi
+(umask 077 && touch "$ENV_FILE")
+asegura() { grep -q "^$1=" "$ENV_FILE" || printf '%s=%s\n' "$1" "$2" >>"$ENV_FILE"; }
+asegura POSTGRES_PASSWORD "$(openssl rand -hex 24)"
+asegura AUTH_SECRET "$(openssl rand -hex 32)"
+asegura PUBLIC_URL "https://neo.crisol.144-91-122-245.sslip.io"
+asegura CRISOL_PORT "$PUERTO"
 
 compose() {
   docker compose --project-directory "$DESTINO" -f "$DESTINO/compose.prod.yaml" --env-file "$ENV_FILE" "$@"
