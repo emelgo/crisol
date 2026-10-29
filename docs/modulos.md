@@ -213,9 +213,8 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   4. ~~Diseño~~: aprobado.
   5. ~~`/plan`~~: aprobado.
   6. **`/build` tarea a tarea** (`tasks/todo.md`), con `/agent-skills:review` y `/ship`, como en el módulo 0. Hechas de
-     la 1 a la 7. **Punto de control 1 pedido a Enrique** (el árbol, las propiedades, la papelera, las pestañas y los
-     marcadores, en staging): lo que diga se apunta. **Sigue la 8** (secretos y notas ocultas, lo arriesgado), con su
-     punto de control 2.
+     la 1 a la 8. **Puntos de control 1 y 2 pedidos a Enrique**: la fase 1, y el editor con los secretos (el del
+     riesgo). Lo que diga se apunta. **Sigue la 9** (todos los bloques y marcas, con el menú «/»).
 - **2026-10-29 — Módulo 1, tarea 1: páginas y árbol en la API.**
   - La tabla `pages` tiene historial y su orden es una clave fraccionaria (`packages/domain/src/order.ts`, collation
     "C"). Mover solo escribe la fila que se mueve.
@@ -336,6 +335,35 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
     - sin red se sigue escribiendo y llega al volver (con `routeWebSocket`: `setOffline` no corta un WebSocket abierto);
     - el candado.
   - `@fugas`: con el máster escribiendo en el cuerpo, a la jugadora no le llega ni una palabra.
+- **2026-10-30 — Módulo 1, tarea 8: secretos y notas ocultas (el riesgo).** Desplegada la 7 en staging (health 200,
+  sin errores; `/api/collab` funciona a través de Caddy).
+  - En el esquema, los nodos `secret` y `note` son bloques sin contenido que solo guardan el id de su documento
+    (`packages/editor/src/separate.ts`). Dentro de un secreto no hay otros (`nested`).
+  - En el servidor, cada uno es su propio documento de Yjs, `doc:<id>` (fila `documents` de tipo `secret` o `note`).
+    - Al abrirlo se comprueba el permiso de su página; en el módulo 5 tendrá el suyo propio.
+    - Al borrar la página se cierran también sus secretos.
+  - `createPageDocument` crea el documento vacío, o la copia de otro (`copyOf`) si se puede leer el original. No va al
+    historial: lo cuenta la sesión de edición del cuerpo.
+  - En la web (`apps/web/src/wiki/separate.tsx`):
+    - **Vista**: cada bloque es un editor anidado conectado a su documento por el mismo WebSocket.
+    - **Insertar**: los botones «Secreto» y «Nota oculta» de la barra hacen secreto lo elegido (su contenido pasa al
+      documento nuevo) o insertan uno vacío.
+    - **Deshacer el bloque**: «Convertir en texto normal» devuelve el contenido al cuerpo.
+    - **Copiar**: pegar un secreto crea una copia; la hace la pestaña que pegó. Mover arrastrando no copia.
+    - **Teclado**: con las flechas se llega al bloque, Intro entra, las flechas salen por sus bordes y Escape vuelve
+      al cuerpo con el bloque elegido.
+    - **Ctrl+Z** va por documento.
+    - Los rótulos de los cursores ajenos van ocultos a los lectores de pantalla: van dentro del texto.
+  - Tokens `--color-secret*` con sus contrastes probados.
+  - Pruebas:
+    - de integración, el texto de un secreto nunca está en el estado guardado del cuerpo; dos secretos y otra pestaña
+      escribiendo a la vez convergen; copiar; una jugadora no abre ningún secreto;
+    - e2e, todo lo anterior en el navegador, con la base de datos mirada desde la prueba;
+    - `@fugas` y a11y, con un secreto.
+  - **Fallo encontrado y arreglado**: al escribir en el cuerpo justo después de dar el nombre a una página nueva,
+    cuando se guardaba el nombre el foco saltaba al título y a «Renombrar», y lo que se tecleaba se perdía. Ahora las
+    ayudas que devuelven el foco (`useReturnFocus` y el foco al título tras navegar) solo lo hacen si se había perdido
+    (`focusIsLost`).
 - Queda una ventana pequeña en el tiempo real: lo que cambie entre la primera carga de una página y la conexión del
   canal no se ve hasta volver a la pestaña. Taparla costaría volver a pedirlo todo al conectar la primera vez.
 - **Pendientes de permiso de Enrique:**
@@ -358,7 +386,7 @@ Estados: pendiente · en curso · hecho · descartado.
 | # | Módulo | Estado | REA principal |
 |---|---|---|---|
 | 0 | **Fundación**: monorepo, CI, despliegue, cuentas, organizaciones, mundos, campañas, roles, historial y deshacer, esqueleto del MCP | **hecho** (2026-10-29; Discord y Google, pospuestos) | Foundry: modelo de documentos y permisos; DDB: campañas e invitaciones |
-| 1 | **Wiki**: páginas y subpáginas, editor de bloques, enlaces, menciones, vista previa, propiedades, secretos, búsqueda, marcadores, etiquetas, versiones, recursos y archivos, **hojas con estilo** (tipo Homebrewery, con PDF), exportación MD, sus herramientas MCP | en curso (construcción: tareas 1 a 7 de 26 hechas) | Foundry: Journal; DDB: contenido y referencias; Homebrewery (MIT): formato de hoja y descarga |
+| 1 | **Wiki**: páginas y subpáginas, editor de bloques, enlaces, menciones, vista previa, propiedades, secretos, búsqueda, marcadores, etiquetas, versiones, recursos y archivos, **hojas con estilo** (tipo Homebrewery, con PDF), exportación MD, sus herramientas MCP | en curso (construcción: tareas 1 a 8 de 26 hechas) | Foundry: Journal; DDB: contenido y referencias; Homebrewery (MIT): formato de hoja y descarga |
 | 2 | Tipos de página, plantillas y formularios nativos; consultas (en lugar de Dataview y Bases) | pendiente | Foundry: tipos de documento |
 | 3 | Sistemas de reglas, fichas de personaje (creación, subida de nivel), dados y dados 3D | pendiente | DDB: creador y hoja; Foundry: dnd5e, DataModel e instalar y crear sistemas |
 | 4 | Compendios, bestiario, statblocks, biblioteca | pendiente | Foundry: compendium packs; DDB: listados |
