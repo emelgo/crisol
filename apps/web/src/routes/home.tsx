@@ -16,7 +16,7 @@ export function Home() {
       {!pending &&
         (account ? (
           <>
-            <p>{t('account.hello', { name: account.name })}</p>
+            <p className={styles.greeting}>{t('account.hello', { name: account.name })}</p>
             <Link to="/mundos" className={form.button}>
               {t('worlds.title')}
             </Link>
