@@ -19,7 +19,7 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   - Spec `docs/specs/fundacion.md` **aprobada**; ADR-0002 (Better Auth solo para identidad; inquilinos e invitaciones
     en tablas propias); prueba de fugas añadida a `CONSTRAINTS.md`.
   - Plan aprobado: `tasks/plan.md` y 25 tareas en `tasks/todo.md`.
-- **2026-10-29 — Módulo 0 en curso: tareas 1 a 14 y 16 a 18 hechas** (PR #2 a #22). Staging en
+- **2026-10-29 — Módulo 0 en curso: tareas 1 a 14 y 16 a 19 hechas** (PR #2 a #24). Staging en
   https://neo.crisol.144-91-122-245.sslip.io (Compose `crisol-staging` en `~/crisol-staging`, puerto 8140; copia del
   Caddyfile en `/etc/caddy/Caddyfile.bak-20261029-104936-neo-crisol`). Desplegar tras cada merge:
   `scripts/desplegar-staging.sh` (con cerrojo).
@@ -36,6 +36,13 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   - Fugas (18): `e2e/tests/fugas.spec.ts` (`@fugas`), paso propio de la CI que bloquea; falla si se mete una fuga
     por la API o por el WebSocket. Destapó que una jugadora podía forzar el permiso OAuth: ahora se le niega (hook
     de Better Auth) y `/mcp` lo sigue mirando en cada petición. «Deshacer» entra en la prueba con la tarea 20.
+  - Punto de control 3 superado (salvo entrar con Discord, que llega con la 15). Lo que vio Enrique, arreglado en el
+    PR #23: volver a una ventana ya visible no refrescaba (TanStack Query 5 solo mira `visibilitychange`; ahora
+    también `focus`), y una pestaña abierta antes de un despliegue seguía con la web vieja. Ahora el canal saluda con
+    la versión de la web (su script de entrada) y, si no coincide, sale «Hay una versión nueva» con «Recargar».
+  - Historial (19): `listHistory`, de un mundo para su máster y de toda la organización para el propietario, por
+    páginas (cursor: la última operación vista). La web pone la frase de cada acción con i18n y se pone al día con
+    cualquier aviso del canal.
   - Puntos de control 1 y 2 superados: Enrique tiene su cuenta de propietario en staging (organización
     «Fateforge», mundo «Eana») y conectó claude.ai (cliente CIMD `https://claude.ai/oauth/mcp-oauth-client-metadata`).
   - GitHub gratis no protege ramas privadas: se fusiona solo con los 4 check-runs del commit en verde, esperando con
@@ -43,11 +50,8 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   - MIT-0 admitida en `CONSTRAINTS.md`.
   - Puertos: desarrollo 8130 (servidor), 5173 (Vite), 54330 (Postgres), 63790 (Valkey), 10250/8250 (Mailpit);
     e2e 8131; prueba del MCP 8132; staging 8140.
-- **Siguiente paso: punto de control 3 con Enrique en staging** (criterios 2 y 3 de la spec, salvo entrar con
-  Discord, que llega con la 15): crear una segunda campaña, abrir el enlace de una como jugador en otro navegador
-  (o en privado), ver que solo está esa, ver el aviso «X ha entrado», regenerar el enlace y comprobar que el viejo
-  ya no vale, cerrar las invitaciones y expulsar. Después: la **19** (ver el historial) o la **15** (Discord y
-  Google) si Enrique ya tiene las apps OAuth y ha decidido el correo (preguntas 1 y 2 de la spec).
+- **Siguiente paso: tarea 20 (deshacer una operación)**, que también amplía la prueba de fugas. O la **15** (Discord
+  y Google) si Enrique ya tiene las apps OAuth y ha decidido el correo (preguntas 1 y 2 de la spec).
 - **Antes del módulo 1**: ADR sobre Yjs y secretos. Yjs no puede proyectar por usuario, así que el contenido con otra
   visibilidad tiene que ir en documentos o subdocumentos aparte (ver la nota de sincronización de Foundry).
 - **Pendientes de permiso de Enrique:**

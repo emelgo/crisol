@@ -341,6 +341,57 @@ describe('POST /api/actions/:name', () => {
     })
   })
 
+  describe('historial', () => {
+    it('el máster ve el de su mundo, de lo último a lo primero, con quién y por dónde', async () => {
+      const world = (await call('createWorld', { name: 'Eana' }, owner.cookie)).json()
+      const campaign = (await call('createCampaign', { worldId: world.id, name: 'La Marca' }, owner.cookie)).json()
+      await call('regenerateInvitation', { campaignId: campaign.id }, owner.cookie)
+
+      const history = (await call('listHistory', { worldId: world.id }, owner.cookie)).json()
+      expect(history.next).toBeNull()
+      expect(history.entries.map((e: { action: string }) => e.action)).toEqual([
+        'regenerateInvitation',
+        'createCampaign',
+        'createWorld'
+      ])
+      expect(history.entries[1]).toEqual({
+        id: expect.any(String),
+        at: expect.any(String),
+        actor: { id: owner.userId, name: 'Enrique' },
+        via: 'ui',
+        tool: null,
+        action: 'createCampaign',
+        details: { name: 'La Marca', world: 'Eana' },
+        worldId: world.id
+      })
+    })
+
+    it('el propietario ve el de toda la organización, por páginas', async () => {
+      for (const name of ['A', 'B', 'C']) await call('createWorld', { name }, owner.cookie)
+      const first = (await call('listHistory', { limit: 2 }, owner.cookie)).json()
+      expect(first.entries.map((e: { details: { name: string } }) => e.details.name)).toEqual(['C', 'B'])
+      const rest = (await call('listHistory', { limit: 2, before: first.next }, owner.cookie)).json()
+      expect(rest).toMatchObject({ next: null, entries: [{ details: { name: 'A' } }] })
+    })
+
+    it('un jugador no ve el historial; alguien de fuera, ni que existe', async () => {
+      const world = (await call('createWorld', { name: 'Eana' }, owner.cookie)).json()
+      const campaign = (await call('createCampaign', { worldId: world.id, name: 'La Marca' }, owner.cookie)).json()
+      const player = await signUpTestUser(auth, { name: 'Jugadora', email: 'jugadora@crisol.test' })
+      await conn.db.insert(schema.organizationMembers).values({ organizationId, userId: player.userId, role: 'member' })
+      await conn.db
+        .insert(schema.campaignMembers)
+        .values({ campaignId: campaign.id, userId: player.userId, role: 'player' })
+      expect((await call('listHistory', { worldId: world.id }, player.cookie)).statusCode).toBe(403)
+      expect((await call('listHistory', { organizationId }, player.cookie)).statusCode).toBe(403)
+      expect((await call('listHistory', {}, player.cookie)).json()).toEqual({ code: 'ORGANIZATION_REQUIRED' })
+
+      const other = await organizationWithOwner('Otra', 'otra@crisol.test')
+      expect((await call('listHistory', { worldId: world.id }, other.cookie)).statusCode).toBe(404)
+      expect((await call('listHistory', { organizationId }, other.cookie)).statusCode).toBe(404)
+    })
+  })
+
   it('GET /api/openapi.json describe las acciones', async () => {
     const doc = (await app.inject({ method: 'GET', url: '/api/openapi.json' })).json()
     expect(Object.keys(doc.paths)).toContain('/api/actions/createWorld')

@@ -190,11 +190,11 @@ Comprobación local al acabar cada tarea: `pnpm lint && pnpm typecheck && pnpm t
   - Archivos: `e2e/fugas.spec.ts`, `.github/workflows/ci.yml`.
 
 ### Punto de control 3
-- [ ] Criterios 2 y 3 de la spec, en staging.
+- [x] Criterios 2 y 3 de la spec, en staging (2026-10-29, salvo entrar con Discord, que llega con la 15).
 
 ## Fase 4: Historial
 
-- [ ] **19. Ver el historial**
+- [x] **19. Ver el historial**
   - Acepta: lista de operaciones (quién, cuándo, por dónde, herramienta, resumen) por mundo para su máster y de toda
     la organización para el propietario, con paginación.
   - Comprueba: políticas (un jugador no lo ve), integración y e2e.

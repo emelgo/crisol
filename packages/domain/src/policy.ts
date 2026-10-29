@@ -55,7 +55,10 @@ const RULES = {
   'campaign.invite': { sees: seesCampaign, allows: any(isWorldMaster, isCampaignMaster) },
   'campaign.removeMember': { sees: seesCampaign, allows: any(isWorldMaster, isCampaignMaster) },
   // Solo sale quien juega: el máster no deja la campaña sin máster
-  'campaign.leave': { sees: seesCampaign, allows: isCampaignPlayer }
+  'campaign.leave': { sees: seesCampaign, allows: isCampaignPlayer },
+  // El historial: el de un mundo, para su máster; el de toda la organización, para el propietario
+  'world.history': { sees: seesWorld, allows: isWorldMaster },
+  'organization.history': { sees: isOrganizationMember, allows: isOrganizationOwner }
 } satisfies Record<string, { sees: Predicate; allows: Predicate }>
 
 export type Capability = keyof typeof RULES

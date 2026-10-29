@@ -17,7 +17,8 @@ describe('Actions', () => {
       setInvitationsOpen: true,
       listMembers: true,
       removeMember: true,
-      leaveCampaign: true
+      leaveCampaign: true,
+      listHistory: true
     }
     expect(Object.keys(names).sort()).toEqual(ACTIONS.map((a) => a.name).sort())
   })

@@ -90,6 +90,32 @@ export const es = {
     leaveWarning: 'Para volver, el máster tendrá que pasarte el enlace.',
     leaveConfirm: 'Dejarla'
   },
+  history: {
+    title: 'Historial',
+    worldTitle: 'Historial de {{world}}',
+    organizationLink: 'Historial de la organización',
+    listLabel: 'Operaciones',
+    empty: 'Aún no hay nada en el historial',
+    more: 'Ver más',
+    system: 'Crisol',
+    deletedAccount: 'Una cuenta borrada',
+    via: { ui: 'web', ai: 'Claude', aiTool: 'Claude ({{tool}})', system: 'Crisol' },
+    actions: {
+      createOrganization: 'creó la organización «{{name}}»',
+      bootstrapOwner: 'entró como propietario',
+      createWorld: 'creó el mundo «{{name}}»',
+      renameWorld: 'renombró el mundo «{{from}}» a «{{to}}»',
+      createCampaign: 'creó la campaña «{{name}}» en {{world}}',
+      renameCampaign: 'renombró la campaña «{{from}}» a «{{to}}»',
+      regenerateInvitation: 'generó un enlace nuevo para {{campaign}}',
+      openInvitations: 'abrió las invitaciones de {{campaign}}',
+      closeInvitations: 'cerró las invitaciones de {{campaign}}',
+      joinCampaign: 'entró en {{campaign}}',
+      removeMember: 'expulsó a {{member}} de {{campaign}}',
+      leaveCampaign: 'dejó {{campaign}}',
+      unknown: 'hizo un cambio ({{action}})'
+    }
+  },
   notices: {
     title: 'Avisos',
     joined: '{{member}} ha entrado en {{campaign}}.',

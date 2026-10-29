@@ -1,18 +1,16 @@
 import { createWorld, listWorlds, renameWorld } from '@crisol/contracts'
 import { worldsRepo } from '@crisol/db'
-import { authorize, NotFoundError, ownedOrganizations } from '@crisol/domain'
+import { authorize, NotFoundError } from '@crisol/domain'
 import { worldsChanged } from '../realtime/events.ts'
-import { historyContext, InvalidRequestError } from './context.ts'
+import { targetOrganization } from './access.ts'
+import { historyContext } from './context.ts'
 import { implement } from './registry.ts'
 
 export const worldActions = [
   implement(listWorlds, async (ctx) => ({ worlds: await worldsRepo.listMemberWorlds(ctx.db, ctx.actor.userId) })),
 
   implement(createWorld, async (ctx, { name, organizationId }) => {
-    // Sin organización: la única de la que es propietaria
-    const owned = ownedOrganizations(ctx.actor)
-    const target = organizationId ?? (owned.length === 1 ? owned[0] : undefined)
-    if (!target) throw new InvalidRequestError('ORGANIZATION_REQUIRED')
+    const target = targetOrganization(ctx, organizationId)
     authorize(ctx.actor, 'world.create', { organizationId: target })
     const world = await worldsRepo.createWorldWithMaster(
       ctx.db,

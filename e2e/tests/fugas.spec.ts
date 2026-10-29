@@ -76,13 +76,17 @@ test('@fugas una jugadora no recibe nada de lo que no puede ver: ni la campaña 
   await expect(player.getByRole('list', { name: 'Miembros' })).toBeVisible()
   await player.goto(campaignB)
   await expect(player.getByRole('heading', { name: 'Esta campaña no existe' })).toBeVisible()
-  for (const [name, data] of [
-    ['listMembers', { campaignId: idB }],
-    ['getInvitation', { campaignId: idB }],
-    ['getInvitation', { campaignId: campaignA.split('/').at(-1) }]
+  // Lo de B no existe para ella; lo de A que no le toca, se le prohíbe
+  for (const [name, data, status] of [
+    ['listMembers', { campaignId: idB }, 404],
+    ['getInvitation', { campaignId: idB }, 404],
+    ['getInvitation', { campaignId: campaignA.split('/').at(-1) }, 403],
+    ['listHistory', { worldId: campaignA.split('/')[2] }, 403],
+    // Sin organización propia no hay historial que darle
+    ['listHistory', {}, 400]
   ] as const) {
     const response = await player.request.post(`/api/actions/${name}`, { data })
-    expect(response.status()).toBeGreaterThanOrEqual(403)
+    expect(response.status(), name).toBe(status)
   }
 
   const everything = await captured.all()
