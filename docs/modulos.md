@@ -18,7 +18,8 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
     entero y oculta en la interfaz) y no tiene historial; D&D Beyond ata la pertenencia al personaje.
   - Spec `docs/specs/fundacion.md` **aprobada**; ADR-0002 (Better Auth solo para identidad; inquilinos e invitaciones
     en tablas propias); prueba de fugas añadida a `CONSTRAINTS.md`.
-  - Plan aprobado: `tasks/plan.md` y 25 tareas en `tasks/todo.md`.
+  - Plan aprobado: `tasks/fundacion/plan.md` y 25 tareas en `tasks/fundacion/todo.md` (archivados ahí al empezar el
+    módulo 1).
 - **2026-10-29 — Módulo 0 hecho: tareas 1 a 14 y 16 a 25** (PR #2 a #33). La 15 (Discord, Google y correo), pospuesta. Staging en
   https://neo.crisol.144-91-122-245.sslip.io (Compose `crisol-staging` en `~/crisol-staging`, puerto 8140; copia del
   Caddyfile en `/etc/caddy/Caddyfile.bak-20261029-104936-neo-crisol`). Desplegar tras cada merge:
@@ -191,13 +192,27 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
     - el PDF, imprimiendo desde el navegador;
     - la hoja se pagina sola;
     - los tipos de propiedad.
+- **2026-10-29 — Módulo 1: diseño aprobado** por Enrique («me parece bien»). Es el lienzo «Crisol: wiki»
+  (https://claude.ai/artifact/Wvxy8bDfxQLDwcVHbsDLQv; fuentes en `out/lienzo-wiki/`, fuera de git). Tiene cinco
+  tablas:
+  - la página en vista sencilla;
+  - el editor;
+  - la hoja;
+  - la búsqueda con Ctrl+K;
+  - el móvil.
+
+  En la hoja, la letra del texto (Alegreya) es una propuesta para el repaso final.
+- **2026-10-29 — Módulo 1: plan escrito**, pendiente de Enrique (`tasks/plan.md` y 26 tareas en `tasks/todo.md`).
+  - El plan del módulo 0 está ahora en `tasks/fundacion/`.
+  - Hay nueve fases y seis puntos de control. Lo arriesgado va pronto: Yjs en el servidor (6), el editor anidado de
+    los secretos (8, con su punto de control) y Claude escribiendo en una página abierta (11).
 - **Siguiente paso: módulo 1**, en este orden, cada uno con su PR de documentación (rama corta → CI → merge):
   1. ~~ADR-0003, Yjs y secretos~~: hecho.
   2. ~~REA dirigido~~: hecho (Homebrewery, Foundry Journal y D&D Beyond).
   3. ~~Spec~~: aprobada.
-  4. **Diseño** con `frontend-design`: prototipos en el lienzo de claude.ai (el de las direcciones u otro nuevo) del
-     árbol, la página en vista sencilla y en hoja, el editor y la búsqueda. Enrique los aprueba.
-  5. `/plan` con tareas en `tasks/`, y luego `/build`, `/agent-skills:review` y `/ship`, como en el módulo 0.
+  4. ~~Diseño~~: aprobado.
+  5. ~~`/plan`~~: escrito y pendiente de Enrique. Después, `/build` tarea a tarea, desde la 1, con
+     `/agent-skills:review` y `/ship`, como en el módulo 0.
 - Queda una ventana pequeña en el tiempo real: lo que cambie entre la primera carga de una página y la conexión del
   canal no se ve hasta volver a la pestaña. Taparla costaría volver a pedirlo todo al conectar la primera vez.
 - **Pendientes de permiso de Enrique:**
