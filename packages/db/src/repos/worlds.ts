@@ -1,6 +1,7 @@
-import { asc, eq } from 'drizzle-orm'
+import { and, eq, sql } from 'drizzle-orm'
 import type { Database } from '../client.ts'
 import { type OperationContext, operation } from '../operation.ts'
+import { campaignMembers, campaigns } from '../schema/campaigns.ts'
 import { worldMembers, worlds } from '../schema/worlds.ts'
 
 const worldColumns = {
@@ -10,14 +11,23 @@ const worldColumns = {
   version: worlds.version
 }
 
-/** Los mundos en los que la cuenta tiene un rol, con ese rol */
-export function listMemberWorlds(db: Database, userId: string) {
-  return db
-    .select({ ...worldColumns, role: worldMembers.role })
-    .from(worldMembers)
-    .innerJoin(worlds, eq(worlds.id, worldMembers.worldId))
-    .where(eq(worldMembers.userId, userId))
-    .orderBy(asc(worlds.name))
+/** Los mundos de la cuenta con su rol: los que administra (master) y en los que juega alguna campaña (player) */
+export async function listMemberWorlds(db: Database, userId: string) {
+  const [mastered, played] = await Promise.all([
+    db
+      .select({ ...worldColumns, role: sql<'master' | 'player'>`${worldMembers.role}` })
+      .from(worldMembers)
+      .innerJoin(worlds, eq(worlds.id, worldMembers.worldId))
+      .where(eq(worldMembers.userId, userId)),
+    db
+      .selectDistinct({ ...worldColumns, role: sql<'master' | 'player'>`'player'` })
+      .from(campaignMembers)
+      .innerJoin(campaigns, eq(campaigns.id, campaignMembers.campaignId))
+      .innerJoin(worlds, eq(worlds.id, campaigns.worldId))
+      .where(and(eq(campaignMembers.userId, userId), eq(campaignMembers.role, 'player')))
+  ])
+  const masteredIds = new Set(mastered.map((w) => w.id))
+  return [...mastered, ...played.filter((w) => !masteredIds.has(w.id))].sort((a, b) => a.name.localeCompare(b.name))
 }
 
 export async function findWorld(db: Database, worldId: string) {

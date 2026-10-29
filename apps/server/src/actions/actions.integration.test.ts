@@ -140,6 +140,60 @@ describe('POST /api/actions/:name', () => {
     })
   })
 
+  describe('campañas', () => {
+    it('el máster crea campañas en su mundo, las lista y renombra; queda en el historial', async () => {
+      const world = (await call('createWorld', { name: 'Eana' }, owner.cookie)).json()
+      const created = await call('createCampaign', { worldId: world.id, name: 'La Marca' }, owner.cookie)
+      expect(created.json()).toMatchObject({ worldId: world.id, name: 'La Marca', role: 'master', version: 1 })
+      const renamed = await call(
+        'renameCampaign',
+        { campaignId: created.json().id, name: 'La Marca del Este' },
+        owner.cookie
+      )
+      expect(renamed.json()).toMatchObject({ name: 'La Marca del Este', version: 2 })
+      expect((await call('listCampaigns', { worldId: world.id }, owner.cookie)).json().campaigns).toHaveLength(1)
+
+      const ops = await conn.db.select().from(schema.operations)
+      expect(ops.find((op) => op.action === 'createCampaign')).toMatchObject({
+        worldId: world.id,
+        details: { name: 'La Marca', world: 'Eana' }
+      })
+    })
+
+    it('un jugador ve el mundo y su campaña, pero no las demás ni puede cambiarlas', async () => {
+      const world = (await call('createWorld', { name: 'Eana' }, owner.cookie)).json()
+      const mine = (await call('createCampaign', { worldId: world.id, name: 'B' }, owner.cookie)).json()
+      const other = (await call('createCampaign', { worldId: world.id, name: 'A' }, owner.cookie)).json()
+      const player = await signUpTestUser(auth, { name: 'Jugadora', email: 'jugadora@crisol.test' })
+      await conn.db.insert(schema.organizationMembers).values({ organizationId, userId: player.userId, role: 'member' })
+      await conn.db
+        .insert(schema.campaignMembers)
+        .values({ campaignId: mine.id, userId: player.userId, role: 'player' })
+
+      expect((await call('listWorlds', {}, player.cookie)).json().worlds).toEqual([{ ...world, role: 'player' }])
+      expect((await call('listCampaigns', { worldId: world.id }, player.cookie)).json().campaigns).toEqual([
+        { ...mine, role: 'player' }
+      ])
+      expect((await call('renameCampaign', { campaignId: mine.id, name: 'X' }, player.cookie)).statusCode).toBe(403)
+      expect((await call('renameCampaign', { campaignId: other.id, name: 'X' }, player.cookie)).statusCode).toBe(404)
+      expect((await call('createCampaign', { worldId: world.id, name: 'X' }, player.cookie)).statusCode).toBe(403)
+      expect((await call('renameWorld', { worldId: world.id, name: 'X' }, player.cookie)).statusCode).toBe(403)
+    })
+
+    it('las campañas de un mundo ajeno no existen para quien no está en él', async () => {
+      const other = await organizationWithOwner('Otra', 'otra@crisol.test')
+      const world = (await call('createWorld', { name: 'Ajeno' }, other.cookie)).json()
+      const campaign = (await call('createCampaign', { worldId: world.id, name: 'C' }, other.cookie)).json()
+      expect((await call('listCampaigns', { worldId: world.id }, owner.cookie)).statusCode).toBe(404)
+      expect((await call('createCampaign', { worldId: world.id, name: 'X' }, owner.cookie)).statusCode).toBe(404)
+      expect((await call('renameCampaign', { campaignId: campaign.id, name: 'X' }, owner.cookie)).statusCode).toBe(404)
+      expect(
+        (await call('renameCampaign', { campaignId: '00000000-0000-4000-8000-000000000000', name: 'X' }, owner.cookie))
+          .statusCode
+      ).toBe(404)
+    })
+  })
+
   it('GET /api/openapi.json describe las acciones', async () => {
     const doc = (await app.inject({ method: 'GET', url: '/api/openapi.json' })).json()
     expect(Object.keys(doc.paths)).toContain('/api/actions/createWorld')

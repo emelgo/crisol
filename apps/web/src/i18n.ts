@@ -30,7 +30,20 @@ export const es = {
     listLabel: 'Mundos',
     newTitle: 'Nuevo mundo',
     name: 'Nombre del mundo',
-    create: 'Crear el mundo',
+    create: 'Crear el mundo'
+  },
+  world: {
+    notFound: 'Este mundo no existe'
+  },
+  campaigns: {
+    title: 'Campañas',
+    empty: 'Aún no hay campañas',
+    listLabel: 'Campañas',
+    newTitle: 'Nueva campaña',
+    name: 'Nombre de la campaña',
+    create: 'Crear la campaña'
+  },
+  list: {
     rename: 'Renombrar',
     renameButton: 'Renombrar {{name}}',
     renameLabel: 'Nuevo nombre de {{name}}',
@@ -47,6 +60,7 @@ export const es = {
   },
   roles: {
     master: 'Máster',
+    player: 'Jugador',
     owner: 'Propietario',
     member: 'Miembro'
   },

@@ -8,7 +8,10 @@ describe('Actions', () => {
       listOrganizations: true,
       listWorlds: true,
       createWorld: true,
-      renameWorld: true
+      renameWorld: true,
+      listCampaigns: true,
+      createCampaign: true,
+      renameCampaign: true
     }
     expect(Object.keys(names).sort()).toEqual(ACTIONS.map((a) => a.name).sort())
   })

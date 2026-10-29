@@ -1,10 +1,12 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { connect } from '../client.ts'
 import { user } from '../schema/auth.ts'
+import { campaignMembers } from '../schema/campaigns.ts'
 import { changes, operations } from '../schema/history.ts'
 import { bootstrapTokens, organizationMembers, organizations } from '../schema/organizations.ts'
 import { freshTestDatabase, resetDatabase } from '../testing.ts'
 import * as bootstrap from './bootstrap.ts'
+import * as campaignsRepo from './campaigns.ts'
 import { isOwner, listMemberOrganizations, loadMemberships } from './memberships.ts'
 import * as worldsRepo from './worlds.ts'
 
@@ -76,17 +78,99 @@ describe('repositorios', () => {
     })
   })
 
+  describe('campañas', () => {
+    const world = () =>
+      worldsRepo.createWorldWithMaster(conn.db, ui('createWorld'), { organizationId, name: 'Eana', masterId: 'u1' })
+
+    it('crear una campaña hace máster a quien la crea, en una sola operación', async () => {
+      const w = await world()
+      const campaign = await campaignsRepo.createCampaignWithMaster(conn.db, ui('createCampaign'), {
+        worldId: w.id,
+        name: 'La Marca del Este',
+        masterId: 'u1'
+      })
+      expect(await campaignsRepo.listCampaigns(conn.db, { worldId: w.id, userId: 'u1', onlyMember: false })).toEqual([
+        { id: campaign.id, worldId: w.id, name: 'La Marca del Este', version: 1, role: 'master' }
+      ])
+      const ops = await conn.db.select().from(operations)
+      expect(ops.find((op) => op.action === 'createCampaign')?.worldId).toBe(w.id)
+    })
+
+    it('un jugador solo ve sus campañas, con su rol; el máster del mundo las ve todas', async () => {
+      const w = await world()
+      const mine = await campaignsRepo.createCampaignWithMaster(conn.db, ui('createCampaign'), {
+        worldId: w.id,
+        name: 'B',
+        masterId: 'u1'
+      })
+      await campaignsRepo.createCampaignWithMaster(conn.db, ui('createCampaign'), {
+        worldId: w.id,
+        name: 'A',
+        masterId: 'u1'
+      })
+      await conn.db.insert(campaignMembers).values({ campaignId: mine.id, userId: 'u2', role: 'player' })
+
+      const forPlayer = await campaignsRepo.listCampaigns(conn.db, { worldId: w.id, userId: 'u2', onlyMember: true })
+      expect(forPlayer.map((c) => [c.name, c.role])).toEqual([['B', 'player']])
+      const forMaster = await campaignsRepo.listCampaigns(conn.db, { worldId: w.id, userId: 'u1', onlyMember: false })
+      expect(forMaster.map((c) => c.name)).toEqual(['A', 'B'])
+    })
+
+    it('renombrar sube la versión y la campaña se encuentra con su organización', async () => {
+      const w = await world()
+      const campaign = await campaignsRepo.createCampaignWithMaster(conn.db, ui('createCampaign'), {
+        worldId: w.id,
+        name: 'Uno',
+        masterId: 'u1'
+      })
+      expect(await campaignsRepo.renameCampaign(conn.db, ui('renameCampaign'), campaign.id, 'Dos')).toMatchObject({
+        name: 'Dos',
+        version: 2
+      })
+      expect(await campaignsRepo.findCampaign(conn.db, campaign.id)).toMatchObject({
+        name: 'Dos',
+        worldId: w.id,
+        organizationId
+      })
+      expect(await campaignsRepo.findCampaign(conn.db, '00000000-0000-4000-8000-000000000000')).toBeNull()
+    })
+  })
+
+  it('un jugador ve en su lista de mundos aquellos en los que juega', async () => {
+    const w = await worldsRepo.createWorldWithMaster(conn.db, ui('createWorld'), {
+      organizationId,
+      name: 'Eana',
+      masterId: 'u1'
+    })
+    const c = await campaignsRepo.createCampaignWithMaster(conn.db, ui('createCampaign'), {
+      worldId: w.id,
+      name: 'C',
+      masterId: 'u1'
+    })
+    await conn.db.insert(campaignMembers).values({ campaignId: c.id, userId: 'u2', role: 'player' })
+    expect(await worldsRepo.listMemberWorlds(conn.db, 'u2')).toEqual([
+      { id: w.id, organizationId, name: 'Eana', version: 1, role: 'player' }
+    ])
+    expect((await worldsRepo.listMemberWorlds(conn.db, 'u1')).map((x) => x.role)).toEqual(['master'])
+  })
+
   it('las pertenencias dicen el rol en cada organización y en cada mundo', async () => {
     const world = await worldsRepo.createWorldWithMaster(conn.db, ui('createWorld'), {
       organizationId,
       name: 'Eana',
       masterId: 'u1'
     })
+    const campaign = await campaignsRepo.createCampaignWithMaster(conn.db, ui('createCampaign'), {
+      worldId: world.id,
+      name: 'C',
+      masterId: 'u1'
+    })
     expect(await loadMemberships(conn.db, 'u1')).toEqual({
       organizations: [{ organizationId, role: 'owner' }],
-      worlds: [{ worldId: world.id, organizationId, role: 'master' }]
+      worlds: [{ worldId: world.id, organizationId, role: 'master' }],
+      campaigns: [{ campaignId: campaign.id, worldId: world.id, role: 'master' }]
     })
-    expect(await loadMemberships(conn.db, 'u2')).toEqual({ organizations: [], worlds: [] })
+    expect(await loadMemberships(conn.db, 'u2')).toEqual({ organizations: [], worlds: [], campaigns: [] })
   })
 
   it('las organizaciones de la cuenta salen con su nombre y su rol', async () => {

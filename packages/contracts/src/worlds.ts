@@ -8,7 +8,8 @@ export const world = z.object({
   id: z.uuid(),
   organizationId: z.uuid(),
   name: z.string(),
-  role: z.enum(['master']),
+  // master: lo administra; player: juega en alguna de sus campañas
+  role: z.enum(['master', 'player']),
   version: z.number().int()
 })
 
