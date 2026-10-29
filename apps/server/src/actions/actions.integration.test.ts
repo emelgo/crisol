@@ -570,7 +570,7 @@ describe('POST /api/actions/:name', () => {
       expect((await call('listWorlds', {}, player.cookie)).json().worlds).toHaveLength(1)
     })
 
-    it('salir de una campaña solo lo deshace quien salió: el máster no lo mete sin enlace', async () => {
+    it('el máster puede deshacer que alguien saliera de su campaña: vuelve a estar en ella (decidido con Enrique)', async () => {
       const { world, campaign, player } = await worldWithPlayer()
       await call('leaveCampaign', { campaignId: campaign.id }, player.cookie)
       const entries = (await call('listHistory', { worldId: world.id }, owner.cookie)).json().entries as Array<{
@@ -578,9 +578,8 @@ describe('POST /api/actions/:name', () => {
         action: string
       }>
       const left = entries.find((e) => e.action === 'leaveCampaign')
-      const byMaster = await call('undoOperation', { operationId: left?.id }, owner.cookie)
-      expect([byMaster.statusCode, byMaster.json().code]).toEqual([400, 'NOT_UNDOABLE'])
-      expect((await call('listWorlds', {}, player.cookie)).json().worlds).toEqual([])
+      expect((await call('undoOperation', { operationId: left?.id }, owner.cookie)).json().status).toBe('undone')
+      expect((await call('listWorlds', {}, player.cookie)).json().worlds).toHaveLength(1)
     })
 
     it('una campaña de un mundo en la papelera vuelve con el mundo, no sola', async () => {

@@ -223,8 +223,7 @@ Comprobación local al acabar cada tarea: `pnpm lint && pnpm typecheck && pnpm t
     `apps/web/src/rutas/papelera.tsx`.
 
 ### Punto de control 4
-- [ ] Criterios 5 y 6 de la spec. (6, superado por Enrique en staging el 2026-10-29; el 5 se prueba con la 24, que trae
-  `crear_campana`.)
+- [x] Criterios 5 y 6 de la spec (Enrique, en staging el 2026-10-29; el 5 con `crear_campana` desde claude.ai).
 
 ## Fase 5: IA
 
@@ -257,7 +256,8 @@ Comprobación local al acabar cada tarea: `pnpm lint && pnpm typecheck && pnpm t
   - Comprueba: prueba con el cliente del SDK por herramienta × modo, y la proyección (lo que no se ve no sale).
   - Archivos: `apps/server/src/mcp/herramientas.ts`, `packages/contracts/src/*.ts`.
 
-- [ ] **25. Cierre: criterios de éxito en staging, revisión y entrega**
+- [ ] **25. Cierre: criterios de éxito en staging, revisión y entrega** — a medias: LCP medido, revisión hecha y lo del
+  servidor arreglado (PR #31); faltan los arreglos de la web (ver «Dónde estamos»)
   - Acepta:
     - Los 8 criterios de la spec recorridos con Enrique en staging (claude.ai real) y el LCP medido.
     - `/agent-skills:review` sin hallazgos altos.
