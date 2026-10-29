@@ -4,7 +4,8 @@
   "license": "UNLICENSED",
   "type": "module",
   "exports": {
-    "./server": "./src/server.ts"
+    "./server": "./src/server.ts",
+    "./bootstrap": "./src/bootstrap.ts"
   },
   "scripts": {
     "dev": "node --env-file-if-exists=../../.env --watch src/main.ts",

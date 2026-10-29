@@ -72,14 +72,14 @@ Comprobación local al acabar cada tarea: `pnpm lint && pnpm typecheck && pnpm t
   - Archivos: `packages/db/src/schema/{auth,organizaciones}.ts`, `apps/server/src/auth.ts`,
     `apps/server/src/cli/arranque.ts`.
 
-- [ ] **7. Entrar, salir y arranque en la web**
+- [x] **7. Entrar, salir y arranque en la web**
   - Acepta:
     - Páginas de entrar, de arranque y de perfil (nombre visible); botón de salir.
     - Errores claros y sin decir si el email existe.
   - Comprueba: e2e de arranque → crear cuenta → salir → entrar; axe.
   - Archivos: `apps/web/src/rutas/{entrar,arranque,perfil}.tsx`, `e2e/cuentas.spec.ts`.
 
-- [ ] **8. Registro cerrado: pase de alta**
+- [x] **8. Registro cerrado: pase de alta** — la puerta se hizo en la tarea 6; el pase por cookie (alta social e invitaciones) va con las tareas 14 y 15
   - Acepta:
     - Un gancho de Better Auth rechaza crear usuarios sin un «pase de alta», una cookie firmada de vida corta que se
       pone al abrir un enlace válido (de arranque o de invitación).
