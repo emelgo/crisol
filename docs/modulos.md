@@ -136,8 +136,37 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
       la letra de las secciones. Se cierra con Escape, al pulsar fuera o al salir con el tabulador
       (`components/account-menu.tsx`).
     - Las pruebas cierran sesión con `signOut()` (en `testing.ts` y en `e2e/tests/ayudas.ts`).
-- **Siguiente paso**: que Enrique pruebe «Hoja» en staging y diga qué cambiar. Después, el módulo 1 (wiki) con su
-  entrevista; antes, el ADR sobre Yjs y secretos.
+  - **Fase de diseño cerrada** con «Hoja». Enrique: «de la UI faltan cosas que no me convencen, pero lo abarcamos
+    todo cuando tengamos la app terminada». El pulido visual queda para el final; si señala algo concreto, se apunta
+    en «Para el repaso final de la interfaz», más abajo.
+- **2026-10-29 — Módulo 1 (wiki): entrevista hecha** y confirmada por Enrique («vamos»). Las decisiones están en
+  «Decisiones por módulo» § 1, más abajo. Lo gordo:
+  - **No hay importador**: Eana se pasará con Claude por el MCP cuando la app esté terminada. Por eso las herramientas
+    MCP de la wiki tienen que bastar para crearlo todo.
+  - Las **hojas con estilo** (tipo Homebrewery) entran.
+  - Sin editor de Markdown a mano.
+  - La wiki es solo del máster hasta el módulo 5.
+- **Siguiente paso: módulo 1**, en este orden, cada uno con su PR de documentación (rama corta → CI → merge):
+  1. **ADR-0003, Yjs y secretos** (`docs/adr/0003-…`): cómo se guarda y sincroniza una página (TipTap + Yjs, ver
+     ADR-0001). Yjs no puede proyectar por usuario, así que lo que tenga otra visibilidad (secretos) va en documentos
+     o subdocumentos aparte desde el primer día. También:
+     - cómo encaja con el historial y deshacer del módulo 0 (`operation()`) y con las versiones de página;
+     - cómo escribe Claude por el MCP en una página abierta;
+     - cómo se exporta a Markdown.
+
+     Antes, leer `research/foundry/sincronizacion-e-historial.md`.
+  2. **REA dirigido**, con notas en `research/` (leer antes `research/README.md`):
+     - **Homebrewery** (`naturalcrit/homebrewery`, MIT): cómo maqueta la hoja (columnas, saltos de página, statblocks,
+       notas al margen), cómo pagina y cómo saca el PDF o imprime. Su código se puede leer y aprovechar con
+       atribución; su tema 5e (fuentes e imágenes CC BY-SA y aspecto de los libros de WotC), no.
+     - **Foundry Journal**: páginas, carpetas, enlaces y permisos por página (con el Foundry de REA en loopback, ver
+       `research/foundry/entorno.md`).
+     - **D&D Beyond**: cómo enlaza y presenta el contenido (Enrique entra él mismo en el Chromium del VPS; ver más
+       abajo).
+  3. **Spec** `docs/specs/wiki.md` con `/spec` (skill `spec-driven-development`), para que Enrique la apruebe.
+  4. **Diseño** con `frontend-design`: prototipos en el lienzo de claude.ai (el de las direcciones u otro nuevo) del
+     árbol, la página en vista sencilla y en hoja, el editor y la búsqueda. Enrique los aprueba.
+  5. `/plan` con tareas en `tasks/`, y luego `/build`, `/agent-skills:review` y `/ship`, como en el módulo 0.
   - Luego, el módulo 1 (wiki) con su entrevista.
 - Queda una ventana pequeña en el tiempo real: lo que cambie entre la primera carga de una página y la conexión del
   canal no se ve hasta volver a la pestaña. Taparla costaría volver a pedirlo todo al conectar la primera vez.
@@ -157,7 +186,7 @@ Estados: pendiente · en curso · hecho · descartado.
 | # | Módulo | Estado | REA principal |
 |---|---|---|---|
 | 0 | **Fundación**: monorepo, CI, despliegue, cuentas, organizaciones, mundos, campañas, roles, historial y deshacer, esqueleto del MCP | **hecho** (2026-10-29; Discord y Google, pospuestos) | Foundry: modelo de documentos y permisos; DDB: campañas e invitaciones |
-| 1 | **Wiki**: páginas y subpáginas, editor de bloques, enlaces, menciones, vista previa, propiedades, secretos, búsqueda, marcadores, etiquetas, versiones, recursos y archivos, **importador de Eana**, exportación MD | pendiente | Foundry: Journal; DDB: contenido y referencias; Homebrewery (MIT): formato de hoja y descarga |
+| 1 | **Wiki**: páginas y subpáginas, editor de bloques, enlaces, menciones, vista previa, propiedades, secretos, búsqueda, marcadores, etiquetas, versiones, recursos y archivos, **hojas con estilo** (tipo Homebrewery, con PDF), exportación MD, sus herramientas MCP | en curso (entrevista hecha) | Foundry: Journal; DDB: contenido y referencias; Homebrewery (MIT): formato de hoja y descarga |
 | 2 | Tipos de página, plantillas y formularios nativos; consultas (en lugar de Dataview y Bases) | pendiente | Foundry: tipos de documento |
 | 3 | Sistemas de reglas, fichas de personaje (creación, subida de nivel), dados y dados 3D | pendiente | DDB: creador y hoja; Foundry: dnd5e, DataModel e instalar y crear sistemas |
 | 4 | Compendios, bestiario, statblocks, biblioteca | pendiente | Foundry: compendium packs; DDB: listados |
@@ -192,6 +221,12 @@ de D&D Beyond. Oscuro o claro según el sistema, con el botón para cambiarlo.
 
 Las de desplegar en Vercel y React Native no aplican. Desde entonces, cada módulo lleva un paso de diseño entre la spec
 y el plan (ver `CLAUDE.md`).
+
+## Para el repaso final de la interfaz
+
+Lo que a Enrique no le convence y se deja para cuando la app esté terminada (apuntarlo aquí según lo diga):
+
+- (de momento, sin concretar)
 
 ## Decisiones por módulo
 
@@ -236,3 +271,39 @@ y el plan (ver `CLAUDE.md`).
   - Cuidado con su tema 5e: las fuentes y las imágenes llevan licencias propias (varias CC BY-SA, que `CONSTRAINTS.md`
     no admite) e imitan el aspecto de los libros de WotC. Para un producto de pago, un tema propio con ese aire,
     fuentes libres (OFL) y descarga en PDF y para imprimir.
+
+### 1. Wiki (entrevista con Enrique, 2026-10-29)
+
+- **Para qué**: la wiki completa del Crisol nuevo. No se usa de verdad hasta que la app esté terminada: mientras, Eana
+  sigue en el Crisol actual y no se pasa nada.
+- **Sin importador**: al migrar, Eana se pasa con Claude por el MCP. Las herramientas MCP de la wiki tienen que bastar
+  para crear y editar páginas con subpáginas, propiedades, enlaces, secretos y archivos, y a buen ritmo (muchas
+  páginas).
+- **Entra todo lo de la wiki del Crisol actual** (`docs/inventario.md` § 2):
+  - árbol de páginas y subpáginas, recolocar, pestañas, selector rápido, paleta de órdenes;
+  - búsqueda, marcadores con grupos, etiquetas, enlaces entrantes, índice del documento;
+  - menciones sin enlazar, vista previa al pasar el ratón, incrustados, migas de pan;
+  - portada, título en línea, propiedades, candado de lectura;
+  - editor de bloques con su menú «/»: texto, títulos, listas, casillas, cita, código, tabla, separador, secreto,
+    callout, caja, enlace o página nueva, nota oculta, imagen;
+  - versiones con restaurar, recursos y archivos, visor de PDF, exportar a Markdown.
+- **Hojas con estilo**:
+  - Cada página puede activar el formato de hoja de rol: dos columnas, aire de pergamino, statblocks y notas al margen.
+  - Siempre hay una vista sencilla, más fácil de leer.
+  - El máster elige por página si se ve como hoja, y quien lee puede volver a la sencilla.
+  - Se descarga en PDF o se imprime.
+  - Referencia: el repositorio de Homebrewery (MIT, código aprovechable con atribución). Tema propio con fuentes OFL;
+    nada de su tema 5e.
+- **Fuera del módulo 1**:
+  - el importador;
+  - editar en Markdown a mano: el texto vive en la base de datos y para eso está exportar;
+  - los bloques de mapa, línea temporal y tirada (módulos 9, 8 y 3);
+  - las consultas tipo Dataview y Bases (módulo 2);
+  - que los jugadores lean la wiki: hasta el módulo 5 es solo del máster;
+  - el pulido de la interfaz, que va al final.
+- **Secretos**: se escriben ya y se ven marcados como secretos. Se guardan aparte desde el principio, para que el
+  módulo 5 los proyecte por jugador sin rehacer nada (ADR-0003).
+- **Hecho cuando**:
+  - En staging, Enrique crea y edita páginas de prueba con todo lo anterior y las ve en las dos vistas.
+  - Saca el PDF de una hoja.
+  - Claude crea y edita desde claude.ai páginas con subpáginas, propiedades, enlaces y secretos.

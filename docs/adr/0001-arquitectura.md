@@ -38,8 +38,8 @@ Principios:
 - **Partida autoritativa en el servidor**: el estado de la mesa vive en el servidor y cada cliente dibuja su vista. La
   visibilidad (niebla, secretos, notas del máster) se proyecta por usuario en el servidor: al cliente no le llega lo que
   no debe ver. Así se acaba la dependencia de la pestaña del máster.
-- **Enlaces por ID**: renombrar no reescribe texto. Exportar a Markdown produce `[[enlaces]]`; el importador lee el
-  formato del Crisol actual.
+- **Enlaces por ID**: renombrar no reescribe texto. Exportar a Markdown produce `[[enlaces]]`. (2026-10-29: no habrá
+  importador del Crisol actual; Eana se pasará con Claude por el MCP. Ver `docs/modulos.md` § 1.)
 - **API primero**: cada módulo define su contrato zod, y de él salen la API, el cliente y las herramientas MCP.
 - **Historial y deshacer** en el servidor para cualquier cambio (persona o IA), con modos de IA y cola de aprobación.
 
