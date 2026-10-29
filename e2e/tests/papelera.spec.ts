@@ -20,7 +20,7 @@ test('el máster borra una campaña con una jugadora dentro: ella la pierde al m
   await player.goto(link)
   await expect(player.getByRole('heading', { name: 'Este enlace no vale' })).toBeVisible()
 
-  await page.getByRole('link', { name: 'Papelera' }).click()
+  await page.getByRole('link', { name: 'Papelera de Eana' }).click()
   await expect(page.getByRole('heading', { level: 1, name: 'Papelera de Eana' })).toBeVisible()
   const items = page.getByRole('list', { name: 'En la papelera' }).getByRole('listitem')
   await expect(items).toHaveText([/^La Marca.*Campaña de Eana · Se borra del todo el/])
@@ -30,7 +30,7 @@ test('el máster borra una campaña con una jugadora dentro: ella la pierde al m
   await player.goto(campaignUrl)
   await expect(player.getByRole('heading', { level: 1, name: 'La Marca', exact: true })).toBeVisible()
   await page.getByRole('link', { name: 'Eana' }).click()
-  await page.getByRole('link', { name: 'Historial' }).click()
+  await page.getByRole('link', { name: 'Historial de Eana' }).click()
   await expect(page.getByRole('list', { name: 'Operaciones' }).getByRole('listitem').first()).toHaveText(
     /^Enrique restauró la campaña «La Marca» de Eana/
   )

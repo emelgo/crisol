@@ -7,6 +7,7 @@ export const es = {
     name: 'Crisol',
     tagline: 'Mundos de rol y mesa virtual',
     accountNav: 'Cuenta',
+    sectionsNav: 'Secciones',
     pageTitle: '{{page}} · Crisol'
   },
   account: {
@@ -34,7 +35,9 @@ export const es = {
     create: 'Crear el mundo'
   },
   world: {
-    notFound: 'Este mundo no existe'
+    notFound: 'Este mundo no existe',
+    asMaster: 'Eres su máster.',
+    asPlayer: 'Juegas en una de sus campañas.'
   },
   campaigns: {
     title: 'Campañas',
@@ -45,7 +48,11 @@ export const es = {
     create: 'Crear la campaña'
   },
   campaign: {
-    notFound: 'Esta campaña no existe'
+    notFound: 'Esta campaña no existe',
+    asMaster: 'Campaña de {{world}}. Eres su máster.',
+    asPlayer: 'Campaña de {{world}}. Juegas en ella.',
+    players: 'Jugadores',
+    joined: 'Han entrado'
   },
   join: {
     title: 'Te invitan a {{campaign}}',
@@ -98,7 +105,6 @@ export const es = {
   history: {
     title: 'Historial',
     worldTitle: 'Historial de {{world}}',
-    organizationLink: 'Historial de la organización',
     listLabel: 'Operaciones',
     empty: 'Aún no hay nada en el historial',
     more: 'Ver más',

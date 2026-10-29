@@ -119,8 +119,14 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
     para tipografías de `@fontsource`), tokens en `apps/web/src/styles/tokens.css` con sus contrastes probados,
     barra oscura, cajas con las esquinas cortadas (`--cut`), rótulos en rojo, botones condensados. Lo de Claude, en
     azul.
-- **Siguiente paso**: la barra de secciones (Mis mundos, Historial, Papelera, IA) y la franja de mundo y campaña con
-  sus casillas, como en el prototipo de Hoja; luego el kit y el repaso del resto de pantallas.
+  - Barra de secciones y franja (PR #36):
+    - En la barra de arriba van «Mis mundos» y, para el propietario, «Historial», «Papelera» e «IA». La sección
+      actual va marcada.
+    - El mundo y la campaña llevan una franja (`components/banner.tsx`) con su papel y sus casillas: campañas;
+      jugadores; y, para el máster, cuántos han entrado. Comparte las consultas con los paneles de abajo.
+    - Los enlaces del mundo se llaman «Historial de Eana» y «Papelera de Eana».
+- **Siguiente paso**: que Enrique pruebe «Hoja» en staging; después el kit y el repaso del resto de pantallas
+  (entrar, unirse, permiso, perfil, historial, papelera, IA), y luego el módulo 1 (wiki) con su entrevista.
   - Luego, el módulo 1 (wiki) con su entrevista.
 - Queda una ventana pequeña en el tiempo real: lo que cambie entre la primera carga de una página y la conexión del
   canal no se ve hasta volver a la pestaña. Taparla costaría volver a pedirlo todo al conectar la primera vez.

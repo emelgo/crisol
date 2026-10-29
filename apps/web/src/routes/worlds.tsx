@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Link, Navigate } from '@tanstack/react-router'
+import { Navigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
@@ -36,13 +36,6 @@ export function Worlds() {
   return (
     <section>
       <PageTitle>{t('worlds.title')}</PageTitle>
-      {canCreate && (
-        <p>
-          <Link to="/historial">{t('history.organizationLink')}</Link>
-          {' · '}
-          <Link to="/papelera">{t('trash.title')}</Link>
-        </p>
-      )}
       <FormError message={failed(worlds) ? errorText(worlds.error) : null} />
       {worlds.data &&
         (worlds.data.worlds.length === 0 ? (

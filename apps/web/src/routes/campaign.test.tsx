@@ -184,6 +184,26 @@ describe('una campaña y su enlace de invitación', () => {
     expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Nuevo enlace' }))
   })
 
+  // Una casilla de la franja: su número, por su rótulo
+  const stat = (label: string) => screen.queryByText(label, { selector: 'dt' })?.nextElementSibling?.textContent
+
+  it('la franja dice de qué mundo es, que eres su máster, cuántos juegan y cuántos han entrado con el enlace', async () => {
+    renderCampaign(campaign())
+    expect(await screen.findByText('Campaña de Eana. Eres su máster.')).toBeDefined()
+    await screen.findByText('Jugadores', { selector: 'dt' })
+    expect(stat('Jugadores')).toBe('2')
+    expect(await screen.findByText('Han entrado', { selector: 'dt' })).toBeDefined()
+    expect(stat('Han entrado')).toBe('0')
+  })
+
+  it('a un jugador la franja le dice que juega en ella, sin lo del enlace', async () => {
+    renderCampaign(campaign('player'), { ...world, role: 'player' })
+    expect(await screen.findByText('Campaña de Eana. Juegas en ella.')).toBeDefined()
+    await screen.findByText('Jugadores', { selector: 'dt' })
+    expect(stat('Jugadores')).toBe('2')
+    expect(stat('Han entrado')).toBeUndefined()
+  })
+
   it('un jugador ve su campaña pero no el enlace', async () => {
     renderCampaign(campaign('player'), { ...world, role: 'player' })
     expect(await screen.findByRole('heading', { level: 1, name: 'La Marca' })).toBeDefined()

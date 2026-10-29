@@ -128,10 +128,11 @@ describe('el historial', () => {
 
   it('se llega desde el mundo (su máster) y desde «Mis mundos» (el propietario)', async () => {
     const { router } = renderAt(`/mundos/${world.id}`, [])
-    await userEvent.click(await screen.findByRole('link', { name: 'Historial' }))
+    await userEvent.click(await screen.findByRole('link', { name: 'Historial de Eana' }))
     expect(router.state.location.pathname).toBe(`/mundos/${world.id}/historial`)
     await router.navigate({ to: '/mundos' })
-    await userEvent.click(await screen.findByRole('link', { name: 'Historial de la organización' }))
+    const sections = screen.getByRole('navigation', { name: 'Secciones' })
+    await userEvent.click(await within(sections).findByRole('link', { name: 'Historial' }))
     expect(router.state.location.pathname).toBe('/historial')
   })
 
@@ -206,6 +207,6 @@ describe('el historial', () => {
   it('un jugador no ve el enlace al historial del mundo', async () => {
     renderAt(`/mundos/${world.id}`, [], { role: 'player' })
     await screen.findByRole('heading', { level: 1, name: 'Eana' })
-    expect(screen.queryByRole('link', { name: 'Historial' })).toBeNull()
+    expect(screen.queryByRole('link', { name: 'Historial de Eana' })).toBeNull()
   })
 })

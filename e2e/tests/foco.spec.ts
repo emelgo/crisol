@@ -45,7 +45,7 @@ test('al navegar, el foco va al título de la página, y la pestaña lo dice', a
   await page.getByRole('link', { name: 'Eana' }).click()
   await expect(page.getByRole('heading', { level: 1, name: 'Eana' })).toBeFocused()
   await expect(page).toHaveTitle('Eana · Crisol')
-  await page.getByRole('link', { name: 'Mis mundos' }).click()
+  await page.getByRole('main').getByRole('link', { name: 'Mis mundos' }).click()
   await expect(page.getByRole('heading', { level: 1, name: 'Mis mundos' })).toBeFocused()
   await expect(page).toHaveTitle('Mis mundos · Crisol')
 })
@@ -86,7 +86,7 @@ test('las confirmaciones: el foco va a ellas, vuelve al cancelar y, si algo desa
   await expect(page.getByRole('button', { name: 'Renombrar Otro 2' })).toBeFocused()
 
   // Deshacerlo: el botón desaparece y el foco va a «Rehacer» de la operación nueva
-  await page.getByRole('link', { name: 'Historial de la organización' }).click()
+  await page.getByRole('navigation', { name: 'Secciones' }).getByRole('link', { name: 'Historial' }).click()
   await page.getByRole('button', { name: 'Deshacer: renombró el mundo «Otro» a «Otro 2»' }).press('Enter')
   await expect(page.getByRole('button', { name: 'Rehacer: renombró el mundo «Otro» a «Otro 2»' })).toBeFocused()
 })

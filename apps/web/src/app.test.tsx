@@ -1,5 +1,5 @@
 import { createMemoryHistory } from '@tanstack/react-router'
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it } from 'vitest'
 import { fakeAccountClient } from './account/fake.ts'
@@ -35,6 +35,43 @@ describe('App', () => {
     expect(document.documentElement.dataset.theme).toBe('dark')
     expect(localStorage.getItem('crisol.tema')).toBe('dark')
     expect(screen.getByRole('button', { name: 'Cambiar a tema claro' })).toBeDefined()
+  })
+
+  it('el propietario tiene en la barra sus mundos, el historial, la papelera y la IA, con la actual marcada', async () => {
+    const owner = fakeApi({ organizations: [{ id: crypto.randomUUID(), name: 'Fateforge', role: 'owner' }] })
+    render(
+      <App
+        router={createAppRouter(createMemoryHistory({ initialEntries: ['/mundos'] }))}
+        accounts={fakeAccountClient({ account: { name: 'Enrique', email: 'e@crisol.test' } }).client}
+        api={owner.client}
+      />
+    )
+    const sections = await screen.findByRole('navigation', { name: 'Secciones' })
+    for (const name of ['Mis mundos', 'Historial', 'Papelera', 'IA']) {
+      expect(await within(sections).findByRole('link', { name })).toBeDefined()
+    }
+    expect(within(sections).getByRole('link', { name: 'Mis mundos' }).getAttribute('aria-current')).toBe('page')
+    expect(within(sections).getByRole('link', { name: 'Historial' }).getAttribute('aria-current')).toBeNull()
+  })
+
+  it('quien no es propietario solo tiene sus mundos en la barra', async () => {
+    render(
+      <App
+        router={createAppRouter(createMemoryHistory({ initialEntries: ['/mundos'] }))}
+        accounts={fakeAccountClient({ account: { name: 'Ana', email: 'a@crisol.test' } }).client}
+        api={fakeApi().client}
+      />
+    )
+    const sections = await screen.findByRole('navigation', { name: 'Secciones' })
+    expect(await within(sections).findByRole('link', { name: 'Mis mundos' })).toBeDefined()
+    expect(within(sections).queryByRole('link', { name: 'Historial' })).toBeNull()
+    expect(within(sections).queryByRole('link', { name: 'IA' })).toBeNull()
+  })
+
+  it('sin sesión no hay barra de secciones', async () => {
+    renderAt('/entrar')
+    expect(await screen.findByRole('heading', { level: 1, name: 'Entrar' })).toBeDefined()
+    expect(screen.queryByRole('navigation', { name: 'Secciones' })).toBeNull()
   })
 
   it('dice que la página no existe y ofrece volver', async () => {

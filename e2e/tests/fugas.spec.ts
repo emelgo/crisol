@@ -63,7 +63,7 @@ test('@fugas una jugadora no recibe nada de lo que no puede ver: ni la campaña 
   await page.getByRole('button', { name: 'Guardar' }).click()
   await expect(page.getByRole('link', { name: RENAMED_CAMPAIGN })).toBeVisible()
   // Y deshace el renombrado de B desde el historial
-  await page.getByRole('link', { name: 'Historial' }).click()
+  await page.getByRole('link', { name: 'Historial de Eana' }).click()
   await page
     .getByRole('button', { name: `Deshacer: renombró la campaña «${SECRET_CAMPAIGN}» a «${RENAMED_CAMPAIGN}»` })
     .click()

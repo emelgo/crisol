@@ -100,7 +100,7 @@ describe('al cambiar de cuenta en la misma pestaña', () => {
 
     // Mientras llega lo suyo, nada de lo del máster: ni sus mundos, ni el enlace a la IA, ni la papelera
     await signInAsPlayer()
-    await userEvent.click(screen.getByRole('link', { name: 'Mis mundos' }))
+    await userEvent.click(within(screen.getByRole('main')).getByRole('link', { name: 'Mis mundos' }))
     await screen.findByRole('heading', { level: 1, name: 'Mis mundos' })
     expect(screen.queryByText('Eana')).toBeNull()
     expect(screen.queryByText('Otro')).toBeNull()

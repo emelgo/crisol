@@ -48,6 +48,34 @@
   transform: rotate(45deg);
 }
 
+/* Las secciones: condensadas y en mayúsculas; la actual, con la raya roja debajo */
+.sections {
+  display: flex;
+  flex-wrap: wrap;
+  align-self: stretch;
+  gap: 0 var(--space-6);
+  flex: 1 1 auto;
+  font-family: var(--font-display);
+  font-size: 1.0625rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.sections a {
+  display: flex;
+  align-items: center;
+  min-block-size: 3.5rem;
+  border-block: 3px solid transparent;
+  color: var(--color-chrome-muted);
+  text-decoration: none;
+}
+
+.sections a[aria-current="page"] {
+  border-block-end-color: var(--color-accent);
+  color: var(--color-chrome-text);
+}
+
 .main {
   inline-size: min(100%, 60rem);
   margin-inline: auto;
@@ -77,6 +105,18 @@
 
 .signOut:hover {
   color: var(--color-chrome-accent);
+}
+
+/* Estrecho: la marca y la cuenta arriba, las secciones en su propia fila debajo */
+@media (max-width: 48rem) {
+  .sections {
+    order: 1;
+    flex-basis: 100%;
+  }
+
+  .sections a {
+    min-block-size: var(--target);
+  }
 }
 
 @media (max-width: 30rem) {

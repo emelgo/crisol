@@ -61,6 +61,21 @@ describe('un mundo y sus campañas', () => {
     expect(screen.queryByRole('button', { name: 'Renombrar La Marca' })).toBeNull()
   })
 
+  it('la franja dice si eres su máster y cuántas campañas tiene', async () => {
+    const w = world()
+    const campaigns = ['La Marca', 'La Torre'].map((name) => ({
+      id: crypto.randomUUID(),
+      worldId: w.id,
+      name,
+      role: 'master' as const,
+      version: 1
+    }))
+    renderAt(`/mundos/${w.id}`, fakeApi({ organizations: [ORG], worlds: [w], campaigns }))
+    expect(await screen.findByText('Eres su máster.')).toBeDefined()
+    const count = await screen.findByText('Campañas', { selector: 'dt' })
+    expect(count.nextElementSibling?.textContent).toBe('2')
+  })
+
   it('un mundo que no está en la lista no existe', async () => {
     renderAt(`/mundos/${crypto.randomUUID()}`, fakeApi({ organizations: [ORG] }))
     expect(await screen.findByRole('heading', { name: 'Este mundo no existe' })).toBeDefined()
