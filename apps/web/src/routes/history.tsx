@@ -9,6 +9,7 @@ import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
 import { FormError } from '../components/field.tsx'
 import styles from '../components/list.module.css'
+import { summaryOf } from '../summaries.ts'
 
 const worldRoute = getRouteApi('/mundos/$worldId/historial')
 
@@ -147,49 +148,4 @@ function actorOf(t: TFunction, entry: HistoryEntry) {
 function viaOf(t: TFunction, entry: HistoryEntry) {
   if (entry.via === 'ai') return entry.tool ? t('history.via.aiTool', { tool: entry.tool }) : t('history.via.ai')
   return t(`history.via.${entry.via}`)
-}
-
-/** La frase de cada acción, con sus datos; una que la web aún no conoce se dice tal cual */
-function summaryOf(t: TFunction, { action, details }: Pick<HistoryEntry, 'action' | 'details'>): string {
-  const text = (value: unknown) => String(value ?? '')
-  switch (action) {
-    case 'undoOperation': {
-      const original = { action: text(details.action), details: (details.details ?? {}) as Record<string, unknown> }
-      return t('history.actions.undoOperation', { what: summaryOf(t, original) })
-    }
-    case 'createOrganization':
-      return t('history.actions.createOrganization', { name: text(details.name) })
-    case 'bootstrapOwner':
-      return t('history.actions.bootstrapOwner')
-    case 'createWorld':
-      return t('history.actions.createWorld', { name: text(details.name) })
-    case 'renameWorld':
-      return t('history.actions.renameWorld', { from: text(details.from), to: text(details.to) })
-    case 'createCampaign':
-      return t('history.actions.createCampaign', { name: text(details.name), world: text(details.world) })
-    case 'renameCampaign':
-      return t('history.actions.renameCampaign', { from: text(details.from), to: text(details.to) })
-    case 'regenerateInvitation':
-      return t('history.actions.regenerateInvitation', { campaign: text(details.campaign) })
-    case 'setInvitationsOpen':
-      return details.open
-        ? t('history.actions.openInvitations', { campaign: text(details.campaign) })
-        : t('history.actions.closeInvitations', { campaign: text(details.campaign) })
-    case 'joinCampaign':
-      return t('history.actions.joinCampaign', { campaign: text(details.campaign) })
-    case 'removeMember':
-      return t('history.actions.removeMember', { member: text(details.member), campaign: text(details.campaign) })
-    case 'leaveCampaign':
-      return t('history.actions.leaveCampaign', { campaign: text(details.campaign) })
-    case 'deleteWorld':
-      return t('history.actions.deleteWorld', { name: text(details.name) })
-    case 'deleteCampaign':
-      return t('history.actions.deleteCampaign', { name: text(details.name), world: text(details.world) })
-    case 'restoreWorld':
-      return t('history.actions.restoreWorld', { name: text(details.name) })
-    case 'restoreCampaign':
-      return t('history.actions.restoreCampaign', { name: text(details.name), world: text(details.world) })
-    default:
-      return t('history.actions.unknown', { action })
-  }
 }

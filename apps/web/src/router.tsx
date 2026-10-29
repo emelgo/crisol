@@ -1,4 +1,5 @@
 import { createRootRoute, createRoute, createRouter, type RouterHistory } from '@tanstack/react-router'
+import { AiSettings } from './routes/ai-settings.tsx'
 import { Bootstrap } from './routes/bootstrap.tsx'
 import { CampaignPage } from './routes/campaign.tsx'
 import { Consent } from './routes/consent.tsx'
@@ -40,6 +41,7 @@ const worldTrashRoute = createRoute({
   path: '/mundos/$worldId/papelera',
   component: WorldTrash
 })
+const aiRoute = createRoute({ getParentRoute: () => rootRoute, path: '/ia', component: AiSettings })
 const trashRoute = createRoute({ getParentRoute: () => rootRoute, path: '/papelera', component: OrganizationTrash })
 const consentRoute = createRoute({ getParentRoute: () => rootRoute, path: '/oauth/consentimiento', component: Consent })
 const joinRoute = createRoute({ getParentRoute: () => rootRoute, path: '/unirse/$secret', component: Join })
@@ -56,6 +58,7 @@ const routeTree = rootRoute.addChildren([
   historyRoute,
   worldTrashRoute,
   trashRoute,
+  aiRoute,
   consentRoute,
   bootstrapRoute,
   joinRoute

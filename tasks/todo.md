@@ -239,7 +239,8 @@ Comprobación local al acabar cada tarea: `pnpm lint && pnpm typecheck && pnpm t
   - Archivos: `packages/domain/src/modos-ia.ts`, `packages/db/src/schema/aprobaciones.ts`,
     `apps/server/src/mcp/aprobaciones.ts`.
 
-- [ ] **23. Cola y ajustes de IA en la interfaz**
+- [x] **23. Cola y ajustes de IA en la interfaz** — la e2e pide por el MCP de verdad (ayuda `connectClaude`); la prueba de
+  fugas comprueba que la cola del máster no llega a la jugadora
   - Acepta:
     - Ajustes de IA (modo y dirección del conector).
     - Cola siempre a mano cuando hay algo pendiente, en menos de 2 s y sin recargar, con el detalle.

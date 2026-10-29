@@ -1,7 +1,8 @@
+import { createHash, randomBytes } from 'node:crypto'
 import { connect } from '@crisol/db'
 import { resetDatabase } from '@crisol/db/testing'
 import { issueBootstrap } from '@crisol/server/bootstrap'
-import { type Browser, expect, type Page } from '@playwright/test'
+import { type Browser, expect, type Page, request } from '@playwright/test'
 import { e2eDatabaseUrl } from '../servidor.ts'
 
 export const owner = { name: 'Enrique', email: 'enrique@crisol.test', password: 'una-clave-larga' }
@@ -50,4 +51,83 @@ export async function newPlayer(browser: Browser, link: string, name = 'Jugadora
   await player.getByRole('button', { name: 'Crear la cuenta y entrar' }).click()
   await expect(player.getByRole('heading', { level: 1, name: 'La Marca', exact: true })).toBeVisible()
   return player
+}
+
+const REDIRECT = 'https://cliente.example/callback'
+
+/** Lo que contesta una herramienta MCP */
+export interface ToolResult {
+  content: Array<{ type: string; text?: string }>
+  structuredContent?: Record<string, unknown>
+  isError?: boolean
+}
+
+/**
+ * Conecta «Claude» con la cuenta de la sesión de `page`, como claude.ai: un cliente OAuth público (registrado a mano;
+ * claude.ai usa CIMD), el permiso en la web y el código canjeado con PKCE. Devuelve con qué llamar a las herramientas.
+ * Deja `page` en la vuelta del permiso: hay que volver a abrir lo que se quiera ver
+ */
+export async function connectClaude(page: Page) {
+  const base = new URL(page.url()).origin
+  const created = await page.request.post('/api/auth/oauth2/create-client', {
+    headers: { origin: base },
+    data: { redirect_uris: [REDIRECT], token_endpoint_auth_method: 'none', client_name: 'Claude de pruebas' }
+  })
+  const { client_id } = (await created.json()) as { client_id: string }
+
+  let callback: URL | undefined
+  await page.route('https://cliente.example/**', (route) => {
+    callback = new URL(route.request().url())
+    return route.fulfill({ status: 200, body: 'ok' })
+  })
+  const verifier = randomBytes(32).toString('base64url')
+  const authorize = new URL('/api/auth/oauth2/authorize', base)
+  authorize.search = new URLSearchParams({
+    response_type: 'code',
+    client_id,
+    redirect_uri: REDIRECT,
+    scope: 'openid profile offline_access',
+    state: 'estado',
+    code_challenge: createHash('sha256').update(verifier).digest('base64url'),
+    code_challenge_method: 'S256',
+    resource: `${base}/mcp`
+  }).toString()
+  await page.goto(authorize.toString())
+  await page.getByRole('button', { name: 'Permitir', exact: true }).click()
+  await expect.poll(() => callback?.searchParams.get('code')).toBeTruthy()
+
+  // Como claude.ai, desde su servidor: sin la sesión del navegador
+  const server = await request.newContext({ baseURL: base })
+  // Al cerrar la página: si el navegador ya se ha ido, no hay nada que soltar
+  page.once('close', () => void server.dispose().catch(() => undefined))
+  const token = await server.post('/api/auth/oauth2/token', {
+    form: {
+      grant_type: 'authorization_code',
+      code: callback?.searchParams.get('code') ?? '',
+      redirect_uri: REDIRECT,
+      client_id,
+      code_verifier: verifier,
+      resource: `${base}/mcp`
+    }
+  })
+  const { access_token } = (await token.json()) as { access_token: string }
+
+  /** Una herramienta por el protocolo de 2025, como claude.ai. La respuesta viene en JSON o en un flujo SSE */
+  const call = async (name: string, args: Record<string, unknown> = {}): Promise<ToolResult & { text: string }> => {
+    const response = await server.post('/mcp', {
+      headers: {
+        authorization: `Bearer ${access_token}`,
+        accept: 'application/json, text/event-stream',
+        'mcp-protocol-version': '2025-06-18'
+      },
+      data: { jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name, arguments: args } },
+      timeout: 30_000
+    })
+    const body = await response.text()
+    const json = body.startsWith('{') ? body : (body.split('\n').find((l) => l.startsWith('data:')) ?? '').slice(5)
+    const { result, error } = JSON.parse(json) as { result?: ToolResult; error?: unknown }
+    if (!result) throw new Error(`${name}: ${response.status()} ${JSON.stringify(error ?? body)}`)
+    return { ...result, text: result.content.map((c) => c.text ?? '').join('\n') }
+  }
+  return { call }
 }
