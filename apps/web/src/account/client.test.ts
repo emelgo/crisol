@@ -47,3 +47,55 @@ describe('arranque con la API real', () => {
     expect(fetch).toHaveBeenCalledWith('/api/bootstrap', expect.objectContaining({ method: 'POST' }))
   })
 })
+
+describe('OAuth con la API real', () => {
+  const routed = (routes: Record<string, unknown>) =>
+    vi.fn(async (input: RequestInfo | URL) => {
+      const url = new URL(input instanceof Request ? input.url : String(input), 'http://127.0.0.1')
+      const body = routes[url.pathname]
+      return new Response(JSON.stringify(body ?? {}), {
+        status: body === undefined ? 404 : 200,
+        headers: { 'content-type': 'application/json' }
+      })
+    })
+
+  it('al entrar para autorizar una aplicación, sigue a la autorización', async () => {
+    vi.stubGlobal('fetch', routed({ '/api/auth/sign-in/email': { redirect: true, url: '/oauth/consentimiento?x=1' } }))
+    const assign = vi.spyOn(window.location, 'assign').mockImplementation(() => undefined)
+    expect(await createAccountClient().signIn('e@crisol.test', 'una-clave-larga')).toEqual({
+      ok: true,
+      redirected: true
+    })
+    expect(assign).toHaveBeenCalledWith('/oauth/consentimiento?x=1')
+  })
+
+  it('al entrar sin más, no redirige', async () => {
+    vi.stubGlobal('fetch', routed({ '/api/auth/sign-in/email': { token: 't', user: { id: 'u1' } } }))
+    expect(await createAccountClient().signIn('e@crisol.test', 'una-clave-larga')).toEqual({
+      ok: true,
+      redirected: false
+    })
+  })
+
+  it('el consentimiento vuelve a la aplicación', async () => {
+    vi.stubGlobal(
+      'fetch',
+      routed({ '/api/auth/oauth2/consent': { redirect: true, url: 'https://claude.ai/callback?code=c' } })
+    )
+    const assign = vi.spyOn(window.location, 'assign').mockImplementation(() => undefined)
+    expect(await createAccountClient().consent(true)).toEqual({ ok: true, redirected: true })
+    expect(assign).toHaveBeenCalledWith('https://claude.ai/callback?code=c')
+  })
+
+  it('el nombre de la aplicación sale de sus datos públicos', async () => {
+    vi.stubGlobal('fetch', routed({ '/api/auth/oauth2/public-client': { client_name: 'Claude' } }))
+    expect(await createAccountClient().oauthClientName('https://claude.ai/x')).toBe('Claude')
+    vi.stubGlobal('fetch', routed({}))
+    expect(await createAccountClient().oauthClientName('https://claude.ai/x')).toBeNull()
+  })
+
+  it('si falla el consentimiento, da el código del error', async () => {
+    vi.stubGlobal('fetch', routed({}))
+    expect(await createAccountClient().consent(true)).toEqual({ ok: false, code: 'UNKNOWN' })
+  })
+})

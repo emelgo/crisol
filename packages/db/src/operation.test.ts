@@ -118,7 +118,10 @@ describe('operation', () => {
     const tables = await conn.sql<
       { name: string }[]
     >`select tablename as name from pg_tables where schemaname = 'public'`
-    const domain = tables.map((t) => t.name).filter((name) => !notTracked.has(name))
+    // Las de OAuth y sus claves también son de Better Auth
+    const domain = tables
+      .map((t) => t.name)
+      .filter((name) => !notTracked.has(name) && name !== 'jwks' && !name.startsWith('oauth_'))
     expect(domain.sort()).toEqual(Object.keys(TRACKED_TABLES).sort())
   })
 

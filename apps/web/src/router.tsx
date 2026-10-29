@@ -1,5 +1,6 @@
 import { createRootRoute, createRoute, createRouter, type RouterHistory } from '@tanstack/react-router'
 import { Bootstrap } from './routes/bootstrap.tsx'
+import { Consent } from './routes/consent.tsx'
 import { Home } from './routes/home.tsx'
 import { Profile } from './routes/profile.tsx'
 import { NotFound, RootLayout } from './routes/root.tsx'
@@ -13,9 +14,17 @@ const homeRoute = createRoute({ getParentRoute: () => rootRoute, path: '/', comp
 const signInRoute = createRoute({ getParentRoute: () => rootRoute, path: '/entrar', component: SignIn })
 const profileRoute = createRoute({ getParentRoute: () => rootRoute, path: '/perfil', component: Profile })
 const worldsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/mundos', component: Worlds })
+const consentRoute = createRoute({ getParentRoute: () => rootRoute, path: '/oauth/consentimiento', component: Consent })
 const bootstrapRoute = createRoute({ getParentRoute: () => rootRoute, path: '/arranque/$secret', component: Bootstrap })
 
-const routeTree = rootRoute.addChildren([homeRoute, signInRoute, profileRoute, worldsRoute, bootstrapRoute])
+const routeTree = rootRoute.addChildren([
+  homeRoute,
+  signInRoute,
+  profileRoute,
+  worldsRoute,
+  consentRoute,
+  bootstrapRoute
+])
 
 /** Sin historia, usa la del navegador */
 export function createAppRouter(history?: RouterHistory) {

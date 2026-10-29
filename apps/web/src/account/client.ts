@@ -2,6 +2,7 @@
  * Lo que la web necesita de las cuentas. La implementación real usa el cliente de Better Auth y la API del arranque;
  * las pruebas usan account/fake.ts.
  */
+import { oauthProviderClient } from '@better-auth/oauth-provider/client'
 import { createAuthClient } from 'better-auth/react'
 
 export interface Account {
@@ -9,7 +10,8 @@ export interface Account {
   email: string
 }
 
-export type Result = { ok: true } | { ok: false; code: string }
+/** redirected: la página se va a otra dirección (OAuth) y no tiene que navegar */
+export type Result = { ok: true; redirected?: boolean } | { ok: false; code: string }
 
 export interface BootstrapInput {
   secret: string
@@ -24,6 +26,10 @@ export interface AccountClient {
   signOut(): Promise<void>
   rename(name: string): Promise<Result>
   bootstrapInfo(secret: string): Promise<{ organizationName: string } | null>
+  /** El nombre de una aplicación OAuth (Claude…), para la página de consentimiento */
+  oauthClientName(clientId: string): Promise<string | null>
+  /** Permite o no la conexión de la página de consentimiento y vuelve a la aplicación */
+  consent(accept: boolean): Promise<Result>
   redeemBootstrap(input: BootstrapInput): Promise<Result>
 }
 
@@ -34,16 +40,25 @@ export function errorCode(status: number | undefined): string {
   return 'UNKNOWN'
 }
 
+/** Respuesta de Better Auth cuando hay que seguir en otra dirección (un flujo OAuth) */
+const redirectUrl = (data: unknown) =>
+  data && typeof data === 'object' && 'url' in data && typeof data.url === 'string' ? data.url : null
+
 export function createAccountClient(): AccountClient {
-  const auth = createAuthClient({ basePath: '/api/auth' })
+  // El plugin añade la consulta firmada de la página (oauth_query) a las peticiones de entrar y de consentir
+  const auth = createAuthClient({ basePath: '/api/auth', plugins: [oauthProviderClient()] })
   return {
     useAccount() {
       const { data, isPending } = auth.useSession()
       return { account: data ? { name: data.user.name, email: data.user.email } : null, pending: isPending }
     },
     async signIn(email, password) {
-      const { error } = await auth.signIn.email({ email, password })
-      return error ? { ok: false, code: errorCode(error.status) } : { ok: true }
+      const { data, error } = await auth.signIn.email({ email, password })
+      if (error) return { ok: false, code: errorCode(error.status) }
+      // Si se entraba para autorizar una aplicación (OAuth), se sigue con la autorización
+      const next = redirectUrl(data)
+      if (next) window.location.assign(next)
+      return { ok: true, redirected: Boolean(next) }
     },
     async signOut() {
       await auth.signOut()
@@ -55,6 +70,19 @@ export function createAccountClient(): AccountClient {
     async bootstrapInfo(secret) {
       const response = await fetch(`/api/bootstrap/${encodeURIComponent(secret)}`)
       return response.ok ? ((await response.json()) as { organizationName: string }) : null
+    },
+    async oauthClientName(clientId) {
+      const { data } = await auth.$fetch<{ client_name?: string }>('/oauth2/public-client', {
+        query: { client_id: clientId }
+      })
+      return data?.client_name ?? null
+    },
+    async consent(accept) {
+      const { data, error } = await auth.$fetch('/oauth2/consent', { method: 'POST', body: { accept } })
+      if (error) return { ok: false, code: errorCode(error.status) }
+      const next = redirectUrl(data)
+      if (next) window.location.assign(next)
+      return { ok: true, redirected: Boolean(next) }
     },
     async redeemBootstrap(input) {
       const response = await fetch('/api/bootstrap', {

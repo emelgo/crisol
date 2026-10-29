@@ -21,7 +21,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
   }
 }
 
-test('arranque, perfil y mundos, en los dos temas @a11y', async ({ page }) => {
+test('arranque, perfil, mundos y consentimiento, en los dos temas @a11y', async ({ page }) => {
   const conn = connect(e2eDatabaseUrl(), { max: 1 })
   try {
     await resetDatabase(conn.sql)
@@ -50,6 +50,10 @@ test('arranque, perfil y mundos, en los dos temas @a11y', async ({ page }) => {
     await expect(page.getByRole('list', { name: 'Mundos' })).toBeVisible()
     await check()
     await page.getByRole('button', { name: 'Renombrar Eana' }).click()
+    await check()
+    // La página de consentimiento sin consulta firmada: se ve igual, aunque permitir fallaría
+    await page.goto(`/oauth/consentimiento?client_id=${encodeURIComponent('https://claude.ai/oauth/metadatos')}`)
+    await expect(page.getByRole('heading', { name: 'Conectar claude.ai' })).toBeVisible()
     await check()
   } finally {
     await conn.close()

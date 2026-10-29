@@ -5,20 +5,13 @@ import type { FastifyInstance } from 'fastify'
 import type { Auth } from '../auth/auth.ts'
 import { toHeaders } from '../http.ts'
 import { InvalidRequestError } from './context.ts'
-import { organizationActions } from './organizations.ts'
-import type { Implementation } from './registry.ts'
-import { worldActions } from './worlds.ts'
-
-/** Los servicios de todas las acciones del contrato */
-export const IMPLEMENTATIONS: Implementation[] = [...organizationActions, ...worldActions]
+import { implementationsByName } from './implementations.ts'
 
 export function registerActionRoutes(app: FastifyInstance, db: Database, auth: Auth) {
-  const byName = new Map(IMPLEMENTATIONS.map((impl) => [impl.action.name, impl]))
-
   app.get('/api/openapi.json', async () => openApi(ACTIONS))
 
   app.post<{ Params: { name: string } }>('/api/actions/:name', async (request, reply) => {
-    const impl = byName.get(request.params.name)
+    const impl = implementationsByName.get(request.params.name)
     if (!impl) return reply.code(404).send({ code: 'UNKNOWN_ACTION' })
     const session = await auth.api.getSession({ headers: toHeaders(request.headers) })
     if (!session) return reply.code(401).send({ code: 'UNAUTHENTICATED' })

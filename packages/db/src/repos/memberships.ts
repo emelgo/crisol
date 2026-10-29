@@ -1,4 +1,4 @@
-import { asc, eq } from 'drizzle-orm'
+import { and, asc, eq } from 'drizzle-orm'
 import type { Database } from '../client.ts'
 import { organizationMembers, organizations } from '../schema/organizations.ts'
 import { worldMembers, worlds } from '../schema/worlds.ts'
@@ -29,4 +29,14 @@ export function listMemberOrganizations(db: Database, userId: string) {
     .innerJoin(organizations, eq(organizations.id, organizationMembers.organizationId))
     .where(eq(organizationMembers.userId, userId))
     .orderBy(asc(organizations.name))
+}
+
+/** Si la cuenta es propietaria de alguna organización */
+export async function isOwner(db: Database, userId: string): Promise<boolean> {
+  const [found] = await db
+    .select({ id: organizationMembers.id })
+    .from(organizationMembers)
+    .where(and(eq(organizationMembers.userId, userId), eq(organizationMembers.role, 'owner')))
+    .limit(1)
+  return Boolean(found)
 }

@@ -18,8 +18,9 @@ export function SignIn() {
     setBusy(true)
     const result = await accounts.signIn(String(form.get('email')), String(form.get('password')))
     setBusy(false)
-    if (result.ok) await navigate({ to: '/' })
-    else setError(t(`errors.${result.code}`, { defaultValue: t('errors.UNKNOWN') }))
+    if (result.ok) {
+      if (!result.redirected) await navigate({ to: '/' })
+    } else setError(t(`errors.${result.code}`, { defaultValue: t('errors.UNKNOWN') }))
   }
 
   return (

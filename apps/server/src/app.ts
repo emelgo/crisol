@@ -6,6 +6,7 @@ import { registerAuthRoutes } from './auth/routes.ts'
 import { registerBootstrapRoutes } from './bootstrap.ts'
 import { type HealthChecks, registerHealth } from './health.ts'
 import { registerOriginGuard } from './http.ts'
+import { registerMcpRoutes } from './mcp/routes.ts'
 import { registerWeb } from './web.ts'
 
 export interface AppDeps {
@@ -17,6 +18,8 @@ export interface AppDeps {
   webDir?: string
   /** Cuentas y arranque; sin ellas el servidor solo da la salud y la web */
   accounts?: { auth: Auth; db: Database; publicUrl: string }
+  /** El JWKS del propio servidor: con él se monta /mcp */
+  mcpJwksUrl?: string
 }
 
 export function buildApp(deps: AppDeps): FastifyInstance {
@@ -27,6 +30,7 @@ export function buildApp(deps: AppDeps): FastifyInstance {
     registerAuthRoutes(app, deps.accounts.auth)
     registerBootstrapRoutes(app, deps.accounts.db, deps.accounts.auth)
     registerActionRoutes(app, deps.accounts.db, deps.accounts.auth)
+    if (deps.mcpJwksUrl) registerMcpRoutes(app, { ...deps.accounts, jwksUrl: deps.mcpJwksUrl })
   }
   if (deps.webDir) registerWeb(app, deps.webDir)
   return app

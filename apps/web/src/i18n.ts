@@ -37,6 +37,14 @@ export const es = {
     save: 'Guardar',
     cancel: 'Cancelar'
   },
+  consent: {
+    title: 'Conectar {{client}}',
+    body: '{{client}} quiere usar tu cuenta de Crisol: ver y cambiar tus mundos en tu nombre.',
+    history: 'Lo que haga quedará en el historial y podrás deshacerlo.',
+    ownerOnly: 'De momento solo el propietario puede conectar Claude.',
+    allow: 'Permitir',
+    deny: 'No permitir'
+  },
   roles: {
     master: 'Máster',
     owner: 'Propietario',

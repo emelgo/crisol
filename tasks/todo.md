@@ -111,7 +111,7 @@ Comprobación local al acabar cada tarea: `pnpm lint && pnpm typecheck && pnpm t
   - Comprueba: e2e + axe.
   - Archivos: `apps/web/src/{cliente.ts,rutas/mundos.tsx}`, `e2e/mundos.spec.ts`.
 
-- [ ] **11. MCP con OAuth y `listar_mundos`, probado desde claude.ai**
+- [x] **11. MCP con OAuth y `listar_mundos`, probado desde claude.ai** — falta que Enrique lo conecte (punto de control 2)
   - Acepta:
     - Plugins `mcp`, `jwt` y `cimd` de Better Auth, con páginas de entrar y de consentimiento.
     - `/mcp` con Streamable HTTP; sin token responde 401 con los metadatos del recurso.

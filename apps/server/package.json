@@ -17,11 +17,15 @@
     "auth:schema": "auth generate --config better-auth.config.ts --output ../../packages/db/src/schema/auth.ts --yes"
   },
   "dependencies": {
+    "@better-auth/cimd": "catalog:",
     "@better-auth/drizzle-adapter": "catalog:",
+    "@better-auth/mcp": "catalog:",
+    "@better-auth/oauth-provider": "catalog:",
     "@crisol/contracts": "workspace:*",
     "@crisol/db": "workspace:*",
     "@crisol/domain": "workspace:*",
     "@fastify/static": "catalog:",
+    "@modelcontextprotocol/server": "catalog:",
     "better-auth": "catalog:",
     "drizzle-orm": "catalog:",
     "fastify": "catalog:",
@@ -29,6 +33,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@modelcontextprotocol/client": "catalog:",
     "@types/node": "catalog:",
     "@vitest/coverage-v8": "catalog:",
     "auth": "catalog:",

@@ -32,9 +32,16 @@ export async function freshTestDatabase(name: string): Promise<string> {
   return url
 }
 
-/** Vacía todas las tablas de la aplicación (no las de las migraciones), para empezar cada prueba de cero */
+/**
+ * Lo que no se vacía: Better Auth da de alta el recurso MCP una vez por proceso y guarda en memoria su clave de
+ * firma; si se borran con el servidor en marcha, dejan de cuadrar
+ */
+const KEEP = ['jwks', 'oauth_resource']
+
+/** Vacía las tablas de la aplicación (no las de las migraciones ni KEEP), para empezar cada prueba de cero */
 export async function resetDatabase(sql: postgres.Sql): Promise<void> {
   const tables = await sql<{ name: string }[]>`
-    select quote_ident(tablename) as name from pg_tables where schemaname = 'public'`
+    select quote_ident(tablename) as name from pg_tables
+    where schemaname = 'public' and tablename != all(${KEEP})`
   await sql.unsafe(`truncate ${tables.map((t) => t.name).join(', ')} restart identity cascade`)
 }

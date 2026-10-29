@@ -152,6 +152,17 @@ describe('arranque del propietario', () => {
     expect(session.json().user.email).toBe(owner.email)
   })
 
+  it('los formularios urlencoded llegan a Better Auth (OAuth canjea los códigos así)', async () => {
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/auth/oauth2/token',
+      headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      payload: 'grant_type=authorization_code&code=no-vale'
+    })
+    expect(response.statusCode).not.toBe(415)
+    expect(response.json()).toMatchObject({ error: expect.any(String) })
+  })
+
   it('el propietario entra con su contraseña y los intentos fallidos se limitan', async () => {
     const { secret } = await issueBootstrap(conn.db, { organizationName: 'Crisol de Enrique' })
     await post('/api/bootstrap', { secret, ...owner })
