@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
+import { useAnnounce } from '../components/announcer.tsx'
 import { FormError } from '../components/field.tsx'
 import styles from '../components/list.module.css'
 import { summaryOf, undoLayers } from '../summaries.ts'
@@ -110,6 +111,7 @@ function HistoryItem({ entry, undone, date }: { entry: HistoryEntry; undone: boo
   const api = useApi()
   const queryClient = useQueryClient()
   const errorText = useErrorText()
+  const announce = useAnnounce()
   const [conflict, setConflict] = useState<string | null>(null)
   // Lo que hay debajo de un deshacer: deshacerlo lo rehace (si las capas son impares) o lo vuelve a deshacer
   const { depth, root } = entry.action === 'undoOperation' ? undoLayers(entry.details) : { depth: 0, root: entry }
@@ -119,8 +121,11 @@ function HistoryItem({ entry, undone, date }: { entry: HistoryEntry; undone: boo
     onSuccess: async (result) => {
       if (result.status === 'conflict') {
         const values = result.by ? { actor: actorOf(t, result.by), what: summaryOf(t, result.by) } : null
-        if (redo) setConflict(values ? t('history.redoConflict', values) : t('history.redoConflictUnknown'))
-        else setConflict(values ? t('history.conflict', values) : t('history.conflictUnknown'))
+        const text = values
+          ? t(redo ? 'history.redoConflict' : 'history.conflict', values)
+          : t(redo ? 'history.redoConflictUnknown' : 'history.conflictUnknown')
+        setConflict(text)
+        announce(text)
         return
       }
       // Lo deshecho puede tocar cualquier cosa de lo que se ve

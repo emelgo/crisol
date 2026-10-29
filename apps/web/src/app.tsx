@@ -7,6 +7,7 @@ import { AccountScope } from './account/scope.tsx'
 import { type ApiClient, ApiError } from './api/client.ts'
 import { ApiProvider } from './api/context.tsx'
 import { shouldRetry } from './api/errors.ts'
+import { Announcer } from './components/announcer.tsx'
 import type { RealtimeClient } from './realtime/client.ts'
 import { RealtimeProvider } from './realtime/context.tsx'
 import type { createAppRouter } from './router.tsx'
@@ -56,9 +57,11 @@ export function App({
       <AccountsProvider client={accounts}>
         <ApiProvider client={api}>
           <AccountScope>
-            <RealtimeProvider client={realtime}>
-              <RouterProvider router={router} />
-            </RealtimeProvider>
+            <Announcer>
+              <RealtimeProvider client={realtime}>
+                <RouterProvider router={router} />
+              </RealtimeProvider>
+            </Announcer>
           </AccountScope>
         </ApiProvider>
       </AccountsProvider>

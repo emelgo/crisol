@@ -8,6 +8,7 @@ import { ApiError } from '../api/client.ts'
 import { fakeApi } from '../api/fake.ts'
 import { App } from '../app.tsx'
 import { createAppRouter } from '../router.tsx'
+import { announced, inMain } from '../testing.ts'
 
 const ORG = { id: crypto.randomUUID(), name: 'Fateforge', role: 'owner' as const }
 const world: World = { id: crypto.randomUUID(), organizationId: ORG.id, name: 'Eana', role: 'master', version: 1 }
@@ -64,7 +65,13 @@ describe('una campaña y su enlace de invitación', () => {
     expect(screen.getByText('Han entrado 0 con este enlace')).toBeDefined()
     await userEvent.click(screen.getByRole('button', { name: 'Copiar' }))
     expect(writeText).toHaveBeenCalledWith((link as HTMLInputElement).value)
-    expect(await screen.findByText('Copiado')).toBeDefined()
+    expect(await inMain().findByText('Copiado')).toBeDefined()
+    expect(announced()).toBe('Copiado')
+    // Otra vez: el mismo texto, en un nodo nuevo, para que se vuelva a leer
+    const first = screen.getByRole('status').firstElementChild
+    await userEvent.click(screen.getByRole('button', { name: 'Copiar' }))
+    await vi.waitFor(() => expect(screen.getByRole('status').firstElementChild).not.toBe(first))
+    expect(announced()).toBe('Copiado')
   })
 
   it('«Nuevo enlace» avisa antes y cambia el enlace', async () => {
@@ -141,7 +148,8 @@ describe('los miembros de una campaña', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Expulsar a Jugadora' }))
     expect(screen.getByText('Con el enlace actual, Jugadora podría volver a entrar.')).toBeDefined()
     await userEvent.click(screen.getByRole('button', { name: 'Expulsar' }))
-    expect(await screen.findByText('Jugadora ya no está en la campaña.')).toBeDefined()
+    expect(await inMain().findByText('Jugadora ya no está en la campaña.')).toBeDefined()
+    expect(announced()).toBe('Jugadora ya no está en la campaña.')
     expect(memberNames()).toHaveLength(2)
     expect(api.calls).not.toContain('regenerateInvitation')
   })
@@ -151,7 +159,7 @@ describe('los miembros de una campaña', () => {
     const before = ((await screen.findByLabelText('Enlace de invitación')) as HTMLInputElement).value
     await userEvent.click(await screen.findByRole('button', { name: 'Expulsar a Ana' }))
     await userEvent.click(screen.getByRole('button', { name: 'Expulsar y cambiar el enlace' }))
-    expect(await screen.findByText('Ana ya no está en la campaña.')).toBeDefined()
+    expect(await inMain().findByText('Ana ya no está en la campaña.')).toBeDefined()
     expect(api.calls).toContain('regenerateInvitation')
     expect((screen.getByLabelText('Enlace de invitación') as HTMLInputElement).value).not.toBe(before)
   })

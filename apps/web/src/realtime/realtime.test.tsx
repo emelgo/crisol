@@ -7,6 +7,7 @@ import { fakeAccountClient } from '../account/fake.ts'
 import { fakeApi } from '../api/fake.ts'
 import { App } from '../app.tsx'
 import { createAppRouter } from '../router.tsx'
+import { announced, inMain } from '../testing.ts'
 import { fakeRealtime } from './fake.ts'
 
 const ORG = { id: crypto.randomUUID(), name: 'Fateforge', role: 'owner' as const }
@@ -58,15 +59,19 @@ describe('el canal en tiempo real en la web', () => {
   it('el máster ve el aviso de entrada y expulsa desde él', async () => {
     const { api, realtime } = renderAt('/mundos')
     await screen.findByRole('heading', { name: 'Mis mundos' })
+    expect(screen.queryByRole('region', { name: 'Avisos' })).toBeNull()
     act(() => realtime.emit(joined))
-    expect(await screen.findByText('Jugadora ha entrado en La Marca.')).toBeDefined()
+    expect(await inMain().findByText('Jugadora ha entrado en La Marca.')).toBeDefined()
+    expect(announced()).toBe('Jugadora ha entrado en La Marca.')
+    expect(screen.getByRole('region', { name: 'Avisos' }).closest('[aria-live]')).toBeNull()
 
     await userEvent.click(screen.getByRole('button', { name: 'Expulsar a Jugadora' }))
     await userEvent.click(screen.getByRole('button', { name: 'Expulsar' }))
-    expect(await screen.findByText('Jugadora ya no está en la campaña.')).toBeDefined()
+    expect(await inMain().findByText('Jugadora ya no está en la campaña.')).toBeDefined()
+    expect(announced()).toBe('Jugadora ya no está en la campaña.')
     expect(api.calls).toContain('removeMember')
     await userEvent.click(screen.getByRole('button', { name: 'Cerrar el aviso de Jugadora' }))
-    expect(screen.queryByText('Jugadora ya no está en la campaña.')).toBeNull()
+    expect(inMain().queryByText('Jugadora ya no está en la campaña.')).toBeNull()
   })
 
   it('cancelar en el aviso no expulsa; cerrarlo sin más tampoco', async () => {
@@ -76,7 +81,7 @@ describe('el canal en tiempo real en la web', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Expulsar a Jugadora' }))
     await userEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
     await userEvent.click(screen.getByRole('button', { name: 'Cerrar el aviso de Jugadora' }))
-    expect(screen.queryByText('Jugadora ha entrado en La Marca.')).toBeNull()
+    expect(inMain().queryByText('Jugadora ha entrado en La Marca.')).toBeNull()
     expect(api.calls).not.toContain('removeMember')
   })
 
@@ -112,7 +117,8 @@ describe('el canal en tiempo real en la web', () => {
     await screen.findByRole('heading', { name: 'Mis mundos' })
     expect(screen.queryByText('Hay una versión nueva de Crisol.')).toBeNull()
     act(() => realtime.newVersion())
-    expect(await screen.findByText('Hay una versión nueva de Crisol.')).toBeDefined()
+    expect(await inMain().findByText('Hay una versión nueva de Crisol.')).toBeDefined()
+    expect(announced()).toBe('Hay una versión nueva de Crisol.')
     await userEvent.click(screen.getByRole('button', { name: 'Recargar' }))
     expect(reload).toHaveBeenCalledOnce()
     vi.unstubAllGlobals()

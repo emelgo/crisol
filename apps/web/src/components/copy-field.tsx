@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useAnnounce } from './announcer.tsx'
 import form from './form.module.css'
 import styles from './list.module.css'
 
@@ -10,6 +11,7 @@ export function CopyField({ label, value }: { label: string; value: string }) {
 
 function Copyable({ label, value }: { label: string; value: string }) {
   const { t } = useTranslation()
+  const announce = useAnnounce()
   const [copied, setCopied] = useState(false)
   return (
     <>
@@ -24,12 +26,13 @@ function Copyable({ label, value }: { label: string; value: string }) {
           onClick={async () => {
             await navigator.clipboard.writeText(value)
             setCopied(true)
+            announce(t('invitation.copied'))
           }}
         >
           {t('invitation.copy')}
         </button>
       </div>
-      {copied && <p role="status">{t('invitation.copied')}</p>}
+      {copied && <p>{t('invitation.copied')}</p>}
     </>
   )
 }

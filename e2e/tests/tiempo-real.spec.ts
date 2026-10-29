@@ -14,7 +14,8 @@ test('el máster ve entrar a la jugadora sin recargar, la expulsa desde el aviso
 
   const player = await newPlayer(browser, link)
   // Sin recargar: el aviso, la lista y la cuenta del enlace
-  await expect(page.getByText('Jugadora ha entrado en La Marca.')).toBeVisible()
+  await expect(page.getByRole('main').getByText('Jugadora ha entrado en La Marca.')).toBeVisible()
+  await expect(page.getByRole('status')).toHaveText('Jugadora ha entrado en La Marca.')
   await expect(members).toHaveCount(2)
   await expect(page.getByText('Ha entrado 1 con este enlace')).toBeVisible()
 
@@ -42,7 +43,7 @@ test('una pestaña abierta antes de un despliegue avisa de que hay una versión 
     })
   })
   await freshOwner(page)
-  await expect(page.getByText('Hay una versión nueva de Crisol.')).toBeVisible()
+  await expect(page.getByRole('main').getByText('Hay una versión nueva de Crisol.')).toBeVisible()
   const reloaded = page.waitForEvent('load')
   await page.getByRole('button', { name: 'Recargar' }).click()
   await reloaded

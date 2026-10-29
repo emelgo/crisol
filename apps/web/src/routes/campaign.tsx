@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
+import { useAnnounce } from '../components/announcer.tsx'
 import { CopyField } from '../components/copy-field.tsx'
 import { FormError } from '../components/field.tsx'
 import form from '../components/form.module.css'
@@ -65,6 +66,7 @@ function MembersPanel({ campaign }: { campaign: Campaign }) {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const errorText = useErrorText()
+  const announce = useAnnounce()
   const campaignId = campaign.id
   const key = ['members', campaignId]
   const members = useQuery({ queryKey: key, queryFn: () => api.call('listMembers', { campaignId }) })
@@ -120,6 +122,7 @@ function MembersPanel({ campaign }: { campaign: Campaign }) {
                       onSuccess: () => {
                         setConfirmingRemove(null)
                         setRemovedName(member.name)
+                        announce(t('members.removed', { name: member.name }))
                       }
                     }
                   )
@@ -130,7 +133,7 @@ function MembersPanel({ campaign }: { campaign: Campaign }) {
           </li>
         ))}
       </ul>
-      {removedName && <p role="status">{t('members.removed', { name: removedName })}</p>}
+      {removedName && <p>{t('members.removed', { name: removedName })}</p>}
 
       {campaign.role === 'player' &&
         (confirmingLeave ? (

@@ -7,6 +7,7 @@ import { fakeAccountClient } from '../account/fake.ts'
 import { fakeApi } from '../api/fake.ts'
 import { App } from '../app.tsx'
 import { createAppRouter } from '../router.tsx'
+import { announced, inMain } from '../testing.ts'
 
 const owner: Organization = { id: crypto.randomUUID(), name: 'Fateforge', role: 'owner' }
 
@@ -56,7 +57,8 @@ describe('los ajustes de IA', () => {
   it('cambiar el modo se guarda al momento', async () => {
     const { api } = renderAt('/ia')
     await userEvent.click(await screen.findByRole('radio', { name: /^Solo lectura/ }))
-    expect(await screen.findByText('Guardado')).toBeDefined()
+    expect(await inMain().findByText('Guardado')).toBeDefined()
+    expect(announced()).toBe('Guardado')
     expect(screen.getByRole<HTMLInputElement>('radio', { name: /^Solo lectura/ }).checked).toBe(true)
     expect(api.calls).toContain('setAiMode')
     expect(await api.client.call('getAiSettings', {})).toMatchObject({ mode: 'readOnly' })

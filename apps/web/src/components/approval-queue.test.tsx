@@ -8,6 +8,7 @@ import { fakeApi } from '../api/fake.ts'
 import { App } from '../app.tsx'
 import { fakeRealtime } from '../realtime/fake.ts'
 import { createAppRouter } from '../router.tsx'
+import { announced, inMain } from '../testing.ts'
 
 const ORG = { id: crypto.randomUUID(), name: 'Fateforge', role: 'owner' as const }
 const world: World = { id: crypto.randomUUID(), organizationId: ORG.id, name: 'Eana', role: 'master', version: 1 }
@@ -45,10 +46,11 @@ const renderAt = (path: string, approvals: Approval[] = []) => {
 const queue = () => screen.queryByRole('heading', { name: 'Claude espera tu aprobación' })
 
 describe('la cola de aprobación', () => {
-  it('sin nada pendiente, no se ve', async () => {
+  it('sin nada pendiente, no se ve ni es una región', async () => {
     renderAt('/mundos')
     await screen.findByRole('heading', { level: 1, name: 'Mis mundos' })
     expect(queue()).toBeNull()
+    expect(screen.queryByRole('region')).toBeNull()
   })
 
   it('aparece sin recargar cuando el canal avisa, en cualquier página, con la frase y el detalle', async () => {
@@ -57,7 +59,11 @@ describe('la cola de aprobación', () => {
     api.approvals.push(request())
     act(() => realtime.emit({ type: 'changed', what: 'approvals' }))
     expect(await screen.findByRole('heading', { name: 'Claude espera tu aprobación' })).toBeDefined()
-    expect(screen.getByText('Claude quiere generar un enlace nuevo para La Marca')).toBeDefined()
+    expect(inMain().getByText('Claude quiere generar un enlace nuevo para La Marca')).toBeDefined()
+    expect(announced()).toBe('Claude quiere generar un enlace nuevo para La Marca')
+    // Una región con nombre, pero no viva: se leería entera, con sus botones
+    const region = screen.getByRole('region', { name: 'Claude espera tu aprobación' })
+    expect(region.closest('[aria-live]')).toBeNull()
     await userEvent.click(screen.getByText('Detalle'))
     expect(screen.getByText('Herramienta: enlace_invitacion')).toBeDefined()
     expect(screen.getByText(/Lo pidió el 29 oct 2026.*Caduca el 30 oct 2026/)).toBeDefined()
@@ -67,7 +73,8 @@ describe('la cola de aprobación', () => {
   it('aprobar: se hace, lo dice y la cola desaparece', async () => {
     const { api } = renderAt(`/mundos/${world.id}`, [request()])
     await userEvent.click(await screen.findByRole('button', { name: 'Aprobar: generar un enlace nuevo para La Marca' }))
-    expect(await screen.findByText('Hecho: generar un enlace nuevo para La Marca')).toBeDefined()
+    expect(await inMain().findByText('Hecho: generar un enlace nuevo para La Marca')).toBeDefined()
+    expect(announced()).toBe('Hecho: generar un enlace nuevo para La Marca')
     await vi.waitFor(() => expect(queue()).toBeNull())
     expect(api.calls).toContain('approve')
   })
@@ -75,7 +82,8 @@ describe('la cola de aprobación', () => {
   it('rechazar: no se hace y lo dice', async () => {
     const { api } = renderAt('/mundos', [request({ action: 'createWorld', input: { name: 'Otro' }, details: {} })])
     await userEvent.click(await screen.findByRole('button', { name: 'Rechazar: crear el mundo «Otro»' }))
-    expect(await screen.findByText('Rechazado: crear el mundo «Otro»')).toBeDefined()
+    expect(await inMain().findByText('Rechazado: crear el mundo «Otro»')).toBeDefined()
+    expect(announced()).toBe('Rechazado: crear el mundo «Otro»')
     expect(api.approvals[0]?.status).toBe('rejected')
   })
 

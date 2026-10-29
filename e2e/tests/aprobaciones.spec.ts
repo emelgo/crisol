@@ -38,7 +38,7 @@ test('Claude crea una campaña sin preguntar; regenerar el enlace aparece en la 
   await expect(queue.getByText('Herramienta: enlace_invitacion')).toBeVisible()
 
   await queue.getByRole('button', { name: 'Aprobar: generar un enlace nuevo para La Marca' }).click()
-  await expect(page.getByText('Hecho: generar un enlace nuevo para La Marca')).toBeVisible()
+  await expect(page.getByRole('main').getByText('Hecho: generar un enlace nuevo para La Marca')).toBeVisible()
   const result = await asked
   const url = String(result.structuredContent?.url)
   expect(url).not.toBe(link)
@@ -59,7 +59,7 @@ test('rechazado, no se hace; en solo lectura, Claude ya no cambia nada', async (
   const asked = claude.call('enlace_invitacion', { campaignId, change: 'close' })
   const queue = page.getByRole('region', { name: 'Claude espera tu aprobación' })
   await queue.getByRole('button', { name: 'Rechazar: cerrar las invitaciones de La Marca' }).click()
-  await expect(page.getByText('Rechazado: cerrar las invitaciones de La Marca')).toBeVisible()
+  await expect(page.getByRole('main').getByText('Rechazado: cerrar las invitaciones de La Marca')).toBeVisible()
   const rejected = await asked
   expect(rejected.isError).toBe(true)
   expect(rejected.text).toMatch(/^REJECTED/)
@@ -70,7 +70,7 @@ test('rechazado, no se hace; en solo lectura, Claude ya no cambia nada', async (
     'Rechazado: cerrar las invitaciones de La Marca'
   )
   await page.getByRole('radio', { name: /^Solo lectura/ }).check()
-  await expect(page.getByText('Guardado')).toBeVisible()
+  await expect(page.getByRole('status')).toHaveText('Guardado')
   const refused = await claude.call('crear_mundo', { name: 'Otro' })
   expect(refused.text).toMatch(/^READ_ONLY/)
   expect((await claude.call('listar_mundos')).structuredContent).toMatchObject({

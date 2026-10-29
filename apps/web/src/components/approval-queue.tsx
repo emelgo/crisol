@@ -1,12 +1,13 @@
 import type { Approval } from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { TFunction } from 'i18next'
-import { useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
 import { useCodeText, useErrorText } from '../api/errors.ts'
 import { requestSummary } from '../summaries.ts'
+import { useAnnounce } from './announcer.tsx'
 import { FormError } from './field.tsx'
 import form from './form.module.css'
 import styles from './list.module.css'
@@ -35,23 +36,39 @@ export function outcomeText(t: TFunction, codeText: (code: string) => string, ap
 /** Lo que Claude espera que apruebes: en cualquier página, mientras haya algo pendiente, sin recargar */
 export function ApprovalQueue() {
   const { t } = useTranslation()
+  const announce = useAnnounce()
   const approvals = useApprovals()
   const [outcome, setOutcome] = useState<string | null>(null)
   const pending = approvals.data?.pending ?? []
+  const titleId = useId()
+
+  // Lo que llega nuevo se anuncia (la cola no es una región viva: se leería entera con sus botones)
+  const seen = useRef(new Set<string>())
+  useEffect(() => {
+    const fresh = (approvals.data?.pending ?? []).filter((approval) => !seen.current.has(approval.id))
+    for (const approval of fresh) seen.current.add(approval.id)
+    if (fresh.length > 0) announce(fresh.map((a) => t('approvals.request', { what: requestSummary(t, a) })).join('. '))
+  }, [approvals.data, announce, t])
+
+  const decided = (text: string) => {
+    setOutcome(text)
+    announce(text)
+  }
+
   return (
-    <section aria-label={t('approvals.title')} aria-live="polite" className={notices.region}>
+    <>
       {pending.length > 0 && (
-        <>
-          <h2>{t('approvals.title')}</h2>
+        <section aria-labelledby={titleId} className={notices.region}>
+          <h2 id={titleId}>{t('approvals.title')}</h2>
           <ul className={styles.list} aria-label={t('approvals.listLabel')}>
             {pending.map((approval) => (
-              <ApprovalItem key={approval.id} approval={approval} onDecided={setOutcome} />
+              <ApprovalItem key={approval.id} approval={approval} onDecided={decided} />
             ))}
           </ul>
-        </>
+        </section>
       )}
-      {outcome && <p role="status">{outcome}</p>}
-    </section>
+      {outcome && <p className={notices.region}>{outcome}</p>}
+    </>
   )
 }
 

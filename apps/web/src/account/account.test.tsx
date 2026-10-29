@@ -6,6 +6,7 @@ import { ApiError } from '../api/client.ts'
 import { fakeApi } from '../api/fake.ts'
 import { App } from '../app.tsx'
 import { createAppRouter } from '../router.tsx'
+import { announced, inMain } from '../testing.ts'
 import { fakeAccountClient } from './fake.ts'
 
 const renderAt = (path: string, fake = fakeAccountClient()) => {
@@ -77,7 +78,8 @@ describe('perfil y salir', () => {
     renderAt('/perfil', signedIn())
     await fill('Nombre', 'Enrique M.')
     await userEvent.click(screen.getByRole('button', { name: 'Guardar' }))
-    expect(await screen.findByText('Guardado')).toBeDefined()
+    expect(await inMain().findByText('Guardado')).toBeDefined()
+    expect(announced()).toBe('Guardado')
     expect(screen.getByRole('link', { name: 'Enrique M.' })).toBeDefined()
   })
 

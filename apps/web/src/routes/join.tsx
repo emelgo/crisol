@@ -4,6 +4,7 @@ import { type FormEvent, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { JoinResult } from '../account/client.ts'
 import { useAccounts } from '../account/context.tsx'
+import { useAnnounce } from '../components/announcer.tsx'
 import { Field, FormError } from '../components/field.tsx'
 import form from '../components/form.module.css'
 import list from '../components/list.module.css'
@@ -21,6 +22,7 @@ export function Join() {
   const { account, pending } = accounts.useAccount()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const announce = useAnnounce()
   const info = useQuery({ queryKey: ['invitation-info', secret], queryFn: () => accounts.invitationInfo(secret) })
   const [error, setError] = useState<string | null>(null)
   const [isMaster, setIsMaster] = useState(false)
@@ -54,6 +56,7 @@ export function Join() {
     }
     if (result.status === 'master') {
       setIsMaster(true)
+      announce(t('join.isMaster'))
       return
     }
     await queryClient.invalidateQueries()
@@ -82,7 +85,7 @@ export function Join() {
           >
             {t('join.confirm', { campaign: campaignName })}
           </button>
-          {isMaster && <p role="status">{t('join.isMaster')}</p>}
+          {isMaster && <p>{t('join.isMaster')}</p>}
         </>
       ) : (
         <WithoutSession secret={secret} onJoined={after} onBusy={() => setBusy(true)} busy={busy} />
