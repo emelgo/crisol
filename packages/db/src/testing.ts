@@ -30,6 +30,5 @@ export async function freshTestDatabase(name: string): Promise<string> {
 export async function resetDatabase(sql: postgres.Sql): Promise<void> {
   const tables = await sql<{ name: string }[]>`
     select quote_ident(tablename) as name from pg_tables where schemaname = 'public'`
-  if (tables.length === 0) return
   await sql.unsafe(`truncate ${tables.map((t) => t.name).join(', ')} restart identity cascade`)
 }
