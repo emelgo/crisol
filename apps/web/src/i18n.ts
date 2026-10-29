@@ -140,6 +140,11 @@ export const es = {
       deleteCampaign: 'borró la campaña «{{name}}» de {{world}}',
       restoreWorld: 'restauró el mundo «{{name}}»',
       restoreCampaign: 'restauró la campaña «{{name}}» de {{world}}',
+      createPage: 'creó la página «{{title}}»',
+      createSubpage: 'creó la página «{{title}}» dentro de «{{parent}}»',
+      updatePage: 'renombró la página «{{from}}» a «{{to}}»',
+      movePage: 'movió «{{title}}» dentro de «{{parent}}»',
+      movePageToTop: 'movió «{{title}}» al primer nivel',
       unknown: 'hizo un cambio ({{action}})'
     }
   },
@@ -185,6 +190,11 @@ export const es = {
       deleteCampaign: 'borrar la campaña «{{name}}» de {{world}}',
       restoreWorld: 'restaurar el mundo «{{name}}»',
       restoreCampaign: 'restaurar la campaña «{{name}}» de {{world}}',
+      createPage: 'crear la página «{{title}}»',
+      createSubpage: 'crear la página «{{title}}» dentro de «{{parent}}»',
+      updatePage: 'renombrar la página «{{from}}» a «{{to}}»',
+      movePage: 'mover «{{title}}» dentro de «{{parent}}»',
+      movePageToTop: 'mover «{{title}}» al primer nivel',
       unknown: 'hacer un cambio ({{action}})'
     }
   },

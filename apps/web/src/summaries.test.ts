@@ -1,0 +1,52 @@
+import { describe, expect, it } from 'vitest'
+import { i18next } from './i18n.ts'
+import { requestSummary, summaryOf } from './summaries.ts'
+
+const t = i18next.t.bind(i18next)
+
+describe('las frases de la wiki', () => {
+  it('en el historial', () => {
+    expect(summaryOf(t, { action: 'createPage', details: { title: 'Lugares', parent: null } })).toBe(
+      'creó la página «Lugares»'
+    )
+    expect(summaryOf(t, { action: 'createPage', details: { title: 'Costa Gris', parent: 'Lugares' } })).toBe(
+      'creó la página «Costa Gris» dentro de «Lugares»'
+    )
+    expect(summaryOf(t, { action: 'updatePage', details: { from: 'Puerto', to: 'Puerto Ceniza' } })).toBe(
+      'renombró la página «Puerto» a «Puerto Ceniza»'
+    )
+    expect(summaryOf(t, { action: 'movePage', details: { title: 'Maela Varn', parent: 'Personajes' } })).toBe(
+      'movió «Maela Varn» dentro de «Personajes»'
+    )
+    expect(summaryOf(t, { action: 'movePage', details: { title: 'Lugares', parent: null } })).toBe(
+      'movió «Lugares» al primer nivel'
+    )
+  })
+
+  it('lo que pide Claude, con los títulos de lo que toca', () => {
+    expect(
+      requestSummary(t, {
+        action: 'movePage',
+        input: { pageId: 'p', parentId: 'q' },
+        details: { page: 'Maela Varn', parent: 'Personajes' }
+      })
+    ).toBe('mover «Maela Varn» dentro de «Personajes»')
+    expect(
+      requestSummary(t, { action: 'movePage', input: { pageId: 'p', parentId: null }, details: { page: 'Lugares' } })
+    ).toBe('mover «Lugares» al primer nivel')
+    expect(
+      requestSummary(t, {
+        action: 'updatePage',
+        input: { pageId: 'p', title: 'Puerto Ceniza' },
+        details: { page: 'Puerto' }
+      })
+    ).toBe('renombrar la página «Puerto» a «Puerto Ceniza»')
+    expect(
+      requestSummary(t, {
+        action: 'createPage',
+        input: { worldId: 'w', title: 'Costa Gris', parentId: 'q' },
+        details: { world: 'Eana', parent: 'Lugares' }
+      })
+    ).toBe('crear la página «Costa Gris» dentro de «Lugares»')
+  })
+})

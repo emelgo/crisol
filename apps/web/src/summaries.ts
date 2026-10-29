@@ -52,6 +52,17 @@ export function summaryOf(
       return say('restoreWorld', { name: text(details.name) })
     case 'restoreCampaign':
       return say('restoreCampaign', { name: text(details.name), world: text(details.world) })
+    // De la wiki: lo hecho guarda los títulos; lo que pide la IA trae su entrada y los nombres (page, parent)
+    case 'createPage':
+      return details.parent
+        ? say('createSubpage', { title: text(details.title), parent: text(details.parent) })
+        : say('createPage', { title: text(details.title) })
+    case 'updatePage':
+      return say('updatePage', { from: text(details.from ?? details.page), to: text(details.to ?? details.title) })
+    case 'movePage': {
+      const title = text(details.page ?? details.title)
+      return details.parent ? say('movePage', { title, parent: text(details.parent) }) : say('movePageToTop', { title })
+    }
     default:
       return say('unknown', { action })
   }
