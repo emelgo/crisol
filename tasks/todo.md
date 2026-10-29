@@ -37,7 +37,7 @@ Cada vía nueva por la que salen datos amplía `@fugas` en la misma tarea.
   - Archivos: `apps/web/src/wiki/{tree,page}.tsx` (+ módulos CSS), `apps/web/src/router.tsx`, `apps/web/src/i18n.ts`,
     `e2e/tests/wiki.spec.ts`.
 
-- [ ] **3. Propiedades, alias, etiquetas e icono**
+- [x] **3. Propiedades, alias, etiquetas e icono** — hecha. Pulsar una etiqueta para buscar queda para la tarea 20.
   - Acepta:
     - Las propiedades son de tipo texto, número, sí/no, lista o enlace a página, y se ordenan a mano. `alias`,
       `etiquetas` (con jerarquía por «/») y `resumen` son reservadas.

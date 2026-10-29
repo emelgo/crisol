@@ -212,9 +212,9 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   3. ~~Spec~~: aprobada.
   4. ~~Diseño~~: aprobado.
   5. ~~`/plan`~~: aprobado.
-  6. **`/build` tarea a tarea** (`tasks/todo.md`), con `/agent-skills:review` y `/ship`, como en el módulo 0. Hechas la
-     1 y la 2; **siguen la 3** (propiedades, alias, etiquetas e icono), **la 4** (papelera) **y la 5** (pestañas,
-     marcadores y navegación). Después, el punto de control 1 con Enrique en staging.
+  6. **`/build` tarea a tarea** (`tasks/todo.md`), con `/agent-skills:review` y `/ship`, como en el módulo 0. Hechas de
+     la 1 a la 3; **siguen la 4** (papelera) **y la 5** (pestañas, marcadores y navegación). Después, el punto de control
+     1 con Enrique en staging.
 - **2026-10-29 — Módulo 1, tarea 1: páginas y árbol en la API.**
   - La tabla `pages` tiene historial y su orden es una clave fraccionaria (`packages/domain/src/order.ts`, collation
     "C"). Mover solo escribe la fila que se mueve.
@@ -246,6 +246,24 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   - Desde el mundo hay un enlace «Wiki de Eana».
   - Hay e2e de crear, renombrar, recolocar con el teclado y arrastrando, y recargar. Otra comprueba el cajón, y otra
     pasa axe en los dos temas y en el móvil.
+- **2026-10-29 — Módulo 1, tarea 3: propiedades, alias, etiquetas e icono.** Desplegada la 2 en staging (health 200,
+  sin errores).
+  - Las propiedades son de tipo texto, número, sí/no, lista o páginas, en el orden que elige el máster
+    (`setPageProperties`).
+    - Las reglas, en `packages/domain/src/properties.ts`: el nombre no se repite (sin mirar mayúsculas), y `alias` y
+      `etiquetas` son listas y `resumen` es texto. Una etiqueta no lleva espacios y usa «/» para la jerarquía.
+    - Las de tipo páginas solo enlazan páginas de la misma wiki, fuera de la papelera.
+    - En el historial queda qué propiedades cambiaron, y deshacer las devuelve.
+  - El icono es un emoji (`updatePage` con `icon`). Se elige entre 16 habituales o se escribe cualquier otro, y se
+    quita con null. La caja sigue el patrón de despliegue del menú de la cuenta.
+  - Hay un panel de etiquetas (`/mundos/:worldId/etiquetas`, `listTags`): cada madre cuenta también las páginas de sus
+    hijas. Pulsar una etiqueta para buscar llega con la búsqueda (tarea 20).
+  - El editor de propiedades:
+    - tiene un botón para añadir cada reservada, y se sube, se baja y se quita;
+    - un número que no lo es no se guarda, y lo dice;
+    - las de tipo páginas se eligen por el título, con los títulos de `listPageTree` hasta 6 niveles, hasta que lleguen
+      los enlaces (tarea 13).
+  - Los desplegables y las áreas de texto de los formularios tienen ya el estilo de los campos.
 - Queda una ventana pequeña en el tiempo real: lo que cambie entre la primera carga de una página y la conexión del
   canal no se ve hasta volver a la pestaña. Taparla costaría volver a pedirlo todo al conectar la primera vez.
 - **Pendientes de permiso de Enrique:**
@@ -268,7 +286,7 @@ Estados: pendiente · en curso · hecho · descartado.
 | # | Módulo | Estado | REA principal |
 |---|---|---|---|
 | 0 | **Fundación**: monorepo, CI, despliegue, cuentas, organizaciones, mundos, campañas, roles, historial y deshacer, esqueleto del MCP | **hecho** (2026-10-29; Discord y Google, pospuestos) | Foundry: modelo de documentos y permisos; DDB: campañas e invitaciones |
-| 1 | **Wiki**: páginas y subpáginas, editor de bloques, enlaces, menciones, vista previa, propiedades, secretos, búsqueda, marcadores, etiquetas, versiones, recursos y archivos, **hojas con estilo** (tipo Homebrewery, con PDF), exportación MD, sus herramientas MCP | en curso (construcción: tareas 1 y 2 de 26 hechas) | Foundry: Journal; DDB: contenido y referencias; Homebrewery (MIT): formato de hoja y descarga |
+| 1 | **Wiki**: páginas y subpáginas, editor de bloques, enlaces, menciones, vista previa, propiedades, secretos, búsqueda, marcadores, etiquetas, versiones, recursos y archivos, **hojas con estilo** (tipo Homebrewery, con PDF), exportación MD, sus herramientas MCP | en curso (construcción: tareas 1 a 3 de 26 hechas) | Foundry: Journal; DDB: contenido y referencias; Homebrewery (MIT): formato de hoja y descarga |
 | 2 | Tipos de página, plantillas y formularios nativos; consultas (en lugar de Dataview y Bases) | pendiente | Foundry: tipos de documento |
 | 3 | Sistemas de reglas, fichas de personaje (creación, subida de nivel), dados y dados 3D | pendiente | DDB: creador y hoja; Foundry: dnd5e, DataModel e instalar y crear sistemas |
 | 4 | Compendios, bestiario, statblocks, biblioteca | pendiente | Foundry: compendium packs; DDB: listados |
