@@ -6,6 +6,10 @@ español con Enrique.
 
 ## Dónde mirar
 
+- **Al empezar una sesión, lee `docs/modulos.md` § «Dónde estamos»**: dice qué se hizo y cuál es el siguiente paso.
+  Al acabar, actualízalo.
+- La memoria general del VPS (servicios, REA, Playwright, Dex, avisos MCP…) está en
+  `~/.claude/projects/-home-admin/memory/` (índice en `MEMORY.md`); la de este proyecto apunta allí.
 - `docs/modulos.md`: catálogo de módulos, orden y estado. Se va módulo a módulo y alguno puede descartarse.
 - `docs/inventario.md`: todo lo que hace el Crisol actual. Antes de especificar un módulo, repásalo para no olvidar nada.
 - `docs/adr/`: decisiones de arquitectura (empieza por `0001-arquitectura.md`). Una decisión nueva → un ADR nuevo.
