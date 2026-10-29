@@ -1,4 +1,6 @@
 export * from './ai-modes.ts'
+export * from './order.ts'
 export * from './policy.ts'
 export * from './retention.ts'
+export * from './tree.ts'
 export * from './undo.ts'

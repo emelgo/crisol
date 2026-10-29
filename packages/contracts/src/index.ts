@@ -4,6 +4,7 @@ import { listHistory, undoOperation } from './history.ts'
 import { getInvitation, regenerateInvitation, setInvitationsOpen } from './invitations.ts'
 import { leaveCampaign, listMembers, removeMember } from './members.ts'
 import { listOrganizations } from './organizations.ts'
+import { createPage, getPage, listPageChildren, listPageTree, movePage, updatePage } from './pages.ts'
 import { deleteCampaign, deleteWorld, listTrash, restoreCampaign, restoreWorld } from './trash.ts'
 import { createWorld, listWorlds, renameWorld } from './worlds.ts'
 
@@ -15,6 +16,7 @@ export * from './invitations.ts'
 export * from './members.ts'
 export * from './openapi.ts'
 export * from './organizations.ts'
+export * from './pages.ts'
 export type * from './realtime.ts'
 export * from './trash.ts'
 export * from './worlds.ts'
@@ -47,7 +49,13 @@ export const ACTIONS = [
   setAiMode,
   listApprovals,
   approve,
-  reject
+  reject,
+  createPage,
+  updatePage,
+  movePage,
+  getPage,
+  listPageChildren,
+  listPageTree
 ]
 
 /** Las acciones por nombre, solo como tipo: la web las usa sin cargar zod */
@@ -79,4 +87,10 @@ export type Actions = {
   listApprovals: typeof listApprovals
   approve: typeof approve
   reject: typeof reject
+  createPage: typeof createPage
+  updatePage: typeof updatePage
+  movePage: typeof movePage
+  getPage: typeof getPage
+  listPageChildren: typeof listPageChildren
+  listPageTree: typeof listPageTree
 }

@@ -23,6 +23,7 @@ function changedBy(message: RealtimeMessage): QueryKey[] {
     case 'changed':
       if (message.what === 'worlds' || message.what === 'approvals') return [[message.what]]
       if (message.what === 'campaigns') return [['campaigns', message.worldId]]
+      if (message.what === 'pages') return [['pages', message.worldId]]
       return [[message.what, message.campaignId]]
     case 'joined':
       return [

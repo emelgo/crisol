@@ -261,19 +261,32 @@ describe('conector MCP con OAuth', () => {
     await Promise.all(clients.map((client) => client.close()))
   })
 
+  /** Una acción de la API con la sesión del máster (lo que aún no tiene herramienta, o aprobar) */
+  const api = async <T = Record<string, unknown>>(cookie: string, name: string, body: Record<string, unknown>) => {
+    const response = await fetch(new URL(`/api/actions/${name}`, BASE), {
+      method: 'POST',
+      headers: { cookie, origin: BASE, 'content-type': 'application/json' },
+      body: JSON.stringify(body)
+    })
+    return (await response.json()) as T
+  }
+
   it('cada herramienta en cada modo: leer siempre; lo demás se hace, espera o no se hace', async () => {
-    const { userId, call } = await connected()
+    const { userId, cookie, call } = await connected()
     const world = (await call<World>('crear_mundo', { name: 'Eana' })).data
     const campaign = (await call<Campaign>('crear_campana', { worldId: world.id, name: 'La Marca' })).data
     const history = (await call<History>('ver_historial', { worldId: world.id })).data
     const operationId = history.entries[0]?.id
+    const page = await api<{ id: string }>(cookie, 'createPage', { worldId: world.id, title: 'Lugares' })
     const cases: Array<[string, Record<string, unknown>, 'read' | 'write' | 'players' | 'delete']> = [
       ['listar_mundos', {}, 'read'],
       ['ver_campana', { campaignId: campaign.id }, 'read'],
       ['ver_historial', { worldId: world.id }, 'read'],
       ['pendientes', {}, 'read'],
       ['enlace_invitacion', { campaignId: campaign.id }, 'read'],
+      ['ver_arbol', { worldId: world.id }, 'read'],
       ['crear_mundo', { name: 'Otro' }, 'write'],
+      ['mover_pagina', { pageId: page.id, parentId: null }, 'write'],
       ['crear_campana', { worldId: world.id, name: 'Otra' }, 'write'],
       ['enlace_invitacion', { campaignId: campaign.id, change: 'regenerate' }, 'players'],
       ['enlace_invitacion', { campaignId: campaign.id, change: 'close' }, 'players'],
@@ -338,6 +351,32 @@ describe('conector MCP con OAuth', () => {
       ['createCampaign', 'ai', 'crear_campana'],
       ['createWorld', 'ai', 'crear_mundo']
     ])
+  })
+
+  it('Claude ve el árbol de la wiki y recoloca páginas; en modo asistente espera, con los títulos en la cola', async () => {
+    const { userId, cookie, call } = await connected()
+    const world = (await call<World>('crear_mundo', { name: 'Eana' })).data
+    const people = await api<{ id: string }>(cookie, 'createPage', { worldId: world.id, title: 'Personajes' })
+    const places = await api<{ id: string }>(cookie, 'createPage', { worldId: world.id, title: 'Lugares' })
+    const maela = await api<{ id: string }>(cookie, 'createPage', {
+      worldId: world.id,
+      title: 'Maela Varn',
+      parentId: places.id
+    })
+    type Tree = { pages: { title: string; level: number }[] }
+    const tree = async () =>
+      (await call<Tree>('ver_arbol', { worldId: world.id, levels: 3 })).data.pages.map((p) => `${p.level} ${p.title}`)
+    expect(await tree()).toEqual(['1 Personajes', '1 Lugares', '2 Maela Varn'])
+
+    await aiRepo.setAiMode(conn.db, userId, 'assistant')
+    const asked = await call('mover_pagina', { pageId: maela.id, parentId: people.id })
+    expect(asked.text).toMatch(/^PENDING_APPROVAL/)
+    const { pending } = (await call<Approvals>('pendientes')).data
+    expect(pending[0]).toMatchObject({ action: 'movePage', details: { page: 'Maela Varn', parent: 'Personajes' } })
+    expect(await api(cookie, 'approve', { approvalId: pending[0]?.id })).toMatchObject({ status: 'done' })
+    expect(await tree()).toEqual(['1 Personajes', '2 Maela Varn', '1 Lugares'])
+    const { entries } = (await call<History>('ver_historial', { worldId: world.id })).data
+    expect(entries[0]).toMatchObject({ action: 'movePage', via: 'ai', tool: 'mover_pagina' })
   })
 
   it('lo de otra organización no existe para Claude: ni se ve, ni se pide, ni se deshace', async () => {

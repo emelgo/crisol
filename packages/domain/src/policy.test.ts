@@ -42,6 +42,10 @@ const master = actor({
   campaigns: new Map([[CAMPAIGN, { worldId: WORLD, role: 'master' }]])
 })
 const campaign = { campaignId: CAMPAIGN, worldId: WORLD }
+// Propietario de la organización sin administrar el mundo
+const ownerOnly = actor({ organizations: new Map([[ORG, 'owner']]) })
+// La wiki: el mundo con su organización (la del mundo, nunca la que diga quien pide)
+const wiki = { worldId: WORLD, organizationId: ORG }
 const otherCampaign = { campaignId: OTHER_CAMPAIGN, worldId: WORLD }
 
 type Outcome = 'permite' | 'prohíbe' | 'no lo ve'
@@ -139,7 +143,15 @@ describe('authorize', () => {
       { organizationId: ORG },
       'permite'
     ],
-    ['un miembro no la ve', member, 'organization.trash', { organizationId: ORG }, 'prohíbe']
+    ['un miembro no la ve', member, 'organization.trash', { organizationId: ORG }, 'prohíbe'],
+    ['el máster lee la wiki de su mundo', owner, 'page.read', wiki, 'permite'],
+    ['el máster escribe en la wiki de su mundo', owner, 'page.write', wiki, 'permite'],
+    ['el propietario lee la wiki aunque no administre el mundo', ownerOnly, 'page.read', wiki, 'permite'],
+    ['el propietario escribe en ella', ownerOnly, 'page.write', wiki, 'permite'],
+    ['un jugador no ve la wiki del mundo en el que juega (hasta el módulo 5)', player, 'page.read', wiki, 'no lo ve'],
+    ['el máster de una campaña tampoco', master, 'page.read', wiki, 'no lo ve'],
+    ['un miembro sin campaña, tampoco', member, 'page.write', wiki, 'no lo ve'],
+    ['nadie de otra organización', outsider, 'page.read', wiki, 'no lo ve']
   ]
 
   it.each(cases)('%s', (_, who, capability, target, expected) => {

@@ -202,7 +202,7 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   - el móvil.
 
   En la hoja, la letra del texto (Alegreya) es una propuesta para el repaso final.
-- **2026-10-29 — Módulo 1: plan escrito**, pendiente de Enrique (`tasks/plan.md` y 26 tareas en `tasks/todo.md`).
+- **2026-10-29 — Módulo 1: plan aprobado** por Enrique («si, vamos»): `tasks/plan.md` y 26 tareas en `tasks/todo.md`.
   - El plan del módulo 0 está ahora en `tasks/fundacion/`.
   - Hay nueve fases y seis puntos de control. Lo arriesgado va pronto: Yjs en el servidor (6), el editor anidado de
     los secretos (8, con su punto de control) y Claude escribiendo en una página abierta (11).
@@ -211,8 +211,20 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   2. ~~REA dirigido~~: hecho (Homebrewery, Foundry Journal y D&D Beyond).
   3. ~~Spec~~: aprobada.
   4. ~~Diseño~~: aprobado.
-  5. ~~`/plan`~~: escrito y pendiente de Enrique. Después, `/build` tarea a tarea, desde la 1, con
-     `/agent-skills:review` y `/ship`, como en el módulo 0.
+  5. ~~`/plan`~~: aprobado.
+  6. **`/build` tarea a tarea** (`tasks/todo.md`), con `/agent-skills:review` y `/ship`, como en el módulo 0. Hecha la 1;
+     **sigue la 2** (el árbol en la web).
+- **2026-10-29 — Módulo 1, tarea 1: páginas y árbol en la API.**
+  - La tabla `pages` tiene historial y su orden es una clave fraccionaria (`packages/domain/src/order.ts`, collation
+    "C"). Mover solo escribe la fila que se mueve.
+  - Hay nuevas acciones `createPage`, `updatePage`, `movePage`, `getPage` (con la ruta), `listPageChildren` y
+    `listPageTree`.
+  - Permisos `page.read` y `page.write`: el máster del mundo y el propietario de la organización. La organización sale
+    de la fila del mundo, nunca de lo que diga quien pide.
+  - El aviso `changed pages` solo llega a quien ve la wiki.
+  - Herramientas MCP `ver_arbol` y `mover_pagina`; en la cola salen los títulos de las páginas.
+  - `@fugas` amplía la prueba: la jugadora no recibe nada de la wiki. Se comprobó que falla si el aviso llegara a
+    todos los del mundo.
 - Queda una ventana pequeña en el tiempo real: lo que cambie entre la primera carga de una página y la conexión del
   canal no se ve hasta volver a la pestaña. Taparla costaría volver a pedirlo todo al conectar la primera vez.
 - **Pendientes de permiso de Enrique:**
@@ -235,7 +247,7 @@ Estados: pendiente · en curso · hecho · descartado.
 | # | Módulo | Estado | REA principal |
 |---|---|---|---|
 | 0 | **Fundación**: monorepo, CI, despliegue, cuentas, organizaciones, mundos, campañas, roles, historial y deshacer, esqueleto del MCP | **hecho** (2026-10-29; Discord y Google, pospuestos) | Foundry: modelo de documentos y permisos; DDB: campañas e invitaciones |
-| 1 | **Wiki**: páginas y subpáginas, editor de bloques, enlaces, menciones, vista previa, propiedades, secretos, búsqueda, marcadores, etiquetas, versiones, recursos y archivos, **hojas con estilo** (tipo Homebrewery, con PDF), exportación MD, sus herramientas MCP | en curso (entrevista hecha) | Foundry: Journal; DDB: contenido y referencias; Homebrewery (MIT): formato de hoja y descarga |
+| 1 | **Wiki**: páginas y subpáginas, editor de bloques, enlaces, menciones, vista previa, propiedades, secretos, búsqueda, marcadores, etiquetas, versiones, recursos y archivos, **hojas con estilo** (tipo Homebrewery, con PDF), exportación MD, sus herramientas MCP | en curso (construcción: tarea 1 de 26 hecha) | Foundry: Journal; DDB: contenido y referencias; Homebrewery (MIT): formato de hoja y descarga |
 | 2 | Tipos de página, plantillas y formularios nativos; consultas (en lugar de Dataview y Bases) | pendiente | Foundry: tipos de documento |
 | 3 | Sistemas de reglas, fichas de personaje (creación, subida de nivel), dados y dados 3D | pendiente | DDB: creador y hoja; Foundry: dnd5e, DataModel e instalar y crear sistemas |
 | 4 | Compendios, bestiario, statblocks, biblioteca | pendiente | Foundry: compendium packs; DDB: listados |

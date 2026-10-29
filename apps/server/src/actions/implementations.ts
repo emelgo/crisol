@@ -4,6 +4,7 @@ import { historyActions } from './history.ts'
 import { invitationActions } from './invitations.ts'
 import { memberActions } from './members.ts'
 import { organizationActions } from './organizations.ts'
+import { pageActions } from './pages.ts'
 import type { Implementation } from './registry.ts'
 import { trashActions } from './trash.ts'
 import { worldActions } from './worlds.ts'
@@ -17,7 +18,8 @@ export const IMPLEMENTATIONS: Implementation[] = [
   ...memberActions,
   ...historyActions,
   ...trashActions,
-  ...aiActions
+  ...aiActions,
+  ...pageActions
 ]
 
 export const implementationsByName = new Map(IMPLEMENTATIONS.map((impl) => [impl.action.name, impl]))

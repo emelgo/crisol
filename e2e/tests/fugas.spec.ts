@@ -215,3 +215,49 @@ test('@fugas lo que pide la IA del máster solo le llega a él: la cola, sus avi
   }
   await player.close()
 })
+
+test('@fugas la wiki es solo del máster: a la jugadora no le llegan ni sus páginas ni sus avisos', async ({
+  page,
+  browser
+}) => {
+  const link = await campaignLink(page)
+  const worldId = new URL(page.url()).pathname.split('/')[2]
+  let seen: ReturnType<typeof capture> | undefined
+  const player = await newPlayer(browser, link, 'Jugadora', (p) => {
+    seen = capture(p)
+  })
+  if (!seen) throw new Error('sin captura')
+  const captured = seen
+  await expect.poll(() => captured.frames.some((f) => f.includes('"hello"'))).toBe(true)
+
+  // El máster, mientras tanto: crea, renombra y mueve páginas, y deshace
+  const master = async (name: string, data: Record<string, unknown>) => {
+    const response = await page.request.post(`/api/actions/${name}`, { data })
+    expect(response.status(), name).toBe(200)
+    return response.json()
+  }
+  const tower = await master('createPage', { worldId, title: 'La Torre Secreta' })
+  const room = await master('createPage', { worldId, title: 'La Sala de los Mapas', parentId: tower.id })
+  await master('updatePage', { pageId: tower.id, title: 'La Torre Escondida' })
+  await master('movePage', { pageId: room.id, parentId: null })
+  const [lastMove] = (await master('listHistory', { worldId })).entries
+  await master('undoOperation', { operationId: lastMove.id })
+
+  for (const [name, data] of [
+    ['listPageChildren', { worldId }],
+    ['listPageTree', { worldId }],
+    ['getPage', { pageId: tower.id }],
+    ['createPage', { worldId, title: 'Mía' }],
+    ['movePage', { pageId: room.id, parentId: null }]
+  ] as const) {
+    const response = await player.request.post(`/api/actions/${name}`, { data })
+    expect(response.status(), name).toBe(404)
+  }
+
+  const everything = await captured.all()
+  expect(everything.length).toBeGreaterThan(0)
+  for (const leak of ['La Torre Secreta', 'La Torre Escondida', 'La Sala de los Mapas', tower.id, room.id, '"pages"']) {
+    expect(everything).not.toContain(leak)
+  }
+  await player.close()
+})

@@ -7,6 +7,7 @@ import type {
   Invitation,
   Member,
   Organization,
+  Page,
   TrashItem,
   World
 } from '@crisol/contracts'
@@ -25,6 +26,8 @@ export function fakeApi(
     conflicts?: Record<string, HistoryEntry | null>
     /** Lo que pidió la IA de la cuenta */
     approvals?: Approval[]
+    /** Las páginas de la wiki, en su orden entre hermanas */
+    pages?: Array<{ id?: string; worldId: string; parentId?: string | null; title: string }>
   } = {}
 ) {
   const organizations = options.organizations ?? []
@@ -69,6 +72,48 @@ export function fakeApi(
     }
     invitations.set(campaignId, current)
     return { ...current }
+  }
+
+  // La wiki: el orden entre hermanas es el de la lista
+  type StoredPage = { id: string; worldId: string; parentId: string | null; title: string; version: number }
+  const pages: StoredPage[] = (options.pages ?? []).map((page) => ({
+    id: page.id ?? crypto.randomUUID(),
+    worldId: page.worldId,
+    parentId: page.parentId ?? null,
+    title: page.title,
+    version: 1
+  }))
+  const pageById = (pageId: string) => {
+    const found = pages.find((page) => page.id === pageId)
+    if (!found) throw new ApiError('NOT_FOUND', 404)
+    return found
+  }
+  const childrenOf = (worldId: string, parentId: string | null) =>
+    pages.filter((page) => page.worldId === worldId && page.parentId === parentId)
+  const summary = (page: StoredPage) => ({
+    id: page.id,
+    worldId: page.worldId,
+    parentId: page.parentId,
+    title: page.title,
+    icon: null,
+    hasChildren: childrenOf(page.worldId, page.id).length > 0,
+    version: page.version
+  })
+  const pageView = (page: StoredPage): Page => {
+    const path: { id: string; title: string }[] = []
+    for (let at: StoredPage | undefined = page; at; at = pages.find((p) => p.id === at?.parentId)) {
+      path.unshift({ id: at.id, title: at.title })
+    }
+    return { ...summary(page), locked: false, path, updatedAt: new Date().toISOString() }
+  }
+  /** La pone en la lista delante o detrás de su vecina, o detrás de la última de sus hermanas */
+  const place = (page: StoredPage, before?: string, after?: string) => {
+    const neighbour = before ?? after
+    const siblings = childrenOf(page.worldId, page.parentId).filter((p) => p.id !== page.id)
+    const anchor = neighbour ? siblings.find((p) => p.id === neighbour) : siblings.at(-1)
+    if (neighbour && !anchor) throw new ApiError('BAD_PLACEMENT', 400)
+    const index = anchor ? pages.indexOf(anchor) + (before ? 0 : 1) : pages.length
+    pages.splice(index, 0, page)
   }
 
   const handlers: { [N in ActionName]: (input: ActionInput<N>) => ActionOutput<N> } = {
@@ -238,6 +283,41 @@ export function fakeApi(
       if (index < 0) throw new ApiError('NOT_FOUND', 404)
       campaigns.splice(index, 1)
       return {}
+    },
+    createPage: ({ worldId, title, parentId, before, after }) => {
+      if (parentId) pageById(parentId)
+      const page = { id: crypto.randomUUID(), worldId, parentId: parentId ?? null, title, version: 1 }
+      place(page, before, after)
+      return pageView(page)
+    },
+    updatePage: ({ pageId, title }) => {
+      const page = pageById(pageId)
+      Object.assign(page, { title, version: page.version + 1 })
+      return pageView(page)
+    },
+    movePage: ({ pageId, parentId, before, after }) => {
+      const page = pageById(pageId)
+      for (let at = parentId; at; at = pageById(at).parentId) {
+        if (at === pageId) throw new ApiError('CYCLE', 400)
+      }
+      pages.splice(pages.indexOf(page), 1)
+      Object.assign(page, { parentId, version: page.version + 1 })
+      place(page, before, after)
+      return pageView(page)
+    },
+    getPage: ({ pageId }) => pageView(pageById(pageId)),
+    listPageChildren: ({ worldId, parentId }) => ({ pages: childrenOf(worldId, parentId ?? null).map(summary) }),
+    listPageTree: ({ worldId, parentId, levels }) => {
+      const tree: Array<ReturnType<typeof summary> & { level: number }> = []
+      const visit = (from: string | null, level: number) => {
+        if (level > (levels ?? 2)) return
+        for (const page of childrenOf(worldId, from)) {
+          tree.push({ ...summary(page), level })
+          visit(page.id, level + 1)
+        }
+      }
+      visit(parentId ?? null, 1)
+      return { pages: tree.map(({ worldId: _, version: __, ...rest }) => rest) }
     }
   }
 
@@ -247,5 +327,5 @@ export function fakeApi(
       return handlers[name](input as never) as never
     }
   }
-  return { client, calls, worlds, campaigns, history, approvals }
+  return { client, calls, worlds, campaigns, history, approvals, pages }
 }

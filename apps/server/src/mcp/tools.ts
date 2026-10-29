@@ -52,12 +52,15 @@ export const MCP_TOOLS: Record<string, McpTool> = {
   },
   ver_historial: { action: 'listHistory' },
   deshacer: { action: 'undoOperation' },
-  pendientes: { action: 'listApprovals' }
+  pendientes: { action: 'listApprovals' },
+  ver_arbol: { action: 'listPageTree' },
+  mover_pagina: { action: 'movePage' }
 }
 
 const INSTRUCTIONS =
   'Crisol: mundos de rol y su mesa virtual. Habla siempre en español. Una organización tiene mundos, y cada mundo, ' +
-  'campañas con su máster y sus jugadores; a una campaña se entra con su enlace de invitación. Lo que cambies queda ' +
+  'campañas con su máster y sus jugadores; a una campaña se entra con su enlace de invitación. Cada mundo tiene su ' +
+  'wiki: páginas con subpáginas, solo del máster. Lo que cambies queda ' +
   'en el historial de Crisol y el máster puede deshacerlo. Según el modo de IA que elija el máster, algunas acciones ' +
   'esperan su aprobación en Crisol: no las repitas, mira cómo acabaron con pendientes; si rechaza una, no insistas.'
 
