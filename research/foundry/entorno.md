@@ -18,6 +18,9 @@ Instalado 2026-10-29 con la licencia de Enrique, solo para el REA (ver `research
   instancia accesible a otros por licencia. No prohíbe estudiarlo. Por eso aquí no va ni una línea de su código.
 - Datos de prueba (REA del módulo 0, 2026-10-29): usuario «Jugador REA» (rol jugador; su contraseña no se guarda aquí),
   entrada de diario «Secreto REA» (solo máster) y unos mensajes de chat de prueba.
+- Datos de prueba (REA del módulo 1, 2026-10-29): usuaria «Jugadora Wiki REA» (rol jugador; su contraseña no se
+  guarda aquí), la carpeta «REA Wiki» con subcarpetas y cinco entradas de diario con páginas, categorías, secretos,
+  enlaces e incrustados («Liga Secreta» ya borrada).
 - Observar sin navegador: basta un script de Node con el cliente de socket.io que trae la propia instalación (MIT),
   guardado fuera del repo, para entrar como cualquier usuario y ver todo lo que llega por la red. El POST de entrada
   exige la cabecera `Origin` del mismo sitio.

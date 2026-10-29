@@ -157,16 +157,32 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   - Claude escribe en el mismo Markdown de Obsidian que se exporta, con ids de bloque, y su cambio entra en vivo en la
     página abierta.
   - Lo más arriesgado es el editor anidado de los secretos, y es lo primero que se prueba en el plan.
+- **2026-10-29 — Módulo 1: REA hecho.** Tres notas, cada una con sus preguntas para la spec al final.
+  - `research/homebrewery/hojas-y-pdf.md` (Homebrewery 3.24.2):
+    - Pagina a mano, con hojas de tamaño fijo, y lo que no cabe se corta sin avisar. Propuesta: paginar solo, bloque a
+      bloque, con saltos opcionales y aviso.
+    - Su PDF es la impresión del navegador.
+    - Sus fuentes (CC BY-SA) y sus imágenes (sin licencia) no entran. De su código MIT se aprovecha lo de paginar e
+      imprimir, con atribución.
+    - Bloques de hoja propuestos: salto de página y de columna, statblock, nota lateral, ancho e índice. Dos temas
+      propios, Pergamino y Neutro.
+  - `research/foundry/journal.md`:
+    - Sin subpáginas: carpetas → entrada → páginas planas.
+    - Guarda HTML libre, con enlaces por id. No tiene entrantes ni vista previa, y lo borrado deja enlaces rotos sin
+      avisar.
+    - Los secretos van dentro del HTML y se escapan por la red, por la búsqueda y por los incrustados. Revelar es para
+      todos a la vez. Confirma el ADR-0003.
+    - Archivos sin sesión y «mostrar a los jugadores» sin comprobar en el servidor: los dos fallos que no repetiremos.
+  - `research/dndbeyond/contenido-y-enlaces.md`:
+    - Cada enlace lleva su tipo, con vista previa rápida (200–500 ms) pero solo con ratón: no sale con el teclado ni en
+      el móvil.
+    - Las anclas salen del texto del encabezado. El lector es de una columna, sin PDF.
+    - La búsqueda llega a las secciones de los libros.
+    - No hay wiki ni secretos por bloque.
+  - `research/README.md` admite Homebrewery como fuente: su código, MIT, se puede aprovechar con atribución.
 - **Siguiente paso: módulo 1**, en este orden, cada uno con su PR de documentación (rama corta → CI → merge):
   1. ~~ADR-0003, Yjs y secretos~~: hecho.
-  2. **REA dirigido**, con notas en `research/` (leer antes `research/README.md`):
-     - **Homebrewery** (`naturalcrit/homebrewery`, MIT): cómo maqueta la hoja (columnas, saltos de página, statblocks,
-       notas al margen), cómo pagina y cómo saca el PDF o imprime. Su código se puede leer y aprovechar con
-       atribución; su tema 5e (fuentes e imágenes CC BY-SA y aspecto de los libros de WotC), no.
-     - **Foundry Journal**: páginas, carpetas, enlaces y permisos por página (con el Foundry de REA en loopback, ver
-       `research/foundry/entorno.md`).
-     - **D&D Beyond**: cómo enlaza y presenta el contenido (Enrique entra él mismo en el Chromium del VPS; ver más
-       abajo).
+  2. ~~REA dirigido~~: hecho (Homebrewery, Foundry Journal y D&D Beyond).
   3. **Spec** `docs/specs/wiki.md` con `/spec` (skill `spec-driven-development`), para que Enrique la apruebe.
   4. **Diseño** con `frontend-design`: prototipos en el lienzo de claude.ai (el de las direcciones u otro nuevo) del
      árbol, la página en vista sencilla y en hoja, el editor y la búsqueda. Enrique los aprueba.
@@ -181,6 +197,12 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   - Desde VS Code reenvía el puerto 9222 (pestaña Ports), abre `chrome://inspect` en su Chrome, añade `localhost:9222`
     y pulsa *inspect*.
   - REA se conecta luego a esa sesión (`list_browser_targets` / `capture_browser_scenario` en modo `connect`).
+  - Así se lanza el navegador. Va sin sandbox porque este Ubuntu no lo permite, como Playwright y REA:
+    `xvfb-run -a -s "-screen 0 1920x1080x24" ~/.cache/ms-playwright/chromium-1243/chrome-linux64/chrome --no-sandbox
+    --remote-debugging-port=9222 --remote-debugging-address=127.0.0.1 --user-data-dir=$HOME/rea-workspace/chromium-ddb
+    --no-first-run --window-size=1920,1080 https://www.dndbeyond.com/sign-in`.
+  - Enrique entra con Google. El botón abre una ventana aparte, «Sign in - Google Accounts», que hay que abrir con su
+    propio *inspect* en `chrome://inspect`. Funcionó el 2026-10-29.
 
 Estados: pendiente · en curso · hecho · descartado.
 
@@ -264,6 +286,11 @@ Lo que a Enrique no le convence y se deja para cuando la app esté terminada (ap
     de su comunidad, que llevan cada uno su licencia y están escritos contra su API.
   - El Crisol actual ya guarda el sistema como datos (`.crisol/sistema.json`, con herramientas para crearlo, validarlo y
     probar tiradas): repasarlo en `docs/inventario.md` § 5.
+- **Creador de personajes y hoja (módulo 3)**: de D&D Beyond, son lo fundamental (Enrique, 2026-10-29). En el módulo 3
+  se estudian a fondo con REA: el paso a paso del creador, subir de nivel, la hoja en escritorio y en el móvil,
+  tiradas desde la hoja, y cómo se ven y se gestionan los recursos y el inventario. Se estudian en la cuenta de
+  Enrique, solo mirando. La sesión queda en el perfil del Chromium del VPS (`~/rea-workspace/chromium-ddb`); si ha
+  caducado, Enrique vuelve a entrar como en «D&D Beyond», más arriba.
 - **Hojas con estilo (módulo 1)**: que las páginas de la wiki tengan el formato de las hojas de rol (dos columnas,
   pergamino, statblocks, notas al margen) y se puedan descargar, al estilo de
   [Homebrewery](https://github.com/naturalcrit/homebrewery).
