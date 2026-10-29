@@ -1,6 +1,7 @@
 import { createWorld, listWorlds, renameWorld } from '@crisol/contracts'
 import { worldsRepo } from '@crisol/db'
 import { authorize, NotFoundError, ownedOrganizations } from '@crisol/domain'
+import { worldsChanged } from '../realtime/events.ts'
 import { historyContext, InvalidRequestError } from './context.ts'
 import { implement } from './registry.ts'
 
@@ -22,6 +23,7 @@ export const worldActions = [
         masterId: ctx.actor.userId
       }
     )
+    ctx.realtime.publish(worldsChanged(world.id))
     return { ...world, role: 'master' as const }
   }),
 
@@ -36,6 +38,7 @@ export const worldActions = [
       worldId,
       name
     )
+    ctx.realtime.publish(worldsChanged(worldId))
     return { ...world, role }
   })
 ]

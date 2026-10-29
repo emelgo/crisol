@@ -90,6 +90,12 @@ export const es = {
     leaveWarning: 'Para volver, el máster tendrá que pasarte el enlace.',
     leaveConfirm: 'Dejarla'
   },
+  notices: {
+    title: 'Avisos',
+    joined: '{{member}} ha entrado en {{campaign}}.',
+    dismissShort: 'Cerrar',
+    dismiss: 'Cerrar el aviso de {{member}}'
+  },
   list: {
     rename: 'Renombrar',
     renameButton: 'Renombrar {{name}}',

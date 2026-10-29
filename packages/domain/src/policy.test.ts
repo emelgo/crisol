@@ -4,6 +4,7 @@ import {
   actorFrom,
   authorize,
   type Capability,
+  can,
   ForbiddenError,
   NotFoundError,
   ownedOrganizations
@@ -104,6 +105,15 @@ describe('authorize', () => {
 
   it.each(cases)('%s', (_, who, capability, target, expected) => {
     expect(outcome(who, capability, target)).toBe(expected)
+  })
+})
+
+describe('can', () => {
+  it('dice sí o no sin lanzar: para elegir a quién le llega un evento', () => {
+    expect(can(player, 'campaign.read', campaign)).toBe(true)
+    expect(can(player, 'campaign.read', otherCampaign)).toBe(false)
+    expect(can(player, 'campaign.invite', campaign)).toBe(false)
+    expect(can(owner, 'campaign.invite', campaign)).toBe(true)
   })
 })
 

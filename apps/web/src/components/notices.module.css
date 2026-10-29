@@ -1,0 +1,4 @@
+/* Encima del contenido de la página; vacía no ocupa nada */
+.region:not(:empty) {
+  margin-block-end: var(--space-6);
+}

@@ -1,6 +1,7 @@
 import { Link, Outlet, useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
+import { Notices } from '../components/notices.tsx'
 import { ThemeToggle } from '../components/theme-toggle.tsx'
 import styles from './root.module.css'
 
@@ -18,6 +19,7 @@ export function RootLayout() {
         </nav>
       </header>
       <main className={styles.main}>
+        <Notices />
         <Outlet />
       </main>
     </div>

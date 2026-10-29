@@ -5,8 +5,8 @@ import type { FastifyInstance } from 'fastify'
 export function toHeaders(incoming: IncomingHttpHeaders): Headers {
   const headers = new Headers()
   for (const [key, value] of Object.entries(incoming)) {
-    if (typeof value === 'string') headers.set(key, value)
-    else if (value) for (const v of value) headers.append(key, v)
+    if (Array.isArray(value)) for (const v of value) headers.append(key, v)
+    else if (value !== undefined) headers.set(key, String(value))
   }
   return headers
 }

@@ -9,6 +9,7 @@ import { useErrorText } from '../api/errors.ts'
 import { FormError } from '../components/field.tsx'
 import form from '../components/form.module.css'
 import styles from '../components/list.module.css'
+import { RemoveMemberConfirm, useRemoveMember } from '../components/remove-member.tsx'
 
 const route = getRouteApi('/mundos/$worldId/campanas/$campaignId')
 
@@ -69,18 +70,7 @@ function MembersPanel({ campaign }: { campaign: Campaign }) {
   const [confirmingRemove, setConfirmingRemove] = useState<string | null>(null)
   const [removedName, setRemovedName] = useState<string | null>(null)
   const [confirmingLeave, setConfirmingLeave] = useState(false)
-  const remove = useMutation({
-    mutationFn: async ({ userId, newLink }: { userId: string; name: string; newLink: boolean }) => {
-      queryClient.setQueryData(key, await api.call('removeMember', { campaignId, userId }))
-      if (newLink) {
-        queryClient.setQueryData(['invitation', campaignId], await api.call('regenerateInvitation', { campaignId }))
-      }
-    },
-    onSuccess: (_, { name }) => {
-      setConfirmingRemove(null)
-      setRemovedName(name)
-    }
-  })
+  const remove = useRemoveMember(campaignId)
   const leave = useMutation({
     mutationFn: () => api.call('leaveCampaign', { campaignId }),
     // Primero fuera de la campaña: refrescar aquí pediría lo que ya no ve
@@ -119,25 +109,22 @@ function MembersPanel({ campaign }: { campaign: Campaign }) {
               </button>
             )}
             {confirmingRemove === member.userId && (
-              <div className={styles.confirm}>
-                <p>{t('members.removeWarning', { name: member.name })}</p>
-                <div className={styles.actions}>
-                  {[false, true].map((newLink) => (
-                    <button
-                      key={String(newLink)}
-                      type="button"
-                      className={newLink ? styles.secondary : form.button}
-                      disabled={remove.isPending}
-                      onClick={() => remove.mutate({ userId: member.userId, name: member.name, newLink })}
-                    >
-                      {newLink ? t('members.removeAndRegenerate') : t('members.removeConfirm')}
-                    </button>
-                  ))}
-                  <button type="button" className={styles.secondary} onClick={() => setConfirmingRemove(null)}>
-                    {t('list.cancel')}
-                  </button>
-                </div>
-              </div>
+              <RemoveMemberConfirm
+                name={member.name}
+                pending={remove.isPending}
+                onConfirm={(newLink) =>
+                  remove.mutate(
+                    { userId: member.userId, newLink },
+                    {
+                      onSuccess: () => {
+                        setConfirmingRemove(null)
+                        setRemovedName(member.name)
+                      }
+                    }
+                  )
+                }
+                onCancel={() => setConfirmingRemove(null)}
+              />
             )}
           </li>
         ))}

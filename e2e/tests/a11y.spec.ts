@@ -4,6 +4,7 @@ import { resetDatabase } from '@crisol/db/testing'
 import { issueBootstrap } from '@crisol/server/bootstrap'
 import { expect, test } from '@playwright/test'
 import { e2eDatabaseUrl } from '../servidor.ts'
+import { newPlayer } from './ayudas.ts'
 
 // WCAG 2.1 AA: cero fallos críticos o graves (CONSTRAINTS.md)
 const WCAG = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']
@@ -21,7 +22,10 @@ for (const colorScheme of ['light', 'dark'] as const) {
   }
 }
 
-test('arranque, perfil, mundos, campañas y consentimiento, en los dos temas @a11y', async ({ page }) => {
+test('arranque, perfil, mundos, campañas, avisos y consentimiento, en los dos temas @a11y', async ({
+  page,
+  browser
+}) => {
   const conn = connect(e2eDatabaseUrl(), { max: 1 })
   try {
     await resetDatabase(conn.sql)
@@ -71,9 +75,16 @@ test('arranque, perfil, mundos, campañas y consentimiento, en los dos temas @a1
     await page.reload()
     await page.getByRole('button', { name: 'Expulsar a Ana' }).click()
     await check()
-    // La página de consentimiento sin consulta firmada: se ve igual, aunque permitir fallaría
-    await page.goto(`/oauth/consentimiento?client_id=${encodeURIComponent('https://claude.ai/oauth/metadatos')}`)
-    await expect(page.getByRole('heading', { name: 'Conectar claude.ai' })).toBeVisible()
+    // El aviso de que alguien ha entrado, con su confirmación de expulsar
+    const bea = await newPlayer(browser, invitationLink, 'Bea')
+    const notices = page.getByRole('region', { name: 'Avisos' })
+    await notices.getByRole('button', { name: 'Expulsar a Bea' }).click()
+    await check()
+    await bea.close()
+    // La página de consentimiento sin consulta firmada: se ve igual, aunque permitir fallaría. El cliente no es una
+    // URL: con una, el servidor iría a buscar sus metadatos (CIMD) a internet y la prueba dependería de la red
+    await page.goto('/oauth/consentimiento?client_id=cliente-de-prueba')
+    await expect(page.getByRole('heading', { name: 'Conectar cliente-de-prueba' })).toBeVisible()
     await check()
     // La página de unirse: con sesión (el máster) y sin ella
     await page.goto(invitationLink)
