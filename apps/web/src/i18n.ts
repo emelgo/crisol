@@ -5,7 +5,37 @@ import { initReactI18next } from 'react-i18next'
 export const es = {
   app: {
     name: 'Crisol',
-    tagline: 'Mundos de rol y mesa virtual'
+    tagline: 'Mundos de rol y mesa virtual',
+    accountNav: 'Cuenta'
+  },
+  account: {
+    signIn: 'Entrar',
+    signOut: 'Salir',
+    name: 'Nombre',
+    email: 'Email',
+    password: 'Contraseña',
+    passwordHint: 'Al menos 10 caracteres',
+    hello: 'Hola, {{name}}'
+  },
+  bootstrap: {
+    title: 'Cuenta del propietario',
+    organization: 'Organización:',
+    create: 'Crear la cuenta',
+    invalidTitle: 'Este enlace no vale',
+    invalidBody: 'Puede que ya se haya usado o que haya caducado.'
+  },
+  profile: {
+    title: 'Perfil',
+    save: 'Guardar',
+    saved: 'Guardado'
+  },
+  errors: {
+    INVALID_CREDENTIALS: 'Email o contraseña incorrectos',
+    TOO_MANY_REQUESTS: 'Demasiados intentos. Espera un minuto.',
+    EMAIL_TAKEN: 'Ese email ya tiene cuenta',
+    INVALID_LINK: 'Este enlace no vale',
+    INVALID_INPUT: 'Revisa los datos',
+    UNKNOWN: 'Algo ha fallado. Vuelve a intentarlo.'
   },
   theme: {
     toDark: 'Cambiar a tema oscuro',

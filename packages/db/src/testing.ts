@@ -9,9 +9,17 @@ import { runMigrations } from './migrate.ts'
 const DEFAULT_SERVER = 'postgres://crisol:crisol@127.0.0.1:54330/crisol'
 const SIMPLE_NAME = /^[a-z_][a-z0-9_]{0,62}$/
 
+/** URL de la base de datos de pruebas `name` (en el servidor de TEST_DATABASE_URL) */
+export function testDatabaseUrl(name: string): string {
+  if (!SIMPLE_NAME.test(name)) throw new Error(`Nombre de base de datos no válido: ${name}`)
+  const url = new URL(process.env.TEST_DATABASE_URL ?? DEFAULT_SERVER)
+  url.pathname = `/${name}`
+  return url.toString()
+}
+
 /** Borra y crea la base de datos `name`, le aplica las migraciones y devuelve su URL */
 export async function freshTestDatabase(name: string): Promise<string> {
-  if (!SIMPLE_NAME.test(name)) throw new Error(`Nombre de base de datos no válido: ${name}`)
+  const url = testDatabaseUrl(name)
   const server = process.env.TEST_DATABASE_URL ?? DEFAULT_SERVER
   const admin = postgres(server, { max: 1, onnotice: () => undefined })
   try {
@@ -20,10 +28,8 @@ export async function freshTestDatabase(name: string): Promise<string> {
   } finally {
     await admin.end()
   }
-  const url = new URL(server)
-  url.pathname = `/${name}`
-  await runMigrations(url.toString())
-  return url.toString()
+  await runMigrations(url)
+  return url
 }
 
 /** Vacía todas las tablas de la aplicación (no las de las migraciones), para empezar cada prueba de cero */

@@ -1,0 +1,68 @@
+import { connect } from '@crisol/db'
+import { resetDatabase } from '@crisol/db/testing'
+import { issueBootstrap } from '@crisol/server/bootstrap'
+import { expect, test } from '@playwright/test'
+import { e2eDatabaseUrl } from '../servidor.ts'
+
+const owner = { name: 'Enrique', email: 'enrique@crisol.test', password: 'una-clave-larga' }
+
+test.describe.configure({ mode: 'serial' })
+
+let conn: ReturnType<typeof connect>
+
+test.beforeAll(async () => {
+  conn = connect(e2eDatabaseUrl(), { max: 1 })
+  await resetDatabase(conn.sql)
+})
+
+test.afterAll(async () => {
+  await conn.close()
+})
+
+test('el propietario crea su cuenta con el enlace de arranque, sale y vuelve a entrar', async ({ page }) => {
+  const { secret } = await issueBootstrap(conn.db, { organizationName: 'Crisol de Enrique' })
+
+  await page.goto(`/arranque/${secret}`)
+  await expect(page.getByText('Crisol de Enrique')).toBeVisible()
+  await page.getByLabel('Nombre').fill(owner.name)
+  await page.getByLabel('Email').fill(owner.email)
+  await page.getByLabel('Contraseña').fill(owner.password)
+  await page.getByRole('button', { name: 'Crear la cuenta' }).click()
+  await expect(page.getByText('Hola, Enrique')).toBeVisible()
+
+  await page.reload()
+  await expect(page.getByText('Hola, Enrique')).toBeVisible()
+
+  await page.getByRole('button', { name: 'Salir' }).click()
+  await expect(page).toHaveURL('/entrar')
+  await expect(page.getByRole('link', { name: 'Enrique' })).toHaveCount(0)
+
+  await page.getByLabel('Email').fill(owner.email)
+  await page.getByLabel('Contraseña').fill(owner.password)
+  await page.getByRole('button', { name: 'Entrar' }).click()
+  await expect(page.getByText('Hola, Enrique')).toBeVisible()
+
+  await page.goto(`/arranque/${secret}`)
+  await expect(page.getByRole('heading', { name: 'Este enlace no vale' })).toBeVisible()
+})
+
+test('con la contraseña mal no entra y lo dice', async ({ page }) => {
+  await page.goto('/entrar')
+  await page.getByLabel('Email').fill(owner.email)
+  await page.getByLabel('Contraseña').fill('no-es-la-clave')
+  await page.getByRole('button', { name: 'Entrar' }).click()
+  await expect(page.getByRole('alert')).toHaveText('Email o contraseña incorrectos')
+})
+
+test('el propietario cambia su nombre en el perfil', async ({ page }) => {
+  await page.goto('/entrar')
+  await page.getByLabel('Email').fill(owner.email)
+  await page.getByLabel('Contraseña').fill(owner.password)
+  await page.getByRole('button', { name: 'Entrar' }).click()
+  await page.getByRole('link', { name: 'Enrique' }).click()
+  await page.getByLabel('Nombre').fill('Enrique M.')
+  await page.getByRole('button', { name: 'Guardar' }).click()
+  await expect(page.getByRole('status')).toHaveText('Guardado')
+  await page.reload()
+  await expect(page.getByRole('link', { name: 'Enrique M.' })).toBeVisible()
+})

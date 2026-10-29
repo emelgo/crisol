@@ -2,11 +2,17 @@ import { createMemoryHistory } from '@tanstack/react-router'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it } from 'vitest'
+import { fakeAccountClient } from './account/fake.ts'
 import { App } from './app.tsx'
 import { createAppRouter } from './router.tsx'
 
 const renderAt = (path: string) =>
-  render(<App router={createAppRouter(createMemoryHistory({ initialEntries: [path] }))} />)
+  render(
+    <App
+      router={createAppRouter(createMemoryHistory({ initialEntries: [path] }))}
+      accounts={fakeAccountClient().client}
+    />
+  )
 
 afterEach(() => {
   document.documentElement.removeAttribute('data-theme')

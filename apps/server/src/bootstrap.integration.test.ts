@@ -164,6 +164,21 @@ describe('arranque del propietario', () => {
     expect(failures.at(-1)).toBe(429)
   })
 
+  it('los intentos fallidos se cuentan por IP: uno que falla no bloquea a los demás', async () => {
+    const { secret } = await issueBootstrap(conn.db, { organizationName: 'Crisol de Enrique' })
+    await post('/api/bootstrap', { secret, ...owner })
+    const signInFrom = (ip: string, password: string) =>
+      app.inject({
+        method: 'POST',
+        url: '/api/auth/sign-in/email',
+        payload: { email: owner.email, password },
+        headers: { origin: BASE_URL, 'x-forwarded-for': ip }
+      })
+    for (let i = 0; i < 5; i++) await signInFrom('203.0.113.7', 'no-es-la-clave')
+    expect((await signInFrom('203.0.113.7', owner.password)).statusCode).toBe(429)
+    expect((await signInFrom('198.51.100.20', owner.password)).statusCode).toBe(200)
+  })
+
   it('al propietario se le guarda con su usuario de Better Auth', async () => {
     const { secret } = await issueBootstrap(conn.db, { organizationName: 'Crisol de Enrique' })
     await post('/api/bootstrap', { secret, ...owner })
