@@ -33,13 +33,14 @@ export async function indexDocuments(
 }
 
 /** Indexa lo que falte en el mundo (los documentos de antes de la búsqueda, o de antes de guardar su texto) */
-export async function indexMissing(env: ActionEnv, worldId: string) {
+export async function indexMissing(env: ActionEnv, worldId: string, onError?: (error: unknown) => void) {
   for (const doc of await searchRepo.unindexedDocuments(env.db, worldId)) {
     const ref =
       doc.kind === 'body'
         ? ({ kind: 'body', pageId: doc.pageId } as const)
         : ({ kind: 'separate', documentId: doc.id, pageId: doc.pageId } as const)
-    await indexDocument(env, doc.id, documentJson(env, ref, doc.state))
+    // Uno que no se puede indexar no deja al mundo sin búsqueda
+    await indexDocument(env, doc.id, documentJson(env, ref, doc.state)).catch((error: unknown) => onError?.(error))
   }
 }
 

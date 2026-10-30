@@ -28,6 +28,13 @@ export interface Storage {
   keys(): Promise<Array<{ key: string; writtenAt: Date }>>
 }
 
+export class NotAStreamError extends Error {
+  constructor() {
+    super('El cuerpo no es el archivo en crudo')
+    this.name = 'NotAStreamError'
+  }
+}
+
 export class TooLargeError extends Error {
   constructor() {
     super('El archivo pasa del límite')
@@ -47,6 +54,8 @@ export function diskStorage(root: string): Storage {
   }
   return {
     async write(worldId, body, maxBytes) {
+      // Lo que no es un flujo (un cuerpo que ya se leyó como JSON o texto) ni se intenta: no queda nada abierto
+      if (typeof (body as Partial<Readable> | undefined)?.pipe !== 'function') throw new NotAStreamError()
       const key = `${worldId}/${randomUUID()}`
       const path = pathOf(key)
       await mkdir(dirname(path), { recursive: true })

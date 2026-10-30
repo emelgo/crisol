@@ -12,10 +12,10 @@ import { authorizedWiki } from '../actions/access.ts'
 import { type ActionContext, type ActionEnv, errorCode, historyContext } from '../actions/context.ts'
 import { authorizedFile, fileView, withFreeName } from '../actions/files.ts'
 import type { Auth } from '../auth/auth.ts'
-import { toHeaders } from '../http.ts'
+import { clientIp, toHeaders } from '../http.ts'
 import { filesChanged } from '../realtime/events.ts'
 import { resolvePendingFiles } from '../wiki/file-embeds.ts'
-import { type Storage, TooLargeError } from './storage.ts'
+import { NotAStreamError, type Storage, TooLargeError } from './storage.ts'
 
 const uploadQuery = z.object({ worldId: z.uuid(), name: fileName })
 const fileParams = z.object({ id: z.uuid() })
@@ -72,6 +72,7 @@ export function registerFileRoutes(
   /** Lo esperado (no existe, sin permiso…) con su código; lo demás sigue hacia arriba */
   const fail = (reply: FastifyReply, error: unknown) => {
     if (error instanceof TooLargeError) return reply.code(413).send({ code: 'TOO_LARGE', maxBytes })
+    if (error instanceof NotAStreamError) return reply.code(415).send({ code: 'NOT_RAW' })
     const code = errorCode(error)
     if (code === 'NOT_FOUND') return reply.code(404).send({ code })
     if (code === 'FORBIDDEN') return reply.code(403).send({ code })
@@ -86,8 +87,8 @@ export function registerFileRoutes(
     return { ...sniff(stored.head, name), size: stored.size, hash: stored.hash, storageKey: stored.key }
   }
 
-  // Muchas seguidas al subir una carpeta: el límite es holgado
-  const uploads = { config: { rateLimit: { max: 600, timeWindow: '1 minute' } } }
+  // Muchas seguidas al subir una carpeta: el límite es holgado (por quien las manda, no por el proxy)
+  const uploads = { config: { rateLimit: { max: 600, timeWindow: '1 minute', keyGenerator: clientIp } } }
 
   app.post('/api/files', uploads, async (request, reply) => {
     const ctx = await contextOf(request)

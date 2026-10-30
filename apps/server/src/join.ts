@@ -9,7 +9,7 @@ import { z } from 'zod'
 import type { ActionEnv } from './actions/context.ts'
 import type { Auth } from './auth/auth.ts'
 import { signUpAllowed } from './auth/signup.ts'
-import { toHeaders } from './http.ts'
+import { clientIp, toHeaders } from './http.ts'
 import { invitationChanged, memberJoined, membersChanged } from './realtime/events.ts'
 import { hashSecret } from './secrets.ts'
 
@@ -63,12 +63,6 @@ const signupInput = z.object({
   password: z.string().min(10).max(128)
 })
 
-/** Clave del límite de intentos: la IP que manda Caddy (la app solo escucha en loopback, detrás de él) */
-const clientIp = (request: FastifyRequest) => {
-  const forwarded = request.headers['x-forwarded-for']
-  const first = (Array.isArray(forwarded) ? forwarded[0] : forwarded)?.split(',')[0]?.trim()
-  return first || request.ip
-}
 const limited = { rateLimit: { max: 30, timeWindow: '1 minute', keyGenerator: clientIp } }
 
 export function registerJoinRoutes(app: FastifyInstance, env: ActionEnv, auth: Auth) {

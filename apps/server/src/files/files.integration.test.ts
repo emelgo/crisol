@@ -124,6 +124,17 @@ describe('los archivos del mundo', () => {
     expect(attachment.headers['content-disposition']).toMatch(/^attachment; filename="trampa.png"/)
   })
 
+  it('un cuerpo que no es el archivo en crudo (JSON, texto) da 415 y no deja nada', async () => {
+    const json = await app.inject({
+      method: 'POST',
+      url: `/api/files?worldId=${worldId}&name=a.png`,
+      payload: { a: 1 },
+      headers: { origin: BASE_URL, cookie: owner.cookie, 'content-type': 'application/json' }
+    })
+    expect(json.statusCode).toBe(415)
+    expect(await storage.keys()).toEqual([])
+  })
+
   it('el límite: si pasa, 413 y no queda nada, ni con el tamaño dicho ni sin él', async () => {
     const big = Buffer.alloc(LIMIT + 1, 1)
     expect((await upload('grande.bin', big)).statusCode).toBe(413)
