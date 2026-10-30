@@ -163,7 +163,6 @@
   color: var(--color-text);
 }
 
-
 /* La miniatura, arriba de la tarjeta: la imagen recortada, o el icono de su tipo sobre un fondo apagado */
 .thumb {
   position: relative;

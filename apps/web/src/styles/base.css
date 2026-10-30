@@ -408,8 +408,9 @@ html:active-view-transition-type(seccion)::view-transition-new(root) {
 
 /*
  * Crear y borrar mundos (components/card-transition.ts). Las demás tarjetas se recolocan deslizándose. Al crear, la
- * ventana se encoge en la tarjeta nueva, al rojo, y se enfría al llegar. Al borrar, la tarjeta se pone al rojo, se quema
- * de abajo arriba y queda en ceniza; las demás esperan a que arda para cerrar el hueco
+ * ventana se encoge en la tarjeta nueva, al rojo, y se enfría al llegar. Al borrar, al revés y sin fuego: la tarjeta se
+ * apaga a gris carbón y se deshace en ceniza de arriba abajo, soltando copos que caen; las demás esperan a que se
+ * deshaga para cerrar el hueco
  */
 html:active-view-transition-type(crear-mundo)::view-transition-group(*),
 html:active-view-transition-type(borrar-mundo)::view-transition-group(*) {
@@ -447,10 +448,11 @@ html:active-view-transition-type(borrar-mundo)::view-transition-group(*) {
 }
 
 ::view-transition-old(.ardiendo) {
-  animation: arde-en-su-sitio 1300ms ease-in forwards;
-  mask-image: linear-gradient(to top, transparent 42%, #000 52%);
+  animation: se-deshace 1300ms ease-in forwards;
+  /* Opaca abajo y transparente arriba: al subir la ventana de la máscara, el borde entra por arriba */
+  mask-image: linear-gradient(to top, #000 40%, transparent 60%);
   mask-size: 100% 300%;
-  mask-position: 0 0;
+  mask-position: 0 100%;
 }
 
 /* Las brasas sobre una tarjeta: un resplandor en su borde de abajo y chispas que suben y se apagan */
@@ -498,27 +500,89 @@ html:active-view-transition-type(borrar-mundo)::view-transition-group(*) {
 
 ::view-transition-group(brasas-tarjeta),
 ::view-transition-old(brasas-tarjeta),
-::view-transition-new(brasas-tarjeta) {
+::view-transition-new(brasas-tarjeta),
+::view-transition-group(ceniza-tarjeta),
+::view-transition-old(ceniza-tarjeta),
+::view-transition-new(ceniza-tarjeta) {
   animation: none;
 }
 
-@keyframes arde-en-su-sitio {
+/* La ceniza sobre una tarjeta que se borra: una bruma gris y copos que se sueltan y caen despacio, apagándose */
+.ceniza-tarjeta {
+  position: fixed;
+  z-index: 100;
+  pointer-events: none;
+  view-transition-name: ceniza-tarjeta;
+  background: radial-gradient(ellipse 80% 45% at 50% 30%, rgb(150 150 160 / 0.16), transparent 70%);
+  opacity: 0;
+  animation: calor 1700ms ease-out 250ms forwards;
+}
+
+.ceniza-tarjeta::before,
+.ceniza-tarjeta::after {
+  content: "";
+  position: absolute;
+  inset-block-start: 22%;
+  inset-inline-start: 50%;
+  inline-size: 3px;
+  block-size: 3px;
+  border-radius: 1px;
+  background: #b8b4ae;
+  box-shadow:
+    -98px 6px 0 0 #8e8a85,
+    -60px -8px 0 1px #a9a49e,
+    -24px 12px 0 0 #77736f,
+    18px -4px 0 1px #c2bdb6,
+    54px 10px 0 0 #8e8a85,
+    90px -6px 0 0 #a9a49e;
+  opacity: 0;
+  animation: copos 1600ms ease-in 350ms forwards;
+}
+
+.ceniza-tarjeta::after {
+  inset-block-start: 38%;
+  box-shadow:
+    -80px -4px 0 1px #a9a49e,
+    -42px 8px 0 0 #8e8a85,
+    6px -6px 0 0 #c2bdb6,
+    44px 6px 0 1px #77736f,
+    82px -2px 0 0 #b8b4ae;
+  animation-delay: 600ms;
+  animation-duration: 1500ms;
+}
+
+@keyframes copos {
   0% {
-    filter: none;
-    mask-position: 0 0;
+    opacity: 0;
+    transform: translate(0, 0) rotate(0);
   }
 
   20% {
-    filter: sepia(1) saturate(4) hue-rotate(-25deg) brightness(1.15);
-  }
-
-  70% {
-    filter: sepia(1) saturate(3) hue-rotate(-30deg) brightness(0.6);
+    opacity: 0.9;
   }
 
   100% {
-    filter: grayscale(1) brightness(0.3);
+    opacity: 0;
+    transform: translate(10px, 90px) rotate(40deg);
+  }
+}
+
+@keyframes se-deshace {
+  0% {
+    filter: none;
     mask-position: 0 100%;
+    transform: none;
+  }
+
+  30% {
+    filter: grayscale(1) brightness(0.45) contrast(1.15);
+    mask-position: 0 100%;
+  }
+
+  100% {
+    filter: grayscale(1) brightness(0.3) blur(1.5px);
+    mask-position: 0 0;
+    transform: translateY(-6px);
   }
 }
 

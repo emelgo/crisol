@@ -141,14 +141,14 @@ async function run(
 }
 
 /**
- * Unas brasas sobre una tarjeta (base.css, .brasas-tarjeta): suben de su borde de abajo y se apagan. Van aparte en la
- * transición (su nombre), por encima; luego se quitan
+ * Una capa de adorno sobre una tarjeta (base.css): va aparte en la transición (su nombre), por encima; luego se quita.
+ * brasas-tarjeta: suben del borde de abajo y se apagan (al crear); ceniza-tarjeta: copos grises que caen (al borrar)
  */
-function embersOver(card: HTMLElement | null) {
+function overlayOver(card: HTMLElement | null, className: 'brasas-tarjeta' | 'ceniza-tarjeta') {
   if (!card) return
   const box = card.getBoundingClientRect()
   const layer = document.createElement('div')
-  layer.className = 'brasas-tarjeta'
+  layer.className = className
   layer.setAttribute('aria-hidden', 'true')
   Object.assign(layer.style, {
     left: `${box.left}px`,
@@ -157,7 +157,7 @@ function embersOver(card: HTMLElement | null) {
     height: `${box.height}px`
   })
   document.body.append(layer)
-  window.setTimeout(() => layer.remove(), 2200)
+  window.setTimeout(() => layer.remove(), 2400)
 }
 
 /**
@@ -176,7 +176,7 @@ export function revealCard(id: string, from: HTMLDialogElement | null, refresh: 
       const card = cardOf(id)
       card?.style.setProperty('view-transition-name', `tarjeta-${id}`)
       card?.style.setProperty('view-transition-class', 'forjando')
-      embersOver(card)
+      overlayOver(card, 'brasas-tarjeta')
     },
     () => {
       from?.style.setProperty('view-transition-name', `tarjeta-${id}`)
@@ -185,7 +185,7 @@ export function revealCard(id: string, from: HTMLDialogElement | null, refresh: 
   )
 }
 
-/** La borrada arde en su sitio y queda en ceniza; después, las demás cierran el hueco */
+/** La borrada se apaga y se deshace en ceniza en su sitio; después, las demás cierran el hueco */
 export async function burnCard(id: string, refresh: () => Promise<unknown>) {
   await tick()
   return run(
@@ -199,7 +199,7 @@ export async function burnCard(id: string, refresh: () => Promise<unknown>) {
     () => {
       const card = cardOf(id)
       card?.style.setProperty('view-transition-class', 'ardiendo')
-      embersOver(card)
+      overlayOver(card, 'ceniza-tarjeta')
     },
     // La de su lista (en una pantalla puede haber dos: los archivos del mundo y los comunes)
     cardOf(id)?.closest('[data-card-list]') ?? null
