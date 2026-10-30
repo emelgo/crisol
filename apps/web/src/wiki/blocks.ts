@@ -9,7 +9,7 @@ import type { es } from '../i18n.ts'
 /** Los textos de los bloques en i18n (blocks.<clave>) */
 export type BlockText = Exclude<keyof typeof es.blocks, 'menu' | 'groups' | 'none' | 'help' | 'inserted'>
 
-export type BlockGroup = 'text' | 'wiki' | 'boxes' | 'master'
+export type BlockGroup = 'text' | 'wiki' | 'boxes' | 'sheet' | 'master'
 
 export interface BlockChoice {
   id: string
@@ -190,6 +190,88 @@ export const BLOCKS: readonly BlockChoice[] = [
     convert: true,
     run: (editor) => {
       editor.chain().focus().setBox().run()
+    }
+  },
+  // La hoja: saltos, statblock, nota lateral, a lo ancho e índice (en la vista sencilla se ven discretos)
+  {
+    id: 'pageBreak',
+    group: 'sheet',
+    label: 'pageBreak',
+    hint: 'sheetHint',
+    keywords: 'salto pagina hoja',
+    convert: false,
+    run: (editor) => {
+      // Con un párrafo detrás, para seguir escribiendo (si no, Intro cambiaría el bloque recién puesto)
+      editor
+        .chain()
+        .focus()
+        .insertContent([{ type: 'pageBreak' }, { type: 'paragraph' }])
+        .run()
+    }
+  },
+  {
+    id: 'columnBreak',
+    group: 'sheet',
+    label: 'columnBreak',
+    hint: 'sheetHint',
+    keywords: 'salto columna hoja',
+    convert: false,
+    run: (editor) => {
+      // Con un párrafo detrás, para seguir escribiendo (si no, Intro cambiaría el bloque recién puesto)
+      editor
+        .chain()
+        .focus()
+        .insertContent([{ type: 'columnBreak' }, { type: 'paragraph' }])
+        .run()
+    }
+  },
+  {
+    id: 'statblock',
+    group: 'sheet',
+    label: 'statblock',
+    hint: 'statblockHint',
+    keywords: 'statblock criatura estadisticas monstruo',
+    convert: true,
+    run: (editor) => {
+      editor.chain().focus().wrapIn('statblock').run()
+    }
+  },
+  {
+    id: 'sidenote',
+    group: 'sheet',
+    label: 'sidenote',
+    hint: 'sidenoteHint',
+    keywords: 'nota lateral margen',
+    convert: true,
+    run: (editor) => {
+      editor.chain().focus().wrapIn('sidenote').run()
+    }
+  },
+  {
+    id: 'wideBlock',
+    group: 'sheet',
+    label: 'wideBlock',
+    hint: 'wideBlockHint',
+    keywords: 'ancho dos columnas',
+    convert: true,
+    run: (editor) => {
+      editor.chain().focus().wrapIn('wideBlock').run()
+    }
+  },
+  {
+    id: 'tableOfContents',
+    group: 'sheet',
+    label: 'tableOfContents',
+    hint: 'tableOfContentsHint',
+    keywords: 'indice contenidos toc',
+    convert: false,
+    run: (editor) => {
+      // Con un párrafo detrás, para seguir escribiendo (si no, Intro cambiaría el bloque recién puesto)
+      editor
+        .chain()
+        .focus()
+        .insertContent([{ type: 'tableOfContents' }, { type: 'paragraph' }])
+        .run()
     }
   },
   {

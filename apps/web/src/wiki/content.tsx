@@ -12,6 +12,7 @@ import styles from './content.module.css'
 import editor from './editor.module.css'
 import { FileEmbedBlock } from './file-embed.tsx'
 import separate from './separate.module.css'
+import sheet from './sheet-blocks.module.css'
 
 type Marks = NonNullable<JSONContent['marks']>
 
@@ -139,6 +140,28 @@ function Block({ node, worldId }: { node: JSONContent; worldId: string }): React
       return <EmbeddedFrame node={node} worldId={worldId} />
     case 'fileEmbed':
       return <FileEmbedBlock node={node} />
+    // Los de hoja, como en la vista sencilla sin editar: los saltos y el índice no se ven
+    case 'statblock':
+      return (
+        <section aria-label={t('sheet.statblock')} className={sheet.statblock}>
+          {children}
+        </section>
+      )
+    case 'sidenote':
+      return (
+        <aside
+          aria-label={t('sheet.sidenote', { side: t(`sheet.sides.${node.attrs?.side === 'left' ? 'left' : 'right'}`) })}
+          className={sheet.sidenote}
+        >
+          {children}
+        </aside>
+      )
+    case 'wideBlock':
+      return <div>{children}</div>
+    case 'pageBreak':
+    case 'columnBreak':
+    case 'tableOfContents':
+      return null
     default:
       return null
   }

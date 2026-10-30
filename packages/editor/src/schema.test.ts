@@ -18,6 +18,7 @@ describe('el esquema del editor', () => {
         'bulletList',
         'callout',
         'codeBlock',
+        'columnBreak',
         'doc',
         'fileEmbed',
         'hardBreak',
@@ -26,17 +27,22 @@ describe('el esquema del editor', () => {
         'listItem',
         'note',
         'orderedList',
+        'pageBreak',
         'pageEmbed',
         'pageLink',
         'paragraph',
         'secret',
+        'sidenote',
+        'statblock',
         'table',
         'tableCell',
         'tableHeader',
+        'tableOfContents',
         'tableRow',
         'taskItem',
         'taskList',
-        'text'
+        'text',
+        'wideBlock'
       ].sort()
     )
   })
@@ -95,7 +101,7 @@ describe('el esquema del editor', () => {
     const copy = withoutBlockIds(Fragment.from(callout)).firstChild
     expect(copy?.toJSON()).toEqual({
       type: 'callout',
-      attrs: { id: null, kind: 'tip' },
+      attrs: { id: null, kind: 'tip', wide: false },
       content: [
         { type: 'paragraph', attrs: { id: null }, content: [{ type: 'text', text: 'Ojo', marks: [{ type: 'bold' }] }] }
       ]

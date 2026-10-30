@@ -57,7 +57,7 @@ export const calloutKindOf = (name: string): CalloutKind | null => CALLOUT_READ[
  */
 export function calloutTokenizer(
   name: string,
-  accept: (type: string) => Record<string, unknown> | null
+  accept: (type: string, options: readonly string[]) => Record<string, unknown> | null
 ): MarkdownTokenizer {
   return {
     name,
@@ -66,7 +66,12 @@ export function calloutTokenizer(
     tokenize: (src, _tokens, lexer) => {
       const head = /^ {0,3}> ?\[!([^\]|]+)((?:\|[^\]]*)?)\][+-]?[ \t]*([^\n]*)(?:\n|$)/.exec(src)
       if (!head) return undefined
-      const attrs = accept((head[1] ?? '').trim().toLocaleLowerCase('es'))
+      // Lo de tras «|» (`> [!lateral|izquierda]`), en minúsculas
+      const options = (head[2] ?? '')
+        .split('|')
+        .map((part) => part.trim().toLocaleLowerCase('es'))
+        .filter(Boolean)
+      const attrs = accept((head[1] ?? '').trim().toLocaleLowerCase('es'), options)
       if (!attrs) return undefined
       let raw = head[0]
       const lines: string[] = []
@@ -87,14 +92,20 @@ export function calloutTokenizer(
   }
 }
 
-/** `> [!tipo]` y cada línea de lo de dentro tras `> ` (las vacías, `>`) */
-export function renderCallout(type: string, node: JSONContent, h: MarkdownRendererHelpers) {
+/** `> [!tipo]` (o `> [!tipo|opción]`) y cada línea de lo de dentro tras `> ` (las vacías, `>`) */
+export function renderCallout(
+  type: string,
+  node: JSONContent,
+  h: MarkdownRendererHelpers,
+  options: readonly string[] = []
+) {
   const inner = (node.content ?? []).map((child, index) => h.renderChild?.(child, index) ?? h.renderChildren([child]))
   const lines = inner
     .join('\n\n')
     .split('\n')
     .map((line) => (line.trim() === '' ? '>' : `> ${line}`))
-  return [`> [!${type}]`, ...(lines.length > 0 && inner.join('') !== '' ? lines : [])].join('\n')
+  const head = `> [!${[type, ...options].join('|')}]`
+  return [head, ...(lines.length > 0 && inner.join('') !== '' ? lines : [])].join('\n')
 }
 
 /** La nota oculta: `%%` en su línea, lo de dentro, y `%%` en la suya. También `%%texto%%` en una sola línea */

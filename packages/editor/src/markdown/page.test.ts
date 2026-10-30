@@ -117,11 +117,23 @@ const body: JSONContent = {
     ...(['note', 'tip', 'warning', 'danger', 'read-aloud'] as const).map(
       (kind): JSONContent => ({
         type: 'callout',
-        attrs: { id: `c${kind.slice(0, 2)}aaaaa`.slice(0, 8), kind },
+        attrs: { id: `c${kind.slice(0, 2)}aaaaa`.slice(0, 8), kind, wide: kind === 'tip' },
         content: [paragraph(null, text(`Recuadro ${kind}.`)), paragraph(null, text('Segundo párrafo.'))]
       })
     ),
-    { type: 'box', attrs: { id: 'bxaaaaaa' }, content: [paragraph(null, text('Dentro de la caja.'))] },
+    { type: 'box', attrs: { id: 'bxaaaaaa', wide: false }, content: [paragraph(null, text('Dentro de la caja.'))] },
+    { type: 'box', attrs: { id: 'bxbaaaaa', wide: true }, content: [paragraph(null, text('Caja a lo ancho.'))] },
+    { type: 'pageBreak', attrs: { id: 'pbaaaaaa' } },
+    { type: 'columnBreak', attrs: { id: 'cbaaaaaa' } },
+    {
+      type: 'statblock',
+      attrs: { id: 'sbaaaaaa', wide: true },
+      content: [paragraph(null, text('Dragón rojo adulto')), paragraph(null, text('CA 19'))]
+    },
+    { type: 'sidenote', attrs: { id: 'snaaaaaa', side: 'left' }, content: [paragraph(null, text('Al margen.'))] },
+    { type: 'sidenote', attrs: { id: 'snbaaaaa', side: 'right' }, content: [paragraph(null, text('Al otro.'))] },
+    { type: 'wideBlock', attrs: { id: 'wbaaaaaa' }, content: [paragraph(null, text('Todo a lo ancho.'))] },
+    { type: 'tableOfContents', attrs: { id: 'tcaaaaaa' } },
     { type: 'pageEmbed', attrs: { id: 'emaaaaaa', pageId: null, title: 'Costa Gris', anchor: 'Historia' } },
     {
       type: 'fileEmbed',

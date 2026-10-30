@@ -15,6 +15,7 @@ import { FileEmbed } from './nodes/file-embed.ts'
 import { PageEmbed } from './nodes/page-embed.ts'
 import { PageLink } from './nodes/page-link.ts'
 import { HiddenNote, Secret } from './nodes/separate.ts'
+import { ColumnBreak, PageBreak, Sidenote, Statblock, TableOfContents, WideBlock } from './nodes/sheet.ts'
 
 /** El fragmento de Yjs que guarda el cuerpo de una página (el de siempre de la extensión de colaboración) */
 export const BODY_FIELD = 'default'
@@ -70,6 +71,12 @@ export function editorExtensions(options: EditorOptions = {}): Extensions {
     view(PageLink),
     view(PageEmbed),
     view(FileEmbed),
+    view(PageBreak),
+    view(ColumnBreak),
+    view(Statblock),
+    view(Sidenote),
+    view(WideBlock),
+    view(TableOfContents),
     ...(nested ? [] : [view(Secret), view(HiddenNote)]),
     BlockIds
   ]
