@@ -98,7 +98,7 @@ Todo va en la rama `interfaz/pulir-inicio`, en un commit local sin subir. Las no
   - Papelera, con los días de `TRASH_DAYS`;
   - tu menú.
 
-  «Lo tengo claro» solo en el último paso. En Ajustes, la casilla «Mostrar los recorridos». Se ve desmarcada si
+  Con Atrás desde el segundo paso. «Lo tengo claro» solo en el último paso. En Ajustes, la casilla «Mostrar los recorridos». Se ve desmarcada si
   alguno se tiene claro, y al marcarla, el recorrido de la pantalla sale en cuanto se cierra la ventana.
 - **Barra lateral**:
   - sin barra de estado abajo;

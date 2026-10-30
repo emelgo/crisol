@@ -63,7 +63,7 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
 
 ## Recorridos
 
-- **Cada pantalla tiene su recorrido**: un globo por zona, con «1 de 3», Siguiente y Saltar. Sale cada vez que se
+- **Cada pantalla tiene su recorrido**: un globo por zona, con «1 de 3», Saltar, Atrás (desde el segundo) y Siguiente. Sale cada vez que se
   entra hasta que se marca **«Lo tengo claro»**, que solo aparece en el último paso.
 - **Lo relacionado se resalta en el mismo paso**, sin un paso propio: «Mundo en la barra lateral se tiene que resaltar
   en el paso 1, no debe tener un paso propio porque es redundante». Si hace falta, lleva su propia nota corta junto a

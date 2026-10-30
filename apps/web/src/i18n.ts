@@ -837,6 +837,7 @@ export const es = {
   tour: {
     count: '{{current}} de {{total}}',
     skip: 'Saltar',
+    back: 'Atrás',
     next: 'Siguiente',
     done: 'Entendido',
     understood: 'Lo tengo claro',

@@ -59,7 +59,7 @@ export function setToursEnabled(email: string, enabled: boolean) {
 }
 
 /**
- * Un recorrido por una pantalla: al entrar, un globo junto a cada parte dice qué es («1 de 3», Siguiente, Saltar). Los
+ * Un recorrido por una pantalla: al entrar, un globo junto a cada parte dice qué es («1 de 3», Atrás, Siguiente, Saltar). Los
  * pasos cuyo elemento no está en la pantalla se saltan. Sale cada vez hasta que se marca «Lo tengo claro»; en Ajustes
  * se apagan todos o se vuelven a encender
  */
@@ -218,6 +218,11 @@ export function Tour({ id, steps }: { id: string; steps: readonly TourStep[] }) 
           {!last && (
             <button type="button" className={styles.skip} onClick={close}>
               {t('tour.skip')}
+            </button>
+          )}
+          {index > 0 && (
+            <button type="button" className={styles.back} onClick={() => setIndex(index - 1)}>
+              {t('tour.back')}
             </button>
           )}
           <button
