@@ -25,8 +25,9 @@ test('los bloques de hoja con «/»: se ven discretos en la vista sencilla y sal
   const { pageId } = await openPage(page, '## Guarida\n\nEn la cima.')
   // Con el texto ya cargado (si no, lo escrito iría delante de lo que llega después)
   await expect(body(page).getByText('En la cima.')).toBeVisible()
-  await body(page).click()
-  await page.keyboard.press('ControlOrMeta+End')
+  // Al final del último párrafo, sin depender de Ctrl+Fin (en la CI a veces deja el cursor al principio)
+  await body(page).getByText('En la cima.').click()
+  await page.keyboard.press('End')
   await page.keyboard.press('Enter')
   for (const [command, name] of [
     ['salto', 'Salto de página'],
