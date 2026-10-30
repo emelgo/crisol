@@ -105,7 +105,8 @@ function LookCard({
   style,
   fresh = false,
   burning = false,
-  onBurnt
+  onBurnt,
+  onPreview
 }: {
   kind: LookKind
   look: Look
@@ -114,6 +115,8 @@ function LookCard({
   fresh?: boolean
   burning?: boolean
   onBurnt?: () => void
+  /** Al pasar el ratón o llegar con el foco: para enseñarlo en el panel de al lado */
+  onPreview?: (() => void) | undefined
 }) {
   const { t } = useTranslation()
   const image = useCoverImage(look)
@@ -145,6 +148,8 @@ function LookCard({
       }}
       style={{ ...tint(look.color), ...style }}
       data-card={look.id}
+      onPointerEnter={onPreview}
+      onFocus={onPreview}
     >
       <CoverHeader
         url={image?.url}
@@ -178,12 +183,14 @@ export function WorldCard({
   world,
   fresh,
   burning,
-  onBurnt
+  onBurnt,
+  onPreview
 }: {
   world: World
   fresh?: boolean
   burning?: boolean
   onBurnt?: () => void
+  onPreview?: () => void
 }) {
   const kind = useWorldKind()
   return (
@@ -194,6 +201,7 @@ export function WorldCard({
       fresh={fresh}
       burning={burning}
       {...(onBurnt ? { onBurnt } : {})}
+      onPreview={onPreview}
       name={
         <Link
           to="/mundos/$worldId"
@@ -713,5 +721,79 @@ function ColorChoices({ value, onChange }: { value: World['color']; onChange: (c
         <span className={styles.hidden}>{t('worlds.customColor')}</span>
       </label>
     </fieldset>
+  )
+}
+
+/**
+ * El mundo sobre el que se pasa el ratón, en el panel de la derecha de Mis mundos: su portada, su descripción, sus
+ * campañas, lo último de su wiki y cuántos archivos tiene, y entrar (sus ajustes, en el engranaje de su tarjeta). Lo
+ * que pide es lo mismo que su Inicio: al entrar, ya está
+ */
+export function WorldDetail({ world }: { world: World }) {
+  const { t } = useTranslation()
+  const api = useApi()
+  const master = world.role === 'master'
+  const image = useCoverImage(world)
+  const campaigns = useQuery({
+    queryKey: ['campaigns', world.id],
+    queryFn: () => api.call('listCampaigns', { worldId: world.id })
+  })
+  const recent = useQuery({
+    queryKey: ['pages', world.id, 'recent'],
+    queryFn: () => api.call('listRecentPages', { worldId: world.id }),
+    enabled: master
+  })
+  const files = useWorldFiles(world.id, master)
+  const own = files.data?.files.filter((file) => file.worldId !== null).length
+  return (
+    <div className={styles.detailBody} style={tint(world.color)}>
+      <CoverHeader url={image?.url} cover={world.cover} />
+      <div className={styles.detailText}>
+        <h2 className={styles.detailName}>{world.name}</h2>
+        {world.description && <p className={styles.description}>{world.description}</p>}
+        <dl className={styles.facts}>
+          <dt>{t('campaigns.title')}</dt>
+          <dd>
+            {campaigns.data
+              ? campaigns.data.campaigns.length > 0
+                ? campaigns.data.campaigns.map((c) => c.name).join(' · ')
+                : t('worlds.noCampaigns')
+              : '…'}
+          </dd>
+          {master && (
+            <>
+              <dt>{t('world.recent')}</dt>
+              <dd>
+                {recent.data
+                  ? recent.data.pages.length > 0
+                    ? recent.data.pages
+                        .slice(0, 3)
+                        .map((page) => page.title)
+                        .join(' · ')
+                    : t('world.noPages')
+                  : '…'}
+              </dd>
+              <dt>{t('files.title')}</dt>
+              <dd>
+                {own === undefined ? '…' : own > 0 ? t('files.folderFiles', { count: own }) : t('worlds.noFiles')}
+              </dd>
+            </>
+          )}
+          <dt>{t('worlds.roleLabel')}</dt>
+          <dd>{t(`roles.${world.role}`)}</dd>
+        </dl>
+        <div className={styles.detailActions}>
+          <Link
+            to="/mundos/$worldId"
+            params={{ worldId: world.id }}
+            className={form.button}
+            viewTransition={ENTER_WORLD}
+            onClick={() => enterWorld(world.id, document.querySelector(`[data-card="${world.id}"]`))}
+          >
+            {t('worlds.enter')}
+          </Link>
+        </div>
+      </div>
+    </div>
   )
 }

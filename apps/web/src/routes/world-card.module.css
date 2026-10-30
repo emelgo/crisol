@@ -1,3 +1,110 @@
+/*
+ * Mis mundos: la columna del centro como en las demás vistas (con el título) y, a la derecha, fuera de ella, el mundo
+ * señalado. Sin sitio, el panel se quita
+ */
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 52rem) minmax(0, 1fr);
+  gap: var(--space-6);
+  align-items: start;
+  padding: var(--space-8) var(--space-6);
+}
+
+.center {
+  min-inline-size: 0;
+}
+
+.detail {
+  position: sticky;
+  inset-block-start: var(--space-4);
+  justify-self: start;
+  inline-size: min(100%, 22rem);
+  /* Bajo el título, a la altura de las tarjetas */
+  margin-block-start: 5.45rem;
+}
+
+@media (max-width: 90rem) {
+  .layout {
+    grid-template-columns: 0 minmax(0, 52rem) 0;
+    justify-content: center;
+  }
+
+  .detail {
+    display: none;
+  }
+}
+
+@media (max-width: 48rem) {
+  .layout {
+    padding: var(--space-6) var(--space-4);
+  }
+}
+
+.detailHint {
+  margin: 0;
+  padding: var(--space-4);
+  border: 1px dashed var(--color-frame);
+  border-radius: 6px;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+/* El panel del mundo: como su tarjeta, con el contorno de su color */
+.detailBody {
+  composes: frame from "../components/frame.module.css";
+  display: flex;
+  flex-direction: column;
+  background: color-mix(in srgb, var(--world-color, var(--color-frame)) 55%, var(--color-frame));
+}
+
+.detailBody .header {
+  margin: 1px 1px 0;
+}
+
+.detailBody .frame {
+  block-size: 10rem;
+  clip-path: polygon(11px 0, calc(100% - 11px) 0, 100% 11px, 100% 100%, 0 100%, 0 11px);
+}
+
+.detailText {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+}
+
+.detailName {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  color: var(--color-text);
+  font-size: 1.5rem;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-1) var(--space-3);
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+.facts dt {
+  color: var(--color-muted);
+}
+
+.facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.detailActions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
 /* Como Ajustes: una columna en el centro, con el título y lo demás alineados */
 .page {
   inline-size: min(100%, 52rem);

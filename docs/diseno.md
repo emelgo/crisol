@@ -78,7 +78,8 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
 - **La colocación de Ajustes es la referencia**: una columna en el centro, con el título y el contenido alineados.
   Nada suelto «en medio sin sentido». **El título no se mueve de una vista a otra**; si hace falta más sitio, se usan
   los lados con **paneles fuera de la columna** («a cada lado puede haber como pestañas extras»): en Archivos, el
-  árbol de carpetas a la izquierda y el archivo elegido a la derecha.
+  árbol de carpetas a la izquierda y el archivo elegido a la derecha; en Mis mundos, a la derecha, el mundo sobre el
+  que se pasa el ratón (portada, campañas, últimos artículos, archivos y «Entrar»), para probarlo.
 - **Crear algo se hace con un botón que abre un cuadro**, no con un formulario suelto en la pantalla. **El de crear es
   prácticamente el de sus ajustes** (para un mundo: portada, nombre, descripción y color), para dejarlo bien hecho
   sin tener que entrar después en ajustes.

@@ -2,6 +2,7 @@ import { TRASH_DAYS } from '@crisol/domain'
 import { useQuery } from '@tanstack/react-query'
 import { Navigate } from '@tanstack/react-router'
 import { Globe } from 'lucide-react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
@@ -13,7 +14,7 @@ import { failed } from '../components/load-error.tsx'
 import { PageTitle } from '../components/page-title.tsx'
 import { Tour } from '../components/tour.tsx'
 import styles from './world-card.module.css'
-import { NewWorld, WorldCard } from './world-card.tsx'
+import { NewWorld, WorldCard, WorldDetail } from './world-card.tsx'
 
 export function Worlds() {
   const { t } = useTranslation()
@@ -31,6 +32,9 @@ export function Worlds() {
     enabled: Boolean(account)
   })
   const cards = useCardList('mundos', worlds.data?.worlds)
+  // El mundo señalado (el último sobre el que se pasó el ratón), para el panel de la derecha
+  const [previewId, setPreviewId] = useState<string | null>(null)
+  const preview = worlds.data?.worlds.find((w) => w.id === previewId)
 
   if (pending) return null
   if (!account) return <Navigate to="/entrar" replace />
@@ -39,30 +43,47 @@ export function Worlds() {
   const empty = cards.length === 0
 
   return (
-    <section className={styles.page}>
-      <div className={styles.top}>
-        <PageTitle>{t('worlds.title')}</PageTitle>
+    <section className={styles.layout}>
+      <div className={styles.side} />
+      <div className={styles.center}>
+        <div className={styles.top}>
+          <PageTitle>{t('worlds.title')}</PageTitle>
+        </div>
+        <FormError message={failed(worlds) ? errorText(worlds.error) : null} />
+        {!worlds.data && !failed(worlds) && <Loading />}
+        {worlds.data &&
+          (empty ? (
+            // Sin mundos: qué es un mundo y el botón grande para crear el primero
+            <div className={styles.empty}>
+              <Globe aria-hidden="true" size={44} strokeWidth={1.25} />
+              <h2>{t('worlds.empty')}</h2>
+              {!canCreate && <p>{t('worlds.emptyPlayer')}</p>}
+              {canCreate && <NewWorld big />}
+            </div>
+          ) : (
+            <ul className={styles.list} aria-label={t('worlds.listLabel')} data-card-list>
+              {cards.map(({ item, fresh, burning, burnt }) => (
+                <WorldCard
+                  key={item.id}
+                  world={item}
+                  fresh={fresh}
+                  burning={burning}
+                  onBurnt={burnt}
+                  onPreview={() => setPreviewId(item.id)}
+                />
+              ))}
+              {/* Tras el último, el recuadro vacío para crear otro */}
+              {canCreate && <NewWorld />}
+            </ul>
+          ))}
       </div>
-      <FormError message={failed(worlds) ? errorText(worlds.error) : null} />
-      {!worlds.data && !failed(worlds) && <Loading />}
-      {worlds.data &&
-        (empty ? (
-          // Sin mundos: qué es un mundo y el botón grande para crear el primero
-          <div className={styles.empty}>
-            <Globe aria-hidden="true" size={44} strokeWidth={1.25} />
-            <h2>{t('worlds.empty')}</h2>
-            {!canCreate && <p>{t('worlds.emptyPlayer')}</p>}
-            {canCreate && <NewWorld big />}
-          </div>
+      <aside className={styles.detail} aria-label={t('worlds.detail')}>
+        {preview ? (
+          <WorldDetail world={preview} />
         ) : (
-          <ul className={styles.list} aria-label={t('worlds.listLabel')} data-card-list>
-            {cards.map(({ item, fresh, burning, burnt }) => (
-              <WorldCard key={item.id} world={item} fresh={fresh} burning={burning} onBurnt={burnt} />
-            ))}
-            {/* Tras el último, el recuadro vacío para crear otro */}
-            {canCreate && <NewWorld />}
-          </ul>
-        ))}
+          !empty && <p className={styles.detailHint}>{t('worlds.pickOne')}</p>
+        )}
+      </aside>
       <Tour
         id="mundos"
         steps={[

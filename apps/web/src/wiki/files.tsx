@@ -14,7 +14,6 @@ import { getRouteApi, Navigate } from '@tanstack/react-router'
 import {
   ChevronRight,
   File as FileIcon,
-  Files,
   FileText,
   Folder,
   FolderPlus,
@@ -700,7 +699,7 @@ function FileRow({
   onSelect?: (() => void) | undefined
   onChanged: () => Promise<unknown>
 }) {
-  const { t, i18n } = useTranslation()
+  const { i18n } = useTranslation()
   const [viewing, setViewing] = useState(false)
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents: elegirla es un atajo del ratón; con el teclado, su nombre y su engranaje
