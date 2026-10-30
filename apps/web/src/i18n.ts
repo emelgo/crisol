@@ -600,6 +600,16 @@ export const es = {
     root: 'Todos',
     path: 'Carpetas',
     search: 'Buscar por nombre',
+    results_one: '1 archivo encontrado',
+    results_other: '{{count}} archivos encontrados',
+    emptyFolder: 'Esta carpeta está vacía.',
+    view: 'Vista',
+    asList: 'En lista',
+    asCards: 'En tarjetas',
+    expand: 'Abrir {{name}}',
+    collapse: 'Cerrar {{name}}',
+    moveHere: 'Mover aquí',
+    moved: '«{{name}}» movido a «{{folder}}»',
     noResults: 'Ningún archivo se llama así.',
     folder: 'Carpeta',
     noFolder: 'Ninguna (en lo más alto)',
@@ -624,7 +634,6 @@ export const es = {
     empty: 'Aún no hay archivos.',
     common: 'Comunes',
     commonTitle: 'Archivos comunes',
-    commonHint: 'Los comparten todos tus mundos.',
     commonEmpty: 'Aún no hay archivos comunes.',
     kinds: 'Tipo',
     all: 'Todo',
@@ -906,6 +915,7 @@ export const es = {
     worlds: {
       create: 'Un mundo guarda tu wiki, tus campañas y tus partidas.',
       ribbon: 'Dentro de un mundo, esta barra cambiará y mostrará su contenido.',
+      files: 'Aquí guardas las imágenes y documentos que comparten todos tus mundos.',
       history: 'Aquí queda todo lo que se hace, tanto por ti como por la IA, y desde aquí se puede deshacer y rehacer.',
       trash: 'Lo que se borra viene aquí, por si hay que recuperarlo, y se guarda durante {{days}} días.',
       account: 'Desde aquí podrás administrar la aplicación.'
@@ -917,6 +927,11 @@ export const es = {
     },
     campaigns: {
       create: 'Cada campaña reúne a un grupo de jugadores en este mundo.'
+    },
+    files: {
+      upload: 'Desde aquí se suben imágenes, PDF, audio y textos; también puedes soltarlos en la pantalla.',
+      folders: 'Tus carpetas, para ordenarlos: arrastra un archivo a una para moverlo.',
+      search: 'Busca por nombre en todas las carpetas, o filtra por tipo.'
     }
   },
   profile: {
@@ -944,6 +959,7 @@ export const es = {
     NAME_TAKEN: 'Ya hay un archivo con ese nombre',
     TOO_LARGE: 'Pasa de 250 MB',
     NETWORK: 'Se cortó la conexión: vuelve a intentarlo',
+    BAD_TYPE: 'Ese tipo de archivo no se puede subir',
     CANCELLED: 'Cancelada',
     PDF_UNAVAILABLE: 'Ahora no se puede sacar el PDF: usa «Imprimir» y guárdalo como PDF.',
     INVALID_CREDENTIALS: 'Email o contraseña incorrectos',

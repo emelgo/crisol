@@ -117,18 +117,30 @@ describe('los archivos del mundo', () => {
     expect((await download(id, { range: `bytes=${PDF.length}-` })).statusCode).toBe(416)
   })
 
-  it('el SVG va con una CSP que no deja ejecutar nada; lo que no es imagen ni PDF, como descarga', async () => {
+  it('el SVG va con una CSP que no deja ejecutar nada; lo que no se admite (programas, scripts, páginas) no se sube', async () => {
     const svg = (await upload('Escudo.svg', SVG)).json()
     expect(svg).toMatchObject({ kind: 'image', mime: 'image/svg+xml' })
     const served = await download(svg.id)
     expect(served.headers['content-security-policy']).toContain('sandbox')
     expect(served.headers['content-security-policy']).toContain("default-src 'none'")
-    // Un .png que es HTML no se sirve como imagen ni como página
-    const fake = (await upload('trampa.png', Buffer.from('<html><script>alert(1)</script>'))).json()
-    expect(fake).toMatchObject({ kind: 'other', mime: 'application/octet-stream' })
-    const attachment = await download(fake.id)
-    expect(attachment.headers['content-type']).toBe('application/octet-stream')
-    expect(attachment.headers['content-disposition']).toMatch(/^attachment; filename="trampa.png"/)
+    // Un .png que es HTML, un programa o un script: no entran, ni queda nada de ellos
+    for (const [name, body] of [
+      ['trampa.png', Buffer.from('<html><script>alert(1)</script>')],
+      ['instalar.exe', Buffer.from('MZ\x90\x00programa')],
+      ['hola.js', Buffer.from('alert(1)')],
+      ['notas.txt', Buffer.from([0x00, 0x01, 0x02])]
+    ] as const) {
+      const response = await upload(name, body)
+      expect(response.statusCode, name).toBe(415)
+      expect(response.json()).toEqual({ code: 'BAD_TYPE' })
+    }
+    expect((await call('listFiles', { worldId })).files.map((f: { name: string }) => f.name)).toEqual(['Escudo.svg'])
+    // Texto, audio y vídeo, sí, con su tipo
+    expect((await upload('notas.md', Buffer.from('# Sesión 3\nLos PJ llegan a Puerto Ceniza'))).json()).toMatchObject({
+      kind: 'other',
+      mime: 'text/markdown; charset=utf-8'
+    })
+    expect((await upload('tema.mp3', Buffer.from('ID3\x04\x00musica'))).json()).toMatchObject({ mime: 'audio/mpeg' })
   })
 
   it('un cuerpo que no es el archivo en crudo (JSON, texto) da 415 y no deja nada', async () => {
@@ -151,8 +163,8 @@ describe('los archivos del mundo', () => {
     )
     expect(await storage.keys()).toEqual([])
     expect((await call('listFiles', { worldId })).files).toEqual([])
-    // Justo en el límite, sí
-    expect((await upload('justo.bin', Buffer.alloc(LIMIT, 1))).statusCode).toBe(201)
+    // Justo en el límite, sí (un texto, de lo que se admite)
+    expect((await upload('justo.txt', Buffer.alloc(LIMIT, 'a'))).statusCode).toBe(201)
   })
 
   it('con permiso: sin sesión 401; quien no ve la wiki ni sube ni descarga (404)', async () => {

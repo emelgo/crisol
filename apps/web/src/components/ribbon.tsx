@@ -86,6 +86,12 @@ export function Ribbon() {
   const prefetchHistory = () =>
     void queryClient.prefetchInfiniteQuery({ ...historyQuery(api, scope), staleTime: 10_000 })
   const prefetchTrash = () => void queryClient.prefetchQuery({ ...trashQuery(api, scope), staleTime: 10_000 })
+  const prefetchCommon = () =>
+    void queryClient.prefetchQuery({
+      queryKey: ['commonFiles'],
+      queryFn: () => api.call('listCommonFiles', {}),
+      staleTime: 10_000
+    })
   // Al entrar en un mundo, «Mundos» sube a la llama y se funde con ella, que se aviva (el mundo se cocina en el crisol);
   // dentro, la llama es la vuelta. Al volver, «Mundos» sale de la llama, sin fuego
   const inWorld = Boolean(worldId)
@@ -142,7 +148,8 @@ export function Ribbon() {
           className={[styles.brand, flame === 'fire' ? styles.cooking : '', flame === 'smoke' ? styles.smoking : '']
             .filter(Boolean)
             .join(' ')}
-          {...(inWorld ? { viewTransition: LEAVE_WORLD, onClick: leaveWorld } : {})}
+          // Dentro de un mundo, salir de él; fuera, como «Mundos»: el cambio rápido de sección
+          {...(inWorld ? { viewTransition: LEAVE_WORLD, onClick: leaveWorld } : { viewTransition: SECTION })}
           data-tour="barra-llama"
           aria-label={t('app.name')}
           translate="no"
@@ -170,6 +177,10 @@ export function Ribbon() {
             viewTransition={SECTION}
             className={worldsItem.filter(Boolean).join(' ')}
             style={{ '--rise': '-7.4rem' } as CSSProperties}
+            data-tour="barra-archivos"
+            // Se piden al acercarse: al llegar, ya están
+            onPointerEnter={prefetchCommon}
+            onFocus={prefetchCommon}
           >
             <Label icon={Folder} text={t('ribbon.files')} />
           </Link>
@@ -234,6 +245,15 @@ export function Ribbon() {
  */
 function WorldPanels({ worldId, master }: { worldId: string; master: boolean }) {
   const { t } = useTranslation()
+  const api = useApi()
+  const queryClient = useQueryClient()
+  // Lo de cada pestaña se pide al acercarse a su botón: al llegar, ya está (sin un momento en blanco)
+  const prefetch = (queryKey: unknown[], queryFn: () => Promise<unknown>) => () =>
+    void queryClient.prefetchQuery({ queryKey, queryFn, staleTime: 10_000 })
+  const prefetchHome = master
+    ? prefetch(['pages', worldId, 'recent'], () => api.call('listRecentPages', { worldId }))
+    : prefetch(['campaigns', worldId], () => api.call('listCampaigns', { worldId }))
+  const prefetchCampaigns = prefetch(['campaigns', worldId], () => api.call('listCampaigns', { worldId }))
   return (
     <>
       <Link
@@ -242,10 +262,19 @@ function WorldPanels({ worldId, master }: { worldId: string; master: boolean }) 
         activeOptions={{ exact: true }}
         className={styles.item}
         viewTransition={SECTION}
+        onPointerEnter={prefetchHome}
+        onFocus={prefetchHome}
       >
         <Label icon={House} text={t('ribbon.home')} />
       </Link>
-      <Link to="/mundos/$worldId/campanas" params={{ worldId }} className={styles.item} viewTransition={SECTION}>
+      <Link
+        to="/mundos/$worldId/campanas"
+        params={{ worldId }}
+        className={styles.item}
+        viewTransition={SECTION}
+        onPointerEnter={prefetchCampaigns}
+        onFocus={prefetchCampaigns}
+      >
         <Label icon={Swords} text={t('ribbon.campaigns')} />
       </Link>
       {master && <WikiPanels worldId={worldId} />}
@@ -256,6 +285,14 @@ function WorldPanels({ worldId, master }: { worldId: string; master: boolean }) 
 /** Los paneles de la wiki de un mundo */
 function WikiPanels({ worldId }: { worldId: string }) {
   const { t } = useTranslation()
+  const api = useApi()
+  const queryClient = useQueryClient()
+  const prefetchFiles = () =>
+    void queryClient.prefetchQuery({
+      queryKey: ['files', worldId],
+      queryFn: () => api.call('listFiles', { worldId }),
+      staleTime: 10_000
+    })
   const navigate = useNavigate()
   const wikiPanel = useWikiPanel()
   const inWiki = useRouterState({
@@ -289,7 +326,14 @@ function WikiPanels({ worldId }: { worldId: string }) {
       <Link to="/mundos/$worldId/etiquetas" params={{ worldId }} className={styles.item} viewTransition={SECTION}>
         <Label icon={Hash} text={t('ribbon.tags')} />
       </Link>
-      <Link to="/mundos/$worldId/archivos" params={{ worldId }} className={styles.item} viewTransition={SECTION}>
+      <Link
+        to="/mundos/$worldId/archivos"
+        params={{ worldId }}
+        className={styles.item}
+        viewTransition={SECTION}
+        onPointerEnter={prefetchFiles}
+        onFocus={prefetchFiles}
+      >
         <Label icon={Folder} text={t('ribbon.files')} />
       </Link>
     </>

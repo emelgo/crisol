@@ -28,34 +28,11 @@ export function enterWorld(worldId: string, card: Element | null) {
 }
 
 /**
- * Al salir de un mundo (por la llama): de su cabecera, que vuelve a ser tarjeta, sube humo, como de un fuego que se
- * apaga. Unas volutas finas que se retuercen al subir (un filtro de turbulencia, base.css .humo), solo sobre ella
+ * Al salir de un mundo (por la llama): como las brasas al entrar, pero apagadas: una bruma gris que sube desde abajo y
+ * bocanadas de humo que suben, se ensanchan y se disipan (base.css, .humo)
  */
 export function leaveWorld() {
-  if (typeof document.startViewTransition !== 'function') return
-  const header = document.querySelector<HTMLElement>('[data-cabecera-mundo]')
-  if (!header) return
-  const box = header.getBoundingClientRect()
-  const layer = document.createElement('div')
-  layer.className = 'humo'
-  layer.setAttribute('aria-hidden', 'true')
-  Object.assign(layer.style, {
-    left: `${box.left}px`,
-    top: `${box.top}px`,
-    width: `${box.width}px`,
-    height: `${box.height}px`
-  })
-  // El filtro que las retuerce, que se mueve solo; y las volutas, a lo ancho, cada una a su ritmo
-  layer.innerHTML = `<svg width="0" height="0" style="position:absolute"><filter id="humo-retorcido"><feTurbulence type="fractalNoise" baseFrequency="0.012 0.035" numOctaves="3" seed="7"><animate attributeName="baseFrequency" dur="3.2s" values="0.012 0.035;0.02 0.05" fill="freeze"/></feTurbulence><feDisplacementMap in="SourceGraphic" scale="32"/></filter></svg>${[
-    8, 21, 34, 47, 60, 73, 86
-  ]
-    .map(
-      (x, i) =>
-        `<span class="voluta" style="left:${x}%;--giro:${i % 2 ? -14 : 12}deg;animation-delay:${[0, 160, 60, 240, 120, 300, 200][i]}ms"></span>`
-    )
-    .join('')}`
-  document.body.append(layer)
-  window.setTimeout(() => layer.remove(), 3800)
+  overlay('humo', 3000)
 }
 
 /** Las brasas: un calor suave que sube desde abajo y unas chispas que se apagan */
@@ -64,7 +41,7 @@ function embers() {
 }
 
 /**
- * Una capa encima de todo, de adorno (base.css, .brasas): va aparte en la transición (su nombre), así que se ve por
+ * Una capa encima de todo, de adorno (base.css, .brasas y .humo): va aparte en la transición (su nombre), así que se ve por
  * encima mientras dura; luego se quita
  */
 function overlay(className: string, ms: number) {

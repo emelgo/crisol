@@ -263,7 +263,7 @@ export function LookHeader({
   const image = useCoverImage(look)
   const [viewing, setViewing] = useState(false)
   return (
-    <header className={styles.hero} style={{ ...tint(look.color), ...style }} data-cabecera-mundo>
+    <header className={styles.hero} style={{ ...tint(look.color), ...style }}>
       <CoverHeader
         url={image?.url}
         cover={look.cover}

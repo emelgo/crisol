@@ -53,7 +53,10 @@ const cardsIn = async (region?: string) =>
   )
 
 beforeEach(() =>
-  localStorage.setItem('crisol.recorridos.enrique@crisol.test', JSON.stringify({ seen: ['mundos', 'mundo'] }))
+  localStorage.setItem(
+    'crisol.recorridos.enrique@crisol.test',
+    JSON.stringify({ seen: ['mundos', 'mundo', 'archivos'] })
+  )
 )
 
 describe('los archivos del mundo', () => {
@@ -70,7 +73,8 @@ describe('los archivos del mundo', () => {
     expect(bestiary.getAttribute('target')).toBe('_blank')
     expect(bestiary.getAttribute('href')).toMatch(/^\/api\/files\//)
     // Filtrar: solo las imágenes
-    await userEvent.click(screen.getByRole('button', { name: /Imágenes/ }))
+    // El filtro del mundo (el primero; el otro es el de los comunes)
+    await userEvent.click(screen.getAllByRole('button', { name: /Imágenes/ })[0] as HTMLElement)
     await waitFor(() => expect(list.queryByRole('link', { name: 'Bestiario.pdf' })).toBeNull())
     // Una imagen se ve en grande
     await userEvent.click(list.getByRole('button', { name: 'Mapa de Eana.png' }))
@@ -85,10 +89,13 @@ describe('los archivos del mundo', () => {
     if (!input) throw new Error('sin campo de archivos')
     const huge = new File(['x'], 'Enorme.pdf', { type: 'application/pdf' })
     Object.defineProperty(huge, 'size', { value: 300 * 1024 * 1024 })
-    await userEvent.upload(input, [
+    // Sin aplicar «accept», como al soltarlos en la pantalla: llegan también los que no se admiten
+    await userEvent.setup({ applyAccept: false }).upload(input, [
       new File(['%PDF'], 'Atlas.pdf', { type: 'application/pdf' }),
       new File(['png'], 'Escudo.png', { type: 'image/png' }),
-      huge
+      huge,
+      // Un programa: no se admite, ni se intenta
+      new File(['MZ'], 'virus.exe', { type: 'application/octet-stream' })
     ])
     const list = await cardsIn()
     expect(await list.findByRole('link', { name: 'Atlas.pdf' })).toBeDefined()
@@ -96,6 +103,7 @@ describe('los archivos del mundo', () => {
     await waitFor(() => expect(screen.queryByRole('button', { name: /Cancelar la subida/ })).toBeNull())
     expect(api.calls.filter((call) => call === 'uploadFile')).toHaveLength(2)
     expect(list.getByText('No se pudo: Pasa de 250 MB')).toBeDefined()
+    expect(list.getByText('No se pudo: Ese tipo de archivo no se puede subir')).toBeDefined()
     await userEvent.click(list.getByRole('button', { name: 'Quitar Enorme.pdf' }))
     expect(list.queryByText('Enorme.pdf')).toBeNull()
   })
@@ -171,8 +179,9 @@ describe('las carpetas de los archivos', () => {
     await userEvent.type(create.getByLabelText('Nombre de la carpeta'), 'Mapas')
     await userEvent.click(create.getByRole('button', { name: 'Crear la carpeta' }))
     await userEvent.click(await screen.findByRole('button', { name: 'Abrir la carpeta Mapas' }))
-    const path = within(await screen.findByRole('navigation', { name: 'Carpetas' }))
-    expect(path.getByText('Mapas').getAttribute('aria-current')).toBe('location')
+    // En el árbol del mundo, la elegida
+    const path = within((await screen.findAllByRole('navigation', { name: 'Carpetas' }))[0] as HTMLElement)
+    expect(path.getByRole('button', { name: /^Mapas/ }).getAttribute('aria-current')).toBe('true')
     // Dentro, aún no hay nada; lo que se sube va a ella
     expect(screen.queryByRole('button', { name: 'Mapa de Eana.png' })).toBeNull()
     const input = document.querySelector<HTMLInputElement>('input[type=file][multiple]')
@@ -182,7 +191,7 @@ describe('las carpetas de los archivos', () => {
     const [folder] = (await api.client.call('listFiles', { worldId: WORLD.id })).folders
     expect(api.files.find((f) => f.name === 'Costa.png')?.folderId).toBe(folder?.id)
     // Por la ruta, a lo más alto; y desde su engranaje, el mapa a la carpeta
-    await userEvent.click(path.getByRole('button', { name: 'Todos' }))
+    await userEvent.click(path.getByRole('button', { name: /^Todos/ }))
     await userEvent.click(await screen.findByRole('button', { name: 'Ajustes de Mapa de Eana.png' }))
     const settings = within(await screen.findByRole('dialog', { name: 'Ajustes de Mapa de Eana.png' }))
     await userEvent.selectOptions(settings.getByLabelText('Carpeta'), 'Mapas')

@@ -100,6 +100,12 @@ label {
   outline-offset: 2px;
 }
 
+/* Un título recibe el foco al cambiar de página (para quien usa lector de pantalla): sin recuadro, no es un control */
+h1[tabindex="-1"]:focus,
+h1[tabindex="-1"]:focus-visible {
+  outline: none;
+}
+
 /* Una sección con título es una caja de la hoja: marco de 1px con las esquinas cortadas */
 main section[aria-labelledby],
 dialog section[aria-labelledby] {
@@ -263,31 +269,45 @@ html:active-view-transition-type(entrar-mundo)::view-transition-image-pair(mundo
 }
 
 /*
- * El humo al salir (world-transition.ts): sobre la cabecera que se va, volutas grises que suben retorciéndose, se
- * ensanchan y se disipan. Van aparte en la transición (su nombre), por encima
+ * El humo al salir (world-transition.ts): como las brasas al entrar, pero apagadas. Una bruma gris que sube desde
+ * abajo y bocanadas que suben, se ensanchan y se disipan; van por encima
  */
 .humo {
   position: fixed;
+  inset: 0;
   z-index: 100;
-  overflow: visible;
+  background: radial-gradient(ellipse 65% 40% at 50% 115%, rgb(150 150 158 / 0.2), transparent 70%);
+  opacity: 0;
   pointer-events: none;
   view-transition-name: humo;
+  animation: calor 2400ms ease-out forwards;
 }
 
-.humo .voluta {
+.humo::before,
+.humo::after {
+  content: "";
   position: absolute;
-  inset-block-end: 10%;
-  inline-size: 90px;
-  block-size: 170px;
-  margin-inline-start: -45px;
-  background: radial-gradient(
-    ellipse 38% 46% at 50% 70%,
-    color-mix(in srgb, var(--color-muted) 55%, transparent),
-    transparent 72%
-  );
-  filter: url(#humo-retorcido) blur(7px);
+  inset: 0;
+  /* Bocanadas: manchas suaves, sin borde, repartidas a lo ancho junto al suelo */
+  background:
+    radial-gradient(ellipse 9% 11% at 18% 96%, rgb(178 178 186 / 0.26), transparent 70%),
+    radial-gradient(ellipse 11% 13% at 34% 99%, rgb(165 165 174 / 0.22), transparent 70%),
+    radial-gradient(ellipse 8% 10% at 49% 95%, rgb(182 182 190 / 0.26), transparent 70%),
+    radial-gradient(ellipse 12% 14% at 64% 100%, rgb(165 165 174 / 0.22), transparent 70%),
+    radial-gradient(ellipse 9% 11% at 81% 97%, rgb(178 178 186 / 0.24), transparent 70%);
+  filter: blur(10px);
   opacity: 0;
-  animation: voluta 3000ms cubic-bezier(0.25, 0.6, 0.35, 1) forwards;
+  animation: humo-sube 2400ms ease-out forwards;
+}
+
+.humo::after {
+  background:
+    radial-gradient(ellipse 10% 12% at 26% 100%, rgb(170 170 178 / 0.22), transparent 70%),
+    radial-gradient(ellipse 8% 10% at 42% 97%, rgb(182 182 190 / 0.24), transparent 70%),
+    radial-gradient(ellipse 11% 13% at 57% 101%, rgb(165 165 174 / 0.2), transparent 70%),
+    radial-gradient(ellipse 9% 11% at 73% 98%, rgb(178 178 186 / 0.24), transparent 70%);
+  animation-delay: 300ms;
+  animation-duration: 2700ms;
 }
 
 ::view-transition-group(humo),
@@ -296,19 +316,22 @@ html:active-view-transition-type(entrar-mundo)::view-transition-image-pair(mundo
   animation: none;
 }
 
-@keyframes voluta {
+/* Las bocanadas suben, se abren y se difuminan */
+@keyframes humo-sube {
   0% {
     opacity: 0;
-    transform: translateY(30%) scale(0.5, 0.6);
+    transform: translateY(0) scale(1, 0.8);
+    filter: blur(8px);
   }
 
-  22% {
-    opacity: 0.75;
+  25% {
+    opacity: 1;
   }
 
   100% {
     opacity: 0;
-    transform: translateY(-115%) scale(1.8, 1.7) rotate(var(--giro, 0deg));
+    transform: translateY(-38vh) scale(1.15, 1.6);
+    filter: blur(22px);
   }
 }
 

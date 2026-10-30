@@ -5,7 +5,7 @@
 import type { Readable } from 'node:stream'
 import { FILE_NAME_FORBIDDEN, fileName } from '@crisol/contracts'
 import { filesRepo, loadMemberships } from '@crisol/db'
-import { actorFrom, MAX_FILE_BYTES, sniff } from '@crisol/domain'
+import { actorFrom, MAX_FILE_BYTES, sniff, uploadable } from '@crisol/domain'
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
 import { z } from 'zod'
 import { authorizedWiki } from '../actions/access.ts'
@@ -30,6 +30,9 @@ const uploadQuery = z.union([
   z.object({ organizationId: z.uuid(), name: fileName, folderId: z.uuid().optional() })
 ])
 const fileParams = z.object({ id: z.uuid() })
+
+/** Lo subido no es de lo que se admite */
+class BadTypeError extends Error {}
 
 /** Un trozo pedido con Range («bytes=a-b», «bytes=a-», «bytes=-n»); null si no se entiende o pide varios */
 export function parseRange(
@@ -84,6 +87,7 @@ export function registerFileRoutes(
   const fail = (reply: FastifyReply, error: unknown) => {
     if (error instanceof TooLargeError) return reply.code(413).send({ code: 'TOO_LARGE', maxBytes })
     if (error instanceof NotAStreamError) return reply.code(415).send({ code: 'NOT_RAW' })
+    if (error instanceof BadTypeError) return reply.code(415).send({ code: 'BAD_TYPE' })
     const code = errorCode(error)
     if (code === 'NOT_FOUND') return reply.code(404).send({ code })
     if (code === 'FORBIDDEN') return reply.code(403).send({ code })
@@ -95,7 +99,13 @@ export function registerFileRoutes(
   const store = async (storage: Storage, request: FastifyRequest, place: FilePlace, name: string) => {
     if (Number(request.headers['content-length'] ?? 0) > maxBytes) throw new TooLargeError()
     const stored = await storage.write(place.worldId ?? place.organizationId, request.body as Readable, maxBytes)
-    return { ...sniff(stored.head, name), size: stored.size, hash: stored.hash, storageKey: stored.key }
+    const sniffed = sniff(stored.head, name)
+    // Solo imágenes, PDF, audio, vídeo y texto, por su contenido: lo demás (programas, scripts…) se tira
+    if (!uploadable(sniffed)) {
+      await storage.remove(stored.key)
+      throw new BadTypeError()
+    }
+    return { ...sniffed, size: stored.size, hash: stored.hash, storageKey: stored.key }
   }
 
   // Muchas seguidas al subir una carpeta: el límite es holgado (por quien las manda, no por el proxy)
