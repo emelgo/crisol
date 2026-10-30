@@ -7,7 +7,13 @@ import type { RealtimeMessage } from '@crisol/contracts'
 import { aiRepo, historyRepo, loadMemberships, worldsRepo } from '@crisol/db'
 import { actorFrom, aiDecision, authorize, MAX_PENDING_APPROVALS, NotFoundError } from '@crisol/domain'
 import { authorizedCampaign, authorizedPage } from '../actions/access.ts'
-import { type ActionContext, type ActionEnv, errorCode, type Implementation } from '../actions/context.ts'
+import {
+  type ActionContext,
+  type ActionEnv,
+  errorCode,
+  type Implementation,
+  InvalidRequestError
+} from '../actions/context.ts'
 import { approvalsChanged } from '../realtime/events.ts'
 import { openJson } from '../secrets.ts'
 
@@ -39,7 +45,7 @@ export function errorText(error: unknown): string {
   if (code === 'NOT_FOUND') return 'NOT_FOUND: no existe o no lo puedes ver'
   if (code === 'FORBIDDEN') return 'FORBIDDEN: no tienes permiso'
   if (code === null) throw error
-  return code
+  return error instanceof InvalidRequestError && error.detail ? `${code}: ${error.detail}` : code
 }
 
 export interface AiCall {
@@ -95,6 +101,10 @@ async function describe(ctx: ActionContext, input: Record<string, unknown>) {
   }
   if (typeof input.parentId === 'string') {
     details.parent = (await authorizedPage(ctx, 'page.read', input.parentId)).page.title
+  }
+  // Crear varias páginas: sus títulos
+  if (Array.isArray(input.pages)) {
+    details.titles = input.pages.map((page) => String((page as { title?: unknown }).title ?? ''))
   }
   if (typeof input.operationId === 'string') {
     const operation = await historyRepo.getOperation(ctx.db, input.operationId)

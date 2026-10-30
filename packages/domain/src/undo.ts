@@ -36,13 +36,16 @@ export function undoBlocker(operation: {
 
 /**
  * El primer cambio cuya fila ya no está como la dejó la operación: otra la tocó después. La versión identifica el
- * estado: deshacer deja la de antes, así que tras deshacer lo posterior se puede deshacer lo anterior.
+ * estado: deshacer deja la de antes, así que tras deshacer lo posterior se puede deshacer lo anterior. Si la operación
+ * tocó una fila varias veces (crearla y luego darle sus propiedades), cuenta cómo la dejó al final
  */
 export function staleChange(
   changes: readonly RowChange[],
   current: (tableName: string, rowId: string) => Row | null
 ): RowChange | null {
-  for (const change of changes) {
+  const last = new Map<string, RowChange>()
+  for (const change of changes) last.set(`${change.tableName}/${change.rowId}`, change)
+  for (const change of last.values()) {
     const now = current(change.tableName, change.rowId)
     const stale = change.after === null ? now !== null : now === null || now.version !== change.after.version
     if (stale) return change

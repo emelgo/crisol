@@ -211,3 +211,117 @@ export const createPageDocument = defineAction({
   }),
   output: z.object({ id: z.uuid() })
 })
+
+/** Markdown de una página: el dialecto de Obsidian que entiende Crisol */
+const MARKDOWN_HELP =
+  'Markdown de Obsidian: propiedades en YAML al principio (alias, etiquetas, resumen y las demás; las de páginas como "[[Título]]"), títulos #, listas, - [ ] casillas, tablas, ``` código, recuadros > [!nota] > [!consejo] > [!aviso] > [!peligro] > [!leer], la caja > [!caja], > [!secreto] para lo que solo ve el máster (se guarda aparte, nunca en el cuerpo) y %%notas ocultas%% en sus líneas'
+const markdownText = z.string().max(2_000_000)
+const blockId = z.string().regex(/^[A-Za-z0-9-]{1,64}$/)
+
+export const readPage = defineAction({
+  name: 'readPage',
+  kind: 'read',
+  description: `Lee una página de la wiki: sus propiedades y su cuerpo en ${MARKDOWN_HELP}. Con ids, cada bloque de primer nivel lleva al final su ^id (los secretos, ^s-id), para cambiarlo con editPage`,
+  input: z.object({
+    pageId: z.uuid(),
+    ids: z.boolean().optional().describe('Los ^id de los bloques de primer nivel, para cambiar uno con editPage')
+  }),
+  output: z.object({ page, markdown: z.string() })
+})
+
+const newPage = z.object({
+  key: z
+    .string()
+    .trim()
+    .min(1)
+    .max(60)
+    .describe('Un nombre para esta página dentro de la llamada, para que otras de la llamada la tengan de madre'),
+  parent: z
+    .string()
+    .trim()
+    .min(1)
+    .max(60)
+    .optional()
+    .describe('La key de otra página de esta llamada que será su madre; sin parent, va donde diga parentId'),
+  title: pageTitle,
+  icon: pageIcon.optional(),
+  markdown: markdownText.optional().describe('Sus propiedades (YAML) y su cuerpo')
+})
+
+export const createPages = defineAction({
+  name: 'createPages',
+  kind: 'write',
+  description: `Crea hasta 50 páginas de una vez en la wiki de un mundo, con su cuerpo y sus propiedades en ${MARKDOWN_HELP}. Pueden ir unas dentro de otras (parent, por su key). Es una sola operación del historial`,
+  input: z
+    .object({
+      worldId: z.uuid(),
+      parentId: z
+        .uuid()
+        .nullable()
+        .describe('Dónde van las que no tienen parent: dentro de esta página, o en el primer nivel con null'),
+      pages: z.array(newPage).min(1).max(50)
+    })
+    .refine((input) => new Set(input.pages.map((p) => p.key)).size === input.pages.length, {
+      message: 'Cada página necesita una key distinta'
+    }),
+  output: z.object({
+    pages: z.array(z.object({ key: z.string(), id: z.uuid(), title: z.string(), parentId: z.uuid().nullable() }))
+  })
+})
+
+/** Una propiedad que escribe la IA: las de páginas, por su título, un alias o su id */
+const propertyInput = z.discriminatedUnion('type', [
+  z.object({ name: propertyName, type: z.literal('text'), value: z.string().max(5000) }),
+  z.object({ name: propertyName, type: z.literal('number'), value: z.number().finite() }),
+  z.object({ name: propertyName, type: z.literal('boolean'), value: z.boolean() }),
+  z.object({ name: propertyName, type: z.literal('list'), value: z.array(z.string().trim().min(1).max(200)).max(200) }),
+  z.object({
+    name: propertyName,
+    type: z.literal('pages'),
+    value: z.array(z.string().trim().min(1).max(200)).max(200).describe('Títulos, alias o ids de páginas del mundo')
+  })
+])
+
+export const editPage = defineAction({
+  name: 'editPage',
+  kind: 'write',
+  description: `Cambia una página: su título, su icono, sus propiedades (todas, como se den) o su cuerpo, en ${MARKDOWN_HELP}. El cuerpo: append añade al final; replace lo cambia entero (y su YAML, si lo trae, las propiedades); block cambia el bloque blockId por lo que se dé (lee la página con ids); section cambia lo que hay debajo del título section (por su texto o su id), hasta el siguiente título de su nivel. Si la página está abierta, el cambio se ve al momento`,
+  input: z
+    .object({
+      pageId: z.uuid(),
+      title: pageTitle.optional(),
+      icon: pageIcon.nullable().optional(),
+      properties: z.array(propertyInput).max(100).optional(),
+      body: z
+        .object({
+          mode: z.enum(['append', 'replace', 'block', 'section']),
+          markdown: markdownText,
+          blockId: blockId.optional().describe('Con mode block: el id del bloque (sin ^ ni s-)'),
+          section: z
+            .string()
+            .trim()
+            .min(1)
+            .max(200)
+            .optional()
+            .describe('Con mode section: el texto del título o su id')
+        })
+        .refine((body) => body.mode !== 'block' || body.blockId, { message: 'block necesita blockId' })
+        .refine((body) => body.mode !== 'section' || body.section, { message: 'section necesita section' })
+        .optional()
+    })
+    .refine(
+      (input) =>
+        input.title !== undefined ||
+        input.icon !== undefined ||
+        input.properties !== undefined ||
+        input.body !== undefined,
+      { message: 'Nada que cambiar' }
+    ),
+  output: z.object({
+    page,
+    changedBlocks: z.array(z.string()).describe('Los ids de los bloques de primer nivel que se escribieron'),
+    changedSinceRequest: z
+      .boolean()
+      .describe('Si esperó la aprobación del máster y el cuerpo cambió entre medias: se aplicó sobre lo de ahora')
+  })
+})

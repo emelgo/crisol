@@ -130,3 +130,25 @@
 .tool:hover {
   color: var(--color-accent-text);
 }
+
+/* Lo que acaba de escribir Claude: un fondo azul que se va */
+.aiFlash {
+  animation: ai-flash 2.5s ease-out;
+}
+
+@keyframes ai-flash {
+  from {
+    background-color: color-mix(in srgb, var(--color-ai) 22%, transparent);
+  }
+  to {
+    background-color: transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aiFlash {
+    animation: none;
+    outline: 2px solid var(--color-ai);
+    outline-offset: 2px;
+  }
+}

@@ -2,6 +2,8 @@
  * Los ids de bloque: estables, para enlazar a un bloque, para el MCP y para exportar (`^id` en Markdown). Cortos, porque
  * se leen en el Markdown; únicos dentro de su documento (la extensión cambia los repetidos al pegar o duplicar)
  */
+
+import type { JSONContent } from '@tiptap/core'
 import { UniqueID } from '@tiptap/extension-unique-id'
 import { Fragment, type Node as PMNode } from '@tiptap/pm/model'
 import type { EditorState, Transaction } from '@tiptap/pm/state'
@@ -63,4 +65,20 @@ export function withoutBlockIds(fragment: Fragment): Fragment {
     )
   })
   return Fragment.from(nodes)
+}
+
+/**
+ * Lo mismo en JSON, para lo que se escribe fuera del editor (Claude, al crear o cambiar una página): pone id a los
+ * bloques que no lo tienen y cambia los repetidos (se queda el primero)
+ */
+export function fillJsonIds(node: JSONContent, seen: Set<string> = new Set()): JSONContent {
+  let attrs = node.attrs
+  if (node.type && BLOCK_TYPES.includes(node.type)) {
+    const id = typeof attrs?.id === 'string' && attrs.id !== '' ? attrs.id : null
+    const fresh = id && !seen.has(id) ? id : newBlockId()
+    seen.add(fresh)
+    attrs = { ...attrs, id: fresh }
+  }
+  const content = node.content?.map((child) => fillJsonIds(child, seen))
+  return { ...node, ...(attrs ? { attrs } : {}), ...(content ? { content } : {}) }
 }

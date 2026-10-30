@@ -169,6 +169,7 @@ export const es = {
     body: 'Texto de la página',
     label: 'Texto de la página',
     offline: 'Sin conexión: se guardará al volver.',
+    aiChanged: 'Claude ha cambiado la página.',
     toolbar: 'Insertar en el texto',
     task: 'Por hacer: {{text}}',
     taskDone: 'Hecho: {{text}}',
@@ -209,6 +210,9 @@ export const es = {
     none: 'Ningún bloque se llama así.',
     help: '↑↓ para moverte · Intro para elegir · Esc para cerrar',
     inserted: 'Bloque insertado: {{block}}.'
+  },
+  summaries: {
+    andMore: '{{list}} y {{count}} más'
   },
   callout: {
     note: 'Nota',
@@ -343,6 +347,8 @@ export const es = {
       unlockPage: 'quitó el candado de «{{title}}»',
       setPageProperties: 'cambió las propiedades de «{{title}}»',
       deletePage: 'borró la página «{{title}}»',
+      createPages: 'creó {{count}} páginas: {{titles}}',
+      editPage: 'cambió la página «{{title}}»',
       restorePage: 'restauró la página «{{title}}»',
       unknown: 'hizo un cambio ({{action}})'
     }
@@ -390,6 +396,8 @@ export const es = {
       restoreWorld: 'restaurar el mundo «{{name}}»',
       restoreCampaign: 'restaurar la campaña «{{name}}» de {{world}}',
       createPage: 'crear la página «{{title}}»',
+      createPages: 'crear {{count}} páginas: {{titles}}',
+      editPage: 'cambiar la página «{{title}}»',
       createSubpage: 'crear la página «{{title}}» dentro de «{{parent}}»',
       updatePage: 'renombrar la página «{{from}}» a «{{to}}»',
       movePage: 'mover «{{title}}» dentro de «{{parent}}»',

@@ -4,11 +4,9 @@
  */
 import { mergeAttributes, Node } from '@tiptap/core'
 import { CALLOUT_MARKDOWN, calloutKindOf, calloutTokenizer, renderCallout } from '../markdown/syntax.ts'
+import { type CalloutKind, isCalloutKind } from './callout-kinds.ts'
 
-export const CALLOUT_KINDS = ['note', 'tip', 'warning', 'danger', 'read-aloud'] as const
-export type CalloutKind = (typeof CALLOUT_KINDS)[number]
-
-export const isCalloutKind = (value: unknown): value is CalloutKind => CALLOUT_KINDS.includes(value as CalloutKind)
+export { CALLOUT_KINDS, type CalloutKind, isCalloutKind } from './callout-kinds.ts'
 
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {

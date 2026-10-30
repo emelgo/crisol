@@ -78,6 +78,17 @@ export function summaryOf(
       const title = text(details.page ?? details.title)
       return details.parent ? say('movePage', { title, parent: text(details.parent) }) : say('movePageToTop', { title })
     }
+    // Lo que escribe Claude: varias páginas de una vez, o el cambio de una
+    case 'createPages': {
+      const titles = Array.isArray(details.titles) ? details.titles.map(String) : []
+      if (titles.length === 1) return say('createPage', { title: titles[0] })
+      const shown = titles.slice(0, 3).map((title) => `«${title}»`)
+      const more = titles.length - shown.length
+      const list = more > 0 ? t('summaries.andMore', { list: shown.join(', '), count: more }) : listOf(shown)
+      return say('createPages', { count: titles.length, titles: list })
+    }
+    case 'editPage':
+      return say('editPage', { title: text(details.page ?? details.title) })
     default:
       return say('unknown', { action })
   }
@@ -98,6 +109,9 @@ export function undoLayers(details: Record<string, unknown>): { depth: number; r
   }
   return { depth, root: inner }
 }
+
+/** «a», «b» y «c» */
+const listOf = (items: readonly string[]) => new Intl.ListFormat('es', { type: 'conjunction' }).format(items)
 
 const asRecord = (value: unknown) => (value && typeof value === 'object' ? value : {}) as Record<string, unknown>
 

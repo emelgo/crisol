@@ -409,6 +409,12 @@ export function fakeApi(
       pageById(pageId)
       return { id: crypto.randomUUID() }
     },
+    // Lo de Claude (Markdown) no se usa desde la web: lo mínimo para el tipo
+    readPage: ({ pageId }) => ({ page: pageView(pageById(pageId)), markdown: '' }),
+    createPages: () => {
+      throw new ApiError('UNSUPPORTED', 400)
+    },
+    editPage: ({ pageId }) => ({ page: pageView(pageById(pageId)), changedBlocks: [], changedSinceRequest: false }),
     deletePage: ({ pageId }) => {
       const root = pageById(pageId)
       const below: StoredPage[] = []

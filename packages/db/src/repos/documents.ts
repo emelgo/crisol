@@ -5,7 +5,7 @@ import { documents } from '../schema/documents.ts'
 /** El estado guardado del cuerpo de una página, si ya tiene */
 export async function findBody(db: Database, pageId: string) {
   const [found] = await db
-    .select({ id: documents.id, state: documents.state })
+    .select({ id: documents.id, state: documents.state, updatedAt: documents.updatedAt })
     .from(documents)
     .where(and(eq(documents.pageId, pageId), eq(documents.kind, 'body')))
   return found ?? null

@@ -4,12 +4,13 @@ import type { HocuspocusProvider } from '@hocuspocus/provider'
 import { Collaboration } from '@tiptap/extension-collaboration'
 import { CollaborationCaret } from '@tiptap/extension-collaboration-caret'
 import { EditorContent, useEditor } from '@tiptap/react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type * as Y from 'yjs'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
 import { useAnnounce } from '../components/announcer.tsx'
+import { AiHighlight, useAiHighlight } from './ai-highlight.ts'
 import type { BlockContext } from './blocks.ts'
 import { FormatMenu, TableMenu } from './bubble-menu.tsx'
 import { caretColor, renderCaret } from './carets.ts'
@@ -102,6 +103,7 @@ function BodyEditor({
           announce: (block) => announce(t('blocks.inserted', { block: t(`blocks.${block.label}`).toLowerCase() }))
         }),
         CopySeparateOnPaste,
+        AiHighlight.configure({ className: styles.aiFlash ?? '' }),
         Collaboration.configure({ document, field: BODY_FIELD }),
         CollaborationCaret.configure({ provider, user: { name, color: caretColor(name) }, render: renderCaret })
       ],
@@ -128,6 +130,9 @@ function BodyEditor({
     const tr = fillMissingIds(editor.state)
     if (tr) editor.view.dispatch(tr)
   }, [editor, ready, editable])
+  // Lo que escribe Claude se resalta un instante
+  const announceAi = useCallback(() => announce(t('editor.aiChanged')), [announce, t])
+  useAiHighlight(editor, provider, announceAi)
   // El menú del bloque del cursor, desde la barra
   const blockButton = useRef<HTMLButtonElement>(null)
   const [blockMenu, setBlockMenu] = useState<BlockTarget | null>(null)

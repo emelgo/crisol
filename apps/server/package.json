@@ -30,6 +30,9 @@
     "@fastify/websocket": "catalog:",
     "@hocuspocus/server": "catalog:",
     "@modelcontextprotocol/server": "catalog:",
+    "@tiptap/core": "catalog:",
+    "@tiptap/pm": "catalog:",
+    "@tiptap/y-tiptap": "catalog:",
     "better-auth": "catalog:",
     "bullmq": "catalog:",
     "drizzle-orm": "catalog:",
@@ -42,7 +45,6 @@
   "devDependencies": {
     "@hocuspocus/provider": "catalog:",
     "@modelcontextprotocol/client": "catalog:",
-    "@tiptap/y-tiptap": "catalog:",
     "@types/node": "catalog:",
     "@vitest/coverage-v8": "catalog:",
     "auth": "catalog:",
