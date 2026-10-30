@@ -17,7 +17,7 @@ const worldRoute = getRouteApi('/mundos/$worldId/papelera')
 /** La papelera de la organización (para su propietario): mundos y campañas */
 export function OrganizationTrash() {
   const { t } = useTranslation()
-  return <TrashPage title={t('trash.title')} back={<Link to="/mundos">{t('worlds.title')}</Link>} scope={{}} />
+  return <TrashPage title={t('trash.title')} scope={{}} />
 }
 
 /** La papelera de un mundo (para su máster): sus campañas */
@@ -40,7 +40,8 @@ export function WorldTrash() {
   )
 }
 
-function TrashPage({ title, back, scope }: { title: string; back: ReactNode; scope: { worldId?: string } }) {
+/** back: el enlace de vuelta, solo como página; en una ventana no hace falta */
+function TrashPage({ title, back, scope }: { title: string; back?: ReactNode; scope: { worldId?: string } }) {
   const { t } = useTranslation()
   const api = useApi()
   const errorText = useErrorText()
@@ -55,7 +56,7 @@ function TrashPage({ title, back, scope }: { title: string; back: ReactNode; sco
   if (!account) return <Navigate to="/entrar" replace />
   return (
     <section>
-      <p>{back}</p>
+      {back && <p>{back}</p>}
       <PageTitle>{title}</PageTitle>
       <FormError message={trash.error ? errorText(trash.error) : null} />
       {trash.data &&

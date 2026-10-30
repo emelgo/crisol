@@ -26,11 +26,12 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
 
 - **Con sesión no hay barra arriba**. A la izquierda, una barra con iconos y su nombre debajo. Dentro de un mundo
   cambia y enseña su contenido. **Sin barra de estado abajo**: «la barra que hay abajo sirve de algo? sino quitala».
-- **Con sesión, la portada lleva directa a Mis mundos**. Una portada que solo enlaza a Mis mundos es redundante.
+- **Con sesión, la portada y Entrar llevan directos a Mis mundos**. Una portada que solo enlaza a Mis mundos es redundante.
 - **Lo de la barra lateral se abre encima**, como una ventana, sin quitar lo que se está viendo: Historial, Papelera,
   Ajustes, Perfil. «Ajustes y todo lo de la barra lateral debe ser como un popup, para no quitar la vista que se
   tiene en el momento». Se cierra con la X, con Escape o pulsando fuera, y se vuelve a donde se estaba; un enlace
-  de dentro la cierra y lleva a su sitio.
+  de dentro la cierra y lleva a su sitio. **Sin enlace de vuelta** arriba («Mis mundos»): en una ventana no tiene
+  sentido.
 - **El menú de la cuenta** (la inicial, abajo en la barra): quién eres, Perfil, Ajustes y Cerrar sesión. El tema va en
   Ajustes, no en el menú. Se abre al lado del botón y nunca se corta.
 

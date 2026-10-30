@@ -20,7 +20,7 @@ const worldRoute = getRouteApi('/mundos/$worldId/historial')
 /** El historial de toda la organización (para su propietario) */
 export function OrganizationHistory() {
   const { t } = useTranslation()
-  return <HistoryPage title={t('history.title')} back={<Link to="/mundos">{t('worlds.title')}</Link>} scope={{}} />
+  return <HistoryPage title={t('history.title')} scope={{}} />
 }
 
 /** El historial de un mundo (para su máster) */
@@ -43,7 +43,8 @@ export function WorldHistory() {
   )
 }
 
-function HistoryPage({ title, back, scope }: { title: string; back: ReactNode; scope: { worldId?: string } }) {
+/** back: el enlace de vuelta, solo como página; en una ventana no hace falta */
+function HistoryPage({ title, back, scope }: { title: string; back?: ReactNode; scope: { worldId?: string } }) {
   const { t, i18n } = useTranslation()
   const api = useApi()
   const errorText = useErrorText()
@@ -66,7 +67,7 @@ function HistoryPage({ title, back, scope }: { title: string; back: ReactNode; s
 
   return (
     <section>
-      <p>{back}</p>
+      {back && <p>{back}</p>}
       <PageTitle>{title}</PageTitle>
       <FormError message={history.error ? errorText(history.error) : null} />
       {history.data &&

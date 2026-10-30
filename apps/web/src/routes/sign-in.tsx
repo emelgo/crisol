@@ -1,4 +1,4 @@
-import { useNavigate } from '@tanstack/react-router'
+import { Navigate, useNavigate } from '@tanstack/react-router'
 import { type FormEvent, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
@@ -7,9 +7,11 @@ import { Field, FormError } from '../components/field.tsx'
 import styles from '../components/form.module.css'
 import { PageTitle } from '../components/page-title.tsx'
 
+/** Entrar con email y contraseña. Con sesión no hace falta: lleva a Mis mundos */
 export function SignIn() {
   const { t } = useTranslation()
   const accounts = useAccounts()
+  const { account, pending } = accounts.useAccount()
   const navigate = useNavigate()
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -19,12 +21,17 @@ export function SignIn() {
     const form = new FormData(event.currentTarget)
     setBusy(true)
     const result = await accounts.signIn(String(form.get('email')), String(form.get('password')))
-    setBusy(false)
     if (result.ok) {
-      if (!result.redirected) await navigate({ to: '/' })
-    } else setError(t(`errors.${result.code}`, { defaultValue: t('errors.UNKNOWN') }))
+      if (!result.redirected) await navigate({ to: '/mundos' })
+      return
+    }
+    setBusy(false)
+    setError(t(`errors.${result.code}`, { defaultValue: t('errors.UNKNOWN') }))
   }
 
+  if (pending) return null
+  // Mientras entra se queda aquí: si se entraba para autorizar una aplicación (OAuth), la página se va a otra dirección
+  if (account && !busy) return <Navigate to="/mundos" replace />
   return (
     <section className={styles.centered}>
       <PageTitle>{t('account.signIn')}</PageTitle>

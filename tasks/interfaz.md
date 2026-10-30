@@ -77,6 +77,8 @@ Todo va en la rama `interfaz/pulir-inicio`, en un commit local sin subir. Las no
 
 **Hecho:**
 - **Con sesión, la portada lleva directa a Mis mundos**, y el rombo de la barra también.
+- **Entrar con sesión lleva a Mis mundos**. Antes, si la sesión no llegaba (el servidor reiniciándose), la app
+  mandaba a Entrar y se quedaba ahí aunque luego la sesión volviera.
 - **Crear la cuenta** (arranque y unirse):
   - centrada;
   - nombre y apellido(s) en dos recuadros;
@@ -102,6 +104,7 @@ Todo va en la rama `interfaz/pulir-inicio`, en un commit local sin subir. Las no
   - el tema y la IA salen de ella;
   - Historial y Papelera abren una ventana encima (`components/window.tsx`), igual que Perfil y Ajustes desde el menú
     de la cuenta.
+  - en las ventanas de Historial y Papelera, sin el enlace «Mis mundos» de arriba.
 - **Menú de la cuenta**: quién eres, Perfil, Ajustes y Cerrar sesión. Es fijo en la pantalla y no se corta.
 - **Ajustes** (`/ajustes`):
   - Apariencia, con el tema;
@@ -117,6 +120,7 @@ Todo va en la rama `interfaz/pulir-inicio`, en un commit local sin subir. Las no
    - las etiquetas de la cuenta: Nombre, Apellido(s), Nombre de usuario y Repite la contraseña;
    - crear un mundo es un cuadro;
    - Historial y Papelera son botones que abren ventana;
+   - Entrar con sesión redirige; Historial y Papelera de la cuenta, sin enlace de vuelta;
    - Perfil y Ajustes, en el menú;
    - el tema ya no está en la barra;
    - las tarjetas de la IA;
