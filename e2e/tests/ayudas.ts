@@ -66,7 +66,7 @@ export async function openWorld(page: Page, name: string) {
 /** Desde Mis mundos, entra en un mundo y abre su wiki con «Páginas» */
 export async function openWiki(page: Page, name: string) {
   await openWorld(page, name)
-  await sections(page).getByRole('button', { name: 'Páginas' }).click()
+  await sections(page).getByRole('button', { name: 'Wiki' }).click()
   await expect(page).toHaveURL(/\/wiki$/)
 }
 

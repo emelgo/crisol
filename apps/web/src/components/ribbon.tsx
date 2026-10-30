@@ -1,18 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router'
-import {
-  Bookmark,
-  BookOpen,
-  Folder,
-  Globe,
-  Hash,
-  History,
-  House,
-  type LucideIcon,
-  Search,
-  Swords,
-  Trash2
-} from 'lucide-react'
+import { BookOpen, Folder, Globe, Hash, History, House, type LucideIcon, Swords, Trash2 } from 'lucide-react'
 import { type CSSProperties, type MouseEvent, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
@@ -298,7 +286,7 @@ function WikiPanels({ worldId }: { worldId: string }) {
   const navigate = useNavigate()
   const wikiPanel = useWikiPanel()
   const inWiki = useRouterState({
-    select: (state) => new RegExp(`^/mundos/${worldId}/(wiki|buscar|etiquetas|archivos)`).test(state.location.pathname)
+    select: (state) => new RegExp(`^/mundos/${worldId}/(wiki|buscar|etiquetas)`).test(state.location.pathname)
   })
   const press = (panel: WikiPanel) => (event: MouseEvent<HTMLButtonElement>) => {
     const trigger = event.currentTarget
@@ -310,28 +298,19 @@ function WikiPanels({ worldId }: { worldId: string }) {
     void navigate({ to: '/mundos/$worldId/wiki', params: { worldId }, viewTransition: SECTION })
   }
   const narrow = useNarrow()
-  // Marcado si se ve: en lo estrecho, con el cajón abierto; en lo ancho, si no está recogido
-  const pressed = (panel: WikiPanel) =>
-    inWiki && wikiPanel.panel === panel && (narrow ? wikiPanel.open : !wikiPanel.collapsed)
-  const panels: [WikiPanel, LucideIcon, string][] = [
-    ['pages', BookOpen, t('ribbon.pages')],
-    ['search', Search, t('ribbon.search')],
-    ['bookmarks', Bookmark, t('ribbon.bookmarks')]
-  ]
+  // Marcado si se ve su panel: en lo estrecho, con el cajón abierto; en lo ancho, si no está recogido
+  // La wiki: abre su panel (páginas; buscar y marcadores, en sus pestañas)
   return (
     <>
-      {panels.map(([panel, icon, text]) => (
-        <button
-          key={panel}
-          type="button"
-          className={styles.item}
-          aria-pressed={pressed(panel)}
-          data-tour={`barra-${panel}`}
-          onClick={press(panel)}
-        >
-          <Label icon={icon} text={text} />
-        </button>
-      ))}
+      <button
+        type="button"
+        className={styles.item}
+        aria-pressed={inWiki && (narrow ? wikiPanel.open : !wikiPanel.collapsed)}
+        data-tour="barra-wiki"
+        onClick={press(inWiki ? wikiPanel.panel : 'pages')}
+      >
+        <Label icon={BookOpen} text={t('ribbon.wiki')} />
+      </button>
       <Link
         to="/mundos/$worldId/etiquetas"
         params={{ worldId }}

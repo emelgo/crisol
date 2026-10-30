@@ -32,7 +32,7 @@ export function Worlds() {
     enabled: Boolean(account)
   })
   const cards = useCardList('mundos', worlds.data?.worlds)
-  // El mundo señalado (el último sobre el que se pasó el ratón), para el panel de la derecha
+  // El mundo sobre el que está el ratón (o el foco), para el panel de la izquierda; al irse, nada
   const [previewId, setPreviewId] = useState<string | null>(null)
   const preview = worlds.data?.worlds.find((w) => w.id === previewId)
 
@@ -44,7 +44,9 @@ export function Worlds() {
 
   return (
     <section className={styles.layout}>
-      <div className={styles.side} />
+      <aside className={styles.detail} aria-label={t('worlds.detail')}>
+        {preview && <WorldDetail key={preview.id} world={preview} />}
+      </aside>
       <div className={styles.center}>
         <div className={styles.top}>
           <PageTitle>{t('worlds.title')}</PageTitle>
@@ -69,7 +71,9 @@ export function Worlds() {
                   fresh={fresh}
                   burning={burning}
                   onBurnt={burnt}
-                  onPreview={() => setPreviewId(item.id)}
+                  onPreview={(shown) =>
+                    setPreviewId((current) => (shown ? item.id : current === item.id ? null : current))
+                  }
                 />
               ))}
               {/* Tras el último, el recuadro vacío para crear otro */}
@@ -77,13 +81,6 @@ export function Worlds() {
             </ul>
           ))}
       </div>
-      <aside className={styles.detail} aria-label={t('worlds.detail')}>
-        {preview ? (
-          <WorldDetail world={preview} />
-        ) : (
-          !empty && <p className={styles.detailHint}>{t('worlds.pickOne')}</p>
-        )}
-      </aside>
       <Tour
         id="mundos"
         steps={[

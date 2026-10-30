@@ -150,7 +150,7 @@ describe('el Inicio de un mundo', () => {
     // En la barra, Inicio y Campañas, pero no la wiki
     expect(await ribbon().findByRole('link', { name: 'Inicio' })).toBeDefined()
     expect(ribbon().getByRole('link', { name: 'Campañas' })).toBeDefined()
-    expect(ribbon().queryByRole('button', { name: 'Páginas' })).toBeNull()
+    expect(ribbon().queryByRole('button', { name: 'Wiki' })).toBeNull()
   })
 
   it('dentro de un mundo, la barra empieza por Inicio y Campañas, y siguen los de su wiki', async () => {
@@ -162,7 +162,7 @@ describe('el Inicio de un mundo', () => {
     const items = [...screen.getByRole('navigation', { name: 'Secciones' }).querySelectorAll('a, button')]
       .map((item) => item.textContent)
       .filter(Boolean)
-    expect(items).toEqual(['Inicio', 'Campañas', 'Páginas', 'Buscar', 'Marcadores', 'Etiquetas', 'Archivos'])
+    expect(items).toEqual(['Inicio', 'Campañas', 'Wiki', 'Etiquetas', 'Archivos'])
 
     await userEvent.click(ribbon().getByRole('link', { name: 'Campañas' }))
     expect(await screen.findByRole('heading', { level: 1, name: 'Campañas' })).toBeDefined()

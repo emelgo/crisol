@@ -37,7 +37,8 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   tiene en el momento». Se cierra con la X, con Escape o pulsando fuera, y se vuelve a donde se estaba; un enlace
   de dentro la cierra y lleva a su sitio. **Sin enlace de vuelta** arriba («Mis mundos»): en una ventana no tiene
   sentido.
-- **Dentro de un mundo, la barra empieza por Inicio y Campañas**, y siguen los de su wiki. Sin ellos «no hay forma
+- **Dentro de un mundo, la barra empieza por Inicio y Campañas**, y siguen **Wiki** (sus páginas; buscar y marcadores,
+  como pestañas de su panel, no en la barra), Etiquetas y Archivos. Sin ellos «no hay forma
   de volver». Historial y Papelera enseñan los de ese mundo.
 - **El Inicio de un mundo**: arriba su cabecera, que es su tarjeta en grande (portada, nombre, descripción, papel y
   engranaje); al entrar, la tarjeta se convierte en ella. Debajo, lo reciente: «Últimos artículos» de la wiki para
@@ -78,8 +79,10 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
 - **La colocación de Ajustes es la referencia**: una columna en el centro, con el título y el contenido alineados.
   Nada suelto «en medio sin sentido». **El título no se mueve de una vista a otra**; si hace falta más sitio, se usan
   los lados con **paneles fuera de la columna** («a cada lado puede haber como pestañas extras»): en Archivos, el
-  árbol de carpetas a la izquierda y el archivo elegido a la derecha; en Mis mundos, a la derecha, el mundo sobre el
-  que se pasa el ratón (portada, campañas, últimos artículos, archivos y «Entrar»), para probarlo.
+  árbol de carpetas a la izquierda y, a la derecha, el archivo o la carpeta **sobre la que está el ratón** (solo
+  mientras lo está); en Mis mundos, a la izquierda, el mundo sobre el que está el ratón (portada, descripción,
+  campañas y archivos). Archivos de un mundo es la misma pantalla que la de los comunes, con «Comunes» como una carpeta
+  más. Con menos sitio (o con zoom) la columna del centro se estrecha; sin sitio, el panel se quita.
 - **Crear algo se hace con un botón que abre un cuadro**, no con un formulario suelto en la pantalla. **El de crear es
   prácticamente el de sus ajustes** (para un mundo: portada, nombre, descripción y color), para dejarlo bien hecho
   sin tener que entrar después en ajustes.

@@ -80,7 +80,7 @@ export function WikiLayout({
   const api = useApi()
   const errorText = useErrorText()
   const { account, pending } = useAccounts().useAccount()
-  const { panel, collapsed, open, close } = useWikiPanel()
+  const { panel, collapsed, open, close, show } = useWikiPanel()
   const closeButton = useRef<HTMLButtonElement>(null)
   // Al abrir el cajón (en lo estrecho), el foco entra en él; al cerrarlo, vuelve al botón de la barra que lo abrió
   useEffect(() => {
@@ -121,8 +121,25 @@ export function WikiLayout({
           if (event.key === 'Escape' && open) close(true)
         }}
       >
+        {/* Las pestañas del panel: las páginas, buscar y los marcadores (antes, botones de la barra) */}
+        <div className={styles.panelTabs} role="tablist" aria-label={t('ribbon.wiki')}>
+          {(['pages', 'search', 'bookmarks'] as const).map((tab) => (
+            <button
+              key={tab}
+              type="button"
+              role="tab"
+              aria-selected={panel === tab}
+              className={styles.panelTab}
+              onClick={(event) => show(tab, event.currentTarget)}
+            >
+              {titles[tab]}
+            </button>
+          ))}
+        </div>
         <div className={styles.asideHeader}>
-          <h2 id={headingId}>{titles[panel]}</h2>
+          <h2 id={headingId} className={styles.hiddenTitle}>
+            {titles[panel]}
+          </h2>
           {panel === 'pages' && (
             <BusyButton className={form.button} busy={create.isPending} onClick={() => create.mutate(null)}>
               {t('wiki.newPage')}

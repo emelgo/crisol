@@ -266,18 +266,27 @@ describe('los archivos comunes de la cuenta (ADR-0005)', () => {
       ]
     })
 
-  it('en los archivos de un mundo, aparte, la carpeta «Comunes»; lo que se sube ahí es común', async () => {
+  it('en los archivos de un mundo, la carpeta «Comunes» tiene los de la cuenta; lo que se sube ahí es común', async () => {
     const api = renderAt(`/mundos/${WORLD.id}/archivos`, withCommon())
-    const common = await cardsIn('Comunes')
-    expect(await common.findByRole('button', { name: 'Escudo.png' })).toBeDefined()
-    expect(common.queryByRole('button', { name: 'Mapa de Eana.png' })).toBeNull()
-    const input = (await screen.findByRole('region', { name: 'Comunes' })).querySelector<HTMLInputElement>(
-      'input[type=file][multiple]'
+    // Fuera de ella, solo los del mundo
+    expect(await screen.findByRole('button', { name: 'Mapa de Eana.png' })).toBeDefined()
+    expect(screen.queryByRole('button', { name: 'Escudo.png' })).toBeNull()
+    await userEvent.click(
+      within(screen.getByRole('navigation', { name: 'Carpetas' })).getByRole('button', { name: /^Comunes/ })
     )
-    if (!input) throw new Error('sin campo de archivos en los comunes')
+    expect(await screen.findByRole('button', { name: 'Escudo.png' })).toBeDefined()
+    expect(screen.queryByRole('button', { name: 'Mapa de Eana.png' })).toBeNull()
+    // Sin engranaje: no se renombra ni se borra
+    expect(screen.queryByRole('button', { name: 'Ajustes de la carpeta Comunes' })).toBeNull()
+    const input = document.querySelector<HTMLInputElement>('input[type=file][multiple]')
+    if (!input) throw new Error('sin campo de archivos')
     await userEvent.upload(input, [new File(['png'], 'Sello.png', { type: 'image/png' })])
-    expect(await common.findByRole('button', { name: 'Sello.png' })).toBeDefined()
-    expect(api.files.find((f) => f.name === 'Sello.png')).toMatchObject({ worldId: null, organizationId: ORG.id })
+    expect(await screen.findByRole('button', { name: 'Sello.png' })).toBeDefined()
+    expect(api.files.find((f) => f.name === 'Sello.png')).toMatchObject({
+      worldId: null,
+      organizationId: ORG.id,
+      folderId: null
+    })
   })
 
   it('fuera de los mundos, «Archivos» en la barra lleva a los comunes', async () => {

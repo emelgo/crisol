@@ -1,6 +1,6 @@
 /*
- * Mis mundos: la columna del centro como en las demás vistas (con el título) y, a la derecha, fuera de ella, el mundo
- * señalado. Sin sitio, el panel se quita
+ * Mis mundos: la columna del centro como en las demás vistas (con el título) y, a la izquierda, fuera de ella, el mundo
+ * sobre el que está el ratón (solo mientras lo está). Sin sitio, el panel se quita
  */
 .layout {
   display: grid;
@@ -11,19 +11,30 @@
 }
 
 .center {
+  grid-column: 2;
   min-inline-size: 0;
 }
 
 .detail {
+  grid-column: 1;
+  grid-row: 1;
   position: sticky;
   inset-block-start: var(--space-4);
-  justify-self: start;
+  justify-self: end;
   inline-size: min(100%, 22rem);
   /* Bajo el título, a la altura de las tarjetas */
   margin-block-start: 5.45rem;
 }
 
+/* Con menos sitio (o con zoom), la columna del centro se estrecha y el panel sigue; sin sitio, se quita (y en lo
+   táctil no hay ratón que pasar por encima) */
 @media (max-width: 90rem) {
+  .layout {
+    grid-template-columns: minmax(16rem, 20rem) minmax(0, 1fr) 0;
+  }
+}
+
+@media (max-width: 64rem) {
   .layout {
     grid-template-columns: 0 minmax(0, 52rem) 0;
     justify-content: center;
@@ -49,11 +60,12 @@
   font-size: 0.875rem;
 }
 
-/* El panel del mundo: como su tarjeta, con el contorno de su color */
+/* El panel del mundo: como su tarjeta, con el contorno de su color; asoma desde la columna */
 .detailBody {
   composes: frame from "../components/frame.module.css";
   display: flex;
   flex-direction: column;
+  animation: asoma 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
   background: color-mix(in srgb, var(--world-color, var(--color-frame)) 55%, var(--color-frame));
 }
 
@@ -768,4 +780,11 @@
   overflow: hidden;
   clip-path: inset(50%);
   white-space: nowrap;
+}
+
+@keyframes asoma {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
 }

@@ -66,7 +66,7 @@ describe('el árbol de la wiki', () => {
     await screen.findByRole('heading', { level: 1, name: 'Eana' })
     // «Páginas», en la barra del mundo, lleva a la wiki con su árbol
     const sections = within(screen.getByRole('navigation', { name: 'Secciones' }))
-    await userEvent.click(await sections.findByRole('button', { name: 'Páginas' }))
+    await userEvent.click(await sections.findByRole('button', { name: 'Wiki' }))
     expect(await screen.findByRole('heading', { level: 1, name: 'Wiki de Eana' })).toBeDefined()
     expect(router.state.location.pathname).toBe(`/mundos/${WORLD.id}/wiki`)
     const items = (await tree()).getAllByRole('treeitem')

@@ -10,7 +10,7 @@
 import type { FolderView } from '@crisol/contracts'
 import { looksUploadable, MAX_FILE_BYTES, TRASH_DAYS, UPLOAD_ACCEPT } from '@crisol/domain'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { getRouteApi, Navigate } from '@tanstack/react-router'
+import { getRouteApi, Link, Navigate } from '@tanstack/react-router'
 import {
   ChevronRight,
   File as FileIcon,
@@ -31,6 +31,7 @@ import { ApiError, type UploadTarget } from '../api/client.ts'
 import { useApi } from '../api/context.tsx'
 import { useCodeText, useErrorText } from '../api/errors.ts'
 import { useAnnounce } from '../components/announcer.tsx'
+import { Loading } from '../components/brand.tsx'
 import { BusyButton } from '../components/busy-button.tsx'
 import { ChangesBar } from '../components/changes.tsx'
 import { ConfirmByName, DangerZone } from '../components/danger.tsx'
@@ -46,24 +47,43 @@ import cards from '../routes/world-card.module.css'
 import { CoverViewer } from '../routes/world-cover.tsx'
 import styles from './files.module.css'
 import type { WorldFile } from './links-context.ts'
-import { WikiLayout } from './wiki.tsx'
 
 const route = getRouteApi('/mundos/$worldId/archivos')
 
 const KINDS = ['image', 'pdf', 'other'] as const
+/** La carpeta «Comunes» dentro de un mundo: no existe como tal, es la raíz de los comunes */
+const COMMON = 'comunes'
 type Kind = (typeof KINDS)[number]
 /** Cuántas subidas a la vez */
 const PARALLEL = 3
 
 type Target = { worldId: string } | { organizationId: string }
 
+/** Los archivos de un mundo: la misma pantalla que los comunes, sin el marco de la wiki (solo para quien lo dirige) */
 export function WikiFiles() {
+  const { t } = useTranslation()
   const { worldId } = route.useParams()
-  return (
-    <WikiLayout worldId={worldId}>
-      {(world) => <FilesPage worldId={worldId} world={world.name} organizationId={world.organizationId} />}
-    </WikiLayout>
-  )
+  const api = useApi()
+  const { account, pending } = useAccounts().useAccount()
+  const worlds = useQuery({
+    queryKey: ['worlds'],
+    queryFn: () => api.call('listWorlds', {}),
+    enabled: Boolean(account)
+  })
+  const world = worlds.data?.worlds.find((w) => w.id === worldId && w.role === 'master')
+  if (pending) return null
+  if (!account) return <Navigate to="/entrar" replace />
+  if (!worlds.data)
+    return failed(worlds) ? <LoadError error={worlds.error} onRetry={() => worlds.refetch()} /> : <Loading />
+  if (!world) {
+    return (
+      <section className={styles.page}>
+        <PageTitle>{t('wiki.notFound')}</PageTitle>
+        <Link to="/mundos">{t('worlds.title')}</Link>
+      </section>
+    )
+  }
+  return <FilesPage worldId={worldId} world={world.name} organizationId={world.organizationId} />
 }
 
 /** Si la cuenta administra la organización: solo entonces sube y cambia los comunes */
@@ -73,11 +93,10 @@ function useOwns(organizationId: string | undefined) {
   return organizations.data?.organizations.some((o) => o.id === organizationId && o.role === 'owner') ?? false
 }
 
-/** Los de un mundo y, aparte, la carpeta de los comunes, la misma en todos sus mundos */
+/** Los de un mundo y, dentro, la carpeta «Comunes»: los de la cuenta, la misma en todos sus mundos */
 function FilesPage({ worldId, world, organizationId }: { worldId: string; world: string; organizationId: string }) {
   const { t } = useTranslation()
   const api = useApi()
-  const commonId = useId()
   const files = useQuery({ queryKey: ['files', worldId], queryFn: () => api.call('listFiles', { worldId }) })
   const ownsCommon = useOwns(organizationId)
   // Las mismas listas mientras no cambien los datos
@@ -98,15 +117,17 @@ function FilesPage({ worldId, world, organizationId }: { worldId: string; world:
     [files.data]
   )
   return (
-    <section>
-      <PageTitle>{t('files.worldTitle', { world })}</PageTitle>
+    <section className={styles.page}>
       {failed(files) && <LoadError error={files.error} onRetry={() => files.refetch()} />}
-      <FilesSection target={{ worldId }} data={own} canWrite empty={t('files.empty')} />
+      <FilesSection
+        target={{ worldId }}
+        data={own}
+        canWrite
+        empty={t('files.empty')}
+        title={<PageTitle>{t('files.worldTitle', { world })}</PageTitle>}
+        common={{ target: { organizationId }, data: common, canWrite: ownsCommon }}
+      />
       {files.data && <FilesTour />}
-      <section aria-labelledby={commonId} className={styles.common}>
-        <h2 id={commonId}>{t('files.common')}</h2>
-        <FilesSection target={{ organizationId }} data={common} canWrite={ownsCommon} empty={t('files.commonEmpty')} />
-      </section>
     </section>
   )
 }
@@ -206,10 +227,11 @@ function useView(): [View, (view: View) => void] {
  */
 function FilesSection({
   target,
-  data,
+  data: ownData,
   canWrite,
   empty,
-  title
+  title,
+  common
 }: {
   target: Target
   /** Sin datos aún: undefined */
@@ -218,11 +240,33 @@ function FilesSection({
   empty: string
   /** El título de la página: con él, la columna del centro y los paneles a los lados */
   title?: ReactNode
+  /** En un mundo, los comunes de la cuenta: una carpeta más, «Comunes», con las suyas dentro (ADR-0005) */
+  common?: { target: { organizationId: string }; data: Scope | undefined; canWrite: boolean }
 }) {
   const { t } = useTranslation()
   const api = useApi()
   const queryClient = useQueryClient()
-  const uploads = useUploads(target)
+  const uploads = useUploads()
+  const commonLabel = t('files.common')
+  // Lo de los comunes cuelga de su carpeta, «Comunes»: lo que en ellos está en lo más alto, dentro de ella
+  const data = useMemo<Scope | undefined>(() => {
+    if (!ownData || !common?.data) return ownData
+    const folder: FolderView = {
+      id: COMMON,
+      worldId: null,
+      organizationId: common.target.organizationId,
+      parentId: null,
+      name: commonLabel
+    }
+    return {
+      files: [...ownData.files, ...common.data.files.map((f) => ({ ...f, folderId: f.folderId ?? COMMON }))],
+      folders: [
+        ...(ownData.folders ?? []),
+        folder,
+        ...(common.data.folders ?? []).map((f) => ({ ...f, parentId: f.parentId ?? COMMON }))
+      ]
+    }
+  }, [ownData, common?.data, common?.target.organizationId, commonLabel])
   const several = useRef<HTMLInputElement>(null)
   const [folderId, setFolderId] = useState<string | null>(null)
   const [query, setQuery] = useState('')
@@ -231,19 +275,27 @@ function FilesSection({
   const [over, setOver] = useState(false)
   const [received, setReceived] = useState<string | null>(null)
   // El archivo elegido (pulsando su fila), que sale en el panel de la derecha
-  const [selected, setSelected] = useState<{ kind: 'file' | 'folder'; id: string } | null>(null)
-  // Pulsar fuera (en cualquier sitio que no sea una fila, un panel, un control o una ventana) suelta lo elegido
-  useEffect(() => {
-    if (!selected) return
-    const away = (event: MouseEvent) => {
-      const target = event.target as Element | null
-      if (!target?.closest('[data-file-card], aside, dialog, button, a, input, label, select')) setSelected(null)
-    }
-    document.addEventListener('click', away)
-    return () => document.removeEventListener('click', away)
-  }, [selected])
+  // Lo que está bajo el ratón (un archivo o una carpeta), para el panel de la derecha; al irse, nada
+  const [hovered, setHovered] = useState<{ kind: 'file' | 'folder'; id: string } | null>(null)
+  const preview = (kind: 'file' | 'folder', id: string) => (shown: boolean) =>
+    setHovered((current) => (shown ? { kind, id } : current?.id === id ? null : current))
+  // Al cambiar de carpeta, de búsqueda o de filtro, nada señalado
+  useEffect(() => setHovered(null), [folderId, query, kind])
   const folders = data?.folders ?? []
   const byId = new Map(folders.map((folder) => [folder.id, folder]))
+  // Si una carpeta es de los comunes (la suya, o una de dentro)
+  const inCommon = (folderId: string | null) => {
+    for (let at = folderId ? byId.get(folderId) : undefined; at; at = at.parentId ? byId.get(at.parentId) : undefined) {
+      if (at.id === COMMON) return true
+    }
+    return false
+  }
+  // Adónde va lo que se sube o se crea en una carpeta: su ámbito y la carpeta de verdad (la de «Comunes» es su raíz)
+  const placeOf = (folderId: string | null) =>
+    common && inCommon(folderId)
+      ? { target: common.target as Target, folderId: folderId === COMMON ? null : folderId, canWrite: common.canWrite }
+      : { target, folderId, canWrite }
+  const canWriteFile = (file: WorldFile) => (file.worldId === null && common ? common.canWrite : canWrite)
   // Si la elegida deja de existir (borrada aquí o en otra pestaña), a lo más alto
   const open = folderId && byId.has(folderId) ? folderId : null
   const pathOf = (id: string | null): FolderView[] => {
@@ -273,7 +325,12 @@ function FilesSection({
   const moveInto = async (fileId: string, to: string | null) => {
     const file = data?.files.find((f) => f.id === fileId)
     if (!file || (file.folderId ?? null) === to) return
-    await api.call('moveFile', { fileId, folderId: to })
+    // Un archivo no pasa del mundo a los comunes ni al revés (son de ámbitos distintos)
+    if ((file.worldId === null) !== (Boolean(common) && inCommon(to))) {
+      announce(t('files.otherScope'))
+      return
+    }
+    await api.call('moveFile', { fileId, folderId: placeOf(to).folderId })
     await refresh()
     announce(t('files.moved', { name: file.name, folder: to ? (byId.get(to)?.name ?? '') : t('files.root') }))
     // Y la carpeta que lo recibe se ilumina un momento en el árbol
@@ -284,17 +341,18 @@ function FilesSection({
     event.preventDefault()
     setOver(false)
     // Un archivo de la lista arrastrado fuera de una carpeta no se sube
-    if (canWrite && event.dataTransfer.types.includes('Files'))
-      uploads.add(await droppedFiles(event.dataTransfer), open)
+    const here = placeOf(open)
+    if (here.canWrite && event.dataTransfer.types.includes('Files'))
+      uploads.add(await droppedFiles(event.dataTransfer), here.target, here.folderId)
   }
   if (!data) return null
   const path = pathOf(open)
   const nothing = data.files.length === 0 && folders.length === 0 && uploads.items.length === 0
-  if (nothing && !canWrite) return <p className={styles.empty}>{empty}</p>
-  const rowProps = { folders, canWrite, onChanged: refresh }
+  if (nothing && !canWrite && !common?.canWrite) return <p className={styles.empty}>{empty}</p>
+  const rowProps = { folders, onChanged: refresh }
   const tools = (
     <div className={styles.tools}>
-      {canWrite && (
+      {placeOf(open).canWrite && (
         <>
           <button
             type="button"
@@ -311,7 +369,8 @@ function FilesSection({
             accept={UPLOAD_ACCEPT}
             hidden
             onChange={(event) => {
-              uploads.add([...(event.currentTarget.files ?? [])], open)
+              const here = placeOf(open)
+              uploads.add([...(event.currentTarget.files ?? [])], here.target, here.folderId)
               event.currentTarget.value = ''
             }}
           />
@@ -366,8 +425,8 @@ function FilesSection({
       folders={folders}
       open={searching ? undefined : open}
       received={received}
-      canWrite={canWrite}
-      target={target}
+      canWriteAt={(id) => placeOf(id).canWrite}
+      placeOf={placeOf}
       onOpen={(id) => {
         setQuery('')
         setFolderId(id)
@@ -394,7 +453,11 @@ function FilesSection({
                     {name}
                   </span>
                 ) : (
-                  <FolderTarget folderId={folder?.id ?? null} canWrite={canWrite} onMove={moveInto}>
+                  <FolderTarget
+                    folderId={folder?.id ?? null}
+                    canWrite={placeOf(folder?.id ?? null).canWrite}
+                    onMove={moveInto}
+                  >
                     <button
                       type="button"
                       className={styles.crumb}
@@ -424,14 +487,11 @@ function FilesSection({
               key={folder.id}
               folder={folder}
               count={countIn(folder.id, data.files, folders)}
-              canWrite={canWrite}
+              canWrite={placeOf(folder.id).canWrite}
+              fixed={folder.id === COMMON}
               fresh={fresh(folder.id)}
-              selected={selected?.id === folder.id}
-              onSelect={title ? () => setSelected({ kind: 'folder', id: folder.id }) : undefined}
-              onOpen={() => {
-                setSelected(null)
-                setFolderId(folder.id)
-              }}
+              onPreview={title ? preview('folder', folder.id) : undefined}
+              onOpen={() => setFolderId(folder.id)}
               onMove={moveInto}
               onChanged={refresh}
             />
@@ -442,8 +502,8 @@ function FilesSection({
               file={file}
               where={searching ? pathOf(file.folderId) : []}
               fresh={fresh(file.id)}
-              selected={selected?.id === file.id}
-              onSelect={title ? () => setSelected({ kind: 'file', id: file.id }) : undefined}
+              canWrite={canWriteFile(file)}
+              onPreview={title ? preview('file', file.id) : undefined}
               {...rowProps}
             />
           ))}
@@ -456,11 +516,12 @@ function FilesSection({
               folder={folder}
               files={data.files}
               folders={folders}
-              canWrite={canWrite}
+              canWrite={placeOf(folder.id).canWrite && folder.id !== COMMON}
               fresh={fresh(folder.id)}
               onOpen={() => setFolderId(folder.id)}
               onMove={moveInto}
               onChanged={refresh}
+              onPreview={title ? preview('folder', folder.id) : undefined}
             />
           ))}
           {shownFiles.map((file) => (
@@ -469,7 +530,9 @@ function FilesSection({
               file={file}
               where={searching ? pathOf(file.folderId) : []}
               fresh={fresh(file.id)}
+              canWrite={canWriteFile(file)}
               {...rowProps}
+              onPreview={title ? preview('file', file.id) : undefined}
             />
           ))}
           {uploads.items.map((upload) => (
@@ -479,16 +542,15 @@ function FilesSection({
       )}
     </div>
   )
-  const selectedFile = selected?.kind === 'file' ? data.files.find((file) => file.id === selected.id) : undefined
-  // La carpeta elegida o, sin nada elegido, la abierta
-  const shownFolder =
-    selected?.kind === 'folder' ? byId.get(selected.id) : !selected && open ? byId.get(open) : undefined
+  // Solo si sigue en la lista (al entrar en una carpeta, su fila se va sin que el ratón «salga» de ella)
+  const selectedFile = hovered?.kind === 'file' ? shownFiles.find((file) => file.id === hovered.id) : undefined
+  const shownFolder = hovered?.kind === 'folder' ? shownFolders.find((folder) => folder.id === hovered.id) : undefined
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions: soltar es un atajo; «Subir archivos» hace lo mismo con el teclado
     <div
       className={`${styles.zone} ${over ? styles.over : ''}`}
       onDragOver={(event) => {
-        if (!canWrite || !event.dataTransfer.types.includes('Files')) return
+        if (!placeOf(open).canWrite || !event.dataTransfer.types.includes('Files')) return
         event.preventDefault()
         setOver(true)
       }}
@@ -509,29 +571,10 @@ function FilesSection({
           </div>
           <aside className={styles.detail} aria-label={t('files.detail')}>
             {selectedFile ? (
-              <FileDetail
-                file={selectedFile}
-                where={pathOf(selectedFile.folderId)}
-                folders={folders}
-                canWrite={canWrite}
-                onChanged={refresh}
-              />
+              <FileDetail file={selectedFile} where={pathOf(selectedFile.folderId)} />
             ) : shownFolder ? (
-              <FolderDetail
-                folder={shownFolder}
-                files={data.files}
-                folders={folders}
-                canWrite={canWrite}
-                isOpen={shownFolder.id === open}
-                onOpen={() => {
-                  setSelected(null)
-                  setFolderId(shownFolder.id)
-                }}
-                onChanged={refresh}
-              />
-            ) : (
-              <p className={styles.detailHint}>{t('files.pickOne')}</p>
-            )}
+              <FolderDetail folder={shownFolder} files={data.files} folders={folders} />
+            ) : null}
           </aside>
         </div>
       ) : (
@@ -574,8 +617,8 @@ function FolderTree({
   folders,
   open,
   received,
-  canWrite,
-  target,
+  canWriteAt,
+  placeOf,
   onOpen,
   onMove,
   onChanged
@@ -586,8 +629,10 @@ function FolderTree({
   open: string | null | undefined
   /** La que acaba de recibir un archivo arrastrado ('todos': lo más alto), que se ilumina un momento */
   received: string | null
-  canWrite: boolean
-  target: Target
+  /** Si se puede cambiar lo de una carpeta (null: lo más alto) */
+  canWriteAt: (folderId: string | null) => boolean
+  /** Adónde va lo que se crea en una carpeta: su ámbito y la carpeta de verdad */
+  placeOf: (folderId: string | null) => { target: Target; folderId: string | null }
   onOpen: (folderId: string | null) => void
   onMove: (fileId: string, folderId: string | null) => Promise<unknown>
   onChanged: () => Promise<unknown>
@@ -634,7 +679,7 @@ function FolderTree({
                 ) : (
                   <span className={styles.twistySpace} />
                 )}
-                <FolderTarget folderId={folder.id} canWrite={canWrite} onMove={onMove}>
+                <FolderTarget folderId={folder.id} canWrite={canWriteAt(folder.id)} onMove={onMove}>
                   <button
                     type="button"
                     className={styles.nodeButton}
@@ -648,7 +693,9 @@ function FolderTree({
                     <span className={styles.nodeCount}>{countIn(folder.id, files, folders)}</span>
                   </button>
                 </FolderTarget>
-                {canWrite && open === folder.id && <FolderSettings folder={folder} onChanged={onChanged} small />}
+                {canWriteAt(folder.id) && open === folder.id && folder.id !== COMMON && (
+                  <FolderSettings folder={folder} onChanged={onChanged} small />
+                )}
               </div>
               {isOpen && branch(folder.id, depth + 1)}
             </li>
@@ -660,8 +707,13 @@ function FolderTree({
   return (
     <nav className={styles.tree} aria-label={t('files.path')} data-tour="archivos-carpetas">
       {branch(null, 0)}
-      {canWrite && (
-        <NewFolderButton target={target} parentId={open ?? null} onCreated={onChanged} className={styles.newFolder} />
+      {canWriteAt(open ?? null) && (
+        <NewFolderButton
+          target={placeOf(open ?? null).target}
+          parentId={placeOf(open ?? null).folderId}
+          onCreated={onChanged}
+          className={styles.newFolder}
+        />
       )}
     </nav>
   )
@@ -684,8 +736,7 @@ function FileRow({
   folders,
   canWrite,
   fresh,
-  selected = false,
-  onSelect,
+  onPreview,
   onChanged
 }: {
   file: WorldFile
@@ -693,24 +744,24 @@ function FileRow({
   folders: FolderView[]
   canWrite: boolean
   fresh: boolean
-  /** El elegido, que sale en el panel de la derecha */
-  selected?: boolean
-  /** Pulsar la fila (fuera de su nombre y su engranaje) lo elige */
-  onSelect?: (() => void) | undefined
+  /** Al pasar el ratón (true) y al irse (false): para el panel de la derecha */
+  onPreview?: ((shown: boolean) => void) | undefined
   onChanged: () => Promise<unknown>
 }) {
   const { i18n } = useTranslation()
   const [viewing, setViewing] = useState(false)
   return (
-    // biome-ignore lint/a11y/useKeyWithClickEvents: elegirla es un atajo del ratón; con el teclado, su nombre y su engranaje
     <li
-      className={[styles.row, fresh ? styles.appear : '', selected ? styles.selected : ''].filter(Boolean).join(' ')}
+      className={[styles.row, fresh ? styles.appear : ''].filter(Boolean).join(' ')}
       data-file-card={file.id}
       draggable={canWrite}
       onDragStart={(event) => startDragging(event, file)}
       onDragEnd={stopDragging}
-      onClick={(event) => {
-        if (!(event.target as Element).closest('a, button')) onSelect?.()
+      onPointerEnter={() => onPreview?.(true)}
+      onPointerLeave={() => onPreview?.(false)}
+      // Al abrir algo suyo (su engranaje, la imagen en grande), el detalle se va
+      onClickCapture={(event) => {
+        if ((event.target as Element).closest('[aria-haspopup="dialog"]')) onPreview?.(false)
       }}
     >
       <span className={styles.rowThumb}>
@@ -759,24 +810,11 @@ const typeOf = (file: WorldFile) =>
           : 'other'
 
 /**
- * El archivo elegido, en el panel de la derecha: su vista previa grande, su nombre, de qué tipo es, cuánto pesa,
- * dónde está y cuántas páginas lo usan; y abrirlo, descargarlo o sus ajustes
+ * El archivo bajo el ratón, en el panel de la derecha: su vista previa grande, su nombre, de qué tipo es, sus
+ * medidas si es una imagen, cuánto pesa, dónde está y cuándo cambió (abrirlo y lo demás, en su fila)
  */
-function FileDetail({
-  file,
-  where,
-  folders,
-  canWrite,
-  onChanged
-}: {
-  file: WorldFile
-  where: FolderView[]
-  folders: FolderView[]
-  canWrite: boolean
-  onChanged: () => Promise<unknown>
-}) {
+function FileDetail({ file, where }: { file: WorldFile; where: FolderView[] }) {
   const { t, i18n } = useTranslation()
-  const [viewing, setViewing] = useState(false)
   const date = new Intl.DateTimeFormat(i18n.language, { dateStyle: 'medium' })
   // Las medidas de una imagen, al cargarla en la vista previa
   const [size, setSize] = useState<{ width: number; height: number } | null>(null)
@@ -817,22 +855,6 @@ function FileDetail({
         <dt>{t('files.updatedLabel')}</dt>
         <dd>{date.format(new Date(file.updatedAt))}</dd>
       </dl>
-      <div className={styles.detailActions}>
-        {file.kind === 'image' ? (
-          <button type="button" className={list.secondary} aria-haspopup="dialog" onClick={() => setViewing(true)}>
-            {t('cover.view')}
-          </button>
-        ) : (
-          <a className={`${list.secondary} ${styles.plain}`} href={file.url} target="_blank" rel="noopener">
-            {t('files.open')}
-          </a>
-        )}
-        <a className={`${list.secondary} ${styles.plain}`} href={file.url} download={file.name}>
-          {t('files.download')}
-        </a>
-        {canWrite && <FileSettings file={file} folders={folders} onChanged={onChanged} small />}
-      </div>
-      {viewing && <CoverViewer url={file.url} label={file.name} onClose={() => setViewing(false)} />}
     </div>
   )
 }
@@ -856,26 +878,10 @@ function contentsOf(folderId: string, files: WorldFile[], folders: FolderView[])
 }
 
 /**
- * La carpeta elegida (o la abierta), en el panel de la derecha: cuántos archivos y carpetas tiene, cuánto ocupa todo
- * y de qué tipos; abrirla y sus ajustes
+ * La carpeta bajo el ratón, en el panel de la derecha: cuántos archivos y carpetas tiene, cuánto ocupa todo y de qué
+ * tipos
  */
-function FolderDetail({
-  folder,
-  files,
-  folders,
-  canWrite,
-  isOpen,
-  onOpen,
-  onChanged
-}: {
-  folder: FolderView
-  files: WorldFile[]
-  folders: FolderView[]
-  canWrite: boolean
-  isOpen: boolean
-  onOpen: () => void
-  onChanged: () => Promise<unknown>
-}) {
+function FolderDetail({ folder, files, folders }: { folder: FolderView; files: WorldFile[]; folders: FolderView[] }) {
   const { t, i18n } = useTranslation()
   const inside = contentsOf(folder.id, files, folders)
   const total = inside.files.reduce((sum, file) => sum + file.size, 0)
@@ -910,14 +916,6 @@ function FolderDetail({
           </>
         )}
       </dl>
-      <div className={styles.detailActions}>
-        {!isOpen && (
-          <button type="button" className={list.secondary} onClick={onOpen}>
-            {t('files.open')}
-          </button>
-        )}
-        {canWrite && <FolderSettings folder={folder} onChanged={onChanged} small />}
-      </div>
     </div>
   )
 }
@@ -927,9 +925,9 @@ function FolderRow({
   folder,
   count,
   canWrite,
+  fixed = false,
   fresh,
-  selected = false,
-  onSelect,
+  onPreview,
   onOpen,
   onMove,
   onChanged
@@ -937,11 +935,11 @@ function FolderRow({
   folder: FolderView
   count: number
   canWrite: boolean
+  /** La de «Comunes» en un mundo: no se renombra ni se borra */
+  fixed?: boolean
   fresh: boolean
-  /** La elegida, que sale en el panel de la derecha */
-  selected?: boolean
-  /** Pulsar la fila (fuera de su nombre y su engranaje) la elige; con doble clic, se abre */
-  onSelect?: (() => void) | undefined
+  /** Al pasar el ratón (true) y al irse (false): para el panel de la derecha */
+  onPreview?: ((shown: boolean) => void) | undefined
   onOpen: () => void
   onMove: (fileId: string, folderId: string | null) => Promise<unknown>
   onChanged: () => Promise<unknown>
@@ -949,14 +947,14 @@ function FolderRow({
   const { t } = useTranslation()
   const [over, setOver] = useState(false)
   return (
-    // biome-ignore lint/a11y/useKeyWithClickEvents: elegirla es un atajo del ratón; con el teclado, su nombre y su engranaje
     <li
-      className={[styles.row, fresh ? styles.appear : '', over ? styles.dropping : '', selected ? styles.selected : '']
-        .filter(Boolean)
-        .join(' ')}
+      className={[styles.row, fresh ? styles.appear : '', over ? styles.dropping : ''].filter(Boolean).join(' ')}
       data-file-card={folder.id}
-      onClick={(event) => {
-        if (!(event.target as Element).closest('a, button')) onSelect?.()
+      onPointerEnter={() => onPreview?.(true)}
+      onPointerLeave={() => onPreview?.(false)}
+      // Al abrir algo suyo (su engranaje, la imagen en grande), el detalle se va
+      onClickCapture={(event) => {
+        if ((event.target as Element).closest('[aria-haspopup="dialog"]')) onPreview?.(false)
       }}
       onDoubleClick={(event) => {
         if (!(event.target as Element).closest('a, button')) onOpen()
@@ -993,7 +991,7 @@ function FolderRow({
       <span className={styles.rowMeta}>
         {over ? t('files.moveHere') : count > 0 ? t('files.folderFiles', { count }) : t('files.folderEmpty')}
       </span>
-      {canWrite ? <FolderSettings folder={folder} onChanged={onChanged} small /> : <span />}
+      {canWrite && !fixed ? <FolderSettings folder={folder} onChanged={onChanged} small /> : <span />}
     </li>
   )
 }
@@ -1174,7 +1172,8 @@ function FolderCard({
   fresh,
   onOpen,
   onMove,
-  onChanged
+  onChanged,
+  onPreview
 }: {
   folder: FolderView
   files: WorldFile[]
@@ -1184,6 +1183,8 @@ function FolderCard({
   onOpen: () => void
   onMove: (fileId: string, folderId: string | null) => Promise<unknown>
   onChanged: () => Promise<unknown>
+  /** Al pasar el ratón (true) y al irse (false): para el panel de la derecha */
+  onPreview?: ((shown: boolean) => void) | undefined
 }) {
   const { t } = useTranslation()
   const [over, setOver] = useState(false)
@@ -1198,6 +1199,12 @@ function FolderCard({
     <li
       className={classes.filter(Boolean).join(' ')}
       data-file-card={folder.id}
+      onPointerEnter={() => onPreview?.(true)}
+      onPointerLeave={() => onPreview?.(false)}
+      // Al abrir algo suyo (su engranaje, la imagen en grande), el detalle se va
+      onClickCapture={(event) => {
+        if ((event.target as Element).closest('[aria-haspopup="dialog"]')) onPreview?.(false)
+      }}
       onDragOver={(event) => {
         if (!canWrite || !event.dataTransfer.types.includes(DRAGGED)) return
         event.preventDefault()
@@ -1392,17 +1399,17 @@ type Upload = {
 }
 
 /**
- * La cola de subidas a un ámbito: unas pocas a la vez, cada una con su progreso. Al acabar, se quita (ya es su
+ * La cola de subidas: unas pocas a la vez, cada una con su progreso. Al acabar, se quita (ya es su
  * tarjeta); la que falla se queda con el motivo hasta quitarla. Cancelar una la corta o la saca de la cola
  */
-function useUploads(target: Target) {
+function useUploads() {
   const { t } = useTranslation()
   const api = useApi()
   const queryClient = useQueryClient()
   const codeText = useCodeText()
   const announce = useAnnounce()
   const [items, setItems] = useState<Upload[]>([])
-  const queue = useRef<Array<{ key: number; file: File; folderId: string | null }>>([])
+  const queue = useRef<Array<{ key: number; file: File; target: Target; folderId: string | null }>>([])
   const controllers = useRef(new Map<number, AbortController>())
   const running = useRef(0)
   const finished = useRef(0)
@@ -1436,7 +1443,7 @@ function useUploads(target: Target) {
       const controller = new AbortController()
       controllers.current.set(next.key, controller)
       update(next.key, { status: 'uploading' })
-      const to: UploadTarget = { ...target, name: next.file.name, folderId: next.folderId }
+      const to: UploadTarget = { ...next.target, name: next.file.name, folderId: next.folderId }
       api
         .uploadFile(to, next.file, (fraction) => update(next.key, { fraction }), controller.signal)
         .then(
@@ -1472,18 +1479,18 @@ function useUploads(target: Target) {
           pump()
         })
     }
-  }, [api, target, queryClient, codeText, announce, t, update, remove])
+  }, [api, queryClient, codeText, announce, t, update, remove])
 
-  /** Sube estos a una carpeta (null: a lo más alto) */
+  /** Sube estos a un ámbito (un mundo o los comunes) y a una de sus carpetas (null: a lo más alto) */
   const add = useCallback(
-    (files: File[], folderId: string | null) => {
+    (files: File[], target: Target, folderId: string | null) => {
       // Lo oculto de las carpetas (.DS_Store y compañía) no se sube
       const wanted = files.filter((file) => !file.name.startsWith('.'))
       const added = wanted.map((file) => {
         const key = nextKey.current++
         // Lo que no se admite (un programa, un script…) ni se intenta; el servidor lo comprueba igualmente
         const refused = !looksUploadable(file.name) ? 'BAD_TYPE' : file.size > MAX_FILE_BYTES ? 'TOO_LARGE' : null
-        if (!refused) queue.current.push({ key, file, folderId })
+        if (!refused) queue.current.push({ key, file, target, folderId })
         return {
           key,
           name: file.name,
@@ -1579,7 +1586,8 @@ function FileCard({
   folders,
   canWrite,
   fresh,
-  onChanged
+  onChanged,
+  onPreview
 }: {
   file: WorldFile
   where: FolderView[]
@@ -1587,6 +1595,8 @@ function FileCard({
   canWrite: boolean
   fresh: boolean
   onChanged: () => Promise<unknown>
+  /** Al pasar el ratón (true) y al irse (false): para el panel de la derecha */
+  onPreview?: ((shown: boolean) => void) | undefined
 }) {
   const { t, i18n } = useTranslation()
   const [viewing, setViewing] = useState(false)
@@ -1595,6 +1605,12 @@ function FileCard({
     <li
       className={classes.join(' ')}
       data-file-card={file.id}
+      onPointerEnter={() => onPreview?.(true)}
+      onPointerLeave={() => onPreview?.(false)}
+      // Al abrir algo suyo (su engranaje, la imagen en grande), el detalle se va
+      onClickCapture={(event) => {
+        if ((event.target as Element).closest('[aria-haspopup="dialog"]')) onPreview?.(false)
+      }}
       draggable={canWrite}
       onDragStart={(event) => startDragging(event, file)}
       onDragEnd={stopDragging}

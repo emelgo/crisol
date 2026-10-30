@@ -115,8 +115,8 @@ function LookCard({
   fresh?: boolean
   burning?: boolean
   onBurnt?: () => void
-  /** Al pasar el ratón o llegar con el foco: para enseñarlo en el panel de al lado */
-  onPreview?: (() => void) | undefined
+  /** Al pasar el ratón o llegar con el foco (true) y al irse (false): para enseñarlo en el panel de al lado */
+  onPreview?: ((shown: boolean) => void) | undefined
 }) {
   const { t } = useTranslation()
   const image = useCoverImage(look)
@@ -148,8 +148,12 @@ function LookCard({
       }}
       style={{ ...tint(look.color), ...style }}
       data-card={look.id}
-      onPointerEnter={onPreview}
-      onFocus={onPreview}
+      onPointerEnter={() => onPreview?.(true)}
+      onPointerLeave={() => onPreview?.(false)}
+      onFocus={() => onPreview?.(true)}
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) onPreview?.(false)
+      }}
     >
       <CoverHeader
         url={image?.url}
@@ -190,7 +194,7 @@ export function WorldCard({
   fresh?: boolean
   burning?: boolean
   onBurnt?: () => void
-  onPreview?: () => void
+  onPreview?: (shown: boolean) => void
 }) {
   const kind = useWorldKind()
   return (
@@ -725,9 +729,8 @@ function ColorChoices({ value, onChange }: { value: World['color']; onChange: (c
 }
 
 /**
- * El mundo sobre el que se pasa el ratón, en el panel de la derecha de Mis mundos: su portada, su descripción, sus
- * campañas, lo último de su wiki y cuántos archivos tiene, y entrar (sus ajustes, en el engranaje de su tarjeta). Lo
- * que pide es lo mismo que su Inicio: al entrar, ya está
+ * El mundo sobre el que está el ratón, en el panel de la izquierda de Mis mundos: su portada, su descripción, sus
+ * campañas y cuántos archivos tiene (se entra y se ajusta desde su tarjeta)
  */
 export function WorldDetail({ world }: { world: World }) {
   const { t } = useTranslation()
@@ -737,11 +740,6 @@ export function WorldDetail({ world }: { world: World }) {
   const campaigns = useQuery({
     queryKey: ['campaigns', world.id],
     queryFn: () => api.call('listCampaigns', { worldId: world.id })
-  })
-  const recent = useQuery({
-    queryKey: ['pages', world.id, 'recent'],
-    queryFn: () => api.call('listRecentPages', { worldId: world.id }),
-    enabled: master
   })
   const files = useWorldFiles(world.id, master)
   const own = files.data?.files.filter((file) => file.worldId !== null).length
@@ -762,17 +760,6 @@ export function WorldDetail({ world }: { world: World }) {
           </dd>
           {master && (
             <>
-              <dt>{t('world.recent')}</dt>
-              <dd>
-                {recent.data
-                  ? recent.data.pages.length > 0
-                    ? recent.data.pages
-                        .slice(0, 3)
-                        .map((page) => page.title)
-                        .join(' · ')
-                    : t('world.noPages')
-                  : '…'}
-              </dd>
               <dt>{t('files.title')}</dt>
               <dd>
                 {own === undefined ? '…' : own > 0 ? t('files.folderFiles', { count: own }) : t('worlds.noFiles')}
@@ -782,17 +769,6 @@ export function WorldDetail({ world }: { world: World }) {
           <dt>{t('worlds.roleLabel')}</dt>
           <dd>{t(`roles.${world.role}`)}</dd>
         </dl>
-        <div className={styles.detailActions}>
-          <Link
-            to="/mundos/$worldId"
-            params={{ worldId: world.id }}
-            className={form.button}
-            viewTransition={ENTER_WORLD}
-            onClick={() => enterWorld(world.id, document.querySelector(`[data-card="${world.id}"]`))}
-          >
-            {t('worlds.enter')}
-          </Link>
-        </div>
       </div>
     </div>
   )
