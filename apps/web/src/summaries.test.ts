@@ -31,6 +31,16 @@ describe('las frases de la wiki', () => {
       'cambió las propiedades de «Puerto»'
     )
     expect(summaryOf(t, { action: 'deletePage', details: { title: 'Puerto' } })).toBe('borró la página «Puerto»')
+    expect(summaryOf(t, { action: 'createPages', details: { count: 2, titles: ['Lugares', 'Costa Gris'] } })).toBe(
+      'creó 2 páginas: «Lugares» y «Costa Gris»'
+    )
+    expect(
+      summaryOf(t, { action: 'createPages', details: { count: 5, titles: ['A', 'B', 'C', 'D', 'E'] } }, 'requested')
+    ).toBe('crear 5 páginas: «A», «B», «C» y 2 más')
+    expect(summaryOf(t, { action: 'createPages', details: { titles: ['Sola'] } })).toBe('creó la página «Sola»')
+    expect(summaryOf(t, { action: 'editPage', details: { title: 'Puerto', body: 'section' } })).toBe(
+      'cambió la página «Puerto»'
+    )
     expect(summaryOf(t, { action: 'updatePage', details: { title: 'Puerto', locked: true } })).toBe(
       'puso «Puerto» en lectura'
     )
