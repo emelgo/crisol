@@ -278,7 +278,7 @@ Cada vía nueva por la que salen datos amplía `@fugas` en la misma tarea.
   - Archivos: `packages/db/src/schema/search.ts` (+ migración de `es_unaccent`), `apps/server/src/wiki/search.ts`,
     `apps/server/src/actions/search.ts`, `apps/web/src/routes/search.tsx`.
 
-- [ ] **21. Selector rápido, órdenes y buscar en la página**
+- [x] **21. Selector rápido, órdenes y buscar en la página**
   - Acepta:
     - Ctrl+K abre el selector: títulos y alias a los 250 ms, primero los recientes, y «Ver todos».
     - «>» al principio pasa a la paleta de órdenes.
