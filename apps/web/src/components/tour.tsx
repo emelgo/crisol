@@ -15,8 +15,6 @@ export interface TourStep {
 }
 
 const STORAGE = 'crisol.recorridos'
-/** Aviso de que se han encendido o apagado en Ajustes */
-const CHANGED = 'crisol:recorridos'
 
 /** Lo que se guarda por cuenta: si salen los recorridos y cuáles ya tiene claros */
 interface ToursState {
@@ -55,13 +53,12 @@ export function toursEnabled(email: string) {
 /** Encenderlos los vuelve a sacar todos (también los que se tenían claros); apagarlos, ninguno */
 export function setToursEnabled(email: string, enabled: boolean) {
   writeState(email, { off: !enabled, clear: [] })
-  window.dispatchEvent(new Event(CHANGED))
 }
 
 /**
- * Un recorrido por una pantalla: al entrar, un globo junto a cada parte dice qué es («1 de 3», Atrás, Siguiente, Saltar). Los
- * pasos cuyo elemento no está en la pantalla se saltan. Sale cada vez hasta que se marca «Lo tengo claro»; en Ajustes
- * se apagan todos o se vuelven a encender
+ * Un recorrido por una pantalla: al entrar, un globo junto a cada parte dice qué es («1 de 3», Saltar, Atrás,
+ * Siguiente). Los pasos cuyo elemento no está en la pantalla se saltan. Sale cada vez hasta que se marca «Lo tengo
+ * claro»; en Ajustes se apagan todos o se vuelven a encender, y al cerrar Ajustes vuelve a salir si se había saltado
  */
 export function Tour({ id, steps }: { id: string; steps: readonly TourStep[] }) {
   const { t } = useTranslation()
@@ -81,23 +78,19 @@ export function Tour({ id, steps }: { id: string; steps: readonly TourStep[] }) 
   // Los pasos llegan nuevos en cada pintado: se leen al empezar, sin volver a empezar el recorrido
   const latest = useRef(steps)
   latest.current = steps
-  // Sale una vez por visita; si se vuelven a encender en Ajustes, otra vez al cerrar su ventana
+  // Sale una vez por visita, y otra al cerrar Ajustes si no está en pantalla (la casilla marcada dice que sale)
   const started = useRef(false)
-  const [round, setRound] = useState(0)
-  const windowOpen = Boolean(useWindow()?.opened)
-  useEffect(() => {
-    const again = () => {
-      started.current = false
-      setRound((value) => value + 1)
-    }
-    window.addEventListener(CHANGED, again)
-    return () => window.removeEventListener(CHANGED, again)
-  }, [])
+  const opened = useWindow()?.opened ?? null
+  const lastWindow = useRef(opened)
 
   // Al entrar, si no se ha visto: los pasos que tienen dónde apuntar (un momento después, cuando ya está pintado).
-  // Con una ventana abierta espera a que se cierre; round: se ha cambiado en Ajustes
+  // Con una ventana abierta espera a que se cierre
   useEffect(() => {
-    if (!email || windowOpen || started.current) return
+    const closed = lastWindow.current
+    lastWindow.current = opened
+    if (!email || opened) return
+    if (closed === 'ajustes' && index === null) started.current = false
+    if (started.current) return
     const state = readState(email)
     if (state.off || state.clear.includes(id)) return
     const timer = window.setTimeout(() => {
@@ -110,7 +103,7 @@ export function Tour({ id, steps }: { id: string; steps: readonly TourStep[] }) 
       setIndex(0)
     }, 400)
     return () => window.clearTimeout(timer)
-  }, [email, id, windowOpen, round])
+  }, [email, id, opened])
 
   const step = index === null ? undefined : visible[index]
 

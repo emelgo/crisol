@@ -69,8 +69,8 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   en el paso 1, no debe tener un paso propio porque es redundante». Si hace falta, lleva su propia nota corta junto a
   su recuadro (la de «Mundos»: «Dentro de un mundo, esta barra cambiará y mostrará su contenido»).
 - **En Ajustes, una casilla «Mostrar los recorridos»**: desmarcada, no sale ninguno; al volver a marcarla, salen
-  todos otra vez. Con alguno marcado «Lo tengo claro», se ve desmarcada. El de la pantalla que se ve sale al cerrar
-  Ajustes.
+  todos otra vez. Con alguno marcado «Lo tengo claro», se ve desmarcada. **Marcada quiere decir que sale**: al
+  cerrar Ajustes, el de la pantalla que se ve vuelve a salir, aunque se hubiera saltado.
 
 ## IA
 
