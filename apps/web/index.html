@@ -17,10 +17,6 @@
       const t = localStorage.getItem('crisol.tema')
       document.documentElement.dataset.theme =
         t === 'light' || t === 'dark' ? t : matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-      // Y las animaciones: completas salvo que se elijan reducidas o las del sistema (src/motion.ts)
-      const m = localStorage.getItem('crisol.movimiento')
-      document.documentElement.dataset.motion =
-        m === 'reduced' || (m === 'system' && matchMedia('(prefers-reduced-motion: reduce)').matches) ? 'reduced' : 'full'
     </script>
   </head>
   <body>

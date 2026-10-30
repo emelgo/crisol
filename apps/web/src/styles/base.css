@@ -143,7 +143,7 @@ dialog section[aria-labelledby] > h2:first-child {
  * desvanecen; el fondo se oscurece y se aclara a la vez. Con transiciones (no animaciones) para que también se vean al
  * cerrarse: el cuadro sigue en pantalla hasta acabar (overlay y display, discretos) y quien lo quita espera (Modal)
  */
-:root[data-motion] dialog {
+dialog {
   transition:
     opacity 200ms ease-in,
     transform 200ms ease-in,
@@ -151,22 +151,22 @@ dialog section[aria-labelledby] > h2:first-child {
     display 200ms ease-in allow-discrete;
 }
 
-:root[data-motion] dialog:not([open]) {
+dialog:not([open]) {
   opacity: 0;
 }
 
-:root[data-motion="full"] dialog:not([open]) {
+dialog:not([open]) {
   transform: translateY(14px) scale(0.95);
 }
 
-:root[data-motion] dialog[open] {
+dialog[open] {
   opacity: 1;
   transform: none;
   transition-duration: 320ms;
   transition-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-:root[data-motion] dialog::backdrop {
+dialog::backdrop {
   opacity: 0;
   transition:
     opacity 200ms ease-in,
@@ -174,21 +174,21 @@ dialog section[aria-labelledby] > h2:first-child {
     display 200ms ease-in allow-discrete;
 }
 
-:root[data-motion] dialog[open]::backdrop {
+dialog[open]::backdrop {
   opacity: 1;
   transition-duration: 320ms;
 }
 
 @starting-style {
-  :root[data-motion] dialog[open] {
+  dialog[open] {
     opacity: 0;
   }
 
-  :root[data-motion="full"] dialog[open] {
+  dialog[open] {
     transform: translateY(20px) scale(0.93);
   }
 
-  :root[data-motion] dialog[open]::backdrop {
+  dialog[open]::backdrop {
     opacity: 0;
   }
 }

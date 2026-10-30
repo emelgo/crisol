@@ -117,7 +117,7 @@ Todo va en la rama `interfaz/pulir-inicio`, en un commit local sin subir. Las no
 - **Los mundos, en el orden en que se crearon** (uno nuevo, al final): `worldsRepo.listMemberWorlds` y su prueba.
 - **Animaciones**: la tarjeta de un mundo nuevo entra y la de uno borrado se va (con menos movimiento, solo fundidos); los cuadros (`dialog[open]` en
   `base.css`) y el menú de la cuenta se abren con un pequeño crecimiento.
-  En Ajustes, «Animaciones» (completas por defecto, reducidas o como el sistema; `src/motion.ts`, `data-motion`).
+  Siempre completas, aunque el sistema pida menos movimiento (sin opción en Ajustes, por decisión de Enrique).
   Los cuadros también se cierran animados (transiciones con `@starting-style`; `afterExit` en `modal.tsx` espera
   a que acaben). Al crear, la lista se pone al día cuando el cuadro ya se ha ido, y la tarjeta entra con el contorno
   iluminado. Historial y Papelera se piden al pasar el ratón por su botón (`api/queries.ts`).
@@ -125,7 +125,7 @@ Todo va en la rama `interfaz/pulir-inicio`, en un commit local sin subir. Las no
   recorre, queda en ceniza y se va como humo). Un mundo que desaparece de la lista arde en su sitio aunque la lista
   se ponga al día antes (aviso en tiempo real, la IA, otra pestaña). Al entrar en un mundo, «Mundos» sube a la llama de
   la barra y se funde con ella, que se aviva con chispas; dentro, la llama es la vuelta, y al volver «Mundos» sale de
-  ella. Ajustes pide la IA al abrir el menú de la cuenta. La app aplica `data-motion` al arrancar (`startMotion`).
+  ella. Ajustes pide la IA al abrir el menú de la cuenta.
 - **Barras de desplazamiento** finas, del color de los bordes; en las ventanas solo se desplaza el contenido.
 - **Barra lateral**:
   - sin barra de estado abajo;

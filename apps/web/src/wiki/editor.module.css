@@ -156,9 +156,3 @@
     background-color: transparent;
   }
 }
-
-:root[data-motion="reduced"] .aiFlash {
-  animation: none;
-  outline: 2px solid var(--color-ai);
-  outline-offset: 2px;
-}

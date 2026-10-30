@@ -13,16 +13,12 @@
   overflow: hidden;
 }
 
-:root[data-motion="full"] .bar {
+.bar {
   animation: abre 260ms ease-out;
 }
 
-:root[data-motion="full"] .closing {
+.closing {
   animation: cierra 220ms ease-in forwards;
-}
-
-:root[data-motion="reduced"] .closing {
-  display: none;
 }
 
 @keyframes abre {

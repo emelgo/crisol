@@ -66,7 +66,7 @@
 /*
  * Con temática de crisol. Recién creada, se forja: sale del crisol al rojo (sube y crece, con un brillo de metal
  * fundido encima) y se enfría (el contorno, de naranja a su color). Borrada, arde: el fuego la recorre de abajo
- * arriba, queda en ceniza y se va como humo. Empieza cuando la ventana ya se ha ido. Reducidas: sin moverse
+ * arriba, queda en ceniza y se va como humo. Empieza cuando la ventana ya se ha ido
  */
 .card::after {
   content: "";
@@ -77,40 +77,29 @@
   pointer-events: none;
 }
 
-:root[data-motion="full"] .entering {
+.entering {
   animation:
     forja 620ms cubic-bezier(0.2, 0.8, 0.2, 1) both,
     enfria 2000ms ease-out;
 }
 
-:root[data-motion="reduced"] .entering {
-  animation:
-    funde 400ms ease-out both,
-    enfria 2000ms ease-out;
-}
-
-:root[data-motion] .entering::after {
+.entering::after {
   background: linear-gradient(to top, rgb(255 138 92 / 0.6), rgb(229 72 77 / 0.3) 55%, rgb(255 180 120 / 0.15));
   mix-blend-mode: screen;
   animation: metal 1500ms ease-out;
 }
 
-:root[data-motion="full"] .burning {
+.burning {
   animation: arde 1400ms ease-in 200ms forwards;
   pointer-events: none;
 }
 
-:root[data-motion="reduced"] .burning {
-  animation: arde-quieto 1100ms ease-in 200ms forwards;
-  pointer-events: none;
-}
-
 /* Lo de dentro se vuelve ceniza; el fuego (::after), por encima, conserva su color */
-:root[data-motion] .burning > * {
+.burning > * {
   animation: ceniza 1300ms ease-in 200ms forwards;
 }
 
-:root[data-motion="full"] .burning::after {
+.burning::after {
   background:
     linear-gradient(
       to top,
@@ -184,16 +173,6 @@
   }
 }
 
-@keyframes arde-quieto {
-  65% {
-    opacity: 1;
-  }
-
-  100% {
-    opacity: 0;
-  }
-}
-
 @keyframes ceniza {
   35% {
     filter: none;
@@ -202,12 +181,6 @@
   80%,
   100% {
     filter: grayscale(1) brightness(0.45);
-  }
-}
-
-@keyframes funde {
-  from {
-    opacity: 0;
   }
 }
 
@@ -299,7 +272,7 @@
 
 /* Siempre en su propia capa: si el navegador la pasara a otra solo al acercarla, la redibujaría distinta y la línea del
    contorno de al lado cambiaría de intensidad durante la animación */
-:root[data-motion="full"] .picture {
+.picture {
   transition: transform 300ms ease-out;
   will-change: transform;
 }
@@ -329,7 +302,7 @@
   opacity: 0;
 }
 
-:root[data-motion="full"] .coverActions {
+.coverActions {
   transition: opacity 150ms ease-out;
 }
 

@@ -828,8 +828,6 @@ export const es = {
     theme: 'Tema',
     light: 'Claro',
     dark: 'Oscuro',
-    motion: 'Animaciones',
-    motionOptions: { full: 'Completas', reduced: 'Reducidas', system: 'Como el sistema' },
     aiWaiting_one: '{{count}} petición',
     aiWaiting_other: '{{count}} peticiones'
   },
