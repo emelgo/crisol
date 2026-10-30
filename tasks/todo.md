@@ -143,7 +143,8 @@ Cada vía nueva por la que salen datos amplía `@fugas` en la misma tarea.
   - Comprueba: la prueba de ida y vuelta de cada nodo y marca. Un nodo sin su forma en Markdown hace fallar la prueba.
   - Archivos: `packages/editor/src/markdown/{serialize,parse,frontmatter}.ts` (+ pruebas).
 
-- [ ] **11. Claude lee y escribe páginas**
+- [x] **11. Claude lee y escribe páginas** — hecha. Huella de partida = la hora de la petición; el cuerpo se podrá
+  deshacer con las versiones (16 y 17).
   - Acepta:
     - MCP: `leer_pagina`, `crear_paginas` (hasta 50, anidables, en una operación) y `editar_pagina` (añadir, un
       bloque o una sección, todo el cuerpo, título y propiedades).
@@ -159,6 +160,7 @@ Cada vía nueva por la que salen datos amplía `@fugas` en la misma tarea.
 ### Punto de control 3
 
 - [ ] Desde claude.ai, Claude crea varias páginas con secretos y edita una que Enrique tiene abierta.
+  (Pendiente de Enrique: se sigue sin esperar, por su encargo del 2026-10-30.)
 
 - [ ] **12. Exportar**
   - Acepta:

@@ -213,8 +213,8 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   4. ~~Diseño~~: aprobado.
   5. ~~`/plan`~~: aprobado.
   6. **`/build` tarea a tarea** (`tasks/todo.md`), con `/agent-skills:review` y `/ship`, como en el módulo 0. Hechas de
-     la 1 a la 10. **Puntos de control 1 y 2 pasados** (2026-10-30, «todo funciona de momento»): el editor anidado se
-     queda. **Sigue la 11** (Claude lee y escribe páginas), y así hasta acabar el módulo (bitácora: `tasks/bitacora.md`).
+     la 1 a la 11. **Puntos de control 1 y 2 pasados** (2026-10-30, «todo funciona de momento»): el editor anidado se
+     queda. **Sigue la 12** (exportar), y así hasta acabar el módulo (bitácora: `tasks/bitacora.md`).
   7. **Al acabar el módulo 1, la interfaz** (decisión de Enrique, 2026-10-30): se apunta por dónde vamos y se
      dedica una etapa a la interfaz antes del módulo 2. Ver «Para el repaso final de la interfaz».
 - **2026-10-29 — Módulo 1, tarea 1: páginas y árbol en la API.**
@@ -424,6 +424,45 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
     prueba no lleva.
   - **Límite conocido**: dos listas seguidas sin nada entre ellas se leen como una sola (pasa igual en Obsidian), salvo
     si se escriben con sus ids.
+- **2026-10-30 — Módulo 1, tarea 11: Claude lee y escribe páginas.**
+  - **Acciones y herramientas MCP** (`apps/server/src/actions/page-content.ts`):
+    - `readPage` → `leer_pagina`: la página en Markdown, con los secretos dentro y los ids si se piden.
+    - `createPages` → `crear_paginas`: hasta 50 en una operación. Van anidadas por `key` y `parent` (plano: sin
+      esquemas recursivos en MCP).
+    - `editPage` → `editar_pagina`: título, icono, propiedades y cuerpo, con `append`, `replace` (con su YAML),
+      `block` o `section`.
+  - **Propiedades de páginas**: se resuelven por título, alias o id, sin mayúsculas. Si no aparece, da
+    `PAGE_NOT_FOUND`; si hay varias, `AMBIGUOUS_PAGE` con las candidatas. `InvalidRequestError` lleva ahora su
+    `detail`, que la IA lee.
+  - **En vivo** (`apps/server/src/wiki/content.ts`):
+    - el cuerpo se cambia por `openDirectConnection` de Hocuspocus, con la diferencia justa (`updateYFragment`);
+    - el servidor avisa con un mensaje sin estado de los bloques que cambió, y la web los resalta (`ai-highlight.ts`,
+      con una decoración);
+    - ese aviso puede llegar antes que el cambio, porque Hocuspocus junta los cambios al final de la vuelta, así que
+      los ids esperan a que lleguen sus bloques;
+    - a los lectores de pantalla se les dice «Claude ha cambiado la página».
+  - **Secretos**:
+    - un `> [!secreto]` nuevo crea su documento;
+    - uno con el `^s-id` de un secreto de la página cambia ese mismo documento;
+    - su texto nunca entra en el cuerpo, y lo comprueban las pruebas.
+  - **Huella de partida**: la hora de la petición (`ctx.requestedAt`, al aprobar).
+    - Si el cuerpo se guardó después, la respuesta dice `changedSinceRequest`.
+    - Si el bloque o la sección ya no están, `failed` con `BLOCK_NOT_FOUND` o `SECTION_NOT_FOUND`.
+  - **Al cambiar un bloque**, lo nuevo se queda con su id si no trae otro, así que los enlaces a él siguen valiendo.
+  - **Arreglado en deshacer** (`staleChange`): una operación que toca una fila dos veces (crear una página y luego darle
+    sus propiedades) se mira como quedó al final.
+  - **Arreglado en el servidor**: al cerrarse guarda los documentos abiertos antes de salir (`collab.close()`). La CI
+    daba un *deadlock* entre pruebas, y en producción se podía perder lo último escrito al reiniciar.
+  - **El cuerpo aún no se deshace**: la operación queda en el historial, pero deshacerla solo toca la fila de la
+    página. Se podrá deshacer con las versiones (tareas 16 y 17).
+  - **Arreglado un ciclo** entre `markdown/syntax.ts` y `nodes/callout.ts`, que entró con la 10: los tipos de recuadro
+    van ahora en `nodes/callout-kinds.ts`.
+  - **Pruebas**:
+    - integración: crear, leer, cambiar, secretos, errores sin dejar nada a medias, candidatas y permisos;
+    - en vivo, con un cliente de Hocuspocus;
+    - MCP: cada herramienta en cada modo, y la aprobación que falla o se aplica sobre lo de ahora;
+    - fugas entre organizaciones;
+    - e2e `claude-wiki.spec.ts`: Claude cambia una sección de la página abierta y se ve sin recargar.
 - **Pendientes de permiso de Enrique:**
   - Servicio de systemd para Foundry: ahora corre como proceso de la sesión y se para al cerrarla; se arranca con el
     comando de `research/foundry/entorno.md`.
@@ -444,7 +483,7 @@ Estados: pendiente · en curso · hecho · descartado.
 | # | Módulo | Estado | REA principal |
 |---|---|---|---|
 | 0 | **Fundación**: monorepo, CI, despliegue, cuentas, organizaciones, mundos, campañas, roles, historial y deshacer, esqueleto del MCP | **hecho** (2026-10-29; Discord y Google, pospuestos) | Foundry: modelo de documentos y permisos; DDB: campañas e invitaciones |
-| 1 | **Wiki**: páginas y subpáginas, editor de bloques, enlaces, menciones, vista previa, propiedades, secretos, búsqueda, marcadores, etiquetas, versiones, recursos y archivos, **hojas con estilo** (tipo Homebrewery, con PDF), exportación MD, sus herramientas MCP | en curso (construcción: tareas 1 a 10 de 26 hechas) | Foundry: Journal; DDB: contenido y referencias; Homebrewery (MIT): formato de hoja y descarga |
+| 1 | **Wiki**: páginas y subpáginas, editor de bloques, enlaces, menciones, vista previa, propiedades, secretos, búsqueda, marcadores, etiquetas, versiones, recursos y archivos, **hojas con estilo** (tipo Homebrewery, con PDF), exportación MD, sus herramientas MCP | en curso (construcción: tareas 1 a 11 de 26 hechas) | Foundry: Journal; DDB: contenido y referencias; Homebrewery (MIT): formato de hoja y descarga |
 | 2 | Tipos de página, plantillas y formularios nativos; consultas (en lugar de Dataview y Bases) | pendiente | Foundry: tipos de documento |
 | 3 | Sistemas de reglas, fichas de personaje (creación, subida de nivel), dados y dados 3D | pendiente | DDB: creador y hoja; Foundry: dnd5e, DataModel e instalar y crear sistemas |
 | 4 | Compendios, bestiario, statblocks, biblioteca | pendiente | Foundry: compendium packs; DDB: listados |
