@@ -43,8 +43,8 @@ export interface ApiClient {
 /** Adónde va una subida: un archivo nuevo del mundo, con su nombre, o los bytes nuevos de uno que ya está */
 /** Subir a un mundo, a los comunes de una organización (ADR-0005) o reemplazar uno que ya está */
 export type UploadTarget =
-  | { worldId: string; name: string }
-  | { organizationId: string; name: string }
+  | { worldId: string; name: string; folderId?: string | null }
+  | { organizationId: string; name: string; folderId?: string | null }
   | { fileId: string }
 
 /** El nombre del archivo que da el servidor (filename* en UTF-8, o filename) */
@@ -100,6 +100,7 @@ export function createApiClient(): ApiClient {
               ? { worldId: target.worldId, name: target.name }
               : { organizationId: target.organizationId, name: target.name }
           )
+          if (target.folderId) query.set('folderId', target.folderId)
           request.open('POST', `/api/files?${query}`)
         }
         request.setRequestHeader('content-type', 'application/octet-stream')

@@ -45,12 +45,95 @@
   color: var(--color-muted);
 }
 
+/* Arriba de la lista: la ruta de carpetas, el buscador y el filtro por tipo */
+.tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  margin-block-end: var(--space-4);
+}
+
+.path {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+  flex-basis: 100%;
+  color: var(--color-muted);
+  font-weight: 600;
+}
+
+.step {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.crumb {
+  padding: var(--space-1) var(--space-2);
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--color-link);
+  font: inherit;
+  cursor: pointer;
+}
+
+.crumb:hover {
+  background: var(--color-raised);
+}
+
+.here {
+  padding: var(--space-1) var(--space-2);
+  color: var(--color-text);
+}
+
+/* Donde se suelta un archivo para meterlo en una carpeta de la ruta */
+.target {
+  display: inline-flex;
+  border-radius: 4px;
+}
+
+.targetOver {
+  display: inline-flex;
+  border-radius: 4px;
+  outline: 2px dashed var(--color-accent);
+}
+
+.search {
+  display: inline-flex;
+  flex: 1 1 14rem;
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: 2.25rem;
+  max-inline-size: 22rem;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-field-border);
+  border-radius: 4px;
+  background: var(--color-field, var(--color-bg));
+  color: var(--color-muted);
+}
+
+.search:focus-within {
+  border-color: var(--color-focus);
+}
+
+.search input {
+  flex: 1;
+  min-inline-size: 0;
+  border: 0;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  outline: none;
+}
+
 /* Filtrar por tipo: unas pastillas, la elegida marcada */
 .kinds {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
-  margin-block-end: var(--space-4);
 }
 
 .kind {
@@ -80,10 +163,6 @@
   color: var(--color-text);
 }
 
-.count {
-  color: var(--color-muted);
-  font-weight: 400;
-}
 
 /* La miniatura, arriba de la tarjeta: la imagen recortada, o el icono de su tipo sobre un fondo apagado */
 .thumb {
@@ -153,31 +232,6 @@
   font-size: 0.875rem;
 }
 
-/* El recuadro de subir: el botón ocupa todo y, abajo, «o una carpeta», por encima */
-.uploadItem {
-  position: relative;
-}
-
-.folder {
-  position: absolute;
-  inset-block-end: var(--space-4);
-  inset-inline: 0;
-  margin-inline: auto;
-  inline-size: max-content;
-  padding: var(--space-1) var(--space-2);
-  border: 0;
-  background: none;
-  color: var(--color-muted);
-  font: inherit;
-  font-size: 0.875rem;
-  text-decoration: underline;
-  cursor: pointer;
-}
-
-.folder:hover {
-  color: var(--color-text);
-}
-
 /* La vista previa de la ventana de un archivo: la imagen entera, o su icono */
 .preview {
   position: relative;
@@ -213,4 +267,66 @@
 /* Al pasar el ratón, la miniatura se acerca un poco, como las portadas */
 li:hover > .thumb img {
   transform: scale(1.06);
+}
+
+/* Al buscar, en qué carpeta está */
+.where {
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+}
+
+/* La carpeta de un archivo, en su ventana */
+.folderField {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.folderField label {
+  font-weight: 600;
+}
+
+.folderField select {
+  min-block-size: 2.5rem;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-field-border);
+  border-radius: 4px;
+  background: var(--color-field, var(--color-bg));
+  color: var(--color-text);
+  font: inherit;
+}
+
+/* Una carpeta, con su icono en vez de miniatura; marcada mientras se le arrastra un archivo encima */
+.folderCard .thumb {
+  color: var(--color-accent-text);
+}
+
+.dropping {
+  outline: 2px dashed var(--color-accent);
+  outline-offset: 3px;
+}
+
+/* Lo nuevo (subido o creado) aparece subiendo un poco; lo borrado se desvanece encogiendo. Sin fuego: eso es de los
+   mundos */
+.appear {
+  animation: aparece 280ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.vanishing {
+  animation: se-desvanece 240ms ease-in forwards;
+  pointer-events: none;
+}
+
+@keyframes aparece {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
+
+@keyframes se-desvanece {
+  to {
+    opacity: 0;
+    transform: scale(0.94);
+  }
 }

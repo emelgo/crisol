@@ -5,7 +5,7 @@
 import { and, asc, eq, inArray, isNotNull, isNull, or, type SQL, sql } from 'drizzle-orm'
 import type { Database } from '../client.ts'
 import { type OperationContext, operation } from '../operation.ts'
-import { files } from '../schema/files.ts'
+import { fileFolders, files } from '../schema/files.ts'
 
 export type FileKind = 'image' | 'pdf' | 'other'
 
@@ -54,7 +54,7 @@ export async function freeName(db: Database, scope: FileScope, wanted: string, e
 export function createFile(
   db: Database,
   context: OperationContext,
-  input: { organizationId: string; worldId: string | null; name: string } & FileContent
+  input: { organizationId: string; worldId: string | null; folderId?: string | null; name: string } & FileContent
 ) {
   return operation(db, context, (w) => w.insert(files, input))
 }
@@ -63,7 +63,7 @@ export function updateFile(
   db: Database,
   context: OperationContext,
   fileId: string,
-  patch: Partial<FileContent & { name: string; deletedAt: Date | null }>
+  patch: Partial<FileContent & { name: string; folderId: string | null; deletedAt: Date | null }>
 ) {
   return operation(db, context, (w) => w.update(files, fileId, patch))
 }
@@ -118,4 +118,90 @@ export function filesInWorld(db: Database, worldId: string, ids: readonly string
     .select({ id: files.id })
     .from(files)
     .where(and(usableIn(worldId), inArray(files.id, [...ids])))
+}
+
+const folderInScope = (scope: FileScope): SQL | undefined =>
+  'worldId' in scope
+    ? eq(fileFolders.worldId, scope.worldId)
+    : and(isNull(fileFolders.worldId), eq(fileFolders.organizationId, scope.organizationId))
+
+/** Las carpetas de un ámbito (un mundo o los comunes de una organización), por nombre */
+export function listFolders(db: Database, scope: FileScope) {
+  return db
+    .select()
+    .from(fileFolders)
+    .where(folderInScope(scope))
+    .orderBy(asc(sql`lower(${fileFolders.name})`))
+}
+
+/** Las carpetas que se ven desde un mundo: las suyas y las de los comunes de su organización */
+export function usableFolders(db: Database, worldId: string) {
+  return db
+    .select()
+    .from(fileFolders)
+    .where(
+      or(
+        eq(fileFolders.worldId, worldId),
+        and(
+          isNull(fileFolders.worldId),
+          sql`${fileFolders.organizationId} = (select organization_id from worlds where id = ${worldId})`
+        )
+      )
+    )
+    .orderBy(asc(sql`lower(${fileFolders.name})`))
+}
+
+export async function findFolder(db: Database, folderId: string) {
+  const [found] = await db.select().from(fileFolders).where(eq(fileFolders.id, folderId))
+  return found ?? null
+}
+
+export function createFolder(
+  db: Database,
+  context: OperationContext,
+  input: { organizationId: string; worldId: string | null; parentId: string | null; name: string }
+) {
+  return operation(db, context, (w) => w.insert(fileFolders, input))
+}
+
+export function updateFolder(
+  db: Database,
+  context: OperationContext,
+  folderId: string,
+  patch: Partial<{ name: string; parentId: string | null }>
+) {
+  return operation(db, context, (w) => w.update(fileFolders, folderId, patch))
+}
+
+/** Borra una carpeta: lo que tenía (archivos y carpetas) pasa a la de arriba, en la misma operación */
+export function deleteFolder(db: Database, context: OperationContext, folderId: string) {
+  return operation(db, context, async (w) => {
+    const [folder] = await w.read.select().from(fileFolders).where(eq(fileFolders.id, folderId))
+    if (!folder) return
+    const inside = await w.read.select({ id: files.id }).from(files).where(eq(files.folderId, folderId))
+    for (const file of inside) await w.update(files, file.id, { folderId: folder.parentId })
+    const children = await w.read
+      .select({ id: fileFolders.id, name: fileFolders.name })
+      .from(fileFolders)
+      .where(eq(fileFolders.parentId, folderId))
+    // Arriba, una con el mismo nombre que otra que ya está allí sube con un número
+    const scope = folder.worldId ? { worldId: folder.worldId } : { organizationId: folder.organizationId }
+    const above = await w.read
+      .select({ name: fileFolders.name })
+      .from(fileFolders)
+      .where(
+        and(
+          folderInScope(scope),
+          folder.parentId ? eq(fileFolders.parentId, folder.parentId) : isNull(fileFolders.parentId)
+        )
+      )
+    const taken = new Set(above.map((row) => row.name.toLocaleLowerCase('es')))
+    for (const child of children) {
+      let name = child.name
+      for (let n = 2; taken.has(name.toLocaleLowerCase('es')); n++) name = `${child.name} (${n})`
+      taken.add(name.toLocaleLowerCase('es'))
+      await w.update(fileFolders, child.id, { parentId: folder.parentId, ...(name !== child.name ? { name } : {}) })
+    }
+    await w.remove(fileFolders, folderId)
+  })
 }

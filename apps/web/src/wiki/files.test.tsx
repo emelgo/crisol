@@ -162,6 +162,85 @@ describe('los archivos del mundo', () => {
   })
 })
 
+describe('las carpetas de los archivos', () => {
+  it('se crea una, se entra, se sube ahí y se vuelve por la ruta; un archivo se mueve desde su engranaje', async () => {
+    const api = renderAt(`/mundos/${WORLD.id}/archivos`)
+    // La del mundo (la primera; la otra es la de los comunes)
+    await userEvent.click((await screen.findAllByRole('button', { name: 'Nueva carpeta' }))[0] as HTMLElement)
+    const create = within(await screen.findByRole('dialog', { name: 'Nueva carpeta' }))
+    await userEvent.type(create.getByLabelText('Nombre de la carpeta'), 'Mapas')
+    await userEvent.click(create.getByRole('button', { name: 'Crear la carpeta' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Abrir la carpeta Mapas' }))
+    const path = within(await screen.findByRole('navigation', { name: 'Carpetas' }))
+    expect(path.getByText('Mapas').getAttribute('aria-current')).toBe('location')
+    // Dentro, aún no hay nada; lo que se sube va a ella
+    expect(screen.queryByRole('button', { name: 'Mapa de Eana.png' })).toBeNull()
+    const input = document.querySelector<HTMLInputElement>('input[type=file][multiple]')
+    if (!input) throw new Error('sin campo de archivos')
+    await userEvent.upload(input, [new File(['png'], 'Costa.png', { type: 'image/png' })])
+    expect(await screen.findByRole('button', { name: 'Costa.png' })).toBeDefined()
+    const [folder] = (await api.client.call('listFiles', { worldId: WORLD.id })).folders
+    expect(api.files.find((f) => f.name === 'Costa.png')?.folderId).toBe(folder?.id)
+    // Por la ruta, a lo más alto; y desde su engranaje, el mapa a la carpeta
+    await userEvent.click(path.getByRole('button', { name: 'Todos' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Ajustes de Mapa de Eana.png' }))
+    const settings = within(await screen.findByRole('dialog', { name: 'Ajustes de Mapa de Eana.png' }))
+    await userEvent.selectOptions(settings.getByLabelText('Carpeta'), 'Mapas')
+    await waitFor(() => expect(api.files.find((f) => f.name === 'Mapa de Eana.png')?.folderId).toBe(folder?.id))
+  })
+
+  it('buscar encuentra en todas las carpetas, y dice en cuál está', async () => {
+    const folder = {
+      id: crypto.randomUUID(),
+      worldId: WORLD.id,
+      organizationId: ORG.id,
+      parentId: null,
+      name: 'Bestias'
+    }
+    const api = fakeApi({
+      organizations: [ORG],
+      worlds: [WORLD],
+      folders: [folder],
+      files: [
+        { worldId: WORLD.id, name: 'Mapa de Eana.png', kind: 'image' },
+        { worldId: WORLD.id, name: 'Bestiario.pdf', kind: 'pdf', mime: 'application/pdf', folderId: folder.id }
+      ]
+    })
+    renderAt(`/mundos/${WORLD.id}/archivos`, api)
+    expect(await screen.findByRole('button', { name: 'Abrir la carpeta Bestias' })).toBeDefined()
+    expect(screen.queryByRole('link', { name: 'Bestiario.pdf' })).toBeNull()
+    await userEvent.type(screen.getAllByRole('searchbox', { name: 'Buscar por nombre' })[0] as HTMLElement, 'bestia')
+    const found = await screen.findByRole('link', { name: 'Bestiario.pdf' })
+    expect(found.closest('li')?.textContent).toContain('Bestias')
+    expect(screen.queryByRole('button', { name: 'Mapa de Eana.png' })).toBeNull()
+  })
+
+  it('borrar una carpeta no borra lo que tiene: pasa a la de arriba', async () => {
+    const folder = {
+      id: crypto.randomUUID(),
+      worldId: WORLD.id,
+      organizationId: ORG.id,
+      parentId: null,
+      name: 'Viejos'
+    }
+    const api = fakeApi({
+      organizations: [ORG],
+      worlds: [WORLD],
+      folders: [folder],
+      files: [{ worldId: WORLD.id, name: 'Antiguo.pdf', kind: 'pdf', mime: 'application/pdf', folderId: folder.id }]
+    })
+    renderAt(`/mundos/${WORLD.id}/archivos`, api)
+    await userEvent.click(await screen.findByRole('button', { name: 'Ajustes de la carpeta Viejos' }))
+    const settings = within(await screen.findByRole('dialog', { name: 'Ajustes de la carpeta Viejos' }))
+    await userEvent.click(settings.getByRole('button', { name: 'Borrar la carpeta' }))
+    const confirm = within(await screen.findByRole('dialog', { name: '¿Borrar «Viejos»?' }))
+    expect(confirm.getByText(/pasa a la carpeta de arriba/)).toBeDefined()
+    await userEvent.click(confirm.getByRole('button', { name: 'Borrar la carpeta' }))
+    expect(await screen.findByRole('link', { name: 'Antiguo.pdf' })).toBeDefined()
+    expect(screen.queryByRole('button', { name: 'Abrir la carpeta Viejos' })).toBeNull()
+  })
+})
+
 describe('los archivos comunes de la cuenta (ADR-0005)', () => {
   const withCommon = () =>
     fakeApi({

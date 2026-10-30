@@ -110,6 +110,7 @@ export function undoEvents(
         events.push(pagesChanged({ worldId, organizationId: context.organizationId }))
         break
       case 'files':
+      case 'file_folders':
         // Uno común (sin mundo): a quien ve los comunes de su organización
         if (change.after?.world_id === null || change.before?.world_id === null) {
           events.push(commonFilesChanged(String(row.organization_id ?? context.organizationId)))

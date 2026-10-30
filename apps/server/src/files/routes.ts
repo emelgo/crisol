@@ -15,6 +15,7 @@ import {
   authorizedFile,
   type FilePlace,
   filesTouched,
+  folderIn,
   fileView,
   scopeOf,
   withFreeName
@@ -23,10 +24,10 @@ import type { Auth } from '../auth/auth.ts'
 import { clientIp, toHeaders } from '../http.ts'
 import { NotAStreamError, type Storage, TooLargeError } from './storage.ts'
 
-/** A un mundo (worldId) o, sin él, a los comunes de una organización (organizationId) */
+/** A un mundo (worldId) o, sin él, a los comunes de una organización (organizationId); folderId: a esa carpeta */
 const uploadQuery = z.union([
-  z.object({ worldId: z.uuid(), name: fileName }),
-  z.object({ organizationId: z.uuid(), name: fileName })
+  z.object({ worldId: z.uuid(), name: fileName, folderId: z.uuid().optional() }),
+  z.object({ organizationId: z.uuid(), name: fileName, folderId: z.uuid().optional() })
 ])
 const fileParams = z.object({ id: z.uuid() })
 
@@ -113,12 +114,14 @@ export function registerFileRoutes(
         'worldId' in query.data
           ? await authorizedWiki(ctx, 'page.write', query.data.worldId)
           : authorizedCommon(ctx, true, query.data.organizationId)
+      const folder = await folderIn(ctx, place, query.data.folderId)
       const content = await store(env.storage, request, place, query.data.name)
       const scope = place.worldId ? place : { organizationId: place.organizationId }
       const file = await withFreeName(ctx.db, { scope: scopeOf(place), name: query.data.name }, (name) =>
         filesRepo.createFile(ctx.db, historyContext(ctx, 'uploadFile', { name }, scope), {
           organizationId: place.organizationId,
           worldId: place.worldId,
+          folderId: folder?.id ?? null,
           name,
           ...content
         })

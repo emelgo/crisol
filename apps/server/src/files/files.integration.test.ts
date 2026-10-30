@@ -204,6 +204,41 @@ describe('los archivos del mundo', () => {
     })
   })
 
+  it('carpetas: se crean (también dentro de otra), se sube a una, se mueve un archivo y borrarla sube lo que tenía', async () => {
+    const maps = await call('createFolder', { worldId, name: 'Mapas' })
+    expect(maps).toMatchObject({ name: 'Mapas', parentId: null, worldId })
+    const north = await call('createFolder', { worldId, parentId: maps.id, name: 'Norte' })
+    expect(await call('createFolder', { worldId, parentId: maps.id, name: 'NORTE' })).toMatchObject({
+      code: 'NAME_TAKEN'
+    })
+    // Subir a una carpeta
+    const response = await app.inject({
+      method: 'POST',
+      url: `/api/files?worldId=${worldId}&folderId=${north.id}&name=Costa.png`,
+      payload: PNG,
+      headers: { origin: BASE_URL, cookie: owner.cookie, 'content-type': 'application/octet-stream' }
+    })
+    expect(response.json()).toMatchObject({ name: 'Costa.png', folderId: north.id })
+    const shield = (await upload('Escudo.png', PNG)).json()
+    expect(await call('moveFile', { fileId: shield.id, folderId: maps.id })).toMatchObject({ folderId: maps.id })
+    // Ni dentro de sí misma, ni una carpeta de otro ámbito
+    expect(await call('updateFolder', { folderId: maps.id, parentId: north.id })).toMatchObject({ code: 'CYCLE' })
+    const common = await call('createFolder', { organizationId, name: 'Comunes' })
+    expect(await call('moveFile', { fileId: shield.id, folderId: common.id })).toMatchObject({ code: 'BAD_FOLDER' })
+    const listed = await call('listFiles', { worldId })
+    expect(listed.folders.map((f: { name: string }) => f.name).sort()).toEqual(['Comunes', 'Mapas', 'Norte'])
+    // Borrar «Mapas»: «Norte» y «Escudo.png» suben a lo más alto; se deshace con el historial
+    expect(await call('deleteFolder', { folderId: maps.id })).toMatchObject({ name: 'Mapas' })
+    const after = await call('listFiles', { worldId })
+    expect(after.folders.find((f: { name: string }) => f.name === 'Norte')).toMatchObject({ parentId: null })
+    expect(after.files.find((f: { name: string }) => f.name === 'Escudo.png')).toMatchObject({ folderId: null })
+    const [last] = (await call('listHistory', { worldId })).entries
+    expect(last).toMatchObject({ action: 'deleteFolder' })
+    await call('undoOperation', { operationId: last.id })
+    const undone = await call('listFiles', { worldId })
+    expect(undone.files.find((f: { name: string }) => f.name === 'Escudo.png')).toMatchObject({ folderId: maps.id })
+  })
+
   it('la papelera: borrado no se sirve, sale en la del mundo y vuelve; si su nombre ya está, con número', async () => {
     const { id } = (await upload('Mapa.png', PNG)).json()
     await call('deleteFile', { fileId: id })

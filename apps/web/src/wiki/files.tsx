@@ -1,15 +1,29 @@
 /**
  * Los archivos: los de un mundo y, aparte, los comunes de la cuenta, que comparten todos sus mundos (ADR-0005; también
  * en su pantalla, fuera de los mundos). En tarjetas, como los mundos: su miniatura, su nombre y su engranaje (nombre,
- * reemplazar y la zona de peligro). Se suben con el recuadro discontinuo del final (varios o una carpeta) o
- * soltándolos encima; cada subida sale en la lista con su progreso y se puede cancelar, y al acabar es ya su tarjeta.
- * Las carpetas de lo que se sube no cuentan: se ordenan por tipo
+ * carpeta, reemplazar y la zona de peligro). Se ordenan en carpetas, que solo ordenan (el nombre de un archivo es único
+ * en su ámbito); se buscan por nombre y se filtran por tipo. Se suben con el recuadro discontinuo del final o
+ * soltándolos encima, a la carpeta abierta; cada subida sale con su progreso y se puede cancelar, y al acabar es ya su
+ * tarjeta. Un archivo se mueve arrastrándolo a una carpeta
  */
+
+import type { FolderView } from '@crisol/contracts'
 import { MAX_FILE_BYTES, TRASH_DAYS } from '@crisol/domain'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getRouteApi, Navigate } from '@tanstack/react-router'
-import { File as FileIcon, FileText, Plus, Settings, Upload as UploadIcon, X } from 'lucide-react'
-import { type DragEvent, useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
+import {
+  ChevronRight,
+  File as FileIcon,
+  FileText,
+  Folder,
+  FolderPlus,
+  Plus,
+  Search,
+  Settings,
+  Upload as UploadIcon,
+  X
+} from 'lucide-react'
+import { type DragEvent, type ReactNode, useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { ApiError, type UploadTarget } from '../api/client.ts'
@@ -17,12 +31,10 @@ import { useApi } from '../api/context.tsx'
 import { useCodeText, useErrorText } from '../api/errors.ts'
 import { useAnnounce } from '../components/announcer.tsx'
 import { BusyButton } from '../components/busy-button.tsx'
-import { burnCard, closeAtOnce, keepCard, useCardList } from '../components/card-transition.ts'
 import { ChangesBar } from '../components/changes.tsx'
 import { ConfirmByName, DangerZone } from '../components/danger.tsx'
 import dialogStyles from '../components/dialog.module.css'
 import { Field, FormError } from '../components/field.tsx'
-import { focusAfterRemoving } from '../components/focus.ts'
 import form from '../components/form.module.css'
 import list from '../components/list.module.css'
 import { failed, LoadError } from '../components/load-error.tsx'
@@ -66,24 +78,32 @@ function FilesPage({ worldId, world, organizationId }: { worldId: string; world:
   const commonId = useId()
   const files = useQuery({ queryKey: ['files', worldId], queryFn: () => api.call('listFiles', { worldId }) })
   const ownsCommon = useOwns(organizationId)
-  // Las mismas listas mientras no cambien los datos: las tarjetas comparan para saber cuáles son nuevas o se han ido
-  const own = useMemo(() => files.data?.files.filter((file) => file.worldId !== null), [files.data])
-  const common = useMemo(() => files.data?.files.filter((file) => file.worldId === null), [files.data])
+  // Las mismas listas mientras no cambien los datos
+  const own = useMemo(
+    () =>
+      files.data && {
+        files: files.data.files.filter((f) => f.worldId !== null),
+        folders: files.data.folders.filter((f) => f.worldId !== null)
+      },
+    [files.data]
+  )
+  const common = useMemo(
+    () =>
+      files.data && {
+        files: files.data.files.filter((f) => f.worldId === null),
+        folders: files.data.folders.filter((f) => f.worldId === null)
+      },
+    [files.data]
+  )
   return (
     <section>
       <PageTitle>{t('files.worldTitle', { world })}</PageTitle>
       {failed(files) && <LoadError error={files.error} onRetry={() => files.refetch()} />}
-      <FilesSection target={{ worldId }} name={`archivos-${worldId}`} files={own} canWrite empty={t('files.empty')} />
+      <FilesSection target={{ worldId }} data={own} canWrite empty={t('files.empty')} />
       <section aria-labelledby={commonId} className={styles.common}>
         <h2 id={commonId}>{t('files.common')}</h2>
         <p className={styles.commonHint}>{t('files.commonHint')}</p>
-        <FilesSection
-          target={{ organizationId }}
-          name={`comunes-${organizationId}`}
-          files={common}
-          canWrite={ownsCommon}
-          empty={t('files.commonEmpty')}
-        />
+        <FilesSection target={{ organizationId }} data={common} canWrite={ownsCommon} empty={t('files.commonEmpty')} />
       </section>
     </section>
   )
@@ -113,56 +133,100 @@ export function CommonFiles() {
       <p className={styles.commonHint}>{t('files.commonHint')}</p>
       {failed(files) && <LoadError error={files.error} onRetry={() => files.refetch()} />}
       {owned && (
-        <FilesSection
-          target={{ organizationId: owned.id }}
-          name={`comunes-${owned.id}`}
-          files={files.data?.files}
-          canWrite
-          empty={t('files.commonEmpty')}
-        />
+        <FilesSection target={{ organizationId: owned.id }} data={files.data} canWrite empty={t('files.commonEmpty')} />
       )}
     </section>
   )
 }
 
+/** Los archivos y las carpetas de un ámbito */
+type Scope = { files: WorldFile[]; folders: FolderView[] }
+
+/** El tipo de dato que lleva un archivo arrastrado (para meterlo en una carpeta) */
+const DRAGGED = 'application/x-crisol-archivo'
+
+/** Las ya vistas: las que lleguen después (recién subidas o creadas) entran con su animación; al cargar, ninguna */
+function useFresh(ids: readonly string[] | undefined) {
+  const seen = useRef<Set<string> | null>(null)
+  if (ids && !seen.current) seen.current = new Set(ids)
+  useEffect(() => {
+    for (const id of ids ?? []) seen.current?.add(id)
+  }, [ids])
+  return (id: string) => Boolean(seen.current && !seen.current.has(id))
+}
+
 /**
- * Los archivos de un ámbito en tarjetas, con las subidas en marcha y, si se puede subir, el recuadro para hacerlo;
- * también se sueltan encima. name: su lista (la de card-transition)
+ * Los archivos de un ámbito: la carpeta abierta (con su ruta), sus carpetas y sus archivos en tarjetas, las subidas en
+ * marcha y, si se puede cambiar, los recuadros de subir y de crear carpeta; también se sueltan encima. Al buscar, los
+ * de todas las carpetas que se llaman así
  */
 function FilesSection({
   target,
-  name,
-  files,
+  data,
   canWrite,
   empty
 }: {
   target: Target
-  name: string
   /** Sin datos aún: undefined */
-  files: WorldFile[] | undefined
+  data: Scope | undefined
   canWrite: boolean
   empty: string
 }) {
   const { t } = useTranslation()
+  const api = useApi()
+  const queryClient = useQueryClient()
   const uploads = useUploads(target)
+  const [folderId, setFolderId] = useState<string | null>(null)
+  const [query, setQuery] = useState('')
   const [kind, setKind] = useState<Kind | 'all'>('all')
   const [over, setOver] = useState(false)
-  const shown = useMemo(() => (kind === 'all' ? files : files?.filter((file) => file.kind === kind)), [files, kind])
-  const list = useCardList(name, shown)
-  const present = KINDS.filter((k) => files?.some((file) => file.kind === k))
+  const folders = data?.folders ?? []
+  const byId = new Map(folders.map((folder) => [folder.id, folder]))
+  // Si la abierta deja de existir (borrada aquí o en otra pestaña), a lo más alto
+  const open = folderId && byId.has(folderId) ? folderId : null
+  const pathOf = (id: string | null): FolderView[] => {
+    const path: FolderView[] = []
+    for (let at = id ? byId.get(id) : undefined; at; at = at.parentId ? byId.get(at.parentId) : undefined) {
+      path.unshift(at)
+    }
+    return path
+  }
+  const searching = query.trim() !== ''
+  const wanted = query.trim().toLocaleLowerCase('es')
+  const shownFiles = (data?.files ?? []).filter(
+    (file) =>
+      (searching ? file.name.toLocaleLowerCase('es').includes(wanted) : file.folderId === open) &&
+      (kind === 'all' || file.kind === kind)
+  )
+  const shownFolders = searching ? [] : folders.filter((folder) => folder.parentId === open)
+  const present = KINDS.filter((k) => data?.files.some((file) => file.kind === k))
+  const ids = useMemo(() => data && [...data.files.map((f) => f.id), ...data.folders.map((f) => f.id)], [data])
+  const fresh = useFresh(ids)
+  const refresh = () =>
+    Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['files'] }),
+      queryClient.invalidateQueries({ queryKey: ['commonFiles'] })
+    ])
+  const moveInto = async (fileId: string, to: string | null) => {
+    await api.call('moveFile', { fileId, folderId: to })
+    await refresh()
+  }
   const drop = async (event: DragEvent) => {
     event.preventDefault()
     setOver(false)
-    if (canWrite) uploads.add(await droppedFiles(event.dataTransfer))
+    // Un archivo de la lista arrastrado fuera de una carpeta no se sube
+    if (canWrite && event.dataTransfer.types.includes('Files'))
+      uploads.add(await droppedFiles(event.dataTransfer), open)
   }
-  if (!files) return null
-  const nothing = files.length === 0 && uploads.items.length === 0
+  if (!data) return null
+  const path = pathOf(open)
+  const nothing = data.files.length === 0 && folders.length === 0 && uploads.items.length === 0
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions: soltar es un atajo; el recuadro de subir hace lo mismo con el teclado
     <div
       className={`${styles.zone} ${over ? styles.over : ''}`}
       onDragOver={(event) => {
-        if (!canWrite) return
+        if (!canWrite || !event.dataTransfer.types.includes('Files')) return
         event.preventDefault()
         setOver(true)
       }}
@@ -171,71 +235,432 @@ function FilesSection({
       }}
       onDrop={drop}
     >
-      {present.length > 1 && (
-        // biome-ignore lint/a11y/useSemanticElements: unos botones que filtran, no un formulario
-        <div className={styles.kinds} role="group" aria-label={t('files.kinds')}>
-          {(['all', ...present] as const).map((k) => (
-            <button key={k} type="button" className={styles.kind} aria-pressed={kind === k} onClick={() => setKind(k)}>
-              {k === 'all' ? t('files.all') : t(`files.groups.${k}`)}
-              <span className={styles.count}>
-                {k === 'all' ? files.length : files.filter((file) => file.kind === k).length}
-              </span>
-            </button>
-          ))}
+      {!nothing && (
+        <div className={styles.tools}>
+          {path.length > 0 && !searching && (
+            <nav className={styles.path} aria-label={t('files.path')}>
+              <FolderTarget folderId={null} canWrite={canWrite} onMove={moveInto}>
+                <button type="button" className={styles.crumb} onClick={() => setFolderId(null)}>
+                  {t('files.root')}
+                </button>
+              </FolderTarget>
+              {path.map((folder, i) => (
+                <span key={folder.id} className={styles.step}>
+                  <ChevronRight aria-hidden="true" size={14} />
+                  {i === path.length - 1 ? (
+                    <span aria-current="location" className={styles.here}>
+                      {folder.name}
+                    </span>
+                  ) : (
+                    <FolderTarget folderId={folder.id} canWrite={canWrite} onMove={moveInto}>
+                      <button type="button" className={styles.crumb} onClick={() => setFolderId(folder.id)}>
+                        {folder.name}
+                      </button>
+                    </FolderTarget>
+                  )}
+                </span>
+              ))}
+            </nav>
+          )}
+          <label className={styles.search}>
+            <Search aria-hidden="true" size={16} />
+            <input
+              type="search"
+              value={query}
+              placeholder={t('files.search')}
+              aria-label={t('files.search')}
+              onChange={(event) => setQuery(event.currentTarget.value)}
+            />
+          </label>
+          {present.length > 1 && (
+            // biome-ignore lint/a11y/useSemanticElements: unos botones que filtran, no un formulario
+            <div className={styles.kinds} role="group" aria-label={t('files.kinds')}>
+              {(['all', ...present] as const).map((k) => (
+                <button
+                  key={k}
+                  type="button"
+                  className={styles.kind}
+                  aria-pressed={kind === k}
+                  onClick={() => setKind(k)}
+                >
+                  {k === 'all' ? t('files.all') : t(`files.groups.${k}`)}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
       {nothing && !canWrite && <p className={styles.empty}>{empty}</p>}
-      <ul className={cards.list} aria-label={t('files.listLabel')} data-card-list>
-        {list.map(({ item, fresh, burning, burnt }) => (
-          <FileCard
-            key={item.id}
-            file={item}
-            list={name}
+      {searching && shownFiles.length === 0 && <p className={styles.empty}>{t('files.noResults')}</p>}
+      <ul className={cards.list} aria-label={t('files.listLabel')}>
+        {shownFolders.map((folder) => (
+          <FolderCard
+            key={folder.id}
+            folder={folder}
+            files={data.files}
+            folders={folders}
             canWrite={canWrite}
-            fresh={fresh}
-            burning={burning}
-            onBurnt={burnt}
+            fresh={fresh(folder.id)}
+            onOpen={() => setFolderId(folder.id)}
+            onMove={moveInto}
+            onChanged={refresh}
+          />
+        ))}
+        {shownFiles.map((file) => (
+          <FileCard
+            key={file.id}
+            file={file}
+            where={searching ? pathOf(file.folderId) : []}
+            folders={folders}
+            canWrite={canWrite}
+            fresh={fresh(file.id)}
+            onChanged={refresh}
           />
         ))}
         {uploads.items.map((upload) => (
           <UploadCard key={upload.key} upload={upload} onCancel={() => uploads.cancel(upload.key)} />
         ))}
-        {canWrite && <UploadTile onFiles={uploads.add} />}
+        {canWrite && <UploadTile onFiles={(files) => uploads.add(files, open)} />}
+        {canWrite && !searching && <NewFolderTile target={target} parentId={open} onCreated={refresh} />}
       </ul>
       {over && <p className={styles.dropHint}>{t('files.dropHere')}</p>}
     </div>
   )
 }
 
-/** «Subir archivos»: un recuadro discontinuo, como «Nuevo mundo», tras el último; y, debajo, una carpeta entera */
+/** Donde se suelta un archivo arrastrado para meterlo en una carpeta (o, con null, en lo más alto) */
+function FolderTarget({
+  folderId,
+  canWrite,
+  onMove,
+  children
+}: {
+  folderId: string | null
+  canWrite: boolean
+  onMove: (fileId: string, folderId: string | null) => Promise<unknown>
+  children: ReactNode
+}) {
+  const [over, setOver] = useState(false)
+  if (!canWrite) return <>{children}</>
+  return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: soltar es un atajo; la carpeta se elige también en el engranaje
+    <span
+      className={over ? styles.targetOver : styles.target}
+      onDragOver={(event) => {
+        if (!event.dataTransfer.types.includes(DRAGGED)) return
+        event.preventDefault()
+        event.stopPropagation()
+        setOver(true)
+      }}
+      onDragLeave={() => setOver(false)}
+      onDrop={(event) => {
+        const fileId = event.dataTransfer.getData(DRAGGED)
+        if (!fileId) return
+        event.preventDefault()
+        event.stopPropagation()
+        setOver(false)
+        void onMove(fileId, folderId)
+      }}
+    >
+      {children}
+    </span>
+  )
+}
+
+/** «Subir archivos»: un recuadro discontinuo, como «Nuevo mundo», tras el último; se eligen varios a la vez */
 function UploadTile({ onFiles }: { onFiles: (files: File[]) => void }) {
   const { t } = useTranslation()
   const several = useRef<HTMLInputElement>(null)
-  const folder = useRef<HTMLInputElement>(null)
-  const take = (input: HTMLInputElement) => {
-    onFiles([...(input.files ?? [])])
-    input.value = ''
-  }
   return (
-    <li className={`${cards.newItem} ${styles.uploadItem}`}>
+    <li className={cards.newItem}>
       <button type="button" className={cards.newCard} onClick={() => several.current?.click()}>
         <Plus aria-hidden="true" size={28} strokeWidth={1.5} />
         {t('files.upload')}
       </button>
-      <button type="button" className={styles.folder} onClick={() => folder.current?.click()}>
-        {t('files.uploadFolder')}
-      </button>
-      <input ref={several} type="file" multiple hidden onChange={(event) => take(event.currentTarget)} />
-      {/* webkitdirectory: elegir una carpeta (todos los navegadores lo entienden con ese nombre) */}
       <input
-        ref={folder}
+        ref={several}
         type="file"
+        multiple
         hidden
-        {...{ webkitdirectory: '' }}
-        onChange={(event) => take(event.currentTarget)}
+        onChange={(event) => {
+          onFiles([...(event.currentTarget.files ?? [])])
+          event.currentTarget.value = ''
+        }}
       />
     </li>
   )
+}
+
+/** «Nueva carpeta»: otro recuadro discontinuo; abre un cuadro con su nombre */
+function NewFolderTile({
+  target,
+  parentId,
+  onCreated
+}: {
+  target: Target
+  parentId: string | null
+  onCreated: () => Promise<unknown>
+}) {
+  const { t } = useTranslation()
+  const api = useApi()
+  const errorText = useErrorText()
+  const trigger = useRef<HTMLButtonElement>(null)
+  const dialog = useRef<HTMLDialogElement>(null)
+  const titleId = useId()
+  const [open, setOpen] = useState(false)
+  const [name, setName] = useState('')
+  const create = useMutation({
+    mutationFn: async () => {
+      await api.call('createFolder', { ...target, parentId, name: name.trim() })
+      await onCreated()
+    },
+    onSuccess: () => dialog.current?.close()
+  })
+  return (
+    <li className={cards.newItem}>
+      <button
+        ref={trigger}
+        type="button"
+        className={cards.newCard}
+        aria-haspopup="dialog"
+        onClick={() => {
+          setName('')
+          create.reset()
+          setOpen(true)
+        }}
+      >
+        <FolderPlus aria-hidden="true" size={28} strokeWidth={1.5} />
+        {t('files.newFolder')}
+      </button>
+      {open && (
+        <Modal
+          ref={dialog}
+          aria-labelledby={titleId}
+          className={dialogStyles.dialog}
+          onClose={() => {
+            setOpen(false)
+            trigger.current?.focus()
+          }}
+        >
+          <form
+            className={dialogStyles.body}
+            onSubmit={(event) => {
+              event.preventDefault()
+              create.mutate()
+            }}
+          >
+            <h2 id={titleId}>{t('files.newFolder')}</h2>
+            <Field
+              label={t('files.folderName')}
+              value={name}
+              required
+              maxLength={120}
+              autoComplete="off"
+              data-autofocus=""
+              onChange={(event) => setName(event.currentTarget.value)}
+            />
+            <FormError message={create.error ? errorText(create.error) : null} />
+            <div className={dialogStyles.actions}>
+              <button type="button" className={dialogStyles.cancel} onClick={() => dialog.current?.close()}>
+                {t('files.cancel')}
+              </button>
+              <BusyButton type="submit" className={form.button} busy={create.isPending}>
+                {t('files.createFolder')}
+              </BusyButton>
+            </div>
+          </form>
+        </Modal>
+      )}
+    </li>
+  )
+}
+
+/**
+ * Una carpeta en su tarjeta: toda ella la abre, se le pueden soltar archivos encima y su engranaje, para quien puede
+ * cambiarla, abre su ventana (nombre y borrarla)
+ */
+function FolderCard({
+  folder,
+  files,
+  folders,
+  canWrite,
+  fresh,
+  onOpen,
+  onMove,
+  onChanged
+}: {
+  folder: FolderView
+  files: WorldFile[]
+  folders: FolderView[]
+  canWrite: boolean
+  fresh: boolean
+  onOpen: () => void
+  onMove: (fileId: string, folderId: string | null) => Promise<unknown>
+  onChanged: () => Promise<unknown>
+}) {
+  const { t } = useTranslation()
+  const [over, setOver] = useState(false)
+  const inside = files.filter((file) => file.folderId === folder.id).length
+  const subfolders = folders.filter((child) => child.parentId === folder.id).length
+  const counts = [
+    subfolders > 0 ? t('files.folderFolders', { count: subfolders }) : null,
+    inside > 0 ? t('files.folderFiles', { count: inside }) : null
+  ].filter(Boolean)
+  const classes = [cards.card, styles.folderCard, fresh ? styles.appear : '', over ? styles.dropping : '']
+  return (
+    <li
+      className={classes.filter(Boolean).join(' ')}
+      data-file-card={folder.id}
+      onDragOver={(event) => {
+        if (!canWrite || !event.dataTransfer.types.includes(DRAGGED)) return
+        event.preventDefault()
+        event.stopPropagation()
+        setOver(true)
+      }}
+      onDragLeave={() => setOver(false)}
+      onDrop={(event) => {
+        const fileId = event.dataTransfer.getData(DRAGGED)
+        if (!fileId) return
+        event.preventDefault()
+        event.stopPropagation()
+        setOver(false)
+        void onMove(fileId, folder.id)
+      }}
+    >
+      <div className={styles.thumb}>
+        <Folder aria-hidden="true" size={44} strokeWidth={1.25} />
+      </div>
+      <div className={cards.body}>
+        <button
+          type="button"
+          className={`${cards.name} ${styles.fileName} ${styles.open}`}
+          aria-label={t('files.openFolder', { name: folder.name })}
+          onClick={onOpen}
+        >
+          {folder.name}
+        </button>
+        <div className={cards.footer}>
+          <span className={cards.role}>{counts.length > 0 ? counts.join(' · ') : t('files.folderEmpty')}</span>
+          {canWrite && <FolderSettings folder={folder} onChanged={onChanged} />}
+        </div>
+      </div>
+    </li>
+  )
+}
+
+/** El engranaje de una carpeta: su ventana, con el nombre y la zona de peligro (lo que tiene pasa a la de arriba) */
+function FolderSettings({ folder, onChanged }: { folder: FolderView; onChanged: () => Promise<unknown> }) {
+  const { t } = useTranslation()
+  const api = useApi()
+  const errorText = useErrorText()
+  const trigger = useRef<HTMLButtonElement>(null)
+  const dialog = useRef<HTMLDialogElement>(null)
+  const titleId = useId()
+  const gone = useRef(false)
+  const [open, setOpen] = useState(false)
+  const [name, setName] = useState(folder.name)
+  const rename = useMutation({
+    mutationFn: async () => {
+      await api.call('updateFolder', { folderId: folder.id, name: name.trim() })
+      await onChanged()
+    }
+  })
+  const changed = name.trim() !== folder.name
+  const remove = async () => {
+    await api.call('deleteFolder', { folderId: folder.id })
+    gone.current = true
+    await vanish(folder.id, dialog.current)
+    await onChanged()
+  }
+  return (
+    <>
+      <button
+        ref={trigger}
+        type="button"
+        className={cards.gear}
+        aria-label={t('files.folderSettingsOf', { name: folder.name })}
+        title={t('files.folderSettingsOf', { name: folder.name })}
+        aria-haspopup="dialog"
+        onClick={() => {
+          setName(folder.name)
+          rename.reset()
+          gone.current = false
+          setOpen(true)
+        }}
+      >
+        <Settings aria-hidden="true" size={18} />
+      </button>
+      {open && (
+        <Modal
+          ref={dialog}
+          aria-labelledby={titleId}
+          className={cards.dialog}
+          onClose={() => {
+            setOpen(false)
+            if (!gone.current) trigger.current?.focus()
+          }}
+        >
+          <div className={styles.preview}>
+            <Folder aria-hidden="true" size={56} strokeWidth={1.25} />
+          </div>
+          <form
+            className={cards.form}
+            onSubmit={(event) => {
+              event.preventDefault()
+              if (changed) rename.mutate()
+            }}
+          >
+            <h2 id={titleId}>{t('files.folderSettingsOf', { name: folder.name })}</h2>
+            <Field
+              label={t('files.folderName')}
+              value={name}
+              required
+              maxLength={120}
+              autoComplete="off"
+              onChange={(event) => setName(event.currentTarget.value)}
+            />
+            <FormError message={rename.error ? errorText(rename.error) : null} />
+            <ChangesBar shown={changed}>
+              <BusyButton type="submit" className={form.button} busy={rename.isPending}>
+                {t('files.save')}
+              </BusyButton>
+              <button type="button" className={dialogStyles.cancel} onClick={() => setName(folder.name)}>
+                {t('files.cancel')}
+              </button>
+            </ChangesBar>
+          </form>
+          <div className={cards.dangerArea}>
+            <DangerZone>
+              <ConfirmByName
+                name={folder.name}
+                action={t('files.deleteFolder')}
+                title={t('files.deleteTitle', { name: folder.name })}
+                warning={t('files.deleteFolderWarning')}
+                label={t('files.folderName')}
+                typed={false}
+                onConfirm={remove}
+              />
+            </DangerZone>
+          </div>
+        </Modal>
+      )}
+    </>
+  )
+}
+
+/**
+ * Lo que se va (un archivo o una carpeta borrados): su ventana se cierra y su tarjeta se desvanece encogiendo un poco;
+ * después ya se puede quitar de la lista. Sin animaciones (las pruebas), al momento
+ */
+async function vanish(id: string, dialog: HTMLDialogElement | null) {
+  if (dialog?.open) {
+    dialog.style.transition = 'none'
+    dialog.close()
+  }
+  const card = document.querySelector<HTMLElement>(`[data-file-card="${id}"]`)
+  if (!card || typeof card.getAnimations !== 'function') return
+  card.classList.add(styles.vanishing ?? '')
+  await new Promise((resolve) => setTimeout(resolve, 260))
 }
 
 /** Lo que se soltó: los archivos y, de las carpetas, todo lo que tengan dentro */
@@ -281,7 +706,7 @@ function useUploads(target: Target) {
   const codeText = useCodeText()
   const announce = useAnnounce()
   const [items, setItems] = useState<Upload[]>([])
-  const queue = useRef<Array<{ key: number; file: File }>>([])
+  const queue = useRef<Array<{ key: number; file: File; folderId: string | null }>>([])
   const controllers = useRef(new Map<number, AbortController>())
   const running = useRef(0)
   const finished = useRef(0)
@@ -315,7 +740,7 @@ function useUploads(target: Target) {
       const controller = new AbortController()
       controllers.current.set(next.key, controller)
       update(next.key, { status: 'uploading' })
-      const to: UploadTarget = { ...target, name: next.file.name }
+      const to: UploadTarget = { ...target, name: next.file.name, folderId: next.folderId }
       api
         .uploadFile(to, next.file, (fraction) => update(next.key, { fraction }), controller.signal)
         .then(
@@ -353,14 +778,15 @@ function useUploads(target: Target) {
     }
   }, [api, target, queryClient, codeText, announce, t, update, remove])
 
+  /** Sube estos a una carpeta (null: a lo más alto) */
   const add = useCallback(
-    (files: File[]) => {
+    (files: File[], folderId: string | null) => {
       // Lo oculto de las carpetas (.DS_Store y compañía) no se sube
       const wanted = files.filter((file) => !file.name.startsWith('.'))
       const added = wanted.map((file) => {
         const key = nextKey.current++
         const tooLarge = file.size > MAX_FILE_BYTES
-        if (!tooLarge) queue.current.push({ key, file })
+        if (!tooLarge) queue.current.push({ key, file, folderId })
         return {
           key,
           name: file.name,
@@ -446,49 +872,36 @@ function Thumb({ file }: { file: WorldFile }) {
 }
 
 /**
- * Un archivo en su tarjeta: toda ella lo abre (una imagen, en grande; lo demás, en otra pestaña) y su engranaje, para
- * quien puede cambiarlo, abre su ventana. fresh: recién subido, se forja; burning: borrado, arde
+ * Un archivo en su tarjeta: toda ella lo abre (una imagen, en grande; lo demás, en otra pestaña), se arrastra a una
+ * carpeta y su engranaje, para quien puede cambiarlo, abre su ventana. where: la ruta de su carpeta (al buscar)
  */
 function FileCard({
   file,
-  list: listName,
+  where,
+  folders,
   canWrite,
   fresh,
-  burning,
-  onBurnt
+  onChanged
 }: {
   file: WorldFile
-  list: string
+  where: FolderView[]
+  folders: FolderView[]
   canWrite: boolean
   fresh: boolean
-  burning: boolean
-  onBurnt: () => void
+  onChanged: () => Promise<unknown>
 }) {
   const { t, i18n } = useTranslation()
   const [viewing, setViewing] = useState(false)
-  const [entering, setEntering] = useState(fresh)
-  const card = useRef<HTMLLIElement>(null)
-  const burnt = useRef(onBurnt)
-  burnt.current = onBurnt
-  useEffect(() => {
-    if (!burning) return
-    if (typeof card.current?.getAnimations !== 'function') return burnt.current()
-    const timer = window.setTimeout(() => burnt.current(), 2000)
-    return () => window.clearTimeout(timer)
-  }, [burning])
-  const classes = [cards.card, entering ? cards.entering : '', burning ? cards.burning : ''].filter(Boolean)
+  const classes = [cards.card, fresh ? styles.appear : ''].filter(Boolean)
   return (
     <li
-      ref={card}
       className={classes.join(' ')}
-      aria-hidden={burning || undefined}
-      inert={burning}
-      onAnimationEnd={(event) => {
-        if (event.target !== event.currentTarget) return
-        if (event.animationName.includes('enfria')) setEntering(false)
-        if (event.animationName.includes('arde')) burnt.current()
+      data-file-card={file.id}
+      draggable={canWrite}
+      onDragStart={(event) => {
+        event.dataTransfer.setData(DRAGGED, file.id)
+        event.dataTransfer.effectAllowed = 'move'
       }}
-      data-card={file.id}
     >
       <div className={styles.thumb}>
         <Thumb file={file} />
@@ -514,12 +927,13 @@ function FileCard({
             {file.name}
           </a>
         )}
+        {where.length > 0 && <span className={styles.where}>{where.map((folder) => folder.name).join(' › ')}</span>}
         <div className={cards.footer}>
           <span className={cards.role}>
             {sizeText(file.size, i18n.language)}
             {file.usedBy > 0 && ` · ${t('files.usedBy', { count: file.usedBy })}`}
           </span>
-          {canWrite && <FileSettings file={file} list={listName} />}
+          {canWrite && <FileSettings file={file} folders={folders} onChanged={onChanged} />}
         </div>
       </div>
       {viewing && <CoverViewer url={file.url} label={file.name} onClose={() => setViewing(false)} />}
@@ -528,7 +942,15 @@ function FileCard({
 }
 
 /** El engranaje de un archivo: abre su ventana */
-function FileSettings({ file, list: listName }: { file: WorldFile; list: string }) {
+function FileSettings({
+  file,
+  folders,
+  onChanged
+}: {
+  file: WorldFile
+  folders: FolderView[]
+  onChanged: () => Promise<unknown>
+}) {
   const { t } = useTranslation()
   const trigger = useRef<HTMLButtonElement>(null)
   const [open, setOpen] = useState(false)
@@ -548,7 +970,8 @@ function FileSettings({ file, list: listName }: { file: WorldFile; list: string 
       {open && (
         <FileDialog
           file={file}
-          list={listName}
+          folders={folders}
+          onChanged={onChanged}
           onClose={(gone) => {
             setOpen(false)
             if (!gone) trigger.current?.focus()
@@ -559,59 +982,70 @@ function FileSettings({ file, list: listName }: { file: WorldFile; list: string 
   )
 }
 
+/** Las carpetas con su ruta («Mapas › Norte»), en el orden de la ruta */
+function folderPaths(folders: FolderView[]) {
+  const byId = new Map(folders.map((folder) => [folder.id, folder]))
+  const pathOf = (folder: FolderView): string =>
+    folder.parentId && byId.has(folder.parentId)
+      ? `${pathOf(byId.get(folder.parentId) as FolderView)} › ${folder.name}`
+      : folder.name
+  return folders
+    .map((folder) => ({ id: folder.id, label: pathOf(folder) }))
+    .sort((a, b) => a.label.localeCompare(b.label, 'es'))
+}
+
 /**
- * La ventana de un archivo: su vista previa, el nombre («Guardar» y «Cancelar» solo con cambios), reemplazarlo por
- * otro (las páginas que lo usan ven el nuevo) y, al final, la zona de peligro. onClose(gone): si se ha borrado
+ * La ventana de un archivo: su vista previa, el nombre («Guardar» y «Cancelar» solo con cambios), su carpeta,
+ * reemplazarlo por otro (las páginas que lo usan ven el nuevo) y, al final, la zona de peligro. onClose(gone): si se ha
+ * borrado
  */
 function FileDialog({
   file,
-  list: listName,
+  folders,
+  onChanged,
   onClose
 }: {
   file: WorldFile
-  list: string
+  folders: FolderView[]
+  onChanged: () => Promise<unknown>
   onClose: (gone: boolean) => void
 }) {
   const { t } = useTranslation()
   const api = useApi()
-  const queryClient = useQueryClient()
   const errorText = useErrorText()
   const announce = useAnnounce()
   const dialog = useRef<HTMLDialogElement>(null)
   const replaceInput = useRef<HTMLInputElement>(null)
   const titleId = useId()
+  const folderId = useId()
   const gone = useRef(false)
   const [name, setName] = useState(file.name)
-  // Un común sale en los archivos de todos los mundos
-  const refresh = () =>
-    Promise.all([
-      queryClient.invalidateQueries({ queryKey: ['files'] }),
-      queryClient.invalidateQueries({ queryKey: ['commonFiles'] })
-    ])
   const rename = useMutation({
     mutationFn: async () => {
       await api.call('renameFile', { fileId: file.id, name: name.trim() })
-      await refresh()
+      await onChanged()
+    }
+  })
+  const move = useMutation({
+    mutationFn: async (to: string | null) => {
+      await api.call('moveFile', { fileId: file.id, folderId: to })
+      await onChanged()
     }
   })
   const replace = useMutation({
     mutationFn: async (chosen: File) => {
       if (chosen.size > MAX_FILE_BYTES) throw new ApiError('TOO_LARGE', 413)
       await api.uploadFile({ fileId: file.id }, chosen)
-      await refresh()
+      await onChanged()
     },
     onSuccess: () => announce(t('files.replaced', { name: file.name }))
   })
-  // Borrado, su tarjeta arde en su sitio: el foco, a la siguiente
+  // Borrado, su tarjeta se desvanece y la lista se pone al día
   const remove = async () => {
     await api.call('deleteFile', { fileId: file.id })
-    const card = document.querySelector(`[data-card="${file.id}"]`)
-    keepCard(listName, file, card?.parentElement ? [...card.parentElement.children].indexOf(card) : 0)
-    const after = focusAfterRemoving(card)
     gone.current = true
-    closeAtOnce(dialog.current)
-    await burnCard(file.id, refresh)
-    after()
+    await vanish(file.id, dialog.current)
+    await onChanged()
   }
   const changed = name.trim() !== file.name
   return (
@@ -645,6 +1079,25 @@ function FileDialog({
             {t('files.cancel')}
           </button>
         </ChangesBar>
+        {folders.length > 0 && (
+          <div className={styles.folderField}>
+            <label htmlFor={folderId}>{t('files.folder')}</label>
+            <select
+              id={folderId}
+              value={file.folderId ?? ''}
+              disabled={move.isPending}
+              onChange={(event) => move.mutate(event.currentTarget.value || null)}
+            >
+              <option value="">{t('files.noFolder')}</option>
+              {folderPaths(folders).map((folder) => (
+                <option key={folder.id} value={folder.id}>
+                  {folder.label}
+                </option>
+              ))}
+            </select>
+            <FormError message={move.error ? errorText(move.error) : null} />
+          </div>
+        )}
         <div>
           <BusyButton
             className={`${list.secondary} ${styles.replace}`}

@@ -7,7 +7,17 @@ import {
   renameCampaign,
   updateCampaign
 } from './campaigns.ts'
-import { deleteFile, listCommonFiles, listFiles, renameFile, restoreFile } from './files.ts'
+import {
+  createFolder,
+  deleteFile,
+  deleteFolder,
+  listCommonFiles,
+  listFiles,
+  moveFile,
+  renameFile,
+  restoreFile,
+  updateFolder
+} from './files.ts'
 import { listHistory, undoOperation } from './history.ts'
 import { getInvitation, regenerateInvitation, setInvitationsOpen } from './invitations.ts'
 import { leaveCampaign, listMembers, removeMember } from './members.ts'
@@ -129,6 +139,10 @@ export const ACTIONS = [
   renameFile,
   deleteFile,
   restoreFile,
+  createFolder,
+  updateFolder,
+  deleteFolder,
+  moveFile,
   searchWiki
 ]
 
@@ -195,5 +209,9 @@ export type Actions = {
   renameFile: typeof renameFile
   deleteFile: typeof deleteFile
   restoreFile: typeof restoreFile
+  createFolder: typeof createFolder
+  updateFolder: typeof updateFolder
+  deleteFolder: typeof deleteFolder
+  moveFile: typeof moveFile
   searchWiki: typeof searchWiki
 }

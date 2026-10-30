@@ -4,6 +4,7 @@ import type {
   Approval,
   Campaign,
   FileView,
+  FolderView,
   HistoryEntry,
   Invitation,
   Member,
@@ -39,6 +40,8 @@ export function fakeApi(
     }>
     /** Los archivos de los mundos (usedBy: cuántas páginas lo usan) */
     files?: Array<Pick<FileView, 'worldId' | 'name'> & Partial<FileView> & { usedBy?: number }>
+    /** Las carpetas de los archivos */
+    folders?: FolderView[]
   } = {}
 ) {
   const organizations = options.organizations ?? []
@@ -72,6 +75,7 @@ export function fakeApi(
       mime: 'image/png',
       size: 1024,
       url: `/api/files/${id}`,
+      folderId: null,
       version: 1,
       updatedAt: new Date().toISOString(),
       ...file,
@@ -81,6 +85,12 @@ export function fakeApi(
   const files = (options.files ?? []).map(({ usedBy: _, ...file }) => fileOf(file))
   const fileUses = new Map((options.files ?? []).map((file, i) => [files[i]?.id ?? '', file.usedBy ?? 0]))
   const trashedFiles: FileView[] = []
+  const folders: FolderView[] = [...(options.folders ?? [])]
+  const folderById = (folderId: string) => {
+    const folder = folders.find((f) => f.id === folderId)
+    if (!folder) throw new ApiError('NOT_FOUND', 404)
+    return folder
+  }
   const fileById = (fileId: string) => {
     const file = files.find((f) => f.id === fileId)
     if (!file) throw new ApiError('NOT_FOUND', 404)
@@ -568,18 +578,62 @@ export function fakeApi(
       }
     },
     // Los del mundo y los comunes de su organización, como el servidor
-    listFiles: ({ worldId }) => ({
-      files: files
-        .filter((f) => f.worldId === worldId || (f.worldId === null && f.organizationId === organizationOf(worldId)))
-        .sort((a, b) => a.name.localeCompare(b.name, 'es'))
-        .map((f) => ({ ...f, usedBy: fileUses.get(f.id) ?? 0 }))
-    }),
-    listCommonFiles: ({ organizationId }) => ({
-      files: files
-        .filter((f) => f.worldId === null && f.organizationId === (organizationId ?? organizationOf(null)))
-        .sort((a, b) => a.name.localeCompare(b.name, 'es'))
-        .map((f) => ({ ...f, usedBy: fileUses.get(f.id) ?? 0 }))
-    }),
+    listFiles: ({ worldId }) => {
+      const usable = (f: { worldId: string | null; organizationId: string }) =>
+        f.worldId === worldId || (f.worldId === null && f.organizationId === organizationOf(worldId))
+      return {
+        files: files
+          .filter(usable)
+          .sort((a, b) => a.name.localeCompare(b.name, 'es'))
+          .map((f) => ({ ...f, usedBy: fileUses.get(f.id) ?? 0 })),
+        folders: folders.filter(usable).map((f) => ({ ...f }))
+      }
+    },
+    listCommonFiles: ({ organizationId }) => {
+      const common = (f: { worldId: string | null; organizationId: string }) =>
+        f.worldId === null && f.organizationId === (organizationId ?? organizationOf(null))
+      return {
+        files: files
+          .filter(common)
+          .sort((a, b) => a.name.localeCompare(b.name, 'es'))
+          .map((f) => ({ ...f, usedBy: fileUses.get(f.id) ?? 0 })),
+        folders: folders.filter(common).map((f) => ({ ...f }))
+      }
+    },
+    createFolder: ({ worldId, organizationId, parentId, name }) => {
+      const scope = { worldId: worldId ?? null, organizationId: organizationId ?? organizationOf(worldId ?? null) }
+      const sibling = folders.find(
+        (f) =>
+          f.worldId === scope.worldId &&
+          f.organizationId === scope.organizationId &&
+          f.parentId === (parentId ?? null) &&
+          f.name.toLowerCase() === name.trim().toLowerCase()
+      )
+      if (sibling) throw new ApiError('NAME_TAKEN', 400)
+      const folder: FolderView = { id: crypto.randomUUID(), ...scope, parentId: parentId ?? null, name: name.trim() }
+      folders.push(folder)
+      return { ...folder }
+    },
+    updateFolder: ({ folderId, name, parentId }) => {
+      const folder = folderById(folderId)
+      if (name !== undefined) folder.name = name.trim()
+      if (parentId !== undefined) folder.parentId = parentId
+      return { ...folder }
+    },
+    deleteFolder: ({ folderId }) => {
+      const folder = folderById(folderId)
+      for (const file of [...files, ...trashedFiles]) if (file.folderId === folderId) file.folderId = folder.parentId
+      for (const child of folders) if (child.parentId === folderId) child.parentId = folder.parentId
+      folders.splice(folders.indexOf(folder), 1)
+      return { id: folder.id, name: folder.name }
+    },
+    moveFile: ({ fileId, folderId }) => {
+      const file = fileById(fileId)
+      if (folderId) folderById(folderId)
+      file.folderId = folderId
+      file.version++
+      return { ...file }
+    },
     renameFile: ({ fileId, name }) => {
       const file = fileById(fileId)
       if (files.some((f) => f !== file && f.worldId === file.worldId && f.name.toLowerCase() === name.toLowerCase())) {
@@ -702,7 +756,7 @@ export function fakeApi(
         )
       let name = target.name
       for (let n = 2; taken(name); n++) name = target.name.replace(/(\.[^.]*)?$/, ` (${n})$1`)
-      const file = fileOf({ worldId, organizationId, name, ...content })
+      const file = fileOf({ worldId, organizationId, name, folderId: target.folderId ?? null, ...content })
       files.push(file)
       return { ...file }
     }
