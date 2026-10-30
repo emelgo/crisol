@@ -17,7 +17,7 @@ import { childrenKey } from './tree.tsx'
 /** Cuántas pestañas sin fijar se quedan abiertas: al abrir otra, se cierra la más antigua */
 const LOOSE_TABS = 8
 
-const preferencesKey = (worldId: string) => ['pages', worldId, 'preferences']
+export const preferencesKey = (worldId: string) => ['pages', worldId, 'preferences']
 
 /** Las pestañas y los marcadores de la cuenta en esta wiki, y con qué guardar cada parte */
 function usePreferences(worldId: string) {
