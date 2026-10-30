@@ -1,6 +1,7 @@
-import { and, eq, inArray, sql } from 'drizzle-orm'
+import { and, eq, ilike, inArray, isNull, or, sql } from 'drizzle-orm'
 import type { Database } from '../client.ts'
 import { documents } from '../schema/documents.ts'
+import { pages } from '../schema/pages.ts'
 
 /** El estado guardado del cuerpo de una página, si ya tiene */
 export async function findBody(db: Database, pageId: string) {
@@ -113,4 +114,37 @@ export async function documentsWithState(db: Database, pageIds: readonly string[
     .select({ id: documents.id, pageId: documents.pageId, kind: documents.kind, state: documents.state })
     .from(documents)
     .where(inArray(documents.pageId, [...pageIds]))
+}
+
+/** Guarda el texto plano de un documento (para buscar y encontrar menciones) */
+export async function setText(db: Database, documentId: string, value: string) {
+  await db.update(documents).set({ text: value }).where(eq(documents.id, documentId))
+}
+
+/** Los documentos del mundo aún sin texto plano (de antes de tenerlo), con su estado para sacarlo */
+export function withoutText(db: Database, worldId: string) {
+  return db
+    .select({ id: documents.id, pageId: documents.pageId, kind: documents.kind, state: documents.state })
+    .from(documents)
+    .where(and(eq(documents.worldId, worldId), isNull(documents.text)))
+}
+
+/**
+ * Los documentos del mundo cuyo texto contiene alguno de estos nombres (sin mayúsculas), de páginas fuera de la
+ * papelera: los candidatos a mencionar una página
+ */
+export function mentioning(db: Database, worldId: string, names: readonly string[]) {
+  const patterns = names.filter(Boolean).map((name) => `%${name.replace(/[\\%_]/g, (c) => `\\${c}`)}%`)
+  if (patterns.length === 0) return Promise.resolve([])
+  return db
+    .select({ id: documents.id, pageId: documents.pageId, kind: documents.kind, text: documents.text })
+    .from(documents)
+    .innerJoin(pages, eq(pages.id, documents.pageId))
+    .where(
+      and(
+        eq(documents.worldId, worldId),
+        isNull(pages.deletedAt),
+        or(...patterns.map((pattern) => ilike(documents.text, pattern)))
+      )
+    )
 }

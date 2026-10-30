@@ -71,3 +71,26 @@ export function unresolvedInWorld(db: Database, worldId: string) {
     .where(and(eq(pageLinks.worldId, worldId), isNull(pageLinks.targetPageId), isNull(pages.deletedAt)))
     .groupBy(pageLinks.targetKey)
 }
+
+/** Los enlaces que llegan a una página desde otras fuera de la papelera, con de dónde salen */
+export function incoming(db: Database, targetPageId: string) {
+  return db
+    .select({
+      sourcePageId: pageLinks.sourcePageId,
+      sourceDocumentId: pageLinks.sourceDocumentId,
+      documentKind: documents.kind,
+      title: pages.title
+    })
+    .from(pageLinks)
+    .innerJoin(pages, eq(pages.id, pageLinks.sourcePageId))
+    .innerJoin(documents, eq(documents.id, pageLinks.sourceDocumentId))
+    .where(and(eq(pageLinks.targetPageId, targetPageId), isNull(pages.deletedAt)))
+}
+
+/** Los enlaces que salen de una página (de su cuerpo y sus secretos) */
+export function outgoing(db: Database, sourcePageId: string) {
+  return db
+    .select({ targetPageId: pageLinks.targetPageId, targetTitle: pageLinks.targetTitle, anchor: pageLinks.anchor })
+    .from(pageLinks)
+    .where(eq(pageLinks.sourcePageId, sourcePageId))
+}

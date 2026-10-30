@@ -27,6 +27,8 @@ export const documents = pgTable(
       .references(() => pages.id, { onDelete: 'cascade' }),
     kind: text({ enum: ['body', 'secret', 'note'] }).notNull(),
     state: bytea().notNull(),
+    // Su texto plano, para buscar y encontrar menciones (se rehace con cada guardado; null: aún no)
+    text: text(),
     // Quien escribió el último (para cerrar su sesión si el servidor se para con ella abierta)
     updatedBy: text().references(() => user.id, { onDelete: 'set null' }),
     updatedAt: timestamp({ withTimezone: true }).defaultNow().notNull()
