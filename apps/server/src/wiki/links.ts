@@ -5,13 +5,13 @@
  */
 import { documentsRepo, linksRepo, pagesRepo, worldsRepo } from '@crisol/db'
 import { foldName, type NamedPage, reservedList, resolveName } from '@crisol/domain'
-import { plainText } from '@crisol/editor'
 import type { JSONContent } from '@tiptap/core'
 import { type ActionEnv, InvalidRequestError } from '../actions/context.ts'
 import { pageContentChanged } from '../realtime/events.ts'
 import { documentJson, writeDocument } from './content.ts'
 import { rebuildFileEmbeds, withResolvedFiles } from './file-embeds.ts'
 import { propertiesOf } from './properties.ts'
+import { indexDocument } from './search.ts'
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 
@@ -192,7 +192,7 @@ export async function linksOfNewPages(
       await writeDocument(env, ref, { userId: actorId, worldId }, resolve)
       json = resolve(json)
     }
-    await documentsRepo.setText(env.db, doc.id, plainText(json))
+    await indexDocument(env, doc.id, json)
   }
   await resolvePending(
     env,
@@ -211,7 +211,7 @@ export async function linksOfStored(
 ) {
   const byName = await rebuildLinks(env, source, json)
   const filesByName = await rebuildFileEmbeds(env, source, json)
-  await documentsRepo.setText(env.db, source.documentId, plainText(json))
+  await indexDocument(env, source.documentId, json)
   // Lo que la enseña en otra página (vista previa, incrustados) se vuelve a pedir
   const world = await worldsRepo.findWorld(env.db, source.worldId)
   if (world) {
