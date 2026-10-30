@@ -1,4 +1,4 @@
-import { and, eq, ilike, inArray, isNull, or, sql } from 'drizzle-orm'
+import { and, desc, eq, ilike, inArray, isNull, or, sql } from 'drizzle-orm'
 import type { Database } from '../client.ts'
 import { documents } from '../schema/documents.ts'
 import { pages } from '../schema/pages.ts'
@@ -147,4 +147,14 @@ export function mentioning(db: Database, worldId: string, names: readonly string
         or(...patterns.map((pattern) => ilike(documents.text, pattern)))
       )
     )
+}
+
+/** Quien escribió lo último en algún documento de la página */
+export function lastWriter(db: Database, pageId: string) {
+  return db
+    .select({ updatedBy: documents.updatedBy })
+    .from(documents)
+    .where(eq(documents.pageId, pageId))
+    .orderBy(desc(documents.updatedAt))
+    .limit(1)
 }

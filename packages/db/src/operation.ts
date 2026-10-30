@@ -9,6 +9,7 @@ import { changes, operations } from './schema/history.ts'
 import { invitationLinks } from './schema/invitations.ts'
 import { organizationMembers, organizations } from './schema/organizations.ts'
 import { pages } from './schema/pages.ts'
+import { pageBodies } from './schema/versions.ts'
 import { worldMembers, worlds } from './schema/worlds.ts'
 
 /** Tablas de dominio: las que pasan por el historial, por su nombre en SQL */
@@ -20,7 +21,8 @@ export const TRACKED_TABLES = {
   campaigns,
   campaign_members: campaignMembers,
   invitation_links: invitationLinks,
-  pages
+  pages,
+  page_bodies: pageBodies
 }
 
 export type TrackedTable = (typeof TRACKED_TABLES)[keyof typeof TRACKED_TABLES]

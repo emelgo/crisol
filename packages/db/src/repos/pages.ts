@@ -5,6 +5,7 @@ import type { Database } from '../client.ts'
 import { type OperationContext, operation, type Transaction } from '../operation.ts'
 import { documents } from '../schema/documents.ts'
 import { pages } from '../schema/pages.ts'
+import { type DocumentState, recordVersion } from './versions.ts'
 
 const summaryColumns = {
   id: pages.id,
@@ -282,8 +283,12 @@ export interface NewPage {
   title: string
   icon: string | null
   body: Uint8Array | null
+  /** El id de su cuerpo, si lo tiene (lo nombra su versión) */
+  bodyId?: string
   /** Sus secretos y notas ocultas, con el id que ya lleva el cuerpo */
   separates: { id: string; kind: 'secret' | 'note'; state: Uint8Array }[]
+  /** Su primera versión (con texto), en la misma operación: deshacer la creación la quita también */
+  version?: { fingerprint: string; documents: DocumentState[] }
 }
 
 /**
@@ -317,10 +322,17 @@ export function createPagesWithBodies(
       ids.set(page.key, row.id)
       created.push({ key: page.key, id: row.id, title: row.title, parentId })
       const owner = { worldId: input.worldId, pageId: row.id, updatedBy: context.actorId }
-      if (page.body) docs.push({ ...owner, kind: 'body', state: page.body })
+      if (page.body)
+        docs.push({ ...owner, kind: 'body', state: page.body, ...(page.bodyId ? { id: page.bodyId } : {}) })
       for (const separate of page.separates) docs.push({ ...owner, ...separate })
     }
     if (docs.length > 0) await w.read.insert(documents).values(docs)
+    for (const page of input.pages) {
+      const id = ids.get(page.key)
+      if (!id || !page.version) continue
+      const via = context.via === 'ai' ? 'ai' : context.via === 'system' ? 'system' : 'ui'
+      await recordVersion(w, { pageId: id, worldId: input.worldId, actorId: context.actorId, via, ...page.version })
+    }
     for (const [key, properties] of input.properties(ids)) {
       const id = ids.get(key)
       if (id && properties.length > 0) await w.update(pages, id, { properties })
