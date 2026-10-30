@@ -1,4 +1,4 @@
-/* La pantalla de los comunes, fuera de los mundos: a todo lo ancho (hay mucho que ver), con su margen */
+/* La pantalla de los comunes, fuera de los mundos: a todo lo ancho (los paneles van a los lados), con su margen */
 .page {
   padding: var(--space-8) var(--space-6);
 }
@@ -9,15 +9,126 @@
   }
 }
 
-/* El título, donde en las demás vistas (su columna del centro, como Mis mundos); lo de debajo, más ancho */
-.titleColumn {
-  inline-size: min(100%, 52rem);
-  margin-inline: auto;
+/*
+ * La página: la columna del centro, donde en las demás vistas (con el título), y a los lados, fuera de ella, el árbol
+ * de carpetas y el archivo elegido. Sin sitio para los tres, el detalle se quita (queda el engranaje); en lo estrecho,
+ * todo en una columna
+ */
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 52rem) minmax(0, 1fr);
+  gap: var(--space-6);
+  align-items: start;
 }
 
-.wideColumn {
-  inline-size: min(100%, 100rem);
-  margin-inline: auto;
+.side {
+  justify-self: end;
+  inline-size: min(100%, 17rem);
+  /* Bajo el título, a la altura de la lista */
+  margin-block-start: 6.5rem;
+}
+
+.center {
+  min-inline-size: 0;
+}
+
+.detail {
+  justify-self: start;
+  inline-size: min(100%, 20rem);
+  margin-block-start: 6.5rem;
+  position: sticky;
+  inset-block-start: var(--space-4);
+}
+
+@media (max-width: 90rem) {
+  .layout {
+    grid-template-columns: minmax(12rem, 16rem) minmax(0, 52rem) 0;
+    gap: var(--space-5);
+  }
+
+  .detail {
+    display: none;
+  }
+}
+
+@media (max-width: 56rem) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .side {
+    justify-self: stretch;
+    inline-size: auto;
+    margin-block-start: 0;
+    order: 1;
+  }
+
+  .center {
+    order: 0;
+  }
+}
+
+.detailHint {
+  padding: var(--space-4);
+  border: 1px dashed var(--color-frame);
+  border-radius: 6px;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+.detailBody {
+  padding: var(--space-3);
+  border: 1px solid var(--color-frame);
+  border-radius: 6px;
+  background: var(--color-surface);
+}
+
+.detailBody .preview {
+  block-size: 11rem;
+  margin-block-end: var(--space-3);
+  border-radius: 4px;
+}
+
+.detailName {
+  margin: 0 0 var(--space-3);
+  padding: 0;
+  border: 0;
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  text-transform: none;
+  overflow-wrap: anywhere;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-1) var(--space-3);
+  margin: 0 0 var(--space-4);
+  font-size: 0.875rem;
+}
+
+.facts dt {
+  color: var(--color-muted);
+}
+
+.facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.detailActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* La fila elegida (la del panel de la derecha) */
+.selected,
+.selected:hover {
+  background: color-mix(in srgb, var(--color-text) 8%, transparent);
+  box-shadow: inset 3px 0 0 var(--color-accent);
 }
 
 /* Los comunes, aparte, tras los del mundo */
@@ -603,6 +714,9 @@ li:hover > .thumb img {
 }
 
 .rowName {
+  /* Solo lo que ocupa el nombre: el resto de la fila elige el archivo */
+  align-self: flex-start;
+  max-inline-size: 100%;
   overflow: hidden;
   color: var(--color-text);
   font-weight: 600;
@@ -688,4 +802,11 @@ button.rowName:hover {
   35% {
     background-color: color-mix(in srgb, var(--color-accent) 35%, transparent);
   }
+}
+
+/* Un enlace con aspecto de botón: sin subrayado */
+.plain {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
 }

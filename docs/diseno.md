@@ -76,17 +76,20 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
 - **Las listas, en el orden en que se crearon**: lo nuevo, al final.
 
 - **La colocación de Ajustes es la referencia**: una columna en el centro, con el título y el contenido alineados.
-  Nada suelto «en medio sin sentido».
+  Nada suelto «en medio sin sentido». **El título no se mueve de una vista a otra**; si hace falta más sitio, se usan
+  los lados con **paneles fuera de la columna** («a cada lado puede haber como pestañas extras»): en Archivos, el
+  árbol de carpetas a la izquierda y el archivo elegido a la derecha.
 - **Crear algo se hace con un botón que abre un cuadro**, no con un formulario suelto en la pantalla. **El de crear es
   prácticamente el de sus ajustes** (para un mundo: portada, nombre, descripción y color), para dejarlo bien hecho
   sin tener que entrar después en ajustes.
 - **«Nuevo …» va como un recuadro más de la lista**, con la misma forma (esquinas cortadas), vacío y con el borde
   discontinuo, tras el último (no un botón arriba). Sin ninguno, la pantalla vacía con su botón grande.
 - **Las pantallas de cuenta (entrar, crear la cuenta)** van centradas y con aspecto profesional.
-- **Archivos, en tarjetas** como los mundos (miniatura, nombre, tamaño, engranaje). Se ordenan en **carpetas** (unas
-  dentro de otras; un archivo se mueve arrastrándolo o desde su engranaje; borrar una carpeta sube lo que tiene), con
-  **buscador por nombre y filtro por tipo**. Se suben varios a la vez (no carpetas enteras), a la carpeta abierta; cada
-  subida sale con su progreso y una X para cancelarla, y al acabar ya es su tarjeta (sin lista de «Subidas»).
+- **Archivos, como un explorador**: árbol de carpetas (unas dentro de otras; se les arrastran archivos, y mientras se
+  arrastra se marcan las carpetas donde se puede soltar, con «Mover aquí»; la que lo recibe se ilumina), lista
+  compacta o tarjetas, **buscador por nombre y filtro por tipo** siempre a la vista. Se suben varios a la vez (no
+  carpetas enteras), a la carpeta elegida; cada subida sale con su progreso y una X para cancelarla, y al acabar ya
+  es su archivo (sin lista de «Subidas»). **Solo imágenes, PDF, audio, vídeo y texto**: nada que se ejecute.
 - **Los archivos comunes de la cuenta** (ADR-0005): fuera de los mundos, «Archivos» en la barra; dentro de cada
   mundo, la carpeta «Comunes» en sus archivos, la misma en todos. Donde se elige un archivo (la portada), «Del mundo»
   y «Comunes» por separado.
@@ -137,6 +140,9 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
 - **Cada vista tiene el suyo**: un globo por zona, con «1 de 3», Atrás (desde el segundo) y Siguiente. Ni Saltar ni
   «Lo tengo claro»: «los jugadores tendrán que hacer la guía de todas las vistas la primera vez que entren».
 - **Sale solo la primera vez**, hasta acabarlo. Con Escape se cierra sin acabar y vuelve a salir la próxima vez.
+- **Lo que se añada a la barra lateral entra en el tutorial de la vista donde sale** (un paso por cada botón de la
+  barra, como en Mis mundos y dentro de un mundo), **y además tiene el suyo propio en su vista** (Archivos, por
+  ejemplo).
 - **Un «?» abajo a la derecha lo vuelve a sacar**: casi transparente, pero que se vea, y con su color al pasar el
   ratón. No hay casilla en Ajustes.
 - **Lo relacionado se resalta en el mismo paso**, sin un paso propio: «Mundo en la barra lateral se tiene que resaltar

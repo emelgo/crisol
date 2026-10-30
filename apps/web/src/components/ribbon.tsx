@@ -264,6 +264,7 @@ function WorldPanels({ worldId, master }: { worldId: string; master: boolean }) 
         viewTransition={SECTION}
         onPointerEnter={prefetchHome}
         onFocus={prefetchHome}
+        data-tour="barra-inicio"
       >
         <Label icon={House} text={t('ribbon.home')} />
       </Link>
@@ -274,6 +275,7 @@ function WorldPanels({ worldId, master }: { worldId: string; master: boolean }) 
         viewTransition={SECTION}
         onPointerEnter={prefetchCampaigns}
         onFocus={prefetchCampaigns}
+        data-tour="barra-campanas"
       >
         <Label icon={Swords} text={t('ribbon.campaigns')} />
       </Link>
@@ -319,11 +321,24 @@ function WikiPanels({ worldId }: { worldId: string }) {
   return (
     <>
       {panels.map(([panel, icon, text]) => (
-        <button key={panel} type="button" className={styles.item} aria-pressed={pressed(panel)} onClick={press(panel)}>
+        <button
+          key={panel}
+          type="button"
+          className={styles.item}
+          aria-pressed={pressed(panel)}
+          data-tour={`barra-${panel}`}
+          onClick={press(panel)}
+        >
           <Label icon={icon} text={text} />
         </button>
       ))}
-      <Link to="/mundos/$worldId/etiquetas" params={{ worldId }} className={styles.item} viewTransition={SECTION}>
+      <Link
+        to="/mundos/$worldId/etiquetas"
+        params={{ worldId }}
+        className={styles.item}
+        viewTransition={SECTION}
+        data-tour="barra-etiquetas"
+      >
         <Label icon={Hash} text={t('ribbon.tags')} />
       </Link>
       <Link
@@ -333,6 +348,7 @@ function WikiPanels({ worldId }: { worldId: string }) {
         viewTransition={SECTION}
         onPointerEnter={prefetchFiles}
         onFocus={prefetchFiles}
+        data-tour="barra-archivos-mundo"
       >
         <Label icon={Folder} text={t('ribbon.files')} />
       </Link>

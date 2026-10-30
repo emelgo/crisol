@@ -132,20 +132,17 @@ export function CommonFiles() {
   if (!account) return <Navigate to="/entrar" replace />
   return (
     <section className={styles.page}>
-      {/* El título, en la columna de todas las vistas; lo de debajo se abre hacia los lados */}
-      <div className={styles.titleColumn}>
-        <PageTitle>{t('files.commonTitle')}</PageTitle>
-      </div>
       {failed(files) && <LoadError error={files.error} onRetry={() => files.refetch()} />}
-      {owned && (
-        <div className={styles.wideColumn}>
-          <FilesSection
-            target={{ organizationId: owned.id }}
-            data={files.data}
-            canWrite
-            empty={t('files.commonEmpty')}
-          />
-        </div>
+      {owned ? (
+        <FilesSection
+          target={{ organizationId: owned.id }}
+          data={files.data}
+          canWrite
+          empty={t('files.commonEmpty')}
+          title={<PageTitle>{t('files.commonTitle')}</PageTitle>}
+        />
+      ) : (
+        <PageTitle>{t('files.commonTitle')}</PageTitle>
       )}
       {owned && files.data && <FilesTour />}
     </section>
@@ -212,13 +209,16 @@ function FilesSection({
   target,
   data,
   canWrite,
-  empty
+  empty,
+  title
 }: {
   target: Target
   /** Sin datos aún: undefined */
   data: Scope | undefined
   canWrite: boolean
   empty: string
+  /** El título de la página: con él, la columna del centro y los paneles a los lados */
+  title?: ReactNode
 }) {
   const { t } = useTranslation()
   const api = useApi()
@@ -231,6 +231,8 @@ function FilesSection({
   const [view, setView] = useView()
   const [over, setOver] = useState(false)
   const [received, setReceived] = useState<string | null>(null)
+  // El archivo elegido (pulsando su fila), que sale en el panel de la derecha
+  const [selected, setSelected] = useState<string | null>(null)
   const folders = data?.folders ?? []
   const byId = new Map(folders.map((folder) => [folder.id, folder]))
   // Si la elegida deja de existir (borrada aquí o en otra pestaña), a lo más alto
@@ -281,6 +283,162 @@ function FilesSection({
   const nothing = data.files.length === 0 && folders.length === 0 && uploads.items.length === 0
   if (nothing && !canWrite) return <p className={styles.empty}>{empty}</p>
   const rowProps = { folders, canWrite, onChanged: refresh }
+  const tools = (
+    <div className={styles.tools}>
+      {canWrite && (
+        <>
+          <button
+            type="button"
+            className={`${form.button} ${styles.uploadButton}`}
+            onClick={() => several.current?.click()}
+          >
+            <UploadIcon aria-hidden="true" size={16} />
+            {t('files.upload')}
+          </button>
+          <input
+            ref={several}
+            type="file"
+            multiple
+            accept={UPLOAD_ACCEPT}
+            hidden
+            onChange={(event) => {
+              uploads.add([...(event.currentTarget.files ?? [])], open)
+              event.currentTarget.value = ''
+            }}
+          />
+        </>
+      )}
+      <label className={styles.search} data-tour="archivos-buscar">
+        <Search aria-hidden="true" size={16} />
+        <input
+          type="search"
+          value={query}
+          placeholder={t('files.search')}
+          aria-label={t('files.search')}
+          onChange={(event) => setQuery(event.currentTarget.value)}
+        />
+      </label>
+      {/* biome-ignore lint/a11y/useSemanticElements: unos botones que filtran, no un formulario */}
+      <div className={styles.kinds} role="group" aria-label={t('files.kinds')}>
+        {(['all', ...KINDS] as const).map((k) => (
+          <button key={k} type="button" className={styles.kind} aria-pressed={kind === k} onClick={() => setKind(k)}>
+            {k === 'all' ? t('files.all') : t(`files.groups.${k}`)}
+          </button>
+        ))}
+      </div>
+      {/* biome-ignore lint/a11y/useSemanticElements: dos botones que eligen la vista */}
+      <div className={styles.views} role="group" aria-label={t('files.view')}>
+        <button
+          type="button"
+          className={styles.viewButton}
+          aria-pressed={view === 'list'}
+          aria-label={t('files.asList')}
+          title={t('files.asList')}
+          onClick={() => setView('list')}
+        >
+          <List aria-hidden="true" size={16} />
+        </button>
+        <button
+          type="button"
+          className={styles.viewButton}
+          aria-pressed={view === 'cards'}
+          aria-label={t('files.asCards')}
+          title={t('files.asCards')}
+          onClick={() => setView('cards')}
+        >
+          <LayoutGrid aria-hidden="true" size={16} />
+        </button>
+      </div>
+    </div>
+  )
+  const tree = (
+    <FolderTree
+      files={data.files}
+      folders={folders}
+      open={searching ? undefined : open}
+      received={received}
+      canWrite={canWrite}
+      target={target}
+      onOpen={(id) => {
+        setQuery('')
+        setFolderId(id)
+      }}
+      onMove={moveInto}
+      onChanged={refresh}
+    />
+  )
+  const contents = (
+    <div className={styles.contents}>
+      <p className={styles.here}>
+        {searching
+          ? t('files.results', { count: shownFiles.length })
+          : [t('files.root'), ...path.map((f) => f.name)].join(' › ')}
+      </p>
+      {searching && shownFiles.length === 0 && <p className={styles.empty}>{t('files.noResults')}</p>}
+      {!searching && shownFolders.length === 0 && shownFiles.length === 0 && uploads.items.length === 0 && (
+        <p className={styles.empty}>{nothing ? empty : t('files.emptyFolder')}</p>
+      )}
+      {view === 'list' ? (
+        <ul className={styles.rows} aria-label={t('files.listLabel')}>
+          {uploads.items.map((upload) => (
+            <UploadRow key={upload.key} upload={upload} onCancel={() => uploads.cancel(upload.key)} />
+          ))}
+          {shownFolders.map((folder) => (
+            <FolderRow
+              key={folder.id}
+              folder={folder}
+              count={countIn(folder.id, data.files, folders)}
+              canWrite={canWrite}
+              fresh={fresh(folder.id)}
+              onOpen={() => setFolderId(folder.id)}
+              onMove={moveInto}
+              onChanged={refresh}
+            />
+          ))}
+          {shownFiles.map((file) => (
+            <FileRow
+              key={file.id}
+              file={file}
+              where={searching ? pathOf(file.folderId) : []}
+              fresh={fresh(file.id)}
+              selected={selected === file.id}
+              onSelect={title ? () => setSelected(file.id) : undefined}
+              {...rowProps}
+            />
+          ))}
+        </ul>
+      ) : (
+        <ul className={cards.list} aria-label={t('files.listLabel')}>
+          {shownFolders.map((folder) => (
+            <FolderCard
+              key={folder.id}
+              folder={folder}
+              files={data.files}
+              folders={folders}
+              canWrite={canWrite}
+              fresh={fresh(folder.id)}
+              onOpen={() => setFolderId(folder.id)}
+              onMove={moveInto}
+              onChanged={refresh}
+            />
+          ))}
+          {shownFiles.map((file) => (
+            <FileCard
+              key={file.id}
+              file={file}
+              where={searching ? pathOf(file.folderId) : []}
+              fresh={fresh(file.id)}
+              {...rowProps}
+            />
+          ))}
+          {uploads.items.map((upload) => (
+            <UploadCard key={upload.key} upload={upload} onCancel={() => uploads.cancel(upload.key)} />
+          ))}
+        </ul>
+      )}
+    </div>
+  )
+  const selectedFile = data.files.find((file) => file.id === selected)
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions: soltar es un atajo; «Subir archivos» hace lo mismo con el teclado
     <div
@@ -295,155 +453,39 @@ function FilesSection({
       }}
       onDrop={drop}
     >
-      <div className={styles.tools}>
-        {canWrite && (
-          <>
-            <button
-              type="button"
-              className={`${form.button} ${styles.uploadButton}`}
-              onClick={() => several.current?.click()}
-            >
-              <UploadIcon aria-hidden="true" size={16} />
-              {t('files.upload')}
-            </button>
-            <input
-              ref={several}
-              type="file"
-              multiple
-              accept={UPLOAD_ACCEPT}
-              hidden
-              onChange={(event) => {
-                uploads.add([...(event.currentTarget.files ?? [])], open)
-                event.currentTarget.value = ''
-              }}
-            />
-          </>
-        )}
-        <label className={styles.search} data-tour="archivos-buscar">
-          <Search aria-hidden="true" size={16} />
-          <input
-            type="search"
-            value={query}
-            placeholder={t('files.search')}
-            aria-label={t('files.search')}
-            onChange={(event) => setQuery(event.currentTarget.value)}
-          />
-        </label>
-        {/* biome-ignore lint/a11y/useSemanticElements: unos botones que filtran, no un formulario */}
-        <div className={styles.kinds} role="group" aria-label={t('files.kinds')}>
-          {(['all', ...KINDS] as const).map((k) => (
-            <button key={k} type="button" className={styles.kind} aria-pressed={kind === k} onClick={() => setKind(k)}>
-              {k === 'all' ? t('files.all') : t(`files.groups.${k}`)}
-            </button>
-          ))}
+      {title ? (
+        // La página: la columna del centro como en las demás vistas (título, botones y lista) y, a los lados, el
+        // árbol de carpetas y el archivo elegido
+        <div className={styles.layout}>
+          <aside className={styles.side}>{tree}</aside>
+          <div className={styles.center}>
+            {title}
+            {tools}
+            {contents}
+          </div>
+          <aside className={styles.detail} aria-label={t('files.detail')}>
+            {selectedFile ? (
+              <FileDetail
+                file={selectedFile}
+                where={pathOf(selectedFile.folderId)}
+                folders={folders}
+                canWrite={canWrite}
+                onChanged={refresh}
+              />
+            ) : (
+              <p className={styles.detailHint}>{t('files.pickOne')}</p>
+            )}
+          </aside>
         </div>
-        {/* biome-ignore lint/a11y/useSemanticElements: dos botones que eligen la vista */}
-        <div className={styles.views} role="group" aria-label={t('files.view')}>
-          <button
-            type="button"
-            className={styles.viewButton}
-            aria-pressed={view === 'list'}
-            aria-label={t('files.asList')}
-            title={t('files.asList')}
-            onClick={() => setView('list')}
-          >
-            <List aria-hidden="true" size={16} />
-          </button>
-          <button
-            type="button"
-            className={styles.viewButton}
-            aria-pressed={view === 'cards'}
-            aria-label={t('files.asCards')}
-            title={t('files.asCards')}
-            onClick={() => setView('cards')}
-          >
-            <LayoutGrid aria-hidden="true" size={16} />
-          </button>
-        </div>
-      </div>
-      <div className={styles.explorer}>
-        <FolderTree
-          files={data.files}
-          folders={folders}
-          open={searching ? undefined : open}
-          received={received}
-          canWrite={canWrite}
-          target={target}
-          onOpen={(id) => {
-            setQuery('')
-            setFolderId(id)
-          }}
-          onMove={moveInto}
-          onChanged={refresh}
-        />
-        <div className={styles.contents}>
-          <p className={styles.here}>
-            {searching
-              ? t('files.results', { count: shownFiles.length })
-              : [t('files.root'), ...path.map((f) => f.name)].join(' › ')}
-          </p>
-          {searching && shownFiles.length === 0 && <p className={styles.empty}>{t('files.noResults')}</p>}
-          {!searching && shownFolders.length === 0 && shownFiles.length === 0 && uploads.items.length === 0 && (
-            <p className={styles.empty}>{nothing ? empty : t('files.emptyFolder')}</p>
-          )}
-          {view === 'list' ? (
-            <ul className={styles.rows} aria-label={t('files.listLabel')}>
-              {uploads.items.map((upload) => (
-                <UploadRow key={upload.key} upload={upload} onCancel={() => uploads.cancel(upload.key)} />
-              ))}
-              {shownFolders.map((folder) => (
-                <FolderRow
-                  key={folder.id}
-                  folder={folder}
-                  count={countIn(folder.id, data.files, folders)}
-                  canWrite={canWrite}
-                  fresh={fresh(folder.id)}
-                  onOpen={() => setFolderId(folder.id)}
-                  onMove={moveInto}
-                  onChanged={refresh}
-                />
-              ))}
-              {shownFiles.map((file) => (
-                <FileRow
-                  key={file.id}
-                  file={file}
-                  where={searching ? pathOf(file.folderId) : []}
-                  fresh={fresh(file.id)}
-                  {...rowProps}
-                />
-              ))}
-            </ul>
-          ) : (
-            <ul className={cards.list} aria-label={t('files.listLabel')}>
-              {shownFolders.map((folder) => (
-                <FolderCard
-                  key={folder.id}
-                  folder={folder}
-                  files={data.files}
-                  folders={folders}
-                  canWrite={canWrite}
-                  fresh={fresh(folder.id)}
-                  onOpen={() => setFolderId(folder.id)}
-                  onMove={moveInto}
-                  onChanged={refresh}
-                />
-              ))}
-              {shownFiles.map((file) => (
-                <FileCard
-                  key={file.id}
-                  file={file}
-                  where={searching ? pathOf(file.folderId) : []}
-                  fresh={fresh(file.id)}
-                  {...rowProps}
-                />
-              ))}
-              {uploads.items.map((upload) => (
-                <UploadCard key={upload.key} upload={upload} onCancel={() => uploads.cancel(upload.key)} />
-              ))}
-            </ul>
-          )}
-        </div>
-      </div>
+      ) : (
+        <>
+          {tools}
+          <div className={styles.explorer}>
+            {tree}
+            {contents}
+          </div>
+        </>
+      )}
       {over && <p className={styles.dropHint}>{t('files.dropHere')}</p>}
     </div>
   )
@@ -601,6 +643,8 @@ function FileRow({
   folders,
   canWrite,
   fresh,
+  selected = false,
+  onSelect,
   onChanged
 }: {
   file: WorldFile
@@ -608,17 +652,25 @@ function FileRow({
   folders: FolderView[]
   canWrite: boolean
   fresh: boolean
+  /** El elegido, que sale en el panel de la derecha */
+  selected?: boolean
+  /** Pulsar la fila (fuera de su nombre y su engranaje) lo elige */
+  onSelect?: (() => void) | undefined
   onChanged: () => Promise<unknown>
 }) {
   const { t, i18n } = useTranslation()
   const [viewing, setViewing] = useState(false)
   return (
+    // biome-ignore lint/a11y/useKeyWithClickEvents: elegirla es un atajo del ratón; con el teclado, su nombre y su engranaje
     <li
-      className={[styles.row, fresh ? styles.appear : ''].filter(Boolean).join(' ')}
+      className={[styles.row, fresh ? styles.appear : '', selected ? styles.selected : ''].filter(Boolean).join(' ')}
       data-file-card={file.id}
       draggable={canWrite}
       onDragStart={(event) => startDragging(event, file)}
       onDragEnd={stopDragging}
+      onClick={(event) => {
+        if (!(event.target as Element).closest('a, button')) onSelect?.()
+      }}
     >
       <span className={styles.rowThumb}>
         <Thumb file={file} small />
@@ -653,6 +705,76 @@ function FileRow({
       {canWrite ? <FileSettings file={file} folders={folders} onChanged={onChanged} small /> : <span />}
       {viewing && <CoverViewer url={file.url} label={file.name} onClose={() => setViewing(false)} />}
     </li>
+  )
+}
+
+/** De qué tipo es, para decirlo: por su clase y, entre los demás, por su mime */
+const typeOf = (file: WorldFile) =>
+  file.kind !== 'other'
+    ? file.kind
+    : file.mime.startsWith('audio/')
+      ? 'audio'
+      : file.mime.startsWith('video/')
+        ? 'video'
+        : file.mime.startsWith('text/') || file.mime === 'application/json'
+          ? 'text'
+          : 'other'
+
+/**
+ * El archivo elegido, en el panel de la derecha: su vista previa grande, su nombre, de qué tipo es, cuánto pesa,
+ * dónde está y cuántas páginas lo usan; y abrirlo, descargarlo o sus ajustes
+ */
+function FileDetail({
+  file,
+  where,
+  folders,
+  canWrite,
+  onChanged
+}: {
+  file: WorldFile
+  where: FolderView[]
+  folders: FolderView[]
+  canWrite: boolean
+  onChanged: () => Promise<unknown>
+}) {
+  const { t, i18n } = useTranslation()
+  const [viewing, setViewing] = useState(false)
+  const date = new Intl.DateTimeFormat(i18n.language, { dateStyle: 'medium' })
+  return (
+    <div className={styles.detailBody}>
+      <div className={styles.preview}>
+        <Thumb file={file} />
+      </div>
+      <h2 className={styles.detailName}>{file.name}</h2>
+      <dl className={styles.facts}>
+        <dt>{t('files.kindLabel')}</dt>
+        <dd>{t(`files.types.${typeOf(file)}`)}</dd>
+        <dt>{t('files.sizeLabel')}</dt>
+        <dd>{sizeText(file.size, i18n.language)}</dd>
+        <dt>{t('files.folder')}</dt>
+        <dd>{where.length > 0 ? where.map((folder) => folder.name).join(' › ') : t('files.root')}</dd>
+        <dt>{t('files.usedLabel')}</dt>
+        <dd>{file.usedBy > 0 ? t('files.usedBy', { count: file.usedBy }) : t('files.unused')}</dd>
+        <dt>{t('files.updatedLabel')}</dt>
+        <dd>{date.format(new Date(file.updatedAt))}</dd>
+      </dl>
+      <div className={styles.detailActions}>
+        {file.kind === 'image' ? (
+          <button type="button" className={list.secondary} aria-haspopup="dialog" onClick={() => setViewing(true)}>
+            {t('cover.view')}
+          </button>
+        ) : (
+          <a className={`${list.secondary} ${styles.plain}`} href={file.url} target="_blank" rel="noopener">
+            {t('files.open')}
+          </a>
+        )}
+        <a className={`${list.secondary} ${styles.plain}`} href={file.url} download={file.name}>
+          {t('files.download')}
+        </a>
+        {canWrite && <FileSettings file={file} folders={folders} onChanged={onChanged} small />}
+      </div>
+      {viewing && <CoverViewer url={file.url} label={file.name} onClose={() => setViewing(false)} />}
+    </div>
   )
 }
 

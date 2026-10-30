@@ -49,12 +49,15 @@ test('subir archivos: salen como tarjetas, se sirven tal cual, se ordenan en car
   await create.getByLabel('Nombre de la carpeta').fill('Bestias')
   await create.getByRole('button', { name: 'Crear la carpeta' }).click()
   await expect(create).toHaveCount(0)
-  // Las tarjetas, por lo que pone (la del archivo y la de la carpeta)
-  const folder = page.locator('[data-file-card]').filter({ hasText: 'Bestias' })
+  // Al árbol: la fila del archivo, sobre su carpeta
+  const folder = page
+    .getByRole('navigation', { name: 'Carpetas' })
+    .first()
+    .getByRole('button', { name: /^Bestias/ })
   await expect(folder).toBeVisible()
   await page.locator('[data-file-card]').filter({ hasText: 'Bestiario.pdf' }).dragTo(folder)
   await expect(bestiary).toHaveCount(0)
-  await expect(folder.getByText('1 archivo')).toBeVisible()
+  await expect(page.locator('[data-file-card]').filter({ hasText: 'Bestias' }).getByText('1 archivo')).toBeVisible()
   await page.getByRole('button', { name: 'Abrir la carpeta Bestias' }).click()
   await expect(files.getByRole('link', { name: 'Bestiario.pdf', exact: true })).toBeVisible()
 
@@ -84,6 +87,8 @@ test('los archivos, en los dos temas @a11y', async ({ page }) => {
     { name: 'Bestiario.pdf', mimeType: 'application/pdf', buffer: PDF }
   ])
   await expect(page.getByRole('status').getByText('Subidos 2 archivos')).toBeAttached()
+  // Sin animaciones a medias (un archivo que aparece aún no tiene su contraste)
+  await page.waitForFunction(() => document.getAnimations().every((a) => a.playState !== 'running'))
   for (const colorScheme of ['light', 'dark'] as const) {
     await page.emulateMedia({ colorScheme })
     const { violations } = await new AxeBuilder({ page })

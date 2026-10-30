@@ -107,7 +107,7 @@ export async function remove(page: Page, kind: Kind, name: string) {
 /** Los tutoriales guiados de cada vista, ya hechos para esa cuenta: salen la primera vez y taparían lo que se prueba */
 export async function skipTours(page: Page, email: string) {
   await page.addInitScript((key) => {
-    localStorage.setItem(key, JSON.stringify({ seen: ['mundos', 'mundo', 'campanas'] }))
+    localStorage.setItem(key, JSON.stringify({ seen: ['mundos', 'mundo', 'campanas', 'archivos'] }))
   }, `crisol.recorridos.${email}`)
 }
 

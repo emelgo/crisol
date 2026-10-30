@@ -62,14 +62,23 @@ export function WorldPage() {
       {master ? <RecentPages worldId={worldId} /> : <PlayerCampaigns worldId={worldId} />}
       <Tour
         id="mundo"
+        // Un paso por cada botón de la barra (y lo que se añada a ella, también aquí)
         steps={[
-          {
-            target: '[data-tour="barra-mundo"]',
-            text: t('tour.world.ribbon'),
-            placement: 'right'
-          },
-          ...(master ? [{ target: '[data-tour="engranaje"]', text: t('tour.world.settings') }] : []),
-          { target: '[data-tour="barra-llama"]', text: t('tour.world.back'), placement: 'right' as const }
+          { target: '[data-tour="barra-inicio"]', text: t('tour.world.home'), placement: 'right' },
+          { target: '[data-tour="barra-campanas"]', text: t('tour.world.campaigns'), placement: 'right' },
+          ...(master
+            ? ([
+                { target: '[data-tour="barra-pages"]', text: t('tour.world.pages'), placement: 'right' },
+                { target: '[data-tour="barra-search"]', text: t('tour.world.search'), placement: 'right' },
+                { target: '[data-tour="barra-bookmarks"]', text: t('tour.world.bookmarks'), placement: 'right' },
+                { target: '[data-tour="barra-etiquetas"]', text: t('tour.world.tags'), placement: 'right' },
+                { target: '[data-tour="barra-archivos-mundo"]', text: t('tour.world.files'), placement: 'right' },
+                { target: '[data-tour="barra-historial"]', text: t('tour.world.history'), placement: 'right' },
+                { target: '[data-tour="barra-papelera"]', text: t('tour.world.trash'), placement: 'right' },
+                { target: '[data-tour="engranaje"]', text: t('tour.world.settings') }
+              ] as const)
+            : []),
+          { target: '[data-tour="barra-llama"]', text: t('tour.world.back'), placement: 'right' }
         ]}
       />
     </section>
