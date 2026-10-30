@@ -693,6 +693,21 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   - En la vista sencilla, discretos (los saltos solo se ven al editar). Grupo «Hoja» en el menú «/».
   - **Pruebas**: Markdown de ida y vuelta con todos y e2e `hoja.spec.ts` (con «/» y desde Markdown, con
     accesibilidad).
+- **2026-10-30 — Módulo 1, tarea 23: vista de hoja** (migración 0021).
+  - **«Hoja»** en las acciones de la página la activa, con sus ajustes en una fila: papel (A4 o Letter), tema
+    (Pergamino, con Alegreya y una textura propia de gradientes, o Neutro), numerar y desde qué número, y pie con el
+    título. Va al historial («puso «X» como hoja»).
+  - **Quien lee** puede volver a la vista sencilla, y se recuerda por cuenta y página (`wiki_preferences.simple_pages`,
+    acción `setPageView`). En pantallas estrechas se abre la sencilla, con «Ver la hoja».
+  - **Paginación** por bloques en `@crisol/domain` (`paginate`): dos columnas (la primera se llena antes), los saltos
+    fuerzan, un título va con su bloque siguiente, antes de un bloque a lo ancho se equilibran las columnas, y lo que
+    no cabe ni en una página vacía va igual y la página lo avisa. Guionado en español con `hyphens: auto`.
+  - La hoja pinta lo que da `getPageContent` (con secretos e incrustados) y mide cada bloque a su ancho. Índice con
+    número de página y puntos guía; nota lateral flotando en su columna; statblock con el marco del tema.
+  - **En escritorio ancho** (≥ 1500 px), el editor y la hoja lado a lado, sincronizados por bloque.
+  - **Pruebas**: el paginador con alturas simuladas y una página grande; integración de los ajustes y de la vista de
+    cada cuenta; e2e (activar, varias páginas sin que ningún bloque se salga, pie, índice, tema, volver a la sencilla y
+    que se recuerde, con accesibilidad).
 - **Pendientes de permiso de Enrique:**
   - Servicio de systemd para Foundry: ahora corre como proceso de la sesión y se para al cerrarla; se arranca con el
     comando de `research/foundry/entorno.md`.
