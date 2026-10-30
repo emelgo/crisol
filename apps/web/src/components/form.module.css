@@ -59,11 +59,9 @@
   border: 0;
   background: var(--color-accent);
   color: var(--color-on-accent);
-  font-family: var(--font-display);
-  font-size: 1.0625rem;
+  font-family: var(--font-body);
+  font-size: 0.9375rem;
   font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
   clip-path: var(--cut-button);
   text-decoration: none;
   cursor: pointer;

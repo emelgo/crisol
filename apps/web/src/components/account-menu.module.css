@@ -13,11 +13,9 @@
   border: 0;
   background: none;
   color: var(--color-chrome-text);
-  font-family: var(--font-display);
-  font-size: 1.0625rem;
+  font-family: var(--font-body);
+  font-size: 0.9375rem;
   font-weight: 600;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
   text-decoration: none;
   cursor: pointer;
 }
@@ -80,12 +78,10 @@
   border: 0;
   background: none;
   color: var(--color-text);
-  font-family: var(--font-display);
-  font-size: 1.0625rem;
+  font-family: var(--font-body);
+  font-size: 0.9375rem;
   font-weight: 600;
-  letter-spacing: 0.05em;
   text-align: start;
-  text-transform: uppercase;
   text-decoration: none;
   cursor: pointer;
 }

@@ -14,12 +14,12 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Los títulos, condensados y en mayúsculas, como en una hoja de personaje */
+/* Los títulos, condensados y en mayúsculas; cada nivel con su color, como en el Crisol antiguo */
 h1,
 h2,
 h3 {
   font-family: var(--font-display);
-  line-height: 1;
+  line-height: 1.05;
   text-transform: uppercase;
   text-wrap: balance;
 }
@@ -32,22 +32,34 @@ h1 {
   letter-spacing: 0.01em;
 }
 
-/* Un h2 es el rótulo de una sección: en rojo y con su raya debajo */
+/* Un h2 abre una sección: en su color y con una raya fina debajo */
 h2 {
   margin: var(--space-8) 0 var(--space-3);
-  padding-block-end: var(--space-2);
-  border-block-end: 2px solid var(--color-accent);
-  color: var(--color-accent-text);
-  font-size: 1.25rem;
+  padding-block-end: var(--space-1);
+  border-block-end: 1px solid color-mix(in srgb, var(--color-h2) 35%, transparent);
+  color: var(--color-h2);
+  font-size: 1.625rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.01em;
 }
 
 h3 {
   margin: var(--space-6) 0 var(--space-2);
-  font-size: 1.125rem;
+  color: var(--color-h3);
+  font-size: 1.5rem;
   font-weight: 700;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.01em;
+}
+
+h4 {
+  margin: var(--space-4) 0 var(--space-2);
+  color: var(--color-h4);
+  font-family: var(--font-display);
+  font-size: 1.1875rem;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
 }
 
 p {
@@ -102,8 +114,12 @@ main section[aria-labelledby]::before {
   clip-path: var(--cut-inner);
 }
 
+/* El título de un recuadro: más pequeño y sin raya, el recuadro ya lo separa */
 main section[aria-labelledby] > h2:first-child {
   margin-block-start: 0;
+  padding: 0;
+  border: 0;
+  font-size: 1.125rem;
 }
 
 /* En el papel, sin el fondo del tema oscuro */

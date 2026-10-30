@@ -1,7 +1,8 @@
 /*
- * Tokens de diseño: «Hoja» (decidida con Enrique, 2026-10-29: «es más rol»). La interfaz como una hoja de
- * personaje: barra oscura, marcos de esquinas cortadas, títulos condensados y el rojo para lo que se hace.
- * Lo de Claude, en azul. Oscuro o claro según el sistema; los contrastes los comprueba tokens.test.ts
+ * Tokens de diseño: la mezcla del Crisol antiguo y del nuevo (Enrique, 2026-10-30). Del antiguo, los grises neutros,
+ * un color por nivel de título, los enlaces en azul y el rojo solo en lo importante; del nuevo, Barlow, los títulos
+ * condensados y las esquinas cortadas. Lo de la IA, en azul claro. Oscuro o claro según el sistema; los contrastes los
+ * comprueba tokens.test.ts
  */
 @import "@fontsource/barlow/400.css";
 @import "@fontsource/barlow/600.css";
@@ -17,21 +18,28 @@
   --color-chrome-text: #edebe7;
   --color-chrome-muted: #a9adb5;
   --color-chrome-accent: #f27470;
-  --color-bg: #e9eaed;
-  --color-surface: #ffffff;
-  --color-raised: #f4f4f6;
-  --color-frame: #b7bbc3;
-  --color-text: #1b1d22;
-  --color-muted: #555a63;
-  --color-border: #d8dbe0;
+  --color-bg: #ffffff;
+  --color-surface: #fafafa;
+  --color-raised: #f4f4f5;
+  --color-frame: #cdcdd4;
+  --color-text: #1c1c1f;
+  --color-muted: #5b5b65;
+  --color-border: #e1e1e6;
   /* El borde de los campos: 3:1 con el fondo y la superficie (WCAG 1.4.11). --color-border es solo decorativo */
   --color-field-border: #7a7f89;
   /* El acento de fondo (botones) y el de texto no son el mismo: el de fondo no siempre llega a 4,5:1 como texto */
   --color-accent: #b8282a;
   --color-on-accent: #ffffff;
-  --color-accent-text: #a82326;
+  --color-accent-text: #c42b31;
+  /* Un color por nivel de título (h2, h3, h4) y el de los enlaces, como en el Crisol antiguo */
+  --color-h2: #a8201a;
+  --color-h3: #85540f;
+  --color-h4: #1d7466;
+  --color-link: #1a62c4;
+  /* La marca: el rombo y la señal de lo activo. Solo adorno, nunca texto */
+  --color-brand: #d63a40;
   --color-ai: #1f6e99;
-  --color-focus: #a82326;
+  --color-focus: #c42b31;
   /* Los secretos y las notas ocultas: aparte, en morado, con su borde de rayas */
   --color-secret: #f3eff9;
   --color-secret-rule: #6b5494;
@@ -93,19 +101,24 @@
   --color-chrome-text: #edebe7;
   --color-chrome-muted: #a9adb5;
   --color-chrome-accent: #f27470;
-  --color-bg: #1b1d22;
-  --color-surface: #24272d;
-  --color-raised: #2c3037;
-  --color-frame: #4a4f59;
-  --color-text: #edebe7;
-  --color-muted: #a9adb5;
-  --color-border: #393d46;
+  --color-bg: #17181b;
+  --color-surface: #1e1f23;
+  --color-raised: #25262b;
+  --color-frame: #3b3c44;
+  --color-text: #e7e7ea;
+  --color-muted: #a1a1aa;
+  --color-border: #2c2d33;
   --color-field-border: #80858f;
   --color-accent: #c9302c;
   --color-on-accent: #ffffff;
-  --color-accent-text: #f27470;
+  --color-accent-text: #f08b8e;
+  --color-h2: #f07167;
+  --color-h3: #e9b872;
+  --color-h4: #6fc3b2;
+  --color-link: #8ab4f8;
+  --color-brand: #e5484d;
   --color-ai: #7cc4e8;
-  --color-focus: #f27470;
+  --color-focus: #f08b8e;
   --color-secret: #2a2530;
   --color-secret-rule: #8e7bb0;
   --color-secret-text: #c9b8e8;
