@@ -9,6 +9,8 @@ export type WindowKind = 'historial' | 'papelera' | 'ajustes' | 'perfil'
 
 interface WindowState {
   open: (kind: WindowKind) => void
+  /** La que está abierta, si hay una */
+  opened: WindowKind | null
 }
 
 const WindowContext = createContext<WindowState | null>(null)
@@ -56,7 +58,7 @@ export function WindowProvider({
       dialog.current.close()
     }
   }, [path])
-  const value = useMemo(() => ({ open }), [open])
+  const value = useMemo(() => ({ open, opened: kind }), [open, kind])
   return (
     <WindowContext.Provider value={value}>
       {children}

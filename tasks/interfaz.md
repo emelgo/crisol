@@ -98,7 +98,8 @@ Todo va en la rama `interfaz/pulir-inicio`, en un commit local sin subir. Las no
   - Papelera, con los días de `TRASH_DAYS`;
   - tu menú.
 
-  «Lo tengo claro» solo en el último paso. En Ajustes, la casilla «Mostrar los recorridos».
+  «Lo tengo claro» solo en el último paso. En Ajustes, la casilla «Mostrar los recorridos». Se ve desmarcada si
+  alguno se tiene claro, y al marcarla, el recorrido de la pantalla sale en cuanto se cierra la ventana.
 - **Barra lateral**:
   - sin barra de estado abajo;
   - el tema y la IA salen de ella;
@@ -127,7 +128,7 @@ Todo va en la rama `interfaz/pulir-inicio`, en un commit local sin subir. Las no
    - el bootstrap y la unión, con `firstName` y `lastName`;
    - `USERNAME_TAKEN`;
    - el contrato de `Account`;
-   - las pruebas nuevas de los recorridos, la ventana y el perfil.
+   - las pruebas nuevas de los recorridos (también volver a encenderlos desde Ajustes), la ventana y el perfil.
 2. `pnpm test` entero y `pnpm e2e`.
 3. PR, CI y staging; la migración 0024 se aplica al desplegar.
 4. En `.env` de desarrollo, `PUBLIC_URL` pasó a `http://localhost:5173`: Enrique entra por `localhost` y el servidor
