@@ -167,6 +167,28 @@ acciones de la página; la fila de ajustes encima del texto; a partir de 1500 px
   512 MB). El guardián de origen acepta también el origen interno (solo lo puede abrir el propio servidor). Sin
   Chromium o sin la web compilada: 503.
 
+## Tarea 25, a la escala de Eana (hecha, rama `wiki/tarea-25-escala`)
+
+- `apps/server/src/mcp/escala.integration.test.ts` (solo con `CRISOL_ESCALA=1`; `CRISOL_ESCALA_PAGINAS` para menos):
+  2.400 páginas por `crear_paginas` de 50 en 50, con alias, etiquetas, secretos y enlaces cruzados (también hacia
+  delante). Los ayudantes OAuth del MCP pasaron a `src/mcp/test-client.ts`.
+- **Primera medida**: 15 s por llamada (búsqueda 188 ms y árbol 97 ms, bien). Lo que se arregló:
+  - los ids de las páginas se dan de antemano: los enlaces de la tanda salen ya resueltos (antes se reescribía cada
+    texto por Hocuspocus: 2,5 s);
+  - `patchDocument`/`patchDocuments`: poner su página a un enlace que esperaba no pasa por Hocuspocus si nadie tiene el
+    documento abierto, y se guardan todos de una vez (antes, hasta 5 s);
+  - indexar (texto y secciones) y rehacer los enlaces de la tanda, en una sola transacción cada cosa;
+  - la posición de cada rama se pregunta una vez, y las propiedades van ya en el INSERT.
+- Con 300 páginas: 2,3 s por llamada. Con 2.400, aún 3,9 s: `resolveName` recorría todas las páginas por enlace. Ahora
+  indexa cada lista una vez (`WeakMap` en `@crisol/domain`).
+- **Final, 2.400 páginas**: mediana 2,2 s y máxima 2,4 s por llamada, ningún enlace sin resolver, búsqueda 149 ms y
+  árbol 100 ms.
+
+## Estado de los PR
+
+- #61 (18), #62 (19a), #63 (19b), #64 (20), #65 (21), #66 (22), #67 (23) y #68 (24): fusionados y en staging. Staging
+  tiene Chromium (probado: saca un PDF dentro del contenedor).
+
 ## Hechas en esta tirada
 
 - **9** (PR #52): bloques, marcas, menú «/», barras, asa e ids. Decisiones apuntadas en `docs/modulos.md`.

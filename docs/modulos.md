@@ -722,6 +722,22 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   - **Pruebas**: e2e con `page.pdf()` en la ruta de impresión (tantas páginas como la hoja y sin interfaz; secretos
     solo con la casilla; notas nunca) y el PDF del servidor (`%PDF`, nombre y páginas).
   - **Queda para Enrique**: la prueba a mano de imprimir en Chrome, Firefox y Safari (punto de control 6).
+- **2026-10-30 — Módulo 1, tarea 25: a la escala de Eana.**
+  - Prueba aparte (`CRISOL_ESCALA=1`, `apps/server/src/mcp/escala.integration.test.ts`): un mundo de 2.400 páginas
+    con alias, etiquetas, secretos y enlaces cruzados (también a páginas que aún no existen), creado solo por el MCP
+    con `crear_paginas` de 50 en 50.
+  - **Números** (VPS, local): cada llamada de 50 páginas, mediana 2,2 s y máxima 2,4 s; ningún enlace sin resolver;
+    `buscar_paginas` 149 ms y `ver_arbol` 100 ms. Al empezar eran 15 s por llamada.
+  - **Lo que se cambió para llegar**:
+    - los ids de las páginas se dan antes de crearlas, así que los enlaces de la tanda salen ya resueltos;
+    - poner su página a lo que la esperaba no pasa por Hocuspocus si nadie tiene el documento abierto, y se escribe
+      todo de una vez (`patchDocuments`);
+    - indexar y rehacer los enlaces de la tanda, en una transacción cada cosa;
+    - la posición de cada rama se pregunta una vez;
+    - las propiedades van en el INSERT;
+    - `resolveName` indexa cada lista de páginas una sola vez.
+  - Las instrucciones del MCP y la descripción de `crear_paginas` explican cómo pasar una wiki entera (de 50 en 50,
+    en cualquier orden, y al final `enlaces_pagina` con el mundo para ver lo que quede).
 - **Pendientes de permiso de Enrique:**
   - Servicio de systemd para Foundry: ahora corre como proceso de la sesión y se para al cerrarla; se arranca con el
     comando de `research/foundry/entorno.md`.
