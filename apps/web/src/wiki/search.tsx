@@ -115,7 +115,8 @@ function SearchPage({ worldId, world }: { worldId: string; world: string }) {
       )}
       {failed(results) && <LoadError error={results.error} onRetry={() => results.refetch()} />}
       <p role="status" className={styles.count}>
-        {query && results.data ? t('search.count', { count: total, query }) : ''}
+        {/* Mientras llega lo nuevo, lo de antes sigue a la vista pero no se anuncia */}
+        {query && results.data && !results.isPlaceholderData ? t('search.count', { count: total, query }) : ''}
       </p>
       {results.data && results.data.results.length > 0 && (
         <ol className={styles.results} aria-label={t('search.results')}>

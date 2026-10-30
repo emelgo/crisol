@@ -40,6 +40,14 @@ export function PrintPage() {
     document.body.dataset.sheetReady = 'true'
     if (imprimir) window.print()
   }, [imprimir])
+  useEffect(() => {
+    // Para el PDF del servidor: que no espere a una hoja que no va a llegar
+    if (page.isError) document.body.dataset.sheetError = 'true'
+    return () => {
+      delete document.body.dataset.sheetError
+    }
+  }, [page.isError])
+  if (page.isError) return <p role="alert">{t('load.title')}</p>
   if (!page.data) return null
   const settings = page.data.sheet ?? DEFAULT_SHEET
   return (

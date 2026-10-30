@@ -143,7 +143,7 @@ export function Block({ node, worldId }: { node: JSONContent; worldId: string })
     // Los de hoja, como en la vista sencilla sin editar: los saltos y el índice no se ven
     case 'statblock':
       return (
-        <section aria-label={t('sheet.statblock')} className={sheet.statblock}>
+        <section aria-label={t('sheet.statblock')} className={sheet.statblock} data-statblock="">
           {children}
         </section>
       )

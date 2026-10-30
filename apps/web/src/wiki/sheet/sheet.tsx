@@ -12,6 +12,7 @@ import type { JSONContent } from '@tiptap/core'
 import { createContext, type ReactNode, useContext, useEffect, useLayoutEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Block } from '../content.tsx'
+import { ImageLoading } from '../file-embed.tsx'
 import { usePageContent } from '../preview.tsx'
 import styles from './sheet.module.css'
 
@@ -93,6 +94,8 @@ const headingsOf = (blocks: readonly JSONContent[]): Heading[] =>
 /** Lo que mide cada bloque (con sus márgenes) a su ancho: el de la columna o el de la página */
 function useMeasured(blocks: readonly JSONContent[], settings: SheetSettings, measurer: HTMLDivElement | null) {
   const [heights, setHeights] = useState<Map<string, number> | null>(null)
+  // Las imágenes que aún no han llegado (mientras, miden poco: se vuelve a medir con cada una)
+  const [loading, setLoading] = useState(0)
   useLayoutEffect(() => {
     if (!measurer) return
     const measure = () => {
@@ -108,8 +111,24 @@ function useMeasured(blocks: readonly JSONContent[], settings: SheetSettings, me
     measure()
     // Cuando llegan las letras del tema, todo mide otra cosa
     void document.fonts?.ready.then(measure)
+    const pending = [...measurer.querySelectorAll('img')].filter((img) => !img.complete)
+    setLoading(pending.length)
+    const loaded = () => {
+      setLoading((count) => Math.max(0, count - 1))
+      measure()
+    }
+    for (const img of pending) {
+      img.addEventListener('load', loaded, { once: true })
+      img.addEventListener('error', loaded, { once: true })
+    }
+    return () => {
+      for (const img of pending) {
+        img.removeEventListener('load', loaded)
+        img.removeEventListener('error', loaded)
+      }
+    }
   }, [measurer, blocks, settings])
-  return heights
+  return { heights, loading: loading > 0 }
 }
 
 export function SheetView({
@@ -138,7 +157,7 @@ export function SheetView({
     return all.filter((block) => block.type !== 'note' && (secrets || block.type !== 'secret'))
   }, [content.data, printing, secrets])
   const [measurer, setMeasurer] = useState<HTMLDivElement | null>(null)
-  const heights = useMeasured(blocks, settings, measurer)
+  const { heights, loading: imagesLoading } = useMeasured(blocks, settings, measurer)
   const headings = headingsOf(blocks)
   const byId = new Map(blocks.map((block, i) => [idOf(block, i), block]))
   const pages: SheetPage[] = heights
@@ -151,7 +170,8 @@ export function SheetView({
         contentHeight(settings)
       )
     : []
-  const ready = content.data !== undefined && heights !== null
+  // Lista cuando está paginada con todo medido, imágenes incluidas (el PDF del servidor espera a esto)
+  const ready = content.data !== undefined && heights !== null && !imagesLoading
   useEffect(() => {
     if (ready) onReady?.()
   }, [ready, onReady])
@@ -176,55 +196,57 @@ export function SheetView({
     )
   }
   return (
-    <PageNumbers.Provider value={numbers}>
-      <section className={styles.sheet} data-theme={settings.theme} lang="es" aria-label={t('sheet.view')}>
-        {/* El medidor: cada bloque a su ancho, fuera de la vista */}
-        <div ref={setMeasurer} className={`${styles.measurer} ${styles.page}`} aria-hidden="true">
-          {blocks.map((block, i) => (
-            <div
-              key={idOf(block, i)}
-              data-measure={idOf(block, i)}
-              className={styles.block}
-              style={{ inlineSize: kindOf(block) === 'wide' ? contentWidth(settings) : columnWidth(settings) }}
+    <ImageLoading.Provider value="eager">
+      <PageNumbers.Provider value={numbers}>
+        <section className={styles.sheet} data-theme={settings.theme} lang="es" aria-label={t('sheet.view')}>
+          {/* El medidor: cada bloque a su ancho, fuera de la vista */}
+          <div ref={setMeasurer} className={`${styles.measurer} ${styles.page}`} aria-hidden="true">
+            {blocks.map((block, i) => (
+              <div
+                key={idOf(block, i)}
+                data-measure={idOf(block, i)}
+                className={styles.block}
+                style={{ inlineSize: kindOf(block) === 'wide' ? contentWidth(settings) : columnWidth(settings) }}
+              >
+                <SheetBlockView block={block} worldId={page.worldId} headings={headings} />
+              </div>
+            ))}
+          </div>
+          {pages.map((sheetPage, index) => (
+            <section
+              key={index}
+              className={styles.page}
+              aria-label={t('sheet.pageLabel', { number: settings.firstNumber + index })}
+              style={{ inlineSize: paper.width, blockSize: paper.height }}
             >
-              <SheetBlockView block={block} worldId={page.worldId} headings={headings} />
-            </div>
-          ))}
-        </div>
-        {pages.map((sheetPage, index) => (
-          <section
-            key={index}
-            className={styles.page}
-            aria-label={t('sheet.pageLabel', { number: settings.firstNumber + index })}
-            style={{ inlineSize: paper.width, blockSize: paper.height }}
-          >
-            <div className={styles.content} style={{ blockSize: contentHeight(settings) }}>
-              {sheetPage.rows.map((row, r) =>
-                row.kind === 'wide' ? (
-                  render(row.id)
-                ) : (
-                  <div key={r} className={styles.columns} style={{ columnGap: GAP }}>
-                    <div className={styles.column}>{row.columns[0].map(render)}</div>
-                    <div className={styles.column}>{row.columns[1].map(render)}</div>
-                  </div>
-                )
+              <div className={styles.content} style={{ blockSize: contentHeight(settings) }}>
+                {sheetPage.rows.map((row, r) =>
+                  row.kind === 'wide' ? (
+                    render(row.id)
+                  ) : (
+                    <div key={r} className={styles.columns} style={{ columnGap: GAP }}>
+                      <div className={styles.column}>{row.columns[0].map(render)}</div>
+                      <div className={styles.column}>{row.columns[1].map(render)}</div>
+                    </div>
+                  )
+                )}
+              </div>
+              {sheetPage.overflow.length > 0 && (
+                <p role="note" className={styles.overflow}>
+                  {t('sheet.overflow')}
+                </p>
               )}
-            </div>
-            {sheetPage.overflow.length > 0 && (
-              <p role="note" className={styles.overflow}>
-                {t('sheet.overflow')}
-              </p>
-            )}
-            {(settings.footer || settings.numbers) && (
-              <footer className={styles.footer}>
-                <span>{settings.footer ? page.title : ''}</span>
-                <span>{settings.numbers ? settings.firstNumber + index : ''}</span>
-              </footer>
-            )}
-          </section>
-        ))}
-      </section>
-    </PageNumbers.Provider>
+              {(settings.footer || settings.numbers) && (
+                <footer className={styles.footer}>
+                  <span>{settings.footer ? page.title : ''}</span>
+                  <span>{settings.numbers ? settings.firstNumber + index : ''}</span>
+                </footer>
+              )}
+            </section>
+          ))}
+        </section>
+      </PageNumbers.Provider>
+    </ImageLoading.Provider>
   )
 }
 

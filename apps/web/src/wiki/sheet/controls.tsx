@@ -49,16 +49,24 @@ function useSaveSheet(page: Page) {
 /** El botón «Hoja» de las acciones de la página: activa o quita la vista de hoja */
 export function SheetToggle({ page }: { page: Page }) {
   const { t } = useTranslation()
+  const errorText = useErrorText()
   const save = useSaveSheet(page)
   return (
-    <button
-      type="button"
-      className={list.secondary}
-      aria-pressed={page.sheet !== null}
-      onClick={() => save.mutate(page.sheet ? null : DEFAULT_SHEET)}
-    >
-      {t('sheet.toggle')}
-    </button>
+    <>
+      <BusyButton
+        className={list.secondary}
+        aria-pressed={page.sheet !== null}
+        busy={save.isPending}
+        onClick={() => save.mutate(page.sheet ? null : DEFAULT_SHEET)}
+      >
+        {t('sheet.toggle')}
+      </BusyButton>
+      {save.error && (
+        <span role="alert" className={styles.error}>
+          {errorText(save.error)}
+        </span>
+      )}
+    </>
   )
 }
 
@@ -179,43 +187,51 @@ function PrintButtons({ page }: { page: Page }) {
   )
 }
 
-/** Los ajustes de la hoja, en una fila */
+/** Los ajustes de la hoja, en una fila. Cambian al momento (sin esperar al servidor); si no se guardan, lo dice */
 function SheetSettingsRow({ page, settings, children }: { page: Page; settings: SheetSettings; children: ReactNode }) {
   const { t } = useTranslation()
+  const errorText = useErrorText()
   const save = useSaveSheet(page)
-  const ids = { paper: useId(), theme: useId(), numbers: useId(), first: useId(), footer: useId() }
-  const change = (patch: Partial<SheetSettings>) => save.mutate({ ...settings, ...patch })
+  const [local, setLocal] = useState(settings)
+  useEffect(() => setLocal(settings), [settings])
+  const ids = { paper: useId(), theme: useId(), first: useId() }
+  const change = (patch: Partial<SheetSettings>) => {
+    const next = { ...local, ...patch }
+    setLocal(next)
+    save.mutate(next, { onError: () => setLocal(settings) })
+  }
+  const saveFirst = (input: HTMLInputElement) => {
+    const value = Number(input.value)
+    if (Number.isInteger(value) && value >= 1 && value <= 999) {
+      if (value !== local.firstNumber) change({ firstNumber: value })
+    } else input.value = String(local.firstNumber)
+  }
   return (
     <fieldset className={styles.row}>
       <legend className={styles.legend}>{t('sheet.settings')}</legend>
       <label htmlFor={ids.paper}>{t('sheet.paper')}</label>
       <select
         id={ids.paper}
-        value={settings.paper}
+        value={local.paper}
         onChange={(e) => change({ paper: e.currentTarget.value as SheetSettings['paper'] })}
       >
-        <option value="a4">A4</option>
-        <option value="letter">Letter</option>
+        <option value="a4">{t('sheet.papers.a4')}</option>
+        <option value="letter">{t('sheet.papers.letter')}</option>
       </select>
       <label htmlFor={ids.theme}>{t('sheet.theme')}</label>
       <select
         id={ids.theme}
-        value={settings.theme}
+        value={local.theme}
         onChange={(e) => change({ theme: e.currentTarget.value as SheetSettings['theme'] })}
       >
         <option value="pergamino">{t('sheet.themes.pergamino')}</option>
         <option value="neutro">{t('sheet.themes.neutro')}</option>
       </select>
-      <span className={styles.check}>
-        <input
-          id={ids.numbers}
-          type="checkbox"
-          checked={settings.numbers}
-          onChange={(e) => change({ numbers: e.currentTarget.checked })}
-        />
-        <label htmlFor={ids.numbers}>{t('sheet.numbers')}</label>
-      </span>
-      {settings.numbers && (
+      <label className={styles.check}>
+        <input type="checkbox" checked={local.numbers} onChange={(e) => change({ numbers: e.currentTarget.checked })} />
+        {t('sheet.numbers')}
+      </label>
+      {local.numbers && (
         <>
           <label htmlFor={ids.first}>{t('sheet.firstNumber')}</label>
           <input
@@ -224,27 +240,25 @@ function SheetSettingsRow({ page, settings, children }: { page: Page; settings: 
             min={1}
             max={999}
             className={styles.number}
-            defaultValue={settings.firstNumber}
-            key={settings.firstNumber}
-            onBlur={(e) => {
-              const value = Number(e.currentTarget.value)
-              if (Number.isInteger(value) && value >= 1 && value <= 999 && value !== settings.firstNumber) {
-                change({ firstNumber: value })
-              }
+            defaultValue={local.firstNumber}
+            key={local.firstNumber}
+            onBlur={(e) => saveFirst(e.currentTarget)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') saveFirst(e.currentTarget)
             }}
           />
         </>
       )}
-      <span className={styles.check}>
-        <input
-          id={ids.footer}
-          type="checkbox"
-          checked={settings.footer}
-          onChange={(e) => change({ footer: e.currentTarget.checked })}
-        />
-        <label htmlFor={ids.footer}>{t('sheet.footer')}</label>
-      </span>
+      <label className={styles.check}>
+        <input type="checkbox" checked={local.footer} onChange={(e) => change({ footer: e.currentTarget.checked })} />
+        {t('sheet.footer')}
+      </label>
       {children}
+      {save.error && (
+        <span role="alert" className={styles.error}>
+          {errorText(save.error)}
+        </span>
+      )}
     </fieldset>
   )
 }

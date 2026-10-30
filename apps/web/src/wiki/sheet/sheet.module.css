@@ -3,6 +3,25 @@
  * propios. Las mismas reglas valen para imprimir (tarea 24)
  */
 .sheet {
+  /* El papel es claro en los dos temas: lo que pinta dentro con los colores de la app, con los del tema claro */
+  color-scheme: light;
+  --color-surface: #ffffff;
+  --color-raised: #f4f4f6;
+  --color-frame: #b7bbc3;
+  --color-text: #1b1d22;
+  --color-muted: #555a63;
+  --color-border: #d8dbe0;
+  --color-field-border: #7a7f89;
+  --color-accent-text: #a82326;
+  --color-focus: #a82326;
+  --color-secret: #f3eff9;
+  --color-secret-rule: #6b5494;
+  --color-secret-text: #553f7a;
+  --color-tip: #2d6a39;
+  --color-warning: #80520a;
+  --color-danger: #a82326;
+  --color-read-aloud: #f6efdf;
+  --color-read-aloud-rule: #7a5a28;
   --sheet-paper: #ffffff;
   --sheet-texture: none;
   --sheet-text: #1c1c1c;
@@ -107,8 +126,7 @@
 }
 
 /* Los bloques de hoja con el aire del tema */
-.page [aria-label="Statblock"],
-.page section[class*="statblock"] {
+.page [data-statblock] {
   padding: 0.6em 0.8em;
   border-block: 4px solid var(--sheet-accent);
   background: var(--sheet-box);
