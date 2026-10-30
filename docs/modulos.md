@@ -987,10 +987,12 @@ app: el 2026-10-30 dijo «luego apuntaremos por donde vamos y nos dedicaremos a 
 
 ### Ideas de Enrique para módulos siguientes (2026-10-29, para repasar en su entrevista)
 
-- **Sistemas (módulo 3)**: al crear un mundo se elige su sistema, como en Foundry. Los sistemas se instalan antes y
-  también se pueden crear, con una forma parecida a la de Foundry (un paquete con su manifiesto y su modelo de datos).
-  - Toca lo ya hecho en el módulo 0: crear un mundo pedirá el sistema, y los mundos que ya existan tendrán uno por
-    defecto.
+- **Sistemas (módulo 3)**: los sistemas se instalan antes y también se pueden crear, con una forma parecida a la de
+  Foundry (un paquete con su manifiesto y su modelo de datos).
+  - **El sistema es de la campaña, no del mundo** (Enrique, 2026-10-30, cambia la idea anterior de elegirlo al crear
+    el mundo): «los mundos no necesitarán sistema al crearse pero las campañas sí, así un máster puede decidir jugar
+    una campaña en su mundo con D&D y otra con Daggerheart». Crear un mundo sigue sin pedir sistema; crear una campaña
+    lo pedirá, y las campañas que ya existan tendrán uno por defecto.
   - Sala limpia: de Foundry se estudia cómo lo resuelve (manifiesto, DataModel, instalación, actualizaciones). Si nos
     conviene ser compatibles con su formato de sistemas se decide en la entrevista; su código no entra, ni los sistemas
     de su comunidad, que llevan cada uno su licencia y están escritos contra su API.

@@ -1,7 +1,7 @@
 import { createMemoryHistory } from '@tanstack/react-router'
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { fakeAccountClient } from '../account/fake.ts'
 import { ApiError } from '../api/client.ts'
 import { fakeApi } from '../api/fake.ts'
@@ -10,6 +10,17 @@ import { createAppRouter } from '../router.tsx'
 
 const ORG = { id: crypto.randomUUID(), name: 'Fateforge', role: 'owner' as const }
 const signedIn = () => fakeAccountClient({ account: { name: 'Enrique', email: 'enrique@crisol.test' } })
+const eana = () => ({
+  id: crypto.randomUUID(),
+  organizationId: ORG.id,
+  name: 'Eana',
+  description: '',
+  icon: null,
+  color: null,
+  cover: null,
+  role: 'master' as 'master' | 'player',
+  version: 1
+})
 
 const renderWorlds = (api = fakeApi({ organizations: [ORG] }), accounts = signedIn()) => {
   const router = createAppRouter(createMemoryHistory({ initialEntries: ['/mundos'] }))
@@ -18,6 +29,9 @@ const renderWorlds = (api = fakeApi({ organizations: [ORG] }), accounts = signed
 }
 
 describe('mis mundos', () => {
+  // El tutorial guiado ya hecho: que no se ponga en medio
+  beforeEach(() => localStorage.setItem('crisol.recorridos.enrique@crisol.test', JSON.stringify({ seen: ['mundos'] })))
+
   it('con sesión, la portada lleva directa a mis mundos', async () => {
     const router = createAppRouter(createMemoryHistory({ initialEntries: ['/'] }))
     render(<App router={router} accounts={signedIn().client} api={fakeApi({ organizations: [ORG] }).client} />)
@@ -28,7 +42,11 @@ describe('mis mundos', () => {
   it('sin mundos lo dice y deja crear el primero', async () => {
     renderWorlds()
     expect(await screen.findByText('Aún no tienes mundos')).toBeDefined()
-    await userEvent.type(screen.getByLabelText('Nombre del mundo'), 'Eana')
+    await userEvent.click(screen.getByRole('button', { name: 'Crear tu primer mundo' }))
+    await userEvent.type(
+      within(screen.getByRole('dialog', { name: 'Nuevo mundo' })).getByLabelText('Nombre del mundo'),
+      'Eana'
+    )
     await userEvent.click(screen.getByRole('button', { name: 'Crear el mundo' }))
     const list = await screen.findByRole('list', { name: 'Mundos' })
     expect(within(list).getByText('Eana')).toBeDefined()
@@ -58,45 +76,41 @@ describe('mis mundos', () => {
     expect(api.calls).toContain('updateWorld')
   })
 
-  it('renombra un mundo', async () => {
-    const world = {
-      id: crypto.randomUUID(),
-      organizationId: ORG.id,
-      name: 'Eana',
-      description: '',
-      icon: null,
-      color: null,
-      cover: null,
-      role: 'master' as const,
-      version: 1
-    }
-    const { api } = renderWorlds(fakeApi({ organizations: [ORG], worlds: [world] }))
-    await userEvent.click(await screen.findByRole('button', { name: 'Renombrar Eana' }))
-    const input = screen.getByLabelText('Nuevo nombre de Eana')
+  it('el engranaje abre la ventana del mundo, y ahí se cambia el nombre', async () => {
+    const { api } = renderWorlds(fakeApi({ organizations: [ORG], worlds: [eana()] }))
+    expect(screen.queryByRole('button', { name: 'Renombrar Eana' })).toBeNull()
+    await userEvent.click(await screen.findByRole('button', { name: 'Ajustes de Eana' }))
+    const dialog = within(await screen.findByRole('dialog', { name: 'Ajustes de Eana' }))
+    const input = dialog.getByLabelText('Nombre del mundo')
     await userEvent.clear(input)
     await userEvent.type(input, 'Eana (Fateforge)')
-    await userEvent.click(screen.getByRole('button', { name: 'Guardar' }))
+    await userEvent.click(dialog.getByRole('button', { name: 'Guardar' }))
     expect(await screen.findByText('Eana (Fateforge)')).toBeDefined()
     expect(api.calls).toContain('renameWorld')
   })
 
-  it('cancelar el renombrado deja el nombre como estaba', async () => {
-    const world = {
-      id: crypto.randomUUID(),
-      organizationId: ORG.id,
-      name: 'Eana',
-      description: '',
-      icon: null,
-      color: null,
-      cover: null,
-      role: 'master' as const,
-      version: 1
-    }
-    renderWorlds(fakeApi({ organizations: [ORG], worlds: [world] }))
-    await userEvent.click(await screen.findByRole('button', { name: 'Renombrar Eana' }))
-    await userEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
-    expect(screen.queryByLabelText('Nuevo nombre de Eana')).toBeNull()
-    expect(screen.getByText('Eana')).toBeDefined()
+  it('desde su zona de peligro se borra el mundo, escribiendo su nombre para confirmarlo', async () => {
+    const { api } = renderWorlds(fakeApi({ organizations: [ORG], worlds: [eana()] }))
+    expect(screen.queryByRole('button', { name: 'Borrar Eana' })).toBeNull()
+    await userEvent.click(await screen.findByRole('button', { name: 'Ajustes de Eana' }))
+    const settings = within(await screen.findByRole('dialog', { name: 'Ajustes de Eana' }))
+    const zone = within(settings.getByRole('region', { name: 'Zona de peligro' }))
+    await userEvent.click(zone.getByRole('button', { name: 'Borrar el mundo' }))
+    const confirm = within(await screen.findByRole('dialog', { name: '¿Borrar «Eana»?' }))
+    const button = confirm.getByRole<HTMLButtonElement>('button', { name: 'Borrar el mundo' })
+    expect(button.disabled).toBe(true)
+    await userEvent.type(confirm.getByLabelText('Nombre del mundo'), 'Ean')
+    expect(button.disabled).toBe(true)
+    await userEvent.type(confirm.getByLabelText('Nombre del mundo'), 'a')
+    await userEvent.click(button)
+    expect(await screen.findByText('Aún no tienes mundos')).toBeDefined()
+    expect(api.calls).toContain('deleteWorld')
+  })
+
+  it('quien juega en un mundo no tiene su engranaje', async () => {
+    renderWorlds(fakeApi({ organizations: [ORG], worlds: [{ ...eana(), role: 'player' as const }] }))
+    expect(await screen.findByText('Eana')).toBeDefined()
+    expect(screen.queryByRole('button', { name: 'Ajustes de Eana' })).toBeNull()
   })
 
   it('quien no es propietario no ve el formulario de crear', async () => {
@@ -119,7 +133,8 @@ describe('mis mundos', () => {
       return original(name, input)
     }
     renderWorlds(api)
-    await userEvent.type(await screen.findByLabelText('Nombre del mundo'), 'Eana')
+    await userEvent.click(await screen.findByRole('button', { name: 'Crear tu primer mundo' }))
+    await userEvent.type(screen.getByLabelText('Nombre del mundo'), 'Eana')
     await userEvent.click(screen.getByRole('button', { name: 'Crear el mundo' }))
     expect((await screen.findByRole('alert')).textContent).toBe('No tienes permiso')
   })

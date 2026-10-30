@@ -1,0 +1,109 @@
+import { useMutation } from '@tanstack/react-query'
+import { type ReactNode, useEffect, useId, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { useErrorText } from '../api/errors.ts'
+import { BusyButton } from './busy-button.tsx'
+import styles from './danger.module.css'
+import dialogStyles from './dialog.module.css'
+import { Field, FormError } from './field.tsx'
+
+/** La zona de peligro: aparte, al final, en un recuadro rojizo */
+export function DangerZone({ children }: { children: ReactNode }) {
+  const { t } = useTranslation()
+  const titleId = useId()
+  return (
+    <section className={styles.zone} aria-labelledby={titleId}>
+      <h3 id={titleId}>{t('danger.zone')}</h3>
+      {children}
+    </section>
+  )
+}
+
+interface Props {
+  /** Lo que hay que escribir para confirmar, y que sale en el mensaje para poder copiarlo */
+  name: string
+  /** El botón (y el de confirmar) */
+  action: string
+  title: string
+  warning: string
+  label: string
+  onConfirm: () => Promise<unknown>
+}
+
+/**
+ * Algo que no conviene hacer sin querer (borrar un mundo): el botón abre una confirmación en la que hay que escribir
+ * el nombre. Hasta que coincide, no se puede confirmar
+ */
+export function ConfirmByName({ name, action, title, warning, label, onConfirm }: Props) {
+  const { t } = useTranslation()
+  const errorText = useErrorText()
+  const dialog = useRef<HTMLDialogElement>(null)
+  const button = useRef<HTMLButtonElement>(null)
+  const titleId = useId()
+  const [open, setOpen] = useState(false)
+  const [typed, setTyped] = useState('')
+  const confirm = useMutation({ mutationFn: onConfirm })
+  useEffect(() => {
+    if (open) dialog.current?.showModal()
+  }, [open])
+  const matches = typed.trim() === name.trim()
+  return (
+    <>
+      <button
+        ref={button}
+        type="button"
+        className={styles.button}
+        aria-haspopup="dialog"
+        onClick={() => {
+          setTyped('')
+          confirm.reset()
+          setOpen(true)
+        }}
+      >
+        {action}
+      </button>
+      {open && (
+        <dialog
+          ref={dialog}
+          aria-labelledby={titleId}
+          className={dialogStyles.dialog}
+          onClose={() => {
+            setOpen(false)
+            button.current?.focus()
+          }}
+        >
+          <form
+            className={dialogStyles.body}
+            onSubmit={(event) => {
+              event.preventDefault()
+              if (matches) confirm.mutate()
+            }}
+          >
+            <h2 id={titleId}>{title}</h2>
+            <p className={dialogStyles.description}>{warning}</p>
+            <p className={dialogStyles.description}>
+              {t('danger.typeName')} <strong className={styles.name}>{name}</strong>
+            </p>
+            <Field
+              label={label}
+              value={typed}
+              autoComplete="off"
+              spellCheck={false}
+              autoFocus
+              onChange={(event) => setTyped(event.currentTarget.value)}
+            />
+            <FormError message={confirm.error ? errorText(confirm.error) : null} />
+            <div className={dialogStyles.actions}>
+              <button type="button" className={dialogStyles.cancel} onClick={() => dialog.current?.close()}>
+                {t('list.cancel')}
+              </button>
+              <BusyButton type="submit" className={styles.solid} busy={confirm.isPending} disabled={!matches}>
+                {action}
+              </BusyButton>
+            </div>
+          </form>
+        </dialog>
+      )}
+    </>
+  )
+}

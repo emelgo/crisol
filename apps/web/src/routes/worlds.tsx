@@ -80,12 +80,6 @@ export function Worlds() {
                 name={world.name}
                 role={t(`roles.${world.role}`)}
                 link={{ to: '/mundos/$worldId', params: { worldId: world.id } }}
-                {...(world.role === 'master'
-                  ? {
-                      onRename: (name: string) => api.call('renameWorld', { worldId: world.id, name }).then(refresh),
-                      onDelete: () => api.call('deleteWorld', { worldId: world.id }).then(refresh)
-                    }
-                  : {})}
               >
                 <WorldDescription world={world} />
                 {world.role === 'master' && <WorldSettings world={world} />}

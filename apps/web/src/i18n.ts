@@ -81,6 +81,9 @@ export const es = {
     create: 'Crear el mundo',
     settings: 'Ajustes',
     settingsOf: 'Ajustes de {{name}}',
+    deleteWorld: 'Borrar el mundo',
+    deleteTitle: '¿Borrar «{{name}}»?',
+    deleteWarning: 'Irá a la papelera, con sus campañas y su wiki, y se podrá recuperar durante {{days}} días.',
     description: 'Descripción',
     descriptionHint: 'Una línea que sale en su tarjeta.',
     icon: 'Icono',
@@ -773,6 +776,10 @@ export const es = {
     dismiss: 'Cerrar el aviso de {{member}}',
     newVersion: 'Hay una versión nueva de Crisol.',
     reload: 'Recargar'
+  },
+  danger: {
+    zone: 'Zona de peligro',
+    typeName: 'Para confirmarlo, escribe su nombre:'
   },
   list: {
     rename: 'Renombrar',
