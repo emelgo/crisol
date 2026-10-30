@@ -316,8 +316,9 @@ function CoverHeader({
         <div className={styles.picture}>
           {url && cover && <img src={url} alt="" className={styles.image} style={coverStyle(cover)} />}
         </div>
-        {actions && <div className={styles.coverActions}>{actions}</div>}
       </div>
+      {/* Fuera del marco: su recorte las dejaría debajo del enlace que cubre la tarjeta */}
+      {actions && <div className={styles.coverActions}>{actions}</div>}
     </div>
   )
 }

@@ -279,8 +279,8 @@
 
 /* Al pasar el ratón, la portada se acerca un poco: por la tarjeta (que es un enlace) o por la de la ventana */
 .card:hover .picture,
-.frame:hover .picture,
-.frame:focus-within .picture {
+.header:hover .picture,
+.header:focus-within .picture {
   transform: scale(1.06);
 }
 
@@ -307,8 +307,8 @@
 }
 
 .card:hover .coverActions,
-.frame:hover .coverActions,
-.frame:focus-within .coverActions {
+.header:hover .coverActions,
+.header:focus-within .coverActions {
   opacity: 1;
 }
 
