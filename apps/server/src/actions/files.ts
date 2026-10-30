@@ -34,7 +34,8 @@ export const fileView = (row: FileRow): FileView => ({
   kind: row.kind,
   mime: row.mime,
   size: row.size,
-  url: `/api/files/${row.id}`,
+  // Con su versión: el navegador la guarda sin volver a preguntar (al reemplazarla, cambia)
+  url: `/api/files/${row.id}?v=${row.version}`,
   version: row.version,
   updatedAt: row.updatedAt.toISOString()
 })

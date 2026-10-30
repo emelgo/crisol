@@ -417,6 +417,26 @@ html:active-view-transition-type(seccion)::view-transition-old(root) {
   animation: deja-paso 120ms ease-in both;
 }
 
+/* Entre pestañas, lo que lleva su propio nombre de transición (la cabecera o la tarjeta del mundo en el que se entró, la
+   barra…) no se mueve ni se queda: lo de antes se va como la página y lo nuevo llega con ella, sin el viaje lento de
+   entrar en un mundo */
+html:active-view-transition-type(seccion)::view-transition-group(*) {
+  animation-duration: 0s;
+}
+
+html:active-view-transition-type(seccion)::view-transition-old(*) {
+  animation: deja-paso 120ms ease-in both;
+}
+
+html:active-view-transition-type(seccion)::view-transition-new(*) {
+  animation: sube-seccion 260ms cubic-bezier(0.16, 1, 0.3, 1) 90ms both;
+}
+
+/* Salvo la barra, que se queda quieta */
+html:active-view-transition-type(seccion)::view-transition-new(barra) {
+  animation: none;
+}
+
 html:active-view-transition-type(seccion)::view-transition-new(root) {
   animation: sube-seccion 260ms cubic-bezier(0.16, 1, 0.3, 1) 90ms both;
 }

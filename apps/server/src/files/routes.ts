@@ -177,9 +177,15 @@ export function registerFileRoutes(
       return fail(reply, error)
     }
     const etag = `"${file.hash}"`
+    // Privada: solo el navegador de quien la pidió. Con su versión en la dirección (?v=), esos bytes no cambian nunca:
+    // se guardan sin volver a preguntar. Sin ella (una portada), se enseña al momento lo guardado y se comprueba por
+    // detrás con la huella (reemplazar cambia los bytes)
+    const versioned = String((request.query as Record<string, unknown>).v ?? '') === String(file.version)
     reply
-      // Privada: solo el navegador de quien la pidió; se revalida con la huella (reemplazar cambia los bytes)
-      .header('cache-control', 'private, no-cache')
+      .header(
+        'cache-control',
+        versioned ? 'private, max-age=31536000, immutable' : 'private, max-age=0, stale-while-revalidate=604800'
+      )
       .header('etag', etag)
       .header('x-content-type-options', 'nosniff')
       .header('cross-origin-resource-policy', 'same-origin')

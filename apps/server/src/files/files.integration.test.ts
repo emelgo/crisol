@@ -96,10 +96,14 @@ describe('los archivos del mundo', () => {
     expect(served.rawPayload.equals(PNG)).toBe(true)
     expect(served.headers).toMatchObject({
       'content-type': 'image/png',
-      'cache-control': 'private, no-cache',
+      'cache-control': 'private, max-age=0, stale-while-revalidate=604800',
       'x-content-type-options': 'nosniff'
     })
     expect(served.headers['content-disposition']).toContain('inline')
+    // Con su versión en la dirección (la de la lista), se guarda sin volver a preguntar
+    const listed = (await call('listFiles', { worldId })).files.find((f: { id: string }) => f.id === first.json().id)
+    const cached = await app.inject({ method: 'GET', url: listed.url, headers: { cookie: owner.cookie } })
+    expect(cached.headers['cache-control']).toBe('private, max-age=31536000, immutable')
     // Con la misma huella, no se vuelve a mandar
     expect((await download(first.json().id, { 'if-none-match': String(served.headers.etag) })).statusCode).toBe(304)
     // Y queda en el historial
