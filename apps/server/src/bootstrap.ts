@@ -64,7 +64,9 @@ const redeemInput = z.object({
  * a la vez no creen dos propietarios; si algo falla después, se devuelve.
  */
 export async function redeemBootstrap(db: Database, auth: Auth, input: z.infer<typeof redeemInput>, now = new Date()) {
-  // El nombre de usuario, libre, antes de gastar el enlace
+  // Sin un enlace válido no se dice nada más (tampoco si un nombre de usuario existe); con él, el nombre libre antes de
+  // gastarlo
+  if (!(await peekBootstrap(db, input.secret, now))) throw new BootstrapError('INVALID_LINK')
   if (await usersRepo.isNameTaken(db, input.name)) throw new BootstrapError('USERNAME_TAKEN')
   const token = await bootstrapRepo.consumeBootstrap(db, hashSecret(input.secret), now)
   if (!token) throw new BootstrapError('INVALID_LINK')
