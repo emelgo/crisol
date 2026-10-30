@@ -80,7 +80,8 @@ describe('la vista previa y los incrustados', () => {
         { id: lugares?.id, title: 'Lugares' },
         { id: puerto.id, title: 'Puerto Ceniza' }
       ],
-      summary: 'La última ciudad libre.'
+      summary: 'La última ciudad libre.',
+      cover: null
     })
     expect(preview.blocks).toHaveLength(4)
     expect(preview.truncated).toBe(true)
