@@ -128,7 +128,7 @@ El foco vuelve al botón «Buscar en la página» cuando ya está pintado.
   «Hoja» en el menú «/». Tras un salto o el índice va un párrafo (si no, Intro cambiaba el bloque recién puesto).
 - La ayuda de Markdown de Claude (`MARKDOWN_HELP`) ya cuenta los archivos y los bloques de hoja.
 
-## Siguiente: 23, vista de hoja (diseño)
+## Tarea 23, vista de hoja (hecha, rama `wiki/tarea-23-vista-de-hoja`, migración 0021)
 
 - **Ajustes** en `pages.sheet` (ya existe la columna): `{ paper: 'a4'|'letter', theme: 'pergamino'|'neutro', numbers,
   firstNumber, footer }`; null, sin hoja. `page` los devuelve y `updatePage` los cambia (frase «activó la hoja…»).
@@ -145,6 +145,27 @@ El foco vuelve al botón «Buscar en la página» cuando ya está pintado.
   del plan; textura propia con gradientes) y Neutro. `hyphens: auto` con `lang="es"`.
 - **Escritorio ancho**: el editor y la hoja lado a lado; pulsar un bloque de la hoja lleva al del editor (por `data-id`)
   y el cursor del editor lleva la hoja a su bloque.
+
+**Cómo quedó la 23**: `paginate` en `@crisol/domain` (7 pruebas, 4.000 bloques en < 200 ms). `pages.sheet` se valida
+con `sheetSettings` al leer. `wiki_preferences.simple_pages` y `setPageView`. Web `wiki/sheet/{sheet,controls}.tsx`:
+la hoja mide en un medidor oculto (cada bloque en `display: flow-root`, a su ancho) y solo vuelve a pintar si cambian
+las medidas (un bucle de React, el #185, salió por un `?? []` nuevo en cada pintada). El botón «Hoja» va en las
+acciones de la página; la fila de ajustes encima del texto; a partir de 1500 px, el editor y la hoja lado a lado
+(pulsar un bloque de la hoja lleva el editor a él; el cursor del editor lleva la hoja, con `selectionchange`).
+
+## Siguiente: 24, imprimir y PDF (diseño)
+
+- **Ruta de impresión** `/mundos/:worldId/imprimir/:pageId?secretos=1&imprimir=1`: `RootLayout` la pinta sin nada de la
+  interfaz. Solo las páginas de la hoja, con `@page { size: A4|Letter; margin: 0 }`, `break-after: page` y sin sombras.
+  Las notas ocultas nunca; los secretos, solo con `secretos=1`. Al acabar de paginar pone `data-sheet-ready` (para
+  Chromium) y, con `imprimir=1`, abre el diálogo de imprimir.
+- **En la fila de la hoja**: «Incluir secretos», «Imprimir» (abre la ruta en otra pestaña) y «Descargar PDF».
+- **PDF en el servidor** (permiso de Enrique: Chromium en la imagen): `GET /api/pages/:id/pdf?secretos=1`, con
+  `playwright-core` (Apache-2.0) y el Chromium del sistema (`CHROMIUM_PATH`; en la imagen, `apk add chromium`). Abre la
+  ruta de impresión en `http://127.0.0.1:PORT` con la cookie de quien lo pide (`extraHTTPHeaders`), espera a
+  `data-sheet-ready` y saca `page.pdf({ preferCSSPageSize: true, printBackground: true })`. De uno en uno (memoria de
+  512 MB). El guardián de origen acepta también el origen interno (solo lo puede abrir el propio servidor). Sin
+  Chromium o sin la web compilada: 503.
 
 ## Hechas en esta tirada
 

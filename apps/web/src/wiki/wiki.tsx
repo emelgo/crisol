@@ -25,6 +25,7 @@ import { BookmarkButton, Bookmarks, OpenTabs, SiblingNav } from './navigation.ts
 import { PageProperties } from './properties.tsx'
 import { QuickSwitcher } from './quick-switcher.tsx'
 import { SearchBox } from './search-box.tsx'
+import { SheetLayout, SheetToggle } from './sheet/controls.tsx'
 import { childrenKey, PageTree } from './tree.tsx'
 import { Versions } from './versions.tsx'
 import styles from './wiki.module.css'
@@ -282,6 +283,7 @@ function PageHeading({ page, startEditing }: { page: Page; startEditing: boolean
         </button>
         <LockButton page={page} />
         <CoverButton page={page} />
+        <SheetToggle page={page} />
         <BookmarkButton page={page} />
         <ExportPage page={page} />
         <DeletePage page={page} />
@@ -449,7 +451,7 @@ export function WikiPage() {
             <PageCoverImage page={page.data} />
             <PageHeading key={`${page.data.id}-${nuevo ?? false}`} page={page.data} startEditing={nuevo === true} />
             <PageProperties key={page.data.id} page={page.data} />
-            <PageBody page={page.data} />
+            <SheetLayout page={page.data} body={<PageBody page={page.data} />} />
             <Backlinks key={`enlaces-${page.data.id}`} page={page.data} />
             <Versions key={`versiones-${page.data.id}`} page={page.data} />
             <Subpages page={page.data} />

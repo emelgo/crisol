@@ -300,7 +300,7 @@ Cada vía nueva por la que salen datos amplía `@fugas` en la misma tarea.
   - Comprueba: la ida y vuelta de cada uno y pruebas de componentes.
   - Archivos: `packages/editor/src/nodes/sheet/*.ts`, `apps/web/src/wiki/nodes/sheet/*.tsx`.
 
-- [ ] **23. Vista de hoja: paginar y temas**
+- [x] **23. Vista de hoja: paginar y temas**
   - Acepta:
     - «Ver como hoja» y sus ajustes en la fila: papel, tema, numeración y pie.
     - Quien lee puede volver a la sencilla; se recuerda en `wiki_preferences`. En pantallas estrechas abre la sencilla.

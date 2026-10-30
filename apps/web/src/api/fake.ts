@@ -119,6 +119,7 @@ export function fakeApi(
     properties: PageProperty[]
     locked?: boolean
     cover?: Page['cover']
+    sheet?: Page['sheet']
     version: number
   }
   const pages: StoredPage[] = (options.pages ?? []).map((page) => ({
@@ -133,7 +134,11 @@ export function fakeApi(
   // Las páginas borradas, cada una con las subpáginas que se fueron con ella (todas siguen en la lista, apartadas)
   const trashedPages: Array<{ root: StoredPage; below: StoredPage[] }> = []
   // Pestañas y marcadores de la cuenta, por mundo
-  type Stored = { tabs: { pageId: string; pinned: boolean }[]; bookmarks: { name: string; pages: string[] }[] }
+  type Stored = {
+    tabs: { pageId: string; pinned: boolean }[]
+    bookmarks: { name: string; pages: string[] }[]
+    simplePages?: string[]
+  }
   const preferences = new Map<string, Stored>()
   const preferencesOf = (worldId: string): Stored => preferences.get(worldId) ?? { tabs: [], bookmarks: [] }
   const preferencesView = (worldId: string) => {
@@ -150,7 +155,8 @@ export function fakeApi(
           const title = titleOf(id)
           return title === undefined ? [] : [{ id, title }]
         })
-      }))
+      })),
+      simplePages: [...(stored.simplePages ?? [])]
     }
   }
   const pageById = (pageId: string) => {
@@ -179,6 +185,7 @@ export function fakeApi(
       properties: page.properties.map((p) => ({ ...p })) as PageProperty[],
       locked: page.locked ?? false,
       cover: page.cover ?? null,
+      sheet: page.sheet ?? null,
       path,
       updatedAt: new Date().toISOString()
     }
@@ -398,13 +405,14 @@ export function fakeApi(
       place(page, before, after)
       return pageView(page)
     },
-    updatePage: ({ pageId, title, icon, locked, cover }) => {
+    updatePage: ({ pageId, title, icon, locked, cover, sheet }) => {
       const page = pageById(pageId)
       Object.assign(page, {
         ...(title !== undefined ? { title } : {}),
         ...(icon !== undefined ? { icon } : {}),
         ...(locked !== undefined ? { locked } : {}),
         ...(cover !== undefined ? { cover } : {}),
+        ...(sheet !== undefined ? { sheet } : {}),
         version: page.version + 1
       })
       return pageView(page)
@@ -471,6 +479,12 @@ export function fakeApi(
     getWikiPreferences: ({ worldId }) => preferencesView(worldId),
     setWikiTabs: ({ worldId, tabs }) => {
       preferences.set(worldId, { ...preferencesOf(worldId), tabs: tabs.map((tab) => ({ ...tab })) })
+      return preferencesView(worldId)
+    },
+    setPageView: ({ worldId, pageId, view }) => {
+      const stored = preferencesOf(worldId)
+      const others = (stored.simplePages ?? []).filter((id) => id !== pageId)
+      preferences.set(worldId, { ...stored, simplePages: view === 'simple' ? [...others, pageId] : others })
       return preferencesView(worldId)
     },
     setBookmarks: ({ worldId, bookmarks }) => {

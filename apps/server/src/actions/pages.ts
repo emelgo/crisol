@@ -9,6 +9,7 @@ import {
   movePage,
   type Page,
   setPageProperties,
+  sheetSettings,
   updatePage
 } from '@crisol/contracts'
 import { documentsRepo, filesRepo, pagesRepo } from '@crisol/db'
@@ -44,6 +45,8 @@ export async function pageView(ctx: ActionContext, pageId: string): Promise<Page
     properties: propertiesOf(found.properties),
     locked: found.locked,
     cover: found.cover ?? null,
+    // Lo guardado que no sea unos ajustes de hoja válidos cuenta como sin hoja
+    sheet: sheetSettings.safeParse(found.sheet).data ?? null,
     path: await pagesRepo.pagePath(ctx.db, pageId),
     updatedAt: found.updatedAt.toISOString()
   }
@@ -106,7 +109,7 @@ export const pageActions = [
     return pageView(ctx, created.id)
   }),
 
-  implement(updatePage, async (ctx, { pageId, title, icon, locked, cover }) => {
+  implement(updatePage, async (ctx, { pageId, title, icon, locked, cover, sheet }) => {
     const { page, wiki } = await authorizedPage(ctx, 'page.write', pageId)
     // La portada, una imagen de este mundo
     if (cover) {
@@ -118,13 +121,16 @@ export const pageActions = [
       ...(title !== undefined ? { from: page.title, to: title } : { title: page.title }),
       ...(icon !== undefined ? { icon } : {}),
       ...(locked !== undefined ? { locked } : {}),
-      ...(cover !== undefined ? { cover: cover !== null } : {})
+      ...(cover !== undefined ? { cover: cover !== null } : {}),
+      // La hoja: activada, quitada o con otros ajustes
+      ...(sheet !== undefined ? { sheet: sheet === null ? 'off' : page.sheet ? 'changed' : 'on' } : {})
     }
     await pagesRepo.updatePage(ctx.db, historyContext(ctx, 'updatePage', details, wiki), pageId, {
       ...(title !== undefined ? { title } : {}),
       ...(icon !== undefined ? { icon } : {}),
       ...(locked !== undefined ? { locked } : {}),
-      ...(cover !== undefined ? { cover } : {})
+      ...(cover !== undefined ? { cover } : {}),
+      ...(sheet !== undefined ? { sheet } : {})
     })
     ctx.realtime.publish(pagesChanged(wiki))
     if (title !== undefined) await resolvePending(ctx, wiki.worldId, ctx.actor.userId, [title])

@@ -27,6 +27,7 @@ import {
   restorePageVersion,
   setBookmarks,
   setPageProperties,
+  setPageView,
   setWikiTabs,
   updatePage
 } from './pages.ts'
@@ -99,6 +100,7 @@ export const ACTIONS = [
   getWikiPreferences,
   setWikiTabs,
   setBookmarks,
+  setPageView,
   createPageDocument,
   readPage,
   createPages,
@@ -160,6 +162,7 @@ export type Actions = {
   getWikiPreferences: typeof getWikiPreferences
   setWikiTabs: typeof setWikiTabs
   setBookmarks: typeof setBookmarks
+  setPageView: typeof setPageView
   createPageDocument: typeof createPageDocument
   readPage: typeof readPage
   createPages: typeof createPages

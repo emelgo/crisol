@@ -97,6 +97,25 @@ describe('la wiki: páginas y árbol', () => {
     expect(await titles()).toEqual(['A', 'B', 'B y medio', 'C'])
   })
 
+  it('la hoja: se activa con sus ajustes, se cambia y se quita; quien lee recuerda su vista', async () => {
+    const page = (await call('createPage', { worldId, title: 'El Dragón Rojo' })).json()
+    expect(page.sheet).toBeNull()
+    const sheet = { paper: 'a4', theme: 'pergamino', numbers: true, firstNumber: 3, footer: true }
+    expect((await call('updatePage', { pageId: page.id, sheet })).json()).toMatchObject({ sheet })
+    await call('updatePage', { pageId: page.id, sheet: { ...sheet, theme: 'neutro' } })
+    await call('updatePage', { pageId: page.id, sheet: null })
+    const { entries } = (await call('listHistory', { worldId })).json()
+    expect(entries.slice(0, 3).map((e: { details: { sheet?: string } }) => e.details.sheet)).toEqual([
+      'off',
+      'changed',
+      'on'
+    ])
+    expect((await call('updatePage', { pageId: page.id, sheet: { ...sheet, paper: 'a3' } })).statusCode).toBe(400)
+    const simple = (await call('setPageView', { worldId, pageId: page.id, view: 'simple' })).json()
+    expect(simple.simplePages).toEqual([page.id])
+    expect((await call('setPageView', { worldId, pageId: page.id, view: 'sheet' })).json().simplePages).toEqual([])
+  })
+
   it('renombrar sube la versión y apunta el cambio', async () => {
     const page = await create('Puerto')
     const renamed = (await call('updatePage', { pageId: page.id, title: 'Puerto Ceniza' })).json()
@@ -442,7 +461,8 @@ describe('la wiki: páginas y árbol', () => {
               { id: port.id, title: 'Puerto Ceniza' }
             ]
           }
-        ]
+        ],
+        simplePages: []
       })
       // Solo el renombrado
       expect((await historyOf()).length).toBe(before + 1)
@@ -464,7 +484,11 @@ describe('la wiki: páginas y árbol', () => {
       await conn.db.insert(schema.organizationMembers).values({ organizationId, userId: other.userId, role: 'member' })
       expect((await call('getWikiPreferences', { worldId }, other.cookie)).statusCode).toBe(404)
       await conn.db.insert(schema.worldMembers).values({ worldId, userId: other.userId, role: 'master' })
-      expect((await call('getWikiPreferences', { worldId }, other.cookie)).json()).toEqual({ tabs: [], bookmarks: [] })
+      expect((await call('getWikiPreferences', { worldId }, other.cookie)).json()).toEqual({
+        tabs: [],
+        bookmarks: [],
+        simplePages: []
+      })
     })
   })
 })

@@ -18,6 +18,8 @@ export const wikiPreferences = pgTable(
       .references(() => worlds.id, { onDelete: 'cascade' }),
     tabs: jsonb().$type<{ pageId: string; pinned: boolean }[]>().notNull().default([]),
     bookmarks: jsonb().$type<{ name: string; pages: string[] }[]>().notNull().default([]),
+    // Las páginas con hoja que la cuenta prefiere leer en la vista sencilla
+    simplePages: jsonb().$type<string[]>().notNull().default([]),
     updatedAt: timestamp({ withTimezone: true }).defaultNow().notNull()
   },
   (t) => [unique().on(t.userId, t.worldId)]

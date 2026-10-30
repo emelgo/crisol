@@ -70,3 +70,51 @@ test('lo que llega en Markdown: nota lateral a la izquierda, a lo ancho y salto 
   await expect(body(page).getByText('A lo ancho', { exact: true })).toBeVisible()
   await expect(body(page).getByText('Todo a lo ancho.')).toBeVisible()
 })
+
+test('la vista de hoja: se activa, pagina sin partir bloques, cambia de tema y quien lee vuelve a la sencilla', async ({
+  page
+}) => {
+  test.slow()
+  const paragraphs = Array.from(
+    { length: 60 },
+    (_, i) => `Párrafo ${i + 1}: la costa de Eana guarda faros, puertos y dragones que nadie ha contado todavía.`
+  ).join('\n\n')
+  await openPage(page, `> [!indice]\n\n## La costa\n\n${paragraphs}\n\n## El norte\n\nFin.`)
+  await page.getByRole('button', { name: 'Hoja', exact: true }).click()
+  const sheet = page.getByRole('region', { name: 'Vista de hoja' })
+  await expect(sheet.getByRole('region', { name: 'Página 1' })).toBeVisible()
+  await expect(sheet.getByRole('region', { name: 'Página 2' })).toBeVisible()
+  // El pie con el título y el número; el índice con la página de cada título
+  await expect(sheet.getByRole('region', { name: 'Página 1' }).locator('footer')).toContainText('El Dragón Rojo')
+  await expect(sheet.getByRole('navigation', { name: 'Índice' })).toContainText('La costa')
+  // Ningún bloque se sale de su página
+  const outside = await sheet.locator('section[aria-label^="Página"]').evaluateAll(
+    (pages) =>
+      pages.flatMap((p) => {
+        const bottom = p.getBoundingClientRect().bottom
+        return [...p.querySelectorAll('[data-sheet-block]')].filter(
+          (b) => b.getBoundingClientRect().bottom > bottom + 1
+        )
+      }).length
+  )
+  expect(outside).toBe(0)
+  // El tema
+  await page.getByLabel('Tema', { exact: true }).selectOption({ label: 'Neutro' })
+  await expect(sheet).toHaveAttribute('data-theme', 'neutro')
+  for (const colorScheme of ['light', 'dark'] as const) {
+    await page.emulateMedia({ colorScheme })
+    const { violations } = await new AxeBuilder({ page })
+      .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+      .analyze()
+    expect(violations.filter((v) => v.impact === 'critical' || v.impact === 'serious').map((v) => v.id)).toEqual([])
+  }
+  // Quien lee vuelve a la sencilla, y se recuerda
+  await page.getByRole('button', { name: 'Vista sencilla' }).click()
+  await expect(sheet).toBeHidden()
+  await expect(body(page)).toBeVisible()
+  await page.reload()
+  await expect(page.getByRole('button', { name: 'Ver la hoja' })).toBeVisible()
+  await expect(page.getByRole('region', { name: 'Vista de hoja' })).toBeHidden()
+  await page.getByRole('button', { name: 'Ver la hoja' }).click()
+  await expect(page.getByRole('region', { name: 'Vista de hoja' })).toBeVisible()
+})

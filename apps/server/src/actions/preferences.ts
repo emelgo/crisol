@@ -1,4 +1,4 @@
-import { getWikiPreferences, setBookmarks, setWikiTabs, type WikiPreferences } from '@crisol/contracts'
+import { getWikiPreferences, setBookmarks, setPageView, setWikiTabs, type WikiPreferences } from '@crisol/contracts'
 import { pagesRepo, preferencesRepo } from '@crisol/db'
 import { authorizedWiki } from './access.ts'
 import type { ActionContext } from './context.ts'
@@ -23,11 +23,24 @@ async function preferencesView(ctx: ActionContext, worldId: string): Promise<Wik
         const title = titles.get(id)
         return title === undefined ? [] : [{ id, title }]
       })
-    }))
+    })),
+    simplePages: stored.simplePages
   }
 }
 
 export const preferenceActions = [
+  // La vista en que la cuenta lee una página con hoja (la de hoja, o la sencilla)
+  implement(setPageView, async (ctx, { worldId, pageId, view }) => {
+    await authorizedWiki(ctx, 'page.read', worldId)
+    const known = await pagesRepo.titlesOf(ctx.db, worldId, [pageId])
+    const stored = await preferencesRepo.findPreferences(ctx.db, ctx.actor.userId, worldId)
+    const others = stored.simplePages.filter((id) => id !== pageId)
+    // Solo las que siguen en la wiki, y no más de 500
+    const simplePages = (view === 'simple' && known.has(pageId) ? [...others, pageId] : others).slice(-500)
+    await preferencesRepo.savePreferences(ctx.db, ctx.actor.userId, worldId, { simplePages })
+    return preferencesView(ctx, worldId)
+  }),
+
   implement(getWikiPreferences, async (ctx, { worldId }) => {
     await authorizedWiki(ctx, 'page.read', worldId)
     return preferencesView(ctx, worldId)

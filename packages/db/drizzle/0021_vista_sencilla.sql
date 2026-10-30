@@ -1,0 +1,1 @@
+ALTER TABLE "wiki_preferences" ADD COLUMN "simple_pages" jsonb DEFAULT '[]'::jsonb NOT NULL;
