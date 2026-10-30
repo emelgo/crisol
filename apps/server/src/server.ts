@@ -8,6 +8,7 @@ import { diskStorage } from './files/storage.ts'
 import { startPurges } from './jobs/purges.ts'
 import { deriveSealKey } from './secrets.ts'
 import { serviceChecks } from './services.ts'
+import { pdfRenderer } from './wiki/pdf.ts'
 
 /** Arranca el servidor con sus conexiones; stop() deja de aceptar peticiones y las cierra */
 export async function startServer(
@@ -18,6 +19,9 @@ export async function startServer(
   const valkey = new Redis(config.VALKEY_URL, { maxRetriesPerRequest: 2 })
   const auth = createAuth({ db: db.db, secret: config.AUTH_SECRET, baseURL: config.PUBLIC_URL })
   const storage = diskStorage(join(config.DATA_DIR, 'archivos'))
+  // El PDF de las hojas abre la web del propio servidor: solo si la sirve él
+  const internalUrl = `http://127.0.0.1:${config.PORT}`
+  const pdf = config.WEB_DIR ? pdfRenderer({ baseUrl: internalUrl, executablePath: config.CHROMIUM_PATH }) : null
   const app = buildApp({
     checks: serviceChecks(db, valkey),
     logger: options.logger ?? false,
@@ -25,6 +29,7 @@ export async function startServer(
     accounts: { auth, db: db.db, publicUrl: config.PUBLIC_URL, sealKey: deriveSealKey(config.AUTH_SECRET) },
     mcpJwksUrl: `http://127.0.0.1:${config.PORT}/api/auth/jwks`,
     storage,
+    ...(pdf ? { pdf: { renderer: pdf, internalUrl } } : {}),
     ...(options.approvalWaitMs ? { approvalWaitMs: options.approvalWaitMs } : {})
   })
   // Lo aprobado que se quedó haciéndose al pararse el anterior ya no se va a acabar
@@ -43,6 +48,7 @@ export async function startServer(
     async stop() {
       await purges.close()
       await app.close()
+      await pdf?.close()
       await db.close()
       valkey.disconnect()
     }

@@ -23,6 +23,7 @@ import { type RealtimeRouteOptions, registerRealtimeRoutes } from './realtime/ro
 import { registerWeb, webBuild } from './web.ts'
 import { jsonOfDoc } from './wiki/content.ts'
 import { linksOfStored } from './wiki/links.ts'
+import type { PdfRenderer } from './wiki/pdf.ts'
 import { registerWikiRoutes } from './wiki/routes.ts'
 import { closeSession, recoverSession } from './wiki/versions.ts'
 
@@ -47,6 +48,8 @@ export interface AppDeps {
   storage?: Storage
   /** Lo más que pesa un archivo (las pruebas lo bajan) */
   maxFileBytes?: number
+  /** El PDF de las hojas, con la dirección por dentro del servidor (sin él, «Descargar PDF» no está) */
+  pdf?: { renderer: PdfRenderer; internalUrl: string }
 }
 
 export function buildApp(deps: AppDeps): FastifyInstance {
@@ -92,13 +95,13 @@ export function buildApp(deps: AppDeps): FastifyInstance {
     app.register(fastifyRateLimit, { global: false })
     // Lo más que manda un cliente: un cambio de un documento (el canal en tiempo real corta antes: no escucha)
     app.register(fastifyWebsocket, { options: { maxPayload: MAX_MESSAGE_BYTES } })
-    registerOriginGuard(app, publicUrl)
+    registerOriginGuard(app, publicUrl, deps.pdf ? [deps.pdf.internalUrl] : [])
     registerAuthRoutes(app, auth)
     registerBootstrapRoutes(app, db, auth)
     registerActionRoutes(app, env, auth)
     // Dentro de register: así se añaden después de cargar los plugins que usan (límite de intentos, WebSocket)
     app.register(async (scope) => registerJoinRoutes(scope, env, auth))
-    app.register(async (scope) => registerWikiRoutes(scope, env, auth))
+    app.register(async (scope) => registerWikiRoutes(scope, env, auth, deps.pdf?.renderer))
     app.register(async (scope) =>
       registerFileRoutes(scope, env, auth, deps.maxFileBytes ? { maxBytes: deps.maxFileBytes } : {})
     )

@@ -14,7 +14,9 @@ const schema = z.object({
   // Carpeta de la web compilada; en desarrollo la sirve Vite
   WEB_DIR: z.string().optional(),
   // Donde se guardan los datos que no van en Postgres (los bytes de los archivos, en archivos/)
-  DATA_DIR: z.string().default('datos-locales')
+  DATA_DIR: z.string().default('datos-locales'),
+  // El Chromium del sistema para sacar los PDF de las hojas (en la imagen); sin él, el que instala Playwright
+  CHROMIUM_PATH: z.string().optional()
 })
 
 export type Config = z.infer<typeof schema>

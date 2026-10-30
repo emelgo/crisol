@@ -3,12 +3,17 @@ import { exportInput } from '@crisol/contracts'
 import { loadMemberships } from '@crisol/db'
 import { actorFrom, ForbiddenError, NotFoundError } from '@crisol/domain'
 import type { FastifyInstance } from 'fastify'
+import { z } from 'zod'
+import { authorizedPage } from '../actions/access.ts'
 import type { ActionEnv } from '../actions/context.ts'
 import type { Auth } from '../auth/auth.ts'
 import { toHeaders } from '../http.ts'
-import { exportZip } from './export.ts'
+import { exportZip, fileName } from './export.ts'
+import type { PdfRenderer } from './pdf.ts'
 
-export function registerWikiRoutes(app: FastifyInstance, env: ActionEnv, auth: Auth) {
+const pdfParams = z.object({ id: z.uuid() })
+
+export function registerWikiRoutes(app: FastifyInstance, env: ActionEnv, auth: Auth, pdf?: PdfRenderer) {
   // Exportar un mundo entero pesa: pocas veces seguidas
   app.post('/api/export', { config: { rateLimit: { max: 10, timeWindow: '1 minute' } } }, async (request, reply) => {
     const session = await auth.api.getSession({ headers: toHeaders(request.headers) })
@@ -37,4 +42,49 @@ export function registerWikiRoutes(app: FastifyInstance, env: ActionEnv, auth: A
       throw error
     }
   })
+
+  // El PDF de la hoja de una página: lo saca Chromium de la ruta de impresión. Pesa: pocas veces seguidas
+  app.get(
+    '/api/pages/:id/pdf',
+    { config: { rateLimit: { max: 10, timeWindow: '1 minute' } } },
+    async (request, reply) => {
+      const session = await auth.api.getSession({ headers: toHeaders(request.headers) })
+      if (!session) return reply.code(401).send({ code: 'UNAUTHENTICATED' })
+      const params = pdfParams.safeParse(request.params)
+      if (!params.success) return reply.code(404).send({ code: 'NOT_FOUND' })
+      const actor = actorFrom(session.user.id, await loadMemberships(env.db, session.user.id))
+      let found: Awaited<ReturnType<typeof authorizedPage>>
+      try {
+        found = await authorizedPage({ ...env, actor, via: 'ui' }, 'page.read', params.data.id)
+      } catch (error) {
+        if (error instanceof NotFoundError) return reply.code(404).send({ code: 'NOT_FOUND' })
+        if (error instanceof ForbiddenError) return reply.code(403).send({ code: 'FORBIDDEN' })
+        throw error
+      }
+      if (!pdf) return reply.code(503).send({ code: 'PDF_UNAVAILABLE' })
+      const secrets = (request.query as Record<string, unknown>).secretos === '1'
+      const path = `/mundos/${found.wiki.worldId}/imprimir/${found.page.id}${secrets ? '?secretos=1' : ''}`
+      let bytes: Buffer
+      try {
+        bytes = await pdf.render(path, request.headers.cookie ?? '')
+      } catch (error) {
+        request.log.error(error, 'No se pudo sacar el PDF')
+        return reply.code(503).send({ code: 'PDF_UNAVAILABLE' })
+      }
+      const name = fileName(found.page.title)
+      const ascii =
+        name
+          .normalize('NFD')
+          .replace(/[^\x20-\x7e]/g, '')
+          .replace(/"/g, '') || 'hoja'
+      return reply
+        .header('content-type', 'application/pdf')
+        .header(
+          'content-disposition',
+          `attachment; filename="${ascii}.pdf"; filename*=UTF-8''${encodeURIComponent(`${name}.pdf`)}`
+        )
+        .header('cache-control', 'no-store')
+        .send(bytes)
+    }
+  )
 }
