@@ -5,8 +5,13 @@
 import { type AnyExtension, type Extensions, getSchema, type Node } from '@tiptap/core'
 import { Heading } from '@tiptap/extension-heading'
 import { TaskItem, TaskList } from '@tiptap/extension-list'
+import { TableKit } from '@tiptap/extension-table'
 import { StarterKit } from '@tiptap/starter-kit'
-import { HiddenNote, Secret } from './separate.ts'
+import { BlockIds } from './ids.ts'
+import { isExternalUrl } from './links.ts'
+import { Box } from './nodes/box.ts'
+import { Callout } from './nodes/callout.ts'
+import { HiddenNote, Secret } from './nodes/separate.ts'
 
 /** El fragmento de Yjs que guarda el cuerpo de una página (el de siempre de la extensión de colaboración) */
 export const BODY_FIELD = 'default'
@@ -30,18 +35,25 @@ export interface EditorOptions {
   checkboxLabel?: (text: string, checked: boolean) => string
   /** El editor de dentro de un secreto o una nota oculta: no lleva otros dentro */
   nested?: boolean
-  /** Para darles su vista a los secretos y las notas ocultas (la web, con React) */
-  separate?: (node: Node) => AnyExtension
+  /** Para darles su vista a los bloques que la tienen: secretos, notas ocultas y recuadros (la web, con React) */
+  view?: (node: Node) => AnyExtension
 }
 
 export function editorExtensions(options: EditorOptions = {}): Extensions {
-  const { checkboxLabel, nested = false, separate = (node: Node) => node } = options
+  const { checkboxLabel, nested = false, view = (node: Node) => node } = options
   return [
     StarterKit.configure({
       heading: false,
-      // Deshacer es el de Yjs (por documento y solo lo propio); los enlaces a páginas llegan con la tarea 13
+      // Deshacer es el de Yjs (por documento y solo lo propio)
       undoRedo: false,
-      link: false
+      // Los enlaces externos; los de páginas llegan con la tarea 13
+      link: {
+        openOnClick: false,
+        autolink: true,
+        defaultProtocol: 'https',
+        isAllowedUri: (url) => isExternalUrl(url),
+        HTMLAttributes: { rel: 'noopener noreferrer nofollow', target: '_blank' }
+      }
     }),
     BodyHeading,
     TaskList,
@@ -49,7 +61,11 @@ export function editorExtensions(options: EditorOptions = {}): Extensions {
       nested: true,
       ...(checkboxLabel ? { a11y: { checkboxLabel: (node, checked) => checkboxLabel(node.textContent, checked) } } : {})
     }),
-    ...(nested ? [] : [separate(Secret), separate(HiddenNote)])
+    TableKit.configure({ table: { resizable: false } }),
+    view(Callout),
+    Box,
+    ...(nested ? [] : [view(Secret), view(HiddenNote)]),
+    BlockIds
   ]
 }
 
