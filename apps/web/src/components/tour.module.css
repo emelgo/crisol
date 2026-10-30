@@ -91,25 +91,16 @@
   cursor: pointer;
 }
 
-.skip {
+.skip,
+.back {
   border: 0;
   background: transparent;
   color: var(--color-muted);
 }
 
-.skip:hover {
-  color: var(--color-text);
-}
-
-/* Atrás: con borde, para que pese menos que Siguiente */
-.back {
-  border: 1px solid var(--color-frame);
-  background: transparent;
-  color: var(--color-text);
-}
-
+.skip:hover,
 .back:hover {
-  background: color-mix(in srgb, var(--color-text) 8%, transparent);
+  color: var(--color-text);
 }
 
 .next {
