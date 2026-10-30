@@ -21,7 +21,16 @@ const world: World = {
   role: 'master',
   version: 1
 }
-const campaign: Campaign = { id: crypto.randomUUID(), worldId: world.id, name: 'La Marca', role: 'master', version: 1 }
+const campaign: Campaign = {
+  id: crypto.randomUUID(),
+  worldId: world.id,
+  name: 'La Marca',
+  description: '',
+  color: null,
+  cover: null,
+  role: 'master',
+  version: 1
+}
 
 /** La API, con esa acción fallando (como un 500 o sin red) hasta que `recover` la arregle */
 function renderAt(path: string, broken: ActionName, error: unknown = new ApiError('UNKNOWN', 500)) {

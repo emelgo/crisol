@@ -23,7 +23,16 @@ const world = (name: string, role: World['role'] = 'master'): World => ({
 })
 const eana = world('Eana')
 const otro = world('Otro')
-const marca: Campaign = { id: crypto.randomUUID(), worldId: eana.id, name: 'La Marca', role: 'master', version: 1 }
+const marca: Campaign = {
+  id: crypto.randomUUID(),
+  worldId: eana.id,
+  name: 'La Marca',
+  description: '',
+  color: null,
+  cover: null,
+  role: 'master',
+  version: 1
+}
 const members: Member[] = [
   { userId: 'u1', name: 'Enrique', role: 'master' },
   { userId: 'u2', name: 'Ana', role: 'player' },

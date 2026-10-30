@@ -1,6 +1,18 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router'
-import { Bookmark, BookOpen, Folder, Globe, Hash, History, type LucideIcon, Search, Trash2 } from 'lucide-react'
+import {
+  Bookmark,
+  BookOpen,
+  Folder,
+  Globe,
+  Hash,
+  History,
+  House,
+  type LucideIcon,
+  Search,
+  Swords,
+  Trash2
+} from 'lucide-react'
 import { type CSSProperties, type MouseEvent, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
@@ -23,6 +35,19 @@ function useIsOwner() {
     enabled: Boolean(account)
   })
   return organizations.data?.organizations.some((o) => o.role === 'owner') ?? false
+}
+
+/** El mundo en el que se está, si lo dirige la cuenta (su historial, su papelera y su wiki son suyos) */
+export function useMasteredWorld() {
+  const api = useApi()
+  const { account } = useAccounts().useAccount()
+  const worldId = useRouterState({ select: (state) => /^\/mundos\/([^/]+)/.exec(state.location.pathname)?.[1] })
+  const worlds = useQuery({
+    queryKey: ['worlds'],
+    queryFn: () => api.call('listWorlds', {}),
+    enabled: Boolean(account && worldId)
+  })
+  return worlds.data?.worlds.find((w) => w.id === worldId && w.role === 'master')?.id
 }
 
 /** Lo que va dentro de cada botón: el icono y su nombre debajo, que se entienda sin pasar el ratón */
@@ -52,12 +77,15 @@ export function Ribbon() {
     queryFn: () => api.call('listWorlds', {}),
     enabled: Boolean(account && worldId)
   })
-  // La wiki es solo de quien administra el mundo (hasta el módulo 5)
-  const world = worlds.data?.worlds.find((w) => w.id === worldId && w.role === 'master')
+  const world = worlds.data?.worlds.find((w) => w.id === worldId)
+  // La wiki es solo de quien administra el mundo (hasta el módulo 5); dentro de él, su historial y su papelera
+  const master = world?.role === 'master'
   // Historial y Papelera se piden en cuanto el ratón (o el foco) llega a su botón: al abrirlos, ya están
   const queryClient = useQueryClient()
-  const prefetchHistory = () => void queryClient.prefetchInfiniteQuery({ ...historyQuery(api, {}), staleTime: 10_000 })
-  const prefetchTrash = () => void queryClient.prefetchQuery({ ...trashQuery(api, {}), staleTime: 10_000 })
+  const scope = master && world ? { worldId: world.id } : {}
+  const prefetchHistory = () =>
+    void queryClient.prefetchInfiniteQuery({ ...historyQuery(api, scope), staleTime: 10_000 })
+  const prefetchTrash = () => void queryClient.prefetchQuery({ ...trashQuery(api, scope), staleTime: 10_000 })
   // Al entrar en un mundo, «Mundos» sube a la llama y se funde con ella, que se aviva (el mundo se cocina en el crisol);
   // dentro, la llama es la vuelta. Al volver, «Mundos» sale de la llama, sin fuego
   const inWorld = Boolean(worldId)
@@ -78,14 +106,17 @@ export function Ribbon() {
     const timer = window.setTimeout(() => setFlame('still'), flame === 'fire' ? 3000 : 3400)
     return () => window.clearTimeout(timer)
   }, [flame])
-  // Los iconos del mundo (Páginas, Buscar… y los que vengan): al entrar, salen del crisol uno tras otro cuando «Mundos»
-  // ya se ha fundido; al volver, suben a él y se van antes de que salga «Mundos». Se quedan mientras se van
+  // Los iconos del mundo (Inicio, Campañas, Páginas… y los que vengan): al entrar, salen del crisol uno tras otro
+  // cuando «Mundos» ya se ha fundido; al volver, suben a él y se van antes de que salga «Mundos». Se quedan (todos)
+  // mientras se van
   const [panelsWorld, setPanelsWorld] = useState(world?.id ?? null)
+  const [panelsMaster, setPanelsMaster] = useState(master)
   const [panelsMotion, setPanelsMotion] = useState<'none' | 'enter' | 'leave'>('none')
   if (world && world.id !== panelsWorld) {
     setPanelsWorld(world.id)
     setPanelsMotion(justEntered || phase === 'merging' ? 'enter' : 'none')
   }
+  if (world && master !== panelsMaster) setPanelsMaster(master)
   if (!world && panelsWorld && panelsMotion !== 'leave') setPanelsMotion('leave')
   const panelsBox = useRef<HTMLDivElement>(null)
   useEffect(() => {
@@ -112,6 +143,7 @@ export function Ribbon() {
             .filter(Boolean)
             .join(' ')}
           {...(inWorld ? { viewTransition: LEAVE_WORLD } : {})}
+          data-tour="barra-llama"
           aria-label={t('app.name')}
           translate="no"
         >
@@ -153,8 +185,9 @@ export function Ribbon() {
               .filter(Boolean)
               .join(' ')}
             inert={panelsMotion === 'leave'}
+            data-tour="barra-mundo"
           >
-            <WorldPanels worldId={panelsWorld} />
+            <WorldPanels worldId={panelsWorld} master={panelsMaster} />
           </div>
         )}
       </nav>
@@ -195,8 +228,33 @@ export function Ribbon() {
   )
 }
 
-/** Los paneles de un mundo. Fuera de la wiki, abrir uno lleva a ella con ese panel abierto */
-function WorldPanels({ worldId }: { worldId: string }) {
+/**
+ * Lo de un mundo: su Inicio, sus campañas y, para quien lo dirige, los paneles de su wiki. Fuera de la wiki, abrir uno
+ * lleva a ella con ese panel abierto
+ */
+function WorldPanels({ worldId, master }: { worldId: string; master: boolean }) {
+  const { t } = useTranslation()
+  return (
+    <>
+      <Link
+        to="/mundos/$worldId"
+        params={{ worldId }}
+        activeOptions={{ exact: true }}
+        className={styles.item}
+        viewTransition={SECTION}
+      >
+        <Label icon={House} text={t('ribbon.home')} />
+      </Link>
+      <Link to="/mundos/$worldId/campanas" params={{ worldId }} className={styles.item} viewTransition={SECTION}>
+        <Label icon={Swords} text={t('ribbon.campaigns')} />
+      </Link>
+      {master && <WikiPanels worldId={worldId} />}
+    </>
+  )
+}
+
+/** Los paneles de la wiki de un mundo */
+function WikiPanels({ worldId }: { worldId: string }) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const wikiPanel = useWikiPanel()

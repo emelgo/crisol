@@ -415,6 +415,133 @@
   color: var(--color-text);
 }
 
+/* La cabecera de un mundo (su Inicio): su tarjeta en grande, con el mismo contorno teñido; la portada, más alta */
+.hero {
+  composes: frame from "../components/frame.module.css";
+  display: flex;
+  flex-direction: column;
+  margin-block-end: var(--space-8);
+  background: color-mix(in srgb, var(--world-color, var(--color-frame)) 55%, var(--color-frame));
+}
+
+.hero .header {
+  margin: 1px 1px 0;
+}
+
+.hero .frame {
+  block-size: clamp(8rem, 26vw, 13rem);
+  clip-path: polygon(11px 0, calc(100% - 11px) 0, 100% 11px, 100% 100%, 0 100%, 0 11px);
+}
+
+/* El nombre y la descripción a la izquierda; el papel y el engranaje, abajo a la derecha */
+.heroBody {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-6);
+  padding: var(--space-4) var(--space-6) var(--space-4);
+}
+
+.heroText {
+  flex: 1 1 20rem;
+  min-inline-size: 0;
+}
+
+.heroText h1 {
+  margin: 0;
+  overflow-wrap: break-word;
+}
+
+.heroText .description {
+  margin-block-start: var(--space-1);
+  font-size: 1rem;
+}
+
+.heroBody .footer {
+  gap: var(--space-3);
+  margin: 0 0 0 auto;
+}
+
+/* Una sección de la página (Lo último de la wiki, Tus campañas) */
+.section h2 {
+  margin-block-end: var(--space-4);
+}
+
+/* Lo último de la wiki: una lista, cada página con su miniatura, su título, las de encima y cuándo cambió */
+.recent {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.recentLink {
+  display: grid;
+  grid-template-columns: 3rem 1fr auto;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2);
+  border-radius: 4px;
+  color: var(--color-text);
+  text-decoration: none;
+  transition: background-color 150ms ease-out;
+}
+
+.recentLink:hover {
+  background: var(--color-raised);
+}
+
+/* La miniatura: su portada o, sin ella, su icono (o uno de página) */
+.thumb {
+  display: grid;
+  place-items: center;
+  inline-size: 3rem;
+  block-size: 2.25rem;
+  overflow: hidden;
+  border-radius: 3px;
+  background: var(--color-raised);
+  color: var(--color-muted);
+  font-size: 1.125rem;
+}
+
+.thumb img {
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+}
+
+.recentText {
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 0;
+}
+
+.recentTitle {
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recentLink:hover .recentTitle {
+  color: var(--color-link, var(--color-accent-text));
+}
+
+.recentPath,
+.recentWhen {
+  overflow: hidden;
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.muted {
+  color: var(--color-muted);
+}
+
 /* La ventana del mundo: la portada arriba, de lado a lado, y debajo lo demás */
 .dialog {
   inline-size: min(38rem, calc(100vw - 2rem));

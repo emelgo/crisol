@@ -27,8 +27,17 @@ export function OrganizationHistory() {
 
 /** El historial de un mundo (para su máster) */
 export function WorldHistory() {
-  const { t } = useTranslation()
   const { worldId } = worldRoute.useParams()
+  return <WorldHistoryOf worldId={worldId} back />
+}
+
+/** El de un mundo en la ventana de la barra (dentro de él): sin enlace de vuelta */
+export function WorldHistoryWindow({ worldId }: { worldId: string }) {
+  return <WorldHistoryOf worldId={worldId} />
+}
+
+function WorldHistoryOf({ worldId, back = false }: { worldId: string; back?: boolean }) {
+  const { t } = useTranslation()
   const api = useApi()
   const worlds = useQuery({ queryKey: ['worlds'], queryFn: () => api.call('listWorlds', {}) })
   const world = worlds.data?.worlds.find((w) => w.id === worldId)
@@ -36,9 +45,11 @@ export function WorldHistory() {
     <HistoryPage
       title={world ? t('history.worldTitle', { world: world.name }) : t('history.title')}
       back={
-        <Link to="/mundos/$worldId" params={{ worldId }}>
-          {world?.name ?? t('worlds.title')}
-        </Link>
+        back && (
+          <Link to="/mundos/$worldId" params={{ worldId }}>
+            {world?.name ?? t('worlds.title')}
+          </Link>
+        )
       }
       scope={{ worldId }}
     />

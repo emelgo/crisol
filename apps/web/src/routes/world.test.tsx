@@ -57,7 +57,16 @@ describe('un mundo y sus campañas', () => {
   it('un jugador ve sus campañas pero no puede crear ni renombrar', async () => {
     const w = world('player')
     const api = fakeApi({ organizations: [{ ...ORG, role: 'member' }], worlds: [w] })
-    api.campaigns.push({ id: crypto.randomUUID(), worldId: w.id, name: 'La Marca', role: 'player', version: 1 })
+    api.campaigns.push({
+      id: crypto.randomUUID(),
+      worldId: w.id,
+      name: 'La Marca',
+      description: '',
+      color: null,
+      cover: null,
+      role: 'player',
+      version: 1
+    })
     renderAt(`/mundos/${w.id}`, api)
     const list = await screen.findByRole('list', { name: 'Campañas' })
     expect(within(list).getByText('Jugador')).toBeDefined()
@@ -71,6 +80,9 @@ describe('un mundo y sus campañas', () => {
       id: crypto.randomUUID(),
       worldId: w.id,
       name,
+      description: '',
+      color: null,
+      cover: null,
       role: 'master' as const,
       version: 1
     }))

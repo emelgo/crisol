@@ -24,8 +24,17 @@ export function OrganizationTrash() {
 
 /** La papelera de un mundo (para su máster): sus campañas */
 export function WorldTrash() {
-  const { t } = useTranslation()
   const { worldId } = worldRoute.useParams()
+  return <WorldTrashOf worldId={worldId} back />
+}
+
+/** El de un mundo en la ventana de la barra (dentro de él): sin enlace de vuelta */
+export function WorldTrashWindow({ worldId }: { worldId: string }) {
+  return <WorldTrashOf worldId={worldId} />
+}
+
+function WorldTrashOf({ worldId, back = false }: { worldId: string; back?: boolean }) {
+  const { t } = useTranslation()
   const api = useApi()
   const worlds = useQuery({ queryKey: ['worlds'], queryFn: () => api.call('listWorlds', {}) })
   const world = worlds.data?.worlds.find((w) => w.id === worldId)
@@ -33,9 +42,11 @@ export function WorldTrash() {
     <TrashPage
       title={world ? t('trash.worldTitle', { world: world.name }) : t('trash.title')}
       back={
-        <Link to="/mundos/$worldId" params={{ worldId }}>
-          {world?.name ?? t('worlds.title')}
-        </Link>
+        back && (
+          <Link to="/mundos/$worldId" params={{ worldId }}>
+            {world?.name ?? t('worlds.title')}
+          </Link>
+        )
       }
       scope={{ worldId }}
     />

@@ -7,15 +7,15 @@ import { ApprovalQueue } from '../components/approval-queue.tsx'
 import { CrisolMark, Loading } from '../components/brand.tsx'
 import { Notices } from '../components/notices.tsx'
 import { PageTitle, useFocusHeading } from '../components/page-title.tsx'
-import { Ribbon } from '../components/ribbon.tsx'
+import { Ribbon, useMasteredWorld } from '../components/ribbon.tsx'
 import { ThemeToggle } from '../components/theme-toggle.tsx'
 import { type WindowKind, WindowProvider } from '../components/window.tsx'
 import { WikiPanelProvider } from '../wiki/panel.tsx'
-import { OrganizationHistory } from './history.tsx'
+import { OrganizationHistory, WorldHistoryWindow } from './history.tsx'
 import { Profile } from './profile.tsx'
 import styles from './root.module.css'
 import { Settings } from './settings.tsx'
-import { OrganizationTrash } from './trash.tsx'
+import { OrganizationTrash, WorldTrashWindow } from './trash.tsx'
 
 export function RootLayout() {
   const { t } = useTranslation()
@@ -73,7 +73,7 @@ export function RootLayout() {
   }
   // Con sesión: el armazón del Crisol antiguo, con la barra de la izquierda
   return (
-    <WindowProvider render={windowContent}>
+    <WindowProvider render={(kind) => <WindowContent kind={kind} />}>
       <WikiPanelProvider>
         <div className={styles.app}>
           {skip}
@@ -89,10 +89,14 @@ export function RootLayout() {
   )
 }
 
-/** Lo que se abre encima de la pantalla: las mismas páginas que tienen su dirección */
-function windowContent(kind: WindowKind) {
-  if (kind === 'historial') return <OrganizationHistory />
-  if (kind === 'papelera') return <OrganizationTrash />
+/**
+ * Lo que se abre encima de la pantalla: las mismas páginas que tienen su dirección. Dentro de un mundo que se dirige,
+ * su historial y su papelera; fuera, los de toda la cuenta
+ */
+function WindowContent({ kind }: { kind: WindowKind }) {
+  const worldId = useMasteredWorld()
+  if (kind === 'historial') return worldId ? <WorldHistoryWindow worldId={worldId} /> : <OrganizationHistory />
+  if (kind === 'papelera') return worldId ? <WorldTrashWindow worldId={worldId} /> : <OrganizationTrash />
   if (kind === 'ajustes') return <Settings />
   return <Profile />
 }

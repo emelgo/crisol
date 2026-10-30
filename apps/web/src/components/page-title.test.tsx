@@ -21,7 +21,16 @@ const world: World = {
   role: 'master',
   version: 1
 }
-const campaign: Campaign = { id: crypto.randomUUID(), worldId: world.id, name: 'La Marca', role: 'master', version: 1 }
+const campaign: Campaign = {
+  id: crypto.randomUUID(),
+  worldId: world.id,
+  name: 'La Marca',
+  description: '',
+  color: null,
+  cover: null,
+  role: 'master',
+  version: 1
+}
 
 const renderAt = (path: string) => {
   const router = createAppRouter(createMemoryHistory({ initialEntries: [path] }))

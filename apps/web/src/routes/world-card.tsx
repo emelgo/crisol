@@ -17,39 +17,104 @@ import { Field, FormError } from '../components/field.tsx'
 import { focusAfterRemoving } from '../components/focus.ts'
 import form from '../components/form.module.css'
 import { Modal } from '../components/modal.tsx'
+import { PageTitle } from '../components/page-title.tsx'
 import { ENTER_WORLD, enterWorld, worldTransition } from '../components/world-transition.ts'
 import { coverStyle, useWorldFiles } from '../wiki/cover.tsx'
 import styles from './world-card.module.css'
 import { CoverDialog, CoverViewer, type LocalImage } from './world-cover.tsx'
 import { colorHex, PRESET_COLORS, rememberColor, rememberedColors } from './world-look.ts'
 
-/** El color del mundo (--world-color): tiñe, sutil, el contorno de su tarjeta y el hueco de la portada si no hay imagen */
+/** Lo que se ve de un mundo o de una campaña: en su tarjeta, en su ventana y en su cabecera */
+export interface Look {
+  id: string
+  name: string
+  description: string
+  color: World['color']
+  cover: Cover | null
+  role: 'master' | 'player'
+}
+
+type LookPatch = Partial<Pick<Look, 'name' | 'description' | 'color' | 'cover'>>
+
+/**
+ * Lo que cambia entre mundos y campañas: sus textos (worlds.* o campaigns.*), su lista de tarjetas, de qué mundo son las
+ * imágenes de su portada y cómo se crean, se cambian y se borran
+ */
+export interface LookKind {
+  texts: 'worlds' | 'campaigns'
+  /** Su lista (la de card-transition) y la consulta que la pone al día */
+  list: string
+  queryKey: readonly unknown[]
+  /** El mundo de las imágenes de su portada; sin él (al crear un mundo, aún sin archivos), solo las comunes */
+  worldOf: (look?: Look) => string | undefined
+  /** Crea uno con ese nombre: su id y el mundo al que subir su portada */
+  create: (name: string) => Promise<{ id: string; worldId: string }>
+  update: (id: string, patch: LookPatch) => Promise<unknown>
+  remove: (id: string) => Promise<unknown>
+}
+
+export function useWorldKind(): LookKind {
+  const api = useApi()
+  return {
+    texts: 'worlds',
+    list: 'mundos',
+    queryKey: ['worlds'],
+    worldOf: (look) => look?.id,
+    create: (name) => api.call('createWorld', { name }).then((world) => ({ id: world.id, worldId: world.id })),
+    update: (worldId, patch) => api.call('updateWorld', { worldId, ...patch }),
+    remove: (worldId) => api.call('deleteWorld', { worldId })
+  }
+}
+
+export function useCampaignKind(worldId: string): LookKind {
+  const api = useApi()
+  return {
+    texts: 'campaigns',
+    list: `campanas-${worldId}`,
+    queryKey: ['campaigns', worldId],
+    worldOf: () => worldId,
+    create: (name) => api.call('createCampaign', { worldId, name }).then((campaign) => ({ id: campaign.id, worldId })),
+    update: (campaignId, patch) => api.call('updateCampaign', { campaignId, ...patch }),
+    remove: (campaignId) => api.call('deleteCampaign', { campaignId })
+  }
+}
+
+/** Su color (--world-color): tiñe, sutil, el contorno de su tarjeta y el hueco de la portada si no hay imagen */
 const tint = (color: World['color']): CSSProperties | undefined => {
   const hex = colorHex(color)
   return hex ? ({ '--world-color': hex } as CSSProperties) : undefined
 }
 
+/** La imagen de su portada, si quien mira puede ver las imágenes de su mundo (quien lo dirige); si no, su color */
+function useCoverImage(kind: LookKind, look: Look) {
+  const files = useWorldFiles(kind.worldOf(look) ?? '', look.role === 'master' && look.cover !== null)
+  return look.cover ? files.data?.files.find((f) => f.id === look.cover?.fileId) : undefined
+}
+
 /**
- * La tarjeta de un mundo: la portada, el nombre, la descripción y, abajo, el papel y el engranaje de quien lo dirige.
- * Toda la tarjeta lleva al mundo (el enlace del nombre la cubre), salvo sus botones. fresh: recién creado, se forja
- * (sale del crisol al rojo y se enfría); burning: ya borrado, arde hasta consumirse y entonces onBurnt
+ * La tarjeta de un mundo o de una campaña: la portada, el nombre (name: su enlace, que cubre toda la tarjeta salvo sus
+ * botones), la descripción y, abajo, el papel y el engranaje de quien lo dirige. fresh: recién creado, se forja (sale
+ * del crisol al rojo y se enfría); burning: ya borrado, arde hasta consumirse y entonces onBurnt
  */
-export function WorldCard({
-  world,
+function LookCard({
+  kind,
+  look,
+  name,
+  style,
   fresh = false,
   burning = false,
   onBurnt
 }: {
-  world: World
+  kind: LookKind
+  look: Look
+  name: ReactNode
+  style?: CSSProperties | undefined
   fresh?: boolean
   burning?: boolean
   onBurnt?: () => void
 }) {
   const { t } = useTranslation()
-  const master = world.role === 'master'
-  // Las imágenes del mundo solo las lista quien lo administra; quien juega ve el color
-  const files = useWorldFiles(world.id, master && world.cover !== null)
-  const image = world.cover ? files.data?.files.find((f) => f.id === world.cover?.fileId) : undefined
+  const image = useCoverImage(kind, look)
   const [viewing, setViewing] = useState(false)
   // Recién creada, entra animada hasta acabar (aunque la página se vuelva a pintar mientras)
   const [entering, setEntering] = useState(fresh)
@@ -76,12 +141,12 @@ export function WorldCard({
         if (event.animationName.includes('enfria')) setEntering(false)
         if (event.animationName.includes('arde')) burnt.current?.()
       }}
-      style={{ ...tint(world.color), ...worldTransition(world.id) }}
-      data-world={world.id}
+      style={{ ...tint(look.color), ...style }}
+      data-card={look.id}
     >
       <CoverHeader
         url={image?.url}
-        cover={world.cover}
+        cover={look.cover}
         actions={
           image && (
             <button type="button" aria-haspopup="dialog" onClick={() => setViewing(true)}>
@@ -92,9 +157,42 @@ export function WorldCard({
         }
       />
       {viewing && image && (
-        <CoverViewer url={image.url} label={t('cover.of', { name: world.name })} onClose={() => setViewing(false)} />
+        <CoverViewer url={image.url} label={t('cover.of', { name: look.name })} onClose={() => setViewing(false)} />
       )}
       <div className={styles.body}>
+        {name}
+        {look.description && <p className={styles.description}>{look.description}</p>}
+        <div className={styles.footer}>
+          <span className={styles.role}>{t(`roles.${look.role}`)}</span>
+          {look.role === 'master' && <LookSettings kind={kind} look={look} />}
+        </div>
+      </div>
+    </li>
+  )
+}
+
+/** La tarjeta de un mundo: lleva a él, y al entrar se convierte en su cabecera */
+export function WorldCard({
+  world,
+  fresh,
+  burning,
+  onBurnt
+}: {
+  world: World
+  fresh?: boolean
+  burning?: boolean
+  onBurnt?: () => void
+}) {
+  const kind = useWorldKind()
+  return (
+    <LookCard
+      kind={kind}
+      look={world}
+      style={worldTransition(world.id)}
+      fresh={fresh}
+      burning={burning}
+      {...(onBurnt ? { onBurnt } : {})}
+      name={
         <Link
           to="/mundos/$worldId"
           params={{ worldId: world.id }}
@@ -104,33 +202,116 @@ export function WorldCard({
         >
           {world.name}
         </Link>
-        {world.description && <p className={styles.description}>{world.description}</p>}
-        <div className={styles.footer}>
-          <span className={styles.role}>{t(`roles.${world.role}`)}</span>
-          {master && <WorldSettings world={world} />}
-        </div>
-      </div>
-    </li>
+      }
+    />
+  )
+}
+
+/** La tarjeta de una campaña: lleva a ella */
+export function CampaignCard({
+  worldId,
+  campaign,
+  fresh,
+  burning,
+  onBurnt
+}: {
+  worldId: string
+  campaign: Look
+  fresh?: boolean
+  burning?: boolean
+  onBurnt?: () => void
+}) {
+  const kind = useCampaignKind(worldId)
+  return (
+    <LookCard
+      kind={kind}
+      look={campaign}
+      fresh={fresh}
+      burning={burning}
+      {...(onBurnt ? { onBurnt } : {})}
+      name={
+        <Link
+          to="/mundos/$worldId/campanas/$campaignId"
+          params={{ worldId, campaignId: campaign.id }}
+          className={styles.name}
+        >
+          {campaign.name}
+        </Link>
+      }
+    />
   )
 }
 
 /**
- * La portada: la imagen o, sin ella, un hueco con un tinte oscuro del color del mundo. Al pasar el ratón se acerca un
- * poco y salen sus acciones (Ver, Cambiar). large: la de la ventana del mundo
+ * La cabecera de un mundo (la de su Inicio): como su tarjeta, en grande. Al entrar, la tarjeta se convierte en ella.
+ * afterDelete: si se borra desde aquí, adónde se va
+ */
+export function LookHeader({
+  kind,
+  look,
+  style,
+  afterDelete
+}: {
+  kind: LookKind
+  look: Look
+  style?: CSSProperties | undefined
+  afterDelete: () => void
+}) {
+  const { t } = useTranslation()
+  const image = useCoverImage(kind, look)
+  const [viewing, setViewing] = useState(false)
+  return (
+    <header className={styles.hero} style={{ ...tint(look.color), ...style }}>
+      <CoverHeader
+        url={image?.url}
+        cover={look.cover}
+        hero
+        actions={
+          image && (
+            <button type="button" aria-haspopup="dialog" onClick={() => setViewing(true)}>
+              <Maximize2 aria-hidden="true" size={14} />
+              {t('cover.view')}
+            </button>
+          )
+        }
+      />
+      {viewing && image && (
+        <CoverViewer url={image.url} label={t('cover.of', { name: look.name })} onClose={() => setViewing(false)} />
+      )}
+      <div className={styles.heroBody}>
+        <div className={styles.heroText}>
+          <PageTitle>{look.name}</PageTitle>
+          {look.description && <p className={styles.description}>{look.description}</p>}
+        </div>
+        <div className={styles.footer}>
+          <span className={styles.role}>{t(`roles.${look.role}`)}</span>
+          {look.role === 'master' && <LookSettings kind={kind} look={look} afterDelete={afterDelete} />}
+        </div>
+      </div>
+    </header>
+  )
+}
+
+/**
+ * La portada: la imagen o, sin ella, un hueco con un tinte oscuro de su color. Al pasar el ratón se acerca un poco y
+ * salen sus acciones (Ver, Cambiar). large: la de su ventana; hero: la de la cabecera
  */
 function CoverHeader({
   url,
   cover,
   large = false,
+  hero = false,
   actions
 }: {
   url: string | undefined
   cover: Cover | null
   large?: boolean
+  hero?: boolean
   actions?: ReactNode
 }) {
+  const classes = [styles.header, large ? styles.large : '', hero ? styles.heroCover : ''].filter(Boolean)
   return (
-    <div className={large ? `${styles.header} ${styles.large}` : styles.header}>
+    <div className={classes.join(' ')}>
       <div className={styles.frame}>
         <div className={styles.picture}>
           {url && cover && <img src={url} alt="" className={styles.image} style={coverStyle(cover)} />}
@@ -142,10 +323,10 @@ function CoverHeader({
 }
 
 /**
- * «Nuevo mundo»: un recuadro como el de un mundo, con el borde discontinuo y vacío, tras el último. big: el botón
- * grande de cuando aún no hay ninguno
+ * «Nuevo …»: un recuadro como el de una tarjeta, con el borde discontinuo y vacío, tras la última. big: el botón grande
+ * de cuando aún no hay ninguna
  */
-export function NewWorld({ big = false }: { big?: boolean }) {
+export function NewLook({ kind, big = false, tour }: { kind: LookKind; big?: boolean; tour?: string }) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const trigger = useRef<HTMLButtonElement>(null)
@@ -155,20 +336,21 @@ export function NewWorld({ big = false }: { big?: boolean }) {
       ref={trigger}
       type="button"
       className={big ? `${form.button} ${styles.big}` : styles.newCard}
-      data-tour="nuevo-mundo"
+      data-tour={tour}
       aria-haspopup="dialog"
       onClick={() => setOpen(true)}
     >
       <Plus aria-hidden="true" size={big ? 18 : 28} strokeWidth={big ? 2 : 1.5} />
-      {t(big ? 'worlds.createFirst' : 'worlds.newTitle')}
+      {t(big ? `${kind.texts}.createFirst` : `${kind.texts}.newTitle`)}
     </button>
   )
   const dialog = open && (
-    <WorldDialog
+    <LookDialog
+      kind={kind}
       onClose={(created) => {
         setOpen(false)
         // Creado, el cuadro ya se ha ido: ahora la lista, con la tarjeta nueva entrando
-        if (created) void queryClient.invalidateQueries({ queryKey: ['worlds'] })
+        if (created) void queryClient.invalidateQueries({ queryKey: kind.queryKey })
         else trigger.current?.focus()
       }}
     />
@@ -189,8 +371,13 @@ export function NewWorld({ big = false }: { big?: boolean }) {
   )
 }
 
-/** El engranaje de la tarjeta (para quien dirige el mundo): abre su ventana */
-function WorldSettings({ world }: { world: World }) {
+/** «Nuevo mundo», tras el último (big: el botón grande de cuando aún no hay ninguno) */
+export function NewWorld({ big = false }: { big?: boolean }) {
+  return <NewLook kind={useWorldKind()} big={big} tour="nuevo-mundo" />
+}
+
+/** El engranaje (para quien lo dirige): abre su ventana */
+function LookSettings({ kind, look, afterDelete }: { kind: LookKind; look: Look; afterDelete?: () => void }) {
   const { t } = useTranslation()
   const trigger = useRef<HTMLButtonElement>(null)
   const [open, setOpen] = useState(false)
@@ -200,16 +387,19 @@ function WorldSettings({ world }: { world: World }) {
         ref={trigger}
         type="button"
         className={styles.gear}
-        aria-label={t('worlds.settingsOf', { name: world.name })}
-        title={t('worlds.settingsOf', { name: world.name })}
+        aria-label={t(`${kind.texts}.settingsOf`, { name: look.name })}
+        title={t(`${kind.texts}.settingsOf`, { name: look.name })}
         aria-haspopup="dialog"
+        data-tour="engranaje"
         onClick={() => setOpen(true)}
       >
         <Settings aria-hidden="true" size={18} />
       </button>
       {open && (
-        <WorldDialog
-          world={world}
+        <LookDialog
+          kind={kind}
+          look={look}
+          {...(afterDelete ? { afterDelete } : {})}
           onClose={(deleted) => {
             setOpen(false)
             if (!deleted) trigger.current?.focus()
@@ -234,19 +424,30 @@ interface Draft {
   color: World['color']
 }
 
-const draftOf = (world?: World): Draft => ({
-  name: world?.name ?? '',
-  description: world?.description ?? '',
-  color: world?.color ?? null
+const draftOf = (look?: Look): Draft => ({
+  name: look?.name ?? '',
+  description: look?.description ?? '',
+  color: look?.color ?? null
 })
 
 /**
- * La ventana de un mundo, la misma para crearlo y para ajustarlo: la portada arriba (con lo que se va eligiendo), el
- * nombre, la descripción y el color. Al ajustarlo, «Cancelar» (deshace) y «Guardar» solo salen con cambios,
- * la portada se guarda en su cuadro y al final va la zona de peligro. Al crearlo, la portada elegida se sube al crear.
- * onClose(gone): gone, si se ha creado o borrado (el botón que la abrió ya no tiene el foco que devolver)
+ * La ventana de un mundo o de una campaña, la misma para crearlo y para ajustarlo: la portada arriba (con lo que se va
+ * eligiendo), el nombre, la descripción y el color. Al ajustarlo, «Cancelar» (deshace) y «Guardar» solo salen con
+ * cambios, la portada se guarda en su cuadro y al final va la zona de peligro. Al crear un mundo, la portada elegida se
+ * sube al crearlo. onClose(gone): gone, si se ha creado o borrado (el botón que la abrió ya no tiene el foco que
+ * devolver). afterDelete: borrado desde fuera de su lista (su cabecera), en vez de arder en ella
  */
-function WorldDialog({ world, onClose }: { world?: World; onClose: (gone: boolean) => void }) {
+function LookDialog({
+  kind,
+  look,
+  afterDelete,
+  onClose
+}: {
+  kind: LookKind
+  look?: Look
+  afterDelete?: () => void
+  onClose: (gone: boolean) => void
+}) {
   const { t } = useTranslation()
   const api = useApi()
   const queryClient = useQueryClient()
@@ -254,16 +455,16 @@ function WorldDialog({ world, onClose }: { world?: World; onClose: (gone: boolea
   const { account } = useAccounts().useAccount()
   const dialog = useRef<HTMLDialogElement>(null)
   const titleId = useId()
-  const [draft, setDraft] = useState(() => draftOf(world))
+  const [draft, setDraft] = useState(() => draftOf(look))
   const set = (patch: Partial<Draft>) => setDraft((current) => ({ ...current, ...patch }))
-  const refresh = () => queryClient.invalidateQueries({ queryKey: ['worlds'] })
+  const refresh = () => queryClient.invalidateQueries({ queryKey: kind.queryKey })
   const gone = useRef(false)
+  const texts = kind.texts
 
-  // La portada: al ajustar, la del mundo (se guarda en su cuadro); al crear, la elegida y su imagen, aún sin subir
-  const files = useWorldFiles(world?.id ?? '', Boolean(world?.cover))
-  const worldImage = world?.cover ? files.data?.files.find((f) => f.id === world.cover?.fileId) : undefined
-  // Al crear: la elegida (una común, o una propia aún sin subir, con su imagen)
+  // La portada: al ajustar, la suya (se guarda en su cuadro); al crear, la elegida y, si es propia, su imagen sin subir
+  const filesWorld = kind.worldOf(look)
   const [newCover, setNewCover] = useState<{ cover: Cover; local: LocalImage | null } | null>(null)
+  const files = useWorldFiles(filesWorld ?? '', Boolean(filesWorld) && Boolean(look?.cover || newCover))
   // La imagen sin subir se suelta cuando deja de usarse (otra o ninguna) y al cerrar
   const shownUrl = useRef<string | null>(null)
   useEffect(() => {
@@ -277,80 +478,84 @@ function WorldDialog({ world, onClose }: { world?: World; onClose: (gone: boolea
     },
     []
   )
+  // Al crear un mundo, que aún no tiene archivos, se elige entre los comunes
   const common = useQuery({
     queryKey: ['commonFiles'],
     queryFn: () => api.call('listCommonFiles', {}),
-    enabled: !world && Boolean(newCover && !newCover.local)
+    enabled: !filesWorld && Boolean(newCover && !newCover.local)
   })
-  const cover = world ? world.cover : (newCover?.cover ?? null)
-  const coverUrl = world
-    ? worldImage?.url
-    : (newCover?.local?.url ?? common.data?.files.find((f) => f.id === newCover?.cover.fileId)?.url)
+  const cover = look ? look.cover : (newCover?.cover ?? null)
+  const pool = filesWorld ? files.data?.files : common.data?.files
+  const coverUrl = newCover?.local?.url ?? pool?.find((f) => f.id === cover?.fileId)?.url
   const [viewing, setViewing] = useState(false)
   const [changingCover, setChangingCover] = useState(false)
 
-  const changed = world
-    ? draft.name.trim() !== world.name || draft.description.trim() !== world.description || draft.color !== world.color
+  const changed = look
+    ? draft.name.trim() !== look.name || draft.description.trim() !== look.description || draft.color !== look.color
     : true
+  const createdId = useRef<string | null>(null)
   const save = useMutation({
     mutationFn: async () => {
       const name = draft.name.trim()
-      const look = { description: draft.description.trim(), color: draft.color }
-      if (world) {
-        if (name !== world.name) await api.call('renameWorld', { worldId: world.id, name })
-        await api.call('updateWorld', { worldId: world.id, ...look })
+      const appearance = { description: draft.description.trim(), color: draft.color }
+      if (look) {
+        await kind.update(look.id, { ...(name !== look.name ? { name } : {}), ...appearance })
       } else {
-        const created = await api.call('createWorld', { name })
+        const created = await kind.create(name)
         // No sale en la lista hasta que su transición la enseña, saliendo de esta ventana
         holdCard(created.id)
         createdId.current = created.id
         let chosen: Cover | null = null
-        // Una común se usa tal cual; una propia se sube ahora, al mundo nuevo
+        // Una ya subida se usa tal cual; una propia sin subir, se sube ahora a su mundo
         if (newCover?.local) {
           const stored = await api.uploadFile(
-            { worldId: created.id, name: newCover.local.file.name },
+            { worldId: created.worldId, name: newCover.local.file.name },
             newCover.local.file
           )
           chosen = { ...newCover.cover, fileId: stored.id }
         } else if (newCover) chosen = newCover.cover
-        if (look.description || look.color || chosen) {
-          await api.call('updateWorld', { worldId: created.id, ...look, ...(chosen ? { cover: chosen } : {}) })
+        if (appearance.description || appearance.color || chosen) {
+          await kind.update(created.id, { ...appearance, ...(chosen ? { cover: chosen } : {}) })
         }
-        // La tarjeta sale ya con su portada: sus archivos pedidos y la imagen descargada antes de enseñarla
+        // La tarjeta sale ya con su portada: los archivos de su mundo pedidos y la imagen descargada antes de enseñarla
         if (chosen) {
           await queryClient.prefetchQuery({
-            queryKey: ['files', created.id],
-            queryFn: () => api.call('listFiles', { worldId: created.id })
+            queryKey: ['files', created.worldId],
+            queryFn: () => api.call('listFiles', { worldId: created.worldId })
           })
           await preload(`/api/files/${chosen.fileId}`)
         }
       }
       if (account) rememberColor(account.email, draft.color)
-      if (world) await refresh()
+      if (look) await refresh()
     },
     onSuccess: async () => {
-      if (world || !createdId.current) return
+      if (look || !createdId.current) return
       // Creado: esta ventana se encoge en su tarjeta nueva, al rojo
       gone.current = true
       await revealCard(createdId.current, dialog.current, refresh)
     }
   })
-  const createdId = useRef<string | null>(null)
-  // Borrado, la tarjeta desaparece: el foco, a la siguiente (o al título)
+  // Borrado, su tarjeta arde y desaparece: el foco, a la siguiente (o al título). Desde su cabecera, a afterDelete
   const remove = async () => {
-    if (!world) return
-    await api.call('deleteWorld', { worldId: world.id })
-    // Se mantiene en su sitio hasta que arde, aunque la lista se ponga al día antes
-    const card = document.querySelector(`[data-world="${world.id}"]`)
-    keepCard(world, card?.parentElement ? [...card.parentElement.children].indexOf(card) : 0)
-    const after = focusAfterRemoving(card)
+    if (!look) return
+    await kind.remove(look.id)
     gone.current = true
+    if (afterDelete) {
+      closeAtOnce(dialog.current)
+      afterDelete()
+      return
+    }
+    // Se mantiene en su sitio hasta que arde, aunque la lista se ponga al día antes
+    const card = document.querySelector(`[data-card="${look.id}"]`)
+    keepCard(kind.list, look, card?.parentElement ? [...card.parentElement.children].indexOf(card) : 0)
+    const after = focusAfterRemoving(card)
     closeAtOnce(dialog.current)
-    await burnCard(world.id, refresh)
+    await burnCard(look.id, refresh)
     after()
   }
 
-  const title = world ? t('worlds.settingsOf', { name: world.name }) : t('worlds.newTitle')
+  const title = look ? t(`${texts}.settingsOf`, { name: look.name }) : t(`${texts}.newTitle`)
   return (
     <Modal
       ref={dialog}
@@ -383,16 +588,16 @@ function WorldDialog({ world, onClose }: { world?: World; onClose: (gone: boolea
       )}
       {changingCover && (
         <CoverDialog
-          worldId={world?.id}
-          title={world ? t('cover.of', { name: world.name }) : t('cover.title')}
+          worldId={filesWorld}
+          title={look ? t('cover.of', { name: look.name }) : t('cover.title')}
           cover={cover}
           local={newCover?.local ?? null}
           onSave={async (chosen, local) => {
-            if (!world) {
+            if (!look) {
               setNewCover(chosen ? { cover: chosen, local } : null)
               return
             }
-            await api.call('updateWorld', { worldId: world.id, cover: chosen })
+            await kind.update(look.id, { cover: chosen })
             await refresh()
           }}
           onClose={() => setChangingCover(false)}
@@ -407,12 +612,12 @@ function WorldDialog({ world, onClose }: { world?: World; onClose: (gone: boolea
       >
         <h2 id={titleId}>{title}</h2>
         <Field
-          label={t('worlds.name')}
+          label={t(`${texts}.name`)}
           value={draft.name}
           required
           maxLength={120}
           autoComplete="off"
-          data-autofocus={world ? undefined : ''}
+          data-autofocus={look ? undefined : ''}
           onChange={(event) => set({ name: event.currentTarget.value })}
         />
         <Field
@@ -426,27 +631,27 @@ function WorldDialog({ world, onClose }: { world?: World; onClose: (gone: boolea
         <FormError message={save.error ? errorText(save.error) : null} />
         <ChangesBar shown={changed}>
           <BusyButton type="submit" className={form.button} busy={save.isPending}>
-            {t(world ? 'worlds.save' : 'worlds.create')}
+            {t(look ? 'worlds.save' : `${texts}.create`)}
           </BusyButton>
           <button
             type="button"
             className={dialogStyles.cancel}
-            onClick={() => (world ? setDraft(draftOf(world)) : dialog.current?.close())}
+            onClick={() => (look ? setDraft(draftOf(look)) : dialog.current?.close())}
           >
             {t('worlds.cancel')}
           </button>
         </ChangesBar>
       </form>
-      {world && (
-        // Aparte, al final y fuera del formulario: borrar el mundo, escribiendo su nombre para confirmarlo
+      {look && (
+        // Aparte, al final y fuera del formulario: borrarlo, escribiendo su nombre para confirmarlo
         <div className={styles.dangerArea}>
           <DangerZone>
             <ConfirmByName
-              name={world.name}
-              action={t('worlds.deleteWorld')}
-              title={t('worlds.deleteTitle', { name: world.name })}
-              warning={t('worlds.deleteWarning', { days: TRASH_DAYS })}
-              label={t('worlds.name')}
+              name={look.name}
+              action={t(`${texts}.delete`)}
+              title={t(`${texts}.deleteTitle`, { name: look.name })}
+              warning={t(`${texts}.deleteWarning`, { days: TRASH_DAYS })}
+              label={t(`${texts}.name`)}
               onConfirm={remove}
             />
           </DangerZone>

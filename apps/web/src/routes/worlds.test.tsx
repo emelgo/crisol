@@ -85,7 +85,7 @@ describe('mis mundos', () => {
     await userEvent.type(input, 'Eana (Fateforge)')
     await userEvent.click(dialog.getByRole('button', { name: 'Guardar' }))
     expect(await screen.findByText('Eana (Fateforge)')).toBeDefined()
-    expect(api.calls).toContain('renameWorld')
+    expect(api.calls).toContain('updateWorld')
   })
 
   it('desde su zona de peligro se borra el mundo, escribiendo su nombre para confirmarlo', async () => {

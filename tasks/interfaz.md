@@ -152,6 +152,14 @@ Todo va en la rama `interfaz/pulir-inicio`, en un commit local sin subir. Las no
 - **Perfil**, centrado como Ajustes: tus datos (usuario, nombre, apellidos; el email aún no se cambia) y cambiar la contraseña.
 - **Las peticiones de la IA**, en tarjetas flotantes abajo a la derecha, como en el Crisol antiguo.
 - **ADR-0004**: cuentas personales y registro público, con la organización por debajo.
+- **Inicio de un mundo y pestaña Campañas**:
+  - Inicio (`routes/world.tsx`): la cabecera del mundo y lo último de la wiki (`listRecentPages`, herramienta
+    `paginas_recientes`); para quien juega, sus campañas.
+  - Campañas (`routes/campaigns.tsx`, `/mundos/$worldId/campanas`), con portada, descripción y color como los
+    mundos (`updateCampaign`, migración 0026, herramienta `cambiar_campana`), en el orden en que se crearon.
+  - Las tarjetas, la ventana y la cabecera son las mismas para mundos y campañas (`routes/world-card.tsx`, `LookKind`).
+  - Dentro de un mundo, la barra lleva Inicio y Campañas, y Historial y Papelera son los del mundo.
+  - Pruebas: servidor (`actions` y `pages`), base de datos y MCP.
 
 **Preguntas abiertas a Enrique** (al retomar):
 - guardar en la cuenta (servidor) los tutoriales hechos y los colores propios, que hoy van en el navegador;
@@ -160,7 +168,8 @@ Todo va en la rama `interfaz/pulir-inicio`, en un commit local sin subir. Las no
 **Por dónde iba** (2026-10-30, antes de compactar): Mis mundos y la entrada en un mundo ya le gustan («esta TODO
 GENIAL»), con sus animaciones; crear y borrar mundos, «perfe». No se pudo reproducir un icono que «se recoloca» en el
 último fotograma al entrar o salir de un mundo (quizá el escalado de su pantalla); lo dejó así. Lo siguiente: la
-siguiente pantalla que diga.
+siguiente pantalla que diga. Después rehízo la vista del mundo: Inicio (cabecera y lo reciente) y Campañas en su
+pestaña, con tarjetas como las de los mundos; falta que la vea.
 
 **Al acabar la ronda** (cuando Enrique lo diga):
 1. Poner al día las pruebas que han cambiado:
@@ -172,7 +181,9 @@ siguiente pantalla que diga.
    - renombrar un mundo, también por el engranaje (`focus.test.tsx`);
    - la llama de carga es otro `role="status"` (las pruebas que buscan uno solo);
    - la portada sin sesión y el menú de la cuenta (`app.test`, `account.test`, `account-menu.test`, `page-title.test`);
-   - los ajustes de IA, dentro de Ajustes (`ai-settings.test.tsx`).
+   - los ajustes de IA, dentro de Ajustes (`ai-settings.test.tsx`);
+   - el Inicio del mundo y la pestaña Campañas (`world.test.tsx`; en `campaign.test.tsx`, «desde el mundo se entra en
+     la campaña»): pruebas nuevas de la cabecera, lo reciente, crear y ajustar campañas, y la barra del mundo.
    Hoy: 17 de 233 fallan en `apps/web`, todas por esto.
    En `apps/server`, el arranque y el MCP crean dos cuentas con el mismo nombre de usuario (`USERNAME_TAKEN`); la
    de edición en vivo (`collab`) a veces da un bloqueo de Postgres con todo a la vez, y sola pasa.
@@ -186,7 +197,7 @@ siguiente pantalla que diga.
    - el contrato de `Account`;
    - las pruebas nuevas de la ventana y el perfil (las de los recorridos ya están).
 2. `pnpm test` entero y `pnpm e2e`.
-3. PR, CI y staging; la migración 0024 se aplica al desplegar.
+3. PR, CI y staging; las migraciones 0024, 0025 y 0026 se aplican al desplegar.
 4. En `.env` de desarrollo, `PUBLIC_URL` pasó a `http://localhost:5173`: Enrique entra por `localhost` y el servidor
    rechazaba las peticiones de `127.0.0.1` con `BAD_ORIGIN`. Solo afecta al desarrollo.
 

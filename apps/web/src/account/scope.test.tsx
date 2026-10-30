@@ -24,7 +24,16 @@ const eana: World = {
   version: 1
 }
 const otro: World = { ...eana, id: crypto.randomUUID(), name: 'Otro' }
-const marca: Campaign = { id: crypto.randomUUID(), worldId: eana.id, name: 'La Marca', role: 'master', version: 1 }
+const marca: Campaign = {
+  id: crypto.randomUUID(),
+  worldId: eana.id,
+  name: 'La Marca',
+  description: '',
+  color: null,
+  cover: null,
+  role: 'master',
+  version: 1
+}
 const request: Approval = {
   id: crypto.randomUUID(),
   tool: 'enlace_invitacion',

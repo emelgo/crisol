@@ -23,7 +23,16 @@ const world: World = {
   role: 'master',
   version: 1
 }
-const campaign: Campaign = { id: crypto.randomUUID(), worldId: world.id, name: 'La Marca', role: 'master', version: 1 }
+const campaign: Campaign = {
+  id: crypto.randomUUID(),
+  worldId: world.id,
+  name: 'La Marca',
+  description: '',
+  color: null,
+  cover: null,
+  role: 'master',
+  version: 1
+}
 const members: Member[] = [
   { userId: 'u1', name: 'Enrique', role: 'master' },
   { userId: 'u2', name: 'Jugadora', role: 'player' }

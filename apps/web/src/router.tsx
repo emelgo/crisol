@@ -2,6 +2,7 @@ import { createRootRoute, createRoute, createRouter, type RouterHistory } from '
 import { AiSettings } from './routes/ai-settings.tsx'
 import { Bootstrap } from './routes/bootstrap.tsx'
 import { CampaignPage } from './routes/campaign.tsx'
+import { CampaignsPage } from './routes/campaigns.tsx'
 import { Consent } from './routes/consent.tsx'
 import { OrganizationHistory, WorldHistory } from './routes/history.tsx'
 import { Home } from './routes/home.tsx'
@@ -27,6 +28,11 @@ const signInRoute = createRoute({ getParentRoute: () => rootRoute, path: '/entra
 const profileRoute = createRoute({ getParentRoute: () => rootRoute, path: '/perfil', component: Profile })
 const worldsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/mundos', component: Worlds })
 const worldRoute = createRoute({ getParentRoute: () => rootRoute, path: '/mundos/$worldId', component: WorldPage })
+const campaignsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/mundos/$worldId/campanas',
+  component: CampaignsPage
+})
 const campaignRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/mundos/$worldId/campanas/$campaignId',
@@ -93,6 +99,7 @@ const routeTree = rootRoute.addChildren([
   profileRoute,
   worldsRoute,
   worldRoute,
+  campaignsRoute,
   campaignRoute,
   wikiRoute,
   wikiPageRoute,

@@ -26,6 +26,9 @@ const campaign = (role: Campaign['role'] = 'master'): Campaign => ({
   id: crypto.randomUUID(),
   worldId: world.id,
   name: 'La Marca',
+  description: '',
+  color: null,
+  cover: null,
   role,
   version: 1
 })

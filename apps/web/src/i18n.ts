@@ -15,6 +15,8 @@ export const es = {
   // La barra de la izquierda: cada botón con su icono y su nombre debajo
   ribbon: {
     worlds: 'Mundos',
+    home: 'Inicio',
+    campaigns: 'Campañas',
     pages: 'Páginas',
     search: 'Buscar',
     bookmarks: 'Marcadores',
@@ -81,7 +83,7 @@ export const es = {
     create: 'Crear el mundo',
     settings: 'Ajustes',
     settingsOf: 'Ajustes de {{name}}',
-    deleteWorld: 'Borrar el mundo',
+    delete: 'Borrar el mundo',
     deleteTitle: '¿Borrar «{{name}}»?',
     deleteWarning: 'Irá a la papelera, con sus campañas y su wiki, y se podrá recuperar durante {{days}} días.',
     description: 'Descripción',
@@ -103,15 +105,26 @@ export const es = {
   world: {
     notFound: 'Este mundo no existe',
     asMaster: 'Eres su máster.',
-    asPlayer: 'Juegas en una de sus campañas.'
+    asPlayer: 'Juegas en una de sus campañas.',
+    recent: 'Lo último de la wiki',
+    recentLabel: 'Páginas cambiadas hace poco',
+    noPages: 'Aún no hay páginas.',
+    openWiki: 'Abrir la wiki',
+    yourCampaigns: 'Tus campañas'
   },
   campaigns: {
     title: 'Campañas',
     empty: 'Aún no hay campañas',
+    emptyHint: 'Cada campaña es un grupo de jugadores que juega en este mundo.',
+    createFirst: 'Crear la primera campaña',
     listLabel: 'Campañas',
     newTitle: 'Nueva campaña',
     name: 'Nombre de la campaña',
-    create: 'Crear la campaña'
+    create: 'Crear la campaña',
+    settingsOf: 'Ajustes de {{name}}',
+    delete: 'Borrar la campaña',
+    deleteTitle: '¿Borrar «{{name}}»?',
+    deleteWarning: 'Irá a la papelera y sus jugadores dejarán de verla. Se podrá recuperar durante {{days}} días.'
   },
   campaign: {
     notFound: 'Esta campaña no existe',
@@ -860,6 +873,14 @@ export const es = {
       history: 'Aquí queda todo lo que se hace, tanto por ti como por la IA, y desde aquí se puede deshacer y rehacer.',
       trash: 'Lo que se borra viene aquí, por si hay que recuperarlo, y se guarda durante {{days}} días.',
       account: 'Desde aquí podrás administrar la aplicación.'
+    },
+    world: {
+      ribbon: 'Desde aquí te mueves por el mundo.',
+      settings: 'Aquí se ajusta el mundo: cómo se ve y lo demás.',
+      back: 'La llama te devuelve a tus mundos.'
+    },
+    campaigns: {
+      create: 'Cada campaña reúne a un grupo de jugadores en este mundo.'
     }
   },
   profile: {
