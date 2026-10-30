@@ -22,6 +22,8 @@ export const es = {
     history: 'Historial',
     trash: 'Papelera',
     ai: 'IA',
+    aiPending_one: 'IA, {{count}} petición esperando',
+    aiPending_other: 'IA, {{count}} peticiones esperando',
     theme: 'Tema'
   },
   account: {
@@ -189,7 +191,7 @@ export const es = {
     body: 'Texto de la página',
     label: 'Texto de la página',
     offline: 'Sin conexión: se guardará al volver.',
-    aiChanged: 'Claude ha cambiado la página.',
+    aiChanged: 'La IA ha cambiado la página.',
     toolbar: 'Insertar en el texto',
     task: 'Por hacer: {{text}}',
     taskDone: 'Hecho: {{text}}',
@@ -273,7 +275,7 @@ export const es = {
   versions: {
     title: 'Versiones',
     none: 'Aún no tiene versiones: se guarda una al terminar de escribir.',
-    claude: 'Claude',
+    claude: 'IA',
     someone: 'Alguien',
     current: '(la de ahora)',
     viewShort: 'Ver',
@@ -565,7 +567,7 @@ export const es = {
     redoConflictUnknown: 'No se puede rehacer: algo de lo que cambió se ha cambiado después.',
     system: 'Crisol',
     deletedAccount: 'Una cuenta borrada',
-    via: { ui: 'web', ai: 'Claude', aiTool: 'Claude ({{tool}})', system: 'Crisol' },
+    via: { ui: 'web', ai: 'IA', aiTool: 'IA ({{tool}})', system: 'Crisol' },
     actions: {
       createOrganization: 'creó la organización «{{name}}»',
       bootstrapOwner: 'entró como propietario',
@@ -614,9 +616,9 @@ export const es = {
     }
   },
   approvals: {
-    title: 'Claude espera tu aprobación',
-    listLabel: 'Peticiones de Claude',
-    request: 'Claude quiere {{what}}',
+    title: 'La IA espera tu aprobación',
+    listLabel: 'Peticiones de la IA',
+    request: 'La IA quiere {{what}}',
     detail: 'Detalle',
     tool: 'Herramienta: {{tool}}',
     requestedAt: 'Lo pidió el {{date}}. Caduca el {{expires}}.',
@@ -686,9 +688,9 @@ export const es = {
   ai: {
     link: 'IA',
     title: 'Ajustes de IA',
-    connectorTitle: 'Conectar Claude',
+    connectorTitle: 'Conectar una IA',
     connector: 'Dirección del conector',
-    connectorHint: 'En claude.ai, añade un conector con esta dirección.',
+    connectorHint: 'En tu app de IA (claude.ai u otra), añade un conector MCP con esta dirección.',
     modeTitle: 'Modo',
     modes: {
       readOnly: 'Solo lectura',
@@ -741,7 +743,7 @@ export const es = {
     title: 'Conectar {{client}}',
     body: '{{client}} quiere usar tu cuenta de Crisol: ver y cambiar tus mundos en tu nombre.',
     history: 'Lo que haga quedará en el historial y podrás deshacerlo.',
-    ownerOnly: 'De momento solo el propietario puede conectar Claude.',
+    ownerOnly: 'De momento solo el propietario puede conectar una IA.',
     allow: 'Permitir',
     deny: 'No permitir',
     expiredTitle: 'Tu sesión ha caducado',

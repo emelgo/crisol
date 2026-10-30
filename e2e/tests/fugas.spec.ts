@@ -142,7 +142,7 @@ test('@fugas una jugadora no puede conectar Claude: no se le ofrece y, aunque fu
     resource: `${BASE}/mcp`
   }).toString()
   await player.goto(authorize.toString())
-  await expect(player.getByText('De momento solo el propietario puede conectar Claude.')).toBeVisible()
+  await expect(player.getByText('De momento solo el propietario puede conectar una IA.')).toBeVisible()
   await expect(player.getByRole('button', { name: 'Permitir', exact: true })).toHaveCount(0)
 
   // Forzando el permiso con la consulta firmada de la página: el servidor no lo da
@@ -179,7 +179,7 @@ test('@fugas lo que pide la IA del máster solo le llega a él: la cola, sus avi
   // Claude pide regenerar el enlace de B (el máster lo aprueba) y cerrar las invitaciones de A (lo rechaza)
   const claude = await connectClaude(page)
   await gotoLive(page, '/mundos')
-  const queue = page.getByRole('region', { name: 'Claude espera tu aprobación' })
+  const queue = page.getByRole('region', { name: 'La IA espera tu aprobación' })
   const regenerate = claude.call('enlace_invitacion', { campaignId: idB, change: 'regenerate' })
   await queue.getByRole('button', { name: `Aprobar: generar un enlace nuevo para ${SECRET_CAMPAIGN}` }).click()
   const newLinkB = String((await regenerate).structuredContent?.url)

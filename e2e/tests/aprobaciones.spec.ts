@@ -32,8 +32,8 @@ test('Claude crea una campaña sin preguntar; regenerar el enlace aparece en la 
   await gotoLive(page, campaignPage)
   await expect(page.getByLabel('Enlace de invitación')).toHaveValue(link)
   const asked = claude.call('enlace_invitacion', { campaignId, change: 'regenerate' })
-  const queue = page.getByRole('region', { name: 'Claude espera tu aprobación' })
-  await expect(queue.getByText('Claude quiere generar un enlace nuevo para La Marca')).toBeVisible({ timeout: 2000 })
+  const queue = page.getByRole('region', { name: 'La IA espera tu aprobación' })
+  await expect(queue.getByText('La IA quiere generar un enlace nuevo para La Marca')).toBeVisible({ timeout: 2000 })
   await queue.getByText('Detalle').click()
   await expect(queue.getByText('Herramienta: enlace_invitacion')).toBeVisible()
 
@@ -49,7 +49,7 @@ test('Claude crea una campaña sin preguntar; regenerar el enlace aparece en la 
   await page.goto('/historial')
   const history = page.getByRole('list', { name: 'Operaciones' })
   await expect(history.getByRole('listitem').first()).toContainText('generó un enlace nuevo para La Marca')
-  await expect(history.getByRole('listitem').first()).toContainText('Claude (enlace_invitacion)')
+  await expect(history.getByRole('listitem').first()).toContainText('IA (enlace_invitacion)')
 })
 
 test('rechazado, no se hace; en solo lectura, Claude ya no cambia nada', async ({ page }) => {
@@ -57,7 +57,7 @@ test('rechazado, no se hace; en solo lectura, Claude ya no cambia nada', async (
   await gotoLive(page, '/mundos')
 
   const asked = claude.call('enlace_invitacion', { campaignId, change: 'close' })
-  const queue = page.getByRole('region', { name: 'Claude espera tu aprobación' })
+  const queue = page.getByRole('region', { name: 'La IA espera tu aprobación' })
   await queue.getByRole('button', { name: 'Rechazar: cerrar las invitaciones de La Marca' }).click()
   await expect(page.getByRole('main').getByText('Rechazado: cerrar las invitaciones de La Marca')).toBeVisible()
   const rejected = await asked
@@ -93,7 +93,7 @@ test('la cola y los ajustes de IA, en los dos temas @a11y', async ({ page }) => 
   await gotoLive(page, '/ia')
   await expect(page.getByRole('heading', { level: 1, name: 'Ajustes de IA' })).toBeVisible()
   const asked = claude.call('enlace_invitacion', { campaignId, change: 'regenerate' })
-  const queue = page.getByRole('region', { name: 'Claude espera tu aprobación' })
+  const queue = page.getByRole('region', { name: 'La IA espera tu aprobación' })
   await queue.getByText('Detalle').click()
   await expect(queue.getByText('Herramienta: enlace_invitacion')).toBeVisible()
   await check()

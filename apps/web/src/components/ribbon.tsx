@@ -21,6 +21,7 @@ import { useApi } from '../api/context.tsx'
 import { currentTheme, nextTheme, setTheme } from '../theme.ts'
 import { useNarrow, useWikiPanel, type WikiPanel } from '../wiki/panel.tsx'
 import { AccountMenu } from './account-menu.tsx'
+import { useApprovals } from './approval-queue.tsx'
 import styles from './ribbon.module.css'
 
 /** Si la cuenta es propietaria de alguna organización: solo ella ve su historial, su papelera y la IA */
@@ -84,9 +85,7 @@ export function Ribbon() {
               <Label icon={Trash2} text={t('ribbon.trash')} />
             </Link>
             {/* La IA solo se conecta con la cuenta del propietario (módulo 0) */}
-            <Link to="/ia" className={styles.item}>
-              <Label icon={Plug} text={t('ribbon.ai')} />
-            </Link>
+            <AiLink />
           </>
         )}
       </nav>
@@ -158,5 +157,28 @@ function ThemeButton() {
     >
       <Label icon={next === 'dark' ? Moon : Sun} text={next === 'dark' ? t('theme.dark') : t('theme.light')} />
     </button>
+  )
+}
+
+/** La IA, con cuántas peticiones esperan tu aprobación */
+function AiLink() {
+  const { t } = useTranslation()
+  const pending = useApprovals().data?.pending.length ?? 0
+  return (
+    <Link
+      to="/ia"
+      className={styles.item}
+      aria-label={pending > 0 ? t('ribbon.aiPending', { count: pending }) : undefined}
+    >
+      <span className={styles.badged}>
+        <Plug aria-hidden="true" size={20} strokeWidth={1.75} />
+        {pending > 0 && (
+          <span aria-hidden="true" className={styles.badge}>
+            {pending}
+          </span>
+        )}
+      </span>
+      <span className={styles.text}>{t('ribbon.ai')}</span>
+    </Link>
   )
 }
