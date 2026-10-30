@@ -37,9 +37,11 @@ Hay que contárselo al final, con lo que tenga que probar o revisar:
   (`https://neo.crisol.144-91-122-245.sslip.io/mcp`), con su cuenta de propietario. Después prueba crear_paginas con
   secretos y editar_pagina sobre una página que tenga abierta.
 
-## Tarea en curso: 16, sesiones de edición en el historial
+## Tarea en curso: 17, versiones de página
 
-(Por empezar. Leer antes el ADR-0003, § sesiones y versiones, y la spec, § `versiones`.)
+(Por empezar: panel con la lista, «Ver» y «Restaurar»; purgar a los 90 días más las 40 últimas; MCP `versiones_pagina`
+y `restaurar_version`. Lo que hay: `versionsRepo.listVersions`, `versionDocumentsOf`, `applyVersion` y
+`snapshotPage`.)
 
 ## Hechas en esta tirada
 
@@ -53,4 +55,6 @@ Hay que contárselo al final, con lo que tenga que probar o revisar:
 - **13** (PR #56, en staging, con la migración 0012): enlaces, `page_links`, resolución sola y `[[`.
 - **14** (PR #57, en staging, con la migración 0013): entrantes, menciones, «Enlazar», aviso al borrar y
   `enlaces_pagina`.
-- **15** (rama `wiki/tarea-15-vista-previa`): vista previa, incrustados y aviso `pageContent`.
+- **15** (PR #58): vista previa, incrustados y aviso `pageContent`. La e2e del teclado falló una vez en la CI; se
+  arregló avanzando hasta que el enlace queda elegido.
+- **16** (rama `wiki/tarea-16-sesiones`, migración 0014): sesiones de edición, versiones y deshacer hacia delante.

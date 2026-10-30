@@ -213,8 +213,8 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   4. ~~Diseño~~: aprobado.
   5. ~~`/plan`~~: aprobado.
   6. **`/build` tarea a tarea** (`tasks/todo.md`), con `/agent-skills:review` y `/ship`, como en el módulo 0. Hechas de
-     la 1 a la 15. **Puntos de control 1 y 2 pasados** (2026-10-30, «todo funciona de momento»): el editor anidado se
-     queda. **Sigue la 16** (sesiones de edición en el historial), y así hasta acabar el módulo (bitácora: `tasks/bitacora.md`).
+     la 1 a la 16. **Puntos de control 1 y 2 pasados** (2026-10-30, «todo funciona de momento»): el editor anidado se
+     queda. **Sigue la 17** (versiones de página: panel, restaurar y purgar), y así hasta acabar el módulo (bitácora: `tasks/bitacora.md`).
   7. **Al acabar el módulo 1, la interfaz** (decisión de Enrique, 2026-10-30): se apunta por dónde vamos y se
      dedica una etapa a la interfaz antes del módulo 2. Ver «Para el repaso final de la interfaz».
 - **2026-10-29 — Módulo 1, tarea 1: páginas y árbol en la API.**
@@ -565,6 +565,35 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
     - componentes: la vista previa con Escape y en el móvil;
     - e2e `vista-previa.spec.ts`: ratón, teclado, incrustado que se pone al día, `![[`, móvil y a11y;
     - `@fugas` de `getPageContent`.
+- **2026-10-30 — Módulo 1, tarea 16: sesiones de edición en el historial.**
+  - **Tablas** (migración 0014):
+    - `page_bodies`, en `TRACKED_TABLES`, una por página: su versión y su huella;
+    - `page_versions`;
+    - `snapshots`: el estado de un documento por su huella, compartido entre versiones;
+    - `version_documents`.
+    - En `changes` solo entran ids y huellas, nunca el texto.
+  - **Huella de la página** (`apps/server/src/wiki/versions.ts`): sha256 del JSON del cuerpo y sus secretos, sin los
+    ids de bloque ni el `pageId` de los enlaces. Así resolver un enlace solo, o poner ids, no da versiones falsas.
+  - **Sesiones** (`apps/server/src/collab/sessions.ts`), en memoria por página y cuenta:
+    - se abren con el primer cambio (`onChange`; las conexiones directas del servidor, no);
+    - se cierran por inactividad (3 min), a los 15 min, al irse su última conexión, antes de una operación del
+      servidor o al parar;
+    - al cerrarse, lo vivo se guarda y se apunta `editPage` con su versión (`versionsRepo.recordEdit`). Si la huella
+      no cambió, nada.
+  - **Claude** (`editPage`): cierra antes las sesiones. Su cambio y su versión van en una sola operación, con título y
+    propiedades. `createPages` deja la primera versión de cada página en la misma operación.
+  - **Deshacer**: cierra antes las sesiones de las páginas cuyo `page_bodies` toca. Después aplica hacia delante la
+    versión que queda (`applyVersion`, por conexión directa); si alguien escribió después, conflicto con quién.
+  - **Recuperación**: al cargar el cuerpo sin sesiones abiertas, si lo guardado no es su última versión, se cierra a
+    nombre del último que escribió.
+  - **Dos cuentas a la vez**: la primera sesión que se cierra lleva lo de las dos; la otra no apunta nada si ya no hay
+    nada nuevo. Nada se pierde; la autoría es aproximada en ese caso.
+  - **Pruebas** (`sessions.integration.test.ts`):
+    - agrupar y cerrar por inactividad;
+    - dos cuentas y Claude a la vez, sin perder nada;
+    - deshacer lo de Claude con un editor abierto, sin que vuelva lo viejo;
+    - conflicto con quién;
+    - recuperación tras parar.
 - **Pendientes de permiso de Enrique:**
   - Servicio de systemd para Foundry: ahora corre como proceso de la sesión y se para al cerrarla; se arranca con el
     comando de `research/foundry/entorno.md`.
@@ -585,7 +614,7 @@ Estados: pendiente · en curso · hecho · descartado.
 | # | Módulo | Estado | REA principal |
 |---|---|---|---|
 | 0 | **Fundación**: monorepo, CI, despliegue, cuentas, organizaciones, mundos, campañas, roles, historial y deshacer, esqueleto del MCP | **hecho** (2026-10-29; Discord y Google, pospuestos) | Foundry: modelo de documentos y permisos; DDB: campañas e invitaciones |
-| 1 | **Wiki**: páginas y subpáginas, editor de bloques, enlaces, menciones, vista previa, propiedades, secretos, búsqueda, marcadores, etiquetas, versiones, recursos y archivos, **hojas con estilo** (tipo Homebrewery, con PDF), exportación MD, sus herramientas MCP | en curso (construcción: tareas 1 a 15 de 26 hechas) | Foundry: Journal; DDB: contenido y referencias; Homebrewery (MIT): formato de hoja y descarga |
+| 1 | **Wiki**: páginas y subpáginas, editor de bloques, enlaces, menciones, vista previa, propiedades, secretos, búsqueda, marcadores, etiquetas, versiones, recursos y archivos, **hojas con estilo** (tipo Homebrewery, con PDF), exportación MD, sus herramientas MCP | en curso (construcción: tareas 1 a 16 de 26 hechas) | Foundry: Journal; DDB: contenido y referencias; Homebrewery (MIT): formato de hoja y descarga |
 | 2 | Tipos de página, plantillas y formularios nativos; consultas (en lugar de Dataview y Bases) | pendiente | Foundry: tipos de documento |
 | 3 | Sistemas de reglas, fichas de personaje (creación, subida de nivel), dados y dados 3D | pendiente | DDB: creador y hoja; Foundry: dnd5e, DataModel e instalar y crear sistemas |
 | 4 | Compendios, bestiario, statblocks, biblioteca | pendiente | Foundry: compendium packs; DDB: listados |

@@ -208,7 +208,8 @@ Cada vía nueva por la que salen datos amplía `@fugas` en la misma tarea.
 
 ## Fase 5: Versiones
 
-- [ ] **16. Sesiones de edición en el historial**
+- [x] **16. Sesiones de edición en el historial** — hecha. Con dos cuentas a la vez, la autoría de la versión es
+  aproximada (una versión es de toda la página).
   - Acepta:
     - La sesión se abre con el primer cambio y se cierra por inactividad, a los 15 minutos, al cerrar la última
       pestaña o antes de una operación del servidor.
