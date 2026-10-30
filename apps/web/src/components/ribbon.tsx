@@ -23,7 +23,7 @@ import { AccountMenu } from './account-menu.tsx'
 import { CrisolMark } from './brand.tsx'
 import styles from './ribbon.module.css'
 import { useWindow } from './window.tsx'
-import { LEAVE_WORLD, SECTION } from './world-transition.ts'
+import { LEAVE_WORLD, leaveWorld, SECTION } from './world-transition.ts'
 
 /** Si la cuenta es propietaria de alguna organización: solo ella ve su historial, su papelera y la IA */
 function useIsOwner() {
@@ -142,7 +142,7 @@ export function Ribbon() {
           className={[styles.brand, flame === 'fire' ? styles.cooking : '', flame === 'smoke' ? styles.smoking : '']
             .filter(Boolean)
             .join(' ')}
-          {...(inWorld ? { viewTransition: LEAVE_WORLD } : {})}
+          {...(inWorld ? { viewTransition: LEAVE_WORLD, onClick: leaveWorld } : {})}
           data-tour="barra-llama"
           aria-label={t('app.name')}
           translate="no"

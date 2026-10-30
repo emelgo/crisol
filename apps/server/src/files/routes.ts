@@ -15,8 +15,8 @@ import {
   authorizedFile,
   type FilePlace,
   filesTouched,
-  folderIn,
   fileView,
+  folderIn,
   scopeOf,
   withFreeName
 } from '../actions/files.ts'

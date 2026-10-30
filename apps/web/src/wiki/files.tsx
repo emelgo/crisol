@@ -83,7 +83,7 @@ function FilesPage({ worldId, world, organizationId }: { worldId: string; world:
     () =>
       files.data && {
         files: files.data.files.filter((f) => f.worldId !== null),
-        folders: files.data.folders.filter((f) => f.worldId !== null)
+        folders: (files.data.folders ?? []).filter((f) => f.worldId !== null)
       },
     [files.data]
   )
@@ -91,7 +91,7 @@ function FilesPage({ worldId, world, organizationId }: { worldId: string; world:
     () =>
       files.data && {
         files: files.data.files.filter((f) => f.worldId === null),
-        folders: files.data.folders.filter((f) => f.worldId === null)
+        folders: (files.data.folders ?? []).filter((f) => f.worldId === null)
       },
     [files.data]
   )
@@ -200,7 +200,7 @@ function FilesSection({
   )
   const shownFolders = searching ? [] : folders.filter((folder) => folder.parentId === open)
   const present = KINDS.filter((k) => data?.files.some((file) => file.kind === k))
-  const ids = useMemo(() => data && [...data.files.map((f) => f.id), ...data.folders.map((f) => f.id)], [data])
+  const ids = useMemo(() => data && [...data.files.map((f) => f.id), ...(data.folders ?? []).map((f) => f.id)], [data])
   const fresh = useFresh(ids)
   const refresh = () =>
     Promise.all([

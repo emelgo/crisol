@@ -262,6 +262,56 @@ html:active-view-transition-type(entrar-mundo)::view-transition-image-pair(mundo
   animation: none;
 }
 
+/*
+ * El humo al salir (world-transition.ts): sobre la cabecera que se va, volutas grises que suben retorciéndose, se
+ * ensanchan y se disipan. Van aparte en la transición (su nombre), por encima
+ */
+.humo {
+  position: fixed;
+  z-index: 100;
+  overflow: visible;
+  pointer-events: none;
+  view-transition-name: humo;
+}
+
+.humo .voluta {
+  position: absolute;
+  inset-block-end: 10%;
+  inline-size: 90px;
+  block-size: 170px;
+  margin-inline-start: -45px;
+  background: radial-gradient(
+    ellipse 38% 46% at 50% 70%,
+    color-mix(in srgb, var(--color-muted) 55%, transparent),
+    transparent 72%
+  );
+  filter: url(#humo-retorcido) blur(5px);
+  opacity: 0;
+  animation: voluta 2400ms cubic-bezier(0.25, 0.6, 0.35, 1) forwards;
+}
+
+::view-transition-group(humo),
+::view-transition-old(humo),
+::view-transition-new(humo) {
+  animation: none;
+}
+
+@keyframes voluta {
+  0% {
+    opacity: 0;
+    transform: translateY(30%) scale(0.5, 0.6);
+  }
+
+  22% {
+    opacity: 0.75;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(-150%) scale(1.7, 1.9) rotate(var(--giro, 0deg));
+  }
+}
+
 /* Al salir, la cabecera se enfría (pierde el color y vuelve) mientras vuelve a ser tarjeta */
 html:active-view-transition-type(salir-mundo)::view-transition-image-pair(mundo-actual) {
   animation: se-enfria 1100ms ease-out;
