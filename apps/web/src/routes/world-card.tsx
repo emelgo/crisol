@@ -9,6 +9,7 @@ import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
 import { BusyButton } from '../components/busy-button.tsx'
+import { ChangesBar } from '../components/changes.tsx'
 import { ConfirmByName, DangerZone } from '../components/danger.tsx'
 import dialogStyles from '../components/dialog.module.css'
 import { Field, FormError } from '../components/field.tsx'
@@ -344,7 +345,10 @@ function WorldDialog({ world, onClose }: { world?: World; onClose: (gone: boolea
         <ColorChoices value={draft.color} onChange={(color) => set({ color })} />
         <FormError message={save.error ? errorText(save.error) : null} />
         {changed && (
-          <div className={dialogStyles.actions}>
+          <ChangesBar>
+            <BusyButton type="submit" className={form.button} busy={save.isPending}>
+              {t(world ? 'worlds.save' : 'worlds.create')}
+            </BusyButton>
             <button
               type="button"
               className={dialogStyles.cancel}
@@ -352,10 +356,7 @@ function WorldDialog({ world, onClose }: { world?: World; onClose: (gone: boolea
             >
               {t('worlds.cancel')}
             </button>
-            <BusyButton type="submit" className={form.button} busy={save.isPending}>
-              {t(world ? 'worlds.save' : 'worlds.create')}
-            </BusyButton>
-          </div>
+          </ChangesBar>
         )}
       </form>
       {world && (

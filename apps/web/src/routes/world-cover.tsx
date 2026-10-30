@@ -11,6 +11,7 @@ import { ApiError } from '../api/client.ts'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
 import { BusyButton } from '../components/busy-button.tsx'
+import { ChangesBar } from '../components/changes.tsx'
 import dialogStyles from '../components/dialog.module.css'
 import { FormError } from '../components/field.tsx'
 import form from '../components/form.module.css'
@@ -253,13 +254,11 @@ export function CoverDialog({
         </div>
         <FormError message={save.error || uploadImage.error ? errorText(save.error ?? uploadImage.error) : null} />
         <div className={styles.footer}>
-          {chosen && (
-            <button type="button" className={styles.remove} onClick={() => setChosen(null)}>
-              {t('cover.remove')}
-            </button>
-          )}
           {changed && (
-            <div className={dialogStyles.actions}>
+            <ChangesBar>
+              <BusyButton className={form.button} busy={save.isPending} onClick={() => save.mutate()}>
+                {t('list.save')}
+              </BusyButton>
               <button
                 type="button"
                 className={dialogStyles.cancel}
@@ -270,10 +269,12 @@ export function CoverDialog({
               >
                 {t('list.cancel')}
               </button>
-              <BusyButton className={form.button} busy={save.isPending} onClick={() => save.mutate()}>
-                {t('list.save')}
-              </BusyButton>
-            </div>
+            </ChangesBar>
+          )}
+          {chosen && (
+            <button type="button" className={styles.remove} onClick={() => setChosen(null)}>
+              {t('cover.remove')}
+            </button>
           )}
         </div>
       </div>

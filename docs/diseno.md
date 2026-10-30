@@ -58,7 +58,8 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   recuerdan para usarlos otra vez. **Solo tiñe, sutil, el contorno de su tarjeta** (y el de su ventana); la portada no
   se colorea. Sin imagen, el hueco de la portada lleva un tinte muy oscuro de ese color.
 - **Toda la tarjeta es clicable** y lleva al elemento, no solo su nombre (salvo sus botones).
-- **«Guardar» y «Cancelar» solo salen si hay cambios**; «Cancelar» los deshace.
+- **«Guardar» y «Cancelar» solo salen si hay cambios**, a la izquierda (Guardar primero) y abriéndose suavemente al
+  aparecer, sin saltos (`components/changes.tsx`); «Cancelar» los deshace.
 - **Un cuadro dentro de otro** (ver la portada desde la ventana del mundo): al cerrarlo se vuelve al de fuera, no a la
   pantalla.
 - **Borrar algo importante va en una zona de peligro** rojiza, al final de su ventana, y se confirma en otro cuadro

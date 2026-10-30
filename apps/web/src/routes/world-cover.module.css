@@ -159,7 +159,7 @@
   color: var(--color-text);
 }
 
-/* Quitarla a la izquierda; Cancelar y Guardar a la derecha */
+/* Guardar y Cancelar a la izquierda; quitarla, a la derecha */
 .footer {
   display: flex;
   flex-wrap: wrap;
@@ -168,11 +168,8 @@
   gap: var(--space-3);
 }
 
-.footer > :last-child {
-  margin-inline-start: auto;
-}
-
 .remove {
+  margin-inline-start: auto;
   padding: 0;
   border: 0;
   background: none;
