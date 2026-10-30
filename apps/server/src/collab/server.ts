@@ -45,6 +45,8 @@ export interface Collab {
   closePages(pageIds: Iterable<string>): void
   /** Las de toda la wiki de un mundo (el mundo, a la papelera) */
   closeWorld(worldId: string): void
+  /** Al parar el servidor: cierra todo y espera (hasta 5 s) a que se guarde lo pendiente */
+  close(): Promise<void>
 }
 
 export function createCollab({ db, onError }: { db: Database; onError: (error: unknown) => void }): Collab {
@@ -130,6 +132,15 @@ export function createCollab({ db, onError }: { db: Database; onError: (error: u
     },
     closeWorld(worldId) {
       for (const [name, place] of opened) if (place.worldId === worldId) hocuspocus.closeConnections(name)
+    },
+    async close() {
+      hocuspocus.closeConnections()
+      hocuspocus.flushPendingStores()
+      // Cada documento se descarga cuando ya está guardado
+      const deadline = Date.now() + 5000
+      while (hocuspocus.documents.size > 0 && Date.now() < deadline) {
+        await new Promise((resolve) => setTimeout(resolve, 20))
+      }
     }
   }
 }
