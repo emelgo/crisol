@@ -9,6 +9,7 @@ import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
 import { Loading } from '../components/brand.tsx'
+import { quiet, useCardHolds } from '../components/card-transition.ts'
 import { FormError } from '../components/field.tsx'
 import { failed } from '../components/load-error.tsx'
 import { PageTitle } from '../components/page-title.tsx'
@@ -39,18 +40,21 @@ export function Worlds() {
   }, [worlds.data])
   // Los que se acaban de ir (borrados aquí, por la IA o en otra pestaña) se quedan en su sitio, ardiendo, hasta que se
   // consumen. Se calcula al pintar, no después: si no, la tarjeta desaparecería un instante antes de arder
+  // Los que se crean o se borran aquí los enseña su transición (card-transition.ts): la nueva, retenida hasta que la
+  // enseña; la borrada, mantenida hasta que arde
+  const { held, kept } = useCardHolds()
   const [burning, setBurning] = useState<{ world: World; index: number }[]>([])
   const [shown, setShown] = useState(worlds.data)
   if (worlds.data !== shown) {
     const current = worlds.data?.worlds ?? []
     const gone = (shown?.worlds ?? []).flatMap((world, index) =>
-      current.some((c) => c.id === world.id) ? [] : [{ world, index }]
+      current.some((c) => c.id === world.id) || quiet.has(world.id) ? [] : [{ world, index }]
     )
     setShown(worlds.data)
     if (gone.length > 0) setBurning((list) => [...list, ...gone])
   }
-  const list = [...(worlds.data?.worlds ?? [])]
-  for (const { world, index } of burning) {
+  const list = (worlds.data?.worlds ?? []).filter((world) => !held.has(world.id))
+  for (const { world, index } of [...burning, ...kept.values()]) {
     if (!list.some((w) => w.id === world.id)) list.splice(Math.min(index, list.length), 0, world)
   }
 
@@ -77,14 +81,14 @@ export function Worlds() {
             {canCreate && <NewWorld big />}
           </div>
         ) : (
-          <ul className={cards.list} aria-label={t('worlds.listLabel')}>
+          <ul className={cards.list} aria-label={t('worlds.listLabel')} data-world-list>
             {list.map((world) => {
               const ashes = burning.some((b) => b.world.id === world.id)
               return (
                 <WorldCard
                   key={world.id}
                   world={world}
-                  fresh={!seen.current?.has(world.id)}
+                  fresh={!seen.current?.has(world.id) && !quiet.has(world.id)}
                   burning={ashes}
                   onBurnt={() => setBurning((all) => all.filter((b) => b.world.id !== world.id))}
                 />

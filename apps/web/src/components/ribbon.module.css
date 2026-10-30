@@ -284,16 +284,19 @@
   }
 }
 
-/* Al salir de un mundo, la llama se aplaca y echa humo: dos bocanadas grises que suben, crecen y se disipan */
+/*
+ * Al salir de un mundo, la llama expulsa a «Mundos» (un impulso, sin fuego), se va apagando a latidos y echa tres
+ * bocanadas de humo que suben ondulando, crecen y se disipan: lo de entrar, al revés
+ */
 .smoking {
-  animation: aplaca 1400ms ease-in-out;
+  animation: expulsa 2000ms ease-in-out 150ms;
 }
 
 .smoking::before,
 .smoking::after {
   content: "";
   position: absolute;
-  inset-block-start: 15%;
+  inset-block-start: 12%;
   inset-inline-start: calc(50% - 10px);
   inline-size: 20px;
   block-size: 20px;
@@ -302,19 +305,51 @@
   filter: blur(1.5px);
   opacity: 0;
   pointer-events: none;
-  animation: bocanada 2000ms ease-out 150ms;
+  animation: bocanada 2000ms ease-out 650ms;
 }
 
+/* La segunda y la tercera bocanada: un poco después, una a cada lado */
 .smoking::after {
   inset-inline-start: calc(50% - 4px);
-  animation-delay: 600ms;
+  box-shadow: -14px 10px 6px 2px rgb(185 185 195 / 0.35);
+  animation-delay: 1000ms;
   animation-duration: 2200ms;
 }
 
-@keyframes aplaca {
-  35% {
-    transform: scale(0.88);
-    filter: grayscale(0.6) brightness(0.75);
+@keyframes expulsa {
+  0% {
+    transform: none;
+    filter: none;
+  }
+
+  15% {
+    transform: scale(1.3) translateY(2px);
+    filter: brightness(1.15);
+  }
+
+  32% {
+    transform: scale(0.85);
+    filter: grayscale(0.5) brightness(0.7);
+  }
+
+  48% {
+    transform: scale(0.98);
+    filter: grayscale(0.3) brightness(0.85);
+  }
+
+  64% {
+    transform: scale(0.86);
+    filter: grayscale(0.6) brightness(0.65);
+  }
+
+  80% {
+    transform: scale(0.94);
+    filter: grayscale(0.3) brightness(0.85);
+  }
+
+  100% {
+    transform: none;
+    filter: none;
   }
 }
 
@@ -328,9 +363,17 @@
     opacity: 0.9;
   }
 
+  45% {
+    transform: translate(-4px, -16px) scale(1.8);
+  }
+
+  70% {
+    transform: translate(5px, -28px) scale(2.6);
+  }
+
   100% {
     opacity: 0;
-    transform: translate(6px, -36px) scale(3.2);
+    transform: translate(1px, -40px) scale(3.4);
   }
 }
 

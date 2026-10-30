@@ -135,6 +135,9 @@ Todo va en la rama `interfaz/pulir-inicio`, en un commit local sin subir. Las no
   `files.integration.test.ts`. En la interfaz: «Archivos» en la barra de Mis mundos (`/archivos`, los comunes),
   la carpeta «Comunes» en los archivos de cada mundo (solo el propietario sube y cambia) y el cuadro de la portada
   con «Del mundo» y «Comunes» (al crear un mundo, una común sirve tal cual). Pruebas en `wiki/files.test.tsx`.
+- **Crear y borrar mundos con transición de vista** (`components/card-transition.ts`): la nueva se retiene y la
+  borrada se mantiene hasta que su transición las enseña o las quema (el aviso en tiempo real no se adelanta); la
+  portada de la nueva se descarga antes de enseñarla.
 - **Barras de desplazamiento** finas, del color de los bordes; en las ventanas solo se desplaza el contenido.
 - **Barra lateral**:
   - sin barra de estado abajo;

@@ -9,6 +9,7 @@ import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
 import { BusyButton } from '../components/busy-button.tsx'
+import { burnCard, closeAtOnce, holdCard, keepCard, revealCard } from '../components/card-transition.ts'
 import { ChangesBar } from '../components/changes.tsx'
 import { ConfirmByName, DangerZone } from '../components/danger.tsx'
 import dialogStyles from '../components/dialog.module.css'
@@ -219,6 +220,14 @@ function WorldSettings({ world }: { world: World }) {
   )
 }
 
+/** Descarga una imagen antes de enseñarla (como mucho, un par de segundos) */
+function preload(url: string) {
+  const image = new Image()
+  image.src = url
+  const loaded = typeof image.decode === 'function' ? image.decode().catch(() => undefined) : Promise.resolve()
+  return Promise.race([loaded, new Promise((resolve) => setTimeout(resolve, 2000))])
+}
+
 interface Draft {
   name: string
   description: string
@@ -292,6 +301,9 @@ function WorldDialog({ world, onClose }: { world?: World; onClose: (gone: boolea
         await api.call('updateWorld', { worldId: world.id, ...look })
       } else {
         const created = await api.call('createWorld', { name })
+        // No sale en la lista hasta que su transición la enseña, saliendo de esta ventana
+        holdCard(created.id)
+        createdId.current = created.id
         let chosen: Cover | null = null
         // Una común se usa tal cual; una propia se sube ahora, al mundo nuevo
         if (newCover?.local) {
@@ -304,27 +316,37 @@ function WorldDialog({ world, onClose }: { world?: World; onClose: (gone: boolea
         if (look.description || look.color || chosen) {
           await api.call('updateWorld', { worldId: created.id, ...look, ...(chosen ? { cover: chosen } : {}) })
         }
+        // La tarjeta sale ya con su portada: sus archivos pedidos y la imagen descargada antes de enseñarla
+        if (chosen) {
+          await queryClient.prefetchQuery({
+            queryKey: ['files', created.id],
+            queryFn: () => api.call('listFiles', { worldId: created.id })
+          })
+          await preload(`/api/files/${chosen.fileId}`)
+        }
       }
       if (account) rememberColor(account.email, draft.color)
-      // Al crearlo, la lista se pone al día cuando el cuadro ya se ha ido (NewWorld): así se ve entrar la tarjeta
       if (world) await refresh()
     },
-    onSuccess: () => {
-      if (world) return
+    onSuccess: async () => {
+      if (world || !createdId.current) return
+      // Creado: esta ventana se encoge en su tarjeta nueva, al rojo
       gone.current = true
-      dialog.current?.close()
+      await revealCard(createdId.current, dialog.current, refresh)
     }
   })
+  const createdId = useRef<string | null>(null)
   // Borrado, la tarjeta desaparece: el foco, a la siguiente (o al título)
   const remove = async () => {
     if (!world) return
-    const card = document.querySelector(`[data-world="${world.id}"]`)
     await api.call('deleteWorld', { worldId: world.id })
-    const after = focusAfterRemoving(card?.closest('li'))
+    // Se mantiene en su sitio hasta que arde, aunque la lista se ponga al día antes
+    const card = document.querySelector(`[data-world="${world.id}"]`)
+    keepCard(world, card?.parentElement ? [...card.parentElement.children].indexOf(card) : 0)
+    const after = focusAfterRemoving(card)
     gone.current = true
-    dialog.current?.close()
-    // La tarjeta arde en su sitio antes de quitarse (Worlds), aunque la lista se ponga al día ya
-    await refresh()
+    closeAtOnce(dialog.current)
+    await burnCard(world.id, refresh)
     after()
   }
 

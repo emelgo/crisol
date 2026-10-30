@@ -75,7 +75,7 @@ export function Ribbon() {
   }
   useEffect(() => {
     if (flame === 'still') return
-    const timer = window.setTimeout(() => setFlame('still'), flame === 'fire' ? 3000 : 3000)
+    const timer = window.setTimeout(() => setFlame('still'), flame === 'fire' ? 3000 : 3400)
     return () => window.clearTimeout(timer)
   }, [flame])
   // Los iconos del mundo (Páginas, Buscar… y los que vengan): al entrar, salen del crisol uno tras otro cuando «Mundos»

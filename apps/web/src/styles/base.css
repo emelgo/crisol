@@ -404,3 +404,135 @@ html:active-view-transition-type(seccion)::view-transition-new(root) {
     transform: scale(1.1);
   }
 }
+
+/*
+ * Crear y borrar mundos (components/card-transition.ts). Las demás tarjetas se recolocan deslizándose. Al crear, la
+ * ventana se encoge en la tarjeta nueva, al rojo, y se enfría al llegar. Al borrar, la tarjeta se pone al rojo, se quema
+ * de abajo arriba y queda en ceniza; las demás esperan a que arda para cerrar el hueco
+ */
+html:active-view-transition-type(crear-mundo)::view-transition-group(*),
+html:active-view-transition-type(borrar-mundo)::view-transition-group(*) {
+  animation-duration: 700ms;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+html:active-view-transition-type(borrar-mundo)::view-transition-group(*) {
+  animation-delay: 1000ms;
+}
+
+/* La ventana y la tarjeta tienen otra forma: sin estirarse, cortadas por arriba como la tarjeta */
+::view-transition-old(.forjando),
+::view-transition-new(.forjando) {
+  block-size: 100%;
+  object-fit: cover;
+  object-position: top;
+}
+
+::view-transition-group(.forjando) {
+  animation-duration: 900ms;
+}
+
+/* La ventana deja paso pronto a la tarjeta: sin mezclarse a mitad de camino */
+::view-transition-old(.forjando) {
+  animation: deja-paso 300ms ease-in both;
+}
+
+::view-transition-new(.forjando) {
+  animation: toma-el-relevo 400ms ease-out 280ms both;
+}
+
+::view-transition-image-pair(.forjando) {
+  animation: al-rojo 1500ms ease-out;
+}
+
+::view-transition-old(.ardiendo) {
+  animation: arde-en-su-sitio 1300ms ease-in forwards;
+  mask-image: linear-gradient(to top, transparent 42%, #000 52%);
+  mask-size: 100% 300%;
+  mask-position: 0 0;
+}
+
+/* Las brasas sobre una tarjeta: un resplandor en su borde de abajo y chispas que suben y se apagan */
+.brasas-tarjeta {
+  position: fixed;
+  z-index: 100;
+  pointer-events: none;
+  view-transition-name: brasas-tarjeta;
+  background: radial-gradient(ellipse 70% 30% at 50% 100%, rgb(255 110 40 / 0.35), transparent 70%);
+  opacity: 0;
+  animation: calor 1600ms ease-out forwards;
+}
+
+.brasas-tarjeta::before,
+.brasas-tarjeta::after {
+  content: "";
+  position: absolute;
+  inset-block-end: 6%;
+  inset-inline-start: 50%;
+  inline-size: 3px;
+  block-size: 3px;
+  border-radius: 50%;
+  background: #ffc04d;
+  box-shadow:
+    -96px 0 0 0 #ff8a5c,
+    -56px -4px 0 1px #ffb347,
+    -20px 3px 0 0 #ff6a2a,
+    22px -2px 0 1px #ffd27a,
+    60px 2px 0 0 #ff8a5c,
+    92px -3px 0 0 #ffb347;
+  opacity: 0;
+  animation: chispas-tarjeta 1400ms ease-out 150ms forwards;
+}
+
+.brasas-tarjeta::after {
+  box-shadow:
+    -76px 2px 0 1px #ffb347,
+    -38px -3px 0 0 #ff8a5c,
+    4px 3px 0 0 #ffc04d,
+    40px -2px 0 1px #ff6a2a,
+    78px 1px 0 0 #ffd27a;
+  animation-delay: 400ms;
+  animation-duration: 1500ms;
+}
+
+::view-transition-group(brasas-tarjeta),
+::view-transition-old(brasas-tarjeta),
+::view-transition-new(brasas-tarjeta) {
+  animation: none;
+}
+
+@keyframes arde-en-su-sitio {
+  0% {
+    filter: none;
+    mask-position: 0 0;
+  }
+
+  20% {
+    filter: sepia(1) saturate(4) hue-rotate(-25deg) brightness(1.15);
+  }
+
+  70% {
+    filter: sepia(1) saturate(3) hue-rotate(-30deg) brightness(0.6);
+  }
+
+  100% {
+    filter: grayscale(1) brightness(0.3);
+    mask-position: 0 100%;
+  }
+}
+
+@keyframes chispas-tarjeta {
+  0% {
+    opacity: 0;
+    transform: translateY(0);
+  }
+
+  15% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(-120px) scale(0.6);
+  }
+}
