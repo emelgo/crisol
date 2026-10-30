@@ -13,6 +13,7 @@ import { OrganizationTrash, WorldTrash } from './routes/trash.tsx'
 import { WorldPage } from './routes/world.tsx'
 import { Worlds } from './routes/worlds.tsx'
 import { WikiFiles } from './wiki/files.tsx'
+import { searchParams, WikiSearch } from './wiki/search.tsx'
 import { WikiTags } from './wiki/tags.tsx'
 import { WikiHome, WikiPage } from './wiki/wiki.tsx'
 
@@ -48,6 +49,12 @@ const filesRoute = createRoute({
   path: '/mundos/$worldId/archivos',
   component: WikiFiles
 })
+const searchRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/mundos/$worldId/buscar',
+  component: WikiSearch,
+  validateSearch: searchParams
+})
 const worldHistoryRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/mundos/$worldId/historial',
@@ -80,6 +87,7 @@ const routeTree = rootRoute.addChildren([
   wikiPageRoute,
   tagsRoute,
   filesRoute,
+  searchRoute,
   worldHistoryRoute,
   historyRoute,
   worldTrashRoute,
