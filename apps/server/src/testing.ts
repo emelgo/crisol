@@ -1,5 +1,8 @@
 /** Ayudas para las pruebas del servidor */
 import { randomBytes } from 'node:crypto'
+import { mkdtempSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import type { Database } from '@crisol/db'
 import { type Auth, createAuth } from './auth/auth.ts'
 import { allowSignup } from './auth/signup-gate.ts'
@@ -24,3 +27,6 @@ export async function signUpTestUser(auth: Auth, person: { name: string; email: 
     .join('; ')
   return { userId: response.user.id, cookie }
 }
+
+/** Una carpeta de datos nueva para una prueba (los bytes de los archivos), en la temporal del sistema */
+export const testDataDir = () => mkdtempSync(join(tmpdir(), 'crisol-prueba-'))

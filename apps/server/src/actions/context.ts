@@ -2,6 +2,7 @@ import type { ActionDefinition } from '@crisol/contracts'
 import type { Database, OperationContext } from '@crisol/db'
 import { type Actor, ForbiddenError, NotFoundError } from '@crisol/domain'
 import type { Collab } from '../collab/server.ts'
+import type { Storage } from '../files/storage.ts'
 import type { Realtime } from '../realtime/hub.ts'
 
 /** Una acción del contrato con su servicio */
@@ -23,6 +24,8 @@ export interface ActionEnv {
   collab?: Collab
   /** Las acciones por su nombre: al aprobarse, lo que pidió la IA se hace con la suya */
   actions: ReadonlyMap<string, Implementation>
+  /** Donde van los bytes de los archivos */
+  storage?: Storage
 }
 
 /** Con qué se ejecuta una acción: el servidor y quién la pide, por dónde */

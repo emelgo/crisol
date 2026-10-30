@@ -78,6 +78,7 @@ export const MCP_TOOLS: Record<string, McpTool> = {
       return { action: 'listUnresolvedLinks', input: { worldId } }
     }
   },
+  listar_archivos: { action: 'listFiles' },
   mover_pagina: { action: 'movePage' },
   borrar_pagina: { action: 'deletePage' }
 }

@@ -1,8 +1,10 @@
+import { join } from 'node:path'
 import { aiRepo, connect } from '@crisol/db'
 import { Redis } from 'ioredis'
 import { buildApp } from './app.ts'
 import { createAuth } from './auth/auth.ts'
 import type { Config } from './config.ts'
+import { diskStorage } from './files/storage.ts'
 import { startPurges } from './jobs/purges.ts'
 import { deriveSealKey } from './secrets.ts'
 import { serviceChecks } from './services.ts'
@@ -15,12 +17,14 @@ export async function startServer(
   const db = connect(config.DATABASE_URL)
   const valkey = new Redis(config.VALKEY_URL, { maxRetriesPerRequest: 2 })
   const auth = createAuth({ db: db.db, secret: config.AUTH_SECRET, baseURL: config.PUBLIC_URL })
+  const storage = diskStorage(join(config.DATA_DIR, 'archivos'))
   const app = buildApp({
     checks: serviceChecks(db, valkey),
     logger: options.logger ?? false,
     ...(config.WEB_DIR ? { webDir: config.WEB_DIR } : {}),
     accounts: { auth, db: db.db, publicUrl: config.PUBLIC_URL, sealKey: deriveSealKey(config.AUTH_SECRET) },
     mcpJwksUrl: `http://127.0.0.1:${config.PORT}/api/auth/jwks`,
+    storage,
     ...(options.approvalWaitMs ? { approvalWaitMs: options.approvalWaitMs } : {})
   })
   // Lo aprobado que se quedó haciéndose al pararse el anterior ya no se va a acabar
@@ -30,6 +34,7 @@ export async function startServer(
   const purges = await startPurges({
     db: db.db,
     valkeyUrl: config.VALKEY_URL,
+    storage,
     onError: (error) => app.log.error(error, 'Falló la purga diaria')
   })
   return {
