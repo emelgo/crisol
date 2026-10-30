@@ -2,8 +2,9 @@ import type { World } from '@crisol/contracts'
 import { createMemoryHistory } from '@tanstack/react-router'
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { fakeAccountClient } from '../account/fake.ts'
+import { ApiError } from '../api/client.ts'
 import { fakeApi } from '../api/fake.ts'
 import { App } from '../app.tsx'
 import { createAppRouter } from '../router.tsx'
@@ -43,25 +44,43 @@ const renderAt = (path: string, api = filesApi()) => {
   )
   return api
 }
-const group = async (name: RegExp) => within(await screen.findByRole('region', { name }))
+/** Una lista de archivos: la del mundo, o la de los comunes (dentro de su región) */
+const cardsIn = async (region?: string) =>
+  within(
+    region
+      ? await within(await screen.findByRole('region', { name: region })).findByRole('list', { name: 'Archivos' })
+      : ((await screen.findAllByRole('list', { name: 'Archivos' }))[0] ?? document.body)
+  )
+
+beforeEach(() =>
+  localStorage.setItem('crisol.recorridos.enrique@crisol.test', JSON.stringify({ seen: ['mundos', 'mundo'] }))
+)
 
 describe('los archivos del mundo', () => {
-  it('desde la wiki se llega; se ordenan por tipo, con su tamaño, y el nombre los abre', async () => {
+  it('desde la barra se llega; en tarjetas, con su tamaño y cuántas páginas los usan; se filtran por tipo y se abren', async () => {
     renderAt(`/mundos/${WORLD.id}/wiki`)
     await userEvent.click(await screen.findByRole('link', { name: 'Archivos' }))
     expect(await screen.findByRole('heading', { level: 1, name: 'Archivos de Eana' })).toBeDefined()
-    const images = await group(/Imágenes/)
-    const map = images.getByRole('link', { name: 'Mapa de Eana.png' })
-    expect(map.getAttribute('target')).toBe('_blank')
-    expect(map.getAttribute('href')).toMatch(/^\/api\/files\//)
-    expect(images.getByText('2,5 MB')).toBeDefined()
-    expect((await group(/PDF/)).getByRole('link', { name: 'Bestiario.pdf' })).toBeDefined()
-    expect((await group(/Otros/)).getByText('0,5 kB')).toBeDefined()
+    const list = await cardsIn()
+    expect(await list.findByText('2,5 MB')).toBeDefined()
+    expect(list.getByText('0,5 kB')).toBeDefined()
+    expect(list.getByText(/En 2 páginas/)).toBeDefined()
+    // Un PDF se abre en otra pestaña
+    const bestiary = list.getByRole('link', { name: 'Bestiario.pdf' })
+    expect(bestiary.getAttribute('target')).toBe('_blank')
+    expect(bestiary.getAttribute('href')).toMatch(/^\/api\/files\//)
+    // Filtrar: solo las imágenes
+    await userEvent.click(screen.getByRole('button', { name: /Imágenes/ }))
+    await waitFor(() => expect(list.queryByRole('link', { name: 'Bestiario.pdf' })).toBeNull())
+    // Una imagen se ve en grande
+    await userEvent.click(list.getByRole('button', { name: 'Mapa de Eana.png' }))
+    expect(await screen.findByRole('dialog', { name: 'Mapa de Eana.png' })).toBeDefined()
   })
 
-  it('subir varios: cada uno con su progreso; al acabar, en su carpeta, y uno muy grande no se intenta', async () => {
+  it('subir varios: al acabar son ya sus tarjetas, sin lista de subidas; uno muy grande no se intenta y se quita', async () => {
     const api = renderAt(`/mundos/${WORLD.id}/archivos`)
     await screen.findByRole('heading', { level: 1, name: 'Archivos de Eana' })
+    await screen.findAllByRole('button', { name: 'Subir archivos' })
     const input = document.querySelector<HTMLInputElement>('input[type=file][multiple]')
     if (!input) throw new Error('sin campo de archivos')
     const huge = new File(['x'], 'Enorme.pdf', { type: 'application/pdf' })
@@ -71,36 +90,68 @@ describe('los archivos del mundo', () => {
       new File(['png'], 'Escudo.png', { type: 'image/png' }),
       huge
     ])
-    const uploads = await group(/Subidas/)
-    await waitFor(() => expect(uploads.getAllByText('Subido')).toHaveLength(2))
-    expect(uploads.getByText('No se pudo: Pasa de 250 MB')).toBeDefined()
+    const list = await cardsIn()
+    expect(await list.findByRole('link', { name: 'Atlas.pdf' })).toBeDefined()
+    expect(await list.findByRole('button', { name: 'Escudo.png' })).toBeDefined()
+    await waitFor(() => expect(screen.queryByRole('button', { name: /Cancelar la subida/ })).toBeNull())
     expect(api.calls.filter((call) => call === 'uploadFile')).toHaveLength(2)
-    expect((await group(/PDF/)).getByRole('link', { name: 'Atlas.pdf' })).toBeDefined()
-    expect((await group(/Imágenes/)).getByRole('link', { name: 'Escudo.png' })).toBeDefined()
-    await userEvent.click(uploads.getByRole('button', { name: 'Quitar las terminadas' }))
-    expect(screen.queryByRole('region', { name: /Subidas/ })).toBeNull()
+    expect(list.getByText('No se pudo: Pasa de 250 MB')).toBeDefined()
+    await userEvent.click(list.getByRole('button', { name: 'Quitar Enorme.pdf' }))
+    expect(list.queryByText('Enorme.pdf')).toBeNull()
   })
 
-  it('renombrar (sin repetir nombre), reemplazar y mandar a la papelera, de donde vuelve', async () => {
-    const api = renderAt(`/mundos/${WORLD.id}/archivos`)
-    await userEvent.click(await screen.findByRole('button', { name: 'Renombrar Mapa de Eana.png' }))
-    const field = screen.getByLabelText('Nuevo nombre de Mapa de Eana.png')
-    await userEvent.clear(field)
-    await userEvent.type(field, 'bestiario.pdf{Enter}')
-    expect(await screen.findByText('Ya hay un archivo con ese nombre')).toBeDefined()
-    await userEvent.clear(field)
-    await userEvent.type(field, 'Mapa del norte.png{Enter}')
-    expect(await screen.findByRole('link', { name: 'Mapa del norte.png' })).toBeDefined()
+  it('una subida se puede cancelar: se corta y no queda nada', async () => {
+    const api = filesApi()
+    let cancelled = false
+    api.client.uploadFile = (_target, _file, _progress, signal) =>
+      new Promise((_resolve, reject) =>
+        signal?.addEventListener('abort', () => {
+          cancelled = true
+          reject(new ApiError('CANCELLED', 0))
+        })
+      )
+    renderAt(`/mundos/${WORLD.id}/archivos`, api)
+    await screen.findByRole('heading', { level: 1, name: 'Archivos de Eana' })
+    await screen.findAllByRole('button', { name: 'Subir archivos' })
+    const input = document.querySelector<HTMLInputElement>('input[type=file][multiple]')
+    if (!input) throw new Error('sin campo de archivos')
+    await userEvent.upload(input, [new File(['%PDF'], 'Lento.pdf', { type: 'application/pdf' })])
+    expect(await screen.findByRole('progressbar', { name: 'Subiendo Lento.pdf' })).toBeDefined()
+    await userEvent.click(screen.getByRole('button', { name: 'Cancelar la subida de Lento.pdf' }))
+    await waitFor(() => expect(screen.queryByText('Lento.pdf')).toBeNull())
+    expect(cancelled).toBe(true)
+    expect(screen.queryByText(/No se pudo/)).toBeNull()
+  })
 
-    const replace = document.querySelectorAll<HTMLInputElement>('li input[type=file]')[0]
+  it('su engranaje: renombrar (sin repetir nombre), reemplazar y mandar a la papelera, de donde vuelve', async () => {
+    const api = renderAt(`/mundos/${WORLD.id}/archivos`)
+    await userEvent.click(await screen.findByRole('button', { name: 'Ajustes de Mapa de Eana.png' }))
+    const dialogElement = await screen.findByRole('dialog', { name: 'Ajustes de Mapa de Eana.png' })
+    const dialog = within(dialogElement)
+    const field = dialog.getByLabelText('Nombre del archivo')
+    await userEvent.clear(field)
+    await userEvent.type(field, 'bestiario.pdf')
+    await userEvent.click(dialog.getByRole('button', { name: 'Guardar' }))
+    expect(await dialog.findByText('Ya hay un archivo con ese nombre')).toBeDefined()
+    await userEvent.clear(field)
+    await userEvent.type(field, 'Mapa del norte.png')
+    await userEvent.click(dialog.getByRole('button', { name: 'Guardar' }))
+    expect(await screen.findByRole('button', { name: 'Mapa del norte.png' })).toBeDefined()
+
+    // Renombrado, la ventana ya lleva el nombre nuevo
+    const replace = dialogElement.querySelector<HTMLInputElement>('input[type=file]')
     if (!replace) throw new Error('sin campo de reemplazo')
     await userEvent.upload(replace, new File(['nuevo'], 'otro.png', { type: 'image/png' }))
     await waitFor(() => expect(api.calls).toContain('uploadFile'))
+    await userEvent.click(dialog.getByRole('button', { name: 'Cerrar' }))
 
-    await userEvent.click(screen.getByRole('button', { name: 'Borrar Bestiario.pdf' }))
-    // Lo usan dos páginas: se avisa
-    expect(screen.getByText(/Lo usan 2 páginas/)).toBeDefined()
-    await userEvent.click(screen.getByRole('button', { name: 'Borrar' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Ajustes de Bestiario.pdf' }))
+    const settings = within(await screen.findByRole('dialog', { name: 'Ajustes de Bestiario.pdf' }))
+    await userEvent.click(settings.getByRole('button', { name: 'Borrar el archivo' }))
+    const confirm = within(await screen.findByRole('dialog', { name: '¿Borrar «Bestiario.pdf»?' }))
+    // Lo usan dos páginas: se avisa; no hace falta escribir su nombre
+    expect(confirm.getByText(/Lo usan 2 páginas/)).toBeDefined()
+    await userEvent.click(confirm.getByRole('button', { name: 'Borrar el archivo' }))
     await waitFor(() => expect(screen.queryByRole('link', { name: 'Bestiario.pdf' })).toBeNull())
     const trash = await api.client.call('listTrash', { worldId: WORLD.id })
     expect(trash.items).toMatchObject([{ kind: 'file', name: 'Bestiario.pdf' }])
@@ -124,15 +175,15 @@ describe('los archivos comunes de la cuenta (ADR-0005)', () => {
 
   it('en los archivos de un mundo, aparte, la carpeta «Comunes»; lo que se sube ahí es común', async () => {
     const api = renderAt(`/mundos/${WORLD.id}/archivos`, withCommon())
-    const common = within(await screen.findByRole('region', { name: 'Comunes' }))
-    expect(await common.findByRole('link', { name: 'Escudo.png' })).toBeDefined()
-    expect(common.queryByRole('link', { name: 'Mapa de Eana.png' })).toBeNull()
+    const common = await cardsIn('Comunes')
+    expect(await common.findByRole('button', { name: 'Escudo.png' })).toBeDefined()
+    expect(common.queryByRole('button', { name: 'Mapa de Eana.png' })).toBeNull()
     const input = (await screen.findByRole('region', { name: 'Comunes' })).querySelector<HTMLInputElement>(
       'input[type=file][multiple]'
     )
     if (!input) throw new Error('sin campo de archivos en los comunes')
     await userEvent.upload(input, [new File(['png'], 'Sello.png', { type: 'image/png' })])
-    expect(await common.findByRole('link', { name: 'Sello.png' })).toBeDefined()
+    expect(await common.findByRole('button', { name: 'Sello.png' })).toBeDefined()
     expect(api.files.find((f) => f.name === 'Sello.png')).toMatchObject({ worldId: null, organizationId: ORG.id })
   })
 
@@ -140,7 +191,7 @@ describe('los archivos comunes de la cuenta (ADR-0005)', () => {
     renderAt('/mundos', withCommon())
     await userEvent.click(await screen.findByRole('link', { name: 'Archivos' }))
     expect(await screen.findByRole('heading', { level: 1, name: 'Archivos comunes' })).toBeDefined()
-    expect(await screen.findByRole('link', { name: 'Escudo.png' })).toBeDefined()
-    expect(screen.queryByRole('link', { name: 'Mapa de Eana.png' })).toBeNull()
+    expect(await screen.findByRole('button', { name: 'Escudo.png' })).toBeDefined()
+    expect(screen.queryByRole('button', { name: 'Mapa de Eana.png' })).toBeNull()
   })
 })

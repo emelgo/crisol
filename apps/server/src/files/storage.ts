@@ -46,6 +46,13 @@ const HEAD_BYTES = 512
 const KEY = /^[0-9a-f-]{36}\/[0-9a-f-]{36}$/
 
 /** El disco, bajo una carpeta: cada mundo, su subcarpeta */
+/** La subida se cortó antes de acabar */
+export class UploadCutError extends Error {
+  constructor() {
+    super('La subida se cortó antes de acabar')
+  }
+}
+
 export function diskStorage(root: string): Storage {
   const pathOf = (key: string) => {
     // Una clave siempre es nuestra (mundo/uuid): nada de rutas que salgan de la carpeta
@@ -79,7 +86,12 @@ export function diskStorage(root: string): Storage {
       // (así aún se le puede contestar)
       const written = pipeline(count, createWriteStream(path, { flags: 'wx' }))
       const abort = (error: Error) => count.destroy(error)
+      // Si quien sube la corta (la cancela o se va), el cuerpo se cierra sin acabar: se tira lo que llegó
+      const cut = () => {
+        if (!body.readableEnded) count.destroy(new UploadCutError())
+      }
       body.once('error', abort)
+      body.once('close', cut)
       body.pipe(count)
       try {
         await written
@@ -90,6 +102,7 @@ export function diskStorage(root: string): Storage {
         throw error
       } finally {
         body.off('error', abort)
+        body.off('close', cut)
       }
       return { key, size, hash: hash.digest('hex'), head: new Uint8Array(Buffer.concat(head)) }
     },

@@ -1,72 +1,3 @@
-/* La zona de subir: los botones y, alrededor, donde soltar */
-.drop {
-  margin-block-end: var(--space-6);
-  padding: var(--space-6);
-  border: 2px dashed var(--color-field-border);
-}
-
-.over {
-  border-color: var(--color-accent);
-  background: var(--color-surface);
-}
-
-.buttons {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-3);
-}
-
-.hint {
-  margin: var(--space-3) 0 0;
-  color: var(--color-muted);
-}
-
-.uploads {
-  margin-block-end: var(--space-6);
-}
-
-.uploadList {
-  list-style: none;
-  margin: 0 0 var(--space-3);
-  padding: 0;
-}
-
-.upload {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-2) var(--space-4);
-  padding-block: var(--space-2);
-  border-block-end: 1px solid var(--color-border);
-}
-
-.uploadName {
-  flex: 1 1 12rem;
-  min-inline-size: 0;
-  overflow-wrap: anywhere;
-}
-
-.progress {
-  inline-size: 10rem;
-}
-
-.done {
-  color: var(--color-muted);
-}
-
-.error {
-  color: var(--color-danger);
-}
-
-.group {
-  margin-block-end: var(--space-6);
-}
-
-.count {
-  color: var(--color-muted);
-  font-weight: 400;
-}
-
 /* La pantalla de los comunes, fuera de los mundos: una columna en el centro, como Mis mundos */
 .page {
   inline-size: min(100%, 52rem);
@@ -81,4 +12,205 @@
 .commonHint {
   margin: 0 0 var(--space-4);
   color: var(--color-muted);
+}
+
+/* Donde se sueltan: toda la sección; mientras se arrastra encima, se marca */
+.zone {
+  position: relative;
+  margin: calc(-1 * var(--space-2));
+  padding: var(--space-2);
+  border: 1px dashed transparent;
+  border-radius: 8px;
+  transition:
+    border-color 150ms ease-out,
+    background-color 150ms ease-out;
+}
+
+.over {
+  border-color: var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 6%, transparent);
+}
+
+.dropHint {
+  position: absolute;
+  inset-block-start: var(--space-2);
+  inset-inline-end: var(--space-3);
+  margin: 0;
+  color: var(--color-accent-text);
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.empty {
+  color: var(--color-muted);
+}
+
+/* Filtrar por tipo: unas pastillas, la elegida marcada */
+.kinds {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-block-end: var(--space-4);
+}
+
+.kind {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: 2rem;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-frame);
+  border-radius: 999px;
+  background: none;
+  color: var(--color-muted);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.kind:hover {
+  border-color: var(--color-text);
+  color: var(--color-text);
+}
+
+.kind[aria-pressed="true"] {
+  border-color: var(--color-text);
+  background: color-mix(in srgb, var(--color-text) 10%, transparent);
+  color: var(--color-text);
+}
+
+.count {
+  color: var(--color-muted);
+  font-weight: 400;
+}
+
+/* La miniatura, arriba de la tarjeta: la imagen recortada, o el icono de su tipo sobre un fondo apagado */
+.thumb {
+  position: relative;
+  display: grid;
+  place-items: center;
+  block-size: 7rem;
+  margin: 1px 1px var(--space-3);
+  overflow: hidden;
+  background: var(--color-raised);
+  color: var(--color-muted);
+  clip-path: polygon(11px 0, calc(100% - 11px) 0, 100% 11px, 100% 100%, 0 100%, 0 11px);
+}
+
+.thumb img {
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+  transition: transform 300ms ease-out;
+}
+
+/* El nombre de un archivo: entero, aunque sea largo, y sin las mayúsculas de los títulos */
+.fileName {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 600;
+  text-transform: none;
+  overflow-wrap: anywhere;
+}
+
+/* El de una imagen es un botón (la abre en grande): como el enlace */
+.open {
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: start;
+  cursor: pointer;
+}
+
+/* Subiendo: la barra al pie de la miniatura */
+.progress {
+  position: absolute;
+  inset-inline: 0;
+  inset-block-end: 0;
+  inline-size: 100%;
+  block-size: 4px;
+  border: 0;
+  appearance: none;
+  background: color-mix(in srgb, var(--color-bg) 70%, transparent);
+}
+
+.progress::-webkit-progress-bar {
+  background: transparent;
+}
+
+.progress::-webkit-progress-value {
+  background: var(--color-brand-glow, var(--color-accent));
+  transition: inline-size 200ms ease-out;
+}
+
+.progress::-moz-progress-bar {
+  background: var(--color-brand-glow, var(--color-accent));
+}
+
+.error {
+  color: var(--color-danger);
+  font-size: 0.875rem;
+}
+
+/* El recuadro de subir: el botón ocupa todo y, abajo, «o una carpeta», por encima */
+.uploadItem {
+  position: relative;
+}
+
+.folder {
+  position: absolute;
+  inset-block-end: var(--space-4);
+  inset-inline: 0;
+  margin-inline: auto;
+  inline-size: max-content;
+  padding: var(--space-1) var(--space-2);
+  border: 0;
+  background: none;
+  color: var(--color-muted);
+  font: inherit;
+  font-size: 0.875rem;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.folder:hover {
+  color: var(--color-text);
+}
+
+/* La vista previa de la ventana de un archivo: la imagen entera, o su icono */
+.preview {
+  position: relative;
+  display: grid;
+  place-items: center;
+  block-size: 12rem;
+  margin-block-end: var(--space-4);
+  overflow: hidden;
+  background: var(--color-raised);
+  color: var(--color-muted);
+}
+
+.preview img {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: contain;
+}
+
+/* Reemplazar: el icono y el texto, separados */
+.replace {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* Subiendo, la imagen apagada hasta que llega */
+.uploading .thumb img {
+  opacity: 0.6;
+}
+
+/* Al pasar el ratón, la miniatura se acerca un poco, como las portadas */
+li:hover > .thumb img {
+  transform: scale(1.06);
 }

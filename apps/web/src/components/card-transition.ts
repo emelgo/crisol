@@ -116,8 +116,12 @@ export function closeAtOnce(dialog: HTMLDialogElement | null) {
 }
 
 /** Corre la transición; sin transiciones de vista (o sin la lista), solo el cambio */
-async function run(type: 'crear-mundo' | 'borrar-mundo', update: () => Promise<void>, before: (list: Element) => void) {
-  const list = document.querySelector('[data-card-list]')
+async function run(
+  type: 'crear-mundo' | 'borrar-mundo',
+  update: () => Promise<void>,
+  before: (list: Element) => void,
+  list = document.querySelector('[data-card-list]')
+) {
   if (typeof document.startViewTransition !== 'function' || !list) return update()
   nameCards(list)
   before(list)
@@ -196,6 +200,8 @@ export async function burnCard(id: string, refresh: () => Promise<unknown>) {
       const card = cardOf(id)
       card?.style.setProperty('view-transition-class', 'ardiendo')
       embersOver(card)
-    }
+    },
+    // La de su lista (en una pantalla puede haber dos: los archivos del mundo y los comunes)
+    cardOf(id)?.closest('[data-card-list]') ?? null
   )
 }

@@ -681,8 +681,9 @@ export function fakeApi(
       return { name: `${pageById(pageId).title}.pdf`, data: new Blob(['%PDF']) }
     },
     // Sube al momento, en dos pasos de progreso; el tipo, por el que dice el Blob
-    async uploadFile(target, blob, onProgress) {
+    async uploadFile(target, blob, onProgress, signal) {
       calls.push('uploadFile')
+      if (signal?.aborted) throw new ApiError('CANCELLED', 0)
       onProgress?.(0.5)
       onProgress?.(1)
       const kind = blob.type.startsWith('image/') ? 'image' : blob.type === 'application/pdf' ? 'pdf' : 'other'
