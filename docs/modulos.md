@@ -213,8 +213,8 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   4. ~~Diseño~~: aprobado.
   5. ~~`/plan`~~: aprobado.
   6. **`/build` tarea a tarea** (`tasks/todo.md`), con `/agent-skills:review` y `/ship`, como en el módulo 0. Hechas de
-     la 1 a la 13. **Puntos de control 1 y 2 pasados** (2026-10-30, «todo funciona de momento»): el editor anidado se
-     queda. **Sigue la 14** (entrantes, menciones y aviso al borrar), y así hasta acabar el módulo (bitácora: `tasks/bitacora.md`).
+     la 1 a la 14. **Puntos de control 1 y 2 pasados** (2026-10-30, «todo funciona de momento»): el editor anidado se
+     queda. **Sigue la 15** (vista previa e incrustados), y así hasta acabar el módulo (bitácora: `tasks/bitacora.md`).
   7. **Al acabar el módulo 1, la interfaz** (decisión de Enrique, 2026-10-30): se apunta por dónde vamos y se
      dedica una etapa a la interfaz antes del módulo 2. Ver «Para el repaso final de la interfaz».
 - **2026-10-29 — Módulo 1, tarea 1: páginas y árbol en la API.**
@@ -514,6 +514,33 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
     - dominio (resolver y erratas) y Markdown (ida y vuelta con `pageLink`);
     - integración: en cualquier orden, en una tanda, alias, ambiguos con ruta, y papelera;
     - e2e `enlaces.spec.ts`, con a11y.
+  - **Arreglado después, en la 14**: un enlace que solo llevaba el nombre se resolvía en `page_links` pero no en el
+    texto. Ahora se le pone también ahí: al crear páginas, y tras cada guardado en una conexión directa aparte.
+- **2026-10-30 — Módulo 1, tarea 14: entrantes, menciones y aviso al borrar.**
+  - **Texto plano de cada documento**: `documents.text` (migración 0013) y `plainText`, en
+    `packages/editor/src/text.ts`.
+    - Se guarda con cada guardado y al crear páginas.
+    - Lo que no lo tiene aún se rellena al buscar menciones.
+    - Lo usará también la búsqueda (tarea 20).
+  - **Acciones** (`apps/server/src/actions/links.ts`):
+    - **`getPageLinks`**:
+      - entrantes, con el trozo del bloque que enlaza y si sale de un secreto;
+      - salientes, con su estado;
+      - menciones sin enlazar: título o alias como palabra entera (`findName`), en páginas que no la enlazan.
+    - **`listUnresolvedLinks`**: los sin resolver del mundo.
+    - **`linkMention`**: «Enlazar» cambia la primera mención por un enlace, con su texto si no es el título.
+  - **MCP `enlaces_pagina`**: con `pageId`, los de la página; con `worldId`, los sin resolver del mundo.
+  - **Web**:
+    - la sección «Enlaces» bajo el cuerpo (`backlinks.tsx`), con «La enlazan» y «La nombran sin enlazar», y
+      «Enlazar»;
+    - al borrar, «La enlazan N páginas: sus enlaces se verán rotos».
+    - Su sitio a la derecha queda para la etapa de interfaz.
+  - **Pruebas**:
+    - integración: entrantes con su trozo y desde un secreto, salientes en sus tres estados, menciones con alias y sin
+      falsos «Maela Varnes», «Enlazar» y los sin resolver;
+    - MCP en cada modo;
+    - e2e del panel y del aviso;
+    - `@fugas` con las acciones nuevas.
 - **Pendientes de permiso de Enrique:**
   - Servicio de systemd para Foundry: ahora corre como proceso de la sesión y se para al cerrarla; se arranca con el
     comando de `research/foundry/entorno.md`.
@@ -534,7 +561,7 @@ Estados: pendiente · en curso · hecho · descartado.
 | # | Módulo | Estado | REA principal |
 |---|---|---|---|
 | 0 | **Fundación**: monorepo, CI, despliegue, cuentas, organizaciones, mundos, campañas, roles, historial y deshacer, esqueleto del MCP | **hecho** (2026-10-29; Discord y Google, pospuestos) | Foundry: modelo de documentos y permisos; DDB: campañas e invitaciones |
-| 1 | **Wiki**: páginas y subpáginas, editor de bloques, enlaces, menciones, vista previa, propiedades, secretos, búsqueda, marcadores, etiquetas, versiones, recursos y archivos, **hojas con estilo** (tipo Homebrewery, con PDF), exportación MD, sus herramientas MCP | en curso (construcción: tareas 1 a 13 de 26 hechas) | Foundry: Journal; DDB: contenido y referencias; Homebrewery (MIT): formato de hoja y descarga |
+| 1 | **Wiki**: páginas y subpáginas, editor de bloques, enlaces, menciones, vista previa, propiedades, secretos, búsqueda, marcadores, etiquetas, versiones, recursos y archivos, **hojas con estilo** (tipo Homebrewery, con PDF), exportación MD, sus herramientas MCP | en curso (construcción: tareas 1 a 14 de 26 hechas) | Foundry: Journal; DDB: contenido y referencias; Homebrewery (MIT): formato de hoja y descarga |
 | 2 | Tipos de página, plantillas y formularios nativos; consultas (en lugar de Dataview y Bases) | pendiente | Foundry: tipos de documento |
 | 3 | Sistemas de reglas, fichas de personaje (creación, subida de nivel), dados y dados 3D | pendiente | DDB: creador y hoja; Foundry: dnd5e, DataModel e instalar y crear sistemas |
 | 4 | Compendios, bestiario, statblocks, biblioteca | pendiente | Foundry: compendium packs; DDB: listados |
