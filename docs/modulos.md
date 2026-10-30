@@ -42,7 +42,51 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
 
 ### Lo que dijo Enrique al probar
 
-(vacío: se apunta aquí al volver)
+2026-10-30, en staging. Se arregla al volver de la etapa de interfaz, antes de cerrar el módulo.
+
+**Punto 3 (Claude por el MCP)**: funciona. `crear_paginas` creó páginas anidadas con secretos, propiedades de todos los
+tipos y enlaces entre ellas resueltos en la misma llamada. `editar_pagina` funcionó al añadir, por bloque y por sección,
+y la búsqueda encuentra lo que está dentro de un secreto. Lo raro que vio Claude:
+
+1. **El id de un secreto cambia al reemplazarlo por bloque** (`^s-6lkcs0i3` pasó a `^s-yy6zw8yy`). **Arreglar**: en el
+   modo `block`, si lo nuevo es un solo bloque del mismo tipo, conserva el id del que reemplaza.
+2. **La fecha de la página no cambia al escribir en el texto**: `updatedAt` y la versión de la fila solo cambian con
+   los ajustes de la página. **Arreglar**: que la sesión de edición, o lo que escribe Claude, ponga al día `updated_at`
+   de `pages`, sin subir `version` (`version` es la que mira deshacer).
+3. **La búsqueda no dice en qué título está un secreto**: cada secreto es su documento y sus secciones no tienen
+   título. **Arreglar**: dar a las secciones de un secreto el título de la sección del cuerpo donde está su bloque.
+4. **Una nota oculta `%%…%%` de una línea vuelve en tres** al leerla. Es igual de válido, pero no es lo que se mandó.
+   **Arreglar**: si la nota es un solo párrafo, escribirla en una línea.
+5. **Aprobaciones**: crear y añadir terminaron enseguida, y las ediciones por bloque y por sección esperaron. Lo
+   decide solo el modo de IA y el tipo de acción, y las cuatro son `editPage`, así que el modo cambió entre medias (a
+   «asistente»). No es un fallo; si vuelve a pasar sin cambiar el modo, mirarlo.
+6. **Un párrafo vacío al final de «Test»**, en una versión a nombre de Enrique (08:17:35), justo después de lo de
+   Claude. Seguramente lo puso el editor al abrir. **Mirar** con el punto de «vigilar» de arriba (lo que escribe el
+   editor al abrir).
+
+**Puntos 3 y 4 (Enrique)**:
+
+7. **Deshacer no funciona con las versiones** (las versiones se ven y salen en el historial). Hay que reproducirlo con
+   él. Sospecha: el párrafo vacío del punto 6 crea una versión posterior a nombre suyo, y deshacer dice «alguien
+   escribió después» y no toca nada (es lo que debe hacer si de verdad escribió alguien). **Arreglar**: que el editor
+   no escriba nada solo al abrir; y que el mensaje del conflicto se vea claro.
+8. **Buscar en la página no busca dentro de los secretos ni en los enlaces `[[…]]`**. Los secretos son otros editores
+   y los enlaces son átomos sin texto. **Arreglar**: contar el texto que enseña cada enlace y buscar también en los
+   editores de los secretos (cada uno resalta lo suyo; «n de m» suma los de todos).
+9. **Exportar**: bien.
+
+**Punto 5 (archivos y hoja)**:
+
+10. **Los PDF de la pestaña de archivos se abren en otra pestaña del navegador** (es lo que hace «Abrir»). En una
+    página se ven en el visor con «Ver aquí».
+11. **En la hoja, dentro de la app, las notas laterales no quedan al lado del texto** (en la captura sale arriba, sola,
+    y el texto de después no la rodea). Causa: cada bloque de la hoja va en su propia caja (`display: flow-root`, para
+    medirlo), así que el texto de los bloques siguientes no rodea la nota. **Arreglar**: medir y pintar la nota lateral
+    junto con el bloque siguiente, en la misma caja, para que lo rodee.
+12. **Con la hoja al lado del editor, la página no cabe y se corta** (la hoja mide 794 px y el panel es más estrecho).
+    **Arreglar**: escalar la hoja al ancho del panel (`zoom`), midiendo siempre a tamaño real.
+
+**Punto 6 (PDF de una hoja e imprimir)** y **final**: pendientes de probar.
 
 ### Historia
 
