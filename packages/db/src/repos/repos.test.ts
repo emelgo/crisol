@@ -8,10 +8,12 @@ import { bootstrapTokens, organizationMembers, organizations } from '../schema/o
 import { freshTestDatabase, resetDatabase } from '../testing.ts'
 import * as bootstrap from './bootstrap.ts'
 import * as campaignsRepo from './campaigns.ts'
+import * as documentsRepo from './documents.ts'
 import * as historyRepo from './history.ts'
 import * as invitationsRepo from './invitations.ts'
 import * as membersRepo from './members.ts'
 import { isOwner, listMemberOrganizations, loadMemberships } from './memberships.ts'
+import * as pagesRepo from './pages.ts'
 import * as worldsRepo from './worlds.ts'
 
 const DAY = 24 * 60 * 60 * 1000
@@ -91,6 +93,30 @@ describe('repositorios', () => {
 
     it('un mundo que no existe no se encuentra', async () => {
       expect(await worldsRepo.findWorld(conn.db, '00000000-0000-4000-8000-000000000000')).toBeNull()
+    })
+  })
+
+  describe('documentos', () => {
+    it('dos guardados del cuerpo a la vez, aún sin fila, no se bloquean ni se pisan', async () => {
+      const world = await worldsRepo.createWorldWithMaster(conn.db, ui('createWorld'), {
+        organizationId,
+        name: 'Eana',
+        masterId: 'u1'
+      })
+      for (let round = 0; round < 15; round++) {
+        const page = await pagesRepo.createPage(conn.db, ui('createPage'), {
+          worldId: world.id,
+          title: `Página ${round}`,
+          placement: { parentId: null }
+        })
+        const save = (byte: number) =>
+          documentsRepo.mergeBody(conn.db, { pageId: page.id, worldId: world.id, userId: 'u1' }, (stored) =>
+            stored ? new Uint8Array([...stored, byte]) : new Uint8Array([byte])
+          )
+        await Promise.all([save(1), save(2)])
+        const body = await documentsRepo.findBody(conn.db, page.id)
+        expect([...(body?.state ?? [])].sort()).toEqual([1, 2])
+      }
     })
   })
 
