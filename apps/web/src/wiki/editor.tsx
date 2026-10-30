@@ -1,6 +1,7 @@
 import type { Page } from '@crisol/contracts'
 import { BODY_FIELD, editorExtensions, fillMissingIds } from '@crisol/editor'
 import type { HocuspocusProvider } from '@hocuspocus/provider'
+import type { Editor } from '@tiptap/core'
 import { Collaboration } from '@tiptap/extension-collaboration'
 import { CollaborationCaret } from '@tiptap/extension-collaboration-caret'
 import { EditorContent, useEditor } from '@tiptap/react'
@@ -9,6 +10,7 @@ import { useTranslation } from 'react-i18next'
 import type * as Y from 'yjs'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
+import { useErrorText } from '../api/errors.ts'
 import { useAnnounce } from '../components/announcer.tsx'
 import { AiHighlight, useAiHighlight } from './ai-highlight.ts'
 import type { BlockContext } from './blocks.ts'
@@ -17,6 +19,7 @@ import { caretColor, renderCaret } from './carets.ts'
 import { useCollabDocument } from './collab.tsx'
 import { BlockHandle, BlockMenu, type BlockTarget, blockAtCursor } from './drag-handle.tsx'
 import styles from './editor.module.css'
+import { FileDrop, type FileDropOptions } from './file-embed.tsx'
 import { LinkSuggest, PageLinksContext, useLinksRef, usePageLinks } from './page-links.tsx'
 import {
   CopySeparateOnPaste,
@@ -84,6 +87,27 @@ function BodyEditor({
   // Las páginas del mundo, para `[[`: el editor se crea una vez y las lee al momento
   const links = useLinksRef()
   // Hacer secreto lo elegido: su documento nuevo se crea en el servidor
+  // Subir un archivo al mundo de la página (pegado, soltado o elegido con «/»)
+  const upload = useCallback(
+    (file: File) => {
+      const worldId = links.current?.worldId
+      if (!worldId) return Promise.reject(new Error('sin mundo'))
+      return api.uploadFile({ worldId, name: file.name }, file)
+    },
+    [api, links]
+  )
+  const errorText = useErrorText()
+  const announceFile = useCallback<FileDropOptions['announce']>(
+    (message) =>
+      announce(
+        message.kind === 'failed'
+          ? t('fileEmbed.failed', { name: message.name, error: errorText(message.error) })
+          : t(`fileEmbed.${message.kind}`, { name: message.name })
+      ),
+    [announce, t, errorText]
+  )
+  const filePicker = useRef<HTMLInputElement>(null)
+  const pickingFor = useRef<Editor | null>(null)
   const context = useMemo<BlockContext>(
     () => ({
       makeSeparate: (editor, kind) =>
@@ -91,7 +115,11 @@ function BodyEditor({
           editor,
           kind,
           async (which) => (await api.call('createPageDocument', { pageId, kind: which })).id
-        )
+        ),
+      pickFile: (editor) => {
+        pickingFor.current = editor
+        filePicker.current?.click()
+      }
     }),
     [api, pageId]
   )
@@ -113,6 +141,7 @@ function BodyEditor({
           announce: (title) => announce(t('links.inserted', { title }))
         }),
         CopySeparateOnPaste,
+        FileDrop.configure({ upload, announce: announceFile }),
         AiHighlight.configure({ className: styles.aiFlash ?? '' }),
         Collaboration.configure({ document, field: BODY_FIELD }),
         CollaborationCaret.configure({ provider, user: { name, color: caretColor(name) }, render: renderCaret })
@@ -169,6 +198,29 @@ function BodyEditor({
         </div>
       )}
       <EditorContent editor={editor} />
+      <input
+        ref={filePicker}
+        type="file"
+        hidden
+        onChange={(event) => {
+          const chosen = event.currentTarget.files?.[0]
+          event.currentTarget.value = ''
+          const target = pickingFor.current
+          if (!chosen || !target) return
+          announceFile({ kind: 'uploading', name: chosen.name })
+          upload(chosen).then(
+            (stored) => {
+              target
+                .chain()
+                .focus()
+                .insertContent({ type: 'fileEmbed', attrs: { fileId: stored.id, name: stored.name } })
+                .run()
+              announceFile({ kind: 'uploaded', name: stored.name })
+            },
+            (error: unknown) => announceFile({ kind: 'failed', name: chosen.name, error })
+          )
+        }}
+      />
       {editable && editor && (
         <>
           <FormatMenu editor={editor} />

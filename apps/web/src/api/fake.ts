@@ -37,8 +37,8 @@ export function fakeApi(
       icon?: string | null
       properties?: PageProperty[]
     }>
-    /** Los archivos de los mundos */
-    files?: Array<Pick<FileView, 'worldId' | 'name'> & Partial<FileView>>
+    /** Los archivos de los mundos (usedBy: cuántas páginas lo usan) */
+    files?: Array<Pick<FileView, 'worldId' | 'name'> & Partial<FileView> & { usedBy?: number }>
   } = {}
 ) {
   const organizations = options.organizations ?? []
@@ -72,7 +72,8 @@ export function fakeApi(
       id
     }
   }
-  const files = (options.files ?? []).map(fileOf)
+  const files = (options.files ?? []).map(({ usedBy: _, ...file }) => fileOf(file))
+  const fileUses = new Map((options.files ?? []).map((file, i) => [files[i]?.id ?? '', file.usedBy ?? 0]))
   const trashedFiles: FileView[] = []
   const fileById = (fileId: string) => {
     const file = files.find((f) => f.id === fileId)
@@ -497,7 +498,7 @@ export function fakeApi(
       files: files
         .filter((f) => f.worldId === worldId)
         .sort((a, b) => a.name.localeCompare(b.name, 'es'))
-        .map((f) => ({ ...f }))
+        .map((f) => ({ ...f, usedBy: fileUses.get(f.id) ?? 0 }))
     }),
     renameFile: ({ fileId, name }) => {
       const file = fileById(fileId)
