@@ -12,6 +12,7 @@ import {
   getPage,
   getWikiPreferences,
   listPageChildren,
+  listPageNames,
   listPageTree,
   listTags,
   movePage,
@@ -90,7 +91,8 @@ export const ACTIONS = [
   createPageDocument,
   readPage,
   createPages,
-  editPage
+  editPage,
+  listPageNames
 ]
 
 /** Las acciones por nombre, solo como tipo: la web las usa sin cargar zod */
@@ -139,4 +141,5 @@ export type Actions = {
   readPage: typeof readPage
   createPages: typeof createPages
   editPage: typeof editPage
+  listPageNames: typeof listPageNames
 }

@@ -337,3 +337,16 @@ export const exportInput = z.object({
 })
 
 export type ExportInput = z.infer<typeof exportInput>
+
+export const listPageNames = defineAction({
+  name: 'listPageNames',
+  kind: 'read',
+  description:
+    'Los nombres de todas las páginas de la wiki de un mundo (título, alias y ruta), para enlazarlas: un [[Título]] lleva a la página que se llama así',
+  input: z.object({ worldId: z.uuid() }),
+  output: z.object({
+    pages: z.array(
+      z.object({ id: z.uuid(), title: z.string(), aliases: z.array(z.string()), path: z.array(z.string()) })
+    )
+  })
+})

@@ -494,6 +494,9 @@ importers:
       '@crisol/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
+      '@crisol/domain':
+        specifier: workspace:*
+        version: link:../../packages/domain
       '@crisol/editor':
         specifier: workspace:*
         version: link:../../packages/editor

@@ -29,7 +29,7 @@ export interface WritePage {
   body: JSONContent
   /** Lo de dentro de cada secreto o nota oculta, por el id de su documento (null: no se puede leer) */
   separate: (documentId: string) => JSONContent[] | null
-  /** El título de una página enlazada (en las propiedades) */
+  /** Cómo se escribe una página enlazada (en las propiedades y en el texto): su título, o su ruta si se repite */
   pageTitle?: (pageId: string) => string
   /** Los ids de bloque de primer nivel (`^id`), para que Claude pueda señalar bloques */
   ids?: boolean
@@ -57,6 +57,15 @@ function withSeparates(node: JSONContent, separate: WritePage['separate']): JSON
   return node.content ? { ...node, content: node.content.map((child) => withSeparates(child, separate)) } : node
 }
 
+/** Los enlaces con el nombre de ahora de su página (los que no se encuentran se quedan con el último conocido) */
+function withLinkTitles(node: JSONContent, pageTitle: WritePage['pageTitle']): JSONContent {
+  if (!pageTitle) return node
+  if (node.type === 'pageLink' && typeof node.attrs?.pageId === 'string') {
+    return { ...node, attrs: { ...node.attrs, title: pageTitle(node.attrs.pageId) || node.attrs.title } }
+  }
+  return node.content ? { ...node, content: node.content.map((child) => withLinkTitles(child, pageTitle)) } : node
+}
+
 /** Un bloque de primer nivel en Markdown, con su id si se pide */
 function blockMarkdown(block: JSONContent, ids: boolean) {
   const text = markdown()
@@ -72,7 +81,7 @@ function blockMarkdown(block: JSONContent, ids: boolean) {
 
 /** La página en Markdown: YAML (si hay propiedades) y el cuerpo, con sus secretos dentro */
 export function pageToMarkdown(page: WritePage): string {
-  const body = withSeparates(page.body, page.separate)
+  const body = withLinkTitles(withSeparates(page.body, page.separate), page.pageTitle)
   const blocks = (body.content ?? [])
     .map((block) => blockMarkdown(block, page.ids ?? false))
     .filter((text) => text !== '')

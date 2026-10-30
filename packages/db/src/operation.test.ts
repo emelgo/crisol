@@ -128,6 +128,8 @@ describe('operation', () => {
     notTracked.add('wiki_preferences')
     // El estado de Yjs de cada documento: lo que cambia el texto lo cuentan las sesiones de edición (ADR-0003)
     notTracked.add('documents')
+    // Los enlaces salen del texto: se rehacen con cada guardado
+    notTracked.add('page_links')
     const tables = await conn.sql<
       { name: string }[]
     >`select tablename as name from pg_tables where schemaname = 'public'`
