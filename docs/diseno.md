@@ -55,7 +55,9 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   salen del crisol uno tras otro al entrar y suben a él al volver, antes de que salga «Mundos».
 - **Entrar en un mundo es entrar**: la tarjeta pulsada se convierte en la cabecera del mundo mientras Mis mundos se
   acerca y se desvanece, como si se pasara a través; al volver, al revés (transiciones de vista del navegador). Al
-  entrar, con un fuego sutil: la tarjeta se pone al rojo mientras crece y sube algo de calor con unas brasas.
+  entrar, con un fuego sutil: la tarjeta se pone al rojo mientras crece y sube algo de calor con unas brasas; la
+  llama de la barra se aviva y suelta chispas durante unos segundos. Al salir, humo: la cabecera se enfría mientras
+  vuelve a ser tarjeta, suben unas volutas de humo muy suaves y la llama de la barra se aplaca y echa dos bocanadas.
   **En secuencia, sin verse las dos vistas a la vez**: lo de antes se va deprisa, la tarjeta que crece hace de puente
   y lo nuevo llega cuando ya no está.
 - **Las pestañas de la barra (dentro de una vista) también tienen transición, pero rápida y sin fuego**: lo que había

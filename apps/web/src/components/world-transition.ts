@@ -27,17 +27,27 @@ export function enterWorld(worldId: string, card: Element | null) {
   embers()
 }
 
-/**
- * Las brasas: un calor suave que sube desde abajo y unas chispas que se apagan (base.css, .brasas). Va aparte en la
- * transición (su nombre), así que se ve por encima mientras dura; luego se quita
- */
+/** Al salir de un mundo (la llama o «Mis mundos»): sube algo de humo, como de un fuego que se apaga */
+export function leaveWorld() {
+  overlay('humo', 2600)
+}
+
+/** Las brasas: un calor suave que sube desde abajo y unas chispas que se apagan */
 function embers() {
+  overlay('brasas', 2500)
+}
+
+/**
+ * Una capa encima de todo, de adorno (base.css, .brasas y .humo): va aparte en la transición (su nombre), así que se
+ * ve por encima mientras dura; luego se quita
+ */
+function overlay(className: string, ms: number) {
   if (typeof document.startViewTransition !== 'function') return
-  const heat = document.createElement('div')
-  heat.className = 'brasas'
-  heat.setAttribute('aria-hidden', 'true')
-  document.body.append(heat)
-  window.setTimeout(() => heat.remove(), 2500)
+  const layer = document.createElement('div')
+  layer.className = className
+  layer.setAttribute('aria-hidden', 'true')
+  document.body.append(layer)
+  window.setTimeout(() => layer.remove(), ms)
 }
 
 /** Para la tarjeta y la cabecera de ese mundo: su nombre de transición */

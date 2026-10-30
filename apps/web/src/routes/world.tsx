@@ -12,7 +12,7 @@ import styles from '../components/list.module.css'
 import { failed, LoadError } from '../components/load-error.tsx'
 import { PageTitle } from '../components/page-title.tsx'
 import { RenamableItem } from '../components/renamable-item.tsx'
-import { LEAVE_WORLD, worldTransition } from '../components/world-transition.ts'
+import { LEAVE_WORLD, leaveWorld, worldTransition } from '../components/world-transition.ts'
 
 const route = getRouteApi('/mundos/$worldId')
 
@@ -55,7 +55,7 @@ export function WorldPage() {
     <section>
       <Banner
         crumb={
-          <Link to="/mundos" viewTransition={LEAVE_WORLD}>
+          <Link to="/mundos" viewTransition={LEAVE_WORLD} onClick={leaveWorld}>
             {t('worlds.title')}
           </Link>
         }

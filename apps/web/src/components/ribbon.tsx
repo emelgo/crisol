@@ -11,7 +11,7 @@ import { AccountMenu } from './account-menu.tsx'
 import { CrisolMark } from './brand.tsx'
 import styles from './ribbon.module.css'
 import { useWindow } from './window.tsx'
-import { LEAVE_WORLD, SECTION } from './world-transition.ts'
+import { LEAVE_WORLD, leaveWorld, SECTION } from './world-transition.ts'
 
 /** Si la cuenta es propietaria de alguna organización: solo ella ve su historial, su papelera y la IA */
 function useIsOwner() {
@@ -65,10 +65,19 @@ export function Ribbon() {
   // Recién entrado (en este mismo pintado aún no se ve en phase)
   const justEntered = inWorld && !wasInWorld
   const [phase, setPhase] = useState<'still' | 'merging' | 'emerging'>('still')
+  // La llama: al entrar, se aviva y suelta chispas; al salir, se aplaca y echa humo. Con su propio tiempo, más largo
+  // que el de «Mundos»
+  const [flame, setFlame] = useState<'still' | 'fire' | 'smoke'>('still')
   if (inWorld !== wasInWorld) {
     setWasInWorld(inWorld)
     setPhase(inWorld ? 'merging' : 'emerging')
+    setFlame(inWorld ? 'fire' : 'smoke')
   }
+  useEffect(() => {
+    if (flame === 'still') return
+    const timer = window.setTimeout(() => setFlame('still'), flame === 'fire' ? 3000 : 2400)
+    return () => window.clearTimeout(timer)
+  }, [flame])
   // Los iconos del mundo (Páginas, Buscar… y los que vengan): al entrar, salen del crisol uno tras otro cuando «Mundos»
   // ya se ha fundido; al volver, suben a él y se van antes de que salga «Mundos». Se quedan mientras se van
   const [panelsWorld, setPanelsWorld] = useState(world?.id ?? null)
@@ -99,8 +108,10 @@ export function Ribbon() {
       <nav className={styles.sections} aria-label={t('app.sectionsNav')}>
         <Link
           to="/mundos"
-          className={phase === 'merging' ? `${styles.brand} ${styles.cooking}` : styles.brand}
-          {...(inWorld ? { viewTransition: LEAVE_WORLD } : {})}
+          className={[styles.brand, flame === 'fire' ? styles.cooking : '', flame === 'smoke' ? styles.smoking : '']
+            .filter(Boolean)
+            .join(' ')}
+          {...(inWorld ? { viewTransition: LEAVE_WORLD, onClick: leaveWorld } : {})}
           aria-label={t('app.name')}
           translate="no"
         >
