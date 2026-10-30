@@ -61,12 +61,15 @@ test.describe('en escritorio', () => {
     page
   }) => {
     await eana(page)
-    await body(page).getByText('Lo gobierna').click()
-    await page.keyboard.press('Home')
-    // Con la flecha hasta que el enlace queda elegido entero (sin contar letras: lo que importa es llegar)
+    // Con la flecha hasta que el enlace queda elegido entero (sin contar letras: lo que importa es llegar). Si un
+    // cambio que llega del servidor justo entonces quita la selección, se vuelve a empezar
     const chosen = body(page).locator('.ProseMirror-selectednode')
-    for (let i = 0; i < 30 && (await chosen.count()) === 0; i++) await page.keyboard.press('ArrowRight')
-    await expect(chosen.getByRole('link', { name: 'Maela Varn', exact: true })).toBeVisible()
+    await expect(async () => {
+      await body(page).getByText('Lo gobierna').click()
+      await page.keyboard.press('Home')
+      for (let i = 0; i < 30 && (await chosen.count()) === 0; i++) await page.keyboard.press('ArrowRight')
+      await expect(chosen.getByRole('link', { name: 'Maela Varn', exact: true })).toBeVisible({ timeout: 1000 })
+    }).toPass({ timeout: 15_000 })
     const preview = page.getByRole('dialog', { name: 'Maela Varn' })
     await expect(preview).toBeVisible()
     await page.keyboard.press('Tab')
