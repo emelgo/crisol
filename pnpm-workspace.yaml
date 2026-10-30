@@ -37,6 +37,7 @@ catalog:
   "@tiptap/extension-node-range": 3.32.1
   "@tiptap/extension-table": 3.32.1
   "@tiptap/extension-unique-id": 3.32.1
+  "@tiptap/markdown": 3.32.1
   "@tiptap/pm": 3.32.1
   "@tiptap/react": 3.32.1
   "@tiptap/starter-kit": 3.32.1
