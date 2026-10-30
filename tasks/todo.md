@@ -292,7 +292,7 @@ Cada vía nueva por la que salen datos amplía `@fugas` en la misma tarea.
 
 ## Fase 8: Hojas
 
-- [ ] **22. Bloques de hoja**
+- [x] **22. Bloques de hoja**
   - Acepta:
     - Salto de página, salto de columna, statblock, nota lateral, el atributo «a lo ancho» e índice de contenidos,
       cada uno con su forma en la vista sencilla y en Markdown (tabla de la spec).

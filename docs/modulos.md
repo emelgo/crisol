@@ -685,6 +685,14 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
     tildes ni mayúsculas, dice «n de m», Intro va a la siguiente y Mayús+Intro a la anterior. Lo de dentro de los
     secretos no entra.
   - **Pruebas**: componentes (teclado y foco), unidad de las coincidencias y e2e `selector.spec.ts` con accesibilidad.
+- **2026-10-30 — Módulo 1, tarea 22: bloques de hoja.**
+  - Salto de página y de columna, statblock, nota lateral (izquierda o derecha), «a lo ancho» (atributo del recuadro,
+    la caja y el statblock, o un contenedor para varios bloques) e índice de contenidos. En Markdown, la tabla de la
+    spec: `<div class="salto-pagina"></div>`, `> [!statblock]`, `> [!lateral|izquierda]`, `> [!ancho]`, `|ancho`,
+    `> [!indice]`.
+  - En la vista sencilla, discretos (los saltos solo se ven al editar). Grupo «Hoja» en el menú «/».
+  - **Pruebas**: Markdown de ida y vuelta con todos y e2e `hoja.spec.ts` (con «/» y desde Markdown, con
+    accesibilidad).
 - **Pendientes de permiso de Enrique:**
   - Servicio de systemd para Foundry: ahora corre como proceso de la sesión y se para al cerrarla; se arranca con el
     comando de `research/foundry/entorno.md`.

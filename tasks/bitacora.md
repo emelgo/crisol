@@ -117,6 +117,17 @@ Rama `wiki/tarea-19-archivos-en-paginas` (sobre main, tras la 18). En dos porcio
 `FindBar`, siempre a mano, también con candado). Escape se atiende en el campo (happy-dom no cierra el `dialog` solo).
 El foco vuelve al botón «Buscar en la página» cuando ya está pintado.
 
+## Tarea 22, bloques de hoja (hecha, rama `wiki/tarea-22-bloques-de-hoja`)
+
+- `packages/editor/src/nodes/sheet.ts`: `pageBreak` y `columnBreak` (`<div class="salto-pagina"></div>`), `statblock`
+  (`> [!statblock]`, con `|ancho`), `sidenote` (`> [!lateral]`, `> [!lateral|izquierda]`), `wideBlock` (`> [!ancho]`) y
+  `tableOfContents` (`> [!indice]`, no guarda nada). `wide.ts`: el atributo «a lo ancho» del recuadro, la caja y el
+  statblock (`|ancho`). `calloutTokenizer` pasa ahora las opciones de tras «|».
+- Web `sheet-blocks.tsx`: los saltos, una raya con rótulo solo al editar; el statblock, un marco; la nota lateral con
+  su lado y un botón para cambiarlo; «a lo ancho» con rótulo al editar; el índice, los títulos como enlaces. Grupo
+  «Hoja» en el menú «/». Tras un salto o el índice va un párrafo (si no, Intro cambiaba el bloque recién puesto).
+- La ayuda de Markdown de Claude (`MARKDOWN_HELP`) ya cuenta los archivos y los bloques de hoja.
+
 ## Hechas en esta tirada
 
 - **9** (PR #52): bloques, marcas, menú «/», barras, asa e ids. Decisiones apuntadas en `docs/modulos.md`.
