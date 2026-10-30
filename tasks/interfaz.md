@@ -37,9 +37,9 @@ del módulo 1.
   renombrar, mover, icono y portada, en lectura, exportar y borrar. Las propiedades, en una lista compacta. El panel
   derecho lleva índice, enlaces y versiones, que hoy van debajo de la página. Las subpáginas, en su recuadro.
   - Archivos: `wiki/wiki.tsx`, `properties.tsx`, `backlinks.tsx`, `versions.tsx`.
-- [ ] **4. El editor y las pestañas.** Fuera los botones de encima del texto: secreto, nota oculta y bloque van en el
-  menú «/» y en la barra de selección, y buscar en la página va en la cabecera. Las pestañas, finas y con esquinas
-  cortadas.
+- [x] **4. El editor y las pestañas.** La barra de encima del texto (secreto, nota oculta, bloque y buscar en la
+  página) pasa a una línea fina, sin cajas y con iconos. No se quita: es el camino con el teclado, y para quien no
+  conoce el menú «/». Las pestañas, en una tira fina de lado a lado; «Añadir propiedades», discreto.
 - [ ] **5. La IA.** Los textos dicen «IA». Hay un panel de la IA en la barra, con lo que espera aprobación, el modo y
   el conector, en lugar de la cola encima de cada página. En la página se marca lo que la IA quiere añadir o quitar.
 - [ ] **6. Historial y papelera.** El aspecto nuevo, y un aviso claro cuando no se puede deshacer porque alguien

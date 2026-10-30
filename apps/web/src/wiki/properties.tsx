@@ -139,7 +139,7 @@ export function PageProperties({ page }: { page: Page }) {
           ))}
         </dl>
       )}
-      <button type="button" ref={editButton.ref} className={list.secondary} onClick={() => setEditing(true)}>
+      <button type="button" ref={editButton.ref} className={styles.addButton} onClick={() => setEditing(true)}>
         {t(page.properties.length > 0 ? 'properties.edit' : 'properties.add')}
       </button>
     </section>
