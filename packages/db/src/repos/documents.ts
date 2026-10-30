@@ -105,3 +105,12 @@ export async function documentsOfPages(db: Database, pageIds: readonly string[])
     .from(documents)
     .where(inArray(documents.pageId, [...pageIds]))
 }
+
+/** Los documentos de estas páginas con su estado (para exportarlas de una vez) */
+export async function documentsWithState(db: Database, pageIds: readonly string[]) {
+  if (pageIds.length === 0) return []
+  return db
+    .select({ id: documents.id, pageId: documents.pageId, kind: documents.kind, state: documents.state })
+    .from(documents)
+    .where(inArray(documents.pageId, [...pageIds]))
+}

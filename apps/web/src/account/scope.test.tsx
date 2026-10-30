@@ -61,7 +61,8 @@ function setup(path: string) {
       if (!asPlayer) return master.client.call(name, input)
       await held
       return player.client.call(name, input)
-    }
+    },
+    exportWiki: (input) => master.client.exportWiki(input)
   }
   const realtime = fakeRealtime()
   const router = createAppRouter(createMemoryHistory({ initialEntries: [path] }))

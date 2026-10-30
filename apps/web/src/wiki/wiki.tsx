@@ -17,6 +17,7 @@ import { failed, LoadError } from '../components/load-error.tsx'
 import { PageTitle } from '../components/page-title.tsx'
 import { CollabSocket } from './collab.tsx'
 import { PageBody } from './editor.tsx'
+import { ExportPage, ExportWiki } from './export.tsx'
 import { PageIcon } from './icon.tsx'
 import { BookmarkButton, Bookmarks, OpenTabs, SiblingNav } from './navigation.tsx'
 import { PageProperties } from './properties.tsx'
@@ -149,6 +150,7 @@ export function WikiLayout({
           <Link to="/mundos/$worldId/etiquetas" params={{ worldId }} onClick={() => close(false)}>
             {t('tags.title')}
           </Link>
+          <ExportWiki worldId={worldId} />
         </nav>
       </aside>
       <div className={styles.content}>
@@ -270,6 +272,7 @@ function PageHeading({ page, startEditing }: { page: Page; startEditing: boolean
         </button>
         <LockButton page={page} />
         <BookmarkButton page={page} />
+        <ExportPage page={page} />
         <DeletePage page={page} />
       </div>
       {page.locked && <p className={styles.locked}>{t('editor.locked')}</p>}

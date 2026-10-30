@@ -37,30 +37,9 @@ Hay que contárselo al final, con lo que tenga que probar o revisar:
   (`https://neo.crisol.144-91-122-245.sslip.io/mcp`), con su cuenta de propietario. Después prueba crear_paginas con
   secretos y editar_pagina sobre una página que tenga abierta.
 
-## Tarea en curso: 12, exportar
+## Tarea en curso: 13, enlaces por id, sin resolver y rotos
 
-Diseño:
-
-- **Ruta** `POST /api/export` (no es una acción: devuelve bytes), con la sesión y el origen de siempre. Entrada
-  validada con un esquema de `packages/contracts` (`exportInput`): `{ worldId, pageId?, children? }`. Sin `pageId`,
-  el mundo entero. Contesta `application/zip` con `content-disposition`.
-- **`apps/server/src/wiki/export.ts`**:
-  - **Permisos**: `page.read`, la proyección del máster (lleva los secretos; los jugadores, en el módulo 5).
-  - **Rutas dentro del .zip**, calculadas con el árbol de todo el mundo:
-    - nombres saneados (sin `/\:*?"<>|`), y entre hermanas que se llaman igual, ` (2)`;
-    - una página con hijas es una carpeta con su nota dentro, `Título/Título.md`;
-    - al exportar una rama, se quita lo de antes de su carpeta.
-  - **Enlaces de las propiedades** (`[[…]]`): el título si es único en el mundo; si no, su ruta dentro del .zip sin
-    `.md`. Los enlaces del cuerpo llegan con la tarea 13.
-  - **Cuerpos y secretos**: se cargan de una vez de la base de datos; los que están abiertos, del documento vivo.
-  - **El .zip**, con `zipSync` de `fflate` (MIT, aprobado en el plan).
-- **Web**:
-  - «Exportar» en la cabecera de la página, con «Solo esta página» y «Con sus subpáginas»;
-  - «Exportar la wiki» en «Más de la wiki»;
-  - la descarga va con fetch, un blob y un enlace temporal.
-- **Pruebas**:
-  - integración: exportar un mundo y volver a leerlo da lo mismo; títulos repetidos; permisos;
-  - e2e de la descarga.
+(Por empezar.)
 
 ## Hechas en esta tirada
 
@@ -68,5 +47,6 @@ Diseño:
   «Enlace a página» y proponer enlazar quedan para la 13.
 - **10** (PR #53, en staging): el Markdown de ida y vuelta. Lleva también el arreglo de `collab.close()`, por un
   deadlock de la CI.
-- **11** (rama `wiki/tarea-11-claude`): leer_pagina, crear_paginas y editar_pagina. El diseño está en
-  `docs/modulos.md`.
+- **11** (PR #54): leer_pagina, crear_paginas y editar_pagina. El diseño está en `docs/modulos.md`. En la CI, la
+  prueba de la barra de formato falló una vez (Alt+F10 antes de la selección nueva); arreglada en #54.
+- **12** (rama `wiki/tarea-12-exportar`, sobre la 11): exportar en .zip.

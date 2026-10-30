@@ -260,10 +260,19 @@ test('@fugas la wiki es solo del máster: a la jugadora no le llegan ni sus pág
     ['listPageTree', { worldId }],
     ['getPage', { pageId: tower.id }],
     ['createPage', { worldId, title: 'Mía' }],
-    ['movePage', { pageId: room.id, parentId: null }]
+    ['movePage', { pageId: room.id, parentId: null }],
+    ['readPage', { pageId: tower.id }],
+    ['editPage', { pageId: tower.id, body: { mode: 'append', markdown: 'Mía' } }],
+    ['createPages', { worldId, parentId: null, pages: [{ key: 'a', title: 'Mía' }] }]
   ] as const) {
     const response = await player.request.post(`/api/actions/${name}`, { data })
     expect(response.status(), name).toBe(404)
+  }
+  // Ni exportar: ni la wiki ni una página
+  for (const data of [{ worldId }, { worldId, pageId: tower.id, children: true }]) {
+    const response = await player.request.post('/api/export', { data })
+    expect(response.status(), JSON.stringify(data)).toBe(404)
+    expect(await response.text()).not.toContain('Torre')
   }
 
   const everything = await captured.all()

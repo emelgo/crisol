@@ -465,6 +465,11 @@ export function fakeApi(
     async call(name, input) {
       calls.push(name)
       return handlers[name](input as never) as never
+    },
+    async exportWiki(input) {
+      calls.push('exportWiki')
+      const page = input.pageId ? pageById(input.pageId) : null
+      return { name: `${page?.title ?? 'Eana'}.zip`, data: new Blob(['zip']) }
     }
   }
   return { client, calls, worlds, campaigns, history, approvals, pages }

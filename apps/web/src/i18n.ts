@@ -214,6 +214,13 @@ export const es = {
   summaries: {
     andMore: '{{list}} y {{count}} más'
   },
+  export: {
+    page: 'Exportar',
+    only: 'Solo esta página',
+    withChildren: 'Con sus subpáginas',
+    wiki: 'Exportar la wiki',
+    done: 'Descargado: {{name}}'
+  },
   callout: {
     note: 'Nota',
     tip: 'Consejo',
