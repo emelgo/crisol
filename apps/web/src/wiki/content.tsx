@@ -66,7 +66,7 @@ function Inline({ nodes, worldId }: { nodes: JSONContent[]; worldId: string }) {
   )
 }
 
-function Block({ node, worldId }: { node: JSONContent; worldId: string }): ReactNode {
+export function Block({ node, worldId }: { node: JSONContent; worldId: string }): ReactNode {
   const { t } = useTranslation()
   const children = (node.content ?? []).map((child, i) => <Block key={String(i)} node={child} worldId={worldId} />)
   const inline = <Inline nodes={node.content ?? []} worldId={worldId} />
