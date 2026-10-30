@@ -116,16 +116,6 @@
   margin-block-end: var(--space-3);
 }
 
-/* En la tarjeta, la portada va 1px dentro del contorno, con las esquinas de arriba cortadas como las suyas: el
-   contorno se ve siempre, también con portada */
-.card .header {
-  margin: 1px 1px var(--space-3);
-}
-
-.card .frame {
-  clip-path: polygon(11px 0, calc(100% - 11px) 0, 100% 11px, 100% 100%, 0 100%, 0 11px);
-}
-
 /* El marco de la portada: recorta el acercamiento */
 .frame {
   position: relative;
@@ -135,6 +125,16 @@
 
 .large .frame {
   block-size: 10rem;
+}
+
+/* En la tarjeta, la portada va 1px dentro del contorno, con las esquinas de arriba cortadas como las suyas: el
+   contorno se ve siempre, también con portada */
+.card .header {
+  margin: 1px 1px var(--space-3);
+}
+
+.card .frame {
+  clip-path: polygon(11px 0, calc(100% - 11px) 0, 100% 11px, 100% 100%, 0 100%, 0 11px);
 }
 
 /* Sin imagen, el hueco lleva un tinte oscuro del color del mundo */
