@@ -7,13 +7,16 @@ import { Extension, type JSONContent, type Node } from '@tiptap/core'
 import { Plugin, PluginKey } from '@tiptap/pm/state'
 import type { EditorView } from '@tiptap/pm/view'
 import { type NodeViewProps, NodeViewWrapper, ReactNodeViewRenderer } from '@tiptap/react'
-import { useContext, useEffect, useId, useRef, useState } from 'react'
+import { createContext, useContext, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
 import styles from './file-embed.module.css'
 import { PageLinksContext, type WorldFile } from './links-context.ts'
 import { PdfViewer } from './pdf-viewer.tsx'
+
+/** Cómo se cargan las imágenes: al acercarse (lo normal) o ya (en la hoja, que las mide antes de enseñarlas) */
+export const ImageLoading = createContext<'lazy' | 'eager'>('lazy')
 
 export function withFileEmbedView(node: Node) {
   return node.extend({
@@ -130,6 +133,7 @@ function ImageFigure({
   edit: { selected: boolean; update: (attrs: Partial<Attrs>) => void } | null
 }) {
   const { t } = useTranslation()
+  const loading = useContext(ImageLoading)
   const dialog = useRef<HTMLDialogElement>(null)
   const altId = useId()
   const altHintId = useId()
@@ -148,13 +152,14 @@ function ImageFigure({
       <button
         type="button"
         className={styles.enlarge}
-        aria-label={t('fileEmbed.enlarge', { name: file.name })}
+        // Su nombre dice lo que se ve (el texto alternativo) o, si no lo hay, el archivo
+        aria-label={t('fileEmbed.enlarge', { name: attrs.alt || file.name })}
         onClick={() => dialog.current?.showModal()}
       >
         <img
           src={file.url}
           alt={attrs.alt ?? ''}
-          loading="lazy"
+          loading={loading}
           className={styles.image}
           style={attrs.width ? { inlineSize: `${attrs.width}px` } : undefined}
         />

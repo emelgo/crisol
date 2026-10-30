@@ -738,6 +738,34 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
     - `resolveName` indexa cada lista de páginas una sola vez.
   - Las instrucciones del MCP y la descripción de `crear_paginas` explican cómo pasar una wiki entera (de 50 en 50,
     en cualquier orden, y al final `enlaces_pagina` con el mundo para ver lo que quede).
+- **2026-10-30 — Módulo 1, tarea 26: cierre del módulo.** Construido entero; falta que Enrique lo revise en staging.
+  - **Revisiones** (dos agentes): seguridad del servidor, y la interfaz con `web-design-guidelines`. No hay fugas entre
+    mundos ni fallos de permisos.
+  - **Arreglado de seguridad**:
+    - una subida que no es el archivo en crudo da 415 y no deja nada abierto (dejaba descriptores abiertos);
+    - Chromium arranca sin los secretos del servidor, no pide nada fuera del propio origen, tiene una cola con tope
+      (2) y un plazo de 60 s, y se relanza si se cae;
+    - los límites de subir, exportar y PDF van por la IP que manda Caddy (no por la del proxy);
+    - las palabras de la búsqueda tienen de 3 a 64 letras (migración 0022);
+    - las secciones van acotadas;
+    - un documento que no se puede indexar no rompe la búsqueda.
+  - **Arreglado de la interfaz**:
+    - el botón de la imagen se nombra con su texto alternativo;
+    - la hoja usa los colores claros en su papel;
+    - las imágenes de la hoja se miden al llegar (la hoja y el PDF esperan a ellas);
+    - el visor de PDF no pierde el foco y anuncia la carga;
+    - los ajustes de la hoja cambian al momento y avisan si no se guardan;
+    - la subida dice cuántas fallaron;
+    - «Carta»;
+    - la búsqueda no anuncia el total de antes.
+  - **Rendimiento**: una página de unos 40 KB se abre lista para escribir en 748 ms (prueba e2e
+    `rendimiento.spec.ts`, en el VPS; en la CI no se mide).
+  - **Queda para Enrique** (infraestructura o producto, no se ha hecho):
+    - Chromium en un contenedor aparte, sin secretos y con su sandbox (ahora va en el de la app, sin sandbox y con el
+      entorno limpio);
+    - una cuota de almacenamiento por organización;
+    - quizá más memoria para la app si se sacan PDF grandes.
+  - **Siguiente**: revisar con Enrique los criterios de éxito de la spec en staging, y la etapa de interfaz.
 - **Pendientes de permiso de Enrique:**
   - Servicio de systemd para Foundry: ahora corre como proceso de la sesión y se para al cerrarla; se arranca con el
     comando de `research/foundry/entorno.md`.
@@ -758,7 +786,7 @@ Estados: pendiente · en curso · hecho · descartado.
 | # | Módulo | Estado | REA principal |
 |---|---|---|---|
 | 0 | **Fundación**: monorepo, CI, despliegue, cuentas, organizaciones, mundos, campañas, roles, historial y deshacer, esqueleto del MCP | **hecho** (2026-10-29; Discord y Google, pospuestos) | Foundry: modelo de documentos y permisos; DDB: campañas e invitaciones |
-| 1 | **Wiki**: páginas y subpáginas, editor de bloques, enlaces, menciones, vista previa, propiedades, secretos, búsqueda, marcadores, etiquetas, versiones, recursos y archivos, **hojas con estilo** (tipo Homebrewery, con PDF), exportación MD, sus herramientas MCP | en curso (construcción: tareas 1 a 17 de 26 hechas) | Foundry: Journal; DDB: contenido y referencias; Homebrewery (MIT): formato de hoja y descarga |
+| 1 | **Wiki**: páginas y subpáginas, editor de bloques, enlaces, menciones, vista previa, propiedades, secretos, búsqueda, marcadores, etiquetas, versiones, recursos y archivos, **hojas con estilo** (tipo Homebrewery, con PDF), exportación MD, sus herramientas MCP | construido (tareas 1 a 26 hechas); falta la revisión de Enrique en staging | Foundry: Journal; DDB: contenido y referencias; Homebrewery (MIT): formato de hoja y descarga |
 | 2 | Tipos de página, plantillas y formularios nativos; consultas (en lugar de Dataview y Bases) | pendiente | Foundry: tipos de documento |
 | 3 | Sistemas de reglas, fichas de personaje (creación, subida de nivel), dados y dados 3D | pendiente | DDB: creador y hoja; Foundry: dnd5e, DataModel e instalar y crear sistemas |
 | 4 | Compendios, bestiario, statblocks, biblioteca | pendiente | Foundry: compendium packs; DDB: listados |

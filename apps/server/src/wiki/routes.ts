@@ -7,7 +7,7 @@ import { z } from 'zod'
 import { authorizedPage } from '../actions/access.ts'
 import type { ActionEnv } from '../actions/context.ts'
 import type { Auth } from '../auth/auth.ts'
-import { toHeaders } from '../http.ts'
+import { clientIp, toHeaders } from '../http.ts'
 import { exportZip, fileName } from './export.ts'
 import type { PdfRenderer } from './pdf.ts'
 
@@ -15,38 +15,42 @@ const pdfParams = z.object({ id: z.uuid() })
 
 export function registerWikiRoutes(app: FastifyInstance, env: ActionEnv, auth: Auth, pdf?: PdfRenderer) {
   // Exportar un mundo entero pesa: pocas veces seguidas
-  app.post('/api/export', { config: { rateLimit: { max: 10, timeWindow: '1 minute' } } }, async (request, reply) => {
-    const session = await auth.api.getSession({ headers: toHeaders(request.headers) })
-    if (!session) return reply.code(401).send({ code: 'UNAUTHENTICATED' })
-    const input = exportInput.safeParse(request.body ?? {})
-    if (!input.success) return reply.code(400).send({ code: 'INVALID_INPUT', issues: input.error.issues })
-    const actor = actorFrom(session.user.id, await loadMemberships(env.db, session.user.id))
-    try {
-      const { name, zip } = await exportZip({ ...env, actor, via: 'ui' }, input.data)
-      const ascii =
-        name
-          .normalize('NFD')
-          .replace(/[^\x20-\x7e]/g, '')
-          .replace(/"/g, '') || 'wiki'
-      return reply
-        .header('content-type', 'application/zip')
-        .header(
-          'content-disposition',
-          `attachment; filename="${ascii}.zip"; filename*=UTF-8''${encodeURIComponent(`${name}.zip`)}`
-        )
-        .header('cache-control', 'no-store')
-        .send(zip)
-    } catch (error) {
-      if (error instanceof NotFoundError) return reply.code(404).send({ code: 'NOT_FOUND' })
-      if (error instanceof ForbiddenError) return reply.code(403).send({ code: 'FORBIDDEN' })
-      throw error
+  app.post(
+    '/api/export',
+    { config: { rateLimit: { max: 10, timeWindow: '1 minute', keyGenerator: clientIp } } },
+    async (request, reply) => {
+      const session = await auth.api.getSession({ headers: toHeaders(request.headers) })
+      if (!session) return reply.code(401).send({ code: 'UNAUTHENTICATED' })
+      const input = exportInput.safeParse(request.body ?? {})
+      if (!input.success) return reply.code(400).send({ code: 'INVALID_INPUT', issues: input.error.issues })
+      const actor = actorFrom(session.user.id, await loadMemberships(env.db, session.user.id))
+      try {
+        const { name, zip } = await exportZip({ ...env, actor, via: 'ui' }, input.data)
+        const ascii =
+          name
+            .normalize('NFD')
+            .replace(/[^\x20-\x7e]/g, '')
+            .replace(/"/g, '') || 'wiki'
+        return reply
+          .header('content-type', 'application/zip')
+          .header(
+            'content-disposition',
+            `attachment; filename="${ascii}.zip"; filename*=UTF-8''${encodeURIComponent(`${name}.zip`)}`
+          )
+          .header('cache-control', 'no-store')
+          .send(zip)
+      } catch (error) {
+        if (error instanceof NotFoundError) return reply.code(404).send({ code: 'NOT_FOUND' })
+        if (error instanceof ForbiddenError) return reply.code(403).send({ code: 'FORBIDDEN' })
+        throw error
+      }
     }
-  })
+  )
 
   // El PDF de la hoja de una página: lo saca Chromium de la ruta de impresión. Pesa: pocas veces seguidas
   app.get(
     '/api/pages/:id/pdf',
-    { config: { rateLimit: { max: 10, timeWindow: '1 minute' } } },
+    { config: { rateLimit: { max: 10, timeWindow: '1 minute', keyGenerator: clientIp } } },
     async (request, reply) => {
       const session = await auth.api.getSession({ headers: toHeaders(request.headers) })
       if (!session) return reply.code(401).send({ code: 'UNAUTHENTICATED' })

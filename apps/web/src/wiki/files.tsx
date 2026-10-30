@@ -145,6 +145,7 @@ function useUploads(worldId: string) {
   const queue = useRef<Array<{ key: number; file: File }>>([])
   const running = useRef(0)
   const finished = useRef(0)
+  const failedCount = useRef(0)
   const nextKey = useRef(0)
   const update = useCallback(
     (key: number, patch: Partial<Upload>) =>
@@ -166,17 +167,22 @@ function useUploads(worldId: string) {
             update(next.key, { status: 'done', fraction: 1 })
             void queryClient.invalidateQueries({ queryKey: ['files', worldId] })
           },
-          (error: unknown) =>
+          (error: unknown) => {
+            failedCount.current++
             update(next.key, {
               status: 'failed',
               error: codeText(error instanceof ApiError ? error.code : 'UNKNOWN')
             })
+          }
         )
         .finally(() => {
           running.current--
-          if (running.current === 0 && queue.current.length === 0 && finished.current > 0) {
-            announce(t('files.uploadedAll', { count: finished.current }))
+          // Al acabar la tanda, lo que se subió y lo que no
+          if (running.current === 0 && queue.current.length === 0 && finished.current + failedCount.current > 0) {
+            const done = t('files.uploadedAll', { count: finished.current })
+            announce(failedCount.current > 0 ? `${done} ${t('files.failedAll', { count: failedCount.current })}` : done)
             finished.current = 0
+            failedCount.current = 0
           }
           pump()
         })

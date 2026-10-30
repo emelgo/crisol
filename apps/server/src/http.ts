@@ -1,5 +1,5 @@
 import type { IncomingHttpHeaders } from 'node:http'
-import type { FastifyInstance } from 'fastify'
+import type { FastifyInstance, FastifyRequest } from 'fastify'
 
 /** Cabeceras de Node a Headers de Fetch (Better Auth trabaja con Fetch) */
 export function toHeaders(incoming: IncomingHttpHeaders): Headers {
@@ -25,6 +25,13 @@ export function registerOriginGuard(app: FastifyInstance, publicUrl: string, int
     if (!WRITES.has(request.method) || !request.url.startsWith('/api/') || request.url.startsWith('/api/auth/')) return
     if (origin !== undefined && !allowed.has(origin)) return reply.code(403).send({ code: 'BAD_ORIGIN' })
   })
+}
+
+/** Clave de los límites de intentos: la IP que manda Caddy (la app solo escucha en loopback, detrás de él) */
+export const clientIp = (request: FastifyRequest) => {
+  const forwarded = request.headers['x-forwarded-for']
+  const first = (Array.isArray(forwarded) ? forwarded[0] : forwarded)?.split(',')[0]?.trim()
+  return first || request.ip
 }
 
 /** Las rutas que llevan un secreto en la propia URL: el enlace de invitación y el de arranque */

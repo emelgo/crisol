@@ -13,6 +13,10 @@ export interface SectionRow {
   body: string
 }
 
+/** Lo más que se indexa de una sección: más no cabe en un vector de búsqueda (1 MB) */
+const MAX_SECTION = 200_000
+const bounded = (section: SectionRow): SectionRow => ({ ...section, body: section.body.slice(0, MAX_SECTION) })
+
 /** Rehace las secciones de un documento (su página, su mundo y su tipo salen de él) */
 export async function replaceSections(db: Database, documentId: string, sections: readonly SectionRow[]) {
   await db.transaction(async (tx) => {
@@ -24,7 +28,7 @@ export async function replaceSections(db: Database, documentId: string, sections
     if (!doc || sections.length === 0) return
     await tx
       .insert(searchSections)
-      .values(sections.map((section, position) => ({ ...doc, documentId, position, ...section })))
+      .values(sections.map((section, position) => ({ ...doc, documentId, position, ...bounded(section) })))
   })
 }
 
@@ -51,7 +55,7 @@ export async function replaceSectionsMany(
         kind: doc.kind,
         documentId: doc.id,
         position,
-        ...section
+        ...bounded(section)
       }))
     })
     // De mil en mil: un INSERT con demasiados parámetros no cabe
@@ -78,7 +82,7 @@ export const searchTerms = (query: string) =>
     .replace(/\p{M}/gu, '')
     .toLowerCase()
     .split(/[^a-z0-9]+/)
-    .filter(Boolean)
+    .filter((word) => word.length > 0 && word.length <= 64)
     .slice(0, 8)
 
 /**

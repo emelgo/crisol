@@ -169,7 +169,7 @@ test('un PDF en la página: enseña su tamaño, se abre aquí por la página 3 y
     if (/pdf\.worker|\/pdf-/.test(request.url())) loaded.push(request.url())
   })
   expect(loaded).toEqual([])
-  await figure.getByRole('button', { name: 'Ver aquí' }).click()
+  await figure.getByRole('button', { name: 'Ver «Libro.pdf» aquí' }).click()
   await expect(figure.getByRole('img', { name: 'Página 3 de 3 de «Libro.pdf»' })).toBeVisible()
   expect(loaded.length).toBeGreaterThan(0)
   await figure.getByRole('button', { name: 'Anterior' }).click()
