@@ -27,8 +27,10 @@ COPY --from=prod-deps /app /app
 COPY --from=build /app/apps/web/dist apps/web/dist
 # Los datos que no van en Postgres (los bytes de los archivos): del usuario node, que el volumen nuevo lo herede
 RUN mkdir -p /data/archivos && chown -R node:node /data
+# Chromium para sacar el PDF de las hojas (permiso de Enrique, 2026-10-30), con una letra de reserva
+RUN apk add --no-cache chromium ttf-dejavu
 USER node
-ENV HOST=0.0.0.0 PORT=8130 WEB_DIR=/app/apps/web/dist DATA_DIR=/data
+ENV HOST=0.0.0.0 PORT=8130 WEB_DIR=/app/apps/web/dist DATA_DIR=/data CHROMIUM_PATH=/usr/bin/chromium-browser
 EXPOSE 8130
 HEALTHCHECK --interval=10s --timeout=3s --start-period=10s \
   CMD node -e "fetch('http://127.0.0.1:8130/api/health').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"

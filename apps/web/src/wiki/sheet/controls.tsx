@@ -8,6 +8,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { type ReactNode, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../../api/context.tsx'
+import { useErrorText } from '../../api/errors.ts'
+import { useAnnounce } from '../../components/announcer.tsx'
+import { BusyButton } from '../../components/busy-button.tsx'
 import list from '../../components/list.module.css'
 import { preferencesKey } from '../navigation.tsx'
 import styles from './controls.module.css'
@@ -111,6 +114,7 @@ export function SheetLayout({ page, body }: { page: Page; body: ReactNode }) {
   return (
     <>
       <SheetSettingsRow page={page} settings={settings}>
+        <PrintButtons page={page} />
         <button type="button" className={list.secondary} onClick={() => switchView(sheetShown ? 'simple' : 'sheet')}>
           {t(sheetShown ? 'sheet.toSimple' : 'sheet.toSheet')}
         </button>
@@ -128,6 +132,48 @@ export function SheetLayout({ page, body }: { page: Page; body: ReactNode }) {
         <div className={styles.scroller}>
           <SheetView page={page} settings={settings} />
         </div>
+      )}
+    </>
+  )
+}
+
+/** Imprimir (por el diálogo del navegador) y descargar el PDF que saca el servidor; con o sin secretos */
+function PrintButtons({ page }: { page: Page }) {
+  const { t } = useTranslation()
+  const api = useApi()
+  const errorText = useErrorText()
+  const announce = useAnnounce()
+  const secretsId = useId()
+  const [secrets, setSecrets] = useState(false)
+  const download = useMutation({
+    mutationFn: () => api.downloadPdf(page.id, secrets),
+    onSuccess: ({ name, data }) => {
+      const url = URL.createObjectURL(data)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = name
+      link.click()
+      setTimeout(() => URL.revokeObjectURL(url), 1000)
+      announce(t('sheet.downloaded', { name }))
+    }
+  })
+  const printUrl = `/mundos/${page.worldId}/imprimir/${page.id}?imprimir=1${secrets ? '&secretos=1' : ''}`
+  return (
+    <>
+      <span className={styles.check}>
+        <input id={secretsId} type="checkbox" checked={secrets} onChange={(e) => setSecrets(e.currentTarget.checked)} />
+        <label htmlFor={secretsId}>{t('sheet.includeSecrets')}</label>
+      </span>
+      <a className={list.secondary} href={printUrl} target="_blank" rel="noopener">
+        {t('sheet.print')}
+      </a>
+      <BusyButton className={list.secondary} busy={download.isPending} onClick={() => download.mutate()}>
+        {t('sheet.pdf')}
+      </BusyButton>
+      {download.error && (
+        <span role="alert" className={styles.error}>
+          {errorText(download.error)}
+        </span>
       )}
     </>
   )

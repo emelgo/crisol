@@ -14,6 +14,7 @@ import { WorldPage } from './routes/world.tsx'
 import { Worlds } from './routes/worlds.tsx'
 import { WikiFiles } from './wiki/files.tsx'
 import { searchParams, WikiSearch } from './wiki/search.tsx'
+import { PrintPage, printParams } from './wiki/sheet/print.tsx'
 import { WikiTags } from './wiki/tags.tsx'
 import { WikiHome, WikiPage } from './wiki/wiki.tsx'
 
@@ -55,6 +56,12 @@ const searchRoute = createRoute({
   component: WikiSearch,
   validateSearch: searchParams
 })
+const printRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/mundos/$worldId/imprimir/$pageId',
+  component: PrintPage,
+  validateSearch: printParams
+})
 const worldHistoryRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/mundos/$worldId/historial',
@@ -88,6 +95,7 @@ const routeTree = rootRoute.addChildren([
   tagsRoute,
   filesRoute,
   searchRoute,
+  printRoute,
   worldHistoryRoute,
   historyRoute,
   worldTrashRoute,

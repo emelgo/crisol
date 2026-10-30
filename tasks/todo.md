@@ -312,7 +312,7 @@ Cada vía nueva por la que salen datos amplía `@fugas` en la misma tarea.
   - Archivos: `packages/domain/src/paginate.ts`, `apps/web/src/wiki/sheet/{sheet,paginate,themes}.tsx`,
     `apps/web/src/wiki/sheet/sheet.module.css`.
 
-- [ ] **24. Imprimir y PDF**
+- [x] **24. Imprimir y PDF**
   - Acepta:
     - La ruta de impresión con `@page` del papel elegido.
     - En el papel no sale nada de la interfaz ni ningún bloque partido.

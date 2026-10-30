@@ -17,6 +17,8 @@ export function RootLayout() {
   const focusHeading = useFocusHeading()
   // La wiki necesita más ancho: el árbol y la página, uno al lado del otro
   const wide = useRouterState({ select: (state) => /^\/mundos\/[^/]+\/(wiki|etiquetas)/.test(state.location.pathname) })
+  // Imprimir: solo la hoja, sin nada de la interfaz
+  const printing = useRouterState({ select: (state) => /^\/mundos\/[^/]+\/imprimir\//.test(state.location.pathname) })
   // Al llegar a otra página (no al cargar la primera), el foco va a su título
   useEffect(
     () =>
@@ -25,6 +27,13 @@ export function RootLayout() {
       }),
     [router, focusHeading]
   )
+  if (printing) {
+    return (
+      <main id="contenido">
+        <Outlet />
+      </main>
+    )
+  }
   return (
     <div className={styles.shell}>
       <a href="#contenido" className={styles.skip}>

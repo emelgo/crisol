@@ -17,12 +17,13 @@ const WRITES = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
  * Además de SameSite=Lax: una petición que cambia algo y trae un Origin que no es el del sitio se rechaza. Las rutas
  * de Better Auth hacen su propia comprobación.
  */
-export function registerOriginGuard(app: FastifyInstance, publicUrl: string) {
-  const allowed = new URL(publicUrl).origin
+export function registerOriginGuard(app: FastifyInstance, publicUrl: string, internal: readonly string[] = []) {
+  // Además del sitio, el propio servidor por dentro (el Chromium del PDF): nadie de fuera puede abrir esa dirección
+  const allowed = new Set([new URL(publicUrl).origin, ...internal.map((url) => new URL(url).origin)])
   app.addHook('onRequest', async (request, reply) => {
     const origin = request.headers.origin
     if (!WRITES.has(request.method) || !request.url.startsWith('/api/') || request.url.startsWith('/api/auth/')) return
-    if (origin !== undefined && origin !== allowed) return reply.code(403).send({ code: 'BAD_ORIGIN' })
+    if (origin !== undefined && !allowed.has(origin)) return reply.code(403).send({ code: 'BAD_ORIGIN' })
   })
 }
 
