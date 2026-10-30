@@ -213,8 +213,8 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   4. ~~Diseño~~: aprobado.
   5. ~~`/plan`~~: aprobado.
   6. **`/build` tarea a tarea** (`tasks/todo.md`), con `/agent-skills:review` y `/ship`, como en el módulo 0. Hechas de
-     la 1 a la 16. **Puntos de control 1 y 2 pasados** (2026-10-30, «todo funciona de momento»): el editor anidado se
-     queda. **Sigue la 17** (versiones de página: panel, restaurar y purgar), y así hasta acabar el módulo (bitácora: `tasks/bitacora.md`).
+     la 1 a la 17. **Puntos de control 1 y 2 pasados** (2026-10-30, «todo funciona de momento»): el editor anidado se
+     queda. **Sigue la 18** (archivos del mundo), y así hasta acabar el módulo (bitácora: `tasks/bitacora.md`).
   7. **Al acabar el módulo 1, la interfaz** (decisión de Enrique, 2026-10-30): se apunta por dónde vamos y se
      dedica una etapa a la interfaz antes del módulo 2. Ver «Para el repaso final de la interfaz».
 - **2026-10-29 — Módulo 1, tarea 1: páginas y árbol en la API.**
@@ -594,6 +594,27 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
     - deshacer lo de Claude con un editor abierto, sin que vuelva lo viejo;
     - conflicto con quién;
     - recuperación tras parar.
+- **2026-10-30 — Módulo 1, tarea 17: versiones de página.**
+  - **Acciones** (`apps/server/src/actions/versions.ts`):
+    - `listPageVersions`: quién (persona o Claude), cuándo y cuál es la de ahora;
+    - `getPageVersion`: en solo lectura, con los secretos de esa versión;
+    - `restorePageVersion`: cierra antes las sesiones, aplica la versión hacia delante y apunta `restoreVersion` con
+      una versión nueva. Se deshace como lo demás.
+  - **MCP**: `versiones_pagina` y `restaurar_version`.
+  - **Purga** (en la diaria, `trashRepo.purge`): las versiones de más de 90 días, salvo:
+    - las 40 últimas de cada página;
+    - la de ahora;
+    - las que nombra alguna operación que sigue en el historial.
+    - Los estados que ya no usa ninguna versión, también se van.
+    - `applyVersion` no vacía nada si la versión ya no está.
+  - **Web** (`versions.tsx`): la sección «Versiones», que se abre, con «Ver» y «Restaurar». La frase del historial es
+    «restauró una versión de «X»».
+  - **Pruebas**:
+    - integración: lista, ver con secretos, restaurar y deshacerlo; purgar con el reloj simulado (43 → 40);
+      permisos;
+    - MCP en cada modo;
+    - e2e `versiones.spec.ts`;
+    - `@fugas`.
 - **Pendientes de permiso de Enrique:**
   - Servicio de systemd para Foundry: ahora corre como proceso de la sesión y se para al cerrarla; se arranca con el
     comando de `research/foundry/entorno.md`.
@@ -614,7 +635,7 @@ Estados: pendiente · en curso · hecho · descartado.
 | # | Módulo | Estado | REA principal |
 |---|---|---|---|
 | 0 | **Fundación**: monorepo, CI, despliegue, cuentas, organizaciones, mundos, campañas, roles, historial y deshacer, esqueleto del MCP | **hecho** (2026-10-29; Discord y Google, pospuestos) | Foundry: modelo de documentos y permisos; DDB: campañas e invitaciones |
-| 1 | **Wiki**: páginas y subpáginas, editor de bloques, enlaces, menciones, vista previa, propiedades, secretos, búsqueda, marcadores, etiquetas, versiones, recursos y archivos, **hojas con estilo** (tipo Homebrewery, con PDF), exportación MD, sus herramientas MCP | en curso (construcción: tareas 1 a 16 de 26 hechas) | Foundry: Journal; DDB: contenido y referencias; Homebrewery (MIT): formato de hoja y descarga |
+| 1 | **Wiki**: páginas y subpáginas, editor de bloques, enlaces, menciones, vista previa, propiedades, secretos, búsqueda, marcadores, etiquetas, versiones, recursos y archivos, **hojas con estilo** (tipo Homebrewery, con PDF), exportación MD, sus herramientas MCP | en curso (construcción: tareas 1 a 17 de 26 hechas) | Foundry: Journal; DDB: contenido y referencias; Homebrewery (MIT): formato de hoja y descarga |
 | 2 | Tipos de página, plantillas y formularios nativos; consultas (en lugar de Dataview y Bases) | pendiente | Foundry: tipos de documento |
 | 3 | Sistemas de reglas, fichas de personaje (creación, subida de nivel), dados y dados 3D | pendiente | DDB: creador y hoja; Foundry: dnd5e, DataModel e instalar y crear sistemas |
 | 4 | Compendios, bestiario, statblocks, biblioteca | pendiente | Foundry: compendium packs; DDB: listados |

@@ -37,11 +37,10 @@ Hay que contárselo al final, con lo que tenga que probar o revisar:
   (`https://neo.crisol.144-91-122-245.sslip.io/mcp`), con su cuenta de propietario. Después prueba crear_paginas con
   secretos y editar_pagina sobre una página que tenga abierta.
 
-## Tarea en curso: 17, versiones de página
+## Tarea en curso: 18, archivos del mundo
 
-(Por empezar: panel con la lista, «Ver» y «Restaurar»; purgar a los 90 días más las 40 últimas; MCP `versiones_pagina`
-y `restaurar_version`. Lo que hay: `versionsRepo.listVersions`, `versionDocumentsOf`, `applyVersion` y
-`snapshotPage`.)
+(Por empezar. Permiso de Enrique: volumen «archivos» en `compose.prod.yaml`. `@fastify/multipart` está aprobado en el
+plan, aunque la subida puede ir en crudo con su progreso.)
 
 ## Hechas en esta tirada
 
@@ -57,4 +56,5 @@ y `restaurar_version`. Lo que hay: `versionsRepo.listVersions`, `versionDocument
   `enlaces_pagina`.
 - **15** (PR #58): vista previa, incrustados y aviso `pageContent`. La e2e del teclado falló una vez en la CI; se
   arregló avanzando hasta que el enlace queda elegido.
-- **16** (rama `wiki/tarea-16-sesiones`, migración 0014): sesiones de edición, versiones y deshacer hacia delante.
+- **16** (PR #59, en staging, migración 0014): sesiones de edición, versiones y deshacer hacia delante.
+- **17** (rama `wiki/tarea-17-versiones`): panel de versiones, restaurar, purga y MCP.
