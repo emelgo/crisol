@@ -40,7 +40,7 @@
   block-size: var(--target);
   border: 0;
   border-radius: 6px;
-  background: color-mix(in srgb, var(--color-bg) 80%, transparent);
+  background: transparent;
   color: var(--color-muted);
   cursor: pointer;
 }

@@ -301,6 +301,12 @@
   background: rgb(0 0 0 / 0.55);
 }
 
+/* La X va sobre la portada: sin recuadro, como en las demás ventanas, y con sombra para que se vea sobre una imagen */
+.dialog > button:first-child {
+  color: var(--color-text);
+  filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.7));
+}
+
 .form {
   display: flex;
   flex-direction: column;
