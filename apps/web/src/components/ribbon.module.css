@@ -294,21 +294,21 @@
   content: "";
   position: absolute;
   inset-block-start: 15%;
-  inset-inline-start: calc(50% - 7px);
-  inline-size: 14px;
-  block-size: 14px;
+  inset-inline-start: calc(50% - 10px);
+  inline-size: 20px;
+  block-size: 20px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgb(175 175 185 / 0.55), transparent 70%);
-  filter: blur(1px);
+  background: radial-gradient(circle, rgb(185 185 195 / 0.8), transparent 70%);
+  filter: blur(1.5px);
   opacity: 0;
   pointer-events: none;
-  animation: bocanada 1700ms ease-out 150ms;
+  animation: bocanada 2000ms ease-out 150ms;
 }
 
 .smoking::after {
-  inset-inline-start: calc(50% - 3px);
-  animation-delay: 550ms;
-  animation-duration: 1800ms;
+  inset-inline-start: calc(50% - 4px);
+  animation-delay: 600ms;
+  animation-duration: 2200ms;
 }
 
 @keyframes aplaca {
@@ -330,7 +330,7 @@
 
   100% {
     opacity: 0;
-    transform: translate(4px, -30px) scale(2.4);
+    transform: translate(6px, -36px) scale(3.2);
   }
 }
 

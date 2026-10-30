@@ -257,34 +257,13 @@ html:active-view-transition-type(entrar-mundo)::view-transition-image-pair(mundo
 
 ::view-transition-group(brasas),
 ::view-transition-old(brasas),
-::view-transition-new(brasas),
-::view-transition-group(humo),
-::view-transition-old(humo),
-::view-transition-new(humo) {
+::view-transition-new(brasas) {
   animation: none;
 }
 
 /* Al salir, la cabecera se enfría (pierde el color y vuelve) mientras vuelve a ser tarjeta */
 html:active-view-transition-type(salir-mundo)::view-transition-image-pair(mundo-actual) {
   animation: se-enfria 1100ms ease-out;
-}
-
-/* El humo al salir: unas volutas grises muy suaves que suben desde abajo, crecen y se disipan (world-transition.ts) */
-.humo {
-  position: fixed;
-  inset: 0;
-  z-index: 100;
-  opacity: 0;
-  pointer-events: none;
-  view-transition-name: humo;
-  background:
-    radial-gradient(ellipse 7% 32% at 22% 100%, rgb(170 170 180 / 0.13), transparent 70%),
-    radial-gradient(ellipse 9% 38% at 38% 104%, rgb(170 170 180 / 0.12), transparent 70%),
-    radial-gradient(ellipse 6% 30% at 52% 98%, rgb(170 170 180 / 0.14), transparent 70%),
-    radial-gradient(ellipse 10% 40% at 67% 106%, rgb(170 170 180 / 0.11), transparent 70%),
-    radial-gradient(ellipse 7% 28% at 82% 100%, rgb(170 170 180 / 0.12), transparent 70%);
-  filter: blur(12px);
-  animation: humo-sube 2200ms ease-out forwards;
 }
 
 @keyframes se-enfria {
@@ -298,22 +277,6 @@ html:active-view-transition-type(salir-mundo)::view-transition-image-pair(mundo-
 
   100% {
     filter: none;
-  }
-}
-
-@keyframes humo-sube {
-  0% {
-    opacity: 0;
-    transform: translateY(8vh) scale(1);
-  }
-
-  25% {
-    opacity: 1;
-  }
-
-  100% {
-    opacity: 0;
-    transform: translateY(-30vh) scale(1.25);
   }
 }
 
