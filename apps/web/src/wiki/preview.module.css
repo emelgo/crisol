@@ -1,0 +1,77 @@
+/* La vista previa de un enlace: junto a él, o en el móvil, una hoja abajo */
+.popover,
+.sheet {
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-field-border);
+  background: var(--color-surface);
+  box-shadow: 0 6px 24px rgb(0 0 0 / 0.25);
+  color: var(--color-text);
+}
+
+.popover {
+  position: fixed;
+  inline-size: min(24rem, calc(100vw - 1rem));
+  max-block-size: min(22rem, 60vh);
+  overflow-y: auto;
+}
+
+.sheet {
+  position: fixed;
+  inset-inline: 0;
+  inset-block-end: 0;
+  max-block-size: 70vh;
+  overflow-y: auto;
+  padding-block-end: max(var(--space-4), env(safe-area-inset-bottom));
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+.path,
+.more {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+.summary {
+  margin: 0;
+}
+
+.body {
+  font-size: 0.9375rem;
+}
+
+.actions {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.open,
+.close {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: var(--target);
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-field-border);
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.open:focus-visible,
+.close:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}

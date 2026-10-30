@@ -1,0 +1,71 @@
+/* Lo de otra página en solo lectura: como el texto del editor, un poco más pequeño */
+.content {
+  min-block-size: 0;
+  padding: 0;
+  font-size: 1rem;
+}
+
+.heading {
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+.missing {
+  color: var(--color-muted);
+  text-decoration: underline dashed;
+}
+
+.tasks {
+  padding-inline-start: 0;
+  list-style: none;
+}
+
+.tasks li {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.check {
+  color: var(--color-muted);
+  font-size: 0.875rem;
+  white-space: nowrap;
+}
+
+.table {
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--color-border);
+  text-align: start;
+  vertical-align: top;
+}
+
+.box {
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--color-frame);
+}
+
+.embed {
+  margin-block: var(--space-3);
+  padding: var(--space-2) var(--space-4);
+  border-inline-start: 3px solid var(--color-frame);
+  background: var(--color-surface);
+}
+
+.embedTitle {
+  margin-block-end: var(--space-1);
+  font-family: var(--font-display);
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.note {
+  margin: 0;
+  color: var(--color-muted);
+}

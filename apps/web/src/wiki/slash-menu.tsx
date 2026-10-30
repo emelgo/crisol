@@ -23,7 +23,7 @@ export interface SlashMenuOptions {
   announce: (block: BlockChoice) => void
 }
 
-const GROUPS: readonly BlockGroup[] = ['text', 'boxes', 'master']
+const GROUPS: readonly BlockGroup[] = ['text', 'wiki', 'boxes', 'master']
 
 export const SlashMenu = Extension.create<SlashMenuOptions>({
   name: 'slashMenu',

@@ -33,13 +33,13 @@ test('el menú «/» con el teclado: filtra, se mueve con las flechas, inserta y
   await page.keyboard.press('ArrowDown')
   await expect(body(page)).not.toHaveAttribute('aria-activedescendant', first ?? '')
   // Escape cierra y deja lo escrito
-  await page.keyboard.type('ci')
+  await page.keyboard.type('cit')
   await expect(slashMenu(page).getByRole('option')).toHaveCount(1)
   await page.keyboard.press('Escape')
   await expect(slashMenu(page)).toBeHidden()
   await expect(body(page)).not.toHaveAttribute('aria-activedescendant')
-  await expect(body(page)).toContainText('/ci')
-  for (let i = 0; i < 3; i++) await page.keyboard.press('Backspace')
+  await expect(body(page)).toContainText('/cit')
+  for (let i = 0; i < 4; i++) await page.keyboard.press('Backspace')
 
   // Lo que no existe
   await page.keyboard.type('/zzz')
