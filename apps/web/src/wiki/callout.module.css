@@ -34,12 +34,10 @@
 .label {
   margin-block-end: var(--space-1);
   color: var(--callout, var(--color-muted));
-  font-family: var(--font-display);
+  font-family: var(--font-body);
   font-size: 0.875rem;
   font-style: normal;
   font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
   user-select: none;
 }
 

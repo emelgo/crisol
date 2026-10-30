@@ -35,6 +35,15 @@ describe('los tokens de color', () => {
       expect(contrast(c['color-on-accent'], c['color-accent'])).toBeGreaterThanOrEqual(4.5)
     })
 
+    it(`en el tema ${theme}, los títulos de cada nivel y los enlaces llegan a 4,5:1 con el fondo, la superficie y lo realzado`, () => {
+      const c = colors(selector)
+      for (const text of ['color-h2', 'color-h3', 'color-h4', 'color-link']) {
+        expect(contrast(c[text], c['color-bg'])).toBeGreaterThanOrEqual(4.5)
+        expect(contrast(c[text], c['color-surface'])).toBeGreaterThanOrEqual(4.5)
+        expect(contrast(c[text], c['color-raised'])).toBeGreaterThanOrEqual(4.5)
+      }
+    })
+
     it(`en el tema ${theme}, un secreto se lee: su rótulo y el texto a 4,5:1 sobre su fondo, y su borde a 3:1`, () => {
       const c = colors(selector)
       expect(contrast(c['color-secret-text'], c['color-secret'])).toBeGreaterThanOrEqual(4.5)

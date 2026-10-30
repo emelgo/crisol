@@ -3,11 +3,13 @@
   position: relative;
 }
 
+/* Los enlaces de la wiki, en azul y con la raya suave, como en el Crisol antiguo */
 .link {
-  color: var(--color-accent-text);
+  color: var(--color-link);
   text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--color-link) 45%, transparent);
   text-decoration-thickness: 1px;
-  text-underline-offset: 0.15em;
+  text-underline-offset: 0.2em;
   cursor: pointer;
 }
 

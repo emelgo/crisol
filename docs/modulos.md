@@ -34,7 +34,13 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
      del nuevo (ver «Para el repaso final de la interfaz»). Los puntos 11 y 12 de sus pruebas (la hoja) van aquí;
   2. arreglar el resto de lo que dijo de sus pruebas;
   3. cerrar el módulo 1 (que pruebe el punto 6 y el final; marcar sus puntos de control en `tasks/todo.md`);
-  4. empezar el módulo 2 con su ciclo (`interview-me` frente al inventario, REA, spec…).
+  4. **antes del módulo 2, la búsqueda** (pregunta de Enrique, 2026-10-30, con herramientas que propuso: qmd, basic-memory,
+     probe, Meilisearch, pymupdf4llm). Primera respuesta: basic-memory y pymupdf4llm son AGPL (fuera); probe es para
+     código; Meilisearch sería otro servicio y a esta escala basta Postgres; de qmd, la idea de buscar por significado,
+     que se puede hacer en Postgres con pgvector. Propuesta: buscar dentro de los PDF (texto de cada página con pdf.js
+     al subirlo, en la misma búsqueda, y el resultado abre el visor en esa página) y, si le compensa el coste de los
+     embeddings, búsqueda por significado con pgvector. Los PDF escaneados (OCR) aparte;
+  5. empezar el módulo 2 con su ciclo (`interview-me` frente al inventario, REA, spec…).
 - **Lo que aún no tiene el módulo 1**, a propósito o para más adelante: importador (Eana se pasa por el MCP), los
   jugadores viendo la wiki (módulo 5), los datos de criatura del statblock (módulo 4), y la capa de texto del visor de
   PDF (hoy se lee con «Abrir aparte»).
