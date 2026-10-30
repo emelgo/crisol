@@ -69,8 +69,9 @@ Cada vía nueva por la que salen datos amplía `@fugas` en la misma tarea.
 
 ### Punto de control 1
 
-- [ ] CI en verde. En staging, Enrique crea un árbol, lo recoloca, le pone propiedades y lo manda a la papelera.
+- [x] CI en verde. En staging, Enrique crea un árbol, lo recoloca, le pone propiedades y lo manda a la papelera.
   (Pedido el 2026-10-29 tras la tarea 5.)
+  Pasado el 2026-10-30, junto al 2: «todo funciona de momento».
 
 ## Fase 2: Editor
 
@@ -116,10 +117,12 @@ Cada vía nueva por la que salen datos amplía `@fugas` en la misma tarea.
 
 ### Punto de control 2 (riesgo)
 
-- [ ] Enrique prueba el editor y los secretos en staging. Si el editor anidado no va bien, se para y se decide con él
+- [x] Enrique prueba el editor y los secretos en staging. Si el editor anidado no va bien, se para y se decide con él
   el plan B del plan: editar el secreto en un panel propio.
+  Pasado el 2026-10-30: el editor anidado se queda.
 
-- [ ] **9. Todos los bloques y marcas**
+- [x] **9. Todos los bloques y marcas** — hecha. «Enlace a página» en el menú «/» y proponer enlazar lo elegido llegan
+  con la tarea 13. El menú del bloque también se abre desde «Bloque» en la barra (teclado y móvil).
   - Acepta:
     - El menú «/» con filtro y todos los bloques de la spec, menos imagen, archivo e incrustado (llegan en las
       tareas 19 y 15).
@@ -304,6 +307,8 @@ Cada vía nueva por la que salen datos amplía `@fugas` en la misma tarea.
     - La ruta de impresión con `@page` del papel elegido.
     - En el papel no sale nada de la interfaz ni ningún bloque partido.
     - Los secretos solo salen si se marca «Incluir secretos», y las notas ocultas nunca.
+    - «Descargar PDF»: el servidor saca el PDF de la ruta de impresión con Chromium, dentro del contenedor de la app
+      (permiso de Enrique, 2026-10-30).
   - Comprueba: e2e con `page.pdf()` sobre la ruta de impresión (número de páginas y que no haya interfaz) y una prueba
     a mano en Chrome, Firefox y Safari.
   - Archivos: `apps/web/src/routes/print.tsx`, `apps/web/src/wiki/sheet/print.module.css`, `e2e/tests/hoja.spec.ts`.
