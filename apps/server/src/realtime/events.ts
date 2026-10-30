@@ -24,6 +24,12 @@ export const pagesChanged = (wiki: { worldId: string; organizationId: string }):
   message: { type: 'changed', what: 'pages', worldId: wiki.worldId }
 })
 
+/** Los archivos de un mundo: a quien ve su wiki */
+export const filesChanged = (wiki: { worldId: string; organizationId: string }): RealtimeEvent => ({
+  to: { capability: 'page.read', target: wiki },
+  message: { type: 'changed', what: 'files', worldId: wiki.worldId }
+})
+
 /** El texto de una página se guardó: a quien la ve (lo que la enseña en otra se vuelve a pedir) */
 export const pageContentChanged = (
   wiki: { worldId: string; organizationId: string },
@@ -96,6 +102,9 @@ export function undoEvents(
         break
       case 'pages':
         events.push(pagesChanged({ worldId, organizationId: context.organizationId }))
+        break
+      case 'files':
+        events.push(filesChanged({ worldId, organizationId: context.organizationId }))
         break
       case 'campaign_members': {
         const userId = String(row.user_id ?? '')

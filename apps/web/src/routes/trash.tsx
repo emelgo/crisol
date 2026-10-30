@@ -84,6 +84,7 @@ function TrashEntry({ item }: { item: TrashItem }) {
     mutationFn: () => {
       if (item.kind === 'world') return api.call('restoreWorld', { worldId: item.id })
       if (item.kind === 'page') return api.call('restorePage', { pageId: item.id })
+      if (item.kind === 'file') return api.call('restoreFile', { fileId: item.id })
       return api.call('restoreCampaign', { campaignId: item.id })
     },
     onMutate: () => {
@@ -105,7 +106,9 @@ function TrashEntry({ item }: { item: TrashItem }) {
           ? t('trash.world')
           : item.kind === 'page'
             ? t('trash.pageOf', { world: item.worldName, count: item.subpages ?? 0 })
-            : t('trash.campaignOf', { world: item.worldName })}{' '}
+            : item.kind === 'file'
+              ? t('trash.fileOf', { world: item.worldName })
+              : t('trash.campaignOf', { world: item.worldName })}{' '}
         · {t('trash.purgeAt', { date })}
       </span>
       <BusyButton

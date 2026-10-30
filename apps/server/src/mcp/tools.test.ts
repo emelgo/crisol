@@ -24,6 +24,7 @@ describe('herramientas MCP', () => {
       'enlace_invitacion',
       'enlaces_pagina',
       'leer_pagina',
+      'listar_archivos',
       'listar_mundos',
       'mover_pagina',
       'pendientes',

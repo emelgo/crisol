@@ -10,7 +10,13 @@ const minimal = {
 
 describe('loadConfig', () => {
   it('rellena los valores por defecto: loopback, puerto 8130 y desarrollo', () => {
-    expect(loadConfig(minimal)).toEqual({ ...minimal, HOST: '127.0.0.1', PORT: 8130, NODE_ENV: 'development' })
+    expect(loadConfig(minimal)).toEqual({
+      ...minimal,
+      HOST: '127.0.0.1',
+      PORT: 8130,
+      NODE_ENV: 'development',
+      DATA_DIR: 'datos-locales'
+    })
   })
 
   it('convierte el puerto a número', () => {

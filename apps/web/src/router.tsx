@@ -12,6 +12,7 @@ import { SignIn } from './routes/sign-in.tsx'
 import { OrganizationTrash, WorldTrash } from './routes/trash.tsx'
 import { WorldPage } from './routes/world.tsx'
 import { Worlds } from './routes/worlds.tsx'
+import { WikiFiles } from './wiki/files.tsx'
 import { WikiTags } from './wiki/tags.tsx'
 import { WikiHome, WikiPage } from './wiki/wiki.tsx'
 
@@ -41,6 +42,11 @@ const tagsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/mundos/$worldId/etiquetas',
   component: WikiTags
+})
+const filesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/mundos/$worldId/archivos',
+  component: WikiFiles
 })
 const worldHistoryRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -73,6 +79,7 @@ const routeTree = rootRoute.addChildren([
   wikiRoute,
   wikiPageRoute,
   tagsRoute,
+  filesRoute,
   worldHistoryRoute,
   historyRoute,
   worldTrashRoute,

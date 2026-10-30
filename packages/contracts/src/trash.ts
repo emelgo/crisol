@@ -3,7 +3,7 @@ import { defineAction } from './action.ts'
 
 /** Algo en la papelera: se puede restaurar hasta purgeAt; luego se borra del todo */
 export const trashItem = z.object({
-  kind: z.enum(['world', 'campaign', 'page']),
+  kind: z.enum(['world', 'campaign', 'page', 'file']),
   /** De una página: cuántas subpáginas se fueron con ella (vuelven con ella) */
   subpages: z.number().int().optional(),
   id: z.uuid(),

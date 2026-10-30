@@ -17,6 +17,8 @@ export type RealtimeMessage =
   | { type: 'changed'; what: 'pages'; worldId: string }
   /** El texto de una página (su cuerpo o un secreto) se guardó: lo que lo enseña en otra (vista previa, incrustado) */
   | { type: 'changed'; what: 'pageContent'; worldId: string; pageId: string }
+  /** Los archivos de ese mundo */
+  | { type: 'changed'; what: 'files'; worldId: string }
   | { type: 'changed'; what: 'members' | 'invitation'; campaignId: string }
   /** Alguien ha entrado en la campaña con el enlace (al máster, con «Expulsar» a mano) */
   | { type: 'joined'; worldId: string; campaignId: string; campaign: string; member: { userId: string; name: string } }

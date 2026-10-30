@@ -12,7 +12,9 @@ const schema = z.object({
   // Dirección pública del sitio (en desarrollo, la de Vite)
   PUBLIC_URL: z.url({ protocol: /^https?$/ }),
   // Carpeta de la web compilada; en desarrollo la sirve Vite
-  WEB_DIR: z.string().optional()
+  WEB_DIR: z.string().optional(),
+  // Donde se guardan los datos que no van en Postgres (los bytes de los archivos, en archivos/)
+  DATA_DIR: z.string().default('datos-locales')
 })
 
 export type Config = z.infer<typeof schema>

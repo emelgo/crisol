@@ -62,7 +62,8 @@ function setup(path: string) {
       await held
       return player.client.call(name, input)
     },
-    exportWiki: (input) => master.client.exportWiki(input)
+    exportWiki: (input) => master.client.exportWiki(input),
+    uploadFile: (target, file, onProgress) => master.client.uploadFile(target, file, onProgress)
   }
   const realtime = fakeRealtime()
   const router = createAppRouter(createMemoryHistory({ initialEntries: [path] }))

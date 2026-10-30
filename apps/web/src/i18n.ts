@@ -361,6 +361,26 @@ export const es = {
     previous: 'Anterior',
     next: 'Siguiente'
   },
+  files: {
+    title: 'Archivos',
+    worldTitle: 'Archivos de {{world}}',
+    upload: 'Subir archivos',
+    uploadFolder: 'Subir una carpeta',
+    drop: 'O arrástralos aquí, también carpetas enteras.',
+    dropHere: 'Suéltalos para subirlos',
+    uploads: 'Subidas',
+    progress: 'Subiendo {{name}}',
+    uploaded: 'Subido',
+    uploadedAll_one: 'Subido {{count}} archivo',
+    uploadedAll_other: 'Subidos {{count}} archivos',
+    failed: 'No se pudo: {{error}}',
+    clear: 'Quitar las terminadas',
+    empty: 'Aún no hay archivos.',
+    groups: { image: 'Imágenes', pdf: 'PDF', other: 'Otros' },
+    replace: 'Reemplazar',
+    replaceButton: 'Reemplazar {{name}}',
+    replaced: '{{name}} reemplazado'
+  },
   tags: {
     title: 'Etiquetas',
     worldTitle: 'Etiquetas de {{world}}',
@@ -420,6 +440,11 @@ export const es = {
       editPage: 'cambió la página «{{title}}»',
       restoreVersion: 'restauró una versión de «{{title}}»',
       restorePage: 'restauró la página «{{title}}»',
+      uploadFile: 'subió el archivo «{{name}}»',
+      replaceFile: 'reemplazó el archivo «{{name}}»',
+      renameFile: 'renombró el archivo «{{from}}» a «{{to}}»',
+      deleteFile: 'borró el archivo «{{name}}»',
+      restoreFile: 'restauró el archivo «{{name}}»',
       unknown: 'hizo un cambio ({{action}})'
     }
   },
@@ -480,6 +505,11 @@ export const es = {
       setPageProperties: 'cambiar las propiedades de «{{title}}»',
       deletePage: 'borrar la página «{{title}}»',
       restorePage: 'restaurar la página «{{title}}»',
+      uploadFile: 'subir el archivo «{{name}}»',
+      replaceFile: 'reemplazar el archivo «{{name}}»',
+      renameFile: 'renombrar el archivo «{{from}}» a «{{to}}»',
+      deleteFile: 'borrar el archivo «{{name}}»',
+      restoreFile: 'restaurar el archivo «{{name}}»',
       unknown: 'hacer un cambio ({{action}})'
     }
   },
@@ -529,6 +559,7 @@ export const es = {
     empty: 'La papelera está vacía',
     world: 'Mundo',
     campaignOf: 'Campaña de {{world}}',
+    fileOf: 'Archivo de {{world}}',
     pageOf_zero: 'Página de {{world}}',
     pageOf_one: 'Página de {{world}}, con {{count}} subpágina',
     pageOf_other: 'Página de {{world}}, con {{count}} subpáginas',
@@ -566,6 +597,9 @@ export const es = {
     BAD_TAG: 'Una etiqueta no lleva espacios; para la jerarquía, «/»',
     BAD_PROPERTY: 'Alguna página de las propiedades ya no está en la wiki',
     PARENT_IN_TRASH: 'Su página madre también está en la papelera: restáurala antes',
+    NAME_TAKEN: 'Ya hay un archivo con ese nombre',
+    TOO_LARGE: 'Pasa de 250 MB',
+    NETWORK: 'Se cortó la conexión: vuelve a intentarlo',
     INVALID_CREDENTIALS: 'Email o contraseña incorrectos',
     TOO_MANY_REQUESTS: 'Demasiados intentos. Espera un minuto.',
     EMAIL_TAKEN: 'Ese email ya tiene cuenta',

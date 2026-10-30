@@ -12,6 +12,8 @@ import { registerBootstrapRoutes } from './bootstrap.ts'
 import { registerCollabRoutes } from './collab/routes.ts'
 import { createCollab, MAX_MESSAGE_BYTES } from './collab/server.ts'
 import type { SessionTimes } from './collab/sessions.ts'
+import { registerFileRoutes } from './files/routes.ts'
+import type { Storage } from './files/storage.ts'
 import { type HealthChecks, registerHealth } from './health.ts'
 import { redactSecrets, registerOriginGuard } from './http.ts'
 import { registerJoinRoutes } from './join.ts'
@@ -41,6 +43,10 @@ export interface AppDeps {
   approvalWaitMs?: number
   /** Cuánto duran las sesiones de edición (las pruebas las acortan) */
   sessionTimes?: SessionTimes
+  /** Donde van los bytes de los archivos; sin él, no se pueden subir */
+  storage?: Storage
+  /** Lo más que pesa un archivo (las pruebas lo bajan) */
+  maxFileBytes?: number
 }
 
 export function buildApp(deps: AppDeps): FastifyInstance {
@@ -73,7 +79,15 @@ export function buildApp(deps: AppDeps): FastifyInstance {
           onError: (error) => app.log.error(error)
         })
     })
-    const env: ActionEnv = { db, publicUrl, sealKey, realtime, collab, actions: implementationsByName }
+    const env: ActionEnv = {
+      db,
+      publicUrl,
+      sealKey,
+      realtime,
+      collab,
+      actions: implementationsByName,
+      ...(deps.storage ? { storage: deps.storage } : {})
+    }
     // Límite de intentos solo donde se pide (las rutas de Better Auth tienen el suyo)
     app.register(fastifyRateLimit, { global: false })
     // Lo más que manda un cliente: un cambio de un documento (el canal en tiempo real corta antes: no escucha)
@@ -85,6 +99,9 @@ export function buildApp(deps: AppDeps): FastifyInstance {
     // Dentro de register: así se añaden después de cargar los plugins que usan (límite de intentos, WebSocket)
     app.register(async (scope) => registerJoinRoutes(scope, env, auth))
     app.register(async (scope) => registerWikiRoutes(scope, env, auth))
+    app.register(async (scope) =>
+      registerFileRoutes(scope, env, auth, deps.maxFileBytes ? { maxBytes: deps.maxFileBytes } : {})
+    )
     const build = deps.webDir ? webBuild(deps.webDir) : null
     app.register(async (scope) =>
       registerRealtimeRoutes(scope, { auth, publicUrl, realtime, build, ...deps.realtimeTimers })

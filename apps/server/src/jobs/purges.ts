@@ -1,8 +1,9 @@
 import { type Database, trashRepo } from '@crisol/db'
 import { Queue, QueueEvents, Worker } from 'bullmq'
 import { Redis } from 'ioredis'
+import type { Storage } from '../files/storage.ts'
 
-type PurgeResult = Awaited<ReturnType<typeof trashRepo.purge>>
+type PurgeResult = Awaited<ReturnType<typeof trashRepo.purge>> & { storedFiles: number }
 
 export interface PurgeJobs {
   queue: Queue
@@ -26,6 +27,8 @@ export async function startPurges(options: {
   now?: () => Date
   prefix?: string
   onError?: (error: unknown) => void
+  /** Los bytes de los archivos: se quitan los que ya no nombra nadie */
+  storage?: Storage
 }): Promise<PurgeJobs> {
   const prefix = options.prefix ?? 'crisol'
   const now = options.now ?? (() => new Date())
@@ -33,7 +36,16 @@ export async function startPurges(options: {
   const connection = new Redis(options.valkeyUrl, { maxRetriesPerRequest: null })
   const queue = new Queue(QUEUE, { connection, prefix })
   await queue.upsertJobScheduler('purga-diaria', { pattern: '0 4 * * *', tz: 'Europe/Madrid' }, { name: 'purgar' })
-  const worker = new Worker(QUEUE, () => trashRepo.purge(options.db, now()), { connection, prefix })
+  const worker = new Worker(
+    QUEUE,
+    async () => {
+      const at = now()
+      const result = await trashRepo.purge(options.db, at)
+      const storedFiles = options.storage ? await sweepStorage(options.db, options.storage, at) : 0
+      return { ...result, storedFiles }
+    },
+    { connection, prefix }
+  )
   worker.on('failed', (_, error) => options.onError?.(error))
   worker.on('error', (error) => options.onError?.(error))
 
@@ -60,4 +72,20 @@ export async function startPurges(options: {
       connection.disconnect()
     }
   }
+}
+
+/**
+ * Quita del almacenamiento los bytes que no nombra ni un archivo ni el historial. Solo los de hace más de un día: una
+ * subida a medias ya tiene sus bytes y aún no su fila
+ */
+export async function sweepStorage(db: Database, storage: Storage, now: Date) {
+  const live = await trashRepo.liveStorageKeys(db)
+  const dayAgo = now.getTime() - 24 * 60 * 60 * 1000
+  let removed = 0
+  for (const { key, writtenAt } of await storage.keys()) {
+    if (live.has(key) || writtenAt.getTime() > dayAgo) continue
+    await storage.remove(key)
+    removed++
+  }
+  return removed
 }

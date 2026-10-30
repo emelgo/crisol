@@ -1,5 +1,6 @@
 import { approve, getAiSettings, listApprovals, reject, setAiMode } from './ai.ts'
 import { createCampaign, getCampaign, listCampaigns, listWorldsWithCampaigns, renameCampaign } from './campaigns.ts'
+import { deleteFile, listFiles, renameFile, restoreFile } from './files.ts'
 import { listHistory, undoOperation } from './history.ts'
 import { getInvitation, regenerateInvitation, setInvitationsOpen } from './invitations.ts'
 import { leaveCampaign, listMembers, removeMember } from './members.ts'
@@ -43,6 +44,7 @@ import { createWorld, listWorlds, renameWorld } from './worlds.ts'
 export * from './action.ts'
 export * from './ai.ts'
 export * from './campaigns.ts'
+export * from './files.ts'
 export * from './history.ts'
 export * from './invitations.ts'
 export * from './members.ts'
@@ -106,7 +108,11 @@ export const ACTIONS = [
   getPageContent,
   listPageVersions,
   getPageVersion,
-  restorePageVersion
+  restorePageVersion,
+  listFiles,
+  renameFile,
+  deleteFile,
+  restoreFile
 ]
 
 /** Las acciones por nombre, solo como tipo: la web las usa sin cargar zod */
@@ -163,4 +169,8 @@ export type Actions = {
   listPageVersions: typeof listPageVersions
   getPageVersion: typeof getPageVersion
   restorePageVersion: typeof restorePageVersion
+  listFiles: typeof listFiles
+  renameFile: typeof renameFile
+  deleteFile: typeof deleteFile
+  restoreFile: typeof restoreFile
 }

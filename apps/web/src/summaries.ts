@@ -74,6 +74,13 @@ export function summaryOf(
       return say('deletePage', { title: text(details.title ?? details.page) })
     case 'restorePage':
       return say('restorePage', { title: text(details.title ?? details.page) })
+    case 'uploadFile':
+    case 'replaceFile':
+    case 'deleteFile':
+    case 'restoreFile':
+      return say(action, { name: text(details.name ?? details.file) })
+    case 'renameFile':
+      return say('renameFile', { from: text(details.from ?? details.file), to: text(details.to ?? details.name) })
     case 'movePage': {
       const title = text(details.page ?? details.title)
       return details.parent ? say('movePage', { title, parent: text(details.parent) }) : say('movePageToTop', { title })

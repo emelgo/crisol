@@ -5,7 +5,7 @@ import { freshTestDatabase } from '@crisol/db/testing'
 import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/client'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { startServer } from '../server.ts'
-import { signUpTestUser, TEST_AUTH_SECRET } from '../testing.ts'
+import { signUpTestUser, TEST_AUTH_SECRET, testDataDir } from '../testing.ts'
 
 type History = { entries: HistoryEntry[] }
 type Approvals = { pending: Approval[]; recent: Approval[] }
@@ -31,7 +31,8 @@ describe('conector MCP con OAuth', () => {
         DATABASE_URL: url,
         VALKEY_URL: process.env.TEST_VALKEY_URL ?? 'redis://127.0.0.1:63790',
         AUTH_SECRET: TEST_AUTH_SECRET,
-        PUBLIC_URL: BASE
+        PUBLIC_URL: BASE,
+        DATA_DIR: testDataDir()
       },
       // Lo que espera aprobación contesta enseguida: aquí no se aprueba durante la espera
       { approvalWaitMs: 50 }
@@ -291,6 +292,7 @@ describe('conector MCP con OAuth', () => {
       ['enlaces_pagina', { pageId: page.id }, 'read'],
       ['enlaces_pagina', { worldId: world.id }, 'read'],
       ['versiones_pagina', { pageId: page.id }, 'read'],
+      ['listar_archivos', { worldId: world.id }, 'read'],
       ['restaurar_version', { pageId: page.id, versionId: versions[0]?.id }, 'write'],
       ['crear_mundo', { name: 'Otro' }, 'write'],
       ['crear_paginas', { worldId: world.id, parentId: null, pages: [{ key: 'a', title: 'Nueva' }] }, 'write'],

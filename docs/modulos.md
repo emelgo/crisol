@@ -615,6 +615,28 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
     - MCP en cada modo;
     - e2e `versiones.spec.ts`;
     - `@fugas`.
+- **2026-10-30 — Módulo 1, tarea 18: archivos del mundo** (migración 0015).
+  - **Tabla `files`**, con historial: nombre único en el mundo (sin mayúsculas; si se repite, «nombre (2).ext»), tipo
+    (`image`, `pdf` u `other`), tamaño, huella y clave del almacenamiento. Reemplazar pone una clave nueva: deshacer
+    vuelve a los bytes de antes. Los bytes no van al historial.
+  - **Almacenamiento** (`apps/server/src/files/storage.ts`): disco en `DATA_DIR/archivos`, claves `mundo/uuid`. En
+    staging, el volumen «archivos» (`/data/archivos`, del usuario node).
+  - **Rutas** (`files/routes.ts`):
+    - `POST /api/files?worldId&name` y `PUT /api/files/:id`: el cuerpo es el archivo, en streaming, hasta 250 MB
+      (`MAX_FILE_BYTES` en `@crisol/domain`). Si pasa, 413 sin romper la petición y sin dejar nada.
+    - El tipo sale de los primeros bytes (`sniff`): PNG, JPEG, GIF, WebP, AVIF, PDF y SVG; lo demás, «otro», que se
+      sirve como descarga. Un .png que es HTML no pasa por imagen.
+    - `GET /api/files/:id`: con sesión y `page.read`; `private, no-cache` con ETag (la huella), `nosniff`, Range (para
+      el visor de PDF) y, al SVG, la CSP `sandbox; default-src 'none'`.
+  - **Acciones**: `listFiles`, `renameFile`, `deleteFile` y `restoreFile`; en la papelera del mundo salen los archivos.
+    MCP: `listar_archivos`. Aviso en tiempo real `files`.
+  - **Purga**: la fila, a los 30 días en la papelera; los bytes, cuando ya no los nombra ni una fila ni el historial (y
+    nunca los escritos hace menos de un día: una subida a medias).
+  - **Web** (`apps/web/src/wiki/files.tsx`, enlace «Archivos» en la wiki): subir varios o una carpeta, con botón o
+    arrastrando, tres a la vez con su barra; carpetas por tipo; abrir, renombrar, reemplazar y borrar.
+  - **Pruebas**: integración (límite con y sin tamaño dicho, permisos, Range, SVG, reemplazar y deshacer, papelera,
+    purga), componentes, e2e `archivos.spec.ts` con accesibilidad y `@fugas` de los archivos.
+  - **Queda para la 19**: el aviso «lo usan N páginas» al borrar, cuando las páginas usen archivos.
 - **Pendientes de permiso de Enrique:**
   - Servicio de systemd para Foundry: ahora corre como proceso de la sesión y se para al cerrarla; se arranca con el
     comando de `research/foundry/entorno.md`.

@@ -240,7 +240,7 @@ Cada vía nueva por la que salen datos amplía `@fugas` en la misma tarea.
 
 ## Fase 6: Archivos
 
-- [ ] **18. Archivos del mundo**
+- [x] **18. Archivos del mundo**
   - Acepta:
     - Subir un archivo, varios o una carpeta, de hasta 250 MB, en streaming. `files` está en `TRACKED_TABLES` y el
       disco va tras `Storage`.
