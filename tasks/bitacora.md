@@ -37,10 +37,36 @@ Hay que contárselo al final, con lo que tenga que probar o revisar:
   (`https://neo.crisol.144-91-122-245.sslip.io/mcp`), con su cuenta de propietario. Después prueba crear_paginas con
   secretos y editar_pagina sobre una página que tenga abierta.
 
-## Tarea en curso: 18, archivos del mundo
+## Tarea en curso: 19, archivos en las páginas
 
-(Por empezar. Permiso de Enrique: volumen «archivos» en `compose.prod.yaml`. `@fastify/multipart` está aprobado en el
-plan, aunque la subida puede ir en crudo con su progreso.)
+Rama `wiki/tarea-19-archivos-en-paginas` (sobre main, tras la 18). En dos porciones, cada una con su PR:
+
+**19a — imagen y archivo en el texto**
+
+- Nodo `fileEmbed` en `packages/editor` (bloque, átomo): `fileId` (null si no se ha resuelto), `name`, `width`
+  (número o null), `alt`, `caption` y `page` (para un PDF).
+  - Markdown: `![[nombre.ext|texto alternativo|300]]`; cada parte tras `|` es el ancho si es un número y si no, el
+    texto alternativo. `#page=12` para un PDF. El pie, en la línea siguiente en cursiva (`*El pie*`).
+  - Es un archivo (y no una página) si el nombre acaba en una extensión de la lista (imágenes, pdf, documentos, audio,
+    vídeo, comprimidos). `.md` no: en Obsidian es una nota.
+- **Tabla `file_embeds`** (sin historial, como `page_links`): de qué página y documento sale, `file_id` (null sin
+  resolver), el nombre y su clave. Se rehace con cada guardado. De ella salen:
+  - el aviso al borrar un archivo: «Lo usan N páginas»;
+  - resolver solos los que esperaban a ese nombre al subir, renombrar o restaurar un archivo (en el texto también,
+    con `writeDocument`, como `resolvePending`).
+- Lo que escribe Claude: `resolveIncoming` también pone el `fileId` por nombre.
+- La web pinta el nombre de ahora (de `listFiles`, por `fileId`): renombrar no rompe nada. Sin archivo: «por subir».
+- **Web**: vista de React del nodo. Imagen con su ancho (asas o un campo), pie editable, texto alternativo y caja de luz
+  (un `dialog`). Otro archivo: una tarjeta con nombre, tamaño y «Abrir». Un PDF, de momento, tarjeta con «Abrir».
+- Pegar o arrastrar una imagen en el editor la sube (`api.uploadFile`) y pone el bloque. Menú «/»: «Imagen» y
+  «Archivo», que eligen de los del mundo o suben uno.
+- Exportar: los archivos usados (o todos, si se exporta el mundo) en `_archivos/`.
+
+**19b — visor de PDF y portada**
+
+- `pdfjs-dist` (Apache-2.0; está en el plan), cargado con `import()` al abrir el visor; antes enseña el tamaño.
+  Va a una página y abre `#page=12`. Pide los bytes con Range (el servidor ya lo da).
+- La portada de la página, con su encuadre (columna en `pages`: migración 0017 o la que toque).
 
 ## Hechas en esta tirada
 
@@ -57,4 +83,8 @@ plan, aunque la subida puede ir en crudo con su progreso.)
 - **15** (PR #58): vista previa, incrustados y aviso `pageContent`. La e2e del teclado falló una vez en la CI; se
   arregló avanzando hasta que el enlace queda elegido.
 - **16** (PR #59, en staging, migración 0014): sesiones de edición, versiones y deshacer hacia delante.
-- **17** (rama `wiki/tarea-17-versiones`): panel de versiones, restaurar, purga y MCP.
+- **17** (PR #60, en staging): panel de versiones, restaurar, purga y MCP.
+- **18** (rama `wiki/tarea-18-archivos`, migración 0015): archivos del mundo. Bytes en disco tras `Storage`
+  (`DATA_DIR/archivos`, volumen «archivos» en staging); subir en crudo con XHR y progreso; el tipo por los primeros
+  bytes (`sniff` en `@crisol/domain`); `GET /api/files/:id` con sesión, ETag, Range y CSP `sandbox` para SVG; papelera y
+  purga (la fila a los 30 días; los bytes cuando ni el historial los nombra, y nunca los de menos de un día).
