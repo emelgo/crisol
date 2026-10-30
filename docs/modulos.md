@@ -11,9 +11,9 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
 
 - **El módulo 1 (wiki) está construido entero y en staging**: tareas 1 a 26, PR #52 a #70. Lo que hace cada tarea está
   en las entradas de abajo, del 2026-10-30.
-- **Ahora mismo**: Enrique prueba en staging los puntos de control 3 a 6 y el final. Después viene la **etapa de
-  interfaz** (Enrique ve la interfaz «horrible»). Lo que salga de sus pruebas se apunta abajo, en «Lo que dijo Enrique
-  al probar», y se arregla al volver.
+- **Ahora mismo**: la **etapa de interfaz** (empezó el 2026-10-30; lo que quiere Enrique está en «Para el repaso
+  final de la interfaz», más abajo). Sus pruebas de los puntos 3 a 5 están apuntadas en «Lo que dijo Enrique al
+  probar» y se arreglan al acabar la interfaz; le quedan por probar el punto 6 y el final.
 - **Lo que tiene que probar**:
   1. **Punto 3**: el conector MCP de staging (`https://neo.crisol.144-91-122-245.sslip.io/mcp`) en claude.ai con su
      cuenta de propietario. Probar `crear_paginas` con secretos y `editar_pagina` sobre una página abierta.
@@ -29,11 +29,11 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
 - **Para vigilar**: en la CI, en una máquina lenta, lo escrito nada más abrir una página quedó a veces delante del
   contenido. No se ha visto en local ni en staging; si pasa, mirar `editable` hasta `ready` en
   `apps/web/src/wiki/editor.tsx`.
-- **Al volver, el orden**:
-  1. arreglar lo que diga Enrique de sus pruebas;
-  2. la etapa de interfaz, con la skill `frontend-design` y `web-design-guidelines`, sobre la identidad «Hoja» ya
-     elegida (`docs/modulos.md`, más abajo) y los prototipos aprobados de la wiki;
-  3. cerrar el módulo 1 (marcar sus puntos de control en `tasks/todo.md`);
+- **El orden** (Enrique, 2026-10-30: «para seguir después de la edición de la UI»):
+  1. la etapa de interfaz, con la skill `frontend-design` y `web-design-guidelines`: una mezcla del Crisol antiguo y
+     del nuevo (ver «Para el repaso final de la interfaz»). Los puntos 11 y 12 de sus pruebas (la hoja) van aquí;
+  2. arreglar el resto de lo que dijo de sus pruebas;
+  3. cerrar el módulo 1 (que pruebe el punto 6 y el final; marcar sus puntos de control en `tasks/todo.md`);
   4. empezar el módulo 2 con su ciclo (`interview-me` frente al inventario, REA, spec…).
 - **Lo que aún no tiene el módulo 1**, a propósito o para más adelante: importador (Eana se pasa por el MCP), los
   jugadores viendo la wiki (módulo 5), los datos de criatura del statblock (módulo 4), y la capa de texto del visor de
@@ -910,7 +910,22 @@ y el plan (ver `CLAUDE.md`).
 Lo que a Enrique no le convence (apuntarlo aquí según lo diga). Se repasa al acabar el módulo 1, no al final de la
 app: el 2026-10-30 dijo «luego apuntaremos por donde vamos y nos dedicaremos a la UI, que es horrible».
 
-- La interfaz en general, sin concretar aún: se verá con él al empezar esa etapa.
+- **2026-10-30, al empezar la etapa**: «No me gusta casi nada de la interfaz actual, es horrible y no se entiende nada!!
+  […] el crisol antiguo era más bonito y profesional, la nuestra parece una app de ia. Me refiero a la interfaz en
+  general, hay cosas del nuevo que me gustan como las formas de los recuadros, pero en general parece una app de IA.
+  […] quiero una combinacion de ambas app, con lo mejor de cada una».
+  - **Cambia lo de «el actual, deséchalo»** (fase de diseño, 2026-10-29): el Crisol antiguo vuelve a ser referencia de
+    aspecto. Es código propio de Enrique, así que la sala limpia no lo impide; lo que sí sigue fuera es cualquier cosa
+    copiada de otros productos.
+  - **Del nuevo le gusta**: la forma de los recuadros (las esquinas cortadas, `--cut`).
+  - **Del antiguo** (tema en `~/crisol-app/packages/ui/src/theme.css`, solo de consulta): grises neutros, oscuro por
+    defecto, Roboto en minúscula normal, cada nivel de título con su color, el rojo solo en lo importante y un espacio
+    de trabajo con barra lateral de iconos, paneles a los lados y barra de estado.
+  - **Primera lectura de Claude, por confirmar con él**: lo que hace que el nuevo «parezca de IA» es que todo va en
+    mayúsculas condensadas (Barlow Condensed en títulos, botones, pestañas y rótulos); filas de botones con borde para
+    cada acción (la cabecera de la página, «Secreto», «Nota oculta», «Bloque», «Buscar en la página» sobre el texto);
+    textos de ayuda fijos en pantalla («Arrastra para recolocar…»); y poca jerarquía entre lo principal y lo
+    secundario. «No se entiende nada» apunta a lo mismo: demasiadas acciones a la vista, todas con el mismo peso.
 
 ## Decisiones por módulo
 
