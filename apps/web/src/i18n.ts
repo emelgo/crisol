@@ -563,6 +563,8 @@ export const es = {
     undone: 'deshecho',
     conflict: 'No se puede deshacer: después, {{actor}} {{what}}. Deshaz eso antes.',
     conflictUnknown: 'No se puede deshacer: algo de lo que cambió se ha cambiado después.',
+    conflictVersions: 'Ir a «{{title}}» y a sus versiones',
+    conflictHint: 'Para recuperar algo de antes, abre la página y usa sus versiones.',
     redoConflict: 'No se puede rehacer: después, {{actor}} {{what}}. Deshaz eso antes.',
     redoConflictUnknown: 'No se puede rehacer: algo de lo que cambió se ha cambiado después.',
     system: 'Crisol',

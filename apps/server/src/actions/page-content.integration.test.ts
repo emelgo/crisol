@@ -219,8 +219,10 @@ describe('Claude lee y escribe páginas en Markdown', () => {
 
     // Cada cambio, en el historial
     const entries = (await ok200('listHistory', { worldId })).entries as { action: string; details: object }[]
+    // Con el id de la página, para que el historial lleve a sus versiones
     expect(entries.filter((e) => e.action === 'editPage').map((e) => e.details)).toContainEqual({
       title: 'Puerto Ceniza',
+      pageId,
       body: 'section'
     })
   })

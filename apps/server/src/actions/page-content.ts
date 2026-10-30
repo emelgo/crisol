@@ -326,6 +326,8 @@ export const pageContentActions = [
     // Lo que queda en el historial: título, icono y propiedades se pueden deshacer; el cuerpo, con las versiones
     const details = {
       title: page.title,
+      // El id, para que el historial pueda llevar a sus versiones
+      pageId: page.id,
       ...(input.title !== undefined && input.title !== page.title ? { from: page.title, to: input.title } : {}),
       ...(properties ? { properties: true } : {}),
       ...(input.icon !== undefined ? { icon: input.icon } : {}),
