@@ -85,10 +85,12 @@ const tint = (color: World['color']): CSSProperties | undefined => {
   return hex ? ({ '--world-color': hex } as CSSProperties) : undefined
 }
 
-/** La imagen de su portada, si quien mira puede ver las imágenes de su mundo (quien lo dirige); si no, su color */
-function useCoverImage(kind: LookKind, look: Look) {
-  const files = useWorldFiles(kind.worldOf(look) ?? '', look.role === 'master' && look.cover !== null)
-  return look.cover ? files.data?.files.find((f) => f.id === look.cover?.fileId) : undefined
+/**
+ * La imagen de su portada, si quien mira puede ver las imágenes de su mundo (quien lo dirige); si no, su color. Su
+ * dirección sale de su id: se pide al momento, sin esperar a la lista de archivos
+ */
+function useCoverImage(look: Look) {
+  return look.cover && look.role === 'master' ? { url: `/api/files/${look.cover.fileId}` } : undefined
 }
 
 /**
@@ -114,7 +116,7 @@ function LookCard({
   onBurnt?: () => void
 }) {
   const { t } = useTranslation()
-  const image = useCoverImage(kind, look)
+  const image = useCoverImage(look)
   const [viewing, setViewing] = useState(false)
   // Recién creada, entra animada hasta acabar (aunque la página se vuelva a pintar mientras)
   const [entering, setEntering] = useState(fresh)
@@ -258,7 +260,7 @@ export function LookHeader({
   afterDelete: () => void
 }) {
   const { t } = useTranslation()
-  const image = useCoverImage(kind, look)
+  const image = useCoverImage(look)
   const [viewing, setViewing] = useState(false)
   return (
     <header className={styles.hero} style={{ ...tint(look.color), ...style }}>
@@ -314,7 +316,18 @@ function CoverHeader({
     <div className={classes.join(' ')}>
       <div className={styles.frame}>
         <div className={styles.picture}>
-          {url && cover && <img src={url} alt="" className={styles.image} style={coverStyle(cover)} />}
+          {url && cover && (
+            <img
+              src={url}
+              alt=""
+              className={styles.image}
+              style={coverStyle(cover)}
+              // Si ya no está (en la papelera), queda el hueco con su color
+              onError={(event) => {
+                event.currentTarget.hidden = true
+              }}
+            />
+          )}
         </div>
       </div>
       {/* Fuera del marco: su recorte las dejaría debajo del enlace que cubre la tarjeta */}
