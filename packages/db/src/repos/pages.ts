@@ -70,6 +70,26 @@ export async function pagePath(db: Database, pageId: string): Promise<{ id: stri
   return [...rows]
 }
 
+/** Las rutas de varias páginas de una vez (para listas de resultados): id → del primer nivel a ella */
+export async function pagePaths(db: Database, pageIds: readonly string[]) {
+  const paths = new Map<string, { id: string; title: string }[]>()
+  if (pageIds.length === 0) return paths
+  const rows = await db.execute<{ start: string; id: string; title: string }>(sql`
+    with recursive up as (
+      select id as start, id, parent_id, title, 0 as depth from pages
+        where id in (${sql.join(
+          pageIds.map((id) => sql`${id}::uuid`),
+          sql`, `
+        )})
+      union all
+      select up.start, p.id, p.parent_id, p.title, up.depth + 1 from pages p join up on p.id = up.parent_id
+        where up.depth < 64
+    )
+    select start, id, title from up order by start, depth desc`)
+  for (const row of rows) paths.set(row.start, [...(paths.get(row.start) ?? []), { id: row.id, title: row.title }])
+  return paths
+}
+
 /** Cuántos niveles ocupa la rama de una página, ella incluida (también lo que está en la papelera: puede volver) */
 export async function subtreeHeight(db: Database, pageId: string): Promise<number> {
   const rows = await db.execute<{ height: number }>(sql`

@@ -1,5 +1,7 @@
+import { sql } from 'drizzle-orm'
 import { type AnyPgColumn, boolean, index, jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core'
 import { trackedColumns } from './tracked.ts'
+import { tsvector } from './tsvector.ts'
 import { worlds } from './worlds.ts'
 
 /**
@@ -24,10 +26,20 @@ export const pages = pgTable(
     locked: boolean().notNull().default(false),
     // La imagen de cabecera (un archivo del mundo) y su punto de encuadre, en % del ancho y del alto
     cover: jsonb().$type<{ fileId: string; x: number; y: number } | null>(),
+    // Lo que se busca de la página además de su texto: el título y sus propiedades, con el peso de un título (la
+    // función, en la migración 0018)
+    searchTsv: tsvector().generatedAlwaysAs(
+      sql`setweight(to_tsvector('es_unaccent'::regconfig, crisol_page_text(title, properties)), 'A')`
+    ),
     // Los ajustes de la hoja; null: no se ve como hoja
     sheet: jsonb().$type<Record<string, unknown> | null>(),
     /** En la papelera desde entonces, con sus subpáginas: no sale en ninguna vista y a los 30 días se purga */
     deletedAt: timestamp({ withTimezone: true })
   },
-  (t) => [index().on(t.worldId, t.parentId), index().on(t.parentId), index().on(t.deletedAt)]
+  (t) => [
+    index().on(t.worldId, t.parentId),
+    index().on(t.parentId),
+    index().on(t.deletedAt),
+    index('pages_search').using('gin', t.searchTsv)
+  ]
 )

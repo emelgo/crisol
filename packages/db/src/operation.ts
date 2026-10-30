@@ -66,6 +66,28 @@ export interface Writer {
 
 type Json = Record<string, unknown>
 
+/**
+ * Las columnas que calcula la base (el vector de búsqueda de las páginas): no van al historial ni se escriben al
+ * deshacer (Postgres no deja). Se miran una vez por tabla
+ */
+const generated = new Map<string, Promise<Set<string>>>()
+function generatedColumns(tx: Transaction, table: string) {
+  let columns = generated.get(table)
+  if (!columns) {
+    columns = tx
+      .execute<{ name: string }>(
+        sql`select column_name as name from information_schema.columns
+          where table_schema = current_schema() and table_name = ${table} and is_generated = 'ALWAYS'`
+      )
+      .then((rows) => new Set([...rows].map((row) => row.name)))
+    generated.set(table, columns)
+  }
+  return columns
+}
+
+const without = (row: Json, columns: ReadonlySet<string>) =>
+  columns.size === 0 ? row : Object.fromEntries(Object.entries(row).filter(([column]) => !columns.has(column)))
+
 interface Change {
   tableName: string
   rowId: string
@@ -85,7 +107,8 @@ export async function operation<R>(
       const rows = await tx.execute<{ row: Json }>(
         sql`select to_jsonb(t) as row from ${sql.identifier(table)} t where t.id = ${id} ${lock ? sql`for update` : sql``}`
       )
-      return rows[0]?.row ?? null
+      const row = rows[0]?.row ?? null
+      return row ? without(row, await generatedColumns(tx, table)) : null
     }
     const existing = async (table: string, id: string) => {
       const row = await snapshot(table, id, true)
@@ -125,8 +148,9 @@ export async function operation<R>(
         await tx.delete(table).where(eq(table.id, id))
         recorded.push({ tableName: name, rowId: id, before, after: null })
       },
-      async restore(table, row) {
+      async restore(table, given) {
         const name = getTableName(table)
+        const row = without(given, await generatedColumns(tx, name))
         const id = String(row.id)
         const before = await snapshot(name, id, true)
         // Quien lo deja así es quien deshace, ahora; lo demás (versión incluida) es la fila tal como estaba
@@ -147,8 +171,14 @@ export async function operation<R>(
             )}) = (select ${list('r')} from jsonb_populate_record(null::${target}, ${values}::jsonb) r) where t.id = ${id}`
           )
         } else {
+          const columns = Object.keys(row)
+          columns.push(...['updated_by', 'updated_at'].filter((column) => !columns.includes(column)))
+          const list = sql.join(
+            columns.map((column) => sql.identifier(column)),
+            sql`, `
+          )
           await tx.execute(
-            sql`insert into ${target} select * from jsonb_populate_record(null::${target}, ${values}::jsonb)`
+            sql`insert into ${target} (${list}) select ${list} from jsonb_populate_record(null::${target}, ${values}::jsonb)`
           )
         }
         recorded.push({ tableName: name, rowId: id, before, after: await snapshot(name, id) })
