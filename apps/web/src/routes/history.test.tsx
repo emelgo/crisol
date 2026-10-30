@@ -186,6 +186,16 @@ describe('el historial', () => {
     expect(announced()).toBe(text)
   })
 
+  it('si lo de después fue en una página, lleva a ella y a sus versiones', async () => {
+    const pageId = crypto.randomUUID()
+    const edit = entry('editPage', { title: 'Puerto Ceniza', pageId })
+    const create = entry('createWorld', { name: 'Eana' })
+    renderAt('/historial', [edit, create], { conflicts: { [create.id]: edit } })
+    await userEvent.click(await screen.findByRole('button', { name: 'Deshacer: creó el mundo «Eana»' }))
+    const link = await inMain().findByRole('link', { name: 'Ir a «Puerto Ceniza» y a sus versiones' })
+    expect(link.getAttribute('href')).toBe(`/mundos/${world.id}/wiki/${pageId}`)
+  })
+
   it('si no se sabe qué lo impide, lo dice igual', async () => {
     const create = entry('createWorld', { name: 'Eana' })
     renderAt('/historial', [create], { conflicts: { [create.id]: null } })

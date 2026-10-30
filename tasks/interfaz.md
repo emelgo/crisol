@@ -44,8 +44,10 @@ del módulo 1.
   barra, el número de peticiones que esperan tu aprobación sobre el icono de la IA. **Queda para pulir**: llevar la
   cola de peticiones a un panel de la IA, en vez de encima de cada página, y marcar en la página lo que la IA quiere
   añadir o quitar antes de aprobarlo.
-- [ ] **6. Historial y papelera.** El aspecto nuevo, y un aviso claro cuando no se puede deshacer porque alguien
-  escribió después, con un enlace a las versiones. Va con el punto 7 de sus pruebas.
+- [x] **6. Historial y papelera.** Cuando no se puede deshacer porque alguien escribió después, un recuadro bien
+  visible dice por qué y, si fue en una página, lleva a ella y a sus versiones. El historial guarda el id de la
+  página en cada `editPage`. Los botones secundarios de toda la app pesan menos con ratón y con el dedo siguen del
+  tamaño que se toca. Va con el punto 7 de sus pruebas, que sigue abierto hasta reproducirlo con él.
 - [ ] **7. Mis mundos.** Tarjetas con portada (imagen o color), icono y descripción, y un botón de ajustes en cada una.
   En el servidor esto es nuevo: migración, API y herramienta MCP.
 - [ ] **8. Buscar y Ctrl+K.** Los filtros en el panel y los resultados agrupados por página.

@@ -131,7 +131,8 @@ function HistoryItem(props: {
   const queryClient = useQueryClient()
   const errorText = useErrorText()
   const announce = useAnnounce()
-  const [conflict, setConflict] = useState<string | null>(null)
+  // Por qué no se pudo deshacer y, si fue en una página, cuál: para ir a sus versiones
+  const [conflict, setConflict] = useState<{ text: string; by: HistoryEntry | null } | null>(null)
   // Lo que hay debajo de un deshacer: deshacerlo lo rehace (si las capas son impares) o lo vuelve a deshacer
   const { depth, root } = entry.action === 'undoOperation' ? undoLayers(entry.details) : { depth: 0, root: entry }
   const redo = depth % 2 === 1
@@ -143,7 +144,7 @@ function HistoryItem(props: {
         const text = values
           ? t(redo ? 'history.redoConflict' : 'history.conflict', values)
           : t(redo ? 'history.redoConflictUnknown' : 'history.conflictUnknown')
-        setConflict(text)
+        setConflict({ text, by: result.by ?? null })
         announce(text)
         return
       }
@@ -178,9 +179,28 @@ function HistoryItem(props: {
           {redo ? t('history.redo') : t('history.undo')}
         </BusyButton>
       )}
-      {conflict && <p className={styles.confirm}>{conflict}</p>}
+      {conflict && <Conflict text={conflict.text} by={conflict.by} />}
       <FormError message={undo.error ? errorText(undo.error) : null} />
     </li>
+  )
+}
+
+/** No se pudo deshacer: por qué, y cómo seguir. Si lo de después fue en una página, el enlace a sus versiones */
+function Conflict({ text, by }: { text: string; by: HistoryEntry | null }) {
+  const { t } = useTranslation()
+  const pageId = typeof by?.details.pageId === 'string' ? by.details.pageId : null
+  const title = typeof by?.details.title === 'string' ? by.details.title : ''
+  return (
+    <div className={styles.conflict}>
+      <p>{text}</p>
+      {pageId && by?.worldId ? (
+        <Link to="/mundos/$worldId/wiki/$pageId" params={{ worldId: by.worldId, pageId }}>
+          {t('history.conflictVersions', { title })}
+        </Link>
+      ) : (
+        <p>{t('history.conflictHint')}</p>
+      )}
+    </div>
   )
 }
 

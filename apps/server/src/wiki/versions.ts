@@ -130,7 +130,8 @@ export async function closeSession(env: ActionEnv, session: { pageId: string; wo
       via: 'ui',
       tool: null,
       action: 'editPage',
-      details: { title: page.title },
+      // El id, para que el historial pueda llevar a sus versiones
+      details: { title: page.title, pageId: page.id },
       organizationId: world.organizationId,
       worldId: world.id
     },
