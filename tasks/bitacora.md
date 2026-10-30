@@ -128,6 +128,24 @@ El foco vuelve al botón «Buscar en la página» cuando ya está pintado.
   «Hoja» en el menú «/». Tras un salto o el índice va un párrafo (si no, Intro cambiaba el bloque recién puesto).
 - La ayuda de Markdown de Claude (`MARKDOWN_HELP`) ya cuenta los archivos y los bloques de hoja.
 
+## Siguiente: 23, vista de hoja (diseño)
+
+- **Ajustes** en `pages.sheet` (ya existe la columna): `{ paper: 'a4'|'letter', theme: 'pergamino'|'neutro', numbers,
+  firstNumber, footer }`; null, sin hoja. `page` los devuelve y `updatePage` los cambia (frase «activó la hoja…»).
+- **Quien lee**: `wiki_preferences.simple_pages` (uuid[]; migración) y la acción `setPageView`. En pantallas estrechas,
+  la sencilla con «Ver la hoja».
+- **Paginador** en `@crisol/domain` (`paginate.ts`), puro y probado con alturas simuladas: páginas de filas; una fila es
+  a dos columnas (la primera se llena antes) o a lo ancho. Los saltos fuerzan; un título va con el bloque siguiente;
+  ningún bloque se parte; antes de un bloque a lo ancho se equilibran las columnas (salvo salto de columna a mano); lo
+  que no cabe ni en una página vacía va igual y la página lo avisa.
+- **Web** `apps/web/src/wiki/sheet/`: la hoja pinta lo que da `getPageContent` (con los secretos y los incrustados ya
+  proyectados; se pone al día con el aviso `pageContent`). Mide cada bloque en un medidor oculto con el ancho de la
+  columna, pagina y pinta páginas de tamaño fijo (A4 794×1123 px, Letter 816×1056). Pie con número y título. Índice con
+  número de página y puntos guía. Temas con variables `--sheet-…`: Pergamino (Alegreya, `@fontsource/alegreya`, OFL,
+  del plan; textura propia con gradientes) y Neutro. `hyphens: auto` con `lang="es"`.
+- **Escritorio ancho**: el editor y la hoja lado a lado; pulsar un bloque de la hoja lleva al del editor (por `data-id`)
+  y el cursor del editor lleva la hoja a su bloque.
+
 ## Hechas en esta tirada
 
 - **9** (PR #52): bloques, marcas, menú «/», barras, asa e ids. Decisiones apuntadas en `docs/modulos.md`.
