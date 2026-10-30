@@ -5,6 +5,7 @@ import type { Editor } from '@tiptap/core'
 import { Collaboration } from '@tiptap/extension-collaboration'
 import { CollaborationCaret } from '@tiptap/extension-collaboration-caret'
 import { EditorContent, useEditor } from '@tiptap/react'
+import { EyeOff, GripVertical, NotebookPen } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type * as Y from 'yjs'
@@ -180,27 +181,32 @@ function BodyEditor({
   const [blockMenu, setBlockMenu] = useState<BlockTarget | null>(null)
   return (
     <div aria-busy={!ready}>
-      {editable && editor && (
-        <div role="toolbar" aria-label={t('editor.toolbar')} className={styles.toolbar}>
-          <button type="button" className={styles.tool} onClick={() => void context.makeSeparate(editor, 'secret')}>
-            {t('separate.makeSecret')}
-          </button>
-          <button type="button" className={styles.tool} onClick={() => void context.makeSeparate(editor, 'note')}>
-            {t('separate.makeNote')}
-          </button>
-          <button
-            ref={blockButton}
-            type="button"
-            className={styles.tool}
-            aria-haspopup="menu"
-            aria-expanded={Boolean(blockMenu)}
-            onClick={() => setBlockMenu(blockAtCursor(editor))}
-          >
-            {t('blockMenu.button')}
-          </button>
-        </div>
-      )}
-      {editor && <FindBar editor={editor} />}
+      <div className={styles.editorBar}>
+        {editable && editor && (
+          <div role="toolbar" aria-label={t('editor.toolbar')} className={styles.toolbar}>
+            <button type="button" className={styles.tool} onClick={() => void context.makeSeparate(editor, 'secret')}>
+              <EyeOff aria-hidden="true" size={16} />
+              {t('separate.makeSecret')}
+            </button>
+            <button type="button" className={styles.tool} onClick={() => void context.makeSeparate(editor, 'note')}>
+              <NotebookPen aria-hidden="true" size={16} />
+              {t('separate.makeNote')}
+            </button>
+            <button
+              ref={blockButton}
+              type="button"
+              className={styles.tool}
+              aria-haspopup="menu"
+              aria-expanded={Boolean(blockMenu)}
+              onClick={() => setBlockMenu(blockAtCursor(editor))}
+            >
+              <GripVertical aria-hidden="true" size={16} />
+              {t('blockMenu.button')}
+            </button>
+          </div>
+        )}
+        {editor && <FindBar editor={editor} />}
+      </div>
       <EditorContent editor={editor} />
       <input
         ref={filePicker}
