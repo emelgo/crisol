@@ -329,7 +329,7 @@ Cada vía nueva por la que salen datos amplía `@fugas` en la misma tarea.
 
 ## Fase 9: Cierre
 
-- [ ] **25. A la escala de Eana**
+- [x] **25. A la escala de Eana**
   - Acepta:
     - Un mundo sintético del tamaño de Eana (2.400 páginas con enlaces cruzados, secretos y alias), creado solo por el
       MCP con `crear_paginas`.

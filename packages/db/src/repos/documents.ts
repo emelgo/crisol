@@ -158,3 +158,38 @@ export function lastWriter(db: Database, pageId: string) {
     .orderBy(desc(documents.updatedAt))
     .limit(1)
 }
+
+/** El texto plano de muchos documentos de una vez */
+export async function setTexts(db: Database, items: readonly { id: string; text: string }[]) {
+  if (items.length === 0) return
+  await db.execute(sql`
+    update documents d set text = v.text
+    from (values ${sql.join(
+      items.map((item) => sql`(${item.id}::uuid, ${item.text}::text)`),
+      sql`, `
+    )}) as v(id, text)
+    where d.id = v.id`)
+}
+
+/** El estado de estos documentos (por su id), para cambiar muchos de una vez */
+export async function statesOf(db: Database, ids: readonly string[]) {
+  if (ids.length === 0) return []
+  return db
+    .select({ id: documents.id, kind: documents.kind, pageId: documents.pageId, state: documents.state })
+    .from(documents)
+    .where(inArray(documents.id, [...ids]))
+}
+
+/** Guarda el estado nuevo de muchos documentos (ya fusionado con el de antes) */
+export async function saveStates(db: Database, userId: string, items: readonly { id: string; state: Uint8Array }[]) {
+  for (let i = 0; i < items.length; i += 200) {
+    const part = items.slice(i, i + 200)
+    await db.execute(sql`
+      update documents d set state = v.state, updated_by = ${userId}, updated_at = now()
+      from (values ${sql.join(
+        part.map((item) => sql`(${item.id}::uuid, ${Buffer.from(item.state)}::bytea)`),
+        sql`, `
+      )}) as v(id, state)
+      where d.id = v.id`)
+  }
+}

@@ -31,6 +31,31 @@ export function replaceLinks(
   })
 }
 
+/** Los enlaces de muchos documentos de una vez (los de una tanda de páginas nuevas) */
+export async function replaceLinksMany(
+  db: Database,
+  items: readonly { source: { worldId: string; pageId: string; documentId: string }; links: readonly LinkRow[] }[]
+) {
+  if (items.length === 0) return
+  await db.transaction(async (tx) => {
+    await tx.delete(pageLinks).where(
+      inArray(
+        pageLinks.sourceDocumentId,
+        items.map((item) => item.source.documentId)
+      )
+    )
+    const rows = items.flatMap((item) =>
+      item.links.map((link) => ({
+        worldId: item.source.worldId,
+        sourcePageId: item.source.pageId,
+        sourceDocumentId: item.source.documentId,
+        ...link
+      }))
+    )
+    for (let i = 0; i < rows.length; i += 1000) await tx.insert(pageLinks).values(rows.slice(i, i + 1000))
+  })
+}
+
 /** Los enlaces sin resolver del mundo con alguno de estos nombres (sin mayúsculas), con su documento */
 export function unresolvedNamed(db: Database, worldId: string, keys: readonly string[]) {
   if (keys.length === 0) return Promise.resolve([])

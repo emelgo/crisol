@@ -16,6 +16,22 @@ export async function indexDocument(env: Pick<ActionEnv, 'db'>, documentId: stri
   await searchRepo.replaceSections(env.db, documentId, sectionsOf(json))
 }
 
+/** Lo mismo para muchos documentos de una vez (los de una tanda de páginas nuevas): en dos consultas */
+export async function indexDocuments(
+  env: Pick<ActionEnv, 'db'>,
+  docs: readonly { documentId: string; json: JSONContent }[]
+) {
+  if (docs.length === 0) return
+  await documentsRepo.setTexts(
+    env.db,
+    docs.map((doc) => ({ id: doc.documentId, text: plainText(doc.json) }))
+  )
+  await searchRepo.replaceSectionsMany(
+    env.db,
+    docs.map((doc) => ({ documentId: doc.documentId, sections: sectionsOf(doc.json) }))
+  )
+}
+
 /** Indexa lo que falte en el mundo (los documentos de antes de la búsqueda, o de antes de guardar su texto) */
 export async function indexMissing(env: ActionEnv, worldId: string) {
   for (const doc of await searchRepo.unindexedDocuments(env.db, worldId)) {
