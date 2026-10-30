@@ -54,7 +54,8 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   la vuelta; al volver, «Mundos» sale de la llama, sin fuego. Los iconos del mundo (todos, también los que vengan)
   salen del crisol uno tras otro al entrar y suben a él al volver, antes de que salga «Mundos».
 - **Entrar en un mundo es entrar**: la tarjeta pulsada se convierte en la cabecera del mundo mientras Mis mundos se
-  acerca y se desvanece, como si se pasara a través; al volver, al revés (transiciones de vista del navegador).
+  acerca y se desvanece, como si se pasara a través; al volver, al revés (transiciones de vista del navegador). Al
+  entrar, con un fuego sutil: la tarjeta se pone al rojo mientras crece y sube algo de calor con unas brasas.
 - **El menú de la cuenta sale del avatar** creciendo, con un pequeño rebote, y al cerrarse vuelve a él encogiendo.
 - **Las listas, en el orden en que se crearon**: lo nuevo, al final.
 
