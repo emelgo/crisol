@@ -40,6 +40,10 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
      que se puede hacer en Postgres con pgvector. Propuesta: buscar dentro de los PDF (texto de cada página con pdf.js
      al subirlo, en la misma búsqueda, y el resultado abre el visor en esa página) y, si le compensa el coste de los
      embeddings, búsqueda por significado con pgvector. Los PDF escaneados (OCR) aparte;
+     **Enrique lo aprobó**: «me gusta eso que dices de busqueda en PDF y que abra la pagina del pdf obviamente y lo
+     de pgvector si ayuda también, quiero crear la mejor app». Antes de pgvector: pedirle permiso para cambiar la
+     imagen de Postgres a `pgvector/pgvector` y elegir con él quién calcula los embeddings (un modelo propio en el
+     servidor, gratis y privado pero con memoria; o una API, que cuesta y saca el texto fuera);
   5. empezar el módulo 2 con su ciclo (`interview-me` frente al inventario, REA, spec…).
 - **Lo que aún no tiene el módulo 1**, a propósito o para más adelante: importador (Eana se pasa por el MCP), los
   jugadores viendo la wiki (módulo 5), los datos de criatura del statblock (módulo 4), y la capa de texto del visor de
