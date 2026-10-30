@@ -56,7 +56,7 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
 - **Los mundos no llevan icono**: «no aportan nada».
 - **El color de un mundo**: sin color, uno de los fijos o uno propio con el selector de color; los propios se
   recuerdan para usarlos otra vez. **Solo tiñe, sutil, el contorno de su tarjeta** (y el de su ventana); la portada no
-  se colorea. Sin imagen, el hueco de la portada lleva un tinte muy oscuro de ese color.
+  se colorea. **El contorno sale siempre**, entero, también alrededor de la portada. Sin imagen, el hueco de la portada lleva un tinte muy oscuro de ese color.
 - **Toda la tarjeta es clicable** y lleva al elemento, no solo su nombre (salvo sus botones).
 - **«Guardar» y «Cancelar» solo salen si hay cambios**, a la izquierda (Guardar primero), y se abren y se cierran
   suavemente al aparecer y al irse, sin saltos (`components/changes.tsx`); «Cancelar» los deshace.
