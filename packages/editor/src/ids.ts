@@ -26,7 +26,13 @@ export const BLOCK_TYPES = [
   'secret',
   'note',
   'pageEmbed',
-  'fileEmbed'
+  'fileEmbed',
+  'pageBreak',
+  'columnBreak',
+  'statblock',
+  'sidenote',
+  'wideBlock',
+  'tableOfContents'
 ]
 
 const ALPHABET = 'abcdefghijklmnopqrstuvwxyz0123456789'

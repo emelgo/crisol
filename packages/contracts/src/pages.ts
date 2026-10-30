@@ -230,7 +230,7 @@ export const createPageDocument = defineAction({
 
 /** Markdown de una página: el dialecto de Obsidian que entiende Crisol */
 const MARKDOWN_HELP =
-  'Markdown de Obsidian: propiedades en YAML al principio (alias, etiquetas, resumen y las demás; las de páginas como "[[Título]]"), títulos #, listas, - [ ] casillas, tablas, ``` código, recuadros > [!nota] > [!consejo] > [!aviso] > [!peligro] > [!leer], la caja > [!caja], > [!secreto] para lo que solo ve el máster (se guarda aparte, nunca en el cuerpo) y %%notas ocultas%% en sus líneas'
+  'Markdown de Obsidian: propiedades en YAML al principio (alias, etiquetas, resumen y las demás; las de páginas como "[[Título]]"), títulos #, listas, - [ ] casillas, tablas, ``` código, recuadros > [!nota] > [!consejo] > [!aviso] > [!peligro] > [!leer], la caja > [!caja], > [!secreto] para lo que solo ve el máster (se guarda aparte, nunca en el cuerpo), %%notas ocultas%% en sus líneas, archivos del mundo con ![[mapa.png|300]] o ![[libro.pdf#page=12]], y para la vista de hoja: > [!statblock], > [!lateral] (o > [!lateral|izquierda]), > [!ancho] para varios bloques (o |ancho en un recuadro), > [!indice], y los saltos <div class="salto-pagina"></div> y <div class="salto-columna"></div> en su línea'
 const markdownText = z.string().max(2_000_000)
 const blockId = z.string().regex(/^[A-Za-z0-9-]{1,64}$/)
 
