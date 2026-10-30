@@ -926,6 +926,11 @@ app: el 2026-10-30 dijo «luego apuntaremos por donde vamos y nos dedicaremos a 
     cada acción (la cabecera de la página, «Secreto», «Nota oculta», «Bloque», «Buscar en la página» sobre el texto);
     textos de ayuda fijos en pantalla («Arrastra para recolocar…»); y poca jerarquía entre lo principal y lo
     secundario. «No se entiende nada» apunta a lo mismo: demasiadas acciones a la vista, todas con el mismo peso.
+- **Lienzo «Crisol: interfaz»** (claude.ai, privado: https://claude.ai/artifact/QLHQADLdZSnTn5uzTubqf7; fuentes en
+  `out/lienzo-interfaz/`, fuera de git). Primera ronda, la página y el editor: «Me gusta mucho más que el actual, al
+  menos a grandes rasgos». Segunda ronda, el resto de pantallas: entrar, mis mundos, buscar y Ctrl+K, la hoja (sola o
+  con el editor, con la nota lateral rodeada por el texto), Claude y sus aprobaciones, historial (con el aviso claro
+  cuando no se puede deshacer) y papelera, y el móvil. Falta que la apruebe; después, plan por porciones.
 
 ## Decisiones por módulo
 
