@@ -350,4 +350,6 @@ Cada vía nueva por la que salen datos amplía `@fugas` en la misma tarea.
 
 ### Punto de control final
 
+Estado (2026-10-30): todo construido y en staging; Enrique está probando los puntos 3 a 6 y este.
+
 - [ ] Los criterios de éxito de `docs/specs/wiki.md`, en staging y con Enrique.

@@ -171,7 +171,7 @@ acciones de la página; la fila de ajustes encima del texto; a partir de 1500 px
   512 MB). El guardián de origen acepta también el origen interno (solo lo puede abrir el propio servidor). Sin
   Chromium o sin la web compilada: 503.
 
-## Tarea 25, a la escala de Eana (hecha, rama `wiki/tarea-25-escala`)
+## Tarea 25, a la escala de Eana (hecha, PR #69)
 
 - `apps/server/src/mcp/escala.integration.test.ts` (solo con `CRISOL_ESCALA=1`; `CRISOL_ESCALA_PAGINAS` para menos):
   2.400 páginas por `crear_paginas` de 50 en 50, con alias, etiquetas, secretos y enlaces cruzados (también hacia
@@ -190,10 +190,12 @@ acciones de la página; la fila de ajustes encima del texto; a partir de 1500 px
 
 ## Estado de los PR
 
-- #61 (18), #62 (19a), #63 (19b), #64 (20), #65 (21), #66 (22), #67 (23) y #68 (24): fusionados y en staging. Staging
-  tiene Chromium (probado: saca un PDF dentro del contenedor).
+- #61 (18), #62 (19a), #63 (19b), #64 (20), #65 (21), #66 (22), #67 (23), #68 (24), #69 (25) y #70 (26): fusionados
+  y en staging. Staging tiene Chromium (probado: saca un PDF dentro del contenedor).
+- **El módulo está construido.** Lo siguiente está en `docs/modulos.md` § «Dónde estamos» → «Para retomar»: Enrique
+  prueba en staging, la etapa de interfaz, y cerrar el módulo con sus puntos de control.
 
-## Tarea 26, cierre (hecha, rama `wiki/tarea-26-cierre`)
+## Tarea 26, cierre (hecha, PR #70)
 
 Revisiones hechas con dos agentes (seguridad del servidor; interfaz con `web-design-guidelines`).
 
