@@ -23,6 +23,8 @@ export function registerCollabRoutes(app: FastifyInstance, options: CollabRouteO
   const stops = new Set<() => void>()
   app.addHook('onClose', async () => {
     for (const stop of stops) stop()
+    // Lo que se estaba escribiendo se guarda antes de cerrar (y no choca con lo que venga después)
+    await collab.close()
   })
 
   app.get(

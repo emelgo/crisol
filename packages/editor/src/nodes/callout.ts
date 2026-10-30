@@ -3,6 +3,7 @@
  * `> [!aviso]` (tarea 10); aquí, el tipo en inglés
  */
 import { mergeAttributes, Node } from '@tiptap/core'
+import { CALLOUT_MARKDOWN, calloutKindOf, calloutTokenizer, renderCallout } from '../markdown/syntax.ts'
 
 export const CALLOUT_KINDS = ['note', 'tip', 'warning', 'danger', 'read-aloud'] as const
 export type CalloutKind = (typeof CALLOUT_KINDS)[number]
@@ -35,6 +36,19 @@ export const Callout = Node.create({
   }),
   parseHTML: () => [{ tag: 'div[data-callout]' }],
   renderHTML: ({ HTMLAttributes }) => ['div', mergeAttributes(HTMLAttributes), 0],
+  // En Markdown: `> [!aviso]`
+  markdownTokenizer: calloutTokenizer('callout', (type) => {
+    const kind = calloutKindOf(type)
+    return kind ? { kind } : null
+  }),
+  parseMarkdown: (token, helpers) =>
+    helpers.createNode(
+      'callout',
+      { kind: token.attrs?.kind ?? 'note' },
+      (helpers.parseBlockChildren ?? helpers.parseChildren)(token.tokens ?? [])
+    ),
+  renderMarkdown: (node, helpers) =>
+    renderCallout(CALLOUT_MARKDOWN[node.attrs?.kind as CalloutKind] ?? 'nota', node, helpers),
   addCommands() {
     return {
       setCallout:

@@ -27,26 +27,12 @@ Hay que contárselo al final, con lo que tenga que probar o revisar:
 
 - Los puntos de control 3 (Markdown y Claude), 4 (versiones), 5 (búsqueda), 6 (hojas) y el final.
 
-## Tarea en curso: 10, el Markdown de ida y vuelta
+## Tarea en curso: 11, Claude lee y escribe páginas
 
-- **Hecho**: `packages/editor/src/markdown/frontmatter.ts`, un YAML hecho a mano para los cinco tipos de propiedad.
-  Las páginas se escriben como `"[[Título]]"`; al leer vuelven títulos, que resuelve el servidor (tarea 11/13).
-- **Plan** (`@tiptap/markdown` 3.32.1, MIT, con marked):
-  - Un tokenizador de bloque para `> [!tipo]`. Da recuadro, caja o secreto según el tipo:
-    - en español: nota, consejo, aviso, peligro, leer, caja y secreto;
-    - los de Obsidian en inglés se leen también: info → nota, warning → aviso…
-  - Otro para `%%…%%`, que da la nota oculta.
-  - **Ids**, solo de los bloques de primer nivel y solo si se piden:
-    - en el párrafo y el título, ` ^id` al final de la última línea;
-    - en los demás, `^id` en su propia línea, con líneas en blanco alrededor (como en Obsidian);
-    - en el secreto, `^s-id`, como pide la spec.
-  - Si no hay propiedades y el cuerpo empieza por `---` (un separador), se escribe un YAML vacío (`---\n---`), para
-    que no se confunda con el YAML.
-  - **Al leer** se devuelven el cuerpo y aparte el contenido de cada secreto y nota oculta, con su id de bloque.
-  - **Prueba de ida y vuelta**: un documento con todos los nodos y marcas del esquema. Falla si el esquema tiene un
-    nodo o una marca que el documento de prueba no lleva.
+(Por empezar. Usa `@crisol/editor/markdown`: `pageToMarkdown` y `pageFromMarkdown`.)
 
 ## Hechas en esta tirada
 
-- **9** (PR por abrir al escribir esto): bloques, marcas, menú «/», barras, asa e ids. Decisiones apuntadas en
-  `docs/modulos.md`. «Enlace a página» y proponer enlazar quedan para la 13.
+- **9** (PR #52): bloques, marcas, menú «/», barras, asa e ids. Decisiones apuntadas en `docs/modulos.md`.
+  «Enlace a página» y proponer enlazar quedan para la 13.
+- **10** (rama `wiki/tarea-10-markdown`, sobre la 9): el Markdown de ida y vuelta.

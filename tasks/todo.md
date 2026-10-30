@@ -134,7 +134,8 @@ Cada vía nueva por la que salen datos amplía `@fugas` en la misma tarea.
 
 ## Fase 3: Markdown y Claude
 
-- [ ] **10. El Markdown, de ida y vuelta**
+- [x] **10. El Markdown, de ida y vuelta** — hecha. Va en `@crisol/editor/markdown` (aparte, para que la web no cargue
+  marked). El YAML es propio (sin dependencia). Los ids, solo de primer nivel.
   - Acepta:
     - Cada nodo y marca declara su forma en Markdown (la tabla de la spec), con `@tiptap/markdown` en el servidor.
     - Al leer, `> [!secreto]` y `%%…%%` devuelven el cuerpo y aparte los documentos de sus secretos.

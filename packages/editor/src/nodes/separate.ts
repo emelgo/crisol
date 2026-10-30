@@ -4,6 +4,7 @@
  * toque. copyOf: al pegar, el documento del que hay que hacer una copia (lo hace la pestaña que pegó, copyBy)
  */
 import { mergeAttributes, Node } from '@tiptap/core'
+import { calloutTokenizer, hiddenNoteTokenizer, renderCallout, renderHiddenNote } from '../markdown/syntax.ts'
 
 export type SeparateKind = 'secret' | 'note'
 
@@ -25,7 +26,17 @@ function separateBlock(name: SeparateKind) {
       copyBy: { default: null, rendered: false }
     }),
     parseHTML: () => [{ tag: `div[data-type="${name}"]` }],
-    renderHTML: ({ HTMLAttributes }) => ['div', mergeAttributes({ 'data-type': name }, HTMLAttributes)]
+    renderHTML: ({ HTMLAttributes }) => ['div', mergeAttributes({ 'data-type': name }, HTMLAttributes)],
+    // En Markdown, `> [!secreto]` y la nota oculta entre `%%`. Lo de dentro no es del cuerpo: al escribir, se pone
+    // antes en node.content; al leer, sale en content y se aparta (markdown/page.ts)
+    markdownTokenizer:
+      name === 'secret'
+        ? calloutTokenizer('secret', (type) => (type === 'secreto' || type === 'secret' ? {} : null))
+        : hiddenNoteTokenizer,
+    parseMarkdown: (token, helpers) =>
+      helpers.createNode(name, {}, (helpers.parseBlockChildren ?? helpers.parseChildren)(token.tokens ?? [])),
+    renderMarkdown: (node, helpers) =>
+      name === 'secret' ? renderCallout('secreto', node, helpers) : renderHiddenNote(node, helpers)
   })
 }
 

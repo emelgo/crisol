@@ -213,8 +213,8 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   4. ~~Diseño~~: aprobado.
   5. ~~`/plan`~~: aprobado.
   6. **`/build` tarea a tarea** (`tasks/todo.md`), con `/agent-skills:review` y `/ship`, como en el módulo 0. Hechas de
-     la 1 a la 9. **Puntos de control 1 y 2 pasados** (2026-10-30, «todo funciona de momento»): el editor anidado se
-     queda. **Sigue la 10** (el Markdown, de ida y vuelta), y así hasta acabar el módulo (bitácora: `tasks/bitacora.md`).
+     la 1 a la 10. **Puntos de control 1 y 2 pasados** (2026-10-30, «todo funciona de momento»): el editor anidado se
+     queda. **Sigue la 11** (Claude lee y escribe páginas), y así hasta acabar el módulo (bitácora: `tasks/bitacora.md`).
   7. **Al acabar el módulo 1, la interfaz** (decisión de Enrique, 2026-10-30): se apunta por dónde vamos y se
      dedica una etapa a la interfaz antes del módulo 2. Ver «Para el repaso final de la interfaz».
 - **2026-10-29 — Módulo 1, tarea 1: páginas y árbol en la API.**
@@ -400,6 +400,30 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
       el menú del bloque, arrastrar, los ids al recargar, pegar HTML, y el menú dentro de un secreto;
     - a11y de los menús abiertos.
   - **Queda para la tarea 13**: «Enlace a página» en el menú «/» y la propuesta de enlazar en la barra de formato.
+- **2026-10-30 — Módulo 1, tarea 10: el Markdown, de ida y vuelta** (`packages/editor/src/markdown`, entrada propia
+  `@crisol/editor/markdown`, para que la web no cargue marked).
+  - **Propiedades** (`frontmatter.ts`): un YAML pequeño hecho a mano para los cinco tipos (sin dependencia nueva).
+    - Las páginas enlazadas se escriben `"[[Título]]"`; al leer vuelven sus títulos, que resuelve el servidor.
+    - Lo que no entiende lo dice con su línea (`FrontmatterError`).
+  - **Formas propias** (`syntax.ts`), declaradas en cada nodo (`markdownTokenizer`, `parseMarkdown` y
+    `renderMarkdown`):
+    - los recuadros `> [!nota|consejo|aviso|peligro|leer]`. También se leen los de Obsidian en inglés y el título tras
+      el tipo;
+    - la caja, `> [!caja]`;
+    - el secreto, `> [!secreto]`;
+    - la nota oculta, entre `%%` en su línea, o `%%texto%%`.
+  - **Una página** (`page.ts`): `pageToMarkdown` y `pageFromMarkdown`.
+    - Ids solo de primer nivel y solo si se piden: ` ^id` al final del párrafo o el título, `^id` en su línea en lo
+      demás, y `^s-id` en los secretos.
+    - Al leer se apartan lo de dentro de los secretos y las notas ocultas, con su id de bloque. Un secreto dentro de
+      otro se deshace.
+    - Se quitan los enlaces que no son http, https o mailto.
+    - En el servidor no hay DOM: el HTML suelto queda como texto y no se ejecuta.
+    - Si no hay propiedades y el cuerpo empieza por `---`, se escribe un YAML vacío.
+  - **Prueba de ida y vuelta**: un cuerpo con todos los nodos y marcas del esquema. Falla si el esquema gana uno que la
+    prueba no lleva.
+  - **Límite conocido**: dos listas seguidas sin nada entre ellas se leen como una sola (pasa igual en Obsidian), salvo
+    si se escriben con sus ids.
 - **Pendientes de permiso de Enrique:**
   - Servicio de systemd para Foundry: ahora corre como proceso de la sesión y se para al cerrarla; se arranca con el
     comando de `research/foundry/entorno.md`.
@@ -420,7 +444,7 @@ Estados: pendiente · en curso · hecho · descartado.
 | # | Módulo | Estado | REA principal |
 |---|---|---|---|
 | 0 | **Fundación**: monorepo, CI, despliegue, cuentas, organizaciones, mundos, campañas, roles, historial y deshacer, esqueleto del MCP | **hecho** (2026-10-29; Discord y Google, pospuestos) | Foundry: modelo de documentos y permisos; DDB: campañas e invitaciones |
-| 1 | **Wiki**: páginas y subpáginas, editor de bloques, enlaces, menciones, vista previa, propiedades, secretos, búsqueda, marcadores, etiquetas, versiones, recursos y archivos, **hojas con estilo** (tipo Homebrewery, con PDF), exportación MD, sus herramientas MCP | en curso (construcción: tareas 1 a 9 de 26 hechas) | Foundry: Journal; DDB: contenido y referencias; Homebrewery (MIT): formato de hoja y descarga |
+| 1 | **Wiki**: páginas y subpáginas, editor de bloques, enlaces, menciones, vista previa, propiedades, secretos, búsqueda, marcadores, etiquetas, versiones, recursos y archivos, **hojas con estilo** (tipo Homebrewery, con PDF), exportación MD, sus herramientas MCP | en curso (construcción: tareas 1 a 10 de 26 hechas) | Foundry: Journal; DDB: contenido y referencias; Homebrewery (MIT): formato de hoja y descarga |
 | 2 | Tipos de página, plantillas y formularios nativos; consultas (en lugar de Dataview y Bases) | pendiente | Foundry: tipos de documento |
 | 3 | Sistemas de reglas, fichas de personaje (creación, subida de nivel), dados y dados 3D | pendiente | DDB: creador y hoja; Foundry: dnd5e, DataModel e instalar y crear sistemas |
 | 4 | Compendios, bestiario, statblocks, biblioteca | pendiente | Foundry: compendium packs; DDB: listados |

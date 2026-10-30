@@ -4,7 +4,8 @@
   "license": "UNLICENSED",
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./markdown": "./src/markdown/index.ts"
   },
   "scripts": {
     "typecheck": "tsc -p .",
@@ -17,6 +18,7 @@
     "@tiptap/extension-list": "catalog:",
     "@tiptap/extension-table": "catalog:",
     "@tiptap/extension-unique-id": "catalog:",
+    "@tiptap/markdown": "catalog:",
     "@tiptap/pm": "catalog:",
     "@tiptap/starter-kit": "catalog:"
   },
