@@ -60,7 +60,10 @@ function withDocuments(body: JSONContent, documents: ReadonlyMap<string, string>
 
 /** Los enlaces a páginas de la misma tanda, sin resolver aún: se resuelven al crearlas */
 function withoutBatch(json: JSONContent): JSONContent {
-  if (json.type === 'pageLink' && String(json.attrs?.pageId ?? '').startsWith('batch:')) {
+  if (
+    (json.type === 'pageLink' || json.type === 'pageEmbed') &&
+    String(json.attrs?.pageId ?? '').startsWith('batch:')
+  ) {
     return { ...json, attrs: { ...json.attrs, pageId: null } }
   }
   return json.content ? { ...json, content: json.content.map(withoutBatch) } : json

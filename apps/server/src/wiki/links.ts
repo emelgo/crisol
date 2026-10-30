@@ -3,22 +3,23 @@
  * página que aún no existe se quedan sin resolver, por su nombre; cuando aparece una página con ese nombre (al crearla,
  * renombrarla o darle un alias), se resuelven solos, también en el texto
  */
-import { documentsRepo, linksRepo, pagesRepo } from '@crisol/db'
+import { documentsRepo, linksRepo, pagesRepo, worldsRepo } from '@crisol/db'
 import { foldName, type NamedPage, reservedList, resolveName } from '@crisol/domain'
 import { plainText } from '@crisol/editor'
 import type { JSONContent } from '@tiptap/core'
 import { type ActionEnv, InvalidRequestError } from '../actions/context.ts'
+import { pageContentChanged } from '../realtime/events.ts'
 import { documentJson, writeDocument } from './content.ts'
 import { propertiesOf } from './properties.ts'
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 
-/** Los enlaces de un documento, en el orden en que salen */
+/** Los enlaces de un documento (también los incrustados, que llevan a una página), en el orden en que salen */
 export function linksIn(
   json: JSONContent,
   found: { pageId: string | null; title: string; anchor: string | null }[] = []
 ) {
-  if (json.type === 'pageLink') {
+  if (json.type === 'pageLink' || json.type === 'pageEmbed') {
     const pageId = typeof json.attrs?.pageId === 'string' && UUID.test(json.attrs.pageId) ? json.attrs.pageId : null
     found.push({
       pageId,
@@ -65,7 +66,7 @@ export function linkName(names: readonly NamedPage[]) {
  * a varias, no se adivina: Claude recibe las candidatas
  */
 export function resolveIncoming(json: JSONContent, names: readonly NamedPage[]): JSONContent {
-  if (json.type === 'pageLink' && !json.attrs?.pageId) {
+  if ((json.type === 'pageLink' || json.type === 'pageEmbed') && !json.attrs?.pageId) {
     const title = String(json.attrs?.title ?? '')
     const found = resolveName(title, names)
     if (found.length > 1) {
@@ -118,7 +119,7 @@ export async function rebuildLinks(
 
 /** Pone su página a los enlaces sin resolver de un documento que ya la tienen (por su nombre) */
 function withResolved(json: JSONContent, resolved: ReadonlyMap<string, string>): JSONContent {
-  if (json.type === 'pageLink' && !json.attrs?.pageId) {
+  if ((json.type === 'pageLink' || json.type === 'pageEmbed') && !json.attrs?.pageId) {
     const pageId = resolved.get(foldName(String(json.attrs?.title ?? '')))
     return pageId ? { ...json, attrs: { ...json.attrs, pageId } } : json
   }
@@ -192,7 +193,7 @@ export async function linksOfNewPages(
   )
 }
 
-/** Tras guardar un documento en Hocuspocus: sus enlaces y su texto plano, de nuevo */
+/** Tras guardar un documento en Hocuspocus: sus enlaces y su texto plano, de nuevo, y el aviso de que cambió */
 export async function linksOfStored(
   env: ActionEnv,
   source: { worldId: string; pageId: string; documentId: string },
@@ -201,6 +202,11 @@ export async function linksOfStored(
 ) {
   const byName = await rebuildLinks(env, source, json)
   await documentsRepo.setText(env.db, source.documentId, plainText(json))
+  // Lo que la enseña en otra página (vista previa, incrustados) se vuelve a pedir
+  const world = await worldsRepo.findWorld(env.db, source.worldId)
+  if (world) {
+    env.realtime.publish(pageContentChanged({ worldId: world.id, organizationId: world.organizationId }, source.pageId))
+  }
   // Un enlace con solo el nombre que ya tiene página: se le pone también en el texto, después (no dentro del guardado)
   if (byName.size > 0 && actorId) {
     const ref =
