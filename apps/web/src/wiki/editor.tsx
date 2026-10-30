@@ -1,25 +1,30 @@
 import type { Page } from '@crisol/contracts'
-import { BODY_FIELD, editorExtensions } from '@crisol/editor'
+import { BODY_FIELD, editorExtensions, fillMissingIds } from '@crisol/editor'
 import type { HocuspocusProvider } from '@hocuspocus/provider'
 import { Collaboration } from '@tiptap/extension-collaboration'
 import { CollaborationCaret } from '@tiptap/extension-collaboration-caret'
 import { EditorContent, useEditor } from '@tiptap/react'
-import { useEffect } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type * as Y from 'yjs'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
+import { useAnnounce } from '../components/announcer.tsx'
+import type { BlockContext } from './blocks.ts'
+import { FormatMenu, TableMenu } from './bubble-menu.tsx'
 import { caretColor, renderCaret } from './carets.ts'
 import { useCollabDocument } from './collab.tsx'
+import { BlockHandle, BlockMenu, type BlockTarget, blockAtCursor } from './drag-handle.tsx'
 import styles from './editor.module.css'
 import {
   CopySeparateOnPaste,
   insertSeparate,
   NestedOptionsContext,
   SeparatePageContext,
-  useNestedOptions,
-  withSeparateView
+  useNestedOptions
 } from './separate.tsx'
+import { SlashMenu } from './slash-menu.tsx'
+import { withNodeView } from './views.ts'
 
 /**
  * El cuerpo de la página: el editor de bloques sobre su documento de Yjs. Lo que se escribe llega a las demás pestañas
@@ -68,14 +73,33 @@ function BodyEditor({
 }) {
   const { t } = useTranslation()
   const api = useApi()
+  const announce = useAnnounce()
   const { account } = useAccounts().useAccount()
   const name = account?.name ?? ''
+  // Hacer secreto lo elegido: su documento nuevo se crea en el servidor
+  const context = useMemo<BlockContext>(
+    () => ({
+      makeSeparate: (editor, kind) =>
+        insertSeparate(
+          editor,
+          kind,
+          async (which) => (await api.call('createPageDocument', { pageId, kind: which })).id
+        )
+    }),
+    [api, pageId]
+  )
   const editor = useEditor(
     {
       extensions: [
         ...editorExtensions({
           checkboxLabel: (text, checked) => t(checked ? 'editor.taskDone' : 'editor.task', { text }),
-          separate: withSeparateView
+          view: withNodeView
+        }),
+        SlashMenu.configure({
+          nested: false,
+          name: (block) => t(`blocks.${block.label}`),
+          context,
+          announce: (block) => announce(t('blocks.inserted', { block: t(`blocks.${block.label}`).toLowerCase() }))
         }),
         CopySeparateOnPaste,
         Collaboration.configure({ document, field: BODY_FIELD }),
@@ -98,27 +122,57 @@ function BodyEditor({
   useEffect(() => {
     editor?.setEditable(editable)
   }, [editor, editable])
-  const insert = (kind: 'secret' | 'note') => {
-    if (!editor) return
-    void insertSeparate(
-      editor,
-      kind,
-      async (which) => (await api.call('createPageDocument', { pageId, kind: which })).id
-    )
-  }
+  // Los bloques de antes de tener ids reciben el suyo al abrirse
+  useEffect(() => {
+    if (!editor || !ready || !editable) return
+    const tr = fillMissingIds(editor.state)
+    if (tr) editor.view.dispatch(tr)
+  }, [editor, ready, editable])
+  // El menú del bloque del cursor, desde la barra
+  const blockButton = useRef<HTMLButtonElement>(null)
+  const [blockMenu, setBlockMenu] = useState<BlockTarget | null>(null)
   return (
     <div aria-busy={!ready}>
-      {editable && (
+      {editable && editor && (
         <div role="toolbar" aria-label={t('editor.toolbar')} className={styles.toolbar}>
-          <button type="button" className={styles.tool} onClick={() => insert('secret')}>
+          <button type="button" className={styles.tool} onClick={() => void context.makeSeparate(editor, 'secret')}>
             {t('separate.makeSecret')}
           </button>
-          <button type="button" className={styles.tool} onClick={() => insert('note')}>
+          <button type="button" className={styles.tool} onClick={() => void context.makeSeparate(editor, 'note')}>
             {t('separate.makeNote')}
+          </button>
+          <button
+            ref={blockButton}
+            type="button"
+            className={styles.tool}
+            aria-haspopup="menu"
+            aria-expanded={Boolean(blockMenu)}
+            onClick={() => setBlockMenu(blockAtCursor(editor))}
+          >
+            {t('blockMenu.button')}
           </button>
         </div>
       )}
       <EditorContent editor={editor} />
+      {editable && editor && (
+        <>
+          <FormatMenu editor={editor} />
+          <TableMenu editor={editor} />
+          <BlockHandle editor={editor} context={context} />
+        </>
+      )}
+      {editor && blockMenu && (
+        <BlockMenu
+          editor={editor}
+          target={blockMenu}
+          anchor={blockButton.current}
+          context={context}
+          onClose={(returnFocus) => {
+            setBlockMenu(null)
+            if (returnFocus) blockButton.current?.focus()
+          }}
+        />
+      )}
     </div>
   )
 }

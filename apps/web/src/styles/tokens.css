@@ -36,6 +36,12 @@
   --color-secret: #f3eff9;
   --color-secret-rule: #6b5494;
   --color-secret-text: #553f7a;
+  /* Los recuadros: su raya y su rótulo (4,5:1 sobre --color-raised); leer en voz alta, como un pergamino */
+  --color-tip: #2d6a39;
+  --color-warning: #80520a;
+  --color-danger: #a82326;
+  --color-read-aloud: #f6efdf;
+  --color-read-aloud-rule: #7a5a28;
 
   --font-body: "Barlow", system-ui, sans-serif;
   --font-display: "Barlow Condensed", "Arial Narrow", sans-serif;
@@ -103,4 +109,9 @@
   --color-secret: #2a2530;
   --color-secret-rule: #8e7bb0;
   --color-secret-text: #c9b8e8;
+  --color-tip: #84cc92;
+  --color-warning: #e2b35a;
+  --color-danger: #f27470;
+  --color-read-aloud: #2e2a22;
+  --color-read-aloud-rule: #d2b077;
 }

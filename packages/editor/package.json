@@ -15,11 +15,14 @@
     "@tiptap/core": "catalog:",
     "@tiptap/extension-heading": "catalog:",
     "@tiptap/extension-list": "catalog:",
+    "@tiptap/extension-table": "catalog:",
+    "@tiptap/extension-unique-id": "catalog:",
     "@tiptap/pm": "catalog:",
     "@tiptap/starter-kit": "catalog:"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "catalog:",
+    "happy-dom": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
   }

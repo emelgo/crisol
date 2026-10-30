@@ -2,7 +2,7 @@
  * Los secretos y las notas ocultas en el editor (ADR-0003): cada uno es un bloque del cuerpo que solo guarda el id de
  * su documento, y aquí se pinta con un editor anidado conectado a ese documento por el mismo WebSocket.
  */
-import { editorExtensions, type SeparateKind } from '@crisol/editor'
+import { editorExtensions, fillMissingIds, type SeparateKind } from '@crisol/editor'
 import { type Editor, Extension, type JSONContent, type Node } from '@tiptap/core'
 import { Collaboration } from '@tiptap/extension-collaboration'
 import { CollaborationCaret } from '@tiptap/extension-collaboration-caret'
@@ -13,9 +13,13 @@ import { createContext, useContext, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
+import { useAnnounce } from '../components/announcer.tsx'
+import { FormatMenu, TableMenu } from './bubble-menu.tsx'
+import { withCalloutView } from './callout.tsx'
 import { renderCaret } from './carets.ts'
 import { useCollabDocument } from './collab.tsx'
 import styles from './separate.module.css'
+import { SlashMenu } from './slash-menu.tsx'
 
 /** Esta pestaña: la que pega es la que hace la copia (las demás ven el bloque y esperan) */
 const TAB_ID = crypto.randomUUID()
@@ -59,7 +63,7 @@ export function withSeparateView(node: Node) {
 }
 
 /** Cambia en un trozo pegado los secretos por copias: el pegado de otra página (o duplicado) no comparte documento */
-function copiesOf(fragment: Fragment): Fragment {
+export function copiesOf(fragment: Fragment): Fragment {
   const nodes: PMNode[] = []
   fragment.forEach((child) => {
     if ((child.type.name === 'secret' || child.type.name === 'note') && child.attrs.documentId) {
@@ -114,6 +118,7 @@ export async function insertSeparate(
 function SeparateView({ node, editor, getPos, updateAttributes, selected }: NodeViewProps) {
   const { t } = useTranslation()
   const api = useApi()
+  const announce = useAnnounce()
   const pageId = useContext(SeparatePageContext)
   const options = useContext(NestedOptionsContext)
   const kind = node.type.name as SeparateKind
@@ -134,13 +139,23 @@ function SeparateView({ node, editor, getPos, updateAttributes, selected }: Node
     {
       extensions: session
         ? [
-            ...editorExtensions({ nested: true, ...(options ? { checkboxLabel: options.checkboxLabel } : {}) }),
+            ...editorExtensions({
+              nested: true,
+              view: withCalloutView,
+              ...(options ? { checkboxLabel: options.checkboxLabel } : {})
+            }),
+            SlashMenu.configure({
+              nested: true,
+              name: (block) => t(`blocks.${block.label}`),
+              context: null,
+              announce: (block) => announce(t('blocks.inserted', { block: t(`blocks.${block.label}`).toLowerCase() }))
+            }),
             Collaboration.configure({ document: session.document }),
             ...(options
               ? [CollaborationCaret.configure({ provider: session.provider, user: options.caret, render: renderCaret })]
               : [])
           ]
-        : editorExtensions({ nested: true }),
+        : editorExtensions({ nested: true, view: withCalloutView }),
       editable: editor.isEditable && Boolean(session),
       editorProps: {
         attributes: {
@@ -152,26 +167,25 @@ function SeparateView({ node, editor, getPos, updateAttributes, selected }: Node
         // Las flechas salen del bloque por sus bordes, y Escape vuelve al cuerpo con el bloque elegido
         handleKeyDown: (view, event) => {
           const position = typeof getPos === 'function' ? getPos() : undefined
-          if (position === undefined) return false
+          // Con el menú «/» abierto, las flechas y Escape son suyos
+          if (position === undefined || view.dom.hasAttribute('aria-controls')) return false
           const { from, to, empty } = view.state.selection
           const atStart = empty && from <= 1
           const atEnd = empty && to >= view.state.doc.content.size - 1
-          if ((event.key === 'ArrowUp' || event.key === 'ArrowLeft') && atStart) {
-            editor.chain().focus().setTextSelection(position).run()
+          // El foco pasa al cuerpo al momento (focus() de TipTap espera un fotograma): un Ctrl+C justo después copia
+          // el bloque, no la nada de dentro
+          const leave = (select: () => void) => {
+            editor.view.focus()
+            select()
             return true
+          }
+          if ((event.key === 'ArrowUp' || event.key === 'ArrowLeft') && atStart) {
+            return leave(() => editor.commands.setTextSelection(position))
           }
           if ((event.key === 'ArrowDown' || event.key === 'ArrowRight') && atEnd) {
-            editor
-              .chain()
-              .focus()
-              .setTextSelection(position + node.nodeSize)
-              .run()
-            return true
+            return leave(() => editor.commands.setTextSelection(position + node.nodeSize))
           }
-          if (event.key === 'Escape') {
-            editor.chain().focus().setNodeSelection(position).run()
-            return true
-          }
+          if (event.key === 'Escape') return leave(() => editor.commands.setNodeSelection(position))
           return false
         }
       }
@@ -191,6 +205,13 @@ function SeparateView({ node, editor, getPos, updateAttributes, selected }: Node
   useEffect(() => {
     nested?.setEditable(editor.isEditable && Boolean(session))
   }, [nested, editor.isEditable, session])
+
+  // Los bloques de antes de tener ids reciben el suyo al abrirse
+  useEffect(() => {
+    if (!nested || !synced || !editor.isEditable) return
+    const tr = fillMissingIds(nested.state)
+    if (tr) nested.view.dispatch(tr)
+  }, [nested, synced, editor.isEditable])
 
   /** Convierte el bloque en texto normal: su contenido vuelve al cuerpo, en su sitio */
   const unwrap = () => {
@@ -235,6 +256,12 @@ function SeparateView({ node, editor, getPos, updateAttributes, selected }: Node
       </div>
       <div data-nested="" aria-busy={!synced}>
         {documentId ? <EditorContent editor={nested} /> : <p className={styles.copying}>{t('separate.copying')}</p>}
+        {nested && editor.isEditable && (
+          <>
+            <FormatMenu editor={nested} />
+            <TableMenu editor={nested} />
+          </>
+        )}
       </div>
     </NodeViewWrapper>
   )

@@ -1,0 +1,48 @@
+/* Los recuadros: una raya a la izquierda y el rótulo del color de su tipo */
+.callout {
+  margin-block: var(--space-3);
+  padding: var(--space-2) var(--space-4) var(--space-3);
+  border-inline-start: 4px solid var(--callout, var(--color-frame));
+  background: var(--color-raised);
+}
+
+.callout[data-callout="note"] {
+  --callout: var(--color-muted);
+}
+
+.callout[data-callout="tip"] {
+  --callout: var(--color-tip);
+}
+
+.callout[data-callout="warning"] {
+  --callout: var(--color-warning);
+}
+
+.callout[data-callout="danger"] {
+  --callout: var(--color-danger);
+}
+
+/* Leer en voz alta: como un pergamino, para la mesa */
+.callout[data-callout="read-aloud"] {
+  --callout: var(--color-read-aloud-rule);
+  border: 1px solid var(--color-read-aloud-rule);
+  border-inline-start-width: 4px;
+  background: var(--color-read-aloud);
+  font-style: italic;
+}
+
+.label {
+  margin-block-end: var(--space-1);
+  color: var(--callout, var(--color-muted));
+  font-family: var(--font-display);
+  font-size: 0.875rem;
+  font-style: normal;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  user-select: none;
+}
+
+.content > * + * {
+  margin-block-start: var(--space-2);
+}

@@ -341,6 +341,8 @@ La del ADR-0001 y el ADR-0003. Dependencias nuevas, todas con licencia admitida 
 - de TipTap 3.32 (MIT): `@tiptap/core`, `@tiptap/extension-collaboration`, `@tiptap/extension-collaboration-caret`,
   `@tiptap/extension-unique-id`, `@tiptap/markdown` (con marked, MIT) y las extensiones de tabla, índice y asa que hagan
   falta;
+  - con el permiso de Enrique (2026-10-30), cualquier extensión oficial de TipTap 3.32 con licencia MIT, y
+    `@floating-ui/dom` (MIT), que las coloca en pantalla;
 - `pdfjs-dist` (Apache-2.0);
 - las fuentes de los temas de hoja, de `@fontsource` (OFL-1.1).
 
@@ -407,7 +409,7 @@ definición, para que la prueba de ida y vuelta lo encuentre.
   - la CI en verde antes del merge.
 - **Preguntar antes**:
   - dependencias que no estén en «Pila»;
-  - Chromium en el servidor para «Descargar PDF»;
+  - ~~Chromium en el servidor para «Descargar PDF»~~: concedido el 2026-10-30, dentro del contenedor de la app;
   - cambiar `CONSTRAINTS.md`;
   - cualquier puerto, servicio o cambio en Caddy.
 - **Nunca**:
@@ -463,7 +465,8 @@ Decididas: Enrique aprobó las cuatro propuestas (2026-10-29).
    su nombre. Claude no puede pasar 710 MB por el chat. **Decidido: así, con un límite de 250 MB por archivo.**
 2. ~~**El PDF**~~: en el módulo 1 basta «Imprimir → Guardar como PDF» del navegador. «Descargar PDF» generado en el
    servidor necesita Chromium en el contenedor de staging, y eso pide permiso. **Decidido: imprimir ahora y dejar
-   preparada la ruta de impresión para el servidor.**
+   preparada la ruta de impresión para el servidor.** **Cambiado el 2026-10-30**: Enrique da permiso para Chromium en el contenedor de la
+   app, así que «Descargar PDF» desde el servidor entra en la tarea 24, además de imprimir.
 3. ~~**La paginación de la hoja**~~: automática, con saltos opcionales, o solo a mano como Homebrewery. **Decidido:
    automática.** Con saltos solo a mano, una página que se pasa a hoja sería una sola página desbordada.
 4. ~~**Los tipos de propiedad**~~: texto, número, sí/no, lista y enlace a página. **Decidido: estos.** Las fechas del

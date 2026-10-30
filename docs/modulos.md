@@ -213,8 +213,10 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   4. ~~Diseño~~: aprobado.
   5. ~~`/plan`~~: aprobado.
   6. **`/build` tarea a tarea** (`tasks/todo.md`), con `/agent-skills:review` y `/ship`, como en el módulo 0. Hechas de
-     la 1 a la 8. **Puntos de control 1 y 2 pedidos a Enrique**: la fase 1, y el editor con los secretos (el del
-     riesgo). Lo que diga se apunta. **Sigue la 9** (todos los bloques y marcas, con el menú «/»).
+     la 1 a la 9. **Puntos de control 1 y 2 pasados** (2026-10-30, «todo funciona de momento»): el editor anidado se
+     queda. **Sigue la 10** (el Markdown, de ida y vuelta), y así hasta acabar el módulo (bitácora: `tasks/bitacora.md`).
+  7. **Al acabar el módulo 1, la interfaz** (decisión de Enrique, 2026-10-30): se apunta por dónde vamos y se
+     dedica una etapa a la interfaz antes del módulo 2. Ver «Para el repaso final de la interfaz».
 - **2026-10-29 — Módulo 1, tarea 1: páginas y árbol en la API.**
   - La tabla `pages` tiene historial y su orden es una clave fraccionaria (`packages/domain/src/order.ts`, collation
     "C"). Mover solo escribe la fila que se mueve.
@@ -366,6 +368,38 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
     (`focusIsLost`).
 - Queda una ventana pequeña en el tiempo real: lo que cambie entre la primera carga de una página y la conexión del
   canal no se ve hasta volver a la pestaña. Taparla costaría volver a pedirlo todo al conectar la primera vez.
+- **2026-10-30 — Módulo 1, tarea 9: todos los bloques y marcas.** Enrique pasó los puntos de control 1 y 2. Antes de
+  irse a dormir pidió acabar el módulo sin parar. Dio permiso para:
+  - las extensiones MIT de TipTap y `@floating-ui/dom`;
+  - el volumen «archivos»;
+  - Chromium en el contenedor para «Descargar PDF», en la tarea 24.
+
+  Hecho:
+  - **Esquema** (`packages/editor`):
+    - tablas (`@tiptap/extension-table`);
+    - recuadros (`callout`, de los tipos `note`, `tip`, `warning`, `danger` y `read-aloud`) y la caja (`box`);
+    - el enlace externo, que solo admite http, https y mailto (`isExternalUrl`);
+    - ids de bloque (`@tiptap/extension-unique-id`): 8 letras o cifras, en `data-id`. Los documentos de antes reciben
+      los suyos al abrirse (`fillMissingIds`), y lo duplicado se copia sin ids (`withoutBlockIds`).
+  - **Vistas**: la opción `separate` de `editorExtensions` pasa a ser `view` (las vistas de React de la web:
+    `apps/web/src/wiki/views.ts`).
+  - **Web**:
+    - **Menú «/»** (`slash-menu.tsx`, con `@tiptap/suggestion`): grupos «Texto», «Recuadros» y «Del máster», según el
+      lienzo. Filtra sin tildes, y el texto guarda el foco con `aria-activedescendant`. Va también dentro de los
+      secretos, sin «Del máster».
+    - **Barra de formato y barra de la tabla** (`bubble-menu.tsx`): se llega con Alt+F10 y se recorren con las flechas.
+    - **Asa y menú del bloque** (`drag-handle.tsx`): convertir, duplicar, subir, bajar y borrar. El menú se abre
+      también desde «Bloque» en la barra: así vale con el teclado y en el móvil. El asa se fija con la meta
+      `lockDragHandle` de su plugin, porque los comandos son de la extensión y aquí no está.
+  - **Tokens** de los recuadros (`--color-tip`, `--color-warning`, `--color-danger` y `--color-read-aloud*`), con sus
+    contrastes probados.
+  - **Pruebas**:
+    - del esquema, con pegar HTML sucio en happy-dom (`pasteHTML`);
+    - del catálogo de bloques;
+    - e2e en `e2e/tests/bloques.spec.ts`: el menú «/» con el teclado, los atajos, la barra de formato y los enlaces,
+      el menú del bloque, arrastrar, los ids al recargar, pegar HTML, y el menú dentro de un secreto;
+    - a11y de los menús abiertos.
+  - **Queda para la tarea 13**: «Enlace a página» en el menú «/» y la propuesta de enlazar en la barra de formato.
 - **Pendientes de permiso de Enrique:**
   - Servicio de systemd para Foundry: ahora corre como proceso de la sesión y se para al cerrarla; se arranca con el
     comando de `research/foundry/entorno.md`.
@@ -386,7 +420,7 @@ Estados: pendiente · en curso · hecho · descartado.
 | # | Módulo | Estado | REA principal |
 |---|---|---|---|
 | 0 | **Fundación**: monorepo, CI, despliegue, cuentas, organizaciones, mundos, campañas, roles, historial y deshacer, esqueleto del MCP | **hecho** (2026-10-29; Discord y Google, pospuestos) | Foundry: modelo de documentos y permisos; DDB: campañas e invitaciones |
-| 1 | **Wiki**: páginas y subpáginas, editor de bloques, enlaces, menciones, vista previa, propiedades, secretos, búsqueda, marcadores, etiquetas, versiones, recursos y archivos, **hojas con estilo** (tipo Homebrewery, con PDF), exportación MD, sus herramientas MCP | en curso (construcción: tareas 1 a 8 de 26 hechas) | Foundry: Journal; DDB: contenido y referencias; Homebrewery (MIT): formato de hoja y descarga |
+| 1 | **Wiki**: páginas y subpáginas, editor de bloques, enlaces, menciones, vista previa, propiedades, secretos, búsqueda, marcadores, etiquetas, versiones, recursos y archivos, **hojas con estilo** (tipo Homebrewery, con PDF), exportación MD, sus herramientas MCP | en curso (construcción: tareas 1 a 9 de 26 hechas) | Foundry: Journal; DDB: contenido y referencias; Homebrewery (MIT): formato de hoja y descarga |
 | 2 | Tipos de página, plantillas y formularios nativos; consultas (en lugar de Dataview y Bases) | pendiente | Foundry: tipos de documento |
 | 3 | Sistemas de reglas, fichas de personaje (creación, subida de nivel), dados y dados 3D | pendiente | DDB: creador y hoja; Foundry: dnd5e, DataModel e instalar y crear sistemas |
 | 4 | Compendios, bestiario, statblocks, biblioteca | pendiente | Foundry: compendium packs; DDB: listados |
@@ -424,9 +458,10 @@ y el plan (ver `CLAUDE.md`).
 
 ## Para el repaso final de la interfaz
 
-Lo que a Enrique no le convence y se deja para cuando la app esté terminada (apuntarlo aquí según lo diga):
+Lo que a Enrique no le convence (apuntarlo aquí según lo diga). Se repasa al acabar el módulo 1, no al final de la
+app: el 2026-10-30 dijo «luego apuntaremos por donde vamos y nos dedicaremos a la UI, que es horrible».
 
-- (de momento, sin concretar)
+- La interfaz en general, sin concretar aún: se verá con él al empezar esa etapa.
 
 ## Decisiones por módulo
 
