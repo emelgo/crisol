@@ -427,3 +427,37 @@ export const getPageContent = defineAction({
     truncated: z.boolean()
   })
 })
+
+const versionView = z.object({
+  id: z.uuid(),
+  at: z.string(),
+  by: z.object({ id: z.string(), name: z.string() }).nullable(),
+  via: z.enum(['ui', 'ai', 'system']),
+  current: z.boolean().describe('Si es la versión en la que está ahora')
+})
+
+export const listPageVersions = defineAction({
+  name: 'listPageVersions',
+  kind: 'read',
+  description:
+    'Las versiones del texto de una página, de la más reciente a la más antigua: quién (una persona o Claude) y cuándo. Cada sesión de edición y cada cambio de Claude deja una',
+  input: z.object({ pageId: z.uuid() }),
+  output: z.object({ versions: z.array(versionView) })
+})
+
+export const getPageVersion = defineAction({
+  name: 'getPageVersion',
+  kind: 'read',
+  description: 'Una versión del texto de una página, en solo lectura, con sus secretos',
+  input: z.object({ pageId: z.uuid(), versionId: z.uuid() }),
+  output: z.object({ version: versionView, blocks: z.array(z.record(z.string(), z.unknown())) })
+})
+
+export const restorePageVersion = defineAction({
+  name: 'restorePageVersion',
+  kind: 'write',
+  description:
+    'Deja el texto de una página como estaba en una versión. Es un cambio nuevo, que queda en el historial y se puede deshacer',
+  input: z.object({ pageId: z.uuid(), versionId: z.uuid() }),
+  output: z.object({ restored: z.boolean() })
+})

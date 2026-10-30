@@ -5,6 +5,7 @@
 import { and, desc, eq } from 'drizzle-orm'
 import type { Database } from '../client.ts'
 import { type OperationContext, operation, type Writer } from '../operation.ts'
+import { user } from '../schema/auth.ts'
 import { pages } from '../schema/pages.ts'
 import { pageBodies, pageVersions, snapshots, versionDocuments } from '../schema/versions.ts'
 
@@ -95,16 +96,27 @@ export function versionDocumentsOf(db: Database, versionId: string) {
     .where(eq(versionDocuments.versionId, versionId))
 }
 
-/** Las versiones de una página, de la más reciente a la más antigua */
+/** Las versiones de una página, de la más reciente a la más antigua, con quién las hizo */
 export function listVersions(db: Database, pageId: string) {
   return db
     .select({
       id: pageVersions.id,
       createdBy: pageVersions.createdBy,
+      authorName: user.name,
       via: pageVersions.via,
       createdAt: pageVersions.createdAt
     })
     .from(pageVersions)
+    .leftJoin(user, eq(user.id, pageVersions.createdBy))
     .where(eq(pageVersions.pageId, pageId))
     .orderBy(desc(pageVersions.createdAt))
+}
+
+/** Una versión de una página */
+export async function findVersion(db: Database, pageId: string, versionId: string) {
+  const [found] = await db
+    .select()
+    .from(pageVersions)
+    .where(and(eq(pageVersions.id, versionId), eq(pageVersions.pageId, pageId)))
+  return found ?? null
 }
