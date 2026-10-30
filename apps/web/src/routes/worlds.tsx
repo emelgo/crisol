@@ -1,8 +1,9 @@
+import type { World } from '@crisol/contracts'
 import { TRASH_DAYS } from '@crisol/domain'
 import { useQuery } from '@tanstack/react-query'
 import { Navigate } from '@tanstack/react-router'
 import { Globe } from 'lucide-react'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
@@ -36,12 +37,28 @@ export function Worlds() {
   useEffect(() => {
     for (const world of worlds.data?.worlds ?? []) seen.current?.add(world.id)
   }, [worlds.data])
+  // Los que se acaban de ir (borrados aquí, por la IA o en otra pestaña) se quedan en su sitio, ardiendo, hasta que se
+  // consumen. Se calcula al pintar, no después: si no, la tarjeta desaparecería un instante antes de arder
+  const [burning, setBurning] = useState<{ world: World; index: number }[]>([])
+  const [shown, setShown] = useState(worlds.data)
+  if (worlds.data !== shown) {
+    const current = worlds.data?.worlds ?? []
+    const gone = (shown?.worlds ?? []).flatMap((world, index) =>
+      current.some((c) => c.id === world.id) ? [] : [{ world, index }]
+    )
+    setShown(worlds.data)
+    if (gone.length > 0) setBurning((list) => [...list, ...gone])
+  }
+  const list = [...(worlds.data?.worlds ?? [])]
+  for (const { world, index } of burning) {
+    if (!list.some((w) => w.id === world.id)) list.splice(Math.min(index, list.length), 0, world)
+  }
 
   if (pending) return null
   if (!account) return <Navigate to="/entrar" replace />
   const canCreate = organizations.data?.organizations.some((o) => o.role === 'owner') ?? false
 
-  const empty = worlds.data?.worlds.length === 0
+  const empty = list.length === 0
 
   return (
     <section className={cards.page}>
@@ -61,9 +78,18 @@ export function Worlds() {
           </div>
         ) : (
           <ul className={cards.list} aria-label={t('worlds.listLabel')}>
-            {worlds.data.worlds.map((world) => (
-              <WorldCard key={world.id} world={world} fresh={!seen.current?.has(world.id)} />
-            ))}
+            {list.map((world) => {
+              const ashes = burning.some((b) => b.world.id === world.id)
+              return (
+                <WorldCard
+                  key={world.id}
+                  world={world}
+                  fresh={!seen.current?.has(world.id)}
+                  burning={ashes}
+                  onBurnt={() => setBurning((all) => all.filter((b) => b.world.id !== world.id))}
+                />
+              )
+            })}
             {/* Tras el último, el recuadro vacío para crear otro */}
             {canCreate && <NewWorld />}
           </ul>

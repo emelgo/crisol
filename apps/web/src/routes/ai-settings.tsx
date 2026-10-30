@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
 import { useCodeText, useErrorText } from '../api/errors.ts'
+import { aiSettingsQuery } from '../api/queries.ts'
 import { useAnnounce } from '../components/announcer.tsx'
 import { outcomeText, useApprovals } from '../components/approval-queue.tsx'
 import { CopyField } from '../components/copy-field.tsx'
@@ -26,11 +27,7 @@ export function AiSettings({ embedded = false }: { embedded?: boolean }) {
   const codeText = useCodeText()
   const announce = useAnnounce()
   const { account, pending } = useAccounts().useAccount()
-  const current = useQuery({
-    queryKey: ['aiSettings'],
-    queryFn: () => api.call('getAiSettings', {}),
-    enabled: Boolean(account)
-  })
+  const current = useQuery({ ...aiSettingsQuery(api), enabled: Boolean(account) })
   const approvals = useApprovals()
   // Optimista: la opción cambia en el mismo clic y vuelve atrás si el servidor falla
   const [pendingMode, setPendingMode] = useState<AiMode | null>(null)

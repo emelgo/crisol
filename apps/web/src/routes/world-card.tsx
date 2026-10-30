@@ -29,10 +29,20 @@ const tint = (color: World['color']): CSSProperties | undefined => {
 
 /**
  * La tarjeta de un mundo: la portada, el nombre, la descripción y, abajo, el papel y el engranaje de quien lo dirige.
- * Toda la tarjeta lleva al mundo (el enlace del nombre la cubre), salvo sus botones. fresh: recién creado (entra
- * animada)
+ * Toda la tarjeta lleva al mundo (el enlace del nombre la cubre), salvo sus botones. fresh: recién creado, se forja
+ * (sale del crisol al rojo y se enfría); burning: ya borrado, arde hasta consumirse y entonces onBurnt
  */
-export function WorldCard({ world, fresh = false }: { world: World; fresh?: boolean }) {
+export function WorldCard({
+  world,
+  fresh = false,
+  burning = false,
+  onBurnt
+}: {
+  world: World
+  fresh?: boolean
+  burning?: boolean
+  onBurnt?: () => void
+}) {
   const { t } = useTranslation()
   const master = world.role === 'master'
   // Las imágenes del mundo solo las lista quien lo administra; quien juega ve el color
@@ -41,12 +51,28 @@ export function WorldCard({ world, fresh = false }: { world: World; fresh?: bool
   const [viewing, setViewing] = useState(false)
   // Recién creada, entra animada hasta acabar (aunque la página se vuelva a pintar mientras)
   const [entering, setEntering] = useState(fresh)
+  const card = useRef<HTMLLIElement>(null)
+  // Ardiendo: se quita al consumirse; sin animaciones (las pruebas), al momento; como mucho, en lo que dura y un poco
+  const burnt = useRef(onBurnt)
+  burnt.current = onBurnt
+  useEffect(() => {
+    if (!burning) return
+    if (typeof card.current?.getAnimations !== 'function') return burnt.current?.()
+    const timer = window.setTimeout(() => burnt.current?.(), 2000)
+    return () => window.clearTimeout(timer)
+  }, [burning])
+  const classes = [styles.card, entering ? styles.entering : '', burning ? styles.burning : ''].filter(Boolean)
   return (
     <li
-      className={entering ? `${styles.card} ${styles.entering}` : styles.card}
-      // Acaba cuando acaba la más larga: el contorno iluminado
+      ref={card}
+      className={classes.join(' ')}
+      aria-hidden={burning || undefined}
+      inert={burning}
+      // Acaba cuando acaba la más larga: el enfriado del contorno, o el fuego
       onAnimationEnd={(event) => {
-        if (event.target === event.currentTarget && event.animationName.includes('resalta')) setEntering(false)
+        if (event.target !== event.currentTarget) return
+        if (event.animationName.includes('enfria')) setEntering(false)
+        if (event.animationName.includes('arde')) burnt.current?.()
       }}
       style={tint(world.color)}
       data-world={world.id}
@@ -186,17 +212,6 @@ function WorldSettings({ world }: { world: World }) {
   )
 }
 
-/** Anima la salida de una tarjeta (.leaving) y espera a que acabe (como mucho, un poco más de lo que dura) */
-function leave(element: Element | null) {
-  return new Promise<void>((resolve) => {
-    // Sin animaciones (las pruebas, en jsdom): al momento
-    if (!(element instanceof HTMLElement) || typeof element.getAnimations !== 'function') return resolve()
-    element.classList.add(styles.leaving as string)
-    element.addEventListener('animationend', () => resolve(), { once: true })
-    window.setTimeout(resolve, 800)
-  })
-}
-
 interface Draft {
   name: string
   description: string
@@ -292,8 +307,7 @@ function WorldDialog({ world, onClose }: { world?: World; onClose: (gone: boolea
     const after = focusAfterRemoving(card?.closest('li'))
     gone.current = true
     dialog.current?.close()
-    // La tarjeta se va despacio antes de quitarla de la lista
-    await leave(card)
+    // La tarjeta arde en su sitio antes de quitarse (Worlds), aunque la lista se ponga al día ya
     await refresh()
     after()
   }

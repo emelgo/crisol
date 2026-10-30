@@ -11,6 +11,10 @@ export const historyQuery = (api: ApiClient, scope: { worldId?: string }) =>
     getNextPageParam: (last) => last.next
   })
 
+/** Los ajustes de la IA (el conector y el modo), del propietario */
+export const aiSettingsQuery = (api: ApiClient) =>
+  queryOptions({ queryKey: ['aiSettings'], queryFn: () => api.call('getAiSettings', {}) })
+
 /** La papelera (de la organización, o de un mundo) */
 export const trashQuery = (api: ApiClient, scope: { worldId?: string }) =>
   queryOptions({

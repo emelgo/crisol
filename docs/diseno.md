@@ -48,6 +48,10 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   abre no enseña un momento de carga: sus datos se piden antes (al pasar el ratón) y entran con un fundido. **Completas por defecto**, para que todos vean el detalle: en Ajustes → Apariencia, «Animaciones»
   (completas, reducidas, que son solo fundidos, o como el sistema). Los estilos miran `data-motion`, no la
   preferencia del sistema directamente (`src/motion.ts`).
+- **Las animaciones, con temática de crisol**: lo nuevo se forja (sale al rojo y se enfría); lo borrado arde (el fuego
+  lo recorre de abajo arriba, queda en ceniza y se va como humo). Al entrar en un mundo, «Mundos» sube a la llama de la
+  barra y se funde con ella, que se aviva soltando chispas: «como que el mundo se está cocinando». Dentro, la llama es
+  la vuelta; al volver, «Mundos» sale de la llama, sin fuego.
 - **Las listas, en el orden en que se crearon**: lo nuevo, al final.
 
 - **La colocación de Ajustes es la referencia**: una columna en el centro, con el título y el contenido alineados.

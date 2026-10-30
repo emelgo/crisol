@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router'
 import { Bookmark, BookOpen, Folder, Globe, Hash, History, type LucideIcon, Search, Trash2 } from 'lucide-react'
-import type { MouseEvent } from 'react'
+import { type MouseEvent, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
@@ -57,14 +57,40 @@ export function Ribbon() {
   const queryClient = useQueryClient()
   const prefetchHistory = () => void queryClient.prefetchInfiniteQuery({ ...historyQuery(api, {}), staleTime: 10_000 })
   const prefetchTrash = () => void queryClient.prefetchQuery({ ...trashQuery(api, {}), staleTime: 10_000 })
+  // Al entrar en un mundo, «Mundos» sube a la llama y se funde con ella, que se aviva (el mundo se cocina en el crisol);
+  // dentro, la llama es la vuelta. Al volver, «Mundos» sale de la llama, sin fuego
+  const inWorld = Boolean(worldId)
+  const [wasInWorld, setWasInWorld] = useState(inWorld)
+  const [phase, setPhase] = useState<'still' | 'merging' | 'emerging'>('still')
+  if (inWorld !== wasInWorld) {
+    setWasInWorld(inWorld)
+    setPhase(inWorld ? 'merging' : 'emerging')
+  }
+  const worldsItem = [
+    styles.item,
+    inWorld && phase === 'merging' ? styles.merging : '',
+    inWorld && phase !== 'merging' ? styles.merged : '',
+    !inWorld && phase === 'emerging' ? styles.emerging : ''
+  ]
 
   return (
     <div className={styles.ribbon}>
       <nav className={styles.sections} aria-label={t('app.sectionsNav')}>
-        <Link to="/mundos" className={styles.brand} aria-label={t('app.name')} translate="no">
+        <Link
+          to="/mundos"
+          className={phase === 'merging' ? `${styles.brand} ${styles.cooking}` : styles.brand}
+          aria-label={t('app.name')}
+          translate="no"
+        >
           <CrisolMark size={26} />
         </Link>
-        <Link to="/mundos" activeOptions={{ exact: true }} className={styles.item} data-tour="barra-mundos">
+        <Link
+          to="/mundos"
+          activeOptions={{ exact: true }}
+          className={worldsItem.filter(Boolean).join(' ')}
+          data-tour="barra-mundos"
+          onAnimationEnd={() => setPhase('still')}
+        >
           <Label icon={Globe} text={t('ribbon.worlds')} />
         </Link>
         {world && <WorldPanels worldId={world.id} />}

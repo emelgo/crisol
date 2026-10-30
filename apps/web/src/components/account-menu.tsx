@@ -1,9 +1,12 @@
 import { autoUpdate, computePosition, flip, offset, shift } from '@floating-ui/dom'
+import { useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { LogOut, Settings, User } from 'lucide-react'
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
+import { useApi } from '../api/context.tsx'
+import { aiSettingsQuery } from '../api/queries.ts'
 import styles from './account-menu.module.css'
 import { useApprovals } from './approval-queue.tsx'
 import { useWindow } from './window.tsx'
@@ -26,6 +29,17 @@ export function AccountMenu({ variant = 'bar' }: { variant?: 'bar' | 'ribbon' })
   const panelId = useId()
   const waiting = useApprovals().data?.pending.length ?? 0
   const windows = useWindow()
+  const api = useApi()
+  const queryClient = useQueryClient()
+
+  // Al abrirlo, lo que necesita Ajustes (la IA, si es el propietario) se pide ya: al abrir Ajustes, está
+  useEffect(() => {
+    if (!open) return
+    const organizations = queryClient.getQueryData<{ organizations: { role: string }[] }>(['organizations'])
+    if (organizations?.organizations.some((o) => o.role === 'owner')) {
+      void queryClient.prefetchQuery({ ...aiSettingsQuery(api), staleTime: 10_000 })
+    }
+  }, [open, api, queryClient])
 
   // Mientras está abierto: pulsar fuera o llevar el foco fuera lo cierra; Escape también, y el foco vuelve al botón
   useEffect(() => {

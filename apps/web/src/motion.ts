@@ -38,8 +38,12 @@ export function setMotion(choice: Motion) {
   apply(choice)
 }
 
-/** Con «como el sistema», si el sistema cambia mientras la app está abierta, se sigue */
-export function watchMotion() {
+/**
+ * Al arrancar la app: aplica lo elegido (por si index.html no lo hizo, como con los cambios en caliente) y, con «como
+ * el sistema», si el sistema cambia mientras la app está abierta, lo sigue
+ */
+export function startMotion() {
+  apply(chosenMotion())
   if (typeof window.matchMedia !== 'function') return
   window.matchMedia(REDUCE).addEventListener('change', () => {
     if (chosenMotion() === 'system') apply('system')

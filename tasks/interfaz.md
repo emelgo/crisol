@@ -121,6 +121,11 @@ Todo va en la rama `interfaz/pulir-inicio`, en un commit local sin subir. Las no
   Los cuadros también se cierran animados (transiciones con `@starting-style`; `afterExit` en `modal.tsx` espera
   a que acaben). Al crear, la lista se pone al día cuando el cuadro ya se ha ido, y la tarjeta entra con el contorno
   iluminado. Historial y Papelera se piden al pasar el ratón por su botón (`api/queries.ts`).
+  Con temática de crisol: la tarjeta nueva se forja (sale al rojo y se enfría) y la borrada arde (el fuego la
+  recorre, queda en ceniza y se va como humo). Un mundo que desaparece de la lista arde en su sitio aunque la lista
+  se ponga al día antes (aviso en tiempo real, la IA, otra pestaña). Al entrar en un mundo, «Mundos» sube a la llama de
+  la barra y se funde con ella, que se aviva con chispas; dentro, la llama es la vuelta, y al volver «Mundos» sale de
+  ella. Ajustes pide la IA al abrir el menú de la cuenta. La app aplica `data-motion` al arrancar (`startMotion`).
 - **Barras de desplazamiento** finas, del color de los bordes; en las ventanas solo se desplaza el contenido.
 - **Barra lateral**:
   - sin barra de estado abajo;
@@ -143,6 +148,11 @@ Todo va en la rama `interfaz/pulir-inicio`, en un commit local sin subir. Las no
    - crear un mundo es un cuadro;
    - Historial y Papelera son botones que abren ventana;
    - borrar un mundo va por el engranaje y su zona de peligro (`trash.test.tsx`);
+   - renombrar un mundo, también por el engranaje (`focus.test.tsx`);
+   - la llama de carga es otro `role="status"` (las pruebas que buscan uno solo);
+   - la portada sin sesión y el menú de la cuenta (`app.test`, `account.test`, `account-menu.test`, `page-title.test`);
+   - los ajustes de IA, dentro de Ajustes (`ai-settings.test.tsx`).
+   Hoy: 17 de 233 fallan en `apps/web`, todas por esto.
    - Entrar con sesión redirige; Historial y Papelera de la cuenta, sin enlace de vuelta;
    - Perfil y Ajustes, en el menú;
    - el tema ya no está en la barra;
