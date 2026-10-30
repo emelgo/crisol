@@ -100,6 +100,19 @@ Rama `wiki/tarea-19-archivos-en-paginas` (sobre main, tras la 18). En dos porcio
 - Lo de antes de la búsqueda se indexa al buscar en su mundo (`indexMissing`), como hacía `fillMissingText`.
 - Extracto con `**` (lo lee bien Claude y la web lo pinta con `<mark>`).
 
+## Siguiente: 21, selector rápido, órdenes y buscar en la página (diseño)
+
+- **Ctrl+K** (o Cmd+K) desde cualquier pantalla de la wiki abre un `dialog` modal con un combobox (patrón ARIA:
+  `aria-activedescendant` sobre un `listbox`). Vacío: los recientes (las pestañas abiertas, de la última a la primera).
+  Al escribir, a los 250 ms, títulos y alias con `searchNames` (con erratas), hasta 8, y al final «Ver todos los
+  resultados» (lleva a `/buscar?q=`). Escape lo cierra y el foco vuelve a donde estaba.
+- **«>» al principio**: la paleta de órdenes (página nueva, buscar, archivos, etiquetas, historial, papelera), filtradas
+  por lo escrito sin tildes.
+- **Buscar en la página**: botón en las acciones de la página (y Ctrl+Alt+F, sin quitarle Ctrl+F al navegador). Una
+  barra con el campo, «n de m», anterior y siguiente; las coincidencias se resaltan con decoraciones de ProseMirror
+  (sin tildes ni mayúsculas) y la actual se elige y se lleva a la vista. Los secretos (otros editores) quedan fuera:
+  apuntarlo.
+
 ## Hechas en esta tirada
 
 - **9** (PR #52): bloques, marcas, menú «/», barras, asa e ids. Decisiones apuntadas en `docs/modulos.md`.
