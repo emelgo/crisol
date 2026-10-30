@@ -191,7 +191,7 @@ export function updatePage(
     icon?: string | null
     properties?: unknown[]
     locked?: boolean
-    cover?: { fileId: string; x: number; y: number } | null
+    cover?: { fileId: string; x: number; y: number; zoom?: number } | null
     sheet?: Record<string, unknown> | null
   }
 ) {

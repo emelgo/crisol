@@ -25,7 +25,7 @@ export const pages = pgTable(
     // Pone el editor en lectura; no es un permiso
     locked: boolean().notNull().default(false),
     // La imagen de cabecera (un archivo del mundo) y su punto de encuadre, en % del ancho y del alto
-    cover: jsonb().$type<{ fileId: string; x: number; y: number } | null>(),
+    cover: jsonb().$type<{ fileId: string; x: number; y: number; zoom?: number } | null>(),
     // Lo que se busca de la página además de su texto: el título y sus propiedades, con el peso de un título (la
     // función, en la migración 0018)
     searchTsv: tsvector().generatedAlwaysAs(

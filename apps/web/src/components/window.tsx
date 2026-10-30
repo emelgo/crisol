@@ -68,7 +68,9 @@ export function WindowProvider({
           ref={dialog}
           className={styles.window}
           aria-label={t(`window.${kind}`)}
-          onClose={() => {
+          // React pasa el cierre de un cuadro de dentro a los de fuera: solo cuenta el suyo
+          onClose={(event) => {
+            if (event.target !== event.currentTarget) return
             setKind(null)
             document.title = title.current
             if (returnTo.current instanceof HTMLElement) returnTo.current.focus()

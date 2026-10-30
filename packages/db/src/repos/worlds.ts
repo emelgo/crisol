@@ -72,7 +72,7 @@ export type WorldAppearance = Partial<{
   description: string
   icon: string | null
   color: string | null
-  cover: { fileId: string; x: number; y: number } | null
+  cover: { fileId: string; x: number; y: number; zoom?: number } | null
 }>
 
 export function updateWorld(db: Database, context: OperationContext, worldId: string, patch: WorldAppearance) {

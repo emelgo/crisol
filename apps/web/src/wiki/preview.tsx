@@ -3,6 +3,7 @@
  * Junto al enlace (con el ratón tras 300 ms, o con el teclado al elegirlo; Tab entra y Escape la cierra) o, en el
  * móvil, en una hoja abajo. Sale de la API, en caché hasta que el canal avise de un cambio
  */
+import type { PageCover } from '@crisol/contracts'
 import { autoUpdate, computePosition, flip, offset, shift } from '@floating-ui/dom'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
@@ -12,6 +13,7 @@ import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import { ContentView } from './content.tsx'
+import { coverStyle } from './cover.tsx'
 import styles from './preview.module.css'
 
 /** La consulta de lo de dentro de una página (cuelga de ['pages', mundo, 'content', página]: la vacía el canal) */
@@ -138,10 +140,14 @@ export function LinkPreview({ worldId, pageId, anchor, anchorElement, sheet, onC
 }
 
 /** La portada pequeña de la vista previa (si su archivo sigue en el mundo) */
-function PreviewCover({ cover, worldId }: { cover: { fileId: string; x: number; y: number }; worldId: string }) {
+function PreviewCover({ cover, worldId }: { cover: PageCover; worldId: string }) {
   const api = useApi()
   const files = useQuery({ queryKey: ['files', worldId], queryFn: () => api.call('listFiles', { worldId }) })
   const file = files.data?.files.find((f) => f.id === cover.fileId)
   if (!file) return null
-  return <img src={file.url} alt="" className={styles.cover} style={{ objectPosition: `${cover.x}% ${cover.y}%` }} />
+  return (
+    <div className={styles.coverFrame}>
+      <img src={file.url} alt="" className={styles.cover} style={coverStyle(cover)} />
+    </div>
+  )
 }

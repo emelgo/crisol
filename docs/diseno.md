@@ -49,11 +49,16 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
 - **Todo cuadro o ventana encima lleva la X arriba a la derecha y se cierra al pulsar fuera** (y con Escape).
 - **Las acciones de un elemento van en su engranaje**, abajo a la derecha de su tarjeta, siempre a la vista: abre su
   ventana, donde se cambia todo (nombre incluido) y donde irá lo que se añada. Nada de «Renombrar» y «Borrar» sueltos.
+- **Toda la tarjeta es clicable** y lleva al elemento, no solo su nombre (salvo sus botones).
+- **«Guardar» y «Cancelar» solo salen si hay cambios**; «Cancelar» los deshace.
+- **Un cuadro dentro de otro** (ver la portada desde la ventana del mundo): al cerrarlo se vuelve al de fuera, no a la
+  pantalla.
 - **Borrar algo importante va en una zona de peligro** rojiza, al final de su ventana, y se confirma en otro cuadro
   escribiendo su nombre, que sale en el mensaje para poder copiarlo.
-- **Las portadas, al pasar el ratón, se acercan un poco y dejan verlas y cambiarlas**, como las de las hojas del
-  Crisol antiguo. Cambiarla: las imágenes del mundo en miniatura, subir otra, quitarla y encuadrarla arrastrando. La
-  ventana del elemento la enseña arriba, con lo que se va eligiendo (icono, color) antes de guardar.
+- **Las portadas, al pasar el ratón, se acercan un poco y dejan verlas**, como las de las hojas del Crisol antiguo.
+  **Cambiarlas, solo en la ventana del elemento**, que la enseña arriba con lo que se va eligiendo (icono, color) antes
+  de guardar. Cambiarla: las imágenes del mundo en miniatura, subir otra, quitarla, encuadrarla arrastrando y
+  acercarla o alejarla (deslizador, rueda del ratón o + y -).
 
 ## Cuentas
 

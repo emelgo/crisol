@@ -99,7 +99,8 @@
   }
 }
 
-/* Al pasar el ratón, la portada se acerca un poco */
+/* Al pasar el ratón, la portada se acerca un poco: por la tarjeta (que es un enlace) o por la de la ventana */
+.card:hover .picture,
 .frame:hover .picture,
 .frame:focus-within .picture {
   transform: scale(1.06);
@@ -111,9 +112,11 @@
   object-fit: cover;
 }
 
-/* Ver y Cambiar: abajo a la derecha de la portada, al pasar el ratón (en pantallas táctiles, siempre) */
+/* Ver (y, en la ventana, Cambiar): abajo a la derecha de la portada, al pasar el ratón (en pantallas táctiles,
+   siempre); por encima del enlace que cubre la tarjeta */
 .coverActions {
   position: absolute;
+  z-index: 2;
   inset-block-end: var(--space-2);
   inset-inline-end: var(--space-2);
   display: flex;
@@ -127,6 +130,7 @@
   }
 }
 
+.card:hover .coverActions,
 .frame:hover .coverActions,
 .frame:focus-within .coverActions {
   opacity: 1;
@@ -206,9 +210,8 @@
   block-size: 4rem;
 }
 
-/* Debajo de la portada: el nombre, que lleva al mundo desde toda esta parte, la descripción y el pie */
+/* Debajo de la portada: el nombre, cuyo enlace cubre toda la tarjeta, la descripción y el pie */
 .body {
-  position: relative;
   display: flex;
   flex: 1;
   flex-direction: column;

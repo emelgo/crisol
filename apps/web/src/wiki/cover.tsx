@@ -5,7 +5,7 @@
  */
 import type { PageCover as Cover, Page } from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useId, useRef, useState } from 'react'
+import { type CSSProperties, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ApiError } from '../api/client.ts'
 import { useApi } from '../api/context.tsx'
@@ -20,6 +20,16 @@ export const useWorldFiles = (worldId: string, enabled = true) => {
   return useQuery({ queryKey: ['files', worldId], queryFn: () => api.call('listFiles', { worldId }), enabled })
 }
 
+/**
+ * Cómo se pinta una portada: recortada alrededor de su punto de encuadre y, si se acercó, ampliada desde ese punto.
+ * Quien la contiene recorta lo que sobra (overflow: hidden)
+ */
+export function coverStyle(cover: Cover): CSSProperties {
+  const at = `${cover.x}% ${cover.y}%`
+  const zoom = cover.zoom ?? 1
+  return zoom === 1 ? { objectPosition: at } : { objectPosition: at, transform: `scale(${zoom})`, transformOrigin: at }
+}
+
 /** La imagen de cabecera, si la tiene (si su archivo ya no está, nada) */
 export function PageCoverImage({ page }: { page: Page }) {
   const files = useWorldFiles(page.worldId)
@@ -27,12 +37,7 @@ export function PageCoverImage({ page }: { page: Page }) {
   if (!page.cover || !file) return null
   return (
     <div className={styles.cover}>
-      <img
-        src={file.url}
-        alt=""
-        className={styles.image}
-        style={{ objectPosition: `${page.cover.x}% ${page.cover.y}%` }}
-      />
+      <img src={file.url} alt="" className={styles.image} style={coverStyle(page.cover)} />
     </div>
   )
 }

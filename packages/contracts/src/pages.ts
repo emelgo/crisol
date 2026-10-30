@@ -35,11 +35,15 @@ export const pageSummary = z.object({
 
 export type PageSummary = z.infer<typeof pageSummary>
 
-/** La portada: una imagen del mundo y su punto de encuadre (en % del ancho y del alto: lo que no se recorta) */
+/**
+ * La portada: una imagen del mundo, su punto de encuadre (en % del ancho y del alto: lo que no se recorta) y cuánto se
+ * acerca alrededor de ese punto (1, sin acercar, si no se dice)
+ */
 export const pageCover = z.object({
   fileId: z.uuid(),
   x: z.number().min(0).max(100),
-  y: z.number().min(0).max(100)
+  y: z.number().min(0).max(100),
+  zoom: z.number().min(1).max(3).optional()
 })
 
 export type PageCover = z.infer<typeof pageCover>

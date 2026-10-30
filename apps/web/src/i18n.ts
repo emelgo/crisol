@@ -465,7 +465,10 @@ export const es = {
     view: 'Ver',
     change: 'Cambiar',
     add: 'Añadir portada',
-    drag: 'Arrastra para encuadrar'
+    drag: 'Arrastra para encuadrar',
+    zoom: 'Acercar',
+    zoomIn: 'Acercar más',
+    zoomOut: 'Alejar'
   },
   pdf: {
     show: 'Ver aquí',

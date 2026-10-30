@@ -5,7 +5,8 @@ import styles from './window.module.css'
 
 /**
  * Un cuadro encima de la pantalla (dialog modal), que se abre al montarse: con la X arriba a la derecha y, al pulsar
- * fuera, se cierra. Escape también (propio de dialog). onClose: al cerrarse, por lo que sea
+ * fuera, se cierra. Escape también (propio de dialog). onClose: al cerrarse, por lo que sea. Puede ir uno dentro de
+ * otro (ver la portada desde la ventana del mundo): al cerrar el de dentro, el de fuera sigue
  */
 export function Modal({ ref, onClose, children, ...props }: ComponentProps<'dialog'> & { onClose: () => void }) {
   const { t } = useTranslation()
@@ -24,7 +25,10 @@ export function Modal({ ref, onClose, children, ...props }: ComponentProps<'dial
         if (typeof ref === 'function') ref(node)
         else if (ref) ref.current = node
       }}
-      onClose={onClose}
+      // React pasa el cierre de un cuadro de dentro a los de fuera: solo cuenta el suyo
+      onClose={(event) => {
+        if (event.target === event.currentTarget) onClose()
+      }}
       onPointerDown={(event) => {
         pressedOutside.current = event.target === event.currentTarget
       }}

@@ -118,7 +118,7 @@ describe('mis mundos', () => {
     expect(screen.queryByRole('dialog', { name: 'Ajustes de Eana' })).toBeNull()
   })
 
-  it('desde la portada de la tarjeta se cambia por una imagen del mundo', async () => {
+  it('la portada se cambia desde la ventana del mundo, no desde la tarjeta', async () => {
     const world = eana()
     const api = fakeApi({
       organizations: [ORG],
@@ -126,12 +126,37 @@ describe('mis mundos', () => {
       files: [{ worldId: world.id, name: 'mapa.png', kind: 'image', url: '/archivos/mapa.png' }]
     })
     renderWorlds(api)
-    await userEvent.click(await screen.findByRole('button', { name: 'Añadir portada' }))
-    const dialog = within(await screen.findByRole('dialog', { name: 'Portada de Eana' }))
-    await userEvent.click(await dialog.findByRole('button', { name: 'mapa.png' }))
-    await userEvent.click(dialog.getByRole('button', { name: 'Guardar' }))
-    expect(await screen.findByRole('button', { name: 'Cambiar' })).toBeDefined()
+    await screen.findByText('Eana')
+    expect(screen.queryByRole('button', { name: 'Añadir portada' })).toBeNull()
+    await userEvent.click(screen.getByRole('button', { name: 'Ajustes de Eana' }))
+    const settings = within(await screen.findByRole('dialog', { name: 'Ajustes de Eana' }))
+    await userEvent.click(settings.getByRole('button', { name: 'Añadir portada' }))
+    const cover = within(await screen.findByRole('dialog', { name: 'Portada de Eana' }))
+    expect(cover.queryByRole('button', { name: 'Guardar' })).toBeNull()
+    await userEvent.click(await cover.findByRole('button', { name: 'mapa.png' }))
+    await userEvent.click(cover.getByRole('button', { name: 'Acercar más' }))
+    await userEvent.click(cover.getByRole('button', { name: 'Guardar' }))
+    // Cerrar la portada no cierra la ventana del mundo
+    expect(await settings.findByRole('button', { name: 'Cambiar' })).toBeDefined()
+    expect(screen.getByRole('dialog', { name: 'Ajustes de Eana' })).toBeDefined()
     expect(api.calls).toContain('updateWorld')
+    // Ver la portada y cerrarla también deja la ventana del mundo abierta
+    await userEvent.click(settings.getByRole('button', { name: 'Ver' }))
+    const viewer = await screen.findByRole('dialog', { name: 'Portada de Eana' })
+    await userEvent.click(within(viewer).getByRole('button', { name: 'Cerrar' }))
+    expect(screen.queryByRole('dialog', { name: 'Portada de Eana' })).toBeNull()
+    expect(screen.getByRole('dialog', { name: 'Ajustes de Eana' })).toBeDefined()
+  })
+
+  it('en la ventana del mundo, Guardar y Cancelar solo salen con cambios, y Cancelar los deshace', async () => {
+    renderWorlds(fakeApi({ organizations: [ORG], worlds: [eana()] }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Ajustes de Eana' }))
+    const dialog = within(await screen.findByRole('dialog', { name: 'Ajustes de Eana' }))
+    expect(dialog.queryByRole('button', { name: 'Guardar' })).toBeNull()
+    await userEvent.type(dialog.getByLabelText('Descripción'), 'Tierra de dragones')
+    await userEvent.click(dialog.getByRole('button', { name: 'Cancelar' }))
+    expect(dialog.getByLabelText<HTMLInputElement>('Descripción').value).toBe('')
+    expect(dialog.queryByRole('button', { name: 'Guardar' })).toBeNull()
   })
 
   it('quien juega en un mundo no tiene su engranaje', async () => {

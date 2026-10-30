@@ -27,7 +27,7 @@ import { Field, FormError } from '../components/field.tsx'
 import { focusAfterRemoving } from '../components/focus.ts'
 import form from '../components/form.module.css'
 import { Modal } from '../components/modal.tsx'
-import { useWorldFiles } from '../wiki/cover.tsx'
+import { coverStyle, useWorldFiles } from '../wiki/cover.tsx'
 import styles from './world-card.module.css'
 import { CoverDialog, CoverViewer } from './world-cover.tsx'
 
@@ -52,8 +52,8 @@ const COLORS: Record<NonNullable<World['color']>, string> = {
 }
 
 /**
- * La tarjeta de un mundo: la portada, el nombre (toda la parte de abajo lleva al mundo), la descripción y, abajo, el
- * papel y el engranaje de quien lo dirige
+ * La tarjeta de un mundo: la portada, el nombre, la descripción y, abajo, el papel y el engranaje de quien lo dirige.
+ * Toda la tarjeta lleva al mundo (el enlace del nombre la cubre), salvo sus botones
  */
 export function WorldCard({ world }: { world: World }) {
   const { t } = useTranslation()
@@ -76,18 +76,19 @@ export function WorldCard({ world }: { world: World }) {
 
 /**
  * La portada (imagen o color) con el icono medio dentro. Al pasar el ratón se acerca un poco y, a quien dirige el
- * mundo, deja verla y cambiarla. icon y color: para enseñar lo que se está eligiendo, aún sin guardar
+ * mundo, deja verla; en su ventana (editable), también cambiarla. icon y color: lo que se está eligiendo, aún sin
+ * guardar
  */
 function WorldCover({
   world,
   icon = world.icon,
   color = world.color,
-  large = false
+  editable = false
 }: {
   world: World
   icon?: World['icon']
   color?: World['color']
-  large?: boolean
+  editable?: boolean
 }) {
   const { t } = useTranslation()
   const api = useApi()
@@ -105,19 +106,14 @@ function WorldCover({
     await queryClient.invalidateQueries({ queryKey: ['worlds'] })
   }
   return (
-    <div className={large ? `${styles.header} ${styles.large}` : styles.header}>
+    <div className={editable ? `${styles.header} ${styles.large}` : styles.header}>
       <div className={styles.frame}>
         <div className={styles.picture} style={{ background }}>
           {image && world.cover && (
-            <img
-              src={image.url}
-              alt=""
-              className={styles.image}
-              style={{ objectPosition: `${world.cover.x}% ${world.cover.y}%` }}
-            />
+            <img src={image.url} alt="" className={styles.image} style={coverStyle(world.cover)} />
           )}
         </div>
-        {master && (
+        {master && (image || editable) && (
           <div className={styles.coverActions}>
             {image && (
               <button type="button" aria-haspopup="dialog" onClick={() => setViewing(true)}>
@@ -125,16 +121,18 @@ function WorldCover({
                 {t('cover.view')}
               </button>
             )}
-            <button type="button" aria-haspopup="dialog" onClick={() => setChanging(true)}>
-              <ImagePlus aria-hidden="true" size={14} />
-              {t(world.cover ? 'cover.change' : 'cover.add')}
-            </button>
+            {editable && (
+              <button type="button" aria-haspopup="dialog" onClick={() => setChanging(true)}>
+                <ImagePlus aria-hidden="true" size={14} />
+                {t(world.cover ? 'cover.change' : 'cover.add')}
+              </button>
+            )}
           </div>
         )}
       </div>
       <span className={styles.icon} aria-hidden="true">
         <span>
-          <Icon size={large ? 32 : 28} strokeWidth={1.5} />
+          <Icon size={editable ? 32 : 28} strokeWidth={1.5} />
         </span>
       </span>
       {viewing && image && (
@@ -156,7 +154,8 @@ function WorldCover({
 
 /**
  * El engranaje de la tarjeta (para quien dirige el mundo): abre su ventana, con la portada arriba, el nombre, la
- * descripción, el icono y el color y, al final, la zona de peligro. Ahí irá lo que se añada del mundo
+ * descripción, el icono y el color y, al final, la zona de peligro. Ahí irá lo que se añada del mundo. «Cancelar» (deshace
+ * lo cambiado) y «Guardar» solo salen si hay cambios
  */
 function WorldSettings({ world }: { world: World }) {
   const { t } = useTranslation()
@@ -171,15 +170,23 @@ function WorldSettings({ world }: { world: World }) {
   const [icon, setIcon] = useState(world.icon)
   const [color, setColor] = useState(world.color)
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['worlds'] })
+  const changed =
+    name.trim() !== world.name ||
+    description.trim() !== world.description ||
+    icon !== world.icon ||
+    color !== world.color
+  const revert = () => {
+    setName(world.name)
+    setDescription(world.description)
+    setIcon(world.icon)
+    setColor(world.color)
+  }
   const save = useMutation({
     mutationFn: async () => {
       const next = name.trim()
       if (next !== world.name) await api.call('renameWorld', { worldId: world.id, name: next })
       await api.call('updateWorld', { worldId: world.id, description, icon, color })
-    },
-    onSuccess: async () => {
       await refresh()
-      dialog.current?.close()
     }
   })
   // Borrado, la tarjeta desaparece: el foco, a la siguiente (o al título)
@@ -195,10 +202,7 @@ function WorldSettings({ world }: { world: World }) {
   // La ventana solo existe mientras está abierta: cerrada, no queda nada suyo en la página
   const [isOpen, setOpen] = useState(false)
   const open = () => {
-    setName(world.name)
-    setDescription(world.description)
-    setIcon(world.icon)
-    setColor(world.color)
+    revert()
     save.reset()
     setOpen(true)
   }
@@ -226,7 +230,7 @@ function WorldSettings({ world }: { world: World }) {
             if (!deleted.current) trigger.current?.focus()
           }}
         >
-          <WorldCover world={world} icon={icon} color={color} large />
+          <WorldCover world={world} icon={icon} color={color} editable />
           <form
             className={styles.form}
             onSubmit={(event) => {
@@ -275,14 +279,16 @@ function WorldSettings({ world }: { world: World }) {
               <small className={styles.hint}>{t('worlds.colorHint')}</small>
             </fieldset>
             <FormError message={save.error ? errorText(save.error) : null} />
-            <div className={dialogStyles.actions}>
-              <button type="button" className={dialogStyles.cancel} onClick={() => dialog.current?.close()}>
-                {t('worlds.cancel')}
-              </button>
-              <BusyButton type="submit" className={form.button} busy={save.isPending}>
-                {t('worlds.save')}
-              </BusyButton>
-            </div>
+            {changed && (
+              <div className={dialogStyles.actions}>
+                <button type="button" className={dialogStyles.cancel} onClick={revert}>
+                  {t('worlds.cancel')}
+                </button>
+                <BusyButton type="submit" className={form.button} busy={save.isPending}>
+                  {t('worlds.save')}
+                </BusyButton>
+              </div>
+            )}
           </form>
           {/* Aparte, al final y fuera del formulario: borrar el mundo, escribiendo su nombre para confirmarlo */}
           <div className={styles.dangerArea}>
