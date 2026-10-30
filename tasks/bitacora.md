@@ -25,6 +25,8 @@ que queda pendiente de Enrique. Lo que ya está hecho va a `docs/modulos.md` § 
 - Una tarea de fondo que espera la CI y fusiona **no hace `git checkout` en el repo de trabajo**: el 2026-10-30
   pasó a `main` mientras se trabajaba en otra rama y los commits cayeron en `main`. Solo `gh pr merge --repo
   emelgo/crisol`; `scripts/desplegar-staging.sh` ya trabaja en su copia aparte.
+- **Antes de subir, `pnpm test` entero** (todos los paquetes), no solo la web y el servidor: el 2026-10-30 un cambio
+  de contrato rompió pruebas de `contracts` y `db` que solo vio la CI.
 
 ## Permisos de Enrique (2026-10-30, antes de irse)
 

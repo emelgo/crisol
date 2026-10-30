@@ -94,7 +94,8 @@
   display: flow-root;
 }
 
-.block > :first-child {
+.block > :first-child,
+.block > :first-child > :first-child {
   margin-block-start: 0;
 }
 
