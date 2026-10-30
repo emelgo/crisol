@@ -23,6 +23,7 @@ import { historyQuery, trashQuery } from '../api/queries.ts'
 import { useNarrow, useWikiPanel, type WikiPanel } from '../wiki/panel.tsx'
 import { AccountMenu } from './account-menu.tsx'
 import { CrisolMark } from './brand.tsx'
+import dialogStyles from './dialog.module.css'
 import { Modal } from './modal.tsx'
 import styles from './ribbon.module.css'
 import { useWindow } from './window.tsx'
@@ -104,6 +105,7 @@ export function Ribbon() {
   // Al entrar en un mundo, «Mundos» sube a la llama y se funde con ella, que se aviva (el mundo se cocina en el crisol);
   // dentro, la llama es la vuelta. Al volver, «Mundos» sale de la llama, sin fuego
   const inWorld = Boolean(worldId)
+  const narrow = useNarrow()
   const [wasInWorld, setWasInWorld] = useState(inWorld)
   // Recién entrado (en este mismo pintado aún no se ve en phase)
   const justEntered = inWorld && !wasInWorld
@@ -116,6 +118,12 @@ export function Ribbon() {
     setPhase(inWorld ? 'merging' : 'emerging')
     setFlame(inWorld ? 'fire' : 'smoke')
   }
+  // Por si la animación no acaba (en el móvil no la hay): se queda quieto al rato
+  useEffect(() => {
+    if (phase === 'still') return
+    const timer = window.setTimeout(() => setPhase('still'), 1300)
+    return () => window.clearTimeout(timer)
+  }, [phase])
   useEffect(() => {
     if (flame === 'still') return
     const timer = window.setTimeout(() => setFlame('still'), flame === 'fire' ? 3000 : 3400)
@@ -161,6 +169,7 @@ export function Ribbon() {
           // Dentro de un mundo, salir de él; fuera, como «Mundos»: el cambio rápido de sección
           {...(inWorld ? { viewTransition: LEAVE_WORLD, onClick: leaveWorld } : { viewTransition: SECTION })}
           data-tour="barra-llama"
+          data-slot="3"
           aria-label={t('app.name')}
           translate="no"
         >
@@ -191,6 +200,7 @@ export function Ribbon() {
             className={worldsItem.filter(Boolean).join(' ')}
             style={{ '--rise': '-7.4rem' } as CSSProperties}
             data-tour="barra-archivos"
+            data-slot="1"
             // Se piden al acercarse: al llegar, ya están
             onPointerEnter={prefetchCommon}
             onFocus={prefetchCommon}
@@ -207,6 +217,7 @@ export function Ribbon() {
             className={worldsItem.filter(Boolean).join(' ')}
             style={{ '--rise': '-11.2rem' } as CSSProperties}
             data-tour="barra-etiquetas"
+            data-slot="2"
             onPointerEnter={prefetchTags}
             onFocus={prefetchTags}
           >
@@ -229,7 +240,19 @@ export function Ribbon() {
             <WorldPanels worldId={panelsWorld} master={panelsMaster} />
           </div>
         )}
-        <MoreSheet worldId={inWorld && master && world ? world.id : null} isOwner={isOwner} />
+        {/* En el móvil, fuera de los mundos, el historial cabe en la barra (dentro, va en «Más») */}
+        {isOwner && !inWorld && narrow && (
+          <button
+            type="button"
+            className={`${styles.item} ${styles.mobileOnly}`}
+            data-slot="4"
+            aria-haspopup="dialog"
+            onClick={() => windows?.open('historial')}
+          >
+            <Label icon={History} text={t('ribbon.history')} />
+          </button>
+        )}
+        <MoreSheet worldId={inWorld && master && world ? world.id : null} isOwner={isOwner} history={inWorld} />
       </nav>
       {/* Abajo y fijo: lo de arriba puede crecer o no caber (al entrar en un mundo) sin moverlo */}
       <div className={`${styles.foot} ${styles.desktopOnly}`}>
@@ -294,6 +317,7 @@ function WorldPanels({ worldId, master }: { worldId: string; master: boolean }) 
         onPointerEnter={prefetchHome}
         onFocus={prefetchHome}
         data-tour="barra-inicio"
+        data-slot="1"
       >
         <Label icon={House} text={t('ribbon.home')} />
       </Link>
@@ -305,6 +329,7 @@ function WorldPanels({ worldId, master }: { worldId: string; master: boolean }) 
         onPointerEnter={prefetchCampaigns}
         onFocus={prefetchCampaigns}
         data-tour="barra-campanas"
+        data-slot="2"
       >
         <Label icon={Swords} text={t('ribbon.campaigns')} />
       </Link>
@@ -348,6 +373,7 @@ function WikiPanels({ worldId }: { worldId: string }) {
         className={styles.item}
         aria-pressed={inWiki && (narrow ? wikiPanel.open : !wikiPanel.collapsed)}
         data-tour="barra-wiki"
+        data-slot="4"
         onClick={press(inWiki ? wikiPanel.panel : 'pages')}
       >
         <Label icon={BookOpen} text={t('ribbon.wiki')} />
@@ -371,7 +397,16 @@ function WikiPanels({ worldId }: { worldId: string }) {
  * En el móvil, «Más»: lo que no cabe en la barra de abajo (de un mundo, sus archivos; el historial, la
  * papelera y la cuenta), en una hoja que sube desde abajo
  */
-function MoreSheet({ worldId, isOwner }: { worldId: string | null; isOwner: boolean }) {
+function MoreSheet({
+  worldId,
+  isOwner,
+  history
+}: {
+  worldId: string | null
+  isOwner: boolean
+  /** Si lleva el historial (fuera de los mundos va en la barra) */
+  history: boolean
+}) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const accounts = useAccounts()
@@ -392,13 +427,19 @@ function MoreSheet({ worldId, isOwner }: { worldId: string | null; isOwner: bool
         ref={trigger}
         type="button"
         className={`${styles.item} ${styles.mobileOnly}`}
+        data-slot="5"
         aria-haspopup="dialog"
         onClick={() => setOpen(true)}
       >
         <Label icon={Ellipsis} text={t('ribbon.more')} />
       </button>
       {open && (
-        <Modal ref={dialog} aria-labelledby={titleId} className={styles.more} onClose={() => setOpen(false)}>
+        <Modal
+          ref={dialog}
+          aria-labelledby={titleId}
+          className={`${dialogStyles.dialog} ${styles.more}`}
+          onClose={() => setOpen(false)}
+        >
           <h2 id={titleId} className={styles.moreTitle}>
             {account?.name}
           </h2>
@@ -416,12 +457,14 @@ function MoreSheet({ worldId, isOwner }: { worldId: string | null; isOwner: bool
             )}
             {isOwner && (
               <>
-                <li>
-                  <button type="button" onClick={then(() => windows?.open('historial', trigger.current))}>
-                    <History aria-hidden="true" size={18} />
-                    {t('ribbon.history')}
-                  </button>
-                </li>
+                {history && (
+                  <li>
+                    <button type="button" onClick={then(() => windows?.open('historial', trigger.current))}>
+                      <History aria-hidden="true" size={18} />
+                      {t('ribbon.history')}
+                    </button>
+                  </li>
+                )}
                 <li>
                   <button type="button" onClick={then(() => windows?.open('papelera', trigger.current))}>
                     <Trash2 aria-hidden="true" size={18} />

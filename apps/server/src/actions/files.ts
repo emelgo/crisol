@@ -5,6 +5,7 @@
 import {
   createFolder,
   deleteFile,
+  deleteFiles,
   deleteFolder,
   type FileView,
   type FolderView,
@@ -239,6 +240,42 @@ export const fileActions = [
     )
     await filesTouched(ctx, place)
     return { id: folder.id, name: folder.name }
+  }),
+
+  implement(deleteFiles, async (ctx, { fileIds, folderIds }) => {
+    // Por ámbito (un mundo, o los comunes): cada uno, su operación
+    const byPlace = new Map<string, { place: FilePlace; fileIds: string[]; folderIds: string[]; names: string[] }>()
+    const groupOf = (place: FilePlace) => {
+      const key = place.worldId ?? `org:${place.organizationId}`
+      let group = byPlace.get(key)
+      if (!group) {
+        group = { place, fileIds: [], folderIds: [], names: [] }
+        byPlace.set(key, group)
+      }
+      return group
+    }
+    for (const fileId of new Set(fileIds)) {
+      const { file, place } = await authorizedFile(ctx, 'page.write', fileId)
+      const group = groupOf(place)
+      group.fileIds.push(file.id)
+      group.names.push(file.name)
+    }
+    for (const folderId of new Set(folderIds)) {
+      const { folder, place } = await authorizedFolder(ctx, true, folderId)
+      const group = groupOf(place)
+      group.folderIds.push(folder.id)
+      group.names.push(folder.name)
+    }
+    let trashed = 0
+    for (const { place, fileIds: files, folderIds: folders, names } of byPlace.values()) {
+      trashed += await filesRepo.trashItems(
+        ctx.db,
+        historyContext(ctx, 'deleteFiles', { names, count: names.length }, historyScopeOf(place)),
+        { fileIds: files, folderIds: folders }
+      )
+      await filesTouched(ctx, place)
+    }
+    return { files: trashed }
   }),
 
   implement(moveFile, async (ctx, { fileId, folderId }) => {

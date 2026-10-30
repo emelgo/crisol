@@ -1,6 +1,6 @@
 import type { World } from '@crisol/contracts'
 import { createMemoryHistory } from '@tanstack/react-router'
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { fakeAccountClient } from '../account/fake.ts'
@@ -130,7 +130,7 @@ describe('los archivos del mundo', () => {
     expect(screen.queryByText(/No se pudo/)).toBeNull()
   })
 
-  it('su engranaje: renombrar (sin repetir nombre), reemplazar y mandar a la papelera, de donde vuelve', async () => {
+  it('su engranaje: renombrar (sin repetir nombre) y mandar a la papelera, de donde vuelve', async () => {
     const api = renderAt(`/mundos/${WORLD.id}/archivos`)
     await userEvent.click(await screen.findByRole('button', { name: 'Ajustes de Mapa de Eana.png' }))
     const dialogElement = await screen.findByRole('dialog', { name: 'Ajustes de Mapa de Eana.png' })
@@ -145,11 +145,9 @@ describe('los archivos del mundo', () => {
     await userEvent.click(dialog.getByRole('button', { name: 'Guardar' }))
     expect(await screen.findByRole('button', { name: 'Mapa del norte.png' })).toBeDefined()
 
-    // Renombrado, la ventana ya lleva el nombre nuevo
-    const replace = dialogElement.querySelector<HTMLInputElement>('input[type=file]')
-    if (!replace) throw new Error('sin campo de reemplazo')
-    await userEvent.upload(replace, new File(['nuevo'], 'otro.png', { type: 'image/png' }))
-    await waitFor(() => expect(api.calls).toContain('uploadFile'))
+    // Sin reemplazar ni mover desde aquí: se sube otro y se arrastra
+    expect(dialogElement.querySelector('input[type=file]')).toBeNull()
+    expect(dialog.queryByLabelText('Carpeta')).toBeNull()
     await userEvent.click(dialog.getByRole('button', { name: 'Cerrar' }))
 
     await userEvent.click(screen.getByRole('button', { name: 'Ajustes de Bestiario.pdf' }))
@@ -208,7 +206,7 @@ describe('los archivos en el móvil', () => {
 })
 
 describe('las carpetas de los archivos', () => {
-  it('se crea una, se entra, se sube ahí y se vuelve por la ruta; un archivo se mueve desde su engranaje', async () => {
+  it('se crea una, se entra y se sube ahí; arrastrando, un archivo entra en ella y, soltado en el árbol, vuelve arriba', async () => {
     const api = renderAt(`/mundos/${WORLD.id}/archivos`)
     // La del mundo (la primera; la otra es la de los comunes)
     await userEvent.click((await screen.findAllByRole('button', { name: 'Nueva carpeta' }))[0] as HTMLElement)
@@ -227,18 +225,28 @@ describe('las carpetas de los archivos', () => {
     expect(await screen.findByRole('button', { name: 'Costa.png' })).toBeDefined()
     const [folder] = (await api.client.call('listFiles', { worldId: WORLD.id })).folders
     expect(api.files.find((f) => f.name === 'Costa.png')?.folderId).toBe(folder?.id)
-    // Por la ruta, a lo más alto; y desde su engranaje, el mapa a la carpeta
-    // A lo más alto, por la ruta de encima de la lista
-    await userEvent.click(
-      within((await screen.findAllByRole('navigation', { name: 'Ruta de la carpeta' }))[0] as HTMLElement).getByRole(
-        'button',
-        { name: 'Todos' }
-      )
-    )
-    await userEvent.click(await screen.findByRole('button', { name: 'Ajustes de Mapa de Eana.png' }))
-    const settings = within(await screen.findByRole('dialog', { name: 'Ajustes de Mapa de Eana.png' }))
-    await userEvent.selectOptions(settings.getByLabelText('Carpeta'), 'Mapas')
-    await waitFor(() => expect(api.files.find((f) => f.name === 'Mapa de Eana.png')?.folderId).toBe(folder?.id))
+    // La abierta, otra vez en el árbol: a lo más alto
+    await userEvent.click(path.getByRole('button', { name: /^Mapas/ }))
+    await screen.findByRole('button', { name: 'Mapa de Eana.png' })
+    // Arrastrar el mapa a la carpeta (solo a una del mismo ámbito: el tipo lo dice)
+    const map = api.files.find((f) => f.name === 'Mapa de Eana.png')
+    const dragged = (id: string, realm = 'mundo') => ({
+      dataTransfer: {
+        types: ['application/x-crisol-archivo', `application/x-crisol-archivo-${realm}`],
+        getData: (type: string) => (type === 'application/x-crisol-archivo' ? id : '')
+      }
+    })
+    const row = (await screen.findByRole('button', { name: 'Abrir la carpeta Mapas' })).closest('li') as HTMLElement
+    fireEvent.dragOver(row, dragged(map?.id ?? '', 'comun'))
+    expect(row.textContent).not.toContain('Mover aquí')
+    fireEvent.dragOver(row, dragged(map?.id ?? ''))
+    fireEvent.drop(row, dragged(map?.id ?? ''))
+    await waitFor(() => expect(map?.folderId).toBe(folder?.id))
+    // Soltado en la caja del árbol, fuera de las carpetas: a lo más alto
+    const tree = (await screen.findAllByRole('navigation', { name: 'Carpetas' }))[0] as HTMLElement
+    fireEvent.dragOver(tree, dragged(map?.id ?? ''))
+    fireEvent.drop(tree, dragged(map?.id ?? ''))
+    await waitFor(() => expect(map?.folderId).toBeNull())
   })
 
   it('buscar encuentra en todas las carpetas, y dice en cuál está', async () => {
@@ -267,7 +275,7 @@ describe('las carpetas de los archivos', () => {
     expect(screen.queryByRole('button', { name: 'Mapa de Eana.png' })).toBeNull()
   })
 
-  it('borrar una carpeta no borra lo que tiene: pasa a la de arriba', async () => {
+  it('borrar una carpeta se lleva lo que tiene, avisando: sus archivos van a la papelera', async () => {
     const folder = {
       id: crypto.randomUUID(),
       worldId: WORLD.id,
@@ -286,10 +294,26 @@ describe('las carpetas de los archivos', () => {
     const settings = within(await screen.findByRole('dialog', { name: 'Ajustes de la carpeta Viejos' }))
     await userEvent.click(settings.getByRole('button', { name: 'Borrar la carpeta' }))
     const confirm = within(await screen.findByRole('dialog', { name: '¿Borrar «Viejos»?' }))
-    expect(confirm.getByText(/pasa a la carpeta de arriba/)).toBeDefined()
+    expect(confirm.getByText(/con lo que tiene dentro/)).toBeDefined()
     await userEvent.click(confirm.getByRole('button', { name: 'Borrar la carpeta' }))
-    expect(await screen.findByRole('link', { name: 'Antiguo.pdf' })).toBeDefined()
-    expect(screen.queryByRole('button', { name: 'Abrir la carpeta Viejos' })).toBeNull()
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Abrir la carpeta Viejos' })).toBeNull())
+    expect(screen.queryByRole('link', { name: 'Antiguo.pdf' })).toBeNull()
+    expect((await api.client.call('listTrash', { worldId: WORLD.id })).items).toMatchObject([{ name: 'Antiguo.pdf' }])
+  })
+
+  it('se eligen varios y se borran de una vez, con un aviso', async () => {
+    const api = renderAt(`/mundos/${WORLD.id}/archivos`)
+    const list = await cardsIn()
+    await userEvent.click(await list.findByRole('checkbox', { name: 'Elegir Bestiario.pdf' }))
+    await userEvent.click(list.getByRole('checkbox', { name: 'Elegir Notas.txt' }))
+    const bar = within(screen.getByRole('group', { name: 'Lo elegido' }))
+    expect(bar.getByText('2 elegidos')).toBeDefined()
+    await userEvent.click(bar.getByRole('button', { name: 'Borrar' }))
+    const confirm = within(await screen.findByRole('dialog', { name: '¿Borrar los 2 elegidos?' }))
+    await userEvent.click(confirm.getByRole('button', { name: 'Borrar' }))
+    await waitFor(() => expect(list.queryByRole('link', { name: 'Bestiario.pdf' })).toBeNull())
+    expect(api.files.map((f) => f.name)).toEqual(['Mapa de Eana.png'])
+    expect(screen.queryByRole('group', { name: 'Lo elegido' })).toBeNull()
   })
 })
 

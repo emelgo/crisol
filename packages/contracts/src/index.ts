@@ -10,6 +10,7 @@ import {
 import {
   createFolder,
   deleteFile,
+  deleteFiles,
   deleteFolder,
   listCommonFiles,
   listFiles,
@@ -144,6 +145,7 @@ export const ACTIONS = [
   createFolder,
   updateFolder,
   deleteFolder,
+  deleteFiles,
   moveFile,
   searchWiki,
   listAccountTags,
@@ -218,6 +220,7 @@ export type Actions = {
   restoreFile: typeof restoreFile
   createFolder: typeof createFolder
   updateFolder: typeof updateFolder
+  deleteFiles: typeof deleteFiles
   deleteFolder: typeof deleteFolder
   moveFile: typeof moveFile
   listAccountTags: typeof listAccountTags

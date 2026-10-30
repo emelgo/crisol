@@ -173,35 +173,45 @@ export function updateFolder(
   return operation(db, context, (w) => w.update(fileFolders, folderId, patch))
 }
 
-/** Borra una carpeta: lo que tenía (archivos y carpetas) pasa a la de arriba, en la misma operación */
+/** Borra una carpeta con lo que tiene dentro (sus archivos, a la papelera), en una operación */
 export function deleteFolder(db: Database, context: OperationContext, folderId: string) {
+  return trashItems(db, context, { fileIds: [], folderIds: [folderId] })
+}
+
+/**
+ * Borra de una vez (una operación, que se deshace entera) archivos y carpetas de un mismo ámbito: los archivos van a
+ * la papelera, y las carpetas se quitan con todo lo que tengan dentro (sus archivos, a la papelera; sus carpetas,
+ * también quitadas). Un archivo de la papelera vuelve a lo más alto. Devuelve cuántos archivos fueron a la papelera
+ */
+export function trashItems(
+  db: Database,
+  context: OperationContext,
+  items: { fileIds: readonly string[]; folderIds: readonly string[] }
+) {
   return operation(db, context, async (w) => {
-    const [folder] = await w.read.select().from(fileFolders).where(eq(fileFolders.id, folderId))
-    if (!folder) return
-    const inside = await w.read.select({ id: files.id }).from(files).where(eq(files.folderId, folderId))
-    for (const file of inside) await w.update(files, file.id, { folderId: folder.parentId })
-    const children = await w.read
-      .select({ id: fileFolders.id, name: fileFolders.name })
-      .from(fileFolders)
-      .where(eq(fileFolders.parentId, folderId))
-    // Arriba, una con el mismo nombre que otra que ya está allí sube con un número
-    const scope = folder.worldId ? { worldId: folder.worldId } : { organizationId: folder.organizationId }
-    const above = await w.read
-      .select({ name: fileFolders.name })
-      .from(fileFolders)
-      .where(
-        and(
-          folderInScope(scope),
-          folder.parentId ? eq(fileFolders.parentId, folder.parentId) : isNull(fileFolders.parentId)
-        )
-      )
-    const taken = new Set(above.map((row) => row.name.toLocaleLowerCase('es')))
-    for (const child of children) {
-      let name = child.name
-      for (let n = 2; taken.has(name.toLocaleLowerCase('es')); n++) name = `${child.name} (${n})`
-      taken.add(name.toLocaleLowerCase('es'))
-      await w.update(fileFolders, child.id, { parentId: folder.parentId, ...(name !== child.name ? { name } : {}) })
+    // Las carpetas y todas las de dentro
+    const gone = new Set<string>()
+    let level = [...items.folderIds]
+    while (level.length > 0) {
+      for (const id of level) gone.add(id)
+      const children = await w.read
+        .select({ id: fileFolders.id })
+        .from(fileFolders)
+        .where(inArray(fileFolders.parentId, level))
+      level = children.map((child) => child.id).filter((id) => !gone.has(id))
     }
-    await w.remove(fileFolders, folderId)
+    const inside =
+      gone.size > 0
+        ? await w.read
+            .select({ id: files.id })
+            .from(files)
+            .where(and(inArray(files.folderId, [...gone]), isNull(files.deletedAt)))
+        : []
+    const fileIds = new Set([...items.fileIds, ...inside.map((file) => file.id)])
+    const now = new Date()
+    for (const id of fileIds) await w.update(files, id, { deletedAt: now, folderId: null })
+    // De las de dentro a las de fuera (una madre no se quita antes que sus hijas)
+    for (const id of [...gone].reverse()) await w.remove(fileFolders, id)
+    return fileIds.size
   })
 }

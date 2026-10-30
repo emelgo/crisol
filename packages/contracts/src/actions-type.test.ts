@@ -69,6 +69,7 @@ describe('Actions', () => {
       createFolder: true,
       updateFolder: true,
       deleteFolder: true,
+      deleteFiles: true,
       moveFile: true,
       searchWiki: true,
       listAccountTags: true,

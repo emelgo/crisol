@@ -188,6 +188,12 @@ abajo; en Archivos, selector de carpeta y hoja del archivo. **Etiquetas de la cu
 y como filtro; en las páginas, con su color y sugerencias de la cuenta; herramientas MCP `listar_etiquetas`,
 `crear_etiqueta`, `cambiar_etiqueta`, `borrar_etiqueta` y `etiquetar_archivo`. Sin pestaña en la barra del mundo.
 
+**Pruebas de Enrique en el móvil** (2026-10-30, hecho): la llama en el centro de la barra; dentro de un mundo ya no
+sale el «Archivos» común (la animación de entrar no acaba en el móvil); hojas que bajan enteras y visor centrado; filas
+enteras pulsables; hoja también para las carpetas; borrar varios de una vez; borrar una carpeta se lleva lo de dentro
+(acción `deleteFiles`); sin ruta, sin «Reemplazar» ni «Carpeta» en la ventana del archivo; soltar en la caja del árbol
+lleva a lo más alto, y un común no se suelta en una carpeta del mundo.
+
 **Lo siguiente**: seguir puliendo en la rama `interfaz/pulir-2`. Falta que Enrique vea el Inicio del mundo y la
 pestaña Campañas; la página de una campaña aún lleva la franja antigua. Pequeños pendientes vistos al probar:
 - reabrir una ventana en el instante en que se cierra no la abre (`components/window.tsx`, el mismo `kind`);

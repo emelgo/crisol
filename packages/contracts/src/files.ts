@@ -106,9 +106,24 @@ export const updateFolder = defineAction({
 export const deleteFolder = defineAction({
   name: 'deleteFolder',
   kind: 'delete',
-  description: 'Borra una carpeta: lo que tenía (archivos y carpetas) pasa a la de arriba. Se deshace con el historial',
+  description:
+    'Borra una carpeta con todo lo que tiene dentro: sus archivos van a la papelera y sus carpetas se quitan. Se deshace con el historial',
   input: z.object({ folderId: z.uuid() }),
   output: z.object({ id: z.uuid(), name: z.string() })
+})
+
+export const deleteFiles = defineAction({
+  name: 'deleteFiles',
+  kind: 'delete',
+  description:
+    'Borra de una vez varios archivos (a la papelera) y carpetas (con todo lo que tienen dentro). Se deshace con el historial',
+  input: z
+    .object({
+      fileIds: z.array(z.uuid()).max(500).default([]),
+      folderIds: z.array(z.uuid()).max(200).default([])
+    })
+    .refine((input) => input.fileIds.length + input.folderIds.length > 0, { message: 'fileIds o folderIds' }),
+  output: z.object({ files: z.number().int().describe('Cuántos archivos fueron a la papelera') })
 })
 
 export const moveFile = defineAction({

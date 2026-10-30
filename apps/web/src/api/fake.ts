@@ -285,6 +285,27 @@ export function fakeApi(
     return { pages: changedPages, files: changedFiles }
   }
 
+  /** Archivos a la papelera y carpetas quitadas con lo que tienen dentro; devuelve cuántos archivos */
+  const trashItems = (fileIds: readonly string[], folderIds: readonly string[]) => {
+    const gone = new Set<string>()
+    let level = [...folderIds]
+    while (level.length > 0) {
+      for (const id of level) gone.add(id)
+      level = folders.filter((f) => f.parentId && level.includes(f.parentId)).map((f) => f.id)
+    }
+    const doomed = files.filter((file) => fileIds.includes(file.id) || (file.folderId && gone.has(file.folderId)))
+    for (const file of doomed) {
+      files.splice(files.indexOf(file), 1)
+      trashedFiles.unshift({ ...file, folderId: null })
+    }
+    for (const id of gone)
+      folders.splice(
+        folders.findIndex((f) => f.id === id),
+        1
+      )
+    return doomed.length
+  }
+
   const handlers: { [N in ActionName]: (input: ActionInput<N>) => ActionOutput<N> } = {
     listOrganizations: () => ({ organizations }),
     // Copias, como las de la API real (JSON nuevo en cada respuesta)
@@ -691,11 +712,10 @@ export function fakeApi(
     },
     deleteFolder: ({ folderId }) => {
       const folder = folderById(folderId)
-      for (const file of [...files, ...trashedFiles]) if (file.folderId === folderId) file.folderId = folder.parentId
-      for (const child of folders) if (child.parentId === folderId) child.parentId = folder.parentId
-      folders.splice(folders.indexOf(folder), 1)
+      trashItems([], [folderId])
       return { id: folder.id, name: folder.name }
     },
+    deleteFiles: ({ fileIds = [], folderIds = [] }) => ({ files: trashItems(fileIds, folderIds) }),
     moveFile: ({ fileId, folderId }) => {
       const file = fileById(fileId)
       if (folderId) folderById(folderId)

@@ -48,14 +48,17 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
 - **Las etiquetas son de toda la cuenta** (ADR-0006): «Etiquetas» va en la barra de Mis mundos, no en la de un mundo;
   dentro, son filtros (al buscar en la wiki, en Archivos). Llevan un color opcional y se ven como un punto de color con
   su nombre. Se eligen o se escriben: una nueva entra sola.
-- **En el móvil, la barra va abajo, centrada y con huecos fijos**: la llama (con «Crisol» debajo, nunca «Mundos»), lo
-  principal de la zona y «Más». Mis mundos: Crisol · Archivos · Etiquetas · Más. Dentro de un mundo: Crisol · Inicio ·
-  Campañas · Wiki · Más. «Más» es una hoja con el resto (Archivos del mundo, Historial, Papelera y la cuenta). Nunca
-  se desplaza de lado: «si añadimos iconos es un caos». La guía se salta lo que no se ve.
+- **En el móvil, la barra va abajo, con cinco huecos fijos y la llama en el centro** (en un círculo que sobresale, con
+  «Crisol» debajo, nunca «Mundos»): «Crisol debería estar en el centro en ambas vistas». Mis mundos: Archivos ·
+  Etiquetas · Crisol · Historial · Más. Dentro de un mundo: Inicio · Campañas · Crisol · Wiki · Más. «Más» es una hoja
+  con el resto (Archivos del mundo, Historial dentro de un mundo, Papelera y la cuenta). Lo elegido, en su color y con
+  una raya arriba, sin fondo (las esquinas, del mismo color). Nunca se desplaza de lado: «si añadimos iconos es un
+  caos». La guía se salta lo que no se ve.
 - **En el móvil, las ventanas son hojas que suben desde abajo**, con su asa arriba y la página oscurecida detrás: «los
-  popup no parecen popups».
-- **Archivos en el móvil**: en vez del árbol, un selector de carpeta; tocar un archivo sube su hoja (vista previa, lo
-  que es, «Abrir» y «Ajustes»), que hace de la vista previa al pasar el ratón.
+  popup no parecen popups». Al cerrarse bajan enteras, sin cambiar de forma. Una imagen en grande sigue en el centro.
+- **Archivos en el móvil**: en vez del árbol, un selector de carpeta; tocar un archivo o una carpeta sube su hoja
+  (vista previa o lo que tiene, «Abrir» y «Ajustes»), que hace de la vista previa al pasar el ratón. Para borrar
+  varios, «Elegir» saca las casillas.
 
 ## Pantallas
 
@@ -101,7 +104,12 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   discontinuo, tras el último (no un botón arriba). Sin ninguno, la pantalla vacía con su botón grande.
 - **Las pantallas de cuenta (entrar, crear la cuenta)** van centradas y con aspecto profesional.
 - **Archivos, como un explorador**: árbol de carpetas (unas dentro de otras; se les arrastran archivos, y mientras se
-  arrastra se marcan las carpetas donde se puede soltar, con «Mover aquí»; la que lo recibe se ilumina), lista
+  arrastra se marcan las carpetas donde se puede soltar, con «Mover aquí»; la que lo recibe se ilumina; soltado en la
+  caja del árbol, fuera de una carpeta, va a lo más alto; un común no va a una carpeta del mundo ni al revés). **Sin
+  ruta encima de la lista** («Todos › Carpeta»): el árbol ya dice dónde se está. **Toda la fila o tarjeta abre lo
+  suyo**, no solo el nombre. Mover es arrastrar y cambiar un archivo es subir otro y borrar el viejo: su ventana no
+  tiene «Carpeta» ni «Reemplazar». **Se eligen varios** con su casilla (al pasar el ratón) y se borran de una vez,
+  con aviso. **Borrar una carpeta se lleva lo que tiene dentro** (sus archivos, a la papelera), avisando. Lista
   compacta o tarjetas, **buscador por nombre y filtro por tipo** siempre a la vista. Se suben varios a la vez (no
   carpetas enteras), a la carpeta elegida; cada subida sale con su progreso y una X para cancelarla, y al acabar ya
   es su archivo (sin lista de «Subidas»). **Solo imágenes, PDF, audio, vídeo y texto**: nada que se ejecute.

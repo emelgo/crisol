@@ -470,33 +470,58 @@
   display: none;
 }
 
-/* Estrecho: la barra pasa abajo, con huecos fijos (la llama, lo principal de la zona y «Más», que lleva el resto) */
+/*
+ * Estrecho: la barra pasa abajo, en cinco huecos fijos con la llama en el centro, un poco más grande y por encima; a
+ * los lados, lo principal de la zona y, al final, «Más» con el resto. Lo elegido, en su color y con una raya arriba
+ */
 @media (max-width: 48rem) {
   .ribbon {
     position: fixed;
     inset: auto 0 0;
     z-index: 5;
-    flex-direction: row;
-    justify-content: center;
+    display: block;
     block-size: auto;
-    padding: 0 var(--space-1) env(safe-area-inset-bottom);
+    padding: 0 var(--space-2) env(safe-area-inset-bottom);
+    overflow: visible;
     border-inline-end: 0;
     border-block-start: 1px solid var(--color-border);
   }
 
-  .sections,
-  .panels {
-    flex-direction: row;
-  }
-
   .sections {
-    flex: 1 1 auto;
-    justify-content: space-around;
-    max-inline-size: 32rem;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    align-items: end;
     gap: 0;
+    max-inline-size: 30rem;
+    margin-inline: auto;
   }
 
-  /* Los paneles del mundo no son una caja aparte: sus botones van como los demás */
+  .sections > *,
+  .panels > * {
+    grid-row: 1;
+  }
+
+  [data-slot="1"] {
+    grid-column: 1;
+  }
+
+  [data-slot="2"] {
+    grid-column: 2;
+  }
+
+  [data-slot="3"] {
+    grid-column: 3;
+  }
+
+  [data-slot="4"] {
+    grid-column: 4;
+  }
+
+  [data-slot="5"] {
+    grid-column: 5;
+  }
+
+  /* Los paneles del mundo no son una caja aparte: sus botones van en sus huecos */
   .panels {
     display: contents;
   }
@@ -509,16 +534,64 @@
     display: flex;
   }
 
-  /* La llama, con su nombre debajo, como un botón más */
+  /* Los nombres, a la misma altura que el de la llama */
+  .item {
+    position: relative;
+    justify-content: flex-end;
+    inline-size: auto;
+    min-block-size: 3.5rem;
+    padding-block: 0.5rem;
+    border-radius: 0;
+  }
+
+  /* Elegido: sin fondo, en su color y con la raya arriba, de esquinas iguales */
+  .item[aria-current="page"],
+  .item[aria-pressed="true"] {
+    background: none;
+    box-shadow: none;
+    color: var(--color-text);
+  }
+
+  .item[aria-current="page"]::before,
+  .item[aria-pressed="true"]::before {
+    content: "";
+    position: absolute;
+    inset: -1px 25% auto;
+    block-size: 2px;
+    background: var(--color-brand);
+  }
+
+  .item[aria-current="page"] svg,
+  .item[aria-pressed="true"] svg {
+    color: var(--color-brand);
+  }
+
+  /* La llama, en el centro: en un círculo que sobresale de la barra, con su nombre debajo */
   .brand {
     display: flex;
     flex-direction: column;
+    align-items: center;
     gap: 0.25rem;
     inline-size: auto;
     block-size: auto;
     margin: 0;
-    border-radius: 6px;
+    padding-block-end: 0.5rem;
     text-decoration: none;
+  }
+
+  .brand svg {
+    box-sizing: content-box;
+    inline-size: 24px;
+    block-size: 24px;
+    margin-block-start: -1.25rem;
+    padding: 0.75rem;
+    border: 1px solid var(--color-border);
+    border-radius: 50%;
+    background: var(--color-raised);
+  }
+
+  .brand[aria-current="page"] svg {
+    border-color: var(--color-brand);
   }
 
   .brandText {
@@ -529,36 +602,27 @@
     color: var(--color-muted);
   }
 
-  .brand svg {
-    inline-size: 20px;
-    block-size: 20px;
+  .brand[aria-current="page"] .brandText {
+    color: var(--color-text);
   }
 
-  .brand,
-  .item {
-    flex: 1 1 0;
-    min-inline-size: 0;
-    max-inline-size: 5.5rem;
-    inline-size: auto;
-    padding-block: 0.5rem 0.4375rem;
-  }
-
-  /* «Mundos» no sale (la llama lleva a Mis mundos): nada que subir a la llama */
+  /* Al entrar en un mundo, lo de Mis mundos se va sin animación; al volver, aparece sin más */
   .merged,
-  .merging,
+  .merging {
+    display: none;
+  }
+
   .emerging {
     display: flex;
     animation: none;
   }
-
-  .item[aria-current="page"],
-  .item[aria-pressed="true"],
-  .brand[aria-current="page"] {
-    box-shadow: inset 0 2px 0 var(--color-brand);
-  }
 }
 
 /* La hoja de «Más» */
+.more {
+  padding: var(--space-3) var(--space-4) var(--space-4);
+}
+
 .moreTitle {
   margin: 0 0 var(--space-2);
   padding-inline-end: 2.5rem;

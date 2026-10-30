@@ -220,7 +220,7 @@ describe('los archivos del mundo', () => {
     })
   })
 
-  it('carpetas: se crean (también dentro de otra), se sube a una, se mueve un archivo y borrarla sube lo que tenía', async () => {
+  it('carpetas: se crean (también dentro de otra), se sube a una, se mueve un archivo y borrarla se lleva lo que tiene', async () => {
     const maps = await call('createFolder', { worldId, name: 'Mapas' })
     expect(maps).toMatchObject({ name: 'Mapas', parentId: null, worldId })
     const north = await call('createFolder', { worldId, parentId: maps.id, name: 'Norte' })
@@ -243,16 +243,46 @@ describe('los archivos del mundo', () => {
     expect(await call('moveFile', { fileId: shield.id, folderId: common.id })).toMatchObject({ code: 'BAD_FOLDER' })
     const listed = await call('listFiles', { worldId })
     expect(listed.folders.map((f: { name: string }) => f.name).sort()).toEqual(['Comunes', 'Mapas', 'Norte'])
-    // Borrar «Mapas»: «Norte» y «Escudo.png» suben a lo más alto; se deshace con el historial
+    // Borrar «Mapas» se lleva lo de dentro: «Norte» se quita, y «Escudo.png» y «Costa.png», a la papelera
     expect(await call('deleteFolder', { folderId: maps.id })).toMatchObject({ name: 'Mapas' })
     const after = await call('listFiles', { worldId })
-    expect(after.folders.find((f: { name: string }) => f.name === 'Norte')).toMatchObject({ parentId: null })
-    expect(after.files.find((f: { name: string }) => f.name === 'Escudo.png')).toMatchObject({ folderId: null })
+    expect(after.folders.map((f: { name: string }) => f.name)).toEqual(['Comunes'])
+    expect(after.files.map((f: { name: string }) => f.name)).toEqual([])
+    expect((await call('listTrash', { worldId })).items.map((i: { name: string }) => i.name).sort()).toEqual([
+      'Costa.png',
+      'Escudo.png'
+    ])
+    // Se deshace entera: vuelven las carpetas y sus archivos, cada uno en la suya
     const [last] = (await call('listHistory', { worldId })).entries
     expect(last).toMatchObject({ action: 'deleteFolder' })
     await call('undoOperation', { operationId: last.id })
     const undone = await call('listFiles', { worldId })
     expect(undone.files.find((f: { name: string }) => f.name === 'Escudo.png')).toMatchObject({ folderId: maps.id })
+    expect(undone.files.find((f: { name: string }) => f.name === 'Costa.png')).toMatchObject({ folderId: north.id })
+  })
+
+  it('borrar varios de una vez: archivos y carpetas, en una operación que se deshace', async () => {
+    const a = (await upload('A.png', PNG)).json()
+    const b = (await upload('B.pdf', PDF)).json()
+    const folder = await call('createFolder', { worldId, name: 'Viejo' })
+    const inside = (
+      await app.inject({
+        method: 'POST',
+        url: `/api/files?worldId=${worldId}&folderId=${folder.id}&name=C.png`,
+        payload: PNG,
+        headers: { origin: BASE_URL, cookie: owner.cookie, 'content-type': 'application/octet-stream' }
+      })
+    ).json()
+    expect(await call('deleteFiles', { fileIds: [a.id, b.id], folderIds: [folder.id] })).toEqual({ files: 3 })
+    const after = await call('listFiles', { worldId })
+    expect(after.files).toEqual([])
+    expect(after.folders).toEqual([])
+    const [last] = (await call('listHistory', { worldId })).entries
+    expect(last).toMatchObject({ action: 'deleteFiles' })
+    await call('undoOperation', { operationId: last.id })
+    const undone = await call('listFiles', { worldId })
+    expect(undone.files.map((f: { name: string }) => f.name).sort()).toEqual(['A.png', 'B.pdf', 'C.png'])
+    expect(undone.files.find((f: { id: string }) => f.id === inside.id)).toMatchObject({ folderId: folder.id })
   })
 
   it('la papelera: borrado no se sirve, sale en la del mundo y vuelve; si su nombre ya está, con número', async () => {

@@ -21,10 +21,23 @@ import {
   List,
   Search,
   Settings,
+  SquareCheck,
+  Trash2,
   Upload as UploadIcon,
   X
 } from 'lucide-react'
-import { type DragEvent, type ReactNode, useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
+import {
+  createContext,
+  type DragEvent,
+  type ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState
+} from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { ApiError, type UploadTarget } from '../api/client.ts'
@@ -34,6 +47,7 @@ import { useAnnounce } from '../components/announcer.tsx'
 import { Loading } from '../components/brand.tsx'
 import { BusyButton } from '../components/busy-button.tsx'
 import { ChangesBar } from '../components/changes.tsx'
+import dangerStyles from '../components/danger.module.css'
 import { ConfirmByName, DangerZone } from '../components/danger.tsx'
 import dialogStyles from '../components/dialog.module.css'
 import { Field, FormError } from '../components/field.tsx'
@@ -187,6 +201,105 @@ function FilesTour() {
   )
 }
 
+/** Lo elegido para borrar de una vez (en la lista de la pantalla) */
+interface Selection {
+  has: (id: string) => boolean
+  active: boolean
+  toggle: (id: string, what: 'file' | 'folder') => void
+}
+const SelectionContext = createContext<Selection | null>(null)
+
+/** La casilla para elegir un archivo o una carpeta (sobre su miniatura; se ve al pasar el ratón o al elegir) */
+function Pick({ id, what, name }: { id: string; what: 'file' | 'folder'; name: string }) {
+  const { t } = useTranslation()
+  const selection = useContext(SelectionContext)
+  if (!selection) return null
+  return (
+    <input
+      type="checkbox"
+      className={styles.pick}
+      checked={selection.has(id)}
+      aria-label={t('files.choose', { name })}
+      onChange={() => selection.toggle(id, what)}
+    />
+  )
+}
+
+/** Lo elegido: cuántos y, para todo a la vez, borrar (con su aviso) o dejar de elegir */
+function ChosenBar({
+  chosen,
+  onDone,
+  onClear
+}: {
+  chosen: { kind: 'file' | 'folder'; id: string }[]
+  onDone: () => Promise<unknown>
+  onClear: () => void
+}) {
+  const { t } = useTranslation()
+  const api = useApi()
+  const errorText = useErrorText()
+  const announce = useAnnounce()
+  const dialog = useRef<HTMLDialogElement>(null)
+  const titleId = useId()
+  const [confirming, setConfirming] = useState(false)
+  const folders = chosen.filter((item) => item.kind === 'folder').length
+  const remove = useMutation({
+    mutationFn: async () => {
+      const ids = (kind: 'file' | 'folder') => chosen.filter((item) => item.kind === kind).map((item) => item.id)
+      const { files } = await api.call('deleteFiles', { fileIds: ids('file'), folderIds: ids('folder') })
+      dialog.current?.close()
+      announce(t('files.deletedMany', { count: files }))
+      await onDone()
+    }
+  })
+  return (
+    // biome-ignore lint/a11y/useSemanticElements: una barra de acciones sobre lo elegido
+    <div className={styles.chosenBar} role="group" aria-label={t('files.chosenLabel')}>
+      <span className={styles.chosenCount}>{t('files.chosen', { count: chosen.length })}</span>
+      <button
+        type="button"
+        className={styles.chosenDelete}
+        aria-haspopup="dialog"
+        disabled={chosen.length === 0}
+        onClick={() => setConfirming(true)}
+      >
+        <Trash2 aria-hidden="true" size={16} />
+        {t('files.deleteChosen')}
+      </button>
+      <button type="button" className={dialogStyles.cancel} onClick={onClear}>
+        {t('files.cancel')}
+      </button>
+      {confirming && (
+        <Modal
+          ref={dialog}
+          aria-labelledby={titleId}
+          className={dialogStyles.dialog}
+          onClose={() => {
+            setConfirming(false)
+            remove.reset()
+          }}
+        >
+          <div className={dialogStyles.body}>
+            <h2 id={titleId}>{t('files.deleteChosenTitle', { count: chosen.length })}</h2>
+            <p className={dialogStyles.description}>
+              {folders > 0 ? t('files.deleteChosenFolders') : t('files.deleteChosenWarning')}
+            </p>
+            <FormError message={remove.error ? errorText(remove.error) : null} />
+            <div className={dialogStyles.actions}>
+              <button type="button" className={dialogStyles.cancel} onClick={() => dialog.current?.close()}>
+                {t('files.cancel')}
+              </button>
+              <BusyButton className={dangerStyles.solid} busy={remove.isPending} onClick={() => remove.mutate()}>
+                {t('files.deleteChosen')}
+              </BusyButton>
+            </div>
+          </div>
+        </Modal>
+      )}
+    </div>
+  )
+}
+
 /** Los archivos y las carpetas de un ámbito */
 type Scope = { files: WorldFile[]; folders: FolderView[] }
 
@@ -276,6 +389,10 @@ function FilesSection({
   const [kind, setKind] = useState<Kind | 'all'>('all')
   // Una etiqueta (con sus hijas): como al buscar, en todas las carpetas
   const [tag, setTag] = useState<string | null>(null)
+  // Lo elegido para borrar de una vez: por id, si es un archivo o una carpeta
+  const [chosen, setChosen] = useState<Map<string, 'file' | 'folder'>>(() => new Map())
+  // En lo táctil (sin ratón que pase por encima), las casillas salen al pulsar «Elegir»
+  const [picking, setPicking] = useState(false)
   const [view, setView] = useView()
   const [over, setOver] = useState(false)
   const [received, setReceived] = useState<string | null>(null)
@@ -286,6 +403,12 @@ function FilesSection({
     setHovered((current) => (shown ? { kind, id } : current?.id === id ? null : current))
   // Al cambiar de carpeta, de búsqueda o de filtro, nada señalado
   useEffect(() => setHovered(null), [folderId, query, kind, tag])
+  // Al cambiar de carpeta, de búsqueda o de filtro, nada elegido
+  useEffect(() => setChosen(new Map()), [folderId, query, kind, tag])
+  const stopChoosing = () => {
+    setChosen(new Map())
+    setPicking(false)
+  }
   const folders = data?.folders ?? []
   const byId = new Map(folders.map((folder) => [folder.id, folder]))
   // Si una carpeta es de los comunes (la suya, o una de dentro)
@@ -301,6 +424,8 @@ function FilesSection({
       ? { target: common.target as Target, folderId: folderId === COMMON ? null : folderId, canWrite: common.canWrite }
       : { target, folderId, canWrite }
   const canWriteFile = (file: WorldFile) => (file.worldId === null && common ? common.canWrite : canWrite)
+  // De qué ámbito es una carpeta, para lo que se le suelta
+  const scopeAt = (folderId: string | null): Realm => ('worldId' in placeOf(folderId).target ? 'mundo' : 'comun')
   // Si la elegida deja de existir (borrada aquí o en otra pestaña), a lo más alto
   const open = folderId && byId.has(folderId) ? folderId : null
   const pathOf = (id: string | null): FolderView[] => {
@@ -320,6 +445,24 @@ function FilesSection({
       (tag === null || file.tags.some((t) => isTagOrChild(t, tag)))
   )
   const shownFolders = searching || kind !== 'all' ? [] : folders.filter((folder) => folder.parentId === open)
+  // Lo elegido que sigue a la vista
+  const chosenNow = [
+    ...shownFiles.filter((file) => chosen.has(file.id)).map((file) => ({ kind: 'file' as const, id: file.id })),
+    ...shownFolders
+      .filter((folder) => chosen.has(folder.id))
+      .map((folder) => ({ kind: 'folder' as const, id: folder.id }))
+  ]
+  const selection = {
+    has: (id: string) => chosen.has(id),
+    active: chosenNow.length > 0,
+    toggle: (id: string, what: 'file' | 'folder') =>
+      setChosen((current) => {
+        const next = new Map(current)
+        if (next.has(id)) next.delete(id)
+        else next.set(id, what)
+        return next
+      })
+  }
   // Las etiquetas que llevan los archivos de aquí, con sus madres, para el filtro
   const fileTags = useMemo(() => tagTree<null>({ rows: [], pages: [], files: data?.files ?? [] }), [data?.files])
   const ids = useMemo(() => data && [...data.files.map((f) => f.id), ...(data.folders ?? []).map((f) => f.id)], [data])
@@ -435,6 +578,12 @@ function FilesSection({
           </select>
         </label>
       )}
+      {!picking && (
+        <button type="button" className={styles.pickToggle} onClick={() => setPicking(true)}>
+          <SquareCheck aria-hidden="true" size={16} />
+          {t('files.pick')}
+        </button>
+      )}
       {/* biome-ignore lint/a11y/useSemanticElements: dos botones que eligen la vista */}
       <div className={styles.views} role="group" aria-label={t('files.view')}>
         <button
@@ -468,6 +617,7 @@ function FilesSection({
       received={received}
       canWriteAt={(id) => placeOf(id).canWrite}
       placeOf={placeOf}
+      scopeAt={scopeAt}
       onOpen={(id) => {
         setQuery('')
         setTag(null)
@@ -478,113 +628,98 @@ function FilesSection({
     />
   )
   const contents = (
-    <div className={styles.contents}>
-      {searching ? (
-        <p className={styles.here}>{t('files.results', { count: shownFiles.length })}</p>
-      ) : (
-        // La ruta de la carpeta abierta: cada paso lleva a ella y recibe archivos arrastrados (el primero, lo más alto)
-        <nav className={`${styles.here} ${styles.route}`} aria-label={t('files.route')}>
-          {[null, ...path].map((folder, i) => {
-            const last = i === path.length
-            const name = folder ? folder.name : t('files.root')
-            return (
-              <span key={folder?.id ?? 'todos'} className={styles.step}>
-                {i > 0 && <ChevronRight aria-hidden="true" size={14} />}
-                {last ? (
-                  <span aria-current="location" className={styles.hereNow}>
-                    {name}
-                  </span>
-                ) : (
-                  <FolderTarget
-                    folderId={folder?.id ?? null}
-                    canWrite={placeOf(folder?.id ?? null).canWrite}
-                    onMove={moveInto}
-                  >
-                    <button
-                      type="button"
-                      className={styles.crumb}
-                      data-move-here={t('files.moveHere')}
-                      onClick={() => setFolderId(folder?.id ?? null)}
-                    >
-                      {name}
-                    </button>
-                  </FolderTarget>
-                )}
-              </span>
-            )
-          })}
-        </nav>
-      )}
-      {searching && shownFiles.length === 0 && (
-        <p className={styles.empty}>{wanted ? t('files.noResults') : t('files.noMatch')}</p>
-      )}
-      {!searching && shownFolders.length === 0 && shownFiles.length === 0 && uploads.items.length === 0 && (
-        <p className={styles.empty}>{nothing ? empty : t('files.emptyFolder')}</p>
-      )}
-      {view === 'list' ? (
-        <ul className={styles.rows} aria-label={t('files.listLabel')}>
-          {uploads.items.map((upload) => (
-            <UploadRow key={upload.key} upload={upload} onCancel={() => uploads.cancel(upload.key)} />
-          ))}
-          {shownFolders.map((folder) => (
-            <FolderRow
-              key={folder.id}
-              folder={folder}
-              count={countIn(folder.id, data.files, folders)}
-              canWrite={placeOf(folder.id).canWrite}
-              fixed={folder.id === COMMON}
-              fresh={fresh(folder.id)}
-              onPreview={title ? preview('folder', folder.id) : undefined}
-              onOpen={() => setFolderId(folder.id)}
-              onMove={moveInto}
-              onChanged={refresh}
-            />
-          ))}
-          {shownFiles.map((file) => (
-            <FileRow
-              key={file.id}
-              file={file}
-              where={searching ? pathOf(file.folderId) : []}
-              fresh={fresh(file.id)}
-              canWrite={canWriteFile(file)}
-              onPreview={title ? preview('file', file.id) : undefined}
-              {...rowProps}
-            />
-          ))}
-        </ul>
-      ) : (
-        <ul className={cards.list} aria-label={t('files.listLabel')}>
-          {shownFolders.map((folder) => (
-            <FolderCard
-              key={folder.id}
-              folder={folder}
-              files={data.files}
-              folders={folders}
-              canWrite={placeOf(folder.id).canWrite && folder.id !== COMMON}
-              fresh={fresh(folder.id)}
-              onOpen={() => setFolderId(folder.id)}
-              onMove={moveInto}
-              onChanged={refresh}
-              onPreview={title ? preview('folder', folder.id) : undefined}
-            />
-          ))}
-          {shownFiles.map((file) => (
-            <FileCard
-              key={file.id}
-              file={file}
-              where={searching ? pathOf(file.folderId) : []}
-              fresh={fresh(file.id)}
-              canWrite={canWriteFile(file)}
-              {...rowProps}
-              onPreview={title ? preview('file', file.id) : undefined}
-            />
-          ))}
-          {uploads.items.map((upload) => (
-            <UploadCard key={upload.key} upload={upload} onCancel={() => uploads.cancel(upload.key)} />
-          ))}
-        </ul>
-      )}
-    </div>
+    <SelectionContext value={selection}>
+      <div
+        className={styles.contents}
+        data-selecting={selection.active || picking || undefined}
+        data-picking={picking || undefined}
+      >
+        {searching && <p className={styles.here}>{t('files.results', { count: shownFiles.length })}</p>}
+        {(chosenNow.length > 0 || picking) && (
+          <ChosenBar
+            chosen={chosenNow}
+            onDone={async () => {
+              stopChoosing()
+              await refresh()
+            }}
+            onClear={stopChoosing}
+          />
+        )}
+        {searching && shownFiles.length === 0 && (
+          <p className={styles.empty}>{wanted ? t('files.noResults') : t('files.noMatch')}</p>
+        )}
+        {!searching && shownFolders.length === 0 && shownFiles.length === 0 && uploads.items.length === 0 && (
+          <p className={styles.empty}>{nothing ? empty : t('files.emptyFolder')}</p>
+        )}
+        {view === 'list' ? (
+          <ul className={styles.rows} aria-label={t('files.listLabel')}>
+            {uploads.items.map((upload) => (
+              <UploadRow key={upload.key} upload={upload} onCancel={() => uploads.cancel(upload.key)} />
+            ))}
+            {shownFolders.map((folder) => (
+              <FolderRow
+                key={folder.id}
+                folder={folder}
+                count={countIn(folder.id, data.files, folders)}
+                files={data.files}
+                folders={folders}
+                scope={scopeAt(folder.id)}
+                canWrite={placeOf(folder.id).canWrite}
+                fixed={folder.id === COMMON}
+                fresh={fresh(folder.id)}
+                onPreview={title ? preview('folder', folder.id) : undefined}
+                onOpen={() => setFolderId(folder.id)}
+                onMove={moveInto}
+                onChanged={refresh}
+              />
+            ))}
+            {shownFiles.map((file) => (
+              <FileRow
+                key={file.id}
+                file={file}
+                where={searching ? pathOf(file.folderId) : []}
+                fresh={fresh(file.id)}
+                canWrite={canWriteFile(file)}
+                onPreview={title ? preview('file', file.id) : undefined}
+                {...rowProps}
+              />
+            ))}
+          </ul>
+        ) : (
+          <ul className={cards.list} aria-label={t('files.listLabel')}>
+            {shownFolders.map((folder) => (
+              <FolderCard
+                key={folder.id}
+                folder={folder}
+                files={data.files}
+                folders={folders}
+                scope={scopeAt(folder.id)}
+                canWrite={placeOf(folder.id).canWrite && folder.id !== COMMON}
+                fresh={fresh(folder.id)}
+                onOpen={() => setFolderId(folder.id)}
+                onMove={moveInto}
+                onChanged={refresh}
+                onPreview={title ? preview('folder', folder.id) : undefined}
+              />
+            ))}
+            {shownFiles.map((file) => (
+              <FileCard
+                key={file.id}
+                file={file}
+                where={searching ? pathOf(file.folderId) : []}
+                fresh={fresh(file.id)}
+                canWrite={canWriteFile(file)}
+                {...rowProps}
+                onPreview={title ? preview('file', file.id) : undefined}
+              />
+            ))}
+            {uploads.items.map((upload) => (
+              <UploadCard key={upload.key} upload={upload} onCancel={() => uploads.cancel(upload.key)} />
+            ))}
+          </ul>
+        )}
+      </div>
+    </SelectionContext>
   )
   // Solo si sigue en la lista (al entrar en una carpeta, su fila se va sin que el ratón «salga» de ella)
   const selectedFile = hovered?.kind === 'file' ? shownFiles.find((file) => file.id === hovered.id) : undefined
@@ -663,6 +798,7 @@ function FolderTree({
   received,
   canWriteAt,
   placeOf,
+  scopeAt,
   onOpen,
   onMove,
   onChanged
@@ -677,6 +813,8 @@ function FolderTree({
   canWriteAt: (folderId: string | null) => boolean
   /** Adónde va lo que se crea en una carpeta: su ámbito y la carpeta de verdad */
   placeOf: (folderId: string | null) => { target: Target; folderId: string | null }
+  /** De qué ámbito es una carpeta (null: lo más alto), para lo que se le suelta */
+  scopeAt: (folderId: string | null) => Realm
   onOpen: (folderId: string | null) => void
   onMove: (fileId: string, folderId: string | null) => Promise<unknown>
   onChanged: () => Promise<unknown>
@@ -723,7 +861,12 @@ function FolderTree({
                 ) : (
                   <span className={styles.twistySpace} />
                 )}
-                <FolderTarget folderId={folder.id} canWrite={canWriteAt(folder.id)} onMove={onMove}>
+                <FolderTarget
+                  folderId={folder.id}
+                  scope={scopeAt(folder.id)}
+                  canWrite={canWriteAt(folder.id)}
+                  onMove={onMove}
+                >
                   <button
                     type="button"
                     className={styles.nodeButton}
@@ -748,8 +891,30 @@ function FolderTree({
       </ul>
     )
   }
+  // Soltar en la caja, fuera de una carpeta: a lo más alto
+  const [over, setOver] = useState(false)
+  const rootScope = scopeAt(null)
   return (
-    <nav className={styles.tree} aria-label={t('files.path')} data-tour="archivos-carpetas">
+    <nav
+      className={`${styles.tree} ${over ? styles.treeOver : ''}`}
+      aria-label={t('files.path')}
+      data-tour="archivos-carpetas"
+      onDragOver={(event) => {
+        if (!canWriteAt(null) || !accepts(event, rootScope)) return
+        event.preventDefault()
+        setOver(true)
+      }}
+      onDragLeave={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setOver(false)
+      }}
+      onDrop={(event) => {
+        const fileId = event.dataTransfer.getData(DRAGGED)
+        setOver(false)
+        if (!fileId) return
+        event.preventDefault()
+        void onMove(fileId, null)
+      }}
+    >
       {branch(null, 0)}
       {canWriteAt(open ?? null) && (
         <NewFolderButton
@@ -763,9 +928,19 @@ function FolderTree({
   )
 }
 
+/**
+ * El tipo que lleva un archivo arrastrado según su ámbito (los del mundo y los comunes no se mezclan): mientras se
+ * arrastra solo se leen los tipos, así que el ámbito va en uno de ellos
+ */
+type Realm = 'mundo' | 'comun'
+const draggedType = (scope: Realm) => `${DRAGGED}-${scope}`
+/** Si lo que se arrastra es un archivo que puede ir a un sitio de ese ámbito */
+const accepts = (event: DragEvent, scope: Realm) => event.dataTransfer.types.includes(draggedType(scope))
+
 /** Mientras se arrastra un archivo, el árbol marca dónde se puede soltar (base: una clase en el documento) */
 function startDragging(event: DragEvent, file: WorldFile) {
   event.dataTransfer.setData(DRAGGED, file.id)
+  event.dataTransfer.setData(draggedType(file.worldId === null ? 'comun' : 'mundo'), '1')
   event.dataTransfer.effectAllowed = 'move'
   document.documentElement.classList.add(styles.draggingFile ?? '')
 }
@@ -809,6 +984,7 @@ function FileRow({
     >
       <span className={styles.rowThumb}>
         <Thumb file={file} small />
+        {canWrite && <Pick id={file.id} what="file" name={file.name} />}
       </span>
       <span className={styles.rowText}>
         <FileName file={file} className={styles.rowName} folders={folders} canWrite={canWrite} onChanged={onChanged} />
@@ -961,6 +1137,9 @@ function FolderDetail({ folder, files, folders }: { folder: FolderView; files: W
 function FolderRow({
   folder,
   count,
+  files,
+  folders,
+  scope,
   canWrite,
   fixed = false,
   fresh,
@@ -971,6 +1150,9 @@ function FolderRow({
 }: {
   folder: FolderView
   count: number
+  files: WorldFile[]
+  folders: FolderView[]
+  scope: Realm
   canWrite: boolean
   /** La de «Comunes» en un mundo: no se renombra ni se borra */
   fixed?: boolean
@@ -983,6 +1165,7 @@ function FolderRow({
 }) {
   const { t } = useTranslation()
   const [over, setOver] = useState(false)
+  const opener = useFolderOpen({ folder, files, folders, canWrite: canWrite && !fixed, onOpen, onChanged })
   return (
     <li
       className={[styles.row, fresh ? styles.appear : '', over ? styles.dropping : ''].filter(Boolean).join(' ')}
@@ -993,11 +1176,8 @@ function FolderRow({
       onClickCapture={(event) => {
         if ((event.target as Element).closest('[aria-haspopup="dialog"]')) onPreview?.(false)
       }}
-      onDoubleClick={(event) => {
-        if (!(event.target as Element).closest('a, button')) onOpen()
-      }}
       onDragOver={(event) => {
-        if (!canWrite || !event.dataTransfer.types.includes(DRAGGED)) return
+        if (!canWrite || !accepts(event, scope)) return
         event.preventDefault()
         event.stopPropagation()
         setOver(true)
@@ -1014,13 +1194,15 @@ function FolderRow({
     >
       <span className={`${styles.rowThumb} ${styles.folderThumb}`}>
         <Folder aria-hidden="true" size={18} />
+        {canWrite && !fixed && <Pick id={folder.id} what="folder" name={folder.name} />}
       </span>
       <span className={styles.rowText}>
         <button
           type="button"
           className={`${styles.rowName} ${styles.open}`}
           aria-label={t('files.openFolder', { name: folder.name })}
-          onClick={onOpen}
+          aria-haspopup={opener.sheet ? 'dialog' : undefined}
+          onClick={opener.open}
         >
           {folder.name}
         </button>
@@ -1029,6 +1211,7 @@ function FolderRow({
         {over ? t('files.moveHere') : count > 0 ? t('files.folderFiles', { count }) : t('files.folderEmpty')}
       </span>
       {canWrite && !fixed ? <FolderSettings folder={folder} onChanged={onChanged} small /> : <span />}
+      {opener.layers}
     </li>
   )
 }
@@ -1073,11 +1256,13 @@ function UploadRow({ upload, onCancel }: { upload: Upload; onCancel: () => void 
 /** Donde se suelta un archivo arrastrado para meterlo en una carpeta (o, con null, en lo más alto) */
 function FolderTarget({
   folderId,
+  scope,
   canWrite,
   onMove,
   children
 }: {
   folderId: string | null
+  scope: Realm
   canWrite: boolean
   onMove: (fileId: string, folderId: string | null) => Promise<unknown>
   children: ReactNode
@@ -1085,11 +1270,11 @@ function FolderTarget({
   const [over, setOver] = useState(false)
   if (!canWrite) return <>{children}</>
   return (
-    // biome-ignore lint/a11y/noStaticElementInteractions: soltar es un atajo; la carpeta se elige también en el engranaje
+    // biome-ignore lint/a11y/noStaticElementInteractions: soltar es un atajo para mover un archivo
     <span
       className={over ? styles.targetOver : styles.target}
       onDragOver={(event) => {
-        if (!event.dataTransfer.types.includes(DRAGGED)) return
+        if (!accepts(event, scope)) return
         event.preventDefault()
         event.stopPropagation()
         setOver(true)
@@ -1205,6 +1390,7 @@ function FolderCard({
   folder,
   files,
   folders,
+  scope,
   canWrite,
   fresh,
   onOpen,
@@ -1215,6 +1401,7 @@ function FolderCard({
   folder: FolderView
   files: WorldFile[]
   folders: FolderView[]
+  scope: Realm
   canWrite: boolean
   fresh: boolean
   onOpen: () => void
@@ -1225,6 +1412,7 @@ function FolderCard({
 }) {
   const { t } = useTranslation()
   const [over, setOver] = useState(false)
+  const opener = useFolderOpen({ folder, files, folders, canWrite, onOpen, onChanged })
   const inside = files.filter((file) => file.folderId === folder.id).length
   const subfolders = folders.filter((child) => child.parentId === folder.id).length
   const counts = [
@@ -1243,7 +1431,7 @@ function FolderCard({
         if ((event.target as Element).closest('[aria-haspopup="dialog"]')) onPreview?.(false)
       }}
       onDragOver={(event) => {
-        if (!canWrite || !event.dataTransfer.types.includes(DRAGGED)) return
+        if (!canWrite || !accepts(event, scope)) return
         event.preventDefault()
         event.stopPropagation()
         setOver(true)
@@ -1261,12 +1449,14 @@ function FolderCard({
       <div className={styles.thumb}>
         <Folder aria-hidden="true" size={44} strokeWidth={1.25} />
       </div>
+      {canWrite && <Pick id={folder.id} what="folder" name={folder.name} />}
       <div className={cards.body}>
         <button
           type="button"
           className={`${cards.name} ${styles.fileName} ${styles.open}`}
           aria-label={t('files.openFolder', { name: folder.name })}
-          onClick={onOpen}
+          aria-haspopup={opener.sheet ? 'dialog' : undefined}
+          onClick={opener.open}
         >
           {folder.name}
         </button>
@@ -1275,11 +1465,12 @@ function FolderCard({
           {canWrite && <FolderSettings folder={folder} onChanged={onChanged} />}
         </div>
       </div>
+      {opener.layers}
     </li>
   )
 }
 
-/** El engranaje de una carpeta: su ventana, con el nombre y la zona de peligro (lo que tiene pasa a la de arriba) */
+/** El engranaje de una carpeta: abre su ventana */
 function FolderSettings({
   folder,
   onChanged,
@@ -1291,13 +1482,51 @@ function FolderSettings({
   small?: boolean
 }) {
   const { t } = useTranslation()
+  const trigger = useRef<HTMLButtonElement>(null)
+  const [open, setOpen] = useState(false)
+  return (
+    <>
+      <button
+        ref={trigger}
+        type="button"
+        className={small ? styles.smallGear : cards.gear}
+        aria-label={t('files.folderSettingsOf', { name: folder.name })}
+        title={t('files.folderSettingsOf', { name: folder.name })}
+        aria-haspopup="dialog"
+        onClick={() => setOpen(true)}
+      >
+        <Settings aria-hidden="true" size={small ? 14 : 18} />
+      </button>
+      {open && (
+        <FolderDialog
+          folder={folder}
+          onChanged={onChanged}
+          onClose={(gone) => {
+            setOpen(false)
+            if (!gone) trigger.current?.focus()
+          }}
+        />
+      )}
+    </>
+  )
+}
+
+/** La ventana de una carpeta: su nombre y, en la zona de peligro, borrarla con lo que tiene. onClose(gone): si se borró */
+function FolderDialog({
+  folder,
+  onChanged,
+  onClose
+}: {
+  folder: FolderView
+  onChanged: () => Promise<unknown>
+  onClose: (gone: boolean) => void
+}) {
+  const { t } = useTranslation()
   const api = useApi()
   const errorText = useErrorText()
-  const trigger = useRef<HTMLButtonElement>(null)
   const dialog = useRef<HTMLDialogElement>(null)
   const titleId = useId()
   const gone = useRef(false)
-  const [open, setOpen] = useState(false)
   const [name, setName] = useState(folder.name)
   const rename = useMutation({
     mutationFn: async () => {
@@ -1313,79 +1542,131 @@ function FolderSettings({
     await onChanged()
   }
   return (
-    <>
-      <button
-        ref={trigger}
-        type="button"
-        className={small ? styles.smallGear : cards.gear}
-        aria-label={t('files.folderSettingsOf', { name: folder.name })}
-        title={t('files.folderSettingsOf', { name: folder.name })}
-        aria-haspopup="dialog"
-        onClick={() => {
-          setName(folder.name)
-          rename.reset()
-          gone.current = false
-          setOpen(true)
+    <Modal ref={dialog} aria-labelledby={titleId} className={cards.dialog} onClose={() => onClose(gone.current)}>
+      <div className={styles.preview}>
+        <Folder aria-hidden="true" size={56} strokeWidth={1.25} />
+      </div>
+      <form
+        className={cards.form}
+        onSubmit={(event) => {
+          event.preventDefault()
+          if (changed) rename.mutate()
         }}
       >
-        <Settings aria-hidden="true" size={small ? 14 : 18} />
-      </button>
-      {open && (
-        <Modal
-          ref={dialog}
-          aria-labelledby={titleId}
-          className={cards.dialog}
-          onClose={() => {
-            setOpen(false)
-            if (!gone.current) trigger.current?.focus()
+        <h2 id={titleId}>{t('files.folderSettingsOf', { name: folder.name })}</h2>
+        <Field
+          label={t('files.folderName')}
+          value={name}
+          required
+          maxLength={120}
+          autoComplete="off"
+          onChange={(event) => setName(event.currentTarget.value)}
+        />
+        <FormError message={rename.error ? errorText(rename.error) : null} />
+        <ChangesBar shown={changed}>
+          <BusyButton type="submit" className={form.button} busy={rename.isPending}>
+            {t('files.save')}
+          </BusyButton>
+          <button type="button" className={dialogStyles.cancel} onClick={() => setName(folder.name)}>
+            {t('files.cancel')}
+          </button>
+        </ChangesBar>
+      </form>
+      <div className={cards.dangerArea}>
+        <DangerZone>
+          <ConfirmByName
+            name={folder.name}
+            action={t('files.deleteFolder')}
+            title={t('files.deleteTitle', { name: folder.name })}
+            warning={t('files.deleteFolderWarning')}
+            label={t('files.folderName')}
+            typed={false}
+            onConfirm={remove}
+          />
+        </DangerZone>
+      </div>
+    </Modal>
+  )
+}
+
+/** La hoja de una carpeta en el móvil: lo que tiene y, abajo, abrirla y sus ajustes */
+function FolderSheet({
+  folder,
+  files,
+  folders,
+  canWrite,
+  onOpen,
+  onSettings,
+  onClose
+}: {
+  folder: FolderView
+  files: WorldFile[]
+  folders: FolderView[]
+  canWrite: boolean
+  onOpen: () => void
+  onSettings: () => void
+  onClose: () => void
+}) {
+  const { t } = useTranslation()
+  return (
+    <Modal aria-label={folder.name} className={`${dialogStyles.dialog} ${styles.sheet}`} onClose={onClose}>
+      <FolderDetail folder={folder} files={files} folders={folders} />
+      <div className={styles.sheetActions}>
+        <button type="button" className={form.button} onClick={onOpen}>
+          {t('files.open')}
+        </button>
+        {canWrite && (
+          <button type="button" className={`${form.button} ${styles.sheetSecondary}`} onClick={onSettings}>
+            <Settings aria-hidden="true" size={16} />
+            {t('files.settings')}
+          </button>
+        )}
+      </div>
+    </Modal>
+  )
+}
+
+/**
+ * Abrir una carpeta (su fila o su tarjeta): en lo ancho, entra; en el móvil, antes sube su hoja. Lo que hay que pintar
+ * (la hoja y su ventana) va en `layers`
+ */
+function useFolderOpen({
+  folder,
+  files,
+  folders,
+  canWrite,
+  onOpen,
+  onChanged
+}: {
+  folder: FolderView
+  files: WorldFile[]
+  folders: FolderView[]
+  canWrite: boolean
+  onOpen: () => void
+  onChanged: () => Promise<unknown>
+}) {
+  const narrow = useNarrow()
+  const [open, setOpen] = useState<'sheet' | 'settings' | null>(null)
+  const layers = (
+    <>
+      {open === 'sheet' && (
+        <FolderSheet
+          folder={folder}
+          files={files}
+          folders={folders}
+          canWrite={canWrite}
+          onOpen={() => {
+            setOpen(null)
+            onOpen()
           }}
-        >
-          <div className={styles.preview}>
-            <Folder aria-hidden="true" size={56} strokeWidth={1.25} />
-          </div>
-          <form
-            className={cards.form}
-            onSubmit={(event) => {
-              event.preventDefault()
-              if (changed) rename.mutate()
-            }}
-          >
-            <h2 id={titleId}>{t('files.folderSettingsOf', { name: folder.name })}</h2>
-            <Field
-              label={t('files.folderName')}
-              value={name}
-              required
-              maxLength={120}
-              autoComplete="off"
-              onChange={(event) => setName(event.currentTarget.value)}
-            />
-            <FormError message={rename.error ? errorText(rename.error) : null} />
-            <ChangesBar shown={changed}>
-              <BusyButton type="submit" className={form.button} busy={rename.isPending}>
-                {t('files.save')}
-              </BusyButton>
-              <button type="button" className={dialogStyles.cancel} onClick={() => setName(folder.name)}>
-                {t('files.cancel')}
-              </button>
-            </ChangesBar>
-          </form>
-          <div className={cards.dangerArea}>
-            <DangerZone>
-              <ConfirmByName
-                name={folder.name}
-                action={t('files.deleteFolder')}
-                title={t('files.deleteTitle', { name: folder.name })}
-                warning={t('files.deleteFolderWarning')}
-                label={t('files.folderName')}
-                typed={false}
-                onConfirm={remove}
-              />
-            </DangerZone>
-          </div>
-        </Modal>
+          onSettings={() => setOpen('settings')}
+          onClose={() => setOpen((current) => (current === 'sheet' ? null : current))}
+        />
       )}
+      {open === 'settings' && <FolderDialog folder={folder} onChanged={onChanged} onClose={() => setOpen(null)} />}
     </>
   )
+  return { open: () => (narrow ? setOpen('sheet') : onOpen()), sheet: narrow, layers }
 }
 
 /**
@@ -1654,6 +1935,7 @@ function FileCard({
       <div className={styles.thumb}>
         <Thumb file={file} />
       </div>
+      {canWrite && <Pick id={file.id} what="file" name={file.name} />}
       <div className={cards.body}>
         <FileName
           file={file}
@@ -1734,7 +2016,7 @@ function FileName({
           onClose={() => setOpen((current) => (current === 'sheet' ? null : current))}
         />
       )}
-      {open === 'settings' && <FileDialog file={file} folders={folders} onChanged={onChanged} onClose={close} />}
+      {open === 'settings' && <FileDialog file={file} onChanged={onChanged} onClose={close} />}
     </>
   )
 }
@@ -1766,7 +2048,7 @@ function FileSheet({
     where.unshift(at)
   }
   return (
-    <Modal aria-label={file.name} className={styles.sheet} onClose={onClose}>
+    <Modal aria-label={file.name} className={`${dialogStyles.dialog} ${styles.sheet}`} onClose={onClose}>
       <FileDetail file={file} where={where} />
       <div className={styles.sheetActions}>
         {file.kind === 'image' ? (
@@ -1827,7 +2109,6 @@ function FileSettings({
       {open && (
         <FileDialog
           file={file}
-          folders={folders}
           onChanged={onChanged}
           onClose={(gone) => {
             setOpen(false)
@@ -1858,23 +2139,18 @@ function folderPaths(folders: FolderView[]) {
  */
 function FileDialog({
   file,
-  folders,
   onChanged,
   onClose
 }: {
   file: WorldFile
-  folders: FolderView[]
   onChanged: () => Promise<unknown>
   onClose: (gone: boolean) => void
 }) {
   const { t } = useTranslation()
   const api = useApi()
   const errorText = useErrorText()
-  const announce = useAnnounce()
   const dialog = useRef<HTMLDialogElement>(null)
-  const replaceInput = useRef<HTMLInputElement>(null)
   const titleId = useId()
-  const folderId = useId()
   const gone = useRef(false)
   const [name, setName] = useState(file.name)
   const rename = useMutation({
@@ -1883,25 +2159,11 @@ function FileDialog({
       await onChanged()
     }
   })
-  const move = useMutation({
-    mutationFn: async (to: string | null) => {
-      await api.call('moveFile', { fileId: file.id, folderId: to })
-      await onChanged()
-    }
-  })
   const retag = useMutation({
     mutationFn: async (tags: string[]) => {
       await api.call('setFileTags', { fileId: file.id, tags })
       await onChanged()
     }
-  })
-  const replace = useMutation({
-    mutationFn: async (chosen: File) => {
-      if (chosen.size > MAX_FILE_BYTES) throw new ApiError('TOO_LARGE', 413)
-      await api.uploadFile({ fileId: file.id }, chosen)
-      await onChanged()
-    },
-    onSuccess: () => announce(t('files.replaced', { name: file.name }))
   })
   // Borrado, su tarjeta se desvanece y la lista se pone al día
   const remove = async () => {
@@ -1942,53 +2204,12 @@ function FileDialog({
             {t('files.cancel')}
           </button>
         </ChangesBar>
-        {folders.length > 0 && (
-          <div className={styles.folderField}>
-            <label htmlFor={folderId}>{t('files.folder')}</label>
-            <select
-              id={folderId}
-              value={file.folderId ?? ''}
-              disabled={move.isPending}
-              onChange={(event) => move.mutate(event.currentTarget.value || null)}
-            >
-              <option value="">{t('files.noFolder')}</option>
-              {folderPaths(folders).map((folder) => (
-                <option key={folder.id} value={folder.id}>
-                  {folder.label}
-                </option>
-              ))}
-            </select>
-            <FormError message={move.error ? errorText(move.error) : null} />
-          </div>
-        )}
         <div>
           <TagsField
             value={retag.isPending && retag.variables ? retag.variables : file.tags}
             onChange={(tags) => retag.mutate(tags)}
           />
           <FormError message={retag.error ? errorText(retag.error) : null} />
-        </div>
-        <div>
-          <BusyButton
-            className={`${list.secondary} ${styles.replace}`}
-            busy={replace.isPending}
-            onClick={() => replaceInput.current?.click()}
-          >
-            <UploadIcon aria-hidden="true" size={16} />
-            {t('files.replace')}
-          </BusyButton>
-          <input
-            ref={replaceInput}
-            type="file"
-            accept={UPLOAD_ACCEPT}
-            hidden
-            onChange={(event) => {
-              const chosen = event.currentTarget.files?.[0]
-              event.currentTarget.value = ''
-              if (chosen) replace.mutate(chosen)
-            }}
-          />
-          <FormError message={replace.error ? errorText(replace.error) : null} />
         </div>
       </form>
       <div className={cards.dangerArea}>

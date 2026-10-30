@@ -195,19 +195,22 @@ dialog[open]::backdrop {
 
 /*
  * En el móvil, los cuadros y las ventanas son hojas que suben desde abajo: a todo lo ancho, con las esquinas de arriba
- * redondeadas, un asa y la página oscurecida detrás, para que se note que van encima
+ * redondeadas, un asa y la página oscurecida detrás, para que se note que van encima. Al cerrarse bajan enteras, sin
+ * cambiar de forma (por eso la forma va también en el cerrado). Lo que se ve en grande (data-full) sigue en el centro
  */
 @media (max-width: 48rem) {
-  dialog[open] {
+  dialog:not([data-full]) {
     inline-size: 100%;
     max-inline-size: 100%;
     max-block-size: calc(100dvh - 2.5rem);
     margin: auto 0 0;
     border-radius: 16px 16px 0 0;
     border-block-end: 0;
+    transition-duration: 280ms;
+    transition-timing-function: cubic-bezier(0.4, 0, 1, 1);
   }
 
-  dialog[open]::before {
+  dialog:not([data-full])::before {
     content: "";
     display: block;
     inline-size: 2.5rem;
@@ -217,12 +220,18 @@ dialog[open]::backdrop {
     background: var(--color-field-border);
   }
 
-  dialog:not([open]) {
+  dialog:not([data-full]):not([open]) {
+    opacity: 1;
     transform: translateY(100%);
   }
 
+  dialog:not([data-full])[open] {
+    transition-duration: 360ms;
+    transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
   @starting-style {
-    dialog[open] {
+    dialog:not([data-full])[open] {
       opacity: 1;
       transform: translateY(100%);
     }
