@@ -3,7 +3,7 @@
  * secreto `> [!secreto]` y la nota oculta entre `%%`. Los usan los nodos en su markdownTokenizer y su renderMarkdown
  */
 import type { JSONContent, MarkdownRendererHelpers, MarkdownTokenizer } from '@tiptap/core'
-import type { CalloutKind } from '../nodes/callout.ts'
+import type { CalloutKind } from '../nodes/callout-kinds.ts'
 
 /** El nombre de cada recuadro en Markdown, en español */
 export const CALLOUT_MARKDOWN: Record<CalloutKind, string> = {

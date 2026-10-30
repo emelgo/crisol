@@ -3,6 +3,7 @@ import { and, eq, inArray, isNotNull, isNull, ne, type SQL, sql } from 'drizzle-
 import { alias } from 'drizzle-orm/pg-core'
 import type { Database } from '../client.ts'
 import { type OperationContext, operation, type Transaction } from '../operation.ts'
+import { documents } from '../schema/documents.ts'
 import { pages } from '../schema/pages.ts'
 
 const summaryColumns = {
@@ -262,5 +263,68 @@ export function restorePageTree(db: Database, context: OperationContext, pageId:
     await w.update(pages, pageId, { deletedAt: null })
     for (const id of together) await w.update(pages, id, { deletedAt: null })
     return together.length
+  })
+}
+
+/** Los nombres de las páginas del mundo fuera de la papelera (título y propiedades, con los alias), para resolver títulos */
+export function pageNames(db: Database, worldId: string) {
+  return db
+    .select({ id: pages.id, title: pages.title, properties: pages.properties })
+    .from(pages)
+    .where(and(eq(pages.worldId, worldId), isNull(pages.deletedAt)))
+}
+
+/** Una página nueva de las que se crean de una vez, con su cuerpo y sus secretos ya hechos estado de Yjs */
+export interface NewPage {
+  key: string
+  /** La de la misma tanda que es su madre (va antes en la lista); sin ella, la madre común */
+  parentKey: string | null
+  title: string
+  icon: string | null
+  body: Uint8Array | null
+  /** Sus secretos y notas ocultas, con el id que ya lleva el cuerpo */
+  separates: { id: string; kind: 'secret' | 'note'; state: Uint8Array }[]
+}
+
+/**
+ * Crea varias páginas con sus cuerpos y sus secretos en una sola operación (las madres antes que sus hijas). Las
+ * propiedades se ponen al final, cuando ya se saben los ids de todas: así una puede enlazar a otra de la misma tanda
+ */
+export function createPagesWithBodies(
+  db: Database,
+  context: OperationContext,
+  input: {
+    worldId: string
+    parentId: string | null
+    pages: readonly NewPage[]
+    properties: (ids: ReadonlyMap<string, string>) => ReadonlyMap<string, unknown[]>
+  }
+) {
+  return operation(db, context, async (w) => {
+    const ids = new Map<string, string>()
+    const created: { key: string; id: string; title: string; parentId: string | null }[] = []
+    const docs: (typeof documents.$inferInsert)[] = []
+    for (const page of input.pages) {
+      const parentId = page.parentKey ? (ids.get(page.parentKey) ?? null) : input.parentId
+      const position = await placeKey(w.read, input.worldId, { parentId })
+      const row = await w.insert(pages, {
+        worldId: input.worldId,
+        parentId,
+        position,
+        title: page.title,
+        icon: page.icon
+      })
+      ids.set(page.key, row.id)
+      created.push({ key: page.key, id: row.id, title: row.title, parentId })
+      const owner = { worldId: input.worldId, pageId: row.id, updatedBy: context.actorId }
+      if (page.body) docs.push({ ...owner, kind: 'body', state: page.body })
+      for (const separate of page.separates) docs.push({ ...owner, ...separate })
+    }
+    if (docs.length > 0) await w.read.insert(documents).values(docs)
+    for (const [key, properties] of input.properties(ids)) {
+      const id = ids.get(key)
+      if (id && properties.length > 0) await w.update(pages, id, { properties })
+    }
+    return created
   })
 }

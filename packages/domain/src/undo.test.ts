@@ -88,6 +88,18 @@ describe('deshacer', () => {
       expect(staleChange([expel], current({ 'campaign_members/m1': member(1) }))).toBe(expel)
     })
 
+    it('una fila que la operación tocó dos veces (crearla y cambiarla) se mira como quedó al final', () => {
+      const created: RowChange = { tableName: 'worlds', rowId: 'w1', before: null, after: world(1, 'Eana') }
+      const renamed: RowChange = {
+        tableName: 'worlds',
+        rowId: 'w1',
+        before: world(1, 'Eana'),
+        after: world(2, 'Eana 2')
+      }
+      expect(staleChange([created, renamed], current({ 'worlds/w1': world(2, 'Eana 2') }))).toBeNull()
+      expect(staleChange([created, renamed], current({ 'worlds/w1': world(3, 'Eana 3') }))).toBe(renamed)
+    })
+
     it('se mira cada fila: basta una cambiada para no tocar nada', () => {
       const other: RowChange = { tableName: 'campaign_members', rowId: 'm1', before: null, after: member() }
       expect(staleChange([create, other], current({ 'worlds/w1': world(1, 'Eana') }))).toBe(other)

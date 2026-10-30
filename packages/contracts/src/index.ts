@@ -7,12 +7,15 @@ import { listOrganizations } from './organizations.ts'
 import {
   createPage,
   createPageDocument,
+  createPages,
+  editPage,
   getPage,
   getWikiPreferences,
   listPageChildren,
   listPageTree,
   listTags,
   movePage,
+  readPage,
   setBookmarks,
   setPageProperties,
   setWikiTabs,
@@ -84,7 +87,10 @@ export const ACTIONS = [
   getWikiPreferences,
   setWikiTabs,
   setBookmarks,
-  createPageDocument
+  createPageDocument,
+  readPage,
+  createPages,
+  editPage
 ]
 
 /** Las acciones por nombre, solo como tipo: la web las usa sin cargar zod */
@@ -130,4 +136,7 @@ export type Actions = {
   setWikiTabs: typeof setWikiTabs
   setBookmarks: typeof setBookmarks
   createPageDocument: typeof createPageDocument
+  readPage: typeof readPage
+  createPages: typeof createPages
+  editPage: typeof editPage
 }
