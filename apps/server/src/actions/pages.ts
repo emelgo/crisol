@@ -11,7 +11,7 @@ import {
   setPageProperties,
   updatePage
 } from '@crisol/contracts'
-import { documentsRepo, pagesRepo } from '@crisol/db'
+import { documentsRepo, filesRepo, pagesRepo } from '@crisol/db'
 import {
   compareKeys,
   moveBlocker,
@@ -43,6 +43,7 @@ export async function pageView(ctx: ActionContext, pageId: string): Promise<Page
     version: found.version,
     properties: propertiesOf(found.properties),
     locked: found.locked,
+    cover: found.cover ?? null,
     path: await pagesRepo.pagePath(ctx.db, pageId),
     updatedAt: found.updatedAt.toISOString()
   }
@@ -105,18 +106,25 @@ export const pageActions = [
     return pageView(ctx, created.id)
   }),
 
-  implement(updatePage, async (ctx, { pageId, title, icon, locked }) => {
+  implement(updatePage, async (ctx, { pageId, title, icon, locked, cover }) => {
     const { page, wiki } = await authorizedPage(ctx, 'page.write', pageId)
-    // Lo que cambió, para la frase del historial: renombrar, el icono o el candado
+    // La portada, una imagen de este mundo
+    if (cover) {
+      const file = await filesRepo.findFile(ctx.db, cover.fileId)
+      if (!file || file.worldId !== wiki.worldId || file.kind !== 'image') throw new InvalidRequestError('BAD_COVER')
+    }
+    // Lo que cambió, para la frase del historial: renombrar, el icono, el candado o la portada
     const details = {
       ...(title !== undefined ? { from: page.title, to: title } : { title: page.title }),
       ...(icon !== undefined ? { icon } : {}),
-      ...(locked !== undefined ? { locked } : {})
+      ...(locked !== undefined ? { locked } : {}),
+      ...(cover !== undefined ? { cover: cover !== null } : {})
     }
     await pagesRepo.updatePage(ctx.db, historyContext(ctx, 'updatePage', details, wiki), pageId, {
       ...(title !== undefined ? { title } : {}),
       ...(icon !== undefined ? { icon } : {}),
-      ...(locked !== undefined ? { locked } : {})
+      ...(locked !== undefined ? { locked } : {}),
+      ...(cover !== undefined ? { cover } : {})
     })
     ctx.realtime.publish(pagesChanged(wiki))
     if (title !== undefined) await resolvePending(ctx, wiki.worldId, ctx.actor.userId, [title])

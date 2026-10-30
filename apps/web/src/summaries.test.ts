@@ -49,6 +49,12 @@ describe('las frases de la wiki', () => {
     )
     expect(summaryOf(t, { action: 'restorePage', details: { title: 'Puerto' } })).toBe('restauró la página «Puerto»')
     expect(summaryOf(t, { action: 'uploadFile', details: { name: 'Mapa.png' } })).toBe('subió el archivo «Mapa.png»')
+    expect(summaryOf(t, { action: 'updatePage', details: { title: 'Puerto', cover: true } })).toBe(
+      'cambió la portada de «Puerto»'
+    )
+    expect(summaryOf(t, { action: 'updatePage', details: { title: 'Puerto', cover: false } })).toBe(
+      'quitó la portada de «Puerto»'
+    )
     expect(summaryOf(t, { action: 'renameFile', details: { from: 'a.png', to: 'b.png' } })).toBe(
       'renombró el archivo «a.png» a «b.png»'
     )

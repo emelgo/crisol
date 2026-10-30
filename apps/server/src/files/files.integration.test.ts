@@ -2,6 +2,7 @@ import { Readable } from 'node:stream'
 import { connect, schema, trashRepo } from '@crisol/db'
 import { freshTestDatabase, resetDatabase } from '@crisol/db/testing'
 import type { FastifyInstance } from 'fastify'
+import { unzipSync } from 'fflate'
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { buildApp } from '../app.ts'
 import type { Auth } from '../auth/auth.ts'
@@ -238,6 +239,50 @@ describe('los archivos del mundo', () => {
     // Una página en la papelera no cuenta
     await call('deletePage', { pageId: page.id })
     expect((await call('listFiles', { worldId })).files[0].usedBy).toBe(0)
+  })
+
+  it('exportar lleva los archivos en _archivos/: el mundo, todos; una página, los que usa', async () => {
+    await upload('Mapa.png', PNG)
+    await upload('Bestiario.pdf', PDF)
+    const [page] = (
+      await call('createPages', {
+        worldId,
+        parentId: null,
+        pages: [{ key: 'a', title: 'Eana', markdown: '![[Mapa.png|300]]' }]
+      })
+    ).pages
+    const exported = async (payload: object) => {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/export',
+        payload,
+        headers: { origin: BASE_URL, cookie: owner.cookie }
+      })
+      expect(response.statusCode).toBe(200)
+      return unzipSync(new Uint8Array(response.rawPayload))
+    }
+    const world = await exported({ worldId })
+    expect(Object.keys(world).sort()).toEqual(['Eana.md', '_archivos/Bestiario.pdf', '_archivos/Mapa.png'])
+    expect(Buffer.from(world['_archivos/Mapa.png'] ?? []).equals(PNG)).toBe(true)
+    expect(Buffer.from(world['Eana.md'] ?? []).toString()).toContain('![[Mapa.png|300]]')
+    const one = await exported({ worldId, pageId: page.id })
+    expect(Object.keys(one).sort()).toEqual(['Eana.md', '_archivos/Mapa.png'])
+  })
+
+  it('la portada: una imagen del mundo con su encuadre; cuenta como uso, se deshace y no vale otra cosa', async () => {
+    const map = (await upload('Mapa.png', PNG)).json()
+    const book = (await upload('Bestiario.pdf', PDF)).json()
+    const page = await call('createPage', { worldId, title: 'Puerto Ceniza' })
+    const cover = { fileId: map.id, x: 50, y: 20 }
+    expect(await call('updatePage', { pageId: page.id, cover })).toMatchObject({ cover })
+    expect((await call('listFiles', { worldId })).files.find((f: { id: string }) => f.id === map.id).usedBy).toBe(1)
+    expect(await call('updatePage', { pageId: page.id, cover: { ...cover, fileId: book.id } })).toMatchObject({
+      code: 'BAD_COVER'
+    })
+    const [last] = (await call('listHistory', { worldId })).entries
+    expect(last).toMatchObject({ action: 'updatePage', details: { cover: true } })
+    await call('undoOperation', { operationId: last.id })
+    expect((await call('getPage', { pageId: page.id })).cover).toBeNull()
   })
 
   it('el nombre que viene del disco con lo que rompe `![[…]]` se sube con «-»', async () => {

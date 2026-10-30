@@ -252,7 +252,7 @@ Cada vía nueva por la que salen datos amplía `@fugas` en la misma tarea.
   - Archivos: `packages/db/src/schema/files.ts`, `apps/server/src/files/{storage,routes}.ts`,
     `apps/server/src/actions/files.ts`, `apps/web/src/routes/files.tsx`.
 
-- [ ] **19. Archivos en las páginas**
+- [x] **19. Archivos en las páginas**
   - Acepta:
     - El bloque de imagen, con pie, ancho, texto alternativo y caja de luz. Pegar o arrastrar una imagen la sube.
     - La portada, con su encuadre.

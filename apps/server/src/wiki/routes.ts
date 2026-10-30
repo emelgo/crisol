@@ -30,7 +30,7 @@ export function registerWikiRoutes(app: FastifyInstance, env: ActionEnv, auth: A
           `attachment; filename="${ascii}.zip"; filename*=UTF-8''${encodeURIComponent(`${name}.zip`)}`
         )
         .header('cache-control', 'no-store')
-        .send(Buffer.from(zip))
+        .send(zip)
     } catch (error) {
       if (error instanceof NotFoundError) return reply.code(404).send({ code: 'NOT_FOUND' })
       if (error instanceof ForbiddenError) return reply.code(403).send({ code: 'FORBIDDEN' })

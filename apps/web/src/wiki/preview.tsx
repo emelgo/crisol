@@ -101,6 +101,7 @@ export function LinkPreview({ worldId, pageId, anchor, anchorElement, sheet, onC
       onMouseEnter={() => onHover?.(true)}
       onMouseLeave={() => onHover?.(false)}
     >
+      {page?.cover && <PreviewCover cover={page.cover} worldId={worldId} />}
       <div className={styles.header}>
         <p id={`${id}-title`} className={styles.title}>
           {page?.icon ? `${page.icon} ` : ''}
@@ -134,4 +135,13 @@ export function LinkPreview({ worldId, pageId, anchor, anchorElement, sheet, onC
     </div>,
     document.body
   )
+}
+
+/** La portada pequeña de la vista previa (si su archivo sigue en el mundo) */
+function PreviewCover({ cover, worldId }: { cover: { fileId: string; x: number; y: number }; worldId: string }) {
+  const api = useApi()
+  const files = useQuery({ queryKey: ['files', worldId], queryFn: () => api.call('listFiles', { worldId }) })
+  const file = files.data?.files.find((f) => f.id === cover.fileId)
+  if (!file) return null
+  return <img src={file.url} alt="" className={styles.cover} style={{ objectPosition: `${cover.x}% ${cover.y}%` }} />
 }

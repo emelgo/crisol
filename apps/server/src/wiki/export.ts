@@ -1,16 +1,21 @@
 /**
  * Exportar la wiki en Markdown (el de la tarea 10): una página, una rama o el mundo entero en un .zip. Una página con
  * subpáginas es una carpeta con su nota dentro (`Página/Página.md`), como en el Crisol de antes. Pasa por la misma
- * proyección que leer: el máster exporta con sus secretos (los jugadores, en el módulo 5, sin lo que no ven)
+ * proyección que leer: el máster exporta con sus secretos (los jugadores, en el módulo 5, sin lo que no ven). Los
+ * archivos van en `_archivos/`: todos al exportar el mundo, y los que usan las páginas al exportar una. El .zip se manda
+ * a trozos (los archivos de un mundo pueden pasar de lo que cabe en memoria)
  */
+import { once } from 'node:events'
+import { PassThrough, type Readable } from 'node:stream'
 import type { ExportInput } from '@crisol/contracts'
-import { documentsRepo, pagesRepo, worldsRepo } from '@crisol/db'
+import { documentsRepo, filesRepo, linksRepo, pagesRepo, worldsRepo } from '@crisol/db'
 import { NotFoundError } from '@crisol/domain'
 import { pageToMarkdown } from '@crisol/editor/markdown'
 import type { JSONContent } from '@tiptap/core'
-import { strToU8, zipSync } from 'fflate'
+import { strToU8, Zip, ZipDeflate, ZipPassThrough } from 'fflate'
 import { authorizedPage, authorizedWiki } from '../actions/access.ts'
 import type { ActionContext } from '../actions/context.ts'
+import type { Storage } from '../files/storage.ts'
 import { documentJson } from './content.ts'
 import { fileNames } from './file-embeds.ts'
 import { propertiesOf } from './properties.ts'
@@ -62,8 +67,21 @@ export function exportPaths(pages: readonly TreePage[]) {
   return { path, folder, children }
 }
 
-/** El .zip y su nombre */
-export async function exportZip(ctx: ActionContext, input: ExportInput): Promise<{ name: string; zip: Uint8Array }> {
+/** Lo que va en el .zip: las notas y, en `_archivos/`, los bytes de los archivos (por su clave) */
+export interface ExportContents {
+  name: string
+  notes: Record<string, Uint8Array>
+  files: Array<{ path: string; storageKey: string }>
+}
+
+/** El .zip y su nombre: se comprueba todo antes y luego se manda a trozos */
+export async function exportZip(ctx: ActionContext, input: ExportInput): Promise<{ name: string; zip: Readable }> {
+  const contents = await exportContents(ctx, input)
+  return { name: contents.name, zip: zipStream(contents, ctx.storage) }
+}
+
+/** Lo que hay que exportar, ya con el permiso comprobado */
+export async function exportContents(ctx: ActionContext, input: ExportInput): Promise<ExportContents> {
   const pageId = input.pageId ?? null
   const wiki = pageId
     ? (await authorizedPage(ctx, 'page.read', pageId)).wiki
@@ -132,5 +150,58 @@ export async function exportZip(ctx: ActionContext, input: ExportInput): Promise
     const relative = strip && full.startsWith(`${strip}/`) ? full.slice(strip.length + 1) : full
     files[`${relative}.md`] = strToU8(markdown)
   }
-  return { name: fileName(name), zip: zipSync(files, { level: 6 }) }
+  // Los archivos: los del mundo, o los que usan las páginas que van
+  const worldFiles = await filesRepo.listFiles(ctx.db, wiki.worldId)
+  const used = pageId
+    ? new Set(
+        await linksRepo.filesUsedBy(
+          ctx.db,
+          chosen.map((page) => page.id)
+        )
+      )
+    : null
+  return {
+    name: fileName(name),
+    notes: files,
+    files: worldFiles
+      .filter((file) => !used || used.has(file.id))
+      .map((file) => ({ path: `_archivos/${file.name}`, storageKey: file.storageKey }))
+  }
+}
+
+/** El .zip a trozos: las notas comprimidas y los archivos tal cual (ya lo están casi todos) */
+export function zipStream(contents: Pick<ExportContents, 'notes' | 'files'>, storage: Storage | undefined): Readable {
+  const out = new PassThrough()
+  const zip = new Zip((error, chunk, final) => {
+    if (error) {
+      out.destroy(error)
+      return
+    }
+    out.write(chunk)
+    if (final) out.end()
+  })
+  const run = async () => {
+    for (const [path, data] of Object.entries(contents.notes)) {
+      const entry = new ZipDeflate(path, { level: 6 })
+      zip.add(entry)
+      entry.push(data, true)
+    }
+    for (const file of storage ? contents.files : []) {
+      const entry = new ZipPassThrough(file.path)
+      zip.add(entry)
+      try {
+        for await (const chunk of storage?.read(file.storageKey) ?? []) {
+          entry.push(chunk as Uint8Array)
+          // Sin llenar la memoria: se espera a que el que descarga vaya leyendo
+          if (out.writableNeedDrain) await once(out, 'drain')
+        }
+      } catch {
+        // Unos bytes que faltan no estropean el .zip: ese archivo va vacío
+      }
+      entry.push(new Uint8Array(0), true)
+    }
+    zip.end()
+  }
+  run().catch((error: unknown) => out.destroy(error as Error))
+  return out
 }

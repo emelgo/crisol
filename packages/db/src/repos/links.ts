@@ -145,23 +145,35 @@ export async function resolveFileEmbeds(db: Database, embedIds: readonly string[
     .where(inArray(fileEmbeds.id, [...embedIds]))
 }
 
-/** Cuántas páginas (fuera de la papelera) usan cada archivo del mundo */
+/** Cuántas páginas (fuera de la papelera) usan cada archivo del mundo: en su texto o de portada */
 export async function fileUses(db: Database, worldId: string) {
-  const rows = await db
-    .select({ fileId: fileEmbeds.fileId, pages: sql<number>`count(distinct ${fileEmbeds.sourcePageId})::int` })
-    .from(fileEmbeds)
-    .innerJoin(pages, eq(pages.id, fileEmbeds.sourcePageId))
-    .where(and(eq(fileEmbeds.worldId, worldId), isNull(pages.deletedAt)))
-    .groupBy(fileEmbeds.fileId)
-  return new Map(rows.flatMap((row) => (row.fileId ? [[row.fileId, row.pages] as const] : [])))
+  const rows = await db.execute<{ file_id: string; pages: number }>(sql`
+    select file_id, count(distinct page_id)::int as pages from (
+      select fe.file_id, fe.source_page_id as page_id from file_embeds fe
+        join pages p on p.id = fe.source_page_id
+        where fe.world_id = ${worldId} and fe.file_id is not null and p.deleted_at is null
+      union all
+      select (p.cover->>'fileId')::uuid, p.id from pages p
+        where p.world_id = ${worldId} and p.cover is not null and p.deleted_at is null
+    ) used group by file_id`)
+  return new Map([...rows].map((row) => [row.file_id, row.pages] as const))
 }
 
-/** Los archivos que usan estas páginas (para exportarlas con ellos) */
+/** Los archivos que usan estas páginas, en su texto o de portada (para exportarlas con ellos) */
 export async function filesUsedBy(db: Database, pageIds: readonly string[]) {
   if (pageIds.length === 0) return []
   const rows = await db
     .selectDistinct({ fileId: fileEmbeds.fileId })
     .from(fileEmbeds)
     .where(inArray(fileEmbeds.sourcePageId, [...pageIds]))
-  return rows.flatMap((row) => (row.fileId ? [row.fileId] : []))
+  const covers = await db
+    .select({ cover: pages.cover })
+    .from(pages)
+    .where(inArray(pages.id, [...pageIds]))
+  return [
+    ...new Set([
+      ...rows.flatMap((row) => (row.fileId ? [row.fileId] : [])),
+      ...covers.flatMap((row) => (row.cover ? [row.cover.fileId] : []))
+    ])
+  ]
 }

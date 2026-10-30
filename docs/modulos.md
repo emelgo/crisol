@@ -650,7 +650,17 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   - Los nombres de archivo no llevan `[ ] | # ^`: al subir se cambian por «-».
   - **Pruebas**: Markdown de ida y vuelta, integración (resolver al subir, renombrar, Claude, papelera) y e2e
     `archivos-en-paginas.spec.ts` (con «/», pegar, «Subirlo», `![[` y accesibilidad).
-  - **Queda (19b)**: visor de PDF con pdf.js, la portada y `_archivos/` al exportar.
+- **2026-10-30 — Módulo 1, tarea 19b: visor de PDF, portada y archivos al exportar** (migración 0017).
+  - **Visor de PDF** (`apps/web/src/wiki/pdf-viewer.tsx`, `pdfjs-dist`, Apache-2.0): antes enseña el nombre y el
+    tamaño; pdf.js se carga al pulsar «Ver aquí» y pide los bytes a trozos (Range), así que un libro grande se abre
+    por la página que toque sin bajarlo entero. Anterior, ir a una página y siguiente; abre por `#page=N`.
+  - **Portada**: una imagen del mundo de cabecera con su punto de encuadre (`pages.cover`). Se elige de las del mundo
+    o se sube, se encuadra con dos deslizadores y se quita; se puede deshacer y cuenta como uso del archivo. La vista
+    previa la enseña pequeña. No va al Markdown (como el icono).
+  - **Exportar** lleva `_archivos/`: todos los del mundo, o los que usan las páginas exportadas. El .zip se manda a
+    trozos, sin cargarlo en memoria.
+  - **Pruebas**: integración (exportar con archivos, portada) y e2e (PDF por la página 3 con pdf.js cargado solo al
+    abrirlo; portada con el teclado y accesibilidad).
 - **Pendientes de permiso de Enrique:**
   - Servicio de systemd para Foundry: ahora corre como proceso de la sesión y se para al cerrarla; se arranca con el
     comando de `research/foundry/entorno.md`.
