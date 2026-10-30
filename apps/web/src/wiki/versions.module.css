@@ -1,0 +1,44 @@
+/* Las versiones: una lista que se abre, con lo de cada una en solo lectura */
+.panel {
+  margin-block: var(--space-6);
+}
+
+.toggle {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.toggle::after {
+  content: " ▸";
+}
+
+.toggle[aria-expanded="true"]::after {
+  content: " ▾";
+}
+
+.item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-3);
+}
+
+.current {
+  color: var(--color-muted);
+}
+
+.empty {
+  color: var(--color-muted);
+}
+
+.content {
+  flex-basis: 100%;
+  padding: var(--space-2) var(--space-4);
+  border-inline-start: 3px solid var(--color-frame);
+  background: var(--color-surface);
+}

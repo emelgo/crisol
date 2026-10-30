@@ -269,7 +269,8 @@ test('@fugas la wiki es solo del máster: a la jugadora no le llegan ni sus pág
     ['listUnresolvedLinks', { worldId }],
     ['linkMention', { sourcePageId: tower.id, targetPageId: room.id }],
     ['getPageContent', { pageId: tower.id }],
-    ['getPageContent', { pageId: tower.id, preview: true }]
+    ['getPageContent', { pageId: tower.id, preview: true }],
+    ['listPageVersions', { pageId: tower.id }]
   ] as const) {
     const response = await player.request.post(`/api/actions/${name}`, { data })
     expect(response.status(), name).toBe(404)

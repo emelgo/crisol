@@ -89,6 +89,8 @@ export function summaryOf(
     }
     case 'editPage':
       return say('editPage', { title: text(details.page ?? details.title) })
+    case 'restoreVersion':
+      return say('restoreVersion', { title: text(details.page ?? details.title) })
     default:
       return say('unknown', { action })
   }

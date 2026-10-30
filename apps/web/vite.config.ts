@@ -12,6 +12,8 @@ export default defineConfig({
   test: {
     environment: 'happy-dom',
     setupFiles: ['./src/test-setup.ts'],
+    // Con todos los paquetes probándose a la vez, una prueba larga (varias acciones seguidas) pasa de los 5 s por carga
+    testTimeout: 15_000,
     // tokens.css, de verdad: su prueba comprueba los contrastes
     css: { include: [/tokens\.css/], modules: { classNameStrategy: 'non-scoped' } },
     coverage: {

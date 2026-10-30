@@ -239,6 +239,19 @@ export const es = {
     close: 'Cerrar',
     more: 'Sigue en la página.'
   },
+  versions: {
+    title: 'Versiones',
+    none: 'Aún no tiene versiones: se guarda una al terminar de escribir.',
+    claude: 'Claude',
+    someone: 'Alguien',
+    current: '(la de ahora)',
+    viewShort: 'Ver',
+    view: 'Ver la versión del {{version}}',
+    restoreShort: 'Restaurar',
+    restore: 'Restaurar la versión del {{version}}',
+    content: 'Versión del {{version}}',
+    restored: 'Restaurada la versión del {{when}}.'
+  },
   backlinks: {
     title: 'Enlaces',
     incoming: 'La enlazan',
@@ -405,6 +418,7 @@ export const es = {
       deletePage: 'borró la página «{{title}}»',
       createPages: 'creó {{count}} páginas: {{titles}}',
       editPage: 'cambió la página «{{title}}»',
+      restoreVersion: 'restauró una versión de «{{title}}»',
       restorePage: 'restauró la página «{{title}}»',
       unknown: 'hizo un cambio ({{action}})'
     }
@@ -454,6 +468,7 @@ export const es = {
       createPage: 'crear la página «{{title}}»',
       createPages: 'crear {{count}} páginas: {{titles}}',
       editPage: 'cambiar la página «{{title}}»',
+      restoreVersion: 'restaurar una versión de «{{title}}»',
       createSubpage: 'crear la página «{{title}}» dentro de «{{parent}}»',
       updatePage: 'renombrar la página «{{from}}» a «{{to}}»',
       movePage: 'mover «{{title}}» dentro de «{{parent}}»',
