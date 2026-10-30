@@ -53,7 +53,7 @@ describe('mis mundos', () => {
     expect(within(list).getByText('Máster')).toBeDefined()
   })
 
-  it('en «Ajustes» se le pone descripción, icono y color, y la tarjeta lo enseña', async () => {
+  it('en «Ajustes» se le pone descripción y color, y la tarjeta lo enseña', async () => {
     const world = {
       id: crypto.randomUUID(),
       organizationId: ORG.id,
@@ -69,7 +69,6 @@ describe('mis mundos', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Ajustes de Costa Gris' }))
     const dialog = within(await screen.findByRole('dialog', { name: 'Ajustes de Costa Gris' }))
     await userEvent.type(dialog.getByLabelText('Descripción'), 'Ciudades libres en la niebla')
-    await userEvent.click(dialog.getByRole('radio', { name: 'Torre' }))
     await userEvent.click(dialog.getByRole('radio', { name: 'Vino' }))
     await userEvent.click(dialog.getByRole('button', { name: 'Guardar' }))
     expect(await screen.findByText('Ciudades libres en la niebla')).toBeDefined()
@@ -159,7 +158,7 @@ describe('mis mundos', () => {
     expect(dialog.queryByRole('button', { name: 'Guardar' })).toBeNull()
   })
 
-  it('crear un mundo abre la misma ventana que sus ajustes: icono, color propio (que se recuerda) y portada', async () => {
+  it('crear un mundo abre la misma ventana que sus ajustes: color propio (que se recuerda) y portada', async () => {
     // jsdom no tiene URL.createObjectURL: la vista previa de la imagen aún sin subir
     URL.createObjectURL = () => 'blob:portada'
     URL.revokeObjectURL = () => {}
@@ -169,8 +168,8 @@ describe('mis mundos', () => {
     const dialog = within(await screen.findByRole('dialog', { name: 'Nuevo mundo' }))
     await userEvent.type(dialog.getByLabelText('Nombre del mundo'), 'Eana')
     await userEvent.type(dialog.getByLabelText('Descripción'), 'Tierra de dragones')
-    expect(dialog.getByRole<HTMLInputElement>('radio', { name: 'Sin icono' }).checked).toBe(true)
-    await userEvent.click(dialog.getByRole('radio', { name: 'Calavera' }))
+    expect(dialog.getByRole<HTMLInputElement>('radio', { name: 'Sin color' }).checked).toBe(true)
+    expect(dialog.queryByRole('group', { name: 'Icono' })).toBeNull()
     fireEvent.input(dialog.getByLabelText('Color propio'), { target: { value: '#aa3355' } })
     await userEvent.click(dialog.getByRole('button', { name: 'Añadir portada' }))
     const coverDialog = await screen.findByRole('dialog', { name: 'Portada' })

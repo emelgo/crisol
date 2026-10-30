@@ -44,6 +44,8 @@
   overflow: hidden;
   border: 1px solid var(--color-border);
   border-radius: 6px;
+  /* Sin imagen, el hueco con el tinte del color del mundo, como en su tarjeta */
+  background: color-mix(in srgb, var(--world-color, var(--color-raised)) 22%, var(--color-raised));
   cursor: grab;
   touch-action: none;
 }

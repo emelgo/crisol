@@ -54,7 +54,6 @@ export function CoverDialog({
   title,
   cover,
   local,
-  background,
   onSave,
   onClose
 }: {
@@ -62,8 +61,6 @@ export function CoverDialog({
   title: string
   cover: Cover | null
   local?: LocalImage | null
-  /** El color que se ve sin imagen */
-  background: string
   onSave: (cover: Cover | null, local: LocalImage | null) => Promise<unknown>
   onClose: () => void
 }) {
@@ -165,7 +162,6 @@ export function CoverDialog({
           ref={preview}
           type="button"
           className={styles.preview}
-          style={{ background }}
           disabled={!image}
           aria-label={t('cover.framing')}
           onPointerDown={startDrag}

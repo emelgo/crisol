@@ -3,58 +3,11 @@ import { defineAction } from './action.ts'
 
 const worldName = z.string().trim().min(1).max(120)
 
-/** Los iconos que ofrece la tarjeta de un mundo (opcional: sin él, la tarjeta no lleva icono) */
-export const WORLD_ICONS = [
-  'tower',
-  'mountain',
-  'peak',
-  'sword',
-  'swords',
-  'axe',
-  'bow',
-  'shield',
-  'wand',
-  'potion',
-  'scroll',
-  'book',
-  'map',
-  'compass',
-  'key',
-  'hourglass',
-  'crown',
-  'gem',
-  'coins',
-  'skull',
-  'bone',
-  'ghost',
-  'flame',
-  'moon',
-  'sun',
-  'sparkles',
-  'storm',
-  'snowflake',
-  'waves',
-  'ship',
-  'anchor',
-  'tree',
-  'forest',
-  'leaf',
-  'temple',
-  'church',
-  'pyramid',
-  'tent',
-  'bird',
-  'feather',
-  'eye',
-  'dice',
-  'beer',
-  'hammer',
-  'amphora',
-  'masks'
-] as const
+/** Los iconos que ofrecía la tarjeta de un mundo (la interfaz ya no los enseña) */
+export const WORLD_ICONS = ['tower', 'mountain', 'sword', 'ship', 'crown', 'tree', 'book'] as const
 export const worldIcon = z.enum(WORLD_ICONS)
 
-/** Los colores fijos de la portada cuando no hay imagen (también tiñen, sutil, el borde de su tarjeta) */
+/** Los colores fijos de un mundo: tiñen, sutil, el contorno de su tarjeta (y la portada si no hay imagen) */
 export const WORLD_COLORS = ['wine', 'moss', 'slate', 'ochre', 'sea', 'plum'] as const
 /** Uno de los fijos o uno propio (#rrggbb) */
 export const worldColor = z.union([z.enum(WORLD_COLORS), z.string().regex(/^#[0-9a-f]{6}$/i)])
@@ -112,7 +65,7 @@ export const updateWorld = defineAction({
   name: 'updateWorld',
   kind: 'write',
   description:
-    'Cambia cómo se ve un mundo en su tarjeta: nombre, descripción (una línea), icono, color (uno de los fijos o #rrggbb: la portada sin imagen y, sutil, el borde de la tarjeta) o la portada (una imagen del mundo). Solo lo que se pase; null quita el icono, el color o la portada',
+    'Cambia cómo se ve un mundo en su tarjeta: nombre, descripción (una línea), icono, color (uno de los fijos o #rrggbb: tiñe, sutil, el contorno de su tarjeta) o la portada (una imagen del mundo). Solo lo que se pase; null quita el icono, el color o la portada',
   input: z
     .object({
       worldId: z.uuid(),

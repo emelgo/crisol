@@ -1,4 +1,4 @@
-import { type PageCover as Cover, WORLD_COLORS, WORLD_ICONS, type World } from '@crisol/contracts'
+import { type PageCover as Cover, WORLD_COLORS, type World } from '@crisol/contracts'
 import { TRASH_DAYS } from '@crisol/domain'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
@@ -18,9 +18,9 @@ import { Modal } from '../components/modal.tsx'
 import { coverStyle, useWorldFiles } from '../wiki/cover.tsx'
 import styles from './world-card.module.css'
 import { CoverDialog, CoverViewer, type LocalImage } from './world-cover.tsx'
-import { colorHex, ICONS, PRESET_COLORS, rememberColor, rememberedColors } from './world-look.ts'
+import { colorHex, PRESET_COLORS, rememberColor, rememberedColors } from './world-look.ts'
 
-/** El color del mundo para su tarjeta: tiñe, sutil, el borde (--world-color) */
+/** El color del mundo (--world-color): tiñe, sutil, el contorno de su tarjeta y el hueco de la portada si no hay imagen */
 const tint = (color: World['color']): CSSProperties | undefined => {
   const hex = colorHex(color)
   return hex ? ({ '--world-color': hex } as CSSProperties) : undefined
@@ -42,8 +42,6 @@ export function WorldCard({ world }: { world: World }) {
       <CoverHeader
         url={image?.url}
         cover={world.cover}
-        icon={world.icon}
-        color={world.color}
         actions={
           image && (
             <button type="button" aria-haspopup="dialog" onClick={() => setViewing(true)}>
@@ -71,41 +69,28 @@ export function WorldCard({ world }: { world: World }) {
 }
 
 /**
- * La portada (imagen o color) con el icono medio dentro, si lo tiene. Al pasar el ratón se acerca un poco y salen sus
- * acciones (Ver, Cambiar). large: la de la ventana del mundo
+ * La portada: la imagen o, sin ella, un hueco con un tinte oscuro del color del mundo. Al pasar el ratón se acerca un
+ * poco y salen sus acciones (Ver, Cambiar). large: la de la ventana del mundo
  */
 function CoverHeader({
   url,
   cover,
-  icon,
-  color,
   large = false,
   actions
 }: {
   url: string | undefined
   cover: Cover | null
-  icon: World['icon']
-  color: World['color']
   large?: boolean
   actions?: ReactNode
 }) {
-  const Icon = icon ? ICONS[icon] : null
-  const classes = [styles.header, large ? styles.large : '', Icon ? '' : styles.noIcon].filter(Boolean).join(' ')
   return (
-    <div className={classes}>
+    <div className={large ? `${styles.header} ${styles.large}` : styles.header}>
       <div className={styles.frame}>
-        <div className={styles.picture} style={{ background: colorHex(color) ?? PRESET_COLORS.slate }}>
+        <div className={styles.picture}>
           {url && cover && <img src={url} alt="" className={styles.image} style={coverStyle(cover)} />}
         </div>
         {actions && <div className={styles.coverActions}>{actions}</div>}
       </div>
-      {Icon && (
-        <span className={styles.icon} aria-hidden="true">
-          <span>
-            <Icon size={large ? 32 : 28} strokeWidth={1.5} />
-          </span>
-        </span>
-      )}
     </div>
   )
 }
@@ -189,20 +174,18 @@ function WorldSettings({ world }: { world: World }) {
 interface Draft {
   name: string
   description: string
-  icon: World['icon']
   color: World['color']
 }
 
 const draftOf = (world?: World): Draft => ({
   name: world?.name ?? '',
   description: world?.description ?? '',
-  icon: world?.icon ?? null,
   color: world?.color ?? null
 })
 
 /**
  * La ventana de un mundo, la misma para crearlo y para ajustarlo: la portada arriba (con lo que se va eligiendo), el
- * nombre, la descripción, el icono y el color. Al ajustarlo, «Cancelar» (deshace) y «Guardar» solo salen con cambios,
+ * nombre, la descripción y el color. Al ajustarlo, «Cancelar» (deshace) y «Guardar» solo salen con cambios,
  * la portada se guarda en su cuadro y al final va la zona de peligro. Al crearlo, la portada elegida se sube al crear.
  * onClose(gone): gone, si se ha creado o borrado (el botón que la abrió ya no tiene el foco que devolver)
  */
@@ -242,15 +225,12 @@ function WorldDialog({ world, onClose }: { world?: World; onClose: (gone: boolea
   const [changingCover, setChangingCover] = useState(false)
 
   const changed = world
-    ? draft.name.trim() !== world.name ||
-      draft.description.trim() !== world.description ||
-      draft.icon !== world.icon ||
-      draft.color !== world.color
+    ? draft.name.trim() !== world.name || draft.description.trim() !== world.description || draft.color !== world.color
     : true
   const save = useMutation({
     mutationFn: async () => {
       const name = draft.name.trim()
-      const look = { description: draft.description.trim(), icon: draft.icon, color: draft.color }
+      const look = { description: draft.description.trim(), color: draft.color }
       if (world) {
         if (name !== world.name) await api.call('renameWorld', { worldId: world.id, name })
         await api.call('updateWorld', { worldId: world.id, ...look })
@@ -264,7 +244,7 @@ function WorldDialog({ world, onClose }: { world?: World; onClose: (gone: boolea
           )
           chosen = { ...newCover.cover, fileId: stored.id }
         }
-        if (look.description || look.icon || look.color || chosen) {
+        if (look.description || look.color || chosen) {
           await api.call('updateWorld', { worldId: created.id, ...look, ...(chosen ? { cover: chosen } : {}) })
         }
       }
@@ -291,12 +271,16 @@ function WorldDialog({ world, onClose }: { world?: World; onClose: (gone: boolea
 
   const title = world ? t('worlds.settingsOf', { name: world.name }) : t('worlds.newTitle')
   return (
-    <Modal ref={dialog} aria-labelledby={titleId} className={styles.dialog} onClose={() => onClose(gone.current)}>
+    <Modal
+      ref={dialog}
+      aria-labelledby={titleId}
+      className={styles.dialog}
+      style={tint(draft.color)}
+      onClose={() => onClose(gone.current)}
+    >
       <CoverHeader
         url={coverUrl}
         cover={cover}
-        icon={draft.icon}
-        color={draft.color}
         large
         actions={
           <>
@@ -322,7 +306,6 @@ function WorldDialog({ world, onClose }: { world?: World; onClose: (gone: boolea
           title={world ? t('cover.of', { name: world.name }) : t('cover.title')}
           cover={cover}
           local={newCover?.local}
-          background={colorHex(draft.color) ?? PRESET_COLORS.slate}
           onSave={async (chosen, local) => {
             if (!world) {
               setNewCover(chosen && local ? { cover: chosen, local } : null)
@@ -358,7 +341,6 @@ function WorldDialog({ world, onClose }: { world?: World; onClose: (gone: boolea
           maxLength={280}
           onChange={(event) => set({ description: event.currentTarget.value })}
         />
-        <IconChoices value={draft.icon} onChange={(icon) => set({ icon })} />
         <ColorChoices value={draft.color} onChange={(color) => set({ color })} />
         <FormError message={save.error ? errorText(save.error) : null} />
         {changed && (
@@ -395,33 +377,7 @@ function WorldDialog({ world, onClose }: { world?: World; onClose: (gone: boolea
   )
 }
 
-/** El icono: ninguno o uno de la lista */
-function IconChoices({ value, onChange }: { value: World['icon']; onChange: (icon: World['icon']) => void }) {
-  const { t } = useTranslation()
-  const name = useId()
-  return (
-    <fieldset className={styles.choices}>
-      <legend>{t('worlds.icon')}</legend>
-      <label className={styles.iconChoice} title={t('worlds.noIcon')}>
-        <input type="radio" name={name} checked={value === null} onChange={() => onChange(null)} />
-        <CircleOff aria-hidden="true" size={20} strokeWidth={1.5} />
-        <span className={styles.hidden}>{t('worlds.noIcon')}</span>
-      </label>
-      {WORLD_ICONS.map((id) => {
-        const Icon = ICONS[id]
-        return (
-          <label key={id} className={styles.iconChoice} title={t(`worlds.icons.${id}`)}>
-            <input type="radio" name={name} checked={value === id} onChange={() => onChange(id)} />
-            <Icon aria-hidden="true" size={20} strokeWidth={1.5} />
-            <span className={styles.hidden}>{t(`worlds.icons.${id}`)}</span>
-          </label>
-        )
-      })}
-    </fieldset>
-  )
-}
-
-/** El color: uno de los fijos, uno de los propios que ya se crearon o uno nuevo, con el selector de color */
+/** El color: ninguno, uno de los fijos, uno de los propios que ya se crearon o uno nuevo, con el selector de color */
 function ColorChoices({ value, onChange }: { value: World['color']; onChange: (color: World['color']) => void }) {
   const { t } = useTranslation()
   const { account } = useAccounts().useAccount()
@@ -442,6 +398,11 @@ function ColorChoices({ value, onChange }: { value: World['color']; onChange: (c
   return (
     <fieldset className={styles.choices}>
       <legend>{t('worlds.color')}</legend>
+      <label className={styles.colorChoice} title={t('worlds.noColor')}>
+        <input type="radio" name={name} checked={value === null} onChange={() => onChange(null)} />
+        <CircleOff aria-hidden="true" size={18} strokeWidth={1.5} />
+        <span className={styles.hidden}>{t('worlds.noColor')}</span>
+      </label>
       {WORLD_COLORS.map((id) => swatch(id, PRESET_COLORS[id], t(`worlds.colors.${id}`)))}
       {custom.map((hex) => swatch(hex, hex, hex))}
       <label className={`${styles.colorChoice} ${styles.newColor}`} title={t('worlds.customColor')}>
@@ -453,7 +414,6 @@ function ColorChoices({ value, onChange }: { value: World['color']; onChange: (c
         <Plus aria-hidden="true" size={18} />
         <span className={styles.hidden}>{t('worlds.customColor')}</span>
       </label>
-      <small className={styles.hint}>{t('worlds.colorHint')}</small>
     </fieldset>
   )
 }
