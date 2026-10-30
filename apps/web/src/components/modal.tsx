@@ -17,7 +17,7 @@ export function afterExit(element: HTMLElement, done: () => void) {
     done()
   }
   void Promise.allSettled(running.map((animation) => animation.finished)).then(finish)
-  window.setTimeout(finish, 400)
+  window.setTimeout(finish, 500)
 }
 
 /**

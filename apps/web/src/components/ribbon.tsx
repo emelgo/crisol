@@ -127,7 +127,9 @@ export function Ribbon() {
             <WorldPanels worldId={panelsWorld} />
           </div>
         )}
-        <span className={styles.spacer} />
+      </nav>
+      {/* Abajo y fijo: lo de arriba puede crecer o no caber (al entrar en un mundo) sin moverlo */}
+      <div className={styles.foot}>
         {isOwner && (
           <>
             {/* Se abren encima, sin dejar lo que se está viendo */}
@@ -155,10 +157,10 @@ export function Ribbon() {
             </button>
           </>
         )}
-      </nav>
-      <nav className={styles.account} aria-label={t('app.accountNav')}>
-        <AccountMenu variant="ribbon" />
-      </nav>
+        <nav className={styles.account} aria-label={t('app.accountNav')}>
+          <AccountMenu variant="ribbon" />
+        </nav>
+      </div>
     </div>
   )
 }
