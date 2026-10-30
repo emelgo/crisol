@@ -131,30 +131,34 @@ function SwitcherDialog({
   const pages = names.data?.pages ?? []
   const byId = new Map(pages.map((page) => [page.id, page]))
   const where = (path: readonly string[]) => path.slice(0, -1).join(' / ')
-  let choices: Choice[]
-  if (query.startsWith('>')) {
-    const wanted = foldName(query.slice(1))
-    choices = commands.filter((command) => command.kind === 'command' && foldName(command.label).includes(wanted))
-  } else if (query.trim() === '') {
-    // Los recientes: las pestañas abiertas, de la última a la primera
-    choices = [...(preferences.data?.tabs ?? [])]
-      .reverse()
-      .flatMap((tab) => {
-        const page = byId.get(tab.pageId)
-        return page ? [{ kind: 'page' as const, id: page.id, title: page.title, hint: where(page.path) }] : []
-      })
-      .slice(0, 8)
-  } else {
-    choices = [
-      ...searchNames(query, pages, 8).map(({ page, name }) => ({
+  /** Lo que se ofrece para un texto: las órdenes con «>», los recientes si está vacío, o las páginas que se llaman así */
+  const choicesFor = (value: string): Choice[] => {
+    if (value.startsWith('>')) {
+      const wanted = foldName(value.slice(1))
+      return commands.filter((command) => command.kind === 'command' && foldName(command.label).includes(wanted))
+    }
+    if (value.trim() === '') {
+      // Los recientes: las pestañas abiertas, de la última a la primera
+      return [...(preferences.data?.tabs ?? [])]
+        .reverse()
+        .flatMap((tab) => {
+          const page = byId.get(tab.pageId)
+          return page ? [{ kind: 'page' as const, id: page.id, title: page.title, hint: where(page.path) }] : []
+        })
+        .slice(0, 8)
+    }
+    return [
+      ...searchNames(value, pages, 8).map(({ page, name }) => ({
         kind: 'page' as const,
         id: page.id,
         title: page.title,
         hint: name !== page.title ? t('links.aliasOf', { name }) : where(page.path)
       })),
-      { kind: 'all', query: query.trim() }
+      { kind: 'all', query: value.trim() }
     ]
   }
+  // Las órdenes, al momento; las páginas, a los 250 ms de dejar de escribir
+  const choices = choicesFor(text.startsWith('>') ? text : query)
   const current = choices.find((choice) => keyOf(choice) === active) ?? choices[0]
   const optionId = (choice: Choice) => `${listId}-${choices.indexOf(choice)}`
 
@@ -172,7 +176,10 @@ function SwitcherDialog({
       setActive(next ? keyOf(next) : null)
     } else if (event.key === 'Enter') {
       event.preventDefault()
-      if (current) pick(current)
+      // Con lo escrito ahora, aunque la lista aún no se haya puesto al día
+      const fresh = text === query || text.startsWith('>') ? choices : choicesFor(text)
+      const chosen = fresh.find((choice) => keyOf(choice) === active) ?? fresh[0]
+      if (chosen) pick(chosen)
     } else if (event.key === 'Escape') {
       event.preventDefault()
       close()

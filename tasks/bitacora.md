@@ -14,6 +14,10 @@ que queda pendiente de Enrique. Lo que ya está hecho va a `docs/modulos.md` § 
 
 ## Lecciones
 
+- **Ni una prueba suelta mientras corre la e2e completa**: comparte el servidor y la base (el 2026-10-30 una suelta
+  rompió `@fugas` a mitad). Tampoco cambiar de rama: el servidor de cada suite carga el código al arrancar.
+- **En las e2e del editor, esperar a `aria-busy="false"`** antes de escribir: en la CI, lo escrito antes de sincronizar
+  acaba delante de lo que llega.
 - **Nunca dos comprobaciones completas a la vez**: las e2e comparten la base de datos y se pisan (salen fallos
   falsos). Antes de lanzar otra, que acabe la anterior.
 - **El despliegue sale de `origin/main`** en una copia aparte (`scripts/desplegar-staging.sh`): se puede desplegar con
@@ -208,6 +212,12 @@ Revisiones hechas con dos agentes (seguridad del servidor; interfaz con `web-des
   - límites por IP de Caddy (`x-forwarded-for`), no por la del proxy;
   - palabras de búsqueda de 3 a 64 letras;
   - indexar lo de antes sin romper la búsqueda si un documento falla.
+- **Visto en la CI, para vigilar**: en una máquina lenta, al abrir una página lo que se escribe nada más abrirla puede
+  quedar delante de lo que llega del servidor, con un párrafo vacío arriba. TipTap pone los ids al sincronizar y aun
+  así pasa a veces. No se ha visto en local ni en staging. Las e2e ya no dependen de eso; si Enrique lo ve, mirar
+  `editable` hasta `ready` en `editor.tsx`.
+- **Arreglado en el selector**: Intro actúa sobre lo escrito en ese momento, aunque la lista aún no esté al día. Con
+  «>archivos» e Intro rápido creaba una «Página nueva».
 - **Para Enrique** (son de infraestructura o de producto):
   - Chromium en un contenedor aparte, sin secretos y con sandbox (hoy va sin sandbox en el de la app, con el entorno
     limpio);

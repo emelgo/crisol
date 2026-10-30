@@ -22,15 +22,16 @@ async function openPage(page: Page, markdown = '') {
 }
 
 test('los bloques de hoja con «/»: se ven discretos en la vista sencilla y salen en el Markdown', async ({ page }) => {
-  const { pageId } = await openPage(page, '## Guarida\n\nEn la cima.')
-  // Con el texto ya cargado (si no, lo escrito iría delante de lo que llega después)
-  await expect(body(page).getByText('En la cima.')).toBeVisible()
-  // Con el editor ya listo (sincronizado): antes, lo que se escribe puede acabar delante de lo que llega
+  // Una página vacía y todo escrito en orden: así no importa dónde deja el cursor la carga (en la CI, a veces, al
+  // principio, antes de sincronizar)
+  const { pageId } = await openPage(page)
   await expect(body(page).locator('xpath=ancestor::div[@aria-busy][1]')).toHaveAttribute('aria-busy', 'false')
-  // Al final del último párrafo, sin depender de Ctrl+Fin (en la CI a veces deja el cursor al principio)
-  await body(page).getByText('En la cima.').click()
-  await page.keyboard.press('End')
+  await body(page).click()
+  await page.keyboard.type('## Guarida')
   await page.keyboard.press('Enter')
+  await page.keyboard.type('En la cima.')
+  await page.keyboard.press('Enter')
+  await expect(body(page).getByRole('heading', { name: 'Guarida' })).toBeVisible()
   for (const [command, name] of [
     ['salto', 'Salto de página'],
     ['indice', 'Índice']
