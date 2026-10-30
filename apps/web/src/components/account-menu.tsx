@@ -23,6 +23,9 @@ export function AccountMenu({ variant = 'bar' }: { variant?: 'bar' | 'ribbon' })
   const { account, pending } = accounts.useAccount()
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
+  // Cerrado, se queda un momento mientras se va (animado); luego se quita
+  const [shown, setShown] = useState(false)
+  if (open && !shown) setShown(true)
   const root = useRef<HTMLDivElement>(null)
   const trigger = useRef<HTMLButtonElement>(null)
   const panel = useRef<HTMLDivElement>(null)
@@ -61,6 +64,13 @@ export function AccountMenu({ variant = 'bar' }: { variant?: 'bar' | 'ribbon' })
       document.removeEventListener('keydown', onEscape)
     }
   }, [open])
+
+  useEffect(() => {
+    if (open || !shown) return
+    if (typeof panel.current?.getAnimations !== 'function') return setShown(false)
+    const timer = window.setTimeout(() => setShown(false), 400)
+    return () => window.clearTimeout(timer)
+  }, [open, shown])
 
   // Fijo en la pantalla, al lado del botón: así no lo recorta la barra (que se desplaza) ni se sale de la ventana
   useLayoutEffect(() => {
@@ -112,8 +122,17 @@ export function AccountMenu({ variant = 'bar' }: { variant?: 'bar' | 'ribbon' })
           account.name
         )}
       </button>
-      {open && (
-        <div ref={panel} id={panelId} className={styles.panel}>
+      {shown && (
+        <div
+          ref={panel}
+          id={panelId}
+          className={open ? styles.panel : `${styles.panel} ${styles.closing}`}
+          inert={!open}
+          aria-hidden={open ? undefined : true}
+          onAnimationEnd={() => {
+            if (!open) setShown(false)
+          }}
+        >
           <div className={styles.who}>
             <span aria-hidden="true" className={styles.whoAvatar}>
               {initial}

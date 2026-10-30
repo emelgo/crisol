@@ -87,16 +87,28 @@
   color: var(--color-text);
 }
 
-/* Al abrirse, se desliza un poco desde el avatar mientras aparece */
+/* Al abrirse, sale del avatar creciendo, con un pequeño rebote; al cerrarse, vuelve a él encogiendo */
 .panel {
-  animation: despliega 420ms cubic-bezier(0.16, 1, 0.3, 1);
+  animation: despliega 520ms cubic-bezier(0.34, 1.4, 0.64, 1);
   transform-origin: left bottom;
+}
+
+.closing {
+  animation: recoge 260ms cubic-bezier(0.5, 0, 0.75, 0) forwards;
+  pointer-events: none;
 }
 
 @keyframes despliega {
   from {
     opacity: 0;
-    transform: translateX(-28px) scale(0.85);
+    transform: translateX(-40px) scale(0.7);
+  }
+}
+
+@keyframes recoge {
+  to {
+    opacity: 0;
+    transform: translateX(-32px) scale(0.75);
   }
 }
 

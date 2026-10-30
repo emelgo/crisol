@@ -125,7 +125,9 @@ Todo va en la rama `interfaz/pulir-inicio`, en un commit local sin subir. Las no
   recorre, queda en ceniza y se va como humo). Un mundo que desaparece de la lista arde en su sitio aunque la lista
   se ponga al día antes (aviso en tiempo real, la IA, otra pestaña). Al entrar en un mundo, «Mundos» sube a la llama de
   la barra y se funde con ella, que se aviva con chispas; dentro, la llama es la vuelta, y al volver «Mundos» sale de
-  ella. Ajustes pide la IA al abrir el menú de la cuenta.
+  ella. Ajustes pide la IA al abrir el menú de la cuenta. Entrar en un mundo y salir: transiciones de vista
+  (`components/world-transition.ts`; la tarjeta se convierte en la cabecera; la barra va aparte). El menú de la
+  cuenta también se cierra animado.
 - **Archivos comunes de la cuenta** (ADR-0005): migración 0025 (`files.organization_id`, `world_id` opcional, un
   índice de nombre por ámbito); `commonFiles.read`/`write` en la política; `listFiles(worldId)` da los del mundo y
   los comunes, y `listCommonFiles`, solo los comunes; subir con `organizationId`; `![[nombre]]`, portadas y la

@@ -16,6 +16,7 @@ import { Field, FormError } from '../components/field.tsx'
 import { focusAfterRemoving } from '../components/focus.ts'
 import form from '../components/form.module.css'
 import { Modal } from '../components/modal.tsx'
+import { ENTER_WORLD, enterWorld, worldTransition } from '../components/world-transition.ts'
 import { coverStyle, useWorldFiles } from '../wiki/cover.tsx'
 import styles from './world-card.module.css'
 import { CoverDialog, CoverViewer, type LocalImage } from './world-cover.tsx'
@@ -74,7 +75,7 @@ export function WorldCard({
         if (event.animationName.includes('enfria')) setEntering(false)
         if (event.animationName.includes('arde')) burnt.current?.()
       }}
-      style={tint(world.color)}
+      style={{ ...tint(world.color), ...worldTransition(world.id) }}
       data-world={world.id}
     >
       <CoverHeader
@@ -93,7 +94,13 @@ export function WorldCard({
         <CoverViewer url={image.url} label={t('cover.of', { name: world.name })} onClose={() => setViewing(false)} />
       )}
       <div className={styles.body}>
-        <Link to="/mundos/$worldId" params={{ worldId: world.id }} className={styles.name}>
+        <Link
+          to="/mundos/$worldId"
+          params={{ worldId: world.id }}
+          className={styles.name}
+          viewTransition={ENTER_WORLD}
+          onClick={(event) => enterWorld(world.id, event.currentTarget.closest('li'))}
+        >
           {world.name}
         </Link>
         {world.description && <p className={styles.description}>{world.description}</p>}

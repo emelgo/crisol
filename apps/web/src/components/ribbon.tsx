@@ -11,6 +11,7 @@ import { AccountMenu } from './account-menu.tsx'
 import { CrisolMark } from './brand.tsx'
 import styles from './ribbon.module.css'
 import { useWindow } from './window.tsx'
+import { LEAVE_WORLD } from './world-transition.ts'
 
 /** Si la cuenta es propietaria de alguna organización: solo ella ve su historial, su papelera y la IA */
 function useIsOwner() {
@@ -99,6 +100,7 @@ export function Ribbon() {
         <Link
           to="/mundos"
           className={phase === 'merging' ? `${styles.brand} ${styles.cooking}` : styles.brand}
+          {...(inWorld ? { viewTransition: LEAVE_WORLD } : {})}
           aria-label={t('app.name')}
           translate="no"
         >

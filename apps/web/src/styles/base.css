@@ -186,3 +186,68 @@ dialog[open]::backdrop {
     opacity: 0;
   }
 }
+
+/*
+ * Entrar en un mundo y salir de él (transiciones de vista, components/world-transition.ts). Al entrar, Mis mundos se
+ * acerca y se desvanece, como si se pasara a través, y el mundo llega creciendo; la tarjeta pulsada se convierte en su
+ * cabecera. Al salir, al revés. La barra va aparte (barra) y sin la transición: su propia animación se ve tal cual
+ */
+::view-transition-group(barra),
+::view-transition-new(barra) {
+  animation: none;
+}
+
+::view-transition-old(barra) {
+  display: none;
+}
+
+::view-transition-group(mundo-actual) {
+  animation-duration: 620ms;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+html:active-view-transition-type(entrar-mundo)::view-transition-old(root) {
+  animation: atraviesa 460ms cubic-bezier(0.5, 0, 0.75, 0) both;
+}
+
+html:active-view-transition-type(entrar-mundo)::view-transition-new(root) {
+  animation: llega 620ms cubic-bezier(0.16, 1, 0.3, 1) 120ms both;
+}
+
+html:active-view-transition-type(salir-mundo)::view-transition-old(root) {
+  animation: se-aleja 420ms cubic-bezier(0.5, 0, 0.75, 0) both;
+}
+
+html:active-view-transition-type(salir-mundo)::view-transition-new(root) {
+  animation: vuelve 620ms cubic-bezier(0.16, 1, 0.3, 1) 100ms both;
+}
+
+@keyframes atraviesa {
+  to {
+    opacity: 0;
+    transform: scale(1.12);
+    filter: blur(4px);
+  }
+}
+
+@keyframes llega {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+}
+
+@keyframes se-aleja {
+  to {
+    opacity: 0;
+    transform: scale(0.9);
+    filter: blur(3px);
+  }
+}
+
+@keyframes vuelve {
+  from {
+    opacity: 0;
+    transform: scale(1.1);
+  }
+}

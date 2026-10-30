@@ -12,6 +12,7 @@ import styles from '../components/list.module.css'
 import { failed, LoadError } from '../components/load-error.tsx'
 import { PageTitle } from '../components/page-title.tsx'
 import { RenamableItem } from '../components/renamable-item.tsx'
+import { LEAVE_WORLD, worldTransition } from '../components/world-transition.ts'
 
 const route = getRouteApi('/mundos/$worldId')
 
@@ -53,7 +54,12 @@ export function WorldPage() {
   return (
     <section>
       <Banner
-        crumb={<Link to="/mundos">{t('worlds.title')}</Link>}
+        crumb={
+          <Link to="/mundos" viewTransition={LEAVE_WORLD}>
+            {t('worlds.title')}
+          </Link>
+        }
+        style={worldTransition(worldId)}
         title={world.name}
         detail={t(world.role === 'master' ? 'world.asMaster' : 'world.asPlayer')}
         stats={campaigns.data ? [{ label: t('campaigns.title'), value: campaigns.data.campaigns.length }] : []}

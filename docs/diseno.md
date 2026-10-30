@@ -53,6 +53,9 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   barra y se funde con ella, que se aviva soltando chispas: «como que el mundo se está cocinando». Dentro, la llama es
   la vuelta; al volver, «Mundos» sale de la llama, sin fuego. Los iconos del mundo (todos, también los que vengan)
   salen del crisol uno tras otro al entrar y suben a él al volver, antes de que salga «Mundos».
+- **Entrar en un mundo es entrar**: la tarjeta pulsada se convierte en la cabecera del mundo mientras Mis mundos se
+  acerca y se desvanece, como si se pasara a través; al volver, al revés (transiciones de vista del navegador).
+- **El menú de la cuenta sale del avatar** creciendo, con un pequeño rebote, y al cerrarse vuelve a él encogiendo.
 - **Las listas, en el orden en que se crearon**: lo nuevo, al final.
 
 - **La colocación de Ajustes es la referencia**: una columna en el centro, con el título y el contenido alineados.
