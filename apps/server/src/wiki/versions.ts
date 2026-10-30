@@ -105,6 +105,8 @@ export async function applyVersion(
   versionId: string | null
 ) {
   const documents = versionId ? await versionsRepo.versionDocumentsOf(env.db, versionId) : []
+  // Una versión que ya no está (no debería: la purga deja las que nombra el historial) no vacía la página
+  if (versionId && documents.length === 0) return
   const body = documents.find((doc) => doc.kind === 'body')
   const place = { userId: page.userId, worldId: page.worldId }
   await writeDocument(env, { kind: 'body', pageId: page.pageId }, place, () =>

@@ -278,6 +278,8 @@ describe('conector MCP con OAuth', () => {
     const history = (await call<History>('ver_historial', { worldId: world.id })).data
     const operationId = history.entries[0]?.id
     const page = await api<{ id: string }>(cookie, 'createPage', { worldId: world.id, title: 'Lugares' })
+    await api(cookie, 'editPage', { pageId: page.id, body: { mode: 'append', markdown: 'Texto.' } })
+    const { versions } = await api<{ versions: { id: string }[] }>(cookie, 'listPageVersions', { pageId: page.id })
     const cases: Array<[string, Record<string, unknown>, 'read' | 'write' | 'players' | 'delete']> = [
       ['listar_mundos', {}, 'read'],
       ['ver_campana', { campaignId: campaign.id }, 'read'],
@@ -288,6 +290,8 @@ describe('conector MCP con OAuth', () => {
       ['leer_pagina', { pageId: page.id, ids: true }, 'read'],
       ['enlaces_pagina', { pageId: page.id }, 'read'],
       ['enlaces_pagina', { worldId: world.id }, 'read'],
+      ['versiones_pagina', { pageId: page.id }, 'read'],
+      ['restaurar_version', { pageId: page.id, versionId: versions[0]?.id }, 'write'],
       ['crear_mundo', { name: 'Otro' }, 'write'],
       ['crear_paginas', { worldId: world.id, parentId: null, pages: [{ key: 'a', title: 'Nueva' }] }, 'write'],
       ['editar_pagina', { pageId: page.id, body: { mode: 'append', markdown: 'Más.' } }, 'write'],

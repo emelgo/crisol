@@ -27,9 +27,11 @@ describe('herramientas MCP', () => {
       'listar_mundos',
       'mover_pagina',
       'pendientes',
+      'restaurar_version',
       'ver_arbol',
       'ver_campana',
-      'ver_historial'
+      'ver_historial',
+      'versiones_pagina'
     ])
   })
 
