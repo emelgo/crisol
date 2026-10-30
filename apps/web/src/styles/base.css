@@ -285,9 +285,9 @@ html:active-view-transition-type(entrar-mundo)::view-transition-image-pair(mundo
     color-mix(in srgb, var(--color-muted) 55%, transparent),
     transparent 72%
   );
-  filter: url(#humo-retorcido) blur(5px);
+  filter: url(#humo-retorcido) blur(7px);
   opacity: 0;
-  animation: voluta 2400ms cubic-bezier(0.25, 0.6, 0.35, 1) forwards;
+  animation: voluta 3000ms cubic-bezier(0.25, 0.6, 0.35, 1) forwards;
 }
 
 ::view-transition-group(humo),
@@ -308,7 +308,7 @@ html:active-view-transition-type(entrar-mundo)::view-transition-image-pair(mundo
 
   100% {
     opacity: 0;
-    transform: translateY(-150%) scale(1.7, 1.9) rotate(var(--giro, 0deg));
+    transform: translateY(-115%) scale(1.8, 1.7) rotate(var(--giro, 0deg));
   }
 }
 

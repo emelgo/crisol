@@ -46,7 +46,7 @@ export function leaveWorld() {
     height: `${box.height}px`
   })
   // El filtro que las retuerce, que se mueve solo; y las volutas, a lo ancho, cada una a su ritmo
-  layer.innerHTML = `<svg width="0" height="0" style="position:absolute"><filter id="humo-retorcido"><feTurbulence type="fractalNoise" baseFrequency="0.012 0.035" numOctaves="3" seed="7"><animate attributeName="baseFrequency" dur="2.6s" values="0.012 0.035;0.02 0.05" fill="freeze"/></feTurbulence><feDisplacementMap in="SourceGraphic" scale="46"/></filter></svg>${[
+  layer.innerHTML = `<svg width="0" height="0" style="position:absolute"><filter id="humo-retorcido"><feTurbulence type="fractalNoise" baseFrequency="0.012 0.035" numOctaves="3" seed="7"><animate attributeName="baseFrequency" dur="3.2s" values="0.012 0.035;0.02 0.05" fill="freeze"/></feTurbulence><feDisplacementMap in="SourceGraphic" scale="32"/></filter></svg>${[
     8, 21, 34, 47, 60, 73, 86
   ]
     .map(
@@ -55,7 +55,7 @@ export function leaveWorld() {
     )
     .join('')}`
   document.body.append(layer)
-  window.setTimeout(() => layer.remove(), 3200)
+  window.setTimeout(() => layer.remove(), 3800)
 }
 
 /** Las brasas: un calor suave que sube desde abajo y unas chispas que se apagan */
