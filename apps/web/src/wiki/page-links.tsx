@@ -9,22 +9,15 @@ import { Extension, type Node } from '@tiptap/core'
 import { NodeSelection, PluginKey } from '@tiptap/pm/state'
 import { type NodeViewProps, NodeViewWrapper, ReactNodeViewRenderer, ReactRenderer } from '@tiptap/react'
 import { Suggestion, type SuggestionProps } from '@tiptap/suggestion'
-import { createContext, forwardRef, useContext, useEffect, useId, useImperativeHandle, useRef, useState } from 'react'
+import { forwardRef, useContext, useEffect, useId, useImperativeHandle, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
+import { type PageLinks, PageLinksContext, type WorldFile } from './links-context.ts'
 import styles from './page-links.module.css'
 import { LinkPreview } from './preview.tsx'
 import menu from './slash-menu.module.css'
 
-/** Lo que necesitan los enlaces del editor: las páginas del mundo por su nombre, y crear una */
-export interface PageLinks {
-  worldId: string
-  names: readonly NamedPage[]
-  byId: ReadonlyMap<string, NamedPage>
-  create: (title: string) => Promise<string>
-}
-
-export const PageLinksContext = createContext<PageLinks | null>(null)
+export { type PageLinks, PageLinksContext, type WorldFile } from './links-context.ts'
 
 /** Las páginas del mundo con sus nombres: al día con los avisos de páginas (su clave cuelga de ['pages', mundo]) */
 export function usePageLinks(worldId: string): PageLinks {
@@ -34,10 +27,12 @@ export function usePageLinks(worldId: string): PageLinks {
     queryKey: ['pages', worldId, 'names'],
     queryFn: () => api.call('listPageNames', { worldId })
   })
+  const files = useQuery({ queryKey: ['files', worldId], queryFn: () => api.call('listFiles', { worldId }) })
   const names = data?.pages ?? []
   return {
     worldId,
     names,
+    files: files.data?.files ?? [],
     byId: new Map(names.map((page) => [page.id, page])),
     create: async (title) => {
       const created = await api.call('createPage', { worldId, title, parentId: null })
@@ -231,8 +226,11 @@ function PageLinkView({ node, updateAttributes, selected, editor }: NodeViewProp
   )
 }
 
-/** Lo que se elige al escribir `[[`: una página, o crear una con lo escrito */
-type LinkChoice = { kind: 'page'; page: NamedPage; name: string } | { kind: 'create'; title: string }
+/** Lo que se elige al escribir `[[`: una página, o crear una con lo escrito; tras `![[`, también un archivo */
+type LinkChoice =
+  | { kind: 'page'; page: NamedPage; name: string }
+  | { kind: 'create'; title: string }
+  | { kind: 'file'; file: WorldFile }
 
 export interface LinkSuggestOptions {
   /** Las páginas de ahora (cambian mientras el editor sigue abierto) */
@@ -256,9 +254,12 @@ export const LinkSuggest = Extension.create<LinkSuggestOptions>({
         allowSpaces: true,
         allowedPrefixes: null,
         allow: ({ state, range }) => state.doc.resolve(range.from).parent.type.name !== 'codeBlock',
-        items: ({ query }) => {
+        items: ({ query, editor }) => {
           lastQuery = query
           const current = links()
+          // `![[`: el «!» va justo antes de los corchetes
+          const start = editor.state.selection.from - query.length - 2
+          const embedding = start > 1 && editor.state.doc.textBetween(start - 1, start) === '!'
           // «Título#Sección»: se busca por el título; la sección va con el enlace
           const [name = ''] = query.replace(/\]+$/, '').split('#')
           const text = name.trim()
@@ -268,7 +269,13 @@ export const LinkSuggest = Extension.create<LinkSuggestOptions>({
             name: matched
           }))
           const exact = found.some((choice) => choice.kind === 'page' && foldName(choice.name) === foldName(text))
-          return text && !exact ? [...found, { kind: 'create', title: text }] : found
+          const files: LinkChoice[] = embedding
+            ? (current?.files ?? [])
+                .filter((file) => foldName(file.name).includes(foldName(text)))
+                .slice(0, 5)
+                .map((file) => ({ kind: 'file', file }))
+            : []
+          return [...files, ...(text && !exact ? [...found, { kind: 'create', title: text } as const] : found)]
         },
         command: ({ editor, range, props: choice }) => {
           const anchor = lastQuery.replace(/\]+$/, '').split('#').slice(1).join('#').trim() || null
@@ -288,7 +295,16 @@ export const LinkSuggest = Extension.create<LinkSuggestOptions>({
               .run()
             announce(title)
           }
-          if (choice.kind === 'page') insert(choice.page.id, choice.page.title)
+          if (choice.kind === 'file') {
+            editor
+              .chain()
+              .focus()
+              .insertContentAt({ from: range.from - 1, to: range.to }, [
+                { type: 'fileEmbed', attrs: { fileId: choice.file.id, name: choice.file.name } }
+              ])
+              .run()
+            announce(choice.file.name)
+          } else if (choice.kind === 'page') insert(choice.page.id, choice.page.title)
           else
             void links()
               ?.create(choice.title)
@@ -322,7 +338,12 @@ interface ListHandle {
   onKeyDown: (event: KeyboardEvent) => boolean
 }
 
-const keyOf = (choice: LinkChoice) => (choice.kind === 'page' ? choice.page.id : `crear:${choice.title}`)
+const keyOf = (choice: LinkChoice) =>
+  choice.kind === 'page'
+    ? choice.page.id
+    : choice.kind === 'file'
+      ? `archivo:${choice.file.id}`
+      : `crear:${choice.title}`
 
 const LinkList = forwardRef<ListHandle, LinkListProps>(function LinkList({ items, command, editor }, ref) {
   const { t } = useTranslation()
@@ -389,7 +410,12 @@ const LinkList = forwardRef<ListHandle, LinkListProps>(function LinkList({ items
               command(choice)
             }}
           >
-            {choice.kind === 'page' ? (
+            {choice.kind === 'file' ? (
+              <>
+                <span>{choice.file.name}</span>
+                <span className={menu.hint}>{t('links.file')}</span>
+              </>
+            ) : choice.kind === 'page' ? (
               <>
                 <span>{choice.page.title}</span>
                 <span className={menu.hint}>

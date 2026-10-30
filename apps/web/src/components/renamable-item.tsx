@@ -25,13 +25,25 @@ interface Props {
   children?: ReactNode
   /** Lo más largo que puede ser el nombre */
   maxLength?: number
+  /** El aviso al borrar, si no es el de siempre */
+  deleteWarning?: string
 }
 
 /**
  * Un elemento de una lista (mundo, campaña) con su rol y, si se puede, renombrar en el sitio y borrar. Al abrir una
  * confirmación, el foco va a ella; al cerrarla, vuelve al botón que la abrió
  */
-export function RenamableItem({ name, role, onRename, onDelete, link, href, children, maxLength = 120 }: Props) {
+export function RenamableItem({
+  name,
+  role,
+  onRename,
+  onDelete,
+  link,
+  href,
+  children,
+  maxLength = 120,
+  deleteWarning
+}: Props) {
   const { t } = useTranslation()
   const errorText = useErrorText()
   const item = useRef<HTMLLIElement>(null)
@@ -119,7 +131,7 @@ export function RenamableItem({ name, role, onRename, onDelete, link, href, chil
       )}
       {confirmingDelete && (
         <div className={styles.confirm}>
-          <p id={warningId}>{t('list.deleteWarning', { name })}</p>
+          <p id={warningId}>{deleteWarning ?? t('list.deleteWarning', { name })}</p>
           <div className={styles.actions}>
             <BusyButton
               ref={focusOnMount}

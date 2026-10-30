@@ -200,6 +200,8 @@ export const es = {
     pageLinkHint: 'O escribe [[',
     pageEmbed: 'Incrustar página',
     pageEmbedHint: 'O una sección',
+    fileEmbed: 'Imagen o archivo',
+    fileEmbedHint: 'Súbelo; los del mundo, con ![[',
     calloutNote: 'Nota',
     calloutTip: 'Consejo',
     calloutWarning: 'Aviso',
@@ -264,10 +266,30 @@ export const es = {
     linked: 'Enlazada en «{{title}}».',
     notLinked: 'En «{{title}}» ya no se la nombra.'
   },
+  fileEmbed: {
+    of: 'Archivo: {{name}}',
+    enlarge: 'Ver «{{name}}» en grande',
+    close: 'Cerrar',
+    caption: 'Pie de la imagen',
+    captionPlaceholder: 'Pie (opcional)',
+    alt: 'Texto alternativo',
+    altHint: 'Lo que se ve en la imagen, para quien no la ve',
+    width: 'Ancho',
+    widths: { auto: 'Ajustado', small: 'Pequeña', medium: 'Mediana', large: 'Grande' },
+    open: 'Abrir',
+    page: 'página {{page}}',
+    pending: '«{{name}}» aún no está subido',
+    upload: 'Subirlo',
+    trashed: '«{{name}}» está en la papelera',
+    uploading: 'Subiendo «{{name}}»…',
+    uploaded: '«{{name}}» subido',
+    failed: 'No se pudo subir «{{name}}»: {{error}}'
+  },
   links: {
     menu: 'Páginas',
     none: 'Escribe para buscar una página.',
     create: 'Crear página «{{title}}»',
+    file: 'archivo',
     aliasOf: 'por {{name}}',
     missing: '{{title}}: por crear, pulsa para crearla',
     broken: '{{title}}: en la papelera',
@@ -379,7 +401,11 @@ export const es = {
     groups: { image: 'Imágenes', pdf: 'PDF', other: 'Otros' },
     replace: 'Reemplazar',
     replaceButton: 'Reemplazar {{name}}',
-    replaced: '{{name}} reemplazado'
+    replaced: '{{name}} reemplazado',
+    deleteUsed_one:
+      '¿Borrar {{name}}? Lo usa 1 página: allí se verá que está en la papelera, de donde se puede restaurar durante 30 días.',
+    deleteUsed_other:
+      '¿Borrar {{name}}? Lo usan {{count}} páginas: allí se verá que está en la papelera, de donde se puede restaurar durante 30 días.'
   },
   tags: {
     title: 'Etiquetas',

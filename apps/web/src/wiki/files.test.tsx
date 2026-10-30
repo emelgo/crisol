@@ -17,7 +17,7 @@ const filesApi = () =>
     worlds: [WORLD],
     files: [
       { worldId: WORLD.id, name: 'Mapa de Eana.png', kind: 'image', size: 2.5 * 1024 * 1024 },
-      { worldId: WORLD.id, name: 'Bestiario.pdf', kind: 'pdf', mime: 'application/pdf', size: 300 * 1024 },
+      { worldId: WORLD.id, name: 'Bestiario.pdf', kind: 'pdf', mime: 'application/pdf', size: 300 * 1024, usedBy: 2 },
       { worldId: WORLD.id, name: 'Notas.txt', kind: 'other', mime: 'application/octet-stream', size: 512 }
     ]
   })
@@ -88,6 +88,8 @@ describe('los archivos del mundo', () => {
     await waitFor(() => expect(api.calls).toContain('uploadFile'))
 
     await userEvent.click(screen.getByRole('button', { name: 'Borrar Bestiario.pdf' }))
+    // Lo usan dos páginas: se avisa
+    expect(screen.getByText(/Lo usan 2 páginas/)).toBeDefined()
     await userEvent.click(screen.getByRole('button', { name: 'Borrar' }))
     await waitFor(() => expect(screen.queryByRole('link', { name: 'Bestiario.pdf' })).toBeNull())
     const trash = await api.client.call('listTrash', { worldId: WORLD.id })

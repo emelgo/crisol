@@ -10,6 +10,7 @@ import { useTranslation } from 'react-i18next'
 import callout from './callout.module.css'
 import styles from './content.module.css'
 import editor from './editor.module.css'
+import { FileEmbedBlock } from './file-embed.tsx'
 import separate from './separate.module.css'
 
 type Marks = NonNullable<JSONContent['marks']>
@@ -136,6 +137,8 @@ function Block({ node, worldId }: { node: JSONContent; worldId: string }): React
       )
     case 'pageEmbed':
       return <EmbeddedFrame node={node} worldId={worldId} />
+    case 'fileEmbed':
+      return <FileEmbedBlock node={node} />
     default:
       return null
   }

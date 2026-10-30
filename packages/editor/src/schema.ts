@@ -11,6 +11,7 @@ import { BlockIds } from './ids.ts'
 import { isExternalUrl } from './links.ts'
 import { Box } from './nodes/box.ts'
 import { Callout } from './nodes/callout.ts'
+import { FileEmbed } from './nodes/file-embed.ts'
 import { PageEmbed } from './nodes/page-embed.ts'
 import { PageLink } from './nodes/page-link.ts'
 import { HiddenNote, Secret } from './nodes/separate.ts'
@@ -68,6 +69,7 @@ export function editorExtensions(options: EditorOptions = {}): Extensions {
     Box,
     view(PageLink),
     view(PageEmbed),
+    view(FileEmbed),
     ...(nested ? [] : [view(Secret), view(HiddenNote)]),
     BlockIds
   ]

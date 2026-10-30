@@ -79,7 +79,10 @@ test('propiedades, icono y etiquetas: se guardan, siguen al recargar y cuentan e
   await editor.getByLabel('Tipo de la propiedad 2').selectOption({ label: 'Páginas' })
   await editor.getByLabel('Valor de la propiedad 2').fill('Costa Gris')
   await expect(editor.getByRole('button', { name: 'Quitar Costa Gris' })).toBeVisible()
+  // Guardado antes de recargar (si no, la recarga puede cortar la petición)
+  const saved = page.waitForResponse('**/api/actions/setPageProperties')
   await editor.getByRole('button', { name: 'Guardar' }).click()
+  await saved
 
   await page.reload()
   const properties = page.getByRole('region', { name: 'Propiedades' })

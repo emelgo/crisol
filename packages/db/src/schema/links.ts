@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm'
 import { index, pgTable, text, uuid } from 'drizzle-orm/pg-core'
 import { documents } from './documents.ts'
+import { files } from './files.ts'
 import { pages } from './pages.ts'
 import { worlds } from './worlds.ts'
 
@@ -33,5 +34,33 @@ export const pageLinks = pgTable(
     index().on(t.sourceDocumentId),
     index().on(t.targetPageId),
     index('page_links_unresolved').on(t.worldId, t.targetKey).where(sql`${t.targetPageId} is null`)
+  ]
+)
+
+/**
+ * Los archivos que usa el texto de la wiki (`![[mapa.png]]`): como page_links, se rehacen con cada guardado. Sin
+ * archivo, está sin resolver por su nombre (name_key, sin mayúsculas): se resuelve al subir uno que se llame así
+ */
+export const fileEmbeds = pgTable(
+  'file_embeds',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    worldId: uuid()
+      .notNull()
+      .references(() => worlds.id, { onDelete: 'cascade' }),
+    sourcePageId: uuid()
+      .notNull()
+      .references(() => pages.id, { onDelete: 'cascade' }),
+    sourceDocumentId: uuid()
+      .notNull()
+      .references(() => documents.id, { onDelete: 'cascade' }),
+    fileId: uuid().references(() => files.id, { onDelete: 'set null' }),
+    name: text().notNull(),
+    nameKey: text().notNull()
+  },
+  (t) => [
+    index().on(t.sourceDocumentId),
+    index().on(t.fileId),
+    index('file_embeds_unresolved').on(t.worldId, t.nameKey).where(sql`${t.fileId} is null`)
   ]
 )

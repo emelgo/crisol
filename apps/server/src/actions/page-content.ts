@@ -21,6 +21,7 @@ import {
 import type { JSONContent } from '@tiptap/core'
 import { pagesChanged } from '../realtime/events.ts'
 import { readDocument, stateOf, writeDocument } from '../wiki/content.ts'
+import { fileNames, worldFiles } from '../wiki/file-embeds.ts'
 import { linkName, linksOfNewPages, resolveIncoming, resolvePending, worldNames } from '../wiki/links.ts'
 import { propertiesOf } from '../wiki/properties.ts'
 import { snapshotPage, versionOf } from '../wiki/versions.ts'
@@ -158,6 +159,7 @@ export const pageContentActions = [
       body,
       separate: (documentId) => contents.get(documentId) ?? null,
       pageTitle: (id) => nameOf(id) || titles.get(id) || id,
+      fileName: await fileNames(ctx, wiki.worldId),
       ids: ids ?? false
     })
     return { page: view, markdown }
@@ -190,7 +192,8 @@ export const pageContentActions = [
       }
     })
     const names = [...(await worldNames(ctx, wiki.worldId)), ...batch]
-    const links = (json: JSONContent) => withoutBatch(resolveIncoming(json, names))
+    const files = await worldFiles(ctx, wiki.worldId)
+    const links = (json: JSONContent) => withoutBatch(resolveIncoming(json, names, files))
     const prepared = ordered.map((page) => {
       const read = reads.get(page.key) as ReadPage
       const documents = new Map(read.separates.map((separate) => [separate.id, randomUUID()]))
@@ -297,6 +300,7 @@ export const pageContentActions = [
         throw error
       }
       const names = await worldNames(ctx, wiki.worldId)
+      const files = await worldFiles(ctx, wiki.worldId)
       // Cada secreto: el que ya estaba (mismo id de bloque, de esta página) cambia su documento; uno nuevo, se crea
       const existing = separatesIn(current)
       const own = new Set(
@@ -305,7 +309,7 @@ export const pageContentActions = [
       const documents = new Map<string, string>()
       for (const separate of read.separates) {
         const before = existing.get(separate.id)
-        const content = separateDoc(separate.content.map((block) => resolveIncoming(block, names)))
+        const content = separateDoc(separate.content.map((block) => resolveIncoming(block, names, files)))
         if (before?.documentId && before.kind === separate.kind && own.has(before.documentId)) {
           await writeDocument(
             ctx,
@@ -325,7 +329,7 @@ export const pageContentActions = [
           documents.set(separate.id, documentId)
         }
       }
-      incoming = withDocuments(resolveIncoming(read.body, names), documents).content ?? []
+      incoming = withDocuments(resolveIncoming(read.body, names, files), documents).content ?? []
     }
 
     // Lo que queda en el historial: título, icono y propiedades se pueden deshacer; el cuerpo, con las versiones

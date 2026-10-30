@@ -19,6 +19,7 @@ describe('el esquema del editor', () => {
         'callout',
         'codeBlock',
         'doc',
+        'fileEmbed',
         'hardBreak',
         'heading',
         'horizontalRule',

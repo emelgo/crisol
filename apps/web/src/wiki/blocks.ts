@@ -29,6 +29,8 @@ export interface BlockChoice {
 export interface BlockContext {
   /** Hace secreto (o nota oculta) lo elegido, con su documento nuevo */
   makeSeparate: (editor: Editor, kind: SeparateKind) => Promise<void>
+  /** Elige un archivo del equipo, lo sube y lo pone donde está el cursor */
+  pickFile?: (editor: Editor) => void
 }
 
 const callout = (kind: CalloutKind, label: BlockText, hint: BlockText, keywords: string): BlockChoice => ({
@@ -160,6 +162,18 @@ export const BLOCKS: readonly BlockChoice[] = [
     convert: false,
     run: (editor) => {
       editor.chain().focus().insertContent('![[').run()
+    }
+  },
+  // Una imagen o un archivo: uno del equipo (se sube); los del mundo, con `![[`
+  {
+    id: 'fileEmbed',
+    group: 'wiki',
+    label: 'fileEmbed',
+    hint: 'fileEmbedHint',
+    keywords: 'imagen foto archivo pdf subir',
+    convert: false,
+    run: (editor, context) => {
+      context.pickFile?.(editor)
     }
   },
   callout('note', 'calloutNote', 'calloutHint', 'nota'),

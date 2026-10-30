@@ -2,7 +2,6 @@
  * Los archivos del mundo: subirlos (con botón, varios o una carpeta, o arrastrándolos), con su progreso, y la lista por
  * tipo, con renombrar, reemplazar y mandar a la papelera. Las carpetas de lo que se sube no cuentan: se ordenan por tipo
  */
-import type { FileView } from '@crisol/contracts'
 import { MAX_FILE_BYTES } from '@crisol/domain'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getRouteApi } from '@tanstack/react-router'
@@ -20,6 +19,7 @@ import { failed, LoadError } from '../components/load-error.tsx'
 import { PageTitle } from '../components/page-title.tsx'
 import { RenamableItem } from '../components/renamable-item.tsx'
 import styles from './files.module.css'
+import type { WorldFile } from './links-context.ts'
 import { WikiLayout } from './wiki.tsx'
 
 const route = getRouteApi('/mundos/$worldId/archivos')
@@ -248,7 +248,7 @@ function UploadList({ uploads, onClear }: { uploads: Upload[]; onClear: () => vo
   )
 }
 
-function FileGroup({ kind, files }: { kind: (typeof KINDS)[number]; files: FileView[] }) {
+function FileGroup({ kind, files }: { kind: (typeof KINDS)[number]; files: WorldFile[] }) {
   const { t } = useTranslation()
   const headingId = useId()
   if (files.length === 0) return null
@@ -272,8 +272,8 @@ const sizeText = (bytes: number, locale: string) => {
   return new Intl.NumberFormat(locale, { style: 'unit', unit, maximumFractionDigits: 1 }).format(value)
 }
 
-function FileItem({ file }: { file: FileView }) {
-  const { i18n } = useTranslation()
+function FileItem({ file }: { file: WorldFile }) {
+  const { t, i18n } = useTranslation()
   const api = useApi()
   const queryClient = useQueryClient()
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['files', file.worldId] })
@@ -283,6 +283,7 @@ function FileItem({ file }: { file: FileView }) {
       role={sizeText(file.size, i18n.language)}
       href={file.url}
       maxLength={200}
+      deleteWarning={file.usedBy > 0 ? t('files.deleteUsed', { name: file.name, count: file.usedBy }) : undefined}
       onRename={async (name) => {
         await api.call('renameFile', { fileId: file.id, name })
         await refresh()
@@ -298,7 +299,7 @@ function FileItem({ file }: { file: FileView }) {
 }
 
 /** Reemplazar: otro archivo con el mismo nombre (las páginas que lo usan ven el nuevo) */
-function ReplaceButton({ file, onReplaced }: { file: FileView; onReplaced: () => Promise<unknown> }) {
+function ReplaceButton({ file, onReplaced }: { file: WorldFile; onReplaced: () => Promise<unknown> }) {
   const { t } = useTranslation()
   const api = useApi()
   const errorText = useErrorText()

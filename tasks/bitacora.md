@@ -41,26 +41,20 @@ Hay que contárselo al final, con lo que tenga que probar o revisar:
 
 Rama `wiki/tarea-19-archivos-en-paginas` (sobre main, tras la 18). En dos porciones, cada una con su PR:
 
-**19a — imagen y archivo en el texto**
+**19a — imagen y archivo en el texto** (hecha, rama `wiki/tarea-19-archivos-en-paginas`, migración 0016)
 
-- Nodo `fileEmbed` en `packages/editor` (bloque, átomo): `fileId` (null si no se ha resuelto), `name`, `width`
-  (número o null), `alt`, `caption` y `page` (para un PDF).
-  - Markdown: `![[nombre.ext|texto alternativo|300]]`; cada parte tras `|` es el ancho si es un número y si no, el
-    texto alternativo. `#page=12` para un PDF. El pie, en la línea siguiente en cursiva (`*El pie*`).
-  - Es un archivo (y no una página) si el nombre acaba en una extensión de la lista (imágenes, pdf, documentos, audio,
-    vídeo, comprimidos). `.md` no: en Obsidian es una nota.
-- **Tabla `file_embeds`** (sin historial, como `page_links`): de qué página y documento sale, `file_id` (null sin
-  resolver), el nombre y su clave. Se rehace con cada guardado. De ella salen:
-  - el aviso al borrar un archivo: «Lo usan N páginas»;
-  - resolver solos los que esperaban a ese nombre al subir, renombrar o restaurar un archivo (en el texto también,
-    con `writeDocument`, como `resolvePending`).
-- Lo que escribe Claude: `resolveIncoming` también pone el `fileId` por nombre.
-- La web pinta el nombre de ahora (de `listFiles`, por `fileId`): renombrar no rompe nada. Sin archivo: «por subir».
-- **Web**: vista de React del nodo. Imagen con su ancho (asas o un campo), pie editable, texto alternativo y caja de luz
-  (un `dialog`). Otro archivo: una tarjeta con nombre, tamaño y «Abrir». Un PDF, de momento, tarjeta con «Abrir».
-- Pegar o arrastrar una imagen en el editor la sube (`api.uploadFile`) y pone el bloque. Menú «/»: «Imagen» y
-  «Archivo», que eligen de los del mundo o suben uno.
-- Exportar: los archivos usados (o todos, si se exporta el mundo) en `_archivos/`.
+- Nodo `fileEmbed` (`packages/editor/src/nodes/file-embed.ts`): `fileId`, `name`, `width`, `page`, `alt` y `caption`.
+  Markdown `![[mapa.png|alt|300]]`, `#page=12` y el pie en la línea siguiente en cursiva. Es archivo por la extensión
+  (`isFileName`); `pageEmbed` deja pasar esos nombres.
+- `file_embeds` (sin historial) y `apps/server/src/wiki/file-embeds.ts`: se rehace con cada guardado (en
+  `linksOfStored` y `linksOfNewPages`), y al subir, renombrar o restaurar se resuelve lo que esperaba ese nombre
+  (`resolvePendingFiles`). `resolveIncoming` pone el `fileId` a lo que escribe Claude. `readPage` y exportar escriben el
+  nombre de ahora (`fileName` en `pageToMarkdown`).
+- `listFiles` lleva `usedBy` (páginas fuera de la papelera): el aviso al borrar «Lo usan N páginas».
+- Los nombres de archivo no llevan `[ ] | # ^` (rompen `![[…]]`): al subir se cambian por «-».
+- Web: `file-embed.tsx` (vista, `FileDrop` para pegar y soltar), «Imagen o archivo» en «/», `![[` propone archivos,
+  «Subirlo» en un archivo que aún no está. El contexto de enlaces pasó a `links-context.ts` (había un ciclo).
+- Un PDF, de momento, es una tarjeta con «Abrir» (`#page` lo entiende el visor del navegador).
 
 **19b — visor de PDF y portada**
 
@@ -84,7 +78,7 @@ Rama `wiki/tarea-19-archivos-en-paginas` (sobre main, tras la 18). En dos porcio
   arregló avanzando hasta que el enlace queda elegido.
 - **16** (PR #59, en staging, migración 0014): sesiones de edición, versiones y deshacer hacia delante.
 - **17** (PR #60, en staging): panel de versiones, restaurar, purga y MCP.
-- **18** (rama `wiki/tarea-18-archivos`, migración 0015): archivos del mundo. Bytes en disco tras `Storage`
+- **18** (PR #61, en staging, migración 0015): archivos del mundo. Bytes en disco tras `Storage`
   (`DATA_DIR/archivos`, volumen «archivos» en staging); subir en crudo con XHR y progreso; el tipo por los primeros
   bytes (`sniff` en `@crisol/domain`); `GET /api/files/:id` con sesión, ETag, Range y CSP `sandbox` para SVG; papelera y
   purga (la fila a los 30 días; los bytes cuando ni el historial los nombra, y nunca los de menos de un día).
