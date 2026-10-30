@@ -50,6 +50,17 @@ export function stateOf(json: JSONContent, nested = false): Uint8Array {
   return state
 }
 
+/** Lo que hay en un documento a partir de su estado guardado, salvo que esté abierto: entonces, el vivo */
+export function documentJson(env: ActionEnv, ref: DocumentRef, stored: Uint8Array | null): JSONContent {
+  const live = env.collab?.hocuspocus.documents.get(nameOf(ref))
+  if (live) return fragmentJson(live, schemaOf(ref))
+  const doc = new Y.Doc()
+  if (stored) Y.applyUpdate(doc, stored)
+  const json = fragmentJson(doc, schemaOf(ref))
+  doc.destroy()
+  return json
+}
+
 async function storedState(env: ActionEnv, ref: DocumentRef) {
   const stored =
     ref.kind === 'body'
@@ -60,14 +71,8 @@ async function storedState(env: ActionEnv, ref: DocumentRef) {
 
 /** Lo que hay ahora en un documento: el vivo si está abierto; si no, el guardado */
 export async function readDocument(env: ActionEnv, ref: DocumentRef): Promise<JSONContent> {
-  const live = env.collab?.hocuspocus.documents.get(nameOf(ref))
-  if (live) return fragmentJson(live, schemaOf(ref))
-  const doc = new Y.Doc()
-  const state = await storedState(env, ref)
-  if (state) Y.applyUpdate(doc, state)
-  const json = fragmentJson(doc, schemaOf(ref))
-  doc.destroy()
-  return json
+  const live = env.collab?.hocuspocus.documents.has(nameOf(ref))
+  return documentJson(env, ref, live ? null : await storedState(env, ref))
 }
 
 /** Escribe la diferencia justa entre lo que hay y lo nuevo (así Yjs la fusiona con lo que escriban otros a la vez) */

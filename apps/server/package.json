@@ -37,6 +37,7 @@
     "bullmq": "catalog:",
     "drizzle-orm": "catalog:",
     "fastify": "catalog:",
+    "fflate": "catalog:",
     "ioredis": "catalog:",
     "y-protocols": "catalog:",
     "yjs": "catalog:",

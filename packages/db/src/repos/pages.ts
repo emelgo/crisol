@@ -328,3 +328,12 @@ export function createPagesWithBodies(
     return created
   })
 }
+
+/** Todas las páginas del mundo fuera de la papelera, en su orden (para exportar) */
+export function worldPages(db: Database, worldId: string) {
+  return db
+    .select({ id: pages.id, parentId: pages.parentId, title: pages.title, properties: pages.properties })
+    .from(pages)
+    .where(and(eq(pages.worldId, worldId), isNull(pages.deletedAt)))
+    .orderBy(...byPosition)
+}

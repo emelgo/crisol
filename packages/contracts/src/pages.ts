@@ -325,3 +325,15 @@ export const editPage = defineAction({
       .describe('Si esperó la aprobación del máster y el cuerpo cambió entre medias: se aplicó sobre lo de ahora')
   })
 })
+
+/**
+ * Qué exportar en Markdown: la wiki entera de un mundo, o una página (con sus subpáginas, si se pide). No es una acción:
+ * va por POST /api/export, que contesta con el .zip
+ */
+export const exportInput = z.object({
+  worldId: z.uuid(),
+  pageId: z.uuid().nullable().optional(),
+  children: z.boolean().optional()
+})
+
+export type ExportInput = z.infer<typeof exportInput>
