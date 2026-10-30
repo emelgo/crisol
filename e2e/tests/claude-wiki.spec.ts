@@ -44,7 +44,7 @@ test('Claude cambia una sección de la página abierta: se ve sin recargar, se r
   await expect(body(page).getByText('El faro.')).toHaveCount(0)
   await expect(body(page).getByText('Los Muelles.')).toBeVisible()
   await expect(body(page).locator('[class*="aiFlash"]')).toHaveCount(1)
-  await expect(page.getByRole('status').getByText('Claude ha cambiado la página.')).toBeAttached()
+  await expect(page.getByRole('status').getByText('La IA ha cambiado la página.')).toBeAttached()
 
   // Varias páginas de una vez, con un secreto: salen en el árbol sin recargar
   const created = await claude.call('crear_paginas', {

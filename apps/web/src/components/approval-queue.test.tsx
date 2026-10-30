@@ -43,7 +43,7 @@ const renderAt = (path: string, approvals: Approval[] = []) => {
   return { api, realtime }
 }
 
-const queue = () => screen.queryByRole('heading', { name: 'Claude espera tu aprobación' })
+const queue = () => screen.queryByRole('heading', { name: 'La IA espera tu aprobación' })
 
 describe('la cola de aprobación', () => {
   it('sin nada pendiente, no se ve ni es una región', async () => {
@@ -58,11 +58,11 @@ describe('la cola de aprobación', () => {
     await screen.findByRole('heading', { level: 1, name: 'Mis mundos' })
     api.approvals.push(request())
     act(() => realtime.emit({ type: 'changed', what: 'approvals' }))
-    expect(await screen.findByRole('heading', { name: 'Claude espera tu aprobación' })).toBeDefined()
-    expect(inMain().getByText('Claude quiere generar un enlace nuevo para La Marca')).toBeDefined()
-    expect(announced()).toBe('Claude quiere generar un enlace nuevo para La Marca')
+    expect(await screen.findByRole('heading', { name: 'La IA espera tu aprobación' })).toBeDefined()
+    expect(inMain().getByText('La IA quiere generar un enlace nuevo para La Marca')).toBeDefined()
+    expect(announced()).toBe('La IA quiere generar un enlace nuevo para La Marca')
     // Una región con nombre, pero no viva: se leería entera, con sus botones
-    const region = screen.getByRole('region', { name: 'Claude espera tu aprobación' })
+    const region = screen.getByRole('region', { name: 'La IA espera tu aprobación' })
     expect(region.closest('[aria-live]')).toBeNull()
     await userEvent.click(screen.getByText('Detalle'))
     expect(screen.getByText('Herramienta: enlace_invitacion')).toBeDefined()
@@ -100,7 +100,7 @@ describe('la cola de aprobación', () => {
     api.approvals.push(request())
     act(() => realtime.emit({ type: 'changed', what: 'approvals' }))
     act(release)
-    expect(await screen.findByRole('heading', { name: 'Claude espera tu aprobación' })).toBeDefined()
+    expect(await screen.findByRole('heading', { name: 'La IA espera tu aprobación' })).toBeDefined()
   })
 
   it('aprobar: se hace, lo dice y la cola desaparece', async () => {
@@ -129,7 +129,7 @@ describe('la cola de aprobación', () => {
         details: { operation: { action: 'createCampaign', details: { name: 'La Marca', world: 'Eana' } } }
       })
     ])
-    expect(await screen.findByText('Claude quiere deshacer: creó la campaña «La Marca» en Eana')).toBeDefined()
+    expect(await screen.findByText('La IA quiere deshacer: creó la campaña «La Marca» en Eana')).toBeDefined()
   })
 
   it('si ya se decidió en otra pestaña, la cola se pone al día', async () => {

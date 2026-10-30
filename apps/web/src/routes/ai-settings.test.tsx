@@ -104,7 +104,7 @@ describe('los ajustes de IA', () => {
       expect.stringMatching(/^Hecho: generar un enlace nuevo para La Marca.*enlace_invitacion$/),
       expect.stringMatching(/^No se pudo generar un enlace nuevo para La Marca: Ya no existe/),
       expect.stringMatching(/^Rechazado: crear el mundo «Otro»/),
-      expect.stringMatching(/^Claude quiere generar un enlace nuevo para La Marca \(caducado\)/)
+      expect.stringMatching(/^La IA quiere generar un enlace nuevo para La Marca \(caducado\)/)
     ])
   })
 

@@ -40,8 +40,10 @@ del módulo 1.
 - [x] **4. El editor y las pestañas.** La barra de encima del texto (secreto, nota oculta, bloque y buscar en la
   página) pasa a una línea fina, sin cajas y con iconos. No se quita: es el camino con el teclado, y para quien no
   conoce el menú «/». Las pestañas, en una tira fina de lado a lado; «Añadir propiedades», discreto.
-- [ ] **5. La IA.** Los textos dicen «IA». Hay un panel de la IA en la barra, con lo que espera aprobación, el modo y
-  el conector, en lugar de la cola encima de cada página. En la página se marca lo que la IA quiere añadir o quitar.
+- [x] **5. La IA.** La interfaz dice «IA», no «Claude»: aprobaciones, historial, versiones, conectar y avisos. En la
+  barra, el número de peticiones que esperan tu aprobación sobre el icono de la IA. **Queda para pulir**: llevar la
+  cola de peticiones a un panel de la IA, en vez de encima de cada página, y marcar en la página lo que la IA quiere
+  añadir o quitar antes de aprobarlo.
 - [ ] **6. Historial y papelera.** El aspecto nuevo, y un aviso claro cuando no se puede deshacer porque alguien
   escribió después, con un enlace a las versiones. Va con el punto 7 de sus pruebas.
 - [ ] **7. Mis mundos.** Tarjetas con portada (imagen o color), icono y descripción, y un botón de ajustes en cada una.

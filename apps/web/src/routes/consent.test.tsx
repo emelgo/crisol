@@ -87,7 +87,7 @@ describe('consentimiento OAuth', () => {
 
   it('quien no es propietario no puede permitirlo (módulo 0)', async () => {
     renderConsent('member')
-    expect((await screen.findByRole('alert')).textContent).toBe('De momento solo el propietario puede conectar Claude.')
+    expect((await screen.findByRole('alert')).textContent).toBe('De momento solo el propietario puede conectar una IA.')
     expect(screen.queryByRole('button', { name: 'Permitir' })).toBeNull()
     expect(screen.getByRole('button', { name: 'No permitir' })).toBeDefined()
   })

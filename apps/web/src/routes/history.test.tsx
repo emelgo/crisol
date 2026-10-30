@@ -85,7 +85,7 @@ describe('el historial', () => {
     expect(lines()).toEqual([
       expect.stringMatching(/^Enrique expulsó a Pepe de La Marca.*29 oct 2026.*· web/),
       expect.stringMatching(/^Enrique cerró las invitaciones de La Marca/),
-      expect.stringMatching(/^Enrique creó la campaña «La Marca» en Eana.*· Claude \(crear_campana\)/),
+      expect.stringMatching(/^Enrique creó la campaña «La Marca» en Eana.*· IA \(crear_campana\)/),
       expect.stringMatching(/^Enrique renombró el mundo «Eana» a «Eana \(Fateforge\)»/),
       expect.stringMatching(/^Pepe entró en La Marca/),
       expect.stringMatching(/^Crisol creó la organización «Fateforge».*Crisol$/),
