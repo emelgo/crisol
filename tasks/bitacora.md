@@ -37,7 +37,7 @@ Hay que contárselo al final, con lo que tenga que probar o revisar:
   (`https://neo.crisol.144-91-122-245.sslip.io/mcp`), con su cuenta de propietario. Después prueba crear_paginas con
   secretos y editar_pagina sobre una página que tenga abierta.
 
-## Tarea en curso: 19, archivos en las páginas
+## Tarea en curso: 19, archivos en las páginas (19a en PR #62, 19b hecha)
 
 Rama `wiki/tarea-19-archivos-en-paginas` (sobre main, tras la 18). En dos porciones, cada una con su PR:
 
@@ -56,11 +56,20 @@ Rama `wiki/tarea-19-archivos-en-paginas` (sobre main, tras la 18). En dos porcio
   «Subirlo» en un archivo que aún no está. El contexto de enlaces pasó a `links-context.ts` (había un ciclo).
 - Un PDF, de momento, es una tarjeta con «Abrir» (`#page` lo entiende el visor del navegador).
 
-**19b — visor de PDF y portada**
+**19b — visor de PDF, portada y `_archivos/`** (hecha, rama `wiki/tarea-19b-pdf-y-portada`, migración 0017)
 
-- `pdfjs-dist` (Apache-2.0; está en el plan), cargado con `import()` al abrir el visor; antes enseña el tamaño.
-  Va a una página y abre `#page=12`. Pide los bytes con Range (el servidor ya lo da).
-- La portada de la página, con su encuadre (columna en `pages`: migración 0017 o la que toque).
+- `pdfjs-dist` 6.4.299 (Apache-2.0) en el catálogo; `@napi-rs/canvas` (su opcional, solo para Node) va en
+  `ignoredOptionalDependencies`. `apps/web/src/wiki/pdf-viewer.tsx`: enseña nombre y tamaño; pdf.js y su worker se
+  piden con `import()` al pulsar «Ver aquí» (trozo aparte de 430 kB); `disableAutoFetch` y Range. Anterior, página N
+  de M y siguiente; abre por `#page`.
+- **Portada**: `pages.cover` (jsonb `{ fileId, x, y }`), en `updatePage` (`BAD_COVER` si no es una imagen del mundo).
+  Cuenta como uso del archivo (`fileUses` y `filesUsedBy` miran también las portadas). Web `cover.tsx`: la franja de
+  cabecera con `object-position`, y «Portada» con elegir de las del mundo, subir una, encuadre con dos deslizadores
+  (se guarda al soltar) y quitar. La vista previa la enseña pequeña.
+- **Exportar** va a trozos (`zipStream` con `Zip`, `ZipDeflate` y `ZipPassThrough` de fflate, esperando a `drain`):
+  `_archivos/` con todos los del mundo, o los que usan las páginas exportadas.
+- Dos e2e intermitentes en la CI del PR #62 (propiedades y vista previa con el teclado), arreglados en ese PR: esperar
+  a guardar antes de recargar, y volver a elegir el enlace si se pierde la selección.
 
 ## Hechas en esta tirada
 
