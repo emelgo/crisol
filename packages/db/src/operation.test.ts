@@ -128,8 +128,8 @@ describe('operation', () => {
     notTracked.add('wiki_preferences')
     // El estado de Yjs de cada documento: lo que cambia el texto lo cuentan las sesiones de edición (ADR-0003)
     notTracked.add('documents')
-    // Los enlaces y los archivos que usa el texto salen de él: se rehacen con cada guardado
-    notTracked.add('page_links').add('file_embeds')
+    // Los enlaces, los archivos que usa el texto y lo que se busca salen de él: se rehacen con cada guardado
+    notTracked.add('page_links').add('file_embeds').add('search_sections').add('search_words')
     // Las versiones del texto: las nombra page_bodies, que sí pasa por el historial (solo con ids y huellas)
     notTracked.add('page_versions').add('snapshots').add('version_documents')
     const tables = await conn.sql<

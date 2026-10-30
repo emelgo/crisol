@@ -284,6 +284,26 @@ export const es = {
     uploaded: '«{{name}}» subido',
     failed: 'No se pudo subir «{{name}}»: {{error}}'
   },
+  search: {
+    worldTitle: 'Buscar en {{world}}',
+    label: 'Buscar',
+    tag: 'Etiqueta',
+    anyTag: 'Todas',
+    submit: 'Buscar',
+    inBranch: 'Solo en «{{title}}» y sus subpáginas.',
+    wholeWiki: 'Buscar en toda la wiki',
+    count_zero: 'Nada coincide con «{{query}}».',
+    count_one: '1 página coincide con «{{query}}».',
+    count_other: '{{count}} páginas coinciden con «{{query}}».',
+    results: 'Resultados',
+    secret: 'Secreto',
+    pages: 'Páginas de resultados',
+    previous: 'Anteriores',
+    next: 'Siguientes',
+    pageOf: 'Página {{page}} de {{pages}}',
+    sidebar: 'Buscar en la wiki',
+    sidebarSubmit: 'Buscar'
+  },
   cover: {
     button: 'Portada',
     image: 'Imagen de portada',

@@ -30,6 +30,7 @@ import {
   setWikiTabs,
   updatePage
 } from './pages.ts'
+import { searchWiki } from './search.ts'
 import {
   deleteCampaign,
   deletePage,
@@ -52,6 +53,7 @@ export * from './openapi.ts'
 export * from './organizations.ts'
 export * from './pages.ts'
 export type * from './realtime.ts'
+export * from './search.ts'
 export * from './trash.ts'
 export * from './worlds.ts'
 
@@ -112,7 +114,8 @@ export const ACTIONS = [
   listFiles,
   renameFile,
   deleteFile,
-  restoreFile
+  restoreFile,
+  searchWiki
 ]
 
 /** Las acciones por nombre, solo como tipo: la web las usa sin cargar zod */
@@ -173,4 +176,5 @@ export type Actions = {
   renameFile: typeof renameFile
   deleteFile: typeof deleteFile
   restoreFile: typeof restoreFile
+  searchWiki: typeof searchWiki
 }

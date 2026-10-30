@@ -64,3 +64,36 @@ export function findName(text: string, name: string, from = 0): number {
   }
   return -1
 }
+
+/** Una sección de un documento, para buscar: lo de debajo de un título (o lo de antes del primero), en texto plano */
+export interface TextSection {
+  heading: string | null
+  headingId: string | null
+  body: string
+}
+
+/** Las secciones de un documento: se corta en cada título de primer nivel del documento (de cualquier nivel) */
+export function sectionsOf(doc: JSONContent): TextSection[] {
+  const sections: TextSection[] = []
+  let current: TextSection & { lines: string[] } = { heading: null, headingId: null, body: '', lines: [] }
+  const close = () => {
+    const body = current.lines.filter((line) => line.trim() !== '').join('\n')
+    if (current.heading !== null || body !== '')
+      sections.push({ heading: current.heading, headingId: current.headingId, body })
+  }
+  for (const block of doc.content ?? []) {
+    if (block.type === 'heading') {
+      close()
+      current = {
+        heading: (block.content ?? []).map(inlineText).join(''),
+        headingId: (block.attrs?.id as string | null | undefined) ?? null,
+        body: '',
+        lines: []
+      }
+      continue
+    }
+    current.lines.push(...textBlocks(block).map((found) => found.text))
+  }
+  close()
+  return sections
+}

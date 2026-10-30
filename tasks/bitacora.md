@@ -37,7 +37,7 @@ Hay que contárselo al final, con lo que tenga que probar o revisar:
   (`https://neo.crisol.144-91-122-245.sslip.io/mcp`), con su cuenta de propietario. Después prueba crear_paginas con
   secretos y editar_pagina sobre una página que tenga abierta.
 
-## Tarea en curso: 19, archivos en las páginas (19a: PR #62, en staging; 19b hecha)
+## Tarea 19, archivos en las páginas (19a: PR #62; 19b: PR #63; las dos en staging)
 
 Rama `wiki/tarea-19-archivos-en-paginas` (sobre main, tras la 18). En dos porciones, cada una con su PR:
 
@@ -71,7 +71,7 @@ Rama `wiki/tarea-19-archivos-en-paginas` (sobre main, tras la 18). En dos porcio
 - Dos e2e intermitentes en la CI del PR #62 (propiedades y vista previa con el teclado), arreglados en ese PR: esperar
   a guardar antes de recargar, y volver a elegir el enlace si se pierde la selección.
 
-## Siguiente: 20, búsqueda en español (diseño)
+## Tarea 20, búsqueda en español (hecha, rama `wiki/tarea-20-busqueda`, migraciones 0018 a 0020)
 
 - **Migración a mano** (no la saca drizzle): extensiones `unaccent`, `pg_trgm` y `fuzzystrmatch` (las tres «trusted»:
   las crea el dueño de la base), la configuración `es_unaccent` (copia de `spanish` con `unaccent` delante del
@@ -89,6 +89,29 @@ Rama `wiki/tarea-19-archivos-en-paginas` (sobre main, tras la 18). En dos porcio
   sus secciones con `ts_headline` (marcas que la web pinta con `<mark>`). Lo de un secreto, marcado.
 - **Web** `/mundos/:worldId/buscar?q&etiqueta&rama&pagina`; **MCP** `buscar_paginas`; prueba de rendimiento con 5.000
   páginas sintéticas (p95 < 300 ms).
+
+**Cómo quedó la 20** (lo que cambió del diseño):
+
+- El vector de cada página (título y propiedades, peso A) es una columna generada, `pages.search_tsv`, con su índice:
+  calcularlo al buscar costaba 150 ms con 5.000 páginas. `operation()` deja fuera del historial las columnas
+  generadas (Postgres no deja escribirlas al deshacer), mirándolas en `information_schema` una vez por tabla.
+- Las palabras parecidas, todas en una consulta (`lateral`); las rutas de los 20 resultados, en otra (`pagePaths`).
+- Con 5.000 páginas sintéticas y `analyze`: p95 192 ms y mediana 79 ms en local (la prueba exige < 300).
+- Lo de antes de la búsqueda se indexa al buscar en su mundo (`indexMissing`), como hacía `fillMissingText`.
+- Extracto con `**` (lo lee bien Claude y la web lo pinta con `<mark>`).
+
+## Siguiente: 21, selector rápido, órdenes y buscar en la página (diseño)
+
+- **Ctrl+K** (o Cmd+K) desde cualquier pantalla de la wiki abre un `dialog` modal con un combobox (patrón ARIA:
+  `aria-activedescendant` sobre un `listbox`). Vacío: los recientes (las pestañas abiertas, de la última a la primera).
+  Al escribir, a los 250 ms, títulos y alias con `searchNames` (con erratas), hasta 8, y al final «Ver todos los
+  resultados» (lleva a `/buscar?q=`). Escape lo cierra y el foco vuelve a donde estaba.
+- **«>» al principio**: la paleta de órdenes (página nueva, buscar, archivos, etiquetas, historial, papelera), filtradas
+  por lo escrito sin tildes.
+- **Buscar en la página**: botón en las acciones de la página (y Ctrl+Alt+F, sin quitarle Ctrl+F al navegador). Una
+  barra con el campo, «n de m», anterior y siguiente; las coincidencias se resaltan con decoraciones de ProseMirror
+  (sin tildes ni mayúsculas) y la actual se elige y se lleva a la vista. Los secretos (otros editores) quedan fuera:
+  apuntarlo.
 
 ## Hechas en esta tirada
 

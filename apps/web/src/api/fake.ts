@@ -497,6 +497,23 @@ export function fakeApi(
       throw new ApiError('NOT_FOUND', 404)
     },
     restorePageVersion: () => ({ restored: false }),
+    // Por el título, sin tildes ni mayúsculas (la de verdad la prueban las del servidor)
+    searchWiki: ({ worldId, query, page = 1 }) => {
+      const fold = (text: string) => text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()
+      const found = pages.filter((p) => p.worldId === worldId && fold(p.title).includes(fold(query)))
+      return {
+        total: found.length,
+        page,
+        pageSize: 20,
+        results: found.slice((page - 1) * 20, page * 20).map((p) => ({
+          id: p.id,
+          title: p.title,
+          icon: p.icon,
+          path: pageView(p).path,
+          sections: [{ heading: null, headingId: null, secret: false, excerpt: `Sobre **${p.title}**.` }]
+        }))
+      }
+    },
     listFiles: ({ worldId }) => ({
       files: files
         .filter((f) => f.worldId === worldId)

@@ -661,6 +661,21 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
     trozos, sin cargarlo en memoria.
   - **Pruebas**: integración (exportar con archivos, portada) y e2e (PDF por la página 3 con pdf.js cargado solo al
     abrirlo; portada con el teclado y accesibilidad).
+- **2026-10-30 — Módulo 1, tarea 20: búsqueda en español** (migraciones 0018 a 0020).
+  - **Postgres**: `unaccent`, `pg_trgm` y `fuzzystrmatch`, y la configuración `es_unaccent` (español sin tildes).
+    Cada documento se indexa por secciones (`search_sections`, lo de debajo de cada título) con cada guardado; cada
+    página, por su título y sus propiedades (`pages.search_tsv`, generada). Lo de antes se indexa al buscar.
+  - **Erratas**: `search_words` (las palabras de cada mundo, por triggers). Cada palabra buscada se amplía con las
+    parecidas (trigramas y `levenshtein` ≤ 1, o ≤ 2 desde 6 letras) y la última, por su principio: «dargón» encuentra
+    «Dragón» y «drag», también.
+  - **Resultados** por página (el título pesa más), con hasta tres secciones con su extracto (lo encontrado entre
+    `**`), lo de un secreto marcado, por etiqueta (con sus hijas) y por rama, de 20 en 20. Acción `searchWiki` y MCP
+    `buscar_paginas`.
+  - **Web**: `/mundos/:worldId/buscar?q&etiqueta&rama&pagina` y la caja de buscar en el lateral de la wiki.
+  - El historial deja fuera las columnas generadas (la de búsqueda de `pages`).
+  - **Pruebas**: integración («dragon», «DRAGONES», «dargón», «drag», secciones y secretos, etiqueta y rama, papelera,
+    indexar lo de antes, paginada, permisos) y rendimiento con 5.000 páginas (p95 192 ms en local; < 300 exigido);
+    componentes, e2e `buscar.spec.ts` con accesibilidad y `@fugas`.
 - **Pendientes de permiso de Enrique:**
   - Servicio de systemd para Foundry: ahora corre como proceso de la sesión y se para al cerrarla; se arranca con el
     comando de `research/foundry/entorno.md`.

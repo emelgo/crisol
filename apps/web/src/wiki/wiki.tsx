@@ -23,6 +23,7 @@ import { ExportPage, ExportWiki } from './export.tsx'
 import { PageIcon } from './icon.tsx'
 import { BookmarkButton, Bookmarks, OpenTabs, SiblingNav } from './navigation.tsx'
 import { PageProperties } from './properties.tsx'
+import { SearchBox } from './search-box.tsx'
 import { childrenKey, PageTree } from './tree.tsx'
 import { Versions } from './versions.tsx'
 import styles from './wiki.module.css'
@@ -146,6 +147,7 @@ export function WikiLayout({
           </button>
         </div>
         <FormError message={create.error ? errorText(create.error) : null} />
+        <SearchBox worldId={worldId} onSearch={() => close(false)} />
         <PageTree worldId={worldId} currentId={current?.id} path={current?.path} onNavigate={() => close(false)} />
         <OpenTabs worldId={worldId} current={current} compact />
         <Bookmarks worldId={worldId} onNavigate={() => close(false)} />

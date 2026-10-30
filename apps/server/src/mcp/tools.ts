@@ -79,6 +79,7 @@ export const MCP_TOOLS: Record<string, McpTool> = {
     }
   },
   listar_archivos: { action: 'listFiles' },
+  buscar_paginas: { action: 'searchWiki' },
   mover_pagina: { action: 'movePage' },
   borrar_pagina: { action: 'deletePage' }
 }
