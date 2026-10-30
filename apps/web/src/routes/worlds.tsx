@@ -2,6 +2,7 @@ import { TRASH_DAYS } from '@crisol/domain'
 import { useQuery } from '@tanstack/react-query'
 import { Navigate } from '@tanstack/react-router'
 import { Globe } from 'lucide-react'
+import { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
@@ -29,6 +30,12 @@ export function Worlds() {
     queryFn: () => api.call('listWorlds', {}),
     enabled: Boolean(account)
   })
+  // Los mundos ya vistos: los que lleguen después (recién creados) entran animados; al cargar, ninguno
+  const seen = useRef<Set<string> | null>(null)
+  if (worlds.data && !seen.current) seen.current = new Set(worlds.data.worlds.map((w) => w.id))
+  useEffect(() => {
+    for (const world of worlds.data?.worlds ?? []) seen.current?.add(world.id)
+  }, [worlds.data])
 
   if (pending) return null
   if (!account) return <Navigate to="/entrar" replace />
@@ -55,7 +62,7 @@ export function Worlds() {
         ) : (
           <ul className={cards.list} aria-label={t('worlds.listLabel')}>
             {worlds.data.worlds.map((world) => (
-              <WorldCard key={world.id} world={world} />
+              <WorldCard key={world.id} world={world} fresh={!seen.current?.has(world.id)} />
             ))}
             {/* Tras el último, el recuadro vacío para crear otro */}
             {canCreate && <NewWorld />}

@@ -42,6 +42,10 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
 
 ## Pantallas
 
+- **Los cambios no son bruscos**: un elemento nuevo entra animado (sube un poco y crece) y uno borrado encoge y se
+  desvanece antes de irse; los cuadros, las ventanas y el menú de la cuenta se abren con un pequeño crecimiento y
+  fundido. Todo, sin animación si el sistema pide menos movimiento.
+
 - **La colocación de Ajustes es la referencia**: una columna en el centro, con el título y el contenido alineados.
   Nada suelto «en medio sin sentido».
 - **Crear algo se hace con un botón que abre un cuadro**, no con un formulario suelto en la pantalla. **El de crear es

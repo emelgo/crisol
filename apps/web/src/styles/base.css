@@ -137,3 +137,27 @@ dialog section[aria-labelledby] > h2:first-child {
     color: #000;
   }
 }
+
+/* Al abrirse, los cuadros y las ventanas crecen un poco mientras aparecen, y el fondo se oscurece poco a poco */
+@media (prefers-reduced-motion: no-preference) {
+  dialog[open] {
+    animation: abre-cuadro 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  dialog[open]::backdrop {
+    animation: oscurece 220ms ease-out;
+  }
+}
+
+@keyframes abre-cuadro {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.97);
+  }
+}
+
+@keyframes oscurece {
+  from {
+    opacity: 0;
+  }
+}

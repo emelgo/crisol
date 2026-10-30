@@ -29,9 +29,10 @@ const tint = (color: World['color']): CSSProperties | undefined => {
 
 /**
  * La tarjeta de un mundo: la portada, el nombre, la descripción y, abajo, el papel y el engranaje de quien lo dirige.
- * Toda la tarjeta lleva al mundo (el enlace del nombre la cubre), salvo sus botones
+ * Toda la tarjeta lleva al mundo (el enlace del nombre la cubre), salvo sus botones. fresh: recién creado (entra
+ * animada)
  */
-export function WorldCard({ world }: { world: World }) {
+export function WorldCard({ world, fresh = false }: { world: World; fresh?: boolean }) {
   const { t } = useTranslation()
   const master = world.role === 'master'
   // Las imágenes del mundo solo las lista quien lo administra; quien juega ve el color
@@ -39,7 +40,11 @@ export function WorldCard({ world }: { world: World }) {
   const image = world.cover ? files.data?.files.find((f) => f.id === world.cover?.fileId) : undefined
   const [viewing, setViewing] = useState(false)
   return (
-    <li className={styles.card} style={tint(world.color)} data-world={world.id}>
+    <li
+      className={fresh ? `${styles.card} ${styles.entering}` : styles.card}
+      style={tint(world.color)}
+      data-world={world.id}
+    >
       <CoverHeader
         url={image?.url}
         cover={world.cover}
@@ -172,6 +177,18 @@ function WorldSettings({ world }: { world: World }) {
   )
 }
 
+/** Anima la salida de una tarjeta (.leaving) y espera a que acabe; sin animación (movimiento reducido), al momento */
+function leave(element: Element | null) {
+  return new Promise<void>((resolve) => {
+    const still =
+      typeof window.matchMedia !== 'function' || window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (!(element instanceof HTMLElement) || still) return resolve()
+    element.classList.add(styles.leaving as string)
+    element.addEventListener('animationend', () => resolve(), { once: true })
+    window.setTimeout(resolve, 400)
+  })
+}
+
 interface Draft {
   name: string
   description: string
@@ -266,6 +283,8 @@ function WorldDialog({ world, onClose }: { world?: World; onClose: (gone: boolea
     const after = focusAfterRemoving(card?.closest('li'))
     gone.current = true
     dialog.current?.close()
+    // La tarjeta se va despacio antes de quitarla de la lista
+    await leave(card)
     await refresh()
     after()
   }

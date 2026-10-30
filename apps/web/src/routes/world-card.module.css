@@ -63,6 +63,32 @@
   background: color-mix(in srgb, var(--world-color, var(--color-field-border)) 70%, var(--color-field-border));
 }
 
+/* Recién creada, la tarjeta sube un poco y crece mientras aparece; al borrarla, encoge y se desvanece */
+@media (prefers-reduced-motion: no-preference) {
+  .entering {
+    animation: entra 360ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  .leaving {
+    animation: sale 260ms ease-in forwards;
+    pointer-events: none;
+  }
+}
+
+@keyframes entra {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.95);
+  }
+}
+
+@keyframes sale {
+  to {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+}
+
 /* «Nuevo mundo»: un recuadro vacío con la forma de una tarjeta (esquinas cortadas) y el borde discontinuo, del alto
    de las demás. El borde se recorta con la forma y la diagonal de cada esquina se dibuja aparte */
 .newItem {
@@ -149,9 +175,12 @@
   background: var(--color-raised);
 }
 
+/* Siempre en su propia capa: si el navegador la pasara a otra solo al acercarla, la redibujaría distinta y la línea del
+   contorno de al lado cambiaría de intensidad durante la animación */
 @media (prefers-reduced-motion: no-preference) {
   .picture {
     transition: transform 300ms ease-out;
+    will-change: transform;
   }
 }
 
