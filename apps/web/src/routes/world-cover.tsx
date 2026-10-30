@@ -36,24 +36,35 @@ const sameCover = (a: Cover | null, b: Cover | null) =>
   a === b ||
   (a !== null && b !== null && a.fileId === b.fileId && a.x === b.x && a.y === b.y && (a.zoom ?? 1) === (b.zoom ?? 1))
 
+/** Una imagen elegida al crear el mundo, aún sin subir (se sube al crearlo) */
+export interface LocalImage {
+  file: File
+  url: string
+}
+
+/** El archivo de la portada mientras es una imagen sin subir */
+export const LOCAL_FILE = '00000000-0000-0000-0000-000000000000'
+
 /**
  * Cambiar la portada: elegirla, subirla o quitarla, encuadrarla y acercarla. Con cambios salen «Cancelar» (los deshace)
- * y «Guardar»
+ * y «Guardar». Sin worldId (al crear el mundo, que aún no tiene archivos): solo una imagen propia, sin subir aún
  */
 export function CoverDialog({
   worldId,
   title,
   cover,
+  local,
   background,
   onSave,
   onClose
 }: {
-  worldId: string
+  worldId?: string
   title: string
   cover: Cover | null
+  local?: LocalImage | null
   /** El color que se ve sin imagen */
   background: string
-  onSave: (cover: Cover | null) => Promise<unknown>
+  onSave: (cover: Cover | null, local: LocalImage | null) => Promise<unknown>
   onClose: () => void
 }) {
   const { t } = useTranslation()
@@ -63,18 +74,32 @@ export function CoverDialog({
   const dialog = useRef<HTMLDialogElement>(null)
   const upload = useRef<HTMLInputElement>(null)
   const titleId = useId()
-  const files = useWorldFiles(worldId)
+  const files = useWorldFiles(worldId ?? '', Boolean(worldId))
   const images = files.data?.files.filter((file) => file.kind === 'image') ?? []
   const [chosen, setChosen] = useState<Cover | null>(cover)
-  const image = chosen ? images.find((file) => file.id === chosen.fileId) : undefined
-  const changed = !sameCover(chosen, cover)
+  const [pending, setPending] = useState<LocalImage | null>(local ?? null)
+  const image = !chosen
+    ? undefined
+    : chosen.fileId === LOCAL_FILE
+      ? (pending ?? undefined)
+      : images.find((file) => file.id === chosen.fileId)
+  const changed = !sameCover(chosen, cover) || pending !== (local ?? null)
   const zoom = chosen?.zoom ?? 1
   const setZoom = (value: number) => {
     if (chosen) setChosen({ ...chosen, zoom: clampZoom(value) })
   }
-  const save = useMutation({ mutationFn: () => onSave(chosen), onSuccess: () => dialog.current?.close() })
+  const save = useMutation({
+    mutationFn: () => onSave(chosen, chosen?.fileId === LOCAL_FILE ? pending : null),
+    onSuccess: () => dialog.current?.close()
+  })
   const uploadImage = useMutation({
     mutationFn: async (file: File) => {
+      if (!file.type.startsWith('image/')) throw new ApiError('BAD_COVER', 400)
+      if (!worldId) {
+        setPending({ file, url: URL.createObjectURL(file) })
+        setChosen({ fileId: LOCAL_FILE, x: 50, y: 50 })
+        return
+      }
       const stored = await api.uploadFile({ worldId, name: file.name }, file)
       if (stored.kind !== 'image') throw new ApiError('BAD_COVER', 400)
       await queryClient.invalidateQueries({ queryKey: ['files', worldId] })
@@ -197,6 +222,18 @@ export function CoverDialog({
               <img src={file.url} alt="" />
             </button>
           ))}
+          {pending && (
+            <button
+              type="button"
+              className={styles.thumb}
+              aria-pressed={chosen?.fileId === LOCAL_FILE}
+              aria-label={pending.file.name}
+              title={pending.file.name}
+              onClick={() => setChosen({ fileId: LOCAL_FILE, x: 50, y: 50 })}
+            >
+              <img src={pending.url} alt="" />
+            </button>
+          )}
           <BusyButton
             className={styles.upload}
             busy={uploadImage.isPending}
@@ -227,7 +264,14 @@ export function CoverDialog({
           )}
           {changed && (
             <div className={dialogStyles.actions}>
-              <button type="button" className={dialogStyles.cancel} onClick={() => setChosen(cover)}>
+              <button
+                type="button"
+                className={dialogStyles.cancel}
+                onClick={() => {
+                  setChosen(cover)
+                  setPending(local ?? null)
+                }}
+              >
                 {t('list.cancel')}
               </button>
               <BusyButton className={form.button} busy={save.isPending} onClick={() => save.mutate()}>

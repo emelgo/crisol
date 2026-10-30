@@ -44,11 +44,18 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
 
 - **La colocación de Ajustes es la referencia**: una columna en el centro, con el título y el contenido alineados.
   Nada suelto «en medio sin sentido».
-- **Crear algo se hace con un botón que abre un cuadro**, no con un formulario suelto en la pantalla.
+- **Crear algo se hace con un botón que abre un cuadro**, no con un formulario suelto en la pantalla. **El de crear es
+  prácticamente el de sus ajustes** (para un mundo: portada, nombre, descripción, icono y color), para dejarlo bien
+  hecho sin tener que entrar después en ajustes.
+- **«Nuevo …» va como un recuadro más de la lista**, vacío y con el borde discontinuo, tras el último (no un botón
+  arriba). Sin ninguno, la pantalla vacía con su botón grande.
 - **Las pantallas de cuenta (entrar, crear la cuenta)** van centradas y con aspecto profesional.
 - **Todo cuadro o ventana encima lleva la X arriba a la derecha y se cierra al pulsar fuera** (y con Escape).
 - **Las acciones de un elemento van en su engranaje**, abajo a la derecha de su tarjeta, siempre a la vista: abre su
   ventana, donde se cambia todo (nombre incluido) y donde irá lo que se añada. Nada de «Renombrar» y «Borrar» sueltos.
+- **El icono de un mundo es opcional** (sin él, la tarjeta no lleva icono), y hay muchos de fantasía.
+- **El color de un mundo**: uno de los fijos o uno propio con el selector de color; los propios se recuerdan para
+  usarlos otra vez. Es el fondo de la portada cuando no hay imagen y tiñe muy sutilmente el borde de su tarjeta.
 - **Toda la tarjeta es clicable** y lleva al elemento, no solo su nombre (salvo sus botones).
 - **«Guardar» y «Cancelar» solo salen si hay cambios**; «Cancelar» los deshace.
 - **Un cuadro dentro de otro** (ver la portada desde la ventana del mundo): al cerrarlo se vuelve al de fuera, no a la

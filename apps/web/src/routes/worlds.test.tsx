@@ -1,5 +1,5 @@
 import { createMemoryHistory } from '@tanstack/react-router'
-import { render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { fakeAccountClient } from '../account/fake.ts'
@@ -157,6 +157,39 @@ describe('mis mundos', () => {
     await userEvent.click(dialog.getByRole('button', { name: 'Cancelar' }))
     expect(dialog.getByLabelText<HTMLInputElement>('Descripción').value).toBe('')
     expect(dialog.queryByRole('button', { name: 'Guardar' })).toBeNull()
+  })
+
+  it('crear un mundo abre la misma ventana que sus ajustes: icono, color propio (que se recuerda) y portada', async () => {
+    // jsdom no tiene URL.createObjectURL: la vista previa de la imagen aún sin subir
+    URL.createObjectURL = () => 'blob:portada'
+    URL.revokeObjectURL = () => {}
+    const api = fakeApi({ organizations: [ORG] })
+    renderWorlds(api)
+    await userEvent.click(await screen.findByRole('button', { name: 'Crear tu primer mundo' }))
+    const dialog = within(await screen.findByRole('dialog', { name: 'Nuevo mundo' }))
+    await userEvent.type(dialog.getByLabelText('Nombre del mundo'), 'Eana')
+    await userEvent.type(dialog.getByLabelText('Descripción'), 'Tierra de dragones')
+    expect(dialog.getByRole<HTMLInputElement>('radio', { name: 'Sin icono' }).checked).toBe(true)
+    await userEvent.click(dialog.getByRole('radio', { name: 'Calavera' }))
+    fireEvent.input(dialog.getByLabelText('Color propio'), { target: { value: '#aa3355' } })
+    await userEvent.click(dialog.getByRole('button', { name: 'Añadir portada' }))
+    const coverDialog = await screen.findByRole('dialog', { name: 'Portada' })
+    const cover = within(coverDialog)
+    const image = new File(['png'], 'eana.png', { type: 'image/png' })
+    await userEvent.upload(coverDialog.querySelector('input[type="file"]') as HTMLInputElement, image)
+    await userEvent.click(await cover.findByRole('button', { name: 'Guardar' }))
+    await userEvent.click(dialog.getByRole('button', { name: 'Crear el mundo' }))
+    expect(await screen.findByText('Tierra de dragones')).toBeDefined()
+    expect(api.calls).toEqual(expect.arrayContaining(['createWorld', 'uploadFile', 'updateWorld']))
+    expect(localStorage.getItem('crisol.colores.enrique@crisol.test')).toBe('["#aa3355"]')
+  })
+
+  it('con mundos, «Nuevo mundo» es un recuadro tras el último', async () => {
+    renderWorlds(fakeApi({ organizations: [ORG], worlds: [eana()] }))
+    const list = within(await screen.findByRole('list', { name: 'Mundos' }))
+    const items = list.getAllByRole('listitem')
+    expect(within(items[items.length - 1] as HTMLElement).getByRole('button', { name: 'Nuevo mundo' })).toBeDefined()
+    expect(screen.getAllByRole('button', { name: 'Nuevo mundo' })).toHaveLength(1)
   })
 
   it('quien juega en un mundo no tiene su engranaje', async () => {

@@ -108,6 +108,10 @@ Todo va en la rama `interfaz/pulir-inicio`, en un commit local sin subir. Las no
   toda la tarjeta lleva al mundo; Guardar y Cancelar solo con cambios; al pie, el papel y el engranaje. El engranaje abre la ventana del mundo
   (portada arriba, nombre, descripción, icono, color y zona de peligro, `components/danger.tsx`); sin Renombrar ni
   Borrar sueltos. Cuadros con X y cierre al pulsar fuera (`components/modal.tsx`). Pruebas en `worlds.test.tsx`.
+- **Crear un mundo** abre la misma ventana que sus ajustes (`WorldDialog`): portada (se sube al crearlo), nombre,
+  descripción, icono (opcional; 46 de fantasía, `routes/world-look.ts`) y color (fijo o propio, que se recuerda en el
+  navegador y tiñe el borde). «Nuevo mundo» es un recuadro discontinuo tras el último. En el contrato, `worldIcon` con
+  más iconos y `worldColor` admite `#rrggbb` (columnas de texto: sin migración).
 - **Barras de desplazamiento** finas, del color de los bordes; en las ventanas solo se desplaza el contenido.
 - **Barra lateral**:
   - sin barra de estado abajo;

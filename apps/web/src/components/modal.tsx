@@ -13,8 +13,10 @@ export function Modal({ ref, onClose, children, ...props }: ComponentProps<'dial
   const element = useRef<HTMLDialogElement | null>(null)
   // Solo si se pulsó y se soltó fuera: arrastrar desde un campo hasta el fondo (al seleccionar texto) no lo cierra
   const pressedOutside = useRef(false)
+  // Al abrirse, el foco va a lo marcado con data-autofocus (el primer campo al crear algo), si lo hay
   useEffect(() => {
     if (!element.current?.open) element.current?.showModal()
+    element.current?.querySelector<HTMLElement>('[data-autofocus]')?.focus()
   }, [])
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents: pulsar el fondo es un atajo del ratón; con el teclado, Escape (propio de dialog)

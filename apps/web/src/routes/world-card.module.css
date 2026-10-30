@@ -51,15 +51,45 @@
 
 /* La tarjeta de un mundo: la portada arriba (imagen o color), su icono medio dentro, y debajo el nombre, la
    descripción y, al pie, el papel y el engranaje */
+/* El borde (el fondo del marco), teñido muy sutilmente con el color del mundo (--world-color), si lo tiene */
 .card {
   composes: frame from "../components/frame.module.css";
   display: flex;
   flex-direction: column;
+  background: color-mix(in srgb, var(--world-color, var(--color-frame)) 35%, var(--color-frame));
   transition: background-color 150ms ease-out;
 }
 
 .card:hover {
-  background: var(--color-field-border);
+  background: color-mix(in srgb, var(--world-color, var(--color-field-border)) 45%, var(--color-field-border));
+}
+
+/* «Nuevo mundo»: un recuadro vacío con el borde discontinuo, del alto de una tarjeta */
+.newItem {
+  display: flex;
+  min-block-size: 14rem;
+}
+
+.newCard {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  border: 1px dashed var(--color-field-border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-muted);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.newCard:hover {
+  border-color: var(--color-text);
+  background: color-mix(in srgb, var(--color-text) 4%, transparent);
+  color: var(--color-text);
 }
 
 .list {
@@ -75,6 +105,11 @@
 .header {
   position: relative;
   margin-block-end: 2rem;
+}
+
+/* Sin icono, el nombre va justo debajo de la portada */
+.header.noIcon {
+  margin-block-end: var(--space-3);
 }
 
 /* El marco de la portada: recorta el acercamiento */
@@ -377,6 +412,16 @@
   border-radius: 50%;
 }
 
+/* Un color propio: el «+» abre el selector de color del sistema */
+.newColor {
+  border-style: dashed;
+}
+
+.newColor:hover {
+  border-color: var(--color-text);
+  color: var(--color-text);
+}
+
 .iconChoice:has(input:checked),
 .colorChoice:has(input:checked) {
   border-color: var(--color-text);
@@ -397,4 +442,10 @@
   overflow: hidden;
   clip-path: inset(50%);
   white-space: nowrap;
+}
+
+/* Los iconos son muchos: algo más pequeños que los colores */
+.iconChoice {
+  inline-size: 2.5rem;
+  block-size: 2.5rem;
 }
