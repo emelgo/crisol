@@ -88,16 +88,12 @@
 }
 
 /* Al abrirse, se desliza un poco desde el avatar mientras aparece */
-@media (prefers-reduced-motion: no-preference) {
-  .panel {
-    animation: despliega 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
-  }
+:root[data-motion="full"] .panel {
+  animation: despliega 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .panel {
-    animation: aparece-menu 160ms ease-out;
-  }
+:root[data-motion="reduced"] .panel {
+  animation: aparece-menu 160ms ease-out;
 }
 
 @keyframes aparece-menu {

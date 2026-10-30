@@ -88,10 +88,8 @@
   color: var(--color-bg);
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .bubble {
-    animation: aparece 160ms ease-out;
-  }
+:root[data-motion="full"] .bubble {
+  animation: aparece 160ms ease-out;
 }
 
 @keyframes aparece {
@@ -125,10 +123,8 @@
   opacity: 1;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .help {
-    transition: opacity 150ms ease-out;
-  }
+:root[data-motion="full"] .help {
+  transition: opacity 150ms ease-out;
 }
 
 /* En el móvil, la barra va abajo: encima de ella */

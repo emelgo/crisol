@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
 import { PageTitle } from '../components/page-title.tsx'
+import { chosenMotion, type Motion, setMotion } from '../motion.ts'
 import { currentTheme, setTheme, type Theme } from '../theme.ts'
 import { AiSettings } from './ai-settings.tsx'
 import styles from './settings.module.css'
@@ -20,6 +21,7 @@ export function Settings() {
     enabled: Boolean(account)
   })
   const [theme, setThemeState] = useState<Theme>(currentTheme)
+  const [motion, setMotionState] = useState<Motion>(chosenMotion)
   if (pending) return null
   if (!account) return <Navigate to="/entrar" replace />
   // La IA solo se conecta con la cuenta del propietario (módulo 0)
@@ -44,6 +46,23 @@ export function Settings() {
               />
               <span aria-hidden="true" className={styles.swatch} />
               {t(option === 'light' ? 'settings.light' : 'settings.dark')}
+            </label>
+          ))}
+        </fieldset>
+        <fieldset className={styles.themes}>
+          <legend>{t('settings.motion')}</legend>
+          {(['full', 'reduced', 'system'] as const).map((option) => (
+            <label key={option} className={styles.theme}>
+              <input
+                type="radio"
+                name="animaciones"
+                checked={motion === option}
+                onChange={() => {
+                  setMotion(option)
+                  setMotionState(option)
+                }}
+              />
+              {t(`settings.motionOptions.${option}`)}
             </label>
           ))}
         </fieldset>

@@ -157,10 +157,8 @@
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .aiFlash {
-    animation: none;
-    outline: 2px solid var(--color-ai);
-    outline-offset: 2px;
-  }
+:root[data-motion="reduced"] .aiFlash {
+  animation: none;
+  outline: 2px solid var(--color-ai);
+  outline-offset: 2px;
 }

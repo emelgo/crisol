@@ -64,27 +64,23 @@
 }
 
 /* Recién creada, la tarjeta sube un poco y crece mientras aparece; al borrarla, encoge y se desvanece */
-@media (prefers-reduced-motion: no-preference) {
-  .entering {
-    animation: entra 360ms cubic-bezier(0.2, 0.8, 0.2, 1);
-  }
+:root[data-motion="full"] .entering {
+  animation: entra 360ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
 
-  .leaving {
-    animation: sale 260ms ease-in forwards;
-    pointer-events: none;
-  }
+:root[data-motion="full"] .leaving {
+  animation: sale 260ms ease-in forwards;
+  pointer-events: none;
 }
 
 /* Con menos movimiento, solo un fundido, sin desplazarse */
-@media (prefers-reduced-motion: reduce) {
-  .entering {
-    animation: funde 300ms ease-out;
-  }
+:root[data-motion="reduced"] .entering {
+  animation: funde 300ms ease-out;
+}
 
-  .leaving {
-    animation: desvanece 260ms ease-in forwards;
-    pointer-events: none;
-  }
+:root[data-motion="reduced"] .leaving {
+  animation: desvanece 260ms ease-in forwards;
+  pointer-events: none;
 }
 
 @keyframes funde {
@@ -201,11 +197,9 @@
 
 /* Siempre en su propia capa: si el navegador la pasara a otra solo al acercarla, la redibujaría distinta y la línea del
    contorno de al lado cambiaría de intensidad durante la animación */
-@media (prefers-reduced-motion: no-preference) {
-  .picture {
-    transition: transform 300ms ease-out;
-    will-change: transform;
-  }
+:root[data-motion="full"] .picture {
+  transition: transform 300ms ease-out;
+  will-change: transform;
 }
 
 /* Al pasar el ratón, la portada se acerca un poco: por la tarjeta (que es un enlace) o por la de la ventana */
@@ -233,10 +227,8 @@
   opacity: 0;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .coverActions {
-    transition: opacity 150ms ease-out;
-  }
+:root[data-motion="full"] .coverActions {
+  transition: opacity 150ms ease-out;
 }
 
 .card:hover .coverActions,

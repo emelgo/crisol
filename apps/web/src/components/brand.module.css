@@ -26,10 +26,8 @@
   }
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .beat {
-    animation: late 1.2s ease-in-out infinite;
-  }
+:root[data-motion="full"] .beat {
+  animation: late 1.2s ease-in-out infinite;
 }
 
 @keyframes late {

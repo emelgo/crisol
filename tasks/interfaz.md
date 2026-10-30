@@ -117,6 +117,7 @@ Todo va en la rama `interfaz/pulir-inicio`, en un commit local sin subir. Las no
 - **Los mundos, en el orden en que se crearon** (uno nuevo, al final): `worldsRepo.listMemberWorlds` y su prueba.
 - **Animaciones**: la tarjeta de un mundo nuevo entra y la de uno borrado se va (con menos movimiento, solo fundidos); los cuadros (`dialog[open]` en
   `base.css`) y el menú de la cuenta se abren con un pequeño crecimiento.
+  En Ajustes, «Animaciones» (completas por defecto, reducidas o como el sistema; `src/motion.ts`, `data-motion`).
 - **Barras de desplazamiento** finas, del color de los bordes; en las ventanas solo se desplaza el contenido.
 - **Barra lateral**:
   - sin barra de estado abajo;
