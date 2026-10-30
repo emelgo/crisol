@@ -13,6 +13,7 @@ import { createContext, forwardRef, useContext, useEffect, useId, useImperativeH
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import styles from './page-links.module.css'
+import { LinkPreview } from './preview.tsx'
 import menu from './slash-menu.module.css'
 
 /** Lo que necesitan los enlaces del editor: las páginas del mundo por su nombre, y crear una */
@@ -59,7 +60,7 @@ export function useLinksRef() {
 type LinkState = { state: 'ok'; page: NamedPage } | { state: 'missing' } | { state: 'broken' }
 
 /** Adónde va un enlace ahora: por su id; sin id, por su nombre (si ya hay una sola página que se llame así) */
-function stateOf(links: PageLinks | null, pageId: string | null, title: string): LinkState {
+export function stateOf(links: PageLinks | null, pageId: string | null, title: string): LinkState {
   if (!links) return { state: 'missing' }
   if (pageId) {
     const page = links.byId.get(pageId)
@@ -77,6 +78,16 @@ export function withPageLinkView(node: Node) {
     },
     addKeyboardShortcuts() {
       return {
+        // Con el enlace elegido, Tab entra en su vista previa
+        Tab: ({ editor }) => {
+          const { selection } = editor.state
+          if (!(selection instanceof NodeSelection) || selection.node.type.name !== this.name) return false
+          const dom = editor.view.nodeDOM(selection.from)
+          const link = dom instanceof HTMLElement ? dom.querySelector<HTMLAnchorElement>('a[data-page-link]') : null
+          if (!link || !document.querySelector('[role="dialog"]')) return false
+          link.dispatchEvent(new CustomEvent('crisol:preview-enter'))
+          return true
+        },
         // Con el enlace elegido, Intro lo sigue
         Enter: ({ editor }) => {
           const { selection } = editor.state
@@ -91,16 +102,27 @@ export function withPageLinkView(node: Node) {
   })
 }
 
-function PageLinkView({ node, updateAttributes }: NodeViewProps) {
+/** Un toque en el móvil (sin ratón fino): la vista previa va en una hoja abajo */
+const coarsePointer = () => typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches
+
+function PageLinkView({ node, updateAttributes, selected, editor }: NodeViewProps) {
   const { t } = useTranslation()
   const api = useApi()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const links = useContext(PageLinksContext)
   const [trashOpen, setTrashOpen] = useState(false)
+  // La vista previa: con el ratón encima, con el enlace elegido (teclado) o, en el móvil, en una hoja
+  const [hovering, setHovering] = useState(false)
+  const [sheet, setSheet] = useState(false)
+  const [dismissed, setDismissed] = useState(false)
+  const linkRef = useRef<HTMLAnchorElement>(null)
+  const previewRef = useRef<HTMLDivElement>(null)
+  const hoverTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const pageId = (node.attrs.pageId as string | null) ?? null
   const title = String(node.attrs.title ?? '')
   const label = (node.attrs.label as string | null) || null
+  const anchor = (node.attrs.anchor as string | null) || null
   const target = stateOf(links, pageId, title)
   const text = label ?? (target.state === 'ok' ? target.page.title : title)
   const worldId = links?.worldId ?? ''
@@ -121,6 +143,33 @@ function PageLinkView({ node, updateAttributes }: NodeViewProps) {
     }
   })
 
+  // Al dejar de estar elegido, la vista previa se puede volver a abrir
+  useEffect(() => {
+    if (!selected) setDismissed(false)
+  }, [selected])
+  useEffect(() => () => clearTimeout(hoverTimer.current), [])
+  // Tab con el enlace elegido entra en la vista previa (lo pide la tecla del editor con este evento)
+  useEffect(() => {
+    const element = linkRef.current
+    if (!element) return
+    const enter = () => previewRef.current?.querySelector<HTMLElement>('a, button')?.focus()
+    element.addEventListener('crisol:preview-enter', enter)
+    return () => element.removeEventListener('crisol:preview-enter', enter)
+  }, [])
+
+  const hover = (inside: boolean) => {
+    clearTimeout(hoverTimer.current)
+    hoverTimer.current = setTimeout(() => setHovering(inside), inside ? 300 : 200)
+  }
+  const showPreview = target.state === 'ok' && (sheet || hovering || (selected && !dismissed))
+  const closePreview = (returnFocus: boolean) => {
+    clearTimeout(hoverTimer.current)
+    setHovering(false)
+    setSheet(false)
+    setDismissed(true)
+    if (returnFocus) editor.commands.focus()
+  }
+
   const href = target.state === 'ok' ? `/mundos/${worldId}/wiki/${target.page.id}` : undefined
   const description =
     target.state === 'missing'
@@ -131,22 +180,40 @@ function PageLinkView({ node, updateAttributes }: NodeViewProps) {
   return (
     <NodeViewWrapper as="span" className={styles.wrapper}>
       <a
+        ref={linkRef}
         href={href ?? '#'}
         className={styles.link}
         data-state={target.state}
+        data-page-link=""
         aria-label={description}
         title={description}
+        onMouseEnter={() => !coarsePointer() && hover(true)}
+        onMouseLeave={() => hover(false)}
         onClick={(event) => {
           event.preventDefault()
           if (target.state === 'ok') {
             if (!pageId) updateAttributes({ pageId: target.page.id })
-            open(target.page.id)
+            // En el móvil, primero la hoja con «Abrir página»
+            if (coarsePointer()) setSheet(true)
+            else open(target.page.id)
           } else if (target.state === 'missing') create.mutate()
           else setTrashOpen(!trashOpen)
         }}
       >
         {text}
       </a>
+      {showPreview && target.state === 'ok' && (
+        <LinkPreview
+          ref={previewRef}
+          worldId={worldId}
+          pageId={target.page.id}
+          anchor={anchor}
+          anchorElement={linkRef.current}
+          sheet={sheet}
+          onHover={hover}
+          onClose={closePreview}
+        />
+      )}
       {trashOpen && (
         <span className={styles.trash} contentEditable={false} role="status">
           {t('links.inTrash')}{' '}
@@ -179,6 +246,8 @@ export const LinkSuggest = Extension.create<LinkSuggestOptions>({
   addOptions: () => ({ links: () => null, announce: () => {} }),
   addProseMirrorPlugins() {
     const { links, announce } = this.options
+    // Lo escrito tras `[[` (la orden de elegir no lo recibe: se guarda al buscar)
+    let lastQuery = ''
     return [
       Suggestion<LinkChoice, LinkChoice>({
         editor: this.editor,
@@ -188,25 +257,34 @@ export const LinkSuggest = Extension.create<LinkSuggestOptions>({
         allowedPrefixes: null,
         allow: ({ state, range }) => state.doc.resolve(range.from).parent.type.name !== 'codeBlock',
         items: ({ query }) => {
+          lastQuery = query
           const current = links()
-          const text = query.replace(/\]+$/, '').trim()
-          const found: LinkChoice[] = searchNames(text, current?.names ?? [], 8).map(({ page, name }) => ({
+          // «Título#Sección»: se busca por el título; la sección va con el enlace
+          const [name = ''] = query.replace(/\]+$/, '').split('#')
+          const text = name.trim()
+          const found: LinkChoice[] = searchNames(text, current?.names ?? [], 8).map(({ page, name: matched }) => ({
             kind: 'page',
             page,
-            name
+            name: matched
           }))
           const exact = found.some((choice) => choice.kind === 'page' && foldName(choice.name) === foldName(text))
           return text && !exact ? [...found, { kind: 'create', title: text }] : found
         },
         command: ({ editor, range, props: choice }) => {
+          const anchor = lastQuery.replace(/\]+$/, '').split('#').slice(1).join('#').trim() || null
+          // Con «!» delante, incrustar; si no, enlazar
+          const embed = range.from > 1 && editor.state.doc.textBetween(range.from - 1, range.from) === '!'
           const insert = (pageId: string, title: string) => {
+            const content = embed
+              ? [{ type: 'pageEmbed', attrs: { pageId, title, anchor } }]
+              : [
+                  { type: 'pageLink', attrs: { pageId, title, anchor } },
+                  { type: 'text', text: ' ' }
+                ]
             editor
               .chain()
               .focus()
-              .insertContentAt(range, [
-                { type: 'pageLink', attrs: { pageId, title } },
-                { type: 'text', text: ' ' }
-              ])
+              .insertContentAt(embed ? { from: range.from - 1, to: range.to } : range, content)
               .run()
             announce(title)
           }

@@ -24,6 +24,15 @@ export const pagesChanged = (wiki: { worldId: string; organizationId: string }):
   message: { type: 'changed', what: 'pages', worldId: wiki.worldId }
 })
 
+/** El texto de una página se guardó: a quien la ve (lo que la enseña en otra se vuelve a pedir) */
+export const pageContentChanged = (
+  wiki: { worldId: string; organizationId: string },
+  pageId: string
+): RealtimeEvent => ({
+  to: { capability: 'page.read', target: wiki },
+  message: { type: 'changed', what: 'pageContent', worldId: wiki.worldId, pageId }
+})
+
 export const membersChanged = (scope: CampaignScope): RealtimeEvent => ({
   to: { capability: 'campaign.read', target: scope },
   message: { type: 'changed', what: 'members', campaignId: scope.campaignId }

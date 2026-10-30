@@ -181,7 +181,7 @@ export const es = {
   },
   blocks: {
     menu: 'Bloques',
-    groups: { text: 'Texto', boxes: 'Recuadros', master: 'Del máster' },
+    groups: { text: 'Texto', wiki: 'Wiki', boxes: 'Recuadros', master: 'Del máster' },
     paragraph: 'Texto',
     paragraphHint: 'Un párrafo',
     heading1: 'Título 1',
@@ -196,6 +196,10 @@ export const es = {
     table: 'Tabla',
     tableHint: 'Con cabecera',
     horizontalRule: 'Separador',
+    pageLink: 'Enlace a página',
+    pageLinkHint: 'O escribe [[',
+    pageEmbed: 'Incrustar página',
+    pageEmbedHint: 'O una sección',
     calloutNote: 'Nota',
     calloutTip: 'Consejo',
     calloutWarning: 'Aviso',
@@ -215,6 +219,25 @@ export const es = {
   },
   summaries: {
     andMore: '{{list}} y {{count}} más'
+  },
+  content: {
+    done: 'Hecho:',
+    todo: 'Por hacer:'
+  },
+  embed: {
+    of: 'Incrustado: {{title}}',
+    cycle: 'No se incrusta aquí: crearía un círculo.',
+    tooDeep: 'Hay demasiados incrustados unos dentro de otros: ábrela para verla.',
+    missing: 'No se encuentra: puede estar en la papelera.',
+    loading: 'Cargando…',
+    pending: '{{title}}: por crear'
+  },
+  preview: {
+    of: 'Vista previa: {{title}}',
+    open: 'Abrir',
+    openPage: 'Abrir página',
+    close: 'Cerrar',
+    more: 'Sigue en la página.'
   },
   backlinks: {
     title: 'Enlaces',

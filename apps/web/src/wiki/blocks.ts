@@ -9,7 +9,7 @@ import type { es } from '../i18n.ts'
 /** Los textos de los bloques en i18n (blocks.<clave>) */
 export type BlockText = Exclude<keyof typeof es.blocks, 'menu' | 'groups' | 'none' | 'help' | 'inserted'>
 
-export type BlockGroup = 'text' | 'boxes' | 'master'
+export type BlockGroup = 'text' | 'wiki' | 'boxes' | 'master'
 
 export interface BlockChoice {
   id: string
@@ -137,6 +137,29 @@ export const BLOCKS: readonly BlockChoice[] = [
     convert: false,
     run: (editor) => {
       editor.chain().focus().setHorizontalRule().run()
+    }
+  },
+  // Enlazar e incrustar: escriben `[[` o `![[`, que abren la lista de páginas
+  {
+    id: 'pageLink',
+    group: 'wiki',
+    label: 'pageLink',
+    hint: 'pageLinkHint',
+    keywords: 'enlace pagina vincular',
+    convert: false,
+    run: (editor) => {
+      editor.chain().focus().insertContent('[[').run()
+    }
+  },
+  {
+    id: 'pageEmbed',
+    group: 'wiki',
+    label: 'pageEmbed',
+    hint: 'pageEmbedHint',
+    keywords: 'incrustar pagina seccion',
+    convert: false,
+    run: (editor) => {
+      editor.chain().focus().insertContent('![[').run()
     }
   },
   callout('note', 'calloutNote', 'calloutHint', 'nota'),

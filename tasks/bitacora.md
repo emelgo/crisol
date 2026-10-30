@@ -37,9 +37,9 @@ Hay que contárselo al final, con lo que tenga que probar o revisar:
   (`https://neo.crisol.144-91-122-245.sslip.io/mcp`), con su cuenta de propietario. Después prueba crear_paginas con
   secretos y editar_pagina sobre una página que tenga abierta.
 
-## Tarea en curso: 15, vista previa e incrustados
+## Tarea en curso: 16, sesiones de edición en el historial
 
-(Por empezar.)
+(Por empezar. Leer antes el ADR-0003, § sesiones y versiones, y la spec, § `versiones`.)
 
 ## Hechas en esta tirada
 
@@ -51,4 +51,6 @@ Hay que contárselo al final, con lo que tenga que probar o revisar:
   prueba de la barra de formato falló una vez (Alt+F10 antes de la selección nueva); arreglada en #54.
 - **12** (PR #55, en staging): exportar en .zip.
 - **13** (PR #56, en staging, con la migración 0012): enlaces, `page_links`, resolución sola y `[[`.
-- **14** (rama `wiki/tarea-14-entrantes`): entrantes, menciones, «Enlazar», aviso al borrar y `enlaces_pagina`.
+- **14** (PR #57, en staging, con la migración 0013): entrantes, menciones, «Enlazar», aviso al borrar y
+  `enlaces_pagina`.
+- **15** (rama `wiki/tarea-15-vista-previa`): vista previa, incrustados y aviso `pageContent`.

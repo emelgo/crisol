@@ -194,7 +194,8 @@ Cada vía nueva por la que salen datos amplía `@fugas` en la misma tarea.
   - Comprueba: integración, MCP y e2e.
   - Archivos: `apps/server/src/actions/links.ts`, `apps/web/src/wiki/backlinks.tsx`, `apps/server/src/mcp/tools.ts`.
 
-- [ ] **15. Vista previa e incrustados**
+- [x] **15. Vista previa e incrustados** — hecha. El contenido se pinta en solo lectura desde el JSON de la API
+  (sin Yjs); aviso `pageContent` del canal tras cada guardado.
   - Acepta:
     - La vista previa sale a los 300 ms o con el foco, anclada, y se puede entrar en ella. Escape la cierra. En el
       móvil, en una hoja inferior. Si el enlace va a una sección, enseña esa sección.

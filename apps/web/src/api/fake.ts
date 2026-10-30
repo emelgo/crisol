@@ -453,6 +453,15 @@ export function fakeApi(
       return { incoming: [], outgoing: [], mentions: [] }
     },
     listUnresolvedLinks: () => ({ links: [] }),
+    getPageContent: ({ pageId }) => {
+      const page = pageById(pageId)
+      const { path } = pageView(page)
+      return {
+        page: { id: page.id, title: page.title, icon: page.icon, path, summary: null },
+        blocks: [],
+        truncated: false
+      }
+    },
     linkMention: () => ({ linked: false }),
     listPageNames: ({ worldId }) => {
       const inWorld = pages.filter((page) => page.worldId === worldId)

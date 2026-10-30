@@ -60,7 +60,7 @@ function withSeparates(node: JSONContent, separate: WritePage['separate']): JSON
 /** Los enlaces con el nombre de ahora de su página (los que no se encuentran se quedan con el último conocido) */
 function withLinkTitles(node: JSONContent, pageTitle: WritePage['pageTitle']): JSONContent {
   if (!pageTitle) return node
-  if (node.type === 'pageLink' && typeof node.attrs?.pageId === 'string') {
+  if ((node.type === 'pageLink' || node.type === 'pageEmbed') && typeof node.attrs?.pageId === 'string') {
     return { ...node, attrs: { ...node.attrs, title: pageTitle(node.attrs.pageId) || node.attrs.title } }
   }
   return node.content ? { ...node, content: node.content.map((child) => withLinkTitles(child, pageTitle)) } : node
