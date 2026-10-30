@@ -22,6 +22,7 @@ describe('herramientas MCP', () => {
       'deshacer',
       'editar_pagina',
       'enlace_invitacion',
+      'enlaces_pagina',
       'leer_pagina',
       'listar_mundos',
       'mover_pagina',

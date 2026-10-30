@@ -168,4 +168,71 @@ describe('los enlaces entre páginas', () => {
     await ok200('restorePage', { pageId: maela?.id })
     expect((await ok200('readPage', { pageId: puerto?.id })).markdown).toBe('Ver [[Maela Varn]].\n')
   })
+
+  it('los entrantes con su trozo (también desde un secreto), los salientes y las menciones sin enlazar', async () => {
+    const [maela, puerto, faro, notas] = await create([
+      {
+        key: 'm',
+        title: 'Maela Varn',
+        markdown: '---\nalias: [La Maestre]\n---\nVer [[Puerto Ceniza]], [[Por crear]] y [[El Faro]].'
+      },
+      { key: 'p', title: 'Puerto Ceniza', markdown: 'Lo gobierna [[Maela Varn]] desde la lonja.' },
+      { key: 'f', title: 'El Faro', markdown: '> [!secreto]\n> Lo quemó gente de [[Maela Varn]].' },
+      { key: 'n', title: 'Notas', markdown: 'Hablar con la maestre. Y con Maela Varnes, que no es ella.' }
+    ])
+    await ok200('deletePage', { pageId: faro?.id })
+    const links = await ok200('getPageLinks', { pageId: maela?.id })
+    expect(links.incoming).toEqual([
+      {
+        pageId: puerto?.id,
+        title: 'Puerto Ceniza',
+        path: [],
+        fragment: 'Lo gobierna Maela Varn desde la lonja.',
+        inSecret: false
+      }
+    ])
+    expect(links.outgoing).toEqual([
+      { pageId: puerto?.id, title: 'Puerto Ceniza', anchor: null, state: 'ok' },
+      { pageId: null, title: 'Por crear', anchor: null, state: 'missing' },
+      { pageId: faro?.id, title: 'El Faro', anchor: null, state: 'broken' }
+    ])
+    // «la maestre» es un alias (sin mayúsculas); «Maela Varnes» no cuenta: no es la palabra entera
+    expect(links.mentions).toEqual([
+      {
+        pageId: notas?.id,
+        title: 'Notas',
+        path: [],
+        fragment: 'Hablar con la maestre. Y con Maela Varnes, que no es ella.',
+        inSecret: false
+      }
+    ])
+
+    // «Enlazar»: la mención pasa a ser un enlace, y ya sale entre los entrantes
+    expect(await ok200('linkMention', { sourcePageId: notas?.id, targetPageId: maela?.id })).toEqual({ linked: true })
+    expect((await ok200('readPage', { pageId: notas?.id })).markdown).toBe(
+      'Hablar con [[Maela Varn|la maestre]]. Y con Maela Varnes, que no es ella.\n'
+    )
+    const after = await until(
+      () => ok200('getPageLinks', { pageId: maela?.id }),
+      (l) => l.incoming.length === 2,
+      'el entrante nuevo'
+    )
+    expect(after.mentions).toEqual([])
+
+    // Los sin resolver del mundo
+    expect((await ok200('listUnresolvedLinks', { worldId })).links).toEqual([
+      { title: 'Por crear', count: 1, pages: [{ id: maela?.id, title: 'Maela Varn' }] }
+    ])
+  })
+
+  it('desde un secreto, el entrante lo dice', async () => {
+    const [maela, faro] = await create([
+      { key: 'm', title: 'Maela Varn' },
+      { key: 'f', title: 'El Faro', markdown: '> [!secreto]\n> Lo quemó gente de [[Maela Varn]].' }
+    ])
+    const links = await ok200('getPageLinks', { pageId: maela?.id })
+    expect(links.incoming).toEqual([
+      { pageId: faro?.id, title: 'El Faro', path: [], fragment: 'Lo quemó gente de Maela Varn.', inSecret: true }
+    ])
+  })
 })

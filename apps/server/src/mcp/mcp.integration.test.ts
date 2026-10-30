@@ -286,6 +286,8 @@ describe('conector MCP con OAuth', () => {
       ['enlace_invitacion', { campaignId: campaign.id }, 'read'],
       ['ver_arbol', { worldId: world.id }, 'read'],
       ['leer_pagina', { pageId: page.id, ids: true }, 'read'],
+      ['enlaces_pagina', { pageId: page.id }, 'read'],
+      ['enlaces_pagina', { worldId: world.id }, 'read'],
       ['crear_mundo', { name: 'Otro' }, 'write'],
       ['crear_paginas', { worldId: world.id, parentId: null, pages: [{ key: 'a', title: 'Nueva' }] }, 'write'],
       ['editar_pagina', { pageId: page.id, body: { mode: 'append', markdown: 'Más.' } }, 'write'],

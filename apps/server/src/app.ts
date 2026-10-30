@@ -58,7 +58,12 @@ export function buildApp(deps: AppDeps): FastifyInstance {
       db,
       onError: (error) => app.log.error(error),
       // Los enlaces salen del texto: se rehacen con cada guardado (env se crea justo después)
-      onStored: ({ document, kind, ...source }) => linksOfStored(env, source, jsonOfDoc(document, kind === 'separate'))
+      onStored: ({ document, kind, userId, ...source }) =>
+        linksOfStored(env, source, jsonOfDoc(document, kind === 'separate'), {
+          kind,
+          actorId: userId,
+          onError: (error) => app.log.error(error)
+        })
     })
     const env: ActionEnv = { db, publicUrl, sealKey, realtime, collab, actions: implementationsByName }
     // Límite de intentos solo donde se pide (las rutas de Better Auth tienen el suyo)

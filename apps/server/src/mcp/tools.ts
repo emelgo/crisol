@@ -33,6 +33,14 @@ const invitationInput = z.object({
     )
 })
 
+const linksInput = z.object({
+  pageId: z
+    .uuid()
+    .optional()
+    .describe('Los enlaces de esta página: quién la enlaza, adónde enlaza y dónde se la nombra'),
+  worldId: z.uuid().optional().describe('Sin pageId: los enlaces sin resolver de la wiki de este mundo')
+})
+
 export const MCP_TOOLS: Record<string, McpTool> = {
   listar_mundos: { action: 'listWorldsWithCampaigns' },
   ver_campana: { action: 'getCampaign' },
@@ -57,6 +65,17 @@ export const MCP_TOOLS: Record<string, McpTool> = {
   leer_pagina: { action: 'readPage' },
   crear_paginas: { action: 'createPages' },
   editar_pagina: { action: 'editPage' },
+  enlaces_pagina: {
+    description:
+      'Con pageId, los enlaces de una página: las que la enlazan (con el trozo), adónde enlaza ella y dónde se la nombra sin enlazar. Con worldId, los enlaces sin resolver de la wiki: páginas que alguien enlaza y aún no existen',
+    input: linksInput,
+    actions: ['getPageLinks', 'listUnresolvedLinks'],
+    route: (input) => {
+      const { pageId, worldId } = linksInput.parse(input)
+      if (pageId) return { action: 'getPageLinks', input: { pageId } }
+      return { action: 'listUnresolvedLinks', input: { worldId } }
+    }
+  },
   mover_pagina: { action: 'movePage' },
   borrar_pagina: { action: 'deletePage' }
 }
