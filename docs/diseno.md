@@ -40,8 +40,8 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
 - **Dentro de un mundo, la barra empieza por Inicio y Campañas**, y siguen los de su wiki. Sin ellos «no hay forma
   de volver». Historial y Papelera enseñan los de ese mundo.
 - **El Inicio de un mundo**: arriba su cabecera, que es su tarjeta en grande (portada, nombre, descripción, papel y
-  engranaje); al entrar, la tarjeta se convierte en ella. Debajo, lo reciente: lo último de la wiki para quien lo
-  dirige, y sus campañas para quien juega. Las campañas tienen su propia pestaña.
+  engranaje); al entrar, la tarjeta se convierte en ella. Debajo, lo reciente: «Últimos artículos» de la wiki para
+  quien lo dirige (sin enlace a la wiki: está en la barra), y sus campañas para quien juega. Las campañas tienen su propia pestaña.
 - **El menú de la cuenta** (la inicial, abajo en la barra): quién eres, Perfil, Ajustes y Cerrar sesión. El tema va en
   Ajustes, no en el menú. Se abre al lado del botón y nunca se corta.
 
@@ -53,8 +53,10 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   abre no enseña un momento de carga: sus datos se piden antes (al pasar el ratón) y entran con un fundido.
 - **Las animaciones, siempre completas y para todos**, aunque el sistema pida menos movimiento, para que todos los
   clientes vean el detalle. Sin opción en Ajustes: «Quítalo» (2026-10-30).
-- **Las animaciones, con temática de crisol**: lo nuevo se forja (sale al rojo y se enfría); lo borrado arde (el fuego
-  lo recorre de abajo arriba, queda en ceniza y se va como humo). **Crear y borrar, como entrar y salir**: con
+- **Las animaciones, con temática de crisol**: lo nuevo se forja (sale al rojo y se enfría); lo borrado, **distinto y
+  sin fuego**: se apaga a gris carbón, suelta ceniza que cae y se deshace de arriba abajo («la de borrar debería ser
+  diferente»). **Forja y ceniza son solo de los mundos (y las campañas)**: los archivos aparecen y se van con una
+  animación suave, sin fuego. **Crear y borrar, como entrar y salir**: con
   transiciones de vista, la ventana de crear se encoge al rojo en la tarjeta nueva (que sale ya con su portada) y la
   borrada arde en su sitio; las demás se recolocan deslizándose, sin saltos. Al entrar en un mundo, «Mundos» sube a la llama de la
   barra y se funde con ella, que se aviva soltando chispas: «como que el mundo se está cocinando». Dentro, la llama es
@@ -64,8 +66,8 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   acerca y se desvanece, como si se pasara a través; al volver, al revés (transiciones de vista del navegador). Al
   entrar, con un fuego sutil: la tarjeta se pone al rojo mientras crece y sube algo de calor con unas brasas; la
   llama de la barra se aviva y suelta chispas durante unos segundos. Al salir, la cabecera se enfría mientras vuelve
-  a ser tarjeta y la llama de la barra expulsa a «Mundos», se apaga a latidos y echa tres bocanadas de humo. Sin humo grande en la página: «muy
-  cutre».
+  a ser tarjeta, de ella suben unas volutas finas de humo que se retuercen y se disipan, y la llama de la barra expulsa
+  a «Mundos», se apaga a latidos y echa tres bocanadas. Nada de manchas de humo por toda la página: «muy cutre».
   **En secuencia, sin verse las dos vistas a la vez**: lo de antes se va deprisa, la tarjeta que crece hace de puente
   y lo nuevo llega cuando ya no está.
 - **Las pestañas de la barra (dentro de una vista) también tienen transición, pero rápida y sin fuego**: lo que había
@@ -81,6 +83,10 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
 - **«Nuevo …» va como un recuadro más de la lista**, con la misma forma (esquinas cortadas), vacío y con el borde
   discontinuo, tras el último (no un botón arriba). Sin ninguno, la pantalla vacía con su botón grande.
 - **Las pantallas de cuenta (entrar, crear la cuenta)** van centradas y con aspecto profesional.
+- **Archivos, en tarjetas** como los mundos (miniatura, nombre, tamaño, engranaje). Se ordenan en **carpetas** (unas
+  dentro de otras; un archivo se mueve arrastrándolo o desde su engranaje; borrar una carpeta sube lo que tiene), con
+  **buscador por nombre y filtro por tipo**. Se suben varios a la vez (no carpetas enteras), a la carpeta abierta; cada
+  subida sale con su progreso y una X para cancelarla, y al acabar ya es su tarjeta (sin lista de «Subidas»).
 - **Los archivos comunes de la cuenta** (ADR-0005): fuera de los mundos, «Archivos» en la barra; dentro de cada
   mundo, la carpeta «Comunes» en sus archivos, la misma en todos. Donde se elige un archivo (la portada), «Del mundo»
   y «Comunes» por separado.

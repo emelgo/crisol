@@ -176,6 +176,10 @@ y las e2e (con fugas y accesibilidad) en verde aquí. Al poner al día las prueb
 - el detalle de una petición de la IA no se alcanzaba con el teclado;
 - el arranque decía si un nombre de usuario existía sin un enlace válido.
 
+**En `interfaz/pulir-2`** (2026-10-30, en local): «Ver» de las portadas arreglado (con su e2e); portadas al momento;
+«Últimos artículos»; archivos en tarjetas con carpetas (migración 0027), buscador, filtro y subidas que se cancelan
+(el servidor ya tira una subida cortada); borrar un mundo con ceniza, distinto de crearlo; humo al salir de un mundo.
+
 **Lo siguiente**: seguir puliendo en la rama `interfaz/pulir-2`. Falta que Enrique vea el Inicio del mundo y la
 pestaña Campañas; la página de una campaña aún lleva la franja antigua. Pequeños pendientes vistos al probar:
 - reabrir una ventana en el instante en que se cierra no la abre (`components/window.tsx`, el mismo `kind`);
