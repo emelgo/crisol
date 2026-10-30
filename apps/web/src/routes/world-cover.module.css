@@ -50,6 +50,11 @@
   touch-action: none;
 }
 
+/* Con imagen, sin el tinte detrás (por si tiene partes transparentes) */
+.preview:has(> img) {
+  background: var(--color-raised);
+}
+
 .preview:active {
   cursor: grabbing;
 }
