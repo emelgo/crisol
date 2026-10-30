@@ -8,6 +8,7 @@ import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
 import { useAnnounce } from '../components/announcer.tsx'
 import { Banner, type Stat } from '../components/banner.tsx'
+import { Loading } from '../components/brand.tsx'
 import { BusyButton } from '../components/busy-button.tsx'
 import { CopyField } from '../components/copy-field.tsx'
 import { FormError } from '../components/field.tsx'
@@ -41,10 +42,11 @@ export function CampaignPage() {
 
   if (pending) return null
   if (!account) return <Navigate to="/entrar" replace />
-  // Sin las listas no se sabe si existe: mientras llegan, nada; si fallan, el error (no «no existe»)
-  if (!worlds.data) return failed(worlds) ? <LoadError error={worlds.error} onRetry={() => worlds.refetch()} /> : null
+  // Sin las listas no se sabe si existe: mientras llegan, la carga; si fallan, el error (no «no existe»)
+  if (!worlds.data)
+    return failed(worlds) ? <LoadError error={worlds.error} onRetry={() => worlds.refetch()} /> : <Loading />
   if (world && !campaigns.data) {
-    return failed(campaigns) ? <LoadError error={campaigns.error} onRetry={() => campaigns.refetch()} /> : null
+    return failed(campaigns) ? <LoadError error={campaigns.error} onRetry={() => campaigns.refetch()} /> : <Loading />
   }
   if (!world || !campaign) {
     return (

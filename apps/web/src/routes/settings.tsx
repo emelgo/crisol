@@ -5,7 +5,6 @@ import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
 import { PageTitle } from '../components/page-title.tsx'
-import { setToursEnabled, toursEnabled } from '../components/tour.tsx'
 import { currentTheme, setTheme, type Theme } from '../theme.ts'
 import { AiSettings } from './ai-settings.tsx'
 import styles from './settings.module.css'
@@ -21,7 +20,6 @@ export function Settings() {
     enabled: Boolean(account)
   })
   const [theme, setThemeState] = useState<Theme>(currentTheme)
-  const [tours, setTours] = useState(() => (account ? toursEnabled(account.email) : true))
   if (pending) return null
   if (!account) return <Navigate to="/entrar" replace />
   // La IA solo se conecta con la cuenta del propietario (módulo 0)
@@ -49,21 +47,6 @@ export function Settings() {
             </label>
           ))}
         </fieldset>
-      </section>
-      <section aria-labelledby="ajustes-ayuda">
-        <h2 id="ajustes-ayuda">{t('settings.help')}</h2>
-        <label className={styles.check}>
-          <input
-            type="checkbox"
-            checked={tours}
-            onChange={(event) => {
-              const on = event.currentTarget.checked
-              setToursEnabled(account.email, on)
-              setTours(on)
-            }}
-          />
-          {t('settings.tours')}
-        </label>
       </section>
       {isOwner && <AiSettings embedded />}
     </section>

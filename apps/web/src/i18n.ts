@@ -6,6 +6,7 @@ export const es = {
   app: {
     name: 'Crisol',
     tagline: 'Mundos de rol y mesa virtual',
+    loading: 'Cargando…',
     accountNav: 'Cuenta',
     sectionsNav: 'Secciones',
     skipToContent: 'Saltar al contenido',
@@ -820,8 +821,6 @@ export const es = {
     theme: 'Tema',
     light: 'Claro',
     dark: 'Oscuro',
-    help: 'Ayuda',
-    tours: 'Mostrar los recorridos',
     aiWaiting_one: '{{count}} petición',
     aiWaiting_other: '{{count}} peticiones'
   },
@@ -833,14 +832,13 @@ export const es = {
     perfil: 'Perfil',
     close: 'Cerrar'
   },
-  // Los recorridos: la primera vez en cada pantalla, qué es cada cosa
+  // El tutorial guiado de cada vista: la primera vez que se entra, qué es cada cosa
   tour: {
     count: '{{current}} de {{total}}',
-    skip: 'Saltar',
     back: 'Atrás',
     next: 'Siguiente',
     done: 'Entendido',
-    understood: 'Lo tengo claro',
+    again: 'Tutorial guiado de esta vista',
     worlds: {
       create: 'Un mundo guarda tu wiki, tus campañas y tus partidas.',
       ribbon: 'Dentro de un mundo, esta barra cambiará y mostrará su contenido.',

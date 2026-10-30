@@ -36,8 +36,9 @@
   --color-h3: #85540f;
   --color-h4: #1d7466;
   --color-link: #1a62c4;
-  /* La marca: el rombo y la señal de lo activo. Solo adorno, nunca texto */
+  /* La marca: la llama (de brand abajo a glow arriba) y la señal de lo activo. Solo adorno, nunca texto */
   --color-brand: #d63a40;
+  --color-brand-glow: #f0703f;
   --color-ai: #1f6e99;
   --color-focus: #c42b31;
   /* Los secretos y las notas ocultas: aparte, en morado, con su borde de rayas */
@@ -117,6 +118,7 @@
   --color-h4: #6fc3b2;
   --color-link: #8ab4f8;
   --color-brand: #e5484d;
+  --color-brand-glow: #ff8a5c;
   --color-ai: #7cc4e8;
   --color-focus: #f08b8e;
   --color-secret: #2a2530;

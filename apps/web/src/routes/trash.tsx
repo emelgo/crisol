@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
+import { Loading } from '../components/brand.tsx'
 import { BusyButton } from '../components/busy-button.tsx'
 import { FormError } from '../components/field.tsx'
 import { focusAfterRemoving } from '../components/focus.ts'
@@ -59,6 +60,7 @@ function TrashPage({ title, back, scope }: { title: string; back?: ReactNode; sc
       {back && <p>{back}</p>}
       <PageTitle>{title}</PageTitle>
       <FormError message={trash.error ? errorText(trash.error) : null} />
+      {!trash.data && !trash.error && <Loading />}
       {trash.data &&
         (trash.data.items.length === 0 ? (
           <p>{t('trash.empty')}</p>

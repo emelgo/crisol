@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { AccountMenu } from '../components/account-menu.tsx'
 import { ApprovalQueue } from '../components/approval-queue.tsx'
+import { CrisolMark, Loading } from '../components/brand.tsx'
 import { Notices } from '../components/notices.tsx'
 import { PageTitle, useFocusHeading } from '../components/page-title.tsx'
 import { Ribbon } from '../components/ribbon.tsx'
@@ -47,13 +48,16 @@ export function RootLayout() {
       {t('app.skipToContent')}
     </a>
   )
+  // Mientras llega la sesión, la llama en el centro
+  if (pending) return <Loading full />
   // Sin sesión (entrar, unirse a una campaña): una barra sencilla arriba, con la marca, entrar y el tema
-  if (!account && !pending) {
+  if (!account) {
     return (
       <div className={styles.shell}>
         {skip}
         <header className={styles.header}>
           <Link to="/" className={styles.brand} translate="no">
+            <CrisolMark size={28} />
             {t('app.name')}
           </Link>
           <nav className={styles.nav} aria-label={t('app.accountNav')}>

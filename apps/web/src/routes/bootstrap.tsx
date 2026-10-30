@@ -4,6 +4,7 @@ import { type FormEvent, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { NewAccountFields } from '../account/account-fields.tsx'
 import { useAccounts } from '../account/context.tsx'
+import { Loading } from '../components/brand.tsx'
 import { BusyButton } from '../components/busy-button.tsx'
 import { FormError } from '../components/field.tsx'
 import styles from '../components/form.module.css'
@@ -21,7 +22,7 @@ export function Bootstrap() {
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
-  if (info.isPending) return null
+  if (info.isPending) return <Loading />
   if (!info.data) {
     return (
       <section>

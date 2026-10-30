@@ -1,7 +1,8 @@
 /* Lo que la IA espera que apruebes: una pila de tarjetas abajo a la derecha, encima de todo lo demás */
 .stack {
   position: fixed;
-  inset-block-end: var(--space-4);
+  /* Encima del «?» de los recorridos */
+  inset-block-end: calc(var(--space-4) + 2.25rem + var(--space-2));
   inset-inline-end: var(--space-4);
   z-index: 35;
   display: flex;

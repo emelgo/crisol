@@ -5,6 +5,7 @@ import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
 import { Banner } from '../components/banner.tsx'
+import { Loading } from '../components/brand.tsx'
 import { CreateForm } from '../components/create-form.tsx'
 import { FormError } from '../components/field.tsx'
 import styles from '../components/list.module.css'
@@ -37,8 +38,9 @@ export function WorldPage() {
 
   if (pending) return null
   if (!account) return <Navigate to="/entrar" replace />
-  // Sin la lista no se sabe si existe: mientras llega, nada; si falla, el error (no «no existe»)
-  if (!worlds.data) return failed(worlds) ? <LoadError error={worlds.error} onRetry={() => worlds.refetch()} /> : null
+  // Sin la lista no se sabe si existe: mientras llega, la carga; si falla, el error (no «no existe»)
+  if (!worlds.data)
+    return failed(worlds) ? <LoadError error={worlds.error} onRetry={() => worlds.refetch()} /> : <Loading />
   if (!world) {
     return (
       <section>

@@ -56,15 +56,6 @@
   text-decoration: none;
 }
 
-/* El rombo rojo: la marca */
-.brand::before {
-  content: "";
-  inline-size: 0.875rem;
-  block-size: 0.875rem;
-  background: var(--color-accent);
-  transform: rotate(45deg);
-}
-
 .main {
   inline-size: min(100%, 72rem);
   margin-inline: auto;

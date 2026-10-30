@@ -92,15 +92,18 @@ Todo va en la rama `interfaz/pulir-inicio`, en un commit local sin subir. Las no
   - con la colocación de Ajustes;
   - sin la frase larga;
   - «Nuevo mundo» y «Crear tu primer mundo» abren un cuadro (`CreateDialog`), en vez del formulario suelto.
-- **Recorridos** (`components/tour.tsx`), el de Mis mundos:
+- **Tutorial guiado de cada vista** (`components/tour.tsx`), el de Mis mundos:
   - crear un mundo, con «Mundos» resaltado y su nota en el mismo paso;
   - Historial;
   - Papelera, con los días de `TRASH_DAYS`;
   - tu menú.
 
-  Con Atrás desde el segundo paso. «Lo tengo claro» solo en el último paso. En Ajustes, la casilla «Mostrar los recorridos». Se ve desmarcada si
-  alguno se tiene claro. Al cerrar Ajustes con ella marcada, el recorrido de la pantalla vuelve a salir (también si
-  se había saltado). Pruebas ya hechas en `components/tour.test.tsx`.
+  Sale solo la primera vez, hasta acabarlo; con Atrás desde el segundo paso, sin Saltar ni «Lo tengo claro». Un «?»
+  casi transparente abajo a la derecha lo vuelve a sacar. Lo hecho se guarda en el navegador, por cuenta. Pruebas ya
+  hechas en `components/tour.test.tsx`.
+- **La marca, la llama** del Crisol antiguo (`components/brand.tsx`): en la barra, la cabecera y la pestaña
+  (`public/favicon.svg`), y latiendo mientras algo carga (`Loading`), en vez de la pantalla en blanco.
+- **Barras de desplazamiento** finas, del color de los bordes; en las ventanas solo se desplaza el contenido.
 - **Barra lateral**:
   - sin barra de estado abajo;
   - el tema y la IA salen de ella;
@@ -110,9 +113,8 @@ Todo va en la rama `interfaz/pulir-inicio`, en un commit local sin subir. Las no
 - **Menú de la cuenta**: quién eres, Perfil, Ajustes y Cerrar sesión. Es fijo en la pantalla y no se corta.
 - **Ajustes** (`/ajustes`):
   - Apariencia, con el tema;
-  - Ayuda, con los recorridos;
   - IA, solo el conector y el modo.
-- **Perfil**: tus datos (usuario, nombre, apellidos; el email aún no se cambia) y cambiar la contraseña.
+- **Perfil**, centrado como Ajustes: tus datos (usuario, nombre, apellidos; el email aún no se cambia) y cambiar la contraseña.
 - **Las peticiones de la IA**, en tarjetas flotantes abajo a la derecha, como en el Crisol antiguo.
 - **ADR-0004**: cuentas personales y registro público, con la organización por debajo.
 
@@ -125,6 +127,7 @@ Todo va en la rama `interfaz/pulir-inicio`, en un commit local sin subir. Las no
    - Entrar con sesión redirige; Historial y Papelera de la cuenta, sin enlace de vuelta;
    - Perfil y Ajustes, en el menú;
    - el tema ya no está en la barra;
+   - mientras carga sale la llama (`Loading`), no la pantalla en blanco;
    - las tarjetas de la IA;
    - el bootstrap y la unión, con `firstName` y `lastName`;
    - `USERNAME_TAKEN`;

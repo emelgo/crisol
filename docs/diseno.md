@@ -15,6 +15,11 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   - Barlow para el texto;
   - Barlow Condensed en mayúsculas para los títulos;
   - las esquinas cortadas de los recuadros.
+- **La marca es la llama** del Crisol antiguo, de rojo abajo a naranja arriba (`components/brand.tsx`): en la barra,
+  en la cabecera, en la pestaña del navegador y **mientras algo carga** (latiendo en el centro). «El icono actual no
+  trasmite nada».
+- **Las barras de desplazamiento, finas y del color de los bordes**, sin flechas; en una ventana solo se desplaza el
+  contenido: «la barra lateral de los popup desentona bastante».
 - **Nada de aspecto «de IA»**:
   - ni todo en mayúsculas condensadas;
   - ni filas de botones con borde, todos con el mismo peso;
@@ -61,16 +66,17 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   cambiará. Por ejemplo, «Desde aquí podrás administrar la aplicación».
 - **Nada de mensajes aclarativos** tras una acción («Volverán a salir»). Mejor una opción que se marca y se ve marcada.
 
-## Recorridos
+## Tutorial guiado de cada vista
 
-- **Cada pantalla tiene su recorrido**: un globo por zona, con «1 de 3», Saltar, Atrás (desde el segundo) y Siguiente. Sale cada vez que se
-  entra hasta que se marca **«Lo tengo claro»**, que solo aparece en el último paso.
+- **Se llama «tutorial guiado de la vista»**, no «recorrido».
+- **Cada vista tiene el suyo**: un globo por zona, con «1 de 3», Atrás (desde el segundo) y Siguiente. Ni Saltar ni
+  «Lo tengo claro»: «los jugadores tendrán que hacer la guía de todas las vistas la primera vez que entren».
+- **Sale solo la primera vez**, hasta acabarlo. Con Escape se cierra sin acabar y vuelve a salir la próxima vez.
+- **Un «?» abajo a la derecha lo vuelve a sacar**: casi transparente, pero que se vea, y con su color al pasar el
+  ratón. No hay casilla en Ajustes.
 - **Lo relacionado se resalta en el mismo paso**, sin un paso propio: «Mundo en la barra lateral se tiene que resaltar
   en el paso 1, no debe tener un paso propio porque es redundante». Si hace falta, lleva su propia nota corta junto a
   su recuadro (la de «Mundos»: «Dentro de un mundo, esta barra cambiará y mostrará su contenido»).
-- **En Ajustes, una casilla «Mostrar los recorridos»**: desmarcada, no sale ninguno; al volver a marcarla, salen
-  todos otra vez. Con alguno marcado «Lo tengo claro», se ve desmarcada. **Marcada quiere decir que sale**: al
-  cerrar Ajustes, el de la pantalla que se ve vuelve a salir, aunque se hubiera saltado.
 
 ## IA
 

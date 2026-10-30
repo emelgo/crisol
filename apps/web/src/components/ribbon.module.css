@@ -27,20 +27,13 @@
   flex: 1 1 auto;
 }
 
-/* El rombo de la marca: lleva a la portada */
+/* La llama de la marca: lleva a Mis mundos */
 .brand {
   display: grid;
   place-items: center;
   inline-size: var(--target);
   block-size: var(--target);
   margin-block-end: var(--space-2);
-}
-
-.brand span {
-  inline-size: 1rem;
-  block-size: 1rem;
-  background: var(--color-brand);
-  transform: rotate(45deg);
 }
 
 .item {

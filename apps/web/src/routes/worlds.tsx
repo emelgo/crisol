@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
+import { Loading } from '../components/brand.tsx'
 import { CreateDialog } from '../components/create-dialog.tsx'
 import { FormError } from '../components/field.tsx'
 import form from '../components/form.module.css'
@@ -59,6 +60,7 @@ export function Worlds() {
         {canCreate && !empty && newWorld(false)}
       </div>
       <FormError message={failed(worlds) ? errorText(worlds.error) : null} />
+      {!worlds.data && !failed(worlds) && <Loading />}
       {worlds.data &&
         (empty ? (
           // Sin mundos: qué es un mundo y el botón grande para crear el primero

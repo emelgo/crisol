@@ -8,6 +8,7 @@ import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
 import { useAnnounce } from '../components/announcer.tsx'
+import { Loading } from '../components/brand.tsx'
 import { BusyButton } from '../components/busy-button.tsx'
 import { FormError } from '../components/field.tsx'
 import { focusOnMount } from '../components/focus.ts'
@@ -70,6 +71,7 @@ function HistoryPage({ title, back, scope }: { title: string; back?: ReactNode; 
       {back && <p>{back}</p>}
       <PageTitle>{title}</PageTitle>
       <FormError message={history.error ? errorText(history.error) : null} />
+      {!history.data && !history.error && <Loading />}
       {history.data &&
         (entries.length === 0 ? (
           <p>{t('history.empty')}</p>

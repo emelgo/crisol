@@ -7,6 +7,7 @@ import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
 import { useNarrow, useWikiPanel, type WikiPanel } from '../wiki/panel.tsx'
 import { AccountMenu } from './account-menu.tsx'
+import { CrisolMark } from './brand.tsx'
 import styles from './ribbon.module.css'
 import { useWindow } from './window.tsx'
 
@@ -56,7 +57,7 @@ export function Ribbon() {
     <div className={styles.ribbon}>
       <nav className={styles.sections} aria-label={t('app.sectionsNav')}>
         <Link to="/mundos" className={styles.brand} aria-label={t('app.name')} translate="no">
-          <span aria-hidden="true" />
+          <CrisolMark size={26} />
         </Link>
         <Link to="/mundos" activeOptions={{ exact: true }} className={styles.item} data-tour="barra-mundos">
           <Label icon={Globe} text={t('ribbon.worlds')} />

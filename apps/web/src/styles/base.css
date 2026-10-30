@@ -4,6 +4,11 @@
   box-sizing: border-box;
 }
 
+/* Las barras de desplazamiento, del color de los bordes y sin flechas: que no desentonen (se hereda en toda la app) */
+:root {
+  scrollbar-color: var(--color-frame) transparent;
+}
+
 body {
   margin: 0;
   font-family: var(--font-body);

@@ -34,15 +34,18 @@
   margin-block-start: 0;
 }
 
+/* min-inline-size 0: un campo (y su recuadro) se ajusta a su columna, sin salirse por su ancho propio */
 .field {
   display: grid;
   gap: var(--space-1);
+  min-inline-size: 0;
   font-weight: 600;
 }
 
 .field input,
 .field select,
 .field textarea {
+  min-inline-size: 0;
   min-block-size: 3rem;
   padding: 0 var(--space-3);
   border: 1px solid var(--color-field-border);

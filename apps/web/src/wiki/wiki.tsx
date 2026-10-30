@@ -9,6 +9,7 @@ import { ApiError } from '../api/client.ts'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
 import { useAnnounce } from '../components/announcer.tsx'
+import { Loading } from '../components/brand.tsx'
 import { BusyButton } from '../components/busy-button.tsx'
 import { Field, FormError } from '../components/field.tsx'
 import { focusOnMount, useReturnFocus } from '../components/focus.ts'
@@ -97,7 +98,8 @@ export function WikiLayout({
 
   if (pending) return null
   if (!account) return <Navigate to="/entrar" replace />
-  if (!worlds.data) return failed(worlds) ? <LoadError error={worlds.error} onRetry={() => worlds.refetch()} /> : null
+  if (!worlds.data)
+    return failed(worlds) ? <LoadError error={worlds.error} onRetry={() => worlds.refetch()} /> : <Loading />
   if (!world) {
     return (
       <section>

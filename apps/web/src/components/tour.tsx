@@ -1,4 +1,5 @@
 import { autoUpdate, computePosition, flip, offset, type Placement, shift } from '@floating-ui/dom'
+import { CircleHelp } from 'lucide-react'
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
@@ -16,49 +17,30 @@ export interface TourStep {
 
 const STORAGE = 'crisol.recorridos'
 
-/** Lo que se guarda por cuenta: si salen los recorridos y cuáles ya tiene claros */
-interface ToursState {
-  off: boolean
-  clear: string[]
-}
-
 const keyFor = (email: string) => `${STORAGE}.${email}`
 
-function readState(email: string): ToursState {
+/** Los recorridos que la cuenta ya ha hecho hasta el final (en este navegador) */
+function readSeen(email: string): string[] {
   try {
-    const value = JSON.parse(localStorage.getItem(keyFor(email)) ?? '{}') as Partial<ToursState>
-    return {
-      off: value.off === true,
-      clear: Array.isArray(value.clear) ? value.clear.filter((item): item is string => typeof item === 'string') : []
-    }
+    const value = JSON.parse(localStorage.getItem(keyFor(email)) ?? '{}') as { seen?: unknown }
+    return Array.isArray(value.seen) ? value.seen.filter((item): item is string => typeof item === 'string') : []
   } catch {
-    return { off: false, clear: [] }
+    return []
   }
 }
 
-function writeState(email: string, state: ToursState) {
+function markSeen(email: string, id: string) {
   try {
-    localStorage.setItem(keyFor(email), JSON.stringify(state))
+    localStorage.setItem(keyFor(email), JSON.stringify({ seen: [...new Set([...readSeen(email), id])] }))
   } catch {
-    // Sin almacenamiento, los recorridos salen como siempre
+    // Sin almacenamiento, el recorrido vuelve a salir la próxima vez
   }
-}
-
-/** Para «Ajustes»: si salen todos. Con uno marcado «Lo tengo claro», la casilla se ve sin marcar */
-export function toursEnabled(email: string) {
-  const state = readState(email)
-  return !state.off && state.clear.length === 0
-}
-
-/** Encenderlos los vuelve a sacar todos (también los que se tenían claros); apagarlos, ninguno */
-export function setToursEnabled(email: string, enabled: boolean) {
-  writeState(email, { off: !enabled, clear: [] })
 }
 
 /**
- * Un recorrido por una pantalla: al entrar, un globo junto a cada parte dice qué es («1 de 3», Saltar, Atrás,
- * Siguiente). Los pasos cuyo elemento no está en la pantalla se saltan. Sale cada vez hasta que se marca «Lo tengo
- * claro»; en Ajustes se apagan todos o se vuelven a encender, y al cerrar Ajustes vuelve a salir si se había saltado
+ * El recorrido de una pantalla: un globo junto a cada parte dice qué es («1 de 3», Atrás, Siguiente). Sale solo la
+ * primera vez, hasta acabarlo; después, con el botón «?» que pinta este componente (va junto al título de la
+ * pantalla). Los pasos cuyo elemento no está en la pantalla se saltan
  */
 export function Tour({ id, steps }: { id: string; steps: readonly TourStep[] }) {
   const { t } = useTranslation()
@@ -72,36 +54,27 @@ export function Tour({ id, steps }: { id: string; steps: readonly TourStep[] }) 
   const next = useRef<HTMLButtonElement>(null)
   const returnTo = useRef<Element | null>(null)
   const titleId = useId()
-  const clearId = useId()
-  const [understood, setUnderstood] = useState(false)
   const email = account?.email
   // Los pasos llegan nuevos en cada pintado: se leen al empezar, sin volver a empezar el recorrido
   const latest = useRef(steps)
   latest.current = steps
-  // Sale una vez por visita, y otra al cerrar Ajustes si no está en pantalla (la casilla marcada dice que sale)
+  // Sale solo una vez por visita, y no con una ventana abierta encima (espera a que se cierre)
   const started = useRef(false)
   const opened = useWindow()?.opened ?? null
-  const lastWindow = useRef(opened)
 
-  // Al entrar, si no se ha visto: los pasos que tienen dónde apuntar (un momento después, cuando ya está pintado).
-  // Con una ventana abierta espera a que se cierre
+  const start = () => {
+    const present = latest.current.filter((step) => document.querySelector(step.target))
+    if (present.length === 0) return
+    started.current = true
+    returnTo.current = document.activeElement
+    setVisible(present)
+    setIndex(0)
+  }
+
+  // La primera vez: un momento después de entrar, cuando ya está pintado
   useEffect(() => {
-    const closed = lastWindow.current
-    lastWindow.current = opened
-    if (!email || opened) return
-    if (closed === 'ajustes' && index === null) started.current = false
-    if (started.current) return
-    const state = readState(email)
-    if (state.off || state.clear.includes(id)) return
-    const timer = window.setTimeout(() => {
-      const present = latest.current.filter((step) => document.querySelector(step.target))
-      if (present.length === 0) return
-      started.current = true
-      returnTo.current = document.activeElement
-      setUnderstood(false)
-      setVisible(present)
-      setIndex(0)
-    }, 400)
+    if (!email || opened || started.current || readSeen(email).includes(id)) return
+    const timer = window.setTimeout(start, 400)
     return () => window.clearTimeout(timer)
   }, [email, id, opened])
 
@@ -147,19 +120,23 @@ export function Tour({ id, steps }: { id: string; steps: readonly TourStep[] }) 
     })
   }, [step])
 
-  if (!step || index === null || !email) return null
-  const close = () => {
-    // Solo si se marcó «Lo tengo claro», no vuelve a salir
-    if (understood) {
-      const state = readState(email)
-      writeState(email, { ...state, clear: [...new Set([...state.clear, id])] })
-    }
+  // El «?»: vuelve a sacar el recorrido cuando se quiera
+  const help = (
+    <button type="button" className={styles.help} aria-label={t('tour.again')} title={t('tour.again')} onClick={start}>
+      <CircleHelp aria-hidden="true" size={18} />
+    </button>
+  )
+  if (!step || index === null || !email) return help
+  // Con Escape se cierra sin acabarlo: volverá a salir la próxima vez
+  const close = (finished: boolean) => {
+    if (finished) markSeen(email, id)
     setIndex(null)
     if (returnTo.current instanceof HTMLElement) returnTo.current.focus()
   }
   const last = index === visible.length - 1
   return (
     <>
+      {help}
       <div ref={ring} aria-hidden="true" className={styles.ring} />
       {(step.also ?? []).map((also, i) => (
         <div key={also.target}>
@@ -188,31 +165,14 @@ export function Tour({ id, steps }: { id: string; steps: readonly TourStep[] }) 
         aria-labelledby={titleId}
         className={styles.bubble}
         onKeyDown={(event) => {
-          if (event.key === 'Escape') close()
+          if (event.key === 'Escape') close(false)
         }}
       >
         <p id={titleId} className={styles.text}>
           {step.text}
         </p>
-        {/* Solo en el último paso: al acabarlo se decide si vuelve a salir */}
-        {last && (
-          <label className={styles.clear} htmlFor={clearId}>
-            <input
-              id={clearId}
-              type="checkbox"
-              checked={understood}
-              onChange={(event) => setUnderstood(event.currentTarget.checked)}
-            />
-            {t('tour.understood')}
-          </label>
-        )}
         <div className={styles.footer}>
           <span className={styles.count}>{t('tour.count', { current: index + 1, total: visible.length })}</span>
-          {!last && (
-            <button type="button" className={styles.skip} onClick={close}>
-              {t('tour.skip')}
-            </button>
-          )}
           {index > 0 && (
             <button type="button" className={styles.back} onClick={() => setIndex(index - 1)}>
               {t('tour.back')}
@@ -222,7 +182,7 @@ export function Tour({ id, steps }: { id: string; steps: readonly TourStep[] }) 
             ref={next}
             type="button"
             className={styles.next}
-            onClick={() => (last ? close() : setIndex(index + 1))}
+            onClick={() => (last ? close(true) : setIndex(index + 1))}
           >
             {t(last ? 'tour.done' : 'tour.next')}
           </button>

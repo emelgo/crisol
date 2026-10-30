@@ -3,6 +3,11 @@
   margin-inline: auto;
 }
 
+/* Los formularios (Perfil), a todo el ancho de la columna, como las secciones de Ajustes */
+.page > form {
+  max-inline-size: none;
+}
+
 .themes {
   display: flex;
   flex-wrap: wrap;
@@ -55,20 +60,4 @@
 
 .theme[data-theme-option="dark"] .swatch {
   background: linear-gradient(90deg, #25262b 0 30%, #17181b 30%);
-}
-
-/* Una opción que se marca: la casilla y su nombre */
-.check {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.check input {
-  inline-size: 1.125rem;
-  block-size: 1.125rem;
-  margin: 0;
-  accent-color: var(--color-accent);
 }

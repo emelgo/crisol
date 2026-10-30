@@ -7,6 +7,7 @@ import type { JoinResult } from '../account/client.ts'
 import { useAccounts } from '../account/context.tsx'
 import { useAnnounce } from '../components/announcer.tsx'
 import { Banner } from '../components/banner.tsx'
+import { Loading } from '../components/brand.tsx'
 import { BusyButton } from '../components/busy-button.tsx'
 import { Field, FormError } from '../components/field.tsx'
 import { focusOnMount } from '../components/focus.ts'
@@ -33,7 +34,7 @@ export function Join() {
   const [isMaster, setIsMaster] = useState(false)
   const [busy, setBusy] = useState(false)
 
-  if (pending || info.isPending) return null
+  if (pending || info.isPending) return <Loading />
   if (!info.data) {
     return (
       <section>
