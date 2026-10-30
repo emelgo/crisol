@@ -37,7 +37,7 @@ function embers() {
   heat.className = 'brasas'
   heat.setAttribute('aria-hidden', 'true')
   document.body.append(heat)
-  window.setTimeout(() => heat.remove(), 1800)
+  window.setTimeout(() => heat.remove(), 2500)
 }
 
 /** Para la tarjeta y la cabecera de ese mundo: su nombre de transición */
