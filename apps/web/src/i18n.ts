@@ -22,8 +22,8 @@ export const es = {
     history: 'Historial',
     trash: 'Papelera',
     ai: 'IA',
-    aiPending_one: 'IA, {{count}} petición esperando',
-    aiPending_other: 'IA, {{count}} peticiones esperando',
+    aiPending_one: ', {{count}} petición esperando',
+    aiPending_other: ', {{count}} peticiones esperando',
     theme: 'Tema'
   },
   account: {

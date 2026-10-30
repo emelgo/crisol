@@ -164,12 +164,9 @@ function ThemeButton() {
 function AiLink() {
   const { t } = useTranslation()
   const pending = useApprovals().data?.pending.length ?? 0
+  // El número se ve sobre el icono; a los lectores de pantalla se les dice detrás de «IA», con el texto visible
   return (
-    <Link
-      to="/ia"
-      className={styles.item}
-      aria-label={pending > 0 ? t('ribbon.aiPending', { count: pending }) : undefined}
-    >
+    <Link to="/ia" className={styles.item}>
       <span className={styles.badged}>
         <Plug aria-hidden="true" size={20} strokeWidth={1.75} />
         {pending > 0 && (
@@ -178,7 +175,10 @@ function AiLink() {
           </span>
         )}
       </span>
-      <span className={styles.text}>{t('ribbon.ai')}</span>
+      <span className={styles.text}>
+        {t('ribbon.ai')}
+        {pending > 0 && <span className={styles.hidden}>{t('ribbon.aiPending', { count: pending })}</span>}
+      </span>
     </Link>
   )
 }
