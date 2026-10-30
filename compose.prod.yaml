@@ -12,6 +12,9 @@ services:
       VALKEY_URL: redis://valkey:6379
       AUTH_SECRET: ${AUTH_SECRET:?falta AUTH_SECRET}
       PUBLIC_URL: ${PUBLIC_URL:?falta PUBLIC_URL}
+    volumes:
+      # Los bytes de los archivos de los mundos
+      - archivos:/data/archivos
     ports:
       - 127.0.0.1:${CRISOL_PORT:-8140}:8130
     depends_on:
@@ -54,3 +57,4 @@ services:
 volumes:
   postgres:
   valkey:
+  archivos:
