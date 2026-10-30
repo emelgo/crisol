@@ -7,6 +7,45 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
+### Para retomar (2026-10-30)
+
+- **El módulo 1 (wiki) está construido entero y en staging**: tareas 1 a 26, PR #52 a #70. Lo que hace cada tarea está
+  en las entradas de abajo, del 2026-10-30.
+- **Ahora mismo**: Enrique prueba en staging los puntos de control 3 a 6 y el final. Después viene la **etapa de
+  interfaz** (Enrique ve la interfaz «horrible»). Lo que salga de sus pruebas se apunta abajo, en «Lo que dijo Enrique
+  al probar», y se arregla al volver.
+- **Lo que tiene que probar**:
+  1. **Punto 3**: el conector MCP de staging (`https://neo.crisol.144-91-122-245.sslip.io/mcp`) en claude.ai con su
+     cuenta de propietario. Probar `crear_paginas` con secretos y `editar_pagina` sobre una página abierta.
+  2. **Punto 4**: versiones, restaurar una y deshacer desde el historial.
+  3. **Punto 5**: subir archivos, usarlos en páginas, abrir un PDF y buscar con erratas.
+  4. **Punto 6**: el PDF de una hoja con statblock, nota lateral y tabla, e «Imprimir» en Chrome, Firefox y Safari.
+  5. **Final**: los 10 criterios de éxito de `docs/specs/wiki.md`.
+- **Decisiones pendientes de Enrique** (no se tocan sin su permiso):
+  - Chromium para los PDF en un contenedor aparte, sin secretos y con sandbox (hoy va en el de la app, sin sandbox y
+    con el entorno limpio);
+  - una cuota de almacenamiento por organización (hoy no hay ninguna);
+  - más memoria para la app (512 MB) si se sacan PDF grandes.
+- **Para vigilar**: en la CI, en una máquina lenta, lo escrito nada más abrir una página quedó a veces delante del
+  contenido. No se ha visto en local ni en staging; si pasa, mirar `editable` hasta `ready` en
+  `apps/web/src/wiki/editor.tsx`.
+- **Al volver, el orden**:
+  1. arreglar lo que diga Enrique de sus pruebas;
+  2. la etapa de interfaz, con la skill `frontend-design` y `web-design-guidelines`, sobre la identidad «Hoja» ya
+     elegida (`docs/modulos.md`, más abajo) y los prototipos aprobados de la wiki;
+  3. cerrar el módulo 1 (marcar sus puntos de control en `tasks/todo.md`);
+  4. empezar el módulo 2 con su ciclo (`interview-me` frente al inventario, REA, spec…).
+- **Lo que aún no tiene el módulo 1**, a propósito o para más adelante: importador (Eana se pasa por el MCP), los
+  jugadores viendo la wiki (módulo 5), los datos de criatura del statblock (módulo 4), y la capa de texto del visor de
+  PDF (hoy se lee con «Abrir aparte»).
+- **La bitácora de la tirada**: `tasks/bitacora.md` (decisiones pequeñas, lecciones y lo que queda de cada tarea).
+
+### Lo que dijo Enrique al probar
+
+(vacío: se apunta aquí al volver)
+
+### Historia
+
 - **2026-10-29 — Fase 0 hecha.**
   - Repo, normas (`CLAUDE.md`, `CONSTRAINTS.md`), inventario, ADR-0001 y skills de agent-skills en el proyecto.
   - REA arreglado (navegador).
