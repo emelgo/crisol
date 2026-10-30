@@ -68,6 +68,139 @@ del módulo 1.
 - [x] **10. Móvil y entrar.** Entrar, en una caja en el centro con su título. El móvil ya lo traía la parte 2 (la
   barra abajo y el panel en un cajón). Queda para pulir: menos botones en la barra de abajo.
 
+## Ronda de pulido 1, pantalla a pantalla, en local (2026-10-30)
+
+Enrique lo revisa en vivo en el servidor de desarrollo, en http://localhost:5173 (`pnpm dev`, con la API en 8130).
+«No pases los test hasta terminar, solo haz cambios en localhost y los veo en tiempo real y luego pasamos todo».
+Todo va en la rama `interfaz/pulir-inicio`, en un commit local sin subir. Las normas que va dictando, en
+`docs/diseno.md`.
+
+**Hecho:**
+- **Con sesión, la portada lleva directa a Mis mundos**, y el rombo de la barra también.
+- **Entrar con sesión lleva a Mis mundos**. Antes, si la sesión no llegaba (el servidor reiniciándose), la app
+  mandaba a Entrar y se quedaba ahí aunque luego la sesión volviera.
+- **Crear la cuenta** (arranque y unirse):
+  - centrada;
+  - nombre y apellido(s) en dos recuadros;
+  - nombre de usuario único, que es el apodo visible;
+  - contraseña con medidor de seguridad y repetida.
+
+  En el servidor: las columnas `first_name` y `last_name` (migración 0024), Better Auth con `additionalFields`,
+  `usersRepo.isNameTaken` y el error `USERNAME_TAKEN` en el arranque, al unirse y al cambiar el perfil.
+- **Errores de formulario propios** en `Field`, sin el globo del navegador, con el foco al primero que falla.
+- **Mis mundos**:
+  - con la colocación de Ajustes;
+  - sin la frase larga;
+  - «Nuevo mundo» y «Crear tu primer mundo» abren un cuadro (`CreateDialog`), en vez del formulario suelto.
+- **Tutorial guiado de cada vista** (`components/tour.tsx`), el de Mis mundos:
+  - crear un mundo, con «Mundos» resaltado y su nota en el mismo paso;
+  - Historial;
+  - Papelera, con los días de `TRASH_DAYS`;
+  - tu menú.
+
+  Sale solo la primera vez, hasta acabarlo; con Atrás desde el segundo paso, sin Saltar ni «Lo tengo claro». Un «?»
+  casi transparente abajo a la derecha lo vuelve a sacar. Lo hecho se guarda en el navegador, por cuenta. Pruebas ya
+  hechas en `components/tour.test.tsx`.
+- **La marca, la llama** del Crisol antiguo (`components/brand.tsx`): en la barra, la cabecera y la pestaña
+  (`public/favicon.svg`), y latiendo mientras algo carga (`Loading`), en vez de la pantalla en blanco.
+- **Tarjeta del mundo**: portada que se acerca al pasar el ratón, con Ver (Cambiar, solo en su ventana;
+  `routes/world-cover.tsx`, con encuadre y acercamiento: `zoom` opcional en `pageCover` y `worldCover`, sin migración, jsonb; pruebas en `contracts/actions.test.ts`);
+  toda la tarjeta lleva al mundo; Guardar y Cancelar solo con cambios; al pie, el papel y el engranaje. El engranaje abre la ventana del mundo
+  (portada arriba, nombre, descripción, icono, color y zona de peligro, `components/danger.tsx`); sin Renombrar ni
+  Borrar sueltos. Cuadros con X y cierre al pulsar fuera (`components/modal.tsx`). Pruebas en `worlds.test.tsx`.
+- **Crear un mundo** abre la misma ventana que sus ajustes (`WorldDialog`): portada (se sube al crearlo), nombre,
+  descripción y color (ninguno, fijo o propio, que se recuerda en el navegador, `routes/world-look.ts`; tiñe el
+  contorno). «Nuevo mundo» es un recuadro discontinuo con la forma de una tarjeta, tras el último. Sin iconos en los
+  mundos. En el contrato, `worldColor` admite `#rrggbb` (columna de texto: sin migración).
+- **Por decidir al cerrar la ronda**: el icono del mundo ya no sale en la interfaz, pero sigue en el contrato
+  (`updateWorld`, MCP) y en la columna `icon`. Quitarlo de ahí o dejarlo.
+- **Los mundos, en el orden en que se crearon** (uno nuevo, al final): `worldsRepo.listMemberWorlds` y su prueba.
+- **Animaciones**: la tarjeta de un mundo nuevo entra y la de uno borrado se va (con menos movimiento, solo fundidos); los cuadros (`dialog[open]` en
+  `base.css`) y el menú de la cuenta se abren con un pequeño crecimiento.
+  Siempre completas, aunque el sistema pida menos movimiento (sin opción en Ajustes, por decisión de Enrique).
+  Los cuadros también se cierran animados (transiciones con `@starting-style`; `afterExit` en `modal.tsx` espera
+  a que acaben). Al crear, la lista se pone al día cuando el cuadro ya se ha ido, y la tarjeta entra con el contorno
+  iluminado. Historial y Papelera se piden al pasar el ratón por su botón (`api/queries.ts`).
+  Con temática de crisol: la tarjeta nueva se forja (sale al rojo y se enfría) y la borrada arde (el fuego la
+  recorre, queda en ceniza y se va como humo). Un mundo que desaparece de la lista arde en su sitio aunque la lista
+  se ponga al día antes (aviso en tiempo real, la IA, otra pestaña). Al entrar en un mundo, «Mundos» sube a la llama de
+  la barra y se funde con ella, que se aviva con chispas; dentro, la llama es la vuelta, y al volver «Mundos» sale de
+  ella. Ajustes pide la IA al abrir el menú de la cuenta. Entrar en un mundo y salir: transiciones de vista
+  (`components/world-transition.ts`; la tarjeta se convierte en la cabecera; la barra va aparte). El menú de la
+  cuenta también se cierra animado.
+- **Archivos comunes de la cuenta** (ADR-0005): migración 0025 (`files.organization_id`, `world_id` opcional, un
+  índice de nombre por ámbito); `commonFiles.read`/`write` en la política; `listFiles(worldId)` da los del mundo y
+  los comunes, y `listCommonFiles`, solo los comunes; subir con `organizationId`; `![[nombre]]`, portadas y la
+  exportación los usan (con el mismo nombre, el del mundo); papelera e historial de la organización. Pruebas en
+  `files.integration.test.ts`. En la interfaz: «Archivos» en la barra de Mis mundos (`/archivos`, los comunes),
+  la carpeta «Comunes» en los archivos de cada mundo (solo el propietario sube y cambia) y el cuadro de la portada
+  con «Del mundo» y «Comunes» (al crear un mundo, una común sirve tal cual). Pruebas en `wiki/files.test.tsx`.
+- **Crear y borrar mundos con transición de vista** (`components/card-transition.ts`): la nueva se retiene y la
+  borrada se mantiene hasta que su transición las enseña o las quema (el aviso en tiempo real no se adelanta); la
+  portada de la nueva se descarga antes de enseñarla.
+- **Barras de desplazamiento** finas, del color de los bordes; en las ventanas solo se desplaza el contenido.
+- **Barra lateral**:
+  - sin barra de estado abajo;
+  - el tema y la IA salen de ella;
+  - Historial y Papelera abren una ventana encima (`components/window.tsx`), igual que Perfil y Ajustes desde el menú
+    de la cuenta.
+  - en las ventanas de Historial y Papelera, sin el enlace «Mis mundos» de arriba.
+- **Menú de la cuenta**: quién eres, Perfil, Ajustes y Cerrar sesión. Es fijo en la pantalla y no se corta.
+- **Ajustes** (`/ajustes`):
+  - Apariencia, con el tema;
+  - IA, solo el conector y el modo.
+- **Perfil**, centrado como Ajustes: tus datos (usuario, nombre, apellidos; el email aún no se cambia) y cambiar la contraseña.
+- **Las peticiones de la IA**, en tarjetas flotantes abajo a la derecha, como en el Crisol antiguo.
+- **ADR-0004**: cuentas personales y registro público, con la organización por debajo.
+- **Inicio de un mundo y pestaña Campañas**:
+  - Inicio (`routes/world.tsx`): la cabecera del mundo y lo último de la wiki (`listRecentPages`, herramienta
+    `paginas_recientes`); para quien juega, sus campañas.
+  - Campañas (`routes/campaigns.tsx`, `/mundos/$worldId/campanas`), con portada, descripción y color como los
+    mundos (`updateCampaign`, migración 0026, herramienta `cambiar_campana`), en el orden en que se crearon.
+  - Las tarjetas, la ventana y la cabecera son las mismas para mundos y campañas (`routes/world-card.tsx`, `LookKind`).
+  - Dentro de un mundo, la barra lleva Inicio y Campañas, y Historial y Papelera son los del mundo.
+  - Pruebas: servidor (`actions` y `pages`), base de datos y MCP.
+
+**Preguntas abiertas a Enrique** (al retomar):
+- guardar en la cuenta (servidor) los tutoriales hechos y los colores propios, que hoy van en el navegador;
+- el icono del mundo: quitarlo del contrato y de la columna `icon`, o dejarlo (la interfaz ya no lo usa).
+
+**Por dónde iba** (2026-10-30, antes de compactar): Mis mundos y la entrada en un mundo ya le gustan («esta TODO
+GENIAL»), con sus animaciones; crear y borrar mundos, «perfe». No se pudo reproducir un icono que «se recoloca» en el
+último fotograma al entrar o salir de un mundo (quizá el escalado de su pantalla); lo dejó así. Lo siguiente: la
+siguiente pantalla que diga. Después rehízo la vista del mundo: Inicio (cabecera y lo reciente) y Campañas en su
+pestaña, con tarjetas como las de los mundos; falta que la vea.
+
+**Al acabar la ronda** (cuando Enrique lo diga):
+1. Poner al día las pruebas que han cambiado:
+   - la portada redirige;
+   - las etiquetas de la cuenta: Nombre, Apellido(s), Nombre de usuario y Repite la contraseña;
+   - crear un mundo es un cuadro;
+   - Historial y Papelera son botones que abren ventana;
+   - borrar un mundo va por el engranaje y su zona de peligro (`trash.test.tsx`);
+   - renombrar un mundo, también por el engranaje (`focus.test.tsx`);
+   - la llama de carga es otro `role="status"` (las pruebas que buscan uno solo);
+   - la portada sin sesión y el menú de la cuenta (`app.test`, `account.test`, `account-menu.test`, `page-title.test`);
+   - los ajustes de IA, dentro de Ajustes (`ai-settings.test.tsx`);
+   - el Inicio del mundo y la pestaña Campañas (`world.test.tsx`; en `campaign.test.tsx`, «desde el mundo se entra en
+     la campaña»): pruebas nuevas de la cabecera, lo reciente, crear y ajustar campañas, y la barra del mundo.
+   Hoy: 17 de 233 fallan en `apps/web`, todas por esto.
+   En `apps/server`, el arranque y el MCP crean dos cuentas con el mismo nombre de usuario (`USERNAME_TAKEN`); la
+   de edición en vivo (`collab`) a veces da un bloqueo de Postgres con todo a la vez, y sola pasa.
+   - Entrar con sesión redirige; Historial y Papelera de la cuenta, sin enlace de vuelta;
+   - Perfil y Ajustes, en el menú;
+   - el tema ya no está en la barra;
+   - mientras carga sale la llama (`Loading`), no la pantalla en blanco;
+   - las tarjetas de la IA;
+   - el bootstrap y la unión, con `firstName` y `lastName`;
+   - `USERNAME_TAKEN`;
+   - el contrato de `Account`;
+   - las pruebas nuevas de la ventana y el perfil (las de los recorridos ya están).
+2. `pnpm test` entero y `pnpm e2e`.
+3. PR, CI y staging; las migraciones 0024, 0025 y 0026 se aplican al desplegar.
+4. En `.env` de desarrollo, `PUBLIC_URL` pasó a `http://localhost:5173`: Enrique entra por `localhost` y el servidor
+   rechazaba las peticiones de `127.0.0.1` con `BAD_ORIGIN`. Solo afecta al desarrollo.
+
 ### Punto de control: tras las tareas 1 y 2
 - [ ] e2e, @fugas y @a11y en verde; desplegado en staging.
 - [ ] Enrique lo ve en staging antes de seguir con la 3.

@@ -1,5 +1,5 @@
 import { expect, type Page, test } from '@playwright/test'
-import { freshOwner } from './ayudas.ts'
+import { createWorld, freshOwner, openWiki } from './ayudas.ts'
 
 const body = (page: Page) => page.getByRole('textbox', { name: 'Texto de la página' })
 
@@ -11,11 +11,8 @@ const api = async (page: Page, name: string, data: Record<string, unknown>) => {
 
 test('las versiones de la página: verlas, restaurar una y deshacerlo, sin recargar', async ({ page }) => {
   await freshOwner(page)
-  await page.goto('/mundos')
-  await page.getByLabel('Nombre del mundo').fill('Eana')
-  await page.getByRole('button', { name: 'Crear el mundo' }).click()
-  await page.getByRole('link', { name: 'Eana' }).click()
-  await page.getByRole('link', { name: 'Wiki de Eana' }).click()
+  await createWorld(page, 'Eana')
+  await openWiki(page, 'Eana')
   const worldId = page.url().split('/')[4] ?? ''
   const { pages } = await api(page, 'createPages', {
     worldId,

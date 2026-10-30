@@ -6,6 +6,8 @@ import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
+import { trashQuery } from '../api/queries.ts'
+import { Loading } from '../components/brand.tsx'
 import { BusyButton } from '../components/busy-button.tsx'
 import { FormError } from '../components/field.tsx'
 import { focusAfterRemoving } from '../components/focus.ts'
@@ -17,13 +19,22 @@ const worldRoute = getRouteApi('/mundos/$worldId/papelera')
 /** La papelera de la organización (para su propietario): mundos y campañas */
 export function OrganizationTrash() {
   const { t } = useTranslation()
-  return <TrashPage title={t('trash.title')} back={<Link to="/mundos">{t('worlds.title')}</Link>} scope={{}} />
+  return <TrashPage title={t('trash.title')} scope={{}} />
 }
 
 /** La papelera de un mundo (para su máster): sus campañas */
 export function WorldTrash() {
-  const { t } = useTranslation()
   const { worldId } = worldRoute.useParams()
+  return <WorldTrashOf worldId={worldId} back />
+}
+
+/** El de un mundo en la ventana de la barra (dentro de él): sin enlace de vuelta */
+export function WorldTrashWindow({ worldId }: { worldId: string }) {
+  return <WorldTrashOf worldId={worldId} />
+}
+
+function WorldTrashOf({ worldId, back = false }: { worldId: string; back?: boolean }) {
+  const { t } = useTranslation()
   const api = useApi()
   const worlds = useQuery({ queryKey: ['worlds'], queryFn: () => api.call('listWorlds', {}) })
   const world = worlds.data?.worlds.find((w) => w.id === worldId)
@@ -31,38 +42,38 @@ export function WorldTrash() {
     <TrashPage
       title={world ? t('trash.worldTitle', { world: world.name }) : t('trash.title')}
       back={
-        <Link to="/mundos/$worldId" params={{ worldId }}>
-          {world?.name ?? t('worlds.title')}
-        </Link>
+        back && (
+          <Link to="/mundos/$worldId" params={{ worldId }}>
+            {world?.name ?? t('worlds.title')}
+          </Link>
+        )
       }
       scope={{ worldId }}
     />
   )
 }
 
-function TrashPage({ title, back, scope }: { title: string; back: ReactNode; scope: { worldId?: string } }) {
+/** back: el enlace de vuelta, solo como página; en una ventana no hace falta */
+function TrashPage({ title, back, scope }: { title: string; back?: ReactNode; scope: { worldId?: string } }) {
   const { t } = useTranslation()
   const api = useApi()
   const errorText = useErrorText()
   const { account, pending } = useAccounts().useAccount()
-  const trash = useQuery({
-    queryKey: ['trash', scope.worldId ?? 'organization'],
-    queryFn: () => api.call('listTrash', scope),
-    enabled: Boolean(account)
-  })
+  const trash = useQuery({ ...trashQuery(api, scope), enabled: Boolean(account) })
 
   if (pending) return null
   if (!account) return <Navigate to="/entrar" replace />
   return (
     <section>
-      <p>{back}</p>
+      {back && <p>{back}</p>}
       <PageTitle>{title}</PageTitle>
       <FormError message={trash.error ? errorText(trash.error) : null} />
+      {!trash.data && !trash.error && <Loading />}
       {trash.data &&
         (trash.data.items.length === 0 ? (
-          <p>{t('trash.empty')}</p>
+          <p className={styles.appear}>{t('trash.empty')}</p>
         ) : (
-          <ul className={styles.list} aria-label={t('trash.listLabel')}>
+          <ul className={`${styles.list} ${styles.appear}`} aria-label={t('trash.listLabel')}>
             {trash.data.items.map((item) => (
               <TrashEntry key={item.id} item={item} />
             ))}
@@ -107,7 +118,9 @@ function TrashEntry({ item }: { item: TrashItem }) {
           : item.kind === 'page'
             ? t('trash.pageOf', { world: item.worldName, count: item.subpages ?? 0 })
             : item.kind === 'file'
-              ? t('trash.fileOf', { world: item.worldName })
+              ? item.worldName === null
+                ? t('trash.commonFile')
+                : t('trash.fileOf', { world: item.worldName })
               : t('trash.campaignOf', { world: item.worldName })}{' '}
         · {t('trash.purgeAt', { date })}
       </span>

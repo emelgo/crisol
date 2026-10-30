@@ -4,7 +4,18 @@ import { resetDatabase } from '@crisol/db/testing'
 import { issueBootstrap } from '@crisol/server/bootstrap'
 import { expect, test } from '@playwright/test'
 import { e2eDatabaseUrl } from '../servidor.ts'
-import { newPlayer, openProfile } from './ayudas.ts'
+import {
+  closeWindow,
+  createCampaign,
+  createWorld,
+  fillNewAccount,
+  newPlayer,
+  openProfile,
+  openSettings,
+  openWindow,
+  openWorld,
+  skipTours
+} from './ayudas.ts'
 
 // WCAG 2.1 AA: cero fallos críticos o graves (CONSTRAINTS.md)
 const WCAG = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']
@@ -22,7 +33,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
   }
 }
 
-test('arranque, perfil, mundos, campañas, avisos, historial, papelera y consentimiento, en los dos temas @a11y', async ({
+test('arranque, perfil, mundos y sus ajustes, campañas, avisos, historial, papelera y consentimiento, en los dos temas @a11y', async ({
   page,
   browser
 }) => {
@@ -40,30 +51,31 @@ test('arranque, perfil, mundos, campañas, avisos, historial, papelera y consent
         expect(serious.map((v) => `${colorScheme} ${v.id}: ${v.help}`)).toEqual([])
       }
     }
+    await skipTours(page, 'enrique@crisol.test')
     await page.goto(`/arranque/${secret}`)
     await expect(page.getByRole('button', { name: 'Crear la cuenta' })).toBeVisible()
     await check()
-    await page.getByLabel('Nombre').fill('Enrique')
-    await page.getByLabel('Email').fill('enrique@crisol.test')
-    await page.getByLabel('Contraseña').fill('una-clave-larga')
+    await fillNewAccount(page, { name: 'Enrique', email: 'enrique@crisol.test', password: 'una-clave-larga' })
     await page.getByRole('button', { name: 'Crear la cuenta' }).click()
-    await openProfile(page)
-    await expect(page.getByRole('heading', { name: 'Perfil' })).toBeVisible()
+    await expect(page.getByRole('heading', { level: 1, name: 'Mis mundos' })).toBeVisible()
+    const profile = await openProfile(page)
+    await expect(profile.getByRole('heading', { name: 'Perfil' })).toBeVisible()
     await check()
-    await page.goto('/mundos')
-    await page.getByLabel('Nombre del mundo').fill('Eana')
-    await page.getByRole('button', { name: 'Crear el mundo' }).click()
-    await expect(page.getByRole('list', { name: 'Mundos' })).toBeVisible()
+    await closeWindow(profile)
+    await createWorld(page, 'Eana')
     await check()
-    await page.getByRole('button', { name: 'Renombrar Eana' }).click()
+    // Los ajustes del mundo, con su zona de peligro y la confirmación de borrarlo
+    const settings = await openSettings(page, 'Eana')
     await check()
-    await page.getByRole('button', { name: 'Cancelar' }).click()
-    await page.getByRole('link', { name: 'Eana' }).click()
-    await page.getByLabel('Nombre de la campaña').fill('La Marca')
-    await page.getByRole('button', { name: 'Crear la campaña' }).click()
-    await expect(page.getByRole('list', { name: 'Campañas' })).toBeVisible()
+    await settings.getByRole('button', { name: 'Borrar el mundo' }).click()
     await check()
-    await page.getByRole('link', { name: 'La Marca' }).click()
+    await page.getByRole('dialog', { name: '¿Borrar «Eana»?' }).getByRole('button', { name: 'Cancelar' }).click()
+    await closeWindow(settings)
+    await openWorld(page, 'Eana')
+    await check()
+    await createCampaign(page, 'La Marca')
+    await check()
+    await page.getByRole('link', { name: 'La Marca', exact: true }).click()
     await expect(page.getByLabel('Enlace de invitación')).toBeVisible()
     const invitationLink = await page.getByLabel('Enlace de invitación').inputValue()
     await page.getByRole('button', { name: 'Nuevo enlace' }).click()
@@ -77,22 +89,23 @@ test('arranque, perfil, mundos, campañas, avisos, historial, papelera y consent
     await page.reload()
     await page.getByRole('button', { name: 'Expulsar a Ana' }).click()
     await check()
+    await page.keyboard.press('Escape')
     // El aviso de que alguien ha entrado, con su confirmación de expulsar
     const bea = await newPlayer(browser, invitationLink, 'Bea')
     const notices = page.getByRole('region', { name: 'Avisos' })
     await notices.getByRole('button', { name: 'Expulsar a Bea' }).click()
     await check()
     await bea.close()
-    await page.goto('/historial')
-    await expect(page.getByRole('list', { name: 'Operaciones' })).toBeVisible()
+    await page.keyboard.press('Escape')
+    // Historial y Papelera, en su ventana
+    const history = await openWindow(page, 'Historial')
+    await expect(history.getByRole('list', { name: 'Operaciones' })).toBeVisible()
     await check()
-    await page.goto('/papelera')
-    await expect(page.getByText('La papelera está vacía')).toBeVisible()
+    await closeWindow(history)
+    const trash = await openWindow(page, 'Papelera')
+    await expect(trash.getByText('La papelera está vacía')).toBeVisible()
     await check()
-    await page.goto('/mundos')
-    await page.getByRole('button', { name: 'Borrar Eana' }).click()
-    await check()
-    await page.getByRole('button', { name: 'Cancelar' }).click()
+    await closeWindow(trash)
     // La página de consentimiento sin consulta firmada: se ve igual, aunque permitir fallaría. El cliente no es una
     // URL: con una, el servidor iría a buscar sus metadatos (CIMD) a internet y la prueba dependería de la red
     await page.goto('/oauth/consentimiento?client_id=cliente-de-prueba')

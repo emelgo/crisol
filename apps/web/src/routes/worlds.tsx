@@ -1,21 +1,23 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { TRASH_DAYS } from '@crisol/domain'
+import { useQuery } from '@tanstack/react-query'
 import { Navigate } from '@tanstack/react-router'
+import { Globe } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
-import { CreateForm } from '../components/create-form.tsx'
+import { Loading } from '../components/brand.tsx'
+import { useCardList } from '../components/card-transition.ts'
 import { FormError } from '../components/field.tsx'
 import { failed } from '../components/load-error.tsx'
 import { PageTitle } from '../components/page-title.tsx'
-import { RenamableItem } from '../components/renamable-item.tsx'
-import cards from './world-card.module.css'
-import { WorldCardHeader, WorldDescription, WorldSettings } from './world-card.tsx'
+import { Tour } from '../components/tour.tsx'
+import styles from './world-card.module.css'
+import { NewWorld, WorldCard } from './world-card.tsx'
 
 export function Worlds() {
   const { t } = useTranslation()
   const api = useApi()
-  const queryClient = useQueryClient()
   const errorText = useErrorText()
   const { account, pending } = useAccounts().useAccount()
   const organizations = useQuery({
@@ -28,50 +30,56 @@ export function Worlds() {
     queryFn: () => api.call('listWorlds', {}),
     enabled: Boolean(account)
   })
-  const refresh = () => queryClient.invalidateQueries({ queryKey: ['worlds'] })
+  const cards = useCardList('mundos', worlds.data?.worlds)
 
   if (pending) return null
   if (!account) return <Navigate to="/entrar" replace />
   const canCreate = organizations.data?.organizations.some((o) => o.role === 'owner') ?? false
 
+  const empty = cards.length === 0
+
   return (
-    <section>
-      <PageTitle>{t('worlds.title')}</PageTitle>
+    <section className={styles.page}>
+      <div className={styles.top}>
+        <PageTitle>{t('worlds.title')}</PageTitle>
+      </div>
       <FormError message={failed(worlds) ? errorText(worlds.error) : null} />
+      {!worlds.data && !failed(worlds) && <Loading />}
       {worlds.data &&
-        (worlds.data.worlds.length === 0 ? (
-          <p>{t('worlds.empty')}</p>
+        (empty ? (
+          // Sin mundos: qué es un mundo y el botón grande para crear el primero
+          <div className={styles.empty}>
+            <Globe aria-hidden="true" size={44} strokeWidth={1.25} />
+            <h2>{t('worlds.empty')}</h2>
+            {!canCreate && <p>{t('worlds.emptyPlayer')}</p>}
+            {canCreate && <NewWorld big />}
+          </div>
         ) : (
-          <ul className={cards.list} aria-label={t('worlds.listLabel')}>
-            {worlds.data.worlds.map((world) => (
-              <RenamableItem
-                key={world.id}
-                className={cards.card}
-                header={<WorldCardHeader world={world} />}
-                name={world.name}
-                role={t(`roles.${world.role}`)}
-                link={{ to: '/mundos/$worldId', params: { worldId: world.id } }}
-                {...(world.role === 'master'
-                  ? {
-                      onRename: (name: string) => api.call('renameWorld', { worldId: world.id, name }).then(refresh),
-                      onDelete: () => api.call('deleteWorld', { worldId: world.id }).then(refresh)
-                    }
-                  : {})}
-              >
-                <WorldDescription world={world} />
-                {world.role === 'master' && <WorldSettings world={world} />}
-              </RenamableItem>
+          <ul className={styles.list} aria-label={t('worlds.listLabel')} data-card-list>
+            {cards.map(({ item, fresh, burning, burnt }) => (
+              <WorldCard key={item.id} world={item} fresh={fresh} burning={burning} onBurnt={burnt} />
             ))}
+            {/* Tras el último, el recuadro vacío para crear otro */}
+            {canCreate && <NewWorld />}
           </ul>
         ))}
-      {canCreate && (
-        <CreateForm
-          title={t('worlds.newTitle')}
-          label={t('worlds.name')}
-          submit={t('worlds.create')}
-          onCreate={(name) => api.call('createWorld', { name }).then(refresh)}
-        />
-      )}
+      <Tour
+        id="mundos"
+        steps={[
+          {
+            target: '[data-tour="nuevo-mundo"]',
+            text: t('tour.worlds.create'),
+            also: [{ target: '[data-tour="barra-mundos"]', text: t('tour.worlds.ribbon') }]
+          },
+          { target: '[data-tour="barra-historial"]', text: t('tour.worlds.history'), placement: 'right' },
+          {
+            target: '[data-tour="barra-papelera"]',
+            text: t('tour.worlds.trash', { days: TRASH_DAYS }),
+            placement: 'right'
+          },
+          { target: '[data-tour="cuenta"]', text: t('tour.worlds.account'), placement: 'right' }
+        ]}
+      />
     </section>
   )
 }

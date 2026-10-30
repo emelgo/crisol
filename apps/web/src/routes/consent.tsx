@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
+import { Loading } from '../components/brand.tsx'
 import { BusyButton } from '../components/busy-button.tsx'
 import { FormError } from '../components/field.tsx'
 import form from '../components/form.module.css'
@@ -52,7 +53,7 @@ export function Consent() {
       </section>
     )
   }
-  if (name.isPending || organizations.isPending) return null
+  if (name.isPending || organizations.isPending) return <Loading />
   const client = clientLabel(clientId, name.data ?? null)
   const isOwner = organizations.data?.organizations.some((o) => o.role === 'owner') ?? false
 

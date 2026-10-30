@@ -2,7 +2,7 @@ import type { Approval, Campaign, World } from '@crisol/contracts'
 import { createMemoryHistory } from '@tanstack/react-router'
 import { act, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import type { ApiClient } from '../api/client.ts'
 import { fakeApi } from '../api/fake.ts'
 import { App } from '../app.tsx'
@@ -24,7 +24,16 @@ const eana: World = {
   version: 1
 }
 const otro: World = { ...eana, id: crypto.randomUUID(), name: 'Otro' }
-const marca: Campaign = { id: crypto.randomUUID(), worldId: eana.id, name: 'La Marca', role: 'master', version: 1 }
+const marca: Campaign = {
+  id: crypto.randomUUID(),
+  worldId: eana.id,
+  name: 'La Marca',
+  description: '',
+  color: null,
+  cover: null,
+  role: 'master',
+  version: 1
+}
 const request: Approval = {
   id: crypto.randomUUID(),
   tool: 'enlace_invitacion',
@@ -84,15 +93,29 @@ function setup(path: string) {
     await userEvent.type(await screen.findByLabelText('Email'), 'j@crisol.test')
     await userEvent.type(screen.getByLabelText('Contraseña'), 'una-clave-larga')
     await userEvent.click(screen.getByRole('button', { name: 'Entrar' }))
-    await screen.findByText('Hola, Jugadora')
+    await screen.findByRole('heading', { level: 1, name: 'Mis mundos' })
   }
   return { accounts, realtime, router, signInAsPlayer, release: () => act(release) }
 }
 
+// Lo del propietario en la barra: el historial y la papelera de toda la cuenta
+const ownerButtons = () => [
+  screen.queryByRole('button', { name: 'Historial' }),
+  screen.queryByRole('button', { name: 'Papelera' })
+]
+
 describe('al cambiar de cuenta en la misma pestaña', () => {
+  // Los tutoriales guiados de Mis mundos ya hechos: que no se pongan en medio
+  beforeEach(() => {
+    for (const email of ['e@crisol.test', 'j@crisol.test']) {
+      localStorage.setItem(`crisol.recorridos.${email}`, JSON.stringify({ seen: ['mundos'] }))
+    }
+  })
+
   it('al salir no queda nada del máster, y la jugadora que entra después no ve nada suyo', async () => {
     const { realtime, signInAsPlayer, release } = setup('/mundos')
     await screen.findByRole('link', { name: 'Otro' })
+    expect(await screen.findByRole('button', { name: 'Papelera' })).toBeDefined()
     await userEvent.click(screen.getByRole('button', { name: 'Aprobar: generar un enlace nuevo para La Marca' }))
     await within(screen.getByRole('main')).findByText('Hecho: generar un enlace nuevo para La Marca')
     act(() =>
@@ -110,22 +133,20 @@ describe('al cambiar de cuenta en la misma pestaña', () => {
     await screen.findByRole('heading', { level: 1, name: 'Entrar' })
     expect(screen.queryByText(/Hecho:/)).toBeNull()
     expect(screen.queryByText(/Bea/)).toBeNull()
-    expect(screen.queryByRole('link', { name: 'IA' })).toBeNull()
+    expect(ownerButtons()).toEqual([null, null])
 
-    // Mientras llega lo suyo, nada de lo del máster: ni sus mundos, ni el enlace a la IA, ni la papelera
+    // Mientras llega lo suyo, nada de lo del máster: ni sus mundos, ni su historial, ni su papelera
     await signInAsPlayer()
-    await userEvent.click(within(screen.getByRole('main')).getByRole('link', { name: 'Mis mundos' }))
     await screen.findByRole('heading', { level: 1, name: 'Mis mundos' })
     expect(screen.queryByText('Eana')).toBeNull()
     expect(screen.queryByText('Otro')).toBeNull()
-    expect(screen.queryByRole('link', { name: 'IA' })).toBeNull()
-    expect(screen.queryByRole('link', { name: 'Papelera' })).toBeNull()
+    expect(ownerButtons()).toEqual([null, null])
 
     release()
     const list = await screen.findByRole('list', { name: 'Mundos' })
     expect(within(list).getByText('Jugador')).toBeDefined()
     expect(screen.queryByText('Otro')).toBeNull()
-    expect(screen.queryByRole('link', { name: 'IA' })).toBeNull()
+    expect(ownerButtons()).toEqual([null, null])
   })
 
   it('en la campaña, la jugadora no ve el enlace de invitación del máster', async () => {

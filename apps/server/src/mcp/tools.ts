@@ -47,6 +47,7 @@ export const MCP_TOOLS: Record<string, McpTool> = {
   crear_mundo: { action: 'createWorld' },
   cambiar_mundo: { action: 'updateWorld' },
   crear_campana: { action: 'createCampaign' },
+  cambiar_campana: { action: 'updateCampaign' },
   enlace_invitacion: {
     description:
       'El enlace de invitación de una campaña y si las invitaciones están abiertas. Con change, lo regenera (el anterior deja de valer) o abre o cierra las invitaciones: eso afecta a los jugadores y puede esperar la aprobación del máster',
@@ -63,6 +64,7 @@ export const MCP_TOOLS: Record<string, McpTool> = {
   deshacer: { action: 'undoOperation' },
   pendientes: { action: 'listApprovals' },
   ver_arbol: { action: 'listPageTree' },
+  paginas_recientes: { action: 'listRecentPages' },
   leer_pagina: { action: 'readPage' },
   crear_paginas: { action: 'createPages' },
   editar_pagina: { action: 'editPage' },

@@ -1,17 +1,14 @@
 import { expect, test } from '@playwright/test'
-import { freshOwner } from './ayudas.ts'
+import { createCampaign, createWorld, freshOwner, openWorld } from './ayudas.ts'
 
 test.use({ permissions: ['clipboard-read', 'clipboard-write'] })
 
 test('el máster ve y copia el enlace de su campaña, genera uno nuevo y cierra las invitaciones', async ({ page }) => {
   await freshOwner(page)
-  await page.goto('/mundos')
-  await page.getByLabel('Nombre del mundo').fill('Eana')
-  await page.getByRole('button', { name: 'Crear el mundo' }).click()
-  await page.getByRole('link', { name: 'Eana' }).click()
-  await page.getByLabel('Nombre de la campaña').fill('La Marca')
-  await page.getByRole('button', { name: 'Crear la campaña' }).click()
-  await page.getByRole('link', { name: 'La Marca' }).click()
+  await createWorld(page, 'Eana')
+  await openWorld(page, 'Eana')
+  await createCampaign(page, 'La Marca')
+  await page.getByRole('link', { name: 'La Marca', exact: true }).click()
   await expect(page.getByRole('heading', { level: 1, name: 'La Marca' })).toBeVisible()
 
   const link = page.getByLabel('Enlace de invitación')

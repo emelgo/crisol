@@ -191,7 +191,7 @@ export function updatePage(
     icon?: string | null
     properties?: unknown[]
     locked?: boolean
-    cover?: { fileId: string; x: number; y: number } | null
+    cover?: { fileId: string; x: number; y: number; zoom?: number } | null
     sheet?: Record<string, unknown> | null
   }
 ) {
@@ -406,4 +406,20 @@ export async function inWorld(db: Database, worldId: string, pageIds: readonly s
     .from(pages)
     .where(and(eq(pages.worldId, worldId), inArray(pages.id, [...new Set(pageIds)])))
   return new Set(rows.map((row) => row.id))
+}
+
+/**
+ * Las páginas del mundo fuera de la papelera cambiadas hace poco, de la última a la primera: su fila o alguno de sus
+ * documentos (el cuerpo, un secreto, una nota), lo que sea más reciente
+ */
+export function recentPages(db: Database, worldId: string, limit: number) {
+  const editedAt = sql<Date>`greatest(${pages.updatedAt}, coalesce(max(${documents.updatedAt}), ${pages.updatedAt}))`
+  return db
+    .select({ id: pages.id, title: pages.title, icon: pages.icon, cover: pages.cover, editedAt })
+    .from(pages)
+    .leftJoin(documents, eq(documents.pageId, pages.id))
+    .where(and(eq(pages.worldId, worldId), isNull(pages.deletedAt)))
+    .groupBy(pages.id)
+    .orderBy(sql`${editedAt} desc`, pages.id)
+    .limit(limit)
 }

@@ -23,7 +23,16 @@ const world: World = {
   role: 'master',
   version: 1
 }
-const campaign: Campaign = { id: crypto.randomUUID(), worldId: world.id, name: 'La Marca', role: 'master', version: 1 }
+const campaign: Campaign = {
+  id: crypto.randomUUID(),
+  worldId: world.id,
+  name: 'La Marca',
+  description: '',
+  color: null,
+  cover: null,
+  role: 'master',
+  version: 1
+}
 const members: Member[] = [
   { userId: 'u1', name: 'Enrique', role: 'master' },
   { userId: 'u2', name: 'Jugadora', role: 'player' }
@@ -62,7 +71,8 @@ describe('el canal en tiempo real en la web', () => {
   it('se abre con la sesión y se cierra al salir', async () => {
     const { realtime } = renderAt('/mundos')
     await screen.findByRole('heading', { name: 'Mis mundos' })
-    expect(realtime.connections()).toBe(1)
+    // El canal se abre tras pintar: con la máquina cargada, puede llegar un poco después
+    await vi.waitFor(() => expect(realtime.connections()).toBe(1))
     await signOut()
     await vi.waitFor(() => expect(realtime.connections()).toBe(0))
   })

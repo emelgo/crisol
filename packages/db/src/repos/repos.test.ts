@@ -8,10 +8,12 @@ import { bootstrapTokens, organizationMembers, organizations } from '../schema/o
 import { freshTestDatabase, resetDatabase } from '../testing.ts'
 import * as bootstrap from './bootstrap.ts'
 import * as campaignsRepo from './campaigns.ts'
+import * as documentsRepo from './documents.ts'
 import * as historyRepo from './history.ts'
 import * as invitationsRepo from './invitations.ts'
 import * as membersRepo from './members.ts'
 import { isOwner, listMemberOrganizations, loadMemberships } from './memberships.ts'
+import * as pagesRepo from './pages.ts'
 import * as worldsRepo from './worlds.ts'
 
 const DAY = 24 * 60 * 60 * 1000
@@ -66,7 +68,7 @@ describe('repositorios', () => {
       expect(await conn.db.select().from(changes)).toHaveLength(2)
     })
 
-    it('la lista sale por nombre y solo con los mundos de la cuenta', async () => {
+    it('la lista sale en el orden en que se crearon y solo con los mundos de la cuenta', async () => {
       for (const name of ['Zafiro', 'Eana']) {
         await worldsRepo.createWorldWithMaster(conn.db, ui('createWorld'), { organizationId, name, masterId: 'u1' })
       }
@@ -75,7 +77,7 @@ describe('repositorios', () => {
         name: 'Ajeno',
         masterId: 'u2'
       })
-      expect((await worldsRepo.listMemberWorlds(conn.db, 'u1')).map((w) => w.name)).toEqual(['Eana', 'Zafiro'])
+      expect((await worldsRepo.listMemberWorlds(conn.db, 'u1')).map((w) => w.name)).toEqual(['Zafiro', 'Eana'])
     })
 
     it('renombrar sube la versión', async () => {
@@ -94,6 +96,30 @@ describe('repositorios', () => {
     })
   })
 
+  describe('documentos', () => {
+    it('dos guardados del cuerpo a la vez, aún sin fila, no se bloquean ni se pisan', async () => {
+      const world = await worldsRepo.createWorldWithMaster(conn.db, ui('createWorld'), {
+        organizationId,
+        name: 'Eana',
+        masterId: 'u1'
+      })
+      for (let round = 0; round < 15; round++) {
+        const page = await pagesRepo.createPage(conn.db, ui('createPage'), {
+          worldId: world.id,
+          title: `Página ${round}`,
+          placement: { parentId: null }
+        })
+        const save = (byte: number) =>
+          documentsRepo.mergeBody(conn.db, { pageId: page.id, worldId: world.id, userId: 'u1' }, (stored) =>
+            stored ? new Uint8Array([...stored, byte]) : new Uint8Array([byte])
+          )
+        await Promise.all([save(1), save(2)])
+        const body = await documentsRepo.findBody(conn.db, page.id)
+        expect([...(body?.state ?? [])].sort()).toEqual([1, 2])
+      }
+    })
+  })
+
   describe('campañas', () => {
     const world = () =>
       worldsRepo.createWorldWithMaster(conn.db, ui('createWorld'), { organizationId, name: 'Eana', masterId: 'u1' })
@@ -107,7 +133,16 @@ describe('repositorios', () => {
         invitation: prepared()
       })
       expect(await campaignsRepo.listCampaigns(conn.db, { worldId: w.id, userId: 'u1', onlyMember: false })).toEqual([
-        { id: campaign.id, worldId: w.id, name: 'La Marca del Este', version: 1, role: 'master' }
+        {
+          id: campaign.id,
+          worldId: w.id,
+          name: 'La Marca del Este',
+          description: '',
+          color: null,
+          cover: null,
+          version: 1,
+          role: 'master'
+        }
       ])
       const ops = await conn.db.select().from(operations)
       expect(ops.find((op) => op.action === 'createCampaign')?.worldId).toBe(w.id)
@@ -132,7 +167,8 @@ describe('repositorios', () => {
       const forPlayer = await campaignsRepo.listCampaigns(conn.db, { worldId: w.id, userId: 'u2', onlyMember: true })
       expect(forPlayer.map((c) => [c.name, c.role])).toEqual([['B', 'player']])
       const forMaster = await campaignsRepo.listCampaigns(conn.db, { worldId: w.id, userId: 'u1', onlyMember: false })
-      expect(forMaster.map((c) => c.name)).toEqual(['A', 'B'])
+      // En el orden en que se crearon
+      expect(forMaster.map((c) => c.name)).toEqual(['B', 'A'])
     })
 
     it('renombrar sube la versión y la campaña se encuentra con su organización', async () => {

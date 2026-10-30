@@ -1,57 +1,62 @@
-import { expect, test } from '@playwright/test'
-import { campaignLink } from './ayudas.ts'
+import { expect, type Page, test } from '@playwright/test'
+import { campaignLink, closeWindow, openWindow, rename, sections } from './ayudas.ts'
+
+/** Va a la pestaña Campañas del mundo abierto */
+async function campaigns(page: Page) {
+  await sections(page).getByRole('link', { name: 'Campañas' }).click()
+  await expect(page.getByRole('heading', { level: 1, name: 'Campañas' })).toBeVisible()
+}
 
 test('el propietario ve en el historial lo que ha hecho, en el mundo y en toda la organización', async ({ page }) => {
   await campaignLink(page)
   await page.getByRole('button', { name: 'Nuevo enlace' }).click()
   await page.getByRole('button', { name: 'Generar el nuevo' }).click()
-  await page.getByRole('link', { name: 'Eana' }).click()
-  await page.getByRole('button', { name: 'Renombrar La Marca' }).click()
-  await page.getByLabel('Nuevo nombre de La Marca').fill('La Marca del Este')
-  await page.getByRole('button', { name: 'Guardar' }).click()
+  await campaigns(page)
+  await rename(page, 'campaña', 'La Marca', 'La Marca del Este')
 
-  await page.getByRole('link', { name: 'Historial de Eana' }).click()
-  await expect(page.getByRole('heading', { level: 1, name: 'Historial de Eana' })).toBeVisible()
-  const entries = page.getByRole('list', { name: 'Operaciones' }).getByRole('listitem')
+  const history = await openWindow(page, 'Historial')
+  await expect(history.getByRole('heading', { level: 1, name: 'Historial de Eana' })).toBeVisible()
+  const entries = history.getByRole('list', { name: 'Operaciones' }).getByRole('listitem')
   await expect(entries).toHaveText([
     /^Enrique renombró la campaña «La Marca» a «La Marca del Este».*· web/,
     /^Enrique generó un enlace nuevo para La Marca/,
     /^Enrique creó la campaña «La Marca» en Eana/,
     /^Enrique creó el mundo «Eana»/
   ])
+  await closeWindow(history)
 
   await page.goto('/mundos')
-  await page.getByRole('navigation', { name: 'Secciones' }).getByRole('link', { name: 'Historial' }).click()
-  await expect(entries).toHaveCount(6)
-  await expect(entries.last()).toHaveText(/^Crisol creó la organización «Fateforge»/)
-  await expect(entries.nth(4)).toHaveText(/^Enrique entró como propietario/)
+  const all = await openWindow(page, 'Historial')
+  await expect(all.getByRole('heading', { level: 1, name: 'Historial' })).toBeVisible()
+  const allEntries = all.getByRole('list', { name: 'Operaciones' }).getByRole('listitem')
+  await expect(allEntries).toHaveCount(6)
+  await expect(allEntries.last()).toHaveText(/^Crisol creó la organización «Fateforge»/)
+  await expect(allEntries.nth(4)).toHaveText(/^Enrique entró como propietario/)
 })
 
 test('el máster deshace crear una campaña y lo rehace; si algo cambió después, se le dice qué', async ({ page }) => {
   await campaignLink(page)
-  await page.getByRole('link', { name: 'Eana' }).click()
-  await page.getByRole('link', { name: 'Historial de Eana' }).click()
-  await page.getByRole('button', { name: 'Deshacer: creó la campaña «La Marca» en Eana' }).click()
-  const entries = page.getByRole('list', { name: 'Operaciones' }).getByRole('listitem')
+  await campaigns(page)
+  let history = await openWindow(page, 'Historial')
+  await history.getByRole('button', { name: 'Deshacer: creó la campaña «La Marca» en Eana' }).click()
+  const entries = history.getByRole('list', { name: 'Operaciones' }).getByRole('listitem')
   await expect(entries.first()).toHaveText(/^Enrique deshizo: creó la campaña «La Marca» en Eana/)
-  await page.getByRole('link', { name: 'Eana' }).click()
+  await closeWindow(history)
   await expect(page.getByText('Aún no hay campañas')).toBeVisible()
 
   // Rehacer: deshacer el deshacer
-  await page.getByRole('link', { name: 'Historial de Eana' }).click()
-  await page.getByRole('button', { name: 'Rehacer: creó la campaña «La Marca» en Eana' }).click()
+  history = await openWindow(page, 'Historial')
+  await history.getByRole('button', { name: 'Rehacer: creó la campaña «La Marca» en Eana' }).click()
   await expect(entries.first()).toHaveText(/^Enrique rehízo: creó la campaña «La Marca» en Eana/)
-  await page.getByRole('link', { name: 'Eana' }).click()
-  await expect(page.getByRole('link', { name: 'La Marca' })).toBeVisible()
+  await closeWindow(history)
+  await expect(page.getByRole('link', { name: 'La Marca', exact: true })).toBeVisible()
 
   // Con un cambio posterior, el deshacer de la creación se niega y dice cuál
-  await page.getByRole('button', { name: 'Renombrar La Marca' }).click()
-  await page.getByLabel('Nuevo nombre de La Marca').fill('La Marca del Este')
-  await page.getByRole('button', { name: 'Guardar' }).click()
-  await page.getByRole('link', { name: 'Historial de Eana' }).click()
-  await page.getByRole('button', { name: 'Deshacer: creó la campaña «La Marca» en Eana' }).click()
+  await rename(page, 'campaña', 'La Marca', 'La Marca del Este')
+  history = await openWindow(page, 'Historial')
+  await history.getByRole('button', { name: 'Deshacer: creó la campaña «La Marca» en Eana' }).click()
   const conflict =
     'No se puede deshacer: después, Enrique renombró la campaña «La Marca» a «La Marca del Este». Deshaz eso antes.'
-  await expect(page.getByRole('main').getByText(conflict)).toBeVisible()
+  await expect(history.getByText(conflict)).toBeVisible()
   await expect(page.getByRole('status')).toHaveText(conflict)
 })

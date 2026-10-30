@@ -1,17 +1,17 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, type Page, test } from '@playwright/test'
-import { freshOwner } from './ayudas.ts'
+import { createWorld, freshOwner, openWiki } from './ayudas.ts'
 
 const PNG = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.from('un mapa')])
 const PDF = Buffer.from('%PDF-1.7\nun bestiario')
 
+/** Subir del mundo: el primero (después va el de los comunes) */
+const worldUpload = (page: Page) => page.locator('input[type=file][multiple]').first()
+
 async function openFiles(page: Page) {
   await freshOwner(page)
-  await page.goto('/mundos')
-  await page.getByLabel('Nombre del mundo').fill('Eana')
-  await page.getByRole('button', { name: 'Crear el mundo' }).click()
-  await page.getByRole('link', { name: 'Eana' }).click()
-  await page.getByRole('link', { name: 'Wiki de Eana' }).click()
+  await createWorld(page, 'Eana')
+  await openWiki(page, 'Eana')
   await page.getByRole('link', { name: 'Archivos' }).click()
   await expect(page.getByRole('heading', { level: 1, name: 'Archivos de Eana' })).toBeVisible()
 }
@@ -21,7 +21,7 @@ test('subir archivos: con su progreso, en su carpeta, se sirven tal cual y van a
 }) => {
   await openFiles(page)
 
-  await page.locator('input[type=file][multiple]').setInputFiles([
+  await worldUpload(page).setInputFiles([
     { name: 'Mapa de Eana.png', mimeType: 'image/png', buffer: PNG },
     { name: 'Bestiario.pdf', mimeType: 'application/pdf', buffer: PDF }
   ])
@@ -39,9 +39,7 @@ test('subir archivos: con su progreso, en su carpeta, se sirven tal cual y van a
   expect(Buffer.from(await served.body()).equals(PNG)).toBe(true)
 
   // El mismo nombre otra vez: con número
-  await page
-    .locator('input[type=file][multiple]')
-    .setInputFiles([{ name: 'Mapa de Eana.png', mimeType: 'image/png', buffer: PNG }])
+  await worldUpload(page).setInputFiles([{ name: 'Mapa de Eana.png', mimeType: 'image/png', buffer: PNG }])
   await expect(page.getByRole('link', { name: 'Mapa de Eana (2).png' })).toBeVisible()
 
   // A la papelera y de vuelta
@@ -57,7 +55,7 @@ test('subir archivos: con su progreso, en su carpeta, se sirven tal cual y van a
 
 test('los archivos, en los dos temas @a11y', async ({ page }) => {
   await openFiles(page)
-  await page.locator('input[type=file][multiple]').setInputFiles([
+  await worldUpload(page).setInputFiles([
     { name: 'Mapa de Eana.png', mimeType: 'image/png', buffer: PNG },
     { name: 'Bestiario.pdf', mimeType: 'application/pdf', buffer: PDF }
   ])

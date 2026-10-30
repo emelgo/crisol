@@ -110,3 +110,37 @@ describe('los archivos del mundo', () => {
     )
   })
 })
+
+describe('los archivos comunes de la cuenta (ADR-0005)', () => {
+  const withCommon = () =>
+    fakeApi({
+      organizations: [ORG],
+      worlds: [WORLD],
+      files: [
+        { worldId: WORLD.id, name: 'Mapa de Eana.png', kind: 'image' },
+        { worldId: null, organizationId: ORG.id, name: 'Escudo.png', kind: 'image' }
+      ]
+    })
+
+  it('en los archivos de un mundo, aparte, la carpeta «Comunes»; lo que se sube ahí es común', async () => {
+    const api = renderAt(`/mundos/${WORLD.id}/archivos`, withCommon())
+    const common = within(await screen.findByRole('region', { name: 'Comunes' }))
+    expect(await common.findByRole('link', { name: 'Escudo.png' })).toBeDefined()
+    expect(common.queryByRole('link', { name: 'Mapa de Eana.png' })).toBeNull()
+    const input = (await screen.findByRole('region', { name: 'Comunes' })).querySelector<HTMLInputElement>(
+      'input[type=file][multiple]'
+    )
+    if (!input) throw new Error('sin campo de archivos en los comunes')
+    await userEvent.upload(input, [new File(['png'], 'Sello.png', { type: 'image/png' })])
+    expect(await common.findByRole('link', { name: 'Sello.png' })).toBeDefined()
+    expect(api.files.find((f) => f.name === 'Sello.png')).toMatchObject({ worldId: null, organizationId: ORG.id })
+  })
+
+  it('fuera de los mundos, «Archivos» en la barra lleva a los comunes', async () => {
+    renderAt('/mundos', withCommon())
+    await userEvent.click(await screen.findByRole('link', { name: 'Archivos' }))
+    expect(await screen.findByRole('heading', { level: 1, name: 'Archivos comunes' })).toBeDefined()
+    expect(await screen.findByRole('link', { name: 'Escudo.png' })).toBeDefined()
+    expect(screen.queryByRole('link', { name: 'Mapa de Eana.png' })).toBeNull()
+  })
+})

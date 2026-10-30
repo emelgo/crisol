@@ -18,7 +18,14 @@ describe('errorCode', () => {
 })
 
 describe('arranque con la API real', () => {
-  const input = { secret: 'abc', name: 'Enrique', email: 'e@crisol.test', password: 'una-clave-larga' }
+  const input = {
+    secret: 'abc',
+    name: 'Enrique',
+    firstName: 'Enrique',
+    lastName: 'Mellado',
+    email: 'e@crisol.test',
+    password: 'una-clave-larga'
+  }
 
   it('bootstrapInfo devuelve la organización o null', async () => {
     vi.stubGlobal('fetch', respond(200, { organizationName: 'Crisol' }))
@@ -40,11 +47,14 @@ describe('arranque con la API real', () => {
     expect(await createAccountClient().redeemBootstrap(input)).toEqual({ ok: false, code: 'TOO_MANY_REQUESTS' })
   })
 
-  it('redeemBootstrap envía los datos por POST', async () => {
+  it('redeemBootstrap envía los datos por POST, con el nombre y los apellidos', async () => {
     const fetch = respond(201, { userId: 'u1' })
     vi.stubGlobal('fetch', fetch)
     expect(await createAccountClient().redeemBootstrap(input)).toEqual({ ok: true })
-    expect(fetch).toHaveBeenCalledWith('/api/bootstrap', expect.objectContaining({ method: 'POST' }))
+    expect(fetch).toHaveBeenCalledWith(
+      '/api/bootstrap',
+      expect.objectContaining({ method: 'POST', body: JSON.stringify(input) })
+    )
   })
 })
 
@@ -101,7 +111,14 @@ describe('OAuth con la API real', () => {
 })
 
 describe('unirse con la API real', () => {
-  const input = { secret: 'abc', name: 'Jugadora', email: 'j@crisol.test', password: 'una-clave-larga' }
+  const input = {
+    secret: 'abc',
+    name: 'Jugadora',
+    firstName: 'Ana',
+    lastName: 'Ruiz',
+    email: 'j@crisol.test',
+    password: 'una-clave-larga'
+  }
 
   it('invitationInfo da la invitación o null', async () => {
     vi.stubGlobal('fetch', respond(200, { campaignName: 'La Marca', worldName: 'Eana', masterName: 'Enrique' }))

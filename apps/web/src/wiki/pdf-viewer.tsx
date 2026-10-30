@@ -6,6 +6,7 @@
 import type { PDFDocumentProxy, RenderTask } from 'pdfjs-dist'
 import { useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Loading } from '../components/brand.tsx'
 import styles from './pdf-viewer.module.css'
 
 export function PdfViewer({ url, name, size, page }: { url: string; name: string; size: number; page: number | null }) {
@@ -117,9 +118,7 @@ function PdfPages({ url, name, first }: { url: string; name: string; first: numb
     return (
       <section ref={frame} className={styles.pages} tabIndex={-1} aria-label={t('pdf.viewer', { name })}>
         {loaded.state === 'loading' ? (
-          <p role="status" className={styles.note}>
-            {t('pdf.loading')}
-          </p>
+          <Loading label={t('pdf.loading')} />
         ) : (
           <p role="alert" className={styles.note}>
             {t('pdf.failed')}

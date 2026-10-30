@@ -2,7 +2,7 @@ import { cimd } from '@better-auth/cimd'
 import { fetchClientMetadataResource } from '@better-auth/cimd/node'
 import { drizzleAdapter } from '@better-auth/drizzle-adapter'
 import { mcp } from '@better-auth/mcp'
-import { authSchema, type Database, isOwner } from '@crisol/db'
+import { authSchema, type Database, isOwner, usersRepo } from '@crisol/db'
 import { betterAuth } from 'better-auth'
 import { APIError, createAuthMiddleware, getSessionFromCtx } from 'better-auth/api'
 import { jwt } from 'better-auth/plugins'
@@ -27,15 +27,44 @@ const signupClosed = () => new APIError('FORBIDDEN', { message: 'El registro est
 
 const displayName = z.string().trim().min(1).max(80)
 
-/** El perfil que se guarda: nombre visible de 1 a 80 caracteres y sin imagen (no hay en el módulo 0) */
-function checkedProfile(user: { name?: unknown; image?: unknown }): { name?: string } {
+const personName = z.string().trim().max(80)
+
+/**
+ * El perfil que se guarda: nombre de usuario (el visible) de 1 a 80 caracteres, nombre y apellido(s) hasta 80 cada
+ * uno, y sin imagen (no hay en el módulo 0)
+ */
+function checkedProfile(user: { name?: unknown; firstName?: unknown; lastName?: unknown; image?: unknown }): {
+  name?: string
+  firstName?: string
+  lastName?: string
+} {
   if (user.image !== undefined && user.image !== null) {
     throw new APIError('BAD_REQUEST', { message: 'Sin imagen de perfil', code: 'INVALID_PROFILE' })
   }
-  if (user.name === undefined) return {}
-  const name = displayName.safeParse(user.name)
-  if (!name.success) throw new APIError('BAD_REQUEST', { message: 'Nombre no válido', code: 'INVALID_PROFILE' })
-  return { name: name.data }
+  const invalid = () => new APIError('BAD_REQUEST', { message: 'Nombre no válido', code: 'INVALID_PROFILE' })
+  const checked: { name?: string; firstName?: string; lastName?: string } = {}
+  if (user.name !== undefined) {
+    const name = displayName.safeParse(user.name)
+    if (!name.success) throw invalid()
+    checked.name = name.data
+  }
+  for (const key of ['firstName', 'lastName'] as const) {
+    if (user[key] === undefined || user[key] === null) continue
+    const part = personName.safeParse(user[key])
+    if (!part.success) throw invalid()
+    checked[key] = part.data
+  }
+  return checked
+}
+
+/** El nombre de usuario es único (sin distinguir mayúsculas): si otra cuenta ya lo tiene, no se guarda */
+async function freeName(db: Database, name: string, except?: string) {
+  if (await usersRepo.isNameTaken(db, name, except)) {
+    throw new APIError('BAD_REQUEST', {
+      message: 'Ese nombre de usuario ya lo tiene otra cuenta',
+      code: 'USERNAME_TAKEN'
+    })
+  }
 }
 
 /** Los dominios de los clientes que se registran solos por CIMD (claude.ai) */
@@ -49,6 +78,13 @@ export function createAuth({ db, secret, baseURL, trustedOrigins = [] }: AuthOpt
     trustedOrigins,
     database: drizzleAdapter(db, { provider: 'pg', schema: authSchema }),
     emailAndPassword: { enabled: true, minPasswordLength: 10, maxPasswordLength: 128, autoSignIn: true },
+    // name es el nombre de usuario (el apodo que se ve en la app); firstName y lastName, nombre y apellido(s)
+    user: {
+      additionalFields: {
+        firstName: { type: 'string', required: false, defaultValue: '', input: true },
+        lastName: { type: 'string', required: false, defaultValue: '', input: true }
+      }
+    },
     session: { expiresIn: 30 * DAY, updateAge: DAY },
     // En la base de datos: sobrevive a reinicios y vale con varias instancias
     rateLimit: {
@@ -97,12 +133,21 @@ export function createAuth({ db, secret, baseURL, trustedOrigins = [] }: AuthOpt
         create: {
           before: async (user) => {
             if (!signupAllowed()) throw signupClosed()
-            return { data: { ...user, ...checkedProfile(user) } }
+            const checked = checkedProfile(user)
+            if (checked.name !== undefined) await freeName(db, checked.name)
+            return { data: { ...user, ...checked } }
           }
         },
-        // El nombre lo ven sus compañeros, el máster y Claude: el mismo límite que al crear la cuenta
+        // El nombre lo ven sus compañeros, el máster y la IA: el mismo límite que al crear la cuenta, y que no lo tenga otro
         update: {
-          before: async (user) => ({ data: { ...user, ...checkedProfile(user) } })
+          before: async (user, ctx) => {
+            const checked = checkedProfile(user)
+            if (checked.name !== undefined) {
+              const session = ctx ? await getSessionFromCtx(ctx) : null
+              await freeName(db, checked.name, session?.user.id)
+            }
+            return { data: { ...user, ...checked } }
+          }
         }
       }
     }

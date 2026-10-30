@@ -169,6 +169,27 @@
       "when": 1793360583418,
       "tag": "0023_apariencia_de_los_mundos",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1793365935872,
+      "tag": "0024_nombre_y_apellidos",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1793375916194,
+      "tag": "0025_archivos_comunes",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1793379520997,
+      "tag": "0026_apariencia_de_las_campanas",
+      "breakpoints": true
     }
   ]
 }

@@ -1,7 +1,16 @@
 import { createHash, randomBytes } from 'node:crypto'
 import { expect, type Page, test } from '@playwright/test'
 import { E2E_PORT } from '../servidor.ts'
-import { campaignLink, connectClaude, gotoLive, newPlayer } from './ayudas.ts'
+import {
+  campaignLink,
+  connectClaude,
+  createCampaign,
+  gotoLive,
+  newPlayer,
+  openWindow,
+  rename,
+  sections
+} from './ayudas.ts'
 
 const BASE = `http://127.0.0.1:${E2E_PORT}`
 const REDIRECT = 'https://cliente.example/callback'
@@ -38,10 +47,8 @@ test('@fugas una jugadora no recibe nada de lo que no puede ver: ni la campaña 
   const captured = seen
 
   // El máster, mientras tanto: crea la campaña B, regenera los dos enlaces, cierra y abre las invitaciones y deshace
-  await page.getByRole('link', { name: 'Eana' }).click()
-  await page.getByLabel('Nombre de la campaña').fill(SECRET_CAMPAIGN)
-  await page.getByRole('button', { name: 'Crear la campaña' }).click()
-  await page.getByRole('link', { name: SECRET_CAMPAIGN }).click()
+  await createCampaign(page, SECRET_CAMPAIGN)
+  await page.getByRole('link', { name: SECRET_CAMPAIGN, exact: true }).click()
   const campaignB = new URL(page.url()).pathname
   const idB = campaignB.split('/').at(-1) ?? ''
   const linkB = await page.getByLabel('Enlace de invitación').inputValue()
@@ -63,27 +70,23 @@ test('@fugas una jugadora no recibe nada de lo que no puede ver: ni la campaña 
   const opening = page.waitForResponse('**/api/actions/setInvitationsOpen')
   await toggle.check()
   await opening
-  await page.getByRole('link', { name: 'Eana' }).click()
-  await page.getByRole('button', { name: `Renombrar ${SECRET_CAMPAIGN}` }).click()
-  await page.getByLabel(`Nuevo nombre de ${SECRET_CAMPAIGN}`).fill(RENAMED_CAMPAIGN)
-  await page.getByRole('button', { name: 'Guardar' }).click()
+  await sections(page).getByRole('link', { name: 'Campañas' }).click()
+  await rename(page, 'campaña', SECRET_CAMPAIGN, RENAMED_CAMPAIGN)
   await expect(page.getByRole('link', { name: RENAMED_CAMPAIGN })).toBeVisible()
   // Y deshace el renombrado de B desde el historial
-  await page.getByRole('link', { name: 'Historial de Eana' }).click()
-  await page
+  const history = await openWindow(page, 'Historial')
+  await history
     .getByRole('button', { name: `Deshacer: renombró la campaña «${SECRET_CAMPAIGN}» a «${RENAMED_CAMPAIGN}»` })
     .click()
-  await expect(page.getByRole('list', { name: 'Operaciones' }).getByRole('listitem').first()).toHaveText(/deshizo/)
+  await expect(history.getByRole('list', { name: 'Operaciones' }).getByRole('listitem').first()).toHaveText(/deshizo/)
   await page.goto('/mundos')
-  await page.getByRole('button', { name: 'Renombrar Eana' }).click()
-  await page.getByLabel('Nuevo nombre de Eana').fill('Eana (Fateforge)')
-  await page.getByRole('button', { name: 'Guardar' }).click()
+  await rename(page, 'mundo', 'Eana', 'Eana (Fateforge)')
 
   // La jugadora recorre lo suyo y prueba lo ajeno
   await expect.poll(() => captured.frames.some((f) => f.includes('"worlds"'))).toBe(true)
   await player.goto('/mundos')
   await player.getByRole('link', { name: 'Eana (Fateforge)' }).click()
-  await expect(player.getByRole('list', { name: 'Campañas' }).getByRole('listitem')).toHaveCount(1)
+  await expect(player.getByRole('list', { name: 'Tus campañas' }).getByRole('listitem')).toHaveCount(1)
   await player.goto(campaignA)
   await expect(player.getByRole('list', { name: 'Miembros' })).toBeVisible()
   await player.goto(campaignB)
@@ -169,10 +172,8 @@ test('@fugas lo que pide la IA del máster solo le llega a él: la cola, sus avi
   })
   if (!seen) throw new Error('sin captura')
   const captured = seen
-  await page.getByRole('link', { name: 'Eana' }).click()
-  await page.getByLabel('Nombre de la campaña').fill(SECRET_CAMPAIGN)
-  await page.getByRole('button', { name: 'Crear la campaña' }).click()
-  await page.getByRole('link', { name: SECRET_CAMPAIGN }).click()
+  await createCampaign(page, SECRET_CAMPAIGN)
+  await page.getByRole('link', { name: SECRET_CAMPAIGN, exact: true }).click()
   const idB = new URL(page.url()).pathname.split('/').at(-1) ?? ''
   const linkB = await page.getByLabel('Enlace de invitación').inputValue()
 

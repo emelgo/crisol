@@ -56,10 +56,11 @@ export const worldActions = [
     const current = await worldsRepo.findWorld(ctx.db, worldId)
     const role = ctx.actor.worlds.get(worldId)?.role
     if (!current || !role) throw new NotFoundError('world')
-    // La portada, una imagen de este mundo
+    // La portada, una imagen de este mundo o una común de su organización
     if (patch.cover) {
       const file = await filesRepo.findFile(ctx.db, patch.cover.fileId)
-      if (!file || file.worldId !== worldId || file.kind !== 'image') throw new InvalidRequestError('BAD_COVER')
+      const usable = file && (file.worldId ? file.worldId === worldId : file.organizationId === current.organizationId)
+      if (!file || !usable || file.kind !== 'image') throw new InvalidRequestError('BAD_COVER')
     }
     // Lo que cambió, para la frase del historial
     const details = {

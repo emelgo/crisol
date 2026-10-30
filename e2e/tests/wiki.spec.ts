@@ -1,15 +1,12 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, type Page, test } from '@playwright/test'
-import { freshOwner } from './ayudas.ts'
+import { createWorld, freshOwner, openWiki } from './ayudas.ts'
 
 /** El propietario crea Eana y entra en su wiki */
-async function openWiki(page: Page) {
+async function eanaWiki(page: Page) {
   await freshOwner(page)
-  await page.goto('/mundos')
-  await page.getByLabel('Nombre del mundo').fill('Eana')
-  await page.getByRole('button', { name: 'Crear el mundo' }).click()
-  await page.getByRole('link', { name: 'Eana' }).click()
-  await page.getByRole('link', { name: 'Wiki de Eana' }).click()
+  await createWorld(page, 'Eana')
+  await openWiki(page, 'Eana')
   await expect(page.getByRole('heading', { level: 1, name: 'Wiki de Eana' })).toBeVisible()
 }
 
@@ -26,7 +23,7 @@ const tree = (page: Page) => page.getByRole('tree', { name: 'Páginas' })
 const titles = (page: Page) => tree(page).getByRole('treeitem')
 
 test('el máster crea páginas y subpáginas, las renombra y las recoloca; todo sigue al recargar', async ({ page }) => {
-  await openWiki(page)
+  await eanaWiki(page)
   await expect(page.getByText('Aún no hay páginas.')).toBeVisible()
   await newPage(page, 'Lugares')
   await newPage(page, 'Costa Gris', 'Nueva subpágina')
@@ -64,7 +61,7 @@ test('el máster crea páginas y subpáginas, las renombra y las recoloca; todo 
 })
 
 test('propiedades, icono y etiquetas: se guardan, siguen al recargar y cuentan en el panel', async ({ page }) => {
-  await openWiki(page)
+  await eanaWiki(page)
   await newPage(page, 'Costa Gris')
   await newPage(page, 'Puerto Ceniza')
   await page.getByRole('button', { name: 'Añadir icono' }).click()
@@ -100,7 +97,7 @@ test('propiedades, icono y etiquetas: se guardan, siguen al recargar y cuentan e
 })
 
 test('borrar una página con sus subpáginas, y restaurarla desde la papelera del mundo', async ({ page }) => {
-  await openWiki(page)
+  await eanaWiki(page)
   await newPage(page, 'Lugares')
   await newPage(page, 'Costa Gris', 'Nueva subpágina')
   await newPage(page, 'Puerto Ceniza', 'Nueva subpágina')
@@ -123,7 +120,7 @@ test('borrar una página con sus subpáginas, y restaurarla desde la papelera de
 })
 
 test('pestañas y marcadores siguen al recargar; en el móvil, las abiertas van en el cajón', async ({ page }) => {
-  await openWiki(page)
+  await eanaWiki(page)
   await newPage(page, 'Puerto Ceniza')
   await newPage(page, 'Maela Varn')
   const tabs = page.getByRole('navigation', { name: 'Páginas abiertas' })
@@ -150,7 +147,7 @@ test('pestañas y marcadores siguen al recargar; en el móvil, las abiertas van 
 })
 
 test('en el móvil el árbol va en un cajón, que se cierra al abrir una página', async ({ page }) => {
-  await openWiki(page)
+  await eanaWiki(page)
   await newPage(page, 'Lugares')
   await newPage(page, 'Personajes')
   await page.setViewportSize({ width: 390, height: 844 })
@@ -168,7 +165,7 @@ test('en el móvil el árbol va en un cajón, que se cierra al abrir una página
 
 test('la wiki, en los dos temas y en el móvil @a11y', async ({ page }) => {
   test.slow()
-  await openWiki(page)
+  await eanaWiki(page)
   await newPage(page, 'Lugares')
   await newPage(page, 'Costa Gris', 'Nueva subpágina')
   const check = async () => {

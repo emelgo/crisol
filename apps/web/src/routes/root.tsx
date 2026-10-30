@@ -1,17 +1,21 @@
-import { useQuery } from '@tanstack/react-query'
 import { Link, Outlet, useRouter, useRouterState } from '@tanstack/react-router'
 import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
-import { useApi } from '../api/context.tsx'
 import { AccountMenu } from '../components/account-menu.tsx'
 import { ApprovalQueue } from '../components/approval-queue.tsx'
+import { CrisolMark, Loading } from '../components/brand.tsx'
 import { Notices } from '../components/notices.tsx'
 import { PageTitle, useFocusHeading } from '../components/page-title.tsx'
-import { Ribbon } from '../components/ribbon.tsx'
+import { Ribbon, useMasteredWorld } from '../components/ribbon.tsx'
 import { ThemeToggle } from '../components/theme-toggle.tsx'
+import { type WindowKind, WindowProvider } from '../components/window.tsx'
 import { WikiPanelProvider } from '../wiki/panel.tsx'
+import { OrganizationHistory, WorldHistoryWindow } from './history.tsx'
+import { Profile } from './profile.tsx'
 import styles from './root.module.css'
+import { Settings } from './settings.tsx'
+import { OrganizationTrash, WorldTrashWindow } from './trash.tsx'
 
 export function RootLayout() {
   const { t } = useTranslation()
@@ -44,13 +48,16 @@ export function RootLayout() {
       {t('app.skipToContent')}
     </a>
   )
+  // Mientras llega la sesión, la llama en el centro
+  if (pending) return <Loading full />
   // Sin sesión (entrar, unirse a una campaña): una barra sencilla arriba, con la marca, entrar y el tema
-  if (!account && !pending) {
+  if (!account) {
     return (
       <div className={styles.shell}>
         {skip}
         <header className={styles.header}>
           <Link to="/" className={styles.brand} translate="no">
+            <CrisolMark size={28} />
             {t('app.name')}
           </Link>
           <nav className={styles.nav} aria-label={t('app.accountNav')}>
@@ -64,39 +71,34 @@ export function RootLayout() {
       </div>
     )
   }
-  // Con sesión: el armazón del Crisol antiguo, con la barra de la izquierda y la de estado abajo
+  // Con sesión: el armazón del Crisol antiguo, con la barra de la izquierda
   return (
-    <WikiPanelProvider>
-      <div className={styles.app}>
-        {skip}
-        <Ribbon />
-        <main id="contenido" className={wide ? styles.wide : styles.main}>
-          <ApprovalQueue />
-          <Notices />
-          <Outlet />
-        </main>
-        <StatusBar />
-      </div>
-    </WikiPanelProvider>
+    <WindowProvider render={(kind) => <WindowContent kind={kind} />}>
+      <WikiPanelProvider>
+        <div className={styles.app}>
+          {skip}
+          <Ribbon />
+          <main id="contenido" className={wide ? styles.wide : styles.main}>
+            <ApprovalQueue />
+            <Notices />
+            <Outlet />
+          </main>
+        </div>
+      </WikiPanelProvider>
+    </WindowProvider>
   )
 }
 
-/** La barra de estado: el mundo en el que estás */
-function StatusBar() {
-  const api = useApi()
-  const { account } = useAccounts().useAccount()
-  const worldId = useRouterState({ select: (state) => /^\/mundos\/([^/]+)/.exec(state.location.pathname)?.[1] })
-  const worlds = useQuery({
-    queryKey: ['worlds'],
-    queryFn: () => api.call('listWorlds', {}),
-    enabled: Boolean(account && worldId)
-  })
-  const world = worlds.data?.worlds.find((w) => w.id === worldId)
-  return (
-    <footer className={styles.status}>
-      <span>{world?.name}</span>
-    </footer>
-  )
+/**
+ * Lo que se abre encima de la pantalla: las mismas páginas que tienen su dirección. Dentro de un mundo que se dirige,
+ * su historial y su papelera; fuera, los de toda la cuenta
+ */
+function WindowContent({ kind }: { kind: WindowKind }) {
+  const worldId = useMasteredWorld()
+  if (kind === 'historial') return worldId ? <WorldHistoryWindow worldId={worldId} /> : <OrganizationHistory />
+  if (kind === 'papelera') return worldId ? <WorldTrashWindow worldId={worldId} /> : <OrganizationTrash />
+  if (kind === 'ajustes') return <Settings />
+  return <Profile />
 }
 
 export function NotFound() {

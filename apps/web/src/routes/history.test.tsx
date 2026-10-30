@@ -2,7 +2,7 @@ import type { HistoryEntry, World } from '@crisol/contracts'
 import { createMemoryHistory } from '@tanstack/react-router'
 import { act, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { fakeAccountClient } from '../account/fake.ts'
 import { fakeApi } from '../api/fake.ts'
 import { App } from '../app.tsx'
@@ -76,6 +76,11 @@ const lines = () =>
     .map((item) => item.textContent)
 
 describe('el historial', () => {
+  // Los tutoriales guiados ya hechos: que no se pongan en medio
+  beforeEach(() =>
+    localStorage.setItem('crisol.recorridos.e@crisol.test', JSON.stringify({ seen: ['mundos', 'mundo', 'campanas'] }))
+  )
+
   it('cuenta cada operación en una frase, con quién, cuándo y por dónde', async () => {
     minute = 0
     renderAt(`/mundos/${world.id}/historial`, [
@@ -136,14 +141,22 @@ describe('el historial', () => {
     expect(await screen.findByText('No tienes permiso')).toBeDefined()
   })
 
-  it('se llega desde el mundo (su máster) y desde «Mis mundos» (el propietario)', async () => {
+  it('se abre desde la barra, encima de la página: dentro del mundo, el suyo (su máster); fuera, el de la cuenta', async () => {
     const { router } = renderAt(`/mundos/${world.id}`, [])
-    await userEvent.click(await screen.findByRole('link', { name: 'Historial de Eana' }))
-    expect(router.state.location.pathname).toBe(`/mundos/${world.id}/historial`)
+    await screen.findByRole('heading', { level: 1, name: 'Eana' })
+    await userEvent.click(screen.getByRole('button', { name: 'Historial' }))
+    const inWorld = await screen.findByRole('dialog', { name: 'Historial' })
+    expect(await within(inWorld).findByRole('heading', { level: 1, name: 'Historial de Eana' })).toBeDefined()
+    expect(router.state.location.pathname).toBe(`/mundos/${world.id}`)
+    await userEvent.click(within(inWorld).getByRole('button', { name: 'Cerrar' }))
+    expect(screen.queryByRole('dialog', { name: 'Historial' })).toBeNull()
+
     await router.navigate({ to: '/mundos' })
-    const sections = screen.getByRole('navigation', { name: 'Secciones' })
-    await userEvent.click(await within(sections).findByRole('link', { name: 'Historial' }))
-    expect(router.state.location.pathname).toBe('/historial')
+    await screen.findByRole('heading', { level: 1, name: 'Mis mundos' })
+    await userEvent.click(screen.getByRole('button', { name: 'Historial' }))
+    const outside = await screen.findByRole('dialog', { name: 'Historial' })
+    expect(await within(outside).findByRole('heading', { level: 1, name: 'Historial' })).toBeDefined()
+    expect(router.state.location.pathname).toBe('/mundos')
   })
 
   it('deshace una operación: la tacha como deshecha y el deshacer queda arriba, con «Rehacer»', async () => {
@@ -224,9 +237,12 @@ describe('el historial', () => {
     expect(screen.queryByRole('button', { name: /^Deshacer/ })).toBeNull()
   })
 
-  it('un jugador no ve el enlace al historial del mundo', async () => {
+  it('a un jugador, el historial de la barra no le enseña el del mundo, sino el de su cuenta', async () => {
     renderAt(`/mundos/${world.id}`, [], { role: 'player' })
     await screen.findByRole('heading', { level: 1, name: 'Eana' })
-    expect(screen.queryByRole('link', { name: 'Historial de Eana' })).toBeNull()
+    await userEvent.click(screen.getByRole('button', { name: 'Historial' }))
+    const dialog = within(await screen.findByRole('dialog', { name: 'Historial' }))
+    expect(await dialog.findByRole('heading', { level: 1, name: 'Historial' })).toBeDefined()
+    expect(dialog.queryByRole('heading', { name: 'Historial de Eana' })).toBeNull()
   })
 })

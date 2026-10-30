@@ -35,11 +35,15 @@ export const pageSummary = z.object({
 
 export type PageSummary = z.infer<typeof pageSummary>
 
-/** La portada: una imagen del mundo y su punto de encuadre (en % del ancho y del alto: lo que no se recorta) */
+/**
+ * La portada: una imagen del mundo, su punto de encuadre (en % del ancho y del alto: lo que no se recorta) y cuánto se
+ * acerca alrededor de ese punto (1, sin acercar, si no se dice)
+ */
 export const pageCover = z.object({
   fileId: z.uuid(),
   x: z.number().min(0).max(100),
-  y: z.number().min(0).max(100)
+  y: z.number().min(0).max(100),
+  zoom: z.number().min(1).max(3).optional()
 })
 
 export type PageCover = z.infer<typeof pageCover>
@@ -187,6 +191,27 @@ export const listPageTree = defineAction({
         icon: z.string().nullable(),
         level: z.number().int(),
         hasChildren: z.boolean()
+      })
+    )
+  })
+})
+
+export const listRecentPages = defineAction({
+  name: 'listRecentPages',
+  kind: 'read',
+  description:
+    'Las páginas de la wiki de un mundo cambiadas hace poco (su texto o lo demás), de la última a la primera, con las páginas de encima',
+  input: z.object({ worldId: z.uuid(), limit: z.number().int().min(1).max(50).default(6) }),
+  output: z.object({
+    pages: z.array(
+      z.object({
+        id: z.uuid(),
+        title: z.string(),
+        icon: z.string().nullable(),
+        cover: pageCover.nullable(),
+        /** Las de encima, del primer nivel a su madre */
+        path: z.array(z.object({ id: z.uuid(), title: z.string() })),
+        editedAt: z.string()
       })
     )
   })

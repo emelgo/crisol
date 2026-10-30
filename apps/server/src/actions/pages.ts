@@ -5,6 +5,7 @@ import {
   listPageChildren,
   listPageNames,
   listPageTree,
+  listRecentPages,
   listTags,
   movePage,
   type Page,
@@ -111,10 +112,12 @@ export const pageActions = [
 
   implement(updatePage, async (ctx, { pageId, title, icon, locked, cover, sheet }) => {
     const { page, wiki } = await authorizedPage(ctx, 'page.write', pageId)
-    // La portada, una imagen de este mundo
+    // La portada, una imagen de este mundo o una común de su organización
     if (cover) {
       const file = await filesRepo.findFile(ctx.db, cover.fileId)
-      if (!file || file.worldId !== wiki.worldId || file.kind !== 'image') throw new InvalidRequestError('BAD_COVER')
+      const usable =
+        file && (file.worldId ? file.worldId === wiki.worldId : file.organizationId === wiki.organizationId)
+      if (!file || !usable || file.kind !== 'image') throw new InvalidRequestError('BAD_COVER')
     }
     // Lo que cambió, para la frase del historial: renombrar, el icono, el candado o la portada
     const details = {
@@ -254,5 +257,25 @@ export const pageActions = [
     }
     visit(parentId, 1)
     return { pages }
+  }),
+
+  implement(listRecentPages, async (ctx, { worldId, limit }) => {
+    await authorizedWiki(ctx, 'page.read', worldId)
+    const rows = await pagesRepo.recentPages(ctx.db, worldId, limit)
+    const paths = await pagesRepo.pagePaths(
+      ctx.db,
+      rows.map((row) => row.id)
+    )
+    return {
+      pages: rows.map((row) => ({
+        id: row.id,
+        title: row.title,
+        icon: row.icon,
+        cover: row.cover,
+        // Las de encima: la ruta sin ella
+        path: (paths.get(row.id) ?? []).slice(0, -1),
+        editedAt: new Date(row.editedAt).toISOString()
+      }))
+    }
   })
 ]

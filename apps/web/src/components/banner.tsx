@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
 import styles from './banner.module.css'
 import { PageTitle } from './page-title.tsx'
 
@@ -12,15 +12,18 @@ export function Banner({
   crumb,
   title,
   detail,
-  stats
+  stats,
+  style
 }: {
   crumb: ReactNode
   title: string
   detail?: string | undefined
   stats: Stat[]
+  /** Su nombre de transición, para que una tarjeta se convierta en ella (la del mundo al entrar) */
+  style?: CSSProperties | undefined
 }) {
   return (
-    <div className={styles.banner}>
+    <div className={styles.banner} style={style}>
       <div className={styles.heading}>
         <p className={styles.crumb}>{crumb}</p>
         <PageTitle>{title}</PageTitle>

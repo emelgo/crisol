@@ -3,7 +3,11 @@ import { bigint, boolean, index, integer, jsonb, pgTable, text, timestamp, uniqu
 
 export const user = pgTable('user', {
   id: text('id').primaryKey(),
+  /** El nombre de usuario: el apodo con el que se le ve en la app */
   name: text('name').notNull(),
+  /** Nombre y apellido(s), aparte: solo los ve quien tiene que verlos (su perfil) */
+  firstName: text('first_name').notNull().default(''),
+  lastName: text('last_name').notNull().default(''),
   email: text('email').notNull().unique(),
   emailVerified: boolean('email_verified').default(false).notNull(),
   image: text('image'),

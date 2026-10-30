@@ -111,7 +111,8 @@ describe('arranque del propietario', () => {
     const auth = createTestAuth(conn.db, BASE_URL)
     await allowSignup(() => auth.api.signUpEmail({ body: owner }))
     const { secret } = await issueBootstrap(conn.db, { organizationName: 'Crisol de Enrique' })
-    const response = await post('/api/bootstrap', { secret, ...owner })
+    // Otro nombre de usuario: el que choca es el email
+    const response = await post('/api/bootstrap', { secret, ...owner, name: 'Enrique2' })
     expect(response.statusCode).toBe(409)
     expect(response.json()).toMatchObject({ code: 'EMAIL_TAKEN' })
     expect((await app.inject({ method: 'GET', url: `/api/bootstrap/${secret}` })).statusCode).toBe(200)

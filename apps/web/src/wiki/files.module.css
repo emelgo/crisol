@@ -66,3 +66,19 @@
   color: var(--color-muted);
   font-weight: 400;
 }
+
+/* La pantalla de los comunes, fuera de los mundos: una columna en el centro, como Mis mundos */
+.page {
+  inline-size: min(100%, 52rem);
+  margin-inline: auto;
+}
+
+/* Los comunes, aparte, tras los del mundo */
+.common {
+  margin-block-start: var(--space-8);
+}
+
+.commonHint {
+  margin: 0 0 var(--space-4);
+  color: var(--color-muted);
+}

@@ -39,6 +39,10 @@ export function summaryOf(
       return say('createCampaign', { name: text(details.name), world: text(details.world) })
     case 'renameCampaign':
       return say('renameCampaign', { from: text(details.from), to: text(details.to) })
+    case 'updateCampaign':
+      return details.from !== undefined
+        ? say('renameCampaign', { from: text(details.from), to: text(details.to) })
+        : say('updateCampaign', { name: text(details.name) })
     case 'regenerateInvitation':
       return say('regenerateInvitation', { campaign: text(details.campaign) })
     case 'setInvitationsOpen':

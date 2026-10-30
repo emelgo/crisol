@@ -1,4 +1,4 @@
-/* La cuenta en la barra oscura: el nombre y lo de entrar, en la letra de las secciones */
+/* La cuenta: sin sesión, «Entrar» en la barra de arriba; con sesión, el círculo con la inicial en la de la izquierda */
 .account {
   position: relative;
 }
@@ -26,83 +26,14 @@
   color: var(--color-chrome-accent);
 }
 
-.trigger svg {
-  transition: transform 120ms ease-out;
-}
-
-.trigger[aria-expanded="true"] svg {
-  transform: rotate(180deg);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .trigger svg {
-    transition: none;
-  }
-}
-
-/* El desplegable: una caja de la hoja bajo el nombre, alineada a la derecha */
-.panel {
-  composes: frame from "./frame.module.css";
-  position: absolute;
-  inset-block-start: calc(100% + var(--space-2));
-  inset-inline-end: 0;
-  z-index: 10;
-  min-inline-size: 14rem;
-  padding: var(--space-3) var(--space-4) var(--space-2);
-  color: var(--color-text);
-}
-
-/* El email, en texto corriente: en mayúsculas se lee mal */
-.email {
-  margin: 0 0 var(--space-2);
-  padding-block-end: var(--space-2);
-  border-block-end: 2px solid var(--color-accent);
-  color: var(--color-muted);
-  font-size: 0.875rem;
-  overflow-wrap: anywhere;
-}
-
-.items {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.items a,
-.items button {
-  display: flex;
-  align-items: center;
-  inline-size: 100%;
-  min-block-size: var(--target);
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--color-text);
-  font-family: var(--font-body);
-  font-size: 0.9375rem;
-  font-weight: 600;
-  text-align: start;
-  text-decoration: none;
-  cursor: pointer;
-}
-
-.items a:hover,
-.items button:hover {
-  color: var(--color-accent-text);
-}
-
-/* Dentro de la caja el fondo es la superficie: el foco, en el color del texto */
-.account .panel :focus-visible {
-  outline-color: var(--color-focus);
-}
-
-/* En la barra de la izquierda: un círculo con la inicial; el nombre, para los lectores de pantalla */
+/* El círculo con la inicial; el nombre, para los lectores de pantalla; encima, lo que espera tu aprobación */
 .avatar {
+  position: relative;
   display: grid;
   place-items: center;
   inline-size: 2.25rem;
   block-size: 2.25rem;
-  margin-block-start: var(--space-2);
+  margin-block: var(--space-2);
   padding: 0;
   border: 0;
   border-radius: 50%;
@@ -110,6 +41,26 @@
   color: var(--color-on-accent);
   font-weight: 700;
   cursor: pointer;
+}
+
+.avatar[aria-expanded="true"] {
+  box-shadow:
+    0 0 0 2px var(--color-raised),
+    0 0 0 4px var(--color-text);
+}
+
+.badge {
+  position: absolute;
+  inset-block-start: -0.25rem;
+  inset-inline-end: -0.375rem;
+  min-inline-size: 1rem;
+  block-size: 1rem;
+  padding: 0 0.25rem;
+  border-radius: 0.5rem;
+  background: var(--color-ai);
+  color: var(--color-bg);
+  font-size: 0.6875rem;
+  line-height: 1rem;
 }
 
 .hidden {
@@ -121,15 +72,135 @@
   white-space: nowrap;
 }
 
-/* Desde la barra de la izquierda, el desplegable sale a su derecha, pegado abajo */
-.fromRibbon {
-  inset-block: auto 0;
-  inset-inline: calc(100% + var(--space-2)) auto;
+/* El desplegable: fijo en la pantalla, al lado del botón (lo coloca floating-ui) */
+.panel {
+  position: fixed;
+  z-index: 30;
+  inline-size: 17rem;
+  max-block-size: calc(100dvh - 1.5rem);
+  overflow-y: auto;
+  padding: var(--space-2);
+  border: 1px solid var(--color-frame);
+  border-radius: 8px;
+  background: var(--color-surface);
+  box-shadow: 0 1rem 2.5rem rgb(0 0 0 / 0.4);
+  color: var(--color-text);
 }
 
-@media (max-width: 48rem) {
-  .fromRibbon {
-    inset-block: auto calc(100% + var(--space-2));
-    inset-inline: auto 0;
+/* Al abrirse, sale del avatar creciendo, con un pequeño rebote; al cerrarse, vuelve a él encogiendo */
+.panel {
+  animation: despliega 520ms cubic-bezier(0.34, 1.4, 0.64, 1);
+  transform-origin: left bottom;
+}
+
+.closing {
+  animation: recoge 260ms cubic-bezier(0.5, 0, 0.75, 0) forwards;
+  pointer-events: none;
+}
+
+@keyframes despliega {
+  from {
+    opacity: 0;
+    transform: translateX(-40px) scale(0.7);
   }
+}
+
+@keyframes recoge {
+  to {
+    opacity: 0;
+    transform: translateX(-32px) scale(0.75);
+  }
+}
+
+/* Quién eres: la inicial, el nombre de usuario y el email */
+.who {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-2) var(--space-3);
+  border-block-end: 1px solid var(--color-border);
+}
+
+.whoAvatar {
+  display: grid;
+  flex: none;
+  place-items: center;
+  inline-size: 2.5rem;
+  block-size: 2.5rem;
+  border-radius: 50%;
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  font-weight: 700;
+}
+
+.whoText {
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 0;
+}
+
+.email {
+  overflow: hidden;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.items {
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.items a,
+.items button {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  inline-size: 100%;
+  min-block-size: 2.5rem;
+  padding: 0 var(--space-2);
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  text-align: start;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.items a:hover,
+.items button:hover {
+  background: color-mix(in srgb, var(--color-text) 8%, transparent);
+}
+
+.items svg {
+  flex: none;
+  color: var(--color-muted);
+}
+
+/* Lo que espera de la IA, al final de «Ajustes» */
+.note {
+  margin-inline-start: auto;
+  padding: 0 var(--space-2);
+  border-radius: 0.5rem;
+  background: var(--color-ai);
+  color: var(--color-bg);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.separated {
+  margin-block-start: var(--space-2);
+  padding-block-start: var(--space-2);
+  border-block-start: 1px solid var(--color-border);
+}
+
+.panel :focus-visible {
+  outline-color: var(--color-focus);
+  outline-offset: -2px;
 }

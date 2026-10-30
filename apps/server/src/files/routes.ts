@@ -10,14 +10,24 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
 import { z } from 'zod'
 import { authorizedWiki } from '../actions/access.ts'
 import { type ActionContext, type ActionEnv, errorCode, historyContext } from '../actions/context.ts'
-import { authorizedFile, fileView, withFreeName } from '../actions/files.ts'
+import {
+  authorizedCommon,
+  authorizedFile,
+  type FilePlace,
+  filesTouched,
+  fileView,
+  scopeOf,
+  withFreeName
+} from '../actions/files.ts'
 import type { Auth } from '../auth/auth.ts'
 import { clientIp, toHeaders } from '../http.ts'
-import { filesChanged } from '../realtime/events.ts'
-import { resolvePendingFiles } from '../wiki/file-embeds.ts'
 import { NotAStreamError, type Storage, TooLargeError } from './storage.ts'
 
-const uploadQuery = z.object({ worldId: z.uuid(), name: fileName })
+/** A un mundo (worldId) o, sin él, a los comunes de una organización (organizationId) */
+const uploadQuery = z.union([
+  z.object({ worldId: z.uuid(), name: fileName }),
+  z.object({ organizationId: z.uuid(), name: fileName })
+])
 const fileParams = z.object({ id: z.uuid() })
 
 /** Un trozo pedido con Range («bytes=a-b», «bytes=a-», «bytes=-n»); null si no se entiende o pide varios */
@@ -80,10 +90,10 @@ export function registerFileRoutes(
     throw error
   }
 
-  /** Guarda el cuerpo; si dice de antemano que pasa del límite, ni se lee */
-  const store = async (storage: Storage, request: FastifyRequest, worldId: string, name: string) => {
+  /** Guarda el cuerpo, bajo su mundo o, si es común, su organización; si dice de antemano que pasa del límite, ni se lee */
+  const store = async (storage: Storage, request: FastifyRequest, place: FilePlace, name: string) => {
     if (Number(request.headers['content-length'] ?? 0) > maxBytes) throw new TooLargeError()
-    const stored = await storage.write(worldId, request.body as Readable, maxBytes)
+    const stored = await storage.write(place.worldId ?? place.organizationId, request.body as Readable, maxBytes)
     return { ...sniff(stored.head, name), size: stored.size, hash: stored.hash, storageKey: stored.key }
   }
 
@@ -99,18 +109,22 @@ export function registerFileRoutes(
     if (!query.success) return reply.code(400).send({ code: 'INVALID_INPUT', issues: query.error.issues })
     if (!env.storage) return reply.code(503).send({ code: 'NO_STORAGE' })
     try {
-      const wiki = await authorizedWiki(ctx, 'page.write', query.data.worldId)
-      const content = await store(env.storage, request, wiki.worldId, query.data.name)
-      const file = await withFreeName(ctx.db, { worldId: wiki.worldId, name: query.data.name }, (name) =>
-        filesRepo.createFile(ctx.db, historyContext(ctx, 'uploadFile', { name }, wiki), {
-          worldId: wiki.worldId,
+      const place: FilePlace =
+        'worldId' in query.data
+          ? await authorizedWiki(ctx, 'page.write', query.data.worldId)
+          : authorizedCommon(ctx, true, query.data.organizationId)
+      const content = await store(env.storage, request, place, query.data.name)
+      const scope = place.worldId ? place : { organizationId: place.organizationId }
+      const file = await withFreeName(ctx.db, { scope: scopeOf(place), name: query.data.name }, (name) =>
+        filesRepo.createFile(ctx.db, historyContext(ctx, 'uploadFile', { name }, scope), {
+          organizationId: place.organizationId,
+          worldId: place.worldId,
           name,
           ...content
         })
       )
-      ctx.realtime.publish(filesChanged(wiki))
-      // Las páginas que ya lo usaban por su nombre lo encuentran
-      await resolvePendingFiles(ctx, wiki.worldId, ctx.actor.userId, [file.name])
+      // Las páginas que ya lo usaban por su nombre lo encuentran (con un común, en todos los mundos)
+      await filesTouched(ctx, place, [file.name])
       return reply.code(201).send(fileView(file))
     } catch (error) {
       return fail(reply, error)
@@ -124,12 +138,13 @@ export function registerFileRoutes(
     if (!params.success) return reply.code(404).send({ code: 'NOT_FOUND' })
     if (!env.storage) return reply.code(503).send({ code: 'NO_STORAGE' })
     try {
-      const { file, wiki } = await authorizedFile(ctx, 'page.write', params.data.id)
-      const content = await store(env.storage, request, wiki.worldId, file.name)
-      const context = historyContext(ctx, 'replaceFile', { name: file.name }, wiki)
+      const { file, place } = await authorizedFile(ctx, 'page.write', params.data.id)
+      const content = await store(env.storage, request, place, file.name)
+      const scope = place.worldId ? place : { organizationId: place.organizationId }
+      const context = historyContext(ctx, 'replaceFile', { name: file.name }, scope)
       // La clave vieja se queda: deshacer vuelve a ella (la limpieza la quita cuando ya no la nombra nadie)
       await filesRepo.updateFile(ctx.db, context, file.id, content)
-      ctx.realtime.publish(filesChanged(wiki))
+      await filesTouched(ctx, place)
       const replaced = await filesRepo.findFile(ctx.db, file.id)
       return reply.send(replaced ? fileView(replaced) : null)
     } catch (error) {

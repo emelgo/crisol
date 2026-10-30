@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, type Page, test } from '@playwright/test'
-import { freshOwner } from './ayudas.ts'
+import { createWorld, freshOwner, openWiki } from './ayudas.ts'
 
 // Un PNG de verdad (1×1), para que el navegador lo pinte
 const PNG = Buffer.from(
@@ -13,11 +13,8 @@ const body = (page: Page) => page.getByRole('textbox', { name: 'Texto de la pág
 /** El propietario crea Eana y «Puerto Ceniza», y la deja abierta; devuelve el mundo y la página */
 async function openPage(page: Page) {
   await freshOwner(page)
-  await page.goto('/mundos')
-  await page.getByLabel('Nombre del mundo').fill('Eana')
-  await page.getByRole('button', { name: 'Crear el mundo' }).click()
-  await page.getByRole('link', { name: 'Eana' }).click()
-  await page.getByRole('link', { name: 'Wiki de Eana' }).click()
+  await createWorld(page, 'Eana')
+  await openWiki(page, 'Eana')
   await page.getByRole('button', { name: 'Página nueva' }).click()
   await expect(page.getByLabel('Título de la página')).toBeFocused()
   await page.keyboard.type('Puerto Ceniza')

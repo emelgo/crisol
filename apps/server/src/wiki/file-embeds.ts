@@ -21,10 +21,17 @@ export function fileEmbedsIn(json: JSONContent, found: { fileId: string | null; 
   return found
 }
 
-/** Los archivos del mundo fuera de la papelera, por su nombre sin mayúsculas */
+/**
+ * Los archivos que el mundo puede usar fuera de la papelera, por su nombre sin mayúsculas: los suyos y los comunes de
+ * su organización; con el mismo nombre, el del mundo
+ */
 export async function worldFiles(env: Pick<ActionEnv, 'db'>, worldId: string) {
-  const rows = await filesRepo.listFiles(env.db, worldId)
-  return new Map(rows.map((row) => [foldName(row.name), row.id]))
+  const byName = new Map<string, string>()
+  for (const row of await filesRepo.usableFiles(env.db, worldId)) {
+    const key = foldName(row.name)
+    if (!byName.has(key) || row.worldId) byName.set(key, row.id)
+  }
+  return byName
 }
 
 /** El nombre de ahora de cada archivo del mundo (también los de la papelera), para escribir el Markdown */
@@ -61,7 +68,7 @@ export async function rebuildFileEmbeds(
     await linksRepo.replaceFileEmbeds(env.db, source, [])
     return byName
   }
-  // Por id, solo los de este mundo (aunque estén en la papelera: se ven rotos)
+  // Por id, solo los que el mundo puede usar: suyos o comunes (aunque estén en la papelera: se ven rotos)
   const ids = new Set(
     (
       await filesRepo.filesInWorld(

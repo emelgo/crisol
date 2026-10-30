@@ -60,9 +60,15 @@ const openMore = async () => userEvent.click(await screen.findByRole('button', {
 
 describe('el árbol de la wiki', () => {
   it('desde el mundo se llega a su wiki, con el primer nivel', async () => {
-    renderAt(`/mundos/${WORLD.id}`)
-    await userEvent.click(await screen.findByRole('link', { name: 'Wiki de Eana' }))
+    // El tutorial guiado del mundo ya hecho: que no se ponga en medio
+    localStorage.setItem('crisol.recorridos.enrique@crisol.test', JSON.stringify({ seen: ['mundo'] }))
+    const router = renderAt(`/mundos/${WORLD.id}`)
+    await screen.findByRole('heading', { level: 1, name: 'Eana' })
+    // «Páginas», en la barra del mundo, lleva a la wiki con su árbol
+    const sections = within(screen.getByRole('navigation', { name: 'Secciones' }))
+    await userEvent.click(await sections.findByRole('button', { name: 'Páginas' }))
     expect(await screen.findByRole('heading', { level: 1, name: 'Wiki de Eana' })).toBeDefined()
+    expect(router.state.location.pathname).toBe(`/mundos/${WORLD.id}/wiki`)
     const items = (await tree()).getAllByRole('treeitem')
     expect(items.map((i) => i.textContent)).toEqual(['Lugares', 'Personajes', 'Reglas de la casa'])
     expect(items[0]?.getAttribute('aria-level')).toBe('1')

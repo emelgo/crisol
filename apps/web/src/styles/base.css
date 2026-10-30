@@ -4,6 +4,11 @@
   box-sizing: border-box;
 }
 
+/* Las barras de desplazamiento, del color de los bordes y sin flechas: que no desentonen (se hereda en toda la app) */
+:root {
+  scrollbar-color: var(--color-frame) transparent;
+}
+
 body {
   margin: 0;
   font-family: var(--font-body);
@@ -96,7 +101,8 @@ label {
 }
 
 /* Una sección con título es una caja de la hoja: marco de 1px con las esquinas cortadas */
-main section[aria-labelledby] {
+main section[aria-labelledby],
+dialog section[aria-labelledby] {
   position: relative;
   isolation: isolate;
   margin-block: var(--space-6);
@@ -105,7 +111,8 @@ main section[aria-labelledby] {
   clip-path: var(--cut);
 }
 
-main section[aria-labelledby]::before {
+main section[aria-labelledby]::before,
+dialog section[aria-labelledby]::before {
   content: "";
   position: absolute;
   inset: 1px;
@@ -115,7 +122,8 @@ main section[aria-labelledby]::before {
 }
 
 /* El título de un recuadro: más pequeño y sin raya, el recuadro ya lo separa */
-main section[aria-labelledby] > h2:first-child {
+main section[aria-labelledby] > h2:first-child,
+dialog section[aria-labelledby] > h2:first-child {
   margin-block-start: 0;
   padding: 0;
   border: 0;
@@ -127,5 +135,405 @@ main section[aria-labelledby] > h2:first-child {
   body {
     background: #fff;
     color: #000;
+  }
+}
+
+/*
+ * Los cuadros y las ventanas: al abrirse suben y crecen mientras aparecen, y al cerrarse bajan y encogen mientras se
+ * desvanecen; el fondo se oscurece y se aclara a la vez. Con transiciones (no animaciones) para que también se vean al
+ * cerrarse: el cuadro sigue en pantalla hasta acabar (overlay y display, discretos) y quien lo quita espera (Modal)
+ */
+dialog {
+  transition:
+    opacity 260ms ease-in,
+    transform 260ms ease-in,
+    overlay 260ms ease-in allow-discrete,
+    display 260ms ease-in allow-discrete;
+}
+
+dialog:not([open]) {
+  opacity: 0;
+  transform: translateY(28px) scale(0.9);
+}
+
+dialog[open] {
+  opacity: 1;
+  transform: none;
+  transition-duration: 460ms;
+  transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+dialog::backdrop {
+  opacity: 0;
+  transition:
+    opacity 260ms ease-in,
+    overlay 260ms ease-in allow-discrete,
+    display 260ms ease-in allow-discrete;
+}
+
+dialog[open]::backdrop {
+  opacity: 1;
+  transition-duration: 460ms;
+}
+
+@starting-style {
+  dialog[open] {
+    opacity: 0;
+    transform: translateY(48px) scale(0.86);
+  }
+
+  dialog[open]::backdrop {
+    opacity: 0;
+  }
+}
+
+/*
+ * Entrar en un mundo y salir de él (transiciones de vista, components/world-transition.ts). Al entrar, Mis mundos se
+ * acerca y se desvanece, como si se pasara a través, y el mundo llega creciendo; la tarjeta pulsada se convierte en su
+ * cabecera. Al salir, al revés. La barra va aparte (barra) y sin la transición: su propia animación se ve tal cual
+ */
+::view-transition-group(barra),
+::view-transition-new(barra) {
+  animation: none;
+}
+
+::view-transition-old(barra) {
+  display: none;
+}
+
+/* Frenando de forma pareja hasta posarse, sin parar en seco */
+::view-transition-group(mundo-actual) {
+  animation-duration: 1150ms;
+  animation-timing-function: cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+/* Al entrar, la tarjeta se pone al rojo mientras se convierte en la cabecera, y se enfría al llegar */
+html:active-view-transition-type(entrar-mundo)::view-transition-image-pair(mundo-actual) {
+  animation: al-rojo 1300ms ease-out;
+}
+
+/* Las brasas: un calor que sube desde abajo y unas chispas que se apagan (world-transition.ts); van por encima */
+.brasas {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: radial-gradient(ellipse 60% 35% at 50% 115%, rgb(255 110 40 / 0.18), transparent 70%);
+  opacity: 0;
+  pointer-events: none;
+  view-transition-name: brasas;
+  animation: calor 1900ms ease-out forwards;
+}
+
+.brasas::before,
+.brasas::after {
+  content: "";
+  position: absolute;
+  inset-block-end: 4%;
+  inset-inline-start: 50%;
+  inline-size: 3px;
+  block-size: 3px;
+  border-radius: 50%;
+  background: #ffc04d;
+  box-shadow:
+    -32vw 0 0 0 #ff8a5c,
+    -21vw -3vh 0 1px #ffb347,
+    -9vw 1vh 0 0 #ff6a2a,
+    6vw -2vh 0 1px #ffd27a,
+    17vw 2vh 0 0 #ff8a5c,
+    29vw -1vh 0 0 #ffb347;
+  animation: chispas-suben 1800ms ease-out forwards;
+}
+
+.brasas::after {
+  inset-block-end: 2%;
+  box-shadow:
+    -26vw 1vh 0 1px #ffb347,
+    -14vw -2vh 0 0 #ff8a5c,
+    1vw 2vh 0 0 #ffc04d,
+    12vw -1vh 0 1px #ff6a2a,
+    24vw 1vh 0 0 #ffd27a;
+  animation-delay: 240ms;
+  animation-duration: 2000ms;
+}
+
+::view-transition-group(brasas),
+::view-transition-old(brasas),
+::view-transition-new(brasas) {
+  animation: none;
+}
+
+/* Al salir, la cabecera se enfría (pierde el color y vuelve) mientras vuelve a ser tarjeta */
+html:active-view-transition-type(salir-mundo)::view-transition-image-pair(mundo-actual) {
+  animation: se-enfria 1100ms ease-out;
+}
+
+@keyframes se-enfria {
+  0% {
+    filter: none;
+  }
+
+  35% {
+    filter: grayscale(0.7) brightness(0.8);
+  }
+
+  100% {
+    filter: none;
+  }
+}
+
+@keyframes al-rojo {
+  0% {
+    filter: none;
+  }
+
+  35% {
+    filter: drop-shadow(0 0 18px rgb(255 120 50 / 0.65)) brightness(1.12) saturate(1.3);
+  }
+
+  100% {
+    filter: none;
+  }
+}
+
+@keyframes calor {
+  25% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes chispas-suben {
+  0% {
+    opacity: 0;
+    transform: translateY(0) scale(1);
+  }
+
+  15% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(-38vh) scale(0.5);
+  }
+}
+
+/* En secuencia, sin verse las dos a la vez: lo de antes se va deprisa y lo nuevo llega cuando ya no está; entre
+   medias, la tarjeta que crece hace de puente */
+html:active-view-transition-type(entrar-mundo)::view-transition-old(root) {
+  animation: atraviesa 320ms cubic-bezier(0.2, 0.7, 0.4, 1) both;
+}
+
+html:active-view-transition-type(entrar-mundo)::view-transition-new(root) {
+  animation: llega 850ms cubic-bezier(0.33, 1, 0.68, 1) 460ms both;
+}
+
+html:active-view-transition-type(salir-mundo)::view-transition-old(root) {
+  animation: se-aleja 320ms cubic-bezier(0.2, 0.7, 0.4, 1) both;
+}
+
+html:active-view-transition-type(salir-mundo)::view-transition-new(root) {
+  animation: vuelve 850ms cubic-bezier(0.33, 1, 0.68, 1) 440ms both;
+}
+
+/* Cambiar de pestaña en la barra: lo que había se funde en un instante y lo nuevo sube un poco al llegar */
+html:active-view-transition-type(seccion)::view-transition-old(root) {
+  animation: deja-paso 120ms ease-in both;
+}
+
+html:active-view-transition-type(seccion)::view-transition-new(root) {
+  animation: sube-seccion 260ms cubic-bezier(0.16, 1, 0.3, 1) 90ms both;
+}
+
+@keyframes sube-seccion {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+/* La tarjeta y la cabecera no se mezclan todo el rato: la de antes deja paso pronto a la nueva */
+::view-transition-old(mundo-actual) {
+  animation: deja-paso 340ms ease-in both;
+}
+
+::view-transition-new(mundo-actual) {
+  animation: toma-el-relevo 420ms ease-out 340ms both;
+}
+
+@keyframes deja-paso {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes toma-el-relevo {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes atraviesa {
+  to {
+    opacity: 0;
+    transform: scale(1.12);
+    filter: blur(4px);
+  }
+}
+
+@keyframes llega {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+}
+
+@keyframes se-aleja {
+  to {
+    opacity: 0;
+    transform: scale(0.9);
+    filter: blur(3px);
+  }
+}
+
+@keyframes vuelve {
+  from {
+    opacity: 0;
+    transform: scale(1.1);
+  }
+}
+
+/*
+ * Crear y borrar mundos (components/card-transition.ts). Las demás tarjetas se recolocan deslizándose. Al crear, la
+ * ventana se encoge en la tarjeta nueva, al rojo, y se enfría al llegar. Al borrar, la tarjeta se pone al rojo, se quema
+ * de abajo arriba y queda en ceniza; las demás esperan a que arda para cerrar el hueco
+ */
+html:active-view-transition-type(crear-mundo)::view-transition-group(*),
+html:active-view-transition-type(borrar-mundo)::view-transition-group(*) {
+  animation-duration: 700ms;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+html:active-view-transition-type(borrar-mundo)::view-transition-group(*) {
+  animation-delay: 1000ms;
+}
+
+/* La ventana y la tarjeta tienen otra forma: sin estirarse, cortadas por arriba como la tarjeta */
+::view-transition-old(.forjando),
+::view-transition-new(.forjando) {
+  block-size: 100%;
+  object-fit: cover;
+  object-position: top;
+}
+
+::view-transition-group(.forjando) {
+  animation-duration: 900ms;
+}
+
+/* La ventana deja paso pronto a la tarjeta: sin mezclarse a mitad de camino */
+::view-transition-old(.forjando) {
+  animation: deja-paso 300ms ease-in both;
+}
+
+::view-transition-new(.forjando) {
+  animation: toma-el-relevo 400ms ease-out 280ms both;
+}
+
+::view-transition-image-pair(.forjando) {
+  animation: al-rojo 1500ms ease-out;
+}
+
+::view-transition-old(.ardiendo) {
+  animation: arde-en-su-sitio 1300ms ease-in forwards;
+  mask-image: linear-gradient(to top, transparent 42%, #000 52%);
+  mask-size: 100% 300%;
+  mask-position: 0 0;
+}
+
+/* Las brasas sobre una tarjeta: un resplandor en su borde de abajo y chispas que suben y se apagan */
+.brasas-tarjeta {
+  position: fixed;
+  z-index: 100;
+  pointer-events: none;
+  view-transition-name: brasas-tarjeta;
+  background: radial-gradient(ellipse 70% 30% at 50% 100%, rgb(255 110 40 / 0.35), transparent 70%);
+  opacity: 0;
+  animation: calor 1600ms ease-out forwards;
+}
+
+.brasas-tarjeta::before,
+.brasas-tarjeta::after {
+  content: "";
+  position: absolute;
+  inset-block-end: 6%;
+  inset-inline-start: 50%;
+  inline-size: 3px;
+  block-size: 3px;
+  border-radius: 50%;
+  background: #ffc04d;
+  box-shadow:
+    -96px 0 0 0 #ff8a5c,
+    -56px -4px 0 1px #ffb347,
+    -20px 3px 0 0 #ff6a2a,
+    22px -2px 0 1px #ffd27a,
+    60px 2px 0 0 #ff8a5c,
+    92px -3px 0 0 #ffb347;
+  opacity: 0;
+  animation: chispas-tarjeta 1400ms ease-out 150ms forwards;
+}
+
+.brasas-tarjeta::after {
+  box-shadow:
+    -76px 2px 0 1px #ffb347,
+    -38px -3px 0 0 #ff8a5c,
+    4px 3px 0 0 #ffc04d,
+    40px -2px 0 1px #ff6a2a,
+    78px 1px 0 0 #ffd27a;
+  animation-delay: 400ms;
+  animation-duration: 1500ms;
+}
+
+::view-transition-group(brasas-tarjeta),
+::view-transition-old(brasas-tarjeta),
+::view-transition-new(brasas-tarjeta) {
+  animation: none;
+}
+
+@keyframes arde-en-su-sitio {
+  0% {
+    filter: none;
+    mask-position: 0 0;
+  }
+
+  20% {
+    filter: sepia(1) saturate(4) hue-rotate(-25deg) brightness(1.15);
+  }
+
+  70% {
+    filter: sepia(1) saturate(3) hue-rotate(-30deg) brightness(0.6);
+  }
+
+  100% {
+    filter: grayscale(1) brightness(0.3);
+    mask-position: 0 100%;
+  }
+}
+
+@keyframes chispas-tarjeta {
+  0% {
+    opacity: 0;
+    transform: translateY(0);
+  }
+
+  15% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(-120px) scale(0.6);
   }
 }

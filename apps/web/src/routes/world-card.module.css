@@ -1,146 +1,589 @@
-/* La tarjeta de un mundo: la portada arriba (imagen o color), su icono en un recuadro de esquinas cortadas, y debajo
-   el nombre, el rol y las acciones */
+/* Como Ajustes: una columna en el centro, con el título y lo demás alineados */
+.page {
+  inline-size: min(100%, 52rem);
+  margin-inline: auto;
+}
+
+/* El título y «Nuevo mundo» en la misma fila */
+.top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3) var(--space-6);
+  margin-block-end: var(--space-6);
+}
+
+.top h1 {
+  margin: 0;
+}
+
+/* Sin mundos: en el centro, el icono, qué es un mundo y el botón grande */
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-8) var(--space-6);
+  border: 1px dashed var(--color-frame);
+  border-radius: 8px;
+  color: var(--color-muted);
+  text-align: center;
+}
+
+.empty h2 {
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  border: 0;
+  color: var(--color-text);
+  font-size: 1.75rem;
+}
+
+.empty p {
+  margin: 0 0 var(--space-3);
+}
+
+.big {
+  min-block-size: 3.25rem;
+  padding-inline: var(--space-8);
+  font-size: 1rem;
+}
+
+/* La tarjeta de un mundo: la portada arriba y debajo el nombre, la descripción y, al pie, el papel y el engranaje */
+/* El contorno (el fondo del marco), teñido sutilmente con el color del mundo (--world-color), si lo tiene */
 .card {
   composes: frame from "../components/frame.module.css";
   display: flex;
-  flex-flow: row wrap;
+  flex-direction: column;
+  background: color-mix(in srgb, var(--world-color, var(--color-frame)) 55%, var(--color-frame));
+  transition: background-color 150ms ease-out;
+}
+
+.card:hover {
+  background: color-mix(in srgb, var(--world-color, var(--color-field-border)) 70%, var(--color-field-border));
+}
+
+/*
+ * Con temática de crisol. Recién creada, se forja: sale del crisol al rojo (sube y crece, con un brillo de metal
+ * fundido encima) y se enfría (el contorno, de naranja a su color). Borrada, arde: el fuego la recorre de abajo
+ * arriba, queda en ceniza y se va como humo. Empieza cuando la ventana ya se ha ido
+ */
+.card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.entering {
+  animation:
+    forja 620ms cubic-bezier(0.2, 0.8, 0.2, 1) both,
+    enfria 2000ms ease-out;
+}
+
+.entering::after {
+  background: linear-gradient(to top, rgb(255 138 92 / 0.6), rgb(229 72 77 / 0.3) 55%, rgb(255 180 120 / 0.15));
+  mix-blend-mode: screen;
+  animation: metal 1500ms ease-out;
+}
+
+.burning {
+  animation: arde 1400ms ease-in 200ms forwards;
+  pointer-events: none;
+}
+
+/* Lo de dentro se vuelve ceniza; el fuego (::after), por encima, conserva su color */
+.burning > * {
+  animation: ceniza 1300ms ease-in 200ms forwards;
+}
+
+.burning::after {
+  background:
+    linear-gradient(
+      to top,
+      rgb(20 10 6 / 0.92) 0%,
+      rgb(50 18 8 / 0.85) 30%,
+      #ff4d1a 34%,
+      #ffc04d 37%,
+      rgb(255 120 40 / 0.5) 41%,
+      transparent 47%
+    )
+    0 0 / 100% 300% no-repeat;
+  opacity: 1;
+  animation: llamas 1000ms ease-out 200ms forwards;
+}
+
+@keyframes forja {
+  from {
+    opacity: 0;
+    transform: translateY(32px) scale(0.86);
+  }
+
+  70% {
+    opacity: 1;
+    transform: translateY(-3px) scale(1.01);
+  }
+}
+
+@keyframes enfria {
+  0%,
+  25% {
+    background: var(--color-brand-glow);
+  }
+
+  55% {
+    background: var(--color-brand);
+  }
+}
+
+@keyframes metal {
+  0% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes llamas {
+  to {
+    background-position: 0 100%;
+  }
+}
+
+@keyframes arde {
+  0%,
+  30% {
+    background: var(--color-brand-glow);
+  }
+
+  65% {
+    opacity: 1;
+    transform: none;
+    background: #2a1a14;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(-18px) scale(0.94);
+    background: #2a1a14;
+  }
+}
+
+@keyframes ceniza {
+  35% {
+    filter: none;
+  }
+
+  80%,
+  100% {
+    filter: grayscale(1) brightness(0.45);
+  }
+}
+
+/* «Nuevo mundo»: un recuadro vacío con la forma de una tarjeta (esquinas cortadas) y el borde discontinuo, del alto
+   de las demás. El borde se recorta con la forma y la diagonal de cada esquina se dibuja aparte */
+.newItem {
+  display: flex;
+  min-block-size: 14rem;
+}
+
+.newCard {
+  --line: var(--color-field-border);
+  display: flex;
+  flex: 1;
+  flex-direction: column;
   align-items: center;
-  align-content: start;
-  gap: var(--space-2) var(--space-3);
-  padding: 0 var(--space-4) var(--space-4);
+  justify-content: center;
+  gap: var(--space-2);
+  border: 1px dashed var(--line);
+  background:
+    linear-gradient(to bottom right, transparent calc(50% - 0.6px), var(--line) 0 calc(50% + 0.6px), transparent 0) top
+    left / 12px 12px no-repeat,
+    linear-gradient(to bottom left, transparent calc(50% - 0.6px), var(--line) 0 calc(50% + 0.6px), transparent 0) top
+    right / 12px 12px no-repeat,
+    linear-gradient(to bottom right, transparent calc(50% - 0.6px), var(--line) 0 calc(50% + 0.6px), transparent 0)
+    bottom right / 12px 12px no-repeat,
+    linear-gradient(to bottom left, transparent calc(50% - 0.6px), var(--line) 0 calc(50% + 0.6px), transparent 0)
+    bottom left / 12px 12px no-repeat;
+  background-origin: border-box;
+  color: var(--color-muted);
+  font: inherit;
+  font-weight: 600;
+  clip-path: var(--cut);
+  cursor: pointer;
+}
+
+.newCard:hover {
+  --line: var(--color-text);
+  color: var(--color-text);
 }
 
 .list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
   gap: var(--space-5, 1.25rem);
   margin: 0 0 var(--space-8);
   padding: 0;
   list-style: none;
 }
 
-/* De lado a lado de la tarjeta, por encima del nombre */
+/* La portada */
 .header {
-  flex: 1 0 100%;
-  margin-inline: calc(-1 * var(--space-4));
+  position: relative;
+  margin-block-end: var(--space-3);
 }
 
-.cover {
+/* El marco de la portada: recorta el acercamiento */
+.frame {
   position: relative;
   block-size: 7rem;
-  margin-block-end: 2.25rem;
+  overflow: hidden;
+}
+
+.large .frame {
+  block-size: 10rem;
+}
+
+/* En la tarjeta, la portada va 1px dentro del contorno, con las esquinas de arriba cortadas como las suyas: el
+   contorno se ve siempre, también con portada */
+.card .header {
+  margin: 1px 1px var(--space-3);
+}
+
+.card .frame {
+  clip-path: polygon(11px 0, calc(100% - 11px) 0, 100% 11px, 100% 100%, 0 100%, 0 11px);
+}
+
+/* Sin imagen, el hueco lleva un tinte oscuro del color del mundo */
+.picture {
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--world-color, var(--color-raised)) 22%, var(--color-raised));
+}
+
+/* Con imagen, sin color: si tiene partes transparentes (un PNG), detrás no se ve el tinte */
+.picture:has(> img) {
+  background: var(--color-raised);
+}
+
+/* Siempre en su propia capa: si el navegador la pasara a otra solo al acercarla, la redibujaría distinta y la línea del
+   contorno de al lado cambiaría de intensidad durante la animación */
+.picture {
+  transition: transform 300ms ease-out;
+  will-change: transform;
+}
+
+/* Al pasar el ratón, la portada se acerca un poco: por la tarjeta (que es un enlace) o por la de la ventana */
+.card:hover .picture,
+.frame:hover .picture,
+.frame:focus-within .picture {
+  transform: scale(1.06);
 }
 
 .image {
-  position: absolute;
-  inset: 0;
   inline-size: 100%;
   block-size: 100%;
   object-fit: cover;
 }
 
-/* El icono, en su recuadro, medio dentro de la portada */
-.icon {
+/* Ver (y, en la ventana, Cambiar): abajo a la derecha de la portada, al pasar el ratón (en pantallas táctiles,
+   siempre); por encima del enlace que cubre la tarjeta */
+.coverActions {
   position: absolute;
-  inset-block-end: -1.75rem;
-  inset-inline-start: var(--space-4);
-  display: grid;
-  place-items: center;
-  inline-size: 3.5rem;
-  block-size: 3.5rem;
-  padding: 1px;
-  background: var(--color-frame);
-  clip-path: polygon(
-    9px 0,
-    calc(100% - 9px) 0,
-    100% 9px,
-    100% calc(100% - 9px),
-    calc(100% - 9px) 100%,
-    9px 100%,
-    0 calc(100% - 9px),
-    0 9px
-  );
+  z-index: 2;
+  inset-block-end: var(--space-2);
+  inset-inline-end: var(--space-2);
+  display: flex;
+  gap: var(--space-1);
+  opacity: 0;
 }
 
-.icon > span {
-  display: grid;
-  place-items: center;
-  inline-size: 100%;
-  block-size: 100%;
-  background: var(--color-surface);
+.coverActions {
+  transition: opacity 150ms ease-out;
+}
+
+.card:hover .coverActions,
+.frame:hover .coverActions,
+.frame:focus-within .coverActions {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .coverActions {
+    opacity: 1;
+  }
+}
+
+.coverActions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-block-size: 1.875rem;
+  padding: 0 0.625rem;
+  border: 1px solid color-mix(in srgb, var(--color-text) 25%, transparent);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--color-bg) 82%, transparent);
   color: var(--color-text);
-  clip-path: polygon(
-    8px 0,
-    calc(100% - 8px) 0,
-    100% 8px,
-    100% calc(100% - 8px),
-    calc(100% - 8px) 100%,
-    8px 100%,
-    0 calc(100% - 8px),
-    0 8px
-  );
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
 }
 
-/* El nombre, con letra de título */
-.card > a:first-of-type {
+.coverActions button:hover {
+  background: var(--color-bg);
+}
+
+/* Debajo de la portada: el nombre, cuyo enlace cubre toda la tarjeta, la descripción y el pie */
+.body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: 0 var(--space-4) var(--space-3);
+}
+
+.name {
+  color: var(--color-text);
   font-family: var(--font-display);
   font-size: 1.5rem;
   font-weight: 700;
   line-height: 1.1;
+  text-decoration: none;
   text-transform: uppercase;
+  overflow-wrap: break-word;
+}
+
+.name::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+.name:focus-visible {
+  outline: none;
+}
+
+.name:focus-visible::after {
+  outline: 2px solid var(--color-focus);
+  outline-offset: -2px;
 }
 
 .description {
-  flex-basis: 100%;
   margin: 0;
   color: var(--color-muted);
   font-size: 0.9375rem;
 }
 
-/* El cuadro de ajustes */
-.dialog {
-  inline-size: min(36rem, calc(100vw - 2rem));
+/* Al pie: el papel, discreto, y el engranaje a la derecha */
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-block-size: 2.25rem;
+  margin-block-start: auto;
+}
+
+.role {
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+/* El engranaje, redondo y siempre a la vista; por encima del enlace del nombre */
+.gear {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  inline-size: 2.25rem;
+  block-size: 2.25rem;
   padding: 0;
   border: 1px solid var(--color-frame);
-  border-radius: 6px;
+  border-radius: 50%;
   background: var(--color-surface);
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+.gear:hover {
+  border-color: var(--color-text);
   color: var(--color-text);
+}
+
+/* La cabecera de un mundo (su Inicio): su tarjeta en grande, con el mismo contorno teñido; la portada, más alta */
+.hero {
+  composes: frame from "../components/frame.module.css";
+  display: flex;
+  flex-direction: column;
+  margin-block-end: var(--space-8);
+  background: color-mix(in srgb, var(--world-color, var(--color-frame)) 55%, var(--color-frame));
+}
+
+.hero .header {
+  margin: 1px 1px 0;
+}
+
+.hero .frame {
+  block-size: clamp(8rem, 26vw, 13rem);
+  clip-path: polygon(11px 0, calc(100% - 11px) 0, 100% 11px, 100% 100%, 0 100%, 0 11px);
+}
+
+/* El nombre y la descripción a la izquierda; el papel y el engranaje, abajo a la derecha */
+.heroBody {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-6);
+  padding: var(--space-4) var(--space-6) var(--space-4);
+}
+
+.heroText {
+  flex: 1 1 20rem;
+  min-inline-size: 0;
+}
+
+.heroText h1 {
+  margin: 0;
+  overflow-wrap: break-word;
+}
+
+.heroText .description {
+  margin-block-start: var(--space-1);
+  font-size: 1rem;
+}
+
+.heroBody .footer {
+  gap: var(--space-3);
+  margin: 0 0 0 auto;
+}
+
+/* Una sección de la página (Lo último de la wiki, Tus campañas) */
+.section h2 {
+  margin-block-end: var(--space-4);
+}
+
+/* Lo último de la wiki: una lista, cada página con su miniatura, su título, las de encima y cuándo cambió */
+.recent {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.recentLink {
+  display: grid;
+  grid-template-columns: 3rem 1fr auto;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2);
+  border-radius: 4px;
+  color: var(--color-text);
+  text-decoration: none;
+  transition: background-color 150ms ease-out;
+}
+
+.recentLink:hover {
+  background: var(--color-raised);
+}
+
+/* La miniatura: su portada o, sin ella, su icono (o uno de página) */
+.thumb {
+  display: grid;
+  place-items: center;
+  inline-size: 3rem;
+  block-size: 2.25rem;
+  overflow: hidden;
+  border-radius: 3px;
+  background: var(--color-raised);
+  color: var(--color-muted);
+  font-size: 1.125rem;
+}
+
+.thumb img {
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+}
+
+.recentText {
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 0;
+}
+
+.recentTitle {
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recentLink:hover .recentTitle {
+  color: var(--color-link, var(--color-accent-text));
+}
+
+.recentPath,
+.recentWhen {
+  overflow: hidden;
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.muted {
+  color: var(--color-muted);
+}
+
+/* La ventana del mundo: la portada arriba, de lado a lado, y debajo lo demás */
+.dialog {
+  inline-size: min(38rem, calc(100vw - 2rem));
+  max-block-size: calc(100dvh - 2rem);
+  padding: 0;
+  /* El contorno, con el color del mundo, como su tarjeta */
+  border: 1px solid color-mix(in srgb, var(--world-color, var(--color-frame)) 55%, var(--color-frame));
+  border-radius: 8px;
+  background: var(--color-surface);
+  box-shadow: 0 1.5rem 3.75rem rgb(0 0 0 / 0.45);
+  color: var(--color-text);
+  scrollbar-width: thin;
 }
 
 .dialog::backdrop {
   background: rgb(0 0 0 / 0.55);
 }
 
+/* La X va sobre la portada: sin recuadro, como en las demás ventanas, y con sombra para que se vea sobre una imagen */
+.dialog > button:first-child {
+  color: var(--color-text);
+  filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.7));
+}
+
 .form {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
-  padding: var(--space-6);
+  padding: 0 var(--space-6) var(--space-6);
 }
 
 .form h2 {
   margin: 0;
 }
 
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  font-weight: 600;
+/* La zona de peligro, al final, con el mismo margen que el formulario */
+.dangerArea {
+  padding: 0 var(--space-6) var(--space-6);
 }
 
-.field input {
-  min-block-size: var(--target);
-  padding: 0 var(--space-3);
-  border: 1px solid var(--color-field-border);
-  border-radius: var(--radius);
-  background: var(--color-bg);
-  color: var(--color-text);
-  font-weight: 400;
-}
-
-.field small,
 .hint {
+  flex-basis: 100%;
   color: var(--color-muted);
   font-size: 0.875rem;
   font-weight: 400;
@@ -161,12 +604,7 @@
   font-weight: 600;
 }
 
-.hint {
-  flex-basis: 100%;
-}
-
-/* Cada opción es una radio de verdad, escondida: se ve su icono o su color, y el elegido, marcado */
-.iconChoice,
+/* Cada color es una radio de verdad, escondida: se ve su color, y el elegido, marcado */
 .colorChoice {
   position: relative;
   display: grid;
@@ -179,7 +617,6 @@
   cursor: pointer;
 }
 
-.iconChoice input,
 .colorChoice input {
   position: absolute;
   inset: 0;
@@ -194,14 +631,22 @@
   border-radius: 50%;
 }
 
-.iconChoice:has(input:checked),
+/* Un color propio: el «+» abre el selector de color del sistema */
+.newColor {
+  border-style: dashed;
+}
+
+.newColor:hover {
+  border-color: var(--color-text);
+  color: var(--color-text);
+}
+
 .colorChoice:has(input:checked) {
   border-color: var(--color-text);
   background: color-mix(in srgb, var(--color-text) 10%, transparent);
   color: var(--color-text);
 }
 
-.iconChoice:has(input:focus-visible),
 .colorChoice:has(input:focus-visible) {
   outline: 2px solid var(--color-focus);
   outline-offset: 2px;

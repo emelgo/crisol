@@ -1,8 +1,8 @@
 import type { Approval, Campaign, HistoryEntry, Member, World } from '@crisol/contracts'
 import { createMemoryHistory } from '@tanstack/react-router'
-import { act, render, screen, waitFor } from '@testing-library/react'
+import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { fakeAccountClient } from '../account/fake.ts'
 import { fakeApi } from '../api/fake.ts'
 import { App } from '../app.tsx'
@@ -23,7 +23,16 @@ const world = (name: string, role: World['role'] = 'master'): World => ({
 })
 const eana = world('Eana')
 const otro = world('Otro')
-const marca: Campaign = { id: crypto.randomUUID(), worldId: eana.id, name: 'La Marca', role: 'master', version: 1 }
+const marca: Campaign = {
+  id: crypto.randomUUID(),
+  worldId: eana.id,
+  name: 'La Marca',
+  description: '',
+  color: null,
+  cover: null,
+  role: 'master',
+  version: 1
+}
 const members: Member[] = [
   { userId: 'u1', name: 'Enrique', role: 'master' },
   { userId: 'u2', name: 'Ana', role: 'player' },
@@ -70,34 +79,56 @@ const description = (element: Element) =>
 const expectFocus = (element: () => Element) => waitFor(() => expect(document.activeElement).toBe(element()))
 const campaignPath = `/mundos/${eana.id}/campanas/${marca.id}`
 
-describe('el foco en las confirmaciones', () => {
-  it('borrar: va al botón de confirmar, que lleva el aviso; cancelar lo devuelve; borrado, va al siguiente', async () => {
-    renderAt('/mundos')
-    await userEvent.click(await screen.findByRole('button', { name: 'Borrar Eana' }))
-    expect(document.activeElement).toBe(button('Borrar'))
-    expect(description(button('Borrar'))).toBe('¿Borrar Eana? Irá a la papelera: se puede restaurar durante 30 días.')
-    await userEvent.click(button('Cancelar'))
-    await expectFocus(() => button('Borrar Eana'))
+/** Abre la ventana de un mundo por su engranaje y, en su zona de peligro, la confirmación de borrarlo */
+async function openDelete(name: string) {
+  await userEvent.click(await screen.findByRole('button', { name: `Ajustes de ${name}` }))
+  const settings = within(await screen.findByRole('dialog', { name: `Ajustes de ${name}` }))
+  const zone = within(settings.getByRole('region', { name: 'Zona de peligro' }))
+  await userEvent.click(zone.getByRole('button', { name: 'Borrar el mundo' }))
+  return within(await screen.findByRole('dialog', { name: `¿Borrar «${name}»?` }))
+}
 
-    await userEvent.click(button('Borrar Eana'))
-    await userEvent.click(button('Borrar'))
+describe('el foco en las confirmaciones', () => {
+  // El tutorial guiado ya hecho: que no se lleve el foco
+  beforeEach(() => localStorage.setItem('crisol.recorridos.e@crisol.test', JSON.stringify({ seen: ['mundos'] })))
+
+  it('borrar: va al campo del nombre, junto al aviso; cancelar lo devuelve; borrado, va al siguiente', async () => {
+    renderAt('/mundos')
+    const confirm = await openDelete('Eana')
+    expect(document.activeElement).toBe(confirm.getByLabelText('Nombre del mundo'))
+    expect(
+      confirm.getByText('Irá a la papelera, con sus campañas y su wiki, y se podrá recuperar durante 30 días.')
+    ).toBeDefined()
+    const settings = () => within(screen.getByRole('dialog', { name: 'Ajustes de Eana' }))
+    await userEvent.click(confirm.getByRole('button', { name: 'Cancelar' }))
+    await expectFocus(() => settings().getByRole('button', { name: 'Borrar el mundo' }))
+
+    await userEvent.click(settings().getByRole('button', { name: 'Borrar el mundo' }))
+    const again = within(await screen.findByRole('dialog', { name: '¿Borrar «Eana»?' }))
+    await userEvent.type(again.getByLabelText('Nombre del mundo'), 'Eana')
+    await userEvent.click(again.getByRole('button', { name: 'Borrar el mundo' }))
     await expectFocus(() => screen.getByRole('link', { name: 'Otro' }))
     // El último: no queda otro, el foco va al título de la página
-    await userEvent.click(button('Borrar Otro'))
-    await userEvent.click(button('Borrar'))
+    const last = await openDelete('Otro')
+    await userEvent.type(last.getByLabelText('Nombre del mundo'), 'Otro')
+    await userEvent.click(last.getByRole('button', { name: 'Borrar el mundo' }))
     await expectFocus(() => screen.getByRole('heading', { level: 1, name: 'Mis mundos' }))
   })
 
-  it('renombrar: va al campo; al cancelar o guardar, vuelve a «Renombrar»', async () => {
+  it('ajustes: al cerrar su ventana, el foco vuelve al engranaje, también tras cambiar el nombre', async () => {
     renderAt('/mundos')
-    await userEvent.click(await screen.findByRole('button', { name: 'Renombrar Eana' }))
-    expect(document.activeElement).toBe(screen.getByLabelText('Nuevo nombre de Eana'))
-    await userEvent.click(button('Cancelar'))
-    await expectFocus(() => button('Renombrar Eana'))
-    await userEvent.click(button('Renombrar Eana'))
-    await userEvent.type(screen.getByLabelText('Nuevo nombre de Eana'), ' 2')
-    await userEvent.click(button('Guardar'))
-    await expectFocus(() => button('Renombrar Eana 2'))
+    await userEvent.click(await screen.findByRole('button', { name: 'Ajustes de Eana' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Ajustes de Eana' })
+    await userEvent.click(within(dialog).getAllByRole('button', { name: 'Cerrar' })[0] as HTMLElement)
+    await expectFocus(() => button('Ajustes de Eana'))
+
+    await userEvent.click(button('Ajustes de Eana'))
+    const again = within(await screen.findByRole('dialog', { name: 'Ajustes de Eana' }))
+    await userEvent.type(again.getByLabelText('Nombre del mundo'), ' 2')
+    await userEvent.click(again.getByRole('button', { name: 'Guardar' }))
+    const renamed = await screen.findByRole('dialog', { name: 'Ajustes de Eana 2' })
+    await userEvent.click(within(renamed).getAllByRole('button', { name: 'Cerrar' })[0] as HTMLElement)
+    await expectFocus(() => button('Ajustes de Eana 2'))
   })
 
   it('expulsar: va a «Expulsar», con el aviso; cancelar lo devuelve; expulsada, va al siguiente', async () => {

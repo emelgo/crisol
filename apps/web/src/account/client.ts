@@ -6,8 +6,11 @@ import { oauthProviderClient } from '@better-auth/oauth-provider/client'
 import { createAuthClient } from 'better-auth/react'
 
 export interface Account {
+  /** El nombre de usuario: el apodo que se ve en la app */
   name: string
   email: string
+  firstName?: string
+  lastName?: string
 }
 
 /** redirected: la página se va a otra dirección (OAuth) y no tiene que navegar */
@@ -15,7 +18,10 @@ export type Result = { ok: true; redirected?: boolean } | { ok: false; code: str
 
 export interface BootstrapInput {
   secret: string
+  /** El nombre de usuario: el apodo que se ve en la app */
   name: string
+  firstName: string
+  lastName: string
   email: string
   password: string
 }
@@ -39,6 +45,10 @@ export interface AccountClient {
   /** Vuelve a pedir la sesión al servidor (cuando algo dice que ya no la hay) */
   refreshSession(): void
   rename(name: string): Promise<Result>
+  /** Nombre de usuario (si no lo tiene otra cuenta), nombre y apellido(s) */
+  updateProfile(profile: { name: string; firstName: string; lastName: string }): Promise<Result>
+  /** Con la actual; cierra las demás sesiones */
+  changePassword(current: string, next: string): Promise<Result>
   bootstrapInfo(secret: string): Promise<{ organizationName: string } | null>
   /** El nombre de una aplicación OAuth (Claude…), para la página de consentimiento */
   oauthClientName(clientId: string): Promise<string | null>
@@ -81,7 +91,19 @@ export function createAccountClient(): AccountClient {
   return {
     useAccount() {
       const { data, isPending } = auth.useSession()
-      return { account: data ? { name: data.user.name, email: data.user.email } : null, pending: isPending }
+      // Nombre y apellido(s) son campos propios de la cuenta (additionalFields en el servidor)
+      const extra = (data?.user ?? {}) as { firstName?: unknown; lastName?: unknown }
+      return {
+        account: data
+          ? {
+              name: data.user.name,
+              email: data.user.email,
+              firstName: typeof extra.firstName === 'string' ? extra.firstName : '',
+              lastName: typeof extra.lastName === 'string' ? extra.lastName : ''
+            }
+          : null,
+        pending: isPending
+      }
     },
     async signIn(email, password) {
       const { data, error } = await auth.signIn.email({ email, password })
@@ -100,6 +122,20 @@ export function createAccountClient(): AccountClient {
     async rename(name) {
       const { error } = await auth.updateUser({ name })
       return error ? { ok: false, code: errorCode(error.status) } : { ok: true }
+    },
+    async updateProfile(profile) {
+      const { error } = await auth.updateUser(profile as { name: string })
+      if (!error) return { ok: true }
+      return { ok: false, code: error.code === 'USERNAME_TAKEN' ? 'USERNAME_TAKEN' : errorCode(error.status) }
+    },
+    async changePassword(current, next) {
+      const { error } = await auth.changePassword({
+        currentPassword: current,
+        newPassword: next,
+        revokeOtherSessions: true
+      })
+      if (!error) return { ok: true }
+      return { ok: false, code: error.code === 'INVALID_PASSWORD' ? 'WRONG_PASSWORD' : errorCode(error.status) }
     },
     async bootstrapInfo(secret) {
       const response = await fetch(`/api/bootstrap/${encodeURIComponent(secret)}`)

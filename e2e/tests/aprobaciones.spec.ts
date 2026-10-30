@@ -21,8 +21,8 @@ test('Claude crea una campaña sin preguntar; regenerar el enlace aparece en la 
 }) => {
   const { link, campaignPage, claude, worldId, campaignId } = await withClaude(page)
 
-  // En copiloto, crear no espera: la campaña sale en el mundo sin recargar
-  await gotoLive(page, `/mundos/${worldId}`)
+  // En copiloto, crear no espera: la campaña sale en las del mundo sin recargar
+  await gotoLive(page, `/mundos/${worldId}/campanas`)
   await expect(page.getByRole('link', { name: 'La Marca' })).toBeVisible()
   const created = await claude.call('crear_campana', { worldId, name: 'Los Cuervos' })
   expect(created.isError).toBeFalsy()
@@ -65,7 +65,8 @@ test('rechazado, no se hace; en solo lectura, Claude ya no cambia nada', async (
   expect(rejected.text).toMatch(/^REJECTED/)
   expect((await claude.call('enlace_invitacion', { campaignId })).structuredContent).toMatchObject({ open: true })
 
-  await page.getByRole('link', { name: 'IA', exact: true }).click()
+  // La página de la IA (por su dirección; el modo también está en Ajustes): las últimas peticiones y el modo
+  await page.goto('/ia')
   await expect(page.getByRole('list', { name: 'Últimas peticiones' })).toContainText(
     'Rechazado: cerrar las invitaciones de La Marca'
   )

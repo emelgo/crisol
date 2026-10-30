@@ -170,16 +170,23 @@ export async function resolveFileEmbeds(db: Database, embedIds: readonly string[
     .where(inArray(fileEmbeds.id, [...embedIds]))
 }
 
-/** Cuántas páginas (fuera de la papelera) usan cada archivo del mundo: en su texto o de portada */
-export async function fileUses(db: Database, worldId: string) {
+/**
+ * Cuántas páginas usa cada archivo, en su texto o de portada: las del mundo o, para los comunes de una organización,
+ * las de todos sus mundos
+ */
+export async function fileUses(db: Database, scope: { worldId: string } | { organizationId: string }) {
+  const pagesIn =
+    'worldId' in scope
+      ? sql`p.world_id = ${scope.worldId}`
+      : sql`p.world_id in (select id from worlds where organization_id = ${scope.organizationId})`
   const rows = await db.execute<{ file_id: string; pages: number }>(sql`
     select file_id, count(distinct page_id)::int as pages from (
       select fe.file_id, fe.source_page_id as page_id from file_embeds fe
         join pages p on p.id = fe.source_page_id
-        where fe.world_id = ${worldId} and fe.file_id is not null and p.deleted_at is null
+        where ${pagesIn} and fe.file_id is not null and p.deleted_at is null
       union all
       select (p.cover->>'fileId')::uuid, p.id from pages p
-        where p.world_id = ${worldId} and p.cover is not null and p.deleted_at is null
+        where ${pagesIn} and p.cover is not null and p.deleted_at is null
     ) used group by file_id`)
   return new Map([...rows].map((row) => [row.file_id, row.pages] as const))
 }

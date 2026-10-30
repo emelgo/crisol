@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
 import { useCodeText, useErrorText } from '../api/errors.ts'
+import { aiSettingsQuery } from '../api/queries.ts'
 import { useAnnounce } from '../components/announcer.tsx'
 import { outcomeText, useApprovals } from '../components/approval-queue.tsx'
 import { CopyField } from '../components/copy-field.tsx'
@@ -17,7 +18,8 @@ import settings from './ai-settings.module.css'
 const MODES: AiMode[] = ['readOnly', 'assistant', 'copilot']
 
 /** Los ajustes de IA de la cuenta: la dirección del conector, el modo y cómo acabaron sus últimas peticiones */
-export function AiSettings() {
+/** Los ajustes de la IA: el conector, el modo y lo último que pidió. En «Ajustes» va dentro, con su título */
+export function AiSettings({ embedded = false }: { embedded?: boolean }) {
   const { t, i18n } = useTranslation()
   const api = useApi()
   const queryClient = useQueryClient()
@@ -25,11 +27,7 @@ export function AiSettings() {
   const codeText = useCodeText()
   const announce = useAnnounce()
   const { account, pending } = useAccounts().useAccount()
-  const current = useQuery({
-    queryKey: ['aiSettings'],
-    queryFn: () => api.call('getAiSettings', {}),
-    enabled: Boolean(account)
-  })
+  const current = useQuery({ ...aiSettingsQuery(api), enabled: Boolean(account) })
   const approvals = useApprovals()
   // Optimista: la opción cambia en el mismo clic y vuelve atrás si el servidor falla
   const [pendingMode, setPendingMode] = useState<AiMode | null>(null)
@@ -49,8 +47,8 @@ export function AiSettings() {
   const date = new Intl.DateTimeFormat(i18n.language, { dateStyle: 'medium', timeStyle: 'short' })
 
   return (
-    <section>
-      <PageTitle>{t('ai.title')}</PageTitle>
+    <section aria-labelledby={embedded ? 'ajustes-ia' : undefined} className={embedded ? settings.embedded : undefined}>
+      {embedded ? <h2 id="ajustes-ia">{t('ai.link')}</h2> : <PageTitle>{t('ai.title')}</PageTitle>}
       {current.data && (
         <>
           <section aria-labelledby="conector">
@@ -87,25 +85,28 @@ export function AiSettings() {
       )}
       <FormError message={current.error || setMode.error ? errorText(current.error ?? setMode.error) : null} />
 
-      <section aria-labelledby="ultimas">
-        <h2 id="ultimas">{t('ai.recentTitle')}</h2>
-        {approvals.data &&
-          (recent.length === 0 ? (
-            <p>{t('ai.recentEmpty')}</p>
-          ) : (
-            <ul className={styles.list} aria-label={t('ai.recentTitle')}>
-              {recent.map((approval) => (
-                <li key={approval.id} className={styles.item}>
-                  <span className={styles.name}>{outcomeText(t, codeText, approval)}</span>
-                  <span className={styles.role}>
-                    <time dateTime={approval.requestedAt}>{date.format(new Date(approval.requestedAt))}</time> ·{' '}
-                    {approval.tool}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          ))}
-      </section>
+      {/* Las peticiones salen flotando en cualquier página; aquí, solo en su página propia */}
+      {!embedded && (
+        <section aria-labelledby="ultimas">
+          <h2 id="ultimas">{t('ai.recentTitle')}</h2>
+          {approvals.data &&
+            (recent.length === 0 ? (
+              <p>{t('ai.recentEmpty')}</p>
+            ) : (
+              <ul className={styles.list} aria-label={t('ai.recentTitle')}>
+                {recent.map((approval) => (
+                  <li key={approval.id} className={styles.item}>
+                    <span className={styles.name}>{outcomeText(t, codeText, approval)}</span>
+                    <span className={styles.role}>
+                      <time dateTime={approval.requestedAt}>{date.format(new Date(approval.requestedAt))}</time> ·{' '}
+                      {approval.tool}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ))}
+        </section>
+      )}
     </section>
   )
 }

@@ -1,6 +1,13 @@
 import { approve, getAiSettings, listApprovals, reject, setAiMode } from './ai.ts'
-import { createCampaign, getCampaign, listCampaigns, listWorldsWithCampaigns, renameCampaign } from './campaigns.ts'
-import { deleteFile, listFiles, renameFile, restoreFile } from './files.ts'
+import {
+  createCampaign,
+  getCampaign,
+  listCampaigns,
+  listWorldsWithCampaigns,
+  renameCampaign,
+  updateCampaign
+} from './campaigns.ts'
+import { deleteFile, listCommonFiles, listFiles, renameFile, restoreFile } from './files.ts'
 import { listHistory, undoOperation } from './history.ts'
 import { getInvitation, regenerateInvitation, setInvitationsOpen } from './invitations.ts'
 import { leaveCampaign, listMembers, removeMember } from './members.ts'
@@ -20,6 +27,7 @@ import {
   listPageNames,
   listPageTree,
   listPageVersions,
+  listRecentPages,
   listTags,
   listUnresolvedLinks,
   movePage,
@@ -68,6 +76,7 @@ export const ACTIONS = [
   listCampaigns,
   createCampaign,
   renameCampaign,
+  updateCampaign,
   listWorldsWithCampaigns,
   getCampaign,
   getInvitation,
@@ -94,6 +103,7 @@ export const ACTIONS = [
   getPage,
   listPageChildren,
   listPageTree,
+  listRecentPages,
   setPageProperties,
   listTags,
   deletePage,
@@ -115,6 +125,7 @@ export const ACTIONS = [
   getPageVersion,
   restorePageVersion,
   listFiles,
+  listCommonFiles,
   renameFile,
   deleteFile,
   restoreFile,
@@ -131,6 +142,7 @@ export type Actions = {
   listCampaigns: typeof listCampaigns
   createCampaign: typeof createCampaign
   renameCampaign: typeof renameCampaign
+  updateCampaign: typeof updateCampaign
   listWorldsWithCampaigns: typeof listWorldsWithCampaigns
   getCampaign: typeof getCampaign
   getInvitation: typeof getInvitation
@@ -157,6 +169,7 @@ export type Actions = {
   getPage: typeof getPage
   listPageChildren: typeof listPageChildren
   listPageTree: typeof listPageTree
+  listRecentPages: typeof listRecentPages
   setPageProperties: typeof setPageProperties
   listTags: typeof listTags
   deletePage: typeof deletePage
@@ -178,6 +191,7 @@ export type Actions = {
   getPageVersion: typeof getPageVersion
   restorePageVersion: typeof restorePageVersion
   listFiles: typeof listFiles
+  listCommonFiles: typeof listCommonFiles
   renameFile: typeof renameFile
   deleteFile: typeof deleteFile
   restoreFile: typeof restoreFile

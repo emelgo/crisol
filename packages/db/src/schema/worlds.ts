@@ -19,7 +19,7 @@ export const worlds = pgTable(
     /** El color de la portada cuando no hay imagen */
     color: text(),
     /** La portada: una imagen del mundo y su encuadre */
-    cover: jsonb().$type<{ fileId: string; x: number; y: number } | null>(),
+    cover: jsonb().$type<{ fileId: string; x: number; y: number; zoom?: number } | null>(),
     /** En la papelera desde entonces: no sale en ninguna vista y a los 30 días se purga */
     deletedAt: timestamp({ withTimezone: true })
   },

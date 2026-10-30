@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
-import { ACTIONS, defineAction, openApi } from './index.ts'
+import { ACTIONS, defineAction, openApi, updatePage, updateWorld } from './index.ts'
 
 describe('acciones', () => {
   it('cada acción tiene un nombre único', () => {
@@ -47,5 +47,26 @@ describe('openApi', () => {
     const doc = openApi(ACTIONS) as { paths: Record<string, { post: { operationId: string } }> }
     expect(Object.keys(doc.paths)).toEqual(ACTIONS.map((a) => `/api/actions/${a.name}`))
     expect(doc.paths['/api/actions/createWorld']?.post.operationId).toBe('createWorld')
+  })
+})
+
+describe('portadas', () => {
+  const cover = { fileId: crypto.randomUUID(), x: 30, y: 70, zoom: 1.8 }
+
+  it('la de un mundo guarda el encuadre y el acercamiento', () => {
+    const input = updateWorld.input.parse({ worldId: crypto.randomUUID(), cover })
+    expect(input.cover).toEqual(cover)
+  })
+
+  it('la de una página, también', () => {
+    const input = updatePage.input.parse({ pageId: crypto.randomUUID(), cover })
+    expect(input.cover).toEqual(cover)
+  })
+
+  it('el color de un mundo: uno de los fijos o uno propio', () => {
+    const worldId = crypto.randomUUID()
+    expect(updateWorld.input.parse({ worldId, color: '#aa3355' }).color).toBe('#aa3355')
+    expect(updateWorld.input.parse({ worldId, color: 'wine' }).color).toBe('wine')
+    expect(() => updateWorld.input.parse({ worldId, color: 'rojo' })).toThrow()
   })
 })

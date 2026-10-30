@@ -1,13 +1,21 @@
 import type { Approval, Organization } from '@crisol/contracts'
 import { createMemoryHistory } from '@tanstack/react-router'
-import { act, render, screen } from '@testing-library/react'
+import { act, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { fakeAccountClient } from '../account/fake.ts'
 import { fakeApi } from '../api/fake.ts'
 import { App } from '../app.tsx'
 import { createAppRouter } from '../router.tsx'
 import { announced, inMain } from '../testing.ts'
+
+// Ajustes, desde el menú de la cuenta: se abre encima de la página
+const openSettings = async () => {
+  const account = within(await screen.findByRole('navigation', { name: 'Cuenta' }))
+  await userEvent.click(await account.findByRole('button', { name: 'Enrique', expanded: false }))
+  await userEvent.click(account.getByRole('button', { name: 'Ajustes' }))
+  return within(await screen.findByRole('dialog', { name: 'Ajustes' }))
+}
 
 const owner: Organization = { id: crypto.randomUUID(), name: 'Fateforge', role: 'owner' }
 
@@ -39,19 +47,27 @@ const renderAt = (path: string, options: { organizations?: Organization[]; appro
 }
 
 describe('los ajustes de IA', () => {
-  it('el propietario llega desde la cabecera: la dirección del conector y el modo, copiloto por defecto', async () => {
+  // El tutorial guiado de Mis mundos ya hecho: que no se ponga en medio
+  beforeEach(() => localStorage.setItem('crisol.recorridos.e@crisol.test', JSON.stringify({ seen: ['mundos'] })))
+
+  it('el propietario los tiene en Ajustes: la dirección del conector y el modo, copiloto por defecto', async () => {
     const { router } = renderAt('/mundos')
-    await userEvent.click(await screen.findByRole('link', { name: 'IA' }))
-    expect(router.state.location.pathname).toBe('/ia')
-    expect(await screen.findByRole('heading', { level: 1, name: 'Ajustes de IA' })).toBeDefined()
-    expect(screen.getByLabelText<HTMLInputElement>('Dirección del conector').value).toBe('https://crisol.test/mcp')
-    expect(screen.getByRole<HTMLInputElement>('radio', { name: /^Copiloto/ }).checked).toBe(true)
+    const settings = await openSettings()
+    expect(await settings.findByRole('heading', { level: 2, name: 'IA' })).toBeDefined()
+    expect(router.state.location.pathname).toBe('/mundos')
+    expect((await settings.findByLabelText<HTMLInputElement>('Dirección del conector')).value).toBe(
+      'https://crisol.test/mcp'
+    )
+    expect(settings.getByRole<HTMLInputElement>('radio', { name: /^Copiloto/ }).checked).toBe(true)
   })
 
-  it('quien no es propietario no ve el enlace', async () => {
+  it('quien no es propietario no los tiene en Ajustes', async () => {
     renderAt('/mundos', { organizations: [{ ...owner, role: 'member' }] })
     await screen.findByRole('heading', { level: 1, name: 'Mis mundos' })
-    expect(screen.queryByRole('link', { name: 'IA' })).toBeNull()
+    const settings = await openSettings()
+    expect(settings.getByRole('heading', { level: 2, name: 'Apariencia' })).toBeDefined()
+    expect(settings.queryByRole('heading', { name: 'IA' })).toBeNull()
+    expect(settings.queryByLabelText('Dirección del conector')).toBeNull()
   })
 
   it('cambiar el modo se guarda al momento', async () => {

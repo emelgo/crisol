@@ -189,3 +189,15 @@ section[aria-labelledby] .list::before {
   color: var(--color-muted);
   text-decoration: line-through;
 }
+
+/* Lo que llega después de abrir (Historial, Papelera): entra con un fundido, sin saltar de golpe */
+.appear {
+  animation: aparece-lista 260ms ease-out;
+}
+
+@keyframes aparece-lista {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}

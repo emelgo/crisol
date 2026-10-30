@@ -213,6 +213,31 @@ describe('POST /api/actions/:name', () => {
       })
     })
 
+    it('el máster cambia cómo se ve una campaña, como un mundo: descripción, color y portada; se deshace', async () => {
+      const world = (await call('createWorld', { name: 'Eana' }, owner.cookie)).json()
+      const campaign = (await call('createCampaign', { worldId: world.id, name: 'La Marca' }, owner.cookie)).json()
+      expect(campaign).toMatchObject({ description: '', color: null, cover: null })
+      const response = await call(
+        'updateCampaign',
+        { campaignId: campaign.id, description: 'Frontera y ruinas', color: '#aa3355' },
+        owner.cookie
+      )
+      expect(response.json()).toMatchObject({ description: 'Frontera y ruinas', color: '#aa3355', version: 2 })
+      const op = (await conn.db.select().from(schema.operations)).find((o) => o.action === 'updateCampaign')
+      expect(op).toMatchObject({
+        worldId: world.id,
+        details: { name: 'La Marca', description: true, color: '#aa3355' }
+      })
+      // La portada tiene que ser una imagen de su mundo (o común)
+      const cover = { fileId: crypto.randomUUID(), x: 50, y: 50 }
+      expect((await call('updateCampaign', { campaignId: campaign.id, cover }, owner.cookie)).json()).toEqual({
+        code: 'BAD_COVER'
+      })
+      await call('undoOperation', { operationId: op?.id }, owner.cookie)
+      const [after] = (await call('listCampaigns', { worldId: world.id }, owner.cookie)).json().campaigns
+      expect(after).toMatchObject({ description: '', color: null })
+    })
+
     it('un jugador ve el mundo y su campaña, pero no las demás ni puede cambiarlas', async () => {
       const world = (await call('createWorld', { name: 'Eana' }, owner.cookie)).json()
       const mine = (await call('createCampaign', { worldId: world.id, name: 'B' }, owner.cookie)).json()
@@ -228,6 +253,7 @@ describe('POST /api/actions/:name', () => {
         { ...mine, role: 'player' }
       ])
       expect((await call('renameCampaign', { campaignId: mine.id, name: 'X' }, player.cookie)).statusCode).toBe(403)
+      expect((await call('updateCampaign', { campaignId: mine.id, color: 'wine' }, player.cookie)).statusCode).toBe(403)
       expect((await call('renameCampaign', { campaignId: other.id, name: 'X' }, player.cookie)).statusCode).toBe(404)
       expect((await call('createCampaign', { worldId: world.id, name: 'X' }, player.cookie)).statusCode).toBe(403)
       expect((await call('renameWorld', { worldId: world.id, name: 'X' }, player.cookie)).statusCode).toBe(403)

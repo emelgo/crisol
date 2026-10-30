@@ -13,8 +13,9 @@ export async function findBody(db: Database, pageId: string) {
 }
 
 /**
- * Guarda el cuerpo fusionando con lo que ya hay: merge recibe el estado guardado (o null) y devuelve el nuevo. La fila
- * va bloqueada mientras tanto, así que dos guardados a la vez no se pisan. Nunca se vuelve atrás: solo se fusiona
+ * Guarda el cuerpo fusionando con lo que ya hay: merge recibe el estado guardado (o null) y devuelve el nuevo. Los
+ * guardados del cuerpo de una página van de uno en uno (un cerrojo por página, también cuando aún no tiene fila: dos
+ * altas a la vez se bloqueaban entre sí), así que no se pisan. Nunca se vuelve atrás: solo se fusiona
  */
 export function mergeBody(
   db: Database,
@@ -22,6 +23,7 @@ export function mergeBody(
   merge: (stored: Uint8Array | null) => Uint8Array
 ) {
   return db.transaction(async (tx) => {
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${`cuerpo:${page.pageId}`}, 0))`)
     const [stored] = await tx
       .select({ id: documents.id, state: documents.state })
       .from(documents)

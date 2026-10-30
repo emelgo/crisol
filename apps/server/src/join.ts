@@ -3,7 +3,7 @@
  * Discord lo abren. Unirse es un POST, con sesión o creando la cuenta en la misma petición (el enlace es el pase de
  * alta; el registro sigue cerrado para todo lo demás).
  */
-import { bootstrapRepo, invitationsRepo } from '@crisol/db'
+import { bootstrapRepo, invitationsRepo, usersRepo } from '@crisol/db'
 import type { FastifyInstance, FastifyRequest } from 'fastify'
 import { z } from 'zod'
 import type { ActionEnv } from './actions/context.ts'
@@ -59,6 +59,8 @@ async function join(env: ActionEnv, link: Link, user: { id: string; name: string
 const signupInput = z.object({
   secret: z.string().min(1),
   name: z.string().trim().min(1).max(80),
+  firstName: z.string().trim().max(80).optional(),
+  lastName: z.string().trim().max(80).optional(),
   email: z.email().max(254),
   password: z.string().min(10).max(128)
 })
@@ -105,8 +107,15 @@ export function registerJoinRoutes(app: FastifyInstance, env: ActionEnv, auth: A
     const link = await validLink(env, input.data.secret)
     if (!link) return reply.code(404).send(INVALID)
 
-    const { name, email, password } = input.data
-    const created = await signUpAllowed(auth, { name, email, password })
+    const { name, firstName, lastName, email, password } = input.data
+    if (await usersRepo.isNameTaken(env.db, name)) return reply.code(409).send({ code: 'USERNAME_TAKEN' })
+    const created = await signUpAllowed(auth, {
+      name,
+      firstName: firstName ?? '',
+      lastName: lastName ?? '',
+      email,
+      password
+    })
     if (!created) return reply.code(409).send({ code: 'EMAIL_TAKEN' })
     // Sin entrar no hay alta (el registro está cerrado): si el enlace dejó de valer mientras se creaba la cuenta, o
     // algo falla al unirla, la cuenta se borra

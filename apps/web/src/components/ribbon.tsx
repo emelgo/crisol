@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router'
 import {
   Bookmark,
@@ -7,22 +7,23 @@ import {
   Globe,
   Hash,
   History,
+  House,
   type LucideIcon,
-  Moon,
-  Plug,
   Search,
-  Sun,
+  Swords,
   Trash2
 } from 'lucide-react'
-import { type MouseEvent, useState } from 'react'
+import { type CSSProperties, type MouseEvent, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
-import { currentTheme, nextTheme, setTheme } from '../theme.ts'
+import { historyQuery, trashQuery } from '../api/queries.ts'
 import { useNarrow, useWikiPanel, type WikiPanel } from '../wiki/panel.tsx'
 import { AccountMenu } from './account-menu.tsx'
-import { useApprovals } from './approval-queue.tsx'
+import { CrisolMark } from './brand.tsx'
 import styles from './ribbon.module.css'
+import { useWindow } from './window.tsx'
+import { LEAVE_WORLD, SECTION } from './world-transition.ts'
 
 /** Si la cuenta es propietaria de alguna organización: solo ella ve su historial, su papelera y la IA */
 function useIsOwner() {
@@ -34,6 +35,19 @@ function useIsOwner() {
     enabled: Boolean(account)
   })
   return organizations.data?.organizations.some((o) => o.role === 'owner') ?? false
+}
+
+/** El mundo en el que se está, si lo dirige la cuenta (su historial, su papelera y su wiki son suyos) */
+export function useMasteredWorld() {
+  const api = useApi()
+  const { account } = useAccounts().useAccount()
+  const worldId = useRouterState({ select: (state) => /^\/mundos\/([^/]+)/.exec(state.location.pathname)?.[1] })
+  const worlds = useQuery({
+    queryKey: ['worlds'],
+    queryFn: () => api.call('listWorlds', {}),
+    enabled: Boolean(account && worldId)
+  })
+  return worlds.data?.worlds.find((w) => w.id === worldId && w.role === 'master')?.id
 }
 
 /** Lo que va dentro de cada botón: el icono y su nombre debajo, que se entienda sin pasar el ratón */
@@ -56,49 +70,191 @@ export function Ribbon() {
   const api = useApi()
   const { account } = useAccounts().useAccount()
   const isOwner = useIsOwner()
+  const windows = useWindow()
   const worldId = useRouterState({ select: (state) => /^\/mundos\/([^/]+)/.exec(state.location.pathname)?.[1] })
   const worlds = useQuery({
     queryKey: ['worlds'],
     queryFn: () => api.call('listWorlds', {}),
     enabled: Boolean(account && worldId)
   })
-  // La wiki es solo de quien administra el mundo (hasta el módulo 5)
-  const world = worlds.data?.worlds.find((w) => w.id === worldId && w.role === 'master')
+  const world = worlds.data?.worlds.find((w) => w.id === worldId)
+  // La wiki es solo de quien administra el mundo (hasta el módulo 5); dentro de él, su historial y su papelera
+  const master = world?.role === 'master'
+  // Historial y Papelera se piden en cuanto el ratón (o el foco) llega a su botón: al abrirlos, ya están
+  const queryClient = useQueryClient()
+  const scope = master && world ? { worldId: world.id } : {}
+  const prefetchHistory = () =>
+    void queryClient.prefetchInfiniteQuery({ ...historyQuery(api, scope), staleTime: 10_000 })
+  const prefetchTrash = () => void queryClient.prefetchQuery({ ...trashQuery(api, scope), staleTime: 10_000 })
+  // Al entrar en un mundo, «Mundos» sube a la llama y se funde con ella, que se aviva (el mundo se cocina en el crisol);
+  // dentro, la llama es la vuelta. Al volver, «Mundos» sale de la llama, sin fuego
+  const inWorld = Boolean(worldId)
+  const [wasInWorld, setWasInWorld] = useState(inWorld)
+  // Recién entrado (en este mismo pintado aún no se ve en phase)
+  const justEntered = inWorld && !wasInWorld
+  const [phase, setPhase] = useState<'still' | 'merging' | 'emerging'>('still')
+  // La llama: al entrar, se aviva y suelta chispas; al salir, se aplaca y echa humo. Con su propio tiempo, más largo
+  // que el de «Mundos»
+  const [flame, setFlame] = useState<'still' | 'fire' | 'smoke'>('still')
+  if (inWorld !== wasInWorld) {
+    setWasInWorld(inWorld)
+    setPhase(inWorld ? 'merging' : 'emerging')
+    setFlame(inWorld ? 'fire' : 'smoke')
+  }
+  useEffect(() => {
+    if (flame === 'still') return
+    const timer = window.setTimeout(() => setFlame('still'), flame === 'fire' ? 3000 : 3400)
+    return () => window.clearTimeout(timer)
+  }, [flame])
+  // Los iconos del mundo (Inicio, Campañas, Páginas… y los que vengan): al entrar, salen del crisol uno tras otro
+  // cuando «Mundos» ya se ha fundido; al volver, suben a él y se van antes de que salga «Mundos». Se quedan (todos)
+  // mientras se van
+  const [panelsWorld, setPanelsWorld] = useState(world?.id ?? null)
+  const [panelsMaster, setPanelsMaster] = useState(master)
+  const [panelsMotion, setPanelsMotion] = useState<'none' | 'enter' | 'leave'>('none')
+  if (world && world.id !== panelsWorld) {
+    setPanelsWorld(world.id)
+    setPanelsMotion(justEntered || phase === 'merging' ? 'enter' : 'none')
+  }
+  if (world && master !== panelsMaster) setPanelsMaster(master)
+  if (!world && panelsWorld && panelsMotion !== 'leave') setPanelsMotion('leave')
+  const panelsBox = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (panelsMotion !== 'leave') return
+    // Sin animaciones (las pruebas), al momento; si no, cuando el último ya se ha ido
+    if (typeof panelsBox.current?.getAnimations !== 'function') return setPanelsWorld(null)
+    const timer = window.setTimeout(() => setPanelsWorld(null), 650)
+    return () => window.clearTimeout(timer)
+  }, [panelsMotion])
+  const merged = inWorld && phase !== 'merging'
+  const worldsItem = [
+    styles.item,
+    inWorld && phase === 'merging' ? styles.merging : '',
+    inWorld && phase !== 'merging' ? styles.merged : '',
+    !inWorld && phase === 'emerging' ? styles.emerging : ''
+  ]
 
   return (
     <div className={styles.ribbon}>
       <nav className={styles.sections} aria-label={t('app.sectionsNav')}>
-        <Link to="/" className={styles.brand} aria-label={t('app.name')} translate="no">
-          <span aria-hidden="true" />
+        <Link
+          to="/mundos"
+          className={[styles.brand, flame === 'fire' ? styles.cooking : '', flame === 'smoke' ? styles.smoking : '']
+            .filter(Boolean)
+            .join(' ')}
+          {...(inWorld ? { viewTransition: LEAVE_WORLD } : {})}
+          data-tour="barra-llama"
+          aria-label={t('app.name')}
+          translate="no"
+        >
+          <CrisolMark size={26} />
         </Link>
-        <Link to="/mundos" activeOptions={{ exact: true }} className={styles.item}>
-          <Label icon={Globe} text={t('ribbon.worlds')} />
-        </Link>
-        {world && <WorldPanels worldId={world.id} />}
-        <span className={styles.spacer} />
-        {isOwner && (
-          <>
-            <Link to="/historial" className={styles.item}>
-              <Label icon={History} text={t('ribbon.history')} />
-            </Link>
-            <Link to="/papelera" className={styles.item}>
-              <Label icon={Trash2} text={t('ribbon.trash')} />
-            </Link>
-            {/* La IA solo se conecta con la cuenta del propietario (módulo 0) */}
-            <AiLink />
-          </>
+        {/* Ya fundidos con la llama (dentro de un mundo), «Mundos» y los archivos comunes no están */}
+        {merged ? null : (
+          <Link
+            to="/mundos"
+            activeOptions={{ exact: true }}
+            viewTransition={SECTION}
+            className={worldsItem.filter(Boolean).join(' ')}
+            data-tour="barra-mundos"
+            onAnimationEnd={() => setPhase('still')}
+          >
+            <Label icon={Globe} text={t('ribbon.worlds')} />
+          </Link>
+        )}
+        {/* Los archivos comunes de la cuenta: fuera de los mundos; dentro, en los «Archivos» de cada uno (ADR-0005).
+            Al entrar en un mundo sube a la llama con «Mundos», desde más abajo */}
+        {isOwner && !merged && (
+          <Link
+            to="/archivos"
+            viewTransition={SECTION}
+            className={worldsItem.filter(Boolean).join(' ')}
+            style={{ '--rise': '-7.4rem' } as CSSProperties}
+          >
+            <Label icon={Folder} text={t('ribbon.files')} />
+          </Link>
+        )}
+        {panelsWorld && (
+          <div
+            ref={panelsBox}
+            className={[
+              styles.panels,
+              panelsMotion === 'enter' ? styles.panelsEnter : '',
+              panelsMotion === 'leave' ? styles.panelsLeave : ''
+            ]
+              .filter(Boolean)
+              .join(' ')}
+            inert={panelsMotion === 'leave'}
+            data-tour="barra-mundo"
+          >
+            <WorldPanels worldId={panelsWorld} master={panelsMaster} />
+          </div>
         )}
       </nav>
-      <nav className={styles.account} aria-label={t('app.accountNav')}>
-        <AccountMenu variant="ribbon" />
-        <ThemeButton />
-      </nav>
+      {/* Abajo y fijo: lo de arriba puede crecer o no caber (al entrar en un mundo) sin moverlo */}
+      <div className={styles.foot}>
+        {isOwner && (
+          <>
+            {/* Se abren encima, sin dejar lo que se está viendo */}
+            <button
+              type="button"
+              className={styles.item}
+              aria-haspopup="dialog"
+              data-tour="barra-historial"
+              onPointerEnter={prefetchHistory}
+              onFocus={prefetchHistory}
+              onClick={() => windows?.open('historial')}
+            >
+              <Label icon={History} text={t('ribbon.history')} />
+            </button>
+            <button
+              type="button"
+              className={styles.item}
+              aria-haspopup="dialog"
+              data-tour="barra-papelera"
+              onPointerEnter={prefetchTrash}
+              onFocus={prefetchTrash}
+              onClick={() => windows?.open('papelera')}
+            >
+              <Label icon={Trash2} text={t('ribbon.trash')} />
+            </button>
+          </>
+        )}
+        <nav className={styles.account} aria-label={t('app.accountNav')}>
+          <AccountMenu variant="ribbon" />
+        </nav>
+      </div>
     </div>
   )
 }
 
-/** Los paneles de un mundo. Fuera de la wiki, abrir uno lleva a ella con ese panel abierto */
-function WorldPanels({ worldId }: { worldId: string }) {
+/**
+ * Lo de un mundo: su Inicio, sus campañas y, para quien lo dirige, los paneles de su wiki. Fuera de la wiki, abrir uno
+ * lleva a ella con ese panel abierto
+ */
+function WorldPanels({ worldId, master }: { worldId: string; master: boolean }) {
+  const { t } = useTranslation()
+  return (
+    <>
+      <Link
+        to="/mundos/$worldId"
+        params={{ worldId }}
+        activeOptions={{ exact: true }}
+        className={styles.item}
+        viewTransition={SECTION}
+      >
+        <Label icon={House} text={t('ribbon.home')} />
+      </Link>
+      <Link to="/mundos/$worldId/campanas" params={{ worldId }} className={styles.item} viewTransition={SECTION}>
+        <Label icon={Swords} text={t('ribbon.campaigns')} />
+      </Link>
+      {master && <WikiPanels worldId={worldId} />}
+    </>
+  )
+}
+
+/** Los paneles de la wiki de un mundo */
+function WikiPanels({ worldId }: { worldId: string }) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const wikiPanel = useWikiPanel()
@@ -112,7 +268,7 @@ function WorldPanels({ worldId }: { worldId: string }) {
       return
     }
     wikiPanel.show(panel, trigger)
-    void navigate({ to: '/mundos/$worldId/wiki', params: { worldId } })
+    void navigate({ to: '/mundos/$worldId/wiki', params: { worldId }, viewTransition: SECTION })
   }
   const narrow = useNarrow()
   // Marcado si se ve: en lo estrecho, con el cajón abierto; en lo ancho, si no está recogido
@@ -130,55 +286,12 @@ function WorldPanels({ worldId }: { worldId: string }) {
           <Label icon={icon} text={text} />
         </button>
       ))}
-      <Link to="/mundos/$worldId/etiquetas" params={{ worldId }} className={styles.item}>
+      <Link to="/mundos/$worldId/etiquetas" params={{ worldId }} className={styles.item} viewTransition={SECTION}>
         <Label icon={Hash} text={t('ribbon.tags')} />
       </Link>
-      <Link to="/mundos/$worldId/archivos" params={{ worldId }} className={styles.item}>
+      <Link to="/mundos/$worldId/archivos" params={{ worldId }} className={styles.item} viewTransition={SECTION}>
         <Label icon={Folder} text={t('ribbon.files')} />
       </Link>
     </>
-  )
-}
-
-/** Claro u oscuro: el nombre dice a cuál cambia */
-function ThemeButton() {
-  const { t } = useTranslation()
-  const [theme, setThemeState] = useState(currentTheme)
-  const next = nextTheme(theme)
-  return (
-    <button
-      type="button"
-      className={styles.item}
-      aria-label={next === 'dark' ? t('theme.toDark') : t('theme.toLight')}
-      onClick={() => {
-        setTheme(next)
-        setThemeState(next)
-      }}
-    >
-      <Label icon={next === 'dark' ? Moon : Sun} text={next === 'dark' ? t('theme.dark') : t('theme.light')} />
-    </button>
-  )
-}
-
-/** La IA, con cuántas peticiones esperan tu aprobación */
-function AiLink() {
-  const { t } = useTranslation()
-  const pending = useApprovals().data?.pending.length ?? 0
-  // El número se ve sobre el icono; a los lectores de pantalla se les dice detrás de «IA», con el texto visible
-  return (
-    <Link to="/ia" className={styles.item}>
-      <span className={styles.badged}>
-        <Plug aria-hidden="true" size={20} strokeWidth={1.75} />
-        {pending > 0 && (
-          <span aria-hidden="true" className={styles.badge}>
-            {pending}
-          </span>
-        )}
-      </span>
-      <span className={styles.text}>
-        {t('ribbon.ai')}
-        {pending > 0 && <span className={styles.hidden}>{t('ribbon.aiPending', { count: pending })}</span>}
-      </span>
-    </Link>
   )
 }

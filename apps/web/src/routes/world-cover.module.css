@@ -1,0 +1,192 @@
+/* La portada vista grande: solo la imagen, sin marco */
+.viewer {
+  max-inline-size: 92vw;
+  max-block-size: 90dvh;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  overflow: visible;
+}
+
+.viewer::backdrop {
+  background: rgb(0 0 0 / 0.8);
+}
+
+.full {
+  display: block;
+  max-inline-size: 92vw;
+  max-block-size: 90dvh;
+  border-radius: 6px;
+}
+
+/* El cuadro para cambiarla */
+.dialog {
+  inline-size: min(36rem, calc(100vw - 2rem));
+  padding: 0;
+  border: 1px solid var(--color-frame);
+  border-radius: 8px;
+  background: var(--color-surface);
+  box-shadow: 0 1.5rem 3.75rem rgb(0 0 0 / 0.45);
+  color: var(--color-text);
+}
+
+.dialog::backdrop {
+  background: rgb(0 0 0 / 0.55);
+}
+
+/* La vista previa, con la forma de la portada: se arrastra para encuadrar */
+.preview {
+  position: relative;
+  display: block;
+  inline-size: 100%;
+  aspect-ratio: 16 / 6;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  /* Sin imagen, el hueco con el tinte del color del mundo, como en su tarjeta */
+  background: color-mix(in srgb, var(--world-color, var(--color-raised)) 22%, var(--color-raised));
+  cursor: grab;
+  touch-action: none;
+}
+
+/* Con imagen, sin el tinte detrás (por si tiene partes transparentes) */
+.preview:has(> img) {
+  background: var(--color-raised);
+}
+
+.preview:active {
+  cursor: grabbing;
+}
+
+.preview:disabled {
+  cursor: default;
+}
+
+.image {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+  pointer-events: none;
+  user-select: none;
+}
+
+.hint {
+  position: absolute;
+  inset-block-end: var(--space-2);
+  inset-inline-end: var(--space-2);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--color-bg) 80%, transparent);
+  color: var(--color-text);
+  font-size: 0.8125rem;
+}
+
+/* Acercar y alejar: la lupa pequeña, el deslizador y la grande */
+.zoom {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.zoom input {
+  flex: 1;
+  accent-color: var(--color-text);
+}
+
+.zoom button {
+  display: grid;
+  place-items: center;
+  inline-size: 2rem;
+  block-size: 2rem;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+.zoom button:hover {
+  background: color-mix(in srgb, var(--color-text) 8%, transparent);
+  color: var(--color-text);
+}
+
+/* El nombre de cada grupo de miniaturas (del mundo, comunes), en su propia línea */
+.groupLabel {
+  flex-basis: 100%;
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+/* Las imágenes del mundo, en miniatura; la elegida, marcada */
+.thumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.thumb,
+.upload {
+  display: grid;
+  place-items: center;
+  inline-size: 4.5rem;
+  block-size: 3rem;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-raised);
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+.thumb img {
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+}
+
+.thumb[aria-pressed="true"] {
+  outline: 2px solid var(--color-text);
+  outline-offset: 1px;
+}
+
+.upload {
+  border-style: dashed;
+}
+
+.upload:hover,
+.thumb:hover {
+  border-color: var(--color-text);
+  color: var(--color-text);
+}
+
+/* Guardar y Cancelar a la izquierda; quitarla, a la derecha */
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.remove {
+  margin-inline-start: auto;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-accent-text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.remove:hover {
+  text-decoration: underline;
+}

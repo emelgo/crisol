@@ -2,7 +2,7 @@ import { createHash, randomBytes } from 'node:crypto'
 import { connect } from '@crisol/db'
 import { resetDatabase } from '@crisol/db/testing'
 import { issueBootstrap } from '@crisol/server/bootstrap'
-import { type Browser, expect, type Page } from '@playwright/test'
+import { type Browser, expect, type Locator, type Page } from '@playwright/test'
 import { e2eDatabaseUrl } from '../servidor.ts'
 
 export const owner = { name: 'Enrique', email: 'enrique@crisol.test', password: 'una-clave-larga' }
@@ -21,10 +21,125 @@ export async function signOut(page: Page) {
   await account.getByRole('button', { name: 'Cerrar sesión' }).click()
 }
 
-/** Va al perfil desde el menú de la cuenta */
-export async function openProfile(page: Page) {
+/** Abre una ventana del menú de la cuenta (Perfil o Ajustes); devuelve la ventana */
+export async function openAccountWindow(page: Page, name: 'Perfil' | 'Ajustes') {
   const account = await openAccountMenu(page)
-  await account.getByRole('link', { name: 'Perfil' }).click()
+  await account.getByRole('button', { name, exact: true }).click()
+  const window = page.getByRole('dialog', { name, exact: true })
+  await expect(window).toBeVisible()
+  return window
+}
+
+/** Abre el perfil desde el menú de la cuenta; devuelve su ventana */
+export function openProfile(page: Page) {
+  return openAccountWindow(page, 'Perfil')
+}
+
+/** La barra de la izquierda */
+export function sections(page: Page) {
+  return page.getByRole('navigation', { name: 'Secciones' })
+}
+
+/** Abre Historial o Papelera, desde abajo en la barra (del mundo en el que se esté); devuelve la ventana */
+export async function openWindow(page: Page, name: 'Historial' | 'Papelera') {
+  await page.getByRole('button', { name, exact: true }).click()
+  const window = page.getByRole('dialog', { name, exact: true })
+  await expect(window).toBeVisible()
+  return window
+}
+
+/**
+ * Cierra una ventana con su X y espera a que se haya ido del todo: si se vuelve a abrir la misma mientras se va (su
+ * animación de salida), no se abre
+ */
+export async function closeWindow(window: Locator) {
+  await window.getByRole('button', { name: 'Cerrar' }).first().click()
+  await expect(window).toHaveCount(0)
+}
+
+/** Entra en un mundo desde Mis mundos, por el nombre de su tarjeta */
+export async function openWorld(page: Page, name: string) {
+  await page.getByRole('list', { name: 'Mundos' }).getByRole('link', { name, exact: true }).click()
+  await expect(page.getByRole('heading', { level: 1, name, exact: true })).toBeVisible()
+}
+
+/** Desde Mis mundos, entra en un mundo y abre su wiki con «Páginas» */
+export async function openWiki(page: Page, name: string) {
+  await openWorld(page, name)
+  await sections(page).getByRole('button', { name: 'Páginas' }).click()
+  await expect(page).toHaveURL(/\/wiki$/)
+}
+
+/** Abre los ajustes de un mundo o una campaña (su engranaje); devuelve su ventana */
+export async function openSettings(page: Page, name: string) {
+  await page.getByRole('button', { name: `Ajustes de ${name}`, exact: true }).click()
+  const dialog = page.getByRole('dialog', { name: `Ajustes de ${name}`, exact: true })
+  await expect(dialog).toBeVisible()
+  return dialog
+}
+
+type Kind = 'mundo' | 'campaña'
+const nameField = (kind: Kind) => (kind === 'mundo' ? 'Nombre del mundo' : 'Nombre de la campaña')
+
+/** Renombra un mundo o una campaña desde sus ajustes y cierra la ventana */
+export async function rename(page: Page, kind: Kind, name: string, to: string) {
+  const dialog = await openSettings(page, name)
+  await dialog.getByLabel(nameField(kind)).fill(to)
+  await dialog.getByRole('button', { name: 'Guardar' }).click()
+  // Guardado, la ventana lleva el nombre nuevo
+  const renamed = page.getByRole('dialog', { name: `Ajustes de ${to}`, exact: true })
+  await expect(renamed).toBeVisible()
+  await renamed.getByRole('button', { name: 'Cerrar' }).click()
+  await expect(renamed).toBeHidden()
+}
+
+/** Borra un mundo o una campaña desde sus ajustes, escribiendo su nombre en la confirmación */
+export async function remove(page: Page, kind: Kind, name: string) {
+  const dialog = await openSettings(page, name)
+  const action = kind === 'mundo' ? 'Borrar el mundo' : 'Borrar la campaña'
+  await dialog.getByRole('button', { name: action }).click()
+  const confirm = page.getByRole('dialog', { name: `¿Borrar «${name}»?` })
+  await confirm.getByLabel(nameField(kind)).fill(name)
+  await confirm.getByRole('button', { name: action }).click()
+  await expect(confirm).toBeHidden()
+}
+
+/** Los tutoriales guiados de cada vista, ya hechos para esa cuenta: salen la primera vez y taparían lo que se prueba */
+export async function skipTours(page: Page, email: string) {
+  await page.addInitScript((key) => {
+    localStorage.setItem(key, JSON.stringify({ seen: ['mundos', 'mundo', 'campanas'] }))
+  }, `crisol.recorridos.${email}`)
+}
+
+/** Rellena el alta de una cuenta: nombre de usuario, nombre, email y la contraseña dos veces */
+export async function fillNewAccount(page: Page, person: { name: string; email: string; password: string }) {
+  await page.getByLabel('Nombre', { exact: true }).fill(person.name)
+  await page.getByLabel('Apellido(s)').fill('Pruebas')
+  await page.getByLabel('Nombre de usuario').fill(person.name)
+  await page.getByLabel('Email').fill(person.email)
+  await page.getByLabel('Contraseña', { exact: true }).fill(person.password)
+  await page.getByLabel('Repite la contraseña').fill(person.password)
+}
+
+/** Crea un mundo desde Mis mundos: el recuadro «Nuevo mundo» (o el botón grande si no hay ninguno) abre su cuadro */
+export async function createWorld(page: Page, name: string) {
+  // Si ya está en Mis mundos, sin recargar (no corta el canal en tiempo real)
+  if (new URL(page.url()).pathname !== '/mundos') await page.goto('/mundos')
+  await page.getByRole('button', { name: /Nuevo mundo|Crear tu primer mundo/ }).click()
+  const dialog = page.getByRole('dialog', { name: 'Nuevo mundo' })
+  await dialog.getByLabel('Nombre del mundo').fill(name)
+  await dialog.getByRole('button', { name: 'Crear el mundo' }).click()
+  await expect(page.getByRole('link', { name, exact: true })).toBeVisible()
+}
+
+/** Crea una campaña en el mundo abierto, desde su pestaña Campañas */
+export async function createCampaign(page: Page, name: string) {
+  await page.getByRole('navigation', { name: 'Secciones' }).getByRole('link', { name: 'Campañas' }).click()
+  await page.getByRole('button', { name: /Nueva campaña|Crear la primera campaña/ }).click()
+  const dialog = page.getByRole('dialog', { name: 'Nueva campaña' })
+  await dialog.getByLabel('Nombre de la campaña').fill(name)
+  await dialog.getByRole('button', { name: 'Crear la campaña' }).click()
+  await expect(page.getByRole('link', { name, exact: true })).toBeVisible()
 }
 
 export async function freshOwner(page: Page) {
@@ -32,12 +147,12 @@ export async function freshOwner(page: Page) {
   try {
     await resetDatabase(conn.sql)
     const { secret } = await issueBootstrap(conn.db, { organizationName: 'Fateforge' })
+    await skipTours(page, owner.email)
     await page.goto(`/arranque/${secret}`)
-    await page.getByLabel('Nombre').fill(owner.name)
-    await page.getByLabel('Email').fill(owner.email)
-    await page.getByLabel('Contraseña').fill(owner.password)
+    await fillNewAccount(page, owner)
     await page.getByRole('button', { name: 'Crear la cuenta' }).click()
-    await expect(page.getByText(`Hola, ${owner.name}`)).toBeVisible()
+    // Con sesión, la portada lleva directa a Mis mundos
+    await expect(page.getByRole('heading', { level: 1, name: 'Mis mundos' })).toBeVisible()
   } finally {
     await conn.close()
   }
@@ -46,13 +161,10 @@ export async function freshOwner(page: Page) {
 /** El propietario crea Eana y La Marca; devuelve el enlace de invitación (con `page` en la campaña) */
 export async function campaignLink(page: Page) {
   await freshOwner(page)
-  await page.goto('/mundos')
-  await page.getByLabel('Nombre del mundo').fill('Eana')
-  await page.getByRole('button', { name: 'Crear el mundo' }).click()
-  await page.getByRole('link', { name: 'Eana' }).click()
-  await page.getByLabel('Nombre de la campaña').fill('La Marca')
-  await page.getByRole('button', { name: 'Crear la campaña' }).click()
-  await page.getByRole('link', { name: 'La Marca' }).click()
+  await createWorld(page, 'Eana')
+  await page.getByRole('link', { name: 'Eana', exact: true }).click()
+  await createCampaign(page, 'La Marca')
+  await page.getByRole('link', { name: 'La Marca', exact: true }).click()
   return page.getByLabel('Enlace de invitación').inputValue()
 }
 
@@ -63,10 +175,10 @@ export async function campaignLink(page: Page) {
 export async function newPlayer(browser: Browser, link: string, name = 'Jugadora', onPage?: (page: Page) => void) {
   const player = await browser.newPage()
   onPage?.(player)
+  const email = `${name.toLowerCase()}@crisol.test`
+  await skipTours(player, email)
   await player.goto(link)
-  await player.getByLabel('Nombre').fill(name)
-  await player.getByLabel('Email').fill(`${name.toLowerCase()}@crisol.test`)
-  await player.getByLabel('Contraseña').fill('una-clave-larga')
+  await fillNewAccount(player, { name, email, password: 'una-clave-larga' })
   await player.getByRole('button', { name: 'Crear la cuenta y entrar' }).click()
   await expect(player.getByRole('heading', { level: 1, name: 'La Marca', exact: true })).toBeVisible()
   return player

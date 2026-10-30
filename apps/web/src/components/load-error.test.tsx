@@ -21,11 +21,29 @@ const world: World = {
   role: 'master',
   version: 1
 }
-const campaign: Campaign = { id: crypto.randomUUID(), worldId: world.id, name: 'La Marca', role: 'master', version: 1 }
+const campaign: Campaign = {
+  id: crypto.randomUUID(),
+  worldId: world.id,
+  name: 'La Marca',
+  description: '',
+  color: null,
+  cover: null,
+  role: 'master',
+  version: 1
+}
 
-/** La API, con esa acción fallando (como un 500 o sin red) hasta que `recover` la arregle */
-function renderAt(path: string, broken: ActionName, error: unknown = new ApiError('UNKNOWN', 500)) {
-  const api = fakeApi({ organizations: [ORG], worlds: [world], campaigns: [campaign] })
+/** La API, con esa acción fallando (como un 500 o sin red) hasta que `recover` la arregle. role: el de quien entra */
+function renderAt(
+  path: string,
+  broken: ActionName,
+  error: unknown = new ApiError('UNKNOWN', 500),
+  role: World['role'] = 'master'
+) {
+  const api = fakeApi({
+    organizations: [role === 'master' ? ORG : { ...ORG, role: 'member' }],
+    worlds: [{ ...world, role }],
+    campaigns: [{ ...campaign, role }]
+  })
   const original = api.client.call
   let failing = true
   api.client.call = async (name, input) => {
@@ -53,6 +71,8 @@ const user = () => userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
 describe('si no llega lo que necesita una página', () => {
   beforeEach(() => {
     vi.useFakeTimers({ shouldAdvanceTime: true })
+    // Los tutoriales guiados ya hechos: que no se pongan en medio
+    localStorage.setItem('crisol.recorridos.e@crisol.test', JSON.stringify({ seen: ['mundos', 'mundo', 'campanas'] }))
   })
   afterEach(() => {
     vi.useRealTimers()
@@ -100,11 +120,43 @@ describe('si no llega lo que necesita una página', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Mis mundos' })).toBeDefined()
   })
 
-  it('las campañas de un mundo: el error, bajo el mundo', async () => {
-    renderAt(`/mundos/${world.id}`, 'listCampaigns')
+  it('las campañas de un mundo (en el Inicio de quien juega): el error, bajo el mundo', async () => {
+    renderAt(`/mundos/${world.id}`, 'listCampaigns', undefined, 'player')
     await afterRetries()
     expect((await screen.findByRole('alert')).textContent).toBe('Algo ha fallado. Vuelve a intentarlo.')
     expect(screen.getByRole('heading', { level: 1, name: 'Eana' })).toBeDefined()
+  })
+
+  it('y en su pestaña Campañas: el error, bajo el título', async () => {
+    renderAt(`/mundos/${world.id}/campanas`, 'listCampaigns')
+    await afterRetries()
+    expect((await screen.findByRole('alert')).textContent).toBe('Algo ha fallado. Vuelve a intentarlo.')
+    expect(screen.getByRole('heading', { level: 1, name: 'Campañas' })).toBeDefined()
+    expect(screen.queryByText('Aún no hay campañas')).toBeNull()
+  })
+
+  it('lo último de la wiki: el error, bajo el mundo, y se puede reintentar', async () => {
+    const { recover } = renderAt(`/mundos/${world.id}`, 'listRecentPages')
+    await afterRetries()
+    expect((await screen.findByRole('alert')).textContent).toBe('Algo ha fallado. Vuelve a intentarlo.')
+    expect(screen.getByRole('heading', { level: 1, name: 'Eana' })).toBeDefined()
+    expect(screen.queryByText('Aún no hay páginas.')).toBeNull()
+    recover()
+    await user().click(screen.getByRole('button', { name: 'Reintentar' }))
+    expect(await screen.findByText('Aún no hay páginas.')).toBeDefined()
+  })
+
+  it('si falla una parte del Inicio, el título de la página sigue siendo el del mundo', async () => {
+    const { recover } = renderAt(`/mundos/${world.id}`, 'listRecentPages')
+    await afterRetries()
+    await screen.findByRole('alert')
+    const titles = () => screen.getAllByRole('heading', { level: 1 }).map((h) => h.textContent)
+    expect(titles()).toEqual(['Eana'])
+    expect(document.title).toBe('Eana · Crisol')
+    recover()
+    await user().click(screen.getByRole('button', { name: 'Reintentar' }))
+    await screen.findByText('Aún no hay páginas.')
+    expect(document.title).toBe('Eana · Crisol')
   })
 
   it('en la campaña, los miembros: el error, en vez de nada', async () => {

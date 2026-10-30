@@ -156,11 +156,3 @@
     background-color: transparent;
   }
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .aiFlash {
-    animation: none;
-    outline: 2px solid var(--color-ai);
-    outline-offset: 2px;
-  }
-}

@@ -7,7 +7,9 @@ import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
+import { historyQuery } from '../api/queries.ts'
 import { useAnnounce } from '../components/announcer.tsx'
+import { Loading } from '../components/brand.tsx'
 import { BusyButton } from '../components/busy-button.tsx'
 import { FormError } from '../components/field.tsx'
 import { focusOnMount } from '../components/focus.ts'
@@ -20,13 +22,22 @@ const worldRoute = getRouteApi('/mundos/$worldId/historial')
 /** El historial de toda la organización (para su propietario) */
 export function OrganizationHistory() {
   const { t } = useTranslation()
-  return <HistoryPage title={t('history.title')} back={<Link to="/mundos">{t('worlds.title')}</Link>} scope={{}} />
+  return <HistoryPage title={t('history.title')} scope={{}} />
 }
 
 /** El historial de un mundo (para su máster) */
 export function WorldHistory() {
-  const { t } = useTranslation()
   const { worldId } = worldRoute.useParams()
+  return <WorldHistoryOf worldId={worldId} back />
+}
+
+/** El de un mundo en la ventana de la barra (dentro de él): sin enlace de vuelta */
+export function WorldHistoryWindow({ worldId }: { worldId: string }) {
+  return <WorldHistoryOf worldId={worldId} />
+}
+
+function WorldHistoryOf({ worldId, back = false }: { worldId: string; back?: boolean }) {
+  const { t } = useTranslation()
   const api = useApi()
   const worlds = useQuery({ queryKey: ['worlds'], queryFn: () => api.call('listWorlds', {}) })
   const world = worlds.data?.worlds.find((w) => w.id === worldId)
@@ -34,27 +45,24 @@ export function WorldHistory() {
     <HistoryPage
       title={world ? t('history.worldTitle', { world: world.name }) : t('history.title')}
       back={
-        <Link to="/mundos/$worldId" params={{ worldId }}>
-          {world?.name ?? t('worlds.title')}
-        </Link>
+        back && (
+          <Link to="/mundos/$worldId" params={{ worldId }}>
+            {world?.name ?? t('worlds.title')}
+          </Link>
+        )
       }
       scope={{ worldId }}
     />
   )
 }
 
-function HistoryPage({ title, back, scope }: { title: string; back: ReactNode; scope: { worldId?: string } }) {
+/** back: el enlace de vuelta, solo como página; en una ventana no hace falta */
+function HistoryPage({ title, back, scope }: { title: string; back?: ReactNode; scope: { worldId?: string } }) {
   const { t, i18n } = useTranslation()
   const api = useApi()
   const errorText = useErrorText()
   const { account, pending } = useAccounts().useAccount()
-  const history = useInfiniteQuery({
-    queryKey: ['history', scope.worldId ?? 'organization'],
-    queryFn: ({ pageParam }) => api.call('listHistory', { ...scope, ...(pageParam ? { before: pageParam } : {}) }),
-    initialPageParam: null as string | null,
-    getNextPageParam: (last) => last.next,
-    enabled: Boolean(account)
-  })
+  const history = useInfiniteQuery({ ...historyQuery(api, scope), enabled: Boolean(account) })
   // Tras deshacer o rehacer, el botón de la operación nueva (arriba): el del deshecho ya no está
   const [focusEntry, setFocusEntry] = useState<string | null>(null)
 
@@ -66,14 +74,15 @@ function HistoryPage({ title, back, scope }: { title: string; back: ReactNode; s
 
   return (
     <section>
-      <p>{back}</p>
+      {back && <p>{back}</p>}
       <PageTitle>{title}</PageTitle>
       <FormError message={history.error ? errorText(history.error) : null} />
+      {!history.data && !history.error && <Loading />}
       {history.data &&
         (entries.length === 0 ? (
-          <p>{t('history.empty')}</p>
+          <p className={styles.appear}>{t('history.empty')}</p>
         ) : (
-          <ul className={styles.list} aria-label={t('history.listLabel')}>
+          <ul className={`${styles.list} ${styles.appear}`} aria-label={t('history.listLabel')}>
             {entries.map((entry) => (
               <HistoryItem
                 key={entry.id}

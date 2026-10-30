@@ -77,6 +77,11 @@
 }
 
 /* La portada pequeña, a lo ancho de la vista previa */
+/* Recorta la portada si está ampliada */
+.coverFrame {
+  overflow: hidden;
+}
+
 .cover {
   display: block;
   inline-size: 100%;

@@ -198,6 +198,19 @@ describe('la wiki: páginas y árbol', () => {
     expect(branch.map((p: { title: string }) => p.title)).toEqual(['Puerto Ceniza', 'Velaria'])
   })
 
+  it('lo último de la wiki: la cambiada más tarde, primero, con las de encima; sin las de la papelera', async () => {
+    const places = await create('Lugares')
+    const coast = await create('Costa Gris', { parentId: places.id })
+    const gone = await create('Borrador')
+    await call('updatePage', { pageId: coast.id, title: 'Costa Brava' })
+    await call('deletePage', { pageId: gone.id })
+
+    const recent = (await call('listRecentPages', { worldId })).json().pages
+    expect(recent[0]).toMatchObject({ id: coast.id, title: 'Costa Brava', path: [{ id: places.id, title: 'Lugares' }] })
+    expect(recent.map((p: { title: string }) => p.title).sort()).toEqual(['Costa Brava', 'Lugares'])
+    expect((await call('listRecentPages', { worldId, limit: 1 })).json().pages).toHaveLength(1)
+  })
+
   it('deshacer un movimiento la devuelve a su sitio; crear con subpáginas debajo no se deshace', async () => {
     const places = await create('Lugares')
     const people = await create('Personajes')
@@ -234,6 +247,7 @@ describe('la wiki: páginas y árbol', () => {
     for (const [name, payload] of [
       ['listPageChildren', { worldId }],
       ['listPageTree', { worldId }],
+      ['listRecentPages', { worldId }],
       ['getPage', { pageId: page.id }],
       ['createPage', { worldId, title: 'Mía' }],
       ['updatePage', { pageId: page.id, title: 'Mía' }],

@@ -1,5 +1,5 @@
 import { historyCutoff, trashCutoff } from '@crisol/domain'
-import { and, eq, isNotNull, isNull, lt, sql } from 'drizzle-orm'
+import { and, eq, isNotNull, isNull, lt, or, sql } from 'drizzle-orm'
 import type { Database } from '../client.ts'
 import { type OperationContext, operation } from '../operation.ts'
 import { approvals } from '../schema/ai.ts'
@@ -116,12 +116,13 @@ export async function listTrash(db: Database, scope: TrashScope) {
       deletedAt: files.deletedAt
     })
     .from(files)
-    .innerJoin(worlds, eq(worlds.id, files.worldId))
+    // Los comunes (sin mundo) van en la papelera de la organización
+    .leftJoin(worlds, eq(worlds.id, files.worldId))
     .where(
       and(
         isNotNull(files.deletedAt),
-        isNull(worlds.deletedAt),
-        'worldId' in scope ? eq(files.worldId, scope.worldId) : eq(worlds.organizationId, scope.organizationId)
+        or(isNull(files.worldId), isNull(worlds.deletedAt)),
+        'worldId' in scope ? eq(files.worldId, scope.worldId) : eq(files.organizationId, scope.organizationId)
       )
     )
   return [

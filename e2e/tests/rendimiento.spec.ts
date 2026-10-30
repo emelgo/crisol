@@ -1,14 +1,12 @@
 import { expect, test } from '@playwright/test'
-import { freshOwner } from './ayudas.ts'
+import { createWorld, freshOwner, openWorld } from './ayudas.ts'
 
 test('una página mediana se abre lista para escribir en menos de 1 s', async ({ page }) => {
   // El tiempo cuenta en el VPS (como staging); las máquinas de la CI no se le parecen
   test.skip(Boolean(process.env.CI), 'Se mide en el VPS, no en la CI')
   await freshOwner(page)
-  await page.goto('/mundos')
-  await page.getByLabel('Nombre del mundo').fill('Eana')
-  await page.getByRole('button', { name: 'Crear el mundo' }).click()
-  await page.getByRole('link', { name: 'Eana' }).click()
+  await createWorld(page, 'Eana')
+  await openWorld(page, 'Eana')
   const worldId = new URL(page.url()).pathname.split('/')[2] ?? ''
   // Unos 40 KB: secciones, listas, una tabla, enlaces y un secreto
   const section = (n: number) =>

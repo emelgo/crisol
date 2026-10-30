@@ -1,26 +1,32 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { getRouteApi, Link, Navigate } from '@tanstack/react-router'
+import { useQuery } from '@tanstack/react-query'
+import { getRouteApi, Link, Navigate, useNavigate } from '@tanstack/react-router'
+import { FileText } from 'lucide-react'
+import { useId } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
-import { useErrorText } from '../api/errors.ts'
-import { Banner } from '../components/banner.tsx'
-import { CreateForm } from '../components/create-form.tsx'
-import { FormError } from '../components/field.tsx'
-import styles from '../components/list.module.css'
-import { failed, LoadError } from '../components/load-error.tsx'
+import { Loading } from '../components/brand.tsx'
+import { useCardList } from '../components/card-transition.ts'
+import { failed, LoadError, SectionError } from '../components/load-error.tsx'
 import { PageTitle } from '../components/page-title.tsx'
-import { RenamableItem } from '../components/renamable-item.tsx'
+import { Tour } from '../components/tour.tsx'
+import { LEAVE_WORLD, SECTION, worldTransition } from '../components/world-transition.ts'
+import { coverStyle, useWorldFiles } from '../wiki/cover.tsx'
+import styles from './world-card.module.css'
+import { CampaignCard, LookHeader, useWorldKind } from './world-card.tsx'
 
 const route = getRouteApi('/mundos/$worldId')
 
-/** Un mundo: sus campañas (todas para su máster; las suyas para un jugador) */
+/**
+ * El Inicio de un mundo: su cabecera (en ella se convierte su tarjeta al entrar) y lo reciente: para quien lo dirige,
+ * lo último de su wiki; para quien juega (aún sin wiki), sus campañas
+ */
 export function WorldPage() {
   const { t } = useTranslation()
   const { worldId } = route.useParams()
   const api = useApi()
-  const queryClient = useQueryClient()
-  const errorText = useErrorText()
+  const navigate = useNavigate()
+  const kind = useWorldKind()
   const { account, pending } = useAccounts().useAccount()
   const worlds = useQuery({
     queryKey: ['worlds'],
@@ -28,17 +34,12 @@ export function WorldPage() {
     enabled: Boolean(account)
   })
   const world = worlds.data?.worlds.find((w) => w.id === worldId)
-  const campaigns = useQuery({
-    queryKey: ['campaigns', worldId],
-    queryFn: () => api.call('listCampaigns', { worldId }),
-    enabled: Boolean(world)
-  })
-  const refresh = () => queryClient.invalidateQueries({ queryKey: ['campaigns', worldId] })
 
   if (pending) return null
   if (!account) return <Navigate to="/entrar" replace />
-  // Sin la lista no se sabe si existe: mientras llega, nada; si falla, el error (no «no existe»)
-  if (!worlds.data) return failed(worlds) ? <LoadError error={worlds.error} onRetry={() => worlds.refetch()} /> : null
+  // Sin la lista no se sabe si existe: mientras llega, la carga; si falla, el error (no «no existe»)
+  if (!worlds.data)
+    return failed(worlds) ? <LoadError error={worlds.error} onRetry={() => worlds.refetch()} /> : <Loading />
   if (!world) {
     return (
       <section>
@@ -47,62 +48,149 @@ export function WorldPage() {
       </section>
     )
   }
+  const master = world.role === 'master'
 
   return (
-    <section>
-      <Banner
-        crumb={<Link to="/mundos">{t('worlds.title')}</Link>}
-        title={world.name}
-        detail={t(world.role === 'master' ? 'world.asMaster' : 'world.asPlayer')}
-        stats={campaigns.data ? [{ label: t('campaigns.title'), value: campaigns.data.campaigns.length }] : []}
+    <section className={styles.page}>
+      <LookHeader
+        kind={kind}
+        look={world}
+        style={worldTransition(worldId)}
+        // Borrado desde dentro: a Mis mundos, saliendo de él
+        afterDelete={() => void navigate({ to: '/mundos', viewTransition: LEAVE_WORLD })}
       />
-      {world.role === 'master' && (
-        <p>
-          <Link to="/mundos/$worldId/wiki" params={{ worldId }}>
-            {t('wiki.link', { world: world.name })}
-          </Link>
-          {' · '}
-          <Link to="/mundos/$worldId/historial" params={{ worldId }}>
-            {t('history.worldTitle', { world: world.name })}
-          </Link>
-          {' · '}
-          <Link to="/mundos/$worldId/papelera" params={{ worldId }}>
-            {t('trash.worldTitle', { world: world.name })}
-          </Link>
-        </p>
-      )}
-      <h2>{t('campaigns.title')}</h2>
-      <FormError message={failed(campaigns) ? errorText(campaigns.error) : null} />
-      {campaigns.data &&
-        (campaigns.data.campaigns.length === 0 ? (
-          <p>{t('campaigns.empty')}</p>
+      {master ? <RecentPages worldId={worldId} /> : <PlayerCampaigns worldId={worldId} />}
+      <Tour
+        id="mundo"
+        steps={[
+          {
+            target: '[data-tour="barra-mundo"]',
+            text: t('tour.world.ribbon'),
+            placement: 'right'
+          },
+          ...(master ? [{ target: '[data-tour="engranaje"]', text: t('tour.world.settings') }] : []),
+          { target: '[data-tour="barra-llama"]', text: t('tour.world.back'), placement: 'right' as const }
+        ]}
+      />
+    </section>
+  )
+}
+
+/** Cuánto hace: «hace 5 minutos», «ayer»…; pasado un mes, la fecha */
+function useAgo() {
+  const { i18n } = useTranslation()
+  const relative = new Intl.RelativeTimeFormat(i18n.language, { numeric: 'auto' })
+  const date = new Intl.DateTimeFormat(i18n.language, { dateStyle: 'medium' })
+  return (iso: string) => {
+    const seconds = (new Date(iso).getTime() - Date.now()) / 1000
+    const steps: [number, Intl.RelativeTimeFormatUnit][] = [
+      [60, 'second'],
+      [60, 'minute'],
+      [24, 'hour'],
+      [30, 'day']
+    ]
+    let value = seconds
+    for (const [size, unit] of steps) {
+      if (Math.abs(value) < size)
+        return unit === 'second' ? relative.format(0, 'second') : relative.format(Math.round(value), unit)
+      value /= size
+    }
+    return date.format(new Date(iso))
+  }
+}
+
+/** Lo último de la wiki: las páginas cambiadas hace poco, para seguir donde se dejó */
+function RecentPages({ worldId }: { worldId: string }) {
+  const { t } = useTranslation()
+  const api = useApi()
+  const titleId = useId()
+  const ago = useAgo()
+  const recent = useQuery({
+    queryKey: ['pages', worldId, 'recent'],
+    queryFn: () => api.call('listRecentPages', { worldId })
+  })
+  const pages = recent.data?.pages ?? []
+  const files = useWorldFiles(
+    worldId,
+    pages.some((page) => page.cover)
+  )
+  const imageOf = (fileId: string | undefined) => files.data?.files.find((f) => f.id === fileId)?.url
+  return (
+    <section className={styles.section} aria-labelledby={titleId}>
+      <h2 id={titleId}>{t('world.recent')}</h2>
+      {failed(recent) && <SectionError error={recent.error} onRetry={() => recent.refetch()} />}
+      {recent.data &&
+        (pages.length === 0 ? (
+          <p className={styles.muted}>
+            {t('world.noPages')}{' '}
+            <Link to="/mundos/$worldId/wiki" params={{ worldId }} viewTransition={SECTION}>
+              {t('world.openWiki')}
+            </Link>
+          </p>
         ) : (
-          <ul className={styles.list} aria-label={t('campaigns.listLabel')}>
-            {campaigns.data.campaigns.map((campaign) => (
-              <RenamableItem
-                key={campaign.id}
-                name={campaign.name}
-                role={t(`roles.${campaign.role}`)}
-                link={{ to: '/mundos/$worldId/campanas/$campaignId', params: { worldId, campaignId: campaign.id } }}
-                {...(campaign.role === 'master'
-                  ? {
-                      onRename: (name: string) =>
-                        api.call('renameCampaign', { campaignId: campaign.id, name }).then(refresh),
-                      onDelete: () => api.call('deleteCampaign', { campaignId: campaign.id }).then(refresh)
-                    }
-                  : {})}
-              />
-            ))}
+          <ul className={styles.recent} aria-label={t('world.recentLabel')}>
+            {pages.map((page) => {
+              const image = page.cover ? imageOf(page.cover.fileId) : undefined
+              return (
+                <li key={page.id}>
+                  <Link
+                    to="/mundos/$worldId/wiki/$pageId"
+                    params={{ worldId, pageId: page.id }}
+                    className={styles.recentLink}
+                    viewTransition={SECTION}
+                  >
+                    <span className={styles.thumb} aria-hidden="true">
+                      {image && page.cover ? (
+                        <img src={image} alt="" style={coverStyle(page.cover)} />
+                      ) : (
+                        (page.icon ?? <FileText size={18} strokeWidth={1.5} />)
+                      )}
+                    </span>
+                    <span className={styles.recentText}>
+                      <span className={styles.recentTitle}>{page.title}</span>
+                      {page.path.length > 0 && (
+                        <span className={styles.recentPath}>{page.path.map((p) => p.title).join(' › ')}</span>
+                      )}
+                    </span>
+                    <time className={styles.recentWhen} dateTime={page.editedAt}>
+                      {ago(page.editedAt)}
+                    </time>
+                  </Link>
+                </li>
+              )
+            })}
           </ul>
         ))}
-      {world.role === 'master' && (
-        <CreateForm
-          title={t('campaigns.newTitle')}
-          label={t('campaigns.name')}
-          submit={t('campaigns.create')}
-          onCreate={(name) => api.call('createCampaign', { worldId, name }).then(refresh)}
-        />
-      )}
+    </section>
+  )
+}
+
+/** Para quien juega: sus campañas de este mundo (las mismas tarjetas que en Campañas) */
+function PlayerCampaigns({ worldId }: { worldId: string }) {
+  const { t } = useTranslation()
+  const api = useApi()
+  const titleId = useId()
+  const campaigns = useQuery({
+    queryKey: ['campaigns', worldId],
+    queryFn: () => api.call('listCampaigns', { worldId })
+  })
+  const cards = useCardList(`campanas-${worldId}`, campaigns.data?.campaigns)
+  return (
+    <section className={styles.section} aria-labelledby={titleId}>
+      <h2 id={titleId}>{t('world.yourCampaigns')}</h2>
+      {failed(campaigns) && <SectionError error={campaigns.error} onRetry={() => campaigns.refetch()} />}
+      <ul className={styles.list} aria-labelledby={titleId}>
+        {cards.map(({ item, fresh, burning, burnt }) => (
+          <CampaignCard
+            key={item.id}
+            worldId={worldId}
+            campaign={item}
+            fresh={fresh}
+            burning={burning}
+            onBurnt={burnt}
+          />
+        ))}
+      </ul>
     </section>
   )
 }

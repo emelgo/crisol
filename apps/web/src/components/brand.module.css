@@ -1,0 +1,48 @@
+/* El degradado de la llama: el rojo de la marca abajo, naranja arriba */
+.bottom {
+  stop-color: var(--color-brand);
+}
+
+.top {
+  stop-color: var(--color-brand-glow);
+}
+
+/* La carga: centrada en su sitio; a pantalla completa, en medio de la ventana */
+.loading {
+  display: grid;
+  place-items: center;
+  min-block-size: 12rem;
+  opacity: 0;
+  animation: aparece 200ms ease-out 300ms forwards;
+}
+
+.full {
+  min-block-size: 100dvh;
+}
+
+@keyframes aparece {
+  to {
+    opacity: 1;
+  }
+}
+
+.beat {
+  animation: late 1.2s ease-in-out infinite;
+}
+
+@keyframes late {
+  50% {
+    opacity: 0.45;
+    transform: scale(0.92);
+  }
+}
+
+/* Para los lectores de pantalla, sin ocupar sitio */
+.hidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

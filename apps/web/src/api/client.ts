@@ -33,7 +33,11 @@ export interface ApiClient {
 }
 
 /** Adónde va una subida: un archivo nuevo del mundo, con su nombre, o los bytes nuevos de uno que ya está */
-export type UploadTarget = { worldId: string; name: string } | { fileId: string }
+/** Subir a un mundo, a los comunes de una organización (ADR-0005) o reemplazar uno que ya está */
+export type UploadTarget =
+  | { worldId: string; name: string }
+  | { organizationId: string; name: string }
+  | { fileId: string }
 
 /** El nombre del archivo que da el servidor (filename* en UTF-8, o filename) */
 function attachmentName(disposition: string | null) {
@@ -80,7 +84,11 @@ export function createApiClient(): ApiClient {
         const request = new XMLHttpRequest()
         if ('fileId' in target) request.open('PUT', `/api/files/${target.fileId}`)
         else {
-          const query = new URLSearchParams({ worldId: target.worldId, name: target.name })
+          const query = new URLSearchParams(
+            'worldId' in target
+              ? { worldId: target.worldId, name: target.name }
+              : { organizationId: target.organizationId, name: target.name }
+          )
           request.open('POST', `/api/files?${query}`)
         }
         request.setRequestHeader('content-type', 'application/octet-stream')

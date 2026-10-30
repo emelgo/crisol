@@ -1,16 +1,14 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, type Page, test } from '@playwright/test'
-import { freshOwner } from './ayudas.ts'
+import { createWorld, freshOwner, openWorld } from './ayudas.ts'
 
 const body = (page: Page) => page.getByRole('textbox', { name: 'Texto de la página' })
 
 /** El propietario crea Eana y una página; devuelve el mundo y la página, abierta */
 async function openPage(page: Page, markdown = '') {
   await freshOwner(page)
-  await page.goto('/mundos')
-  await page.getByLabel('Nombre del mundo').fill('Eana')
-  await page.getByRole('button', { name: 'Crear el mundo' }).click()
-  await page.getByRole('link', { name: 'Eana' }).click()
+  await createWorld(page, 'Eana')
+  await openWorld(page, 'Eana')
   const worldId = new URL(page.url()).pathname.split('/')[2] ?? ''
   const created = await page.request.post('/api/actions/createPages', {
     data: { worldId, parentId: null, pages: [{ key: 'h', title: 'El Dragón Rojo', markdown }] }

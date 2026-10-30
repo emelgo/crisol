@@ -1,0 +1,36 @@
+/* Se abre hacia abajo (de alto 0 al suyo) a la vez que aparece, y se cierra igual: sin empujar lo de debajo de golpe */
+.bar {
+  display: grid;
+  grid-template-rows: 1fr;
+}
+
+.inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: 0;
+  overflow: hidden;
+}
+
+.bar {
+  animation: abre 260ms ease-out;
+}
+
+.closing {
+  animation: cierra 220ms ease-in forwards;
+}
+
+@keyframes abre {
+  from {
+    grid-template-rows: 0fr;
+    opacity: 0;
+  }
+}
+
+@keyframes cierra {
+  to {
+    grid-template-rows: 0fr;
+    opacity: 0;
+  }
+}

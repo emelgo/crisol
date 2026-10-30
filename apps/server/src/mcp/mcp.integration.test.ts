@@ -240,7 +240,7 @@ describe('conector MCP con OAuth', () => {
     expect((await call('ver_campana', { campaignId: campaign.id })).data).toMatchObject({
       campaign: { name: 'Los Cuervos', role: 'master' },
       world: { id: world.id, name: 'Eana' },
-      members: [{ name: 'Enrique', role: 'master' }]
+      members: [{ name: expect.stringMatching(/^Enrique /), role: 'master' }]
     })
     const before = (await call<Invitation>('enlace_invitacion', { campaignId: campaign.id })).data.url
 

@@ -16,7 +16,12 @@ export function mcpTestHelpers(
   // La base de datos se vacía una sola vez: Better Auth da de alta el recurso MCP al primer uso y lo recuerda
   /** Una cuenta (propietaria o no) en una organización nueva, con su cookie de sesión */
   const account = async (role: 'owner' | 'member') => {
-    const person = await signUpTestUser(server().auth, { name: 'Enrique', email: `${randomUUID()}@crisol.test` })
+    // El nombre de usuario es único: uno distinto en cada cuenta (la base de datos no se vacía entre pruebas)
+    const id = randomUUID()
+    const person = await signUpTestUser(server().auth, {
+      name: `Enrique ${id.slice(0, 8)}`,
+      email: `${id}@crisol.test`
+    })
     const [org] = await database().db.insert(schema.organizations).values({ name: 'Fateforge' }).returning()
     if (!org) throw new Error('sin organización')
     await database()

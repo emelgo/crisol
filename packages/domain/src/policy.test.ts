@@ -44,6 +44,11 @@ const master = actor({
 const campaign = { campaignId: CAMPAIGN, worldId: WORLD }
 // Propietario de la organización sin administrar el mundo
 const ownerOnly = actor({ organizations: new Map([[ORG, 'owner']]) })
+// Administra un mundo de la organización sin ser su propietario
+const worldMaster = actor({
+  organizations: new Map([[ORG, 'member']]),
+  worlds: new Map([[OTHER_WORLD, { organizationId: ORG, role: 'master' }]])
+})
 // La wiki: el mundo con su organización (la del mundo, nunca la que diga quien pide)
 const wiki = { worldId: WORLD, organizationId: ORG }
 const otherCampaign = { campaignId: OTHER_CAMPAIGN, worldId: WORLD }
@@ -151,7 +156,20 @@ describe('authorize', () => {
     ['un jugador no ve la wiki del mundo en el que juega (hasta el módulo 5)', player, 'page.read', wiki, 'no lo ve'],
     ['el máster de una campaña tampoco', master, 'page.read', wiki, 'no lo ve'],
     ['un miembro sin campaña, tampoco', member, 'page.write', wiki, 'no lo ve'],
-    ['nadie de otra organización', outsider, 'page.read', wiki, 'no lo ve']
+    ['nadie de otra organización', outsider, 'page.read', wiki, 'no lo ve'],
+    // Los archivos comunes de la organización (ADR-0005)
+    ['el propietario ve los comunes', ownerOnly, 'commonFiles.read', { organizationId: ORG }, 'permite'],
+    ['y los cambia', ownerOnly, 'commonFiles.write', { organizationId: ORG }, 'permite'],
+    [
+      'el máster de un mundo de la organización los ve',
+      worldMaster,
+      'commonFiles.read',
+      { organizationId: ORG },
+      'permite'
+    ],
+    ['pero no los cambia', worldMaster, 'commonFiles.write', { organizationId: ORG }, 'prohíbe'],
+    ['un jugador no los ve', player, 'commonFiles.read', { organizationId: ORG }, 'no lo ve'],
+    ['nadie de otra organización', outsider, 'commonFiles.read', { organizationId: ORG }, 'no lo ve']
   ]
 
   it.each(cases)('%s', (_, who, capability, target, expected) => {

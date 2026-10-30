@@ -91,9 +91,3 @@
   color: var(--color-muted);
   font-size: 0.875rem;
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .chevron {
-    transition: none;
-  }
-}
