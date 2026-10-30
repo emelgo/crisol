@@ -43,6 +43,7 @@ test('exportar una página, con sus subpáginas, y la wiki entera en Markdown', 
   await expect(page.getByRole('heading', { level: 1, name: 'Lugares' })).toBeVisible()
 
   // Con subpáginas: se elige
+  await page.getByRole('button', { name: 'Más acciones' }).click()
   await page.getByRole('button', { name: 'Exportar', exact: true }).click()
   const branch = await downloaded(page, () => page.getByRole('button', { name: 'Con sus subpáginas' }).click())
   expect(branch.name).toBe('Lugares.zip')

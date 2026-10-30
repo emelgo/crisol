@@ -182,6 +182,7 @@ test('un PDF en la página: enseña su tamaño, se abre aquí por la página 3 y
 
 test('la portada: se sube desde la página, se encuadra con el teclado y se quita', async ({ page }) => {
   const { pageId } = await openPage(page)
+  await page.getByRole('button', { name: 'Más acciones' }).click()
   await page.getByRole('button', { name: 'Portada' }).click()
   const chooser = page.waitForEvent('filechooser')
   await page.getByRole('button', { name: 'Subir una imagen' }).click()

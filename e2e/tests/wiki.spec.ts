@@ -38,6 +38,7 @@ test('el máster crea páginas y subpáginas, las renombra y las recoloca; todo 
   await expect(titles(page)).toHaveText(['Lugares', 'Costa Gris', 'Personajes', 'Reglas'])
 
   // Renombrar en el sitio
+  await page.getByRole('button', { name: 'Más acciones' }).click()
   await page.getByRole('button', { name: 'Renombrar' }).click()
   await page.getByLabel('Título de la página').fill('Reglas de la casa')
   await page.getByRole('button', { name: 'Guardar' }).click()
@@ -104,6 +105,7 @@ test('borrar una página con sus subpáginas, y restaurarla desde la papelera de
   await newPage(page, 'Costa Gris', 'Nueva subpágina')
   await newPage(page, 'Puerto Ceniza', 'Nueva subpágina')
   await tree(page).getByRole('treeitem', { name: 'Lugares' }).click()
+  await page.getByRole('button', { name: 'Más acciones' }).click()
   await page.getByRole('button', { name: 'Borrar' }).click()
   await page.getByRole('button', { name: 'Borrar' }).click()
   await expect(page.getByRole('heading', { level: 1, name: 'Wiki de Eana' })).toBeVisible()
@@ -185,6 +187,7 @@ test('la wiki, en los dos temas y en el móvil @a11y', async ({ page }) => {
   await page.getByRole('textbox', { name: 'Texto del secreto' }).click()
   await page.keyboard.type('El faro no fue un accidente.')
   await check()
+  await page.getByRole('button', { name: 'Más acciones' }).click()
   await page.getByRole('button', { name: 'Renombrar' }).click()
   await check()
   await page.getByRole('button', { name: 'Cancelar' }).click()

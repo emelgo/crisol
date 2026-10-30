@@ -45,6 +45,9 @@ const renderAt = (path: string, api = wikiApi()) => {
 const tree = async () => within(await screen.findByRole('tree', { name: 'Páginas' }))
 const item = async (name: string) => (await tree()).findByRole('treeitem', { name })
 
+/** Lo que se hace de vez en cuando con la página está en «Más» */
+const openMore = async () => userEvent.click(await screen.findByRole('button', { name: 'Más acciones' }))
+
 describe('el árbol de la wiki', () => {
   it('desde el mundo se llega a su wiki, con el primer nivel', async () => {
     renderAt(`/mundos/${WORLD.id}`)
@@ -152,14 +155,17 @@ describe('el árbol de la wiki', () => {
 
   it('renombrar en el sitio; Escape lo deja como estaba', async () => {
     renderAt(`/mundos/${WORLD.id}/wiki/${ids.rules}`)
+    await openMore()
     await userEvent.click(await screen.findByRole('button', { name: 'Renombrar' }))
     await userEvent.keyboard('{Escape}')
     expect(await screen.findByRole('heading', { level: 1, name: 'Reglas de la casa' })).toBeDefined()
-    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Renombrar' }))
+    // El foco vuelve a «Más», de donde salió
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Más acciones' }))
   })
 
   it('borrar pide confirmar, vuelve a la madre y la rama sale una vez en la papelera, de donde se restaura', async () => {
     const router = renderAt(`/mundos/${WORLD.id}/wiki/${ids.coast}`)
+    await openMore()
     await userEvent.click(await screen.findByRole('button', { name: 'Borrar' }))
     expect(
       screen.getByText(
@@ -184,6 +190,7 @@ describe('el árbol de la wiki', () => {
 
   it('cancelar el borrado devuelve el foco a «Borrar»', async () => {
     renderAt(`/mundos/${WORLD.id}/wiki/${ids.rules}`)
+    await openMore()
     await userEvent.click(await screen.findByRole('button', { name: 'Borrar' }))
     expect(
       screen.getByText('¿Borrar «Reglas de la casa»? Irá a la papelera y se puede restaurar durante 30 días.')
@@ -194,6 +201,7 @@ describe('el árbol de la wiki', () => {
 
   it('el candado pone la página en lectura y se quita', async () => {
     renderAt(`/mundos/${WORLD.id}/wiki/${ids.rules}`)
+    await openMore()
     const lock = await screen.findByRole('button', { name: 'Poner en lectura' })
     expect(lock.getAttribute('aria-pressed')).toBe('false')
     await userEvent.click(lock)
