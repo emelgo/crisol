@@ -453,6 +453,11 @@ export function fakeApi(
       return { incoming: [], outgoing: [], mentions: [] }
     },
     listUnresolvedLinks: () => ({ links: [] }),
+    listPageVersions: () => ({ versions: [] }),
+    getPageVersion: () => {
+      throw new ApiError('NOT_FOUND', 404)
+    },
+    restorePageVersion: () => ({ restored: false }),
     getPageContent: ({ pageId }) => {
       const page = pageById(pageId)
       const { path } = pageView(page)

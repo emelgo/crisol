@@ -53,7 +53,10 @@ describe('Actions', () => {
       getPageLinks: true,
       listUnresolvedLinks: true,
       linkMention: true,
-      getPageContent: true
+      getPageContent: true,
+      listPageVersions: true,
+      getPageVersion: true,
+      restorePageVersion: true
     }
     expect(Object.keys(names).sort()).toEqual(ACTIONS.map((a) => a.name).sort())
   })

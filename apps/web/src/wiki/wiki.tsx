@@ -23,6 +23,7 @@ import { PageIcon } from './icon.tsx'
 import { BookmarkButton, Bookmarks, OpenTabs, SiblingNav } from './navigation.tsx'
 import { PageProperties } from './properties.tsx'
 import { childrenKey, PageTree } from './tree.tsx'
+import { Versions } from './versions.tsx'
 import styles from './wiki.module.css'
 
 const homeRoute = getRouteApi('/mundos/$worldId/wiki')
@@ -440,6 +441,7 @@ export function WikiPage() {
             <PageProperties key={page.data.id} page={page.data} />
             <PageBody page={page.data} />
             <Backlinks key={`enlaces-${page.data.id}`} page={page.data} />
+            <Versions key={`versiones-${page.data.id}`} page={page.data} />
             <Subpages page={page.data} />
             <SiblingNav page={page.data} />
           </article>

@@ -222,7 +222,8 @@ Cada vía nueva por la que salen datos amplía `@fugas` en la misma tarea.
   - Archivos: `packages/db/src/schema/versions.ts`, `apps/server/src/collab/sessions.ts`,
     `packages/domain/src/undo.ts`, `packages/db/src/repos/undo.ts`, `apps/web/src/summaries.ts`.
 
-- [ ] **17. Versiones de página**
+- [x] **17. Versiones de página** — hecha. La purga va en la diaria de siempre (`trashRepo.purge`), sin trabajo
+  aparte.
   - Acepta:
     - Un panel con la lista (quién, persona o Claude, y cuándo), «Ver» en solo lectura y «Restaurar», que también se
       deshace.
@@ -235,6 +236,7 @@ Cada vía nueva por la que salen datos amplía `@fugas` en la misma tarea.
 ### Punto de control 4
 
 - [ ] Enrique enlaza, ve la vista previa, restaura una versión y deshace lo que hizo Claude.
+  (Pendiente de Enrique: se sigue sin esperar, por su encargo del 2026-10-30.)
 
 ## Fase 6: Archivos
 

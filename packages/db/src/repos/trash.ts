@@ -148,6 +148,9 @@ export async function peopleOf(db: Database, scope: { worldId: string } | { camp
  * operaciones y las peticiones de la IA de más de 90. No es una operación: purgar no se puede deshacer. Quien se queda
  * sin nada en una organización deja de ser miembro de ella, como al expulsarlo.
  */
+/** Las versiones de cada página que se guardan siempre, por viejas que sean */
+export const VERSIONS_KEPT = 40
+
 export function purge(db: Database, now: Date) {
   return db.transaction(async (tx) => {
     const cutoff = trashCutoff(now)
@@ -175,6 +178,23 @@ export function purge(db: Database, now: Date) {
       .delete(operations)
       .where(lt(operations.createdAt, historyCutoff(now)))
       .returning({ id: operations.id })
+    // Las versiones del texto: a los 90 días, salvo las 40 últimas de cada página, la de ahora y las que nombra una
+    // operación que sigue en el historial (deshacerla las necesita). Sus estados se van si ya no los usa ninguna
+    const purgedVersions = await tx.execute<{ id: string }>(sql`
+      delete from page_versions v
+      where v.created_at < ${historyCutoff(now).toISOString()}::timestamptz
+        and not exists (select 1 from page_bodies b where b.version_id = v.id)
+        and v.id not in (
+          select r.id from (
+            select id, row_number() over (partition by page_id order by created_at desc) as n from page_versions
+          ) r where r.n <= ${VERSIONS_KEPT})
+        and not exists (
+          select 1 from changes c where c.table_name = 'page_bodies'
+            and (c.before->>'version_id' = v.id::text or c.after->>'version_id' = v.id::text))
+      returning v.id`)
+    await tx.execute(
+      sql`delete from snapshots s where not exists (select 1 from version_documents d where d.snapshot_id = s.id)`
+    )
     const purgedApprovals = await tx
       .delete(approvals)
       .where(lt(approvals.createdAt, historyCutoff(now)))
@@ -191,6 +211,7 @@ export function purge(db: Database, now: Date) {
       pages: purgedPages.length,
       memberships: memberships.length,
       operations: purgedOperations.length,
+      versions: purgedVersions.length,
       approvals: purgedApprovals.length,
       interrupted: interrupted.length
     }

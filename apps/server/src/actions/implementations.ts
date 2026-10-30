@@ -11,6 +11,7 @@ import { preferenceActions } from './preferences.ts'
 import { previewActions } from './preview.ts'
 import type { Implementation } from './registry.ts'
 import { trashActions } from './trash.ts'
+import { versionActions } from './versions.ts'
 import { worldActions } from './worlds.ts'
 
 /** Los servicios de todas las acciones del contrato: los usan la API y el MCP */
@@ -27,6 +28,7 @@ export const IMPLEMENTATIONS: Implementation[] = [
   ...pageContentActions,
   ...linkActions,
   ...previewActions,
+  ...versionActions,
   ...preferenceActions
 ]
 

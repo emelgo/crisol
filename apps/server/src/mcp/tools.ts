@@ -65,6 +65,8 @@ export const MCP_TOOLS: Record<string, McpTool> = {
   leer_pagina: { action: 'readPage' },
   crear_paginas: { action: 'createPages' },
   editar_pagina: { action: 'editPage' },
+  versiones_pagina: { action: 'listPageVersions' },
+  restaurar_version: { action: 'restorePageVersion' },
   enlaces_pagina: {
     description:
       'Con pageId, los enlaces de una página: las que la enlazan (con el trozo), adónde enlaza ella y dónde se la nombra sin enlazar. Con worldId, los enlaces sin resolver de la wiki: páginas que alguien enlaza y aún no existen',
