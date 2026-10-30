@@ -88,7 +88,10 @@ const INSTRUCTIONS =
   'Crisol: mundos de rol y su mesa virtual. Habla siempre en español. Una organización tiene mundos, y cada mundo, ' +
   'campañas con su máster y sus jugadores; a una campaña se entra con su enlace de invitación. Cada mundo tiene su ' +
   'wiki: páginas con subpáginas, solo del máster, en Markdown de Obsidian (lee una con leer_pagina antes de cambiarla, ' +
-  'y lo que solo debe saber el máster va en > [!secreto]). Lo que cambies queda ' +
+  'y lo que solo debe saber el máster va en > [!secreto]). Antes de crear, busca con buscar_paginas para no repetir. ' +
+  'Para pasar una wiki entera: crear_paginas de 50 en 50, en cualquier orden (los enlaces se resuelven solos), y al ' +
+  'final enlaces_pagina con worldId para ver lo que quede sin resolver; los archivos los sube el máster y se enlazan ' +
+  'por su nombre (listar_archivos). Lo que cambies queda ' +
   'en el historial de Crisol y el máster puede deshacerlo. Según el modo de IA que elija el máster, algunas acciones ' +
   'esperan su aprobación en Crisol: no las repitas, mira cómo acabaron con pendientes; si rechaza una, no insistas.'
 

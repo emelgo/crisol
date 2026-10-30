@@ -1,11 +1,12 @@
-import { createHash, randomBytes, randomUUID } from 'node:crypto'
+import { createHash, randomBytes } from 'node:crypto'
 import type { Approval, Campaign, HistoryEntry, Invitation, World } from '@crisol/contracts'
 import { aiRepo, connect, schema } from '@crisol/db'
 import { freshTestDatabase } from '@crisol/db/testing'
 import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/client'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { startServer } from '../server.ts'
-import { signUpTestUser, TEST_AUTH_SECRET, testDataDir } from '../testing.ts'
+import { TEST_AUTH_SECRET, testDataDir } from '../testing.ts'
+import { mcpTestHelpers } from './test-client.ts'
 
 type History = { entries: HistoryEntry[] }
 type Approvals = { pending: Approval[]; recent: Approval[] }
@@ -13,8 +14,6 @@ type Approvals = { pending: Approval[]; recent: Approval[] }
 // Puerto fijo: el recurso y el emisor de los tokens salen de PUBLIC_URL, que tiene que ser la dirección real
 const PORT = 8132
 const BASE = `http://127.0.0.1:${PORT}`
-// Como la de claude.ai: HTTPS. Nunca se visita: la prueba solo lee el código de la URL
-const REDIRECT = 'https://cliente.example/callback'
 
 describe('conector MCP con OAuth', () => {
   let server: Awaited<ReturnType<typeof startServer>>
@@ -44,71 +43,12 @@ describe('conector MCP con OAuth', () => {
     await conn?.close()
   })
 
-  // La base de datos se vacía una sola vez: Better Auth da de alta el recurso MCP al primer uso y lo recuerda
-  /** Una cuenta (propietaria o no) en una organización nueva, con su cookie de sesión */
-  const account = async (role: 'owner' | 'member') => {
-    const person = await signUpTestUser(server.auth, { name: 'Enrique', email: `${randomUUID()}@crisol.test` })
-    const [org] = await conn.db.insert(schema.organizations).values({ name: 'Fateforge' }).returning()
-    if (!org) throw new Error('sin organización')
-    await conn.db.insert(schema.organizationMembers).values({ organizationId: org.id, userId: person.userId, role })
-    return person
-  }
-
-  /** Un cliente OAuth público (como claude.ai, pero registrado a mano por el propietario en vez de por CIMD) */
-  const oauthClient = (ownerCookie: string) =>
-    server.auth.api.adminCreateOAuthClient({
-      headers: new Headers({ cookie: ownerCookie }),
-      body: { redirect_uris: [REDIRECT], token_endpoint_auth_method: 'none', client_name: 'Pruebas' }
-    })
-
-  /** El flujo de claude.ai: autorizar, consentir y canjear el código con PKCE */
-  const accessToken = async (cookie: string, client: { client_id: string }) => {
-    const verifier = randomBytes(32).toString('base64url')
-    const challenge = createHash('sha256').update(verifier).digest('base64url')
-    const authorize = new URL('/api/auth/oauth2/authorize', BASE)
-    for (const [key, value] of Object.entries({
-      response_type: 'code',
-      client_id: client.client_id,
-      redirect_uri: REDIRECT,
-      scope: 'openid profile offline_access',
-      state: 'estado',
-      code_challenge: challenge,
-      code_challenge_method: 'S256',
-      resource: `${BASE}/mcp`
-    }))
-      authorize.searchParams.set(key, value)
-
-    // Como un navegador: claude.ai abre esta URL en el del máster
-    const toConsent = await fetch(authorize, { headers: { cookie, accept: 'text/html' }, redirect: 'manual' })
-    const location = toConsent.headers.get('location') ?? ((await toConsent.json()) as { url?: string }).url ?? ''
-    const consentPage = new URL(location, BASE)
-    expect(consentPage.pathname).toBe('/oauth/consentimiento')
-
-    const consent = await fetch(new URL('/api/auth/oauth2/consent', BASE), {
-      method: 'POST',
-      headers: { cookie, origin: BASE, 'content-type': 'application/json' },
-      body: JSON.stringify({ accept: true, oauth_query: consentPage.search.slice(1) })
-    })
-    if (!consent.ok) throw new Error(`Permiso rechazado: ${consent.status}`)
-    const { url } = (await consent.json()) as { url: string }
-    const code = new URL(url).searchParams.get('code') ?? ''
-
-    const token = await fetch(new URL('/api/auth/oauth2/token', BASE), {
-      method: 'POST',
-      headers: { 'content-type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        grant_type: 'authorization_code',
-        code,
-        redirect_uri: REDIRECT,
-        client_id: client.client_id,
-        code_verifier: verifier,
-        resource: `${BASE}/mcp`
-      })
-    })
-    const body = (await token.json()) as { access_token?: string }
-    if (!body.access_token) throw new Error(`Sin token: ${JSON.stringify(body)}`)
-    return body.access_token
-  }
+  const { account, oauthClient, accessToken, connected, api, closeClients } = mcpTestHelpers(
+    BASE,
+    () => server,
+    () => conn
+  )
+  afterAll(closeClients)
 
   /** Una petición JSON-RPC del protocolo de 2025 (sin sesión: el servidor es sin estado) */
   const rpc = (token: string | null, method: string, params: object = {}) =>
@@ -239,39 +179,6 @@ describe('conector MCP con OAuth', () => {
   })
 
   /** El cliente oficial con el token de un propietario recién conectado */
-  const connected = async () => {
-    const owner = await account('owner')
-    const token = await accessToken(owner.cookie, await oauthClient(owner.cookie))
-    const client = new Client({ name: 'pruebas', version: '1' })
-    await client.connect(
-      new StreamableHTTPClientTransport(new URL('/mcp', BASE), {
-        requestInit: { headers: { authorization: `Bearer ${token}` } }
-      })
-    )
-    clients.push(client)
-    /** Llama a una herramienta: devuelve lo que contesta y su texto */
-    const call = async <T = Record<string, unknown>>(name: string, args: Record<string, unknown> = {}) => {
-      const result = await client.callTool({ name, arguments: args })
-      const text = (result.content as Array<{ text?: string }>).map((c) => c.text ?? '').join('\n')
-      return { ...result, text, data: result.structuredContent as T }
-    }
-    return { ...owner, call }
-  }
-  const clients: Client[] = []
-  afterAll(async () => {
-    await Promise.all(clients.map((client) => client.close()))
-  })
-
-  /** Una acción de la API con la sesión del máster (lo que aún no tiene herramienta, o aprobar) */
-  const api = async <T = Record<string, unknown>>(cookie: string, name: string, body: Record<string, unknown>) => {
-    const response = await fetch(new URL(`/api/actions/${name}`, BASE), {
-      method: 'POST',
-      headers: { cookie, origin: BASE, 'content-type': 'application/json' },
-      body: JSON.stringify(body)
-    })
-    return (await response.json()) as T
-  }
-
   it('cada herramienta en cada modo: leer siempre; lo demás se hace, espera o no se hace', async () => {
     const { userId, cookie, call } = await connected()
     const world = (await call<World>('crear_mundo', { name: 'Eana' })).data
