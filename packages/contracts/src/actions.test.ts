@@ -31,6 +31,10 @@ describe('acciones', () => {
       id: crypto.randomUUID(),
       organizationId: crypto.randomUUID(),
       name: 'Eana',
+      description: '',
+      icon: null,
+      color: null,
+      cover: null,
       role: 'master',
       version: 2
     }

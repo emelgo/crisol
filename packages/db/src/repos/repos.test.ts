@@ -50,7 +50,17 @@ describe('repositorios', () => {
         masterId: 'u1'
       })
       expect(await worldsRepo.listMemberWorlds(conn.db, 'u1')).toEqual([
-        { id: world.id, organizationId, name: 'Eana', version: 1, role: 'master' }
+        {
+          id: world.id,
+          organizationId,
+          name: 'Eana',
+          description: '',
+          icon: null,
+          color: null,
+          cover: null,
+          version: 1,
+          role: 'master'
+        }
       ])
       expect(await conn.db.select().from(operations)).toHaveLength(1)
       expect(await conn.db.select().from(changes)).toHaveLength(2)
@@ -459,7 +469,17 @@ describe('repositorios', () => {
     })
     await conn.db.insert(campaignMembers).values({ campaignId: c.id, userId: 'u2', role: 'player' })
     expect(await worldsRepo.listMemberWorlds(conn.db, 'u2')).toEqual([
-      { id: w.id, organizationId, name: 'Eana', version: 1, role: 'player' }
+      {
+        id: w.id,
+        organizationId,
+        name: 'Eana',
+        description: '',
+        icon: null,
+        color: null,
+        cover: null,
+        version: 1,
+        role: 'player'
+      }
     ])
     expect((await worldsRepo.listMemberWorlds(conn.db, 'u1')).map((x) => x.role)).toEqual(['master'])
   })
