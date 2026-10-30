@@ -43,6 +43,15 @@ describe('los tokens de color', () => {
       expect(contrast(c['color-secret-rule'], c['color-surface'])).toBeGreaterThanOrEqual(3)
     })
 
+    it(`en el tema ${theme}, el rótulo de cada recuadro llega a 4,5:1 sobre su fondo, y el texto de leer en voz alta también`, () => {
+      const c = colors(selector)
+      for (const label of ['color-tip', 'color-warning', 'color-danger', 'color-muted']) {
+        expect(contrast(c[label], c['color-raised'])).toBeGreaterThanOrEqual(4.5)
+      }
+      expect(contrast(c['color-read-aloud-rule'], c['color-read-aloud'])).toBeGreaterThanOrEqual(4.5)
+      expect(contrast(c['color-text'], c['color-read-aloud'])).toBeGreaterThanOrEqual(4.5)
+    })
+
     it(`en el tema ${theme}, la barra de arriba se lee: su texto, el atenuado y el acento a 4,5:1`, () => {
       const c = colors(selector)
       for (const text of ['color-chrome-text', 'color-chrome-muted', 'color-chrome-accent']) {
