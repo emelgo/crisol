@@ -10,6 +10,7 @@ import { changes, operations } from './schema/history.ts'
 import { invitationLinks } from './schema/invitations.ts'
 import { organizationMembers, organizations } from './schema/organizations.ts'
 import { pages } from './schema/pages.ts'
+import { tags } from './schema/tags.ts'
 import { pageBodies } from './schema/versions.ts'
 import { worldMembers, worlds } from './schema/worlds.ts'
 
@@ -25,7 +26,8 @@ export const TRACKED_TABLES = {
   pages,
   page_bodies: pageBodies,
   files,
-  file_folders: fileFolders
+  file_folders: fileFolders,
+  tags
 }
 
 export type TrackedTable = (typeof TRACKED_TABLES)[keyof typeof TRACKED_TABLES]

@@ -921,3 +921,24 @@ button.rowName:hover {
   background: color-mix(in srgb, var(--color-text) 12%, transparent);
   color: var(--color-text);
 }
+
+/* El filtro por etiqueta (si algún archivo lleva) */
+.tagPick {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.tagPick select {
+  min-block-size: 2.25rem;
+  max-inline-size: 14rem;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--color-field-border);
+  border-radius: 6px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  font-weight: 400;
+}

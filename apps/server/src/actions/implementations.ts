@@ -12,6 +12,7 @@ import { preferenceActions } from './preferences.ts'
 import { previewActions } from './preview.ts'
 import type { Implementation } from './registry.ts'
 import { searchActions } from './search.ts'
+import { tagActions } from './tags.ts'
 import { trashActions } from './trash.ts'
 import { versionActions } from './versions.ts'
 import { worldActions } from './worlds.ts'
@@ -33,6 +34,7 @@ export const IMPLEMENTATIONS: Implementation[] = [
   ...versionActions,
   ...fileActions,
   ...searchActions,
+  ...tagActions,
   ...preferenceActions
 ]
 

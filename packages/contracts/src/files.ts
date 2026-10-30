@@ -26,6 +26,7 @@ export const fileView = z.object({
   mime: z.string(),
   size: z.number().int(),
   url: z.string().describe('Dónde se piden sus bytes, con la sesión'),
+  tags: z.array(z.string()).describe('Sus etiquetas, de las de la cuenta'),
   version: z.number().int(),
   updatedAt: z.string()
 })

@@ -88,7 +88,8 @@ test('propiedades, icono y etiquetas: se guardan, siguen al recargar y cuentan e
   await expect(properties.getByRole('link', { name: 'Costa Gris' })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Icono ⚓: cambiarlo' })).toBeVisible()
 
-  await page.getByRole('link', { name: 'Etiquetas' }).click()
+  // Son de la cuenta: en la zona de Mis mundos
+  await page.goto('/etiquetas')
   await expect(page.getByRole('list', { name: 'Etiquetas' }).getByRole('listitem')).toHaveText([
     'costa1 página',
     'lugar1 página',
@@ -206,9 +207,11 @@ test('la wiki, en los dos temas y en el móvil @a11y', async ({ page }) => {
   await expect(page.getByLabel('O en un grupo nuevo')).toBeVisible()
   await check()
   await page.keyboard.press('Escape')
-  await page.getByRole('link', { name: 'Etiquetas' }).click()
+  const wiki = page.url()
+  await page.goto('/etiquetas')
   await expect(page.getByRole('list', { name: 'Etiquetas' })).toBeVisible()
   await check()
+  await page.goto(wiki)
   await page.getByRole('tree').getByRole('treeitem', { name: 'Lugares' }).click()
   await page.setViewportSize({ width: 390, height: 844 })
   await page.getByRole('button', { name: 'Wiki' }).click()

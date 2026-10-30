@@ -36,6 +36,7 @@ export const fileView = (row: FileRow): FileView => ({
   size: row.size,
   // Con su versión: el navegador la guarda sin volver a preguntar (al reemplazarla, cambia)
   url: `/api/files/${row.id}?v=${row.version}`,
+  tags: row.tags,
   version: row.version,
   updatedAt: row.updatedAt.toISOString()
 })
@@ -149,7 +150,7 @@ export async function folderIn(ctx: ActionContext, place: FilePlace, folderId: s
 const folderTaken = (name: string) => new InvalidRequestError('NAME_TAKEN', `Ya hay una carpeta «${name}» ahí`)
 
 /** Para el historial: el mundo o, con un común, solo su organización */
-const historyScope = (place: FilePlace) => (place.worldId ? place : { organizationId: place.organizationId })
+export const historyScopeOf = (place: FilePlace) => (place.worldId ? place : { organizationId: place.organizationId })
 
 /** Con cuántas páginas cuenta cada archivo: los del mundo, en él; los comunes, en todos los de su organización */
 async function withUses(ctx: ActionContext, rows: FileRow[], worldId?: string) {
@@ -193,7 +194,7 @@ export const fileActions = [
     try {
       const folder = await filesRepo.createFolder(
         ctx.db,
-        historyContext(ctx, 'createFolder', { name }, historyScope(place)),
+        historyContext(ctx, 'createFolder', { name }, historyScopeOf(place)),
         { organizationId: place.organizationId, worldId: place.worldId, parentId, name }
       )
       await filesTouched(ctx, place)
@@ -217,7 +218,7 @@ export const fileActions = [
     try {
       const updated = await filesRepo.updateFolder(
         ctx.db,
-        historyContext(ctx, 'updateFolder', details, historyScope(place)),
+        historyContext(ctx, 'updateFolder', details, historyScopeOf(place)),
         folderId,
         { ...(name !== undefined ? { name } : {}), ...(parentId !== undefined ? { parentId } : {}) }
       )
@@ -233,7 +234,7 @@ export const fileActions = [
     const { folder, place } = await authorizedFolder(ctx, true, folderId)
     await filesRepo.deleteFolder(
       ctx.db,
-      historyContext(ctx, 'deleteFolder', { name: folder.name }, historyScope(place)),
+      historyContext(ctx, 'deleteFolder', { name: folder.name }, historyScopeOf(place)),
       folderId
     )
     await filesTouched(ctx, place)
@@ -246,7 +247,7 @@ export const fileActions = [
     if (file.folderId === folderId) return fileView(file)
     await filesRepo.updateFile(
       ctx.db,
-      historyContext(ctx, 'moveFile', { name: file.name, folder: folder?.name ?? null }, historyScope(place)),
+      historyContext(ctx, 'moveFile', { name: file.name, folder: folder?.name ?? null }, historyScopeOf(place)),
       fileId,
       { folderId }
     )
@@ -264,7 +265,7 @@ export const fileActions = [
       ctx,
       'renameFile',
       { from: file.name, to: name },
-      historyScope(place)
+      historyScopeOf(place)
     )
     try {
       await filesRepo.updateFile(ctx.db, context, fileId, { name })
@@ -283,7 +284,7 @@ export const fileActions = [
     const { file, place } = await authorizedFile(ctx, 'page.write', fileId)
     await filesRepo.updateFile(
       ctx.db,
-      historyContext(ctx, 'deleteFile', { name: file.name }, historyScope(place)),
+      historyContext(ctx, 'deleteFile', { name: file.name }, historyScopeOf(place)),
       fileId,
       { deletedAt: new Date() }
     )
@@ -297,7 +298,7 @@ export const fileActions = [
     // Si su nombre lo tiene ya otro, vuelve con un número
     const name = await withFreeName(ctx.db, { scope: scopeOf(place), name: file.name, except: file.id }, (free) =>
       filesRepo
-        .updateFile(ctx.db, historyContext(ctx, 'restoreFile', { name: free }, historyScope(place)), fileId, {
+        .updateFile(ctx.db, historyContext(ctx, 'restoreFile', { name: free }, historyScopeOf(place)), fileId, {
           deletedAt: null,
           ...(free !== file.name ? { name: free } : {})
         })

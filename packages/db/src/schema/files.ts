@@ -68,6 +68,8 @@ export const files = pgTable(
     size: bigint({ mode: 'number' }).notNull(),
     hash: text().notNull(),
     storageKey: text().notNull(),
+    /** Sus etiquetas, de las de la cuenta (ADR-0006) */
+    tags: text().array().notNull().default(sql`'{}'::text[]`),
     deletedAt: timestamp({ withTimezone: true })
   },
   (t) => [

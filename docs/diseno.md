@@ -38,16 +38,19 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   de dentro la cierra y lleva a su sitio. **Sin enlace de vuelta** arriba («Mis mundos»): en una ventana no tiene
   sentido.
 - **Dentro de un mundo, la barra empieza por Inicio y Campañas**, y siguen **Wiki** (sus páginas; buscar y marcadores,
-  como pestañas de su panel, no en la barra), Etiquetas y Archivos. Sin ellos «no hay forma
+  como pestañas de su panel, no en la barra) y Archivos. Sin ellos «no hay forma
   de volver». Historial y Papelera enseñan los de ese mundo.
 - **El Inicio de un mundo**: arriba su cabecera, que es su tarjeta en grande (portada, nombre, descripción, papel y
   engranaje); al entrar, la tarjeta se convierte en ella. Debajo, lo reciente: «Últimos artículos» de la wiki para
   quien lo dirige (sin enlace a la wiki: está en la barra), y sus campañas para quien juega. Las campañas tienen su propia pestaña.
 - **El menú de la cuenta** (la inicial, abajo en la barra): quién eres, Perfil, Ajustes y Cerrar sesión. El tema va en
   Ajustes, no en el menú. Se abre al lado del botón y nunca se corta.
+- **Las etiquetas son de toda la cuenta** (ADR-0006): «Etiquetas» va en la barra de Mis mundos, no en la de un mundo;
+  dentro, son filtros (al buscar en la wiki, en Archivos). Llevan un color opcional y se ven como un punto de color con
+  su nombre. Se eligen o se escriben: una nueva entra sola.
 - **En el móvil, la barra va abajo, centrada y con huecos fijos**: la llama (con «Crisol» debajo, nunca «Mundos»), lo
-  principal de la zona y «Más». Mis mundos: Crisol · Archivos · Más. Dentro de un mundo: Crisol · Inicio · Campañas ·
-  Wiki · Más. «Más» es una hoja con el resto (Archivos y Etiquetas del mundo, Historial, Papelera y la cuenta). Nunca
+  principal de la zona y «Más». Mis mundos: Crisol · Archivos · Etiquetas · Más. Dentro de un mundo: Crisol · Inicio ·
+  Campañas · Wiki · Más. «Más» es una hoja con el resto (Archivos del mundo, Historial, Papelera y la cuenta). Nunca
   se desplaza de lado: «si añadimos iconos es un caos». La guía se salta lo que no se ve.
 - **En el móvil, las ventanas son hojas que suben desde abajo**, con su asa arriba y la página oscurecida detrás: «los
   popup no parecen popups».

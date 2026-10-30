@@ -688,7 +688,13 @@ function LookDialog({
 }
 
 /** El color: ninguno, uno de los fijos, uno de los propios que ya se crearon o uno nuevo, con el selector de color */
-function ColorChoices({ value, onChange }: { value: World['color']; onChange: (color: World['color']) => void }) {
+export function ColorChoices({
+  value,
+  onChange
+}: {
+  value: World['color']
+  onChange: (color: World['color']) => void
+}) {
   const { t } = useTranslation()
   const { account } = useAccounts().useAccount()
   const name = useId()

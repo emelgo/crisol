@@ -64,9 +64,9 @@ function Label({ icon: Icon, text }: { icon: LucideIcon; text: string }) {
 }
 
 /**
- * La barra de la izquierda, como en el Crisol antiguo: Mundos; dentro de un mundo que llevas, sus paneles (páginas,
- * buscar y marcadores abren el panel lateral; etiquetas y archivos, su pantalla); abajo, lo del propietario, el tema y
- * la cuenta. La sección actual lleva aria-current (lo pone el Link) o aria-pressed
+ * La barra de la izquierda, como en el Crisol antiguo: Mundos, los archivos comunes y las etiquetas de la cuenta;
+ * dentro de un mundo que llevas, sus paneles (la wiki abre el panel lateral; archivos, su pantalla); abajo, lo del
+ * propietario, el tema y la cuenta. La sección actual lleva aria-current (lo pone el Link) o aria-pressed
  */
 export function Ribbon() {
   const { t } = useTranslation()
@@ -93,6 +93,12 @@ export function Ribbon() {
     void queryClient.prefetchQuery({
       queryKey: ['commonFiles'],
       queryFn: () => api.call('listCommonFiles', {}),
+      staleTime: 10_000
+    })
+  const prefetchTags = () =>
+    void queryClient.prefetchQuery({
+      queryKey: ['tags'],
+      queryFn: () => api.call('listAccountTags', {}),
       staleTime: 10_000
     })
   // Al entrar en un mundo, «Mundos» sube a la llama y se funde con ella, que se aviva (el mundo se cocina en el crisol);
@@ -190,6 +196,21 @@ export function Ribbon() {
             onFocus={prefetchCommon}
           >
             <Label icon={Folder} text={t('ribbon.files')} />
+          </Link>
+        )}
+        {/* Las etiquetas de la cuenta (ADR-0006): fuera de los mundos; dentro, se filtra por ellas en la wiki y los
+            archivos */}
+        {isOwner && !merged && (
+          <Link
+            to="/etiquetas"
+            viewTransition={SECTION}
+            className={worldsItem.filter(Boolean).join(' ')}
+            style={{ '--rise': '-11.2rem' } as CSSProperties}
+            data-tour="barra-etiquetas"
+            onPointerEnter={prefetchTags}
+            onFocus={prefetchTags}
+          >
+            <Label icon={Hash} text={t('ribbon.tags')} />
           </Link>
         )}
         {panelsWorld && (
@@ -332,15 +353,6 @@ function WikiPanels({ worldId }: { worldId: string }) {
         <Label icon={BookOpen} text={t('ribbon.wiki')} />
       </button>
       <Link
-        to="/mundos/$worldId/etiquetas"
-        params={{ worldId }}
-        className={`${styles.item} ${styles.desktopOnly}`}
-        viewTransition={SECTION}
-        data-tour="barra-etiquetas"
-      >
-        <Label icon={Hash} text={t('ribbon.tags')} />
-      </Link>
-      <Link
         to="/mundos/$worldId/archivos"
         params={{ worldId }}
         className={`${styles.item} ${styles.desktopOnly}`}
@@ -356,7 +368,7 @@ function WikiPanels({ worldId }: { worldId: string }) {
 }
 
 /**
- * En el móvil, «Más»: lo que no cabe en la barra de abajo (de un mundo, sus archivos y etiquetas; el historial, la
+ * En el móvil, «Más»: lo que no cabe en la barra de abajo (de un mundo, sus archivos; el historial, la
  * papelera y la cuenta), en una hoja que sube desde abajo
  */
 function MoreSheet({ worldId, isOwner }: { worldId: string | null; isOwner: boolean }) {
@@ -392,26 +404,15 @@ function MoreSheet({ worldId, isOwner }: { worldId: string | null; isOwner: bool
           </h2>
           <ul className={styles.moreList}>
             {worldId && (
-              <>
-                <li>
-                  <button
-                    type="button"
-                    onClick={then(() => void navigate({ to: '/mundos/$worldId/archivos', params: { worldId } }))}
-                  >
-                    <Folder aria-hidden="true" size={18} />
-                    {t('ribbon.files')}
-                  </button>
-                </li>
-                <li>
-                  <button
-                    type="button"
-                    onClick={then(() => void navigate({ to: '/mundos/$worldId/etiquetas', params: { worldId } }))}
-                  >
-                    <Hash aria-hidden="true" size={18} />
-                    {t('ribbon.tags')}
-                  </button>
-                </li>
-              </>
+              <li>
+                <button
+                  type="button"
+                  onClick={then(() => void navigate({ to: '/mundos/$worldId/archivos', params: { worldId } }))}
+                >
+                  <Folder aria-hidden="true" size={18} />
+                  {t('ribbon.files')}
+                </button>
+              </li>
             )}
             {isOwner && (
               <>

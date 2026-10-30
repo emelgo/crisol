@@ -8,7 +8,7 @@
  */
 
 import type { FolderView } from '@crisol/contracts'
-import { looksUploadable, MAX_FILE_BYTES, TRASH_DAYS, UPLOAD_ACCEPT } from '@crisol/domain'
+import { isTagOrChild, looksUploadable, MAX_FILE_BYTES, TRASH_DAYS, tagTree, UPLOAD_ACCEPT } from '@crisol/domain'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getRouteApi, Link, Navigate } from '@tanstack/react-router'
 import {
@@ -48,6 +48,8 @@ import { CoverViewer } from '../routes/world-cover.tsx'
 import styles from './files.module.css'
 import type { WorldFile } from './links-context.ts'
 import { useNarrow } from './panel.tsx'
+import tagStyles from './tags.module.css'
+import { TagChip, TagsField, useTagColor } from './tags.tsx'
 
 const route = getRouteApi('/mundos/$worldId/archivos')
 
@@ -272,6 +274,8 @@ function FilesSection({
   const [folderId, setFolderId] = useState<string | null>(null)
   const [query, setQuery] = useState('')
   const [kind, setKind] = useState<Kind | 'all'>('all')
+  // Una etiqueta (con sus hijas): como al buscar, en todas las carpetas
+  const [tag, setTag] = useState<string | null>(null)
   const [view, setView] = useView()
   const [over, setOver] = useState(false)
   const [received, setReceived] = useState<string | null>(null)
@@ -281,7 +285,7 @@ function FilesSection({
   const preview = (kind: 'file' | 'folder', id: string) => (shown: boolean) =>
     setHovered((current) => (shown ? { kind, id } : current?.id === id ? null : current))
   // Al cambiar de carpeta, de búsqueda o de filtro, nada señalado
-  useEffect(() => setHovered(null), [folderId, query, kind])
+  useEffect(() => setHovered(null), [folderId, query, kind, tag])
   const folders = data?.folders ?? []
   const byId = new Map(folders.map((folder) => [folder.id, folder]))
   // Si una carpeta es de los comunes (la suya, o una de dentro)
@@ -306,14 +310,18 @@ function FilesSection({
     }
     return path
   }
-  const searching = query.trim() !== ''
   const wanted = query.trim().toLocaleLowerCase('es')
+  // Buscando o con una etiqueta: en todas las carpetas, diciendo en cuál está cada uno
+  const searching = wanted !== '' || tag !== null
   const shownFiles = (data?.files ?? []).filter(
     (file) =>
       (searching ? file.name.toLocaleLowerCase('es').includes(wanted) : (file.folderId ?? null) === open) &&
-      (kind === 'all' || file.kind === kind)
+      (kind === 'all' || file.kind === kind) &&
+      (tag === null || file.tags.some((t) => isTagOrChild(t, tag)))
   )
   const shownFolders = searching || kind !== 'all' ? [] : folders.filter((folder) => folder.parentId === open)
+  // Las etiquetas que llevan los archivos de aquí, con sus madres, para el filtro
+  const fileTags = useMemo(() => tagTree<null>({ rows: [], pages: [], files: data?.files ?? [] }), [data?.files])
   const ids = useMemo(() => data && [...data.files.map((f) => f.id), ...(data.folders ?? []).map((f) => f.id)], [data])
   const fresh = useFresh(ids)
   const refresh = () =>
@@ -360,6 +368,7 @@ function FilesSection({
           value={searching ? '' : (open ?? '')}
           onChange={(event) => {
             setQuery('')
+            setTag(null)
             setFolderId(event.currentTarget.value || null)
           }}
         >
@@ -413,6 +422,19 @@ function FilesSection({
           </button>
         ))}
       </div>
+      {fileTags.length > 0 && (
+        <label className={styles.tagPick}>
+          <span>{t('tags.filter')}</span>
+          <select value={tag ?? ''} onChange={(event) => setTag(event.currentTarget.value || null)}>
+            <option value="">{t('tags.any')}</option>
+            {fileTags.map((option) => (
+              <option key={option.name} value={option.name}>
+                {`${'\u00a0\u00a0'.repeat(option.depth)}${option.depth > 0 ? option.name.split('/').at(-1) : option.name}`}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
       {/* biome-ignore lint/a11y/useSemanticElements: dos botones que eligen la vista */}
       <div className={styles.views} role="group" aria-label={t('files.view')}>
         <button
@@ -448,6 +470,7 @@ function FilesSection({
       placeOf={placeOf}
       onOpen={(id) => {
         setQuery('')
+        setTag(null)
         setFolderId(id)
       }}
       onMove={moveInto}
@@ -492,7 +515,9 @@ function FilesSection({
           })}
         </nav>
       )}
-      {searching && shownFiles.length === 0 && <p className={styles.empty}>{t('files.noResults')}</p>}
+      {searching && shownFiles.length === 0 && (
+        <p className={styles.empty}>{wanted ? t('files.noResults') : t('files.noMatch')}</p>
+      )}
       {!searching && shownFolders.length === 0 && shownFiles.length === 0 && uploads.items.length === 0 && (
         <p className={styles.empty}>{nothing ? empty : t('files.emptyFolder')}</p>
       )}
@@ -788,10 +813,24 @@ function FileRow({
       <span className={styles.rowText}>
         <FileName file={file} className={styles.rowName} folders={folders} canWrite={canWrite} onChanged={onChanged} />
         {where.length > 0 && <span className={styles.where}>{where.map((folder) => folder.name).join(' › ')}</span>}
+        <FileTags tags={file.tags} />
       </span>
       <span className={styles.rowMeta}>{sizeText(file.size, i18n.language)}</span>
       {canWrite ? <FileSettings file={file} folders={folders} onChanged={onChanged} small /> : <span />}
     </li>
+  )
+}
+
+/** Las etiquetas de un archivo, en su fila o su tarjeta */
+function FileTags({ tags }: { tags: readonly string[] }) {
+  const colorOf = useTagColor()
+  if (tags.length === 0) return null
+  return (
+    <span className={tagStyles.rowChips}>
+      {tags.map((tag) => (
+        <TagChip key={tag} name={tag} color={colorOf(tag)} />
+      ))}
+    </span>
   )
 }
 
@@ -1624,6 +1663,7 @@ function FileCard({
           onChanged={onChanged}
         />
         {where.length > 0 && <span className={styles.where}>{where.map((folder) => folder.name).join(' › ')}</span>}
+        <FileTags tags={file.tags} />
         <div className={cards.footer}>
           <span className={cards.role}>
             {sizeText(file.size, i18n.language)}
@@ -1849,6 +1889,12 @@ function FileDialog({
       await onChanged()
     }
   })
+  const retag = useMutation({
+    mutationFn: async (tags: string[]) => {
+      await api.call('setFileTags', { fileId: file.id, tags })
+      await onChanged()
+    }
+  })
   const replace = useMutation({
     mutationFn: async (chosen: File) => {
       if (chosen.size > MAX_FILE_BYTES) throw new ApiError('TOO_LARGE', 413)
@@ -1915,6 +1961,13 @@ function FileDialog({
             <FormError message={move.error ? errorText(move.error) : null} />
           </div>
         )}
+        <div>
+          <TagsField
+            value={retag.isPending && retag.variables ? retag.variables : file.tags}
+            onChange={(tags) => retag.mutate(tags)}
+          />
+          <FormError message={retag.error ? errorText(retag.error) : null} />
+        </div>
         <div>
           <BusyButton
             className={`${list.secondary} ${styles.replace}`}

@@ -11,9 +11,11 @@ import type {
   Organization,
   Page,
   PageProperty,
+  TagView,
   TrashItem,
   World
 } from '@crisol/contracts'
+import { removeTagIn, renameTagIn, tagKey, tagTree, uniqueTags } from '@crisol/domain'
 import { type ActionInput, type ActionName, type ActionOutput, type ApiClient, ApiError } from './client.ts'
 
 export function fakeApi(
@@ -75,6 +77,7 @@ export function fakeApi(
       mime: 'image/png',
       size: 1024,
       url: `/api/files/${id}`,
+      tags: [],
       folderId: null,
       version: 1,
       updatedAt: new Date().toISOString(),
@@ -214,6 +217,72 @@ export function fakeApi(
     if (neighbour && !anchor) throw new ApiError('BAD_PLACEMENT', 400)
     const index = anchor ? pages.indexOf(anchor) + (before ? 0 : 1) : pages.length
     pages.splice(index, 0, page)
+  }
+
+  // Las etiquetas de la cuenta (ADR-0006): las guardadas y las que llevan páginas y archivos
+  const tagRows: { id: string; organizationId: string; name: string; color: TagView['color'] }[] = []
+  const tagsOfPage = (page: StoredPage) => {
+    const found = page.properties.find((p) => p.name.toLowerCase() === 'etiquetas')
+    return found?.type === 'list' ? found.value : []
+  }
+  const ownOrganization = (organizationId?: string) =>
+    organizationId ?? organizations.find((o) => o.role === 'owner')?.id ?? ''
+  const catalogOf = (organizationId: string): TagView[] =>
+    tagTree<TagView['color']>({
+      rows: tagRows.filter((row) => row.organizationId === organizationId),
+      pages: pages
+        .filter((page) => worlds.find((w) => w.id === page.worldId)?.organizationId === organizationId)
+        .map((page) => ({ worldId: page.worldId, tags: tagsOfPage(page) })),
+      files: files.filter((file) => file.organizationId === organizationId)
+    }).map((node) => ({
+      id: node.id,
+      name: node.name,
+      depth: node.depth,
+      color: node.color,
+      pages: node.pages,
+      files: node.files,
+      worlds: [...node.worlds].map(([worldId, count]) => ({
+        worldId,
+        name: worlds.find((w) => w.id === worldId)?.name ?? '',
+        pages: count
+      }))
+    }))
+  const tagIn = (organizationId: string, name: string) => {
+    const found = catalogOf(organizationId).find((tag) => tagKey(tag.name) === tagKey(name))
+    if (!found) throw new ApiError('TAG_NOT_FOUND', 400)
+    return found
+  }
+  /** Renombra (to) o quita (null) una etiqueta y sus hijas en todo lo que la lleva */
+  const retag = (organizationId: string, from: string, to: string | null) => {
+    const change = (list: readonly string[]) => (to === null ? removeTagIn(list, from) : renameTagIn(list, from, to))
+    let changedPages = 0
+    let changedFiles = 0
+    for (const page of pages.filter((p) => worlds.find((w) => w.id === p.worldId)?.organizationId === organizationId)) {
+      const next = change(tagsOfPage(page))
+      if (!next) continue
+      page.properties = page.properties.flatMap((p): PageProperty[] =>
+        p.name.toLowerCase() !== 'etiquetas'
+          ? [p]
+          : next.length > 0
+            ? [{ name: p.name, type: 'list', value: next }]
+            : []
+      )
+      changedPages++
+    }
+    for (const file of files.filter((f) => f.organizationId === organizationId)) {
+      const next = change(file.tags)
+      if (!next) continue
+      file.tags = next
+      changedFiles++
+    }
+    for (const row of [...tagRows]) {
+      if (row.organizationId !== organizationId) continue
+      const next = change([row.name])
+      if (!next) continue
+      if (next[0]) row.name = next[0]
+      else tagRows.splice(tagRows.indexOf(row), 1)
+    }
+    return { pages: changedPages, files: changedFiles }
   }
 
   const handlers: { [N in ActionName]: (input: ActionInput<N>) => ActionOutput<N> } = {
@@ -633,6 +702,48 @@ export function fakeApi(
       file.folderId = folderId
       file.version++
       return { ...file }
+    },
+    listAccountTags: ({ organizationId }) => {
+      const target = ownOrganization(organizationId)
+      return { organizationId: target, tags: catalogOf(target) }
+    },
+    createTag: ({ organizationId, name, color }) => {
+      const target = ownOrganization(organizationId)
+      const existing = catalogOf(target).find((tag) => tagKey(tag.name) === tagKey(name))
+      if (existing?.id) throw new ApiError('TAG_TAKEN', 400)
+      tagRows.push({
+        id: crypto.randomUUID(),
+        organizationId: target,
+        name: existing?.name ?? name,
+        color: color ?? null
+      })
+      return tagIn(target, name)
+    },
+    updateTag: ({ organizationId, tag, name, color }) => {
+      const target = ownOrganization(organizationId)
+      const current = tagIn(target, tag)
+      let now = current.name
+      if (name !== undefined && name !== current.name) {
+        retag(target, current.name, name)
+        now = name
+      }
+      if (color !== undefined) {
+        const row = tagRows.find((r) => r.organizationId === target && tagKey(r.name) === tagKey(now))
+        if (row) row.color = color
+        else tagRows.push({ id: crypto.randomUUID(), organizationId: target, name: now, color })
+      }
+      return tagIn(target, now)
+    },
+    deleteTag: ({ organizationId, tag }) => {
+      const target = ownOrganization(organizationId)
+      const current = tagIn(target, tag)
+      return { name: current.name, ...retag(target, current.name, null) }
+    },
+    setFileTags: ({ fileId, tags }) => {
+      const file = fileById(fileId)
+      file.tags = uniqueTags(tags)
+      file.version++
+      return { id: file.id, tags: file.tags }
     },
     renameFile: ({ fileId, name }) => {
       const file = fileById(fileId)

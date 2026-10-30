@@ -135,11 +135,12 @@ describe('el icono de una página', () => {
   })
 })
 
-describe('el panel de etiquetas', () => {
-  it('desde la wiki se llega a las etiquetas, con cuántas páginas tiene cada una', async () => {
-    renderPort([{ name: 'etiquetas', type: 'list', value: ['lugar/ciudad', 'costa'] }])
-    await userEvent.click(await screen.findByRole('link', { name: 'Etiquetas' }))
-    expect(await screen.findByRole('heading', { level: 1, name: 'Etiquetas de Eana' })).toBeDefined()
+describe('las etiquetas de la cuenta', () => {
+  it('las de las páginas salen en Etiquetas, en árbol y con cuántas páginas tiene cada una', async () => {
+    const { router } = renderPort([{ name: 'etiquetas', type: 'list', value: ['lugar/ciudad', 'costa'] }])
+    await screen.findByRole('heading', { level: 1, name: 'Puerto Ceniza' })
+    await router.navigate({ to: '/etiquetas' })
+    expect(await screen.findByRole('heading', { level: 1, name: 'Etiquetas' })).toBeDefined()
     const tags = within(screen.getByRole('list', { name: 'Etiquetas' }))
     await waitFor(() =>
       expect(tags.getAllByRole('listitem').map((item) => item.textContent)).toEqual([

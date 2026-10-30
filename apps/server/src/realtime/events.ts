@@ -36,6 +36,12 @@ export const commonFilesChanged = (organizationId: string): RealtimeEvent => ({
   message: { type: 'changed', what: 'commonFiles', organizationId }
 })
 
+/** Las etiquetas de la cuenta: a quien las ve */
+export const tagsChanged = (organizationId: string): RealtimeEvent => ({
+  to: { capability: 'tags.read', target: { organizationId } },
+  message: { type: 'changed', what: 'tags', organizationId }
+})
+
 /** El texto de una página se guardó: a quien la ve (lo que la enseña en otra se vuelve a pedir) */
 export const pageContentChanged = (
   wiki: { worldId: string; organizationId: string },
@@ -108,6 +114,9 @@ export function undoEvents(
         break
       case 'pages':
         events.push(pagesChanged({ worldId, organizationId: context.organizationId }))
+        break
+      case 'tags':
+        events.push(tagsChanged(String(row.organization_id ?? context.organizationId)))
         break
       case 'files':
       case 'file_folders':

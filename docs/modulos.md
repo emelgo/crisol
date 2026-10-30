@@ -15,11 +15,11 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   `tasks/interfaz.md`, en staging (PR #77 a #84). Enrique: «cuando este lista la nueva UI ENTERA la revisaré e iremos
   puliendo». Va la **ronda de pulido 1**, pantalla a pantalla y en local. Su primera parte (armazón, cuentas, Mis
   mundos, archivos comunes con el ADR-0005, Inicio de un mundo y Campañas) está fusionada y en staging (PR #86). Se
-  sigue en la rama `interfaz/pulir-2`. Lo hecho y lo que falta están en `tasks/interfaz.md`, y sus normas en
+  sigue en la rama `interfaz/pulir-2` (sin subir aún), con el móvil y las etiquetas de la cuenta (ADR-0006). Lo hecho y lo que falta están en `tasks/interfaz.md`, y sus normas en
   `docs/diseno.md`. GitHub Actions va justo de minutos: todo en verde en local antes de subir. Ya apuntado para pulir:
   - ~~la cola de la IA, en su propio panel~~ (hecho en la ronda 1: tarjetas flotantes);
   - marcar en la página lo que la IA quiere cambiar;
-  - menos botones en la barra del móvil;
+  - ~~menos botones en la barra del móvil~~ (hecho: huecos fijos y «Más»);
   - concretar qué ve mal de la hoja.
 
   Sus pruebas de los puntos 3 a 5 están en «Lo que dijo Enrique al probar». De ellas, los puntos 11 y 12 (la hoja) ya

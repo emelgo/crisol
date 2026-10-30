@@ -69,7 +69,6 @@ export function WorldPage() {
           ...(master
             ? ([
                 { target: '[data-tour="barra-wiki"]', text: t('tour.world.wiki'), placement: 'right' },
-                { target: '[data-tour="barra-etiquetas"]', text: t('tour.world.tags'), placement: 'right' },
                 { target: '[data-tour="barra-archivos-mundo"]', text: t('tour.world.files'), placement: 'right' },
                 { target: '[data-tour="barra-historial"]', text: t('tour.world.history'), placement: 'right' },
                 { target: '[data-tour="barra-papelera"]', text: t('tour.world.trash'), placement: 'right' },

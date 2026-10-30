@@ -17,7 +17,7 @@ import { Worlds } from './routes/worlds.tsx'
 import { CommonFiles, WikiFiles } from './wiki/files.tsx'
 import { searchParams, WikiSearch } from './wiki/search.tsx'
 import { PrintPage, printParams } from './wiki/sheet/print.tsx'
-import { WikiTags } from './wiki/tags.tsx'
+import { AccountTags, WorldTagsRedirect } from './wiki/tags.tsx'
 import { WikiHome, WikiPage } from './wiki/wiki.tsx'
 
 const rootRoute = createRootRoute({ component: RootLayout, notFoundComponent: NotFound })
@@ -50,7 +50,7 @@ const wikiPageRoute = createRoute({
 const tagsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/mundos/$worldId/etiquetas',
-  component: WikiTags
+  component: WorldTagsRedirect
 })
 const filesRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -88,6 +88,8 @@ const aiRoute = createRoute({ getParentRoute: () => rootRoute, path: '/ia', comp
 const settingsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/ajustes', component: Settings })
 // Los archivos comunes de la cuenta, fuera de los mundos (ADR-0005)
 const commonFilesRoute = createRoute({ getParentRoute: () => rootRoute, path: '/archivos', component: CommonFiles })
+// Las etiquetas de la cuenta, en la zona de Mis mundos (ADR-0006)
+const accountTagsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/etiquetas', component: AccountTags })
 const trashRoute = createRoute({ getParentRoute: () => rootRoute, path: '/papelera', component: OrganizationTrash })
 const consentRoute = createRoute({ getParentRoute: () => rootRoute, path: '/oauth/consentimiento', component: Consent })
 const joinRoute = createRoute({ getParentRoute: () => rootRoute, path: '/unirse/$secret', component: Join })
@@ -114,6 +116,7 @@ const routeTree = rootRoute.addChildren([
   aiRoute,
   settingsRoute,
   commonFilesRoute,
+  accountTagsRoute,
   consentRoute,
   bootstrapRoute,
   joinRoute

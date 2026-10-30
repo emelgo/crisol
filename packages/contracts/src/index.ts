@@ -50,6 +50,7 @@ import {
   updatePage
 } from './pages.ts'
 import { searchWiki } from './search.ts'
+import { createTag, deleteTag, listAccountTags, setFileTags, updateTag } from './tags.ts'
 import {
   deleteCampaign,
   deletePage,
@@ -73,6 +74,7 @@ export * from './organizations.ts'
 export * from './pages.ts'
 export type * from './realtime.ts'
 export * from './search.ts'
+export * from './tags.ts'
 export * from './trash.ts'
 export * from './worlds.ts'
 
@@ -143,7 +145,12 @@ export const ACTIONS = [
   updateFolder,
   deleteFolder,
   moveFile,
-  searchWiki
+  searchWiki,
+  listAccountTags,
+  createTag,
+  updateTag,
+  deleteTag,
+  setFileTags
 ]
 
 /** Las acciones por nombre, solo como tipo: la web las usa sin cargar zod */
@@ -213,5 +220,10 @@ export type Actions = {
   updateFolder: typeof updateFolder
   deleteFolder: typeof deleteFolder
   moveFile: typeof moveFile
+  listAccountTags: typeof listAccountTags
+  createTag: typeof createTag
+  updateTag: typeof updateTag
+  deleteTag: typeof deleteTag
+  setFileTags: typeof setFileTags
   searchWiki: typeof searchWiki
 }

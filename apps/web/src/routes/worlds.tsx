@@ -90,6 +90,7 @@ export function Worlds() {
             also: [{ target: '[data-tour="barra-mundos"]', text: t('tour.worlds.ribbon') }]
           },
           { target: '[data-tour="barra-archivos"]', text: t('tour.worlds.files'), placement: 'right' },
+          { target: '[data-tour="barra-etiquetas"]', text: t('tour.worlds.tags'), placement: 'right' },
           { target: '[data-tour="barra-historial"]', text: t('tour.worlds.history'), placement: 'right' },
           {
             target: '[data-tour="barra-papelera"]',

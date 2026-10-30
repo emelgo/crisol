@@ -180,10 +180,19 @@ y las e2e (con fugas y accesibilidad) en verde aquí. Al poner al día las prueb
 «Últimos artículos»; archivos en tarjetas con carpetas (migración 0027), buscador, filtro y subidas que se cancelan
 (el servidor ya tira una subida cortada); borrar un mundo con ceniza, distinto de crearlo; humo al salir de un mundo.
 
+**También en `interfaz/pulir-2`** (2026-10-30): archivos de un mundo con el mismo diseño que los comunes (árbol a la
+izquierda, detalle a la derecha al pasar el ratón); Mis mundos con el mundo señalado a la izquierda; la barra del
+mundo con un solo «Wiki». **Móvil**: barra de abajo con huecos fijos y «Más» en una hoja; las ventanas suben desde
+abajo; en Archivos, selector de carpeta y hoja del archivo. **Etiquetas de la cuenta** (ADR-0006, migración 0028):
+«Etiquetas» en la barra de Mis mundos (crear, color, renombrar y borrar, con sus hijas); en los archivos, en su ventana
+y como filtro; en las páginas, con su color y sugerencias de la cuenta; herramientas MCP `listar_etiquetas`,
+`crear_etiqueta`, `cambiar_etiqueta`, `borrar_etiqueta` y `etiquetar_archivo`. Sin pestaña en la barra del mundo.
+
 **Lo siguiente**: seguir puliendo en la rama `interfaz/pulir-2`. Falta que Enrique vea el Inicio del mundo y la
 pestaña Campañas; la página de una campaña aún lleva la franja antigua. Pequeños pendientes vistos al probar:
 - reabrir una ventana en el instante en que se cierra no la abre (`components/window.tsx`, el mismo `kind`);
-- Perfil anuncia «Guardado» dos veces (su `role="status"` y el anunciador).
+- Perfil anuncia «Guardado» dos veces (su `role="status"` y el anunciador);
+- `collab.integration.test.ts` › «guardar es fusionar» falla a veces con la máquina cargada (su espera de 1 s).
 
 **Al cerrar cada parte**: todo en verde en local (lint, tipos, `pnpm test`, e2e) antes de subir; un solo push por PR.
 Los minutos de GitHub Actions son pocos.

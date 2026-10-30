@@ -153,7 +153,7 @@ describe('el Inicio de un mundo', () => {
     expect(ribbon().queryByRole('button', { name: 'Wiki' })).toBeNull()
   })
 
-  it('dentro de un mundo, la barra empieza por Inicio y Campañas, y siguen los de su wiki', async () => {
+  it('dentro de un mundo, la barra empieza por Inicio y Campañas, y siguen la wiki y los archivos', async () => {
     const w = world()
     const router = renderAt(`/mundos/${w.id}`, fakeApi({ organizations: [ORG], worlds: [w] }))
     await screen.findByRole('heading', { level: 1, name: 'Eana' })
@@ -163,7 +163,7 @@ describe('el Inicio de un mundo', () => {
       .map((item) => item.textContent)
       .filter(Boolean)
     // La llama, delante; «Más», detrás (solo se ve en el móvil)
-    expect(items).toEqual(['Crisol', 'Inicio', 'Campañas', 'Wiki', 'Etiquetas', 'Archivos', 'Más'])
+    expect(items).toEqual(['Crisol', 'Inicio', 'Campañas', 'Wiki', 'Archivos', 'Más'])
 
     await userEvent.click(ribbon().getByRole('link', { name: 'Campañas' }))
     expect(await screen.findByRole('heading', { level: 1, name: 'Campañas' })).toBeDefined()

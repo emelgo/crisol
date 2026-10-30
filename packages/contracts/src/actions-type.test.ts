@@ -70,7 +70,12 @@ describe('Actions', () => {
       updateFolder: true,
       deleteFolder: true,
       moveFile: true,
-      searchWiki: true
+      searchWiki: true,
+      listAccountTags: true,
+      createTag: true,
+      updateTag: true,
+      deleteTag: true,
+      setFileTags: true
     }
     expect(Object.keys(names).sort()).toEqual(ACTIONS.map((a) => a.name).sort())
   })
