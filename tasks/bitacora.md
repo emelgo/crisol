@@ -37,7 +37,7 @@ Hay que contárselo al final, con lo que tenga que probar o revisar:
   (`https://neo.crisol.144-91-122-245.sslip.io/mcp`), con su cuenta de propietario. Después prueba crear_paginas con
   secretos y editar_pagina sobre una página que tenga abierta.
 
-## Tarea en curso: 19, archivos en las páginas (19a en PR #62, 19b hecha)
+## Tarea en curso: 19, archivos en las páginas (19a: PR #62, en staging; 19b hecha)
 
 Rama `wiki/tarea-19-archivos-en-paginas` (sobre main, tras la 18). En dos porciones, cada una con su PR:
 
@@ -70,6 +70,25 @@ Rama `wiki/tarea-19-archivos-en-paginas` (sobre main, tras la 18). En dos porcio
   `_archivos/` con todos los del mundo, o los que usan las páginas exportadas.
 - Dos e2e intermitentes en la CI del PR #62 (propiedades y vista previa con el teclado), arreglados en ese PR: esperar
   a guardar antes de recargar, y volver a elegir el enlace si se pierde la selección.
+
+## Siguiente: 20, búsqueda en español (diseño)
+
+- **Migración a mano** (no la saca drizzle): extensiones `unaccent`, `pg_trgm` y `fuzzystrmatch` (las tres «trusted»:
+  las crea el dueño de la base), la configuración `es_unaccent` (copia de `spanish` con `unaccent` delante del
+  lexema) y `crisol_unaccent(text)` inmutable.
+- **`search_sections`**: una fila por sección (lo de debajo de cada título de primer nivel) de cada documento, con su
+  título, el id del título (para el ancla), el tipo de documento (cuerpo, secreto, nota) y `tsv` generado. Se rehace
+  donde ya se rehace `documents.text` (`setText`, con las secciones). Al arrancar, lo que no tenga secciones se
+  indexa (para lo que ya había).
+- **Páginas**: título, alias y propiedades, con una función inmutable y un índice GIN por expresión en `pages`.
+- **Erratas**: `search_words` (palabras sin tildes por mundo, que llenan triggers de `search_sections` y `pages`).
+  Cada palabra buscada se amplía con las del mundo parecidas: trigramas (similitud > 0.2) y `levenshtein` ≤ 1 (≤ 2 desde
+  6 letras). «dargón» → «dragon»: la transposición son 2.
+- **Consulta**: tsquery de alternativas por palabra (la última, con prefijo), filtro por etiqueta y por rama (CTE
+  recursiva), agrupado por página (la mejor puntuación más un plus si coincide el título), 20 por página, y en cada una
+  sus secciones con `ts_headline` (marcas que la web pinta con `<mark>`). Lo de un secreto, marcado.
+- **Web** `/mundos/:worldId/buscar?q&etiqueta&rama&pagina`; **MCP** `buscar_paginas`; prueba de rendimiento con 5.000
+  páginas sintéticas (p95 < 300 ms).
 
 ## Hechas en esta tirada
 
