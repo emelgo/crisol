@@ -55,10 +55,18 @@ del módulo 1.
     selector que la de las páginas.
   - **Servidor**: la migración 0023, `updateWorld` (se deshace con el historial) y la herramienta MCP `cambiar_mundo`.
   - **Renombrar y Borrar** siguen como estaban.
-- [ ] **8. Buscar y Ctrl+K.** Los filtros en el panel y los resultados agrupados por página.
-- [ ] **9. La hoja.** Pendiente de que Enrique diga qué ve mal. Lleva los puntos 11 (la nota lateral rodeada por el
-  texto) y 12 (escalada al ancho del panel) de sus pruebas.
-- [ ] **10. Móvil y entrar.** Barra de abajo con nombres, el árbol en un cajón y la pantalla de entrar.
+- [x] **8. Buscar y Ctrl+K.** Los resultados, en bloques que se marcan al pasar; la sección en el color de los títulos
+  y lo de un secreto en su morado. El selector Ctrl+K con bordes suaves y la opción elegida con la raya roja. Los
+  filtros siguen en la pantalla de resultados.
+- [x] **9. La hoja.** Puntos 11 y 12 de sus pruebas:
+  - la nota lateral va en la misma caja que el bloque que la sigue (se mide y se pagina con él), así que flota a su
+    lado y el texto la rodea;
+  - el papel se encoge al ancho que tiene, al lado del editor o en una pantalla estrecha, y se sigue midiendo a tamaño
+    real. Al imprimir, tal cual.
+
+  Lo que Enrique ve mal de la hoja, por concretar con él en la revisión.
+- [x] **10. Móvil y entrar.** Entrar, en una caja en el centro con su título. El móvil ya lo traía la parte 2 (la
+  barra abajo y el panel en un cajón). Queda para pulir: menos botones en la barra de abajo.
 
 ### Punto de control: tras las tareas 1 y 2
 - [ ] e2e, @fugas y @a11y en verde; desplegado en staging.

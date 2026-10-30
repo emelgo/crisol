@@ -25,13 +25,21 @@
 }
 
 .result {
-  padding-block: var(--space-3);
-  border-block-end: 1px solid var(--color-border);
+  padding: var(--space-3) var(--space-4);
+  border-radius: 4px;
+}
+
+.result:hover {
+  background: color-mix(in srgb, var(--color-text) 5%, transparent);
+}
+
+.result + .result {
+  margin-block-start: var(--space-1);
 }
 
 .title {
-  font-size: 1.0625rem;
-  font-weight: 600;
+  font-size: 1.125rem;
+  font-weight: 700;
 }
 
 .path {
@@ -45,16 +53,20 @@
   padding: 0;
 }
 
+/* La sección donde está: en el color de los títulos */
 .heading {
   margin: var(--space-2) 0 0;
+  color: var(--color-h3);
   font-weight: 600;
 }
 
+/* Lo de un secreto, en su morado */
 .secret {
   margin-inline-end: var(--space-2);
-  padding: 0 var(--space-1);
-  border: 1px solid var(--color-accent);
-  color: var(--color-accent-text);
+  padding: 0 var(--space-2);
+  border-radius: 3px;
+  background: var(--color-secret);
+  color: var(--color-secret-text);
   font-size: 0.8125rem;
   font-weight: 600;
 }

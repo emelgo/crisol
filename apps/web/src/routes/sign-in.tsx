@@ -26,7 +26,7 @@ export function SignIn() {
   }
 
   return (
-    <section>
+    <section className={styles.centered}>
       <PageTitle>{t('account.signIn')}</PageTitle>
       <form className={styles.form} onSubmit={submit}>
         <Field label={t('account.email')} name="email" type="email" autoComplete="email" required />

@@ -39,6 +39,40 @@ function kindOf(block: JSONContent): SheetBlock['kind'] {
   return 'block'
 }
 
+/**
+ * Lo que se mide y se pagina junto. Una nota lateral va en la misma caja que el bloque que la sigue: así flota a su
+ * lado y su texto la rodea (cada caja es un flow-root, para medirla con sus márgenes)
+ */
+interface Unit {
+  id: string
+  kind: SheetBlock['kind']
+  blocks: { id: string; block: JSONContent }[]
+}
+
+function unitsOf(blocks: readonly JSONContent[]): Unit[] {
+  const units: Unit[] = []
+  for (let i = 0; i < blocks.length; i++) {
+    const block = blocks[i] as JSONContent
+    const id = idOf(block, i)
+    const next = blocks[i + 1]
+    const nextKind = next ? kindOf(next) : null
+    if (block.type === 'sidenote' && next && (nextKind === 'block' || nextKind === 'heading')) {
+      units.push({
+        id,
+        kind: nextKind,
+        blocks: [
+          { id, block },
+          { id: idOf(next, i + 1), block: next }
+        ]
+      })
+      i++
+      continue
+    }
+    units.push({ id, kind: kindOf(block), blocks: [{ id, block }] })
+  }
+  return units
+}
+
 /** En qué página sale cada título (para el índice) */
 const PageNumbers = createContext<ReadonlyMap<string, number>>(new Map())
 
@@ -91,8 +125,23 @@ const headingsOf = (blocks: readonly JSONContent[]): Heading[] =>
       : []
   )
 
+/** Cuánto encoger el papel para que quepa a lo ancho de su sitio (nunca agrandarlo; al imprimir, tal cual) */
+function useFitScale(container: HTMLElement | null, paperWidth: number, printing: boolean) {
+  const [scale, setScale] = useState(1)
+  useEffect(() => {
+    if (!container || printing || typeof ResizeObserver === 'undefined') return
+    const observer = new ResizeObserver(([entry]) => {
+      const width = entry?.contentRect.width ?? paperWidth
+      setScale(Math.min(1, Math.max(0.3, width / paperWidth)))
+    })
+    observer.observe(container)
+    return () => observer.disconnect()
+  }, [container, paperWidth, printing])
+  return scale
+}
+
 /** Lo que mide cada bloque (con sus márgenes) a su ancho: el de la columna o el de la página */
-function useMeasured(blocks: readonly JSONContent[], settings: SheetSettings, measurer: HTMLDivElement | null) {
+function useMeasured(units: readonly Unit[], settings: SheetSettings, measurer: HTMLDivElement | null) {
   const [heights, setHeights] = useState<Map<string, number> | null>(null)
   // Las imágenes que aún no han llegado (mientras, miden poco: se vuelve a medir con cada una)
   const [loading, setLoading] = useState(0)
@@ -127,7 +176,7 @@ function useMeasured(blocks: readonly JSONContent[], settings: SheetSettings, me
         img.removeEventListener('error', loaded)
       }
     }
-  }, [measurer, blocks, settings])
+  }, [measurer, units, settings])
   return { heights, loading: loading > 0 }
 }
 
@@ -157,19 +206,19 @@ export function SheetView({
     return all.filter((block) => block.type !== 'note' && (secrets || block.type !== 'secret'))
   }, [content.data, printing, secrets])
   const [measurer, setMeasurer] = useState<HTMLDivElement | null>(null)
-  const { heights, loading: imagesLoading } = useMeasured(blocks, settings, measurer)
+  const [sheetSection, setSheetSection] = useState<HTMLElement | null>(null)
+  const units = useMemo(() => unitsOf(blocks), [blocks])
+  const { heights, loading: imagesLoading } = useMeasured(units, settings, measurer)
   const headings = headingsOf(blocks)
-  const byId = new Map(blocks.map((block, i) => [idOf(block, i), block]))
+  const byId = new Map(units.map((unit) => [unit.id, unit]))
   const pages: SheetPage[] = heights
     ? paginate(
-        blocks.map((block, i) => ({
-          id: idOf(block, i),
-          kind: kindOf(block),
-          height: heights.get(idOf(block, i)) ?? 0
-        })),
+        units.map((unit) => ({ id: unit.id, kind: unit.kind, height: heights.get(unit.id) ?? 0 })),
         contentHeight(settings)
       )
     : []
+  // A lo ancho que haya (al lado del editor, más pequeña); se mide siempre a tamaño real
+  const scale = useFitScale(sheetSection, PAPER[settings.paper].width, printing)
   // Lista cuando está paginada con todo medido, imágenes incluidas (el PDF del servidor espera a esto)
   const ready = content.data !== undefined && heights !== null && !imagesLoading
   useEffect(() => {
@@ -179,36 +228,50 @@ export function SheetView({
   pages.forEach((sheetPage, index) => {
     for (const row of sheetPage.rows) {
       for (const id of row.kind === 'wide' ? [row.id] : row.columns.flat()) {
-        numbers.set(id, settings.firstNumber + index)
+        for (const inner of byId.get(id)?.blocks ?? []) numbers.set(inner.id, settings.firstNumber + index)
       }
     }
   })
   const paper = PAPER[settings.paper]
   const render = (id: string): ReactNode => {
-    const block = byId.get(id)
-    if (!block) return null
+    const unit = byId.get(id)
+    if (!unit) return null
     return (
-      // biome-ignore lint/a11y/noStaticElementInteractions: pulsar un bloque lleva el editor a él; es un atajo del ratón
-      // biome-ignore lint/a11y/useKeyWithClickEvents: con el teclado se va al editor y se mueve el cursor por el texto
-      <div key={id} data-sheet-block={id} className={styles.block} onClick={() => onBlockClick?.(id)}>
-        <SheetBlockView block={block} worldId={page.worldId} headings={headings} />
+      <div key={id} className={styles.block}>
+        {unit.blocks.map(({ id: blockId, block }) => (
+          // biome-ignore lint/a11y/noStaticElementInteractions: pulsar un bloque lleva el editor a él; es un atajo del ratón
+          // biome-ignore lint/a11y/useKeyWithClickEvents: con el teclado se va al editor y se mueve el cursor por el texto
+          <div key={blockId} data-sheet-block={blockId} onClick={() => onBlockClick?.(blockId)}>
+            <SheetBlockView block={block} worldId={page.worldId} headings={headings} />
+          </div>
+        ))}
       </div>
     )
   }
   return (
     <ImageLoading.Provider value="eager">
       <PageNumbers.Provider value={numbers}>
-        <section className={styles.sheet} data-theme={settings.theme} lang="es" aria-label={t('sheet.view')}>
+        <section
+          ref={setSheetSection}
+          className={styles.sheet}
+          data-theme={settings.theme}
+          lang="es"
+          aria-label={t('sheet.view')}
+        >
           {/* El medidor: cada bloque a su ancho, fuera de la vista */}
           <div ref={setMeasurer} className={`${styles.measurer} ${styles.page}`} aria-hidden="true">
-            {blocks.map((block, i) => (
+            {units.map((unit) => (
               <div
-                key={idOf(block, i)}
-                data-measure={idOf(block, i)}
+                key={unit.id}
+                data-measure={unit.id}
                 className={styles.block}
-                style={{ inlineSize: kindOf(block) === 'wide' ? contentWidth(settings) : columnWidth(settings) }}
+                style={{ inlineSize: unit.kind === 'wide' ? contentWidth(settings) : columnWidth(settings) }}
               >
-                <SheetBlockView block={block} worldId={page.worldId} headings={headings} />
+                {unit.blocks.map(({ id, block }) => (
+                  <div key={id}>
+                    <SheetBlockView block={block} worldId={page.worldId} headings={headings} />
+                  </div>
+                ))}
               </div>
             ))}
           </div>
@@ -217,7 +280,7 @@ export function SheetView({
               key={index}
               className={styles.page}
               aria-label={t('sheet.pageLabel', { number: settings.firstNumber + index })}
-              style={{ inlineSize: paper.width, blockSize: paper.height }}
+              style={{ inlineSize: paper.width, blockSize: paper.height, zoom: scale }}
             >
               <div className={styles.content} style={{ blockSize: contentHeight(settings) }}>
                 {sheetPage.rows.map((row, r) =>
