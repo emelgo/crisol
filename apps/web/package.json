@@ -36,6 +36,7 @@
     "@tiptap/y-tiptap": "catalog:",
     "better-auth": "catalog:",
     "i18next": "catalog:",
+    "pdfjs-dist": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
     "react-i18next": "catalog:",

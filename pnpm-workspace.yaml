@@ -10,6 +10,10 @@ allowBuilds:
   esbuild: false
   msgpackr-extract: false
 
+# El lienzo nativo de pdf.js solo sirve en Node: la web no lo usa
+ignoredOptionalDependencies:
+  - "@napi-rs/canvas"
+
 # Versiones compartidas por todos los paquetes (se usan con "catalog:")
 catalog:
   "@biomejs/biome": 2.6.4
@@ -57,6 +61,8 @@ catalog:
   fastify: ^5.12.7
   fflate: ^0.8.3
   happy-dom: ^21.0.4
+  # El visor de PDF de la web (Apache-2.0), cargado solo al abrir uno
+  pdfjs-dist: ^6.4.299
   "@floating-ui/dom": ^1.7.4
   "@fastify/rate-limit": ^11.2.1
   "@fontsource/barlow": ^5.3.0

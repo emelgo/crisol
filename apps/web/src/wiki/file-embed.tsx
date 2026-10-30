@@ -13,6 +13,7 @@ import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
 import styles from './file-embed.module.css'
 import { PageLinksContext, type WorldFile } from './links-context.ts'
+import { PdfViewer } from './pdf-viewer.tsx'
 
 export function withFileEmbedView(node: Node) {
   return node.extend({
@@ -104,20 +105,15 @@ function FileFigure({
   if (target.state === 'trashed') return <p className={styles.note}>{t('fileEmbed.trashed', { name: attrs.name })}</p>
   if (target.state === 'pending') return <PendingFile name={attrs.name} editable={Boolean(edit)} />
   const { file } = target
+  if (file.kind === 'pdf') return <PdfViewer url={file.url} name={file.name} size={file.size} page={attrs.page} />
   if (file.kind !== 'image') {
     const size = new Intl.NumberFormat(i18n.language, { style: 'unit', unit: 'megabyte', maximumFractionDigits: 1 })
     return (
       <div className={styles.card}>
-        <a href={attrs.page ? `${file.url}#page=${attrs.page}` : file.url} target="_blank" rel="noopener">
+        <a href={file.url} target="_blank" rel="noopener">
           {file.name}
         </a>
-        <span className={styles.meta}>
-          {[file.kind === 'pdf' ? 'PDF' : null, attrs.page ? t('fileEmbed.page', { page: attrs.page }) : null]
-            .filter(Boolean)
-            .join(' · ')}
-          {file.kind === 'pdf' || attrs.page ? ' · ' : ''}
-          {size.format(file.size / (1024 * 1024))}
-        </span>
+        <span className={styles.meta}>{size.format(file.size / (1024 * 1024))}</span>
       </div>
     )
   }

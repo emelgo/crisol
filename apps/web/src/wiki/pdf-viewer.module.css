@@ -1,0 +1,56 @@
+/* Un PDF en la página: su cabecera y, si se abre, sus páginas */
+.viewer {
+  border-inline-start: 3px solid var(--color-frame);
+  background: var(--color-raised);
+}
+
+.head,
+.tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+  padding: var(--space-2) var(--space-4);
+}
+
+.name {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.meta,
+.note {
+  color: var(--color-muted);
+}
+
+.note {
+  margin: 0;
+  padding: var(--space-2) var(--space-4);
+}
+
+.button {
+  font: inherit;
+  font-weight: 600;
+}
+
+.pages {
+  padding-block-end: var(--space-3);
+}
+
+.goto {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.number {
+  inline-size: 4.5rem;
+  font: inherit;
+}
+
+.canvas {
+  display: block;
+  max-inline-size: 100%;
+  margin-inline: auto;
+  background: #fff;
+}
