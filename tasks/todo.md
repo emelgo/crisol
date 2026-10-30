@@ -339,7 +339,7 @@ Cada vía nueva por la que salen datos amplía `@fugas` en la misma tarea.
     ese mundo.
   - Archivos: `apps/server/src/mcp/escala.integration.test.ts`, `apps/server/src/mcp/tools.ts`.
 
-- [ ] **26. Cierre del módulo**
+- [x] **26. Cierre del módulo**
   - Acepta:
     - Revisiones de seguridad, servidor y web (esta con `web-design-guidelines`), con lo alto arreglado.
     - `@fugas` completa para la wiki.

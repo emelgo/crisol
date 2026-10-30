@@ -189,6 +189,31 @@ acciones de la página; la fila de ajustes encima del texto; a partir de 1500 px
 - #61 (18), #62 (19a), #63 (19b), #64 (20), #65 (21), #66 (22), #67 (23) y #68 (24): fusionados y en staging. Staging
   tiene Chromium (probado: saca un PDF dentro del contenedor).
 
+## Tarea 26, cierre (hecha, rama `wiki/tarea-26-cierre`)
+
+Revisiones hechas con dos agentes (seguridad del servidor; interfaz con `web-design-guidelines`).
+
+- **Interfaz, arreglado**:
+  - el botón de la imagen se nombra con su texto alternativo;
+  - la hoja lleva los colores del tema claro en su papel;
+  - las imágenes de la hoja se cargan ya y se vuelve a medir al llegar (la hoja no está lista hasta entonces);
+  - el visor de PDF no pierde el foco, avisa al cargar y al fallar, y usa `aria-disabled`;
+  - los ajustes de la hoja cambian al momento y dicen si no se guardan;
+  - la subida dice cuántos fallaron;
+  - «Carta» en vez de «Letter».
+- **Seguridad, arreglado**:
+  - subida sin flujo → 415 sin abrir archivo;
+  - Chromium con el entorno limpio y sin pedir nada fuera del propio origen;
+  - cola del PDF con tope (2) y plazo total, y Chromium que se relanza si se cae;
+  - límites por IP de Caddy (`x-forwarded-for`), no por la del proxy;
+  - palabras de búsqueda de 3 a 64 letras;
+  - indexar lo de antes sin romper la búsqueda si un documento falla.
+- **Para Enrique** (son de infraestructura o de producto):
+  - Chromium en un contenedor aparte, sin secretos y con sandbox (hoy va sin sandbox en el de la app, con el entorno
+    limpio);
+  - una cuota de almacenamiento por organización;
+  - quizá más memoria para la app si se sacan PDF grandes.
+
 ## Hechas en esta tirada
 
 - **9** (PR #52): bloques, marcas, menú «/», barras, asa e ids. Decisiones apuntadas en `docs/modulos.md`.
