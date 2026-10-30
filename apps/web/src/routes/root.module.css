@@ -65,40 +65,37 @@
   transform: rotate(45deg);
 }
 
-/* Las secciones: condensadas y en mayúsculas; la actual, con la raya roja debajo */
-.sections {
-  display: flex;
-  flex-wrap: wrap;
-  align-self: stretch;
-  gap: 0 var(--space-6);
-  flex: 1 1 auto;
-  font-family: var(--font-body);
-  font-size: 0.9375rem;
-  font-weight: 600;
-}
-
-.sections a {
-  display: flex;
-  align-items: center;
-  min-block-size: 3.5rem;
-  border-block: 3px solid transparent;
-  color: var(--color-chrome-muted);
-  text-decoration: none;
-}
-
-.sections a[aria-current="page"] {
-  border-block-end-color: var(--color-accent);
-  color: var(--color-chrome-text);
-}
-
 .main {
   inline-size: min(100%, 60rem);
   margin-inline: auto;
   padding: var(--space-8) var(--space-6);
 }
 
+/* Con sesión: la barra de la izquierda, el contenido y la barra de estado abajo */
+.app {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-rows: minmax(calc(100dvh - 1.625rem), auto) auto;
+}
+
+/* La wiki: de lado a lado, sin márgenes; el panel lateral y la página se los ponen ellos */
 .wide {
-  inline-size: min(100%, 90rem);
+  min-inline-size: 0;
+}
+
+.status {
+  position: sticky;
+  inset-block-end: 0;
+  grid-column: 2;
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  block-size: 1.625rem;
+  padding-inline: var(--space-3);
+  background: var(--color-raised);
+  border-block-start: 1px solid var(--color-border);
+  color: var(--color-muted);
+  font-size: 0.75rem;
 }
 
 .nav {
@@ -113,15 +110,15 @@
   text-decoration: none;
 }
 
-/* Estrecho: la marca y la cuenta arriba, las secciones en su propia fila debajo */
+/* Estrecho: la barra de la izquierda pasa abajo (ribbon.module.css); el contenido le deja sitio y sin barra de estado */
 @media (max-width: 48rem) {
-  .sections {
-    order: 1;
-    flex-basis: 100%;
+  .app {
+    grid-template-columns: minmax(0, 1fr);
+    padding-block-end: 4.25rem;
   }
 
-  .sections a {
-    min-block-size: var(--target);
+  .status {
+    display: none;
   }
 }
 

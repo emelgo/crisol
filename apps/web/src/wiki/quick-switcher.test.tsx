@@ -54,7 +54,7 @@ describe('el selector rápido', () => {
 
   it('con «>», las órdenes; Escape lo cierra y el foco vuelve a donde estaba', async () => {
     const router = renderAt(`/mundos/${WORLD.id}/wiki`)
-    const box = await screen.findByRole('searchbox', { name: 'Buscar en la wiki' })
+    const box = await screen.findByRole('button', { name: 'Página nueva' })
     box.focus()
     await userEvent.keyboard('{Control>}k{/Control}')
     const dialog = await screen.findByRole('dialog', { name: 'Ir a una página' })

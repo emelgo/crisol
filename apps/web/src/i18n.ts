@@ -11,6 +11,19 @@ export const es = {
     skipToContent: 'Saltar al contenido',
     pageTitle: '{{page}} · Crisol'
   },
+  // La barra de la izquierda: cada botón con su icono y su nombre debajo
+  ribbon: {
+    worlds: 'Mundos',
+    pages: 'Páginas',
+    search: 'Buscar',
+    bookmarks: 'Marcadores',
+    tags: 'Etiquetas',
+    files: 'Archivos',
+    history: 'Historial',
+    trash: 'Papelera',
+    ai: 'IA',
+    theme: 'Tema'
+  },
   account: {
     signIn: 'Entrar',
     signOut: 'Cerrar sesión',
@@ -779,7 +792,9 @@ export const es = {
   },
   theme: {
     toDark: 'Cambiar a tema oscuro',
-    toLight: 'Cambiar a tema claro'
+    toLight: 'Cambiar a tema claro',
+    dark: 'Oscuro',
+    light: 'Claro'
   },
   notFound: {
     title: 'Página no encontrada',

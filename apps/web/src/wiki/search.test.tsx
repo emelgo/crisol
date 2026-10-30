@@ -36,6 +36,9 @@ const renderAt = (path: string) => {
 describe('buscar en la wiki', () => {
   it('desde la caja del lateral: lo buscado va en la dirección, con los resultados, su ruta y lo encontrado', async () => {
     const router = renderAt(`/mundos/${WORLD.id}/wiki`)
+    // La caja está en el panel de buscar, que se abre con su botón de la barra de la izquierda
+    const sections = within(await screen.findByRole('navigation', { name: 'Secciones' }))
+    await userEvent.click(await sections.findByRole('button', { name: 'Buscar' }))
     await userEvent.type(await screen.findByRole('searchbox', { name: 'Buscar en la wiki' }), 'dragon{Enter}')
     expect(await screen.findByRole('heading', { level: 1, name: 'Buscar en Eana' })).toBeDefined()
     expect(router.state.location.search).toMatchObject({ q: 'dragon' })

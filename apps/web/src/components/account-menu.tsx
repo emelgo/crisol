@@ -9,7 +9,8 @@ import styles from './account-menu.module.css'
  * Es un botón que muestra u oculta una lista (no un menú de ARIA): se recorre con el tabulador como el resto.
  * Se cierra con Escape (el foco vuelve al nombre), al pulsar fuera o al salir de él con el tabulador.
  */
-export function AccountMenu() {
+/** La cuenta: en la barra de arriba, con su nombre (sin sesión); en la de la izquierda, con su inicial */
+export function AccountMenu({ variant = 'bar' }: { variant?: 'bar' | 'ribbon' }) {
   const { t } = useTranslation()
   const accounts = useAccounts()
   const { account, pending } = accounts.useAccount()
@@ -54,26 +55,35 @@ export function AccountMenu() {
       <button
         ref={trigger}
         type="button"
-        className={styles.trigger}
+        className={variant === 'ribbon' ? styles.avatar : styles.trigger}
         aria-expanded={open}
         aria-controls={panelId}
         onClick={() => setOpen((value) => !value)}
       >
-        {account.name}
-        <svg
-          aria-hidden="true"
-          width="14"
-          height="14"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.4"
-        >
-          <path d="m6 9 6 6 6-6" />
-        </svg>
+        {variant === 'ribbon' ? (
+          <>
+            <span aria-hidden="true">{account.name.trim().charAt(0).toLocaleUpperCase('es')}</span>
+            <span className={styles.hidden}>{account.name}</span>
+          </>
+        ) : (
+          account.name
+        )}
+        {variant === 'bar' && (
+          <svg
+            aria-hidden="true"
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.4"
+          >
+            <path d="m6 9 6 6 6-6" />
+          </svg>
+        )}
       </button>
       {open && (
-        <div id={panelId} className={styles.panel}>
+        <div id={panelId} className={variant === 'ribbon' ? `${styles.panel} ${styles.fromRibbon}` : styles.panel}>
           <p className={styles.email}>{account.email}</p>
           <ul className={styles.items}>
             <li>

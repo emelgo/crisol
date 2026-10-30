@@ -47,10 +47,10 @@ describe('App', () => {
       />
     )
     const sections = await screen.findByRole('navigation', { name: 'Secciones' })
-    for (const name of ['Mis mundos', 'Historial', 'Papelera', 'IA']) {
+    for (const name of ['Mundos', 'Historial', 'Papelera', 'IA']) {
       expect(await within(sections).findByRole('link', { name })).toBeDefined()
     }
-    expect(within(sections).getByRole('link', { name: 'Mis mundos' }).getAttribute('aria-current')).toBe('page')
+    expect(within(sections).getByRole('link', { name: 'Mundos' }).getAttribute('aria-current')).toBe('page')
     expect(within(sections).getByRole('link', { name: 'Historial' }).getAttribute('aria-current')).toBeNull()
   })
 
@@ -63,7 +63,7 @@ describe('App', () => {
       />
     )
     const sections = await screen.findByRole('navigation', { name: 'Secciones' })
-    expect(await within(sections).findByRole('link', { name: 'Mis mundos' })).toBeDefined()
+    expect(await within(sections).findByRole('link', { name: 'Mundos' })).toBeDefined()
     expect(within(sections).queryByRole('link', { name: 'Historial' })).toBeNull()
     expect(within(sections).queryByRole('link', { name: 'IA' })).toBeNull()
   })

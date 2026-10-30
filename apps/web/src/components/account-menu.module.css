@@ -95,3 +95,41 @@
 .account .panel :focus-visible {
   outline-color: var(--color-focus);
 }
+
+/* En la barra de la izquierda: un círculo con la inicial; el nombre, para los lectores de pantalla */
+.avatar {
+  display: grid;
+  place-items: center;
+  inline-size: 2.25rem;
+  block-size: 2.25rem;
+  margin-block-start: var(--space-2);
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.hidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Desde la barra de la izquierda, el desplegable sale a su derecha, pegado abajo */
+.fromRibbon {
+  inset-block: auto 0;
+  inset-inline: calc(100% + var(--space-2)) auto;
+}
+
+@media (max-width: 48rem) {
+  .fromRibbon {
+    inset-block: auto calc(100% + var(--space-2));
+    inset-inline: auto 0;
+  }
+}
