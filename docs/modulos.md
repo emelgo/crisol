@@ -11,9 +11,17 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
 
 - **El módulo 1 (wiki) está construido entero y en staging**: tareas 1 a 26, PR #52 a #70. Lo que hace cada tarea está
   en las entradas de abajo, del 2026-10-30.
-- **Ahora mismo**: la **etapa de interfaz** (empezó el 2026-10-30; lo que quiere Enrique está en «Para el repaso
-  final de la interfaz», más abajo). Sus pruebas de los puntos 3 a 5 están apuntadas en «Lo que dijo Enrique al
-  probar» y se arreglan al acabar la interfaz; le quedan por probar el punto 6 y el final.
+- **Ahora mismo**: la **etapa de interfaz** tiene hecha la primera pasada entera: las 10 partes de
+  `tasks/interfaz.md`, en staging (PR #77 a #84). Enrique: «cuando este lista la nueva UI ENTERA la revisaré e iremos
+  puliendo». Lo siguiente es su revisión y pulir lo que diga. Ya apuntado para pulir:
+  - la cola de la IA, en su propio panel;
+  - marcar en la página lo que la IA quiere cambiar;
+  - menos botones en la barra del móvil;
+  - concretar qué ve mal de la hoja.
+
+  Sus pruebas de los puntos 3 a 5 están en «Lo que dijo Enrique al probar». De ellas, los puntos 11 y 12 (la hoja) ya
+  están arreglados, y el 7 (deshacer) tiene ya un aviso claro, pero falta reproducirlo con él. Le quedan por probar el
+  punto 6 y el final.
 - **Lo que tiene que probar**:
   1. **Punto 3**: el conector MCP de staging (`https://neo.crisol.144-91-122-245.sslip.io/mcp`) en claude.ai con su
      cuenta de propietario. Probar `crear_paginas` con secretos y `editar_pagina` sobre una página abierta.
@@ -30,8 +38,7 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   contenido. No se ha visto en local ni en staging; si pasa, mirar `editable` hasta `ready` en
   `apps/web/src/wiki/editor.tsx`.
 - **El orden** (Enrique, 2026-10-30: «para seguir después de la edición de la UI»):
-  1. la etapa de interfaz, con la skill `frontend-design` y `web-design-guidelines`: una mezcla del Crisol antiguo y
-     del nuevo (ver «Para el repaso final de la interfaz»). Los puntos 11 y 12 de sus pruebas (la hoja) van aquí;
+  1. la etapa de interfaz: primera pasada hecha (`tasks/interfaz.md`); falta la revisión de Enrique y pulir;
   2. arreglar el resto de lo que dijo de sus pruebas;
   3. cerrar el módulo 1 (que pruebe el punto 6 y el final; marcar sus puntos de control en `tasks/todo.md`);
   4. **antes del módulo 2, la búsqueda** (pregunta de Enrique, 2026-10-30, con herramientas que propuso: qmd, basic-memory,
