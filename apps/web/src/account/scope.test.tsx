@@ -84,7 +84,7 @@ function setup(path: string) {
     await userEvent.type(await screen.findByLabelText('Email'), 'j@crisol.test')
     await userEvent.type(screen.getByLabelText('Contraseña'), 'una-clave-larga')
     await userEvent.click(screen.getByRole('button', { name: 'Entrar' }))
-    await screen.findByText('Hola, Jugadora')
+    await screen.findByRole('heading', { level: 1, name: 'Mis mundos' })
   }
   return { accounts, realtime, router, signInAsPlayer, release: () => act(release) }
 }
@@ -114,7 +114,6 @@ describe('al cambiar de cuenta en la misma pestaña', () => {
 
     // Mientras llega lo suyo, nada de lo del máster: ni sus mundos, ni el enlace a la IA, ni la papelera
     await signInAsPlayer()
-    await userEvent.click(within(screen.getByRole('main')).getByRole('link', { name: 'Mis mundos' }))
     await screen.findByRole('heading', { level: 1, name: 'Mis mundos' })
     expect(screen.queryByText('Eana')).toBeNull()
     expect(screen.queryByText('Otro')).toBeNull()

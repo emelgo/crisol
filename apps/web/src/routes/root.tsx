@@ -1,17 +1,20 @@
-import { useQuery } from '@tanstack/react-query'
 import { Link, Outlet, useRouter, useRouterState } from '@tanstack/react-router'
 import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
-import { useApi } from '../api/context.tsx'
 import { AccountMenu } from '../components/account-menu.tsx'
 import { ApprovalQueue } from '../components/approval-queue.tsx'
 import { Notices } from '../components/notices.tsx'
 import { PageTitle, useFocusHeading } from '../components/page-title.tsx'
 import { Ribbon } from '../components/ribbon.tsx'
 import { ThemeToggle } from '../components/theme-toggle.tsx'
+import { type WindowKind, WindowProvider } from '../components/window.tsx'
 import { WikiPanelProvider } from '../wiki/panel.tsx'
+import { OrganizationHistory } from './history.tsx'
+import { Profile } from './profile.tsx'
 import styles from './root.module.css'
+import { Settings } from './settings.tsx'
+import { OrganizationTrash } from './trash.tsx'
 
 export function RootLayout() {
   const { t } = useTranslation()
@@ -64,39 +67,30 @@ export function RootLayout() {
       </div>
     )
   }
-  // Con sesión: el armazón del Crisol antiguo, con la barra de la izquierda y la de estado abajo
+  // Con sesión: el armazón del Crisol antiguo, con la barra de la izquierda
   return (
-    <WikiPanelProvider>
-      <div className={styles.app}>
-        {skip}
-        <Ribbon />
-        <main id="contenido" className={wide ? styles.wide : styles.main}>
-          <ApprovalQueue />
-          <Notices />
-          <Outlet />
-        </main>
-        <StatusBar />
-      </div>
-    </WikiPanelProvider>
+    <WindowProvider render={windowContent}>
+      <WikiPanelProvider>
+        <div className={styles.app}>
+          {skip}
+          <Ribbon />
+          <main id="contenido" className={wide ? styles.wide : styles.main}>
+            <ApprovalQueue />
+            <Notices />
+            <Outlet />
+          </main>
+        </div>
+      </WikiPanelProvider>
+    </WindowProvider>
   )
 }
 
-/** La barra de estado: el mundo en el que estás */
-function StatusBar() {
-  const api = useApi()
-  const { account } = useAccounts().useAccount()
-  const worldId = useRouterState({ select: (state) => /^\/mundos\/([^/]+)/.exec(state.location.pathname)?.[1] })
-  const worlds = useQuery({
-    queryKey: ['worlds'],
-    queryFn: () => api.call('listWorlds', {}),
-    enabled: Boolean(account && worldId)
-  })
-  const world = worlds.data?.worlds.find((w) => w.id === worldId)
-  return (
-    <footer className={styles.status}>
-      <span>{world?.name}</span>
-    </footer>
-  )
+/** Lo que se abre encima de la pantalla: las mismas páginas que tienen su dirección */
+function windowContent(kind: WindowKind) {
+  if (kind === 'historial') return <OrganizationHistory />
+  if (kind === 'papelera') return <OrganizationTrash />
+  if (kind === 'ajustes') return <Settings />
+  return <Profile />
 }
 
 export function NotFound() {

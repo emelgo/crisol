@@ -13,8 +13,9 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   en las entradas de abajo, del 2026-10-30.
 - **Ahora mismo**: la **etapa de interfaz** tiene hecha la primera pasada entera: las 10 partes de
   `tasks/interfaz.md`, en staging (PR #77 a #84). Enrique: «cuando este lista la nueva UI ENTERA la revisaré e iremos
-  puliendo». Lo siguiente es su revisión y pulir lo que diga. Ya apuntado para pulir:
-  - la cola de la IA, en su propio panel;
+  puliendo». Ahora va la **ronda de pulido 1**, pantalla a pantalla y en local: la rama `interfaz/pulir-inicio`, sin
+  subir. Lo hecho y lo que falta están en `tasks/interfaz.md`, y sus normas en `docs/diseno.md`. Ya apuntado para pulir:
+  - ~~la cola de la IA, en su propio panel~~ (hecho en la ronda 1: tarjetas flotantes);
   - marcar en la página lo que la IA quiere cambiar;
   - menos botones en la barra del móvil;
   - concretar qué ve mal de la hoja.
@@ -1008,6 +1009,22 @@ app: el 2026-10-30 dijo «luego apuntaremos por donde vamos y nos dedicaremos a 
   - Cuidado con su tema 5e: las fuentes y las imágenes llevan licencias propias (varias CC BY-SA, que `CONSTRAINTS.md`
     no admite) e imitan el aspecto de los libros de WotC. Para un producto de pago, un tema propio con ese aire,
     fuentes libres (OFL) y descarga en PDF y para imprimir.
+
+- **Registro público desde la landing** (2026-10-30, al pulir la interfaz). Enrique: «si alguien llega a nuestra futura
+  landing page y le da a registrarse […] ¿como se puede saber la organizacion antes del registro? ¿Tiene sentido una
+  organización? Cada usuario tendrá su cuenta y en el momento del registro como en una serie de pasos eligirá si es
+  jugador o master o ambas cosas». Enrique aceptó la propuesta («Vale»): ADR-0004.
+  - la organización se queda por debajo, sin verse: cada cuenta nueva tiene su espacio (donde van el plan y la cuota);
+    más adelante, grupos opcionales (club, tienda, asociación con varios másteres);
+  - registro en pasos:
+    1. la cuenta, con verificación del email y aceptar condiciones;
+    2. «¿qué vas a hacer?» (dirigir, jugar o las dos), como preferencia y no como permiso;
+    3. primeros pasos: el primer mundo, o pegar el enlace de invitación;
+  - con el módulo 11 (pagos y planes), con su ADR. La pantalla de arranque es la de instalar; la del registro
+    reutiliza sus campos (`NewAccountFields`).
+- **Módulos que se añaden a la app, como en Foundry** (2026-10-30): que aparezcan en la portada. Idea a medio plazo;
+  ejecutar código de terceros en un SaaS pide aislarlo, permisos y versiones. Se decide con su ADR, junto a los
+  sistemas del módulo 3.
 
 ### 1. Wiki (entrevista con Enrique, 2026-10-29)
 

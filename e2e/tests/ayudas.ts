@@ -37,7 +37,8 @@ export async function freshOwner(page: Page) {
     await page.getByLabel('Email').fill(owner.email)
     await page.getByLabel('Contraseña').fill(owner.password)
     await page.getByRole('button', { name: 'Crear la cuenta' }).click()
-    await expect(page.getByText(`Hola, ${owner.name}`)).toBeVisible()
+    // Con sesión, la portada lleva directa a Mis mundos
+    await expect(page.getByRole('heading', { level: 1, name: 'Mis mundos' })).toBeVisible()
   } finally {
     await conn.close()
   }

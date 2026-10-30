@@ -3,7 +3,6 @@ import { freshOwner } from './ayudas.ts'
 
 test('el propietario crea un mundo, lo renombra y sigue ahí al recargar', async ({ page }) => {
   await freshOwner(page)
-  await page.getByRole('main').getByRole('link', { name: 'Mis mundos' }).click()
   await expect(page.getByText('Aún no tienes mundos')).toBeVisible()
 
   await page.getByLabel('Nombre del mundo').fill('Eana')

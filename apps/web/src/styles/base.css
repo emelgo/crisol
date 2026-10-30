@@ -96,7 +96,8 @@ label {
 }
 
 /* Una sección con título es una caja de la hoja: marco de 1px con las esquinas cortadas */
-main section[aria-labelledby] {
+main section[aria-labelledby],
+dialog section[aria-labelledby] {
   position: relative;
   isolation: isolate;
   margin-block: var(--space-6);
@@ -105,7 +106,8 @@ main section[aria-labelledby] {
   clip-path: var(--cut);
 }
 
-main section[aria-labelledby]::before {
+main section[aria-labelledby]::before,
+dialog section[aria-labelledby]::before {
   content: "";
   position: absolute;
   inset: 1px;
@@ -115,7 +117,8 @@ main section[aria-labelledby]::before {
 }
 
 /* El título de un recuadro: más pequeño y sin raya, el recuadro ya lo separa */
-main section[aria-labelledby] > h2:first-child {
+main section[aria-labelledby] > h2:first-child,
+dialog section[aria-labelledby] > h2:first-child {
   margin-block-start: 0;
   padding: 0;
   border: 0;

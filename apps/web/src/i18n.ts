@@ -30,13 +30,40 @@ export const es = {
     signIn: 'Entrar',
     signOut: 'Cerrar sesión',
     name: 'Nombre',
+    firstName: 'Nombre',
+    lastName: 'Apellido(s)',
+    username: 'Nombre de usuario',
+    usernameHint: 'El nombre con el que te verán.',
     email: 'Email',
     password: 'Contraseña',
     passwordHint: 'Al menos 10 caracteres',
+    confirmPassword: 'Repite la contraseña',
+    passwordMismatch: 'No coincide con la contraseña.',
+    passwordWeak: 'Es fácil de adivinar: alárgala o mezcla letras, números y signos',
+    strength: {
+      veryWeak: 'Seguridad: muy débil',
+      weak: 'Seguridad: débil',
+      fair: 'Seguridad: aceptable',
+      good: 'Seguridad: buena',
+      strong: 'Seguridad: muy buena'
+    },
     hello: 'Hola, {{name}}'
+  },
+  // Por qué no vale lo escrito en un campo (en vez del globo del navegador)
+  validation: {
+    required: 'Rellena este campo.',
+    email: 'Escribe un email válido, como nombre@ejemplo.com.',
+    format: 'Revisa lo escrito: no tiene el formato que se espera.',
+    tooShort_one: 'Al menos {{count}} carácter.',
+    tooShort_other: 'Al menos {{count}} caracteres.',
+    tooLong_one: 'Como mucho {{count}} carácter.',
+    tooLong_other: 'Como mucho {{count}} caracteres.',
+    min: 'Desde {{min}}.',
+    max: 'Hasta {{max}}.'
   },
   bootstrap: {
     title: 'Cuenta del propietario',
+    intro: 'Crea la primera cuenta de {{organization}}: la del propietario, que lo administra todo.',
     organization: 'Organización:',
     create: 'Crear la cuenta',
     invalidTitle: 'Este enlace no vale',
@@ -45,6 +72,8 @@ export const es = {
   worlds: {
     title: 'Mis mundos',
     empty: 'Aún no tienes mundos',
+    emptyPlayer: 'Cuando un máster te invite a una campaña, su mundo saldrá aquí.',
+    createFirst: 'Crear tu primer mundo',
     listLabel: 'Mundos',
     newTitle: 'Nuevo mundo',
     name: 'Nombre del mundo',
@@ -785,10 +814,51 @@ export const es = {
     owner: 'Propietario',
     member: 'Miembro'
   },
+  settings: {
+    title: 'Ajustes',
+    appearance: 'Apariencia',
+    theme: 'Tema',
+    light: 'Claro',
+    dark: 'Oscuro',
+    help: 'Ayuda',
+    tours: 'Mostrar los recorridos',
+    aiWaiting_one: '{{count}} petición',
+    aiWaiting_other: '{{count}} peticiones'
+  },
+  // Lo que se abre encima de la pantalla
+  window: {
+    historial: 'Historial',
+    papelera: 'Papelera',
+    ajustes: 'Ajustes',
+    perfil: 'Perfil',
+    close: 'Cerrar'
+  },
+  // Los recorridos: la primera vez en cada pantalla, qué es cada cosa
+  tour: {
+    count: '{{current}} de {{total}}',
+    skip: 'Saltar',
+    next: 'Siguiente',
+    done: 'Entendido',
+    understood: 'Lo tengo claro',
+    worlds: {
+      create: 'Un mundo guarda tu wiki, tus campañas y tus partidas.',
+      ribbon: 'Dentro de un mundo, esta barra cambiará y mostrará su contenido.',
+      history: 'Aquí queda todo lo que se hace, tanto por ti como por la IA, y desde aquí se puede deshacer y rehacer.',
+      trash: 'Lo que se borra viene aquí, por si hay que recuperarlo, y se guarda durante {{days}} días.',
+      account: 'Desde aquí podrás administrar la aplicación.'
+    }
+  },
   profile: {
     title: 'Perfil',
     save: 'Guardar',
-    saved: 'Guardado'
+    saved: 'Guardado',
+    you: 'Tus datos',
+    emailNote: 'Aún no se puede cambiar.',
+    password: 'Contraseña',
+    currentPassword: 'Contraseña actual',
+    newPassword: 'Contraseña nueva',
+    changePassword: 'Cambiar la contraseña',
+    passwordChanged: 'Contraseña cambiada'
   },
   errors: {
     CYCLE: 'Una página no puede ir dentro de sí misma ni de sus subpáginas',
@@ -807,6 +877,8 @@ export const es = {
     INVALID_CREDENTIALS: 'Email o contraseña incorrectos',
     TOO_MANY_REQUESTS: 'Demasiados intentos. Espera un minuto.',
     EMAIL_TAKEN: 'Ese email ya tiene cuenta',
+    USERNAME_TAKEN: 'Ese nombre de usuario ya lo tiene otra cuenta: elige otro',
+    WRONG_PASSWORD: 'La contraseña actual no es esa',
     INVALID_LINK: 'Este enlace no vale',
     INVALID_INPUT: 'Revisa los datos',
     FORBIDDEN: 'No tienes permiso',

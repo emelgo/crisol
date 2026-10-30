@@ -1,6 +1,7 @@
 import type { Approval } from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { TFunction } from 'i18next'
+import { Plug } from 'lucide-react'
 import { useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
@@ -8,12 +9,12 @@ import { useApi } from '../api/context.tsx'
 import { useCodeText, useErrorText } from '../api/errors.ts'
 import { requestSummary } from '../summaries.ts'
 import { useAnnounce } from './announcer.tsx'
+import floating from './approval-queue.module.css'
 import { BusyButton } from './busy-button.tsx'
 import { FormError } from './field.tsx'
 import { focusAfterRemoving } from './focus.ts'
 import form from './form.module.css'
 import styles from './list.module.css'
-import notices from './notices.module.css'
 
 /** Lo que pidió la IA de la cuenta. El canal avisa de cada cambio (changed approvals) y la consulta se vuelve a pedir */
 export function useApprovals() {
@@ -35,7 +36,7 @@ export function outcomeText(t: TFunction, codeText: (code: string) => string, ap
   return `${t('approvals.request', { what })} (${t(`approvals.status.${approval.status}`)})`
 }
 
-/** Lo que Claude espera que apruebes: en cualquier página, mientras haya algo pendiente, sin recargar */
+/** Lo que la IA espera que apruebes: tarjetas que flotan en cualquier página, mientras haya algo pendiente */
 export function ApprovalQueue() {
   const { t } = useTranslation()
   const announce = useAnnounce()
@@ -56,20 +57,30 @@ export function ApprovalQueue() {
     setOutcome(text)
     announce(text)
   }
+  // Lo decidido se ve un momento y se va
+  useEffect(() => {
+    if (!outcome) return
+    const timer = window.setTimeout(() => setOutcome(null), 5000)
+    return () => window.clearTimeout(timer)
+  }, [outcome])
 
   return (
     <>
+      {/* Flotan abajo a la derecha, estés donde estés, como en el Crisol antiguo */}
       {pending.length > 0 && (
-        <section aria-labelledby={titleId} className={`${notices.region} ${notices.panel}`}>
-          <h2 id={titleId}>{t('approvals.title')}</h2>
-          <ul className={styles.list} aria-label={t('approvals.listLabel')}>
+        <section aria-labelledby={titleId} className={floating.stack}>
+          <h2 id={titleId} className={floating.title}>
+            <Plug aria-hidden="true" size={16} />
+            {t('approvals.title')}
+          </h2>
+          <ul className={floating.list} aria-label={t('approvals.listLabel')}>
             {pending.map((approval) => (
               <ApprovalItem key={approval.id} approval={approval} onDecided={decided} />
             ))}
           </ul>
         </section>
       )}
-      {outcome && <p className={notices.region}>{outcome}</p>}
+      {outcome && pending.length === 0 && <p className={floating.outcome}>{outcome}</p>}
     </>
   )
 }
@@ -104,9 +115,9 @@ function ApprovalItem({ approval, onDecided }: { approval: Approval; onDecided: 
   const date = new Intl.DateTimeFormat(i18n.language, { dateStyle: 'medium', timeStyle: 'short' })
 
   return (
-    <li ref={item} className={styles.item}>
-      <span className={styles.name}>{t('approvals.request', { what })}</span>
-      <div className={styles.actions}>
+    <li ref={item} className={floating.card}>
+      <span className={floating.what}>{t('approvals.request', { what })}</span>
+      <div className={floating.actions}>
         <BusyButton
           className={form.button}
           aria-label={t('approvals.approveButton', { what })}
@@ -124,7 +135,7 @@ function ApprovalItem({ approval, onDecided }: { approval: Approval; onDecided: 
           {t('approvals.reject')}
         </BusyButton>
       </div>
-      <details className={styles.confirm}>
+      <details className={floating.detail}>
         <summary>{t('approvals.detail')}</summary>
         <p>{t('approvals.tool', { tool: approval.tool })}</p>
         <p>

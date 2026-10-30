@@ -18,12 +18,11 @@ const renderWorlds = (api = fakeApi({ organizations: [ORG] }), accounts = signed
 }
 
 describe('mis mundos', () => {
-  it('con sesión, la portada lleva a mis mundos', async () => {
+  it('con sesión, la portada lleva directa a mis mundos', async () => {
     const router = createAppRouter(createMemoryHistory({ initialEntries: ['/'] }))
     render(<App router={router} accounts={signedIn().client} api={fakeApi({ organizations: [ORG] }).client} />)
-    // El de la portada, no el de la barra de secciones
-    await userEvent.click(await within(await screen.findByRole('main')).findByRole('link', { name: 'Mis mundos' }))
     expect(await screen.findByRole('heading', { name: 'Mis mundos' })).toBeDefined()
+    expect(router.state.location.pathname).toBe('/mundos')
   })
 
   it('sin mundos lo dice y deja crear el primero', async () => {

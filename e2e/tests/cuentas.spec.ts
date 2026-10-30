@@ -29,10 +29,10 @@ test('el propietario crea su cuenta con el enlace de arranque, sale y vuelve a e
   await page.getByLabel('Email').fill(owner.email)
   await page.getByLabel('Contraseña').fill(owner.password)
   await page.getByRole('button', { name: 'Crear la cuenta' }).click()
-  await expect(page.getByText('Hola, Enrique')).toBeVisible()
+  await expect(page.getByRole('heading', { level: 1, name: 'Mis mundos' })).toBeVisible()
 
   await page.reload()
-  await expect(page.getByText('Hola, Enrique')).toBeVisible()
+  await expect(page.getByRole('heading', { level: 1, name: 'Mis mundos' })).toBeVisible()
 
   await signOut(page)
   await expect(page).toHaveURL('/entrar')
@@ -41,7 +41,7 @@ test('el propietario crea su cuenta con el enlace de arranque, sale y vuelve a e
   await page.getByLabel('Email').fill(owner.email)
   await page.getByLabel('Contraseña').fill(owner.password)
   await page.getByRole('button', { name: 'Entrar' }).click()
-  await expect(page.getByText('Hola, Enrique')).toBeVisible()
+  await expect(page.getByRole('heading', { level: 1, name: 'Mis mundos' })).toBeVisible()
 
   await page.goto(`/arranque/${secret}`)
   await expect(page.getByRole('heading', { name: 'Este enlace no vale' })).toBeVisible()

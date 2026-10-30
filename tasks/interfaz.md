@@ -68,6 +68,67 @@ del módulo 1.
 - [x] **10. Móvil y entrar.** Entrar, en una caja en el centro con su título. El móvil ya lo traía la parte 2 (la
   barra abajo y el panel en un cajón). Queda para pulir: menos botones en la barra de abajo.
 
+## Ronda de pulido 1, pantalla a pantalla, en local (2026-10-30)
+
+Enrique lo revisa en vivo en el servidor de desarrollo, en http://localhost:5173 (`pnpm dev`, con la API en 8130).
+«No pases los test hasta terminar, solo haz cambios en localhost y los veo en tiempo real y luego pasamos todo».
+Todo va en la rama `interfaz/pulir-inicio`, en un commit local sin subir. Las normas que va dictando, en
+`docs/diseno.md`.
+
+**Hecho:**
+- **Con sesión, la portada lleva directa a Mis mundos**, y el rombo de la barra también.
+- **Crear la cuenta** (arranque y unirse):
+  - centrada;
+  - nombre y apellido(s) en dos recuadros;
+  - nombre de usuario único, que es el apodo visible;
+  - contraseña con medidor de seguridad y repetida.
+
+  En el servidor: las columnas `first_name` y `last_name` (migración 0024), Better Auth con `additionalFields`,
+  `usersRepo.isNameTaken` y el error `USERNAME_TAKEN` en el arranque, al unirse y al cambiar el perfil.
+- **Errores de formulario propios** en `Field`, sin el globo del navegador, con el foco al primero que falla.
+- **Mis mundos**:
+  - con la colocación de Ajustes;
+  - sin la frase larga;
+  - «Nuevo mundo» y «Crear tu primer mundo» abren un cuadro (`CreateDialog`), en vez del formulario suelto.
+- **Recorridos** (`components/tour.tsx`), el de Mis mundos:
+  - crear un mundo, con «Mundos» resaltado y su nota en el mismo paso;
+  - Historial;
+  - Papelera, con los días de `TRASH_DAYS`;
+  - tu menú.
+
+  «Lo tengo claro» solo en el último paso. En Ajustes, la casilla «Mostrar los recorridos».
+- **Barra lateral**:
+  - sin barra de estado abajo;
+  - el tema y la IA salen de ella;
+  - Historial y Papelera abren una ventana encima (`components/window.tsx`), igual que Perfil y Ajustes desde el menú
+    de la cuenta.
+- **Menú de la cuenta**: quién eres, Perfil, Ajustes y Cerrar sesión. Es fijo en la pantalla y no se corta.
+- **Ajustes** (`/ajustes`):
+  - Apariencia, con el tema;
+  - Ayuda, con los recorridos;
+  - IA, solo el conector y el modo.
+- **Perfil**: tus datos (usuario, nombre, apellidos; el email aún no se cambia) y cambiar la contraseña.
+- **Las peticiones de la IA**, en tarjetas flotantes abajo a la derecha, como en el Crisol antiguo.
+- **ADR-0004**: cuentas personales y registro público, con la organización por debajo.
+
+**Al acabar la ronda** (cuando Enrique lo diga):
+1. Poner al día las pruebas que han cambiado:
+   - la portada redirige;
+   - las etiquetas de la cuenta: Nombre, Apellido(s), Nombre de usuario y Repite la contraseña;
+   - crear un mundo es un cuadro;
+   - Historial y Papelera son botones que abren ventana;
+   - Perfil y Ajustes, en el menú;
+   - el tema ya no está en la barra;
+   - las tarjetas de la IA;
+   - el bootstrap y la unión, con `firstName` y `lastName`;
+   - `USERNAME_TAKEN`;
+   - el contrato de `Account`;
+   - las pruebas nuevas de los recorridos, la ventana y el perfil.
+2. `pnpm test` entero y `pnpm e2e`.
+3. PR, CI y staging; la migración 0024 se aplica al desplegar.
+4. En `.env` de desarrollo, `PUBLIC_URL` pasó a `http://localhost:5173`: Enrique entra por `localhost` y el servidor
+   rechazaba las peticiones de `127.0.0.1` con `BAD_ORIGIN`. Solo afecta al desarrollo.
+
 ### Punto de control: tras las tareas 1 y 2
 - [ ] e2e, @fugas y @a11y en verde; desplegado en staging.
 - [ ] Enrique lo ve en staging antes de seguir con la 3.

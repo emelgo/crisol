@@ -54,11 +54,10 @@ test('al salir no queda nada del máster en la pestaña, tampoco para la jugador
   await page.getByLabel('Email').fill('jugadora@crisol.test')
   await page.getByLabel('Contraseña').fill('una-clave-larga')
   await page.getByRole('button', { name: 'Entrar', exact: true }).click()
-  await expect(page.getByText('Hola, Jugadora')).toBeVisible()
+  await expect(page.getByRole('heading', { level: 1, name: 'Mis mundos' })).toBeVisible()
 
   // Mientras llegan sus mundos, no se ven los del máster
   let release = await holdApi(page)
-  await page.getByRole('main').getByRole('link', { name: 'Mis mundos' }).click()
   await expect(page.getByRole('heading', { level: 1, name: 'Mis mundos' })).toBeVisible()
   await expect(main.getByText('Otro')).toHaveCount(0)
   await expect(main.getByText('Eana')).toHaveCount(0)

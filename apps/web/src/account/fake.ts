@@ -64,6 +64,16 @@ export function fakeAccountClient(
       if (account) set({ ...account, name })
       return { ok: true }
     },
+    async updateProfile(profile): Promise<Result> {
+      calls.push(`updateProfile ${profile.name}`)
+      if (account) set({ ...account, ...profile })
+      return { ok: true }
+    },
+    async changePassword(current, next): Promise<Result> {
+      if (!account || passwords.get(account.email) !== current) return { ok: false, code: 'WRONG_PASSWORD' }
+      passwords.set(account.email, next)
+      return { ok: true }
+    },
     async bootstrapInfo(secret) {
       const organizationName = options.bootstrap?.[secret]
       return organizationName ? { organizationName } : null

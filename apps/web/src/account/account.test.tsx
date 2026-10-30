@@ -28,8 +28,8 @@ describe('entrar', () => {
     await fill('Email', 'enrique@crisol.test')
     await fill('Contraseña', 'una-clave-larga')
     await userEvent.click(screen.getByRole('button', { name: 'Entrar' }))
-    expect(await screen.findByText('Hola, Enrique')).toBeDefined()
-    expect(router.state.location.pathname).toBe('/')
+    expect(await screen.findByRole('heading', { level: 1, name: 'Mis mundos' })).toBeDefined()
+    expect(router.state.location.pathname).toBe('/mundos')
   })
 
   it('con datos incorrectos lo dice sin decir cuál falla', async () => {
@@ -49,7 +49,7 @@ describe('arranque', () => {
     await fill('Email', 'enrique@crisol.test')
     await fill('Contraseña', 'una-clave-larga')
     await userEvent.click(screen.getByRole('button', { name: 'Crear la cuenta' }))
-    expect(await screen.findByText('Hola, Enrique')).toBeDefined()
+    expect(await screen.findByRole('heading', { level: 1, name: 'Mis mundos' })).toBeDefined()
     expect(fake.passwords.get('enrique@crisol.test')).toBe('una-clave-larga')
   })
 

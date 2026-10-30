@@ -8,6 +8,7 @@ import { Home } from './routes/home.tsx'
 import { Join } from './routes/join.tsx'
 import { Profile } from './routes/profile.tsx'
 import { NotFound, RootLayout } from './routes/root.tsx'
+import { Settings } from './routes/settings.tsx'
 import { SignIn } from './routes/sign-in.tsx'
 import { OrganizationTrash, WorldTrash } from './routes/trash.tsx'
 import { WorldPage } from './routes/world.tsx'
@@ -78,6 +79,7 @@ const worldTrashRoute = createRoute({
   component: WorldTrash
 })
 const aiRoute = createRoute({ getParentRoute: () => rootRoute, path: '/ia', component: AiSettings })
+const settingsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/ajustes', component: Settings })
 const trashRoute = createRoute({ getParentRoute: () => rootRoute, path: '/papelera', component: OrganizationTrash })
 const consentRoute = createRoute({ getParentRoute: () => rootRoute, path: '/oauth/consentimiento', component: Consent })
 const joinRoute = createRoute({ getParentRoute: () => rootRoute, path: '/unirse/$secret', component: Join })
@@ -101,6 +103,7 @@ const routeTree = rootRoute.addChildren([
   worldTrashRoute,
   trashRoute,
   aiRoute,
+  settingsRoute,
   consentRoute,
   bootstrapRoute,
   joinRoute

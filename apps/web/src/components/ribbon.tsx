@@ -1,28 +1,14 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router'
-import {
-  Bookmark,
-  BookOpen,
-  Folder,
-  Globe,
-  Hash,
-  History,
-  type LucideIcon,
-  Moon,
-  Plug,
-  Search,
-  Sun,
-  Trash2
-} from 'lucide-react'
-import { type MouseEvent, useState } from 'react'
+import { Bookmark, BookOpen, Folder, Globe, Hash, History, type LucideIcon, Search, Trash2 } from 'lucide-react'
+import type { MouseEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
-import { currentTheme, nextTheme, setTheme } from '../theme.ts'
 import { useNarrow, useWikiPanel, type WikiPanel } from '../wiki/panel.tsx'
 import { AccountMenu } from './account-menu.tsx'
-import { useApprovals } from './approval-queue.tsx'
 import styles from './ribbon.module.css'
+import { useWindow } from './window.tsx'
 
 /** Si la cuenta es propietaria de alguna organización: solo ella ve su historial, su papelera y la IA */
 function useIsOwner() {
@@ -56,6 +42,7 @@ export function Ribbon() {
   const api = useApi()
   const { account } = useAccounts().useAccount()
   const isOwner = useIsOwner()
+  const windows = useWindow()
   const worldId = useRouterState({ select: (state) => /^\/mundos\/([^/]+)/.exec(state.location.pathname)?.[1] })
   const worlds = useQuery({
     queryKey: ['worlds'],
@@ -68,30 +55,40 @@ export function Ribbon() {
   return (
     <div className={styles.ribbon}>
       <nav className={styles.sections} aria-label={t('app.sectionsNav')}>
-        <Link to="/" className={styles.brand} aria-label={t('app.name')} translate="no">
+        <Link to="/mundos" className={styles.brand} aria-label={t('app.name')} translate="no">
           <span aria-hidden="true" />
         </Link>
-        <Link to="/mundos" activeOptions={{ exact: true }} className={styles.item}>
+        <Link to="/mundos" activeOptions={{ exact: true }} className={styles.item} data-tour="barra-mundos">
           <Label icon={Globe} text={t('ribbon.worlds')} />
         </Link>
         {world && <WorldPanels worldId={world.id} />}
         <span className={styles.spacer} />
         {isOwner && (
           <>
-            <Link to="/historial" className={styles.item}>
+            {/* Se abren encima, sin dejar lo que se está viendo */}
+            <button
+              type="button"
+              className={styles.item}
+              aria-haspopup="dialog"
+              data-tour="barra-historial"
+              onClick={() => windows?.open('historial')}
+            >
               <Label icon={History} text={t('ribbon.history')} />
-            </Link>
-            <Link to="/papelera" className={styles.item}>
+            </button>
+            <button
+              type="button"
+              className={styles.item}
+              aria-haspopup="dialog"
+              data-tour="barra-papelera"
+              onClick={() => windows?.open('papelera')}
+            >
               <Label icon={Trash2} text={t('ribbon.trash')} />
-            </Link>
-            {/* La IA solo se conecta con la cuenta del propietario (módulo 0) */}
-            <AiLink />
+            </button>
           </>
         )}
       </nav>
       <nav className={styles.account} aria-label={t('app.accountNav')}>
         <AccountMenu variant="ribbon" />
-        <ThemeButton />
       </nav>
     </div>
   )
@@ -137,48 +134,5 @@ function WorldPanels({ worldId }: { worldId: string }) {
         <Label icon={Folder} text={t('ribbon.files')} />
       </Link>
     </>
-  )
-}
-
-/** Claro u oscuro: el nombre dice a cuál cambia */
-function ThemeButton() {
-  const { t } = useTranslation()
-  const [theme, setThemeState] = useState(currentTheme)
-  const next = nextTheme(theme)
-  return (
-    <button
-      type="button"
-      className={styles.item}
-      aria-label={next === 'dark' ? t('theme.toDark') : t('theme.toLight')}
-      onClick={() => {
-        setTheme(next)
-        setThemeState(next)
-      }}
-    >
-      <Label icon={next === 'dark' ? Moon : Sun} text={next === 'dark' ? t('theme.dark') : t('theme.light')} />
-    </button>
-  )
-}
-
-/** La IA, con cuántas peticiones esperan tu aprobación */
-function AiLink() {
-  const { t } = useTranslation()
-  const pending = useApprovals().data?.pending.length ?? 0
-  // El número se ve sobre el icono; a los lectores de pantalla se les dice detrás de «IA», con el texto visible
-  return (
-    <Link to="/ia" className={styles.item}>
-      <span className={styles.badged}>
-        <Plug aria-hidden="true" size={20} strokeWidth={1.75} />
-        {pending > 0 && (
-          <span aria-hidden="true" className={styles.badge}>
-            {pending}
-          </span>
-        )}
-      </span>
-      <span className={styles.text}>
-        {t('ribbon.ai')}
-        {pending > 0 && <span className={styles.hidden}>{t('ribbon.aiPending', { count: pending })}</span>}
-      </span>
-    </Link>
   )
 }

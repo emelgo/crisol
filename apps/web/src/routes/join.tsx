@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { getRouteApi, Link, useNavigate } from '@tanstack/react-router'
 import { type FormEvent, useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { NewAccountFields } from '../account/account-fields.tsx'
 import type { JoinResult } from '../account/client.ts'
 import { useAccounts } from '../account/context.tsx'
 import { useAnnounce } from '../components/announcer.tsx'
@@ -143,6 +144,8 @@ function WithoutSession(props: {
       await accounts.signUpAndJoin({
         secret: props.secret,
         name: String(data.get('name')),
+        firstName: String(data.get('firstName')),
+        lastName: String(data.get('lastName')),
         email: String(data.get('email')),
         password: String(data.get('password'))
       })
@@ -176,18 +179,7 @@ function WithoutSession(props: {
     <>
       <form className={form.form} aria-labelledby={signUpTitle} onSubmit={signUp}>
         <h2 id={signUpTitle}>{t('join.signUpTitle')}</h2>
-        <Field label={t('account.name')} name="name" autoComplete="name" maxLength={80} required />
-        <Field label={t('account.email')} name="email" type="email" autoComplete="email" required />
-        <Field
-          label={t('account.password')}
-          hint={t('account.passwordHint')}
-          name="password"
-          type="password"
-          autoComplete="new-password"
-          minLength={10}
-          maxLength={128}
-          required
-        />
+        <NewAccountFields />
         <BusyButton type="submit" className={form.button} busy={props.busy}>
           {t('join.signUp')}
         </BusyButton>

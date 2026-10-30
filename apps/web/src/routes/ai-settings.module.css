@@ -43,3 +43,8 @@
   margin: 0.15em 0 0;
   accent-color: var(--color-accent);
 }
+
+/* Dentro de «Ajustes»: sin la caja de las secciones (lleva las suyas dentro) */
+.embedded {
+  margin-block-start: var(--space-8);
+}

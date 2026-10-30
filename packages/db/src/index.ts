@@ -23,6 +23,7 @@ export * as preferencesRepo from './repos/preferences.ts'
 export * as searchRepo from './repos/search.ts'
 export * as trashRepo from './repos/trash.ts'
 export * as undoRepo from './repos/undo.ts'
+export * as usersRepo from './repos/users.ts'
 export * as versionsRepo from './repos/versions.ts'
 export * as worldsRepo from './repos/worlds.ts'
 // Las tablas de Better Auth, para su adaptador

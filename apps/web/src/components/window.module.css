@@ -1,0 +1,55 @@
+/* Una ventana encima de la pantalla: grande, con el fondo oscurecido, y la pantalla de debajo sigue ahí */
+.window {
+  inline-size: min(60rem, calc(100vw - 2rem));
+  max-block-size: min(88dvh, 60rem);
+  padding: 0;
+  border: 1px solid var(--color-frame);
+  border-radius: 10px;
+  background: var(--color-bg);
+  box-shadow: 0 2rem 5rem rgb(0 0 0 / 0.5);
+  color: var(--color-text);
+}
+
+.window::backdrop {
+  background: rgb(0 0 0 / 0.6);
+}
+
+.body {
+  padding: var(--space-6) var(--space-8) var(--space-8);
+}
+
+.close {
+  position: sticky;
+  inset-block-start: var(--space-3);
+  z-index: 1;
+  float: inline-end;
+  display: grid;
+  place-items: center;
+  inline-size: var(--target);
+  block-size: var(--target);
+  margin: var(--space-3) var(--space-3) 0 0;
+  border: 0;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--color-bg) 80%, transparent);
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+.close:hover {
+  background: color-mix(in srgb, var(--color-text) 10%, transparent);
+  color: var(--color-text);
+}
+
+@media (max-width: 48rem) {
+  .window {
+    inline-size: 100vw;
+    max-inline-size: none;
+    max-block-size: 100dvh;
+    block-size: 100dvh;
+    border-radius: 0;
+  }
+
+  .body {
+    padding: var(--space-4);
+  }
+}

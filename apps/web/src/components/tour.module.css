@@ -1,0 +1,120 @@
+/* El aro alrededor de lo que se explica: en el color de la IA, que guía, sin tapar nada */
+.ring {
+  position: fixed;
+  z-index: 40;
+  border: 2px solid var(--color-ai);
+  border-radius: 8px;
+  box-shadow: 0 0 0 9999px rgb(0 0 0 / 0.35);
+  pointer-events: none;
+}
+
+/* Lo relacionado, resaltado en el mismo paso: el mismo aro, sin oscurecer otra vez el fondo */
+.also {
+  position: fixed;
+  z-index: 40;
+  border: 2px solid var(--color-ai);
+  border-radius: 8px;
+  pointer-events: none;
+}
+
+/* La nota de lo relacionado: pequeña, junto a su aro */
+.note {
+  position: fixed;
+  z-index: 41;
+  max-inline-size: 16rem;
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-ai);
+  border-radius: 6px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+/* El globo: lo que es, el paso y las acciones */
+.bubble {
+  position: fixed;
+  z-index: 41;
+  inline-size: min(20rem, calc(100vw - 2rem));
+  padding: var(--space-4);
+  border: 1px solid var(--color-ai);
+  border-radius: 8px;
+  background: var(--color-surface);
+  box-shadow: 0 1rem 2.5rem rgb(0 0 0 / 0.45);
+  color: var(--color-text);
+}
+
+.text {
+  margin: 0 0 var(--space-3);
+  line-height: 1.45;
+}
+
+/* «Lo tengo claro»: si se marca, el recorrido no vuelve a salir */
+.clear {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-block-end: var(--space-3);
+  color: var(--color-muted);
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.clear input {
+  inline-size: 1rem;
+  block-size: 1rem;
+  margin: 0;
+  accent-color: var(--color-ai);
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.count {
+  flex: 1;
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+}
+
+.skip,
+.next {
+  min-block-size: 2.25rem;
+  padding: 0 var(--space-3);
+  border-radius: 4px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.skip {
+  border: 0;
+  background: transparent;
+  color: var(--color-muted);
+}
+
+.skip:hover {
+  color: var(--color-text);
+}
+
+.next {
+  border: 0;
+  background: var(--color-ai);
+  color: var(--color-bg);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .bubble {
+    animation: aparece 160ms ease-out;
+  }
+}
+
+@keyframes aparece {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}

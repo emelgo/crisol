@@ -2,7 +2,7 @@
  * Arranque: la primera cuenta, la del propietario, se crea con un enlace de un solo uso que da `pnpm crisol arranque`.
  * Sin ese enlace nadie puede crear la primera cuenta (el registro está cerrado).
  */
-import { bootstrapRepo, type Database } from '@crisol/db'
+import { bootstrapRepo, type Database, usersRepo } from '@crisol/db'
 import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 import type { Auth } from './auth/auth.ts'
@@ -11,7 +11,12 @@ import { hashSecret, newSecret } from './secrets.ts'
 
 const DAY = 24 * 60 * 60 * 1000
 
-type BootstrapErrorCode = 'OWNER_EXISTS' | 'ORGANIZATION_NAME_REQUIRED' | 'INVALID_LINK' | 'EMAIL_TAKEN'
+type BootstrapErrorCode =
+  | 'OWNER_EXISTS'
+  | 'ORGANIZATION_NAME_REQUIRED'
+  | 'INVALID_LINK'
+  | 'EMAIL_TAKEN'
+  | 'USERNAME_TAKEN'
 
 export class BootstrapError extends Error {
   readonly code: BootstrapErrorCode
@@ -48,6 +53,8 @@ export function peekBootstrap(db: Database, secret: string, now = new Date()) {
 const redeemInput = z.object({
   secret: z.string().min(1),
   name: z.string().trim().min(1).max(80),
+  firstName: z.string().trim().max(80).optional(),
+  lastName: z.string().trim().max(80).optional(),
   email: z.email().max(254),
   password: z.string().min(10).max(128)
 })
@@ -57,12 +64,20 @@ const redeemInput = z.object({
  * a la vez no creen dos propietarios; si algo falla después, se devuelve.
  */
 export async function redeemBootstrap(db: Database, auth: Auth, input: z.infer<typeof redeemInput>, now = new Date()) {
+  // El nombre de usuario, libre, antes de gastar el enlace
+  if (await usersRepo.isNameTaken(db, input.name)) throw new BootstrapError('USERNAME_TAKEN')
   const token = await bootstrapRepo.consumeBootstrap(db, hashSecret(input.secret), now)
   if (!token) throw new BootstrapError('INVALID_LINK')
 
   let created: Awaited<ReturnType<typeof signUpAllowed>>
   try {
-    created = await signUpAllowed(auth, { name: input.name, email: input.email, password: input.password })
+    created = await signUpAllowed(auth, {
+      name: input.name,
+      firstName: input.firstName ?? '',
+      lastName: input.lastName ?? '',
+      email: input.email,
+      password: input.password
+    })
   } catch (error) {
     await bootstrapRepo.releaseBootstrap(db, token.id)
     throw error
@@ -87,7 +102,8 @@ const STATUS: Record<BootstrapErrorCode, number> = {
   OWNER_EXISTS: 409,
   ORGANIZATION_NAME_REQUIRED: 400,
   INVALID_LINK: 400,
-  EMAIL_TAKEN: 409
+  EMAIL_TAKEN: 409,
+  USERNAME_TAKEN: 409
 }
 
 export function registerBootstrapRoutes(app: FastifyInstance, db: Database, auth: Auth) {
