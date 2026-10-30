@@ -13,9 +13,10 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   en las entradas de abajo, del 2026-10-30.
 - **Ahora mismo**: la **etapa de interfaz** tiene hecha la primera pasada entera: las 10 partes de
   `tasks/interfaz.md`, en staging (PR #77 a #84). Enrique: «cuando este lista la nueva UI ENTERA la revisaré e iremos
-  puliendo». Ahora va la **ronda de pulido 1**, pantalla a pantalla y en local: la rama `interfaz/pulir-inicio`, sin
-  subir (unos 40 commits). Lo hecho y lo que falta están en `tasks/interfaz.md`, y sus normas en `docs/diseno.md`. En
-  la ronda han salido también los **archivos comunes de la cuenta** (ADR-0005, migración 0025). Ya apuntado para pulir:
+  puliendo». Va la **ronda de pulido 1**, pantalla a pantalla y en local. Su primera parte (armazón, cuentas, Mis
+  mundos, archivos comunes con el ADR-0005, Inicio de un mundo y Campañas) está fusionada y en staging (PR #86). Se
+  sigue en la rama `interfaz/pulir-2`. Lo hecho y lo que falta están en `tasks/interfaz.md`, y sus normas en
+  `docs/diseno.md`. GitHub Actions va justo de minutos: todo en verde en local antes de subir. Ya apuntado para pulir:
   - ~~la cola de la IA, en su propio panel~~ (hecho en la ronda 1: tarjetas flotantes);
   - marcar en la página lo que la IA quiere cambiar;
   - menos botones en la barra del móvil;
