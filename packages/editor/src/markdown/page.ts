@@ -31,6 +31,8 @@ export interface WritePage {
   separate: (documentId: string) => JSONContent[] | null
   /** Cómo se escribe una página enlazada (en las propiedades y en el texto): su título, o su ruta si se repite */
   pageTitle?: (pageId: string) => string
+  /** El nombre de ahora de un archivo (renombrarlo no rompe lo que lo usa) */
+  fileName?: (fileId: string) => string | undefined
   /** Los ids de bloque de primer nivel (`^id`), para que Claude pueda señalar bloques */
   ids?: boolean
 }
@@ -57,13 +59,22 @@ function withSeparates(node: JSONContent, separate: WritePage['separate']): JSON
   return node.content ? { ...node, content: node.content.map((child) => withSeparates(child, separate)) } : node
 }
 
-/** Los enlaces con el nombre de ahora de su página (los que no se encuentran se quedan con el último conocido) */
-function withLinkTitles(node: JSONContent, pageTitle: WritePage['pageTitle']): JSONContent {
-  if (!pageTitle) return node
-  if ((node.type === 'pageLink' || node.type === 'pageEmbed') && typeof node.attrs?.pageId === 'string') {
-    return { ...node, attrs: { ...node.attrs, title: pageTitle(node.attrs.pageId) || node.attrs.title } }
+/**
+ * Los enlaces con el nombre de ahora de su página, y los archivos con el suyo (los que no se encuentran se quedan con
+ * el último conocido)
+ */
+function withLinkTitles(node: JSONContent, page: Pick<WritePage, 'pageTitle' | 'fileName'>): JSONContent {
+  if (
+    page.pageTitle &&
+    (node.type === 'pageLink' || node.type === 'pageEmbed') &&
+    typeof node.attrs?.pageId === 'string'
+  ) {
+    return { ...node, attrs: { ...node.attrs, title: page.pageTitle(node.attrs.pageId) || node.attrs.title } }
   }
-  return node.content ? { ...node, content: node.content.map((child) => withLinkTitles(child, pageTitle)) } : node
+  if (page.fileName && node.type === 'fileEmbed' && typeof node.attrs?.fileId === 'string') {
+    return { ...node, attrs: { ...node.attrs, name: page.fileName(node.attrs.fileId) || node.attrs.name } }
+  }
+  return node.content ? { ...node, content: node.content.map((child) => withLinkTitles(child, page)) } : node
 }
 
 /** Un bloque de primer nivel en Markdown, con su id si se pide */
@@ -81,7 +92,7 @@ function blockMarkdown(block: JSONContent, ids: boolean) {
 
 /** La página en Markdown: YAML (si hay propiedades) y el cuerpo, con sus secretos dentro */
 export function pageToMarkdown(page: WritePage): string {
-  const body = withLinkTitles(withSeparates(page.body, page.separate), page.pageTitle)
+  const body = withLinkTitles(withSeparates(page.body, page.separate), page)
   const blocks = (body.content ?? [])
     .map((block) => blockMarkdown(block, page.ids ?? false))
     .filter((text) => text !== '')

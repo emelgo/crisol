@@ -123,6 +123,22 @@ const body: JSONContent = {
     ),
     { type: 'box', attrs: { id: 'bxaaaaaa' }, content: [paragraph(null, text('Dentro de la caja.'))] },
     { type: 'pageEmbed', attrs: { id: 'emaaaaaa', pageId: null, title: 'Costa Gris', anchor: 'Historia' } },
+    {
+      type: 'fileEmbed',
+      attrs: {
+        id: 'fiaaaaaa',
+        fileId: null,
+        name: 'Mapa de Eana.png',
+        width: 300,
+        page: null,
+        alt: 'El continente',
+        caption: 'Eana en el año *mil*'
+      }
+    },
+    {
+      type: 'fileEmbed',
+      attrs: { id: 'fibaaaaa', fileId: null, name: 'Bestiario.pdf', width: null, page: 12, alt: null, caption: null }
+    },
     { type: 'secret', attrs: { id: 'scaaaaaa', documentId: 'doc-secreto', copyOf: null, copyBy: null } },
     { type: 'note', attrs: { id: 'ntaaaaaa', documentId: 'doc-nota', copyOf: null, copyBy: null } },
     paragraph('p4aaaaaa', text('Fin.'))

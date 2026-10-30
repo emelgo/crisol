@@ -3,6 +3,7 @@
  * apunta: lo de dentro lo da la API, nunca el documento del otro. En Markdown, `![[Título#Sección]]` en su línea
  */
 import { mergeAttributes, Node } from '@tiptap/core'
+import { isFileName } from './file-embed.ts'
 
 const EMBED = /^!\[\[([^[\]\n|#]+?)(#[^[\]\n|]*)?\]\][ \t]*(?:\n|$)/
 
@@ -41,7 +42,8 @@ export const PageEmbed = Node.create({
     start: (src) => src.search(/^!\[\[/m),
     tokenize: (src) => {
       const match = EMBED.exec(src)
-      if (!match) return undefined
+      // Un nombre con extensión de archivo es un archivo (fileEmbed), no una página
+      if (!match || isFileName(match[1] ?? '')) return undefined
       return {
         type: 'pageEmbed',
         raw: match[0],

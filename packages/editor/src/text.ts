@@ -26,6 +26,11 @@ export function textBlocks(node: JSONContent, found: { text: string; links: stri
     found.push({ text: (node.content ?? []).map(inlineText).join(''), links })
     return found
   }
+  // El pie de una imagen se busca como un texto más
+  if (node.type === 'fileEmbed' && node.attrs?.caption) {
+    found.push({ text: String(node.attrs.caption), links: [] })
+    return found
+  }
   for (const child of node.content ?? []) textBlocks(child, found)
   return found
 }
