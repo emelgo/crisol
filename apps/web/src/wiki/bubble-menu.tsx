@@ -2,14 +2,25 @@
  * Las barras flotantes del texto: la de formato, al elegir texto, y la de la tabla, con el cursor en una. Con el teclado
  * se llega con Alt+F10, se recorren con las flechas y Escape vuelve al texto
  */
+import { resolveName } from '@crisol/domain'
 import { isExternalUrl } from '@crisol/editor'
 import type { Editor } from '@tiptap/core'
 import { TextSelection } from '@tiptap/pm/state'
 import { useEditorState } from '@tiptap/react'
 import { BubbleMenu } from '@tiptap/react/menus'
-import { type KeyboardEvent, type ReactNode, type RefObject, useEffect, useId, useRef, useState } from 'react'
+import {
+  type KeyboardEvent,
+  type ReactNode,
+  type RefObject,
+  useContext,
+  useEffect,
+  useId,
+  useRef,
+  useState
+} from 'react'
 import { useTranslation } from 'react-i18next'
 import styles from './bubble-menu.module.css'
+import { PageLinksContext } from './page-links.tsx'
 
 /** Alt+F10 desde el texto lleva a la barra, si se ve */
 function useReachWithKeyboard(editor: Editor, toolbar: RefObject<HTMLDivElement | null>) {
@@ -109,9 +120,14 @@ export function FormatMenu({ editor }: { editor: Editor }) {
       strike: current.isActive('strike'),
       code: current.isActive('code'),
       link: current.isActive('link'),
-      href: String(current.getAttributes('link').href ?? '')
+      href: String(current.getAttributes('link').href ?? ''),
+      text: current.state.doc.textBetween(current.state.selection.from, current.state.selection.to, ' ')
     })
   })
+  // Si lo elegido es el nombre de una página (título o alias, y una sola), se propone enlazarlo
+  const links = useContext(PageLinksContext)
+  const named = active.text.trim() ? resolveName(active.text, links?.names ?? []) : []
+  const page = named.length === 1 ? named[0] : undefined
   useReachWithKeyboard(editor, toolbar)
   return (
     <BubbleMenu
@@ -158,6 +174,22 @@ export function FormatMenu({ editor }: { editor: Editor }) {
               </ToolButton>
             ))}
             <ToolButton label={t('format.link')} pressed={active.link} onClick={() => setLinking(true)} />
+            {page && (
+              <ToolButton
+                label={t('links.linkTo', { title: page.title })}
+                onClick={() => {
+                  const text = active.text.trim()
+                  editor
+                    .chain()
+                    .focus()
+                    .insertContent({
+                      type: 'pageLink',
+                      attrs: { pageId: page.id, title: page.title, label: text === page.title ? null : text }
+                    })
+                    .run()
+                }}
+              />
+            )}
           </div>
         )}
       </div>

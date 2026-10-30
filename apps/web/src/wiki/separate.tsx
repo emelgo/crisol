@@ -18,8 +18,12 @@ import { FormatMenu, TableMenu } from './bubble-menu.tsx'
 import { withCalloutView } from './callout.tsx'
 import { renderCaret } from './carets.ts'
 import { useCollabDocument } from './collab.tsx'
+import { LinkSuggest, useLinksRef, withPageLinkView } from './page-links.tsx'
 import styles from './separate.module.css'
 import { SlashMenu } from './slash-menu.tsx'
+
+/** Las vistas de dentro de un secreto: los recuadros y los enlaces */
+const nestedView = (node: Node) => (node.name === 'pageLink' ? withPageLinkView(node) : withCalloutView(node))
 
 /** Esta pestaña: la que pega es la que hace la copia (las demás ven el bloque y esperan) */
 const TAB_ID = crypto.randomUUID()
@@ -119,6 +123,7 @@ function SeparateView({ node, editor, getPos, updateAttributes, selected }: Node
   const { t } = useTranslation()
   const api = useApi()
   const announce = useAnnounce()
+  const links = useLinksRef()
   const pageId = useContext(SeparatePageContext)
   const options = useContext(NestedOptionsContext)
   const kind = node.type.name as SeparateKind
@@ -141,7 +146,7 @@ function SeparateView({ node, editor, getPos, updateAttributes, selected }: Node
         ? [
             ...editorExtensions({
               nested: true,
-              view: withCalloutView,
+              view: nestedView,
               ...(options ? { checkboxLabel: options.checkboxLabel } : {})
             }),
             SlashMenu.configure({
@@ -150,12 +155,16 @@ function SeparateView({ node, editor, getPos, updateAttributes, selected }: Node
               context: null,
               announce: (block) => announce(t('blocks.inserted', { block: t(`blocks.${block.label}`).toLowerCase() }))
             }),
+            LinkSuggest.configure({
+              links: () => links.current,
+              announce: (title) => announce(t('links.inserted', { title }))
+            }),
             Collaboration.configure({ document: session.document }),
             ...(options
               ? [CollaborationCaret.configure({ provider: session.provider, user: options.caret, render: renderCaret })]
               : [])
           ]
-        : editorExtensions({ nested: true, view: withCalloutView }),
+        : editorExtensions({ nested: true, view: nestedView }),
       editable: editor.isEditable && Boolean(session),
       editorProps: {
         attributes: {

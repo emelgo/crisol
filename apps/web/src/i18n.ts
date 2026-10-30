@@ -214,6 +214,18 @@ export const es = {
   summaries: {
     andMore: '{{list}} y {{count}} más'
   },
+  links: {
+    menu: 'Páginas',
+    none: 'Escribe para buscar una página.',
+    create: 'Crear página «{{title}}»',
+    aliasOf: 'por {{name}}',
+    missing: '{{title}}: por crear, pulsa para crearla',
+    broken: '{{title}}: en la papelera',
+    inTrash: 'Está en la papelera.',
+    restore: 'Restaurar',
+    linkTo: 'Enlazar con «{{title}}»',
+    inserted: 'Enlace a «{{title}}».'
+  },
   export: {
     page: 'Exportar',
     only: 'Solo esta página',

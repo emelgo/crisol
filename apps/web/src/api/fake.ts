@@ -447,6 +447,24 @@ export function fakeApi(
       return { id: found.root.id, name: found.root.title }
     },
     listPageChildren: ({ worldId, parentId }) => ({ pages: childrenOf(worldId, parentId ?? null).map(summary) }),
+    listPageNames: ({ worldId }) => {
+      const inWorld = pages.filter((page) => page.worldId === worldId)
+      const pathOf = (page: StoredPage): string[] => {
+        const parent = inWorld.find((p) => p.id === page.parentId)
+        return [...(parent ? pathOf(parent) : []), page.title]
+      }
+      return {
+        pages: inWorld.map((page) => {
+          const alias = page.properties.find((p) => p.name === 'alias')
+          return {
+            id: page.id,
+            title: page.title,
+            aliases: alias?.type === 'list' ? alias.value : [],
+            path: pathOf(page)
+          }
+        })
+      }
+    },
     listPageTree: ({ worldId, parentId, levels }) => {
       const tree: Array<ReturnType<typeof summary> & { level: number }> = []
       const visit = (from: string | null, level: number) => {
