@@ -60,14 +60,13 @@ beforeEach(() =>
 )
 
 describe('los archivos del mundo', () => {
-  it('desde la barra se llega; en tarjetas, con su tamaño y cuántas páginas los usan; se filtran por tipo y se abren', async () => {
+  it('desde la barra se llega; en lista, con su tamaño; se filtran por tipo y se abren', async () => {
     renderAt(`/mundos/${WORLD.id}/wiki`)
     await userEvent.click(await screen.findByRole('link', { name: 'Archivos' }))
     expect(await screen.findByRole('heading', { level: 1, name: 'Archivos de Eana' })).toBeDefined()
     const list = await cardsIn()
     expect(await list.findByText('2,5 MB')).toBeDefined()
     expect(list.getByText('0,5 kB')).toBeDefined()
-    expect(list.getByText(/En 2 páginas/)).toBeDefined()
     // Un PDF se abre en otra pestaña
     const bestiary = list.getByRole('link', { name: 'Bestiario.pdf' })
     expect(bestiary.getAttribute('target')).toBe('_blank')
@@ -191,7 +190,13 @@ describe('las carpetas de los archivos', () => {
     const [folder] = (await api.client.call('listFiles', { worldId: WORLD.id })).folders
     expect(api.files.find((f) => f.name === 'Costa.png')?.folderId).toBe(folder?.id)
     // Por la ruta, a lo más alto; y desde su engranaje, el mapa a la carpeta
-    await userEvent.click(path.getByRole('button', { name: /^Todos/ }))
+    // A lo más alto, por la ruta de encima de la lista
+    await userEvent.click(
+      within((await screen.findAllByRole('navigation', { name: 'Ruta de la carpeta' }))[0] as HTMLElement).getByRole(
+        'button',
+        { name: 'Todos' }
+      )
+    )
     await userEvent.click(await screen.findByRole('button', { name: 'Ajustes de Mapa de Eana.png' }))
     const settings = within(await screen.findByRole('dialog', { name: 'Ajustes de Mapa de Eana.png' }))
     await userEvent.selectOptions(settings.getByLabelText('Carpeta'), 'Mapas')

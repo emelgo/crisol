@@ -232,7 +232,17 @@ function FilesSection({
   const [over, setOver] = useState(false)
   const [received, setReceived] = useState<string | null>(null)
   // El archivo elegido (pulsando su fila), que sale en el panel de la derecha
-  const [selected, setSelected] = useState<string | null>(null)
+  const [selected, setSelected] = useState<{ kind: 'file' | 'folder'; id: string } | null>(null)
+  // Pulsar fuera (en cualquier sitio que no sea una fila, un panel, un control o una ventana) suelta lo elegido
+  useEffect(() => {
+    if (!selected) return
+    const away = (event: MouseEvent) => {
+      const target = event.target as Element | null
+      if (!target?.closest('[data-file-card], aside, dialog, button, a, input, label, select')) setSelected(null)
+    }
+    document.addEventListener('click', away)
+    return () => document.removeEventListener('click', away)
+  }, [selected])
   const folders = data?.folders ?? []
   const byId = new Map(folders.map((folder) => [folder.id, folder]))
   // Si la elegida deja de existir (borrada aquí o en otra pestaña), a lo más alto
@@ -369,11 +379,38 @@ function FilesSection({
   )
   const contents = (
     <div className={styles.contents}>
-      <p className={styles.here}>
-        {searching
-          ? t('files.results', { count: shownFiles.length })
-          : [t('files.root'), ...path.map((f) => f.name)].join(' › ')}
-      </p>
+      {searching ? (
+        <p className={styles.here}>{t('files.results', { count: shownFiles.length })}</p>
+      ) : (
+        // La ruta de la carpeta abierta: cada paso lleva a ella y recibe archivos arrastrados (el primero, lo más alto)
+        <nav className={styles.here} aria-label={t('files.route')}>
+          {[null, ...path].map((folder, i) => {
+            const last = i === path.length
+            const name = folder ? folder.name : t('files.root')
+            return (
+              <span key={folder?.id ?? 'todos'} className={styles.step}>
+                {i > 0 && <ChevronRight aria-hidden="true" size={14} />}
+                {last ? (
+                  <span aria-current="location" className={styles.hereNow}>
+                    {name}
+                  </span>
+                ) : (
+                  <FolderTarget folderId={folder?.id ?? null} canWrite={canWrite} onMove={moveInto}>
+                    <button
+                      type="button"
+                      className={styles.crumb}
+                      data-move-here={t('files.moveHere')}
+                      onClick={() => setFolderId(folder?.id ?? null)}
+                    >
+                      {name}
+                    </button>
+                  </FolderTarget>
+                )}
+              </span>
+            )
+          })}
+        </nav>
+      )}
       {searching && shownFiles.length === 0 && <p className={styles.empty}>{t('files.noResults')}</p>}
       {!searching && shownFolders.length === 0 && shownFiles.length === 0 && uploads.items.length === 0 && (
         <p className={styles.empty}>{nothing ? empty : t('files.emptyFolder')}</p>
@@ -390,7 +427,12 @@ function FilesSection({
               count={countIn(folder.id, data.files, folders)}
               canWrite={canWrite}
               fresh={fresh(folder.id)}
-              onOpen={() => setFolderId(folder.id)}
+              selected={selected?.id === folder.id}
+              onSelect={title ? () => setSelected({ kind: 'folder', id: folder.id }) : undefined}
+              onOpen={() => {
+                setSelected(null)
+                setFolderId(folder.id)
+              }}
               onMove={moveInto}
               onChanged={refresh}
             />
@@ -401,8 +443,8 @@ function FilesSection({
               file={file}
               where={searching ? pathOf(file.folderId) : []}
               fresh={fresh(file.id)}
-              selected={selected === file.id}
-              onSelect={title ? () => setSelected(file.id) : undefined}
+              selected={selected?.id === file.id}
+              onSelect={title ? () => setSelected({ kind: 'file', id: file.id }) : undefined}
               {...rowProps}
             />
           ))}
@@ -438,7 +480,10 @@ function FilesSection({
       )}
     </div>
   )
-  const selectedFile = data.files.find((file) => file.id === selected)
+  const selectedFile = selected?.kind === 'file' ? data.files.find((file) => file.id === selected.id) : undefined
+  // La carpeta elegida o, sin nada elegido, la abierta
+  const shownFolder =
+    selected?.kind === 'folder' ? byId.get(selected.id) : !selected && open ? byId.get(open) : undefined
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions: soltar es un atajo; «Subir archivos» hace lo mismo con el teclado
     <div
@@ -470,6 +515,19 @@ function FilesSection({
                 where={pathOf(selectedFile.folderId)}
                 folders={folders}
                 canWrite={canWrite}
+                onChanged={refresh}
+              />
+            ) : shownFolder ? (
+              <FolderDetail
+                folder={shownFolder}
+                files={data.files}
+                folders={folders}
+                canWrite={canWrite}
+                isOpen={shownFolder.id === open}
+                onOpen={() => {
+                  setSelected(null)
+                  setFolderId(shownFolder.id)
+                }}
                 onChanged={refresh}
               />
             ) : (
@@ -508,7 +566,7 @@ function countIn(folderId: string | null, files: WorldFile[], folders: FolderVie
 }
 
 /**
- * El árbol de carpetas: «Todos» y, debajo, cada carpeta con las suyas (se despliegan; la elegida y su ruta, abiertas),
+ * El árbol de carpetas: cada una con las suyas (se despliegan; la elegida y su ruta, abiertas),
  * cuántos archivos tiene y, a la elegida, su engranaje. Se le sueltan archivos encima para moverlos. Al final, crear una
  * carpeta dentro de la elegida
  */
@@ -583,7 +641,8 @@ function FolderTree({
                     className={styles.nodeButton}
                     aria-current={open === folder.id ? 'true' : undefined}
                     data-move-here={t('files.moveHere')}
-                    onClick={() => onOpen(folder.id)}
+                    // La abierta, otra vez: a lo más alto
+                    onClick={() => onOpen(open === folder.id ? null : folder.id)}
                   >
                     <Folder aria-hidden="true" size={15} />
                     <span className={styles.nodeName}>{folder.name}</span>
@@ -601,23 +660,6 @@ function FolderTree({
   }
   return (
     <nav className={styles.tree} aria-label={t('files.path')} data-tour="archivos-carpetas">
-      <div
-        className={`${styles.node} ${open === null ? styles.nodeHere : ''} ${received === 'todos' ? styles.received : ''}`}
-      >
-        <FolderTarget folderId={null} canWrite={canWrite} onMove={onMove}>
-          <button
-            type="button"
-            className={styles.nodeButton}
-            aria-current={open === null ? 'true' : undefined}
-            data-move-here={t('files.moveHere')}
-            onClick={() => onOpen(null)}
-          >
-            <Files aria-hidden="true" size={15} />
-            <span className={styles.nodeName}>{t('files.root')}</span>
-            <span className={styles.nodeCount}>{files.length}</span>
-          </button>
-        </FolderTarget>
-      </div>
       {branch(null, 0)}
       {canWrite && (
         <NewFolderButton target={target} parentId={open ?? null} onCreated={onChanged} className={styles.newFolder} />
@@ -698,10 +740,7 @@ function FileRow({
         )}
         {where.length > 0 && <span className={styles.where}>{where.map((folder) => folder.name).join(' › ')}</span>}
       </span>
-      <span className={styles.rowMeta}>
-        {sizeText(file.size, i18n.language)}
-        {file.usedBy > 0 && ` · ${t('files.usedBy', { count: file.usedBy })}`}
-      </span>
+      <span className={styles.rowMeta}>{sizeText(file.size, i18n.language)}</span>
       {canWrite ? <FileSettings file={file} folders={folders} onChanged={onChanged} small /> : <span />}
       {viewing && <CoverViewer url={file.url} label={file.name} onClose={() => setViewing(false)} />}
     </li>
@@ -740,21 +779,42 @@ function FileDetail({
   const { t, i18n } = useTranslation()
   const [viewing, setViewing] = useState(false)
   const date = new Intl.DateTimeFormat(i18n.language, { dateStyle: 'medium' })
+  // Las medidas de una imagen, al cargarla en la vista previa
+  const [size, setSize] = useState<{ width: number; height: number } | null>(null)
+  useEffect(() => setSize(null), [file.id])
   return (
     <div className={styles.detailBody}>
       <div className={styles.preview}>
-        <Thumb file={file} />
+        {file.kind === 'image' ? (
+          <img
+            src={file.url}
+            alt=""
+            onLoad={(event) =>
+              setSize({ width: event.currentTarget.naturalWidth, height: event.currentTarget.naturalHeight })
+            }
+          />
+        ) : (
+          <Thumb file={file} />
+        )}
       </div>
       <h2 className={styles.detailName}>{file.name}</h2>
       <dl className={styles.facts}>
         <dt>{t('files.kindLabel')}</dt>
         <dd>{t(`files.types.${typeOf(file)}`)}</dd>
+        {size && (
+          <>
+            <dt>{t('files.dimensions')}</dt>
+            <dd>{t('files.pixels', { width: size.width, height: size.height })}</dd>
+          </>
+        )}
         <dt>{t('files.sizeLabel')}</dt>
         <dd>{sizeText(file.size, i18n.language)}</dd>
-        <dt>{t('files.folder')}</dt>
-        <dd>{where.length > 0 ? where.map((folder) => folder.name).join(' › ') : t('files.root')}</dd>
-        <dt>{t('files.usedLabel')}</dt>
-        <dd>{file.usedBy > 0 ? t('files.usedBy', { count: file.usedBy }) : t('files.unused')}</dd>
+        {where.length > 0 && (
+          <>
+            <dt>{t('files.folder')}</dt>
+            <dd>{where.map((folder) => folder.name).join(' › ')}</dd>
+          </>
+        )}
         <dt>{t('files.updatedLabel')}</dt>
         <dd>{date.format(new Date(file.updatedAt))}</dd>
       </dl>
@@ -778,12 +838,99 @@ function FileDetail({
   )
 }
 
+/** Todo lo que hay dentro de una carpeta, también en las suyas: archivos y carpetas */
+function contentsOf(folderId: string, files: WorldFile[], folders: FolderView[]) {
+  const inside = new Set([folderId])
+  for (let grew = true; grew; ) {
+    grew = false
+    for (const folder of folders) {
+      if (folder.parentId && inside.has(folder.parentId) && !inside.has(folder.id)) {
+        inside.add(folder.id)
+        grew = true
+      }
+    }
+  }
+  return {
+    files: files.filter((file) => file.folderId && inside.has(file.folderId)),
+    subfolders: inside.size - 1
+  }
+}
+
+/**
+ * La carpeta elegida (o la abierta), en el panel de la derecha: cuántos archivos y carpetas tiene, cuánto ocupa todo
+ * y de qué tipos; abrirla y sus ajustes
+ */
+function FolderDetail({
+  folder,
+  files,
+  folders,
+  canWrite,
+  isOpen,
+  onOpen,
+  onChanged
+}: {
+  folder: FolderView
+  files: WorldFile[]
+  folders: FolderView[]
+  canWrite: boolean
+  isOpen: boolean
+  onOpen: () => void
+  onChanged: () => Promise<unknown>
+}) {
+  const { t, i18n } = useTranslation()
+  const inside = contentsOf(folder.id, files, folders)
+  const total = inside.files.reduce((sum, file) => sum + file.size, 0)
+  const byType = Map.groupBy(inside.files, typeOf)
+  return (
+    <div className={styles.detailBody}>
+      <div className={`${styles.preview} ${styles.folderPreview}`}>
+        <Folder aria-hidden="true" size={56} strokeWidth={1.25} />
+      </div>
+      <h2 className={styles.detailName}>{folder.name}</h2>
+      <dl className={styles.facts}>
+        <dt>{t('files.filesLabel')}</dt>
+        <dd>
+          {inside.files.length > 0 ? t('files.folderFiles', { count: inside.files.length }) : t('files.folderEmpty')}
+        </dd>
+        {inside.subfolders > 0 && (
+          <>
+            <dt>{t('files.foldersLabel')}</dt>
+            <dd>{t('files.folderFolders', { count: inside.subfolders })}</dd>
+          </>
+        )}
+        {total > 0 && (
+          <>
+            <dt>{t('files.sizeLabel')}</dt>
+            <dd>{sizeText(total, i18n.language)}</dd>
+          </>
+        )}
+        {byType.size > 0 && (
+          <>
+            <dt>{t('files.kindLabel')}</dt>
+            <dd>{[...byType].map(([type, list]) => t(`files.counts.${type}`, { count: list.length })).join(' · ')}</dd>
+          </>
+        )}
+      </dl>
+      <div className={styles.detailActions}>
+        {!isOpen && (
+          <button type="button" className={list.secondary} onClick={onOpen}>
+            {t('files.open')}
+          </button>
+        )}
+        {canWrite && <FolderSettings folder={folder} onChanged={onChanged} small />}
+      </div>
+    </div>
+  )
+}
+
 /** Una carpeta en una fila: la abre; se le sueltan archivos encima */
 function FolderRow({
   folder,
   count,
   canWrite,
   fresh,
+  selected = false,
+  onSelect,
   onOpen,
   onMove,
   onChanged
@@ -792,6 +939,10 @@ function FolderRow({
   count: number
   canWrite: boolean
   fresh: boolean
+  /** La elegida, que sale en el panel de la derecha */
+  selected?: boolean
+  /** Pulsar la fila (fuera de su nombre y su engranaje) la elige; con doble clic, se abre */
+  onSelect?: (() => void) | undefined
   onOpen: () => void
   onMove: (fileId: string, folderId: string | null) => Promise<unknown>
   onChanged: () => Promise<unknown>
@@ -799,9 +950,18 @@ function FolderRow({
   const { t } = useTranslation()
   const [over, setOver] = useState(false)
   return (
+    // biome-ignore lint/a11y/useKeyWithClickEvents: elegirla es un atajo del ratón; con el teclado, su nombre y su engranaje
     <li
-      className={[styles.row, fresh ? styles.appear : '', over ? styles.dropping : ''].filter(Boolean).join(' ')}
+      className={[styles.row, fresh ? styles.appear : '', over ? styles.dropping : '', selected ? styles.selected : '']
+        .filter(Boolean)
+        .join(' ')}
       data-file-card={folder.id}
+      onClick={(event) => {
+        if (!(event.target as Element).closest('a, button')) onSelect?.()
+      }}
+      onDoubleClick={(event) => {
+        if (!(event.target as Element).closest('a, button')) onOpen()
+      }}
       onDragOver={(event) => {
         if (!canWrite || !event.dataTransfer.types.includes(DRAGGED)) return
         event.preventDefault()
