@@ -7,6 +7,8 @@ import type { CSSProperties } from 'react'
 
 export const ENTER_WORLD = { types: ['entrar-mundo'] }
 export const LEAVE_WORLD = { types: ['salir-mundo'] }
+/** Cambiar de pestaña en la barra (dentro de una vista): rápido, sin fuego */
+export const SECTION = { types: ['seccion'] }
 
 let current: string | null = null
 

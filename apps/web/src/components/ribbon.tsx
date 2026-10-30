@@ -11,7 +11,7 @@ import { AccountMenu } from './account-menu.tsx'
 import { CrisolMark } from './brand.tsx'
 import styles from './ribbon.module.css'
 import { useWindow } from './window.tsx'
-import { LEAVE_WORLD } from './world-transition.ts'
+import { LEAVE_WORLD, SECTION } from './world-transition.ts'
 
 /** Si la cuenta es propietaria de alguna organización: solo ella ve su historial, su papelera y la IA */
 function useIsOwner() {
@@ -111,6 +111,7 @@ export function Ribbon() {
           <Link
             to="/mundos"
             activeOptions={{ exact: true }}
+            viewTransition={SECTION}
             className={worldsItem.filter(Boolean).join(' ')}
             data-tour="barra-mundos"
             onAnimationEnd={() => setPhase('still')}
@@ -123,6 +124,7 @@ export function Ribbon() {
         {isOwner && !merged && (
           <Link
             to="/archivos"
+            viewTransition={SECTION}
             className={worldsItem.filter(Boolean).join(' ')}
             style={{ '--rise': '-7.4rem' } as CSSProperties}
           >
@@ -197,7 +199,7 @@ function WorldPanels({ worldId }: { worldId: string }) {
       return
     }
     wikiPanel.show(panel, trigger)
-    void navigate({ to: '/mundos/$worldId/wiki', params: { worldId } })
+    void navigate({ to: '/mundos/$worldId/wiki', params: { worldId }, viewTransition: SECTION })
   }
   const narrow = useNarrow()
   // Marcado si se ve: en lo estrecho, con el cajón abierto; en lo ancho, si no está recogido
@@ -215,10 +217,10 @@ function WorldPanels({ worldId }: { worldId: string }) {
           <Label icon={icon} text={text} />
         </button>
       ))}
-      <Link to="/mundos/$worldId/etiquetas" params={{ worldId }} className={styles.item}>
+      <Link to="/mundos/$worldId/etiquetas" params={{ worldId }} className={styles.item} viewTransition={SECTION}>
         <Label icon={Hash} text={t('ribbon.tags')} />
       </Link>
-      <Link to="/mundos/$worldId/archivos" params={{ worldId }} className={styles.item}>
+      <Link to="/mundos/$worldId/archivos" params={{ worldId }} className={styles.item} viewTransition={SECTION}>
         <Label icon={Folder} text={t('ribbon.files')} />
       </Link>
     </>

@@ -56,6 +56,10 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
 - **Entrar en un mundo es entrar**: la tarjeta pulsada se convierte en la cabecera del mundo mientras Mis mundos se
   acerca y se desvanece, como si se pasara a través; al volver, al revés (transiciones de vista del navegador). Al
   entrar, con un fuego sutil: la tarjeta se pone al rojo mientras crece y sube algo de calor con unas brasas.
+  **En secuencia, sin verse las dos vistas a la vez**: lo de antes se va deprisa, la tarjeta que crece hace de puente
+  y lo nuevo llega cuando ya no está.
+- **Las pestañas de la barra (dentro de una vista) también tienen transición, pero rápida y sin fuego**: lo que había
+  se funde en un instante y lo nuevo sube un poco al llegar; se usan a menudo y no deben frenar.
 - **El menú de la cuenta sale del avatar** creciendo, con un pequeño rebote, y al cerrarse vuelve a él encogiendo.
 - **Las listas, en el orden en que se crearon**: lo nuevo, al final.
 
