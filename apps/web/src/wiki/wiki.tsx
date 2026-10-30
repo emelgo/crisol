@@ -15,6 +15,7 @@ import form from '../components/form.module.css'
 import list from '../components/list.module.css'
 import { failed, LoadError } from '../components/load-error.tsx'
 import { PageTitle } from '../components/page-title.tsx'
+import { Backlinks, useLinkedBy } from './backlinks.tsx'
 import { CollabSocket } from './collab.tsx'
 import { PageBody } from './editor.tsx'
 import { ExportPage, ExportWiki } from './export.tsx'
@@ -312,6 +313,8 @@ function DeletePage({ page }: { page: Page }) {
   const button = useReturnFocus()
   const warningId = useId()
   const [confirming, setConfirming] = useState(false)
+  // Al confirmar, cuántas páginas la enlazan: sus enlaces se verán rotos
+  const linkedBy = useLinkedBy(page, confirming)
   const remove = useMutation({
     mutationFn: () => api.call('deletePage', { pageId: page.id }),
     onSuccess: async () => {
@@ -336,6 +339,7 @@ function DeletePage({ page }: { page: Page }) {
     <div className={list.confirm}>
       <p id={warningId}>
         {t(page.hasChildren ? 'wiki.deleteWarningWithSubpages' : 'wiki.deleteWarning', { title: page.title })}
+        {linkedBy ? ` ${t('wiki.linkedBy', { count: linkedBy })}` : ''}
       </p>
       <div className={list.actions}>
         <BusyButton
@@ -435,6 +439,7 @@ export function WikiPage() {
             <PageHeading key={`${page.data.id}-${nuevo ?? false}`} page={page.data} startEditing={nuevo === true} />
             <PageProperties key={page.data.id} page={page.data} />
             <PageBody page={page.data} />
+            <Backlinks key={`enlaces-${page.data.id}`} page={page.data} />
             <Subpages page={page.data} />
             <SiblingNav page={page.data} />
           </article>

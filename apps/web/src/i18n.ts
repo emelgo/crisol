@@ -126,6 +126,8 @@ export const es = {
     more: 'Más de la wiki',
     delete: 'Borrar',
     deleteWarning: '¿Borrar «{{title}}»? Irá a la papelera y se puede restaurar durante 30 días.',
+    linkedBy_one: 'La enlaza 1 página: su enlace se verá roto.',
+    linkedBy_other: 'La enlazan {{count}} páginas: sus enlaces se verán rotos.',
     deleteWarningWithSubpages:
       '¿Borrar «{{title}}» y sus subpáginas? Irán a la papelera y se pueden restaurar durante 30 días.',
     deleted: '«{{title}}» está en la papelera'
@@ -213,6 +215,18 @@ export const es = {
   },
   summaries: {
     andMore: '{{list}} y {{count}} más'
+  },
+  backlinks: {
+    title: 'Enlaces',
+    incoming: 'La enlazan',
+    noIncoming: 'Ninguna página la enlaza.',
+    mentions: 'La nombran sin enlazar',
+    noMentions: 'Ninguna página la nombra sin enlazarla.',
+    inSecret: 'en un secreto',
+    link: 'Enlazar',
+    linkIn: 'Enlazar en «{{title}}»',
+    linked: 'Enlazada en «{{title}}».',
+    notLinked: 'En «{{title}}» ya no se la nombra.'
   },
   links: {
     menu: 'Páginas',
