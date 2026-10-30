@@ -4,6 +4,7 @@ import { historyActions } from './history.ts'
 import { invitationActions } from './invitations.ts'
 import { memberActions } from './members.ts'
 import { organizationActions } from './organizations.ts'
+import { pageContentActions } from './page-content.ts'
 import { pageActions } from './pages.ts'
 import { preferenceActions } from './preferences.ts'
 import type { Implementation } from './registry.ts'
@@ -21,6 +22,7 @@ export const IMPLEMENTATIONS: Implementation[] = [
   ...trashActions,
   ...aiActions,
   ...pageActions,
+  ...pageContentActions,
   ...preferenceActions
 ]
 

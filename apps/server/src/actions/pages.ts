@@ -28,7 +28,7 @@ import { type ActionContext, historyContext, InvalidRequestError } from './conte
 import { implement } from './registry.ts'
 
 /** La página como la ve la API: con su ruta desde el primer nivel */
-async function pageView(ctx: ActionContext, pageId: string): Promise<Page> {
+export async function pageView(ctx: ActionContext, pageId: string): Promise<Page> {
   const found = await pagesRepo.findPage(ctx.db, pageId)
   if (!found) throw new NotFoundError('page')
   return {
@@ -47,7 +47,7 @@ async function pageView(ctx: ActionContext, pageId: string): Promise<Page> {
 }
 
 /** Las propiedades guardadas, tal como las da la API (lo que no encaje en el contrato no sale) */
-function propertiesOf(stored: unknown[]) {
+export function propertiesOf(stored: unknown[]) {
   return stored.flatMap((item) => {
     const parsed = pageProperty.safeParse(item)
     return parsed.success ? [parsed.data] : []
@@ -55,7 +55,7 @@ function propertiesOf(stored: unknown[]) {
 }
 
 /** La madre (sin ella, el primer nivel): tiene que ser de la misma wiki y no estar en la papelera */
-async function parentIn(ctx: ActionContext, wiki: WikiTarget, parentId: string | null) {
+export async function parentIn(ctx: ActionContext, wiki: WikiTarget, parentId: string | null) {
   if (parentId === null) return null
   const parent = await pagesRepo.findPage(ctx.db, parentId)
   if (!parent || parent.worldId !== wiki.worldId) throw new NotFoundError('page')

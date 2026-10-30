@@ -31,15 +31,20 @@ export interface ActionContext extends ActionEnv {
   via: 'ui' | 'ai'
   /** La herramienta MCP, si la pide la IA */
   tool?: string
+  /** Cuándo lo pidió la IA, si se hace al aprobarlo después: para saber si algo cambió entre medias */
+  requestedAt?: Date
 }
 
 /** La petición es válida según el contrato pero no se puede atender así */
 export class InvalidRequestError extends Error {
   readonly code: string
+  /** Lo que explica el código a quien lo pidió (la IA lo lee: qué línea, qué página no aparece…) */
+  readonly detail: string | null
 
-  constructor(code: string) {
-    super(code)
+  constructor(code: string, detail: string | null = null) {
+    super(detail ? `${code}: ${detail}` : code)
     this.code = code
+    this.detail = detail
     this.name = 'InvalidRequestError'
   }
 }

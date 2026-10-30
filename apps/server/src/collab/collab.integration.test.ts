@@ -200,6 +200,25 @@ describe('la edición en vivo (/api/collab)', () => {
     await until(() => again.events.failed !== '', 'el rechazo al volver')
   })
 
+  it('lo que escribe Claude entra en vivo en la página abierta, con los bloques que hay que resaltar', async () => {
+    const page = await call('createPage', { worldId, title: 'Puerto Ceniza' })
+    const editor = client(`page:${page.id}`)
+    const stateless: string[] = []
+    editor.provider.on('stateless', ({ payload }: { payload: string }) => stateless.push(payload))
+    await until(() => editor.events.synced, 'la sincronización')
+    const result = await call('editPage', {
+      pageId: page.id,
+      body: { mode: 'append', markdown: 'Escrito por Claude.\n\n> [!secreto]\n> Solo para el máster.' }
+    })
+    expect(result.changedBlocks, JSON.stringify(result)).toHaveLength(2)
+    const fragment = () => editor.document.getXmlFragment('default').toString()
+    await until(() => fragment().includes('Escrito por Claude.'), 'el cambio en vivo')
+    // El secreto, aparte: en el cuerpo vivo solo su bloque
+    expect(fragment()).not.toContain('Solo para el máster')
+    await until(() => stateless.length > 0, 'el aviso para resaltar')
+    expect(JSON.parse(stateless[0] ?? '{}')).toEqual({ type: 'ai', blocks: result.changedBlocks })
+  })
+
   describe('secretos y notas ocultas', () => {
     const paragraph = (text: string) => ({ type: 'paragraph', content: [{ type: 'text', text }] })
     /** Escribe un contenido de ProseMirror en el fragmento del documento (como hace el editor) */

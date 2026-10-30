@@ -285,7 +285,10 @@ describe('conector MCP con OAuth', () => {
       ['pendientes', {}, 'read'],
       ['enlace_invitacion', { campaignId: campaign.id }, 'read'],
       ['ver_arbol', { worldId: world.id }, 'read'],
+      ['leer_pagina', { pageId: page.id, ids: true }, 'read'],
       ['crear_mundo', { name: 'Otro' }, 'write'],
+      ['crear_paginas', { worldId: world.id, parentId: null, pages: [{ key: 'a', title: 'Nueva' }] }, 'write'],
+      ['editar_pagina', { pageId: page.id, body: { mode: 'append', markdown: 'Más.' } }, 'write'],
       ['mover_pagina', { pageId: page.id, parentId: null }, 'write'],
       ['borrar_pagina', { pageId: page.id }, 'delete'],
       ['crear_campana', { worldId: world.id, name: 'Otra' }, 'write'],
@@ -380,6 +383,58 @@ describe('conector MCP con OAuth', () => {
     expect(entries[0]).toMatchObject({ action: 'movePage', via: 'ai', tool: 'mover_pagina' })
   })
 
+  it('Claude crea y cambia páginas en Markdown; lo que espera aprobación se aplica sobre lo de ese momento', async () => {
+    const { userId, cookie, call } = await connected()
+    const world = (await call<World>('crear_mundo', { name: 'Eana' })).data
+    type Created = { pages: { key: string; id: string }[] }
+    const created = await call<Created>('crear_paginas', {
+      worldId: world.id,
+      parentId: null,
+      pages: [
+        {
+          key: 'p',
+          title: 'Puerto Ceniza',
+          markdown: 'Uno.\n\n## Historia\n\nEl faro.\n\n> [!secreto]\n> La Hermandad.'
+        }
+      ]
+    })
+    const pageId = created.data.pages[0]?.id
+    const read = await call<{ markdown: string }>('leer_pagina', { pageId, ids: true })
+    expect(read.data.markdown).toContain('> [!secreto]\n> La Hermandad.')
+    const firstId = /^Uno\. \^([a-z0-9]{8})$/m.exec(read.data.markdown)?.[1]
+
+    // En modo asistente espera; el máster borra el bloque antes de aprobar: queda fallida, con su código
+    await aiRepo.setAiMode(conn.db, userId, 'assistant')
+    const asked = await call('editar_pagina', { pageId, body: { mode: 'block', blockId: firstId, markdown: 'Dos.' } })
+    expect(asked.text).toMatch(/^PENDING_APPROVAL/)
+    await api(cookie, 'editPage', {
+      pageId,
+      body: { mode: 'replace', markdown: 'Otra cosa.\n\n## Historia\n\nEl faro.' }
+    })
+    let { pending } = (await call<Approvals>('pendientes')).data
+    expect(pending[0]).toMatchObject({ action: 'editPage', details: { page: 'Puerto Ceniza' } })
+    expect(await api(cookie, 'approve', { approvalId: pending[0]?.id })).toMatchObject({
+      status: 'failed',
+      error: 'BLOCK_NOT_FOUND'
+    })
+
+    // Una sección: se aplica sobre lo de ahora, y dice que la página cambió entre medias
+    const section = await call('editar_pagina', {
+      pageId,
+      body: { mode: 'section', section: 'Historia', markdown: 'Ardió.' }
+    })
+    expect(section.text).toMatch(/^PENDING_APPROVAL/)
+    await api(cookie, 'editPage', { pageId, body: { mode: 'append', markdown: '## Barrios\n\nDel máster.' } })
+    ;({ pending } = (await call<Approvals>('pendientes')).data)
+    expect(await api(cookie, 'approve', { approvalId: pending[0]?.id })).toMatchObject({ status: 'done' })
+    const after = (await call<{ markdown: string }>('leer_pagina', { pageId })).data.markdown
+    expect(after).toBe('Otra cosa.\n\n## Historia\n\nArdió.\n\n## Barrios\n\nDel máster.\n')
+    const { recent } = (await call<Approvals>('pendientes')).data
+    expect(recent[0]).toMatchObject({ status: 'done' })
+    const { entries } = (await call<History>('ver_historial', { worldId: world.id })).data
+    expect(entries[0]).toMatchObject({ action: 'editPage', via: 'ai', tool: 'editar_pagina' })
+  })
+
   it('lo de otra organización no existe para Claude: ni se ve, ni se pide, ni se deshace', async () => {
     const mine = await connected()
     const other = await connected()
@@ -387,6 +442,14 @@ describe('conector MCP con OAuth', () => {
     const theirCampaign = (await other.call<Campaign>('crear_campana', { worldId: theirWorld.id, name: 'Secreta' }))
       .data
     const theirOperation = (await other.call<History>('ver_historial', { worldId: theirWorld.id })).data.entries[0]?.id
+    type Created = { pages: { id: string }[] }
+    const theirPage = (
+      await other.call<Created>('crear_paginas', {
+        worldId: theirWorld.id,
+        parentId: null,
+        pages: [{ key: 'p', title: 'Página ajena', markdown: '> [!secreto]\n> Lo que nadie más sabe.' }]
+      })
+    ).data.pages[0]?.id
 
     expect(JSON.stringify((await mine.call('listar_mundos')).data)).not.toMatch(/Ajeno|Secreta/)
     for (const [tool, args] of [
@@ -395,10 +458,14 @@ describe('conector MCP con OAuth', () => {
       ['enlace_invitacion', { campaignId: theirCampaign.id, change: 'regenerate' }],
       ['crear_campana', { worldId: theirWorld.id, name: 'Intrusa' }],
       ['ver_historial', { worldId: theirWorld.id }],
-      ['deshacer', { operationId: theirOperation }]
+      ['deshacer', { operationId: theirOperation }],
+      ['leer_pagina', { pageId: theirPage }],
+      ['editar_pagina', { pageId: theirPage, body: { mode: 'append', markdown: 'Intrusa' } }],
+      ['crear_paginas', { worldId: theirWorld.id, parentId: null, pages: [{ key: 'x', title: 'Intrusa' }] }]
     ] as const) {
       const result = await mine.call(tool, args)
       expect(`${tool}: ${result.text}`).toMatch(new RegExp(`^${tool}: NOT_FOUND`))
+      expect(result.text).not.toContain('nadie más sabe')
     }
     expect((await mine.call('pendientes')).data).toEqual({ pending: [], recent: [] })
   })

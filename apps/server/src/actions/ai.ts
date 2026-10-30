@@ -45,7 +45,9 @@ async function execute(ctx: ActionContext, row: aiRepo.Approval): Promise<aiRepo
   try {
     if (!impl) throw new InvalidRequestError('UNKNOWN_ACTION')
     const input = impl.action.input.parse(row.input)
-    const output = impl.action.output.parse(await impl.handler({ ...ctx, via: 'ai', tool: row.tool }, input))
+    const output = impl.action.output.parse(
+      await impl.handler({ ...ctx, via: 'ai', tool: row.tool, requestedAt: row.createdAt }, input)
+    )
     // Cifrado: puede llevar un enlace de invitación, y una copia de la base de datos no debe dar enlaces válidos
     outcome = { status: 'done', result: sealJson(output, ctx.sealKey) }
   } catch (error) {
