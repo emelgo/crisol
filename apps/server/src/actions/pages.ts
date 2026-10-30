@@ -5,6 +5,7 @@ import {
   listPageChildren,
   listPageNames,
   listPageTree,
+  listRecentPages,
   listTags,
   movePage,
   type Page,
@@ -256,5 +257,25 @@ export const pageActions = [
     }
     visit(parentId, 1)
     return { pages }
+  }),
+
+  implement(listRecentPages, async (ctx, { worldId, limit }) => {
+    await authorizedWiki(ctx, 'page.read', worldId)
+    const rows = await pagesRepo.recentPages(ctx.db, worldId, limit)
+    const paths = await pagesRepo.pagePaths(
+      ctx.db,
+      rows.map((row) => row.id)
+    )
+    return {
+      pages: rows.map((row) => ({
+        id: row.id,
+        title: row.title,
+        icon: row.icon,
+        cover: row.cover,
+        // Las de encima: la ruta sin ella
+        path: (paths.get(row.id) ?? []).slice(0, -1),
+        editedAt: new Date(row.editedAt).toISOString()
+      }))
+    }
   })
 ]

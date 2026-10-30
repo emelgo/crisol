@@ -5,9 +5,13 @@ import { campaignMembers, campaigns } from '../schema/campaigns.ts'
 import { worlds } from '../schema/worlds.ts'
 import { type PreparedSecret, writeInvitation } from './invitations.ts'
 
+/** Lo que se ve de una campaña en su tarjeta, además del nombre */
+const appearance = { description: campaigns.description, color: campaigns.color, cover: campaigns.cover }
+
 /**
- * Las campañas de un mundo con el rol de la cuenta en cada una. onlyMember: solo aquellas en las que está (un
- * jugador); si no, todas, y en las que no está figura como máster porque administra el mundo.
+ * Las campañas de un mundo con el rol de la cuenta en cada una, en el orden en que se crearon (una nueva, al final).
+ * onlyMember: solo aquellas en las que está (un jugador); si no, todas, y en las que no está figura como máster porque
+ * administra el mundo.
  */
 export function listCampaigns(db: Database, query: { worldId: string; userId: string; onlyMember: boolean }) {
   const membership = and(eq(campaignMembers.campaignId, campaigns.id), eq(campaignMembers.userId, query.userId))
@@ -18,13 +22,14 @@ export function listCampaigns(db: Database, query: { worldId: string; userId: st
       id: campaigns.id,
       worldId: campaigns.worldId,
       name: campaigns.name,
+      ...appearance,
       version: campaigns.version,
       role: sql<'master' | 'player'>`coalesce(${campaignMembers.role}, 'master')`
     })
     .from(campaigns)
     .leftJoin(campaignMembers, membership)
     .where(and(...filters))
-    .orderBy(asc(campaigns.name))
+    .orderBy(asc(campaigns.createdAt), asc(campaigns.id))
 }
 
 /** La campaña con su mundo y su organización (para decidir permisos e historial). En la papelera, no existe */
@@ -35,6 +40,7 @@ export async function findCampaign(db: Database, campaignId: string) {
       worldId: campaigns.worldId,
       organizationId: worlds.organizationId,
       name: campaigns.name,
+      ...appearance,
       version: campaigns.version
     })
     .from(campaigns)
@@ -59,4 +65,16 @@ export function createCampaignWithMaster(
 
 export function renameCampaign(db: Database, context: OperationContext, campaignId: string, name: string) {
   return operation(db, context, (w) => w.update(campaigns, campaignId, { name }))
+}
+
+/** Lo que se ve de una campaña en su tarjeta: nombre, descripción, color y portada (como en un mundo) */
+export type CampaignAppearance = Partial<{
+  name: string
+  description: string
+  color: string | null
+  cover: { fileId: string; x: number; y: number; zoom?: number } | null
+}>
+
+export function updateCampaign(db: Database, context: OperationContext, campaignId: string, patch: CampaignAppearance) {
+  return operation(db, context, (w) => w.update(campaigns, campaignId, patch))
 }

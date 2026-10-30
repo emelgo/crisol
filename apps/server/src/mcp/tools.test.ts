@@ -17,6 +17,7 @@ describe('herramientas MCP', () => {
     expect(Object.keys(MCP_TOOLS).sort()).toEqual([
       'borrar_pagina',
       'buscar_paginas',
+      'cambiar_campana',
       'cambiar_mundo',
       'crear_campana',
       'crear_mundo',
@@ -29,6 +30,7 @@ describe('herramientas MCP', () => {
       'listar_archivos',
       'listar_mundos',
       'mover_pagina',
+      'paginas_recientes',
       'pendientes',
       'restaurar_version',
       'ver_arbol',

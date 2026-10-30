@@ -107,7 +107,16 @@ describe('repositorios', () => {
         invitation: prepared()
       })
       expect(await campaignsRepo.listCampaigns(conn.db, { worldId: w.id, userId: 'u1', onlyMember: false })).toEqual([
-        { id: campaign.id, worldId: w.id, name: 'La Marca del Este', version: 1, role: 'master' }
+        {
+          id: campaign.id,
+          worldId: w.id,
+          name: 'La Marca del Este',
+          description: '',
+          color: null,
+          cover: null,
+          version: 1,
+          role: 'master'
+        }
       ])
       const ops = await conn.db.select().from(operations)
       expect(ops.find((op) => op.action === 'createCampaign')?.worldId).toBe(w.id)
@@ -132,7 +141,8 @@ describe('repositorios', () => {
       const forPlayer = await campaignsRepo.listCampaigns(conn.db, { worldId: w.id, userId: 'u2', onlyMember: true })
       expect(forPlayer.map((c) => [c.name, c.role])).toEqual([['B', 'player']])
       const forMaster = await campaignsRepo.listCampaigns(conn.db, { worldId: w.id, userId: 'u1', onlyMember: false })
-      expect(forMaster.map((c) => c.name)).toEqual(['A', 'B'])
+      // En el orden en que se crearon
+      expect(forMaster.map((c) => c.name)).toEqual(['B', 'A'])
     })
 
     it('renombrar sube la versión y la campaña se encuentra con su organización', async () => {

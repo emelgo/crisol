@@ -247,15 +247,32 @@ export function fakeApi(
       return { ...world }
     },
     listCampaigns: ({ worldId }) => ({
-      campaigns: campaigns
-        .filter((c) => c.worldId === worldId)
-        .map((c) => ({ ...c }))
-        .sort((a, b) => a.name.localeCompare(b.name))
+      // En el orden en que se crearon
+      campaigns: campaigns.filter((c) => c.worldId === worldId).map((c) => ({ ...c }))
     }),
     createCampaign: ({ worldId, name }) => {
-      const campaign: Campaign = { id: crypto.randomUUID(), worldId, name: name.trim(), role: 'master', version: 1 }
+      const campaign: Campaign = {
+        id: crypto.randomUUID(),
+        worldId,
+        name: name.trim(),
+        description: '',
+        color: null,
+        cover: null,
+        role: 'master',
+        version: 1
+      }
       campaigns.push(campaign)
       return campaign
+    },
+    updateCampaign: ({ campaignId, ...patch }) => {
+      const campaign = campaigns.find((c) => c.id === campaignId)
+      if (!campaign) throw new ApiError('NOT_FOUND', 404)
+      if (patch.name !== undefined) campaign.name = patch.name.trim()
+      if (patch.description !== undefined) campaign.description = patch.description.trim()
+      if (patch.color !== undefined) campaign.color = patch.color
+      if (patch.cover !== undefined) campaign.cover = patch.cover
+      campaign.version++
+      return { ...campaign }
     },
     listWorldsWithCampaigns: () => ({
       worlds: handlers.listWorlds({}).worlds.map((w) => ({
@@ -625,6 +642,27 @@ export function fakeApi(
       }
       visit(parentId ?? null, 1)
       return { pages: tree.map(({ worldId: _, version: __, ...rest }) => rest) }
+    },
+    // Sin fechas: las últimas creadas, primero
+    listRecentPages: ({ worldId, limit }) => {
+      const pathOf = (page: StoredPage): { id: string; title: string }[] => {
+        const parent = pages.find((p) => p.id === page.parentId)
+        return parent ? [...pathOf(parent), { id: parent.id, title: parent.title }] : []
+      }
+      return {
+        pages: pages
+          .filter((page) => page.worldId === worldId && !trashedPages.some((t) => [t.root, ...t.below].includes(page)))
+          .reverse()
+          .slice(0, limit ?? 6)
+          .map((page) => ({
+            id: page.id,
+            title: page.title,
+            icon: page.icon,
+            cover: page.cover ?? null,
+            path: pathOf(page),
+            editedAt: new Date().toISOString()
+          }))
+      }
     }
   }
 

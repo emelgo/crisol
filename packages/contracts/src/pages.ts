@@ -196,6 +196,27 @@ export const listPageTree = defineAction({
   })
 })
 
+export const listRecentPages = defineAction({
+  name: 'listRecentPages',
+  kind: 'read',
+  description:
+    'Las páginas de la wiki de un mundo cambiadas hace poco (su texto o lo demás), de la última a la primera, con las páginas de encima',
+  input: z.object({ worldId: z.uuid(), limit: z.number().int().min(1).max(50).default(6) }),
+  output: z.object({
+    pages: z.array(
+      z.object({
+        id: z.uuid(),
+        title: z.string(),
+        icon: z.string().nullable(),
+        cover: pageCover.nullable(),
+        /** Las de encima, del primer nivel a su madre */
+        path: z.array(z.object({ id: z.uuid(), title: z.string() })),
+        editedAt: z.string()
+      })
+    )
+  })
+})
+
 /** Lo que la cuenta tiene a mano en la wiki de un mundo: sus pestañas y sus marcadores, con los títulos de ahora */
 export const wikiPreferences = z.object({
   tabs: z.array(z.object({ pageId: z.uuid(), title: z.string(), pinned: z.boolean() })),
