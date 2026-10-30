@@ -7,7 +7,7 @@ import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
 import { Loading } from '../components/brand.tsx'
 import { useCardList } from '../components/card-transition.ts'
-import { failed, LoadError } from '../components/load-error.tsx'
+import { failed, LoadError, SectionError } from '../components/load-error.tsx'
 import { PageTitle } from '../components/page-title.tsx'
 import { Tour } from '../components/tour.tsx'
 import { LEAVE_WORLD, SECTION, worldTransition } from '../components/world-transition.ts'
@@ -118,7 +118,7 @@ function RecentPages({ worldId }: { worldId: string }) {
   return (
     <section className={styles.section} aria-labelledby={titleId}>
       <h2 id={titleId}>{t('world.recent')}</h2>
-      {failed(recent) && <LoadError error={recent.error} onRetry={() => recent.refetch()} />}
+      {failed(recent) && <SectionError error={recent.error} onRetry={() => recent.refetch()} />}
       {recent.data &&
         (pages.length === 0 ? (
           <p className={styles.muted}>
@@ -178,7 +178,7 @@ function PlayerCampaigns({ worldId }: { worldId: string }) {
   return (
     <section className={styles.section} aria-labelledby={titleId}>
       <h2 id={titleId}>{t('world.yourCampaigns')}</h2>
-      {failed(campaigns) && <LoadError error={campaigns.error} onRetry={() => campaigns.refetch()} />}
+      {failed(campaigns) && <SectionError error={campaigns.error} onRetry={() => campaigns.refetch()} />}
       <ul className={styles.list} aria-labelledby={titleId}>
         {cards.map(({ item, fresh, burning, burnt }) => (
           <CampaignCard

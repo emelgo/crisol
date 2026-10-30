@@ -41,6 +41,7 @@ export function ConfirmByName({ name, action, title, warning, label, onConfirm }
   const dialog = useRef<HTMLDialogElement>(null)
   const button = useRef<HTMLButtonElement>(null)
   const titleId = useId()
+  const warningId = useId()
   const [open, setOpen] = useState(false)
   const [typed, setTyped] = useState('')
   const confirm = useMutation({ mutationFn: onConfirm })
@@ -64,6 +65,8 @@ export function ConfirmByName({ name, action, title, warning, label, onConfirm }
         <Modal
           ref={dialog}
           aria-labelledby={titleId}
+          // El aviso se lee al abrirse, con el título
+          aria-describedby={warningId}
           className={dialogStyles.dialog}
           onClose={() => {
             setOpen(false)
@@ -78,7 +81,9 @@ export function ConfirmByName({ name, action, title, warning, label, onConfirm }
             }}
           >
             <h2 id={titleId}>{title}</h2>
-            <p className={dialogStyles.description}>{warning}</p>
+            <p id={warningId} className={dialogStyles.description}>
+              {warning}
+            </p>
             <p className={dialogStyles.description}>
               {t('danger.typeName')} <strong className={styles.name}>{name}</strong>
             </p>

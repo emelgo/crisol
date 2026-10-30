@@ -24,3 +24,17 @@ export function LoadError({ error, onRetry }: { error: unknown; onRetry(): void 
     </section>
   )
 }
+
+/** Una parte de la página que no ha llegado (la página sí): lo dice en su sitio y deja reintentarlo, sin otro título */
+export function SectionError({ error, onRetry }: { error: unknown; onRetry(): void }) {
+  const { t } = useTranslation()
+  const errorText = useErrorText()
+  return (
+    <>
+      <FormError message={errorText(error)} />
+      <button type="button" className={list.secondary} onClick={onRetry}>
+        {t('load.retry')}
+      </button>
+    </>
+  )
+}

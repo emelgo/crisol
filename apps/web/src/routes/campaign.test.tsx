@@ -53,7 +53,9 @@ const renderCampaign = (c: Campaign, w: World = world) => {
 }
 
 describe('una campaña y su enlace de invitación', () => {
-  it('desde el mundo se entra en la campaña', async () => {
+  it('desde el mundo se entra en la campaña, por su pestaña Campañas', async () => {
+    // Los tutoriales guiados ya hechos: que no se pongan en medio
+    localStorage.setItem('crisol.recorridos.e@x.es', JSON.stringify({ seen: ['mundo', 'campanas'] }))
     const c = campaign()
     const api = fakeApi({ organizations: [ORG], worlds: [world], campaigns: [c] })
     const router = createAppRouter(createMemoryHistory({ initialEntries: [`/mundos/${world.id}`] }))
@@ -64,8 +66,12 @@ describe('una campaña y su enlace de invitación', () => {
         api={api.client}
       />
     )
-    await userEvent.click(await screen.findByRole('link', { name: 'La Marca' }))
+    await screen.findByRole('heading', { level: 1, name: 'Eana' })
+    const sections = within(screen.getByRole('navigation', { name: 'Secciones' }))
+    await userEvent.click(await sections.findByRole('link', { name: 'Campañas' }))
+    await userEvent.click(await inMain().findByRole('link', { name: 'La Marca' }))
     expect(await screen.findByRole('heading', { level: 1, name: 'La Marca' })).toBeDefined()
+    expect(router.state.location.pathname).toBe(`/mundos/${world.id}/campanas/${c.id}`)
   })
 
   it('el máster ve el enlace, la fecha y cuántos han entrado, y lo copia', async () => {
