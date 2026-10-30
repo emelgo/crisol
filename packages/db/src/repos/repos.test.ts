@@ -66,7 +66,7 @@ describe('repositorios', () => {
       expect(await conn.db.select().from(changes)).toHaveLength(2)
     })
 
-    it('la lista sale por nombre y solo con los mundos de la cuenta', async () => {
+    it('la lista sale en el orden en que se crearon y solo con los mundos de la cuenta', async () => {
       for (const name of ['Zafiro', 'Eana']) {
         await worldsRepo.createWorldWithMaster(conn.db, ui('createWorld'), { organizationId, name, masterId: 'u1' })
       }
@@ -75,7 +75,7 @@ describe('repositorios', () => {
         name: 'Ajeno',
         masterId: 'u2'
       })
-      expect((await worldsRepo.listMemberWorlds(conn.db, 'u1')).map((w) => w.name)).toEqual(['Eana', 'Zafiro'])
+      expect((await worldsRepo.listMemberWorlds(conn.db, 'u1')).map((w) => w.name)).toEqual(['Zafiro', 'Eana'])
     })
 
     it('renombrar sube la versión', async () => {

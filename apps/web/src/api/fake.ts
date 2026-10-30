@@ -203,7 +203,8 @@ export function fakeApi(
   const handlers: { [N in ActionName]: (input: ActionInput<N>) => ActionOutput<N> } = {
     listOrganizations: () => ({ organizations }),
     // Copias, como las de la API real (JSON nuevo en cada respuesta)
-    listWorlds: () => ({ worlds: worlds.map((w) => ({ ...w })).sort((a, b) => a.name.localeCompare(b.name)) }),
+    // En el orden en que se crearon, como el servidor
+    listWorlds: () => ({ worlds: worlds.map((w) => ({ ...w })) }),
     createWorld: ({ name }) => {
       const owned = organizations.find((o) => o.role === 'owner')
       if (!owned) throw new ApiError('ORGANIZATION_REQUIRED', 400)

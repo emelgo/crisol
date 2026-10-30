@@ -44,7 +44,8 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
 
 - **Los cambios no son bruscos**: un elemento nuevo entra animado (sube un poco y crece) y uno borrado encoge y se
   desvanece antes de irse; los cuadros, las ventanas y el menú de la cuenta se abren con un pequeño crecimiento y
-  fundido. Todo, sin animación si el sistema pide menos movimiento.
+  fundido. Si el sistema pide menos movimiento, solo fundidos, sin desplazarse.
+- **Las listas, en el orden en que se crearon**: lo nuevo, al final.
 
 - **La colocación de Ajustes es la referencia**: una columna en el centro, con el título y el contenido alineados.
   Nada suelto «en medio sin sentido».

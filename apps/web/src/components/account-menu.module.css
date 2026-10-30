@@ -94,6 +94,18 @@
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .panel {
+    animation: aparece-menu 160ms ease-out;
+  }
+}
+
+@keyframes aparece-menu {
+  from {
+    opacity: 0;
+  }
+}
+
 @keyframes despliega {
   from {
     opacity: 0;

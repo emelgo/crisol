@@ -39,9 +39,14 @@ export function WorldCard({ world, fresh = false }: { world: World; fresh?: bool
   const files = useWorldFiles(world.id, master && world.cover !== null)
   const image = world.cover ? files.data?.files.find((f) => f.id === world.cover?.fileId) : undefined
   const [viewing, setViewing] = useState(false)
+  // Recién creada, entra animada hasta acabar (aunque la página se vuelva a pintar mientras)
+  const [entering, setEntering] = useState(fresh)
   return (
     <li
-      className={fresh ? `${styles.card} ${styles.entering}` : styles.card}
+      className={entering ? `${styles.card} ${styles.entering}` : styles.card}
+      onAnimationEnd={(event) => {
+        if (event.target === event.currentTarget) setEntering(false)
+      }}
       style={tint(world.color)}
       data-world={world.id}
     >
@@ -177,12 +182,11 @@ function WorldSettings({ world }: { world: World }) {
   )
 }
 
-/** Anima la salida de una tarjeta (.leaving) y espera a que acabe; sin animación (movimiento reducido), al momento */
+/** Anima la salida de una tarjeta (.leaving) y espera a que acabe (como mucho, un poco más de lo que dura) */
 function leave(element: Element | null) {
   return new Promise<void>((resolve) => {
-    const still =
-      typeof window.matchMedia !== 'function' || window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    if (!(element instanceof HTMLElement) || still) return resolve()
+    // Sin animaciones (las pruebas, en jsdom): al momento
+    if (!(element instanceof HTMLElement) || typeof element.getAnimations !== 'function') return resolve()
     element.classList.add(styles.leaving as string)
     element.addEventListener('animationend', () => resolve(), { once: true })
     window.setTimeout(resolve, 400)

@@ -75,6 +75,30 @@
   }
 }
 
+/* Con menos movimiento, solo un fundido, sin desplazarse */
+@media (prefers-reduced-motion: reduce) {
+  .entering {
+    animation: funde 300ms ease-out;
+  }
+
+  .leaving {
+    animation: desvanece 260ms ease-in forwards;
+    pointer-events: none;
+  }
+}
+
+@keyframes funde {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes desvanece {
+  to {
+    opacity: 0;
+  }
+}
+
 @keyframes entra {
   from {
     opacity: 0;

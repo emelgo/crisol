@@ -149,6 +149,14 @@ dialog section[aria-labelledby] > h2:first-child {
   }
 }
 
+/* Con menos movimiento, solo un fundido */
+@media (prefers-reduced-motion: reduce) {
+  dialog[open],
+  dialog[open]::backdrop {
+    animation: oscurece 200ms ease-out;
+  }
+}
+
 @keyframes abre-cuadro {
   from {
     opacity: 0;

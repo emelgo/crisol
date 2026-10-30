@@ -114,7 +114,8 @@ Todo va en la rama `interfaz/pulir-inicio`, en un commit local sin subir. Las no
   mundos. En el contrato, `worldColor` admite `#rrggbb` (columna de texto: sin migración).
 - **Por decidir al cerrar la ronda**: el icono del mundo ya no sale en la interfaz, pero sigue en el contrato
   (`updateWorld`, MCP) y en la columna `icon`. Quitarlo de ahí o dejarlo.
-- **Animaciones**: la tarjeta de un mundo nuevo entra y la de uno borrado se va; los cuadros (`dialog[open]` en
+- **Los mundos, en el orden en que se crearon** (uno nuevo, al final): `worldsRepo.listMemberWorlds` y su prueba.
+- **Animaciones**: la tarjeta de un mundo nuevo entra y la de uno borrado se va (con menos movimiento, solo fundidos); los cuadros (`dialog[open]` en
   `base.css`) y el menú de la cuenta se abren con un pequeño crecimiento.
 - **Barras de desplazamiento** finas, del color de los bordes; en las ventanas solo se desplaza el contenido.
 - **Barra lateral**:
