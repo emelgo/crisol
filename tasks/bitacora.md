@@ -22,6 +22,9 @@ que queda pendiente de Enrique. Lo que ya está hecho va a `docs/modulos.md` § 
   falsos). Antes de lanzar otra, que acabe la anterior.
 - **El despliegue sale de `origin/main`** en una copia aparte (`scripts/desplegar-staging.sh`): se puede desplegar con
   trabajo a medias en la carpeta.
+- Una tarea de fondo que espera la CI y fusiona **no hace `git checkout` en el repo de trabajo**: el 2026-10-30
+  pasó a `main` mientras se trabajaba en otra rama y los commits cayeron en `main`. Solo `gh pr merge --repo
+  emelgo/crisol`; `scripts/desplegar-staging.sh` ya trabaja en su copia aparte.
 
 ## Permisos de Enrique (2026-10-30, antes de irse)
 

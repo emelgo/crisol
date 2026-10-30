@@ -25,6 +25,8 @@ catalog:
   "@modelcontextprotocol/client": ^2.4.0
   "@modelcontextprotocol/server": ^2.4.0
   "@playwright/test": ^1.64.1
+  # Los iconos de la interfaz (ISC)
+  lucide-react: 1.57.0
   # Para sacar el PDF de la hoja en el servidor, con el Chromium del sistema (Apache-2.0)
   playwright-core: ^1.64.1
   "@swc/core": ^1.16.20

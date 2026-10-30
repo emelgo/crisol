@@ -22,6 +22,7 @@ import { PageBody } from './editor.tsx'
 import { ExportPage, ExportWiki } from './export.tsx'
 import { PageIcon } from './icon.tsx'
 import { BookmarkButton, Bookmarks, OpenTabs, SiblingNav } from './navigation.tsx'
+import { useWikiPanel } from './panel.tsx'
 import { PageProperties } from './properties.tsx'
 import { QuickSwitcher } from './quick-switcher.tsx'
 import { SearchBox } from './search-box.tsx'
@@ -77,20 +78,12 @@ export function WikiLayout({
   const api = useApi()
   const errorText = useErrorText()
   const { account, pending } = useAccounts().useAccount()
-  const [open, setOpen] = useState(false)
-  const toggleButton = useRef<HTMLButtonElement>(null)
+  const { panel, collapsed, open, close } = useWikiPanel()
   const closeButton = useRef<HTMLButtonElement>(null)
-  // Al abrir el cajón, el foco entra en él; al cerrarlo (no al abrir una página, que lo lleva al título), vuelve
-  const returnFocus = useRef(false)
+  // Al abrir el cajón (en lo estrecho), el foco entra en él; al cerrarlo, vuelve al botón de la barra que lo abrió
   useEffect(() => {
     if (open) closeButton.current?.focus()
-    else if (returnFocus.current) toggleButton.current?.focus()
-    returnFocus.current = false
   }, [open])
-  const close = (back: boolean) => {
-    returnFocus.current = back
-    setOpen(false)
-  }
   const asideId = useId()
   const headingId = useId()
   const create = useCreatePage(worldId)
@@ -113,18 +106,9 @@ export function WikiLayout({
     )
   }
 
+  const titles = { pages: t('wiki.pages'), search: t('ribbon.search'), bookmarks: t('ribbon.bookmarks') }
   return (
-    <div className={styles.wiki}>
-      <button
-        type="button"
-        className={`${list.secondary} ${styles.pagesToggle}`}
-        ref={toggleButton}
-        aria-expanded={open}
-        aria-controls={asideId}
-        onClick={() => setOpen(true)}
-      >
-        {t('wiki.pages')}
-      </button>
+    <div className={styles.wiki} data-collapsed={collapsed || undefined}>
       <aside
         id={asideId}
         className={styles.aside}
@@ -135,10 +119,12 @@ export function WikiLayout({
         }}
       >
         <div className={styles.asideHeader}>
-          <h2 id={headingId}>{t('wiki.pages')}</h2>
-          <BusyButton className={form.button} busy={create.isPending} onClick={() => create.mutate(null)}>
-            {t('wiki.newPage')}
-          </BusyButton>
+          <h2 id={headingId}>{titles[panel]}</h2>
+          {panel === 'pages' && (
+            <BusyButton className={form.button} busy={create.isPending} onClick={() => create.mutate(null)}>
+              {t('wiki.newPage')}
+            </BusyButton>
+          )}
           <button
             type="button"
             ref={closeButton}
@@ -149,19 +135,17 @@ export function WikiLayout({
           </button>
         </div>
         <FormError message={create.error ? errorText(create.error) : null} />
-        <SearchBox worldId={worldId} onSearch={() => close(false)} />
-        <PageTree worldId={worldId} currentId={current?.id} path={current?.path} onNavigate={() => close(false)} />
-        <OpenTabs worldId={worldId} current={current} compact />
-        <Bookmarks worldId={worldId} onNavigate={() => close(false)} />
-        <nav aria-label={t('wiki.more')} className={styles.more}>
-          <Link to="/mundos/$worldId/archivos" params={{ worldId }} onClick={() => close(false)}>
-            {t('files.title')}
-          </Link>
-          <Link to="/mundos/$worldId/etiquetas" params={{ worldId }} onClick={() => close(false)}>
-            {t('tags.title')}
-          </Link>
-          <ExportWiki worldId={worldId} />
-        </nav>
+        {panel === 'pages' && (
+          <>
+            <PageTree worldId={worldId} currentId={current?.id} path={current?.path} onNavigate={() => close(false)} />
+            <OpenTabs worldId={worldId} current={current} compact />
+            <div className={styles.more}>
+              <ExportWiki worldId={worldId} />
+            </div>
+          </>
+        )}
+        {panel === 'search' && <SearchBox worldId={worldId} onSearch={() => close(false)} />}
+        {panel === 'bookmarks' && <Bookmarks worldId={worldId} onNavigate={() => close(false)} />}
       </aside>
       <QuickSwitcher worldId={worldId} onCreatePage={() => create.mutate(null)} />
       <div className={styles.content}>

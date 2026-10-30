@@ -4,7 +4,7 @@
  * vale con el teclado y en el móvil
  */
 import { withoutBlockIds } from '@crisol/editor'
-import { autoUpdate, computePosition, flip, offset, shift } from '@floating-ui/dom'
+import { autoUpdate, computePosition, flip, offset, shift, size } from '@floating-ui/dom'
 import type { Editor } from '@tiptap/core'
 import { DragHandle } from '@tiptap/extension-drag-handle-react'
 import { Fragment, type Node as PMNode } from '@tiptap/pm/model'
@@ -199,7 +199,18 @@ export function BlockMenu({
       void computePosition(anchor, element, {
         strategy: 'fixed',
         placement: 'bottom-start',
-        middleware: [offset(4), flip(), shift({ padding: 8 })]
+        middleware: [
+          offset(4),
+          flip(),
+          shift({ padding: 8 }),
+          // Si no cabe ni arriba ni abajo, se encoge al hueco que queda y se desplaza por dentro
+          size({
+            padding: 8,
+            apply: ({ availableHeight, elements }) => {
+              elements.floating.style.maxBlockSize = `${Math.max(160, availableHeight)}px`
+            }
+          })
+        ]
       }).then(({ x, y }) => Object.assign(element.style, { left: `${x}px`, top: `${y}px` }))
     })
   }, [anchor])

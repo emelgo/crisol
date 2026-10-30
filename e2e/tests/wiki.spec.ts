@@ -129,6 +129,8 @@ test('pestañas y marcadores siguen al recargar; en el móvil, las abiertas van 
   await tabs.getByRole('button', { name: 'Fijar Maela Varn' }).click()
   await expect(tabs.getByRole('link')).toHaveText(['Maela Varn', 'Puerto Ceniza'])
   await page.getByRole('button', { name: 'Marcar' }).click()
+  // Los marcadores, en su panel; al recargar sigue abierto el último que se eligió
+  await page.getByRole('navigation', { name: 'Secciones' }).getByRole('button', { name: 'Marcadores' }).click()
   await expect(page.getByRole('region', { name: 'Marcadores' }).getByRole('link', { name: 'Maela Varn' })).toBeVisible()
 
   await page.reload()

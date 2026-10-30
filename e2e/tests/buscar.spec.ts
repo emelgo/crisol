@@ -28,6 +28,8 @@ test('buscar en español: sin tildes y con erratas, por secciones, con lo de un 
   })
   const [bestiario] = (await created.json()).pages
   await page.getByRole('link', { name: 'Wiki de Eana' }).click()
+  // La caja está en el panel de buscar: se abre con su botón de la barra de la izquierda
+  await page.getByRole('navigation', { name: 'Secciones' }).getByRole('button', { name: 'Buscar' }).click()
   await page.getByRole('searchbox', { name: 'Buscar en la wiki' }).fill('dargon')
   await page.keyboard.press('Enter')
   await expect(page.getByRole('heading', { level: 1, name: 'Buscar en Eana' })).toBeVisible()

@@ -38,6 +38,7 @@
     "better-auth": "catalog:",
     "i18next": "catalog:",
     "pdfjs-dist": "catalog:",
+    "lucide-react": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
     "react-i18next": "catalog:",
