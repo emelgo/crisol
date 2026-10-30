@@ -100,7 +100,7 @@ Rama `wiki/tarea-19-archivos-en-paginas` (sobre main, tras la 18). En dos porcio
 - Lo de antes de la búsqueda se indexa al buscar en su mundo (`indexMissing`), como hacía `fillMissingText`.
 - Extracto con `**` (lo lee bien Claude y la web lo pinta con `<mark>`).
 
-## Siguiente: 21, selector rápido, órdenes y buscar en la página (diseño)
+## Tarea 21, selector rápido, órdenes y buscar en la página (hecha, rama `wiki/tarea-21-selector`)
 
 - **Ctrl+K** (o Cmd+K) desde cualquier pantalla de la wiki abre un `dialog` modal con un combobox (patrón ARIA:
   `aria-activedescendant` sobre un `listbox`). Vacío: los recientes (las pestañas abiertas, de la última a la primera).
@@ -112,6 +112,10 @@ Rama `wiki/tarea-19-archivos-en-paginas` (sobre main, tras la 18). En dos porcio
   barra con el campo, «n de m», anterior y siguiente; las coincidencias se resaltan con decoraciones de ProseMirror
   (sin tildes ni mayúsculas) y la actual se elige y se lleva a la vista. Los secretos (otros editores) quedan fuera:
   apuntarlo.
+
+**Cómo quedó la 21**: `quick-switcher.tsx` (montado en `WikiLayout`), `find-in-page.tsx` (extensión `FindInPage` y
+`FindBar`, siempre a mano, también con candado). Escape se atiende en el campo (happy-dom no cierra el `dialog` solo).
+El foco vuelve al botón «Buscar en la página» cuando ya está pintado.
 
 ## Hechas en esta tirada
 

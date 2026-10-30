@@ -20,6 +20,8 @@ import { useCollabDocument } from './collab.tsx'
 import { BlockHandle, BlockMenu, type BlockTarget, blockAtCursor } from './drag-handle.tsx'
 import styles from './editor.module.css'
 import { FileDrop, type FileDropOptions } from './file-embed.tsx'
+import find from './find-in-page.module.css'
+import { FindBar, FindInPage } from './find-in-page.tsx'
 import { LinkSuggest, PageLinksContext, useLinksRef, usePageLinks } from './page-links.tsx'
 import {
   CopySeparateOnPaste,
@@ -142,6 +144,7 @@ function BodyEditor({
         }),
         CopySeparateOnPaste,
         FileDrop.configure({ upload, announce: announceFile }),
+        FindInPage.configure({ match: find.match ?? '', current: find.current ?? '' }),
         AiHighlight.configure({ className: styles.aiFlash ?? '' }),
         Collaboration.configure({ document, field: BODY_FIELD }),
         CollaborationCaret.configure({ provider, user: { name, color: caretColor(name) }, render: renderCaret })
@@ -197,6 +200,7 @@ function BodyEditor({
           </button>
         </div>
       )}
+      {editor && <FindBar editor={editor} />}
       <EditorContent editor={editor} />
       <input
         ref={filePicker}

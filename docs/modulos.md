@@ -676,6 +676,15 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   - **Pruebas**: integración («dragon», «DRAGONES», «dargón», «drag», secciones y secretos, etiqueta y rama, papelera,
     indexar lo de antes, paginada, permisos) y rendimiento con 5.000 páginas (p95 192 ms en local; < 300 exigido);
     componentes, e2e `buscar.spec.ts` con accesibilidad y `@fugas`.
+- **2026-10-30 — Módulo 1, tarea 21: selector rápido, órdenes y buscar en la página.**
+  - **Ctrl+K** (o Cmd+K) en cualquier pantalla de la wiki: un diálogo con combobox (ARIA). Vacío, las páginas
+    recientes (las pestañas abiertas); al escribir, a los 250 ms, títulos y alias con erratas (hasta 8) y «Ver todos
+    los resultados». Escape lo cierra y el foco vuelve a donde estaba.
+  - **«>»** al principio: la paleta de órdenes (página nueva, buscar, archivos, etiquetas, historial y papelera).
+  - **Buscar en la página**: botón encima del texto (y Ctrl+Alt+F; Ctrl+F sigue siendo del navegador). Resalta sin
+    tildes ni mayúsculas, dice «n de m», Intro va a la siguiente y Mayús+Intro a la anterior. Lo de dentro de los
+    secretos no entra.
+  - **Pruebas**: componentes (teclado y foco), unidad de las coincidencias y e2e `selector.spec.ts` con accesibilidad.
 - **Pendientes de permiso de Enrique:**
   - Servicio de systemd para Foundry: ahora corre como proceso de la sesión y se para al cerrarla; se arranca con el
     comando de `research/foundry/entorno.md`.
