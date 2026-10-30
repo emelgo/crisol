@@ -1,14 +1,11 @@
 import { expect, type Page, test } from '@playwright/test'
-import { freshOwner } from './ayudas.ts'
+import { createWorld, freshOwner, openWiki } from './ayudas.ts'
 
 /** El propietario crea Eana y una página, y la deja abierta */
 async function openPage(page: Page, title = 'Puerto Ceniza') {
   await freshOwner(page)
-  await page.goto('/mundos')
-  await page.getByLabel('Nombre del mundo').fill('Eana')
-  await page.getByRole('button', { name: 'Crear el mundo' }).click()
-  await page.getByRole('link', { name: 'Eana' }).click()
-  await page.getByRole('link', { name: 'Wiki de Eana' }).click()
+  await createWorld(page, 'Eana')
+  await openWiki(page, 'Eana')
   await page.getByRole('button', { name: 'Página nueva' }).click()
   await expect(page.getByLabel('Título de la página')).toBeFocused()
   await page.keyboard.type(title)

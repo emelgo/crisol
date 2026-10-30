@@ -16,6 +16,8 @@
   scrollbar-width: none;
   /* Al entrar en un mundo o salir, va aparte de la transición de la página: con su propia animación (base.css) */
   view-transition-name: barra;
+  /* Por encima de la página: lo que se abre desde ella (el menú de la cuenta) no queda debajo de sus recuadros */
+  z-index: 30;
 }
 
 /* Abajo, fijo aunque lo de arriba no quepa: Historial, Papelera y la cuenta no se mueven nunca */

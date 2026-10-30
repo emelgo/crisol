@@ -1,7 +1,7 @@
 import { createHash, randomBytes } from 'node:crypto'
 import { expect, test } from '@playwright/test'
 import { E2E_PORT } from '../servidor.ts'
-import { freshOwner, owner, signOut } from './ayudas.ts'
+import { createWorld, freshOwner, owner, signOut } from './ayudas.ts'
 
 const BASE = `http://127.0.0.1:${E2E_PORT}`
 // Como la de claude.ai: HTTPS. La prueba la intercepta para leer el código
@@ -9,10 +9,7 @@ const REDIRECT = 'https://cliente.example/callback'
 
 test('el propietario conecta una aplicación por OAuth y esta lista sus mundos por MCP', async ({ page, request }) => {
   await freshOwner(page)
-  await page.goto('/mundos')
-  await page.getByLabel('Nombre del mundo').fill('Eana')
-  await page.getByRole('button', { name: 'Crear el mundo' }).click()
-  await expect(page.getByRole('list', { name: 'Mundos' })).toBeVisible()
+  await createWorld(page, 'Eana')
 
   // claude.ai se registra solo por CIMD; aquí, como en la prueba del servidor, el propietario registra un cliente
   const created = await page.request.post('/api/auth/oauth2/create-client', {
@@ -45,7 +42,7 @@ test('el propietario conecta una aplicación por OAuth y esta lista sus mundos p
   await page.goto(authorize.toString())
   await expect(page).toHaveURL(/\/entrar\?/)
   await page.getByLabel('Email').fill(owner.email)
-  await page.getByLabel('Contraseña').fill(owner.password)
+  await page.getByLabel('Contraseña', { exact: true }).fill(owner.password)
   await page.getByRole('button', { name: 'Entrar' }).click()
   await expect(page.getByRole('heading', { name: 'Conectar Claude de pruebas' })).toBeVisible()
   await page.getByRole('button', { name: 'Permitir', exact: true }).click()

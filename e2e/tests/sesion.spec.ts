@@ -1,5 +1,14 @@
 import { expect, type Page, test } from '@playwright/test'
-import { campaignLink, connectClaude, freshOwner, gotoLive, newPlayer, signOut } from './ayudas.ts'
+import {
+  campaignLink,
+  connectClaude,
+  createWorld,
+  freshOwner,
+  gotoLive,
+  newPlayer,
+  signOut,
+  skipTours
+} from './ayudas.ts'
 
 /**
  * Retiene las respuestas de la API (todas, o las de esas acciones) hasta soltarlas: así se ve qué se pinta mientras
@@ -26,13 +35,12 @@ test('al salir no queda nada del máster en la pestaña, tampoco para la jugador
   page,
   browser
 }) => {
+  await skipTours(page, 'jugadora@crisol.test')
   await campaignLink(page)
   const campaignId = new URL(page.url()).pathname.split('/').at(-1) ?? ''
   const claude = await connectClaude(page)
   await gotoLive(page, '/mundos')
-  await page.getByLabel('Nombre del mundo').fill('Otro')
-  await page.getByRole('button', { name: 'Crear el mundo' }).click()
-  await expect(page.getByRole('link', { name: 'Otro' })).toBeVisible()
+  await createWorld(page, 'Otro')
 
   // La cola de Claude, con lo que dijo al aprobar, y el aviso de que alguien ha entrado
   const main = page.getByRole('main')
@@ -48,31 +56,30 @@ test('al salir no queda nada del máster en la pestaña, tampoco para la jugador
   await expect(page).toHaveURL('/entrar')
   await expect(page.getByText(/^Hecho:/)).toHaveCount(0)
   await expect(page.getByText(/ha entrado en La Marca/)).toHaveCount(0)
-  await expect(page.getByRole('link', { name: 'IA', exact: true })).toHaveCount(0)
+  await expect(page.getByRole('navigation', { name: 'Secciones' })).toHaveCount(0)
 
   // La jugadora entra en la misma pestaña, sin recargar
   await page.getByLabel('Email').fill('jugadora@crisol.test')
-  await page.getByLabel('Contraseña').fill('una-clave-larga')
-  await page.getByRole('button', { name: 'Entrar', exact: true }).click()
-  await expect(page.getByRole('heading', { level: 1, name: 'Mis mundos' })).toBeVisible()
-
-  // Mientras llegan sus mundos, no se ven los del máster
+  await page.getByLabel('Contraseña', { exact: true }).fill('una-clave-larga')
+  // Mientras llegan sus mundos (retenidos desde antes de entrar), no se ven los del máster
   let release = await holdApi(page)
+  await page.getByRole('button', { name: 'Entrar', exact: true }).click()
   await expect(page.getByRole('heading', { level: 1, name: 'Mis mundos' })).toBeVisible()
   await expect(main.getByText('Otro')).toHaveCount(0)
   await expect(main.getByText('Eana')).toHaveCount(0)
-  await expect(page.getByRole('link', { name: 'Papelera' })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Papelera', exact: true })).toHaveCount(0)
   await release()
   const worlds = page.getByRole('list', { name: 'Mundos' })
   await expect(worlds.getByRole('listitem')).toHaveText([/^Eana.*Jugador/])
-  await expect(page.getByRole('link', { name: 'IA', exact: true })).toHaveCount(0)
+  // Ni el historial ni la papelera del propietario
+  await expect(page.getByRole('button', { name: 'Historial', exact: true })).toHaveCount(0)
 
   // Ni las campañas del máster mientras llegan las suyas, ni luego el enlace de invitación
   release = await holdApi(page, ['listCampaigns'])
   await worlds.getByRole('link', { name: 'Eana' }).click()
   await expect(page.getByRole('heading', { level: 1, name: 'Eana' })).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Renombrar La Marca' })).toHaveCount(0)
-  await expect(page.getByRole('link', { name: 'Historial' })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Ajustes de La Marca' })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Historial', exact: true })).toHaveCount(0)
   await release()
   await page.getByRole('link', { name: 'La Marca' }).click()
   await expect(page.getByRole('heading', { level: 1, name: 'La Marca' })).toBeVisible()
@@ -82,10 +89,7 @@ test('al salir no queda nada del máster en la pestaña, tampoco para la jugador
 
 test('si sale desde otra pestaña, esta deja de enseñar lo suyo y lleva a entrar', async ({ page }) => {
   await freshOwner(page)
-  await page.goto('/mundos')
-  await page.getByLabel('Nombre del mundo').fill('Eana')
-  await page.getByRole('button', { name: 'Crear el mundo' }).click()
-  await expect(page.getByRole('link', { name: 'Eana' })).toBeVisible()
+  await createWorld(page, 'Eana')
 
   const other = await page.context().newPage()
   await other.goto('/')

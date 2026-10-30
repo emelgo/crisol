@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { campaignLink, newPlayer } from './ayudas.ts'
+import { campaignLink, closeWindow, newPlayer, openSettings, openWindow, sections } from './ayudas.ts'
 
 test('el máster borra una campaña con una jugadora dentro: ella la pierde al momento y vuelve al restaurarla', async ({
   page,
@@ -9,10 +9,15 @@ test('el máster borra una campaña con una jugadora dentro: ella la pierde al m
   const player = await newPlayer(browser, link)
   const campaignUrl = player.url()
 
-  await page.getByRole('link', { name: 'Eana' }).click()
-  await page.getByRole('button', { name: 'Borrar La Marca' }).click()
-  await expect(page.getByText('¿Borrar La Marca? Irá a la papelera: se puede restaurar durante 30 días.')).toBeVisible()
-  await page.getByRole('button', { name: 'Borrar', exact: true }).click()
+  await sections(page).getByRole('link', { name: 'Campañas' }).click()
+  const settings = await openSettings(page, 'La Marca')
+  await settings.getByRole('button', { name: 'Borrar la campaña' }).click()
+  const confirm = page.getByRole('dialog', { name: '¿Borrar «La Marca»?' })
+  await expect(confirm).toHaveAccessibleDescription(
+    'Irá a la papelera y sus jugadores dejarán de verla. Se podrá recuperar durante 30 días.'
+  )
+  await confirm.getByLabel('Nombre de la campaña').fill('La Marca')
+  await confirm.getByRole('button', { name: 'Borrar la campaña' }).click()
   await expect(page.getByText('Aún no hay campañas')).toBeVisible()
 
   // La tenía abierta: deja de verla sin recargar, y su enlace ya no vale
@@ -20,18 +25,19 @@ test('el máster borra una campaña con una jugadora dentro: ella la pierde al m
   await player.goto(link)
   await expect(player.getByRole('heading', { name: 'Este enlace no vale' })).toBeVisible()
 
-  await page.getByRole('link', { name: 'Papelera de Eana' }).click()
-  await expect(page.getByRole('heading', { level: 1, name: 'Papelera de Eana' })).toBeVisible()
-  const items = page.getByRole('list', { name: 'En la papelera' }).getByRole('listitem')
+  const trash = await openWindow(page, 'Papelera')
+  await expect(trash.getByRole('heading', { level: 1, name: 'Papelera de Eana' })).toBeVisible()
+  const items = trash.getByRole('list', { name: 'En la papelera' }).getByRole('listitem')
   await expect(items).toHaveText([/^La Marca.*Campaña de Eana · Se borra del todo el/])
-  await page.getByRole('button', { name: 'Restaurar La Marca' }).click()
-  await expect(page.getByText('La papelera está vacía')).toBeVisible()
+  await trash.getByRole('button', { name: 'Restaurar La Marca' }).click()
+  await expect(trash.getByText('La papelera está vacía')).toBeVisible()
+  await closeWindow(trash)
 
   await player.goto(campaignUrl)
   await expect(player.getByRole('heading', { level: 1, name: 'La Marca', exact: true })).toBeVisible()
-  await page.getByRole('link', { name: 'Eana' }).click()
-  await page.getByRole('link', { name: 'Historial de Eana' }).click()
-  await expect(page.getByRole('list', { name: 'Operaciones' }).getByRole('listitem').first()).toHaveText(
+  await expect(page.getByRole('link', { name: 'La Marca', exact: true })).toBeVisible()
+  const history = await openWindow(page, 'Historial')
+  await expect(history.getByRole('list', { name: 'Operaciones' }).getByRole('listitem').first()).toHaveText(
     /^Enrique restauró la campaña «La Marca» de Eana/
   )
   await player.close()

@@ -1,13 +1,11 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
-import { freshOwner } from './ayudas.ts'
+import { createWorld, freshOwner, openWorld } from './ayudas.ts'
 
 test('Ctrl+K: recientes, títulos con erratas y órdenes; buscar en la página resalta y salta', async ({ page }) => {
   await freshOwner(page)
-  await page.goto('/mundos')
-  await page.getByLabel('Nombre del mundo').fill('Eana')
-  await page.getByRole('button', { name: 'Crear el mundo' }).click()
-  await page.getByRole('link', { name: 'Eana' }).click()
+  await createWorld(page, 'Eana')
+  await openWorld(page, 'Eana')
   const worldId = new URL(page.url()).pathname.split('/')[2] ?? ''
   const created = await page.request.post('/api/actions/createPages', {
     data: {

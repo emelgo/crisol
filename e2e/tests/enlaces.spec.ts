@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, type Page, test } from '@playwright/test'
-import { freshOwner } from './ayudas.ts'
+import { createWorld, freshOwner, openWiki } from './ayudas.ts'
 
 const body = (page: Page) => page.getByRole('textbox', { name: 'Texto de la página' })
 const suggestions = (page: Page) => page.getByRole('listbox', { name: 'Páginas' })
@@ -16,11 +16,8 @@ async function newPage(page: Page, title: string) {
 /** Eana con Maela Varn y Puerto Ceniza (abierta, con el cursor en el texto); devuelve el mundo y las páginas */
 async function eana(page: Page) {
   await freshOwner(page)
-  await page.goto('/mundos')
-  await page.getByLabel('Nombre del mundo').fill('Eana')
-  await page.getByRole('button', { name: 'Crear el mundo' }).click()
-  await page.getByRole('link', { name: 'Eana' }).click()
-  await page.getByRole('link', { name: 'Wiki de Eana' }).click()
+  await createWorld(page, 'Eana')
+  await openWiki(page, 'Eana')
   await newPage(page, 'Maela Varn')
   const maela = page.url().split('/').at(-1) ?? ''
   await newPage(page, 'Puerto Ceniza')

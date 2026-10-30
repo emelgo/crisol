@@ -1,7 +1,9 @@
 import { connect, schema } from '@crisol/db'
 import { expect, test } from '@playwright/test'
 import { e2eDatabaseUrl } from '../servidor.ts'
-import { campaignLink, signOut } from './ayudas.ts'
+import { campaignLink, fillNewAccount, signOut, skipTours } from './ayudas.ts'
+
+const jugadora = { name: 'Jugadora', email: 'jugadora@crisol.test', password: 'una-clave-larga' }
 
 const players = async () => {
   const conn = connect(e2eDatabaseUrl(), { max: 1 })
@@ -23,12 +25,11 @@ test('una jugadora nueva abre el enlace, crea su cuenta y queda en la campaña',
   expect(await players()).toBe(0)
 
   const player = await browser.newPage()
+  await skipTours(player, jugadora.email)
   await player.goto(link)
   await expect(player.getByRole('heading', { name: 'Te invitan a La Marca' })).toBeVisible()
   await expect(player.getByText('Máster: Enrique')).toBeVisible()
-  await player.getByLabel('Nombre').fill('Jugadora')
-  await player.getByLabel('Email').fill('jugadora@crisol.test')
-  await player.getByLabel('Contraseña').fill('una-clave-larga')
+  await fillNewAccount(player, jugadora)
   await player.getByRole('button', { name: 'Crear la cuenta y entrar' }).click()
   await expect(player.getByRole('heading', { level: 1, name: 'La Marca', exact: true })).toBeVisible()
   await expect(player.getByLabel('Enlace de invitación')).toHaveCount(0)
@@ -54,10 +55,9 @@ test('con cuenta: entra y vuelve a la confirmación; con el enlace cerrado o cam
 }) => {
   const link = await campaignLink(page)
   const player = await browser.newPage()
+  await skipTours(player, jugadora.email)
   await player.goto(link)
-  await player.getByLabel('Nombre').fill('Jugadora')
-  await player.getByLabel('Email').fill('jugadora@crisol.test')
-  await player.getByLabel('Contraseña').fill('una-clave-larga')
+  await fillNewAccount(player, jugadora)
   await player.getByRole('button', { name: 'Crear la cuenta y entrar' }).click()
   await expect(player.getByRole('heading', { level: 1, name: 'La Marca', exact: true })).toBeVisible()
   await signOut(player)
@@ -65,7 +65,7 @@ test('con cuenta: entra y vuelve a la confirmación; con el enlace cerrado o cam
   await player.goto(link)
   await player.getByRole('button', { name: 'Ya tengo cuenta' }).click()
   await player.getByLabel('Email').fill('jugadora@crisol.test')
-  await player.getByLabel('Contraseña').fill('una-clave-larga')
+  await player.getByLabel('Contraseña', { exact: true }).fill('una-clave-larga')
   await player.getByRole('button', { name: 'Entrar', exact: true }).click()
   await player.getByRole('button', { name: 'Entrar en La Marca como jugador' }).click()
   await expect(player.getByRole('heading', { level: 1, name: 'La Marca', exact: true })).toBeVisible()

@@ -144,7 +144,11 @@ function ApprovalItem({ approval, onDecided }: { approval: Approval; onDecided: 
             expires: date.format(new Date(approval.expiresAt))
           })}
         </p>
-        <pre className={styles.detail}>{JSON.stringify(approval.input, null, 2)}</pre>
+        {/* Se desplaza: con el foco, también con el teclado */}
+        {/* biome-ignore lint/a11y/noNoninteractiveTabindex: una zona que se desplaza tiene que poder recibir el foco */}
+        <pre className={styles.detail} tabIndex={0}>
+          {JSON.stringify(approval.input, null, 2)}
+        </pre>
       </details>
       <FormError message={decide.error ? errorText(decide.error) : null} />
     </li>

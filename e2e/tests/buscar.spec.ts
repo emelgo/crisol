@@ -1,15 +1,13 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
-import { freshOwner } from './ayudas.ts'
+import { createWorld, freshOwner, openWorld } from './ayudas.ts'
 
 test('buscar en español: sin tildes y con erratas, por secciones, con lo de un secreto marcado y por rama', async ({
   page
 }) => {
   await freshOwner(page)
-  await page.goto('/mundos')
-  await page.getByLabel('Nombre del mundo').fill('Eana')
-  await page.getByRole('button', { name: 'Crear el mundo' }).click()
-  await page.getByRole('link', { name: 'Eana' }).click()
+  await createWorld(page, 'Eana')
+  await openWorld(page, 'Eana')
   const worldId = new URL(page.url()).pathname.split('/')[2] ?? ''
   const created = await page.request.post('/api/actions/createPages', {
     data: {
@@ -27,8 +25,7 @@ test('buscar en español: sin tildes y con erratas, por secciones, con lo de un 
     }
   })
   const [bestiario] = (await created.json()).pages
-  await page.getByRole('link', { name: 'Wiki de Eana' }).click()
-  // La caja está en el panel de buscar: se abre con su botón de la barra de la izquierda
+  // La caja está en el panel de buscar: se abre con su botón de la barra de la izquierda, que lleva a la wiki
   await page.getByRole('navigation', { name: 'Secciones' }).getByRole('button', { name: 'Buscar' }).click()
   await page.getByRole('searchbox', { name: 'Buscar en la wiki' }).fill('dargon')
   await page.keyboard.press('Enter')
