@@ -56,6 +56,8 @@ export interface StoredDocument {
   documentId: string
   kind: 'body' | 'separate'
   document: Y.Doc
+  /** Quien escribió lo último */
+  userId: string | null
 }
 
 export function createCollab({
@@ -131,7 +133,7 @@ export function createCollab({
         const documentId =
           target.kind === 'body' ? (await documentsRepo.findBody(db, target.pageId))?.id : target.documentId
         if (documentId && onStored) {
-          const stored = { worldId: place.worldId, pageId: place.pageId, documentId, document }
+          const stored = { worldId: place.worldId, pageId: place.pageId, documentId, document, userId }
           await onStored({ ...stored, kind: target.kind })
         }
       } catch (error) {

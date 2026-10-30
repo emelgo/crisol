@@ -10,11 +10,14 @@ import {
   createPages,
   editPage,
   getPage,
+  getPageLinks,
   getWikiPreferences,
+  linkMention,
   listPageChildren,
   listPageNames,
   listPageTree,
   listTags,
+  listUnresolvedLinks,
   movePage,
   readPage,
   setBookmarks,
@@ -92,7 +95,10 @@ export const ACTIONS = [
   readPage,
   createPages,
   editPage,
-  listPageNames
+  listPageNames,
+  getPageLinks,
+  listUnresolvedLinks,
+  linkMention
 ]
 
 /** Las acciones por nombre, solo como tipo: la web las usa sin cargar zod */
@@ -142,4 +148,7 @@ export type Actions = {
   createPages: typeof createPages
   editPage: typeof editPage
   listPageNames: typeof listPageNames
+  getPageLinks: typeof getPageLinks
+  listUnresolvedLinks: typeof listUnresolvedLinks
+  linkMention: typeof linkMention
 }

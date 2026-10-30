@@ -447,6 +447,13 @@ export function fakeApi(
       return { id: found.root.id, name: found.root.title }
     },
     listPageChildren: ({ worldId, parentId }) => ({ pages: childrenOf(worldId, parentId ?? null).map(summary) }),
+    // Sin documentos en estas pruebas: sin enlaces
+    getPageLinks: ({ pageId }) => {
+      pageById(pageId)
+      return { incoming: [], outgoing: [], mentions: [] }
+    },
+    listUnresolvedLinks: () => ({ links: [] }),
+    linkMention: () => ({ linked: false }),
     listPageNames: ({ worldId }) => {
       const inWorld = pages.filter((page) => page.worldId === worldId)
       const pathOf = (page: StoredPage): string[] => {

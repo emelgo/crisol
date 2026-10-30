@@ -97,6 +97,34 @@ test('al elegir un nombre de página, la barra propone enlazarlo', async ({ page
   await expect(body(page).getByRole('link', { name: 'Maela Varn' })).toHaveAttribute('data-state', 'ok')
 })
 
+test('los enlaces de la página: quién la enlaza, dónde se la nombra y «Enlazar»; al borrarla, cuántas la enlazan', async ({
+  page
+}) => {
+  const { worldId, maela, puerto } = await eana(page)
+  await api(page, 'editPage', { pageId: puerto, body: { mode: 'append', markdown: 'Lo gobierna [[Maela Varn]].' } })
+  const notas = await api(page, 'createPage', { worldId, title: 'Notas', parentId: null })
+  await api(page, 'editPage', {
+    pageId: notas.id,
+    body: { mode: 'append', markdown: 'Preguntar a Maela Varn por el faro.' }
+  })
+  await page.getByRole('treeitem', { name: 'Maela Varn' }).click()
+  const panel = page.getByRole('region', { name: 'Enlaces' })
+  const incoming = panel.getByRole('list', { name: 'La enlazan' })
+  await expect(incoming.getByRole('link', { name: 'Puerto Ceniza' })).toBeVisible()
+  await expect(incoming.getByText('Lo gobierna Maela Varn.')).toBeVisible()
+  const mentions = panel.getByRole('list', { name: 'La nombran sin enlazar' })
+  await expect(mentions.getByText('Preguntar a Maela Varn por el faro.')).toBeVisible()
+  await mentions.getByRole('button', { name: 'Enlazar en «Notas»' }).click()
+  await expect(page.getByRole('status').getByText('Enlazada en «Notas».')).toBeAttached()
+  await expect(incoming.getByRole('link', { name: 'Notas' })).toBeVisible()
+  await expect(panel.getByText('Ninguna página la nombra sin enlazarla.')).toBeVisible()
+
+  // Al borrarla, el aviso dice cuántas la enlazan
+  await page.getByRole('button', { name: 'Borrar' }).click()
+  await expect(page.getByText('La enlazan 2 páginas: sus enlaces se verán rotos.')).toBeVisible()
+  expect(maela).toBeTruthy()
+})
+
 test('los enlaces en sus tres estados y la lista de [[, en los dos temas @a11y', async ({ page }) => {
   const { maela, puerto } = await eana(page)
   await api(page, 'editPage', {

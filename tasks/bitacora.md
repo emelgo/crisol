@@ -37,10 +37,9 @@ Hay que contárselo al final, con lo que tenga que probar o revisar:
   (`https://neo.crisol.144-91-122-245.sslip.io/mcp`), con su cuenta de propietario. Después prueba crear_paginas con
   secretos y editar_pagina sobre una página que tenga abierta.
 
-## Tarea en curso: 14, entrantes, menciones y aviso al borrar
+## Tarea en curso: 15, vista previa e incrustados
 
-(Por empezar. Sale de `page_links`: entrantes con su fragmento, menciones sin enlazar con «Enlazar», «La enlazan N
-páginas» al borrar, y la herramienta MCP `enlaces_pagina`.)
+(Por empezar.)
 
 ## Hechas en esta tirada
 
@@ -51,5 +50,5 @@ páginas» al borrar, y la herramienta MCP `enlaces_pagina`.)
 - **11** (PR #54): leer_pagina, crear_paginas y editar_pagina. El diseño está en `docs/modulos.md`. En la CI, la
   prueba de la barra de formato falló una vez (Alt+F10 antes de la selección nueva); arreglada en #54.
 - **12** (PR #55, en staging): exportar en .zip.
-- **13** (rama `wiki/tarea-13-enlaces`): enlaces, `page_links`, resolución sola, `[[`. El diseño está en
-  `docs/modulos.md`.
+- **13** (PR #56, en staging, con la migración 0012): enlaces, `page_links`, resolución sola y `[[`.
+- **14** (rama `wiki/tarea-14-entrantes`): entrantes, menciones, «Enlazar», aviso al borrar y `enlaces_pagina`.

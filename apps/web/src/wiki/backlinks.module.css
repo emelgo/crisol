@@ -1,0 +1,34 @@
+/* Los enlaces de la página: bajo el cuerpo, discretos */
+.panel {
+  margin-block: var(--space-6);
+}
+
+.panel h3 {
+  margin-block: var(--space-4) var(--space-2);
+  font-size: 1rem;
+}
+
+.item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-3);
+}
+
+.path,
+.empty {
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+.secret {
+  color: var(--color-secret-text);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.fragment {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--color-muted);
+}

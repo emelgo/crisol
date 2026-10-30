@@ -350,3 +350,57 @@ export const listPageNames = defineAction({
     )
   })
 })
+
+/** Una página que enlaza o nombra a otra, con el trozo donde lo hace */
+const linkingPage = z.object({
+  pageId: z.uuid(),
+  title: z.string(),
+  path: z.array(z.string()),
+  fragment: z.string(),
+  inSecret: z.boolean().describe('Si el enlace o la mención está dentro de un secreto o una nota oculta')
+})
+
+export const getPageLinks = defineAction({
+  name: 'getPageLinks',
+  kind: 'read',
+  description:
+    'Los enlaces de una página: las páginas que la enlazan (con el trozo donde lo hacen), adónde enlaza ella (y si esos enlaces están bien, sin resolver o rotos) y dónde se la nombra sin enlazarla',
+  input: z.object({ pageId: z.uuid() }),
+  output: z.object({
+    incoming: z.array(linkingPage),
+    outgoing: z.array(
+      z.object({
+        pageId: z.uuid().nullable(),
+        title: z.string(),
+        anchor: z.string().nullable(),
+        state: z.enum(['ok', 'missing', 'broken'])
+      })
+    ),
+    mentions: z.array(linkingPage)
+  })
+})
+
+export const listUnresolvedLinks = defineAction({
+  name: 'listUnresolvedLinks',
+  kind: 'read',
+  description:
+    'Los enlaces sin resolver de la wiki de un mundo: a páginas que aún no existen, con cuántas veces se enlazan y desde qué páginas. Al crear una página con ese título (o darle ese alias), se resuelven solos',
+  input: z.object({ worldId: z.uuid() }),
+  output: z.object({
+    links: z.array(
+      z.object({
+        title: z.string(),
+        count: z.number().int(),
+        pages: z.array(z.object({ id: z.uuid(), title: z.string() }))
+      })
+    )
+  })
+})
+
+export const linkMention = defineAction({
+  name: 'linkMention',
+  kind: 'write',
+  description: 'Convierte en enlace la primera vez que una página nombra a otra sin enlazarla',
+  input: z.object({ sourcePageId: z.uuid(), targetPageId: z.uuid() }),
+  output: z.object({ linked: z.boolean() })
+})

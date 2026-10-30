@@ -5,6 +5,7 @@
  */
 import { documentsRepo, linksRepo, pagesRepo } from '@crisol/db'
 import { foldName, type NamedPage, reservedList, resolveName } from '@crisol/domain'
+import { plainText } from '@crisol/editor'
 import type { JSONContent } from '@tiptap/core'
 import { type ActionEnv, InvalidRequestError } from '../actions/context.ts'
 import { documentJson, writeDocument } from './content.ts'
@@ -76,7 +77,10 @@ export function resolveIncoming(json: JSONContent, names: readonly NamedPage[]):
   return json.content ? { ...json, content: json.content.map((child) => resolveIncoming(child, names)) } : json
 }
 
-/** Rehace los enlaces que salen de un documento con lo que hay ahora en él */
+/**
+ * Rehace los enlaces que salen de un documento con lo que hay ahora en él. Devuelve los que llevan solo el nombre y ya
+ * tienen página (nombre sin mayúsculas → id): hay que ponérsela también en el texto
+ */
 export async function rebuildLinks(
   env: ActionEnv,
   source: { worldId: string; pageId: string; documentId: string },
@@ -92,20 +96,24 @@ export async function rebuildLinks(
   )
   const pending = links.filter((link) => !link.pageId || !valid.has(link.pageId))
   const world = pending.length > 0 ? (names ?? (await worldNames(env, source.worldId))) : []
+  const byName = new Map<string, string>()
   await linksRepo.replaceLinks(
     env.db,
     source,
     links.map((link) => {
       const byId = link.pageId && valid.has(link.pageId) ? link.pageId : null
       const found = byId ? [] : resolveName(link.title, world)
+      const named = found.length === 1 ? (found[0]?.id ?? null) : null
+      if (named && !link.pageId) byName.set(foldName(link.title), named)
       return {
-        targetPageId: byId ?? (found.length === 1 ? (found[0]?.id ?? null) : null),
+        targetPageId: byId ?? named,
         targetTitle: link.title,
         targetKey: foldName(link.title),
         anchor: link.anchor
       }
     })
   )
+  return byName
 }
 
 /** Pone su página a los enlaces sin resolver de un documento que ya la tienen (por su nombre) */
@@ -167,12 +175,14 @@ export async function linksOfNewPages(
       doc.kind === 'body'
         ? ({ kind: 'body', pageId: doc.pageId } as const)
         : ({ kind: 'separate', documentId: doc.id, pageId: doc.pageId } as const)
-    await rebuildLinks(
-      env,
-      { worldId, pageId: doc.pageId, documentId: doc.id },
-      documentJson(env, ref, doc.state),
-      names
-    )
+    let json = documentJson(env, ref, doc.state)
+    const byName = await rebuildLinks(env, { worldId, pageId: doc.pageId, documentId: doc.id }, json, names)
+    // Los que se enlazan entre ellas (o a otras que ya había) se resuelven también en el texto
+    if (byName.size > 0) {
+      await writeDocument(env, ref, { userId: actorId, worldId }, (current) => withResolved(current, byName))
+      json = withResolved(json, byName)
+    }
+    await documentsRepo.setText(env.db, doc.id, plainText(json))
   }
   await resolvePending(
     env,
@@ -182,11 +192,25 @@ export async function linksOfNewPages(
   )
 }
 
-/** Tras guardar un documento en Hocuspocus: sus enlaces, de nuevo */
+/** Tras guardar un documento en Hocuspocus: sus enlaces y su texto plano, de nuevo */
 export async function linksOfStored(
   env: ActionEnv,
   source: { worldId: string; pageId: string; documentId: string },
-  json: JSONContent
+  json: JSONContent,
+  { kind, actorId, onError }: { kind: 'body' | 'separate'; actorId: string | null; onError: (error: unknown) => void }
 ) {
-  await rebuildLinks(env, source, json)
+  const byName = await rebuildLinks(env, source, json)
+  await documentsRepo.setText(env.db, source.documentId, plainText(json))
+  // Un enlace con solo el nombre que ya tiene página: se le pone también en el texto, después (no dentro del guardado)
+  if (byName.size > 0 && actorId) {
+    const ref =
+      kind === 'separate'
+        ? ({ kind: 'separate', documentId: source.documentId, pageId: source.pageId } as const)
+        : ({ kind: 'body', pageId: source.pageId } as const)
+    setTimeout(() => {
+      writeDocument(env, ref, { userId: actorId, worldId: source.worldId }, (current) =>
+        withResolved(current, byName)
+      ).catch(onError)
+    }, 0)
+  }
 }

@@ -185,7 +185,8 @@ Cada vía nueva por la que salen datos amplía `@fugas` en la misma tarea.
   - Archivos: `packages/editor/src/nodes/link.ts`, `packages/domain/src/links.ts`, `apps/server/src/wiki/links.ts`,
     `apps/web/src/wiki/link-suggest.tsx`.
 
-- [ ] **14. Entrantes, menciones y aviso al borrar**
+- [x] **14. Entrantes, menciones y aviso al borrar** — hecha. El panel va bajo el cuerpo (a la derecha, en la etapa
+  de interfaz). Añade `documents.text`, que usará la búsqueda.
   - Acepta:
     - Un panel con los entrantes (con su fragmento) y las menciones sin enlazar, con «Enlazar» de un clic.
     - Borrar avisa: «La enlazan N páginas».

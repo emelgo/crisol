@@ -49,7 +49,10 @@ describe('Actions', () => {
       readPage: true,
       createPages: true,
       editPage: true,
-      listPageNames: true
+      listPageNames: true,
+      getPageLinks: true,
+      listUnresolvedLinks: true,
+      linkMention: true
     }
     expect(Object.keys(names).sort()).toEqual(ACTIONS.map((a) => a.name).sort())
   })
