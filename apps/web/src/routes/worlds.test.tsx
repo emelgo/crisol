@@ -36,8 +36,41 @@ describe('mis mundos', () => {
     expect(within(list).getByText('Máster')).toBeDefined()
   })
 
+  it('en «Ajustes» se le pone descripción, icono y color, y la tarjeta lo enseña', async () => {
+    const world = {
+      id: crypto.randomUUID(),
+      organizationId: ORG.id,
+      name: 'Costa Gris',
+      description: '',
+      icon: null,
+      color: null,
+      cover: null,
+      role: 'master' as const,
+      version: 1
+    }
+    const { api } = renderWorlds(fakeApi({ organizations: [ORG], worlds: [world] }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Ajustes de Costa Gris' }))
+    const dialog = within(await screen.findByRole('dialog', { name: 'Ajustes de Costa Gris' }))
+    await userEvent.type(dialog.getByLabelText('Descripción'), 'Ciudades libres en la niebla')
+    await userEvent.click(dialog.getByRole('radio', { name: 'Torre' }))
+    await userEvent.click(dialog.getByRole('radio', { name: 'Vino' }))
+    await userEvent.click(dialog.getByRole('button', { name: 'Guardar' }))
+    expect(await screen.findByText('Ciudades libres en la niebla')).toBeDefined()
+    expect(api.calls).toContain('updateWorld')
+  })
+
   it('renombra un mundo', async () => {
-    const world = { id: crypto.randomUUID(), organizationId: ORG.id, name: 'Eana', role: 'master' as const, version: 1 }
+    const world = {
+      id: crypto.randomUUID(),
+      organizationId: ORG.id,
+      name: 'Eana',
+      description: '',
+      icon: null,
+      color: null,
+      cover: null,
+      role: 'master' as const,
+      version: 1
+    }
     const { api } = renderWorlds(fakeApi({ organizations: [ORG], worlds: [world] }))
     await userEvent.click(await screen.findByRole('button', { name: 'Renombrar Eana' }))
     const input = screen.getByLabelText('Nuevo nombre de Eana')
@@ -49,7 +82,17 @@ describe('mis mundos', () => {
   })
 
   it('cancelar el renombrado deja el nombre como estaba', async () => {
-    const world = { id: crypto.randomUUID(), organizationId: ORG.id, name: 'Eana', role: 'master' as const, version: 1 }
+    const world = {
+      id: crypto.randomUUID(),
+      organizationId: ORG.id,
+      name: 'Eana',
+      description: '',
+      icon: null,
+      color: null,
+      cover: null,
+      role: 'master' as const,
+      version: 1
+    }
     renderWorlds(fakeApi({ organizations: [ORG], worlds: [world] }))
     await userEvent.click(await screen.findByRole('button', { name: 'Renombrar Eana' }))
     await userEvent.click(screen.getByRole('button', { name: 'Cancelar' }))

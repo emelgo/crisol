@@ -17,6 +17,7 @@ describe('herramientas MCP', () => {
     expect(Object.keys(MCP_TOOLS).sort()).toEqual([
       'borrar_pagina',
       'buscar_paginas',
+      'cambiar_mundo',
       'crear_campana',
       'crear_mundo',
       'crear_paginas',

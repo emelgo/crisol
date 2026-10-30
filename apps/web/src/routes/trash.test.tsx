@@ -9,7 +9,17 @@ import { App } from '../app.tsx'
 import { createAppRouter } from '../router.tsx'
 
 const ORG = { id: crypto.randomUUID(), name: 'Fateforge', role: 'owner' as const }
-const world: World = { id: crypto.randomUUID(), organizationId: ORG.id, name: 'Eana', role: 'master', version: 1 }
+const world: World = {
+  id: crypto.randomUUID(),
+  organizationId: ORG.id,
+  name: 'Eana',
+  description: '',
+  icon: null,
+  color: null,
+  cover: null,
+  role: 'master',
+  version: 1
+}
 const campaign: Campaign = { id: crypto.randomUUID(), worldId: world.id, name: 'La Marca', role: 'master', version: 1 }
 
 const renderAt = (path: string, role: World['role'] = 'master') => {

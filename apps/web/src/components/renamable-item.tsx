@@ -23,6 +23,9 @@ interface Props {
   href?: string
   /** Más acciones, tras el rol */
   children?: ReactNode
+  /** Lo que va encima del nombre (la portada de un mundo), y la clase del elemento */
+  header?: ReactNode
+  className?: string
   /** Lo más largo que puede ser el nombre */
   maxLength?: number
   /** El aviso al borrar, si no es el de siempre */
@@ -41,6 +44,8 @@ export function RenamableItem({
   link,
   href,
   children,
+  header,
+  className,
   maxLength = 120,
   deleteWarning
 }: Props) {
@@ -93,7 +98,8 @@ export function RenamableItem({
   }
 
   return (
-    <li className={styles.item} ref={item}>
+    <li className={className ? `${styles.item} ${className}` : styles.item} ref={item}>
+      {header}
       {link ? (
         <Link to={link.to} params={link.params} className={`${styles.name} ${styles.entity}`}>
           {name}

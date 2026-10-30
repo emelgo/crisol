@@ -162,6 +162,13 @@
       "when": 1793344781685,
       "tag": "0022_palabras_acotadas",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1793360583418,
+      "tag": "0023_apariencia_de_los_mundos",
+      "breakpoints": true
     }
   ]
 }

@@ -8,6 +8,10 @@ const worldColumns = {
   id: worlds.id,
   organizationId: worlds.organizationId,
   name: worlds.name,
+  description: worlds.description,
+  icon: worlds.icon,
+  color: worlds.color,
+  cover: worlds.cover,
   version: worlds.version
 }
 
@@ -60,4 +64,17 @@ export function createWorldWithMaster(
 
 export function renameWorld(db: Database, context: OperationContext, worldId: string, name: string) {
   return operation(db, context, (w) => w.update(worlds, worldId, { name }))
+}
+
+/** Lo que se ve de un mundo en su tarjeta: nombre, descripción, icono, color y portada */
+export type WorldAppearance = Partial<{
+  name: string
+  description: string
+  icon: string | null
+  color: string | null
+  cover: { fileId: string; x: number; y: number } | null
+}>
+
+export function updateWorld(db: Database, context: OperationContext, worldId: string, patch: WorldAppearance) {
+  return operation(db, context, (w) => w.update(worlds, worldId, patch))
 }

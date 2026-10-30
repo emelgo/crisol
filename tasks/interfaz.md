@@ -48,8 +48,13 @@ del módulo 1.
   visible dice por qué y, si fue en una página, lleva a ella y a sus versiones. El historial guarda el id de la
   página en cada `editPage`. Los botones secundarios de toda la app pesan menos con ratón y con el dedo siguen del
   tamaño que se toca. Va con el punto 7 de sus pruebas, que sigue abierto hasta reproducirlo con él.
-- [ ] **7. Mis mundos.** Tarjetas con portada (imagen o color), icono y descripción, y un botón de ajustes en cada una.
-  En el servidor esto es nuevo: migración, API y herramienta MCP.
+- [x] **7. Mis mundos.**
+  - **Tarjeta**: arriba, la portada (imagen o color) con el icono en un recuadro de esquinas cortadas; debajo, el nombre
+    con letra de título, la descripción y las acciones.
+  - **«Ajustes»** abre un cuadro con la descripción, el icono (siete), el color (seis) y la portada, que usa el mismo
+    selector que la de las páginas.
+  - **Servidor**: la migración 0023, `updateWorld` (se deshace con el historial) y la herramienta MCP `cambiar_mundo`.
+  - **Renombrar y Borrar** siguen como estaban.
 - [ ] **8. Buscar y Ctrl+K.** Los filtros en el panel y los resultados agrupados por página.
 - [ ] **9. La hoja.** Pendiente de que Enrique diga qué ve mal. Lleva los puntos 11 (la nota lateral rodeada por el
   texto) y 12 (escalada al ancho del panel) de sus pruebas.

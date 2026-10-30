@@ -14,6 +14,10 @@ const world = (name: string, role: World['role'] = 'master'): World => ({
   id: crypto.randomUUID(),
   organizationId: ORG.id,
   name,
+  description: '',
+  icon: null,
+  color: null,
+  cover: null,
   role,
   version: 1
 })

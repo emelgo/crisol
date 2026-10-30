@@ -9,6 +9,7 @@ describe('Actions', () => {
       listWorlds: true,
       createWorld: true,
       renameWorld: true,
+      updateWorld: true,
       listCampaigns: true,
       createCampaign: true,
       renameCampaign: true,

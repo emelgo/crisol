@@ -41,7 +41,7 @@ import {
   restorePage,
   restoreWorld
 } from './trash.ts'
-import { createWorld, listWorlds, renameWorld } from './worlds.ts'
+import { createWorld, listWorlds, renameWorld, updateWorld } from './worlds.ts'
 
 export * from './action.ts'
 export * from './ai.ts'
@@ -64,6 +64,7 @@ export const ACTIONS = [
   listWorlds,
   createWorld,
   renameWorld,
+  updateWorld,
   listCampaigns,
   createCampaign,
   renameCampaign,
@@ -126,6 +127,7 @@ export type Actions = {
   listWorlds: typeof listWorlds
   createWorld: typeof createWorld
   renameWorld: typeof renameWorld
+  updateWorld: typeof updateWorld
   listCampaigns: typeof listCampaigns
   createCampaign: typeof createCampaign
   renameCampaign: typeof renameCampaign
