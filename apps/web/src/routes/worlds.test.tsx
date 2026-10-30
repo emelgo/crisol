@@ -96,6 +96,8 @@ describe('mis mundos', () => {
     const zone = within(settings.getByRole('region', { name: 'Zona de peligro' }))
     await userEvent.click(zone.getByRole('button', { name: 'Borrar el mundo' }))
     const confirm = within(await screen.findByRole('dialog', { name: '¿Borrar «Eana»?' }))
+    // El cursor ya está en el campo del nombre
+    expect(document.activeElement).toBe(confirm.getByLabelText('Nombre del mundo'))
     const button = confirm.getByRole<HTMLButtonElement>('button', { name: 'Borrar el mundo' })
     expect(button.disabled).toBe(true)
     await userEvent.type(confirm.getByLabelText('Nombre del mundo'), 'Ean')

@@ -87,6 +87,8 @@ export function ConfirmByName({ name, action, title, warning, label, onConfirm }
               value={typed}
               autoComplete="off"
               spellCheck={false}
+              // El cursor, en el campo en cuanto se abre (lo pone Modal, ya abierto)
+              data-autofocus=""
               onChange={(event) => setTyped(event.currentTarget.value)}
             />
             <FormError message={confirm.error ? errorText(confirm.error) : null} />
