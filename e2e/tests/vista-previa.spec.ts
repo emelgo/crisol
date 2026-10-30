@@ -63,9 +63,10 @@ test.describe('en escritorio', () => {
     await eana(page)
     await body(page).getByText('Lo gobierna').click()
     await page.keyboard.press('Home')
-    // Hasta justo antes del enlace, y la flecha lo elige entero
-    for (let i = 0; i < 'Lo gobierna '.length; i++) await page.keyboard.press('ArrowRight')
-    await page.keyboard.press('ArrowRight')
+    // Con la flecha hasta que el enlace queda elegido entero (sin contar letras: lo que importa es llegar)
+    const chosen = body(page).locator('.ProseMirror-selectednode')
+    for (let i = 0; i < 30 && (await chosen.count()) === 0; i++) await page.keyboard.press('ArrowRight')
+    await expect(chosen.getByRole('link', { name: 'Maela Varn', exact: true })).toBeVisible()
     const preview = page.getByRole('dialog', { name: 'Maela Varn' })
     await expect(preview).toBeVisible()
     await page.keyboard.press('Tab')
