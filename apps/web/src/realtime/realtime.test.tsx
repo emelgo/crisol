@@ -71,7 +71,8 @@ describe('el canal en tiempo real en la web', () => {
   it('se abre con la sesión y se cierra al salir', async () => {
     const { realtime } = renderAt('/mundos')
     await screen.findByRole('heading', { name: 'Mis mundos' })
-    expect(realtime.connections()).toBe(1)
+    // El canal se abre tras pintar: con la máquina cargada, puede llegar un poco después
+    await vi.waitFor(() => expect(realtime.connections()).toBe(1))
     await signOut()
     await vi.waitFor(() => expect(realtime.connections()).toBe(0))
   })
