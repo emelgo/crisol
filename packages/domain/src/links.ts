@@ -23,6 +23,23 @@ const plain = (name: string) =>
 const namesOf = (page: NamedPage) => [page.title, ...page.aliases]
 
 /**
+ * Las páginas de una lista por cada uno de sus nombres (sin mayúsculas). Se hace una vez por lista: al pasar un mundo
+ * entero se resuelven miles de enlaces contra la misma
+ */
+const indexes = new WeakMap<readonly NamedPage[], Map<string, NamedPage[]>>()
+function indexOf(pages: readonly NamedPage[]) {
+  let index = indexes.get(pages)
+  if (!index) {
+    index = new Map()
+    for (const page of pages) {
+      for (const name of new Set(namesOf(page).map(foldName))) index.set(name, [...(index.get(name) ?? []), page])
+    }
+    indexes.set(pages, index)
+  }
+  return index
+}
+
+/**
  * Las páginas a las que lleva un nombre: las que se llaman así (título o alias), o, con «A/B», la B que cuelga de A.
  * Una: resuelto; ninguna: sin resolver; varias: hay que elegir
  */
@@ -30,7 +47,7 @@ export function resolveName(name: string, pages: readonly NamedPage[]): NamedPag
   const parts = name.split('/').map(foldName).filter(Boolean)
   const last = parts.at(-1)
   if (!last) return []
-  const named = pages.filter((page) => namesOf(page).some((n) => foldName(n) === last))
+  const named = indexOf(pages).get(last) ?? []
   if (parts.length === 1) return named
   const above = parts.slice(0, -1)
   return named.filter((page) => {

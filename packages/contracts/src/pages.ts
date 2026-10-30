@@ -292,7 +292,7 @@ const newPage = z.object({
 export const createPages = defineAction({
   name: 'createPages',
   kind: 'write',
-  description: `Crea hasta 50 páginas de una vez en la wiki de un mundo, con su cuerpo y sus propiedades en ${MARKDOWN_HELP}. Pueden ir unas dentro de otras (parent, por su key). Es una sola operación del historial`,
+  description: `Crea hasta 50 páginas de una vez en la wiki de un mundo, con su cuerpo y sus propiedades en ${MARKDOWN_HELP}. Pueden ir unas dentro de otras (parent, por su key). Es una sola operación del historial. Un [[enlace]] a una página que aún no existe queda sin resolver y se resuelve solo al crearla: una wiki entera se puede pasar de 50 en 50 en cualquier orden. Los archivos (![[mapa.png]]) los sube el máster: se nombran por su nombre y se resuelven al subirlos`,
   input: z
     .object({
       worldId: z.uuid(),

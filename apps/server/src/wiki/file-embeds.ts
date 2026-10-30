@@ -7,7 +7,7 @@ import { filesRepo, linksRepo } from '@crisol/db'
 import { foldName } from '@crisol/domain'
 import type { JSONContent } from '@tiptap/core'
 import type { ActionEnv } from '../actions/context.ts'
-import { writeDocument } from './content.ts'
+import { patchDocument } from './content.ts'
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 
@@ -50,11 +50,14 @@ export function withResolvedFiles(json: JSONContent, byName: ReadonlyMap<string,
 export async function rebuildFileEmbeds(
   env: ActionEnv,
   source: { worldId: string; pageId: string; documentId: string },
-  json: JSONContent
+  json: JSONContent,
+  /** Un documento recién creado: sin nada que quitar */
+  fresh = false
 ) {
   const embeds = fileEmbedsIn(json)
   const byName = new Map<string, string>()
   if (embeds.length === 0) {
+    if (fresh) return byName
     await linksRepo.replaceFileEmbeds(env.db, source, [])
     return byName
   }
@@ -113,6 +116,6 @@ export async function resolvePendingFiles(env: ActionEnv, worldId: string, actor
       doc.kind === 'body'
         ? ({ kind: 'body', pageId: doc.pageId } as const)
         : ({ kind: 'separate', documentId, pageId: doc.pageId } as const)
-    await writeDocument(env, ref, { userId: actorId, worldId }, (current) => withResolvedFiles(current, doc.resolved))
+    await patchDocument(env, ref, { userId: actorId, worldId }, (current) => withResolvedFiles(current, doc.resolved))
   }
 }

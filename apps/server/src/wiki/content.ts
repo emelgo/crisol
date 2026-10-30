@@ -132,3 +132,54 @@ export async function writeDocument(
     await documentsRepo.mergeSeparate(env.db, ref.documentId, place.userId, merge)
   }
 }
+
+/**
+ * Como writeDocument, para lo que no cambia el texto (poner su página a un enlace que la esperaba): si nadie tiene el
+ * documento abierto, va directo a lo guardado, sin cargarlo en Hocuspocus ni volver a rehacer sus enlaces al soltarlo
+ */
+export async function patchDocument(
+  env: ActionEnv,
+  ref: DocumentRef,
+  place: { userId: string; worldId: string },
+  change: (current: JSONContent) => JSONContent
+) {
+  if (env.collab?.hocuspocus.documents.has(nameOf(ref))) return writeDocument(env, ref, place, change)
+  const { collab: _collab, ...stored } = env
+  return writeDocument(stored, ref, place, change)
+}
+
+/**
+ * patchDocument para muchos documentos a la vez (los enlaces que esperaban a unas páginas): los que alguien tiene
+ * abiertos, en vivo; los demás, leídos y guardados de una vez
+ */
+export async function patchDocuments(
+  env: ActionEnv,
+  place: { userId: string; worldId: string },
+  items: readonly { ref: DocumentRef; documentId: string; change: (current: JSONContent) => JSONContent }[]
+) {
+  const stored: (typeof items)[number][] = []
+  for (const item of items) {
+    if (env.collab?.hocuspocus.documents.has(nameOf(item.ref))) await writeDocument(env, item.ref, place, item.change)
+    else stored.push(item)
+  }
+  if (stored.length === 0) return
+  const states = new Map(
+    (
+      await documentsRepo.statesOf(
+        env.db,
+        stored.map((item) => item.documentId)
+      )
+    ).map((row) => [row.id, row.state])
+  )
+  const next = stored.flatMap((item) => {
+    const state = states.get(item.documentId)
+    if (!state) return []
+    const doc = new Y.Doc()
+    Y.applyUpdate(doc, state)
+    apply(doc, schemaOf(item.ref), item.change)
+    const merged = Y.encodeStateAsUpdate(doc)
+    doc.destroy()
+    return [{ id: item.documentId, state: merged }]
+  })
+  await documentsRepo.saveStates(env.db, place.userId, next)
+}

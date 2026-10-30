@@ -8,10 +8,10 @@ import { foldName, type NamedPage, reservedList, resolveName } from '@crisol/dom
 import type { JSONContent } from '@tiptap/core'
 import { type ActionEnv, InvalidRequestError } from '../actions/context.ts'
 import { pageContentChanged } from '../realtime/events.ts'
-import { documentJson, writeDocument } from './content.ts'
+import { documentJson, patchDocument, patchDocuments, writeDocument } from './content.ts'
 import { rebuildFileEmbeds, withResolvedFiles } from './file-embeds.ts'
 import { propertiesOf } from './properties.ts'
-import { indexDocument } from './search.ts'
+import { indexDocument, indexDocuments } from './search.ts'
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 
@@ -92,9 +92,12 @@ export async function rebuildLinks(
   env: ActionEnv,
   source: { worldId: string; pageId: string; documentId: string },
   json: JSONContent,
-  names?: readonly NamedPage[]
+  names?: readonly NamedPage[],
+  /** Un documento recién creado: sin enlaces que quitar */
+  fresh = false
 ) {
   const links = linksIn(json)
+  if (fresh && links.length === 0) return new Map<string, string>()
   // Por id, solo los de este mundo (aunque estén en la papelera: se ven rotos)
   const valid = await pagesRepo.inWorld(
     env.db,
@@ -121,6 +124,48 @@ export async function rebuildLinks(
     })
   )
   return byName
+}
+
+/**
+ * rebuildLinks para muchos documentos recién creados a la vez: una consulta para ver qué páginas existen y otra para
+ * guardar todos los enlaces. Devuelve, por documento, los que se resolvieron por su nombre
+ */
+async function rebuildLinksMany(
+  env: ActionEnv,
+  docs: readonly { source: { worldId: string; pageId: string; documentId: string }; json: JSONContent }[],
+  names: readonly NamedPage[]
+) {
+  const found = docs.map((doc) => ({ ...doc, links: linksIn(doc.json) }))
+  const worldId = docs[0]?.source.worldId ?? ''
+  const valid = await pagesRepo.inWorld(
+    env.db,
+    worldId,
+    found.flatMap((doc) => doc.links.flatMap((link) => (link.pageId ? [link.pageId] : [])))
+  )
+  const byDocument = new Map<string, Map<string, string>>()
+  await linksRepo.replaceLinksMany(
+    env.db,
+    found.map((doc) => {
+      const byName = new Map<string, string>()
+      byDocument.set(doc.source.documentId, byName)
+      return {
+        source: doc.source,
+        links: doc.links.map((link) => {
+          const byId = link.pageId && valid.has(link.pageId) ? link.pageId : null
+          const matches = byId ? [] : resolveName(link.title, names)
+          const named = matches.length === 1 ? (matches[0]?.id ?? null) : null
+          if (named && !link.pageId) byName.set(foldName(link.title), named)
+          return {
+            targetPageId: byId ?? named,
+            targetTitle: link.title,
+            targetKey: foldName(link.title),
+            anchor: link.anchor
+          }
+        })
+      }
+    })
+  )
+  return byDocument
 }
 
 /** Pone su página a los enlaces sin resolver de un documento que ya la tienen (por su nombre) */
@@ -159,13 +204,18 @@ export async function resolvePending(env: ActionEnv, worldId: string, actorId: s
     byDocument.set(link.sourceDocumentId, doc)
   }
   for (const [target, ids] of resolvedTo) await linksRepo.resolveLinks(env.db, ids, target)
-  for (const [documentId, doc] of byDocument) {
-    const ref =
-      doc.kind === 'body'
-        ? ({ kind: 'body', pageId: doc.pageId } as const)
-        : ({ kind: 'separate', documentId, pageId: doc.pageId } as const)
-    await writeDocument(env, ref, { userId: actorId, worldId }, (current) => withResolved(current, doc.resolved))
-  }
+  await patchDocuments(
+    env,
+    { userId: actorId, worldId },
+    [...byDocument].map(([documentId, doc]) => ({
+      documentId,
+      ref:
+        doc.kind === 'body'
+          ? ({ kind: 'body', pageId: doc.pageId } as const)
+          : ({ kind: 'separate', documentId, pageId: doc.pageId } as const),
+      change: (current: JSONContent) => withResolved(current, doc.resolved)
+    }))
+  )
 }
 
 /** Los enlaces de los documentos recién creados (sin pasar por Hocuspocus), y lo que esperaba a esas páginas */
@@ -177,23 +227,28 @@ export async function linksOfNewPages(
 ) {
   const pageIds = created.map((page) => page.id)
   const names = await worldNames(env, worldId)
-  for (const doc of await documentsRepo.documentsWithState(env.db, pageIds)) {
+  const indexed: { documentId: string; json: JSONContent }[] = []
+  const docs = (await documentsRepo.documentsWithState(env.db, pageIds)).map((doc) => {
     const ref =
       doc.kind === 'body'
         ? ({ kind: 'body', pageId: doc.pageId } as const)
         : ({ kind: 'separate', documentId: doc.id, pageId: doc.pageId } as const)
-    let json = documentJson(env, ref, doc.state)
-    const source = { worldId, pageId: doc.pageId, documentId: doc.id }
-    const byName = await rebuildLinks(env, source, json, names)
-    const filesByName = await rebuildFileEmbeds(env, source, json)
-    // Los que se enlazan entre ellas (o a otras que ya había) se resuelven también en el texto
+    return { ref, source: { worldId, pageId: doc.pageId, documentId: doc.id }, json: documentJson(env, ref, doc.state) }
+  })
+  const resolved = await rebuildLinksMany(env, docs, names)
+  for (const { ref, source, json: read } of docs) {
+    let json = read
+    const byName = resolved.get(source.documentId) ?? new Map<string, string>()
+    const filesByName = await rebuildFileEmbeds(env, source, json, true)
+    // Lo que se resolvió por su nombre (de la tanda ya llevan su id) se pone también en el texto
     if (byName.size > 0 || filesByName.size > 0) {
       const resolve = (current: JSONContent) => withResolvedFiles(withResolved(current, byName), filesByName)
-      await writeDocument(env, ref, { userId: actorId, worldId }, resolve)
+      await patchDocument(env, ref, { userId: actorId, worldId }, resolve)
       json = resolve(json)
     }
-    await indexDocument(env, doc.id, json)
+    indexed.push({ documentId: source.documentId, json })
   }
+  await indexDocuments(env, indexed)
   await resolvePending(
     env,
     worldId,

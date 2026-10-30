@@ -60,17 +60,6 @@ function withDocuments(body: JSONContent, documents: ReadonlyMap<string, string>
   return body.content ? { ...body, content: body.content.map((child) => withDocuments(child, documents)) } : body
 }
 
-/** Los enlaces a páginas de la misma tanda, sin resolver aún: se resuelven al crearlas */
-function withoutBatch(json: JSONContent): JSONContent {
-  if (
-    (json.type === 'pageLink' || json.type === 'pageEmbed') &&
-    String(json.attrs?.pageId ?? '').startsWith('batch:')
-  ) {
-    return { ...json, attrs: { ...json.attrs, pageId: null } }
-  }
-  return json.content ? { ...json, content: json.content.map(withoutBatch) } : json
-}
-
 /** Lo de dentro de un secreto como documento: con sus ids, y un párrafo si viene vacío */
 const separateDoc = (content: JSONContent[]): JSONContent =>
   fillJsonIds({ type: 'doc', content: content.length > 0 ? content : [{ type: 'paragraph' }] })
@@ -173,8 +162,9 @@ export const pageContentActions = [
     const blocker = moveBlocker({ pageId: '', parentPath, subtreeHeight: height })
     if (blocker) throw new InvalidRequestError(blocker)
 
-    // Todo se lee y se comprueba antes de escribir nada. Los enlaces, contra las páginas del mundo y las de la tanda:
-    // a una de la tanda se quedan sin resolver y se resuelven al crearla (como los de Eana, en cualquier orden)
+    // Todo se lee y se comprueba antes de escribir nada. Los enlaces, contra las páginas del mundo y las de la tanda,
+    // que ya tienen su id: así salen resueltos sin volver a escribir el texto (lo que no está, se resuelve al crearlo)
+    const pageIds = new Map(ordered.map((page) => [page.key, randomUUID()]))
     const reads = new Map(ordered.map((page) => [page.key, parse(page.markdown ?? '')]))
     const above = parent ? (await pagesRepo.pagePath(ctx.db, parent.id)).map((p) => p.title) : []
     const pathOf = (key: string): string[] => {
@@ -185,7 +175,7 @@ export const pageContentActions = [
     const batch = ordered.map((page) => {
       const aliases = reads.get(page.key)?.properties.find((p) => fold(p.name) === 'alias')
       return {
-        id: `batch:${page.key}`,
+        id: pageIds.get(page.key) as string,
         title: page.title,
         aliases: aliases?.type === 'list' ? aliases.value : [],
         path: pathOf(page.key)
@@ -193,7 +183,7 @@ export const pageContentActions = [
     })
     const names = [...(await worldNames(ctx, wiki.worldId)), ...batch]
     const files = await worldFiles(ctx, wiki.worldId)
-    const links = (json: JSONContent) => withoutBatch(resolveIncoming(json, names, files))
+    const links = (json: JSONContent) => resolveIncoming(json, names, files)
     const prepared = ordered.map((page) => {
       const read = reads.get(page.key) as ReadPage
       const documents = new Map(read.separates.map((separate) => [separate.id, randomUUID()]))
@@ -207,6 +197,7 @@ export const pageContentActions = [
       // Con texto, su primera versión va en la misma operación
       const bodyId = bodyState ? randomUUID() : undefined
       const newPage: pagesRepo.NewPage = {
+        id: pageIds.get(page.key) as string,
         key: page.key,
         parentKey: page.parent ?? null,
         title: page.title,
@@ -260,7 +251,7 @@ export const pageContentActions = [
       ctx,
       wiki.worldId,
       created.map((page) => {
-        const named = batch.find((b) => b.id === `batch:${page.key}`)
+        const named = batch.find((b) => b.id === page.id)
         return { id: page.id, names: [page.title, ...(named?.aliases ?? [])] }
       }),
       ctx.actor.userId

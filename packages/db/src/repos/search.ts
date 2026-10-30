@@ -2,7 +2,7 @@
  * La búsqueda de la wiki (ADR-0003): en Postgres, en español sin tildes. Cada documento se indexa por secciones; las
  * páginas, por su título y sus propiedades. Las erratas se arreglan ampliando cada palabra con las parecidas del mundo
  */
-import { eq, type SQL, sql } from 'drizzle-orm'
+import { eq, inArray, type SQL, sql } from 'drizzle-orm'
 import type { Database } from '../client.ts'
 import { documents } from '../schema/documents.ts'
 import { searchSections } from '../schema/search.ts'
@@ -25,6 +25,37 @@ export async function replaceSections(db: Database, documentId: string, sections
     await tx
       .insert(searchSections)
       .values(sections.map((section, position) => ({ ...doc, documentId, position, ...section })))
+  })
+}
+
+/** Rehace las secciones de muchos documentos de una vez (los de una tanda de páginas nuevas) */
+export async function replaceSectionsMany(
+  db: Database,
+  items: readonly { documentId: string; sections: readonly SectionRow[] }[]
+) {
+  if (items.length === 0) return
+  const ids = items.map((item) => item.documentId)
+  await db.transaction(async (tx) => {
+    const docs = await tx
+      .select({ id: documents.id, worldId: documents.worldId, pageId: documents.pageId, kind: documents.kind })
+      .from(documents)
+      .where(inArray(documents.id, ids))
+    const byId = new Map(docs.map((doc) => [doc.id, doc]))
+    await tx.delete(searchSections).where(inArray(searchSections.documentId, ids))
+    const rows = items.flatMap((item) => {
+      const doc = byId.get(item.documentId)
+      if (!doc) return []
+      return item.sections.map((section, position) => ({
+        worldId: doc.worldId,
+        pageId: doc.pageId,
+        kind: doc.kind,
+        documentId: doc.id,
+        position,
+        ...section
+      }))
+    })
+    // De mil en mil: un INSERT con demasiados parámetros no cabe
+    for (let i = 0; i < rows.length; i += 1000) await tx.insert(searchSections).values(rows.slice(i, i + 1000))
   })
 }
 

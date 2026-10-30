@@ -305,6 +305,8 @@ export function pageNames(db: Database, worldId: string) {
 
 /** Una página nueva de las que se crean de una vez, con su cuerpo y sus secretos ya hechos estado de Yjs */
 export interface NewPage {
+  /** Su id, si se da de antemano (para resolver ya los enlaces de la tanda) */
+  id?: string
   key: string
   /** La de la misma tanda que es su madre (va antes en la lista); sin ella, la madre común */
   parentKey: string | null
@@ -337,15 +339,31 @@ export function createPagesWithBodies(
     const ids = new Map<string, string>()
     const created: { key: string; id: string; title: string; parentId: string | null }[] = []
     const docs: (typeof documents.$inferInsert)[] = []
+    // Con los ids de antemano, las propiedades van ya en la fila (sin cambiarla después)
+    const given = new Map(input.pages.flatMap((page) => (page.id ? [[page.key, page.id] as const] : [])))
+    const early = given.size === input.pages.length ? input.properties(given) : null
+    // La última posición de cada rama: se pregunta una vez y se sigue de ahí
+    const last = new Map<string | null, string | null>()
     for (const page of input.pages) {
       const parentId = page.parentKey ? (ids.get(page.parentKey) ?? null) : input.parentId
-      const position = await placeKey(w.read, input.worldId, { parentId })
+      if (!last.has(parentId)) {
+        const [found] = await w.read
+          .select({ position: sql<string | null>`max(${pages.position} collate "C")` })
+          .from(pages)
+          .where(inBranch(input.worldId, parentId))
+        last.set(parentId, found?.position ?? null)
+      }
+      const position = keyBetween(last.get(parentId) ?? null, null)
+      last.set(parentId, position)
+      const properties = early?.get(page.key)
       const row = await w.insert(pages, {
+        ...(page.id ? { id: page.id } : {}),
         worldId: input.worldId,
         parentId,
         position,
         title: page.title,
-        icon: page.icon
+        icon: page.icon,
+        ...(properties && properties.length > 0 ? { properties } : {})
       })
       ids.set(page.key, row.id)
       created.push({ key: page.key, id: row.id, title: row.title, parentId })
@@ -361,9 +379,11 @@ export function createPagesWithBodies(
       const via = context.via === 'ai' ? 'ai' : context.via === 'system' ? 'system' : 'ui'
       await recordVersion(w, { pageId: id, worldId: input.worldId, actorId: context.actorId, via, ...page.version })
     }
-    for (const [key, properties] of input.properties(ids)) {
-      const id = ids.get(key)
-      if (id && properties.length > 0) await w.update(pages, id, { properties })
+    if (!early) {
+      for (const [key, properties] of input.properties(ids)) {
+        const id = ids.get(key)
+        if (id && properties.length > 0) await w.update(pages, id, { properties })
+      }
     }
     return created
   })
