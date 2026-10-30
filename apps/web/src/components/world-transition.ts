@@ -24,6 +24,8 @@ export function enterWorld(worldId: string, card: Element | null) {
       other.style.removeProperty('view-transition-name')
   }
   if (card instanceof HTMLElement) card.style.setProperty('view-transition-name', 'mundo-actual')
+  // El panel del mundo señalado (Mis mundos) no entra en la foto: la tarjeta es la que se convierte en la cabecera
+  for (const panel of document.querySelectorAll<HTMLElement>('[data-vista-previa]')) panel.style.visibility = 'hidden'
   embers()
 }
 

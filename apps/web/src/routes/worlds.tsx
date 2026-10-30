@@ -44,7 +44,7 @@ export function Worlds() {
 
   return (
     <section className={styles.layout}>
-      <aside className={styles.detail} aria-label={t('worlds.detail')}>
+      <aside className={styles.detail} aria-label={t('worlds.detail')} data-vista-previa>
         {preview && <WorldDetail key={preview.id} world={preview} />}
       </aside>
       <div className={styles.center}>
