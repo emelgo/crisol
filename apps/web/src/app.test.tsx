@@ -1,7 +1,7 @@
 import { createMemoryHistory } from '@tanstack/react-router'
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { fakeAccountClient } from './account/fake.ts'
 import { fakeApi } from './api/fake.ts'
 import { App } from './app.tsx'
@@ -15,6 +15,13 @@ const renderAt = (path: string) =>
       api={fakeApi().client}
     />
   )
+
+// El tutorial guiado de Mis mundos ya hecho: que no se ponga en medio
+beforeEach(() => {
+  for (const email of ['e@crisol.test', 'a@crisol.test']) {
+    localStorage.setItem(`crisol.recorridos.${email}`, JSON.stringify({ seen: ['mundos'] }))
+  }
+})
 
 afterEach(() => {
   document.documentElement.removeAttribute('data-theme')
@@ -37,21 +44,31 @@ describe('App', () => {
     expect(screen.getByRole('button', { name: 'Cambiar a tema claro' })).toBeDefined()
   })
 
-  it('el propietario tiene en la barra sus mundos, el historial, la papelera y la IA, con la actual marcada', async () => {
+  it('el propietario tiene en la barra sus mundos y sus archivos, con la actual marcada, y abajo el historial y la papelera', async () => {
     const owner = fakeApi({ organizations: [{ id: crypto.randomUUID(), name: 'Fateforge', role: 'owner' }] })
+    const router = createAppRouter(createMemoryHistory({ initialEntries: ['/mundos'] }))
     render(
       <App
-        router={createAppRouter(createMemoryHistory({ initialEntries: ['/mundos'] }))}
+        router={router}
         accounts={fakeAccountClient({ account: { name: 'Enrique', email: 'e@crisol.test' } }).client}
         api={owner.client}
       />
     )
     const sections = await screen.findByRole('navigation', { name: 'Secciones' })
-    for (const name of ['Mundos', 'Historial', 'Papelera', 'IA']) {
+    for (const name of ['Mundos', 'Archivos']) {
       expect(await within(sections).findByRole('link', { name })).toBeDefined()
     }
     expect(within(sections).getByRole('link', { name: 'Mundos' }).getAttribute('aria-current')).toBe('page')
-    expect(within(sections).getByRole('link', { name: 'Historial' }).getAttribute('aria-current')).toBeNull()
+    expect(within(sections).getByRole('link', { name: 'Archivos' }).getAttribute('aria-current')).toBeNull()
+    // Historial y Papelera no llevan a otra página: se abren encima de la que se ve
+    for (const name of ['Historial', 'Papelera']) {
+      await userEvent.click(await screen.findByRole('button', { name }))
+      const opened = await screen.findByRole('dialog', { name })
+      expect(within(opened).getByRole('heading', { level: 1, name })).toBeDefined()
+      expect(router.state.location.pathname).toBe('/mundos')
+      await userEvent.click(within(opened).getAllByRole('button', { name: 'Cerrar' })[0] as HTMLElement)
+      expect(screen.queryByRole('dialog', { name })).toBeNull()
+    }
   })
 
   it('quien no es propietario solo tiene sus mundos en la barra', async () => {
@@ -64,8 +81,10 @@ describe('App', () => {
     )
     const sections = await screen.findByRole('navigation', { name: 'Secciones' })
     expect(await within(sections).findByRole('link', { name: 'Mundos' })).toBeDefined()
-    expect(within(sections).queryByRole('link', { name: 'Historial' })).toBeNull()
-    expect(within(sections).queryByRole('link', { name: 'IA' })).toBeNull()
+    await screen.findByText('Aún no tienes mundos')
+    expect(within(sections).queryByRole('link', { name: 'Archivos' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Historial' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Papelera' })).toBeNull()
   })
 
   it('sin sesión no hay barra de secciones', async () => {

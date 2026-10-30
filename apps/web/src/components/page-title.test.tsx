@@ -2,7 +2,7 @@ import type { Campaign, World } from '@crisol/contracts'
 import { createMemoryHistory } from '@tanstack/react-router'
 import { act, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { fakeAccountClient } from '../account/fake.ts'
 import { fakeApi } from '../api/fake.ts'
 import { App } from '../app.tsx'
@@ -32,12 +32,12 @@ const campaign: Campaign = {
   version: 1
 }
 
-const renderAt = (path: string) => {
+const renderAt = (path: string, signedIn = true) => {
   const router = createAppRouter(createMemoryHistory({ initialEntries: [path] }))
   render(
     <App
       router={router}
-      accounts={fakeAccountClient({ account: { name: 'Enrique', email: 'e@crisol.test' } }).client}
+      accounts={fakeAccountClient(signedIn ? { account: { name: 'Enrique', email: 'e@crisol.test' } } : {}).client}
       api={fakeApi({ organizations: [ORG], worlds: [world], campaigns: [campaign] }).client}
     />
   )
@@ -47,13 +47,24 @@ const renderAt = (path: string) => {
 const h1 = (name: string) => screen.findByRole('heading', { level: 1, name })
 
 describe('el título de cada página', () => {
-  it('cada pantalla tiene el suyo en la pestaña', async () => {
-    const router = renderAt('/')
+  // Los tutoriales guiados ya hechos: que no se lleven el foco
+  beforeEach(() =>
+    localStorage.setItem('crisol.recorridos.e@crisol.test', JSON.stringify({ seen: ['mundos', 'mundo', 'campanas'] }))
+  )
+
+  it('la portada, sin sesión, lleva solo el nombre', async () => {
+    renderAt('/', false)
     await h1('Crisol')
     await waitFor(() => expect(document.title).toBe('Crisol'))
+  })
+
+  it('cada pantalla tiene el suyo en la pestaña', async () => {
+    const router = renderAt('/mundos')
+    await h1('Mis mundos')
+    await waitFor(() => expect(document.title).toBe('Mis mundos · Crisol'))
     for (const [path, title] of [
-      ['/mundos', 'Mis mundos · Crisol'],
       [`/mundos/${world.id}`, 'Eana · Crisol'],
+      [`/mundos/${world.id}/campanas`, 'Campañas · Crisol'],
       [`/mundos/${world.id}/campanas/${campaign.id}`, 'La Marca · Crisol'],
       ['/historial', 'Historial · Crisol'],
       ['/no-existe', 'Página no encontrada · Crisol']
@@ -69,6 +80,8 @@ describe('el título de cada página', () => {
     expect(document.activeElement).toBe(document.body)
     await userEvent.click(await screen.findByRole('link', { name: 'Eana' }))
     await waitFor(async () => expect(document.activeElement).toBe(await h1('Eana')))
+    await userEvent.click(await screen.findByRole('link', { name: 'Campañas' }))
+    await waitFor(async () => expect(document.activeElement).toBe(await h1('Campañas')))
     // La campaña pinta su título cuando llegan sus datos: el foco va a él en cuanto aparece
     await userEvent.click(await screen.findByRole('link', { name: 'La Marca' }))
     await waitFor(async () => expect(document.activeElement).toBe(await h1('La Marca')))

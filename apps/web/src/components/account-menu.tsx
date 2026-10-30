@@ -149,7 +149,7 @@ export function AccountMenu({ variant = 'bar' }: { variant?: 'bar' | 'ribbon' })
                 aria-haspopup="dialog"
                 onClick={() => {
                   setOpen(false)
-                  windows?.open('perfil')
+                  windows?.open('perfil', trigger.current)
                 }}
               >
                 <User aria-hidden="true" size={18} />
@@ -162,7 +162,7 @@ export function AccountMenu({ variant = 'bar' }: { variant?: 'bar' | 'ribbon' })
                 aria-haspopup="dialog"
                 onClick={() => {
                   setOpen(false)
-                  windows?.open('ajustes')
+                  windows?.open('ajustes', trigger.current)
                 }}
               >
                 <Settings aria-hidden="true" size={18} />

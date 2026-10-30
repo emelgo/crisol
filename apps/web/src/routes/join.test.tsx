@@ -26,6 +26,15 @@ const fill = async (label: string, value: string) => {
   await userEvent.clear(input)
   await userEvent.type(input, value)
 }
+// Crear la cuenta: nombre y apellido(s), el nombre de usuario, el email y la contraseña dos veces
+const fillNewAccount = async (email: string, password: string) => {
+  await fill('Nombre', 'Ana')
+  await fill('Apellido(s)', 'Ruiz')
+  await fill('Nombre de usuario', 'Jugadora')
+  await fill('Email', email)
+  await fill('Contraseña', password)
+  await fill('Repite la contraseña', password)
+}
 
 describe('unirse con el enlace', () => {
   it('un enlace que no vale lo dice', async () => {
@@ -83,9 +92,7 @@ describe('unirse con el enlace', () => {
   it('sin cuenta, crearla une a la campaña de una vez', async () => {
     const accounts = fakeAccountClient({ invitations: { abc: invitation() } })
     const router = renderJoin(accounts)
-    await fill('Nombre', 'Jugadora')
-    await fill('Email', 'nueva@crisol.test')
-    await fill('Contraseña', 'una-clave-larga')
+    await fillNewAccount('nueva@crisol.test', 'una-clave-larga')
     await userEvent.click(screen.getByRole('button', { name: 'Crear la cuenta y entrar' }))
     await screen.findByRole('heading', { level: 1 })
     expect(router.state.location.pathname).toBe('/mundos/w1/campanas/c1')
@@ -95,9 +102,7 @@ describe('unirse con el enlace', () => {
     const accounts = fakeAccountClient({ invitations: { abc: invitation() } })
     accounts.passwords.set('nueva@crisol.test', 'otra-clave-larga')
     renderJoin(accounts)
-    await fill('Nombre', 'Jugadora')
-    await fill('Email', 'nueva@crisol.test')
-    await fill('Contraseña', 'una-clave-larga')
+    await fillNewAccount('nueva@crisol.test', 'una-clave-larga')
     await userEvent.click(screen.getByRole('button', { name: 'Crear la cuenta y entrar' }))
     expect((await screen.findByRole('alert')).textContent).toBe('Ese email ya tiene cuenta: entra con ella más abajo')
   })
@@ -131,9 +136,7 @@ describe('unirse con el enlace', () => {
     const accounts = fakeAccountClient({ invitations: { abc: invitation() } })
     accounts.passwords.set('j@crisol.test', 'una-clave-larga')
     renderJoin(accounts)
-    await fill('Nombre', 'Jugadora')
-    await fill('Email', 'j@crisol.test')
-    await fill('Contraseña', 'otra-clave-larga')
+    await fillNewAccount('j@crisol.test', 'otra-clave-larga')
     await userEvent.click(screen.getByRole('button', { name: 'Crear la cuenta y entrar' }))
     await screen.findByRole('alert')
     await userEvent.click(screen.getByRole('button', { name: 'Ya tengo cuenta' }))

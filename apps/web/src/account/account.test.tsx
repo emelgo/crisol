@@ -1,12 +1,12 @@
 import { createMemoryHistory } from '@tanstack/react-router'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { ApiError } from '../api/client.ts'
 import { fakeApi } from '../api/fake.ts'
 import { App } from '../app.tsx'
 import { createAppRouter } from '../router.tsx'
-import { announced, inMain, signOut } from '../testing.ts'
+import { inMain, signOut } from '../testing.ts'
 import { fakeAccountClient } from './fake.ts'
 
 const renderAt = (path: string, fake = fakeAccountClient()) => {
@@ -19,6 +19,20 @@ const fill = async (label: string, value: string) => {
   await userEvent.clear(input)
   await userEvent.type(input, value)
 }
+// Una cuenta nueva: nombre y apellido(s), el nombre de usuario (el que se ve), el email y la contraseña dos veces
+const fillNewAccount = async (username: string, email: string, password: string, confirm = password) => {
+  await fill('Nombre', 'Enrique')
+  await fill('Apellido(s)', 'Mellado')
+  await fill('Nombre de usuario', username)
+  await fill('Email', email)
+  await fill('Contraseña', password)
+  await fill('Repite la contraseña', confirm)
+}
+// La región viva, fuera de la página (el perfil enseña «Guardado» con su propio role="status")
+const liveRegion = () => screen.getAllByRole('status').filter((status) => !status.closest('main'))
+
+// El tutorial guiado de Mis mundos ya hecho: que no se ponga en medio
+beforeEach(() => localStorage.setItem('crisol.recorridos.enrique@crisol.test', JSON.stringify({ seen: ['mundos'] })))
 
 describe('entrar', () => {
   it('con email y contraseña correctos entra y vuelve a la portada', async () => {
@@ -44,13 +58,27 @@ describe('entrar', () => {
 describe('arranque', () => {
   it('con un enlace válido crea la cuenta del propietario', async () => {
     const { fake } = renderAt('/arranque/abc', fakeAccountClient({ bootstrap: { abc: 'Crisol de Enrique' } }))
-    expect(await screen.findByText('Crisol de Enrique')).toBeDefined()
-    await fill('Nombre', 'Enrique')
-    await fill('Email', 'enrique@crisol.test')
-    await fill('Contraseña', 'una-clave-larga')
+    expect(await screen.findByText(/Crisol de Enrique/)).toBeDefined()
+    await fillNewAccount('Quique', 'enrique@crisol.test', 'una-clave-larga')
     await userEvent.click(screen.getByRole('button', { name: 'Crear la cuenta' }))
     expect(await screen.findByRole('heading', { level: 1, name: 'Mis mundos' })).toBeDefined()
     expect(fake.passwords.get('enrique@crisol.test')).toBe('una-clave-larga')
+    // En la app se le ve por su nombre de usuario
+    expect(screen.getByRole('button', { name: 'Quique', expanded: false })).toBeDefined()
+  })
+
+  it('no deja una contraseña fácil de adivinar ni una repetida que no coincide', async () => {
+    const fake = fakeAccountClient({ bootstrap: { abc: 'Crisol de Enrique' } })
+    renderAt('/arranque/abc', fake)
+    await fillNewAccount('Quique', 'enrique@crisol.test', 'contraseña123', 'contraseña123')
+    expect(screen.getByText('Seguridad: débil')).toBeDefined()
+    await userEvent.click(screen.getByRole('button', { name: 'Crear la cuenta' }))
+    expect(screen.getByText('Es fácil de adivinar: alárgala o mezcla letras, números y signos')).toBeDefined()
+    await fill('Contraseña', 'una-clave-larga')
+    await fill('Repite la contraseña', 'una-clave-larg')
+    await userEvent.click(screen.getByRole('button', { name: 'Crear la cuenta' }))
+    expect(screen.getByText('No coincide con la contraseña.')).toBeDefined()
+    expect(fake.passwords.has('enrique@crisol.test')).toBe(false)
   })
 
   it('con un enlace que no vale lo dice y no enseña el formulario', async () => {
@@ -63,9 +91,7 @@ describe('arranque', () => {
     const fake = fakeAccountClient({ bootstrap: { abc: 'Crisol de Enrique' } })
     fake.passwords.set('enrique@crisol.test', 'otra-clave-larga')
     renderAt('/arranque/abc', fake)
-    await fill('Nombre', 'Enrique')
-    await fill('Email', 'enrique@crisol.test')
-    await fill('Contraseña', 'una-clave-larga')
+    await fillNewAccount('Quique', 'enrique@crisol.test', 'una-clave-larga')
     await userEvent.click(screen.getByRole('button', { name: 'Crear la cuenta' }))
     expect((await screen.findByRole('alert')).textContent).toBe('Ese email ya tiene cuenta')
   })
@@ -76,10 +102,10 @@ describe('perfil y salir', () => {
 
   it('cambia el nombre visible', async () => {
     renderAt('/perfil', signedIn())
-    await fill('Nombre', 'Enrique M.')
+    await fill('Nombre de usuario', 'Enrique M.')
     await userEvent.click(screen.getByRole('button', { name: 'Guardar' }))
     expect(await inMain().findByText('Guardado')).toBeDefined()
-    expect(announced()).toBe('Guardado')
+    expect(liveRegion().map((status) => status.textContent)).toEqual(['Guardado'])
     // El nombre nuevo, en el menú de la cuenta
     expect(screen.getByRole('button', { name: 'Enrique M.', expanded: false })).toBeDefined()
   })
@@ -116,6 +142,7 @@ describe('perfil y salir', () => {
     }
     const router = createAppRouter(createMemoryHistory({ initialEntries: ['/mundos'] }))
     render(<App router={router} accounts={fake.client} api={api.client} />)
+    await userEvent.click(await screen.findByRole('button', { name: 'Crear tu primer mundo' }))
     await fill('Nombre del mundo', 'Eana')
     await userEvent.click(screen.getByRole('button', { name: 'Crear el mundo' }))
     expect((await screen.findByRole('alert')).textContent).toBe('Tu sesión ha acabado. Vuelve a entrar.')

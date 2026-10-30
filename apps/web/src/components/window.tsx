@@ -9,7 +9,8 @@ import styles from './window.module.css'
 export type WindowKind = 'historial' | 'papelera' | 'ajustes' | 'perfil'
 
 interface WindowState {
-  open: (kind: WindowKind) => void
+  /** returnTo: adónde vuelve el foco al cerrarla, si no es a lo que lo tenía (un menú que se cierra a la vez) */
+  open: (kind: WindowKind, returnTo?: HTMLElement | null) => void
   /** La que está abierta, si hay una */
   opened: WindowKind | null
 }
@@ -39,8 +40,8 @@ export function WindowProvider({
   const returnTo = useRef<Element | null>(null)
   const title = useRef('')
   const { t } = useTranslation()
-  const open = useCallback((next: WindowKind) => {
-    returnTo.current = document.activeElement
+  const open = useCallback((next: WindowKind, back?: HTMLElement | null) => {
+    returnTo.current = back ?? document.activeElement
     title.current = document.title
     setKind(next)
   }, [])
