@@ -1,30 +1,35 @@
-import { WORLD_COLORS, WORLD_ICONS, type World } from '@crisol/contracts'
+import { type PageCover as Cover, WORLD_COLORS, WORLD_ICONS, type World } from '@crisol/contracts'
 import { TRASH_DAYS } from '@crisol/domain'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { Link } from '@tanstack/react-router'
 import {
   BookOpen,
   Castle,
   Crown,
   Globe,
+  ImagePlus,
   type LucideIcon,
+  Maximize2,
   Mountain,
   Settings,
   Ship,
   Sword,
   TreePine
 } from 'lucide-react'
-import { useEffect, useId, useRef, useState } from 'react'
+import { useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
 import { BusyButton } from '../components/busy-button.tsx'
 import { ConfirmByName, DangerZone } from '../components/danger.tsx'
-import { FormError } from '../components/field.tsx'
+import dialogStyles from '../components/dialog.module.css'
+import { Field, FormError } from '../components/field.tsx'
 import { focusAfterRemoving } from '../components/focus.ts'
 import form from '../components/form.module.css'
-import list from '../components/list.module.css'
-import { CoverPicker, useWorldFiles } from '../wiki/cover.tsx'
+import { Modal } from '../components/modal.tsx'
+import { useWorldFiles } from '../wiki/cover.tsx'
 import styles from './world-card.module.css'
+import { CoverDialog, CoverViewer } from './world-cover.tsx'
 
 const ICONS: Record<NonNullable<World['icon']>, LucideIcon> = {
   tower: Castle,
@@ -46,43 +51,114 @@ const COLORS: Record<NonNullable<World['color']>, string> = {
   plum: '#3a2d44'
 }
 
-/** Lo de encima del nombre en la tarjeta de un mundo: la portada (imagen o color) y el icono */
-export function WorldCardHeader({ world }: { world: World }) {
-  // Las imágenes del mundo solo las lista quien lo administra; quien juega ve el color
-  const files = useWorldFiles(world.id, world.role === 'master' && world.cover !== null)
-  const image = world.cover ? files.data?.files.find((f) => f.id === world.cover?.fileId) : undefined
-  const Icon = world.icon ? ICONS[world.icon] : Globe
+/**
+ * La tarjeta de un mundo: la portada, el nombre (toda la parte de abajo lleva al mundo), la descripción y, abajo, el
+ * papel y el engranaje de quien lo dirige
+ */
+export function WorldCard({ world }: { world: World }) {
+  const { t } = useTranslation()
   return (
-    <div className={styles.header}>
-      <div className={styles.cover} style={{ background: COLORS[world.color ?? 'slate'] }}>
-        {image && world.cover && (
-          <img
-            src={image.url}
-            alt=""
-            className={styles.image}
-            style={{ objectPosition: `${world.cover.x}% ${world.cover.y}%` }}
-          />
-        )}
-        <span className={styles.icon} aria-hidden="true">
-          <span>
-            <Icon size={28} strokeWidth={1.5} />
-          </span>
-        </span>
+    <li className={styles.card}>
+      <WorldCover world={world} />
+      <div className={styles.body}>
+        <Link to="/mundos/$worldId" params={{ worldId: world.id }} className={styles.name}>
+          {world.name}
+        </Link>
+        {world.description && <p className={styles.description}>{world.description}</p>}
+        <div className={styles.footer}>
+          <span className={styles.role}>{t(`roles.${world.role}`)}</span>
+          {world.role === 'master' && <WorldSettings world={world} />}
+        </div>
       </div>
+    </li>
+  )
+}
+
+/**
+ * La portada (imagen o color) con el icono medio dentro. Al pasar el ratón se acerca un poco y, a quien dirige el
+ * mundo, deja verla y cambiarla. icon y color: para enseñar lo que se está eligiendo, aún sin guardar
+ */
+function WorldCover({
+  world,
+  icon = world.icon,
+  color = world.color,
+  large = false
+}: {
+  world: World
+  icon?: World['icon']
+  color?: World['color']
+  large?: boolean
+}) {
+  const { t } = useTranslation()
+  const api = useApi()
+  const queryClient = useQueryClient()
+  // Las imágenes del mundo solo las lista quien lo administra; quien juega ve el color
+  const master = world.role === 'master'
+  const files = useWorldFiles(world.id, master && world.cover !== null)
+  const image = world.cover ? files.data?.files.find((f) => f.id === world.cover?.fileId) : undefined
+  const [viewing, setViewing] = useState(false)
+  const [changing, setChanging] = useState(false)
+  const Icon = icon ? ICONS[icon] : Globe
+  const background = COLORS[color ?? 'slate']
+  const saveCover = async (cover: Cover | null) => {
+    await api.call('updateWorld', { worldId: world.id, cover })
+    await queryClient.invalidateQueries({ queryKey: ['worlds'] })
+  }
+  return (
+    <div className={large ? `${styles.header} ${styles.large}` : styles.header}>
+      <div className={styles.frame}>
+        <div className={styles.picture} style={{ background }}>
+          {image && world.cover && (
+            <img
+              src={image.url}
+              alt=""
+              className={styles.image}
+              style={{ objectPosition: `${world.cover.x}% ${world.cover.y}%` }}
+            />
+          )}
+        </div>
+        {master && (
+          <div className={styles.coverActions}>
+            {image && (
+              <button type="button" aria-haspopup="dialog" onClick={() => setViewing(true)}>
+                <Maximize2 aria-hidden="true" size={14} />
+                {t('cover.view')}
+              </button>
+            )}
+            <button type="button" aria-haspopup="dialog" onClick={() => setChanging(true)}>
+              <ImagePlus aria-hidden="true" size={14} />
+              {t(world.cover ? 'cover.change' : 'cover.add')}
+            </button>
+          </div>
+        )}
+      </div>
+      <span className={styles.icon} aria-hidden="true">
+        <span>
+          <Icon size={large ? 32 : 28} strokeWidth={1.5} />
+        </span>
+      </span>
+      {viewing && image && (
+        <CoverViewer url={image.url} label={t('cover.of', { name: world.name })} onClose={() => setViewing(false)} />
+      )}
+      {changing && (
+        <CoverDialog
+          worldId={world.id}
+          title={t('cover.of', { name: world.name })}
+          cover={world.cover}
+          background={background}
+          onSave={saveCover}
+          onClose={() => setChanging(false)}
+        />
+      )}
     </div>
   )
 }
 
-/** La descripción, debajo del nombre */
-export function WorldDescription({ world }: { world: World }) {
-  return world.description ? <p className={styles.description}>{world.description}</p> : null
-}
-
 /**
- * El engranaje de la tarjeta (abajo a la derecha, para quien dirige el mundo): abre su ventana, con el nombre, la
- * descripción, el icono, el color, la portada y, al final, borrarlo. Ahí irá lo que se añada del mundo
+ * El engranaje de la tarjeta (para quien dirige el mundo): abre su ventana, con la portada arriba, el nombre, la
+ * descripción, el icono y el color y, al final, la zona de peligro. Ahí irá lo que se añada del mundo
  */
-export function WorldSettings({ world }: { world: World }) {
+function WorldSettings({ world }: { world: World }) {
   const { t } = useTranslation()
   const api = useApi()
   const queryClient = useQueryClient()
@@ -116,11 +192,8 @@ export function WorldSettings({ world }: { world: World }) {
     await refresh()
     after()
   }
-  // El cuadro solo existe mientras está abierto: cerrado, no queda nada suyo en la página
+  // La ventana solo existe mientras está abierta: cerrada, no queda nada suyo en la página
   const [isOpen, setOpen] = useState(false)
-  useEffect(() => {
-    if (isOpen) dialog.current?.showModal()
-  }, [isOpen])
   const open = () => {
     setName(world.name)
     setDescription(world.description)
@@ -143,18 +216,18 @@ export function WorldSettings({ world }: { world: World }) {
         <Settings aria-hidden="true" size={18} />
       </button>
       {isOpen && (
-        <dialog
+        <Modal
           ref={dialog}
           aria-labelledby={titleId}
           className={styles.dialog}
-          // Al cerrarse (Guardar, Cancelar o Escape), el foco vuelve al engranaje
+          // Al cerrarse (Guardar, Cancelar, la X, fuera o Escape), el foco vuelve al engranaje
           onClose={() => {
             setOpen(false)
             if (!deleted.current) trigger.current?.focus()
           }}
         >
+          <WorldCover world={world} icon={icon} color={color} large />
           <form
-            method="dialog"
             className={styles.form}
             onSubmit={(event) => {
               event.preventDefault()
@@ -162,30 +235,21 @@ export function WorldSettings({ world }: { world: World }) {
             }}
           >
             <h2 id={titleId}>{t('worlds.settingsOf', { name: world.name })}</h2>
-            <div className={styles.field}>
-              <label htmlFor={`${titleId}-name`}>{t('worlds.name')}</label>
-              <input
-                id={`${titleId}-name`}
-                type="text"
-                value={name}
-                required
-                maxLength={120}
-                autoComplete="off"
-                onChange={(event) => setName(event.currentTarget.value)}
-              />
-            </div>
-            <div className={styles.field}>
-              <label htmlFor={`${titleId}-input`}>{t('worlds.description')}</label>
-              <input
-                id={`${titleId}-input`}
-                type="text"
-                value={description}
-                maxLength={280}
-                aria-describedby={`${titleId}-description`}
-                onChange={(event) => setDescription(event.currentTarget.value)}
-              />
-              <small id={`${titleId}-description`}>{t('worlds.descriptionHint')}</small>
-            </div>
+            <Field
+              label={t('worlds.name')}
+              value={name}
+              required
+              maxLength={120}
+              autoComplete="off"
+              onChange={(event) => setName(event.currentTarget.value)}
+            />
+            <Field
+              label={t('worlds.description')}
+              hint={t('worlds.descriptionHint')}
+              value={description}
+              maxLength={280}
+              onChange={(event) => setDescription(event.currentTarget.value)}
+            />
             <fieldset className={styles.choices}>
               <legend>{t('worlds.icon')}</legend>
               {WORLD_ICONS.map((id) => {
@@ -210,24 +274,14 @@ export function WorldSettings({ world }: { world: World }) {
               ))}
               <small className={styles.hint}>{t('worlds.colorHint')}</small>
             </fieldset>
-            {world.role === 'master' && (
-              <CoverPicker
-                worldId={world.id}
-                cover={world.cover}
-                onSave={async (cover) => {
-                  await api.call('updateWorld', { worldId: world.id, cover })
-                  await refresh()
-                }}
-              />
-            )}
             <FormError message={save.error ? errorText(save.error) : null} />
-            <div className={list.actions}>
+            <div className={dialogStyles.actions}>
+              <button type="button" className={dialogStyles.cancel} onClick={() => dialog.current?.close()}>
+                {t('worlds.cancel')}
+              </button>
               <BusyButton type="submit" className={form.button} busy={save.isPending}>
                 {t('worlds.save')}
               </BusyButton>
-              <button type="button" className={list.secondary} onClick={() => dialog.current?.close()}>
-                {t('worlds.cancel')}
-              </button>
             </div>
           </form>
           {/* Aparte, al final y fuera del formulario: borrar el mundo, escribiendo su nombre para confirmarlo */}
@@ -243,7 +297,7 @@ export function WorldSettings({ world }: { world: World }) {
               />
             </DangerZone>
           </div>
-        </dialog>
+        </Modal>
       )}
     </>
   )

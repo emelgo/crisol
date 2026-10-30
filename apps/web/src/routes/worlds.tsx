@@ -12,10 +12,9 @@ import { FormError } from '../components/field.tsx'
 import form from '../components/form.module.css'
 import { failed } from '../components/load-error.tsx'
 import { PageTitle } from '../components/page-title.tsx'
-import { RenamableItem } from '../components/renamable-item.tsx'
 import { Tour } from '../components/tour.tsx'
 import cards from './world-card.module.css'
-import { WorldCardHeader, WorldDescription, WorldSettings } from './world-card.tsx'
+import { WorldCard } from './world-card.tsx'
 
 export function Worlds() {
   const { t } = useTranslation()
@@ -73,17 +72,7 @@ export function Worlds() {
         ) : (
           <ul className={cards.list} aria-label={t('worlds.listLabel')}>
             {worlds.data.worlds.map((world) => (
-              <RenamableItem
-                key={world.id}
-                className={cards.card}
-                header={<WorldCardHeader world={world} />}
-                name={world.name}
-                role={t(`roles.${world.role}`)}
-                link={{ to: '/mundos/$worldId', params: { worldId: world.id } }}
-              >
-                <WorldDescription world={world} />
-                {world.role === 'master' && <WorldSettings world={world} />}
-              </RenamableItem>
+              <WorldCard key={world.id} world={world} />
             ))}
           </ul>
         ))}

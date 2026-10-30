@@ -107,6 +107,33 @@ describe('mis mundos', () => {
     expect(api.calls).toContain('deleteWorld')
   })
 
+  it('la ventana del mundo se cierra con la X y al pulsar fuera', async () => {
+    renderWorlds(fakeApi({ organizations: [ORG], worlds: [eana()] }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Ajustes de Eana' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Ajustes de Eana' })
+    await userEvent.click(within(dialog).getAllByRole('button', { name: 'Cerrar' })[0] as HTMLElement)
+    expect(screen.queryByRole('dialog', { name: 'Ajustes de Eana' })).toBeNull()
+    await userEvent.click(screen.getByRole('button', { name: 'Ajustes de Eana' }))
+    await userEvent.click(await screen.findByRole('dialog', { name: 'Ajustes de Eana' }))
+    expect(screen.queryByRole('dialog', { name: 'Ajustes de Eana' })).toBeNull()
+  })
+
+  it('desde la portada de la tarjeta se cambia por una imagen del mundo', async () => {
+    const world = eana()
+    const api = fakeApi({
+      organizations: [ORG],
+      worlds: [world],
+      files: [{ worldId: world.id, name: 'mapa.png', kind: 'image', url: '/archivos/mapa.png' }]
+    })
+    renderWorlds(api)
+    await userEvent.click(await screen.findByRole('button', { name: 'Añadir portada' }))
+    const dialog = within(await screen.findByRole('dialog', { name: 'Portada de Eana' }))
+    await userEvent.click(await dialog.findByRole('button', { name: 'mapa.png' }))
+    await userEvent.click(dialog.getByRole('button', { name: 'Guardar' }))
+    expect(await screen.findByRole('button', { name: 'Cambiar' })).toBeDefined()
+    expect(api.calls).toContain('updateWorld')
+  })
+
   it('quien juega en un mundo no tiene su engranaje', async () => {
     renderWorlds(fakeApi({ organizations: [ORG], worlds: [{ ...eana(), role: 'player' as const }] }))
     expect(await screen.findByText('Eana')).toBeDefined()

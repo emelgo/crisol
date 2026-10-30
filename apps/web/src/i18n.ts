@@ -460,7 +460,12 @@ export const es = {
     framing: 'Encuadre',
     horizontal: 'Horizontal',
     vertical: 'Vertical',
-    remove: 'Quitar la portada'
+    remove: 'Quitar la portada',
+    of: 'Portada de {{name}}',
+    view: 'Ver',
+    change: 'Cambiar',
+    add: 'Añadir portada',
+    drag: 'Arrastra para encuadrar'
   },
   pdf: {
     show: 'Ver aquí',

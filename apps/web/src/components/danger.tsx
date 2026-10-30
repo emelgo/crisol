@@ -1,11 +1,12 @@
 import { useMutation } from '@tanstack/react-query'
-import { type ReactNode, useEffect, useId, useRef, useState } from 'react'
+import { type ReactNode, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useErrorText } from '../api/errors.ts'
 import { BusyButton } from './busy-button.tsx'
 import styles from './danger.module.css'
 import dialogStyles from './dialog.module.css'
 import { Field, FormError } from './field.tsx'
+import { Modal } from './modal.tsx'
 
 /** La zona de peligro: aparte, al final, en un recuadro rojizo */
 export function DangerZone({ children }: { children: ReactNode }) {
@@ -43,9 +44,6 @@ export function ConfirmByName({ name, action, title, warning, label, onConfirm }
   const [open, setOpen] = useState(false)
   const [typed, setTyped] = useState('')
   const confirm = useMutation({ mutationFn: onConfirm })
-  useEffect(() => {
-    if (open) dialog.current?.showModal()
-  }, [open])
   const matches = typed.trim() === name.trim()
   return (
     <>
@@ -63,7 +61,7 @@ export function ConfirmByName({ name, action, title, warning, label, onConfirm }
         {action}
       </button>
       {open && (
-        <dialog
+        <Modal
           ref={dialog}
           aria-labelledby={titleId}
           className={dialogStyles.dialog}
@@ -102,7 +100,7 @@ export function ConfirmByName({ name, action, title, warning, label, onConfirm }
               </BusyButton>
             </div>
           </form>
-        </dialog>
+        </Modal>
       )}
     </>
   )

@@ -49,17 +49,17 @@
   font-size: 1rem;
 }
 
-/* La tarjeta de un mundo: la portada arriba (imagen o color), su icono en un recuadro de esquinas cortadas, y debajo
-   el nombre, el rol y las acciones */
+/* La tarjeta de un mundo: la portada arriba (imagen o color), su icono medio dentro, y debajo el nombre, la
+   descripción y, al pie, el papel y el engranaje */
 .card {
   composes: frame from "../components/frame.module.css";
-  position: relative;
   display: flex;
-  flex-flow: row wrap;
-  align-items: center;
-  align-content: start;
-  gap: var(--space-2) var(--space-3);
-  padding: 0 var(--space-4) var(--space-4);
+  flex-direction: column;
+  transition: background-color 150ms ease-out;
+}
+
+.card:hover {
+  background: var(--color-field-border);
 }
 
 .list {
@@ -71,27 +71,94 @@
   list-style: none;
 }
 
-/* De lado a lado de la tarjeta, por encima del nombre */
+/* La portada y el icono, que sobresale por abajo */
 .header {
-  flex: 1 0 100%;
-  margin-inline: calc(-1 * var(--space-4));
+  position: relative;
+  margin-block-end: 2rem;
 }
 
-.cover {
+/* El marco de la portada: recorta el acercamiento */
+.frame {
   position: relative;
   block-size: 7rem;
-  margin-block-end: 2.25rem;
+  overflow: hidden;
+}
+
+.large .frame {
+  block-size: 10rem;
+}
+
+.picture {
+  position: absolute;
+  inset: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .picture {
+    transition: transform 300ms ease-out;
+  }
+}
+
+/* Al pasar el ratón, la portada se acerca un poco */
+.frame:hover .picture,
+.frame:focus-within .picture {
+  transform: scale(1.06);
 }
 
 .image {
-  position: absolute;
-  inset: 0;
   inline-size: 100%;
   block-size: 100%;
   object-fit: cover;
 }
 
-/* El icono, en su recuadro, medio dentro de la portada */
+/* Ver y Cambiar: abajo a la derecha de la portada, al pasar el ratón (en pantallas táctiles, siempre) */
+.coverActions {
+  position: absolute;
+  inset-block-end: var(--space-2);
+  inset-inline-end: var(--space-2);
+  display: flex;
+  gap: var(--space-1);
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .coverActions {
+    transition: opacity 150ms ease-out;
+  }
+}
+
+.frame:hover .coverActions,
+.frame:focus-within .coverActions {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .coverActions {
+    opacity: 1;
+  }
+}
+
+.coverActions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-block-size: 1.875rem;
+  padding: 0 0.625rem;
+  border: 1px solid color-mix(in srgb, var(--color-text) 25%, transparent);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--color-bg) 82%, transparent);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.coverActions button:hover {
+  background: var(--color-bg);
+}
+
+/* El icono, en su recuadro de esquinas cortadas, medio dentro de la portada */
 .icon {
   position: absolute;
   inset-block-end: -1.75rem;
@@ -133,32 +200,73 @@
   );
 }
 
-/* El nombre, con letra de título */
-.card > a:first-of-type {
+.large .icon {
+  inset-inline-start: var(--space-6);
+  inline-size: 4rem;
+  block-size: 4rem;
+}
+
+/* Debajo de la portada: el nombre, que lleva al mundo desde toda esta parte, la descripción y el pie */
+.body {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: 0 var(--space-4) var(--space-3);
+}
+
+.name {
+  color: var(--color-text);
   font-family: var(--font-display);
   font-size: 1.5rem;
   font-weight: 700;
   line-height: 1.1;
+  text-decoration: none;
   text-transform: uppercase;
+  overflow-wrap: break-word;
+}
+
+.name::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+.name:focus-visible {
+  outline: none;
+}
+
+.name:focus-visible::after {
+  outline: 2px solid var(--color-focus);
+  outline-offset: -2px;
 }
 
 .description {
-  flex-basis: 100%;
   margin: 0;
   color: var(--color-muted);
   font-size: 0.9375rem;
 }
 
-/* El engranaje de quien dirige el mundo: abajo a la derecha de la tarjeta, redondo, siempre a la vista. La tarjeta
-   le deja su sitio abajo para que no tape nada */
-.card:has(> .gear) {
-  padding-block-end: calc(var(--space-4) + 2.25rem);
+/* Al pie: el papel, discreto, y el engranaje a la derecha */
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-block-size: 2.25rem;
+  margin-block-start: auto;
 }
 
+.role {
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+/* El engranaje, redondo y siempre a la vista; por encima del enlace del nombre */
 .gear {
-  position: absolute;
-  inset-block-end: var(--space-3);
-  inset-inline-end: var(--space-3);
+  position: relative;
+  z-index: 1;
   display: grid;
   place-items: center;
   inline-size: 2.25rem;
@@ -176,19 +284,17 @@
   color: var(--color-text);
 }
 
-/* La zona de peligro, al final de la ventana, con el mismo margen que el formulario */
-.dangerArea {
-  padding: 0 var(--space-6) var(--space-6);
-}
-
-/* El cuadro de ajustes */
+/* La ventana del mundo: la portada arriba, de lado a lado, y debajo lo demás */
 .dialog {
-  inline-size: min(36rem, calc(100vw - 2rem));
+  inline-size: min(38rem, calc(100vw - 2rem));
+  max-block-size: calc(100dvh - 2rem);
   padding: 0;
   border: 1px solid var(--color-frame);
-  border-radius: 6px;
+  border-radius: 8px;
   background: var(--color-surface);
+  box-shadow: 0 1.5rem 3.75rem rgb(0 0 0 / 0.45);
   color: var(--color-text);
+  scrollbar-width: thin;
 }
 
 .dialog::backdrop {
@@ -199,32 +305,20 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
-  padding: var(--space-6);
+  padding: 0 var(--space-6) var(--space-6);
 }
 
 .form h2 {
   margin: 0;
 }
 
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  font-weight: 600;
+/* La zona de peligro, al final, con el mismo margen que el formulario */
+.dangerArea {
+  padding: 0 var(--space-6) var(--space-6);
 }
 
-.field input {
-  min-block-size: var(--target);
-  padding: 0 var(--space-3);
-  border: 1px solid var(--color-field-border);
-  border-radius: var(--radius);
-  background: var(--color-bg);
-  color: var(--color-text);
-  font-weight: 400;
-}
-
-.field small,
 .hint {
+  flex-basis: 100%;
   color: var(--color-muted);
   font-size: 0.875rem;
   font-weight: 400;
@@ -243,10 +337,6 @@
 .choices legend {
   margin-block-end: var(--space-2);
   font-weight: 600;
-}
-
-.hint {
-  flex-basis: 100%;
 }
 
 /* Cada opción es una radio de verdad, escondida: se ve su icono o su color, y el elegido, marcado */

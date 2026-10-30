@@ -46,6 +46,14 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   Nada suelto «en medio sin sentido».
 - **Crear algo se hace con un botón que abre un cuadro**, no con un formulario suelto en la pantalla.
 - **Las pantallas de cuenta (entrar, crear la cuenta)** van centradas y con aspecto profesional.
+- **Todo cuadro o ventana encima lleva la X arriba a la derecha y se cierra al pulsar fuera** (y con Escape).
+- **Las acciones de un elemento van en su engranaje**, abajo a la derecha de su tarjeta, siempre a la vista: abre su
+  ventana, donde se cambia todo (nombre incluido) y donde irá lo que se añada. Nada de «Renombrar» y «Borrar» sueltos.
+- **Borrar algo importante va en una zona de peligro** rojiza, al final de su ventana, y se confirma en otro cuadro
+  escribiendo su nombre, que sale en el mensaje para poder copiarlo.
+- **Las portadas, al pasar el ratón, se acercan un poco y dejan verlas y cambiarlas**, como las de las hojas del
+  Crisol antiguo. Cambiarla: las imágenes del mundo en miniatura, subir otra, quitarla y encuadrarla arrastrando. La
+  ventana del elemento la enseña arriba, con lo que se va eligiendo (icono, color) antes de guardar.
 
 ## Cuentas
 

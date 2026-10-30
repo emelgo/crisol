@@ -103,6 +103,10 @@ Todo va en la rama `interfaz/pulir-inicio`, en un commit local sin subir. Las no
   hechas en `components/tour.test.tsx`.
 - **La marca, la llama** del Crisol antiguo (`components/brand.tsx`): en la barra, la cabecera y la pestaña
   (`public/favicon.svg`), y latiendo mientras algo carga (`Loading`), en vez de la pantalla en blanco.
+- **Tarjeta del mundo**: portada que se acerca al pasar el ratón, con Ver y Cambiar (`routes/world-cover.tsx`);
+  toda la parte de abajo lleva al mundo; al pie, el papel y el engranaje. El engranaje abre la ventana del mundo
+  (portada arriba, nombre, descripción, icono, color y zona de peligro, `components/danger.tsx`); sin Renombrar ni
+  Borrar sueltos. Cuadros con X y cierre al pulsar fuera (`components/modal.tsx`). Pruebas en `worlds.test.tsx`.
 - **Barras de desplazamiento** finas, del color de los bordes; en las ventanas solo se desplaza el contenido.
 - **Barra lateral**:
   - sin barra de estado abajo;
