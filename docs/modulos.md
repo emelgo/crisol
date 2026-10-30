@@ -708,6 +708,20 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   - **Pruebas**: el paginador con alturas simuladas y una página grande; integración de los ajustes y de la vista de
     cada cuenta; e2e (activar, varias páginas sin que ningún bloque se salga, pie, índice, tema, volver a la sencilla y
     que se recuerde, con accesibilidad).
+- **2026-10-30 — Módulo 1, tarea 24: imprimir y PDF.**
+  - **Ruta de impresión** `/mundos/:worldId/imprimir/:pageId`: solo las páginas de la hoja, sin nada de la interfaz,
+    con `@page` del papel elegido, cada página en su hoja y sin sombras. Las notas ocultas no salen nunca; los
+    secretos, solo con «Incluir secretos».
+  - **En la fila de la hoja**: «Incluir secretos», «Imprimir» (abre la ruta y el diálogo del navegador) y
+    «Descargar PDF».
+  - **PDF en el servidor** con `playwright-core` (Apache-2.0) y el Chromium de la imagen (`apk add chromium`, permiso
+    de Enrique). Abre la ruta de impresión por dentro (`http://127.0.0.1:PUERTO`) con la cookie de quien lo pide,
+    espera a que la hoja esté paginada (`data-sheet-ready`) y la imprime con su papel. De uno en uno. Sin Chromium o
+    sin la web compilada, «Descargar PDF» dice que se use «Imprimir». El guardián de origen acepta también el origen
+    interno (solo lo abre el propio servidor).
+  - **Pruebas**: e2e con `page.pdf()` en la ruta de impresión (tantas páginas como la hoja y sin interfaz; secretos
+    solo con la casilla; notas nunca) y el PDF del servidor (`%PDF`, nombre y páginas).
+  - **Queda para Enrique**: la prueba a mano de imprimir en Chrome, Firefox y Safari (punto de control 6).
 - **Pendientes de permiso de Enrique:**
   - Servicio de systemd para Foundry: ahora corre como proceso de la sesión y se para al cerrarla; se arranca con el
     comando de `research/foundry/entorno.md`.

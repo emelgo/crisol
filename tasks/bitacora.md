@@ -153,7 +153,7 @@ las medidas (un bucle de React, el #185, salió por un `?? []` nuevo en cada pin
 acciones de la página; la fila de ajustes encima del texto; a partir de 1500 px, el editor y la hoja lado a lado
 (pulsar un bloque de la hoja lleva el editor a él; el cursor del editor lleva la hoja, con `selectionchange`).
 
-## Siguiente: 24, imprimir y PDF (diseño)
+## Tarea 24, imprimir y PDF (hecha, rama `wiki/tarea-24-imprimir-y-pdf`)
 
 - **Ruta de impresión** `/mundos/:worldId/imprimir/:pageId?secretos=1&imprimir=1`: `RootLayout` la pinta sin nada de la
   interfaz. Solo las páginas de la hoja, con `@page { size: A4|Letter; margin: 0 }`, `break-after: page` y sin sombras.
