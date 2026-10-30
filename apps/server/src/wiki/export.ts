@@ -12,6 +12,7 @@ import { strToU8, zipSync } from 'fflate'
 import { authorizedPage, authorizedWiki } from '../actions/access.ts'
 import type { ActionContext } from '../actions/context.ts'
 import { documentJson } from './content.ts'
+import { fileNames } from './file-embeds.ts'
 import { propertiesOf } from './properties.ts'
 
 /** Un nombre de archivo que vale en cualquier sistema: sin barras ni lo que Windows no admite */
@@ -100,6 +101,8 @@ export async function exportZip(ctx: ActionContext, input: ExportInput): Promise
     return (titleCount.get(page.title.toLocaleLowerCase('es')) ?? 0) > 1 ? (path.get(id) ?? page.title) : page.title
   }
 
+  const nameOfFile = await fileNames(ctx, wiki.worldId)
+
   const documents = await documentsRepo.documentsWithState(
     ctx.db,
     chosen.map((page) => page.id)
@@ -121,7 +124,8 @@ export async function exportZip(ctx: ActionContext, input: ExportInput): Promise
       properties: propertiesOf(page.properties),
       body,
       separate: (documentId) => separates.get(documentId) ?? null,
-      pageTitle: linkTo
+      pageTitle: linkTo,
+      fileName: nameOfFile
     })
     // Una página sola, sin su rama: su nota, aunque tenga hijas
     const full = pageId && !input.children && page.id === pageId ? fileName(page.title) : (path.get(page.id) ?? page.id)

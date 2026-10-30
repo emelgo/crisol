@@ -1,13 +1,16 @@
 import { z } from 'zod'
 import { defineAction } from './action.ts'
 
-/** El nombre de un archivo: sin barras (las carpetas son por tipo) */
+/** Lo que no puede llevar el nombre de un archivo: barras (las carpetas son por tipo) ni lo que rompe `![[…]]` */
+export const FILE_NAME_FORBIDDEN = /[\\/\0[\]|#^]/g
+
+/** El nombre de un archivo */
 export const fileName = z
   .string()
   .trim()
   .min(1)
   .max(200)
-  .refine((name) => !/[\\/\0]/.test(name), 'Sin barras')
+  .refine((name) => !new RegExp(FILE_NAME_FORBIDDEN.source).test(name), 'Sin barras, corchetes, |, # ni ^')
 
 /** Un archivo del mundo: los bytes se piden aparte, en /api/files/:id, con la sesión */
 export const fileView = z.object({
@@ -30,7 +33,9 @@ export const listFiles = defineAction({
   description:
     'Los archivos del mundo (imágenes, PDF y otros), por nombre y tipo. En una página se usan con ![[nombre]] (una imagen con ![[nombre|300]] de ancho, un PDF en una página con ![[nombre#page=12]])',
   input: z.object({ worldId: z.uuid() }),
-  output: z.object({ files: z.array(fileView) })
+  output: z.object({
+    files: z.array(fileView.extend({ usedBy: z.number().int().describe('Cuántas páginas lo usan') }))
+  })
 })
 
 export const renameFile = defineAction({

@@ -212,6 +212,38 @@ describe('los archivos del mundo', () => {
     expect((await storage.keys()).map((k) => k.key)).not.toContain(key?.key)
   })
 
+  it('en las páginas: lo que espera a un archivo por su nombre se resuelve al subirlo; renombrarlo no lo rompe', async () => {
+    // Claude escribe antes de que esté el archivo
+    const [page] = (
+      await call('createPages', {
+        worldId,
+        parentId: null,
+        pages: [{ key: 'a', title: 'Eana', markdown: 'El mapa:\n\n![[Mapa de Eana.png|El continente|300]]\n*Eana*' }]
+      })
+    ).pages
+    const embeds = () => conn.sql`select file_id, name from file_embeds where source_page_id = ${page.id}`
+    expect(await embeds()).toMatchObject([{ file_id: null, name: 'Mapa de Eana.png' }])
+    // Al subirlo (con otras mayúsculas), se resuelve: en la tabla y en el texto
+    const { id } = (await upload('mapa de eana.png', PNG)).json()
+    expect(await embeds()).toMatchObject([{ file_id: id }])
+    expect((await call('listFiles', { worldId })).files).toMatchObject([{ id, usedBy: 1 }])
+    // Renombrarlo: la página lo sigue usando y su Markdown dice el nombre nuevo
+    await call('renameFile', { fileId: id, name: 'Mapa del continente.png' })
+    const read = await call('readPage', { pageId: page.id })
+    expect(read.markdown).toContain('![[Mapa del continente.png|El continente|300]]\n*Eana*')
+    // Lo que escribe Claude después, con el archivo ya subido, va resuelto desde el principio
+    await call('editPage', { pageId: page.id, body: { mode: 'append', markdown: '![[MAPA DEL CONTINENTE.png]]' } })
+    expect((await embeds()).map((row) => row.file_id)).toEqual([id, id])
+    expect((await call('listFiles', { worldId })).files[0].usedBy).toBe(1)
+    // Una página en la papelera no cuenta
+    await call('deletePage', { pageId: page.id })
+    expect((await call('listFiles', { worldId })).files[0].usedBy).toBe(0)
+  })
+
+  it('el nombre que viene del disco con lo que rompe `![[…]]` se sube con «-»', async () => {
+    expect((await upload('mapa [v2] #1.png', PNG)).json().name).toBe('mapa -v2- -1.png')
+  })
+
   it('lo recién escrito sin fila (una subida a medias) no se toca', async () => {
     await storage.write(worldId, Readable.from([PNG]), LIMIT)
     expect(await sweepStorage(conn.db, storage, new Date())).toBe(0)

@@ -1,7 +1,7 @@
 import { and, eq, inArray, isNull, sql } from 'drizzle-orm'
 import type { Database } from '../client.ts'
 import { documents } from '../schema/documents.ts'
-import { pageLinks } from '../schema/links.ts'
+import { fileEmbeds, pageLinks } from '../schema/links.ts'
 import { pages } from '../schema/pages.ts'
 
 export interface LinkRow {
@@ -93,4 +93,75 @@ export function outgoing(db: Database, sourcePageId: string) {
     .select({ targetPageId: pageLinks.targetPageId, targetTitle: pageLinks.targetTitle, anchor: pageLinks.anchor })
     .from(pageLinks)
     .where(eq(pageLinks.sourcePageId, sourcePageId))
+}
+
+export interface FileEmbedRow {
+  fileId: string | null
+  name: string
+  nameKey: string
+}
+
+/** Rehace los archivos que usa un documento */
+export function replaceFileEmbeds(
+  db: Database,
+  source: { worldId: string; pageId: string; documentId: string },
+  embeds: readonly FileEmbedRow[]
+) {
+  return db.transaction(async (tx) => {
+    await tx.delete(fileEmbeds).where(eq(fileEmbeds.sourceDocumentId, source.documentId))
+    if (embeds.length === 0) return
+    await tx.insert(fileEmbeds).values(
+      embeds.map((embed) => ({
+        worldId: source.worldId,
+        sourcePageId: source.pageId,
+        sourceDocumentId: source.documentId,
+        ...embed
+      }))
+    )
+  })
+}
+
+/** Los archivos sin resolver del mundo con alguno de estos nombres (sin mayúsculas), con su documento */
+export function unresolvedFileEmbeds(db: Database, worldId: string, keys: readonly string[]) {
+  if (keys.length === 0) return Promise.resolve([])
+  return db
+    .select({
+      id: fileEmbeds.id,
+      sourcePageId: fileEmbeds.sourcePageId,
+      sourceDocumentId: fileEmbeds.sourceDocumentId,
+      documentKind: documents.kind,
+      nameKey: fileEmbeds.nameKey
+    })
+    .from(fileEmbeds)
+    .innerJoin(documents, eq(documents.id, fileEmbeds.sourceDocumentId))
+    .where(and(eq(fileEmbeds.worldId, worldId), isNull(fileEmbeds.fileId), inArray(fileEmbeds.nameKey, [...keys])))
+}
+
+export async function resolveFileEmbeds(db: Database, embedIds: readonly string[], fileId: string) {
+  if (embedIds.length === 0) return
+  await db
+    .update(fileEmbeds)
+    .set({ fileId })
+    .where(inArray(fileEmbeds.id, [...embedIds]))
+}
+
+/** Cuántas páginas (fuera de la papelera) usan cada archivo del mundo */
+export async function fileUses(db: Database, worldId: string) {
+  const rows = await db
+    .select({ fileId: fileEmbeds.fileId, pages: sql<number>`count(distinct ${fileEmbeds.sourcePageId})::int` })
+    .from(fileEmbeds)
+    .innerJoin(pages, eq(pages.id, fileEmbeds.sourcePageId))
+    .where(and(eq(fileEmbeds.worldId, worldId), isNull(pages.deletedAt)))
+    .groupBy(fileEmbeds.fileId)
+  return new Map(rows.flatMap((row) => (row.fileId ? [[row.fileId, row.pages] as const] : [])))
+}
+
+/** Los archivos que usan estas páginas (para exportarlas con ellos) */
+export async function filesUsedBy(db: Database, pageIds: readonly string[]) {
+  if (pageIds.length === 0) return []
+  const rows = await db
+    .selectDistinct({ fileId: fileEmbeds.fileId })
+    .from(fileEmbeds)
+    .where(inArray(fileEmbeds.sourcePageId, [...pageIds]))
+  return rows.flatMap((row) => (row.fileId ? [row.fileId] : []))
 }

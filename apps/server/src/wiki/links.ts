@@ -10,6 +10,7 @@ import type { JSONContent } from '@tiptap/core'
 import { type ActionEnv, InvalidRequestError } from '../actions/context.ts'
 import { pageContentChanged } from '../realtime/events.ts'
 import { documentJson, writeDocument } from './content.ts'
+import { rebuildFileEmbeds, withResolvedFiles } from './file-embeds.ts'
 import { propertiesOf } from './properties.ts'
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
@@ -63,9 +64,14 @@ export function linkName(names: readonly NamedPage[]) {
 
 /**
  * Los enlaces de lo que escribe Claude, con su página: uno que lleva a una sola, resuelto; a ninguna, sin resolver;
- * a varias, no se adivina: Claude recibe las candidatas
+ * a varias, no se adivina: Claude recibe las candidatas. Los archivos (`![[mapa.png]]`), por su nombre
  */
-export function resolveIncoming(json: JSONContent, names: readonly NamedPage[]): JSONContent {
+export function resolveIncoming(
+  json: JSONContent,
+  names: readonly NamedPage[],
+  files: ReadonlyMap<string, string> = new Map()
+): JSONContent {
+  if (json.type === 'fileEmbed') return withResolvedFiles(json, files)
   if ((json.type === 'pageLink' || json.type === 'pageEmbed') && !json.attrs?.pageId) {
     const title = String(json.attrs?.title ?? '')
     const found = resolveName(title, names)
@@ -75,7 +81,7 @@ export function resolveIncoming(json: JSONContent, names: readonly NamedPage[]):
     }
     return found[0] ? { ...json, attrs: { ...json.attrs, pageId: found[0].id } } : json
   }
-  return json.content ? { ...json, content: json.content.map((child) => resolveIncoming(child, names)) } : json
+  return json.content ? { ...json, content: json.content.map((child) => resolveIncoming(child, names, files)) } : json
 }
 
 /**
@@ -177,11 +183,14 @@ export async function linksOfNewPages(
         ? ({ kind: 'body', pageId: doc.pageId } as const)
         : ({ kind: 'separate', documentId: doc.id, pageId: doc.pageId } as const)
     let json = documentJson(env, ref, doc.state)
-    const byName = await rebuildLinks(env, { worldId, pageId: doc.pageId, documentId: doc.id }, json, names)
+    const source = { worldId, pageId: doc.pageId, documentId: doc.id }
+    const byName = await rebuildLinks(env, source, json, names)
+    const filesByName = await rebuildFileEmbeds(env, source, json)
     // Los que se enlazan entre ellas (o a otras que ya había) se resuelven también en el texto
-    if (byName.size > 0) {
-      await writeDocument(env, ref, { userId: actorId, worldId }, (current) => withResolved(current, byName))
-      json = withResolved(json, byName)
+    if (byName.size > 0 || filesByName.size > 0) {
+      const resolve = (current: JSONContent) => withResolvedFiles(withResolved(current, byName), filesByName)
+      await writeDocument(env, ref, { userId: actorId, worldId }, resolve)
+      json = resolve(json)
     }
     await documentsRepo.setText(env.db, doc.id, plainText(json))
   }
@@ -201,6 +210,7 @@ export async function linksOfStored(
   { kind, actorId, onError }: { kind: 'body' | 'separate'; actorId: string | null; onError: (error: unknown) => void }
 ) {
   const byName = await rebuildLinks(env, source, json)
+  const filesByName = await rebuildFileEmbeds(env, source, json)
   await documentsRepo.setText(env.db, source.documentId, plainText(json))
   // Lo que la enseña en otra página (vista previa, incrustados) se vuelve a pedir
   const world = await worldsRepo.findWorld(env.db, source.worldId)
@@ -208,14 +218,14 @@ export async function linksOfStored(
     env.realtime.publish(pageContentChanged({ worldId: world.id, organizationId: world.organizationId }, source.pageId))
   }
   // Un enlace con solo el nombre que ya tiene página: se le pone también en el texto, después (no dentro del guardado)
-  if (byName.size > 0 && actorId) {
+  if ((byName.size > 0 || filesByName.size > 0) && actorId) {
     const ref =
       kind === 'separate'
         ? ({ kind: 'separate', documentId: source.documentId, pageId: source.pageId } as const)
         : ({ kind: 'body', pageId: source.pageId } as const)
     setTimeout(() => {
       writeDocument(env, ref, { userId: actorId, worldId: source.worldId }, (current) =>
-        withResolved(current, byName)
+        withResolvedFiles(withResolved(current, byName), filesByName)
       ).catch(onError)
     }, 0)
   }

@@ -3,9 +3,10 @@
  * (files/routes.ts): los bytes no caben en una acción
  */
 import { deleteFile, type FileView, listFiles, renameFile, restoreFile } from '@crisol/contracts'
-import { filesRepo, type OperationContext } from '@crisol/db'
+import { filesRepo, linksRepo, type OperationContext } from '@crisol/db'
 import { NotFoundError } from '@crisol/domain'
 import { filesChanged } from '../realtime/events.ts'
+import { resolvePendingFiles } from '../wiki/file-embeds.ts'
 import { authorizedWiki } from './access.ts'
 import { historyContext, InvalidRequestError } from './context.ts'
 import { implement } from './registry.ts'
@@ -67,7 +68,9 @@ export async function authorizedFile(
 export const fileActions = [
   implement(listFiles, async (ctx, { worldId }) => {
     await authorizedWiki(ctx, 'page.read', worldId)
-    return { files: (await filesRepo.listFiles(ctx.db, worldId)).map(fileView) }
+    const uses = await linksRepo.fileUses(ctx.db, worldId)
+    const rows = await filesRepo.listFiles(ctx.db, worldId)
+    return { files: rows.map((row) => ({ ...fileView(row), usedBy: uses.get(row.id) ?? 0 })) }
   }),
 
   implement(renameFile, async (ctx, { fileId, name }) => {
@@ -84,6 +87,8 @@ export const fileActions = [
       throw error
     }
     ctx.realtime.publish(filesChanged(wiki))
+    // Lo que esperaba a ese nombre lo encuentra
+    await resolvePendingFiles(ctx, wiki.worldId, ctx.actor.userId, [name])
     const renamed = await filesRepo.findFile(ctx.db, fileId)
     if (!renamed) throw new NotFoundError('file')
     return fileView(renamed)
@@ -111,6 +116,7 @@ export const fileActions = [
         .then(() => free)
     )
     ctx.realtime.publish(filesChanged(wiki))
+    await resolvePendingFiles(ctx, wiki.worldId, ctx.actor.userId, [name])
     return { id: file.id, name }
   })
 ]

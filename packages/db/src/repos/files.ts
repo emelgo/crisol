@@ -2,7 +2,7 @@
  * Los archivos del mundo: sus filas, con historial (los bytes van en el almacenamiento, por su clave). El nombre no se
  * repite en el mundo entre los que no están en la papelera
  */
-import { and, asc, eq, isNotNull, isNull, sql } from 'drizzle-orm'
+import { and, asc, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm'
 import type { Database } from '../client.ts'
 import { type OperationContext, operation } from '../operation.ts'
 import { files } from '../schema/files.ts'
@@ -74,4 +74,18 @@ export function trashedFiles(db: Database, worldId: string) {
     .select()
     .from(files)
     .where(and(eq(files.worldId, worldId), isNotNull(files.deletedAt)))
+}
+
+/** Los nombres de los archivos del mundo, también los de la papelera */
+export function namesInWorld(db: Database, worldId: string) {
+  return db.select({ id: files.id, name: files.name }).from(files).where(eq(files.worldId, worldId))
+}
+
+/** De estos ids, los archivos que son de este mundo (también los de la papelera) */
+export function filesInWorld(db: Database, worldId: string, ids: readonly string[]) {
+  if (ids.length === 0) return Promise.resolve([])
+  return db
+    .select({ id: files.id })
+    .from(files)
+    .where(and(eq(files.worldId, worldId), inArray(files.id, [...ids])))
 }

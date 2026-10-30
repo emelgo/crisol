@@ -3,7 +3,7 @@
  * progreso lo ve la web), y servirlos con la sesión, con Range para el visor de PDF
  */
 import type { Readable } from 'node:stream'
-import { fileName } from '@crisol/contracts'
+import { FILE_NAME_FORBIDDEN, fileName } from '@crisol/contracts'
 import { filesRepo, loadMemberships } from '@crisol/db'
 import { actorFrom, MAX_FILE_BYTES, sniff } from '@crisol/domain'
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
@@ -14,6 +14,7 @@ import { authorizedFile, fileView, withFreeName } from '../actions/files.ts'
 import type { Auth } from '../auth/auth.ts'
 import { toHeaders } from '../http.ts'
 import { filesChanged } from '../realtime/events.ts'
+import { resolvePendingFiles } from '../wiki/file-embeds.ts'
 import { type Storage, TooLargeError } from './storage.ts'
 
 const uploadQuery = z.object({ worldId: z.uuid(), name: fileName })
@@ -91,7 +92,9 @@ export function registerFileRoutes(
   app.post('/api/files', uploads, async (request, reply) => {
     const ctx = await contextOf(request)
     if (!ctx) return reply.code(401).send({ code: 'UNAUTHENTICATED' })
-    const query = uploadQuery.safeParse(request.query)
+    // El nombre del archivo tal cual venga del disco: lo que no puede llevar se cambia por «-»
+    const raw = request.query as Record<string, unknown>
+    const query = uploadQuery.safeParse({ ...raw, name: String(raw.name ?? '').replace(FILE_NAME_FORBIDDEN, '-') })
     if (!query.success) return reply.code(400).send({ code: 'INVALID_INPUT', issues: query.error.issues })
     if (!env.storage) return reply.code(503).send({ code: 'NO_STORAGE' })
     try {
@@ -105,6 +108,8 @@ export function registerFileRoutes(
         })
       )
       ctx.realtime.publish(filesChanged(wiki))
+      // Las páginas que ya lo usaban por su nombre lo encuentran
+      await resolvePendingFiles(ctx, wiki.worldId, ctx.actor.userId, [file.name])
       return reply.code(201).send(fileView(file))
     } catch (error) {
       return fail(reply, error)
