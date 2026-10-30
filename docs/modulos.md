@@ -637,6 +637,20 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   - **Pruebas**: integración (límite con y sin tamaño dicho, permisos, Range, SVG, reemplazar y deshacer, papelera,
     purga), componentes, e2e `archivos.spec.ts` con accesibilidad y `@fugas` de los archivos.
   - **Queda para la 19**: el aviso «lo usan N páginas» al borrar, cuando las páginas usen archivos.
+- **2026-10-30 — Módulo 1, tarea 19a: imágenes y archivos en las páginas** (migración 0016).
+  - **Bloque `fileEmbed`**: una imagen (ancho, texto alternativo, pie y caja de luz), un PDF (por su página) u otro
+    archivo. En Markdown, como Obsidian: `![[mapa.png|Texto alternativo|300]]`, `![[libro.pdf#page=12]]` y el pie en
+    la línea siguiente, en cursiva. Se sabe que es archivo por la extensión (`.md` es una nota).
+  - **`file_embeds`**: qué archivos usa cada documento, rehecha con cada guardado (como `page_links`). Lo que nombra un
+    archivo que aún no está se resuelve solo al subirlo, renombrarlo o restaurarlo, también en el texto. Lo que escribe
+    Claude con `![[…]]` se resuelve al momento. Renombrar no rompe nada: se enseña y se exporta el nombre de ahora.
+  - **Al borrar un archivo** se avisa si lo usan páginas (`usedBy` en `listFiles`).
+  - **Editor**: «Imagen o archivo» en «/» (lo sube), `![[` propone también los archivos, pegar o soltar archivos los
+    sube y los pone ahí, y en un archivo que falta, «Subirlo».
+  - Los nombres de archivo no llevan `[ ] | # ^`: al subir se cambian por «-».
+  - **Pruebas**: Markdown de ida y vuelta, integración (resolver al subir, renombrar, Claude, papelera) y e2e
+    `archivos-en-paginas.spec.ts` (con «/», pegar, «Subirlo», `![[` y accesibilidad).
+  - **Queda (19b)**: visor de PDF con pdf.js, la portada y `_archivos/` al exportar.
 - **Pendientes de permiso de Enrique:**
   - Servicio de systemd para Foundry: ahora corre como proceso de la sesión y se para al cerrarla; se arranca con el
     comando de `research/foundry/entorno.md`.
