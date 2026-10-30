@@ -8,8 +8,9 @@ export const trashItem = z.object({
   subpages: z.number().int().optional(),
   id: z.uuid(),
   name: z.string(),
-  worldId: z.uuid(),
-  worldName: z.string(),
+  /** Sin mundo: un archivo común de la cuenta */
+  worldId: z.uuid().nullable(),
+  worldName: z.string().nullable(),
   deletedAt: z.iso.datetime(),
   purgeAt: z.iso.datetime()
 })

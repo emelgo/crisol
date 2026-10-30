@@ -126,6 +126,11 @@ Todo va en la rama `interfaz/pulir-inicio`, en un commit local sin subir. Las no
   se ponga al día antes (aviso en tiempo real, la IA, otra pestaña). Al entrar en un mundo, «Mundos» sube a la llama de
   la barra y se funde con ella, que se aviva con chispas; dentro, la llama es la vuelta, y al volver «Mundos» sale de
   ella. Ajustes pide la IA al abrir el menú de la cuenta.
+- **Archivos comunes de la cuenta** (ADR-0005): migración 0025 (`files.organization_id`, `world_id` opcional, un
+  índice de nombre por ámbito); `commonFiles.read`/`write` en la política; `listFiles(worldId)` da los del mundo y
+  los comunes, y `listCommonFiles`, solo los comunes; subir con `organizationId`; `![[nombre]]`, portadas y la
+  exportación los usan (con el mismo nombre, el del mundo); papelera e historial de la organización. Pruebas en
+  `files.integration.test.ts`. Falta la interfaz.
 - **Barras de desplazamiento** finas, del color de los bordes; en las ventanas solo se desplaza el contenido.
 - **Barra lateral**:
   - sin barra de estado abajo;
@@ -153,6 +158,8 @@ Todo va en la rama `interfaz/pulir-inicio`, en un commit local sin subir. Las no
    - la portada sin sesión y el menú de la cuenta (`app.test`, `account.test`, `account-menu.test`, `page-title.test`);
    - los ajustes de IA, dentro de Ajustes (`ai-settings.test.tsx`).
    Hoy: 17 de 233 fallan en `apps/web`, todas por esto.
+   En `apps/server`, el arranque y el MCP crean dos cuentas con el mismo nombre de usuario (`USERNAME_TAKEN`); la
+   de edición en vivo (`collab`) a veces da un bloqueo de Postgres con todo a la vez, y sola pasa.
    - Entrar con sesión redirige; Historial y Papelera de la cuenta, sin enlace de vuelta;
    - Perfil y Ajustes, en el menú;
    - el tema ya no está en la barra;

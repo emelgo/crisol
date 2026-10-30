@@ -46,6 +46,14 @@ export async function listMemberWorlds(db: Database, userId: string) {
     .map(({ createdAt: _, ...world }) => world)
 }
 
+/** Los mundos de una organización fuera de la papelera (para lo que comparten: sus archivos comunes) */
+export function organizationWorlds(db: Database, organizationId: string) {
+  return db
+    .select({ id: worlds.id })
+    .from(worlds)
+    .where(and(eq(worlds.organizationId, organizationId), isNull(worlds.deletedAt)))
+}
+
 export async function findWorld(db: Database, worldId: string) {
   const [found] = await db
     .select(worldColumns)

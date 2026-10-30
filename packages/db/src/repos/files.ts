@@ -1,13 +1,31 @@
 /**
- * Los archivos del mundo: sus filas, con historial (los bytes van en el almacenamiento, por su clave). El nombre no se
- * repite en el mundo entre los que no están en la papelera
+ * Los archivos: sus filas, con historial (los bytes van en el almacenamiento, por su clave). Son de un mundo o comunes a
+ * los de su organización (ADR-0005). El nombre no se repite en su ámbito entre los que no están en la papelera
  */
-import { and, asc, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm'
+import { and, asc, eq, inArray, isNotNull, isNull, or, type SQL, sql } from 'drizzle-orm'
 import type { Database } from '../client.ts'
 import { type OperationContext, operation } from '../operation.ts'
 import { files } from '../schema/files.ts'
 
 export type FileKind = 'image' | 'pdf' | 'other'
+
+/** Dónde vive un archivo: en un mundo o, sin mundo, entre los comunes de una organización */
+export type FileScope = { worldId: string } | { organizationId: string }
+
+const inScope = (scope: FileScope): SQL | undefined =>
+  'worldId' in scope
+    ? eq(files.worldId, scope.worldId)
+    : and(isNull(files.worldId), eq(files.organizationId, scope.organizationId))
+
+/** Lo que un mundo puede usar: los suyos y los comunes de su organización */
+const usableIn = (worldId: string): SQL | undefined =>
+  or(
+    eq(files.worldId, worldId),
+    and(
+      isNull(files.worldId),
+      sql`${files.organizationId} = (select organization_id from worlds where id = ${worldId})`
+    )
+  )
 
 export interface FileContent {
   kind: FileKind
@@ -17,12 +35,12 @@ export interface FileContent {
   storageKey: string
 }
 
-/** Un nombre libre en el mundo: el pedido o, si ya está, «nombre (2).ext», «nombre (3).ext»… */
-export async function freeName(db: Database, worldId: string, wanted: string, except?: string) {
+/** Un nombre libre en su ámbito: el pedido o, si ya está, «nombre (2).ext», «nombre (3).ext»… */
+export async function freeName(db: Database, scope: FileScope, wanted: string, except?: string) {
   const rows = await db
     .select({ id: files.id, name: files.name })
     .from(files)
-    .where(and(eq(files.worldId, worldId), isNull(files.deletedAt)))
+    .where(and(inScope(scope), isNull(files.deletedAt)))
   const taken = new Set(rows.filter((row) => row.id !== except).map((row) => row.name.toLocaleLowerCase('es')))
   if (!taken.has(wanted.toLocaleLowerCase('es'))) return wanted
   const dot = wanted.lastIndexOf('.')
@@ -36,7 +54,7 @@ export async function freeName(db: Database, worldId: string, wanted: string, ex
 export function createFile(
   db: Database,
   context: OperationContext,
-  input: { worldId: string; name: string } & FileContent
+  input: { organizationId: string; worldId: string | null; name: string } & FileContent
 ) {
   return operation(db, context, (w) => w.insert(files, input))
 }
@@ -50,7 +68,7 @@ export function updateFile(
   return operation(db, context, (w) => w.update(files, fileId, patch))
 }
 
-/** Un archivo del mundo; con trashed, también si está en la papelera */
+/** Un archivo (de un mundo o común); con trashed, también si está en la papelera */
 export async function findFile(db: Database, fileId: string, options: { trashed?: boolean } = {}) {
   const [found] = await db
     .select()
@@ -59,13 +77,25 @@ export async function findFile(db: Database, fileId: string, options: { trashed?
   return found ?? null
 }
 
-/** Los archivos del mundo fuera de la papelera, por nombre */
-export function listFiles(db: Database, worldId: string) {
+/** Los archivos de un ámbito (un mundo o los comunes de una organización) fuera de la papelera, por nombre */
+export function listFiles(db: Database, scope: FileScope) {
   return db
     .select()
     .from(files)
-    .where(and(eq(files.worldId, worldId), isNull(files.deletedAt)))
+    .where(and(inScope(scope), isNull(files.deletedAt)))
     .orderBy(asc(sql`lower(${files.name})`))
+}
+
+/**
+ * Los archivos que un mundo puede usar fuera de la papelera, por nombre: los suyos y los comunes de su organización
+ * (`worldId` null). Un nombre en los dos: primero va el del mundo
+ */
+export function usableFiles(db: Database, worldId: string) {
+  return db
+    .select()
+    .from(files)
+    .where(and(usableIn(worldId), isNull(files.deletedAt)))
+    .orderBy(asc(sql`lower(${files.name})`), sql`${files.worldId} is null`)
 }
 
 /** Los archivos en la papelera de un mundo */
@@ -76,16 +106,16 @@ export function trashedFiles(db: Database, worldId: string) {
     .where(and(eq(files.worldId, worldId), isNotNull(files.deletedAt)))
 }
 
-/** Los nombres de los archivos del mundo, también los de la papelera */
+/** Los nombres de los archivos que el mundo puede usar (los suyos y los comunes), también los de la papelera */
 export function namesInWorld(db: Database, worldId: string) {
-  return db.select({ id: files.id, name: files.name }).from(files).where(eq(files.worldId, worldId))
+  return db.select({ id: files.id, name: files.name }).from(files).where(usableIn(worldId))
 }
 
-/** De estos ids, los archivos que son de este mundo (también los de la papelera) */
+/** De estos ids, los archivos que el mundo puede usar: suyos o comunes (también los de la papelera) */
 export function filesInWorld(db: Database, worldId: string, ids: readonly string[]) {
   if (ids.length === 0) return Promise.resolve([])
   return db
     .select({ id: files.id })
     .from(files)
-    .where(and(eq(files.worldId, worldId), inArray(files.id, [...ids])))
+    .where(and(usableIn(worldId), inArray(files.id, [...ids])))
 }

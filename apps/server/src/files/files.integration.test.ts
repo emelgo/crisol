@@ -39,6 +39,13 @@ describe('los archivos del mundo', () => {
       payload: body,
       headers: { origin: BASE_URL, cookie, 'content-type': 'application/octet-stream' }
     })
+  const uploadCommon = (name: string, body: Buffer, cookie = owner.cookie) =>
+    app.inject({
+      method: 'POST',
+      url: `/api/files?organizationId=${organizationId}&name=${encodeURIComponent(name)}`,
+      payload: body,
+      headers: { origin: BASE_URL, cookie, 'content-type': 'application/octet-stream' }
+    })
   const download = (id: string, headers: Record<string, string> = {}, cookie = owner.cookie) =>
     app.inject({ method: 'GET', url: `/api/files/${id}`, headers: { cookie, ...headers } })
 
@@ -294,6 +301,106 @@ describe('los archivos del mundo', () => {
     expect(last).toMatchObject({ action: 'updatePage', details: { cover: true } })
     await call('undoOperation', { operationId: last.id })
     expect((await call('getPage', { pageId: page.id })).cover).toBeNull()
+  })
+
+  describe('los comunes de la cuenta (ADR-0005)', () => {
+    it('se suben a la organización y los ven todos sus mundos, marcados; el nombre no se repite entre ellos', async () => {
+      const common = await uploadCommon('Escudo.png', PNG)
+      expect(common.statusCode).toBe(201)
+      expect(common.json()).toMatchObject({ name: 'Escudo.png', worldId: null, organizationId })
+      expect((await uploadCommon('escudo.png', PNG)).json().name).toBe('escudo (2).png')
+      // Un archivo del mundo puede llamarse igual: es otro ámbito
+      expect((await upload('Escudo.png', PDF)).json().name).toBe('Escudo.png')
+      const zafiro = (await call('createWorld', { name: 'Zafiro' })).id
+      const inZafiro = (await call('listFiles', { worldId: zafiro })).files
+      expect(inZafiro.map((f: { name: string; worldId: string | null }) => [f.name, f.worldId]).sort()).toEqual([
+        ['Escudo.png', null],
+        ['escudo (2).png', null]
+      ])
+      // En Eana, el suyo y los dos comunes
+      const inEana = (await call('listFiles', { worldId })).files
+      expect(inEana.filter((f: { worldId: string | null }) => f.worldId === null)).toHaveLength(2)
+      expect(inEana.filter((f: { worldId: string | null }) => f.worldId === worldId)).toHaveLength(1)
+      expect((await call('listCommonFiles', {})).files).toHaveLength(2)
+      expect((await download(common.json().id)).rawPayload.equals(PNG)).toBe(true)
+    })
+
+    it('`![[nombre]]` usa el común si el mundo no tiene uno así; si lo tiene, el del mundo', async () => {
+      const zafiro = (await call('createWorld', { name: 'Zafiro' })).id
+      const [waiting] = (
+        await call('createPages', {
+          worldId: zafiro,
+          parentId: null,
+          pages: [{ key: 'a', title: 'Zafiro', markdown: '![[Escudo.png]]' }]
+        })
+      ).pages
+      // Subir el común resuelve lo que lo esperaba en cualquier mundo de la organización
+      const common = (await uploadCommon('Escudo.png', PNG)).json()
+      const embedOf = async (pageId: string) =>
+        (await conn.sql`select file_id from file_embeds where source_page_id = ${pageId}`)[0]?.file_id
+      expect(await embedOf(waiting.id)).toBe(common.id)
+      // En Eana hay uno del mundo con el mismo nombre: gana el del mundo
+      const own = (await upload('Escudo.png', PDF)).json()
+      const [page] = (
+        await call('createPages', {
+          worldId,
+          parentId: null,
+          pages: [{ key: 'a', title: 'Eana', markdown: '![[Escudo.png]]' }]
+        })
+      ).pages
+      expect(await embedOf(page.id)).toBe(own.id)
+      // Sus usos se cuentan en todos los mundos
+      expect((await call('listCommonFiles', {})).files).toMatchObject([{ id: common.id, usedBy: 1 }])
+    })
+
+    it('una portada (de un mundo o de una página) puede ser común', async () => {
+      const common = (await uploadCommon('Escudo.png', PNG)).json()
+      const cover = { fileId: common.id, x: 40, y: 60, zoom: 1.5 }
+      expect(await call('updateWorld', { worldId, cover })).toMatchObject({ cover })
+      const page = await call('createPage', { worldId, title: 'Puerto Ceniza' })
+      expect(await call('updatePage', { pageId: page.id, cover })).toMatchObject({ cover })
+    })
+
+    it('el máster de un mundo los ve pero no los sube; nadie de otra organización los ve', async () => {
+      const common = (await uploadCommon('Escudo.png', PNG)).json()
+      const master = await signUpTestUser(auth, { name: 'Iria', email: 'iria@crisol.test' })
+      await conn.db.insert(schema.organizationMembers).values({ organizationId, userId: master.userId, role: 'member' })
+      await conn.db.insert(schema.worldMembers).values({ worldId, userId: master.userId, role: 'master' })
+      expect((await download(common.id, {}, master.cookie)).statusCode).toBe(200)
+      expect((await uploadCommon('Otro.png', PNG, master.cookie)).statusCode).toBe(403)
+      const outsider = await signUpTestUser(auth, { name: 'Otro', email: 'otro@crisol.test' })
+      expect((await download(common.id, {}, outsider.cookie)).statusCode).toBe(404)
+      expect((await uploadCommon('Intruso.png', PNG, outsider.cookie)).statusCode).toBe(404)
+    })
+
+    it('borrado va a la papelera de la cuenta, sin mundo, y vuelve', async () => {
+      const { id } = (await uploadCommon('Escudo.png', PNG)).json()
+      await call('deleteFile', { fileId: id })
+      expect((await call('listTrash', {})).items).toMatchObject([
+        { kind: 'file', id, name: 'Escudo.png', worldId: null, worldName: null }
+      ])
+      expect((await call('listTrash', { worldId })).items).toEqual([])
+      expect(await call('restoreFile', { fileId: id })).toEqual({ id, name: 'Escudo.png' })
+      expect((await call('listCommonFiles', {})).files).toHaveLength(1)
+    })
+
+    it('exportar un mundo lleva los comunes que usa (con el mismo nombre, el del mundo)', async () => {
+      await uploadCommon('Escudo.png', PNG)
+      await uploadCommon('Sin usar.png', PNG)
+      await call('createPages', {
+        worldId,
+        parentId: null,
+        pages: [{ key: 'a', title: 'Eana', markdown: '![[Escudo.png]]' }]
+      })
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/export',
+        payload: { worldId },
+        headers: { origin: BASE_URL, cookie: owner.cookie }
+      })
+      const zip = unzipSync(new Uint8Array(response.rawPayload))
+      expect(Object.keys(zip).sort()).toEqual(['Eana.md', '_archivos/Escudo.png'])
+    })
   })
 
   it('el nombre que viene del disco con lo que rompe `![[…]]` se sube con «-»', async () => {

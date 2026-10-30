@@ -19,6 +19,8 @@ export type RealtimeMessage =
   | { type: 'changed'; what: 'pageContent'; worldId: string; pageId: string }
   /** Los archivos de ese mundo */
   | { type: 'changed'; what: 'files'; worldId: string }
+  /** Los archivos comunes de esa organización (los ven todos sus mundos) */
+  | { type: 'changed'; what: 'commonFiles'; organizationId: string }
   | { type: 'changed'; what: 'members' | 'invitation'; campaignId: string }
   /** Alguien ha entrado en la campaña con el enlace (al máster, con «Expulsar» a mano) */
   | { type: 'joined'; worldId: string; campaignId: string; campaign: string; member: { userId: string; name: string } }

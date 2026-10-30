@@ -30,6 +30,12 @@ export const filesChanged = (wiki: { worldId: string; organizationId: string }):
   message: { type: 'changed', what: 'files', worldId: wiki.worldId }
 })
 
+/** Los archivos comunes de una organización: a quien los ve (el propietario y los másteres de sus mundos) */
+export const commonFilesChanged = (organizationId: string): RealtimeEvent => ({
+  to: { capability: 'commonFiles.read', target: { organizationId } },
+  message: { type: 'changed', what: 'commonFiles', organizationId }
+})
+
 /** El texto de una página se guardó: a quien la ve (lo que la enseña en otra se vuelve a pedir) */
 export const pageContentChanged = (
   wiki: { worldId: string; organizationId: string },
@@ -104,7 +110,10 @@ export function undoEvents(
         events.push(pagesChanged({ worldId, organizationId: context.organizationId }))
         break
       case 'files':
-        events.push(filesChanged({ worldId, organizationId: context.organizationId }))
+        // Uno común (sin mundo): a quien ve los comunes de su organización
+        if (change.after?.world_id === null || change.before?.world_id === null) {
+          events.push(commonFilesChanged(String(row.organization_id ?? context.organizationId)))
+        } else events.push(filesChanged({ worldId, organizationId: context.organizationId }))
         break
       case 'campaign_members': {
         const userId = String(row.user_id ?? '')

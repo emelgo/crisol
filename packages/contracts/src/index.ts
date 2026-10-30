@@ -1,6 +1,6 @@
 import { approve, getAiSettings, listApprovals, reject, setAiMode } from './ai.ts'
 import { createCampaign, getCampaign, listCampaigns, listWorldsWithCampaigns, renameCampaign } from './campaigns.ts'
-import { deleteFile, listFiles, renameFile, restoreFile } from './files.ts'
+import { deleteFile, listCommonFiles, listFiles, renameFile, restoreFile } from './files.ts'
 import { listHistory, undoOperation } from './history.ts'
 import { getInvitation, regenerateInvitation, setInvitationsOpen } from './invitations.ts'
 import { leaveCampaign, listMembers, removeMember } from './members.ts'
@@ -115,6 +115,7 @@ export const ACTIONS = [
   getPageVersion,
   restorePageVersion,
   listFiles,
+  listCommonFiles,
   renameFile,
   deleteFile,
   restoreFile,
@@ -178,6 +179,7 @@ export type Actions = {
   getPageVersion: typeof getPageVersion
   restorePageVersion: typeof restorePageVersion
   listFiles: typeof listFiles
+  listCommonFiles: typeof listCommonFiles
   renameFile: typeof renameFile
   deleteFile: typeof deleteFile
   restoreFile: typeof restoreFile

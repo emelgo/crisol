@@ -150,22 +150,27 @@ export async function exportContents(ctx: ActionContext, input: ExportInput): Pr
     const relative = strip && full.startsWith(`${strip}/`) ? full.slice(strip.length + 1) : full
     files[`${relative}.md`] = strToU8(markdown)
   }
-  // Los archivos: los del mundo, o los que usan las páginas que van
-  const worldFiles = await filesRepo.listFiles(ctx.db, wiki.worldId)
-  const used = pageId
-    ? new Set(
-        await linksRepo.filesUsedBy(
-          ctx.db,
-          chosen.map((page) => page.id)
-        )
-      )
-    : null
+  // Los archivos: los del mundo (o los que usan las páginas que van) y los comunes que usan; con el mismo nombre, el
+  // del mundo (como `![[nombre]]`)
+  const usable = await filesRepo.usableFiles(ctx.db, wiki.worldId)
+  const used = new Set(
+    await linksRepo.filesUsedBy(
+      ctx.db,
+      chosen.map((page) => page.id)
+    )
+  )
+  const taken = new Set<string>()
+  const exported = usable.filter((file) => {
+    const wanted = file.worldId ? !pageId || used.has(file.id) : used.has(file.id)
+    const key = file.name.toLocaleLowerCase('es')
+    if (!wanted || taken.has(key)) return false
+    taken.add(key)
+    return true
+  })
   return {
     name: fileName(name),
     notes: files,
-    files: worldFiles
-      .filter((file) => !used || used.has(file.id))
-      .map((file) => ({ path: `_archivos/${file.name}`, storageKey: file.storageKey }))
+    files: exported.map((file) => ({ path: `_archivos/${file.name}`, storageKey: file.storageKey }))
   }
 }
 

@@ -60,6 +60,7 @@ describe('Actions', () => {
       getPageVersion: true,
       restorePageVersion: true,
       listFiles: true,
+      listCommonFiles: true,
       renameFile: true,
       deleteFile: true,
       restoreFile: true,

@@ -52,6 +52,12 @@ const seesWorld = any(isWorldMaster, playsInWorld)
 const seesCampaign = any(isWorldMaster, isCampaignMember)
 /** La wiki, hasta el módulo 5: el máster del mundo y el propietario de su organización */
 const managesWiki = any(isWorldMaster, isOrganizationOwner)
+/** Administra algún mundo de la organización */
+const mastersInOrganization: Predicate = (actor, target) =>
+  'organizationId' in target &&
+  [...actor.worlds.values()].some((w) => w.organizationId === target.organizationId && w.role === 'master')
+/** Los archivos comunes de la organización (ADR-0005): los ve quien administra la organización o alguno de sus mundos */
+const seesCommonFiles = any(isOrganizationOwner, mastersInOrganization)
 
 const RULES = {
   'world.create': { sees: isOrganizationMember, allows: isOrganizationOwner },
@@ -79,7 +85,10 @@ const RULES = {
   'organization.trash': { sees: isOrganizationMember, allows: isOrganizationOwner },
   // La wiki de un mundo: los jugadores no la ven hasta el módulo 5
   'page.read': { sees: managesWiki, allows: managesWiki },
-  'page.write': { sees: managesWiki, allows: managesWiki }
+  'page.write': { sees: managesWiki, allows: managesWiki },
+  // Los archivos comunes de la organización, que comparten sus mundos: verlos y usarlos; subirlos y cambiarlos
+  'commonFiles.read': { sees: seesCommonFiles, allows: seesCommonFiles },
+  'commonFiles.write': { sees: seesCommonFiles, allows: isOrganizationOwner }
 } satisfies Record<string, { sees: Predicate; allows: Predicate }>
 
 export type Capability = keyof typeof RULES

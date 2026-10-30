@@ -111,10 +111,12 @@ export const pageActions = [
 
   implement(updatePage, async (ctx, { pageId, title, icon, locked, cover, sheet }) => {
     const { page, wiki } = await authorizedPage(ctx, 'page.write', pageId)
-    // La portada, una imagen de este mundo
+    // La portada, una imagen de este mundo o una común de su organización
     if (cover) {
       const file = await filesRepo.findFile(ctx.db, cover.fileId)
-      if (!file || file.worldId !== wiki.worldId || file.kind !== 'image') throw new InvalidRequestError('BAD_COVER')
+      const usable =
+        file && (file.worldId ? file.worldId === wiki.worldId : file.organizationId === wiki.organizationId)
+      if (!file || !usable || file.kind !== 'image') throw new InvalidRequestError('BAD_COVER')
     }
     // Lo que cambió, para la frase del historial: renombrar, el icono, el candado o la portada
     const details = {
