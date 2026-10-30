@@ -45,8 +45,9 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
 - **Los cambios no son bruscos y se notan**: un elemento nuevo entra animado (sube y crece, con el contorno
   iluminado un momento) cuando el cuadro que lo creó ya se ha ido, y uno borrado baja, encoge y se desvanece antes de
   irse; los cuadros y las ventanas se abren y se cierran animados, y el menú de la cuenta se despliega. Lo que se
-  abre no enseña un momento de carga: sus datos se piden antes (al pasar el ratón) y entran con un fundido. **Siempre completas, para todos**, aunque el sistema pida menos movimiento: «Quítalo» (la opción de
-  Ajustes, 2026-10-30), para que todos los clientes vean el detalle.
+  abre no enseña un momento de carga: sus datos se piden antes (al pasar el ratón) y entran con un fundido.
+- **Las animaciones, siempre completas y para todos**, aunque el sistema pida menos movimiento, para que todos los
+  clientes vean el detalle. Sin opción en Ajustes: «Quítalo» (2026-10-30).
 - **Las animaciones, con temática de crisol**: lo nuevo se forja (sale al rojo y se enfría); lo borrado arde (el fuego
   lo recorre de abajo arriba, queda en ceniza y se va como humo). Al entrar en un mundo, «Mundos» sube a la llama de la
   barra y se funde con ella, que se aviva soltando chispas: «como que el mundo se está cocinando». Dentro, la llama es
