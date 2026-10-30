@@ -44,11 +44,24 @@ export const pageCover = z.object({
 
 export type PageCover = z.infer<typeof pageCover>
 
+/** Los ajustes de la vista de hoja de una página: papel, tema, numeración (y desde qué número) y pie con el título */
+export const sheetSettings = z.object({
+  paper: z.enum(['a4', 'letter']),
+  theme: z.enum(['pergamino', 'neutro']),
+  numbers: z.boolean(),
+  firstNumber: z.number().int().min(1).max(999),
+  footer: z.boolean()
+})
+
+export type SheetSettings = z.infer<typeof sheetSettings>
+
 /** Una página abierta: lo que no es su cuerpo, con su ruta desde el primer nivel (ella incluida) */
 export const page = pageSummary.extend({
   properties: z.array(pageProperty),
   locked: z.boolean(),
   cover: pageCover.nullable(),
+  /** La vista de hoja: sus ajustes, o null si la página no se ve como hoja */
+  sheet: sheetSettings.nullable(),
   path: z.array(z.object({ id: z.uuid(), title: z.string() })),
   updatedAt: z.string()
 })
@@ -89,15 +102,17 @@ export const updatePage = defineAction({
       title: pageTitle.optional(),
       icon: pageIcon.nullable().optional(),
       locked: z.boolean().optional(),
-      cover: pageCover.nullable().optional()
+      cover: pageCover.nullable().optional(),
+      sheet: sheetSettings.nullable().optional().describe('La vista de hoja (null: sin hoja)')
     })
     .refine(
       (input) =>
         input.title !== undefined ||
         input.icon !== undefined ||
         input.locked !== undefined ||
-        input.cover !== undefined,
-      { message: 'title, icon, locked o cover' }
+        input.cover !== undefined ||
+        input.sheet !== undefined,
+      { message: 'title, icon, locked, cover o sheet' }
     ),
   output: page
 })
@@ -180,7 +195,9 @@ export const listPageTree = defineAction({
 /** Lo que la cuenta tiene a mano en la wiki de un mundo: sus pestañas y sus marcadores, con los títulos de ahora */
 export const wikiPreferences = z.object({
   tabs: z.array(z.object({ pageId: z.uuid(), title: z.string(), pinned: z.boolean() })),
-  bookmarks: z.array(z.object({ name: z.string(), pages: z.array(z.object({ id: z.uuid(), title: z.string() })) }))
+  bookmarks: z.array(z.object({ name: z.string(), pages: z.array(z.object({ id: z.uuid(), title: z.string() })) })),
+  /** Las páginas con hoja que la cuenta lee en la vista sencilla */
+  simplePages: z.array(z.uuid())
 })
 
 export type WikiPreferences = z.infer<typeof wikiPreferences>
@@ -212,6 +229,14 @@ export const setBookmarks = defineAction({
     worldId: z.uuid(),
     bookmarks: z.array(z.object({ name: z.string().trim().min(1).max(60), pages: z.array(z.uuid()).max(200) })).max(20)
   }),
+  output: wikiPreferences
+})
+
+export const setPageView = defineAction({
+  name: 'setPageView',
+  kind: 'write',
+  description: 'Recuerda en qué vista lee la cuenta una página con hoja: la de hoja o la sencilla (no va al historial)',
+  input: z.object({ worldId: z.uuid(), pageId: z.uuid(), view: z.enum(['sheet', 'simple']) }),
   output: wikiPreferences
 })
 

@@ -192,6 +192,7 @@ export function updatePage(
     properties?: unknown[]
     locked?: boolean
     cover?: { fileId: string; x: number; y: number } | null
+    sheet?: Record<string, unknown> | null
   }
 ) {
   return operation(db, context, (w) => w.update(pages, pageId, patch))

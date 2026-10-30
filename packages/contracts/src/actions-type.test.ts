@@ -45,6 +45,7 @@ describe('Actions', () => {
       getWikiPreferences: true,
       setWikiTabs: true,
       setBookmarks: true,
+      setPageView: true,
       createPageDocument: true,
       readPage: true,
       createPages: true,
