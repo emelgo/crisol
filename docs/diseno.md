@@ -51,7 +51,8 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
 - **Las animaciones, con temática de crisol**: lo nuevo se forja (sale al rojo y se enfría); lo borrado arde (el fuego
   lo recorre de abajo arriba, queda en ceniza y se va como humo). Al entrar en un mundo, «Mundos» sube a la llama de la
   barra y se funde con ella, que se aviva soltando chispas: «como que el mundo se está cocinando». Dentro, la llama es
-  la vuelta; al volver, «Mundos» sale de la llama, sin fuego.
+  la vuelta; al volver, «Mundos» sale de la llama, sin fuego. Los iconos del mundo (todos, también los que vengan)
+  salen del crisol uno tras otro al entrar y suben a él al volver, antes de que salga «Mundos».
 - **Las listas, en el orden en que se crearon**: lo nuevo, al final.
 
 - **La colocación de Ajustes es la referencia**: una columna en el centro, con el título y el contenido alineados.

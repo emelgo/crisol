@@ -258,6 +258,83 @@
   }
 }
 
+/*
+ * Los iconos del mundo, juntos. Al entrar, salen del crisol uno tras otro (bajan desde la llama creciendo) cuando
+ * «Mundos» ya se ha fundido; al volver, suben a él uno tras otro encogiendo, y después sale «Mundos». --i: su orden
+ */
+.panels {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.panels > * {
+  --i: 8;
+}
+
+.panels > :nth-child(1) {
+  --i: 0;
+}
+
+.panels > :nth-child(2) {
+  --i: 1;
+}
+
+.panels > :nth-child(3) {
+  --i: 2;
+}
+
+.panels > :nth-child(4) {
+  --i: 3;
+}
+
+.panels > :nth-child(5) {
+  --i: 4;
+}
+
+.panels > :nth-child(6) {
+  --i: 5;
+}
+
+.panels > :nth-child(7) {
+  --i: 6;
+}
+
+.panels > :nth-child(8) {
+  --i: 7;
+}
+
+.panelsEnter > * {
+  animation: panel-entra 460ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation-delay: calc(820ms + var(--i) * 70ms);
+}
+
+.panelsLeave > * {
+  animation: panel-sale 300ms cubic-bezier(0.5, 0, 0.75, 0) both;
+  animation-delay: calc(var(--i) * 45ms);
+}
+
+/* «Mundos» sale cuando los iconos del mundo ya se han ido */
+.emerging {
+  animation-delay: 280ms;
+  animation-fill-mode: both;
+}
+
+@keyframes panel-entra {
+  from {
+    opacity: 0;
+    transform: translateY(-18px) scale(0.6);
+  }
+}
+
+@keyframes panel-sale {
+  to {
+    opacity: 0;
+    transform: translateY(-18px) scale(0.5);
+  }
+}
+
 /* Estrecho: la barra pasa abajo, en fila; si no cabe, se desplaza de lado */
 @media (max-width: 48rem) {
   .ribbon {
@@ -274,7 +351,8 @@
   }
 
   .sections,
-  .account {
+  .account,
+  .panels {
     flex-direction: row;
   }
 

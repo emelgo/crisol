@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router'
 import { Bookmark, BookOpen, Folder, Globe, Hash, History, type LucideIcon, Search, Trash2 } from 'lucide-react'
-import { type MouseEvent, useState } from 'react'
+import { type MouseEvent, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
@@ -61,11 +61,30 @@ export function Ribbon() {
   // dentro, la llama es la vuelta. Al volver, «Mundos» sale de la llama, sin fuego
   const inWorld = Boolean(worldId)
   const [wasInWorld, setWasInWorld] = useState(inWorld)
+  // Recién entrado (en este mismo pintado aún no se ve en phase)
+  const justEntered = inWorld && !wasInWorld
   const [phase, setPhase] = useState<'still' | 'merging' | 'emerging'>('still')
   if (inWorld !== wasInWorld) {
     setWasInWorld(inWorld)
     setPhase(inWorld ? 'merging' : 'emerging')
   }
+  // Los iconos del mundo (Páginas, Buscar… y los que vengan): al entrar, salen del crisol uno tras otro cuando «Mundos»
+  // ya se ha fundido; al volver, suben a él y se van antes de que salga «Mundos». Se quedan mientras se van
+  const [panelsWorld, setPanelsWorld] = useState(world?.id ?? null)
+  const [panelsMotion, setPanelsMotion] = useState<'none' | 'enter' | 'leave'>('none')
+  if (world && world.id !== panelsWorld) {
+    setPanelsWorld(world.id)
+    setPanelsMotion(justEntered || phase === 'merging' ? 'enter' : 'none')
+  }
+  if (!world && panelsWorld && panelsMotion !== 'leave') setPanelsMotion('leave')
+  const panelsBox = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (panelsMotion !== 'leave') return
+    // Sin animaciones (las pruebas), al momento; si no, cuando el último ya se ha ido
+    if (typeof panelsBox.current?.getAnimations !== 'function') return setPanelsWorld(null)
+    const timer = window.setTimeout(() => setPanelsWorld(null), 650)
+    return () => window.clearTimeout(timer)
+  }, [panelsMotion])
   const worldsItem = [
     styles.item,
     inWorld && phase === 'merging' ? styles.merging : '',
@@ -93,7 +112,21 @@ export function Ribbon() {
         >
           <Label icon={Globe} text={t('ribbon.worlds')} />
         </Link>
-        {world && <WorldPanels worldId={world.id} />}
+        {panelsWorld && (
+          <div
+            ref={panelsBox}
+            className={[
+              styles.panels,
+              panelsMotion === 'enter' ? styles.panelsEnter : '',
+              panelsMotion === 'leave' ? styles.panelsLeave : ''
+            ]
+              .filter(Boolean)
+              .join(' ')}
+            inert={panelsMotion === 'leave'}
+          >
+            <WorldPanels worldId={panelsWorld} />
+          </div>
+        )}
         <span className={styles.spacer} />
         {isOwner && (
           <>
