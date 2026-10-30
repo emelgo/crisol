@@ -298,3 +298,51 @@ test('@fugas la wiki es solo del máster: a la jugadora no le llegan ni sus pág
   }
   await player.close()
 })
+
+test('@fugas los archivos son de la wiki: la jugadora ni los ve, ni los baja, ni sube, ni sabe que cambian', async ({
+  page,
+  browser
+}) => {
+  const link = await campaignLink(page)
+  const worldId = new URL(page.url()).pathname.split('/')[2]
+  let seen: ReturnType<typeof capture> | undefined
+  const player = await newPlayer(browser, link, 'Jugadora', (p) => {
+    seen = capture(p)
+  })
+  if (!seen) throw new Error('sin captura')
+  const captured = seen
+  await expect.poll(() => captured.frames.some((f) => f.includes('"hello"'))).toBe(true)
+
+  // El máster sube, renombra y reemplaza un archivo
+  const png = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.from('mapa')])
+  const raw = { 'content-type': 'application/octet-stream' }
+  const uploaded = await page.request.post(
+    `/api/files?worldId=${worldId}&name=${encodeURIComponent('Mapa del Tesoro.png')}`,
+    {
+      data: png,
+      headers: raw
+    }
+  )
+  expect(uploaded.status()).toBe(201)
+  const file = await uploaded.json()
+  await page.request.post('/api/actions/renameFile', { data: { fileId: file.id, name: 'Mapa Escondido.png' } })
+  expect((await page.request.put(`/api/files/${file.id}`, { data: png, headers: raw })).status()).toBe(200)
+
+  expect((await player.request.get(`/api/files/${file.id}`)).status()).toBe(404)
+  expect((await player.request.put(`/api/files/${file.id}`, { data: png, headers: raw })).status()).toBe(404)
+  expect(
+    (await player.request.post(`/api/files?worldId=${worldId}&name=Mio.png`, { data: png, headers: raw })).status()
+  ).toBe(404)
+  for (const [name, data] of [
+    ['listFiles', { worldId }],
+    ['renameFile', { fileId: file.id, name: 'Mío.png' }],
+    ['deleteFile', { fileId: file.id }]
+  ] as const) {
+    const response = await player.request.post(`/api/actions/${name}`, { data })
+    expect(response.status(), name).toBe(404)
+  }
+
+  const everything = await captured.all()
+  for (const leak of ['Mapa del Tesoro', 'Mapa Escondido', file.id, '"files"']) expect(everything).not.toContain(leak)
+  await player.close()
+})

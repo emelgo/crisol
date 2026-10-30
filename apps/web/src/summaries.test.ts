@@ -48,6 +48,11 @@ describe('las frases de la wiki', () => {
       'quitó el candado de «Puerto»'
     )
     expect(summaryOf(t, { action: 'restorePage', details: { title: 'Puerto' } })).toBe('restauró la página «Puerto»')
+    expect(summaryOf(t, { action: 'uploadFile', details: { name: 'Mapa.png' } })).toBe('subió el archivo «Mapa.png»')
+    expect(summaryOf(t, { action: 'renameFile', details: { from: 'a.png', to: 'b.png' } })).toBe(
+      'renombró el archivo «a.png» a «b.png»'
+    )
+    expect(summaryOf(t, { action: 'deleteFile', details: { name: 'Mapa.png' } })).toBe('borró el archivo «Mapa.png»')
   })
 
   it('lo que pide Claude, con los títulos de lo que toca', () => {

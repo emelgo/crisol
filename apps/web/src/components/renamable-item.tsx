@@ -19,14 +19,19 @@ interface Props {
   onDelete?: () => Promise<unknown>
   /** Adónde lleva el nombre, si lleva a algún sitio */
   link?: { to: string; params?: Record<string, string> }
+  /** O una dirección fuera de la web (un archivo), que se abre en otra pestaña */
+  href?: string
+  /** Más acciones, tras el rol */
   children?: ReactNode
+  /** Lo más largo que puede ser el nombre */
+  maxLength?: number
 }
 
 /**
  * Un elemento de una lista (mundo, campaña) con su rol y, si se puede, renombrar en el sitio y borrar. Al abrir una
  * confirmación, el foco va a ella; al cerrarla, vuelve al botón que la abrió
  */
-export function RenamableItem({ name, role, onRename, onDelete, link }: Props) {
+export function RenamableItem({ name, role, onRename, onDelete, link, href, children, maxLength = 120 }: Props) {
   const { t } = useTranslation()
   const errorText = useErrorText()
   const item = useRef<HTMLLIElement>(null)
@@ -57,7 +62,7 @@ export function RenamableItem({ name, role, onRename, onDelete, link }: Props) {
             name="name"
             autoComplete="off"
             defaultValue={name}
-            maxLength={120}
+            maxLength={maxLength}
             required
             ref={focusOnMount}
           />
@@ -81,10 +86,15 @@ export function RenamableItem({ name, role, onRename, onDelete, link }: Props) {
         <Link to={link.to} params={link.params} className={`${styles.name} ${styles.entity}`}>
           {name}
         </Link>
+      ) : href ? (
+        <a href={href} target="_blank" rel="noopener" className={`${styles.name} ${styles.entity}`}>
+          {name}
+        </a>
       ) : (
         <span className={`${styles.name} ${styles.entity}`}>{name}</span>
       )}
       <span className={`${styles.role} ${styles.tag}`}>{role}</span>
+      {children}
       {onRename && (
         <button
           type="button"

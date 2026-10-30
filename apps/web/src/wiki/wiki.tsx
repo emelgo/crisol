@@ -149,6 +149,9 @@ export function WikiLayout({
         <OpenTabs worldId={worldId} current={current} compact />
         <Bookmarks worldId={worldId} onNavigate={() => close(false)} />
         <nav aria-label={t('wiki.more')} className={styles.more}>
+          <Link to="/mundos/$worldId/archivos" params={{ worldId }} onClick={() => close(false)}>
+            {t('files.title')}
+          </Link>
           <Link to="/mundos/$worldId/etiquetas" params={{ worldId }} onClick={() => close(false)}>
             {t('tags.title')}
           </Link>

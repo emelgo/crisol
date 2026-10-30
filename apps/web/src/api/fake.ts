@@ -3,6 +3,7 @@ import type {
   AiMode,
   Approval,
   Campaign,
+  FileView,
   HistoryEntry,
   Invitation,
   Member,
@@ -36,6 +37,8 @@ export function fakeApi(
       icon?: string | null
       properties?: PageProperty[]
     }>
+    /** Los archivos de los mundos */
+    files?: Array<Pick<FileView, 'worldId' | 'name'> & Partial<FileView>>
   } = {}
 ) {
   const organizations = options.organizations ?? []
@@ -54,6 +57,28 @@ export function fakeApi(
     deletedAt: new Date().toISOString(),
     purgeAt: new Date(Date.now() + 30 * DAY).toISOString()
   })
+
+  let fileCount = 0
+  const fileOf = (file: Pick<FileView, 'worldId' | 'name'> & Partial<FileView>): FileView => {
+    const id = file.id ?? `00000000-0000-4000-8000-${String(++fileCount).padStart(12, '0')}`
+    return {
+      kind: 'image',
+      mime: 'image/png',
+      size: 1024,
+      url: `/api/files/${id}`,
+      version: 1,
+      updatedAt: new Date().toISOString(),
+      ...file,
+      id
+    }
+  }
+  const files = (options.files ?? []).map(fileOf)
+  const trashedFiles: FileView[] = []
+  const fileById = (fileId: string) => {
+    const file = files.find((f) => f.id === fileId)
+    if (!file) throw new ApiError('NOT_FOUND', 404)
+    return file
+  }
 
   const members = new Map(Object.entries(options.members ?? {}).map(([id, list]) => [id, [...list]]))
   const membersOf = (campaignId: string) => ({ members: (members.get(campaignId) ?? []).map((m) => ({ ...m })) })
@@ -291,6 +316,16 @@ export function fakeApi(
     // Como el servidor: las campañas de un mundo borrado no salen sueltas, vuelven con él
     listTrash: ({ worldId }) => ({
       items: [
+        ...trashedFiles
+          .filter((f) => !worldId || f.worldId === worldId)
+          .map((f) =>
+            trashed(
+              'file',
+              f.id,
+              f.name,
+              worlds.find((w) => w.id === f.worldId)
+            )
+          ),
         ...trashedPages
           .filter((t) => !worldId || t.root.worldId === worldId)
           .map((t) => ({
@@ -458,6 +493,35 @@ export function fakeApi(
       throw new ApiError('NOT_FOUND', 404)
     },
     restorePageVersion: () => ({ restored: false }),
+    listFiles: ({ worldId }) => ({
+      files: files
+        .filter((f) => f.worldId === worldId)
+        .sort((a, b) => a.name.localeCompare(b.name, 'es'))
+        .map((f) => ({ ...f }))
+    }),
+    renameFile: ({ fileId, name }) => {
+      const file = fileById(fileId)
+      if (files.some((f) => f !== file && f.worldId === file.worldId && f.name.toLowerCase() === name.toLowerCase())) {
+        throw new ApiError('NAME_TAKEN', 400)
+      }
+      file.name = name
+      file.version++
+      return { ...file }
+    },
+    deleteFile: ({ fileId }) => {
+      const file = fileById(fileId)
+      files.splice(files.indexOf(file), 1)
+      trashedFiles.unshift(file)
+      return { id: file.id, name: file.name }
+    },
+    restoreFile: ({ fileId }) => {
+      const index = trashedFiles.findIndex((f) => f.id === fileId)
+      const file = trashedFiles[index]
+      if (!file) throw new ApiError('NOT_FOUND', 404)
+      trashedFiles.splice(index, 1)
+      files.push(file)
+      return { id: file.id, name: file.name }
+    },
     getPageContent: ({ pageId }) => {
       const page = pageById(pageId)
       const { path } = pageView(page)
@@ -509,7 +573,27 @@ export function fakeApi(
       calls.push('exportWiki')
       const page = input.pageId ? pageById(input.pageId) : null
       return { name: `${page?.title ?? 'Eana'}.zip`, data: new Blob(['zip']) }
+    },
+    // Sube al momento, en dos pasos de progreso; el tipo, por el que dice el Blob
+    async uploadFile(target, blob, onProgress) {
+      calls.push('uploadFile')
+      onProgress?.(0.5)
+      onProgress?.(1)
+      const kind = blob.type.startsWith('image/') ? 'image' : blob.type === 'application/pdf' ? 'pdf' : 'other'
+      const content = { kind, mime: blob.type || 'application/octet-stream', size: blob.size } as const
+      if ('fileId' in target) {
+        const file = fileById(target.fileId)
+        Object.assign(file, content, { version: file.version + 1 })
+        return { ...file }
+      }
+      const taken = (name: string) =>
+        files.some((f) => f.worldId === target.worldId && f.name.toLowerCase() === name.toLowerCase())
+      let name = target.name
+      for (let n = 2; taken(name); n++) name = target.name.replace(/(\.[^.]*)?$/, ` (${n})$1`)
+      const file = fileOf({ worldId: target.worldId, name, ...content })
+      files.push(file)
+      return { ...file }
     }
   }
-  return { client, calls, worlds, campaigns, history, approvals, pages }
+  return { client, calls, worlds, campaigns, history, approvals, pages, files }
 }
