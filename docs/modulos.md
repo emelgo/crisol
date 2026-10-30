@@ -929,8 +929,19 @@ app: el 2026-10-30 dijo «luego apuntaremos por donde vamos y nos dedicaremos a 
 - **Lienzo «Crisol: interfaz»** (claude.ai, privado: https://claude.ai/artifact/QLHQADLdZSnTn5uzTubqf7; fuentes en
   `out/lienzo-interfaz/`, fuera de git). Primera ronda, la página y el editor: «Me gusta mucho más que el actual, al
   menos a grandes rasgos». Segunda ronda, el resto de pantallas: entrar, mis mundos, buscar y Ctrl+K, la hoja (sola o
-  con el editor, con la nota lateral rodeada por el texto), Claude y sus aprobaciones, historial (con el aviso claro
-  cuando no se puede deshacer) y papelera, y el móvil. Falta que la apruebe; después, plan por porciones.
+  con el editor, con la nota lateral rodeada por el texto), la IA y sus aprobaciones, historial (con el aviso claro
+  cuando no se puede deshacer) y papelera, y el móvil.
+- **Segunda ronda** (2026-10-30): «Lo demás me gusta bastante, como primera aproximacion me gusta mucho, luego ya
+  iremos puliendo». Pidió:
+  - **Mundos**: «que puedan configurarse con un icono en el recuadro para cambiarle el nombre, la portada y lo que
+    creas oportuno, las lineas que has puesto no me gustan». En el lienzo: botón de ajustes en la tarjeta (nombre,
+    descripción, portada o un color, icono, exportar y borrar) y sin las líneas de adorno. **Es nuevo en el servidor**:
+    hoy un mundo solo tiene nombre.
+  - **«IA», no «Claude»**: «esto debe poder conectarse a cualquier IA, así que mejor usar IA no?». En la interfaz se
+    dice «IA» («La IA quiere…», «Conectar una IA», «En tu app de IA, añade un conector MCP…»); el nombre de la app
+    conectada, solo donde se ve qué está conectado. Hay que cambiar los textos de `apps/web/src/i18n.ts`
+    (`approvals`, `ai`).
+  - **La hoja «se ve mal»**, «no sé si es solo porque es el boceto»: por concretar con él.
 
 ## Decisiones por módulo
 
