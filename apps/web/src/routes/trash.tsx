@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
+import { trashQuery } from '../api/queries.ts'
 import { Loading } from '../components/brand.tsx'
 import { BusyButton } from '../components/busy-button.tsx'
 import { FormError } from '../components/field.tsx'
@@ -47,11 +48,7 @@ function TrashPage({ title, back, scope }: { title: string; back?: ReactNode; sc
   const api = useApi()
   const errorText = useErrorText()
   const { account, pending } = useAccounts().useAccount()
-  const trash = useQuery({
-    queryKey: ['trash', scope.worldId ?? 'organization'],
-    queryFn: () => api.call('listTrash', scope),
-    enabled: Boolean(account)
-  })
+  const trash = useQuery({ ...trashQuery(api, scope), enabled: Boolean(account) })
 
   if (pending) return null
   if (!account) return <Navigate to="/entrar" replace />
@@ -63,9 +60,9 @@ function TrashPage({ title, back, scope }: { title: string; back?: ReactNode; sc
       {!trash.data && !trash.error && <Loading />}
       {trash.data &&
         (trash.data.items.length === 0 ? (
-          <p>{t('trash.empty')}</p>
+          <p className={styles.appear}>{t('trash.empty')}</p>
         ) : (
-          <ul className={styles.list} aria-label={t('trash.listLabel')}>
+          <ul className={`${styles.list} ${styles.appear}`} aria-label={t('trash.listLabel')}>
             {trash.data.items.map((item) => (
               <TrashEntry key={item.id} item={item} />
             ))}

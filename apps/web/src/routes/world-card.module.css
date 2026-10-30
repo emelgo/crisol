@@ -63,24 +63,49 @@
   background: color-mix(in srgb, var(--world-color, var(--color-field-border)) 70%, var(--color-field-border));
 }
 
-/* Recién creada, la tarjeta sube un poco y crece mientras aparece; al borrarla, encoge y se desvanece */
+/* Recién creada, la tarjeta sube y crece mientras aparece, y su contorno se ilumina un momento; al borrarla, cuando
+   su ventana ya se ha ido, baja y encoge mientras se desvanece. Reducidas: solo fundidos (y el contorno, igual) */
 :root[data-motion="full"] .entering {
-  animation: entra 360ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  animation:
+    entra 560ms cubic-bezier(0.2, 0.8, 0.2, 1) both,
+    resalta 1600ms ease-out;
 }
 
 :root[data-motion="full"] .leaving {
-  animation: sale 260ms ease-in forwards;
+  animation: sale 380ms cubic-bezier(0.4, 0, 1, 1) 200ms forwards;
   pointer-events: none;
 }
 
-/* Con menos movimiento, solo un fundido, sin desplazarse */
 :root[data-motion="reduced"] .entering {
-  animation: funde 300ms ease-out;
+  animation:
+    funde 400ms ease-out both,
+    resalta 1600ms ease-out;
 }
 
 :root[data-motion="reduced"] .leaving {
-  animation: desvanece 260ms ease-in forwards;
+  animation: desvanece 320ms ease-in 200ms forwards;
   pointer-events: none;
+}
+
+@keyframes entra {
+  from {
+    opacity: 0;
+    transform: translateY(32px) scale(0.86);
+  }
+}
+
+@keyframes resalta {
+  0%,
+  35% {
+    background: var(--color-text);
+  }
+}
+
+@keyframes sale {
+  to {
+    opacity: 0;
+    transform: translateY(12px) scale(0.82);
+  }
 }
 
 @keyframes funde {
@@ -92,20 +117,6 @@
 @keyframes desvanece {
   to {
     opacity: 0;
-  }
-}
-
-@keyframes entra {
-  from {
-    opacity: 0;
-    transform: translateY(10px) scale(0.95);
-  }
-}
-
-@keyframes sale {
-  to {
-    opacity: 0;
-    transform: scale(0.92);
   }
 }
 

@@ -42,9 +42,10 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
 
 ## Pantallas
 
-- **Los cambios no son bruscos**: un elemento nuevo entra animado (sube un poco y crece) y uno borrado encoge y se
-  desvanece antes de irse; los cuadros, las ventanas y el menú de la cuenta se abren con un pequeño crecimiento y
-  fundido. **Completas por defecto**, para que todos vean el detalle: en Ajustes → Apariencia, «Animaciones»
+- **Los cambios no son bruscos y se notan**: un elemento nuevo entra animado (sube y crece, con el contorno
+  iluminado un momento) cuando el cuadro que lo creó ya se ha ido, y uno borrado baja, encoge y se desvanece antes de
+  irse; los cuadros y las ventanas se abren y se cierran animados, y el menú de la cuenta se despliega. Lo que se
+  abre no enseña un momento de carga: sus datos se piden antes (al pasar el ratón) y entran con un fundido. **Completas por defecto**, para que todos vean el detalle: en Ajustes → Apariencia, «Animaciones»
   (completas, reducidas, que son solo fundidos, o como el sistema). Los estilos miran `data-motion`, no la
   preferencia del sistema directamente (`src/motion.ts`).
 - **Las listas, en el orden en que se crearon**: lo nuevo, al final.

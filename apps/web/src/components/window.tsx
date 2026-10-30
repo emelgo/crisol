@@ -2,6 +2,7 @@ import { useRouterState } from '@tanstack/react-router'
 import { X } from 'lucide-react'
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { afterExit } from './modal.tsx'
 import styles from './window.module.css'
 
 /** Lo que se abre encima de la pantalla, sin dejarla: desde la barra lateral y desde el menú de la cuenta */
@@ -71,9 +72,13 @@ export function WindowProvider({
           // React pasa el cierre de un cuadro de dentro a los de fuera: solo cuenta el suyo
           onClose={(event) => {
             if (event.target !== event.currentTarget) return
-            setKind(null)
             document.title = title.current
             if (returnTo.current instanceof HTMLElement) returnTo.current.focus()
+            // Se quita al acabar de irse (su transición de salida)
+            // (si mientras tanto se ha abierto otra, se queda)
+            afterExit(event.currentTarget, () => {
+              if (!dialog.current?.open) setKind(null)
+            })
           }}
           // Pulsar fuera de la ventana (en el fondo oscurecido) la cierra
           onClick={(event) => {

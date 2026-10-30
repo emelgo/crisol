@@ -1,10 +1,11 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router'
 import { Bookmark, BookOpen, Folder, Globe, Hash, History, type LucideIcon, Search, Trash2 } from 'lucide-react'
 import type { MouseEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
+import { historyQuery, trashQuery } from '../api/queries.ts'
 import { useNarrow, useWikiPanel, type WikiPanel } from '../wiki/panel.tsx'
 import { AccountMenu } from './account-menu.tsx'
 import { CrisolMark } from './brand.tsx'
@@ -52,6 +53,10 @@ export function Ribbon() {
   })
   // La wiki es solo de quien administra el mundo (hasta el módulo 5)
   const world = worlds.data?.worlds.find((w) => w.id === worldId && w.role === 'master')
+  // Historial y Papelera se piden en cuanto el ratón (o el foco) llega a su botón: al abrirlos, ya están
+  const queryClient = useQueryClient()
+  const prefetchHistory = () => void queryClient.prefetchInfiniteQuery({ ...historyQuery(api, {}), staleTime: 10_000 })
+  const prefetchTrash = () => void queryClient.prefetchQuery({ ...trashQuery(api, {}), staleTime: 10_000 })
 
   return (
     <div className={styles.ribbon}>
@@ -72,6 +77,8 @@ export function Ribbon() {
               className={styles.item}
               aria-haspopup="dialog"
               data-tour="barra-historial"
+              onPointerEnter={prefetchHistory}
+              onFocus={prefetchHistory}
               onClick={() => windows?.open('historial')}
             >
               <Label icon={History} text={t('ribbon.history')} />
@@ -81,6 +88,8 @@ export function Ribbon() {
               className={styles.item}
               aria-haspopup="dialog"
               data-tour="barra-papelera"
+              onPointerEnter={prefetchTrash}
+              onFocus={prefetchTrash}
               onClick={() => windows?.open('papelera')}
             >
               <Label icon={Trash2} text={t('ribbon.trash')} />

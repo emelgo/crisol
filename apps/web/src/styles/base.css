@@ -138,30 +138,57 @@ dialog section[aria-labelledby] > h2:first-child {
   }
 }
 
-/* Al abrirse, los cuadros y las ventanas crecen un poco mientras aparecen, y el fondo se oscurece poco a poco */
-:root[data-motion="full"] dialog[open] {
-  animation: abre-cuadro 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+/*
+ * Los cuadros y las ventanas: al abrirse suben y crecen mientras aparecen, y al cerrarse bajan y encogen mientras se
+ * desvanecen; el fondo se oscurece y se aclara a la vez. Con transiciones (no animaciones) para que también se vean al
+ * cerrarse: el cuadro sigue en pantalla hasta acabar (overlay y display, discretos) y quien lo quita espera (Modal)
+ */
+:root[data-motion] dialog {
+  transition:
+    opacity 200ms ease-in,
+    transform 200ms ease-in,
+    overlay 200ms ease-in allow-discrete,
+    display 200ms ease-in allow-discrete;
 }
 
-:root[data-motion="full"] dialog[open]::backdrop {
-  animation: oscurece 220ms ease-out;
+:root[data-motion] dialog:not([open]) {
+  opacity: 0;
 }
 
-/* Con menos movimiento, solo un fundido */
-:root[data-motion="reduced"] dialog[open],
-:root[data-motion="reduced"] dialog[open]::backdrop {
-  animation: oscurece 200ms ease-out;
+:root[data-motion="full"] dialog:not([open]) {
+  transform: translateY(14px) scale(0.95);
 }
 
-@keyframes abre-cuadro {
-  from {
+:root[data-motion] dialog[open] {
+  opacity: 1;
+  transform: none;
+  transition-duration: 320ms;
+  transition-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+:root[data-motion] dialog::backdrop {
+  opacity: 0;
+  transition:
+    opacity 200ms ease-in,
+    overlay 200ms ease-in allow-discrete,
+    display 200ms ease-in allow-discrete;
+}
+
+:root[data-motion] dialog[open]::backdrop {
+  opacity: 1;
+  transition-duration: 320ms;
+}
+
+@starting-style {
+  :root[data-motion] dialog[open] {
     opacity: 0;
-    transform: translateY(8px) scale(0.97);
   }
-}
 
-@keyframes oscurece {
-  from {
+  :root[data-motion="full"] dialog[open] {
+    transform: translateY(20px) scale(0.93);
+  }
+
+  :root[data-motion] dialog[open]::backdrop {
     opacity: 0;
   }
 }

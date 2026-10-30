@@ -118,6 +118,9 @@ Todo va en la rama `interfaz/pulir-inicio`, en un commit local sin subir. Las no
 - **Animaciones**: la tarjeta de un mundo nuevo entra y la de uno borrado se va (con menos movimiento, solo fundidos); los cuadros (`dialog[open]` en
   `base.css`) y el menú de la cuenta se abren con un pequeño crecimiento.
   En Ajustes, «Animaciones» (completas por defecto, reducidas o como el sistema; `src/motion.ts`, `data-motion`).
+  Los cuadros también se cierran animados (transiciones con `@starting-style`; `afterExit` en `modal.tsx` espera
+  a que acaben). Al crear, la lista se pone al día cuando el cuadro ya se ha ido, y la tarjeta entra con el contorno
+  iluminado. Historial y Papelera se piden al pasar el ratón por su botón (`api/queries.ts`).
 - **Barras de desplazamiento** finas, del color de los bordes; en las ventanas solo se desplaza el contenido.
 - **Barra lateral**:
   - sin barra de estado abajo;
@@ -139,6 +142,7 @@ Todo va en la rama `interfaz/pulir-inicio`, en un commit local sin subir. Las no
    - las etiquetas de la cuenta: Nombre, Apellido(s), Nombre de usuario y Repite la contraseña;
    - crear un mundo es un cuadro;
    - Historial y Papelera son botones que abren ventana;
+   - borrar un mundo va por el engranaje y su zona de peligro (`trash.test.tsx`);
    - Entrar con sesión redirige; Historial y Papelera de la cuenta, sin enlace de vuelta;
    - Perfil y Ajustes, en el menú;
    - el tema ya no está en la barra;

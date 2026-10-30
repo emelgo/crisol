@@ -4,6 +4,23 @@ import { useTranslation } from 'react-i18next'
 import styles from './window.module.css'
 
 /**
+ * Cuando un cuadro se cierra, espera a que acabe su transición de salida (base.css) para quitarlo; sin transiciones
+ * (las pruebas, en jsdom), al momento. Como mucho, un poco más de lo que dura
+ */
+export function afterExit(element: HTMLElement, done: () => void) {
+  const running = typeof element.getAnimations === 'function' ? element.getAnimations() : []
+  if (running.length === 0) return done()
+  let finished = false
+  const finish = () => {
+    if (finished) return
+    finished = true
+    done()
+  }
+  void Promise.allSettled(running.map((animation) => animation.finished)).then(finish)
+  window.setTimeout(finish, 400)
+}
+
+/**
  * Un cuadro encima de la pantalla (dialog modal), que se abre al montarse: con la X arriba a la derecha y, al pulsar
  * fuera, se cierra. Escape también (propio de dialog). onClose: al cerrarse, por lo que sea. Puede ir uno dentro de
  * otro (ver la portada desde la ventana del mundo): al cerrar el de dentro, el de fuera sigue
@@ -27,9 +44,9 @@ export function Modal({ ref, onClose, children, ...props }: ComponentProps<'dial
         if (typeof ref === 'function') ref(node)
         else if (ref) ref.current = node
       }}
-      // React pasa el cierre de un cuadro de dentro a los de fuera: solo cuenta el suyo
+      // React pasa el cierre de un cuadro de dentro a los de fuera: solo cuenta el suyo. Se quita al acabar de irse
       onClose={(event) => {
-        if (event.target === event.currentTarget) onClose()
+        if (event.target === event.currentTarget) afterExit(event.currentTarget, onClose)
       }}
       onPointerDown={(event) => {
         pressedOutside.current = event.target === event.currentTarget

@@ -44,8 +44,9 @@ export function WorldCard({ world, fresh = false }: { world: World; fresh?: bool
   return (
     <li
       className={entering ? `${styles.card} ${styles.entering}` : styles.card}
+      // Acaba cuando acaba la más larga: el contorno iluminado
       onAnimationEnd={(event) => {
-        if (event.target === event.currentTarget) setEntering(false)
+        if (event.target === event.currentTarget && event.animationName.includes('resalta')) setEntering(false)
       }}
       style={tint(world.color)}
       data-world={world.id}
@@ -112,6 +113,7 @@ function CoverHeader({
  */
 export function NewWorld({ big = false }: { big?: boolean }) {
   const { t } = useTranslation()
+  const queryClient = useQueryClient()
   const trigger = useRef<HTMLButtonElement>(null)
   const [open, setOpen] = useState(false)
   const button = (
@@ -131,7 +133,9 @@ export function NewWorld({ big = false }: { big?: boolean }) {
     <WorldDialog
       onClose={(created) => {
         setOpen(false)
-        if (!created) trigger.current?.focus()
+        // Creado, el cuadro ya se ha ido: ahora la lista, con la tarjeta nueva entrando
+        if (created) void queryClient.invalidateQueries({ queryKey: ['worlds'] })
+        else trigger.current?.focus()
       }}
     />
   )
@@ -189,7 +193,7 @@ function leave(element: Element | null) {
     if (!(element instanceof HTMLElement) || typeof element.getAnimations !== 'function') return resolve()
     element.classList.add(styles.leaving as string)
     element.addEventListener('animationend', () => resolve(), { once: true })
-    window.setTimeout(resolve, 400)
+    window.setTimeout(resolve, 800)
   })
 }
 
@@ -271,7 +275,8 @@ function WorldDialog({ world, onClose }: { world?: World; onClose: (gone: boolea
         }
       }
       if (account) rememberColor(account.email, draft.color)
-      await refresh()
+      // Al crearlo, la lista se pone al día cuando el cuadro ya se ha ido (NewWorld): así se ve entrar la tarjeta
+      if (world) await refresh()
     },
     onSuccess: () => {
       if (world) return

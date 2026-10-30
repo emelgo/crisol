@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
+import { historyQuery } from '../api/queries.ts'
 import { useAnnounce } from '../components/announcer.tsx'
 import { Loading } from '../components/brand.tsx'
 import { BusyButton } from '../components/busy-button.tsx'
@@ -50,13 +51,7 @@ function HistoryPage({ title, back, scope }: { title: string; back?: ReactNode; 
   const api = useApi()
   const errorText = useErrorText()
   const { account, pending } = useAccounts().useAccount()
-  const history = useInfiniteQuery({
-    queryKey: ['history', scope.worldId ?? 'organization'],
-    queryFn: ({ pageParam }) => api.call('listHistory', { ...scope, ...(pageParam ? { before: pageParam } : {}) }),
-    initialPageParam: null as string | null,
-    getNextPageParam: (last) => last.next,
-    enabled: Boolean(account)
-  })
+  const history = useInfiniteQuery({ ...historyQuery(api, scope), enabled: Boolean(account) })
   // Tras deshacer o rehacer, el botón de la operación nueva (arriba): el del deshecho ya no está
   const [focusEntry, setFocusEntry] = useState<string | null>(null)
 
@@ -74,9 +69,9 @@ function HistoryPage({ title, back, scope }: { title: string; back?: ReactNode; 
       {!history.data && !history.error && <Loading />}
       {history.data &&
         (entries.length === 0 ? (
-          <p>{t('history.empty')}</p>
+          <p className={styles.appear}>{t('history.empty')}</p>
         ) : (
-          <ul className={styles.list} aria-label={t('history.listLabel')}>
+          <ul className={`${styles.list} ${styles.appear}`} aria-label={t('history.listLabel')}>
             {entries.map((entry) => (
               <HistoryItem
                 key={entry.id}
