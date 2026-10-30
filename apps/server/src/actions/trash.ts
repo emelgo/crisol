@@ -11,6 +11,7 @@ import {
 import { pagesRepo, trashRepo, worldsRepo } from '@crisol/db'
 import { authorize, NotFoundError, purgeAt } from '@crisol/domain'
 import { campaignsChanged, pagesChanged } from '../realtime/events.ts'
+import { resolvePending } from '../wiki/links.ts'
 import { authorizedCampaign, authorizedPage, authorizedWiki, targetOrganization } from './access.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
 import { implement } from './registry.ts'
@@ -76,6 +77,8 @@ export const trashActions = [
     if (page.parentInTrash) throw new InvalidRequestError('PARENT_IN_TRASH')
     await pagesRepo.restorePageTree(ctx.db, historyContext(ctx, 'restorePage', { title: page.title }, wiki), pageId)
     ctx.realtime.publish(pagesChanged(wiki))
+    // Vuelve su nombre: lo que lo esperaba la encuentra
+    await resolvePending(ctx, wiki.worldId, ctx.actor.userId, [page.title])
     return { id: page.id, name: page.title }
   }),
 

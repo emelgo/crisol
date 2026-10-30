@@ -3,11 +3,11 @@ import {
   createPageDocument,
   getPage,
   listPageChildren,
+  listPageNames,
   listPageTree,
   listTags,
   movePage,
   type Page,
-  pageProperty,
   setPageProperties,
   updatePage
 } from '@crisol/contracts'
@@ -23,6 +23,8 @@ import {
 } from '@crisol/domain'
 import * as Y from 'yjs'
 import { pagesChanged } from '../realtime/events.ts'
+import { resolvePending, worldNames } from '../wiki/links.ts'
+import { propertiesOf } from '../wiki/properties.ts'
 import { authorizedPage, authorizedWiki, type WikiTarget } from './access.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
 import { implement } from './registry.ts'
@@ -44,14 +46,6 @@ export async function pageView(ctx: ActionContext, pageId: string): Promise<Page
     path: await pagesRepo.pagePath(ctx.db, pageId),
     updatedAt: found.updatedAt.toISOString()
   }
-}
-
-/** Las propiedades guardadas, tal como las da la API (lo que no encaje en el contrato no sale) */
-export function propertiesOf(stored: unknown[]) {
-  return stored.flatMap((item) => {
-    const parsed = pageProperty.safeParse(item)
-    return parsed.success ? [parsed.data] : []
-  })
 }
 
 /** La madre (sin ella, el primer nivel): tiene que ser de la misma wiki y no estar en la papelera */
@@ -106,6 +100,8 @@ export const pageActions = [
       { worldId: wiki.worldId, title: input.title, placement: placementOf(input) }
     )
     ctx.realtime.publish(pagesChanged(wiki))
+    // Lo que la enlazaba antes de existir, ya la encuentra
+    await resolvePending(ctx, wiki.worldId, ctx.actor.userId, [input.title])
     return pageView(ctx, created.id)
   }),
 
@@ -123,6 +119,7 @@ export const pageActions = [
       ...(locked !== undefined ? { locked } : {})
     })
     ctx.realtime.publish(pagesChanged(wiki))
+    if (title !== undefined) await resolvePending(ctx, wiki.worldId, ctx.actor.userId, [title])
     return pageView(ctx, pageId)
   }),
 
@@ -146,7 +143,15 @@ export const pageActions = [
       { properties }
     )
     ctx.realtime.publish(pagesChanged(wiki))
+    // Un alias nuevo puede resolver enlaces que esperaban ese nombre
+    await resolvePending(ctx, wiki.worldId, ctx.actor.userId, reservedList(properties, 'alias'))
     return pageView(ctx, pageId)
+  }),
+
+  implement(listPageNames, async (ctx, { worldId }) => {
+    const wiki = await authorizedWiki(ctx, 'page.read', worldId)
+    const names = await worldNames(ctx, wiki.worldId)
+    return { pages: names.map((page) => ({ ...page, aliases: [...page.aliases], path: [...page.path] })) }
   }),
 
   implement(listTags, async (ctx, { worldId }) => {

@@ -11,8 +11,8 @@ import type { JSONContent } from '@tiptap/core'
 import { strToU8, zipSync } from 'fflate'
 import { authorizedPage, authorizedWiki } from '../actions/access.ts'
 import type { ActionContext } from '../actions/context.ts'
-import { propertiesOf } from '../actions/pages.ts'
 import { documentJson } from './content.ts'
+import { propertiesOf } from './properties.ts'
 
 /** Un nombre de archivo que vale en cualquier sistema: sin barras ni lo que Windows no admite */
 export function fileName(title: string) {

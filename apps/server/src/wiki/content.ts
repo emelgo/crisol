@@ -40,6 +40,9 @@ function fragmentJson(doc: Y.Doc, schema: Schema): JSONContent {
   return yXmlFragmentToProseMirrorRootNode(fragment, schema).toJSON() as JSONContent
 }
 
+/** El JSON de un documento de Yjs ya cargado (el cuerpo o, nested, un secreto) */
+export const jsonOfDoc = (doc: Y.Doc, nested: boolean) => fragmentJson(doc, nested ? nestedSchema : bodySchema)
+
 /** El estado de Yjs de un documento nuevo con este contenido (comprobado y sin pasarse de tamaño) */
 export function stateOf(json: JSONContent, nested = false): Uint8Array {
   const schema = nested ? nestedSchema : bodySchema

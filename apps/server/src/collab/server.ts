@@ -49,7 +49,24 @@ export interface Collab {
   close(): Promise<void>
 }
 
-export function createCollab({ db, onError }: { db: Database; onError: (error: unknown) => void }): Collab {
+/** Lo guardado: de qué mundo, página y documento es, y el documento de Yjs (para rehacer sus enlaces) */
+export interface StoredDocument {
+  worldId: string
+  pageId: string
+  documentId: string
+  kind: 'body' | 'separate'
+  document: Y.Doc
+}
+
+export function createCollab({
+  db,
+  onError,
+  onStored
+}: {
+  db: Database
+  onError: (error: unknown) => void
+  onStored?: (stored: StoredDocument) => Promise<void>
+}): Collab {
   // De qué página y mundo es cada documento abierto, para cerrarlos si se van a la papelera
   const opened = new Map<string, { pageId: string; worldId: string }>()
   /** De qué página es lo que se abre: la del cuerpo, o la del secreto o la nota oculta */
@@ -110,6 +127,12 @@ export function createCollab({ db, onError }: { db: Database; onError: (error: u
           await documentsRepo.mergeBody(db, { pageId: target.pageId, worldId: place.worldId, userId }, merge)
         } else {
           await documentsRepo.mergeSeparate(db, target.documentId, userId, merge)
+        }
+        const documentId =
+          target.kind === 'body' ? (await documentsRepo.findBody(db, target.pageId))?.id : target.documentId
+        if (documentId && onStored) {
+          const stored = { worldId: place.worldId, pageId: place.pageId, documentId, document }
+          await onStored({ ...stored, kind: target.kind })
         }
       } catch (error) {
         onError(error)
