@@ -17,6 +17,7 @@ import { caretColor, renderCaret } from './carets.ts'
 import { useCollabDocument } from './collab.tsx'
 import { BlockHandle, BlockMenu, type BlockTarget, blockAtCursor } from './drag-handle.tsx'
 import styles from './editor.module.css'
+import { LinkSuggest, PageLinksContext, useLinksRef, usePageLinks } from './page-links.tsx'
 import {
   CopySeparateOnPaste,
   insertSeparate,
@@ -35,6 +36,7 @@ export function PageBody({ page }: { page: Page }) {
   const { t } = useTranslation()
   const { session, synced, offline } = useCollabDocument(`page:${page.id}`)
   const nestedOptions = useNestedOptions(caretColor)
+  const links = usePageLinks(page.worldId)
   if (!session) return null
   return (
     <section aria-label={t('editor.body')} className={styles.body}>
@@ -44,16 +46,18 @@ export function PageBody({ page }: { page: Page }) {
         </p>
       )}
       <SeparatePageContext.Provider value={page.id}>
-        <NestedOptionsContext.Provider value={nestedOptions}>
-          <BodyEditor
-            key={page.id}
-            pageId={page.id}
-            document={session.document}
-            provider={session.provider}
-            editable={!page.locked}
-            ready={synced}
-          />
-        </NestedOptionsContext.Provider>
+        <PageLinksContext.Provider value={links}>
+          <NestedOptionsContext.Provider value={nestedOptions}>
+            <BodyEditor
+              key={page.id}
+              pageId={page.id}
+              document={session.document}
+              provider={session.provider}
+              editable={!page.locked}
+              ready={synced}
+            />
+          </NestedOptionsContext.Provider>
+        </PageLinksContext.Provider>
       </SeparatePageContext.Provider>
     </section>
   )
@@ -77,6 +81,8 @@ function BodyEditor({
   const announce = useAnnounce()
   const { account } = useAccounts().useAccount()
   const name = account?.name ?? ''
+  // Las páginas del mundo, para `[[`: el editor se crea una vez y las lee al momento
+  const links = useLinksRef()
   // Hacer secreto lo elegido: su documento nuevo se crea en el servidor
   const context = useMemo<BlockContext>(
     () => ({
@@ -101,6 +107,10 @@ function BodyEditor({
           name: (block) => t(`blocks.${block.label}`),
           context,
           announce: (block) => announce(t('blocks.inserted', { block: t(`blocks.${block.label}`).toLowerCase() }))
+        }),
+        LinkSuggest.configure({
+          links: () => links.current,
+          announce: (title) => announce(t('links.inserted', { title }))
         }),
         CopySeparateOnPaste,
         AiHighlight.configure({ className: styles.aiFlash ?? '' }),

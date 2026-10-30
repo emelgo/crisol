@@ -213,8 +213,8 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   4. ~~Diseño~~: aprobado.
   5. ~~`/plan`~~: aprobado.
   6. **`/build` tarea a tarea** (`tasks/todo.md`), con `/agent-skills:review` y `/ship`, como en el módulo 0. Hechas de
-     la 1 a la 12. **Puntos de control 1 y 2 pasados** (2026-10-30, «todo funciona de momento»): el editor anidado se
-     queda. **Sigue la 13** (enlaces por id, sin resolver y rotos), y así hasta acabar el módulo (bitácora: `tasks/bitacora.md`).
+     la 1 a la 13. **Puntos de control 1 y 2 pasados** (2026-10-30, «todo funciona de momento»): el editor anidado se
+     queda. **Sigue la 14** (entrantes, menciones y aviso al borrar), y así hasta acabar el módulo (bitácora: `tasks/bitacora.md`).
   7. **Al acabar el módulo 1, la interfaz** (decisión de Enrique, 2026-10-30): se apunta por dónde vamos y se
      dedica una etapa a la interfaz antes del módulo 2. Ver «Para el repaso final de la interfaz».
 - **2026-10-29 — Módulo 1, tarea 1: páginas y árbol en la API.**
@@ -486,6 +486,34 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
     - e2e `exportar.spec.ts`: la descarga real, desabriendo el .zip;
     - `@fugas`: la jugadora no exporta ni usa `readPage`, `editPage` ni `createPages`.
   - **Queda para la 19**: los archivos, en `_archivos/`.
+- **2026-10-30 — Módulo 1, tarea 13: enlaces por id, sin resolver y rotos.**
+  - **Nodo `pageLink`** (`packages/editor/src/nodes/page-link.ts`): en línea y atómico, con `pageId`, `title`,
+    `anchor` y `label`. En Markdown, `[[Título#Sección|texto]]`; al escribir lleva el título de ahora (o la ruta si se
+    repite). `![[…]]` se queda como texto hasta la tarea 15.
+  - **Dominio** (`packages/domain/src/links.ts`):
+    - `resolveName`: por título o alias, o por una ruta «A/B»;
+    - `searchNames`: por prefijo, palabra o contenido, y con erratas (Levenshtein contra el principio del nombre y de
+      cada palabra, con una letra más o menos).
+  - **Tabla `page_links`** (migración 0012). Se rehace con cada guardado de Hocuspocus (`onStored`, en
+    `apps/server/src/wiki/links.ts`) y al crear páginas.
+  - **Resolución sola** (`resolvePending`): al crear, renombrar, restaurar o dar un alias, los enlaces que esperaban
+    ese nombre se resuelven en la tabla y en el texto (conexión directa).
+  - **Claude**: sus `[[…]]` se resuelven al escribir. Con varias posibles, `AMBIGUOUS_PAGE` y las rutas. En una tanda,
+    se pueden enlazar entre ellas en cualquier orden.
+  - **Web** (`apps/web/src/wiki/page-links.tsx`):
+    - **Lista de páginas**: `listPageNames`, en caché bajo `['pages', mundo]`, así que se pone al día con los avisos.
+    - **Vista del enlace**, con tres estados:
+      - bien;
+      - «por crear»: pulsarlo la crea;
+      - roto (en la papelera): «Restaurar».
+    - **Intro** sobre un enlace elegido lo sigue.
+    - **`[[`** sugiere y ofrece «Crear página «X»». Va también dentro de los secretos.
+    - **«Enlazar con «X»»** en la barra de formato.
+  - **Arreglado de paso**: `propertiesOf` pasa a `wiki/properties.ts`, para no hacer un ciclo.
+  - **Pruebas**:
+    - dominio (resolver y erratas) y Markdown (ida y vuelta con `pageLink`);
+    - integración: en cualquier orden, en una tanda, alias, ambiguos con ruta, y papelera;
+    - e2e `enlaces.spec.ts`, con a11y.
 - **Pendientes de permiso de Enrique:**
   - Servicio de systemd para Foundry: ahora corre como proceso de la sesión y se para al cerrarla; se arranca con el
     comando de `research/foundry/entorno.md`.
@@ -506,7 +534,7 @@ Estados: pendiente · en curso · hecho · descartado.
 | # | Módulo | Estado | REA principal |
 |---|---|---|---|
 | 0 | **Fundación**: monorepo, CI, despliegue, cuentas, organizaciones, mundos, campañas, roles, historial y deshacer, esqueleto del MCP | **hecho** (2026-10-29; Discord y Google, pospuestos) | Foundry: modelo de documentos y permisos; DDB: campañas e invitaciones |
-| 1 | **Wiki**: páginas y subpáginas, editor de bloques, enlaces, menciones, vista previa, propiedades, secretos, búsqueda, marcadores, etiquetas, versiones, recursos y archivos, **hojas con estilo** (tipo Homebrewery, con PDF), exportación MD, sus herramientas MCP | en curso (construcción: tareas 1 a 12 de 26 hechas) | Foundry: Journal; DDB: contenido y referencias; Homebrewery (MIT): formato de hoja y descarga |
+| 1 | **Wiki**: páginas y subpáginas, editor de bloques, enlaces, menciones, vista previa, propiedades, secretos, búsqueda, marcadores, etiquetas, versiones, recursos y archivos, **hojas con estilo** (tipo Homebrewery, con PDF), exportación MD, sus herramientas MCP | en curso (construcción: tareas 1 a 13 de 26 hechas) | Foundry: Journal; DDB: contenido y referencias; Homebrewery (MIT): formato de hoja y descarga |
 | 2 | Tipos de página, plantillas y formularios nativos; consultas (en lugar de Dataview y Bases) | pendiente | Foundry: tipos de documento |
 | 3 | Sistemas de reglas, fichas de personaje (creación, subida de nivel), dados y dados 3D | pendiente | DDB: creador y hoja; Foundry: dnd5e, DataModel e instalar y crear sistemas |
 | 4 | Compendios, bestiario, statblocks, biblioteca | pendiente | Foundry: compendium packs; DDB: listados |

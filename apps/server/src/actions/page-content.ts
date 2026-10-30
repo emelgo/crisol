@@ -21,9 +21,11 @@ import {
 import type { JSONContent } from '@tiptap/core'
 import { pagesChanged } from '../realtime/events.ts'
 import { readDocument, stateOf, writeDocument } from '../wiki/content.ts'
+import { linkName, linksOfNewPages, resolveIncoming, resolvePending, worldNames } from '../wiki/links.ts'
+import { propertiesOf } from '../wiki/properties.ts'
 import { authorizedPage, authorizedWiki } from './access.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
-import { pageView, parentIn, propertiesOf } from './pages.ts'
+import { pageView, parentIn } from './pages.ts'
 import { implement } from './registry.ts'
 
 const SEPARATE = new Set(['secret', 'note'])
@@ -54,6 +56,14 @@ function withDocuments(body: JSONContent, documents: ReadonlyMap<string, string>
     return documentId ? { ...body, attrs: { ...body.attrs, documentId } } : body
   }
   return body.content ? { ...body, content: body.content.map((child) => withDocuments(child, documents)) } : body
+}
+
+/** Los enlaces a páginas de la misma tanda, sin resolver aún: se resuelven al crearlas */
+function withoutBatch(json: JSONContent): JSONContent {
+  if (json.type === 'pageLink' && String(json.attrs?.pageId ?? '').startsWith('batch:')) {
+    return { ...json, attrs: { ...json.attrs, pageId: null } }
+  }
+  return json.content ? { ...json, content: json.content.map(withoutBatch) } : json
 }
 
 /** Lo de dentro de un secreto como documento: con sus ids, y un párrafo si viene vacío */
@@ -137,11 +147,13 @@ export const pageContentActions = [
     }
     const linked = view.properties.flatMap((property) => (property.type === 'pages' ? property.value : []))
     const titles = await pagesRepo.titlesOf(ctx.db, wiki.worldId, linked)
+    // Las páginas enlazadas, por su título (o su ruta si se repite)
+    const nameOf = linkName(await worldNames(ctx, wiki.worldId))
     const markdown = pageToMarkdown({
       properties: view.properties,
       body,
       separate: (documentId) => contents.get(documentId) ?? null,
-      pageTitle: (id) => titles.get(id) ?? id,
+      pageTitle: (id) => nameOf(id) || titles.get(id) || id,
       ids: ids ?? false
     })
     return { page: view, markdown }
@@ -155,11 +167,30 @@ export const pageContentActions = [
     const blocker = moveBlocker({ pageId: '', parentPath, subtreeHeight: height })
     if (blocker) throw new InvalidRequestError(blocker)
 
-    // Todo se lee y se comprueba antes de escribir nada
+    // Todo se lee y se comprueba antes de escribir nada. Los enlaces, contra las páginas del mundo y las de la tanda:
+    // a una de la tanda se quedan sin resolver y se resuelven al crearla (como los de Eana, en cualquier orden)
+    const reads = new Map(ordered.map((page) => [page.key, parse(page.markdown ?? '')]))
+    const above = parent ? (await pagesRepo.pagePath(ctx.db, parent.id)).map((p) => p.title) : []
+    const pathOf = (key: string): string[] => {
+      const page = ordered.find((p) => p.key === key)
+      if (!page) return above
+      return [...(page.parent ? pathOf(page.parent) : above), page.title]
+    }
+    const batch = ordered.map((page) => {
+      const aliases = reads.get(page.key)?.properties.find((p) => fold(p.name) === 'alias')
+      return {
+        id: `batch:${page.key}`,
+        title: page.title,
+        aliases: aliases?.type === 'list' ? aliases.value : [],
+        path: pathOf(page.key)
+      }
+    })
+    const names = [...(await worldNames(ctx, wiki.worldId)), ...batch]
+    const links = (json: JSONContent) => withoutBatch(resolveIncoming(json, names))
     const prepared = ordered.map((page) => {
-      const read = parse(page.markdown ?? '')
+      const read = reads.get(page.key) as ReadPage
       const documents = new Map(read.separates.map((separate) => [separate.id, randomUUID()]))
-      const body = fillJsonIds(withDocuments(read.body, documents))
+      const body = fillJsonIds(withDocuments(links(read.body), documents))
       const newPage: pagesRepo.NewPage = {
         key: page.key,
         parentKey: page.parent ?? null,
@@ -169,7 +200,7 @@ export const pageContentActions = [
         separates: read.separates.map((separate) => ({
           id: documents.get(separate.id) as string,
           kind: separate.kind,
-          state: stateOf(separateDoc(separate.content), true)
+          state: stateOf(separateDoc(separate.content.map(links)), true)
         }))
       }
       return { newPage, properties: read.properties }
@@ -200,6 +231,16 @@ export const pageContentActions = [
       }
     )
     ctx.realtime.publish(pagesChanged(wiki))
+    // Sus enlaces, y los que las esperaban (también entre ellas)
+    await linksOfNewPages(
+      ctx,
+      wiki.worldId,
+      created.map((page) => {
+        const named = batch.find((b) => b.id === `batch:${page.key}`)
+        return { id: page.id, names: [page.title, ...(named?.aliases ?? [])] }
+      }),
+      ctx.actor.userId
+    )
     const byKey = new Map(created.map((page) => [page.key, page]))
     return { pages: input.pages.map((page) => byKey.get(page.key)).filter((page) => page !== undefined) }
   }),
@@ -232,6 +273,7 @@ export const pageContentActions = [
         if (error instanceof EditTargetError) throw new InvalidRequestError(error.code)
         throw error
       }
+      const names = await worldNames(ctx, wiki.worldId)
       // Cada secreto: el que ya estaba (mismo id de bloque, de esta página) cambia su documento; uno nuevo, se crea
       const existing = separatesIn(current)
       const own = new Set(
@@ -240,7 +282,7 @@ export const pageContentActions = [
       const documents = new Map<string, string>()
       for (const separate of read.separates) {
         const before = existing.get(separate.id)
-        const content = separateDoc(separate.content)
+        const content = separateDoc(separate.content.map((block) => resolveIncoming(block, names)))
         if (before?.documentId && before.kind === separate.kind && own.has(before.documentId)) {
           await writeDocument(
             ctx,
@@ -260,7 +302,7 @@ export const pageContentActions = [
           documents.set(separate.id, documentId)
         }
       }
-      incoming = withDocuments(read.body, documents).content ?? []
+      incoming = withDocuments(resolveIncoming(read.body, names), documents).content ?? []
     }
 
     // Lo que queda en el historial: título, icono y propiedades se pueden deshacer; el cuerpo, con las versiones
@@ -276,6 +318,11 @@ export const pageContentActions = [
       ...(input.icon !== undefined ? { icon: input.icon } : {}),
       ...(properties ? { properties } : {})
     })
+
+    // Un título o un alias nuevos pueden resolver enlaces que los esperaban
+    const aliases = properties?.find((p) => fold(p.name) === 'alias')
+    const renamed = [...(input.title ? [input.title] : []), ...(aliases?.type === 'list' ? aliases.value : [])]
+    if (renamed.length > 0) await resolvePending(ctx, wiki.worldId, ctx.actor.userId, renamed)
 
     let changedBlocks: string[] = []
     if (edit) {

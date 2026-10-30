@@ -40,7 +40,11 @@ const body: JSONContent = {
       text('Mapa', [{ type: 'link', attrs: { href: 'https://eana.example/mapa' } }]),
       text('.'),
       { type: 'hardBreak' },
-      text('Segunda línea.')
+      text('Segunda línea. Ver '),
+      { type: 'pageLink', attrs: { pageId: null, title: 'Maela Varn', anchor: 'Historia', label: 'la jefa' } },
+      text(' y '),
+      { type: 'pageLink', attrs: { pageId: null, title: 'Lugares/Notas', anchor: '^k3x9a1b2', label: null } },
+      text('.')
     ),
     { type: 'heading', attrs: { id: 'h2aaaaaa', level: 2 }, content: [text('Barrios')] },
     { type: 'heading', attrs: { id: 'h3aaaaaa', level: 3 }, content: [text('Los Muelles')] },
@@ -296,6 +300,36 @@ describe('el Markdown de una página', () => {
       type: 'paragraph',
       content: [{ type: 'text', text: '<script>alert(1)</script>' }]
     })
+  })
+
+  it('los enlaces a páginas: con el título de ahora, su sección o bloque y su texto; ![[…]] no es un enlace', () => {
+    const markdown = pageToMarkdown({
+      properties: [],
+      body: {
+        type: 'doc',
+        content: [
+          paragraph(
+            null,
+            text('Ver '),
+            { type: 'pageLink', attrs: { pageId: 'p1', title: 'Viejo título', anchor: null, label: null } },
+            text(' y '),
+            { type: 'pageLink', attrs: { pageId: 'p2', title: 'Notas', anchor: 'Barrios', label: 'aquí' } },
+            text(' y '),
+            { type: 'pageLink', attrs: { pageId: null, title: 'Por crear', anchor: null, label: null } }
+          )
+        ]
+      },
+      separate: () => null,
+      pageTitle: (id) => (id === 'p1' ? 'Maela Varn' : 'Personajes/Notas')
+    })
+    expect(markdown).toBe('Ver [[Maela Varn]] y [[Personajes/Notas#Barrios|aquí]] y [[Por crear]]\n')
+    const read = pageFromMarkdown('Mira [[Puerto Ceniza#^abc12345|el puerto]] y ![[Mapa]]')
+    const inline = (read.body.content?.[0]?.content ?? []).map((node) => ({ ...node, content: undefined }))
+    expect(inline).toMatchObject([
+      { type: 'text', text: 'Mira ' },
+      { type: 'pageLink', attrs: { pageId: null, title: 'Puerto Ceniza', anchor: '^abc12345', label: 'el puerto' } },
+      { type: 'text', text: ' y ![[Mapa]]' }
+    ])
   })
 
   it('sin propiedades, un separador al principio no se confunde con el YAML', () => {

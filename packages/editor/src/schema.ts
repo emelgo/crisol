@@ -11,6 +11,7 @@ import { BlockIds } from './ids.ts'
 import { isExternalUrl } from './links.ts'
 import { Box } from './nodes/box.ts'
 import { Callout } from './nodes/callout.ts'
+import { PageLink } from './nodes/page-link.ts'
 import { HiddenNote, Secret } from './nodes/separate.ts'
 
 /** El fragmento de Yjs que guarda el cuerpo de una página (el de siempre de la extensión de colaboración) */
@@ -35,7 +36,7 @@ export interface EditorOptions {
   checkboxLabel?: (text: string, checked: boolean) => string
   /** El editor de dentro de un secreto o una nota oculta: no lleva otros dentro */
   nested?: boolean
-  /** Para darles su vista a los bloques que la tienen: secretos, notas ocultas y recuadros (la web, con React) */
+  /** Para darles su vista a los nodos que la tienen: secretos, notas ocultas, recuadros y enlaces (la web, con React) */
   view?: (node: Node) => AnyExtension
 }
 
@@ -64,6 +65,7 @@ export function editorExtensions(options: EditorOptions = {}): Extensions {
     TableKit.configure({ table: { resizable: false } }),
     view(Callout),
     Box,
+    view(PageLink),
     ...(nested ? [] : [view(Secret), view(HiddenNote)]),
     BlockIds
   ]

@@ -1,0 +1,49 @@
+/* Los enlaces a páginas: subrayados; «por crear», a rayas y atenuados; rotos, tachados */
+.wrapper {
+  position: relative;
+}
+
+.link {
+  color: var(--color-accent-text);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.15em;
+  cursor: pointer;
+}
+
+.link[data-state="missing"] {
+  color: var(--color-muted);
+  text-decoration-style: dashed;
+}
+
+.link[data-state="broken"] {
+  color: var(--color-muted);
+  text-decoration-line: line-through;
+}
+
+.trash {
+  position: absolute;
+  z-index: 20;
+  inset-block-start: 100%;
+  inset-inline-start: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-block-start: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--color-field-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 0.875rem;
+  white-space: nowrap;
+}
+
+.restore {
+  min-block-size: 2rem;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--color-field-border);
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}

@@ -337,3 +337,13 @@ export function worldPages(db: Database, worldId: string) {
     .where(and(eq(pages.worldId, worldId), isNull(pages.deletedAt)))
     .orderBy(...byPosition)
 }
+
+/** Cuáles de estas son páginas del mundo, estén o no en la papelera (para guardar un enlace por su id) */
+export async function inWorld(db: Database, worldId: string, pageIds: readonly string[]) {
+  if (pageIds.length === 0) return new Set<string>()
+  const rows = await db
+    .select({ id: pages.id })
+    .from(pages)
+    .where(and(eq(pages.worldId, worldId), inArray(pages.id, [...new Set(pageIds)])))
+  return new Set(rows.map((row) => row.id))
+}

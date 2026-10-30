@@ -37,9 +37,10 @@ Hay que contárselo al final, con lo que tenga que probar o revisar:
   (`https://neo.crisol.144-91-122-245.sslip.io/mcp`), con su cuenta de propietario. Después prueba crear_paginas con
   secretos y editar_pagina sobre una página que tenga abierta.
 
-## Tarea en curso: 13, enlaces por id, sin resolver y rotos
+## Tarea en curso: 14, entrantes, menciones y aviso al borrar
 
-(Por empezar.)
+(Por empezar. Sale de `page_links`: entrantes con su fragmento, menciones sin enlazar con «Enlazar», «La enlazan N
+páginas» al borrar, y la herramienta MCP `enlaces_pagina`.)
 
 ## Hechas en esta tirada
 
@@ -49,4 +50,6 @@ Hay que contárselo al final, con lo que tenga que probar o revisar:
   deadlock de la CI.
 - **11** (PR #54): leer_pagina, crear_paginas y editar_pagina. El diseño está en `docs/modulos.md`. En la CI, la
   prueba de la barra de formato falló una vez (Alt+F10 antes de la selección nueva); arreglada en #54.
-- **12** (rama `wiki/tarea-12-exportar`, sobre la 11): exportar en .zip.
+- **12** (PR #55, en staging): exportar en .zip.
+- **13** (rama `wiki/tarea-13-enlaces`): enlaces, `page_links`, resolución sola, `[[`. El diseño está en
+  `docs/modulos.md`.

@@ -173,7 +173,8 @@ Cada vía nueva por la que salen datos amplía `@fugas` en la misma tarea.
 
 ## Fase 4: Enlaces
 
-- [ ] **13. Enlaces por id, sin resolver y rotos**
+- [x] **13. Enlaces por id, sin resolver y rotos** — hecha. La resolución sola también parchea el texto (conexión
+  directa), y así un renombrado posterior no los deja sin resolver.
   - Acepta:
     - `[[` sugiere por título y alias, con erratas, y ofrece «Crear página «X»».
     - Los enlaces van a una página, una sección o un bloque, por id.

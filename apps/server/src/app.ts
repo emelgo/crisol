@@ -18,6 +18,8 @@ import { registerMcpRoutes } from './mcp/routes.ts'
 import { createRealtime } from './realtime/hub.ts'
 import { type RealtimeRouteOptions, registerRealtimeRoutes } from './realtime/routes.ts'
 import { registerWeb, webBuild } from './web.ts'
+import { jsonOfDoc } from './wiki/content.ts'
+import { linksOfStored } from './wiki/links.ts'
 import { registerWikiRoutes } from './wiki/routes.ts'
 
 export interface AppDeps {
@@ -52,7 +54,12 @@ export function buildApp(deps: AppDeps): FastifyInstance {
       (error) => app.log.error(error)
     )
     // Los documentos de Yjs de la wiki (ADR-0003)
-    const collab = createCollab({ db, onError: (error) => app.log.error(error) })
+    const collab = createCollab({
+      db,
+      onError: (error) => app.log.error(error),
+      // Los enlaces salen del texto: se rehacen con cada guardado (env se crea justo después)
+      onStored: ({ document, kind, ...source }) => linksOfStored(env, source, jsonOfDoc(document, kind === 'separate'))
+    })
     const env: ActionEnv = { db, publicUrl, sealKey, realtime, collab, actions: implementationsByName }
     // Límite de intentos solo donde se pide (las rutas de Better Auth tienen el suyo)
     app.register(fastifyRateLimit, { global: false })

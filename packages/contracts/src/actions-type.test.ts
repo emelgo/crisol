@@ -48,7 +48,8 @@ describe('Actions', () => {
       createPageDocument: true,
       readPage: true,
       createPages: true,
-      editPage: true
+      editPage: true,
+      listPageNames: true
     }
     expect(Object.keys(names).sort()).toEqual(ACTIONS.map((a) => a.name).sort())
   })
