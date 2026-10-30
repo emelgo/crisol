@@ -118,3 +118,48 @@ test('la vista de hoja: se activa, pagina sin partir bloques, cambia de tema y q
   await page.getByRole('button', { name: 'Ver la hoja' }).click()
   await expect(page.getByRole('region', { name: 'Vista de hoja' })).toBeVisible()
 })
+
+test('imprimir y PDF: solo la hoja, sin interfaz, con su número de páginas; los secretos solo si se piden', async ({
+  page
+}) => {
+  test.slow()
+  const paragraphs = Array.from({ length: 200 }, (_, i) => `Párrafo ${i + 1} de la costa de Eana, con sus faros.`).join(
+    '\n\n'
+  )
+  const { worldId, pageId } = await openPage(
+    page,
+    `## La costa\n\n${paragraphs}\n\n> [!secreto]\n> La Hermandad quemó el faro.\n\n%%\nPreguntar por su familia.\n%%`
+  )
+  await page.request.post('/api/actions/updatePage', {
+    data: { pageId, sheet: { paper: 'a4', theme: 'neutro', numbers: true, firstNumber: 1, footer: true } }
+  })
+  // La ruta de impresión: sin cabecera ni menús, y con la hoja paginada
+  await page.goto(`/mundos/${worldId}/imprimir/${pageId}`)
+  await expect(page.locator('body[data-sheet-ready="true"]')).toBeAttached()
+  await expect(page.getByRole('banner')).toHaveCount(0)
+  const sheets = await page.getByRole('region', { name: /^Página \d+$/ }).count()
+  expect(sheets).toBeGreaterThan(1)
+  await expect(page.getByText('La Hermandad quemó el faro.')).toHaveCount(0)
+  await expect(page.getByText('Preguntar por su familia.')).toHaveCount(0)
+  await page.emulateMedia({ media: 'print' })
+  const pdf = await page.pdf({ preferCSSPageSize: true, printBackground: true })
+  const pages = (pdf.toString('latin1').match(/\/Type\s*\/Page[^s]/g) ?? []).length
+  expect(pages).toBe(sheets)
+  // Con secretos
+  await page.goto(`/mundos/${worldId}/imprimir/${pageId}?secretos=1`)
+  await expect(
+    page.getByRole('region', { name: /^Página \d+$/ }).getByText('La Hermandad quemó el faro.')
+  ).toBeVisible()
+  await expect(page.getByText('Preguntar por su familia.')).toHaveCount(0)
+
+  // «Descargar PDF»: lo saca el servidor
+  const response = await page.request.get(`/api/pages/${pageId}/pdf`)
+  expect(response.status()).toBe(200)
+  expect(response.headers()['content-type']).toBe('application/pdf')
+  expect(response.headers()['content-disposition']).toContain(
+    `filename*=UTF-8''${encodeURIComponent('El Dragón Rojo.pdf')}`
+  )
+  const body = (await response.body()).toString('latin1')
+  expect(body.startsWith('%PDF')).toBe(true)
+  expect((body.match(/\/Type\s*\/Page[^s]/g) ?? []).length).toBe(sheets)
+})
