@@ -140,10 +140,10 @@ describe('si no llega lo que necesita una página', () => {
     await afterRetries()
     expect((await screen.findByRole('alert')).textContent).toBe('Algo ha fallado. Vuelve a intentarlo.')
     expect(screen.getByRole('heading', { level: 1, name: 'Eana' })).toBeDefined()
-    expect(screen.queryByText('Aún no hay páginas.')).toBeNull()
+    expect(screen.queryByText('Aún no hay artículos.')).toBeNull()
     recover()
     await user().click(screen.getByRole('button', { name: 'Reintentar' }))
-    expect(await screen.findByText('Aún no hay páginas.')).toBeDefined()
+    expect(await screen.findByText('Aún no hay artículos.')).toBeDefined()
   })
 
   it('si falla una parte del Inicio, el título de la página sigue siendo el del mundo', async () => {
@@ -155,7 +155,7 @@ describe('si no llega lo que necesita una página', () => {
     expect(document.title).toBe('Eana · Crisol')
     recover()
     await user().click(screen.getByRole('button', { name: 'Reintentar' }))
-    await screen.findByText('Aún no hay páginas.')
+    await screen.findByText('Aún no hay artículos.')
     expect(document.title).toBe('Eana · Crisol')
   })
 

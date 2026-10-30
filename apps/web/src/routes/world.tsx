@@ -99,7 +99,7 @@ function useAgo() {
   }
 }
 
-/** Lo último de la wiki: las páginas cambiadas hace poco, para seguir donde se dejó */
+/** Los últimos artículos: las páginas de la wiki cambiadas hace poco, para seguir donde se dejó */
 function RecentPages({ worldId }: { worldId: string }) {
   const { t } = useTranslation()
   const api = useApi()
@@ -121,12 +121,7 @@ function RecentPages({ worldId }: { worldId: string }) {
       {failed(recent) && <SectionError error={recent.error} onRetry={() => recent.refetch()} />}
       {recent.data &&
         (pages.length === 0 ? (
-          <p className={styles.muted}>
-            {t('world.noPages')}{' '}
-            <Link to="/mundos/$worldId/wiki" params={{ worldId }} viewTransition={SECTION}>
-              {t('world.openWiki')}
-            </Link>
-          </p>
+          <p className={styles.muted}>{t('world.noPages')}</p>
         ) : (
           <ul className={styles.recent} aria-label={t('world.recentLabel')}>
             {pages.map((page) => {

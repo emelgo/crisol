@@ -111,7 +111,7 @@ describe('el Inicio de un mundo', () => {
       ]
     })
     const router = renderAt(`/mundos/${w.id}`, api)
-    expect(await screen.findByRole('heading', { level: 2, name: 'Lo último de la wiki' })).toBeDefined()
+    expect(await screen.findByRole('heading', { level: 2, name: 'Últimos artículos' })).toBeDefined()
     const list = within(await screen.findByRole('list', { name: 'Páginas cambiadas hace poco' }))
     expect(list.getAllByRole('link').map((link) => link.textContent)).toEqual([
       expect.stringMatching(/^Puerto Ceniza/),
@@ -126,13 +126,11 @@ describe('el Inicio de un mundo', () => {
     expect(api.calls).toContain('listRecentPages')
   })
 
-  it('sin páginas, lo dice y lleva a la wiki', async () => {
+  it('sin páginas, lo dice (a la wiki se va por la barra)', async () => {
     const w = world()
-    const router = renderAt(`/mundos/${w.id}`, fakeApi({ organizations: [ORG], worlds: [w] }))
-    expect(await screen.findByText('Aún no hay páginas.')).toBeDefined()
-    await userEvent.click(screen.getByRole('link', { name: 'Abrir la wiki' }))
-    expect(await screen.findByRole('heading', { level: 1, name: 'Wiki de Eana' })).toBeDefined()
-    expect(router.state.location.pathname).toBe(`/mundos/${w.id}/wiki`)
+    renderAt(`/mundos/${w.id}`, fakeApi({ organizations: [ORG], worlds: [w] }))
+    expect(await screen.findByText('Aún no hay artículos.')).toBeDefined()
+    expect(screen.queryByRole('link', { name: 'Abrir la wiki' })).toBeNull()
   })
 
   it('quien juega ve sus campañas, sin engranaje ni lo de la wiki', async () => {
@@ -148,7 +146,7 @@ describe('el Inicio de un mundo', () => {
     expect(link.getAttribute('href')).toBe(`/mundos/${w.id}/campanas/${marca.id}`)
     expect(list.getByText('Jugador')).toBeDefined()
     expect(screen.queryByRole('button', { name: /^Ajustes de/ })).toBeNull()
-    expect(screen.queryByRole('heading', { name: 'Lo último de la wiki' })).toBeNull()
+    expect(screen.queryByRole('heading', { name: 'Últimos artículos' })).toBeNull()
     // En la barra, Inicio y Campañas, pero no la wiki
     expect(await ribbon().findByRole('link', { name: 'Inicio' })).toBeDefined()
     expect(ribbon().getByRole('link', { name: 'Campañas' })).toBeDefined()

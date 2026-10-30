@@ -463,12 +463,12 @@
   margin: 0 0 0 auto;
 }
 
-/* Una sección de la página (Lo último de la wiki, Tus campañas) */
+/* Una sección de la página (Últimos artículos, Tus campañas) */
 .section h2 {
   margin-block-end: var(--space-4);
 }
 
-/* Lo último de la wiki: una lista, cada página con su miniatura, su título, las de encima y cuándo cambió */
+/* Últimos artículos: una lista, cada página con su miniatura, su título, las de encima y cuándo cambió */
 .recent {
   display: grid;
   gap: var(--space-1);

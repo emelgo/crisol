@@ -106,10 +106,9 @@ export const es = {
     notFound: 'Este mundo no existe',
     asMaster: 'Eres su máster.',
     asPlayer: 'Juegas en una de sus campañas.',
-    recent: 'Lo último de la wiki',
+    recent: 'Últimos artículos',
     recentLabel: 'Páginas cambiadas hace poco',
-    noPages: 'Aún no hay páginas.',
-    openWiki: 'Abrir la wiki',
+    noPages: 'Aún no hay artículos.',
     yourCampaigns: 'Tus campañas'
   },
   campaigns: {
@@ -877,7 +876,7 @@ export const es = {
     world: {
       ribbon: 'Desde aquí te mueves por el mundo.',
       settings: 'Aquí se ajusta el mundo: cómo se ve y lo demás.',
-      back: 'La llama te devuelve a tus mundos.'
+      back: 'El Crisol te devuelve a tus mundos.'
     },
     campaigns: {
       create: 'Cada campaña reúne a un grupo de jugadores en este mundo.'
