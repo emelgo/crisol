@@ -20,6 +20,10 @@
   gap: var(--space-1);
 }
 
+.error {
+  color: var(--color-danger);
+}
+
 .number {
   inline-size: 4.5rem;
   font: inherit;

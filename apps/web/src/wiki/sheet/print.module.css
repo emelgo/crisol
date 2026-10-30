@@ -1,0 +1,20 @@
+/* Imprimir: la hoja sola (lo de la hoja al imprimir va en sheet.module.css) */
+.print {
+  background: var(--color-bg);
+}
+
+@media print {
+  .print {
+    background: none;
+  }
+}
+
+/* El título, para los lectores de pantalla (en el papel ya va en la hoja) */
+.title {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

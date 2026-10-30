@@ -105,3 +105,11 @@ main section[aria-labelledby]::before {
 main section[aria-labelledby] > h2:first-child {
   margin-block-start: 0;
 }
+
+/* En el papel, sin el fondo del tema oscuro */
+@media print {
+  body {
+    background: #fff;
+    color: #000;
+  }
+}

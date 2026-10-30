@@ -115,16 +115,28 @@ function useMeasured(blocks: readonly JSONContent[], settings: SheetSettings, me
 export function SheetView({
   page,
   settings,
-  onBlockClick
+  onBlockClick,
+  print,
+  onReady
 }: {
   page: Page
   settings: SheetSettings
   /** Pulsar un bloque de la hoja (para llevar el editor a él) */
   onBlockClick?: (blockId: string) => void
+  /** Para imprimir: las notas ocultas nunca salen, y los secretos solo si se piden */
+  print?: { secrets: boolean }
+  /** Ya está paginada (para imprimir) */
+  onReady?: () => void
 }) {
   const { t } = useTranslation()
   const content = usePageContent(page.worldId, page.id, null, false)
-  const blocks = useMemo(() => (content.data?.blocks ?? []) as JSONContent[], [content.data])
+  const printing = print !== undefined
+  const secrets = print?.secrets ?? true
+  const blocks = useMemo(() => {
+    const all = (content.data?.blocks ?? []) as JSONContent[]
+    if (!printing) return all
+    return all.filter((block) => block.type !== 'note' && (secrets || block.type !== 'secret'))
+  }, [content.data, printing, secrets])
   const [measurer, setMeasurer] = useState<HTMLDivElement | null>(null)
   const heights = useMeasured(blocks, settings, measurer)
   const headings = headingsOf(blocks)
@@ -139,6 +151,10 @@ export function SheetView({
         contentHeight(settings)
       )
     : []
+  const ready = content.data !== undefined && heights !== null
+  useEffect(() => {
+    if (ready) onReady?.()
+  }, [ready, onReady])
   const numbers = new Map<string, number>()
   pages.forEach((sheetPage, index) => {
     for (const row of sheetPage.rows) {

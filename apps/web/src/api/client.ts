@@ -26,6 +26,8 @@ export interface ApiClient {
   call<N extends ActionName>(name: N, input: ActionInput<N>): Promise<ActionOutput<N>>
   /** Exporta la wiki (o una página) en un .zip: sus bytes y su nombre */
   exportWiki(input: ExportInput): Promise<{ name: string; data: Blob }>
+  /** El PDF de la hoja de una página (lo saca el servidor), con o sin secretos */
+  downloadPdf(pageId: string, secrets: boolean): Promise<{ name: string; data: Blob }>
   /** Sube un archivo al mundo, o reemplaza los bytes de uno, diciendo cuánto lleva (de 0 a 1) */
   uploadFile(target: UploadTarget, file: Blob, onProgress?: (fraction: number) => void): Promise<FileView>
 }
@@ -58,6 +60,14 @@ export function createApiClient(): ApiClient {
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify(input)
       })
+      if (!response.ok) {
+        const body = (await response.json().catch(() => ({}))) as { code?: string }
+        throw new ApiError(body.code ?? 'UNKNOWN', response.status)
+      }
+      return { name: attachmentName(response.headers.get('content-disposition')), data: await response.blob() }
+    },
+    async downloadPdf(pageId, secrets) {
+      const response = await fetch(`/api/pages/${pageId}/pdf${secrets ? '?secretos=1' : ''}`)
       if (!response.ok) {
         const body = (await response.json().catch(() => ({}))) as { code?: string }
         throw new ApiError(body.code ?? 'UNKNOWN', response.status)
