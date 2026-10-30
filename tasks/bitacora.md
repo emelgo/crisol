@@ -153,6 +153,20 @@ las medidas (un bucle de React, el #185, salió por un `?? []` nuevo en cada pin
 acciones de la página; la fila de ajustes encima del texto; a partir de 1500 px, el editor y la hoja lado a lado
 (pulsar un bloque de la hoja lleva el editor a él; el cursor del editor lleva la hoja, con `selectionchange`).
 
+## Siguiente: 24, imprimir y PDF (diseño)
+
+- **Ruta de impresión** `/mundos/:worldId/imprimir/:pageId?secretos=1&imprimir=1`: `RootLayout` la pinta sin nada de la
+  interfaz. Solo las páginas de la hoja, con `@page { size: A4|Letter; margin: 0 }`, `break-after: page` y sin sombras.
+  Las notas ocultas nunca; los secretos, solo con `secretos=1`. Al acabar de paginar pone `data-sheet-ready` (para
+  Chromium) y, con `imprimir=1`, abre el diálogo de imprimir.
+- **En la fila de la hoja**: «Incluir secretos», «Imprimir» (abre la ruta en otra pestaña) y «Descargar PDF».
+- **PDF en el servidor** (permiso de Enrique: Chromium en la imagen): `GET /api/pages/:id/pdf?secretos=1`, con
+  `playwright-core` (Apache-2.0) y el Chromium del sistema (`CHROMIUM_PATH`; en la imagen, `apk add chromium`). Abre la
+  ruta de impresión en `http://127.0.0.1:PORT` con la cookie de quien lo pide (`extraHTTPHeaders`), espera a
+  `data-sheet-ready` y saca `page.pdf({ preferCSSPageSize: true, printBackground: true })`. De uno en uno (memoria de
+  512 MB). El guardián de origen acepta también el origen interno (solo lo puede abrir el propio servidor). Sin
+  Chromium o sin la web compilada: 503.
+
 ## Hechas en esta tirada
 
 - **9** (PR #52): bloques, marcas, menú «/», barras, asa e ids. Decisiones apuntadas en `docs/modulos.md`.
