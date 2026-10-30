@@ -25,6 +25,7 @@ describe('el esquema del editor', () => {
         'listItem',
         'note',
         'orderedList',
+        'pageEmbed',
         'pageLink',
         'paragraph',
         'secret',

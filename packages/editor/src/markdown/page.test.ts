@@ -122,6 +122,7 @@ const body: JSONContent = {
       })
     ),
     { type: 'box', attrs: { id: 'bxaaaaaa' }, content: [paragraph(null, text('Dentro de la caja.'))] },
+    { type: 'pageEmbed', attrs: { id: 'emaaaaaa', pageId: null, title: 'Costa Gris', anchor: 'Historia' } },
     { type: 'secret', attrs: { id: 'scaaaaaa', documentId: 'doc-secreto', copyOf: null, copyBy: null } },
     { type: 'note', attrs: { id: 'ntaaaaaa', documentId: 'doc-nota', copyOf: null, copyBy: null } },
     paragraph('p4aaaaaa', text('Fin.'))

@@ -404,3 +404,26 @@ export const linkMention = defineAction({
   input: z.object({ sourcePageId: z.uuid(), targetPageId: z.uuid() }),
   output: z.object({ linked: z.boolean() })
 })
+
+export const getPageContent = defineAction({
+  name: 'getPageContent',
+  kind: 'read',
+  description:
+    'Lo de dentro de una página para enseñarlo en otra (vista previa o incrustado): su título, su ruta, su resumen y sus bloques en JSON del editor, o los de una sección (anchor: su título) o un bloque (anchor: ^id). Los incrustados de dentro llegan hasta 3 niveles',
+  input: z.object({
+    pageId: z.uuid(),
+    anchor: z.string().trim().min(1).max(200).nullable().optional(),
+    preview: z.boolean().optional().describe('Solo el principio, sin abrir lo incrustado dentro')
+  }),
+  output: z.object({
+    page: z.object({
+      id: z.uuid(),
+      title: z.string(),
+      icon: z.string().nullable(),
+      path: z.array(z.object({ id: z.uuid(), title: z.string() })),
+      summary: z.string().nullable()
+    }),
+    blocks: z.array(z.record(z.string(), z.unknown())),
+    truncated: z.boolean()
+  })
+})

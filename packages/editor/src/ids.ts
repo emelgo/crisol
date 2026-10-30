@@ -24,7 +24,8 @@ export const BLOCK_TYPES = [
   'callout',
   'box',
   'secret',
-  'note'
+  'note',
+  'pageEmbed'
 ]
 
 const ALPHABET = 'abcdefghijklmnopqrstuvwxyz0123456789'

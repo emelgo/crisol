@@ -10,6 +10,7 @@ import {
   createPages,
   editPage,
   getPage,
+  getPageContent,
   getPageLinks,
   getWikiPreferences,
   linkMention,
@@ -98,7 +99,8 @@ export const ACTIONS = [
   listPageNames,
   getPageLinks,
   listUnresolvedLinks,
-  linkMention
+  linkMention,
+  getPageContent
 ]
 
 /** Las acciones por nombre, solo como tipo: la web las usa sin cargar zod */
@@ -151,4 +153,5 @@ export type Actions = {
   getPageLinks: typeof getPageLinks
   listUnresolvedLinks: typeof listUnresolvedLinks
   linkMention: typeof linkMention
+  getPageContent: typeof getPageContent
 }
