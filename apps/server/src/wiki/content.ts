@@ -104,7 +104,8 @@ export async function writeDocument(
     const connection = await env.collab.hocuspocus.openDirectConnection(nameOf(ref), {
       userId: place.userId,
       pageId: ref.pageId,
-      worldId: place.worldId
+      worldId: place.worldId,
+      server: true
     })
     try {
       await connection.transact((document) => {

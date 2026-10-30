@@ -6,6 +6,7 @@ import { type Database, documentsRepo, loadMemberships, pagesRepo, worldsRepo } 
 import { actorFrom, authorize, can, NotFoundError } from '@crisol/domain'
 import { Hocuspocus } from '@hocuspocus/server'
 import * as Y from 'yjs'
+import { createSessions, type SessionTimes } from './sessions.ts'
 
 /** Lo más que ocupa el estado de un documento, y un mensaje: lo que pase no se guarda */
 export const MAX_STATE_BYTES = 4 * 1024 * 1024
@@ -16,6 +17,8 @@ export interface CollabContext {
   userId: string
   pageId?: string
   worldId?: string
+  /** Una conexión directa del servidor (Claude, deshacer, restaurar): no abre sesión de edición */
+  server?: boolean
 }
 
 const UUID = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
@@ -47,6 +50,10 @@ export interface Collab {
   closeWorld(worldId: string): void
   /** Al parar el servidor: cierra todo y espera (hasta 5 s) a que se guarde lo pendiente */
   close(): Promise<void>
+  /** Cierra las sesiones de edición abiertas de una página (antes de una operación del servidor sobre ella) */
+  closeSessions(pageId: string): Promise<void>
+  /** Los documentos abiertos de una página, para sacar su versión con lo último */
+  livePage(pageId: string): { kind: 'body' | 'separate'; documentId: string; document: Y.Doc }[]
 }
 
 /** Lo guardado: de qué mundo, página y documento es, y el documento de Yjs (para rehacer sus enlaces) */
@@ -63,12 +70,21 @@ export interface StoredDocument {
 export function createCollab({
   db,
   onError,
-  onStored
+  onStored,
+  onSessionClosed,
+  onBodyLoaded,
+  sessionTimes
 }: {
   db: Database
   onError: (error: unknown) => void
   onStored?: (stored: StoredDocument) => Promise<void>
+  /** Al cerrarse una sesión de edición: su versión y su operación */
+  onSessionClosed?: (session: { pageId: string; worldId: string; userId: string }) => Promise<void>
+  /** Al cargar el cuerpo de una página sin sesiones: por si quedó una abierta al pararse el servidor */
+  onBodyLoaded?: (page: { pageId: string; worldId: string }) => Promise<void>
+  sessionTimes?: SessionTimes
 }): Collab {
+  const sessions = createSessions(async (session) => onSessionClosed?.(session), onError, sessionTimes)
   // De qué página y mundo es cada documento abierto, para cerrarlos si se van a la papelera
   const opened = new Map<string, { pageId: string; worldId: string }>()
   /** De qué página es lo que se abre: la del cuerpo, o la del secreto o la nota oculta */
@@ -107,6 +123,29 @@ export function createCollab({
           ? await documentsRepo.findBody(db, target.pageId)
           : await documentsRepo.findSeparate(db, target.documentId)
       if (stored) Y.applyUpdate(document, stored.state)
+      // El cuerpo, sin sesiones abiertas: si quedó una a medias al pararse el servidor, se cierra ahora
+      const place = opened.get(documentName)
+      if (target.kind === 'body' && place && onBodyLoaded && !sessions.isOpen(place.pageId)) {
+        setTimeout(() => void onBodyLoaded({ pageId: place.pageId, worldId: place.worldId }).catch(onError), 0)
+      }
+    },
+
+    // Cada cambio de una cuenta (no del servidor) abre o alarga su sesión de edición en la página
+    async onChange({ documentName, context }) {
+      const place = opened.get(documentName)
+      if (!place || !context?.userId || context.server) return
+      sessions.touch(place.pageId, place.worldId, context.userId)
+    },
+
+    async connected({ documentName, context }) {
+      const place = opened.get(documentName)
+      if (place && context?.userId && !context.server) sessions.connected(place.pageId, context.userId)
+    },
+
+    // Al irse su última conexión a la página, la sesión de esa cuenta se cierra
+    async onDisconnect({ documentName, context }) {
+      const place = opened.get(documentName)
+      if (place && context?.userId && !context.server) sessions.disconnected(place.pageId, context.userId)
     },
 
     async beforeHandleMessage({ update }) {
@@ -158,7 +197,24 @@ export function createCollab({
     closeWorld(worldId) {
       for (const [name, place] of opened) if (place.worldId === worldId) hocuspocus.closeConnections(name)
     },
+    closeSessions: (pageId) => sessions.closePage(pageId),
+    livePage(pageId) {
+      const live: { kind: 'body' | 'separate'; documentId: string; document: Y.Doc }[] = []
+      for (const [name, place] of opened) {
+        const document = hocuspocus.documents.get(name)
+        const target = parseDocumentName(name)
+        if (place.pageId !== pageId || !document || !target) continue
+        live.push(
+          target.kind === 'body'
+            ? { kind: 'body', documentId: '', document }
+            : { kind: 'separate', documentId: target.documentId, document }
+        )
+      }
+      return live
+    },
     async close() {
+      // Lo que se estaba escribiendo queda en su versión
+      await sessions.closeAll()
       hocuspocus.closeConnections()
       hocuspocus.flushPendingStores()
       // Cada documento se descarga cuando ya está guardado

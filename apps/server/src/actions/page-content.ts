@@ -23,6 +23,7 @@ import { pagesChanged } from '../realtime/events.ts'
 import { readDocument, stateOf, writeDocument } from '../wiki/content.ts'
 import { linkName, linksOfNewPages, resolveIncoming, resolvePending, worldNames } from '../wiki/links.ts'
 import { propertiesOf } from '../wiki/properties.ts'
+import { snapshotPage, versionOf } from '../wiki/versions.ts'
 import { authorizedPage, authorizedWiki } from './access.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
 import { pageView, parentIn } from './pages.ts'
@@ -194,17 +195,34 @@ export const pageContentActions = [
       const read = reads.get(page.key) as ReadPage
       const documents = new Map(read.separates.map((separate) => [separate.id, randomUUID()]))
       const body = fillJsonIds(withDocuments(links(read.body), documents))
+      const bodyState = (read.body.content ?? []).length > 0 ? stateOf(body) : null
+      const separates = read.separates.map((separate) => ({
+        id: documents.get(separate.id) as string,
+        kind: separate.kind,
+        state: stateOf(separateDoc(separate.content.map(links)), true)
+      }))
+      // Con texto, su primera versión va en la misma operación
+      const bodyId = bodyState ? randomUUID() : undefined
       const newPage: pagesRepo.NewPage = {
         key: page.key,
         parentKey: page.parent ?? null,
         title: page.title,
         icon: page.icon ?? null,
-        body: (read.body.content ?? []).length > 0 ? stateOf(body) : null,
-        separates: read.separates.map((separate) => ({
-          id: documents.get(separate.id) as string,
-          kind: separate.kind,
-          state: stateOf(separateDoc(separate.content.map(links)), true)
-        }))
+        body: bodyState,
+        separates,
+        ...(bodyState && bodyId
+          ? {
+              bodyId,
+              version: versionOf([
+                { documentId: bodyId, kind: 'body', state: bodyState },
+                ...separates.map((separate) => ({
+                  documentId: separate.id,
+                  kind: separate.kind,
+                  state: separate.state
+                }))
+              ])
+            }
+          : {})
       }
       return { newPage, properties: read.properties }
     })
@@ -250,6 +268,8 @@ export const pageContentActions = [
 
   implement(editPage, async (ctx, input) => {
     const { page, wiki } = await authorizedPage(ctx, 'page.write', input.pageId)
+    // Lo que se estaba escribiendo queda en su sesión, antes de lo de Claude
+    await ctx.collab?.closeSessions(page.id)
     const read = input.body ? parse(input.body.markdown) : null
     // Las propiedades: las que se dan; o, al cambiar el cuerpo entero, las de su YAML
     const fromYaml = input.body?.mode === 'replace' && read && read.properties.length > 0 ? read.properties : undefined
@@ -316,16 +336,11 @@ export const pageContentActions = [
       ...(input.icon !== undefined ? { icon: input.icon } : {}),
       ...(input.body ? { body: input.body.mode } : {})
     }
-    await pagesRepo.updatePage(ctx.db, historyContext(ctx, 'editPage', details, wiki), page.id, {
+    const pagePatch = {
       ...(input.title !== undefined ? { title: input.title } : {}),
       ...(input.icon !== undefined ? { icon: input.icon } : {}),
       ...(properties ? { properties } : {})
-    })
-
-    // Un título o un alias nuevos pueden resolver enlaces que los esperaban
-    const aliases = properties?.find((p) => fold(p.name) === 'alias')
-    const renamed = [...(input.title ? [input.title] : []), ...(aliases?.type === 'list' ? aliases.value : [])]
-    if (renamed.length > 0) await resolvePending(ctx, wiki.worldId, ctx.actor.userId, renamed)
+    }
 
     let changedBlocks: string[] = []
     if (edit) {
@@ -346,6 +361,17 @@ export const pageContentActions = [
         throw error
       }
     }
+    // Una sola operación: el cambio de la fila (título, icono, propiedades) y, si cambió el texto, su versión
+    const context = historyContext(ctx, 'editPage', details, wiki)
+    if (edit) {
+      const via = ctx.via === 'ai' ? 'ai' : 'ui'
+      await snapshotPage(ctx, context, { pageId: page.id, worldId: wiki.worldId, via }, pagePatch)
+    } else await pagesRepo.updatePage(ctx.db, context, page.id, pagePatch)
+
+    // Un título o un alias nuevos pueden resolver enlaces que los esperaban
+    const aliases = properties?.find((p) => fold(p.name) === 'alias')
+    const renamed = [...(input.title ? [input.title] : []), ...(aliases?.type === 'list' ? aliases.value : [])]
+    if (renamed.length > 0) await resolvePending(ctx, wiki.worldId, ctx.actor.userId, renamed)
     ctx.realtime.publish(pagesChanged(wiki))
     return { page: await pageView(ctx, page.id), changedBlocks, changedSinceRequest }
   })

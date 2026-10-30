@@ -1,7 +1,8 @@
 import { type HistoryEntry, listHistory, undoOperation } from '@crisol/contracts'
-import { historyRepo, trashRepo, undoRepo } from '@crisol/db'
+import { historyRepo, pagesRepo, trashRepo, undoRepo } from '@crisol/db'
 import { authorize, can, NotFoundError } from '@crisol/domain'
 import { undoEvents } from '../realtime/events.ts'
+import { applyVersion } from '../wiki/versions.ts'
 import { targetOrganization } from './access.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
 import { implement } from './registry.ts'
@@ -45,6 +46,10 @@ export const historyActions = [
     authorizeUndo(ctx, target ?? { organizationId: '', worldId: null })
     if (!target) throw new NotFoundError('operation')
 
+    // El texto de las páginas que toca: lo que se estaba escribiendo queda antes en su sesión (y si cambió, conflicto)
+    const bodies = await historyRepo.pagesOfBodies(ctx.db, operationId)
+    for (const pageId of bodies) await ctx.collab?.closeSessions(pageId)
+
     const result = await undoRepo.undoOperation(ctx.db, historyContext(ctx, 'undoOperation', {}), operationId)
     if (result.status === 'not-found') throw new NotFoundError('operation')
     if (result.status === 'already-undone') throw new InvalidRequestError('ALREADY_UNDONE')
@@ -65,6 +70,14 @@ export const historyActions = [
       else ctx.realtime.publish(event)
     }
     await tellTrashChanges(ctx, result.applied)
+    // El texto vuelve a su versión, hacia delante (un editor abierto no lo deshace al reconectar)
+    for (const change of result.applied) {
+      if (change.tableName !== 'page_bodies') continue
+      const row = (change.after ?? change.before) as { page_id?: string; world_id?: string } | null
+      if (!row?.page_id || !row.world_id || !(await pagesRepo.findPage(ctx.db, row.page_id))) continue
+      const versionId = change.after ? ((change.after.version_id as string | null) ?? null) : null
+      await applyVersion(ctx, { pageId: row.page_id, worldId: row.world_id, userId: ctx.actor.userId }, versionId)
+    }
     return { status: 'undone' as const, entry: entry(done) }
   })
 ]
