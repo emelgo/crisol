@@ -45,6 +45,7 @@ export const MCP_TOOLS: Record<string, McpTool> = {
   listar_mundos: { action: 'listWorldsWithCampaigns' },
   ver_campana: { action: 'getCampaign' },
   crear_mundo: { action: 'createWorld' },
+  cambiar_mundo: { action: 'updateWorld' },
   crear_campana: { action: 'createCampaign' },
   enlace_invitacion: {
     description:

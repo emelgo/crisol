@@ -30,6 +30,11 @@ export function summaryOf(
       return say('createWorld', { name: text(details.name) })
     case 'renameWorld':
       return say('renameWorld', { from: text(details.from), to: text(details.to) })
+    case 'updateWorld':
+      // Si cambió el nombre, se dice como un renombrar
+      return details.from !== undefined
+        ? say('renameWorld', { from: text(details.from), to: text(details.to) })
+        : say('updateWorld', { name: text(details.name) })
     case 'createCampaign':
       return say('createCampaign', { name: text(details.name), world: text(details.world) })
     case 'renameCampaign':

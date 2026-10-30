@@ -11,7 +11,17 @@ import { createAppRouter } from '../router.tsx'
 import { announced, inMain } from '../testing.ts'
 
 const ORG = { id: crypto.randomUUID(), name: 'Fateforge', role: 'owner' as const }
-const world: World = { id: crypto.randomUUID(), organizationId: ORG.id, name: 'Eana', role: 'master', version: 1 }
+const world: World = {
+  id: crypto.randomUUID(),
+  organizationId: ORG.id,
+  name: 'Eana',
+  description: '',
+  icon: null,
+  color: null,
+  cover: null,
+  role: 'master',
+  version: 1
+}
 const campaign = (role: Campaign['role'] = 'master'): Campaign => ({
   id: crypto.randomUUID(),
   worldId: world.id,

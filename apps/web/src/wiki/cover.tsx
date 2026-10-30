@@ -15,9 +15,9 @@ import { FormError } from '../components/field.tsx'
 import list from '../components/list.module.css'
 import styles from './cover.module.css'
 
-const useWorldFiles = (worldId: string) => {
+export const useWorldFiles = (worldId: string, enabled = true) => {
   const api = useApi()
-  return useQuery({ queryKey: ['files', worldId], queryFn: () => api.call('listFiles', { worldId }) })
+  return useQuery({ queryKey: ['files', worldId], queryFn: () => api.call('listFiles', { worldId }), enabled })
 }
 
 /** La imagen de cabecera, si la tiene (si su archivo ya no está, nada) */
@@ -37,33 +37,52 @@ export function PageCoverImage({ page }: { page: Page }) {
   )
 }
 
-/** El botón «Portada» y su caja */
+/** El botón «Portada» de una página y su caja */
 export function CoverButton({ page }: { page: Page }) {
+  const api = useApi()
+  const queryClient = useQueryClient()
+  return (
+    <CoverPicker
+      worldId={page.worldId}
+      cover={page.cover}
+      onSave={async (cover) => {
+        await api.call('updatePage', { pageId: page.id, cover })
+        await queryClient.invalidateQueries({ queryKey: ['pages', page.worldId] })
+      }}
+    />
+  )
+}
+
+/** «Portada» y su caja: elegir una imagen del mundo o subir una, moverle el encuadre y quitarla. Sirve a páginas y mundos */
+export function CoverPicker({
+  worldId,
+  cover,
+  onSave
+}: {
+  worldId: string
+  cover: Cover | null
+  onSave: (cover: Cover | null) => Promise<unknown>
+}) {
   const { t } = useTranslation()
   const api = useApi()
   const queryClient = useQueryClient()
   const errorText = useErrorText()
-  const files = useWorldFiles(page.worldId)
+  const files = useWorldFiles(worldId)
   const [open, setOpen] = useState(false)
   const panelId = useId()
   const selectId = useId()
   const upload = useRef<HTMLInputElement>(null)
   const trigger = useRef<HTMLButtonElement>(null)
   const images = files.data?.files.filter((file) => file.kind === 'image') ?? []
-  const save = useMutation({
-    mutationFn: (cover: Cover | null) => api.call('updatePage', { pageId: page.id, cover }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['pages', page.worldId] })
-  })
+  const save = useMutation({ mutationFn: onSave })
   const uploadCover = useMutation({
     mutationFn: async (file: File) => {
-      const stored = await api.uploadFile({ worldId: page.worldId, name: file.name }, file)
+      const stored = await api.uploadFile({ worldId, name: file.name }, file)
       if (stored.kind !== 'image') throw new ApiError('BAD_COVER', 400)
-      await queryClient.invalidateQueries({ queryKey: ['files', page.worldId] })
-      return api.call('updatePage', { pageId: page.id, cover: { fileId: stored.id, x: 50, y: 50 } })
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['pages', page.worldId] })
+      await queryClient.invalidateQueries({ queryKey: ['files', worldId] })
+      return onSave({ fileId: stored.id, x: 50, y: 50 })
+    }
   })
-  const cover = page.cover
   return (
     <div className={styles.wrapper}>
       <button

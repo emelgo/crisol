@@ -211,6 +211,10 @@ export function fakeApi(
         id: crypto.randomUUID(),
         organizationId: owned.id,
         name: name.trim(),
+        description: '',
+        icon: null,
+        color: null,
+        cover: null,
         role: 'master',
         version: 1
       }
@@ -221,6 +225,17 @@ export function fakeApi(
       const world = worlds.find((w) => w.id === worldId)
       if (!world) throw new ApiError('NOT_FOUND', 404)
       world.name = name.trim()
+      world.version++
+      return { ...world }
+    },
+    updateWorld: ({ worldId, ...patch }) => {
+      const world = worlds.find((w) => w.id === worldId)
+      if (!world) throw new ApiError('NOT_FOUND', 404)
+      if (patch.name !== undefined) world.name = patch.name.trim()
+      if (patch.description !== undefined) world.description = patch.description.trim()
+      if (patch.icon !== undefined) world.icon = patch.icon
+      if (patch.color !== undefined) world.color = patch.color
+      if (patch.cover !== undefined) world.cover = patch.cover
       world.version++
       return { ...world }
     },

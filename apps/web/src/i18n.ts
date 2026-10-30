@@ -48,7 +48,33 @@ export const es = {
     listLabel: 'Mundos',
     newTitle: 'Nuevo mundo',
     name: 'Nombre del mundo',
-    create: 'Crear el mundo'
+    create: 'Crear el mundo',
+    settings: 'Ajustes',
+    settingsOf: 'Ajustes de {{name}}',
+    description: 'Descripción',
+    descriptionHint: 'Una línea que sale en su tarjeta.',
+    icon: 'Icono',
+    color: 'Color de la portada',
+    colorHint: 'Se ve si no hay imagen.',
+    save: 'Guardar',
+    cancel: 'Cancelar',
+    icons: {
+      tower: 'Torre',
+      mountain: 'Montaña',
+      sword: 'Espada',
+      ship: 'Barco',
+      crown: 'Corona',
+      tree: 'Árbol',
+      book: 'Libro'
+    },
+    colors: {
+      wine: 'Vino',
+      moss: 'Musgo',
+      slate: 'Pizarra',
+      ochre: 'Ocre',
+      sea: 'Mar',
+      plum: 'Ciruela'
+    }
   },
   world: {
     notFound: 'Este mundo no existe',
@@ -575,6 +601,7 @@ export const es = {
       bootstrapOwner: 'entró como propietario',
       createWorld: 'creó el mundo «{{name}}»',
       renameWorld: 'renombró el mundo «{{from}}» a «{{to}}»',
+      updateWorld: 'cambió cómo se ve el mundo «{{name}}»',
       createCampaign: 'creó la campaña «{{name}}» en {{world}}',
       renameCampaign: 'renombró la campaña «{{from}}» a «{{to}}»',
       regenerateInvitation: 'generó un enlace nuevo para {{campaign}}',
@@ -645,6 +672,7 @@ export const es = {
       bootstrapOwner: 'entrar como propietario',
       createWorld: 'crear el mundo «{{name}}»',
       renameWorld: 'renombrar el mundo «{{from}}» a «{{to}}»',
+      updateWorld: 'cambiar cómo se ve el mundo «{{name}}»',
       createCampaign: 'crear la campaña «{{name}}» en {{world}}',
       renameCampaign: 'renombrar la campaña «{{from}}» a «{{to}}»',
       regenerateInvitation: 'generar un enlace nuevo para {{campaign}}',

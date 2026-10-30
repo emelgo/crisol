@@ -12,7 +12,17 @@ import { signOut } from '../testing.ts'
 import { fakeAccountClient } from './fake.ts'
 
 const ORG = { id: crypto.randomUUID(), name: 'Fateforge', role: 'owner' as const }
-const eana: World = { id: crypto.randomUUID(), organizationId: ORG.id, name: 'Eana', role: 'master', version: 1 }
+const eana: World = {
+  id: crypto.randomUUID(),
+  organizationId: ORG.id,
+  name: 'Eana',
+  description: '',
+  icon: null,
+  color: null,
+  cover: null,
+  role: 'master',
+  version: 1
+}
 const otro: World = { ...eana, id: crypto.randomUUID(), name: 'Otro' }
 const marca: Campaign = { id: crypto.randomUUID(), worldId: eana.id, name: 'La Marca', role: 'master', version: 1 }
 const request: Approval = {

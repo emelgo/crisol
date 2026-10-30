@@ -6,10 +6,11 @@ import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
 import { CreateForm } from '../components/create-form.tsx'
 import { FormError } from '../components/field.tsx'
-import styles from '../components/list.module.css'
 import { failed } from '../components/load-error.tsx'
 import { PageTitle } from '../components/page-title.tsx'
 import { RenamableItem } from '../components/renamable-item.tsx'
+import cards from './world-card.module.css'
+import { WorldCardHeader, WorldDescription, WorldSettings } from './world-card.tsx'
 
 export function Worlds() {
   const { t } = useTranslation()
@@ -41,10 +42,12 @@ export function Worlds() {
         (worlds.data.worlds.length === 0 ? (
           <p>{t('worlds.empty')}</p>
         ) : (
-          <ul className={styles.list} aria-label={t('worlds.listLabel')}>
+          <ul className={cards.list} aria-label={t('worlds.listLabel')}>
             {worlds.data.worlds.map((world) => (
               <RenamableItem
                 key={world.id}
+                className={cards.card}
+                header={<WorldCardHeader world={world} />}
                 name={world.name}
                 role={t(`roles.${world.role}`)}
                 link={{ to: '/mundos/$worldId', params: { worldId: world.id } }}
@@ -54,7 +57,10 @@ export function Worlds() {
                       onDelete: () => api.call('deleteWorld', { worldId: world.id }).then(refresh)
                     }
                   : {})}
-              />
+              >
+                <WorldDescription world={world} />
+                {world.role === 'master' && <WorldSettings world={world} />}
+              </RenamableItem>
             ))}
           </ul>
         ))}

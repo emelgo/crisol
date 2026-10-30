@@ -69,7 +69,17 @@ describe('POST /api/actions/:name', () => {
     const response = await call('createWorld', { name: 'Eana' }, owner.cookie)
     expect(response.statusCode).toBe(200)
     const world = response.json()
-    expect(world).toEqual({ id: expect.any(String), organizationId, name: 'Eana', role: 'master', version: 1 })
+    expect(world).toEqual({
+      id: expect.any(String),
+      organizationId,
+      name: 'Eana',
+      description: '',
+      icon: null,
+      color: null,
+      cover: null,
+      role: 'master',
+      version: 1
+    })
 
     const [op] = await conn.db.select().from(schema.operations)
     expect(op).toMatchObject({
@@ -88,6 +98,36 @@ describe('POST /api/actions/:name', () => {
     expect(response.json()).toMatchObject({ name: 'Eana (Fateforge)', version: 2 })
     const ops = await conn.db.select().from(schema.operations)
     expect(ops.find((op) => op.action === 'renameWorld')?.details).toEqual({ from: 'Eana', to: 'Eana (Fateforge)' })
+  })
+
+  it('el máster cambia cómo se ve su mundo: descripción, icono y color; se deshace con el historial', async () => {
+    const world = (await call('createWorld', { name: 'Costa Gris' }, owner.cookie)).json()
+    expect(world).toMatchObject({ description: '', icon: null, color: null, cover: null })
+    const response = await call(
+      'updateWorld',
+      { worldId: world.id, description: 'Ciudades libres en la niebla', icon: 'tower', color: 'wine' },
+      owner.cookie
+    )
+    expect(response.json()).toMatchObject({
+      name: 'Costa Gris',
+      description: 'Ciudades libres en la niebla',
+      icon: 'tower',
+      color: 'wine',
+      version: 2
+    })
+    const ops = await conn.db.select().from(schema.operations)
+    const op = ops.find((o) => o.action === 'updateWorld')
+    expect(op?.details).toEqual({ name: 'Costa Gris', description: true, icon: 'tower', color: 'wine' })
+    // Lo que no es de la lista no entra; la portada tiene que ser una imagen del mundo
+    expect((await call('updateWorld', { worldId: world.id, icon: 'dragon' }, owner.cookie)).statusCode).toBe(400)
+    const cover = { fileId: crypto.randomUUID(), x: 50, y: 50 }
+    expect((await call('updateWorld', { worldId: world.id, cover }, owner.cookie)).json()).toEqual({
+      code: 'BAD_COVER'
+    })
+    // Deshacer lo deja como estaba
+    await call('undoOperation', { operationId: op?.id }, owner.cookie)
+    const [after] = (await call('listWorlds', {}, owner.cookie)).json().worlds
+    expect(after).toMatchObject({ description: '', icon: null, color: null })
   })
 
   it('un miembro que no es propietario no crea mundos', async () => {
@@ -134,7 +174,17 @@ describe('POST /api/actions/:name', () => {
 
   it('la respuesta solo lleva lo que dice el contrato', async () => {
     const world = (await call('createWorld', { name: 'Eana' }, owner.cookie)).json()
-    expect(Object.keys(world).sort()).toEqual(['id', 'name', 'organizationId', 'role', 'version'])
+    expect(Object.keys(world).sort()).toEqual([
+      'color',
+      'cover',
+      'description',
+      'icon',
+      'id',
+      'name',
+      'organizationId',
+      'role',
+      'version'
+    ])
   })
 
   it('listOrganizations da las organizaciones de la cuenta con su rol', async () => {

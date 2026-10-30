@@ -6,6 +6,7 @@ import { authorizedCampaign } from './access.ts'
 import { historyContext } from './context.ts'
 import { prepareSecret } from './invitations.ts'
 import { implement } from './registry.ts'
+import { presentWorld } from './worlds.ts'
 
 export const campaignActions = [
   implement(listCampaigns, async (ctx, { worldId }) => {
@@ -21,7 +22,7 @@ export const campaignActions = [
     return {
       worlds: await Promise.all(
         worlds.map(async (world) => ({
-          ...world,
+          ...presentWorld(world),
           campaigns: await campaignsRepo.listCampaigns(ctx.db, {
             worldId: world.id,
             userId,
