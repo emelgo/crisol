@@ -75,3 +75,11 @@
   outline: 2px solid var(--color-focus);
   outline-offset: 2px;
 }
+
+/* La portada pequeña, a lo ancho de la vista previa */
+.cover {
+  display: block;
+  inline-size: 100%;
+  block-size: 5rem;
+  object-fit: cover;
+}

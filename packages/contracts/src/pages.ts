@@ -35,10 +35,20 @@ export const pageSummary = z.object({
 
 export type PageSummary = z.infer<typeof pageSummary>
 
+/** La portada: una imagen del mundo y su punto de encuadre (en % del ancho y del alto: lo que no se recorta) */
+export const pageCover = z.object({
+  fileId: z.uuid(),
+  x: z.number().min(0).max(100),
+  y: z.number().min(0).max(100)
+})
+
+export type PageCover = z.infer<typeof pageCover>
+
 /** Una página abierta: lo que no es su cuerpo, con su ruta desde el primer nivel (ella incluida) */
 export const page = pageSummary.extend({
   properties: z.array(pageProperty),
   locked: z.boolean(),
+  cover: pageCover.nullable(),
   path: z.array(z.object({ id: z.uuid(), title: z.string() })),
   updatedAt: z.string()
 })
@@ -72,17 +82,23 @@ export const updatePage = defineAction({
   name: 'updatePage',
   kind: 'write',
   description:
-    'Cambia el título de una página, su icono (un emoji; null, sin icono) o su candado (locked: el editor, en lectura)',
+    'Cambia el título de una página, su icono (un emoji; null, sin icono), su candado (locked: el editor, en lectura) o su portada (una imagen del mundo con su encuadre; null, sin portada)',
   input: z
     .object({
       pageId: z.uuid(),
       title: pageTitle.optional(),
       icon: pageIcon.nullable().optional(),
-      locked: z.boolean().optional()
+      locked: z.boolean().optional(),
+      cover: pageCover.nullable().optional()
     })
-    .refine((input) => input.title !== undefined || input.icon !== undefined || input.locked !== undefined, {
-      message: 'title, icon o locked'
-    }),
+    .refine(
+      (input) =>
+        input.title !== undefined ||
+        input.icon !== undefined ||
+        input.locked !== undefined ||
+        input.cover !== undefined,
+      { message: 'title, icon, locked o cover' }
+    ),
   output: page
 })
 
@@ -421,7 +437,8 @@ export const getPageContent = defineAction({
       title: z.string(),
       icon: z.string().nullable(),
       path: z.array(z.object({ id: z.uuid(), title: z.string() })),
-      summary: z.string().nullable()
+      summary: z.string().nullable(),
+      cover: pageCover.nullable().describe('La portada: un archivo del mundo y su encuadre')
     }),
     blocks: z.array(z.record(z.string(), z.unknown())),
     truncated: z.boolean()

@@ -39,6 +39,7 @@ export async function findPage(db: Database, pageId: string) {
       ...summaryColumns,
       properties: pages.properties,
       locked: pages.locked,
+      cover: pages.cover,
       sheet: pages.sheet,
       updatedAt: pages.updatedAt,
       hasChildren
@@ -165,7 +166,13 @@ export function updatePage(
   db: Database,
   context: OperationContext,
   pageId: string,
-  patch: { title?: string; icon?: string | null; properties?: unknown[]; locked?: boolean }
+  patch: {
+    title?: string
+    icon?: string | null
+    properties?: unknown[]
+    locked?: boolean
+    cover?: { fileId: string; x: number; y: number } | null
+  }
 ) {
   return operation(db, context, (w) => w.update(pages, pageId, patch))
 }

@@ -63,6 +63,9 @@ export function summaryOf(
       if (!renames && 'locked' in details) {
         return say(details.locked ? 'lockPage' : 'unlockPage', { title: text(details.page ?? details.title) })
       }
+      if (!renames && 'cover' in details) {
+        return say(details.cover ? 'setPageCover' : 'removePageCover', { title: text(details.page ?? details.title) })
+      }
       if (!renames && 'icon' in details) {
         return say(details.icon ? 'setPageIcon' : 'removePageIcon', { title: text(details.page ?? details.title) })
       }

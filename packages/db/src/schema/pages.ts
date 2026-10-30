@@ -22,6 +22,8 @@ export const pages = pgTable(
     properties: jsonb().$type<unknown[]>().notNull().default([]),
     // Pone el editor en lectura; no es un permiso
     locked: boolean().notNull().default(false),
+    // La imagen de cabecera (un archivo del mundo) y su punto de encuadre, en % del ancho y del alto
+    cover: jsonb().$type<{ fileId: string; x: number; y: number } | null>(),
     // Los ajustes de la hoja; null: no se ve como hoja
     sheet: jsonb().$type<Record<string, unknown> | null>(),
     /** En la papelera desde entonces, con sus subpáginas: no sale en ninguna vista y a los 30 días se purga */

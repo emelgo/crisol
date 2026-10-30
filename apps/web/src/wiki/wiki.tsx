@@ -17,6 +17,7 @@ import { failed, LoadError } from '../components/load-error.tsx'
 import { PageTitle } from '../components/page-title.tsx'
 import { Backlinks, useLinkedBy } from './backlinks.tsx'
 import { CollabSocket } from './collab.tsx'
+import { CoverButton, PageCoverImage } from './cover.tsx'
 import { PageBody } from './editor.tsx'
 import { ExportPage, ExportWiki } from './export.tsx'
 import { PageIcon } from './icon.tsx'
@@ -276,6 +277,7 @@ function PageHeading({ page, startEditing }: { page: Page; startEditing: boolean
           {t('wiki.rename')}
         </button>
         <LockButton page={page} />
+        <CoverButton page={page} />
         <BookmarkButton page={page} />
         <ExportPage page={page} />
         <DeletePage page={page} />
@@ -440,6 +442,7 @@ export function WikiPage() {
         return (
           <article>
             <Breadcrumbs worldId={worldId} world={world.name} path={page.data.path} />
+            <PageCoverImage page={page.data} />
             <PageHeading key={`${page.data.id}-${nuevo ?? false}`} page={page.data} startEditing={nuevo === true} />
             <PageProperties key={page.data.id} page={page.data} />
             <PageBody page={page.data} />

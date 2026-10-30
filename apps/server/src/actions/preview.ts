@@ -111,7 +111,8 @@ export const previewActions = [
         title: page.title,
         icon: page.icon,
         path: await pagesRepo.pagePath(ctx.db, page.id),
-        summary: summary?.type === 'text' && summary.value.trim() ? summary.value : null
+        summary: summary?.type === 'text' && summary.value.trim() ? summary.value : null,
+        cover: page.cover ?? null
       },
       blocks: blocks as Record<string, unknown>[],
       truncated
