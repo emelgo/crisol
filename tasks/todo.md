@@ -264,7 +264,7 @@ Cada vía nueva por la que salen datos amplía `@fugas` en la misma tarea.
 
 ## Fase 7: Búsqueda
 
-- [ ] **20. Búsqueda en español**
+- [x] **20. Búsqueda en español**
   - Acepta:
     - `search_documents` por documento, con `es_unaccent` y trigramas.
     - Agrupa por página, con secciones y extracto. Filtra por etiqueta y rama, va paginada y marca lo que sale de un
