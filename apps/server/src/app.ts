@@ -11,6 +11,7 @@ import { registerAuthRoutes } from './auth/routes.ts'
 import { registerBootstrapRoutes } from './bootstrap.ts'
 import { registerCollabRoutes } from './collab/routes.ts'
 import { createCollab, MAX_MESSAGE_BYTES } from './collab/server.ts'
+import type { SessionTimes } from './collab/sessions.ts'
 import { type HealthChecks, registerHealth } from './health.ts'
 import { redactSecrets, registerOriginGuard } from './http.ts'
 import { registerJoinRoutes } from './join.ts'
@@ -21,6 +22,7 @@ import { registerWeb, webBuild } from './web.ts'
 import { jsonOfDoc } from './wiki/content.ts'
 import { linksOfStored } from './wiki/links.ts'
 import { registerWikiRoutes } from './wiki/routes.ts'
+import { closeSession, recoverSession } from './wiki/versions.ts'
 
 export interface AppDeps {
   checks: HealthChecks
@@ -37,6 +39,8 @@ export interface AppDeps {
   realtimeTimers?: Pick<RealtimeRouteOptions, 'sessionCheckMs' | 'heartbeatMs'>
   /** Cuánto espera una herramienta MCP la aprobación (las pruebas lo acortan) */
   approvalWaitMs?: number
+  /** Cuánto duran las sesiones de edición (las pruebas las acortan) */
+  sessionTimes?: SessionTimes
 }
 
 export function buildApp(deps: AppDeps): FastifyInstance {
@@ -58,6 +62,10 @@ export function buildApp(deps: AppDeps): FastifyInstance {
       db,
       onError: (error) => app.log.error(error),
       // Los enlaces salen del texto: se rehacen con cada guardado (env se crea justo después)
+      // Las sesiones de edición: al cerrarse, su versión; al cargar, por si quedó una a medias
+      onSessionClosed: (session) => closeSession(env, session),
+      onBodyLoaded: (page) => recoverSession(env, page),
+      ...(deps.sessionTimes ? { sessionTimes: deps.sessionTimes } : {}),
       onStored: ({ document, kind, userId, ...source }) =>
         linksOfStored(env, source, jsonOfDoc(document, kind === 'separate'), {
           kind,

@@ -65,5 +65,6 @@ test('Claude cambia una sección de la página abierta: se ve sin recargar, se r
   // El historial lo cuenta como de Claude
   await page.goto('/historial')
   await expect(page.getByText('creó 2 páginas: «Los Muelles» y «Maela Varn»')).toBeVisible()
-  await expect(page.getByText('cambió la página «Puerto Ceniza»')).toBeVisible()
+  // La sesión del máster (lo que escribió) y el cambio de Claude, cada uno con su entrada
+  await expect(page.getByText('cambió la página «Puerto Ceniza»')).toHaveCount(2)
 })

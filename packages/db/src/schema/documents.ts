@@ -5,7 +5,7 @@ import { pages } from './pages.ts'
 import { worlds } from './worlds.ts'
 
 /** Bytes tal cual (bytea): el estado de Yjs */
-const bytea = customType<{ data: Uint8Array; driverData: Buffer }>({
+export const bytea = customType<{ data: Uint8Array; driverData: Buffer }>({
   dataType: () => 'bytea',
   toDriver: (value) => Buffer.from(value),
   fromDriver: (value) => new Uint8Array(value)

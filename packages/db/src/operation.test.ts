@@ -130,6 +130,8 @@ describe('operation', () => {
     notTracked.add('documents')
     // Los enlaces salen del texto: se rehacen con cada guardado
     notTracked.add('page_links')
+    // Las versiones del texto: las nombra page_bodies, que sí pasa por el historial (solo con ids y huellas)
+    notTracked.add('page_versions').add('snapshots').add('version_documents')
     const tables = await conn.sql<
       { name: string }[]
     >`select tablename as name from pg_tables where schemaname = 'public'`

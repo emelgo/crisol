@@ -21,6 +21,7 @@ export * as pagesRepo from './repos/pages.ts'
 export * as preferencesRepo from './repos/preferences.ts'
 export * as trashRepo from './repos/trash.ts'
 export * as undoRepo from './repos/undo.ts'
+export * as versionsRepo from './repos/versions.ts'
 export * as worldsRepo from './repos/worlds.ts'
 // Las tablas de Better Auth, para su adaptador
 export * as authSchema from './schema/auth.ts'

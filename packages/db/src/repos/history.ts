@@ -50,3 +50,11 @@ function selectOperations(db: Database) {
     .from(operations)
     .leftJoin(user, eq(user.id, operations.actorId))
 }
+
+/** Las páginas cuyo texto (page_bodies) toca una operación: antes de deshacerla hay que cerrar sus sesiones */
+export async function pagesOfBodies(db: Database, operationId: string) {
+  const rows = await db.execute<{ page_id: string }>(sql`
+    select distinct coalesce(c.after->>'page_id', c.before->>'page_id') as page_id
+    from changes c where c.operation_id = ${operationId} and c.table_name = 'page_bodies'`)
+  return rows.map((row) => row.page_id).filter(Boolean)
+}
