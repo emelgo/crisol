@@ -25,6 +25,8 @@ test('los bloques de hoja con «/»: se ven discretos en la vista sencilla y sal
   const { pageId } = await openPage(page, '## Guarida\n\nEn la cima.')
   // Con el texto ya cargado (si no, lo escrito iría delante de lo que llega después)
   await expect(body(page).getByText('En la cima.')).toBeVisible()
+  // Con el editor ya listo (sincronizado): antes, lo que se escribe puede acabar delante de lo que llega
+  await expect(body(page).locator('xpath=ancestor::div[@aria-busy][1]')).toHaveAttribute('aria-busy', 'false')
   // Al final del último párrafo, sin depender de Ctrl+Fin (en la CI a veces deja el cursor al principio)
   await body(page).getByText('En la cima.').click()
   await page.keyboard.press('End')
