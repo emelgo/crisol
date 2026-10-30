@@ -284,6 +284,34 @@ export const es = {
     uploaded: '«{{name}}» subido',
     failed: 'No se pudo subir «{{name}}»: {{error}}'
   },
+  find: {
+    button: 'Buscar en la página',
+    label: 'Buscar en la página',
+    count: '{{current}} de {{total}}',
+    previous: 'Anterior',
+    next: 'Siguiente',
+    close: 'Cerrar la búsqueda'
+  },
+  switcher: {
+    title: 'Ir a una página',
+    commandsTitle: 'Órdenes',
+    label: 'Página u orden',
+    placeholder: 'Escribe un título, o «>» para las órdenes',
+    results: 'Páginas',
+    all: 'Ver todos los resultados de «{{query}}»',
+    none: 'Ninguna página se llama así.',
+    noRecent: 'Aún no hay páginas recientes.',
+    noCommand: 'Ninguna orden se llama así.',
+    help: '↑ ↓ para moverse · Intro para abrir · Esc para cerrar',
+    commands: {
+      newPage: 'Página nueva',
+      search: 'Buscar en la wiki',
+      files: 'Archivos',
+      tags: 'Etiquetas',
+      history: 'Historial del mundo',
+      trash: 'Papelera del mundo'
+    }
+  },
   search: {
     worldTitle: 'Buscar en {{world}}',
     label: 'Buscar',

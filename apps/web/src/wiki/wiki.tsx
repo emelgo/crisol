@@ -23,6 +23,7 @@ import { ExportPage, ExportWiki } from './export.tsx'
 import { PageIcon } from './icon.tsx'
 import { BookmarkButton, Bookmarks, OpenTabs, SiblingNav } from './navigation.tsx'
 import { PageProperties } from './properties.tsx'
+import { QuickSwitcher } from './quick-switcher.tsx'
 import { SearchBox } from './search-box.tsx'
 import { childrenKey, PageTree } from './tree.tsx'
 import { Versions } from './versions.tsx'
@@ -161,6 +162,7 @@ export function WikiLayout({
           <ExportWiki worldId={worldId} />
         </nav>
       </aside>
+      <QuickSwitcher worldId={worldId} onCreatePage={() => create.mutate(null)} />
       <div className={styles.content}>
         <OpenTabs worldId={worldId} current={current} />
         <CollabSocket>{children(world)}</CollabSocket>
