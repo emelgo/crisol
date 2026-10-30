@@ -254,23 +254,21 @@ export function CoverDialog({
         </div>
         <FormError message={save.error || uploadImage.error ? errorText(save.error ?? uploadImage.error) : null} />
         <div className={styles.footer}>
-          {changed && (
-            <ChangesBar>
-              <BusyButton className={form.button} busy={save.isPending} onClick={() => save.mutate()}>
-                {t('list.save')}
-              </BusyButton>
-              <button
-                type="button"
-                className={dialogStyles.cancel}
-                onClick={() => {
-                  setChosen(cover)
-                  setPending(local ?? null)
-                }}
-              >
-                {t('list.cancel')}
-              </button>
-            </ChangesBar>
-          )}
+          <ChangesBar shown={changed}>
+            <BusyButton className={form.button} busy={save.isPending} onClick={() => save.mutate()}>
+              {t('list.save')}
+            </BusyButton>
+            <button
+              type="button"
+              className={dialogStyles.cancel}
+              onClick={() => {
+                setChosen(cover)
+                setPending(local ?? null)
+              }}
+            >
+              {t('list.cancel')}
+            </button>
+          </ChangesBar>
           {chosen && (
             <button type="button" className={styles.remove} onClick={() => setChosen(null)}>
               {t('cover.remove')}

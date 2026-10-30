@@ -16,7 +16,8 @@ export const worldColor = z.union([z.enum(WORLD_COLORS), z.string().regex(/^#[0-
 export const worldCover = z.object({
   fileId: z.uuid(),
   x: z.number().min(0).max(100),
-  y: z.number().min(0).max(100)
+  y: z.number().min(0).max(100),
+  zoom: z.number().min(1).max(3).optional()
 })
 
 const worldDescription = z.string().trim().max(280)

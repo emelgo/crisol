@@ -344,20 +344,18 @@ function WorldDialog({ world, onClose }: { world?: World; onClose: (gone: boolea
         />
         <ColorChoices value={draft.color} onChange={(color) => set({ color })} />
         <FormError message={save.error ? errorText(save.error) : null} />
-        {changed && (
-          <ChangesBar>
-            <BusyButton type="submit" className={form.button} busy={save.isPending}>
-              {t(world ? 'worlds.save' : 'worlds.create')}
-            </BusyButton>
-            <button
-              type="button"
-              className={dialogStyles.cancel}
-              onClick={() => (world ? setDraft(draftOf(world)) : dialog.current?.close())}
-            >
-              {t('worlds.cancel')}
-            </button>
-          </ChangesBar>
-        )}
+        <ChangesBar shown={changed}>
+          <BusyButton type="submit" className={form.button} busy={save.isPending}>
+            {t(world ? 'worlds.save' : 'worlds.create')}
+          </BusyButton>
+          <button
+            type="button"
+            className={dialogStyles.cancel}
+            onClick={() => (world ? setDraft(draftOf(world)) : dialog.current?.close())}
+          >
+            {t('worlds.cancel')}
+          </button>
+        </ChangesBar>
       </form>
       {world && (
         // Aparte, al final y fuera del formulario: borrar el mundo, escribiendo su nombre para confirmarlo
