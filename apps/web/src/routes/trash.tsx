@@ -107,7 +107,9 @@ function TrashEntry({ item }: { item: TrashItem }) {
           : item.kind === 'page'
             ? t('trash.pageOf', { world: item.worldName, count: item.subpages ?? 0 })
             : item.kind === 'file'
-              ? t('trash.fileOf', { world: item.worldName })
+              ? item.worldName === null
+                ? t('trash.commonFile')
+                : t('trash.fileOf', { world: item.worldName })
               : t('trash.campaignOf', { world: item.worldName })}{' '}
         · {t('trash.purgeAt', { date })}
       </span>

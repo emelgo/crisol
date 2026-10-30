@@ -1,13 +1,16 @@
 /**
- * Los archivos del mundo: subirlos (con botón, varios o una carpeta, o arrastrándolos), con su progreso, y la lista por
- * tipo, con renombrar, reemplazar y mandar a la papelera. Las carpetas de lo que se sube no cuentan: se ordenan por tipo
+ * Los archivos: los de un mundo y, aparte, los comunes de la cuenta, que comparten todos sus mundos (ADR-0005; también
+ * en su pantalla, fuera de los mundos). Subirlos (con botón, varios o una carpeta, o arrastrándolos), con su progreso,
+ * y la lista por tipo, con renombrar, reemplazar y mandar a la papelera. Las carpetas de lo que se sube no cuentan: se
+ * ordenan por tipo
  */
 import { MAX_FILE_BYTES } from '@crisol/domain'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { getRouteApi } from '@tanstack/react-router'
+import { getRouteApi, Navigate } from '@tanstack/react-router'
 import { type DragEvent, useCallback, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ApiError } from '../api/client.ts'
+import { useAccounts } from '../account/context.tsx'
+import { ApiError, type UploadTarget } from '../api/client.ts'
 import { useApi } from '../api/context.tsx'
 import { useCodeText, useErrorText } from '../api/errors.ts'
 import { useAnnounce } from '../components/announcer.tsx'
@@ -30,29 +33,119 @@ const PARALLEL = 3
 
 export function WikiFiles() {
   const { worldId } = route.useParams()
-  return <WikiLayout worldId={worldId}>{(world) => <FilesPage worldId={worldId} world={world.name} />}</WikiLayout>
+  return (
+    <WikiLayout worldId={worldId}>
+      {(world) => <FilesPage worldId={worldId} world={world.name} organizationId={world.organizationId} />}
+    </WikiLayout>
+  )
 }
 
-function FilesPage({ worldId, world }: { worldId: string; world: string }) {
+/** Si la cuenta administra la organización: solo entonces sube y cambia los comunes */
+function useOwns(organizationId: string | undefined) {
+  const api = useApi()
+  const organizations = useQuery({ queryKey: ['organizations'], queryFn: () => api.call('listOrganizations', {}) })
+  return organizations.data?.organizations.some((o) => o.id === organizationId && o.role === 'owner') ?? false
+}
+
+/** Los de un mundo y, aparte, la carpeta de los comunes, la misma en todos sus mundos */
+function FilesPage({ worldId, world, organizationId }: { worldId: string; world: string; organizationId: string }) {
   const { t } = useTranslation()
   const api = useApi()
+  const commonId = useId()
   const files = useQuery({ queryKey: ['files', worldId], queryFn: () => api.call('listFiles', { worldId }) })
-  const uploads = useUploads(worldId)
+  const ownsCommon = useOwns(organizationId)
+  const own = files.data?.files.filter((file) => file.worldId !== null) ?? []
+  const common = files.data?.files.filter((file) => file.worldId === null) ?? []
   return (
     <section>
       <PageTitle>{t('files.worldTitle', { world })}</PageTitle>
-      <Uploader onFiles={uploads.add} />
-      <UploadList uploads={uploads.items} onClear={uploads.clear} />
       {failed(files) && <LoadError error={files.error} onRetry={() => files.refetch()} />}
-      {files.data &&
-        (files.data.files.length === 0 ? (
-          <p>{t('files.empty')}</p>
+      <FilesSection target={{ worldId }} files={files.data && own} canWrite empty={t('files.empty')} />
+      <section aria-labelledby={commonId} className={styles.common}>
+        <h2 id={commonId}>{t('files.common')}</h2>
+        <p className={styles.commonHint}>{t('files.commonHint')}</p>
+        <FilesSection
+          target={{ organizationId }}
+          files={files.data && common}
+          canWrite={ownsCommon}
+          empty={t('files.commonEmpty')}
+          level={3}
+        />
+      </section>
+    </section>
+  )
+}
+
+/** Los comunes de la cuenta, en su pantalla, fuera de los mundos («Archivos» en la barra de Mis mundos) */
+export function CommonFiles() {
+  const { t } = useTranslation()
+  const api = useApi()
+  const { account, pending } = useAccounts().useAccount()
+  const organizations = useQuery({
+    queryKey: ['organizations'],
+    queryFn: () => api.call('listOrganizations', {}),
+    enabled: Boolean(account)
+  })
+  const owned = organizations.data?.organizations.find((o) => o.role === 'owner')
+  const files = useQuery({
+    queryKey: ['commonFiles'],
+    queryFn: () => api.call('listCommonFiles', {}),
+    enabled: Boolean(owned)
+  })
+  if (pending) return null
+  if (!account) return <Navigate to="/entrar" replace />
+  return (
+    <section className={styles.page}>
+      <PageTitle>{t('files.commonTitle')}</PageTitle>
+      <p className={styles.commonHint}>{t('files.commonHint')}</p>
+      {failed(files) && <LoadError error={files.error} onRetry={() => files.refetch()} />}
+      {owned && (
+        <FilesSection
+          target={{ organizationId: owned.id }}
+          files={files.data?.files}
+          canWrite
+          empty={t('files.commonEmpty')}
+        />
+      )}
+    </section>
+  )
+}
+
+/** Subir (si se puede) y la lista por tipo de los de un ámbito; level: el de los títulos de cada tipo */
+function FilesSection({
+  target,
+  files,
+  canWrite,
+  empty,
+  level = 2
+}: {
+  target: { worldId: string } | { organizationId: string }
+  /** Sin datos aún: undefined */
+  files: WorldFile[] | undefined
+  canWrite: boolean
+  empty: string
+  level?: 2 | 3
+}) {
+  const uploads = useUploads(target)
+  return (
+    <>
+      {canWrite && <Uploader onFiles={uploads.add} />}
+      <UploadList uploads={uploads.items} onClear={uploads.clear} />
+      {files &&
+        (files.length === 0 ? (
+          <p>{empty}</p>
         ) : (
           KINDS.map((kind) => (
-            <FileGroup key={kind} kind={kind} files={files.data.files.filter((file) => file.kind === kind)} />
+            <FileGroup
+              key={kind}
+              kind={kind}
+              level={level}
+              canWrite={canWrite}
+              files={files.filter((file) => file.kind === kind)}
+            />
           ))
         ))}
-    </section>
+    </>
   )
 }
 
@@ -134,8 +227,8 @@ type Upload = {
   error?: string
 }
 
-/** La cola de subidas: unas pocas a la vez, cada una con su progreso */
-function useUploads(worldId: string) {
+/** La cola de subidas a un ámbito: unas pocas a la vez, cada una con su progreso */
+function useUploads(target: { worldId: string } | { organizationId: string }) {
   const { t } = useTranslation()
   const api = useApi()
   const queryClient = useQueryClient()
@@ -159,13 +252,16 @@ function useUploads(worldId: string) {
       if (!next) break
       running.current++
       update(next.key, { status: 'uploading' })
+      const to: UploadTarget = { ...target, name: next.file.name }
       api
-        .uploadFile({ worldId, name: next.file.name }, next.file, (fraction) => update(next.key, { fraction }))
+        .uploadFile(to, next.file, (fraction) => update(next.key, { fraction }))
         .then(
           () => {
             finished.current++
             update(next.key, { status: 'done', fraction: 1 })
-            void queryClient.invalidateQueries({ queryKey: ['files', worldId] })
+            // Un común sale en los archivos de todos los mundos
+            void queryClient.invalidateQueries({ queryKey: ['files'] })
+            void queryClient.invalidateQueries({ queryKey: ['commonFiles'] })
           },
           (error: unknown) => {
             failedCount.current++
@@ -187,7 +283,7 @@ function useUploads(worldId: string) {
           pump()
         })
     }
-  }, [api, worldId, queryClient, codeText, announce, t, update])
+  }, [api, target, queryClient, codeText, announce, t, update])
 
   const add = useCallback(
     (files: File[]) => {
@@ -254,18 +350,29 @@ function UploadList({ uploads, onClear }: { uploads: Upload[]; onClear: () => vo
   )
 }
 
-function FileGroup({ kind, files }: { kind: (typeof KINDS)[number]; files: WorldFile[] }) {
+function FileGroup({
+  kind,
+  files,
+  level,
+  canWrite
+}: {
+  kind: (typeof KINDS)[number]
+  files: WorldFile[]
+  level: 2 | 3
+  canWrite: boolean
+}) {
   const { t } = useTranslation()
   const headingId = useId()
   if (files.length === 0) return null
+  const Heading = level === 2 ? 'h2' : 'h3'
   return (
     <section aria-labelledby={headingId} className={styles.group}>
-      <h2 id={headingId}>
+      <Heading id={headingId}>
         {t(`files.groups.${kind}`)} <span className={styles.count}>({files.length})</span>
-      </h2>
+      </Heading>
       <ul className={list.list}>
         {files.map((file) => (
-          <FileItem key={file.id} file={file} />
+          <FileItem key={file.id} file={file} canWrite={canWrite} />
         ))}
       </ul>
     </section>
@@ -278,11 +385,17 @@ const sizeText = (bytes: number, locale: string) => {
   return new Intl.NumberFormat(locale, { style: 'unit', unit, maximumFractionDigits: 1 }).format(value)
 }
 
-function FileItem({ file }: { file: WorldFile }) {
+/** Un archivo; quien no puede cambiarlo (un común, para el máster de un mundo), solo lo abre */
+function FileItem({ file, canWrite }: { file: WorldFile; canWrite: boolean }) {
   const { t, i18n } = useTranslation()
   const api = useApi()
   const queryClient = useQueryClient()
-  const refresh = () => queryClient.invalidateQueries({ queryKey: ['files', file.worldId] })
+  // Un común sale en los archivos de todos los mundos
+  const refresh = () =>
+    Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['files'] }),
+      queryClient.invalidateQueries({ queryKey: ['commonFiles'] })
+    ])
   return (
     <RenamableItem
       name={file.name}
@@ -290,16 +403,20 @@ function FileItem({ file }: { file: WorldFile }) {
       href={file.url}
       maxLength={200}
       deleteWarning={file.usedBy > 0 ? t('files.deleteUsed', { name: file.name, count: file.usedBy }) : undefined}
-      onRename={async (name) => {
-        await api.call('renameFile', { fileId: file.id, name })
-        await refresh()
-      }}
-      onDelete={async () => {
-        await api.call('deleteFile', { fileId: file.id })
-        await refresh()
-      }}
+      {...(canWrite
+        ? {
+            onRename: async (name: string) => {
+              await api.call('renameFile', { fileId: file.id, name })
+              await refresh()
+            },
+            onDelete: async () => {
+              await api.call('deleteFile', { fileId: file.id })
+              await refresh()
+            }
+          }
+        : {})}
     >
-      <ReplaceButton file={file} onReplaced={refresh} />
+      {canWrite && <ReplaceButton file={file} onReplaced={refresh} />}
     </RenamableItem>
   )
 }

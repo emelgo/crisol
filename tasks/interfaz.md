@@ -130,7 +130,9 @@ Todo va en la rama `interfaz/pulir-inicio`, en un commit local sin subir. Las no
   índice de nombre por ámbito); `commonFiles.read`/`write` en la política; `listFiles(worldId)` da los del mundo y
   los comunes, y `listCommonFiles`, solo los comunes; subir con `organizationId`; `![[nombre]]`, portadas y la
   exportación los usan (con el mismo nombre, el del mundo); papelera e historial de la organización. Pruebas en
-  `files.integration.test.ts`. Falta la interfaz.
+  `files.integration.test.ts`. En la interfaz: «Archivos» en la barra de Mis mundos (`/archivos`, los comunes),
+  la carpeta «Comunes» en los archivos de cada mundo (solo el propietario sube y cambia) y el cuadro de la portada
+  con «Del mundo» y «Comunes» (al crear un mundo, una común sirve tal cual). Pruebas en `wiki/files.test.tsx`.
 - **Barras de desplazamiento** finas, del color de los bordes; en las ventanas solo se desplaza el contenido.
 - **Barra lateral**:
   - sin barra de estado abajo;

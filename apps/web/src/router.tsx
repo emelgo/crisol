@@ -13,7 +13,7 @@ import { SignIn } from './routes/sign-in.tsx'
 import { OrganizationTrash, WorldTrash } from './routes/trash.tsx'
 import { WorldPage } from './routes/world.tsx'
 import { Worlds } from './routes/worlds.tsx'
-import { WikiFiles } from './wiki/files.tsx'
+import { CommonFiles, WikiFiles } from './wiki/files.tsx'
 import { searchParams, WikiSearch } from './wiki/search.tsx'
 import { PrintPage, printParams } from './wiki/sheet/print.tsx'
 import { WikiTags } from './wiki/tags.tsx'
@@ -80,6 +80,8 @@ const worldTrashRoute = createRoute({
 })
 const aiRoute = createRoute({ getParentRoute: () => rootRoute, path: '/ia', component: AiSettings })
 const settingsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/ajustes', component: Settings })
+// Los archivos comunes de la cuenta, fuera de los mundos (ADR-0005)
+const commonFilesRoute = createRoute({ getParentRoute: () => rootRoute, path: '/archivos', component: CommonFiles })
 const trashRoute = createRoute({ getParentRoute: () => rootRoute, path: '/papelera', component: OrganizationTrash })
 const consentRoute = createRoute({ getParentRoute: () => rootRoute, path: '/oauth/consentimiento', component: Consent })
 const joinRoute = createRoute({ getParentRoute: () => rootRoute, path: '/unirse/$secret', component: Join })
@@ -104,6 +106,7 @@ const routeTree = rootRoute.addChildren([
   trashRoute,
   aiRoute,
   settingsRoute,
+  commonFilesRoute,
   consentRoute,
   bootstrapRoute,
   joinRoute

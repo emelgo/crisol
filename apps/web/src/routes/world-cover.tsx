@@ -3,7 +3,7 @@
  * quitarla y encuadrarla arrastrando sobre la vista previa (o con las flechas)
  */
 import type { PageCover as Cover } from '@crisol/contracts'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Move, Upload, ZoomIn, ZoomOut } from 'lucide-react'
 import { type KeyboardEvent, type PointerEvent, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -72,8 +72,16 @@ export function CoverDialog({
   const dialog = useRef<HTMLDialogElement>(null)
   const upload = useRef<HTMLInputElement>(null)
   const titleId = useId()
+  // Al ajustar un mundo, los suyos y los comunes; al crearlo (aún sin archivos), los comunes
   const files = useWorldFiles(worldId ?? '', Boolean(worldId))
-  const images = files.data?.files.filter((file) => file.kind === 'image') ?? []
+  const common = useQuery({
+    queryKey: ['commonFiles'],
+    queryFn: () => api.call('listCommonFiles', {}),
+    enabled: !worldId
+  })
+  const images = (worldId ? files.data?.files : common.data?.files)?.filter((file) => file.kind === 'image') ?? []
+  const ownImages = images.filter((file) => file.worldId !== null)
+  const commonImages = images.filter((file) => file.worldId === null)
   const [chosen, setChosen] = useState<Cover | null>(cover)
   const [pending, setPending] = useState<LocalImage | null>(local ?? null)
   const image = !chosen
@@ -204,9 +212,11 @@ export function CoverDialog({
             </button>
           </div>
         )}
+        {/* Las del mundo (con la propia aún sin subir y el botón de subir otra) y, aparte, las comunes */}
         {/* biome-ignore lint/a11y/useSemanticElements: una fila de botones que se marcan (aria-pressed), no un formulario */}
-        <div className={styles.thumbs} role="group" aria-label={t('cover.image')}>
-          {images.map((file) => (
+        <div className={styles.thumbs} role="group" aria-label={worldId ? t('cover.fromWorld') : t('cover.image')}>
+          {worldId && <span className={styles.groupLabel}>{t('cover.fromWorld')}</span>}
+          {ownImages.map((file) => (
             <button
               key={file.id}
               type="button"
@@ -252,6 +262,25 @@ export function CoverDialog({
             }}
           />
         </div>
+        {commonImages.length > 0 && (
+          // biome-ignore lint/a11y/useSemanticElements: una fila de botones que se marcan (aria-pressed), no un formulario
+          <div className={styles.thumbs} role="group" aria-label={t('files.common')}>
+            <span className={styles.groupLabel}>{t('files.common')}</span>
+            {commonImages.map((file) => (
+              <button
+                key={file.id}
+                type="button"
+                className={styles.thumb}
+                aria-pressed={chosen?.fileId === file.id}
+                aria-label={file.name}
+                title={file.name}
+                onClick={() => setChosen({ fileId: file.id, x: 50, y: 50 })}
+              >
+                <img src={file.url} alt="" />
+              </button>
+            ))}
+          </div>
+        )}
         <FormError message={save.error || uploadImage.error ? errorText(save.error ?? uploadImage.error) : null} />
         <div className={styles.footer}>
           <ChangesBar shown={changed}>

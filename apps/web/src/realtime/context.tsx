@@ -25,6 +25,8 @@ function changedBy(message: RealtimeMessage): QueryKey[] {
       if (message.what === 'campaigns') return [['campaigns', message.worldId]]
       if (message.what === 'pages') return [['pages', message.worldId]]
       if (message.what === 'files') return [['files', message.worldId]]
+      // Los comunes salen en los archivos de todos los mundos
+      if (message.what === 'commonFiles') return [['files'], ['commonFiles']]
       // El texto de una página: lo que la enseña en otra y los enlaces (sus trozos)
       if (message.what === 'pageContent') {
         return [

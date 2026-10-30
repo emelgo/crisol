@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router'
 import { Bookmark, BookOpen, Folder, Globe, Hash, History, type LucideIcon, Search, Trash2 } from 'lucide-react'
-import { type MouseEvent, useEffect, useRef, useState } from 'react'
+import { type CSSProperties, type MouseEvent, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
@@ -85,6 +85,7 @@ export function Ribbon() {
     const timer = window.setTimeout(() => setPanelsWorld(null), 650)
     return () => window.clearTimeout(timer)
   }, [panelsMotion])
+  const merged = inWorld && phase !== 'merging'
   const worldsItem = [
     styles.item,
     inWorld && phase === 'merging' ? styles.merging : '',
@@ -103,15 +104,29 @@ export function Ribbon() {
         >
           <CrisolMark size={26} />
         </Link>
-        <Link
-          to="/mundos"
-          activeOptions={{ exact: true }}
-          className={worldsItem.filter(Boolean).join(' ')}
-          data-tour="barra-mundos"
-          onAnimationEnd={() => setPhase('still')}
-        >
-          <Label icon={Globe} text={t('ribbon.worlds')} />
-        </Link>
+        {/* Ya fundidos con la llama (dentro de un mundo), «Mundos» y los archivos comunes no están */}
+        {merged ? null : (
+          <Link
+            to="/mundos"
+            activeOptions={{ exact: true }}
+            className={worldsItem.filter(Boolean).join(' ')}
+            data-tour="barra-mundos"
+            onAnimationEnd={() => setPhase('still')}
+          >
+            <Label icon={Globe} text={t('ribbon.worlds')} />
+          </Link>
+        )}
+        {/* Los archivos comunes de la cuenta: fuera de los mundos; dentro, en los «Archivos» de cada uno (ADR-0005).
+            Al entrar en un mundo sube a la llama con «Mundos», desde más abajo */}
+        {isOwner && !merged && (
+          <Link
+            to="/archivos"
+            className={worldsItem.filter(Boolean).join(' ')}
+            style={{ '--rise': '-7.4rem' } as CSSProperties}
+          >
+            <Label icon={Folder} text={t('ribbon.files')} />
+          </Link>
+        )}
         {panelsWorld && (
           <div
             ref={panelsBox}

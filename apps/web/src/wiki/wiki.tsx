@@ -74,7 +74,7 @@ export function WikiLayout({
 }: {
   worldId: string
   current?: Page | undefined
-  children: (world: { name: string }) => ReactNode
+  children: (world: { name: string; organizationId: string }) => ReactNode
 }) {
   const { t } = useTranslation()
   const api = useApi()

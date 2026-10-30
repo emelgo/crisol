@@ -59,9 +59,15 @@ export function fakeApi(
   })
 
   let fileCount = 0
+  // La organización de un archivo: la de su mundo; los comunes (sin mundo), la que digan o la del propietario
+  const organizationOf = (worldId: string | null) =>
+    worlds.find((w) => w.id === worldId)?.organizationId ??
+    organizations.find((o) => o.role === 'owner')?.id ??
+    '00000000-0000-4000-8000-0000000000aa'
   const fileOf = (file: Pick<FileView, 'worldId' | 'name'> & Partial<FileView>): FileView => {
     const id = file.id ?? `00000000-0000-4000-8000-${String(++fileCount).padStart(12, '0')}`
     return {
+      organizationId: organizationOf(file.worldId),
       kind: 'image',
       mime: 'image/png',
       size: 1024,
@@ -544,9 +550,16 @@ export function fakeApi(
         }))
       }
     },
+    // Los del mundo y los comunes de su organización, como el servidor
     listFiles: ({ worldId }) => ({
       files: files
-        .filter((f) => f.worldId === worldId)
+        .filter((f) => f.worldId === worldId || (f.worldId === null && f.organizationId === organizationOf(worldId)))
+        .sort((a, b) => a.name.localeCompare(b.name, 'es'))
+        .map((f) => ({ ...f, usedBy: fileUses.get(f.id) ?? 0 }))
+    }),
+    listCommonFiles: ({ organizationId }) => ({
+      files: files
+        .filter((f) => f.worldId === null && f.organizationId === (organizationId ?? organizationOf(null)))
         .sort((a, b) => a.name.localeCompare(b.name, 'es'))
         .map((f) => ({ ...f, usedBy: fileUses.get(f.id) ?? 0 }))
     }),
@@ -641,11 +654,16 @@ export function fakeApi(
         Object.assign(file, content, { version: file.version + 1 })
         return { ...file }
       }
+      const worldId = 'worldId' in target ? target.worldId : null
+      const organizationId = 'organizationId' in target ? target.organizationId : organizationOf(worldId)
       const taken = (name: string) =>
-        files.some((f) => f.worldId === target.worldId && f.name.toLowerCase() === name.toLowerCase())
+        files.some(
+          (f) =>
+            f.worldId === worldId && f.organizationId === organizationId && f.name.toLowerCase() === name.toLowerCase()
+        )
       let name = target.name
       for (let n = 2; taken(name); n++) name = target.name.replace(/(\.[^.]*)?$/, ` (${n})$1`)
-      const file = fileOf({ worldId: target.worldId, name, ...content })
+      const file = fileOf({ worldId, organizationId, name, ...content })
       files.push(file)
       return { ...file }
     }

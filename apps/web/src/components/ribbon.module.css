@@ -195,7 +195,7 @@
   70% {
     max-block-size: 3.5rem;
     min-block-size: 3.25rem;
-    transform: translateY(-3.6rem) scale(0.3);
+    transform: translateY(var(--rise, -3.6rem)) scale(0.3);
     opacity: 0.6;
   }
 
@@ -203,7 +203,7 @@
     max-block-size: 0;
     min-block-size: 0;
     padding-block: 0;
-    transform: translateY(-3.6rem) scale(0.2);
+    transform: translateY(var(--rise, -3.6rem)) scale(0.2);
     opacity: 0;
   }
 }
@@ -213,14 +213,14 @@
     max-block-size: 0;
     min-block-size: 0;
     padding-block: 0;
-    transform: translateY(-3.6rem) scale(0.2);
+    transform: translateY(var(--rise, -3.6rem)) scale(0.2);
     opacity: 0;
   }
 
   30% {
     max-block-size: 3.5rem;
     min-block-size: 3.25rem;
-    transform: translateY(-3.6rem) scale(0.3);
+    transform: translateY(var(--rise, -3.6rem)) scale(0.3);
     opacity: 0.4;
   }
 

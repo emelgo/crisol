@@ -1,6 +1,6 @@
 import { type PageCover as Cover, WORLD_COLORS, type World } from '@crisol/contracts'
 import { TRASH_DAYS } from '@crisol/domain'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { CircleOff, ImagePlus, Maximize2, Plus, Settings } from 'lucide-react'
 import { type CSSProperties, type ReactNode, useEffect, useId, useRef, useState } from 'react'
@@ -246,11 +246,12 @@ function WorldDialog({ world, onClose }: { world?: World; onClose: (gone: boolea
   // La portada: al ajustar, la del mundo (se guarda en su cuadro); al crear, la elegida y su imagen, aún sin subir
   const files = useWorldFiles(world?.id ?? '', Boolean(world?.cover))
   const worldImage = world?.cover ? files.data?.files.find((f) => f.id === world.cover?.fileId) : undefined
-  const [newCover, setNewCover] = useState<{ cover: Cover; local: LocalImage } | null>(null)
+  // Al crear: la elegida (una común, o una propia aún sin subir, con su imagen)
+  const [newCover, setNewCover] = useState<{ cover: Cover; local: LocalImage | null } | null>(null)
   // La imagen sin subir se suelta cuando deja de usarse (otra o ninguna) y al cerrar
   const shownUrl = useRef<string | null>(null)
   useEffect(() => {
-    const url = newCover?.local.url ?? null
+    const url = newCover?.local?.url ?? null
     if (shownUrl.current && shownUrl.current !== url) URL.revokeObjectURL(shownUrl.current)
     shownUrl.current = url
   }, [newCover])
@@ -260,8 +261,15 @@ function WorldDialog({ world, onClose }: { world?: World; onClose: (gone: boolea
     },
     []
   )
+  const common = useQuery({
+    queryKey: ['commonFiles'],
+    queryFn: () => api.call('listCommonFiles', {}),
+    enabled: !world && Boolean(newCover && !newCover.local)
+  })
   const cover = world ? world.cover : (newCover?.cover ?? null)
-  const coverUrl = world ? worldImage?.url : newCover?.local.url
+  const coverUrl = world
+    ? worldImage?.url
+    : (newCover?.local?.url ?? common.data?.files.find((f) => f.id === newCover?.cover.fileId)?.url)
   const [viewing, setViewing] = useState(false)
   const [changingCover, setChangingCover] = useState(false)
 
@@ -278,13 +286,14 @@ function WorldDialog({ world, onClose }: { world?: World; onClose: (gone: boolea
       } else {
         const created = await api.call('createWorld', { name })
         let chosen: Cover | null = null
-        if (newCover) {
+        // Una común se usa tal cual; una propia se sube ahora, al mundo nuevo
+        if (newCover?.local) {
           const stored = await api.uploadFile(
             { worldId: created.id, name: newCover.local.file.name },
             newCover.local.file
           )
           chosen = { ...newCover.cover, fileId: stored.id }
-        }
+        } else if (newCover) chosen = newCover.cover
         if (look.description || look.color || chosen) {
           await api.call('updateWorld', { worldId: created.id, ...look, ...(chosen ? { cover: chosen } : {}) })
         }
@@ -348,10 +357,10 @@ function WorldDialog({ world, onClose }: { world?: World; onClose: (gone: boolea
           worldId={world?.id}
           title={world ? t('cover.of', { name: world.name }) : t('cover.title')}
           cover={cover}
-          local={newCover?.local}
+          local={newCover?.local ?? null}
           onSave={async (chosen, local) => {
             if (!world) {
-              setNewCover(chosen && local ? { cover: chosen, local } : null)
+              setNewCover(chosen ? { cover: chosen, local } : null)
               return
             }
             await api.call('updateWorld', { worldId: world.id, cover: chosen })

@@ -116,6 +116,14 @@
   color: var(--color-text);
 }
 
+/* El nombre de cada grupo de miniaturas (del mundo, comunes), en su propia línea */
+.groupLabel {
+  flex-basis: 100%;
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
 /* Las imágenes del mundo, en miniatura; la elegida, marcada */
 .thumbs {
   display: flex;
