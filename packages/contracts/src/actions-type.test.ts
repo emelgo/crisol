@@ -56,7 +56,11 @@ describe('Actions', () => {
       getPageContent: true,
       listPageVersions: true,
       getPageVersion: true,
-      restorePageVersion: true
+      restorePageVersion: true,
+      listFiles: true,
+      renameFile: true,
+      deleteFile: true,
+      restoreFile: true
     }
     expect(Object.keys(names).sort()).toEqual(ACTIONS.map((a) => a.name).sort())
   })

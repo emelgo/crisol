@@ -4,6 +4,7 @@ import type { Database } from '../client.ts'
 import { type OperationContext, operation } from '../operation.ts'
 import { approvals } from '../schema/ai.ts'
 import { campaignMembers, campaigns } from '../schema/campaigns.ts'
+import { files } from '../schema/files.ts'
 import { operations } from '../schema/history.ts'
 import { pages } from '../schema/pages.ts'
 import { worldMembers, worlds } from '../schema/worlds.ts'
@@ -106,7 +107,25 @@ export async function listTrash(db: Database, scope: TrashScope) {
     where p.deleted_at is not null and w.deleted_at is null
       and (parent.id is null or parent.deleted_at is null or parent.deleted_at <> p.deleted_at)
       and ${'worldId' in scope ? sql`p.world_id = ${scope.worldId}` : sql`w.organization_id = ${scope.organizationId}`}`)
+  const trashedFiles = await db
+    .select({
+      id: files.id,
+      name: files.name,
+      worldId: files.worldId,
+      worldName: worlds.name,
+      deletedAt: files.deletedAt
+    })
+    .from(files)
+    .innerJoin(worlds, eq(worlds.id, files.worldId))
+    .where(
+      and(
+        isNotNull(files.deletedAt),
+        isNull(worlds.deletedAt),
+        'worldId' in scope ? eq(files.worldId, scope.worldId) : eq(worlds.organizationId, scope.organizationId)
+      )
+    )
   return [
+    ...trashedFiles.map((item) => ({ kind: 'file' as const, ...item, deletedAt: item.deletedAt as Date })),
     ...trashedWorlds.map((item) => ({ kind: 'world' as const, ...item, deletedAt: item.deletedAt as Date })),
     ...trashedCampaigns.map((item) => ({ kind: 'campaign' as const, ...item, deletedAt: item.deletedAt as Date })),
     ...[...trashedPages].map((item) => ({
@@ -161,6 +180,8 @@ export function purge(db: Database, now: Date) {
       .returning({ id: campaigns.id })
     // Una página purgada se lleva sus subpáginas (clave ajena en cascada)
     const purgedPages = await tx.delete(pages).where(lt(pages.deletedAt, cutoff)).returning({ id: pages.id })
+    // Los archivos: su fila (sus bytes se van cuando ya no los nombra nadie; lo hace la limpieza del almacenamiento)
+    const purgedFiles = await tx.delete(files).where(lt(files.deletedAt, cutoff)).returning({ id: files.id })
     const memberships = await tx.execute<{ id: string }>(sql`
       delete from organization_members om
       where om.role = 'member'
@@ -209,6 +230,7 @@ export function purge(db: Database, now: Date) {
       worlds: purgedWorlds.length,
       campaigns: purgedCampaigns.length,
       pages: purgedPages.length,
+      files: purgedFiles.length,
       memberships: memberships.length,
       operations: purgedOperations.length,
       versions: purgedVersions.length,
@@ -216,4 +238,13 @@ export function purge(db: Database, now: Date) {
       interrupted: interrupted.length
     }
   })
+}
+
+/** Las claves del almacenamiento que aún nombra alguien: una fila de archivos o el historial (deshacer las necesita) */
+export async function liveStorageKeys(db: Database) {
+  const rows = await db.execute<{ key: string }>(sql`
+    select storage_key as key from files
+    union select c.before->>'storage_key' from changes c where c.table_name = 'files' and c.before is not null
+    union select c.after->>'storage_key' from changes c where c.table_name = 'files' and c.after is not null`)
+  return new Set([...rows].map((row) => row.key).filter(Boolean))
 }
