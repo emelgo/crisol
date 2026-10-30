@@ -213,8 +213,8 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   4. ~~Diseño~~: aprobado.
   5. ~~`/plan`~~: aprobado.
   6. **`/build` tarea a tarea** (`tasks/todo.md`), con `/agent-skills:review` y `/ship`, como en el módulo 0. Hechas de
-     la 1 a la 11. **Puntos de control 1 y 2 pasados** (2026-10-30, «todo funciona de momento»): el editor anidado se
-     queda. **Sigue la 12** (exportar), y así hasta acabar el módulo (bitácora: `tasks/bitacora.md`).
+     la 1 a la 12. **Puntos de control 1 y 2 pasados** (2026-10-30, «todo funciona de momento»): el editor anidado se
+     queda. **Sigue la 13** (enlaces por id, sin resolver y rotos), y así hasta acabar el módulo (bitácora: `tasks/bitacora.md`).
   7. **Al acabar el módulo 1, la interfaz** (decisión de Enrique, 2026-10-30): se apunta por dónde vamos y se
      dedica una etapa a la interfaz antes del módulo 2. Ver «Para el repaso final de la interfaz».
 - **2026-10-29 — Módulo 1, tarea 1: páginas y árbol en la API.**
@@ -463,6 +463,29 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
     - MCP: cada herramienta en cada modo, y la aprobación que falla o se aplica sobre lo de ahora;
     - fugas entre organizaciones;
     - e2e `claude-wiki.spec.ts`: Claude cambia una sección de la página abierta y se ve sin recargar.
+- **2026-10-30 — Módulo 1, tarea 12: exportar.**
+  - **Ruta** `POST /api/export`. No es una acción porque contesta con bytes: `application/zip` con su nombre en
+    `content-disposition`, y como mucho 10 por minuto. Su entrada, `exportInput`, va en `packages/contracts`.
+  - **`apps/server/src/wiki/export.ts`**:
+    - **Rutas** dentro del .zip con el árbol de todo el mundo:
+      - una página con hijas es `Título/Título.md`;
+      - nombres saneados (`fileName`);
+      - « (2)» entre hermanas que se llaman igual.
+    - **Una rama** sale desde su carpeta; una página sola, su nota.
+    - **Enlaces de las propiedades**: el título si es único en el mundo; si no, su ruta en el .zip.
+    - **Cuerpos y secretos**: se cargan de una vez (`documentsWithState`); los que están abiertos, del documento
+      vivo.
+    - **Comprimido** con `fflate` (MIT, aprobado en el plan).
+  - **Web** (`apps/web/src/wiki/export.tsx`):
+    - «Exportar» en la página, que con subpáginas pregunta «Solo esta página» o «Con sus subpáginas»;
+    - «Exportar la wiki» en «Más de la wiki»;
+    - la descarga, con `api.exportWiki` y un enlace temporal; «Descargado: …» a los lectores de pantalla.
+  - **Pruebas**:
+    - integración: el mundo entero con carpetas, y cada archivo igual a lo que da `readPage`; rama, página sola,
+      nombres raros, títulos repetidos y permisos;
+    - e2e `exportar.spec.ts`: la descarga real, desabriendo el .zip;
+    - `@fugas`: la jugadora no exporta ni usa `readPage`, `editPage` ni `createPages`.
+  - **Queda para la 19**: los archivos, en `_archivos/`.
 - **Pendientes de permiso de Enrique:**
   - Servicio de systemd para Foundry: ahora corre como proceso de la sesión y se para al cerrarla; se arranca con el
     comando de `research/foundry/entorno.md`.
@@ -483,7 +506,7 @@ Estados: pendiente · en curso · hecho · descartado.
 | # | Módulo | Estado | REA principal |
 |---|---|---|---|
 | 0 | **Fundación**: monorepo, CI, despliegue, cuentas, organizaciones, mundos, campañas, roles, historial y deshacer, esqueleto del MCP | **hecho** (2026-10-29; Discord y Google, pospuestos) | Foundry: modelo de documentos y permisos; DDB: campañas e invitaciones |
-| 1 | **Wiki**: páginas y subpáginas, editor de bloques, enlaces, menciones, vista previa, propiedades, secretos, búsqueda, marcadores, etiquetas, versiones, recursos y archivos, **hojas con estilo** (tipo Homebrewery, con PDF), exportación MD, sus herramientas MCP | en curso (construcción: tareas 1 a 11 de 26 hechas) | Foundry: Journal; DDB: contenido y referencias; Homebrewery (MIT): formato de hoja y descarga |
+| 1 | **Wiki**: páginas y subpáginas, editor de bloques, enlaces, menciones, vista previa, propiedades, secretos, búsqueda, marcadores, etiquetas, versiones, recursos y archivos, **hojas con estilo** (tipo Homebrewery, con PDF), exportación MD, sus herramientas MCP | en curso (construcción: tareas 1 a 12 de 26 hechas) | Foundry: Journal; DDB: contenido y referencias; Homebrewery (MIT): formato de hoja y descarga |
 | 2 | Tipos de página, plantillas y formularios nativos; consultas (en lugar de Dataview y Bases) | pendiente | Foundry: tipos de documento |
 | 3 | Sistemas de reglas, fichas de personaje (creación, subida de nivel), dados y dados 3D | pendiente | DDB: creador y hoja; Foundry: dnd5e, DataModel e instalar y crear sistemas |
 | 4 | Compendios, bestiario, statblocks, biblioteca | pendiente | Foundry: compendium packs; DDB: listados |

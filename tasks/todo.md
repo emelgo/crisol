@@ -162,7 +162,8 @@ Cada vía nueva por la que salen datos amplía `@fugas` en la misma tarea.
 - [ ] Desde claude.ai, Claude crea varias páginas con secretos y edita una que Enrique tiene abierta.
   (Pendiente de Enrique: se sigue sin esperar, por su encargo del 2026-10-30.)
 
-- [ ] **12. Exportar**
+- [x] **12. Exportar** — hecha. Ruta `POST /api/export`, no es una acción porque devuelve bytes. Los archivos
+  (`_archivos/`) llegan con la 19.
   - Acepta:
     - Exportar una página, una rama o el mundo entero en .zip (`Página/Página.md`), con `fflate`.
     - Los enlaces salen con el título del momento, con la ruta si dos se llaman igual.
