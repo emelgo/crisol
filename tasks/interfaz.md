@@ -153,6 +153,15 @@ Todo va en la rama `interfaz/pulir-inicio`, en un commit local sin subir. Las no
 - **Las peticiones de la IA**, en tarjetas flotantes abajo a la derecha, como en el Crisol antiguo.
 - **ADR-0004**: cuentas personales y registro público, con la organización por debajo.
 
+**Preguntas abiertas a Enrique** (al retomar):
+- guardar en la cuenta (servidor) los tutoriales hechos y los colores propios, que hoy van en el navegador;
+- el icono del mundo: quitarlo del contrato y de la columna `icon`, o dejarlo (la interfaz ya no lo usa).
+
+**Por dónde iba** (2026-10-30, antes de compactar): Mis mundos y la entrada en un mundo ya le gustan («esta TODO
+GENIAL»), con sus animaciones; crear y borrar mundos, «perfe». No se pudo reproducir un icono que «se recoloca» en el
+último fotograma al entrar o salir de un mundo (quizá el escalado de su pantalla); lo dejó así. Lo siguiente: la
+siguiente pantalla que diga.
+
 **Al acabar la ronda** (cuando Enrique lo diga):
 1. Poner al día las pruebas que han cambiado:
    - la portada redirige;
