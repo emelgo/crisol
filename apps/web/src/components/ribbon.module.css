@@ -194,27 +194,34 @@
     opacity: 1;
   }
 
-  70% {
+  /* Ya en la llama, su sitio se cierra frenando: lo de debajo sube suave, sin tirón */
+  55% {
     max-block-size: 3.5rem;
     min-block-size: 3.25rem;
+    margin-block-end: 0;
     transform: translateY(var(--rise, -3.6rem)) scale(0.3);
     opacity: 0.6;
+    animation-timing-function: cubic-bezier(0.33, 1, 0.68, 1);
   }
 
+  /* Cerrado del todo, también su hueco con el siguiente: al quitarlo, nada se mueve */
   100% {
     max-block-size: 0;
     min-block-size: 0;
     padding-block: 0;
+    margin-block-end: calc(-1 * var(--space-1));
     transform: translateY(var(--rise, -3.6rem)) scale(0.2);
     opacity: 0;
   }
 }
 
 @keyframes del-crisol {
+  /* Empieza cerrado, también su hueco: al ponerlo, nada se mueve */
   0% {
     max-block-size: 0;
     min-block-size: 0;
     padding-block: 0;
+    margin-block-end: calc(-1 * var(--space-1));
     transform: translateY(var(--rise, -3.6rem)) scale(0.2);
     opacity: 0;
   }
@@ -222,6 +229,7 @@
   30% {
     max-block-size: 3.5rem;
     min-block-size: 3.25rem;
+    margin-block-end: 0;
     transform: translateY(var(--rise, -3.6rem)) scale(0.3);
     opacity: 0.4;
   }
