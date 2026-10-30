@@ -45,6 +45,14 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   quien lo dirige (sin enlace a la wiki: está en la barra), y sus campañas para quien juega. Las campañas tienen su propia pestaña.
 - **El menú de la cuenta** (la inicial, abajo en la barra): quién eres, Perfil, Ajustes y Cerrar sesión. El tema va en
   Ajustes, no en el menú. Se abre al lado del botón y nunca se corta.
+- **En el móvil, la barra va abajo, centrada y con huecos fijos**: la llama (con «Crisol» debajo, nunca «Mundos»), lo
+  principal de la zona y «Más». Mis mundos: Crisol · Archivos · Más. Dentro de un mundo: Crisol · Inicio · Campañas ·
+  Wiki · Más. «Más» es una hoja con el resto (Archivos y Etiquetas del mundo, Historial, Papelera y la cuenta). Nunca
+  se desplaza de lado: «si añadimos iconos es un caos». La guía se salta lo que no se ve.
+- **En el móvil, las ventanas son hojas que suben desde abajo**, con su asa arriba y la página oscurecida detrás: «los
+  popup no parecen popups».
+- **Archivos en el móvil**: en vez del árbol, un selector de carpeta; tocar un archivo sube su hoja (vista previa, lo
+  que es, «Abrir» y «Ajustes»), que hace de la vista previa al pasar el ratón.
 
 ## Pantallas
 

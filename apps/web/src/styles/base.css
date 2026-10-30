@@ -194,6 +194,42 @@ dialog[open]::backdrop {
 }
 
 /*
+ * En el móvil, los cuadros y las ventanas son hojas que suben desde abajo: a todo lo ancho, con las esquinas de arriba
+ * redondeadas, un asa y la página oscurecida detrás, para que se note que van encima
+ */
+@media (max-width: 48rem) {
+  dialog[open] {
+    inline-size: 100%;
+    max-inline-size: 100%;
+    max-block-size: calc(100dvh - 2.5rem);
+    margin: auto 0 0;
+    border-radius: 16px 16px 0 0;
+    border-block-end: 0;
+  }
+
+  dialog[open]::before {
+    content: "";
+    display: block;
+    inline-size: 2.5rem;
+    block-size: 4px;
+    margin: 8px auto 0;
+    border-radius: 2px;
+    background: var(--color-field-border);
+  }
+
+  dialog:not([open]) {
+    transform: translateY(100%);
+  }
+
+  @starting-style {
+    dialog[open] {
+      opacity: 1;
+      transform: translateY(100%);
+    }
+  }
+}
+
+/*
  * Entrar en un mundo y salir de él (transiciones de vista, components/world-transition.ts). Al entrar, Mis mundos se
  * acerca y se desvanece, como si se pasara a través, y el mundo llega creciendo; la tarjeta pulsada se convierte en su
  * cabecera. Al salir, al revés. La barra va aparte (barra) y sin la transición: su propia animación se ve tal cual

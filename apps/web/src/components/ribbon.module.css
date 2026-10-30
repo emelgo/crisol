@@ -464,41 +464,86 @@
   }
 }
 
-/* Estrecho: la barra pasa abajo, en fila; si no cabe, se desplaza de lado */
+/* El nombre de la llama y «Más»: solo en el móvil */
+.brandText,
+.mobileOnly {
+  display: none;
+}
+
+/* Estrecho: la barra pasa abajo, con huecos fijos (la llama, lo principal de la zona y «Más», que lleva el resto) */
 @media (max-width: 48rem) {
   .ribbon {
     position: fixed;
     inset: auto 0 0;
     z-index: 5;
     flex-direction: row;
+    justify-content: center;
     block-size: auto;
-    padding: 0 var(--space-1);
-    overflow-x: auto;
-    overflow-y: hidden;
+    padding: 0 var(--space-1) env(safe-area-inset-bottom);
     border-inline-end: 0;
     border-block-start: 1px solid var(--color-border);
   }
 
   .sections,
-  .account,
   .panels {
     flex-direction: row;
   }
 
+  .sections {
+    flex: 1 1 auto;
+    justify-content: space-around;
+    max-inline-size: 32rem;
+    gap: 0;
+  }
+
+  /* Los paneles del mundo no son una caja aparte: sus botones van como los demás */
+  .panels {
+    display: contents;
+  }
+
+  .desktopOnly {
+    display: none !important;
+  }
+
+  .mobileOnly {
+    display: flex;
+  }
+
+  /* La llama, con su nombre debajo, como un botón más */
   .brand {
-    display: none;
-  }
-
-  /* En fila, como lo demás */
-  .foot {
-    position: static;
-    flex-direction: row;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    inline-size: auto;
+    block-size: auto;
     margin: 0;
-    padding: 0;
-    background: none;
+    border-radius: 6px;
+    text-decoration: none;
   }
 
-  /* Sin la llama (no hay marca), «Mundos» se queda siempre, sin subir a ninguna parte */
+  .brandText {
+    display: block;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    line-height: 1;
+    color: var(--color-muted);
+  }
+
+  .brand svg {
+    inline-size: 20px;
+    block-size: 20px;
+  }
+
+  .brand,
+  .item {
+    flex: 1 1 0;
+    min-inline-size: 0;
+    max-inline-size: 5.5rem;
+    inline-size: auto;
+    padding-block: 0.5rem 0.4375rem;
+  }
+
+  /* «Mundos» no sale (la llama lleva a Mis mundos): nada que subir a la llama */
   .merged,
   .merging,
   .emerging {
@@ -506,12 +551,53 @@
     animation: none;
   }
 
-  .item {
-    flex: none;
-  }
-
   .item[aria-current="page"],
-  .item[aria-pressed="true"] {
+  .item[aria-pressed="true"],
+  .brand[aria-current="page"] {
     box-shadow: inset 0 2px 0 var(--color-brand);
   }
+}
+
+/* La hoja de «Más» */
+.moreTitle {
+  margin: 0 0 var(--space-2);
+  padding-inline-end: 2.5rem;
+  font-size: 1rem;
+}
+
+.moreList {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.moreList button {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  inline-size: 100%;
+  min-block-size: 3rem;
+  padding: 0 var(--space-2);
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.moreList button:hover {
+  background: color-mix(in srgb, var(--color-text) 8%, transparent);
+}
+
+.moreList svg {
+  color: var(--color-muted);
+}
+
+.moreSeparated {
+  margin-block-start: var(--space-2);
+  padding-block-start: var(--space-2);
+  border-block-start: 1px solid var(--color-border);
 }

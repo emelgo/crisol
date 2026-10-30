@@ -169,6 +169,44 @@ describe('los archivos del mundo', () => {
   })
 })
 
+describe('los archivos en el móvil', () => {
+  // Una pantalla estrecha
+  beforeEach(() => {
+    const narrow = (query: string) =>
+      ({
+        matches: query.includes('max-width'),
+        addEventListener() {},
+        removeEventListener() {}
+      }) as unknown as MediaQueryList
+    window.matchMedia = narrow
+    return () => {
+      Reflect.deleteProperty(window, 'matchMedia')
+    }
+  })
+
+  it('al tocar un archivo sube su hoja: su detalle, abrirlo y sus ajustes; la carpeta se elige en un selector', async () => {
+    renderAt(`/mundos/${WORLD.id}/archivos`)
+    const list = await cardsIn()
+    await userEvent.click(await list.findByRole('button', { name: 'Bestiario.pdf' }))
+    const sheet = await screen.findByRole('dialog', { name: 'Bestiario.pdf' })
+    expect(within(sheet).getByText('PDF')).toBeDefined()
+    expect(within(sheet).getByRole('link', { name: 'Abrir' }).getAttribute('href')).toMatch(/^\/api\/files\//)
+    await userEvent.click(within(sheet).getByRole('button', { name: 'Ajustes' }))
+    expect(await screen.findByRole('dialog', { name: 'Ajustes de Bestiario.pdf' })).toBeDefined()
+    await userEvent.keyboard('{Escape}')
+
+    // Una carpeta nueva, y a ella desde el selector
+    await userEvent.click(screen.getAllByRole('button', { name: 'Nueva carpeta' })[0] as HTMLElement)
+    const create = await screen.findByRole('dialog', { name: 'Nueva carpeta' })
+    await userEvent.type(within(create).getByLabelText('Nombre de la carpeta'), 'Mapas')
+    await userEvent.click(within(create).getByRole('button', { name: 'Crear la carpeta' }))
+    const picker = screen.getAllByRole('combobox', { name: 'Carpeta' })[0] as HTMLSelectElement
+    await waitFor(() => expect(within(picker).getByRole('option', { name: 'Mapas' })).toBeDefined())
+    await userEvent.selectOptions(picker, 'Mapas')
+    expect(await screen.findByText('Esta carpeta está vacía.')).toBeDefined()
+  })
+})
+
 describe('las carpetas de los archivos', () => {
   it('se crea una, se entra, se sube ahí y se vuelve por la ruta; un archivo se mueve desde su engranaje', async () => {
     const api = renderAt(`/mundos/${WORLD.id}/archivos`)

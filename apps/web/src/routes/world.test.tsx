@@ -162,7 +162,8 @@ describe('el Inicio de un mundo', () => {
     const items = [...screen.getByRole('navigation', { name: 'Secciones' }).querySelectorAll('a, button')]
       .map((item) => item.textContent)
       .filter(Boolean)
-    expect(items).toEqual(['Inicio', 'Campañas', 'Wiki', 'Etiquetas', 'Archivos'])
+    // La llama, delante; «Más», detrás (solo se ve en el móvil)
+    expect(items).toEqual(['Crisol', 'Inicio', 'Campañas', 'Wiki', 'Etiquetas', 'Archivos', 'Más'])
 
     await userEvent.click(ribbon().getByRole('link', { name: 'Campañas' }))
     expect(await screen.findByRole('heading', { level: 1, name: 'Campañas' })).toBeDefined()

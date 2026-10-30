@@ -853,3 +853,71 @@ button.rowName:hover {
     transform: translateX(-12px);
   }
 }
+
+/* El selector de carpeta: en el móvil, en vez del árbol */
+.folderPick {
+  display: none;
+}
+
+@media (max-width: 48rem) {
+  .folderPick {
+    display: flex;
+    flex: 1 1 100%;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+
+  .folderPick select {
+    flex: 1;
+    min-inline-size: 0;
+    min-block-size: 2.5rem;
+    padding: 0 var(--space-2);
+    border: 1px solid var(--color-field-border);
+    border-radius: 6px;
+    background: var(--color-surface);
+    color: var(--color-text);
+    font: inherit;
+    font-weight: 400;
+  }
+
+  /* El selector ya dice dónde se está y lleva a cualquier carpeta */
+  .side,
+  .explorer .tree,
+  .route {
+    display: none;
+  }
+}
+
+/* La hoja de un archivo (móvil): el detalle, sin caja (ya está en la hoja) y, abajo, qué hacer */
+.sheet .detailBody {
+  padding: 0;
+  border: 0;
+  background: none;
+  animation: none;
+}
+
+.sheet .detailBody .preview {
+  block-size: min(14rem, 35dvh);
+}
+
+.sheet .detailName {
+  padding-inline-end: 2.5rem;
+}
+
+.sheetActions {
+  display: flex;
+  gap: var(--space-2);
+  margin-block-start: var(--space-4);
+}
+
+.sheetActions > * {
+  flex: 1;
+  justify-content: center;
+}
+
+.sheetSecondary {
+  background: color-mix(in srgb, var(--color-text) 12%, transparent);
+  color: var(--color-text);
+}

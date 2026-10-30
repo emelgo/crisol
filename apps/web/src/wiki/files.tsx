@@ -47,6 +47,7 @@ import cards from '../routes/world-card.module.css'
 import { CoverViewer } from '../routes/world-cover.tsx'
 import styles from './files.module.css'
 import type { WorldFile } from './links-context.ts'
+import { useNarrow } from './panel.tsx'
 
 const route = getRouteApi('/mundos/$worldId/archivos')
 
@@ -352,6 +353,24 @@ function FilesSection({
   const rowProps = { folders, onChanged: refresh }
   const tools = (
     <div className={styles.tools}>
+      {/* En el móvil, en vez del árbol */}
+      <label className={styles.folderPick}>
+        <span>{t('files.folder')}</span>
+        <select
+          value={searching ? '' : (open ?? '')}
+          onChange={(event) => {
+            setQuery('')
+            setFolderId(event.currentTarget.value || null)
+          }}
+        >
+          <option value="">{t('files.root')}</option>
+          {folderPaths(folders).map((folder) => (
+            <option key={folder.id} value={folder.id}>
+              {folder.label}
+            </option>
+          ))}
+        </select>
+      </label>
       {placeOf(open).canWrite && (
         <>
           <button
@@ -441,7 +460,7 @@ function FilesSection({
         <p className={styles.here}>{t('files.results', { count: shownFiles.length })}</p>
       ) : (
         // La ruta de la carpeta abierta: cada paso lleva a ella y recibe archivos arrastrados (el primero, lo más alto)
-        <nav className={styles.here} aria-label={t('files.route')}>
+        <nav className={`${styles.here} ${styles.route}`} aria-label={t('files.route')}>
           {[null, ...path].map((folder, i) => {
             const last = i === path.length
             const name = folder ? folder.name : t('files.root')
@@ -749,7 +768,6 @@ function FileRow({
   onChanged: () => Promise<unknown>
 }) {
   const { i18n } = useTranslation()
-  const [viewing, setViewing] = useState(false)
   return (
     <li
       className={[styles.row, fresh ? styles.appear : ''].filter(Boolean).join(' ')}
@@ -768,31 +786,11 @@ function FileRow({
         <Thumb file={file} small />
       </span>
       <span className={styles.rowText}>
-        {file.kind === 'image' ? (
-          <button
-            type="button"
-            className={`${styles.rowName} ${styles.open}`}
-            aria-haspopup="dialog"
-            onClick={() => setViewing(true)}
-          >
-            {file.name}
-          </button>
-        ) : (
-          <a
-            href={file.url}
-            className={styles.rowName}
-            target="_blank"
-            rel="noopener"
-            {...(file.kind === 'other' ? { download: file.name } : {})}
-          >
-            {file.name}
-          </a>
-        )}
+        <FileName file={file} className={styles.rowName} folders={folders} canWrite={canWrite} onChanged={onChanged} />
         {where.length > 0 && <span className={styles.where}>{where.map((folder) => folder.name).join(' › ')}</span>}
       </span>
       <span className={styles.rowMeta}>{sizeText(file.size, i18n.language)}</span>
       {canWrite ? <FileSettings file={file} folders={folders} onChanged={onChanged} small /> : <span />}
-      {viewing && <CoverViewer url={file.url} label={file.name} onClose={() => setViewing(false)} />}
     </li>
   )
 }
@@ -1599,7 +1597,6 @@ function FileCard({
   onPreview?: ((shown: boolean) => void) | undefined
 }) {
   const { t, i18n } = useTranslation()
-  const [viewing, setViewing] = useState(false)
   const classes = [cards.card, fresh ? styles.appear : ''].filter(Boolean)
   return (
     <li
@@ -1619,26 +1616,13 @@ function FileCard({
         <Thumb file={file} />
       </div>
       <div className={cards.body}>
-        {file.kind === 'image' ? (
-          <button
-            type="button"
-            className={`${cards.name} ${styles.fileName} ${styles.open}`}
-            aria-haspopup="dialog"
-            onClick={() => setViewing(true)}
-          >
-            {file.name}
-          </button>
-        ) : (
-          <a
-            href={file.url}
-            className={`${cards.name} ${styles.fileName}`}
-            target="_blank"
-            rel="noopener"
-            {...(file.kind === 'other' ? { download: file.name } : {})}
-          >
-            {file.name}
-          </a>
-        )}
+        <FileName
+          file={file}
+          className={`${cards.name} ${styles.fileName}`}
+          folders={folders}
+          canWrite={canWrite}
+          onChanged={onChanged}
+        />
         {where.length > 0 && <span className={styles.where}>{where.map((folder) => folder.name).join(' › ')}</span>}
         <div className={cards.footer}>
           <span className={cards.role}>
@@ -1648,8 +1632,126 @@ function FileCard({
           {canWrite && <FileSettings file={file} folders={folders} onChanged={onChanged} />}
         </div>
       </div>
-      {viewing && <CoverViewer url={file.url} label={file.name} onClose={() => setViewing(false)} />}
     </li>
+  )
+}
+
+/**
+ * El nombre de un archivo, que lo abre: una imagen, en grande; lo demás, en otra pestaña. En el móvil (sin ratón que
+ * pasar por encima), primero su hoja, desde abajo: la vista previa, lo que es y qué hacer con él
+ */
+function FileName({
+  file,
+  className,
+  folders,
+  canWrite,
+  onChanged
+}: {
+  file: WorldFile
+  className: string | undefined
+  folders: FolderView[]
+  canWrite: boolean
+  onChanged: () => Promise<unknown>
+}) {
+  const narrow = useNarrow()
+  const trigger = useRef<HTMLButtonElement>(null)
+  const [open, setOpen] = useState<'viewer' | 'sheet' | 'settings' | null>(null)
+  const close = (gone = false) => {
+    setOpen(null)
+    if (!gone) trigger.current?.focus()
+  }
+  return (
+    <>
+      {narrow || file.kind === 'image' ? (
+        <button
+          ref={trigger}
+          type="button"
+          className={[className, styles.open].filter(Boolean).join(' ')}
+          aria-haspopup="dialog"
+          onClick={() => setOpen(narrow ? 'sheet' : 'viewer')}
+        >
+          {file.name}
+        </button>
+      ) : (
+        <a
+          href={file.url}
+          className={className}
+          target="_blank"
+          rel="noopener"
+          {...(file.kind === 'other' ? { download: file.name } : {})}
+        >
+          {file.name}
+        </a>
+      )}
+      {open === 'viewer' && <CoverViewer url={file.url} label={file.name} onClose={() => close()} />}
+      {open === 'sheet' && (
+        <FileSheet
+          file={file}
+          folders={folders}
+          canWrite={canWrite}
+          onView={() => setOpen('viewer')}
+          onSettings={() => setOpen('settings')}
+          onClose={() => setOpen((current) => (current === 'sheet' ? null : current))}
+        />
+      )}
+      {open === 'settings' && <FileDialog file={file} folders={folders} onChanged={onChanged} onClose={close} />}
+    </>
+  )
+}
+
+/** La hoja de un archivo en el móvil: su detalle y, abajo, abrirlo y sus ajustes */
+function FileSheet({
+  file,
+  folders,
+  canWrite,
+  onView,
+  onSettings,
+  onClose
+}: {
+  file: WorldFile
+  folders: FolderView[]
+  canWrite: boolean
+  onView: () => void
+  onSettings: () => void
+  onClose: () => void
+}) {
+  const { t } = useTranslation()
+  const byId = new Map(folders.map((folder) => [folder.id, folder]))
+  const where: FolderView[] = []
+  for (
+    let at = file.folderId ? byId.get(file.folderId) : undefined;
+    at;
+    at = at.parentId ? byId.get(at.parentId) : undefined
+  ) {
+    where.unshift(at)
+  }
+  return (
+    <Modal aria-label={file.name} className={styles.sheet} onClose={onClose}>
+      <FileDetail file={file} where={where} />
+      <div className={styles.sheetActions}>
+        {file.kind === 'image' ? (
+          <button type="button" className={form.button} onClick={onView}>
+            {t('files.open')}
+          </button>
+        ) : (
+          <a
+            href={file.url}
+            className={form.button}
+            target="_blank"
+            rel="noopener"
+            {...(file.kind === 'other' ? { download: file.name } : {})}
+          >
+            {file.kind === 'other' ? t('files.download') : t('files.open')}
+          </a>
+        )}
+        {canWrite && (
+          <button type="button" className={`${form.button} ${styles.sheetSecondary}`} onClick={onSettings}>
+            <Settings aria-hidden="true" size={16} />
+            {t('files.settings')}
+          </button>
+        )}
+      </div>
+    </Modal>
   )
 }
 
