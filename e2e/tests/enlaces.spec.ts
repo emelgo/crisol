@@ -120,6 +120,7 @@ test('los enlaces de la página: quién la enlaza, dónde se la nombra y «Enlaz
   await expect(panel.getByText('Ninguna página la nombra sin enlazarla.')).toBeVisible()
 
   // Al borrarla, el aviso dice cuántas la enlazan
+  await page.getByRole('button', { name: 'Más acciones' }).click()
   await page.getByRole('button', { name: 'Borrar' }).click()
   await expect(page.getByText('La enlazan 2 páginas: sus enlaces se verán rotos.')).toBeVisible()
   expect(maela).toBeTruthy()

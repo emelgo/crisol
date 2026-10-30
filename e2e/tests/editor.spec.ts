@@ -67,6 +67,7 @@ test('dos pestañas convergen; sin conexión se sigue escribiendo y llega al vol
 
 test('con el candado, el texto no se edita', async ({ page }) => {
   await openPage(page)
+  await page.getByRole('button', { name: 'Más acciones' }).click()
   await page.getByRole('button', { name: 'Poner en lectura' }).click()
   await expect(page.getByText('En lectura: quita el candado para editar.')).toBeVisible()
   await expect(body(page)).toHaveAttribute('contenteditable', 'false')

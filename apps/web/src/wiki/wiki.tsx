@@ -1,7 +1,8 @@
 import type { Page } from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getRouteApi, Link, Navigate, useNavigate } from '@tanstack/react-router'
-import { type ReactNode, useEffect, useId, useRef, useState } from 'react'
+import { Ellipsis } from 'lucide-react'
+import { type ReactNode, type RefObject, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { ApiError } from '../api/client.ts'
@@ -196,7 +197,7 @@ export function WikiHome() {
 }
 
 /** El título de la página, que se renombra en el sitio. Una recién creada empieza ya con el campo abierto */
-function PageHeading({ page, startEditing }: { page: Page; startEditing: boolean }) {
+function PageHeading({ page, world, startEditing }: { page: Page; world: string; startEditing: boolean }) {
   const { t } = useTranslation()
   const api = useApi()
   const queryClient = useQueryClient()
@@ -224,55 +225,130 @@ function PageHeading({ page, startEditing }: { page: Page; startEditing: boolean
     }
   })
 
+  const crumbs = <Breadcrumbs worldId={page.worldId} world={world} path={page.path} />
   if (editing) {
     return (
-      <form
-        className={styles.rename}
-        onSubmit={(event) => {
-          event.preventDefault()
-          rename.mutate(String(new FormData(event.currentTarget).get('title')))
-        }}
-        onKeyDown={(event) => {
-          if (event.key === 'Escape') stop()
-        }}
-      >
-        <Field
-          label={t('wiki.titleLabel')}
-          name="title"
-          autoComplete="off"
-          defaultValue={page.title}
-          maxLength={200}
-          required
-          ref={focusAndSelect}
-        />
-        <FormError message={rename.error ? errorText(rename.error) : null} />
-        <div className={list.actions}>
-          <BusyButton type="submit" className={form.button} busy={rename.isPending}>
-            {t('list.save')}
-          </BusyButton>
-          <button type="button" className={list.secondary} onClick={stop}>
-            {t('list.cancel')}
-          </button>
-        </div>
-      </form>
+      <>
+        {crumbs}
+        <form
+          className={styles.rename}
+          onSubmit={(event) => {
+            event.preventDefault()
+            rename.mutate(String(new FormData(event.currentTarget).get('title')))
+          }}
+          onKeyDown={(event) => {
+            if (event.key === 'Escape') stop()
+          }}
+        >
+          <Field
+            label={t('wiki.titleLabel')}
+            name="title"
+            autoComplete="off"
+            defaultValue={page.title}
+            maxLength={200}
+            required
+            ref={focusAndSelect}
+          />
+          <FormError message={rename.error ? errorText(rename.error) : null} />
+          <div className={list.actions}>
+            <BusyButton type="submit" className={form.button} busy={rename.isPending}>
+              {t('list.save')}
+            </BusyButton>
+            <button type="button" className={list.secondary} onClick={stop}>
+              {t('list.cancel')}
+            </button>
+          </div>
+        </form>
+      </>
     )
   }
   return (
-    <div className={styles.heading}>
-      <PageIcon page={page} />
-      <PageTitle>{page.title}</PageTitle>
-      <div className={list.actions}>
-        <button type="button" ref={renameButton.ref} className={list.secondary} onClick={() => setEditing(true)}>
-          {t('wiki.rename')}
-        </button>
-        <LockButton page={page} />
-        <CoverButton page={page} />
-        <SheetToggle page={page} />
-        <BookmarkButton page={page} />
-        <ExportPage page={page} />
-        <DeletePage page={page} />
+    <>
+      <div className={styles.pageBar}>
+        {crumbs}
+        <div className={styles.pageActions}>
+          <BookmarkButton page={page} />
+          <SheetToggle page={page} />
+          <MoreActions page={page} triggerRef={renameButton.ref} onRename={() => setEditing(true)} />
+        </div>
       </div>
-      {page.locked && <p className={styles.locked}>{t('editor.locked')}</p>}
+      <PageCoverImage page={page} />
+      <div className={styles.heading}>
+        <PageIcon page={page} />
+        <PageTitle>{page.title}</PageTitle>
+        {page.locked && <p className={styles.locked}>{t('editor.locked')}</p>}
+      </div>
+    </>
+  )
+}
+
+/** «Más»: lo que se hace de vez en cuando con la página, fuera de la vista hasta que se pide */
+function MoreActions({
+  page,
+  triggerRef,
+  onRename
+}: {
+  page: Page
+  triggerRef: (element: HTMLElement | null) => void
+  onRename: () => void
+}) {
+  const { t } = useTranslation()
+  const [open, setOpen] = useState(false)
+  const root = useRef<HTMLDivElement>(null)
+  const trigger = useRef<HTMLButtonElement | null>(null)
+  const panelId = useId()
+  // Abierto: pulsar fuera lo cierra; Escape también, y el foco vuelve a «Más»
+  useEffect(() => {
+    if (!open) return
+    const outside = (event: Event) => {
+      if (!root.current?.contains(event.target as Node)) setOpen(false)
+    }
+    const onEscape = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return
+      setOpen(false)
+      trigger.current?.focus()
+    }
+    document.addEventListener('pointerdown', outside)
+    document.addEventListener('keydown', onEscape)
+    return () => {
+      document.removeEventListener('pointerdown', outside)
+      document.removeEventListener('keydown', onEscape)
+    }
+  }, [open])
+  return (
+    <div ref={root} className={styles.moreMenu}>
+      <button
+        type="button"
+        ref={(element) => {
+          trigger.current = element
+          triggerRef(element)
+        }}
+        aria-label={t('wiki.moreActions')}
+        aria-expanded={open}
+        aria-controls={panelId}
+        onClick={() => setOpen((value) => !value)}
+      >
+        <Ellipsis aria-hidden="true" size={18} />
+        {t('wiki.moreShort')}
+      </button>
+      {open && (
+        <div id={panelId} className={styles.morePanel}>
+          <button
+            type="button"
+            className={list.secondary}
+            onClick={() => {
+              setOpen(false)
+              onRename()
+            }}
+          >
+            {t('wiki.rename')}
+          </button>
+          <LockButton page={page} />
+          <CoverButton page={page} />
+          <ExportPage page={page} />
+          <DeletePage page={page} />
+        </div>
+      )}
     </div>
   )
 }
@@ -410,6 +486,7 @@ export function WikiPage() {
   const { nuevo } = pageRoute.useSearch()
   const page = useQuery({ queryKey: pageKey(worldId, pageId), queryFn: () => api.call('getPage', { pageId }) })
   const missing = page.error instanceof ApiError && page.error.status === 404
+  const pageMain = useRef<HTMLDivElement>(null)
   useEffect(() => {
     // Mientras se le pone nombre no hay título que lo diga
     if (page.data) document.title = t('app.pageTitle', { page: page.data.title })
@@ -430,19 +507,75 @@ export function WikiPage() {
         }
         if (!page.data) return failed(page) ? <LoadError error={page.error} onRetry={() => page.refetch()} /> : null
         return (
-          <article>
-            <Breadcrumbs worldId={worldId} world={world.name} path={page.data.path} />
-            <PageCoverImage page={page.data} />
-            <PageHeading key={`${page.data.id}-${nuevo ?? false}`} page={page.data} startEditing={nuevo === true} />
-            <PageProperties key={page.data.id} page={page.data} />
-            <SheetLayout page={page.data} body={<PageBody page={page.data} />} />
-            <Backlinks key={`enlaces-${page.data.id}`} page={page.data} />
-            <Versions key={`versiones-${page.data.id}`} page={page.data} />
-            <Subpages page={page.data} />
-            <SiblingNav page={page.data} />
+          <article className={styles.page}>
+            <div className={styles.pageMain} ref={pageMain}>
+              <PageHeading
+                key={`${page.data.id}-${nuevo ?? false}`}
+                page={page.data}
+                world={world.name}
+                startEditing={nuevo === true}
+              />
+              <PageProperties key={page.data.id} page={page.data} />
+              <SheetLayout page={page.data} body={<PageBody page={page.data} />} />
+              <Subpages page={page.data} />
+              <SiblingNav page={page.data} />
+            </div>
+            <aside aria-label={t('wiki.pagePanel')} className={styles.pagePanel}>
+              <Contents key={`indice-${page.data.id}`} root={pageMain} />
+              <Backlinks key={`enlaces-${page.data.id}`} page={page.data} />
+              <Versions key={`versiones-${page.data.id}`} page={page.data} />
+            </aside>
           </article>
         )
       }}
     </WikiLayout>
+  )
+}
+
+/** El índice: los títulos del texto de la página (no los de los secretos), que se siguen al escribir */
+function Contents({ root }: { root: RefObject<HTMLDivElement | null> }) {
+  const { t } = useTranslation()
+  const id = useId()
+  const [headings, setHeadings] = useState<{ level: number; text: string; element: HTMLElement }[]>([])
+  useEffect(() => {
+    const container = root.current
+    if (!container) return
+    let frame = 0
+    const read = () => {
+      cancelAnimationFrame(frame)
+      frame = requestAnimationFrame(() => {
+        const found = [...container.querySelectorAll<HTMLElement>('[role="textbox"] > :is(h2, h3, h4)')]
+        setHeadings(
+          found
+            .map((element) => ({ level: Number(element.tagName[1]), text: element.textContent?.trim() ?? '', element }))
+            .filter((heading) => heading.text)
+        )
+      })
+    }
+    read()
+    const observer = new MutationObserver(read)
+    observer.observe(container, { childList: true, subtree: true, characterData: true })
+    return () => {
+      observer.disconnect()
+      cancelAnimationFrame(frame)
+    }
+  }, [root])
+  return (
+    <section aria-labelledby={`${id}-title`} className={styles.contents}>
+      <h2 id={`${id}-title`}>{t('wiki.contents')}</h2>
+      {headings.length === 0 ? (
+        <p>{t('wiki.contentsEmpty')}</p>
+      ) : (
+        <ul>
+          {headings.map((heading, index) => (
+            <li key={`${index}-${heading.text}`} data-level={heading.level}>
+              <button type="button" onClick={() => heading.element.scrollIntoView({ block: 'start' })}>
+                {heading.text}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   )
 }
