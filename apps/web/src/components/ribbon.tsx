@@ -371,6 +371,11 @@ function WikiPanels({ worldId }: { worldId: string }) {
   )
 }
 
+/** La llama de Crisol, como un icono más del menú (Mis mundos sigue siendo la llama, como en la barra) */
+function FlameIcon(_: { 'aria-hidden'?: 'true'; size?: number; strokeWidth?: number }) {
+  return <CrisolMark size={22} />
+}
+
 /**
  * En el móvil, en vez de la barra: la llama, sola, abajo en el centro. Al tocarla sube una hoja con todas las secciones
  * de donde se está (fuera de los mundos, Mis mundos, Archivos, Etiquetas, Historial y Papelera; dentro, las del mundo y
@@ -401,12 +406,12 @@ function MobileMenu({
     action()
   }
   const go = (to: string) => then(() => void navigate({ to, viewTransition: SECTION } as never))
-  type Entry = { key: string; icon: LucideIcon; text: string; current: boolean; run: () => void }
+  type Entry = { key: string; icon: LucideIcon | typeof FlameIcon; text: string; current: boolean; run: () => void }
   const entries: Entry[] = world
     ? [
         {
           key: 'mundos',
-          icon: Globe,
+          icon: FlameIcon,
           text: t('ribbon.worlds'),
           current: false,
           run: then(() => {
@@ -458,7 +463,7 @@ function MobileMenu({
           : [])
       ]
     : [
-        { key: 'mundos', icon: Globe, text: t('ribbon.worlds'), current: path === '/mundos', run: go('/mundos') },
+        { key: 'mundos', icon: FlameIcon, text: t('ribbon.worlds'), current: path === '/mundos', run: go('/mundos') },
         ...(isOwner
           ? [
               {
