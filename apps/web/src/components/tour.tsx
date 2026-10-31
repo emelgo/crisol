@@ -63,7 +63,11 @@ export function Tour({ id, steps }: { id: string; steps: readonly TourStep[] }) 
   const opened = useWindow()?.opened ?? null
 
   const start = () => {
-    const present = latest.current.filter((step) => document.querySelector(step.target))
+    // Solo lo que se ve: en el móvil, lo de la barra que va en «Más» no está
+    const present = latest.current.filter((step) => {
+      const element = document.querySelector(step.target)
+      return element && (typeof element.checkVisibility !== 'function' || element.checkVisibility())
+    })
     if (present.length === 0) return
     started.current = true
     returnTo.current = document.activeElement

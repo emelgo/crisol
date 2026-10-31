@@ -24,7 +24,17 @@ export function enterWorld(worldId: string, card: Element | null) {
       other.style.removeProperty('view-transition-name')
   }
   if (card instanceof HTMLElement) card.style.setProperty('view-transition-name', 'mundo-actual')
+  // El panel del mundo señalado (Mis mundos) no entra en la foto: la tarjeta es la que se convierte en la cabecera
+  for (const panel of document.querySelectorAll<HTMLElement>('[data-vista-previa]')) panel.style.visibility = 'hidden'
   embers()
+}
+
+/**
+ * Al salir de un mundo (por la llama): como las brasas al entrar, pero apagadas: una bruma gris que sube desde abajo y
+ * bocanadas de humo que suben, se ensanchan y se disipan (base.css, .humo)
+ */
+export function leaveWorld() {
+  overlay('humo', 3000)
 }
 
 /** Las brasas: un calor suave que sube desde abajo y unas chispas que se apagan */
@@ -33,7 +43,7 @@ function embers() {
 }
 
 /**
- * Una capa encima de todo, de adorno (base.css, .brasas): va aparte en la transición (su nombre), así que se ve por
+ * Una capa encima de todo, de adorno (base.css, .brasas y .humo): va aparte en la transición (su nombre), así que se ve por
  * encima mientras dura; luego se quita
  */
 function overlay(className: string, ms: number) {

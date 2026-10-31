@@ -1,8 +1,49 @@
 import { sql } from 'drizzle-orm'
-import { bigint, check, index, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core'
+import {
+  type AnyPgColumn,
+  bigint,
+  check,
+  index,
+  pgTable,
+  text,
+  timestamp,
+  uniqueIndex,
+  uuid
+} from 'drizzle-orm/pg-core'
 import { organizations } from './organizations.ts'
 import { trackedColumns } from './tracked.ts'
 import { worlds } from './worlds.ts'
+
+/**
+ * Una carpeta para ordenar los archivos de un ámbito (un mundo o los comunes de una organización), dentro de otra o en
+ * lo más alto. Solo ordena: el nombre de un archivo sigue siendo único en todo su ámbito, para que `![[nombre]]` no
+ * dependa de dónde esté. Al borrarla, lo que tenía pasa a la de arriba
+ */
+export const fileFolders = pgTable(
+  'file_folders',
+  {
+    ...trackedColumns(),
+    organizationId: uuid()
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
+    /** Sin mundo, es de los comunes */
+    worldId: uuid().references(() => worlds.id, { onDelete: 'cascade' }),
+    /** Sin madre, en lo más alto */
+    parentId: uuid().references((): AnyPgColumn => fileFolders.id, { onDelete: 'cascade' }),
+    name: text().notNull()
+  },
+  (t) => [
+    index().on(t.worldId),
+    index().on(t.organizationId),
+    index().on(t.parentId),
+    // El nombre no se repite entre hermanas (sin mayúsculas)
+    uniqueIndex('file_folders_name').on(
+      sql`coalesce(${t.worldId}, ${t.organizationId})`,
+      sql`coalesce(${t.parentId}, '00000000-0000-0000-0000-000000000000'::uuid)`,
+      sql`lower(${t.name})`
+    )
+  ]
+)
 
 /**
  * Un archivo (imágenes, PDF y lo demás): de un mundo o, sin mundo, común a todos los de su organización (ADR-0005).
@@ -20,16 +61,21 @@ export const files = pgTable(
     /** Sin mundo, es común */
     worldId: uuid().references(() => worlds.id, { onDelete: 'cascade' }),
     name: text().notNull(),
+    /** Su carpeta; sin ella, en lo más alto */
+    folderId: uuid().references(() => fileFolders.id, { onDelete: 'set null' }),
     kind: text({ enum: ['image', 'pdf', 'other'] }).notNull(),
     mime: text().notNull(),
     size: bigint({ mode: 'number' }).notNull(),
     hash: text().notNull(),
     storageKey: text().notNull(),
+    /** Sus etiquetas, de las de la cuenta (ADR-0006) */
+    tags: text().array().notNull().default(sql`'{}'::text[]`),
     deletedAt: timestamp({ withTimezone: true })
   },
   (t) => [
     index().on(t.worldId),
     index().on(t.organizationId),
+    index().on(t.folderId),
     uniqueIndex('files_name')
       .on(t.worldId, sql`lower(${t.name})`)
       .where(sql`${t.worldId} is not null and ${t.deletedAt} is null`),

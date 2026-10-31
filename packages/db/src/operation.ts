@@ -5,11 +5,12 @@
 import { eq, getTableName, type InferInsertModel, type InferSelectModel, sql } from 'drizzle-orm'
 import type { Database } from './client.ts'
 import { campaignMembers, campaigns } from './schema/campaigns.ts'
-import { files } from './schema/files.ts'
+import { fileFolders, files } from './schema/files.ts'
 import { changes, operations } from './schema/history.ts'
 import { invitationLinks } from './schema/invitations.ts'
 import { organizationMembers, organizations } from './schema/organizations.ts'
 import { pages } from './schema/pages.ts'
+import { tags } from './schema/tags.ts'
 import { pageBodies } from './schema/versions.ts'
 import { worldMembers, worlds } from './schema/worlds.ts'
 
@@ -24,7 +25,9 @@ export const TRACKED_TABLES = {
   invitation_links: invitationLinks,
   pages,
   page_bodies: pageBodies,
-  files
+  files,
+  file_folders: fileFolders,
+  tags
 }
 
 export type TrackedTable = (typeof TRACKED_TABLES)[keyof typeof TRACKED_TABLES]

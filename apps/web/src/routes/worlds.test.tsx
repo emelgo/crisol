@@ -71,7 +71,10 @@ describe('mis mundos', () => {
     await userEvent.type(dialog.getByLabelText('Descripción'), 'Ciudades libres en la niebla')
     await userEvent.click(dialog.getByRole('radio', { name: 'Vino' }))
     await userEvent.click(dialog.getByRole('button', { name: 'Guardar' }))
-    expect(await screen.findByText('Ciudades libres en la niebla')).toBeDefined()
+    // En su tarjeta (el panel de al lado también lo enseña)
+    expect(
+      await within(screen.getByRole('list', { name: 'Mundos' })).findByText('Ciudades libres en la niebla')
+    ).toBeDefined()
     expect(api.calls).toContain('updateWorld')
   })
 
@@ -84,7 +87,7 @@ describe('mis mundos', () => {
     await userEvent.clear(input)
     await userEvent.type(input, 'Eana (Fateforge)')
     await userEvent.click(dialog.getByRole('button', { name: 'Guardar' }))
-    expect(await screen.findByText('Eana (Fateforge)')).toBeDefined()
+    expect(await within(screen.getByRole('list', { name: 'Mundos' })).findByText('Eana (Fateforge)')).toBeDefined()
     expect(api.calls).toContain('updateWorld')
   })
 

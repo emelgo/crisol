@@ -165,41 +165,48 @@ Todo va en la rama `interfaz/pulir-inicio`, en un commit local sin subir. Las no
 - guardar en la cuenta (servidor) los tutoriales hechos y los colores propios, que hoy van en el navegador;
 - el icono del mundo: quitarlo del contrato y de la columna `icon`, o dejarlo (la interfaz ya no lo usa).
 
-**Por dónde iba** (2026-10-30, antes de compactar): Mis mundos y la entrada en un mundo ya le gustan («esta TODO
-GENIAL»), con sus animaciones; crear y borrar mundos, «perfe». No se pudo reproducir un icono que «se recoloca» en el
-último fotograma al entrar o salir de un mundo (quizá el escalado de su pantalla); lo dejó así. Lo siguiente: la
-siguiente pantalla que diga. Después rehízo la vista del mundo: Inicio (cabecera y lo reciente) y Campañas en su
-pestaña, con tarjetas como las de los mundos; falta que la vea.
+**Primera parte, cerrada** (2026-10-30): PR #86, fusionado y en staging (migraciones hasta la 0026). Enrique
+decidió fusionarlo con lo verificado en local, porque GitHub Actions estaba al 90 % del mes: lint, tipos, `pnpm test`
+y las e2e (con fugas y accesibilidad) en verde aquí. Al poner al día las pruebas salieron y se arreglaron:
+- dos guardados a la vez del cuerpo de una página nueva perdían uno (ahora van de uno en uno por página);
+- el menú de la cuenta quedaba debajo de la página;
+- el foco se perdía al cerrar Perfil o Ajustes;
+- un error en lo reciente de Inicio cambiaba el título de la pestaña;
+- la confirmación de borrar no leía su aviso;
+- el detalle de una petición de la IA no se alcanzaba con el teclado;
+- el arranque decía si un nombre de usuario existía sin un enlace válido.
 
-**Al acabar la ronda** (cuando Enrique lo diga):
-1. Poner al día las pruebas que han cambiado:
-   - la portada redirige;
-   - las etiquetas de la cuenta: Nombre, Apellido(s), Nombre de usuario y Repite la contraseña;
-   - crear un mundo es un cuadro;
-   - Historial y Papelera son botones que abren ventana;
-   - borrar un mundo va por el engranaje y su zona de peligro (`trash.test.tsx`);
-   - renombrar un mundo, también por el engranaje (`focus.test.tsx`);
-   - la llama de carga es otro `role="status"` (las pruebas que buscan uno solo);
-   - la portada sin sesión y el menú de la cuenta (`app.test`, `account.test`, `account-menu.test`, `page-title.test`);
-   - los ajustes de IA, dentro de Ajustes (`ai-settings.test.tsx`);
-   - el Inicio del mundo y la pestaña Campañas (`world.test.tsx`; en `campaign.test.tsx`, «desde el mundo se entra en
-     la campaña»): pruebas nuevas de la cabecera, lo reciente, crear y ajustar campañas, y la barra del mundo.
-   Hoy: 17 de 233 fallan en `apps/web`, todas por esto.
-   En `apps/server`, el arranque y el MCP crean dos cuentas con el mismo nombre de usuario (`USERNAME_TAKEN`); la
-   de edición en vivo (`collab`) a veces da un bloqueo de Postgres con todo a la vez, y sola pasa.
-   - Entrar con sesión redirige; Historial y Papelera de la cuenta, sin enlace de vuelta;
-   - Perfil y Ajustes, en el menú;
-   - el tema ya no está en la barra;
-   - mientras carga sale la llama (`Loading`), no la pantalla en blanco;
-   - las tarjetas de la IA;
-   - el bootstrap y la unión, con `firstName` y `lastName`;
-   - `USERNAME_TAKEN`;
-   - el contrato de `Account`;
-   - las pruebas nuevas de la ventana y el perfil (las de los recorridos ya están).
-2. `pnpm test` entero y `pnpm e2e`.
-3. PR, CI y staging; las migraciones 0024, 0025 y 0026 se aplican al desplegar.
-4. En `.env` de desarrollo, `PUBLIC_URL` pasó a `http://localhost:5173`: Enrique entra por `localhost` y el servidor
-   rechazaba las peticiones de `127.0.0.1` con `BAD_ORIGIN`. Solo afecta al desarrollo.
+**En `interfaz/pulir-2`** (2026-10-30, en local): «Ver» de las portadas arreglado (con su e2e); portadas al momento;
+«Últimos artículos»; archivos en tarjetas con carpetas (migración 0027), buscador, filtro y subidas que se cancelan
+(el servidor ya tira una subida cortada); borrar un mundo con ceniza, distinto de crearlo; humo al salir de un mundo.
+
+**También en `interfaz/pulir-2`** (2026-10-30): archivos de un mundo con el mismo diseño que los comunes (árbol a la
+izquierda, detalle a la derecha al pasar el ratón); Mis mundos con el mundo señalado a la izquierda; la barra del
+mundo con un solo «Wiki». **Móvil**: barra de abajo con huecos fijos y «Más» en una hoja; las ventanas suben desde
+abajo; en Archivos, selector de carpeta y hoja del archivo. **Etiquetas de la cuenta** (ADR-0006, migración 0028):
+«Etiquetas» en la barra de Mis mundos (crear, color, renombrar y borrar, con sus hijas); en los archivos, en su ventana
+y como filtro; en las páginas, con su color y sugerencias de la cuenta; herramientas MCP `listar_etiquetas`,
+`crear_etiqueta`, `cambiar_etiqueta`, `borrar_etiqueta` y `etiquetar_archivo`. Sin pestaña en la barra del mundo.
+
+**Pruebas de Enrique en el móvil** (2026-10-30, hecho): la llama en el centro de la barra; dentro de un mundo ya no
+sale el «Archivos» común (la animación de entrar no acaba en el móvil); hojas que bajan enteras y visor centrado; filas
+enteras pulsables; hoja también para las carpetas; borrar varios de una vez; borrar una carpeta se lleva lo de dentro
+(acción `deleteFiles`); sin ruta, sin «Reemplazar» ni «Carpeta» en la ventana del archivo; soltar en la caja del árbol
+lleva a lo más alto, y un común no se suelta en una carpeta del mundo.
+
+**Segunda tanda de sus pruebas** (2026-10-31): en el móvil, sin barra: la llama sola y su menú con todas las
+secciones; hoja al tocar una etiqueta; «Elegir» por toque; casillas solo con ratón; el panel de la etiqueta ya no se
+encoge (la pantalla va a todo lo ancho); guía de Etiquetas.
+
+**Lo siguiente**: seguir puliendo en la rama `interfaz/pulir-2`. Falta que Enrique vea el Inicio del mundo y la
+pestaña Campañas; la página de una campaña aún lleva la franja antigua. Pequeños pendientes vistos al probar:
+- reabrir una ventana en el instante en que se cierra no la abre (`components/window.tsx`, el mismo `kind`);
+- Perfil anuncia «Guardado» dos veces (su `role="status"` y el anunciador);
+- `collab.integration.test.ts` › «guardar es fusionar» falla a veces con la máquina cargada (su espera de 1 s).
+
+**Al cerrar cada parte**: todo en verde en local (lint, tipos, `pnpm test`, e2e) antes de subir; un solo push por PR.
+Los minutos de GitHub Actions son pocos.
+
 
 ### Punto de control: tras las tareas 1 y 2
 - [ ] e2e, @fugas y @a11y en verde; desplegado en staging.

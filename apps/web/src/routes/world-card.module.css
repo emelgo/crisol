@@ -1,3 +1,122 @@
+/*
+ * Mis mundos: la columna del centro como en las demás vistas (con el título) y, a la izquierda, fuera de ella, el mundo
+ * sobre el que está el ratón (solo mientras lo está). Sin sitio, el panel se quita
+ */
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 52rem) minmax(0, 1fr);
+  gap: var(--space-6);
+  align-items: start;
+  padding: var(--space-8) var(--space-6);
+}
+
+.center {
+  grid-column: 2;
+  min-inline-size: 0;
+}
+
+.detail {
+  grid-column: 1;
+  grid-row: 1;
+  position: sticky;
+  inset-block-start: var(--space-4);
+  justify-self: end;
+  inline-size: min(100%, 22rem);
+  /* Bajo el título, a la altura de las tarjetas */
+  margin-block-start: 5.45rem;
+}
+
+/* Con menos sitio (o con zoom), la columna del centro se estrecha y el panel sigue; sin sitio, se quita (y en lo
+   táctil no hay ratón que pasar por encima) */
+@media (max-width: 90rem) {
+  .layout {
+    grid-template-columns: minmax(16rem, 20rem) minmax(0, 1fr) 0;
+  }
+}
+
+@media (max-width: 64rem) {
+  .layout {
+    grid-template-columns: 0 minmax(0, 52rem) 0;
+    justify-content: center;
+  }
+
+  .detail {
+    display: none;
+  }
+}
+
+@media (max-width: 48rem) {
+  .layout {
+    padding: var(--space-6) var(--space-4);
+  }
+}
+
+.detailHint {
+  margin: 0;
+  padding: var(--space-4);
+  border: 1px dashed var(--color-frame);
+  border-radius: 6px;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+/* El panel del mundo: como su tarjeta, con el contorno de su color; asoma desde la columna */
+.detailBody {
+  composes: frame from "../components/frame.module.css";
+  display: flex;
+  flex-direction: column;
+  animation: asoma 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  background: color-mix(in srgb, var(--world-color, var(--color-frame)) 55%, var(--color-frame));
+}
+
+.detailBody .header {
+  margin: 1px 1px 0;
+}
+
+.detailBody .frame {
+  block-size: 10rem;
+  clip-path: polygon(11px 0, calc(100% - 11px) 0, 100% 11px, 100% 100%, 0 100%, 0 11px);
+}
+
+.detailText {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+}
+
+.detailName {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  color: var(--color-text);
+  font-size: 1.5rem;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-1) var(--space-3);
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+.facts dt {
+  color: var(--color-muted);
+}
+
+.facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.detailActions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
 /* Como Ajustes: una columna en el centro, con el título y lo demás alineados */
 .page {
   inline-size: min(100%, 52rem);
@@ -65,8 +184,8 @@
 
 /*
  * Con temática de crisol. Recién creada, se forja: sale del crisol al rojo (sube y crece, con un brillo de metal
- * fundido encima) y se enfría (el contorno, de naranja a su color). Borrada, arde: el fuego la recorre de abajo
- * arriba, queda en ceniza y se va como humo. Empieza cuando la ventana ya se ha ido
+ * fundido encima) y se enfría (el contorno, de naranja a su color). Borrada, sin fuego: se apaga a gris carbón, la
+ * ceniza la cubre de arriba abajo y se va. Empieza cuando la ventana ya se ha ido
  */
 .card::after {
   content: "";
@@ -94,7 +213,7 @@
   pointer-events: none;
 }
 
-/* Lo de dentro se vuelve ceniza; el fuego (::after), por encima, conserva su color */
+/* Lo de dentro se apaga a gris carbón; la ceniza (::after) lo cubre de arriba abajo */
 .burning > * {
   animation: ceniza 1300ms ease-in 200ms forwards;
 }
@@ -102,17 +221,15 @@
 .burning::after {
   background:
     linear-gradient(
-      to top,
-      rgb(20 10 6 / 0.92) 0%,
-      rgb(50 18 8 / 0.85) 30%,
-      #ff4d1a 34%,
-      #ffc04d 37%,
-      rgb(255 120 40 / 0.5) 41%,
+      to bottom,
+      rgb(28 26 25 / 0.95) 0%,
+      rgb(60 57 54 / 0.85) 34%,
+      rgb(120 116 110 / 0.35) 40%,
       transparent 47%
     )
-    0 0 / 100% 300% no-repeat;
+    0 100% / 100% 300% no-repeat;
   opacity: 1;
-  animation: llamas 1000ms ease-out 200ms forwards;
+  animation: llamas 1000ms ease-in 200ms forwards;
 }
 
 @keyframes forja {
@@ -149,27 +266,31 @@
 }
 
 @keyframes llamas {
-  to {
+  from {
     background-position: 0 100%;
+  }
+
+  to {
+    background-position: 0 0;
   }
 }
 
 @keyframes arde {
   0%,
   30% {
-    background: var(--color-brand-glow);
+    background: #6b6763;
   }
 
   65% {
     opacity: 1;
     transform: none;
-    background: #2a1a14;
+    background: #2a2826;
   }
 
   100% {
     opacity: 0;
-    transform: translateY(-18px) scale(0.94);
-    background: #2a1a14;
+    transform: translateY(-12px) scale(0.96);
+    background: #2a2826;
   }
 }
 
@@ -279,8 +400,8 @@
 
 /* Al pasar el ratón, la portada se acerca un poco: por la tarjeta (que es un enlace) o por la de la ventana */
 .card:hover .picture,
-.frame:hover .picture,
-.frame:focus-within .picture {
+.header:hover .picture,
+.header:focus-within .picture {
   transform: scale(1.06);
 }
 
@@ -307,8 +428,8 @@
 }
 
 .card:hover .coverActions,
-.frame:hover .coverActions,
-.frame:focus-within .coverActions {
+.header:hover .coverActions,
+.header:focus-within .coverActions {
   opacity: 1;
 }
 
@@ -463,12 +584,12 @@
   margin: 0 0 0 auto;
 }
 
-/* Una sección de la página (Lo último de la wiki, Tus campañas) */
+/* Una sección de la página (Últimos artículos, Tus campañas) */
 .section h2 {
   margin-block-end: var(--space-4);
 }
 
-/* Lo último de la wiki: una lista, cada página con su miniatura, su título, las de encima y cuándo cambió */
+/* Últimos artículos: una lista, cada página con su miniatura, su título, las de encima y cuándo cambió */
 .recent {
   display: grid;
   gap: var(--space-1);
@@ -659,4 +780,11 @@
   overflow: hidden;
   clip-path: inset(50%);
   white-space: nowrap;
+}
+
+@keyframes asoma {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
 }

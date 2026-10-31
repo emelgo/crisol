@@ -22,9 +22,14 @@ export function RootLayout() {
   const router = useRouter()
   const focusHeading = useFocusHeading()
   const { account, pending } = useAccounts().useAccount()
-  // La wiki ocupa todo el ancho: el panel lateral y la página, uno al lado del otro
+  // La wiki ocupa todo el ancho: el panel lateral y la página, uno al lado del otro; Mis mundos, los archivos comunes y
+  // las etiquetas, con su columna en el centro y paneles a los lados
   const wide = useRouterState({
-    select: (state) => /^\/mundos\/[^/]+\/(wiki|etiquetas|archivos|buscar)/.test(state.location.pathname)
+    select: (state) =>
+      /^\/mundos\/[^/]+\/(wiki|etiquetas|archivos|buscar)/.test(state.location.pathname) ||
+      state.location.pathname === '/archivos' ||
+      state.location.pathname === '/etiquetas' ||
+      state.location.pathname === '/mundos'
   })
   // Imprimir: solo la hoja, sin nada de la interfaz
   const printing = useRouterState({ select: (state) => /^\/mundos\/[^/]+\/imprimir\//.test(state.location.pathname) })

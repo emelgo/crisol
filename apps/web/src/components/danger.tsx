@@ -29,13 +29,15 @@ interface Props {
   warning: string
   label: string
   onConfirm: () => Promise<unknown>
+  /** false: basta con confirmar, sin escribir el nombre (para lo que se recupera de la papelera y pesa poco, un archivo) */
+  typed?: boolean
 }
 
 /**
  * Algo que no conviene hacer sin querer (borrar un mundo): el botón abre una confirmación en la que hay que escribir
  * el nombre. Hasta que coincide, no se puede confirmar
  */
-export function ConfirmByName({ name, action, title, warning, label, onConfirm }: Props) {
+export function ConfirmByName({ name, action, title, warning, label, onConfirm, typed: mustType = true }: Props) {
   const { t } = useTranslation()
   const errorText = useErrorText()
   const dialog = useRef<HTMLDialogElement>(null)
@@ -45,7 +47,7 @@ export function ConfirmByName({ name, action, title, warning, label, onConfirm }
   const [open, setOpen] = useState(false)
   const [typed, setTyped] = useState('')
   const confirm = useMutation({ mutationFn: onConfirm })
-  const matches = typed.trim() === name.trim()
+  const matches = !mustType || typed.trim() === name.trim()
   return (
     <>
       <button
@@ -84,21 +86,31 @@ export function ConfirmByName({ name, action, title, warning, label, onConfirm }
             <p id={warningId} className={dialogStyles.description}>
               {warning}
             </p>
-            <p className={dialogStyles.description}>
-              {t('danger.typeName')} <strong className={styles.name}>{name}</strong>
-            </p>
-            <Field
-              label={label}
-              value={typed}
-              autoComplete="off"
-              spellCheck={false}
-              // El cursor, en el campo en cuanto se abre (lo pone Modal, ya abierto)
-              data-autofocus=""
-              onChange={(event) => setTyped(event.currentTarget.value)}
-            />
+            {mustType && (
+              <>
+                <p className={dialogStyles.description}>
+                  {t('danger.typeName')} <strong className={styles.name}>{name}</strong>
+                </p>
+                <Field
+                  label={label}
+                  value={typed}
+                  autoComplete="off"
+                  spellCheck={false}
+                  // El cursor, en el campo en cuanto se abre (lo pone Modal, ya abierto)
+                  data-autofocus=""
+                  onChange={(event) => setTyped(event.currentTarget.value)}
+                />
+              </>
+            )}
             <FormError message={confirm.error ? errorText(confirm.error) : null} />
             <div className={dialogStyles.actions}>
-              <button type="button" className={dialogStyles.cancel} onClick={() => dialog.current?.close()}>
+              <button
+                type="button"
+                className={dialogStyles.cancel}
+                // Sin nombre que escribir, el foco empieza en lo que no borra
+                data-autofocus={mustType ? undefined : ''}
+                onClick={() => dialog.current?.close()}
+              >
                 {t('list.cancel')}
               </button>
               <BusyButton type="submit" className={styles.solid} busy={confirm.isPending} disabled={!matches}>

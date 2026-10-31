@@ -23,10 +23,12 @@ function changedBy(message: RealtimeMessage): QueryKey[] {
     case 'changed':
       if (message.what === 'worlds' || message.what === 'approvals') return [[message.what]]
       if (message.what === 'campaigns') return [['campaigns', message.worldId]]
-      if (message.what === 'pages') return [['pages', message.worldId]]
-      if (message.what === 'files') return [['files', message.worldId]]
+      // Lo que lleva etiquetas cambia también su catálogo
+      if (message.what === 'pages') return [['pages', message.worldId], ['tags']]
+      if (message.what === 'files') return [['files', message.worldId], ['tags']]
       // Los comunes salen en los archivos de todos los mundos
-      if (message.what === 'commonFiles') return [['files'], ['commonFiles']]
+      if (message.what === 'commonFiles') return [['files'], ['commonFiles'], ['tags']]
+      if (message.what === 'tags') return [['tags']]
       // El texto de una página: lo que la enseña en otra y los enlaces (sus trozos)
       if (message.what === 'pageContent') {
         return [

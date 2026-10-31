@@ -112,7 +112,7 @@ function SwitcherDialog({
       kind: 'command',
       id: 'tags',
       label: t('switcher.commands.tags'),
-      run: () => go('/mundos/$worldId/etiquetas', { worldId })
+      run: () => go('/etiquetas', {})
     },
     {
       kind: 'command',

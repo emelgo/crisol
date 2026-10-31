@@ -11,6 +11,11 @@ import { focusOnMount, useReturnFocus } from '../components/focus.ts'
 import form from '../components/form.module.css'
 import list from '../components/list.module.css'
 import styles from './properties.module.css'
+import tagStyles from './tags.module.css'
+import { TagsField, tagDot, useTagColor } from './tags.tsx'
+
+/** La propiedad de las etiquetas */
+const isTagsName = (name: string) => name.trim().toLocaleLowerCase('es') === 'etiquetas'
 
 type PropertyType = PageProperty['type']
 const TYPES: PropertyType[] = ['text', 'number', 'boolean', 'list', 'pages']
@@ -39,6 +44,8 @@ interface Draft {
   text: string
   checked: boolean
   pages: string[]
+  /** Las etiquetas escritas aún sin poner: van con las demás al guardar */
+  pending?: string
 }
 
 const toDraft = (property: PageProperty): Draft => ({
@@ -71,10 +78,12 @@ function fromDraft(draft: Draft): PageProperty | null {
       return {
         name,
         type: 'list',
-        value: draft.text
-          .split(',')
+        value: [
+          ...draft.text.split(','),
+          ...(draft.pending ?? '').split(',').map((item) => item.replace(/\s/g, '').replace(/^#/, ''))
+        ]
           .map((item) => item.trim())
-          .filter(Boolean)
+          .filter((item, i, all) => item && all.indexOf(item) === i)
       }
     case 'pages':
       return { name, type: 'pages', value: draft.pages }
@@ -85,12 +94,33 @@ function fromDraft(draft: Draft): PageProperty | null {
 function PropertyValue({ property, worldId }: { property: PageProperty; worldId: string }) {
   const { t } = useTranslation()
   const titles = usePageTitles(worldId)
+  const colorOf = useTagColor()
   switch (property.type) {
     case 'number':
       return <>{property.value.toLocaleString('es')}</>
     case 'boolean':
       return <>{t(property.value ? 'properties.yes' : 'properties.no')}</>
     case 'list':
+      // Las etiquetas, con su color, llevan a buscar las páginas que la llevan
+      if (isTagsName(property.name)) {
+        return (
+          <ul className={tagStyles.chips}>
+            {property.value.map((tag) => (
+              <li key={tag}>
+                <Link
+                  to="/mundos/$worldId/buscar"
+                  params={{ worldId }}
+                  search={{ etiqueta: tag }}
+                  className={`${tagStyles.chip} ${tagStyles.chipLink}`}
+                  style={tagDot(colorOf(tag))}
+                >
+                  {tag}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )
+      }
       return (
         <ul className={styles.chips}>
           {property.value.map((item) => (
@@ -412,6 +442,22 @@ function ValueField({
       )
     }
     default: {
+      // Las etiquetas, de las de la cuenta (ADR-0006): como en un archivo
+      if (draft.type === 'list' && isTagsName(draft.name)) {
+        const tags = draft.text
+          .split(',')
+          .map((tag) => tag.trim())
+          .filter(Boolean)
+        return (
+          <TagsField
+            id={valueId}
+            label={label}
+            value={tags}
+            onChange={(next) => onChange({ text: next.join(', ') })}
+            onPending={(pending) => onChange({ pending })}
+          />
+        )
+      }
       const long = draft.type === 'text' && draft.name.trim().toLocaleLowerCase('es') === 'resumen'
       return (
         <div className={form.field}>

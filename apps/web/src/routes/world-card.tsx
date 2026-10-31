@@ -85,10 +85,12 @@ const tint = (color: World['color']): CSSProperties | undefined => {
   return hex ? ({ '--world-color': hex } as CSSProperties) : undefined
 }
 
-/** La imagen de su portada, si quien mira puede ver las imágenes de su mundo (quien lo dirige); si no, su color */
-function useCoverImage(kind: LookKind, look: Look) {
-  const files = useWorldFiles(kind.worldOf(look) ?? '', look.role === 'master' && look.cover !== null)
-  return look.cover ? files.data?.files.find((f) => f.id === look.cover?.fileId) : undefined
+/**
+ * La imagen de su portada, si quien mira puede ver las imágenes de su mundo (quien lo dirige); si no, su color. Su
+ * dirección sale de su id: se pide al momento, sin esperar a la lista de archivos
+ */
+function useCoverImage(look: Look) {
+  return look.cover && look.role === 'master' ? { url: `/api/files/${look.cover.fileId}` } : undefined
 }
 
 /**
@@ -103,7 +105,8 @@ function LookCard({
   style,
   fresh = false,
   burning = false,
-  onBurnt
+  onBurnt,
+  onPreview
 }: {
   kind: LookKind
   look: Look
@@ -112,9 +115,11 @@ function LookCard({
   fresh?: boolean
   burning?: boolean
   onBurnt?: () => void
+  /** Al pasar el ratón o llegar con el foco (true) y al irse (false): para enseñarlo en el panel de al lado */
+  onPreview?: ((shown: boolean) => void) | undefined
 }) {
   const { t } = useTranslation()
-  const image = useCoverImage(kind, look)
+  const image = useCoverImage(look)
   const [viewing, setViewing] = useState(false)
   // Recién creada, entra animada hasta acabar (aunque la página se vuelva a pintar mientras)
   const [entering, setEntering] = useState(fresh)
@@ -143,6 +148,12 @@ function LookCard({
       }}
       style={{ ...tint(look.color), ...style }}
       data-card={look.id}
+      onPointerEnter={() => onPreview?.(true)}
+      onPointerLeave={() => onPreview?.(false)}
+      onFocus={() => onPreview?.(true)}
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) onPreview?.(false)
+      }}
     >
       <CoverHeader
         url={image?.url}
@@ -176,12 +187,14 @@ export function WorldCard({
   world,
   fresh,
   burning,
-  onBurnt
+  onBurnt,
+  onPreview
 }: {
   world: World
   fresh?: boolean
   burning?: boolean
   onBurnt?: () => void
+  onPreview?: (shown: boolean) => void
 }) {
   const kind = useWorldKind()
   return (
@@ -192,6 +205,7 @@ export function WorldCard({
       fresh={fresh}
       burning={burning}
       {...(onBurnt ? { onBurnt } : {})}
+      onPreview={onPreview}
       name={
         <Link
           to="/mundos/$worldId"
@@ -258,7 +272,7 @@ export function LookHeader({
   afterDelete: () => void
 }) {
   const { t } = useTranslation()
-  const image = useCoverImage(kind, look)
+  const image = useCoverImage(look)
   const [viewing, setViewing] = useState(false)
   return (
     <header className={styles.hero} style={{ ...tint(look.color), ...style }}>
@@ -314,10 +328,22 @@ function CoverHeader({
     <div className={classes.join(' ')}>
       <div className={styles.frame}>
         <div className={styles.picture}>
-          {url && cover && <img src={url} alt="" className={styles.image} style={coverStyle(cover)} />}
+          {url && cover && (
+            <img
+              src={url}
+              alt=""
+              className={styles.image}
+              style={coverStyle(cover)}
+              // Si ya no está (en la papelera), queda el hueco con su color
+              onError={(event) => {
+                event.currentTarget.hidden = true
+              }}
+            />
+          )}
         </div>
-        {actions && <div className={styles.coverActions}>{actions}</div>}
       </div>
+      {/* Fuera del marco: su recorte las dejaría debajo del enlace que cubre la tarjeta */}
+      {actions && <div className={styles.coverActions}>{actions}</div>}
     </div>
   )
 }
@@ -662,7 +688,13 @@ function LookDialog({
 }
 
 /** El color: ninguno, uno de los fijos, uno de los propios que ya se crearon o uno nuevo, con el selector de color */
-function ColorChoices({ value, onChange }: { value: World['color']; onChange: (color: World['color']) => void }) {
+export function ColorChoices({
+  value,
+  onChange
+}: {
+  value: World['color']
+  onChange: (color: World['color']) => void
+}) {
   const { t } = useTranslation()
   const { account } = useAccounts().useAccount()
   const name = useId()
@@ -699,5 +731,51 @@ function ColorChoices({ value, onChange }: { value: World['color']; onChange: (c
         <span className={styles.hidden}>{t('worlds.customColor')}</span>
       </label>
     </fieldset>
+  )
+}
+
+/**
+ * El mundo sobre el que está el ratón, en el panel de la izquierda de Mis mundos: su portada, su descripción, sus
+ * campañas y cuántos archivos tiene (se entra y se ajusta desde su tarjeta)
+ */
+export function WorldDetail({ world }: { world: World }) {
+  const { t } = useTranslation()
+  const api = useApi()
+  const master = world.role === 'master'
+  const image = useCoverImage(world)
+  const campaigns = useQuery({
+    queryKey: ['campaigns', world.id],
+    queryFn: () => api.call('listCampaigns', { worldId: world.id })
+  })
+  const files = useWorldFiles(world.id, master)
+  const own = files.data?.files.filter((file) => file.worldId !== null).length
+  return (
+    <div className={styles.detailBody} style={tint(world.color)}>
+      <CoverHeader url={image?.url} cover={world.cover} />
+      <div className={styles.detailText}>
+        <h2 className={styles.detailName}>{world.name}</h2>
+        {world.description && <p className={styles.description}>{world.description}</p>}
+        <dl className={styles.facts}>
+          <dt>{t('campaigns.title')}</dt>
+          <dd>
+            {campaigns.data
+              ? campaigns.data.campaigns.length > 0
+                ? campaigns.data.campaigns.map((c) => c.name).join(' · ')
+                : t('worlds.noCampaigns')
+              : '…'}
+          </dd>
+          {master && (
+            <>
+              <dt>{t('files.title')}</dt>
+              <dd>
+                {own === undefined ? '…' : own > 0 ? t('files.folderFiles', { count: own }) : t('worlds.noFiles')}
+              </dd>
+            </>
+          )}
+          <dt>{t('worlds.roleLabel')}</dt>
+          <dd>{t(`roles.${world.role}`)}</dd>
+        </dl>
+      </div>
+    </div>
   )
 }

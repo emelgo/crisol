@@ -84,7 +84,13 @@ export const MCP_TOOLS: Record<string, McpTool> = {
   listar_archivos: { action: 'listFiles' },
   buscar_paginas: { action: 'searchWiki' },
   mover_pagina: { action: 'movePage' },
-  borrar_pagina: { action: 'deletePage' }
+  borrar_pagina: { action: 'deletePage' },
+  // Las etiquetas de la cuenta (ADR-0006); las de una página van en sus propiedades
+  listar_etiquetas: { action: 'listAccountTags' },
+  crear_etiqueta: { action: 'createTag' },
+  cambiar_etiqueta: { action: 'updateTag' },
+  borrar_etiqueta: { action: 'deleteTag' },
+  etiquetar_archivo: { action: 'setFileTags' }
 }
 
 const INSTRUCTIONS =
@@ -94,7 +100,8 @@ const INSTRUCTIONS =
   'y lo que solo debe saber el máster va en > [!secreto]). Antes de crear, busca con buscar_paginas para no repetir. ' +
   'Para pasar una wiki entera: crear_paginas de 50 en 50, en cualquier orden (los enlaces se resuelven solos), y al ' +
   'final enlaces_pagina con worldId para ver lo que quede sin resolver; los archivos los sube el máster y se enlazan ' +
-  'por su nombre (listar_archivos). Lo que cambies queda ' +
+  'por su nombre (listar_archivos). Las etiquetas son de toda la cuenta: míralas con listar_etiquetas y usa las que ' +
+  'ya hay antes de inventar otras. Lo que cambies queda ' +
   'en el historial de Crisol y el máster puede deshacerlo. Según el modo de IA que elija el máster, algunas acciones ' +
   'esperan su aprobación en Crisol: no las repitas, mira cómo acabaron con pendientes; si rechaza una, no insistas.'
 

@@ -5,7 +5,7 @@
 import { and, asc, eq, inArray, isNotNull, isNull, or, type SQL, sql } from 'drizzle-orm'
 import type { Database } from '../client.ts'
 import { type OperationContext, operation } from '../operation.ts'
-import { files } from '../schema/files.ts'
+import { fileFolders, files } from '../schema/files.ts'
 
 export type FileKind = 'image' | 'pdf' | 'other'
 
@@ -54,7 +54,7 @@ export async function freeName(db: Database, scope: FileScope, wanted: string, e
 export function createFile(
   db: Database,
   context: OperationContext,
-  input: { organizationId: string; worldId: string | null; name: string } & FileContent
+  input: { organizationId: string; worldId: string | null; folderId?: string | null; name: string } & FileContent
 ) {
   return operation(db, context, (w) => w.insert(files, input))
 }
@@ -63,7 +63,7 @@ export function updateFile(
   db: Database,
   context: OperationContext,
   fileId: string,
-  patch: Partial<FileContent & { name: string; deletedAt: Date | null }>
+  patch: Partial<FileContent & { name: string; folderId: string | null; deletedAt: Date | null }>
 ) {
   return operation(db, context, (w) => w.update(files, fileId, patch))
 }
@@ -118,4 +118,100 @@ export function filesInWorld(db: Database, worldId: string, ids: readonly string
     .select({ id: files.id })
     .from(files)
     .where(and(usableIn(worldId), inArray(files.id, [...ids])))
+}
+
+const folderInScope = (scope: FileScope): SQL | undefined =>
+  'worldId' in scope
+    ? eq(fileFolders.worldId, scope.worldId)
+    : and(isNull(fileFolders.worldId), eq(fileFolders.organizationId, scope.organizationId))
+
+/** Las carpetas de un ámbito (un mundo o los comunes de una organización), por nombre */
+export function listFolders(db: Database, scope: FileScope) {
+  return db
+    .select()
+    .from(fileFolders)
+    .where(folderInScope(scope))
+    .orderBy(asc(sql`lower(${fileFolders.name})`))
+}
+
+/** Las carpetas que se ven desde un mundo: las suyas y las de los comunes de su organización */
+export function usableFolders(db: Database, worldId: string) {
+  return db
+    .select()
+    .from(fileFolders)
+    .where(
+      or(
+        eq(fileFolders.worldId, worldId),
+        and(
+          isNull(fileFolders.worldId),
+          sql`${fileFolders.organizationId} = (select organization_id from worlds where id = ${worldId})`
+        )
+      )
+    )
+    .orderBy(asc(sql`lower(${fileFolders.name})`))
+}
+
+export async function findFolder(db: Database, folderId: string) {
+  const [found] = await db.select().from(fileFolders).where(eq(fileFolders.id, folderId))
+  return found ?? null
+}
+
+export function createFolder(
+  db: Database,
+  context: OperationContext,
+  input: { organizationId: string; worldId: string | null; parentId: string | null; name: string }
+) {
+  return operation(db, context, (w) => w.insert(fileFolders, input))
+}
+
+export function updateFolder(
+  db: Database,
+  context: OperationContext,
+  folderId: string,
+  patch: Partial<{ name: string; parentId: string | null }>
+) {
+  return operation(db, context, (w) => w.update(fileFolders, folderId, patch))
+}
+
+/** Borra una carpeta con lo que tiene dentro (sus archivos, a la papelera), en una operación */
+export function deleteFolder(db: Database, context: OperationContext, folderId: string) {
+  return trashItems(db, context, { fileIds: [], folderIds: [folderId] })
+}
+
+/**
+ * Borra de una vez (una operación, que se deshace entera) archivos y carpetas de un mismo ámbito: los archivos van a
+ * la papelera, y las carpetas se quitan con todo lo que tengan dentro (sus archivos, a la papelera; sus carpetas,
+ * también quitadas). Un archivo de la papelera vuelve a lo más alto. Devuelve cuántos archivos fueron a la papelera
+ */
+export function trashItems(
+  db: Database,
+  context: OperationContext,
+  items: { fileIds: readonly string[]; folderIds: readonly string[] }
+) {
+  return operation(db, context, async (w) => {
+    // Las carpetas y todas las de dentro
+    const gone = new Set<string>()
+    let level = [...items.folderIds]
+    while (level.length > 0) {
+      for (const id of level) gone.add(id)
+      const children = await w.read
+        .select({ id: fileFolders.id })
+        .from(fileFolders)
+        .where(inArray(fileFolders.parentId, level))
+      level = children.map((child) => child.id).filter((id) => !gone.has(id))
+    }
+    const inside =
+      gone.size > 0
+        ? await w.read
+            .select({ id: files.id })
+            .from(files)
+            .where(and(inArray(files.folderId, [...gone]), isNull(files.deletedAt)))
+        : []
+    const fileIds = new Set([...items.fileIds, ...inside.map((file) => file.id)])
+    const now = new Date()
+    for (const id of fileIds) await w.update(files, id, { deletedAt: now, folderId: null })
+    // De las de dentro a las de fuera (una madre no se quita antes que sus hijas)
+    for (const id of [...gone].reverse()) await w.remove(fileFolders, id)
+    return fileIds.size
+  })
 }

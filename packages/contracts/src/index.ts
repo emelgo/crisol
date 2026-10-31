@@ -7,7 +7,18 @@ import {
   renameCampaign,
   updateCampaign
 } from './campaigns.ts'
-import { deleteFile, listCommonFiles, listFiles, renameFile, restoreFile } from './files.ts'
+import {
+  createFolder,
+  deleteFile,
+  deleteFiles,
+  deleteFolder,
+  listCommonFiles,
+  listFiles,
+  moveFile,
+  renameFile,
+  restoreFile,
+  updateFolder
+} from './files.ts'
 import { listHistory, undoOperation } from './history.ts'
 import { getInvitation, regenerateInvitation, setInvitationsOpen } from './invitations.ts'
 import { leaveCampaign, listMembers, removeMember } from './members.ts'
@@ -40,6 +51,7 @@ import {
   updatePage
 } from './pages.ts'
 import { searchWiki } from './search.ts'
+import { createTag, deleteTag, listAccountTags, setFileTags, updateTag } from './tags.ts'
 import {
   deleteCampaign,
   deletePage,
@@ -63,6 +75,7 @@ export * from './organizations.ts'
 export * from './pages.ts'
 export type * from './realtime.ts'
 export * from './search.ts'
+export * from './tags.ts'
 export * from './trash.ts'
 export * from './worlds.ts'
 
@@ -129,7 +142,17 @@ export const ACTIONS = [
   renameFile,
   deleteFile,
   restoreFile,
-  searchWiki
+  createFolder,
+  updateFolder,
+  deleteFolder,
+  deleteFiles,
+  moveFile,
+  searchWiki,
+  listAccountTags,
+  createTag,
+  updateTag,
+  deleteTag,
+  setFileTags
 ]
 
 /** Las acciones por nombre, solo como tipo: la web las usa sin cargar zod */
@@ -195,5 +218,15 @@ export type Actions = {
   renameFile: typeof renameFile
   deleteFile: typeof deleteFile
   restoreFile: typeof restoreFile
+  createFolder: typeof createFolder
+  updateFolder: typeof updateFolder
+  deleteFiles: typeof deleteFiles
+  deleteFolder: typeof deleteFolder
+  moveFile: typeof moveFile
+  listAccountTags: typeof listAccountTags
+  createTag: typeof createTag
+  updateTag: typeof updateTag
+  deleteTag: typeof deleteTag
+  setFileTags: typeof setFileTags
   searchWiki: typeof searchWiki
 }

@@ -100,6 +100,12 @@ label {
   outline-offset: 2px;
 }
 
+/* Un título recibe el foco al cambiar de página (para quien usa lector de pantalla): sin recuadro, no es un control */
+h1[tabindex="-1"]:focus,
+h1[tabindex="-1"]:focus-visible {
+  outline: none;
+}
+
 /* Una sección con título es una caja de la hoja: marco de 1px con las esquinas cortadas */
 main section[aria-labelledby],
 dialog section[aria-labelledby] {
@@ -188,6 +194,51 @@ dialog[open]::backdrop {
 }
 
 /*
+ * En el móvil, los cuadros y las ventanas son hojas que suben desde abajo: a todo lo ancho, con las esquinas de arriba
+ * redondeadas, un asa y la página oscurecida detrás, para que se note que van encima. Al cerrarse bajan enteras, sin
+ * cambiar de forma (por eso la forma va también en el cerrado). Lo que se ve en grande (data-full) sigue en el centro
+ */
+@media (max-width: 48rem) {
+  dialog:not([data-full]) {
+    inline-size: 100%;
+    max-inline-size: 100%;
+    max-block-size: calc(100dvh - 2.5rem);
+    margin: auto 0 0;
+    border-radius: 16px 16px 0 0;
+    border-block-end: 0;
+    transition-duration: 280ms;
+    transition-timing-function: cubic-bezier(0.4, 0, 1, 1);
+  }
+
+  dialog:not([data-full])::before {
+    content: "";
+    display: block;
+    inline-size: 2.5rem;
+    block-size: 4px;
+    margin: 8px auto 0;
+    border-radius: 2px;
+    background: var(--color-field-border);
+  }
+
+  dialog:not([data-full]):not([open]) {
+    opacity: 1;
+    transform: translateY(100%);
+  }
+
+  dialog:not([data-full])[open] {
+    transition-duration: 360ms;
+    transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @starting-style {
+    dialog:not([data-full])[open] {
+      opacity: 1;
+      transform: translateY(100%);
+    }
+  }
+}
+
+/*
  * Entrar en un mundo y salir de él (transiciones de vista, components/world-transition.ts). Al entrar, Mis mundos se
  * acerca y se desvanece, como si se pasara a través, y el mundo llega creciendo; la tarjeta pulsada se convierte en su
  * cabecera. Al salir, al revés. La barra va aparte (barra) y sin la transición: su propia animación se ve tal cual
@@ -260,6 +311,73 @@ html:active-view-transition-type(entrar-mundo)::view-transition-image-pair(mundo
 ::view-transition-old(brasas),
 ::view-transition-new(brasas) {
   animation: none;
+}
+
+/*
+ * El humo al salir (world-transition.ts): como las brasas al entrar, pero apagadas. Una bruma gris que sube desde
+ * abajo y bocanadas que suben, se ensanchan y se disipan; van por encima
+ */
+.humo {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: radial-gradient(ellipse 65% 40% at 50% 115%, rgb(150 150 158 / 0.2), transparent 70%);
+  opacity: 0;
+  pointer-events: none;
+  view-transition-name: humo;
+  animation: calor 2400ms ease-out forwards;
+}
+
+.humo::before,
+.humo::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  /* Bocanadas: manchas suaves, sin borde, repartidas a lo ancho junto al suelo */
+  background:
+    radial-gradient(ellipse 9% 11% at 18% 96%, rgb(178 178 186 / 0.26), transparent 70%),
+    radial-gradient(ellipse 11% 13% at 34% 99%, rgb(165 165 174 / 0.22), transparent 70%),
+    radial-gradient(ellipse 8% 10% at 49% 95%, rgb(182 182 190 / 0.26), transparent 70%),
+    radial-gradient(ellipse 12% 14% at 64% 100%, rgb(165 165 174 / 0.22), transparent 70%),
+    radial-gradient(ellipse 9% 11% at 81% 97%, rgb(178 178 186 / 0.24), transparent 70%);
+  filter: blur(10px);
+  opacity: 0;
+  animation: humo-sube 2400ms ease-out forwards;
+}
+
+.humo::after {
+  background:
+    radial-gradient(ellipse 10% 12% at 26% 100%, rgb(170 170 178 / 0.22), transparent 70%),
+    radial-gradient(ellipse 8% 10% at 42% 97%, rgb(182 182 190 / 0.24), transparent 70%),
+    radial-gradient(ellipse 11% 13% at 57% 101%, rgb(165 165 174 / 0.2), transparent 70%),
+    radial-gradient(ellipse 9% 11% at 73% 98%, rgb(178 178 186 / 0.24), transparent 70%);
+  animation-delay: 300ms;
+  animation-duration: 2700ms;
+}
+
+::view-transition-group(humo),
+::view-transition-old(humo),
+::view-transition-new(humo) {
+  animation: none;
+}
+
+/* Las bocanadas suben, se abren y se difuminan */
+@keyframes humo-sube {
+  0% {
+    opacity: 0;
+    transform: translateY(0) scale(1, 0.8);
+    filter: blur(8px);
+  }
+
+  25% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(-38vh) scale(1.15, 1.6);
+    filter: blur(22px);
+  }
 }
 
 /* Al salir, la cabecera se enfría (pierde el color y vuelve) mientras vuelve a ser tarjeta */
@@ -344,6 +462,26 @@ html:active-view-transition-type(seccion)::view-transition-old(root) {
   animation: deja-paso 120ms ease-in both;
 }
 
+/* Entre pestañas, lo que lleva su propio nombre de transición (la cabecera o la tarjeta del mundo en el que se entró, la
+   barra…) no se mueve ni se queda: lo de antes se va como la página y lo nuevo llega con ella, sin el viaje lento de
+   entrar en un mundo */
+html:active-view-transition-type(seccion)::view-transition-group(*) {
+  animation-duration: 0s;
+}
+
+html:active-view-transition-type(seccion)::view-transition-old(*) {
+  animation: deja-paso 120ms ease-in both;
+}
+
+html:active-view-transition-type(seccion)::view-transition-new(*) {
+  animation: sube-seccion 260ms cubic-bezier(0.16, 1, 0.3, 1) 90ms both;
+}
+
+/* Salvo la barra, que se queda quieta */
+html:active-view-transition-type(seccion)::view-transition-new(barra) {
+  animation: none;
+}
+
 html:active-view-transition-type(seccion)::view-transition-new(root) {
   animation: sube-seccion 260ms cubic-bezier(0.16, 1, 0.3, 1) 90ms both;
 }
@@ -408,8 +546,9 @@ html:active-view-transition-type(seccion)::view-transition-new(root) {
 
 /*
  * Crear y borrar mundos (components/card-transition.ts). Las demás tarjetas se recolocan deslizándose. Al crear, la
- * ventana se encoge en la tarjeta nueva, al rojo, y se enfría al llegar. Al borrar, la tarjeta se pone al rojo, se quema
- * de abajo arriba y queda en ceniza; las demás esperan a que arda para cerrar el hueco
+ * ventana se encoge en la tarjeta nueva, al rojo, y se enfría al llegar. Al borrar, al revés y sin fuego: la tarjeta se
+ * apaga a gris carbón y se deshace en ceniza de arriba abajo, soltando copos que caen; las demás esperan a que se
+ * deshaga para cerrar el hueco
  */
 html:active-view-transition-type(crear-mundo)::view-transition-group(*),
 html:active-view-transition-type(borrar-mundo)::view-transition-group(*) {
@@ -447,10 +586,11 @@ html:active-view-transition-type(borrar-mundo)::view-transition-group(*) {
 }
 
 ::view-transition-old(.ardiendo) {
-  animation: arde-en-su-sitio 1300ms ease-in forwards;
-  mask-image: linear-gradient(to top, transparent 42%, #000 52%);
+  animation: se-deshace 1300ms ease-in forwards;
+  /* Opaca abajo y transparente arriba: al subir la ventana de la máscara, el borde entra por arriba */
+  mask-image: linear-gradient(to top, #000 40%, transparent 60%);
   mask-size: 100% 300%;
-  mask-position: 0 0;
+  mask-position: 0 100%;
 }
 
 /* Las brasas sobre una tarjeta: un resplandor en su borde de abajo y chispas que suben y se apagan */
@@ -498,27 +638,89 @@ html:active-view-transition-type(borrar-mundo)::view-transition-group(*) {
 
 ::view-transition-group(brasas-tarjeta),
 ::view-transition-old(brasas-tarjeta),
-::view-transition-new(brasas-tarjeta) {
+::view-transition-new(brasas-tarjeta),
+::view-transition-group(ceniza-tarjeta),
+::view-transition-old(ceniza-tarjeta),
+::view-transition-new(ceniza-tarjeta) {
   animation: none;
 }
 
-@keyframes arde-en-su-sitio {
+/* La ceniza sobre una tarjeta que se borra: una bruma gris y copos que se sueltan y caen despacio, apagándose */
+.ceniza-tarjeta {
+  position: fixed;
+  z-index: 100;
+  pointer-events: none;
+  view-transition-name: ceniza-tarjeta;
+  background: radial-gradient(ellipse 80% 45% at 50% 30%, rgb(150 150 160 / 0.16), transparent 70%);
+  opacity: 0;
+  animation: calor 1700ms ease-out 250ms forwards;
+}
+
+.ceniza-tarjeta::before,
+.ceniza-tarjeta::after {
+  content: "";
+  position: absolute;
+  inset-block-start: 22%;
+  inset-inline-start: 50%;
+  inline-size: 3px;
+  block-size: 3px;
+  border-radius: 1px;
+  background: #b8b4ae;
+  box-shadow:
+    -98px 6px 0 0 #8e8a85,
+    -60px -8px 0 1px #a9a49e,
+    -24px 12px 0 0 #77736f,
+    18px -4px 0 1px #c2bdb6,
+    54px 10px 0 0 #8e8a85,
+    90px -6px 0 0 #a9a49e;
+  opacity: 0;
+  animation: copos 1600ms ease-in 350ms forwards;
+}
+
+.ceniza-tarjeta::after {
+  inset-block-start: 38%;
+  box-shadow:
+    -80px -4px 0 1px #a9a49e,
+    -42px 8px 0 0 #8e8a85,
+    6px -6px 0 0 #c2bdb6,
+    44px 6px 0 1px #77736f,
+    82px -2px 0 0 #b8b4ae;
+  animation-delay: 600ms;
+  animation-duration: 1500ms;
+}
+
+@keyframes copos {
   0% {
-    filter: none;
-    mask-position: 0 0;
+    opacity: 0;
+    transform: translate(0, 0) rotate(0);
   }
 
   20% {
-    filter: sepia(1) saturate(4) hue-rotate(-25deg) brightness(1.15);
-  }
-
-  70% {
-    filter: sepia(1) saturate(3) hue-rotate(-30deg) brightness(0.6);
+    opacity: 0.9;
   }
 
   100% {
-    filter: grayscale(1) brightness(0.3);
+    opacity: 0;
+    transform: translate(10px, 90px) rotate(40deg);
+  }
+}
+
+@keyframes se-deshace {
+  0% {
+    filter: none;
     mask-position: 0 100%;
+    transform: none;
+  }
+
+  30% {
+    filter: grayscale(1) brightness(0.45) contrast(1.15);
+    mask-position: 0 100%;
+  }
+
+  100% {
+    filter: grayscale(1) brightness(0.3) blur(1.5px);
+    mask-position: 0 0;
+    transform: translateY(-6px);
   }
 }
 

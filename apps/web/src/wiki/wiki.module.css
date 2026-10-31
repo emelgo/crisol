@@ -21,6 +21,47 @@
   border-inline-end: 1px solid var(--color-border);
 }
 
+/* Las pestañas del panel de la wiki: páginas, buscar y marcadores */
+.panelTabs {
+  display: flex;
+  gap: var(--space-1);
+  margin-block-end: var(--space-3);
+  border-block-end: 1px solid var(--color-border);
+}
+
+.panelTab {
+  flex: 1;
+  min-block-size: 2.25rem;
+  padding: 0 var(--space-2);
+  border: 0;
+  border-block-end: 2px solid transparent;
+  background: none;
+  color: var(--color-muted);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.panelTab:hover {
+  color: var(--color-text);
+}
+
+.panelTab[aria-selected="true"] {
+  border-block-end-color: var(--color-accent);
+  color: var(--color-text);
+}
+
+/* El título del panel: ya lo dicen las pestañas; queda para los lectores de pantalla */
+.hiddenTitle {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 .asideHeader {
   display: flex;
   flex-wrap: wrap;

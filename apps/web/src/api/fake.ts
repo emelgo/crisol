@@ -4,15 +4,18 @@ import type {
   Approval,
   Campaign,
   FileView,
+  FolderView,
   HistoryEntry,
   Invitation,
   Member,
   Organization,
   Page,
   PageProperty,
+  TagView,
   TrashItem,
   World
 } from '@crisol/contracts'
+import { removeTagIn, renameTagIn, tagKey, tagTree, uniqueTags } from '@crisol/domain'
 import { type ActionInput, type ActionName, type ActionOutput, type ApiClient, ApiError } from './client.ts'
 
 export function fakeApi(
@@ -39,6 +42,8 @@ export function fakeApi(
     }>
     /** Los archivos de los mundos (usedBy: cuántas páginas lo usan) */
     files?: Array<Pick<FileView, 'worldId' | 'name'> & Partial<FileView> & { usedBy?: number }>
+    /** Las carpetas de los archivos */
+    folders?: FolderView[]
   } = {}
 ) {
   const organizations = options.organizations ?? []
@@ -72,6 +77,8 @@ export function fakeApi(
       mime: 'image/png',
       size: 1024,
       url: `/api/files/${id}`,
+      tags: [],
+      folderId: null,
       version: 1,
       updatedAt: new Date().toISOString(),
       ...file,
@@ -81,6 +88,12 @@ export function fakeApi(
   const files = (options.files ?? []).map(({ usedBy: _, ...file }) => fileOf(file))
   const fileUses = new Map((options.files ?? []).map((file, i) => [files[i]?.id ?? '', file.usedBy ?? 0]))
   const trashedFiles: FileView[] = []
+  const folders: FolderView[] = [...(options.folders ?? [])]
+  const folderById = (folderId: string) => {
+    const folder = folders.find((f) => f.id === folderId)
+    if (!folder) throw new ApiError('NOT_FOUND', 404)
+    return folder
+  }
   const fileById = (fileId: string) => {
     const file = files.find((f) => f.id === fileId)
     if (!file) throw new ApiError('NOT_FOUND', 404)
@@ -204,6 +217,93 @@ export function fakeApi(
     if (neighbour && !anchor) throw new ApiError('BAD_PLACEMENT', 400)
     const index = anchor ? pages.indexOf(anchor) + (before ? 0 : 1) : pages.length
     pages.splice(index, 0, page)
+  }
+
+  // Las etiquetas de la cuenta (ADR-0006): las guardadas y las que llevan páginas y archivos
+  const tagRows: { id: string; organizationId: string; name: string; color: TagView['color'] }[] = []
+  const tagsOfPage = (page: StoredPage) => {
+    const found = page.properties.find((p) => p.name.toLowerCase() === 'etiquetas')
+    return found?.type === 'list' ? found.value : []
+  }
+  const ownOrganization = (organizationId?: string) =>
+    organizationId ?? organizations.find((o) => o.role === 'owner')?.id ?? ''
+  const catalogOf = (organizationId: string): TagView[] =>
+    tagTree<TagView['color']>({
+      rows: tagRows.filter((row) => row.organizationId === organizationId),
+      pages: pages
+        .filter((page) => worlds.find((w) => w.id === page.worldId)?.organizationId === organizationId)
+        .map((page) => ({ worldId: page.worldId, tags: tagsOfPage(page) })),
+      files: files.filter((file) => file.organizationId === organizationId)
+    }).map((node) => ({
+      id: node.id,
+      name: node.name,
+      depth: node.depth,
+      color: node.color,
+      pages: node.pages,
+      files: node.files,
+      worlds: [...node.worlds].map(([worldId, count]) => ({
+        worldId,
+        name: worlds.find((w) => w.id === worldId)?.name ?? '',
+        pages: count
+      }))
+    }))
+  const tagIn = (organizationId: string, name: string) => {
+    const found = catalogOf(organizationId).find((tag) => tagKey(tag.name) === tagKey(name))
+    if (!found) throw new ApiError('TAG_NOT_FOUND', 400)
+    return found
+  }
+  /** Renombra (to) o quita (null) una etiqueta y sus hijas en todo lo que la lleva */
+  const retag = (organizationId: string, from: string, to: string | null) => {
+    const change = (list: readonly string[]) => (to === null ? removeTagIn(list, from) : renameTagIn(list, from, to))
+    let changedPages = 0
+    let changedFiles = 0
+    for (const page of pages.filter((p) => worlds.find((w) => w.id === p.worldId)?.organizationId === organizationId)) {
+      const next = change(tagsOfPage(page))
+      if (!next) continue
+      page.properties = page.properties.flatMap((p): PageProperty[] =>
+        p.name.toLowerCase() !== 'etiquetas'
+          ? [p]
+          : next.length > 0
+            ? [{ name: p.name, type: 'list', value: next }]
+            : []
+      )
+      changedPages++
+    }
+    for (const file of files.filter((f) => f.organizationId === organizationId)) {
+      const next = change(file.tags)
+      if (!next) continue
+      file.tags = next
+      changedFiles++
+    }
+    for (const row of [...tagRows]) {
+      if (row.organizationId !== organizationId) continue
+      const next = change([row.name])
+      if (!next) continue
+      if (next[0]) row.name = next[0]
+      else tagRows.splice(tagRows.indexOf(row), 1)
+    }
+    return { pages: changedPages, files: changedFiles }
+  }
+
+  /** Archivos a la papelera y carpetas quitadas con lo que tienen dentro; devuelve cuántos archivos */
+  const trashItems = (fileIds: readonly string[], folderIds: readonly string[]) => {
+    const gone = new Set<string>()
+    let level = [...folderIds]
+    while (level.length > 0) {
+      for (const id of level) gone.add(id)
+      level = folders.filter((f) => f.parentId && level.includes(f.parentId)).map((f) => f.id)
+    }
+    const doomed = files.filter((file) => fileIds.includes(file.id) || (file.folderId && gone.has(file.folderId)))
+    for (const file of doomed) {
+      files.splice(files.indexOf(file), 1)
+      trashedFiles.unshift({ ...file, folderId: null })
+    }
+    for (const id of gone)
+      folders.splice(
+        folders.findIndex((f) => f.id === id),
+        1
+      )
+    return doomed.length
   }
 
   const handlers: { [N in ActionName]: (input: ActionInput<N>) => ActionOutput<N> } = {
@@ -568,18 +668,103 @@ export function fakeApi(
       }
     },
     // Los del mundo y los comunes de su organización, como el servidor
-    listFiles: ({ worldId }) => ({
-      files: files
-        .filter((f) => f.worldId === worldId || (f.worldId === null && f.organizationId === organizationOf(worldId)))
-        .sort((a, b) => a.name.localeCompare(b.name, 'es'))
-        .map((f) => ({ ...f, usedBy: fileUses.get(f.id) ?? 0 }))
-    }),
-    listCommonFiles: ({ organizationId }) => ({
-      files: files
-        .filter((f) => f.worldId === null && f.organizationId === (organizationId ?? organizationOf(null)))
-        .sort((a, b) => a.name.localeCompare(b.name, 'es'))
-        .map((f) => ({ ...f, usedBy: fileUses.get(f.id) ?? 0 }))
-    }),
+    listFiles: ({ worldId }) => {
+      const usable = (f: { worldId: string | null; organizationId: string }) =>
+        f.worldId === worldId || (f.worldId === null && f.organizationId === organizationOf(worldId))
+      return {
+        files: files
+          .filter(usable)
+          .sort((a, b) => a.name.localeCompare(b.name, 'es'))
+          .map((f) => ({ ...f, usedBy: fileUses.get(f.id) ?? 0 })),
+        folders: folders.filter(usable).map((f) => ({ ...f }))
+      }
+    },
+    listCommonFiles: ({ organizationId }) => {
+      const common = (f: { worldId: string | null; organizationId: string }) =>
+        f.worldId === null && f.organizationId === (organizationId ?? organizationOf(null))
+      return {
+        files: files
+          .filter(common)
+          .sort((a, b) => a.name.localeCompare(b.name, 'es'))
+          .map((f) => ({ ...f, usedBy: fileUses.get(f.id) ?? 0 })),
+        folders: folders.filter(common).map((f) => ({ ...f }))
+      }
+    },
+    createFolder: ({ worldId, organizationId, parentId, name }) => {
+      const scope = { worldId: worldId ?? null, organizationId: organizationId ?? organizationOf(worldId ?? null) }
+      const sibling = folders.find(
+        (f) =>
+          f.worldId === scope.worldId &&
+          f.organizationId === scope.organizationId &&
+          f.parentId === (parentId ?? null) &&
+          f.name.toLowerCase() === name.trim().toLowerCase()
+      )
+      if (sibling) throw new ApiError('NAME_TAKEN', 400)
+      const folder: FolderView = { id: crypto.randomUUID(), ...scope, parentId: parentId ?? null, name: name.trim() }
+      folders.push(folder)
+      return { ...folder }
+    },
+    updateFolder: ({ folderId, name, parentId }) => {
+      const folder = folderById(folderId)
+      if (name !== undefined) folder.name = name.trim()
+      if (parentId !== undefined) folder.parentId = parentId
+      return { ...folder }
+    },
+    deleteFolder: ({ folderId }) => {
+      const folder = folderById(folderId)
+      trashItems([], [folderId])
+      return { id: folder.id, name: folder.name }
+    },
+    deleteFiles: ({ fileIds = [], folderIds = [] }) => ({ files: trashItems(fileIds, folderIds) }),
+    moveFile: ({ fileId, folderId }) => {
+      const file = fileById(fileId)
+      if (folderId) folderById(folderId)
+      file.folderId = folderId
+      file.version++
+      return { ...file }
+    },
+    listAccountTags: ({ organizationId }) => {
+      const target = ownOrganization(organizationId)
+      return { organizationId: target, tags: catalogOf(target) }
+    },
+    createTag: ({ organizationId, name, color }) => {
+      const target = ownOrganization(organizationId)
+      const existing = catalogOf(target).find((tag) => tagKey(tag.name) === tagKey(name))
+      if (existing?.id) throw new ApiError('TAG_TAKEN', 400)
+      tagRows.push({
+        id: crypto.randomUUID(),
+        organizationId: target,
+        name: existing?.name ?? name,
+        color: color ?? null
+      })
+      return tagIn(target, name)
+    },
+    updateTag: ({ organizationId, tag, name, color }) => {
+      const target = ownOrganization(organizationId)
+      const current = tagIn(target, tag)
+      let now = current.name
+      if (name !== undefined && name !== current.name) {
+        retag(target, current.name, name)
+        now = name
+      }
+      if (color !== undefined) {
+        const row = tagRows.find((r) => r.organizationId === target && tagKey(r.name) === tagKey(now))
+        if (row) row.color = color
+        else tagRows.push({ id: crypto.randomUUID(), organizationId: target, name: now, color })
+      }
+      return tagIn(target, now)
+    },
+    deleteTag: ({ organizationId, tag }) => {
+      const target = ownOrganization(organizationId)
+      const current = tagIn(target, tag)
+      return { name: current.name, ...retag(target, current.name, null) }
+    },
+    setFileTags: ({ fileId, tags }) => {
+      const file = fileById(fileId)
+      file.tags = uniqueTags(tags)
+      file.version++
+      return { id: file.id, tags: file.tags }
+    },
     renameFile: ({ fileId, name }) => {
       const file = fileById(fileId)
       if (files.some((f) => f !== file && f.worldId === file.worldId && f.name.toLowerCase() === name.toLowerCase())) {
@@ -681,8 +866,9 @@ export function fakeApi(
       return { name: `${pageById(pageId).title}.pdf`, data: new Blob(['%PDF']) }
     },
     // Sube al momento, en dos pasos de progreso; el tipo, por el que dice el Blob
-    async uploadFile(target, blob, onProgress) {
+    async uploadFile(target, blob, onProgress, signal) {
       calls.push('uploadFile')
+      if (signal?.aborted) throw new ApiError('CANCELLED', 0)
       onProgress?.(0.5)
       onProgress?.(1)
       const kind = blob.type.startsWith('image/') ? 'image' : blob.type === 'application/pdf' ? 'pdf' : 'other'
@@ -701,7 +887,7 @@ export function fakeApi(
         )
       let name = target.name
       for (let n = 2; taken(name); n++) name = target.name.replace(/(\.[^.]*)?$/, ` (${n})$1`)
-      const file = fileOf({ worldId, organizationId, name, ...content })
+      const file = fileOf({ worldId, organizationId, name, folderId: target.folderId ?? null, ...content })
       files.push(file)
       return { ...file }
     }

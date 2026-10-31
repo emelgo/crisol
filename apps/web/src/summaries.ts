@@ -96,6 +96,17 @@ export function summaryOf(
     case 'deleteFile':
     case 'restoreFile':
       return say(action, { name: text(details.name ?? details.file) })
+    case 'createFolder':
+    case 'deleteFolder':
+      return say(action, { name: text(details.name) })
+    case 'updateFolder':
+      return details.from !== undefined
+        ? say('renameFolder', { from: text(details.from), to: text(details.to) })
+        : say('moveFolder', { name: text(details.name) })
+    case 'moveFile':
+      return details.folder
+        ? say('moveFile', { name: text(details.name), folder: text(details.folder) })
+        : say('moveFileTop', { name: text(details.name) })
     case 'renameFile':
       return say('renameFile', { from: text(details.from ?? details.file), to: text(details.to ?? details.name) })
     case 'movePage': {

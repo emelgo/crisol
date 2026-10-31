@@ -88,7 +88,10 @@ const RULES = {
   'page.write': { sees: managesWiki, allows: managesWiki },
   // Los archivos comunes de la organización, que comparten sus mundos: verlos y usarlos; subirlos y cambiarlos
   'commonFiles.read': { sees: seesCommonFiles, allows: seesCommonFiles },
-  'commonFiles.write': { sees: seesCommonFiles, allows: isOrganizationOwner }
+  'commonFiles.write': { sees: seesCommonFiles, allows: isOrganizationOwner },
+  // Las etiquetas de la cuenta (ADR-0006): verlas (para ponerlas); crearlas, renombrarlas, darles color y borrarlas
+  'tags.read': { sees: seesCommonFiles, allows: seesCommonFiles },
+  'tags.write': { sees: seesCommonFiles, allows: isOrganizationOwner }
 } satisfies Record<string, { sees: Predicate; allows: Predicate }>
 
 export type Capability = keyof typeof RULES

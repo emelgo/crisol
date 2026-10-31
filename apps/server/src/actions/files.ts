@@ -2,7 +2,20 @@
  * Los archivos: la lista, renombrar, mandar a la papelera y restaurar. Son de un mundo o comunes a los de su
  * organización (ADR-0005). Subir y reemplazar van por sus rutas (files/routes.ts): los bytes no caben en una acción
  */
-import { deleteFile, type FileView, listCommonFiles, listFiles, renameFile, restoreFile } from '@crisol/contracts'
+import {
+  createFolder,
+  deleteFile,
+  deleteFiles,
+  deleteFolder,
+  type FileView,
+  type FolderView,
+  listCommonFiles,
+  listFiles,
+  moveFile,
+  renameFile,
+  restoreFile,
+  updateFolder
+} from '@crisol/contracts'
 import { type FileScope, filesRepo, linksRepo, type OperationContext, worldsRepo } from '@crisol/db'
 import { authorize, NotFoundError } from '@crisol/domain'
 import { commonFilesChanged, filesChanged } from '../realtime/events.ts'
@@ -18,12 +31,25 @@ export const fileView = (row: FileRow): FileView => ({
   worldId: row.worldId,
   organizationId: row.organizationId,
   name: row.name,
+  folderId: row.folderId,
   kind: row.kind,
   mime: row.mime,
   size: row.size,
-  url: `/api/files/${row.id}`,
+  // Con su versión: el navegador la guarda sin volver a preguntar (al reemplazarla, cambia)
+  url: `/api/files/${row.id}?v=${row.version}`,
+  tags: row.tags,
   version: row.version,
   updatedAt: row.updatedAt.toISOString()
+})
+
+type FolderRow = NonNullable<Awaited<ReturnType<typeof filesRepo.findFolder>>>
+
+const folderView = (row: FolderRow): FolderView => ({
+  id: row.id,
+  worldId: row.worldId,
+  organizationId: row.organizationId,
+  parentId: row.parentId,
+  name: row.name
 })
 
 /** Dónde está un archivo: en un mundo (con su organización) o, sin mundo, entre los comunes de una organización */
@@ -102,8 +128,30 @@ export async function filesTouched(ctx: ActionContext, place: FilePlace, names: 
   }
 }
 
+/** La carpeta y dónde está, si la cuenta puede verla (write: cambiarla). Si no, 404 o 403 */
+async function authorizedFolder(ctx: ActionContext, write: boolean, folderId: string) {
+  const folder = await filesRepo.findFolder(ctx.db, folderId)
+  if (folder && folder.worldId === null) {
+    return { folder, place: authorizedCommon(ctx, write, folder.organizationId) }
+  }
+  const wiki = await authorizedWiki(ctx, write ? 'page.write' : 'page.read', folder?.worldId ?? '')
+  if (!folder) throw new NotFoundError('folder')
+  return { folder, place: wiki as FilePlace }
+}
+
+/** Una carpeta de destino: tiene que ser del mismo ámbito (null: lo más alto, siempre vale) */
+export async function folderIn(ctx: ActionContext, place: FilePlace, folderId: string | null | undefined) {
+  if (!folderId) return null
+  const folder = await filesRepo.findFolder(ctx.db, folderId)
+  const same = folder && folder.worldId === place.worldId && folder.organizationId === place.organizationId
+  if (!same) throw new InvalidRequestError('BAD_FOLDER')
+  return folder
+}
+
+const folderTaken = (name: string) => new InvalidRequestError('NAME_TAKEN', `Ya hay una carpeta «${name}» ahí`)
+
 /** Para el historial: el mundo o, con un común, solo su organización */
-const historyScope = (place: FilePlace) => (place.worldId ? place : { organizationId: place.organizationId })
+export const historyScopeOf = (place: FilePlace) => (place.worldId ? place : { organizationId: place.organizationId })
 
 /** Con cuántas páginas cuenta cada archivo: los del mundo, en él; los comunes, en todos los de su organización */
 async function withUses(ctx: ActionContext, rows: FileRow[], worldId?: string) {
@@ -125,12 +173,125 @@ const notFree = (name: string, place: FilePlace) =>
 export const fileActions = [
   implement(listFiles, async (ctx, { worldId }) => {
     await authorizedWiki(ctx, 'page.read', worldId)
-    return { files: await withUses(ctx, await filesRepo.usableFiles(ctx.db, worldId), worldId) }
+    return {
+      files: await withUses(ctx, await filesRepo.usableFiles(ctx.db, worldId), worldId),
+      folders: (await filesRepo.usableFolders(ctx.db, worldId)).map(folderView)
+    }
   }),
 
   implement(listCommonFiles, async (ctx, { organizationId }) => {
     const place = authorizedCommon(ctx, false, organizationId ?? targetOrganization(ctx, undefined))
-    return { files: await withUses(ctx, await filesRepo.listFiles(ctx.db, scopeOf(place))) }
+    return {
+      files: await withUses(ctx, await filesRepo.listFiles(ctx.db, scopeOf(place))),
+      folders: (await filesRepo.listFolders(ctx.db, scopeOf(place))).map(folderView)
+    }
+  }),
+
+  implement(createFolder, async (ctx, { worldId, organizationId, parentId, name }) => {
+    const place: FilePlace = worldId
+      ? await authorizedWiki(ctx, 'page.write', worldId)
+      : authorizedCommon(ctx, true, organizationId ?? '')
+    await folderIn(ctx, place, parentId)
+    try {
+      const folder = await filesRepo.createFolder(
+        ctx.db,
+        historyContext(ctx, 'createFolder', { name }, historyScopeOf(place)),
+        { organizationId: place.organizationId, worldId: place.worldId, parentId, name }
+      )
+      await filesTouched(ctx, place)
+      return folderView(folder)
+    } catch (error) {
+      if (nameTaken(error)) throw folderTaken(name)
+      throw error
+    }
+  }),
+
+  implement(updateFolder, async (ctx, { folderId, name, parentId }) => {
+    const { folder, place } = await authorizedFolder(ctx, true, folderId)
+    if (parentId !== undefined && parentId !== null) {
+      await folderIn(ctx, place, parentId)
+      // Ni dentro de sí misma ni de una de las suyas
+      for (let at: string | null = parentId; at; at = (await filesRepo.findFolder(ctx.db, at))?.parentId ?? null) {
+        if (at === folderId) throw new InvalidRequestError('CYCLE')
+      }
+    }
+    const details = name !== undefined && name !== folder.name ? { from: folder.name, to: name } : { name: folder.name }
+    try {
+      const updated = await filesRepo.updateFolder(
+        ctx.db,
+        historyContext(ctx, 'updateFolder', details, historyScopeOf(place)),
+        folderId,
+        { ...(name !== undefined ? { name } : {}), ...(parentId !== undefined ? { parentId } : {}) }
+      )
+      await filesTouched(ctx, place)
+      return folderView(updated)
+    } catch (error) {
+      if (nameTaken(error)) throw folderTaken(name ?? folder.name)
+      throw error
+    }
+  }),
+
+  implement(deleteFolder, async (ctx, { folderId }) => {
+    const { folder, place } = await authorizedFolder(ctx, true, folderId)
+    await filesRepo.deleteFolder(
+      ctx.db,
+      historyContext(ctx, 'deleteFolder', { name: folder.name }, historyScopeOf(place)),
+      folderId
+    )
+    await filesTouched(ctx, place)
+    return { id: folder.id, name: folder.name }
+  }),
+
+  implement(deleteFiles, async (ctx, { fileIds, folderIds }) => {
+    // Por ámbito (un mundo, o los comunes): cada uno, su operación
+    const byPlace = new Map<string, { place: FilePlace; fileIds: string[]; folderIds: string[]; names: string[] }>()
+    const groupOf = (place: FilePlace) => {
+      const key = place.worldId ?? `org:${place.organizationId}`
+      let group = byPlace.get(key)
+      if (!group) {
+        group = { place, fileIds: [], folderIds: [], names: [] }
+        byPlace.set(key, group)
+      }
+      return group
+    }
+    for (const fileId of new Set(fileIds)) {
+      const { file, place } = await authorizedFile(ctx, 'page.write', fileId)
+      const group = groupOf(place)
+      group.fileIds.push(file.id)
+      group.names.push(file.name)
+    }
+    for (const folderId of new Set(folderIds)) {
+      const { folder, place } = await authorizedFolder(ctx, true, folderId)
+      const group = groupOf(place)
+      group.folderIds.push(folder.id)
+      group.names.push(folder.name)
+    }
+    let trashed = 0
+    for (const { place, fileIds: files, folderIds: folders, names } of byPlace.values()) {
+      trashed += await filesRepo.trashItems(
+        ctx.db,
+        historyContext(ctx, 'deleteFiles', { names, count: names.length }, historyScopeOf(place)),
+        { fileIds: files, folderIds: folders }
+      )
+      await filesTouched(ctx, place)
+    }
+    return { files: trashed }
+  }),
+
+  implement(moveFile, async (ctx, { fileId, folderId }) => {
+    const { file, place } = await authorizedFile(ctx, 'page.write', fileId)
+    const folder = await folderIn(ctx, place, folderId)
+    if (file.folderId === folderId) return fileView(file)
+    await filesRepo.updateFile(
+      ctx.db,
+      historyContext(ctx, 'moveFile', { name: file.name, folder: folder?.name ?? null }, historyScopeOf(place)),
+      fileId,
+      { folderId }
+    )
+    await filesTouched(ctx, place)
+    const moved = await filesRepo.findFile(ctx.db, fileId)
+    if (!moved) throw new NotFoundError('file')
+    return fileView(moved)
   }),
 
   implement(renameFile, async (ctx, { fileId, name }) => {
@@ -141,7 +302,7 @@ export const fileActions = [
       ctx,
       'renameFile',
       { from: file.name, to: name },
-      historyScope(place)
+      historyScopeOf(place)
     )
     try {
       await filesRepo.updateFile(ctx.db, context, fileId, { name })
@@ -160,7 +321,7 @@ export const fileActions = [
     const { file, place } = await authorizedFile(ctx, 'page.write', fileId)
     await filesRepo.updateFile(
       ctx.db,
-      historyContext(ctx, 'deleteFile', { name: file.name }, historyScope(place)),
+      historyContext(ctx, 'deleteFile', { name: file.name }, historyScopeOf(place)),
       fileId,
       { deletedAt: new Date() }
     )
@@ -174,7 +335,7 @@ export const fileActions = [
     // Si su nombre lo tiene ya otro, vuelve con un número
     const name = await withFreeName(ctx.db, { scope: scopeOf(place), name: file.name, except: file.id }, (free) =>
       filesRepo
-        .updateFile(ctx.db, historyContext(ctx, 'restoreFile', { name: free }, historyScope(place)), fileId, {
+        .updateFile(ctx.db, historyContext(ctx, 'restoreFile', { name: free }, historyScopeOf(place)), fileId, {
           deletedAt: null,
           ...(free !== file.name ? { name: free } : {})
         })

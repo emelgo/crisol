@@ -75,6 +75,12 @@ export function WikiPanelProvider({ children }: { children: ReactNode }) {
     setPanel(next)
     setCollapsed(false)
     setOpen(window.matchMedia?.(NARROW).matches ?? false)
+    // Se recuerda, como al pulsar su botón: al volver, sigue abierto el último
+    try {
+      localStorage.setItem(STORAGE_KEY, next)
+    } catch {
+      // Sin almacenamiento, el panel vuelve al árbol en la próxima visita
+    }
   }, [])
 
   const close = useCallback((back: boolean) => {

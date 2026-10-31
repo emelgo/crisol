@@ -168,6 +168,15 @@ describe('authorize', () => {
       'permite'
     ],
     ['pero no los cambia', worldMaster, 'commonFiles.write', { organizationId: ORG }, 'prohíbe'],
+    [
+      'las etiquetas de la cuenta: el propietario las gestiona',
+      ownerOnly,
+      'tags.write',
+      { organizationId: ORG },
+      'permite'
+    ],
+    ['un máster las ve (para ponerlas)', worldMaster, 'tags.read', { organizationId: ORG }, 'permite'],
+    ['pero no las gestiona', worldMaster, 'tags.write', { organizationId: ORG }, 'prohíbe'],
     ['un jugador no los ve', player, 'commonFiles.read', { organizationId: ORG }, 'no lo ve'],
     ['nadie de otra organización', outsider, 'commonFiles.read', { organizationId: ORG }, 'no lo ve']
   ]

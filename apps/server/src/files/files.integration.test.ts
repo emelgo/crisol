@@ -96,10 +96,14 @@ describe('los archivos del mundo', () => {
     expect(served.rawPayload.equals(PNG)).toBe(true)
     expect(served.headers).toMatchObject({
       'content-type': 'image/png',
-      'cache-control': 'private, no-cache',
+      'cache-control': 'private, max-age=0, stale-while-revalidate=604800',
       'x-content-type-options': 'nosniff'
     })
     expect(served.headers['content-disposition']).toContain('inline')
+    // Con su versión en la dirección (la de la lista), se guarda sin volver a preguntar
+    const listed = (await call('listFiles', { worldId })).files.find((f: { id: string }) => f.id === first.json().id)
+    const cached = await app.inject({ method: 'GET', url: listed.url, headers: { cookie: owner.cookie } })
+    expect(cached.headers['cache-control']).toBe('private, max-age=31536000, immutable')
     // Con la misma huella, no se vuelve a mandar
     expect((await download(first.json().id, { 'if-none-match': String(served.headers.etag) })).statusCode).toBe(304)
     // Y queda en el historial
@@ -117,18 +121,30 @@ describe('los archivos del mundo', () => {
     expect((await download(id, { range: `bytes=${PDF.length}-` })).statusCode).toBe(416)
   })
 
-  it('el SVG va con una CSP que no deja ejecutar nada; lo que no es imagen ni PDF, como descarga', async () => {
+  it('el SVG va con una CSP que no deja ejecutar nada; lo que no se admite (programas, scripts, páginas) no se sube', async () => {
     const svg = (await upload('Escudo.svg', SVG)).json()
     expect(svg).toMatchObject({ kind: 'image', mime: 'image/svg+xml' })
     const served = await download(svg.id)
     expect(served.headers['content-security-policy']).toContain('sandbox')
     expect(served.headers['content-security-policy']).toContain("default-src 'none'")
-    // Un .png que es HTML no se sirve como imagen ni como página
-    const fake = (await upload('trampa.png', Buffer.from('<html><script>alert(1)</script>'))).json()
-    expect(fake).toMatchObject({ kind: 'other', mime: 'application/octet-stream' })
-    const attachment = await download(fake.id)
-    expect(attachment.headers['content-type']).toBe('application/octet-stream')
-    expect(attachment.headers['content-disposition']).toMatch(/^attachment; filename="trampa.png"/)
+    // Un .png que es HTML, un programa o un script: no entran, ni queda nada de ellos
+    for (const [name, body] of [
+      ['trampa.png', Buffer.from('<html><script>alert(1)</script>')],
+      ['instalar.exe', Buffer.from('MZ\x90\x00programa')],
+      ['hola.js', Buffer.from('alert(1)')],
+      ['notas.txt', Buffer.from([0x00, 0x01, 0x02])]
+    ] as const) {
+      const response = await upload(name, body)
+      expect(response.statusCode, name).toBe(415)
+      expect(response.json()).toEqual({ code: 'BAD_TYPE' })
+    }
+    expect((await call('listFiles', { worldId })).files.map((f: { name: string }) => f.name)).toEqual(['Escudo.svg'])
+    // Texto, audio y vídeo, sí, con su tipo
+    expect((await upload('notas.md', Buffer.from('# Sesión 3\nLos PJ llegan a Puerto Ceniza'))).json()).toMatchObject({
+      kind: 'other',
+      mime: 'text/markdown; charset=utf-8'
+    })
+    expect((await upload('tema.mp3', Buffer.from('ID3\x04\x00musica'))).json()).toMatchObject({ mime: 'audio/mpeg' })
   })
 
   it('un cuerpo que no es el archivo en crudo (JSON, texto) da 415 y no deja nada', async () => {
@@ -151,8 +167,8 @@ describe('los archivos del mundo', () => {
     )
     expect(await storage.keys()).toEqual([])
     expect((await call('listFiles', { worldId })).files).toEqual([])
-    // Justo en el límite, sí
-    expect((await upload('justo.bin', Buffer.alloc(LIMIT, 1))).statusCode).toBe(201)
+    // Justo en el límite, sí (un texto, de lo que se admite)
+    expect((await upload('justo.txt', Buffer.alloc(LIMIT, 'a'))).statusCode).toBe(201)
   })
 
   it('con permiso: sin sesión 401; quien no ve la wiki ni sube ni descarga (404)', async () => {
@@ -202,6 +218,71 @@ describe('los archivos del mundo', () => {
     expect(await call('renameFile', { fileId: map.id, name: 'otra/carpeta.png' })).toMatchObject({
       code: 'INVALID_INPUT'
     })
+  })
+
+  it('carpetas: se crean (también dentro de otra), se sube a una, se mueve un archivo y borrarla se lleva lo que tiene', async () => {
+    const maps = await call('createFolder', { worldId, name: 'Mapas' })
+    expect(maps).toMatchObject({ name: 'Mapas', parentId: null, worldId })
+    const north = await call('createFolder', { worldId, parentId: maps.id, name: 'Norte' })
+    expect(await call('createFolder', { worldId, parentId: maps.id, name: 'NORTE' })).toMatchObject({
+      code: 'NAME_TAKEN'
+    })
+    // Subir a una carpeta
+    const response = await app.inject({
+      method: 'POST',
+      url: `/api/files?worldId=${worldId}&folderId=${north.id}&name=Costa.png`,
+      payload: PNG,
+      headers: { origin: BASE_URL, cookie: owner.cookie, 'content-type': 'application/octet-stream' }
+    })
+    expect(response.json()).toMatchObject({ name: 'Costa.png', folderId: north.id })
+    const shield = (await upload('Escudo.png', PNG)).json()
+    expect(await call('moveFile', { fileId: shield.id, folderId: maps.id })).toMatchObject({ folderId: maps.id })
+    // Ni dentro de sí misma, ni una carpeta de otro ámbito
+    expect(await call('updateFolder', { folderId: maps.id, parentId: north.id })).toMatchObject({ code: 'CYCLE' })
+    const common = await call('createFolder', { organizationId, name: 'Comunes' })
+    expect(await call('moveFile', { fileId: shield.id, folderId: common.id })).toMatchObject({ code: 'BAD_FOLDER' })
+    const listed = await call('listFiles', { worldId })
+    expect(listed.folders.map((f: { name: string }) => f.name).sort()).toEqual(['Comunes', 'Mapas', 'Norte'])
+    // Borrar «Mapas» se lleva lo de dentro: «Norte» se quita, y «Escudo.png» y «Costa.png», a la papelera
+    expect(await call('deleteFolder', { folderId: maps.id })).toMatchObject({ name: 'Mapas' })
+    const after = await call('listFiles', { worldId })
+    expect(after.folders.map((f: { name: string }) => f.name)).toEqual(['Comunes'])
+    expect(after.files.map((f: { name: string }) => f.name)).toEqual([])
+    expect((await call('listTrash', { worldId })).items.map((i: { name: string }) => i.name).sort()).toEqual([
+      'Costa.png',
+      'Escudo.png'
+    ])
+    // Se deshace entera: vuelven las carpetas y sus archivos, cada uno en la suya
+    const [last] = (await call('listHistory', { worldId })).entries
+    expect(last).toMatchObject({ action: 'deleteFolder' })
+    await call('undoOperation', { operationId: last.id })
+    const undone = await call('listFiles', { worldId })
+    expect(undone.files.find((f: { name: string }) => f.name === 'Escudo.png')).toMatchObject({ folderId: maps.id })
+    expect(undone.files.find((f: { name: string }) => f.name === 'Costa.png')).toMatchObject({ folderId: north.id })
+  })
+
+  it('borrar varios de una vez: archivos y carpetas, en una operación que se deshace', async () => {
+    const a = (await upload('A.png', PNG)).json()
+    const b = (await upload('B.pdf', PDF)).json()
+    const folder = await call('createFolder', { worldId, name: 'Viejo' })
+    const inside = (
+      await app.inject({
+        method: 'POST',
+        url: `/api/files?worldId=${worldId}&folderId=${folder.id}&name=C.png`,
+        payload: PNG,
+        headers: { origin: BASE_URL, cookie: owner.cookie, 'content-type': 'application/octet-stream' }
+      })
+    ).json()
+    expect(await call('deleteFiles', { fileIds: [a.id, b.id], folderIds: [folder.id] })).toEqual({ files: 3 })
+    const after = await call('listFiles', { worldId })
+    expect(after.files).toEqual([])
+    expect(after.folders).toEqual([])
+    const [last] = (await call('listHistory', { worldId })).entries
+    expect(last).toMatchObject({ action: 'deleteFiles' })
+    await call('undoOperation', { operationId: last.id })
+    const undone = await call('listFiles', { worldId })
+    expect(undone.files.map((f: { name: string }) => f.name).sort()).toEqual(['A.png', 'B.pdf', 'C.png'])
+    expect(undone.files.find((f: { id: string }) => f.id === inside.id)).toMatchObject({ folderId: folder.id })
   })
 
   it('la papelera: borrado no se sirve, sale en la del mundo y vuelve; si su nombre ya está, con número', async () => {

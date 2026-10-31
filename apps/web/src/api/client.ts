@@ -28,15 +28,23 @@ export interface ApiClient {
   exportWiki(input: ExportInput): Promise<{ name: string; data: Blob }>
   /** El PDF de la hoja de una página (lo saca el servidor), con o sin secretos */
   downloadPdf(pageId: string, secrets: boolean): Promise<{ name: string; data: Blob }>
-  /** Sube un archivo al mundo, o reemplaza los bytes de uno, diciendo cuánto lleva (de 0 a 1) */
-  uploadFile(target: UploadTarget, file: Blob, onProgress?: (fraction: number) => void): Promise<FileView>
+  /**
+   * Sube un archivo al mundo, o reemplaza los bytes de uno, diciendo cuánto lleva (de 0 a 1). Con signal se puede
+   * cancelar: falla con CANCELLED
+   */
+  uploadFile(
+    target: UploadTarget,
+    file: Blob,
+    onProgress?: (fraction: number) => void,
+    signal?: AbortSignal
+  ): Promise<FileView>
 }
 
 /** Adónde va una subida: un archivo nuevo del mundo, con su nombre, o los bytes nuevos de uno que ya está */
 /** Subir a un mundo, a los comunes de una organización (ADR-0005) o reemplazar uno que ya está */
 export type UploadTarget =
-  | { worldId: string; name: string }
-  | { organizationId: string; name: string }
+  | { worldId: string; name: string; folderId?: string | null }
+  | { organizationId: string; name: string; folderId?: string | null }
   | { fileId: string }
 
 /** El nombre del archivo que da el servidor (filename* en UTF-8, o filename) */
@@ -79,9 +87,12 @@ export function createApiClient(): ApiClient {
       return { name: attachmentName(response.headers.get('content-disposition')), data: await response.blob() }
     },
     // Con XHR, no fetch: fetch aún no dice cuánto lleva subido
-    uploadFile(target, file, onProgress) {
+    uploadFile(target, file, onProgress, signal) {
       return new Promise((resolve, reject) => {
+        if (signal?.aborted) return reject(new ApiError('CANCELLED', 0))
         const request = new XMLHttpRequest()
+        signal?.addEventListener('abort', () => request.abort(), { once: true })
+        request.onabort = () => reject(new ApiError('CANCELLED', 0))
         if ('fileId' in target) request.open('PUT', `/api/files/${target.fileId}`)
         else {
           const query = new URLSearchParams(
@@ -89,6 +100,7 @@ export function createApiClient(): ApiClient {
               ? { worldId: target.worldId, name: target.name }
               : { organizationId: target.organizationId, name: target.name }
           )
+          if (target.folderId) query.set('folderId', target.folderId)
           request.open('POST', `/api/files?${query}`)
         }
         request.setRequestHeader('content-type', 'application/octet-stream')

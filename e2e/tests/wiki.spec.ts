@@ -19,6 +19,14 @@ async function newPage(page: Page, title: string, button = 'Página nueva') {
   await expect(page.getByRole('heading', { level: 1, name: title })).toBeVisible()
 }
 
+/** En el móvil, la wiki se abre desde el menú de la llama */
+async function openMobileWiki(page: Page) {
+  await page.getByRole('button', { name: 'Menú' }).click()
+  await page.getByRole('dialog', { name: 'Eana' }).getByRole('button', { name: 'Wiki' }).click()
+  // El menú se va del todo (su animación de salida) antes de seguir
+  await expect(page.getByRole('dialog', { name: 'Eana' })).toHaveCount(0)
+}
+
 const tree = (page: Page) => page.getByRole('tree', { name: 'Páginas' })
 const titles = (page: Page) => tree(page).getByRole('treeitem')
 
@@ -88,7 +96,8 @@ test('propiedades, icono y etiquetas: se guardan, siguen al recargar y cuentan e
   await expect(properties.getByRole('link', { name: 'Costa Gris' })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Icono ⚓: cambiarlo' })).toBeVisible()
 
-  await page.getByRole('link', { name: 'Etiquetas' }).click()
+  // Son de la cuenta: en la zona de Mis mundos
+  await page.goto('/etiquetas')
   await expect(page.getByRole('list', { name: 'Etiquetas' }).getByRole('listitem')).toHaveText([
     'costa1 página',
     'lugar1 página',
@@ -129,7 +138,7 @@ test('pestañas y marcadores siguen al recargar; en el móvil, las abiertas van 
   await expect(tabs.getByRole('link')).toHaveText(['Maela Varn', 'Puerto Ceniza'])
   await page.getByRole('button', { name: 'Marcar' }).click()
   // Los marcadores, en su panel; al recargar sigue abierto el último que se eligió
-  await page.getByRole('navigation', { name: 'Secciones' }).getByRole('button', { name: 'Marcadores' }).click()
+  await page.getByRole('tab', { name: 'Marcadores' }).click()
   await expect(page.getByRole('region', { name: 'Marcadores' }).getByRole('link', { name: 'Maela Varn' })).toBeVisible()
 
   await page.reload()
@@ -139,7 +148,8 @@ test('pestañas y marcadores siguen al recargar; en el móvil, las abiertas van 
 
   await page.setViewportSize({ width: 390, height: 844 })
   await expect(tabs).toBeHidden()
-  await page.getByRole('button', { name: 'Páginas' }).click()
+  await openMobileWiki(page)
+  await page.getByRole('tab', { name: 'Páginas' }).click()
   await expect(page.getByRole('navigation', { name: 'Abiertas' }).getByRole('link')).toHaveText([
     'Maela Varn',
     'Puerto Ceniza'
@@ -152,12 +162,12 @@ test('en el móvil el árbol va en un cajón, que se cierra al abrir una página
   await newPage(page, 'Personajes')
   await page.setViewportSize({ width: 390, height: 844 })
   await expect(tree(page)).toBeHidden()
-  await page.getByRole('button', { name: 'Páginas' }).click()
+  await openMobileWiki(page)
   await expect(page.getByRole('button', { name: 'Cerrar' })).toBeFocused()
   await page.keyboard.press('Escape')
   await expect(tree(page)).toBeHidden()
-  await expect(page.getByRole('button', { name: 'Páginas' })).toBeFocused()
-  await page.getByRole('button', { name: 'Páginas' }).click()
+  await expect(page.getByRole('button', { name: 'Menú' })).toBeFocused()
+  await openMobileWiki(page)
   await tree(page).getByRole('treeitem', { name: 'Lugares' }).click()
   await expect(page.getByRole('heading', { level: 1, name: 'Lugares' })).toBeVisible()
   await expect(tree(page)).toBeHidden()
@@ -205,12 +215,14 @@ test('la wiki, en los dos temas y en el móvil @a11y', async ({ page }) => {
   await expect(page.getByLabel('O en un grupo nuevo')).toBeVisible()
   await check()
   await page.keyboard.press('Escape')
-  await page.getByRole('link', { name: 'Etiquetas' }).click()
+  const wiki = page.url()
+  await page.goto('/etiquetas')
   await expect(page.getByRole('list', { name: 'Etiquetas' })).toBeVisible()
   await check()
+  await page.goto(wiki)
   await page.getByRole('tree').getByRole('treeitem', { name: 'Lugares' }).click()
   await page.setViewportSize({ width: 390, height: 844 })
-  await page.getByRole('button', { name: 'Páginas' }).click()
+  await openMobileWiki(page)
   await expect(tree(page)).toBeVisible()
   await check()
 })

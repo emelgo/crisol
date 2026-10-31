@@ -48,7 +48,9 @@ describe('buscar en la wiki', () => {
     const router = renderAt(`/mundos/${WORLD.id}/wiki`)
     // La caja está en el panel de buscar, que se abre con su botón de la barra de la izquierda
     const sections = within(await screen.findByRole('navigation', { name: 'Secciones' }))
-    await userEvent.click(await sections.findByRole('button', { name: 'Buscar' }))
+    // La wiki, y en su panel, la pestaña de buscar
+    await userEvent.click(await sections.findByRole('button', { name: 'Wiki' }))
+    await userEvent.click(await screen.findByRole('tab', { name: 'Buscar' }))
     await userEvent.type(await screen.findByRole('searchbox', { name: 'Buscar en la wiki' }), 'dragon{Enter}')
     expect(await screen.findByRole('heading', { level: 1, name: 'Buscar en Eana' })).toBeDefined()
     expect(router.state.location.search).toMatchObject({ q: 'dragon' })

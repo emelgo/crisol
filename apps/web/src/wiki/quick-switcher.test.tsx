@@ -79,6 +79,6 @@ describe('el selector rápido', () => {
     expect(document.activeElement).toBe(box)
     await userEvent.keyboard('{Control>}k{/Control}')
     await userEvent.type(await screen.findByRole('combobox'), '>etiq{Enter}')
-    await waitFor(() => expect(router.state.location.pathname).toBe(`/mundos/${WORLD.id}/etiquetas`))
+    await waitFor(() => expect(router.state.location.pathname).toBe('/etiquetas'))
   })
 })

@@ -22,7 +22,7 @@ import styles from './world-cover.module.css'
 /** La portada entera, encima de todo */
 export function CoverViewer({ url, label, onClose }: { url: string; label: string; onClose: () => void }) {
   return (
-    <Modal className={styles.viewer} aria-label={label} onClose={onClose}>
+    <Modal className={styles.viewer} aria-label={label} onClose={onClose} data-full="">
       <img src={url} alt="" className={styles.full} />
     </Modal>
   )

@@ -62,14 +62,21 @@ export function WorldPage() {
       {master ? <RecentPages worldId={worldId} /> : <PlayerCampaigns worldId={worldId} />}
       <Tour
         id="mundo"
+        // Un paso por cada botón de la barra (y lo que se añada a ella, también aquí)
         steps={[
-          {
-            target: '[data-tour="barra-mundo"]',
-            text: t('tour.world.ribbon'),
-            placement: 'right'
-          },
-          ...(master ? [{ target: '[data-tour="engranaje"]', text: t('tour.world.settings') }] : []),
-          { target: '[data-tour="barra-llama"]', text: t('tour.world.back'), placement: 'right' as const }
+          { target: '[data-tour="barra-inicio"]', text: t('tour.world.home'), placement: 'right' },
+          { target: '[data-tour="barra-campanas"]', text: t('tour.world.campaigns'), placement: 'right' },
+          ...(master
+            ? ([
+                { target: '[data-tour="barra-wiki"]', text: t('tour.world.wiki'), placement: 'right' },
+                { target: '[data-tour="barra-archivos-mundo"]', text: t('tour.world.files'), placement: 'right' },
+                { target: '[data-tour="barra-historial"]', text: t('tour.world.history'), placement: 'right' },
+                { target: '[data-tour="barra-papelera"]', text: t('tour.world.trash'), placement: 'right' },
+                { target: '[data-tour="engranaje"]', text: t('tour.world.settings') }
+              ] as const)
+            : []),
+          { target: '[data-tour="barra-llama"]', text: t('tour.world.back'), placement: 'right' },
+          { target: '[data-tour="menu-movil"]', text: t('tour.menu') }
         ]}
       />
     </section>
@@ -99,7 +106,7 @@ function useAgo() {
   }
 }
 
-/** Lo último de la wiki: las páginas cambiadas hace poco, para seguir donde se dejó */
+/** Los últimos artículos: las páginas de la wiki cambiadas hace poco, para seguir donde se dejó */
 function RecentPages({ worldId }: { worldId: string }) {
   const { t } = useTranslation()
   const api = useApi()
@@ -121,12 +128,7 @@ function RecentPages({ worldId }: { worldId: string }) {
       {failed(recent) && <SectionError error={recent.error} onRetry={() => recent.refetch()} />}
       {recent.data &&
         (pages.length === 0 ? (
-          <p className={styles.muted}>
-            {t('world.noPages')}{' '}
-            <Link to="/mundos/$worldId/wiki" params={{ worldId }} viewTransition={SECTION}>
-              {t('world.openWiki')}
-            </Link>
-          </p>
+          <p className={styles.muted}>{t('world.noPages')}</p>
         ) : (
           <ul className={styles.recent} aria-label={t('world.recentLabel')}>
             {pages.map((page) => {
