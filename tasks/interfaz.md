@@ -194,6 +194,10 @@ enteras pulsables; hoja también para las carpetas; borrar varios de una vez; bo
 (acción `deleteFiles`); sin ruta, sin «Reemplazar» ni «Carpeta» en la ventana del archivo; soltar en la caja del árbol
 lleva a lo más alto, y un común no se suelta en una carpeta del mundo.
 
+**Segunda tanda de sus pruebas** (2026-10-31): en el móvil, sin barra: la llama sola y su menú con todas las
+secciones; hoja al tocar una etiqueta; «Elegir» por toque; casillas solo con ratón; el panel de la etiqueta ya no se
+encoge (la pantalla va a todo lo ancho); guía de Etiquetas.
+
 **Lo siguiente**: seguir puliendo en la rama `interfaz/pulir-2`. Falta que Enrique vea el Inicio del mundo y la
 pestaña Campañas; la página de una campaña aún lleva la franja antigua. Pequeños pendientes vistos al probar:
 - reabrir una ventana en el instante en que se cierra no la abre (`components/window.tsx`, el mismo `kind`);

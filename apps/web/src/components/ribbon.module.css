@@ -464,170 +464,113 @@
   }
 }
 
-/* El nombre de la llama y «Más»: solo en el móvil */
-.brandText,
+/* El botón del menú: solo en el móvil */
 .mobileOnly {
   display: none;
 }
 
 /*
- * Estrecho: la barra pasa abajo, en cinco huecos fijos con la llama en el centro, un poco más grande y por encima; a
- * los lados, lo principal de la zona y, al final, «Más» con el resto. Lo elegido, en su color y con una raya arriba
+ * Estrecho: sin barra. Solo la llama, abajo en el centro, en un círculo; al tocarla sube el menú con todas las
+ * secciones de donde se está y la cuenta
  */
 @media (max-width: 48rem) {
   .ribbon {
     position: fixed;
-    inset: auto 0 0;
+    inset: auto 0 calc(var(--space-3) + env(safe-area-inset-bottom));
     z-index: 5;
-    display: block;
+    display: flex;
+    justify-content: center;
     block-size: auto;
-    padding: 0 var(--space-2) env(safe-area-inset-bottom);
+    padding: 0;
     overflow: visible;
-    border-inline-end: 0;
-    border-block-start: 1px solid var(--color-border);
-  }
-
-  .sections {
-    display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    align-items: end;
-    gap: 0;
-    max-inline-size: 30rem;
-    margin-inline: auto;
-  }
-
-  .sections > *,
-  .panels > * {
-    grid-row: 1;
-  }
-
-  [data-slot="1"] {
-    grid-column: 1;
-  }
-
-  [data-slot="2"] {
-    grid-column: 2;
-  }
-
-  [data-slot="3"] {
-    grid-column: 3;
-  }
-
-  [data-slot="4"] {
-    grid-column: 4;
-  }
-
-  [data-slot="5"] {
-    grid-column: 5;
-  }
-
-  /* Los paneles del mundo no son una caja aparte: sus botones van en sus huecos */
-  .panels {
-    display: contents;
-  }
-
-  .desktopOnly {
-    display: none !important;
-  }
-
-  .mobileOnly {
-    display: flex;
-  }
-
-  /* Los nombres, a la misma altura que el de la llama */
-  .item {
-    position: relative;
-    justify-content: flex-end;
-    inline-size: auto;
-    min-block-size: 3.5rem;
-    padding-block: 0.5rem;
-    border-radius: 0;
-  }
-
-  /* Elegido: sin fondo, en su color y con la raya arriba, de esquinas iguales */
-  .item[aria-current="page"],
-  .item[aria-pressed="true"] {
+    border: 0;
     background: none;
-    box-shadow: none;
-    color: var(--color-text);
+    pointer-events: none;
   }
 
-  .item[aria-current="page"]::before,
-  .item[aria-pressed="true"]::before {
-    content: "";
-    position: absolute;
-    inset: -1px 25% auto;
-    block-size: 2px;
-    background: var(--color-brand);
-  }
-
-  .item[aria-current="page"] svg,
-  .item[aria-pressed="true"] svg {
-    color: var(--color-brand);
-  }
-
-  /* La llama, en el centro: en un círculo que sobresale de la barra, con su nombre debajo */
-  .brand {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.25rem;
-    inline-size: auto;
-    block-size: auto;
-    margin: 0;
-    padding-block-end: 0.5rem;
-    text-decoration: none;
-  }
-
-  .brand svg {
-    box-sizing: content-box;
-    inline-size: 24px;
-    block-size: 24px;
-    margin-block-start: -1.25rem;
-    padding: 0.75rem;
-    border: 1px solid var(--color-border);
-    border-radius: 50%;
-    background: var(--color-raised);
-  }
-
-  .brand[aria-current="page"] svg {
-    border-color: var(--color-brand);
-  }
-
-  .brandText {
-    display: block;
-    font-size: 0.6875rem;
-    font-weight: 600;
-    line-height: 1;
-    color: var(--color-muted);
-  }
-
-  .brand[aria-current="page"] .brandText {
-    color: var(--color-text);
-  }
-
-  /* Al entrar en un mundo, lo de Mis mundos se va sin animación; al volver, aparece sin más */
-  .merged,
-  .merging {
+  .sections,
+  .foot {
     display: none;
   }
 
-  .emerging {
-    display: flex;
-    animation: none;
+  .mobileOnly {
+    display: grid;
+  }
+
+  .menuButton {
+    place-items: center;
+    inline-size: 3.5rem;
+    block-size: 3.5rem;
+    padding: 0;
+    border: 1px solid var(--color-border);
+    border-radius: 50%;
+    background: var(--color-raised);
+    box-shadow: 0 0.5rem 1.5rem rgb(0 0 0 / 0.35);
+    cursor: pointer;
+    pointer-events: auto;
+  }
+
+  .menuButton[aria-expanded="true"] {
+    border-color: var(--color-brand);
   }
 }
 
-/* La hoja de «Más» */
-.more {
+/* El menú del móvil: las secciones en mosaico y, debajo, la cuenta */
+.menu {
   padding: var(--space-3) var(--space-4) var(--space-4);
+  /* Va dentro de la barra, que en el móvil no recibe toques (solo su botón) */
+  pointer-events: auto;
 }
 
-.moreTitle {
-  margin: 0 0 var(--space-2);
+.menuTitle {
+  margin: 0 0 var(--space-3);
   padding-inline-end: 2.5rem;
   font-size: 1rem;
 }
+
+.menuGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin: 0 0 var(--space-3);
+  padding: 0 0 var(--space-3);
+  list-style: none;
+  border-block-end: 1px solid var(--color-border);
+}
+
+.menuTile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  inline-size: 100%;
+  min-block-size: 4.5rem;
+  padding: var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.menuTile svg {
+  color: var(--color-muted);
+}
+
+.menuTile[aria-current="page"] {
+  border-color: var(--color-brand);
+  background: color-mix(in srgb, var(--color-brand) 10%, transparent);
+}
+
+.menuTile[aria-current="page"] svg {
+  color: var(--color-brand);
+}
+
+/* La cuenta, en el menú del móvil */
 
 .moreList {
   display: grid;
@@ -658,10 +601,4 @@
 
 .moreList svg {
   color: var(--color-muted);
-}
-
-.moreSeparated {
-  margin-block-start: var(--space-2);
-  padding-block-start: var(--space-2);
-  border-block-start: 1px solid var(--color-border);
 }

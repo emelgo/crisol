@@ -26,7 +26,9 @@
   position: sticky;
   inset-block-start: var(--space-4);
   justify-self: start;
-  inline-size: min(100%, 20rem);
+  /* Fijo, con tope: en % dentro de una columna flexible se encogería a su contenido */
+  inline-size: 20rem;
+  max-inline-size: 100%;
   /* Bajo el título, a la altura de la lista */
   margin-block-start: 6.5rem;
 }
@@ -39,7 +41,8 @@
 .side {
   grid-column: 1;
   justify-self: end;
-  inline-size: min(100%, 17rem);
+  inline-size: 17rem;
+  max-inline-size: 100%;
   margin-block-start: 6.5rem;
 }
 
@@ -679,8 +682,10 @@ li:hover > .thumb img {
   border-radius: 4px;
 }
 
-.row:hover {
-  background: var(--color-raised);
+@media (hover: hover) {
+  .row:hover {
+    background: var(--color-raised);
+  }
 }
 
 .row[draggable="true"] {
@@ -740,8 +745,10 @@ li:hover > .thumb img {
   z-index: 1;
 }
 
-.row:hover .rowName {
-  color: var(--color-link);
+@media (hover: hover) {
+  .row:hover .rowName {
+    color: var(--color-link);
+  }
 }
 
 .rowMeta {
@@ -944,8 +951,14 @@ li:hover > .thumb img {
   margin: auto;
 }
 
-.row:hover .pick,
-:global(li):hover > .pick,
+/* Al pasar el ratón (no en lo táctil: ahí un toque deja el «hover» puesto) */
+@media (hover: hover) {
+  .row:hover .pick,
+  :global(li):hover > .pick {
+    opacity: 1;
+  }
+}
+
 .pick:focus-visible,
 .pick:checked,
 [data-selecting] .pick {
@@ -979,12 +992,6 @@ li:hover > .thumb img {
 
   [data-picking] .pick {
     pointer-events: auto;
-  }
-
-  /* Eligiendo, tocar la fila no la abre */
-  [data-picking] .rowName::after,
-  [data-picking] .fileName::after {
-    display: none;
   }
 }
 

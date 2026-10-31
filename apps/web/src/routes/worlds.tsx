@@ -97,7 +97,9 @@ export function Worlds() {
             text: t('tour.worlds.trash', { days: TRASH_DAYS }),
             placement: 'right'
           },
-          { target: '[data-tour="cuenta"]', text: t('tour.worlds.account'), placement: 'right' }
+          { target: '[data-tour="cuenta"]', text: t('tour.worlds.account'), placement: 'right' },
+          // En el móvil, todo va en el menú de la llama
+          { target: '[data-tour="menu-movil"]', text: t('tour.menu') }
         ]}
       />
     </section>

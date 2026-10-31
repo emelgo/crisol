@@ -18,7 +18,7 @@ export const es = {
     home: 'Inicio',
     campaigns: 'Campañas',
     wiki: 'Wiki',
-    more: 'Más',
+    menu: 'Menú',
     pages: 'Páginas',
     search: 'Buscar',
     bookmarks: 'Marcadores',
@@ -721,6 +721,7 @@ export const es = {
     search: 'Buscar etiquetas',
     noResults: 'Ninguna etiqueta se llama así.',
     settingsOf: 'Ajustes de {{name}}',
+    settings: 'Ajustes',
     color: 'Color',
     save: 'Guardar',
     cancel: 'Cancelar',
@@ -1016,6 +1017,12 @@ export const es = {
       upload: 'Desde aquí se suben imágenes, PDF, audio y textos; también puedes soltarlos en la pantalla.',
       folders: 'Tus carpetas, para ordenarlos: arrastra un archivo a una para moverlo.',
       search: 'Busca por nombre en todas las carpetas, o filtra por tipo.'
+    },
+    menu: 'Todas las secciones, aquí.',
+    tags: {
+      create: 'Crea etiquetas.',
+      list: 'Con su engranaje se renombran o se borran.',
+      search: 'Busca entre ellas.'
     }
   },
   profile: {

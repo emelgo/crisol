@@ -2,7 +2,6 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router'
 import {
   BookOpen,
-  Ellipsis,
   Folder,
   Globe,
   Hash,
@@ -159,6 +158,7 @@ export function Ribbon() {
 
   return (
     <div className={styles.ribbon}>
+      <MobileMenu world={inWorld && world ? world : null} master={master} isOwner={isOwner} />
       <nav className={styles.sections} aria-label={t('app.sectionsNav')}>
         <Link
           to="/mundos"
@@ -169,14 +169,10 @@ export function Ribbon() {
           // Dentro de un mundo, salir de él; fuera, como «Mundos»: el cambio rápido de sección
           {...(inWorld ? { viewTransition: LEAVE_WORLD, onClick: leaveWorld } : { viewTransition: SECTION })}
           data-tour="barra-llama"
-          data-slot="3"
           aria-label={t('app.name')}
           translate="no"
         >
           <CrisolMark size={26} />
-          <span className={styles.brandText} aria-hidden="true">
-            {t('app.name')}
-          </span>
         </Link>
         {/* Ya fundidos con la llama (dentro de un mundo), «Mundos» y los archivos comunes no están */}
         {merged ? null : (
@@ -184,7 +180,7 @@ export function Ribbon() {
             to="/mundos"
             activeOptions={{ exact: true }}
             viewTransition={SECTION}
-            className={[...worldsItem, styles.desktopOnly].filter(Boolean).join(' ')}
+            className={worldsItem.filter(Boolean).join(' ')}
             data-tour="barra-mundos"
             onAnimationEnd={() => setPhase('still')}
           >
@@ -200,7 +196,6 @@ export function Ribbon() {
             className={worldsItem.filter(Boolean).join(' ')}
             style={{ '--rise': '-7.4rem' } as CSSProperties}
             data-tour="barra-archivos"
-            data-slot="1"
             // Se piden al acercarse: al llegar, ya están
             onPointerEnter={prefetchCommon}
             onFocus={prefetchCommon}
@@ -217,7 +212,6 @@ export function Ribbon() {
             className={worldsItem.filter(Boolean).join(' ')}
             style={{ '--rise': '-11.2rem' } as CSSProperties}
             data-tour="barra-etiquetas"
-            data-slot="2"
             onPointerEnter={prefetchTags}
             onFocus={prefetchTags}
           >
@@ -240,22 +234,9 @@ export function Ribbon() {
             <WorldPanels worldId={panelsWorld} master={panelsMaster} />
           </div>
         )}
-        {/* En el móvil, fuera de los mundos, el historial cabe en la barra (dentro, va en «Más») */}
-        {isOwner && !inWorld && narrow && (
-          <button
-            type="button"
-            className={`${styles.item} ${styles.mobileOnly}`}
-            data-slot="4"
-            aria-haspopup="dialog"
-            onClick={() => windows?.open('historial')}
-          >
-            <Label icon={History} text={t('ribbon.history')} />
-          </button>
-        )}
-        <MoreSheet worldId={inWorld && master && world ? world.id : null} isOwner={isOwner} history={inWorld} />
       </nav>
       {/* Abajo y fijo: lo de arriba puede crecer o no caber (al entrar en un mundo) sin moverlo */}
-      <div className={`${styles.foot} ${styles.desktopOnly}`}>
+      <div className={styles.foot}>
         {isOwner && (
           <>
             {/* Se abren encima, sin dejar lo que se está viendo */}
@@ -317,7 +298,6 @@ function WorldPanels({ worldId, master }: { worldId: string; master: boolean }) 
         onPointerEnter={prefetchHome}
         onFocus={prefetchHome}
         data-tour="barra-inicio"
-        data-slot="1"
       >
         <Label icon={House} text={t('ribbon.home')} />
       </Link>
@@ -329,7 +309,6 @@ function WorldPanels({ worldId, master }: { worldId: string; master: boolean }) 
         onPointerEnter={prefetchCampaigns}
         onFocus={prefetchCampaigns}
         data-tour="barra-campanas"
-        data-slot="2"
       >
         <Label icon={Swords} text={t('ribbon.campaigns')} />
       </Link>
@@ -373,7 +352,6 @@ function WikiPanels({ worldId }: { worldId: string }) {
         className={styles.item}
         aria-pressed={inWiki && (narrow ? wikiPanel.open : !wikiPanel.collapsed)}
         data-tour="barra-wiki"
-        data-slot="4"
         onClick={press(inWiki ? wikiPanel.panel : 'pages')}
       >
         <Label icon={BookOpen} text={t('ribbon.wiki')} />
@@ -381,7 +359,7 @@ function WikiPanels({ worldId }: { worldId: string }) {
       <Link
         to="/mundos/$worldId/archivos"
         params={{ worldId }}
-        className={`${styles.item} ${styles.desktopOnly}`}
+        className={styles.item}
         viewTransition={SECTION}
         onPointerEnter={prefetchFiles}
         onFocus={prefetchFiles}
@@ -394,24 +372,25 @@ function WikiPanels({ worldId }: { worldId: string }) {
 }
 
 /**
- * En el móvil, «Más»: lo que no cabe en la barra de abajo (de un mundo, sus archivos; el historial, la
- * papelera y la cuenta), en una hoja que sube desde abajo
+ * En el móvil, en vez de la barra: la llama, sola, abajo en el centro. Al tocarla sube una hoja con todas las secciones
+ * de donde se está (fuera de los mundos, Mis mundos, Archivos, Etiquetas, Historial y Papelera; dentro, las del mundo y
+ * la vuelta a Mis mundos) y, debajo, la cuenta
  */
-function MoreSheet({
-  worldId,
-  isOwner,
-  history
+function MobileMenu({
+  world,
+  master,
+  isOwner
 }: {
-  worldId: string | null
+  world: { id: string; name: string } | null
+  master: boolean
   isOwner: boolean
-  /** Si lleva el historial (fuera de los mundos va en la barra) */
-  history: boolean
 }) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const accounts = useAccounts()
-  const { account } = accounts.useAccount()
   const windows = useWindow()
+  const wikiPanel = useWikiPanel()
+  const path = useRouterState({ select: (state) => state.location.pathname })
   const trigger = useRef<HTMLButtonElement>(null)
   const dialog = useRef<HTMLDialogElement>(null)
   const titleId = useId()
@@ -421,59 +400,143 @@ function MoreSheet({
     dialog.current?.close()
     action()
   }
+  const go = (to: string) => then(() => void navigate({ to, viewTransition: SECTION } as never))
+  type Entry = { key: string; icon: LucideIcon; text: string; current: boolean; run: () => void }
+  const entries: Entry[] = world
+    ? [
+        {
+          key: 'mundos',
+          icon: Globe,
+          text: t('ribbon.worlds'),
+          current: false,
+          run: then(() => {
+            leaveWorld()
+            void navigate({ to: '/mundos', viewTransition: LEAVE_WORLD })
+          })
+        },
+        {
+          key: 'inicio',
+          icon: House,
+          text: t('ribbon.home'),
+          current: path === `/mundos/${world.id}`,
+          run: go(`/mundos/${world.id}`)
+        },
+        {
+          key: 'campanas',
+          icon: Swords,
+          text: t('ribbon.campaigns'),
+          current: path.startsWith(`/mundos/${world.id}/campanas`),
+          run: go(`/mundos/${world.id}/campanas`)
+        },
+        ...(master
+          ? [
+              {
+                key: 'wiki',
+                icon: BookOpen,
+                text: t('ribbon.wiki'),
+                current: /^\/mundos\/[^/]+\/(wiki|buscar)/.test(path),
+                // Abre el cajón de sus páginas (y, si no se está en ella, entra en la wiki)
+                run: then(() => {
+                  wikiPanel.show('pages', trigger.current)
+                  if (!/^\/mundos\/[^/]+\/(wiki|buscar)/.test(path)) {
+                    void navigate({
+                      to: '/mundos/$worldId/wiki',
+                      params: { worldId: world.id },
+                      viewTransition: SECTION
+                    })
+                  }
+                })
+              },
+              {
+                key: 'archivos',
+                icon: Folder,
+                text: t('ribbon.files'),
+                current: path === `/mundos/${world.id}/archivos`,
+                run: go(`/mundos/${world.id}/archivos`)
+              }
+            ]
+          : [])
+      ]
+    : [
+        { key: 'mundos', icon: Globe, text: t('ribbon.worlds'), current: path === '/mundos', run: go('/mundos') },
+        ...(isOwner
+          ? [
+              {
+                key: 'archivos',
+                icon: Folder,
+                text: t('ribbon.files'),
+                current: path === '/archivos',
+                run: go('/archivos')
+              },
+              {
+                key: 'etiquetas',
+                icon: Hash,
+                text: t('ribbon.tags'),
+                current: path === '/etiquetas',
+                run: go('/etiquetas')
+              }
+            ]
+          : [])
+      ]
+  if (isOwner) {
+    entries.push(
+      {
+        key: 'historial',
+        icon: History,
+        text: t('ribbon.history'),
+        current: false,
+        run: then(() => windows?.open('historial', trigger.current))
+      },
+      {
+        key: 'papelera',
+        icon: Trash2,
+        text: t('ribbon.trash'),
+        current: false,
+        run: then(() => windows?.open('papelera', trigger.current))
+      }
+    )
+  }
   return (
     <>
       <button
         ref={trigger}
         type="button"
-        className={`${styles.item} ${styles.mobileOnly}`}
-        data-slot="5"
+        className={`${styles.menuButton} ${styles.mobileOnly}`}
+        aria-label={t('ribbon.menu')}
         aria-haspopup="dialog"
+        aria-expanded={open}
+        data-tour="menu-movil"
         onClick={() => setOpen(true)}
       >
-        <Label icon={Ellipsis} text={t('ribbon.more')} />
+        <CrisolMark size={26} />
       </button>
       {open && (
         <Modal
           ref={dialog}
           aria-labelledby={titleId}
-          className={`${dialogStyles.dialog} ${styles.more}`}
+          className={`${dialogStyles.dialog} ${styles.menu}`}
           onClose={() => setOpen(false)}
         >
-          <h2 id={titleId} className={styles.moreTitle}>
-            {account?.name}
+          <h2 id={titleId} className={styles.menuTitle}>
+            {world ? world.name : t('app.name')}
           </h2>
-          <ul className={styles.moreList}>
-            {worldId && (
-              <li>
+          <ul className={styles.menuGrid}>
+            {entries.map((entry) => (
+              <li key={entry.key}>
                 <button
                   type="button"
-                  onClick={then(() => void navigate({ to: '/mundos/$worldId/archivos', params: { worldId } }))}
+                  className={styles.menuTile}
+                  aria-current={entry.current ? 'page' : undefined}
+                  onClick={entry.run}
                 >
-                  <Folder aria-hidden="true" size={18} />
-                  {t('ribbon.files')}
+                  <entry.icon aria-hidden="true" size={22} strokeWidth={1.75} />
+                  {entry.text}
                 </button>
               </li>
-            )}
-            {isOwner && (
-              <>
-                {history && (
-                  <li>
-                    <button type="button" onClick={then(() => windows?.open('historial', trigger.current))}>
-                      <History aria-hidden="true" size={18} />
-                      {t('ribbon.history')}
-                    </button>
-                  </li>
-                )}
-                <li>
-                  <button type="button" onClick={then(() => windows?.open('papelera', trigger.current))}>
-                    <Trash2 aria-hidden="true" size={18} />
-                    {t('ribbon.trash')}
-                  </button>
-                </li>
-              </>
-            )}
-            <li className={styles.moreSeparated}>
+            ))}
+          </ul>
+          <ul className={styles.moreList}>
+            <li>
               <button type="button" onClick={then(() => windows?.open('perfil', trigger.current))}>
                 <User aria-hidden="true" size={18} />
                 {t('profile.title')}

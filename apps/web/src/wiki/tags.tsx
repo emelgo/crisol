@@ -17,10 +17,12 @@ import form from '../components/form.module.css'
 import { failed, LoadError } from '../components/load-error.tsx'
 import { Modal } from '../components/modal.tsx'
 import { PageTitle } from '../components/page-title.tsx'
+import { Tour } from '../components/tour.tsx'
 import cards from '../routes/world-card.module.css'
 import { ColorChoices } from '../routes/world-card.tsx'
 import { colorHex } from '../routes/world-look.ts'
 import files from './files.module.css'
+import { useNarrow } from './panel.tsx'
 import styles from './tags.module.css'
 
 /** El color de una etiqueta, para su punto */
@@ -183,7 +185,7 @@ export function AccountTags() {
           <PageTitle>{t('tags.title')}</PageTitle>
           <div className={files.tools}>
             <NewTag onCreated={refresh} />
-            <label className={files.search}>
+            <label className={files.search} data-tour="etiquetas-buscar">
               <Search aria-hidden="true" size={16} />
               <input
                 type="search"
@@ -201,7 +203,7 @@ export function AccountTags() {
             ) : shown.length === 0 ? (
               <p className={files.empty}>{t('tags.noResults')}</p>
             ) : (
-              <ul className={files.rows} aria-label={t('tags.title')}>
+              <ul className={files.rows} aria-label={t('tags.title')} data-tour="etiquetas-lista">
                 {shown.map((tag) => (
                   <TagRow
                     key={tag.name}
@@ -218,6 +220,16 @@ export function AccountTags() {
           {detail && <TagDetail key={detail.name} tag={detail} />}
         </aside>
       </div>
+      {tags.data && (
+        <Tour
+          id="etiquetas"
+          steps={[
+            { target: '[data-tour="etiquetas-nueva"]', text: t('tour.tags.create') },
+            { target: '[data-tour="etiquetas-lista"]', text: t('tour.tags.list') },
+            { target: '[data-tour="etiquetas-buscar"]', text: t('tour.tags.search') }
+          ]}
+        />
+      )}
     </section>
   )
 }
@@ -246,8 +258,12 @@ function TagRow({
   onPreview: (shown: boolean) => void
   onChanged: () => Promise<unknown>
 }) {
+  const { t } = useTranslation()
   const uses = useUses()
   const name = indent && tag.depth > 0 ? tag.name.split('/').at(-1) : tag.name
+  // En el móvil (sin ratón que pase por encima), tocarla sube su hoja: lo que es y sus ajustes
+  const narrow = useNarrow()
+  const [open, setOpen] = useState<'sheet' | 'settings' | null>(null)
   return (
     <li
       className={`${files.row} ${styles.tagRow}`}
@@ -260,10 +276,41 @@ function TagRow({
     >
       <span className={styles.dot} style={tagDot(tag.color)} aria-hidden="true" />
       <span className={files.rowText}>
-        <span className={styles.name}>{name}</span>
+        {narrow ? (
+          <button
+            type="button"
+            className={`${files.rowName} ${files.open} ${styles.name}`}
+            aria-haspopup="dialog"
+            onClick={() => setOpen('sheet')}
+          >
+            {name}
+          </button>
+        ) : (
+          <span className={styles.name}>{name}</span>
+        )}
       </span>
       <span className={`${files.rowMeta} ${styles.usesAside}`}>{uses(tag)}</span>
       <TagSettings tag={tag} onChanged={onChanged} />
+      {open === 'sheet' && (
+        <Modal
+          aria-label={tag.name}
+          className={`${dialogStyles.dialog} ${files.sheet}`}
+          onClose={() => setOpen((current) => (current === 'sheet' ? null : current))}
+        >
+          <TagDetail tag={tag} />
+          <div className={files.sheetActions}>
+            <button
+              type="button"
+              className={`${form.button} ${files.sheetSecondary}`}
+              onClick={() => setOpen('settings')}
+            >
+              <Settings aria-hidden="true" size={16} />
+              {t('tags.settings')}
+            </button>
+          </div>
+        </Modal>
+      )}
+      {open === 'settings' && <TagDialog tag={tag} onChanged={onChanged} onClose={() => setOpen(null)} />}
     </li>
   )
 }
@@ -322,6 +369,7 @@ function NewTag({ onCreated }: { onCreated: () => Promise<unknown> }) {
         type="button"
         className={`${form.button} ${files.uploadButton}`}
         aria-haspopup="dialog"
+        data-tour="etiquetas-nueva"
         onClick={() => {
           setName('')
           setColor(null)
@@ -378,16 +426,54 @@ function NewTag({ onCreated }: { onCreated: () => Promise<unknown> }) {
   )
 }
 
-/** El engranaje de una etiqueta: su nombre (con la ruta), su color y borrarla */
+/** El engranaje de una etiqueta: abre su ventana */
 function TagSettings({ tag, onChanged }: { tag: TagView; onChanged: () => Promise<unknown> }) {
+  const { t } = useTranslation()
+  const trigger = useRef<HTMLButtonElement>(null)
+  const [open, setOpen] = useState(false)
+  return (
+    <>
+      <button
+        ref={trigger}
+        type="button"
+        className={files.smallGear}
+        aria-label={t('tags.settingsOf', { name: tag.name })}
+        title={t('tags.settingsOf', { name: tag.name })}
+        aria-haspopup="dialog"
+        onClick={() => setOpen(true)}
+      >
+        <Settings aria-hidden="true" size={14} />
+      </button>
+      {open && (
+        <TagDialog
+          tag={tag}
+          onChanged={onChanged}
+          onClose={(gone) => {
+            setOpen(false)
+            if (!gone) trigger.current?.focus()
+          }}
+        />
+      )}
+    </>
+  )
+}
+
+/** La ventana de una etiqueta: su nombre (con la ruta), su color y borrarla. onClose(gone): si se borró */
+function TagDialog({
+  tag,
+  onChanged,
+  onClose
+}: {
+  tag: TagView
+  onChanged: () => Promise<unknown>
+  onClose: (gone: boolean) => void
+}) {
   const { t } = useTranslation()
   const api = useApi()
   const errorText = useErrorText()
-  const trigger = useRef<HTMLButtonElement>(null)
   const dialog = useRef<HTMLDialogElement>(null)
   const titleId = useId()
   const gone = useRef(false)
-  const [open, setOpen] = useState(false)
   const [name, setName] = useState(tag.name)
   const [color, setColor] = useState(tag.color)
   const changed = name.trim() !== tag.name || color !== tag.color
@@ -409,87 +495,58 @@ function TagSettings({ tag, onChanged }: { tag: TagView; onChanged: () => Promis
     await onChanged()
   }
   return (
-    <>
-      <button
-        ref={trigger}
-        type="button"
-        className={files.smallGear}
-        aria-label={t('tags.settingsOf', { name: tag.name })}
-        title={t('tags.settingsOf', { name: tag.name })}
-        aria-haspopup="dialog"
-        onClick={() => {
-          setName(tag.name)
-          setColor(tag.color)
-          save.reset()
-          gone.current = false
-          setOpen(true)
+    <Modal ref={dialog} aria-labelledby={titleId} className={cards.dialog} onClose={() => onClose(gone.current)}>
+      <div className={`${files.preview} ${styles.big}`} style={tagDot(color)}>
+        <Hash aria-hidden="true" size={48} strokeWidth={1.25} />
+      </div>
+      <form
+        className={cards.form}
+        onSubmit={(event) => {
+          event.preventDefault()
+          if (changed) save.mutate()
         }}
       >
-        <Settings aria-hidden="true" size={14} />
-      </button>
-      {open && (
-        <Modal
-          ref={dialog}
-          aria-labelledby={titleId}
-          className={cards.dialog}
-          onClose={() => {
-            setOpen(false)
-            if (!gone.current) trigger.current?.focus()
-          }}
-        >
-          <div className={`${files.preview} ${styles.big}`} style={tagDot(color)}>
-            <Hash aria-hidden="true" size={48} strokeWidth={1.25} />
-          </div>
-          <form
-            className={cards.form}
-            onSubmit={(event) => {
-              event.preventDefault()
-              if (changed) save.mutate()
+        <h2 id={titleId}>{t('tags.settingsOf', { name: tag.name })}</h2>
+        <Field
+          label={t('tags.name')}
+          hint={t('tags.nameHint')}
+          value={name}
+          required
+          maxLength={100}
+          autoComplete="off"
+          onChange={(event) => setName(event.currentTarget.value.replace(/\s/g, ''))}
+        />
+        <ColorChoices value={color} onChange={setColor} />
+        <FormError message={save.error ? errorText(save.error) : null} />
+        <ChangesBar shown={changed}>
+          <BusyButton type="submit" className={form.button} busy={save.isPending}>
+            {t('tags.save')}
+          </BusyButton>
+          <button
+            type="button"
+            className={dialogStyles.cancel}
+            onClick={() => {
+              setName(tag.name)
+              setColor(tag.color)
             }}
           >
-            <h2 id={titleId}>{t('tags.settingsOf', { name: tag.name })}</h2>
-            <Field
-              label={t('tags.name')}
-              hint={t('tags.nameHint')}
-              value={name}
-              required
-              maxLength={100}
-              autoComplete="off"
-              onChange={(event) => setName(event.currentTarget.value.replace(/\s/g, ''))}
-            />
-            <ColorChoices value={color} onChange={setColor} />
-            <FormError message={save.error ? errorText(save.error) : null} />
-            <ChangesBar shown={changed}>
-              <BusyButton type="submit" className={form.button} busy={save.isPending}>
-                {t('tags.save')}
-              </BusyButton>
-              <button
-                type="button"
-                className={dialogStyles.cancel}
-                onClick={() => {
-                  setName(tag.name)
-                  setColor(tag.color)
-                }}
-              >
-                {t('tags.cancel')}
-              </button>
-            </ChangesBar>
-          </form>
-          <div className={cards.dangerArea}>
-            <DangerZone>
-              <ConfirmByName
-                name={tag.name}
-                action={t('tags.delete')}
-                title={t('tags.deleteTitle', { name: tag.name })}
-                warning={t('tags.deleteWarning')}
-                label={t('tags.name')}
-                typed={false}
-                onConfirm={remove}
-              />
-            </DangerZone>
-          </div>
-        </Modal>
-      )}
-    </>
+            {t('tags.cancel')}
+          </button>
+        </ChangesBar>
+      </form>
+      <div className={cards.dangerArea}>
+        <DangerZone>
+          <ConfirmByName
+            name={tag.name}
+            action={t('tags.delete')}
+            title={t('tags.deleteTitle', { name: tag.name })}
+            warning={t('tags.deleteWarning')}
+            label={t('tags.name')}
+            typed={false}
+            onConfirm={remove}
+          />
+        </DangerZone>
+      </div>
+    </Modal>
   )
 }

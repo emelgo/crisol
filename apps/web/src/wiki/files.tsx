@@ -29,6 +29,7 @@ import {
 import {
   createContext,
   type DragEvent,
+  type MouseEvent,
   type ReactNode,
   useCallback,
   useContext,
@@ -205,9 +206,26 @@ function FilesTour() {
 interface Selection {
   has: (id: string) => boolean
   active: boolean
+  /** Eligiendo con «Elegir» (lo táctil): tocar algo lo elige en vez de abrirlo */
+  picking: boolean
   toggle: (id: string, what: 'file' | 'folder') => void
 }
 const SelectionContext = createContext<Selection | null>(null)
+
+/**
+ * Para el clic (en captura) de una fila o una tarjeta: eligiendo, lo elige o lo suelta en vez de abrirlo (salvo en su
+ * casilla, que ya lo hace). Devuelve si lo ha hecho
+ */
+function usePickOnTap(id: string, what: 'file' | 'folder', enabled: boolean) {
+  const selection = useContext(SelectionContext)
+  return (event: MouseEvent) => {
+    if (!enabled || !selection?.picking || (event.target as Element).closest('input')) return false
+    event.preventDefault()
+    event.stopPropagation()
+    selection.toggle(id, what)
+    return true
+  }
+}
 
 /** La casilla para elegir un archivo o una carpeta (sobre su miniatura; se ve al pasar el ratón o al elegir) */
 function Pick({ id, what, name }: { id: string; what: 'file' | 'folder'; name: string }) {
@@ -455,6 +473,7 @@ function FilesSection({
   const selection = {
     has: (id: string) => chosen.has(id),
     active: chosenNow.length > 0,
+    picking,
     toggle: (id: string, what: 'file' | 'folder') =>
       setChosen((current) => {
         const next = new Map(current)
@@ -967,6 +986,7 @@ function FileRow({
   onPreview?: ((shown: boolean) => void) | undefined
   onChanged: () => Promise<unknown>
 }) {
+  const pickOnTap = usePickOnTap(file.id, 'file', canWrite)
   const { i18n } = useTranslation()
   return (
     <li
@@ -979,6 +999,7 @@ function FileRow({
       onPointerLeave={() => onPreview?.(false)}
       // Al abrir algo suyo (su engranaje, la imagen en grande), el detalle se va
       onClickCapture={(event) => {
+        if (pickOnTap(event)) return
         if ((event.target as Element).closest('[aria-haspopup="dialog"]')) onPreview?.(false)
       }}
     >
@@ -1163,6 +1184,7 @@ function FolderRow({
   onMove: (fileId: string, folderId: string | null) => Promise<unknown>
   onChanged: () => Promise<unknown>
 }) {
+  const pickOnTap = usePickOnTap(folder.id, 'folder', canWrite && !fixed)
   const { t } = useTranslation()
   const [over, setOver] = useState(false)
   const opener = useFolderOpen({ folder, files, folders, canWrite: canWrite && !fixed, onOpen, onChanged })
@@ -1174,6 +1196,7 @@ function FolderRow({
       onPointerLeave={() => onPreview?.(false)}
       // Al abrir algo suyo (su engranaje, la imagen en grande), el detalle se va
       onClickCapture={(event) => {
+        if (pickOnTap(event)) return
         if ((event.target as Element).closest('[aria-haspopup="dialog"]')) onPreview?.(false)
       }}
       onDragOver={(event) => {
@@ -1410,6 +1433,7 @@ function FolderCard({
   /** Al pasar el ratón (true) y al irse (false): para el panel de la derecha */
   onPreview?: ((shown: boolean) => void) | undefined
 }) {
+  const pickOnTap = usePickOnTap(folder.id, 'folder', canWrite)
   const { t } = useTranslation()
   const [over, setOver] = useState(false)
   const opener = useFolderOpen({ folder, files, folders, canWrite, onOpen, onChanged })
@@ -1428,6 +1452,7 @@ function FolderCard({
       onPointerLeave={() => onPreview?.(false)}
       // Al abrir algo suyo (su engranaje, la imagen en grande), el detalle se va
       onClickCapture={(event) => {
+        if (pickOnTap(event)) return
         if ((event.target as Element).closest('[aria-haspopup="dialog"]')) onPreview?.(false)
       }}
       onDragOver={(event) => {
@@ -1916,6 +1941,7 @@ function FileCard({
   /** Al pasar el ratón (true) y al irse (false): para el panel de la derecha */
   onPreview?: ((shown: boolean) => void) | undefined
 }) {
+  const pickOnTap = usePickOnTap(file.id, 'file', canWrite)
   const { t, i18n } = useTranslation()
   const classes = [cards.card, fresh ? styles.appear : ''].filter(Boolean)
   return (
@@ -1926,6 +1952,7 @@ function FileCard({
       onPointerLeave={() => onPreview?.(false)}
       // Al abrir algo suyo (su engranaje, la imagen en grande), el detalle se va
       onClickCapture={(event) => {
+        if (pickOnTap(event)) return
         if ((event.target as Element).closest('[aria-haspopup="dialog"]')) onPreview?.(false)
       }}
       draggable={canWrite}

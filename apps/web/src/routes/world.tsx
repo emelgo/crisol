@@ -75,7 +75,8 @@ export function WorldPage() {
                 { target: '[data-tour="engranaje"]', text: t('tour.world.settings') }
               ] as const)
             : []),
-          { target: '[data-tour="barra-llama"]', text: t('tour.world.back'), placement: 'right' }
+          { target: '[data-tour="barra-llama"]', text: t('tour.world.back'), placement: 'right' },
+          { target: '[data-tour="menu-movil"]', text: t('tour.menu') }
         ]}
       />
     </section>

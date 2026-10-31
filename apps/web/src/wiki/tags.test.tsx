@@ -57,7 +57,7 @@ const rows = () =>
 beforeEach(() =>
   localStorage.setItem(
     'crisol.recorridos.enrique@crisol.test',
-    JSON.stringify({ seen: ['mundos', 'mundo', 'archivos'] })
+    JSON.stringify({ seen: ['mundos', 'mundo', 'archivos', 'etiquetas'] })
   )
 )
 
@@ -74,6 +74,12 @@ describe('las etiquetas de la cuenta', () => {
     await userEvent.click(within(create).getByRole('radio', { name: 'Vino' }))
     await userEvent.click(within(create).getByRole('button', { name: 'Crear la etiqueta' }))
     await waitFor(() => expect(rows()).toContain('facciónSin usar'))
+  })
+
+  it('la primera vez sale su guía', async () => {
+    localStorage.setItem('crisol.recorridos.enrique@crisol.test', JSON.stringify({ seen: ['mundos'] }))
+    renderAt('/etiquetas')
+    expect(await screen.findByText('Crea etiquetas.', {}, { timeout: 3000 })).toBeDefined()
   })
 
   it('renombrar desde su engranaje cambia también sus hijas', async () => {

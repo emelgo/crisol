@@ -19,6 +19,14 @@ async function newPage(page: Page, title: string, button = 'Página nueva') {
   await expect(page.getByRole('heading', { level: 1, name: title })).toBeVisible()
 }
 
+/** En el móvil, la wiki se abre desde el menú de la llama */
+async function openMobileWiki(page: Page) {
+  await page.getByRole('button', { name: 'Menú' }).click()
+  await page.getByRole('dialog', { name: 'Eana' }).getByRole('button', { name: 'Wiki' }).click()
+  // El menú se va del todo (su animación de salida) antes de seguir
+  await expect(page.getByRole('dialog', { name: 'Eana' })).toHaveCount(0)
+}
+
 const tree = (page: Page) => page.getByRole('tree', { name: 'Páginas' })
 const titles = (page: Page) => tree(page).getByRole('treeitem')
 
@@ -140,7 +148,7 @@ test('pestañas y marcadores siguen al recargar; en el móvil, las abiertas van 
 
   await page.setViewportSize({ width: 390, height: 844 })
   await expect(tabs).toBeHidden()
-  await page.getByRole('button', { name: 'Wiki' }).click()
+  await openMobileWiki(page)
   await page.getByRole('tab', { name: 'Páginas' }).click()
   await expect(page.getByRole('navigation', { name: 'Abiertas' }).getByRole('link')).toHaveText([
     'Maela Varn',
@@ -154,12 +162,12 @@ test('en el móvil el árbol va en un cajón, que se cierra al abrir una página
   await newPage(page, 'Personajes')
   await page.setViewportSize({ width: 390, height: 844 })
   await expect(tree(page)).toBeHidden()
-  await page.getByRole('button', { name: 'Wiki' }).click()
+  await openMobileWiki(page)
   await expect(page.getByRole('button', { name: 'Cerrar' })).toBeFocused()
   await page.keyboard.press('Escape')
   await expect(tree(page)).toBeHidden()
-  await expect(page.getByRole('button', { name: 'Wiki' })).toBeFocused()
-  await page.getByRole('button', { name: 'Wiki' }).click()
+  await expect(page.getByRole('button', { name: 'Menú' })).toBeFocused()
+  await openMobileWiki(page)
   await tree(page).getByRole('treeitem', { name: 'Lugares' }).click()
   await expect(page.getByRole('heading', { level: 1, name: 'Lugares' })).toBeVisible()
   await expect(tree(page)).toBeHidden()
@@ -214,7 +222,7 @@ test('la wiki, en los dos temas y en el móvil @a11y', async ({ page }) => {
   await page.goto(wiki)
   await page.getByRole('tree').getByRole('treeitem', { name: 'Lugares' }).click()
   await page.setViewportSize({ width: 390, height: 844 })
-  await page.getByRole('button', { name: 'Wiki' }).click()
+  await openMobileWiki(page)
   await expect(tree(page)).toBeVisible()
   await check()
 })

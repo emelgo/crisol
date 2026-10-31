@@ -63,10 +63,14 @@ export async function openWorld(page: Page, name: string) {
   await expect(page.getByRole('heading', { level: 1, name, exact: true })).toBeVisible()
 }
 
-/** Desde Mis mundos, entra en un mundo y abre su wiki con «Páginas» */
+/** Desde Mis mundos, entra en un mundo y abre su wiki con «Páginas» (en el móvil, desde el menú de la llama) */
 export async function openWiki(page: Page, name: string) {
   await openWorld(page, name)
-  await sections(page).getByRole('button', { name: 'Wiki' }).click()
+  const menu = page.getByRole('button', { name: 'Menú' })
+  if (await menu.isVisible()) {
+    await menu.click()
+    await page.getByRole('dialog', { name }).getByRole('button', { name: 'Wiki' }).click()
+  } else await sections(page).getByRole('button', { name: 'Wiki' }).click()
   await expect(page).toHaveURL(/\/wiki$/)
 }
 
@@ -107,7 +111,7 @@ export async function remove(page: Page, kind: Kind, name: string) {
 /** Los tutoriales guiados de cada vista, ya hechos para esa cuenta: salen la primera vez y taparían lo que se prueba */
 export async function skipTours(page: Page, email: string) {
   await page.addInitScript((key) => {
-    localStorage.setItem(key, JSON.stringify({ seen: ['mundos', 'mundo', 'campanas', 'archivos'] }))
+    localStorage.setItem(key, JSON.stringify({ seen: ['mundos', 'mundo', 'campanas', 'archivos', 'etiquetas'] }))
   }, `crisol.recorridos.${email}`)
 }
 
