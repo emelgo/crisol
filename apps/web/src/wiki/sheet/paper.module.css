@@ -96,6 +96,11 @@
   color: var(--sheet-accent);
 }
 
+/* Ningún bloque se parte entre columnas (un secreto, un recuadro, una lista) */
+.paper :global(.ProseMirror) > * {
+  break-inside: avoid;
+}
+
 /* Los bloques de la hoja, con el aire del tema; no se parten entre columnas */
 .paper [data-statblock] {
   padding: 0.6em 0.8em;

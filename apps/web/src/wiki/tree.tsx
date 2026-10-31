@@ -2,7 +2,7 @@ import type { PageSummary } from '@crisol/contracts'
 import { useQueries, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { type CSSProperties, type DragEvent, type KeyboardEvent, useEffect, useRef, useState } from 'react'
+import { type CSSProperties, type DragEvent, type KeyboardEvent, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
@@ -48,6 +48,7 @@ interface Props {
  */
 export function PageTree({ worldId, currentId, path, onNavigate }: Props) {
   const { t } = useTranslation()
+  const hintId = useId()
   const api = useApi()
   const queryClient = useQueryClient()
   const announce = useAnnounce()
@@ -288,6 +289,7 @@ export function PageTree({ worldId, currentId, path, onNavigate }: Props) {
       <div
         role="tree"
         aria-label={t('wiki.pages')}
+        aria-describedby={hintId}
         className={styles.tree}
         style={virtual ? { blockSize: virtualizer.getTotalSize(), position: 'relative' } : undefined}
       >
@@ -305,7 +307,10 @@ export function PageTree({ worldId, currentId, path, onNavigate }: Props) {
             })
           : rows.map((row) => renderRow(row))}
       </div>
-      <p className={styles.hint}>{t('wiki.moveHint')}</p>
+      {/* Cómo se recoloca: para los lectores de pantalla (con el ratón se ve al arrastrar) */}
+      <p id={hintId} className={styles.hint}>
+        {t('wiki.moveHint')}
+      </p>
     </div>
   )
 }

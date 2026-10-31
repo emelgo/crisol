@@ -13,7 +13,7 @@
 
 .secret[data-selected],
 .note[data-selected] {
-  outline: 2px solid var(--color-focus);
+  outline: 2px solid var(--color-secret-rule);
   outline-offset: 2px;
 }
 

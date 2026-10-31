@@ -42,8 +42,11 @@ export function Backlinks({ page }: { page: Page }) {
   return (
     <section aria-labelledby={`${id}-title`} className={styles.panel}>
       <h2 id={`${id}-title`}>{t('backlinks.title')}</h2>
-      <h3 id={`${id}-in`}>{t('backlinks.incoming')}</h3>
-      {data && data.incoming.length === 0 && <p className={styles.empty}>{t('backlinks.noIncoming')}</p>}
+      {/* Sin nada: una sola línea; si no, cada lista con su título */}
+      {data && data.incoming.length === 0 && data.mentions.length === 0 && (
+        <p className={styles.empty}>{t('backlinks.none')}</p>
+      )}
+      {data && data.incoming.length > 0 && <h3 id={`${id}-in`}>{t('backlinks.incoming')}</h3>}
       {data && data.incoming.length > 0 && (
         <ul aria-labelledby={`${id}-in`} className={list.list}>
           {data.incoming.map((item) => (
@@ -58,8 +61,7 @@ export function Backlinks({ page }: { page: Page }) {
           ))}
         </ul>
       )}
-      <h3 id={`${id}-mentions`}>{t('backlinks.mentions')}</h3>
-      {data && data.mentions.length === 0 && <p className={styles.empty}>{t('backlinks.noMentions')}</p>}
+      {data && data.mentions.length > 0 && <h3 id={`${id}-mentions`}>{t('backlinks.mentions')}</h3>}
       {data && data.mentions.length > 0 && (
         <ul aria-labelledby={`${id}-mentions`} className={list.list}>
           {data.mentions.map((item) => (

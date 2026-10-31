@@ -168,3 +168,8 @@ a.chipLink:hover {
   background: var(--color-surface);
   outline: none;
 }
+
+.field input::-webkit-calendar-picker-indicator,
+.fieldInline input::-webkit-calendar-picker-indicator {
+  display: none !important;
+}

@@ -366,6 +366,7 @@ export const es = {
     title: 'Enlaces',
     incoming: 'La enlazan',
     noIncoming: 'Ninguna página la enlaza.',
+    none: 'Ninguna página la enlaza ni la nombra.',
     mentions: 'La nombran sin enlazar',
     noMentions: 'Ninguna página la nombra sin enlazarla.',
     inSecret: 'en un secreto',

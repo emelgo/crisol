@@ -116,7 +116,8 @@ test('los enlaces de la página: quién la enlaza, dónde se la nombra y «Enlaz
   await mentions.getByRole('button', { name: 'Enlazar en «Notas»' }).click()
   await expect(page.getByRole('status').getByText('Enlazada en «Notas».')).toBeAttached()
   await expect(incoming.getByRole('link', { name: 'Notas' })).toBeVisible()
-  await expect(panel.getByText('Ninguna página la nombra sin enlazarla.')).toBeVisible()
+  // Ya no queda ninguna sin enlazar: su lista se va
+  await expect(mentions).toHaveCount(0)
 
   // Al borrarla, el aviso dice cuántas la enlazan
   await page.getByRole('button', { name: 'Más acciones' }).click()

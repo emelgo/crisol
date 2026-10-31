@@ -69,6 +69,8 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   derecha). Sin «Editar», «Guardar», «Cancelar» ni «Renombrar», y sin barra de botones encima del texto: los bloques
   con «/», los enlaces con «@» o «[[», buscar con Ctrl+Alt+F y el menú del bloque con Ctrl+Alt+B. La cabecera, en
   iconos (Marcar, Bloquear, Hoja, «⋯»).
+- **Alrededor de la página, nada pesa** («la UI es rara»): los paneles de los lados sin recuadros, con títulos
+  pequeños y grises; «Página nueva», «Exportar» y «Nueva subpágina», discretos; un vacío dice una sola línea.
 - **La hoja es lo que hace única la wiki**, y se escribe encima: con la hoja puesta, la página entera va sobre el
   papel del tema, a dos columnas (una en el móvil). Las páginas numeradas, al imprimir y en el PDF.
 

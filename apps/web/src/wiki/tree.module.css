@@ -87,7 +87,10 @@
 
 .empty,
 .hint {
-  margin: var(--space-3) 0 0;
-  color: var(--color-muted);
-  font-size: 0.875rem;
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }

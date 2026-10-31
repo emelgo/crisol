@@ -135,7 +135,8 @@ export function WikiLayout({
             {titles[panel]}
           </h2>
           {panel === 'pages' && (
-            <BusyButton className={form.button} busy={create.isPending} onClick={() => create.mutate(null)}>
+            <BusyButton className={styles.newPage} busy={create.isPending} onClick={() => create.mutate(null)}>
+              <Plus aria-hidden="true" size={15} />
               {t('wiki.newPage')}
             </BusyButton>
           )}
