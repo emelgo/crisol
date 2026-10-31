@@ -64,11 +64,17 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
 ## Pantallas
 - **La wiki se edita en el sitio, como en el Crisol antiguo** (`docs/specs/wiki-edicion.md`): «no me gusta que todo sea
   como con botones, debe ser más ágil, poder cambiar todo en edición, incluso el título». Se abre la página y se
-  escribe: el título es el propio encabezado (Intro guarda, Escape deshace), las propiedades son una tabla siempre
-  editable, «Icono» y «Portada» salen al acercarse, y todo se guarda solo («Guardando…», «Guardado», abajo a la
-  derecha). Sin «Editar», «Guardar», «Cancelar» ni «Renombrar», y sin barra de botones encima del texto: los bloques
-  con «/», los enlaces con «@» o «[[», buscar con Ctrl+Alt+F y el menú del bloque con Ctrl+Alt+B. La cabecera, en
-  iconos (Marcar, Bloquear, Hoja, «⋯»).
+  escribe: el título es el propio encabezado (Intro guarda, Escape deshace) y todo se guarda solo («Guardando…»,
+  «Guardado», abajo a la derecha). Sin «Editar», «Guardar», «Cancelar» ni «Renombrar», y sin barra de botones encima
+  del texto: los bloques con «/», los enlaces con «@» o «[[», buscar con Ctrl+Alt+F y el menú del bloque con
+  Ctrl+Alt+B. La cabecera, en iconos (Marcar, Bloquear, Hoja, «⋯»).
+- **El icono va en el propio título**, si se quiere: no hay botón para ponerlo. **La portada**, como en el Crisol antiguo
+  y en los mundos: se pone desde «⋯»; puesta, al pasar por encima salen «Ver» y «Cambiar», y se arrastra para
+  encuadrarla.
+- **Las propiedades, en una ficha a un lado** (a la derecha, con el texto alrededor, como en el Crisol antiguo); en la
+  hoja, arriba a todo lo ancho. Solo «+ Propiedad» y «Etiquetas» a mano: «Alias» y «Resumen» sobran. El tipo de una
+  propiedad sale junto a su × mientras se edita.
+- **Sin sección de subpáginas**: se navega desde el árbol; «Nueva subpágina», en «⋯».
 - **Alrededor de la página, nada pesa** («la UI es rara»): los paneles de los lados sin recuadros, con títulos
   pequeños y grises; «Página nueva», «Exportar» y «Nueva subpágina», discretos; un vacío dice una sola línea.
 - **La hoja es lo que hace única la wiki**, y se escribe encima: con la hoja puesta, la página entera va sobre el

@@ -242,16 +242,10 @@ function PageHead({ page, startEditing }: { page: Page; startEditing: boolean })
       replace: true
     })
   }
-  // Encima del título, al acercarse: «Icono» si no tiene, y «Portada» (siempre: su ventana sigue abierta al ponerla)
+  // El icono, si se quiere, va en el propio título; la portada, desde «⋯» (y, puesta, desde ella misma)
   return (
     <>
       <PageCoverImage page={page} />
-      {!page.locked && (
-        <div className={styles.ghosts}>
-          {!page.icon && <PageIcon page={page} ghost />}
-          <CoverButton page={page} className={styles.ghostButton} />
-        </div>
-      )}
       <div className={styles.heading}>
         {page.icon && <PageIcon page={page} />}
         <InlineTitle page={page} autoFocus={startEditing} onDone={named} />
@@ -423,6 +417,9 @@ function MoreActions({ page }: { page: Page }) {
       {open && (
         <div id={panelId} className={styles.morePanel}>
           <SheetMenu page={page} />
+          <NewSubpage page={page} onDone={() => setOpen(false)} />
+          {/* Puesta, se cambia desde ella misma («Cambiar», al pasar por encima) */}
+          {!page.cover && <CoverButton page={page} />}
           <ExportPage page={page} />
           <DeletePage page={page} />
         </div>
@@ -532,43 +529,23 @@ function DeletePage({ page }: { page: Page }) {
   )
 }
 
-/** Las subpáginas de la abierta (la misma consulta que su rama en el árbol) y crear otra */
-function Subpages({ page }: { page: Page }) {
+/** «Nueva subpágina», en «⋯»: se crea dentro de esta y se abre para ponerle nombre (en el árbol, debajo de su madre) */
+function NewSubpage({ page, onDone }: { page: Page; onDone: () => void }) {
   const { t } = useTranslation()
-  const api = useApi()
   const errorText = useErrorText()
   const create = useCreatePage(page.worldId)
-  const children = useQuery({
-    queryKey: childrenKey(page.worldId, page.id),
-    queryFn: () => api.call('listPageChildren', { worldId: page.worldId, parentId: page.id })
-  })
-  const pages = children.data?.pages ?? []
-  // Sin recuadro: sus subpáginas, si tiene, y «+ Nueva subpágina», discreto
+  if (page.locked) return null
   return (
-    <section aria-label={t('wiki.subpages')} className={styles.subpages}>
-      {pages.length > 0 && (
-        <>
-          <h2 className={styles.subpagesTitle}>{t('wiki.subpages')}</h2>
-          <ul className={styles.subpagesList}>
-            {pages.map((child) => (
-              <li key={child.id}>
-                <Link to="/mundos/$worldId/wiki/$pageId" params={{ worldId: page.worldId, pageId: child.id }}>
-                  {child.icon ? `${child.icon} ` : ''}
-                  {child.title}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
+    <>
+      <BusyButton
+        className={list.secondary}
+        busy={create.isPending}
+        onClick={() => create.mutate(page.id, { onSuccess: onDone })}
+      >
+        {t('wiki.newSubpage')}
+      </BusyButton>
       <FormError message={create.error ? errorText(create.error) : null} />
-      {!page.locked && (
-        <BusyButton className={styles.subpagesAdd} busy={create.isPending} onClick={() => create.mutate(page.id)}>
-          <Plus aria-hidden="true" size={14} />
-          {t('wiki.newSubpage')}
-        </BusyButton>
-      )}
-    </section>
+    </>
   )
 }
 
@@ -609,7 +586,6 @@ export function WikiPage() {
                 <PageProperties key={page.data.id} page={page.data} />
                 <PageBody page={page.data} />
               </SheetPaper>
-              <Subpages page={page.data} />
               <SiblingNav page={page.data} />
             </div>
             <aside aria-label={t('wiki.pagePanel')} className={styles.pagePanel}>

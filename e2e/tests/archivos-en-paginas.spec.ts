@@ -179,14 +179,18 @@ test('un PDF en la página: enseña su tamaño, se abre aquí por la página 3 y
 
 test('la portada: se sube desde la página, se encuadra con el teclado y se quita', async ({ page }) => {
   const { pageId } = await openPage(page)
-  // «Portada», sobre el título
+  // «Portada», en «⋯»
+  await page.getByRole('button', { name: 'Más acciones' }).click()
   await page.getByRole('button', { name: 'Portada' }).click()
   const chooser = page.waitForEvent('filechooser')
   await page.getByRole('button', { name: 'Subir una imagen' }).click()
   await (await chooser).setFiles({ name: 'puerto.png', mimeType: 'image/png', buffer: PNG })
-  await expect(page.getByLabel('Imagen de portada')).toHaveValue(/[0-9a-f-]{36}/)
   const banner = page.locator('article img').first()
   await expect(banner).toHaveAttribute('src', /^\/api\/files\//)
+  // Puesta, se cambia desde ella: «Cambiar», al pasar por encima
+  await banner.hover()
+  await page.getByRole('button', { name: 'Cambiar' }).click()
+  await expect(page.getByLabel('Imagen de portada')).toHaveValue(/[0-9a-f-]{36}/)
   const current = async () =>
     (await (await page.request.post('/api/actions/getPage', { data: { pageId } })).json()).cover
   expect(await current()).toMatchObject({ x: 50, y: 50 })

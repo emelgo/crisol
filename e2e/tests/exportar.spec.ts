@@ -6,6 +6,8 @@ import { createWorld, freshOwner, openWiki, slash } from './ayudas.ts'
 const body = (page: Page) => page.getByRole('textbox', { name: 'Texto de la página' })
 
 async function newPage(page: Page, title: string, button = 'Página nueva') {
+  // Una subpágina, desde «⋯» de su madre
+  if (button === 'Nueva subpágina') await page.getByRole('button', { name: 'Más acciones' }).click()
   await page.getByRole('button', { name: button }).click()
   await expect(page.getByLabel('Título de la página')).toBeFocused()
   await page.keyboard.type(title)

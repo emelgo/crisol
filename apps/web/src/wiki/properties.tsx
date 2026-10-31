@@ -16,11 +16,7 @@ const isTagsName = (name: string) => name.trim().toLocaleLowerCase('es') === 'et
 type PropertyType = PageProperty['type']
 const TYPES: PropertyType[] = ['text', 'number', 'boolean', 'list', 'pages']
 /** Las reservadas, con su tipo: se ofrecen para añadirlas de un clic */
-const RESERVED = [
-  { name: 'alias', type: 'list' },
-  { name: 'etiquetas', type: 'list' },
-  { name: 'resumen', type: 'text' }
-] as const
+const RESERVED = [{ name: 'etiquetas', type: 'list' }] as const
 
 /** Los títulos de las páginas de la wiki por su id (para las propiedades que enlazan páginas) */
 function usePageTitles(worldId: string) {
@@ -151,7 +147,7 @@ export function PageProperties({ page }: { page: Page }) {
   if (page.locked) {
     if (page.properties.length === 0) return null
     return (
-      <section aria-label={t('properties.title')} className={styles.properties}>
+      <section aria-label={t('properties.title')} className={styles.properties} data-properties="">
         <dl className={styles.list}>
           {page.properties.map((property) => (
             <div key={property.name} className={styles.row}>
@@ -221,7 +217,7 @@ function InlineProperties({ page }: { page: Page }) {
   }
   const present = new Set(rows.map((row) => row.name.trim().toLocaleLowerCase('es')))
   return (
-    <section ref={box} aria-label={t('properties.title')} className={styles.properties}>
+    <section ref={box} aria-label={t('properties.title')} className={styles.properties} data-properties="">
       {rows.length > 0 && (
         <div className={styles.table}>
           {rows.map((row, index) => (
@@ -334,29 +330,31 @@ function PropertyRow({
       <div className={styles.propValue}>
         <ValueField row={row} id={id} n={n} worldId={worldId} onChange={onChange} onCommit={onCommit} keys={keys} />
       </div>
-      <select
-        className={styles.typeSelect}
-        aria-label={t('properties.type', { n })}
-        title={t('properties.type', { n })}
-        value={row.type}
-        onChange={(event) => onChange({ type: event.target.value as PropertyType }, true)}
-      >
-        {TYPES.map((type) => (
-          <option key={type} value={type}>
-            {t(`properties.types.${type}`)}
-          </option>
-        ))}
-      </select>
 
-      <button
-        type="button"
-        className={styles.removeProp}
-        aria-label={t('properties.remove', { name: label })}
-        title={t('properties.remove', { name: label })}
-        onClick={onRemove}
-      >
-        ×
-      </button>
+      <div className={styles.propEnd}>
+        <button
+          type="button"
+          className={styles.removeProp}
+          aria-label={t('properties.remove', { name: label })}
+          title={t('properties.remove', { name: label })}
+          onClick={onRemove}
+        >
+          ×
+        </button>
+        <select
+          className={styles.typeSelect}
+          aria-label={t('properties.type', { n })}
+          title={t('properties.type', { n })}
+          value={row.type}
+          onChange={(event) => onChange({ type: event.target.value as PropertyType }, true)}
+        >
+          {TYPES.map((type) => (
+            <option key={type} value={type}>
+              {t(`properties.types.${type}`)}
+            </option>
+          ))}
+        </select>
+      </div>
     </div>
   )
 }

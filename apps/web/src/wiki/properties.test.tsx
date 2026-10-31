@@ -120,27 +120,20 @@ describe('las propiedades de una página', () => {
 })
 
 describe('el icono de una página', () => {
-  it('se elige de los habituales y sale en el árbol; Escape cierra y devuelve el foco', async () => {
+  it('sin icono no hay botón para ponerlo: si se quiere, va en el propio título', async () => {
     renderPort()
-    const trigger = await screen.findByRole('button', { name: 'Añadir icono' })
-    await userEvent.click(trigger)
-    expect(trigger.getAttribute('aria-expanded')).toBe('true')
-    await userEvent.keyboard('{Escape}')
-    expect(trigger.getAttribute('aria-expanded')).toBe('false')
-    expect(document.activeElement).toBe(trigger)
-    await userEvent.click(trigger)
-    await userEvent.click(screen.getByRole('button', { name: 'Usar ⚓' }))
-    expect(await screen.findByRole('button', { name: 'Icono ⚓: cambiarlo' })).toBeDefined()
+    await screen.findByRole('heading', { level: 1, name: 'Puerto Ceniza' })
+    expect(screen.queryByRole('button', { name: 'Añadir icono' })).toBeNull()
   })
 
-  it('se escribe cualquier otro, y se quita', async () => {
+  it('el que ya tiene se cambia por cualquier otro, o se quita', async () => {
     renderPort([], '⚓')
     await userEvent.click(await screen.findByRole('button', { name: 'Icono ⚓: cambiarlo' }))
     await userEvent.type(screen.getByLabelText('Otro emoji'), '🦑')
     await userEvent.click(screen.getByRole('button', { name: 'Usar' }))
     await userEvent.click(await screen.findByRole('button', { name: 'Icono 🦑: cambiarlo' }))
     await userEvent.click(screen.getByRole('button', { name: 'Quitar el icono' }))
-    expect(await screen.findByRole('button', { name: 'Añadir icono' })).toBeDefined()
+    await waitFor(() => expect(screen.queryByRole('button', { name: /^Icono/ })).toBeNull())
   })
 })
 

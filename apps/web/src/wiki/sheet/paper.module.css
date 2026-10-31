@@ -68,6 +68,16 @@
   letter-spacing: 0;
 }
 
+/* Las propiedades, en la hoja: arriba, a todo lo ancho y sin recuadro (a un lado dejarían una columna sola) */
+.paper [data-properties] {
+  float: none;
+  inline-size: auto;
+  margin: var(--space-2) 0 var(--space-4);
+  padding: 0;
+  border: 0;
+  background: none;
+}
+
 /* El texto: a dos columnas, con la letra y el tamaño de la hoja */
 .paper :global(.ProseMirror) {
   column-count: 2;

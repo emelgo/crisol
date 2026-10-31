@@ -12,6 +12,8 @@ async function eanaWiki(page: Page) {
 
 /** Página nueva (o subpágina de la abierta) con su título */
 async function newPage(page: Page, title: string, button = 'Página nueva') {
+  // Una subpágina, desde «⋯» de su madre
+  if (button === 'Nueva subpágina') await page.getByRole('button', { name: 'Más acciones' }).click()
   await page.getByRole('button', { name: button }).click()
   await expect(page.getByLabel('Título de la página')).toBeFocused()
   await page.keyboard.type(title)
@@ -70,13 +72,10 @@ test('el máster crea páginas y subpáginas, las renombra y las recoloca; todo 
   await expect(titles(page)).toHaveText(['Lugares', 'Costa Gris', 'Personajes', 'Reglas de la casa'])
 })
 
-test('propiedades, icono y etiquetas: se guardan, siguen al recargar y cuentan en el panel', async ({ page }) => {
+test('propiedades y etiquetas: se guardan, siguen al recargar y cuentan en el panel', async ({ page }) => {
   await eanaWiki(page)
   await newPage(page, 'Costa Gris')
   await newPage(page, 'Puerto Ceniza')
-  await page.getByRole('button', { name: 'Añadir icono' }).click()
-  await page.getByRole('button', { name: 'Usar ⚓' }).click()
-  await expect(page.getByRole('button', { name: 'Icono ⚓: cambiarlo' })).toBeVisible()
 
   // Se escriben en el sitio y se guardan solas, sin «Guardar»
   const editor = page.getByRole('region', { name: 'Propiedades' })
@@ -102,7 +101,6 @@ test('propiedades, icono y etiquetas: se guardan, siguen al recargar y cuentan e
   const properties = page.getByRole('region', { name: 'Propiedades' })
   await expect(properties.getByText('costa', { exact: true })).toBeVisible()
   await expect(properties.getByRole('link', { name: 'Costa Gris' })).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Icono ⚓: cambiarlo' })).toBeVisible()
 
   // Son de la cuenta: en la zona de Mis mundos
   await page.goto('/etiquetas')
@@ -203,9 +201,6 @@ test('la wiki, en los dos temas y en el móvil @a11y', async ({ page }) => {
   await page.keyboard.type('El faro no fue un accidente.')
   await check()
   await page.getByRole('button', { name: 'Más acciones' }).click()
-  await check()
-  await page.keyboard.press('Escape')
-  await page.getByRole('button', { name: 'Añadir icono' }).click()
   await check()
   await page.keyboard.press('Escape')
   await page.getByRole('button', { name: 'Etiquetas' }).click()

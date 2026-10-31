@@ -5,6 +5,7 @@
  */
 import type { PageCover as Cover, Page } from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Maximize2 } from 'lucide-react'
 import { type CSSProperties, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ApiError } from '../api/client.ts'
@@ -13,6 +14,7 @@ import { useErrorText } from '../api/errors.ts'
 import { BusyButton } from '../components/busy-button.tsx'
 import { FormError } from '../components/field.tsx'
 import list from '../components/list.module.css'
+import { CoverViewer } from '../routes/world-cover.tsx'
 import styles from './cover.module.css'
 
 export const useWorldFiles = (worldId: string, enabled = true) => {
@@ -30,14 +32,72 @@ export function coverStyle(cover: Cover): CSSProperties {
   return zoom === 1 ? { objectPosition: at } : { objectPosition: at, transform: `scale(${zoom})`, transformOrigin: at }
 }
 
-/** La imagen de cabecera, si la tiene (si su archivo ya no está, nada) */
+/**
+ * La imagen de cabecera, si la tiene (si su archivo ya no está, nada). Como la portada de un mundo: al pasar por
+ * encima, «Ver» (en grande) y «Cambiar»; y, como en el Crisol antiguo, se arrastra arriba o abajo para encuadrarla
+ */
 export function PageCoverImage({ page }: { page: Page }) {
+  const { t } = useTranslation()
+  const api = useApi()
+  const queryClient = useQueryClient()
   const files = useWorldFiles(page.worldId)
+  const [viewing, setViewing] = useState(false)
+  // Mientras se arrastra: dónde empezó y el encuadre que lleva
+  const drag = useRef<{ y: number; start: number; height: number } | null>(null)
+  const [dragY, setDragY] = useState<number | null>(null)
   const file = page.cover ? files.data?.files.find((f) => f.id === page.cover?.fileId) : undefined
   if (!page.cover || !file) return null
+  const cover = page.cover
+  const save = async (next: Cover | null) => {
+    await api.call('updatePage', { pageId: page.id, cover: next })
+    await queryClient.invalidateQueries({ queryKey: ['pages', page.worldId] })
+  }
+  const shown = dragY === null ? cover : { ...cover, y: dragY }
   return (
-    <div className={styles.cover}>
-      <img src={file.url} alt="" className={styles.image} style={coverStyle(page.cover)} />
+    <div className={styles.cover} data-dragging={dragY !== null || undefined}>
+      <img
+        src={file.url}
+        alt=""
+        className={styles.image}
+        style={coverStyle(shown)}
+        draggable={false}
+        onPointerDown={(event) => {
+          if (page.locked) return
+          event.currentTarget.setPointerCapture(event.pointerId)
+          drag.current = { y: event.clientY, start: cover.y, height: event.currentTarget.clientHeight }
+          setDragY(cover.y)
+        }}
+        onPointerMove={(event) => {
+          const at = drag.current
+          if (!at) return
+          // Bajar el ratón enseña lo de arriba
+          const moved = ((event.clientY - at.y) / at.height) * 100
+          setDragY(Math.round(Math.min(100, Math.max(0, at.start - moved))))
+        }}
+        onPointerUp={() => {
+          const y = dragY
+          drag.current = null
+          setDragY(null)
+          if (y !== null && y !== cover.y) void save({ ...cover, y })
+        }}
+      />
+      <div className={styles.coverActions}>
+        {!page.locked && <span className={styles.dragHint}>{t('cover.drag')}</span>}
+        <button type="button" className={styles.coverButton} aria-haspopup="dialog" onClick={() => setViewing(true)}>
+          <Maximize2 aria-hidden="true" size={14} />
+          {t('cover.view')}
+        </button>
+        {!page.locked && (
+          <CoverPicker
+            worldId={page.worldId}
+            cover={cover}
+            label={t('cover.change')}
+            triggerClassName={styles.coverButton}
+            onSave={save}
+          />
+        )}
+      </div>
+      {viewing && <CoverViewer url={file.url} label={page.title} onClose={() => setViewing(false)} />}
     </div>
   )
 }
@@ -64,11 +124,14 @@ export function CoverPicker({
   worldId,
   cover,
   onSave,
-  triggerClassName
+  triggerClassName,
+  label
 }: {
   worldId: string
   cover: Cover | null
   onSave: (cover: Cover | null) => Promise<unknown>
+  /** El texto del botón (sin él, «Portada») */
+  label?: string
   /** El aspecto del botón (en la cabecera de una página, discreto) */
   triggerClassName?: string | undefined
 }) {
@@ -102,7 +165,7 @@ export function CoverPicker({
         aria-controls={panelId}
         onClick={() => setOpen(!open)}
       >
-        {t('cover.button')}
+        {label ?? t('cover.button')}
       </button>
       {/* biome-ignore lint/a11y/useSemanticElements: la caja que despliega «Portada» (ARIA), no un grupo de un formulario */}
       <div

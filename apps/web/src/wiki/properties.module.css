@@ -1,6 +1,36 @@
-/* Las propiedades: una caja de la hoja con filas de nombre y valor */
+/*
+ * Las propiedades: una ficha a un lado (a la derecha, con el texto alrededor), como en el Crisol antiguo. Sin ninguna,
+ * solo «+ Propiedad», discreto. En lo estrecho, a todo lo ancho
+ */
 .properties {
-  margin-block: var(--space-2) var(--space-4);
+  float: right;
+  clear: right;
+  position: relative;
+  z-index: 1;
+  inline-size: min(20rem, 45%);
+  margin: var(--space-2) 0 var(--space-4) var(--space-6);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+  font-size: 0.9375rem;
+}
+
+.properties:not(:has(.table)) {
+  float: none;
+  inline-size: auto;
+  margin: 0 0 var(--space-2);
+  padding: 0;
+  border-color: transparent;
+  background: none;
+}
+
+@media (max-width: 40rem) {
+  .properties {
+    float: none;
+    inline-size: auto;
+    margin-inline: 0;
+  }
 }
 
 /* Añadir o cambiar: discreto, que no compita con el texto */
@@ -86,8 +116,8 @@
  */
 .table {
   display: grid;
-  grid-template-columns: minmax(5rem, max-content) minmax(0, 1fr) auto 2rem;
-  column-gap: var(--space-3);
+  grid-template-columns: minmax(4rem, max-content) minmax(0, 1fr) 1.75rem;
+  column-gap: var(--space-2);
   align-items: center;
 }
 
@@ -96,12 +126,14 @@
 }
 
 .propName {
+  grid-column: 1;
   display: flex;
   align-items: center;
   min-inline-size: 0;
 }
 
 .propValue {
+  grid-column: 2;
   min-inline-size: 0;
 }
 
@@ -148,24 +180,33 @@ textarea.valueInput {
   resize: vertical;
 }
 
-/* El tipo: una palabra pequeña que se cambia; destaca al pasar por encima de su fila */
+/* El final de la fila: su × y, encima a su izquierda mientras se edita, el tipo (sin mover nada) */
+.propEnd {
+  position: relative;
+  grid-column: 3;
+  display: grid;
+  place-items: center;
+}
+
 .typeSelect {
-  flex: none;
-  max-inline-size: 5.5rem;
-  padding: 0 0.125rem;
-  border: 0;
-  background: transparent;
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-end: 100%;
+  z-index: 2;
+  translate: 0 -50%;
+  padding: 0.125rem 0.25rem;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-surface);
   color: var(--color-muted);
   font: inherit;
   font-size: 0.75rem;
   cursor: pointer;
-  opacity: 0;
+  visibility: hidden;
 }
 
-.prop:hover .typeSelect,
-.typeSelect:focus,
 .prop:focus-within .typeSelect {
-  opacity: 1;
+  visibility: visible;
 }
 
 .removeProp {
@@ -234,7 +275,6 @@ textarea.valueInput {
 
 @media (hover: none) {
   .adders,
-  .typeSelect,
   .removeProp {
     opacity: 1;
   }
@@ -260,8 +300,7 @@ textarea.valueInput {
 
 @media (max-width: 48rem) {
   .table {
-    grid-template-columns: minmax(4rem, max-content) minmax(0, 1fr) auto 2rem;
-    column-gap: var(--space-2);
+    grid-template-columns: minmax(4rem, max-content) minmax(0, 1fr) 1.75rem;
   }
 }
 

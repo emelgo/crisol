@@ -157,8 +157,9 @@ describe('el árbol de la wiki', () => {
     expect(router.state.location.search).toEqual({})
   })
 
-  it('una subpágina se crea desde su madre', async () => {
+  it('una subpágina se crea desde su madre, en «⋯»', async () => {
     renderAt(`/mundos/${WORLD.id}/wiki/${ids.people}`)
+    await openMore()
     await userEvent.click(await screen.findByRole('button', { name: 'Nueva subpágina' }))
     const title = await screen.findByLabelText('Título de la página')
     await userEvent.clear(title)
