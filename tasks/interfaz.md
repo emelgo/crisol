@@ -198,7 +198,14 @@ lleva a lo más alto, y un común no se suelta en una carpeta del mundo.
 secciones; hoja al tocar una etiqueta; «Elegir» por toque; casillas solo con ratón; el panel de la etiqueta ya no se
 encoge (la pantalla va a todo lo ancho); guía de Etiquetas.
 
-**Lo siguiente**: seguir puliendo en la rama `interfaz/pulir-2`. Falta que Enrique vea el Inicio del mundo y la
+**La wiki en el sitio** (2026-10-31, rama `interfaz/pulir-3`; intención en `docs/intent/wiki-edicion.md`, spec en
+`docs/specs/wiki-edicion.md`, prototipo «Crisol: wiki en el sitio»): título en línea, cabecera en iconos, propiedades
+siempre editables, sin barra de botones sobre el texto (secreto de lo elegido en la barrita de formato), «@» enlaza,
+`[!secreto]` crea un secreto, aviso de guardado y texto de ayuda en la página vacía, la hoja como papel donde se
+escribe, subpáginas sin recuadro. También: «Mundos» con la llama en el menú del móvil; la papelera de un mundo enseña
+los comunes borrados desde él; el panel de Mis mundos ya no se encoge.
+
+**Lo siguiente**: seguir puliendo en la rama `interfaz/pulir-3`. Falta que Enrique vea el Inicio del mundo y la
 pestaña Campañas; la página de una campaña aún lleva la franja antigua. Pequeños pendientes vistos al probar:
 - reabrir una ventana en el instante en que se cierra no la abre (`components/window.tsx`, el mismo `kind`);
 - Perfil anuncia «Guardado» dos veces (su `role="status"` y el anunciador);

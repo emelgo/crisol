@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, type Page, test } from '@playwright/test'
-import { createWorld, freshOwner, openWiki } from './ayudas.ts'
+import { createWorld, freshOwner, openWiki, slash } from './ayudas.ts'
 
 /** El propietario crea Eana y entra en su wiki */
 async function eanaWiki(page: Page) {
@@ -17,6 +17,8 @@ async function newPage(page: Page, title: string, button = 'Página nueva') {
   await page.keyboard.type(title)
   await page.keyboard.press('Enter')
   await expect(page.getByRole('heading', { level: 1, name: title })).toBeVisible()
+  // Ya con su nombre: la dirección deja de decir «nuevo»
+  await expect(page).not.toHaveURL(/nuevo/)
 }
 
 /** En el móvil, la wiki se abre desde el menú de la llama */
@@ -42,11 +44,11 @@ test('el máster crea páginas y subpáginas, las renombra y las recoloca; todo 
   await newPage(page, 'Reglas')
   await expect(titles(page)).toHaveText(['Lugares', 'Costa Gris', 'Personajes', 'Reglas'])
 
-  // Renombrar en el sitio
-  await page.getByRole('button', { name: 'Más acciones' }).click()
-  await page.getByRole('button', { name: 'Renombrar' }).click()
-  await page.getByLabel('Título de la página').fill('Reglas de la casa')
-  await page.getByRole('button', { name: 'Guardar' }).click()
+  // Renombrar en el sitio: el título se escribe ahí mismo e Intro lo guarda
+  await page.getByLabel('Título de la página').click()
+  await page.keyboard.press('ControlOrMeta+a')
+  await page.keyboard.type('Reglas de la casa')
+  await page.keyboard.press('Enter')
   await expect(page.getByRole('heading', { level: 1, name: 'Reglas de la casa' })).toBeVisible()
   await expect(tree(page).getByRole('treeitem', { name: 'Reglas de la casa' })).toBeVisible()
 
@@ -76,18 +78,24 @@ test('propiedades, icono y etiquetas: se guardan, siguen al recargar y cuentan e
   await page.getByRole('button', { name: 'Usar ⚓' }).click()
   await expect(page.getByRole('button', { name: 'Icono ⚓: cambiarlo' })).toBeVisible()
 
-  await page.getByRole('button', { name: 'Añadir propiedades' }).click()
-  const editor = page.getByRole('form', { name: 'Propiedades' })
+  // Se escriben en el sitio y se guardan solas, sin «Guardar»
+  const editor = page.getByRole('region', { name: 'Propiedades' })
   await editor.getByRole('button', { name: 'Etiquetas' }).click()
   await editor.getByLabel('Valor de la propiedad 1').fill('lugar/ciudad, costa')
-  await editor.getByRole('button', { name: 'Añadir propiedad' }).click()
+  await editor.getByLabel('Valor de la propiedad 1').press('Enter')
+  await expect(editor.getByRole('button', { name: 'Quitar costa' })).toBeVisible()
+  await editor.getByRole('button', { name: '+ Propiedad' }).click()
   await editor.getByLabel('Nombre de la propiedad 2').fill('Región')
+  await editor.getByLabel('Nombre de la propiedad 2').press('Enter')
   await editor.getByLabel('Tipo de la propiedad 2').selectOption({ label: 'Páginas' })
+  // Guardado antes de recargar (si no, la recarga puede cortar la petición)
+  const saved = page.waitForResponse(
+    (response) =>
+      response.url().endsWith('/api/actions/setPageProperties') &&
+      /"type":"pages","value":\["/.test(response.request().postData() ?? '')
+  )
   await editor.getByLabel('Valor de la propiedad 2').fill('Costa Gris')
   await expect(editor.getByRole('button', { name: 'Quitar Costa Gris' })).toBeVisible()
-  // Guardado antes de recargar (si no, la recarga puede cortar la petición)
-  const saved = page.waitForResponse('**/api/actions/setPageProperties')
-  await editor.getByRole('button', { name: 'Guardar' }).click()
   await saved
 
   await page.reload()
@@ -190,23 +198,21 @@ test('la wiki, en los dos temas y en el móvil @a11y', async ({ page }) => {
   }
   // El cuerpo con un secreto
   await page.getByRole('textbox', { name: 'Texto de la página' }).click()
-  await page.getByRole('toolbar', { name: 'Insertar en el texto' }).getByRole('button', { name: 'Secreto' }).click()
+  await slash(page, 'Secreto')
   await page.getByRole('textbox', { name: 'Texto del secreto' }).click()
   await page.keyboard.type('El faro no fue un accidente.')
   await check()
   await page.getByRole('button', { name: 'Más acciones' }).click()
-  await page.getByRole('button', { name: 'Renombrar' }).click()
   await check()
-  await page.getByRole('button', { name: 'Cancelar' }).click()
+  await page.keyboard.press('Escape')
   await page.getByRole('button', { name: 'Añadir icono' }).click()
   await check()
   await page.keyboard.press('Escape')
-  await page.getByRole('button', { name: 'Añadir propiedades' }).click()
   await page.getByRole('button', { name: 'Etiquetas' }).click()
-  await page.getByRole('button', { name: 'Añadir propiedad' }).click()
+  await page.getByRole('button', { name: '+ Propiedad' }).click()
   await check()
   await page.getByLabel('Valor de la propiedad 1').fill('lugar')
-  await page.getByRole('button', { name: 'Guardar' }).click()
+  await page.getByLabel('Valor de la propiedad 1').press('Enter')
   await expect(page.getByRole('region', { name: 'Propiedades' }).getByText('lugar')).toBeVisible()
   await check()
   await page.getByRole('button', { name: 'Marcar' }).click()

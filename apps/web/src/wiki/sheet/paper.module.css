@@ -1,0 +1,153 @@
+/*
+ * El papel de la hoja, para escribir encima: la página (título, propiedades y texto) sobre el tema de la hoja, con su
+ * letra y a dos columnas. Los temas, como en la hoja que se imprime (sheet.module.css); lo de la app que pinta dentro
+ * (secretos, recuadros, campos), con los colores del tema claro, porque el papel es claro en los dos temas
+ */
+.paper {
+  color-scheme: light;
+  --color-bg: #ffffff;
+  --color-surface: #ffffff;
+  --color-raised: #f4f4f6;
+  --color-frame: #b7bbc3;
+  --color-text: #1b1d22;
+  --color-muted: #555a63;
+  --color-border: #d8dbe0;
+  --color-field-border: #7a7f89;
+  --color-accent-text: #a82326;
+  --color-focus: #a82326;
+  --color-link: #1a62c4;
+  --color-secret: #f3eff9;
+  --color-secret-rule: #6b5494;
+  --color-secret-text: #553f7a;
+  --color-tip: #2d6a39;
+  --color-warning: #80520a;
+  --color-danger: #a82326;
+  --color-read-aloud: #f6efdf;
+  --color-read-aloud-rule: #7a5a28;
+  --sheet-paper: #ffffff;
+  --sheet-texture: none;
+  --sheet-text: #1c1c1c;
+  --sheet-heading: #1c1c1c;
+  --sheet-accent: #4a4a4a;
+  --sheet-rule: #9a9a9a;
+  --sheet-box: #f2f2f2;
+  --sheet-font: Georgia, "Times New Roman", serif;
+  --sheet-heading-font: var(--font-display);
+  --color-h2: var(--sheet-heading);
+  --color-h3: var(--sheet-heading);
+  --color-h4: var(--sheet-accent);
+
+  margin-block: var(--space-2) var(--space-6);
+  padding: 2.5rem 3rem 3rem;
+  background: var(--sheet-texture), var(--sheet-paper);
+  box-shadow: 0 2px 14px rgb(0 0 0 / 0.25);
+  color: var(--sheet-text);
+}
+
+.paper[data-theme="pergamino"] {
+  --sheet-paper: #f4e8cf;
+  --sheet-texture:
+    radial-gradient(circle at 20% 15%, rgb(255 250 235 / 0.55), transparent 45%),
+    radial-gradient(circle at 80% 85%, rgb(196 160 96 / 0.18), transparent 50%),
+    radial-gradient(circle at 60% 40%, rgb(214 188 134 / 0.12), transparent 35%);
+  --sheet-text: #2a1f14;
+  --sheet-heading: #5a1d10;
+  --sheet-accent: #8c3a1d;
+  --sheet-rule: #b9924f;
+  --sheet-box: #ecdcb8;
+  --sheet-font: "Alegreya", Georgia, serif;
+  --sheet-heading-font: "Alegreya", Georgia, serif;
+}
+
+/* El título, con la letra de la hoja */
+.paper h1 {
+  color: var(--sheet-heading);
+  font-family: var(--sheet-heading-font);
+  font-variant: small-caps;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+/* El texto: a dos columnas, con la letra y el tamaño de la hoja */
+.paper :global(.ProseMirror) {
+  column-count: 2;
+  column-gap: 2rem;
+  color: var(--sheet-text);
+  font-family: var(--sheet-font);
+  font-size: 1.0625rem;
+  line-height: 1.45;
+  hyphens: auto;
+}
+
+.paper :global(.ProseMirror) :is(h2, h3, h4) {
+  color: var(--sheet-heading);
+  font-family: var(--sheet-heading-font);
+  font-variant: small-caps;
+  text-transform: none;
+  break-after: avoid;
+}
+
+.paper :global(.ProseMirror) h2 {
+  padding-block-end: 0.15em;
+  border-block-end: 2px solid var(--sheet-rule);
+}
+
+.paper :global(.ProseMirror) a {
+  color: var(--sheet-accent);
+}
+
+/* Los bloques de la hoja, con el aire del tema; no se parten entre columnas */
+.paper [data-statblock] {
+  padding: 0.6em 0.8em;
+  border-block: 4px solid var(--sheet-accent);
+  background: var(--sheet-box);
+  break-inside: avoid;
+}
+
+.paper :global(.ProseMirror) aside {
+  inline-size: 48%;
+  margin: 0.2em 0 0.6em 0.8em;
+  padding: 0.5em 0.7em;
+  float: right;
+  border: 1px solid var(--sheet-rule);
+  background: var(--sheet-box);
+  font-size: 0.9em;
+}
+
+.paper :global(.ProseMirror) table {
+  break-inside: avoid;
+}
+
+.paper :global(.ProseMirror) :is(td, th) {
+  border-color: var(--sheet-rule);
+}
+
+/* «A lo ancho»: por encima de las dos columnas */
+.paper [data-wide],
+.paper [data-wide-block] {
+  column-span: all;
+}
+
+/* Los saltos: el de columna pasa a la otra; el de página, también aquí (las páginas, al imprimir) */
+.paper [data-break="column"],
+.paper [data-break="page"] {
+  break-after: column;
+}
+
+/* En el móvil, una columna */
+@media (max-width: 48rem) {
+  .paper {
+    margin-inline: calc(-1 * var(--space-4));
+    padding: 1.5rem 1.25rem 2rem;
+  }
+
+  .paper :global(.ProseMirror) {
+    column-count: 1;
+  }
+
+  .paper :global(.ProseMirror) aside {
+    float: none;
+    inline-size: auto;
+    margin-inline: 0;
+  }
+}

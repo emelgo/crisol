@@ -61,6 +61,7 @@ export function TagsField({
   onChange,
   disabled = false,
   label,
+  hideLabel = false,
   id,
   onPending
 }: {
@@ -69,6 +70,8 @@ export function TagsField({
   disabled?: boolean
   /** Sin él, «Etiquetas» */
   label?: string
+  /** Solo para los lectores de pantalla (en una fila de propiedades, el nombre ya lo dice) */
+  hideLabel?: boolean
   id?: string
   /**
    * Lo escrito aún sin poner, para quien lo guarda con lo demás (las propiedades): así no se pone al salir del campo
@@ -99,8 +102,10 @@ export function TagsField({
     if (next.length > value.length) onChange(next)
   }
   return (
-    <div className={styles.field}>
-      <label htmlFor={inputId}>{label ?? t('tags.label')}</label>
+    <div className={hideLabel ? styles.fieldInline : styles.field}>
+      <label htmlFor={inputId} className={hideLabel ? styles.hidden : undefined}>
+        {label ?? t('tags.label')}
+      </label>
       {value.length > 0 && (
         <ul className={styles.chips} aria-label={label ?? t('tags.label')}>
           {value.map((tag) => (

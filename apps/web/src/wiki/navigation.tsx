@@ -1,6 +1,7 @@
 import type { Page, WikiPreferences } from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
+import { Bookmark, BookmarkCheck } from 'lucide-react'
 import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
@@ -213,6 +214,9 @@ export function BookmarkButton({ page }: { page: Page }) {
       <BusyButton
         ref={button.ref}
         className={list.secondary}
+        aria-label={t('bookmarks.remove')}
+        title={t('bookmarks.remove')}
+        aria-pressed
         busy={saveBookmarks.isPending}
         onClick={() =>
           save(
@@ -221,7 +225,7 @@ export function BookmarkButton({ page }: { page: Page }) {
           )
         }
       >
-        {t('bookmarks.remove')}
+        <BookmarkCheck aria-hidden="true" size={18} />
       </BusyButton>
     )
   }
@@ -230,10 +234,12 @@ export function BookmarkButton({ page }: { page: Page }) {
       <BusyButton
         ref={button.ref}
         className={list.secondary}
+        aria-label={t('bookmarks.add')}
+        title={t('bookmarks.add')}
         busy={saveBookmarks.isPending}
         onClick={() => (groups.length === 0 ? addTo(t('bookmarks.defaultGroup')) : setChoosing(true))}
       >
-        {t('bookmarks.add')}
+        <Bookmark aria-hidden="true" size={18} />
       </BusyButton>
     )
   }

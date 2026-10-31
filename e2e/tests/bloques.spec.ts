@@ -181,40 +181,37 @@ test('el menú del bloque: desde la barra con el teclado, y desde el asa con el 
   await page.keyboard.press('Enter')
   await page.keyboard.type('Segundo')
 
-  // Desde la barra: el bloque del cursor
-  const blockButton = page
-    .getByRole('toolbar', { name: 'Insertar en el texto' })
-    .getByRole('button', { name: 'Bloque' })
-  await blockButton.click()
+  // Con el teclado (Ctrl+Alt+B): el bloque del cursor; Escape vuelve al texto
+  await page.keyboard.press('Control+Alt+b')
   const menu = page.getByRole('menu', { name: 'Bloque' })
   await expect(menu).toBeVisible()
   await expect(menu.getByRole('menuitem').first()).toBeFocused()
   await page.keyboard.press('Escape')
   await expect(menu).toBeHidden()
-  await expect(blockButton).toBeFocused()
+  await expect(body(page)).toBeFocused()
 
   // Subir el segundo
   await body(page).getByText('Segundo').click()
-  await blockButton.click()
+  await page.keyboard.press('Control+Alt+b')
   await menu.getByRole('menuitem', { name: 'Subir' }).click()
   await expect(body(page).locator('p').first()).toHaveText('Segundo')
   await expect(announced(page)).toHaveText('Bloque movido.')
 
   // Convertir en aviso, duplicar y borrar
   await body(page).getByText('Primero').click()
-  await blockButton.click()
+  await page.keyboard.press('Control+Alt+b')
   await menu.getByRole('menuitem', { name: 'Aviso' }).click()
   await expect(body(page).getByRole('note', { name: 'Aviso' })).toHaveText(/Primero/)
-  await blockButton.click()
+  await page.keyboard.press('Control+Alt+b')
   await menu.getByRole('menuitem', { name: 'Duplicar' }).click()
   await expect(body(page).getByRole('note', { name: 'Aviso' })).toHaveCount(2)
-  await blockButton.click()
+  await page.keyboard.press('Control+Alt+b')
   await menu.getByRole('menuitem', { name: 'Borrar' }).click()
   await expect(body(page).getByRole('note', { name: 'Aviso' })).toHaveCount(1)
 
   // Un aviso pasa a consejo sin perder lo de dentro
   await body(page).getByText('Primero').click()
-  await blockButton.click()
+  await page.keyboard.press('Control+Alt+b')
   await menu.getByRole('menuitem', { name: 'Consejo' }).click()
   await expect(body(page).getByRole('note', { name: 'Consejo' })).toHaveText(/Primero/)
 
@@ -344,7 +341,7 @@ test('el editor con sus bloques y sus menús, en los dos temas @a11y', async ({ 
   await body(page).getByText('Texto de aviso').dblclick()
   await expect(page.getByRole('toolbar', { name: 'Formato' })).toBeVisible()
   await check()
-  await page.getByRole('toolbar', { name: 'Insertar en el texto' }).getByRole('button', { name: 'Bloque' }).click()
+  await page.keyboard.press('Control+Alt+b')
   await expect(page.getByRole('menu', { name: 'Bloque' })).toBeVisible()
   await check()
 })

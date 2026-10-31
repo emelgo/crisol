@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises'
 import { expect, type Page, test } from '@playwright/test'
 import { strFromU8, unzipSync } from 'fflate'
-import { createWorld, freshOwner, openWiki } from './ayudas.ts'
+import { createWorld, freshOwner, openWiki, slash } from './ayudas.ts'
 
 const body = (page: Page) => page.getByRole('textbox', { name: 'Texto de la página' })
 
@@ -11,6 +11,8 @@ async function newPage(page: Page, title: string, button = 'Página nueva') {
   await page.keyboard.type(title)
   await page.keyboard.press('Enter')
   await expect(page.getByRole('heading', { level: 1, name: title })).toBeVisible()
+  // Ya con su nombre: la dirección deja de decir «nuevo»
+  await expect(page).not.toHaveURL(/nuevo/)
 }
 
 /** Lo que hay en el .zip descargado: ruta → texto */
@@ -32,7 +34,8 @@ test('exportar una página, con sus subpáginas, y la wiki entera en Markdown', 
   await newPage(page, 'Lugares')
   await body(page).click()
   await page.keyboard.type('Los sitios de Eana.')
-  await page.getByRole('toolbar', { name: 'Insertar en el texto' }).getByRole('button', { name: 'Secreto' }).click()
+  await page.keyboard.press('Enter')
+  await slash(page, 'Secreto')
   await page.getByRole('textbox', { name: 'Texto del secreto' }).click()
   await page.keyboard.type('El faro no fue un accidente.')
   await newPage(page, 'Costa Gris', 'Nueva subpágina')

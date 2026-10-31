@@ -11,6 +11,8 @@ async function newPage(page: Page, title: string) {
   await page.keyboard.type(title)
   await page.keyboard.press('Enter')
   await expect(page.getByRole('heading', { level: 1, name: title })).toBeVisible()
+  // Ya con su nombre: la dirección deja de decir «nuevo»
+  await expect(page).not.toHaveURL(/nuevo/)
 }
 
 /** Eana con Maela Varn y Puerto Ceniza (abierta, con el cursor en el texto); devuelve el mundo y las páginas */

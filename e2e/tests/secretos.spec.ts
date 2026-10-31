@@ -1,7 +1,7 @@
 import { connect, schema } from '@crisol/db'
 import { expect, type Page, test } from '@playwright/test'
 import { e2eDatabaseUrl } from '../servidor.ts'
-import { createWorld, freshOwner, openWiki } from './ayudas.ts'
+import { createWorld, freshOwner, openWiki, selectionToSecret, slash } from './ayudas.ts'
 
 /** El propietario crea Eana y una página, y la deja abierta */
 async function openPage(page: Page, title = 'Puerto Ceniza') {
@@ -18,6 +18,8 @@ async function newPage(page: Page, title: string) {
   await page.keyboard.type(title)
   await page.keyboard.press('Enter')
   await expect(page.getByRole('heading', { level: 1, name: title })).toBeVisible()
+  // Ya con su nombre: la dirección deja de decir «nuevo»
+  await expect(page).not.toHaveURL(/nuevo/)
 }
 
 const body = (page: Page) => page.getByRole('textbox', { name: 'Texto de la página' })
@@ -46,7 +48,7 @@ test('un párrafo se hace secreto y su texto se guarda aparte, nunca en el cuerp
   await page.keyboard.press('Enter')
   await page.keyboard.type('La Hermandad quemó el faro.')
   await page.keyboard.press('Shift+Home')
-  await page.getByRole('toolbar', { name: 'Insertar en el texto' }).getByRole('button', { name: 'Secreto' }).click()
+  await selectionToSecret(page)
   const secret = page.getByRole('region', { name: 'Secreto' })
   await expect(secret).toBeVisible()
   await expect(secretText(page)).toHaveText('La Hermandad quemó el faro.')
@@ -73,7 +75,8 @@ test('con el teclado se entra y se sale del secreto; Ctrl+Z dentro solo deshace 
   await openPage(page)
   await body(page).click()
   await page.keyboard.type('Antes.')
-  await page.getByRole('toolbar', { name: 'Insertar en el texto' }).getByRole('button', { name: 'Nota oculta' }).click()
+  await page.keyboard.press('Enter')
+  await slash(page, 'Nota oculta')
   const note = page.getByRole('textbox', { name: 'Texto de la nota oculta' })
   await expect(note).toBeVisible()
 
@@ -105,7 +108,7 @@ test('con el teclado se entra y se sale del secreto; Ctrl+Z dentro solo deshace 
 test('dos pestañas ven el mismo secreto al momento', async ({ page, context }) => {
   const url = await openPage(page)
   await body(page).click()
-  await page.getByRole('toolbar', { name: 'Insertar en el texto' }).getByRole('button', { name: 'Secreto' }).click()
+  await slash(page, 'Secreto')
   await secretText(page).click()
   await page.keyboard.type('El mapa de las corrientes.')
   const other = await context.newPage()
@@ -125,7 +128,7 @@ test('copiar un secreto a otra página crea otro documento: cambiar uno no cambi
   await context.grantPermissions(['clipboard-read', 'clipboard-write'])
   await openPage(page)
   await body(page).click()
-  await page.getByRole('toolbar', { name: 'Insertar en el texto' }).getByRole('button', { name: 'Secreto' }).click()
+  await slash(page, 'Secreto')
   await secretText(page).click()
   await page.keyboard.type('Original.')
   // Elegir el bloque entero (Escape desde dentro) y copiarlo

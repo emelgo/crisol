@@ -1,8 +1,8 @@
 import type { Page } from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { getRouteApi, Link, Navigate, useNavigate } from '@tanstack/react-router'
-import { Ellipsis } from 'lucide-react'
-import { type ReactNode, type RefObject, useEffect, useId, useRef, useState } from 'react'
+import { getRouteApi, Link, Navigate, useNavigate, useRouter } from '@tanstack/react-router'
+import { Ellipsis, Lock, LockOpen, Plus } from 'lucide-react'
+import { type ReactNode, type RefObject, useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { ApiError } from '../api/client.ts'
@@ -12,11 +12,11 @@ import { useAnnounce } from '../components/announcer.tsx'
 import { Loading } from '../components/brand.tsx'
 import { BusyButton } from '../components/busy-button.tsx'
 import { Field, FormError } from '../components/field.tsx'
-import { focusOnMount, useReturnFocus } from '../components/focus.ts'
+import { focusIsLost, focusOnMount, useReturnFocus } from '../components/focus.ts'
 import form from '../components/form.module.css'
 import list from '../components/list.module.css'
 import { failed, LoadError } from '../components/load-error.tsx'
-import { PageTitle } from '../components/page-title.tsx'
+import { PageTitle, useHeadingFocusRequest } from '../components/page-title.tsx'
 import { Backlinks, useLinkedBy } from './backlinks.tsx'
 import { CollabSocket } from './collab.tsx'
 import { CoverButton, PageCoverImage } from './cover.tsx'
@@ -28,7 +28,7 @@ import { useWikiPanel } from './panel.tsx'
 import { PageProperties } from './properties.tsx'
 import { QuickSwitcher } from './quick-switcher.tsx'
 import { SearchBox } from './search-box.tsx'
-import { SheetLayout, SheetToggle } from './sheet/controls.tsx'
+import { SheetMenu, SheetPaper, SheetToggle } from './sheet/controls.tsx'
 import { childrenKey, PageTree } from './tree.tsx'
 import { Versions } from './versions.tsx'
 import styles from './wiki.module.css'
@@ -37,12 +37,6 @@ const homeRoute = getRouteApi('/mundos/$worldId/wiki')
 const pageRoute = getRouteApi('/mundos/$worldId/wiki/$pageId')
 
 export const pageKey = (worldId: string, pageId: string) => ['pages', worldId, 'page', pageId]
-
-/** Para el campo del título de una página recién creada: el foco y todo el texto elegido, para escribir encima */
-function focusAndSelect(input: HTMLInputElement | null) {
-  input?.focus()
-  input?.select()
-}
 
 /** Crea una página (o una subpágina) con el título provisional y la abre para ponerle nombre */
 function useCreatePage(worldId: string) {
@@ -216,101 +210,179 @@ export function WikiHome() {
 }
 
 /** El título de la página, que se renombra en el sitio. Una recién creada empieza ya con el campo abierto */
-function PageHeading({ page, world, startEditing }: { page: Page; world: string; startEditing: boolean }) {
-  const { t } = useTranslation()
-  const api = useApi()
-  const queryClient = useQueryClient()
-  const navigate = useNavigate()
-  const errorText = useErrorText()
-  const renameButton = useReturnFocus()
-  const [editing, setEditing] = useState(startEditing)
-  const stop = () => {
-    renameButton.back()
-    setEditing(false)
-    if (startEditing) {
-      void navigate({
-        to: '/mundos/$worldId/wiki/$pageId',
-        params: { worldId: page.worldId, pageId: page.id },
-        search: {},
-        replace: true
-      })
-    }
-  }
-  const rename = useMutation({
-    mutationFn: (title: string) => api.call('updatePage', { pageId: page.id, title }),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['pages', page.worldId] })
-      stop()
-    }
-  })
+/** Encima de la página: las migas a la izquierda y, a la derecha, sus iconos (marcar, bloquear, hoja y «⋯») */
+function PageBar({ page, world }: { page: Page; world: string }) {
+  return (
+    <div className={styles.pageBar}>
+      <Breadcrumbs worldId={page.worldId} world={world} path={page.path} />
+      <div className={styles.pageActions}>
+        <BookmarkButton page={page} />
+        <LockButton page={page} />
+        <SheetToggle page={page} />
+        <MoreActions page={page} />
+      </div>
+    </div>
+  )
+}
 
-  const crumbs = <Breadcrumbs worldId={page.worldId} world={world} path={page.path} />
-  if (editing) {
-    return (
-      <>
-        {crumbs}
-        <form
-          className={styles.rename}
-          onSubmit={(event) => {
-            event.preventDefault()
-            rename.mutate(String(new FormData(event.currentTarget).get('title')))
-          }}
-          onKeyDown={(event) => {
-            if (event.key === 'Escape') stop()
-          }}
-        >
-          <Field
-            label={t('wiki.titleLabel')}
-            name="title"
-            autoComplete="off"
-            defaultValue={page.title}
-            maxLength={200}
-            required
-            ref={focusAndSelect}
-          />
-          <FormError message={rename.error ? errorText(rename.error) : null} />
-          <div className={list.actions}>
-            <BusyButton type="submit" className={form.button} busy={rename.isPending}>
-              {t('list.save')}
-            </BusyButton>
-            <button type="button" className={list.secondary} onClick={stop}>
-              {t('list.cancel')}
-            </button>
-          </div>
-        </form>
-      </>
-    )
+/** La cabecera de la página: su portada, su icono y su título, que se cambian ahí mismo */
+function PageHead({ page, startEditing }: { page: Page; startEditing: boolean }) {
+  const { t } = useTranslation()
+  const navigate = useNavigate()
+  const router = useRouter()
+  // Recién creada: ya con su nombre puesto, la dirección deja de decir «nuevo» (si aún se está en ella: al salir del
+  // título pulsando otra página, se guarda sin volver aquí)
+  const named = () => {
+    if (!startEditing || !router.state.location.pathname.endsWith(`/wiki/${page.id}`)) return
+    void navigate({
+      to: '/mundos/$worldId/wiki/$pageId',
+      params: { worldId: page.worldId, pageId: page.id },
+      search: {},
+      replace: true
+    })
   }
+  // Encima del título, al acercarse: «Icono» si no tiene, y «Portada» (siempre: su ventana sigue abierta al ponerla)
   return (
     <>
-      <div className={styles.pageBar}>
-        {crumbs}
-        <div className={styles.pageActions}>
-          <BookmarkButton page={page} />
-          <SheetToggle page={page} />
-          <MoreActions page={page} triggerRef={renameButton.ref} onRename={() => setEditing(true)} />
-        </div>
-      </div>
       <PageCoverImage page={page} />
+      {!page.locked && (
+        <div className={styles.ghosts}>
+          {!page.icon && <PageIcon page={page} ghost />}
+          <CoverButton page={page} className={styles.ghostButton} />
+        </div>
+      )}
       <div className={styles.heading}>
-        <PageIcon page={page} />
-        <PageTitle>{page.title}</PageTitle>
+        {page.icon && <PageIcon page={page} />}
+        <InlineTitle page={page} autoFocus={startEditing} onDone={named} />
         {page.locked && <p className={styles.locked}>{t('editor.locked')}</p>}
       </div>
     </>
   )
 }
 
+/**
+ * El título de la página, que es su propio encabezado y se cambia ahí mismo (como en el Crisol antiguo): Intro, la
+ * flecha abajo al final o salir del campo lo guardan; Intro y la flecha bajan al texto; Escape lo deja como estaba.
+ * Vacío o igual, vuelve el de antes sin más; un error (del servidor) sale debajo y el foco se queda. Con la página
+ * bloqueada, solo se lee
+ */
+function InlineTitle({ page, autoFocus, onDone }: { page: Page; autoFocus: boolean; onDone: () => void }) {
+  const { t } = useTranslation()
+  const api = useApi()
+  const queryClient = useQueryClient()
+  const errorText = useErrorText()
+  const request = useHeadingFocusRequest()
+  const box = useRef<HTMLSpanElement>(null)
+  const errorId = useId()
+  const [error, setError] = useState<string | null>(null)
+  const rename = useMutation({
+    mutationFn: (title: string) => api.call('updatePage', { pageId: page.id, title }),
+    onSuccess: async () => {
+      setError(null)
+      await queryClient.invalidateQueries({ queryKey: ['pages', page.worldId] })
+      onDone()
+    },
+    onError: (failure) => {
+      setError(errorText(failure))
+      box.current?.focus()
+    }
+  })
+  // El texto lo pone esto, no React: mientras se escribe, lo que llegue del servidor no lo pisa
+  useLayoutEffect(() => {
+    if (box.current && document.activeElement !== box.current) box.current.textContent = page.title
+  }, [page.title])
+  // Recién creada: el foco en el título, con todo elegido para escribir encima
+  useEffect(() => {
+    if (!autoFocus || !box.current) return
+    box.current.focus()
+    const range = document.createRange()
+    range.selectNodeContents(box.current)
+    getSelection()?.removeAllRanges()
+    getSelection()?.addRange(range)
+  }, [autoFocus])
+  const toBody = () => {
+    const body = box.current?.closest('article')?.querySelector<HTMLElement>('.ProseMirror[contenteditable="true"]')
+    body?.focus()
+  }
+  const commit = () => {
+    const text = (box.current?.textContent ?? '').replace(/\s+/g, ' ').trim()
+    if (!text || text === page.title) {
+      if (box.current) box.current.textContent = page.title
+      setError(null)
+      onDone()
+      return
+    }
+    if (box.current) box.current.textContent = text
+    rename.mutate(text)
+  }
+  const atEnd = () => {
+    const selection = getSelection()
+    if (!selection?.rangeCount || !box.current) return false
+    const range = selection.getRangeAt(0).cloneRange()
+    range.setEnd(box.current, box.current.childNodes.length)
+    return range.toString() === ''
+  }
+  return (
+    <div className={styles.titleBox}>
+      <h1
+        tabIndex={-1}
+        ref={(heading) => {
+          if (!heading || !request.current) return
+          request.current = false
+          if (focusIsLost()) heading.focus()
+        }}
+      >
+        {/* biome-ignore lint/a11y/useSemanticElements: el título es el propio encabezado, que se escribe en el sitio */}
+        <span
+          ref={box}
+          className={styles.title}
+          role="textbox"
+          tabIndex={0}
+          aria-label={t('wiki.titleLabel')}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? errorId : undefined}
+          aria-readonly={page.locked || undefined}
+          contentEditable={!page.locked}
+          suppressContentEditableWarning
+          spellCheck={false}
+          data-placeholder={t('wiki.untitled')}
+          onKeyDown={(event) => {
+            // Solo texto: sin negritas ni cursivas en el título
+            if ((event.ctrlKey || event.metaKey) && ['b', 'i', 'u'].includes(event.key.toLowerCase())) {
+              event.preventDefault()
+              return
+            }
+            if (event.key === 'Enter' || (event.key === 'ArrowDown' && atEnd())) {
+              event.preventDefault()
+              commit()
+              if (!rename.isError) toBody()
+            } else if (event.key === 'Escape') {
+              event.preventDefault()
+              if (box.current) box.current.textContent = page.title
+              setError(null)
+              toBody()
+            }
+          }}
+          onBlur={() => {
+            if (!rename.isPending) commit()
+          }}
+          onPaste={(event) => {
+            event.preventDefault()
+            document.execCommand('insertText', false, event.clipboardData.getData('text/plain').replace(/\s+/g, ' '))
+          }}
+        />
+      </h1>
+      {error && (
+        <p id={errorId} className={styles.titleError} role="alert">
+          {error}
+        </p>
+      )}
+    </div>
+  )
+}
+
 /** «Más»: lo que se hace de vez en cuando con la página, fuera de la vista hasta que se pide */
-function MoreActions({
-  page,
-  triggerRef,
-  onRename
-}: {
-  page: Page
-  triggerRef: (element: HTMLElement | null) => void
-  onRename: () => void
-}) {
+function MoreActions({ page }: { page: Page }) {
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const root = useRef<HTMLDivElement>(null)
@@ -338,32 +410,18 @@ function MoreActions({
     <div ref={root} className={styles.moreMenu}>
       <button
         type="button"
-        ref={(element) => {
-          trigger.current = element
-          triggerRef(element)
-        }}
+        ref={trigger}
         aria-label={t('wiki.moreActions')}
+        title={t('wiki.moreActions')}
         aria-expanded={open}
         aria-controls={panelId}
         onClick={() => setOpen((value) => !value)}
       >
         <Ellipsis aria-hidden="true" size={18} />
-        {t('wiki.moreShort')}
       </button>
       {open && (
         <div id={panelId} className={styles.morePanel}>
-          <button
-            type="button"
-            className={list.secondary}
-            onClick={() => {
-              setOpen(false)
-              onRename()
-            }}
-          >
-            {t('wiki.rename')}
-          </button>
-          <LockButton page={page} />
-          <CoverButton page={page} />
+          <SheetMenu page={page} />
           <ExportPage page={page} />
           <DeletePage page={page} />
         </div>
@@ -372,7 +430,7 @@ function MoreActions({
   )
 }
 
-/** El candado: pone el editor en lectura (no es un permiso: quien escribe puede quitarlo) */
+/** El candado: pone la página en lectura (no es un permiso: quien escribe puede quitarlo). Ctrl+E también */
 function LockButton({ page }: { page: Page }) {
   const { t } = useTranslation()
   const api = useApi()
@@ -381,14 +439,29 @@ function LockButton({ page }: { page: Page }) {
     mutationFn: () => api.call('updatePage', { pageId: page.id, locked: !page.locked }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['pages', page.worldId] })
   })
+  const latest = useRef(toggle)
+  latest.current = toggle
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && !event.altKey && event.key.toLowerCase() === 'e') {
+        event.preventDefault()
+        if (!latest.current.isPending) latest.current.mutate()
+      }
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [])
+  const label = t(page.locked ? 'editor.unlock' : 'editor.lock')
   return (
     <BusyButton
       className={list.secondary}
       aria-pressed={page.locked}
+      aria-label={label}
+      title={`${label} (Ctrl+E)`}
       busy={toggle.isPending}
       onClick={() => toggle.mutate()}
     >
-      {t(page.locked ? 'editor.unlock' : 'editor.lock')}
+      {page.locked ? <Lock aria-hidden="true" size={18} /> : <LockOpen aria-hidden="true" size={18} />}
     </BusyButton>
   )
 }
@@ -468,31 +541,32 @@ function Subpages({ page }: { page: Page }) {
     queryKey: childrenKey(page.worldId, page.id),
     queryFn: () => api.call('listPageChildren', { worldId: page.worldId, parentId: page.id })
   })
+  const pages = children.data?.pages ?? []
+  // Sin recuadro: sus subpáginas, si tiene, y «+ Nueva subpágina», discreto
   return (
-    <section aria-labelledby="subpaginas" className={styles.subpages}>
-      <h2 id="subpaginas">{t('wiki.subpages')}</h2>
-      {children.data &&
-        (children.data.pages.length === 0 ? (
-          <p>{t('wiki.noSubpages')}</p>
-        ) : (
-          <ul className={list.list}>
-            {children.data.pages.map((child) => (
-              <li key={child.id} className={list.item}>
-                <Link
-                  to="/mundos/$worldId/wiki/$pageId"
-                  params={{ worldId: page.worldId, pageId: child.id }}
-                  className={`${list.name} ${list.entity}`}
-                >
+    <section aria-label={t('wiki.subpages')} className={styles.subpages}>
+      {pages.length > 0 && (
+        <>
+          <h2 className={styles.subpagesTitle}>{t('wiki.subpages')}</h2>
+          <ul className={styles.subpagesList}>
+            {pages.map((child) => (
+              <li key={child.id}>
+                <Link to="/mundos/$worldId/wiki/$pageId" params={{ worldId: page.worldId, pageId: child.id }}>
+                  {child.icon ? `${child.icon} ` : ''}
                   {child.title}
                 </Link>
               </li>
             ))}
           </ul>
-        ))}
+        </>
+      )}
       <FormError message={create.error ? errorText(create.error) : null} />
-      <BusyButton className={form.button} busy={create.isPending} onClick={() => create.mutate(page.id)}>
-        {t('wiki.newSubpage')}
-      </BusyButton>
+      {!page.locked && (
+        <BusyButton className={styles.subpagesAdd} busy={create.isPending} onClick={() => create.mutate(page.id)}>
+          <Plus aria-hidden="true" size={14} />
+          {t('wiki.newSubpage')}
+        </BusyButton>
+      )}
     </section>
   )
 }
@@ -528,14 +602,12 @@ export function WikiPage() {
         return (
           <article className={styles.page}>
             <div className={styles.pageMain} ref={pageMain}>
-              <PageHeading
-                key={`${page.data.id}-${nuevo ?? false}`}
-                page={page.data}
-                world={world.name}
-                startEditing={nuevo === true}
-              />
-              <PageProperties key={page.data.id} page={page.data} />
-              <SheetLayout page={page.data} body={<PageBody page={page.data} />} />
+              <PageBar page={page.data} world={world.name} />
+              <SheetPaper page={page.data}>
+                <PageHead key={page.data.id} page={page.data} startEditing={nuevo === true} />
+                <PageProperties key={page.data.id} page={page.data} />
+                <PageBody page={page.data} />
+              </SheetPaper>
               <Subpages page={page.data} />
               <SiblingNav page={page.data} />
             </div>

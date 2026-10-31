@@ -151,8 +151,7 @@ describe('el árbol de la wiki', () => {
     const title = await screen.findByLabelText('Título de la página')
     expect(document.activeElement).toBe(title)
     // Con todo el título provisional elegido, escribir lo sustituye
-    await userEvent.keyboard('Facciones')
-    await userEvent.click(screen.getByRole('button', { name: 'Guardar' }))
+    await userEvent.keyboard('Facciones{Enter}')
     expect(await screen.findByRole('heading', { level: 1, name: 'Facciones' })).toBeDefined()
     expect(await item('Facciones')).toBeDefined()
     expect(router.state.location.search).toEqual({})
@@ -169,14 +168,28 @@ describe('el árbol de la wiki', () => {
     expect(within(screen.getByRole('navigation', { name: 'Migas de pan' })).getByText('Personajes')).toBeDefined()
   })
 
-  it('renombrar en el sitio; Escape lo deja como estaba', async () => {
-    renderAt(`/mundos/${WORLD.id}/wiki/${ids.rules}`)
+  it('el título se cambia en el sitio: Intro lo guarda, Escape lo deja como estaba y vacío vuelve el de antes', async () => {
+    const api = wikiApi()
+    renderAt(`/mundos/${WORLD.id}/wiki/${ids.rules}`, api)
+    const title = await screen.findByRole('textbox', { name: 'Título de la página' })
+    expect(title.textContent).toBe('Reglas de la casa')
+    // Escape: como estaba, sin guardar
+    await userEvent.clear(title)
+    await userEvent.type(title, 'Otra cosa{Escape}')
+    expect(title.textContent).toBe('Reglas de la casa')
+    // Vacío: vuelve el de antes
+    await userEvent.clear(title)
+    await userEvent.type(title, '{Enter}')
+    expect(title.textContent).toBe('Reglas de la casa')
+    expect(api.calls).not.toContain('updatePage')
+    // Intro: se guarda, y se ve en el árbol
+    await userEvent.clear(title)
+    await userEvent.type(title, 'Reglas de mesa{Enter}')
+    expect(await screen.findByRole('heading', { level: 1, name: 'Reglas de mesa' })).toBeDefined()
+    expect(await item('Reglas de mesa')).toBeDefined()
+    // Ya no hay «Renombrar»
     await openMore()
-    await userEvent.click(await screen.findByRole('button', { name: 'Renombrar' }))
-    await userEvent.keyboard('{Escape}')
-    expect(await screen.findByRole('heading', { level: 1, name: 'Reglas de la casa' })).toBeDefined()
-    // El foco vuelve a «Más», de donde salió
-    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Más acciones' }))
+    expect(screen.queryByRole('button', { name: 'Renombrar' })).toBeNull()
   })
 
   it('borrar pide confirmar, vuelve a la madre y la rama sale una vez en la papelera, de donde se restaura', async () => {

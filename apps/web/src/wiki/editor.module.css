@@ -104,43 +104,36 @@
   color: var(--color-muted);
 }
 
-/* Lo que se puede meter en el cuerpo (hasta que llegue el menú «/») */
-/* Encima del texto: insertar y buscar en la página, en una línea fina y sin cajas */
-.editorBar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-1);
-  margin-block-end: var(--space-3);
-  padding-block-end: var(--space-1);
-  border-block-end: 1px solid var(--color-border);
-}
-
-.toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-1);
-}
-
-.tool {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  min-block-size: 2rem;
-  padding: 0 0.5rem;
-  border: 0;
+/* Se guarda solo: el aviso, discreto, abajo a la derecha */
+.saveState {
+  position: fixed;
+  inset-inline-end: calc(var(--space-4) + env(safe-area-inset-right, 0px));
+  inset-block-end: calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
+  z-index: 3;
+  margin: 0;
+  padding: 0.125rem 0.5rem;
   border-radius: 4px;
-  background: transparent;
+  /* Su propio fondo: se lee igual encima de lo que pase por debajo */
+  background: var(--color-bg);
   color: var(--color-muted);
-  font-family: var(--font-body);
-  font-size: 0.875rem;
-  font-weight: 600;
-  cursor: pointer;
+  font-size: 0.8125rem;
+  pointer-events: none;
 }
 
-.tool:hover {
-  background: color-mix(in srgb, var(--color-text) 8%, transparent);
-  color: var(--color-text);
+/* En el móvil, encima de la llama del menú */
+@media (max-width: 48rem) {
+  .saveState {
+    inset-block-end: calc(5rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* El texto vacío: qué hacer, en gris, sin que se pueda elegir */
+.emptyHint::before {
+  content: attr(data-placeholder);
+  float: inline-start;
+  block-size: 0;
+  color: var(--color-field-border);
+  pointer-events: none;
 }
 
 /* Lo que acaba de escribir Claude: un fondo azul que se va */

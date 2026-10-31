@@ -76,3 +76,25 @@
 .other > div {
   flex: 1 1 8rem;
 }
+
+/* Sin icono, sobre el título: «Icono», discreto (sale al acercarse a la cabecera) */
+.ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-block-size: 2rem;
+  padding: 0 0.5rem;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--color-muted);
+  font: inherit;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.ghost:hover,
+.ghost[aria-expanded="true"] {
+  background: color-mix(in srgb, var(--color-text) 8%, transparent);
+  color: var(--color-text);
+}

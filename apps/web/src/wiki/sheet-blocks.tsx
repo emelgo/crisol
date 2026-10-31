@@ -35,6 +35,7 @@ function BreakView({ node, editor, selected }: NodeViewProps) {
   return (
     <NodeViewWrapper
       className={styles.break}
+      data-break={node.type.name === 'pageBreak' ? 'page' : 'column'}
       data-selected={selected || undefined}
       hidden={!editor.isEditable}
       contentEditable={false}
@@ -48,7 +49,7 @@ function StatblockView() {
   const { t } = useTranslation()
   const id = useId()
   return (
-    <NodeViewWrapper role="group" aria-labelledby={id} className={styles.statblock}>
+    <NodeViewWrapper role="group" aria-labelledby={id} className={styles.statblock} data-statblock="">
       <div id={id} className={styles.label} contentEditable={false}>
         {t('sheet.statblock')}
       </div>
@@ -85,7 +86,7 @@ function SidenoteView({ node, editor, updateAttributes }: NodeViewProps) {
 function WideView({ editor }: NodeViewProps) {
   const { t } = useTranslation()
   return (
-    <NodeViewWrapper className={editor.isEditable ? styles.wide : undefined}>
+    <NodeViewWrapper className={editor.isEditable ? styles.wide : undefined} data-wide-block="">
       {editor.isEditable && (
         <div className={styles.label} contentEditable={false}>
           {t('sheet.wide')}

@@ -43,13 +43,14 @@ export function PageCoverImage({ page }: { page: Page }) {
 }
 
 /** El botón «Portada» de una página y su caja */
-export function CoverButton({ page }: { page: Page }) {
+export function CoverButton({ page, className }: { page: Page; className?: string | undefined }) {
   const api = useApi()
   const queryClient = useQueryClient()
   return (
     <CoverPicker
       worldId={page.worldId}
       cover={page.cover}
+      triggerClassName={className}
       onSave={async (cover) => {
         await api.call('updatePage', { pageId: page.id, cover })
         await queryClient.invalidateQueries({ queryKey: ['pages', page.worldId] })
@@ -62,11 +63,14 @@ export function CoverButton({ page }: { page: Page }) {
 export function CoverPicker({
   worldId,
   cover,
-  onSave
+  onSave,
+  triggerClassName
 }: {
   worldId: string
   cover: Cover | null
   onSave: (cover: Cover | null) => Promise<unknown>
+  /** El aspecto del botón (en la cabecera de una página, discreto) */
+  triggerClassName?: string | undefined
 }) {
   const { t } = useTranslation()
   const api = useApi()
@@ -93,7 +97,7 @@ export function CoverPicker({
       <button
         ref={trigger}
         type="button"
-        className={list.secondary}
+        className={triggerClassName ?? list.secondary}
         aria-expanded={open}
         aria-controls={panelId}
         onClick={() => setOpen(!open)}

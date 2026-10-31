@@ -15,7 +15,7 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   `tasks/interfaz.md`, en staging (PR #77 a #84). Enrique: «cuando este lista la nueva UI ENTERA la revisaré e iremos
   puliendo». Va la **ronda de pulido 1**, pantalla a pantalla y en local. Su primera parte (armazón, cuentas, Mis
   mundos, archivos comunes con el ADR-0005, Inicio de un mundo y Campañas) está fusionada y en staging (PR #86). Se
-  con la rama `interfaz/pulir-2` fusionada en `main` sin la CI de GitHub (2026-10-31: sin minutos y sin querer pagar; todo se prueba en local): el móvil (la llama y su menú), las etiquetas de la cuenta (ADR-0006) y los arreglos de Archivos de sus pruebas. Staging aún no lleva esta tanda (migración 0028). Lo hecho y lo que falta están en `tasks/interfaz.md`, y sus normas en
+  con la rama `interfaz/pulir-2` fusionada en `main` sin la CI de GitHub (2026-10-31: sin minutos y sin querer pagar; todo se prueba en local): el móvil (la llama y su menú), las etiquetas de la cuenta (ADR-0006) y los arreglos de Archivos de sus pruebas. Staging aún no lleva esta tanda (migración 0028). Después, en `interfaz/pulir-3`: **la wiki se edita en el sitio** (`docs/specs/wiki-edicion.md`), a falta de que Enrique la pruebe. Lo hecho y lo que falta están en `tasks/interfaz.md`, y sus normas en
   `docs/diseno.md`. GitHub Actions va justo de minutos: todo en verde en local antes de subir. Ya apuntado para pulir:
   - ~~la cola de la IA, en su propio panel~~ (hecho en la ronda 1: tarjetas flotantes);
   - marcar en la página lo que la IA quiere cambiar;

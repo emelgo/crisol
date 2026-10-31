@@ -115,7 +115,6 @@ export function FindBar({ editor }: { editor: Editor }) {
   const [query, setQuery] = useState('')
   const [count, setCount] = useState({ current: 0, total: 0 })
   const input = useRef<HTMLInputElement>(null)
-  const button = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
     const listen = (event: globalThis.KeyboardEvent) => {
@@ -128,11 +127,11 @@ export function FindBar({ editor }: { editor: Editor }) {
     window.addEventListener('keydown', listen)
     return () => window.removeEventListener('keydown', listen)
   }, [])
-  // Al abrirla, el foco al campo; al cerrarla, de vuelta al botón (cuando ya está pintado)
+  // Al abrirla, el foco al campo; al cerrarla, de vuelta al texto
   const back = useRef(false)
   useEffect(() => {
     if (open) input.current?.focus()
-    else if (back.current) button.current?.focus()
+    else if (back.current) editor.commands.focus()
     back.current = false
   }, [open])
   // Lo que cuenta la barra, al día con el documento (si se escribe mientras, cambia)
@@ -174,13 +173,8 @@ export function FindBar({ editor }: { editor: Editor }) {
     }
   }
 
-  if (!open) {
-    return (
-      <button ref={button} type="button" className={styles.open} onClick={() => setOpen(true)}>
-        {t('find.button')}
-      </button>
-    )
-  }
+  // Cerrada no ocupa sitio: se abre con Ctrl+Alt+F
+  if (!open) return null
   return (
     <search className={styles.bar}>
       <input

@@ -285,9 +285,87 @@
   gap: var(--space-2) var(--space-4);
 }
 
-.heading h1 {
+/* «Icono» y «Portada», sobre el título: solo al acercarse a la página (en lo táctil, siempre) */
+.ghosts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-block-end: var(--space-1);
+  opacity: 0;
+  transition: opacity 120ms ease-out;
+}
+
+.pageMain:hover .ghosts,
+.ghosts:focus-within {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .ghosts {
+    opacity: 1;
+  }
+}
+
+.ghostButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-block-size: 2rem;
+  padding: 0 0.5rem;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--color-muted);
+  font: inherit;
+  font-size: 0.875rem;
+  clip-path: none;
+  cursor: pointer;
+}
+
+.ghostButton:hover,
+.ghostButton[aria-expanded="true"] {
+  background: color-mix(in srgb, var(--color-text) 8%, transparent);
+  color: var(--color-text);
+}
+
+.titleBox {
   flex: 1 1 16rem;
   min-inline-size: 0;
+}
+
+.titleBox h1 {
+  margin: 0;
+}
+
+/* El título se escribe ahí mismo: solo se marca un poco al pasar por encima o al escribir */
+.title {
+  display: block;
+  margin-inline: -0.25rem;
+  padding-inline: 0.25rem;
+  border-radius: 4px;
+  outline: none;
+  overflow-wrap: anywhere;
+  cursor: text;
+}
+
+.title[contenteditable="false"] {
+  cursor: default;
+}
+
+.title[contenteditable="true"]:hover,
+.title:focus {
+  background: color-mix(in srgb, var(--color-text) 5%, transparent);
+}
+
+.title:empty::before {
+  content: attr(data-placeholder);
+  color: var(--color-field-border);
+}
+
+.titleError {
+  margin: var(--space-1) 0 0;
+  color: var(--color-danger);
+  font-size: 0.9375rem;
 }
 
 .locked {
@@ -296,12 +374,57 @@
   color: var(--color-muted);
 }
 
-.rename {
-  margin-block-end: var(--space-6);
-}
-
 .subpages {
   margin-block-start: var(--space-8);
+  padding-block-start: var(--space-3);
+  border-block-start: 1px solid var(--color-border);
+}
+
+.subpagesTitle {
+  margin: 0 0 var(--space-2);
+  padding: 0;
+  border: 0;
+  color: var(--color-muted);
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.subpagesList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
+  margin: 0 0 var(--space-2);
+  padding: 0;
+  list-style: none;
+}
+
+.subpagesList a {
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.subpagesAdd {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-block-size: 2rem;
+  padding: 0 0.5rem;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+  font-weight: 600;
+  clip-path: none;
+  cursor: pointer;
+}
+
+.subpagesAdd:hover {
+  background: color-mix(in srgb, var(--color-text) 8%, transparent);
+  color: var(--color-text);
 }
 
 /* Estrecho: el panel, en un cajón que se abre con su botón de la barra de abajo */

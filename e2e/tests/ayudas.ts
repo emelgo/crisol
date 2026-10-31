@@ -277,3 +277,17 @@ export async function connectClaude(page: Page) {
   }
   return { call }
 }
+
+/** En el texto de una página, un bloque con «/»: escribe la orden y la elige (en una línea vacía o tras un espacio) */
+export async function slash(page: Page, name: string) {
+  // La orden: su primera palabra (un espacio cierra el menú)
+  await page.keyboard.type(`/${name.split(' ')[0]?.toLocaleLowerCase('es')}`)
+  const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const option = page.getByRole('listbox', { name: 'Bloques' }).getByRole('option', { name: new RegExp(`^${escaped}`) })
+  await option.first().click()
+}
+
+/** Lo elegido en el texto, a un secreto: desde la barrita que sale al elegir */
+export async function selectionToSecret(page: Page) {
+  await page.getByRole('toolbar', { name: 'Formato' }).getByRole('button', { name: 'Secreto' }).click()
+}

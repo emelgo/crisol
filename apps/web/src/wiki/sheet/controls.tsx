@@ -1,20 +1,23 @@
 /**
- * Los mandos de la hoja: activarla (el máster), sus ajustes en una fila (papel, tema, numeración y pie) y en qué vista
- * la lee cada cuenta (se recuerda por cuenta y página). En pantallas estrechas se abre la sencilla; en escritorio ancho,
- * la hoja va al lado del editor
+ * La hoja de una página: el icono que la pone o la quita, el papel donde se escribe (con la hoja puesta, la página se
+ * ve y se edita sobre él, a dos columnas) y, en «⋯», sus ajustes, imprimir y el PDF. Las páginas numeradas quedan para
+ * imprimir y el PDF (print.tsx)
  */
 import type { Page, SheetSettings } from '@crisol/contracts'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { type ReactNode, useEffect, useId, useRef, useState } from 'react'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { ScrollText } from 'lucide-react'
+import { type ReactNode, useEffect, useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../../api/context.tsx'
 import { useErrorText } from '../../api/errors.ts'
 import { useAnnounce } from '../../components/announcer.tsx'
 import { BusyButton } from '../../components/busy-button.tsx'
 import list from '../../components/list.module.css'
-import { preferencesKey } from '../navigation.tsx'
 import styles from './controls.module.css'
-import { SheetView, useFollowBlock } from './sheet.tsx'
+import '@fontsource/alegreya/400.css'
+import '@fontsource/alegreya/400-italic.css'
+import '@fontsource/alegreya/700.css'
+import paper from './paper.module.css'
 
 export const DEFAULT_SHEET: SheetSettings = {
   paper: 'a4',
@@ -22,18 +25,6 @@ export const DEFAULT_SHEET: SheetSettings = {
   numbers: true,
   firstNumber: 1,
   footer: true
-}
-
-const useMedia = (query: string) => {
-  const [matches, setMatches] = useState(() => typeof matchMedia === 'function' && matchMedia(query).matches)
-  useEffect(() => {
-    if (typeof matchMedia !== 'function') return
-    const media = matchMedia(query)
-    const update = () => setMatches(media.matches)
-    media.addEventListener('change', update)
-    return () => media.removeEventListener('change', update)
-  }, [query])
-  return matches
 }
 
 /** Guarda la página con otros ajustes de hoja (o sin hoja) */
@@ -46,7 +37,7 @@ function useSaveSheet(page: Page) {
   })
 }
 
-/** El botón «Hoja» de las acciones de la página: activa o quita la vista de hoja */
+/** El icono «Hoja» de la cabecera de la página: pone o quita la hoja */
 export function SheetToggle({ page }: { page: Page }) {
   const { t } = useTranslation()
   const errorText = useErrorText()
@@ -55,11 +46,13 @@ export function SheetToggle({ page }: { page: Page }) {
     <>
       <BusyButton
         className={list.secondary}
+        aria-label={t('sheet.toggle')}
+        title={t('sheet.toggle')}
         aria-pressed={page.sheet !== null}
         busy={save.isPending}
         onClick={() => save.mutate(page.sheet ? null : DEFAULT_SHEET)}
       >
-        {t('sheet.toggle')}
+        <ScrollText aria-hidden="true" size={18} />
       </BusyButton>
       {save.error && (
         <span role="alert" className={styles.error}>
@@ -71,77 +64,25 @@ export function SheetToggle({ page }: { page: Page }) {
 }
 
 /**
- * La página con hoja: la fila de ajustes y la vista que toque. body es el editor (la vista sencilla). Sin hoja, solo
- * el editor
+ * Con la hoja puesta, el papel: la página (título, propiedades y texto) se ve y se escribe sobre él, con el tema y la
+ * letra de la hoja y a dos columnas (una en el móvil). Sin hoja, tal cual
  */
-export function SheetLayout({ page, body }: { page: Page; body: ReactNode }) {
-  const { t } = useTranslation()
-  const api = useApi()
-  const queryClient = useQueryClient()
-  const narrow = useMedia('(max-width: 760px)')
-  const wide = useMedia('(min-width: 1500px)')
-  const preferences = useQuery({
-    queryKey: preferencesKey(page.worldId),
-    queryFn: () => api.call('getWikiPreferences', { worldId: page.worldId })
-  })
-  // En una pantalla estrecha, la sencilla salvo que se pida la hoja en esta visita
-  const [showOnNarrow, setShowOnNarrow] = useState(false)
-  const view = useMutation({
-    mutationFn: (next: 'sheet' | 'simple') =>
-      api.call('setPageView', { worldId: page.worldId, pageId: page.id, view: next }),
-    onSuccess: (data) => queryClient.setQueryData(preferencesKey(page.worldId), data)
-  })
-  const panel = useRef<HTMLDivElement>(null)
-  const [cursorBlock, setCursorBlock] = useState<string | null>(null)
-  const sheetShown = page.sheet !== null && (narrow ? showOnNarrow : !preferences.data?.simplePages.includes(page.id))
-  const sideBySide = sheetShown && wide
-  // Con las dos a la vez, el cursor del editor lleva la hoja a su bloque
-  useEffect(() => {
-    if (!sideBySide) return
-    const follow = () => {
-      const node = document.getSelection()?.anchorNode
-      const element = node instanceof Element ? node : node?.parentElement
-      const top = element?.closest('.ProseMirror > [data-id]')
-      setCursorBlock(top?.getAttribute('data-id') ?? null)
-    }
-    document.addEventListener('selectionchange', follow)
-    return () => document.removeEventListener('selectionchange', follow)
-  }, [sideBySide])
-  useFollowBlock(sideBySide ? panel.current : null, cursorBlock)
-
-  if (!page.sheet) return <>{body}</>
-  const settings = page.sheet
-  const toEditor = (id: string) => {
-    if (!sideBySide) return
-    document.querySelector(`.ProseMirror > [data-id="${CSS.escape(id)}"]`)?.scrollIntoView({ block: 'center' })
-  }
-  const switchView = (next: 'sheet' | 'simple') => {
-    if (narrow) setShowOnNarrow(next === 'sheet')
-    else view.mutate(next)
-  }
+export function SheetPaper({ page, children }: { page: Page; children: ReactNode }) {
+  if (!page.sheet) return <>{children}</>
   return (
-    <>
-      <SheetSettingsRow page={page} settings={settings}>
-        <PrintButtons page={page} />
-        <button type="button" className={list.secondary} onClick={() => switchView(sheetShown ? 'simple' : 'sheet')}>
-          {t(sheetShown ? 'sheet.toSimple' : 'sheet.toSheet')}
-        </button>
-      </SheetSettingsRow>
-      {!sheetShown ? (
-        body
-      ) : sideBySide ? (
-        <div className={styles.sideBySide}>
-          <div className={styles.editor}>{body}</div>
-          <div ref={panel} className={styles.panel}>
-            <SheetView page={page} settings={settings} onBlockClick={toEditor} />
-          </div>
-        </div>
-      ) : (
-        <div className={styles.scroller}>
-          <SheetView page={page} settings={settings} />
-        </div>
-      )}
-    </>
+    <div className={paper.paper} data-theme={page.sheet.theme} data-sheet-paper="">
+      {children}
+    </div>
+  )
+}
+
+/** En «⋯», con la hoja puesta: sus ajustes, imprimir y el PDF */
+export function SheetMenu({ page }: { page: Page }) {
+  if (!page.sheet) return null
+  return (
+    <SheetSettingsRow page={page} settings={page.sheet}>
+      <PrintButtons page={page} />
+    </SheetSettingsRow>
   )
 }
 

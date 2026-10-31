@@ -62,6 +62,15 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
 - **Cada pantalla tiene su guía, aunque sea básica**: «debemos mantener el patrón siempre».
 
 ## Pantallas
+- **La wiki se edita en el sitio, como en el Crisol antiguo** (`docs/specs/wiki-edicion.md`): «no me gusta que todo sea
+  como con botones, debe ser más ágil, poder cambiar todo en edición, incluso el título». Se abre la página y se
+  escribe: el título es el propio encabezado (Intro guarda, Escape deshace), las propiedades son una tabla siempre
+  editable, «Icono» y «Portada» salen al acercarse, y todo se guarda solo («Guardando…», «Guardado», abajo a la
+  derecha). Sin «Editar», «Guardar», «Cancelar» ni «Renombrar», y sin barra de botones encima del texto: los bloques
+  con «/», los enlaces con «@» o «[[», buscar con Ctrl+Alt+F y el menú del bloque con Ctrl+Alt+B. La cabecera, en
+  iconos (Marcar, Bloquear, Hoja, «⋯»).
+- **La hoja es lo que hace única la wiki**, y se escribe encima: con la hoja puesta, la página entera va sobre el
+  papel del tema, a dos columnas (una en el móvil). Las páginas numeradas, al imprimir y en el PDF.
 
 - **Los cambios no son bruscos y se notan**: un elemento nuevo entra animado (sube y crece, con el contorno
   iluminado un momento) cuando el cuadro que lo creó ya se ha ido, y uno borrado baja, encoge y se desvanece antes de

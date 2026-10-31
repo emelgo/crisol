@@ -133,3 +133,38 @@ a.chipLink:hover {
   padding: 0 0.4rem;
   font-size: 0.75rem;
 }
+
+/* Solo para los lectores de pantalla */
+.hidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* En una fila de propiedades: las pastillas y el campo en la misma línea, sin caja hasta escribir */
+.fieldInline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.fieldInline input {
+  flex: 1 1 8rem;
+  min-block-size: 2rem;
+  padding: 0.25rem 0.375rem;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+
+.fieldInline input:focus {
+  border-color: var(--color-field-border);
+  background: var(--color-surface);
+  outline: none;
+}
