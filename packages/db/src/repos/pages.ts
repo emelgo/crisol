@@ -5,6 +5,7 @@ import type { Database } from '../client.ts'
 import { type OperationContext, operation, type Transaction } from '../operation.ts'
 import { documents } from '../schema/documents.ts'
 import { pages } from '../schema/pages.ts'
+import { worlds } from '../schema/worlds.ts'
 import { type DocumentState, recordVersion } from './versions.ts'
 
 const summaryColumns = {
@@ -179,6 +180,25 @@ export function createPage(
   return operation(db, context, async (w) => {
     const position = await placeKey(w.read, input.worldId, input.placement)
     return w.insert(pages, { worldId: input.worldId, parentId: input.placement.parentId, position, title: input.title })
+  })
+}
+
+/**
+ * La página de portada de un mundo (como la «Home» de Everlore): la primera de lo más alto, y el mundo la apunta. En
+ * una sola operación, así deshacerla quita las dos cosas
+ */
+export function createHomePage(db: Database, context: OperationContext, input: { worldId: string; title: string }) {
+  return operation(db, context, async (w) => {
+    const [first] = await w.read
+      .select({ id: pages.id })
+      .from(pages)
+      .where(and(inBranch(input.worldId, null), isNull(pages.deletedAt)))
+      .orderBy(...byPosition)
+      .limit(1)
+    const position = await placeKey(w.read, input.worldId, { parentId: null, ...(first ? { before: first.id } : {}) })
+    const page = await w.insert(pages, { worldId: input.worldId, parentId: null, position, title: input.title })
+    await w.update(worlds, input.worldId, { homePageId: page.id })
+    return page
   })
 }
 

@@ -1,24 +1,40 @@
-/* La wiki: el panel lateral a toda altura a un lado y la página al otro, como en el Crisol antiguo */
+/*
+ * Dentro de un mundo, las páginas con la forma de Everlore (Enrique, 2026-11-02): esquinas redondeadas y sin cortes,
+ * con nuestros colores y nuestras letras
+ */
 .wiki {
+  --radius: 0.625rem;
+  --cut: none;
+  --cut-inner: none;
+  --cut-button: none;
+
   display: grid;
   grid-template-columns: 17.5rem minmax(0, 1fr);
   align-items: start;
   min-block-size: 100dvh;
 }
 
-/* Se recoge pulsando otra vez su botón de la barra */
+/* Las secciones con título y los botones, sin esquinas cortadas: redondeadas */
+.wiki :is(section[aria-labelledby], button, input, select, textarea) {
+  border-radius: var(--radius);
+}
+
 .wiki[data-collapsed] {
   grid-template-columns: minmax(0, 1fr);
 }
 
+/* Como en Archivos: el panel de la izquierda, una ficha a su lado, pegada arriba al bajar */
 .aside {
   position: sticky;
-  inset-block-start: 0;
-  block-size: 100dvh;
+  inset-block-start: var(--space-4);
+  max-block-size: calc(100dvh - 2 * var(--space-4));
   overflow-y: auto;
-  padding: var(--space-3) var(--space-3) var(--space-6);
+  margin: var(--space-4);
+  padding: var(--space-3) var(--space-3) var(--space-4);
+  border: 1px solid var(--color-frame);
+  border-radius: 6px;
   background: var(--color-surface);
-  border-inline-end: 1px solid var(--color-border);
+  scrollbar-width: thin;
 }
 
 /* Las pestañas del panel de la wiki: páginas, buscar y marcadores */
@@ -305,7 +321,7 @@
   color: var(--color-text);
 }
 
-/* El panel de la derecha: fijo, a toda la altura, con su raya a la izquierda */
+/* El panel de la derecha, como el detalle de Archivos: una ficha a su lado, pegada arriba al bajar */
 .entryPanel {
   display: flex;
   flex-direction: column;
@@ -314,24 +330,36 @@
 }
 
 @media (min-width: 64rem) {
+  /* Fija arriba a la derecha, a la misma altura y con el mismo margen que la de la izquierda; la hoja le deja sitio */
   .entryPanel {
     position: fixed;
-    inset-block: 0;
-    inset-inline-end: 0;
-    z-index: 10;
+    inset-block-start: var(--space-4);
+    inset-inline-end: var(--space-4);
+    z-index: 5;
     inline-size: 18rem;
+    max-block-size: calc(100dvh - 2 * var(--space-4));
     overflow-y: auto;
-    padding: var(--space-6);
-    border-inline-start: 1px solid var(--color-border);
-    background: var(--color-raised);
+    padding: var(--space-4);
+    border: 1px solid var(--color-frame);
+    border-radius: 6px;
+    background: var(--color-surface);
+    box-shadow: 0 0.5rem 1.5rem rgb(0 0 0 / 0.2);
     scrollbar-width: thin;
   }
 
-  /* Lo de la wiki (sus pestañas abiertas y la página) le deja sitio */
-  .content:has([data-entry-panel]),
-  .worldHome:has([data-entry-panel]) {
-    margin-inline-end: 18rem;
+  .entry[data-entry-panel] .entryMain {
+    margin-inline-end: calc(18rem + var(--space-4) - var(--space-8) + var(--space-6));
   }
+}
+
+/* Las propiedades, en el panel: sin la ficha flotante, a lo ancho del panel */
+.entryPanel [data-properties] {
+  float: none;
+  inline-size: auto;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
 }
 
 /* Debajo de la página, sin sitio a la derecha */
@@ -468,7 +496,7 @@
 }
 
 .titleBox {
-  flex: 1 1 16rem;
+  flex: 0 1 auto;
   min-inline-size: 0;
 }
 
@@ -595,8 +623,12 @@
     display: block;
     inline-size: min(20rem, 85vw);
     block-size: auto;
+    max-block-size: none;
+    margin: 0;
     padding: var(--space-4);
+    border: 0;
     border-inline-end: 1px solid var(--color-frame);
+    border-radius: 0;
     box-shadow: 0 0 2rem rgb(0 0 0 / 0.4);
   }
 
@@ -620,24 +652,6 @@
   padding: var(--space-4) var(--space-8) var(--space-8);
 }
 
-/* Un mundo sin páginas: el aviso y el botón, en un recuadro de trazos */
-.worldEmpty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-4);
-  margin-block-start: var(--space-6);
-  padding: 4rem var(--space-6);
-  border: 1px dashed var(--color-frame);
-  border-radius: 1rem;
-  color: var(--color-muted);
-  text-align: center;
-}
-
-.worldEmpty p {
-  margin: 0;
-}
-
 @media (max-width: 48rem) {
   .worldHome {
     padding: var(--space-2) var(--space-4) var(--space-6);
@@ -650,4 +664,197 @@
   padding: 0 var(--space-2);
   color: var(--color-muted);
   font-size: 0.875rem;
+}
+
+/* El filtro del árbol, como en LegendKeeper: un campo redondeado con su icono a la derecha */
+.filter {
+  position: relative;
+  margin-block-end: var(--space-3);
+}
+
+.filter input {
+  inline-size: 100%;
+  min-block-size: 2.25rem;
+  padding: 0 2.25rem 0 var(--space-3);
+  border: 1px solid transparent;
+  border-radius: 0.5rem;
+  background: var(--color-raised);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.9375rem;
+}
+
+.filter input:focus {
+  border-color: var(--color-field-border);
+  outline: none;
+}
+
+.filter svg {
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-end: var(--space-3);
+  color: var(--color-muted);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.filterEmpty {
+  margin: 0;
+  padding: var(--space-2);
+  color: var(--color-muted);
+  font-size: 0.9375rem;
+}
+
+.filtered {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.filtered a {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: 0.375rem var(--space-2);
+  border-radius: 6px;
+  color: var(--color-text);
+  font-size: 0.9375rem;
+  text-decoration: none;
+}
+
+.filtered a:hover,
+.filtered a[aria-current="page"] {
+  background: color-mix(in srgb, var(--color-text) 8%, transparent);
+}
+
+.filtered svg {
+  flex: none;
+  margin-block-start: 0.2rem;
+  color: var(--color-muted);
+}
+
+.filtered small {
+  display: block;
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+}
+
+/* «Inicio», junto al título de la portada del mundo (como en LegendKeeper) */
+.homeBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.125rem 0.5rem;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--color-text) 10%, transparent);
+  color: var(--color-text);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+/* Las pestañas del panel de las páginas (Páginas, Plantillas, Archivos), como en LegendKeeper: texto, la elegida en
+   blanco y en negrita; a la derecha, «+» para una página nueva */
+.sideTabs {
+  display: flex;
+  flex: 1;
+  gap: var(--space-4);
+}
+
+.sideTab {
+  padding: 0.25rem 0;
+  border: 0;
+  background: none;
+  color: var(--color-muted);
+  font: inherit;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.sideTab:hover,
+.sideTab[aria-selected="true"] {
+  color: var(--color-text);
+}
+
+.sideTab[aria-selected="true"] {
+  font-weight: 700;
+}
+
+.newPageIcon {
+  display: grid;
+  place-items: center;
+  inline-size: 2rem;
+  block-size: 2rem;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+.newPageIcon:hover {
+  background: color-mix(in srgb, var(--color-text) 8%, transparent);
+  color: var(--color-text);
+}
+
+.soon {
+  margin: 0;
+  padding: var(--space-2);
+  color: var(--color-muted);
+  font-size: 0.9375rem;
+}
+
+/* Los marcadores, en la vista del mundo: debajo del árbol, con su raya */
+.asideBookmarks {
+  margin-block-start: var(--space-4);
+  padding-block-start: var(--space-3);
+  border-block-start: 1px solid var(--color-border);
+}
+
+/* La portada de la página (o la del mundo, en su portada), por detrás: a todo lo ancho del centro, pegada arriba, sin
+   esquinas, fundiéndose con el fondo por abajo; el título va encima de su parte de abajo. Así no cambia de tamaño al
+   abrir o cerrar la ficha de la derecha */
+.entryBanner {
+  padding-block-start: var(--space-4);
+}
+
+.entryBanner:empty {
+  display: none;
+}
+
+.entryBanner[data-cover] {
+  position: relative;
+  overflow: hidden;
+  /* El mismo hueco a los dos lados que las fichas (1rem): a la izquierda, junto a la del árbol; a la derecha, junto al
+     borde de la pantalla, aunque la ficha de la derecha se vea encima o no */
+  margin: calc(-1 * var(--space-2)) calc(var(--space-4) - var(--space-8)) 0 calc(-1 * var(--space-8));
+  padding: 0;
+  border-radius: 0.75rem;
+}
+
+.entryBanner[data-cover]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(to bottom, transparent 45%, var(--color-bg));
+  pointer-events: none;
+}
+
+/* La imagen, más alta y sin esquinas */
+.entryBanner[data-cover] > :first-child {
+  border-radius: 0;
+}
+
+.entryBanner[data-cover] [data-cover-image] {
+  block-size: 15rem;
+  border-radius: 0;
+}
+
+/* El título, encima de la parte de abajo de la portada; la ficha de la derecha, por debajo de ella */
+.entryBanner[data-cover] + .entry {
+  position: relative;
+  z-index: 2;
+  margin-block-start: -5rem;
 }

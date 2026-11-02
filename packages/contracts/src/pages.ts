@@ -412,7 +412,13 @@ export const listPageNames = defineAction({
   input: z.object({ worldId: z.uuid() }),
   output: z.object({
     pages: z.array(
-      z.object({ id: z.uuid(), title: z.string(), aliases: z.array(z.string()), path: z.array(z.string()) })
+      z.object({
+        id: z.uuid(),
+        title: z.string(),
+        aliases: z.array(z.string()),
+        path: z.array(z.string()),
+        tags: z.array(z.string()).describe('Sus etiquetas, para filtrar por #etiqueta')
+      })
     )
   })
 })

@@ -1,12 +1,14 @@
 /* Las pestañas: una tira fina arriba, de lado a lado; la abierta, del color de la página y con las esquinas cortadas */
+/* Las páginas abiertas: pestañas sin fondo, la abierta subrayada sobre la línea de abajo (como las de la página), y el
+   texto de la primera en la misma vertical que el título de la hoja */
 .tabs ul {
   display: flex;
   flex-wrap: wrap;
   gap: 2px;
   margin: 0 calc(-1 * var(--space-8)) var(--space-2);
-  padding: var(--space-1) var(--space-2) 0;
+  padding: var(--space-1) var(--space-2) 0 calc(var(--space-8) - var(--space-3));
   list-style: none;
-  background: var(--color-raised);
+  background: transparent;
   border-block-end: 1px solid var(--color-border);
 }
 
@@ -14,17 +16,17 @@
   display: flex;
   align-items: center;
   max-inline-size: 13rem;
+  margin-block-end: -1px;
+  border-block-end: 2px solid transparent;
   color: var(--color-muted);
-  clip-path: polygon(5px 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 0 100%, 0 5px);
 }
 
 .tabs li:hover {
-  background: color-mix(in srgb, var(--color-text) 6%, transparent);
   color: var(--color-text);
 }
 
 .tabs li[data-current] {
-  background: var(--color-bg);
+  border-block-end-color: var(--color-accent-text);
   color: var(--color-text);
 }
 

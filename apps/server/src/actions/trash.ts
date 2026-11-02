@@ -58,6 +58,8 @@ export const trashActions = [
 
   implement(deletePage, async (ctx, { pageId }) => {
     const { page, wiki } = await authorizedPage(ctx, 'page.write', pageId)
+    // La portada del mundo no se borra (se abre en ella)
+    if ((await worldsRepo.homePageOf(ctx.db, wiki.worldId)) === pageId) throw new InvalidRequestError('HOME_PAGE')
     const below = await pagesRepo.deletePageTree(
       ctx.db,
       historyContext(ctx, 'deletePage', { title: page.title }, wiki),

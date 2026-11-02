@@ -216,6 +216,9 @@ con su mundo; «Nueva campaña» pide el mundo) y salen de la barra; en la barra
 Marcadores, Páginas y Archivos (iconos, como antes: Enrique prefirió la barra estrecha a una ancha al estilo Everlore);
 el panel de la wiki con su título visible y el árbol al estilo del de Archivos; «wiki» deja de salir en la interfaz
 (se habla del mundo y sus páginas; «Compendio» se guarda para las reglas). Pendiente, por este orden:
+- (hecho después: el Inicio vuelve a ser el panel del mundo; sin «portada del mundo» en la interfaz, aunque
+  `getWorldHome` y `worlds.home_page_id` siguen en el servidor por si se recupera; propiedades al panel derecho;
+  forma de Everlore con nuestros colores y letras)
 - (primera versión hecha) **la página, como en Everlore**: portada ancha, el mundo pequeño sobre el título, acciones,
   «⋯» y el botón del panel, pestañas con «+», texto en columna ancha, panel derecho fijo y cabecera pegajosa; el mundo
   abre en su página de portada bajo su cabecera (la transición de entrar no cambia). Falta que la vea Enrique, y los

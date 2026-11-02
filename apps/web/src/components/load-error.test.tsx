@@ -135,27 +135,14 @@ describe('si no llega lo que necesita una página', () => {
     expect(screen.queryByText('Aún no hay campañas')).toBeNull()
   })
 
-  it('la portada del mundo: el error, bajo el mundo, y se puede reintentar', async () => {
+  it('la portada del mundo: el error, bajo su cabecera, y se puede reintentar; la pestaña sigue diciendo el mundo', async () => {
     const { recover } = renderAt(`/mundos/${world.id}`, 'getWorldHome')
     await afterRetries()
     expect((await screen.findByRole('alert')).textContent).toBe('Algo ha fallado. Vuelve a intentarlo.')
-    expect(screen.getByRole('heading', { level: 1, name: 'Eana' })).toBeDefined()
-    expect(screen.queryByText('Este mundo aún no tiene páginas.')).toBeNull()
-    recover()
-    await user().click(screen.getByRole('button', { name: 'Reintentar' }))
-    expect(await screen.findByText('Este mundo aún no tiene páginas.')).toBeDefined()
-  })
-
-  it('si falla una parte del Inicio, el título de la página sigue siendo el del mundo', async () => {
-    const { recover } = renderAt(`/mundos/${world.id}`, 'getWorldHome')
-    await afterRetries()
-    await screen.findByRole('alert')
-    const titles = () => screen.getAllByRole('heading', { level: 1 }).map((h) => h.textContent)
-    expect(titles()).toEqual(['Eana'])
     expect(document.title).toBe('Eana · Crisol')
     recover()
     await user().click(screen.getByRole('button', { name: 'Reintentar' }))
-    await screen.findByText('Este mundo aún no tiene páginas.')
+    expect(await screen.findByRole('heading', { level: 1, name: 'Eana' })).toBeDefined()
     expect(document.title).toBe('Eana · Crisol')
   })
 

@@ -1,33 +1,27 @@
 import type { Page } from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getRouteApi, Link, Navigate, useNavigate } from '@tanstack/react-router'
-import { Plus } from 'lucide-react'
-import { type ReactNode, useId } from 'react'
+import { type ReactNode, useEffect, useId } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
-import { useErrorText } from '../api/errors.ts'
 import { Loading } from '../components/brand.tsx'
-import { BusyButton } from '../components/busy-button.tsx'
 import { useCardList } from '../components/card-transition.ts'
-import { FormError } from '../components/field.tsx'
-import form from '../components/form.module.css'
 import { failed, LoadError, SectionError } from '../components/load-error.tsx'
 import { PageTitle } from '../components/page-title.tsx'
 import { Tour } from '../components/tour.tsx'
 import { LEAVE_WORLD, worldTransition } from '../components/world-transition.ts'
-import { CollabSocket } from '../wiki/collab.tsx'
 import { usePageTabs } from '../wiki/tabs/page-tabs.tsx'
 import wiki from '../wiki/wiki.module.css'
-import { EntryView, pageKey } from '../wiki/wiki.tsx'
+import { EntryView, pageKey, WikiLayout } from '../wiki/wiki.tsx'
 import styles from './world-card.module.css'
-import { CampaignCard, LookHeader, useWorldKind } from './world-card.tsx'
+import { CampaignCard, LookHeader, useCampaignKind, useWorldKind, WorldBanner } from './world-card.tsx'
 
 const route = getRouteApi('/mundos/$worldId')
 
 /**
- * El Inicio de un mundo: su cabecera (en ella se convierte su tarjeta al entrar) y lo reciente: para quien lo dirige,
- * lo último de su wiki; para quien juega (aún sin wiki), sus campañas
+ * El Inicio de un mundo, su panel: su cabecera (en ella se convierte su tarjeta al entrar) y, para quien lo dirige,
+ * los accesos rápidos, sus campañas y las últimas páginas, con el árbol al lado; para quien juega, sus campañas
  */
 export function WorldPage() {
   const { t } = useTranslation()
@@ -42,6 +36,10 @@ export function WorldPage() {
     enabled: Boolean(account)
   })
   const world = worlds.data?.worlds.find((w) => w.id === worldId)
+  // En la pestaña del navegador, el mundo (su portada pone el suyo solo si se abre como página)
+  useEffect(() => {
+    if (world) document.title = t('app.pageTitle', { page: world.name })
+  }, [world, t])
 
   if (pending) return null
   if (!account) return <Navigate to="/entrar" replace />
@@ -58,21 +56,19 @@ export function WorldPage() {
   }
   const master = world.role === 'master'
 
-  const header = (
-    <LookHeader
-      kind={kind}
-      look={world}
-      style={worldTransition(worldId)}
-      // Borrado desde dentro: a Mis mundos, saliendo de él
-      afterDelete={() => void navigate({ to: '/mundos', viewTransition: LEAVE_WORLD })}
-    />
-  )
+  const headerProps = {
+    kind,
+    look: world,
+    style: worldTransition(worldId),
+    // Borrado desde dentro: a Mis mundos, saliendo de él
+    afterDelete: () => void navigate({ to: '/mundos', viewTransition: LEAVE_WORLD })
+  }
+  const header = <LookHeader {...headerProps} />
   const tour = (
     <Tour
       id="mundo"
       // Un paso por cada botón de la barra (y lo que se añada a ella, también aquí)
       steps={[
-        { target: '[data-tour="barra-inicio"]', text: t('tour.world.home'), placement: 'right' },
         ...(master
           ? ([
               { target: '[data-tour="barra-buscar"]', text: t('tour.world.search'), placement: 'right' },
@@ -84,26 +80,29 @@ export function WorldPage() {
               { target: '[data-tour="engranaje"]', text: t('tour.world.settings') }
             ] as const)
           : []),
+        ...(master
+          ? []
+          : ([{ target: '[data-tour="barra-inicio"]', text: t('tour.world.home'), placement: 'right' }] as const)),
         { target: '[data-tour="barra-llama"]', text: t('tour.world.back'), placement: 'right' },
         { target: '[data-tour="menu-movil"]', text: t('tour.menu') }
       ]}
     />
   )
 
-  // Quien lo dirige: su página de portada, como en Everlore, con la cabecera del mundo en lugar de su portada
+  // Quien lo dirige: su página de portada, como en Everlore (la cabecera del mundo hace de portada)
   if (master) {
     return (
-      <div className={wiki.worldHome}>
-        <WorldHome worldId={worldId} name={world.name} header={header} />
+      <>
+        <WorldHome worldId={worldId} name={world.name} banner={<WorldBanner world={world} />} />
         {tour}
-      </div>
+      </>
     )
   }
   return (
     <div className={wiki.worldHome}>
       <section className={styles.page}>
         {header}
-        <PlayerCampaigns worldId={worldId} />
+        <WorldCampaigns worldId={worldId} master={false} />
         {tour}
       </section>
     </div>
@@ -111,71 +110,66 @@ export function WorldPage() {
 }
 
 /**
- * La página de portada del mundo (la elegida o la primera del árbol) bajo su cabecera; sin páginas, el aviso y el botón
- * para crear la primera
+ * La página de portada del mundo (si aún no tiene, se crea), como cualquier página: con el árbol al lado y la cabecera
+ * del mundo como su portada
  */
-function WorldHome({ worldId, name, header }: { worldId: string; name: string; header: ReactNode }) {
-  const { t } = useTranslation()
+function WorldHome({ worldId, name, banner }: { worldId: string; name: string; banner: ReactNode }) {
   const api = useApi()
-  const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const errorText = useErrorText()
   const home = useQuery({
     queryKey: ['pages', worldId, 'home'],
     queryFn: () => api.call('getWorldHome', { worldId })
   })
+  const ensure = useMutation({
+    mutationFn: () => api.call('ensureWorldHome', { worldId }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['pages', worldId] })
+  })
+  const missing = home.data && !home.data.pageId
+  useEffect(() => {
+    if (missing && ensure.isIdle) ensure.mutate()
+  }, [missing, ensure])
   const pageId = home.data?.pageId ?? null
   const page = useQuery({
     queryKey: pageKey(worldId, pageId ?? ''),
     queryFn: () => api.call('getPage', { pageId: pageId ?? '' }),
     enabled: Boolean(pageId)
   })
-  const create = useMutation({
-    mutationFn: () => api.call('createPage', { worldId, title: t('wiki.untitled'), parentId: null }),
-    onSuccess: async (created) => {
-      await queryClient.invalidateQueries({ queryKey: ['pages', worldId] })
-      await navigate({
-        to: '/mundos/$worldId/wiki/$pageId',
-        params: { worldId, pageId: created.id },
-        search: { nuevo: true }
-      })
-    }
-  })
-  if (home.data && pageId && page.data) {
-    return (
-      <CollabSocket>
-        <HomeEntry page={page.data} world={name} header={header} />
-      </CollabSocket>
-    )
-  }
+  const current = page.data
+  const error = home.error ?? ensure.error ?? page.error
   return (
-    <>
-      {header}
-      {home.data && !pageId ? (
-        <div className={wiki.worldEmpty}>
-          <p>{t('wiki.worldEmpty')}</p>
-          <BusyButton className={form.button} busy={create.isPending} onClick={() => create.mutate()}>
-            <Plus aria-hidden="true" size={16} />
-            {t('wiki.createFirst')}
-          </BusyButton>
-          <FormError message={create.error ? errorText(create.error) : null} />
-        </div>
-      ) : failed(home) || failed(page) ? (
-        <SectionError error={home.error ?? page.error} onRetry={() => void (failed(home) ? home : page).refetch()} />
-      ) : (
-        <Loading />
-      )}
-    </>
+    <WikiLayout worldId={worldId} current={current}>
+      {() =>
+        current ? (
+          <HomeEntry page={current} world={name} banner={banner} />
+        ) : (
+          <>
+            {banner}
+            {error ? (
+              <SectionError
+                error={error}
+                onRetry={() => {
+                  if (ensure.isError) ensure.mutate()
+                  void home.refetch()
+                  if (pageId) void page.refetch()
+                }}
+              />
+            ) : (
+              <Loading />
+            )}
+          </>
+        )
+      }
+    </WikiLayout>
   )
 }
 
-function HomeEntry({ page, world, header }: { page: Page; world: string; header: ReactNode }) {
+function HomeEntry({ page, world, banner }: { page: Page; world: string; banner: ReactNode }) {
   const tabs = usePageTabs(page)
-  return <EntryView page={page} world={world} tabs={tabs.data ?? []} banner={header} />
+  return <EntryView page={page} world={world} tabs={tabs.data ?? []} banner={banner} home />
 }
 
-/** Para quien juega: sus campañas de este mundo (las mismas tarjetas que en Campañas) */
-function PlayerCampaigns({ worldId }: { worldId: string }) {
+/** Las campañas de este mundo, en tarjetas: para su máster, todas y «Nueva campaña»; para quien juega, las suyas */
+function WorldCampaigns({ worldId, master }: { worldId: string; master: boolean }) {
   const { t } = useTranslation()
   const api = useApi()
   const titleId = useId()
@@ -183,10 +177,11 @@ function PlayerCampaigns({ worldId }: { worldId: string }) {
     queryKey: ['campaigns', worldId],
     queryFn: () => api.call('listCampaigns', { worldId })
   })
-  const cards = useCardList(`campanas-${worldId}`, campaigns.data?.campaigns)
+  const kind = useCampaignKind(worldId)
+  const cards = useCardList(kind.list, campaigns.data?.campaigns)
   return (
     <section className={styles.section} aria-labelledby={titleId}>
-      <h2 id={titleId}>{t('world.yourCampaigns')}</h2>
+      <h2 id={titleId}>{t(master ? 'campaigns.title' : 'world.yourCampaigns')}</h2>
       {failed(campaigns) && <SectionError error={campaigns.error} onRetry={() => campaigns.refetch()} />}
       <ul className={styles.list} aria-labelledby={titleId}>
         {cards.map(({ item, fresh, burning, burnt }) => (

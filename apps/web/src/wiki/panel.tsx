@@ -9,10 +9,10 @@ import {
   useSyncExternalStore
 } from 'react'
 
-/** Lo que enseña el panel lateral de la wiki: el árbol, la búsqueda o los marcadores */
-export type WikiPanel = 'pages' | 'search' | 'bookmarks'
+/** Lo que enseña el panel de la izquierda de un mundo: sus páginas (el árbol) */
+export type WikiPanel = 'pages'
 
-const PANELS: readonly WikiPanel[] = ['pages', 'search', 'bookmarks']
+const PANELS: readonly WikiPanel[] = ['pages']
 const STORAGE_KEY = 'crisol.panel'
 // En lo estrecho el panel es un cajón que se abre encima; el mismo corte que wiki.module.css
 const NARROW = '(max-width: 48rem)'

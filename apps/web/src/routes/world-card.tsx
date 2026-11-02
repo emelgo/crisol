@@ -1,7 +1,7 @@
 import { type PageCover as Cover, WORLD_COLORS, type World } from '@crisol/contracts'
 import { TRASH_DAYS } from '@crisol/domain'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Link } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
 import { CircleOff, ImagePlus, Maximize2, Plus, Settings } from 'lucide-react'
 import { type CSSProperties, type ReactNode, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -18,7 +18,7 @@ import { focusAfterRemoving } from '../components/focus.ts'
 import form from '../components/form.module.css'
 import { Modal } from '../components/modal.tsx'
 import { PageTitle } from '../components/page-title.tsx'
-import { ENTER_WORLD, enterWorld, worldTransition } from '../components/world-transition.ts'
+import { ENTER_WORLD, enterWorld, LEAVE_WORLD, worldTransition } from '../components/world-transition.ts'
 import { coverStyle, useWorldFiles } from '../wiki/cover.tsx'
 import styles from './world-card.module.css'
 import { CoverDialog, CoverViewer, type LocalImage } from './world-cover.tsx'
@@ -210,7 +210,8 @@ function LookCard({
         {place && <p className={styles.place}>{place}</p>}
         {look.description && <p className={styles.description}>{look.description}</p>}
         <div className={styles.footer}>
-          <span className={styles.role}>{t(`roles.${look.role}`)}</span>
+          {/* El papel (máster o jugador) es de las campañas, no de los mundos */}
+          {kind.texts === 'campaigns' && <span className={styles.role}>{t(`roles.${look.role}`)}</span>}
           {look.role === 'master' && (
             <LookSettings
               kind={kind}
@@ -309,6 +310,25 @@ export function CampaignCard({
 }
 
 /**
+ * La portada del mundo como portada ancha de su página de portada (Everlore), la misma se llegue por donde se llegue: al
+ * entrar en él (su tarjeta se convierte en ella) o desde el árbol
+ */
+export function WorldBanner({ world }: { world: World }) {
+  const kind = useWorldKind()
+  const navigate = useNavigate()
+  return (
+    <LookHeader
+      banner
+      kind={kind}
+      look={world}
+      style={worldTransition(world.id)}
+      // Borrado desde dentro: a Mis mundos, saliendo de él
+      afterDelete={() => void navigate({ to: '/mundos', viewTransition: LEAVE_WORLD })}
+    />
+  )
+}
+
+/**
  * La cabecera de un mundo (la de su Inicio): como su tarjeta, en grande. Al entrar, la tarjeta se convierte en ella.
  * afterDelete: si se borra desde aquí, adónde se va
  */
@@ -316,16 +336,46 @@ export function LookHeader({
   kind,
   look,
   style,
-  afterDelete
+  afterDelete,
+  banner = false
 }: {
   kind: LookKind
   look: Look
   style?: CSSProperties | undefined
   afterDelete: () => void
+  /** Como portada ancha de la página de portada del mundo (Everlore): la imagen, con el engranaje encima */
+  banner?: boolean
 }) {
   const { t } = useTranslation()
   const image = useCoverImage(look)
   const [viewing, setViewing] = useState(false)
+  if (banner) {
+    return (
+      <header className={styles.banner} style={{ ...tint(look.color), ...style }}>
+        <CoverHeader
+          url={image?.url}
+          cover={look.cover}
+          hero
+          actions={
+            image && (
+              <button type="button" aria-haspopup="dialog" onClick={() => setViewing(true)}>
+                <Maximize2 aria-hidden="true" size={14} />
+                {t('cover.view')}
+              </button>
+            )
+          }
+        />
+        {viewing && image && (
+          <CoverViewer url={image.url} label={t('cover.of', { name: look.name })} onClose={() => setViewing(false)} />
+        )}
+        {look.role === 'master' && (
+          <div className={styles.bannerGear}>
+            <LookSettings kind={kind} look={look} afterDelete={afterDelete} />
+          </div>
+        )}
+      </header>
+    )
+  }
   return (
     <header className={styles.hero} style={{ ...tint(look.color), ...style }}>
       <CoverHeader
@@ -350,7 +400,8 @@ export function LookHeader({
           {look.description && <p className={styles.description}>{look.description}</p>}
         </div>
         <div className={styles.footer}>
-          <span className={styles.role}>{t(`roles.${look.role}`)}</span>
+          {/* El papel (máster o jugador) es de las campañas, no de los mundos */}
+          {kind.texts === 'campaigns' && <span className={styles.role}>{t(`roles.${look.role}`)}</span>}
           {look.role === 'master' && <LookSettings kind={kind} look={look} afterDelete={afterDelete} />}
         </div>
       </div>
@@ -861,8 +912,6 @@ export function WorldDetail({ world }: { world: World }) {
               </dd>
             </>
           )}
-          <dt>{t('worlds.roleLabel')}</dt>
-          <dd>{t(`roles.${world.role}`)}</dd>
         </dl>
       </div>
     </div>

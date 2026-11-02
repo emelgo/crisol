@@ -114,3 +114,15 @@
   clip-path: inset(50%);
   white-space: nowrap;
 }
+
+/* Sin título, en gris (como en LegendKeeper) */
+.title[data-untitled] {
+  color: var(--color-muted);
+}
+
+/* La casa de la portada, a la derecha de su fila */
+.home {
+  flex: none;
+  margin-inline: var(--space-2);
+  color: var(--color-muted);
+}

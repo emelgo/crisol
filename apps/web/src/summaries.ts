@@ -126,6 +126,8 @@ export function summaryOf(
       return say('editPage', { title: text(details.page ?? details.title) })
     case 'restoreVersion':
       return say('restoreVersion', { title: text(details.page ?? details.title) })
+    case 'createWorldHome':
+      return say('createWorldHome', { title: text(details.title) })
     // Las pestañas de una página y sus mapas (ADR-0007)
     case 'createPageTab':
     case 'deletePageTab':

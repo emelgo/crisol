@@ -30,7 +30,7 @@ export function useFocusHeading() {
 }
 
 /** El título de la página: su h1, enfocable para llevar ahí el foco, y el de la pestaña («Mis mundos · Crisol») */
-export function PageTitle({ children }: { children: string }) {
+export function PageTitle({ children, className }: { children: string; className?: string | undefined }) {
   const { t } = useTranslation()
   const request = useContext(FocusRequest)
   useEffect(() => {
@@ -46,7 +46,7 @@ export function PageTitle({ children }: { children: string }) {
     [request]
   )
   return (
-    <h1 ref={ref} tabIndex={-1}>
+    <h1 ref={ref} tabIndex={-1} className={className}>
       {children}
     </h1>
   )

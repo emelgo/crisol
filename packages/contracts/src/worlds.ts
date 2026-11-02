@@ -65,10 +65,18 @@ export const renameWorld = defineAction({
 export const getWorldHome = defineAction({
   name: 'getWorldHome',
   kind: 'read',
-  description:
-    'La página de portada de un mundo, donde se abre: la elegida o, sin ella, la primera del árbol (null si no hay páginas)',
+  description: 'La página de portada de un mundo, donde se abre (null si aún no tiene: ensureWorldHome la crea)',
   input: z.object({ worldId: z.uuid() }),
   output: z.object({ pageId: z.uuid().nullable(), chosen: z.boolean().describe('Si es la elegida a propósito') })
+})
+
+export const ensureWorldHome = defineAction({
+  name: 'ensureWorldHome',
+  kind: 'write',
+  description:
+    'La página de portada de un mundo (donde se abre, la primera de su árbol): si aún no tiene, la crea con el nombre del mundo',
+  input: z.object({ worldId: z.uuid() }),
+  output: z.object({ pageId: z.uuid() })
 })
 
 export const updateWorld = defineAction({

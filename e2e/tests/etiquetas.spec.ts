@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
-import { createWorld, freshOwner, openWiki } from './ayudas.ts'
+import { createWorld, freshOwner, openWiki, openWorldFiles } from './ayudas.ts'
 
 const PNG = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.from('un mapa')])
 
@@ -10,7 +10,7 @@ test('las etiquetas de la cuenta: un archivo lleva una, sale en Etiquetas y, ren
   await freshOwner(page)
   await createWorld(page, 'Eana')
   await openWiki(page, 'Eana')
-  await page.getByRole('link', { name: 'Archivos' }).click()
+  await openWorldFiles(page)
   await page
     .locator('input[type=file][multiple]')
     .first()

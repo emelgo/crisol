@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, type Page, test } from '@playwright/test'
-import { createWorld, freshOwner, openWiki } from './ayudas.ts'
+import { createWorld, freshOwner, openWiki, openWorldFiles } from './ayudas.ts'
 
 const PNG = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.from('un mapa')])
 const PDF = Buffer.from('%PDF-1.7\nun bestiario')
@@ -12,7 +12,7 @@ async function openFiles(page: Page) {
   await freshOwner(page)
   await createWorld(page, 'Eana')
   await openWiki(page, 'Eana')
-  await page.getByRole('link', { name: 'Archivos' }).click()
+  await openWorldFiles(page)
   await expect(page.getByRole('heading', { level: 1, name: 'Archivos de Eana' })).toBeVisible()
 }
 

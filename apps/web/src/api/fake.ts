@@ -309,6 +309,8 @@ export function fakeApi(
     return doomed.length
   }
 
+  // La página de portada de cada mundo
+  const homes = new Map<string, string>()
   // Las pestañas de las páginas y sus mapas (los pines, dentro de cada mapa)
   const pageTabs: PageTabView[] = []
   const maps: MapView[] = []
@@ -749,8 +751,25 @@ export function fakeApi(
       return { ...file }
     },
     getWorldHome: ({ worldId }) => {
-      const first = pages.find((p) => p.worldId === worldId && !p.parentId)
-      return { pageId: first?.id ?? null, chosen: false }
+      const home = homes.get(worldId) ?? null
+      return { pageId: home, chosen: home !== null }
+    },
+    ensureWorldHome: ({ worldId }) => {
+      const existing = homes.get(worldId)
+      if (existing) return { pageId: existing }
+      const world = worlds.find((w) => w.id === worldId)
+      const page = handlers.createPage({ worldId, title: world?.name ?? '', parentId: null })
+      // Delante de las demás de lo más alto
+      const index = pages.findIndex((p) => p.id === page.id)
+      const [stored] = pages.splice(index, 1)
+      if (stored)
+        pages.splice(
+          pages.findIndex((p) => p.worldId === worldId && !p.parentId),
+          0,
+          stored
+        )
+      homes.set(worldId, page.id)
+      return { pageId: page.id }
     },
     listPageTabs: ({ pageId }) => ({ tabs: pageTabs.filter((t) => t.pageId === pageId).map((t) => ({ ...t })) }),
     createPageTab: ({ pageId, kind, name }) => {
@@ -793,7 +812,7 @@ export function fakeApi(
       const map = mapById(mapId)
       if (image) {
         const file = files.find((f) => f.id === image.fileId)
-        if (!file || file.kind !== 'image') throw new ApiError('BAD_MAP_IMAGE', 400)
+        if (file?.kind !== 'image') throw new ApiError('BAD_MAP_IMAGE', 400)
         map.image = { fileId: file.id, name: file.name, url: file.url, width: image.width, height: image.height }
       }
       if (scale !== undefined) map.scale = scale
@@ -916,11 +935,13 @@ export function fakeApi(
       return {
         pages: inWorld.map((page) => {
           const alias = page.properties.find((p) => p.name === 'alias')
+          const tags = page.properties.find((p) => p.name === 'etiquetas')
           return {
             id: page.id,
             title: page.title,
             aliases: alias?.type === 'list' ? alias.value : [],
-            path: pathOf(page)
+            path: pathOf(page),
+            tags: tags?.type === 'list' ? tags.value : []
           }
         })
       }

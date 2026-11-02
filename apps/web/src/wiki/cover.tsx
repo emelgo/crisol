@@ -54,7 +54,7 @@ export function PageCoverImage({ page }: { page: Page }) {
   }
   const shown = dragY === null ? cover : { ...cover, y: dragY }
   return (
-    <div className={styles.cover} data-dragging={dragY !== null || undefined}>
+    <div className={styles.cover} data-cover-image="" data-dragging={dragY !== null || undefined}>
       <img
         src={file.url}
         alt=""

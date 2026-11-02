@@ -61,8 +61,11 @@ beforeEach(() =>
 
 describe('los archivos del mundo', () => {
   it('desde la barra se llega; en lista, con su tamaño; se filtran por tipo y se abren', async () => {
+    localStorage.setItem('crisol.recorridos.enrique@crisol.test', JSON.stringify({ seen: ['mundo'] }))
     renderAt(`/mundos/${WORLD.id}/wiki`)
-    await userEvent.click(await screen.findByRole('link', { name: 'Archivos' }))
+    // «Archivos» en la barra: su pantalla
+    const sections = within(await screen.findByRole('navigation', { name: 'Secciones' }))
+    await userEvent.click(await sections.findByRole('link', { name: 'Archivos' }))
     expect(await screen.findByRole('heading', { level: 1, name: 'Archivos de Eana' })).toBeDefined()
     const list = await cardsIn()
     expect(await list.findByText('2,5 MB')).toBeDefined()

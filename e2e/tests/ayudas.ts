@@ -63,15 +63,23 @@ export async function openWorld(page: Page, name: string) {
   await expect(page.getByRole('heading', { level: 1, name, exact: true })).toBeVisible()
 }
 
-/** Desde Mis mundos, entra en un mundo y abre su wiki con «Páginas» (en el móvil, desde el menú de la llama) */
+/**
+ * Desde Mis mundos, entra en un mundo: se abre su portada (una página que se crea sola, con el nombre del mundo) con el
+ * árbol al lado; en el móvil, el árbol se abre con «Páginas» en el menú de la llama
+ */
 export async function openWiki(page: Page, name: string) {
   await openWorld(page, name)
   const menu = page.getByRole('button', { name: 'Menú' })
   if (await menu.isVisible()) {
     await menu.click()
-    await page.getByRole('dialog', { name }).getByRole('button', { name: 'Páginas' }).click()
-  } else await sections(page).getByRole('button', { name: 'Páginas' }).click()
-  await expect(page).toHaveURL(/\/wiki$/)
+    await page.getByRole('dialog', { name }).getByRole('button', { name, exact: true }).click()
+  }
+  await expect(page.getByRole('tree', { name: 'Páginas' }).getByRole('treeitem', { name, exact: true })).toBeVisible()
+}
+
+/** Los archivos del mundo abierto, en su pantalla: «Archivos» en la barra */
+export async function openWorldFiles(page: Page) {
+  await sections(page).getByRole('link', { name: 'Archivos' }).click()
 }
 
 /** Abre los ajustes de un mundo o una campaña (su engranaje); devuelve su ventana */

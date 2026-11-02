@@ -23,8 +23,9 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   interfaz (hoy solo por el MCP; servirá con los jugadores, módulo 5). Después, la fase 2.
 - **Después, en `interfaz/barra-lateral`** (sale de `mundo/pestanas-mapa`): campañas en Mis mundos (fuera de la barra);
   barra de iconos con Inicio, Buscar, Marcadores, Páginas y Archivos; sin la palabra «wiki»; la página con la forma de
-  Everlore (cabecera pegajosa, pestañas con «+», panel derecho fijo) y el mundo que se abre en su página de portada
-  (`worlds.home_page_id`, migración 0030, acción `getWorldHome`). Las normas, en `docs/diseno.md`; lo pendiente que
+  Everlore (cabecera pegajosa, pestañas con «+», panel derecho fijo con las propiedades), con nuestros colores y letras;
+  el Inicio del mundo como su panel (campañas, últimas páginas, accesos). La «portada del mundo» se probó y se quitó
+  de la interfaz (quedan `worlds.home_page_id`, migración 0030, y `getWorldHome` en el servidor). Las normas, en `docs/diseno.md`; lo pendiente que
   pidió Enrique (Buscar y Marcadores como en Everlore, transiciones entre páginas de una vista), en `tasks/interfaz.md`.
 - Lo de antes sigue abajo (2026-10-30).
 

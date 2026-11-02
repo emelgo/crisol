@@ -7,7 +7,8 @@ async function eanaWiki(page: Page) {
   await freshOwner(page)
   await createWorld(page, 'Eana')
   await openWiki(page, 'Eana')
-  await expect(page.getByRole('heading', { level: 1, name: 'Páginas de Eana' })).toBeVisible()
+  // La portada del mundo, abierta
+  await expect(page.getByRole('heading', { level: 1, name: 'Eana' })).toBeVisible()
 }
 
 /** Página nueva (o subpágina de la abierta) con su título */
@@ -26,7 +27,7 @@ async function newPage(page: Page, title: string, button = 'Página nueva') {
 /** En el móvil, la wiki se abre desde el menú de la llama */
 async function openMobileWiki(page: Page) {
   await page.getByRole('button', { name: 'Menú' }).click()
-  await page.getByRole('dialog', { name: 'Eana' }).getByRole('button', { name: 'Páginas' }).click()
+  await page.getByRole('dialog', { name: 'Eana' }).getByRole('button', { name: 'Eana', exact: true }).click()
   // El menú se va del todo (su animación de salida) antes de seguir
   await expect(page.getByRole('dialog', { name: 'Eana' })).toHaveCount(0)
 }
@@ -36,13 +37,14 @@ const titles = (page: Page) => tree(page).getByRole('treeitem')
 
 test('el máster crea páginas y subpáginas, las renombra y las recoloca; todo sigue al recargar', async ({ page }) => {
   await eanaWiki(page)
-  await expect(page.getByText('Aún no hay páginas.')).toBeVisible()
+  // Solo la portada del mundo, que se creó al entrar
+  await expect(titles(page)).toHaveText(['Eana'])
   await newPage(page, 'Lugares')
   await newPage(page, 'Costa Gris', 'Nueva subpágina')
   await expect(page.getByRole('treeitem', { name: 'Costa Gris' })).toHaveAttribute('aria-level', '2')
   await newPage(page, 'Personajes')
   await newPage(page, 'Reglas')
-  await expect(titles(page)).toHaveText(['Lugares', 'Costa Gris', 'Personajes', 'Reglas'])
+  await expect(titles(page)).toHaveText(['Eana', 'Lugares', 'Costa Gris', 'Personajes', 'Reglas'])
 
   // Renombrar en el sitio: el título se escribe ahí mismo e Intro lo guarda
   await page.getByLabel('Título de la página').click()
@@ -55,7 +57,7 @@ test('el máster crea páginas y subpáginas, las renombra y las recoloca; todo 
   // Con el teclado: «Reglas de la casa» sube por encima de «Personajes»
   await tree(page).getByRole('treeitem', { name: 'Reglas de la casa' }).focus()
   await page.keyboard.press('Alt+ArrowUp')
-  await expect(titles(page)).toHaveText(['Lugares', 'Costa Gris', 'Reglas de la casa', 'Personajes'])
+  await expect(titles(page)).toHaveText(['Eana', 'Lugares', 'Costa Gris', 'Reglas de la casa', 'Personajes'])
 
   // Arrastrando: «Personajes» dentro de «Lugares»
   await tree(page)
@@ -67,7 +69,7 @@ test('el máster crea páginas y subpáginas, las renombra y las recoloca; todo 
   await expect(titles(page).first()).toHaveText('Lugares')
   await tree(page).getByRole('treeitem', { name: 'Lugares' }).focus()
   await page.keyboard.press('ArrowRight')
-  await expect(titles(page)).toHaveText(['Lugares', 'Costa Gris', 'Personajes', 'Reglas de la casa'])
+  await expect(titles(page)).toHaveText(['Eana', 'Lugares', 'Costa Gris', 'Personajes', 'Reglas de la casa'])
 })
 
 test('propiedades y etiquetas: se guardan, siguen al recargar y cuentan en el panel', async ({ page }) => {
@@ -118,10 +120,11 @@ test('borrar una página con sus subpáginas, y restaurarla desde la papelera de
   await page.getByRole('button', { name: 'Más acciones' }).click()
   await page.getByRole('button', { name: 'Borrar' }).click()
   await page.getByRole('button', { name: 'Borrar' }).click()
-  await expect(page.getByRole('heading', { level: 1, name: 'Páginas de Eana' })).toBeVisible()
-  await expect(page.getByText('Aún no hay páginas.')).toBeVisible()
+  // De vuelta en la portada del mundo, sin las borradas
+  await expect(page.getByRole('heading', { level: 1, name: 'Eana' })).toBeVisible()
+  await expect(titles(page)).toHaveText(['Eana'])
 
-  await page.goto(new URL(page.url()).pathname.replace(/\/wiki$/, '/papelera'))
+  await page.goto(`${new URL(page.url()).pathname.replace(/\/$/, '')}/papelera`)
   const trash = page.getByRole('list', { name: 'En la papelera' })
   await expect(trash.getByText('Página de Eana, con 2 subpáginas', { exact: false })).toBeVisible()
   await trash.getByRole('button', { name: 'Restaurar Lugares' }).click()
@@ -142,7 +145,6 @@ test('pestañas y marcadores siguen al recargar; en el móvil, las abiertas van 
   await expect(tabs.getByRole('link')).toHaveText(['Maela Varn', 'Puerto Ceniza'])
   await page.getByRole('button', { name: 'Marcar' }).click()
   // Los marcadores, en su panel; al recargar sigue abierto el último que se eligió
-  await sections(page).getByRole('button', { name: 'Marcadores' }).click()
   await expect(page.getByRole('region', { name: 'Marcadores' }).getByRole('link', { name: 'Maela Varn' })).toBeVisible()
 
   await page.reload()

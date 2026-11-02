@@ -1,8 +1,8 @@
 import type { PageSummary } from '@crisol/contracts'
-import { useQueries, useQueryClient } from '@tanstack/react-query'
+import { useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { BookCopy, FileText } from 'lucide-react'
+import { BookCopy, FileText, House } from 'lucide-react'
 import { type CSSProperties, type DragEvent, type KeyboardEvent, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
@@ -77,7 +77,18 @@ export function PageTree({ worldId, currentId, path, onNavigate }: Props) {
       queryFn: () => api.call('listPageChildren', { worldId, parentId })
     }))
   })
-  const childrenOf = new Map(parents.map((parentId, i) => [parentId, lists[i]?.data?.pages]))
+  // La portada del mundo (como la «Home» de Everlore): la primera de lo más alto, con su casa, y no se arrastra
+  const homeId = useQuery({
+    queryKey: ['pages', worldId, 'home'],
+    queryFn: () => api.call('getWorldHome', { worldId })
+  }).data?.pageId
+  const childrenOf = new Map(
+    parents.map((parentId, i) => {
+      const pages = lists[i]?.data?.pages
+      const home = parentId === null ? pages?.find((page) => page.id === homeId) : undefined
+      return [parentId, home && pages ? [home, ...pages.filter((page) => page !== home)] : pages]
+    })
+  )
   const root = lists[0]
 
   // Las filas visibles, en orden de lectura: cada página seguida de sus subpáginas si está desplegada
@@ -247,7 +258,7 @@ export function PageTree({ worldId, currentId, path, onNavigate }: Props) {
             setOpen(page.id, !row.expanded)
           } else onNavigate?.()
         }}
-        draggable
+        draggable={page.id !== homeId}
         onDragStart={(event) => {
           dragged.current = page.id
           event.dataTransfer.effectAllowed = 'move'
@@ -277,11 +288,15 @@ export function PageTree({ worldId, currentId, path, onNavigate }: Props) {
             </svg>
           )}
         </span>
-        {/* Su icono, si tiene; si no, el de página (las que tienen dentro, el de carpeta de páginas) */}
+        {/* Su icono, si tiene; si no, el de página (las que tienen dentro, el de varias) */}
         <span aria-hidden="true" className={styles.icon}>
           {page.icon ?? (page.hasChildren ? <BookCopy size={15} /> : <FileText size={15} />)}
         </span>
-        <span className={styles.title}>{page.title}</span>
+        <span className={styles.title} data-untitled={page.title === t('wiki.untitled') || undefined}>
+          {page.title}
+        </span>
+        {/* La portada del mundo, con su casa a la derecha (como en LegendKeeper) */}
+        {page.id === homeId && <House aria-hidden="true" size={15} className={styles.home} />}
       </Link>
     )
   }

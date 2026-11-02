@@ -13,7 +13,7 @@ import {
   sheetSettings,
   updatePage
 } from '@crisol/contracts'
-import { documentsRepo, filesRepo, pagesRepo } from '@crisol/db'
+import { documentsRepo, filesRepo, pagesRepo, worldsRepo } from '@crisol/db'
 import {
   compareKeys,
   moveBlocker,
@@ -167,8 +167,19 @@ export const pageActions = [
 
   implement(listPageNames, async (ctx, { worldId }) => {
     const wiki = await authorizedWiki(ctx, 'page.read', worldId)
-    const names = await worldNames(ctx, wiki.worldId)
-    return { pages: names.map((page) => ({ ...page, aliases: [...page.aliases], path: [...page.path] })) }
+    const [names, rows] = await Promise.all([
+      worldNames(ctx, wiki.worldId),
+      pagesRepo.listProperties(ctx.db, wiki.worldId)
+    ])
+    const tags = new Map(rows.map((row) => [row.id, reservedList(propertiesOf(row.properties), 'etiquetas')]))
+    return {
+      pages: names.map((page) => ({
+        ...page,
+        aliases: [...page.aliases],
+        path: [...page.path],
+        tags: tags.get(page.id) ?? []
+      }))
+    }
   }),
 
   implement(listTags, async (ctx, { worldId }) => {
@@ -181,6 +192,10 @@ export const pageActions = [
   implement(movePage, async (ctx, input) => {
     const { page, wiki } = await authorizedPage(ctx, 'page.write', input.pageId)
     const parent = await parentIn(ctx, wiki, input.parentId)
+    // La portada del mundo se queda en lo más alto
+    if (input.parentId && (await worldsRepo.homePageOf(ctx.db, wiki.worldId)) === page.id) {
+      throw new InvalidRequestError('HOME_PAGE')
+    }
     const blocker = moveBlocker({
       pageId: page.id,
       parentPath: parent ? (await pagesRepo.pagePath(ctx.db, parent.id)).map((p) => p.id) : [],

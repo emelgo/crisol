@@ -87,9 +87,12 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   ancha (72rem) y centrada; un mapa, a todo lo ancho.
 - **El panel de la derecha de la página**: fijo, a toda la altura de la ventana, con «quién la menciona» primero, el
   índice y las versiones; se esconde con su botón (solo en esa visita). Sin sitio, va debajo de la página.
-- **Un mundo se abre en su página de portada** (la elegida con «Hacer portada del mundo», en «⋯»; si no, la primera
-  del árbol), bajo la cabecera del mundo, que hace de portada. **La transición de entrar en un mundo (la tarjeta que se
-  convierte en su cabecera) no se toca** aunque cambie cómo se ve un mundo.
+- **El Inicio de un mundo es su panel**, distinto de sus páginas («si no, pierde el sentido»): su cabecera (en ella se
+  convierte su tarjeta al entrar: **esa transición no se toca**), accesos rápidos (página nueva, subir archivos), sus
+  campañas y las últimas páginas, con el árbol al lado.
+- **Dentro de un mundo, la forma de Everlore (esquinas redondeadas, sin cortes) con nuestros colores y nuestras
+  letras.** Las propiedades de una página van en el panel de la derecha, con su título pequeño como lo demás.
+- **Los mundos no tienen papel** (máster o jugador): eso es de las campañas.
 - **El mapa**: la imagen se arrastra y se acerca con la rueda hacia el cursor (y con dos dedos); las herramientas, una
   columna de iconos arriba a la izquierda; el botón derecho ofrece «Pin aquí» y «Pin con página nueva» (su nombre es
   el de la página, que nace como subpágina). Pulsar un pin abre su panel a la derecha (abajo en el móvil), donde todo

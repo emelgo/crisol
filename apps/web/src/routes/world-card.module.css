@@ -123,6 +123,7 @@
 .page {
   inline-size: min(100%, 52rem);
   margin-inline: auto;
+  padding-block-start: var(--space-4);
 }
 
 /* El título y «Nuevo mundo» en la misma fila */
@@ -837,4 +838,61 @@
 /* Con una ventana abierta (los ajustes de un mundo), la vista previa de al lado se quita */
 .layout:has(dialog[open]) .detail {
   visibility: hidden;
+}
+
+/* El Inicio de un mundo: los accesos rápidos bajo su cabecera, como botones grandes y discretos */
+.quick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-block: var(--space-4) var(--space-2);
+}
+
+.quickButton {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: var(--target);
+  padding: 0 var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: 0.625rem;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.quickButton:hover {
+  border-color: var(--color-frame);
+  background: var(--color-raised);
+}
+
+/* La cabecera del mundo como portada ancha de su página de portada: redondeada, con el engranaje encima */
+.banner {
+  position: relative;
+  overflow: hidden;
+}
+
+.banner .header {
+  margin: 0;
+}
+
+.banner .frame {
+  block-size: 15rem;
+}
+
+.bannerGear {
+  position: absolute;
+  inset-block-start: var(--space-3);
+  inset-inline-end: var(--space-8);
+  z-index: 3;
+}
+
+/* «Ver», arriba a la derecha (junto al engranaje): abajo va el título de la página, encima de la portada */
+.banner .coverActions {
+  inset-block: var(--space-3) auto;
+  inset-inline-end: calc(var(--space-8) + 2.75rem);
+  z-index: 3;
 }

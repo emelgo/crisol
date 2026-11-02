@@ -58,20 +58,19 @@ describe('la wiki: páginas y árbol', () => {
     await conn?.close()
   })
 
-  it('la portada del mundo: sin elegir, la primera del árbol; elegida, esa; borrada, otra vez la primera', async () => {
+  it('la portada del mundo (como en Everlore): se crea una vez, la primera del árbol, y no se borra ni se mete en otra', async () => {
     const home = async () => (await call('getWorldHome', { worldId })).json()
+    const other = await create('Lugares')
     expect(await home()).toEqual({ pageId: null, chosen: false })
-    const first = await create('Eana')
-    const lore = await create('Historia')
-    expect(await home()).toEqual({ pageId: first.id, chosen: false })
-    expect((await call('updateWorld', { worldId, homePageId: lore.id })).statusCode).toBe(200)
-    expect(await home()).toEqual({ pageId: lore.id, chosen: true })
-    // Una que no es de este mundo, no
-    expect((await call('updateWorld', { worldId, homePageId: crypto.randomUUID() })).json()).toMatchObject({
-      code: 'BAD_HOME_PAGE'
-    })
-    await call('deletePage', { pageId: lore.id })
-    expect(await home()).toEqual({ pageId: first.id, chosen: false })
+    const { pageId } = (await call('ensureWorldHome', { worldId })).json()
+    // Con el nombre del mundo, delante de las que ya había; y no se repite
+    expect(await titles()).toEqual(['Eana', 'Lugares'])
+    expect((await call('ensureWorldHome', { worldId })).json()).toEqual({ pageId })
+    expect(await home()).toEqual({ pageId, chosen: true })
+    expect((await call('deletePage', { pageId })).json()).toMatchObject({ code: 'HOME_PAGE' })
+    expect((await call('movePage', { pageId, parentId: other.id })).json()).toMatchObject({ code: 'HOME_PAGE' })
+    // Las demás, sí
+    expect((await call('movePage', { pageId: other.id, parentId: pageId })).statusCode).toBe(200)
   })
 
   it('el máster crea páginas y subpáginas; salen en su orden y quedan en el historial', async () => {
