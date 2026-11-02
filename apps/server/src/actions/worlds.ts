@@ -1,8 +1,17 @@
-import { createWorld, listWorlds, renameWorld, updateWorld, type World, worldColor, worldIcon } from '@crisol/contracts'
-import { filesRepo, worldsRepo } from '@crisol/db'
+import {
+  createWorld,
+  getWorldHome,
+  listWorlds,
+  renameWorld,
+  updateWorld,
+  type World,
+  worldColor,
+  worldIcon
+} from '@crisol/contracts'
+import { filesRepo, pagesRepo, worldsRepo } from '@crisol/db'
 import { authorize, NotFoundError } from '@crisol/domain'
 import { worldsChanged } from '../realtime/events.ts'
-import { targetOrganization } from './access.ts'
+import { authorizedWiki, targetOrganization } from './access.ts'
 import { historyContext, InvalidRequestError } from './context.ts'
 import { implement } from './registry.ts'
 
@@ -16,6 +25,16 @@ export function presentWorld<T extends { icon: string | null; color: string | nu
 }
 
 export const worldActions = [
+  implement(getWorldHome, async (ctx, { worldId }) => {
+    await authorizedWiki(ctx, 'page.read', worldId)
+    const chosen = await worldsRepo.homePageOf(ctx.db, worldId)
+    if (chosen && (await pagesRepo.existingPages(ctx.db, worldId, [chosen])).has(chosen)) {
+      return { pageId: chosen, chosen: true }
+    }
+    const [first] = await pagesRepo.listChildren(ctx.db, worldId, null)
+    return { pageId: first?.id ?? null, chosen: false }
+  }),
+
   implement(listWorlds, async (ctx) => ({
     worlds: (await worldsRepo.listMemberWorlds(ctx.db, ctx.actor.userId)).map(presentWorld)
   })),
@@ -62,6 +81,11 @@ export const worldActions = [
       const usable = file && (file.worldId ? file.worldId === worldId : file.organizationId === current.organizationId)
       if (!file || !usable || file.kind !== 'image') throw new InvalidRequestError('BAD_COVER')
     }
+    // La página de portada, una de este mundo fuera de la papelera
+    if (patch.homePageId) {
+      const found = await pagesRepo.existingPages(ctx.db, worldId, [patch.homePageId])
+      if (!found.has(patch.homePageId)) throw new InvalidRequestError('BAD_HOME_PAGE')
+    }
     // Lo que cambió, para la frase del historial
     const details = {
       ...(patch.name !== undefined && patch.name !== current.name
@@ -70,7 +94,8 @@ export const worldActions = [
       ...(patch.description !== undefined ? { description: true } : {}),
       ...(patch.icon !== undefined ? { icon: patch.icon } : {}),
       ...(patch.color !== undefined ? { color: patch.color } : {}),
-      ...(patch.cover !== undefined ? { cover: patch.cover !== null } : {})
+      ...(patch.cover !== undefined ? { cover: patch.cover !== null } : {}),
+      ...(patch.homePageId !== undefined ? { home: patch.homePageId !== null } : {})
     }
     const world = await worldsRepo.updateWorld(
       ctx.db,

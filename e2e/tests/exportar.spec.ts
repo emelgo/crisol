@@ -57,7 +57,7 @@ test('exportar una página, con sus subpáginas, y la wiki entera en Markdown', 
   expect(Object.keys(only.files)).toEqual(['Lugares.md'])
 
   // La wiki entera
-  const wiki = await downloaded(page, () => page.getByRole('button', { name: 'Exportar la wiki' }).click())
+  const wiki = await downloaded(page, () => page.getByRole('button', { name: 'Exportar todas las páginas' }).click())
   expect(wiki.name).toBe('Eana.zip')
   expect(Object.keys(wiki.files).sort()).toEqual(['Lugares/Costa Gris.md', 'Lugares/Lugares.md'])
 })

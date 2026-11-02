@@ -1,10 +1,9 @@
 /* La portada: una franja a lo ancho, recortada alrededor de su punto de encuadre */
 .cover {
   position: relative;
-  margin-block-end: var(--space-4);
-  block-size: 12rem;
+  block-size: 11rem;
   overflow: hidden;
-  border-radius: 6px;
+  border-radius: 1rem;
   background: var(--color-raised);
 }
 

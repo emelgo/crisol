@@ -1,13 +1,13 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, type Page, test } from '@playwright/test'
-import { createWorld, freshOwner, openWiki, slash } from './ayudas.ts'
+import { createWorld, freshOwner, openWiki, sections, slash } from './ayudas.ts'
 
 /** El propietario crea Eana y entra en su wiki */
 async function eanaWiki(page: Page) {
   await freshOwner(page)
   await createWorld(page, 'Eana')
   await openWiki(page, 'Eana')
-  await expect(page.getByRole('heading', { level: 1, name: 'Wiki de Eana' })).toBeVisible()
+  await expect(page.getByRole('heading', { level: 1, name: 'Páginas de Eana' })).toBeVisible()
 }
 
 /** Página nueva (o subpágina de la abierta) con su título */
@@ -26,7 +26,7 @@ async function newPage(page: Page, title: string, button = 'Página nueva') {
 /** En el móvil, la wiki se abre desde el menú de la llama */
 async function openMobileWiki(page: Page) {
   await page.getByRole('button', { name: 'Menú' }).click()
-  await page.getByRole('dialog', { name: 'Eana' }).getByRole('button', { name: 'Wiki' }).click()
+  await page.getByRole('dialog', { name: 'Eana' }).getByRole('button', { name: 'Páginas' }).click()
   // El menú se va del todo (su animación de salida) antes de seguir
   await expect(page.getByRole('dialog', { name: 'Eana' })).toHaveCount(0)
 }
@@ -39,9 +39,7 @@ test('el máster crea páginas y subpáginas, las renombra y las recoloca; todo 
   await expect(page.getByText('Aún no hay páginas.')).toBeVisible()
   await newPage(page, 'Lugares')
   await newPage(page, 'Costa Gris', 'Nueva subpágina')
-  await expect(
-    page.getByRole('navigation', { name: 'Migas de pan' }).getByRole('link', { name: 'Lugares' })
-  ).toBeVisible()
+  await expect(page.getByRole('treeitem', { name: 'Costa Gris' })).toHaveAttribute('aria-level', '2')
   await newPage(page, 'Personajes')
   await newPage(page, 'Reglas')
   await expect(titles(page)).toHaveText(['Lugares', 'Costa Gris', 'Personajes', 'Reglas'])
@@ -120,7 +118,7 @@ test('borrar una página con sus subpáginas, y restaurarla desde la papelera de
   await page.getByRole('button', { name: 'Más acciones' }).click()
   await page.getByRole('button', { name: 'Borrar' }).click()
   await page.getByRole('button', { name: 'Borrar' }).click()
-  await expect(page.getByRole('heading', { level: 1, name: 'Wiki de Eana' })).toBeVisible()
+  await expect(page.getByRole('heading', { level: 1, name: 'Páginas de Eana' })).toBeVisible()
   await expect(page.getByText('Aún no hay páginas.')).toBeVisible()
 
   await page.goto(new URL(page.url()).pathname.replace(/\/wiki$/, '/papelera'))
@@ -144,7 +142,7 @@ test('pestañas y marcadores siguen al recargar; en el móvil, las abiertas van 
   await expect(tabs.getByRole('link')).toHaveText(['Maela Varn', 'Puerto Ceniza'])
   await page.getByRole('button', { name: 'Marcar' }).click()
   // Los marcadores, en su panel; al recargar sigue abierto el último que se eligió
-  await page.getByRole('tab', { name: 'Marcadores' }).click()
+  await sections(page).getByRole('button', { name: 'Marcadores' }).click()
   await expect(page.getByRole('region', { name: 'Marcadores' }).getByRole('link', { name: 'Maela Varn' })).toBeVisible()
 
   await page.reload()
@@ -155,7 +153,6 @@ test('pestañas y marcadores siguen al recargar; en el móvil, las abiertas van 
   await page.setViewportSize({ width: 390, height: 844 })
   await expect(tabs).toBeHidden()
   await openMobileWiki(page)
-  await page.getByRole('tab', { name: 'Páginas' }).click()
   await expect(page.getByRole('navigation', { name: 'Abiertas' }).getByRole('link')).toHaveText([
     'Maela Varn',
     'Puerto Ceniza'

@@ -65,7 +65,7 @@ test('las confirmaciones: el foco va a ellas, vuelve al cancelar y, si algo desa
   await settings.getByRole('button', { name: 'Borrar el mundo' }).first().press('Enter')
   const confirm = page.getByRole('dialog', { name: '¿Borrar «Eana»?' })
   await expect(confirm).toHaveAccessibleDescription(
-    'Irá a la papelera, con sus campañas y su wiki, y se podrá recuperar durante 30 días.'
+    'Irá a la papelera, con sus campañas y sus páginas, y se podrá recuperar durante 30 días.'
   )
   await expect(confirm.getByLabel('Nombre del mundo')).toBeFocused()
   await confirm.getByRole('button', { name: 'Cancelar' }).press('Enter')

@@ -85,10 +85,10 @@ test('con la hoja, la página se escribe sobre el papel; el tema, en «⋯»; al
   ).join('\n\n')
   const { worldId, pageId } = await openPage(page, `> [!indice]\n\n## La costa\n\n${paragraphs}\n\n## El norte\n\nFin.`)
   await page.getByRole('button', { name: 'Hoja', exact: true }).click()
-  // El papel: el título y el texto encima, y se sigue escribiendo
+  // El papel: el texto encima (la cabecera, como en Everlore, va fuera), y se sigue escribiendo
   const paper = page.locator('[data-sheet-paper]')
   await expect(paper).toHaveAttribute('data-theme', 'pergamino')
-  await expect(paper.getByRole('heading', { level: 1, name: 'El Dragón Rojo' })).toBeVisible()
+  await expect(page.getByRole('heading', { level: 1, name: 'El Dragón Rojo' })).toBeVisible()
   await paper.getByText('Fin.').click()
   await page.keyboard.press('End')
   await page.keyboard.type(' Y más allá.')

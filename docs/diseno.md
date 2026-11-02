@@ -77,10 +77,19 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
 - **Sin sección de subpáginas**: se navega desde el árbol; «Nueva subpágina», en «⋯».
 - **Alrededor de la página, nada pesa** («la UI es rara»): los paneles de los lados sin recuadros, con títulos
   pequeños y grises; «Página nueva», «Exportar» y «Nueva subpágina», discretos; un vacío dice una sola línea.
-- **Las pestañas de una página** (ADR-0007, lo de Everlore): bajo el título, «Texto» y las que se añaden (de momento,
-  mapas), en texto plano con la elegida subrayada. Sin pestañas añadidas no hay barra; «Añadir mapa» va en «⋯». La
-  elegida lleva su menú (▾): nombre, mover y quitar. Una pestaña que no es el texto va a todo lo ancho, sin el panel
-  de la derecha (es del texto) ni la portada.
+- **La página, «prácticamente idéntica» a la de Everlore** (Enrique, 2026-11-02: «misma forma; solo cambian los
+  colores y las letras»): la portada ancha y redondeada arriba (sin ella, «Añadir portada» pequeño); el mundo en
+  pequeño sobre el icono y el título; a la derecha sus acciones, «⋯» y el botón del panel; al bajar, la cabecera se
+  queda pegada arriba, compacta. Sin migas de pan.
+- **Las pestañas de una página** (ADR-0007): siempre bajo el título, «Texto» y las que se añaden, en texto plano con la
+  elegida subrayada; «+» al final abre un cuadro con un recuadro por tipo (mapa; pizarra, línea temporal y árbol
+  familiar, «Pronto») y el nombre. La elegida lleva su menú (▾): nombre, mover y quitar. El texto va en una columna
+  ancha (72rem) y centrada; un mapa, a todo lo ancho.
+- **El panel de la derecha de la página**: fijo, a toda la altura de la ventana, con «quién la menciona» primero, el
+  índice y las versiones; se esconde con su botón (solo en esa visita). Sin sitio, va debajo de la página.
+- **Un mundo se abre en su página de portada** (la elegida con «Hacer portada del mundo», en «⋯»; si no, la primera
+  del árbol), bajo la cabecera del mundo, que hace de portada. **La transición de entrar en un mundo (la tarjeta que se
+  convierte en su cabecera) no se toca** aunque cambie cómo se ve un mundo.
 - **El mapa**: la imagen se arrastra y se acerca con la rueda hacia el cursor (y con dos dedos); las herramientas, una
   columna de iconos arriba a la izquierda; el botón derecho ofrece «Pin aquí» y «Pin con página nueva» (su nombre es
   el de la página, que nace como subpágina). Pulsar un pin abre su panel a la derecha (abajo en el móvil), donde todo
@@ -148,7 +157,15 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
 - **Los mundos no llevan icono**: «no aportan nada».
 - **Las campañas se ven y se crean como los mundos**: tarjeta con portada, descripción y color, engranaje con su
   ventana y zona de peligro, «Nueva campaña» discontinuo al final, y se forjan y arden igual. Su portada, una imagen
-  de su mundo o común.
+  de su mundo o común. **Viven en Mis mundos**, bajo los mundos, cada una con su mundo debajo del nombre; «Nueva
+  campaña» pide el mundo. No están en la barra.
+- **La barra de la izquierda, estrecha y de iconos** (Enrique prefirió esta a una ancha al estilo Everlore). Dentro de
+  un mundo: Inicio, Buscar, Marcadores, Páginas y Archivos, por ese orden; cada uno de los tres de la wiki abre su
+  panel, con su título pequeño arriba (siempre en el mismo sitio). El árbol, como el de las carpetas de Archivos.
+- **No se dice «wiki» en la interfaz**: quien solo hace worldbuilding no piensa en una wiki. Se habla del mundo y de sus
+  páginas («Páginas de Eana», «Buscar en las páginas»). «Compendio» se guarda para las reglas.
+- **Con una ventana abierta encima (los ajustes de un mundo), la vista previa de al lado se quita**, y no vuelve hasta
+  que el ratón entra otra vez en la tarjeta.
 - **El color de un mundo**: sin color, uno de los fijos o uno propio con el selector de color; los propios se
   recuerdan para usarlos otra vez. **Solo tiñe, sutil, el contorno de su tarjeta** (y el de su ventana); la portada no
   se colorea. **El contorno sale siempre**, entero, también alrededor de la portada. Sin imagen, el hueco de la portada lleva un tinte muy oscuro de ese color.

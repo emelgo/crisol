@@ -211,6 +211,13 @@
       "when": 1793623286651,
       "tag": "0029_pestanas_y_mapas",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1793627271310,
+      "tag": "0030_portada_del_mundo",
+      "breakpoints": true
     }
   ]
 }

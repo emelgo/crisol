@@ -748,6 +748,10 @@ export function fakeApi(
       file.version++
       return { ...file }
     },
+    getWorldHome: ({ worldId }) => {
+      const first = pages.find((p) => p.worldId === worldId && !p.parentId)
+      return { pageId: first?.id ?? null, chosen: false }
+    },
     listPageTabs: ({ pageId }) => ({ tabs: pageTabs.filter((t) => t.pageId === pageId).map((t) => ({ ...t })) }),
     createPageTab: ({ pageId, kind, name }) => {
       pageById(pageId)

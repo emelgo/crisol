@@ -46,7 +46,7 @@ const renderAt = (path: string) => {
 describe('el selector rápido', () => {
   it('Ctrl+K lo abre con el foco en el campo; busca con erratas, se elige con las flechas y abre la página', async () => {
     const router = renderAt(`/mundos/${WORLD.id}/wiki`)
-    await screen.findByRole('heading', { level: 1, name: 'Wiki de Eana' })
+    await screen.findByRole('heading', { level: 1, name: 'Páginas de Eana' })
     await userEvent.keyboard('{Control>}k{/Control}')
     const dialog = await screen.findByRole('dialog', { name: 'Ir a una página' })
     const field = within(dialog).getByRole('combobox', { name: 'Página u orden' })

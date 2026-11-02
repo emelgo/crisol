@@ -103,7 +103,15 @@ export function PageCoverImage({ page }: { page: Page }) {
 }
 
 /** El botón «Portada» de una página y su caja */
-export function CoverButton({ page, className }: { page: Page; className?: string | undefined }) {
+export function CoverButton({
+  page,
+  className,
+  label
+}: {
+  page: Page
+  className?: string | undefined
+  label?: string
+}) {
   const api = useApi()
   const queryClient = useQueryClient()
   return (
@@ -111,6 +119,7 @@ export function CoverButton({ page, className }: { page: Page; className?: strin
       worldId={page.worldId}
       cover={page.cover}
       triggerClassName={className}
+      {...(label ? { label } : {})}
       onSave={async (cover) => {
         await api.call('updatePage', { pageId: page.id, cover })
         await queryClient.invalidateQueries({ queryKey: ['pages', page.worldId] })

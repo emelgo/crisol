@@ -2,6 +2,7 @@ import type { PageSummary } from '@crisol/contracts'
 import { useQueries, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { useVirtualizer } from '@tanstack/react-virtual'
+import { BookCopy, FileText } from 'lucide-react'
 import { type CSSProperties, type DragEvent, type KeyboardEvent, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
@@ -229,7 +230,7 @@ export function PageTree({ worldId, currentId, path, onNavigate }: Props) {
         to="/mundos/$worldId/wiki/$pageId"
         params={{ worldId, pageId: page.id }}
         className={styles.item}
-        style={{ ...style, paddingInlineStart: `${row.level - 1}rem` }}
+        style={{ ...style, paddingInlineStart: `${(row.level - 1) * 0.875}rem` }}
         data-drop={drop?.id === page.id ? drop.zone : undefined}
         aria-level={row.level}
         aria-setsize={row.setsize}
@@ -275,6 +276,10 @@ export function PageTree({ worldId, currentId, path, onNavigate }: Props) {
               <path d="M9 6l6 6-6 6" />
             </svg>
           )}
+        </span>
+        {/* Su icono, si tiene; si no, el de página (las que tienen dentro, el de carpeta de páginas) */}
+        <span aria-hidden="true" className={styles.icon}>
+          {page.icon ?? (page.hasChildren ? <BookCopy size={15} /> : <FileText size={15} />)}
         </span>
         <span className={styles.title}>{page.title}</span>
       </Link>

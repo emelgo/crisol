@@ -66,8 +66,8 @@ describe('el árbol de la wiki', () => {
     await screen.findByRole('heading', { level: 1, name: 'Eana' })
     // «Páginas», en la barra del mundo, lleva a la wiki con su árbol
     const sections = within(screen.getByRole('navigation', { name: 'Secciones' }))
-    await userEvent.click(await sections.findByRole('button', { name: 'Wiki' }))
-    expect(await screen.findByRole('heading', { level: 1, name: 'Wiki de Eana' })).toBeDefined()
+    await userEvent.click(await sections.findByRole('button', { name: 'Páginas' }))
+    expect(await screen.findByRole('heading', { level: 1, name: 'Páginas de Eana' })).toBeDefined()
     expect(router.state.location.pathname).toBe(`/mundos/${WORLD.id}/wiki`)
     const items = (await tree()).getAllByRole('treeitem')
     expect(items.map((i) => i.textContent)).toEqual(['Lugares', 'Personajes', 'Reglas de la casa'])
@@ -121,8 +121,8 @@ describe('el árbol de la wiki', () => {
     const port = await item('Puerto Ceniza')
     expect(port.getAttribute('aria-current')).toBe('page')
     expect(port.getAttribute('aria-level')).toBe('3')
-    const crumbs = within(screen.getByRole('navigation', { name: 'Migas de pan' }))
-    expect(crumbs.getAllByRole('link').map((l) => l.textContent)).toEqual(['Eana', 'Lugares', 'Costa Gris'])
+    // Sobre el título, el mundo en pequeño (como en Everlore)
+    expect(screen.getByText('Eana', { selector: 'header span' })).toBeDefined()
   })
 
   it('Alt y las flechas recolocan: abajo entre hermanas y a la derecha dentro de la de encima', async () => {
@@ -166,7 +166,6 @@ describe('el árbol de la wiki', () => {
     await userEvent.type(title, 'Maela Varn{Enter}')
     expect(await screen.findByRole('heading', { level: 1, name: 'Maela Varn' })).toBeDefined()
     expect((await item('Maela Varn')).getAttribute('aria-level')).toBe('2')
-    expect(within(screen.getByRole('navigation', { name: 'Migas de pan' })).getByText('Personajes')).toBeDefined()
   })
 
   it('el título se cambia en el sitio: Intro lo guarda, Escape lo deja como estaba y vacío vuelve el de antes', async () => {
@@ -244,7 +243,7 @@ describe('el árbol de la wiki', () => {
 
   it('un jugador no tiene wiki', async () => {
     renderAt(`/mundos/${WORLD.id}/wiki`, wikiApi({ ...WORLD, role: 'player' }))
-    expect(await screen.findByRole('heading', { level: 1, name: 'Esta wiki no existe' })).toBeDefined()
+    expect(await screen.findByRole('heading', { level: 1, name: 'Este mundo no existe' })).toBeDefined()
     expect(screen.queryByRole('tree')).toBeNull()
   })
 })

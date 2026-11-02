@@ -69,8 +69,8 @@ export async function openWiki(page: Page, name: string) {
   const menu = page.getByRole('button', { name: 'Menú' })
   if (await menu.isVisible()) {
     await menu.click()
-    await page.getByRole('dialog', { name }).getByRole('button', { name: 'Wiki' }).click()
-  } else await sections(page).getByRole('button', { name: 'Wiki' }).click()
+    await page.getByRole('dialog', { name }).getByRole('button', { name: 'Páginas' }).click()
+  } else await sections(page).getByRole('button', { name: 'Páginas' }).click()
   await expect(page).toHaveURL(/\/wiki$/)
 }
 
@@ -136,12 +136,19 @@ export async function createWorld(page: Page, name: string) {
   await expect(page.getByRole('link', { name, exact: true })).toBeVisible()
 }
 
-/** Crea una campaña en el mundo abierto, desde su pestaña Campañas */
-export async function createCampaign(page: Page, name: string) {
-  await page.getByRole('navigation', { name: 'Secciones' }).getByRole('link', { name: 'Campañas' }).click()
-  await page.getByRole('button', { name: /Nueva campaña|Crear la primera campaña/ }).click()
+/** A Mis mundos con la llama, sin recargar (no corta el canal en tiempo real) */
+export async function toWorlds(page: Page) {
+  if (new URL(page.url()).pathname !== '/mundos') await sections(page).getByRole('link', { name: 'Crisol' }).click()
+  await expect(page.getByRole('heading', { level: 1, name: 'Mis mundos' })).toBeVisible()
+}
+
+/** Crea una campaña desde Mis mundos: «Nueva campaña» pide su mundo (sin decirlo, el primero) */
+export async function createCampaign(page: Page, name: string, world?: string) {
+  await toWorlds(page)
+  await page.getByRole('button', { name: 'Nueva campaña' }).click()
   const dialog = page.getByRole('dialog', { name: 'Nueva campaña' })
   await dialog.getByLabel('Nombre de la campaña').fill(name)
+  if (world) await dialog.getByLabel('Mundo').selectOption({ label: world })
   await dialog.getByRole('button', { name: 'Crear la campaña' }).click()
   await expect(page.getByRole('link', { name, exact: true })).toBeVisible()
 }
@@ -166,7 +173,6 @@ export async function freshOwner(page: Page) {
 export async function campaignLink(page: Page) {
   await freshOwner(page)
   await createWorld(page, 'Eana')
-  await page.getByRole('link', { name: 'Eana', exact: true }).click()
   await createCampaign(page, 'La Marca')
   await page.getByRole('link', { name: 'La Marca', exact: true }).click()
   return page.getByLabel('Enlace de invitación').inputValue()

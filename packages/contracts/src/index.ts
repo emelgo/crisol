@@ -72,7 +72,7 @@ import {
   restorePage,
   restoreWorld
 } from './trash.ts'
-import { createWorld, listWorlds, renameWorld, updateWorld } from './worlds.ts'
+import { createWorld, getWorldHome, listWorlds, renameWorld, updateWorld } from './worlds.ts'
 
 export * from './action.ts'
 export * from './ai.ts'
@@ -173,7 +173,8 @@ export const ACTIONS = [
   updateMap,
   createMapPin,
   updateMapPin,
-  deleteMapPin
+  deleteMapPin,
+  getWorldHome
 ]
 
 /** Las acciones por nombre, solo como tipo: la web las usa sin cargar zod */
@@ -258,5 +259,6 @@ export type Actions = {
   createMapPin: typeof createMapPin
   updateMapPin: typeof updateMapPin
   deleteMapPin: typeof deleteMapPin
+  getWorldHome: typeof getWorldHome
   searchWiki: typeof searchWiki
 }

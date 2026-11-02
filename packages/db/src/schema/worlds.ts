@@ -20,6 +20,8 @@ export const worlds = pgTable(
     color: text(),
     /** La portada: una imagen del mundo y su encuadre */
     cover: jsonb().$type<{ fileId: string; x: number; y: number; zoom?: number } | null>(),
+    /** Su página de portada, en la que se abre el mundo (sin ella o borrada, la primera del árbol) */
+    homePageId: uuid(),
     /** En la papelera desde entonces: no sale en ninguna vista y a los 30 días se purga */
     deletedAt: timestamp({ withTimezone: true })
   },

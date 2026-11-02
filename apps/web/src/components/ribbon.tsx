@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router'
 import {
+  Bookmark,
   BookOpen,
   Folder,
   Globe,
@@ -9,8 +10,8 @@ import {
   House,
   LogOut,
   type LucideIcon,
+  Search,
   Settings,
-  Swords,
   Trash2,
   User
 } from 'lucide-react'
@@ -273,7 +274,7 @@ export function Ribbon() {
 }
 
 /**
- * Lo de un mundo: su Inicio, sus campañas y, para quien lo dirige, los paneles de su wiki. Fuera de la wiki, abrir uno
+ * Lo de un mundo: su Inicio y, para quien lo dirige, los paneles de su wiki. Fuera de la wiki, abrir uno
  * lleva a ella con ese panel abierto
  */
 function WorldPanels({ worldId, master }: { worldId: string; master: boolean }) {
@@ -286,7 +287,6 @@ function WorldPanels({ worldId, master }: { worldId: string; master: boolean }) 
   const prefetchHome = master
     ? prefetch(['pages', worldId, 'recent'], () => api.call('listRecentPages', { worldId }))
     : prefetch(['campaigns', worldId], () => api.call('listCampaigns', { worldId }))
-  const prefetchCampaigns = prefetch(['campaigns', worldId], () => api.call('listCampaigns', { worldId }))
   return (
     <>
       <Link
@@ -300,17 +300,6 @@ function WorldPanels({ worldId, master }: { worldId: string; master: boolean }) 
         data-tour="barra-inicio"
       >
         <Label icon={House} text={t('ribbon.home')} />
-      </Link>
-      <Link
-        to="/mundos/$worldId/campanas"
-        params={{ worldId }}
-        className={styles.item}
-        viewTransition={SECTION}
-        onPointerEnter={prefetchCampaigns}
-        onFocus={prefetchCampaigns}
-        data-tour="barra-campanas"
-      >
-        <Label icon={Swords} text={t('ribbon.campaigns')} />
       </Link>
       {master && <WikiPanels worldId={worldId} />}
     </>
@@ -343,19 +332,29 @@ function WikiPanels({ worldId }: { worldId: string }) {
     void navigate({ to: '/mundos/$worldId/wiki', params: { worldId }, viewTransition: SECTION })
   }
   const narrow = useNarrow()
-  // Marcado si se ve su panel: en lo estrecho, con el cajón abierto; en lo ancho, si no está recogido
-  // La wiki: abre su panel (páginas; buscar y marcadores, en sus pestañas)
+  // Cada uno abre su panel (o lo recoge si ya está abierto); marcado si es el que se ve: en lo estrecho, con el cajón
+  // abierto; en lo ancho, si no está recogido
+  const shown = (panel: WikiPanel) =>
+    inWiki && wikiPanel.panel === panel && (narrow ? wikiPanel.open : !wikiPanel.collapsed)
+  const buttons: { panel: WikiPanel; icon: LucideIcon; text: string; tour: string }[] = [
+    { panel: 'search', icon: Search, text: t('ribbon.search'), tour: 'barra-buscar' },
+    { panel: 'bookmarks', icon: Bookmark, text: t('ribbon.bookmarks'), tour: 'barra-marcadores' },
+    { panel: 'pages', icon: BookOpen, text: t('ribbon.pages'), tour: 'barra-wiki' }
+  ]
   return (
     <>
-      <button
-        type="button"
-        className={styles.item}
-        aria-pressed={inWiki && (narrow ? wikiPanel.open : !wikiPanel.collapsed)}
-        data-tour="barra-wiki"
-        onClick={press(inWiki ? wikiPanel.panel : 'pages')}
-      >
-        <Label icon={BookOpen} text={t('ribbon.wiki')} />
-      </button>
+      {buttons.map((button) => (
+        <button
+          key={button.panel}
+          type="button"
+          className={styles.item}
+          aria-pressed={shown(button.panel)}
+          data-tour={button.tour}
+          onClick={press(button.panel)}
+        >
+          <Label icon={button.icon} text={button.text} />
+        </button>
+      ))}
       <Link
         to="/mundos/$worldId/archivos"
         params={{ worldId }}
@@ -426,23 +425,16 @@ function MobileMenu({
           current: path === `/mundos/${world.id}`,
           run: go(`/mundos/${world.id}`)
         },
-        {
-          key: 'campanas',
-          icon: Swords,
-          text: t('ribbon.campaigns'),
-          current: path.startsWith(`/mundos/${world.id}/campanas`),
-          run: go(`/mundos/${world.id}/campanas`)
-        },
         ...(master
           ? [
-              {
-                key: 'wiki',
-                icon: BookOpen,
-                text: t('ribbon.wiki'),
-                current: /^\/mundos\/[^/]+\/(wiki|buscar)/.test(path),
-                // Abre el cajón de sus páginas (y, si no se está en ella, entra en la wiki)
+              ...(['search', 'bookmarks', 'pages'] as const).map((panel) => ({
+                key: panel,
+                icon: { pages: BookOpen, search: Search, bookmarks: Bookmark }[panel],
+                text: t(`ribbon.${panel}`),
+                current: wikiPanel.open && wikiPanel.panel === panel,
+                // Abre el cajón con ese panel (y, si no se está en la wiki, entra en ella)
                 run: then(() => {
-                  wikiPanel.show('pages', trigger.current)
+                  wikiPanel.show(panel, trigger.current)
                   if (!/^\/mundos\/[^/]+\/(wiki|buscar)/.test(path)) {
                     void navigate({
                       to: '/mundos/$worldId/wiki',
@@ -451,7 +443,7 @@ function MobileMenu({
                     })
                   }
                 })
-              },
+              })),
               {
                 key: 'archivos',
                 icon: Folder,

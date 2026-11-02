@@ -85,7 +85,8 @@ describe('Actions', () => {
       updateMap: true,
       createMapPin: true,
       updateMapPin: true,
-      deleteMapPin: true
+      deleteMapPin: true,
+      getWorldHome: true
     }
     expect(Object.keys(names).sort()).toEqual(ACTIONS.map((a) => a.name).sort())
   })

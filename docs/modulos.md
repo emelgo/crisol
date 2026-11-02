@@ -21,6 +21,11 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
 - **Lo que falta de la fase 1**: dibujar en el mapa (regiones, rutas y textos: la tabla `map_elements` ya está),
   medir con la escala, el menú radial de Everlore, recolocar pestañas arrastrando y la marca de «oculto» en la
   interfaz (hoy solo por el MCP; servirá con los jugadores, módulo 5). Después, la fase 2.
+- **Después, en `interfaz/barra-lateral`** (sale de `mundo/pestanas-mapa`): campañas en Mis mundos (fuera de la barra);
+  barra de iconos con Inicio, Buscar, Marcadores, Páginas y Archivos; sin la palabra «wiki»; la página con la forma de
+  Everlore (cabecera pegajosa, pestañas con «+», panel derecho fijo) y el mundo que se abre en su página de portada
+  (`worlds.home_page_id`, migración 0030, acción `getWorldHome`). Las normas, en `docs/diseno.md`; lo pendiente que
+  pidió Enrique (Buscar y Marcadores como en Everlore, transiciones entre páginas de una vista), en `tasks/interfaz.md`.
 - Lo de antes sigue abajo (2026-10-30).
 
 ### Antes (2026-10-30)

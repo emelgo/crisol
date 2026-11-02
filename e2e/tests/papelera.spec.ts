@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { campaignLink, closeWindow, newPlayer, openSettings, openWindow, sections } from './ayudas.ts'
+import { campaignLink, closeWindow, newPlayer, openSettings, openWindow, openWorld, toWorlds } from './ayudas.ts'
 
 test('el máster borra una campaña con una jugadora dentro: ella la pierde al momento y vuelve al restaurarla', async ({
   page,
@@ -9,7 +9,7 @@ test('el máster borra una campaña con una jugadora dentro: ella la pierde al m
   const player = await newPlayer(browser, link)
   const campaignUrl = player.url()
 
-  await sections(page).getByRole('link', { name: 'Campañas' }).click()
+  await toWorlds(page)
   const settings = await openSettings(page, 'La Marca')
   await settings.getByRole('button', { name: 'Borrar la campaña' }).click()
   const confirm = page.getByRole('dialog', { name: '¿Borrar «La Marca»?' })
@@ -25,6 +25,8 @@ test('el máster borra una campaña con una jugadora dentro: ella la pierde al m
   await player.goto(link)
   await expect(player.getByRole('heading', { name: 'Este enlace no vale' })).toBeVisible()
 
+  // La del mundo, dentro de él
+  await openWorld(page, 'Eana')
   const trash = await openWindow(page, 'Papelera')
   await expect(trash.getByRole('heading', { level: 1, name: 'Papelera de Eana' })).toBeVisible()
   const items = trash.getByRole('list', { name: 'En la papelera' }).getByRole('listitem')
@@ -35,7 +37,6 @@ test('el máster borra una campaña con una jugadora dentro: ella la pierde al m
 
   await player.goto(campaignUrl)
   await expect(player.getByRole('heading', { level: 1, name: 'La Marca', exact: true })).toBeVisible()
-  await expect(page.getByRole('link', { name: 'La Marca', exact: true })).toBeVisible()
   const history = await openWindow(page, 'Historial')
   await expect(history.getByRole('list', { name: 'Operaciones' }).getByRole('listitem').first()).toHaveText(
     /^Enrique restauró la campaña «La Marca» de Eana/

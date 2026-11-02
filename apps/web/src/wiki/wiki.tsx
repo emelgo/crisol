@@ -1,7 +1,7 @@
-import type { Page } from '@crisol/contracts'
+import type { Page, PageTabView } from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getRouteApi, Link, Navigate, useNavigate, useRouter } from '@tanstack/react-router'
-import { Ellipsis, Lock, LockOpen, Plus } from 'lucide-react'
+import { Ellipsis, Lock, LockOpen, PanelRight, Plus } from 'lucide-react'
 import { type ReactNode, type RefObject, useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
@@ -30,7 +30,7 @@ import { PageProperties } from './properties.tsx'
 import { QuickSwitcher } from './quick-switcher.tsx'
 import { SearchBox } from './search-box.tsx'
 import { SheetMenu, SheetPaper, SheetToggle } from './sheet/controls.tsx'
-import { AddMapTab, PageTabs, usePageTabs } from './tabs/page-tabs.tsx'
+import { PageTabs, usePageTabs } from './tabs/page-tabs.tsx'
 import { childrenKey, PageTree } from './tree.tsx'
 import { Versions } from './versions.tsx'
 import styles from './wiki.module.css'
@@ -76,7 +76,7 @@ export function WikiLayout({
   const api = useApi()
   const errorText = useErrorText()
   const { account, pending } = useAccounts().useAccount()
-  const { panel, collapsed, open, close, show } = useWikiPanel()
+  const { panel, collapsed, open, close } = useWikiPanel()
   const closeButton = useRef<HTMLButtonElement>(null)
   // Al abrir el cajón (en lo estrecho), el foco entra en él; al cerrarlo, vuelve al botón de la barra que lo abrió
   useEffect(() => {
@@ -117,25 +117,8 @@ export function WikiLayout({
           if (event.key === 'Escape' && open) close(true)
         }}
       >
-        {/* Las pestañas del panel: las páginas, buscar y los marcadores (antes, botones de la barra) */}
-        <div className={styles.panelTabs} role="tablist" aria-label={t('ribbon.wiki')}>
-          {(['pages', 'search', 'bookmarks'] as const).map((tab) => (
-            <button
-              key={tab}
-              type="button"
-              role="tab"
-              aria-selected={panel === tab}
-              className={styles.panelTab}
-              onClick={(event) => show(tab, event.currentTarget)}
-            >
-              {titles[tab]}
-            </button>
-          ))}
-        </div>
         <div className={styles.asideHeader}>
-          <h2 id={headingId} className={styles.hiddenTitle}>
-            {titles[panel]}
-          </h2>
+          <h2 id={headingId}>{titles[panel]}</h2>
           {panel === 'pages' && (
             <BusyButton className={styles.newPage} busy={create.isPending} onClick={() => create.mutate(null)}>
               <Plus aria-hidden="true" size={15} />
@@ -173,29 +156,6 @@ export function WikiLayout({
   )
 }
 
-/** Migas de pan: el mundo y la ruta hasta la página */
-function Breadcrumbs({ worldId, world, path }: { worldId: string; world: string; path: Page['path'] }) {
-  const { t } = useTranslation()
-  return (
-    <nav aria-label={t('wiki.breadcrumbs')} className={styles.crumbs}>
-      <ol>
-        <li>
-          <Link to="/mundos/$worldId/wiki" params={{ worldId }}>
-            {world}
-          </Link>
-        </li>
-        {path.slice(0, -1).map((step) => (
-          <li key={step.id}>
-            <Link to="/mundos/$worldId/wiki/$pageId" params={{ worldId, pageId: step.id }}>
-              {step.title}
-            </Link>
-          </li>
-        ))}
-      </ol>
-    </nav>
-  )
-}
-
 /** La wiki sin página abierta */
 export function WikiHome() {
   const { t } = useTranslation()
@@ -213,23 +173,26 @@ export function WikiHome() {
 }
 
 /** El título de la página, que se renombra en el sitio. Una recién creada empieza ya con el campo abierto */
-/** Encima de la página: las migas a la izquierda y, a la derecha, sus iconos (marcar, bloquear, hoja y «⋯») */
-function PageBar({ page, world }: { page: Page; world: string }) {
-  return (
-    <div className={styles.pageBar}>
-      <Breadcrumbs worldId={page.worldId} world={world} path={page.path} />
-      <div className={styles.pageActions}>
-        <BookmarkButton page={page} />
-        <LockButton page={page} />
-        <SheetToggle page={page} />
-        <MoreActions page={page} />
-      </div>
-    </div>
-  )
-}
 
-/** La cabecera de la página: su portada, su icono y su título, que se cambian ahí mismo */
-function PageHead({ page, startEditing, cover = true }: { page: Page; startEditing: boolean; cover?: boolean }) {
+/**
+ * La cabecera de la página, como en Everlore: arriba, la portada ancha (o, sin ella, «Añadir portada»); después, el
+ * mundo en pequeño sobre el icono y el título, que se cambia ahí mismo, y a la derecha sus acciones. Al bajar, la
+ * cabecera se queda pegada arriba, más pequeña. banner: lo que va en lugar de la portada (la cabecera del mundo, en su
+ * página de portada)
+ */
+function PageHead({
+  page,
+  world,
+  startEditing,
+  banner,
+  actions
+}: {
+  page: Page
+  world: string
+  startEditing: boolean
+  banner?: ReactNode
+  actions: ReactNode
+}) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const router = useRouter()
@@ -244,15 +207,36 @@ function PageHead({ page, startEditing, cover = true }: { page: Page; startEditi
       replace: true
     })
   }
-  // El icono, si se quiere, va en el propio título; la portada, desde «⋯» (y, puesta, desde ella misma)
+  // Pegada y pequeña en cuanto lo de encima de ella se va de la vista
+  const sentinel = useRef<HTMLDivElement>(null)
+  const [compact, setCompact] = useState(false)
+  useEffect(() => {
+    const element = sentinel.current
+    if (!element || typeof IntersectionObserver === 'undefined') return
+    const observer = new IntersectionObserver(([entry]) => setCompact(!entry?.isIntersecting), { threshold: 0 })
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [])
   return (
     <>
-      {cover && <PageCoverImage page={page} />}
-      <div className={styles.heading}>
-        {page.icon && <PageIcon page={page} />}
-        <InlineTitle page={page} autoFocus={startEditing} onDone={named} />
-        {page.locked && <p className={styles.locked}>{t('editor.locked')}</p>}
-      </div>
+      {banner ??
+        (page.cover ? (
+          <PageCoverImage page={page} />
+        ) : (
+          !page.locked && <CoverButton page={page} className={styles.addCover} label={t('cover.add')} />
+        ))}
+      <div ref={sentinel} aria-hidden="true" className={styles.sentinel} />
+      <header className={styles.entryHeader} data-compact={compact || undefined}>
+        <div className={styles.entryTitle}>
+          <span className={styles.entryWorld}>{world}</span>
+          <div className={styles.heading}>
+            {page.icon && <PageIcon page={page} />}
+            <InlineTitle page={page} autoFocus={startEditing} onDone={named} />
+            {page.locked && <span className={styles.locked}>{t('editor.locked')}</span>}
+          </div>
+        </div>
+        <div className={styles.pageActions}>{actions}</div>
+      </header>
     </>
   )
 }
@@ -420,9 +404,7 @@ function MoreActions({ page }: { page: Page }) {
         <div id={panelId} className={styles.morePanel}>
           <SheetMenu page={page} />
           <NewSubpage page={page} onDone={() => setOpen(false)} />
-          <AddMapTab page={page} onDone={() => setOpen(false)} />
-          {/* Puesta, se cambia desde ella misma («Cambiar», al pasar por encima) */}
-          {!page.cover && <CoverButton page={page} />}
+          <MakeHome page={page} onDone={() => setOpen(false)} />
           <ExportPage page={page} />
           <DeletePage page={page} />
         </div>
@@ -464,6 +446,34 @@ function LockButton({ page }: { page: Page }) {
     >
       {page.locked ? <Lock aria-hidden="true" size={18} /> : <LockOpen aria-hidden="true" size={18} />}
     </BusyButton>
+  )
+}
+
+/** «Hacer portada del mundo»: el mundo se abre en esta página. Si ya lo es, lo dice */
+function MakeHome({ page, onDone }: { page: Page; onDone: () => void }) {
+  const { t } = useTranslation()
+  const api = useApi()
+  const queryClient = useQueryClient()
+  const errorText = useErrorText()
+  const home = useQuery({
+    queryKey: ['pages', page.worldId, 'home'],
+    queryFn: () => api.call('getWorldHome', { worldId: page.worldId })
+  })
+  const make = useMutation({
+    mutationFn: () => api.call('updateWorld', { worldId: page.worldId, homePageId: page.id }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['pages', page.worldId, 'home'] })
+      onDone()
+    }
+  })
+  if (home.data?.pageId === page.id) return <p className={styles.isHome}>{t('wiki.isHome')}</p>
+  return (
+    <>
+      <BusyButton className={list.secondary} busy={make.isPending} onClick={() => make.mutate()}>
+        {t('wiki.makeHome')}
+      </BusyButton>
+      <FormError message={make.error ? errorText(make.error) : null} />
+    </>
   )
 }
 
@@ -585,10 +595,7 @@ export function WikiPage() {
   )
 }
 
-/**
- * La página abierta: su texto (con su hoja) o, con ?pestana=, una de sus pestañas (un mapa), a todo lo ancho y sin el
- * panel de la derecha, que es del texto
- */
+/** La página abierta: su texto o, con ?pestana=, una de sus pestañas (un mapa) */
 function OpenPage({
   page,
   world,
@@ -600,9 +607,7 @@ function OpenPage({
   nuevo: boolean
   pestana: string | null
 }) {
-  const { t } = useTranslation()
   const tabs = usePageTabs(page)
-  const pageMain = useRef<HTMLDivElement>(null)
   const all = tabs.data ?? []
   const active = pestana ? (all.find((tab) => tab.id === pestana) ?? null) : null
   // Una pestaña que ya no está (quitada, o de otra página): al texto, una vez al día la lista
@@ -617,41 +622,92 @@ function OpenPage({
     )
   }
   if (pestana && !active) return null
-  if (active) {
-    return (
-      <article className={`${styles.page} ${styles.pageWide}`}>
-        <div className={styles.pageMain}>
-          <PageBar page={page} world={world} />
-          <PageHead key={page.id} page={page} startEditing={false} cover={false} />
-          <PageTabs page={page} tabs={all} active={active.id} />
-          <MapTab key={active.id} page={page} tab={active} />
-        </div>
-      </article>
-    )
+  return <EntryView page={page} world={world} nuevo={nuevo} tabs={all} active={active} />
+}
+
+/**
+ * Una página, como en Everlore: la cabecera, sus pestañas, lo de la elegida (el texto en una columna ancha, con su
+ * hoja; un mapa, a todo lo ancho) y, a la derecha, el panel fijo a toda altura (quién la menciona, su índice y sus
+ * versiones), que se esconde con su botón. banner: en lugar de la portada (la cabecera del mundo)
+ */
+export function EntryView({
+  page,
+  world,
+  nuevo = false,
+  tabs,
+  active = null,
+  banner
+}: {
+  page: Page
+  world: string
+  nuevo?: boolean
+  tabs: PageTabView[]
+  active?: PageTabView | null
+  banner?: ReactNode
+}) {
+  const { t } = useTranslation()
+  const main = useRef<HTMLElement>(null)
+  // Se ve al llegar a cada página; el botón lo esconde solo en esta visita
+  const [panel, setPanel] = useState(true)
+  const [shownFor, setShownFor] = useState(page.id)
+  if (shownFor !== page.id) {
+    setShownFor(page.id)
+    setPanel(true)
   }
   return (
-    <article className={styles.page}>
-      <div className={styles.pageMain} ref={pageMain}>
-        <PageBar page={page} world={world} />
-        <SheetPaper page={page}>
-          <PageHead key={page.id} page={page} startEditing={nuevo} />
-          <PageTabs page={page} tabs={all} active={null} />
-          <PageProperties key={page.id} page={page} />
-          <PageBody page={page} />
-        </SheetPaper>
-        <SiblingNav page={page} />
-      </div>
-      <aside aria-label={t('wiki.pagePanel')} className={styles.pagePanel}>
-        <Contents key={`indice-${page.id}`} root={pageMain} />
-        <Backlinks key={`enlaces-${page.id}`} page={page} />
-        <Versions key={`versiones-${page.id}`} page={page} />
-      </aside>
-    </article>
+    <div className={styles.entry} data-entry-panel={panel || undefined}>
+      <article ref={main} className={styles.entryMain}>
+        <PageHead
+          key={page.id}
+          page={page}
+          world={world}
+          startEditing={nuevo}
+          banner={banner}
+          actions={
+            <>
+              <BookmarkButton page={page} />
+              <LockButton page={page} />
+              <SheetToggle page={page} />
+              <MoreActions page={page} />
+              <button
+                type="button"
+                className={styles.panelToggle}
+                aria-pressed={panel}
+                aria-label={t('wiki.togglePanel')}
+                title={t('wiki.togglePanel')}
+                onClick={() => setPanel(!panel)}
+              >
+                <PanelRight aria-hidden="true" size={18} />
+              </button>
+            </>
+          }
+        />
+        <PageTabs page={page} tabs={tabs} active={active?.id ?? null} />
+        {active ? (
+          <MapTab key={active.id} page={page} tab={active} />
+        ) : (
+          <div className={styles.column}>
+            <SheetPaper page={page}>
+              <PageProperties key={page.id} page={page} />
+              <PageBody page={page} />
+            </SheetPaper>
+            <SiblingNav page={page} />
+          </div>
+        )}
+      </article>
+      {panel && (
+        <aside aria-label={t('wiki.pagePanel')} className={styles.entryPanel}>
+          <Backlinks key={`enlaces-${page.id}`} page={page} />
+          {!active && <Contents key={`indice-${page.id}`} root={main} />}
+          <Versions key={`versiones-${page.id}`} page={page} />
+        </aside>
+      )}
+    </div>
   )
 }
 
 /** El índice: los títulos del texto de la página (no los de los secretos), que se siguen al escribir */
-function Contents({ root }: { root: RefObject<HTMLDivElement | null> }) {
+function Contents({ root }: { root: RefObject<HTMLElement | null> }) {
   const { t } = useTranslation()
   const id = useId()
   const [headings, setHeadings] = useState<{ level: number; text: string; element: HTMLElement }[]>([])

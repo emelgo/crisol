@@ -211,6 +211,19 @@ pestaña Campañas; la página de una campaña aún lleva la franja antigua. Peq
 - Perfil anuncia «Guardado» dos veces (su `role="status"` y el anunciador);
 - `collab.integration.test.ts` › «guardar es fusionar» falla a veces con la máquina cargada (su espera de 1 s).
 
+**2026-11-02, rama `interfaz/barra-lateral`** (sobre `mundo/pestanas-mapa`): las campañas pasan a Mis mundos (todas,
+con su mundo; «Nueva campaña» pide el mundo) y salen de la barra; en la barra, dentro de un mundo: Inicio, Buscar,
+Marcadores, Páginas y Archivos (iconos, como antes: Enrique prefirió la barra estrecha a una ancha al estilo Everlore);
+el panel de la wiki con su título visible y el árbol al estilo del de Archivos; «wiki» deja de salir en la interfaz
+(se habla del mundo y sus páginas; «Compendio» se guarda para las reglas). Pendiente, por este orden:
+- (primera versión hecha) **la página, como en Everlore**: portada ancha, el mundo pequeño sobre el título, acciones,
+  «⋯» y el botón del panel, pestañas con «+», texto en columna ancha, panel derecho fijo y cabecera pegajosa; el mundo
+  abre en su página de portada bajo su cabecera (la transición de entrar no cambia). Falta que la vea Enrique, y los
+  bloques del panel (fase 2 de Everlore);
+- Buscar y Marcadores, con el aspecto de Everlore;
+- faltan las animaciones de transición entre páginas de una misma vista;
+- (hecho) con los ajustes de un mundo abiertos, la vista previa de al lado se quita.
+
 **Al cerrar cada parte**: todo en verde en local (lint, tipos, `pnpm test`, e2e) antes de subir; un solo push por PR.
 Los minutos de GitHub Actions son pocos.
 

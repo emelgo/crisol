@@ -58,6 +58,22 @@ describe('la wiki: páginas y árbol', () => {
     await conn?.close()
   })
 
+  it('la portada del mundo: sin elegir, la primera del árbol; elegida, esa; borrada, otra vez la primera', async () => {
+    const home = async () => (await call('getWorldHome', { worldId })).json()
+    expect(await home()).toEqual({ pageId: null, chosen: false })
+    const first = await create('Eana')
+    const lore = await create('Historia')
+    expect(await home()).toEqual({ pageId: first.id, chosen: false })
+    expect((await call('updateWorld', { worldId, homePageId: lore.id })).statusCode).toBe(200)
+    expect(await home()).toEqual({ pageId: lore.id, chosen: true })
+    // Una que no es de este mundo, no
+    expect((await call('updateWorld', { worldId, homePageId: crypto.randomUUID() })).json()).toMatchObject({
+      code: 'BAD_HOME_PAGE'
+    })
+    await call('deletePage', { pageId: lore.id })
+    expect(await home()).toEqual({ pageId: first.id, chosen: false })
+  })
+
   it('el máster crea páginas y subpáginas; salen en su orden y quedan en el historial', async () => {
     const places = await create('Lugares')
     await create('Personajes')

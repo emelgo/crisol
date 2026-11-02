@@ -11,6 +11,16 @@ const MAP = Buffer.from(
 </svg>`
 )
 
+/** «+» en las pestañas: el cuadro con el mapa ya elegido, y «Crear» */
+async function addMap(page: Page) {
+  await page.getByRole('button', { name: 'Pestaña nueva' }).click()
+  const dialog = page.getByRole('dialog', { name: 'Pestaña nueva' })
+  await expect(dialog.getByRole('radio', { name: 'Mapa' })).toBeChecked()
+  await expect(dialog.getByRole('radio', { name: /Pizarra/ })).toBeDisabled()
+  await dialog.getByRole('button', { name: 'Crear' }).click()
+  await expect(dialog).toHaveCount(0)
+}
+
 async function openPage(page: Page) {
   await freshOwner(page)
   await page.addInitScript(() => {
@@ -40,11 +50,10 @@ test('un mapa en la página: se añade desde «⋯», se le pone imagen, se pone
 }) => {
   await openPage(page)
 
-  // Sin pestañas no hay barra; «Añadir mapa» la trae, con «Texto» y «Mapa»
-  await expect(page.getByRole('navigation', { name: 'Pestañas de la página' })).toHaveCount(0)
-  await page.getByRole('button', { name: 'Más acciones' }).click()
-  await page.getByRole('button', { name: 'Añadir mapa' }).click()
+  // Solo el texto; «+» añade un mapa (los demás tipos, pronto)
   const tabs = page.getByRole('navigation', { name: 'Pestañas de la página' })
+  await expect(tabs.getByRole('link')).toHaveText(['Texto'])
+  await addMap(page)
   await expect(tabs.getByRole('link')).toHaveText(['Texto', 'Mapa'])
   await expect(tabs.getByRole('link', { name: 'Mapa' })).toHaveAttribute('aria-current', 'page')
   await expect(page).toHaveURL(/pestana=/)
@@ -99,17 +108,14 @@ test('un mapa en la página: se añade desde «⋯», se le pone imagen, se pone
   // Doble clic en el pin abre su página, que es subpágina de la del mapa
   await pins.getByRole('button', { name: 'Puerto Ceniza' }).dblclick()
   await expect(page.getByRole('heading', { level: 1, name: 'Puerto Ceniza' })).toBeVisible()
-  await expect(
-    page.getByRole('navigation', { name: 'Migas de pan' }).getByRole('link', { name: 'Costa Gris' })
-  ).toBeVisible()
+  await expect(page.getByRole('treeitem', { name: 'Puerto Ceniza' })).toHaveAttribute('aria-level', '2')
 })
 
 test('las pestañas se renombran y se quitan; el texto sigue siendo la primera', async ({ page }) => {
   await openPage(page)
   const tabs = page.getByRole('navigation', { name: 'Pestañas de la página' })
   for (const count of [2, 3]) {
-    await page.getByRole('button', { name: 'Más acciones' }).click()
-    await page.getByRole('button', { name: 'Añadir mapa' }).click()
+    await addMap(page)
     await expect(tabs.getByRole('link')).toHaveCount(count)
   }
   await expect(tabs.getByRole('link')).toHaveText(['Texto', 'Mapa', 'Mapa 2'])

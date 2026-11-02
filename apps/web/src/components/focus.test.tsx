@@ -97,7 +97,7 @@ describe('el foco en las confirmaciones', () => {
     const confirm = await openDelete('Eana')
     expect(document.activeElement).toBe(confirm.getByLabelText('Nombre del mundo'))
     expect(
-      confirm.getByText('Irá a la papelera, con sus campañas y su wiki, y se podrá recuperar durante 30 días.')
+      confirm.getByText('Irá a la papelera, con sus campañas y sus páginas, y se podrá recuperar durante 30 días.')
     ).toBeDefined()
     const settings = () => within(screen.getByRole('dialog', { name: 'Ajustes de Eana' }))
     await userEvent.click(confirm.getByRole('button', { name: 'Cancelar' }))

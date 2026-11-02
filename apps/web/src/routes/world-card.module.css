@@ -502,6 +502,35 @@
   font-size: 0.9375rem;
 }
 
+/* De qué mundo es una campaña (en Mis mundos): bajo su nombre, pequeño */
+.place {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+/* Al crear una campaña desde Mis mundos: su mundo */
+.placeField {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.placeField label {
+  font-weight: 600;
+}
+
+.placeField select {
+  min-block-size: var(--target);
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-field-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+}
+
 /* Al pie: el papel, discreto, y el engranaje a la derecha */
 .footer {
   display: flex;
@@ -789,4 +818,23 @@
     opacity: 0;
     transform: translateX(12px);
   }
+}
+
+/* Mis mundos: las campañas de todos, bajo los mundos */
+.campaigns {
+  margin-block-start: var(--space-8);
+}
+
+.sectionTitle {
+  margin: 0 0 var(--space-4);
+}
+
+.sectionHint {
+  margin: 0 0 var(--space-4);
+  color: var(--color-muted);
+}
+
+/* Con una ventana abierta (los ajustes de un mundo), la vista previa de al lado se quita */
+.layout:has(dialog[open]) .detail {
+  visibility: hidden;
 }

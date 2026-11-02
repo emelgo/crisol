@@ -44,6 +44,15 @@ test('arranque, perfil, mundos y sus ajustes, campañas, avisos, historial, pape
     await resetDatabase(conn.sql)
     const { secret } = await issueBootstrap(conn.db, { organizationName: 'Crisol de Enrique' })
     const check = async () => {
+      // Lo que esté a medio animar (entrar en un mundo) se mide ya quieto
+      await page.waitForFunction(() =>
+        document
+          .getAnimations()
+          .every(
+            (animation) =>
+              animation.playState !== 'running' || animation.effect?.getTiming().iterations === Number.POSITIVE_INFINITY
+          )
+      )
       for (const colorScheme of ['light', 'dark'] as const) {
         await page.emulateMedia({ colorScheme })
         const { violations } = await new AxeBuilder({ page }).withTags(WCAG).analyze()

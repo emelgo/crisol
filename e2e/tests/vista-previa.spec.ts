@@ -62,7 +62,9 @@ test.describe('en escritorio', () => {
     // cambio que llega del servidor justo entonces quita la selección, se vuelve a empezar
     const chosen = body(page).locator('.ProseMirror-selectednode')
     await expect(async () => {
-      await body(page).getByText('Lo gobierna').click()
+      await body(page)
+        .getByText('Lo gobierna')
+        .click({ position: { x: 4, y: 8 } })
       await page.keyboard.press('Home')
       for (let i = 0; i < 30 && (await chosen.count()) === 0; i++) await page.keyboard.press('ArrowRight')
       await expect(chosen.getByRole('link', { name: 'Maela Varn', exact: true })).toBeVisible({ timeout: 1000 })
@@ -92,7 +94,9 @@ test.describe('en escritorio', () => {
 
   test('![[ en el texto incrusta una página', async ({ page }) => {
     await eana(page)
-    await body(page).getByText('Lo gobierna').click()
+    await body(page)
+      .getByText('Lo gobierna')
+      .click({ position: { x: 4, y: 8 } })
     await page.keyboard.press('End')
     await page.keyboard.press('Enter')
     await page.keyboard.type('![[Maela')

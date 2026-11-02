@@ -5,17 +5,19 @@
 import type { Page, PageTabView } from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
-import { ChevronDown, Map as MapIcon } from 'lucide-react'
+import { ChevronDown, Clock, Map as MapIcon, Network, PenTool, Plus } from 'lucide-react'
 import { type RefObject, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../../api/context.tsx'
 import { useErrorText } from '../../api/errors.ts'
 import { useAnnounce } from '../../components/announcer.tsx'
 import { BusyButton } from '../../components/busy-button.tsx'
+import dialogStyles from '../../components/dialog.module.css'
 import { FormError } from '../../components/field.tsx'
 import { focusOnMount } from '../../components/focus.ts'
 import form from '../../components/form.module.css'
 import list from '../../components/list.module.css'
+import { Modal } from '../../components/modal.tsx'
 import styles from './page-tabs.module.css'
 
 export const tabsKey = (worldId: string, pageId: string) => ['pages', worldId, 'tabs', pageId]
@@ -55,10 +57,12 @@ function useDismiss(
   }, [open, close, root, trigger])
 }
 
-/** La barra: «Texto» y las añadidas; la elegida, con su menú (renombrar, mover y quitar) */
+/**
+ * La barra, como en Everlore: «Texto» y las añadidas; la elegida, con su menú (renombrar, mover y quitar); al final,
+ * «+» para añadir otra
+ */
 export function PageTabs({ page, tabs, active }: { page: Page; tabs: PageTabView[]; active: string | null }) {
   const { t } = useTranslation()
-  if (tabs.length === 0) return null
   const params = { worldId: page.worldId, pageId: page.id }
   return (
     <nav aria-label={t('pageTabs.label')} className={styles.bar} data-tour="mapa-pestanas">
@@ -91,8 +95,111 @@ export function PageTabs({ page, tabs, active }: { page: Page; tabs: PageTabView
             {active === tab.id && !page.locked && <TabMenu page={page} tabs={tabs} index={index} />}
           </li>
         ))}
+        {!page.locked && (
+          <li>
+            <NewTab page={page} />
+          </li>
+        )}
       </ul>
     </nav>
+  )
+}
+
+/** Los tipos de pestaña: el mapa ya; los demás, en las fases que vienen (ADR-0007) */
+const KINDS = [
+  { kind: 'map', icon: MapIcon, ready: true },
+  { kind: 'board', icon: PenTool, ready: false },
+  { kind: 'timeline', icon: Clock, ready: false },
+  { kind: 'tree', icon: Network, ready: false }
+] as const
+
+/** «+»: un cuadro con un recuadro por tipo y el nombre (sin él, el del tipo); la nueva va al final y se abre */
+function NewTab({ page }: { page: Page }) {
+  const { t } = useTranslation()
+  const api = useApi()
+  const queryClient = useQueryClient()
+  const navigate = useNavigate()
+  const errorText = useErrorText()
+  const [open, setOpen] = useState(false)
+  const [name, setName] = useState('')
+  const titleId = useId()
+  const dialog = useRef<HTMLDialogElement>(null)
+  const trigger = useRef<HTMLButtonElement>(null)
+  const add = useMutation({
+    mutationFn: () =>
+      api.call('createPageTab', { pageId: page.id, kind: 'map', ...(name.trim() ? { name: name.trim() } : {}) }),
+    onSuccess: async (tab) => {
+      // Ya en la lista, sin esperar a pedirla otra vez
+      queryClient.setQueryData<PageTabView[]>(tabsKey(page.worldId, page.id), (tabs) => [...(tabs ?? []), tab])
+      void queryClient.invalidateQueries({ queryKey: tabsKey(page.worldId, page.id) })
+      dialog.current?.close()
+      await navigate({
+        to: '/mundos/$worldId/wiki/$pageId',
+        params: { worldId: page.worldId, pageId: page.id },
+        search: { pestana: tab.id }
+      })
+    }
+  })
+  return (
+    <>
+      <button
+        ref={trigger}
+        type="button"
+        className={styles.add}
+        aria-label={t('pageTabs.add')}
+        title={t('pageTabs.add')}
+        aria-haspopup="dialog"
+        onClick={() => setOpen(true)}
+      >
+        <Plus aria-hidden="true" size={16} />
+      </button>
+      {open && (
+        <Modal
+          ref={dialog}
+          aria-labelledby={titleId}
+          className={`${dialogStyles.dialog} ${styles.newDialog}`}
+          onClose={() => {
+            setOpen(false)
+            setName('')
+            trigger.current?.focus()
+          }}
+        >
+          <form
+            className={styles.newForm}
+            onSubmit={(event) => {
+              event.preventDefault()
+              add.mutate()
+            }}
+          >
+            <h2 id={titleId}>{t('pageTabs.newTitle')}</h2>
+            <fieldset className={styles.kinds}>
+              <legend className={styles.hidden}>{t('pageTabs.kind')}</legend>
+              {KINDS.map(({ kind, icon: Icon, ready }) => (
+                <label key={kind} className={styles.kindCard} data-ready={ready || undefined}>
+                  <input type="radio" name={`${titleId}-kind`} disabled={!ready} defaultChecked={kind === 'map'} />
+                  <Icon aria-hidden="true" size={20} />
+                  {t(`pageTabs.kinds.${kind}`)}
+                  {!ready && <span className={styles.soon}>{t('pageTabs.soon')}</span>}
+                </label>
+              ))}
+            </fieldset>
+            <input
+              className={styles.nameInput}
+              data-autofocus=""
+              value={name}
+              maxLength={60}
+              placeholder={t('pageTabs.namePlaceholder')}
+              aria-label={t('pageTabs.name')}
+              onChange={(event) => setName(event.currentTarget.value)}
+            />
+            <FormError message={add.error ? errorText(add.error) : null} />
+            <BusyButton type="submit" className={form.button} busy={add.isPending}>
+              {t('pageTabs.create')}
+            </BusyButton>
+          </form>
+        </Modal>
+      )}
+    </>
   )
 }
 
@@ -216,37 +323,5 @@ function TabMenu({ page, tabs, index }: { page: Page; tabs: PageTabView[]; index
         </div>
       )}
     </div>
-  )
-}
-
-/** «Añadir mapa», en «⋯»: la pestaña nueva, al final, y se abre */
-export function AddMapTab({ page, onDone }: { page: Page; onDone: () => void }) {
-  const { t } = useTranslation()
-  const api = useApi()
-  const queryClient = useQueryClient()
-  const navigate = useNavigate()
-  const errorText = useErrorText()
-  const add = useMutation({
-    mutationFn: () => api.call('createPageTab', { pageId: page.id, kind: 'map' }),
-    onSuccess: async (tab) => {
-      // Ya en la lista, sin esperar a pedirla otra vez
-      queryClient.setQueryData<PageTabView[]>(tabsKey(page.worldId, page.id), (tabs) => [...(tabs ?? []), tab])
-      void queryClient.invalidateQueries({ queryKey: tabsKey(page.worldId, page.id) })
-      onDone()
-      await navigate({
-        to: '/mundos/$worldId/wiki/$pageId',
-        params: { worldId: page.worldId, pageId: page.id },
-        search: { pestana: tab.id }
-      })
-    }
-  })
-  if (page.locked) return null
-  return (
-    <>
-      <BusyButton className={list.secondary} busy={add.isPending} onClick={() => add.mutate()}>
-        {t('pageTabs.addMap')}
-      </BusyButton>
-      <FormError message={add.error ? errorText(add.error) : null} />
-    </>
   )
 }

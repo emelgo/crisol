@@ -9,8 +9,8 @@ import {
   newPlayer,
   openWindow,
   rename,
-  sections,
-  slash
+  slash,
+  toWorlds
 } from './ayudas.ts'
 
 const BASE = `http://127.0.0.1:${E2E_PORT}`
@@ -71,7 +71,7 @@ test('@fugas una jugadora no recibe nada de lo que no puede ver: ni la campaña 
   const opening = page.waitForResponse('**/api/actions/setInvitationsOpen')
   await toggle.check()
   await opening
-  await sections(page).getByRole('link', { name: 'Campañas' }).click()
+  await toWorlds(page)
   await rename(page, 'campaña', SECRET_CAMPAIGN, RENAMED_CAMPAIGN)
   await expect(page.getByRole('link', { name: RENAMED_CAMPAIGN })).toBeVisible()
   // Y deshace el renombrado de B desde el historial

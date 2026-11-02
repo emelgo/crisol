@@ -1,4 +1,5 @@
-/* El árbol de la wiki: filas compactas; la página abierta, en rojo sobre el fondo elevado */
+/* El árbol de la wiki, como el de las carpetas de Archivos: filas compactas con su icono; la abierta, con la raya roja
+   a la izquierda y el fondo un poco marcado */
 .scroller {
   min-block-size: 0;
 }
@@ -18,19 +19,38 @@
 .item {
   display: flex;
   align-items: center;
-  min-block-size: 2.125rem;
+  min-block-size: 2rem;
   border-block: 2px solid transparent;
-  color: inherit;
+  border-inline-start: 3px solid transparent;
+  border-radius: 0 4px 4px 0;
+  color: var(--color-text);
+  font-size: 0.9375rem;
   text-decoration: none;
 }
 
-.item[aria-current="page"] {
-  background: var(--color-raised);
-  color: var(--color-accent-text);
-  font-weight: 700;
+.item:hover {
+  background: color-mix(in srgb, var(--color-text) 6%, transparent);
 }
 
-.item:hover {
+.item[aria-current="page"],
+.item[aria-current="page"]:hover {
+  border-inline-start-color: var(--color-accent);
+  background: color-mix(in srgb, var(--color-text) 9%, transparent);
+  font-weight: 600;
+}
+
+.icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  inline-size: 1.25rem;
+  margin-inline-end: var(--space-2);
+  color: var(--color-muted);
+  font-size: 0.875rem;
+  line-height: 1;
+}
+
+.item[aria-current="page"] .icon {
   color: var(--color-accent-text);
 }
 
@@ -50,7 +70,7 @@
 
 .toggle {
   display: flex;
-  flex: 0 0 1.75rem;
+  flex: 0 0 1.5rem;
   align-items: center;
   justify-content: center;
   align-self: stretch;

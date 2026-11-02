@@ -1,18 +1,14 @@
 import { expect, type Page, test } from '@playwright/test'
-import { campaignLink, closeWindow, openWindow, rename, sections } from './ayudas.ts'
-
-/** Va a la pestaña Campañas del mundo abierto */
-async function campaigns(page: Page) {
-  await sections(page).getByRole('link', { name: 'Campañas' }).click()
-  await expect(page.getByRole('heading', { level: 1, name: 'Campañas' })).toBeVisible()
-}
+import { campaignLink, closeWindow, openWindow, openWorld, rename, toWorlds } from './ayudas.ts'
 
 test('el propietario ve en el historial lo que ha hecho, en el mundo y en toda la organización', async ({ page }) => {
   await campaignLink(page)
   await page.getByRole('button', { name: 'Nuevo enlace' }).click()
   await page.getByRole('button', { name: 'Generar el nuevo' }).click()
-  await campaigns(page)
+  // Las campañas, en Mis mundos; el historial del mundo, dentro de él
+  await toWorlds(page)
   await rename(page, 'campaña', 'La Marca', 'La Marca del Este')
+  await openWorld(page, 'Eana')
 
   const history = await openWindow(page, 'Historial')
   await expect(history.getByRole('heading', { level: 1, name: 'Historial de Eana' })).toBeVisible()
@@ -36,7 +32,7 @@ test('el propietario ve en el historial lo que ha hecho, en el mundo y en toda l
 
 test('el máster deshace crear una campaña y lo rehace; si algo cambió después, se le dice qué', async ({ page }) => {
   await campaignLink(page)
-  await campaigns(page)
+  await toWorlds(page)
   let history = await openWindow(page, 'Historial')
   await history.getByRole('button', { name: 'Deshacer: creó la campaña «La Marca» en Eana' }).click()
   const entries = history.getByRole('list', { name: 'Operaciones' }).getByRole('listitem')

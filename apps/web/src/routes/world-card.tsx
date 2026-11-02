@@ -46,9 +46,11 @@ export interface LookKind {
   list: string
   queryKey: readonly unknown[]
   /** El mundo de las imágenes de su portada; sin él (al crear un mundo, aún sin archivos), solo las comunes */
-  worldOf: (look?: Look) => string | undefined
-  /** Crea uno con ese nombre: su id y el mundo al que subir su portada */
-  create: (name: string) => Promise<{ id: string; worldId: string }>
+  worldOf: (look?: Look, place?: string) => string | undefined
+  /** Crea uno con ese nombre (en ese mundo, si se elige): su id y el mundo al que subir su portada */
+  create: (name: string, place?: string) => Promise<{ id: string; worldId: string }>
+  /** Al crear, en qué mundo: se elige entre estos (las campañas desde Mis mundos) */
+  places?: readonly { id: string; name: string }[]
   update: (id: string, patch: LookPatch) => Promise<unknown>
   remove: (id: string) => Promise<unknown>
 }
@@ -79,6 +81,28 @@ export function useCampaignKind(worldId: string): LookKind {
   }
 }
 
+/**
+ * Las campañas de todos los mundos, desde Mis mundos: al crear una se elige su mundo (de los que dirige la cuenta). Su
+ * lista y su consulta son las de todas
+ */
+export function useAllCampaignsKind(places: readonly { id: string; name: string }[]): LookKind {
+  const api = useApi()
+  return {
+    texts: 'campaigns',
+    list: 'campanas',
+    queryKey: ['campaigns'],
+    worldOf: (look, place) => (look as (Look & { worldId?: string }) | undefined)?.worldId ?? place,
+    create: (name, place) =>
+      api.call('createCampaign', { worldId: place ?? '', name }).then((campaign) => ({
+        id: campaign.id,
+        worldId: campaign.worldId
+      })),
+    update: (campaignId, patch) => api.call('updateCampaign', { campaignId, ...patch }),
+    remove: (campaignId) => api.call('deleteCampaign', { campaignId }),
+    places
+  }
+}
+
 /** Su color (--world-color): tiñe, sutil, el contorno de su tarjeta y el hueco de la portada si no hay imagen */
 const tint = (color: World['color']): CSSProperties | undefined => {
   const hex = colorHex(color)
@@ -106,11 +130,14 @@ function LookCard({
   fresh = false,
   burning = false,
   onBurnt,
-  onPreview
+  onPreview,
+  place
 }: {
   kind: LookKind
   look: Look
   name: ReactNode
+  /** De qué mundo es (una campaña en Mis mundos) */
+  place?: string | undefined
   style?: CSSProperties | undefined
   fresh?: boolean
   burning?: boolean
@@ -134,6 +161,9 @@ function LookCard({
     return () => window.clearTimeout(timer)
   }, [burning])
   const classes = [styles.card, entering ? styles.entering : '', burning ? styles.burning : ''].filter(Boolean)
+  // Con sus ajustes abiertos, sin vista previa; y al cerrarlos tampoco (el foco vuelve a la tarjeta), hasta que el ratón
+  // vuelva a entrar en ella
+  const quiet = useRef(false)
   return (
     <li
       ref={card}
@@ -148,9 +178,14 @@ function LookCard({
       }}
       style={{ ...tint(look.color), ...style }}
       data-card={look.id}
-      onPointerEnter={() => onPreview?.(true)}
+      onPointerEnter={() => {
+        quiet.current = false
+        onPreview?.(true)
+      }}
       onPointerLeave={() => onPreview?.(false)}
-      onFocus={() => onPreview?.(true)}
+      onFocus={() => {
+        if (!quiet.current) onPreview?.(true)
+      }}
       onBlur={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget as Node | null)) onPreview?.(false)
       }}
@@ -172,10 +207,20 @@ function LookCard({
       )}
       <div className={styles.body}>
         {name}
+        {place && <p className={styles.place}>{place}</p>}
         {look.description && <p className={styles.description}>{look.description}</p>}
         <div className={styles.footer}>
           <span className={styles.role}>{t(`roles.${look.role}`)}</span>
-          {look.role === 'master' && <LookSettings kind={kind} look={look} />}
+          {look.role === 'master' && (
+            <LookSettings
+              kind={kind}
+              look={look}
+              onOpen={() => {
+                quiet.current = true
+                onPreview?.(false)
+              }}
+            />
+          )}
         </div>
       </div>
     </li>
@@ -227,19 +272,26 @@ export function CampaignCard({
   campaign,
   fresh,
   burning,
-  onBurnt
+  onBurnt,
+  kind: given,
+  place
 }: {
   worldId: string
   campaign: Look
   fresh?: boolean
   burning?: boolean
   onBurnt?: () => void
+  /** La de su lista, si no es la de su mundo (Mis mundos) */
+  kind?: LookKind
+  place?: string
 }) {
-  const kind = useCampaignKind(worldId)
+  const own = useCampaignKind(worldId)
+  const kind = given ?? own
   return (
     <LookCard
       kind={kind}
       look={campaign}
+      place={place}
       fresh={fresh}
       burning={burning}
       {...(onBurnt ? { onBurnt } : {})}
@@ -403,7 +455,18 @@ export function NewWorld({ big = false }: { big?: boolean }) {
 }
 
 /** El engranaje (para quien lo dirige): abre su ventana */
-function LookSettings({ kind, look, afterDelete }: { kind: LookKind; look: Look; afterDelete?: () => void }) {
+function LookSettings({
+  kind,
+  look,
+  afterDelete,
+  onOpen
+}: {
+  kind: LookKind
+  look: Look
+  afterDelete?: () => void
+  /** Al abrir su ventana */
+  onOpen?: () => void
+}) {
   const { t } = useTranslation()
   const trigger = useRef<HTMLButtonElement>(null)
   const [open, setOpen] = useState(false)
@@ -417,7 +480,10 @@ function LookSettings({ kind, look, afterDelete }: { kind: LookKind; look: Look;
         title={t(`${kind.texts}.settingsOf`, { name: look.name })}
         aria-haspopup="dialog"
         data-tour="engranaje"
-        onClick={() => setOpen(true)}
+        onClick={() => {
+          onOpen?.()
+          setOpen(true)
+        }}
       >
         <Settings aria-hidden="true" size={18} />
       </button>
@@ -486,9 +552,12 @@ function LookDialog({
   const refresh = () => queryClient.invalidateQueries({ queryKey: kind.queryKey })
   const gone = useRef(false)
   const texts = kind.texts
+  // Al crear una campaña desde Mis mundos, su mundo
+  const placeId = useId()
+  const [place, setPlace] = useState(kind.places?.[0]?.id)
 
   // La portada: al ajustar, la suya (se guarda en su cuadro); al crear, la elegida y, si es propia, su imagen sin subir
-  const filesWorld = kind.worldOf(look)
+  const filesWorld = kind.worldOf(look, place)
   const [newCover, setNewCover] = useState<{ cover: Cover; local: LocalImage | null } | null>(null)
   const files = useWorldFiles(filesWorld ?? '', Boolean(filesWorld) && Boolean(look?.cover || newCover))
   // La imagen sin subir se suelta cuando deja de usarse (otra o ninguna) y al cerrar
@@ -527,7 +596,7 @@ function LookDialog({
       if (look) {
         await kind.update(look.id, { ...(name !== look.name ? { name } : {}), ...appearance })
       } else {
-        const created = await kind.create(name)
+        const created = await kind.create(name, place)
         // No sale en la lista hasta que su transición la enseña, saliendo de esta ventana
         holdCard(created.id)
         createdId.current = created.id
@@ -646,6 +715,26 @@ function LookDialog({
           data-autofocus={look ? undefined : ''}
           onChange={(event) => set({ name: event.currentTarget.value })}
         />
+        {!look && kind.places && (
+          <div className={styles.placeField}>
+            <label htmlFor={placeId}>{t('campaigns.world')}</label>
+            <select
+              id={placeId}
+              value={place}
+              onChange={(event) => {
+                setPlace(event.currentTarget.value)
+                // La portada es de su mundo: al cambiarlo, se quita
+                setNewCover(null)
+              }}
+            >
+              {kind.places.map((option) => (
+                <option key={option.id} value={option.id}>
+                  {option.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
         <Field
           label={t('worlds.description')}
           hint={t('worlds.descriptionHint')}

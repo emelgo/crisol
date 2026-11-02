@@ -91,7 +91,7 @@ describe('los marcadores', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Marcar' }))
     // Los marcadores están en su panel: se abre con su botón de la barra de la izquierda
     const sections = within(await screen.findByRole('navigation', { name: 'Secciones' }))
-    await userEvent.click(await screen.findByRole('tab', { name: 'Marcadores' }))
+    await userEvent.click(await sections.findByRole('button', { name: 'Marcadores' }))
     const bookmarks = async () => within(await screen.findByRole('region', { name: 'Marcadores' }))
     expect((await bookmarks()).getByRole('link', { name: 'Puerto Ceniza' })).toBeDefined()
     expect(await screen.findByText('«Puerto Ceniza» está en Marcadores')).toBeDefined()

@@ -1,17 +1,19 @@
 import { expect, test } from '@playwright/test'
-import { createCampaign, createWorld, freshOwner, openWorld, rename } from './ayudas.ts'
+import { createCampaign, createWorld, freshOwner, rename } from './ayudas.ts'
 
-test('el máster crea dos campañas en su mundo, renombra una y siguen al recargar', async ({ page }) => {
+test('en Mis mundos, el máster crea campañas eligiendo su mundo, renombra una y siguen al recargar', async ({
+  page
+}) => {
   await freshOwner(page)
   await createWorld(page, 'Eana')
-  await openWorld(page, 'Eana')
-  await page.getByRole('navigation', { name: 'Secciones' }).getByRole('link', { name: 'Campañas' }).click()
+  await createWorld(page, 'Costa')
   await expect(page.getByText('Aún no hay campañas')).toBeVisible()
 
-  for (const name of ['La Marca', 'Las Islas']) {
-    await createCampaign(page, name)
-    await expect(page.getByRole('list', { name: 'Campañas' }).getByText(name)).toBeVisible()
-  }
+  await createCampaign(page, 'La Marca')
+  await createCampaign(page, 'Las Islas', 'Costa')
+  const cards = page.getByRole('list', { name: 'Campañas' }).getByRole('listitem')
+  await expect(cards.filter({ hasText: 'La Marca' })).toContainText('Eana')
+  await expect(cards.filter({ hasText: 'Las Islas' })).toContainText('Costa')
 
   await rename(page, 'campaña', 'La Marca', 'La Marca del Este')
   const list = page.getByRole('list', { name: 'Campañas' })
