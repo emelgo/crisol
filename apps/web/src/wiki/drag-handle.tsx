@@ -148,7 +148,8 @@ function EmptyLineHandle({ editor }: { editor: Editor }) {
     let frame = 0
     const measure = () => {
       frame = 0
-      if (!editor.isEditable || editor.isDestroyed) return setPlace(null)
+      // Ni sin editar ni mientras el texto aún llega (está oculto: el asa saltaría al aparecer)
+      if (!editor.isEditable || editor.isDestroyed || editor.view.dom.closest('[data-loading]')) return setPlace(null)
       const { $from, empty } = editor.state.selection
       const atEmptyLine =
         (editor.isFocused || editor.isEmpty) &&
@@ -171,6 +172,10 @@ function EmptyLineHandle({ editor }: { editor: Editor }) {
     editor.on('update', schedule)
     editor.on('focus', schedule)
     editor.on('blur', schedule)
+    // Cuando el texto deja de estar cargando (cambia data-loading en su sección), se mide otra vez
+    const section = editor.view.dom.closest('section')
+    const loading = new MutationObserver(schedule)
+    if (section) loading.observe(section, { attributes: true, attributeFilter: ['data-loading'] })
     window.addEventListener('scroll', schedule, true)
     window.addEventListener('resize', schedule)
     return () => {
@@ -179,6 +184,7 @@ function EmptyLineHandle({ editor }: { editor: Editor }) {
       editor.off('update', schedule)
       editor.off('focus', schedule)
       editor.off('blur', schedule)
+      loading.disconnect()
       window.removeEventListener('scroll', schedule, true)
       window.removeEventListener('resize', schedule)
     }

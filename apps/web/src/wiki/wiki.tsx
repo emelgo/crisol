@@ -106,6 +106,7 @@ export function WikiLayout({
           <div className={styles.asideHeader}>
             {/* Lo de la vista elegida en la barra: el mundo (sus páginas), las plantillas o los archivos */}
             <h2 id={headingId}>{world.name}</h2>
+            {panel === 'pages' && <ExportWiki worldId={worldId} className={styles.newPageIcon} />}
             {panel === 'pages' && (
               <button
                 type="button"
@@ -163,9 +164,6 @@ export function WikiLayout({
               {/* Los marcadores, debajo del árbol */}
               <div className={styles.asideBookmarks}>
                 <Bookmarks worldId={worldId} onNavigate={() => close(false)} />
-              </div>
-              <div className={styles.more}>
-                <ExportWiki worldId={worldId} />
               </div>
             </>
           )}

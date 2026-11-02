@@ -75,8 +75,12 @@ export function OpenTabs({
 }) {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const { preferences, saveTabs } = usePreferences(worldId)
   const tabs = preferences?.tabs
+  // Recolocar arrastrando: la que se lleva y sobre cuál va
+  const [dragging, setDragging] = useState<string | null>(null)
+  const [over, setOver] = useState<string | null>(null)
 
   // La página abierta entra en las pestañas; si sobran sin fijar, se va la más antigua
   const currentId = current?.id
@@ -93,12 +97,27 @@ export function OpenTabs({
     const rest = tabs.filter((tab) => tab.pageId !== pageId)
     saveTabs(rest)
     if (pageId !== currentId) return
-    const neighbour = rest.at(-1)
+    // A la de al lado; si no queda ninguna, a la portada del mundo por la misma vista (sin rehacer la pantalla)
+    const home = queryClient.getQueryData<{ pageId: string | null }>(['pages', worldId, 'home'])?.pageId
+    const next = rest.at(-1)?.pageId ?? home
+    if (next === pageId) return
     void navigate(
-      neighbour
-        ? { to: '/mundos/$worldId/wiki/$pageId', params: { worldId, pageId: neighbour.pageId } }
-        : { to: '/mundos/$worldId/wiki', params: { worldId } }
+      next
+        ? { to: '/mundos/$worldId/wiki/$pageId', params: { worldId, pageId: next } }
+        : { to: '/mundos/$worldId', params: { worldId } }
     )
+  }
+  /** Pone una pestaña en el sitio de otra (las fijadas siguen delante) */
+  const moveTab = (pageId: string, target: string) => {
+    if (pageId === target) return
+    const list = ordered(tabs)
+    const from = list.findIndex((tab) => tab.pageId === pageId)
+    const to = list.findIndex((tab) => tab.pageId === target)
+    if (from < 0 || to < 0) return
+    const next = [...list]
+    const [moved] = next.splice(from, 1)
+    if (moved) next.splice(to, 0, moved)
+    saveTabs(ordered(next))
   }
   const togglePin = (pageId: string) =>
     saveTabs(ordered(tabs.map((tab) => (tab.pageId === pageId ? { ...tab, pinned: !tab.pinned } : tab))))
@@ -108,11 +127,47 @@ export function OpenTabs({
       {compact && <h3>{t('tabs.recent')}</h3>}
       <ul>
         {ordered(tabs).map((tab) => (
-          <li key={tab.pageId} data-current={tab.pageId === currentId || undefined}>
+          <li
+            key={tab.pageId}
+            data-current={tab.pageId === currentId || undefined}
+            data-dragging={dragging === tab.pageId || undefined}
+            data-over={(over === tab.pageId && dragging !== tab.pageId) || undefined}
+            draggable={!compact}
+            onDragStart={(event) => {
+              setDragging(tab.pageId)
+              event.dataTransfer.effectAllowed = 'move'
+              event.dataTransfer.setData('text/plain', tab.title)
+            }}
+            onDragEnd={() => {
+              setDragging(null)
+              setOver(null)
+            }}
+            onDragOver={(event) => {
+              if (!dragging) return
+              event.preventDefault()
+              setOver(tab.pageId)
+            }}
+            onDrop={(event) => {
+              event.preventDefault()
+              if (dragging) moveTab(dragging, tab.pageId)
+              setDragging(null)
+              setOver(null)
+            }}
+          >
             <Link
               to="/mundos/$worldId/wiki/$pageId"
               params={{ worldId, pageId: tab.pageId }}
               aria-current={tab.pageId === currentId ? 'page' : undefined}
+              draggable={false}
+              // Alt + flechas: la pestaña, a la izquierda o a la derecha
+              onKeyDown={(event) => {
+                if (compact || !event.altKey || (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight')) return
+                event.preventDefault()
+                const list = ordered(tabs)
+                const index = list.findIndex((other) => other.pageId === tab.pageId)
+                const target = list[index + (event.key === 'ArrowLeft' ? -1 : 1)]
+                if (target) moveTab(tab.pageId, target.pageId)
+              }}
             >
               {tab.title}
             </Link>

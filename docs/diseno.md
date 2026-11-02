@@ -84,6 +84,15 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   siempre una línea de más**, con sus seis puntos: se escribe en ella sin pulsar Intro y aparece la siguiente (no se
   guarda hasta escribir).
 - **«Guardado»**, pequeño y gris a la derecha de las pestañas de la página; nada flotando en las esquinas.
+- **El menú «/» y «Convertir en», por desplegables** (Texto, Títulos, Listas, Páginas, Recuadros —con los secretos y
+  las notas ocultas—, Hoja); al escribir, una lista plana. Sin explicaciones ni «?»: los nombres bastan. Nada de
+  «máster» en el worldbuilding.
+- **Botón derecho en el árbol**, como en Everlore: crear subpágina, renombrar, duplicar, exportar, mover y ordenar
+  (desplegables que se abren al pasar el ratón) y borrar. «⋯» de la página, solo exportar.
+- **Las pestañas abiertas se recolocan** arrastrándolas (o Alt + flechas). Cerrar la última lleva a la portada del
+  mundo sin rehacer la pantalla.
+- **Propiedades y etiquetas, como los bloques del panel**: el nombre pequeño en mayúsculas encima y el valor debajo; el
+  tipo y la ×, al acercarse. «Exportar todas las páginas», un icono en la esquina de la ficha del árbol.
 - **Los desplegables flotan y no mueven nada** (como «Marcar»: «Guardar en», los grupos de un clic y un campo para uno
   nuevo); nada de formularios que empujan la página.
 - **Alrededor de la página, nada pesa** («la UI es rara»): los paneles de los lados sin recuadros, con títulos

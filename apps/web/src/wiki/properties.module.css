@@ -111,29 +111,35 @@
 }
 
 /*
- * En el sitio: una tabla sin cajas, nombre y valor; cada campo solo se marca al pasar por encima o al escribir. El
- * tipo, discreto junto al nombre; el ×, al acercarse a la fila
+ * En el panel, como sus bloques: cada propiedad, su nombre pequeño en mayúsculas arriba y su valor debajo, a lo ancho;
+ * cada campo solo se marca al pasar por encima o al escribir. El tipo y el ×, a la derecha del nombre, al acercarse
  */
 .table {
-  display: grid;
-  grid-template-columns: minmax(4rem, max-content) minmax(0, 1fr) 1.75rem;
-  column-gap: var(--space-2);
-  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-block-end: var(--space-2);
 }
 
 .prop {
-  display: contents;
+  display: grid;
+  grid-template-areas:
+    "name end"
+    "value value";
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  row-gap: 0.125rem;
 }
 
 .propName {
-  grid-column: 1;
+  grid-area: name;
   display: flex;
   align-items: center;
   min-inline-size: 0;
 }
 
 .propValue {
-  grid-column: 2;
+  grid-area: value;
   min-inline-size: 0;
 }
 
@@ -152,11 +158,13 @@
 .nameInput {
   flex: 1;
   min-inline-size: 4ch;
-  max-inline-size: 12rem;
-  /* Tan ancho como el nombre: el valor empieza justo detrás */
-  field-sizing: content;
+  min-block-size: 1.5rem;
+  padding-block: 0;
   color: var(--color-muted);
-  font-weight: 600;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .nameInput:hover,
@@ -180,38 +188,41 @@ textarea.valueInput {
   resize: vertical;
 }
 
-/* El final de la fila: su × y, encima a su izquierda mientras se edita, el tipo (sin mover nada) */
+/* A la derecha del nombre: su tipo y su ×, al acercarse a la propiedad (sin mover nada) */
 .propEnd {
-  position: relative;
-  grid-column: 3;
-  display: grid;
-  place-items: center;
+  grid-area: end;
+  display: flex;
+  flex-direction: row-reverse;
+  align-items: center;
+  gap: 0.125rem;
+  opacity: 0;
+  transition: opacity 120ms ease-out;
+}
+
+.prop:hover .propEnd,
+.prop:focus-within .propEnd {
+  opacity: 1;
 }
 
 .typeSelect {
-  position: absolute;
-  inset-block-start: 50%;
-  inset-inline-end: 100%;
-  z-index: 2;
-  translate: 0 -50%;
-  padding: 0.125rem 0.25rem;
-  border: 1px solid var(--color-border);
+  block-size: 1.5rem;
+  padding: 0 0.25rem;
+  border: 0;
   border-radius: 4px;
-  background: var(--color-surface);
+  background: transparent;
   color: var(--color-muted);
   font: inherit;
   font-size: 0.75rem;
   cursor: pointer;
-  visibility: hidden;
 }
 
-.prop:focus-within .typeSelect {
-  visibility: visible;
+.typeSelect:hover {
+  background: color-mix(in srgb, var(--color-text) 8%, transparent);
 }
 
 .removeProp {
-  inline-size: 1.75rem;
-  block-size: 1.75rem;
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
   padding: 0;
   border: 0;
   border-radius: 50%;
@@ -275,6 +286,7 @@ textarea.valueInput {
 
 @media (hover: none) {
   .adders,
+  .propEnd,
   .removeProp {
     opacity: 1;
   }
@@ -296,12 +308,6 @@ textarea.valueInput {
   gap: var(--space-2);
   min-block-size: 2rem;
   padding-inline: 0.375rem;
-}
-
-@media (max-width: 48rem) {
-  .table {
-    grid-template-columns: minmax(4rem, max-content) minmax(0, 1fr) 1.75rem;
-  }
 }
 
 /* Sin la flecha de las sugerencias: salen al escribir */

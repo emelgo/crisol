@@ -847,11 +847,9 @@
   font-size: 0.9375rem;
 }
 
-/* Los marcadores, en la vista del mundo: debajo del árbol, con su raya */
-.asideBookmarks {
-  margin-block-start: var(--space-4);
-  padding-block-start: var(--space-3);
-  border-block-start: 1px solid var(--color-border);
+/* Los marcadores, en la vista del mundo: debajo del árbol (la raya es la suya, una sola; sin marcadores, nada) */
+.asideBookmarks:empty {
+  display: none;
 }
 
 /* La portada de la página (o la del mundo, en su portada), por detrás: solo en la columna del centro, sin esquinas

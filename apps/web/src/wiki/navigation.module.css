@@ -26,6 +26,19 @@
   color: var(--color-text);
 }
 
+.tabs li[draggable="true"] {
+  cursor: grab;
+}
+
+.tabs li[data-dragging] {
+  opacity: 0.4;
+}
+
+/* Donde caerá la que se arrastra: una raya a su izquierda */
+.tabs li[data-over] {
+  box-shadow: inset 2px 0 0 var(--color-accent-text);
+}
+
 .tabs li[data-current] {
   border-block-end-color: var(--color-accent-text);
   color: var(--color-text);

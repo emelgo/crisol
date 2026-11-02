@@ -5,9 +5,7 @@
   display: flex;
   flex-direction: column;
   inline-size: 15rem;
-  max-block-size: min(26rem, 80vh);
   padding: var(--space-1);
-  overflow-y: auto;
   border: 1px solid var(--color-frame);
   border-radius: 10px;
   background: var(--color-surface);
@@ -123,4 +121,54 @@
   margin: var(--space-1);
   color: var(--color-danger);
   font-size: 0.8125rem;
+}
+
+/* Mover y ordenar: su desplegable, al lado, al pasar por encima */
+.subWrap {
+  position: relative;
+}
+
+.item[aria-expanded="true"] {
+  background: color-mix(in srgb, var(--color-text) 8%, transparent);
+}
+
+.flyout {
+  position: absolute;
+  inset-block-start: calc(-1 * var(--space-1) - 1px);
+  inset-inline-start: calc(100% + var(--space-1));
+  display: flex;
+  flex-direction: column;
+  inline-size: 16rem;
+  padding: var(--space-1);
+  border: 1px solid var(--color-frame);
+  border-radius: 10px;
+  background: var(--color-surface);
+  box-shadow: 0 0.75rem 2rem rgb(0 0 0 / 0.22);
+  animation: asoma 120ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+/* El hueco entre el menú y el desplegable no lo cierra al cruzarlo */
+.flyout::before {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  inset-inline-end: 100%;
+  inline-size: var(--space-2);
+}
+
+.search {
+  block-size: 2rem;
+  margin: var(--space-1);
+  padding: 0 var(--space-2);
+  border: 1px solid var(--color-field-border);
+  border-radius: 6px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.875rem;
+}
+
+.flyout .list {
+  max-block-size: 16rem;
+  overflow-y: auto;
 }

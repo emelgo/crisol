@@ -27,7 +27,8 @@ import { useExport } from './export.tsx'
 import { useNewPage } from './new-page.tsx'
 import styles from './tree-menu.module.css'
 
-type View = 'menu' | 'rename' | 'move' | 'sort' | 'delete'
+type View = 'menu' | 'rename' | 'delete'
+type Sub = 'move' | 'sort'
 
 const plain = (text: string) => text.normalize('NFD').replace(/\p{M}/gu, '').toLocaleLowerCase('es')
 
@@ -57,6 +58,9 @@ export function TreeMenu({
   const run = useExport()
   const menu = useRef<HTMLDivElement>(null)
   const [view, setView] = useState<View>('menu')
+  // El desplegable de al lado (mover u ordenar): se abre al pasar por encima, sin pulsar
+  const [sub, setSub] = useState<Sub | null>(null)
+  const flyout = useRef<HTMLDivElement>(null)
   const [title, setTitle] = useState(page.title)
   const [filter, setFilter] = useState('')
   const [place, setPlace] = useState(at)
@@ -157,7 +161,7 @@ export function TreeMenu({
   const names = useQuery({
     queryKey: ['pages', worldId, 'names'],
     queryFn: () => api.call('listPageNames', { worldId }),
-    enabled: view === 'move'
+    enabled: sub === 'move'
   })
   const linkedBy = useLinkedBy(page, view === 'delete')
   const error = rename.error ?? duplicate.error ?? move.error ?? sort.error ?? remove.error
@@ -165,18 +169,40 @@ export function TreeMenu({
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key === 'Escape') {
       event.preventDefault()
-      if (view === 'menu') onClose(true)
+      if (sub) setSub(null)
+      else if (view === 'menu') onClose(true)
       else setView('menu')
       return
     }
+    const inFlyout = (document.activeElement as HTMLElement | null)?.closest('[data-flyout]') ?? null
+    if (event.key === 'ArrowLeft' && inFlyout) {
+      event.preventDefault()
+      const opener = inFlyout.parentElement?.querySelector<HTMLElement>('[aria-haspopup]')
+      setSub(null)
+      opener?.focus()
+      return
+    }
     if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return
-    const items = [...event.currentTarget.querySelectorAll<HTMLElement>('[role="menuitem"]')]
+    // Las de su nivel: las del desplegable si se está en él; si no, las del menú
+    const items = [...event.currentTarget.querySelectorAll<HTMLElement>('[role="menuitem"]')].filter(
+      (element) => element.closest('[data-flyout]') === inFlyout
+    )
     const index = items.indexOf(document.activeElement as HTMLElement)
     event.preventDefault()
     items[(index + (event.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length]?.focus()
   }
 
-  const item = (icon: ReactNode, label: string, onClick: () => void, extra?: { danger?: boolean; more?: boolean }) => (
+  // Abrir el desplegable con el teclado (o al pulsar): el foco, dentro
+  const openSub = (which: Sub) => {
+    setSub(which)
+    requestAnimationFrame(() => flyout.current?.querySelector<HTMLElement>('input, [role="menuitem"]')?.focus())
+  }
+  const item = (
+    icon: ReactNode,
+    label: string,
+    onClick: () => void,
+    extra?: { danger?: boolean; more?: boolean; sub?: Sub }
+  ) => (
     <button
       type="button"
       role="menuitem"
@@ -184,7 +210,14 @@ export function TreeMenu({
       className={styles.item}
       data-danger={extra?.danger || undefined}
       aria-haspopup={extra?.more ? 'menu' : undefined}
+      aria-expanded={extra?.sub ? sub === extra.sub : undefined}
       onClick={onClick}
+      onKeyDown={(event) => {
+        if (extra?.sub && event.key === 'ArrowRight') {
+          event.preventDefault()
+          openSub(extra.sub)
+        }
+      }}
     >
       {icon}
       <span>{label}</span>
@@ -220,14 +253,62 @@ export function TreeMenu({
             onClose(true)
           })}
           <div className={styles.separator} />
-          {!isHome &&
-            item(<FolderInput aria-hidden="true" size={15} />, t('treeMenu.move'), () => setView('move'), {
-              more: true
-            })}
-          {page.hasChildren &&
-            item(<ArrowDownAZ aria-hidden="true" size={15} />, t('treeMenu.sort'), () => setView('sort'), {
-              more: true
-            })}
+          {!isHome && (
+            // biome-ignore lint/a11y/noStaticElementInteractions: con el teclado se abre con la flecha derecha
+            <div className={styles.subWrap} onMouseEnter={() => setSub('move')} onMouseLeave={() => setSub(null)}>
+              {item(<FolderInput aria-hidden="true" size={15} />, t('treeMenu.move'), () => openSub('move'), {
+                more: true,
+                sub: 'move'
+              })}
+              {sub === 'move' && (
+                <div ref={flyout} className={styles.flyout} data-flyout="" role="menu" aria-label={t('treeMenu.move')}>
+                  <input
+                    className={styles.search}
+                    value={filter}
+                    placeholder={t('treeMenu.moveSearch')}
+                    aria-label={t('treeMenu.moveSearch')}
+                    onChange={(event) => setFilter(event.currentTarget.value)}
+                  />
+                  <div className={styles.list}>
+                    {page.parentId &&
+                      item(<FolderInput aria-hidden="true" size={15} />, t('treeMenu.moveRoot'), () =>
+                        move.mutate(null)
+                      )}
+                    {targets.map((target) => (
+                      <button
+                        key={target.id}
+                        type="button"
+                        role="menuitem"
+                        tabIndex={-1}
+                        className={styles.item}
+                        onClick={() => move.mutate(target.id)}
+                      >
+                        <span>{target.title}</span>
+                        {target.path.length > 1 && (
+                          <span className={styles.path}>{target.path.slice(0, -1).join(' / ')}</span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          {page.hasChildren && (
+            // biome-ignore lint/a11y/noStaticElementInteractions: con el teclado se abre con la flecha derecha
+            <div className={styles.subWrap} onMouseEnter={() => setSub('sort')} onMouseLeave={() => setSub(null)}>
+              {item(<ArrowDownAZ aria-hidden="true" size={15} />, t('treeMenu.sort'), () => openSub('sort'), {
+                more: true,
+                sub: 'sort'
+              })}
+              {sub === 'sort' && (
+                <div ref={flyout} className={styles.flyout} data-flyout="" role="menu" aria-label={t('treeMenu.sort')}>
+                  {item(<ArrowDownAZ aria-hidden="true" size={15} />, t('treeMenu.sortAsc'), () => sort.mutate('asc'))}
+                  {item(<ArrowUpZA aria-hidden="true" size={15} />, t('treeMenu.sortDesc'), () => sort.mutate('desc'))}
+                </div>
+              )}
+            </div>
+          )}
           {!isHome && (
             <>
               <div className={styles.separator} />
@@ -256,39 +337,6 @@ export function TreeMenu({
             onFocus={(event) => event.currentTarget.select()}
           />
         </form>
-      )}
-      {view === 'move' && (
-        <div className={styles.form}>
-          <input
-            value={filter}
-            placeholder={t('treeMenu.moveSearch')}
-            aria-label={t('treeMenu.moveSearch')}
-            onChange={(event) => setFilter(event.currentTarget.value)}
-          />
-          <div className={styles.list}>
-            {page.parentId &&
-              item(<FolderInput aria-hidden="true" size={15} />, t('treeMenu.moveRoot'), () => move.mutate(null))}
-            {targets.map((target) => (
-              <button
-                key={target.id}
-                type="button"
-                role="menuitem"
-                tabIndex={-1}
-                className={styles.item}
-                onClick={() => move.mutate(target.id)}
-              >
-                <span>{target.title}</span>
-                {target.path.length > 1 && <span className={styles.path}>{target.path.slice(0, -1).join(' / ')}</span>}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-      {view === 'sort' && (
-        <>
-          {item(<ArrowDownAZ aria-hidden="true" size={15} />, t('treeMenu.sortAsc'), () => sort.mutate('asc'))}
-          {item(<ArrowUpZA aria-hidden="true" size={15} />, t('treeMenu.sortDesc'), () => sort.mutate('desc'))}
-        </>
       )}
       {view === 'delete' && (
         <div className={styles.confirm}>
