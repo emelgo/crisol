@@ -21,6 +21,17 @@ import {
 } from './files.ts'
 import { listHistory, undoOperation } from './history.ts'
 import { getInvitation, regenerateInvitation, setInvitationsOpen } from './invitations.ts'
+import {
+  createMapPin,
+  createPageTab,
+  deleteMapPin,
+  deletePageTab,
+  getMap,
+  listPageTabs,
+  updateMap,
+  updateMapPin,
+  updatePageTab
+} from './maps.ts'
 import { leaveCampaign, listMembers, removeMember } from './members.ts'
 import { listOrganizations } from './organizations.ts'
 import {
@@ -69,6 +80,7 @@ export * from './campaigns.ts'
 export * from './files.ts'
 export * from './history.ts'
 export * from './invitations.ts'
+export * from './maps.ts'
 export * from './members.ts'
 export * from './openapi.ts'
 export * from './organizations.ts'
@@ -152,7 +164,16 @@ export const ACTIONS = [
   createTag,
   updateTag,
   deleteTag,
-  setFileTags
+  setFileTags,
+  listPageTabs,
+  createPageTab,
+  updatePageTab,
+  deletePageTab,
+  getMap,
+  updateMap,
+  createMapPin,
+  updateMapPin,
+  deleteMapPin
 ]
 
 /** Las acciones por nombre, solo como tipo: la web las usa sin cargar zod */
@@ -228,5 +249,14 @@ export type Actions = {
   updateTag: typeof updateTag
   deleteTag: typeof deleteTag
   setFileTags: typeof setFileTags
+  listPageTabs: typeof listPageTabs
+  createPageTab: typeof createPageTab
+  updatePageTab: typeof updatePageTab
+  deletePageTab: typeof deletePageTab
+  getMap: typeof getMap
+  updateMap: typeof updateMap
+  createMapPin: typeof createMapPin
+  updateMapPin: typeof updateMapPin
+  deleteMapPin: typeof deleteMapPin
   searchWiki: typeof searchWiki
 }

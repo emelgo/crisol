@@ -7,7 +7,23 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
-### Para retomar (2026-10-30)
+### Para retomar (2026-11-02)
+
+- **Ahora: traer Everlore a Crisol** (la app de Enrique al estilo de LegendKeeper). Propuesta aprobada («me vale así,
+  ya iremos puliendo»): ADR-0007, pestañas dentro de las páginas de la wiki, por fases: 1) pestañas y mapa; 2) vista
+  rápida y panel lateral con bloques; 3) línea temporal y calendarios; 4) pizarra y árbol familiar; 5) grafo.
+- **Fase 1, primera tanda hecha** en la rama `mundo/pestanas-mapa` (sale de `interfaz/pulir-3`, PR #88 aún abierto):
+  tablas `page_tabs`, `maps`, `map_pins` y `map_elements` (migración 0029, con historial); acciones y herramientas MCP
+  (`ver_pestanas`, `crear_pestana`, `cambiar_pestana`, `borrar_pestana`, `ver_mapa`, `cambiar_mapa`, `poner_pin`,
+  `cambiar_pin`, `quitar_pin`); la barra de pestañas y el visor (`apps/web/src/wiki/tabs/`, `apps/web/src/wiki/map/`)
+  con pines, su panel, botón derecho y recorrido. Pruebas: `maps.integration.test.ts`, `map.test.ts` y
+  `e2e/tests/mapas.spec.ts`.
+- **Lo que falta de la fase 1**: dibujar en el mapa (regiones, rutas y textos: la tabla `map_elements` ya está),
+  medir con la escala, el menú radial de Everlore, recolocar pestañas arrastrando y la marca de «oculto» en la
+  interfaz (hoy solo por el MCP; servirá con los jugadores, módulo 5). Después, la fase 2.
+- Lo de antes sigue abajo (2026-10-30).
+
+### Antes (2026-10-30)
 
 - **El módulo 1 (wiki) está construido entero y en staging**: tareas 1 a 26, PR #52 a #70. Lo que hace cada tarea está
   en las entradas de abajo, del 2026-10-30.

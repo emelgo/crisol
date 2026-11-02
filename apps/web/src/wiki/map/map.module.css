@@ -1,0 +1,473 @@
+/* El mapa de una pestaña: el visor a lo ancho, con sus herramientas y el panel del pin encima */
+.wrapper {
+  position: relative;
+}
+
+.viewer {
+  position: relative;
+  block-size: clamp(24rem, calc(100dvh - 15rem), 64rem);
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-raised);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.viewer:active {
+  cursor: grabbing;
+}
+
+.viewer[data-tool="pin"] {
+  cursor: crosshair;
+}
+
+.viewer:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+/* El escenario: la imagen a su tamaño, movida y escalada desde su esquina */
+.stage {
+  --inv-k: 1;
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  transform-origin: 0 0;
+  will-change: transform;
+}
+
+.stage img {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  pointer-events: none;
+}
+
+.pins {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Un pin: siempre del mismo tamaño en pantalla (--inv-k deshace la escala), clavado por la punta o por el centro */
+.pin {
+  position: absolute;
+  display: block;
+  padding: 0;
+  border: 0;
+  background: none;
+  line-height: 0;
+  cursor: pointer;
+  transform: translate(-50%, -100%) scale(var(--inv-k));
+  transform-origin: 50% 100%;
+  touch-action: none;
+}
+
+.pin[data-anchor="center"] {
+  transform: translate(-50%, -50%) scale(var(--inv-k));
+  transform-origin: 50% 50%;
+}
+
+.iconOnly {
+  display: block;
+  font-size: 1.5rem;
+  line-height: 1;
+  text-shadow: 0 1px 3px rgb(0 0 0 / 0.7);
+}
+
+.pin svg {
+  filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.55));
+}
+
+.pin[aria-pressed="true"] svg,
+.pin[aria-pressed="true"] .iconOnly {
+  filter: drop-shadow(0 0 2px #ffffff) drop-shadow(0 0 4px var(--color-accent-text));
+}
+
+.pin:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Su nombre, debajo: al pasar por encima (0), siempre (1) o nunca (2); el elegido, siempre */
+.pinLabel {
+  position: absolute;
+  inset-block-start: calc(100% + 2px);
+  inset-inline-start: 50%;
+  display: none;
+  padding: 0.125rem 0.4rem;
+  border-radius: 3px;
+  background: rgb(20 20 24 / 0.82);
+  color: #ffffff;
+  font-size: 0.8125rem;
+  line-height: 1.3;
+  white-space: nowrap;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.pin[data-display="1"] .pinLabel,
+.pin[data-display="0"]:is(:hover, :focus-visible) .pinLabel,
+.pin[data-display="0"][aria-pressed="true"] .pinLabel {
+  display: block;
+}
+
+/* Las herramientas: una columna de iconos arriba a la izquierda */
+.toolbar {
+  position: absolute;
+  inset-block-start: var(--space-2);
+  inset-inline-start: var(--space-2);
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--color-frame);
+  border-radius: 6px;
+  background: var(--color-surface);
+  box-shadow: 0 0.25rem 0.75rem rgb(0 0 0 / 0.25);
+}
+
+.toolbar button {
+  display: grid;
+  place-items: center;
+  inline-size: 2.25rem;
+  block-size: 2.25rem;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.toolbar button:hover {
+  background: color-mix(in srgb, var(--color-text) 10%, transparent);
+}
+
+.toolbar button[aria-pressed="true"],
+.toolbar button[aria-expanded="true"] {
+  background: color-mix(in srgb, var(--color-accent-text) 22%, transparent);
+  color: var(--color-accent-text);
+}
+
+.hint {
+  position: absolute;
+  inset-block-start: var(--space-2);
+  inset-inline-start: 50%;
+  z-index: 2;
+  margin: 0;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  background: rgb(20 20 24 / 0.82);
+  color: #ffffff;
+  font-size: 0.875rem;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+/* Botón derecho: qué poner aquí */
+.contextMenu {
+  position: absolute;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 12rem;
+  padding: var(--space-1);
+  border: 1px solid var(--color-frame);
+  border-radius: 6px;
+  background: var(--color-surface);
+  box-shadow: 0 0.75rem 2rem rgb(0 0 0 / 0.35);
+  cursor: auto;
+}
+
+.contextMenu button {
+  min-block-size: 2.25rem;
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.contextMenu button:hover,
+.contextMenu button:focus-visible {
+  background: color-mix(in srgb, var(--color-text) 10%, transparent);
+}
+
+/* Cambiar la imagen: junto a las herramientas */
+.imagePanel {
+  position: absolute;
+  inset-block-start: var(--space-2);
+  inset-inline-start: 3.5rem;
+  z-index: 3;
+  inline-size: 17rem;
+  padding: var(--space-3);
+  border: 1px solid var(--color-frame);
+  border-radius: 6px;
+  background: var(--color-surface);
+  box-shadow: 0 0.75rem 2rem rgb(0 0 0 / 0.35);
+}
+
+/* Sin imagen: qué poner */
+.empty {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-3);
+  padding: var(--space-8) var(--space-4);
+  border: 1px dashed var(--color-frame);
+  border-radius: 6px;
+  color: var(--color-muted);
+  text-align: center;
+}
+
+.empty p {
+  margin: 0;
+}
+
+.chooser {
+  display: grid;
+  gap: var(--space-2);
+  inline-size: min(100%, 18rem);
+  color: var(--color-text);
+  text-align: start;
+}
+
+.chooser label {
+  font-weight: 600;
+}
+
+.chooser select,
+.fields input:not([type="radio"], [type="checkbox"], [type="color"]),
+.fields select {
+  min-block-size: var(--target);
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-field-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+}
+
+/* El panel del pin: a la derecha del mapa; en el móvil, abajo */
+.panel {
+  position: absolute;
+  inset-block: var(--space-2);
+  inset-inline-end: var(--space-2);
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  inline-size: 18rem;
+  overflow: auto;
+  padding: var(--space-3);
+  border: 1px solid var(--color-frame);
+  border-radius: 6px;
+  background: var(--color-surface);
+  box-shadow: 0 0.75rem 2rem rgb(0 0 0 / 0.35);
+}
+
+@media (max-width: 48rem) {
+  .panel {
+    inset: auto 0 0;
+    inline-size: auto;
+    max-block-size: 65%;
+    border-radius: 6px 6px 0 0;
+  }
+}
+
+.panelHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.panelHead h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.close {
+  display: grid;
+  place-items: center;
+  inline-size: 2rem;
+  block-size: 2rem;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+.close:hover {
+  background: color-mix(in srgb, var(--color-text) 10%, transparent);
+  color: var(--color-text);
+}
+
+.fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.fields > label:not(.check) {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.pageRow {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.pageRow input {
+  flex: 1;
+  min-inline-size: 0;
+}
+
+.choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.choices legend,
+.segmented legend {
+  margin-block-end: 0.25rem;
+  padding: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.swatch,
+.shapeChoice {
+  position: relative;
+  display: grid;
+  place-items: center;
+  inline-size: 2rem;
+  block-size: 2rem;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.shapeChoice {
+  border-radius: 4px;
+}
+
+.swatch input,
+.shapeChoice input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.swatch > span:not(.hidden) {
+  inline-size: 1.375rem;
+  block-size: 1.375rem;
+  border-radius: 50%;
+}
+
+.swatch:has(input:checked),
+.shapeChoice:has(input:checked) {
+  box-shadow: 0 0 0 2px var(--color-text);
+}
+
+.swatch:has(input:focus-visible),
+.shapeChoice:has(input:focus-visible) {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.customSwatch {
+  border: 1px dashed var(--color-field-border);
+  color: var(--color-muted);
+}
+
+.segmented {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.segmented legend {
+  inline-size: 100%;
+}
+
+.segmented label {
+  flex: 1;
+  cursor: pointer;
+}
+
+.segmented input {
+  position: absolute;
+  opacity: 0;
+}
+
+.segmented span {
+  display: block;
+  padding: 0.375rem 0.25rem;
+  border: 1px solid var(--color-field-border);
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+  text-align: center;
+}
+
+.segmented label + label span {
+  border-inline-start: 0;
+}
+
+.segmented label:first-of-type span {
+  border-radius: var(--radius) 0 0 var(--radius);
+}
+
+.segmented label:last-of-type span {
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+
+.segmented input:checked + span {
+  background: color-mix(in srgb, var(--color-accent-text) 16%, transparent);
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.segmented input:focus-visible + span {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 1px;
+}
+
+.iconInput {
+  inline-size: 6rem;
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.hidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

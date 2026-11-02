@@ -126,6 +126,36 @@ export function summaryOf(
       return say('editPage', { title: text(details.page ?? details.title) })
     case 'restoreVersion':
       return say('restoreVersion', { title: text(details.page ?? details.title) })
+    // Las pestañas de una página y sus mapas (ADR-0007)
+    case 'createPageTab':
+    case 'deletePageTab':
+      return say(action, { name: text(details.name), title: text(details.title ?? details.page) })
+    case 'updatePageTab':
+      return details.from !== undefined
+        ? say('renamePageTab', { from: text(details.from), to: text(details.to), title: text(details.title) })
+        : say('updatePageTab', { name: text(details.name), title: text(details.title) })
+    case 'updateMap':
+      return say(details.image ? 'setMapImage' : 'updateMap', { name: text(details.name), title: text(details.title) })
+    case 'createMapPin':
+    case 'updateMapPin':
+    case 'deleteMapPin': {
+      const pin = text(details.pin ?? details.label) || t('map.untitledPin')
+      const key = action === 'updateMapPin' && details.moved ? 'moveMapPin' : action
+      return say(key, { pin, map: text(details.map), title: text(details.title) })
+    }
+    // Las etiquetas de la cuenta (ADR-0006)
+    case 'createTag':
+    case 'colorTag':
+    case 'deleteTag':
+    case 'setFileTags':
+      return say(action, { name: text(details.name ?? details.tag), tag: text(details.tag ?? details.name) })
+    case 'renameTag':
+    case 'updateTag':
+      return say('renameTag', {
+        from: text(details.from ?? details.tag),
+        to: text(details.to ?? details.name),
+        tag: text(details.tag)
+      })
     default:
       return say('unknown', { action })
   }

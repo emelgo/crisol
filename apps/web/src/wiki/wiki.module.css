@@ -218,6 +218,15 @@
   max-inline-size: 50rem;
 }
 
+/* Con una pestaña que no es el texto (un mapa): a todo lo ancho, sin el panel de la derecha */
+.pageWide {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.pageWide .pageMain {
+  max-inline-size: none;
+}
+
 .pagePanel {
   position: sticky;
   inset-block-start: var(--space-4);

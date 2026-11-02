@@ -77,6 +77,14 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
 - **Sin sección de subpáginas**: se navega desde el árbol; «Nueva subpágina», en «⋯».
 - **Alrededor de la página, nada pesa** («la UI es rara»): los paneles de los lados sin recuadros, con títulos
   pequeños y grises; «Página nueva», «Exportar» y «Nueva subpágina», discretos; un vacío dice una sola línea.
+- **Las pestañas de una página** (ADR-0007, lo de Everlore): bajo el título, «Texto» y las que se añaden (de momento,
+  mapas), en texto plano con la elegida subrayada. Sin pestañas añadidas no hay barra; «Añadir mapa» va en «⋯». La
+  elegida lleva su menú (▾): nombre, mover y quitar. Una pestaña que no es el texto va a todo lo ancho, sin el panel
+  de la derecha (es del texto) ni la portada.
+- **El mapa**: la imagen se arrastra y se acerca con la rueda hacia el cursor (y con dos dedos); las herramientas, una
+  columna de iconos arriba a la izquierda; el botón derecho ofrece «Pin aquí» y «Pin con página nueva» (su nombre es
+  el de la página, que nace como subpágina). Pulsar un pin abre su panel a la derecha (abajo en el móvil), donde todo
+  se guarda al momento; arrastrarlo lo mueve y el doble clic abre su página. Los pines, las ocho formas de Everlore.
 - **La hoja es lo que hace única la wiki**, y se escribe encima: con la hoja puesta, la página entera va sobre el
   papel del tema, a dos columnas (una en el móvil). Las páginas numeradas, al imprimir y en el PDF.
 

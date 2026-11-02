@@ -76,7 +76,16 @@ describe('Actions', () => {
       createTag: true,
       updateTag: true,
       deleteTag: true,
-      setFileTags: true
+      setFileTags: true,
+      listPageTabs: true,
+      createPageTab: true,
+      updatePageTab: true,
+      deletePageTab: true,
+      getMap: true,
+      updateMap: true,
+      createMapPin: true,
+      updateMapPin: true,
+      deleteMapPin: true
     }
     expect(Object.keys(names).sort()).toEqual(ACTIONS.map((a) => a.name).sort())
   })

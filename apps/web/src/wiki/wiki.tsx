@@ -23,12 +23,14 @@ import { CoverButton, PageCoverImage } from './cover.tsx'
 import { PageBody } from './editor.tsx'
 import { ExportPage, ExportWiki } from './export.tsx'
 import { PageIcon } from './icon.tsx'
+import { MapTab } from './map/map-tab.tsx'
 import { BookmarkButton, Bookmarks, OpenTabs, SiblingNav } from './navigation.tsx'
 import { useWikiPanel } from './panel.tsx'
 import { PageProperties } from './properties.tsx'
 import { QuickSwitcher } from './quick-switcher.tsx'
 import { SearchBox } from './search-box.tsx'
 import { SheetMenu, SheetPaper, SheetToggle } from './sheet/controls.tsx'
+import { AddMapTab, PageTabs, usePageTabs } from './tabs/page-tabs.tsx'
 import { childrenKey, PageTree } from './tree.tsx'
 import { Versions } from './versions.tsx'
 import styles from './wiki.module.css'
@@ -227,7 +229,7 @@ function PageBar({ page, world }: { page: Page; world: string }) {
 }
 
 /** La cabecera de la página: su portada, su icono y su título, que se cambian ahí mismo */
-function PageHead({ page, startEditing }: { page: Page; startEditing: boolean }) {
+function PageHead({ page, startEditing, cover = true }: { page: Page; startEditing: boolean; cover?: boolean }) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const router = useRouter()
@@ -245,7 +247,7 @@ function PageHead({ page, startEditing }: { page: Page; startEditing: boolean })
   // El icono, si se quiere, va en el propio título; la portada, desde «⋯» (y, puesta, desde ella misma)
   return (
     <>
-      <PageCoverImage page={page} />
+      {cover && <PageCoverImage page={page} />}
       <div className={styles.heading}>
         {page.icon && <PageIcon page={page} />}
         <InlineTitle page={page} autoFocus={startEditing} onDone={named} />
@@ -418,6 +420,7 @@ function MoreActions({ page }: { page: Page }) {
         <div id={panelId} className={styles.morePanel}>
           <SheetMenu page={page} />
           <NewSubpage page={page} onDone={() => setOpen(false)} />
+          <AddMapTab page={page} onDone={() => setOpen(false)} />
           {/* Puesta, se cambia desde ella misma («Cambiar», al pasar por encima) */}
           {!page.cover && <CoverButton page={page} />}
           <ExportPage page={page} />
@@ -554,10 +557,9 @@ export function WikiPage() {
   const { t } = useTranslation()
   const api = useApi()
   const { worldId, pageId } = pageRoute.useParams()
-  const { nuevo } = pageRoute.useSearch()
+  const { nuevo, pestana } = pageRoute.useSearch()
   const page = useQuery({ queryKey: pageKey(worldId, pageId), queryFn: () => api.call('getPage', { pageId }) })
   const missing = page.error instanceof ApiError && page.error.status === 404
-  const pageMain = useRef<HTMLDivElement>(null)
   useEffect(() => {
     // Mientras se le pone nombre no hay título que lo diga
     if (page.data) document.title = t('app.pageTitle', { page: page.data.title })
@@ -577,26 +579,74 @@ export function WikiPage() {
           )
         }
         if (!page.data) return failed(page) ? <LoadError error={page.error} onRetry={() => page.refetch()} /> : null
-        return (
-          <article className={styles.page}>
-            <div className={styles.pageMain} ref={pageMain}>
-              <PageBar page={page.data} world={world.name} />
-              <SheetPaper page={page.data}>
-                <PageHead key={page.data.id} page={page.data} startEditing={nuevo === true} />
-                <PageProperties key={page.data.id} page={page.data} />
-                <PageBody page={page.data} />
-              </SheetPaper>
-              <SiblingNav page={page.data} />
-            </div>
-            <aside aria-label={t('wiki.pagePanel')} className={styles.pagePanel}>
-              <Contents key={`indice-${page.data.id}`} root={pageMain} />
-              <Backlinks key={`enlaces-${page.data.id}`} page={page.data} />
-              <Versions key={`versiones-${page.data.id}`} page={page.data} />
-            </aside>
-          </article>
-        )
+        return <OpenPage page={page.data} world={world.name} nuevo={nuevo === true} pestana={pestana ?? null} />
       }}
     </WikiLayout>
+  )
+}
+
+/**
+ * La página abierta: su texto (con su hoja) o, con ?pestana=, una de sus pestañas (un mapa), a todo lo ancho y sin el
+ * panel de la derecha, que es del texto
+ */
+function OpenPage({
+  page,
+  world,
+  nuevo,
+  pestana
+}: {
+  page: Page
+  world: string
+  nuevo: boolean
+  pestana: string | null
+}) {
+  const { t } = useTranslation()
+  const tabs = usePageTabs(page)
+  const pageMain = useRef<HTMLDivElement>(null)
+  const all = tabs.data ?? []
+  const active = pestana ? (all.find((tab) => tab.id === pestana) ?? null) : null
+  // Una pestaña que ya no está (quitada, o de otra página): al texto, una vez al día la lista
+  if (pestana && tabs.data && !tabs.isFetching && !active) {
+    return (
+      <Navigate
+        to="/mundos/$worldId/wiki/$pageId"
+        params={{ worldId: page.worldId, pageId: page.id }}
+        search={{}}
+        replace
+      />
+    )
+  }
+  if (pestana && !active) return null
+  if (active) {
+    return (
+      <article className={`${styles.page} ${styles.pageWide}`}>
+        <div className={styles.pageMain}>
+          <PageBar page={page} world={world} />
+          <PageHead key={page.id} page={page} startEditing={false} cover={false} />
+          <PageTabs page={page} tabs={all} active={active.id} />
+          <MapTab key={active.id} page={page} tab={active} />
+        </div>
+      </article>
+    )
+  }
+  return (
+    <article className={styles.page}>
+      <div className={styles.pageMain} ref={pageMain}>
+        <PageBar page={page} world={world} />
+        <SheetPaper page={page}>
+          <PageHead key={page.id} page={page} startEditing={nuevo} />
+          <PageTabs page={page} tabs={all} active={null} />
+          <PageProperties key={page.id} page={page} />
+          <PageBody page={page} />
+        </SheetPaper>
+        <SiblingNav page={page} />
+      </div>
+      <aside aria-label={t('wiki.pagePanel')} className={styles.pagePanel}>
+        <Contents key={`indice-${page.id}`} root={pageMain} />
+        <Backlinks key={`enlaces-${page.id}`} page={page} />
+        <Versions key={`versiones-${page.id}`} page={page} />
+      </aside>
+    </article>
   )
 }
 
