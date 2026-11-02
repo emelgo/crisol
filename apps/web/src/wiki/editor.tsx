@@ -49,7 +49,14 @@ export function PageBody({ page }: { page: Page }) {
   const nestedOptions = useNestedOptions(caretColor)
   const links = usePageLinks(page.worldId)
   const saving = useSaving(session?.provider ?? null)
-  const stored = usePageContent(page.worldId, page.id, null, false)
+  // Si el editor tarda en conectarse (más de lo que se nota), el texto guardado se enseña mientras; si no, no cuesta nada
+  const [slow, setSlow] = useState(false)
+  useEffect(() => {
+    if (synced || offline) return
+    const timer = setTimeout(() => setSlow(true), 150)
+    return () => clearTimeout(timer)
+  }, [synced, offline])
+  const stored = usePageContent(page.worldId, slow && !synced ? page.id : null, null, false)
   // El hueco de «Guardado», a la derecha de las pestañas de la página
   const [saveSlot, setSaveSlot] = useState<Element | null>(null)
   useEffect(() => setSaveSlot(document.querySelector('[data-save-slot]')), [])

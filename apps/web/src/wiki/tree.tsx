@@ -8,7 +8,6 @@ import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
 import { useAnnounce } from '../components/announcer.tsx'
-import { contentKey } from './preview.tsx'
 import styles from './tree.module.css'
 import { TreeMenu } from './tree-menu.tsx'
 
@@ -258,12 +257,6 @@ export function PageTree({ worldId, currentId, path, onNavigate }: Props) {
           void queryClient.prefetchQuery({
             queryKey: ['pages', worldId, 'page', page.id],
             queryFn: () => api.call('getPage', { pageId: page.id }),
-            staleTime: 10_000
-          })
-          // Y su texto, para enseñarlo mientras se conecta el editor
-          void queryClient.prefetchQuery({
-            queryKey: contentKey(worldId, page.id, null, false),
-            queryFn: () => api.call('getPageContent', { pageId: page.id, anchor: null, preview: false }),
             staleTime: 10_000
           })
         }}
