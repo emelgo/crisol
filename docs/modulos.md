@@ -28,6 +28,10 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   panel a la derecha, a la misma altura); y **el panel de la derecha con bloques** (fase 2 de Everlore, ADR-0008:
   `pages.panel`, migración 0031, `setPagePanel` y la herramienta `cambiar_panel`; `apps/web/src/wiki/panel-blocks.tsx`
   y `e2e/tests/panel.spec.ts`). Las normas, en `docs/diseno.md`.
+- **También en la PR #90** (2026-11-02, tarde): «Página nueva» con cuadro de tipo, botón derecho en el árbol (con
+  `sortPageChildren` y `ordenar_subpaginas`), menú «/» y «Convertir en» por desplegables, títulos del 1 al 6, línea de
+  más bajo lo escrito, «Marcar» flotante, pestañas que se recolocan y propiedades como bloques del panel. Lo que aún
+  falta de Everlore, en `tasks/everlore-pendiente.md`. Propuesta abierta: la hoja maquetada al escribir, sin texturas.
 - **Pendiente que pidió Enrique**: Buscar y Marcadores como en Everlore, transiciones entre páginas de una vista
   (`tasks/interfaz.md`); de la fase 2 falta la vista rápida de las páginas enlazadas; plantillas, más adelante («ya
   las haremos»).
