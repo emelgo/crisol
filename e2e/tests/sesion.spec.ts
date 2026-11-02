@@ -70,7 +70,7 @@ test('al salir no queda nada del máster en la pestaña, tampoco para la jugador
   await expect(page.getByRole('button', { name: 'Papelera', exact: true })).toHaveCount(0)
   await release()
   const worlds = page.getByRole('list', { name: 'Mundos' })
-  await expect(worlds.getByRole('listitem')).toHaveText([/^Eana.*Jugador/])
+  await expect(worlds.getByRole('listitem')).toHaveText([/^Eana/])
   // Ni el historial ni la papelera del propietario
   await expect(page.getByRole('button', { name: 'Historial', exact: true })).toHaveCount(0)
 

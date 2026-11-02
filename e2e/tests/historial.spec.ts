@@ -13,7 +13,10 @@ test('el propietario ve en el historial lo que ha hecho, en el mundo y en toda l
   const history = await openWindow(page, 'Historial')
   await expect(history.getByRole('heading', { level: 1, name: 'Historial de Eana' })).toBeVisible()
   const entries = history.getByRole('list', { name: 'Operaciones' }).getByRole('listitem')
+  // Al entrar en el mundo se creó su portada, con su texto de bienvenida
   await expect(entries).toHaveText([
+    /^Enrique cambió la página «Eana»/,
+    /^Enrique creó la portada del mundo, «Eana»/,
     /^Enrique renombró la campaña «La Marca» a «La Marca del Este».*· web/,
     /^Enrique generó un enlace nuevo para La Marca/,
     /^Enrique creó la campaña «La Marca» en Eana/,
@@ -25,9 +28,9 @@ test('el propietario ve en el historial lo que ha hecho, en el mundo y en toda l
   const all = await openWindow(page, 'Historial')
   await expect(all.getByRole('heading', { level: 1, name: 'Historial' })).toBeVisible()
   const allEntries = all.getByRole('list', { name: 'Operaciones' }).getByRole('listitem')
-  await expect(allEntries).toHaveCount(6)
+  await expect(allEntries).toHaveCount(9)
   await expect(allEntries.last()).toHaveText(/^Crisol creó la organización «Fateforge»/)
-  await expect(allEntries.nth(4)).toHaveText(/^Enrique entró como propietario/)
+  await expect(allEntries.filter({ hasText: /^Enrique entró como propietario/ })).toHaveCount(1)
 })
 
 test('el máster deshace crear una campaña y lo rehace; si algo cambió después, se le dice qué', async ({ page }) => {

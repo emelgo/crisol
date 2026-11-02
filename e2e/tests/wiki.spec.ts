@@ -13,10 +13,13 @@ async function eanaWiki(page: Page) {
 
 /** Página nueva (o subpágina de la abierta) con su título */
 async function newPage(page: Page, title: string, button = 'Página nueva') {
-  // Una subpágina, desde «⋯» de su madre
-  if (button === 'Nueva subpágina') await page.getByRole('button', { name: 'Más acciones' }).click()
-  await page.getByRole('button', { name: button }).click()
-  await expect(page.getByLabel('Título de la página')).toBeFocused()
+  // Una subpágina, con el botón derecho sobre su madre en el árbol
+  if (button === 'Nueva subpágina') {
+    await page.getByRole('tree').locator('[aria-current="page"]').click({ button: 'right' })
+    await page.getByRole('menuitem', { name: 'Crear subpágina' }).click()
+  } else await page.getByRole('button', { name: button }).click()
+  // El cuadro de página nueva: el título, y Intro la crea
+  await expect(page.getByRole('dialog').getByLabel('Título', { exact: true })).toBeFocused()
   await page.keyboard.type(title)
   await page.keyboard.press('Enter')
   await expect(page.getByRole('heading', { level: 1, name: title })).toBeVisible()
@@ -66,7 +69,7 @@ test('el máster crea páginas y subpáginas, las renombra y las recoloca; todo 
   await expect(tree(page).getByRole('treeitem', { name: 'Personajes' })).toHaveAttribute('aria-level', '2')
 
   await page.reload()
-  await expect(titles(page).first()).toHaveText('Lugares')
+  await expect(titles(page).nth(1)).toHaveText('Lugares')
   await tree(page).getByRole('treeitem', { name: 'Lugares' }).focus()
   await page.keyboard.press('ArrowRight')
   await expect(titles(page)).toHaveText(['Eana', 'Lugares', 'Costa Gris', 'Personajes', 'Reglas de la casa'])
@@ -117,9 +120,10 @@ test('borrar una página con sus subpáginas, y restaurarla desde la papelera de
   await newPage(page, 'Costa Gris', 'Nueva subpágina')
   await newPage(page, 'Puerto Ceniza', 'Nueva subpágina')
   await tree(page).getByRole('treeitem', { name: 'Lugares' }).click()
-  await page.getByRole('button', { name: 'Más acciones' }).click()
-  await page.getByRole('button', { name: 'Borrar' }).click()
-  await page.getByRole('button', { name: 'Borrar' }).click()
+  // Con el botón derecho en el árbol: «Borrar» y su confirmación
+  await tree(page).getByRole('treeitem', { name: 'Lugares' }).click({ button: 'right' })
+  await page.getByRole('menuitem', { name: 'Borrar' }).click()
+  await page.getByRole('menuitem', { name: 'Borrar' }).click()
   // De vuelta en la portada del mundo, sin las borradas
   await expect(page.getByRole('heading', { level: 1, name: 'Eana' })).toBeVisible()
   await expect(titles(page)).toHaveText(['Eana'])
@@ -140,23 +144,24 @@ test('pestañas y marcadores siguen al recargar; en el móvil, las abiertas van 
   await newPage(page, 'Puerto Ceniza')
   await newPage(page, 'Maela Varn')
   const tabs = page.getByRole('navigation', { name: 'Páginas abiertas' })
-  await expect(tabs.getByRole('link')).toHaveText(['Puerto Ceniza', 'Maela Varn'])
+  // La portada del mundo, abierta al entrar
+  await expect(tabs.getByRole('link')).toHaveText(['Eana', 'Puerto Ceniza', 'Maela Varn'])
   await tabs.getByRole('button', { name: 'Fijar Maela Varn' }).click()
-  await expect(tabs.getByRole('link')).toHaveText(['Maela Varn', 'Puerto Ceniza'])
+  await expect(tabs.getByRole('link')).toHaveText(['Maela Varn', 'Eana', 'Puerto Ceniza'])
   await page.getByRole('button', { name: 'Marcar' }).click()
   // Los marcadores, en su panel; al recargar sigue abierto el último que se eligió
   await expect(page.getByRole('region', { name: 'Marcadores' }).getByRole('link', { name: 'Maela Varn' })).toBeVisible()
 
   await page.reload()
-  await expect(tabs.getByRole('link')).toHaveText(['Maela Varn', 'Puerto Ceniza'])
+  await expect(tabs.getByRole('link')).toHaveText(['Maela Varn', 'Eana', 'Puerto Ceniza'])
   await expect(page.getByRole('region', { name: 'Marcadores' }).getByRole('link', { name: 'Maela Varn' })).toBeVisible()
-  await expect(page.getByRole('navigation', { name: 'Páginas hermanas' }).getByRole('link')).toHaveText(/Puerto Ceniza/)
 
   await page.setViewportSize({ width: 390, height: 844 })
   await expect(tabs).toBeHidden()
   await openMobileWiki(page)
   await expect(page.getByRole('navigation', { name: 'Abiertas' }).getByRole('link')).toHaveText([
     'Maela Varn',
+    'Eana',
     'Puerto Ceniza'
   ])
 })
@@ -212,7 +217,7 @@ test('la wiki, en los dos temas y en el móvil @a11y', async ({ page }) => {
   await page.getByRole('button', { name: 'Marcar' }).click()
   await newPage(page, 'Personajes')
   await page.getByRole('button', { name: 'Marcar' }).click()
-  await expect(page.getByLabel('O en un grupo nuevo')).toBeVisible()
+  await expect(page.getByLabel('Grupo nuevo')).toBeVisible()
   await check()
   await page.keyboard.press('Escape')
   const wiki = page.url()

@@ -221,12 +221,21 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
   const pins = usePins(page, map)
   const editable = !page.locked
 
+  // Mientras se mueve, el escenario va en su capa (fluido); al parar, se suelta para que el navegador lo vuelva a
+  // dibujar a la escala de ahora y los pines y la imagen no se vean borrosos
+  const settle = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => () => clearTimeout(settle.current ?? undefined), [])
   const apply = useCallback(() => {
     const element = stage.current
     if (!element) return
     const { x, y, k } = view.current
+    element.style.willChange = 'transform'
     element.style.transform = `translate(${x}px, ${y}px) scale(${k})`
     element.style.setProperty('--inv-k', String(1 / k))
+    clearTimeout(settle.current ?? undefined)
+    settle.current = setTimeout(() => {
+      element.style.willChange = 'auto'
+    }, 200)
   }, [])
 
   const fit = useCallback(() => {

@@ -14,7 +14,6 @@ test('el propietario crea un mundo, lo renombra y sigue ahí al recargar', async
   await createWorld(page, 'Eana')
   const list = page.getByRole('list', { name: 'Mundos' })
   await expect(list.getByText('Eana')).toBeVisible()
-  await expect(list.getByText('Máster')).toBeVisible()
   await expect(page.getByRole('dialog', { name: 'Nuevo mundo' })).toHaveCount(0)
 
   await rename(page, 'mundo', 'Eana', 'Eana (Fateforge)')

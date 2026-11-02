@@ -218,6 +218,13 @@
       "when": 1793627271310,
       "tag": "0030_portada_del_mundo",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1793644893976,
+      "tag": "0031_panel_de_la_pagina",
+      "breakpoints": true
     }
   ]
 }

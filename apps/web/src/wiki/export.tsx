@@ -25,7 +25,7 @@ function save(name: string, data: Blob) {
   setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
-function useExport() {
+export function useExport() {
   const { t } = useTranslation()
   const api = useApi()
   const announce = useAnnounce()

@@ -7,7 +7,8 @@ const suggestions = (page: Page) => page.getByRole('listbox', { name: 'Páginas'
 
 async function newPage(page: Page, title: string) {
   await page.getByRole('button', { name: 'Página nueva' }).click()
-  await expect(page.getByLabel('Título de la página')).toBeFocused()
+  // El cuadro de página nueva: el título, y Intro la crea
+  await expect(page.getByRole('dialog').getByLabel('Título', { exact: true })).toBeFocused()
   await page.keyboard.type(title)
   await page.keyboard.press('Enter')
   await expect(page.getByRole('heading', { level: 1, name: title })).toBeVisible()
@@ -120,8 +121,8 @@ test('los enlaces de la página: quién la enlaza, dónde se la nombra y «Enlaz
   await expect(mentions).toHaveCount(0)
 
   // Al borrarla, el aviso dice cuántas la enlazan
-  await page.getByRole('button', { name: 'Más acciones' }).click()
-  await page.getByRole('button', { name: 'Borrar' }).click()
+  await page.getByRole('tree').locator('[aria-current="page"]').click({ button: 'right' })
+  await page.getByRole('menuitem', { name: 'Borrar' }).click()
   await expect(page.getByText('La enlazan 2 páginas: sus enlaces se verán rotos.')).toBeVisible()
   expect(maela).toBeTruthy()
 })

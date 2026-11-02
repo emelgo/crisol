@@ -56,6 +56,8 @@ import {
   readPage,
   restorePageVersion,
   setBookmarks,
+  setPagePanel,
+  sortPageChildren,
   setPageProperties,
   setPageView,
   setWikiTabs,
@@ -85,6 +87,7 @@ export * from './members.ts'
 export * from './openapi.ts'
 export * from './organizations.ts'
 export * from './pages.ts'
+export * from './panel.ts'
 export type * from './realtime.ts'
 export * from './search.ts'
 export * from './tags.ts'
@@ -129,6 +132,8 @@ export const ACTIONS = [
   listPageChildren,
   listPageTree,
   listRecentPages,
+  setPagePanel,
+  sortPageChildren,
   setPageProperties,
   listTags,
   deletePage,
@@ -216,6 +221,8 @@ export type Actions = {
   listPageChildren: typeof listPageChildren
   listPageTree: typeof listPageTree
   listRecentPages: typeof listRecentPages
+  setPagePanel: typeof setPagePanel
+  sortPageChildren: typeof sortPageChildren
   setPageProperties: typeof setPageProperties
   listTags: typeof listTags
   deletePage: typeof deletePage

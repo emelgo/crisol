@@ -85,8 +85,11 @@ export function summaryOf(
       }
       return say('updatePage', { from: text(details.from ?? details.page), to: text(details.to ?? details.title) })
     }
+    case 'sortPageChildren':
+      return details.title ? say('sortPageChildren', { title: text(details.title) }) : say('sortRootPages')
     case 'setPageProperties':
-      return say('setPageProperties', { title: text(details.title ?? details.page) })
+    case 'setPagePanel':
+      return say(action, { title: text(details.title ?? details.page) })
     case 'deletePage':
       return say('deletePage', { title: text(details.title ?? details.page) })
     case 'restorePage':

@@ -9,12 +9,14 @@ import type { Editor } from '@tiptap/core'
 import { DragHandle } from '@tiptap/extension-drag-handle-react'
 import { Fragment, type Node as PMNode } from '@tiptap/pm/model'
 import { NodeSelection, TextSelection } from '@tiptap/pm/state'
+import { ChevronRight } from 'lucide-react'
 import { type KeyboardEvent, useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { useAnnounce } from '../components/announcer.tsx'
 import { BLOCKS, type BlockChoice, type BlockContext } from './blocks.ts'
 import styles from './drag-handle.module.css'
+import { addLine, GHOST_LINE } from './ghost-line.ts'
 import { copiesOf } from './separate.tsx'
 
 export interface BlockTarget {
@@ -81,6 +83,17 @@ function duplicate(editor: Editor, { pos, node }: BlockTarget) {
     .run()
 }
 
+/** Un párrafo vacío debajo del bloque, con el cursor en él (como en Everlore) */
+function insertBelow(editor: Editor, { pos, node }: BlockTarget) {
+  const at = pos + node.nodeSize
+  editor
+    .chain()
+    .focus()
+    .insertContentAt(at, { type: 'paragraph' })
+    .setTextSelection(at + 1)
+    .run()
+}
+
 /** Sube o baja el bloque un puesto entre los de su nivel */
 function move(editor: Editor, { pos, node }: BlockTarget, step: -1 | 1) {
   const { doc } = editor.state
@@ -109,6 +122,107 @@ function remove(editor: Editor, { pos, node }: BlockTarget) {
     .run()
 }
 
+/**
+ * En una línea vacía (la primera de una página nueva, o donde está el cursor), los seis puntos están ya, aunque el
+ * bloque aún no exista: pulsarlos abre el menú «/» para elegir qué poner. Así se añade un bloque tras otro
+ */
+function EmptyLineHandle({ editor }: { editor: Editor }) {
+  const { t } = useTranslation()
+  const [place, setPlace] = useState<{ top: number; left: number; height: number; ghost: boolean } | null>(null)
+  // Con el ratón sobre el texto ya sale el asa de siempre: esta se aparta para no verse dos (salvo sobre la línea de
+  // más, que no es un bloque y no tiene la otra)
+  const [pointer, setPointer] = useState<number | null>(null)
+  useEffect(() => {
+    const area = editor.view.dom.parentElement
+    if (!area) return
+    const move = (event: PointerEvent) => setPointer(event.clientY)
+    const leave = () => setPointer(null)
+    area.addEventListener('pointermove', move)
+    area.addEventListener('pointerleave', leave)
+    return () => {
+      area.removeEventListener('pointermove', move)
+      area.removeEventListener('pointerleave', leave)
+    }
+  }, [editor])
+  useEffect(() => {
+    let frame = 0
+    const measure = () => {
+      frame = 0
+      if (!editor.isEditable || editor.isDestroyed) return setPlace(null)
+      const { $from, empty } = editor.state.selection
+      const atEmptyLine =
+        (editor.isFocused || editor.isEmpty) &&
+        empty &&
+        $from.depth === 1 &&
+        $from.parent.isTextblock &&
+        $from.parent.content.size === 0
+      const pos = editor.isFocused ? $from.before(1) : 0
+      const ghost = editor.view.dom.querySelector(`[${GHOST_LINE}]`)
+      const dom = atEmptyLine || editor.isEmpty ? editor.view.nodeDOM(pos) : ghost
+      if (!(dom instanceof HTMLElement)) return setPlace(null)
+      const box = dom.getBoundingClientRect()
+      setPlace({ top: box.top, left: box.left, height: Math.min(box.height, 32), ghost: dom === ghost })
+    }
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(measure)
+    }
+    schedule()
+    editor.on('selectionUpdate', schedule)
+    editor.on('update', schedule)
+    editor.on('focus', schedule)
+    editor.on('blur', schedule)
+    window.addEventListener('scroll', schedule, true)
+    window.addEventListener('resize', schedule)
+    return () => {
+      cancelAnimationFrame(frame)
+      editor.off('selectionUpdate', schedule)
+      editor.off('update', schedule)
+      editor.off('focus', schedule)
+      editor.off('blur', schedule)
+      window.removeEventListener('scroll', schedule, true)
+      window.removeEventListener('resize', schedule)
+    }
+  }, [editor])
+  if (!place) return null
+  const overGhost = pointer !== null && pointer >= place.top && pointer <= place.top + place.height + 8
+  if (pointer !== null && !(place.ghost && overGhost)) return null
+  return createPortal(
+    <button
+      type="button"
+      tabIndex={-1}
+      className={`${styles.grip} ${styles.emptyGrip}`}
+      aria-label={t('blockMenu.addBlock')}
+      title={t('blockMenu.addBlock')}
+      style={{ top: place.top + (place.height - 24) / 2, left: place.left - 32 }}
+      // Sin quitar el foco del texto
+      onMouseDown={(event) => event.preventDefault()}
+      onClick={() => {
+        if (place.ghost) addLine(editor.view)
+        editor.chain().focus().insertContent('/').run()
+      }}
+    >
+      <svg aria-hidden="true" viewBox="0 0 10 16">
+        {[3, 8, 13].flatMap((y) => [
+          <circle key={`a${y}`} cx="2.5" cy={y} r="1.5" />,
+          <circle key={`b${y}`} cx="7.5" cy={y} r="1.5" />
+        ])}
+      </svg>
+    </button>,
+    document.body
+  )
+}
+
+/** Los desplegables de «Convertir en»: qué bloques van en cada uno */
+const SUBMENUS = [
+  { key: 'text', match: (b: BlockChoice) => ['paragraph', 'blockquote', 'codeBlock'].includes(b.id) },
+  { key: 'headings', match: (b: BlockChoice) => b.id.startsWith('heading') },
+  { key: 'lists', match: (b: BlockChoice) => ['bulletList', 'orderedList', 'taskList'].includes(b.id) },
+  { key: 'boxes', match: (b: BlockChoice) => b.group === 'boxes' || b.group === 'master' },
+  { key: 'sheet', match: (b: BlockChoice) => b.group === 'sheet' }
+] as const
+
+type SubmenuKey = (typeof SUBMENUS)[number]['key']
+
 /** El asa, junto al bloque bajo el ratón */
 export function BlockHandle({ editor, context }: { editor: Editor; context: BlockContext }) {
   const { t } = useTranslation()
@@ -117,6 +231,7 @@ export function BlockHandle({ editor, context }: { editor: Editor; context: Bloc
   const [open, setOpen] = useState<BlockTarget | null>(null)
   return (
     <>
+      <EmptyLineHandle editor={editor} />
       <DragHandle
         editor={editor}
         className={styles.handle}
@@ -187,6 +302,7 @@ export function BlockMenu({
   const id = useId()
   const menu = useRef<HTMLDivElement>(null)
   const convertible = CONVERTIBLE.includes(target.node.type.name)
+  const [expanded, setExpanded] = useState<SubmenuKey | null>(null)
   const $pos = editor.state.doc.resolve(target.pos)
   const first = $pos.index() === 0
   const last = $pos.index() === $pos.parent.childCount - 1
@@ -267,27 +383,64 @@ export function BlockMenu({
           <div id={`${id}-convert`} className={styles.group}>
             {t('blockMenu.convert')}
           </div>
-          <div className={styles.grid}>
-            {blocks.map((block) => (
-              <button
-                key={block.id}
-                type="button"
-                role="menuitem"
-                tabIndex={-1}
-                className={styles.item}
-                onClick={act(
-                  () => convert(editor, target, block, context),
-                  t('blockMenu.converted', { block: t(`blocks.${block.label}`).toLowerCase() })
+          {/* Por grupos, cada uno en su desplegable (como en Everlore y en el Crisol antiguo) */}
+          {SUBMENUS.map(({ key, match }) => {
+            const choices = blocks.filter(match)
+            if (choices.length === 0) return null
+            const shown = expanded === key
+            return (
+              <div key={key} className={styles.submenu}>
+                <button
+                  type="button"
+                  role="menuitem"
+                  tabIndex={-1}
+                  aria-haspopup="menu"
+                  aria-expanded={shown}
+                  className={`${styles.item} ${styles.submenuToggle}`}
+                  onClick={() => setExpanded(shown ? null : key)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'ArrowRight' && !shown) setExpanded(key)
+                    if (event.key === 'ArrowLeft' && shown) setExpanded(null)
+                  }}
+                >
+                  {t(`blockMenu.groups.${key}`)}
+                  <ChevronRight aria-hidden="true" size={14} />
+                </button>
+                {shown && (
+                  <div role="menu" aria-label={t(`blockMenu.groups.${key}`)} className={styles.submenuItems}>
+                    {choices.map((block) => (
+                      <button
+                        key={block.id}
+                        type="button"
+                        role="menuitem"
+                        tabIndex={-1}
+                        className={styles.item}
+                        onClick={act(
+                          () => convert(editor, target, block, context),
+                          t('blockMenu.converted', { block: t(`blocks.${block.label}`).toLowerCase() })
+                        )}
+                      >
+                        {t(`blocks.${block.label}`)}
+                      </button>
+                    ))}
+                  </div>
                 )}
-              >
-                {t(`blocks.${block.label}`)}
-              </button>
-            ))}
-          </div>
+              </div>
+            )
+          })}
         </div>
       )}
       {/* biome-ignore lint/a11y/useSemanticElements: un grupo de opciones del menú (ARIA), no un grupo de un formulario */}
       <div role="group" aria-label={t('blockMenu.actions')} className={styles.actions}>
+        <button
+          type="button"
+          role="menuitem"
+          tabIndex={-1}
+          className={styles.item}
+          onClick={act(() => insertBelow(editor, target), t('blockMenu.inserted'))}
+        >
+          {t('blockMenu.insertBelow')}
+        </button>
         <button
           type="button"
           role="menuitem"

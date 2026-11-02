@@ -9,6 +9,9 @@ import {
   listTags,
   movePage,
   type Page,
+  pagePanel,
+  setPagePanel,
+  sortPageChildren,
   setPageProperties,
   sheetSettings,
   updatePage
@@ -48,6 +51,8 @@ export async function pageView(ctx: ActionContext, pageId: string): Promise<Page
     cover: found.cover ?? null,
     // Lo guardado que no sea unos ajustes de hoja válidos cuenta como sin hoja
     sheet: sheetSettings.safeParse(found.sheet).data ?? null,
+    // Lo guardado que no valga (de una versión anterior) cuenta como panel vacío
+    panel: pagePanel.safeParse(found.panel).data ?? [],
     path: await pagesRepo.pagePath(ctx.db, pageId),
     updatedAt: found.updatedAt.toISOString()
   }
@@ -165,6 +170,27 @@ export const pageActions = [
     return pageView(ctx, pageId)
   }),
 
+  implement(setPagePanel, async (ctx, { pageId, blocks }) => {
+    const { page, wiki } = await authorizedPage(ctx, 'page.write', pageId)
+    if (new Set(blocks.map((b) => b.id)).size !== blocks.length) throw new InvalidRequestError('BAD_PANEL')
+    for (const block of blocks) {
+      if ((block.type === 'meter' || block.type === 'tokens' || block.type === 'rating') && block.value > block.max)
+        throw new InvalidRequestError('BAD_PANEL')
+      // Las imágenes, de este mundo o comunes de su organización
+      if (block.type === 'image' && block.fileId) {
+        const file = await filesRepo.findFile(ctx.db, block.fileId)
+        const usable =
+          file && (file.worldId ? file.worldId === wiki.worldId : file.organizationId === wiki.organizationId)
+        if (!file || !usable || file.kind !== 'image') throw new InvalidRequestError('BAD_PANEL')
+      }
+    }
+    await pagesRepo.updatePage(ctx.db, historyContext(ctx, 'setPagePanel', { title: page.title }, wiki), pageId, {
+      panel: blocks
+    })
+    ctx.realtime.publish(pagesChanged(wiki))
+    return pageView(ctx, pageId)
+  }),
+
   implement(listPageNames, async (ctx, { worldId }) => {
     const wiki = await authorizedWiki(ctx, 'page.read', worldId)
     const [names, rows] = await Promise.all([
@@ -211,6 +237,18 @@ export const pageActions = [
     )
     ctx.realtime.publish(pagesChanged(wiki))
     return pageView(ctx, page.id)
+  }),
+
+  implement(sortPageChildren, async (ctx, { worldId, parentId, order }) => {
+    const wiki = await authorizedWiki(ctx, 'page.write', worldId)
+    const parent = await parentIn(ctx, wiki, parentId)
+    const sorted = await pagesRepo.sortChildren(
+      ctx.db,
+      historyContext(ctx, 'sortPageChildren', { title: parent?.title ?? null, order }, wiki),
+      { worldId: wiki.worldId, parentId, order, keepFirst: await worldsRepo.homePageOf(ctx.db, wiki.worldId) }
+    )
+    ctx.realtime.publish(pagesChanged(wiki))
+    return { sorted }
   }),
 
   implement(createPageDocument, async (ctx, { pageId, kind, copyOf }) => {

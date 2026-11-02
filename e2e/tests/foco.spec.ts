@@ -44,7 +44,8 @@ test('con el teclado: el modo de IA con flechas y las invitaciones con espacio, 
 test('al navegar, el foco va al título de la página, y la pestaña lo dice', async ({ page }) => {
   await campaignLink(page)
   await expect(page).toHaveTitle('La Marca · Crisol')
-  await sections(page).getByRole('link', { name: 'Inicio' }).click()
+  // El mundo: su portada
+  await sections(page).getByRole('button', { name: 'Eana' }).click()
   await expect(page.getByRole('heading', { level: 1, name: 'Eana' })).toBeFocused()
   await expect(page).toHaveTitle('Eana · Crisol')
   // La llama de la barra vuelve a Mis mundos

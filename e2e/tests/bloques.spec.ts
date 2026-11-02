@@ -8,7 +8,8 @@ async function openPage(page: Page) {
   await createWorld(page, 'Eana')
   await openWiki(page, 'Eana')
   await page.getByRole('button', { name: 'Página nueva' }).click()
-  await expect(page.getByLabel('Título de la página')).toBeFocused()
+  // El cuadro de página nueva: el título, y Intro la crea
+  await expect(page.getByRole('dialog').getByLabel('Título', { exact: true })).toBeFocused()
   await page.keyboard.type('Puerto Ceniza')
   await page.keyboard.press('Enter')
   await expect(page.getByRole('heading', { level: 1, name: 'Puerto Ceniza' })).toBeVisible()
@@ -200,6 +201,8 @@ test('el menú del bloque: desde la barra con el teclado, y desde el asa con el 
   // Convertir en aviso, duplicar y borrar
   await body(page).getByText('Primero').click()
   await page.keyboard.press('Control+Alt+b')
+  // «Convertir en», por grupos: el aviso, en Recuadros
+  await menu.getByRole('menuitem', { name: 'Recuadros' }).click()
   await menu.getByRole('menuitem', { name: 'Aviso' }).click()
   await expect(body(page).getByRole('note', { name: 'Aviso' })).toHaveText(/Primero/)
   await page.keyboard.press('Control+Alt+b')
@@ -212,6 +215,7 @@ test('el menú del bloque: desde la barra con el teclado, y desde el asa con el 
   // Un aviso pasa a consejo sin perder lo de dentro
   await body(page).getByText('Primero').click()
   await page.keyboard.press('Control+Alt+b')
+  await menu.getByRole('menuitem', { name: 'Recuadros' }).click()
   await menu.getByRole('menuitem', { name: 'Consejo' }).click()
   await expect(body(page).getByRole('note', { name: 'Consejo' })).toHaveText(/Primero/)
 
@@ -221,11 +225,12 @@ test('el menú del bloque: desde la barra con el teclado, y desde el asa con el 
   await expect(grip).toBeVisible()
   await grip.click()
   await expect(menu).toBeVisible()
+  await menu.getByRole('menuitem', { name: 'Títulos' }).click()
   await menu.getByRole('menuitem', { name: 'Título 2' }).click()
   await expect(body(page).getByRole('heading', { level: 3, name: 'Segundo' })).toBeVisible()
 })
 
-test('secretos desde el menú «/», y el menú dentro de un secreto, sin «Del máster»', async ({ page }) => {
+test('secretos desde el menú «/», y el menú dentro de un secreto, sin más secretos', async ({ page }) => {
   await openPage(page)
   await page.keyboard.type('/secreto')
   await page.keyboard.press('Enter')
@@ -235,8 +240,11 @@ test('secretos desde el menú «/», y el menú dentro de un secreto, sin «Del 
   await page.keyboard.type('/')
   const menu = slashMenu(page)
   await expect(menu).toBeVisible()
-  await expect(menu.getByRole('group', { name: 'Recuadros' })).toBeVisible()
-  await expect(menu.getByRole('group', { name: 'Del máster' })).toHaveCount(0)
+  // Por grupos, en desplegables; dentro de un secreto no se ofrecen más secretos
+  await expect(menu.getByRole('option', { name: 'Recuadros' })).toBeVisible()
+  await page.keyboard.type('secr')
+  await expect(menu.getByRole('option', { name: /^Secreto/ })).toHaveCount(0)
+  for (let i = 0; i < 4; i++) await page.keyboard.press('Backspace')
   // Las flechas son del menú, no salen del secreto
   await page.keyboard.press('ArrowDown')
   await expect(secret).toBeFocused()

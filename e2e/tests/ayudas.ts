@@ -79,7 +79,8 @@ export async function openWiki(page: Page, name: string) {
 
 /** Los archivos del mundo abierto, en su pantalla: «Archivos» en la barra */
 export async function openWorldFiles(page: Page) {
-  await sections(page).getByRole('link', { name: 'Archivos' }).click()
+  // El del mundo (mientras la barra cambia, aún puede estar saliendo el de los archivos comunes)
+  await sections(page).getByRole('link', { name: 'Archivos' }).and(page.locator('[href*="/mundos/"]')).click()
 }
 
 /** Abre los ajustes de un mundo o una campaña (su engranaje); devuelve su ventana */

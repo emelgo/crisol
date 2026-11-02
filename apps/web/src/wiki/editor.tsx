@@ -8,6 +8,7 @@ import { Plugin } from '@tiptap/pm/state'
 import { Decoration, DecorationSet } from '@tiptap/pm/view'
 import { EditorContent, useEditor } from '@tiptap/react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import type * as Y from 'yjs'
 import { useAccounts } from '../account/context.tsx'
@@ -19,12 +20,15 @@ import type { BlockContext } from './blocks.ts'
 import { FormatMenu, TableMenu } from './bubble-menu.tsx'
 import { caretColor, renderCaret } from './carets.ts'
 import { useCollabDocument } from './collab.tsx'
+import { ContentView } from './content.tsx'
 import { BlockHandle, BlockMenu, type BlockTarget, blockAtCursor } from './drag-handle.tsx'
 import styles from './editor.module.css'
 import { FileDrop, type FileDropOptions } from './file-embed.tsx'
 import find from './find-in-page.module.css'
 import { FindBar, FindInPage } from './find-in-page.tsx'
+import { GhostLine } from './ghost-line.ts'
 import { LinkSuggest, PageLinksContext, useLinksRef, usePageLinks } from './page-links.tsx'
+import { usePageContent } from './preview.tsx'
 import {
   CopySeparateOnPaste,
   insertSeparate,
@@ -45,19 +49,39 @@ export function PageBody({ page }: { page: Page }) {
   const nestedOptions = useNestedOptions(caretColor)
   const links = usePageLinks(page.worldId)
   const saving = useSaving(session?.provider ?? null)
+  const stored = usePageContent(page.worldId, page.id, null, false)
+  // El hueco de «Guardado», a la derecha de las pestañas de la página
+  const [saveSlot, setSaveSlot] = useState<Element | null>(null)
+  useEffect(() => setSaveSlot(document.querySelector('[data-save-slot]')), [])
   if (!session) return null
   return (
-    <section aria-label={t('editor.body')} className={styles.body}>
+    <section
+      aria-label={t('editor.body')}
+      className={styles.body}
+      // Mientras llega su texto (con conexión), no se enseña vacío
+      data-loading={(!synced && !offline) || undefined}
+    >
       {offline && (
         <p role="status" className={styles.offline}>
           {t('editor.offline')}
         </p>
       )}
       {/* Se guarda solo: abajo a la derecha, discreto, si aún falta por guardar o ya está (sin anunciarlo a cada letra) */}
-      {!offline && synced && !page.locked && (
-        <p className={styles.saveState} aria-hidden="true">
-          {t(saving ? 'editor.saving' : 'editor.saved')}
-        </p>
+      {!offline &&
+        synced &&
+        !page.locked &&
+        saveSlot &&
+        createPortal(
+          <p className={styles.saveState} aria-hidden="true">
+            {t(saving ? 'editor.saving' : 'editor.saved')}
+          </p>,
+          saveSlot
+        )}
+      {/* Mientras el editor se conecta, el texto ya se ve (en lectura): cambiar de página no deja un hueco */}
+      {!synced && !offline && stored.data && (
+        <div className={styles.stored} aria-hidden="true">
+          <ContentView blocks={stored.data.blocks} worldId={page.worldId} />
+        </div>
       )}
       <SeparatePageContext.Provider value={page.id}>
         <PageLinksContext.Provider value={links}>
@@ -208,6 +232,7 @@ function BodyEditor({
           view: withNodeView
         }),
         EmptyHint.configure({ text: t('editor.placeholder') }),
+        GhostLine.configure({ className: styles.ghostLine ?? '' }),
         CalloutShortcut.configure({ makeSecret: (editor) => void context.makeSeparate(editor, 'secret') }),
         SlashMenu.configure({
           nested: false,

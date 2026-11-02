@@ -6,10 +6,13 @@ import { createWorld, freshOwner, openWiki, slash } from './ayudas.ts'
 const body = (page: Page) => page.getByRole('textbox', { name: 'Texto de la página' })
 
 async function newPage(page: Page, title: string, button = 'Página nueva') {
-  // Una subpágina, desde «⋯» de su madre
-  if (button === 'Nueva subpágina') await page.getByRole('button', { name: 'Más acciones' }).click()
-  await page.getByRole('button', { name: button }).click()
-  await expect(page.getByLabel('Título de la página')).toBeFocused()
+  // Una subpágina, con el botón derecho sobre su madre en el árbol
+  if (button === 'Nueva subpágina') {
+    await page.getByRole('tree').locator('[aria-current="page"]').click({ button: 'right' })
+    await page.getByRole('menuitem', { name: 'Crear subpágina' }).click()
+  } else await page.getByRole('button', { name: button }).click()
+  // El cuadro de página nueva: el título, y Intro la crea
+  await expect(page.getByRole('dialog').getByLabel('Título', { exact: true })).toBeFocused()
   await page.keyboard.type(title)
   await page.keyboard.press('Enter')
   await expect(page.getByRole('heading', { level: 1, name: title })).toBeVisible()
@@ -59,5 +62,6 @@ test('exportar una página, con sus subpáginas, y la wiki entera en Markdown', 
   // La wiki entera
   const wiki = await downloaded(page, () => page.getByRole('button', { name: 'Exportar todas las páginas' }).click())
   expect(wiki.name).toBe('Eana.zip')
-  expect(Object.keys(wiki.files).sort()).toEqual(['Lugares/Costa Gris.md', 'Lugares/Lugares.md'])
+  // Con la portada del mundo
+  expect(Object.keys(wiki.files).sort()).toEqual(['Eana.md', 'Lugares/Costa Gris.md', 'Lugares/Lugares.md'])
 })

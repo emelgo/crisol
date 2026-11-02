@@ -3,11 +3,12 @@ import { useTranslation } from 'react-i18next'
 import { focusIsLost } from './focus.ts'
 
 /** Si hay que llevar el foco al título de la página en cuanto aparezca */
-const FocusRequest = createContext<{ current: boolean }>({ current: false })
+type Request = { current: boolean; from?: Element | null }
+const FocusRequest = createContext<Request>({ current: false })
 
 /** Por encima de AccountScope: la petición sobrevive a que se vuelva a montar todo al cambiar de cuenta */
 export function HeadingFocusProvider({ children }: { children: ReactNode }) {
-  const request = useRef(false)
+  const request = useRef<Request>({ current: false }).current
   return <FocusRequest.Provider value={request}>{children}</FocusRequest.Provider>
 }
 
@@ -25,8 +26,19 @@ export function useFocusHeading() {
   return useCallback(() => {
     const heading = document.querySelector<HTMLElement>('main h1')
     if (heading) heading.focus()
-    else request.current = true
+    else {
+      request.current = true
+      // Lo que tenía el foco al pedirlo (el enlace pulsado): si sigue ahí, el título se lo lleva
+      request.from = document.activeElement
+    }
   }, [request])
+}
+
+/** Si el foco no se ha ido a otro sitio desde que se pidió llevarlo al título (o se perdió) */
+export function headingMayTakeFocus(request: Request) {
+  const from = request.from
+  request.from = null
+  return focusIsLost() || (from != null && document.activeElement === from)
 }
 
 /** El título de la página: su h1, enfocable para llevar ahí el foco, y el de la pestaña («Mis mundos · Crisol») */
@@ -41,7 +53,7 @@ export function PageTitle({ children, className }: { children: string; className
       if (!heading || !request.current) return
       request.current = false
       // Si mientras llegaba el título la persona ya está en otro sitio, no se le quita el foco
-      if (focusIsLost()) heading.focus()
+      if (headingMayTakeFocus(request)) heading.focus()
     },
     [request]
   )

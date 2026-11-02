@@ -7,6 +7,11 @@
   background: var(--color-raised);
 }
 
+/* Con «Cambiar» abierto, su caja no se recorta */
+.cover:has([aria-expanded="true"]) {
+  overflow: visible;
+}
+
 /* Se arrastra arriba o abajo para encuadrarla */
 .cover .image {
   cursor: grab;
@@ -46,11 +51,6 @@
   .dragHint {
     display: none;
   }
-}
-
-/* La caja de «Cambiar» se abre hacia arriba, dentro de la cabecera no cabe hacia abajo */
-.coverActions .panel {
-  inset-block: auto calc(100% + var(--space-1));
 }
 
 .coverButton {

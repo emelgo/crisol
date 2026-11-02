@@ -41,6 +41,8 @@ describe('Actions', () => {
       listPageChildren: true,
       listPageTree: true,
       listRecentPages: true,
+      setPagePanel: true,
+      sortPageChildren: true,
       setPageProperties: true,
       listTags: true,
       deletePage: true,

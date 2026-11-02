@@ -16,7 +16,8 @@ async function openPage(page: Page) {
   await createWorld(page, 'Eana')
   await openWiki(page, 'Eana')
   await page.getByRole('button', { name: 'Página nueva' }).click()
-  await expect(page.getByLabel('Título de la página')).toBeFocused()
+  // El cuadro de página nueva: el título, y Intro la crea
+  await expect(page.getByRole('dialog').getByLabel('Título', { exact: true })).toBeFocused()
   await page.keyboard.type('Puerto Ceniza')
   await page.keyboard.press('Enter')
   await expect(page.getByRole('heading', { level: 1, name: 'Puerto Ceniza' })).toBeVisible()
@@ -184,7 +185,7 @@ test('la portada: se sube desde la página, se encuadra con el teclado y se quit
   const chooser = page.waitForEvent('filechooser')
   await page.getByRole('button', { name: 'Subir una imagen' }).click()
   await (await chooser).setFiles({ name: 'puerto.png', mimeType: 'image/png', buffer: PNG })
-  const banner = page.locator('article img').first()
+  const banner = page.locator('[data-cover-image] img').first()
   await expect(banner).toHaveAttribute('src', /^\/api\/files\//)
   // Puesta, se cambia desde ella: «Cambiar», al pasar por encima
   await banner.hover()

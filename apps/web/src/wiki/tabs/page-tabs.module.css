@@ -1,6 +1,16 @@
 /* Las pestañas bajo el título: texto plano, la elegida subrayada; sin recuadros */
 .bar {
+  display: flex;
+  align-items: center;
   border-block-end: 1px solid var(--color-border);
+}
+
+.bar > ul {
+  flex: 1 1 auto;
+}
+
+.saveSlot {
+  flex: none;
 }
 
 .bar ul {

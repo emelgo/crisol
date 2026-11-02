@@ -12,9 +12,10 @@
   overflow-wrap: break-word;
 }
 
+/* Escribiendo, sin recuadro (como en Everlore): el cursor y el asa de la línea dicen dónde se está; el hueco de
+   debajo sigue ahí para pulsar, sin verse */
 .prose:focus-visible {
-  outline: 2px solid var(--color-focus);
-  outline-offset: var(--space-2);
+  outline: none;
 }
 
 .prose > * + * {
@@ -106,18 +107,10 @@
 
 /* Se guarda solo: el aviso, discreto, abajo a la derecha */
 .saveState {
-  position: fixed;
-  inset-inline-end: calc(var(--space-4) + env(safe-area-inset-right, 0px));
-  inset-block-end: calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
-  z-index: 3;
   margin: 0;
-  padding: 0.125rem 0.5rem;
-  border-radius: 4px;
-  /* Su propio fondo: se lee igual encima de lo que pase por debajo */
-  background: var(--color-bg);
   color: var(--color-muted);
-  font-size: 0.8125rem;
-  pointer-events: none;
+  font-size: 0.75rem;
+  white-space: nowrap;
 }
 
 /* En el móvil, encima de la llama del menú */
@@ -148,4 +141,45 @@
   to {
     background-color: transparent;
   }
+}
+
+/* El texto no se ve vacío mientras llega: aparece entero, con un fundido */
+.body > [aria-busy] {
+  transition: opacity 200ms ease-out;
+}
+
+.body[data-loading] > [aria-busy] {
+  /* Fuera de la vista hasta que llega: en su sitio está el texto guardado */
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.body {
+  position: relative;
+}
+
+.stored > * {
+  min-block-size: 0;
+}
+
+/* La caja (y en Everlore, el cuadro de texto): un marco fino, redondeado y apenas tintado, con su texto dentro */
+.prose [data-box] {
+  margin-block: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: 0.625rem;
+  background: color-mix(in srgb, var(--color-text) 3%, transparent);
+}
+
+.prose [data-box] + [data-box] {
+  margin-block-start: var(--space-3);
+}
+
+/* La línea de más, bajo lo último escrito: vacía, del alto de una línea; pulsarla es escribir en ella */
+.prose > .ghostLine {
+  /* Como un párrafo: sin el hueco de encima de los demás bloques, para salir justo donde saldrá la línea */
+  block-size: 1.6em;
+  margin-block-start: 0;
+  cursor: text;
 }

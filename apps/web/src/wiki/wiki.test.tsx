@@ -123,8 +123,8 @@ describe('el árbol de la wiki', () => {
     const port = await item('Puerto Ceniza')
     expect(port.getAttribute('aria-current')).toBe('page')
     expect(port.getAttribute('aria-level')).toBe('3')
-    // Sobre el título, el mundo en pequeño (como en Everlore)
-    expect(screen.getByText('Eana', { selector: 'header span' })).toBeDefined()
+    // Sin el mundo sobre el título: el título, donde el de Archivos
+    expect(screen.queryByText('Eana', { selector: 'header span' })).toBeNull()
   })
 
   it('Alt y las flechas recolocan: abajo entre hermanas y a la derecha dentro de la de encima', async () => {
@@ -148,25 +148,25 @@ describe('el árbol de la wiki', () => {
     expect(api.calls.filter((c) => c === 'movePage')).toHaveLength(2)
   })
 
-  it('una página nueva se abre para ponerle nombre, y sale en el árbol', async () => {
+  it('una página nueva: su cuadro pide el tipo y el título, y sale en el árbol', async () => {
     const router = renderAt(`/mundos/${WORLD.id}/wiki`)
     await userEvent.click(await screen.findByRole('button', { name: 'Página nueva' }))
-    const title = await screen.findByLabelText('Título de la página')
-    expect(document.activeElement).toBe(title)
-    // Con todo el título provisional elegido, escribir lo sustituye
+    const dialog = await screen.findByRole('dialog', { name: 'Página nueva' })
+    expect(within(dialog).getByRole('radio', { name: 'Texto' })).toHaveProperty('checked', true)
+    const title = within(dialog).getByLabelText('Título')
+    await waitFor(() => expect(document.activeElement).toBe(title))
     await userEvent.keyboard('Facciones{Enter}')
     expect(await screen.findByRole('heading', { level: 1, name: 'Facciones' })).toBeDefined()
     expect(await item('Facciones')).toBeDefined()
     expect(router.state.location.search).toEqual({})
   })
 
-  it('una subpágina se crea desde su madre, en «⋯»', async () => {
+  it('una subpágina se crea desde su madre, con el botón derecho en el árbol', async () => {
     renderAt(`/mundos/${WORLD.id}/wiki/${ids.people}`)
-    await openMore()
-    await userEvent.click(await screen.findByRole('button', { name: 'Nueva subpágina' }))
-    const title = await screen.findByLabelText('Título de la página')
-    await userEvent.clear(title)
-    await userEvent.type(title, 'Maela Varn{Enter}')
+    await userEvent.pointer({ keys: '[MouseRight]', target: await item('Personajes') })
+    await userEvent.click(await screen.findByRole('menuitem', { name: 'Crear subpágina' }))
+    const dialog = await screen.findByRole('dialog', { name: /^Subpágina de/ })
+    await userEvent.type(within(dialog).getByLabelText('Título'), 'Maela Varn{Enter}')
     expect(await screen.findByRole('heading', { level: 1, name: 'Maela Varn' })).toBeDefined()
     expect((await item('Maela Varn')).getAttribute('aria-level')).toBe('2')
   })
@@ -197,16 +197,16 @@ describe('el árbol de la wiki', () => {
 
   it('borrar pide confirmar, vuelve a la madre y la rama sale una vez en la papelera, de donde se restaura', async () => {
     const router = renderAt(`/mundos/${WORLD.id}/wiki/${ids.coast}`)
-    await openMore()
-    await userEvent.click(await screen.findByRole('button', { name: 'Borrar' }))
+    await userEvent.pointer({ keys: '[MouseRight]', target: await item('Costa Gris') })
+    await userEvent.click(await screen.findByRole('menuitem', { name: 'Borrar' }))
     expect(
       screen.getByText(
         '¿Borrar «Costa Gris» y sus subpáginas? Irán a la papelera y se pueden restaurar durante 30 días.'
       )
     ).toBeDefined()
     // La confirmación lleva el foco a su botón
-    expect(document.activeElement?.textContent).toBe('Borrar')
-    await userEvent.click(screen.getByRole('button', { name: 'Borrar' }))
+    await waitFor(() => expect(document.activeElement?.textContent).toBe('Borrar'))
+    await userEvent.click(screen.getByRole('menuitem', { name: 'Borrar' }))
     expect(await screen.findByRole('heading', { level: 1, name: 'Lugares' })).toBeDefined()
     expect(router.state.location.pathname).toBe(`/mundos/${WORLD.id}/wiki/${ids.places}`)
     await waitFor(() => expect(screen.queryByRole('treeitem', { name: 'Costa Gris' })).toBeNull())
@@ -220,15 +220,19 @@ describe('el árbol de la wiki', () => {
     expect(await screen.findByText('La papelera está vacía')).toBeDefined()
   })
 
-  it('cancelar el borrado devuelve el foco a «Borrar»', async () => {
+  it('cancelar el borrado con Escape vuelve al menú, y otra vez Escape, a la fila del árbol', async () => {
     renderAt(`/mundos/${WORLD.id}/wiki/${ids.rules}`)
-    await openMore()
-    await userEvent.click(await screen.findByRole('button', { name: 'Borrar' }))
+    const row = await item('Reglas de la casa')
+    await userEvent.pointer({ keys: '[MouseRight]', target: row })
+    await userEvent.click(await screen.findByRole('menuitem', { name: 'Borrar' }))
     expect(
       screen.getByText('¿Borrar «Reglas de la casa»? Irá a la papelera y se puede restaurar durante 30 días.')
     ).toBeDefined()
-    await userEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
-    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Borrar' }))
+    await userEvent.keyboard('{Escape}')
+    expect(await screen.findByRole('menuitem', { name: 'Crear subpágina' })).toBeDefined()
+    await userEvent.keyboard('{Escape}')
+    await waitFor(() => expect(screen.queryByRole('menu')).toBeNull())
+    expect(document.activeElement).toBe(row)
   })
 
   it('el candado pone la página en lectura y se quita', async () => {

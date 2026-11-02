@@ -1,17 +1,20 @@
 /* El asa: a la izquierda del bloque, discreta hasta que se usa */
+/* El asa, como en Everlore: pequeña, gris y en el margen de la izquierda, separada del bloque */
 .handle {
   z-index: 10;
+  padding-inline-end: var(--space-3);
 }
 
 .grip {
   display: grid;
   place-items: center;
-  inline-size: 1.5rem;
-  block-size: 2rem;
+  inline-size: 1.25rem;
+  block-size: 1.5rem;
   padding: 0;
   border: 0;
+  border-radius: 4px;
   background: none;
-  color: var(--color-muted);
+  color: color-mix(in srgb, var(--color-muted) 70%, transparent);
   cursor: grab;
 }
 
@@ -26,9 +29,46 @@
 }
 
 .grip svg {
-  inline-size: 0.625rem;
-  block-size: 1rem;
+  inline-size: 0.5rem;
+  block-size: 0.8125rem;
   fill: currentColor;
+}
+
+/* En una línea vacía, siempre a la vista (fijo junto a ella) */
+.emptyGrip {
+  position: fixed;
+  z-index: 25;
+}
+
+/* Los desplegables de «Convertir en»: el grupo con su flecha; abierto, sus bloques debajo, un poco metidos */
+.item.submenuToggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.submenuToggle svg {
+  color: var(--color-muted);
+  transition: transform 150ms ease-out;
+}
+
+.submenuToggle[aria-expanded="true"] svg {
+  transform: rotate(90deg);
+}
+
+.submenuItems {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0 var(--space-2) var(--space-1);
+  border-inline-start: 2px solid var(--color-border);
+  animation: abre 140ms ease-out;
+}
+
+@keyframes abre {
+  from {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
 }
 
 /* El menú del bloque */

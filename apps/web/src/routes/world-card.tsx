@@ -243,6 +243,27 @@ export function WorldCard({
   onPreview?: (shown: boolean) => void
 }) {
   const kind = useWorldKind()
+  const api = useApi()
+  const queryClient = useQueryClient()
+  // Al acercarse, su portada se pide ya: al entrar, sale sin esperar
+  const prefetch = () => {
+    if (world.role !== 'master') return
+    void queryClient
+      .fetchQuery({
+        queryKey: ['pages', world.id, 'home'],
+        queryFn: () => api.call('getWorldHome', { worldId: world.id }),
+        staleTime: 30_000
+      })
+      .then(({ pageId }) => {
+        if (pageId)
+          void queryClient.prefetchQuery({
+            queryKey: ['pages', world.id, 'page', pageId],
+            queryFn: () => api.call('getPage', { pageId }),
+            staleTime: 30_000
+          })
+      })
+      .catch(() => undefined)
+  }
   return (
     <LookCard
       kind={kind}
@@ -251,7 +272,10 @@ export function WorldCard({
       fresh={fresh}
       burning={burning}
       {...(onBurnt ? { onBurnt } : {})}
-      onPreview={onPreview}
+      onPreview={(shown) => {
+        if (shown) prefetch()
+        onPreview?.(shown)
+      }}
       name={
         <Link
           to="/mundos/$worldId"

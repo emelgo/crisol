@@ -71,9 +71,9 @@ export function WorldPage() {
       steps={[
         ...(master
           ? ([
-              { target: '[data-tour="barra-buscar"]', text: t('tour.world.search'), placement: 'right' },
-              { target: '[data-tour="barra-marcadores"]', text: t('tour.world.bookmarks'), placement: 'right' },
               { target: '[data-tour="barra-wiki"]', text: t('tour.world.wiki'), placement: 'right' },
+              { target: '[data-tour="buscador"]', text: t('tour.world.search'), placement: 'right' },
+              { target: '[data-tour="panel-bloques"]', text: t('tour.world.panel'), placement: 'left' },
               { target: '[data-tour="barra-archivos-mundo"]', text: t('tour.world.files'), placement: 'right' },
               { target: '[data-tour="barra-historial"]', text: t('tour.world.history'), placement: 'right' },
               { target: '[data-tour="barra-papelera"]', text: t('tour.world.trash'), placement: 'right' },
@@ -153,9 +153,7 @@ function WorldHome({ worldId, name, banner }: { worldId: string; name: string; b
                   if (pageId) void page.refetch()
                 }}
               />
-            ) : (
-              <Loading />
-            )}
+            ) : null}
           </>
         )
       }

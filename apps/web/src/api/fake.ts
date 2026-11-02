@@ -142,6 +142,7 @@ export function fakeApi(
     locked?: boolean
     cover?: Page['cover']
     sheet?: Page['sheet']
+    panel?: Page['panel']
     version: number
   }
   const pages: StoredPage[] = (options.pages ?? []).map((page) => ({
@@ -208,6 +209,7 @@ export function fakeApi(
       locked: page.locked ?? false,
       cover: page.cover ?? null,
       sheet: page.sheet ?? null,
+      panel: (page.panel ?? []).map((b) => ({ ...b })),
       path,
       updatedAt: new Date().toISOString()
     }
@@ -581,6 +583,21 @@ export function fakeApi(
         ...(sheet !== undefined ? { sheet } : {}),
         version: page.version + 1
       })
+      return pageView(page)
+    },
+    sortPageChildren: ({ worldId, parentId, order }) => {
+      const kids = childrenOf(worldId, parentId).sort((a, b) =>
+        order === 'asc' ? a.title.localeCompare(b.title, 'es') : b.title.localeCompare(a.title, 'es')
+      )
+      for (const kid of kids) {
+        pages.splice(pages.indexOf(kid), 1)
+        pages.push(kid)
+      }
+      return { sorted: kids.length }
+    },
+    setPagePanel: ({ pageId, blocks }) => {
+      const page = pageById(pageId)
+      Object.assign(page, { panel: blocks.map((b) => ({ ...b })), version: page.version + 1 })
       return pageView(page)
     },
     setPageProperties: ({ pageId, properties }) => {

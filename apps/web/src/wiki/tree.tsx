@@ -8,7 +8,9 @@ import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
 import { useAnnounce } from '../components/announcer.tsx'
+import { contentKey } from './preview.tsx'
 import styles from './tree.module.css'
+import { TreeMenu } from './tree-menu.tsx'
 
 /** A partir de cuántas filas visibles solo se pintan las que se ven */
 const VIRTUAL_FROM = 300
@@ -58,6 +60,7 @@ export function PageTree({ worldId, currentId, path, onNavigate }: Props) {
   const [focusedId, setFocusedId] = useState<string | null>(null)
   const [drop, setDrop] = useState<{ id: string; zone: Zone } | null>(null)
   const dragged = useRef<string | null>(null)
+  const [menu, setMenu] = useState<{ page: PageSummary; x: number; y: number } | null>(null)
   const items = useRef(new Map<string, HTMLAnchorElement>())
   const pendingFocus = useRef(false)
   const scroller = useRef<HTMLDivElement>(null)
@@ -250,7 +253,35 @@ export function PageTree({ worldId, currentId, path, onNavigate }: Props) {
         aria-current={page.id === currentId ? 'page' : undefined}
         tabIndex={page.id === tabStop ? 0 : -1}
         onFocus={() => setFocusedId(page.id)}
-        onKeyDown={(event) => onKeyDown(row, event)}
+        // Al pasar por encima, la página se pide ya: al pulsar, sale sin esperar
+        onMouseEnter={() => {
+          void queryClient.prefetchQuery({
+            queryKey: ['pages', worldId, 'page', page.id],
+            queryFn: () => api.call('getPage', { pageId: page.id }),
+            staleTime: 10_000
+          })
+          // Y su texto, para enseñarlo mientras se conecta el editor
+          void queryClient.prefetchQuery({
+            queryKey: contentKey(worldId, page.id, null, false),
+            queryFn: () => api.call('getPageContent', { pageId: page.id, anchor: null, preview: false }),
+            staleTime: 10_000
+          })
+        }}
+        onKeyDown={(event) => {
+          // La tecla de menú (o Mayús+F10): el menú de la página, junto a la fila
+          if (event.key === 'ContextMenu' || (event.shiftKey && event.key === 'F10')) {
+            event.preventDefault()
+            const box = event.currentTarget.getBoundingClientRect()
+            setMenu({ page, x: box.left + 24, y: box.bottom })
+            return
+          }
+          onKeyDown(row, event)
+        }}
+        // Con el botón derecho, el menú de la página (como en Everlore)
+        onContextMenu={(event) => {
+          event.preventDefault()
+          setMenu({ page, x: event.clientX, y: event.clientY })
+        }}
         onClick={(event) => {
           // La flecha despliega o pliega (con el teclado, las flechas del teclado); el resto de la fila abre la página
           if (event.target instanceof Element && event.target.closest('[data-toggle]')) {
@@ -331,6 +362,20 @@ export function PageTree({ worldId, currentId, path, onNavigate }: Props) {
       <p id={hintId} className={styles.hint}>
         {t('wiki.moveHint')}
       </p>
+      {menu && (
+        <TreeMenu
+          worldId={worldId}
+          page={menu.page}
+          at={{ x: menu.x, y: menu.y }}
+          isHome={menu.page.id === homeId}
+          openPath={(path ?? []).map((p) => p.id)}
+          onClose={(returnFocus) => {
+            const id = menu.page.id
+            setMenu(null)
+            if (returnFocus) items.current.get(id)?.focus()
+          }}
+        />
+      )}
     </div>
   )
 }

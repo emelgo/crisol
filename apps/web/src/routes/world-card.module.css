@@ -4,7 +4,8 @@
  */
 .layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 52rem) minmax(0, 1fr);
+  /* Como en las páginas y en Archivos: las fichas de los lados (hasta 20rem) y la columna del centro, en todo el hueco */
+  grid-template-columns: minmax(14rem, 20rem) minmax(0, 1fr) minmax(14rem, 20rem);
   gap: var(--space-6);
   align-items: start;
   padding: var(--space-8) var(--space-6);
@@ -20,26 +21,25 @@
   grid-row: 1;
   position: sticky;
   inset-block-start: var(--space-4);
-  justify-self: end;
-  /* Fijo, con tope: en % dentro de una columna flexible se encogería a su contenido */
-  inline-size: 22rem;
-  max-inline-size: 100%;
+  justify-self: start;
+  inline-size: 100%;
+  max-inline-size: 20rem;
   /* Bajo el título, a la altura de las tarjetas */
   margin-block-start: 5.45rem;
 }
 
 /* Con menos sitio (o con zoom), la columna del centro se estrecha y el panel sigue; sin sitio, se quita (y en lo
    táctil no hay ratón que pasar por encima) */
-@media (max-width: 100rem) {
+@media (max-width: 90rem) {
   .layout {
-    grid-template-columns: minmax(16rem, 20rem) minmax(0, 1fr) 0;
+    grid-template-columns: minmax(11rem, 15rem) minmax(0, 1fr) minmax(11rem, 15rem);
+    gap: var(--space-5);
   }
 }
 
 @media (max-width: 64rem) {
   .layout {
-    grid-template-columns: 0 minmax(0, 52rem) 0;
-    justify-content: center;
+    grid-template-columns: 0 minmax(0, 1fr) 0;
   }
 
   .detail {

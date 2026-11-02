@@ -88,7 +88,7 @@ export function Backlinks({ page }: { page: Page }) {
 }
 
 /** Cuántas otras páginas enlazan a esta (para avisar al borrarla); null mientras no se sabe */
-export function useLinkedBy(page: Page, enabled: boolean) {
+export function useLinkedBy(page: Pick<Page, 'id' | 'worldId'>, enabled: boolean) {
   const api = useApi()
   const links = useQuery({
     queryKey: pageLinksKey(page.worldId, page.id),

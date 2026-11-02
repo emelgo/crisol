@@ -7,9 +7,10 @@ import { Extension } from '@tiptap/core'
 import { PluginKey } from '@tiptap/pm/state'
 import { ReactRenderer } from '@tiptap/react'
 import { Suggestion, type SuggestionProps } from '@tiptap/suggestion'
+import { ChevronRight } from 'lucide-react'
 import { forwardRef, useEffect, useId, useImperativeHandle, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { type BlockChoice, type BlockContext, type BlockGroup, findBlocks } from './blocks.ts'
+import { type BlockChoice, type BlockContext, findBlocks, SECTIONS, type SectionKey } from './blocks.ts'
 import styles from './slash-menu.module.css'
 
 export interface SlashMenuOptions {
@@ -22,8 +23,6 @@ export interface SlashMenuOptions {
   /** Dice a los lectores de pantalla qué bloque se puso */
   announce: (block: BlockChoice) => void
 }
-
-const GROUPS: readonly BlockGroup[] = ['text', 'wiki', 'boxes', 'sheet', 'master']
 
 export const SlashMenu = Extension.create<SlashMenuOptions>({
   name: 'slashMenu',
@@ -52,6 +51,8 @@ export const SlashMenu = Extension.create<SlashMenuOptions>({
           return {
             onStart: (props) => {
               renderer = new ReactRenderer(SlashList, { props, editor: props.editor })
+              // Va al final de la página: por encima de ella, que monta sobre su portada
+              renderer.element.style.zIndex = '30'
               unmount = props.mount(renderer.element)
             },
             onUpdate: (props) => renderer?.updateProps(props),
@@ -74,25 +75,63 @@ interface SlashListHandle {
   onKeyDown: (event: KeyboardEvent) => boolean
 }
 
-const SlashList = forwardRef<SlashListHandle, SlashListProps>(function SlashList({ items, command, editor }, ref) {
+type Entry = { type: 'group'; key: SectionKey; count: number } | { type: 'block'; block: BlockChoice; nested: boolean }
+
+const entryId = (entry: Entry) => (entry.type === 'group' ? `grupo-${entry.key}` : entry.block.id)
+
+const SlashList = forwardRef<SlashListHandle, SlashListProps>(function SlashList(
+  { items, command, editor, query },
+  ref
+) {
   const { t } = useTranslation()
   const id = useId()
   const [activeId, setActiveId] = useState<string | null>(null)
+  // Sin escribir nada, los grupos en desplegables (uno abierto a la vez); al escribir, lo que encaja, sin grupos
+  const [open, setOpen] = useState<SectionKey | null>(null)
   const list = useRef<HTMLDivElement>(null)
-  // La opción activa; si lo escrito la deja fuera, la primera
-  const current = items.find((block) => block.id === activeId) ?? items[0]
+  const searching = query.trim().length > 0
+  const entries: Entry[] = searching
+    ? items.map((block) => ({ type: 'block', block, nested: false }))
+    : SECTIONS.flatMap(({ key, match }): Entry[] => {
+        const blocks = items.filter(match)
+        if (blocks.length === 0) return []
+        return [
+          { type: 'group', key, count: blocks.length },
+          ...(open === key ? blocks.map((block): Entry => ({ type: 'block', block, nested: true })) : [])
+        ]
+      })
+  // La activa; si lo escrito la deja fuera, la primera
+  const current = entries.find((entry) => entryId(entry) === activeId) ?? entries[0]
+  const toggle = (key: SectionKey, opening: boolean) => {
+    setOpen(opening ? key : null)
+    const first = items.find((block) => SECTIONS.find((s) => s.key === key)?.match(block))
+    setActiveId(opening && first ? first.id : `grupo-${key}`)
+  }
+  const choose = (entry: Entry) => {
+    if (entry.type === 'group') toggle(entry.key, open !== entry.key)
+    else command(entry.block)
+  }
 
   useImperativeHandle(ref, () => ({
     onKeyDown: (event) => {
-      if (items.length === 0) return false
+      if (entries.length === 0) return false
       if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
         const step = event.key === 'ArrowDown' ? 1 : -1
-        const index = current ? items.indexOf(current) : 0
-        setActiveId(items[(index + step + items.length) % items.length]?.id ?? null)
+        const index = current ? entries.indexOf(current) : 0
+        const next = entries[(index + step + entries.length) % entries.length]
+        setActiveId(next ? entryId(next) : null)
+        return true
+      }
+      if (event.key === 'ArrowRight' && current?.type === 'group' && open !== current.key) {
+        toggle(current.key, true)
+        return true
+      }
+      if (event.key === 'ArrowLeft' && !searching && open) {
+        toggle(open, false)
         return true
       }
       if (event.key === 'Enter' || event.key === 'Tab') {
-        if (current) command(current)
+        if (current) choose(current)
         return true
       }
       return false
@@ -100,7 +139,7 @@ const SlashList = forwardRef<SlashListHandle, SlashListProps>(function SlashList
   }))
 
   // El texto lleva el foco y anuncia la opción activa de la lista
-  const optionId = (block: BlockChoice) => `${id}-${block.id}`
+  const optionId = (entry: Entry) => `${id}-${entryId(entry)}`
   useEffect(() => {
     const dom = editor.view.dom
     dom.setAttribute('aria-controls', `${id}-list`)
@@ -119,36 +158,35 @@ const SlashList = forwardRef<SlashListHandle, SlashListProps>(function SlashList
   return (
     <div className={styles.menu}>
       <div ref={list} id={`${id}-list`} role="listbox" aria-label={t('blocks.menu')} className={styles.list}>
-        {GROUPS.map((group) => {
-          const blocks = items.filter((block) => block.group === group)
-          if (blocks.length === 0) return null
-          return (
-            // biome-ignore lint/a11y/useSemanticElements: un grupo de opciones de la lista (ARIA), no un grupo de un formulario
-            <div key={group} role="group" aria-labelledby={`${id}-${group}`}>
-              <div id={`${id}-${group}`} className={styles.group}>
-                {t(`blocks.groups.${group}`)}
-              </div>
-              {blocks.map((block) => (
-                <div
-                  key={block.id}
-                  id={optionId(block)}
-                  role="option"
-                  aria-selected={block === current}
-                  className={styles.option}
-                  // El foco se queda en el texto: se elige al pulsar, sin quitárselo
-                  tabIndex={-1}
-                  onMouseDown={(event) => {
-                    event.preventDefault()
-                    command(block)
-                  }}
-                >
-                  <span>{t(`blocks.${block.label}`)}</span>
-                  {block.hint && <span className={styles.hint}>{t(`blocks.${block.hint}`)}</span>}
-                </div>
-              ))}
-            </div>
-          )
-        })}
+        {entries.map((entry) => (
+          <div
+            key={entryId(entry)}
+            id={optionId(entry)}
+            role="option"
+            aria-selected={entry === current}
+            className={styles.option}
+            data-group={entry.type === 'group' || undefined}
+            data-open={(entry.type === 'group' && open === entry.key) || undefined}
+            data-nested={(entry.type === 'block' && entry.nested) || undefined}
+            // El foco se queda en el texto: se elige al pulsar, sin quitárselo
+            tabIndex={-1}
+            onMouseDown={(event) => {
+              event.preventDefault()
+              choose(entry)
+            }}
+          >
+            {entry.type === 'group' ? (
+              <>
+                <span>{t(`blocks.groups.${entry.key}`)}</span>
+                <ChevronRight aria-hidden="true" size={14} className={styles.chevron} />
+              </>
+            ) : (
+              <>
+                <span>{t(`blocks.${entry.block.label}`)}</span>
+              </>
+            )}
+          </div>
+        ))}
       </div>
       {items.length === 0 && <p className={styles.empty}>{t('blocks.none')}</p>}
       <p className={styles.help} aria-hidden="true">

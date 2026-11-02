@@ -65,7 +65,7 @@ export function PageTabs({ page, tabs, active }: { page: Page; tabs: PageTabView
   const { t } = useTranslation()
   const params = { worldId: page.worldId, pageId: page.id }
   return (
-    <nav aria-label={t('pageTabs.label')} className={styles.bar} data-tour="mapa-pestanas">
+    <nav aria-label={t('pageTabs.label')} className={styles.bar} data-tour="mapa-pestanas" data-side-anchor="">
       <ul>
         <li>
           <Link
@@ -101,6 +101,8 @@ export function PageTabs({ page, tabs, active }: { page: Page; tabs: PageTabView
           </li>
         )}
       </ul>
+      {/* «Guardado», a la derecha de las pestañas (lo pone el texto de la página) */}
+      <span className={styles.saveSlot} data-save-slot="" />
     </nav>
   )
 }

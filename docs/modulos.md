@@ -21,12 +21,16 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
 - **Lo que falta de la fase 1**: dibujar en el mapa (regiones, rutas y textos: la tabla `map_elements` ya está),
   medir con la escala, el menú radial de Everlore, recolocar pestañas arrastrando y la marca de «oculto» en la
   interfaz (hoy solo por el MCP; servirá con los jugadores, módulo 5). Después, la fase 2.
-- **Después, en `interfaz/barra-lateral`** (sale de `mundo/pestanas-mapa`): campañas en Mis mundos (fuera de la barra);
-  barra de iconos con Inicio, Buscar, Marcadores, Páginas y Archivos; sin la palabra «wiki»; la página con la forma de
-  Everlore (cabecera pegajosa, pestañas con «+», panel derecho fijo con las propiedades), con nuestros colores y letras;
-  el Inicio del mundo como su panel (campañas, últimas páginas, accesos). La «portada del mundo» se probó y se quitó
-  de la interfaz (quedan `worlds.home_page_id`, migración 0030, y `getWorldHome` en el servidor). Las normas, en `docs/diseno.md`; lo pendiente que
-  pidió Enrique (Buscar y Marcadores como en Everlore, transiciones entre páginas de una vista), en `tasks/interfaz.md`.
+- **Después, en `interfaz/barra-lateral`** (sale de `mundo/pestanas-mapa`; PR #90): campañas en Mis mundos (fuera de
+  la barra); la barra de un mundo con su nombre y Archivos; sin la palabra «wiki»; **el mundo se abre en su portada**
+  (como la Home de LegendKeeper: `worlds.home_page_id`, migración 0030, `getWorldHome` y `ensureWorldHome`); la página
+  con **el esqueleto de Archivos** (columna central que llena el hueco entre las fichas, la ficha del árbol con buscador fijo a la izquierda y la del
+  panel a la derecha, a la misma altura); y **el panel de la derecha con bloques** (fase 2 de Everlore, ADR-0008:
+  `pages.panel`, migración 0031, `setPagePanel` y la herramienta `cambiar_panel`; `apps/web/src/wiki/panel-blocks.tsx`
+  y `e2e/tests/panel.spec.ts`). Las normas, en `docs/diseno.md`.
+- **Pendiente que pidió Enrique**: Buscar y Marcadores como en Everlore, transiciones entre páginas de una vista
+  (`tasks/interfaz.md`); de la fase 2 falta la vista rápida de las páginas enlazadas; plantillas, más adelante («ya
+  las haremos»).
 - Lo de antes sigue abajo (2026-10-30).
 
 ### Antes (2026-10-30)

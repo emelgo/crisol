@@ -319,6 +319,8 @@ export const LinkSuggest = Extension.create<LinkSuggestOptions>({
           return {
             onStart: (props) => {
               renderer = new ReactRenderer(LinkList, { props, editor: props.editor })
+              // Va al final de la página: por encima de ella, que monta sobre su portada
+              renderer.element.style.zIndex = '30'
               unmount = props.mount(renderer.element)
             },
             onUpdate: (props) => renderer?.updateProps(props),

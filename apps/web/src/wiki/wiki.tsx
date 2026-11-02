@@ -1,35 +1,32 @@
 import type { Page, PageTabView } from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getRouteApi, Link, Navigate, useNavigate, useRouter } from '@tanstack/react-router'
-import { Bookmark, Ellipsis, FileText, House, ListFilter, Lock, LockOpen, PanelRight, Plus } from 'lucide-react'
-import { type ReactNode, type RefObject, useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
+import { Ellipsis, FileText, House, ListFilter, Lock, LockOpen, Plus } from 'lucide-react'
+import { type ReactNode, type RefObject, useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { ApiError } from '../api/client.ts'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
-import { useAnnounce } from '../components/announcer.tsx'
 import { Loading } from '../components/brand.tsx'
 import { BusyButton } from '../components/busy-button.tsx'
-import { FormError } from '../components/field.tsx'
-import { focusIsLost, focusOnMount, useReturnFocus } from '../components/focus.ts'
-import form from '../components/form.module.css'
 import list from '../components/list.module.css'
 import { failed, LoadError } from '../components/load-error.tsx'
-import { PageTitle, useHeadingFocusRequest } from '../components/page-title.tsx'
+import { headingMayTakeFocus, PageTitle, useHeadingFocusRequest } from '../components/page-title.tsx'
 import { WorldBanner } from '../routes/world-card.tsx'
-import { Backlinks, useLinkedBy } from './backlinks.tsx'
+import { Backlinks } from './backlinks.tsx'
 import { CollabSocket } from './collab.tsx'
 import { CoverButton, PageCoverImage } from './cover.tsx'
 import { PageBody } from './editor.tsx'
 import { ExportPage, ExportWiki } from './export.tsx'
 import { PageIcon } from './icon.tsx'
 import { MapTab } from './map/map-tab.tsx'
-import { BookmarkButton, Bookmarks, OpenTabs, SiblingNav } from './navigation.tsx'
+import { BookmarkButton, Bookmarks, OpenTabs } from './navigation.tsx'
+import { NewPageContext, NewPageDialog, type NewPageRequest } from './new-page.tsx'
 import { useWikiPanel } from './panel.tsx'
+import { PanelBlocks } from './panel-blocks.tsx'
 import { PageProperties } from './properties.tsx'
 import { QuickSwitcher } from './quick-switcher.tsx'
-import { SearchBox } from './search-box.tsx'
 import { SheetMenu, SheetPaper, SheetToggle } from './sheet/controls.tsx'
 import { PageTabs, usePageTabs } from './tabs/page-tabs.tsx'
 import { PageTree } from './tree.tsx'
@@ -42,24 +39,6 @@ const pageRoute = getRouteApi('/mundos/$worldId/wiki/$pageId')
 export const pageKey = (worldId: string, pageId: string) => ['pages', worldId, 'page', pageId]
 
 /** Crea una página (o una subpágina) con el título provisional y la abre para ponerle nombre */
-function useCreatePage(worldId: string) {
-  const { t } = useTranslation()
-  const api = useApi()
-  const navigate = useNavigate()
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: (parentId: string | null) => api.call('createPage', { worldId, title: t('wiki.untitled'), parentId }),
-    onSuccess: async (created) => {
-      await queryClient.invalidateQueries({ queryKey: ['pages', worldId] })
-      await navigate({
-        to: '/mundos/$worldId/wiki/$pageId',
-        params: { worldId, pageId: created.id },
-        search: { nuevo: true }
-      })
-    }
-  })
-}
-
 /**
  * La wiki de un mundo: el árbol a un lado y la página al otro. En el móvil, el árbol va en un cajón que se abre con
  * «Páginas». Solo para quien administra el mundo (hasta el módulo 5)
@@ -75,7 +54,6 @@ export function WikiLayout({
 }) {
   const { t } = useTranslation()
   const api = useApi()
-  const errorText = useErrorText()
   const { account, pending } = useAccounts().useAccount()
   const { panel, collapsed, open, close } = useWikiPanel()
   const closeButton = useRef<HTMLButtonElement>(null)
@@ -85,7 +63,9 @@ export function WikiLayout({
   }, [open])
   const asideId = useId()
   const headingId = useId()
-  const create = useCreatePage(worldId)
+  // El cuadro de «Página nueva» (o de una subpágina), abierto
+  const [creating, setCreating] = useState<{ parent: { id: string; title: string } | null } | null>(null)
+  const requestNewPage = useCallback<NewPageRequest>((parent) => setCreating({ parent }), [])
   // Lo que se escribe en el buscador de cada vista (en las páginas, por nombre o #etiqueta)
   const [filter, setFilter] = useState('')
   const navigate = useNavigate()
@@ -95,6 +75,8 @@ export function WikiLayout({
     enabled: Boolean(account)
   })
   const world = worlds.data?.worlds.find((w) => w.id === worldId && w.role === 'master')
+  const root = useRef<HTMLDivElement>(null)
+  useSideTop(root, Boolean(world))
 
   if (pending) return null
   if (!account) return <Navigate to="/entrar" replace />
@@ -110,85 +92,131 @@ export function WikiLayout({
   }
 
   return (
-    <div className={styles.wiki} data-collapsed={collapsed || undefined}>
-      <aside
-        id={asideId}
-        className={styles.aside}
-        data-open={open || undefined}
-        aria-labelledby={headingId}
-        onKeyDown={(event) => {
-          if (event.key === 'Escape' && open) close(true)
-        }}
-      >
-        <div className={styles.asideHeader}>
-          {/* Lo de la vista elegida en la barra: el mundo (sus páginas), las plantillas o los archivos */}
-          <h2 id={headingId}>{world.name}</h2>
-          {panel === 'pages' && (
-            <BusyButton
-              className={styles.newPageIcon}
-              busy={create.isPending}
-              aria-label={t('wiki.newPage')}
-              title={t('wiki.newPage')}
-              onClick={() => create.mutate(null)}
-            >
-              <Plus aria-hidden="true" size={16} />
-            </BusyButton>
-          )}
-          <button
-            type="button"
-            ref={closeButton}
-            className={`${list.secondary} ${styles.close}`}
-            onClick={() => close(true)}
-          >
-            {t('wiki.closePages')}
-          </button>
-        </div>
-        {/* El buscador, fijo en su sitio en cada vista, con lo suyo */}
-        <PageFilter
-          label={t('wiki.filter')}
-          value={filter}
-          onChange={setFilter}
-          // En las páginas, Intro busca dentro del texto de todas
-          {...(panel === 'pages'
-            ? {
-                onSearch: (q: string) => {
-                  close(false)
-                  void navigate({ to: '/mundos/$worldId/buscar', params: { worldId }, search: { q } })
-                }
-              }
-            : {})}
-        />
-        <FormError message={create.error ? errorText(create.error) : null} />
-        {panel === 'pages' && (
-          <>
-            {filter.trim() ? (
-              <FilteredPages worldId={worldId} query={filter} currentId={current?.id} onNavigate={() => close(false)} />
-            ) : (
-              <PageTree
-                worldId={worldId}
-                currentId={current?.id}
-                path={current?.path}
-                onNavigate={() => close(false)}
-              />
+    <NewPageContext.Provider value={requestNewPage}>
+      <div ref={root} className={styles.wiki} data-collapsed={collapsed || undefined}>
+        <aside
+          id={asideId}
+          className={styles.aside}
+          data-open={open || undefined}
+          aria-labelledby={headingId}
+          onKeyDown={(event) => {
+            if (event.key === 'Escape' && open) close(true)
+          }}
+        >
+          <div className={styles.asideHeader}>
+            {/* Lo de la vista elegida en la barra: el mundo (sus páginas), las plantillas o los archivos */}
+            <h2 id={headingId}>{world.name}</h2>
+            {panel === 'pages' && (
+              <button
+                type="button"
+                className={styles.newPageIcon}
+                aria-label={t('wiki.newPage')}
+                title={t('wiki.newPage')}
+                aria-haspopup="dialog"
+                onClick={() => requestNewPage(null)}
+              >
+                <Plus aria-hidden="true" size={16} />
+              </button>
             )}
-            <OpenTabs worldId={worldId} current={current} compact />
-            {/* Los marcadores, debajo del árbol */}
-            <div className={styles.asideBookmarks}>
-              <Bookmarks worldId={worldId} onNavigate={() => close(false)} />
-            </div>
-            <div className={styles.more}>
-              <ExportWiki worldId={worldId} />
-            </div>
-          </>
-        )}
-      </aside>
-      <QuickSwitcher worldId={worldId} onCreatePage={() => create.mutate(null)} />
-      <div className={styles.content}>
-        <OpenTabs worldId={worldId} current={current} />
-        <CollabSocket>{children(world)}</CollabSocket>
+            <button
+              type="button"
+              ref={closeButton}
+              className={`${list.secondary} ${styles.close}`}
+              onClick={() => close(true)}
+            >
+              {t('wiki.closePages')}
+            </button>
+          </div>
+          {/* El buscador, fijo en su sitio en cada vista, con lo suyo */}
+          <PageFilter
+            label={t('wiki.filter')}
+            value={filter}
+            onChange={setFilter}
+            // En las páginas, Intro busca dentro del texto de todas
+            {...(panel === 'pages'
+              ? {
+                  onSearch: (q: string) => {
+                    close(false)
+                    void navigate({ to: '/mundos/$worldId/buscar', params: { worldId }, search: { q } })
+                  }
+                }
+              : {})}
+          />
+          {panel === 'pages' && (
+            <>
+              {filter.trim() ? (
+                <FilteredPages
+                  worldId={worldId}
+                  query={filter}
+                  currentId={current?.id}
+                  onNavigate={() => close(false)}
+                />
+              ) : (
+                <PageTree
+                  worldId={worldId}
+                  currentId={current?.id}
+                  path={current?.path}
+                  onNavigate={() => close(false)}
+                />
+              )}
+              <OpenTabs worldId={worldId} current={current} compact />
+              {/* Los marcadores, debajo del árbol */}
+              <div className={styles.asideBookmarks}>
+                <Bookmarks worldId={worldId} onNavigate={() => close(false)} />
+              </div>
+              <div className={styles.more}>
+                <ExportWiki worldId={worldId} />
+              </div>
+            </>
+          )}
+        </aside>
+        <QuickSwitcher worldId={worldId} onCreatePage={() => requestNewPage(null)} />
+        <div className={styles.content}>
+          <OpenTabs worldId={worldId} current={current} />
+          <CollabSocket>{children(world)}</CollabSocket>
+        </div>
+        {creating && <NewPageDialog worldId={worldId} parent={creating.parent} onClose={() => setCreating(null)} />}
       </div>
-    </div>
+    </NewPageContext.Provider>
   )
+}
+
+/**
+ * Como en Archivos, las fichas de los lados empiezan a la altura de lo que va bajo el título (aquí, las pestañas de la
+ * página): se mide dónde quedan y se pasa al CSS (--side-top para la de la izquierda; --panel-top, la de la derecha)
+ */
+function useSideTop(root: RefObject<HTMLDivElement | null>, ready: boolean) {
+  useLayoutEffect(() => {
+    const element = root.current
+    if (!element || typeof ResizeObserver === 'undefined') return
+    let frame = 0
+    const measure = () => {
+      frame = 0
+      const anchor = element.querySelector('[data-side-anchor]')
+      const entry = anchor?.closest('[data-entry]')
+      if (!anchor || !entry) {
+        element.style.removeProperty('--side-top')
+        element.style.removeProperty('--panel-top')
+        return
+      }
+      const top = anchor.getBoundingClientRect().top
+      element.style.setProperty('--side-top', `${top - element.getBoundingClientRect().top}px`)
+      element.style.setProperty('--panel-top', `${top - entry.getBoundingClientRect().top}px`)
+    }
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(measure)
+    }
+    measure()
+    const resized = new ResizeObserver(schedule)
+    resized.observe(element)
+    const changed = new MutationObserver(schedule)
+    changed.observe(element, { childList: true, subtree: true })
+    return () => {
+      cancelAnimationFrame(frame)
+      resized.disconnect()
+      changed.disconnect()
+    }
+  }, [root, ready])
 }
 
 /** Normalizado para comparar: sin mayúsculas ni tildes */
@@ -208,7 +236,7 @@ function PageFilter({
 }) {
   const { t } = useTranslation()
   return (
-    <div className={styles.filter}>
+    <div className={styles.filter} data-tour="buscador">
       <input
         type="search"
         value={value}
@@ -340,8 +368,6 @@ function PageHead({
       <div ref={sentinel} aria-hidden="true" className={styles.sentinel} />
       <header className={styles.entryHeader} data-compact={compact || undefined}>
         <div className={styles.entryTitle}>
-          {/* El mundo, en pequeño (en su portada no: sería repetirlo) */}
-          {!home && <span className={styles.entryWorld}>{world}</span>}
           <div className={styles.heading}>
             {page.icon && <PageIcon page={page} />}
             <InlineTitle page={page} autoFocus={startEditing} onDone={named} />
@@ -429,7 +455,7 @@ function InlineTitle({ page, autoFocus, onDone }: { page: Page; autoFocus: boole
         ref={(heading) => {
           if (!heading || !request.current) return
           request.current = false
-          if (focusIsLost()) heading.focus()
+          if (headingMayTakeFocus(request)) heading.focus()
         }}
       >
         {/* biome-ignore lint/a11y/useSemanticElements: el título es el propio encabezado, que se escribe en el sitio */}
@@ -484,11 +510,6 @@ function InlineTitle({ page, autoFocus, onDone }: { page: Page; autoFocus: boole
 /** «Más»: lo que se hace de vez en cuando con la página, fuera de la vista hasta que se pide */
 function MoreActions({ page }: { page: Page }) {
   const { t } = useTranslation()
-  const api = useApi()
-  const home = useQuery({
-    queryKey: ['pages', page.worldId, 'home'],
-    queryFn: () => api.call('getWorldHome', { worldId: page.worldId })
-  })
   const [open, setOpen] = useState(false)
   const root = useRef<HTMLDivElement>(null)
   const trigger = useRef<HTMLButtonElement | null>(null)
@@ -527,10 +548,8 @@ function MoreActions({ page }: { page: Page }) {
       {open && (
         <div id={panelId} className={styles.morePanel}>
           <SheetMenu page={page} />
-          <NewSubpage page={page} onDone={() => setOpen(false)} />
+          {/* Lo demás (subpágina, renombrar, mover, borrar…), con el botón derecho en el árbol */}
           <ExportPage page={page} />
-          {/* La portada del mundo no se borra */}
-          {home.data?.pageId !== page.id && <DeletePage page={page} />}
         </div>
       )}
     </div>
@@ -573,98 +592,18 @@ function LockButton({ page }: { page: Page }) {
   )
 }
 
-/** Borrar: tras confirmar, la página (con sus subpáginas) va a la papelera y se vuelve a su madre */
-function DeletePage({ page }: { page: Page }) {
-  const { t } = useTranslation()
-  const api = useApi()
-  const queryClient = useQueryClient()
-  const navigate = useNavigate()
-  const announce = useAnnounce()
-  const errorText = useErrorText()
-  const button = useReturnFocus()
-  const warningId = useId()
-  const [confirming, setConfirming] = useState(false)
-  // Al confirmar, cuántas páginas la enlazan: sus enlaces se verán rotos
-  const linkedBy = useLinkedBy(page, confirming)
-  const remove = useMutation({
-    mutationFn: () => api.call('deletePage', { pageId: page.id }),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['pages', page.worldId] })
-      announce(t('wiki.deleted', { title: page.title }))
-      const parent = page.path.at(-2)
-      await navigate(
-        parent
-          ? { to: '/mundos/$worldId/wiki/$pageId', params: { worldId: page.worldId, pageId: parent.id } }
-          : { to: '/mundos/$worldId/wiki', params: { worldId: page.worldId } }
-      )
-    }
-  })
-  if (!confirming) {
-    return (
-      <button type="button" ref={button.ref} className={list.secondary} onClick={() => setConfirming(true)}>
-        {t('wiki.delete')}
-      </button>
-    )
-  }
-  return (
-    <div className={list.confirm}>
-      <p id={warningId}>
-        {t(page.hasChildren ? 'wiki.deleteWarningWithSubpages' : 'wiki.deleteWarning', { title: page.title })}
-        {linkedBy ? ` ${t('wiki.linkedBy', { count: linkedBy })}` : ''}
-      </p>
-      <div className={list.actions}>
-        <BusyButton
-          ref={focusOnMount}
-          className={form.button}
-          aria-describedby={warningId}
-          busy={remove.isPending}
-          onClick={() => remove.mutate()}
-        >
-          {t('wiki.delete')}
-        </BusyButton>
-        <button
-          type="button"
-          className={list.secondary}
-          onClick={() => {
-            button.back()
-            setConfirming(false)
-          }}
-        >
-          {t('list.cancel')}
-        </button>
-      </div>
-      <FormError message={remove.error ? errorText(remove.error) : null} />
-    </div>
-  )
-}
-
-/** «Nueva subpágina», en «⋯»: se crea dentro de esta y se abre para ponerle nombre (en el árbol, debajo de su madre) */
-function NewSubpage({ page, onDone }: { page: Page; onDone: () => void }) {
-  const { t } = useTranslation()
-  const errorText = useErrorText()
-  const create = useCreatePage(page.worldId)
-  if (page.locked) return null
-  return (
-    <>
-      <BusyButton
-        className={list.secondary}
-        busy={create.isPending}
-        onClick={() => create.mutate(page.id, { onSuccess: onDone })}
-      >
-        {t('wiki.newSubpage')}
-      </BusyButton>
-      <FormError message={create.error ? errorText(create.error) : null} />
-    </>
-  )
-}
-
 /** Una página de la wiki abierta */
 export function WikiPage() {
   const { t } = useTranslation()
   const api = useApi()
   const { worldId, pageId } = pageRoute.useParams()
   const { nuevo, pestana } = pageRoute.useSearch()
-  const page = useQuery({ queryKey: pageKey(worldId, pageId), queryFn: () => api.call('getPage', { pageId }) })
+  const page = useQuery({
+    queryKey: pageKey(worldId, pageId),
+    queryFn: () => api.call('getPage', { pageId }),
+    // Al cambiar de página, la de antes se queda hasta que llega la nueva (sin hueco en blanco entre las dos)
+    placeholderData: (previous) => (previous?.worldId === worldId ? previous : undefined)
+  })
   const missing = page.error instanceof ApiError && page.error.status === 404
   useEffect(() => {
     // Mientras se le pone nombre no hay título que lo diga
@@ -728,7 +667,19 @@ function OpenPage({
     )
   }
   if (pestana && !active) return null
-  return <EntryView page={page} world={world} nuevo={nuevo} tabs={all} active={active} banner={banner} home={isHome} />
+  return (
+    <EntryView
+      // Cada página entra con su animación
+      key={page.id}
+      page={page}
+      world={world}
+      nuevo={nuevo}
+      tabs={all}
+      active={active}
+      banner={banner}
+      home={isHome}
+    />
+  )
 }
 
 /**
@@ -755,13 +706,6 @@ export function EntryView({
 }) {
   const { t } = useTranslation()
   const main = useRef<HTMLElement>(null)
-  // Se ve al llegar a cada página; el botón lo esconde solo en esta visita
-  const [panel, setPanel] = useState(true)
-  const [shownFor, setShownFor] = useState(page.id)
-  if (shownFor !== page.id) {
-    setShownFor(page.id)
-    setPanel(true)
-  }
   return (
     <>
       {/* La portada, a todo lo ancho (la del mundo en su portada; si no, la de la página o «Añadir portada») */}
@@ -773,7 +717,7 @@ export function EntryView({
             !page.locked && <CoverButton page={page} className={styles.addCover} label={t('cover.add')} />
           ))}
       </div>
-      <div className={styles.entry} data-entry-panel={panel || undefined}>
+      <div className={styles.entry} data-entry="" data-entry-panel="">
         <article ref={main} className={styles.entryMain}>
           <PageHead
             key={page.id}
@@ -787,16 +731,6 @@ export function EntryView({
                 <LockButton page={page} />
                 <SheetToggle page={page} />
                 <MoreActions page={page} />
-                <button
-                  type="button"
-                  className={styles.panelToggle}
-                  aria-pressed={panel}
-                  aria-label={t('wiki.togglePanel')}
-                  title={t('wiki.togglePanel')}
-                  onClick={() => setPanel(!panel)}
-                >
-                  <PanelRight aria-hidden="true" size={18} />
-                </button>
               </>
             }
           />
@@ -808,19 +742,17 @@ export function EntryView({
               <SheetPaper page={page}>
                 <PageBody page={page} />
               </SheetPaper>
-              <SiblingNav page={page} />
             </div>
           )}
         </article>
-        {panel && (
-          <aside aria-label={t('wiki.pagePanel')} className={styles.entryPanel}>
-            {/* Las propiedades, a un lado (como los bloques del panel de Everlore) */}
-            <PageProperties key={page.id} page={page} />
-            <Backlinks key={`enlaces-${page.id}`} page={page} />
-            {!active && <Contents key={`indice-${page.id}`} root={main} />}
-            <Versions key={`versiones-${page.id}`} page={page} />
-          </aside>
-        )}
+        <aside aria-label={t('wiki.pagePanel')} className={styles.entryPanel} data-tour="panel-bloques">
+          {/* Las propiedades, a un lado (como los bloques del panel de Everlore) */}
+          <PageProperties key={page.id} page={page} />
+          <PanelBlocks key={`bloques-${page.id}`} page={page} />
+          <Backlinks key={`enlaces-${page.id}`} page={page} />
+          {!active && <Contents key={`indice-${page.id}`} root={main} />}
+          <Versions key={`versiones-${page.id}`} page={page} />
+        </aside>
       </div>
     </>
   )

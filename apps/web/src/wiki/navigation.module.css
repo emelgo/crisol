@@ -6,7 +6,8 @@
   flex-wrap: wrap;
   gap: 2px;
   margin: 0 calc(-1 * var(--space-8)) var(--space-2);
-  padding: var(--space-1) var(--space-2) 0 calc(var(--space-8) - var(--space-3));
+  /* Con el margen de dentro de la página (--space-6) */
+  padding: var(--space-1) var(--space-2) 0 calc(var(--space-8) + var(--space-6) - var(--space-3));
   list-style: none;
   background: transparent;
   border-block-end: 1px solid var(--color-border);
@@ -118,51 +119,131 @@
   color: var(--color-accent-text);
 }
 
-.choose {
-  composes: frame from "../components/frame.module.css";
-  flex-basis: 100%;
-  padding: var(--space-3) var(--space-4);
+/* «Marcar» con grupos: un desplegable flotante bajo su botón, que no mueve nada de la página */
+.bookmarkWrap {
+  position: relative;
 }
 
-.choose fieldset {
-  margin: 0 0 var(--space-3);
+.bookmarkMenu {
+  position: absolute;
+  inset-block-start: calc(100% + var(--space-1));
+  inset-inline-end: 0;
+  z-index: 20;
+  inline-size: 15rem;
+  padding: var(--space-2);
+  border: 1px solid var(--color-frame);
+  border-radius: 10px;
+  background: var(--color-surface);
+  box-shadow: 0 0.75rem 2rem rgb(0 0 0 / 0.22);
+  animation: asoma-menu 140ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+@keyframes asoma-menu {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+}
+
+.bookmarkLabel {
+  margin: 0 0 var(--space-1);
+  padding: 0 var(--space-2);
+  color: var(--color-muted);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.bookmarkGroups {
+  margin: 0;
   padding: 0;
-  border: 0;
+  list-style: none;
 }
 
-.option {
+.bookmarkGroups button {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  min-block-size: var(--target);
+  inline-size: 100%;
+  min-block-size: 2rem;
+  padding: 0 var(--space-2);
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.875rem;
+  text-align: start;
+  cursor: pointer;
 }
 
-.siblings {
+.bookmarkGroups button:hover,
+.bookmarkGroups button:focus-visible {
+  background: color-mix(in srgb, var(--color-text) 8%, transparent);
+}
+
+.bookmarkGroups svg {
+  flex: none;
+  color: var(--color-muted);
+}
+
+.bookmarkGroups span:first-of-type {
+  flex: 1;
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bookmarkCount {
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.bookmarkNew {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: var(--space-4);
-  margin-block-start: var(--space-8);
-  padding-block-start: var(--space-4);
+  gap: var(--space-1);
+  margin-block-start: var(--space-2);
+  padding-block-start: var(--space-2);
   border-block-start: 1px solid var(--color-border);
 }
 
-.siblings a {
-  display: flex;
-  flex-direction: column;
-  font-family: var(--font-body);
-  font-size: 1.25rem;
-  font-weight: 700;
-  text-decoration: none;
+.bookmarkNew input {
+  flex: 1;
+  min-inline-size: 0;
+  block-size: 2rem;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.875rem;
 }
 
-.siblings span {
-  color: var(--color-muted);
-  font-family: var(--font-body);
-  font-size: 0.875rem;
-  font-weight: 400;
-  letter-spacing: 0;
-  text-transform: none;
+.bookmarkNew input:focus {
+  border-color: var(--color-field-border);
+  outline: none;
+}
+
+.bookmarkNew button {
+  display: grid;
+  flex: none;
+  place-items: center;
+  inline-size: 2rem;
+  block-size: 2rem;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--color-text) 8%, transparent);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.bookmarkNew button:hover {
+  background: color-mix(in srgb, var(--color-text) 14%, transparent);
 }
 
 .next {
