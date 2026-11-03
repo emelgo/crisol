@@ -11,14 +11,15 @@ import type { Node as PMNode } from '@tiptap/pm/model'
 import { Plugin, PluginKey } from '@tiptap/pm/state'
 import { Decoration, DecorationSet } from '@tiptap/pm/view'
 import { type CSSProperties, type ReactNode, useEffect, useLayoutEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { GHOST_LINE } from '../ghost-line.ts'
 import styles from './paged.module.css'
 import { PAPER } from './sheet.tsx'
 
 const MARGIN = { top: 56, side: 56, bottom: 72 }
 const GAP = 28
-/** Entre una página y la siguiente, en la vista al escribir */
-const PAGE_GAP = 24
+/** Entre una página y la siguiente, al escribir: el hueco de su marca (sin papel: se escribe seguido) */
+const MARKER = 28
 
 const contentWidth = (settings: SheetSettings) => PAPER[settings.paper].width - 2 * MARGIN.side
 
@@ -94,7 +95,17 @@ function heightOf(dom: HTMLElement) {
   return dom.offsetHeight + Number.parseFloat(style.marginTop) + Number.parseFloat(style.marginBottom)
 }
 
-/** Coloca los bloques y devuelve cuántas páginas hay */
+/** Dónde empieza una página (salvo la primera), para su marca; manual: tras un salto de página */
+export interface PageMark {
+  y: number
+  number: number
+}
+
+/**
+ * Coloca los bloques: las páginas se calculan como al imprimir (qué cabe en cada una y cómo se reparten sus dos
+ * columnas), pero van seguidas, sin el hueco de lo que no se llena: se escribe sin saltar. Devuelve el alto y las
+ * marcas de cada página
+ */
 function layOut(editor: Editor, settings: SheetSettings, k: number) {
   const g = geometry(settings, k)
   const { view, state } = editor
@@ -123,8 +134,27 @@ function layOut(editor: Editor, settings: SheetSettings, k: number) {
     placed[index] = `position:absolute;left:${x}px;top:${y}px;width:${width}px;margin-inline:0;box-sizing:border-box`
     ends[index] = { x, y: y + (heights[index] ?? 0), width }
   }
+  const marks: PageMark[] = []
+  const idsOf = (page: (typeof pages)[number]) =>
+    page.rows.flatMap((row) => (row.kind === 'wide' ? [Number(row.id)] : row.columns.flat().map(Number)))
+  let top = 0
   pages.forEach((page, p) => {
-    let y = p * (g.height + PAGE_GAP)
+    if (p > 0) {
+      // Entre esta y la de antes: sus saltos de página (su raya hace de marca) o, si no hay, la marca con el número
+      const before = Math.max(-1, ...idsOf(pages[p - 1] as (typeof pages)[number]))
+      const after = Math.min(blocks.length, ...idsOf(page))
+      const breaks = blocks.slice(before + 1, after).filter((block) => block.kind === 'pageBreak')
+      if (breaks.length > 0) {
+        for (const block of breaks) {
+          place(block.id, 0, top, g.content)
+          top += heights[Number(block.id)] ?? 0
+        }
+      } else {
+        marks.push({ y: top + MARKER * k * 0.5, number: settings.firstNumber + p })
+        top += MARKER * k
+      }
+    }
+    let y = top
     for (const row of page.rows) {
       if (row.kind === 'wide') {
         place(row.id, 0, y, g.content)
@@ -143,12 +173,14 @@ function layOut(editor: Editor, settings: SheetSettings, k: number) {
       }
       y = Math.max(left, right)
     }
+    top = y
   })
-  // Los saltos (de página o de columna) no van en ninguna fila: su raya, justo debajo del bloque de antes
+  // Los demás saltos (de columna, o uno al final) no van en ninguna fila: su raya, justo debajo del bloque de antes
   blocks.forEach((block, index) => {
     if (ends[index]) return
     const before = ends[index - 1] ?? { x: 0, y: 0, width: g.content }
     place(block.id, before.x, before.y, before.width)
+    if (before.y + (heights[index] ?? 0) > top) top = before.y + (heights[index] ?? 0)
   })
   const last = ends.at(-1) ?? null
   const current = layoutKey.getState(state)?.styles
@@ -164,7 +196,7 @@ function layOut(editor: Editor, settings: SheetSettings, k: number) {
       width: `${last.width}px`
     })
   }
-  return { pages: Math.max(1, pages.length), changed }
+  return { height: top, marks, changed }
 }
 
 /** Quita la maqueta (sin hoja, o en lo estrecho) */
@@ -218,7 +250,8 @@ export function PagedSheet({
   ready: boolean
   children: ReactNode
 }) {
-  const [pages, setPages] = useState(1)
+  const { t } = useTranslation()
+  const [layout, setLayout] = useState<{ height: number; marks: readonly PageMark[] }>({ height: 0, marks: [] })
   const [narrow, setNarrow] = useState(() => typeof window !== 'undefined' && window.matchMedia?.(NARROW).matches)
   const [frame, setFrame] = useState<HTMLDivElement | null>(null)
   // El texto llena la columna (alineado con el título); el margen del papel queda fuera, sin verse
@@ -246,7 +279,11 @@ export function PagedSheet({
       frameId = 0
       if (editor.isDestroyed) return
       const result = layOut(editor, settings, scale)
-      setPages(result.pages)
+      setLayout((current) =>
+        current.height === result.height && JSON.stringify(current.marks) === JSON.stringify(result.marks)
+          ? current
+          : { height: result.height, marks: result.marks }
+      )
       // Colocar cambia el ancho de los nuevos: se mide otra vez hasta que no cambie nada
       if (result.changed && passes++ < 4) schedule()
       else passes = 0
@@ -280,39 +317,22 @@ export function PagedSheet({
 
   if (!paged || !settings) return <>{children}</>
   const g = geometry(settings, scale)
-  const height = pages * (g.height + PAGE_GAP) - PAGE_GAP
+  // Debajo, sitio para la línea de más
+  const height = layout.height + 32 * scale
   return (
     <div ref={setFrame} className={styles.fit}>
       <div
         className={styles.paged}
-        style={
-          {
-            inlineSize: g.width,
-            blockSize: height,
-            marginInlineStart: -g.side,
-            marginBlockStart: -g.top + 8,
-            '--sheet-k': scale
-          } as CSSProperties
-        }
+        style={{ inlineSize: g.content, blockSize: height, '--sheet-k': scale } as CSSProperties}
         data-sheet-paged=""
       >
-        {/* Las páginas, detrás del texto */}
-        {Array.from({ length: pages }, (_, index) => (
-          <div
-            // biome-ignore lint/suspicious/noArrayIndexKey: las páginas son su número
-            key={index}
-            className={styles.page}
-            aria-hidden="true"
-            style={{ insetBlockStart: index * (g.height + PAGE_GAP), blockSize: g.height }}
-          >
-            {/* Al escribir, sin pie (es para imprimir): en la raya entre páginas, su número, pequeño */}
-            {index > 0 && <span className={styles.number}>{settings.firstNumber + index}</span>}
+        {/* Dónde empieza cada página (se calculan por detrás, como al imprimir): una raya fina con su número */}
+        {layout.marks.map((mark) => (
+          <div key={mark.number} className={styles.mark} style={{ insetBlockStart: mark.y }} aria-hidden="true">
+            <span>{t('sheet.pageLabel', { number: mark.number })}</span>
           </div>
         ))}
-        <div
-          className={styles.text}
-          style={{ insetBlockStart: g.top, insetInlineStart: g.side, inlineSize: g.content, blockSize: height - g.top }}
-        >
+        <div className={styles.text} style={{ inset: 0 }}>
           {children}
         </div>
       </div>

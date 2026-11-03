@@ -7,11 +7,11 @@
   color: var(--color-muted);
 }
 
-.break::before,
-.break::after {
+/* Una raya fina, discontinua, y su nombre a la derecha (como la marca de página de la hoja, pero puesta a mano) */
+.break::before {
   content: "";
   flex: 1 1 auto;
-  border-block-start: 2px dashed var(--color-border);
+  border-block-start: 1px dashed var(--color-border);
 }
 
 .break[data-selected],
@@ -25,6 +25,12 @@
   font-family: var(--font-body);
   font-size: 0.8125rem;
   font-weight: 700;
+}
+
+.break .breakLabel {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
 }
 
 .label {

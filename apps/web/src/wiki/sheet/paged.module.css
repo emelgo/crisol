@@ -14,25 +14,24 @@
   pointer-events: auto;
 }
 
-/* Sin recuadro: el texto, sobre el fondo, como siempre. Entre una página y la siguiente, una raya fina */
-.page {
+/* Donde empieza una página: una raya fina a todo el ancho y, a la derecha, su número (sin hueco: se escribe seguido) */
+.mark {
   position: absolute;
   inset-inline: 0;
-}
-
-.page + .page {
-  border-block-start: 1px dashed var(--color-border);
-}
-
-.number {
-  position: absolute;
-  inset-block-start: 0;
-  inset-inline-start: 50%;
-  padding: 0 var(--space-2);
-  background: var(--color-bg);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  transform: translateY(-50%);
   color: var(--color-muted);
+  font-family: var(--font-body);
   font-size: 0.6875rem;
-  transform: translate(-50%, -50%);
+  letter-spacing: 0.02em;
+}
+
+.mark::before {
+  flex: 1;
+  border-block-start: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent);
+  content: "";
 }
 
 .text {

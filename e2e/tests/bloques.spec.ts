@@ -147,7 +147,7 @@ test('la barra de formato: con el ratón y con Alt+F10; los enlaces, solo http, 
 
   // Con el teclado: elegir con Mayús y las flechas, Alt+F10 y a la barra. Antes, que la selección sea la nueva (la
   // barra de la anterior sigue un instante a la vista)
-  await body(page).click()
+  await body(page).getByText('La Hermandad quemó el faro').click()
   await page.keyboard.press('End')
   await page.keyboard.press('Shift+ControlOrMeta+ArrowLeft')
   await expect.poll(() => page.evaluate(() => document.getSelection()?.toString())).toBe('faro')
