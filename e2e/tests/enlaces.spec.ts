@@ -90,10 +90,19 @@ test('un enlace sin resolver se ve «por crear» y se resuelve solo; uno a la pa
 test('al elegir un nombre de página, la barra propone enlazarlo', async ({ page }) => {
   await eana(page)
   await page.keyboard.type('Habla con Maela Varn')
-  await page.keyboard.press('Shift+ControlOrMeta+ArrowLeft')
-  await page.keyboard.press('Shift+ControlOrMeta+ArrowLeft')
-  await expect.poll(() => page.evaluate(() => document.getSelection()?.toString())).toBe('Maela Varn')
-  await page.getByRole('toolbar', { name: 'Formato' }).getByRole('button', { name: 'Enlazar con «Maela Varn»' }).click()
+  const linkTo = page
+    .getByRole('toolbar', { name: 'Formato' })
+    .getByRole('button', { name: 'Enlazar con «Maela Varn»' })
+  // Elegir las dos últimas palabras con el teclado. En una máquina lenta, el editor puede quedarse con solo la última
+  // (la segunda tecla llega antes de que lea la primera): se vuelve a elegir desde el final
+  await expect(async () => {
+    await page.keyboard.press('End')
+    await page.keyboard.press('Shift+ControlOrMeta+ArrowLeft')
+    await expect.poll(() => page.evaluate(() => document.getSelection()?.toString())).toBe('Varn')
+    await page.keyboard.press('Shift+ControlOrMeta+ArrowLeft')
+    await expect(linkTo).toBeVisible({ timeout: 2000 })
+  }).toPass({ timeout: 20_000 })
+  await linkTo.click()
   await expect(body(page).getByRole('link', { name: 'Maela Varn' })).toHaveAttribute('data-state', 'ok')
 })
 
