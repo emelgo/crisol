@@ -756,6 +756,8 @@ export function EntryView({
           )}
         </article>
         <aside aria-label={t('wiki.pagePanel')} className={styles.entryPanel} data-tour="panel-bloques">
+          {/* «Mencionado en», arriba (como en Everlore); después, las propiedades y los bloques */}
+          <Backlinks key={`enlaces-${page.id}`} page={page} />
           {/* Las propiedades, a un lado (como los bloques del panel de Everlore) */}
           <PageProperties key={page.id} page={page} adders={false} adderRef={addProperty} />
           <PanelBlocks
@@ -763,58 +765,8 @@ export function EntryView({
             page={page}
             onAddProperty={page.locked ? undefined : (kind) => addProperty.current?.(kind)}
           />
-          <Backlinks key={`enlaces-${page.id}`} page={page} />
-          {!active && <Contents key={`indice-${page.id}`} root={main} />}
         </aside>
       </div>
     </>
-  )
-}
-
-/** El índice: los títulos del texto de la página (no los de los secretos), que se siguen al escribir */
-function Contents({ root }: { root: RefObject<HTMLElement | null> }) {
-  const { t } = useTranslation()
-  const id = useId()
-  const [headings, setHeadings] = useState<{ level: number; text: string; element: HTMLElement }[]>([])
-  useEffect(() => {
-    const container = root.current
-    if (!container) return
-    let frame = 0
-    const read = () => {
-      cancelAnimationFrame(frame)
-      frame = requestAnimationFrame(() => {
-        const found = [...container.querySelectorAll<HTMLElement>('[role="textbox"] > :is(h2, h3, h4)')]
-        setHeadings(
-          found
-            .map((element) => ({ level: Number(element.tagName[1]), text: element.textContent?.trim() ?? '', element }))
-            .filter((heading) => heading.text)
-        )
-      })
-    }
-    read()
-    const observer = new MutationObserver(read)
-    observer.observe(container, { childList: true, subtree: true, characterData: true })
-    return () => {
-      observer.disconnect()
-      cancelAnimationFrame(frame)
-    }
-  }, [root])
-  return (
-    <section aria-labelledby={`${id}-title`} className={styles.contents}>
-      <h2 id={`${id}-title`}>{t('wiki.contents')}</h2>
-      {headings.length === 0 ? (
-        <p>{t('wiki.contentsEmpty')}</p>
-      ) : (
-        <ul>
-          {headings.map((heading, index) => (
-            <li key={`${index}-${heading.text}`} data-level={heading.level}>
-              <button type="button" onClick={() => heading.element.scrollIntoView({ block: 'start' })}>
-                {heading.text}
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-    </section>
   )
 }

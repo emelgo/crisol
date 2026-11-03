@@ -5,13 +5,13 @@
 import type { Page } from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
+import { FileText, Link2 } from 'lucide-react'
 import { useId } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
 import { useAnnounce } from '../components/announcer.tsx'
 import { BusyButton } from '../components/busy-button.tsx'
-import list from '../components/list.module.css'
 import styles from './backlinks.module.css'
 
 /** La consulta de los enlaces de una página (cuelga de ['pages', mundo]: se pone al día con los avisos de páginas) */
@@ -39,49 +39,59 @@ export function Backlinks({ page }: { page: Page }) {
   })
   const data = links.data
   const where = (path: string[]) => (path.length > 0 ? path.join(' / ') : null)
+  const pageIcon = (icon: string | null | undefined) => (
+    <span aria-hidden="true" className={styles.icon}>
+      {icon ?? <FileText size={14} />}
+    </span>
+  )
+  // Como en Everlore: «Mencionado en», arriba del panel, una lista corta de páginas; las que la nombran sin enlazarla,
+  // debajo, con «Enlazar» al pasar por encima. Los trozos de texto, al dejar el ratón encima (title)
   return (
     <section aria-labelledby={`${id}-title`} className={styles.panel}>
-      <h2 id={`${id}-title`}>{t('backlinks.title')}</h2>
-      {/* Sin nada: una sola línea; si no, cada lista con su título */}
+      <h2 id={`${id}-title`} className={styles.title}>
+        <Link2 aria-hidden="true" size={12} />
+        {t('backlinks.title')}
+      </h2>
       {data && data.incoming.length === 0 && data.mentions.length === 0 && (
         <p className={styles.empty}>{t('backlinks.none')}</p>
       )}
-      {data && data.incoming.length > 0 && <h3 id={`${id}-in`}>{t('backlinks.incoming')}</h3>}
       {data && data.incoming.length > 0 && (
-        <ul aria-labelledby={`${id}-in`} className={list.list}>
+        <ul aria-labelledby={`${id}-title`} className={styles.list}>
           {data.incoming.map((item) => (
-            <li key={item.pageId} className={styles.item}>
+            <li key={item.pageId} className={styles.item} title={item.fragment ?? undefined}>
               <Link to="/mundos/$worldId/wiki/$pageId" params={{ worldId: page.worldId, pageId: item.pageId }}>
-                {item.title}
+                {pageIcon(null)}
+                <span className={styles.name}>{item.title}</span>
               </Link>
-              {where(item.path) && <span className={styles.path}>{where(item.path)}</span>}
               {item.inSecret && <span className={styles.secret}>{t('backlinks.inSecret')}</span>}
-              {item.fragment && <p className={styles.fragment}>{item.fragment}</p>}
             </li>
           ))}
         </ul>
       )}
-      {data && data.mentions.length > 0 && <h3 id={`${id}-mentions`}>{t('backlinks.mentions')}</h3>}
       {data && data.mentions.length > 0 && (
-        <ul aria-labelledby={`${id}-mentions`} className={list.list}>
-          {data.mentions.map((item) => (
-            <li key={item.pageId} className={styles.item}>
-              <Link to="/mundos/$worldId/wiki/$pageId" params={{ worldId: page.worldId, pageId: item.pageId }}>
-                {item.title}
-              </Link>
-              {item.inSecret && <span className={styles.secret}>{t('backlinks.inSecret')}</span>}
-              <p className={styles.fragment}>{item.fragment}</p>
-              <BusyButton
-                className={list.secondary}
-                busy={link.isPending && link.variables?.pageId === item.pageId}
-                aria-label={t('backlinks.linkIn', { title: item.title })}
-                onClick={() => link.mutate({ pageId: item.pageId, title: item.title })}
-              >
-                {t('backlinks.link')}
-              </BusyButton>
-            </li>
-          ))}
-        </ul>
+        <>
+          <h3 id={`${id}-mentions`} className={styles.subtitle}>
+            {t('backlinks.mentions')}
+          </h3>
+          <ul aria-labelledby={`${id}-mentions`} className={styles.list}>
+            {data.mentions.map((item) => (
+              <li key={item.pageId} className={styles.item} title={item.fragment}>
+                <Link to="/mundos/$worldId/wiki/$pageId" params={{ worldId: page.worldId, pageId: item.pageId }}>
+                  {pageIcon(null)}
+                  <span className={styles.name}>{item.title}</span>
+                </Link>
+                <BusyButton
+                  className={styles.linkButton}
+                  busy={link.isPending && link.variables?.pageId === item.pageId}
+                  aria-label={t('backlinks.linkIn', { title: item.title })}
+                  onClick={() => link.mutate({ pageId: item.pageId, title: item.title })}
+                >
+                  {t('backlinks.link')}
+                </BusyButton>
+              </li>
+            ))}
+          </ul>
+        </>
       )}
     </section>
   )

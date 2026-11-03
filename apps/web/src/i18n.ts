@@ -384,11 +384,11 @@ export const es = {
     restored: 'Restaurada la versión del {{when}}.'
   },
   backlinks: {
-    title: 'Enlaces',
+    title: 'Mencionado en',
     incoming: 'La enlazan',
     noIncoming: 'Ninguna página la enlaza.',
-    none: 'Ninguna página la enlaza ni la nombra.',
-    mentions: 'La nombran sin enlazar',
+    none: 'Ninguna página la menciona.',
+    mentions: 'Sin enlazar',
     noMentions: 'Ninguna página la nombra sin enlazarla.',
     inSecret: 'en un secreto',
     link: 'Enlazar',
@@ -417,6 +417,7 @@ export const es = {
   sheet: {
     toggle: 'Hoja',
     columns: 'Columnas',
+    printing: 'Imprimir y PDF',
     columnsOne: 'Una',
     columnsTwo: 'Dos',
     columnsChangeOne: 'Una columna desde aquí',

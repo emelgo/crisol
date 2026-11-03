@@ -169,6 +169,8 @@ function EmptyLineHandle({ editor }: { editor: Editor }) {
     }
     schedule()
     editor.on('selectionUpdate', schedule)
+    // También cuando algo se recoloca sin cambiar el texto (la hoja coloca sus bloques con una transacción aparte)
+    editor.on('transaction', schedule)
     editor.on('update', schedule)
     editor.on('focus', schedule)
     editor.on('blur', schedule)
@@ -181,6 +183,7 @@ function EmptyLineHandle({ editor }: { editor: Editor }) {
     return () => {
       cancelAnimationFrame(frame)
       editor.off('selectionUpdate', schedule)
+      editor.off('transaction', schedule)
       editor.off('update', schedule)
       editor.off('focus', schedule)
       editor.off('blur', schedule)

@@ -10,7 +10,7 @@ import { type Editor, Extension } from '@tiptap/core'
 import type { Node as PMNode } from '@tiptap/pm/model'
 import { Plugin, PluginKey } from '@tiptap/pm/state'
 import { Decoration, DecorationSet } from '@tiptap/pm/view'
-import { type ReactNode, useEffect, useLayoutEffect, useState } from 'react'
+import { type CSSProperties, type ReactNode, useEffect, useLayoutEffect, useState } from 'react'
 import { GHOST_LINE } from '../ghost-line.ts'
 import styles from './paged.module.css'
 import { PAPER } from './sheet.tsx'
@@ -21,8 +21,28 @@ const GAP = 28
 const PAGE_GAP = 24
 
 const contentWidth = (settings: SheetSettings) => PAPER[settings.paper].width - 2 * MARGIN.side
-const contentHeight = (settings: SheetSettings) => PAPER[settings.paper].height - MARGIN.top - MARGIN.bottom
-const columnWidth = (settings: SheetSettings) => (contentWidth(settings) - GAP) / 2
+
+/**
+ * Las medidas de la hoja a una escala k (sin zoom de CSS, que agrandaría también lo que flota dentro): el texto llena
+ * la columna y todo crece o mengua a la par, así que cae igual que al imprimir
+ */
+function geometry(settings: SheetSettings, k: number) {
+  const paper = PAPER[settings.paper]
+  const width = paper.width * k
+  const side = MARGIN.side * k
+  const content = width - 2 * side
+  const gap = GAP * k
+  return {
+    width,
+    height: paper.height * k,
+    side,
+    top: MARGIN.top * k,
+    content,
+    contentHeight: (paper.height - MARGIN.top - MARGIN.bottom) * k,
+    gap,
+    column: (content - gap) / 2
+  }
+}
 
 /** Cómo cuenta un bloque para paginar; a una columna, todo va «a lo ancho» (como en sheet.tsx) */
 function kindOf(node: PMNode, columns: 1 | 2): SheetBlock['kind'] {
@@ -75,7 +95,8 @@ function heightOf(dom: HTMLElement) {
 }
 
 /** Coloca los bloques y devuelve cuántas páginas hay */
-function layOut(editor: Editor, settings: SheetSettings) {
+function layOut(editor: Editor, settings: SheetSettings, k: number) {
+  const g = geometry(settings, k)
   const { view, state } = editor
   const blocks: SheetBlock[] = []
   const heights: number[] = []
@@ -89,11 +110,11 @@ function layOut(editor: Editor, settings: SheetSettings) {
     heights.push(height)
     blocks.push({ id: String(index), kind: kindOf(node, columns), height })
   })
-  const pages = paginate(blocks, contentHeight(settings))
+  const pages = paginate(blocks, g.contentHeight)
   const placed: string[] = blocks.map(
     (block) =>
       // Hasta que se coloque: a su ancho, para medirlo bien
-      `position:absolute;left:0;top:0;width:${block.kind === 'wide' ? contentWidth(settings) : columnWidth(settings)}px;margin-inline:0;box-sizing:border-box`
+      `position:absolute;left:0;top:0;width:${block.kind === 'wide' ? g.content : g.column}px;margin-inline:0;box-sizing:border-box`
   )
   let last: { x: number; y: number; width: number } | null = null
   const place = (id: string, x: number, y: number, width: number) => {
@@ -102,21 +123,21 @@ function layOut(editor: Editor, settings: SheetSettings) {
     last = { x, y: y + (heights[index] ?? 0), width }
   }
   pages.forEach((page, p) => {
-    let y = p * (PAPER[settings.paper].height + PAGE_GAP)
+    let y = p * (g.height + PAGE_GAP)
     for (const row of page.rows) {
       if (row.kind === 'wide') {
-        place(row.id, 0, y, contentWidth(settings))
+        place(row.id, 0, y, g.content)
         y += heights[Number(row.id)] ?? 0
         continue
       }
       let left = y
       let right = y
       for (const id of row.columns[0]) {
-        place(id, 0, left, columnWidth(settings))
+        place(id, 0, left, g.column)
         left += heights[Number(id)] ?? 0
       }
       for (const id of row.columns[1]) {
-        place(id, columnWidth(settings) + GAP, right, columnWidth(settings))
+        place(id, g.column + g.gap, right, g.column)
         right += heights[Number(id)] ?? 0
       }
       y = Math.max(left, right)
@@ -142,18 +163,32 @@ function clear(editor: Editor) {
   editor.view.dom.querySelector<HTMLElement>(`[${GHOST_LINE}]`)?.removeAttribute('style')
 }
 
-/** Cuánto escalar las páginas para que llenen a lo ancho su sitio: así la letra se ve del tamaño de siempre */
+/** Cuánto escalar las páginas para que quepan a lo ancho de su sitio, sin pasar del tamaño de letra de siempre */
 function useFit(container: HTMLElement | null, width: number) {
   const [scale, setScale] = useState(1)
   useEffect(() => {
     if (!container || typeof ResizeObserver === 'undefined') return
     const observer = new ResizeObserver(([entry]) => {
-      setScale(Math.min(1.6, Math.max(0.4, (entry?.contentRect.width ?? width) / width)))
+      // Como mucho, la letra del tamaño de siempre (12 pt de la hoja = 16 px; el texto de la app, 17 px)
+      setScale(Math.min(MAX_SCALE, Math.max(0.4, (entry?.contentRect.width ?? width) / width)))
     })
     observer.observe(container)
     return () => observer.disconnect()
   }, [container, width])
   return scale
+}
+
+/** La escala más grande: la letra de la hoja, del tamaño del texto de siempre */
+const MAX_SCALE = 17 / 16
+
+/** Para medir antes de tener ajustes */
+const DEFAULT_GEOMETRY: SheetSettings = {
+  paper: 'a4',
+  theme: 'neutro',
+  numbers: true,
+  firstNumber: 1,
+  footer: true,
+  columns: 1
 }
 
 /** En lo estrecho (el móvil), una columna seguida, sin páginas */
@@ -163,20 +198,22 @@ export function PagedSheet({
   editor,
   settings,
   title,
+  ready,
   children
 }: {
   editor: Editor | null
   settings: SheetSettings | null
   /** Para el pie de cada página */
   title: string
+  /** El texto ya llegó del servidor: antes no se coloca nada (una transacción antes de tiempo metería una línea) */
+  ready: boolean
   children: ReactNode
 }) {
   const [pages, setPages] = useState(1)
   const [narrow, setNarrow] = useState(() => typeof window !== 'undefined' && window.matchMedia?.(NARROW).matches)
   const [frame, setFrame] = useState<HTMLDivElement | null>(null)
-  const paper = settings ? PAPER[settings.paper] : PAPER.a4
   // El texto llena la columna (alineado con el título); el margen del papel queda fuera, sin verse
-  const scale = useFit(frame, settings ? contentWidth(settings) : paper.width - 2 * MARGIN.side)
+  const scale = useFit(frame, contentWidth(settings ?? DEFAULT_GEOMETRY))
   const paged = Boolean(settings) && !narrow
 
   useEffect(() => {
@@ -193,12 +230,13 @@ export function PagedSheet({
       clear(editor)
       return
     }
+    if (!ready) return
     let frameId = 0
     let passes = 0
     const run = () => {
       frameId = 0
       if (editor.isDestroyed) return
-      const result = layOut(editor, settings)
+      const result = layOut(editor, settings, scale)
       setPages(result.pages)
       // Colocar cambia el ancho de los nuevos: se mide otra vez hasta que no cambie nada
       if (result.changed && passes++ < 4) schedule()
@@ -229,21 +267,24 @@ export function PagedSheet({
       resized?.disconnect()
       if (!editor.isDestroyed) clear(editor)
     }
-  }, [editor, paged, settings])
+  }, [editor, paged, settings, ready, scale])
 
   if (!paged || !settings) return <>{children}</>
-  const height = pages * (paper.height + PAGE_GAP) - PAGE_GAP
+  const g = geometry(settings, scale)
+  const height = pages * (g.height + PAGE_GAP) - PAGE_GAP
   return (
     <div ref={setFrame} className={styles.fit}>
       <div
         className={styles.paged}
-        style={{
-          inlineSize: paper.width,
-          blockSize: height,
-          zoom: scale,
-          marginInlineStart: -MARGIN.side,
-          marginBlockStart: -MARGIN.top + 8
-        }}
+        style={
+          {
+            inlineSize: g.width,
+            blockSize: height,
+            marginInlineStart: -g.side,
+            marginBlockStart: -g.top + 8,
+            '--sheet-k': scale
+          } as CSSProperties
+        }
         data-sheet-paged=""
       >
         {/* Las páginas, detrás del texto */}
@@ -253,10 +294,10 @@ export function PagedSheet({
             key={index}
             className={styles.page}
             aria-hidden="true"
-            style={{ insetBlockStart: index * (paper.height + PAGE_GAP), blockSize: paper.height }}
+            style={{ insetBlockStart: index * (g.height + PAGE_GAP), blockSize: g.height }}
           >
             {(settings.footer || settings.numbers) && (
-              <span className={styles.footer}>
+              <span className={styles.footer} style={{ insetInline: g.side, insetBlockEnd: g.top / 2 }}>
                 <span>{settings.footer ? title : ''}</span>
                 <span>{settings.numbers ? settings.firstNumber + index : ''}</span>
               </span>
@@ -265,12 +306,7 @@ export function PagedSheet({
         ))}
         <div
           className={styles.text}
-          style={{
-            insetBlockStart: MARGIN.top,
-            insetInlineStart: MARGIN.side,
-            inlineSize: contentWidth(settings),
-            blockSize: height - MARGIN.top
-          }}
+          style={{ insetBlockStart: g.top, insetInlineStart: g.side, inlineSize: g.content, blockSize: height - g.top }}
         >
           {children}
         </div>

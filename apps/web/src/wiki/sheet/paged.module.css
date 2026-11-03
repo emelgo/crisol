@@ -26,8 +26,6 @@
 
 .footer {
   position: absolute;
-  inset-inline: 56px;
-  inset-block-end: 28px;
   display: flex;
   justify-content: space-between;
   color: var(--color-muted);
@@ -69,7 +67,8 @@
 
 .text :global(.ProseMirror) {
   font-family: var(--sheet-font);
-  font-size: 12pt;
+  /* La de imprimir, a la escala de la vista */
+  font-size: calc(12pt * var(--sheet-k, 1));
   line-height: 1.35;
   hyphens: auto;
   overflow-wrap: break-word;

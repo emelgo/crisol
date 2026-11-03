@@ -318,7 +318,7 @@ function BodyEditor({
     <div aria-busy={!ready}>
       {/* Sin barra de botones encima: los bloques, con «/»; buscar en la página, con Ctrl+Alt+F */}
       {editor && <FindBar editor={editor} />}
-      <PagedSheet editor={editor} settings={sheet} title={title}>
+      <PagedSheet editor={editor} settings={sheet} title={title} ready={ready}>
         <EditorContent editor={editor} />
       </PagedSheet>
       <input

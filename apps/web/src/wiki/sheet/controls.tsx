@@ -79,11 +79,49 @@ export function SheetPaper({ page, children }: { page: Page; children: ReactNode
   )
 }
 
-/** En «⋯», con la hoja puesta: sus ajustes, imprimir y el PDF */
+/** En «⋯»: las columnas de la página y, en su desplegable, imprimir y el PDF con los ajustes de la hoja */
 export function SheetMenu({ page }: { page: Page }) {
+  const { t } = useTranslation()
+  const [printing, setPrinting] = useState(false)
+  const id = useId()
   return (
     <SheetSettingsRow page={page} settings={sheetOf(page)}>
-      <PrintButtons page={page} />
+      {(row) => (
+        <>
+          <div className={styles.line}>
+            <span>{t('sheet.columns')}</span>
+            {/* biome-ignore lint/a11y/useSemanticElements: dos botones que se eligen, no un grupo de un formulario */}
+            <div className={styles.segmented} role="group" aria-label={t('sheet.columns')}>
+              {([1, 2] as const).map((count) => (
+                <button
+                  key={count}
+                  type="button"
+                  aria-pressed={row.local.columns === count}
+                  onClick={() => row.change({ columns: count })}
+                >
+                  {count}
+                </button>
+              ))}
+            </div>
+          </div>
+          <button
+            type="button"
+            className={styles.opener}
+            aria-expanded={printing}
+            aria-controls={id}
+            onClick={() => setPrinting(!printing)}
+          >
+            {t('sheet.printing')}
+            <span aria-hidden="true">▸</span>
+          </button>
+          {printing && (
+            <div id={id} className={styles.printing}>
+              {row.fields}
+              <PrintButtons page={page} />
+            </div>
+          )}
+        </>
+      )}
     </SheetSettingsRow>
   )
 }
@@ -115,12 +153,14 @@ function PrintButtons({ page }: { page: Page }) {
         <input id={secretsId} type="checkbox" checked={secrets} onChange={(e) => setSecrets(e.currentTarget.checked)} />
         <label htmlFor={secretsId}>{t('sheet.includeSecrets')}</label>
       </span>
-      <a className={list.secondary} href={printUrl} target="_blank" rel="noopener">
-        {t('sheet.print')}
-      </a>
-      <BusyButton className={list.secondary} busy={download.isPending} onClick={() => download.mutate()}>
-        {t('sheet.pdf')}
-      </BusyButton>
+      <div className={styles.printActions}>
+        <a className={styles.printButton} href={printUrl} target="_blank" rel="noopener">
+          {t('sheet.print')}
+        </a>
+        <BusyButton className={styles.printButton} busy={download.isPending} onClick={() => download.mutate()}>
+          {t('sheet.pdf')}
+        </BusyButton>
+      </div>
       {download.error && (
         <span role="alert" className={styles.error}>
           {errorText(download.error)}
@@ -130,14 +170,26 @@ function PrintButtons({ page }: { page: Page }) {
   )
 }
 
-/** Los ajustes de la hoja, en una fila. Cambian al momento (sin esperar al servidor); si no se guardan, lo dice */
-function SheetSettingsRow({ page, settings, children }: { page: Page; settings: SheetSettings; children: ReactNode }) {
+/** Los ajustes de la hoja. Cambian al momento (sin esperar al servidor); si no se guardan, lo dice */
+function SheetSettingsRow({
+  page,
+  settings,
+  children
+}: {
+  page: Page
+  settings: SheetSettings
+  children: (row: {
+    local: SheetSettings
+    change: (patch: Partial<SheetSettings>) => void
+    fields: ReactNode
+  }) => ReactNode
+}) {
   const { t } = useTranslation()
   const errorText = useErrorText()
   const save = useSaveSheet(page)
   const [local, setLocal] = useState(settings)
   useEffect(() => setLocal(settings), [settings])
-  const ids = { paper: useId(), theme: useId(), first: useId(), columns: useId() }
+  const ids = { paper: useId(), theme: useId(), first: useId() }
   const change = (patch: Partial<SheetSettings>) => {
     const next = { ...local, ...patch }
     setLocal(next)
@@ -149,68 +201,72 @@ function SheetSettingsRow({ page, settings, children }: { page: Page; settings: 
       if (value !== local.firstNumber) change({ firstNumber: value })
     } else input.value = String(local.firstNumber)
   }
-  return (
-    <fieldset className={styles.row}>
-      <legend className={styles.legend}>{t('sheet.settings')}</legend>
-      <label htmlFor={ids.columns}>{t('sheet.columns')}</label>
-      <select
-        id={ids.columns}
-        value={local.columns}
-        onChange={(e) => change({ columns: e.currentTarget.value === '2' ? 2 : 1 })}
-      >
-        <option value="1">{t('sheet.columnsOne')}</option>
-        <option value="2">{t('sheet.columnsTwo')}</option>
-      </select>
-      <label htmlFor={ids.paper}>{t('sheet.paper')}</label>
-      <select
-        id={ids.paper}
-        value={local.paper}
-        onChange={(e) => change({ paper: e.currentTarget.value as SheetSettings['paper'] })}
-      >
-        <option value="a4">{t('sheet.papers.a4')}</option>
-        <option value="letter">{t('sheet.papers.letter')}</option>
-      </select>
-      <label htmlFor={ids.theme}>{t('sheet.theme')}</label>
-      <select
-        id={ids.theme}
-        value={local.theme}
-        onChange={(e) => change({ theme: e.currentTarget.value as SheetSettings['theme'] })}
-      >
-        <option value="pergamino">{t('sheet.themes.pergamino')}</option>
-        <option value="neutro">{t('sheet.themes.neutro')}</option>
-      </select>
-      <label className={styles.check}>
-        <input type="checkbox" checked={local.numbers} onChange={(e) => change({ numbers: e.currentTarget.checked })} />
-        {t('sheet.numbers')}
-      </label>
-      {local.numbers && (
-        <>
-          <label htmlFor={ids.first}>{t('sheet.firstNumber')}</label>
+  const fields = (
+    <>
+      <div className={styles.line}>
+        <label htmlFor={ids.paper}>{t('sheet.paper')}</label>
+        <select
+          id={ids.paper}
+          value={local.paper}
+          onChange={(e) => change({ paper: e.currentTarget.value as SheetSettings['paper'] })}
+        >
+          <option value="a4">{t('sheet.papers.a4')}</option>
+          <option value="letter">{t('sheet.papers.letter')}</option>
+        </select>
+      </div>
+      <div className={styles.line}>
+        <label htmlFor={ids.theme}>{t('sheet.theme')}</label>
+        <select
+          id={ids.theme}
+          value={local.theme}
+          onChange={(e) => change({ theme: e.currentTarget.value as SheetSettings['theme'] })}
+        >
+          <option value="pergamino">{t('sheet.themes.pergamino')}</option>
+          <option value="neutro">{t('sheet.themes.neutro')}</option>
+        </select>
+      </div>
+      <div className={styles.line}>
+        <label className={styles.check}>
           <input
-            id={ids.first}
-            type="number"
-            min={1}
-            max={999}
-            className={styles.number}
-            defaultValue={local.firstNumber}
-            key={local.firstNumber}
-            onBlur={(e) => saveFirst(e.currentTarget)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') saveFirst(e.currentTarget)
-            }}
+            type="checkbox"
+            checked={local.numbers}
+            onChange={(e) => change({ numbers: e.currentTarget.checked })}
           />
-        </>
-      )}
+          {t('sheet.numbers')}
+        </label>
+        {local.numbers && (
+          <span className={styles.from}>
+            <label htmlFor={ids.first}>{t('sheet.firstNumber')}</label>
+            <input
+              id={ids.first}
+              type="number"
+              min={1}
+              max={999}
+              className={styles.number}
+              defaultValue={local.firstNumber}
+              key={local.firstNumber}
+              onBlur={(e) => saveFirst(e.currentTarget)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') saveFirst(e.currentTarget)
+              }}
+            />
+          </span>
+        )}
+      </div>
       <label className={styles.check}>
         <input type="checkbox" checked={local.footer} onChange={(e) => change({ footer: e.currentTarget.checked })} />
         {t('sheet.footer')}
       </label>
-      {children}
+    </>
+  )
+  return (
+    <div className={styles.row}>
+      {children({ local, change, fields })}
       {save.error && (
         <span role="alert" className={styles.error}>
           {errorText(save.error)}
         </span>
       )}
-    </fieldset>
+    </div>
   )
 }
