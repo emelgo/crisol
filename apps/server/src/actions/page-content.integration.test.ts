@@ -449,6 +449,43 @@ describe('Claude lee y escribe páginas en Markdown', () => {
     })
   })
 
+  it('aplicar una plantilla a una página ya hecha: añade lo que falta, sin borrar nada, en una operación', async () => {
+    const { pages } = await ok200('createPages', {
+      worldId,
+      parentId: null,
+      pages: [
+        {
+          key: 'ciudad',
+          title: 'Ciudad Libre',
+          markdown: '---\nPoblación: 12000\nClima: Niebla\n---\n## Descripción\n\nPuerto franco.\n'
+        }
+      ]
+    })
+    const pageId = pages[0].id
+    const applied = await ok200('editPage', { pageId, template: 'Lugar' })
+    expect(applied.page.template).toBe('lugar')
+    expect(applied.page.properties.map((p: { name: string; field?: string }) => [p.name, p.field])).toEqual([
+      ['Población', 'poblacion'],
+      ['Clima', undefined],
+      ['Tipo', 'tipo'],
+      ['Dentro de', 'dentro-de'],
+      ['Gobierna', 'gobierna']
+    ])
+    expect(applied.page.panel.map((b: { type: string }) => b.type)).toEqual(['image', 'related', 'related'])
+    const { markdown } = await ok200('readPage', { pageId })
+    // Lo suyo se queda; el apartado que no tenía, al final
+    expect(markdown).toContain('## Descripción\n\nPuerto franco.')
+    expect(markdown.trimEnd().endsWith('## Ganchos')).toBe(true)
+    expect(markdown.match(/## Descripción/g)).toHaveLength(1)
+    // Una sola operación del historial, que dice qué plantilla
+    const { entries } = await ok200('listHistory', { worldId })
+    expect(entries[0]).toMatchObject({ action: 'editPage', details: { template: 'Lugar' } })
+    // Con body no va
+    expect(
+      (await call('editPage', { pageId, template: 'lugar', body: { mode: 'append', markdown: 'x' } })).statusCode
+    ).toBe(400)
+  })
+
   it('quien no es máster del mundo no lee ni escribe', async () => {
     const page = await ok200('createPage', { worldId, title: 'Puerto Ceniza' })
     const player = await signUpTestUser(auth, { name: 'Lía', email: 'lia@crisol.test' })

@@ -625,6 +625,15 @@ export const es = {
     sort: 'Orden',
     byTitle: 'Por título'
   },
+  applyTemplate: {
+    open: 'Aplicar plantilla…',
+    title: 'Aplicar plantilla',
+    apply: 'Aplicar {{name}}',
+    summary: 'Lo que añade {{name}}',
+    has: 'Ya está',
+    nothing: 'Nada que añadir',
+    atTheEnd: 'En el texto, al final'
+  },
   templateEditor: {
     kind: 'Plantilla',
     panel: 'Campos y panel de la plantilla',

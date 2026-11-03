@@ -483,16 +483,27 @@ export const editPage = defineAction({
         })
         .refine((body) => body.mode !== 'block' || body.blockId, { message: 'block necesita blockId' })
         .refine((body) => body.mode !== 'section' || body.section, { message: 'section necesita section' })
+        .optional(),
+      template: z
+        .string()
+        .trim()
+        .min(1)
+        .max(60)
         .optional()
+        .describe(
+          'Aplica una plantilla (su id o su nombre): añade los campos, los bloques del panel y, al final del texto, los apartados que le falten, sin borrar nada; la página pasa a ser de ella'
+        )
     })
     .refine(
       (input) =>
         input.title !== undefined ||
         input.icon !== undefined ||
         input.properties !== undefined ||
-        input.body !== undefined,
+        input.body !== undefined ||
+        input.template !== undefined,
       { message: 'Nada que cambiar' }
-    ),
+    )
+    .refine((input) => !(input.template && input.body), { message: 'template no va con body' }),
   output: z.object({
     page,
     changedBlocks: z.array(z.string()).describe('Los ids de los bloques de primer nivel que se escribieron'),

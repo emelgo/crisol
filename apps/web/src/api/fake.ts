@@ -21,6 +21,7 @@ import type {
   World
 } from '@crisol/contracts'
 import {
+  applyTemplate,
   BUILT_IN_TEMPLATES,
   builtInTemplate,
   instantiate,
@@ -718,7 +719,26 @@ export function fakeApi(
     createPages: () => {
       throw new ApiError('UNSUPPORTED', 400)
     },
-    editPage: ({ pageId }) => ({ page: pageView(pageById(pageId)), changedBlocks: [], changedSinceRequest: false }),
+    editPage: ({ pageId, template }) => {
+      const page = pageById(pageId)
+      // Con plantilla, lo que le falta, como el servidor (los apartados del texto no se simulan)
+      const from = template ? templateById(template) : undefined
+      if (template && !from) throw new ApiError('TEMPLATE_NOT_FOUND', 400)
+      if (from) {
+        const applied = applyTemplate(
+          from as unknown as Parameters<typeof applyTemplate>[0],
+          { properties: page.properties, panel: page.panel ?? [], headings: [] },
+          () => crypto.randomUUID().replace(/-/g, '').slice(0, 12)
+        )
+        Object.assign(page, {
+          properties: applied.properties,
+          panel: applied.panel,
+          template: from.id,
+          version: page.version + 1
+        })
+      }
+      return { page: pageView(page), changedBlocks: [], changedSinceRequest: false }
+    },
     deletePage: ({ pageId }) => {
       const root = pageById(pageId)
       const below: StoredPage[] = []

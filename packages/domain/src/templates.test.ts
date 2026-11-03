@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { propertiesProblem } from './properties.ts'
 import {
+  applyTemplate,
   BUILT_IN_TEMPLATES,
   builtInTemplate,
   fieldKey,
@@ -146,5 +147,55 @@ describe('las propiedades que se dan al crear con una plantilla', () => {
   it('si una no cabe en su campo, dice cuál y qué campos tiene la plantilla', () => {
     const filled = fillTemplate(pnj.fields, [{ name: 'Facción', type: 'boolean', value: true }])
     expect(filled).toEqual({ problem: { given: 'Facción', field: 'Facción' } })
+  })
+})
+
+describe('aplicar una plantilla a una página ya hecha', () => {
+  const lugar = builtInTemplate('lugar')
+  if (!lugar) throw new Error('sin Lugar')
+
+  it('añade lo que falta sin borrar nada: campos, bloques y los apartados que no tiene, al final', () => {
+    const applied = applyTemplate(
+      lugar,
+      {
+        properties: [
+          { name: 'Población', type: 'number', value: 12000 },
+          { name: 'Clima', type: 'text', value: 'Niebla' }
+        ],
+        panel: [{ id: 'imagen1', type: 'image', fileId: null, caption: 'El puerto' }],
+        headings: ['Descripción']
+      },
+      () => 'nuevo1'
+    )
+    // Población, a mano, toma el campo de la plantilla; Clima se queda; los demás, al final
+    expect(applied.properties.map((p) => [p.name, p.field])).toEqual([
+      ['Población', 'poblacion'],
+      ['Clima', undefined],
+      ['Tipo', 'tipo'],
+      ['Dentro de', 'dentro-de'],
+      ['Gobierna', 'gobierna']
+    ])
+    expect(applied.fields).toEqual([
+      { name: 'Tipo', added: true },
+      { name: 'Dentro de', added: true },
+      { name: 'Población', added: false },
+      { name: 'Gobierna', added: true }
+    ])
+    // La imagen ya estaba; las dos tablas, no
+    expect(applied.panel.map((b) => b.type)).toEqual(['image', 'related', 'related'])
+    expect(applied.blocks).toEqual(['Lugares dentro', 'Habitantes'])
+    expect(applied.sections).toEqual(['Ganchos'])
+    expect(applied.append).toBe('## Ganchos')
+  })
+
+  it('un campo que se llama igual pero no cabe se deja como está, sin repetirlo', () => {
+    const applied = applyTemplate(
+      lugar,
+      { properties: [{ name: 'Población', type: 'list', value: ['muchos'] }], panel: [], headings: [] },
+      () => 'nuevo1'
+    )
+    expect(applied.properties.filter((p) => p.name === 'Población')).toEqual([
+      { name: 'Población', type: 'list', value: ['muchos'] }
+    ])
   })
 })

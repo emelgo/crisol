@@ -16,6 +16,7 @@ import { headingMayTakeFocus, PageTitle, useHeadingFocusRequest } from '../compo
 import { WorldBanner } from '../routes/world-card.tsx'
 import { TEMPLATE_ICON } from '../templates/icons.tsx'
 import { useTemplates } from '../templates/picker.tsx'
+import { ApplyTemplate } from './apply-template.tsx'
 import { Backlinks } from './backlinks.tsx'
 import { CollabSocket } from './collab.tsx'
 import { CoverButton, PageCoverImage } from './cover.tsx'
@@ -588,6 +589,7 @@ function MoreActions({ page }: { page: Page }) {
         <div id={panelId} className={styles.morePanel}>
           <SheetMenu page={page} />
           {/* Lo demás (subpágina, renombrar, mover, borrar…), con el botón derecho en el árbol */}
+          <ApplyTemplate page={page} />
           <ExportPage page={page} />
           <Versions page={page} />
         </div>

@@ -174,3 +174,41 @@ test('editar una plantilla tuya: «Frente» con un reloj de 8, y una página hec
   await expect(body.getByRole('heading', { level: 3, name: 'En una frase' })).toBeVisible()
   await expect(body.getByRole('heading', { level: 3, name: 'La verdad' })).toBeVisible()
 })
+
+test('aplicar una plantilla a una página ya hecha, desde «⋯»: añade lo que falta sin borrar nada', async ({ page }) => {
+  test.slow()
+  await freshOwner(page)
+  await createWorld(page, 'Eana')
+  await openWiki(page, 'Eana')
+  await page.getByRole('button', { name: 'Página nueva' }).click()
+  await page.keyboard.type('Ciudad Libre')
+  await page.keyboard.press('Enter')
+  await expect(page.getByRole('heading', { level: 1, name: 'Ciudad Libre' })).toBeVisible()
+  const pageId = new URL(page.url()).pathname.split('/').at(-1)
+  const written = await page.request.post('/api/actions/editPage', {
+    data: {
+      pageId,
+      body: { mode: 'replace', markdown: '---\nPoblación: 12000\n---\n## Descripción\n\nPuerto franco.\n' }
+    }
+  })
+  expect(written.status()).toBe(200)
+  await page.reload()
+  await page.getByRole('button', { name: 'Más acciones' }).click()
+  await page.getByRole('button', { name: 'Aplicar plantilla…' }).click()
+  const dialog = page.getByRole('dialog', { name: 'Aplicar plantilla' })
+  await dialog.getByRole('radio', { name: /^Lugar/ }).check()
+  await expect(dialog.getByRole('region', { name: 'Lo que añade Lugar' }).getByText('Ganchos')).toBeVisible()
+  for (const colorScheme of ['light', 'dark'] as const) {
+    await page.emulateMedia({ colorScheme })
+    const { violations } = await new AxeBuilder({ page }).include('dialog').withTags(['wcag2a', 'wcag2aa']).analyze()
+    const serious = violations.filter((v) => v.impact === 'critical' || v.impact === 'serious')
+    expect(serious.map((v) => `${colorScheme} ${v.id}: ${v.help}`)).toEqual([])
+  }
+  await dialog.getByRole('button', { name: 'Aplicar Lugar' }).click()
+  await expect(page.getByTitle('Hecha con la plantilla Lugar')).toBeVisible()
+  const properties = page.getByRole('region', { name: 'Propiedades' })
+  await expect(properties.getByLabel('Nombre de la propiedad 2')).toHaveValue('Tipo')
+  const body = page.getByRole('textbox', { name: 'Texto de la página' })
+  await expect(body.getByText('Puerto franco.')).toBeVisible()
+  await expect(body.getByRole('heading', { level: 3, name: 'Ganchos' })).toBeVisible()
+})

@@ -264,3 +264,77 @@ export function fillTemplate(
   for (const property of given) if (!used.has(fieldKey(property.name))) properties.push(property)
   return { properties }
 }
+
+/** Lo que pasa al aplicar una plantilla a una página ya hecha: qué se añade y qué ya estaba */
+export interface Applied {
+  properties: PageProperty[]
+  panel: TemplateBlock[]
+  /** El texto que se añade al final: los apartados del esqueleto que la página aún no tiene */
+  append: string
+  /** Para enseñarlo antes: cada campo, si se añade o ya estaba */
+  fields: { name: string; added: boolean }[]
+  blocks: string[]
+  sections: string[]
+}
+
+/** Los apartados de un Markdown: cada título con lo que lleva debajo, hasta el siguiente */
+function sectionsOf(markdown: string) {
+  const sections: { heading: string; text: string }[] = []
+  for (const line of markdown.split('\n')) {
+    const heading = /^#{1,6}\s+(.+?)\s*$/.exec(line)
+    if (heading) sections.push({ heading: heading[1] ?? '', text: `${line}\n` })
+    else if (sections.length > 0) (sections.at(-1) as { text: string }).text += `${line}\n`
+  }
+  return sections
+}
+
+const blockKey = (block: TemplateBlock) =>
+  [block.type, fieldKey(String(block.title ?? '')), String(block.template ?? ''), String(block.field ?? '')].join('|')
+
+/**
+ * Aplicar una plantilla a una página ya hecha: añade lo que falte sin borrar nada. Un campo que ya tiene (por su id)
+ * se queda; uno que se llama igual toma su id y su forma si su valor cabe (si no, se deja); los demás, al final. Los
+ * bloques que no tenga (del mismo tipo y título) y, al final del texto, los apartados que no tenga (por su título)
+ */
+export function applyTemplate(
+  template: PageTemplate,
+  page: { properties: readonly PageProperty[]; panel: readonly TemplateBlock[]; headings: readonly string[] },
+  newId: () => string
+): Applied {
+  const properties = [...page.properties]
+  const fields: Applied['fields'] = []
+  for (const field of template.fields) {
+    if (properties.some((p) => p.field !== undefined && p.field === field.field)) {
+      fields.push({ name: field.name, added: false })
+      continue
+    }
+    const index = properties.findIndex((p) => fieldKey(p.name) === fieldKey(field.name))
+    if (index >= 0) {
+      const current = properties[index] as PageProperty
+      const shaped = conformTo(field, current)
+      if (shaped) properties[index] = { ...shaped, name: current.name }
+      fields.push({ name: field.name, added: false })
+      continue
+    }
+    properties.push(structuredClone(field))
+    fields.push({ name: field.name, added: true })
+  }
+  const present = new Set(page.panel.map(blockKey))
+  const panel = [...page.panel]
+  const blocks: string[] = []
+  for (const block of template.panel) {
+    if (present.has(blockKey(block))) continue
+    panel.push({ ...structuredClone(block), id: newId() })
+    blocks.push(String(block.title || block.type))
+  }
+  const headings = new Set(page.headings.map(fieldKey))
+  const missing = sectionsOf(template.skeleton).filter((section) => !headings.has(fieldKey(section.heading)))
+  return {
+    properties,
+    panel,
+    append: missing.map((section) => section.text.trimEnd()).join('\n\n'),
+    fields,
+    blocks,
+    sections: missing.map((section) => section.heading)
+  }
+}

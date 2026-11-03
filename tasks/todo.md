@@ -204,7 +204,8 @@ amplía `@fugas` en la misma tarea. Cobertura ≥ 80 % de lo cambiado (bloquea d
 
 ## Fase 5: Aplicar y cerrar
 
-- [ ] **13. Aplicar una plantilla a una página ya hecha**
+- [x] **13. Aplicar una plantilla a una página ya hecha** — hecha. La regla es pura (`applyTemplate`, en el dominio):
+  la web la usa para enseñar lo que añade antes de aplicarla. `editPage` con `template` no va con `body`.
   - Acepta:
     - «Aplicar plantilla…» en «⋯» de la página abre el cuadro del lienzo: la lista y lo que añade (campos, bloques y
       apartados, al final del texto), con lo que ya tiene marcado.

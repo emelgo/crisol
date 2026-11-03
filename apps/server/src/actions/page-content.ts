@@ -4,9 +4,10 @@
  * nunca entra en el cuerpo
  */
 import { randomUUID } from 'node:crypto'
-import { createPage, createPages, editPage, type PageProperty, readPage } from '@crisol/contracts'
+import { createPage, createPages, editPage, type PageProperty, pagePanel, readPage } from '@crisol/contracts'
 import { documentsRepo, pagesRepo } from '@crisol/db'
 import {
+  applyTemplate,
   fillTemplate,
   type Instance,
   instantiate,
@@ -167,6 +168,28 @@ function inOrder<T extends { key: string; parent?: string | undefined }>(pages: 
   for (const page of pages) levelOf(page, new Set())
   const ordered = [...pages].sort((a, b) => (depth.get(a.key) ?? 0) - (depth.get(b.key) ?? 0))
   return { ordered, height: Math.max(...depth.values()) }
+}
+
+/** Lo que añade una plantilla a una página ya hecha (sus campos, bloques y apartados que falten), con la plantilla */
+async function applying(
+  ctx: ActionContext,
+  wiki: { organizationId: string },
+  page: { id: string; properties: unknown[]; panel: unknown[] },
+  ref: string
+) {
+  const template = await findTemplate(ctx, wiki.organizationId, ref)
+  const body = await readDocument(ctx, { kind: 'body', pageId: page.id })
+  const headings = (body.content ?? [])
+    .filter((node) => node.type === 'heading')
+    .map((node) => (node.content ?? []).map((child) => child.text ?? '').join(''))
+  const applied = applyTemplate(
+    template,
+    { properties: propertiesOf(page.properties), panel: pagePanel.safeParse(page.panel).data ?? [], headings },
+    newBlockId
+  )
+  const problem = propertiesProblem(applied.properties)
+  if (problem) throw new InvalidRequestError(problem)
+  return { template, applied }
 }
 
 /** Las propiedades de una página de plantilla: cada una en su campo, y los que no se dan con su valor inicial */
@@ -410,22 +433,29 @@ export const pageContentActions = [
     const { page, wiki } = await authorizedPage(ctx, 'page.write', input.pageId)
     // Lo que se estaba escribiendo queda en su sesión, antes de lo de Claude
     await ctx.collab?.closeSessions(page.id)
-    const read = input.body ? parse(input.body.markdown) : null
+    // Con plantilla: lo que le falta (campos, bloques y apartados al final), sin borrar nada (ADR-0009)
+    const applied = input.template ? await applying(ctx, wiki, page, input.template) : null
+    const bodyInput =
+      input.body ??
+      (applied?.applied.append ? { mode: 'append' as const, markdown: applied.applied.append } : undefined)
+    const read = bodyInput ? parse(bodyInput.markdown) : null
     // Las propiedades: las que se dan; o, al cambiar el cuerpo entero, las de su YAML
-    const fromYaml = input.body?.mode === 'replace' && read && read.properties.length > 0 ? read.properties : undefined
+    const fromYaml = bodyInput?.mode === 'replace' && read && read.properties.length > 0 ? read.properties : undefined
     const wanted = input.properties ?? fromYaml
-    const properties = wanted
-      ? toProperties(wanted, (await pageResolver(ctx, wiki.worldId)).resolve, propertiesOf(page.properties))
-      : undefined
+    const properties = applied
+      ? applied.applied.properties
+      : wanted
+        ? toProperties(wanted, (await pageResolver(ctx, wiki.worldId)).resolve, propertiesOf(page.properties))
+        : undefined
 
     const stored = await documentsRepo.findBody(ctx.db, page.id)
     const changedSinceRequest = Boolean(ctx.requestedAt && stored && stored.updatedAt > ctx.requestedAt)
-    const edit: BodyEdit | null = input.body
-      ? input.body.mode === 'block'
-        ? { mode: 'block', blockId: input.body.blockId ?? '' }
-        : input.body.mode === 'section'
-          ? { mode: 'section', section: input.body.section ?? '' }
-          : { mode: input.body.mode }
+    const edit: BodyEdit | null = bodyInput
+      ? bodyInput.mode === 'block'
+        ? { mode: 'block', blockId: ('blockId' in bodyInput && bodyInput.blockId) || '' }
+        : bodyInput.mode === 'section'
+          ? { mode: 'section', section: ('section' in bodyInput && bodyInput.section) || '' }
+          : { mode: bodyInput.mode }
       : null
 
     // El cuerpo nuevo, comprobado contra lo de ahora antes de apuntar nada
@@ -479,12 +509,16 @@ export const pageContentActions = [
       ...(input.title !== undefined && input.title !== page.title ? { from: page.title, to: input.title } : {}),
       ...(properties ? { properties: true } : {}),
       ...(input.icon !== undefined ? { icon: input.icon } : {}),
-      ...(input.body ? { body: input.body.mode } : {})
+      ...(bodyInput ? { body: bodyInput.mode } : {}),
+      ...(applied ? { template: applied.template.name } : {})
     }
     const pagePatch = {
       ...(input.title !== undefined ? { title: input.title } : {}),
       ...(input.icon !== undefined ? { icon: input.icon } : {}),
-      ...(properties ? { properties } : {})
+      ...(properties ? { properties } : {}),
+      ...(applied
+        ? { panel: applied.applied.panel, template: applied.template.id, templateLine: [...applied.template.line] }
+        : {})
     }
 
     let changedBlocks: string[] = []
