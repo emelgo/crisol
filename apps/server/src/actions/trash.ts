@@ -9,7 +9,7 @@ import {
   restoreWorld
 } from '@crisol/contracts'
 import { pagesRepo, trashRepo, worldsRepo } from '@crisol/db'
-import { authorize, NotFoundError, purgeAt } from '@crisol/domain'
+import { authorize, can, NotFoundError, purgeAt } from '@crisol/domain'
 import { campaignsChanged, pagesChanged } from '../realtime/events.ts'
 import { resolvePending } from '../wiki/links.ts'
 import { authorizedCampaign, authorizedPage, authorizedWiki, targetOrganization } from './access.ts'
@@ -58,6 +58,8 @@ export const trashActions = [
 
   implement(deletePage, async (ctx, { pageId }) => {
     const { page, wiki } = await authorizedPage(ctx, 'page.write', pageId)
+    // La portada del mundo no se borra (se abre en ella)
+    if ((await worldsRepo.homePageOf(ctx.db, wiki.worldId)) === pageId) throw new InvalidRequestError('HOME_PAGE')
     const below = await pagesRepo.deletePageTree(
       ctx.db,
       historyContext(ctx, 'deletePage', { title: page.title }, wiki),
@@ -92,7 +94,13 @@ export const trashActions = [
       authorize(ctx.actor, 'organization.trash', { organizationId: target })
       scope = { organizationId: target }
     }
-    const items = await trashRepo.listTrash(ctx.db, scope)
+    const all = await trashRepo.listTrash(ctx.db, scope)
+    // En la de un mundo, los comunes solo para quien puede restaurarlos (quien administra la organización)
+    const owner = 'worldId' in scope ? (await worldsRepo.findWorld(ctx.db, scope.worldId))?.organizationId : undefined
+    const restoresCommon = owner !== undefined && can(ctx.actor, 'commonFiles.write', { organizationId: owner })
+    const items = all.filter(
+      (item) => !('worldId' in scope) || item.kind !== 'file' || item.worldId !== null || restoresCommon
+    )
     return {
       items: items.map((item) => ({
         ...item,

@@ -33,6 +33,8 @@ export const pages = pgTable(
     ),
     // Los ajustes de la hoja; null: no se ve como hoja
     sheet: jsonb().$type<Record<string, unknown> | null>(),
+    // El panel a su lado: bloques con datos de toda la página (ADR-0008)
+    panel: jsonb().$type<unknown[]>().notNull().default([]),
     /** En la papelera desde entonces, con sus subpáginas: no sale en ninguna vista y a los 30 días se purga */
     deletedAt: timestamp({ withTimezone: true })
   },

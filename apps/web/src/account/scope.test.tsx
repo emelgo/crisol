@@ -144,7 +144,8 @@ describe('al cambiar de cuenta en la misma pestaña', () => {
 
     release()
     const list = await screen.findByRole('list', { name: 'Mundos' })
-    expect(within(list).getByText('Jugador')).toBeDefined()
+    // Sin su papel: eso es de las campañas, no de los mundos
+    expect(within(list).queryByText('Jugador')).toBeNull()
     expect(screen.queryByText('Otro')).toBeNull()
     expect(ownerButtons()).toEqual([null, null])
   })

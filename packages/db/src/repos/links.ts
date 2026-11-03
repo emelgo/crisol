@@ -4,6 +4,14 @@ import { documents } from '../schema/documents.ts'
 import { fileEmbeds, pageLinks } from '../schema/links.ts'
 import { pages } from '../schema/pages.ts'
 
+/**
+ * Lo que sale de un documento cuenta salvo si es el de una pestaña de texto ya quitada (su documento queda para poder
+ * deshacer, pero sus enlaces y archivos no deben verse)
+ */
+const liveSource = (documentId: unknown) =>
+  sql`not exists (select 1 from documents d where d.id = ${documentId} and d.kind = 'tab'
+    and not exists (select 1 from page_tabs t where t.document_id = d.id))`
+
 export interface LinkRow {
   targetPageId: string | null
   targetTitle: string
@@ -109,7 +117,9 @@ export function incoming(db: Database, targetPageId: string) {
     .from(pageLinks)
     .innerJoin(pages, eq(pages.id, pageLinks.sourcePageId))
     .innerJoin(documents, eq(documents.id, pageLinks.sourceDocumentId))
-    .where(and(eq(pageLinks.targetPageId, targetPageId), isNull(pages.deletedAt)))
+    .where(
+      and(eq(pageLinks.targetPageId, targetPageId), isNull(pages.deletedAt), liveSource(pageLinks.sourceDocumentId))
+    )
 }
 
 /** Los enlaces que salen de una página (de su cuerpo y sus secretos) */
@@ -117,7 +127,7 @@ export function outgoing(db: Database, sourcePageId: string) {
   return db
     .select({ targetPageId: pageLinks.targetPageId, targetTitle: pageLinks.targetTitle, anchor: pageLinks.anchor })
     .from(pageLinks)
-    .where(eq(pageLinks.sourcePageId, sourcePageId))
+    .where(and(eq(pageLinks.sourcePageId, sourcePageId), liveSource(pageLinks.sourceDocumentId)))
 }
 
 export interface FileEmbedRow {
@@ -183,7 +193,7 @@ export async function fileUses(db: Database, scope: { worldId: string } | { orga
     select file_id, count(distinct page_id)::int as pages from (
       select fe.file_id, fe.source_page_id as page_id from file_embeds fe
         join pages p on p.id = fe.source_page_id
-        where ${pagesIn} and fe.file_id is not null and p.deleted_at is null
+        where ${pagesIn} and fe.file_id is not null and p.deleted_at is null and ${liveSource(sql`fe.source_document_id`)}
       union all
       select (p.cover->>'fileId')::uuid, p.id from pages p
         where ${pagesIn} and p.cover is not null and p.deleted_at is null
@@ -197,7 +207,7 @@ export async function filesUsedBy(db: Database, pageIds: readonly string[]) {
   const rows = await db
     .selectDistinct({ fileId: fileEmbeds.fileId })
     .from(fileEmbeds)
-    .where(inArray(fileEmbeds.sourcePageId, [...pageIds]))
+    .where(and(inArray(fileEmbeds.sourcePageId, [...pageIds]), liveSource(fileEmbeds.sourceDocumentId)))
   const covers = await db
     .select({ cover: pages.cover })
     .from(pages)

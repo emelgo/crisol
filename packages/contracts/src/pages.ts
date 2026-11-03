@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { defineAction } from './action.ts'
+import { pagePanel } from './panel.ts'
 
 const pageTitle = z.string().trim().min(1).max(200)
 /** Un emoji (con sus modificadores y uniones), o una bandera */
@@ -48,13 +49,17 @@ export const pageCover = z.object({
 
 export type PageCover = z.infer<typeof pageCover>
 
-/** Los ajustes de la vista de hoja de una página: papel, tema, numeración (y desde qué número) y pie con el título */
+/**
+ * Los ajustes de la hoja de una página (toda página es una hoja): papel, tema para imprimir, numeración (y desde qué
+ * número), pie con el título y cuántas columnas lleva al empezar (los bloques «Columnas» lo cambian desde donde están)
+ */
 export const sheetSettings = z.object({
   paper: z.enum(['a4', 'letter']),
   theme: z.enum(['pergamino', 'neutro']),
   numbers: z.boolean(),
   firstNumber: z.number().int().min(1).max(999),
-  footer: z.boolean()
+  footer: z.boolean(),
+  columns: z.union([z.literal(1), z.literal(2)]).default(1)
 })
 
 export type SheetSettings = z.infer<typeof sheetSettings>
@@ -66,6 +71,8 @@ export const page = pageSummary.extend({
   cover: pageCover.nullable(),
   /** La vista de hoja: sus ajustes, o null si la página no se ve como hoja */
   sheet: sheetSettings.nullable(),
+  /** El panel a su lado: bloques con datos de toda la página */
+  panel: pagePanel,
   path: z.array(z.object({ id: z.uuid(), title: z.string() })),
   updatedAt: z.string()
 })
@@ -154,6 +161,19 @@ export const movePage = defineAction({
     })
     .refine(onlyOneNeighbour, { message: 'before o after, no los dos' }),
   output: page
+})
+
+export const sortPageChildren = defineAction({
+  name: 'sortPageChildren',
+  kind: 'write',
+  description:
+    'Ordena por título las subpáginas de una página (parentId) o el primer nivel del mundo (parentId null), de la A a la Z (asc) o al revés (desc)',
+  input: z.object({
+    worldId: z.uuid(),
+    parentId: z.uuid().nullable(),
+    order: z.enum(['asc', 'desc']).default('asc')
+  }),
+  output: z.object({ sorted: z.number().int() })
 })
 
 export const getPage = defineAction({
@@ -404,6 +424,15 @@ export const exportInput = z.object({
 
 export type ExportInput = z.infer<typeof exportInput>
 
+export const setPagePanel = defineAction({
+  name: 'setPagePanel',
+  kind: 'write',
+  description:
+    'Deja el panel de una página (los bloques a su lado: texto, imagen, medidor en barra o círculo, estrellas, fichas, subpáginas o páginas con una etiqueta) como se da, en ese orden. Cada bloque lleva un id corto propio (letras minúsculas y números); el valor de un medidor o unas fichas no pasa de su máximo',
+  input: z.object({ pageId: z.uuid(), blocks: pagePanel }),
+  output: page
+})
+
 export const listPageNames = defineAction({
   name: 'listPageNames',
   kind: 'read',
@@ -412,7 +441,13 @@ export const listPageNames = defineAction({
   input: z.object({ worldId: z.uuid() }),
   output: z.object({
     pages: z.array(
-      z.object({ id: z.uuid(), title: z.string(), aliases: z.array(z.string()), path: z.array(z.string()) })
+      z.object({
+        id: z.uuid(),
+        title: z.string(),
+        aliases: z.array(z.string()),
+        path: z.array(z.string()),
+        tags: z.array(z.string()).describe('Sus etiquetas, para filtrar por #etiqueta')
+      })
     )
   })
 })

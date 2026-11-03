@@ -7,7 +7,8 @@ async function openPage(page: Page, title = 'Puerto Ceniza') {
   await createWorld(page, 'Eana')
   await openWiki(page, 'Eana')
   await page.getByRole('button', { name: 'Página nueva' }).click()
-  await expect(page.getByLabel('Título de la página')).toBeFocused()
+  // El cuadro de página nueva: el título, y Intro la crea
+  await expect(page.getByRole('dialog').getByLabel('Título', { exact: true })).toBeFocused()
   await page.keyboard.type(title)
   await page.keyboard.press('Enter')
   await expect(page.getByRole('heading', { level: 1, name: title })).toBeVisible()

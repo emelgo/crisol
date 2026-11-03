@@ -7,10 +7,13 @@ const suggestions = (page: Page) => page.getByRole('listbox', { name: 'Páginas'
 
 async function newPage(page: Page, title: string) {
   await page.getByRole('button', { name: 'Página nueva' }).click()
-  await expect(page.getByLabel('Título de la página')).toBeFocused()
+  // El cuadro de página nueva: el título, y Intro la crea
+  await expect(page.getByRole('dialog').getByLabel('Título', { exact: true })).toBeFocused()
   await page.keyboard.type(title)
   await page.keyboard.press('Enter')
   await expect(page.getByRole('heading', { level: 1, name: title })).toBeVisible()
+  // Ya con su nombre: la dirección deja de decir «nuevo»
+  await expect(page).not.toHaveURL(/nuevo/)
 }
 
 /** Eana con Maela Varn y Puerto Ceniza (abierta, con el cursor en el texto); devuelve el mundo y las páginas */
@@ -87,10 +90,19 @@ test('un enlace sin resolver se ve «por crear» y se resuelve solo; uno a la pa
 test('al elegir un nombre de página, la barra propone enlazarlo', async ({ page }) => {
   await eana(page)
   await page.keyboard.type('Habla con Maela Varn')
-  await page.keyboard.press('Shift+ControlOrMeta+ArrowLeft')
-  await page.keyboard.press('Shift+ControlOrMeta+ArrowLeft')
-  await expect.poll(() => page.evaluate(() => document.getSelection()?.toString())).toBe('Maela Varn')
-  await page.getByRole('toolbar', { name: 'Formato' }).getByRole('button', { name: 'Enlazar con «Maela Varn»' }).click()
+  const linkTo = page
+    .getByRole('toolbar', { name: 'Formato' })
+    .getByRole('button', { name: 'Enlazar con «Maela Varn»' })
+  // Elegir las dos últimas palabras con el teclado. En una máquina lenta, el editor puede quedarse con solo la última
+  // (la segunda tecla llega antes de que lea la primera): se vuelve a elegir desde el final
+  await expect(async () => {
+    await page.keyboard.press('End')
+    await page.keyboard.press('Shift+ControlOrMeta+ArrowLeft')
+    await expect.poll(() => page.evaluate(() => document.getSelection()?.toString())).toBe('Varn')
+    await page.keyboard.press('Shift+ControlOrMeta+ArrowLeft')
+    await expect(linkTo).toBeVisible({ timeout: 2000 })
+  }).toPass({ timeout: 20_000 })
+  await linkTo.click()
   await expect(body(page).getByRole('link', { name: 'Maela Varn' })).toHaveAttribute('data-state', 'ok')
 })
 
@@ -105,20 +117,29 @@ test('los enlaces de la página: quién la enlaza, dónde se la nombra y «Enlaz
     body: { mode: 'append', markdown: 'Preguntar a Maela Varn por el faro.' }
   })
   await page.getByRole('treeitem', { name: 'Maela Varn' }).click()
-  const panel = page.getByRole('region', { name: 'Enlaces' })
-  const incoming = panel.getByRole('list', { name: 'La enlazan' })
+  // «Mencionado en», como en Everlore: las que la enlazan y, aparte, las que la nombran sin enlazar; el trozo donde
+  // lo hacen, al pasar el ratón
+  const panel = page.getByRole('region', { name: 'Mencionado en' })
+  const incoming = panel.getByRole('list', { name: 'Mencionado en' })
   await expect(incoming.getByRole('link', { name: 'Puerto Ceniza' })).toBeVisible()
-  await expect(incoming.getByText('Lo gobierna Maela Varn.')).toBeVisible()
-  const mentions = panel.getByRole('list', { name: 'La nombran sin enlazar' })
-  await expect(mentions.getByText('Preguntar a Maela Varn por el faro.')).toBeVisible()
+  await expect(incoming.getByRole('listitem').filter({ hasText: 'Puerto Ceniza' })).toHaveAttribute(
+    'title',
+    'Lo gobierna Maela Varn.'
+  )
+  const mentions = panel.getByRole('list', { name: 'Sin enlazar' })
+  await expect(mentions.getByRole('listitem').filter({ hasText: 'Notas' })).toHaveAttribute(
+    'title',
+    'Preguntar a Maela Varn por el faro.'
+  )
   await mentions.getByRole('button', { name: 'Enlazar en «Notas»' }).click()
   await expect(page.getByRole('status').getByText('Enlazada en «Notas».')).toBeAttached()
   await expect(incoming.getByRole('link', { name: 'Notas' })).toBeVisible()
-  await expect(panel.getByText('Ninguna página la nombra sin enlazarla.')).toBeVisible()
+  // Ya no queda ninguna sin enlazar: su lista se va
+  await expect(mentions).toHaveCount(0)
 
   // Al borrarla, el aviso dice cuántas la enlazan
-  await page.getByRole('button', { name: 'Más acciones' }).click()
-  await page.getByRole('button', { name: 'Borrar' }).click()
+  await page.getByRole('tree').locator('[aria-current="page"]').click({ button: 'right' })
+  await page.getByRole('menuitem', { name: 'Borrar' }).click()
   await expect(page.getByText('La enlazan 2 páginas: sus enlaces se verán rotos.')).toBeVisible()
   expect(maela).toBeTruthy()
 })

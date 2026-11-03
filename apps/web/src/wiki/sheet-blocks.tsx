@@ -13,6 +13,7 @@ import styles from './sheet-blocks.module.css'
 const VIEWS: Record<string, (props: NodeViewProps) => React.ReactNode> = {
   pageBreak: BreakView,
   columnBreak: BreakView,
+  columnsChange: ColumnsView,
   statblock: StatblockView,
   sidenote: SidenoteView,
   wideBlock: WideView,
@@ -35,6 +36,7 @@ function BreakView({ node, editor, selected }: NodeViewProps) {
   return (
     <NodeViewWrapper
       className={styles.break}
+      data-break={node.type.name === 'pageBreak' ? 'page' : 'column'}
       data-selected={selected || undefined}
       hidden={!editor.isEditable}
       contentEditable={false}
@@ -44,11 +46,29 @@ function BreakView({ node, editor, selected }: NodeViewProps) {
   )
 }
 
+/** Un cambio de columnas: una raya fina con su rótulo (sin alto: no ocupa sitio en la hoja) */
+function ColumnsView({ node, editor, selected }: NodeViewProps) {
+  const { t } = useTranslation()
+  return (
+    <NodeViewWrapper
+      // Como el salto de página: una raya fina, con su sitio, y lo que cambia a la derecha
+      className={`${styles.break} ${styles.columns}`}
+      data-selected={selected || undefined}
+      hidden={!editor.isEditable}
+      contentEditable={false}
+    >
+      <span className={styles.breakLabel}>
+        {t(node.attrs.count === 1 ? 'sheet.columnsChangeOne' : 'sheet.columnsChangeTwo')}
+      </span>
+    </NodeViewWrapper>
+  )
+}
+
 function StatblockView() {
   const { t } = useTranslation()
   const id = useId()
   return (
-    <NodeViewWrapper role="group" aria-labelledby={id} className={styles.statblock}>
+    <NodeViewWrapper role="group" aria-labelledby={id} className={styles.statblock} data-statblock="">
       <div id={id} className={styles.label} contentEditable={false}>
         {t('sheet.statblock')}
       </div>
@@ -85,7 +105,7 @@ function SidenoteView({ node, editor, updateAttributes }: NodeViewProps) {
 function WideView({ editor }: NodeViewProps) {
   const { t } = useTranslation()
   return (
-    <NodeViewWrapper className={editor.isEditable ? styles.wide : undefined}>
+    <NodeViewWrapper className={editor.isEditable ? styles.wide : undefined} data-wide-block="">
       {editor.isEditable && (
         <div className={styles.label} contentEditable={false}>
           {t('sheet.wide')}

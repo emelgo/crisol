@@ -1,5 +1,6 @@
 export * from './ids.ts'
 export * from './links.ts'
+export { calloutKindOf } from './markdown/syntax.ts'
 export * from './nodes/box.ts'
 export * from './nodes/callout.ts'
 export * from './nodes/file-embed.ts'

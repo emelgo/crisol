@@ -107,7 +107,7 @@ const MARKS = [
 ] as const
 
 /** La barra de formato: sale al elegir texto (no dentro del código) */
-export function FormatMenu({ editor }: { editor: Editor }) {
+export function FormatMenu({ editor, onSecret }: { editor: Editor; onSecret?: () => void }) {
   const { t } = useTranslation()
   const toolbar = useRef<HTMLDivElement>(null)
   const [linking, setLinking] = useState(false)
@@ -174,6 +174,8 @@ export function FormatMenu({ editor }: { editor: Editor }) {
               </ToolButton>
             ))}
             <ToolButton label={t('format.link')} pressed={active.link} onClick={() => setLinking(true)} />
+            {/* Lo elegido, a un secreto (solo para el máster: va en su propio documento) */}
+            {onSecret && <ToolButton label={t('separate.makeSecret')} onClick={onSecret} />}
             {page && (
               <ToolButton
                 label={t('links.linkTo', { title: page.title })}

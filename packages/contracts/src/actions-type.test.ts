@@ -41,6 +41,8 @@ describe('Actions', () => {
       listPageChildren: true,
       listPageTree: true,
       listRecentPages: true,
+      setPagePanel: true,
+      sortPageChildren: true,
       setPageProperties: true,
       listTags: true,
       deletePage: true,
@@ -76,7 +78,18 @@ describe('Actions', () => {
       createTag: true,
       updateTag: true,
       deleteTag: true,
-      setFileTags: true
+      setFileTags: true,
+      listPageTabs: true,
+      createPageTab: true,
+      updatePageTab: true,
+      deletePageTab: true,
+      getMap: true,
+      updateMap: true,
+      createMapPin: true,
+      updateMapPin: true,
+      deleteMapPin: true,
+      getWorldHome: true,
+      ensureWorldHome: true
     }
     expect(Object.keys(names).sort()).toEqual(ACTIONS.map((a) => a.name).sort())
   })

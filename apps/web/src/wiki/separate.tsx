@@ -35,7 +35,11 @@ const nestedView = (node: Node) =>
 const TAB_ID = crypto.randomUUID()
 
 /** Lo que va dentro de un secreto recién hecho de un trozo del cuerpo: se pone al abrir su documento */
-const pendingContent = new Map<string, JSONContent[]>()
+// En globalThis: al recargar el módulo en caliente (desarrollo), lo pendiente no se pierde entre la copia vieja y la nueva
+const PENDING = '__crisolPendingSeparate'
+const store = globalThis as unknown as Record<string, Map<string, JSONContent[]> | undefined>
+store[PENDING] ??= new Map<string, JSONContent[]>()
+const pendingContent = store[PENDING]
 
 /** La página del editor: para crear y copiar los documentos de sus secretos */
 export const SeparatePageContext = createContext<string | null>(null)

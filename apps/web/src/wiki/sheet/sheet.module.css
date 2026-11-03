@@ -29,9 +29,10 @@
   --sheet-accent: #4a4a4a;
   --sheet-rule: #9a9a9a;
   --sheet-box: #f2f2f2;
-  --sheet-font: Georgia, "Times New Roman", serif;
+  /* Neutro: la letra de la app (la misma que al escribir, para que todo caiga donde se ve) */
+  --sheet-font: var(--font-body);
   --sheet-heading-font: var(--font-display);
-  --sheet-size: 10pt;
+  --sheet-size: 12pt;
 
   display: grid;
   justify-items: center;

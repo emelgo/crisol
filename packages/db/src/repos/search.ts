@@ -68,7 +68,12 @@ export async function replaceSectionsMany(
  * Con su estado, para sacar su contenido
  */
 export async function unindexedDocuments(db: Database, worldId: string) {
-  const rows = await db.execute<{ id: string; page_id: string; kind: 'body' | 'secret' | 'note'; state: Buffer }>(sql`
+  const rows = await db.execute<{
+    id: string
+    page_id: string
+    kind: 'body' | 'secret' | 'note' | 'tab'
+    state: Buffer
+  }>(sql`
     select d.id, d.page_id, d.kind, d.state from documents d
     where d.world_id = ${worldId}
       and (d.text is null or (d.text <> '' and not exists (select 1 from search_sections s where s.document_id = d.id)))`)
@@ -137,6 +142,9 @@ export interface SearchOptions {
   limit: number
 }
 
+/** Lo de una pestaña de texto cuenta solo mientras la pestaña exista (quitada, su documento queda para deshacer) */
+const liveTab = sql`(s.kind <> 'tab' or exists (select 1 from page_tabs t where t.document_id = s.document_id))`
+
 /** Las páginas que coinciden, de la que más a la que menos, con el total */
 export async function searchPages(db: Database, options: SearchOptions) {
   if (options.terms.length === 0) return { total: 0, pages: [] }
@@ -146,7 +154,7 @@ export async function searchPages(db: Database, options: SearchOptions) {
     with q as (select ${query} as query),
     hits as (
       select s.page_id, ts_rank(s.tsv, q.query) as rank
-        from search_sections s, q where s.world_id = ${options.worldId} and s.tsv @@ q.query
+        from search_sections s, q where s.world_id = ${options.worldId} and s.tsv @@ q.query and ${liveTab}
       union all
       -- El título y las propiedades cuentan como el título de una sección, y el doble
       select p.id, 2 * ts_rank(p.search_tsv, q.query)
@@ -201,11 +209,11 @@ export async function matchingSections(db: Database, pageIds: readonly string[],
       where s.page_id in (${sql.join(
         pageIds.map((id) => sql`${id}::uuid`),
         sql`, `
-      )}) and s.tsv @@ q.query
+      )}) and s.tsv @@ q.query and ${liveTab}
     ) ranked where n <= 3 order by page_id, n`)
   return [...rows].map((row) => ({
     pageId: row.page_id,
-    kind: row.kind as 'body' | 'secret' | 'note',
+    kind: row.kind as 'body' | 'secret' | 'note' | 'tab',
     heading: row.heading,
     headingId: row.heading_id,
     excerpt: row.excerpt

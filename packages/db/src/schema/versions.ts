@@ -70,7 +70,7 @@ export const versionDocuments = pgTable(
     documentId: uuid()
       .notNull()
       .references(() => documents.id, { onDelete: 'cascade' }),
-    kind: text({ enum: ['body', 'secret', 'note'] }).notNull(),
+    kind: text({ enum: ['body', 'secret', 'note', 'tab'] }).notNull(),
     snapshotId: uuid()
       .notNull()
       .references(() => snapshots.id, { onDelete: 'cascade' })

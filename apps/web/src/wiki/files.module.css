@@ -16,7 +16,7 @@
  */
 .layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 52rem) minmax(0, 1fr);
+  grid-template-columns: minmax(14rem, 20rem) minmax(0, 1fr) minmax(14rem, 20rem);
   gap: var(--space-6);
   align-items: start;
 }
@@ -25,10 +25,9 @@
   grid-column: 3;
   position: sticky;
   inset-block-start: var(--space-4);
-  justify-self: start;
-  /* Fijo, con tope: en % dentro de una columna flexible se encogería a su contenido */
-  inline-size: 20rem;
-  max-inline-size: 100%;
+  justify-self: end;
+  inline-size: 100%;
+  max-inline-size: 20rem;
   /* Bajo el título, a la altura de la lista */
   margin-block-start: 6.5rem;
 }
@@ -40,9 +39,10 @@
 
 .side {
   grid-column: 1;
-  justify-self: end;
-  inline-size: 17rem;
-  max-inline-size: 100%;
+  /* Hacia el borde, como en las páginas */
+  justify-self: start;
+  inline-size: 100%;
+  max-inline-size: 20rem;
   margin-block-start: 6.5rem;
 }
 

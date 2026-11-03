@@ -9,11 +9,14 @@ import {
   listTags,
   movePage,
   type Page,
+  pagePanel,
+  setPagePanel,
   setPageProperties,
   sheetSettings,
+  sortPageChildren,
   updatePage
 } from '@crisol/contracts'
-import { documentsRepo, filesRepo, pagesRepo } from '@crisol/db'
+import { documentsRepo, filesRepo, pagesRepo, worldsRepo } from '@crisol/db'
 import {
   compareKeys,
   moveBlocker,
@@ -48,6 +51,8 @@ export async function pageView(ctx: ActionContext, pageId: string): Promise<Page
     cover: found.cover ?? null,
     // Lo guardado que no sea unos ajustes de hoja válidos cuenta como sin hoja
     sheet: sheetSettings.safeParse(found.sheet).data ?? null,
+    // Lo guardado que no valga (de una versión anterior) cuenta como panel vacío
+    panel: pagePanel.safeParse(found.panel).data ?? [],
     path: await pagesRepo.pagePath(ctx.db, pageId),
     updatedAt: found.updatedAt.toISOString()
   }
@@ -165,10 +170,42 @@ export const pageActions = [
     return pageView(ctx, pageId)
   }),
 
+  implement(setPagePanel, async (ctx, { pageId, blocks }) => {
+    const { page, wiki } = await authorizedPage(ctx, 'page.write', pageId)
+    if (new Set(blocks.map((b) => b.id)).size !== blocks.length) throw new InvalidRequestError('BAD_PANEL')
+    for (const block of blocks) {
+      if ((block.type === 'meter' || block.type === 'tokens' || block.type === 'rating') && block.value > block.max)
+        throw new InvalidRequestError('BAD_PANEL')
+      // Las imágenes, de este mundo o comunes de su organización
+      if (block.type === 'image' && block.fileId) {
+        const file = await filesRepo.findFile(ctx.db, block.fileId)
+        const usable =
+          file && (file.worldId ? file.worldId === wiki.worldId : file.organizationId === wiki.organizationId)
+        if (!file || !usable || file.kind !== 'image') throw new InvalidRequestError('BAD_PANEL')
+      }
+    }
+    await pagesRepo.updatePage(ctx.db, historyContext(ctx, 'setPagePanel', { title: page.title }, wiki), pageId, {
+      panel: blocks
+    })
+    ctx.realtime.publish(pagesChanged(wiki))
+    return pageView(ctx, pageId)
+  }),
+
   implement(listPageNames, async (ctx, { worldId }) => {
     const wiki = await authorizedWiki(ctx, 'page.read', worldId)
-    const names = await worldNames(ctx, wiki.worldId)
-    return { pages: names.map((page) => ({ ...page, aliases: [...page.aliases], path: [...page.path] })) }
+    const [names, rows] = await Promise.all([
+      worldNames(ctx, wiki.worldId),
+      pagesRepo.listProperties(ctx.db, wiki.worldId)
+    ])
+    const tags = new Map(rows.map((row) => [row.id, reservedList(propertiesOf(row.properties), 'etiquetas')]))
+    return {
+      pages: names.map((page) => ({
+        ...page,
+        aliases: [...page.aliases],
+        path: [...page.path],
+        tags: tags.get(page.id) ?? []
+      }))
+    }
   }),
 
   implement(listTags, async (ctx, { worldId }) => {
@@ -181,6 +218,10 @@ export const pageActions = [
   implement(movePage, async (ctx, input) => {
     const { page, wiki } = await authorizedPage(ctx, 'page.write', input.pageId)
     const parent = await parentIn(ctx, wiki, input.parentId)
+    // La portada del mundo se queda en lo más alto
+    if (input.parentId && (await worldsRepo.homePageOf(ctx.db, wiki.worldId)) === page.id) {
+      throw new InvalidRequestError('HOME_PAGE')
+    }
     const blocker = moveBlocker({
       pageId: page.id,
       parentPath: parent ? (await pagesRepo.pagePath(ctx.db, parent.id)).map((p) => p.id) : [],
@@ -196,6 +237,18 @@ export const pageActions = [
     )
     ctx.realtime.publish(pagesChanged(wiki))
     return pageView(ctx, page.id)
+  }),
+
+  implement(sortPageChildren, async (ctx, { worldId, parentId, order }) => {
+    const wiki = await authorizedWiki(ctx, 'page.write', worldId)
+    const parent = await parentIn(ctx, wiki, parentId)
+    const sorted = await pagesRepo.sortChildren(
+      ctx.db,
+      historyContext(ctx, 'sortPageChildren', { title: parent?.title ?? null, order }, wiki),
+      { worldId: wiki.worldId, parentId, order, keepFirst: await worldsRepo.homePageOf(ctx.db, wiki.worldId) }
+    )
+    ctx.realtime.publish(pagesChanged(wiki))
+    return { sorted }
   }),
 
   implement(createPageDocument, async (ctx, { pageId, kind, copyOf }) => {

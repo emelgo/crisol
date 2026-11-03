@@ -48,8 +48,18 @@ const renderPort = (properties: PageProperty[] = [], icon: string | null = null)
   return { api, router }
 }
 
+/** Las etiquetas y las propiedades se añaden desde «Añadir bloque» del panel */
+async function addFromPanel(name: 'Etiquetas' | 'Propiedad') {
+  const panel = within(await screen.findByRole('complementary', { name: 'Panel de la página' }))
+  await userEvent.click(panel.getByRole('button', { name: 'Añadir bloque' }))
+  await userEvent.click(panel.getByRole('button', { name }))
+}
+
 describe('las propiedades de una página', () => {
-  it('se leen con su tipo: números en español, sí o no, listas y enlaces a páginas', async () => {
+  const saved = async (api: ReturnType<typeof renderPort>['api']) =>
+    (await api.client.call('getPage', { pageId: PORT })).properties
+
+  it('se ven con su valor ya editable: números, sí o no, listas y enlaces a páginas', async () => {
     renderPort([
       { name: 'Región', type: 'pages', value: [COAST] },
       { name: 'Población', type: 'number', value: 4200 },
@@ -57,81 +67,80 @@ describe('las propiedades de una página', () => {
       { name: 'alias', type: 'list', value: ['El Puerto', 'La Ceniza'] }
     ])
     const properties = within(await screen.findByRole('region', { name: 'Propiedades' }))
-    expect(properties.getByText((4200).toLocaleString('es'))).toBeDefined()
-    expect(properties.getByText('Sí')).toBeDefined()
+    expect((properties.getByLabelText('Valor de la propiedad 2') as HTMLInputElement).value).toBe('4200')
+    expect((properties.getByLabelText('Valor de la propiedad 3') as HTMLInputElement).checked).toBe(true)
     expect(properties.getByText('El Puerto')).toBeDefined()
     expect(await properties.findByRole('link', { name: 'Costa Gris' })).toBeDefined()
+    // Sin «Guardar» ni «Cancelar»
+    expect(properties.queryByRole('button', { name: 'Guardar' })).toBeNull()
   })
 
-  it('se añaden de un clic las reservadas, se ordenan y se guardan', async () => {
-    const { api } = renderPort()
-    await userEvent.click(await screen.findByRole('button', { name: 'Añadir propiedades' }))
-    const editor = within(screen.getByRole('form', { name: 'Propiedades' }))
-    expect(document.activeElement).toBe(editor.getByRole('button', { name: 'Añadir propiedad' }))
-    await userEvent.click(editor.getByRole('button', { name: 'Etiquetas' }))
-    await userEvent.type(editor.getByLabelText('Valor de la propiedad 1'), 'lugar/ciudad, costa')
-    await userEvent.click(editor.getByRole('button', { name: 'Añadir propiedad' }))
-    expect(document.activeElement).toBe(editor.getByLabelText('Nombre de la propiedad 2'))
-    await userEvent.keyboard('Población')
-    await userEvent.selectOptions(editor.getByLabelText('Tipo de la propiedad 2'), 'Número')
-    await userEvent.type(editor.getByLabelText('Valor de la propiedad 2'), '4200')
-    await userEvent.click(editor.getByRole('button', { name: 'Subir Población' }))
-    await userEvent.click(editor.getByRole('button', { name: 'Guardar' }))
-
+  it('se cambian en el sitio: Intro guarda, Escape deshace; las reservadas, de un clic', async () => {
+    const { api } = renderPort([{ name: 'Población', type: 'number', value: 4200 }])
     const properties = within(await screen.findByRole('region', { name: 'Propiedades' }))
-    expect(properties.getAllByRole('term').map((term) => term.textContent)).toEqual(['Población', 'etiquetas'])
-    expect(properties.getByText('costa')).toBeDefined()
-    expect(api.calls).toContain('setPageProperties')
-    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Editar propiedades' }))
+    const value = properties.getByLabelText('Valor de la propiedad 1')
+    await userEvent.clear(value)
+    await userEvent.type(value, '5000{Escape}')
+    expect((value as HTMLInputElement).value).toBe('4200')
+    await userEvent.clear(value)
+    await userEvent.type(value, '5000{Enter}')
+    await waitFor(async () => expect(await saved(api)).toEqual([{ name: 'Población', type: 'number', value: 5000 }]))
+
+    // Las etiquetas: se escribe y se pone con Intro; se guarda ya
+    await addFromPanel('Etiquetas')
+    await userEvent.type(properties.getByLabelText('Valor de la propiedad 2'), 'lugar/ciudad{Enter}')
+    await waitFor(async () =>
+      expect(await saved(api)).toContainEqual({ name: 'etiquetas', type: 'list', value: ['lugar/ciudad'] })
+    )
+    // Una nueva: el foco va a su nombre; Intro pasa al valor
+    await addFromPanel('Propiedad')
+    expect(document.activeElement).toBe(properties.getByLabelText('Nombre de la propiedad 3'))
+    await userEvent.keyboard('Clima{Enter}')
+    expect(document.activeElement).toBe(properties.getByLabelText('Valor de la propiedad 3'))
+    await userEvent.keyboard('Ceniza y niebla{Enter}')
+    await waitFor(async () =>
+      expect(await saved(api)).toContainEqual({ name: 'Clima', type: 'text', value: 'Ceniza y niebla' })
+    )
+    // Quitar
+    await userEvent.click(properties.getByRole('button', { name: 'Quitar Clima' }))
+    await waitFor(async () => expect((await saved(api)).map((p) => p.name)).toEqual(['Población', 'etiquetas']))
   })
 
   it('un número que no lo es no se guarda, y lo dice', async () => {
     const { api } = renderPort([{ name: 'Población', type: 'number', value: 4200 }])
-    await userEvent.click(await screen.findByRole('button', { name: 'Editar propiedades' }))
-    const value = screen.getByLabelText('Valor de la propiedad 1')
+    const value = await screen.findByLabelText('Valor de la propiedad 1')
     await userEvent.clear(value)
-    await userEvent.type(value, 'muchos')
-    await userEvent.click(screen.getByRole('button', { name: 'Guardar' }))
+    await userEvent.type(value, 'muchos{Enter}')
     expect((await screen.findByRole('alert')).textContent).toBe('«Población» tiene que ser un número')
     expect(api.calls).not.toContain('setPageProperties')
   })
 
   it('una propiedad de páginas se rellena eligiendo por el título', async () => {
-    renderPort()
-    await userEvent.click(await screen.findByRole('button', { name: 'Añadir propiedades' }))
-    await userEvent.click(screen.getByRole('button', { name: 'Añadir propiedad' }))
+    const { api } = renderPort()
+    await addFromPanel('Propiedad')
     await userEvent.keyboard('Región')
     await userEvent.selectOptions(screen.getByLabelText('Tipo de la propiedad 1'), 'Páginas')
     await userEvent.type(screen.getByLabelText('Valor de la propiedad 1'), 'Costa Gris')
     expect(await screen.findByRole('button', { name: 'Quitar Costa Gris' })).toBeDefined()
-    await userEvent.click(screen.getByRole('button', { name: 'Guardar' }))
-    const properties = within(await screen.findByRole('region', { name: 'Propiedades' }))
-    expect(await properties.findByRole('link', { name: 'Costa Gris' })).toBeDefined()
+    await waitFor(async () => expect(await saved(api)).toEqual([{ name: 'Región', type: 'pages', value: [COAST] }]))
   })
 })
 
 describe('el icono de una página', () => {
-  it('se elige de los habituales y sale en el árbol; Escape cierra y devuelve el foco', async () => {
+  it('sin icono no hay botón para ponerlo: si se quiere, va en el propio título', async () => {
     renderPort()
-    const trigger = await screen.findByRole('button', { name: 'Añadir icono' })
-    await userEvent.click(trigger)
-    expect(trigger.getAttribute('aria-expanded')).toBe('true')
-    await userEvent.keyboard('{Escape}')
-    expect(trigger.getAttribute('aria-expanded')).toBe('false')
-    expect(document.activeElement).toBe(trigger)
-    await userEvent.click(trigger)
-    await userEvent.click(screen.getByRole('button', { name: 'Usar ⚓' }))
-    expect(await screen.findByRole('button', { name: 'Icono ⚓: cambiarlo' })).toBeDefined()
+    await screen.findByRole('heading', { level: 1, name: 'Puerto Ceniza' })
+    expect(screen.queryByRole('button', { name: 'Añadir icono' })).toBeNull()
   })
 
-  it('se escribe cualquier otro, y se quita', async () => {
+  it('el que ya tiene se cambia por cualquier otro, o se quita', async () => {
     renderPort([], '⚓')
     await userEvent.click(await screen.findByRole('button', { name: 'Icono ⚓: cambiarlo' }))
     await userEvent.type(screen.getByLabelText('Otro emoji'), '🦑')
     await userEvent.click(screen.getByRole('button', { name: 'Usar' }))
     await userEvent.click(await screen.findByRole('button', { name: 'Icono 🦑: cambiarlo' }))
     await userEvent.click(screen.getByRole('button', { name: 'Quitar el icono' }))
-    expect(await screen.findByRole('button', { name: 'Añadir icono' })).toBeDefined()
+    await waitFor(() => expect(screen.queryByRole('button', { name: /^Icono/ })).toBeNull())
   })
 })
 

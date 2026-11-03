@@ -58,6 +58,59 @@ describe('la wiki: páginas y árbol', () => {
     await conn?.close()
   })
 
+  it('la portada del mundo (como en Everlore): se crea una vez, la primera del árbol, y no se borra ni se mete en otra', async () => {
+    const home = async () => (await call('getWorldHome', { worldId })).json()
+    const other = await create('Lugares')
+    expect(await home()).toEqual({ pageId: null, chosen: false })
+    const { pageId } = (await call('ensureWorldHome', { worldId })).json()
+    // Con el nombre del mundo, delante de las que ya había; y no se repite
+    expect(await titles()).toEqual(['Eana', 'Lugares'])
+    expect((await call('ensureWorldHome', { worldId })).json()).toEqual({ pageId })
+    expect(await home()).toEqual({ pageId, chosen: true })
+    // Dos a la vez en un mundo sin portada (abierto en dos pestañas): una sola
+    const otherWorld = (await call('createWorld', { name: 'Otro' })).json().id
+    const both = await Promise.all(
+      [1, 2].map(async () => (await call('ensureWorldHome', { worldId: otherWorld })).json())
+    )
+    expect(both[0].pageId).toBe(both[1].pageId)
+    expect((await call('deletePage', { pageId })).json()).toMatchObject({ code: 'HOME_PAGE' })
+    expect((await call('movePage', { pageId, parentId: other.id })).json()).toMatchObject({ code: 'HOME_PAGE' })
+    // Las demás, sí
+    expect((await call('movePage', { pageId: other.id, parentId: pageId })).statusCode).toBe(200)
+  })
+
+  it('las subpáginas se ordenan por título, de la A a la Z o al revés, en una sola operación', async () => {
+    const places = await create('Lugares')
+    for (const title of ['Costa Gris', 'Árbol Viejo', 'Bosque', 'puerto']) await create(title, { parentId: places.id })
+    expect((await call('sortPageChildren', { worldId, parentId: places.id, order: 'asc' })).json()).toEqual({
+      sorted: 4
+    })
+    expect(await titles(places.id)).toEqual(['Árbol Viejo', 'Bosque', 'Costa Gris', 'puerto'])
+    await call('sortPageChildren', { worldId, parentId: places.id, order: 'desc' })
+    expect(await titles(places.id)).toEqual(['puerto', 'Costa Gris', 'Bosque', 'Árbol Viejo'])
+    expect((await historyOf()).filter((e) => e.action === 'sortPageChildren')).toHaveLength(2)
+  })
+
+  it('el panel de la página: se guarda en su orden, se comprueba y queda en el historial', async () => {
+    const page = await create('Puerto Ceniza')
+    expect((await call('getPage', { pageId: page.id })).json().panel).toEqual([])
+    const blocks = [
+      { id: 'amenaza1', type: 'meter', title: 'Amenaza', style: 'bar', value: 3, max: 5, color: 'wine' },
+      { id: 'notas001', type: 'text', title: 'Clima', text: 'Niebla por la mañana' },
+      { id: 'estado01', type: 'rating', title: 'Moral', value: 3.5, max: 5 }
+    ]
+    expect((await call('setPagePanel', { pageId: page.id, blocks })).json().panel).toEqual(blocks)
+    expect((await call('getPage', { pageId: page.id })).json().panel).toEqual(blocks)
+    expect((await historyOf()).find((e) => e.action === 'setPagePanel')).toMatchObject({
+      details: { title: 'Puerto Ceniza' }
+    })
+    // Un valor por encima de su máximo, o dos bloques con el mismo id, no
+    const over = [{ ...blocks[0], value: 9 }]
+    expect((await call('setPagePanel', { pageId: page.id, blocks: over })).json()).toMatchObject({ code: 'BAD_PANEL' })
+    const twice = [blocks[1], blocks[1]]
+    expect((await call('setPagePanel', { pageId: page.id, blocks: twice })).json()).toMatchObject({ code: 'BAD_PANEL' })
+  })
+
   it('el máster crea páginas y subpáginas; salen en su orden y quedan en el historial', async () => {
     const places = await create('Lugares')
     await create('Personajes')

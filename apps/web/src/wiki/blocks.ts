@@ -57,7 +57,7 @@ export const BLOCKS: readonly BlockChoice[] = [
       editor.chain().focus().setParagraph().run()
     }
   },
-  ...([1, 2, 3] as const).map(
+  ...([1, 2, 3, 4, 5, 6] as const).map(
     (level): BlockChoice => ({
       id: `heading${level}`,
       group: 'text',
@@ -225,6 +225,23 @@ export const BLOCKS: readonly BlockChoice[] = [
         .run()
     }
   },
+  // Cambiar de columnas desde aquí, como un salto de sección: lo de debajo, a una o a dos
+  ...([1, 2] as const).map(
+    (count): BlockChoice => ({
+      id: `columns${count}`,
+      group: 'sheet',
+      label: count === 1 ? 'columnsOne' : 'columnsTwo',
+      keywords: `columnas ${count === 1 ? 'una' : 'dos'} seccion hoja`,
+      convert: false,
+      run: (editor) => {
+        editor
+          .chain()
+          .focus()
+          .insertContent([{ type: 'columnsChange', attrs: { count } }, { type: 'paragraph' }])
+          .run()
+      }
+    })
+  ),
   {
     id: 'statblock',
     group: 'sheet',
@@ -304,6 +321,22 @@ export const fold = (text: string) =>
     .toLowerCase()
 
 /** Los bloques que valen en este editor y coinciden con lo escrito tras «/» (name: su nombre ya traducido) */
+/** Los grupos en los que se ordenan los bloques en los menús («/» y «Convertir en»): cada uno, un desplegable */
+export const SECTIONS = [
+  {
+    key: 'text',
+    match: (b: BlockChoice) => ['paragraph', 'blockquote', 'codeBlock', 'horizontalRule', 'table'].includes(b.id)
+  },
+  { key: 'headings', match: (b: BlockChoice) => b.id.startsWith('heading') },
+  { key: 'lists', match: (b: BlockChoice) => ['bulletList', 'orderedList', 'taskList'].includes(b.id) },
+  { key: 'wiki', match: (b: BlockChoice) => b.group === 'wiki' },
+  // Los secretos y las notas ocultas, también recuadros (sin hablar de «máster»: aquí se hace worldbuilding)
+  { key: 'boxes', match: (b: BlockChoice) => b.group === 'boxes' || b.group === 'master' },
+  { key: 'sheet', match: (b: BlockChoice) => b.group === 'sheet' }
+] as const
+
+export type SectionKey = (typeof SECTIONS)[number]['key']
+
 export function findBlocks(query: string, name: (block: BlockChoice) => string, nested: boolean) {
   const wanted = fold(query.trim())
   return BLOCKS.filter((block) => !(nested && block.bodyOnly)).filter(

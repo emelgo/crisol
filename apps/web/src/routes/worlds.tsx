@@ -1,8 +1,9 @@
+import type { Campaign, World } from '@crisol/contracts'
 import { TRASH_DAYS } from '@crisol/domain'
-import { useQuery } from '@tanstack/react-query'
+import { useQueries, useQuery } from '@tanstack/react-query'
 import { Navigate } from '@tanstack/react-router'
 import { Globe } from 'lucide-react'
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
@@ -14,7 +15,7 @@ import { failed } from '../components/load-error.tsx'
 import { PageTitle } from '../components/page-title.tsx'
 import { Tour } from '../components/tour.tsx'
 import styles from './world-card.module.css'
-import { NewWorld, WorldCard, WorldDetail } from './world-card.tsx'
+import { CampaignCard, NewLook, NewWorld, useAllCampaignsKind, WorldCard, WorldDetail } from './world-card.tsx'
 
 export function Worlds() {
   const { t } = useTranslation()
@@ -80,6 +81,7 @@ export function Worlds() {
               {canCreate && <NewWorld />}
             </ul>
           ))}
+        {worlds.data && !empty && <AllCampaigns worlds={worlds.data.worlds} />}
       </div>
       <Tour
         id="mundos"
@@ -92,6 +94,7 @@ export function Worlds() {
           { target: '[data-tour="barra-archivos"]', text: t('tour.worlds.files'), placement: 'right' },
           { target: '[data-tour="barra-etiquetas"]', text: t('tour.worlds.tags'), placement: 'right' },
           { target: '[data-tour="barra-historial"]', text: t('tour.worlds.history'), placement: 'right' },
+          { target: '[data-tour="nueva-campana"]', text: t('tour.worlds.campaigns') },
           {
             target: '[data-tour="barra-papelera"]',
             text: t('tour.worlds.trash', { days: TRASH_DAYS }),
@@ -103,5 +106,57 @@ export function Worlds() {
         ]}
       />
     </section>
+  )
+}
+
+/** Las campañas de todas las listas, cuando han llegado todas (fuera del componente: así no cambia en cada pintado) */
+function joinCampaigns(lists: { data?: { campaigns: Campaign[] } | undefined }[]) {
+  return lists.every((list) => list.data) ? lists.flatMap((list) => list.data?.campaigns ?? []) : undefined
+}
+
+/**
+ * Las campañas de todos los mundos de la cuenta (las que ve: el máster, todas; un jugador, las suyas), con el mundo de
+ * cada una, y tras la última, «Nueva campaña», que pide el mundo (de los que dirige)
+ */
+function AllCampaigns({ worlds }: { worlds: World[] }) {
+  const { t } = useTranslation()
+  const api = useApi()
+  const headingId = useId()
+  // En el orden de sus mundos, y en cada uno, en el que se crearon; la misma lista mientras no cambie (combine)
+  const all = useQueries({
+    queries: worlds.map((world) => ({
+      queryKey: ['campaigns', world.id],
+      queryFn: () => api.call('listCampaigns', { worldId: world.id })
+    })),
+    combine: joinCampaigns
+  })
+  const names = new Map(worlds.map((world) => [world.id, world.name]))
+  const places = worlds.filter((world) => world.role === 'master').map(({ id, name }) => ({ id, name }))
+  const kind = useAllCampaignsKind(places)
+  const cards = useCardList(kind.list, all)
+  if (!all) return null
+  if (cards.length === 0 && places.length === 0) return null
+  return (
+    <div className={styles.campaigns}>
+      <h2 id={headingId} className={styles.sectionTitle}>
+        {t('campaigns.title')}
+      </h2>
+      {cards.length === 0 && <p className={styles.sectionHint}>{t('campaigns.allEmpty')}</p>}
+      <ul className={styles.list} aria-labelledby={headingId} data-card-list>
+        {cards.map(({ item, fresh, burning, burnt }) => (
+          <CampaignCard
+            key={item.id}
+            worldId={item.worldId}
+            campaign={item}
+            kind={kind}
+            place={names.get(item.worldId)}
+            fresh={fresh}
+            burning={burning}
+            onBurnt={burnt}
+          />
+        ))}
+        {places.length > 0 && <NewLook kind={kind} tour="nueva-campana" />}
+      </ul>
+    </div>
   )
 }

@@ -45,13 +45,18 @@ const renderAt = (path: string) => {
 
 describe('el selector rápido', () => {
   it('Ctrl+K lo abre con el foco en el campo; busca con erratas, se elige con las flechas y abre la página', async () => {
+    // El recorrido del mundo, ya hecho: que no se lleve el foco a medio escribir
+    localStorage.setItem('crisol.recorridos.enrique@crisol.test', JSON.stringify({ seen: ['mundo'] }))
     const router = renderAt(`/mundos/${WORLD.id}/wiki`)
-    await screen.findByRole('heading', { level: 1, name: 'Wiki de Eana' })
+    await screen.findByRole('heading', { level: 1, name: 'Eana' })
+    // Ya en la portada del mundo, con su árbol
+    await screen.findByRole('treeitem', { name: 'Eana' })
     await userEvent.keyboard('{Control>}k{/Control}')
     const dialog = await screen.findByRole('dialog', { name: 'Ir a una página' })
     const field = within(dialog).getByRole('combobox', { name: 'Página u orden' })
     expect(document.activeElement).toBe(field)
     await userEvent.type(field, 'puerto cenisa')
+    await waitFor(() => expect(field).toHaveProperty('value', 'puerto cenisa'))
     const list = within(dialog).getByRole('listbox', { name: 'Páginas' })
     await waitFor(() => expect(within(list).getByRole('option', { name: /Puerto Ceniza/ })).toBeDefined())
     // La primera, elegida; al final, «Ver todos»
@@ -63,6 +68,7 @@ describe('el selector rápido', () => {
   })
 
   it('con «>», las órdenes; Escape lo cierra y el foco vuelve a donde estaba', async () => {
+    localStorage.setItem('crisol.recorridos.enrique@crisol.test', JSON.stringify({ seen: ['mundo'] }))
     const router = renderAt(`/mundos/${WORLD.id}/wiki`)
     const box = await screen.findByRole('button', { name: 'Página nueva' })
     box.focus()

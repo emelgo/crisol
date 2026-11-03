@@ -198,11 +198,34 @@ lleva a lo más alto, y un común no se suelta en una carpeta del mundo.
 secciones; hoja al tocar una etiqueta; «Elegir» por toque; casillas solo con ratón; el panel de la etiqueta ya no se
 encoge (la pantalla va a todo lo ancho); guía de Etiquetas.
 
-**Lo siguiente**: seguir puliendo en la rama `interfaz/pulir-2`. Falta que Enrique vea el Inicio del mundo y la
+**La wiki en el sitio** (2026-10-31, rama `interfaz/pulir-3`; intención en `docs/intent/wiki-edicion.md`, spec en
+`docs/specs/wiki-edicion.md`, prototipo «Crisol: wiki en el sitio»): título en línea, cabecera en iconos, propiedades
+siempre editables, sin barra de botones sobre el texto (secreto de lo elegido en la barrita de formato), «@» enlaza,
+`[!secreto]` crea un secreto, aviso de guardado y texto de ayuda en la página vacía, la hoja como papel donde se
+escribe, subpáginas sin recuadro. También: «Mundos» con la llama en el menú del móvil; la papelera de un mundo enseña
+los comunes borrados desde él; el panel de Mis mundos ya no se encoge.
+
+**Lo siguiente**: seguir puliendo en la rama `interfaz/pulir-3`. Falta que Enrique vea el Inicio del mundo y la
 pestaña Campañas; la página de una campaña aún lleva la franja antigua. Pequeños pendientes vistos al probar:
 - reabrir una ventana en el instante en que se cierra no la abre (`components/window.tsx`, el mismo `kind`);
 - Perfil anuncia «Guardado» dos veces (su `role="status"` y el anunciador);
 - `collab.integration.test.ts` › «guardar es fusionar» falla a veces con la máquina cargada (su espera de 1 s).
+
+**2026-11-02, rama `interfaz/barra-lateral`** (sobre `mundo/pestanas-mapa`): las campañas pasan a Mis mundos (todas,
+con su mundo; «Nueva campaña» pide el mundo) y salen de la barra; en la barra, dentro de un mundo: Inicio, Buscar,
+Marcadores, Páginas y Archivos (iconos, como antes: Enrique prefirió la barra estrecha a una ancha al estilo Everlore);
+el panel de la wiki con su título visible y el árbol al estilo del de Archivos; «wiki» deja de salir en la interfaz
+(se habla del mundo y sus páginas; «Compendio» se guarda para las reglas). Pendiente, por este orden:
+- (hecho después: el Inicio vuelve a ser el panel del mundo; sin «portada del mundo» en la interfaz, aunque
+  `getWorldHome` y `worlds.home_page_id` siguen en el servidor por si se recupera; propiedades al panel derecho;
+  forma de Everlore con nuestros colores y letras)
+- (primera versión hecha) **la página, como en Everlore**: portada ancha, el mundo pequeño sobre el título, acciones,
+  «⋯» y el botón del panel, pestañas con «+», texto en columna ancha, panel derecho fijo y cabecera pegajosa; el mundo
+  abre en su página de portada bajo su cabecera (la transición de entrar no cambia). Falta que la vea Enrique, y los
+  bloques del panel (fase 2 de Everlore);
+- Buscar y Marcadores, con el aspecto de Everlore;
+- faltan las animaciones de transición entre páginas de una misma vista;
+- (hecho) con los ajustes de un mundo abiertos, la vista previa de al lado se quita.
 
 **Al cerrar cada parte**: todo en verde en local (lint, tipos, `pnpm test`, e2e) antes de subir; un solo push por PR.
 Los minutos de GitHub Actions son pocos.

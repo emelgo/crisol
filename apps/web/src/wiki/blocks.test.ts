@@ -15,7 +15,7 @@ describe('los bloques del menú «/»', () => {
 
   it('se filtran por su nombre y por otras palabras, sin tildes ni mayúsculas', () => {
     expect(ids('tabla')).toEqual(['table'])
-    expect(ids('TÍTULO')).toEqual(['heading1', 'heading2', 'heading3'])
+    expect(ids('TÍTULO')).toEqual(['heading1', 'heading2', 'heading3', 'heading4', 'heading5', 'heading6'])
     expect(ids('codigo')).toEqual(['codeBlock'])
     expect(ids('aviso')).toEqual(['callout-warning'])
     expect(ids('voz')).toEqual(['callout-read-aloud'])

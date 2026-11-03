@@ -1,5 +1,6 @@
 import type { Page } from '@crisol/contracts'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { SmilePlus } from 'lucide-react'
 import { useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
@@ -16,7 +17,7 @@ const COMMON = ['📜', '🏰', '🏘️', '⚓', '🌲', '⛰️', '🐉', '⚔
  * El icono de la página: un botón que abre una caja (patrón de despliegue, como el menú de la cuenta) con los más
  * habituales, un campo para cualquier otro y quitarlo. Escape, pulsar fuera o salir con el tabulador la cierran
  */
-export function PageIcon({ page }: { page: Page }) {
+export function PageIcon({ page, ghost = false }: { page: Page; ghost?: boolean }) {
   const { t } = useTranslation()
   const api = useApi()
   const queryClient = useQueryClient()
@@ -60,13 +61,20 @@ export function PageIcon({ page }: { page: Page }) {
       <button
         ref={trigger}
         type="button"
-        className={styles.trigger}
+        className={ghost ? styles.ghost : styles.trigger}
         aria-expanded={open}
         aria-controls={panelId}
         aria-label={page.icon ? t('icon.change', { icon: page.icon }) : t('icon.add')}
         onClick={() => setOpen(!open)}
       >
-        {page.icon ?? <span className={styles.placeholder} aria-hidden="true" />}
+        {ghost ? (
+          <>
+            <SmilePlus aria-hidden="true" size={16} />
+            {t('icon.short')}
+          </>
+        ) : (
+          (page.icon ?? <span className={styles.placeholder} aria-hidden="true" />)
+        )}
       </button>
       {open && (
         <div id={panelId} className={styles.panel}>

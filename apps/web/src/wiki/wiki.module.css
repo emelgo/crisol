@@ -1,24 +1,51 @@
-/* La wiki: el panel lateral a toda altura a un lado y la página al otro, como en el Crisol antiguo */
+/*
+ * Dentro de un mundo, las páginas con la forma de Everlore (Enrique, 2026-11-02): esquinas redondeadas y sin cortes,
+ * con nuestros colores y nuestras letras
+ */
 .wiki {
+  --radius: 0.625rem;
+  --cut: none;
+  --cut-inner: none;
+  --cut-button: none;
+
+  /* Como Archivos: la columna del centro (el título, las pestañas y el texto) y, a los lados, fuera de ella, el árbol y
+     el panel de la página; las dos fichas empiezan a la altura de las pestañas (--side-top, lo mide WikiLayout) */
+  /* Donde empiezan las fichas de los lados: como en Archivos */
+  --side-top: 8.5rem;
+
   display: grid;
-  grid-template-columns: 17.5rem minmax(0, 1fr);
+  grid-template-columns: minmax(14rem, 20rem) minmax(0, 1fr) minmax(14rem, 20rem);
+  column-gap: var(--space-6);
   align-items: start;
   min-block-size: 100dvh;
+  padding: 0 var(--space-6) var(--space-8);
 }
 
-/* Se recoge pulsando otra vez su botón de la barra */
-.wiki[data-collapsed] {
-  grid-template-columns: minmax(0, 1fr);
+/* Las secciones con título y los botones, sin esquinas cortadas: redondeadas */
+.wiki :is(section[aria-labelledby], button, input, select, textarea) {
+  border-radius: var(--radius);
 }
 
+/* Como en Archivos: el panel de la izquierda, una ficha a su lado, pegada arriba al bajar */
 .aside {
   position: sticky;
-  inset-block-start: 0;
-  block-size: 100dvh;
+  inset-block-start: var(--space-4);
+  grid-column: 1;
+  grid-row: 1;
+  /* Hacia el borde: la columna del centro, ancha, y las fichas a los lados */
+  justify-self: start;
+  inline-size: 100%;
+  max-inline-size: 20rem;
+  max-block-size: calc(100dvh - 2 * var(--space-4));
   overflow-y: auto;
-  padding: var(--space-3) var(--space-3) var(--space-6);
+  margin-block-start: var(--side-top);
+  /* Hasta abajo de la ventana: una ficha alta, no una cajita */
+  min-block-size: calc(100dvh - var(--side-top) - var(--space-4));
+  padding: var(--space-3) var(--space-3) var(--space-4);
+  border: 1px solid var(--color-frame);
+  border-radius: 6px;
   background: var(--color-surface);
-  border-inline-end: 1px solid var(--color-border);
+  scrollbar-width: thin;
 }
 
 /* Las pestañas del panel de la wiki: páginas, buscar y marcadores */
@@ -68,55 +95,78 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--space-2);
-  margin-block-end: var(--space-3);
+  min-block-size: 2.25rem;
+  margin-block-end: var(--space-2);
 }
 
 .wiki[data-collapsed] .aside {
   display: none;
 }
 
-/* El nombre del panel: un rótulo pequeño, no un título de sección */
+/* El nombre del panel (Páginas, Buscar o Marcadores), siempre en el mismo sitio, arriba: un rótulo pequeño y gris,
+   como los del panel de la derecha */
 .asideHeader h2 {
   flex: 1 1 auto;
   margin: 0;
-  padding: 0;
+  padding: 0 0 0 var(--space-2);
   border: 0;
   color: var(--color-muted);
   font-family: var(--font-body);
-  font-size: 0.8125rem;
-  font-weight: 600;
-  letter-spacing: 0;
-  text-transform: none;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .content {
+  display: grid;
+  grid-column: 2 / 4;
+  grid-row: 1;
+  grid-template-columns: subgrid;
+  align-items: start;
   min-inline-size: 0;
-  padding: 0 var(--space-8) var(--space-8);
+}
+
+/* Lo de cada vista, en la columna del centro */
+.content > * {
+  grid-column: 1;
+  min-inline-size: 0;
 }
 
 .more {
   margin-block-start: var(--space-4);
-  padding-block-start: var(--space-3);
+  padding-block-start: var(--space-2);
   border-block-start: 1px solid var(--color-border);
+}
+
+/* «Página nueva» y «Exportar la wiki»: discretos, sin caja; lo que importa es el árbol */
+.newPage,
+.more button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-block-size: 2rem;
+  padding: 0 0.5rem;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--color-muted);
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  font-weight: 600;
+  clip-path: none;
+  cursor: pointer;
+}
+
+.newPage:hover,
+.more button:hover {
+  background: color-mix(in srgb, var(--color-text) 8%, transparent);
+  color: var(--color-text);
 }
 
 /* Solo en el móvil */
 .close {
   display: none;
-}
-
-/* Encima del título: la ruta a la izquierda y las acciones de la página, discretas, a la derecha */
-.pageBar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-2) var(--space-4);
-  margin-block: var(--space-2) var(--space-4);
-}
-
-.pageBar .crumbs {
-  flex: 1 1 12rem;
-  min-inline-size: 0;
 }
 
 .pageActions {
@@ -128,6 +178,7 @@
 
 /* Botones sin caja: solo se marcan al pasar por encima */
 .pageActions > button,
+.pageActions > [data-action-wrap] > button,
 .moreMenu > button {
   display: inline-flex;
   align-items: center;
@@ -145,6 +196,8 @@
 }
 
 .pageActions > button:hover,
+.pageActions > [data-action-wrap] > button:hover,
+.pageActions > [data-action-wrap] > button[aria-expanded="true"],
 .moreMenu > button:hover,
 .moreMenu > button[aria-expanded="true"] {
   background: color-mix(in srgb, var(--color-text) 8%, transparent);
@@ -165,8 +218,9 @@
   flex-direction: column;
   align-items: stretch;
   gap: var(--space-2);
-  inline-size: max-content;
-  min-inline-size: 15rem;
+  /* Ancho fijo: lo que se despliega dentro (las versiones) no lo deforma */
+  inline-size: 18rem;
+  min-inline-size: 0;
   max-inline-size: min(22rem, calc(100vw - 2rem));
   padding: var(--space-3);
   background: var(--color-surface);
@@ -180,34 +234,275 @@
   inline-size: 100%;
 }
 
-/* La página y su panel derecho (índice, enlaces y versiones) */
-.page {
+/* Como el menú del botón derecho del árbol: filas sin caja, compactas; «Versiones» se despliega dentro */
+.morePanel {
+  gap: 0;
+  padding: var(--space-1);
+  border-radius: 10px;
+  box-shadow: 0 0.75rem 2rem rgb(0 0 0 / 0.22);
+}
+
+.morePanel :is(button, a),
+.morePanel section[aria-labelledby] > h2 > button {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--space-2);
+  inline-size: 100%;
+  min-block-size: 2rem;
+  padding: 0 var(--space-2);
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 400;
+  text-align: start;
+  text-decoration: none;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.morePanel :is(button, a):hover {
+  background: color-mix(in srgb, var(--color-text) 8%, transparent);
+}
+
+.morePanel section[aria-labelledby] {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  clip-path: none;
+}
+
+.morePanel section[aria-labelledby]::before {
+  display: none;
+}
+
+.morePanel section[aria-labelledby] > h2 {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font: inherit;
+}
+
+/*
+ * La página, como en Everlore: una columna con la cabecera, las pestañas y lo de la elegida; el panel de la derecha,
+ * fijo a toda la altura de la ventana. Mientras se ve, todo lo de la wiki le deja sitio
+ */
+.content > .entry {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 17rem;
-  gap: var(--space-8);
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
   align-items: start;
 }
 
-.pageMain {
-  min-inline-size: 0;
-  max-inline-size: 50rem;
+/* Su propia capa al entrar o salir del mundo (solo mientras dura: si no, atraparía las barras flotantes): el título
+   sale con la portada, no debajo de ella hasta que acaba */
+:global(html:active-view-transition-type(entrar-mundo, salir-mundo)) .entryMain {
+  view-transition-name: pagina-mundo;
 }
 
-.pagePanel {
+.entryMain {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  grid-column: 1;
+  min-inline-size: 0;
+  /* Separado del borde de la portada: el título no va pegado a ella */
+  padding-inline: var(--space-6);
+}
+
+@media (max-width: 48rem) {
+  .entryMain {
+    padding-inline: 0;
+  }
+}
+
+.column {
+  inline-size: 100%;
+}
+
+/* «Añadir portada», pequeño y discreto sobre la cabecera */
+.addCover {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.125rem 0.25rem;
+  border: 0;
+  background: none;
+  color: var(--color-muted);
+  font: inherit;
+  font-size: 0.8125rem;
+  cursor: pointer;
+}
+
+.addCover:hover {
+  color: var(--color-text);
+}
+
+/* Lo que avisa de que la cabecera ya se ha ido de la vista */
+.sentinel {
+  block-size: 1px;
+  margin-block-end: calc(-1 * var(--space-4));
+}
+
+/* La cabecera: el mundo en pequeño, el icono y el título; a la derecha, las acciones. Pegada arriba al bajar */
+.entryHeader {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-block: calc(-1 * var(--space-2));
+  padding-block: var(--space-2);
+  transition:
+    padding 150ms ease-out,
+    background-color 150ms ease-out;
+}
+
+.entryHeader[data-compact] {
+  margin-inline: calc(-1 * var(--space-2));
+  padding-inline: var(--space-2);
+  border-radius: 0 0 8px 8px;
+  box-shadow: 0 1px 0 var(--color-border);
+  background: color-mix(in srgb, var(--color-bg) 92%, transparent);
+  backdrop-filter: blur(8px);
+}
+
+.entryTitle {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-inline-size: 0;
+}
+
+.entryWorld {
+  color: var(--color-muted);
+  font-size: 0.75rem;
+}
+
+/* Compacta sin cambiar de alto (si no, lo de debajo se movería al pegarse): el mundo se oculta sin dejar su hueco
+   vacío a la vista y el título no cambia */
+.entryHeader[data-compact] .entryWorld {
+  visibility: hidden;
+}
+
+.panelToggle {
+  display: grid;
+  place-items: center;
+  inline-size: 2.25rem;
+  block-size: 2.25rem;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+.panelToggle:hover,
+.panelToggle[aria-pressed="true"] {
+  background: color-mix(in srgb, var(--color-text) 8%, transparent);
+  color: var(--color-text);
+}
+
+/* El panel de la derecha, como el detalle de Archivos: una ficha a su lado, pegada arriba al bajar */
+.entryPanel {
   position: sticky;
   inset-block-start: var(--space-4);
-  max-block-size: calc(100dvh - 3.5rem);
+  display: flex;
+  grid-column: 2;
+  flex-direction: column;
+  gap: var(--space-4);
+  justify-self: end;
+  inline-size: 100%;
+  max-inline-size: 20rem;
+  max-block-size: calc(100dvh - 2 * var(--space-4));
   overflow-y: auto;
+  margin-block-start: var(--panel-top, 0);
+  min-block-size: calc(100dvh - var(--side-top) - var(--space-4));
+  padding: var(--space-4);
+  border: 1px solid var(--color-frame);
+  border-radius: 6px;
+  background: var(--color-surface);
   font-size: 0.9375rem;
+  scrollbar-width: thin;
 }
 
-/* En el panel, los títulos de cada parte, pequeños */
-.pagePanel h2 {
-  margin-block: var(--space-4) var(--space-2);
-  font-size: 1.125rem;
+/* Las propiedades, en el panel: sin la ficha flotante, a lo ancho del panel */
+.entryPanel [data-properties] {
+  float: none;
+  inline-size: auto;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
 }
 
-.pagePanel section:first-child h2 {
+/* Con menos sitio (o con zoom), la columna del centro se estrecha y las fichas siguen, como en Archivos */
+@media (max-width: 90rem) {
+  .wiki {
+    grid-template-columns: minmax(11rem, 15rem) minmax(0, 1fr) minmax(14rem, 18rem);
+    column-gap: var(--space-5);
+  }
+}
+
+/* Sin sitio a la derecha, el panel va debajo de la página */
+@media (max-width: 64rem) {
+  .wiki {
+    grid-template-columns: minmax(11rem, 15rem) minmax(0, 1fr) 0;
+  }
+
+  .entryPanel {
+    position: static;
+    grid-column: 1;
+    inline-size: auto;
+    min-block-size: 0;
+    max-block-size: none;
+    margin-block-start: var(--space-8);
+  }
+}
+
+/* Sin recuadros: cada parte, con su título pequeño, una debajo de otra (como el panel del Crisol antiguo) */
+.entryPanel section[aria-labelledby] {
+  margin: 0 0 var(--space-6);
+  padding: 0;
+  background: none;
+  clip-path: none;
+}
+
+.entryPanel section[aria-labelledby]::before {
+  display: none;
+}
+
+.entryPanel h2,
+.entryPanel section[aria-labelledby] > h2:first-child {
+  margin: 0 0 var(--space-2);
+  padding: 0;
+  border: 0;
+  color: var(--color-muted);
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.entryPanel h3 {
+  margin: var(--space-2) 0 var(--space-1);
+  color: var(--color-muted);
+  font-family: var(--font-body);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-transform: none;
+}
+
+.entryPanel section:first-child h2 {
   margin-block-start: 0;
 }
 
@@ -246,74 +541,180 @@
   color: var(--color-muted);
 }
 
-/* Sin sitio para el panel derecho: va debajo de la página */
-@media (max-width: 80rem) {
-  .page {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .pagePanel {
-    position: static;
-    max-block-size: none;
-  }
-}
-
-.crumbs ol {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-1) var(--space-2);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  color: var(--color-muted);
-  font-size: 0.9375rem;
-}
-
-.crumbs li + li::before {
-  content: "/";
-  margin-inline-end: var(--space-2);
-}
-
-.crumbs a {
-  color: inherit;
-}
-
 .heading {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-2) var(--space-4);
-}
-
-.heading h1 {
-  flex: 1 1 16rem;
+  gap: var(--space-2) var(--space-3);
   min-inline-size: 0;
 }
 
-.locked {
-  flex-basis: 100%;
-  margin: 0;
-  color: var(--color-muted);
+/* «Icono» y «Portada», sobre el título: solo al acercarse a la página (en lo táctil, siempre) */
+.ghosts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-block-end: var(--space-1);
+  opacity: 0;
+  transition: opacity 120ms ease-out;
 }
 
-.rename {
-  margin-block-end: var(--space-6);
+.pageMain:hover .ghosts,
+.ghosts:focus-within {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .ghosts {
+    opacity: 1;
+  }
+}
+
+.ghostButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-block-size: 2rem;
+  padding: 0 0.5rem;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--color-muted);
+  font: inherit;
+  font-size: 0.875rem;
+  clip-path: none;
+  cursor: pointer;
+}
+
+.ghostButton:hover,
+.ghostButton[aria-expanded="true"] {
+  background: color-mix(in srgb, var(--color-text) 8%, transparent);
+  color: var(--color-text);
+}
+
+.titleBox {
+  flex: 0 1 auto;
+  min-inline-size: 0;
+}
+
+.titleBox h1 {
+  margin: 0;
+}
+
+/* El título se escribe ahí mismo: solo se marca un poco al pasar por encima o al escribir */
+.title {
+  display: block;
+  margin-inline: -0.25rem;
+  padding-inline: 0.25rem;
+  border-radius: 4px;
+  outline: none;
+  overflow-wrap: anywhere;
+  cursor: text;
+}
+
+.title[contenteditable="false"] {
+  cursor: default;
+}
+
+/* Sin franja al pasar ni al escribir: el cursor ya dice que se escribe ahí */
+
+.title:empty::before {
+  content: attr(data-placeholder);
+  color: var(--color-field-border);
+}
+
+.titleError {
+  margin: var(--space-1) 0 0;
+  color: var(--color-danger);
+  font-size: 0.9375rem;
+}
+
+.locked {
+  padding: 0.125rem 0.5rem;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--color-text) 8%, transparent);
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* El título de la página, del tamaño del de Everlore (con nuestra letra) */
+.entryHeader h1 {
+  font-size: 2.25rem;
 }
 
 .subpages {
   margin-block-start: var(--space-8);
+  padding-block-start: var(--space-3);
+  border-block-start: 1px solid var(--color-border);
+}
+
+.subpagesTitle {
+  margin: 0 0 var(--space-2);
+  padding: 0;
+  border: 0;
+  color: var(--color-muted);
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.subpagesList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
+  margin: 0 0 var(--space-2);
+  padding: 0;
+  list-style: none;
+}
+
+.subpagesList a {
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.subpagesAdd {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-block-size: 2rem;
+  padding: 0 0.5rem;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+  font-weight: 600;
+  clip-path: none;
+  cursor: pointer;
+}
+
+.subpagesAdd:hover {
+  background: color-mix(in srgb, var(--color-text) 8%, transparent);
+  color: var(--color-text);
 }
 
 /* Estrecho: el panel, en un cajón que se abre con su botón de la barra de abajo */
 @media (max-width: 48rem) {
-  .wiki,
-  .wiki[data-collapsed] {
+  .wiki {
     grid-template-columns: minmax(0, 1fr);
     min-block-size: 0;
+    padding: var(--space-2) var(--space-4) var(--space-6);
   }
 
   .content {
-    padding: var(--space-2) var(--space-4) var(--space-6);
+    display: block;
+    grid-column: 1;
+  }
+
+  .content > .entry {
+    display: block;
+  }
+
+  .content > .entryBanner:not([data-cover]) {
+    block-size: 5rem;
   }
 
   .aside {
@@ -324,12 +725,17 @@
   .wiki[data-collapsed] .aside[data-open] {
     position: fixed;
     inset: 0 auto 0 0;
-    z-index: 10;
+    z-index: 40;
     display: block;
     inline-size: min(20rem, 85vw);
     block-size: auto;
+    min-block-size: 0;
+    max-block-size: none;
+    margin: 0;
     padding: var(--space-4);
+    border: 0;
     border-inline-end: 1px solid var(--color-frame);
+    border-radius: 0;
     box-shadow: 0 0 2rem rgb(0 0 0 / 0.4);
   }
 
@@ -344,5 +750,257 @@
     grid-column: 1 / -1;
     order: -1;
     justify-self: end;
+  }
+}
+
+/* El Inicio de un mundo: su cabecera y su página de portada, con el margen de la wiki */
+.worldHome {
+  min-inline-size: 0;
+  padding: var(--space-4) var(--space-8) var(--space-8);
+}
+
+@media (max-width: 48rem) {
+  .worldHome {
+    padding: var(--space-2) var(--space-4) var(--space-6);
+  }
+}
+
+/* En «⋯», si la página ya es la portada del mundo */
+.isHome {
+  margin: 0;
+  padding: 0 var(--space-2);
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+/* El filtro del árbol, como en LegendKeeper: un campo redondeado con su icono a la derecha */
+.filter {
+  position: relative;
+  margin-block-end: var(--space-3);
+}
+
+.filter input {
+  inline-size: 100%;
+  min-block-size: 2.25rem;
+  padding: 0 2.25rem 0 var(--space-3);
+  border: 1px solid transparent;
+  border-radius: 0.5rem;
+  background: var(--color-raised);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.9375rem;
+}
+
+.filter input:focus {
+  border-color: var(--color-field-border);
+  outline: none;
+}
+
+.filter svg {
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-end: var(--space-3);
+  color: var(--color-muted);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.filterEmpty {
+  margin: 0;
+  padding: var(--space-2);
+  color: var(--color-muted);
+  font-size: 0.9375rem;
+}
+
+.filtered {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.filtered a {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: 0.375rem var(--space-2);
+  border-radius: 6px;
+  color: var(--color-text);
+  font-size: 0.9375rem;
+  text-decoration: none;
+}
+
+.filtered a:hover,
+.filtered a[aria-current="page"] {
+  background: color-mix(in srgb, var(--color-text) 8%, transparent);
+}
+
+.filtered svg {
+  flex: none;
+  margin-block-start: 0.2rem;
+  color: var(--color-muted);
+}
+
+.filtered small {
+  display: block;
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+}
+
+/* «Inicio», junto al título de la portada del mundo (como en LegendKeeper) */
+.homeBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3125rem;
+  padding: 0.1875rem 0.625rem;
+  border: 1px solid color-mix(in srgb, var(--color-text) 14%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-bg) 72%, transparent);
+  backdrop-filter: blur(6px);
+  color: var(--color-text);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+/* Las pestañas del panel de las páginas (Páginas, Plantillas, Archivos), como en LegendKeeper: texto, la elegida en
+   blanco y en negrita; a la derecha, «+» para una página nueva */
+.sideTabs {
+  display: flex;
+  flex: 1;
+  gap: var(--space-4);
+}
+
+.sideTab {
+  padding: 0.25rem 0;
+  border: 0;
+  background: none;
+  color: var(--color-muted);
+  font: inherit;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.sideTab:hover,
+.sideTab[aria-selected="true"] {
+  color: var(--color-text);
+}
+
+.sideTab[aria-selected="true"] {
+  font-weight: 700;
+}
+
+.newPageIcon {
+  display: grid;
+  place-items: center;
+  inline-size: 2rem;
+  block-size: 2rem;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+.newPageIcon:hover {
+  background: color-mix(in srgb, var(--color-text) 8%, transparent);
+  color: var(--color-text);
+}
+
+.soon {
+  margin: 0;
+  padding: var(--space-2);
+  color: var(--color-muted);
+  font-size: 0.9375rem;
+}
+
+/* Los marcadores, en la vista del mundo: debajo del árbol (la raya es la suya, una sola; sin marcadores, nada) */
+.asideBookmarks:empty {
+  display: none;
+}
+
+/* La portada de la página (o la del mundo, en su portada), por detrás: solo en la columna del centro, sin esquinas
+   abajo, fundiéndose con el fondo; el título va encima de su parte de abajo. Sin portada no ocupa sitio (y «Añadir
+   portada» sale al pasar por su hueco o por la cabecera) */
+.content > .entryBanner {
+  position: relative;
+  grid-column: 1;
+  block-size: 15rem;
+  margin-block-start: var(--space-4);
+}
+
+/* Sin portada, una textura suave en su sitio (para que no se vea plano): grano, un tejido muy tenue y dos manchas de
+   color, fundidos con el fondo por abajo como una portada */
+.content > .entryBanner:not([data-cover]) {
+  border-radius: 0.75rem 0.75rem 0 0;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0.09 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+    repeating-linear-gradient(45deg, color-mix(in srgb, var(--color-text) 3%, transparent) 0 1px, transparent 1px 9px),
+    repeating-linear-gradient(-45deg, color-mix(in srgb, var(--color-text) 2%, transparent) 0 1px, transparent 1px 9px),
+    radial-gradient(ellipse 60% 90% at 15% 0%, color-mix(in srgb, var(--color-accent) 12%, transparent), transparent),
+    radial-gradient(ellipse 55% 80% at 90% 10%, color-mix(in srgb, var(--color-link) 9%, transparent), transparent),
+    var(--color-raised);
+}
+
+.content > .entryBanner:not([data-cover])::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(to bottom, transparent 35%, var(--color-bg));
+  pointer-events: none;
+}
+
+/* Sin portada, su hueco se queda (todas las páginas, con el título en el mismo sitio); «Añadir portada», arriba a la
+   derecha, como «Cambiar» en una con portada */
+.content > .entryBanner:not([data-cover]) > * {
+  position: absolute;
+  inset-block-start: var(--space-3);
+  inset-inline-end: var(--space-3);
+  z-index: 6;
+}
+
+.entryBanner[data-cover]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 0.75rem 0.75rem 0 0;
+  z-index: 1;
+  background: linear-gradient(to bottom, transparent 45%, var(--color-bg));
+  pointer-events: none;
+}
+
+.entryBanner[data-cover] > :first-child {
+  border-radius: 0;
+}
+
+.entryBanner[data-cover] [data-cover-image] {
+  block-size: 15rem;
+  border-radius: 0.75rem 0.75rem 0 0;
+}
+
+/* El título, encima de la parte de abajo de la portada */
+.content > .entryBanner + .entry {
+  position: relative;
+  z-index: 2;
+  margin-block-start: -5rem;
+}
+
+/* «Añadir portada», al pasar por la cabecera o al llegar con el teclado */
+.addCover {
+  opacity: 0;
+  transition: opacity 150ms ease-out;
+}
+
+.content:has(.entryHeader:hover, .entryBanner:hover) .addCover,
+.addCover:hover,
+.addCover:focus-visible {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .addCover {
+    opacity: 1;
   }
 }

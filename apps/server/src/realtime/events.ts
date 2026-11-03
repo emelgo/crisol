@@ -113,6 +113,10 @@ export function undoEvents(
         events.push(invitationChanged(campaignScope))
         break
       case 'pages':
+      case 'page_tabs':
+      case 'maps':
+      case 'map_pins':
+      case 'map_elements':
         events.push(pagesChanged({ worldId, organizationId: context.organizationId }))
         break
       case 'tags':

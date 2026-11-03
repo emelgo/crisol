@@ -116,13 +116,22 @@ export async function listTrash(db: Database, scope: TrashScope) {
       deletedAt: files.deletedAt
     })
     .from(files)
-    // Los comunes (sin mundo) van en la papelera de la organización
+    // Los comunes (sin mundo) van en la papelera de la organización y, como se usan desde cada mundo, también en la de
+    // sus mundos (se borran desde la carpeta «Comunes» de sus archivos)
     .leftJoin(worlds, eq(worlds.id, files.worldId))
     .where(
       and(
         isNotNull(files.deletedAt),
         or(isNull(files.worldId), isNull(worlds.deletedAt)),
-        'worldId' in scope ? eq(files.worldId, scope.worldId) : eq(files.organizationId, scope.organizationId)
+        'worldId' in scope
+          ? or(
+              eq(files.worldId, scope.worldId),
+              and(
+                isNull(files.worldId),
+                sql`${files.organizationId} = (select organization_id from worlds where id = ${scope.worldId})`
+              )
+            )
+          : eq(files.organizationId, scope.organizationId)
       )
     )
   return [

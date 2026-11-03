@@ -62,11 +62,28 @@ export const renameWorld = defineAction({
   output: world
 })
 
+export const getWorldHome = defineAction({
+  name: 'getWorldHome',
+  kind: 'read',
+  description: 'La página de portada de un mundo, donde se abre (null si aún no tiene: ensureWorldHome la crea)',
+  input: z.object({ worldId: z.uuid() }),
+  output: z.object({ pageId: z.uuid().nullable(), chosen: z.boolean().describe('Si es la elegida a propósito') })
+})
+
+export const ensureWorldHome = defineAction({
+  name: 'ensureWorldHome',
+  kind: 'write',
+  description:
+    'La página de portada de un mundo (donde se abre, la primera de su árbol): si aún no tiene, la crea con el nombre del mundo',
+  input: z.object({ worldId: z.uuid() }),
+  output: z.object({ pageId: z.uuid() })
+})
+
 export const updateWorld = defineAction({
   name: 'updateWorld',
   kind: 'write',
   description:
-    'Cambia cómo se ve un mundo en su tarjeta: nombre, descripción (una línea), icono, color (uno de los fijos o #rrggbb: tiñe, sutil, el contorno de su tarjeta) o la portada (una imagen del mundo). Solo lo que se pase; null quita el icono, el color o la portada',
+    'Cambia un mundo: nombre, descripción (una línea), icono, color (uno de los fijos o #rrggbb: tiñe, sutil, el contorno de su tarjeta), la portada de su tarjeta (una imagen del mundo) o su página de portada (donde se abre). Solo lo que se pase; null quita el icono, el color, la portada o la página elegida',
   input: z
     .object({
       worldId: z.uuid(),
@@ -74,7 +91,12 @@ export const updateWorld = defineAction({
       description: worldDescription.optional(),
       icon: worldIcon.nullable().optional(),
       color: worldColor.nullable().optional(),
-      cover: worldCover.nullable().optional()
+      cover: worldCover.nullable().optional(),
+      homePageId: z
+        .uuid()
+        .nullable()
+        .optional()
+        .describe('Su página de portada, donde se abre el mundo; null: la primera del árbol')
     })
     .refine(
       (input) =>
@@ -82,8 +104,9 @@ export const updateWorld = defineAction({
         input.description !== undefined ||
         input.icon !== undefined ||
         input.color !== undefined ||
-        input.cover !== undefined,
-      { message: 'name, description, icon, color o cover' }
+        input.cover !== undefined ||
+        input.homePageId !== undefined,
+      { message: 'name, description, icon, color, cover o homePageId' }
     ),
   output: world
 })

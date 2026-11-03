@@ -7,10 +7,13 @@ import type {
   FolderView,
   HistoryEntry,
   Invitation,
+  MapPinView,
+  MapView,
   Member,
   Organization,
   Page,
   PageProperty,
+  PageTabView,
   TagView,
   TrashItem,
   World
@@ -139,6 +142,7 @@ export function fakeApi(
     locked?: boolean
     cover?: Page['cover']
     sheet?: Page['sheet']
+    panel?: Page['panel']
     version: number
   }
   const pages: StoredPage[] = (options.pages ?? []).map((page) => ({
@@ -205,6 +209,7 @@ export function fakeApi(
       locked: page.locked ?? false,
       cover: page.cover ?? null,
       sheet: page.sheet ?? null,
+      panel: (page.panel ?? []).map((b) => ({ ...b })),
       path,
       updatedAt: new Date().toISOString()
     }
@@ -305,6 +310,30 @@ export function fakeApi(
       )
     return doomed.length
   }
+
+  // La página de portada de cada mundo
+  const homes = new Map<string, string>()
+  // Las pestañas de las páginas y sus mapas (los pines, dentro de cada mapa)
+  const pageTabs: PageTabView[] = []
+  const maps: MapView[] = []
+  const tabById = (tabId: string) => {
+    const tab = pageTabs.find((t) => t.id === tabId)
+    if (!tab) throw new ApiError('NOT_FOUND', 404)
+    return tab
+  }
+  const mapById = (mapId: string) => {
+    const map = maps.find((m) => m.id === mapId)
+    if (!map) throw new ApiError('NOT_FOUND', 404)
+    return map
+  }
+  const pinById = (pinId: string) => {
+    for (const map of maps) {
+      const pin = map.pins.find((p) => p.id === pinId)
+      if (pin) return { map, pin }
+    }
+    throw new ApiError('NOT_FOUND', 404)
+  }
+  const copyMap = (map: MapView): MapView => ({ ...map, pins: map.pins.map((pin) => ({ ...pin })) })
 
   const handlers: { [N in ActionName]: (input: ActionInput<N>) => ActionOutput<N> } = {
     listOrganizations: () => ({ organizations }),
@@ -556,6 +585,21 @@ export function fakeApi(
       })
       return pageView(page)
     },
+    sortPageChildren: ({ worldId, parentId, order }) => {
+      const kids = childrenOf(worldId, parentId).sort((a, b) =>
+        order === 'asc' ? a.title.localeCompare(b.title, 'es') : b.title.localeCompare(a.title, 'es')
+      )
+      for (const kid of kids) {
+        pages.splice(pages.indexOf(kid), 1)
+        pages.push(kid)
+      }
+      return { sorted: kids.length }
+    },
+    setPagePanel: ({ pageId, blocks }) => {
+      const page = pageById(pageId)
+      Object.assign(page, { panel: blocks.map((b) => ({ ...b })), version: page.version + 1 })
+      return pageView(page)
+    },
     setPageProperties: ({ pageId, properties }) => {
       const page = pageById(pageId)
       Object.assign(page, { properties: properties.map((p) => ({ ...p })), version: page.version + 1 })
@@ -723,6 +767,116 @@ export function fakeApi(
       file.version++
       return { ...file }
     },
+    getWorldHome: ({ worldId }) => {
+      const home = homes.get(worldId) ?? null
+      return { pageId: home, chosen: home !== null }
+    },
+    ensureWorldHome: ({ worldId }) => {
+      const existing = homes.get(worldId)
+      if (existing) return { pageId: existing }
+      const world = worlds.find((w) => w.id === worldId)
+      const page = handlers.createPage({ worldId, title: world?.name ?? '', parentId: null })
+      // Delante de las demás de lo más alto
+      const index = pages.findIndex((p) => p.id === page.id)
+      const [stored] = pages.splice(index, 1)
+      if (stored)
+        pages.splice(
+          pages.findIndex((p) => p.worldId === worldId && !p.parentId),
+          0,
+          stored
+        )
+      homes.set(worldId, page.id)
+      return { pageId: page.id }
+    },
+    listPageTabs: ({ pageId }) => ({ tabs: pageTabs.filter((t) => t.pageId === pageId).map((t) => ({ ...t })) }),
+    createPageTab: ({ pageId, kind, name }) => {
+      pageById(pageId)
+      const tab: PageTabView = {
+        id: crypto.randomUUID(),
+        pageId,
+        kind,
+        name: name ?? (kind === 'text' ? 'Texto 2' : 'Mapa'),
+        hidden: false,
+        documentId: kind === 'text' ? crypto.randomUUID() : null,
+        color: null
+      }
+      pageTabs.push(tab)
+      maps.push({ id: crypto.randomUUID(), tabId: tab.id, pageId, image: null, scale: null, pins: [] })
+      return { ...tab }
+    },
+    updatePageTab: ({ tabId, name, hidden, after, color }) => {
+      const tab = tabById(tabId)
+      if (name !== undefined) tab.name = name
+      if (hidden !== undefined) tab.hidden = hidden
+      if (color !== undefined) tab.color = color
+      if (after !== undefined) {
+        pageTabs.splice(pageTabs.indexOf(tab), 1)
+        const index =
+          after === null
+            ? pageTabs.findIndex((t) => t.pageId === tab.pageId)
+            : pageTabs.findIndex((t) => t.id === after) + 1
+        pageTabs.splice(index < 0 ? pageTabs.length : index, 0, tab)
+      }
+      return { ...tab }
+    },
+    deletePageTab: ({ tabId }) => {
+      const tab = tabById(tabId)
+      pageTabs.splice(pageTabs.indexOf(tab), 1)
+      maps.splice(
+        maps.findIndex((m) => m.tabId === tabId),
+        1
+      )
+      return { id: tabId }
+    },
+    getMap: ({ tabId }) => {
+      tabById(tabId)
+      const map = maps.find((m) => m.tabId === tabId)
+      if (!map) throw new ApiError('NOT_FOUND', 404)
+      return copyMap(map)
+    },
+    updateMap: ({ mapId, image, scale }) => {
+      const map = mapById(mapId)
+      if (image) {
+        const file = files.find((f) => f.id === image.fileId)
+        if (file?.kind !== 'image') throw new ApiError('BAD_MAP_IMAGE', 400)
+        map.image = { fileId: file.id, name: file.name, url: file.url, width: image.width, height: image.height }
+      }
+      if (scale !== undefined) map.scale = scale
+      return copyMap(map)
+    },
+    createMapPin: ({ mapId, x, y, ...rest }) => {
+      const map = mapById(mapId)
+      const pin: MapPinView = {
+        id: crypto.randomUUID(),
+        x,
+        y,
+        label: null,
+        pageId: null,
+        icon: null,
+        color: 'wine',
+        shape: 0,
+        variant: 0,
+        display: 0,
+        hidden: false,
+        locked: false,
+        ...rest,
+        pageTitle: null
+      }
+      if (pin.pageId) pin.pageTitle = pageById(pin.pageId).title
+      map.pins.push(pin)
+      return { ...pin }
+    },
+    updateMapPin: ({ pinId, ...patch }) => {
+      const { pin } = pinById(pinId)
+      Object.assign(pin, patch)
+      pin.pageTitle = pin.pageId ? pageById(pin.pageId).title : null
+      return { ...pin }
+    },
+    deleteMapPin: ({ pinId }) => {
+      const { map, pin } = pinById(pinId)
+      map.pins.splice(map.pins.indexOf(pin), 1)
+      return { id: pinId }
+    },
     listAccountTags: ({ organizationId }) => {
       const target = ownOrganization(organizationId)
       return { organizationId: target, tags: catalogOf(target) }
@@ -807,11 +961,13 @@ export function fakeApi(
       return {
         pages: inWorld.map((page) => {
           const alias = page.properties.find((p) => p.name === 'alias')
+          const tags = page.properties.find((p) => p.name === 'etiquetas')
           return {
             id: page.id,
             title: page.title,
             aliases: alias?.type === 'list' ? alias.value : [],
-            path: pathOf(page)
+            path: pathOf(page),
+            tags: tags?.type === 'list' ? tags.value : []
           }
         })
       }

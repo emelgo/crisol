@@ -59,30 +59,32 @@ const item = async (name: string) => (await tree()).findByRole('treeitem', { nam
 const openMore = async () => userEvent.click(await screen.findByRole('button', { name: 'Más acciones' }))
 
 describe('el árbol de la wiki', () => {
-  it('desde el mundo se llega a su wiki, con el primer nivel', async () => {
+  it('al entrar en el mundo, su portada con el árbol al lado, y en él el primer nivel', async () => {
     // El tutorial guiado del mundo ya hecho: que no se ponga en medio
     localStorage.setItem('crisol.recorridos.enrique@crisol.test', JSON.stringify({ seen: ['mundo'] }))
-    const router = renderAt(`/mundos/${WORLD.id}`)
+    const router = renderAt(`/mundos/${WORLD.id}/wiki`)
+    // Sin página, la portada del mundo
     await screen.findByRole('heading', { level: 1, name: 'Eana' })
-    // «Páginas», en la barra del mundo, lleva a la wiki con su árbol
-    const sections = within(screen.getByRole('navigation', { name: 'Secciones' }))
-    await userEvent.click(await sections.findByRole('button', { name: 'Wiki' }))
-    expect(await screen.findByRole('heading', { level: 1, name: 'Wiki de Eana' })).toBeDefined()
-    expect(router.state.location.pathname).toBe(`/mundos/${WORLD.id}/wiki`)
+    await waitFor(() => expect(router.state.location.pathname).toBe(`/mundos/${WORLD.id}`))
+    await item('Lugares')
     const items = (await tree()).getAllByRole('treeitem')
-    expect(items.map((i) => i.textContent)).toEqual(['Lugares', 'Personajes', 'Reglas de la casa'])
+    // Primero, la portada del mundo, que se creó al entrar en él
+    expect(items.map((i) => i.textContent)).toEqual(['Eana', 'Lugares', 'Personajes', 'Reglas de la casa'])
     expect(items[0]?.getAttribute('aria-level')).toBe('1')
     expect(items[0]?.getAttribute('aria-posinset')).toBe('1')
-    expect(items[0]?.getAttribute('aria-setsize')).toBe('3')
-    expect(items[0]?.getAttribute('aria-expanded')).toBe('false')
+    expect(items[0]?.getAttribute('aria-setsize')).toBe('4')
+    expect(items[1]?.getAttribute('aria-expanded')).toBe('false')
     // Sin subpáginas no se despliega
-    expect(items[1]?.hasAttribute('aria-expanded')).toBe(false)
+    expect(items[0]?.hasAttribute('aria-expanded')).toBe(false)
   })
 
   it('una sola parada del tabulador; las flechas se mueven, despliegan y pliegan', async () => {
     renderAt(`/mundos/${WORLD.id}/wiki`)
     const places = await item('Lugares')
-    expect((await tree()).getAllByRole('treeitem').filter((i) => i.tabIndex === 0)).toEqual([places])
+    // La parada, en la abierta (la portada)
+    await waitFor(async () =>
+      expect((await tree()).getAllByRole('treeitem').filter((i) => i.tabIndex === 0)).toEqual([await item('Eana')])
+    )
     places.focus()
     await userEvent.keyboard('{ArrowRight}')
     const coast = await item('Costa Gris')
@@ -99,7 +101,7 @@ describe('el árbol de la wiki', () => {
     await userEvent.keyboard('{End}')
     expect(document.activeElement?.textContent).toBe('Reglas de la casa')
     await userEvent.keyboard('{Home}')
-    expect(document.activeElement).toBe(places)
+    expect(document.activeElement?.textContent).toBe('Eana')
   })
 
   it('la flecha de cada rama la despliega y la pliega sin abrir la página', async () => {
@@ -112,7 +114,7 @@ describe('el árbol de la wiki', () => {
     expect(places.getAttribute('aria-expanded')).toBe('true')
     await userEvent.click(arrow)
     await waitFor(() => expect(screen.queryByRole('treeitem', { name: 'Costa Gris' })).toBeNull())
-    expect(router.state.location.pathname).toBe(`/mundos/${WORLD.id}/wiki`)
+    expect(router.state.location.pathname).toBe(`/mundos/${WORLD.id}`)
   })
 
   it('al abrir una página, su rama está desplegada y ella marcada', async () => {
@@ -121,8 +123,8 @@ describe('el árbol de la wiki', () => {
     const port = await item('Puerto Ceniza')
     expect(port.getAttribute('aria-current')).toBe('page')
     expect(port.getAttribute('aria-level')).toBe('3')
-    const crumbs = within(screen.getByRole('navigation', { name: 'Migas de pan' }))
-    expect(crumbs.getAllByRole('link').map((l) => l.textContent)).toEqual(['Eana', 'Lugares', 'Costa Gris'])
+    // Sin el mundo sobre el título: el título, donde el de Archivos
+    expect(screen.queryByText('Eana', { selector: 'header span' })).toBeNull()
   })
 
   it('Alt y las flechas recolocan: abajo entre hermanas y a la derecha dentro de la de encima', async () => {
@@ -133,6 +135,7 @@ describe('el árbol de la wiki', () => {
     await userEvent.keyboard('{Alt>}{ArrowDown}{/Alt}')
     await waitFor(async () =>
       expect((await tree()).getAllByRole('treeitem').map((i) => i.textContent)).toEqual([
+        'Eana',
         'Lugares',
         'Reglas de la casa',
         'Personajes'
@@ -145,52 +148,65 @@ describe('el árbol de la wiki', () => {
     expect(api.calls.filter((c) => c === 'movePage')).toHaveLength(2)
   })
 
-  it('una página nueva se abre para ponerle nombre, y sale en el árbol', async () => {
+  it('una página nueva: su cuadro pide el tipo y el título, y sale en el árbol', async () => {
     const router = renderAt(`/mundos/${WORLD.id}/wiki`)
     await userEvent.click(await screen.findByRole('button', { name: 'Página nueva' }))
-    const title = await screen.findByLabelText('Título de la página')
-    expect(document.activeElement).toBe(title)
-    // Con todo el título provisional elegido, escribir lo sustituye
-    await userEvent.keyboard('Facciones')
-    await userEvent.click(screen.getByRole('button', { name: 'Guardar' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Página nueva' })
+    expect(within(dialog).getByRole('radio', { name: 'Texto' })).toHaveProperty('checked', true)
+    const title = within(dialog).getByLabelText('Título')
+    await waitFor(() => expect(document.activeElement).toBe(title))
+    await userEvent.keyboard('Facciones{Enter}')
     expect(await screen.findByRole('heading', { level: 1, name: 'Facciones' })).toBeDefined()
     expect(await item('Facciones')).toBeDefined()
     expect(router.state.location.search).toEqual({})
   })
 
-  it('una subpágina se crea desde su madre', async () => {
+  it('una subpágina se crea desde su madre, con el botón derecho en el árbol', async () => {
     renderAt(`/mundos/${WORLD.id}/wiki/${ids.people}`)
-    await userEvent.click(await screen.findByRole('button', { name: 'Nueva subpágina' }))
-    const title = await screen.findByLabelText('Título de la página')
-    await userEvent.clear(title)
-    await userEvent.type(title, 'Maela Varn{Enter}')
+    await userEvent.pointer({ keys: '[MouseRight]', target: await item('Personajes') })
+    await userEvent.click(await screen.findByRole('menuitem', { name: 'Crear subpágina' }))
+    const dialog = await screen.findByRole('dialog', { name: /^Subpágina de/ })
+    await userEvent.type(within(dialog).getByLabelText('Título'), 'Maela Varn{Enter}')
     expect(await screen.findByRole('heading', { level: 1, name: 'Maela Varn' })).toBeDefined()
     expect((await item('Maela Varn')).getAttribute('aria-level')).toBe('2')
-    expect(within(screen.getByRole('navigation', { name: 'Migas de pan' })).getByText('Personajes')).toBeDefined()
   })
 
-  it('renombrar en el sitio; Escape lo deja como estaba', async () => {
-    renderAt(`/mundos/${WORLD.id}/wiki/${ids.rules}`)
+  it('el título se cambia en el sitio: Intro lo guarda, Escape lo deja como estaba y vacío vuelve el de antes', async () => {
+    const api = wikiApi()
+    renderAt(`/mundos/${WORLD.id}/wiki/${ids.rules}`, api)
+    const title = await screen.findByRole('textbox', { name: 'Título de la página' })
+    expect(title.textContent).toBe('Reglas de la casa')
+    // Escape: como estaba, sin guardar
+    await userEvent.clear(title)
+    await userEvent.type(title, 'Otra cosa{Escape}')
+    expect(title.textContent).toBe('Reglas de la casa')
+    // Vacío: vuelve el de antes
+    await userEvent.clear(title)
+    await userEvent.type(title, '{Enter}')
+    expect(title.textContent).toBe('Reglas de la casa')
+    expect(api.calls).not.toContain('updatePage')
+    // Intro: se guarda, y se ve en el árbol
+    await userEvent.clear(title)
+    await userEvent.type(title, 'Reglas de mesa{Enter}')
+    expect(await screen.findByRole('heading', { level: 1, name: 'Reglas de mesa' })).toBeDefined()
+    expect(await item('Reglas de mesa')).toBeDefined()
+    // Ya no hay «Renombrar»
     await openMore()
-    await userEvent.click(await screen.findByRole('button', { name: 'Renombrar' }))
-    await userEvent.keyboard('{Escape}')
-    expect(await screen.findByRole('heading', { level: 1, name: 'Reglas de la casa' })).toBeDefined()
-    // El foco vuelve a «Más», de donde salió
-    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Más acciones' }))
+    expect(screen.queryByRole('button', { name: 'Renombrar' })).toBeNull()
   })
 
   it('borrar pide confirmar, vuelve a la madre y la rama sale una vez en la papelera, de donde se restaura', async () => {
     const router = renderAt(`/mundos/${WORLD.id}/wiki/${ids.coast}`)
-    await openMore()
-    await userEvent.click(await screen.findByRole('button', { name: 'Borrar' }))
+    await userEvent.pointer({ keys: '[MouseRight]', target: await item('Costa Gris') })
+    await userEvent.click(await screen.findByRole('menuitem', { name: 'Borrar' }))
     expect(
       screen.getByText(
         '¿Borrar «Costa Gris» y sus subpáginas? Irán a la papelera y se pueden restaurar durante 30 días.'
       )
     ).toBeDefined()
     // La confirmación lleva el foco a su botón
-    expect(document.activeElement?.textContent).toBe('Borrar')
-    await userEvent.click(screen.getByRole('button', { name: 'Borrar' }))
+    await waitFor(() => expect(document.activeElement?.textContent).toBe('Borrar'))
+    await userEvent.click(screen.getByRole('menuitem', { name: 'Borrar' }))
     expect(await screen.findByRole('heading', { level: 1, name: 'Lugares' })).toBeDefined()
     expect(router.state.location.pathname).toBe(`/mundos/${WORLD.id}/wiki/${ids.places}`)
     await waitFor(() => expect(screen.queryByRole('treeitem', { name: 'Costa Gris' })).toBeNull())
@@ -204,15 +220,19 @@ describe('el árbol de la wiki', () => {
     expect(await screen.findByText('La papelera está vacía')).toBeDefined()
   })
 
-  it('cancelar el borrado devuelve el foco a «Borrar»', async () => {
+  it('cancelar el borrado con Escape vuelve al menú, y otra vez Escape, a la fila del árbol', async () => {
     renderAt(`/mundos/${WORLD.id}/wiki/${ids.rules}`)
-    await openMore()
-    await userEvent.click(await screen.findByRole('button', { name: 'Borrar' }))
+    const row = await item('Reglas de la casa')
+    await userEvent.pointer({ keys: '[MouseRight]', target: row })
+    await userEvent.click(await screen.findByRole('menuitem', { name: 'Borrar' }))
     expect(
       screen.getByText('¿Borrar «Reglas de la casa»? Irá a la papelera y se puede restaurar durante 30 días.')
     ).toBeDefined()
-    await userEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
-    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Borrar' }))
+    await userEvent.keyboard('{Escape}')
+    expect(await screen.findByRole('menuitem', { name: 'Crear subpágina' })).toBeDefined()
+    await userEvent.keyboard('{Escape}')
+    await waitFor(() => expect(screen.queryByRole('menu')).toBeNull())
+    expect(document.activeElement).toBe(row)
   })
 
   it('el candado pone la página en lectura y se quita', async () => {
@@ -228,9 +248,9 @@ describe('el árbol de la wiki', () => {
     expect(await screen.findByRole('button', { name: 'Poner en lectura' })).toBeDefined()
   })
 
-  it('un jugador no tiene wiki', async () => {
+  it('un jugador no tiene páginas: va al Inicio del mundo, sin árbol', async () => {
     renderAt(`/mundos/${WORLD.id}/wiki`, wikiApi({ ...WORLD, role: 'player' }))
-    expect(await screen.findByRole('heading', { level: 1, name: 'Esta wiki no existe' })).toBeDefined()
+    expect(await screen.findByRole('heading', { level: 1, name: 'Eana' })).toBeDefined()
     expect(screen.queryByRole('tree')).toBeNull()
   })
 })

@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, type Page, test } from '@playwright/test'
-import { createWorld, freshOwner, openWiki } from './ayudas.ts'
+import { createWorld, freshOwner, openWiki, slash } from './ayudas.ts'
 
 /** El propietario crea Eana y una página, y la deja abierta con el cursor en el texto */
 async function openPage(page: Page) {
@@ -8,14 +8,24 @@ async function openPage(page: Page) {
   await createWorld(page, 'Eana')
   await openWiki(page, 'Eana')
   await page.getByRole('button', { name: 'Página nueva' }).click()
-  await expect(page.getByLabel('Título de la página')).toBeFocused()
+  // El cuadro de página nueva: el título, y Intro la crea
+  await expect(page.getByRole('dialog').getByLabel('Título', { exact: true })).toBeFocused()
   await page.keyboard.type('Puerto Ceniza')
   await page.keyboard.press('Enter')
   await expect(page.getByRole('heading', { level: 1, name: 'Puerto Ceniza' })).toBeVisible()
-  await body(page).click()
+  // La primera línea (el texto es una hoja entera: pulsar en su centro desplazaría la página)
+  await body(page).locator('p').first().click()
 }
 
 const body = (page: Page) => page.getByRole('textbox', { name: 'Texto de la página' })
+
+/** Pulsa en el texto hasta que el cursor está en él */
+async function caretIn(page: Page, text: string) {
+  await expect(async () => {
+    await body(page).getByText(text, { exact: true }).click()
+    expect(await page.evaluate(() => window.getSelection()?.anchorNode?.textContent ?? '')).toBe(text)
+  }).toPass({ timeout: 10_000 })
+}
 const slashMenu = (page: Page) => page.getByRole('listbox', { name: 'Bloques' })
 const announced = (page: Page) => page.getByRole('status').filter({ hasText: /\S/ }).last()
 
@@ -145,7 +155,7 @@ test('la barra de formato: con el ratón y con Alt+F10; los enlaces, solo http, 
 
   // Con el teclado: elegir con Mayús y las flechas, Alt+F10 y a la barra. Antes, que la selección sea la nueva (la
   // barra de la anterior sigue un instante a la vista)
-  await body(page).click()
+  await body(page).getByText('La Hermandad quemó el faro').click()
   await page.keyboard.press('End')
   await page.keyboard.press('Shift+ControlOrMeta+ArrowLeft')
   await expect.poll(() => page.evaluate(() => document.getSelection()?.toString())).toBe('faro')
@@ -181,40 +191,41 @@ test('el menú del bloque: desde la barra con el teclado, y desde el asa con el 
   await page.keyboard.press('Enter')
   await page.keyboard.type('Segundo')
 
-  // Desde la barra: el bloque del cursor
-  const blockButton = page
-    .getByRole('toolbar', { name: 'Insertar en el texto' })
-    .getByRole('button', { name: 'Bloque' })
-  await blockButton.click()
+  // Con el teclado (Ctrl+Alt+B): el bloque del cursor; Escape vuelve al texto
+  await page.keyboard.press('Control+Alt+b')
   const menu = page.getByRole('menu', { name: 'Bloque' })
   await expect(menu).toBeVisible()
   await expect(menu.getByRole('menuitem').first()).toBeFocused()
   await page.keyboard.press('Escape')
   await expect(menu).toBeHidden()
-  await expect(blockButton).toBeFocused()
+  await expect(body(page)).toBeFocused()
 
   // Subir el segundo
   await body(page).getByText('Segundo').click()
-  await blockButton.click()
+  await page.keyboard.press('Control+Alt+b')
   await menu.getByRole('menuitem', { name: 'Subir' }).click()
   await expect(body(page).locator('p').first()).toHaveText('Segundo')
   await expect(announced(page)).toHaveText('Bloque movido.')
 
-  // Convertir en aviso, duplicar y borrar
-  await body(page).getByText('Primero').click()
-  await blockButton.click()
+  // Convertir en aviso, duplicar y borrar (con el cursor ya en «Primero»: en una máquina lenta, el clic justo tras
+  // cerrar el menú puede llegar antes de que el editor recupere el foco)
+  await caretIn(page, 'Primero')
+  await page.keyboard.press('Control+Alt+b')
+  // «Convertir en», por grupos: el aviso, en Recuadros
+  await menu.getByRole('menuitem', { name: 'Recuadros' }).click()
   await menu.getByRole('menuitem', { name: 'Aviso' }).click()
   await expect(body(page).getByRole('note', { name: 'Aviso' })).toHaveText(/Primero/)
-  await blockButton.click()
+  await page.keyboard.press('Control+Alt+b')
   await menu.getByRole('menuitem', { name: 'Duplicar' }).click()
   await expect(body(page).getByRole('note', { name: 'Aviso' })).toHaveCount(2)
-  await blockButton.click()
+  await page.keyboard.press('Control+Alt+b')
   await menu.getByRole('menuitem', { name: 'Borrar' }).click()
   await expect(body(page).getByRole('note', { name: 'Aviso' })).toHaveCount(1)
 
   // Un aviso pasa a consejo sin perder lo de dentro
-  await body(page).getByText('Primero').click()
-  await blockButton.click()
+  await caretIn(page, 'Primero')
+  await page.keyboard.press('Control+Alt+b')
+  await menu.getByRole('menuitem', { name: 'Recuadros' }).click()
   await menu.getByRole('menuitem', { name: 'Consejo' }).click()
   await expect(body(page).getByRole('note', { name: 'Consejo' })).toHaveText(/Primero/)
 
@@ -224,11 +235,12 @@ test('el menú del bloque: desde la barra con el teclado, y desde el asa con el 
   await expect(grip).toBeVisible()
   await grip.click()
   await expect(menu).toBeVisible()
+  await menu.getByRole('menuitem', { name: 'Títulos' }).click()
   await menu.getByRole('menuitem', { name: 'Título 2' }).click()
   await expect(body(page).getByRole('heading', { level: 3, name: 'Segundo' })).toBeVisible()
 })
 
-test('secretos desde el menú «/», y el menú dentro de un secreto, sin «Del máster»', async ({ page }) => {
+test('secretos desde el menú «/», y el menú dentro de un secreto, sin más secretos', async ({ page }) => {
   await openPage(page)
   await page.keyboard.type('/secreto')
   await page.keyboard.press('Enter')
@@ -238,8 +250,11 @@ test('secretos desde el menú «/», y el menú dentro de un secreto, sin «Del 
   await page.keyboard.type('/')
   const menu = slashMenu(page)
   await expect(menu).toBeVisible()
-  await expect(menu.getByRole('group', { name: 'Recuadros' })).toBeVisible()
-  await expect(menu.getByRole('group', { name: 'Del máster' })).toHaveCount(0)
+  // Por grupos, en desplegables; dentro de un secreto no se ofrecen más secretos
+  await expect(menu.getByRole('option', { name: 'Recuadros' })).toBeVisible()
+  await page.keyboard.type('secr')
+  await expect(menu.getByRole('option', { name: /^Secreto/ })).toHaveCount(0)
+  for (let i = 0; i < 4; i++) await page.keyboard.press('Backspace')
   // Las flechas son del menú, no salen del secreto
   await page.keyboard.press('ArrowDown')
   await expect(secret).toBeFocused()
@@ -344,7 +359,26 @@ test('el editor con sus bloques y sus menús, en los dos temas @a11y', async ({ 
   await body(page).getByText('Texto de aviso').dblclick()
   await expect(page.getByRole('toolbar', { name: 'Formato' })).toBeVisible()
   await check()
-  await page.getByRole('toolbar', { name: 'Insertar en el texto' }).getByRole('button', { name: 'Bloque' }).click()
+  await page.keyboard.press('Control+Alt+b')
   await expect(page.getByRole('menu', { name: 'Bloque' })).toBeVisible()
   await check()
+})
+
+test('el salto de página va debajo de lo de antes y se borra desde su asa', async ({ page }) => {
+  await openPage(page)
+  await page.keyboard.type('Primera hoja.')
+  await page.keyboard.press('Enter')
+  await slash(page, 'Salto de página')
+  await page.keyboard.type('Segunda hoja.')
+  const pageBreak = body(page).locator('[data-break="page"]')
+  await expect(pageBreak).toHaveCount(1)
+  // No encima de la primera línea (antes se quedaba arriba del todo)
+  const first = await body(page).getByText('Primera hoja.').boundingBox()
+  const line = await pageBreak.boundingBox()
+  expect(line?.y ?? 0).toBeGreaterThanOrEqual((first?.y ?? 0) + (first?.height ?? 0) - 1)
+  await pageBreak.hover()
+  await page.getByRole('button', { name: 'Mover o cambiar el bloque' }).click()
+  await page.getByRole('menu', { name: 'Bloque' }).getByRole('menuitem', { name: 'Borrar' }).click()
+  await expect(pageBreak).toHaveCount(0)
+  await expect(body(page).getByText('Segunda hoja.')).toBeVisible()
 })

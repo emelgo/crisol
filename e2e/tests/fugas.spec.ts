@@ -9,7 +9,8 @@ import {
   newPlayer,
   openWindow,
   rename,
-  sections
+  slash,
+  toWorlds
 } from './ayudas.ts'
 
 const BASE = `http://127.0.0.1:${E2E_PORT}`
@@ -70,7 +71,7 @@ test('@fugas una jugadora no recibe nada de lo que no puede ver: ni la campaña 
   const opening = page.waitForResponse('**/api/actions/setInvitationsOpen')
   await toggle.check()
   await opening
-  await sections(page).getByRole('link', { name: 'Campañas' }).click()
+  await toWorlds(page)
   await rename(page, 'campaña', SECRET_CAMPAIGN, RENAMED_CAMPAIGN)
   await expect(page.getByRole('link', { name: RENAMED_CAMPAIGN })).toBeVisible()
   // Y deshace el renombrado de B desde el historial
@@ -251,7 +252,9 @@ test('@fugas la wiki es solo del máster: a la jugadora no le llegan ni sus pág
   await page.keyboard.type('El faro guarda el mapa de las corrientes.')
   await expect(body.getByText('El faro guarda el mapa de las corrientes.')).toBeVisible()
   // Y un secreto, que va en su propio documento
-  await page.getByRole('toolbar', { name: 'Insertar en el texto' }).getByRole('button', { name: 'Secreto' }).click()
+  await page.keyboard.press('End')
+  await page.keyboard.press('Enter')
+  await slash(page, 'Secreto')
   await page.getByRole('textbox', { name: 'Texto del secreto' }).click()
   await page.keyboard.type('La Hermandad paga a los guardias.')
   await page.waitForTimeout(2500)

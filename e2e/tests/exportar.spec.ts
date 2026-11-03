@@ -1,16 +1,23 @@
 import { readFile } from 'node:fs/promises'
 import { expect, type Page, test } from '@playwright/test'
 import { strFromU8, unzipSync } from 'fflate'
-import { createWorld, freshOwner, openWiki } from './ayudas.ts'
+import { createWorld, freshOwner, openWiki, slash } from './ayudas.ts'
 
 const body = (page: Page) => page.getByRole('textbox', { name: 'Texto de la página' })
 
 async function newPage(page: Page, title: string, button = 'Página nueva') {
-  await page.getByRole('button', { name: button }).click()
-  await expect(page.getByLabel('Título de la página')).toBeFocused()
+  // Una subpágina, con el botón derecho sobre su madre en el árbol
+  if (button === 'Nueva subpágina') {
+    await page.getByRole('tree').locator('[aria-current="page"]').click({ button: 'right' })
+    await page.getByRole('menuitem', { name: 'Crear subpágina' }).click()
+  } else await page.getByRole('button', { name: button }).click()
+  // El cuadro de página nueva: el título, y Intro la crea
+  await expect(page.getByRole('dialog').getByLabel('Título', { exact: true })).toBeFocused()
   await page.keyboard.type(title)
   await page.keyboard.press('Enter')
   await expect(page.getByRole('heading', { level: 1, name: title })).toBeVisible()
+  // Ya con su nombre: la dirección deja de decir «nuevo»
+  await expect(page).not.toHaveURL(/nuevo/)
 }
 
 /** Lo que hay en el .zip descargado: ruta → texto */
@@ -32,7 +39,8 @@ test('exportar una página, con sus subpáginas, y la wiki entera en Markdown', 
   await newPage(page, 'Lugares')
   await body(page).click()
   await page.keyboard.type('Los sitios de Eana.')
-  await page.getByRole('toolbar', { name: 'Insertar en el texto' }).getByRole('button', { name: 'Secreto' }).click()
+  await page.keyboard.press('Enter')
+  await slash(page, 'Secreto')
   await page.getByRole('textbox', { name: 'Texto del secreto' }).click()
   await page.keyboard.type('El faro no fue un accidente.')
   await newPage(page, 'Costa Gris', 'Nueva subpágina')
@@ -52,7 +60,8 @@ test('exportar una página, con sus subpáginas, y la wiki entera en Markdown', 
   expect(Object.keys(only.files)).toEqual(['Lugares.md'])
 
   // La wiki entera
-  const wiki = await downloaded(page, () => page.getByRole('button', { name: 'Exportar la wiki' }).click())
+  const wiki = await downloaded(page, () => page.getByRole('button', { name: 'Exportar todas las páginas' }).click())
   expect(wiki.name).toBe('Eana.zip')
-  expect(Object.keys(wiki.files).sort()).toEqual(['Lugares/Costa Gris.md', 'Lugares/Lugares.md'])
+  // Con la portada del mundo
+  expect(Object.keys(wiki.files).sort()).toEqual(['Eana.md', 'Lugares/Costa Gris.md', 'Lugares/Lugares.md'])
 })

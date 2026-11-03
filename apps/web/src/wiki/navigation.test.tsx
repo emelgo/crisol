@@ -89,31 +89,18 @@ describe('los marcadores', () => {
   it('el primero va de un clic a «Marcadores»; luego se elige grupo o se crea otro; y se quitan', async () => {
     const { router } = renderAt(ids.port)
     await userEvent.click(await screen.findByRole('button', { name: 'Marcar' }))
-    // Los marcadores están en su panel: se abre con su botón de la barra de la izquierda
-    const sections = within(await screen.findByRole('navigation', { name: 'Secciones' }))
-    await userEvent.click(await screen.findByRole('tab', { name: 'Marcadores' }))
+    // Los marcadores, en el panel del mundo, debajo del árbol
     const bookmarks = async () => within(await screen.findByRole('region', { name: 'Marcadores' }))
     expect((await bookmarks()).getByRole('link', { name: 'Puerto Ceniza' })).toBeDefined()
     expect(await screen.findByText('«Puerto Ceniza» está en Marcadores')).toBeDefined()
 
     await open(router, ids.maela, 'Maela Varn')
     await userEvent.click(await screen.findByRole('button', { name: 'Marcar' }))
-    await userEvent.type(screen.getByLabelText('O en un grupo nuevo'), 'Sesión 5')
-    await userEvent.click(screen.getByRole('button', { name: 'Marcar' }))
+    await userEvent.type(screen.getByLabelText('Grupo nuevo'), 'Sesión 5{Enter}')
     expect(await (await bookmarks()).findByRole('list', { name: 'Sesión 5' })).toBeDefined()
     expect(within((await bookmarks()).getByRole('list', { name: 'Sesión 5' })).getByText('Maela Varn')).toBeDefined()
 
     await userEvent.click(screen.getByRole('button', { name: 'Quitar el marcador' }))
     await waitFor(async () => expect((await bookmarks()).queryByText('Maela Varn')).toBeNull())
-  })
-})
-
-describe('anterior y siguiente', () => {
-  it('lleva a las hermanas en el orden del árbol', async () => {
-    renderAt(ids.velaria)
-    const siblings = within(await screen.findByRole('navigation', { name: 'Páginas hermanas' }))
-    expect(siblings.getByRole('link', { name: /Anterior.*Puerto Ceniza/ })).toBeDefined()
-    await userEvent.click(siblings.getByRole('link', { name: /Siguiente.*Maela Varn/ }))
-    expect(await screen.findByRole('heading', { level: 1, name: 'Maela Varn' })).toBeDefined()
   })
 })

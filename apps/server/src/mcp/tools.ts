@@ -84,13 +84,26 @@ export const MCP_TOOLS: Record<string, McpTool> = {
   listar_archivos: { action: 'listFiles' },
   buscar_paginas: { action: 'searchWiki' },
   mover_pagina: { action: 'movePage' },
+  ordenar_subpaginas: { action: 'sortPageChildren' },
   borrar_pagina: { action: 'deletePage' },
   // Las etiquetas de la cuenta (ADR-0006); las de una página van en sus propiedades
   listar_etiquetas: { action: 'listAccountTags' },
   crear_etiqueta: { action: 'createTag' },
   cambiar_etiqueta: { action: 'updateTag' },
   borrar_etiqueta: { action: 'deleteTag' },
-  etiquetar_archivo: { action: 'setFileTags' }
+  etiquetar_archivo: { action: 'setFileTags' },
+  // Las pestañas de una página y sus mapas con pines (ADR-0007)
+  ver_pestanas: { action: 'listPageTabs' },
+  crear_pestana: { action: 'createPageTab' },
+  cambiar_pestana: { action: 'updatePageTab' },
+  borrar_pestana: { action: 'deletePageTab' },
+  ver_mapa: { action: 'getMap' },
+  cambiar_mapa: { action: 'updateMap' },
+  poner_pin: { action: 'createMapPin' },
+  cambiar_pin: { action: 'updateMapPin' },
+  quitar_pin: { action: 'deleteMapPin' },
+  // El panel de bloques al lado de una página (ADR-0008); se lee con leer_pagina
+  cambiar_panel: { action: 'setPagePanel' }
 }
 
 const INSTRUCTIONS =
@@ -101,7 +114,9 @@ const INSTRUCTIONS =
   'Para pasar una wiki entera: crear_paginas de 50 en 50, en cualquier orden (los enlaces se resuelven solos), y al ' +
   'final enlaces_pagina con worldId para ver lo que quede sin resolver; los archivos los sube el máster y se enlazan ' +
   'por su nombre (listar_archivos). Las etiquetas son de toda la cuenta: míralas con listar_etiquetas y usa las que ' +
-  'ya hay antes de inventar otras. Lo que cambies queda ' +
+  'ya hay antes de inventar otras. Una página puede tener pestañas además de su texto, como un mapa (ver_pestanas): ' +
+  'sus pines van de 0 a 1 sobre la imagen y llevan a páginas; míralo con ver_mapa antes de poner nada. Al lado del texto, cada página tiene un panel de bloques ' +
+  '(medidores, estrellas, fichas, texto corto…): sale en leer_pagina y se cambia entero con cambiar_panel. Lo que cambies queda ' +
   'en el historial de Crisol y el máster puede deshacerlo. Según el modo de IA que elija el máster, algunas acciones ' +
   'esperan su aprobación en Crisol: no las repitas, mira cómo acabaron con pendientes; si rechaza una, no insistas.'
 

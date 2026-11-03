@@ -53,7 +53,6 @@ import { ConfirmByName, DangerZone } from '../components/danger.tsx'
 import dialogStyles from '../components/dialog.module.css'
 import { Field, FormError } from '../components/field.tsx'
 import form from '../components/form.module.css'
-import list from '../components/list.module.css'
 import { failed, LoadError } from '../components/load-error.tsx'
 import { Modal } from '../components/modal.tsx'
 import { PageTitle } from '../components/page-title.tsx'
@@ -517,7 +516,6 @@ function FilesSection({
       uploads.add(await droppedFiles(event.dataTransfer), here.target, here.folderId)
   }
   if (!data) return null
-  const path = pathOf(open)
   const nothing = data.files.length === 0 && folders.length === 0 && uploads.items.length === 0
   if (nothing && !canWrite && !common?.canWrite) return <p className={styles.empty}>{empty}</p>
   const rowProps = { folders, onChanged: refresh }
@@ -1013,7 +1011,7 @@ function FileRow({
         <FileTags tags={file.tags} />
       </span>
       <span className={styles.rowMeta}>{sizeText(file.size, i18n.language)}</span>
-      {canWrite ? <FileSettings file={file} folders={folders} onChanged={onChanged} small /> : <span />}
+      {canWrite ? <FileSettings file={file} onChanged={onChanged} small /> : <span />}
     </li>
   )
 }
@@ -1978,7 +1976,7 @@ function FileCard({
             {sizeText(file.size, i18n.language)}
             {file.usedBy > 0 && ` · ${t('files.usedBy', { count: file.usedBy })}`}
           </span>
-          {canWrite && <FileSettings file={file} folders={folders} onChanged={onChanged} />}
+          {canWrite && <FileSettings file={file} onChanged={onChanged} />}
         </div>
       </div>
     </li>
@@ -2107,12 +2105,10 @@ function FileSheet({
 /** El engranaje de un archivo: abre su ventana */
 function FileSettings({
   file,
-  folders,
   onChanged,
   small = false
 }: {
   file: WorldFile
-  folders: FolderView[]
   onChanged: () => Promise<unknown>
   /** La de una fila: un engranaje pequeño */
   small?: boolean

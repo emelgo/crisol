@@ -67,6 +67,30 @@ h4 {
   text-transform: uppercase;
 }
 
+/* Los títulos 4 y 5 del texto (h5 y h6): más pequeños, el 4 en versalitas y el 5 en cursiva */
+h5 {
+  margin: var(--space-3) 0 var(--space-1);
+  color: var(--color-h4);
+  font-size: 1.0625rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  font-variant-caps: all-small-caps;
+}
+
+h6 {
+  margin: var(--space-3) 0 var(--space-1);
+  color: var(--color-muted);
+  font-size: 1rem;
+  font-style: italic;
+  font-weight: 700;
+}
+
+h6[data-level="6"] {
+  font-size: 0.9375rem;
+  font-style: normal;
+  letter-spacing: 0.02em;
+}
+
 p {
   text-wrap: pretty;
 }
@@ -491,6 +515,19 @@ html:active-view-transition-type(seccion)::view-transition-new(root) {
     opacity: 0;
     transform: translateY(10px);
   }
+}
+
+/* La página del mundo (su título y su texto), por encima de la portada que llega: aparece mientras se posa */
+::view-transition-group(pagina-mundo) {
+  animation: none;
+}
+
+::view-transition-old(pagina-mundo) {
+  animation: deja-paso 200ms ease-in both;
+}
+
+::view-transition-new(pagina-mundo) {
+  animation: toma-el-relevo 380ms ease-out 260ms both;
 }
 
 /* La tarjeta y la cabecera no se mezclan todo el rato: la de antes deja paso pronto a la nueva */

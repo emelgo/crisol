@@ -1,0 +1,1 @@
+CREATE INDEX "page_tabs_document_id_index" ON "page_tabs" USING btree ("document_id");

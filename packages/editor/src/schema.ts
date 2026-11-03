@@ -15,24 +15,38 @@ import { FileEmbed } from './nodes/file-embed.ts'
 import { PageEmbed } from './nodes/page-embed.ts'
 import { PageLink } from './nodes/page-link.ts'
 import { HiddenNote, Secret } from './nodes/separate.ts'
-import { ColumnBreak, PageBreak, Sidenote, Statblock, TableOfContents, WideBlock } from './nodes/sheet.ts'
+import {
+  ColumnBreak,
+  ColumnsChange,
+  PageBreak,
+  Sidenote,
+  Statblock,
+  TableOfContents,
+  WideBlock
+} from './nodes/sheet.ts'
 
 /** El fragmento de Yjs que guarda el cuerpo de una página (el de siempre de la extensión de colaboración) */
 export const BODY_FIELD = 'default'
 
 /**
- * Los títulos del cuerpo, del 1 al 3. El título de la página es el h1, así que se pintan como h2 a h4; al pegar se leen
- * al revés (y un h1 de fuera, como 1), para que copiar y pegar dentro del editor no cambie su nivel
+ * Los títulos del cuerpo, del 1 al 6. El título de la página es el h1, así que se pintan como h2 a h6 (el 6, un h6 con
+ * su nivel aparte); al pegar se leen al revés (y un h1 de fuera, como 1), para que copiar y pegar no cambie su nivel
  */
 const BodyHeading = Heading.extend({
   parseHTML: () => [
     { tag: 'h1', attrs: { level: 1 } },
     { tag: 'h2', attrs: { level: 1 } },
     { tag: 'h3', attrs: { level: 2 } },
-    { tag: 'h4', attrs: { level: 3 } }
+    { tag: 'h4', attrs: { level: 3 } },
+    { tag: 'h5', attrs: { level: 4 } },
+    { tag: 'h6[data-level="6"]', attrs: { level: 6 }, priority: 60 },
+    { tag: 'h6', attrs: { level: 5 } }
   ],
-  renderHTML: ({ node, HTMLAttributes }) => [`h${Math.min(Number(node.attrs.level) + 1, 6)}`, HTMLAttributes, 0]
-}).configure({ levels: [1, 2, 3] })
+  renderHTML: ({ node, HTMLAttributes }) => {
+    const level = Number(node.attrs.level)
+    return [`h${Math.min(level + 1, 6)}`, level === 6 ? { ...HTMLAttributes, 'data-level': '6' } : HTMLAttributes, 0]
+  }
+}).configure({ levels: [1, 2, 3, 4, 5, 6] })
 
 export interface EditorOptions {
   /** La etiqueta de cada casilla para los lectores de pantalla, ya traducida (sin ella, la de TipTap, en inglés) */
@@ -73,6 +87,7 @@ export function editorExtensions(options: EditorOptions = {}): Extensions {
     view(FileEmbed),
     view(PageBreak),
     view(ColumnBreak),
+    view(ColumnsChange),
     view(Statblock),
     view(Sidenote),
     view(WideBlock),

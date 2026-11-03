@@ -7,7 +7,68 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
-### Para retomar (2026-10-30)
+### Para retomar (2026-11-03, cierre de la interfaz)
+
+- **La etapa de interfaz queda cerrada** («vamos a parar con la UI de momento, con lo que tenemos podremos diseñar los
+  demás módulos»). Todo lo de las PR #88, #89, #90 y la prueba `interfaz/hoja-siempre` (que Enrique aprobó: «está
+  quedando genial») va a `main` en una sola PR, con la CI de GitHub en verde. Lo hecho está en las entradas de abajo y en
+  el historial de git; lo que falta de Everlore, en `tasks/everlore-pendiente.md`.
+- **Cómo quedó la página**: toda página es una hoja; se escribe seguido y las páginas se calculan por detrás como al
+  imprimir (una raya fina con «Página N»; el salto de página corta la página pero lo siguiente va justo debajo);
+  columnas 1 o 2 desde «/» → Maquetación; pestañas de texto (otra página de texto con su documento) y de mapa, con color
+  y menú (botón derecho); panel de bloques a la derecha; árbol con botón derecho y arrastre (a la izquierda, sale de su
+  madre).
+- **Lo siguiente** (en otra conversación): el punto 4 del orden de abajo, **la búsqueda antes del módulo 2** (PDF con
+  pdf.js y, con permiso para la imagen de Postgres y elegir quién calcula los embeddings, pgvector), y después **el
+  módulo 2** (tipos de página, plantillas, formularios y consultas) con su ciclo: `interview-me` frente al inventario,
+  REA, `/spec`…
+- **Apuntado de las revisiones de esta tanda** (para cuando toque):
+  - **Módulo 5 (jugadores)**: el servidor aún no aplica `hidden` (pestañas, pines): filtrar en `listPageTabs` y
+    `getMap` y negar en `onAuthenticate` de colaboración los documentos de pestañas ocultas; pedir aprobación a la IA
+    al revelar algo (`hidden` de true a false) y al vaciar el panel, no solo por el tipo de acción.
+  - La hoja al escribir trata la nota lateral como un bloque suelto y al imprimir va junto al bloque siguiente: con
+    notas laterales, las marcas «Página N» pueden no coincidir con el PDF (sacar `unitsOf` a un módulo común).
+  - Ordenar A-Z reescribe las posiciones solo de las subpáginas vivas: al restaurar una de la papelera puede compartir
+    posición con otra.
+  - La cobertura de lo cambiado (CONSTRAINTS.md, 80 %) bloquea desde el 2026-11-12.
+
+### Para retomar (2026-11-03)
+
+- **Ahora: traer Everlore a Crisol** (la app de Enrique al estilo de LegendKeeper). Propuesta aprobada («me vale así,
+  ya iremos puliendo»): ADR-0007, pestañas dentro de las páginas de la wiki, por fases: 1) pestañas y mapa; 2) vista
+  rápida y panel lateral con bloques; 3) línea temporal y calendarios; 4) pizarra y árbol familiar; 5) grafo.
+- **Fase 1, primera tanda hecha** en la rama `mundo/pestanas-mapa` (sale de `interfaz/pulir-3`, PR #88 aún abierto):
+  tablas `page_tabs`, `maps`, `map_pins` y `map_elements` (migración 0029, con historial); acciones y herramientas MCP
+  (`ver_pestanas`, `crear_pestana`, `cambiar_pestana`, `borrar_pestana`, `ver_mapa`, `cambiar_mapa`, `poner_pin`,
+  `cambiar_pin`, `quitar_pin`); la barra de pestañas y el visor (`apps/web/src/wiki/tabs/`, `apps/web/src/wiki/map/`)
+  con pines, su panel, botón derecho y recorrido. Pruebas: `maps.integration.test.ts`, `map.test.ts` y
+  `e2e/tests/mapas.spec.ts`.
+- **Lo que falta de la fase 1**: dibujar en el mapa (regiones, rutas y textos: la tabla `map_elements` ya está),
+  medir con la escala, el menú radial de Everlore, recolocar pestañas arrastrando y la marca de «oculto» en la
+  interfaz (hoy solo por el MCP; servirá con los jugadores, módulo 5). Después, la fase 2.
+- **Después, en `interfaz/barra-lateral`** (sale de `mundo/pestanas-mapa`; PR #90): campañas en Mis mundos (fuera de
+  la barra); la barra de un mundo con su nombre y Archivos; sin la palabra «wiki»; **el mundo se abre en su portada**
+  (como la Home de LegendKeeper: `worlds.home_page_id`, migración 0030, `getWorldHome` y `ensureWorldHome`); la página
+  con **el esqueleto de Archivos** (columna central que llena el hueco entre las fichas, la ficha del árbol con buscador fijo a la izquierda y la del
+  panel a la derecha, a la misma altura); y **el panel de la derecha con bloques** (fase 2 de Everlore, ADR-0008:
+  `pages.panel`, migración 0031, `setPagePanel` y la herramienta `cambiar_panel`; `apps/web/src/wiki/panel-blocks.tsx`
+  y `e2e/tests/panel.spec.ts`). Las normas, en `docs/diseno.md`.
+- **Prueba en `interfaz/hoja-siempre`** (sale de PR #90; Enrique decide si se queda o se revierte): toda página es
+  una hoja maquetada al escribir (una columna por defecto; el bloque «Una/Dos columnas» desde «/», grupo
+  «Maquetación»), sin modo estricto de React (metía líneas vacías), **pestañas de texto** (`page_tabs.document_id` y
+  documentos de tipo `tab`, migración 0032), pestañas que se recolocan y con botón secundario, y en el árbol
+  **arrastrar a la izquierda saca la página de su madre** y lo movido se ve al instante. Falta, si la aprueba: pasarla
+  a PR #90 y adaptar las e2e (botón «Hoja», índice, «La enlazan», versiones en el panel…).
+- **También en la PR #90** (2026-11-02, tarde): «Página nueva» con cuadro de tipo, botón derecho en el árbol (con
+  `sortPageChildren` y `ordenar_subpaginas`), menú «/» y «Convertir en» por desplegables, títulos del 1 al 6, línea de
+  más bajo lo escrito, «Marcar» flotante, pestañas que se recolocan y propiedades como bloques del panel. Lo que aún
+  falta de Everlore, en `tasks/everlore-pendiente.md`. Propuesta abierta: la hoja maquetada al escribir, sin texturas.
+- **Pendiente que pidió Enrique**: Buscar y Marcadores como en Everlore, transiciones entre páginas de una vista
+  (`tasks/interfaz.md`); de la fase 2 falta la vista rápida de las páginas enlazadas; plantillas, más adelante («ya
+  las haremos»).
+- Lo de antes sigue abajo (2026-10-30).
+
+### Antes (2026-10-30)
 
 - **El módulo 1 (wiki) está construido entero y en staging**: tareas 1 a 26, PR #52 a #70. Lo que hace cada tarea está
   en las entradas de abajo, del 2026-10-30.
@@ -15,7 +76,7 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   `tasks/interfaz.md`, en staging (PR #77 a #84). Enrique: «cuando este lista la nueva UI ENTERA la revisaré e iremos
   puliendo». Va la **ronda de pulido 1**, pantalla a pantalla y en local. Su primera parte (armazón, cuentas, Mis
   mundos, archivos comunes con el ADR-0005, Inicio de un mundo y Campañas) está fusionada y en staging (PR #86). Se
-  con la rama `interfaz/pulir-2` fusionada en `main` sin la CI de GitHub (2026-10-31: sin minutos y sin querer pagar; todo se prueba en local): el móvil (la llama y su menú), las etiquetas de la cuenta (ADR-0006) y los arreglos de Archivos de sus pruebas. Staging aún no lleva esta tanda (migración 0028). Lo hecho y lo que falta están en `tasks/interfaz.md`, y sus normas en
+  con la rama `interfaz/pulir-2` fusionada en `main` sin la CI de GitHub (2026-10-31: sin minutos y sin querer pagar; todo se prueba en local): el móvil (la llama y su menú), las etiquetas de la cuenta (ADR-0006) y los arreglos de Archivos de sus pruebas. Staging aún no lleva esta tanda (migración 0028). Después, en `interfaz/pulir-3`: **la wiki se edita en el sitio** (`docs/specs/wiki-edicion.md`), a falta de que Enrique la pruebe. Lo hecho y lo que falta están en `tasks/interfaz.md`, y sus normas en
   `docs/diseno.md`. GitHub Actions va justo de minutos: todo en verde en local antes de subir. Ya apuntado para pulir:
   - ~~la cola de la IA, en su propio panel~~ (hecho en la ronda 1: tarjetas flotantes);
   - marcar en la página lo que la IA quiere cambiar;

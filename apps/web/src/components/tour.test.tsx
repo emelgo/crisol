@@ -8,7 +8,7 @@ import { App } from '../app.tsx'
 import { createAppRouter } from '../router.tsx'
 
 const ORG = { id: crypto.randomUUID(), name: 'Fateforge', role: 'owner' as const }
-const FIRST = 'Un mundo guarda tu wiki, tus campañas y tus partidas.'
+const FIRST = 'Un mundo guarda sus páginas, tus campañas y tus partidas.'
 const HELP = 'Tutorial guiado de esta vista'
 
 const renderWorlds = () => {

@@ -4,7 +4,8 @@
  */
 .layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 52rem) minmax(0, 1fr);
+  /* Como en las páginas y en Archivos: las fichas de los lados (hasta 20rem) y la columna del centro, en todo el hueco */
+  grid-template-columns: minmax(14rem, 20rem) minmax(0, 1fr) minmax(14rem, 20rem);
   gap: var(--space-6);
   align-items: start;
   padding: var(--space-8) var(--space-6);
@@ -20,8 +21,9 @@
   grid-row: 1;
   position: sticky;
   inset-block-start: var(--space-4);
-  justify-self: end;
-  inline-size: min(100%, 22rem);
+  justify-self: start;
+  inline-size: 100%;
+  max-inline-size: 20rem;
   /* Bajo el título, a la altura de las tarjetas */
   margin-block-start: 5.45rem;
 }
@@ -30,14 +32,14 @@
    táctil no hay ratón que pasar por encima) */
 @media (max-width: 90rem) {
   .layout {
-    grid-template-columns: minmax(16rem, 20rem) minmax(0, 1fr) 0;
+    grid-template-columns: minmax(11rem, 15rem) minmax(0, 1fr) minmax(11rem, 15rem);
+    gap: var(--space-5);
   }
 }
 
 @media (max-width: 64rem) {
   .layout {
-    grid-template-columns: 0 minmax(0, 52rem) 0;
-    justify-content: center;
+    grid-template-columns: 0 minmax(0, 1fr) 0;
   }
 
   .detail {
@@ -121,6 +123,7 @@
 .page {
   inline-size: min(100%, 52rem);
   margin-inline: auto;
+  padding-block-start: var(--space-4);
 }
 
 /* El título y «Nuevo mundo» en la misma fila */
@@ -500,6 +503,35 @@
   font-size: 0.9375rem;
 }
 
+/* De qué mundo es una campaña (en Mis mundos): bajo su nombre, pequeño */
+.place {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+/* Al crear una campaña desde Mis mundos: su mundo */
+.placeField {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.placeField label {
+  font-weight: 600;
+}
+
+.placeField select {
+  min-block-size: var(--target);
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-field-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+}
+
 /* Al pie: el papel, discreto, y el engranaje a la derecha */
 .footer {
   display: flex;
@@ -787,4 +819,80 @@
     opacity: 0;
     transform: translateX(12px);
   }
+}
+
+/* Mis mundos: las campañas de todos, bajo los mundos */
+.campaigns {
+  margin-block-start: var(--space-8);
+}
+
+.sectionTitle {
+  margin: 0 0 var(--space-4);
+}
+
+.sectionHint {
+  margin: 0 0 var(--space-4);
+  color: var(--color-muted);
+}
+
+/* Con una ventana abierta (los ajustes de un mundo), la vista previa de al lado se quita */
+.layout:has(dialog[open]) .detail {
+  visibility: hidden;
+}
+
+/* El Inicio de un mundo: los accesos rápidos bajo su cabecera, como botones grandes y discretos */
+.quick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-block: var(--space-4) var(--space-2);
+}
+
+.quickButton {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: var(--target);
+  padding: 0 var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: 0.625rem;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.quickButton:hover {
+  border-color: var(--color-frame);
+  background: var(--color-raised);
+}
+
+/* La cabecera del mundo como portada ancha de su página de portada: redondeada, con el engranaje encima */
+.banner {
+  position: relative;
+  overflow: hidden;
+}
+
+.banner .header {
+  margin: 0;
+}
+
+.banner .frame {
+  block-size: 15rem;
+}
+
+.bannerGear {
+  position: absolute;
+  inset-block-start: var(--space-3);
+  inset-inline-end: var(--space-8);
+  z-index: 3;
+}
+
+/* «Ver», arriba a la derecha (junto al engranaje): abajo va el título de la página, encima de la portada */
+.banner .coverActions {
+  inset-block: var(--space-3) auto;
+  inset-inline-end: calc(var(--space-8) + 2.75rem);
+  z-index: 3;
 }

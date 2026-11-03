@@ -1,15 +1,11 @@
 import type { Page, PageProperty } from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { useEffect, useId, useRef, useState } from 'react'
+import { type KeyboardEvent, type MutableRefObject, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
-import { BusyButton } from '../components/busy-button.tsx'
 import { FormError } from '../components/field.tsx'
-import { focusOnMount, useReturnFocus } from '../components/focus.ts'
-import form from '../components/form.module.css'
-import list from '../components/list.module.css'
 import styles from './properties.module.css'
 import tagStyles from './tags.module.css'
 import { TagsField, tagDot, useTagColor } from './tags.tsx'
@@ -20,11 +16,7 @@ const isTagsName = (name: string) => name.trim().toLocaleLowerCase('es') === 'et
 type PropertyType = PageProperty['type']
 const TYPES: PropertyType[] = ['text', 'number', 'boolean', 'list', 'pages']
 /** Las reservadas, con su tipo: se ofrecen para añadirlas de un clic */
-const RESERVED = [
-  { name: 'alias', type: 'list' },
-  { name: 'etiquetas', type: 'list' },
-  { name: 'resumen', type: 'text' }
-] as const
+const RESERVED = [{ name: 'etiquetas', type: 'list' }] as const
 
 /** Los títulos de las páginas de la wiki por su id (para las propiedades que enlazan páginas) */
 function usePageTitles(worldId: string) {
@@ -145,19 +137,29 @@ function PropertyValue({ property, worldId }: { property: PageProperty; worldId:
   }
 }
 
-/** Las propiedades de la página abierta: su lista, y editarlas en el sitio */
-export function PageProperties({ page }: { page: Page }) {
+/**
+ * Las propiedades de la página abierta, siempre editables en el sitio (como en el Crisol antiguo): tocar un nombre o
+ * un valor lo cambia; Intro o salir del campo lo guarda, Escape lo deshace. Sin «Guardar» ni «Cancelar». Con la página
+ * bloqueada, solo se leen
+ */
+/** Añadir desde fuera (desde «Añadir bloque» del panel): las etiquetas o una propiedad nueva */
+export type PropertyAdder = (kind: 'tags' | 'property') => void
+
+export function PageProperties({
+  page,
+  adders = true,
+  adderRef
+}: {
+  page: Page
+  /** Sus botones de añadir; en el panel no: se añade desde «Añadir bloque» */
+  adders?: boolean
+  adderRef?: MutableRefObject<PropertyAdder | null>
+}) {
   const { t } = useTranslation()
-  const [editing, setEditing] = useState(false)
-  const editButton = useReturnFocus()
-  const stop = () => {
-    editButton.back()
-    setEditing(false)
-  }
-  if (editing) return <PropertiesEditor page={page} onDone={stop} />
-  return (
-    <section aria-label={t('properties.title')} className={styles.properties}>
-      {page.properties.length > 0 && (
+  if (page.locked) {
+    if (page.properties.length === 0) return null
+    return (
+      <section aria-label={t('properties.title')} className={styles.properties} data-properties="">
         <dl className={styles.list}>
           {page.properties.map((property) => (
             <div key={property.name} className={styles.row}>
@@ -168,257 +170,297 @@ export function PageProperties({ page }: { page: Page }) {
             </div>
           ))}
         </dl>
-      )}
-      <button type="button" ref={editButton.ref} className={styles.addButton} onClick={() => setEditing(true)}>
-        {t(page.properties.length > 0 ? 'properties.edit' : 'properties.add')}
-      </button>
-    </section>
-  )
+      </section>
+    )
+  }
+  return <InlineProperties page={page} adders={adders} adderRef={adderRef} />
 }
 
-function PropertiesEditor({ page, onDone }: { page: Page; onDone: () => void }) {
+const sameProperties = (a: readonly PageProperty[], b: readonly PageProperty[]) =>
+  JSON.stringify(a) === JSON.stringify(b)
+
+function InlineProperties({
+  page,
+  adders,
+  adderRef
+}: {
+  page: Page
+  adders: boolean
+  adderRef: MutableRefObject<PropertyAdder | null> | undefined
+}) {
   const { t } = useTranslation()
   const api = useApi()
   const queryClient = useQueryClient()
   const errorText = useErrorText()
-  const [drafts, setDrafts] = useState<Draft[]>(() => page.properties.map(toDraft))
+  const box = useRef<HTMLElement>(null)
+  const [rows, setRows] = useState<Draft[]>(() => page.properties.map(toDraft))
   const [invalid, setInvalid] = useState<string | null>(null)
-  const formRef = useRef<HTMLFormElement>(null)
-  // Al abrir el editor, el foco va a su primer campo (o a «Añadir propiedad» si no hay ninguna)
-  useEffect(() => {
-    formRef.current?.querySelector<HTMLElement>('input, select, textarea, button')?.focus()
-  }, [])
+  // La fila recién añadida, para llevarle el foco (al nombre, o al valor si ya lo trae)
+  const [fresh, setFresh] = useState<{ key: string; to: 'name' | 'value' } | null>(null)
   const save = useMutation({
     mutationFn: (properties: PageProperty[]) => api.call('setPageProperties', { pageId: page.id, properties }),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['pages', page.worldId] })
-      onDone()
-    }
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['pages', page.worldId] })
   })
-  const update = (key: string, patch: Partial<Draft>) =>
-    setDrafts((current) => current.map((d) => (d.key === key ? { ...d, ...patch } : d)))
-  const move = (index: number, by: -1 | 1) =>
-    setDrafts((current) => {
-      const next = [...current]
-      const [moved] = next.splice(index, 1)
-      if (moved) next.splice(index + by, 0, moved)
-      return next
-    })
-  const add = (name = '', type: PropertyType = 'text') =>
-    setDrafts((current) => [...current, { key: crypto.randomUUID(), name, type, text: '', checked: false, pages: [] }])
-  const present = new Set(drafts.map((d) => d.name.trim().toLocaleLowerCase('es')))
-
+  // Lo que llega de fuera (otra pestaña, la IA) entra si no se está escribiendo aquí
+  useEffect(() => {
+    if (!box.current?.contains(document.activeElement)) setRows(page.properties.map(toDraft))
+  }, [page.properties])
+  const commit = (next: Draft[]) => {
+    setRows(next)
+    const properties = next.filter((row) => row.name.trim()).map(fromDraft)
+    const broken = properties.indexOf(null)
+    if (broken >= 0) {
+      setInvalid(t('properties.badNumber', { name: next.filter((row) => row.name.trim())[broken]?.name ?? '' }))
+      return
+    }
+    setInvalid(null)
+    const valid = properties.filter((property): property is PageProperty => property !== null)
+    if (!sameProperties(valid, page.properties)) save.mutate(valid)
+  }
+  const change = (key: string, patch: Partial<Draft>, now = false) => {
+    const next = rows.map((row) => (row.key === key ? { ...row, ...patch } : row))
+    if (now) commit(next)
+    else setRows(next)
+  }
+  const add = (name = '', type: PropertyType = 'text') => {
+    const row: Draft = { key: crypto.randomUUID(), name, type, text: '', checked: false, pages: [] }
+    setRows([...rows, row])
+    setFresh({ key: row.key, to: name ? 'value' : 'name' })
+  }
+  const move = (index: number, by: -1 | 1) => {
+    const target = index + by
+    if (target < 0 || target >= rows.length) return
+    const next = [...rows]
+    const [moved] = next.splice(index, 1)
+    if (moved) next.splice(target, 0, moved)
+    commit(next)
+  }
+  const present = new Set(rows.map((row) => row.name.trim().toLocaleLowerCase('es')))
+  // Desde «Añadir bloque»: las etiquetas (si ya están, a su campo) o una propiedad nueva
+  if (adderRef) {
+    adderRef.current = (kind) => {
+      if (kind === 'property') return add()
+      const tags = rows.find((row) => isTagsName(row.name))
+      if (tags) setFresh({ key: tags.key, to: 'value' })
+      else add('etiquetas', 'list')
+    }
+  }
+  if (!adders && rows.length === 0) return null
   return (
-    <form
-      ref={formRef}
-      className={styles.editor}
-      aria-label={t('properties.title')}
-      onSubmit={(event) => {
-        event.preventDefault()
-        const properties = drafts.filter((d) => d.name.trim()).map(fromDraft)
-        const broken = properties.indexOf(null)
-        if (broken >= 0) {
-          setInvalid(t('properties.badNumber', { name: drafts[broken]?.name ?? '' }))
-          return
-        }
-        setInvalid(null)
-        save.mutate(properties.filter((p): p is PageProperty => p !== null))
-      }}
-      onKeyDown={(event) => {
-        if (event.key === 'Escape') onDone()
-      }}
-    >
-      {drafts.length === 0 && <p>{t('properties.none')}</p>}
-      <ol className={styles.drafts}>
-        {drafts.map((draft, index) => (
-          <DraftRow
-            key={draft.key}
-            draft={draft}
-            index={index}
-            last={index === drafts.length - 1}
-            worldId={page.worldId}
-            onChange={(patch) => update(draft.key, patch)}
-            onMove={(by) => move(index, by)}
-            onRemove={() => setDrafts((current) => current.filter((d) => d.key !== draft.key))}
-          />
-        ))}
-      </ol>
-      <div className={list.actions}>
-        <button type="button" className={list.secondary} onClick={() => add()}>
-          {t('properties.addOne')}
-        </button>
-        {RESERVED.filter((r) => !present.has(r.name)).map((reserved) => (
-          <button
-            key={reserved.name}
-            type="button"
-            className={list.secondary}
-            onClick={() => add(reserved.name, reserved.type)}
-          >
-            {t(`properties.reserved.${reserved.name}`)}
+    <section ref={box} aria-label={t('properties.title')} className={styles.properties} data-properties="">
+      {rows.length > 0 && (
+        <div className={styles.table}>
+          {rows.map((row, index) => (
+            <PropertyRow
+              key={row.key}
+              row={row}
+              n={index + 1}
+              worldId={page.worldId}
+              focus={fresh?.key === row.key ? fresh.to : null}
+              onFocused={() => setFresh(null)}
+              onChange={(patch, now) => change(row.key, patch, now)}
+              onCommit={() => commit(rows)}
+              onRevert={() => {
+                const saved = page.properties.find((property) => property.name === row.name)
+                change(row.key, saved ? { ...toDraft(saved), key: row.key } : { text: '', pending: '' })
+              }}
+              onMove={(by) => move(index, by)}
+              onRemove={() => commit(rows.filter((other) => other.key !== row.key))}
+            />
+          ))}
+        </div>
+      )}
+      {adders && (
+        <div className={styles.adders}>
+          <button type="button" className={styles.addButton} onClick={() => add()}>
+            {t('properties.addOne')}
           </button>
-        ))}
-      </div>
+          {RESERVED.filter((reserved) => !present.has(reserved.name)).map((reserved) => (
+            <button
+              key={reserved.name}
+              type="button"
+              className={styles.addButton}
+              onClick={() => add(reserved.name, reserved.type)}
+            >
+              {t(`properties.reserved.${reserved.name}`)}
+            </button>
+          ))}
+        </div>
+      )}
       <FormError message={invalid ?? (save.error ? errorText(save.error) : null)} />
-      <div className={list.actions}>
-        <BusyButton type="submit" className={form.button} busy={save.isPending}>
-          {t('list.save')}
-        </BusyButton>
-        <button type="button" className={list.secondary} onClick={onDone}>
-          {t('list.cancel')}
-        </button>
-      </div>
-    </form>
+    </section>
   )
 }
 
-function DraftRow({
-  draft,
-  index,
-  last,
+/** Una fila: su nombre, su tipo (discreto) y su valor, que se cambian ahí mismo; y su ×, al acercarse */
+function PropertyRow({
+  row,
+  n,
   worldId,
+  focus,
+  onFocused,
   onChange,
+  onCommit,
+  onRevert,
   onMove,
   onRemove
 }: {
-  draft: Draft
-  index: number
-  last: boolean
+  row: Draft
+  n: number
   worldId: string
-  onChange: (patch: Partial<Draft>) => void
+  focus: 'name' | 'value' | null
+  onFocused: () => void
+  /** now: guardar ya (lo que no se escribe letra a letra: un tipo, una casilla, una etiqueta) */
+  onChange: (patch: Partial<Draft>, now?: boolean) => void
+  onCommit: () => void
+  onRevert: () => void
   onMove: (by: -1 | 1) => void
   onRemove: () => void
 }) {
   const { t } = useTranslation()
   const id = useId()
-  const n = index + 1
-  const label = draft.name.trim() || t('properties.numbered', { n })
+  const nameInput = useRef<HTMLInputElement>(null)
+  const label = row.name.trim() || t('properties.numbered', { n })
+  useEffect(() => {
+    if (!focus) return
+    const target = focus === 'name' ? nameInput.current : document.getElementById(`${id}-valor`)
+    target?.focus()
+    onFocused()
+  }, [focus, id, onFocused])
+  // Intro guarda (y del nombre pasa al valor); Escape deshace; Alt+flechas la mueven
+  const keys = (event: KeyboardEvent<HTMLElement>, toValue = false) => {
+    if (event.altKey && (event.key === 'ArrowUp' || event.key === 'ArrowDown')) {
+      event.preventDefault()
+      onMove(event.key === 'ArrowUp' ? -1 : 1)
+    } else if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault()
+      onCommit()
+      if (toValue) document.getElementById(`${id}-valor`)?.focus()
+      else (event.currentTarget as HTMLElement).blur()
+    } else if (event.key === 'Escape') {
+      event.preventDefault()
+      onRevert()
+    }
+  }
   return (
-    <li className={styles.draft}>
-      <div className={styles.fields}>
-        <div className={form.field}>
-          <label htmlFor={`${id}-nombre`}>{t('properties.name', { n })}</label>
-          <input
-            id={`${id}-nombre`}
-            value={draft.name}
-            maxLength={60}
-            autoComplete="off"
-            ref={draft.name ? undefined : focusOnMount}
-            onChange={(event) => onChange({ name: event.target.value })}
-          />
-        </div>
-        <div className={form.field}>
-          <label htmlFor={`${id}-tipo`}>{t('properties.type', { n })}</label>
-          <select
-            id={`${id}-tipo`}
-            value={draft.type}
-            onChange={(event) => onChange({ type: event.target.value as PropertyType })}
-          >
-            {TYPES.map((type) => (
-              <option key={type} value={type}>
-                {t(`properties.types.${type}`)}
-              </option>
-            ))}
-          </select>
-        </div>
-        <ValueField draft={draft} id={id} n={n} worldId={worldId} onChange={onChange} />
+    <div className={styles.prop} data-type={row.type}>
+      <div className={styles.propName}>
+        <input
+          ref={nameInput}
+          className={styles.nameInput}
+          aria-label={t('properties.name', { n })}
+          value={row.name}
+          maxLength={60}
+          autoComplete="off"
+          spellCheck={false}
+          placeholder={t('properties.namePlaceholder')}
+          onChange={(event) => onChange({ name: event.target.value })}
+          onBlur={onCommit}
+          onKeyDown={(event) => keys(event, true)}
+        />
       </div>
-      <div className={styles.rowActions}>
-        {index > 0 && (
-          <button
-            type="button"
-            className={list.secondary}
-            aria-label={t('properties.moveUp', { name: label })}
-            onClick={() => onMove(-1)}
-          >
-            {t('properties.up')}
-          </button>
-        )}
-        {!last && (
-          <button
-            type="button"
-            className={list.secondary}
-            aria-label={t('properties.moveDown', { name: label })}
-            onClick={() => onMove(1)}
-          >
-            {t('properties.down')}
-          </button>
-        )}
+      <div className={styles.propValue}>
+        <ValueField row={row} id={id} n={n} worldId={worldId} onChange={onChange} onCommit={onCommit} keys={keys} />
+      </div>
+
+      <div className={styles.propEnd}>
         <button
           type="button"
-          className={list.secondary}
+          className={styles.removeProp}
           aria-label={t('properties.remove', { name: label })}
+          title={t('properties.remove', { name: label })}
           onClick={onRemove}
         >
-          {t('properties.removeShort')}
+          ×
         </button>
+        <select
+          className={styles.typeSelect}
+          aria-label={t('properties.type', { n })}
+          title={t('properties.type', { n })}
+          value={row.type}
+          onChange={(event) => onChange({ type: event.target.value as PropertyType }, true)}
+        >
+          {TYPES.map((type) => (
+            <option key={type} value={type}>
+              {t(`properties.types.${type}`)}
+            </option>
+          ))}
+        </select>
       </div>
-    </li>
+    </div>
   )
 }
 
 function ValueField({
-  draft,
+  row,
   id,
   n,
   worldId,
-  onChange
+  onChange,
+  onCommit,
+  keys
 }: {
-  draft: Draft
+  row: Draft
   id: string
   n: number
   worldId: string
-  onChange: (patch: Partial<Draft>) => void
+  onChange: (patch: Partial<Draft>, now?: boolean) => void
+  onCommit: () => void
+  keys: (event: KeyboardEvent<HTMLElement>) => void
 }) {
   const { t } = useTranslation()
   const titles = usePageTitles(worldId)
   const [choice, setChoice] = useState('')
   const valueId = `${id}-valor`
   const label = t('properties.value', { n })
-  switch (draft.type) {
+  switch (row.type) {
     case 'boolean':
       return (
         <label className={styles.check}>
           <input
+            id={valueId}
             type="checkbox"
-            checked={draft.checked}
-            onChange={(event) => onChange({ checked: event.target.checked })}
+            aria-label={label}
+            checked={row.checked}
+            onChange={(event) => onChange({ checked: event.target.checked }, true)}
           />
-          {label}
+          <span aria-hidden="true">{t(row.checked ? 'properties.yes' : 'properties.no')}</span>
         </label>
       )
     case 'pages': {
       const pick = (title: string) => {
         const found = titles.find((p) => p.title === title)
-        if (found && !draft.pages.includes(found.id)) onChange({ pages: [...draft.pages, found.id] })
+        if (found && !row.pages.includes(found.id)) onChange({ pages: [...row.pages, found.id] }, true)
         if (found) setChoice('')
       }
       return (
-        <div className={form.field}>
-          <label htmlFor={valueId}>{label}</label>
-          <ul className={styles.chips}>
-            {draft.pages.map((pageId) => {
-              const title = titles.find((p) => p.id === pageId)?.title ?? t('properties.unknownPage')
-              return (
-                <li key={pageId}>
-                  {title}{' '}
-                  <button
-                    type="button"
-                    className={styles.chipRemove}
-                    aria-label={t('properties.removePage', { title })}
-                    onClick={() => onChange({ pages: draft.pages.filter((p) => p !== pageId) })}
-                  >
-                    ×
-                  </button>
-                </li>
-              )
-            })}
-          </ul>
+        <div className={styles.chipField}>
+          {row.pages.map((pageId) => {
+            const title = titles.find((p) => p.id === pageId)?.title ?? t('properties.unknownPage')
+            return (
+              <span key={pageId} className={styles.pageChip}>
+                <Link to="/mundos/$worldId/wiki/$pageId" params={{ worldId, pageId }}>
+                  {title}
+                </Link>
+                <button
+                  type="button"
+                  className={styles.chipRemove}
+                  aria-label={t('properties.removePage', { title })}
+                  onClick={() => onChange({ pages: row.pages.filter((p) => p !== pageId) }, true)}
+                >
+                  ×
+                </button>
+              </span>
+            )
+          })}
           <input
             id={valueId}
+            className={styles.valueInput}
+            aria-label={label}
             list={`${id}-paginas`}
             value={choice}
             autoComplete="off"
-            aria-describedby={`${id}-pista`}
+            placeholder={t('properties.pagesHint')}
             onChange={(event) => {
               setChoice(event.target.value)
               pick(event.target.value)
@@ -427,7 +469,7 @@ function ValueField({
               if (event.key === 'Enter') {
                 event.preventDefault()
                 pick(choice)
-              }
+              } else keys(event)
             }}
           />
           <datalist id={`${id}-paginas`}>
@@ -435,58 +477,120 @@ function ValueField({
               <option key={p.id} value={p.title} />
             ))}
           </datalist>
-          <small id={`${id}-pista`} className={form.hint}>
-            {t('properties.pagesHint')}
-          </small>
         </div>
       )
     }
-    default: {
-      // Las etiquetas, de las de la cuenta (ADR-0006): como en un archivo
-      if (draft.type === 'list' && isTagsName(draft.name)) {
-        const tags = draft.text
-          .split(',')
-          .map((tag) => tag.trim())
-          .filter(Boolean)
+    case 'list': {
+      const items = row.text
+        .split(',')
+        .map((item) => item.trim())
+        .filter(Boolean)
+      // Las etiquetas, de las de la cuenta (ADR-0006); las demás listas, con sus pastillas
+      if (isTagsName(row.name)) {
         return (
           <TagsField
             id={valueId}
             label={label}
-            value={tags}
-            onChange={(next) => onChange({ text: next.join(', ') })}
-            onPending={(pending) => onChange({ pending })}
+            hideLabel
+            value={items}
+            onChange={(next) => onChange({ text: next.join(', '), pending: '' }, true)}
           />
         )
       }
-      const long = draft.type === 'text' && draft.name.trim().toLocaleLowerCase('es') === 'resumen'
       return (
-        <div className={form.field}>
-          <label htmlFor={valueId}>{label}</label>
-          {long ? (
-            <textarea
-              id={valueId}
-              value={draft.text}
-              maxLength={5000}
-              rows={3}
-              onChange={(event) => onChange({ text: event.target.value })}
-            />
-          ) : (
-            <input
-              id={valueId}
-              value={draft.text}
-              inputMode={draft.type === 'number' ? 'decimal' : undefined}
-              autoComplete="off"
-              aria-describedby={draft.type === 'list' ? `${id}-pista` : undefined}
-              onChange={(event) => onChange({ text: event.target.value })}
-            />
-          )}
-          {draft.type === 'list' && (
-            <small id={`${id}-pista`} className={form.hint}>
-              {t('properties.listHint')}
-            </small>
-          )}
-        </div>
+        <ChipsField
+          id={valueId}
+          label={label}
+          value={items}
+          onChange={(next) => onChange({ text: next.join(', ') }, true)}
+        />
+      )
+    }
+    default: {
+      const long = row.type === 'text' && row.name.trim().toLocaleLowerCase('es') === 'resumen'
+      return long ? (
+        <textarea
+          id={valueId}
+          className={styles.valueInput}
+          aria-label={label}
+          value={row.text}
+          maxLength={5000}
+          rows={2}
+          onChange={(event) => onChange({ text: event.target.value })}
+          onBlur={onCommit}
+          onKeyDown={keys}
+        />
+      ) : (
+        <input
+          id={valueId}
+          className={styles.valueInput}
+          aria-label={label}
+          value={row.text}
+          inputMode={row.type === 'number' ? 'decimal' : undefined}
+          autoComplete="off"
+          placeholder={t('properties.empty')}
+          onChange={(event) => onChange({ text: event.target.value })}
+          onBlur={onCommit}
+          onKeyDown={keys}
+        />
       )
     }
   }
+}
+
+/** Una lista: sus pastillas con su ×, y un campo para añadir (Intro o coma; borrar en vacío quita la última) */
+function ChipsField({
+  id,
+  label,
+  value,
+  onChange
+}: {
+  id: string
+  label: string
+  value: readonly string[]
+  onChange: (next: string[]) => void
+}) {
+  const { t } = useTranslation()
+  const [draft, setDraft] = useState('')
+  const add = () => {
+    const items = draft
+      .split(',')
+      .map((item) => item.trim())
+      .filter((item) => item && !value.includes(item))
+    setDraft('')
+    if (items.length > 0) onChange([...value, ...items])
+  }
+  return (
+    <div className={styles.chipField}>
+      {value.map((item) => (
+        <span key={item} className={styles.listChip}>
+          {item}
+          <button
+            type="button"
+            className={styles.chipRemove}
+            aria-label={t('properties.remove', { name: item })}
+            onClick={() => onChange(value.filter((other) => other !== item))}
+          >
+            ×
+          </button>
+        </span>
+      ))}
+      <input
+        id={id}
+        className={styles.valueInput}
+        aria-label={label}
+        value={draft}
+        autoComplete="off"
+        placeholder={t('properties.addItem')}
+        onChange={(event) => setDraft(event.target.value)}
+        onBlur={() => draft.trim() && add()}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' || event.key === ',') {
+            event.preventDefault()
+            add()
+          } else if (event.key === 'Backspace' && !draft && value.length > 0) onChange(value.slice(0, -1))
+        }}
+      />
+    </div>
+  )
 }

@@ -43,9 +43,12 @@ const wikiPageRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/mundos/$worldId/wiki/$pageId',
   component: WikiPage,
-  // ?nuevo=true: la página se acaba de crear y se abre con su título por poner
-  validateSearch: (search: Record<string, unknown>): { nuevo?: true } =>
-    search.nuevo === true || search.nuevo === 'true' ? { nuevo: true } : {}
+  // ?nuevo=true: la página se acaba de crear y se abre con su título por poner; ?pestana=<id>: una pestaña que no es
+  // el texto (un mapa)
+  validateSearch: (search: Record<string, unknown>): { nuevo?: true; pestana?: string } => ({
+    ...(search.nuevo === true || search.nuevo === 'true' ? { nuevo: true as const } : {}),
+    ...(typeof search.pestana === 'string' && search.pestana ? { pestana: search.pestana } : {})
+  })
 })
 const tagsRoute = createRoute({
   getParentRoute: () => rootRoute,

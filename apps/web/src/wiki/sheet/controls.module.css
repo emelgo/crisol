@@ -1,23 +1,101 @@
-/* La fila de ajustes de la hoja y el sitio de la hoja en la página */
+/* En «⋯»: filas sencillas, como el resto del menú. Las columnas, con su selector 1 | 2; imprimir, en su desplegable */
 .row {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-2) var(--space-3);
-  margin: 0 0 var(--space-4);
-  padding: var(--space-2) var(--space-3);
-  border: 1px solid var(--color-border);
+  flex-direction: column;
+  margin: 0;
+  padding: 0 0 var(--space-1);
+  border-block-end: 1px solid var(--color-border);
+  font-size: 0.875rem;
 }
 
-.legend {
-  padding-inline: var(--space-1);
-  font-weight: 600;
+.line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-block-size: 2rem;
+  padding: 0 var(--space-2);
+}
+
+.line select {
+  min-block-size: 1.75rem;
+  padding: 0 var(--space-1);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: inherit;
+}
+
+.segmented {
+  display: inline-flex;
+  padding: 2px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--color-text) 8%, transparent);
+}
+
+.row .segmented button {
+  inline-size: 2rem;
+  min-block-size: 1.5rem;
+  justify-content: center;
+  padding: 0;
+  border-radius: 4px;
+}
+
+.row .segmented button[aria-pressed="true"] {
+  background: var(--color-bg);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.15);
+  font-weight: 700;
+}
+
+.opener > span {
+  margin-inline-start: auto;
+  color: var(--color-muted);
+}
+
+.opener[aria-expanded="true"] > span {
+  transform: rotate(90deg);
+}
+
+.printing {
+  display: flex;
+  flex-direction: column;
+  margin: 0 0 var(--space-1) var(--space-2);
+  padding-inline-start: var(--space-1);
+  border-inline-start: 2px solid var(--color-border);
+}
+
+.line .check {
+  padding: 0;
+}
+
+.from {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--color-muted);
 }
 
 .check {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-1);
+  gap: var(--space-2);
+  min-block-size: 2rem;
+  padding: 0 var(--space-2);
+}
+
+.printActions {
+  display: flex;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+}
+
+.row .printActions .printButton {
+  flex: 1;
+  justify-content: center;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--color-border);
+  white-space: nowrap;
 }
 
 .error {
@@ -25,7 +103,13 @@
 }
 
 .number {
-  inline-size: 4.5rem;
+  inline-size: 3.5rem;
+  min-block-size: 1.75rem;
+  padding: 0 var(--space-1);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-bg);
+  color: var(--color-text);
   font: inherit;
 }
 

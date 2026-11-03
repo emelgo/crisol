@@ -4,6 +4,7 @@
  */
 import type { ExportInput, Page } from '@crisol/contracts'
 import { useMutation } from '@tanstack/react-query'
+import { Download } from 'lucide-react'
 import { useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
@@ -25,7 +26,7 @@ function save(name: string, data: Blob) {
   setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
-function useExport() {
+export function useExport() {
   const { t } = useTranslation()
   const api = useApi()
   const announce = useAnnounce()
@@ -92,12 +93,19 @@ export function ExportPage({ page }: { page: Page }) {
 }
 
 /** «Exportar la wiki»: el mundo entero */
-export function ExportWiki({ worldId }: { worldId: string }) {
+/** «Exportar todas las páginas»: un icono en la esquina de la ficha del árbol */
+export function ExportWiki({ worldId, className }: { worldId: string; className?: string | undefined }) {
   const { t } = useTranslation()
   const run = useExport()
   return (
-    <BusyButton className={list.secondary} busy={run.isPending} onClick={() => run.mutate({ worldId })}>
-      {t('export.wiki')}
+    <BusyButton
+      className={className ?? list.secondary}
+      busy={run.isPending}
+      aria-label={t('export.wiki')}
+      title={t('export.wiki')}
+      onClick={() => run.mutate({ worldId })}
+    >
+      <Download aria-hidden="true" size={15} />
     </BusyButton>
   )
 }

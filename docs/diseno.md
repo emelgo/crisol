@@ -37,12 +37,11 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   tiene en el momento». Se cierra con la X, con Escape o pulsando fuera, y se vuelve a donde se estaba; un enlace
   de dentro la cierra y lleva a su sitio. **Sin enlace de vuelta** arriba («Mis mundos»): en una ventana no tiene
   sentido.
-- **Dentro de un mundo, la barra empieza por Inicio y Campañas**, y siguen **Wiki** (sus páginas; buscar y marcadores,
-  como pestañas de su panel, no en la barra) y Archivos. Sin ellos «no hay forma
-  de volver». Historial y Papelera enseñan los de ese mundo.
-- **El Inicio de un mundo**: arriba su cabecera, que es su tarjeta en grande (portada, nombre, descripción, papel y
-  engranaje); al entrar, la tarjeta se convierte en ella. Debajo, lo reciente: «Últimos artículos» de la wiki para
-  quien lo dirige (sin enlace a la wiki: está en la barra), y sus campañas para quien juega. Las campañas tienen su propia pestaña.
+- **Dentro de un mundo, la barra lleva el mundo (su nombre) y Archivos**; nada más (ni Plantillas, ni Campañas, ni
+  «Inicio»: el mundo se abre en su portada). Historial y Papelera enseñan los de ese mundo.
+- **El mundo se abre en su portada**, como la Home de LegendKeeper: una página más, que se crea sola con un texto de
+  bienvenida, va la primera del árbol con su casa, no se borra ni se mete en otra, y lleva «Inicio» junto al título.
+  Por detrás, la portada del mundo (su tarjeta al entrar: **esa transición no se toca**).
 - **El menú de la cuenta** (la inicial, abajo en la barra): quién eres, Perfil, Ajustes y Cerrar sesión. El tema va en
   Ajustes, no en el menú. Se abre al lado del botón y nunca se corta.
 - **Las etiquetas son de toda la cuenta** (ADR-0006): «Etiquetas» va en la barra de Mis mundos, no en la de un mundo;
@@ -62,6 +61,80 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
 - **Cada pantalla tiene su guía, aunque sea básica**: «debemos mantener el patrón siempre».
 
 ## Pantallas
+- **La wiki se edita en el sitio, como en el Crisol antiguo** (`docs/specs/wiki-edicion.md`): «no me gusta que todo sea
+  como con botones, debe ser más ágil, poder cambiar todo en edición, incluso el título». Se abre la página y se
+  escribe: el título es el propio encabezado (Intro guarda, Escape deshace) y todo se guarda solo («Guardando…»,
+  «Guardado», abajo a la derecha). Sin «Editar», «Guardar», «Cancelar» ni «Renombrar», y sin barra de botones encima
+  del texto: los bloques con «/», los enlaces con «@» o «[[», buscar con Ctrl+Alt+F y el menú del bloque con
+  Ctrl+Alt+B. La cabecera, en iconos (Marcar, Bloquear, Hoja, «⋯»).
+- **El icono va en el propio título**, si se quiere: no hay botón para ponerlo. **La portada**, como en el Crisol antiguo
+  y en los mundos: se pone desde «⋯»; puesta, al pasar por encima salen «Ver» y «Cambiar», y se arrastra para
+  encuadrarla.
+- **Las propiedades, en una ficha a un lado** (a la derecha, con el texto alrededor, como en el Crisol antiguo); en la
+  hoja, arriba a todo lo ancho. Solo «+ Propiedad» y «Etiquetas» a mano: «Alias» y «Resumen» sobran. El tipo de una
+  propiedad sale junto a su × mientras se edita.
+- **Sin sección de subpáginas ni «Anterior / Siguiente»**: se navega desde el árbol; «Nueva subpágina», en «⋯».
+- **«Página nueva» (y «Nueva subpágina») abre un cuadro** como el de «Pestaña nueva»: el tipo (texto o mapa; pizarra,
+  línea temporal y árbol familiar, «Pronto») y el título; Intro la crea. Sin título, se abre para ponérselo.
+- **Cambiar de página no deja huecos**: la de antes se queda hasta que llega la nueva, que entra con un fundido corto
+  (al pasar por el árbol ya se pide); el texto no se enseña vacío mientras llega.
+- **Escribiendo, el texto no lleva recuadro** (se confundía con una caja); las cajas, sí: marco fino y redondeado. **El asa de los bloques**, como en Everlore:
+  pequeña y gris en el margen izquierdo; una sola a la vez. Su menú agrupa «Convertir en» en desplegables (Texto,
+  Títulos —del 1 al 6—, Listas, Recuadros, Hoja, Del máster) y tiene «Insertar debajo». **Bajo lo último escrito hay
+  siempre una línea de más**, con sus seis puntos: se escribe en ella sin pulsar Intro y aparece la siguiente (no se
+  guarda hasta escribir).
+- **«Guardado»**, pequeño y gris a la derecha de las pestañas de la página; nada flotando en las esquinas.
+- **El menú «/» y «Convertir en», por desplegables** (Texto, Títulos, Listas, Páginas, Recuadros —con los secretos y
+  las notas ocultas—, Hoja); al escribir, una lista plana. Sin explicaciones ni «?»: los nombres bastan. Nada de
+  «máster» en el worldbuilding.
+- **Botón derecho en el árbol**, como en Everlore: crear subpágina, renombrar, duplicar, exportar, mover y ordenar
+  (desplegables que se abren al pasar el ratón) y borrar. «⋯» de la página, solo exportar.
+- **Las pestañas abiertas se recolocan** arrastrándolas (o Alt + flechas). Cerrar la última lleva a la portada del
+  mundo sin rehacer la pantalla.
+- **Las fichas de los lados de la página empiezan donde las de Archivos** (a la misma altura, haya portada o no) y
+  llegan hasta abajo de la ventana.
+- **Los bloques del panel, con sus seis puntos**: se arrastran para moverlos y, al pulsarlos, sus opciones (sin «⋯»).
+  Las etiquetas y las propiedades se añaden también desde «Añadir bloque» («De la página»). Las versiones, en «⋯» de
+  la página, no en el panel. En los menús, pasar el ratón por una opción la elige.
+- **Propiedades y etiquetas, como los bloques del panel**: el nombre pequeño en mayúsculas encima y el valor debajo; el
+  tipo y la ×, al acercarse. «Exportar todas las páginas», un icono en la esquina de la ficha del árbol.
+- **Los desplegables flotan y no mueven nada** (como «Marcar»: «Guardar en», los grupos de un clic y un campo para uno
+  nuevo); nada de formularios que empujan la página.
+- **Alrededor de la página, nada pesa** («la UI es rara»): los paneles de los lados sin recuadros, con títulos
+  pequeños y grises; «Página nueva», «Exportar» y «Nueva subpágina», discretos; un vacío dice una sola línea.
+- **La página sigue el esqueleto de Archivos** (Enrique, 2026-11-02: «el título en la misma posición y las columnas
+  igual»): la columna del centro (todo el hueco entre las fichas, de hasta 20rem) con las pestañas abiertas arriba, el título, las pestañas de la página y el
+  texto; a los lados, fuera de ella, la ficha del árbol (con su buscador fijo, por nombre o #etiqueta, y los
+  marcadores debajo) y la ficha del panel, hacia los bordes. **Las dos fichas empiezan a la misma altura, la de las pestañas de la
+  página**, como en Archivos bajo el título. La columna no cambia al esconder el panel.
+- **Del estilo de Everlore, la forma** (esquinas redondeadas, cabecera pegajosa compacta al bajar) con nuestros
+  colores y letras. Sin el mundo en pequeño sobre el título (estaba repetido) y sin migas de pan. La portada de la
+  página va por detrás, solo en la columna del centro, fundida con el fondo, con el título encima de su parte de
+  abajo. **Una página sin portada se ve como una con portada, pero sin ella**: su hueco se queda, con una textura
+  suave (grano, un tejido tenue y dos manchas de color, fundidos con el fondo) para que no se vea plano (el título y
+  las fichas, en el mismo sitio en todas) y «Añadir portada» sale arriba a la derecha al pasar por él.
+- **Las pestañas de una página** (ADR-0007): siempre bajo el título, «Texto» y las que se añaden, en texto plano con la
+  elegida subrayada; «+» al final abre un cuadro con un recuadro por tipo (mapa; pizarra, línea temporal y árbol
+  familiar, «Pronto») y el nombre. La elegida lleva su menú (▾): nombre, mover y quitar. El texto y el mapa, en la
+  columna del centro.
+- **El panel de la derecha se escribe** (ADR-0008, como el de LegendKeeper y el de Everlore): arriba las
+  propiedades; después sus bloques, que se añaden con «Añadir bloque» (texto, imagen, barra, círculo, estrellas,
+  fichas, subpáginas, páginas con una etiqueta), se titulan encima, se tocan en el sitio (+ y −, pulsar la barra, las
+  estrellas o las fichas) y se recolocan arrastrando su asa o desde sus opciones; vacío, dice «Panel vacío» y para qué
+  sirve. Arriba del todo, «Mencionado en» (como en Everlore: una lista corta de páginas; las que la nombran sin enlazar, debajo, con «Enlazar» al pasar). Sin índice (está el árbol); las versiones, en «⋯». No se esconde (no hay botón para eso); sin sitio,
+  va debajo de la página.
+- **Dentro de un mundo, la forma de Everlore (esquinas redondeadas, sin cortes) con nuestros colores y nuestras
+  letras.** Las propiedades de una página van en el panel de la derecha, con su título pequeño como lo demás.
+- **Los mundos no tienen papel** (máster o jugador): eso es de las campañas.
+- **El mapa**: la imagen se arrastra y se acerca con la rueda hacia el cursor (y con dos dedos); las herramientas, una
+  columna de iconos arriba a la izquierda; el botón derecho ofrece «Pin aquí» y «Pin con página nueva» (su nombre es
+  el de la página, que nace como subpágina). Pulsar un pin abre su panel a la derecha (abajo en el móvil), donde todo
+  se guarda al momento; arrastrarlo lo mueve y el doble clic abre su página. Los pines, las ocho formas de Everlore.
+- **La hoja es lo que hace única la wiki**, y se escribe ya maquetada (Enrique, 2026-11-03: «verlo directamente como
+  se ve en la hoja pero sin las texturas»): con la hoja puesta, el texto cae en sus páginas y sus dos columnas como al
+  imprimir (el mismo paginador y la misma letra y tamaño), con su número y su pie, pero con los colores de la app; el
+  papel y las texturas del tema, solo al imprimir y en el PDF. En el móvil, una columna seguida. Los bloques de hoja
+  (saltos, statblock, nota lateral, a lo ancho, índice) solo salen en «/» en las páginas con hoja.
 
 - **Los cambios no son bruscos y se notan**: un elemento nuevo entra animado (sube y crece, con el contorno
   iluminado un momento) cuando el cuadro que lo creó ya se ha ido, y uno borrado baja, encoge y se desvanece antes de
@@ -123,7 +196,14 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
 - **Los mundos no llevan icono**: «no aportan nada».
 - **Las campañas se ven y se crean como los mundos**: tarjeta con portada, descripción y color, engranaje con su
   ventana y zona de peligro, «Nueva campaña» discontinuo al final, y se forjan y arden igual. Su portada, una imagen
-  de su mundo o común.
+  de su mundo o común. **Viven en Mis mundos**, bajo los mundos, cada una con su mundo debajo del nombre; «Nueva
+  campaña» pide el mundo. No están en la barra.
+- **La barra de la izquierda, estrecha y de iconos** (Enrique prefirió esta a una ancha al estilo Everlore). Dentro de
+  un mundo: el mundo (abre y cierra la ficha del árbol) y Archivos. El árbol, como el de las carpetas de Archivos.
+- **No se dice «wiki» en la interfaz**: quien solo hace worldbuilding no piensa en una wiki. Se habla del mundo y de sus
+  páginas («Páginas de Eana», «Buscar en las páginas»). «Compendio» se guarda para las reglas.
+- **Con una ventana abierta encima (los ajustes de un mundo), la vista previa de al lado se quita**, y no vuelve hasta
+  que el ratón entra otra vez en la tarjeta.
 - **El color de un mundo**: sin color, uno de los fijos o uno propio con el selector de color; los propios se
   recuerdan para usarlos otra vez. **Solo tiñe, sutil, el contorno de su tarjeta** (y el de su ventana); la portada no
   se colorea. **El contorno sale siempre**, entero, también alrededor de la portada. Sin imagen, el hueco de la portada lleva un tinte muy oscuro de ese color.

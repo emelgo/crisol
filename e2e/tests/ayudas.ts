@@ -63,15 +63,24 @@ export async function openWorld(page: Page, name: string) {
   await expect(page.getByRole('heading', { level: 1, name, exact: true })).toBeVisible()
 }
 
-/** Desde Mis mundos, entra en un mundo y abre su wiki con «Páginas» (en el móvil, desde el menú de la llama) */
+/**
+ * Desde Mis mundos, entra en un mundo: se abre su portada (una página que se crea sola, con el nombre del mundo) con el
+ * árbol al lado; en el móvil, el árbol se abre con «Páginas» en el menú de la llama
+ */
 export async function openWiki(page: Page, name: string) {
   await openWorld(page, name)
   const menu = page.getByRole('button', { name: 'Menú' })
   if (await menu.isVisible()) {
     await menu.click()
-    await page.getByRole('dialog', { name }).getByRole('button', { name: 'Wiki' }).click()
-  } else await sections(page).getByRole('button', { name: 'Wiki' }).click()
-  await expect(page).toHaveURL(/\/wiki$/)
+    await page.getByRole('dialog', { name }).getByRole('button', { name, exact: true }).click()
+  }
+  await expect(page.getByRole('tree', { name: 'Páginas' }).getByRole('treeitem', { name, exact: true })).toBeVisible()
+}
+
+/** Los archivos del mundo abierto, en su pantalla: «Archivos» en la barra */
+export async function openWorldFiles(page: Page) {
+  // El del mundo (mientras la barra cambia, aún puede estar saliendo el de los archivos comunes)
+  await sections(page).getByRole('link', { name: 'Archivos' }).and(page.locator('[href*="/mundos/"]')).click()
 }
 
 /** Abre los ajustes de un mundo o una campaña (su engranaje); devuelve su ventana */
@@ -136,12 +145,19 @@ export async function createWorld(page: Page, name: string) {
   await expect(page.getByRole('link', { name, exact: true })).toBeVisible()
 }
 
-/** Crea una campaña en el mundo abierto, desde su pestaña Campañas */
-export async function createCampaign(page: Page, name: string) {
-  await page.getByRole('navigation', { name: 'Secciones' }).getByRole('link', { name: 'Campañas' }).click()
-  await page.getByRole('button', { name: /Nueva campaña|Crear la primera campaña/ }).click()
+/** A Mis mundos con la llama, sin recargar (no corta el canal en tiempo real) */
+export async function toWorlds(page: Page) {
+  if (new URL(page.url()).pathname !== '/mundos') await sections(page).getByRole('link', { name: 'Crisol' }).click()
+  await expect(page.getByRole('heading', { level: 1, name: 'Mis mundos' })).toBeVisible()
+}
+
+/** Crea una campaña desde Mis mundos: «Nueva campaña» pide su mundo (sin decirlo, el primero) */
+export async function createCampaign(page: Page, name: string, world?: string) {
+  await toWorlds(page)
+  await page.getByRole('button', { name: 'Nueva campaña' }).click()
   const dialog = page.getByRole('dialog', { name: 'Nueva campaña' })
   await dialog.getByLabel('Nombre de la campaña').fill(name)
+  if (world) await dialog.getByLabel('Mundo').selectOption({ label: world })
   await dialog.getByRole('button', { name: 'Crear la campaña' }).click()
   await expect(page.getByRole('link', { name, exact: true })).toBeVisible()
 }
@@ -166,7 +182,6 @@ export async function freshOwner(page: Page) {
 export async function campaignLink(page: Page) {
   await freshOwner(page)
   await createWorld(page, 'Eana')
-  await page.getByRole('link', { name: 'Eana', exact: true }).click()
   await createCampaign(page, 'La Marca')
   await page.getByRole('link', { name: 'La Marca', exact: true }).click()
   return page.getByLabel('Enlace de invitación').inputValue()
@@ -276,4 +291,18 @@ export async function connectClaude(page: Page) {
     return { ...result, text: result.content.map((c) => c.text ?? '').join('\n') }
   }
   return { call }
+}
+
+/** En el texto de una página, un bloque con «/»: escribe la orden y la elige (en una línea vacía o tras un espacio) */
+export async function slash(page: Page, name: string) {
+  // La orden: su primera palabra (un espacio cierra el menú)
+  await page.keyboard.type(`/${name.split(' ')[0]?.toLocaleLowerCase('es')}`)
+  const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const option = page.getByRole('listbox', { name: 'Bloques' }).getByRole('option', { name: new RegExp(`^${escaped}`) })
+  await option.first().click()
+}
+
+/** Lo elegido en el texto, a un secreto: desde la barrita que sale al elegir */
+export async function selectionToSecret(page: Page) {
+  await page.getByRole('toolbar', { name: 'Formato' }).getByRole('button', { name: 'Secreto' }).click()
 }

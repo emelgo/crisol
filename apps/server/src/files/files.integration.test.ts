@@ -454,14 +454,16 @@ describe('los archivos del mundo', () => {
       expect((await uploadCommon('Intruso.png', PNG, outsider.cookie)).statusCode).toBe(404)
     })
 
-    it('borrado va a la papelera de la cuenta, sin mundo, y vuelve', async () => {
+    it('borrado va a la papelera de la cuenta, sin mundo, y también sale en la de sus mundos; vuelve', async () => {
       const { id } = (await uploadCommon('Escudo.png', PNG)).json()
       await call('deleteFile', { fileId: id })
       expect((await call('listTrash', {})).items).toMatchObject([
         { kind: 'file', id, name: 'Escudo.png', worldId: null, worldName: null }
       ])
-      expect((await call('listTrash', { worldId })).items).toEqual([])
+      // Se borra desde la carpeta «Comunes» de un mundo: en su papelera también está
+      expect((await call('listTrash', { worldId })).items).toMatchObject([{ kind: 'file', id, worldId: null }])
       expect(await call('restoreFile', { fileId: id })).toEqual({ id, name: 'Escudo.png' })
+      expect((await call('listTrash', { worldId })).items).toEqual([])
       expect((await call('listCommonFiles', {})).files).toHaveLength(1)
     })
 

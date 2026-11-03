@@ -50,7 +50,7 @@ describe('mis mundos', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Crear el mundo' }))
     const list = await screen.findByRole('list', { name: 'Mundos' })
     expect(within(list).getByText('Eana')).toBeDefined()
-    expect(within(list).getByText('Máster')).toBeDefined()
+    expect(within(list).queryByText('Máster')).toBeNull()
   })
 
   it('en «Ajustes» se le pone descripción y color, y la tarjeta lo enseña', async () => {

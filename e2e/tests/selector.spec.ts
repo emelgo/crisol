@@ -47,7 +47,8 @@ test('Ctrl+K: recientes, títulos con erratas y órdenes; buscar en la página r
 
   // Buscar en la página
   await page.goto(`/mundos/${worldId}/wiki/${puerto.id}`)
-  await page.getByRole('button', { name: 'Buscar en la página' }).click()
+  await page.getByRole('textbox', { name: 'Texto de la página' }).click()
+  await page.keyboard.press('Control+Alt+f')
   const field = page.getByRole('searchbox', { name: 'Buscar en la página' })
   await expect(field).toBeFocused()
   await field.fill('dragon')
@@ -57,5 +58,5 @@ test('Ctrl+K: recientes, títulos con erratas y órdenes; buscar en la página r
   await expect(page.getByRole('status').filter({ hasText: 'de 3' })).toHaveText('2 de 3')
   await page.getByRole('button', { name: 'Cerrar la búsqueda' }).click()
   await expect(page.locator('.ProseMirror [class*="match"]')).toHaveCount(0)
-  await expect(page.getByRole('button', { name: 'Buscar en la página' })).toBeFocused()
+  await expect(page.getByRole('textbox', { name: 'Texto de la página' })).toBeFocused()
 })

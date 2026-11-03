@@ -1,7 +1,7 @@
 import { type PageCover as Cover, WORLD_COLORS, type World } from '@crisol/contracts'
 import { TRASH_DAYS } from '@crisol/domain'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Link } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
 import { CircleOff, ImagePlus, Maximize2, Plus, Settings } from 'lucide-react'
 import { type CSSProperties, type ReactNode, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -18,8 +18,8 @@ import { focusAfterRemoving } from '../components/focus.ts'
 import form from '../components/form.module.css'
 import { Modal } from '../components/modal.tsx'
 import { PageTitle } from '../components/page-title.tsx'
-import { ENTER_WORLD, enterWorld, worldTransition } from '../components/world-transition.ts'
-import { coverStyle, useWorldFiles } from '../wiki/cover.tsx'
+import { ENTER_WORLD, enterWorld, LEAVE_WORLD, worldTransition } from '../components/world-transition.ts'
+import { coverStyle, useWorldFiles } from '../wiki/cover-look.ts'
 import styles from './world-card.module.css'
 import { CoverDialog, CoverViewer, type LocalImage } from './world-cover.tsx'
 import { colorHex, PRESET_COLORS, rememberColor, rememberedColors } from './world-look.ts'
@@ -46,9 +46,11 @@ export interface LookKind {
   list: string
   queryKey: readonly unknown[]
   /** El mundo de las imágenes de su portada; sin él (al crear un mundo, aún sin archivos), solo las comunes */
-  worldOf: (look?: Look) => string | undefined
-  /** Crea uno con ese nombre: su id y el mundo al que subir su portada */
-  create: (name: string) => Promise<{ id: string; worldId: string }>
+  worldOf: (look?: Look, place?: string) => string | undefined
+  /** Crea uno con ese nombre (en ese mundo, si se elige): su id y el mundo al que subir su portada */
+  create: (name: string, place?: string) => Promise<{ id: string; worldId: string }>
+  /** Al crear, en qué mundo: se elige entre estos (las campañas desde Mis mundos) */
+  places?: readonly { id: string; name: string }[]
   update: (id: string, patch: LookPatch) => Promise<unknown>
   remove: (id: string) => Promise<unknown>
 }
@@ -79,6 +81,28 @@ export function useCampaignKind(worldId: string): LookKind {
   }
 }
 
+/**
+ * Las campañas de todos los mundos, desde Mis mundos: al crear una se elige su mundo (de los que dirige la cuenta). Su
+ * lista y su consulta son las de todas
+ */
+export function useAllCampaignsKind(places: readonly { id: string; name: string }[]): LookKind {
+  const api = useApi()
+  return {
+    texts: 'campaigns',
+    list: 'campanas',
+    queryKey: ['campaigns'],
+    worldOf: (look, place) => (look as (Look & { worldId?: string }) | undefined)?.worldId ?? place,
+    create: (name, place) =>
+      api.call('createCampaign', { worldId: place ?? '', name }).then((campaign) => ({
+        id: campaign.id,
+        worldId: campaign.worldId
+      })),
+    update: (campaignId, patch) => api.call('updateCampaign', { campaignId, ...patch }),
+    remove: (campaignId) => api.call('deleteCampaign', { campaignId }),
+    places
+  }
+}
+
 /** Su color (--world-color): tiñe, sutil, el contorno de su tarjeta y el hueco de la portada si no hay imagen */
 const tint = (color: World['color']): CSSProperties | undefined => {
   const hex = colorHex(color)
@@ -106,11 +130,14 @@ function LookCard({
   fresh = false,
   burning = false,
   onBurnt,
-  onPreview
+  onPreview,
+  place
 }: {
   kind: LookKind
   look: Look
   name: ReactNode
+  /** De qué mundo es (una campaña en Mis mundos) */
+  place?: string | undefined
   style?: CSSProperties | undefined
   fresh?: boolean
   burning?: boolean
@@ -134,6 +161,9 @@ function LookCard({
     return () => window.clearTimeout(timer)
   }, [burning])
   const classes = [styles.card, entering ? styles.entering : '', burning ? styles.burning : ''].filter(Boolean)
+  // Con sus ajustes abiertos, sin vista previa; y al cerrarlos tampoco (el foco vuelve a la tarjeta), hasta que el ratón
+  // vuelva a entrar en ella
+  const quiet = useRef(false)
   return (
     <li
       ref={card}
@@ -148,9 +178,14 @@ function LookCard({
       }}
       style={{ ...tint(look.color), ...style }}
       data-card={look.id}
-      onPointerEnter={() => onPreview?.(true)}
+      onPointerEnter={() => {
+        quiet.current = false
+        onPreview?.(true)
+      }}
       onPointerLeave={() => onPreview?.(false)}
-      onFocus={() => onPreview?.(true)}
+      onFocus={() => {
+        if (!quiet.current) onPreview?.(true)
+      }}
       onBlur={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget as Node | null)) onPreview?.(false)
       }}
@@ -172,10 +207,21 @@ function LookCard({
       )}
       <div className={styles.body}>
         {name}
+        {place && <p className={styles.place}>{place}</p>}
         {look.description && <p className={styles.description}>{look.description}</p>}
         <div className={styles.footer}>
-          <span className={styles.role}>{t(`roles.${look.role}`)}</span>
-          {look.role === 'master' && <LookSettings kind={kind} look={look} />}
+          {/* El papel (máster o jugador) es de las campañas, no de los mundos */}
+          {kind.texts === 'campaigns' && <span className={styles.role}>{t(`roles.${look.role}`)}</span>}
+          {look.role === 'master' && (
+            <LookSettings
+              kind={kind}
+              look={look}
+              onOpen={() => {
+                quiet.current = true
+                onPreview?.(false)
+              }}
+            />
+          )}
         </div>
       </div>
     </li>
@@ -197,6 +243,27 @@ export function WorldCard({
   onPreview?: (shown: boolean) => void
 }) {
   const kind = useWorldKind()
+  const api = useApi()
+  const queryClient = useQueryClient()
+  // Al acercarse, su portada se pide ya: al entrar, sale sin esperar
+  const prefetch = () => {
+    if (world.role !== 'master') return
+    void queryClient
+      .fetchQuery({
+        queryKey: ['pages', world.id, 'home'],
+        queryFn: () => api.call('getWorldHome', { worldId: world.id }),
+        staleTime: 30_000
+      })
+      .then(({ pageId }) => {
+        if (pageId)
+          void queryClient.prefetchQuery({
+            queryKey: ['pages', world.id, 'page', pageId],
+            queryFn: () => api.call('getPage', { pageId }),
+            staleTime: 30_000
+          })
+      })
+      .catch(() => undefined)
+  }
   return (
     <LookCard
       kind={kind}
@@ -205,7 +272,10 @@ export function WorldCard({
       fresh={fresh}
       burning={burning}
       {...(onBurnt ? { onBurnt } : {})}
-      onPreview={onPreview}
+      onPreview={(shown) => {
+        if (shown) prefetch()
+        onPreview?.(shown)
+      }}
       name={
         <Link
           to="/mundos/$worldId"
@@ -227,19 +297,26 @@ export function CampaignCard({
   campaign,
   fresh,
   burning,
-  onBurnt
+  onBurnt,
+  kind: given,
+  place
 }: {
   worldId: string
   campaign: Look
   fresh?: boolean
   burning?: boolean
   onBurnt?: () => void
+  /** La de su lista, si no es la de su mundo (Mis mundos) */
+  kind?: LookKind
+  place?: string
 }) {
-  const kind = useCampaignKind(worldId)
+  const own = useCampaignKind(worldId)
+  const kind = given ?? own
   return (
     <LookCard
       kind={kind}
       look={campaign}
+      place={place}
       fresh={fresh}
       burning={burning}
       {...(onBurnt ? { onBurnt } : {})}
@@ -257,6 +334,25 @@ export function CampaignCard({
 }
 
 /**
+ * La portada del mundo como portada ancha de su página de portada (Everlore), la misma se llegue por donde se llegue: al
+ * entrar en él (su tarjeta se convierte en ella) o desde el árbol
+ */
+export function WorldBanner({ world }: { world: World }) {
+  const kind = useWorldKind()
+  const navigate = useNavigate()
+  return (
+    <LookHeader
+      banner
+      kind={kind}
+      look={world}
+      style={worldTransition(world.id)}
+      // Borrado desde dentro: a Mis mundos, saliendo de él
+      afterDelete={() => void navigate({ to: '/mundos', viewTransition: LEAVE_WORLD })}
+    />
+  )
+}
+
+/**
  * La cabecera de un mundo (la de su Inicio): como su tarjeta, en grande. Al entrar, la tarjeta se convierte en ella.
  * afterDelete: si se borra desde aquí, adónde se va
  */
@@ -264,16 +360,46 @@ export function LookHeader({
   kind,
   look,
   style,
-  afterDelete
+  afterDelete,
+  banner = false
 }: {
   kind: LookKind
   look: Look
   style?: CSSProperties | undefined
   afterDelete: () => void
+  /** Como portada ancha de la página de portada del mundo (Everlore): la imagen, con el engranaje encima */
+  banner?: boolean
 }) {
   const { t } = useTranslation()
   const image = useCoverImage(look)
   const [viewing, setViewing] = useState(false)
+  if (banner) {
+    return (
+      <header className={styles.banner} style={{ ...tint(look.color), ...style }}>
+        <CoverHeader
+          url={image?.url}
+          cover={look.cover}
+          hero
+          actions={
+            image && (
+              <button type="button" aria-haspopup="dialog" onClick={() => setViewing(true)}>
+                <Maximize2 aria-hidden="true" size={14} />
+                {t('cover.view')}
+              </button>
+            )
+          }
+        />
+        {viewing && image && (
+          <CoverViewer url={image.url} label={t('cover.of', { name: look.name })} onClose={() => setViewing(false)} />
+        )}
+        {look.role === 'master' && (
+          <div className={styles.bannerGear}>
+            <LookSettings kind={kind} look={look} afterDelete={afterDelete} />
+          </div>
+        )}
+      </header>
+    )
+  }
   return (
     <header className={styles.hero} style={{ ...tint(look.color), ...style }}>
       <CoverHeader
@@ -298,7 +424,8 @@ export function LookHeader({
           {look.description && <p className={styles.description}>{look.description}</p>}
         </div>
         <div className={styles.footer}>
-          <span className={styles.role}>{t(`roles.${look.role}`)}</span>
+          {/* El papel (máster o jugador) es de las campañas, no de los mundos */}
+          {kind.texts === 'campaigns' && <span className={styles.role}>{t(`roles.${look.role}`)}</span>}
           {look.role === 'master' && <LookSettings kind={kind} look={look} afterDelete={afterDelete} />}
         </div>
       </div>
@@ -403,7 +530,18 @@ export function NewWorld({ big = false }: { big?: boolean }) {
 }
 
 /** El engranaje (para quien lo dirige): abre su ventana */
-function LookSettings({ kind, look, afterDelete }: { kind: LookKind; look: Look; afterDelete?: () => void }) {
+function LookSettings({
+  kind,
+  look,
+  afterDelete,
+  onOpen
+}: {
+  kind: LookKind
+  look: Look
+  afterDelete?: () => void
+  /** Al abrir su ventana */
+  onOpen?: () => void
+}) {
   const { t } = useTranslation()
   const trigger = useRef<HTMLButtonElement>(null)
   const [open, setOpen] = useState(false)
@@ -417,7 +555,10 @@ function LookSettings({ kind, look, afterDelete }: { kind: LookKind; look: Look;
         title={t(`${kind.texts}.settingsOf`, { name: look.name })}
         aria-haspopup="dialog"
         data-tour="engranaje"
-        onClick={() => setOpen(true)}
+        onClick={() => {
+          onOpen?.()
+          setOpen(true)
+        }}
       >
         <Settings aria-hidden="true" size={18} />
       </button>
@@ -486,9 +627,12 @@ function LookDialog({
   const refresh = () => queryClient.invalidateQueries({ queryKey: kind.queryKey })
   const gone = useRef(false)
   const texts = kind.texts
+  // Al crear una campaña desde Mis mundos, su mundo
+  const placeId = useId()
+  const [place, setPlace] = useState(kind.places?.[0]?.id)
 
   // La portada: al ajustar, la suya (se guarda en su cuadro); al crear, la elegida y, si es propia, su imagen sin subir
-  const filesWorld = kind.worldOf(look)
+  const filesWorld = kind.worldOf(look, place)
   const [newCover, setNewCover] = useState<{ cover: Cover; local: LocalImage | null } | null>(null)
   const files = useWorldFiles(filesWorld ?? '', Boolean(filesWorld) && Boolean(look?.cover || newCover))
   // La imagen sin subir se suelta cuando deja de usarse (otra o ninguna) y al cerrar
@@ -527,7 +671,7 @@ function LookDialog({
       if (look) {
         await kind.update(look.id, { ...(name !== look.name ? { name } : {}), ...appearance })
       } else {
-        const created = await kind.create(name)
+        const created = await kind.create(name, place)
         // No sale en la lista hasta que su transición la enseña, saliendo de esta ventana
         holdCard(created.id)
         createdId.current = created.id
@@ -646,6 +790,26 @@ function LookDialog({
           data-autofocus={look ? undefined : ''}
           onChange={(event) => set({ name: event.currentTarget.value })}
         />
+        {!look && kind.places && (
+          <div className={styles.placeField}>
+            <label htmlFor={placeId}>{t('campaigns.world')}</label>
+            <select
+              id={placeId}
+              value={place}
+              onChange={(event) => {
+                setPlace(event.currentTarget.value)
+                // La portada es de su mundo: al cambiarlo, se quita
+                setNewCover(null)
+              }}
+            >
+              {kind.places.map((option) => (
+                <option key={option.id} value={option.id}>
+                  {option.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
         <Field
           label={t('worlds.description')}
           hint={t('worlds.descriptionHint')}
@@ -772,8 +936,6 @@ export function WorldDetail({ world }: { world: World }) {
               </dd>
             </>
           )}
-          <dt>{t('worlds.roleLabel')}</dt>
-          <dd>{t(`roles.${world.role}`)}</dd>
         </dl>
       </div>
     </div>

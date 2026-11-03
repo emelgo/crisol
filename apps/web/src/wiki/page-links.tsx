@@ -244,22 +244,24 @@ export const LinkSuggest = Extension.create<LinkSuggestOptions>({
   addOptions: () => ({ links: () => null, announce: () => {} }),
   addProseMirrorPlugins() {
     const { links, announce } = this.options
-    // Lo escrito tras `[[` (la orden de elegir no lo recibe: se guarda al buscar)
-    let lastQuery = ''
-    return [
-      Suggestion<LinkChoice, LinkChoice>({
-        editor: this.editor,
-        pluginKey: new PluginKey('linkSuggest'),
-        char: '[[',
+    const editor = this.editor
+    // «[[» como en el Markdown y «@» como en el Crisol antiguo (este, al empezar una palabra; sin incrustar)
+    const suggest = (char: '[[' | '@') => {
+      // Lo escrito tras el disparador (la orden de elegir no lo recibe: se guarda al buscar)
+      let lastQuery = ''
+      return Suggestion<LinkChoice, LinkChoice>({
+        editor,
+        pluginKey: new PluginKey(char === '@' ? 'linkMention' : 'linkSuggest'),
+        char,
         allowSpaces: true,
-        allowedPrefixes: null,
+        allowedPrefixes: char === '@' ? [' '] : null,
         allow: ({ state, range }) => state.doc.resolve(range.from).parent.type.name !== 'codeBlock',
         items: ({ query, editor }) => {
           lastQuery = query
           const current = links()
           // `![[`: el «!» va justo antes de los corchetes
           const start = editor.state.selection.from - query.length - 2
-          const embedding = start > 1 && editor.state.doc.textBetween(start - 1, start) === '!'
+          const embedding = char === '[[' && start > 1 && editor.state.doc.textBetween(start - 1, start) === '!'
           // «Título#Sección»: se busca por el título; la sección va con el enlace
           const [name = ''] = query.replace(/\]+$/, '').split('#')
           const text = name.trim()
@@ -280,7 +282,8 @@ export const LinkSuggest = Extension.create<LinkSuggestOptions>({
         command: ({ editor, range, props: choice }) => {
           const anchor = lastQuery.replace(/\]+$/, '').split('#').slice(1).join('#').trim() || null
           // Con «!» delante, incrustar; si no, enlazar
-          const embed = range.from > 1 && editor.state.doc.textBetween(range.from - 1, range.from) === '!'
+          const embed =
+            char === '[[' && range.from > 1 && editor.state.doc.textBetween(range.from - 1, range.from) === '!'
           const insert = (pageId: string, title: string) => {
             const content = embed
               ? [{ type: 'pageEmbed', attrs: { pageId, title, anchor } }]
@@ -316,6 +319,8 @@ export const LinkSuggest = Extension.create<LinkSuggestOptions>({
           return {
             onStart: (props) => {
               renderer = new ReactRenderer(LinkList, { props, editor: props.editor })
+              // Va al final de la página: por encima de ella, que monta sobre su portada
+              renderer.element.style.zIndex = '30'
               unmount = props.mount(renderer.element)
             },
             onUpdate: (props) => renderer?.updateProps(props),
@@ -328,7 +333,8 @@ export const LinkSuggest = Extension.create<LinkSuggestOptions>({
           }
         }
       })
-    ]
+    }
+    return [suggest('[['), suggest('@')]
   }
 })
 
@@ -405,6 +411,7 @@ const LinkList = forwardRef<ListHandle, LinkListProps>(function LinkList({ items
             aria-selected={choice === current}
             className={menu.option}
             tabIndex={-1}
+            onMouseEnter={() => setActiveKey(keyOf(choice))}
             onMouseDown={(event) => {
               event.preventDefault()
               command(choice)

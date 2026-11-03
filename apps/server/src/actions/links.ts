@@ -98,7 +98,7 @@ export const linkActions = [
         title: link.title,
         path: [...pathOf(link.sourcePageId)],
         fragment: fragmentAround(block?.text ?? '', 0),
-        inSecret: link.documentKind !== 'body'
+        inSecret: link.documentKind === 'secret' || link.documentKind === 'note'
       })
     }
 
@@ -131,7 +131,7 @@ export const linkActions = [
         title: byId.get(doc.pageId)?.title ?? '',
         path: [...pathOf(doc.pageId)],
         fragment: fragmentAround(doc.text ?? '', found.index, found.name.length),
-        inSecret: doc.kind !== 'body'
+        inSecret: doc.kind === 'secret' || doc.kind === 'note'
       })
     }
     return { incoming, outgoing, mentions }

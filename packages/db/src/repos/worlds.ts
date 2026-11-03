@@ -91,3 +91,9 @@ export type WorldAppearance = Partial<{
 export function updateWorld(db: Database, context: OperationContext, worldId: string, patch: WorldAppearance) {
   return operation(db, context, (w) => w.update(worlds, worldId, patch))
 }
+
+/** La página de portada elegida de un mundo (puede estar borrada: quien la usa lo comprueba) */
+export async function homePageOf(db: Database, worldId: string) {
+  const [found] = await db.select({ homePageId: worlds.homePageId }).from(worlds).where(eq(worlds.id, worldId))
+  return found?.homePageId ?? null
+}

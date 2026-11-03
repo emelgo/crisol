@@ -88,7 +88,7 @@ export async function searchWorld(env: ActionEnv, input: SearchInput) {
         .map((section) => ({
           heading: section.heading,
           headingId: section.headingId,
-          secret: section.kind !== 'body',
+          secret: section.kind === 'secret' || section.kind === 'note',
           excerpt: section.excerpt
         }))
     }))

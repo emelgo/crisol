@@ -204,6 +204,48 @@
       "when": 1793395528396,
       "tag": "0028_etiquetas_de_la_cuenta",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1793623286651,
+      "tag": "0029_pestanas_y_mapas",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1793627271310,
+      "tag": "0030_portada_del_mundo",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1793644893976,
+      "tag": "0031_panel_de_la_pagina",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1793696358343,
+      "tag": "0032_pestanas_de_texto",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1793697297530,
+      "tag": "0033_color_de_pestana",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1793705961687,
+      "tag": "0034_indice_documento_de_pestana",
+      "breakpoints": true
     }
   ]
 }

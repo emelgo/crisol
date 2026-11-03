@@ -5,6 +5,7 @@ import type { Database } from '../client.ts'
 import { type OperationContext, operation, type Transaction } from '../operation.ts'
 import { documents } from '../schema/documents.ts'
 import { pages } from '../schema/pages.ts'
+import { worlds } from '../schema/worlds.ts'
 import { type DocumentState, recordVersion } from './versions.ts'
 
 const summaryColumns = {
@@ -41,6 +42,7 @@ export async function findPage(db: Database, pageId: string) {
       locked: pages.locked,
       cover: pages.cover,
       sheet: pages.sheet,
+      panel: pages.panel,
       updatedAt: pages.updatedAt,
       hasChildren
     })
@@ -182,6 +184,41 @@ export function createPage(
   })
 }
 
+/**
+ * La página de portada de un mundo (como la «Home» de Everlore): la primera de lo más alto, y el mundo la apunta. En
+ * una sola operación, así deshacerla quita las dos cosas
+ */
+/**
+ * Crea la portada del mundo, salvo si otra petición a la vez ya la creó (el mundo, bloqueado mientras): entonces
+ * devuelve esa, sin crear nada (created: false)
+ */
+export function createHomePage(db: Database, context: OperationContext, input: { worldId: string; title: string }) {
+  return operation(db, context, async (w) => {
+    const [world] = await w.read
+      .select({ home: worlds.homePageId })
+      .from(worlds)
+      .where(eq(worlds.id, input.worldId))
+      .for('update')
+    if (world?.home) {
+      const [existing] = await w.read
+        .select()
+        .from(pages)
+        .where(and(eq(pages.id, world.home), isNull(pages.deletedAt)))
+      if (existing) return { page: existing, created: false }
+    }
+    const [first] = await w.read
+      .select({ id: pages.id })
+      .from(pages)
+      .where(and(inBranch(input.worldId, null), isNull(pages.deletedAt)))
+      .orderBy(...byPosition)
+      .limit(1)
+    const position = await placeKey(w.read, input.worldId, { parentId: null, ...(first ? { before: first.id } : {}) })
+    const page = await w.insert(pages, { worldId: input.worldId, parentId: null, position, title: input.title })
+    await w.update(worlds, input.worldId, { homePageId: page.id })
+    return { page, created: true }
+  })
+}
+
 export function updatePage(
   db: Database,
   context: OperationContext,
@@ -193,6 +230,7 @@ export function updatePage(
     locked?: boolean
     cover?: { fileId: string; x: number; y: number; zoom?: number } | null
     sheet?: Record<string, unknown> | null
+    panel?: unknown[]
   }
 ) {
   return operation(db, context, (w) => w.update(pages, pageId, patch))
@@ -235,6 +273,32 @@ export function movePage(
   return operation(db, context, async (w) => {
     const position = await placeKey(w.read, input.worldId, input.placement, pageId)
     return w.update(pages, pageId, { parentId: input.placement.parentId, position })
+  })
+}
+
+/**
+ * Ordena las subpáginas de una página (o el primer nivel) por título, de la A a la Z o al revés, en una sola operación.
+ * La portada del mundo, si está entre ellas, se queda la primera
+ */
+export function sortChildren(
+  db: Database,
+  context: OperationContext,
+  input: { worldId: string; parentId: string | null; order: 'asc' | 'desc'; keepFirst: string | null }
+) {
+  return operation(db, context, async (w) => {
+    const children = await listChildren(w.read as unknown as Database, input.worldId, input.parentId)
+    const collator = new Intl.Collator('es', { sensitivity: 'base', numeric: true })
+    const sorted = [...children].sort((a, b) =>
+      input.order === 'asc' ? collator.compare(a.title, b.title) : collator.compare(b.title, a.title)
+    )
+    const first = sorted.findIndex((child) => child.id === input.keepFirst)
+    if (first > 0) sorted.unshift(...sorted.splice(first, 1))
+    let previous: string | null = null
+    for (const child of sorted) {
+      previous = keyBetween(previous, null)
+      await w.update(pages, child.id, { position: previous })
+    }
+    return sorted.length
   })
 }
 

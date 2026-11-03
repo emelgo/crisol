@@ -1,6 +1,7 @@
 import type { Page, WikiPreferences } from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
+import { Bookmark, BookmarkCheck, Folder, Plus } from 'lucide-react'
 import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
@@ -9,10 +10,8 @@ import { useAnnounce } from '../components/announcer.tsx'
 import { BusyButton } from '../components/busy-button.tsx'
 import { FormError } from '../components/field.tsx'
 import { focusOnMount, useReturnFocus } from '../components/focus.ts'
-import form from '../components/form.module.css'
 import list from '../components/list.module.css'
 import styles from './navigation.module.css'
-import { childrenKey } from './tree.tsx'
 
 /** Cuántas pestañas sin fijar se quedan abiertas: al abrir otra, se cierra la más antigua */
 const LOOSE_TABS = 8
@@ -74,8 +73,12 @@ export function OpenTabs({
 }) {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const { preferences, saveTabs } = usePreferences(worldId)
   const tabs = preferences?.tabs
+  // Recolocar arrastrando: la que se lleva y sobre cuál va
+  const [dragging, setDragging] = useState<string | null>(null)
+  const [over, setOver] = useState<string | null>(null)
 
   // La página abierta entra en las pestañas; si sobran sin fijar, se va la más antigua
   const currentId = current?.id
@@ -92,12 +95,27 @@ export function OpenTabs({
     const rest = tabs.filter((tab) => tab.pageId !== pageId)
     saveTabs(rest)
     if (pageId !== currentId) return
-    const neighbour = rest.at(-1)
+    // A la de al lado; si no queda ninguna, a la portada del mundo por la misma vista (sin rehacer la pantalla)
+    const home = queryClient.getQueryData<{ pageId: string | null }>(['pages', worldId, 'home'])?.pageId
+    const next = rest.at(-1)?.pageId ?? home
+    if (next === pageId) return
     void navigate(
-      neighbour
-        ? { to: '/mundos/$worldId/wiki/$pageId', params: { worldId, pageId: neighbour.pageId } }
-        : { to: '/mundos/$worldId/wiki', params: { worldId } }
+      next
+        ? { to: '/mundos/$worldId/wiki/$pageId', params: { worldId, pageId: next } }
+        : { to: '/mundos/$worldId', params: { worldId } }
     )
+  }
+  /** Pone una pestaña en el sitio de otra (las fijadas siguen delante) */
+  const moveTab = (pageId: string, target: string) => {
+    if (pageId === target) return
+    const list = ordered(tabs)
+    const from = list.findIndex((tab) => tab.pageId === pageId)
+    const to = list.findIndex((tab) => tab.pageId === target)
+    if (from < 0 || to < 0) return
+    const next = [...list]
+    const [moved] = next.splice(from, 1)
+    if (moved) next.splice(to, 0, moved)
+    saveTabs(ordered(next))
   }
   const togglePin = (pageId: string) =>
     saveTabs(ordered(tabs.map((tab) => (tab.pageId === pageId ? { ...tab, pinned: !tab.pinned } : tab))))
@@ -107,11 +125,47 @@ export function OpenTabs({
       {compact && <h3>{t('tabs.recent')}</h3>}
       <ul>
         {ordered(tabs).map((tab) => (
-          <li key={tab.pageId} data-current={tab.pageId === currentId || undefined}>
+          <li
+            key={tab.pageId}
+            data-current={tab.pageId === currentId || undefined}
+            data-dragging={dragging === tab.pageId || undefined}
+            data-over={(over === tab.pageId && dragging !== tab.pageId) || undefined}
+            draggable={!compact}
+            onDragStart={(event) => {
+              setDragging(tab.pageId)
+              event.dataTransfer.effectAllowed = 'move'
+              event.dataTransfer.setData('text/plain', tab.title)
+            }}
+            onDragEnd={() => {
+              setDragging(null)
+              setOver(null)
+            }}
+            onDragOver={(event) => {
+              if (!dragging) return
+              event.preventDefault()
+              setOver(tab.pageId)
+            }}
+            onDrop={(event) => {
+              event.preventDefault()
+              if (dragging) moveTab(dragging, tab.pageId)
+              setDragging(null)
+              setOver(null)
+            }}
+          >
             <Link
               to="/mundos/$worldId/wiki/$pageId"
               params={{ worldId, pageId: tab.pageId }}
               aria-current={tab.pageId === currentId ? 'page' : undefined}
+              draggable={false}
+              // Alt + flechas: la pestaña, a la izquierda o a la derecha
+              onKeyDown={(event) => {
+                if (compact || !event.altKey || (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight')) return
+                event.preventDefault()
+                const list = ordered(tabs)
+                const index = list.findIndex((other) => other.pageId === tab.pageId)
+                const target = list[index + (event.key === 'ArrowLeft' ? -1 : 1)]
+                if (target) moveTab(tab.pageId, target.pageId)
+              }}
             >
               {tab.title}
             </Link>
@@ -187,8 +241,22 @@ export function BookmarkButton({ page }: { page: Page }) {
   const announce = useAnnounce()
   const { preferences, saveBookmarks } = usePreferences(page.worldId)
   const button = useReturnFocus()
-  const groupId = useId()
   const [choosing, setChoosing] = useState(false)
+  const wrap = useRef<HTMLDivElement>(null)
+  const close = () => {
+    setChoosing(false)
+    // «Marcar» sigue montado (useReturnFocus solo enfoca al volver a montarse): el foco vuelve a él aquí
+    wrap.current?.querySelector<HTMLButtonElement>('button')?.focus()
+  }
+  // Abierta, pulsar fuera la cierra
+  useEffect(() => {
+    if (!choosing) return
+    const outside = (event: Event) => {
+      if (!wrap.current?.contains(event.target as Node)) setChoosing(false)
+    }
+    document.addEventListener('pointerdown', outside)
+    return () => document.removeEventListener('pointerdown', outside)
+  }, [choosing])
   if (!preferences) return null
   const groups = preferences.bookmarks.map((group) => ({ name: group.name, pages: group.pages.map((p) => p.id) }))
   const marked = groups.some((group) => group.pages.includes(page.id))
@@ -213,6 +281,9 @@ export function BookmarkButton({ page }: { page: Page }) {
       <BusyButton
         ref={button.ref}
         className={list.secondary}
+        aria-label={t('bookmarks.remove')}
+        title={t('bookmarks.remove')}
+        aria-pressed
         busy={saveBookmarks.isPending}
         onClick={() =>
           save(
@@ -221,109 +292,67 @@ export function BookmarkButton({ page }: { page: Page }) {
           )
         }
       >
-        {t('bookmarks.remove')}
+        <BookmarkCheck aria-hidden="true" size={18} />
       </BusyButton>
     )
   }
-  if (!choosing) {
-    return (
+  return (
+    <div ref={wrap} className={styles.bookmarkWrap} data-action-wrap="">
       <BusyButton
         ref={button.ref}
         className={list.secondary}
+        aria-label={t('bookmarks.add')}
+        title={t('bookmarks.add')}
+        aria-expanded={groups.length > 0 ? choosing : undefined}
         busy={saveBookmarks.isPending}
-        onClick={() => (groups.length === 0 ? addTo(t('bookmarks.defaultGroup')) : setChoosing(true))}
+        onClick={() => (groups.length === 0 ? addTo(t('bookmarks.defaultGroup')) : setChoosing(!choosing))}
       >
-        {t('bookmarks.add')}
+        <Bookmark aria-hidden="true" size={18} />
       </BusyButton>
-    )
-  }
-  return (
-    <form
-      className={styles.choose}
-      onSubmit={(event) => {
-        event.preventDefault()
-        const data = new FormData(event.currentTarget)
-        const name = String(data.get('nuevo') ?? '').trim() || String(data.get('grupo') ?? '')
-        if (name) addTo(name)
-      }}
-      onKeyDown={(event) => {
-        if (event.key === 'Escape') {
-          button.back()
-          setChoosing(false)
-        }
-      }}
-    >
-      <fieldset>
-        <legend>{t('bookmarks.chooseGroup')}</legend>
-        {groups.map((group, index) => (
-          <label key={group.name} className={styles.option}>
-            <input
-              type="radio"
-              name="grupo"
-              value={group.name}
-              defaultChecked={index === 0}
-              ref={index === 0 ? focusOnMount : undefined}
-            />
-            {group.name}
-          </label>
-        ))}
-      </fieldset>
-      <div className={form.field}>
-        <label htmlFor={groupId}>{t('bookmarks.newGroup')}</label>
-        <input id={groupId} name="nuevo" maxLength={60} autoComplete="off" />
-      </div>
-      <FormError message={saveBookmarks.error ? errorText(saveBookmarks.error) : null} />
-      <div className={list.actions}>
-        <BusyButton type="submit" className={form.button} busy={saveBookmarks.isPending}>
-          {t('bookmarks.save')}
-        </BusyButton>
-        <button
-          type="button"
-          className={list.secondary}
-          onClick={() => {
-            button.back()
-            setChoosing(false)
+      {choosing && (
+        // biome-ignore lint/a11y/useSemanticElements: un desplegable (ARIA), no un grupo de un formulario
+        <div
+          className={styles.bookmarkMenu}
+          role="group"
+          aria-label={t('bookmarks.chooseGroup')}
+          onKeyDown={(event) => {
+            if (event.key === 'Escape') close()
           }}
         >
-          {t('list.cancel')}
-        </button>
-      </div>
-    </form>
-  )
-}
-
-/** La anterior y la siguiente entre sus hermanas, en el orden del árbol */
-export function SiblingNav({ page }: { page: Page }) {
-  const { t } = useTranslation()
-  const api = useApi()
-  const siblings = useQuery({
-    queryKey: childrenKey(page.worldId, page.parentId),
-    queryFn: () => api.call('listPageChildren', { worldId: page.worldId, parentId: page.parentId })
-  })
-  const sisters = siblings.data?.pages ?? []
-  const at = sisters.findIndex((sibling) => sibling.id === page.id)
-  const previous = at > 0 ? sisters[at - 1] : undefined
-  const next = at >= 0 ? sisters[at + 1] : undefined
-  if (!previous && !next) return null
-  return (
-    <nav aria-label={t('siblings.title')} className={styles.siblings}>
-      {previous && (
-        <Link to="/mundos/$worldId/wiki/$pageId" params={{ worldId: page.worldId, pageId: previous.id }} rel="prev">
-          <span>{t('siblings.previous')}</span>
-          {previous.title}
-        </Link>
+          <p className={styles.bookmarkLabel}>{t('bookmarks.chooseGroup')}</p>
+          <ul className={styles.bookmarkGroups}>
+            {groups.map((group, index) => (
+              <li key={group.name}>
+                <button type="button" ref={index === 0 ? focusOnMount : undefined} onClick={() => addTo(group.name)}>
+                  <Folder aria-hidden="true" size={14} />
+                  <span>{group.name}</span>
+                  <span className={styles.bookmarkCount}>{group.pages.length}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+          <form
+            className={styles.bookmarkNew}
+            onSubmit={(event) => {
+              event.preventDefault()
+              const name = String(new FormData(event.currentTarget).get('nuevo') ?? '').trim()
+              if (name) addTo(name)
+            }}
+          >
+            <input
+              name="nuevo"
+              maxLength={60}
+              autoComplete="off"
+              placeholder={t('bookmarks.newGroup')}
+              aria-label={t('bookmarks.newGroup')}
+            />
+            <button type="submit" aria-label={t('bookmarks.createGroup')} title={t('bookmarks.createGroup')}>
+              <Plus aria-hidden="true" size={14} />
+            </button>
+          </form>
+          <FormError message={saveBookmarks.error ? errorText(saveBookmarks.error) : null} />
+        </div>
       )}
-      {next && (
-        <Link
-          to="/mundos/$worldId/wiki/$pageId"
-          params={{ worldId: page.worldId, pageId: next.id }}
-          rel="next"
-          className={styles.next}
-        >
-          <span>{t('siblings.next')}</span>
-          {next.title}
-        </Link>
-      )}
-    </nav>
+    </div>
   )
 }

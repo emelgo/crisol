@@ -1,6 +1,6 @@
 import type { Campaign, World } from '@crisol/contracts'
 import { createMemoryHistory } from '@tanstack/react-router'
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { fakeAccountClient } from '../account/fake.ts'
@@ -59,12 +59,11 @@ describe('el Inicio de un mundo', () => {
     expect(router.state.location.pathname).toBe(`/mundos/${w.id}`)
   })
 
-  it('la cabecera lleva su nombre, su descripción, el papel y, para su máster, el engranaje', async () => {
+  it('su cabecera, como portada de su página de portada, lleva el engranaje para su máster (sin papel)', async () => {
     const w = world('master', { description: 'Tierra de dragones' })
     renderAt(`/mundos/${w.id}`, fakeApi({ organizations: [ORG], worlds: [w] }))
     expect(await screen.findByRole('heading', { level: 1, name: 'Eana' })).toBeDefined()
-    expect(screen.getByText('Tierra de dragones')).toBeDefined()
-    expect(screen.getByText('Máster')).toBeDefined()
+    expect(screen.queryByText('Máster')).toBeNull()
     expect(screen.getByRole('button', { name: 'Ajustes de Eana' })).toBeDefined()
   })
 
@@ -72,13 +71,15 @@ describe('el Inicio de un mundo', () => {
     const w = world()
     const api = fakeApi({ organizations: [ORG], worlds: [w] })
     renderAt(`/mundos/${w.id}`, api)
+    await screen.findByRole('heading', { level: 1, name: 'Eana' })
     await userEvent.click(await screen.findByRole('button', { name: 'Ajustes de Eana' }))
     const dialog = within(await screen.findByRole('dialog', { name: 'Ajustes de Eana' }))
     const input = dialog.getByLabelText('Nombre del mundo')
     await userEvent.clear(input)
     await userEvent.type(input, 'Eana (Fateforge)')
     await userEvent.click(dialog.getByRole('button', { name: 'Guardar' }))
-    expect(await screen.findByRole('heading', { level: 1, name: 'Eana (Fateforge)' })).toBeDefined()
+    // Sobre el título de su portada, el mundo con su nombre nuevo
+    expect((await screen.findAllByText('Eana (Fateforge)')).length).toBeGreaterThan(0)
     expect(api.calls).toContain('updateWorld')
   })
 
@@ -86,6 +87,7 @@ describe('el Inicio de un mundo', () => {
     const w = world()
     const api = fakeApi({ organizations: [ORG], worlds: [w] })
     const router = renderAt(`/mundos/${w.id}`, api)
+    await screen.findByRole('heading', { level: 1, name: 'Eana' })
     await userEvent.click(await screen.findByRole('button', { name: 'Ajustes de Eana' }))
     const settings = within(await screen.findByRole('dialog', { name: 'Ajustes de Eana' }))
     const zone = within(settings.getByRole('region', { name: 'Zona de peligro' }))
@@ -98,39 +100,20 @@ describe('el Inicio de un mundo', () => {
     expect(api.calls).toContain('deleteWorld')
   })
 
-  it('lo último de la wiki: lo más reciente primero, con su camino, y cada página lleva a ella', async () => {
+  it('el Inicio abre la portada del mundo (como en Everlore): se crea sola con su nombre, la primera del árbol', async () => {
     const w = world()
-    const ids = { places: crypto.randomUUID(), coast: crypto.randomUUID(), port: crypto.randomUUID() }
-    const api = fakeApi({
-      organizations: [ORG],
-      worlds: [w],
-      pages: [
-        { id: ids.places, worldId: w.id, title: 'Lugares' },
-        { id: ids.coast, worldId: w.id, parentId: ids.places, title: 'Costa Gris' },
-        { id: ids.port, worldId: w.id, parentId: ids.coast, title: 'Puerto Ceniza' }
-      ]
-    })
-    const router = renderAt(`/mundos/${w.id}`, api)
-    expect(await screen.findByRole('heading', { level: 2, name: 'Últimos artículos' })).toBeDefined()
-    const list = within(await screen.findByRole('list', { name: 'Páginas cambiadas hace poco' }))
-    expect(list.getAllByRole('link').map((link) => link.textContent)).toEqual([
-      expect.stringMatching(/^Puerto Ceniza/),
-      expect.stringMatching(/^Costa Gris/),
-      expect.stringMatching(/^Lugares/)
-    ])
-    const port = list.getByRole('link', { name: /^Puerto Ceniza/ })
-    expect(within(port).getByText('Lugares › Costa Gris')).toBeDefined()
-    await userEvent.click(port)
-    expect(await screen.findByRole('heading', { level: 1, name: 'Puerto Ceniza' })).toBeDefined()
-    expect(router.state.location.pathname).toBe(`/mundos/${w.id}/wiki/${ids.port}`)
-    expect(api.calls).toContain('listRecentPages')
-  })
-
-  it('sin páginas, lo dice (a la wiki se va por la barra)', async () => {
-    const w = world()
-    renderAt(`/mundos/${w.id}`, fakeApi({ organizations: [ORG], worlds: [w] }))
-    expect(await screen.findByText('Aún no hay artículos.')).toBeDefined()
-    expect(screen.queryByRole('link', { name: 'Abrir la wiki' })).toBeNull()
+    const api = fakeApi({ organizations: [ORG], worlds: [w], pages: [{ worldId: w.id, title: 'Lugares' }] })
+    renderAt(`/mundos/${w.id}`, api)
+    expect(await screen.findByRole('heading', { level: 1, name: 'Eana' })).toBeDefined()
+    expect(api.calls).toContain('ensureWorldHome')
+    const tree = within(await screen.findByRole('tree', { name: 'Páginas' }))
+    await waitFor(() =>
+      expect(tree.getAllByRole('treeitem').map((item) => item.textContent)).toEqual(['Eana', 'Lugares'])
+    )
+    expect(tree.getByRole('treeitem', { name: 'Eana' }).getAttribute('aria-current')).toBe('page')
+    // No se borra: en «⋯» no está «Borrar»
+    await userEvent.click(screen.getByRole('button', { name: 'Más acciones' }))
+    expect(screen.queryByRole('button', { name: 'Borrar' })).toBeNull()
   })
 
   it('quien juega ve sus campañas, sin engranaje ni lo de la wiki', async () => {
@@ -147,29 +130,29 @@ describe('el Inicio de un mundo', () => {
     expect(list.getByText('Jugador')).toBeDefined()
     expect(screen.queryByRole('button', { name: /^Ajustes de/ })).toBeNull()
     expect(screen.queryByRole('heading', { name: 'Últimos artículos' })).toBeNull()
-    // En la barra, Inicio y Campañas, pero no la wiki
+    // En la barra, Inicio, pero no las páginas del mundo
     expect(await ribbon().findByRole('link', { name: 'Inicio' })).toBeDefined()
-    expect(ribbon().getByRole('link', { name: 'Campañas' })).toBeDefined()
-    expect(ribbon().queryByRole('button', { name: 'Wiki' })).toBeNull()
+    expect(ribbon().queryByRole('button', { name: 'Páginas' })).toBeNull()
   })
 
-  it('dentro de un mundo, la barra empieza por Inicio y Campañas, y siguen la wiki y los archivos', async () => {
+  it('dentro de un mundo que se dirige, la barra lleva el mundo (sus páginas) y Archivos', async () => {
     const w = world()
     const router = renderAt(`/mundos/${w.id}`, fakeApi({ organizations: [ORG], worlds: [w] }))
     await screen.findByRole('heading', { level: 1, name: 'Eana' })
-    const home = await ribbon().findByRole('link', { name: 'Inicio' })
-    expect(home.getAttribute('aria-current')).toBe('page')
-    const items = [...screen.getByRole('navigation', { name: 'Secciones' }).querySelectorAll('a, button')]
-      .map((item) => item.textContent)
-      .filter(Boolean)
+    await screen.findByRole('tree', { name: 'Páginas' })
+    const items = () =>
+      [...screen.getByRole('navigation', { name: 'Secciones' }).querySelectorAll('a, button')]
+        .map((item) => item.textContent)
+        .filter(Boolean)
     // La llama no tiene texto (lleva su nombre como etiqueta)
-    expect(items).toEqual(['Inicio', 'Campañas', 'Wiki', 'Archivos'])
+    expect(items()).toEqual(['Eana', 'Archivos'])
 
-    await userEvent.click(ribbon().getByRole('link', { name: 'Campañas' }))
-    expect(await screen.findByRole('heading', { level: 1, name: 'Campañas' })).toBeDefined()
-    expect(router.state.location.pathname).toBe(`/mundos/${w.id}/campanas`)
-    expect(ribbon().getByRole('link', { name: 'Campañas' }).getAttribute('aria-current')).toBe('page')
-    await userEvent.click(ribbon().getByRole('link', { name: 'Inicio' }))
+    // Los archivos, en su pantalla
+    await userEvent.click(ribbon().getByRole('link', { name: 'Archivos' }))
+    await waitFor(() => expect(router.state.location.pathname).toBe(`/mundos/${w.id}/archivos`))
+    // Desde Archivos, el mundo en la barra vuelve a su portada
+    await userEvent.click(ribbon().getByRole('button', { name: 'Eana' }))
+    await screen.findByRole('treeitem', { name: 'Eana' })
     expect(await screen.findByRole('heading', { level: 1, name: 'Eana' })).toBeDefined()
   })
 

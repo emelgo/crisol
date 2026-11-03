@@ -7,11 +7,11 @@
   color: var(--color-muted);
 }
 
-.break::before,
-.break::after {
+/* Una raya fina, discontinua, y su nombre a la derecha (como la marca de página de la hoja, pero puesta a mano) */
+.break::before {
   content: "";
   flex: 1 1 auto;
-  border-block-start: 2px dashed var(--color-border);
+  border-block-start: 1px dashed var(--color-border);
 }
 
 .break[data-selected],
@@ -25,6 +25,12 @@
   font-family: var(--font-body);
   font-size: 0.8125rem;
   font-weight: 700;
+}
+
+.break .breakLabel {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
 }
 
 .label {
@@ -79,4 +85,18 @@
 .empty {
   margin: 0;
   color: var(--color-muted);
+}
+
+/* Un cambio de columnas: sin alto (no ocupa sitio en la hoja); una raya discontinua con su rótulo, encima */
+/* El cambio de columnas: la raya del salto, en el color de acento (no corta la página, solo cambia las columnas) */
+.columns {
+  color: var(--color-accent-text);
+}
+
+.columns::before {
+  border-block-start-color: color-mix(in srgb, var(--color-accent-text) 55%, transparent);
+}
+
+.columns[data-selected]::before {
+  border-block-start-style: solid;
 }

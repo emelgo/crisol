@@ -1,23 +1,22 @@
-import { expect, type Page, test } from '@playwright/test'
-import { campaignLink, closeWindow, openWindow, rename, sections } from './ayudas.ts'
-
-/** Va a la pestaña Campañas del mundo abierto */
-async function campaigns(page: Page) {
-  await sections(page).getByRole('link', { name: 'Campañas' }).click()
-  await expect(page.getByRole('heading', { level: 1, name: 'Campañas' })).toBeVisible()
-}
+import { expect, test } from '@playwright/test'
+import { campaignLink, closeWindow, openWindow, openWorld, rename, toWorlds } from './ayudas.ts'
 
 test('el propietario ve en el historial lo que ha hecho, en el mundo y en toda la organización', async ({ page }) => {
   await campaignLink(page)
   await page.getByRole('button', { name: 'Nuevo enlace' }).click()
   await page.getByRole('button', { name: 'Generar el nuevo' }).click()
-  await campaigns(page)
+  // Las campañas, en Mis mundos; el historial del mundo, dentro de él
+  await toWorlds(page)
   await rename(page, 'campaña', 'La Marca', 'La Marca del Este')
+  await openWorld(page, 'Eana')
 
   const history = await openWindow(page, 'Historial')
   await expect(history.getByRole('heading', { level: 1, name: 'Historial de Eana' })).toBeVisible()
   const entries = history.getByRole('list', { name: 'Operaciones' }).getByRole('listitem')
+  // Al entrar en el mundo se creó su portada, con su texto de bienvenida
   await expect(entries).toHaveText([
+    /^Enrique cambió la página «Eana»/,
+    /^Enrique creó la portada del mundo, «Eana»/,
     /^Enrique renombró la campaña «La Marca» a «La Marca del Este».*· web/,
     /^Enrique generó un enlace nuevo para La Marca/,
     /^Enrique creó la campaña «La Marca» en Eana/,
@@ -29,14 +28,14 @@ test('el propietario ve en el historial lo que ha hecho, en el mundo y en toda l
   const all = await openWindow(page, 'Historial')
   await expect(all.getByRole('heading', { level: 1, name: 'Historial' })).toBeVisible()
   const allEntries = all.getByRole('list', { name: 'Operaciones' }).getByRole('listitem')
-  await expect(allEntries).toHaveCount(6)
+  await expect(allEntries).toHaveCount(9)
   await expect(allEntries.last()).toHaveText(/^Crisol creó la organización «Fateforge»/)
-  await expect(allEntries.nth(4)).toHaveText(/^Enrique entró como propietario/)
+  await expect(allEntries.filter({ hasText: /^Enrique entró como propietario/ })).toHaveCount(1)
 })
 
 test('el máster deshace crear una campaña y lo rehace; si algo cambió después, se le dice qué', async ({ page }) => {
   await campaignLink(page)
-  await campaigns(page)
+  await toWorlds(page)
   let history = await openWindow(page, 'Historial')
   await history.getByRole('button', { name: 'Deshacer: creó la campaña «La Marca» en Eana' }).click()
   const entries = history.getByRole('list', { name: 'Operaciones' }).getByRole('listitem')

@@ -21,6 +21,17 @@ import {
 } from './files.ts'
 import { listHistory, undoOperation } from './history.ts'
 import { getInvitation, regenerateInvitation, setInvitationsOpen } from './invitations.ts'
+import {
+  createMapPin,
+  createPageTab,
+  deleteMapPin,
+  deletePageTab,
+  getMap,
+  listPageTabs,
+  updateMap,
+  updateMapPin,
+  updatePageTab
+} from './maps.ts'
 import { leaveCampaign, listMembers, removeMember } from './members.ts'
 import { listOrganizations } from './organizations.ts'
 import {
@@ -45,9 +56,11 @@ import {
   readPage,
   restorePageVersion,
   setBookmarks,
+  setPagePanel,
   setPageProperties,
   setPageView,
   setWikiTabs,
+  sortPageChildren,
   updatePage
 } from './pages.ts'
 import { searchWiki } from './search.ts'
@@ -61,7 +74,7 @@ import {
   restorePage,
   restoreWorld
 } from './trash.ts'
-import { createWorld, listWorlds, renameWorld, updateWorld } from './worlds.ts'
+import { createWorld, ensureWorldHome, getWorldHome, listWorlds, renameWorld, updateWorld } from './worlds.ts'
 
 export * from './action.ts'
 export * from './ai.ts'
@@ -69,10 +82,12 @@ export * from './campaigns.ts'
 export * from './files.ts'
 export * from './history.ts'
 export * from './invitations.ts'
+export * from './maps.ts'
 export * from './members.ts'
 export * from './openapi.ts'
 export * from './organizations.ts'
 export * from './pages.ts'
+export * from './panel.ts'
 export type * from './realtime.ts'
 export * from './search.ts'
 export * from './tags.ts'
@@ -117,6 +132,8 @@ export const ACTIONS = [
   listPageChildren,
   listPageTree,
   listRecentPages,
+  setPagePanel,
+  sortPageChildren,
   setPageProperties,
   listTags,
   deletePage,
@@ -152,7 +169,18 @@ export const ACTIONS = [
   createTag,
   updateTag,
   deleteTag,
-  setFileTags
+  setFileTags,
+  listPageTabs,
+  createPageTab,
+  updatePageTab,
+  deletePageTab,
+  getMap,
+  updateMap,
+  createMapPin,
+  updateMapPin,
+  deleteMapPin,
+  getWorldHome,
+  ensureWorldHome
 ]
 
 /** Las acciones por nombre, solo como tipo: la web las usa sin cargar zod */
@@ -193,6 +221,8 @@ export type Actions = {
   listPageChildren: typeof listPageChildren
   listPageTree: typeof listPageTree
   listRecentPages: typeof listRecentPages
+  setPagePanel: typeof setPagePanel
+  sortPageChildren: typeof sortPageChildren
   setPageProperties: typeof setPageProperties
   listTags: typeof listTags
   deletePage: typeof deletePage
@@ -228,5 +258,16 @@ export type Actions = {
   updateTag: typeof updateTag
   deleteTag: typeof deleteTag
   setFileTags: typeof setFileTags
+  listPageTabs: typeof listPageTabs
+  createPageTab: typeof createPageTab
+  updatePageTab: typeof updatePageTab
+  deletePageTab: typeof deletePageTab
+  getMap: typeof getMap
+  updateMap: typeof updateMap
+  createMapPin: typeof createMapPin
+  updateMapPin: typeof updateMapPin
+  deleteMapPin: typeof deleteMapPin
+  getWorldHome: typeof getWorldHome
+  ensureWorldHome: typeof ensureWorldHome
   searchWiki: typeof searchWiki
 }

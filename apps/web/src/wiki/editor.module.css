@@ -12,9 +12,10 @@
   overflow-wrap: break-word;
 }
 
+/* Escribiendo, sin recuadro (como en Everlore): el cursor y el asa de la línea dicen dónde se está; el hueco de
+   debajo sigue ahí para pulsar, sin verse */
 .prose:focus-visible {
-  outline: 2px solid var(--color-focus);
-  outline-offset: var(--space-2);
+  outline: none;
 }
 
 .prose > * + * {
@@ -104,43 +105,28 @@
   color: var(--color-muted);
 }
 
-/* Lo que se puede meter en el cuerpo (hasta que llegue el menú «/») */
-/* Encima del texto: insertar y buscar en la página, en una línea fina y sin cajas */
-.editorBar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-1);
-  margin-block-end: var(--space-3);
-  padding-block-end: var(--space-1);
-  border-block-end: 1px solid var(--color-border);
-}
-
-.toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-1);
-}
-
-.tool {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  min-block-size: 2rem;
-  padding: 0 0.5rem;
-  border: 0;
-  border-radius: 4px;
-  background: transparent;
+/* Se guarda solo: el aviso, discreto, abajo a la derecha */
+.saveState {
+  margin: 0;
   color: var(--color-muted);
-  font-family: var(--font-body);
-  font-size: 0.875rem;
-  font-weight: 600;
-  cursor: pointer;
+  font-size: 0.75rem;
+  white-space: nowrap;
 }
 
-.tool:hover {
-  background: color-mix(in srgb, var(--color-text) 8%, transparent);
-  color: var(--color-text);
+/* En el móvil, encima de la llama del menú */
+@media (max-width: 48rem) {
+  .saveState {
+    inset-block-end: calc(5rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* El texto vacío: qué hacer, en gris, sin que se pueda elegir */
+.emptyHint::before {
+  content: attr(data-placeholder);
+  float: inline-start;
+  block-size: 0;
+  color: var(--color-field-border);
+  pointer-events: none;
 }
 
 /* Lo que acaba de escribir Claude: un fondo azul que se va */
@@ -155,4 +141,45 @@
   to {
     background-color: transparent;
   }
+}
+
+/* El texto no se ve vacío mientras llega: aparece entero, con un fundido */
+.body > [aria-busy] {
+  transition: opacity 200ms ease-out;
+}
+
+.body[data-loading] > [aria-busy] {
+  /* Fuera de la vista hasta que llega: en su sitio está el texto guardado */
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.body {
+  position: relative;
+}
+
+.stored > * {
+  min-block-size: 0;
+}
+
+/* La caja (y en Everlore, el cuadro de texto): un marco fino, redondeado y apenas tintado, con su texto dentro */
+.prose [data-box] {
+  margin-block: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: 0.625rem;
+  background: color-mix(in srgb, var(--color-text) 3%, transparent);
+}
+
+.prose [data-box] + [data-box] {
+  margin-block-start: var(--space-3);
+}
+
+/* La línea de más, bajo lo último escrito: vacía, del alto de una línea; pulsarla es escribir en ella */
+.prose > .ghostLine {
+  /* Como un párrafo: sin el hueco de encima de los demás bloques, para salir justo donde saldrá la línea */
+  block-size: 1.6em;
+  margin-block-start: 0;
+  cursor: text;
 }

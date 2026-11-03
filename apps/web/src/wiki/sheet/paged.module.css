@@ -1,0 +1,111 @@
+/* La hoja al escribir: sus páginas, con los colores de la app (sin el papel del tema), y el texto encima */
+.fit {
+  inline-size: 100%;
+  margin-block: var(--space-2) var(--space-6);
+}
+
+/* Más ancho que la columna (sus márgenes quedan fuera): que no estorbe al ratón fuera del texto */
+.paged {
+  position: relative;
+  pointer-events: none;
+}
+
+.text {
+  pointer-events: auto;
+}
+
+/* Donde empieza una página: una raya fina a todo el ancho y, a la derecha, su número (sin hueco: se escribe seguido) */
+.mark {
+  position: absolute;
+  inset-inline: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  transform: translateY(-50%);
+  color: var(--color-muted);
+  font-family: var(--font-body);
+  font-size: 0.6875rem;
+  letter-spacing: 0.02em;
+}
+
+.mark::before {
+  flex: 1;
+  border-block-start: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent);
+  content: "";
+}
+
+.text {
+  position: absolute;
+}
+
+/* El envoltorio del editor, a todo el alto (si no, mediría 0: sus bloques van colocados) */
+.text > div {
+  block-size: 100%;
+}
+
+/* El texto: cada bloque en su sitio (lo coloca SheetLayout); sin el alto mínimo ni el relleno del editor normal */
+.text :global(.ProseMirror) {
+  position: relative;
+  block-size: 100%;
+  min-block-size: 0;
+  padding: 0;
+}
+
+/*
+ * La letra y los tamaños, los de la hoja que se imprime (sheet.module.css): así cada bloque mide lo mismo y cae en la
+ * misma página. Los colores, los de la app
+ */
+.paged {
+  /* Neutro (el de siempre): la letra de la app */
+  --sheet-font: var(--font-body);
+  --sheet-heading-font: var(--font-display);
+}
+
+:global([data-theme="pergamino"]) > * > .paged,
+:global([data-theme="pergamino"]) .paged {
+  --sheet-font: "Alegreya", Georgia, serif;
+  --sheet-heading-font: "Alegreya", Georgia, serif;
+}
+
+.text :global(.ProseMirror) {
+  font-family: var(--sheet-font);
+  /* La de imprimir, a la escala de la vista */
+  font-size: calc(12pt * var(--sheet-k, 1));
+  line-height: 1.35;
+  hyphens: auto;
+  overflow-wrap: break-word;
+}
+
+.text :global(.ProseMirror) > * {
+  margin-block: 0 0.6em;
+}
+
+.text :global(.ProseMirror) :is(h2, h3, h4, h5, h6) {
+  margin: 0.6em 0 0.3em;
+  padding: 0;
+  border: 0;
+  font-family: var(--sheet-heading-font);
+  line-height: 1.15;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.text :global(.ProseMirror) h2 {
+  padding-block-end: 0.15em;
+  border-block-end: 2px solid color-mix(in srgb, var(--color-h2) 45%, transparent);
+  font-size: 1.9em;
+}
+
+.text :global(.ProseMirror) h3 {
+  font-size: 1.45em;
+}
+
+/* Al imprimir, del 3 al 6 salen como el 3 (sheet.tsx): aquí, igual, para que midan lo mismo */
+.text :global(.ProseMirror) :is(h4, h5, h6) {
+  font-size: 1.15em;
+}
+
+/* El primero de cada columna, pegado arriba (como en la hoja) */
+.text :global(.ProseMirror) > :is(h2, h3, h4, h5, h6) {
+  margin-block-start: 0.6em;
+}

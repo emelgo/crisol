@@ -44,7 +44,8 @@ test('con el teclado: el modo de IA con flechas y las invitaciones con espacio, 
 test('al navegar, el foco va al título de la página, y la pestaña lo dice', async ({ page }) => {
   await campaignLink(page)
   await expect(page).toHaveTitle('La Marca · Crisol')
-  await sections(page).getByRole('link', { name: 'Inicio' }).click()
+  // El mundo: su portada
+  await sections(page).getByRole('button', { name: 'Eana' }).click()
   await expect(page.getByRole('heading', { level: 1, name: 'Eana' })).toBeFocused()
   await expect(page).toHaveTitle('Eana · Crisol')
   // La llama de la barra vuelve a Mis mundos
@@ -65,7 +66,7 @@ test('las confirmaciones: el foco va a ellas, vuelve al cancelar y, si algo desa
   await settings.getByRole('button', { name: 'Borrar el mundo' }).first().press('Enter')
   const confirm = page.getByRole('dialog', { name: '¿Borrar «Eana»?' })
   await expect(confirm).toHaveAccessibleDescription(
-    'Irá a la papelera, con sus campañas y su wiki, y se podrá recuperar durante 30 días.'
+    'Irá a la papelera, con sus campañas y sus páginas, y se podrá recuperar durante 30 días.'
   )
   await expect(confirm.getByLabel('Nombre del mundo')).toBeFocused()
   await confirm.getByRole('button', { name: 'Cancelar' }).press('Enter')

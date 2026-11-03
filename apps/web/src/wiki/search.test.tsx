@@ -44,14 +44,15 @@ const renderAt = (path: string) => {
 }
 
 describe('buscar en la wiki', () => {
-  it('desde la caja del lateral: lo buscado va en la dirección, con los resultados, su ruta y lo encontrado', async () => {
+  it('desde el filtro del panel, con Intro: lo buscado va en la dirección, con los resultados, su ruta y lo encontrado', async () => {
+    localStorage.setItem('crisol.recorridos.enrique@crisol.test', JSON.stringify({ seen: ['mundo'] }))
     const router = renderAt(`/mundos/${WORLD.id}/wiki`)
-    // La caja está en el panel de buscar, que se abre con su botón de la barra de la izquierda
-    const sections = within(await screen.findByRole('navigation', { name: 'Secciones' }))
-    // La wiki, y en su panel, la pestaña de buscar
-    await userEvent.click(await sections.findByRole('button', { name: 'Wiki' }))
-    await userEvent.click(await screen.findByRole('tab', { name: 'Buscar' }))
-    await userEvent.type(await screen.findByRole('searchbox', { name: 'Buscar en la wiki' }), 'dragon{Enter}')
+    // El filtro del panel de las páginas: al escribir filtra el árbol; con Intro, busca en el texto de todas
+    await screen.findByRole('treeitem', { name: 'Eana' })
+    await userEvent.type(
+      await screen.findByRole('searchbox', { name: 'Buscar por nombre o #etiqueta' }),
+      'dragon{Enter}'
+    )
     expect(await screen.findByRole('heading', { level: 1, name: 'Buscar en Eana' })).toBeDefined()
     expect(router.state.location.search).toMatchObject({ q: 'dragon' })
     expect(await screen.findByText('1 página coincide con «dragon».')).toBeDefined()
@@ -65,7 +66,7 @@ describe('buscar en la wiki', () => {
     const router = renderAt(`/mundos/${WORLD.id}/buscar?q=xyz&rama=${places}`)
     expect(await screen.findByText('Nada coincide con «xyz».')).toBeDefined()
     expect(await screen.findByText('Solo en «Lugares» y sus subpáginas.')).toBeDefined()
-    await userEvent.click(screen.getByRole('button', { name: 'Buscar en toda la wiki' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Buscar en todas las páginas' }))
     expect(router.state.location.search).toEqual({ q: 'xyz' })
   })
 })

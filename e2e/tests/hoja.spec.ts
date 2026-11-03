@@ -19,12 +19,13 @@ async function openPage(page: Page, markdown = '') {
   return { worldId, pageId: sheet.id as string }
 }
 
-test('los bloques de hoja con «/»: se ven discretos en la vista sencilla y salen en el Markdown', async ({ page }) => {
+test('los bloques de hoja con «/» (toda página es una hoja); salen en el Markdown', async ({ page }) => {
   // Una página vacía y todo escrito en orden: así no importa dónde deja el cursor la carga (en la CI, a veces, al
   // principio, antes de sincronizar)
   const { pageId } = await openPage(page)
   await expect(body(page).locator('xpath=ancestor::div[@aria-busy][1]')).toHaveAttribute('aria-busy', 'false')
-  await body(page).click()
+  // La primera línea (el texto es una hoja: pulsar en su centro desplazaría la página)
+  await body(page).locator('p').first().click()
   await page.keyboard.type('## Guarida')
   await page.keyboard.press('Enter')
   await page.keyboard.type('En la cima.')
@@ -75,7 +76,7 @@ test('lo que llega en Markdown: nota lateral a la izquierda, a lo ancho y salto 
   await expect(body(page).getByText('Todo a lo ancho.')).toBeVisible()
 })
 
-test('la vista de hoja: se activa, pagina sin partir bloques, cambia de tema y quien lee vuelve a la sencilla', async ({
+test('la página se escribe ya como hoja; el tema, en «⋯» → «Imprimir y PDF»; al imprimir, pagina sin partir bloques', async ({
   page
 }) => {
   test.slow()
@@ -83,28 +84,23 @@ test('la vista de hoja: se activa, pagina sin partir bloques, cambia de tema y q
     { length: 60 },
     (_, i) => `Párrafo ${i + 1}: la costa de Eana guarda faros, puertos y dragones que nadie ha contado todavía.`
   ).join('\n\n')
-  await openPage(page, `> [!indice]\n\n## La costa\n\n${paragraphs}\n\n## El norte\n\nFin.`)
-  await page.getByRole('button', { name: 'Hoja', exact: true }).click()
-  const sheet = page.getByRole('region', { name: 'Vista de hoja' })
-  await expect(sheet.getByRole('region', { name: 'Página 1' })).toBeVisible()
-  await expect(sheet.getByRole('region', { name: 'Página 2' })).toBeVisible()
-  // El pie con el título y el número; el índice con la página de cada título
-  await expect(sheet.getByRole('region', { name: 'Página 1' }).locator('footer')).toContainText('El Dragón Rojo')
-  await expect(sheet.getByRole('navigation', { name: 'Índice' })).toContainText('La costa')
-  // Ningún bloque se sale de su página
-  const outside = await sheet.locator('section[aria-label^="Página"]').evaluateAll(
-    (pages) =>
-      pages.flatMap((p) => {
-        const bottom = p.getBoundingClientRect().bottom
-        return [...p.querySelectorAll('[data-sheet-block]')].filter(
-          (b) => b.getBoundingClientRect().bottom > bottom + 1
-        )
-      }).length
-  )
-  expect(outside).toBe(0)
-  // El tema
-  await page.getByLabel('Tema', { exact: true }).selectOption({ label: 'Neutro' })
-  await expect(sheet).toHaveAttribute('data-theme', 'neutro')
+  const { worldId, pageId } = await openPage(page, `> [!indice]\n\n## La costa\n\n${paragraphs}\n\n## El norte\n\nFin.`)
+  // El papel, sin botón: toda página lo es (el texto encima; la cabecera, como en Everlore, va fuera)
+  const paper = page.locator('[data-sheet-paper]')
+  await expect(paper).toHaveAttribute('data-theme', 'neutro')
+  // Con varias páginas, donde empieza cada una, su marca
+  await expect(page.getByText('Página 2', { exact: true })).toBeAttached()
+  await expect(page.getByRole('heading', { level: 1, name: 'El Dragón Rojo' })).toBeVisible()
+  await paper.getByText('Fin.').click()
+  await page.keyboard.press('End')
+  await page.keyboard.type(' Y más allá.')
+  await expect(body(page)).toContainText('Fin. Y más allá.')
+  // El tema, en «⋯» → «Imprimir y PDF»
+  await page.getByRole('button', { name: 'Más acciones' }).click()
+  await page.getByRole('button', { name: 'Imprimir y PDF' }).click()
+  await page.getByLabel('Tema', { exact: true }).selectOption({ label: 'Pergamino' })
+  await expect(paper).toHaveAttribute('data-theme', 'pergamino')
+  await page.keyboard.press('Escape')
   for (const colorScheme of ['light', 'dark'] as const) {
     await page.emulateMedia({ colorScheme })
     const { violations } = await new AxeBuilder({ page })
@@ -112,15 +108,23 @@ test('la vista de hoja: se activa, pagina sin partir bloques, cambia de tema y q
       .analyze()
     expect(violations.filter((v) => v.impact === 'critical' || v.impact === 'serious').map((v) => v.id)).toEqual([])
   }
-  // Quien lee vuelve a la sencilla, y se recuerda
-  await page.getByRole('button', { name: 'Vista sencilla' }).click()
-  await expect(sheet).toBeHidden()
-  await expect(body(page)).toBeVisible()
-  await page.reload()
-  await expect(page.getByRole('button', { name: 'Ver la hoja' })).toBeVisible()
-  await expect(page.getByRole('region', { name: 'Vista de hoja' })).toBeHidden()
-  await page.getByRole('button', { name: 'Ver la hoja' }).click()
-  await expect(page.getByRole('region', { name: 'Vista de hoja' })).toBeVisible()
+  // Al imprimir: páginas numeradas, con el pie y el índice, y ningún bloque se sale de la suya
+  await page.goto(`/mundos/${worldId}/imprimir/${pageId}`)
+  await expect(page.locator('body[data-sheet-ready="true"]')).toBeAttached()
+  const pages = page.getByRole('region', { name: /^Página \d+$/ })
+  expect(await pages.count()).toBeGreaterThan(1)
+  await expect(page.getByRole('region', { name: 'Página 1' }).locator('footer')).toContainText('El Dragón Rojo')
+  await expect(page.getByRole('navigation', { name: 'Índice' })).toContainText('La costa')
+  const outside = await page.locator('section[aria-label^="Página"]').evaluateAll(
+    (sheets) =>
+      sheets.flatMap((p) => {
+        const bottom = p.getBoundingClientRect().bottom
+        return [...p.querySelectorAll('[data-sheet-block]')].filter(
+          (b) => b.getBoundingClientRect().bottom > bottom + 1
+        )
+      }).length
+  )
+  expect(outside).toBe(0)
 })
 
 test('imprimir y PDF: solo la hoja, sin interfaz, con su número de páginas; los secretos solo si se piden', async ({
