@@ -7,7 +7,7 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
-### Para retomar (2026-11-02)
+### Para retomar (2026-11-03)
 
 - **Ahora: traer Everlore a Crisol** (la app de Enrique al estilo de LegendKeeper). Propuesta aprobada («me vale así,
   ya iremos puliendo»): ADR-0007, pestañas dentro de las páginas de la wiki, por fases: 1) pestañas y mapa; 2) vista
@@ -28,6 +28,12 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   panel a la derecha, a la misma altura); y **el panel de la derecha con bloques** (fase 2 de Everlore, ADR-0008:
   `pages.panel`, migración 0031, `setPagePanel` y la herramienta `cambiar_panel`; `apps/web/src/wiki/panel-blocks.tsx`
   y `e2e/tests/panel.spec.ts`). Las normas, en `docs/diseno.md`.
+- **Prueba en `interfaz/hoja-siempre`** (sale de PR #90; Enrique decide si se queda o se revierte): toda página es
+  una hoja maquetada al escribir (una columna por defecto; el bloque «Una/Dos columnas» desde «/», grupo
+  «Maquetación»), sin modo estricto de React (metía líneas vacías), **pestañas de texto** (`page_tabs.document_id` y
+  documentos de tipo `tab`, migración 0032), pestañas que se recolocan y con botón secundario, y en el árbol
+  **arrastrar a la izquierda saca la página de su madre** y lo movido se ve al instante. Falta, si la aprueba: pasarla
+  a PR #90 y adaptar las e2e (botón «Hoja», índice, «La enlazan», versiones en el panel…).
 - **También en la PR #90** (2026-11-02, tarde): «Página nueva» con cuadro de tipo, botón derecho en el árbol (con
   `sortPageChildren` y `ordenar_subpaginas`), menú «/» y «Convertir en» por desplegables, títulos del 1 al 6, línea de
   más bajo lo escrito, «Marcar» flotante, pestañas que se recolocan y propiedades como bloques del panel. Lo que aún
