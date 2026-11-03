@@ -1190,3 +1190,30 @@ app: el 2026-10-30 dijo «luego apuntaremos por donde vamos y nos dedicaremos a 
   - lo que ven los jugadores de esas tablas (módulo 5).
 - **Hecho cuando**: Enrique crea un PNJ desde plantilla, le pone su facción y sale solo en «Miembros» de la facción;
   hace «Frente» desde cero y la usa; la IA hace lo mismo desde claude.ai.
+
+### 3. Sistemas, fichas y dados (entrevista con Enrique, 2026-11-04, primera parte)
+
+Preguntas con propuesta; lo que eligió:
+
+- **El contenido del creador** (clases, especies, trasfondos, dotes, conjuros): **lo trae cada sistema**, como en
+  Foundry, con el del SRD como datos. El módulo 4 añade las pantallas del compendio y el contenido propio (las clases
+  de Fateforge, por ejemplo).
+- **De serie, 5e 2014 y 5e 2024** (SRD 5.1 y SRD 5.2, CC BY 4.0). Fateforge parte de la de 2014.
+- **Compatibles con los sistemas de Foundry, también su código**: instalar un sistema de Foundry tal cual, con sus
+  hojas y su automatización. Se le avisó del coste (rehacer buena parte de su API en el navegador y aislar ese código) y
+  de que la licencia puede no permitirlo, y lo eligió igualmente. Antes de la spec:
+  - el estudio mide qué parte de la API de Foundry usa un sistema real (dnd5e) para dar el tamaño;
+  - se comprueba qué permiten las licencias: la de Foundry, la de cada sistema y el uso de su nombre (en la interfaz
+    no sale);
+  - un ADR nuevo: cómo se aísla el código de terceros en un SaaS (otro origen, sin acceso a la sesión ni a otros
+    mundos) y cómo encaja con los sistemas propios, que son datos.
+  - Propuesta de orden: primero los sistemas propios como datos con la forma de los de Foundry (manifiesto, tipos y
+    campos), que hacen falta igual para los de serie; luego la capa que ejecuta su código.
+- **La hoja de un PJ la llevan su jugador y el máster**: el jugador crea su PJ con el creador y lleva su hoja; el
+  máster ve y cambia todas. La wiki sigue siendo solo del máster hasta el módulo 5.
+- **Las tiradas las ve toda la campaña**: dados 3D y un historial de tiradas de la campaña en vivo; el máster ve las
+  de sus jugadores y puede tirar en oculto. El chat y los susurros, con la sala (módulo 7).
+- **La hoja, por bloques**: cada sistema compone la suya con bloques, como el diseño de hoja del Crisol actual; los de
+  5e traen una al estilo de D&D Beyond, con el aspecto de Crisol.
+- **Pendiente de preguntar**: las tablas aleatorias (pasaron del módulo 2 a este), subir de nivel y el creador paso a
+  paso con detalle (tras el estudio de D&D Beyond), e importar los PJ de Eana (por el MCP, como todo lo demás).
