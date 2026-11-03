@@ -9,16 +9,18 @@ amplía `@fugas` en la misma tarea. Cobertura ≥ 80 % de lo cambiado (bloquea d
 
 ## Fase 1: Campos
 
-- [ ] **1. Campos con id y tipos nuevos (riesgo)**
+- [x] **1. Campos con id y tipos nuevos (riesgo)** — hecha. Hasta la tarea 2, la web enseña las opciones y los relojes
+  sin poder cambiarlos, y al guardar otra propiedad no pierden su campo ni su forma.
   - Acepta:
-    - `PageProperty` admite `field` en todos los tipos, y tres tipos nuevos: `choice` (un valor que no esté en sus
-      opciones se guarda y se marca), `page` (una página o ninguna) y `clock` (de 2 a 12 segmentos, sin pasar del
-      máximo). `pages` y `page` admiten `targets`.
+    - `PageProperty` admite `field` en todos los tipos, y dos tipos nuevos: `choice` (un valor que no esté en sus
+      opciones se guarda y se marca) y `clock` (de 2 a 12 segmentos, sin pasar del máximo). El enlace a una sola
+      página es `pages` con `single` (así la búsqueda y las tablas tratan igual los dos); `pages` admite `targets`.
     - El servidor comprueba, venga de la web o de la IA, que cada página enlazada existe y es del mismo mundo
       (`setPageProperties`, `editPage`, `createPages`).
     - El Markdown, de ida y vuelta: `choice` como texto, `page` como `"[[Título]]"` y `clock` como `"3/8"`. Lo
       guardado antes sigue saliendo igual.
-    - MCP: `editar_pagina` y `crear_paginas` escriben los tipos nuevos.
+    - MCP: `editar_pagina` escribe los tipos nuevos, y al reescribir las propiedades (también con el YAML de un
+      cuerpo) cada una conserva el campo y la forma que tenía. `crear_paginas` los escribe con plantilla (tarea 4).
   - Comprueba:
     - dominio: cada tipo, con valores fuera de la lista y relojes fuera de rango;
     - `packages/editor`: ida y vuelta del frontmatter con los tipos de antes y los nuevos;

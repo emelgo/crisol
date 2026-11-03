@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { propertiesProblem, tagCounts } from './properties.ts'
+import { conformTo, keepShapes, outsideOptions, type PageProperty, propertiesProblem, tagCounts } from './properties.ts'
 
 describe('las propiedades de una página', () => {
   it('nombres sin repetir, sin mirar mayúsculas ni espacios', () => {
@@ -30,6 +30,137 @@ describe('las propiedades de una página', () => {
     expect(propertiesProblem([{ name: 'etiquetas', type: 'list', value: ['lugar /ciudad'] }])).toBe('BAD_TAG')
     expect(propertiesProblem([{ name: 'etiquetas', type: 'list', value: ['/lugar'] }])).toBe('BAD_TAG')
     expect(propertiesProblem([{ name: 'etiquetas', type: 'list', value: ['lugar//ciudad'] }])).toBe('BAD_TAG')
+  })
+})
+
+describe('los campos: tipos nuevos y su id', () => {
+  it('opciones: un valor que no está en la lista vale, pero se nota', () => {
+    const estado = {
+      name: 'Estado',
+      type: 'choice',
+      value: 'Vive',
+      options: ['Vive', 'Ha muerto']
+    } satisfies PageProperty
+    expect(propertiesProblem([estado])).toBeNull()
+    expect(outsideOptions(estado)).toBe(false)
+    expect(outsideOptions({ ...estado, value: 'Prisionera' })).toBe(true)
+    // Vacío no está fuera: aún no se ha elegido
+    expect(outsideOptions({ ...estado, value: '' })).toBe(false)
+  })
+
+  it('un reloj tiene de 2 a 12 segmentos y no pasa del máximo', () => {
+    expect(propertiesProblem([{ name: 'Reloj', type: 'clock', value: 3, segments: 8 }])).toBeNull()
+    expect(propertiesProblem([{ name: 'Reloj', type: 'clock', value: 9, segments: 8 }])).toBe('BAD_CLOCK')
+    expect(propertiesProblem([{ name: 'Reloj', type: 'clock', value: 0, segments: 1 }])).toBe('BAD_CLOCK')
+    expect(propertiesProblem([{ name: 'Reloj', type: 'clock', value: 0, segments: 13 }])).toBe('BAD_CLOCK')
+  })
+
+  it('un enlace a una sola página no lleva más de una', () => {
+    const one = { name: 'Facción', type: 'pages', single: true, value: ['a'] } satisfies PageProperty
+    expect(propertiesProblem([one])).toBeNull()
+    expect(propertiesProblem([{ ...one, value: [] }])).toBeNull()
+    expect(propertiesProblem([{ ...one, value: ['a', 'b'] }])).toBe('BAD_PROPERTY')
+  })
+
+  it('el id de un campo no se repite en una página', () => {
+    expect(
+      propertiesProblem([
+        { name: 'Facción', field: 'faccion', type: 'pages', value: [] },
+        { name: 'Bando', field: 'faccion', type: 'pages', value: [] }
+      ])
+    ).toBe('DUPLICATE_FIELD')
+  })
+})
+
+describe('dar a un valor la forma de un campo', () => {
+  const faccion = {
+    name: 'Facción',
+    field: 'faccion',
+    type: 'pages',
+    single: true,
+    targets: ['faccion'],
+    value: []
+  } satisfies PageProperty
+
+  it('un enlace leído toma el id, una sola página y a qué apunta', () => {
+    expect(conformTo(faccion, { name: 'Facción', type: 'pages', value: ['raqisa'] })).toEqual({
+      ...faccion,
+      value: ['raqisa']
+    })
+    // Vacío, sin página
+    expect(conformTo(faccion, { name: 'Facción', type: 'text', value: '' })).toEqual(faccion)
+  })
+
+  it('un enlace de una sola página no admite dos: se queda con varias, pero con su id', () => {
+    expect(conformTo(faccion, { name: 'Facción', type: 'pages', value: ['a', 'b'] })).toEqual({
+      name: 'Facción',
+      field: 'faccion',
+      type: 'pages',
+      targets: ['faccion'],
+      value: ['a', 'b']
+    })
+  })
+
+  it('un texto toma las opciones de un desplegable', () => {
+    const estado = {
+      name: 'Estado',
+      field: 'estado',
+      type: 'choice',
+      value: 'Vive',
+      options: ['Vive', 'Ha muerto']
+    } satisfies PageProperty
+    expect(conformTo(estado, { name: 'Estado', type: 'text', value: 'Ha muerto' })).toEqual({
+      ...estado,
+      value: 'Ha muerto'
+    })
+    expect(conformTo(estado, { name: 'Estado', type: 'number', value: 3 })).toEqual({ ...estado, value: '3' })
+  })
+
+  it('un reloj se lee de «3/8» o de un número, y se queda con sus segmentos', () => {
+    const reloj = { name: 'Reloj', field: 'reloj', type: 'clock', value: 0, segments: 8 } satisfies PageProperty
+    expect(conformTo(reloj, { name: 'Reloj', type: 'text', value: '3/8' })).toEqual({ ...reloj, value: 3 })
+    expect(conformTo(reloj, { name: 'Reloj', type: 'text', value: '5/6' })).toEqual({ ...reloj, value: 5, segments: 6 })
+    expect(conformTo(reloj, { name: 'Reloj', type: 'number', value: 2 })).toEqual({ ...reloj, value: 2 })
+    expect(conformTo(reloj, { name: 'Reloj', type: 'text', value: 'mucho' })).toBeNull()
+  })
+
+  it('número, sí/no y texto, de lo que se pueda leer', () => {
+    expect(
+      conformTo(
+        { name: 'Población', field: 'poblacion', type: 'number', value: 0 },
+        { name: 'Población', type: 'text', value: '12000' }
+      )
+    ).toEqual({ name: 'Población', field: 'poblacion', type: 'number', value: 12000 })
+    expect(
+      conformTo({ name: 'Rol', field: 'rol', type: 'text', value: '' }, { name: 'Rol', type: 'number', value: 7 })
+    ).toEqual({ name: 'Rol', field: 'rol', type: 'text', value: '7' })
+    expect(
+      conformTo(
+        { name: 'Sintonización', field: 'sint', type: 'boolean', value: false },
+        { name: 'Sintonización', type: 'text', value: 'quizá' }
+      )
+    ).toBeNull()
+  })
+
+  it('al reescribir las propiedades se conservan los campos que ya había, por su nombre', () => {
+    const before = [faccion, { name: 'Notas', type: 'text', value: 'x' }] satisfies PageProperty[]
+    const after = keepShapes(before, [
+      { name: 'facción', type: 'pages', value: ['raqisa'] },
+      { name: 'Notas', type: 'text', value: 'y' },
+      { name: 'Nueva', type: 'number', value: 1 }
+    ])
+    expect(after).toEqual([
+      { ...faccion, name: 'facción', value: ['raqisa'] },
+      { name: 'Notas', type: 'text', value: 'y' },
+      { name: 'Nueva', type: 'number', value: 1 }
+    ])
+  })
+
+  it('si el valor nuevo no cabe en el campo, se queda como viene, sin el id', () => {
+    const reloj = { name: 'Reloj', field: 'reloj', type: 'clock', value: 0, segments: 8 } satisfies PageProperty
+    expect(keepShapes([reloj], [{ name: 'Reloj', type: 'text', value: 'mucho' }])).toEqual([
+      { name: 'Reloj', type: 'text', value: 'mucho' }
+    ])
   })
 })
 

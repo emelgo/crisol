@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { FrontmatterError, type ReadProperty, readFrontmatter, writeFrontmatter } from './frontmatter.ts'
+import {
+  FrontmatterError,
+  type ReadProperty,
+  readFrontmatter,
+  type WritableProperty,
+  writeFrontmatter
+} from './frontmatter.ts'
 
 describe('las propiedades en YAML', () => {
   const properties: ReadProperty[] = [
@@ -51,6 +57,28 @@ describe('las propiedades en YAML', () => {
         property.type === 'pages' ? { ...property, value: property.value.map((id) => titles[id]) } : property
       )
     )
+  })
+
+  it('los campos de plantilla: opciones como texto, un enlace solo sin lista y el reloj como «3/8»', () => {
+    const fields: WritableProperty[] = [
+      { name: 'Estado', field: 'estado', type: 'choice', value: 'Ha muerto', options: ['Vive', 'Ha muerto'] },
+      { name: 'Facción', field: 'faccion', type: 'pages', single: true, value: ['p1'] },
+      { name: 'Lugar', field: 'lugar', type: 'pages', single: true, value: [] },
+      { name: 'Reloj', field: 'reloj', type: 'clock', value: 3, segments: 8 }
+    ]
+    const yaml = writeFrontmatter(fields, (id) => titles[id] ?? id)
+    expect(yaml).toBe(
+      ['---', 'Estado: Ha muerto', 'Facción: "[[Consejo de la Lonja]]"', 'Lugar: ""', 'Reloj: "3/8"', '---', ''].join(
+        '\n'
+      )
+    )
+    // Se leen con los tipos de siempre: el servidor les devuelve su forma con la de la página o la plantilla
+    expect(readFrontmatter(yaml).properties).toEqual([
+      { name: 'Estado', type: 'text', value: 'Ha muerto' },
+      { name: 'Facción', type: 'pages', value: ['Consejo de la Lonja'] },
+      { name: 'Lugar', type: 'text', value: '' },
+      { name: 'Reloj', type: 'text', value: '3/8' }
+    ])
   })
 
   it('lee el YAML que escribe una persona: listas en línea, comillas simples, comentarios y textos largos', () => {

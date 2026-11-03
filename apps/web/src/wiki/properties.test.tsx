@@ -106,6 +106,22 @@ describe('las propiedades de una página', () => {
     await waitFor(async () => expect((await saved(api)).map((p) => p.name)).toEqual(['Población', 'etiquetas']))
   })
 
+  it('al cambiar una, las de plantilla conservan su campo y su forma (opciones, reloj, enlace a una sola página)', async () => {
+    const fields: PageProperty[] = [
+      { name: 'Población', field: 'poblacion', type: 'number', value: 4200 },
+      { name: 'Estado', field: 'estado', type: 'choice', value: 'Vive', options: ['Vive', 'Ha muerto'] },
+      { name: 'Reloj', field: 'reloj', type: 'clock', value: 3, segments: 8 },
+      { name: 'Región', field: 'region', type: 'pages', single: true, targets: ['lugar'], value: [COAST] }
+    ]
+    const { api } = renderPort(fields)
+    const properties = within(await screen.findByRole('region', { name: 'Propiedades' }))
+    expect(properties.getByText('3/8')).toBeDefined()
+    const value = properties.getByLabelText('Valor de la propiedad 1')
+    await userEvent.clear(value)
+    await userEvent.type(value, '5000{Enter}')
+    await waitFor(async () => expect(await saved(api)).toEqual([{ ...fields[0], value: 5000 }, ...fields.slice(1)]))
+  })
+
   it('un número que no lo es no se guarda, y lo dice', async () => {
     const { api } = renderPort([{ name: 'Población', type: 'number', value: 4200 }])
     const value = await screen.findByLabelText('Valor de la propiedad 1')

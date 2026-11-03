@@ -12,13 +12,35 @@ const pageIcon = z
   )
 
 const propertyName = z.string().trim().min(1).max(60)
-/** Una propiedad con su tipo. alias y etiquetas son listas y resumen es texto (lo comprueba el servidor) */
+/** El id de un campo de plantilla: legible en las de serie («faccion»), corto y aleatorio en las propias (ADR-0009) */
+export const fieldId = z.string().regex(/^[a-z0-9][a-z0-9-]{0,39}$/)
+/** Una plantilla: el id legible de una de serie o el de una propia */
+export const templateRef = z.union([z.uuid(), z.string().regex(/^[a-z][a-z0-9-]{0,39}$/)])
+const field = { name: propertyName, field: fieldId.optional() }
+const optionText = z.string().trim().max(100)
+const choiceOptions = z.array(optionText.min(1)).max(50)
+const clockSegments = z.number().int().min(2).max(12)
+/** Las plantillas cuyas páginas se buscan primero al elegir un enlace (no encierra: se puede elegir cualquiera) */
+const linkTargets = z.array(templateRef).max(10)
+
+/**
+ * Una propiedad con su tipo. alias y etiquetas son listas y resumen es texto (lo comprueba el servidor). Las que salen
+ * de una plantilla llevan el id de su campo y su forma (ADR-0009)
+ */
 export const pageProperty = z.discriminatedUnion('type', [
-  z.object({ name: propertyName, type: z.literal('text'), value: z.string().max(5000) }),
-  z.object({ name: propertyName, type: z.literal('number'), value: z.number().finite() }),
-  z.object({ name: propertyName, type: z.literal('boolean'), value: z.boolean() }),
-  z.object({ name: propertyName, type: z.literal('list'), value: z.array(z.string().trim().min(1).max(200)).max(200) }),
-  z.object({ name: propertyName, type: z.literal('pages'), value: z.array(z.uuid()).max(200) })
+  z.object({ ...field, type: z.literal('text'), value: z.string().max(5000) }),
+  z.object({ ...field, type: z.literal('number'), value: z.number().finite() }),
+  z.object({ ...field, type: z.literal('boolean'), value: z.boolean() }),
+  z.object({ ...field, type: z.literal('list'), value: z.array(z.string().trim().min(1).max(200)).max(200) }),
+  z.object({
+    ...field,
+    type: z.literal('pages'),
+    value: z.array(z.uuid()).max(200),
+    single: z.literal(true).optional(),
+    targets: linkTargets.optional()
+  }),
+  z.object({ ...field, type: z.literal('choice'), value: optionText, options: choiceOptions }),
+  z.object({ ...field, type: z.literal('clock'), value: z.number().int().min(0).max(12), segments: clockSegments })
 ])
 
 export type PageProperty = z.infer<typeof pageProperty>
@@ -355,7 +377,10 @@ export const createPages = defineAction({
   })
 })
 
-/** Una propiedad que escribe la IA: las de páginas, por su título, un alias o su id */
+/**
+ * Una propiedad que escribe la IA: las de páginas, por su título, un alias o su id. Si la página ya tiene una que se
+ * llama igual y salió de una plantilla, se queda con su campo y su forma
+ */
 const propertyInput = z.discriminatedUnion('type', [
   z.object({ name: propertyName, type: z.literal('text'), value: z.string().max(5000) }),
   z.object({ name: propertyName, type: z.literal('number'), value: z.number().finite() }),
@@ -364,7 +389,20 @@ const propertyInput = z.discriminatedUnion('type', [
   z.object({
     name: propertyName,
     type: z.literal('pages'),
-    value: z.array(z.string().trim().min(1).max(200)).max(200).describe('Títulos, alias o ids de páginas del mundo')
+    value: z.array(z.string().trim().min(1).max(200)).max(200).describe('Títulos, alias o ids de páginas del mundo'),
+    single: z.literal(true).optional().describe('Si es un enlace a una sola página')
+  }),
+  z.object({
+    name: propertyName,
+    type: z.literal('choice'),
+    value: optionText,
+    options: choiceOptions.optional().describe('Las opciones; sin ellas, las que ya tenga')
+  }),
+  z.object({
+    name: propertyName,
+    type: z.literal('clock'),
+    value: z.number().int().min(0).max(12).describe('Segmentos llenos'),
+    segments: clockSegments.optional().describe('De 2 a 12; sin ellos, los que ya tenga (4 si es nuevo)')
   })
 ])
 

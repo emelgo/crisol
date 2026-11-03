@@ -38,6 +38,8 @@ interface Draft {
   pages: string[]
   /** Las etiquetas escritas aún sin poner: van con las demás al guardar */
   pending?: string
+  /** Como estaba guardada: su campo de plantilla y su forma no se pierden al cambiar otra cosa */
+  original?: PageProperty
 }
 
 const toDraft = (property: PageProperty): Draft => ({
@@ -51,24 +53,29 @@ const toDraft = (property: PageProperty): Draft => ({
         ? String(property.value)
         : '',
   checked: property.type === 'boolean' ? property.value : false,
-  pages: property.type === 'pages' ? property.value : []
+  pages: property.type === 'pages' ? property.value : [],
+  original: property
 })
 
 /** La propiedad que sale de un borrador, o null si su valor no se puede leer (un número que no lo es) */
 function fromDraft(draft: Draft): PageProperty | null {
   const name = draft.name.trim()
+  const original = draft.original?.type === draft.type ? draft.original : undefined
+  // Lo de la plantilla (su campo, a qué apunta un enlace) se queda; las opciones y los relojes, hasta tener su control
+  const field = original?.field === undefined ? {} : { field: original.field }
   switch (draft.type) {
     case 'text':
-      return { name, type: 'text', value: draft.text }
+      return { name, ...field, type: 'text', value: draft.text }
     case 'number': {
       const value = Number(draft.text.replace(',', '.'))
-      return draft.text.trim() !== '' && Number.isFinite(value) ? { name, type: 'number', value } : null
+      return draft.text.trim() !== '' && Number.isFinite(value) ? { name, ...field, type: 'number', value } : null
     }
     case 'boolean':
-      return { name, type: 'boolean', value: draft.checked }
+      return { name, ...field, type: 'boolean', value: draft.checked }
     case 'list':
       return {
         name,
+        ...field,
         type: 'list',
         value: [
           ...draft.text.split(','),
@@ -78,7 +85,12 @@ function fromDraft(draft: Draft): PageProperty | null {
           .filter((item, i, all) => item && all.indexOf(item) === i)
       }
     case 'pages':
-      return { name, type: 'pages', value: draft.pages }
+      return original?.type === 'pages'
+        ? { ...original, name, value: original.single ? draft.pages.slice(-1) : draft.pages }
+        : { name, type: 'pages', value: draft.pages }
+    case 'choice':
+    case 'clock':
+      return original ? { ...original, name } : null
   }
 }
 
@@ -132,6 +144,8 @@ function PropertyValue({ property, worldId }: { property: PageProperty; worldId:
           ))}
         </ul>
       )
+    case 'clock':
+      return <>{`${property.value}/${property.segments}`}</>
     default:
       return <>{property.value}</>
   }
@@ -506,6 +520,14 @@ function ValueField({
         />
       )
     }
+    case 'choice':
+    case 'clock':
+      // Sus controles llegan con la tarea 2 del módulo 2: de momento se leen
+      return row.original ? (
+        <span id={valueId} className={styles.valueInput}>
+          <PropertyValue property={row.original} worldId={worldId} />
+        </span>
+      ) : null
     default: {
       const long = row.type === 'text' && row.name.trim().toLocaleLowerCase('es') === 'resumen'
       return long ? (

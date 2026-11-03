@@ -6,7 +6,7 @@
 import { randomUUID } from 'node:crypto'
 import { createPages, editPage, type PageProperty, readPage } from '@crisol/contracts'
 import { documentsRepo, pagesRepo } from '@crisol/db'
-import { moveBlocker, propertiesProblem, reservedList } from '@crisol/domain'
+import { keepShapes, moveBlocker, propertiesProblem, propertyKey, reservedList } from '@crisol/domain'
 import { fillJsonIds } from '@crisol/editor'
 import {
   type BodyEdit,
@@ -94,15 +94,46 @@ async function pageResolver(ctx: ActionContext, worldId: string) {
   return { add, resolve }
 }
 
-/** Las propiedades tal como se guardan: las de páginas, con sus ids */
-function toProperties(read: readonly ReadProperty[], resolve: (name: string) => string): PageProperty[] {
-  const properties = read.map(
-    (property): PageProperty =>
-      property.type === 'pages' ? { ...property, value: [...new Set(property.value.map(resolve))] } : property
-  )
-  const problem = propertiesProblem(properties)
+/** Una propiedad que se escribe a mano: del YAML, o de la IA (que también da opciones y relojes) */
+type WantedProperty =
+  | ReadProperty
+  | { name: string; type: 'pages'; value: string[]; single?: true | undefined }
+  | { name: string; type: 'choice'; value: string; options?: string[] | undefined }
+  | { name: string; type: 'clock'; value: number; segments?: number | undefined }
+
+/** Los segmentos de un reloj nuevo, si no se dicen */
+const CLOCK_DEFAULT = 4
+
+/**
+ * Las propiedades tal como se guardan: las de páginas, con sus ids. Las que ya tenía la página con un campo o una forma
+ * (opciones, segmentos, una sola página) los conservan si el valor cabe (ADR-0009)
+ */
+function toProperties(
+  read: readonly WantedProperty[],
+  resolve: (name: string) => string,
+  before: readonly PageProperty[] = []
+): PageProperty[] {
+  const previous = new Map(before.map((p) => [propertyKey(p.name), p]))
+  const properties = read.map((property): PageProperty => {
+    const old = previous.get(propertyKey(property.name))
+    switch (property.type) {
+      case 'pages':
+        return { ...property, value: [...new Set(property.value.map(resolve))] }
+      case 'choice':
+        return { ...property, options: property.options ?? (old?.type === 'choice' ? old.options : []) }
+      case 'clock':
+        return {
+          ...property,
+          segments: property.segments ?? (old?.type === 'clock' ? old.segments : CLOCK_DEFAULT)
+        }
+      default:
+        return property
+    }
+  })
+  const shaped = keepShapes(before, properties)
+  const problem = propertiesProblem(shaped)
   if (problem) throw new InvalidRequestError(problem)
-  return properties
+  return shaped
 }
 
 /** Las madres antes que sus hijas, y cuántos niveles tiene la tanda; una madre que no está o un ciclo no valen */
@@ -268,7 +299,9 @@ export const pageContentActions = [
     // Las propiedades: las que se dan; o, al cambiar el cuerpo entero, las de su YAML
     const fromYaml = input.body?.mode === 'replace' && read && read.properties.length > 0 ? read.properties : undefined
     const wanted = input.properties ?? fromYaml
-    const properties = wanted ? toProperties(wanted, (await pageResolver(ctx, wiki.worldId)).resolve) : undefined
+    const properties = wanted
+      ? toProperties(wanted, (await pageResolver(ctx, wiki.worldId)).resolve, propertiesOf(page.properties))
+      : undefined
 
     const stored = await documentsRepo.findBody(ctx.db, page.id)
     const changedSinceRequest = Boolean(ctx.requestedAt && stored && stored.updatedAt > ctx.requestedAt)

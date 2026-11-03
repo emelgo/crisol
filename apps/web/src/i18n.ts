@@ -256,7 +256,15 @@ export const es = {
     badNumber: '«{{name}}» tiene que ser un número',
     yes: 'Sí',
     no: 'No',
-    types: { text: 'Texto', number: 'Número', boolean: 'Sí o no', list: 'Lista', pages: 'Páginas' },
+    types: {
+      text: 'Texto',
+      number: 'Número',
+      boolean: 'Sí o no',
+      list: 'Lista',
+      pages: 'Páginas',
+      choice: 'Opciones',
+      clock: 'Reloj'
+    },
     reserved: { alias: 'Alias', etiquetas: 'Etiquetas', resumen: 'Resumen' }
   },
   icon: {

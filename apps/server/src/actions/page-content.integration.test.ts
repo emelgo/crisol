@@ -303,6 +303,59 @@ describe('Claude lee y escribe páginas en Markdown', () => {
     expect(ambiguous.json()).toMatchObject({ code: 'AMBIGUOUS_PAGE' })
   })
 
+  it('los campos de plantilla: se guardan, se leen en Markdown y la IA los reescribe sin perder su campo ni su forma', async () => {
+    const raqisa = await ok200('createPage', { worldId, title: 'La Raqisa' })
+    const gris = await ok200('createPage', { worldId, title: 'Mamá Gris' })
+    const fields = [
+      { name: 'Facción', field: 'faccion', type: 'pages', single: true, targets: ['faccion'], value: [raqisa.id] },
+      { name: 'Estado', field: 'estado', type: 'choice', value: 'Vive', options: ['Vive', 'Ha muerto'] },
+      { name: 'Reloj', field: 'reloj', type: 'clock', value: 3, segments: 8 }
+    ]
+    expect((await ok200('setPageProperties', { pageId: gris.id, properties: fields })).properties).toEqual(fields)
+    const { markdown } = await ok200('readPage', { pageId: gris.id })
+    expect(markdown).toContain('Facción: "[[La Raqisa]]"\nEstado: Vive\nReloj: "3/8"')
+
+    // Al cambiar el cuerpo entero con su YAML, cada valor vuelve a su campo
+    const yaml = '---\nFacción: "[[La Raqisa]]"\nEstado: Ha muerto\nReloj: "5/8"\n---\nOtra vida.\n'
+    const replaced = await ok200('editPage', { pageId: gris.id, body: { mode: 'replace', markdown: yaml } })
+    expect(replaced.page.properties).toEqual([
+      fields[0],
+      { ...fields[1], value: 'Ha muerto' },
+      { ...fields[2], value: 5 }
+    ])
+    // Y con las propiedades sueltas: sin opciones ni segmentos, se quedan los que tenía
+    const loose = await ok200('editPage', {
+      pageId: gris.id,
+      properties: [
+        { name: 'Estado', type: 'choice', value: 'Vive' },
+        { name: 'Reloj', type: 'clock', value: 1 },
+        { name: 'Facción', type: 'pages', value: ['La Raqisa'] }
+      ]
+    })
+    expect(loose.page.properties).toEqual([{ ...fields[1], value: 'Vive' }, { ...fields[2], value: 1 }, fields[0]])
+  })
+
+  it('los campos que no valen: un reloj pasado, dos páginas en un enlace solo, una página de otro mundo', async () => {
+    const gris = await ok200('createPage', { worldId, title: 'Mamá Gris' })
+    const set = (property: object) => call('setPageProperties', { pageId: gris.id, properties: [property] })
+    expect((await set({ name: 'Reloj', type: 'clock', value: 9, segments: 8 })).json()).toMatchObject({
+      code: 'BAD_CLOCK'
+    })
+    const a = await ok200('createPage', { worldId, title: 'A' })
+    const b = await ok200('createPage', { worldId, title: 'B' })
+    expect((await set({ name: 'Facción', type: 'pages', single: true, value: [a.id, b.id] })).json()).toMatchObject({
+      code: 'BAD_PROPERTY'
+    })
+    const otherWorld = (await call('createWorld', { name: 'Otro' })).json().id
+    const far = await ok200('createPage', { worldId: otherWorld, title: 'Lejos' })
+    expect((await set({ name: 'Facción', type: 'pages', single: true, value: [far.id] })).json()).toMatchObject({
+      code: 'BAD_PROPERTY'
+    })
+    // Por la IA, un reloj nuevo sin segmentos tiene 4
+    const clock = await ok200('editPage', { pageId: gris.id, properties: [{ name: 'Reloj', type: 'clock', value: 2 }] })
+    expect(clock.page.properties).toEqual([{ name: 'Reloj', type: 'clock', value: 2, segments: 4 }])
+  })
+
   it('quien no es máster del mundo no lee ni escribe', async () => {
     const page = await ok200('createPage', { worldId, title: 'Puerto Ceniza' })
     const player = await signUpTestUser(auth, { name: 'Lía', email: 'lia@crisol.test' })

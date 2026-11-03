@@ -28,13 +28,13 @@ Las plantillas de serie llegan antes que las de la cuenta. Así el primer criter
     de un bloque del panel.
 - **Las propiedades** (`PageProperty`):
   - todas ganan un `field` opcional, el id del campo de la plantilla;
-  - tres tipos nuevos: `choice` (valor y opciones), `page` (una página o ninguna, con `targets` opcional) y `clock`
-    (valor y segmentos, de 2 a 12);
-  - `pages` gana `targets` opcional.
+  - dos tipos nuevos: `choice` (valor y opciones) y `clock` (valor y segmentos, de 2 a 12);
+  - el enlace a una sola página es `pages` con `single`, y `pages` gana `targets` opcional. Así la búsqueda (que no mira
+    los enlaces) y las tablas tratan igual los dos, sin tocar la función de búsqueda de la base de datos.
 
   Lo que ya hay guardado sigue valiendo tal cual.
 - **El Markdown** (frontmatter):
-  - `choice` se escribe como texto, `page` como `"[[Título]]"` y `clock` como `"3/8"`;
+  - `choice` se escribe como texto, un enlace `single` como `"[[Título]]"` y `clock` como `"3/8"`;
   - la plantilla va en `plantilla: <nombre>`.
 
   Al leer con plantilla, cada propiedad que se llame como un campo toma su id y su forma. Se compara sin mayúsculas ni
