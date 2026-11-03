@@ -106,7 +106,10 @@ export const MCP_TOOLS: Record<string, McpTool> = {
   cambiar_panel: { action: 'setPagePanel' },
   // Las plantillas de página (ADR-0009)
   listar_plantillas: { action: 'listTemplates' },
-  ver_plantilla: { action: 'getTemplate' }
+  ver_plantilla: { action: 'getTemplate' },
+  crear_plantilla: { action: 'createTemplate' },
+  cambiar_plantilla: { action: 'updateTemplate' },
+  borrar_plantilla: { action: 'deleteTemplate' }
 }
 
 const INSTRUCTIONS =

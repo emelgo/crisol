@@ -142,7 +142,9 @@ amplía `@fugas` en la misma tarea. Cobertura ≥ 80 % de lo cambiado (bloquea d
 
 ## Fase 4: Plantillas de la cuenta
 
-- [ ] **9. Plantillas de la cuenta en el servidor**
+- [x] **9. Plantillas de la cuenta en el servidor** — hecha. Borrar una la aparta (`deleted_at`): `listTemplates` da
+  las borradas aparte (`deleted`), para el nombre de las páginas que salieron de ellas. Un campo nuevo sin id recibe uno;
+  los enlaces de una plantilla van vacíos. Las tablas de una plantilla pueden nombrarla a ella misma.
   - Acepta:
     - Migración 0036: `page_templates` de la organización (nombre, icono, `basedOn`, linaje, campos, panel y
       esqueleto), en `TRACKED_TABLES`.

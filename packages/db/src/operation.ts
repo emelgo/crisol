@@ -12,6 +12,7 @@ import { mapElements, mapPins, maps, pageTabs } from './schema/maps.ts'
 import { organizationMembers, organizations } from './schema/organizations.ts'
 import { pages } from './schema/pages.ts'
 import { tags } from './schema/tags.ts'
+import { pageTemplates } from './schema/templates.ts'
 import { pageBodies } from './schema/versions.ts'
 import { worldMembers, worlds } from './schema/worlds.ts'
 
@@ -29,6 +30,7 @@ export const TRACKED_TABLES = {
   files,
   file_folders: fileFolders,
   tags,
+  page_templates: pageTemplates,
   page_tabs: pageTabs,
   maps,
   map_pins: mapPins,

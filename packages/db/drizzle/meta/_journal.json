@@ -253,6 +253,13 @@
       "when": 1793723989629,
       "tag": "0035_plantilla_de_la_pagina",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1793727768655,
+      "tag": "0036_plantillas_de_la_cuenta",
+      "breakpoints": true
     }
   ]
 }

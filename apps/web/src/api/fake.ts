@@ -214,13 +214,21 @@ export function fakeApi(
     hasChildren: childrenOf(page.worldId, page.id).length > 0,
     version: page.version
   })
+  // Las plantillas de la cuenta (las de serie, en el dominio)
+  const ownTemplates: Array<PageTemplate & { deleted: boolean }> = []
+  const templateById = (id: string): PageTemplate | undefined =>
+    (builtInTemplate(id) as PageTemplate | undefined) ?? ownTemplates.find((t) => t.id === id && !t.deleted)
   // Las tablas que se llenan solas, como el servidor: las de su plantilla (o sus copias) con el campo hacia esta página
-  const lineOf = (page: StoredPage) => (page.template ? (builtInTemplate(page.template)?.line ?? [page.template]) : [])
+  const lineOf = (page: StoredPage) =>
+    page.template
+      ? (builtInTemplate(page.template)?.line ??
+        ownTemplates.find((t) => t.id === page.template)?.line ?? [page.template])
+      : []
   const tablesOf = (page: StoredPage): PageTables => {
     const blocks = (page.panel ?? []).filter((block) => block.type === 'related')
     const linked = new Map<string, string>()
     const tables = blocks.map((block) => {
-      const template = builtInTemplate(block.template)
+      const template = templateById(block.template)
       const rows = pages
         .filter(
           (other) =>
@@ -618,7 +626,7 @@ export function fakeApi(
     createPage: ({ worldId, title, parentId, before, after, template }) => {
       if (parentId) pageById(parentId)
       // Con plantilla, sus campos y su panel, como el servidor (el esqueleto del texto no se simula)
-      const from = template ? builtInTemplate(template) : undefined
+      const from = template ? templateById(template) : undefined
       if (template && !from) throw new ApiError('TEMPLATE_NOT_FOUND', 400)
       const made = from ? instantiate(from, () => crypto.randomUUID().replace(/-/g, '').slice(0, 12)) : null
       const page: StoredPage = {
@@ -761,12 +769,52 @@ export function fakeApi(
     },
     restorePageVersion: () => ({ restored: false }),
     // Por el título, sin tildes ni mayúsculas (la de verdad la prueban las del servidor)
-    // Las plantillas de serie, como el servidor (las de la cuenta, con la tarea 9)
-    listTemplates: () => ({ templates: structuredClone([...BUILT_IN_TEMPLATES]) as PageTemplate[] }),
+    // Las plantillas: las de serie y las de la cuenta, como el servidor
+    listTemplates: () => ({
+      templates: structuredClone([...BUILT_IN_TEMPLATES, ...ownTemplates.filter((t) => !t.deleted)]) as PageTemplate[],
+      deleted: ownTemplates.filter((t) => t.deleted).map((t) => ({ id: t.id, name: t.name, icon: t.icon }))
+    }),
     getTemplate: ({ templateId }) => {
-      const found = builtInTemplate(templateId)
+      const found = templateById(templateId)
       if (!found) throw new ApiError('NOT_FOUND', 404)
       return structuredClone(found) as PageTemplate
+    },
+    createTemplate: ({ name, icon, copyOf }) => {
+      const base = copyOf
+        ? (templateById(copyOf) ?? [...BUILT_IN_TEMPLATES, ...ownTemplates].find((t) => t.name === copyOf))
+        : undefined
+      if (copyOf && !base) throw new ApiError('TEMPLATE_NOT_FOUND', 400)
+      if ([...BUILT_IN_TEMPLATES, ...ownTemplates].some((t) => !('deleted' in t && t.deleted) && t.name === name)) {
+        throw new ApiError('TEMPLATE_TAKEN', 400)
+      }
+      const id = crypto.randomUUID()
+      const template = {
+        id,
+        name,
+        icon: icon ?? 'template',
+        basedOn: base?.id ?? null,
+        line: [id, ...(base?.line ?? [])],
+        builtIn: false,
+        fields: structuredClone(base?.fields ?? []),
+        panel: structuredClone(base?.panel ?? []),
+        skeleton: base?.skeleton ?? '',
+        deleted: false
+      } as PageTemplate & { deleted: boolean }
+      ownTemplates.push(template)
+      return structuredClone(template) as PageTemplate
+    },
+    updateTemplate: ({ templateId, ...patch }) => {
+      const found = ownTemplates.find((t) => t.id === templateId && !t.deleted)
+      if (!found) throw new ApiError('NOT_FOUND', 404)
+      const fields = patch.fields?.map((f) => (f.field ? f : { ...f, field: crypto.randomUUID().slice(0, 8) }))
+      Object.assign(found, { ...patch, ...(fields ? { fields } : {}) })
+      return structuredClone(found) as PageTemplate
+    },
+    deleteTemplate: ({ templateId }) => {
+      const found = ownTemplates.find((t) => t.id === templateId && !t.deleted)
+      if (!found) throw new ApiError('NOT_FOUND', 404)
+      found.deleted = true
+      return { id: found.id, name: found.name }
     },
     searchWiki: ({ worldId, query, page = 1 }) => {
       const fold = (text: string) => text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()

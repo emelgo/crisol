@@ -168,7 +168,7 @@ export const pageActions = [
       }
     }
     // Las tablas que se llenan solas: con una plantilla, un campo de enlace y columnas suyas (ADR-0009)
-    await checkTables(ctx, wiki, page.panel, blocks)
+    await checkTables(ctx, wiki.organizationId, page.panel, blocks)
     await pagesRepo.updatePage(ctx.db, historyContext(ctx, 'setPagePanel', { title: page.title }, wiki), pageId, {
       panel: blocks
     })

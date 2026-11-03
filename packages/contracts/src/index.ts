@@ -66,7 +66,7 @@ import {
 } from './pages.ts'
 import { searchWiki } from './search.ts'
 import { createTag, deleteTag, listAccountTags, setFileTags, updateTag } from './tags.ts'
-import { getTemplate, listTemplates } from './templates.ts'
+import { createTemplate, deleteTemplate, getTemplate, listTemplates, updateTemplate } from './templates.ts'
 import {
   deleteCampaign,
   deletePage,
@@ -186,7 +186,10 @@ export const ACTIONS = [
   getWorldHome,
   ensureWorldHome,
   listTemplates,
-  getTemplate
+  getTemplate,
+  createTemplate,
+  updateTemplate,
+  deleteTemplate
 ]
 
 /** Las acciones por nombre, solo como tipo: la web las usa sin cargar zod */
@@ -279,4 +282,7 @@ export type Actions = {
   searchWiki: typeof searchWiki
   listTemplates: typeof listTemplates
   getTemplate: typeof getTemplate
+  createTemplate: typeof createTemplate
+  updateTemplate: typeof updateTemplate
+  deleteTemplate: typeof deleteTemplate
 }

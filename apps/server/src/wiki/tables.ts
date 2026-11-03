@@ -4,7 +4,7 @@
  */
 import { type PageTables, pagePanel } from '@crisol/contracts'
 import { pagesRepo } from '@crisol/db'
-import type { PageProperty } from '@crisol/domain'
+import type { PageProperty, PageTemplate } from '@crisol/domain'
 import type { WikiTarget } from '../actions/access.ts'
 import { type ActionContext, InvalidRequestError } from '../actions/context.ts'
 import { propertiesOf } from './properties.ts'
@@ -104,16 +104,18 @@ export async function pageTables(
  */
 export async function checkTables(
   ctx: ActionContext,
-  wiki: WikiTarget,
+  organizationId: string,
   before: unknown,
-  after: readonly ReturnType<typeof pagePanel.parse>[number][]
+  after: readonly ReturnType<typeof pagePanel.parse>[number][],
+  /** Las plantillas contra las que se mira, si no son las de ahora (al cambiar una que se nombra a sí misma) */
+  against?: readonly PageTemplate[]
 ) {
   const old = new Map((pagePanel.safeParse(before).data ?? []).map((block) => [block.id, JSON.stringify(block)]))
   const changed = after.filter(
     (block): block is TableBlock => block.type === 'related' && old.get(block.id) !== JSON.stringify(block)
   )
   if (changed.length === 0) return
-  const templates = await usableTemplates(ctx, wiki.organizationId)
+  const templates = against ?? (await usableTemplates(ctx, organizationId))
   for (const block of changed) {
     const template = templates.find((each) => each.id === block.template)
     const fields = template?.fields ?? []

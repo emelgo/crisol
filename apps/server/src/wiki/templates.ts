@@ -3,13 +3,42 @@
  * página nueva. Las de serie viven en el dominio; las de la cuenta llegan con la tarea 9
  */
 import { randomBytes } from 'node:crypto'
-import { BUILT_IN_TEMPLATES, fieldKey, type PageTemplate } from '@crisol/domain'
+import { pagePanel, TEMPLATE_ICONS } from '@crisol/contracts'
+import { templatesRepo } from '@crisol/db'
+import { BUILT_IN_TEMPLATES, fieldKey, type PageTemplate, type TemplateIcon } from '@crisol/domain'
 import { type ActionContext, InvalidRequestError } from '../actions/context.ts'
+import { propertiesOf } from './properties.ts'
 
-/** Las plantillas que se pueden usar en una organización */
-export async function usableTemplates(_ctx: ActionContext, _organizationId: string): Promise<readonly PageTemplate[]> {
-  return BUILT_IN_TEMPLATES
+const iconOf = (icon: string): TemplateIcon =>
+  (TEMPLATE_ICONS as readonly string[]).includes(icon) ? (icon as TemplateIcon) : 'template'
+
+/** Una plantilla de la cuenta, como las de serie (lo guardado que no valga, fuera) */
+export const ownTemplate = (row: templatesRepo.TemplateRow): PageTemplate => ({
+  id: row.id,
+  name: row.name,
+  icon: iconOf(row.icon),
+  basedOn: row.basedOn,
+  line: row.line,
+  builtIn: false,
+  fields: propertiesOf(row.fields),
+  panel: pagePanel.safeParse(row.panel).data ?? [],
+  skeleton: row.skeleton
+})
+
+/** Las plantillas que se pueden usar en una organización: las de serie y las suyas, en el orden en que se hicieron */
+export async function usableTemplates(ctx: ActionContext, organizationId: string): Promise<readonly PageTemplate[]> {
+  const own = await templatesRepo.listTemplates(ctx.db, organizationId)
+  return [...BUILT_IN_TEMPLATES, ...own.map(ownTemplate)]
 }
+
+/** Las de la cuenta que se borraron: su nombre, para las páginas que salieron de ellas */
+export async function deletedTemplates(ctx: ActionContext, organizationId: string) {
+  const rows = await templatesRepo.listTemplates(ctx.db, organizationId, true)
+  return rows.map((row) => ({ id: row.id, name: row.name, icon: iconOf(row.icon) }))
+}
+
+/** El id de un campo nuevo de una plantilla propia */
+export const newFieldId = () => randomBytes(5).toString('hex')
 
 /** Una plantilla por su id o por su nombre (sin mirar mayúsculas ni tildes) */
 export async function findTemplate(ctx: ActionContext, organizationId: string, ref: string): Promise<PageTemplate> {

@@ -188,6 +188,7 @@ describe('conector MCP con OAuth', () => {
     const page = await api<{ id: string }>(cookie, 'createPage', { worldId: world.id, title: 'Lugares' })
     await api(cookie, 'editPage', { pageId: page.id, body: { mode: 'append', markdown: 'Texto.' } })
     const { versions } = await api<{ versions: { id: string }[] }>(cookie, 'listPageVersions', { pageId: page.id })
+    const own = await api<{ id: string }>(cookie, 'createTemplate', { name: 'Frente' })
     const cases: Array<[string, Record<string, unknown>, 'read' | 'write' | 'players' | 'delete']> = [
       ['listar_mundos', {}, 'read'],
       ['ver_campana', { campaignId: campaign.id }, 'read'],
@@ -204,6 +205,9 @@ describe('conector MCP con OAuth', () => {
       ['ver_pestanas', { pageId: page.id }, 'read'],
       ['listar_plantillas', {}, 'read'],
       ['ver_plantilla', { templateId: 'pnj' }, 'read'],
+      ['crear_plantilla', { name: 'PNJ de Eana', copyOf: 'pnj' }, 'write'],
+      ['cambiar_plantilla', { templateId: own.id, skeleton: '## En una frase' }, 'write'],
+      ['borrar_plantilla', { templateId: own.id }, 'delete'],
       ['buscar_paginas', { worldId: world.id, query: 'lugares' }, 'read'],
       ['restaurar_version', { pageId: page.id, versionId: versions[0]?.id }, 'write'],
       ['crear_mundo', { name: 'Otro' }, 'write'],
