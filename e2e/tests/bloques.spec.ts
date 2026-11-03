@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, type Page, test } from '@playwright/test'
-import { createWorld, freshOwner, openWiki } from './ayudas.ts'
+import { createWorld, freshOwner, openWiki, slash } from './ayudas.ts'
 
 /** El propietario crea Eana y una página, y la deja abierta con el cursor en el texto */
 async function openPage(page: Page) {
@@ -13,7 +13,8 @@ async function openPage(page: Page) {
   await page.keyboard.type('Puerto Ceniza')
   await page.keyboard.press('Enter')
   await expect(page.getByRole('heading', { level: 1, name: 'Puerto Ceniza' })).toBeVisible()
-  await body(page).click()
+  // La primera línea (el texto es una hoja entera: pulsar en su centro desplazaría la página)
+  await body(page).locator('p').first().click()
 }
 
 const body = (page: Page) => page.getByRole('textbox', { name: 'Texto de la página' })
@@ -352,4 +353,23 @@ test('el editor con sus bloques y sus menús, en los dos temas @a11y', async ({ 
   await page.keyboard.press('Control+Alt+b')
   await expect(page.getByRole('menu', { name: 'Bloque' })).toBeVisible()
   await check()
+})
+
+test('el salto de página va debajo de lo de antes y se borra desde su asa', async ({ page }) => {
+  await openPage(page)
+  await page.keyboard.type('Primera hoja.')
+  await page.keyboard.press('Enter')
+  await slash(page, 'Salto de página')
+  await page.keyboard.type('Segunda hoja.')
+  const pageBreak = body(page).locator('[data-break="page"]')
+  await expect(pageBreak).toHaveCount(1)
+  // No encima de la primera línea (antes se quedaba arriba del todo)
+  const first = (await body(page).getByText('Primera hoja.').boundingBox())!
+  const line = (await pageBreak.boundingBox())!
+  expect(line.y).toBeGreaterThanOrEqual(first.y + first.height - 1)
+  await pageBreak.hover()
+  await page.getByRole('button', { name: 'Mover o cambiar el bloque' }).click()
+  await page.getByRole('menu', { name: 'Bloque' }).getByRole('menuitem', { name: 'Borrar' }).click()
+  await expect(pageBreak).toHaveCount(0)
+  await expect(body(page).getByText('Segunda hoja.')).toBeVisible()
 })

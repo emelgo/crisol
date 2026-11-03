@@ -116,11 +116,12 @@ function layOut(editor: Editor, settings: SheetSettings, k: number) {
       // Hasta que se coloque: a su ancho, para medirlo bien
       `position:absolute;left:0;top:0;width:${block.kind === 'wide' ? g.content : g.column}px;margin-inline:0;box-sizing:border-box`
   )
-  let last: { x: number; y: number; width: number } | null = null
+  // Dónde acaba cada bloque colocado (por su orden)
+  const ends: ({ x: number; y: number; width: number } | undefined)[] = []
   const place = (id: string, x: number, y: number, width: number) => {
     const index = Number(id)
     placed[index] = `position:absolute;left:${x}px;top:${y}px;width:${width}px;margin-inline:0;box-sizing:border-box`
-    last = { x, y: y + (heights[index] ?? 0), width }
+    ends[index] = { x, y: y + (heights[index] ?? 0), width }
   }
   pages.forEach((page, p) => {
     let y = p * (g.height + PAGE_GAP)
@@ -143,14 +144,25 @@ function layOut(editor: Editor, settings: SheetSettings, k: number) {
       y = Math.max(left, right)
     }
   })
+  // Los saltos (de página o de columna) no van en ninguna fila: su raya, justo debajo del bloque de antes
+  blocks.forEach((block, index) => {
+    if (ends[index]) return
+    const before = ends[index - 1] ?? { x: 0, y: 0, width: g.content }
+    place(block.id, before.x, before.y, before.width)
+  })
+  const last = ends.at(-1) ?? null
   const current = layoutKey.getState(state)?.styles
   const changed = !current || current.length !== placed.length || current.some((style, i) => style !== placed[i])
   if (changed) view.dispatch(state.tr.setMeta(layoutKey, { styles: placed }).setMeta('addToHistory', false))
   // La línea de más, debajo del último bloque (es de otra extensión: se coloca aquí, sin pasar por el documento)
   const ghost = view.dom.querySelector<HTMLElement>(`[${GHOST_LINE}]`)
-  const end = last as { x: number; y: number; width: number } | null
-  if (ghost && end) {
-    Object.assign(ghost.style, { position: 'absolute', left: `${end.x}px`, top: `${end.y}px`, width: `${end.width}px` })
+  if (ghost && last) {
+    Object.assign(ghost.style, {
+      position: 'absolute',
+      left: `${last.x}px`,
+      top: `${last.y}px`,
+      width: `${last.width}px`
+    })
   }
   return { pages: Math.max(1, pages.length), changed }
 }
