@@ -257,6 +257,32 @@ describe('Claude lee y escribe páginas en Markdown', () => {
     )
   })
 
+  it('escribir en el texto o en un secreto pone al día la fecha de la página, sin subir su versión', async () => {
+    const { pages } = await ok200('createPages', {
+      worldId,
+      parentId: null,
+      pages: [{ key: 'p', title: 'Fecha al día', markdown: 'Uno.\n\n> [!secreto]\n> Dentro.' }]
+    })
+    const pageId = pages[0].id
+    const row = async () => {
+      const [found] = await conn.db.select().from(schema.pages).where(eq(schema.pages.id, pageId))
+      return { updatedAt: found?.updatedAt.getTime() ?? 0, version: found?.version }
+    }
+    const first = await row()
+    await ok200('editPage', { pageId, body: { mode: 'append', markdown: 'Dos.' } })
+    const second = await row()
+    expect(second.updatedAt).toBeGreaterThan(first.updatedAt)
+    expect(second.version).toBe(first.version)
+    const secretId = /\^s-([a-z0-9]{8})/.exec((await ok200('readPage', { pageId, ids: true })).markdown)?.[1]
+    await ok200('editPage', {
+      pageId,
+      body: { mode: 'block', blockId: secretId, markdown: '> [!secreto]\n> Otra cosa.' }
+    })
+    const third = await row()
+    expect(third.updatedAt).toBeGreaterThan(second.updatedAt)
+    expect(third.version).toBe(first.version)
+  })
+
   it('un secreto cambiado por bloque sin su ^s-id conserva su id y su documento', async () => {
     const { pages } = await ok200('createPages', {
       worldId,
