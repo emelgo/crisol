@@ -1,6 +1,6 @@
 /* Las versiones: una lista que se abre, con lo de cada una en solo lectura */
 .panel {
-  margin-block: var(--space-6);
+  margin: 0;
 }
 
 .toggle {
@@ -20,12 +20,60 @@
   content: " ▾";
 }
 
+.panel ul {
+  max-block-size: 16rem;
+  margin: 0 0 var(--space-1) var(--space-2);
+  padding: 0 0 0 var(--space-1);
+  overflow-y: auto;
+  border-inline-start: 2px solid var(--color-border);
+  list-style: none;
+  scrollbar-width: thin;
+}
+
+/* Cada versión, una fila: cuándo y quién (corto) y, al pasar por encima, «Ver» y «Restaurar» */
 .item {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2) var(--space-3);
+  gap: 0 var(--space-1);
+  min-block-size: 1.875rem;
+  padding: 0 var(--space-1);
+  border-radius: 6px;
+  font-size: 0.8125rem;
+}
+
+.item:hover {
+  background: color-mix(in srgb, var(--color-text) 6%, transparent);
+}
+
+.item > span:first-child {
+  flex: 1;
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.item > span:nth-child(2) {
+  display: flex;
+  flex: none;
+  gap: 2px;
+  opacity: 0;
+}
+
+.item:hover > span:nth-child(2),
+.item:focus-within > span:nth-child(2) {
+  opacity: 1;
+}
+
+.panel .item button {
+  inline-size: auto;
+  min-block-size: 1.5rem;
+  padding: 0 0.375rem;
+  border: 0;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
 }
 
 .current {
@@ -38,7 +86,11 @@
 
 .content {
   flex-basis: 100%;
-  padding: var(--space-2) var(--space-4);
+  max-block-size: 14rem;
+  overflow-y: auto;
+  margin-block: var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  font-size: 0.8125rem;
   border-inline-start: 3px solid var(--color-frame);
   background: var(--color-surface);
 }

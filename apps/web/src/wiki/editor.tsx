@@ -95,16 +95,20 @@ export function PageBody({ page }: { page: Page }) {
       <SeparatePageContext.Provider value={page.id}>
         <PageLinksContext.Provider value={links}>
           <NestedOptionsContext.Provider value={nestedOptions}>
-            <BodyEditor
-              key={page.id}
-              pageId={page.id}
-              document={session.document}
-              provider={session.provider}
-              editable={!page.locked}
-              ready={synced}
-              sheet={sheetOf(page)}
-              title={page.title}
-            />
+            {/* El editor, solo cuando ya llegó el texto (o sin conexión): uno creado antes escribiría su línea vacía en
+                el documento compartido, y cada vez que se abriera la página (o React lo montara dos veces) sumaría otra */}
+            {(synced || offline) && (
+              <BodyEditor
+                key={page.id}
+                pageId={page.id}
+                document={session.document}
+                provider={session.provider}
+                editable={!page.locked}
+                ready={synced}
+                sheet={sheetOf(page)}
+                title={page.title}
+              />
+            )}
           </NestedOptionsContext.Provider>
         </PageLinksContext.Provider>
       </SeparatePageContext.Provider>

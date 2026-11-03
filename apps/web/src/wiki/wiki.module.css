@@ -219,7 +219,7 @@
   align-items: stretch;
   gap: var(--space-2);
   inline-size: max-content;
-  min-inline-size: 15rem;
+  min-inline-size: 17rem;
   max-inline-size: min(22rem, calc(100vw - 2rem));
   padding: var(--space-3);
   background: var(--color-surface);

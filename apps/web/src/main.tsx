@@ -1,4 +1,3 @@
-import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { createAccountClient } from './account/client.ts'
 import { createApiClient } from './api/client.ts'
@@ -9,14 +8,14 @@ import { createCollabClient } from './wiki/collab.tsx'
 
 const root = document.getElementById('root')
 if (!root) throw new Error('Falta el elemento #root')
+// Sin StrictMode: en desarrollo monta el editor dos veces y, con la edición en vivo (Yjs), el editor de más dejaba una
+// línea vacía en el documento compartido cada vez que se abría una página (en producción no monta dos veces)
 createRoot(root).render(
-  <StrictMode>
-    <App
-      router={createAppRouter()}
-      accounts={createAccountClient()}
-      api={createApiClient()}
-      realtime={createRealtimeClient()}
-      collab={createCollabClient()}
-    />
-  </StrictMode>
+  <App
+    router={createAppRouter()}
+    accounts={createAccountClient()}
+    api={createApiClient()}
+    realtime={createRealtimeClient()}
+    collab={createCollabClient()}
+  />
 )
