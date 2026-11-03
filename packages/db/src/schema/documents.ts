@@ -25,7 +25,7 @@ export const documents = pgTable(
     pageId: uuid()
       .notNull()
       .references(() => pages.id, { onDelete: 'cascade' }),
-    kind: text({ enum: ['body', 'secret', 'note'] }).notNull(),
+    kind: text({ enum: ['body', 'secret', 'note', 'tab'] }).notNull(),
     state: bytea().notNull(),
     // Su texto plano, para buscar y encontrar menciones (se rehace con cada guardado; null: aún no)
     text: text(),
@@ -37,6 +37,6 @@ export const documents = pgTable(
     index().on(t.pageId),
     // Un solo cuerpo por página
     uniqueIndex('documents_one_body').on(t.pageId).where(sql`${t.kind} = 'body'`),
-    check('documents_kind', sql`${t.kind} in ('body', 'secret', 'note')`)
+    check('documents_kind', sql`${t.kind} in ('body', 'secret', 'note', 'tab')`)
   ]
 )

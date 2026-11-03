@@ -745,7 +745,14 @@ export function EntryView({
             }
           />
           <PageTabs page={page} tabs={tabs} active={active?.id ?? null} />
-          {active ? (
+          {active?.kind === 'text' ? (
+            // Otra página de texto: la misma hoja y el mismo editor, con su propio documento
+            <div className={styles.column}>
+              <SheetPaper page={page}>
+                <PageBody key={active.id} page={page} documentId={active.documentId} />
+              </SheetPaper>
+            </div>
+          ) : active ? (
             <MapTab key={active.id} page={page} tab={active} />
           ) : (
             <div className={styles.column}>

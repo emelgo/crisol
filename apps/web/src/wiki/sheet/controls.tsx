@@ -88,22 +88,6 @@ export function SheetMenu({ page }: { page: Page }) {
     <SheetSettingsRow page={page} settings={sheetOf(page)}>
       {(row) => (
         <>
-          <div className={styles.line}>
-            <span>{t('sheet.columns')}</span>
-            {/* biome-ignore lint/a11y/useSemanticElements: dos botones que se eligen, no un grupo de un formulario */}
-            <div className={styles.segmented} role="group" aria-label={t('sheet.columns')}>
-              {([1, 2] as const).map((count) => (
-                <button
-                  key={count}
-                  type="button"
-                  aria-pressed={row.local.columns === count}
-                  onClick={() => row.change({ columns: count })}
-                >
-                  {count}
-                </button>
-              ))}
-            </div>
-          </div>
           <button
             type="button"
             className={styles.opener}

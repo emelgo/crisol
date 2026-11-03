@@ -5,7 +5,7 @@
 import type { Page, PageTabView } from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
-import { ChevronDown, Clock, Map as MapIcon, Network, PenTool, Plus } from 'lucide-react'
+import { ChevronDown, Clock, FileText, Map as MapIcon, Network, PenTool, Plus } from 'lucide-react'
 import { type RefObject, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../../api/context.tsx'
@@ -63,7 +63,26 @@ function useDismiss(
  */
 export function PageTabs({ page, tabs, active }: { page: Page; tabs: PageTabView[]; active: string | null }) {
   const { t } = useTranslation()
+  const api = useApi()
+  const queryClient = useQueryClient()
+  const navigate = useNavigate()
   const params = { worldId: page.worldId, pageId: page.id }
+  // El botón derecho sobre una pestaña: se elige y se abre su menú
+  const [menuFor, setMenuFor] = useState<string | null>(null)
+  // Recolocar arrastrando: la que se lleva y sobre cuál va (se pone delante de ella)
+  const [dragging, setDragging] = useState<string | null>(null)
+  const [over, setOver] = useState<string | null>(null)
+  const move = useMutation({
+    mutationFn: ({ tabId, after }: { tabId: string; after: string | null }) =>
+      api.call('updatePageTab', { tabId, after }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: tabsKey(page.worldId, page.id) })
+  })
+  const dropOn = (target: string) => {
+    if (!dragging || dragging === target) return
+    const others = tabs.filter((tab) => tab.id !== dragging)
+    const at = others.findIndex((tab) => tab.id === target)
+    move.mutate({ tabId: dragging, after: at > 0 ? (others[at - 1]?.id ?? null) : null })
+  }
   return (
     <nav aria-label={t('pageTabs.label')} className={styles.bar} data-tour="mapa-pestanas" data-side-anchor="">
       <ul>
@@ -80,8 +99,42 @@ export function PageTabs({ page, tabs, active }: { page: Page; tabs: PageTabView
           </Link>
         </li>
         {tabs.map((tab, index) => (
-          <li key={tab.id} className={styles.item}>
+          <li
+            key={tab.id}
+            className={styles.item}
+            draggable={!page.locked}
+            data-dragging={dragging === tab.id || undefined}
+            data-over={(over === tab.id && dragging !== tab.id) || undefined}
+            onDragStart={(event) => {
+              setDragging(tab.id)
+              event.dataTransfer.effectAllowed = 'move'
+              event.dataTransfer.setData('text/plain', tab.name)
+            }}
+            onDragEnd={() => {
+              setDragging(null)
+              setOver(null)
+            }}
+            onDragOver={(event) => {
+              if (!dragging) return
+              event.preventDefault()
+              setOver(tab.id)
+            }}
+            onDrop={(event) => {
+              event.preventDefault()
+              dropOn(tab.id)
+              setDragging(null)
+              setOver(null)
+            }}
+            onContextMenu={(event) => {
+              if (page.locked) return
+              event.preventDefault()
+              setMenuFor(tab.id)
+              if (active !== tab.id)
+                void navigate({ to: '/mundos/$worldId/wiki/$pageId', params, search: { pestana: tab.id } })
+            }}
+          >
             <Link
+              draggable={false}
               to="/mundos/$worldId/wiki/$pageId"
               params={params}
               search={{ pestana: tab.id }}
@@ -89,10 +142,22 @@ export function PageTabs({ page, tabs, active }: { page: Page; tabs: PageTabView
               className={styles.tab}
               aria-current={active === tab.id ? 'page' : undefined}
             >
-              <MapIcon aria-hidden="true" size={14} />
+              {tab.kind === 'text' ? (
+                <FileText aria-hidden="true" size={14} />
+              ) : (
+                <MapIcon aria-hidden="true" size={14} />
+              )}
               {tab.name}
             </Link>
-            {active === tab.id && !page.locked && <TabMenu page={page} tabs={tabs} index={index} />}
+            {active === tab.id && !page.locked && (
+              <TabMenu
+                page={page}
+                tabs={tabs}
+                index={index}
+                requested={menuFor === tab.id}
+                onRequested={() => setMenuFor(null)}
+              />
+            )}
           </li>
         ))}
         {!page.locked && (
@@ -107,8 +172,9 @@ export function PageTabs({ page, tabs, active }: { page: Page; tabs: PageTabView
   )
 }
 
-/** Los tipos de pestaña: el mapa ya; los demás, en las fases que vienen (ADR-0007) */
+/** Los tipos de pestaña: texto y mapa ya; los demás, en las fases que vienen (ADR-0007) */
 const KINDS = [
+  { kind: 'text', icon: FileText, ready: true },
   { kind: 'map', icon: MapIcon, ready: true },
   { kind: 'board', icon: PenTool, ready: false },
   { kind: 'timeline', icon: Clock, ready: false },
@@ -124,12 +190,13 @@ function NewTab({ page }: { page: Page }) {
   const errorText = useErrorText()
   const [open, setOpen] = useState(false)
   const [name, setName] = useState('')
+  const [kind, setKind] = useState<'text' | 'map'>('text')
   const titleId = useId()
   const dialog = useRef<HTMLDialogElement>(null)
   const trigger = useRef<HTMLButtonElement>(null)
   const add = useMutation({
     mutationFn: () =>
-      api.call('createPageTab', { pageId: page.id, kind: 'map', ...(name.trim() ? { name: name.trim() } : {}) }),
+      api.call('createPageTab', { pageId: page.id, kind, ...(name.trim() ? { name: name.trim() } : {}) }),
     onSuccess: async (tab) => {
       // Ya en la lista, sin esperar a pedirla otra vez
       queryClient.setQueryData<PageTabView[]>(tabsKey(page.worldId, page.id), (tabs) => [...(tabs ?? []), tab])
@@ -163,6 +230,7 @@ function NewTab({ page }: { page: Page }) {
           onClose={() => {
             setOpen(false)
             setName('')
+            setKind('text')
             trigger.current?.focus()
           }}
         >
@@ -176,11 +244,19 @@ function NewTab({ page }: { page: Page }) {
             <h2 id={titleId}>{t('pageTabs.newTitle')}</h2>
             <fieldset className={styles.kinds}>
               <legend className={styles.hidden}>{t('pageTabs.kind')}</legend>
-              {KINDS.map(({ kind, icon: Icon, ready }) => (
-                <label key={kind} className={styles.kindCard} data-ready={ready || undefined}>
-                  <input type="radio" name={`${titleId}-kind`} disabled={!ready} defaultChecked={kind === 'map'} />
+              {KINDS.map(({ kind: option, icon: Icon, ready }) => (
+                <label key={option} className={styles.kindCard} data-ready={ready || undefined}>
+                  <input
+                    type="radio"
+                    name={`${titleId}-kind`}
+                    disabled={!ready}
+                    checked={kind === option}
+                    onChange={() => {
+                      if (option === 'text' || option === 'map') setKind(option)
+                    }}
+                  />
                   <Icon aria-hidden="true" size={20} />
-                  {t(`pageTabs.kinds.${kind}`)}
+                  {t(`pageTabs.kinds.${option}`)}
                   {!ready && <span className={styles.soon}>{t('pageTabs.soon')}</span>}
                 </label>
               ))}
@@ -206,7 +282,20 @@ function NewTab({ page }: { page: Page }) {
 }
 
 /** El menú de la pestaña elegida */
-function TabMenu({ page, tabs, index }: { page: Page; tabs: PageTabView[]; index: number }) {
+function TabMenu({
+  page,
+  tabs,
+  index,
+  requested,
+  onRequested
+}: {
+  page: Page
+  tabs: PageTabView[]
+  index: number
+  /** Pedido con el botón derecho: se abre solo */
+  requested: boolean
+  onRequested: () => void
+}) {
   const { t } = useTranslation()
   const api = useApi()
   const queryClient = useQueryClient()
@@ -219,6 +308,11 @@ function TabMenu({ page, tabs, index }: { page: Page; tabs: PageTabView[]; index
   const [name, setName] = useState(tab.name)
   const root = useRef<HTMLDivElement>(null)
   const trigger = useRef<HTMLButtonElement>(null)
+  useEffect(() => {
+    if (!requested) return
+    setOpen(true)
+    onRequested()
+  }, [requested, onRequested])
   const panelId = useId()
   const nameId = useId()
   const close = () => {

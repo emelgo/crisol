@@ -45,9 +45,9 @@ import { withNodeView } from './views.ts'
  * El cuerpo de la página: el editor de bloques sobre su documento de Yjs. Lo que se escribe llega a las demás pestañas
  * al momento y se guarda solo; sin conexión se sigue escribiendo y se sincroniza al volver
  */
-export function PageBody({ page }: { page: Page }) {
+export function PageBody({ page, documentId }: { page: Page; documentId?: string | null }) {
   const { t } = useTranslation()
-  const { session, synced, offline } = useCollabDocument(`page:${page.id}`)
+  const { session, synced, offline } = useCollabDocument(documentId ? `doc:${documentId}` : `page:${page.id}`)
   const nestedOptions = useNestedOptions(caretColor)
   const links = usePageLinks(page.worldId)
   const saving = useSaving(session?.provider ?? null)
@@ -58,7 +58,8 @@ export function PageBody({ page }: { page: Page }) {
     const timer = setTimeout(() => setSlow(true), 150)
     return () => clearTimeout(timer)
   }, [synced, offline])
-  const stored = usePageContent(page.worldId, slow && !synced ? page.id : null, null, false)
+  // (solo del cuerpo: el de una pestaña de texto no se guarda aparte)
+  const stored = usePageContent(page.worldId, slow && !synced && !documentId ? page.id : null, null, false)
   // El hueco de «Guardado», a la derecha de las pestañas de la página
   const [saveSlot, setSaveSlot] = useState<Element | null>(null)
   useEffect(() => setSaveSlot(document.querySelector('[data-save-slot]')), [])
@@ -99,7 +100,7 @@ export function PageBody({ page }: { page: Page }) {
                 el documento compartido, y cada vez que se abriera la página (o React lo montara dos veces) sumaría otra */}
             {(synced || offline) && (
               <BodyEditor
-                key={page.id}
+                key={documentId ?? page.id}
                 pageId={page.id}
                 document={session.document}
                 provider={session.provider}
@@ -322,7 +323,7 @@ function BodyEditor({
     <div aria-busy={!ready}>
       {/* Sin barra de botones encima: los bloques, con «/»; buscar en la página, con Ctrl+Alt+F */}
       {editor && <FindBar editor={editor} />}
-      <PagedSheet editor={editor} settings={sheet} title={title} ready={ready}>
+      <PagedSheet editor={editor} settings={sheet} ready={ready}>
         <EditorContent editor={editor} />
       </PagedSheet>
       <input

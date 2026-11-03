@@ -9,6 +9,7 @@ import {
   text,
   uuid
 } from 'drizzle-orm/pg-core'
+import { documents } from './documents.ts'
 import { files } from './files.ts'
 import { pages } from './pages.ts'
 import { trackedColumns } from './tracked.ts'
@@ -28,7 +29,9 @@ export const pageTabs = pgTable(
     pageId: uuid()
       .notNull()
       .references(() => pages.id, { onDelete: 'cascade' }),
-    kind: text({ enum: ['map'] }).notNull(),
+    kind: text({ enum: ['map', 'text'] }).notNull(),
+    /** La de texto, su documento (como un secreto: aparte del cuerpo) */
+    documentId: uuid().references((): Column => documents.id, { onDelete: 'set null' }),
     name: text().notNull(),
     position: text().notNull(),
     /** Oculta: el máster la ve atenuada; los jugadores, cuando lleguen (módulo 5), no */

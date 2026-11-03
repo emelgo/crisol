@@ -225,6 +225,13 @@
       "when": 1793644893976,
       "tag": "0031_panel_de_la_pagina",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1793696358343,
+      "tag": "0032_pestanas_de_texto",
+      "breakpoints": true
     }
   ]
 }

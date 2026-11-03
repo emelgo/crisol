@@ -11,7 +11,7 @@ import { pageBodies, pageVersions, snapshots, versionDocuments } from '../schema
 
 export interface DocumentState {
   documentId: string
-  kind: 'body' | 'secret' | 'note'
+  kind: 'body' | 'secret' | 'note' | 'tab'
   state: Uint8Array
   /** La huella del estado (para compartirlo entre versiones si no cambió) */
   hash: string

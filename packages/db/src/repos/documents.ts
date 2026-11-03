@@ -60,14 +60,14 @@ export async function findSeparate(db: Database, documentId: string) {
       state: documents.state
     })
     .from(documents)
-    .where(and(eq(documents.id, documentId), inArray(documents.kind, ['secret', 'note'])))
+    .where(and(eq(documents.id, documentId), inArray(documents.kind, ['secret', 'note', 'tab'])))
   return found ?? null
 }
 
 /** Crea el documento de un secreto o una nota oculta de una página, vacío o con el estado de otro */
 export async function createSeparate(
   db: Database,
-  input: { pageId: string; worldId: string; kind: 'secret' | 'note'; state: Uint8Array; userId: string }
+  input: { pageId: string; worldId: string; kind: 'secret' | 'note' | 'tab'; state: Uint8Array; userId: string }
 ) {
   const [created] = await db
     .insert(documents)

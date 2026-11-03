@@ -17,8 +17,9 @@ import {
   updateMapPin,
   updatePageTab
 } from '@crisol/contracts'
-import { filesRepo, mapsRepo } from '@crisol/db'
+import { documentsRepo, filesRepo, mapsRepo } from '@crisol/db'
 import { type Capability, keyBetween, NotFoundError } from '@crisol/domain'
+import * as Y from 'yjs'
 import { pagesChanged } from '../realtime/events.ts'
 import { authorizedPage, type WikiTarget } from './access.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
@@ -29,7 +30,8 @@ const tabView = (row: mapsRepo.PageTabRow): PageTabView => ({
   pageId: row.pageId,
   kind: row.kind,
   name: row.name,
-  hidden: row.hidden
+  hidden: row.hidden,
+  documentId: row.documentId ?? null
 })
 
 type PinRow = mapsRepo.MapPinRow & { pageTitle: string | null }
@@ -118,11 +120,31 @@ export const mapActions = [
   implement(createPageTab, async (ctx, { pageId, kind, name }) => {
     const { page, wiki } = await authorizedPage(ctx, 'page.write', pageId)
     const tabs = await mapsRepo.listTabs(ctx.db, pageId)
-    const named = name ?? (tabs.some((tab) => tab.kind === kind) ? `Mapa ${tabs.length + 1}` : 'Mapa')
+    const base = kind === 'text' ? 'Texto' : 'Mapa'
+    const same = tabs.filter((tab) => tab.kind === kind).length
+    const named = name ?? (same > 0 || kind === 'text' ? `${base} ${same + 2}` : base)
+    // Una de texto lleva su documento, como un secreto (vacío al nacer; no va al historial: lo cuenta su edición)
+    const documentId =
+      kind === 'text'
+        ? await documentsRepo.createSeparate(ctx.db, {
+            pageId,
+            worldId: wiki.worldId,
+            kind: 'tab',
+            state: Y.encodeStateAsUpdate(new Y.Doc()),
+            userId: ctx.actor.userId
+          })
+        : null
     const tab = await mapsRepo.createTab(
       ctx.db,
       historyContext(ctx, 'createPageTab', { title: page.title, kind, name: named }, wiki),
-      { worldId: wiki.worldId, pageId, kind, name: named, position: keyBetween(tabs.at(-1)?.position ?? null, null) }
+      {
+        worldId: wiki.worldId,
+        pageId,
+        kind,
+        name: named,
+        documentId,
+        position: keyBetween(tabs.at(-1)?.position ?? null, null)
+      }
     )
     ctx.realtime.publish(pagesChanged(wiki))
     return tabView(tab)

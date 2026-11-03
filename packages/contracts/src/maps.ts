@@ -6,7 +6,7 @@ import { z } from 'zod'
 import { defineAction } from './action.ts'
 import { worldColor } from './worlds.ts'
 
-export const PAGE_TAB_KINDS = ['map'] as const
+export const PAGE_TAB_KINDS = ['map', 'text'] as const
 
 const tabName = z.string().trim().min(1).max(60)
 
@@ -15,7 +15,9 @@ export const pageTabView = z.object({
   pageId: z.uuid(),
   kind: z.enum(PAGE_TAB_KINDS),
   name: z.string(),
-  hidden: z.boolean().describe('Oculta a los jugadores')
+  hidden: z.boolean().describe('Oculta a los jugadores'),
+  /** Una pestaña de texto: su documento (de Yjs, como un secreto), que se edita en vivo */
+  documentId: z.uuid().nullable()
 })
 
 export type PageTabView = z.infer<typeof pageTabView>

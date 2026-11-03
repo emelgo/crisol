@@ -35,7 +35,14 @@ export async function findTab(db: Database, tabId: string) {
 export function createTab(
   db: Database,
   context: OperationContext,
-  values: { worldId: string; pageId: string; kind: PageTabRow['kind']; name: string; position: string }
+  values: {
+    worldId: string
+    pageId: string
+    kind: PageTabRow['kind']
+    name: string
+    position: string
+    documentId?: string | null
+  }
 ) {
   return operation(db, context, async (w) => {
     const tab = await w.insert(pageTabs, values)

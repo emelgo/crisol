@@ -197,14 +197,11 @@ const NARROW = '(max-width: 48rem)'
 export function PagedSheet({
   editor,
   settings,
-  title,
   ready,
   children
 }: {
   editor: Editor | null
   settings: SheetSettings | null
-  /** Para el pie de cada página */
-  title: string
   /** El texto ya llegó del servidor: antes no se coloca nada (una transacción antes de tiempo metería una línea) */
   ready: boolean
   children: ReactNode
@@ -296,12 +293,8 @@ export function PagedSheet({
             aria-hidden="true"
             style={{ insetBlockStart: index * (g.height + PAGE_GAP), blockSize: g.height }}
           >
-            {(settings.footer || settings.numbers) && (
-              <span className={styles.footer} style={{ insetInline: g.side, insetBlockEnd: g.top / 2 }}>
-                <span>{settings.footer ? title : ''}</span>
-                <span>{settings.numbers ? settings.firstNumber + index : ''}</span>
-              </span>
-            )}
+            {/* Al escribir, sin pie (es para imprimir): en la raya entre páginas, su número, pequeño */}
+            {index > 0 && <span className={styles.number}>{settings.firstNumber + index}</span>}
           </div>
         ))}
         <div

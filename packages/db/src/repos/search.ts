@@ -68,7 +68,12 @@ export async function replaceSectionsMany(
  * Con su estado, para sacar su contenido
  */
 export async function unindexedDocuments(db: Database, worldId: string) {
-  const rows = await db.execute<{ id: string; page_id: string; kind: 'body' | 'secret' | 'note'; state: Buffer }>(sql`
+  const rows = await db.execute<{
+    id: string
+    page_id: string
+    kind: 'body' | 'secret' | 'note' | 'tab'
+    state: Buffer
+  }>(sql`
     select d.id, d.page_id, d.kind, d.state from documents d
     where d.world_id = ${worldId}
       and (d.text is null or (d.text <> '' and not exists (select 1 from search_sections s where s.document_id = d.id)))`)
@@ -205,7 +210,7 @@ export async function matchingSections(db: Database, pageIds: readonly string[],
     ) ranked where n <= 3 order by page_id, n`)
   return [...rows].map((row) => ({
     pageId: row.page_id,
-    kind: row.kind as 'body' | 'secret' | 'note',
+    kind: row.kind as 'body' | 'secret' | 'note' | 'tab',
     heading: row.heading,
     headingId: row.heading_id,
     excerpt: row.excerpt

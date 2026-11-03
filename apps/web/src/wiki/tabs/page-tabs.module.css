@@ -148,7 +148,8 @@
 }
 
 .newForm h2 {
-  margin: 0;
+  /* Su raya acaba antes de la ×: no pasa por detrás de ella */
+  margin: 0 calc(var(--target) + var(--space-1)) 0 0;
 }
 
 .kinds {
@@ -223,4 +224,17 @@
   overflow: hidden;
   clip-path: inset(50%);
   white-space: nowrap;
+}
+
+/* Recolocar arrastrando: la que se lleva, tenue; donde caerá, una raya a su izquierda */
+.item[draggable="true"] {
+  cursor: grab;
+}
+
+.item[data-dragging] {
+  opacity: 0.4;
+}
+
+.item[data-over] {
+  box-shadow: inset 2px 0 0 var(--color-accent-text);
 }

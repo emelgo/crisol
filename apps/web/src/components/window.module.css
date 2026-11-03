@@ -50,6 +50,13 @@
   color: var(--color-text);
 }
 
+/* Con el teclado, un anillo fino (sin el fondo de pasar el ratón, que parecía un botón pulsado) */
+.close:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: -2px;
+  background: transparent;
+}
+
 @media (max-width: 48rem) {
   .window {
     inline-size: 100vw;

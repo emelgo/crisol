@@ -9,7 +9,7 @@ import * as Y from 'yjs'
 import type { ActionEnv } from '../actions/context.ts'
 import { documentJson, jsonOfDoc, writeDocument } from './content.ts'
 
-type Kind = 'body' | 'secret' | 'note'
+type Kind = 'body' | 'secret' | 'note' | 'tab'
 
 const sha256 = (data: Uint8Array | string) => createHash('sha256').update(data).digest('hex')
 

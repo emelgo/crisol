@@ -791,7 +791,14 @@ export function fakeApi(
     listPageTabs: ({ pageId }) => ({ tabs: pageTabs.filter((t) => t.pageId === pageId).map((t) => ({ ...t })) }),
     createPageTab: ({ pageId, kind, name }) => {
       pageById(pageId)
-      const tab: PageTabView = { id: crypto.randomUUID(), pageId, kind, name: name ?? 'Mapa', hidden: false }
+      const tab: PageTabView = {
+        id: crypto.randomUUID(),
+        pageId,
+        kind,
+        name: name ?? (kind === 'text' ? 'Texto 2' : 'Mapa'),
+        hidden: false,
+        documentId: kind === 'text' ? crypto.randomUUID() : null
+      }
       pageTabs.push(tab)
       maps.push({ id: crypto.randomUUID(), tabId: tab.id, pageId, image: null, scale: null, pins: [] })
       return { ...tab }
