@@ -48,3 +48,29 @@ test('desde plantilla: una facción y un PNJ que nace con sus campos, su texto y
   await expect(page.getByTitle('Hecha con la plantilla PNJ')).toBeVisible()
   await expect(page.getByRole('region', { name: 'Propiedades' }).getByRole('link', { name: 'La Raqisa' })).toBeVisible()
 })
+
+test('un enlace a una página que aún no existe se crea pulsándolo: como texto o con una plantilla', async ({
+  page
+}) => {
+  test.slow()
+  await freshOwner(page)
+  await createWorld(page, 'Eana')
+  await openWiki(page, 'Eana')
+  await fromTemplate(page, 'PNJ', 'Mamá Gris')
+  const pageId = new URL(page.url()).pathname.split('/').at(-1)
+  // La IA escribe un enlace a quien aún no tiene página
+  const response = await page.request.post('/api/actions/editPage', {
+    data: { pageId, body: { mode: 'append', markdown: 'Su mano derecha es [[El Viejo Gyles]].' } }
+  })
+  expect(response.status()).toBe(200)
+  const body = page.getByRole('textbox', { name: 'Texto de la página' })
+  await body.getByRole('link', { name: /El Viejo Gyles: por crear/ }).click()
+  const menu = page.getByRole('menu', { name: 'Crear «El Viejo Gyles»' })
+  await expect(menu.getByRole('menuitem', { name: 'Texto' })).toBeFocused()
+  await menu.getByRole('menuitem', { name: 'PNJ' }).click()
+  // Nace con esa plantilla y el enlace queda resuelto
+  await expect(page.getByRole('heading', { level: 1, name: 'El Viejo Gyles' })).toBeVisible()
+  await expect(page.getByTitle('Hecha con la plantilla PNJ')).toBeVisible()
+  await page.goBack()
+  await expect(body.getByRole('link', { name: 'El Viejo Gyles' })).toHaveAttribute('data-state', 'ok')
+})

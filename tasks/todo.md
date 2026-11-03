@@ -94,7 +94,8 @@ amplía `@fugas` en la misma tarea. Cobertura ≥ 80 % de lo cambiado (bloquea d
   - Archivos: `apps/web/src/wiki/new-page.tsx`, `apps/web/src/wiki/template-picker.tsx` (nuevo),
     `apps/web/src/wiki/wiki.tsx`, `apps/web/src/i18n.ts`, `e2e/tests/plantillas.spec.ts`.
 
-- [ ] **6. Crear desde un enlace sin resolver, con plantilla**
+- [x] **6. Crear desde un enlace sin resolver, con plantilla** — hecha. Pulsarlo ya no la crea al momento: abre un
+  menú (con flechas) con «Texto» y las plantillas, tuyas primero.
   - Acepta: pulsar un enlace sin resolver (en el texto y en los enlaces sin resolver) ofrece «Texto» o una plantilla,
     y la página nace con ese título por el mismo camino del servidor.
   - Comprueba: e2e (escribir `[[El Viejo Gyles]]`, crearla como PNJ y que el enlace quede resuelto).

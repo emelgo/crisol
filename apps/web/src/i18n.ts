@@ -710,6 +710,7 @@ export const es = {
     missing: '{{title}}: por crear, pulsa para crearla',
     broken: '{{title}}: en la papelera',
     inTrash: 'Está en la papelera.',
+    createTitle: 'Crear «{{title}}»',
     restore: 'Restaurar',
     linkTo: 'Enlazar con «{{title}}»',
     inserted: 'Enlace a «{{title}}».'

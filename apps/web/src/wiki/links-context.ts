@@ -8,7 +8,8 @@ export interface PageLinks {
   worldId: string
   names: readonly NamedPage[]
   byId: ReadonlyMap<string, NamedPage>
-  create: (title: string) => Promise<string>
+  /** Crea la página que falta (con una plantilla, si se da) y da su id */
+  create: (title: string, template?: string) => Promise<string>
   files: readonly WorldFile[]
 }
 
