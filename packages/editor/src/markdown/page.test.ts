@@ -272,14 +272,21 @@ describe('el Markdown de una página', () => {
         '',
         '^s-cccccccc',
         '',
-        '%%',
-        'Para mí.',
-        '%%',
+        // Una nota de un solo párrafo, en una línea, como se suele escribir
+        '%%Para mí.%%',
         '',
         '^dddddddd',
         ''
       ].join('\n')
     )
+    // La de varios párrafos, con sus %% en su línea
+    expect(
+      pageToMarkdown({
+        properties: [],
+        body: { type: 'doc', content: [{ type: 'note', attrs: { id: null, documentId: 'd2' } }] },
+        separate: () => [paragraph(null, text('Uno.')), paragraph(null, text('Dos.'))]
+      })
+    ).toBe('%%\nUno.\n\nDos.\n%%\n')
     // Sin ids, nada de `^`
     expect(
       pageToMarkdown({
