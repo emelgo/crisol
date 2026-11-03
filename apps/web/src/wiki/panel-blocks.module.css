@@ -176,6 +176,11 @@
   inset-inline-start: 0;
 }
 
+/* Las opciones de una tabla de páginas: más anchas, y crecen hacia la página (el panel va a la derecha) */
+.menu[data-wide] {
+  min-inline-size: 18rem;
+}
+
 .picker {
   inset-block-start: calc(100% + var(--space-1));
   inset-inline-start: 0;

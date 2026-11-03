@@ -9,9 +9,12 @@ import { Extension, type Node } from '@tiptap/core'
 import { NodeSelection, PluginKey } from '@tiptap/pm/state'
 import { type NodeViewProps, NodeViewWrapper, ReactNodeViewRenderer, ReactRenderer } from '@tiptap/react'
 import { Suggestion, type SuggestionProps } from '@tiptap/suggestion'
+import { FileText } from 'lucide-react'
 import { forwardRef, useContext, useEffect, useId, useImperativeHandle, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
+import { TEMPLATE_ICON } from '../templates/icons.tsx'
+import { useTemplates } from '../templates/picker.tsx'
 import { type PageLinks, PageLinksContext, type WorldFile } from './links-context.ts'
 import styles from './page-links.module.css'
 import { LinkPreview } from './preview.tsx'
@@ -34,8 +37,13 @@ export function usePageLinks(worldId: string): PageLinks {
     names,
     files: files.data?.files ?? [],
     byId: new Map(names.map((page) => [page.id, page])),
-    create: async (title) => {
-      const created = await api.call('createPage', { worldId, title, parentId: null })
+    create: async (title, template) => {
+      const created = await api.call('createPage', {
+        worldId,
+        title,
+        parentId: null,
+        ...(template ? { template } : {})
+      })
       await queryClient.invalidateQueries({ queryKey: ['pages', worldId] })
       return created.id
     }
@@ -107,6 +115,14 @@ function PageLinkView({ node, updateAttributes, selected, editor }: NodeViewProp
   const navigate = useNavigate()
   const links = useContext(PageLinksContext)
   const [trashOpen, setTrashOpen] = useState(false)
+  // Pulsar un enlace a una página que aún no existe: crearla como texto o con una plantilla
+  const [createOpen, setCreateOpen] = useState(false)
+  const createMenu = useRef<HTMLSpanElement>(null)
+  const templates = useTemplates().data?.templates ?? []
+  // Al abrirse, el foco a su primera opción
+  useEffect(() => {
+    if (createOpen) createMenu.current?.querySelector<HTMLElement>('[role="menuitem"]')?.focus()
+  }, [createOpen])
   // La vista previa: con el ratón encima, con el enlace elegido (teclado) o, en el móvil, en una hoja
   const [hovering, setHovering] = useState(false)
   const [sheet, setSheet] = useState(false)
@@ -131,8 +147,9 @@ function PageLinkView({ node, updateAttributes, selected, editor }: NodeViewProp
     }
   })
   const create = useMutation({
-    mutationFn: () => links?.create(title) ?? Promise.reject(new Error('sin wiki')),
+    mutationFn: (template?: string) => links?.create(title, template) ?? Promise.reject(new Error('sin wiki')),
     onSuccess: (id) => {
+      setCreateOpen(false)
       updateAttributes({ pageId: id })
       open(id)
     }
@@ -191,7 +208,7 @@ function PageLinkView({ node, updateAttributes, selected, editor }: NodeViewProp
             // En el móvil, primero la hoja con «Abrir página»
             if (coarsePointer()) setSheet(true)
             else open(target.page.id)
-          } else if (target.state === 'missing') create.mutate()
+          } else if (target.state === 'missing') setCreateOpen(!createOpen)
           else setTrashOpen(!trashOpen)
         }}
       >
@@ -208,6 +225,61 @@ function PageLinkView({ node, updateAttributes, selected, editor }: NodeViewProp
           onHover={hover}
           onClose={closePreview}
         />
+      )}
+      {createOpen && (
+        // Crear la que falta: como texto, o con una plantilla (las tuyas primero)
+        <span
+          ref={createMenu}
+          className={styles.create}
+          contentEditable={false}
+          role="menu"
+          aria-label={t('links.createTitle', { title })}
+          onKeyDown={(event) => {
+            const items = [...(createMenu.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? [])]
+            const at = items.indexOf(document.activeElement as HTMLElement)
+            if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+              event.preventDefault()
+              const by = event.key === 'ArrowDown' ? 1 : -1
+              items[(at + by + items.length) % items.length]?.focus()
+            } else if (event.key === 'Escape') {
+              event.preventDefault()
+              setCreateOpen(false)
+              linkRef.current?.focus()
+            }
+          }}
+        >
+          <span className={styles.createTitle} aria-hidden="true">
+            {t('links.createTitle', { title })}
+          </span>
+          <button
+            type="button"
+            role="menuitem"
+            className={styles.createOption}
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={() => create.mutate(undefined)}
+          >
+            <FileText size={14} aria-hidden="true" />
+            {t('newPage.text')}
+          </button>
+          {[...templates.filter((each) => !each.builtIn), ...templates.filter((each) => each.builtIn)].map(
+            (template) => {
+              const Icon = TEMPLATE_ICON[template.icon]
+              return (
+                <button
+                  key={template.id}
+                  type="button"
+                  role="menuitem"
+                  className={styles.createOption}
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => create.mutate(template.id)}
+                >
+                  <Icon size={14} aria-hidden="true" />
+                  {template.name}
+                </button>
+              )
+            }
+          )}
+        </span>
       )}
       {trashOpen && (
         <span className={styles.trash} contentEditable={false} role="status">

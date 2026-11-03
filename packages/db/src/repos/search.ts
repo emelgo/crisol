@@ -138,8 +138,31 @@ export interface SearchOptions {
   terms: readonly string[][]
   tag?: string | null
   branchId?: string | null
+  /** Solo las de esta plantilla o sus copias, y las que la llevan en este campo de enlace (ADR-0009) */
+  template?: string | null
+  link?: { field: string; pageId: string } | null
   offset: number
   limit: number
+}
+
+/** Las condiciones de plantilla y de campo, sobre la página p */
+const templateFilter = (options: Pick<SearchOptions, 'template' | 'link'>) => sql`
+  ${options.template ? sql`and p.template_line @> array[${options.template}]::text[]` : sql``}
+  ${
+    options.link
+      ? sql`and p.properties @> ${JSON.stringify([{ field: options.link.field, value: [options.link.pageId] }])}::jsonb`
+      : sql``
+  }`
+
+/** Sin nada que buscar: las páginas de una plantilla (y de un campo), por título, con el total */
+export async function templatePages(db: Database, options: Omit<SearchOptions, 'terms'>) {
+  const rows = await db.execute<{ id: string; title: string; icon: string | null; total: number }>(sql`
+    select p.id, p.title, p.icon, (count(*) over ())::int as total from pages p
+    where p.world_id = ${options.worldId} and p.deleted_at is null ${templateFilter(options)}
+    order by lower(p.title), p.id
+    offset ${options.offset} limit ${options.limit}`)
+  const pages = [...rows]
+  return { total: pages[0]?.total ?? 0, pages: pages.map(({ total: _total, ...page }) => ({ ...page, score: 0 })) }
 }
 
 /** Lo de una pestaña de texto cuenta solo mientras la pestaña exista (quitada, su documento queda para deshacer) */
@@ -173,6 +196,7 @@ export async function searchPages(db: Database, options: SearchOptions) {
                 and (lower(v) = ${tag} or lower(v) like ${`${tag}/%`}))`
           : sql``
       }
+      ${templateFilter(options)}
       ${
         options.branchId
           ? sql`and p.id in (

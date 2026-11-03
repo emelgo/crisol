@@ -1,141 +1,95 @@
-# Plan: Módulo 1 — Wiki
+# Plan: Módulo 2 — Tipos de página y plantillas
 
-Spec: `docs/specs/wiki.md` (aprobada) · ADR: 0001, 0002, 0003 · Diseño: lienzo «Crisol: wiki» (aprobado) · Tareas con
-detalle: `tasks/todo.md` · Fecha: 2026-10-29. El plan del módulo 0 está en `tasks/fundacion/`.
+Spec: `docs/specs/plantillas.md` (aprobada) · ADR: 0003, 0006, 0008 y 0009 · Diseño: lienzo «Crisol: plantillas»
+(aprobado; fuentes en `out/lienzo-plantillas/`) · Tareas con detalle: `tasks/todo.md` · Fecha: 2026-11-03. Los planes
+de los módulos 0 y 1 están en `tasks/fundacion/` y `tasks/wiki/`.
 
 ## Resumen
 
-Se construye en nueve fases, que siguen el mapa de capacidades de la spec. Cada tarea es una porción vertical: datos,
-servicio, API, interfaz, herramientas MCP y pruebas. Lleva su rama y su PR, se fusiona con la CI en verde y se
-despliega en staging.
+Se construye en cinco fases, que siguen el mapa de capacidades de la spec: campos, plantillas de serie y crear desde
+ellas, tablas, plantillas de la cuenta, y aplicar y cerrar. Cada tarea es una porción vertical: datos, servicio, API,
+interfaz, herramientas MCP y pruebas. Se comprueba en local y se junta con otras: la CI (cuota mensual) se pasa una vez por tanda grande, y entonces se fusiona y se despliega en staging.
 
 Lo más arriesgado va pronto:
-- los documentos de Yjs dentro del servidor (tarea 6);
-- el editor anidado de los secretos (tarea 8), con un punto de control propio;
-- que Claude escriba en una página abierta (tarea 11).
+- la identidad de los campos y los tipos nuevos (tarea 1), porque todo lo demás se apoya en ellos;
+- la consulta de las tablas con 5.000 páginas (tarea 7), con su prueba de ritmo antes de hacer la interfaz.
 
-Las herramientas MCP llegan con su capacidad. La última fase solo prueba a la escala de Eana y cierra.
+Las plantillas de serie llegan antes que las de la cuenta. Así el primer criterio de éxito (un PNJ que sale solo en
+«Miembros») funciona en la fase 3, y las de la cuenta reutilizan todo lo hecho.
 
 ## Decisiones de construcción
 
-- **Rutas de la web**:
-  - `/mundos/:worldId/wiki` y `/mundos/:worldId/wiki/:pageId`;
-  - `/mundos/:worldId/wiki/:pageId/imprimir`, la ruta de impresión;
-  - `/mundos/:worldId/buscar`, `/mundos/:worldId/archivos` y `/mundos/:worldId/etiquetas`.
+- **Rutas de la web**: `/plantillas` y `/plantillas/:templateId`, fuera de los mundos, como `/etiquetas`. «Plantillas»
+  va en la barra de Mis mundos, debajo de «Etiquetas».
+- **Ids**:
+  - de una plantilla: el legible de las de serie (`pnj`, `lugar`, `faccion`, `objeto`, `mision`, `sesion`) o el uuid
+    de una propia;
+  - de un campo: legible en las de serie (`faccion`) y corto y aleatorio en las propias, con la misma forma que el id
+    de un bloque del panel.
+- **Las propiedades** (`PageProperty`):
+  - todas ganan un `field` opcional, el id del campo de la plantilla;
+  - dos tipos nuevos: `choice` (valor y opciones) y `clock` (valor y segmentos, de 2 a 12);
+  - el enlace a una sola página es `pages` con `single`, y `pages` gana `targets` opcional. Así la búsqueda (que no mira
+    los enlaces) y las tablas tratan igual los dos, sin tocar la función de búsqueda de la base de datos.
 
-  En la URL de una página va su id, más el título como adorno: si no coincide, se redirige al canónico.
-- **El orden del árbol con claves fraccionarias** (cadenas que se ordenan entre dos vecinas). Mover una página solo
-  escribe su fila, así que el historial no se llena de renumeraciones. La función está en `packages/domain`, con sus
-  pruebas; no trae dependencia.
-- **El árbol carga por ramas**: `listPageChildren` por padre y la ruta de antepasados de la abierta. Se pinta con
-  `@tanstack/react-virtual`. Para arrastrar se usa lo nativo del navegador, con Alt + flechas como alternativa de
-  teclado; sin librería.
-- **Tablas**, según el ADR-0003:
+  Lo que ya hay guardado sigue valiendo tal cual.
+- **El Markdown** (frontmatter):
+  - `choice` se escribe como texto, un enlace `single` como `"[[Título]]"` y `clock` como `"3/8"`;
+  - la plantilla va en `plantilla: <nombre>`.
 
-  | Tabla | Para qué | Historial |
-  |---|---|---|
-  | `pages` | La fila de la página | con historial |
-  | `page_bodies` | Una fila por página: en qué versión está su cuerpo | con historial |
-  | `files` | Metadatos de los archivos | con historial |
-  | `documents` | El estado de Yjs fusionado de cada documento | sin historial |
-  | `page_versions` y `version_documents` | Las versiones | sin historial |
-  | `snapshots` | El estado de cada documento por su huella, compartido entre versiones | sin historial |
-  | `page_links` | La tabla de enlaces | sin historial |
-  | `search_documents` | El índice de búsqueda | sin historial |
-  | `wiki_preferences` | Pestañas, marcadores y vista elegida, por cuenta y mundo | sin historial |
-
-  Las tablas sin historial cuelgan de la página o del mundo con borrado en cascada.
-- **`dependentRow`** (`packages/db/src/repos/undo.ts`) pasa a mirar solo `TRACKED_TABLES`. Si no, un documento o un
-  enlace impediría deshacer la creación de su página.
-- **`packages/editor`**:
-  - el esquema de TipTap: las extensiones y su Markdown, sin React;
-  - lo usan la web y el servidor; las vistas de los nodos en React viven en `apps/web/src/wiki`;
-  - dependency-cruiser comprueba que no importe React.
-- **Colaboración**:
-  - Hocuspocus en `apps/server/src/collab`, con una ruta de `@fastify/websocket` en `/api/collab` que reusa la
-    comprobación de origen y de sesión del canal del módulo 0.
-  - En la web, un `HocuspocusProviderWebsocket` por pestaña y un proveedor por documento abierto.
-  - Los documentos se llaman `doc:<uuid>`.
-- **Lo que cambia por el servidor**: Claude, restaurar y deshacer. Primero se calcula sobre una copia y se guarda en la
-  transacción de la operación. Al confirmarse, el cambio se aplica al documento vivo por una conexión directa. Su
-  origen se marca para que la sesión de edición no lo cuente dos veces.
-- **Búsqueda**: una configuración de texto propia, `es_unaccent` (español con `unaccent`), creada en una migración, y
-  `pg_trgm` en títulos y alias.
-- **Archivos**:
-  - la interfaz de almacenamiento `Storage`, con disco en el VPS (`DATA_DIR/archivos`);
-  - subida en streaming con `@fastify/multipart` y progreso por XHR;
-  - se sirven en `/api/files/:id`, con la sesión y la política, `Cache-Control: private` y una CSP `sandbox` para SVG.
-- **La hoja**: el algoritmo de paginar es puro (`packages/domain`, recibe la altura de cada bloque) y la web mide con
-  el DOM. La impresión es la misma vista con su CSS `@page`.
-- **La prueba de fugas crece con cada canal nuevo**, no al final. Cada tarea que abre una vía (API, `/api/collab`,
-  archivos, búsqueda, vista previa, MCP) añade su caso a `@fugas`.
-- **Dependencias nuevas** (al aprobar el plan se aprueban también):
-
-  | Paquete | Licencia |
-  |---|---|
-  | `@hocuspocus/server`, `@hocuspocus/provider` | MIT |
-  | `yjs`, `y-protocols` | MIT |
-  | De TipTap 3: `@tiptap/core`, `@tiptap/pm`, `@tiptap/react`, `@tiptap/starter-kit`, `@tiptap/extension-collaboration`, `@tiptap/extension-collaboration-caret`, `@tiptap/extension-unique-id`, `@tiptap/markdown` y las de tabla, índice, asa de arrastre y marcador de posición | MIT |
-  | `@tanstack/react-virtual` | MIT |
-  | `@fastify/multipart` | MIT |
-  | `fflate`, para el .zip | MIT |
-  | `pdfjs-dist` | Apache-2.0 |
-  | `@fontsource/alegreya` | OFL-1.1 |
-
-  De cada una, la última versión que cumpla la antigüedad mínima de pnpm, comprobando su licencia al añadirla. Si
-  hiciera falta otra, se pregunta antes.
+  Al leer con plantilla, cada propiedad que se llame como un campo toma su id y su forma. Se compara sin mayúsculas ni
+  tildes, para que «Faccion» case con «Facción».
+- **Un solo camino para crear**: `instantiateTemplate` en el servidor. Lo usan `createPage` (web), `createPages` (MCP)
+  y crear desde un enlace sin resolver. Saca las propiedades con su valor inicial, el panel y el cuerpo desde el
+  esqueleto en Markdown, por el mismo camino que el Markdown de la IA. Todo va en una sola operación.
+- **Migraciones**:
+  - 0035: `pages.template` y `pages.template_line`, con sus índices GIN (`template_line` y `properties` con
+    `jsonb_path_ops`);
+  - 0036: `page_templates`.
+- **Las tablas**: el bloque `related` del panel guarda `template`, `field`, hasta tres `columns` y `sort`. Se calculan
+  con `getPageTables(pageId)`, que la web pide junto a la página y `leer_pagina` incluye. Se refrescan con
+  `changed pages`, así que una facción abierta ve llegar a su PNJ.
+- **El editor del esqueleto**: el esquema de la wiki en TipTap, sin colaboración. Guarda Markdown con `cambiar_plantilla`
+  y se convierte al crear la página.
+- **Textos**: por i18n. Las plantillas de serie son contenido, no interfaz: van en español en `packages/domain`, con
+  las opciones de Estado sin género (`docs/diseno.md`).
 
 ## Tareas
 
 | # | Tarea | Fase | Depende de | Tamaño |
 |---|---|---|---|---|
-| 1 | Páginas y árbol en la API | Páginas | — | M |
-| 2 | El árbol en la web | Páginas | 1 | M |
-| 3 | Propiedades, alias, etiquetas e icono | Páginas | 2 | M |
-| 4 | Papelera de páginas | Páginas | 2 | S |
-| 5 | Pestañas, marcadores y navegación | Páginas | 2 | M |
-| 6 | Documentos de Yjs en el servidor | Editor | 1 | L |
-| 7 | El editor en la web | Editor | 6 | M |
-| 8 | Secretos y notas ocultas (riesgo) | Editor | 7 | L |
-| 9 | Todos los bloques y marcas | Editor | 8 | M |
-| 10 | El Markdown, de ida y vuelta | Markdown | 9 | M |
-| 11 | Claude lee y escribe páginas | Markdown | 10 | L |
-| 12 | Exportar | Markdown | 10 | M |
-| 13 | Enlaces por id, sin resolver y rotos | Enlaces | 10 | M |
-| 14 | Entrantes, menciones y aviso al borrar | Enlaces | 13 | M |
-| 15 | Vista previa e incrustados | Enlaces | 13 | M |
-| 16 | Sesiones de edición en el historial | Versiones | 11 | L |
-| 17 | Versiones de página | Versiones | 16 | M |
-| 18 | Archivos del mundo | Archivos | 1 | M |
-| 19 | Archivos en las páginas | Archivos | 18, 9 | M |
-| 20 | Búsqueda en español | Búsqueda | 13 | M |
-| 21 | Selector rápido, órdenes y buscar en la página | Búsqueda | 20 | M |
-| 22 | Bloques de hoja | Hojas | 10 | M |
-| 23 | Vista de hoja: paginar y temas | Hojas | 22, 19 | L |
-| 24 | Imprimir y PDF | Hojas | 23 | M |
-| 25 | A la escala de Eana | Cierre | 11, 20 | M |
-| 26 | Cierre del módulo | Cierre | todas | M |
+| 1 | Campos con id y tipos nuevos (riesgo) | Campos | — | L |
+| 2 | Los controles de los campos en el panel | Campos | 1 | M |
+| 3 | Plantillas de serie: los datos y verlas | Crear | 1 | M |
+| 4 | Crear desde plantilla en el servidor y por el MCP | Crear | 3 | L |
+| 5 | «Desde plantilla» en «Página nueva» | Crear | 4, 2 | M |
+| 6 | Crear desde un enlace sin resolver, con plantilla | Crear | 5 | S |
+| 7 | La consulta de las tablas (riesgo) | Tablas | 4 | L |
+| 8 | «Tabla de páginas» en el panel | Tablas | 7 | M |
+| 9 | Plantillas de la cuenta en el servidor | Cuenta | 4, 7 | L |
+| 10 | La pantalla «Plantillas» | Cuenta | 9 | M |
+| 11 | Editar una plantilla: campos y panel | Cuenta | 10, 8 | M |
+| 12 | Editar una plantilla: el esqueleto del texto | Cuenta | 11 | M |
+| 13 | Aplicar una plantilla a una página ya hecha | Cierre | 9, 5 | M |
+| 14 | Cierre del módulo | Cierre | todas | M |
 
-Los puntos de control con Enrique, en staging:
-- **1**, tras la 5: el árbol y la fila de la página.
-- **2**, tras la 8: el editor y los secretos. Es el punto del riesgo.
-- **3**, tras la 11: Claude escribe en una página abierta.
-- **4**, tras la 17: enlaces, versiones y deshacer.
-- **5**, tras la 21: archivos y búsqueda.
-- **6**, tras la 24: la hoja y el PDF.
-- **Final**, tras la 26: los criterios de éxito de la spec.
+Los puntos de control con Enrique, en el servidor de desarrollo local (en staging, tras la tanda que se fusione):
+- **1**, tras la 2: los campos nuevos en el panel de una página.
+- **2**, tras la 6: crear un PNJ desde plantilla, a mano y desde claude.ai.
+- **3**, tras la 8: el PNJ sale solo en «Miembros» de su facción. Es el primer criterio de éxito.
+- **4**, tras la 12: «PNJ de Eana» copiada de PNJ, y «Frente» desde cero con su tabla.
+- **Final**, tras la 14: los criterios de éxito de la spec.
 
 ## Riesgos
 
 | Riesgo | Impacto | Qué se hace |
 |---|---|---|
-| El editor anidado de los secretos no va bien: el foco, el cursor o el deshacer | Alto | Va en la tarea 8, con su punto de control. Si falla, el secreto se edita en un panel o un diálogo propio, sin cambiar cómo se guarda (ADR-0003). Se decide con Enrique |
-| Hocuspocus 4 detrás del WebSocket de Fastify | Medio | Tarea 6 lo primero, con pruebas de integración de dos clientes y una conexión directa |
-| `@tiptap/markdown` pide un DOM en el servidor | Medio | Se comprueba al empezar la tarea 10. Si lo pide, `happy-dom` (MIT, ya está en las pruebas) solo para serializar |
-| Deshacer el cuerpo con sesiones cruzadas | Medio | Pruebas de integración en la 16 con dos cuentas y Claude a la vez |
-| Paginar una página grande (Eana tiene una de 518 KB) | Medio | El paginador es puro y por bloques, mide solo lo visible y se mide con esa página de tamaño |
-| Archivos de 250 MB en el disco del VPS | Bajo | Subida en streaming y un aviso si queda poco disco. Se mira el espacio libre antes de la tarea 18 |
-| La búsqueda con 5.000 páginas | Bajo | Una prueba de rendimiento con datos sintéticos en la 20 |
+| La consulta de las tablas es lenta con 5.000 páginas (`jsonb` con enlaces sueltos y en lista) | Alto | Tarea 7 con su prueba de ritmo antes de la interfaz. Si no llega a 150 ms, una tabla auxiliar de enlaces de campos que se rehace al guardar las propiedades (la alternativa del ADR-0009), sin cambiar el contrato |
+| Las propiedades viejas y las nuevas conviven mal: un `pages` sin `field`, nombres repetidos | Medio | Tarea 1: todo lo de antes sigue valiendo; pruebas de ida y vuelta del Markdown con los dos |
+| La IA escribe los campos con otro nombre o sin tildes | Medio | Casar sin mayúsculas ni tildes, y devolver en el error los campos de la plantilla cuando una propiedad no encaja de tipo |
+| El editor del esqueleto sin colaboración se desvía del de la wiki | Medio | Mismo esquema (`packages/editor`) y misma conversión a Markdown; la prueba de ida y vuelta lo cubre |
+| El panel de 300 px se llena con campos, bloques y tablas | Bajo | Columnas de las tablas limitadas a tres; se mira en el punto de control 3 |
+| Cuota mensual de la CI | Medio | Todo en verde en local; la CI una sola vez por tanda grande, nunca en cada PR |
 
 ## Preguntas abiertas
 

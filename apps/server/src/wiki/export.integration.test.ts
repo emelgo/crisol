@@ -134,6 +134,22 @@ describe('exportar la wiki en Markdown', () => {
     expect(Object.keys(unzip(single.rawPayload))).toEqual(['Costa Gris.md'])
   })
 
+  it('una página de plantilla lleva su plantilla primero en el YAML, y sus campos con su forma', async () => {
+    const raqisa = (await call('createPage', { worldId, title: 'La Raqisa', template: 'faccion' })).json()
+    const gris = (await call('createPage', { worldId, title: 'Mamá Gris', template: 'pnj' })).json()
+    await call('setPageProperties', {
+      pageId: gris.id,
+      properties: gris.properties.map((p: { field?: string }) =>
+        p.field === 'faccion' ? { ...p, value: [raqisa.id] } : p.field === 'estado' ? { ...p, value: 'Vive' } : p
+      )
+    })
+    const files = unzip((await exported({ worldId, pageId: gris.id })).rawPayload)
+    const markdown = files['Mamá Gris.md'] ?? ''
+    expect(markdown.startsWith('---\nplantilla: PNJ\n')).toBe(true)
+    expect(markdown).toContain('Facción: "[[La Raqisa]]"')
+    expect(markdown).toContain('Estado: Vive')
+  })
+
   it('quien no es máster no exporta, ni una página de otro mundo pasa por este', async () => {
     const ids = await eana()
     const player = await signUpTestUser(auth, { name: 'Lía', email: 'lia@crisol.test' })

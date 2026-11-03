@@ -15,6 +15,7 @@ const summaryColumns = {
   position: pages.position,
   title: pages.title,
   icon: pages.icon,
+  template: pages.template,
   version: pages.version
 }
 
@@ -113,16 +114,17 @@ export async function listBranch(db: Database, worldId: string, parentId: string
     position: string
     title: string
     icon: string | null
+    template: string | null
     has_children: boolean
   }>(sql`
     with recursive down as (
-      select id, parent_id, position, title, icon, 1 as level from pages
+      select id, parent_id, position, title, icon, template, 1 as level from pages
       where world_id = ${worldId} and ${top} and deleted_at is null
       union all
-      select p.id, p.parent_id, p.position, p.title, p.icon, down.level + 1 from pages p
+      select p.id, p.parent_id, p.position, p.title, p.icon, p.template, down.level + 1 from pages p
       join down on p.parent_id = down.id where p.deleted_at is null and down.level < ${levels}
     )
-    select id, parent_id, position, title, icon,
+    select id, parent_id, position, title, icon, template,
       exists (select 1 from pages c where c.parent_id = down.id and c.deleted_at is null) as has_children
     from down`)
   return rows.map((row) => ({
@@ -131,6 +133,7 @@ export async function listBranch(db: Database, worldId: string, parentId: string
     position: row.position,
     title: row.title,
     icon: row.icon,
+    template: row.template,
     hasChildren: row.has_children
   }))
 }
@@ -393,6 +396,9 @@ export interface NewPage {
   separates: { id: string; kind: 'secret' | 'note'; state: Uint8Array }[]
   /** Su primera versión (con texto), en la misma operación: deshacer la creación la quita también */
   version?: { fingerprint: string; documents: DocumentState[] }
+  /** La plantilla de la que sale y su linaje (ADR-0009), y su panel */
+  template?: { id: string; line: string[] }
+  panel?: unknown[]
 }
 
 /**
@@ -437,7 +443,9 @@ export function createPagesWithBodies(
         position,
         title: page.title,
         icon: page.icon,
-        ...(properties && properties.length > 0 ? { properties } : {})
+        ...(properties && properties.length > 0 ? { properties } : {}),
+        ...(page.template ? { template: page.template.id, templateLine: page.template.line } : {}),
+        ...(page.panel && page.panel.length > 0 ? { panel: page.panel } : {})
       })
       ids.set(page.key, row.id)
       created.push({ key: page.key, id: row.id, title: row.title, parentId })
@@ -463,10 +471,41 @@ export function createPagesWithBodies(
   })
 }
 
+/**
+ * Las páginas de una plantilla (o de sus copias) cuyo campo apunta a una página (ADR-0009): las filas de una tabla que
+ * se llena sola, por título. Una de más, para saber si quedan
+ */
+export function relatedPages(
+  db: Database,
+  input: { worldId: string; pageId: string; template: string; field: string; limit: number }
+) {
+  const contains = JSON.stringify([{ field: input.field, value: [input.pageId] }])
+  return db
+    .select({ id: pages.id, title: pages.title, icon: pages.icon, properties: pages.properties })
+    .from(pages)
+    .where(
+      and(
+        eq(pages.worldId, input.worldId),
+        isNull(pages.deletedAt),
+        sql`${pages.id} <> ${input.pageId}`,
+        sql`${pages.templateLine} @> array[${input.template}]::text[]`,
+        sql`${pages.properties} @> ${contains}::jsonb`
+      )
+    )
+    .orderBy(sql`lower(${pages.title})`, pages.id)
+    .limit(input.limit + 1)
+}
+
 /** Todas las páginas del mundo fuera de la papelera, en su orden (para exportar) */
 export function worldPages(db: Database, worldId: string) {
   return db
-    .select({ id: pages.id, parentId: pages.parentId, title: pages.title, properties: pages.properties })
+    .select({
+      id: pages.id,
+      parentId: pages.parentId,
+      title: pages.title,
+      properties: pages.properties,
+      template: pages.template
+    })
     .from(pages)
     .where(and(eq(pages.worldId, worldId), isNull(pages.deletedAt)))
     .orderBy(...byPosition)

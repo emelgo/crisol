@@ -161,6 +161,34 @@ describe('el árbol de la wiki', () => {
     expect(router.state.location.search).toEqual({})
   })
 
+  it('desde plantilla: se elige en su lista (con buscador) y la página nace con sus campos y su marca', async () => {
+    const api = wikiApi()
+    renderAt(`/mundos/${WORLD.id}/wiki`, api)
+    await userEvent.click(await screen.findByRole('button', { name: 'Página nueva' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Página nueva' })
+    await userEvent.click(within(dialog).getByRole('radio', { name: 'Desde plantilla' }))
+    const list = within(await within(dialog).findByRole('group', { name: 'Plantilla' }))
+    // La primera, elegida; las de serie, todas
+    expect(list.getByRole('radio', { name: /^PNJ/ })).toHaveProperty('checked', true)
+    expect(list.getAllByRole('radio').map((r) => r.getAttribute('value'))).toEqual([
+      'pnj',
+      'lugar',
+      'faccion',
+      'objeto',
+      'mision',
+      'sesion'
+    ])
+    // El buscador, sin mirar tildes
+    await userEvent.type(within(dialog).getByLabelText('Buscar plantilla'), 'faccion')
+    expect(list.getAllByRole('radio').map((r) => r.getAttribute('value'))).toEqual(['faccion'])
+    await userEvent.click(list.getByRole('radio', { name: /^Facción/ }))
+    await userEvent.type(within(dialog).getByLabelText('Título'), 'La Raqisa{Enter}')
+    expect(await screen.findByRole('heading', { level: 1, name: 'La Raqisa' })).toBeDefined()
+    expect(screen.getByTitle('Hecha con la plantilla Facción')).toBeDefined()
+    const properties = within(await screen.findByRole('region', { name: 'Propiedades' }))
+    expect(properties.getByLabelText('Nombre de la propiedad 2')).toHaveProperty('value', 'Líder')
+  })
+
   it('una subpágina se crea desde su madre, con el botón derecho en el árbol', async () => {
     renderAt(`/mundos/${WORLD.id}/wiki/${ids.people}`)
     await userEvent.pointer({ keys: '[MouseRight]', target: await item('Personajes') })

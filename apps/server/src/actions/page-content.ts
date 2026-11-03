@@ -4,9 +4,20 @@
  * nunca entra en el cuerpo
  */
 import { randomUUID } from 'node:crypto'
-import { createPages, editPage, type PageProperty, readPage } from '@crisol/contracts'
+import { createPage, createPages, editPage, type PageProperty, pagePanel, readPage } from '@crisol/contracts'
 import { documentsRepo, pagesRepo } from '@crisol/db'
-import { moveBlocker, propertiesProblem, reservedList } from '@crisol/domain'
+import {
+  applyTemplate,
+  fillTemplate,
+  type Instance,
+  instantiate,
+  keepShapes,
+  moveBlocker,
+  type PageTemplate,
+  propertiesProblem,
+  propertyKey,
+  reservedList
+} from '@crisol/domain'
 import { fillJsonIds } from '@crisol/editor'
 import {
   type BodyEdit,
@@ -24,10 +35,12 @@ import { readDocument, stateOf, writeDocument } from '../wiki/content.ts'
 import { fileNames, worldFiles } from '../wiki/file-embeds.ts'
 import { linkName, linksOfNewPages, resolveIncoming, resolvePending, worldNames } from '../wiki/links.ts'
 import { propertiesOf } from '../wiki/properties.ts'
+import { pageTables } from '../wiki/tables.ts'
+import { fieldsText, findTemplate, newBlockId } from '../wiki/templates.ts'
 import { snapshotPage, versionOf } from '../wiki/versions.ts'
 import { authorizedPage, authorizedWiki } from './access.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
-import { pageView, parentIn } from './pages.ts'
+import { checkNeighbour, pageView, parentIn, placementOf } from './pages.ts'
 import { implement } from './registry.ts'
 
 const SEPARATE = new Set(['secret', 'note'])
@@ -67,7 +80,7 @@ const separateDoc = (content: JSONContent[]): JSONContent =>
 const fold = (name: string) => name.trim().toLocaleLowerCase('es')
 
 /** Encuentra páginas del mundo por su título, un alias o su id (sin mirar mayúsculas) */
-async function pageResolver(ctx: ActionContext, worldId: string) {
+export async function pageResolver(ctx: ActionContext, worldId: string) {
   const byName = new Map<string, Map<string, string>>()
   const ids = new Set<string>()
   const add = (id: string, title: string, aliases: readonly string[] = []) => {
@@ -94,15 +107,47 @@ async function pageResolver(ctx: ActionContext, worldId: string) {
   return { add, resolve }
 }
 
-/** Las propiedades tal como se guardan: las de páginas, con sus ids */
-function toProperties(read: readonly ReadProperty[], resolve: (name: string) => string): PageProperty[] {
-  const properties = read.map(
-    (property): PageProperty =>
-      property.type === 'pages' ? { ...property, value: [...new Set(property.value.map(resolve))] } : property
-  )
-  const problem = propertiesProblem(properties)
+/** Una propiedad que se escribe a mano: del YAML, o de la IA (que también da opciones y relojes) */
+type WantedProperty =
+  | ReadProperty
+  | { name: string; type: 'number'; value: number | null }
+  | { name: string; type: 'pages'; value: string[]; single?: true | undefined }
+  | { name: string; type: 'choice'; value: string; options?: string[] | undefined }
+  | { name: string; type: 'clock'; value: number; segments?: number | undefined }
+
+/** Los segmentos de un reloj nuevo, si no se dicen */
+const CLOCK_DEFAULT = 4
+
+/**
+ * Las propiedades tal como se guardan: las de páginas, con sus ids. Las que ya tenía la página con un campo o una forma
+ * (opciones, segmentos, una sola página) los conservan si el valor cabe (ADR-0009)
+ */
+function toProperties(
+  read: readonly WantedProperty[],
+  resolve: (name: string) => string,
+  before: readonly PageProperty[] = []
+): PageProperty[] {
+  const previous = new Map(before.map((p) => [propertyKey(p.name), p]))
+  const properties = read.map((property): PageProperty => {
+    const old = previous.get(propertyKey(property.name))
+    switch (property.type) {
+      case 'pages':
+        return { ...property, value: [...new Set(property.value.map(resolve))] }
+      case 'choice':
+        return { ...property, options: property.options ?? (old?.type === 'choice' ? old.options : []) }
+      case 'clock':
+        return {
+          ...property,
+          segments: property.segments ?? (old?.type === 'clock' ? old.segments : CLOCK_DEFAULT)
+        }
+      default:
+        return property
+    }
+  })
+  const shaped = keepShapes(before, properties)
+  const problem = propertiesProblem(shaped)
   if (problem) throw new InvalidRequestError(problem)
-  return properties
+  return shaped
 }
 
 /** Las madres antes que sus hijas, y cuántos niveles tiene la tanda; una madre que no está o un ciclo no valen */
@@ -125,9 +170,192 @@ function inOrder<T extends { key: string; parent?: string | undefined }>(pages: 
   return { ordered, height: Math.max(...depth.values()) }
 }
 
+/** Lo que añade una plantilla a una página ya hecha (sus campos, bloques y apartados que falten), con la plantilla */
+async function applying(
+  ctx: ActionContext,
+  wiki: { organizationId: string },
+  page: { id: string; properties: unknown[]; panel: unknown[] },
+  ref: string
+) {
+  const template = await findTemplate(ctx, wiki.organizationId, ref)
+  const body = await readDocument(ctx, { kind: 'body', pageId: page.id })
+  const headings = (body.content ?? [])
+    .filter((node) => node.type === 'heading')
+    .map((node) => (node.content ?? []).map((child) => child.text ?? '').join(''))
+  const applied = applyTemplate(
+    template,
+    { properties: propertiesOf(page.properties), panel: pagePanel.safeParse(page.panel).data ?? [], headings },
+    newBlockId
+  )
+  const problem = propertiesProblem(applied.properties)
+  if (problem) throw new InvalidRequestError(problem)
+  return { template, applied }
+}
+
+/** Las propiedades de una página de plantilla: cada una en su campo, y los que no se dan con su valor inicial */
+function withTemplate(
+  properties: PageProperty[],
+  made: { template: PageTemplate; instance: Instance } | undefined
+): PageProperty[] {
+  if (!made) return properties
+  const filled = fillTemplate(made.instance.properties, properties)
+  if ('problem' in filled) {
+    const { given, field } = filled.problem
+    throw new InvalidRequestError(
+      'BAD_FIELD',
+      `«${given}» no cabe en el campo «${field}» de ${made.template.name}. Sus campos: ${fieldsText(made.template)}`
+    )
+  }
+  const problem = propertiesProblem(filled.properties)
+  if (problem) throw new InvalidRequestError(problem)
+  return filled.properties
+}
+
+/** Una página nueva de la tanda: por su key, con su madre (de la tanda), su texto y su plantilla */
+interface BatchPage {
+  key: string
+  parent?: string | undefined
+  title: string
+  icon?: string | undefined
+  markdown?: string | undefined
+  template?: string | undefined
+}
+
+/**
+ * Crea las páginas de una tanda en una sola operación: con su cuerpo, sus secretos, sus propiedades y, si la llevan, su
+ * plantilla (sus campos, su panel y su esqueleto si no traen cuerpo). Es el único camino para crear con plantilla
+ */
+async function createBatch(
+  ctx: ActionContext,
+  input: { worldId: string; parentId: string | null; pages: readonly BatchPage[] },
+  describe: (
+    ordered: readonly BatchPage[],
+    parent: { title: string } | null
+  ) => { action: string; details: Record<string, unknown> }
+) {
+  const wiki = await authorizedWiki(ctx, 'page.write', input.worldId)
+  const parent = await parentIn(ctx, wiki, input.parentId)
+  const { ordered, height } = inOrder(input.pages)
+  const parentPath = parent ? (await pagesRepo.pagePath(ctx.db, parent.id)).map((p) => p.id) : []
+  const blocker = moveBlocker({ pageId: '', parentPath, subtreeHeight: height })
+  if (blocker) throw new InvalidRequestError(blocker)
+
+  // Todo se lee y se comprueba antes de escribir nada. Los enlaces, contra las páginas del mundo y las de la tanda,
+  // que ya tienen su id: así salen resueltos sin volver a escribir el texto (lo que no está, se resuelve al crearlo)
+  const pageIds = new Map(ordered.map((page) => [page.key, randomUUID()]))
+  const story = describe(ordered, parent)
+  // Las de plantilla: sus copias; sin cuerpo, nacen con su esqueleto (las propiedades del YAML van a sus campos)
+  const made = new Map<string, { template: PageTemplate; instance: Instance }>()
+  for (const page of ordered) {
+    if (!page.template) continue
+    const template = await findTemplate(ctx, wiki.organizationId, page.template)
+    made.set(page.key, { template, instance: instantiate(template, newBlockId) })
+  }
+  const reads = new Map(
+    ordered.map((page) => {
+      const read = parse(page.markdown ?? '')
+      const instance = made.get(page.key)?.instance
+      if (!instance || (read.body.content ?? []).length > 0) return [page.key, read] as const
+      return [page.key, { ...parse(instance.markdown), properties: read.properties }] as const
+    })
+  )
+  const above = parent ? (await pagesRepo.pagePath(ctx.db, parent.id)).map((p) => p.title) : []
+  const pathOf = (key: string): string[] => {
+    const page = ordered.find((p) => p.key === key)
+    if (!page) return above
+    return [...(page.parent ? pathOf(page.parent) : above), page.title]
+  }
+  const batch = ordered.map((page) => {
+    const aliases = reads.get(page.key)?.properties.find((p) => fold(p.name) === 'alias')
+    return {
+      id: pageIds.get(page.key) as string,
+      title: page.title,
+      aliases: aliases?.type === 'list' ? aliases.value : [],
+      path: pathOf(page.key)
+    }
+  })
+  const names = [...(await worldNames(ctx, wiki.worldId)), ...batch]
+  const files = await worldFiles(ctx, wiki.worldId)
+  const links = (json: JSONContent) => resolveIncoming(json, names, files)
+  const prepared = ordered.map((page) => {
+    const read = reads.get(page.key) as ReadPage
+    const documents = new Map(read.separates.map((separate) => [separate.id, randomUUID()]))
+    const body = fillJsonIds(withDocuments(links(read.body), documents))
+    const bodyState = (read.body.content ?? []).length > 0 ? stateOf(body) : null
+    const separates = read.separates.map((separate) => ({
+      id: documents.get(separate.id) as string,
+      kind: separate.kind,
+      state: stateOf(separateDoc(separate.content.map(links)), true)
+    }))
+    // Con texto, su primera versión va en la misma operación
+    const bodyId = bodyState ? randomUUID() : undefined
+    const instance = made.get(page.key)?.instance
+    const newPage: pagesRepo.NewPage = {
+      ...(instance ? { template: { id: instance.template, line: instance.line }, panel: instance.panel } : {}),
+      id: pageIds.get(page.key) as string,
+      key: page.key,
+      parentKey: page.parent ?? null,
+      title: page.title,
+      icon: page.icon ?? null,
+      body: bodyState,
+      separates,
+      ...(bodyState && bodyId
+        ? {
+            bodyId,
+            version: versionOf([
+              { documentId: bodyId, kind: 'body', state: bodyState },
+              ...separates.map((separate) => ({
+                documentId: separate.id,
+                kind: separate.kind,
+                state: separate.state
+              }))
+            ])
+          }
+        : {})
+    }
+    return { newPage, properties: read.properties }
+  })
+  const resolver = await pageResolver(ctx, wiki.worldId)
+  const created = await pagesRepo.createPagesWithBodies(
+    ctx.db,
+    historyContext(ctx, story.action, story.details, wiki),
+    {
+      worldId: wiki.worldId,
+      parentId: parent?.id ?? null,
+      pages: prepared.map((page) => page.newPage),
+      // Las de la tanda también se pueden enlazar, por su título o sus alias
+      properties: (ids) => {
+        for (const { newPage, properties } of prepared) {
+          const aliases = properties.find((p) => fold(p.name) === 'alias')
+          resolver.add(ids.get(newPage.key) as string, newPage.title, aliases?.type === 'list' ? aliases.value : [])
+        }
+        return new Map(
+          prepared.map(({ newPage, properties }) => [
+            newPage.key,
+            withTemplate(toProperties(properties, resolver.resolve), made.get(newPage.key))
+          ])
+        )
+      }
+    }
+  )
+  ctx.realtime.publish(pagesChanged(wiki))
+  // Sus enlaces, y los que las esperaban (también entre ellas)
+  await linksOfNewPages(
+    ctx,
+    wiki.worldId,
+    created.map((page) => {
+      const named = batch.find((b) => b.id === page.id)
+      return { id: page.id, names: [page.title, ...(named?.aliases ?? [])] }
+    }),
+    ctx.actor.userId
+  )
+  const byKey = new Map(created.map((page) => [page.key, page]))
+  return input.pages.map((page) => byKey.get(page.key)).filter((page) => page !== undefined)
+}
+
 export const pageContentActions = [
   implement(readPage, async (ctx, { pageId, ids }) => {
-    const { wiki } = await authorizedPage(ctx, 'page.read', pageId)
+    const { page, wiki } = await authorizedPage(ctx, 'page.read', pageId)
     const view = await pageView(ctx, pageId)
     const body = await readDocument(ctx, { kind: 'body', pageId })
     // Solo los secretos que son de esta página
@@ -151,133 +379,83 @@ export const pageContentActions = [
       fileName: await fileNames(ctx, wiki.worldId),
       ids: ids ?? false
     })
-    return { page: view, markdown }
+    return { page: view, markdown, tables: (await pageTables(ctx, wiki, page)).tables }
+  }),
+
+  implement(createPage, async (ctx, input) => {
+    if (input.template) {
+      // Con plantilla, por el mismo camino que crear_paginas (ADR-0009): sus campos, su panel y su texto, en una operación
+      const wiki = await authorizedWiki(ctx, 'page.write', input.worldId)
+      const parent = await parentIn(ctx, wiki, input.parentId)
+      const [created] = await createBatch(
+        ctx,
+        {
+          worldId: input.worldId,
+          parentId: input.parentId,
+          pages: [{ key: 'pagina', title: input.title, template: input.template }]
+        },
+        () => ({ action: 'createPage', details: { title: input.title, parent: parent?.title ?? null } })
+      )
+      if (!created) throw new InvalidRequestError('BAD_PAGE')
+      return pageView(ctx, created.id)
+    }
+    const wiki = await authorizedWiki(ctx, 'page.write', input.worldId)
+    const parent = await parentIn(ctx, wiki, input.parentId)
+    if (parent) {
+      const blocker = moveBlocker({
+        pageId: '',
+        parentPath: (await pagesRepo.pagePath(ctx.db, parent.id)).map((p) => p.id),
+        subtreeHeight: 1
+      })
+      if (blocker) throw new InvalidRequestError(blocker)
+    }
+    await checkNeighbour(ctx, wiki, input)
+    const created = await pagesRepo.createPage(
+      ctx.db,
+      historyContext(ctx, 'createPage', { title: input.title, parent: parent?.title ?? null }, wiki),
+      { worldId: wiki.worldId, title: input.title, placement: placementOf(input) }
+    )
+    ctx.realtime.publish(pagesChanged(wiki))
+    // Lo que la enlazaba antes de existir, ya la encuentra
+    await resolvePending(ctx, wiki.worldId, ctx.actor.userId, [input.title])
+    return pageView(ctx, created.id)
   }),
 
   implement(createPages, async (ctx, input) => {
-    const wiki = await authorizedWiki(ctx, 'page.write', input.worldId)
-    const parent = await parentIn(ctx, wiki, input.parentId)
-    const { ordered, height } = inOrder(input.pages)
-    const parentPath = parent ? (await pagesRepo.pagePath(ctx.db, parent.id)).map((p) => p.id) : []
-    const blocker = moveBlocker({ pageId: '', parentPath, subtreeHeight: height })
-    if (blocker) throw new InvalidRequestError(blocker)
-
-    // Todo se lee y se comprueba antes de escribir nada. Los enlaces, contra las páginas del mundo y las de la tanda,
-    // que ya tienen su id: así salen resueltos sin volver a escribir el texto (lo que no está, se resuelve al crearlo)
-    const pageIds = new Map(ordered.map((page) => [page.key, randomUUID()]))
-    const reads = new Map(ordered.map((page) => [page.key, parse(page.markdown ?? '')]))
-    const above = parent ? (await pagesRepo.pagePath(ctx.db, parent.id)).map((p) => p.title) : []
-    const pathOf = (key: string): string[] => {
-      const page = ordered.find((p) => p.key === key)
-      if (!page) return above
-      return [...(page.parent ? pathOf(page.parent) : above), page.title]
-    }
-    const batch = ordered.map((page) => {
-      const aliases = reads.get(page.key)?.properties.find((p) => fold(p.name) === 'alias')
-      return {
-        id: pageIds.get(page.key) as string,
-        title: page.title,
-        aliases: aliases?.type === 'list' ? aliases.value : [],
-        path: pathOf(page.key)
-      }
-    })
-    const names = [...(await worldNames(ctx, wiki.worldId)), ...batch]
-    const files = await worldFiles(ctx, wiki.worldId)
-    const links = (json: JSONContent) => resolveIncoming(json, names, files)
-    const prepared = ordered.map((page) => {
-      const read = reads.get(page.key) as ReadPage
-      const documents = new Map(read.separates.map((separate) => [separate.id, randomUUID()]))
-      const body = fillJsonIds(withDocuments(links(read.body), documents))
-      const bodyState = (read.body.content ?? []).length > 0 ? stateOf(body) : null
-      const separates = read.separates.map((separate) => ({
-        id: documents.get(separate.id) as string,
-        kind: separate.kind,
-        state: stateOf(separateDoc(separate.content.map(links)), true)
-      }))
-      // Con texto, su primera versión va en la misma operación
-      const bodyId = bodyState ? randomUUID() : undefined
-      const newPage: pagesRepo.NewPage = {
-        id: pageIds.get(page.key) as string,
-        key: page.key,
-        parentKey: page.parent ?? null,
-        title: page.title,
-        icon: page.icon ?? null,
-        body: bodyState,
-        separates,
-        ...(bodyState && bodyId
-          ? {
-              bodyId,
-              version: versionOf([
-                { documentId: bodyId, kind: 'body', state: bodyState },
-                ...separates.map((separate) => ({
-                  documentId: separate.id,
-                  kind: separate.kind,
-                  state: separate.state
-                }))
-              ])
-            }
-          : {})
-      }
-      return { newPage, properties: read.properties }
-    })
-    const resolver = await pageResolver(ctx, wiki.worldId)
-    const created = await pagesRepo.createPagesWithBodies(
-      ctx.db,
-      historyContext(
-        ctx,
-        'createPages',
-        { count: ordered.length, titles: ordered.map((page) => page.title), parent: parent?.title ?? null },
-        wiki
-      ),
-      {
-        worldId: wiki.worldId,
-        parentId: parent?.id ?? null,
-        pages: prepared.map((page) => page.newPage),
-        // Las de la tanda también se pueden enlazar, por su título o sus alias
-        properties: (ids) => {
-          for (const { newPage, properties } of prepared) {
-            const aliases = properties.find((p) => fold(p.name) === 'alias')
-            resolver.add(ids.get(newPage.key) as string, newPage.title, aliases?.type === 'list' ? aliases.value : [])
-          }
-          return new Map(
-            prepared.map(({ newPage, properties }) => [newPage.key, toProperties(properties, resolver.resolve)])
-          )
-        }
-      }
-    )
-    ctx.realtime.publish(pagesChanged(wiki))
-    // Sus enlaces, y los que las esperaban (también entre ellas)
-    await linksOfNewPages(
-      ctx,
-      wiki.worldId,
-      created.map((page) => {
-        const named = batch.find((b) => b.id === page.id)
-        return { id: page.id, names: [page.title, ...(named?.aliases ?? [])] }
-      }),
-      ctx.actor.userId
-    )
-    const byKey = new Map(created.map((page) => [page.key, page]))
-    return { pages: input.pages.map((page) => byKey.get(page.key)).filter((page) => page !== undefined) }
+    const pages = await createBatch(ctx, input, (ordered, parent) => ({
+      action: 'createPages',
+      details: { count: ordered.length, titles: ordered.map((page) => page.title), parent: parent?.title ?? null }
+    }))
+    return { pages }
   }),
 
   implement(editPage, async (ctx, input) => {
     const { page, wiki } = await authorizedPage(ctx, 'page.write', input.pageId)
     // Lo que se estaba escribiendo queda en su sesión, antes de lo de Claude
     await ctx.collab?.closeSessions(page.id)
-    const read = input.body ? parse(input.body.markdown) : null
+    // Con plantilla: lo que le falta (campos, bloques y apartados al final), sin borrar nada (ADR-0009)
+    const applied = input.template ? await applying(ctx, wiki, page, input.template) : null
+    const bodyInput =
+      input.body ??
+      (applied?.applied.append ? { mode: 'append' as const, markdown: applied.applied.append } : undefined)
+    const read = bodyInput ? parse(bodyInput.markdown) : null
     // Las propiedades: las que se dan; o, al cambiar el cuerpo entero, las de su YAML
-    const fromYaml = input.body?.mode === 'replace' && read && read.properties.length > 0 ? read.properties : undefined
+    const fromYaml = bodyInput?.mode === 'replace' && read && read.properties.length > 0 ? read.properties : undefined
     const wanted = input.properties ?? fromYaml
-    const properties = wanted ? toProperties(wanted, (await pageResolver(ctx, wiki.worldId)).resolve) : undefined
+    const properties = applied
+      ? applied.applied.properties
+      : wanted
+        ? toProperties(wanted, (await pageResolver(ctx, wiki.worldId)).resolve, propertiesOf(page.properties))
+        : undefined
 
     const stored = await documentsRepo.findBody(ctx.db, page.id)
     const changedSinceRequest = Boolean(ctx.requestedAt && stored && stored.updatedAt > ctx.requestedAt)
-    const edit: BodyEdit | null = input.body
-      ? input.body.mode === 'block'
-        ? { mode: 'block', blockId: input.body.blockId ?? '' }
-        : input.body.mode === 'section'
-          ? { mode: 'section', section: input.body.section ?? '' }
-          : { mode: input.body.mode }
+    const edit: BodyEdit | null = bodyInput
+      ? bodyInput.mode === 'block'
+        ? { mode: 'block', blockId: ('blockId' in bodyInput && bodyInput.blockId) || '' }
+        : bodyInput.mode === 'section'
+          ? { mode: 'section', section: ('section' in bodyInput && bodyInput.section) || '' }
+          : { mode: bodyInput.mode }
       : null
 
     // El cuerpo nuevo, comprobado contra lo de ahora antes de apuntar nada
@@ -331,12 +509,16 @@ export const pageContentActions = [
       ...(input.title !== undefined && input.title !== page.title ? { from: page.title, to: input.title } : {}),
       ...(properties ? { properties: true } : {}),
       ...(input.icon !== undefined ? { icon: input.icon } : {}),
-      ...(input.body ? { body: input.body.mode } : {})
+      ...(bodyInput ? { body: bodyInput.mode } : {}),
+      ...(applied ? { template: applied.template.name } : {})
     }
     const pagePatch = {
       ...(input.title !== undefined ? { title: input.title } : {}),
       ...(input.icon !== undefined ? { icon: input.icon } : {}),
-      ...(properties ? { properties } : {})
+      ...(properties ? { properties } : {}),
+      ...(applied
+        ? { panel: applied.applied.panel, template: applied.template.id, templateLine: [...applied.template.line] }
+        : {})
     }
 
     let changedBlocks: string[] = []

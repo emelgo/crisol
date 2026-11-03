@@ -55,15 +55,17 @@ export interface EditorOptions {
   nested?: boolean
   /** Para darles su vista a los nodos que la tienen: secretos, notas ocultas, recuadros y enlaces (la web, con React) */
   view?: (node: Node) => AnyExtension
+  /** Con su propio deshacer (un editor sin edición compartida: el esqueleto de una plantilla) */
+  history?: boolean
 }
 
 export function editorExtensions(options: EditorOptions = {}): Extensions {
-  const { checkboxLabel, nested = false, view = (node: Node) => node } = options
+  const { checkboxLabel, nested = false, view = (node: Node) => node, history = false } = options
   return [
     StarterKit.configure({
       heading: false,
-      // Deshacer es el de Yjs (por documento y solo lo propio)
-      undoRedo: false,
+      // Deshacer es el de Yjs (por documento y solo lo propio); sin edición compartida, el suyo
+      ...(history ? {} : { undoRedo: false }),
       // Los enlaces externos; los de páginas llegan con la tarea 13
       link: {
         openOnClick: false,

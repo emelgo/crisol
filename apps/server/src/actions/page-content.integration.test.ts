@@ -303,6 +303,189 @@ describe('Claude lee y escribe páginas en Markdown', () => {
     expect(ambiguous.json()).toMatchObject({ code: 'AMBIGUOUS_PAGE' })
   })
 
+  it('los campos de plantilla: se guardan, se leen en Markdown y la IA los reescribe sin perder su campo ni su forma', async () => {
+    const raqisa = await ok200('createPage', { worldId, title: 'La Raqisa' })
+    const gris = await ok200('createPage', { worldId, title: 'Mamá Gris' })
+    const fields = [
+      { name: 'Facción', field: 'faccion', type: 'pages', single: true, targets: ['faccion'], value: [raqisa.id] },
+      { name: 'Estado', field: 'estado', type: 'choice', value: 'Vive', options: ['Vive', 'Ha muerto'] },
+      { name: 'Reloj', field: 'reloj', type: 'clock', value: 3, segments: 8 }
+    ]
+    expect((await ok200('setPageProperties', { pageId: gris.id, properties: fields })).properties).toEqual(fields)
+    const { markdown } = await ok200('readPage', { pageId: gris.id })
+    expect(markdown).toContain('Facción: "[[La Raqisa]]"\nEstado: Vive\nReloj: "3/8"')
+
+    // Al cambiar el cuerpo entero con su YAML, cada valor vuelve a su campo
+    const yaml = '---\nFacción: "[[La Raqisa]]"\nEstado: Ha muerto\nReloj: "5/8"\n---\nOtra vida.\n'
+    const replaced = await ok200('editPage', { pageId: gris.id, body: { mode: 'replace', markdown: yaml } })
+    expect(replaced.page.properties).toEqual([
+      fields[0],
+      { ...fields[1], value: 'Ha muerto' },
+      { ...fields[2], value: 5 }
+    ])
+    // Y con las propiedades sueltas: sin opciones ni segmentos, se quedan los que tenía
+    const loose = await ok200('editPage', {
+      pageId: gris.id,
+      properties: [
+        { name: 'Estado', type: 'choice', value: 'Vive' },
+        { name: 'Reloj', type: 'clock', value: 1 },
+        { name: 'Facción', type: 'pages', value: ['La Raqisa'] }
+      ]
+    })
+    expect(loose.page.properties).toEqual([{ ...fields[1], value: 'Vive' }, { ...fields[2], value: 1 }, fields[0]])
+  })
+
+  it('los campos que no valen: un reloj pasado, dos páginas en un enlace solo, una página de otro mundo', async () => {
+    const gris = await ok200('createPage', { worldId, title: 'Mamá Gris' })
+    const set = (property: object) => call('setPageProperties', { pageId: gris.id, properties: [property] })
+    expect((await set({ name: 'Reloj', type: 'clock', value: 9, segments: 8 })).json()).toMatchObject({
+      code: 'BAD_CLOCK'
+    })
+    const a = await ok200('createPage', { worldId, title: 'A' })
+    const b = await ok200('createPage', { worldId, title: 'B' })
+    expect((await set({ name: 'Facción', type: 'pages', single: true, value: [a.id, b.id] })).json()).toMatchObject({
+      code: 'BAD_PROPERTY'
+    })
+    const otherWorld = (await call('createWorld', { name: 'Otro' })).json().id
+    const far = await ok200('createPage', { worldId: otherWorld, title: 'Lejos' })
+    expect((await set({ name: 'Facción', type: 'pages', single: true, value: [far.id] })).json()).toMatchObject({
+      code: 'BAD_PROPERTY'
+    })
+    // Por la IA, un reloj nuevo sin segmentos tiene 4
+    const clock = await ok200('editPage', { pageId: gris.id, properties: [{ name: 'Reloj', type: 'clock', value: 2 }] })
+    expect(clock.page.properties).toEqual([{ name: 'Reloj', type: 'clock', value: 2, segments: 4 }])
+  })
+
+  it('crear desde plantilla: sus campos, su panel y su texto, en una sola operación que se deshace entera', async () => {
+    const page = await ok200('createPage', { worldId, title: 'Mamá Gris', template: 'pnj' })
+    expect(page.template).toBe('pnj')
+    expect(page.properties.map((p: { name: string; field?: string }) => [p.name, p.field])).toEqual([
+      ['Especie', 'especie'],
+      ['Rol', 'rol'],
+      ['Facción', 'faccion'],
+      ['Lugar', 'lugar'],
+      ['Estado', 'estado'],
+      ['Padres', 'padres'],
+      ['Pareja', 'pareja']
+    ])
+    expect(page.panel).toEqual([
+      { id: expect.stringMatching(/^[a-z0-9]{12}$/), type: 'image', fileId: null, caption: '' },
+      {
+        id: expect.stringMatching(/^[a-z0-9]{12}$/),
+        type: 'related',
+        title: 'Lleva encima',
+        template: 'objeto',
+        field: 'portador',
+        columns: ['tipo', 'rareza'],
+        sort: 'title'
+      }
+    ])
+    const { markdown } = await ok200('readPage', { pageId: page.id })
+    expect(markdown).toContain('## Quién es\n\n## Cómo interpretarlo\n\n## Ganchos')
+    // Una sola operación del historial: deshacerla quita la página con todo
+    const { entries } = await ok200('listHistory', { worldId })
+    expect(entries[0]).toMatchObject({ action: 'createPage', details: { title: 'Mamá Gris' } })
+    expect((await ok200('undoOperation', { operationId: entries[0].id })).status).toBe('undone')
+    expect((await call('getPage', { pageId: page.id })).statusCode).toBe(404)
+  })
+
+  // Su ritmo (menos de 3 s), en la prueba de escala (CRISOL_ESCALA=1): con todo a la vez en el VPS, el tiempo no dice nada
+  it('la IA crea 50 páginas desde plantilla, enlazadas entre sí en cualquier orden', async () => {
+    const pages = [
+      // Los PNJ van antes que sus facciones: los enlaces se resuelven igual
+      ...Array.from({ length: 25 }, (_, i) => ({
+        key: `pnj${i}`,
+        title: `PNJ ${i}`,
+        template: i % 2 ? 'PNJ' : 'pnj',
+        markdown: `---\nfaccion: "[[Facción ${i}]]"\nestado: Vive\nRol: Contable\n---\n`
+      })),
+      ...Array.from({ length: 25 }, (_, i) => ({ key: `f${i}`, title: `Facción ${i}`, template: 'faccion' }))
+    ]
+    const created = await ok200('createPages', { worldId, parentId: null, pages })
+    expect(created.pages).toHaveLength(50)
+    const gris = await ok200('getPage', { pageId: created.pages[3].id })
+    const faction = created.pages.find((p: { key: string }) => p.key === 'f3')
+    expect(gris.template).toBe('pnj')
+    expect(gris.properties.find((p: { field?: string }) => p.field === 'faccion')).toEqual({
+      name: 'Facción',
+      field: 'faccion',
+      type: 'pages',
+      single: true,
+      targets: ['faccion'],
+      value: [faction.id]
+    })
+    expect(gris.properties.find((p: { field?: string }) => p.field === 'estado')).toMatchObject({
+      type: 'choice',
+      value: 'Vive'
+    })
+    // Con cuerpo, el suyo; sin él, el esqueleto
+    expect((await ok200('readPage', { pageId: faction.id })).markdown).toContain('## Quiénes son')
+  })
+
+  it('con plantilla, lo que no vale: una que no existe, un valor que no cabe en su campo; y el cuerpo dado se queda', async () => {
+    const missing = await call('createPages', {
+      worldId,
+      parentId: null,
+      pages: [{ key: 'a', title: 'A', template: 'frente' }]
+    })
+    expect(missing.json()).toMatchObject({ code: 'TEMPLATE_NOT_FOUND' })
+    const bad = await call('createPages', {
+      worldId,
+      parentId: null,
+      pages: [{ key: 'a', title: 'A', template: 'pnj', markdown: '---\nFacción: 7\n---\n' }]
+    })
+    expect(bad.json()).toMatchObject({ code: 'BAD_FIELD' })
+    const own = await ok200('createPages', {
+      worldId,
+      parentId: null,
+      pages: [{ key: 'a', title: 'A', template: 'lugar', markdown: '---\nPoblación: 12000\n---\nMi propio texto.\n' }]
+    })
+    const read = await ok200('readPage', { pageId: own.pages[0].id })
+    expect(read.markdown).toContain('Mi propio texto.')
+    expect(read.markdown).not.toContain('## Descripción')
+    expect(read.page.properties.find((p: { field?: string }) => p.field === 'poblacion')).toMatchObject({
+      type: 'number',
+      value: 12000
+    })
+  })
+
+  it('aplicar una plantilla a una página ya hecha: añade lo que falta, sin borrar nada, en una operación', async () => {
+    const { pages } = await ok200('createPages', {
+      worldId,
+      parentId: null,
+      pages: [
+        {
+          key: 'ciudad',
+          title: 'Ciudad Libre',
+          markdown: '---\nPoblación: 12000\nClima: Niebla\n---\n## Descripción\n\nPuerto franco.\n'
+        }
+      ]
+    })
+    const pageId = pages[0].id
+    const applied = await ok200('editPage', { pageId, template: 'Lugar' })
+    expect(applied.page.template).toBe('lugar')
+    expect(applied.page.properties.map((p: { name: string; field?: string }) => [p.name, p.field])).toEqual([
+      ['Población', 'poblacion'],
+      ['Clima', undefined],
+      ['Tipo', 'tipo'],
+      ['Dentro de', 'dentro-de'],
+      ['Gobierna', 'gobierna']
+    ])
+    expect(applied.page.panel.map((b: { type: string }) => b.type)).toEqual(['image', 'related', 'related'])
+    const { markdown } = await ok200('readPage', { pageId })
+    // Lo suyo se queda; el apartado que no tenía, al final
+    expect(markdown).toContain('## Descripción\n\nPuerto franco.')
+    expect(markdown.trimEnd().endsWith('## Ganchos')).toBe(true)
+    expect(markdown.match(/## Descripción/g)).toHaveLength(1)
+    // Una sola operación del historial, que dice qué plantilla
+    const { entries } = await ok200('listHistory', { worldId })
+    expect(entries[0]).toMatchObject({ action: 'editPage', details: { template: 'Lugar' } })
+    // Con body no va
+    expect(
+      (await call('editPage', { pageId, template: 'lugar', body: { mode: 'append', markdown: 'x' } })).statusCode
+    ).toBe(400)
+  })
+
   it('quien no es máster del mundo no lee ni escribe', async () => {
     const page = await ok200('createPage', { worldId, title: 'Puerto Ceniza' })
     const player = await signUpTestUser(auth, { name: 'Lía', email: 'lia@crisol.test' })

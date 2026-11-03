@@ -13,11 +13,12 @@ describe('herramientas MCP', () => {
     }
   })
 
-  it('las del módulo 0 y las de la wiki que ya hay', () => {
+  it('las del módulo 0, las de la wiki y las de las plantillas', () => {
     expect(Object.keys(MCP_TOOLS).sort()).toEqual([
       'borrar_etiqueta',
       'borrar_pagina',
       'borrar_pestana',
+      'borrar_plantilla',
       'buscar_paginas',
       'cambiar_campana',
       'cambiar_etiqueta',
@@ -26,11 +27,13 @@ describe('herramientas MCP', () => {
       'cambiar_panel',
       'cambiar_pestana',
       'cambiar_pin',
+      'cambiar_plantilla',
       'crear_campana',
       'crear_etiqueta',
       'crear_mundo',
       'crear_paginas',
       'crear_pestana',
+      'crear_plantilla',
       'deshacer',
       'editar_pagina',
       'enlace_invitacion',
@@ -40,6 +43,7 @@ describe('herramientas MCP', () => {
       'listar_archivos',
       'listar_etiquetas',
       'listar_mundos',
+      'listar_plantillas',
       'mover_pagina',
       'ordenar_subpaginas',
       'paginas_recientes',
@@ -52,6 +56,7 @@ describe('herramientas MCP', () => {
       'ver_historial',
       'ver_mapa',
       'ver_pestanas',
+      'ver_plantilla',
       'versiones_pagina'
     ])
   })

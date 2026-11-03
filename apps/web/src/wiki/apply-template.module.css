@@ -1,0 +1,64 @@
+/* Aplicar una plantilla: la lista a un lado y lo que añade al otro */
+.dialog {
+  inline-size: min(40rem, 100% - 2rem);
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--space-4);
+}
+
+@media (max-width: 40rem) {
+  .columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.summary {
+  padding-inline-start: var(--space-4);
+  border-inline-start: 1px solid var(--color-border);
+}
+
+.label {
+  margin: var(--space-2) 0 var(--space-1);
+  color: var(--color-muted);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin: 0 0 var(--space-2);
+  padding: 0;
+  list-style: none;
+  font-size: 0.875rem;
+}
+
+.list li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-muted);
+}
+
+.list li[data-added] {
+  color: var(--color-text);
+}
+
+.list li[data-added] svg {
+  color: var(--color-tip);
+}
+
+.has {
+  margin-inline-start: auto;
+  font-size: 0.75rem;
+}
+
+.none {
+  font-style: italic;
+}

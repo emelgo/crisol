@@ -188,6 +188,7 @@ describe('conector MCP con OAuth', () => {
     const page = await api<{ id: string }>(cookie, 'createPage', { worldId: world.id, title: 'Lugares' })
     await api(cookie, 'editPage', { pageId: page.id, body: { mode: 'append', markdown: 'Texto.' } })
     const { versions } = await api<{ versions: { id: string }[] }>(cookie, 'listPageVersions', { pageId: page.id })
+    const own = await api<{ id: string }>(cookie, 'createTemplate', { name: 'Frente' })
     const cases: Array<[string, Record<string, unknown>, 'read' | 'write' | 'players' | 'delete']> = [
       ['listar_mundos', {}, 'read'],
       ['ver_campana', { campaignId: campaign.id }, 'read'],
@@ -202,6 +203,11 @@ describe('conector MCP con OAuth', () => {
       ['listar_archivos', { worldId: world.id }, 'read'],
       ['listar_etiquetas', {}, 'read'],
       ['ver_pestanas', { pageId: page.id }, 'read'],
+      ['listar_plantillas', {}, 'read'],
+      ['ver_plantilla', { templateId: 'pnj' }, 'read'],
+      ['crear_plantilla', { name: 'PNJ de Eana', copyOf: 'pnj' }, 'write'],
+      ['cambiar_plantilla', { templateId: own.id, skeleton: '## En una frase' }, 'write'],
+      ['borrar_plantilla', { templateId: own.id }, 'delete'],
       ['buscar_paginas', { worldId: world.id, query: 'lugares' }, 'read'],
       ['restaurar_version', { pageId: page.id, versionId: versions[0]?.id }, 'write'],
       ['crear_mundo', { name: 'Otro' }, 'write'],
@@ -351,6 +357,26 @@ describe('conector MCP con OAuth', () => {
     expect(recent[0]).toMatchObject({ status: 'done' })
     const { entries } = (await call<History>('ver_historial', { worldId: world.id })).data
     expect(entries[0]).toMatchObject({ action: 'editPage', via: 'ai', tool: 'editar_pagina' })
+  })
+
+  it('Claude crea con plantilla; si un valor no cabe en su campo, el error le dice qué campos tiene', async () => {
+    const { call } = await connected()
+    const world = (await call<World>('crear_mundo', { name: 'Eana' })).data
+    const bad = await call('crear_paginas', {
+      worldId: world.id,
+      parentId: null,
+      pages: [{ key: 'a', title: 'Mamá Gris', template: 'PNJ', markdown: '---\nFacción: 7\n---\n' }]
+    })
+    expect(bad.isError).toBe(true)
+    expect(bad.text).toContain('«Facción» no cabe en el campo «Facción» de PNJ')
+    expect(bad.text).toContain('Sus campos: Especie (texto), Rol (texto), Facción (páginas, una)')
+    const made = await call<{ pages: { id: string }[] }>('crear_paginas', {
+      worldId: world.id,
+      parentId: null,
+      pages: [{ key: 'a', title: 'Mamá Gris', template: 'PNJ', markdown: '---\nRol: Jefa\n---\n' }]
+    })
+    const read = await call<{ page: { template: string } }>('leer_pagina', { pageId: made.data.pages[0]?.id })
+    expect(read.data.page.template).toBe('pnj')
   })
 
   it('lo de otra organización no existe para Claude: ni se ve, ni se pide, ni se deshace', async () => {

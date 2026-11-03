@@ -42,6 +42,7 @@ import {
   getPage,
   getPageContent,
   getPageLinks,
+  getPageTables,
   getPageVersion,
   getWikiPreferences,
   linkMention,
@@ -65,6 +66,7 @@ import {
 } from './pages.ts'
 import { searchWiki } from './search.ts'
 import { createTag, deleteTag, listAccountTags, setFileTags, updateTag } from './tags.ts'
+import { createTemplate, deleteTemplate, getTemplate, listTemplates, updateTemplate } from './templates.ts'
 import {
   deleteCampaign,
   deletePage,
@@ -91,6 +93,7 @@ export * from './panel.ts'
 export type * from './realtime.ts'
 export * from './search.ts'
 export * from './tags.ts'
+export * from './templates.ts'
 export * from './trash.ts'
 export * from './worlds.ts'
 
@@ -154,6 +157,7 @@ export const ACTIONS = [
   listPageVersions,
   getPageVersion,
   restorePageVersion,
+  getPageTables,
   listFiles,
   listCommonFiles,
   renameFile,
@@ -180,7 +184,12 @@ export const ACTIONS = [
   updateMapPin,
   deleteMapPin,
   getWorldHome,
-  ensureWorldHome
+  ensureWorldHome,
+  listTemplates,
+  getTemplate,
+  createTemplate,
+  updateTemplate,
+  deleteTemplate
 ]
 
 /** Las acciones por nombre, solo como tipo: la web las usa sin cargar zod */
@@ -243,6 +252,7 @@ export type Actions = {
   listPageVersions: typeof listPageVersions
   getPageVersion: typeof getPageVersion
   restorePageVersion: typeof restorePageVersion
+  getPageTables: typeof getPageTables
   listFiles: typeof listFiles
   listCommonFiles: typeof listCommonFiles
   renameFile: typeof renameFile
@@ -270,4 +280,9 @@ export type Actions = {
   getWorldHome: typeof getWorldHome
   ensureWorldHome: typeof ensureWorldHome
   searchWiki: typeof searchWiki
+  listTemplates: typeof listTemplates
+  getTemplate: typeof getTemplate
+  createTemplate: typeof createTemplate
+  updateTemplate: typeof updateTemplate
+  deleteTemplate: typeof deleteTemplate
 }

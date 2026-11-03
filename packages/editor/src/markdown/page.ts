@@ -8,7 +8,7 @@ import { BLOCK_TYPES, newBlockId } from '../ids.ts'
 import { isExternalUrl } from '../links.ts'
 import type { SeparateKind } from '../nodes/separate.ts'
 import { editorExtensions } from '../schema.ts'
-import { type ReadProperty, readFrontmatter, writeFrontmatter } from './frontmatter.ts'
+import { type ReadProperty, readFrontmatter, type WritableProperty, writeFrontmatter } from './frontmatter.ts'
 
 /** Lo de dentro de un secreto o una nota oculta leído del Markdown, con el id de su bloque en el cuerpo */
 export interface ReadSeparate {
@@ -25,7 +25,7 @@ export interface ReadPage {
 }
 
 export interface WritePage {
-  properties: readonly (ReadProperty | { name: string; type: 'pages'; value: string[] })[]
+  properties: readonly WritableProperty[]
   body: JSONContent
   /** Lo de dentro de cada secreto o nota oculta, por el id de su documento (null: no se puede leer) */
   separate: (documentId: string) => JSONContent[] | null

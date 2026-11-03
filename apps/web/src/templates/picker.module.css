@@ -1,0 +1,140 @@
+/* La lista de plantillas al crear una página: un buscador y sus filas, que se eligen como opciones */
+.picker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+}
+
+.search {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding-inline: var(--space-2);
+  border: 1px solid var(--color-field-border);
+  border-radius: 6px;
+  color: var(--color-muted);
+}
+
+.search input {
+  flex: 1;
+  min-inline-size: 0;
+  padding-block: 0.5rem;
+  border: 0;
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.875rem;
+  outline: none;
+}
+
+.search:focus-within {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 1px;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  max-block-size: 16rem;
+  overflow-y: auto;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-inline-size: 0;
+}
+
+.hidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.groupLabel {
+  margin: var(--space-1) var(--space-2) 0;
+  color: var(--color-muted);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 0.375rem var(--space-2);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.row:hover {
+  background: var(--color-raised);
+}
+
+/* El botón de opción, quieto y sin verse: la fila entera es la opción */
+.row input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.row:has(input:checked) {
+  background: color-mix(in srgb, var(--color-accent) 14%, transparent);
+}
+
+.row:has(input:focus-visible) {
+  outline: 2px solid var(--color-focus);
+  outline-offset: -2px;
+}
+
+.icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  inline-size: 1.875rem;
+  block-size: 1.875rem;
+  border-radius: 6px;
+  background: var(--color-raised);
+  color: var(--color-h3);
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 0;
+}
+
+.name {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.hint {
+  overflow: hidden;
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.none {
+  margin: var(--space-2);
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}

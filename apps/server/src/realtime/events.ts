@@ -42,6 +42,11 @@ export const tagsChanged = (organizationId: string): RealtimeEvent => ({
   message: { type: 'changed', what: 'tags', organizationId }
 })
 
+export const templatesChanged = (organizationId: string): RealtimeEvent => ({
+  to: { capability: 'templates.read', target: { organizationId } },
+  message: { type: 'changed', what: 'templates', organizationId }
+})
+
 /** El texto de una página se guardó: a quien la ve (lo que la enseña en otra se vuelve a pedir) */
 export const pageContentChanged = (
   wiki: { worldId: string; organizationId: string },
@@ -121,6 +126,9 @@ export function undoEvents(
         break
       case 'tags':
         events.push(tagsChanged(String(row.organization_id ?? context.organizationId)))
+        break
+      case 'page_templates':
+        events.push(templatesChanged(String(row.organization_id ?? context.organizationId)))
         break
       case 'files':
       case 'file_folders':

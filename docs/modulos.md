@@ -7,6 +7,25 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
+### Para retomar (2026-11-03, módulo 2)
+
+- **El módulo 2 (tipos de página y plantillas) está construido**: las 14 tareas de `tasks/todo.md`, en la rama
+  `modulo-2/campos` (PR #93). La spec es `docs/specs/plantillas.md`, el ADR-0009 y el diseño, el lienzo «Crisol:
+  plantillas» (aprobados).
+  - Campos con id y tipos nuevos (opciones, reloj, enlace a una sola página), con sus controles en el panel.
+  - Seis plantillas de serie y las de la cuenta (`/plantillas` en Mis mundos, con su editor de campos, panel y texto).
+  - «Desde plantilla» al crear una página o desde un enlace sin resolver; aplicar una plantilla a una página ya hecha.
+  - Tablas que se llenan solas en el panel («Miembros», «Habitantes»…): p95 de 43 ms con 5.000 páginas.
+  - MCP: `listar_plantillas`, `ver_plantilla`, `crear_plantilla`, `cambiar_plantilla`, `borrar_plantilla`; `crear_paginas`,
+    `editar_pagina` y `buscar_paginas` con plantilla; `leer_pagina` con sus tablas.
+  - Migraciones 0035 y 0036 (ya en la base de desarrollo).
+- **La CI gasta cuota mensual** (Enrique, 2026-11-03): no se pasa en cada PR. Esta tanda sube junta y se pasa una vez;
+  después, merge y staging.
+- **Lo siguiente**: Enrique repasa en staging los criterios de éxito de la spec (también desde claude.ai, con la IA).
+  Lo que diga, a `docs/diseno.md` si son normas de la interfaz.
+- **Apuntado**: las pruebas de ritmo de la búsqueda (módulo 1) fallan a veces con todo a la vez en el VPS, por la carga;
+  solas pasan. El ritmo de 50 páginas desde plantilla y el de las tablas, en la prueba de escala (`CRISOL_ESCALA=1`).
+
 ### Para retomar (2026-11-03, cierre de la interfaz)
 
 - **La etapa de interfaz queda cerrada** («vamos a parar con la UI de momento, con lo que tenemos podremos diseñar los
@@ -19,7 +38,7 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   y menú (botón derecho); panel de bloques a la derecha; árbol con botón derecho y arrastre (a la izquierda, sale de su
   madre).
 - **Lo siguiente** (en otra conversación): **el módulo 2** (tipos de página, plantillas, formularios y consultas) con
-  su ciclo: `interview-me` frente al inventario, REA, `/spec`… La mejora de la búsqueda (texto de los PDF y búsqueda
+  su ciclo: `interview-me` frente al inventario, estudio con craft-anything, `/spec`… La mejora de la búsqueda (texto de los PDF y búsqueda
   por significado con pgvector) ya no va antes: Enrique la pasó al módulo 4, con la biblioteca (2026-11-03).
 - **En staging** desde el 2026-11-03 (PR #91, migraciones 0029 a 0034).
 - **Apuntado de las revisiones de esta tanda** (para cuando toque):
@@ -105,7 +124,7 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
 - **El orden** (Enrique, 2026-10-30: «para seguir después de la edición de la UI»):
   1. la etapa de interfaz: primera pasada hecha (`tasks/interfaz.md`); falta la revisión de Enrique y pulir;
   2. arreglar el resto de lo que dijo de sus pruebas;
-  3. cerrar el módulo 1 (que pruebe el punto 6 y el final; marcar sus puntos de control en `tasks/todo.md`);
+  3. cerrar el módulo 1 (que pruebe el punto 6 y el final; marcar sus puntos de control en `tasks/wiki/todo.md`);
   4. ~~antes del módulo 2, la búsqueda~~ → **pasada al módulo 4** (2026-11-03: «la mejora de búsqueda ponla donde
      corresponda para seguir con el módulo 2»). Lo que se decidió (pregunta de Enrique, 2026-10-30, con herramientas que propuso: qmd, basic-memory,
      probe, Meilisearch, pymupdf4llm). Primera respuesta: basic-memory y pymupdf4llm son AGPL (fuera); probe es para
@@ -117,7 +136,7 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
      de pgvector si ayuda también, quiero crear la mejor app». Antes de pgvector: pedirle permiso para cambiar la
      imagen de Postgres a `pgvector/pgvector` y elegir con él quién calcula los embeddings (un modelo propio en el
      servidor, gratis y privado pero con memoria; o una API, que cuesta y saca el texto fuera);
-  5. empezar el módulo 2 con su ciclo (`interview-me` frente al inventario, REA, spec…).
+  5. empezar el módulo 2 con su ciclo (`interview-me` frente al inventario, estudio con craft-anything, spec…).
 - **Lo que aún no tiene el módulo 1**, a propósito o para más adelante: importador (Eana se pasa por el MCP), los
   jugadores viendo la wiki (módulo 5), los datos de criatura del statblock (módulo 4), y la capa de texto del visor de
   PDF (hoy se lee con «Abrir aparte»).
@@ -939,7 +958,9 @@ y la búsqueda encuentra lo que está dentro de un secreto. Lo raro que vio Clau
   - Enrique inicia sesión él mismo en un Chromium del VPS con depuración solo en loopback (`--remote-debugging-port=9222`).
   - Desde VS Code reenvía el puerto 9222 (pestaña Ports), abre `chrome://inspect` en su Chrome, añade `localhost:9222`
     y pulsa *inspect*.
-  - REA se conecta luego a esa sesión (`list_browser_targets` / `capture_browser_scenario` en modo `connect`).
+  - El estudio se conectaba luego a esa sesión con REA; desde el 2026-11-03 REA ya no se usa y se hace con
+    craft-anything (falta ver cómo se engancha a esta sesión).
+  - Antes con REA: `list_browser_targets` / `capture_browser_scenario` en modo `connect`.
   - Así se lanza el navegador. Va sin sandbox porque este Ubuntu no lo permite, como Playwright y REA:
     `xvfb-run -a -s "-screen 0 1920x1080x24" ~/.cache/ms-playwright/chromium-1243/chrome-linux64/chrome --no-sandbox
     --remote-debugging-port=9222 --remote-debugging-address=127.0.0.1 --user-data-dir=$HOME/rea-workspace/chromium-ddb
@@ -949,13 +970,13 @@ y la búsqueda encuentra lo que está dentro de un secreto. Lo raro que vio Clau
 
 Estados: pendiente · en curso · hecho · descartado.
 
-| # | Módulo | Estado | REA principal |
+| # | Módulo | Estado | Estudio principal (craft-anything) |
 |---|---|---|---|
 | 0 | **Fundación**: monorepo, CI, despliegue, cuentas, organizaciones, mundos, campañas, roles, historial y deshacer, esqueleto del MCP | **hecho** (2026-10-29; Discord y Google, pospuestos) | Foundry: modelo de documentos y permisos; DDB: campañas e invitaciones |
 | 1 | **Wiki**: páginas y subpáginas, editor de bloques, enlaces, menciones, vista previa, propiedades, secretos, búsqueda, marcadores, etiquetas, versiones, recursos y archivos, **hojas con estilo** (tipo Homebrewery, con PDF), exportación MD, sus herramientas MCP | construido (tareas 1 a 26 hechas); falta la revisión de Enrique en staging | Foundry: Journal; DDB: contenido y referencias; Homebrewery (MIT): formato de hoja y descarga |
-| 2 | Tipos de página, plantillas y formularios nativos; consultas (en lugar de Dataview y Bases) | pendiente | Foundry: tipos de documento |
+| 2 | **Tipos de página y plantillas**: «Desde plantilla» (de serie y propias), campos en el panel, tablas que se llenan solas (en lugar de Dataview) | construido (tareas 1 a 14, 2026-11-03); falta la revisión de Enrique en staging | Foundry: tipos de documento; Kanka, LegendKeeper y World Anvil (web pública) |
 | 3 | Sistemas de reglas, fichas de personaje (creación, subida de nivel), dados y dados 3D | pendiente | DDB: creador y hoja; Foundry: dnd5e, DataModel e instalar y crear sistemas |
-| 4 | Compendios, bestiario, statblocks, biblioteca; **buscar dentro de los PDF** (texto de cada página con pdf.js; el resultado abre el visor en esa página) **y por significado** (pgvector; antes, permiso para la imagen de Postgres y elegir quién calcula los embeddings) | pendiente | Foundry: compendium packs; DDB: listados |
+| 4 | Compendios (aparte de la wiki del mundo y **como los de Foundry**: antes, estudio a fondo con craft-anything), bestiario, statblocks, biblioteca; **buscar dentro de los PDF** (texto de cada página con pdf.js; el resultado abre el visor en esa página) **y por significado** (pgvector; antes, permiso para la imagen de Postgres y elegir quién calcula los embeddings) | pendiente | Foundry: compendium packs; DDB: listados |
 | 5 | Visibilidad por campaña: conocimiento de los jugadores, revelar, compartir | pendiente | Foundry: ownership |
 | 6 | **Mesa**: escenas, rejilla, fichas, medir y plantillas, niebla, muros, puertas, luz, visión, iniciativa, instantáneas, encuentros, UVTT | pendiente | Foundry: canvas, visión y muros; DDB Maps |
 | 7 | **Sala de jugadores**: presencia, chat y susurros, mostrar a jugadores, sonido, controles del máster | pendiente | Foundry: sockets y chat; DDB: game log |
@@ -1064,14 +1085,14 @@ app: el 2026-10-30 dijo «luego apuntaremos por donde vamos y nos dedicaremos a 
   - El Crisol actual ya guarda el sistema como datos (`.crisol/sistema.json`, con herramientas para crearlo, validarlo y
     probar tiradas): repasarlo en `docs/inventario.md` § 5.
 - **Creador de personajes y hoja (módulo 3)**: de D&D Beyond, son lo fundamental (Enrique, 2026-10-29). En el módulo 3
-  se estudian a fondo con REA: el paso a paso del creador, subir de nivel, la hoja en escritorio y en el móvil,
+  se estudian a fondo con craft-anything: el paso a paso del creador, subir de nivel, la hoja en escritorio y en el móvil,
   tiradas desde la hoja, y cómo se ven y se gestionan los recursos y el inventario. Se estudian en la cuenta de
   Enrique, solo mirando. La sesión queda en el perfil del Chromium del VPS (`~/rea-workspace/chromium-ddb`); si ha
   caducado, Enrique vuelve a entrar como en «D&D Beyond», más arriba.
 - **Hojas con estilo (módulo 1)**: que las páginas de la wiki tengan el formato de las hojas de rol (dos columnas,
   pergamino, statblocks, notas al margen) y se puedan descargar, al estilo de
   [Homebrewery](https://github.com/naturalcrit/homebrewery).
-  - Homebrewery tiene licencia MIT: su código se puede leer directamente y aprovechar con su atribución. REA sirve para
+  - Homebrewery tiene licencia MIT: su código se puede leer directamente y aprovechar con su atribución. craft-anything sirve para
     ver en la web cómo pagina e imprime.
   - Cuidado con su tema 5e: las fuentes y las imágenes llevan licencias propias (varias CC BY-SA, que `CONSTRAINTS.md`
     no admite) e imitan el aspecto de los libros de WotC. Para un producto de pago, un tema propio con ese aire,
@@ -1128,3 +1149,33 @@ app: el 2026-10-30 dijo «luego apuntaremos por donde vamos y nos dedicaremos a 
   - En staging, Enrique crea y edita páginas de prueba con todo lo anterior y las ve en las dos vistas.
   - Saca el PDF de una hoja.
   - Claude crea y edita desde claude.ai páginas con subpáginas, propiedades, enlaces y secretos.
+
+### 2. Tipos de página y plantillas (entrevista con Enrique, 2026-11-03)
+
+- **Para qué**: que las páginas del mundo tengan tipo (PNJ, Lugar, Facción…) con sus campos, y que las tablas que hoy
+  hace Dataview («los PNJ de esta facción», «lo que lleva este PNJ») salgan solas. En Eana hay unas 570 páginas con
+  tipo (PNJ, lugares, objetos, facciones y frentes, además de las reglas) y 45 tablas de Dataview, casi todas de ese
+  estilo: las páginas de un tipo cuyo campo apunta a la página en la que se está.
+- **«Desde plantilla»** en «Página nueva», junto a Texto, Mapa, Pizarra, Línea temporal y Árbol. La página sale con
+  sus campos en el panel de la derecha y sus apartados en el texto (un PNJ: Especie, Rol, Facción y Lugar en el panel;
+  Quién es, Cómo interpretarlo y Ganchos en el texto). Sin pestañas.
+- **La página recuerda de qué plantilla salió** («es un PNJ») y después se edita libremente: se quitan o se añaden
+  campos y apartados. Lo que no se toca es el esqueleto de la plantilla.
+- **Plantillas de serie** (fijas, no se editan): PNJ, Lugar, Facción, Objeto, Misión y Sesión.
+- **Plantillas propias**: de toda la cuenta (como las etiquetas), hechas desde cero o copiando una de serie. Estas sí se
+  editan; cambiarlas no toca las páginas ya hechas. «Frente» será la primera, desde cero, para probarlo.
+- **Tablas que se llenan solas**: bloques del panel («Miembros», «Habitantes», «Lugares dentro», «Lleva encima») que
+  vienen en la plantilla o se añaden a mano con desplegables («páginas de tipo [PNJ] cuyo [Lugar] es esta página»).
+  Sin lenguaje de consultas.
+- **Campos** (propuesta de Claude, sin objeciones): texto, número, opciones, enlace a una página (de un tipo o de
+  cualquiera), varios enlaces, reloj de segmentos y casilla.
+- **La IA**, por el MCP: crear páginas desde plantilla, crear plantillas propias y leer esas tablas.
+- **Fuera del módulo 2**:
+  - el compendio (reglas, conjuros, criaturas, dotes): va aparte de la wiki del mundo, en el módulo 4, y tiene que
+    funcionar como el de Foundry; antes, un estudio a fondo con craft-anything;
+  - PJ y tablas aleatorias (módulo 3, con las fichas y los dados);
+  - formularios (Enrique: «no me interesa») y un lenguaje de consultas como Dataview o Bases;
+  - que cambiar una plantilla cambie las páginas ya hechas;
+  - lo que ven los jugadores de esas tablas (módulo 5).
+- **Hecho cuando**: Enrique crea un PNJ desde plantilla, le pone su facción y sale solo en «Miembros» de la facción;
+  hace «Frente» desde cero y la usa; la IA hace lo mismo desde claude.ai.

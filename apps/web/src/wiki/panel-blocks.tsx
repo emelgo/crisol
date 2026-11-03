@@ -19,6 +19,7 @@ import {
   Plus,
   RectangleHorizontal,
   Star,
+  Table2,
   Tag,
   Trash2,
   Type
@@ -31,11 +32,12 @@ import { FormError } from '../components/field.tsx'
 import { colorHex, PRESET_COLORS } from '../routes/world-look.ts'
 import { useWorldFiles } from './cover-look.ts'
 import styles from './panel-blocks.module.css'
+import { RelatedBody, RelatedOptions } from './related-block.tsx'
 import { childrenKey } from './tree.tsx'
 
-type Kind = 'text' | 'image' | 'bar' | 'circle' | 'rating' | 'tokens' | 'subpages' | 'tagged'
+export type Kind = 'text' | 'image' | 'bar' | 'circle' | 'rating' | 'tokens' | 'subpages' | 'tagged' | 'related'
 
-const GROUPS: { group: 'notes' | 'meters' | 'lists'; kinds: { kind: Kind; icon: ReactNode }[] }[] = [
+export const PANEL_GROUPS: { group: 'notes' | 'meters' | 'lists'; kinds: { kind: Kind; icon: ReactNode }[] }[] = [
   {
     group: 'notes',
     kinds: [
@@ -56,7 +58,8 @@ const GROUPS: { group: 'notes' | 'meters' | 'lists'; kinds: { kind: Kind; icon: 
     group: 'lists',
     kinds: [
       { kind: 'subpages', icon: <ListTree size={16} aria-hidden="true" /> },
-      { kind: 'tagged', icon: <Tag size={16} aria-hidden="true" /> }
+      { kind: 'tagged', icon: <Tag size={16} aria-hidden="true" /> },
+      { kind: 'related', icon: <Table2 size={16} aria-hidden="true" /> }
     ]
   }
 ]
@@ -65,7 +68,7 @@ const GROUPS: { group: 'notes' | 'meters' | 'lists'; kinds: { kind: Kind; icon: 
 const newId = () =>
   Array.from(crypto.getRandomValues(new Uint8Array(10)), (n) => 'abcdefghijklmnopqrstuvwxyz0123456789'[n % 36]).join('')
 
-function blockOf(kind: Kind): PanelBlock {
+export function blockOf(kind: Kind): PanelBlock {
   const id = newId()
   switch (kind) {
     case 'text':
@@ -83,10 +86,12 @@ function blockOf(kind: Kind): PanelBlock {
       return { id, type: 'subpages', title: '' }
     case 'tagged':
       return { id, type: 'tagged', title: '', tag: '' }
+    case 'related':
+      return { id, type: 'related', title: '', template: 'pnj', field: 'faccion', columns: [], sort: 'title' }
   }
 }
 
-const kindOf = (block: PanelBlock): Kind => (block.type === 'meter' ? block.style : block.type)
+export const kindOf = (block: PanelBlock): Kind => (block.type === 'meter' ? block.style : block.type)
 
 const same = (a: readonly PanelBlock[], b: readonly PanelBlock[]) => JSON.stringify(a) === JSON.stringify(b)
 
@@ -283,7 +288,7 @@ function AddBlock({
               </ul>
             </div>
           )}
-          {GROUPS.map(({ group, kinds }) => (
+          {PANEL_GROUPS.map(({ group, kinds }) => (
             <div key={group} className={styles.pickerGroup}>
               <p>{t(`panelBlocks.groups.${group}`)}</p>
               <ul>
@@ -343,8 +348,10 @@ function BlockFrame({
   const kind = kindOf(block)
   const name = ('title' in block && block.title) || t(`panelBlocks.kinds.${kind}`)
   const [over, setOver] = useState(false)
+  const section = useRef<HTMLElement>(null)
   return (
     <section
+      ref={section}
       className={styles.block}
       aria-label={name}
       data-dragging={dragging || undefined}
@@ -384,7 +391,13 @@ function BlockFrame({
           <span className={styles.kindLabel}>{t(`panelBlocks.kinds.${kind}`)}</span>
         )}
       </div>
-      <BlockBody page={page} block={block} onChange={onChange} />
+      <BlockBody
+        page={page}
+        block={block}
+        onChange={onChange}
+        // Sus opciones, las de los seis puntos
+        onFix={() => section.current?.querySelector<HTMLButtonElement>('button[aria-controls]')?.click()}
+      />
     </section>
   )
 }
@@ -472,7 +485,7 @@ function BlockMenu({
         <GripVertical size={14} aria-hidden="true" />
       </button>
       {open && (
-        <div id={menuId} className={styles.menu}>
+        <div id={menuId} className={styles.menu} data-wide={block.type === 'related' || undefined}>
           {(block.type === 'meter' || block.type === 'rating' || block.type === 'tokens') && (
             <div className={styles.field}>
               <label htmlFor={maxId}>{t('panelBlocks.max')}</label>
@@ -521,6 +534,7 @@ function BlockMenu({
               ))}
             </fieldset>
           )}
+          {block.type === 'related' && <RelatedOptions block={block} onChange={(patch) => onChange(patch)} />}
           {block.type === 'tagged' && (
             <div className={styles.field}>
               <label htmlFor={tagId}>{t('panelBlocks.tag')}</label>
@@ -558,7 +572,18 @@ function BlockMenu({
   )
 }
 
-function BlockBody({ page, block, onChange }: { page: Page; block: PanelBlock; onChange: Change }) {
+function BlockBody({
+  page,
+  block,
+  onChange,
+  onFix
+}: {
+  page: Page
+  block: PanelBlock
+  onChange: Change
+  /** Abrir sus opciones (para arreglar una tabla que ya no vale) */
+  onFix: () => void
+}) {
   switch (block.type) {
     case 'text':
       return <TextBody value={block.text} onCommit={(text) => onChange({ text })} />
@@ -578,6 +603,8 @@ function BlockBody({ page, block, onChange }: { page: Page; block: PanelBlock; o
       return <SubpagesBody page={page} />
     case 'tagged':
       return <TaggedBody page={page} tag={block.tag} />
+    case 'related':
+      return <RelatedBody page={page} block={block} onFix={onFix} />
   }
 }
 

@@ -118,7 +118,7 @@ export function PageBody({ page, documentId }: { page: Page; documentId?: string
 }
 
 /** El texto vacío dice qué hacer: escribir, «/» o «@» (en la primera línea, mientras no haya nada) */
-const EmptyHint = Extension.create<{ text: string }>({
+export const EmptyHint = Extension.create<{ text: string }>({
   name: 'emptyHint',
   addOptions: () => ({ text: '' }),
   addProseMirrorPlugins() {

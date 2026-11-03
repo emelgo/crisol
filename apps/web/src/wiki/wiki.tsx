@@ -14,6 +14,9 @@ import list from '../components/list.module.css'
 import { failed, LoadError } from '../components/load-error.tsx'
 import { headingMayTakeFocus, PageTitle, useHeadingFocusRequest } from '../components/page-title.tsx'
 import { WorldBanner } from '../routes/world-card.tsx'
+import { TEMPLATE_ICON } from '../templates/icons.tsx'
+import { useTemplates } from '../templates/picker.tsx'
+import { ApplyTemplate } from './apply-template.tsx'
 import { Backlinks } from './backlinks.tsx'
 import { CollabSocket } from './collab.tsx'
 import { CoverButton, PageCoverImage } from './cover.tsx'
@@ -377,6 +380,7 @@ function PageHead({
           <div className={styles.heading}>
             {page.icon && <PageIcon page={page} />}
             <InlineTitle page={page} autoFocus={startEditing} onDone={named} />
+            {page.template && <TemplateBadge templateId={page.template} />}
             {home && (
               <span className={styles.homeBadge}>
                 <House aria-hidden="true" size={12} />
@@ -389,6 +393,36 @@ function PageHead({
         <div className={styles.pageActions}>{actions}</div>
       </header>
     </>
+  )
+}
+
+/** La plantilla con la que se hizo la página, junto a su título: lleva a ella. Si se borró, lo dice (y no lleva) */
+function TemplateBadge({ templateId }: { templateId: string }) {
+  const { t } = useTranslation()
+  const list = useTemplates().data
+  const template = list?.templates.find((each) => each.id === templateId)
+  const deleted = list?.deleted.find((each) => each.id === templateId)
+  const shown = template ?? deleted
+  if (!shown) return null
+  const Icon = TEMPLATE_ICON[shown.icon]
+  if (!template) {
+    return (
+      <span className={styles.templateBadge} title={t('templates.madeWithDeleted', { name: shown.name })}>
+        <Icon aria-hidden="true" size={12} />
+        {t('templates.deletedName', { name: shown.name })}
+      </span>
+    )
+  }
+  return (
+    <Link
+      to="/plantillas/$templateId"
+      params={{ templateId }}
+      className={styles.templateBadge}
+      title={t('templates.madeWith', { name: template.name })}
+    >
+      <Icon aria-hidden="true" size={12} />
+      {template.name}
+    </Link>
   )
 }
 
@@ -555,6 +589,7 @@ function MoreActions({ page }: { page: Page }) {
         <div id={panelId} className={styles.morePanel}>
           <SheetMenu page={page} />
           {/* Lo demás (subpágina, renombrar, mover, borrar…), con el botón derecho en el árbol */}
+          <ApplyTemplate page={page} />
           <ExportPage page={page} />
           <Versions page={page} />
         </div>

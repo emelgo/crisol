@@ -1,6 +1,7 @@
-# Investigación (REA)
+# Investigación
 
-Aquí van las notas de lo aprendido estudiando **Foundry VTT** y **D&D Beyond** con REA. Enrique tiene licencia de los
+Aquí van las notas de lo aprendido estudiando **Foundry VTT** y **D&D Beyond**, con craft-anything desde el
+2026-11-03 (antes, con REA, que ya no se usa). Enrique tiene licencia de los
 dos. El objetivo es entender cómo abordan los problemas para diseñar los nuestros, no reproducirlos.
 
 También se estudia **Homebrewery** (`naturalcrit/homebrewery`), por sus hojas con estilo y su PDF. Su código es MIT: a
@@ -8,6 +9,10 @@ diferencia de Foundry y D&D Beyond, se puede aprovechar en `apps/` o `packages/`
 cabecera con el origen y el commit en cada archivo derivado, y su entrada en las notas de terceros. Sus fuentes e
 imágenes, no: varias son CC BY-SA o no traen licencia (ver `research/homebrewery/hojas-y-pdf.md`). Su nota sigue el
 mismo formato y es igualmente prosa propia.
+
+Para el módulo 2 se estudian además **Kanka**, **LegendKeeper** y **World Anvil** solo por su web pública
+(documentación, ayuda, changelogs, blogs y foros), sin cuenta y sin abrir su código, que en Kanka es copyleft (ver
+`research/kanka/`, `research/legendkeeper/` y `research/worldanvil/`).
 
 ## Reglas de sala limpia
 

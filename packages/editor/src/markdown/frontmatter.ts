@@ -12,6 +12,28 @@ export type ReadProperty =
   | { name: string; type: 'list'; value: string[] }
   | { name: string; type: 'pages'; value: string[] }
 
+/**
+ * Una propiedad que se escribe en YAML: las de siempre y las de los campos de plantilla (con su id, que no se escribe).
+ * Opciones como texto, un enlace solo sin lista y el reloj como «3/8»; al leerlas vuelven con los tipos de siempre y el
+ * servidor les devuelve su forma
+ */
+export type WritableProperty =
+  | ReadProperty
+  | { name: string; field?: string | undefined; type: 'text'; value: string }
+  | { name: string; field?: string | undefined; type: 'number'; value: number | null }
+  | { name: string; field?: string | undefined; type: 'boolean'; value: boolean }
+  | { name: string; field?: string | undefined; type: 'list'; value: string[] }
+  | {
+      name: string
+      field?: string | undefined
+      type: 'pages'
+      value: string[]
+      single?: true | undefined
+      targets?: string[] | undefined
+    }
+  | { name: string; field?: string | undefined; type: 'choice'; value: string; options: string[] }
+  | { name: string; field?: string | undefined; type: 'clock'; value: number; segments: number }
+
 export class FrontmatterError extends Error {
   readonly line: number
   constructor(line: number, message: string) {
@@ -40,20 +62,29 @@ const key = (name: string) =>
 
 /** El YAML de unas propiedades, con sus «---», o nada si no hay. pageTitle da el título de cada página enlazada */
 export function writeFrontmatter(
-  properties: readonly (ReadProperty | { name: string; type: 'pages'; value: string[] })[],
+  properties: readonly WritableProperty[],
   pageTitle: (id: string) => string = (id) => id
 ): string {
   if (properties.length === 0) return ''
   const lines = ['---']
   for (const property of properties) {
     const name = key(property.name)
+    if (property.type === 'pages' && 'single' in property && property.single) {
+      const [id] = property.value
+      lines.push(`${name}: ${id === undefined ? '""' : scalar(`[[${pageTitle(id)}]]`)}`)
+      continue
+    }
     switch (property.type) {
       case 'text':
+      case 'choice':
         lines.push(`${name}: ${scalar(property.value)}`)
+        break
+      case 'clock':
+        lines.push(`${name}: ${scalar(`${property.value}/${property.segments}`)}`)
         break
       case 'number':
       case 'boolean':
-        lines.push(`${name}: ${String(property.value)}`)
+        lines.push(property.value === null ? `${name}:` : `${name}: ${String(property.value)}`)
         break
       case 'list':
       case 'pages': {

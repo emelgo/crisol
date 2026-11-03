@@ -13,12 +13,24 @@ import type {
   Organization,
   Page,
   PageProperty,
+  PageTables,
   PageTabView,
+  PageTemplate,
   TagView,
   TrashItem,
   World
 } from '@crisol/contracts'
-import { removeTagIn, renameTagIn, tagKey, tagTree, uniqueTags } from '@crisol/domain'
+import {
+  applyTemplate,
+  BUILT_IN_TEMPLATES,
+  builtInTemplate,
+  instantiate,
+  removeTagIn,
+  renameTagIn,
+  tagKey,
+  tagTree,
+  uniqueTags
+} from '@crisol/domain'
 import { type ActionInput, type ActionName, type ActionOutput, type ApiClient, ApiError } from './client.ts'
 
 export function fakeApi(
@@ -42,6 +54,8 @@ export function fakeApi(
       title: string
       icon?: string | null
       properties?: PageProperty[]
+      /** La plantilla de la que salió */
+      template?: string
     }>
     /** Los archivos de los mundos (usedBy: cuántas páginas lo usan) */
     files?: Array<Pick<FileView, 'worldId' | 'name'> & Partial<FileView> & { usedBy?: number }>
@@ -143,6 +157,7 @@ export function fakeApi(
     cover?: Page['cover']
     sheet?: Page['sheet']
     panel?: Page['panel']
+    template?: string | null
     version: number
   }
   const pages: StoredPage[] = (options.pages ?? []).map((page) => ({
@@ -152,6 +167,7 @@ export function fakeApi(
     title: page.title,
     icon: page.icon ?? null,
     properties: page.properties ?? [],
+    ...(page.template ? { template: page.template } : {}),
     version: 1
   }))
   // Las páginas borradas, cada una con las subpáginas que se fueron con ella (todas siguen en la lista, apartadas)
@@ -195,9 +211,58 @@ export function fakeApi(
     parentId: page.parentId,
     title: page.title,
     icon: page.icon,
+    template: page.template ?? null,
     hasChildren: childrenOf(page.worldId, page.id).length > 0,
     version: page.version
   })
+  // Las plantillas de la cuenta (las de serie, en el dominio)
+  const ownTemplates: Array<PageTemplate & { deleted: boolean }> = []
+  const templateById = (id: string): PageTemplate | undefined =>
+    (builtInTemplate(id) as PageTemplate | undefined) ?? ownTemplates.find((t) => t.id === id && !t.deleted)
+  // Las tablas que se llenan solas, como el servidor: las de su plantilla (o sus copias) con el campo hacia esta página
+  const lineOf = (page: StoredPage) =>
+    page.template
+      ? (builtInTemplate(page.template)?.line ??
+        ownTemplates.find((t) => t.id === page.template)?.line ?? [page.template])
+      : []
+  const tablesOf = (page: StoredPage): PageTables => {
+    const blocks = (page.panel ?? []).filter((block) => block.type === 'related')
+    const linked = new Map<string, string>()
+    const tables = blocks.map((block) => {
+      const template = templateById(block.template)
+      const rows = pages
+        .filter(
+          (other) =>
+            other.id !== page.id &&
+            other.worldId === page.worldId &&
+            lineOf(other).includes(block.template) &&
+            other.properties.some((p) => p.field === block.field && p.type === 'pages' && p.value.includes(page.id))
+        )
+        .sort((a, b) => a.title.localeCompare(b.title, 'es'))
+        .map((other) => {
+          const cells = block.columns.map((column) => other.properties.find((p) => p.field === column) ?? null)
+          for (const cell of cells) {
+            if (cell?.type === 'pages') {
+              for (const id of cell.value) linked.set(id, pages.find((p) => p.id === id)?.title ?? '')
+            }
+          }
+          return { id: other.id, title: other.title, icon: other.icon, cells }
+        })
+      const usable = !template || template.fields.some((f) => f.field === block.field && f.type === 'pages')
+      return {
+        blockId: block.id,
+        title: block.title,
+        problem: usable ? null : ('field' as const),
+        columns: block.columns.map((field) => ({
+          field,
+          name: template?.fields.find((f) => f.field === field)?.name ?? field
+        })),
+        rows: usable ? rows : [],
+        more: false
+      }
+    })
+    return { tables, linked: [...linked].map(([id, title]) => ({ id, title })) }
+  }
   const pageView = (page: StoredPage): Page => {
     const path: { id: string; title: string }[] = []
     for (let at: StoredPage | undefined = page; at; at = pages.find((p) => p.id === at?.parentId)) {
@@ -559,15 +624,20 @@ export function fakeApi(
       campaigns.splice(index, 1)
       return {}
     },
-    createPage: ({ worldId, title, parentId, before, after }) => {
+    createPage: ({ worldId, title, parentId, before, after, template }) => {
       if (parentId) pageById(parentId)
-      const page = {
+      // Con plantilla, sus campos y su panel, como el servidor (el esqueleto del texto no se simula)
+      const from = template ? templateById(template) : undefined
+      if (template && !from) throw new ApiError('TEMPLATE_NOT_FOUND', 400)
+      const made = from ? instantiate(from, () => crypto.randomUUID().replace(/-/g, '').slice(0, 12)) : null
+      const page: StoredPage = {
         id: crypto.randomUUID(),
         worldId,
         parentId: parentId ?? null,
         title,
         icon: null,
-        properties: [],
+        properties: (made?.properties ?? []) as PageProperty[],
+        ...(made ? { panel: made.panel as Page['panel'], template: made.template } : {}),
         version: 1
       }
       place(page, before, after)
@@ -640,11 +710,35 @@ export function fakeApi(
       return { id: crypto.randomUUID() }
     },
     // Lo de Claude (Markdown) no se usa desde la web: lo mínimo para el tipo
-    readPage: ({ pageId }) => ({ page: pageView(pageById(pageId)), markdown: '' }),
+    readPage: ({ pageId }) => ({
+      page: pageView(pageById(pageId)),
+      markdown: '',
+      tables: tablesOf(pageById(pageId)).tables
+    }),
+    getPageTables: ({ pageId }) => tablesOf(pageById(pageId)),
     createPages: () => {
       throw new ApiError('UNSUPPORTED', 400)
     },
-    editPage: ({ pageId }) => ({ page: pageView(pageById(pageId)), changedBlocks: [], changedSinceRequest: false }),
+    editPage: ({ pageId, template }) => {
+      const page = pageById(pageId)
+      // Con plantilla, lo que le falta, como el servidor (los apartados del texto no se simulan)
+      const from = template ? templateById(template) : undefined
+      if (template && !from) throw new ApiError('TEMPLATE_NOT_FOUND', 400)
+      if (from) {
+        const applied = applyTemplate(
+          from as unknown as Parameters<typeof applyTemplate>[0],
+          { properties: page.properties, panel: page.panel ?? [], headings: [] },
+          () => crypto.randomUUID().replace(/-/g, '').slice(0, 12)
+        )
+        Object.assign(page, {
+          properties: applied.properties,
+          panel: applied.panel,
+          template: from.id,
+          version: page.version + 1
+        })
+      }
+      return { page: pageView(page), changedBlocks: [], changedSinceRequest: false }
+    },
     deletePage: ({ pageId }) => {
       const root = pageById(pageId)
       const below: StoredPage[] = []
@@ -695,9 +789,56 @@ export function fakeApi(
     },
     restorePageVersion: () => ({ restored: false }),
     // Por el título, sin tildes ni mayúsculas (la de verdad la prueban las del servidor)
+    // Las plantillas: las de serie y las de la cuenta, como el servidor
+    listTemplates: () => ({
+      templates: structuredClone([...BUILT_IN_TEMPLATES, ...ownTemplates.filter((t) => !t.deleted)]) as PageTemplate[],
+      deleted: ownTemplates.filter((t) => t.deleted).map((t) => ({ id: t.id, name: t.name, icon: t.icon }))
+    }),
+    getTemplate: ({ templateId }) => {
+      const found = templateById(templateId)
+      if (!found) throw new ApiError('NOT_FOUND', 404)
+      return structuredClone(found) as PageTemplate
+    },
+    createTemplate: ({ name, icon, copyOf }) => {
+      const base = copyOf
+        ? (templateById(copyOf) ?? [...BUILT_IN_TEMPLATES, ...ownTemplates].find((t) => t.name === copyOf))
+        : undefined
+      if (copyOf && !base) throw new ApiError('TEMPLATE_NOT_FOUND', 400)
+      if ([...BUILT_IN_TEMPLATES, ...ownTemplates].some((t) => !('deleted' in t && t.deleted) && t.name === name)) {
+        throw new ApiError('TEMPLATE_TAKEN', 400)
+      }
+      const id = crypto.randomUUID()
+      const template = {
+        id,
+        name,
+        icon: icon ?? 'template',
+        basedOn: base?.id ?? null,
+        line: [id, ...(base?.line ?? [])],
+        builtIn: false,
+        fields: structuredClone(base?.fields ?? []),
+        panel: structuredClone(base?.panel ?? []),
+        skeleton: base?.skeleton ?? '',
+        deleted: false
+      } as PageTemplate & { deleted: boolean }
+      ownTemplates.push(template)
+      return structuredClone(template) as PageTemplate
+    },
+    updateTemplate: ({ templateId, ...patch }) => {
+      const found = ownTemplates.find((t) => t.id === templateId && !t.deleted)
+      if (!found) throw new ApiError('NOT_FOUND', 404)
+      const fields = patch.fields?.map((f) => (f.field ? f : { ...f, field: crypto.randomUUID().slice(0, 8) }))
+      Object.assign(found, { ...patch, ...(fields ? { fields } : {}) })
+      return structuredClone(found) as PageTemplate
+    },
+    deleteTemplate: ({ templateId }) => {
+      const found = ownTemplates.find((t) => t.id === templateId && !t.deleted)
+      if (!found) throw new ApiError('NOT_FOUND', 404)
+      found.deleted = true
+      return { id: found.id, name: found.name }
+    },
     searchWiki: ({ worldId, query, page = 1 }) => {
       const fold = (text: string) => text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()
-      const found = pages.filter((p) => p.worldId === worldId && fold(p.title).includes(fold(query)))
+      const found = pages.filter((p) => p.worldId === worldId && fold(p.title).includes(fold(query ?? '')))
       return {
         total: found.length,
         page,

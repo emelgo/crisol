@@ -3,8 +3,8 @@
 Plan y tareas de la etapa de interfaz (2026-10-30). El diseño aprobado «como primera aproximación» está en el lienzo
 «Crisol: interfaz» (https://claude.ai/artifact/QLHQADLdZSnTn5uzTubqf7; fuentes en `out/lienzo-interfaz/`, fuera de
 git). Lo que dijo Enrique, en `docs/modulos.md` § «Para el repaso final de la interfaz». Va antes de los arreglos de sus
-pruebas («Lo que dijo Enrique al probar») y de cerrar el módulo 1; `tasks/plan.md` y `tasks/todo.md` siguen siendo los
-del módulo 1.
+pruebas («Lo que dijo Enrique al probar») y de cerrar el módulo 1; los del módulo 1 están en
+`tasks/wiki/plan.md` y `tasks/wiki/todo.md`.
 
 ## Qué cambia
 

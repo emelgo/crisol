@@ -2,12 +2,15 @@ import { z } from 'zod'
 import { worldColor } from './worlds.ts'
 
 const blockId = z.string().regex(/^[a-z0-9]{6,24}$/)
+/** Una plantilla y un campo, como en las propiedades (pages.ts no se importa aquí: lo importa él a este) */
+const tableTemplate = z.union([z.uuid(), z.string().regex(/^[a-z][a-z0-9-]{0,39}$/)])
+const tableField = z.string().regex(/^[a-z0-9][a-z0-9-]{0,39}$/)
 const label = z.string().trim().max(80)
 
 /**
  * Un bloque del panel de una página: datos de toda la página al lado del texto (ADR-0008). Texto, una imagen del
- * mundo, un medidor (barra o círculo), una valoración con estrellas, fichas que se marcan, las subpáginas o las páginas
- * con una etiqueta
+ * mundo, un medidor (barra o círculo), una valoración con estrellas, fichas que se marcan, las subpáginas, las páginas
+ * con una etiqueta o una tabla que se llena sola (ADR-0009)
  */
 export const panelBlock = z.discriminatedUnion('type', [
   z.object({ id: blockId, type: z.literal('text'), title: label, text: z.string().max(5000) }),
@@ -42,7 +45,18 @@ export const panelBlock = z.discriminatedUnion('type', [
     color: worldColor
   }),
   z.object({ id: blockId, type: z.literal('subpages'), title: label }),
-  z.object({ id: blockId, type: z.literal('tagged'), title: label, tag: z.string().trim().max(200) })
+  z.object({ id: blockId, type: z.literal('tagged'), title: label, tag: z.string().trim().max(200) }),
+  // Una tabla que se llena sola (ADR-0009): las páginas de una plantilla (y de sus copias) cuyo campo de enlace apunta a
+  // esta página, con hasta tres columnas más de sus campos y su orden (por título o por una columna)
+  z.object({
+    id: blockId,
+    type: z.literal('related'),
+    title: label,
+    template: tableTemplate,
+    field: tableField,
+    columns: z.array(tableField).max(3),
+    sort: z.union([z.literal('title'), tableField])
+  })
 ])
 
 export type PanelBlock = z.infer<typeof panelBlock>

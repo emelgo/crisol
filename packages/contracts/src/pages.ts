@@ -12,13 +12,35 @@ const pageIcon = z
   )
 
 const propertyName = z.string().trim().min(1).max(60)
-/** Una propiedad con su tipo. alias y etiquetas son listas y resumen es texto (lo comprueba el servidor) */
+/** El id de un campo de plantilla: legible en las de serie («faccion»), corto y aleatorio en las propias (ADR-0009) */
+export const fieldId = z.string().regex(/^[a-z0-9][a-z0-9-]{0,39}$/)
+/** Una plantilla: el id legible de una de serie o el de una propia */
+export const templateRef = z.union([z.uuid(), z.string().regex(/^[a-z][a-z0-9-]{0,39}$/)])
+const field = { name: propertyName, field: fieldId.optional() }
+const optionText = z.string().trim().max(100)
+const choiceOptions = z.array(optionText.min(1)).max(50)
+const clockSegments = z.number().int().min(2).max(12)
+/** Las plantillas cuyas páginas se buscan primero al elegir un enlace (no encierra: se puede elegir cualquiera) */
+const linkTargets = z.array(templateRef).max(10)
+
+/**
+ * Una propiedad con su tipo. alias y etiquetas son listas y resumen es texto (lo comprueba el servidor). Las que salen
+ * de una plantilla llevan el id de su campo y su forma (ADR-0009)
+ */
 export const pageProperty = z.discriminatedUnion('type', [
-  z.object({ name: propertyName, type: z.literal('text'), value: z.string().max(5000) }),
-  z.object({ name: propertyName, type: z.literal('number'), value: z.number().finite() }),
-  z.object({ name: propertyName, type: z.literal('boolean'), value: z.boolean() }),
-  z.object({ name: propertyName, type: z.literal('list'), value: z.array(z.string().trim().min(1).max(200)).max(200) }),
-  z.object({ name: propertyName, type: z.literal('pages'), value: z.array(z.uuid()).max(200) })
+  z.object({ ...field, type: z.literal('text'), value: z.string().max(5000) }),
+  z.object({ ...field, type: z.literal('number'), value: z.number().finite().nullable() }),
+  z.object({ ...field, type: z.literal('boolean'), value: z.boolean() }),
+  z.object({ ...field, type: z.literal('list'), value: z.array(z.string().trim().min(1).max(200)).max(200) }),
+  z.object({
+    ...field,
+    type: z.literal('pages'),
+    value: z.array(z.uuid()).max(200),
+    single: z.literal(true).optional(),
+    targets: linkTargets.optional()
+  }),
+  z.object({ ...field, type: z.literal('choice'), value: optionText, options: choiceOptions }),
+  z.object({ ...field, type: z.literal('clock'), value: z.number().int().min(0).max(12), segments: clockSegments })
 ])
 
 export type PageProperty = z.infer<typeof pageProperty>
@@ -30,6 +52,8 @@ export const pageSummary = z.object({
   parentId: z.uuid().nullable(),
   title: z.string(),
   icon: z.string().nullable(),
+  /** La plantilla de la que salió (ADR-0009), o null */
+  template: templateRef.nullable(),
   hasChildren: z.boolean(),
   version: z.number().int()
 })
@@ -96,6 +120,7 @@ export const createPage = defineAction({
       worldId: z.uuid(),
       title: pageTitle,
       parentId: z.uuid().nullable().default(null).describe('La página madre; sin ella, en el primer nivel'),
+      template: templateRef.optional().describe('La plantilla con la que nace: sus campos, su panel y su texto'),
       ...placement
     })
     .refine(onlyOneNeighbour, { message: 'before o after, no los dos' }),
@@ -209,6 +234,7 @@ export const listPageTree = defineAction({
         parentId: z.uuid().nullable(),
         title: z.string(),
         icon: z.string().nullable(),
+        template: templateRef.nullable().describe('La plantilla de la que salió'),
         level: z.number().int(),
         hasChildren: z.boolean()
       })
@@ -304,6 +330,45 @@ const MARKDOWN_HELP =
 const markdownText = z.string().max(2_000_000)
 const blockId = z.string().regex(/^[A-Za-z0-9-]{1,64}$/)
 
+/**
+ * Las tablas que se llenan solas de una página (ADR-0009), ya calculadas: por cada bloque «Tabla de páginas» de su
+ * panel, sus columnas y sus filas (las páginas cuyo campo apunta a ella), con los títulos de las páginas de sus celdas
+ */
+export const pageTables = z.object({
+  tables: z.array(
+    z.object({
+      blockId: z.string(),
+      title: z.string(),
+      /** field: el campo ya no está en la plantilla (la tabla no vale hasta cambiarla) */
+      problem: z.enum(['field']).nullable(),
+      columns: z.array(z.object({ field: fieldId, name: z.string() })),
+      rows: z.array(
+        z.object({
+          id: z.uuid(),
+          title: z.string(),
+          icon: z.string().nullable(),
+          cells: z.array(pageProperty.nullable())
+        })
+      ),
+      /** Si hay más filas de las que caben */
+      more: z.boolean()
+    })
+  ),
+  /** Los títulos de las páginas que salen en las celdas */
+  linked: z.array(z.object({ id: z.uuid(), title: z.string() }))
+})
+
+export type PageTables = z.infer<typeof pageTables>
+
+export const getPageTables = defineAction({
+  name: 'getPageTables',
+  kind: 'read',
+  description:
+    'Las tablas que se llenan solas de una página, ya calculadas: las páginas de una plantilla (y sus copias) cuyo campo de enlace apunta a ella, con sus columnas',
+  input: z.object({ pageId: z.uuid() }),
+  output: pageTables
+})
+
 export const readPage = defineAction({
   name: 'readPage',
   kind: 'read',
@@ -312,7 +377,7 @@ export const readPage = defineAction({
     pageId: z.uuid(),
     ids: z.boolean().optional().describe('Los ^id de los bloques de primer nivel, para cambiar uno con editPage')
   }),
-  output: z.object({ page, markdown: z.string() })
+  output: z.object({ page, markdown: z.string(), tables: pageTables.shape.tables })
 })
 
 const newPage = z.object({
@@ -331,7 +396,16 @@ const newPage = z.object({
     .describe('La key de otra página de esta llamada que será su madre; sin parent, va donde diga parentId'),
   title: pageTitle,
   icon: pageIcon.optional(),
-  markdown: markdownText.optional().describe('Sus propiedades (YAML) y su cuerpo')
+  markdown: markdownText.optional().describe('Sus propiedades (YAML) y su cuerpo'),
+  template: z
+    .string()
+    .trim()
+    .min(1)
+    .max(60)
+    .optional()
+    .describe(
+      'La plantilla (su id o su nombre, de listar_plantillas): nace con sus campos, su panel y, si no se da cuerpo, su texto. Las propiedades del YAML que se llamen como un campo (sin mirar mayúsculas ni tildes) van a ese campo con su forma'
+    )
 })
 
 export const createPages = defineAction({
@@ -355,16 +429,32 @@ export const createPages = defineAction({
   })
 })
 
-/** Una propiedad que escribe la IA: las de páginas, por su título, un alias o su id */
+/**
+ * Una propiedad que escribe la IA: las de páginas, por su título, un alias o su id. Si la página ya tiene una que se
+ * llama igual y salió de una plantilla, se queda con su campo y su forma
+ */
 const propertyInput = z.discriminatedUnion('type', [
   z.object({ name: propertyName, type: z.literal('text'), value: z.string().max(5000) }),
-  z.object({ name: propertyName, type: z.literal('number'), value: z.number().finite() }),
+  z.object({ name: propertyName, type: z.literal('number'), value: z.number().finite().nullable() }),
   z.object({ name: propertyName, type: z.literal('boolean'), value: z.boolean() }),
   z.object({ name: propertyName, type: z.literal('list'), value: z.array(z.string().trim().min(1).max(200)).max(200) }),
   z.object({
     name: propertyName,
     type: z.literal('pages'),
-    value: z.array(z.string().trim().min(1).max(200)).max(200).describe('Títulos, alias o ids de páginas del mundo')
+    value: z.array(z.string().trim().min(1).max(200)).max(200).describe('Títulos, alias o ids de páginas del mundo'),
+    single: z.literal(true).optional().describe('Si es un enlace a una sola página')
+  }),
+  z.object({
+    name: propertyName,
+    type: z.literal('choice'),
+    value: optionText,
+    options: choiceOptions.optional().describe('Las opciones; sin ellas, las que ya tenga')
+  }),
+  z.object({
+    name: propertyName,
+    type: z.literal('clock'),
+    value: z.number().int().min(0).max(12).describe('Segmentos llenos'),
+    segments: clockSegments.optional().describe('De 2 a 12; sin ellos, los que ya tenga (4 si es nuevo)')
   })
 ])
 
@@ -393,16 +483,27 @@ export const editPage = defineAction({
         })
         .refine((body) => body.mode !== 'block' || body.blockId, { message: 'block necesita blockId' })
         .refine((body) => body.mode !== 'section' || body.section, { message: 'section necesita section' })
+        .optional(),
+      template: z
+        .string()
+        .trim()
+        .min(1)
+        .max(60)
         .optional()
+        .describe(
+          'Aplica una plantilla (su id o su nombre): añade los campos, los bloques del panel y, al final del texto, los apartados que le falten, sin borrar nada; la página pasa a ser de ella'
+        )
     })
     .refine(
       (input) =>
         input.title !== undefined ||
         input.icon !== undefined ||
         input.properties !== undefined ||
-        input.body !== undefined,
+        input.body !== undefined ||
+        input.template !== undefined,
       { message: 'Nada que cambiar' }
-    ),
+    )
+    .refine((input) => !(input.template && input.body), { message: 'template no va con body' }),
   output: z.object({
     page,
     changedBlocks: z.array(z.string()).describe('Los ids de los bloques de primer nivel que se escribieron'),
@@ -428,7 +529,7 @@ export const setPagePanel = defineAction({
   name: 'setPagePanel',
   kind: 'write',
   description:
-    'Deja el panel de una página (los bloques a su lado: texto, imagen, medidor en barra o círculo, estrellas, fichas, subpáginas o páginas con una etiqueta) como se da, en ese orden. Cada bloque lleva un id corto propio (letras minúsculas y números); el valor de un medidor o unas fichas no pasa de su máximo',
+    'Deja el panel de una página (los bloques a su lado: texto, imagen, medidor en barra o círculo, estrellas, fichas, subpáginas, páginas con una etiqueta o una tabla de páginas) como se da, en ese orden. Cada bloque lleva un id corto propio (letras minúsculas y números); el valor de un medidor o unas fichas no pasa de su máximo. Una tabla de páginas (related) lista las páginas de una plantilla (template, de listar_plantillas) cuyo campo de enlace (field, su id) apunta a esta página, con hasta tres columnas (ids de campos de esa plantilla) y su orden (title o una columna); leer_pagina la da ya calculada',
   input: z.object({ pageId: z.uuid(), blocks: pagePanel }),
   output: page
 })

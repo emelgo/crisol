@@ -1,355 +1,233 @@
-# Tareas: Módulo 1 — Wiki
+# Tareas: Módulo 2 — Tipos de página y plantillas
 
-Plan: `tasks/plan.md` · Spec: `docs/specs/wiki.md` · ADR-0003. Cada tarea: rama corta → TDD → PR → merge con la CI en
-verde → `scripts/desplegar-staging.sh` → «Dónde estamos» al día.
+Plan: `tasks/plan.md` · Spec: `docs/specs/plantillas.md` · ADR-0009. Cada tarea: TDD → comprobación local → commit en
+la rama de la tanda (`modulo-2/campos`, PR #93) → «Dónde estamos» al día. La CI gasta cuota mensual (Enrique,
+2026-11-03): se sube y se pasa una sola vez tras muchas tareas; entonces merge y `scripts/desplegar-staging.sh`. Los
+puntos de control intermedios se prueban en el servidor de desarrollo local.
 
-Comprobación local al acabar cada tarea: `pnpm lint && pnpm typecheck && pnpm test`, y `pnpm e2e` si toca la interfaz.
-Cada vía nueva por la que salen datos amplía `@fugas` en la misma tarea.
+Comprobación local al acabar cada tarea:
+`pnpm lint && pnpm typecheck && pnpm test`, y `pnpm e2e` si toca la interfaz. Cada vía nueva por la que salen datos
+amplía `@fugas` en la misma tarea. Cobertura ≥ 80 % de lo cambiado (bloquea desde el 2026-11-12).
 
-## Fase 1: Páginas
+## Fase 1: Campos
 
-- [x] **1. Páginas y árbol en la API** — hecha. `getPagePath` quedó dentro de `getPage` (con la ruta), y
-  `listPageTree` es la acción de `ver_arbol`.
+- [x] **1. Campos con id y tipos nuevos (riesgo)** — hecha. Hasta la tarea 2, la web enseña las opciones y los relojes
+  sin poder cambiarlos, y al guardar otra propiedad no pierden su campo ni su forma.
   - Acepta:
-    - La tabla `pages` está en `TRACKED_TABLES` (mundo, padre, orden, título, icono, portada, propiedades, candado,
-      hoja, `deleted_at`).
-    - Acciones `createPage`, `updatePage` (título), `movePage`, `getPage`, `listPageChildren` y `getPagePath`.
-      Mover nunca deja una página dentro de sí misma y el orden usa claves fraccionarias.
-    - Solo leen y escriben el máster del mundo y el propietario. El canal avisa con `changed pages`.
-    - MCP: `ver_arbol` y `mover_pagina`.
+    - `PageProperty` admite `field` en todos los tipos, y dos tipos nuevos: `choice` (un valor que no esté en sus
+      opciones se guarda y se marca) y `clock` (de 2 a 12 segmentos, sin pasar del máximo). El enlace a una sola
+      página es `pages` con `single` (así la búsqueda y las tablas tratan igual los dos); `pages` admite `targets`.
+    - El servidor comprueba, venga de la web o de la IA, que cada página enlazada existe y es del mismo mundo
+      (`setPageProperties`, `editPage`, `createPages`).
+    - El Markdown, de ida y vuelta: `choice` como texto, `page` como `"[[Título]]"` y `clock` como `"3/8"`. Lo
+      guardado antes sigue saliendo igual.
+    - MCP: `editar_pagina` escribe los tipos nuevos, y al reescribir las propiedades (también con el YAML de un
+      cuerpo) cada una conserva el campo y la forma que tenía. `crear_paginas` los escribe con plantilla (tarea 4).
   - Comprueba:
-    - dominio: claves de orden y ciclos;
-    - integración: crear, mover y deshacer;
-    - MCP: las dos herramientas en cada modo;
-    - `@fugas`: un jugador no lista ni lee páginas.
-  - Archivos: `packages/db/src/schema/pages.ts` (+ migración), `packages/domain/src/{tree,order}.ts`,
-    `packages/contracts/src/pages.ts`, `apps/server/src/actions/pages.ts`, `apps/server/src/mcp/tools.ts`.
+    - dominio: cada tipo, con valores fuera de la lista y relojes fuera de rango;
+    - `packages/editor`: ida y vuelta del frontmatter con los tipos de antes y los nuevos;
+    - integración: enlazar una página de otro mundo se rechaza; cambiar y deshacer.
+  - Archivos: `packages/domain/src/properties.ts`, `packages/contracts/src/pages.ts`,
+    `packages/editor/src/markdown/frontmatter.ts`, `apps/server/src/actions/{pages,page-content}.ts`.
 
-- [x] **2. El árbol en la web** — hecha. La flecha de desplegar va dentro de la fila (axe no admite botones entre
-  las filas de un árbol).
+- [x] **2. Los controles de los campos en el panel** — hecha. El buscador que enseña primero las páginas de los
+  `targets` va en la tarea 5 (hasta la 4 las páginas no saben su plantilla). La forma de una propiedad hecha a mano
+  (opciones, segmentos) está siempre a la vista: si salía al editarla, el panel se movía bajo el ratón.
   - Acepta:
-    - `/mundos/:worldId/wiki/:pageId?` con el árbol a la izquierda. Carga por ramas, está virtualizado y sigue el
-      patrón ARIA de árbol.
-    - Crear una página o una subpágina, y el título en línea.
-    - Recolocar arrastrando y con Alt + flechas.
-    - En el móvil, el árbol va en un cajón. Se pone al día con `changed pages`.
-  - Comprueba: pruebas de componentes (teclado y ARIA) y e2e (crear, renombrar, mover) con axe.
-  - Archivos: `apps/web/src/wiki/{tree,page}.tsx` (+ módulos CSS), `apps/web/src/router.tsx`, `apps/web/src/i18n.ts`,
-    `e2e/tests/wiki.spec.ts`.
-
-- [x] **3. Propiedades, alias, etiquetas e icono** — hecha. Pulsar una etiqueta para buscar queda para la tarea 20.
-  - Acepta:
-    - Las propiedades son de tipo texto, número, sí/no, lista o enlace a página, y se ordenan a mano. `alias`,
-      `etiquetas` (con jerarquía por «/») y `resumen` son reservadas.
-    - El icono es un emoji.
-    - El panel de etiquetas (`/mundos/:worldId/etiquetas`) dice cuántas páginas tiene cada una.
-  - Comprueba: zod de cada tipo, integración (cambiar y deshacer propiedades) y e2e.
-  - Archivos: `packages/contracts/src/pages.ts`, `packages/domain/src/properties.ts`,
-    `apps/web/src/wiki/properties.tsx`, `apps/web/src/routes/tags.tsx`.
-
-- [x] **4. Papelera de páginas** — hecha. Restaurar con la madre en la papelera da `PARENT_IN_TRASH`.
-  - Acepta:
-    - Borrar manda a la papelera la página y sus subpáginas en una sola operación, y deshacer las devuelve.
-    - Las páginas salen en la papelera del mundo y se restauran desde ahí.
-    - La purga de 30 días las incluye.
-    - MCP: `borrar_pagina`, de tipo `delete`.
-  - Comprueba: integración (borrar una rama, restaurar, purgar con el reloj simulado) y e2e.
-  - Archivos: `apps/server/src/actions/{pages,trash}.ts`, `apps/server/src/jobs/purges.ts`,
-    `apps/web/src/routes/trash.tsx`.
-
-- [x] **5. Pestañas, marcadores y navegación** — hecha. El índice del documento llega con el cuerpo (fase 2).
-  - Acepta:
-    - Pestañas que se pueden fijar, y marcadores con grupos. Se guardan en `wiki_preferences`, por cuenta y mundo, y
-      no van al historial.
-    - Migas de pan, y anterior y siguiente entre páginas hermanas.
-    - En el móvil, la lista de recientes en lugar de pestañas.
-  - Comprueba: integración de las preferencias, pruebas de componentes y e2e.
-  - Archivos: `packages/db/src/schema/wiki-preferences.ts`, `apps/server/src/actions/preferences.ts`,
-    `apps/web/src/wiki/{tabs,bookmarks,breadcrumbs}.tsx`.
+    - Opciones con su desplegable. Enlace y enlaces con un buscador que enseña primero las páginas de sus `targets`, y
+      «Todas las páginas» para el resto. Reloj con sus segmentos, que se marcan pulsando.
+    - Una página enlazada que está en la papelera sale tachada. Un valor que no vale se ve marcado, sin perderse.
+    - Al añadir una propiedad a mano se puede elegir cualquiera de los tipos.
+  - Comprueba: pruebas de componentes (teclado y ARIA de cada control) y e2e (poner Estado y Facción, recargar) con
+    axe.
+  - Archivos: `apps/web/src/wiki/properties.tsx` (+ CSS), `apps/web/src/wiki/field-controls.tsx` (nuevo),
+    `apps/web/src/i18n.ts`, `e2e/tests/campos.spec.ts`.
 
 ### Punto de control 1
 
-- [x] CI en verde. En staging, Enrique crea un árbol, lo recoloca, le pone propiedades y lo manda a la papelera.
-  (Pedido el 2026-10-29 tras la tarea 5.)
-  Pasado el 2026-10-30, junto al 2: «todo funciona de momento».
+- [ ] En local, Enrique pone a una página un desplegable, un enlace a una página y un reloj desde el panel.
 
-## Fase 2: Editor
+## Fase 2: Plantillas de serie y crear desde ellas
 
-- [x] **6. Documentos de Yjs en el servidor** — hecha. `dependentRow` ya se cambió en la 5. `@fugas` en el navegador
-  llega con el editor (tarea 7).
+- [x] **3. Plantillas de serie: los datos y verlas** — hecha. El número admite estar vacío (Población, Número de
+  sesión), para que un campo sin rellenar no diga «0». Los bloques «Miembros» y demás tablas entran en sus paneles con
+  la tarea 7, cuando exista el bloque. La prueba del canal en tiempo real de la web falla a veces con todo a la vez
+  (por carga, ya pasaba): sola pasa.
   - Acepta:
-    - Hocuspocus 4 en `/api/collab`: comprueba el origen y la sesión, y la política de cada documento. Sin permiso de
-      escritura, abre en solo lectura; si la página está en la papelera, no abre.
-    - La tabla `documents` guarda el estado. Guardar es fusionar con `Y.mergeUpdates`, con espera y un máximo.
-    - Límites: 4 MB por estado y 1 MB por mensaje.
-    - Las conexiones se cierran al perder el permiso. `dependentRow` mira solo `TRACKED_TABLES`.
-  - Comprueba:
-    - integración con dos `HocuspocusProvider` en Node y una conexión directa: convergen, y guardar en cualquier
-      orden no pierde nada;
-    - `@fugas`: un jugador no abre ningún documento.
-  - Archivos: `packages/db/src/schema/documents.ts`, `apps/server/src/collab/{server,auth,persistence}.ts`,
-    `packages/db/src/repos/undo.ts`, `e2e/tests/fugas.spec.ts`.
+    - Las seis de la spec en `packages/domain/src/templates.ts`, con el mismo formato que tendrán las propias: campos
+      (id, nombre, tipo, forma, valor inicial), bloques del panel y esqueleto en Markdown.
+    - Reglas puras: el linaje de una plantilla y lo que sale de ella (`instantiate`: propiedades, panel y Markdown).
+    - Acciones `listTemplates` y `getTemplate`. MCP: `listar_plantillas` y `ver_plantilla`.
+  - Comprueba: dominio (cada plantilla de serie es válida contra el contrato de propiedades y del panel) y MCP en
+    cada modo.
+  - Archivos: `packages/domain/src/templates.ts`, `packages/contracts/src/templates.ts`,
+    `apps/server/src/actions/templates.ts`, `apps/server/src/mcp/tools.ts`.
 
-- [x] **7. El editor en la web** — hecha. Las casillas se anuncian en español (`checkboxLabel`); `@fugas` cubre lo
-  que se escribe.
+- [x] **4. Crear desde plantilla en el servidor y por el MCP** — hecha. `createPage` pasó a `page-content.ts`: con
+  plantilla va por el mismo camino que `createPages` (con plantilla, la colocación es al final de su rama). El texto que
+  explica qué campos tiene la plantilla lo recibe la IA por el MCP; la web, solo el código.
   - Acepta:
-    - `packages/editor` con el esquema base: texto, títulos, listas, casillas, cita, código y separador.
-    - El cuerpo de la página, editable con TipTap y Collaboration, con los cursores con nombre.
-    - El candado pone el editor en lectura.
-    - Sin conexión, sale «Sin conexión: se guardará al volver».
-  - Comprueba: e2e con dos pestañas que convergen y con el aviso al cortar la red.
-  - Archivos: `packages/editor/src/{schema,index}.ts`, `apps/web/src/wiki/{editor,collab}.tsx`,
-    `.dependency-cruiser.cjs`.
+    - Migración 0035: `pages.template` y `pages.template_line`, con sus índices GIN (`template_line` y `properties`).
+    - `instantiateTemplate` en el servidor, usado por `createPage` (con `template`) y `createPages` (con
+      `plantilla`): campos con su valor inicial, panel y cuerpo desde el esqueleto. Es una sola operación y se
+      deshace entera.
+    - Con plantilla, cada propiedad del frontmatter que se llame como un campo (sin mayúsculas ni tildes) toma su id y
+      su forma. Si no encaja de tipo, el error dice qué campos tiene la plantilla.
+    - `leer_pagina` y `getPage` dicen la plantilla de la página. MCP: `crear_paginas` con `plantilla`.
+  - Comprueba: integración (crear y deshacer, 50 páginas desde plantilla enlazadas entre sí en cualquier orden en
+    menos de 3 s) y MCP.
+  - Archivos: `packages/db/drizzle/0035_*.sql` y `packages/db/src/schema/pages.ts`, `packages/db/src/repos/pages.ts`,
+    `apps/server/src/wiki/templates.ts` (nuevo), `apps/server/src/actions/{pages,page-content}.ts`.
 
-- [x] **8. Secretos y notas ocultas (riesgo)** — hecha. El editor anidado funciona: no hace falta el plan B. La prueba
-  con «otra conexión escribiendo» usa otra pestaña; la conexión directa del servidor llega con la tarea 11.
+- [x] **5. «Desde plantilla» en «Página nueva»** — hecha. También: el árbol pinta el icono de la plantilla, el resumen
+  de cada página dice su plantilla, y los guardados de las propiedades van en fila sin que lo que llega de fuera pise lo
+  de aquí mientras quede alguno (se perdía un valor al guardar dos cosas seguidas). El ritmo de 50 páginas desde
+  plantilla va en la prueba de escala (1,5 s); con todo a la vez en el VPS, las pruebas de tiempo fallan a veces.
   - Acepta:
-    - Cada secreto y cada nota oculta es su documento aparte (`documents` de tipo `secret` o `note`), con un editor
-      anidado.
-    - Se ven marcados. Se convierten en bloque normal y al revés. Copiarlos a otra página crea otro documento.
-    - Ctrl+Z va por documento.
-    - Una prueba garantiza que el estado guardado del cuerpo nunca lleva el texto de sus secretos.
-  - Comprueba:
-    - e2e de una página con dos secretos mientras una conexión directa escribe en ella, como hará Claude;
-    - foco y teclado al entrar y salir del secreto.
-  - Archivos: `packages/editor/src/nodes/secret.ts`, `apps/web/src/wiki/nodes/secret.tsx`,
-    `apps/server/src/collab/documents.ts`, `apps/server/src/actions/secrets.ts`.
+    - El recuadro «Desde plantilla» junto a Texto y Mapa abre la lista (tuyas primero y de serie, con buscador); Intro
+      crea con la plantilla elegida, como en el lienzo.
+    - En los campos de enlace, el buscador enseña primero las páginas de sus `targets`, con «Todas las páginas» para el
+      resto (de la tarea 2).
+    - La página nueva sale con sus campos en el panel y sus apartados en el texto.
+    - Junto al título, la plantilla con su icono (sin enlace hasta la tarea 10).
+  - Comprueba: pruebas de componentes y e2e (crear un PNJ desde plantilla y rellenar su Facción) con axe.
+  - Archivos: `apps/web/src/wiki/new-page.tsx`, `apps/web/src/wiki/template-picker.tsx` (nuevo),
+    `apps/web/src/wiki/wiki.tsx`, `apps/web/src/i18n.ts`, `e2e/tests/plantillas.spec.ts`.
 
-### Punto de control 2 (riesgo)
+- [x] **6. Crear desde un enlace sin resolver, con plantilla** — hecha. Pulsarlo ya no la crea al momento: abre un
+  menú (con flechas) con «Texto» y las plantillas, tuyas primero.
+  - Acepta: pulsar un enlace sin resolver (en el texto y en los enlaces sin resolver) ofrece «Texto» o una plantilla,
+    y la página nace con ese título por el mismo camino del servidor.
+  - Comprueba: e2e (escribir `[[El Viejo Gyles]]`, crearla como PNJ y que el enlace quede resuelto).
+  - Archivos: `apps/web/src/wiki/page-links.tsx`, `apps/web/src/wiki/editor.tsx`,
+    `apps/web/src/wiki/template-picker.tsx`.
 
-- [x] Enrique prueba el editor y los secretos en staging. Si el editor anidado no va bien, se para y se decide con él
-  el plan B del plan: editar el secreto en un panel propio.
-  Pasado el 2026-10-30: el editor anidado se queda.
+### Punto de control 2
 
-- [x] **9. Todos los bloques y marcas** — hecha. «Enlace a página» en el menú «/» y proponer enlazar lo elegido llegan
-  con la tarea 13. El menú del bloque también se abre desde «Bloque» en la barra (teclado y móvil).
+- [ ] Enrique crea un PNJ desde plantilla en local, y la IA crea varios desde claude.ai.
+
+## Fase 3: Tablas
+
+- [x] **7. La consulta de las tablas (riesgo)** — hecha. Con 5.000 páginas (100 facciones de 49 miembros), mediana 30 ms
+  y p95 43 ms (prueba de escala, `CRISOL_ESCALA=1`): no hace falta el plan B. Las plantillas de serie ya traen sus
+  tablas. `buscar_paginas` sin texto, con plantilla, da sus páginas por título. Al guardar el panel solo se comprueban
+  las tablas nuevas o cambiadas (una ya guardada puede ser de una plantilla propia borrada).
   - Acepta:
-    - El menú «/» con filtro y todos los bloques de la spec, menos imagen, archivo e incrustado (llegan en las
-      tareas 19 y 15).
-    - Las marcas, los atajos de Markdown, la barra al seleccionar y el asa de arrastre con su menú.
-    - Ids de bloque estables (`unique-id`).
-    - Pegar HTML pasa por el esquema.
-  - Comprueba: pruebas del esquema (pegar HTML sucio) y e2e del menú «/» con el teclado.
-  - Archivos: `packages/editor/src/nodes/*.ts`, `apps/web/src/wiki/{slash-menu,bubble-menu,drag-handle}.tsx`.
+    - El bloque `related` en el contrato del panel: `template`, `field`, hasta tres `columns` y `sort`.
+      `setPagePanel` comprueba que la plantilla y el campo existen y que el campo es de enlace.
+    - `getPageTables(pageId)`: las páginas del mundo, fuera de la papelera, cuyo linaje tiene la plantilla y cuyo campo
+      (por su id) apunta a la página, con sus columnas y en su orden. Si la configuración ya no vale, lo dice.
+    - `leer_pagina` incluye las tablas ya calculadas. `buscar_paginas` filtra por plantilla y por el valor de un campo.
+    - Al purgar una página, se quita de los campos que la apuntan.
+  - Comprueba: integración (miembros de serie, de copias, en la papelera y con el campo renombrado) y la prueba de
+    ritmo: con 5.000 páginas, el 95 % de las tablas en menos de 150 ms.
+  - Archivos: `packages/contracts/src/panel.ts`, `packages/db/src/repos/pages.ts`,
+    `apps/server/src/wiki/tables.ts` (nuevo), `apps/server/src/actions/{pages,page-content,search}.ts`,
+    `apps/server/src/jobs/purges.ts`.
 
-## Fase 3: Markdown y Claude
-
-- [x] **10. El Markdown, de ida y vuelta** — hecha. Va en `@crisol/editor/markdown` (aparte, para que la web no cargue
-  marked). El YAML es propio (sin dependencia). Los ids, solo de primer nivel.
+- [x] **8. «Tabla de páginas» en el panel** — hecha. Sus opciones van con los seis puntos, como las de los demás
+  bloques, más anchas; «Elegir otro» en una tabla que ya no vale las abre.
   - Acepta:
-    - Cada nodo y marca declara su forma en Markdown (la tabla de la spec), con `@tiptap/markdown` en el servidor.
-    - Al leer, `> [!secreto]` y `%%…%%` devuelven el cuerpo y aparte los documentos de sus secretos.
-    - Las propiedades van en YAML.
-  - Comprueba: la prueba de ida y vuelta de cada nodo y marca. Un nodo sin su forma en Markdown hace fallar la prueba.
-  - Archivos: `packages/editor/src/markdown/{serialize,parse,frontmatter}.ts` (+ pruebas).
-
-- [x] **11. Claude lee y escribe páginas** — hecha. Huella de partida = la hora de la petición; el cuerpo se podrá
-  deshacer con las versiones (16 y 17).
-  - Acepta:
-    - MCP: `leer_pagina`, `crear_paginas` (hasta 50, anidables, en una operación) y `editar_pagina` (añadir, un
-      bloque o una sección, todo el cuerpo, título y propiedades).
-    - Si la página está abierta, el cambio entra en vivo por una conexión directa y se resalta.
-    - Lo que espera aprobación guarda su huella de partida. Si ya no se puede aplicar, queda `failed`.
-  - Comprueba:
-    - MCP: cada herramienta en cada modo;
-    - e2e: Claude edita una sección de una página abierta y se ve sin recargar;
-    - `@fugas` del MCP.
-  - Archivos: `apps/server/src/wiki/{write,apply}.ts`, `apps/server/src/mcp/tools.ts`,
-    `packages/contracts/src/pages.ts`, `e2e/tests/claude-wiki.spec.ts`.
+    - El bloque se pinta con sus columnas y sus enlaces, y se pone al día con `changed pages`.
+    - «Tabla de páginas» en «Añadir bloque» (Listas). Sus opciones: el título, «Páginas de [plantilla] cuyo [campo]
+      es esta página», las columnas y el orden, como en el lienzo.
+    - Una tabla que ya no vale lo dice en vez de salir vacía. Una sin páginas dice una sola línea.
+  - Comprueba: pruebas de componentes y e2e (un PNJ con facción sale en «Miembros»; configurar otra tabla) con axe.
+  - Archivos: `apps/web/src/wiki/panel-blocks.tsx` (+ CSS), `apps/web/src/wiki/related-block.tsx` (nuevo),
+    `apps/web/src/i18n.ts`, `e2e/tests/plantillas.spec.ts`.
 
 ### Punto de control 3
 
-- [ ] Desde claude.ai, Claude crea varias páginas con secretos y edita una que Enrique tiene abierta.
-  (Pendiente de Enrique: se sigue sin esperar, por su encargo del 2026-10-30.)
+- [ ] En local, Enrique crea un PNJ, le pone su facción y lo ve en «Miembros» al abrir la facción.
 
-- [x] **12. Exportar** — hecha. Ruta `POST /api/export`, no es una acción porque devuelve bytes. Los archivos
-  (`_archivos/`) llegan con la 19.
+## Fase 4: Plantillas de la cuenta
+
+- [x] **9. Plantillas de la cuenta en el servidor** — hecha. Borrar una la aparta (`deleted_at`): `listTemplates` da
+  las borradas aparte (`deleted`), para el nombre de las páginas que salieron de ellas. Un campo nuevo sin id recibe uno;
+  los enlaces de una plantilla van vacíos. Las tablas de una plantilla pueden nombrarla a ella misma.
   - Acepta:
-    - Exportar una página, una rama o el mundo entero en .zip (`Página/Página.md`), con `fflate`.
-    - Los enlaces salen con el título del momento, con la ruta si dos se llaman igual.
-    - Pasa por la proyección.
-  - Comprueba: integración (exportar un mundo de prueba y volver a leerlo da lo mismo) y e2e de la descarga.
-  - Archivos: `apps/server/src/wiki/export.ts`, `packages/contracts/src/pages.ts`, `apps/web/src/wiki/export.tsx`.
+    - Migración 0036: `page_templates` de la organización (nombre, icono, `basedOn`, linaje, campos, panel y
+      esqueleto), en `TRACKED_TABLES`.
+    - Crear desde cero o copiando otra (conserva los ids de sus campos y de cuál viene), cambiar y borrar. Todo pasa
+      por `operation()` y se deshace. Borrar no toca sus páginas, que dicen «Frente (borrada)», y sus tablas siguen.
+    - Las gestiona quien administra la organización. Las usa quien puede crear páginas en sus mundos.
+    - Las de la cuenta salen en `listTemplates` y se pueden usar para crear. MCP: `crear_plantilla`,
+      `cambiar_plantilla` y `borrar_plantilla` (`delete`).
+  - Comprueba: integración (copiar conserva ids y linaje; cambiar y borrar no tocan las páginas; permisos) y MCP en
+    cada modo.
+  - Archivos: `packages/db/drizzle/0036_*.sql` y `packages/db/src/schema/templates.ts`,
+    `packages/db/src/repos/templates.ts`, `packages/contracts/src/templates.ts`,
+    `apps/server/src/actions/templates.ts`, `apps/server/src/mcp/tools.ts`.
 
-## Fase 4: Enlaces
-
-- [x] **13. Enlaces por id, sin resolver y rotos** — hecha. La resolución sola también parchea el texto (conexión
-  directa), y así un renombrado posterior no los deja sin resolver.
+- [x] **10. La pantalla «Plantillas»** — hecha. `/plantillas/:id` enseña de momento sus campos (su editor, en la 11). La
+  marca de una página hecha con una plantilla borrada dice «(borrada)» y no lleva a nada. En las pruebas de la web, el
+  tutorial guiado hay que darlo por visto: si no, sale y se lleva el foco.
   - Acepta:
-    - `[[` sugiere por título y alias, con erratas, y ofrece «Crear página «X»».
-    - Los enlaces van a una página, una sección o un bloque, por id.
-    - Lo que no existe queda sin resolver y se resuelve solo al crear, renombrar o poner un alias. Lo que está en la
-      papelera se ve roto.
-    - `page_links` se rehace al guardar, con el documento de origen.
-  - Comprueba: dominio (resolución con repetidos y alias), integración (orden cualquiera) y e2e.
-  - Archivos: `packages/editor/src/nodes/link.ts`, `packages/domain/src/links.ts`, `apps/server/src/wiki/links.ts`,
-    `apps/web/src/wiki/link-suggest.tsx`.
+    - «Plantillas» en la barra de Mis mundos y en el menú de la llama del móvil. `/plantillas` con «Tuyas» y «De
+      serie» en tarjetas (las de serie con candado y «Copiar»), la vista previa a la izquierda al pasar el ratón y
+      «Plantilla nueva» (desde cero o copiando, nombre e icono).
+    - El engranaje de cada tarjeta abre su ventana (nombre, icono, zona de peligro para borrar).
+    - La plantilla junto al título de una página lleva a la suya.
+    - Su tutorial guiado y su paso en el de Mis mundos.
+  - Comprueba: pruebas de componentes y e2e (crear una desde cero y otra copiando PNJ) con axe.
+  - Archivos: `apps/web/src/routes/templates.tsx` (+ CSS), `apps/web/src/router.tsx`,
+    `apps/web/src/components/ribbon.tsx`, `apps/web/src/i18n.ts`, `e2e/tests/plantillas.spec.ts`.
 
-- [x] **14. Entrantes, menciones y aviso al borrar** — hecha. El panel va bajo el cuerpo (a la derecha, en la etapa
-  de interfaz). Añade `documents.text`, que usará la búsqueda.
+- [x] **11. Editar una plantilla: campos y panel** — hecha. Los bloques del panel de una plantilla se titulan, se
+  recolocan con Subir y Bajar y se quitan (sin pintar su contenido: no hay página); las tablas, con sus desplegables.
+  La plantilla recién creada entra en la lista al momento (si no, su página volvía a la lista antes de que llegara).
   - Acepta:
-    - Un panel con los entrantes (con su fragmento) y las menciones sin enlazar, con «Enlazar» de un clic.
-    - Borrar avisa: «La enlazan N páginas».
-    - MCP: `enlaces_pagina`, con los enlaces sin resolver del mundo.
-  - Comprueba: integración, MCP y e2e.
-  - Archivos: `apps/server/src/actions/links.ts`, `apps/web/src/wiki/backlinks.tsx`, `apps/server/src/mcp/tools.ts`.
+    - `/plantillas/:templateId` con la forma de una página: el nombre y el icono arriba, y los campos en el panel.
+      Cada campo se añade, se quita, se recoloca y cambia de nombre, tipo, opciones, `targets` o segmentos, como en
+      el lienzo.
+    - Los bloques del panel de la plantilla, con las mismas piezas que el de una página (también «Tabla de
+      páginas»).
+    - Las de serie se ven igual, sin poder cambiarlas, con «Copiar».
+    - Todo se guarda solo («Guardado»).
+  - Comprueba: pruebas de componentes y e2e (añadir un reloj de 8 a «Frente» y crear una página con él).
+  - Archivos: `apps/web/src/templates/editor.tsx` (nuevo, + CSS), `apps/web/src/templates/fields.tsx` (nuevo),
+    `apps/web/src/wiki/panel-blocks.tsx`, `apps/web/src/i18n.ts`.
 
-- [x] **15. Vista previa e incrustados** — hecha. El contenido se pinta en solo lectura desde el JSON de la API
-  (sin Yjs); aviso `pageContent` del canal tras cada guardado.
-  - Acepta:
-    - La vista previa sale a los 300 ms o con el foco, anclada, y se puede entrar en ella. Escape la cierra. En el
-      móvil, en una hoja inferior. Si el enlace va a una sección, enseña esa sección.
-    - Los incrustados van en solo lectura, hasta 3 niveles, con aviso de ciclo.
-    - Las dos salen de la API, que proyecta, con caché hasta el aviso del canal.
-  - Comprueba: pruebas de componentes (teclado y Escape), e2e en escritorio y en el móvil, y `@fugas` de la vista
-    previa.
-  - Archivos: `apps/server/src/actions/preview.ts`, `apps/web/src/wiki/{preview,embed}.tsx`,
-    `packages/editor/src/nodes/embed.ts`.
-
-## Fase 5: Versiones
-
-- [x] **16. Sesiones de edición en el historial** — hecha. Con dos cuentas a la vez, la autoría de la versión es
-  aproximada (una versión es de toda la página).
-  - Acepta:
-    - La sesión se abre con el primer cambio y se cierra por inactividad, a los 15 minutos, al cerrar la última
-      pestaña o antes de una operación del servidor.
-    - Al cerrarse, una operación `editPage` sobre `page_bodies` y una versión (`page_versions`, `version_documents`,
-      `snapshots`).
-    - Deshacer aplica la versión anterior hacia delante y detecta los conflictos.
-    - Si el servidor se paró con una sesión abierta, al cargar se cierra a nombre del último que escribió.
-  - Comprueba: integración con dos cuentas y Claude a la vez, deshacer con un editor abierto sin que vuelva lo viejo, y
-    la recuperación tras parar el servidor.
-  - Archivos: `packages/db/src/schema/versions.ts`, `apps/server/src/collab/sessions.ts`,
-    `packages/domain/src/undo.ts`, `packages/db/src/repos/undo.ts`, `apps/web/src/summaries.ts`.
-
-- [x] **17. Versiones de página** — hecha. La purga va en la diaria de siempre (`trashRepo.purge`), sin trabajo
-  aparte.
-  - Acepta:
-    - Un panel con la lista (quién, persona o Claude, y cuándo), «Ver» en solo lectura y «Restaurar», que también se
-      deshace.
-    - Se guardan 90 días, más las 40 últimas de cada página siempre.
-    - MCP: `versiones_pagina` y `restaurar_version`.
-  - Comprueba: integración (restaurar y purgar con el reloj simulado), MCP y e2e.
-  - Archivos: `apps/server/src/actions/versions.ts`, `apps/server/src/jobs/purges.ts`,
-    `apps/web/src/wiki/versions.tsx`.
+- [x] **12. Editar una plantilla: el esqueleto del texto** — hecha. El editor de la wiki con su propio deshacer
+  (`history` en `editorExtensions`) y sin secretos ni notas ocultas; escribir en él se prueba en la e2e (en happy-dom,
+  ProseMirror no recibe bien el teclado).
+  - Acepta: el texto de la plantilla se escribe con el editor de la wiki sin colaboración y se guarda como Markdown.
+    Al crear una página, sale igual que se escribió.
+  - Comprueba: ida y vuelta (escribir el esqueleto, crear la página y comparar) y e2e.
+  - Archivos: `apps/web/src/templates/skeleton.tsx` (nuevo), `apps/web/src/templates/editor.tsx`,
+    `packages/editor/src/markdown/page.ts`.
 
 ### Punto de control 4
 
-- [ ] Enrique enlaza, ve la vista previa, restaura una versión y deshace lo que hizo Claude.
-  (Pendiente de Enrique: se sigue sin esperar, por su encargo del 2026-10-30.)
+- [ ] En local, Enrique copia PNJ como «PNJ de Eana» con el campo Frentes, y hace «Frente» desde cero con su reloj
+  y la tabla «PNJ del frente».
 
-## Fase 6: Archivos
+## Fase 5: Aplicar y cerrar
 
-- [x] **18. Archivos del mundo**
+- [x] **13. Aplicar una plantilla a una página ya hecha** — hecha. La regla es pura (`applyTemplate`, en el dominio):
+  la web la usa para enseñar lo que añade antes de aplicarla. `editPage` con `template` no va con `body`.
   - Acepta:
-    - Subir un archivo, varios o una carpeta, de hasta 250 MB, en streaming. `files` está en `TRACKED_TABLES` y el
-      disco va tras `Storage`.
-    - Se sirven en `/api/files/:id` con permiso, con caché privada y CSP `sandbox` para SVG.
-    - La pantalla `/mundos/:worldId/archivos` los ordena en carpetas por tipo, y deja renombrar, reemplazar y mandar a
-      la papelera.
-    - MCP: `listar_archivos`.
-  - Comprueba: integración (límite, permiso y papelera), `@fugas` de los archivos y e2e de la subida.
-  - Archivos: `packages/db/src/schema/files.ts`, `apps/server/src/files/{storage,routes}.ts`,
-    `apps/server/src/actions/files.ts`, `apps/web/src/routes/files.tsx`.
+    - «Aplicar plantilla…» en «⋯» de la página abre el cuadro del lienzo: la lista y lo que añade (campos, bloques y
+      apartados, al final del texto), con lo que ya tiene marcado.
+    - Aplicar añade lo que falte sin borrar nada (casa por id de campo y, si no, por nombre), cambia la plantilla que
+      recuerda la página y su linaje, y es una sola operación.
+    - MCP: `editar_pagina` con `plantilla`.
+  - Comprueba: integración (aplicar sobre una página con propiedades a mano; deshacer) y e2e.
+  - Archivos: `apps/server/src/wiki/templates.ts`, `apps/server/src/actions/page-content.ts`,
+    `apps/web/src/wiki/apply-template.tsx` (nuevo), `apps/web/src/wiki/wiki.tsx`.
 
-- [x] **19. Archivos en las páginas**
+- [x] **14. Cierre del módulo** — hecha: exportar lleva `plantilla:`, `@fugas` cubre plantillas, tablas y su aviso, y
+  las instrucciones del MCP hablan de plantillas. En local, todo en verde (84 e2e, 5 de fugas, 17 de accesibilidad).
+  Falta que Enrique repase los criterios de éxito en staging (punto de control final).
   - Acepta:
-    - El bloque de imagen, con pie, ancho, texto alternativo y caja de luz. Pegar o arrastrar una imagen la sube.
-    - La portada, con su encuadre.
-    - El bloque de archivo, con el visor de PDF (`pdfjs-dist`, cargado al hacer falta, con `#page`).
-    - Exportar lleva los archivos en `_archivos/`.
-  - Comprueba: e2e (pegar una imagen, abrir un PDF por la página 3) y la ida y vuelta de `![[…]]`.
-  - Archivos: `packages/editor/src/nodes/{image,file}.ts`, `apps/web/src/wiki/nodes/{image,file,pdf-viewer}.tsx`,
-    `apps/server/src/wiki/export.ts`.
-
-## Fase 7: Búsqueda
-
-- [x] **20. Búsqueda en español**
-  - Acepta:
-    - `search_documents` por documento, con `es_unaccent` y trigramas.
-    - Agrupa por página, con secciones y extracto. Filtra por etiqueta y rama, va paginada y marca lo que sale de un
-      secreto.
-    - La pantalla `/mundos/:worldId/buscar`.
-    - MCP: `buscar_paginas`.
-  - Comprueba:
-    - integración: «dragon» y «dargón» encuentran «Dragón»;
-    - rendimiento: el 95 % de las búsquedas, por debajo de 300 ms con 5.000 páginas sintéticas;
-    - `@fugas` de la búsqueda.
-  - Archivos: `packages/db/src/schema/search.ts` (+ migración de `es_unaccent`), `apps/server/src/wiki/search.ts`,
-    `apps/server/src/actions/search.ts`, `apps/web/src/routes/search.tsx`.
-
-- [x] **21. Selector rápido, órdenes y buscar en la página**
-  - Acepta:
-    - Ctrl+K abre el selector: títulos y alias a los 250 ms, primero los recientes, y «Ver todos».
-    - «>» al principio pasa a la paleta de órdenes.
-    - Buscar en la página abierta resalta lo encontrado en el texto.
-  - Comprueba: pruebas de componentes (teclado y foco del diálogo) y e2e.
-  - Archivos: `apps/web/src/wiki/{quick-switcher,commands,find-in-page}.tsx`.
-
-### Punto de control 5
-
-- [ ] Enrique sube archivos, los usa en páginas, abre un PDF y busca en español.
-
-## Fase 8: Hojas
-
-- [x] **22. Bloques de hoja**
-  - Acepta:
-    - Salto de página, salto de columna, statblock, nota lateral, el atributo «a lo ancho» e índice de contenidos,
-      cada uno con su forma en la vista sencilla y en Markdown (tabla de la spec).
-    - Un grupo «Hoja» en el menú «/».
-  - Comprueba: la ida y vuelta de cada uno y pruebas de componentes.
-  - Archivos: `packages/editor/src/nodes/sheet/*.ts`, `apps/web/src/wiki/nodes/sheet/*.tsx`.
-
-- [x] **23. Vista de hoja: paginar y temas**
-  - Acepta:
-    - «Ver como hoja» y sus ajustes en la fila: papel, tema, numeración y pie.
-    - Quien lee puede volver a la sencilla; se recuerda en `wiki_preferences`. En pantallas estrechas abre la sencilla.
-    - Paginación automática por bloques: no parte bloques, no deja títulos sueltos, guiona en español y avisa si un
-      bloque no cabe.
-    - Temas Pergamino y Neutro con variables `--sheet-…` y `@fontsource/alegreya`. En escritorio ancho, la hoja al
-      lado del editor, sincronizada por bloque.
-  - Comprueba: dominio (el paginador con alturas simuladas y la página de 518 KB) y e2e de cambiar de vista y de tema.
-  - Archivos: `packages/domain/src/paginate.ts`, `apps/web/src/wiki/sheet/{sheet,paginate,themes}.tsx`,
-    `apps/web/src/wiki/sheet/sheet.module.css`.
-
-- [x] **24. Imprimir y PDF**
-  - Acepta:
-    - La ruta de impresión con `@page` del papel elegido.
-    - En el papel no sale nada de la interfaz ni ningún bloque partido.
-    - Los secretos solo salen si se marca «Incluir secretos», y las notas ocultas nunca.
-    - «Descargar PDF»: el servidor saca el PDF de la ruta de impresión con Chromium, dentro del contenedor de la app
-      (permiso de Enrique, 2026-10-30).
-  - Comprueba: e2e con `page.pdf()` sobre la ruta de impresión (número de páginas y que no haya interfaz) y una prueba
-    a mano en Chrome, Firefox y Safari.
-  - Archivos: `apps/web/src/routes/print.tsx`, `apps/web/src/wiki/sheet/print.module.css`, `e2e/tests/hoja.spec.ts`.
-
-### Punto de control 6
-
-- [ ] Enrique saca el PDF de una hoja con un statblock, una nota lateral y una tabla.
-
-## Fase 9: Cierre
-
-- [x] **25. A la escala de Eana**
-  - Acepta:
-    - Un mundo sintético del tamaño de Eana (2.400 páginas con enlaces cruzados, secretos y alias), creado solo por el
-      MCP con `crear_paginas`.
-    - Cada llamada de 50 páginas tarda menos de 3 s, y todos los enlaces quedan resueltos.
-    - Se repasan las descripciones de las herramientas pensando en la migración.
-  - Comprueba: una prueba de rendimiento fuera de la CI normal, con sus números en el PR, y la búsqueda y el árbol en
-    ese mundo.
-  - Archivos: `apps/server/src/mcp/escala.integration.test.ts`, `apps/server/src/mcp/tools.ts`.
-
-- [x] **26. Cierre del módulo**
-  - Acepta:
-    - Revisiones de seguridad, servidor y web (esta con `web-design-guidelines`), con lo alto arreglado.
-    - `@fugas` completa para la wiki.
-    - Una página mediana se abre lista para escribir en menos de 1 s en staging.
-    - `docs/modulos.md` y la tabla de módulos, al día.
-  - Comprueba: los 8 criterios de éxito de la spec, uno a uno, con Enrique en staging.
-  - Archivos: los que salgan de las revisiones y `docs/modulos.md`.
+    - Exportar a Markdown lleva `plantilla:` y los tipos nuevos.
+    - `@fugas`: un jugador no recibe plantillas ni tablas por ninguna vía.
+    - Las instrucciones del MCP y la guía de las herramientas hablan de las plantillas.
+    - Los criterios de éxito de la spec, probados en staging.
+  - Comprueba: `pnpm e2e` entero, la prueba de MCP con 50 páginas desde plantilla y sus tablas, y la CI en verde.
+  - Archivos: `apps/server/src/wiki/export.ts`, `e2e/tests/fugas.spec.ts`, `apps/server/src/mcp/tools.ts`,
+    `docs/modulos.md`.
 
 ### Punto de control final
 
-Estado (2026-10-30): todo construido y en staging; Enrique está probando los puntos 3 a 6 y este.
-
-- [ ] Los criterios de éxito de `docs/specs/wiki.md`, en staging y con Enrique.
+- [ ] Enrique repasa en staging los criterios de éxito de `docs/specs/plantillas.md`.
