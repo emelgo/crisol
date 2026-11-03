@@ -19,7 +19,7 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   y menú (botón derecho); panel de bloques a la derecha; árbol con botón derecho y arrastre (a la izquierda, sale de su
   madre).
 - **Lo siguiente** (en otra conversación): **el módulo 2** (tipos de página, plantillas, formularios y consultas) con
-  su ciclo: `interview-me` frente al inventario, REA, `/spec`… La mejora de la búsqueda (texto de los PDF y búsqueda
+  su ciclo: `interview-me` frente al inventario, estudio con craft-anything, `/spec`… La mejora de la búsqueda (texto de los PDF y búsqueda
   por significado con pgvector) ya no va antes: Enrique la pasó al módulo 4, con la biblioteca (2026-11-03).
 - **En staging** desde el 2026-11-03 (PR #91, migraciones 0029 a 0034).
 - **Apuntado de las revisiones de esta tanda** (para cuando toque):
@@ -117,7 +117,7 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
      de pgvector si ayuda también, quiero crear la mejor app». Antes de pgvector: pedirle permiso para cambiar la
      imagen de Postgres a `pgvector/pgvector` y elegir con él quién calcula los embeddings (un modelo propio en el
      servidor, gratis y privado pero con memoria; o una API, que cuesta y saca el texto fuera);
-  5. empezar el módulo 2 con su ciclo (`interview-me` frente al inventario, REA, spec…).
+  5. empezar el módulo 2 con su ciclo (`interview-me` frente al inventario, estudio con craft-anything, spec…).
 - **Lo que aún no tiene el módulo 1**, a propósito o para más adelante: importador (Eana se pasa por el MCP), los
   jugadores viendo la wiki (módulo 5), los datos de criatura del statblock (módulo 4), y la capa de texto del visor de
   PDF (hoy se lee con «Abrir aparte»).
@@ -939,7 +939,9 @@ y la búsqueda encuentra lo que está dentro de un secreto. Lo raro que vio Clau
   - Enrique inicia sesión él mismo en un Chromium del VPS con depuración solo en loopback (`--remote-debugging-port=9222`).
   - Desde VS Code reenvía el puerto 9222 (pestaña Ports), abre `chrome://inspect` en su Chrome, añade `localhost:9222`
     y pulsa *inspect*.
-  - REA se conecta luego a esa sesión (`list_browser_targets` / `capture_browser_scenario` en modo `connect`).
+  - El estudio se conectaba luego a esa sesión con REA; desde el 2026-11-03 REA ya no se usa y se hace con
+    craft-anything (falta ver cómo se engancha a esta sesión).
+  - Antes con REA: `list_browser_targets` / `capture_browser_scenario` en modo `connect`.
   - Así se lanza el navegador. Va sin sandbox porque este Ubuntu no lo permite, como Playwright y REA:
     `xvfb-run -a -s "-screen 0 1920x1080x24" ~/.cache/ms-playwright/chromium-1243/chrome-linux64/chrome --no-sandbox
     --remote-debugging-port=9222 --remote-debugging-address=127.0.0.1 --user-data-dir=$HOME/rea-workspace/chromium-ddb
@@ -949,7 +951,7 @@ y la búsqueda encuentra lo que está dentro de un secreto. Lo raro que vio Clau
 
 Estados: pendiente · en curso · hecho · descartado.
 
-| # | Módulo | Estado | REA principal |
+| # | Módulo | Estado | Estudio principal (craft-anything) |
 |---|---|---|---|
 | 0 | **Fundación**: monorepo, CI, despliegue, cuentas, organizaciones, mundos, campañas, roles, historial y deshacer, esqueleto del MCP | **hecho** (2026-10-29; Discord y Google, pospuestos) | Foundry: modelo de documentos y permisos; DDB: campañas e invitaciones |
 | 1 | **Wiki**: páginas y subpáginas, editor de bloques, enlaces, menciones, vista previa, propiedades, secretos, búsqueda, marcadores, etiquetas, versiones, recursos y archivos, **hojas con estilo** (tipo Homebrewery, con PDF), exportación MD, sus herramientas MCP | construido (tareas 1 a 26 hechas); falta la revisión de Enrique en staging | Foundry: Journal; DDB: contenido y referencias; Homebrewery (MIT): formato de hoja y descarga |
@@ -1064,14 +1066,14 @@ app: el 2026-10-30 dijo «luego apuntaremos por donde vamos y nos dedicaremos a 
   - El Crisol actual ya guarda el sistema como datos (`.crisol/sistema.json`, con herramientas para crearlo, validarlo y
     probar tiradas): repasarlo en `docs/inventario.md` § 5.
 - **Creador de personajes y hoja (módulo 3)**: de D&D Beyond, son lo fundamental (Enrique, 2026-10-29). En el módulo 3
-  se estudian a fondo con REA: el paso a paso del creador, subir de nivel, la hoja en escritorio y en el móvil,
+  se estudian a fondo con craft-anything: el paso a paso del creador, subir de nivel, la hoja en escritorio y en el móvil,
   tiradas desde la hoja, y cómo se ven y se gestionan los recursos y el inventario. Se estudian en la cuenta de
   Enrique, solo mirando. La sesión queda en el perfil del Chromium del VPS (`~/rea-workspace/chromium-ddb`); si ha
   caducado, Enrique vuelve a entrar como en «D&D Beyond», más arriba.
 - **Hojas con estilo (módulo 1)**: que las páginas de la wiki tengan el formato de las hojas de rol (dos columnas,
   pergamino, statblocks, notas al margen) y se puedan descargar, al estilo de
   [Homebrewery](https://github.com/naturalcrit/homebrewery).
-  - Homebrewery tiene licencia MIT: su código se puede leer directamente y aprovechar con su atribución. REA sirve para
+  - Homebrewery tiene licencia MIT: su código se puede leer directamente y aprovechar con su atribución. craft-anything sirve para
     ver en la web cómo pagina e imprime.
   - Cuidado con su tema 5e: las fuentes y las imágenes llevan licencias propias (varias CC BY-SA, que `CONSTRAINTS.md`
     no admite) e imitan el aspecto de los libros de WotC. Para un producto de pago, un tema propio con ese aire,
