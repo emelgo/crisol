@@ -64,6 +64,9 @@ export function editorExtensions(options: EditorOptions = {}): Extensions {
   return [
     StarterKit.configure({
       heading: false,
+      // Nada de un párrafo al final que se añade solo: abrir una página la cambiaba (una versión a nombre de quien la
+      // abrió, y deshacer lo de antes se negaba). Para seguir escribiendo está la línea de más, que no es del documento
+      trailingNode: false,
       // Deshacer es el de Yjs (por documento y solo lo propio); sin edición compartida, el suyo
       ...(history ? {} : { undoRedo: false }),
       // Los enlaces externos; los de páginas llegan con la tarea 13
