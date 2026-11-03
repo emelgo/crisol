@@ -330,6 +330,45 @@ const MARKDOWN_HELP =
 const markdownText = z.string().max(2_000_000)
 const blockId = z.string().regex(/^[A-Za-z0-9-]{1,64}$/)
 
+/**
+ * Las tablas que se llenan solas de una página (ADR-0009), ya calculadas: por cada bloque «Tabla de páginas» de su
+ * panel, sus columnas y sus filas (las páginas cuyo campo apunta a ella), con los títulos de las páginas de sus celdas
+ */
+export const pageTables = z.object({
+  tables: z.array(
+    z.object({
+      blockId: z.string(),
+      title: z.string(),
+      /** field: el campo ya no está en la plantilla (la tabla no vale hasta cambiarla) */
+      problem: z.enum(['field']).nullable(),
+      columns: z.array(z.object({ field: fieldId, name: z.string() })),
+      rows: z.array(
+        z.object({
+          id: z.uuid(),
+          title: z.string(),
+          icon: z.string().nullable(),
+          cells: z.array(pageProperty.nullable())
+        })
+      ),
+      /** Si hay más filas de las que caben */
+      more: z.boolean()
+    })
+  ),
+  /** Los títulos de las páginas que salen en las celdas */
+  linked: z.array(z.object({ id: z.uuid(), title: z.string() }))
+})
+
+export type PageTables = z.infer<typeof pageTables>
+
+export const getPageTables = defineAction({
+  name: 'getPageTables',
+  kind: 'read',
+  description:
+    'Las tablas que se llenan solas de una página, ya calculadas: las páginas de una plantilla (y sus copias) cuyo campo de enlace apunta a ella, con sus columnas',
+  input: z.object({ pageId: z.uuid() }),
+  output: pageTables
+})
+
 export const readPage = defineAction({
   name: 'readPage',
   kind: 'read',
@@ -338,7 +377,7 @@ export const readPage = defineAction({
     pageId: z.uuid(),
     ids: z.boolean().optional().describe('Los ^id de los bloques de primer nivel, para cambiar uno con editPage')
   }),
-  output: z.object({ page, markdown: z.string() })
+  output: z.object({ page, markdown: z.string(), tables: pageTables.shape.tables })
 })
 
 const newPage = z.object({
@@ -479,7 +518,7 @@ export const setPagePanel = defineAction({
   name: 'setPagePanel',
   kind: 'write',
   description:
-    'Deja el panel de una página (los bloques a su lado: texto, imagen, medidor en barra o círculo, estrellas, fichas, subpáginas o páginas con una etiqueta) como se da, en ese orden. Cada bloque lleva un id corto propio (letras minúsculas y números); el valor de un medidor o unas fichas no pasa de su máximo',
+    'Deja el panel de una página (los bloques a su lado: texto, imagen, medidor en barra o círculo, estrellas, fichas, subpáginas, páginas con una etiqueta o una tabla de páginas) como se da, en ese orden. Cada bloque lleva un id corto propio (letras minúsculas y números); el valor de un medidor o unas fichas no pasa de su máximo. Una tabla de páginas (related) lista las páginas de una plantilla (template, de listar_plantillas) cuyo campo de enlace (field, su id) apunta a esta página, con hasta tres columnas (ids de campos de esa plantilla) y su orden (title o una columna); leer_pagina la da ya calculada',
   input: z.object({ pageId: z.uuid(), blocks: pagePanel }),
   output: page
 })

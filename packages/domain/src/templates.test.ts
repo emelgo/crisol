@@ -52,6 +52,27 @@ describe('las plantillas de serie', () => {
     expect(pnj?.skeleton).toBe('## Quién es\n\n## Cómo interpretarlo\n\n## Ganchos\n')
   })
 
+  it('traen sus tablas: los miembros de una facción, los habitantes de un lugar, lo que lleva un PNJ', () => {
+    const tables = (id: string) =>
+      builtInTemplate(id)
+        ?.panel.filter((block) => block.type === 'related')
+        .map((block) => [block.title, block.template, block.field])
+    expect(tables('faccion')).toEqual([['Miembros', 'pnj', 'faccion']])
+    expect(tables('lugar')).toEqual([
+      ['Lugares dentro', 'lugar', 'dentro-de'],
+      ['Habitantes', 'pnj', 'lugar']
+    ])
+    expect(tables('pnj')).toEqual([['Lleva encima', 'objeto', 'portador']])
+    // Cada tabla apunta a un campo de enlace de su plantilla, y sus columnas son campos suyos
+    for (const template of BUILT_IN_TEMPLATES) {
+      for (const block of template.panel.filter((b) => b.type === 'related')) {
+        const of = builtInTemplate(String(block.template))
+        expect(of?.fields.find((f) => f.field === block.field)?.type).toBe('pages')
+        for (const column of block.columns as string[]) expect(of?.fields.map((f) => f.field)).toContain(column)
+      }
+    }
+  })
+
   it('una que no es de serie no se encuentra', () => {
     expect(builtInTemplate('frente')).toBeUndefined()
   })

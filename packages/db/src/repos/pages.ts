@@ -471,6 +471,31 @@ export function createPagesWithBodies(
   })
 }
 
+/**
+ * Las páginas de una plantilla (o de sus copias) cuyo campo apunta a una página (ADR-0009): las filas de una tabla que
+ * se llena sola, por título. Una de más, para saber si quedan
+ */
+export function relatedPages(
+  db: Database,
+  input: { worldId: string; pageId: string; template: string; field: string; limit: number }
+) {
+  const contains = JSON.stringify([{ field: input.field, value: [input.pageId] }])
+  return db
+    .select({ id: pages.id, title: pages.title, icon: pages.icon, properties: pages.properties })
+    .from(pages)
+    .where(
+      and(
+        eq(pages.worldId, input.worldId),
+        isNull(pages.deletedAt),
+        sql`${pages.id} <> ${input.pageId}`,
+        sql`${pages.templateLine} @> array[${input.template}]::text[]`,
+        sql`${pages.properties} @> ${contains}::jsonb`
+      )
+    )
+    .orderBy(sql`lower(${pages.title})`, pages.id)
+    .limit(input.limit + 1)
+}
+
 /** Todas las páginas del mundo fuera de la papelera, en su orden (para exportar) */
 export function worldPages(db: Database, worldId: string) {
   return db

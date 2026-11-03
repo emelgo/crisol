@@ -91,7 +91,8 @@ describe('Actions', () => {
       getWorldHome: true,
       ensureWorldHome: true,
       listTemplates: true,
-      getTemplate: true
+      getTemplate: true,
+      getPageTables: true
     }
     expect(Object.keys(names).sort()).toEqual(ACTIONS.map((a) => a.name).sort())
   })

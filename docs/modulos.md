@@ -29,8 +29,9 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
 - **Hechas las tareas 3 y 4**: las seis plantillas de serie (`listar_plantillas`, `ver_plantilla`) y crear desde
   plantilla en el servidor y por `crear_paginas` (migración 0035, ya aplicada en la base de desarrollo). Hecha la
   tarea 5 («Desde plantilla» en «Página nueva»). Hecha la
-  tarea 6 (crear con plantilla desde un enlace sin resolver). **Punto de control 2**, en local. **Lo siguiente**: la tarea
-  7 (la consulta de las tablas).
+  tarea 6 (crear con plantilla desde un enlace sin resolver). **Punto de control 2**, en local. Hecha la tarea
+  7 (la consulta de las tablas: p95 de 43 ms con 5.000 páginas). **Lo siguiente**: la tarea 8 («Tabla de páginas» en
+  el panel).
 - REA ya no se usa: los estudios se hacen con craft-anything (cambiado en `CLAUDE.md` y `research/README.md`).
 
 ### Para retomar (2026-11-03, cierre de la interfaz)

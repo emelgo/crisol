@@ -111,6 +111,54 @@ describe.skipIf(!process.env.CRISOL_ESCALA)('a la escala de Eana', () => {
     expect(search.data.total).toBeGreaterThan(0)
   }, 900_000)
 
+  it('las tablas que se llenan solas con 5.000 páginas: el 95 % en menos de 150 ms (módulo 2)', async () => {
+    const { cookie, call } = await connected()
+    const world = (await call<{ id: string }>('crear_mundo', { name: 'Eana' })).data
+    const FACTIONS = 100
+    const factions = Array.from({ length: FACTIONS }, (_, i) => ({
+      key: `f${i}`,
+      title: `Facción ${i}`,
+      template: 'faccion'
+    }))
+    const created = await api<{ pages: { key: string; id: string }[] }>(cookie, 'createPages', {
+      worldId: world.id,
+      parentId: null,
+      pages: factions.slice(0, 50)
+    })
+    const more = await api<{ pages: { key: string; id: string }[] }>(cookie, 'createPages', {
+      worldId: world.id,
+      parentId: null,
+      pages: factions.slice(50)
+    })
+    const factionIds = [...created.pages, ...more.pages].map((p) => p.id)
+    // 4.900 PNJ, cada uno de una facción (unos 49 por facción), con sus columnas
+    for (let start = 0; start < 4900; start += 50) {
+      const pages = Array.from({ length: 50 }, (_, n) => {
+        const i = start + n
+        return {
+          key: `p${i}`,
+          title: `PNJ ${i}`,
+          template: 'pnj',
+          markdown: `---\nFacción: "[[${factionIds[i % FACTIONS]}]]"\nRol: Rol ${i % 7}\nEstado: Vive\n---\n`
+        }
+      })
+      await api(cookie, 'createPages', { worldId: world.id, parentId: null, pages })
+    }
+    const times: number[] = []
+    for (const pageId of factionIds.slice(0, 60)) {
+      const began = performance.now()
+      const tables = await api<{ tables: { rows: unknown[] }[] }>(cookie, 'getPageTables', { pageId })
+      times.push(performance.now() - began)
+      expect(tables.tables[0]?.rows.length).toBe(49)
+    }
+    const sorted = [...times].sort((a, b) => a - b)
+    const p95 = sorted[Math.floor(sorted.length * 0.95)] ?? 0
+    process.stderr.write(
+      `escala: tablas con 5.000 páginas, mediana ${Math.round(median(times))} ms, p95 ${Math.round(p95)} ms\n`
+    )
+    expect(p95).toBeLessThan(150)
+  }, 900_000)
+
   it('50 páginas desde plantilla por crear_paginas, enlazadas entre sí: en menos de 3 s (módulo 2)', async () => {
     const { userId, call } = await connected()
     await aiRepo.setAiMode(conn.db, userId, 'copilot')

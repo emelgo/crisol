@@ -369,7 +369,16 @@ describe('Claude lee y escribe páginas en Markdown', () => {
       ['Pareja', 'pareja']
     ])
     expect(page.panel).toEqual([
-      { id: expect.stringMatching(/^[a-z0-9]{12}$/), type: 'image', fileId: null, caption: '' }
+      { id: expect.stringMatching(/^[a-z0-9]{12}$/), type: 'image', fileId: null, caption: '' },
+      {
+        id: expect.stringMatching(/^[a-z0-9]{12}$/),
+        type: 'related',
+        title: 'Lleva encima',
+        template: 'objeto',
+        field: 'portador',
+        columns: ['tipo', 'rareza'],
+        sort: 'title'
+      }
     ])
     const { markdown } = await ok200('readPage', { pageId: page.id })
     expect(markdown).toContain('## Quién es\n\n## Cómo interpretarlo\n\n## Ganchos')

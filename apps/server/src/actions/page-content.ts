@@ -34,6 +34,7 @@ import { readDocument, stateOf, writeDocument } from '../wiki/content.ts'
 import { fileNames, worldFiles } from '../wiki/file-embeds.ts'
 import { linkName, linksOfNewPages, resolveIncoming, resolvePending, worldNames } from '../wiki/links.ts'
 import { propertiesOf } from '../wiki/properties.ts'
+import { pageTables } from '../wiki/tables.ts'
 import { fieldsText, findTemplate, newBlockId } from '../wiki/templates.ts'
 import { snapshotPage, versionOf } from '../wiki/versions.ts'
 import { authorizedPage, authorizedWiki } from './access.ts'
@@ -78,7 +79,7 @@ const separateDoc = (content: JSONContent[]): JSONContent =>
 const fold = (name: string) => name.trim().toLocaleLowerCase('es')
 
 /** Encuentra páginas del mundo por su título, un alias o su id (sin mirar mayúsculas) */
-async function pageResolver(ctx: ActionContext, worldId: string) {
+export async function pageResolver(ctx: ActionContext, worldId: string) {
   const byName = new Map<string, Map<string, string>>()
   const ids = new Set<string>()
   const add = (id: string, title: string, aliases: readonly string[] = []) => {
@@ -331,7 +332,7 @@ async function createBatch(
 
 export const pageContentActions = [
   implement(readPage, async (ctx, { pageId, ids }) => {
-    const { wiki } = await authorizedPage(ctx, 'page.read', pageId)
+    const { page, wiki } = await authorizedPage(ctx, 'page.read', pageId)
     const view = await pageView(ctx, pageId)
     const body = await readDocument(ctx, { kind: 'body', pageId })
     // Solo los secretos que son de esta página
@@ -355,7 +356,7 @@ export const pageContentActions = [
       fileName: await fileNames(ctx, wiki.worldId),
       ids: ids ?? false
     })
-    return { page: view, markdown }
+    return { page: view, markdown, tables: (await pageTables(ctx, wiki, page)).tables }
   }),
 
   implement(createPage, async (ctx, input) => {

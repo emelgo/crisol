@@ -46,25 +46,34 @@ export async function indexMissing(env: ActionEnv, worldId: string, onError?: (e
 
 export interface SearchInput {
   worldId: string
-  query: string
+  /** Sin ella, con plantilla: todas sus páginas por título */
+  query?: string | undefined
   tag?: string | undefined
   branchId?: string | undefined
+  /** La plantilla ya resuelta (su id) y el campo de enlace con la página a la que apunta */
+  template?: string | null
+  link?: { field: string; pageId: string } | null
   page: number
 }
 
 /** Las páginas que coinciden, con su ruta y las secciones donde sale lo buscado */
 export async function searchWorld(env: ActionEnv, input: SearchInput) {
   await indexMissing(env, input.worldId)
-  const words = searchRepo.searchTerms(input.query)
+  const words = input.query ? searchRepo.searchTerms(input.query) : []
   const terms = words.length > 0 ? await searchRepo.similarWords(env.db, input.worldId, words) : []
-  const { total, pages } = await searchRepo.searchPages(env.db, {
+  const options = {
     worldId: input.worldId,
-    terms,
     tag: input.tag ?? null,
     branchId: input.branchId ?? null,
+    template: input.template ?? null,
+    link: input.link ?? null,
     offset: (input.page - 1) * SEARCH_PAGE_SIZE,
     limit: SEARCH_PAGE_SIZE
-  })
+  }
+  const { total, pages } =
+    input.query === undefined && input.template
+      ? await searchRepo.templatePages(env.db, options)
+      : await searchRepo.searchPages(env.db, { ...options, terms })
   const sections = await searchRepo.matchingSections(
     env.db,
     pages.map((page) => page.id),

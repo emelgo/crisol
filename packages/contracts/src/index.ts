@@ -42,6 +42,7 @@ import {
   getPage,
   getPageContent,
   getPageLinks,
+  getPageTables,
   getPageVersion,
   getWikiPreferences,
   linkMention,
@@ -156,6 +157,7 @@ export const ACTIONS = [
   listPageVersions,
   getPageVersion,
   restorePageVersion,
+  getPageTables,
   listFiles,
   listCommonFiles,
   renameFile,
@@ -247,6 +249,7 @@ export type Actions = {
   listPageVersions: typeof listPageVersions
   getPageVersion: typeof getPageVersion
   restorePageVersion: typeof restorePageVersion
+  getPageTables: typeof getPageTables
   listFiles: typeof listFiles
   listCommonFiles: typeof listCommonFiles
   renameFile: typeof renameFile

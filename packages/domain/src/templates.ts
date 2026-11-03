@@ -51,6 +51,16 @@ export interface PageTemplate {
 export const lineOf = (id: string, basedOnLine: readonly string[] | null): string[] => [id, ...(basedOnLine ?? [])]
 
 const image = (id: string): TemplateBlock => ({ id, type: 'image', fileId: null, caption: '' })
+/** Una tabla que se llena sola: las páginas de la plantilla template cuyo campo field apunta a esta */
+const table = (id: string, title: string, template: string, field: string, columns: string[]): TemplateBlock => ({
+  id,
+  type: 'related',
+  title,
+  template,
+  field,
+  columns,
+  sort: 'title'
+})
 const text = (field: string, name: string): PageProperty => ({ name, field, type: 'text', value: '' })
 const choice = (field: string, name: string, options: string[]): PageProperty => ({
   name,
@@ -98,7 +108,7 @@ export const BUILT_IN_TEMPLATES: readonly PageTemplate[] = [
       links('padres', 'Padres', ['pnj']),
       links('pareja', 'Pareja', ['pnj'])
     ],
-    panel: [image('retrato')],
+    panel: [image('retrato'), table('llevaencima', 'Lleva encima', 'objeto', 'portador', ['tipo', 'rareza'])],
     skeleton: '## Quién es\n\n## Cómo interpretarlo\n\n## Ganchos\n'
   }),
   builtIn({
@@ -124,7 +134,11 @@ export const BUILT_IN_TEMPLATES: readonly PageTemplate[] = [
       number('poblacion', 'Población'),
       link('gobierna', 'Gobierna', ['pnj'])
     ],
-    panel: [image('imagen')],
+    panel: [
+      image('imagen'),
+      table('lugaresdentro', 'Lugares dentro', 'lugar', 'dentro-de', ['tipo']),
+      table('habitantes', 'Habitantes', 'pnj', 'lugar', ['rol', 'estado'])
+    ],
     skeleton: '## Descripción\n\n## Ganchos\n'
   }),
   builtIn({
@@ -137,7 +151,7 @@ export const BUILT_IN_TEMPLATES: readonly PageTemplate[] = [
       link('sede', 'Sede', ['lugar']),
       text('objetivo', 'Objetivo')
     ],
-    panel: [image('emblema')],
+    panel: [image('emblema'), table('miembros', 'Miembros', 'pnj', 'faccion', ['rol', 'estado'])],
     skeleton: '## Quiénes son\n\n## Qué quieren\n\n## Ganchos\n'
   }),
   builtIn({

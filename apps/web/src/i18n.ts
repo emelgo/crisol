@@ -553,6 +553,7 @@ export const es = {
       tokens: 'Fichas',
       subpages: 'Subpáginas',
       tagged: 'Páginas con etiqueta',
+      related: 'Tabla de páginas',
       tags: 'Etiquetas',
       property: 'Propiedad'
     },

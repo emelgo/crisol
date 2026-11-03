@@ -1,6 +1,7 @@
 import {
   createPageDocument,
   getPage,
+  getPageTables,
   listPageChildren,
   listPageNames,
   listPageTree,
@@ -29,6 +30,7 @@ import * as Y from 'yjs'
 import { pagesChanged } from '../realtime/events.ts'
 import { resolvePending, worldNames } from '../wiki/links.ts'
 import { propertiesOf } from '../wiki/properties.ts'
+import { checkTables, pageTables } from '../wiki/tables.ts'
 import { authorizedPage, authorizedWiki, type WikiTarget } from './access.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
 import { implement } from './registry.ts'
@@ -165,6 +167,8 @@ export const pageActions = [
         if (!file || !usable || file.kind !== 'image') throw new InvalidRequestError('BAD_PANEL')
       }
     }
+    // Las tablas que se llenan solas: con una plantilla, un campo de enlace y columnas suyas (ADR-0009)
+    await checkTables(ctx, wiki, page.panel, blocks)
     await pagesRepo.updatePage(ctx.db, historyContext(ctx, 'setPagePanel', { title: page.title }, wiki), pageId, {
       panel: blocks
     })
@@ -256,6 +260,11 @@ export const pageActions = [
   implement(getPage, async (ctx, { pageId }) => {
     await authorizedPage(ctx, 'page.read', pageId)
     return pageView(ctx, pageId)
+  }),
+
+  implement(getPageTables, async (ctx, { pageId }) => {
+    const { page, wiki } = await authorizedPage(ctx, 'page.read', pageId)
+    return pageTables(ctx, wiki, page)
   }),
 
   implement(listPageChildren, async (ctx, { worldId, parentId }) => {

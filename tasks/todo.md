@@ -108,7 +108,10 @@ amplía `@fugas` en la misma tarea. Cobertura ≥ 80 % de lo cambiado (bloquea d
 
 ## Fase 3: Tablas
 
-- [ ] **7. La consulta de las tablas (riesgo)**
+- [x] **7. La consulta de las tablas (riesgo)** — hecha. Con 5.000 páginas (100 facciones de 49 miembros), mediana 30 ms
+  y p95 43 ms (prueba de escala, `CRISOL_ESCALA=1`): no hace falta el plan B. Las plantillas de serie ya traen sus
+  tablas. `buscar_paginas` sin texto, con plantilla, da sus páginas por título. Al guardar el panel solo se comprueban
+  las tablas nuevas o cambiadas (una ya guardada puede ser de una plantilla propia borrada).
   - Acepta:
     - El bloque `related` en el contrato del panel: `template`, `field`, hasta tres `columns` y `sort`.
       `setPagePanel` comprueba que la plantilla y el campo existen y que el campo es de enlace.

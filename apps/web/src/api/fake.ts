@@ -13,6 +13,7 @@ import type {
   Organization,
   Page,
   PageProperty,
+  PageTables,
   PageTabView,
   PageTemplate,
   TagView,
@@ -213,6 +214,46 @@ export function fakeApi(
     hasChildren: childrenOf(page.worldId, page.id).length > 0,
     version: page.version
   })
+  // Las tablas que se llenan solas, como el servidor: las de su plantilla (o sus copias) con el campo hacia esta página
+  const lineOf = (page: StoredPage) => (page.template ? (builtInTemplate(page.template)?.line ?? [page.template]) : [])
+  const tablesOf = (page: StoredPage): PageTables => {
+    const blocks = (page.panel ?? []).filter((block) => block.type === 'related')
+    const linked = new Map<string, string>()
+    const tables = blocks.map((block) => {
+      const template = builtInTemplate(block.template)
+      const rows = pages
+        .filter(
+          (other) =>
+            other.id !== page.id &&
+            other.worldId === page.worldId &&
+            lineOf(other).includes(block.template) &&
+            other.properties.some((p) => p.field === block.field && p.type === 'pages' && p.value.includes(page.id))
+        )
+        .sort((a, b) => a.title.localeCompare(b.title, 'es'))
+        .map((other) => {
+          const cells = block.columns.map((column) => other.properties.find((p) => p.field === column) ?? null)
+          for (const cell of cells) {
+            if (cell?.type === 'pages') {
+              for (const id of cell.value) linked.set(id, pages.find((p) => p.id === id)?.title ?? '')
+            }
+          }
+          return { id: other.id, title: other.title, icon: other.icon, cells }
+        })
+      const usable = !template || template.fields.some((f) => f.field === block.field && f.type === 'pages')
+      return {
+        blockId: block.id,
+        title: block.title,
+        problem: usable ? null : ('field' as const),
+        columns: block.columns.map((field) => ({
+          field,
+          name: template?.fields.find((f) => f.field === field)?.name ?? field
+        })),
+        rows: usable ? rows : [],
+        more: false
+      }
+    })
+    return { tables, linked: [...linked].map(([id, title]) => ({ id, title })) }
+  }
   const pageView = (page: StoredPage): Page => {
     const path: { id: string; title: string }[] = []
     for (let at: StoredPage | undefined = page; at; at = pages.find((p) => p.id === at?.parentId)) {
@@ -660,7 +701,12 @@ export function fakeApi(
       return { id: crypto.randomUUID() }
     },
     // Lo de Claude (Markdown) no se usa desde la web: lo mínimo para el tipo
-    readPage: ({ pageId }) => ({ page: pageView(pageById(pageId)), markdown: '' }),
+    readPage: ({ pageId }) => ({
+      page: pageView(pageById(pageId)),
+      markdown: '',
+      tables: tablesOf(pageById(pageId)).tables
+    }),
+    getPageTables: ({ pageId }) => tablesOf(pageById(pageId)),
     createPages: () => {
       throw new ApiError('UNSUPPORTED', 400)
     },
@@ -724,7 +770,7 @@ export function fakeApi(
     },
     searchWiki: ({ worldId, query, page = 1 }) => {
       const fold = (text: string) => text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()
-      const found = pages.filter((p) => p.worldId === worldId && fold(p.title).includes(fold(query)))
+      const found = pages.filter((p) => p.worldId === worldId && fold(p.title).includes(fold(query ?? '')))
       return {
         total: found.length,
         page,

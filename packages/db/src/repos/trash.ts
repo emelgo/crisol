@@ -190,6 +190,12 @@ export function purge(db: Database, now: Date) {
       .returning({ id: campaigns.id })
     // Una página purgada se lleva sus subpáginas (clave ajena en cascada)
     const purgedPages = await tx.delete(pages).where(lt(pages.deletedAt, cutoff)).returning({ id: pages.id })
+    // Las que se van, fuera de los campos de enlace que las apuntaban (ADR-0009): sin quedarse colgando
+    if (purgedPages.length > 0)
+      await unlinkPages(
+        tx,
+        purgedPages.map((page) => page.id)
+      )
     // Los archivos: su fila (sus bytes se van cuando ya no los nombra nadie; lo hace la limpieza del almacenamiento)
     const purgedFiles = await tx.delete(files).where(lt(files.deletedAt, cutoff)).returning({ id: files.id })
     const memberships = await tx.execute<{ id: string }>(sql`
@@ -257,4 +263,23 @@ export async function liveStorageKeys(db: Database) {
     union select c.before->>'storage_key' from changes c where c.table_name = 'files' and c.before is not null
     union select c.after->>'storage_key' from changes c where c.table_name = 'files' and c.after is not null`)
   return new Set([...rows].map((row) => row.key).filter(Boolean))
+}
+
+/** Quita estas páginas de los enlaces de las propiedades que las apuntan (las demás propiedades, tal cual) */
+async function unlinkPages(tx: Pick<Database, 'execute'>, pageIds: readonly string[]) {
+  const gone = sql`array[${sql.join(
+    pageIds.map((id) => sql`${id}`),
+    sql`, `
+  )}]::text[]`
+  await tx.execute(sql`
+    update pages set properties = (
+      select jsonb_agg(
+        case when e->>'type' = 'pages' then jsonb_set(e, '{value}', coalesce((
+          select jsonb_agg(v) from jsonb_array_elements_text(e->'value') v where v <> all(${gone})
+        ), '[]'::jsonb))
+        else e end order by n)
+      from jsonb_array_elements(properties) with ordinality as x(e, n))
+    where exists (
+      select 1 from jsonb_array_elements(properties) e, jsonb_array_elements_text(e->'value') v
+      where e->>'type' = 'pages' and v = any(${gone}))`)
 }

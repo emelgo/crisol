@@ -33,7 +33,7 @@ import { useWorldFiles } from './cover-look.ts'
 import styles from './panel-blocks.module.css'
 import { childrenKey } from './tree.tsx'
 
-type Kind = 'text' | 'image' | 'bar' | 'circle' | 'rating' | 'tokens' | 'subpages' | 'tagged'
+type Kind = 'text' | 'image' | 'bar' | 'circle' | 'rating' | 'tokens' | 'subpages' | 'tagged' | 'related'
 
 const GROUPS: { group: 'notes' | 'meters' | 'lists'; kinds: { kind: Kind; icon: ReactNode }[] }[] = [
   {
@@ -83,6 +83,8 @@ function blockOf(kind: Kind): PanelBlock {
       return { id, type: 'subpages', title: '' }
     case 'tagged':
       return { id, type: 'tagged', title: '', tag: '' }
+    case 'related':
+      return { id, type: 'related', title: '', template: 'pnj', field: 'faccion', columns: [], sort: 'title' }
   }
 }
 
@@ -578,6 +580,9 @@ function BlockBody({ page, block, onChange }: { page: Page; block: PanelBlock; o
       return <SubpagesBody page={page} />
     case 'tagged':
       return <TaggedBody page={page} tag={block.tag} />
+    case 'related':
+      // Su tabla, con la tarea 8 del módulo 2
+      return null
   }
 }
 
