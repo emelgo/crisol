@@ -20,7 +20,10 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   aspecto real de la app. Seis tablas: «Página nueva» desde plantilla, un PNJ con sus campos, la facción con
   «Miembros» y su configuración, «Plantillas» en Mis mundos, el editor de «Frente» y aplicar una plantilla a una página
   hecha. Las opciones de Estado de PNJ, sin género («Vive», «Ha muerto»…), también aprobadas.
-- **Lo siguiente**: `/plan` (`tasks/plan.md` y `tasks/todo.md`; los del módulo 1 pasan a `tasks/wiki/`).
+- **Plan escrito, por aprobar**: `tasks/plan.md` y 14 tareas en `tasks/todo.md`, en cinco fases (campos, crear desde
+  plantilla, tablas, plantillas de la cuenta, aplicar y cierre), con cuatro puntos de control. Los del módulo 1 pasan a
+  `tasks/wiki/`.
+- **Lo siguiente**: con el plan aprobado, `/build` desde la tarea 1.
 - REA ya no se usa: los estudios se hacen con craft-anything (cambiado en `CLAUDE.md` y `research/README.md`).
 
 ### Para retomar (2026-11-03, cierre de la interfaz)
