@@ -10,9 +10,10 @@ import {
   ChevronUp,
   Circle,
   CircleDot,
-  Ellipsis,
   GripVertical,
+  Hash,
   Image as ImageIcon,
+  ListPlus,
   ListTree,
   Minus,
   Plus,
@@ -89,7 +90,14 @@ const kindOf = (block: PanelBlock): Kind => (block.type === 'meter' ? block.styl
 
 const same = (a: readonly PanelBlock[], b: readonly PanelBlock[]) => JSON.stringify(a) === JSON.stringify(b)
 
-export function PanelBlocks({ page }: { page: Page }) {
+export function PanelBlocks({
+  page,
+  onAddProperty
+}: {
+  page: Page
+  /** Las etiquetas y las propiedades son de la página (no bloques): se añaden en su ficha, de arriba */
+  onAddProperty?: (kind: 'tags' | 'property') => void
+}) {
   const { t } = useTranslation()
   const api = useApi()
   const queryClient = useQueryClient()
@@ -193,7 +201,7 @@ export function PanelBlocks({ page }: { page: Page }) {
           onChange={(patch, soon) => update(block.id, patch, soon)}
         />
       ))}
-      <AddBlock onAdd={add} />
+      <AddBlock onAdd={add} onAddProperty={onAddProperty} />
       <FormError message={error ? errorText(error) : null} />
     </div>
   )
@@ -224,7 +232,13 @@ function usePopover() {
   return { open, setOpen, root, trigger }
 }
 
-function AddBlock({ onAdd }: { onAdd: (kind: Kind) => void }) {
+function AddBlock({
+  onAdd,
+  onAddProperty
+}: {
+  onAdd: (kind: Kind) => void
+  onAddProperty?: ((kind: 'tags' | 'property') => void) | undefined
+}) {
   const { t } = useTranslation()
   const { open, setOpen, root, trigger } = usePopover()
   const menuId = useId()
@@ -243,6 +257,32 @@ function AddBlock({ onAdd }: { onAdd: (kind: Kind) => void }) {
       </button>
       {open && (
         <div id={menuId} className={styles.picker}>
+          {/* Lo de la página: sus etiquetas y sus propiedades */}
+          {onAddProperty && (
+            <div className={styles.pickerGroup}>
+              <p>{t('panelBlocks.groups.data')}</p>
+              <ul>
+                {(['tags', 'property'] as const).map((kind) => (
+                  <li key={kind}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setOpen(false)
+                        onAddProperty(kind)
+                      }}
+                    >
+                      {kind === 'tags' ? (
+                        <Hash size={16} aria-hidden="true" />
+                      ) : (
+                        <ListPlus size={16} aria-hidden="true" />
+                      )}
+                      {t(`panelBlocks.kinds.${kind}`)}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
           {GROUPS.map(({ group, kinds }) => (
             <div key={group} className={styles.pickerGroup}>
               <p>{t(`panelBlocks.groups.${group}`)}</p>
@@ -321,20 +361,18 @@ function BlockFrame({
       }}
     >
       <div className={styles.blockHead}>
-        <span
-          className={styles.grip}
-          draggable
-          role="img"
-          aria-label={t('panelBlocks.drag', { name })}
-          title={t('panelBlocks.drag', { name })}
-          onDragStart={(event) => {
-            event.dataTransfer.effectAllowed = 'move'
-            onDragStart()
-          }}
+        {/* Los seis puntos: se arrastran para mover el bloque y, al pulsarlos, sus opciones (como en el texto) */}
+        <BlockMenu
+          name={name}
+          block={block}
+          index={index}
+          count={count}
+          onMove={onMove}
+          onRemove={onRemove}
+          onChange={onChange}
+          onDragStart={onDragStart}
           onDragEnd={onDragEnd}
-        >
-          <GripVertical size={14} aria-hidden="true" />
-        </span>
+        />
         {'title' in block ? (
           <TitleField
             value={block.title}
@@ -345,15 +383,6 @@ function BlockFrame({
         ) : (
           <span className={styles.kindLabel}>{t(`panelBlocks.kinds.${kind}`)}</span>
         )}
-        <BlockMenu
-          name={name}
-          block={block}
-          index={index}
-          count={count}
-          onMove={onMove}
-          onRemove={onRemove}
-          onChange={onChange}
-        />
       </div>
       <BlockBody page={page} block={block} onChange={onChange} />
     </section>
@@ -402,7 +431,9 @@ function BlockMenu({
   count,
   onMove,
   onRemove,
-  onChange
+  onChange,
+  onDragStart,
+  onDragEnd
 }: {
   name: string
   block: PanelBlock
@@ -411,6 +442,8 @@ function BlockMenu({
   onMove: (to: number) => void
   onRemove: () => void
   onChange: Change
+  onDragStart: () => void
+  onDragEnd: () => void
 }) {
   const { t } = useTranslation()
   const { open, setOpen, root, trigger } = usePopover()
@@ -422,14 +455,21 @@ function BlockMenu({
       <button
         ref={trigger}
         type="button"
-        className={styles.icon}
+        className={styles.grip}
+        draggable
         aria-label={t('panelBlocks.options', { name })}
-        title={t('panelBlocks.options', { name })}
+        title={t('panelBlocks.gripHint')}
         aria-expanded={open}
         aria-controls={menuId}
         onClick={() => setOpen(!open)}
+        onDragStart={(event) => {
+          setOpen(false)
+          event.dataTransfer.effectAllowed = 'move'
+          onDragStart()
+        }}
+        onDragEnd={onDragEnd}
       >
-        <Ellipsis size={16} aria-hidden="true" />
+        <GripVertical size={14} aria-hidden="true" />
       </button>
       {open && (
         <div id={menuId} className={styles.menu}>

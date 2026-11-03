@@ -64,13 +64,13 @@ export function SheetToggle({ page }: { page: Page }) {
 }
 
 /**
- * Con la hoja puesta, el papel: la página (título, propiedades y texto) se ve y se escribe sobre él, con el tema y la
- * letra de la hoja y a dos columnas (una en el móvil). Sin hoja, tal cual
+ * Con la hoja puesta, el texto se escribe ya maquetado en sus páginas (paged.tsx), con los colores y la letra de la
+ * app: el papel y la letra del tema son para imprimir y el PDF. Sin hoja, tal cual
  */
 export function SheetPaper({ page, children }: { page: Page; children: ReactNode }) {
   if (!page.sheet) return <>{children}</>
   return (
-    <div className={paper.paper} data-theme={page.sheet.theme} data-sheet-paper="">
+    <div className={paper.plain} data-theme={page.sheet.theme} data-sheet-paper="">
       {children}
     </div>
   )

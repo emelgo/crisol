@@ -82,11 +82,17 @@ test('propiedades y etiquetas: se guardan, siguen al recargar y cuentan en el pa
 
   // Se escriben en el sitio y se guardan solas, sin «Guardar»
   const editor = page.getByRole('region', { name: 'Propiedades' })
-  await editor.getByRole('button', { name: 'Etiquetas' }).click()
+  // Se añaden desde «Añadir bloque» del panel, como en Everlore
+  const panel = page.getByRole('complementary', { name: 'Panel de la página' })
+  const addFromPanel = async (name: string) => {
+    await panel.getByRole('button', { name: 'Añadir bloque' }).click()
+    await panel.getByRole('button', { name, exact: true }).click()
+  }
+  await addFromPanel('Etiquetas')
   await editor.getByLabel('Valor de la propiedad 1').fill('lugar/ciudad, costa')
   await editor.getByLabel('Valor de la propiedad 1').press('Enter')
   await expect(editor.getByRole('button', { name: 'Quitar costa' })).toBeVisible()
-  await editor.getByRole('button', { name: '+ Propiedad' }).click()
+  await addFromPanel('Propiedad')
   await editor.getByLabel('Nombre de la propiedad 2').fill('Región')
   await editor.getByLabel('Nombre de la propiedad 2').press('Enter')
   await editor.getByLabel('Tipo de la propiedad 2').selectOption({ label: 'Páginas' })
@@ -207,8 +213,11 @@ test('la wiki, en los dos temas y en el móvil @a11y', async ({ page }) => {
   await page.getByRole('button', { name: 'Más acciones' }).click()
   await check()
   await page.keyboard.press('Escape')
-  await page.getByRole('button', { name: 'Etiquetas' }).click()
-  await page.getByRole('button', { name: '+ Propiedad' }).click()
+  const side = page.getByRole('complementary', { name: 'Panel de la página' })
+  for (const name of ['Etiquetas', 'Propiedad']) {
+    await side.getByRole('button', { name: 'Añadir bloque' }).click()
+    await side.getByRole('button', { name, exact: true }).click()
+  }
   await check()
   await page.getByLabel('Valor de la propiedad 1').fill('lugar')
   await page.getByLabel('Valor de la propiedad 1').press('Enter')

@@ -1,4 +1,4 @@
-import type { Page } from '@crisol/contracts'
+import type { Page, SheetSettings } from '@crisol/contracts'
 import { BODY_FIELD, calloutKindOf, editorExtensions, fillMissingIds } from '@crisol/editor'
 import type { HocuspocusProvider } from '@hocuspocus/provider'
 import { type Editor, Extension, InputRule } from '@tiptap/core'
@@ -36,6 +36,7 @@ import {
   SeparatePageContext,
   useNestedOptions
 } from './separate.tsx'
+import { PagedSheet, SheetLayout } from './sheet/paged.tsx'
 import { SlashMenu } from './slash-menu.tsx'
 import { withNodeView } from './views.ts'
 
@@ -100,6 +101,8 @@ export function PageBody({ page }: { page: Page }) {
               provider={session.provider}
               editable={!page.locked}
               ready={synced}
+              sheet={page.sheet}
+              title={page.title}
             />
           </NestedOptionsContext.Provider>
         </PageLinksContext.Provider>
@@ -179,14 +182,22 @@ function BodyEditor({
   document,
   provider,
   editable,
-  ready
+  ready,
+  sheet,
+  title
 }: {
   pageId: string
   document: Y.Doc
   provider: HocuspocusProvider
   editable: boolean
   ready: boolean
+  /** Con hoja: el texto, maquetado en sus páginas; y los bloques de hoja en el menú «/» */
+  sheet: SheetSettings | null
+  title: string
 }) {
+  // El editor se crea una vez: lo de la hoja se lee al momento
+  const isSheet = useRef(sheet !== null)
+  isSheet.current = sheet !== null
   const { t } = useTranslation()
   const api = useApi()
   const announce = useAnnounce()
@@ -241,8 +252,10 @@ function BodyEditor({
         EmptyHint.configure({ text: t('editor.placeholder') }),
         GhostLine.configure({ className: styles.ghostLine ?? '' }),
         CalloutShortcut.configure({ makeSecret: (editor) => void context.makeSeparate(editor, 'secret') }),
+        SheetLayout,
         SlashMenu.configure({
           nested: false,
+          sheet: () => isSheet.current,
           name: (block) => t(`blocks.${block.label}`),
           context,
           announce: (block) => announce(t('blocks.inserted', { block: t(`blocks.${block.label}`).toLowerCase() }))
@@ -304,7 +317,9 @@ function BodyEditor({
     <div aria-busy={!ready}>
       {/* Sin barra de botones encima: los bloques, con «/»; buscar en la página, con Ctrl+Alt+F */}
       {editor && <FindBar editor={editor} />}
-      <EditorContent editor={editor} />
+      <PagedSheet editor={editor} settings={sheet} title={title}>
+        <EditorContent editor={editor} />
+      </PagedSheet>
       <input
         ref={filePicker}
         type="file"

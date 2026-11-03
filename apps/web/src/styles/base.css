@@ -517,6 +517,19 @@ html:active-view-transition-type(seccion)::view-transition-new(root) {
   }
 }
 
+/* La página del mundo (su título y su texto), por encima de la portada que llega: aparece mientras se posa */
+::view-transition-group(pagina-mundo) {
+  animation: none;
+}
+
+::view-transition-old(pagina-mundo) {
+  animation: deja-paso 200ms ease-in both;
+}
+
+::view-transition-new(pagina-mundo) {
+  animation: toma-el-relevo 380ms ease-out 260ms both;
+}
+
 /* La tarjeta y la cabecera no se mezclan todo el rato: la de antes deja paso pronto a la nueva */
 ::view-transition-old(mundo-actual) {
   animation: deja-paso 340ms ease-in both;

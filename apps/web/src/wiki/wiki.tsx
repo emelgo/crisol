@@ -25,7 +25,7 @@ import { BookmarkButton, Bookmarks, OpenTabs } from './navigation.tsx'
 import { NewPageContext, NewPageDialog, type NewPageRequest } from './new-page.tsx'
 import { useWikiPanel } from './panel.tsx'
 import { PanelBlocks } from './panel-blocks.tsx'
-import { PageProperties } from './properties.tsx'
+import { PageProperties, type PropertyAdder } from './properties.tsx'
 import { QuickSwitcher } from './quick-switcher.tsx'
 import { SheetMenu, SheetPaper, SheetToggle } from './sheet/controls.tsx'
 import { PageTabs, usePageTabs } from './tabs/page-tabs.tsx'
@@ -64,8 +64,9 @@ export function WikiLayout({
   const asideId = useId()
   const headingId = useId()
   // El cuadro de «Página nueva» (o de una subpágina), abierto
-  const [creating, setCreating] = useState<{ parent: { id: string; title: string } | null } | null>(null)
-  const requestNewPage = useCallback<NewPageRequest>((parent) => setCreating({ parent }), [])
+  const [creating, setCreating] = useState<{ parent: { id: string; title: string } | null; n: number } | null>(null)
+  // Cada vez, un cuadro nuevo (su número): nunca se reutiliza uno que se cerró
+  const requestNewPage = useCallback<NewPageRequest>((parent) => setCreating({ parent, n: Date.now() }), [])
   // Lo que se escribe en el buscador de cada vista (en las páginas, por nombre o #etiqueta)
   const [filter, setFilter] = useState('')
   const navigate = useNavigate()
@@ -173,15 +174,23 @@ export function WikiLayout({
           <OpenTabs worldId={worldId} current={current} />
           <CollabSocket>{children(world)}</CollabSocket>
         </div>
-        {creating && <NewPageDialog worldId={worldId} parent={creating.parent} onClose={() => setCreating(null)} />}
+        {creating && (
+          <NewPageDialog
+            key={creating.n}
+            worldId={worldId}
+            parent={creating.parent}
+            onClose={() => setCreating(null)}
+          />
+        )}
       </div>
     </NewPageContext.Provider>
   )
 }
 
 /**
- * Como en Archivos, las fichas de los lados empiezan a la altura de lo que va bajo el título (aquí, las pestañas de la
- * página): se mide dónde quedan y se pasa al CSS (--side-top para la de la izquierda; --panel-top, la de la derecha)
+ * Como en Archivos, las fichas de los lados empiezan a la misma altura que allí (8,5rem desde arriba: su margen y el
+ * hueco del título), haya portada o no. La de la izquierda lo hace con su margen (CSS); la de la derecha va dentro de
+ * la página, así que se mide cuánto tiene que subir o bajar (--panel-top)
  */
 function useSideTop(root: RefObject<HTMLDivElement | null>, ready: boolean) {
   useLayoutEffect(() => {
@@ -190,16 +199,14 @@ function useSideTop(root: RefObject<HTMLDivElement | null>, ready: boolean) {
     let frame = 0
     const measure = () => {
       frame = 0
-      const anchor = element.querySelector('[data-side-anchor]')
-      const entry = anchor?.closest('[data-entry]')
-      if (!anchor || !entry) {
-        element.style.removeProperty('--side-top')
-        element.style.removeProperty('--panel-top')
-        return
-      }
-      const top = anchor.getBoundingClientRect().top
-      element.style.setProperty('--side-top', `${top - element.getBoundingClientRect().top}px`)
-      element.style.setProperty('--panel-top', `${top - entry.getBoundingClientRect().top}px`)
+      const entry = element.querySelector('[data-entry]')
+      if (!entry) return element.style.removeProperty('--panel-top')
+      const rem = Number.parseFloat(getComputedStyle(document.documentElement).fontSize) || 16
+      const top = SIDE_TOP_REM * rem
+      element.style.setProperty(
+        '--panel-top',
+        `${top - (entry.getBoundingClientRect().top - element.getBoundingClientRect().top)}px`
+      )
     }
     const schedule = () => {
       if (!frame) frame = requestAnimationFrame(measure)
@@ -216,6 +223,9 @@ function useSideTop(root: RefObject<HTMLDivElement | null>, ready: boolean) {
     }
   }, [root, ready])
 }
+
+/** Donde empiezan las fichas de los lados, como en Archivos (su relleno de 2rem y su margen de 6,5rem) */
+const SIDE_TOP_REM = 8.5
 
 /** Normalizado para comparar: sin mayúsculas ni tildes */
 const plain = (text: string) => text.normalize('NFD').replace(/\p{M}/gu, '').toLocaleLowerCase('es')
@@ -548,6 +558,7 @@ function MoreActions({ page }: { page: Page }) {
           <SheetMenu page={page} />
           {/* Lo demás (subpágina, renombrar, mover, borrar…), con el botón derecho en el árbol */}
           <ExportPage page={page} />
+          <Versions page={page} />
         </div>
       )}
     </div>
@@ -704,6 +715,8 @@ export function EntryView({
 }) {
   const { t } = useTranslation()
   const main = useRef<HTMLElement>(null)
+  // Añadir etiquetas o una propiedad desde «Añadir bloque» del panel: lo hace la ficha de propiedades
+  const addProperty = useRef<PropertyAdder | null>(null)
   return (
     <>
       {/* La portada, a todo lo ancho (la del mundo en su portada; si no, la de la página o «Añadir portada») */}
@@ -745,11 +758,14 @@ export function EntryView({
         </article>
         <aside aria-label={t('wiki.pagePanel')} className={styles.entryPanel} data-tour="panel-bloques">
           {/* Las propiedades, a un lado (como los bloques del panel de Everlore) */}
-          <PageProperties key={page.id} page={page} />
-          <PanelBlocks key={`bloques-${page.id}`} page={page} />
+          <PageProperties key={page.id} page={page} adders={false} adderRef={addProperty} />
+          <PanelBlocks
+            key={`bloques-${page.id}`}
+            page={page}
+            onAddProperty={page.locked ? undefined : (kind) => addProperty.current?.(kind)}
+          />
           <Backlinks key={`enlaces-${page.id}`} page={page} />
           {!active && <Contents key={`indice-${page.id}`} root={main} />}
-          <Versions key={`versiones-${page.id}`} page={page} />
         </aside>
       </div>
     </>

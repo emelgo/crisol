@@ -22,15 +22,23 @@ export interface SlashMenuOptions {
   context: BlockContext | null
   /** Dice a los lectores de pantalla qué bloque se puso */
   announce: (block: BlockChoice) => void
+  /** Si la página es una hoja: solo entonces salen sus bloques (saltos, columnas, statblock…) */
+  sheet: () => boolean
 }
 
 export const SlashMenu = Extension.create<SlashMenuOptions>({
   name: 'slashMenu',
   // Antes que las teclas de las tablas y las listas: con el menú abierto, Intro y Tab son suyos
   priority: 200,
-  addOptions: () => ({ nested: false, name: (block) => block.label, context: null, announce: () => {} }),
+  addOptions: () => ({
+    nested: false,
+    name: (block) => block.label,
+    context: null,
+    announce: () => {},
+    sheet: () => false
+  }),
   addProseMirrorPlugins() {
-    const { nested, name, context, announce } = this.options
+    const { nested, name, context, announce, sheet } = this.options
     return [
       Suggestion<BlockChoice, BlockChoice>({
         editor: this.editor,
@@ -38,7 +46,7 @@ export const SlashMenu = Extension.create<SlashMenuOptions>({
         char: '/',
         // Ni dentro del código ni en un título de tabla raro: solo en texto normal
         allow: ({ state, range }) => state.doc.resolve(range.from).parent.type.name !== 'codeBlock',
-        items: ({ query }) => findBlocks(query, name, nested),
+        items: ({ query }) => findBlocks(query, name, nested).filter((block) => block.group !== 'sheet' || sheet()),
         command: ({ editor, range, props: block }) => {
           editor.chain().focus().deleteRange(range).run()
           void Promise.resolve(block.run(editor, context ?? { makeSeparate: async () => undefined })).then(() =>
@@ -170,6 +178,8 @@ const SlashList = forwardRef<SlashListHandle, SlashListProps>(function SlashList
             data-nested={(entry.type === 'block' && entry.nested) || undefined}
             // El foco se queda en el texto: se elige al pulsar, sin quitárselo
             tabIndex={-1}
+            // Al pasar el ratón, esa es la elegida (como con las flechas)
+            onMouseEnter={() => setActiveId(entryId(entry))}
             onMouseDown={(event) => {
               event.preventDefault()
               choose(entry)

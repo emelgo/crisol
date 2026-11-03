@@ -10,6 +10,9 @@
 
   /* Como Archivos: la columna del centro (el título, las pestañas y el texto) y, a los lados, fuera de ella, el árbol y
      el panel de la página; las dos fichas empiezan a la altura de las pestañas (--side-top, lo mide WikiLayout) */
+  /* Donde empiezan las fichas de los lados: como en Archivos */
+  --side-top: 8.5rem;
+
   display: grid;
   grid-template-columns: minmax(14rem, 20rem) minmax(0, 1fr) minmax(14rem, 20rem);
   column-gap: var(--space-6);
@@ -35,7 +38,9 @@
   max-inline-size: 20rem;
   max-block-size: calc(100dvh - 2 * var(--space-4));
   overflow-y: auto;
-  margin-block-start: var(--side-top, 6.5rem);
+  margin-block-start: var(--side-top);
+  /* Hasta abajo de la ventana: una ficha alta, no una cajita */
+  min-block-size: calc(100dvh - var(--side-top) - var(--space-4));
   padding: var(--space-3) var(--space-3) var(--space-4);
   border: 1px solid var(--color-frame);
   border-radius: 6px;
@@ -228,6 +233,59 @@
   inline-size: 100%;
 }
 
+/* Como el menú del botón derecho del árbol: filas sin caja, compactas; «Versiones» se despliega dentro */
+.morePanel {
+  gap: 0;
+  padding: var(--space-1);
+  border-radius: 10px;
+  box-shadow: 0 0.75rem 2rem rgb(0 0 0 / 0.22);
+}
+
+.morePanel :is(button, a),
+.morePanel section[aria-labelledby] > h2 > button {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--space-2);
+  inline-size: 100%;
+  min-block-size: 2rem;
+  padding: 0 var(--space-2);
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 400;
+  text-align: start;
+  text-decoration: none;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.morePanel :is(button, a):hover {
+  background: color-mix(in srgb, var(--color-text) 8%, transparent);
+}
+
+.morePanel section[aria-labelledby] {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  clip-path: none;
+}
+
+.morePanel section[aria-labelledby]::before {
+  display: none;
+}
+
+.morePanel section[aria-labelledby] > h2 {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font: inherit;
+}
+
 /*
  * La página, como en Everlore: una columna con la cabecera, las pestañas y lo de la elegida; el panel de la derecha,
  * fijo a toda la altura de la ventana. Mientras se ve, todo lo de la wiki le deja sitio
@@ -237,6 +295,12 @@
   grid-column: 1 / -1;
   grid-template-columns: subgrid;
   align-items: start;
+}
+
+/* Su propia capa al entrar o salir del mundo (solo mientras dura: si no, atraparía las barras flotantes): el título
+   sale con la portada, no debajo de ella hasta que acaba */
+:global(html:active-view-transition-type(entrar-mundo, salir-mundo)) .entryMain {
+  view-transition-name: pagina-mundo;
 }
 
 .entryMain {
@@ -359,7 +423,8 @@
   max-inline-size: 20rem;
   max-block-size: calc(100dvh - 2 * var(--space-4));
   overflow-y: auto;
-  margin-block-start: var(--panel-top, 6.5rem);
+  margin-block-start: var(--panel-top, 0);
+  min-block-size: calc(100dvh - var(--side-top) - var(--space-4));
   padding: var(--space-4);
   border: 1px solid var(--color-frame);
   border-radius: 6px;
@@ -396,6 +461,7 @@
     position: static;
     grid-column: 1;
     inline-size: auto;
+    min-block-size: 0;
     max-block-size: none;
     margin-block-start: var(--space-8);
   }
@@ -662,6 +728,7 @@
     display: block;
     inline-size: min(20rem, 85vw);
     block-size: auto;
+    min-block-size: 0;
     max-block-size: none;
     margin: 0;
     padding: var(--space-4);

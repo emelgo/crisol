@@ -24,6 +24,8 @@ test('las versiones de la página: verlas, restaurar una y deshacerlo, sin recar
   await page.goto(`/mundos/${worldId}/wiki/${pageId}`)
   await expect(body(page)).toContainText('Lo que vino después.')
 
+  // Las versiones, en «⋯» de la página
+  await page.getByRole('button', { name: 'Más acciones' }).click()
   const panel = page.getByRole('region', { name: 'Versiones' })
   await panel.getByRole('button', { name: 'Versiones' }).click()
   await expect(panel.getByRole('listitem')).toHaveCount(2)

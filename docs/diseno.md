@@ -91,6 +91,11 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   (desplegables que se abren al pasar el ratón) y borrar. «⋯» de la página, solo exportar.
 - **Las pestañas abiertas se recolocan** arrastrándolas (o Alt + flechas). Cerrar la última lleva a la portada del
   mundo sin rehacer la pantalla.
+- **Las fichas de los lados de la página empiezan donde las de Archivos** (a la misma altura, haya portada o no) y
+  llegan hasta abajo de la ventana.
+- **Los bloques del panel, con sus seis puntos**: se arrastran para moverlos y, al pulsarlos, sus opciones (sin «⋯»).
+  Las etiquetas y las propiedades se añaden también desde «Añadir bloque» («De la página»). Las versiones, en «⋯» de
+  la página, no en el panel. En los menús, pasar el ratón por una opción la elige.
 - **Propiedades y etiquetas, como los bloques del panel**: el nombre pequeño en mayúsculas encima y el valor debajo; el
   tipo y la ×, al acercarse. «Exportar todas las páginas», un icono en la esquina de la ficha del árbol.
 - **Los desplegables flotan y no mueven nada** (como «Marcar»: «Guardar en», los grupos de un clic y un campo para uno
@@ -125,8 +130,11 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   columna de iconos arriba a la izquierda; el botón derecho ofrece «Pin aquí» y «Pin con página nueva» (su nombre es
   el de la página, que nace como subpágina). Pulsar un pin abre su panel a la derecha (abajo en el móvil), donde todo
   se guarda al momento; arrastrarlo lo mueve y el doble clic abre su página. Los pines, las ocho formas de Everlore.
-- **La hoja es lo que hace única la wiki**, y se escribe encima: con la hoja puesta, la página entera va sobre el
-  papel del tema, a dos columnas (una en el móvil). Las páginas numeradas, al imprimir y en el PDF.
+- **La hoja es lo que hace única la wiki**, y se escribe ya maquetada (Enrique, 2026-11-03: «verlo directamente como
+  se ve en la hoja pero sin las texturas»): con la hoja puesta, el texto cae en sus páginas y sus dos columnas como al
+  imprimir (el mismo paginador y la misma letra y tamaño), con su número y su pie, pero con los colores de la app; el
+  papel y las texturas del tema, solo al imprimir y en el PDF. En el móvil, una columna seguida. Los bloques de hoja
+  (saltos, statblock, nota lateral, a lo ancho, índice) solo salen en «/» en las páginas con hoja.
 
 - **Los cambios no son bruscos y se notan**: un elemento nuevo entra animado (sube y crece, con el contorno
   iluminado un momento) cuando el cuadro que lo creó ya se ha ido, y uno borrado baja, encoge y se desvanece antes de

@@ -1,7 +1,7 @@
 import type { Page, PageProperty } from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { type KeyboardEvent, useEffect, useId, useRef, useState } from 'react'
+import { type KeyboardEvent, type MutableRefObject, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
@@ -142,7 +142,19 @@ function PropertyValue({ property, worldId }: { property: PageProperty; worldId:
  * un valor lo cambia; Intro o salir del campo lo guarda, Escape lo deshace. Sin «Guardar» ni «Cancelar». Con la página
  * bloqueada, solo se leen
  */
-export function PageProperties({ page }: { page: Page }) {
+/** Añadir desde fuera (desde «Añadir bloque» del panel): las etiquetas o una propiedad nueva */
+export type PropertyAdder = (kind: 'tags' | 'property') => void
+
+export function PageProperties({
+  page,
+  adders = true,
+  adderRef
+}: {
+  page: Page
+  /** Sus botones de añadir; en el panel no: se añade desde «Añadir bloque» */
+  adders?: boolean
+  adderRef?: MutableRefObject<PropertyAdder | null>
+}) {
   const { t } = useTranslation()
   if (page.locked) {
     if (page.properties.length === 0) return null
@@ -161,13 +173,21 @@ export function PageProperties({ page }: { page: Page }) {
       </section>
     )
   }
-  return <InlineProperties page={page} />
+  return <InlineProperties page={page} adders={adders} adderRef={adderRef} />
 }
 
 const sameProperties = (a: readonly PageProperty[], b: readonly PageProperty[]) =>
   JSON.stringify(a) === JSON.stringify(b)
 
-function InlineProperties({ page }: { page: Page }) {
+function InlineProperties({
+  page,
+  adders,
+  adderRef
+}: {
+  page: Page
+  adders: boolean
+  adderRef: MutableRefObject<PropertyAdder | null> | undefined
+}) {
   const { t } = useTranslation()
   const api = useApi()
   const queryClient = useQueryClient()
@@ -216,6 +236,16 @@ function InlineProperties({ page }: { page: Page }) {
     commit(next)
   }
   const present = new Set(rows.map((row) => row.name.trim().toLocaleLowerCase('es')))
+  // Desde «Añadir bloque»: las etiquetas (si ya están, a su campo) o una propiedad nueva
+  if (adderRef) {
+    adderRef.current = (kind) => {
+      if (kind === 'property') return add()
+      const tags = rows.find((row) => isTagsName(row.name))
+      if (tags) setFresh({ key: tags.key, to: 'value' })
+      else add('etiquetas', 'list')
+    }
+  }
+  if (!adders && rows.length === 0) return null
   return (
     <section ref={box} aria-label={t('properties.title')} className={styles.properties} data-properties="">
       {rows.length > 0 && (
@@ -240,21 +270,23 @@ function InlineProperties({ page }: { page: Page }) {
           ))}
         </div>
       )}
-      <div className={styles.adders}>
-        <button type="button" className={styles.addButton} onClick={() => add()}>
-          {t('properties.addOne')}
-        </button>
-        {RESERVED.filter((reserved) => !present.has(reserved.name)).map((reserved) => (
-          <button
-            key={reserved.name}
-            type="button"
-            className={styles.addButton}
-            onClick={() => add(reserved.name, reserved.type)}
-          >
-            {t(`properties.reserved.${reserved.name}`)}
+      {adders && (
+        <div className={styles.adders}>
+          <button type="button" className={styles.addButton} onClick={() => add()}>
+            {t('properties.addOne')}
           </button>
-        ))}
-      </div>
+          {RESERVED.filter((reserved) => !present.has(reserved.name)).map((reserved) => (
+            <button
+              key={reserved.name}
+              type="button"
+              className={styles.addButton}
+              onClick={() => add(reserved.name, reserved.type)}
+            >
+              {t(`properties.reserved.${reserved.name}`)}
+            </button>
+          ))}
+        </div>
+      )}
       <FormError message={invalid ?? (save.error ? errorText(save.error) : null)} />
     </section>
   )

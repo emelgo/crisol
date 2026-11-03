@@ -64,6 +64,8 @@ export function NewPageDialog({
     onSuccess: async ({ page, tab, named }) => {
       await queryClient.invalidateQueries({ queryKey: ['pages', worldId] })
       dialog.current?.close()
+      // Cerrado del todo, aunque el cuadro no avise (si no, la próxima vez no se abriría)
+      onClose()
       await navigate({
         to: '/mundos/$worldId/wiki/$pageId',
         params: { worldId, pageId: page.id },

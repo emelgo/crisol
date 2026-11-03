@@ -522,13 +522,15 @@ export const es = {
       rating: 'Estrellas',
       tokens: 'Fichas',
       subpages: 'Subpáginas',
-      tagged: 'Páginas con etiqueta'
+      tagged: 'Páginas con etiqueta',
+      tags: 'Etiquetas',
+      property: 'Propiedad'
     },
-    groups: { notes: 'Notas', meters: 'Medidores', lists: 'Listas' },
+    groups: { data: 'De la página', notes: 'Notas', meters: 'Medidores', lists: 'Listas' },
     title: 'Título',
     textPlaceholder: 'Escribe aquí…',
     options: 'Opciones de «{{name}}»',
-    drag: 'Arrastra para mover «{{name}}»',
+    gripHint: 'Arrastra para moverlo; pulsa para sus opciones',
     up: 'Subir',
     down: 'Bajar',
     remove: 'Quitar el bloque',

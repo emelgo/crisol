@@ -19,11 +19,19 @@ async function openPage(page: Page, markdown = '') {
   return { worldId, pageId: sheet.id as string }
 }
 
-test('los bloques de hoja con «/»: se ven discretos en la vista sencilla y salen en el Markdown', async ({ page }) => {
+test('los bloques de hoja con «/», solo en una página con hoja; salen en el Markdown', async ({ page }) => {
   // Una página vacía y todo escrito en orden: así no importa dónde deja el cursor la carga (en la CI, a veces, al
   // principio, antes de sincronizar)
   const { pageId } = await openPage(page)
   await expect(body(page).locator('xpath=ancestor::div[@aria-busy][1]')).toHaveAttribute('aria-busy', 'false')
+  // Sin hoja, el menú «/» no los ofrece
+  await body(page).click()
+  await page.keyboard.type('/salto')
+  await expect(page.getByRole('listbox', { name: 'Bloques' }).getByRole('option', { name: /Salto de página/ })).toHaveCount(0)
+  await page.keyboard.press('Escape')
+  for (let i = 0; i < 6; i++) await page.keyboard.press('Backspace')
+  await page.getByRole('button', { name: 'Hoja', exact: true }).click()
+  await expect(page.getByRole('button', { name: 'Hoja', exact: true })).toHaveAttribute('aria-pressed', 'true')
   await body(page).click()
   await page.keyboard.type('## Guarida')
   await page.keyboard.press('Enter')

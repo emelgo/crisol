@@ -411,6 +411,7 @@ const LinkList = forwardRef<ListHandle, LinkListProps>(function LinkList({ items
             aria-selected={choice === current}
             className={menu.option}
             tabIndex={-1}
+            onMouseEnter={() => setActiveKey(keyOf(choice))}
             onMouseDown={(event) => {
               event.preventDefault()
               command(choice)

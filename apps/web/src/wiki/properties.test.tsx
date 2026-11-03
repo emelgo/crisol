@@ -48,6 +48,13 @@ const renderPort = (properties: PageProperty[] = [], icon: string | null = null)
   return { api, router }
 }
 
+/** Las etiquetas y las propiedades se añaden desde «Añadir bloque» del panel */
+async function addFromPanel(name: 'Etiquetas' | 'Propiedad') {
+  const panel = within(await screen.findByRole('complementary', { name: 'Panel de la página' }))
+  await userEvent.click(panel.getByRole('button', { name: 'Añadir bloque' }))
+  await userEvent.click(panel.getByRole('button', { name }))
+}
+
 describe('las propiedades de una página', () => {
   const saved = async (api: ReturnType<typeof renderPort>['api']) =>
     (await api.client.call('getPage', { pageId: PORT })).properties
@@ -80,13 +87,13 @@ describe('las propiedades de una página', () => {
     await waitFor(async () => expect(await saved(api)).toEqual([{ name: 'Población', type: 'number', value: 5000 }]))
 
     // Las etiquetas: se escribe y se pone con Intro; se guarda ya
-    await userEvent.click(properties.getByRole('button', { name: 'Etiquetas' }))
+    await addFromPanel('Etiquetas')
     await userEvent.type(properties.getByLabelText('Valor de la propiedad 2'), 'lugar/ciudad{Enter}')
     await waitFor(async () =>
       expect(await saved(api)).toContainEqual({ name: 'etiquetas', type: 'list', value: ['lugar/ciudad'] })
     )
     // Una nueva: el foco va a su nombre; Intro pasa al valor
-    await userEvent.click(properties.getByRole('button', { name: '+ Propiedad' }))
+    await addFromPanel('Propiedad')
     expect(document.activeElement).toBe(properties.getByLabelText('Nombre de la propiedad 3'))
     await userEvent.keyboard('Clima{Enter}')
     expect(document.activeElement).toBe(properties.getByLabelText('Valor de la propiedad 3'))
@@ -110,7 +117,7 @@ describe('las propiedades de una página', () => {
 
   it('una propiedad de páginas se rellena eligiendo por el título', async () => {
     const { api } = renderPort()
-    await userEvent.click(await screen.findByRole('button', { name: '+ Propiedad' }))
+    await addFromPanel('Propiedad')
     await userEvent.keyboard('Región')
     await userEvent.selectOptions(screen.getByLabelText('Tipo de la propiedad 1'), 'Páginas')
     await userEvent.type(screen.getByLabelText('Valor de la propiedad 1'), 'Costa Gris')
