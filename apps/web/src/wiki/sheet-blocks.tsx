@@ -51,16 +51,14 @@ function ColumnsView({ node, editor, selected }: NodeViewProps) {
   const { t } = useTranslation()
   return (
     <NodeViewWrapper
-      className={styles.columns}
+      // Como el salto de página: una raya fina, con su sitio, y lo que cambia a la derecha
+      className={`${styles.break} ${styles.columns}`}
       data-selected={selected || undefined}
       hidden={!editor.isEditable}
       contentEditable={false}
     >
-      <span
-        className={styles.breakLabel}
-        title={t(node.attrs.count === 1 ? 'sheet.columnsChangeOne' : 'sheet.columnsChangeTwo')}
-      >
-        {t(node.attrs.count === 1 ? 'sheet.columnsShortOne' : 'sheet.columnsShortTwo')}
+      <span className={styles.breakLabel}>
+        {t(node.attrs.count === 1 ? 'sheet.columnsChangeOne' : 'sheet.columnsChangeTwo')}
       </span>
     </NodeViewWrapper>
   )

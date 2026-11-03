@@ -88,26 +88,15 @@
 }
 
 /* Un cambio de columnas: sin alto (no ocupa sitio en la hoja); una raya discontinua con su rótulo, encima */
+/* El cambio de columnas: la raya del salto, en el color de acento (no corta la página, solo cambia las columnas) */
 .columns {
-  position: relative;
-  block-size: 0;
-  margin: 0 !important;
-  border-block-start: 1px dashed color-mix(in srgb, var(--color-accent-text) 55%, transparent);
-  overflow: visible;
-}
-
-.columns .breakLabel {
-  /* En el margen de la izquierda, corto: no se monta sobre el texto */
-  position: absolute;
-  inset-block-start: -0.55em;
-  inset-inline-end: calc(100% + 0.5rem);
-  white-space: nowrap;
   color: var(--color-accent-text);
-  font-family: var(--font-body);
-  font-size: 0.6875rem;
-  font-weight: 600;
 }
 
-.columns[data-selected] {
+.columns::before {
+  border-block-start-color: color-mix(in srgb, var(--color-accent-text) 55%, transparent);
+}
+
+.columns[data-selected]::before {
   border-block-start-style: solid;
 }

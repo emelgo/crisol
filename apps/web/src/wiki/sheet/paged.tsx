@@ -116,10 +116,14 @@ function layOut(editor: Editor, settings: SheetSettings, k: number) {
   state.doc.forEach((node, offset, index) => {
     if (node.type.name === 'columnsChange') columns = node.attrs.count === 1 ? 1 : 2
     const dom = view.nodeDOM(offset)
-    // El cambio no ocupa sitio (su raya va encima de lo que sigue)
-    const height = dom instanceof HTMLElement && node.type.name !== 'columnsChange' ? heightOf(dom) : 0
+    const height = dom instanceof HTMLElement ? heightOf(dom) : 0
     heights.push(height)
-    blocks.push({ id: String(index), kind: kindOf(node, columns), height })
+    // El cambio de columnas tiene su sitio en pantalla, pero al imprimir no sale: no cuenta para repartir las páginas
+    blocks.push({
+      id: String(index),
+      kind: kindOf(node, columns),
+      height: node.type.name === 'columnsChange' ? 0 : height
+    })
   })
   const pages = paginate(blocks, g.contentHeight)
   const placed: string[] = blocks.map(
