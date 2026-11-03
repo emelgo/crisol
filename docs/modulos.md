@@ -27,8 +27,8 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
 - **Hechas las tareas 1 y 2** (campos con id y tipos nuevos; sus controles en el panel). **Punto de control 1**, en
   local: un desplegable, un enlace a una página y un reloj en el panel.
 - **Hechas las tareas 3 y 4**: las seis plantillas de serie (`listar_plantillas`, `ver_plantilla`) y crear desde
-  plantilla en el servidor y por `crear_paginas` (migración 0035, ya aplicada en la base de desarrollo). **Lo
-  siguiente**: la tarea 5 («Desde plantilla» en «Página nueva»).
+  plantilla en el servidor y por `crear_paginas` (migración 0035, ya aplicada en la base de desarrollo). Hecha la
+  tarea 5 («Desde plantilla» en «Página nueva»). **Lo siguiente**: la tarea 6 (crear desde un enlace sin resolver).
 - REA ya no se usa: los estudios se hacen con craft-anything (cambiado en `CLAUDE.md` y `research/README.md`).
 
 ### Para retomar (2026-11-03, cierre de la interfaz)

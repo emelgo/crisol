@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
 import { FormError } from '../components/field.tsx'
+import { useTemplates } from '../templates/picker.tsx'
 import fieldStyles from './field-controls.module.css'
 import { ChoiceSelect, ClockField } from './field-controls.tsx'
 import styles from './properties.module.css'
@@ -275,13 +276,28 @@ function InlineProperties({
   const [invalid, setInvalid] = useState<string | null>(null)
   // La fila recién añadida, para llevarle el foco (al nombre, o al valor si ya lo trae)
   const [fresh, setFresh] = useState<{ key: string; to: 'name' | 'value' } | null>(null)
+  // Los guardados van en fila: dos seguidos (el tipo y luego el valor) no llegan cambiados de orden; y mientras
+  // quede alguno, lo que llega de fuera (que puede ser de antes de él) no pisa lo de aquí
+  const queue = useRef<Promise<unknown>>(Promise.resolve())
+  const inFlight = useRef(0)
   const save = useMutation({
-    mutationFn: (properties: PageProperty[]) => api.call('setPageProperties', { pageId: page.id, properties }),
+    mutationFn: (properties: PageProperty[]) => {
+      inFlight.current++
+      const run = queue.current
+        .catch(() => undefined)
+        .then(() => api.call('setPageProperties', { pageId: page.id, properties }))
+        .finally(() => {
+          inFlight.current--
+        })
+      queue.current = run
+      return run
+    },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['pages', page.worldId] })
   })
   // Lo que llega de fuera (otra pestaña, la IA) entra si no se está escribiendo aquí
   useEffect(() => {
-    if (!box.current?.contains(document.activeElement)) setRows(page.properties.map(toDraft))
+    if (inFlight.current > 0 || box.current?.contains(document.activeElement)) return
+    setRows(page.properties.map(toDraft))
   }, [page.properties])
   const commit = (next: Draft[]) => {
     setRows(next)
@@ -528,6 +544,8 @@ function ValueField({
   const titles = usePageTitles(worldId)
   const lost = row.type === 'pages' && row.pages.some((id) => !titles.some((p) => p.id === id))
   const trashed = useTrashedTitles(worldId, lost)
+  const templates = useTemplates().data?.templates ?? []
+  const [everyPage, setEveryPage] = useState(false)
   const [choice, setChoice] = useState('')
   const valueId = `${id}-valor`
   const label = t('properties.value', { n })
@@ -547,6 +565,13 @@ function ValueField({
       )
     case 'pages': {
       const single = row.original?.type === 'pages' && row.original.single === true
+      // Las de su tipo primero (sus targets, y las copias de esas plantillas); «Todas las páginas», el resto
+      const targets = row.original?.type === 'pages' ? (row.original.targets ?? []) : []
+      const lineOf = (template: string | null) =>
+        template ? (templates.find((each) => each.id === template)?.line ?? [template]) : []
+      const preferred =
+        targets.length > 0 ? titles.filter((p) => lineOf(p.template).some((id) => targets.includes(id))) : null
+      const offered = preferred && !everyPage ? preferred : titles
       const pick = (title: string) => {
         const found = titles.find((p) => p.title === title)
         // Un enlace a una sola página la cambia; uno a varias la añade
@@ -593,10 +618,15 @@ function ValueField({
             }}
           />
           <datalist id={`${id}-paginas`}>
-            {titles.map((p) => (
+            {offered.map((p) => (
               <option key={p.id} value={p.title} />
             ))}
           </datalist>
+          {preferred && (
+            <button type="button" className={fieldStyles.allPages} onClick={() => setEveryPage(!everyPage)}>
+              {t(everyPage ? 'fields.onlyTargets' : 'fields.allPages')}
+            </button>
+          )}
         </div>
       )
     }

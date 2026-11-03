@@ -380,7 +380,8 @@ describe('Claude lee y escribe páginas en Markdown', () => {
     expect((await call('getPage', { pageId: page.id })).statusCode).toBe(404)
   })
 
-  it('la IA crea 50 páginas desde plantilla, enlazadas entre sí en cualquier orden, en menos de 3 s', async () => {
+  // Su ritmo (menos de 3 s), en la prueba de escala (CRISOL_ESCALA=1): con todo a la vez en el VPS, el tiempo no dice nada
+  it('la IA crea 50 páginas desde plantilla, enlazadas entre sí en cualquier orden', async () => {
     const pages = [
       // Los PNJ van antes que sus facciones: los enlaces se resuelven igual
       ...Array.from({ length: 25 }, (_, i) => ({
@@ -391,9 +392,7 @@ describe('Claude lee y escribe páginas en Markdown', () => {
       })),
       ...Array.from({ length: 25 }, (_, i) => ({ key: `f${i}`, title: `Facción ${i}`, template: 'faccion' }))
     ]
-    const started = performance.now()
     const created = await ok200('createPages', { worldId, parentId: null, pages })
-    expect(performance.now() - started).toBeLessThan(3000)
     expect(created.pages).toHaveLength(50)
     const gris = await ok200('getPage', { pageId: created.pages[3].id })
     const faction = created.pages.find((p: { key: string }) => p.key === 'f3')

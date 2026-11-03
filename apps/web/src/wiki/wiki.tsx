@@ -14,6 +14,8 @@ import list from '../components/list.module.css'
 import { failed, LoadError } from '../components/load-error.tsx'
 import { headingMayTakeFocus, PageTitle, useHeadingFocusRequest } from '../components/page-title.tsx'
 import { WorldBanner } from '../routes/world-card.tsx'
+import { TEMPLATE_ICON } from '../templates/icons.tsx'
+import { useTemplates } from '../templates/picker.tsx'
 import { Backlinks } from './backlinks.tsx'
 import { CollabSocket } from './collab.tsx'
 import { CoverButton, PageCoverImage } from './cover.tsx'
@@ -377,6 +379,7 @@ function PageHead({
           <div className={styles.heading}>
             {page.icon && <PageIcon page={page} />}
             <InlineTitle page={page} autoFocus={startEditing} onDone={named} />
+            {page.template && <TemplateBadge templateId={page.template} />}
             {home && (
               <span className={styles.homeBadge}>
                 <House aria-hidden="true" size={12} />
@@ -389,6 +392,20 @@ function PageHead({
         <div className={styles.pageActions}>{actions}</div>
       </header>
     </>
+  )
+}
+
+/** La plantilla con la que se hizo la página, junto a su título (llevará a ella con la pantalla «Plantillas») */
+function TemplateBadge({ templateId }: { templateId: string }) {
+  const { t } = useTranslation()
+  const template = useTemplates().data?.templates.find((each) => each.id === templateId)
+  if (!template) return null
+  const Icon = TEMPLATE_ICON[template.icon]
+  return (
+    <span className={styles.templateBadge} title={t('templates.madeWith', { name: template.name })}>
+      <Icon aria-hidden="true" size={12} />
+      {template.name}
+    </span>
   )
 }
 

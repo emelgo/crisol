@@ -276,6 +276,7 @@ export const pageActions = [
       parentId: string | null
       title: string
       icon: string | null
+      template: string | null
       level: number
       hasChildren: boolean
     }[] = []

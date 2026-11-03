@@ -135,6 +135,7 @@ describe('la wiki: páginas y árbol', () => {
       parentId: null,
       title: 'Lugares',
       icon: null,
+      template: null,
       hasChildren: true,
       version: 1
     })

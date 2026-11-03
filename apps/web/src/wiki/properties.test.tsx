@@ -34,7 +34,8 @@ const renderPort = (properties: PageProperty[] = [], icon: string | null = null)
         worldId: WORLD.id,
         title: 'Velaria',
         properties: [{ name: 'etiquetas', type: 'list', value: ['lugar/ciudad'] }]
-      }
+      },
+      { worldId: WORLD.id, title: 'La Raqisa', template: 'faccion' }
     ]
   })
   const router = createAppRouter(createMemoryHistory({ initialEntries: [`/mundos/${WORLD.id}/wiki/${PORT}`] }))
@@ -185,6 +186,21 @@ describe('las propiedades de una página', () => {
       expect(property?.type === 'pages' && property.value.length).toBe(1)
       expect(property?.type === 'pages' && property.value[0]).not.toBe(COAST)
     })
+  })
+
+  it('un enlace de un tipo busca primero en las páginas de ese tipo, y «Todas las páginas» enseña el resto', async () => {
+    renderPort([{ name: 'Facción', field: 'faccion', type: 'pages', single: true, targets: ['faccion'], value: [] }])
+    const properties = within(await screen.findByRole('region', { name: 'Propiedades' }))
+    const input = properties.getByLabelText('Valor de la propiedad 1')
+    const offered = () =>
+      [...(document.getElementById(input.getAttribute('list') ?? '')?.querySelectorAll('option') ?? [])].map(
+        (option) => option.value
+      )
+    await waitFor(() => expect(offered()).toEqual(['La Raqisa']))
+    await userEvent.click(properties.getByRole('button', { name: 'Todas las páginas' }))
+    expect(offered()).toContain('Costa Gris')
+    await userEvent.click(properties.getByRole('button', { name: 'Solo las de su tipo' }))
+    expect(offered()).toEqual(['La Raqisa'])
   })
 
   it('un enlace a una página que está en la papelera sale tachado, sin llevar a ella', async () => {

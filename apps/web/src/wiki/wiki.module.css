@@ -847,6 +847,19 @@
 }
 
 /* «Inicio», junto al título de la portada del mundo (como en LegendKeeper) */
+/* La plantilla con la que se hizo, junto al título */
+.templateBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3125rem;
+  padding: 0.1875rem 0.625rem;
+  border: 1px solid color-mix(in srgb, var(--color-text) 14%, transparent);
+  border-radius: 999px;
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
 .homeBadge {
   display: inline-flex;
   align-items: center;

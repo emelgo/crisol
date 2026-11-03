@@ -275,7 +275,9 @@ export const es = {
     clockValue: '{{value}} de {{max}}',
     options: 'Opciones de {{name}}',
     segments: 'Segmentos de {{name}}',
-    trashed: '{{title}}, en la papelera'
+    trashed: '{{title}}, en la papelera',
+    allPages: 'Todas las páginas',
+    onlyTargets: 'Solo las de su tipo'
   },
   icon: {
     add: 'Añadir icono',
@@ -602,8 +604,17 @@ export const es = {
     subTitle: 'Subpágina de «{{parent}}»',
     kind: 'Tipo',
     text: 'Texto',
+    fromTemplate: 'Desde plantilla',
     name: 'Título',
     create: 'Crear'
+  },
+  templates: {
+    label: 'Plantilla',
+    search: 'Buscar plantilla',
+    mine: 'Tuyas',
+    builtIn: 'De serie',
+    none: 'Ninguna plantilla se llama así',
+    madeWith: 'Hecha con la plantilla {{name}}'
   },
   pageTabs: {
     label: 'Pestañas de la página',

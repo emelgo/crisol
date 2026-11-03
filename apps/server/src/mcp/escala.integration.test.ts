@@ -110,4 +110,25 @@ describe.skipIf(!process.env.CRISOL_ESCALA)('a la escala de Eana', () => {
     expect(unresolved.links).toEqual([])
     expect(search.data.total).toBeGreaterThan(0)
   }, 900_000)
+
+  it('50 páginas desde plantilla por crear_paginas, enlazadas entre sí: en menos de 3 s (módulo 2)', async () => {
+    const { userId, call } = await connected()
+    await aiRepo.setAiMode(conn.db, userId, 'copilot')
+    const world = (await call<{ id: string }>('crear_mundo', { name: 'Eana' })).data
+    const pages = [
+      ...Array.from({ length: 25 }, (_, i) => ({
+        key: `pnj${i}`,
+        title: `PNJ ${i}`,
+        template: 'PNJ',
+        markdown: `---\nFacción: "[[Facción ${i}]]"\nEstado: Vive\n---\n`
+      })),
+      ...Array.from({ length: 25 }, (_, i) => ({ key: `f${i}`, title: `Facción ${i}`, template: 'faccion' }))
+    ]
+    const began = performance.now()
+    const result = await call('crear_paginas', { worldId: world.id, parentId: null, pages })
+    const time = performance.now() - began
+    process.stderr.write(`escala: 50 páginas desde plantilla en ${Math.round(time)} ms\n`)
+    expect(result.isError, result.text.slice(0, 300)).toBeFalsy()
+    expect(time).toBeLessThan(3000)
+  })
 })

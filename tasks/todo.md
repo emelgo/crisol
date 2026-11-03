@@ -79,7 +79,10 @@ amplía `@fugas` en la misma tarea. Cobertura ≥ 80 % de lo cambiado (bloquea d
   - Archivos: `packages/db/drizzle/0035_*.sql` y `packages/db/src/schema/pages.ts`, `packages/db/src/repos/pages.ts`,
     `apps/server/src/wiki/templates.ts` (nuevo), `apps/server/src/actions/{pages,page-content}.ts`.
 
-- [ ] **5. «Desde plantilla» en «Página nueva»**
+- [x] **5. «Desde plantilla» en «Página nueva»** — hecha. También: el árbol pinta el icono de la plantilla, el resumen
+  de cada página dice su plantilla, y los guardados de las propiedades van en fila sin que lo que llega de fuera pise lo
+  de aquí mientras quede alguno (se perdía un valor al guardar dos cosas seguidas). El ritmo de 50 páginas desde
+  plantilla va en la prueba de escala (1,5 s); con todo a la vez en el VPS, las pruebas de tiempo fallan a veces.
   - Acepta:
     - El recuadro «Desde plantilla» junto a Texto y Mapa abre la lista (tuyas primero y de serie, con buscador); Intro
       crea con la plantilla elegida, como en el lienzo.

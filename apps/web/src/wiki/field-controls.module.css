@@ -169,3 +169,14 @@
   text-decoration: line-through;
   color: var(--color-muted);
 }
+
+/* En un campo de enlace de un tipo: ver también las demás páginas */
+.allPages {
+  padding: 0.125rem 0.25rem;
+  border: 0;
+  background: transparent;
+  color: var(--color-link);
+  font: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+}

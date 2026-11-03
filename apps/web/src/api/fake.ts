@@ -22,6 +22,7 @@ import type {
 import {
   BUILT_IN_TEMPLATES,
   builtInTemplate,
+  instantiate,
   removeTagIn,
   renameTagIn,
   tagKey,
@@ -51,6 +52,8 @@ export function fakeApi(
       title: string
       icon?: string | null
       properties?: PageProperty[]
+      /** La plantilla de la que salió */
+      template?: string
     }>
     /** Los archivos de los mundos (usedBy: cuántas páginas lo usan) */
     files?: Array<Pick<FileView, 'worldId' | 'name'> & Partial<FileView> & { usedBy?: number }>
@@ -162,6 +165,7 @@ export function fakeApi(
     title: page.title,
     icon: page.icon ?? null,
     properties: page.properties ?? [],
+    ...(page.template ? { template: page.template } : {}),
     version: 1
   }))
   // Las páginas borradas, cada una con las subpáginas que se fueron con ella (todas siguen en la lista, apartadas)
@@ -205,6 +209,7 @@ export function fakeApi(
     parentId: page.parentId,
     title: page.title,
     icon: page.icon,
+    template: page.template ?? null,
     hasChildren: childrenOf(page.worldId, page.id).length > 0,
     version: page.version
   })
@@ -220,7 +225,6 @@ export function fakeApi(
       cover: page.cover ?? null,
       sheet: page.sheet ?? null,
       panel: (page.panel ?? []).map((b) => ({ ...b })),
-      template: page.template ?? null,
       path,
       updatedAt: new Date().toISOString()
     }
@@ -570,15 +574,20 @@ export function fakeApi(
       campaigns.splice(index, 1)
       return {}
     },
-    createPage: ({ worldId, title, parentId, before, after }) => {
+    createPage: ({ worldId, title, parentId, before, after, template }) => {
       if (parentId) pageById(parentId)
-      const page = {
+      // Con plantilla, sus campos y su panel, como el servidor (el esqueleto del texto no se simula)
+      const from = template ? builtInTemplate(template) : undefined
+      if (template && !from) throw new ApiError('TEMPLATE_NOT_FOUND', 400)
+      const made = from ? instantiate(from, () => crypto.randomUUID().replace(/-/g, '').slice(0, 12)) : null
+      const page: StoredPage = {
         id: crypto.randomUUID(),
         worldId,
         parentId: parentId ?? null,
         title,
         icon: null,
-        properties: [],
+        properties: (made?.properties ?? []) as PageProperty[],
+        ...(made ? { panel: made.panel as Page['panel'], template: made.template } : {}),
         version: 1
       }
       place(page, before, after)

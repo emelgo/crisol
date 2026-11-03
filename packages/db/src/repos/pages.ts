@@ -15,6 +15,7 @@ const summaryColumns = {
   position: pages.position,
   title: pages.title,
   icon: pages.icon,
+  template: pages.template,
   version: pages.version
 }
 
@@ -43,7 +44,6 @@ export async function findPage(db: Database, pageId: string) {
       cover: pages.cover,
       sheet: pages.sheet,
       panel: pages.panel,
-      template: pages.template,
       updatedAt: pages.updatedAt,
       hasChildren
     })
@@ -114,16 +114,17 @@ export async function listBranch(db: Database, worldId: string, parentId: string
     position: string
     title: string
     icon: string | null
+    template: string | null
     has_children: boolean
   }>(sql`
     with recursive down as (
-      select id, parent_id, position, title, icon, 1 as level from pages
+      select id, parent_id, position, title, icon, template, 1 as level from pages
       where world_id = ${worldId} and ${top} and deleted_at is null
       union all
-      select p.id, p.parent_id, p.position, p.title, p.icon, down.level + 1 from pages p
+      select p.id, p.parent_id, p.position, p.title, p.icon, p.template, down.level + 1 from pages p
       join down on p.parent_id = down.id where p.deleted_at is null and down.level < ${levels}
     )
-    select id, parent_id, position, title, icon,
+    select id, parent_id, position, title, icon, template,
       exists (select 1 from pages c where c.parent_id = down.id and c.deleted_at is null) as has_children
     from down`)
   return rows.map((row) => ({
@@ -132,6 +133,7 @@ export async function listBranch(db: Database, worldId: string, parentId: string
     position: row.position,
     title: row.title,
     icon: row.icon,
+    template: row.template,
     hasChildren: row.has_children
   }))
 }

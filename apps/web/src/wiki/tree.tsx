@@ -8,6 +8,8 @@ import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
 import { useAnnounce } from '../components/announcer.tsx'
+import { TEMPLATE_ICON } from '../templates/icons.tsx'
+import { useTemplates } from '../templates/picker.tsx'
 import styles from './tree.module.css'
 import { TreeMenu } from './tree-menu.tsx'
 
@@ -410,9 +412,9 @@ export function PageTree({ worldId, currentId, path, onNavigate }: Props) {
             </svg>
           )}
         </span>
-        {/* Su icono, si tiene; si no, el de página (las que tienen dentro, el de varias) */}
+        {/* Su icono, si tiene; si no, el de su plantilla, o el de página (las que tienen dentro, el de varias) */}
         <span aria-hidden="true" className={styles.icon}>
-          {page.icon ?? (page.hasChildren ? <BookCopy size={15} /> : <FileText size={15} />)}
+          {page.icon ?? <PageKindIcon template={page.template ?? null} hasChildren={page.hasChildren} />}
         </span>
         <span className={styles.title} data-untitled={page.title === t('wiki.untitled') || undefined}>
           {page.title}
@@ -469,4 +471,14 @@ export function PageTree({ worldId, currentId, path, onNavigate }: Props) {
       )}
     </div>
   )
+}
+
+/** El dibujo de una página sin icono: el de su plantilla; si no, el de página o el de varias */
+function PageKindIcon({ template, hasChildren }: { template: string | null; hasChildren: boolean }) {
+  const found = useTemplates().data?.templates.find((each) => each.id === template)
+  if (found) {
+    const Icon = TEMPLATE_ICON[found.icon]
+    return <Icon size={15} />
+  }
+  return hasChildren ? <BookCopy size={15} /> : <FileText size={15} />
 }

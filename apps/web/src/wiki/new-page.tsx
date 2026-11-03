@@ -1,10 +1,10 @@
 /**
- * «Página nueva» (y «Nueva subpágina»): un cuadro como el de «Pestaña nueva», con el tipo (texto, o un mapa; lo demás,
- * pronto) y el título. Sin título, la página se abre para ponérselo en el sitio
+ * «Página nueva» (y «Nueva subpágina»): un cuadro como el de «Pestaña nueva», con el tipo (texto, un mapa o desde
+ * plantilla; lo demás, pronto) y el título. Sin título, la página se abre para ponérselo en el sitio
  */
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
-import { Clock, FileText, Map as MapIcon, Network, PenTool } from 'lucide-react'
+import { Clock, FileText, LayoutTemplate, Map as MapIcon, Network, PenTool } from 'lucide-react'
 import { createContext, useContext, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
@@ -14,11 +14,13 @@ import dialogStyles from '../components/dialog.module.css'
 import { FormError } from '../components/field.tsx'
 import form from '../components/form.module.css'
 import { Modal } from '../components/modal.tsx'
+import { TemplatePicker } from '../templates/picker.tsx'
 import styles from './tabs/page-tabs.module.css'
 
 const KINDS = [
   { kind: 'text', icon: FileText, ready: true },
   { kind: 'map', icon: MapIcon, ready: true },
+  { kind: 'template', icon: LayoutTemplate, ready: true },
   { kind: 'board', icon: PenTool, ready: false },
   { kind: 'timeline', icon: Clock, ready: false },
   { kind: 'tree', icon: Network, ready: false }
@@ -48,6 +50,7 @@ export function NewPageDialog({
   const errorText = useErrorText()
   const [kind, setKind] = useState<Kind>('text')
   const [title, setTitle] = useState('')
+  const [template, setTemplate] = useState<string | null>(null)
   const titleId = useId()
   const dialog = useRef<HTMLDialogElement>(null)
   const create = useMutation({
@@ -56,7 +59,8 @@ export function NewPageDialog({
       const page = await api.call('createPage', {
         worldId,
         title: named || t('wiki.untitled'),
-        parentId: parent?.id ?? null
+        parentId: parent?.id ?? null,
+        ...(kind === 'template' && template ? { template } : {})
       })
       // Si la pestaña falla, la página ya está: se abre igual (sin mapa) en vez de dejar el cuadro para crear otra
       const tab =
@@ -103,11 +107,16 @@ export function NewPageDialog({
                 onChange={() => setKind(each)}
               />
               <Icon aria-hidden="true" size={20} />
-              {each === 'text' ? t('newPage.text') : t(`pageTabs.kinds.${each}`)}
+              {each === 'text'
+                ? t('newPage.text')
+                : each === 'template'
+                  ? t('newPage.fromTemplate')
+                  : t(`pageTabs.kinds.${each}`)}
               {!ready && <span className={styles.soon}>{t('pageTabs.soon')}</span>}
             </label>
           ))}
         </fieldset>
+        {kind === 'template' && <TemplatePicker value={template} onChange={setTemplate} />}
         <input
           className={styles.nameInput}
           data-autofocus=""

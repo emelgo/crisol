@@ -52,6 +52,8 @@ export const pageSummary = z.object({
   parentId: z.uuid().nullable(),
   title: z.string(),
   icon: z.string().nullable(),
+  /** La plantilla de la que salió (ADR-0009), o null */
+  template: templateRef.nullable(),
   hasChildren: z.boolean(),
   version: z.number().int()
 })
@@ -95,8 +97,6 @@ export const page = pageSummary.extend({
   sheet: sheetSettings.nullable(),
   /** El panel a su lado: bloques con datos de toda la página */
   panel: pagePanel,
-  /** La plantilla de la que salió (ADR-0009), o null */
-  template: templateRef.nullable(),
   path: z.array(z.object({ id: z.uuid(), title: z.string() })),
   updatedAt: z.string()
 })
@@ -234,6 +234,7 @@ export const listPageTree = defineAction({
         parentId: z.uuid().nullable(),
         title: z.string(),
         icon: z.string().nullable(),
+        template: templateRef.nullable().describe('La plantilla de la que salió'),
         level: z.number().int(),
         hasChildren: z.boolean()
       })
