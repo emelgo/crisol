@@ -2,7 +2,7 @@
  * Los documentos de Yjs de la wiki, con Hocuspocus dentro del servidor (ADR-0003). Cada documento decide su permiso al
  * abrirse; guardar es fusionar con lo que ya hay, nunca pisarlo.
  */
-import { type Database, documentsRepo, loadMemberships, pagesRepo, worldsRepo } from '@crisol/db'
+import { type Database, documentsRepo, loadMemberships, mapsRepo, pagesRepo, worldsRepo } from '@crisol/db'
 import { actorFrom, authorize, can, NotFoundError } from '@crisol/domain'
 import { Hocuspocus } from '@hocuspocus/server'
 import * as Y from 'yjs'
@@ -48,6 +48,8 @@ export interface Collab {
   closePages(pageIds: Iterable<string>): void
   /** Las de toda la wiki de un mundo (el mundo, a la papelera) */
   closeWorld(worldId: string): void
+  /** Las de un documento aparte (el de una pestaña de texto que se quita) */
+  closeDocument(documentId: string): void
   /** Al parar el servidor: cierra todo y espera (hasta 5 s) a que se guarde lo pendiente */
   close(): Promise<void>
   /** Cierra las sesiones de edición abiertas de una página (antes de una operación del servidor sobre ella) */
@@ -91,6 +93,8 @@ export function createCollab({
   const pageOf = async (target: Target) => {
     if (target.kind === 'body') return target.pageId
     const separate = await documentsRepo.findSeparate(db, target.documentId)
+    // El de una pestaña de texto, solo mientras la pestaña exista (borrada, su documento queda para deshacer)
+    if (separate?.kind === 'tab' && !(await mapsRepo.tabOfDocument(db, separate.id))) return null
     return separate?.pageId ?? null
   }
 
@@ -190,6 +194,9 @@ export function createCollab({
 
   return {
     hocuspocus,
+    closeDocument(documentId) {
+      hocuspocus.closeConnections(separateName(documentId))
+    },
     closePages(pageIds) {
       const gone = new Set(pageIds)
       for (const [name, place] of opened) if (gone.has(place.pageId)) hocuspocus.closeConnections(name)

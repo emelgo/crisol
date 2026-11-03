@@ -9,7 +9,7 @@ import { paginate, type SheetBlock } from '@crisol/domain'
 import { type Editor, Extension } from '@tiptap/core'
 import type { Node as PMNode } from '@tiptap/pm/model'
 import { Plugin, PluginKey } from '@tiptap/pm/state'
-import { Decoration, DecorationSet } from '@tiptap/pm/view'
+import { Decoration, DecorationSet, type EditorView } from '@tiptap/pm/view'
 import { type CSSProperties, type ReactNode, useEffect, useLayoutEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { GHOST_LINE } from '../ghost-line.ts'
@@ -56,7 +56,19 @@ function kindOf(node: PMNode, columns: 1 | 2): SheetBlock['kind'] {
   return 'block'
 }
 
-const layoutKey = new PluginKey<{ styles: readonly string[] | null }>('hojaAlEscribir')
+interface LayoutState {
+  styles: readonly string[] | null
+  /** El texto cambió y aún no se ha vuelto a colocar (los bloques nuevos aún no tienen sitio) */
+  stale: boolean
+}
+
+const layoutKey = new PluginKey<LayoutState>('hojaAlEscribir')
+
+/**
+ * Las vistas que dejaron un desplazamiento al cursor para después de colocar: mientras la maqueta está desfasada, un
+ * bloque nuevo aún va en el flujo (arriba del todo) y desplazarse a él subiría la vista al principio
+ */
+const pendingScroll = new WeakSet<EditorView>()
 
 /** El sitio de cada bloque de primer nivel (por su orden), como estilo; null, sin hoja */
 export const SheetLayout = Extension.create({
@@ -66,13 +78,19 @@ export const SheetLayout = Extension.create({
       new Plugin({
         key: layoutKey,
         state: {
-          init: (): { styles: readonly string[] | null } => ({ styles: null }),
-          apply: (tr, value) => {
+          init: (): LayoutState => ({ styles: null, stale: false }),
+          apply: (tr, value): LayoutState => {
             const next = tr.getMeta(layoutKey) as { styles: readonly string[] | null } | undefined
-            return next ?? value
+            if (next) return { styles: next.styles, stale: false }
+            return tr.docChanged && value.styles && !value.stale ? { ...value, stale: true } : value
           }
         },
         props: {
+          handleScrollToSelection: (view) => {
+            if (!layoutKey.getState(view.state)?.stale) return false
+            pendingScroll.add(view)
+            return true
+          },
           decorations: (state) => {
             const placed = layoutKey.getState(state)?.styles
             if (!placed) return null
@@ -142,6 +160,13 @@ function layOut(editor: Editor, settings: SheetSettings, k: number) {
   const idsOf = (page: (typeof pages)[number]) =>
     page.rows.flatMap((row) => (row.kind === 'wide' ? [Number(row.id)] : row.columns.flat().map(Number)))
   let top = 0
+  // Saltos antes del primer bloque (paginate no abre página para ellos): arriba del todo, empujando lo demás
+  const firstId = pages[0] ? Math.min(blocks.length, ...idsOf(pages[0])) : blocks.length
+  for (const block of blocks.slice(0, firstId)) {
+    if (block.kind !== 'pageBreak' && block.kind !== 'columnBreak') continue
+    place(block.id, 0, top, g.content)
+    top += heights[Number(block.id)] ?? 0
+  }
   pages.forEach((page, p) => {
     if (p > 0) {
       // Entre esta y la de antes: sus saltos de página (su raya hace de marca) o, si no hay, la marca con el número
@@ -189,7 +214,14 @@ function layOut(editor: Editor, settings: SheetSettings, k: number) {
   const last = ends.at(-1) ?? null
   const current = layoutKey.getState(state)?.styles
   const changed = !current || current.length !== placed.length || current.some((style, i) => style !== placed[i])
-  if (changed) view.dispatch(state.tr.setMeta(layoutKey, { styles: placed }).setMeta('addToHistory', false))
+  if (changed || layoutKey.getState(state)?.stale) {
+    view.dispatch(state.tr.setMeta(layoutKey, { styles: placed }).setMeta('addToHistory', false))
+  }
+  // Ya en su sitio: el desplazamiento al cursor que quedó pendiente
+  if (pendingScroll.has(view) && !changed) {
+    pendingScroll.delete(view)
+    view.dispatch(view.state.tr.scrollIntoView().setMeta('addToHistory', false))
+  }
   // La línea de más, debajo del último bloque (es de otra extensión: se coloca aquí, sin pasar por el documento)
   const ghost = view.dom.querySelector<HTMLElement>(`[${GHOST_LINE}]`)
   if (ghost && last) {
@@ -279,9 +311,11 @@ export function PagedSheet({
     if (!ready) return
     let frameId = 0
     let passes = 0
+    // Tras limpiar (otra escala, lo estrecho), lo que quedó pendiente (las letras al cargar) ya no coloca nada
+    let disposed = false
     const run = () => {
       frameId = 0
-      if (editor.isDestroyed) return
+      if (disposed || editor.isDestroyed) return
       const result = layOut(editor, settings, scale)
       setLayout((current) =>
         current.height === result.height && JSON.stringify(current.marks) === JSON.stringify(result.marks)
@@ -293,7 +327,7 @@ export function PagedSheet({
       else passes = 0
     }
     const schedule = () => {
-      if (!frameId) frameId = requestAnimationFrame(run)
+      if (!disposed && !frameId) frameId = requestAnimationFrame(run)
     }
     const onUpdate = () => {
       passes = 0
@@ -311,6 +345,7 @@ export function PagedSheet({
     editor.on('update', observeAll)
     void document.fonts?.ready.then(onUpdate)
     return () => {
+      disposed = true
       cancelAnimationFrame(frameId)
       editor.off('update', onUpdate)
       editor.off('update', observeAll)
@@ -327,8 +362,10 @@ export function PagedSheet({
     <div ref={setFrame} className={styles.fit}>
       <div
         className={styles.paged}
-        style={{ inlineSize: g.content, blockSize: height, '--sheet-k': scale } as CSSProperties}
+        // Sin el texto aún (sin conexión), sin colocar: a su alto, con el texto en el flujo
+        style={{ inlineSize: g.content, blockSize: ready ? height : undefined, '--sheet-k': scale } as CSSProperties}
         data-sheet-paged=""
+        data-placed={ready || undefined}
       >
         {/* Dónde empieza cada página (se calculan por detrás, como al imprimir): una raya fina con su número */}
         {layout.marks.map((mark) => (
@@ -336,7 +373,7 @@ export function PagedSheet({
             <span>{t('sheet.pageLabel', { number: mark.number })}</span>
           </div>
         ))}
-        <div className={styles.text} style={{ inset: 0 }}>
+        <div className={styles.text} style={ready ? { inset: 0 } : { position: 'static' }}>
           {children}
         </div>
       </div>

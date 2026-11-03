@@ -188,8 +188,24 @@ export function createPage(
  * La página de portada de un mundo (como la «Home» de Everlore): la primera de lo más alto, y el mundo la apunta. En
  * una sola operación, así deshacerla quita las dos cosas
  */
+/**
+ * Crea la portada del mundo, salvo si otra petición a la vez ya la creó (el mundo, bloqueado mientras): entonces
+ * devuelve esa, sin crear nada (created: false)
+ */
 export function createHomePage(db: Database, context: OperationContext, input: { worldId: string; title: string }) {
   return operation(db, context, async (w) => {
+    const [world] = await w.read
+      .select({ home: worlds.homePageId })
+      .from(worlds)
+      .where(eq(worlds.id, input.worldId))
+      .for('update')
+    if (world?.home) {
+      const [existing] = await w.read
+        .select()
+        .from(pages)
+        .where(and(eq(pages.id, world.home), isNull(pages.deletedAt)))
+      if (existing) return { page: existing, created: false }
+    }
     const [first] = await w.read
       .select({ id: pages.id })
       .from(pages)
@@ -199,7 +215,7 @@ export function createHomePage(db: Database, context: OperationContext, input: {
     const position = await placeKey(w.read, input.worldId, { parentId: null, ...(first ? { before: first.id } : {}) })
     const page = await w.insert(pages, { worldId: input.worldId, parentId: null, position, title: input.title })
     await w.update(worlds, input.worldId, { homePageId: page.id })
-    return page
+    return { page, created: true }
   })
 }
 

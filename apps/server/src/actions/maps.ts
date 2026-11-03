@@ -10,6 +10,8 @@ import {
   deletePageTab,
   getMap,
   listPageTabs,
+  MAX_MAP_PINS,
+  MAX_PAGE_TABS,
   type MapPinView,
   type MapView,
   type PageTabView,
@@ -121,6 +123,7 @@ export const mapActions = [
   implement(createPageTab, async (ctx, { pageId, kind, name }) => {
     const { page, wiki } = await authorizedPage(ctx, 'page.write', pageId)
     const tabs = await mapsRepo.listTabs(ctx.db, pageId)
+    if (tabs.length >= MAX_PAGE_TABS) throw new InvalidRequestError('TOO_MANY_TABS', `como mucho ${MAX_PAGE_TABS}`)
     const base = kind === 'text' ? 'Texto' : 'Mapa'
     const same = tabs.filter((tab) => tab.kind === kind).length
     // La de texto cuenta con la principal («Texto»): la primera añadida es «Texto 2»; el segundo mapa, «Mapa 2»
@@ -185,6 +188,8 @@ export const mapActions = [
       historyContext(ctx, 'deletePageTab', { title: page.title, name: tab.name }, wiki),
       tabId
     )
+    // Quien la tenga abierta deja de escribir en ella (su documento queda, para deshacer)
+    if (tab.documentId) ctx.collab?.closeDocument(tab.documentId)
     ctx.realtime.publish(pagesChanged(wiki))
     return { id: tabId }
   }),
@@ -221,6 +226,9 @@ export const mapActions = [
 
   implement(createMapPin, async (ctx, { mapId, ...input }) => {
     const { tab, page, wiki } = await authorizedMap(ctx, 'page.write', mapId)
+    if ((await mapsRepo.countPins(ctx.db, mapId)) >= MAX_MAP_PINS) {
+      throw new InvalidRequestError('TOO_MANY_PINS', `como mucho ${MAX_MAP_PINS}`)
+    }
     await checkPinPage(ctx, wiki, input.pageId)
     const pin = await mapsRepo.createPin(
       ctx.db,

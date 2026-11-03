@@ -281,23 +281,31 @@ export function PageTree({ worldId, currentId, path, onNavigate }: Props) {
     return current && current !== row ? current : null
   }
 
-  const onDrop = (row: Row, zone: Zone, clientX: number) => {
-    const out = outdentTarget(row, zone, clientX)
-    const id = dragged.current
-    dragged.current = null
-    setDrop(null)
-    const page = rows.find((r) => r.page.id === id)?.page
-    if (!page) return
-    if (out) {
-      if (out.page.id !== page.id) void move(page, { parentId: out.page.parentId, after: out.page.id })
-      return
+  /** Si una página está dentro de otra (o es ella): no se puede soltar ahí, se metería en sí misma */
+  const isInside = (id: string, ancestorId: string) => {
+    for (let at: string | null | undefined = id; at; at = rows.find((r) => r.page.id === at)?.page.parentId) {
+      if (at === ancestorId) return true
     }
-    if (page.id === row.page.id) return
+    return false
+  }
+  /** Adónde iría al soltar, o null si no se puede (dentro de sí misma) */
+  const dropMove = (page: PageSummary, row: Row, zone: Zone, clientX: number): Move | null => {
+    const out = outdentTarget(row, zone, clientX)
+    if (out) return out.page.id === page.id ? null : { parentId: out.page.parentId, after: out.page.id }
+    if (page.id === row.page.id) return null
     const to: Move =
       zone === 'inside'
         ? { parentId: row.page.id }
         : { parentId: row.page.parentId, ...(zone === 'before' ? { before: row.page.id } : { after: row.page.id }) }
-    void move(page, to)
+    return to.parentId && isInside(to.parentId, page.id) ? null : to
+  }
+
+  const onDrop = (row: Row, zone: Zone, clientX: number) => {
+    const page = rows.find((r) => r.page.id === dragged.current)?.page
+    const to = page ? dropMove(page, row, zone, clientX) : null
+    dragged.current = null
+    setDrop(null)
+    if (page && to) void move(page, to)
   }
 
   const renderRow = (row: Row, style?: CSSProperties) => {
@@ -371,9 +379,15 @@ export function PageTree({ worldId, currentId, path, onNavigate }: Props) {
           setDrop(null)
         }}
         onDragOver={(event) => {
-          if (!dragged.current) return
-          event.preventDefault()
+          const moving = rows.find((r) => r.page.id === dragged.current)?.page
+          if (!moving) return
           const zone = zoneOf(event)
+          // Dentro de sí misma no se puede soltar: ni marca ni preventDefault (el navegador lo muestra prohibido)
+          if (!dropMove(moving, row, zone, event.clientX)) {
+            if (drop) setDrop(null)
+            return
+          }
+          event.preventDefault()
           const out = outdentTarget(row, zone, event.clientX)
           if (out) {
             if (drop?.id !== page.id || drop.zone !== 'after' || drop.level !== out.level)

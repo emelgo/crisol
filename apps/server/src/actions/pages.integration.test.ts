@@ -67,6 +67,12 @@ describe('la wiki: páginas y árbol', () => {
     expect(await titles()).toEqual(['Eana', 'Lugares'])
     expect((await call('ensureWorldHome', { worldId })).json()).toEqual({ pageId })
     expect(await home()).toEqual({ pageId, chosen: true })
+    // Dos a la vez en un mundo sin portada (abierto en dos pestañas): una sola
+    const otherWorld = (await call('createWorld', { name: 'Otro' })).json().id
+    const both = await Promise.all(
+      [1, 2].map(async () => (await call('ensureWorldHome', { worldId: otherWorld })).json())
+    )
+    expect(both[0].pageId).toBe(both[1].pageId)
     expect((await call('deletePage', { pageId })).json()).toMatchObject({ code: 'HOME_PAGE' })
     expect((await call('movePage', { pageId, parentId: other.id })).json()).toMatchObject({ code: 'HOME_PAGE' })
     // Las demás, sí

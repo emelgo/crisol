@@ -10,6 +10,12 @@ export const PAGE_TAB_KINDS = ['map', 'text'] as const
 
 const tabName = z.string().trim().min(1).max(60)
 
+/** Lo más que mide de lado la imagen de un mapa, en píxeles */
+export const MAX_MAP_SIDE = 65_535
+/** Cuántas pestañas puede tener una página, y cuántos pines un mapa */
+export const MAX_PAGE_TABS = 50
+export const MAX_MAP_PINS = 2000
+
 export const pageTabView = z.object({
   id: z.uuid(),
   pageId: z.uuid(),
@@ -142,7 +148,11 @@ export const updateMap = defineAction({
     .object({
       mapId: z.uuid(),
       image: z
-        .object({ fileId: z.uuid(), width: z.number().int().positive(), height: z.number().int().positive() })
+        .object({
+          fileId: z.uuid(),
+          width: z.number().int().positive().max(MAX_MAP_SIDE),
+          height: z.number().int().positive().max(MAX_MAP_SIDE)
+        })
         .optional(),
       scale: mapView.shape.scale.optional()
     })

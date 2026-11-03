@@ -101,6 +101,7 @@ export function PageBody({ page, documentId }: { page: Page; documentId?: string
             {(synced || offline) && (
               <BodyEditor
                 key={documentId ?? page.id}
+                nested={Boolean(documentId)}
                 pageId={page.id}
                 document={session.document}
                 provider={session.provider}
@@ -188,7 +189,8 @@ function BodyEditor({
   provider,
   editable,
   ready,
-  sheet
+  sheet,
+  nested = false
 }: {
   pageId: string
   document: Y.Doc
@@ -197,6 +199,8 @@ function BodyEditor({
   ready: boolean
   /** Con hoja: el texto, maquetado en sus páginas; y los bloques de hoja en el menú «/» */
   sheet: SheetSettings | null
+  /** El de una pestaña de texto: sin secretos dentro */
+  nested?: boolean
 }) {
   // El editor se crea una vez: lo de la hoja se lee al momento
   const isSheet = useRef(sheet !== null)
@@ -248,16 +252,20 @@ function BodyEditor({
   const editor = useEditor(
     {
       extensions: [
+        // Una pestaña de texto, como dentro de un secreto: sin secretos ni notas ocultas (su documento es aparte)
         ...editorExtensions({
           checkboxLabel: (text, checked) => t(checked ? 'editor.taskDone' : 'editor.task', { text }),
-          view: withNodeView
+          view: withNodeView,
+          nested
         }),
         EmptyHint.configure({ text: t('editor.placeholder') }),
         GhostLine.configure({ className: styles.ghostLine ?? '' }),
-        CalloutShortcut.configure({ makeSecret: (editor) => void context.makeSeparate(editor, 'secret') }),
+        ...(nested
+          ? []
+          : [CalloutShortcut.configure({ makeSecret: (editor) => void context.makeSeparate(editor, 'secret') })]),
         SheetLayout,
         SlashMenu.configure({
-          nested: false,
+          nested,
           sheet: () => isSheet.current,
           name: (block) => t(`blocks.${block.label}`),
           context,
@@ -267,7 +275,7 @@ function BodyEditor({
           links: () => links.current,
           announce: (title) => announce(t('links.inserted', { title }))
         }),
-        CopySeparateOnPaste,
+        ...(nested ? [] : [CopySeparateOnPaste]),
         FileDrop.configure({ upload, announce: announceFile }),
         FindInPage.configure({ match: find.match ?? '', current: find.current ?? '' }),
         AiHighlight.configure({ className: styles.aiFlash ?? '' }),
@@ -350,7 +358,7 @@ function BodyEditor({
         <>
           <FormatMenu editor={editor} onSecret={() => void context.makeSeparate(editor, 'secret')} />
           <TableMenu editor={editor} />
-          <BlockHandle editor={editor} context={context} />
+          <BlockHandle editor={editor} context={context} nested={nested} />
         </>
       )}
       {editor && blockMenu && (

@@ -334,6 +334,8 @@ function TabMenu({
   const panelId = useId()
   const nameId = useId()
   const close = () => {
+    // El nombre cambiado se guarda también al cerrar (pulsando fuera o con Escape: el campo no llega a perder el foco)
+    rename()
     setOpen(false)
     setConfirming(false)
   }

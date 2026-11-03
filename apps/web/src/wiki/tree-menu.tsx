@@ -163,6 +163,13 @@ export function TreeMenu({
     queryFn: () => api.call('listPageNames', { worldId }),
     enabled: sub === 'move'
   })
+  // Sus subpáginas: no se puede mover dentro de ellas (se metería en sí misma)
+  const below = useQuery({
+    queryKey: ['pages', worldId, 'branch', page.id],
+    queryFn: () => api.call('listPageTree', { worldId, parentId: page.id, levels: 6 }),
+    enabled: sub === 'move' && page.hasChildren
+  })
+  const inside = new Set((below.data?.pages ?? []).map((p) => p.id))
   const linkedBy = useLinkedBy(page, view === 'delete')
   const error = rename.error ?? duplicate.error ?? move.error ?? sort.error ?? remove.error
 
@@ -227,7 +234,7 @@ export function TreeMenu({
 
   const wanted = plain(filter.trim())
   const targets = (names.data?.pages ?? [])
-    .filter((p) => p.id !== page.id && p.id !== page.parentId)
+    .filter((p) => p.id !== page.id && p.id !== page.parentId && !inside.has(p.id))
     .filter((p) => !wanted || plain(p.title).includes(wanted))
     .slice(0, 30)
 

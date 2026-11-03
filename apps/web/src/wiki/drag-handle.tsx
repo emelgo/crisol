@@ -233,7 +233,16 @@ const SUBMENUS = [
 type SubmenuKey = (typeof SUBMENUS)[number]['key']
 
 /** El asa, junto al bloque bajo el ratón */
-export function BlockHandle({ editor, context }: { editor: Editor; context: BlockContext }) {
+export function BlockHandle({
+  editor,
+  context,
+  nested = false
+}: {
+  editor: Editor
+  context: BlockContext
+  /** En una pestaña de texto: sin secretos ni notas ocultas */
+  nested?: boolean
+}) {
   const { t } = useTranslation()
   const target = useRef<BlockTarget | null>(null)
   const button = useRef<HTMLButtonElement>(null)
@@ -281,6 +290,7 @@ export function BlockHandle({ editor, context }: { editor: Editor; context: Bloc
           target={open}
           anchor={button.current}
           context={context}
+          nested={nested}
           onClose={(returnFocus) => {
             setOpen(null)
             editor.commands.setMeta('lockDragHandle', false)
@@ -298,12 +308,14 @@ export function BlockMenu({
   target,
   anchor,
   context,
+  nested = false,
   onClose
 }: {
   editor: Editor
   target: BlockTarget
   anchor: HTMLElement | null
   context: BlockContext
+  nested?: boolean
   onClose: (returnFocus?: boolean) => void
 }) {
   const { t } = useTranslation()
@@ -378,7 +390,7 @@ export function BlockMenu({
     }
   }
 
-  const blocks = empty ? BLOCKS : BLOCKS.filter((block) => block.convert)
+  const blocks = BLOCKS.filter((block) => (empty || block.convert) && !(nested && block.bodyOnly))
   const groups: readonly { key: string; match: (block: BlockChoice) => boolean }[] = empty ? SECTIONS : SUBMENUS
   return createPortal(
     <div

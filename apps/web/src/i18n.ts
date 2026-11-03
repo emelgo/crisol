@@ -1279,6 +1279,8 @@ export const es = {
     BAD_MAP_IMAGE: 'El mapa tiene que ser una imagen del mundo',
     BAD_PIN_PAGE: 'El pin tiene que llevar a una página de este mundo',
     BAD_TAB_PLACE: 'Esa pestaña ya no está',
+    TOO_MANY_TABS: 'No caben más pestañas en esta página',
+    TOO_MANY_PINS: 'No caben más pines en este mapa',
     BAD_HOME_PAGE: 'La portada tiene que ser una página de este mundo',
     HOME_PAGE: 'La portada del mundo no se borra ni se mete dentro de otra página',
     PARENT_IN_TRASH: 'Su página madre también está en la papelera: restáurala antes',

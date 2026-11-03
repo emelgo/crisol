@@ -58,15 +58,20 @@ export const worldActions = [
     if (home) return { pageId: home }
     const world = await worldsRepo.findWorld(ctx.db, worldId)
     const title = world?.name ?? ''
-    const page = await pagesRepo.createHomePage(ctx.db, historyContext(ctx, 'createWorldHome', { title }, wiki), {
-      worldId,
-      title
-    })
+    const { page, created } = await pagesRepo.createHomePage(
+      ctx.db,
+      historyContext(ctx, 'createWorldHome', { title }, wiki),
+      { worldId, title }
+    )
+    // Otra petición a la vez ya la creó (el mundo abierto en dos pestañas): esa, sin otra bienvenida
+    if (!created) return { pageId: page.id }
     // Con un texto de bienvenida: qué es esta página y por dónde empezar (se borra o se cambia como cualquier texto)
-    await pageContentActions.find((impl) => impl.action.name === 'editPage')?.handler(ctx, {
-      pageId: page.id,
-      body: { mode: 'append', markdown: welcome(title) }
-    })
+    await pageContentActions
+      .find((impl) => impl.action.name === 'editPage')
+      ?.handler(ctx, {
+        pageId: page.id,
+        body: { mode: 'append', markdown: welcome(title) }
+      })
     ctx.realtime.publish(pagesChanged(wiki))
     return { pageId: page.id }
   }),

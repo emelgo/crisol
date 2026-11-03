@@ -2,7 +2,7 @@
  * Las pestañas de las páginas y sus mapas con pines (ADR-0007). Todo pasa por operation(): se deshace desde el
  * historial. Quitar una pestaña quita su mapa y sus pines en la misma operación, para que deshacer lo vuelva a poner
  */
-import { and, asc, eq, getTableColumns, inArray, isNull, sql } from 'drizzle-orm'
+import { and, asc, count, eq, getTableColumns, inArray, isNull, sql } from 'drizzle-orm'
 import type { Database } from '../client.ts'
 import { type OperationContext, operation } from '../operation.ts'
 import { files } from '../schema/files.ts'
@@ -24,6 +24,18 @@ export function listTabs(db: Database, pageId: string) {
     .from(pageTabs)
     .where(eq(pageTabs.pageId, pageId))
     .orderBy(sql`${pageTabs.position} collate "C"`, asc(pageTabs.id))
+}
+
+/** La pestaña viva de un documento de texto (de tipo tab), o null si se borró */
+export async function tabOfDocument(db: Database, documentId: string) {
+  const [tab] = await db.select({ id: pageTabs.id }).from(pageTabs).where(eq(pageTabs.documentId, documentId))
+  return tab ?? null
+}
+
+/** Cuántos pines tiene un mapa (para su tope) */
+export async function countPins(db: Database, mapId: string) {
+  const [row] = await db.select({ n: count() }).from(mapPins).where(eq(mapPins.mapId, mapId))
+  return row?.n ?? 0
 }
 
 export async function findTab(db: Database, tabId: string) {

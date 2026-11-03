@@ -142,6 +142,9 @@ export interface SearchOptions {
   limit: number
 }
 
+/** Lo de una pestaña de texto cuenta solo mientras la pestaña exista (quitada, su documento queda para deshacer) */
+const liveTab = sql`(s.kind <> 'tab' or exists (select 1 from page_tabs t where t.document_id = s.document_id))`
+
 /** Las páginas que coinciden, de la que más a la que menos, con el total */
 export async function searchPages(db: Database, options: SearchOptions) {
   if (options.terms.length === 0) return { total: 0, pages: [] }
@@ -151,7 +154,7 @@ export async function searchPages(db: Database, options: SearchOptions) {
     with q as (select ${query} as query),
     hits as (
       select s.page_id, ts_rank(s.tsv, q.query) as rank
-        from search_sections s, q where s.world_id = ${options.worldId} and s.tsv @@ q.query
+        from search_sections s, q where s.world_id = ${options.worldId} and s.tsv @@ q.query and ${liveTab}
       union all
       -- El título y las propiedades cuentan como el título de una sección, y el doble
       select p.id, 2 * ts_rank(p.search_tsv, q.query)
@@ -206,7 +209,7 @@ export async function matchingSections(db: Database, pageIds: readonly string[],
       where s.page_id in (${sql.join(
         pageIds.map((id) => sql`${id}::uuid`),
         sql`, `
-      )}) and s.tsv @@ q.query
+      )}) and s.tsv @@ q.query and ${liveTab}
     ) ranked where n <= 3 order by page_id, n`)
   return [...rows].map((row) => ({
     pageId: row.page_id,

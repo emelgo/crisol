@@ -58,7 +58,9 @@ export function NewPageDialog({
         title: named || t('wiki.untitled'),
         parentId: parent?.id ?? null
       })
-      const tab = kind === 'map' ? await api.call('createPageTab', { pageId: page.id, kind: 'map' }) : null
+      // Si la pestaña falla, la página ya está: se abre igual (sin mapa) en vez de dejar el cuadro para crear otra
+      const tab =
+        kind === 'map' ? await api.call('createPageTab', { pageId: page.id, kind: 'map' }).catch(() => null) : null
       return { page, tab, named }
     },
     onSuccess: async ({ page, tab, named }) => {

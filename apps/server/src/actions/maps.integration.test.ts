@@ -1,4 +1,4 @@
-import { connect, schema } from '@crisol/db'
+import { connect, documentsRepo, schema } from '@crisol/db'
 import { freshTestDatabase, resetDatabase } from '@crisol/db/testing'
 import { desc, eq } from 'drizzle-orm'
 import type { FastifyInstance } from 'fastify'
@@ -7,6 +7,7 @@ import { buildApp } from '../app.ts'
 import type { Auth } from '../auth/auth.ts'
 import { diskStorage } from '../files/storage.ts'
 import { createTestAuth, signUpTestUser, TEST_SEAL_KEY, testDataDir } from '../testing.ts'
+import { stateOf } from '../wiki/content.ts'
 
 const BASE_URL = 'https://crisol.test'
 const ok = async () => undefined
@@ -185,6 +186,33 @@ describe('las pestañas de página y los mapas (ADR-0007)', () => {
     expect((await json('undoOperation', { operationId: await lastOperation('deletePageTab') })).status).toBe('undone')
     expect(await tabNames()).toEqual(['Mapa'])
     expect((await json('getMap', { tabId: tab.id })).pins).toMatchObject([{ label: 'Aquí' }])
+  })
+
+  it('una pestaña de texto: su texto se busca (sin ser secreto) solo mientras la pestaña existe', async () => {
+    const tab = await json('createPageTab', { pageId: page, kind: 'text' })
+    expect(tab).toMatchObject({ kind: 'text', name: 'Texto 2' })
+    expect((await json('createPageTab', { pageId: page, kind: 'map' })).name).toBe('Mapa')
+    // Su texto, como lo guarda el editor (al buscar, el servidor indexa lo que aún no estaba)
+    const state = stateOf(
+      {
+        type: 'doc',
+        content: [{ type: 'paragraph', content: [{ type: 'text', text: 'El faro de los murciélagos' }] }]
+      },
+      true
+    )
+    await documentsRepo.mergeSeparate(conn.db, tab.documentId, owner.userId, () => state)
+    const found = async () => (await json('searchWiki', { worldId: eana, query: 'murciélagos' })).results
+    expect(await found()).toMatchObject([{ id: page, sections: [{ secret: false }] }])
+    await json('deletePageTab', { tabId: tab.id })
+    expect(await found()).toEqual([])
+    // Deshacer la devuelve, y su texto con ella
+    expect((await json('undoOperation', { operationId: await lastOperation('deletePageTab') })).status).toBe('undone')
+    expect(await found()).toMatchObject([{ id: page }])
+  })
+
+  it('como mucho 50 pestañas por página', async () => {
+    for (let i = 0; i < 50; i++) await json('createPageTab', { pageId: page, kind: 'map' })
+    expect(await json('createPageTab', { pageId: page, kind: 'text' })).toMatchObject({ code: 'TOO_MANY_TABS' })
   })
 
   it('sin acceso a la wiki del mundo, ni se ven ni se cambian', async () => {
