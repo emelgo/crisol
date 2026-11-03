@@ -173,7 +173,9 @@ amplía `@fugas` en la misma tarea. Cobertura ≥ 80 % de lo cambiado (bloquea d
   - Archivos: `apps/web/src/routes/templates.tsx` (+ CSS), `apps/web/src/router.tsx`,
     `apps/web/src/components/ribbon.tsx`, `apps/web/src/i18n.ts`, `e2e/tests/plantillas.spec.ts`.
 
-- [ ] **11. Editar una plantilla: campos y panel**
+- [x] **11. Editar una plantilla: campos y panel** — hecha. Los bloques del panel de una plantilla se titulan, se
+  recolocan con Subir y Bajar y se quitan (sin pintar su contenido: no hay página); las tablas, con sus desplegables.
+  La plantilla recién creada entra en la lista al momento (si no, su página volvía a la lista antes de que llegara).
   - Acepta:
     - `/plantillas/:templateId` con la forma de una página: el nombre y el icono arriba, y los campos en el panel.
       Cada campo se añade, se quita, se recoloca y cambia de nombre, tipo, opciones, `targets` o segmentos, como en

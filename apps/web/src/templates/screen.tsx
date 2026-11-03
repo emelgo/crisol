@@ -224,7 +224,7 @@ function TemplatePreview({ template }: { template: PageTemplate }) {
 }
 
 /** Elegir el icono de una plantilla: un grupo de opciones */
-function IconChoices({
+export function IconChoices({
   value,
   onChange
 }: {
@@ -256,7 +256,7 @@ function IconChoices({
 }
 
 /** «Plantilla nueva»: desde cero o copiando otra, con su nombre y su icono. Creada, se abre para cambiarla */
-function NewTemplateDialog({ copyOf, onClose }: { copyOf: string | null; onClose: () => void }) {
+export function NewTemplateDialog({ copyOf, onClose }: { copyOf: string | null; onClose: () => void }) {
   const { t } = useTranslation()
   const api = useApi()
   const queryClient = useQueryClient()
@@ -278,7 +278,11 @@ function NewTemplateDialog({ copyOf, onClose }: { copyOf: string | null; onClose
     mutationFn: () =>
       api.call('createTemplate', { name: name.trim(), icon, ...(mode === 'copy' ? { copyOf: base } : {}) }),
     onSuccess: async (created) => {
-      await queryClient.invalidateQueries({ queryKey: ['templates'] })
+      // Ya en la lista, para que su página la encuentre al abrirse (la lista de verdad llega después)
+      queryClient.setQueryData(['templates'], (old: { templates: PageTemplate[]; deleted: unknown[] } | undefined) =>
+        old ? { ...old, templates: [...old.templates.filter((each) => each.id !== created.id), created] } : old
+      )
+      void queryClient.invalidateQueries({ queryKey: ['templates'] })
       dialog.current?.close()
       onClose()
       await navigate({ to: '/plantillas/$templateId', params: { templateId: created.id } })

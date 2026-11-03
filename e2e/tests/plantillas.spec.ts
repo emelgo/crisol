@@ -121,3 +121,42 @@ test('«Plantillas» en Mis mundos: una desde cero y otra copiando PNJ', async (
   await expect(mine.getByRole('link', { name: 'Frente' })).toBeVisible()
   await expect(mine.getByText('Copia de PNJ')).toBeVisible()
 })
+
+test('editar una plantilla tuya: «Frente» con un reloj de 8, y una página hecha con ella', async ({ page }) => {
+  test.slow()
+  await freshOwner(page)
+  await createWorld(page, 'Eana')
+  await page.goto('/plantillas')
+  await page.getByRole('button', { name: 'Plantilla nueva' }).click()
+  const dialog = page.getByRole('dialog', { name: 'Plantilla nueva' })
+  await dialog.getByLabel('Nombre').fill('Frente')
+  await dialog.getByRole('button', { name: 'Crear la plantilla' }).click()
+  const fields = page.getByRole('complementary', { name: 'Campos y panel de la plantilla' }).getByRole('region', {
+    name: 'Campos'
+  })
+  await fields.getByRole('button', { name: 'Campo' }).click()
+  await fields.getByLabel('Nombre').fill('Reloj')
+  await fields.getByLabel('Nombre').press('Enter')
+  await fields.getByLabel('Tipo').selectOption({ label: 'Reloj' })
+  const saved = page.waitForResponse(
+    (r) => r.url().endsWith('/api/actions/updateTemplate') && /"segments":8/.test(r.request().postData() ?? '')
+  )
+  await fields.getByLabel('Segmentos').fill('8')
+  await fields.getByLabel('Segmentos').press('Enter')
+  await saved
+  await expect(fields.getByRole('button', { name: /Reloj de 8/ })).toBeVisible()
+  for (const colorScheme of ['light', 'dark'] as const) {
+    await page.emulateMedia({ colorScheme })
+    const { violations } = await new AxeBuilder({ page }).include('main').withTags(['wcag2a', 'wcag2aa']).analyze()
+    const serious = violations.filter((v) => v.impact === 'critical' || v.impact === 'serious')
+    expect(serious.map((v) => `${colorScheme} ${v.id}: ${v.help}`)).toEqual([])
+  }
+  // Una página con ella: el reloj, con sus 8 segmentos
+  await page.goto('/mundos')
+  await openWiki(page, 'Eana')
+  await fromTemplate(page, 'Frente', 'Los muelles en llamas')
+  const clock = page
+    .getByRole('region', { name: 'Propiedades' })
+    .getByRole('group', { name: 'Valor de la propiedad 1' })
+  await expect(clock.getByRole('button', { name: 'Segmento 8 de 8' })).toBeVisible()
+})

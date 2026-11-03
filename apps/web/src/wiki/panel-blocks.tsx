@@ -35,9 +35,9 @@ import styles from './panel-blocks.module.css'
 import { RelatedBody, RelatedOptions } from './related-block.tsx'
 import { childrenKey } from './tree.tsx'
 
-type Kind = 'text' | 'image' | 'bar' | 'circle' | 'rating' | 'tokens' | 'subpages' | 'tagged' | 'related'
+export type Kind = 'text' | 'image' | 'bar' | 'circle' | 'rating' | 'tokens' | 'subpages' | 'tagged' | 'related'
 
-const GROUPS: { group: 'notes' | 'meters' | 'lists'; kinds: { kind: Kind; icon: ReactNode }[] }[] = [
+export const PANEL_GROUPS: { group: 'notes' | 'meters' | 'lists'; kinds: { kind: Kind; icon: ReactNode }[] }[] = [
   {
     group: 'notes',
     kinds: [
@@ -68,7 +68,7 @@ const GROUPS: { group: 'notes' | 'meters' | 'lists'; kinds: { kind: Kind; icon: 
 const newId = () =>
   Array.from(crypto.getRandomValues(new Uint8Array(10)), (n) => 'abcdefghijklmnopqrstuvwxyz0123456789'[n % 36]).join('')
 
-function blockOf(kind: Kind): PanelBlock {
+export function blockOf(kind: Kind): PanelBlock {
   const id = newId()
   switch (kind) {
     case 'text':
@@ -91,7 +91,7 @@ function blockOf(kind: Kind): PanelBlock {
   }
 }
 
-const kindOf = (block: PanelBlock): Kind => (block.type === 'meter' ? block.style : block.type)
+export const kindOf = (block: PanelBlock): Kind => (block.type === 'meter' ? block.style : block.type)
 
 const same = (a: readonly PanelBlock[], b: readonly PanelBlock[]) => JSON.stringify(a) === JSON.stringify(b)
 
@@ -288,7 +288,7 @@ function AddBlock({
               </ul>
             </div>
           )}
-          {GROUPS.map(({ group, kinds }) => (
+          {PANEL_GROUPS.map(({ group, kinds }) => (
             <div key={group} className={styles.pickerGroup}>
               <p>{t(`panelBlocks.groups.${group}`)}</p>
               <ul>
