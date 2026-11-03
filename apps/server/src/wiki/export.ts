@@ -19,6 +19,7 @@ import type { Storage } from '../files/storage.ts'
 import { documentJson } from './content.ts'
 import { fileNames } from './file-embeds.ts'
 import { propertiesOf } from './properties.ts'
+import { deletedTemplates, usableTemplates } from './templates.ts'
 
 /** Un nombre de archivo que vale en cualquier sistema: sin barras ni lo que Windows no admite */
 export function fileName(title: string) {
@@ -38,6 +39,7 @@ interface TreePage {
   parentId: string | null
   title: string
   properties: unknown[]
+  template: string | null
 }
 
 /**
@@ -120,6 +122,11 @@ export async function exportContents(ctx: ActionContext, input: ExportInput): Pr
   }
 
   const nameOfFile = await fileNames(ctx, wiki.worldId)
+  // La plantilla de cada página, por su nombre (también las borradas): va primera en su YAML
+  const templateName = new Map([
+    ...(await usableTemplates(ctx, wiki.organizationId)).map((t) => [t.id, t.name] as const),
+    ...(await deletedTemplates(ctx, wiki.organizationId)).map((t) => [t.id, t.name] as const)
+  ])
 
   const documents = await documentsRepo.documentsWithState(
     ctx.db,
@@ -138,8 +145,12 @@ export async function exportContents(ctx: ActionContext, input: ExportInput): Pr
         documentJson(ctx, { kind: 'separate', documentId: doc.id, pageId: page.id }, doc.state).content ?? []
       )
     }
+    const template = page.template ? templateName.get(page.template) : undefined
     const markdown = pageToMarkdown({
-      properties: propertiesOf(page.properties),
+      properties: [
+        ...(template ? [{ name: 'plantilla', type: 'text' as const, value: template }] : []),
+        ...propertiesOf(page.properties)
+      ],
       body,
       separate: (documentId) => separates.get(documentId) ?? null,
       pageTitle: linkTo,

@@ -275,10 +275,24 @@ test('@fugas la wiki es solo del máster: a la jugadora no le llegan ni sus pág
     ['getPageContent', { pageId: tower.id }],
     ['getPageContent', { pageId: tower.id, preview: true }],
     ['listPageVersions', { pageId: tower.id }],
-    ['searchWiki', { worldId, query: 'torre' }]
+    ['searchWiki', { worldId, query: 'torre' }],
+    ['getPageTables', { pageId: tower.id }],
+    ['searchWiki', { worldId, template: 'pnj' }]
   ] as const) {
     const response = await player.request.post(`/api/actions/${name}`, { data })
     expect(response.status(), name).toBe(404)
+  }
+  // Ni las plantillas de la cuenta (ADR-0009), ni su aviso
+  const own = await page.request.post('/api/actions/createTemplate', { data: { name: 'La Plantilla Secreta' } })
+  expect(own.status()).toBe(200)
+  for (const [name, data] of [
+    ['listTemplates', {}],
+    ['getTemplate', { templateId: (await own.json()).id }],
+    ['createTemplate', { name: 'Mía' }]
+  ] as const) {
+    const response = await player.request.post(`/api/actions/${name}`, { data })
+    expect(response.status(), name).toBeGreaterThanOrEqual(400)
+    expect(await response.text(), name).not.toContain('La Plantilla Secreta')
   }
   // Ni exportar: ni la wiki ni una página
   for (const data of [{ worldId }, { worldId, pageId: tower.id, children: true }]) {
@@ -295,6 +309,7 @@ test('@fugas la wiki es solo del máster: a la jugadora no le llegan ni sus pág
     'La Sala de los Mapas',
     'mapa de las corrientes',
     'paga a los guardias',
+    'La Plantilla Secreta',
     tower.id,
     room.id,
     '"pages"'

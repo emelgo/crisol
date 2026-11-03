@@ -216,7 +216,9 @@ amplía `@fugas` en la misma tarea. Cobertura ≥ 80 % de lo cambiado (bloquea d
   - Archivos: `apps/server/src/wiki/templates.ts`, `apps/server/src/actions/page-content.ts`,
     `apps/web/src/wiki/apply-template.tsx` (nuevo), `apps/web/src/wiki/wiki.tsx`.
 
-- [ ] **14. Cierre del módulo**
+- [x] **14. Cierre del módulo** — hecha: exportar lleva `plantilla:`, `@fugas` cubre plantillas, tablas y su aviso, y
+  las instrucciones del MCP hablan de plantillas. En local, todo en verde (84 e2e, 5 de fugas, 17 de accesibilidad).
+  Falta que Enrique repase los criterios de éxito en staging (punto de control final).
   - Acepta:
     - Exportar a Markdown lleva `plantilla:` y los tipos nuevos.
     - `@fugas`: un jugador no recibe plantillas ni tablas por ninguna vía.

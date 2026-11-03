@@ -9,34 +9,22 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
 
 ### Para retomar (2026-11-03, módulo 2)
 
-- **Módulo 2 empezado** en la rama `modulo-2/spec` (sin PR aún). Hecha la entrevista (decisiones en «2. Tipos de página
-  y plantillas», abajo) y los estudios: Foundry con craft-anything (`research/foundry/tipos-de-documento.md`) y Kanka,
-  LegendKeeper y World Anvil por su web pública (`research/kanka/`, `research/legendkeeper/`, `research/worldanvil/`).
-- **Spec aprobada** («si», con las cuatro propuestas): `docs/specs/plantillas.md`. **ADR-0009** escrito
-  (`docs/adr/0009-plantillas-y-campos.md`): campos con id, linaje de plantillas en la página y tablas calculadas en el
-  servidor.
-- **Diseño aprobado** («ok», 2026-11-03): lienzo «Crisol: plantillas» en claude.ai
-  (https://claude.ai/artifact/SBQfr3xdPCpyEeiMqgzees; fuentes en `out/lienzo-plantillas/`, fuera de git), con el
-  aspecto real de la app. Seis tablas: «Página nueva» desde plantilla, un PNJ con sus campos, la facción con
-  «Miembros» y su configuración, «Plantillas» en Mis mundos, el editor de «Frente» y aplicar una plantilla a una página
-  hecha. Las opciones de Estado de PNJ, sin género («Vive», «Ha muerto»…), también aprobadas.
-- **Plan aprobado** («Ok»): `tasks/plan.md` y 14 tareas en `tasks/todo.md`, en cinco fases, con cuatro puntos de
-  control. Los del módulo 1 pasan a `tasks/wiki/`.
-- **La CI gasta cuota mensual** (Enrique, 2026-11-03): no se pasa en cada PR. Las tareas se juntan en la rama
-  `modulo-2/campos` (PR #93, sin subir más hasta la tanda) y los puntos de control se prueban en local.
-- **Hechas las tareas 1 y 2** (campos con id y tipos nuevos; sus controles en el panel). **Punto de control 1**, en
-  local: un desplegable, un enlace a una página y un reloj en el panel.
-- **Hechas las tareas 3 y 4**: las seis plantillas de serie (`listar_plantillas`, `ver_plantilla`) y crear desde
-  plantilla en el servidor y por `crear_paginas` (migración 0035, ya aplicada en la base de desarrollo). Hecha la
-  tarea 5 («Desde plantilla» en «Página nueva»). Hecha la
-  tarea 6 (crear con plantilla desde un enlace sin resolver). **Punto de control 2**, en local. Hecha la tarea
-  7 (la consulta de las tablas: p95 de 43 ms con 5.000 páginas). Hecha la tarea 8 («Tabla de páginas» en el panel).
-  **Punto de control 3**, en local: un PNJ con su facción sale solo en «Miembros». Hecha la tarea 9
-  (plantillas de la cuenta en el servidor; migración 0036, ya en la base de desarrollo). Hecha la tarea 10
-  (la pantalla «Plantillas» en Mis mundos). Hecha la tarea 11 (editar una plantilla: campos y panel). Hecha la tarea 12 (el texto de la
-  plantilla). **Punto de control 4**, en local. Hecha la tarea 13 (aplicar una plantilla a una página ya hecha). **Lo siguiente**: la tarea
-  14 (cierre del módulo).
-- REA ya no se usa: los estudios se hacen con craft-anything (cambiado en `CLAUDE.md` y `research/README.md`).
+- **El módulo 2 (tipos de página y plantillas) está construido**: las 14 tareas de `tasks/todo.md`, en la rama
+  `modulo-2/campos` (PR #93). La spec es `docs/specs/plantillas.md`, el ADR-0009 y el diseño, el lienzo «Crisol:
+  plantillas» (aprobados).
+  - Campos con id y tipos nuevos (opciones, reloj, enlace a una sola página), con sus controles en el panel.
+  - Seis plantillas de serie y las de la cuenta (`/plantillas` en Mis mundos, con su editor de campos, panel y texto).
+  - «Desde plantilla» al crear una página o desde un enlace sin resolver; aplicar una plantilla a una página ya hecha.
+  - Tablas que se llenan solas en el panel («Miembros», «Habitantes»…): p95 de 43 ms con 5.000 páginas.
+  - MCP: `listar_plantillas`, `ver_plantilla`, `crear_plantilla`, `cambiar_plantilla`, `borrar_plantilla`; `crear_paginas`,
+    `editar_pagina` y `buscar_paginas` con plantilla; `leer_pagina` con sus tablas.
+  - Migraciones 0035 y 0036 (ya en la base de desarrollo).
+- **La CI gasta cuota mensual** (Enrique, 2026-11-03): no se pasa en cada PR. Esta tanda sube junta y se pasa una vez;
+  después, merge y staging.
+- **Lo siguiente**: Enrique repasa en staging los criterios de éxito de la spec (también desde claude.ai, con la IA).
+  Lo que diga, a `docs/diseno.md` si son normas de la interfaz.
+- **Apuntado**: las pruebas de ritmo de la búsqueda (módulo 1) fallan a veces con todo a la vez en el VPS, por la carga;
+  solas pasan. El ritmo de 50 páginas desde plantilla y el de las tablas, en la prueba de escala (`CRISOL_ESCALA=1`).
 
 ### Para retomar (2026-11-03, cierre de la interfaz)
 
@@ -986,7 +974,7 @@ Estados: pendiente · en curso · hecho · descartado.
 |---|---|---|---|
 | 0 | **Fundación**: monorepo, CI, despliegue, cuentas, organizaciones, mundos, campañas, roles, historial y deshacer, esqueleto del MCP | **hecho** (2026-10-29; Discord y Google, pospuestos) | Foundry: modelo de documentos y permisos; DDB: campañas e invitaciones |
 | 1 | **Wiki**: páginas y subpáginas, editor de bloques, enlaces, menciones, vista previa, propiedades, secretos, búsqueda, marcadores, etiquetas, versiones, recursos y archivos, **hojas con estilo** (tipo Homebrewery, con PDF), exportación MD, sus herramientas MCP | construido (tareas 1 a 26 hechas); falta la revisión de Enrique en staging | Foundry: Journal; DDB: contenido y referencias; Homebrewery (MIT): formato de hoja y descarga |
-| 2 | **Tipos de página y plantillas**: «Desde plantilla» (de serie y propias), campos en el panel, tablas que se llenan solas (en lugar de Dataview) | en curso (entrevista hecha, 2026-11-03) | Foundry: tipos de documento; Kanka, LegendKeeper y World Anvil (web pública) |
+| 2 | **Tipos de página y plantillas**: «Desde plantilla» (de serie y propias), campos en el panel, tablas que se llenan solas (en lugar de Dataview) | construido (tareas 1 a 14, 2026-11-03); falta la revisión de Enrique en staging | Foundry: tipos de documento; Kanka, LegendKeeper y World Anvil (web pública) |
 | 3 | Sistemas de reglas, fichas de personaje (creación, subida de nivel), dados y dados 3D | pendiente | DDB: creador y hoja; Foundry: dnd5e, DataModel e instalar y crear sistemas |
 | 4 | Compendios (aparte de la wiki del mundo y **como los de Foundry**: antes, estudio a fondo con craft-anything), bestiario, statblocks, biblioteca; **buscar dentro de los PDF** (texto de cada página con pdf.js; el resultado abre el visor en esa página) **y por significado** (pgvector; antes, permiso para la imagen de Postgres y elegir quién calcula los embeddings) | pendiente | Foundry: compendium packs; DDB: listados |
 | 5 | Visibilidad por campaña: conocimiento de los jugadores, revelar, compartir | pendiente | Foundry: ownership |
