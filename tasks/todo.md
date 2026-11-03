@@ -76,7 +76,7 @@ amplía `@fugas` en la misma tarea. Cobertura ≥ 80 % de lo cambiado (bloquea d
     - Junto al título, la plantilla con su icono (sin enlace hasta la tarea 10).
   - Comprueba: pruebas de componentes y e2e (crear un PNJ desde plantilla y rellenar su Facción) con axe.
   - Archivos: `apps/web/src/wiki/new-page.tsx`, `apps/web/src/wiki/template-picker.tsx` (nuevo),
-    `apps/web/src/wiki/page.tsx`, `apps/web/src/i18n.ts`, `e2e/tests/plantillas.spec.ts`.
+    `apps/web/src/wiki/wiki.tsx`, `apps/web/src/i18n.ts`, `e2e/tests/plantillas.spec.ts`.
 
 - [ ] **6. Crear desde un enlace sin resolver, con plantilla**
   - Acepta: pulsar un enlace sin resolver (en el texto y en los enlaces sin resolver) ofrece «Texto» o una plantilla,
@@ -184,7 +184,7 @@ amplía `@fugas` en la misma tarea. Cobertura ≥ 80 % de lo cambiado (bloquea d
     - MCP: `editar_pagina` con `plantilla`.
   - Comprueba: integración (aplicar sobre una página con propiedades a mano; deshacer) y e2e.
   - Archivos: `apps/server/src/wiki/templates.ts`, `apps/server/src/actions/page-content.ts`,
-    `apps/web/src/wiki/apply-template.tsx` (nuevo), `apps/web/src/wiki/page.tsx`.
+    `apps/web/src/wiki/apply-template.tsx` (nuevo), `apps/web/src/wiki/wiki.tsx`.
 
 - [ ] **14. Cierre del módulo**
   - Acepta:
