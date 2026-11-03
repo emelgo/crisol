@@ -7,6 +7,19 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
+### Para retomar (2026-11-03, módulo 2)
+
+- **Módulo 2 empezado** en la rama `modulo-2/spec` (sin PR aún). Hecha la entrevista (decisiones en «2. Tipos de página
+  y plantillas», abajo) y los estudios: Foundry con craft-anything (`research/foundry/tipos-de-documento.md`) y Kanka,
+  LegendKeeper y World Anvil por su web pública (`research/kanka/`, `research/legendkeeper/`, `research/worldanvil/`).
+- **Spec escrita**: `docs/specs/plantillas.md`, a falta de que Enrique la apruebe y responda sus cuatro preguntas
+  abiertas (copias que cuentan, aplicar plantilla a una página hecha, campos a mano fuera de las tablas, contenido de
+  las de serie).
+- **Lo siguiente**: con la spec aprobada, el ADR-0009 (identidad de los campos y la consulta de las tablas) y el diseño
+  de pantallas con `frontend-design` (elegir plantilla, controles de los campos, «Tabla de páginas», «Plantillas» y su
+  editor); después `/plan`.
+- REA ya no se usa: los estudios se hacen con craft-anything (cambiado en `CLAUDE.md` y `research/README.md`).
+
 ### Para retomar (2026-11-03, cierre de la interfaz)
 
 - **La etapa de interfaz queda cerrada** («vamos a parar con la UI de momento, con lo que tenemos podremos diseñar los
