@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { findName, fragmentAround, plainText, textBlocks } from './text.ts'
+import { findName, fragmentAround, plainText, separateHeadings, textBlocks } from './text.ts'
 
 const doc = {
   type: 'doc',
@@ -41,5 +41,34 @@ describe('el texto de un documento', () => {
     expect(fragment.endsWith('…')).toBe(true)
     expect(fragment).toContain('Maela')
     expect(fragmentAround('corto', 0)).toBe('corto')
+  })
+})
+
+describe('dónde está cada secreto', () => {
+  const heading = (id: string, text: string) => ({
+    type: 'heading',
+    attrs: { id, level: 2 },
+    content: [{ type: 'text', text }]
+  })
+  const secret = (documentId: string) => ({ type: 'secret', attrs: { id: `b-${documentId}`, documentId } })
+
+  it('el título de la sección del cuerpo que lo tiene, también dentro de otro bloque; antes del primero, ninguno', () => {
+    const doc = {
+      type: 'doc',
+      content: [
+        secret('d0'),
+        heading('h1', 'Guaridas'),
+        { type: 'paragraph', content: [{ type: 'text', text: 'Cuevas.' }] },
+        secret('d1'),
+        heading('h2', 'Historia'),
+        { type: 'box', content: [secret('d2'), { type: 'note', attrs: { id: 'n', documentId: 'd3' } }] }
+      ]
+    }
+    expect(Object.fromEntries(separateHeadings(doc))).toEqual({
+      d0: { heading: null, headingId: null },
+      d1: { heading: 'Guaridas', headingId: 'h1' },
+      d2: { heading: 'Historia', headingId: 'h2' },
+      d3: { heading: 'Historia', headingId: 'h2' }
+    })
   })
 })
