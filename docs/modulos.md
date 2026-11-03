@@ -33,8 +33,9 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   7 (la consulta de las tablas: p95 de 43 ms con 5.000 páginas). Hecha la tarea 8 («Tabla de páginas» en el panel).
   **Punto de control 3**, en local: un PNJ con su facción sale solo en «Miembros». Hecha la tarea 9
   (plantillas de la cuenta en el servidor; migración 0036, ya en la base de desarrollo). Hecha la tarea 10
-  (la pantalla «Plantillas» en Mis mundos). Hecha la tarea 11 (editar una plantilla: campos y panel). **Lo siguiente**: la tarea 12 (el
-  esqueleto del texto).
+  (la pantalla «Plantillas» en Mis mundos). Hecha la tarea 11 (editar una plantilla: campos y panel). Hecha la tarea 12 (el texto de la
+  plantilla). **Punto de control 4**, en local. **Lo siguiente**: la tarea 13 (aplicar una plantilla a una página ya
+  hecha).
 - REA ya no se usa: los estudios se hacen con craft-anything (cambiado en `CLAUDE.md` y `research/README.md`).
 
 ### Para retomar (2026-11-03, cierre de la interfaz)

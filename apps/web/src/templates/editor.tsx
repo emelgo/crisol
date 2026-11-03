@@ -20,6 +20,7 @@ import { FieldsEditor } from './fields.tsx'
 import { TEMPLATE_ICON } from './icons.tsx'
 import { useTemplates } from './picker.tsx'
 import { NewTemplateDialog } from './screen.tsx'
+import { SkeletonEditor } from './skeleton.tsx'
 
 type Patch = Partial<Pick<PageTemplate, 'name' | 'fields' | 'panel' | 'skeleton'>>
 
@@ -112,7 +113,13 @@ function TemplateEditor({ template, all }: { template: PageTemplate; all: readon
           </p>
         )}
         <FormError message={save.error ? errorText(save.error) : null} />
-        <Skeleton skeleton={draft.skeleton} />
+        <div className={styles.skeleton}>
+          <SkeletonEditor
+            skeleton={template.skeleton}
+            readOnly={readOnly}
+            onChange={(skeleton) => change({ skeleton })}
+          />
+        </div>
       </div>
 
       <aside className={styles.panel} aria-label={t('templateEditor.panel')}>
@@ -179,26 +186,6 @@ function TitleInput({ name, onCommit }: { name: string; onCommit: (name: string)
         }}
       />
     </h1>
-  )
-}
-
-/** El texto con el que nacen sus páginas: de momento se lee (su editor, con la tarea 12) */
-function Skeleton({ skeleton }: { skeleton: string }) {
-  const { t } = useTranslation()
-  const sections = [...skeleton.matchAll(/^#{1,6}\s+(.+)$/gm)].map((match) => match[1] ?? '')
-  return (
-    <div className={styles.skeleton}>
-      <p className={styles.blockTitle}>{t('templates.inText')}</p>
-      {sections.length === 0 ? (
-        <p className={styles.muted}>{t('templates.none')}</p>
-      ) : (
-        sections.map((section) => (
-          <h2 key={section} className={styles.section}>
-            {section}
-          </h2>
-        ))
-      )}
-    </div>
   )
 }
 

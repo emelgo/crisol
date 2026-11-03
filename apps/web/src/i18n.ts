@@ -657,6 +657,8 @@ export const es = {
     removeField: 'Quitar el campo',
     blockTitle: 'Título del bloque {{kind}}',
     builtInNote: 'De serie: no se puede cambiar.',
+    skeleton: 'Texto de la plantilla',
+    skeletonHint: 'El texto con el que nacen sus páginas: pulsa «/» para insertar',
     saving: 'Guardando…',
     saved: 'Guardado'
   },

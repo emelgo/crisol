@@ -145,6 +145,16 @@ test('editar una plantilla tuya: «Frente» con un reloj de 8, y una página hec
   await fields.getByLabel('Segmentos').press('Enter')
   await saved
   await expect(fields.getByRole('button', { name: /Reloj de 8/ })).toBeVisible()
+  // Su texto: «## » hace un título, como en la wiki; se guarda solo
+  const skeleton = page.getByRole('textbox', { name: 'Texto de la plantilla' })
+  await skeleton.click()
+  const written = page.waitForResponse(
+    (r) => r.url().endsWith('/api/actions/updateTemplate') && /La verdad/.test(r.request().postData() ?? '')
+  )
+  await page.keyboard.type('## En una frase')
+  await page.keyboard.press('Enter')
+  await page.keyboard.type('## La verdad')
+  await written
   for (const colorScheme of ['light', 'dark'] as const) {
     await page.emulateMedia({ colorScheme })
     const { violations } = await new AxeBuilder({ page }).include('main').withTags(['wcag2a', 'wcag2aa']).analyze()
@@ -159,4 +169,8 @@ test('editar una plantilla tuya: «Frente» con un reloj de 8, y una página hec
     .getByRole('region', { name: 'Propiedades' })
     .getByRole('group', { name: 'Valor de la propiedad 1' })
   await expect(clock.getByRole('button', { name: 'Segmento 8 de 8' })).toBeVisible()
+  // Y su texto, igual que se escribió
+  const body = page.getByRole('textbox', { name: 'Texto de la página' })
+  await expect(body.getByRole('heading', { level: 3, name: 'En una frase' })).toBeVisible()
+  await expect(body.getByRole('heading', { level: 3, name: 'La verdad' })).toBeVisible()
 })

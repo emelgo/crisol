@@ -188,7 +188,9 @@ amplía `@fugas` en la misma tarea. Cobertura ≥ 80 % de lo cambiado (bloquea d
   - Archivos: `apps/web/src/templates/editor.tsx` (nuevo, + CSS), `apps/web/src/templates/fields.tsx` (nuevo),
     `apps/web/src/wiki/panel-blocks.tsx`, `apps/web/src/i18n.ts`.
 
-- [ ] **12. Editar una plantilla: el esqueleto del texto**
+- [x] **12. Editar una plantilla: el esqueleto del texto** — hecha. El editor de la wiki con su propio deshacer
+  (`history` en `editorExtensions`) y sin secretos ni notas ocultas; escribir en él se prueba en la e2e (en happy-dom,
+  ProseMirror no recibe bien el teclado).
   - Acepta: el texto de la plantilla se escribe con el editor de la wiki sin colaboración y se guarda como Markdown.
     Al crear una página, sale igual que se escribió.
   - Comprueba: ida y vuelta (escribir el esqueleto, crear la página y comparar) y e2e.
