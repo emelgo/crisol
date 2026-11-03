@@ -26,8 +26,9 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   `modulo-2/campos` (PR #93, sin subir más hasta la tanda) y los puntos de control se prueban en local.
 - **Hechas las tareas 1 y 2** (campos con id y tipos nuevos; sus controles en el panel). **Punto de control 1**, en
   local: un desplegable, un enlace a una página y un reloj en el panel.
-- **Hecha la tarea 3** (las seis plantillas de serie, `listar_plantillas` y `ver_plantilla`). **Lo siguiente**: la
-  tarea 4 (crear desde plantilla en el servidor y por el MCP; migración 0035).
+- **Hechas las tareas 3 y 4**: las seis plantillas de serie (`listar_plantillas`, `ver_plantilla`) y crear desde
+  plantilla en el servidor y por `crear_paginas` (migración 0035, ya aplicada en la base de desarrollo). **Lo
+  siguiente**: la tarea 5 («Desde plantilla» en «Página nueva»).
 - REA ya no se usa: los estudios se hacen con craft-anything (cambiado en `CLAUDE.md` y `research/README.md`).
 
 ### Para retomar (2026-11-03, cierre de la interfaz)

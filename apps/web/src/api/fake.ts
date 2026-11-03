@@ -152,6 +152,7 @@ export function fakeApi(
     cover?: Page['cover']
     sheet?: Page['sheet']
     panel?: Page['panel']
+    template?: string | null
     version: number
   }
   const pages: StoredPage[] = (options.pages ?? []).map((page) => ({
@@ -219,6 +220,7 @@ export function fakeApi(
       cover: page.cover ?? null,
       sheet: page.sheet ?? null,
       panel: (page.panel ?? []).map((b) => ({ ...b })),
+      template: page.template ?? null,
       path,
       updatedAt: new Date().toISOString()
     }

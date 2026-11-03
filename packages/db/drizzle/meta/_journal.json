@@ -246,6 +246,13 @@
       "when": 1793705961687,
       "tag": "0034_indice_documento_de_pestana",
       "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1793723989629,
+      "tag": "0035_plantilla_de_la_pagina",
+      "breakpoints": true
     }
   ]
 }

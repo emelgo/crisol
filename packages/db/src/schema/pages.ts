@@ -35,6 +35,10 @@ export const pages = pgTable(
     sheet: jsonb().$type<Record<string, unknown> | null>(),
     // El panel a su lado: bloques con datos de toda la página (ADR-0008)
     panel: jsonb().$type<unknown[]>().notNull().default([]),
+    // La plantilla de la que salió (ADR-0009): el id legible de una de serie («pnj») o el de una propia
+    template: text(),
+    // Esa y todas de las que viene: las tablas casan con cualquiera, aunque se borre una propia
+    templateLine: text().array().notNull().default(sql`'{}'::text[]`),
     /** En la papelera desde entonces, con sus subpáginas: no sale en ninguna vista y a los 30 días se purga */
     deletedAt: timestamp({ withTimezone: true })
   },
@@ -42,6 +46,9 @@ export const pages = pgTable(
     index().on(t.worldId, t.parentId),
     index().on(t.parentId),
     index().on(t.deletedAt),
-    index('pages_search').using('gin', t.searchTsv)
+    index('pages_search').using('gin', t.searchTsv),
+    // Las tablas que se llenan solas: por plantilla y por los enlaces de los campos (ADR-0009)
+    index('pages_template_line').using('gin', t.templateLine),
+    index('pages_properties').using('gin', t.properties.op('jsonb_path_ops'))
   ]
 )

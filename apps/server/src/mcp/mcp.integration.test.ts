@@ -355,6 +355,26 @@ describe('conector MCP con OAuth', () => {
     expect(entries[0]).toMatchObject({ action: 'editPage', via: 'ai', tool: 'editar_pagina' })
   })
 
+  it('Claude crea con plantilla; si un valor no cabe en su campo, el error le dice qué campos tiene', async () => {
+    const { call } = await connected()
+    const world = (await call<World>('crear_mundo', { name: 'Eana' })).data
+    const bad = await call('crear_paginas', {
+      worldId: world.id,
+      parentId: null,
+      pages: [{ key: 'a', title: 'Mamá Gris', template: 'PNJ', markdown: '---\nFacción: 7\n---\n' }]
+    })
+    expect(bad.isError).toBe(true)
+    expect(bad.text).toContain('«Facción» no cabe en el campo «Facción» de PNJ')
+    expect(bad.text).toContain('Sus campos: Especie (texto), Rol (texto), Facción (páginas, una)')
+    const made = await call<{ pages: { id: string }[] }>('crear_paginas', {
+      worldId: world.id,
+      parentId: null,
+      pages: [{ key: 'a', title: 'Mamá Gris', template: 'PNJ', markdown: '---\nRol: Jefa\n---\n' }]
+    })
+    const read = await call<{ page: { template: string } }>('leer_pagina', { pageId: made.data.pages[0]?.id })
+    expect(read.data.page.template).toBe('pnj')
+  })
+
   it('lo de otra organización no existe para Claude: ni se ve, ni se pide, ni se deshace', async () => {
     const mine = await connected()
     const other = await connected()

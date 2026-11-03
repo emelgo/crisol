@@ -3,7 +3,7 @@
  * su panel y el esqueleto del texto en Markdown. Las de serie viven aquí, en español (son contenido, no interfaz) y no se
  * cambian; las de la cuenta tienen la misma forma y se guardan en la base de datos
  */
-import type { PageProperty } from './properties.ts'
+import { conformTo, type PageProperty } from './properties.ts'
 
 /** Los iconos que puede llevar una plantilla (la web los dibuja) */
 export const TEMPLATE_ICONS = [
@@ -218,4 +218,35 @@ export function instantiate(template: PageTemplate, newId: () => string): Instan
     panel: template.panel.map((block) => ({ ...structuredClone(block), id: newId() })),
     markdown: template.skeleton
   }
+}
+
+/** Cómo se casa un nombre con un campo: sin espacios de los lados, mayúsculas ni tildes («Faccion» es «Facción») */
+export const fieldKey = (name: string) => name.normalize('NFD').replace(/\p{M}/gu, '').trim().toLocaleLowerCase('es')
+
+/**
+ * Los campos de una plantilla con las propiedades que se dan al crear (la IA, el YAML): cada una va a su campo por su
+ * nombre, con el nombre y la forma del campo; los que no se dan, con su valor inicial; las que no son de ningún campo,
+ * detrás. Si una no cabe en su campo, cuál
+ */
+export function fillTemplate(
+  fields: readonly PageProperty[],
+  given: readonly PageProperty[]
+): { properties: PageProperty[] } | { problem: { given: string; field: string } } {
+  const byKey = new Map(given.map((property) => [fieldKey(property.name), property]))
+  const used = new Set<string>()
+  const properties: PageProperty[] = []
+  for (const field of fields) {
+    const key = fieldKey(field.name)
+    const value = byKey.get(key)
+    if (!value) {
+      properties.push(structuredClone(field))
+      continue
+    }
+    used.add(key)
+    const shaped = conformTo(field, value)
+    if (!shaped) return { problem: { given: value.name, field: field.name } }
+    properties.push({ ...shaped, name: field.name })
+  }
+  for (const property of given) if (!used.has(fieldKey(property.name))) properties.push(property)
+  return { properties }
 }

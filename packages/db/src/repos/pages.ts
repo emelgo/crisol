@@ -43,6 +43,7 @@ export async function findPage(db: Database, pageId: string) {
       cover: pages.cover,
       sheet: pages.sheet,
       panel: pages.panel,
+      template: pages.template,
       updatedAt: pages.updatedAt,
       hasChildren
     })
@@ -393,6 +394,9 @@ export interface NewPage {
   separates: { id: string; kind: 'secret' | 'note'; state: Uint8Array }[]
   /** Su primera versión (con texto), en la misma operación: deshacer la creación la quita también */
   version?: { fingerprint: string; documents: DocumentState[] }
+  /** La plantilla de la que sale y su linaje (ADR-0009), y su panel */
+  template?: { id: string; line: string[] }
+  panel?: unknown[]
 }
 
 /**
@@ -437,7 +441,9 @@ export function createPagesWithBodies(
         position,
         title: page.title,
         icon: page.icon,
-        ...(properties && properties.length > 0 ? { properties } : {})
+        ...(properties && properties.length > 0 ? { properties } : {}),
+        ...(page.template ? { template: page.template.id, templateLine: page.template.line } : {}),
+        ...(page.panel && page.panel.length > 0 ? { panel: page.panel } : {})
       })
       ids.set(page.key, row.id)
       created.push({ key: page.key, id: row.id, title: row.title, parentId })

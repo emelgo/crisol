@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import { propertiesProblem } from './properties.ts'
-import { BUILT_IN_TEMPLATES, builtInTemplate, instantiate, lineOf, TEMPLATE_ICONS } from './templates.ts'
+import {
+  BUILT_IN_TEMPLATES,
+  builtInTemplate,
+  fieldKey,
+  fillTemplate,
+  instantiate,
+  lineOf,
+  TEMPLATE_ICONS
+} from './templates.ts'
 
 describe('las plantillas de serie', () => {
   it('son seis, con su id legible y en este orden', () => {
@@ -79,5 +87,43 @@ describe('crear una página desde una plantilla', () => {
     if (first?.type === 'choice') first.options.push('Isla')
     expect(lugar.fields[0]).toMatchObject({ type: 'choice' })
     expect(lugar.fields[0]?.type === 'choice' && lugar.fields[0].options).not.toContain('Isla')
+  })
+})
+
+describe('las propiedades que se dan al crear con una plantilla', () => {
+  const pnj = builtInTemplate('pnj')
+  if (!pnj) throw new Error('sin PNJ')
+
+  it('un nombre casa con su campo sin mirar mayúsculas ni tildes', () => {
+    expect(fieldKey(' Facción ')).toBe(fieldKey('faccion'))
+    expect(fieldKey('Dentro de')).toBe('dentro de')
+  })
+
+  it('cada una va a su campo con su forma; las que no se dan, con su valor inicial; las demás, detrás', () => {
+    const filled = fillTemplate(pnj.fields, [
+      { name: 'faccion', type: 'pages', value: ['raqisa'] },
+      { name: 'Estado', type: 'text', value: 'Ha muerto' },
+      { name: 'Apodo', type: 'text', value: 'La Vieja' }
+    ])
+    expect('properties' in filled && filled.properties.map((p) => [p.name, p.field, p.type])).toEqual([
+      ['Especie', 'especie', 'text'],
+      ['Rol', 'rol', 'text'],
+      ['Facción', 'faccion', 'pages'],
+      ['Lugar', 'lugar', 'pages'],
+      ['Estado', 'estado', 'choice'],
+      ['Padres', 'padres', 'pages'],
+      ['Pareja', 'pareja', 'pages'],
+      ['Apodo', undefined, 'text']
+    ])
+    expect('properties' in filled && filled.properties[2]).toMatchObject({
+      single: true,
+      targets: ['faccion'],
+      value: ['raqisa']
+    })
+  })
+
+  it('si una no cabe en su campo, dice cuál y qué campos tiene la plantilla', () => {
+    const filled = fillTemplate(pnj.fields, [{ name: 'Facción', type: 'boolean', value: true }])
+    expect(filled).toEqual({ problem: { given: 'Facción', field: 'Facción' } })
   })
 })

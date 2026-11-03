@@ -63,7 +63,9 @@ amplía `@fugas` en la misma tarea. Cobertura ≥ 80 % de lo cambiado (bloquea d
   - Archivos: `packages/domain/src/templates.ts`, `packages/contracts/src/templates.ts`,
     `apps/server/src/actions/templates.ts`, `apps/server/src/mcp/tools.ts`.
 
-- [ ] **4. Crear desde plantilla en el servidor y por el MCP**
+- [x] **4. Crear desde plantilla en el servidor y por el MCP** — hecha. `createPage` pasó a `page-content.ts`: con
+  plantilla va por el mismo camino que `createPages` (con plantilla, la colocación es al final de su rama). El texto que
+  explica qué campos tiene la plantilla lo recibe la IA por el MCP; la web, solo el código.
   - Acepta:
     - Migración 0035: `pages.template` y `pages.template_line`, con sus índices GIN (`template_line` y `properties`).
     - `instantiateTemplate` en el servidor, usado por `createPage` (con `template`) y `createPages` (con

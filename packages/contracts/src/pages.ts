@@ -95,6 +95,8 @@ export const page = pageSummary.extend({
   sheet: sheetSettings.nullable(),
   /** El panel a su lado: bloques con datos de toda la página */
   panel: pagePanel,
+  /** La plantilla de la que salió (ADR-0009), o null */
+  template: templateRef.nullable(),
   path: z.array(z.object({ id: z.uuid(), title: z.string() })),
   updatedAt: z.string()
 })
@@ -118,6 +120,7 @@ export const createPage = defineAction({
       worldId: z.uuid(),
       title: pageTitle,
       parentId: z.uuid().nullable().default(null).describe('La página madre; sin ella, en el primer nivel'),
+      template: templateRef.optional().describe('La plantilla con la que nace: sus campos, su panel y su texto'),
       ...placement
     })
     .refine(onlyOneNeighbour, { message: 'before o after, no los dos' }),
@@ -353,7 +356,16 @@ const newPage = z.object({
     .describe('La key de otra página de esta llamada que será su madre; sin parent, va donde diga parentId'),
   title: pageTitle,
   icon: pageIcon.optional(),
-  markdown: markdownText.optional().describe('Sus propiedades (YAML) y su cuerpo')
+  markdown: markdownText.optional().describe('Sus propiedades (YAML) y su cuerpo'),
+  template: z
+    .string()
+    .trim()
+    .min(1)
+    .max(60)
+    .optional()
+    .describe(
+      'La plantilla (su id o su nombre, de listar_plantillas): nace con sus campos, su panel y, si no se da cuerpo, su texto. Las propiedades del YAML que se llamen como un campo (sin mirar mayúsculas ni tildes) van a ese campo con su forma'
+    )
 })
 
 export const createPages = defineAction({

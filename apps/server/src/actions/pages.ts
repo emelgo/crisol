@@ -1,5 +1,4 @@
 import {
-  createPage,
   createPageDocument,
   getPage,
   listPageChildren,
@@ -53,6 +52,7 @@ export async function pageView(ctx: ActionContext, pageId: string): Promise<Page
     sheet: sheetSettings.safeParse(found.sheet).data ?? null,
     // Lo guardado que no valga (de una versión anterior) cuenta como panel vacío
     panel: pagePanel.safeParse(found.panel).data ?? [],
+    template: found.template,
     path: await pagesRepo.pagePath(ctx.db, pageId),
     updatedAt: found.updatedAt.toISOString()
   }
@@ -67,7 +67,7 @@ export async function parentIn(ctx: ActionContext, wiki: WikiTarget, parentId: s
 }
 
 /** La hermana junto a la que va: de la misma rama, y no la propia página */
-async function checkNeighbour(
+export async function checkNeighbour(
   ctx: ActionContext,
   wiki: WikiTarget,
   input: { parentId: string | null; before?: string | undefined; after?: string | undefined },
@@ -85,36 +85,17 @@ async function checkNeighbour(
     throw new InvalidRequestError('BAD_PLACEMENT')
 }
 
-const placementOf = (input: { parentId: string | null; before?: string | undefined; after?: string | undefined }) => ({
+export const placementOf = (input: {
+  parentId: string | null
+  before?: string | undefined
+  after?: string | undefined
+}) => ({
   parentId: input.parentId,
   ...(input.before ? { before: input.before } : {}),
   ...(input.after ? { after: input.after } : {})
 })
 
 export const pageActions = [
-  implement(createPage, async (ctx, input) => {
-    const wiki = await authorizedWiki(ctx, 'page.write', input.worldId)
-    const parent = await parentIn(ctx, wiki, input.parentId)
-    if (parent) {
-      const blocker = moveBlocker({
-        pageId: '',
-        parentPath: (await pagesRepo.pagePath(ctx.db, parent.id)).map((p) => p.id),
-        subtreeHeight: 1
-      })
-      if (blocker) throw new InvalidRequestError(blocker)
-    }
-    await checkNeighbour(ctx, wiki, input)
-    const created = await pagesRepo.createPage(
-      ctx.db,
-      historyContext(ctx, 'createPage', { title: input.title, parent: parent?.title ?? null }, wiki),
-      { worldId: wiki.worldId, title: input.title, placement: placementOf(input) }
-    )
-    ctx.realtime.publish(pagesChanged(wiki))
-    // Lo que la enlazaba antes de existir, ya la encuentra
-    await resolvePending(ctx, wiki.worldId, ctx.actor.userId, [input.title])
-    return pageView(ctx, created.id)
-  }),
-
   implement(updatePage, async (ctx, { pageId, title, icon, locked, cover, sheet }) => {
     const { page, wiki } = await authorizedPage(ctx, 'page.write', pageId)
     // La portada, una imagen de este mundo o una común de su organización
