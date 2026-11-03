@@ -47,6 +47,20 @@ test('desde plantilla: una facción y un PNJ que nace con sus campos, su texto y
   await page.reload()
   await expect(page.getByTitle('Hecha con la plantilla PNJ')).toBeVisible()
   await expect(page.getByRole('region', { name: 'Propiedades' }).getByRole('link', { name: 'La Raqisa' })).toBeVisible()
+
+  // Al abrir la facción, Mamá Gris sale sola en «Miembros» (el primer criterio de éxito)
+  await page.getByRole('tree', { name: 'Páginas' }).getByRole('treeitem', { name: 'La Raqisa' }).click()
+  await expect(page.getByRole('heading', { level: 1, name: 'La Raqisa' })).toBeVisible()
+  const members = page
+    .getByRole('complementary', { name: 'Panel de la página' })
+    .getByRole('region', { name: 'Miembros' })
+  await expect(members.getByRole('link', { name: 'Mamá Gris' })).toBeVisible()
+  for (const colorScheme of ['light', 'dark'] as const) {
+    await page.emulateMedia({ colorScheme })
+    const { violations } = await new AxeBuilder({ page }).include('aside').withTags(['wcag2a', 'wcag2aa']).analyze()
+    const serious = violations.filter((v) => v.impact === 'critical' || v.impact === 'serious')
+    expect(serious.map((v) => `${colorScheme} ${v.id}: ${v.help}`)).toEqual([])
+  }
 })
 
 test('un enlace a una página que aún no existe se crea pulsándolo: como texto o con una plantilla', async ({

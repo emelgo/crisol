@@ -125,7 +125,8 @@ amplía `@fugas` en la misma tarea. Cobertura ≥ 80 % de lo cambiado (bloquea d
     `apps/server/src/wiki/tables.ts` (nuevo), `apps/server/src/actions/{pages,page-content,search}.ts`,
     `apps/server/src/jobs/purges.ts`.
 
-- [ ] **8. «Tabla de páginas» en el panel**
+- [x] **8. «Tabla de páginas» en el panel** — hecha. Sus opciones van con los seis puntos, como las de los demás
+  bloques, más anchas; «Elegir otro» en una tabla que ya no vale las abre.
   - Acepta:
     - El bloque se pinta con sus columnas y sus enlaces, y se pone al día con `changed pages`.
     - «Tabla de páginas» en «Añadir bloque» (Listas). Sus opciones: el título, «Páginas de [plantilla] cuyo [campo]

@@ -609,6 +609,21 @@ export const es = {
     name: 'Título',
     create: 'Crear'
   },
+  related: {
+    page: 'Página',
+    empty: 'Ninguna página todavía.',
+    more: 'Y más: solo salen las 100 primeras.',
+    noField: 'Su campo ya no está en la plantilla.',
+    fix: 'Elegir otro',
+    pagesOf: 'Páginas de',
+    whose: 'cuyo',
+    isThis: 'es esta página',
+    columns: 'Columnas',
+    addColumn: 'Columna…',
+    removeColumn: 'Quitar la columna {{name}}',
+    sort: 'Orden',
+    byTitle: 'Por título'
+  },
   templates: {
     label: 'Plantilla',
     search: 'Buscar plantilla',

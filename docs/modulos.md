@@ -30,8 +30,9 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   plantilla en el servidor y por `crear_paginas` (migración 0035, ya aplicada en la base de desarrollo). Hecha la
   tarea 5 («Desde plantilla» en «Página nueva»). Hecha la
   tarea 6 (crear con plantilla desde un enlace sin resolver). **Punto de control 2**, en local. Hecha la tarea
-  7 (la consulta de las tablas: p95 de 43 ms con 5.000 páginas). **Lo siguiente**: la tarea 8 («Tabla de páginas» en
-  el panel).
+  7 (la consulta de las tablas: p95 de 43 ms con 5.000 páginas). Hecha la tarea 8 («Tabla de páginas» en el panel).
+  **Punto de control 3**, en local: un PNJ con su facción sale solo en «Miembros». **Lo siguiente**: la tarea 9
+  (plantillas de la cuenta en el servidor; migración 0036).
 - REA ya no se usa: los estudios se hacen con craft-anything (cambiado en `CLAUDE.md` y `research/README.md`).
 
 ### Para retomar (2026-11-03, cierre de la interfaz)
