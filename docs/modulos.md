@@ -953,9 +953,9 @@ Estados: pendiente · en curso · hecho · descartado.
 |---|---|---|---|
 | 0 | **Fundación**: monorepo, CI, despliegue, cuentas, organizaciones, mundos, campañas, roles, historial y deshacer, esqueleto del MCP | **hecho** (2026-10-29; Discord y Google, pospuestos) | Foundry: modelo de documentos y permisos; DDB: campañas e invitaciones |
 | 1 | **Wiki**: páginas y subpáginas, editor de bloques, enlaces, menciones, vista previa, propiedades, secretos, búsqueda, marcadores, etiquetas, versiones, recursos y archivos, **hojas con estilo** (tipo Homebrewery, con PDF), exportación MD, sus herramientas MCP | construido (tareas 1 a 26 hechas); falta la revisión de Enrique en staging | Foundry: Journal; DDB: contenido y referencias; Homebrewery (MIT): formato de hoja y descarga |
-| 2 | Tipos de página, plantillas y formularios nativos; consultas (en lugar de Dataview y Bases) | pendiente | Foundry: tipos de documento |
+| 2 | **Tipos de página y plantillas**: «Desde plantilla» (de serie y propias), campos en el panel, tablas que se llenan solas (en lugar de Dataview) | en curso (entrevista hecha, 2026-11-03) | Foundry: tipos de documento; Kanka, LegendKeeper y World Anvil (web pública) |
 | 3 | Sistemas de reglas, fichas de personaje (creación, subida de nivel), dados y dados 3D | pendiente | DDB: creador y hoja; Foundry: dnd5e, DataModel e instalar y crear sistemas |
-| 4 | Compendios, bestiario, statblocks, biblioteca; **buscar dentro de los PDF** (texto de cada página con pdf.js; el resultado abre el visor en esa página) **y por significado** (pgvector; antes, permiso para la imagen de Postgres y elegir quién calcula los embeddings) | pendiente | Foundry: compendium packs; DDB: listados |
+| 4 | Compendios (aparte de la wiki del mundo y **como los de Foundry**: antes, estudio a fondo con craft-anything), bestiario, statblocks, biblioteca; **buscar dentro de los PDF** (texto de cada página con pdf.js; el resultado abre el visor en esa página) **y por significado** (pgvector; antes, permiso para la imagen de Postgres y elegir quién calcula los embeddings) | pendiente | Foundry: compendium packs; DDB: listados |
 | 5 | Visibilidad por campaña: conocimiento de los jugadores, revelar, compartir | pendiente | Foundry: ownership |
 | 6 | **Mesa**: escenas, rejilla, fichas, medir y plantillas, niebla, muros, puertas, luz, visión, iniciativa, instantáneas, encuentros, UVTT | pendiente | Foundry: canvas, visión y muros; DDB Maps |
 | 7 | **Sala de jugadores**: presencia, chat y susurros, mostrar a jugadores, sonido, controles del máster | pendiente | Foundry: sockets y chat; DDB: game log |
@@ -1128,3 +1128,33 @@ app: el 2026-10-30 dijo «luego apuntaremos por donde vamos y nos dedicaremos a 
   - En staging, Enrique crea y edita páginas de prueba con todo lo anterior y las ve en las dos vistas.
   - Saca el PDF de una hoja.
   - Claude crea y edita desde claude.ai páginas con subpáginas, propiedades, enlaces y secretos.
+
+### 2. Tipos de página y plantillas (entrevista con Enrique, 2026-11-03)
+
+- **Para qué**: que las páginas del mundo tengan tipo (PNJ, Lugar, Facción…) con sus campos, y que las tablas que hoy
+  hace Dataview («los PNJ de esta facción», «lo que lleva este PNJ») salgan solas. En Eana hay unas 570 páginas con
+  tipo (PNJ, lugares, objetos, facciones y frentes, además de las reglas) y 45 tablas de Dataview, casi todas de ese
+  estilo: las páginas de un tipo cuyo campo apunta a la página en la que se está.
+- **«Desde plantilla»** en «Página nueva», junto a Texto, Mapa, Pizarra, Línea temporal y Árbol. La página sale con
+  sus campos en el panel de la derecha y sus apartados en el texto (un PNJ: Especie, Rol, Facción y Lugar en el panel;
+  Quién es, Cómo interpretarlo y Ganchos en el texto). Sin pestañas.
+- **La página recuerda de qué plantilla salió** («es un PNJ») y después se edita libremente: se quitan o se añaden
+  campos y apartados. Lo que no se toca es el esqueleto de la plantilla.
+- **Plantillas de serie** (fijas, no se editan): PNJ, Lugar, Facción, Objeto, Misión y Sesión.
+- **Plantillas propias**: de toda la cuenta (como las etiquetas), hechas desde cero o copiando una de serie. Estas sí se
+  editan; cambiarlas no toca las páginas ya hechas. «Frente» será la primera, desde cero, para probarlo.
+- **Tablas que se llenan solas**: bloques del panel («Miembros», «Habitantes», «Lugares dentro», «Lleva encima») que
+  vienen en la plantilla o se añaden a mano con desplegables («páginas de tipo [PNJ] cuyo [Lugar] es esta página»).
+  Sin lenguaje de consultas.
+- **Campos** (propuesta de Claude, sin objeciones): texto, número, opciones, enlace a una página (de un tipo o de
+  cualquiera), varios enlaces, reloj de segmentos y casilla.
+- **La IA**, por el MCP: crear páginas desde plantilla, crear plantillas propias y leer esas tablas.
+- **Fuera del módulo 2**:
+  - el compendio (reglas, conjuros, criaturas, dotes): va aparte de la wiki del mundo, en el módulo 4, y tiene que
+    funcionar como el de Foundry; antes, un estudio a fondo con craft-anything;
+  - PJ y tablas aleatorias (módulo 3, con las fichas y los dados);
+  - formularios (Enrique: «no me interesa») y un lenguaje de consultas como Dataview o Bases;
+  - que cambiar una plantilla cambie las páginas ya hechas;
+  - lo que ven los jugadores de esas tablas (módulo 5).
+- **Hecho cuando**: Enrique crea un PNJ desde plantilla, le pone su facción y sale solo en «Miembros» de la facción;
+  hace «Frente» desde cero y la usa; la IA hace lo mismo desde claude.ai.
