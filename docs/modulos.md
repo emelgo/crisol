@@ -7,6 +7,17 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
+### Para retomar (2026-11-04, pruebas)
+
+- **Lo que tiene que probar Enrique, en `tasks/probar.md`** («ve apuntando todas las cosas que tengo que probar»): el
+  módulo 2, lo que quedaba del 1 y lo que hay que arreglar antes. Se mantiene al día: lo nuevo que haya que probar va
+  ahí, y lo que diga, a su apartado «Lo que dijo».
+- **El módulo 2 está en `main` y en staging** (PR #93, fusionada el 2026-11-04 con `[skip ci]` tras la CI en verde;
+  migraciones 0035 y 0036).
+- **La próxima tanda**: los arreglos de «Por arreglar antes de probarlo» y los tres avisos de semgrep que bloquean la
+  CI desde el 2026-11-12 (`${{ github.base_ref }}` en un `run` de `ci.yml`, `createDecipheriv` sin `authTagLength` en
+  `apps/server/src/secrets.ts` y las URL `ws://` de `apps/web/src/realtime/client.test.ts`).
+
 ### Para retomar (2026-11-03, módulo 2)
 
 - **El módulo 2 (tipos de página y plantillas) está construido**: las 14 tareas de `tasks/todo.md`, en la rama
