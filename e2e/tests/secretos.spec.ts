@@ -1,7 +1,7 @@
 import { connect, schema } from '@crisol/db'
 import { expect, type Page, test } from '@playwright/test'
 import { e2eDatabaseUrl } from '../servidor.ts'
-import { createWorld, freshOwner, openWiki, selectionToSecret, slash } from './ayudas.ts'
+import { connectClaude, createWorld, freshOwner, openWiki, selectionToSecret, slash } from './ayudas.ts'
 
 /** El propietario crea Eana y una página, y la deja abierta */
 async function openPage(page: Page, title = 'Puerto Ceniza') {
@@ -154,4 +154,37 @@ test('copiar un secreto a otra página crea otro documento: cambiar uno no cambi
   } finally {
     await conn.close()
   }
+})
+
+test('buscar en la página mira también dentro de los secretos y en el texto de los enlaces', async ({ page }) => {
+  const url = await openPage(page)
+  const [, worldId, pageId] = /\/mundos\/([^/]+)\/wiki\/([^/?#]+)/.exec(url) ?? []
+  const claude = await connectClaude(page)
+  await claude.call('crear_paginas', {
+    worldId,
+    parentId: null,
+    pages: [{ key: 'dragon', title: 'Dragón rojo', markdown: 'El más temido.' }]
+  })
+  const edited = await claude.call('editar_pagina', {
+    pageId,
+    body: {
+      mode: 'replace',
+      markdown: 'Un dragon al norte.\n\nVer [[Dragón rojo]].\n\n> [!secreto]\n> El dragón duerme.'
+    }
+  })
+  expect(edited.isError, edited.text).toBeFalsy()
+  await page.goto(url)
+  await expect(page.getByText('El dragón duerme.')).toBeVisible()
+  await page.getByRole('textbox', { name: 'Texto de la página' }).click()
+  await page.keyboard.press('Control+Alt+f')
+  const field = page.getByRole('searchbox', { name: 'Buscar en la página' })
+  await field.fill('dragon')
+  // El texto, el enlace y el secreto, en el orden de la página
+  const count = page.getByRole('status').filter({ hasText: /de 3$/ })
+  await expect(count).toHaveText('1 de 3')
+  await expect(page.locator('.ProseMirror [class*="match"]')).toHaveCount(3)
+  await field.press('Enter')
+  await field.press('Enter')
+  await expect(count).toHaveText('3 de 3')
+  await expect(page.getByRole('textbox', { name: 'Texto del secreto' }).locator('[class*="current"]')).toHaveCount(1)
 })
