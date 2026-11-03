@@ -18,12 +18,33 @@ test('una página mediana se abre lista para escribir en menos de 1 s', async ({
   await page.goto(`/mundos/${worldId}/wiki`)
   const item = page.getByRole('treeitem', { name: 'Mediana' })
   await expect(item).toBeVisible()
-  const start = Date.now()
+  // Se mide dentro del navegador, del clic a lista para escribir (contando desde fuera entrarían las esperas de
+  // Playwright antes de pulsar y al preguntar, unos cientos de ms que no son de la app)
+  await page.evaluate(() => {
+    const w = window as unknown as { abrir?: Promise<number> }
+    w.abrir = new Promise((resolve) => {
+      document.addEventListener(
+        'click',
+        () => {
+          const start = performance.now()
+          const check = () => {
+            const body = document.querySelector('[role="textbox"][aria-label="Texto de la página"]')
+            const end = [...(body?.querySelectorAll('p') ?? [])].find((p) => p.textContent === 'Fin de la página.')
+            if (body?.getAttribute('contenteditable') === 'true' && (end?.getBoundingClientRect().height ?? 0) > 0) {
+              resolve(Math.round(performance.now() - start))
+            } else requestAnimationFrame(check)
+          }
+          check()
+        },
+        { capture: true, once: true }
+      )
+    })
+  })
   await item.click()
+  const elapsed = await page.evaluate(() => (window as unknown as { abrir: Promise<number> }).abrir)
   const body = page.getByRole('textbox', { name: 'Texto de la página' })
   await expect(body.getByText('Fin de la página.')).toBeVisible()
   await expect(body).toHaveAttribute('contenteditable', 'true')
-  const elapsed = Date.now() - start
   test.info().annotations.push({ type: 'abrir', description: `${elapsed} ms` })
   process.stderr.write(`abrir la página mediana: ${elapsed} ms\n`)
   expect(elapsed).toBeLessThan(1000)

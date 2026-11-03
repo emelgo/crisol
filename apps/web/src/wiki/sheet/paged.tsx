@@ -58,7 +58,7 @@ function kindOf(node: PMNode, columns: 1 | 2): SheetBlock['kind'] {
 
 interface LayoutState {
   styles: readonly string[] | null
-  /** El texto cambió y aún no se ha vuelto a colocar (los bloques nuevos aún no tienen sitio) */
+  /** Hay bloques nuevos (o de menos) que aún no se han vuelto a colocar */
   stale: boolean
 }
 
@@ -82,7 +82,9 @@ export const SheetLayout = Extension.create({
           apply: (tr, value): LayoutState => {
             const next = tr.getMeta(layoutKey) as { styles: readonly string[] | null } | undefined
             if (next) return { styles: next.styles, stale: false }
-            return tr.docChanged && value.styles && !value.stale ? { ...value, stale: true } : value
+            // Desfasada solo si cambia cuántos bloques hay (uno nuevo aún no tiene sitio); al mover o escribir, no
+            const missing = tr.docChanged && value.styles && tr.doc.childCount !== value.styles.length
+            return missing && !value.stale ? { ...value, stale: true } : value
           }
         },
         props: {
@@ -336,10 +338,28 @@ export function PagedSheet({
     schedule()
     editor.on('update', onUpdate)
     // Cuando un bloque cambia de alto sin cambiar el texto (una imagen que llega, la letra que carga)
-    const resized = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(onUpdate)
+    // (el primer aviso es el de empezar a observar: ya se va a colocar igualmente)
+    let primed = false
+    const resized =
+      typeof ResizeObserver === 'undefined'
+        ? null
+        : new ResizeObserver(() => {
+            if (primed) onUpdate()
+            primed = true
+          })
+    // Solo los bloques nuevos (observarlos todos en cada cambio haría medir todo otra vez)
+    const observed = new Set<Element>()
     const observeAll = () => {
-      resized?.disconnect()
-      for (const child of editor.view.dom.children) resized?.observe(child)
+      for (const child of editor.view.dom.children) {
+        if (observed.has(child)) continue
+        observed.add(child)
+        resized?.observe(child)
+      }
+      for (const element of observed) {
+        if (element.isConnected) continue
+        observed.delete(element)
+        resized?.unobserve(element)
+      }
     }
     observeAll()
     editor.on('update', observeAll)

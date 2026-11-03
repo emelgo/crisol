@@ -19,22 +19,13 @@ async function openPage(page: Page, markdown = '') {
   return { worldId, pageId: sheet.id as string }
 }
 
-test('los bloques de hoja con «/», solo en una página con hoja; salen en el Markdown', async ({ page }) => {
+test('los bloques de hoja con «/» (toda página es una hoja); salen en el Markdown', async ({ page }) => {
   // Una página vacía y todo escrito en orden: así no importa dónde deja el cursor la carga (en la CI, a veces, al
   // principio, antes de sincronizar)
   const { pageId } = await openPage(page)
   await expect(body(page).locator('xpath=ancestor::div[@aria-busy][1]')).toHaveAttribute('aria-busy', 'false')
-  // Sin hoja, el menú «/» no los ofrece
-  await body(page).click()
-  await page.keyboard.type('/salto')
-  await expect(
-    page.getByRole('listbox', { name: 'Bloques' }).getByRole('option', { name: /Salto de página/ })
-  ).toHaveCount(0)
-  await page.keyboard.press('Escape')
-  for (let i = 0; i < 6; i++) await page.keyboard.press('Backspace')
-  await page.getByRole('button', { name: 'Hoja', exact: true }).click()
-  await expect(page.getByRole('button', { name: 'Hoja', exact: true })).toHaveAttribute('aria-pressed', 'true')
-  await body(page).click()
+  // La primera línea (el texto es una hoja: pulsar en su centro desplazaría la página)
+  await body(page).locator('p').first().click()
   await page.keyboard.type('## Guarida')
   await page.keyboard.press('Enter')
   await page.keyboard.type('En la cima.')
@@ -85,7 +76,7 @@ test('lo que llega en Markdown: nota lateral a la izquierda, a lo ancho y salto 
   await expect(body(page).getByText('Todo a lo ancho.')).toBeVisible()
 })
 
-test('con la hoja, la página se escribe sobre el papel; el tema, en «⋯»; al imprimir, pagina sin partir bloques', async ({
+test('la página se escribe ya como hoja; el tema, en «⋯» → «Imprimir y PDF»; al imprimir, pagina sin partir bloques', async ({
   page
 }) => {
   test.slow()
@@ -94,19 +85,21 @@ test('con la hoja, la página se escribe sobre el papel; el tema, en «⋯»; al
     (_, i) => `Párrafo ${i + 1}: la costa de Eana guarda faros, puertos y dragones que nadie ha contado todavía.`
   ).join('\n\n')
   const { worldId, pageId } = await openPage(page, `> [!indice]\n\n## La costa\n\n${paragraphs}\n\n## El norte\n\nFin.`)
-  await page.getByRole('button', { name: 'Hoja', exact: true }).click()
-  // El papel: el texto encima (la cabecera, como en Everlore, va fuera), y se sigue escribiendo
+  // El papel, sin botón: toda página lo es (el texto encima; la cabecera, como en Everlore, va fuera)
   const paper = page.locator('[data-sheet-paper]')
-  await expect(paper).toHaveAttribute('data-theme', 'pergamino')
+  await expect(paper).toHaveAttribute('data-theme', 'neutro')
+  // Con varias páginas, donde empieza cada una, su marca
+  await expect(page.getByText('Página 2', { exact: true })).toBeAttached()
   await expect(page.getByRole('heading', { level: 1, name: 'El Dragón Rojo' })).toBeVisible()
   await paper.getByText('Fin.').click()
   await page.keyboard.press('End')
   await page.keyboard.type(' Y más allá.')
   await expect(body(page)).toContainText('Fin. Y más allá.')
-  // El tema, en «⋯»
+  // El tema, en «⋯» → «Imprimir y PDF»
   await page.getByRole('button', { name: 'Más acciones' }).click()
-  await page.getByLabel('Tema', { exact: true }).selectOption({ label: 'Neutro' })
-  await expect(paper).toHaveAttribute('data-theme', 'neutro')
+  await page.getByRole('button', { name: 'Imprimir y PDF' }).click()
+  await page.getByLabel('Tema', { exact: true }).selectOption({ label: 'Pergamino' })
+  await expect(paper).toHaveAttribute('data-theme', 'pergamino')
   await page.keyboard.press('Escape')
   for (const colorScheme of ['light', 'dark'] as const) {
     await page.emulateMedia({ colorScheme })

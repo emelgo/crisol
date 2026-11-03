@@ -108,12 +108,20 @@ test('los enlaces de la página: quién la enlaza, dónde se la nombra y «Enlaz
     body: { mode: 'append', markdown: 'Preguntar a Maela Varn por el faro.' }
   })
   await page.getByRole('treeitem', { name: 'Maela Varn' }).click()
-  const panel = page.getByRole('region', { name: 'Enlaces' })
-  const incoming = panel.getByRole('list', { name: 'La enlazan' })
+  // «Mencionado en», como en Everlore: las que la enlazan y, aparte, las que la nombran sin enlazar; el trozo donde
+  // lo hacen, al pasar el ratón
+  const panel = page.getByRole('region', { name: 'Mencionado en' })
+  const incoming = panel.getByRole('list', { name: 'Mencionado en' })
   await expect(incoming.getByRole('link', { name: 'Puerto Ceniza' })).toBeVisible()
-  await expect(incoming.getByText('Lo gobierna Maela Varn.')).toBeVisible()
-  const mentions = panel.getByRole('list', { name: 'La nombran sin enlazar' })
-  await expect(mentions.getByText('Preguntar a Maela Varn por el faro.')).toBeVisible()
+  await expect(incoming.getByRole('listitem').filter({ hasText: 'Puerto Ceniza' })).toHaveAttribute(
+    'title',
+    'Lo gobierna Maela Varn.'
+  )
+  const mentions = panel.getByRole('list', { name: 'Sin enlazar' })
+  await expect(mentions.getByRole('listitem').filter({ hasText: 'Notas' })).toHaveAttribute(
+    'title',
+    'Preguntar a Maela Varn por el faro.'
+  )
   await mentions.getByRole('button', { name: 'Enlazar en «Notas»' }).click()
   await expect(page.getByRole('status').getByText('Enlazada en «Notas».')).toBeAttached()
   await expect(incoming.getByRole('link', { name: 'Notas' })).toBeVisible()
