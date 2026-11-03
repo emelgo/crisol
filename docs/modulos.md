@@ -15,12 +15,12 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
 - **Spec aprobada** («si», con las cuatro propuestas): `docs/specs/plantillas.md`. **ADR-0009** escrito
   (`docs/adr/0009-plantillas-y-campos.md`): campos con id, linaje de plantillas en la página y tablas calculadas en el
   servidor.
-- **Diseño publicado, por probar**: lienzo «Crisol: plantillas» en claude.ai
+- **Diseño aprobado** («ok», 2026-11-03): lienzo «Crisol: plantillas» en claude.ai
   (https://claude.ai/artifact/SBQfr3xdPCpyEeiMqgzees; fuentes en `out/lienzo-plantillas/`, fuera de git), con el
   aspecto real de la app. Seis tablas: «Página nueva» desde plantilla, un PNJ con sus campos, la facción con
   «Miembros» y su configuración, «Plantillas» en Mis mundos, el editor de «Frente» y aplicar una plantilla a una página
-  hecha. Pregunta abierta: las opciones de Estado de PNJ, sin género («Vive», «Ha muerto»…).
-- **Lo siguiente**: lo que diga Enrique del lienzo (sus normas, a `docs/diseno.md`); con el diseño aprobado, `/plan`.
+  hecha. Las opciones de Estado de PNJ, sin género («Vive», «Ha muerto»…), también aprobadas.
+- **Lo siguiente**: `/plan` (`tasks/plan.md` y `tasks/todo.md`; los del módulo 1 pasan a `tasks/wiki/`).
 - REA ya no se usa: los estudios se hacen con craft-anything (cambiado en `CLAUDE.md` y `research/README.md`).
 
 ### Para retomar (2026-11-03, cierre de la interfaz)
@@ -121,7 +121,7 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
 - **El orden** (Enrique, 2026-10-30: «para seguir después de la edición de la UI»):
   1. la etapa de interfaz: primera pasada hecha (`tasks/interfaz.md`); falta la revisión de Enrique y pulir;
   2. arreglar el resto de lo que dijo de sus pruebas;
-  3. cerrar el módulo 1 (que pruebe el punto 6 y el final; marcar sus puntos de control en `tasks/todo.md`);
+  3. cerrar el módulo 1 (que pruebe el punto 6 y el final; marcar sus puntos de control en `tasks/wiki/todo.md`);
   4. ~~antes del módulo 2, la búsqueda~~ → **pasada al módulo 4** (2026-11-03: «la mejora de búsqueda ponla donde
      corresponda para seguir con el módulo 2»). Lo que se decidió (pregunta de Enrique, 2026-10-30, con herramientas que propuso: qmd, basic-memory,
      probe, Meilisearch, pymupdf4llm). Primera respuesta: basic-memory y pymupdf4llm son AGPL (fuera); probe es para

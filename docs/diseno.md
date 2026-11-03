@@ -238,6 +238,9 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   cambiará. Por ejemplo, «Desde aquí podrás administrar la aplicación».
 - **Nada de mensajes aclarativos** tras una acción («Volverán a salir»). Mejor una opción que se marca y se ve marcada.
 
+- **Sin género en lo que se escribe sobre nombres que pone el máster** (2026-11-03, con las plantillas): «Página nueva ·
+  Frente», nunca «Nuevo Frente»; y las opciones de serie, neutras («Vive», «Ha muerto», «En paradero desconocido»).
+
 ## Tutorial guiado de cada vista
 
 - **Se llama «tutorial guiado de la vista»**, no «recorrido».

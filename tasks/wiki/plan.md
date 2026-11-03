@@ -1,7 +1,7 @@
 # Plan: Módulo 1 — Wiki
 
 Spec: `docs/specs/wiki.md` (aprobada) · ADR: 0001, 0002, 0003 · Diseño: lienzo «Crisol: wiki» (aprobado) · Tareas con
-detalle: `tasks/todo.md` · Fecha: 2026-10-29. El plan del módulo 0 está en `tasks/fundacion/`.
+detalle: `tasks/wiki/todo.md` · Fecha: 2026-10-29. El plan del módulo 0 está en `tasks/fundacion/`.
 
 ## Resumen
 

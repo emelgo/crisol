@@ -88,7 +88,7 @@ de `campos`; la decisión, en `docs/adr/0009-plantillas-y-campos.md`.
 
   | Plantilla | Campos (en el panel) | Bloques del panel | Apartados (en el texto) |
   |---|---|---|---|
-  | PNJ | Especie, Rol, Facción (→ Facción), Lugar (→ Lugar), Estado (vivo, muerto, desaparecido, desconocido), Padres y Pareja (→ PNJ) | Retrato; «Lleva encima» (Objeto · Portador) | Quién es · Cómo interpretarlo · Ganchos |
+  | PNJ | Especie, Rol, Facción (→ Facción), Lugar (→ Lugar), Estado (Vive, Ha muerto, En paradero desconocido, No se sabe), Padres y Pareja (→ PNJ) | Retrato; «Lleva encima» (Objeto · Portador) | Quién es · Cómo interpretarlo · Ganchos |
   | Lugar | Tipo (de plano a paraje), Dentro de (→ Lugar), Población, Gobierna (→ PNJ) | Imagen; «Lugares dentro» (Lugar · Dentro de); «Habitantes» (PNJ · Lugar) | Descripción · Ganchos |
   | Facción | Tipo (reino, casa noble, gremio…), Líder (→ PNJ), Sede (→ Lugar), Objetivo | Emblema; «Miembros» (PNJ · Facción) | Quiénes son · Qué quieren · Ganchos |
   | Objeto | Tipo, Rareza, Sintonización (sí/no), Valor, Portador (→ PNJ) | Imagen | Descripción · Historia |

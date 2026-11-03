@@ -1,6 +1,6 @@
 # Tareas: Módulo 1 — Wiki
 
-Plan: `tasks/plan.md` · Spec: `docs/specs/wiki.md` · ADR-0003. Cada tarea: rama corta → TDD → PR → merge con la CI en
+Plan: `tasks/wiki/plan.md` · Spec: `docs/specs/wiki.md` · ADR-0003. Cada tarea: rama corta → TDD → PR → merge con la CI en
 verde → `scripts/desplegar-staging.sh` → «Dónde estamos» al día.
 
 Comprobación local al acabar cada tarea: `pnpm lint && pnpm typecheck && pnpm test`, y `pnpm e2e` si toca la interfaz.
