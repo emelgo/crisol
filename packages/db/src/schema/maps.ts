@@ -39,7 +39,8 @@ export const pageTabs = pgTable(
     /** Su color en la barra (uno de los fijos o #rrggbb); null, sin color */
     color: text()
   },
-  (t) => [index().on(t.pageId), index().on(t.worldId)]
+  // Por documento: lo que se busca o enlaza desde una pestaña de texto cuenta solo si la pestaña sigue
+  (t) => [index().on(t.pageId), index().on(t.worldId), index().on(t.documentId)]
 )
 
 /** El mapa de una pestaña: su imagen (un archivo del mundo) con sus medidas y, si se calibró, su escala */

@@ -239,6 +239,13 @@
       "when": 1793697297530,
       "tag": "0033_color_de_pestana",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1793705961687,
+      "tag": "0034_indice_documento_de_pestana",
+      "breakpoints": true
     }
   ]
 }
