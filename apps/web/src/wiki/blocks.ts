@@ -225,6 +225,23 @@ export const BLOCKS: readonly BlockChoice[] = [
         .run()
     }
   },
+  // Cambiar de columnas desde aquí, como un salto de sección: lo de debajo, a una o a dos
+  ...([1, 2] as const).map(
+    (count): BlockChoice => ({
+      id: `columns${count}`,
+      group: 'sheet',
+      label: count === 1 ? 'columnsOne' : 'columnsTwo',
+      keywords: `columnas ${count === 1 ? 'una' : 'dos'} seccion hoja`,
+      convert: false,
+      run: (editor) => {
+        editor
+          .chain()
+          .focus()
+          .insertContent([{ type: 'columnsChange', attrs: { count } }, { type: 'paragraph' }])
+          .run()
+      }
+    })
+  ),
   {
     id: 'statblock',
     group: 'sheet',

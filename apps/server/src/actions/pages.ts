@@ -11,9 +11,9 @@ import {
   type Page,
   pagePanel,
   setPagePanel,
-  sortPageChildren,
   setPageProperties,
   sheetSettings,
+  sortPageChildren,
   updatePage
 } from '@crisol/contracts'
 import { documentsRepo, filesRepo, pagesRepo, worldsRepo } from '@crisol/db'

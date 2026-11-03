@@ -24,9 +24,12 @@ const contentWidth = (settings: SheetSettings) => PAPER[settings.paper].width - 
 const contentHeight = (settings: SheetSettings) => PAPER[settings.paper].height - MARGIN.top - MARGIN.bottom
 const columnWidth = (settings: SheetSettings) => (contentWidth(settings) - GAP) / 2
 
-function kindOf(node: PMNode): SheetBlock['kind'] {
+/** Cómo cuenta un bloque para paginar; a una columna, todo va «a lo ancho» (como en sheet.tsx) */
+function kindOf(node: PMNode, columns: 1 | 2): SheetBlock['kind'] {
   if (node.type.name === 'pageBreak') return 'pageBreak'
-  if (node.type.name === 'columnBreak') return 'columnBreak'
+  if (node.type.name === 'columnBreak') return columns === 1 ? 'pageBreak' : 'columnBreak'
+  if (node.type.name === 'columnsChange') return 'wide'
+  if (columns === 1) return 'wide'
   if (node.type.name === 'heading') return 'heading'
   if (node.type.name === 'wideBlock' || node.attrs.wide === true) return 'wide'
   return 'block'
@@ -76,11 +79,15 @@ function layOut(editor: Editor, settings: SheetSettings) {
   const { view, state } = editor
   const blocks: SheetBlock[] = []
   const heights: number[] = []
+  // Las columnas de cada tramo: las de la página y, desde cada cambio, las suyas
+  let columns: 1 | 2 = settings.columns
   state.doc.forEach((node, offset, index) => {
+    if (node.type.name === 'columnsChange') columns = node.attrs.count === 1 ? 1 : 2
     const dom = view.nodeDOM(offset)
-    const height = dom instanceof HTMLElement ? heightOf(dom) : 0
+    // El cambio no ocupa sitio (su raya va encima de lo que sigue)
+    const height = dom instanceof HTMLElement && node.type.name !== 'columnsChange' ? heightOf(dom) : 0
     heights.push(height)
-    blocks.push({ id: String(index), kind: kindOf(node), height })
+    blocks.push({ id: String(index), kind: kindOf(node, columns), height })
   })
   const pages = paginate(blocks, contentHeight(settings))
   const placed: string[] = blocks.map(
@@ -135,13 +142,13 @@ function clear(editor: Editor) {
   editor.view.dom.querySelector<HTMLElement>(`[${GHOST_LINE}]`)?.removeAttribute('style')
 }
 
-/** Cuánto encoger las páginas para que quepan a lo ancho de su sitio (nunca agrandarlas) */
+/** Cuánto escalar las páginas para que llenen a lo ancho su sitio: así la letra se ve del tamaño de siempre */
 function useFit(container: HTMLElement | null, width: number) {
   const [scale, setScale] = useState(1)
   useEffect(() => {
     if (!container || typeof ResizeObserver === 'undefined') return
     const observer = new ResizeObserver(([entry]) => {
-      setScale(Math.min(1, Math.max(0.4, (entry?.contentRect.width ?? width) / width)))
+      setScale(Math.min(1.6, Math.max(0.4, (entry?.contentRect.width ?? width) / width)))
     })
     observer.observe(container)
     return () => observer.disconnect()
@@ -168,7 +175,8 @@ export function PagedSheet({
   const [narrow, setNarrow] = useState(() => typeof window !== 'undefined' && window.matchMedia?.(NARROW).matches)
   const [frame, setFrame] = useState<HTMLDivElement | null>(null)
   const paper = settings ? PAPER[settings.paper] : PAPER.a4
-  const scale = useFit(frame, paper.width)
+  // El texto llena la columna (alineado con el título); el margen del papel queda fuera, sin verse
+  const scale = useFit(frame, settings ? contentWidth(settings) : paper.width - 2 * MARGIN.side)
   const paged = Boolean(settings) && !narrow
 
   useEffect(() => {
@@ -229,7 +237,13 @@ export function PagedSheet({
     <div ref={setFrame} className={styles.fit}>
       <div
         className={styles.paged}
-        style={{ inlineSize: paper.width, blockSize: height, zoom: scale }}
+        style={{
+          inlineSize: paper.width,
+          blockSize: height,
+          zoom: scale,
+          marginInlineStart: -MARGIN.side,
+          marginBlockStart: -MARGIN.top + 8
+        }}
         data-sheet-paged=""
       >
         {/* Las páginas, detrás del texto */}

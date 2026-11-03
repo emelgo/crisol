@@ -31,9 +31,11 @@ const columnWidth = (settings: SheetSettings) => (contentWidth(settings) - GAP) 
 const idOf = (block: JSONContent, index: number) => String(block.attrs?.id ?? `b${index}`)
 
 /** Cómo cuenta cada bloque para paginar */
-function kindOf(block: JSONContent): SheetBlock['kind'] {
+function kindOf(block: JSONContent, columns: 1 | 2): SheetBlock['kind'] {
   if (block.type === 'pageBreak') return 'pageBreak'
-  if (block.type === 'columnBreak') return 'columnBreak'
+  if (block.type === 'columnBreak') return columns === 1 ? 'pageBreak' : 'columnBreak'
+  // A una columna (lo de la página o tras un cambio de columnas), todo «a lo ancho»
+  if (block.type === 'columnsChange' || columns === 1) return 'wide'
   if (block.type === 'heading') return 'heading'
   if (block.type === 'wideBlock' || block.attrs?.wide === true) return 'wide'
   return 'block'
@@ -49,13 +51,19 @@ interface Unit {
   blocks: { id: string; block: JSONContent }[]
 }
 
-function unitsOf(blocks: readonly JSONContent[]): Unit[] {
+function unitsOf(blocks: readonly JSONContent[], start: 1 | 2): Unit[] {
   const units: Unit[] = []
+  let columns = start
   for (let i = 0; i < blocks.length; i++) {
     const block = blocks[i] as JSONContent
     const id = idOf(block, i)
+    // Un cambio de columnas no se pinta ni ocupa: solo cambia lo que sigue
+    if (block.type === 'columnsChange') {
+      columns = block.attrs?.count === 1 ? 1 : 2
+      continue
+    }
     const next = blocks[i + 1]
-    const nextKind = next ? kindOf(next) : null
+    const nextKind = next ? kindOf(next, columns) : null
     if (block.type === 'sidenote' && next && (nextKind === 'block' || nextKind === 'heading')) {
       units.push({
         id,
@@ -68,7 +76,7 @@ function unitsOf(blocks: readonly JSONContent[]): Unit[] {
       i++
       continue
     }
-    units.push({ id, kind: kindOf(block), blocks: [{ id, block }] })
+    units.push({ id, kind: kindOf(block, columns), blocks: [{ id, block }] })
   }
   return units
 }
@@ -207,7 +215,7 @@ export function SheetView({
   }, [content.data, printing, secrets])
   const [measurer, setMeasurer] = useState<HTMLDivElement | null>(null)
   const [sheetSection, setSheetSection] = useState<HTMLElement | null>(null)
-  const units = useMemo(() => unitsOf(blocks), [blocks])
+  const units = useMemo(() => unitsOf(blocks, settings.columns), [blocks, settings.columns])
   const { heights, loading: imagesLoading } = useMeasured(units, settings, measurer)
   const headings = headingsOf(blocks)
   const byId = new Map(units.map((unit) => [unit.id, unit]))

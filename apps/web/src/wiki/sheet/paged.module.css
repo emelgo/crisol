@@ -1,23 +1,27 @@
 /* La hoja al escribir: sus páginas, con los colores de la app (sin el papel del tema), y el texto encima */
 .fit {
-  display: flex;
-  justify-content: center;
   inline-size: 100%;
   margin-block: var(--space-2) var(--space-6);
 }
 
+/* Más ancho que la columna (sus márgenes quedan fuera): que no estorbe al ratón fuera del texto */
 .paged {
   position: relative;
-  flex: none;
+  pointer-events: none;
 }
 
+.text {
+  pointer-events: auto;
+}
+
+/* Sin recuadro: el texto, sobre el fondo, como siempre. Entre una página y la siguiente, una raya fina */
 .page {
   position: absolute;
   inset-inline: 0;
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
-  background: var(--color-surface);
-  box-shadow: 0 1px 6px rgb(0 0 0 / 0.08);
+}
+
+.page + .page {
+  border-block-start: 1px dashed var(--color-border);
 }
 
 .footer {
@@ -52,7 +56,8 @@
  * misma página. Los colores, los de la app
  */
 .paged {
-  --sheet-font: Georgia, "Times New Roman", serif;
+  /* Neutro (el de siempre): la letra de la app */
+  --sheet-font: var(--font-body);
   --sheet-heading-font: var(--font-display);
 }
 
@@ -64,7 +69,7 @@
 
 .text :global(.ProseMirror) {
   font-family: var(--sheet-font);
-  font-size: 10pt;
+  font-size: 12pt;
   line-height: 1.35;
   hyphens: auto;
   overflow-wrap: break-word;

@@ -49,13 +49,17 @@ export const pageCover = z.object({
 
 export type PageCover = z.infer<typeof pageCover>
 
-/** Los ajustes de la vista de hoja de una página: papel, tema, numeración (y desde qué número) y pie con el título */
+/**
+ * Los ajustes de la hoja de una página (toda página es una hoja): papel, tema para imprimir, numeración (y desde qué
+ * número), pie con el título y cuántas columnas lleva al empezar (los bloques «Columnas» lo cambian desde donde están)
+ */
 export const sheetSettings = z.object({
   paper: z.enum(['a4', 'letter']),
   theme: z.enum(['pergamino', 'neutro']),
   numbers: z.boolean(),
   firstNumber: z.number().int().min(1).max(999),
-  footer: z.boolean()
+  footer: z.boolean(),
+  columns: z.union([z.literal(1), z.literal(2)]).default(1)
 })
 
 export type SheetSettings = z.infer<typeof sheetSettings>

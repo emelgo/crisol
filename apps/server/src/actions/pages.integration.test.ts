@@ -76,7 +76,9 @@ describe('la wiki: páginas y árbol', () => {
   it('las subpáginas se ordenan por título, de la A a la Z o al revés, en una sola operación', async () => {
     const places = await create('Lugares')
     for (const title of ['Costa Gris', 'Árbol Viejo', 'Bosque', 'puerto']) await create(title, { parentId: places.id })
-    expect((await call('sortPageChildren', { worldId, parentId: places.id, order: 'asc' })).json()).toEqual({ sorted: 4 })
+    expect((await call('sortPageChildren', { worldId, parentId: places.id, order: 'asc' })).json()).toEqual({
+      sorted: 4
+    })
     expect(await titles(places.id)).toEqual(['Árbol Viejo', 'Bosque', 'Costa Gris', 'puerto'])
     await call('sortPageChildren', { worldId, parentId: places.id, order: 'desc' })
     expect(await titles(places.id)).toEqual(['puerto', 'Costa Gris', 'Bosque', 'Árbol Viejo'])

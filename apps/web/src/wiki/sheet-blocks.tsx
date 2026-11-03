@@ -13,6 +13,7 @@ import styles from './sheet-blocks.module.css'
 const VIEWS: Record<string, (props: NodeViewProps) => React.ReactNode> = {
   pageBreak: BreakView,
   columnBreak: BreakView,
+  columnsChange: ColumnsView,
   statblock: StatblockView,
   sidenote: SidenoteView,
   wideBlock: WideView,
@@ -41,6 +42,26 @@ function BreakView({ node, editor, selected }: NodeViewProps) {
       contentEditable={false}
     >
       <span className={styles.breakLabel}>{label}</span>
+    </NodeViewWrapper>
+  )
+}
+
+/** Un cambio de columnas: una raya fina con su rótulo (sin alto: no ocupa sitio en la hoja) */
+function ColumnsView({ node, editor, selected }: NodeViewProps) {
+  const { t } = useTranslation()
+  return (
+    <NodeViewWrapper
+      className={styles.columns}
+      data-selected={selected || undefined}
+      hidden={!editor.isEditable}
+      contentEditable={false}
+    >
+      <span
+        className={styles.breakLabel}
+        title={t(node.attrs.count === 1 ? 'sheet.columnsChangeOne' : 'sheet.columnsChangeTwo')}
+      >
+        {t(node.attrs.count === 1 ? 'sheet.columnsShortOne' : 'sheet.columnsShortTwo')}
+      </span>
     </NodeViewWrapper>
   )
 }

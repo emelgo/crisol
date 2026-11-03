@@ -36,6 +36,7 @@ import {
   SeparatePageContext,
   useNestedOptions
 } from './separate.tsx'
+import { sheetOf } from './sheet/controls.tsx'
 import { PagedSheet, SheetLayout } from './sheet/paged.tsx'
 import { SlashMenu } from './slash-menu.tsx'
 import { withNodeView } from './views.ts'
@@ -101,7 +102,7 @@ export function PageBody({ page }: { page: Page }) {
               provider={session.provider}
               editable={!page.locked}
               ready={synced}
-              sheet={page.sheet}
+              sheet={sheetOf(page)}
               title={page.title}
             />
           </NestedOptionsContext.Provider>

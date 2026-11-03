@@ -27,7 +27,9 @@ test('los bloques de hoja con «/», solo en una página con hoja; salen en el M
   // Sin hoja, el menú «/» no los ofrece
   await body(page).click()
   await page.keyboard.type('/salto')
-  await expect(page.getByRole('listbox', { name: 'Bloques' }).getByRole('option', { name: /Salto de página/ })).toHaveCount(0)
+  await expect(
+    page.getByRole('listbox', { name: 'Bloques' }).getByRole('option', { name: /Salto de página/ })
+  ).toHaveCount(0)
   await page.keyboard.press('Escape')
   for (let i = 0; i < 6; i++) await page.keyboard.press('Backspace')
   await page.getByRole('button', { name: 'Hoja', exact: true }).click()

@@ -19,13 +19,17 @@ import '@fontsource/alegreya/400-italic.css'
 import '@fontsource/alegreya/700.css'
 import paper from './paper.module.css'
 
+/** Toda página es una hoja: sin ajustes propios, estos (una columna y el tema neutro, con la letra de la app) */
 export const DEFAULT_SHEET: SheetSettings = {
   paper: 'a4',
-  theme: 'pergamino',
+  theme: 'neutro',
   numbers: true,
   firstNumber: 1,
-  footer: true
+  footer: true,
+  columns: 1
 }
+
+export const sheetOf = (page: Page): SheetSettings => page.sheet ?? DEFAULT_SHEET
 
 /** Guarda la página con otros ajustes de hoja (o sin hoja) */
 function useSaveSheet(page: Page) {
@@ -68,9 +72,8 @@ export function SheetToggle({ page }: { page: Page }) {
  * app: el papel y la letra del tema son para imprimir y el PDF. Sin hoja, tal cual
  */
 export function SheetPaper({ page, children }: { page: Page; children: ReactNode }) {
-  if (!page.sheet) return <>{children}</>
   return (
-    <div className={paper.plain} data-theme={page.sheet.theme} data-sheet-paper="">
+    <div className={paper.plain} data-theme={sheetOf(page).theme} data-sheet-paper="">
       {children}
     </div>
   )
@@ -78,9 +81,8 @@ export function SheetPaper({ page, children }: { page: Page; children: ReactNode
 
 /** En «⋯», con la hoja puesta: sus ajustes, imprimir y el PDF */
 export function SheetMenu({ page }: { page: Page }) {
-  if (!page.sheet) return null
   return (
-    <SheetSettingsRow page={page} settings={page.sheet}>
+    <SheetSettingsRow page={page} settings={sheetOf(page)}>
       <PrintButtons page={page} />
     </SheetSettingsRow>
   )
@@ -135,7 +137,7 @@ function SheetSettingsRow({ page, settings, children }: { page: Page; settings: 
   const save = useSaveSheet(page)
   const [local, setLocal] = useState(settings)
   useEffect(() => setLocal(settings), [settings])
-  const ids = { paper: useId(), theme: useId(), first: useId() }
+  const ids = { paper: useId(), theme: useId(), first: useId(), columns: useId() }
   const change = (patch: Partial<SheetSettings>) => {
     const next = { ...local, ...patch }
     setLocal(next)
@@ -150,6 +152,15 @@ function SheetSettingsRow({ page, settings, children }: { page: Page; settings: 
   return (
     <fieldset className={styles.row}>
       <legend className={styles.legend}>{t('sheet.settings')}</legend>
+      <label htmlFor={ids.columns}>{t('sheet.columns')}</label>
+      <select
+        id={ids.columns}
+        value={local.columns}
+        onChange={(e) => change({ columns: e.currentTarget.value === '2' ? 2 : 1 })}
+      >
+        <option value="1">{t('sheet.columnsOne')}</option>
+        <option value="2">{t('sheet.columnsTwo')}</option>
+      </select>
       <label htmlFor={ids.paper}>{t('sheet.paper')}</label>
       <select
         id={ids.paper}

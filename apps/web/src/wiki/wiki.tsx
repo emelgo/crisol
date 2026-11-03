@@ -27,7 +27,7 @@ import { useWikiPanel } from './panel.tsx'
 import { PanelBlocks } from './panel-blocks.tsx'
 import { PageProperties, type PropertyAdder } from './properties.tsx'
 import { QuickSwitcher } from './quick-switcher.tsx'
-import { SheetMenu, SheetPaper, SheetToggle } from './sheet/controls.tsx'
+import { SheetMenu, SheetPaper } from './sheet/controls.tsx'
 import { PageTabs, usePageTabs } from './tabs/page-tabs.tsx'
 import { PageTree } from './tree.tsx'
 import { Versions } from './versions.tsx'
@@ -740,7 +740,6 @@ export function EntryView({
               <>
                 <BookmarkButton page={page} />
                 <LockButton page={page} />
-                <SheetToggle page={page} />
                 <MoreActions page={page} />
               </>
             }

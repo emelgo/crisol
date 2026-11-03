@@ -34,6 +34,42 @@ function sheetBreak(name: 'pageBreak' | 'columnBreak', className: string) {
 export const PageBreak = sheetBreak('pageBreak', 'salto-pagina')
 export const ColumnBreak = sheetBreak('columnBreak', 'salto-columna')
 
+/**
+ * Un cambio de columnas, como un salto de sección: lo que va debajo, a una o a dos columnas, hasta el siguiente. En
+ * Markdown, `<div class="columnas-1"></div>` o `<div class="columnas-2"></div>`
+ */
+const columnsLine = /^<div class="columnas-([12])"><\/div>[ \t]*(?:\n|$)/
+export const ColumnsChange = Node.create({
+  name: 'columnsChange',
+  group: 'block',
+  atom: true,
+  selectable: true,
+  draggable: true,
+  addAttributes: () => ({
+    count: {
+      default: 2,
+      parseHTML: (element) => (element.getAttribute('data-columnas') === '1' ? 1 : 2),
+      renderHTML: (attributes) => ({ 'data-columnas': String(attributes.count) })
+    }
+  }),
+  parseHTML: () => [{ tag: 'div[data-columnas]' }],
+  renderHTML: ({ HTMLAttributes }) => ['div', mergeAttributes(HTMLAttributes)],
+  markdownTokenizer: {
+    name: 'columnsChange',
+    level: 'block',
+    start: (src) => src.search(/^<div class="columnas-[12]">/m),
+    tokenize: (src) => {
+      const match = columnsLine.exec(src)
+      return match ? { type: 'columnsChange', raw: match[0], attrs: { count: Number(match[1]) } } : undefined
+    }
+  },
+  parseMarkdown: (token, helpers) =>
+    helpers.createNode('columnsChange', {
+      count: (token as { attrs?: { count?: number } }).attrs?.count === 1 ? 1 : 2
+    }),
+  renderMarkdown: (node) => `<div class="columnas-${node.attrs?.count === 1 ? 1 : 2}"></div>`
+})
+
 /** Un statblock: un marco con contenido libre que no se parte (los datos de criatura llegan en el módulo 4) */
 export const Statblock = Node.create({
   name: 'statblock',

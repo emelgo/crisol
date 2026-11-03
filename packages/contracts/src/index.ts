@@ -57,10 +57,10 @@ import {
   restorePageVersion,
   setBookmarks,
   setPagePanel,
-  sortPageChildren,
   setPageProperties,
   setPageView,
   setWikiTabs,
+  sortPageChildren,
   updatePage
 } from './pages.ts'
 import { searchWiki } from './search.ts'
