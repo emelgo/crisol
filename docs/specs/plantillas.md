@@ -1,6 +1,6 @@
 # Spec: Módulo 2 — Tipos de página y plantillas
 
-Estado: borrador, a falta de que Enrique lo apruebe · Fecha: 2026-11-03
+Estado: aprobada por Enrique («si», 2026-11-03), con las cuatro propuestas de «Preguntas abiertas» · Fecha: 2026-11-03
 
 Fuentes:
 - Decisiones de partida: `docs/modulos.md` § «2. Tipos de página y plantillas» (entrevista del 2026-11-03).
@@ -53,7 +53,7 @@ Orden: `campos` → `plantillas` → `crear` → `tablas`. Cada capacidad lleva 
 
 **Primero, lo más arriesgado**: la identidad de los campos (que «Facción» sea el mismo campo en todos los PNJ aunque se
 renombre en una página o se copie la plantilla) y la consulta de las tablas con 5.000 páginas. Van en la primera porción
-de `campos` y en un ADR nuevo (ADR-0009), que se escribe con el plan.
+de `campos`; la decisión, en `docs/adr/0009-plantillas-y-campos.md`.
 
 ## Requisitos
 
@@ -259,14 +259,14 @@ comentario breve por campo cuando su forma no se entienda sola.
 
 ## Preguntas abiertas
 
-Propuestas de Claude, por decidir con Enrique:
+Decididas: Enrique aprobó las cuatro propuestas (2026-11-03).
 
-1. **Las copias cuentan**: una página hecha con «PNJ de Eana», copiada de PNJ, sale en las tablas de PNJ. **Propuesta:
+1. ~~**Las copias cuentan**~~: una página hecha con «PNJ de Eana», copiada de PNJ, sale en las tablas de PNJ. **Decidido:
    sí.** Si no, la tabla «Miembros» de serie no vería tus PNJ.
-2. **Aplicar una plantilla a una página ya hecha**, desde el menú de la página: añade los campos, bloques y apartados
-   que falten, sin borrar nada, y cambia la plantilla que recuerda. **Propuesta: sí.** Sirve para las páginas que se
+2. ~~**Aplicar una plantilla a una página ya hecha**~~, desde el menú de la página: añade los campos, bloques y apartados
+   que falten, sin borrar nada, y cambia la plantilla que recuerda. **Decidido: sí.** Sirve para las páginas que se
    hicieron como texto y para cambiar el tipo de una página, que es la queja más repetida en World Anvil.
-3. **Los campos añadidos a mano** a una página no entran en las tablas: solo los de su plantilla. **Propuesta: sí.**
+3. ~~**Los campos añadidos a mano**~~ a una página no entran en las tablas: solo los de su plantilla. **Decidido: así.**
    Para que uno cuente, se añade a una plantilla propia.
-4. **El contenido de las plantillas de serie** (la tabla de `plantillas`): ¿quitarías o añadirías algo? Lo que es solo
-   de Eana, como Frentes en PNJ, va en tu copia.
+4. ~~**El contenido de las plantillas de serie**~~ (la tabla de `plantillas`). **Decidido: así**, sin cambios; se
+   repasa al verlo en el diseño. Lo que es solo de Eana, como Frentes en PNJ, va en su copia.
