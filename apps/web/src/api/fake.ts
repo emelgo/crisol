@@ -797,16 +797,18 @@ export function fakeApi(
         kind,
         name: name ?? (kind === 'text' ? 'Texto 2' : 'Mapa'),
         hidden: false,
-        documentId: kind === 'text' ? crypto.randomUUID() : null
+        documentId: kind === 'text' ? crypto.randomUUID() : null,
+        color: null
       }
       pageTabs.push(tab)
       maps.push({ id: crypto.randomUUID(), tabId: tab.id, pageId, image: null, scale: null, pins: [] })
       return { ...tab }
     },
-    updatePageTab: ({ tabId, name, hidden, after }) => {
+    updatePageTab: ({ tabId, name, hidden, after, color }) => {
       const tab = tabById(tabId)
       if (name !== undefined) tab.name = name
       if (hidden !== undefined) tab.hidden = hidden
+      if (color !== undefined) tab.color = color
       if (after !== undefined) {
         pageTabs.splice(pageTabs.indexOf(tab), 1)
         const index =

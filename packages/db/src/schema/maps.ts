@@ -35,7 +35,9 @@ export const pageTabs = pgTable(
     name: text().notNull(),
     position: text().notNull(),
     /** Oculta: el máster la ve atenuada; los jugadores, cuando lleguen (módulo 5), no */
-    hidden: boolean().notNull().default(false)
+    hidden: boolean().notNull().default(false),
+    /** Su color en la barra (uno de los fijos o #rrggbb); null, sin color */
+    color: text()
   },
   (t) => [index().on(t.pageId), index().on(t.worldId)]
 )

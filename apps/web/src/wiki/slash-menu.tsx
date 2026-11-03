@@ -154,7 +154,15 @@ const SlashList = forwardRef<SlashListHandle, SlashListProps>(function SlashList
     dom.setAttribute('aria-autocomplete', 'list')
     if (current) dom.setAttribute('aria-activedescendant', optionId(current))
     else dom.removeAttribute('aria-activedescendant')
-    list.current?.querySelector('[aria-selected="true"]')?.scrollIntoView({ block: 'nearest' })
+    // La activa, a la vista dentro de la lista (scrollIntoView movería también la página: el menú aún no está colocado)
+    const box = list.current
+    const option = box?.querySelector('[aria-selected="true"]')
+    if (box && option) {
+      const outer = box.getBoundingClientRect()
+      const inner = option.getBoundingClientRect()
+      if (inner.top < outer.top) box.scrollTop -= outer.top - inner.top
+      else if (inner.bottom > outer.bottom) box.scrollTop += inner.bottom - outer.bottom
+    }
   })
   useEffect(() => {
     const dom = editor.view.dom

@@ -600,10 +600,9 @@ export const es = {
     options: 'Opciones de la pestaña {{name}}',
     name: 'Nombre de la pestaña',
     rename: 'Renombrar',
-    moveLeft: 'Mover a la izquierda',
-    moveRight: 'Mover a la derecha',
-    delete: 'Quitar la pestaña',
-    deleteWarning: '¿Quitar «{{name}}» con todo lo que tiene? Se puede deshacer desde el historial.',
+    delete: 'Eliminar pestaña',
+    deleteWarning: '¿Eliminar «{{name}}» y lo que tiene? Se puede deshacer en el historial.',
+    confirmDelete: 'Eliminar',
     deleted: 'Pestaña «{{name}}» quitada'
   },
   map: {

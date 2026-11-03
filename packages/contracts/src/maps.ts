@@ -17,7 +17,9 @@ export const pageTabView = z.object({
   name: z.string(),
   hidden: z.boolean().describe('Oculta a los jugadores'),
   /** Una pestaña de texto: su documento (de Yjs, como un secreto), que se edita en vivo */
-  documentId: z.uuid().nullable()
+  documentId: z.uuid().nullable(),
+  /** Su color en la barra; null, sin color */
+  color: worldColor.nullable()
 })
 
 export type PageTabView = z.infer<typeof pageTabView>
@@ -42,17 +44,23 @@ export const updatePageTab = defineAction({
   name: 'updatePageTab',
   kind: 'write',
   description:
-    'Cambia una pestaña: su nombre, si está oculta a los jugadores o su sitio (after: tras qué pestaña; null, la primera tras el texto)',
+    'Cambia una pestaña: su nombre, su color, si está oculta a los jugadores o su sitio (after: tras qué pestaña; null, la primera tras el texto)',
   input: z
     .object({
       tabId: z.uuid(),
       name: tabName.optional(),
       hidden: z.boolean().optional(),
-      after: z.uuid().nullable().optional()
+      after: z.uuid().nullable().optional(),
+      color: worldColor.nullable().optional()
     })
-    .refine((input) => input.name !== undefined || input.hidden !== undefined || input.after !== undefined, {
-      message: 'name, hidden o after'
-    }),
+    .refine(
+      (input) =>
+        input.name !== undefined ||
+        input.hidden !== undefined ||
+        input.after !== undefined ||
+        input.color !== undefined,
+      { message: 'name, hidden, after o color' }
+    ),
   output: pageTabView
 })
 

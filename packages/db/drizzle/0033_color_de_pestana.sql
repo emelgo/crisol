@@ -1,0 +1,1 @@
+ALTER TABLE "page_tabs" ADD COLUMN "color" text;

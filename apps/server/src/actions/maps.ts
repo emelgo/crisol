@@ -31,7 +31,8 @@ const tabView = (row: mapsRepo.PageTabRow): PageTabView => ({
   kind: row.kind,
   name: row.name,
   hidden: row.hidden,
-  documentId: row.documentId ?? null
+  documentId: row.documentId ?? null,
+  color: (row.color as PageTabView['color']) ?? null
 })
 
 type PinRow = mapsRepo.MapPinRow & { pageTitle: string | null }
@@ -122,7 +123,8 @@ export const mapActions = [
     const tabs = await mapsRepo.listTabs(ctx.db, pageId)
     const base = kind === 'text' ? 'Texto' : 'Mapa'
     const same = tabs.filter((tab) => tab.kind === kind).length
-    const named = name ?? (same > 0 || kind === 'text' ? `${base} ${same + 2}` : base)
+    // La de texto cuenta con la principal («Texto»): la primera añadida es «Texto 2»; el segundo mapa, «Mapa 2»
+    const named = name ?? (kind === 'text' ? `${base} ${same + 2}` : same > 0 ? `${base} ${same + 1}` : base)
     // Una de texto lleva su documento, como un secreto (vacío al nacer; no va al historial: lo cuenta su edición)
     const documentId =
       kind === 'text'
@@ -150,7 +152,7 @@ export const mapActions = [
     return tabView(tab)
   }),
 
-  implement(updatePageTab, async (ctx, { tabId, name, hidden, after }) => {
+  implement(updatePageTab, async (ctx, { tabId, name, hidden, after, color }) => {
     const { tab, page, wiki } = await authorizedTab(ctx, 'page.write', tabId)
     let position: string | undefined
     if (after !== undefined) {
@@ -163,12 +165,14 @@ export const mapActions = [
       title: page.title,
       ...(name !== undefined ? { from: tab.name, to: name } : { name: tab.name }),
       ...(hidden !== undefined ? { hidden } : {}),
-      ...(position !== undefined ? { moved: true } : {})
+      ...(position !== undefined ? { moved: true } : {}),
+      ...(color !== undefined ? { color } : {})
     }
     const updated = await mapsRepo.updateTab(ctx.db, historyContext(ctx, 'updatePageTab', details, wiki), tabId, {
       ...(name !== undefined ? { name } : {}),
       ...(hidden !== undefined ? { hidden } : {}),
-      ...(position !== undefined ? { position } : {})
+      ...(position !== undefined ? { position } : {}),
+      ...(color !== undefined ? { color } : {})
     })
     ctx.realtime.publish(pagesChanged(wiki))
     return tabView(updated)

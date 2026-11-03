@@ -55,7 +55,7 @@ export function updateTab(
   db: Database,
   context: OperationContext,
   tabId: string,
-  patch: Partial<Pick<PageTabRow, 'name' | 'hidden' | 'position'>>
+  patch: Partial<Pick<PageTabRow, 'name' | 'hidden' | 'position' | 'color'>>
 ) {
   return operation(db, context, (w) => w.update(pageTabs, tabId, patch))
 }

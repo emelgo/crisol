@@ -5,8 +5,8 @@
 import type { Page, PageTabView } from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
-import { ChevronDown, Clock, FileText, Map as MapIcon, Network, PenTool, Plus } from 'lucide-react'
-import { type RefObject, useEffect, useId, useRef, useState } from 'react'
+import { ChevronDown, Clock, FileText, Map as MapIcon, Network, PenTool, Plus, Trash2 } from 'lucide-react'
+import { type CSSProperties, type RefObject, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../../api/context.tsx'
 import { useErrorText } from '../../api/errors.ts'
@@ -14,10 +14,12 @@ import { useAnnounce } from '../../components/announcer.tsx'
 import { BusyButton } from '../../components/busy-button.tsx'
 import dialogStyles from '../../components/dialog.module.css'
 import { FormError } from '../../components/field.tsx'
-import { focusOnMount } from '../../components/focus.ts'
+import { focusIsLost, focusOnMount } from '../../components/focus.ts'
 import form from '../../components/form.module.css'
 import list from '../../components/list.module.css'
 import { Modal } from '../../components/modal.tsx'
+import { ColorChoices } from '../../routes/world-card.tsx'
+import { colorHex } from '../../routes/world-look.ts'
 import styles from './page-tabs.module.css'
 
 export const tabsKey = (worldId: string, pageId: string) => ['pages', worldId, 'tabs', pageId]
@@ -58,7 +60,8 @@ function useDismiss(
 }
 
 /**
- * La barra, como en Everlore: «Texto» y las añadidas; la elegida, con su menú (renombrar, mover y quitar); al final,
+ * La barra, como en Everlore: «Texto» y las añadidas; la elegida, con su menú (nombre, color y quitar); se recolocan
+ * arrastrando (o con Alt y las flechas). Al final,
  * «+» para añadir otra
  */
 export function PageTabs({ page, tabs, active }: { page: Page; tabs: PageTabView[]; active: string | null }) {
@@ -141,6 +144,20 @@ export function PageTabs({ page, tabs, active }: { page: Page; tabs: PageTabView
               activeOptions={{ exact: true, includeSearch: true }}
               className={styles.tab}
               aria-current={active === tab.id ? 'page' : undefined}
+              style={tab.color ? ({ '--tab-color': colorHex(tab.color) } as CSSProperties) : undefined}
+              data-color={tab.color ? '' : undefined}
+              aria-keyshortcuts="Alt+ArrowLeft Alt+ArrowRight"
+              // Con el teclado, Alt y las flechas la recolocan (con el ratón, arrastrando)
+              onKeyDown={(event) => {
+                if (page.locked || !event.altKey) return
+                if (event.key === 'ArrowLeft' && index > 0) {
+                  event.preventDefault()
+                  move.mutate({ tabId: tab.id, after: tabs[index - 2]?.id ?? null })
+                } else if (event.key === 'ArrowRight' && index < tabs.length - 1) {
+                  event.preventDefault()
+                  move.mutate({ tabId: tab.id, after: tabs[index + 1]?.id ?? null })
+                }
+              }}
             >
               {tab.kind === 'text' ? (
                 <FileText aria-hidden="true" size={14} />
@@ -231,7 +248,9 @@ function NewTab({ page }: { page: Page }) {
             setOpen(false)
             setName('')
             setKind('text')
-            trigger.current?.focus()
+            // Se quita al acabar de irse: si ya se está en otro sitio (escribiendo en la nueva), el foco no se mueve
+            const at = document.activeElement
+            if (focusIsLost() || at === trigger.current || dialog.current?.contains(at)) trigger.current?.focus()
           }}
         >
           <form
@@ -322,9 +341,14 @@ function TabMenu({
   useDismiss(open, close, root, trigger)
   const refresh = () => queryClient.invalidateQueries({ queryKey: tabsKey(page.worldId, page.id) })
   const update = useMutation({
-    mutationFn: (patch: { name?: string; after?: string | null }) =>
+    mutationFn: (patch: { name?: string; color?: PageTabView['color'] }) =>
       api.call('updatePageTab', { tabId: tab.id, ...patch }),
-    onSuccess: refresh
+    // Se ve ya, sin esperar al servidor
+    onMutate: (patch) =>
+      queryClient.setQueryData<PageTabView[]>(tabsKey(page.worldId, page.id), (current) =>
+        current?.map((other) => (other.id === tab.id ? { ...other, ...patch } : other))
+      ),
+    onSettled: refresh
   })
   const remove = useMutation({
     mutationFn: () => api.call('deletePageTab', { tabId: tab.id }),
@@ -362,6 +386,7 @@ function TabMenu({
           <label htmlFor={nameId}>{t('pageTabs.name')}</label>
           <input
             id={nameId}
+            className={styles.nameField}
             ref={focusOnMount}
             value={name}
             maxLength={60}
@@ -374,44 +399,28 @@ function TabMenu({
               }
             }}
           />
-          <div className={styles.row}>
-            {/* A la izquierda: tras la de antes de la de antes (o la primera tras el texto); a la derecha: tras la siguiente */}
-            <button
-              type="button"
-              className={list.secondary}
-              disabled={index === 0}
-              onClick={() => update.mutate({ after: tabs[index - 2]?.id ?? null })}
-            >
-              {t('pageTabs.moveLeft')}
-            </button>
-            <button
-              type="button"
-              className={list.secondary}
-              disabled={index === tabs.length - 1}
-              onClick={() => update.mutate({ after: tabs[index + 1]?.id ?? null })}
-            >
-              {t('pageTabs.moveRight')}
-            </button>
-          </div>
+          <ColorChoices value={tab.color} onChange={(color) => update.mutate({ color })} />
           {confirming ? (
-            <div className={list.confirm}>
+            // Confirmar, en el mismo sitio y con la misma letra que el menú
+            <div className={styles.confirm}>
               <p>{t('pageTabs.deleteWarning', { name: tab.name })}</p>
-              <div className={list.actions}>
+              <div className={styles.confirmActions}>
+                <button type="button" className={styles.cancelButton} onClick={() => setConfirming(false)}>
+                  {t('list.cancel')}
+                </button>
                 <BusyButton
                   ref={focusOnMount}
-                  className={form.button}
+                  className={styles.confirmButton}
                   busy={remove.isPending}
                   onClick={() => remove.mutate()}
                 >
-                  {t('pageTabs.delete')}
+                  {t('pageTabs.confirmDelete')}
                 </BusyButton>
-                <button type="button" className={list.secondary} onClick={() => setConfirming(false)}>
-                  {t('list.cancel')}
-                </button>
               </div>
             </div>
           ) : (
-            <button type="button" className={list.secondary} onClick={() => setConfirming(true)}>
+            <button type="button" className={styles.deleteButton} onClick={() => setConfirming(true)}>
+              <Trash2 aria-hidden="true" size={15} />
               {t('pageTabs.delete')}
             </button>
           )}
