@@ -12,12 +12,15 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
 - **Módulo 2 empezado** en la rama `modulo-2/spec` (sin PR aún). Hecha la entrevista (decisiones en «2. Tipos de página
   y plantillas», abajo) y los estudios: Foundry con craft-anything (`research/foundry/tipos-de-documento.md`) y Kanka,
   LegendKeeper y World Anvil por su web pública (`research/kanka/`, `research/legendkeeper/`, `research/worldanvil/`).
-- **Spec escrita**: `docs/specs/plantillas.md`, a falta de que Enrique la apruebe y responda sus cuatro preguntas
-  abiertas (copias que cuentan, aplicar plantilla a una página hecha, campos a mano fuera de las tablas, contenido de
-  las de serie).
-- **Lo siguiente**: con la spec aprobada, el ADR-0009 (identidad de los campos y la consulta de las tablas) y el diseño
-  de pantallas con `frontend-design` (elegir plantilla, controles de los campos, «Tabla de páginas», «Plantillas» y su
-  editor); después `/plan`.
+- **Spec aprobada** («si», con las cuatro propuestas): `docs/specs/plantillas.md`. **ADR-0009** escrito
+  (`docs/adr/0009-plantillas-y-campos.md`): campos con id, linaje de plantillas en la página y tablas calculadas en el
+  servidor.
+- **Diseño publicado, por probar**: lienzo «Crisol: plantillas» en claude.ai
+  (https://claude.ai/artifact/SBQfr3xdPCpyEeiMqgzees; fuentes en `out/lienzo-plantillas/`, fuera de git), con el
+  aspecto real de la app. Seis tablas: «Página nueva» desde plantilla, un PNJ con sus campos, la facción con
+  «Miembros» y su configuración, «Plantillas» en Mis mundos, el editor de «Frente» y aplicar una plantilla a una página
+  hecha. Pregunta abierta: las opciones de Estado de PNJ, sin género («Vive», «Ha muerto»…).
+- **Lo siguiente**: lo que diga Enrique del lienzo (sus normas, a `docs/diseno.md`); con el diseño aprobado, `/plan`.
 - REA ya no se usa: los estudios se hacen con craft-anything (cambiado en `CLAUDE.md` y `research/README.md`).
 
 ### Para retomar (2026-11-03, cierre de la interfaz)
