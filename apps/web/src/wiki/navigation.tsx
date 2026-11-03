@@ -10,10 +10,8 @@ import { useAnnounce } from '../components/announcer.tsx'
 import { BusyButton } from '../components/busy-button.tsx'
 import { FormError } from '../components/field.tsx'
 import { focusOnMount, useReturnFocus } from '../components/focus.ts'
-import form from '../components/form.module.css'
 import list from '../components/list.module.css'
 import styles from './navigation.module.css'
-import { childrenKey } from './tree.tsx'
 
 /** Cuántas pestañas sin fijar se quedan abiertas: al abrir otra, se cierra la más antigua */
 const LOOSE_TABS = 8

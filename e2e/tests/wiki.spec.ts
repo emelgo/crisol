@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, type Page, test } from '@playwright/test'
-import { createWorld, freshOwner, openWiki, sections, slash } from './ayudas.ts'
+import { createWorld, freshOwner, openWiki, slash } from './ayudas.ts'
 
 /** El propietario crea Eana y entra en su wiki */
 async function eanaWiki(page: Page) {

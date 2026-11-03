@@ -13,7 +13,7 @@ import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import { ContentView } from './content.tsx'
-import { coverStyle } from './cover.tsx'
+import { coverStyle } from './cover-look.ts'
 import styles from './preview.module.css'
 
 /** La consulta de lo de dentro de una página (cuelga de ['pages', mundo, 'content', página]: la vacía el canal) */

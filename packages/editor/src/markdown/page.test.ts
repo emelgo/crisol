@@ -125,6 +125,9 @@ const body: JSONContent = {
     { type: 'box', attrs: { id: 'bxbaaaaa', wide: true }, content: [paragraph(null, text('Caja a lo ancho.'))] },
     { type: 'pageBreak', attrs: { id: 'pbaaaaaa' } },
     { type: 'columnBreak', attrs: { id: 'cbaaaaaa' } },
+    { type: 'columnsChange', attrs: { id: 'ccaaaaaa', count: 2 } },
+    paragraph(null, text('A dos columnas.')),
+    { type: 'columnsChange', attrs: { id: 'ccbaaaaa', count: 1 } },
     {
       type: 'statblock',
       attrs: { id: 'sbaaaaaa', wide: true },

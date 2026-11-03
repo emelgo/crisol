@@ -199,9 +199,7 @@ const SlashList = forwardRef<SlashListHandle, SlashListProps>(function SlashList
                 <ChevronRight aria-hidden="true" size={14} className={styles.chevron} />
               </>
             ) : (
-              <>
-                <span>{t(`blocks.${entry.block.label}`)}</span>
-              </>
+              <span>{t(`blocks.${entry.block.label}`)}</span>
             )}
           </div>
         ))}

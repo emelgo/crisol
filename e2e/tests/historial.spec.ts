@@ -1,4 +1,4 @@
-import { expect, type Page, test } from '@playwright/test'
+import { expect, test } from '@playwright/test'
 import { campaignLink, closeWindow, openWindow, openWorld, rename, toWorlds } from './ayudas.ts'
 
 test('el propietario ve en el historial lo que ha hecho, en el mundo y en toda la organización', async ({ page }) => {

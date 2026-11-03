@@ -14,6 +14,7 @@ import { authorize, NotFoundError } from '@crisol/domain'
 import { pagesChanged, worldsChanged } from '../realtime/events.ts'
 import { authorizedWiki, targetOrganization } from './access.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
+import { pageContentActions } from './page-content.ts'
 import { implement } from './registry.ts'
 
 /** Un mundo de la base de datos, como lo da la API: el icono y el color, solo si son de los que se ofrecen */
@@ -62,8 +63,7 @@ export const worldActions = [
       title
     })
     // Con un texto de bienvenida: qué es esta página y por dónde empezar (se borra o se cambia como cualquier texto)
-    const { implementationsByName } = await import('./implementations.ts')
-    await implementationsByName.get('editPage')?.handler(ctx, {
+    await pageContentActions.find((impl) => impl.action.name === 'editPage')?.handler(ctx, {
       pageId: page.id,
       body: { mode: 'append', markdown: welcome(title) }
     })

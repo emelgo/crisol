@@ -16,7 +16,7 @@ import dialogStyles from '../components/dialog.module.css'
 import { FormError } from '../components/field.tsx'
 import form from '../components/form.module.css'
 import { Modal } from '../components/modal.tsx'
-import { coverStyle, useWorldFiles } from '../wiki/cover.tsx'
+import { coverStyle, useWorldFiles } from '../wiki/cover-look.ts'
 import styles from './world-cover.module.css'
 
 /** La portada entera, encima de todo */

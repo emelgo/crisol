@@ -335,13 +335,11 @@ export function WikiHome() {
  */
 function PageHead({
   page,
-  world,
   startEditing,
   home = false,
   actions
 }: {
   page: Page
-  world: string
   startEditing: boolean
   /** La portada del mundo: lleva su etiqueta junto al título */
   home?: boolean
@@ -633,24 +631,14 @@ export function WikiPage() {
           )
         }
         if (!page.data) return failed(page) ? <LoadError error={page.error} onRetry={() => page.refetch()} /> : null
-        return <OpenPage page={page.data} world={world.name} nuevo={nuevo === true} pestana={pestana ?? null} />
+        return <OpenPage page={page.data} nuevo={nuevo === true} pestana={pestana ?? null} />
       }}
     </WikiLayout>
   )
 }
 
 /** La página abierta: su texto o, con ?pestana=, una de sus pestañas (un mapa) */
-function OpenPage({
-  page,
-  world,
-  nuevo,
-  pestana
-}: {
-  page: Page
-  world: string
-  nuevo: boolean
-  pestana: string | null
-}) {
+function OpenPage({ page, nuevo, pestana }: { page: Page; nuevo: boolean; pestana: string | null }) {
   const api = useApi()
   const tabs = usePageTabs(page)
   const all = tabs.data ?? []
@@ -681,7 +669,6 @@ function OpenPage({
       // Cada página entra con su animación
       key={page.id}
       page={page}
-      world={world}
       nuevo={nuevo}
       tabs={all}
       active={active}
@@ -698,7 +685,6 @@ function OpenPage({
  */
 export function EntryView({
   page,
-  world,
   nuevo = false,
   tabs,
   active = null,
@@ -706,7 +692,6 @@ export function EntryView({
   home = false
 }: {
   page: Page
-  world: string
   nuevo?: boolean
   tabs: PageTabView[]
   active?: PageTabView | null
@@ -733,7 +718,6 @@ export function EntryView({
           <PageHead
             key={page.id}
             page={page}
-            world={world}
             startEditing={nuevo}
             home={home}
             actions={

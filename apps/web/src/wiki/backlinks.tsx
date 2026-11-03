@@ -38,7 +38,6 @@ export function Backlinks({ page }: { page: Page }) {
     onError: (error) => announce(errorText(error))
   })
   const data = links.data
-  const where = (path: string[]) => (path.length > 0 ? path.join(' / ') : null)
   const pageIcon = (icon: string | null | undefined) => (
     <span aria-hidden="true" className={styles.icon}>
       {icon ?? <FileText size={14} />}

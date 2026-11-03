@@ -29,6 +29,7 @@ export const BLOCK_TYPES = [
   'fileEmbed',
   'pageBreak',
   'columnBreak',
+  'columnsChange',
   'statblock',
   'sidenote',
   'wideBlock',

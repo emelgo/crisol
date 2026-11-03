@@ -364,9 +364,9 @@ test('el salto de página va debajo de lo de antes y se borra desde su asa', asy
   const pageBreak = body(page).locator('[data-break="page"]')
   await expect(pageBreak).toHaveCount(1)
   // No encima de la primera línea (antes se quedaba arriba del todo)
-  const first = (await body(page).getByText('Primera hoja.').boundingBox())!
-  const line = (await pageBreak.boundingBox())!
-  expect(line.y).toBeGreaterThanOrEqual(first.y + first.height - 1)
+  const first = await body(page).getByText('Primera hoja.').boundingBox()
+  const line = await pageBreak.boundingBox()
+  expect(line?.y ?? 0).toBeGreaterThanOrEqual((first?.y ?? 0) + (first?.height ?? 0) - 1)
   await pageBreak.hover()
   await page.getByRole('button', { name: 'Mover o cambiar el bloque' }).click()
   await page.getByRole('menu', { name: 'Bloque' }).getByRole('menuitem', { name: 'Borrar' }).click()

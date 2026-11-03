@@ -29,7 +29,7 @@ import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
 import { FormError } from '../components/field.tsx'
 import { colorHex, PRESET_COLORS } from '../routes/world-look.ts'
-import { useWorldFiles } from './cover.tsx'
+import { useWorldFiles } from './cover-look.ts'
 import styles from './panel-blocks.module.css'
 import { childrenKey } from './tree.tsx'
 

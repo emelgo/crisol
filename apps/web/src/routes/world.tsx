@@ -93,7 +93,7 @@ export function WorldPage() {
   if (master) {
     return (
       <>
-        <WorldHome worldId={worldId} name={world.name} banner={<WorldBanner world={world} />} />
+        <WorldHome worldId={worldId} banner={<WorldBanner world={world} />} />
         {tour}
       </>
     )
@@ -113,7 +113,7 @@ export function WorldPage() {
  * La página de portada del mundo (si aún no tiene, se crea), como cualquier página: con el árbol al lado y la cabecera
  * del mundo como su portada
  */
-function WorldHome({ worldId, name, banner }: { worldId: string; name: string; banner: ReactNode }) {
+function WorldHome({ worldId, banner }: { worldId: string; banner: ReactNode }) {
   const api = useApi()
   const queryClient = useQueryClient()
   const home = useQuery({
@@ -140,7 +140,7 @@ function WorldHome({ worldId, name, banner }: { worldId: string; name: string; b
     <WikiLayout worldId={worldId} current={current}>
       {() =>
         current ? (
-          <HomeEntry page={current} world={name} banner={banner} />
+          <HomeEntry page={current} banner={banner} />
         ) : (
           <>
             {banner}
@@ -161,9 +161,9 @@ function WorldHome({ worldId, name, banner }: { worldId: string; name: string; b
   )
 }
 
-function HomeEntry({ page, world, banner }: { page: Page; world: string; banner: ReactNode }) {
+function HomeEntry({ page, banner }: { page: Page; banner: ReactNode }) {
   const tabs = usePageTabs(page)
-  return <EntryView page={page} world={world} tabs={tabs.data ?? []} banner={banner} home />
+  return <EntryView page={page} tabs={tabs.data ?? []} banner={banner} home />
 }
 
 /** Las campañas de este mundo, en tarjetas: para su máster, todas y «Nueva campaña»; para quien juega, las suyas */

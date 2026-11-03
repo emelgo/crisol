@@ -91,7 +91,6 @@ export function Ribbon() {
   // Al entrar en un mundo, «Mundos» sube a la llama y se funde con ella, que se aviva (el mundo se cocina en el crisol);
   // dentro, la llama es la vuelta. Al volver, «Mundos» sale de la llama, sin fuego
   const inWorld = Boolean(worldId)
-  const narrow = useNarrow()
   const [wasInWorld, setWasInWorld] = useState(inWorld)
   // Recién entrado (en este mismo pintado aún no se ve en phase)
   const justEntered = inWorld && !wasInWorld
@@ -275,20 +274,18 @@ function WorldPanels({ worldId, worldName, master }: { worldId: string; worldNam
   if (master) return <WikiPanels worldId={worldId} worldName={worldName} />
   // Quien juega, sin páginas: su Inicio con sus campañas
   return (
-    <>
-      <Link
-        to="/mundos/$worldId"
-        params={{ worldId }}
-        activeOptions={{ exact: true }}
-        className={styles.item}
-        viewTransition={SECTION}
-        onPointerEnter={prefetchHome}
-        onFocus={prefetchHome}
-        data-tour="barra-inicio"
-      >
-        <Label icon={House} text={t('ribbon.home')} />
-      </Link>
-    </>
+    <Link
+      to="/mundos/$worldId"
+      params={{ worldId }}
+      activeOptions={{ exact: true }}
+      className={styles.item}
+      viewTransition={SECTION}
+      onPointerEnter={prefetchHome}
+      onFocus={prefetchHome}
+      data-tour="barra-inicio"
+    >
+      <Label icon={House} text={t('ribbon.home')} />
+    </Link>
   )
 }
 

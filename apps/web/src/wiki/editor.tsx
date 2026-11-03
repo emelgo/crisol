@@ -107,7 +107,6 @@ export function PageBody({ page, documentId }: { page: Page; documentId?: string
                 editable={!page.locked}
                 ready={synced}
                 sheet={sheetOf(page)}
-                title={page.title}
               />
             )}
           </NestedOptionsContext.Provider>
@@ -189,8 +188,7 @@ function BodyEditor({
   provider,
   editable,
   ready,
-  sheet,
-  title
+  sheet
 }: {
   pageId: string
   document: Y.Doc
@@ -199,7 +197,6 @@ function BodyEditor({
   ready: boolean
   /** Con hoja: el texto, maquetado en sus páginas; y los bloques de hoja en el menú «/» */
   sheet: SheetSettings | null
-  title: string
 }) {
   // El editor se crea una vez: lo de la hoja se lee al momento
   const isSheet = useRef(sheet !== null)
