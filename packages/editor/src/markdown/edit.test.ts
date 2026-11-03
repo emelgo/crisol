@@ -1,7 +1,7 @@
 import type { JSONContent } from '@tiptap/core'
 import { describe, expect, it } from 'vitest'
 import { fillJsonIds } from '../ids.ts'
-import { EditTargetError, editBody } from './edit.ts'
+import { EditTargetError, editBody, keepBlockId } from './edit.ts'
 
 const p = (id: string | null, text: string): JSONContent => ({
   type: 'paragraph',
@@ -118,5 +118,28 @@ describe('cambiar el cuerpo', () => {
     expect(ids).toHaveLength(5)
     expect(new Set(ids).size).toBe(5)
     expect(ids[0]).toBe('aaaaaaaa')
+  })
+})
+
+describe('cambiar un bloque por otro del mismo tipo', () => {
+  const secret = (id: string): JSONContent => ({ type: 'secret', attrs: { id, documentId: null } })
+  const read = (...content: JSONContent[]) => ({
+    properties: [],
+    body: doc(...content),
+    separates: content
+      .filter((b) => b.type === 'secret')
+      .map((b) => ({ id: String(b.attrs?.id), kind: 'secret' as const, content: [] }))
+  })
+
+  it('lo nuevo se queda con el id del cambiado, también un secreto y lo de dentro', () => {
+    const kept = keepBlockId(read(secret('nuevo123')), 'viejo123', 'secret')
+    expect(kept.body.content?.[0]?.attrs?.id).toBe('viejo123')
+    expect(kept.separates.map((s) => s.id)).toEqual(['viejo123'])
+  })
+
+  it('si es de otro tipo o son varios bloques, cada uno con el suyo', () => {
+    expect(keepBlockId(read(secret('nuevo123')), 'viejo123', 'paragraph').body.content?.[0]?.attrs?.id).toBe('nuevo123')
+    const two = keepBlockId(read(secret('nuevo123'), secret('otro1234')), 'viejo123', 'secret')
+    expect(two.separates.map((s) => s.id)).toEqual(['nuevo123', 'otro1234'])
   })
 })

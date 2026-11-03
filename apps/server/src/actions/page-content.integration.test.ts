@@ -257,6 +257,26 @@ describe('Claude lee y escribe páginas en Markdown', () => {
     )
   })
 
+  it('un secreto cambiado por bloque sin su ^s-id conserva su id y su documento', async () => {
+    const { pages } = await ok200('createPages', {
+      worldId,
+      parentId: null,
+      pages: [{ key: 'p', title: 'Torre Gris', markdown: '> [!secreto]\n> Primera versión.' }]
+    })
+    const pageId = pages[0].id
+    const idOf = async () => /\^s-([a-z0-9]{8})/.exec((await ok200('readPage', { pageId, ids: true })).markdown)?.[1]
+    const secretId = await idOf()
+    const before = (await documentsOf(pageId)).filter((d) => d.kind === 'secret')
+    await ok200('editPage', {
+      pageId,
+      body: { mode: 'block', blockId: secretId, markdown: '> [!secreto]\n> Segunda versión.' }
+    })
+    expect(await idOf()).toBe(secretId)
+    const after = (await documentsOf(pageId)).filter((d) => d.kind === 'secret')
+    expect(after.map((d) => d.id)).toEqual(before.map((d) => d.id))
+    expect(await storedText(before[0]?.id ?? '')).toContain('Segunda versión.')
+  })
+
   it('lo que no se puede: una madre que no está, una página enlazada que no existe, un YAML roto, y nada queda a medias', async () => {
     const badParent = await call('createPages', {
       worldId,
