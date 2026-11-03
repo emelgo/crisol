@@ -14,6 +14,8 @@ import { TreeMenu } from './tree-menu.tsx'
 /** A partir de cuántas filas visibles solo se pintan las que se ven */
 const VIRTUAL_FROM = 300
 const ROW_HEIGHT = 34
+/** Cuánto hay que llevar a la izquierda lo que se arrastra para sacarlo un nivel */
+const OUTDENT_STEP = 24
 
 /** Las subpáginas de una página (o el primer nivel): la misma consulta que la lista de subpáginas de la página */
 export const childrenKey = (worldId: string, parentId: string | null) => [
@@ -57,8 +59,10 @@ export function PageTree({ worldId, currentId, path, onNavigate }: Props) {
   const errorText = useErrorText()
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(() => new Set())
   const [focusedId, setFocusedId] = useState<string | null>(null)
-  const [drop, setDrop] = useState<{ id: string; zone: Zone } | null>(null)
+  // Dónde caería lo que se arrastra; con level, detrás de la de ese nivel (llevándolo a la izquierda)
+  const [drop, setDrop] = useState<{ id: string; zone: Zone; level?: number } | null>(null)
   const dragged = useRef<string | null>(null)
+  const dragStartX = useRef(0)
   const [menu, setMenu] = useState<{ page: PageSummary; x: number; y: number } | null>(null)
   const items = useRef(new Map<string, HTMLAnchorElement>())
   const pendingFocus = useRef(false)
@@ -144,19 +148,59 @@ export function PageTree({ worldId, currentId, path, onNavigate }: Props) {
 
   const siblingsOf = (page: PageSummary) => childrenOf.get(page.parentId) ?? []
   const titleOf = (id: string | null) => rows.find((row) => row.page.id === id)?.page.title
+  type Children = { pages: PageSummary[] }
+  /** Lo movido se ve ya en su sitio, sin esperar al servidor (si falla, se vuelve a pedir el árbol tal cual está) */
+  const moveInCache = (page: PageSummary, to: Move) => {
+    void queryClient.cancelQueries({ queryKey: ['pages', worldId, 'children'] })
+    const moved = { ...page, parentId: to.parentId }
+    let emptied = false
+    queryClient.setQueryData<Children>(childrenKey(worldId, page.parentId), (data) => {
+      if (!data) return data
+      const pages = data.pages.filter((p) => p.id !== page.id)
+      emptied = pages.length === 0
+      return { ...data, pages }
+    })
+    queryClient.setQueryData<Children>(childrenKey(worldId, to.parentId), (data) => {
+      if (!data) return data
+      const pages = data.pages.filter((p) => p.id !== page.id)
+      const anchor = to.before ?? to.after
+      let at = anchor ? pages.findIndex((p) => p.id === anchor) : -1
+      if (at < 0) at = pages.length
+      else if (to.after) at += 1
+      pages.splice(at, 0, moved)
+      return { ...data, pages }
+    })
+    // La madre nueva ya tiene dentro; la de antes, quizá ya no
+    queryClient.setQueriesData<Children>({ queryKey: ['pages', worldId, 'children'] }, (data) => {
+      if (!data) return data
+      let changed = false
+      const pages = data.pages.map((p) => {
+        const has = p.id === to.parentId ? true : p.id === page.parentId && emptied ? false : p.hasChildren
+        if (has === p.hasChildren) return p
+        changed = true
+        return { ...p, hasChildren: has }
+      })
+      return changed ? { ...data, pages } : data
+    })
+  }
   const move = async (page: PageSummary, to: Move) => {
+    const cached = to.parentId === null || queryClient.getQueryData(childrenKey(worldId, to.parentId)) !== undefined
+    moveInCache(page, to)
+    // Si sus subpáginas ya se tenían, se despliega ya; si no, al acabar (pedirlas antes no la traería aún)
+    if (to.parentId && cached) setOpen(to.parentId, true)
+    pendingFocus.current = true
+    setFocusedId(page.id)
     try {
       await api.call('movePage', { pageId: page.id, ...to })
-      if (to.parentId) setOpen(to.parentId, true)
-      await queryClient.invalidateQueries({ queryKey: ['pages', worldId] })
-      pendingFocus.current = true
-      setFocusedId(page.id)
+      if (to.parentId && !cached) setOpen(to.parentId, true)
       const parent = titleOf(to.parentId)
       announce(
         parent ? t('wiki.movedInto', { title: page.title, parent }) : t('wiki.movedToTop', { title: page.title })
       )
     } catch (error) {
       announce(errorText(error))
+    } finally {
+      void queryClient.invalidateQueries({ queryKey: ['pages', worldId] })
     }
   }
 
@@ -217,12 +261,38 @@ export function PageTree({ worldId, currentId, path, onNavigate }: Props) {
     const y = (event.clientY - box.top) / (box.height || 1)
     return y < 0.25 ? 'before' : y > 0.75 ? 'after' : 'inside'
   }
-  const onDrop = (row: Row, zone: Zone) => {
+  /**
+   * Llevarlo a la izquierda lo saca de su madre: sobre su propia fila, un nivel por cada paso; sobre la última de una
+   * rama (cayendo detrás), detrás de la de ese nivel. Devuelve la de ese nivel, o null si no se lleva a la izquierda
+   */
+  const outdentTarget = (row: Row, zone: Zone, clientX: number): Row | null => {
+    const steps = Math.floor((dragStartX.current - clientX) / OUTDENT_STEP)
+    if (steps <= 0) return null
+    const self = row.page.id === dragged.current
+    if (!self && (zone !== 'after' || row.expanded)) return null
+    const level = Math.max(1, row.level - steps)
+    let current: Row | undefined = row
+    while (current && current.level > level) {
+      // Solo desde la última de cada rama: si no, caería lejos de donde se suelta
+      if (!self && current.posinset !== current.setsize) return null
+      const parentId: string | null = current.page.parentId
+      current = rows.find((r) => r.page.id === parentId)
+    }
+    return current && current !== row ? current : null
+  }
+
+  const onDrop = (row: Row, zone: Zone, clientX: number) => {
+    const out = outdentTarget(row, zone, clientX)
     const id = dragged.current
     dragged.current = null
     setDrop(null)
     const page = rows.find((r) => r.page.id === id)?.page
-    if (!page || page.id === row.page.id) return
+    if (!page) return
+    if (out) {
+      if (out.page.id !== page.id) void move(page, { parentId: out.page.parentId, after: out.page.id })
+      return
+    }
+    if (page.id === row.page.id) return
     const to: Move =
       zone === 'inside'
         ? { parentId: row.page.id }
@@ -243,8 +313,15 @@ export function PageTree({ worldId, currentId, path, onNavigate }: Props) {
         to="/mundos/$worldId/wiki/$pageId"
         params={{ worldId, pageId: page.id }}
         className={styles.item}
-        style={{ ...style, paddingInlineStart: `${(row.level - 1) * 0.875}rem` }}
+        style={
+          {
+            ...style,
+            paddingInlineStart: `${(row.level - 1) * 0.875}rem`,
+            ...(drop?.id === page.id && drop.level ? { '--drop-indent': `${(drop.level - 1) * 0.875}rem` } : {})
+          } as CSSProperties
+        }
         data-drop={drop?.id === page.id ? drop.zone : undefined}
+        data-outdent={drop?.id === page.id && drop.level ? '' : undefined}
         aria-level={row.level}
         aria-setsize={row.setsize}
         aria-posinset={row.posinset}
@@ -285,6 +362,7 @@ export function PageTree({ worldId, currentId, path, onNavigate }: Props) {
         draggable={page.id !== homeId}
         onDragStart={(event) => {
           dragged.current = page.id
+          dragStartX.current = event.clientX
           event.dataTransfer.effectAllowed = 'move'
           event.dataTransfer.setData('text/plain', page.title)
         }}
@@ -296,12 +374,18 @@ export function PageTree({ worldId, currentId, path, onNavigate }: Props) {
           if (!dragged.current) return
           event.preventDefault()
           const zone = zoneOf(event)
-          if (drop?.id !== page.id || drop.zone !== zone) setDrop({ id: page.id, zone })
+          const out = outdentTarget(row, zone, event.clientX)
+          if (out) {
+            if (drop?.id !== page.id || drop.zone !== 'after' || drop.level !== out.level)
+              setDrop({ id: page.id, zone: 'after', level: out.level })
+          } else if (page.id === dragged.current) {
+            if (drop) setDrop(null)
+          } else if (drop?.id !== page.id || drop.zone !== zone || drop.level) setDrop({ id: page.id, zone })
         }}
         onDragLeave={() => setDrop(null)}
         onDrop={(event) => {
           event.preventDefault()
-          onDrop(row, zoneOf(event))
+          onDrop(row, zoneOf(event), event.clientX)
         }}
       >
         {/* Solo un dibujo para el lector de pantalla: lo que dice es aria-expanded */}

@@ -63,6 +63,21 @@
   border-block-end-color: var(--color-accent);
 }
 
+/* Llevado a la izquierda: la raya empieza en el nivel al que sale */
+.item[data-outdent] {
+  position: relative;
+  border-block-end-color: transparent;
+}
+
+.item[data-outdent]::after {
+  position: absolute;
+  inset-block-end: -2px;
+  inset-inline: var(--drop-indent, 0) 0;
+  block-size: 2px;
+  background: var(--color-accent);
+  content: "";
+}
+
 .item[data-drop="inside"] {
   outline: 2px solid var(--color-accent);
   outline-offset: -2px;
