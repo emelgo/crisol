@@ -18,18 +18,19 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   columnas 1 o 2 desde «/» → Maquetación; pestañas de texto (otra página de texto con su documento) y de mapa, con color
   y menú (botón derecho); panel de bloques a la derecha; árbol con botón derecho y arrastre (a la izquierda, sale de su
   madre).
-- **Lo siguiente** (en otra conversación): el punto 4 del orden de abajo, **la búsqueda antes del módulo 2** (PDF con
-  pdf.js y, con permiso para la imagen de Postgres y elegir quién calcula los embeddings, pgvector), y después **el
-  módulo 2** (tipos de página, plantillas, formularios y consultas) con su ciclo: `interview-me` frente al inventario,
-  REA, `/spec`…
+- **Lo siguiente** (en otra conversación): **el módulo 2** (tipos de página, plantillas, formularios y consultas) con
+  su ciclo: `interview-me` frente al inventario, REA, `/spec`… La mejora de la búsqueda (texto de los PDF y búsqueda
+  por significado con pgvector) ya no va antes: Enrique la pasó al módulo 4, con la biblioteca (2026-11-03).
+- **En staging** desde el 2026-11-03 (PR #91, migraciones 0029 a 0034).
 - **Apuntado de las revisiones de esta tanda** (para cuando toque):
   - **Módulo 5 (jugadores)**: el servidor aún no aplica `hidden` (pestañas, pines): filtrar en `listPageTabs` y
     `getMap` y negar en `onAuthenticate` de colaboración los documentos de pestañas ocultas; pedir aprobación a la IA
     al revelar algo (`hidden` de true a false) y al vaciar el panel, no solo por el tipo de acción.
-  - La hoja al escribir trata la nota lateral como un bloque suelto y al imprimir va junto al bloque siguiente: con
-    notas laterales, las marcas «Página N» pueden no coincidir con el PDF (sacar `unitsOf` a un módulo común).
-  - Ordenar A-Z reescribe las posiciones solo de las subpáginas vivas: al restaurar una de la papelera puede compartir
-    posición con otra.
+  - ~~La nota lateral, suelta en la hoja al escribir~~: hecho (2026-11-03), va con el bloque que la sigue, como al
+    imprimir. Su alto se suma al del bloque (al imprimir flota a su lado): con notas largas, la marca «Página N» puede
+    caer un poco antes que en el PDF.
+  - ~~Ordenar A-Z con subpáginas en la papelera~~: hecho (2026-11-03), las de la papelera van detrás, cada una con su
+    sitio.
   - La cobertura de lo cambiado (CONSTRAINTS.md, 80 %) bloquea desde el 2026-11-12.
 
 ### Para retomar (2026-11-03)
@@ -105,7 +106,8 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   1. la etapa de interfaz: primera pasada hecha (`tasks/interfaz.md`); falta la revisión de Enrique y pulir;
   2. arreglar el resto de lo que dijo de sus pruebas;
   3. cerrar el módulo 1 (que pruebe el punto 6 y el final; marcar sus puntos de control en `tasks/todo.md`);
-  4. **antes del módulo 2, la búsqueda** (pregunta de Enrique, 2026-10-30, con herramientas que propuso: qmd, basic-memory,
+  4. ~~antes del módulo 2, la búsqueda~~ → **pasada al módulo 4** (2026-11-03: «la mejora de búsqueda ponla donde
+     corresponda para seguir con el módulo 2»). Lo que se decidió (pregunta de Enrique, 2026-10-30, con herramientas que propuso: qmd, basic-memory,
      probe, Meilisearch, pymupdf4llm). Primera respuesta: basic-memory y pymupdf4llm son AGPL (fuera); probe es para
      código; Meilisearch sería otro servicio y a esta escala basta Postgres; de qmd, la idea de buscar por significado,
      que se puede hacer en Postgres con pgvector. Propuesta: buscar dentro de los PDF (texto de cada página con pdf.js
@@ -953,7 +955,7 @@ Estados: pendiente · en curso · hecho · descartado.
 | 1 | **Wiki**: páginas y subpáginas, editor de bloques, enlaces, menciones, vista previa, propiedades, secretos, búsqueda, marcadores, etiquetas, versiones, recursos y archivos, **hojas con estilo** (tipo Homebrewery, con PDF), exportación MD, sus herramientas MCP | construido (tareas 1 a 26 hechas); falta la revisión de Enrique en staging | Foundry: Journal; DDB: contenido y referencias; Homebrewery (MIT): formato de hoja y descarga |
 | 2 | Tipos de página, plantillas y formularios nativos; consultas (en lugar de Dataview y Bases) | pendiente | Foundry: tipos de documento |
 | 3 | Sistemas de reglas, fichas de personaje (creación, subida de nivel), dados y dados 3D | pendiente | DDB: creador y hoja; Foundry: dnd5e, DataModel e instalar y crear sistemas |
-| 4 | Compendios, bestiario, statblocks, biblioteca | pendiente | Foundry: compendium packs; DDB: listados |
+| 4 | Compendios, bestiario, statblocks, biblioteca; **buscar dentro de los PDF** (texto de cada página con pdf.js; el resultado abre el visor en esa página) **y por significado** (pgvector; antes, permiso para la imagen de Postgres y elegir quién calcula los embeddings) | pendiente | Foundry: compendium packs; DDB: listados |
 | 5 | Visibilidad por campaña: conocimiento de los jugadores, revelar, compartir | pendiente | Foundry: ownership |
 | 6 | **Mesa**: escenas, rejilla, fichas, medir y plantillas, niebla, muros, puertas, luz, visión, iniciativa, instantáneas, encuentros, UVTT | pendiente | Foundry: canvas, visión y muros; DDB Maps |
 | 7 | **Sala de jugadores**: presencia, chat y susurros, mostrar a jugadores, sonido, controles del máster | pendiente | Foundry: sockets y chat; DDB: game log |

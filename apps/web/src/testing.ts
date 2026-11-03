@@ -12,5 +12,6 @@ export const announced = () => screen.getByRole('status').textContent
 export async function signOut() {
   const nav = within(await screen.findByRole('navigation', { name: 'Cuenta' }))
   await userEvent.click(await nav.findByRole('button', { expanded: false }))
-  await userEvent.click(nav.getByRole('button', { name: 'Cerrar sesión' }))
+  // El menú se abre tras pintar: con la máquina cargada, puede tardar
+  await userEvent.click(await nav.findByRole('button', { name: 'Cerrar sesión' }, { timeout: 5000 }))
 }
