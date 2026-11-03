@@ -245,7 +245,8 @@ export function BookmarkButton({ page }: { page: Page }) {
   const wrap = useRef<HTMLDivElement>(null)
   const close = () => {
     setChoosing(false)
-    button.back()
+    // «Marcar» sigue montado (useReturnFocus solo enfoca al volver a montarse): el foco vuelve a él aquí
+    wrap.current?.querySelector<HTMLButtonElement>('button')?.focus()
   }
   // Abierta, pulsar fuera la cierra
   useEffect(() => {

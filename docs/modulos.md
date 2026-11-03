@@ -7,6 +7,31 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
+### Para retomar (2026-11-03, cierre de la interfaz)
+
+- **La etapa de interfaz queda cerrada** («vamos a parar con la UI de momento, con lo que tenemos podremos diseñar los
+  demás módulos»). Todo lo de las PR #88, #89, #90 y la prueba `interfaz/hoja-siempre` (que Enrique aprobó: «está
+  quedando genial») va a `main` en una sola PR, con la CI de GitHub en verde. Lo hecho está en las entradas de abajo y en
+  el historial de git; lo que falta de Everlore, en `tasks/everlore-pendiente.md`.
+- **Cómo quedó la página**: toda página es una hoja; se escribe seguido y las páginas se calculan por detrás como al
+  imprimir (una raya fina con «Página N»; el salto de página corta la página pero lo siguiente va justo debajo);
+  columnas 1 o 2 desde «/» → Maquetación; pestañas de texto (otra página de texto con su documento) y de mapa, con color
+  y menú (botón derecho); panel de bloques a la derecha; árbol con botón derecho y arrastre (a la izquierda, sale de su
+  madre).
+- **Lo siguiente** (en otra conversación): el punto 4 del orden de abajo, **la búsqueda antes del módulo 2** (PDF con
+  pdf.js y, con permiso para la imagen de Postgres y elegir quién calcula los embeddings, pgvector), y después **el
+  módulo 2** (tipos de página, plantillas, formularios y consultas) con su ciclo: `interview-me` frente al inventario,
+  REA, `/spec`…
+- **Apuntado de las revisiones de esta tanda** (para cuando toque):
+  - **Módulo 5 (jugadores)**: el servidor aún no aplica `hidden` (pestañas, pines): filtrar en `listPageTabs` y
+    `getMap` y negar en `onAuthenticate` de colaboración los documentos de pestañas ocultas; pedir aprobación a la IA
+    al revelar algo (`hidden` de true a false) y al vaciar el panel, no solo por el tipo de acción.
+  - La hoja al escribir trata la nota lateral como un bloque suelto y al imprimir va junto al bloque siguiente: con
+    notas laterales, las marcas «Página N» pueden no coincidir con el PDF (sacar `unitsOf` a un módulo común).
+  - Ordenar A-Z reescribe las posiciones solo de las subpáginas vivas: al restaurar una de la papelera puede compartir
+    posición con otra.
+  - La cobertura de lo cambiado (CONSTRAINTS.md, 80 %) bloquea desde el 2026-11-12.
+
 ### Para retomar (2026-11-03)
 
 - **Ahora: traer Everlore a Crisol** (la app de Enrique al estilo de LegendKeeper). Propuesta aprobada («me vale así,

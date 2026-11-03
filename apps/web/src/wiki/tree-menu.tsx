@@ -176,8 +176,12 @@ export function TreeMenu({
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key === 'Escape') {
       event.preventDefault()
-      if (sub) setSub(null)
-      else if (view === 'menu') onClose(true)
+      if (sub) {
+        // Al cerrar el desplegable, el foco vuelve a la opción que lo abrió (si no, se quedaría en lo que se quita)
+        const open = event.currentTarget.querySelector<HTMLElement>('[aria-haspopup][aria-expanded="true"]')
+        setSub(null)
+        open?.focus()
+      } else if (view === 'menu') onClose(true)
       else setView('menu')
       return
     }
