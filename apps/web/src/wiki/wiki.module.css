@@ -858,6 +858,12 @@
   color: var(--color-muted);
   font-size: 0.75rem;
   font-weight: 600;
+  text-decoration: none;
+}
+
+a.templateBadge:hover {
+  border-color: var(--color-frame);
+  color: var(--color-text);
 }
 
 .homeBadge {

@@ -1,0 +1,373 @@
+/*
+ * «Plantillas»: la columna del centro como en Mis mundos, con la vista previa a la izquierda (fuera de la columna) al
+ * pasar por una. Las tarjetas, con las esquinas cortadas, como los mundos
+ */
+.page {
+  display: grid;
+  grid-template-columns: minmax(14rem, 20rem) minmax(0, 52rem) minmax(0, 20rem);
+  justify-content: center;
+  gap: var(--space-6);
+  align-items: start;
+  padding: var(--space-8) var(--space-6);
+}
+
+.side {
+  grid-column: 1;
+  position: sticky;
+  inset-block-start: var(--space-4);
+  justify-self: end;
+  inline-size: 100%;
+  max-inline-size: 18rem;
+  margin-block-start: 6.5rem;
+}
+
+.center {
+  grid-column: 2;
+  min-inline-size: 0;
+}
+
+@media (max-width: 72rem) {
+  .page {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .side {
+    display: none;
+  }
+
+  .center {
+    grid-column: 1;
+  }
+}
+
+@media (max-width: 48rem) {
+  .page {
+    padding: var(--space-6) var(--space-4);
+  }
+}
+
+.section {
+  margin: var(--space-8) 0 var(--space-4);
+  padding-block-end: 0.125rem;
+  border-block-end: 1px solid var(--color-accent);
+  color: var(--color-h2);
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  gap: var(--space-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-block-size: 11rem;
+  padding: var(--space-5) var(--space-4) var(--space-4);
+  clip-path: var(--cut);
+  background: var(--color-surface);
+  box-shadow: inset 0 0 0 1px var(--color-border);
+}
+
+.card:hover,
+.card:focus-within {
+  background: var(--color-raised);
+}
+
+.icon {
+  display: grid;
+  place-items: center;
+  inline-size: 2.75rem;
+  block-size: 2.75rem;
+  border-radius: 8px;
+  background: var(--color-raised);
+  color: var(--color-h3);
+}
+
+.card:hover .icon {
+  background: var(--color-bg);
+}
+
+.lock {
+  position: absolute;
+  inset-block-start: var(--space-5);
+  inset-inline-end: var(--space-4);
+  color: var(--color-muted);
+}
+
+.name {
+  margin: var(--space-3) 0 0.125rem;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.05;
+  text-transform: uppercase;
+}
+
+/* Toda la tarjeta lleva a la plantilla (salvo sus botones) */
+.open {
+  color: inherit;
+  text-decoration: none;
+}
+
+.open::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+.open:focus-visible {
+  outline: none;
+}
+
+.card:has(.open:focus-visible) {
+  outline: 2px solid var(--color-focus);
+  outline-offset: -2px;
+}
+
+.meta {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+}
+
+.foot {
+  display: flex;
+  justify-content: flex-end;
+  margin-block-start: auto;
+  padding-block-start: var(--space-3);
+}
+
+.foot button {
+  position: relative;
+  z-index: 1;
+}
+
+.gear {
+  display: grid;
+  place-items: center;
+  inline-size: 2.25rem;
+  block-size: 2.25rem;
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+  background: var(--color-bg);
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+.gear:hover {
+  color: var(--color-text);
+}
+
+.copy {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 0.375rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* «Plantilla nueva»: un recuadro más, vacío y con el borde discontinuo */
+.newCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  inline-size: 100%;
+  min-block-size: 11rem;
+  clip-path: var(--cut);
+  border: 1px dashed var(--color-frame);
+  background: none;
+  color: var(--color-muted);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.newCard:hover {
+  border-color: var(--color-muted);
+  color: var(--color-text);
+}
+
+.preview {
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-surface);
+}
+
+.previewTop {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.previewName {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.375rem;
+  font-weight: 700;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.label {
+  margin: var(--space-4) 0 var(--space-1);
+  color: var(--color-muted);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.875rem;
+}
+
+.list li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.list li span {
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+}
+
+.none {
+  color: var(--color-muted);
+}
+
+.modes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.mode {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  min-block-size: 4.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.mode input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.mode:has(input:checked) {
+  border-color: var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 12%, transparent);
+}
+
+.mode:has(input:focus-visible) {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 1px;
+}
+
+.baseField {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.baseField label {
+  font-weight: 600;
+}
+
+.baseField select {
+  padding: 0.5rem;
+  border: 1px solid var(--color-field-border);
+  border-radius: 6px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+}
+
+.icons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.icons legend {
+  margin-block-end: var(--space-1);
+  font-weight: 600;
+}
+
+.iconChoice {
+  position: relative;
+  display: grid;
+  place-items: center;
+  inline-size: 2.75rem;
+  block-size: 2.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.iconChoice input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.iconChoice:has(input:checked) {
+  border-color: var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 12%, transparent);
+}
+
+.iconChoice:has(input:focus-visible) {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 1px;
+}
+
+.hidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

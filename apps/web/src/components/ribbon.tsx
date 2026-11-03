@@ -1,6 +1,18 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router'
-import { Folder, Globe, Hash, History, House, LogOut, type LucideIcon, Settings, Trash2, User } from 'lucide-react'
+import {
+  Folder,
+  Globe,
+  Hash,
+  History,
+  House,
+  LayoutTemplate,
+  LogOut,
+  type LucideIcon,
+  Settings,
+  Trash2,
+  User
+} from 'lucide-react'
 import { type CSSProperties, type MouseEvent, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
@@ -86,6 +98,12 @@ export function Ribbon() {
     void queryClient.prefetchQuery({
       queryKey: ['tags'],
       queryFn: () => api.call('listAccountTags', {}),
+      staleTime: 10_000
+    })
+  const prefetchTemplates = () =>
+    void queryClient.prefetchQuery({
+      queryKey: ['templates'],
+      queryFn: () => api.call('listTemplates', {}),
       staleTime: 10_000
     })
   // Al entrar en un mundo, «Mundos» sube a la llama y se funde con ella, que se aviva (el mundo se cocina en el crisol);
@@ -202,6 +220,20 @@ export function Ribbon() {
             onFocus={prefetchTags}
           >
             <Label icon={Hash} text={t('ribbon.tags')} />
+          </Link>
+        )}
+        {/* Las plantillas de página de la cuenta (ADR-0009): fuera de los mundos, como las etiquetas */}
+        {isOwner && !merged && (
+          <Link
+            to="/plantillas"
+            viewTransition={SECTION}
+            className={worldsItem.filter(Boolean).join(' ')}
+            style={{ '--rise': '-15rem' } as CSSProperties}
+            data-tour="barra-plantillas"
+            onPointerEnter={prefetchTemplates}
+            onFocus={prefetchTemplates}
+          >
+            <Label icon={LayoutTemplate} text={t('ribbon.templates')} />
           </Link>
         )}
         {panelsWorld && (
@@ -451,6 +483,13 @@ function MobileMenu({
                 text: t('ribbon.tags'),
                 current: path === '/etiquetas',
                 run: go('/etiquetas')
+              },
+              {
+                key: 'plantillas',
+                icon: LayoutTemplate,
+                text: t('ribbon.templates'),
+                current: path.startsWith('/plantillas'),
+                run: go('/plantillas')
               }
             ]
           : [])

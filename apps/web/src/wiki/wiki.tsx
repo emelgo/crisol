@@ -395,17 +395,33 @@ function PageHead({
   )
 }
 
-/** La plantilla con la que se hizo la página, junto a su título (llevará a ella con la pantalla «Plantillas») */
+/** La plantilla con la que se hizo la página, junto a su título: lleva a ella. Si se borró, lo dice (y no lleva) */
 function TemplateBadge({ templateId }: { templateId: string }) {
   const { t } = useTranslation()
-  const template = useTemplates().data?.templates.find((each) => each.id === templateId)
-  if (!template) return null
-  const Icon = TEMPLATE_ICON[template.icon]
+  const list = useTemplates().data
+  const template = list?.templates.find((each) => each.id === templateId)
+  const deleted = list?.deleted.find((each) => each.id === templateId)
+  const shown = template ?? deleted
+  if (!shown) return null
+  const Icon = TEMPLATE_ICON[shown.icon]
+  if (!template) {
+    return (
+      <span className={styles.templateBadge} title={t('templates.madeWithDeleted', { name: shown.name })}>
+        <Icon aria-hidden="true" size={12} />
+        {t('templates.deletedName', { name: shown.name })}
+      </span>
+    )
+  }
   return (
-    <span className={styles.templateBadge} title={t('templates.madeWith', { name: template.name })}>
+    <Link
+      to="/plantillas/$templateId"
+      params={{ templateId }}
+      className={styles.templateBadge}
+      title={t('templates.madeWith', { name: template.name })}
+    >
       <Icon aria-hidden="true" size={12} />
       {template.name}
-    </span>
+    </Link>
   )
 }
 

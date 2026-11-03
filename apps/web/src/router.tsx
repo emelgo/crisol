@@ -14,6 +14,8 @@ import { SignIn } from './routes/sign-in.tsx'
 import { OrganizationTrash, WorldTrash } from './routes/trash.tsx'
 import { WorldPage } from './routes/world.tsx'
 import { Worlds } from './routes/worlds.tsx'
+import { TemplateView } from './templates/editor.tsx'
+import { TemplatesScreen } from './templates/screen.tsx'
 import { CommonFiles, WikiFiles } from './wiki/files.tsx'
 import { searchParams, WikiSearch } from './wiki/search.tsx'
 import { PrintPage, printParams } from './wiki/sheet/print.tsx'
@@ -93,6 +95,13 @@ const settingsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/aju
 const commonFilesRoute = createRoute({ getParentRoute: () => rootRoute, path: '/archivos', component: CommonFiles })
 // Las etiquetas de la cuenta, en la zona de Mis mundos (ADR-0006)
 const accountTagsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/etiquetas', component: AccountTags })
+// Las plantillas de página de la cuenta, también en la zona de Mis mundos (ADR-0009)
+const templatesRoute = createRoute({ getParentRoute: () => rootRoute, path: '/plantillas', component: TemplatesScreen })
+const templateRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/plantillas/$templateId',
+  component: TemplateView
+})
 const trashRoute = createRoute({ getParentRoute: () => rootRoute, path: '/papelera', component: OrganizationTrash })
 const consentRoute = createRoute({ getParentRoute: () => rootRoute, path: '/oauth/consentimiento', component: Consent })
 const joinRoute = createRoute({ getParentRoute: () => rootRoute, path: '/unirse/$secret', component: Join })
@@ -120,6 +129,8 @@ const routeTree = rootRoute.addChildren([
   settingsRoute,
   commonFilesRoute,
   accountTagsRoute,
+  templatesRoute,
+  templateRoute,
   consentRoute,
   bootstrapRoute,
   joinRoute

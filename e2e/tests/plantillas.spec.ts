@@ -88,3 +88,36 @@ test('un enlace a una página que aún no existe se crea pulsándolo: como texto
   await page.goBack()
   await expect(body.getByRole('link', { name: 'El Viejo Gyles' })).toHaveAttribute('data-state', 'ok')
 })
+
+test('«Plantillas» en Mis mundos: una desde cero y otra copiando PNJ', async ({ page }) => {
+  test.slow()
+  await freshOwner(page)
+  await page.getByRole('navigation', { name: 'Secciones' }).getByRole('link', { name: 'Plantillas' }).click()
+  await expect(page.getByRole('heading', { level: 1, name: 'Plantillas' })).toBeVisible()
+  await expect(page.getByRole('list', { name: 'De serie' }).getByRole('link', { name: 'Facción' })).toBeVisible()
+  for (const colorScheme of ['light', 'dark'] as const) {
+    await page.emulateMedia({ colorScheme })
+    const { violations } = await new AxeBuilder({ page }).include('main').withTags(['wcag2a', 'wcag2aa']).analyze()
+    const serious = violations.filter((v) => v.impact === 'critical' || v.impact === 'serious')
+    expect(serious.map((v) => `${colorScheme} ${v.id}: ${v.help}`)).toEqual([])
+  }
+  // Desde cero
+  await page.getByRole('button', { name: 'Plantilla nueva' }).click()
+  const dialog = page.getByRole('dialog', { name: 'Plantilla nueva' })
+  await dialog.getByLabel('Nombre').fill('Frente')
+  await dialog.getByRole('radio', { name: 'Reloj de arena' }).check()
+  await dialog.getByRole('button', { name: 'Crear la plantilla' }).click()
+  await expect(page.getByRole('heading', { level: 1, name: 'Frente' })).toBeVisible()
+  // Copiando PNJ
+  await page.goBack()
+  const pnj = page.getByRole('list', { name: 'De serie' }).getByRole('listitem').filter({ hasText: 'PNJ' })
+  await pnj.getByRole('button', { name: 'Copiar' }).click()
+  const copy = page.getByRole('dialog', { name: 'Plantilla nueva' })
+  await copy.getByLabel('Nombre').fill('PNJ de Eana')
+  await copy.getByRole('button', { name: 'Crear la plantilla' }).click()
+  await expect(page.getByRole('heading', { level: 1, name: 'PNJ de Eana' })).toBeVisible()
+  await page.goBack()
+  const mine = page.getByRole('list', { name: 'Tuyas' })
+  await expect(mine.getByRole('link', { name: 'Frente' })).toBeVisible()
+  await expect(mine.getByText('Copia de PNJ')).toBeVisible()
+})

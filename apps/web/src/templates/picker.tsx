@@ -81,7 +81,7 @@ export function TemplatePicker({ value, onChange }: { value: string | null; onCh
             })}
           </div>
         ))}
-        {groups.length === 0 && <p className={styles.none}>{t('templates.none')}</p>}
+        {groups.length === 0 && <p className={styles.none}>{t('templates.noneFound')}</p>}
       </fieldset>
     </div>
   )

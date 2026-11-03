@@ -159,7 +159,9 @@ amplía `@fugas` en la misma tarea. Cobertura ≥ 80 % de lo cambiado (bloquea d
     `packages/db/src/repos/templates.ts`, `packages/contracts/src/templates.ts`,
     `apps/server/src/actions/templates.ts`, `apps/server/src/mcp/tools.ts`.
 
-- [ ] **10. La pantalla «Plantillas»**
+- [x] **10. La pantalla «Plantillas»** — hecha. `/plantillas/:id` enseña de momento sus campos (su editor, en la 11). La
+  marca de una página hecha con una plantilla borrada dice «(borrada)» y no lleva a nada. En las pruebas de la web, el
+  tutorial guiado hay que darlo por visto: si no, sale y se lleva el foco.
   - Acepta:
     - «Plantillas» en la barra de Mis mundos y en el menú de la llama del móvil. `/plantillas` con «Tuyas» y «De
       serie» en tarjetas (las de serie con candado y «Copiar»), la vista previa a la izquierda al pasar el ratón y

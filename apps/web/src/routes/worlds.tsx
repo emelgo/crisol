@@ -93,6 +93,7 @@ export function Worlds() {
           },
           { target: '[data-tour="barra-archivos"]', text: t('tour.worlds.files'), placement: 'right' },
           { target: '[data-tour="barra-etiquetas"]', text: t('tour.worlds.tags'), placement: 'right' },
+          { target: '[data-tour="barra-plantillas"]', text: t('tour.worlds.templates'), placement: 'right' },
           { target: '[data-tour="barra-historial"]', text: t('tour.worlds.history'), placement: 'right' },
           { target: '[data-tour="nueva-campana"]', text: t('tour.worlds.campaigns') },
           {
