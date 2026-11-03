@@ -37,7 +37,8 @@ porciones verticales con TDD → `/agent-skills:review` (la interfaz, también c
 - Identificadores en inglés; textos de la interfaz en español por i18n, cortos y sin sobreexplicar. En la interfaz no
   salen «Obsidian», «Atlas», «Foundry» ni «D&D Beyond».
 - Estilo: sin punto y coma, comillas simples, líneas largas (lo aplica Biome), comentarios breves en español.
-- Git: rama corta por porción de trabajo → PR a `main` en `emelgo/crisol` (privado) → merge con la CI en verde.
+- Git: rama por tanda de trabajo → PR a `main` en `emelgo/crisol` (privado) → merge con la CI en verde. La CI gasta
+  cuota mensual: no se pasa en cada PR, sino una vez tras muchos cambios (todo en verde en local antes).
   Commits pequeños, en español, cuando algo funciona, terminados en
   `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
 - Pide permiso antes de instalar paquetes del sistema, abrir puertos, tocar Caddy o crear servicios.

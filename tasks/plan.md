@@ -8,7 +8,7 @@ de los módulos 0 y 1 están en `tasks/fundacion/` y `tasks/wiki/`.
 
 Se construye en cinco fases, que siguen el mapa de capacidades de la spec: campos, plantillas de serie y crear desde
 ellas, tablas, plantillas de la cuenta, y aplicar y cerrar. Cada tarea es una porción vertical: datos, servicio, API,
-interfaz, herramientas MCP y pruebas. Lleva su rama y su PR, se fusiona con la CI en verde y se despliega en staging.
+interfaz, herramientas MCP y pruebas. Se comprueba en local y se junta con otras: la CI (cuota mensual) se pasa una vez por tanda grande, y entonces se fusiona y se despliega en staging.
 
 Lo más arriesgado va pronto:
 - la identidad de los campos y los tipos nuevos (tarea 1), porque todo lo demás se apoya en ellos;
@@ -73,7 +73,7 @@ Las plantillas de serie llegan antes que las de la cuenta. Así el primer criter
 | 13 | Aplicar una plantilla a una página ya hecha | Cierre | 9, 5 | M |
 | 14 | Cierre del módulo | Cierre | todas | M |
 
-Los puntos de control con Enrique, en staging:
+Los puntos de control con Enrique, en el servidor de desarrollo local (en staging, tras la tanda que se fusione):
 - **1**, tras la 2: los campos nuevos en el panel de una página.
 - **2**, tras la 6: crear un PNJ desde plantilla, a mano y desde claude.ai.
 - **3**, tras la 8: el PNJ sale solo en «Miembros» de su facción. Es el primer criterio de éxito.
@@ -89,7 +89,7 @@ Los puntos de control con Enrique, en staging:
 | La IA escribe los campos con otro nombre o sin tildes | Medio | Casar sin mayúsculas ni tildes, y devolver en el error los campos de la plantilla cuando una propiedad no encaja de tipo |
 | El editor del esqueleto sin colaboración se desvía del de la wiki | Medio | Mismo esquema (`packages/editor`) y misma conversión a Markdown; la prueba de ida y vuelta lo cubre |
 | El panel de 300 px se llena con campos, bloques y tablas | Bajo | Columnas de las tablas limitadas a tres; se mira en el punto de control 3 |
-| Minutos de la CI | Bajo | Todo en verde en local antes de subir y un push por PR |
+| Cuota mensual de la CI | Medio | Todo en verde en local; la CI una sola vez por tanda grande, nunca en cada PR |
 
 ## Preguntas abiertas
 

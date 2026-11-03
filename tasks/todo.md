@@ -1,9 +1,11 @@
 # Tareas: Módulo 2 — Tipos de página y plantillas
 
-Plan: `tasks/plan.md` · Spec: `docs/specs/plantillas.md` · ADR-0009. Cada tarea: rama corta → TDD → PR → merge con la
-CI en verde → `scripts/desplegar-staging.sh` → «Dónde estamos» al día.
+Plan: `tasks/plan.md` · Spec: `docs/specs/plantillas.md` · ADR-0009. Cada tarea: TDD → comprobación local → commit en
+la rama de la tanda (`modulo-2/campos`, PR #93) → «Dónde estamos» al día. La CI gasta cuota mensual (Enrique,
+2026-11-03): se sube y se pasa una sola vez tras muchas tareas; entonces merge y `scripts/desplegar-staging.sh`. Los
+puntos de control intermedios se prueban en el servidor de desarrollo local.
 
-Comprobación local al acabar cada tarea, antes de subir (los minutos de la CI van justos):
+Comprobación local al acabar cada tarea:
 `pnpm lint && pnpm typecheck && pnpm test`, y `pnpm e2e` si toca la interfaz. Cada vía nueva por la que salen datos
 amplía `@fugas` en la misma tarea. Cobertura ≥ 80 % de lo cambiado (bloquea desde el 2026-11-12).
 
@@ -41,7 +43,7 @@ amplía `@fugas` en la misma tarea. Cobertura ≥ 80 % de lo cambiado (bloquea d
 
 ### Punto de control 1
 
-- [ ] En staging, Enrique pone a una página un desplegable, un enlace a una página y un reloj desde el panel.
+- [ ] En local, Enrique pone a una página un desplegable, un enlace a una página y un reloj desde el panel.
 
 ## Fase 2: Plantillas de serie y crear desde ellas
 
@@ -89,7 +91,7 @@ amplía `@fugas` en la misma tarea. Cobertura ≥ 80 % de lo cambiado (bloquea d
 
 ### Punto de control 2
 
-- [ ] Enrique crea un PNJ desde plantilla en staging, y la IA crea varios desde claude.ai.
+- [ ] Enrique crea un PNJ desde plantilla en local, y la IA crea varios desde claude.ai.
 
 ## Fase 3: Tablas
 
@@ -119,7 +121,7 @@ amplía `@fugas` en la misma tarea. Cobertura ≥ 80 % de lo cambiado (bloquea d
 
 ### Punto de control 3
 
-- [ ] En staging, Enrique crea un PNJ, le pone su facción y lo ve en «Miembros» al abrir la facción.
+- [ ] En local, Enrique crea un PNJ, le pone su facción y lo ve en «Miembros» al abrir la facción.
 
 ## Fase 4: Plantillas de la cuenta
 
@@ -172,7 +174,7 @@ amplía `@fugas` en la misma tarea. Cobertura ≥ 80 % de lo cambiado (bloquea d
 
 ### Punto de control 4
 
-- [ ] En staging, Enrique copia PNJ como «PNJ de Eana» con el campo Frentes, y hace «Frente» desde cero con su reloj
+- [ ] En local, Enrique copia PNJ como «PNJ de Eana» con el campo Frentes, y hace «Frente» desde cero con su reloj
   y la tabla «PNJ del frente».
 
 ## Fase 5: Aplicar y cerrar
