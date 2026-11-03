@@ -18,6 +18,14 @@ async function openPage(page: Page) {
 }
 
 const body = (page: Page) => page.getByRole('textbox', { name: 'Texto de la página' })
+
+/** Pulsa en el texto hasta que el cursor está en él */
+async function caretIn(page: Page, text: string) {
+  await expect(async () => {
+    await body(page).getByText(text, { exact: true }).click()
+    expect(await page.evaluate(() => window.getSelection()?.anchorNode?.textContent ?? '')).toBe(text)
+  }).toPass({ timeout: 10_000 })
+}
 const slashMenu = (page: Page) => page.getByRole('listbox', { name: 'Bloques' })
 const announced = (page: Page) => page.getByRole('status').filter({ hasText: /\S/ }).last()
 
@@ -199,8 +207,9 @@ test('el menú del bloque: desde la barra con el teclado, y desde el asa con el 
   await expect(body(page).locator('p').first()).toHaveText('Segundo')
   await expect(announced(page)).toHaveText('Bloque movido.')
 
-  // Convertir en aviso, duplicar y borrar
-  await body(page).getByText('Primero').click()
+  // Convertir en aviso, duplicar y borrar (con el cursor ya en «Primero»: en una máquina lenta, el clic justo tras
+  // cerrar el menú puede llegar antes de que el editor recupere el foco)
+  await caretIn(page, 'Primero')
   await page.keyboard.press('Control+Alt+b')
   // «Convertir en», por grupos: el aviso, en Recuadros
   await menu.getByRole('menuitem', { name: 'Recuadros' }).click()
@@ -214,7 +223,7 @@ test('el menú del bloque: desde la barra con el teclado, y desde el asa con el 
   await expect(body(page).getByRole('note', { name: 'Aviso' })).toHaveCount(1)
 
   // Un aviso pasa a consejo sin perder lo de dentro
-  await body(page).getByText('Primero').click()
+  await caretIn(page, 'Primero')
   await page.keyboard.press('Control+Alt+b')
   await menu.getByRole('menuitem', { name: 'Recuadros' }).click()
   await menu.getByRole('menuitem', { name: 'Consejo' }).click()
