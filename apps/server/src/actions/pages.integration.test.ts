@@ -89,6 +89,16 @@ describe('la wiki: páginas y árbol', () => {
     await call('sortPageChildren', { worldId, parentId: places.id, order: 'desc' })
     expect(await titles(places.id)).toEqual(['puerto', 'Costa Gris', 'Bosque', 'Árbol Viejo'])
     expect((await historyOf()).filter((e) => e.action === 'sortPageChildren')).toHaveLength(2)
+    // Una en la papelera al ordenar: al volver, va detrás de las demás y sin compartir sitio con ninguna
+    const bosque = (await call('listPageChildren', { worldId, parentId: places.id }))
+      .json()
+      .pages.find((p: { title: string }) => p.title === 'Bosque')
+    await call('deletePage', { pageId: bosque.id })
+    await call('sortPageChildren', { worldId, parentId: places.id, order: 'asc' })
+    await call('restorePage', { pageId: bosque.id })
+    expect(await titles(places.id)).toEqual(['Árbol Viejo', 'Costa Gris', 'puerto', 'Bosque'])
+    const positions = await conn.sql`select position from pages where parent_id = ${places.id}`
+    expect(new Set(positions.map((row) => row.position)).size).toBe(4)
   })
 
   it('el panel de la página: se guarda en su orden, se comprueba y queda en el historial', async () => {

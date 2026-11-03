@@ -245,6 +245,17 @@ describe('la hoja al escribir', () => {
     expect(marks()).toEqual(['Página 2'])
     vi.unstubAllGlobals()
   })
+
+  it('una nota lateral va con el bloque que la sigue, como al imprimir: si no caben juntos, pasan juntos', async () => {
+    const note: JSONContent = { type: 'sidenote', attrs: { side: 'left' }, content: [p('Al margen')] }
+    render(<Harness content={[p('Uno'), p('Dos'), note, p('Tres')]} settings={{ ...SHEET, columns: 2 }} />)
+    // Dos párrafos (800) llenan casi la primera columna: la nota (20) cabría, pero con «Tres» no; van a la segunda
+    await waitFor(() => expect(placed().map(at)[2]?.left).toBeGreaterThan(0))
+    const [, , side, after] = placed().map(at)
+    expect(side?.top).toBe(0)
+    expect(after?.left).toBe(side?.left)
+    expect(after?.top).toBe(20)
+  })
 })
 
 describe('la hoja en lo estrecho', () => {

@@ -98,6 +98,10 @@ export function createCollab({
     return separate?.pageId ?? null
   }
 
+  // Al cerrar: ya no se recupera nada más, y lo que esté en marcha se espera
+  let closing = false
+  const recovering = new Set<Promise<void>>()
+
   const hocuspocus = new Hocuspocus<CollabContext>({
     quiet: true,
     debounce: 2000,
@@ -129,8 +133,13 @@ export function createCollab({
       if (stored) Y.applyUpdate(document, stored.state)
       // El cuerpo, sin sesiones abiertas: si quedó una a medias al pararse el servidor, se cierra ahora
       const place = opened.get(documentName)
-      if (target.kind === 'body' && place && onBodyLoaded && !sessions.isOpen(place.pageId)) {
-        setTimeout(() => void onBodyLoaded({ pageId: place.pageId, worldId: place.worldId }).catch(onError), 0)
+      if (target.kind === 'body' && place && onBodyLoaded && !sessions.isOpen(place.pageId) && !closing) {
+        // Apuntada: al cerrar el servidor se espera (si no, escribiría en el historial con todo ya cerrado)
+        const recovery = new Promise<void>((resolve) => setTimeout(resolve, 0))
+          .then(() => onBodyLoaded({ pageId: place.pageId, worldId: place.worldId }))
+          .catch(onError)
+        recovering.add(recovery)
+        void recovery.finally(() => recovering.delete(recovery))
       }
     },
 
@@ -220,7 +229,9 @@ export function createCollab({
       return live
     },
     async close() {
-      // Lo que se estaba escribiendo queda en su versión
+      closing = true
+      // Las sesiones a medias que se estaban recuperando, y lo que se estaba escribiendo, quedan en su versión
+      await Promise.all([...recovering])
       await sessions.closeAll()
       hocuspocus.closeConnections()
       hocuspocus.flushPendingStores()
@@ -229,6 +240,9 @@ export function createCollab({
       while (hocuspocus.documents.size > 0 && Date.now() < deadline) {
         await new Promise((resolve) => setTimeout(resolve, 20))
       }
+      // Lo que cerrar las conexiones haya abierto todavía
+      await Promise.all([...recovering])
+      await sessions.closeAll()
     }
   }
 }

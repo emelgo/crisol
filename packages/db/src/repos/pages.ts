@@ -298,6 +298,16 @@ export function sortChildren(
       previous = keyBetween(previous, null)
       await w.update(pages, child.id, { position: previous })
     }
+    // Las de la papelera, detrás y en su orden: si conservaran su sitio, al restaurarlas podrían compartirlo con otra
+    const trashed = await w.read
+      .select({ id: pages.id })
+      .from(pages)
+      .where(and(inBranch(input.worldId, input.parentId), isNotNull(pages.deletedAt)))
+      .orderBy(...byPosition)
+    for (const child of trashed) {
+      previous = keyBetween(previous, null)
+      await w.update(pages, child.id, { position: previous })
+    }
     return sorted.length
   })
 }

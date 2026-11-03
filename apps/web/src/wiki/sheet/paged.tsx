@@ -145,7 +145,26 @@ function layOut(editor: Editor, settings: SheetSettings, k: number) {
       height: node.type.name === 'columnsChange' ? 0 : height
     })
   })
-  const pages = paginate(blocks, g.contentHeight)
+  // Como al imprimir (sheet.tsx, unitsOf): una nota lateral va con el bloque que la sigue, en la misma columna y página
+  const types: string[] = []
+  state.doc.forEach((node) => {
+    types.push(node.type.name)
+  })
+  const members = new Map<string, number[]>()
+  const units: SheetBlock[] = []
+  for (let i = 0; i < blocks.length; i++) {
+    const block = blocks[i] as SheetBlock
+    const next = blocks[i + 1]
+    if (types[i] === 'sidenote' && next && (next.kind === 'block' || next.kind === 'heading')) {
+      units.push({ id: block.id, kind: next.kind, height: block.height + next.height })
+      members.set(block.id, [i, i + 1])
+      i++
+      continue
+    }
+    units.push(block)
+    members.set(block.id, [i])
+  }
+  const pages = paginate(units, g.contentHeight)
   const placed: string[] = blocks.map(
     (block) =>
       // Hasta que se coloque: a su ancho, para medirlo bien
@@ -158,9 +177,20 @@ function layOut(editor: Editor, settings: SheetSettings, k: number) {
     placed[index] = `position:absolute;left:${x}px;top:${y}px;width:${width}px;margin-inline:0;box-sizing:border-box`
     ends[index] = { x, y: y + (heights[index] ?? 0), width }
   }
+  /** Coloca una unidad (un bloque, o la nota lateral y el suyo, uno debajo del otro) y devuelve lo que ocupa */
+  const placeUnit = (id: string, x: number, y: number, width: number) => {
+    let at = y
+    for (const index of members.get(id) ?? [Number(id)]) {
+      place(String(index), x, at, width)
+      at += heights[index] ?? 0
+    }
+    return at - y
+  }
   const marks: PageMark[] = []
   const idsOf = (page: (typeof pages)[number]) =>
-    page.rows.flatMap((row) => (row.kind === 'wide' ? [Number(row.id)] : row.columns.flat().map(Number)))
+    page.rows
+      .flatMap((row) => (row.kind === 'wide' ? [row.id] : row.columns.flat()))
+      .flatMap((id) => members.get(id) ?? [Number(id)])
   let top = 0
   // Saltos antes del primer bloque (paginate no abre página para ellos): arriba del todo, empujando lo demás
   const firstId = pages[0] ? Math.min(blocks.length, ...idsOf(pages[0])) : blocks.length
@@ -188,20 +218,13 @@ function layOut(editor: Editor, settings: SheetSettings, k: number) {
     let y = top
     for (const row of page.rows) {
       if (row.kind === 'wide') {
-        place(row.id, 0, y, g.content)
-        y += heights[Number(row.id)] ?? 0
+        y += placeUnit(row.id, 0, y, g.content)
         continue
       }
       let left = y
       let right = y
-      for (const id of row.columns[0]) {
-        place(id, 0, left, g.column)
-        left += heights[Number(id)] ?? 0
-      }
-      for (const id of row.columns[1]) {
-        place(id, g.column + g.gap, right, g.column)
-        right += heights[Number(id)] ?? 0
-      }
+      for (const id of row.columns[0]) left += placeUnit(id, 0, left, g.column)
+      for (const id of row.columns[1]) right += placeUnit(id, g.column + g.gap, right, g.column)
       y = Math.max(left, right)
     }
     top = y
