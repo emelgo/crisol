@@ -114,6 +114,12 @@ describe('dar a un valor la forma de un campo', () => {
       value: 'Ha muerto'
     })
     expect(conformTo(estado, { name: 'Estado', type: 'number', value: 3 })).toEqual({ ...estado, value: '3' })
+    // Unas opciones nuevas que se dan se quedan
+    expect(conformTo(estado, { name: 'Estado', type: 'choice', value: 'Presa', options: ['Libre', 'Presa'] })).toEqual({
+      ...estado,
+      value: 'Presa',
+      options: ['Libre', 'Presa']
+    })
   })
 
   it('un reloj se lee de «3/8» o de un número, y se queda con sus segmentos', () => {

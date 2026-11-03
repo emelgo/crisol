@@ -108,7 +108,7 @@ export function conformTo(shape: PageProperty, read: PageProperty): PageProperty
       if (text !== null) return { ...base, type: 'list', value: text.trim() === '' ? [] : [text] }
       return null
     case 'choice':
-      if (read.type === 'choice') return { ...base, type: 'choice', value: read.value, options: shape.options }
+      if (read.type === 'choice') return { ...base, type: 'choice', value: read.value, options: read.options }
       return text === null ? null : { ...base, type: 'choice', value: text.trim(), options: shape.options }
     case 'clock': {
       if (read.type === 'clock') return { ...base, type: 'clock', value: read.value, segments: read.segments }
