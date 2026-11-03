@@ -6,6 +6,8 @@ import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
 import { FormError } from '../components/field.tsx'
+import fieldStyles from './field-controls.module.css'
+import { ChoiceSelect, ClockField } from './field-controls.tsx'
 import styles from './properties.module.css'
 import tagStyles from './tags.module.css'
 import { TagsField, tagDot, useTagColor } from './tags.tsx'
@@ -14,7 +16,9 @@ import { TagsField, tagDot, useTagColor } from './tags.tsx'
 const isTagsName = (name: string) => name.trim().toLocaleLowerCase('es') === 'etiquetas'
 
 type PropertyType = PageProperty['type']
-const TYPES: PropertyType[] = ['text', 'number', 'boolean', 'list', 'pages']
+const TYPES: PropertyType[] = ['text', 'number', 'boolean', 'list', 'pages', 'choice', 'clock']
+/** Los segmentos de un reloj nuevo */
+const CLOCK_SEGMENTS = 4
 /** Las reservadas, con su tipo: se ofrecen para añadirlas de un clic */
 const RESERVED = [{ name: 'etiquetas', type: 'list' }] as const
 
@@ -28,6 +32,40 @@ function usePageTitles(worldId: string) {
   return tree.data?.pages ?? []
 }
 
+/** Las páginas del mundo en la papelera, por su id: un enlace a una de ellas sale tachado (sin llevar a ningún sitio) */
+function useTrashedTitles(worldId: string, wanted: boolean) {
+  const api = useApi()
+  const trash = useQuery({
+    queryKey: ['trash', worldId],
+    queryFn: () => api.call('listTrash', { worldId }),
+    enabled: wanted
+  })
+  return new Map((trash.data?.items ?? []).filter((item) => item.kind === 'page').map((item) => [item.id, item.name]))
+}
+
+/** Un enlace a una página del campo: a ella, o tachado si está en la papelera */
+function LinkedPage({
+  worldId,
+  pageId,
+  title,
+  trashed
+}: {
+  worldId: string
+  pageId: string
+  title: string | undefined
+  trashed: string | undefined
+}) {
+  const { t } = useTranslation()
+  if (title === undefined && trashed !== undefined) {
+    return <s className={fieldStyles.trashed}>{t('fields.trashed', { title: trashed })}</s>
+  }
+  return (
+    <Link to="/mundos/$worldId/wiki/$pageId" params={{ worldId, pageId }}>
+      {title ?? t('properties.unknownPage')}
+    </Link>
+  )
+}
+
 /** Una propiedad mientras se edita: los textos tal como se escriben, y su valor se saca al guardar */
 interface Draft {
   key: string
@@ -36,6 +74,11 @@ interface Draft {
   text: string
   checked: boolean
   pages: string[]
+  /** De unas opciones: la lista */
+  options: string[]
+  /** De un reloj: los segmentos llenos y cuántos tiene */
+  count: number
+  segments: number
   /** Las etiquetas escritas aún sin poner: van con las demás al guardar */
   pending?: string
   /** Como estaba guardada: su campo de plantilla y su forma no se pierden al cambiar otra cosa */
@@ -49,19 +92,32 @@ const toDraft = (property: PageProperty): Draft => ({
   text:
     property.type === 'list'
       ? property.value.join(', ')
-      : property.type === 'text' || property.type === 'number'
+      : property.type === 'text' || property.type === 'number' || property.type === 'choice'
         ? String(property.value)
         : '',
   checked: property.type === 'boolean' ? property.value : false,
   pages: property.type === 'pages' ? property.value : [],
+  options: property.type === 'choice' ? property.options : [],
+  count: property.type === 'clock' ? property.value : 0,
+  segments: property.type === 'clock' ? property.segments : CLOCK_SEGMENTS,
   original: property
 })
+
+/** Al cambiar de tipo a mano: lo que ya había escrito pasa al tipo nuevo como se pueda */
+const retyped = (row: Draft, type: PropertyType): Partial<Draft> => {
+  if (type === 'choice') {
+    const options = row.options.length > 0 ? row.options : row.text.trim() ? [row.text.trim()] : []
+    return { type, options }
+  }
+  if (type === 'clock') return { type, count: Math.min(row.count, row.segments), segments: row.segments }
+  return { type }
+}
 
 /** La propiedad que sale de un borrador, o null si su valor no se puede leer (un número que no lo es) */
 function fromDraft(draft: Draft): PageProperty | null {
   const name = draft.name.trim()
   const original = draft.original?.type === draft.type ? draft.original : undefined
-  // Lo de la plantilla (su campo, a qué apunta un enlace) se queda; las opciones y los relojes, hasta tener su control
+  // Lo de la plantilla (su campo, a qué apunta un enlace) se queda al cambiar el valor
   const field = original?.field === undefined ? {} : { field: original.field }
   switch (draft.type) {
     case 'text':
@@ -89,8 +145,9 @@ function fromDraft(draft: Draft): PageProperty | null {
         ? { ...original, name, value: original.single ? draft.pages.slice(-1) : draft.pages }
         : { name, type: 'pages', value: draft.pages }
     case 'choice':
+      return { name, ...field, type: 'choice', value: draft.text.trim(), options: draft.options }
     case 'clock':
-      return original ? { ...original, name } : null
+      return { name, ...field, type: 'clock', value: Math.min(draft.count, draft.segments), segments: draft.segments }
   }
 }
 
@@ -98,6 +155,8 @@ function fromDraft(draft: Draft): PageProperty | null {
 function PropertyValue({ property, worldId }: { property: PageProperty; worldId: string }) {
   const { t } = useTranslation()
   const titles = usePageTitles(worldId)
+  const lost = property.type === 'pages' && property.value.some((id) => !titles.some((p) => p.id === id))
+  const trashed = useTrashedTitles(worldId, lost)
   const colorOf = useTagColor()
   switch (property.type) {
     case 'number':
@@ -137,9 +196,12 @@ function PropertyValue({ property, worldId }: { property: PageProperty; worldId:
         <ul className={styles.chips}>
           {property.value.map((id) => (
             <li key={id}>
-              <Link to="/mundos/$worldId/wiki/$pageId" params={{ worldId, pageId: id }}>
-                {titles.find((p) => p.id === id)?.title ?? t('properties.unknownPage')}
-              </Link>
+              <LinkedPage
+                worldId={worldId}
+                pageId={id}
+                title={titles.find((p) => p.id === id)?.title}
+                trashed={trashed.get(id)}
+              />
             </li>
           ))}
         </ul>
@@ -237,7 +299,17 @@ function InlineProperties({
     else setRows(next)
   }
   const add = (name = '', type: PropertyType = 'text') => {
-    const row: Draft = { key: crypto.randomUUID(), name, type, text: '', checked: false, pages: [] }
+    const row: Draft = {
+      key: crypto.randomUUID(),
+      name,
+      type,
+      text: '',
+      checked: false,
+      pages: [],
+      options: [],
+      count: 0,
+      segments: CLOCK_SEGMENTS
+    }
     setRows([...rows, row])
     setFresh({ key: row.key, to: name ? 'value' : 'name' })
   }
@@ -376,6 +448,34 @@ function PropertyRow({
       <div className={styles.propValue}>
         <ValueField row={row} id={id} n={n} worldId={worldId} onChange={onChange} onCommit={onCommit} keys={keys} />
       </div>
+      {row.original?.field === undefined && (row.type === 'choice' || row.type === 'clock') && (
+        // La forma de una hecha a mano (las de plantilla traen la suya)
+        <div className={styles.propShape}>
+          {row.type === 'choice' ? (
+            <ChipsField
+              id={`${id}-opciones`}
+              label={t('fields.options', { name: label })}
+              value={row.options}
+              onChange={(options) => onChange({ options }, true)}
+            />
+          ) : (
+            <label className={fieldStyles.shape}>
+              {t('fields.segments', { name: label })}
+              <input
+                type="number"
+                min={2}
+                max={12}
+                className={fieldStyles.segmentsInput}
+                value={row.segments}
+                onChange={(event) => {
+                  const segments = Math.min(12, Math.max(2, Math.trunc(Number(event.target.value)) || 2))
+                  onChange({ segments, count: Math.min(row.count, segments) }, true)
+                }}
+              />
+            </label>
+          )}
+        </div>
+      )}
 
       <div className={styles.propEnd}>
         <button
@@ -392,7 +492,7 @@ function PropertyRow({
           aria-label={t('properties.type', { n })}
           title={t('properties.type', { n })}
           value={row.type}
-          onChange={(event) => onChange({ type: event.target.value as PropertyType }, true)}
+          onChange={(event) => onChange(retyped(row, event.target.value as PropertyType), true)}
         >
           {TYPES.map((type) => (
             <option key={type} value={type}>
@@ -424,6 +524,8 @@ function ValueField({
 }) {
   const { t } = useTranslation()
   const titles = usePageTitles(worldId)
+  const lost = row.type === 'pages' && row.pages.some((id) => !titles.some((p) => p.id === id))
+  const trashed = useTrashedTitles(worldId, lost)
   const [choice, setChoice] = useState('')
   const valueId = `${id}-valor`
   const label = t('properties.value', { n })
@@ -442,20 +544,22 @@ function ValueField({
         </label>
       )
     case 'pages': {
+      const single = row.original?.type === 'pages' && row.original.single === true
       const pick = (title: string) => {
         const found = titles.find((p) => p.title === title)
-        if (found && !row.pages.includes(found.id)) onChange({ pages: [...row.pages, found.id] }, true)
+        // Un enlace a una sola página la cambia; uno a varias la añade
+        if (found && !row.pages.includes(found.id))
+          onChange({ pages: single ? [found.id] : [...row.pages, found.id] }, true)
         if (found) setChoice('')
       }
       return (
         <div className={styles.chipField}>
           {row.pages.map((pageId) => {
-            const title = titles.find((p) => p.id === pageId)?.title ?? t('properties.unknownPage')
+            const found = titles.find((p) => p.id === pageId)?.title
+            const title = found ?? trashed.get(pageId) ?? t('properties.unknownPage')
             return (
               <span key={pageId} className={styles.pageChip}>
-                <Link to="/mundos/$worldId/wiki/$pageId" params={{ worldId, pageId }}>
-                  {title}
-                </Link>
+                <LinkedPage worldId={worldId} pageId={pageId} title={found} trashed={trashed.get(pageId)} />
                 <button
                   type="button"
                   className={styles.chipRemove}
@@ -521,13 +625,24 @@ function ValueField({
       )
     }
     case 'choice':
+      return (
+        <ChoiceSelect
+          id={valueId}
+          label={label}
+          value={row.text}
+          options={row.options}
+          onPick={(value) => onChange({ text: value }, true)}
+        />
+      )
     case 'clock':
-      // Sus controles llegan con la tarea 2 del módulo 2: de momento se leen
-      return row.original ? (
-        <span id={valueId} className={styles.valueInput}>
-          <PropertyValue property={row.original} worldId={worldId} />
-        </span>
-      ) : null
+      return (
+        <ClockField
+          label={label}
+          value={row.count}
+          segments={row.segments}
+          onPick={(count) => onChange({ count }, true)}
+        />
+      )
     default: {
       const long = row.type === 'text' && row.name.trim().toLocaleLowerCase('es') === 'resumen'
       return long ? (

@@ -115,11 +115,105 @@ describe('las propiedades de una página', () => {
     ]
     const { api } = renderPort(fields)
     const properties = within(await screen.findByRole('region', { name: 'Propiedades' }))
-    expect(properties.getByText('3/8')).toBeDefined()
     const value = properties.getByLabelText('Valor de la propiedad 1')
     await userEvent.clear(value)
     await userEvent.type(value, '5000{Enter}')
     await waitFor(async () => expect(await saved(api)).toEqual([{ ...fields[0], value: 5000 }, ...fields.slice(1)]))
+  })
+
+  it('unas opciones se eligen en su lista flotante, con el ratón o con el teclado', async () => {
+    const estado: PageProperty = {
+      name: 'Estado',
+      field: 'estado',
+      type: 'choice',
+      value: 'Vive',
+      options: ['Vive', 'Ha muerto', 'No se sabe']
+    }
+    const { api } = renderPort([estado])
+    const properties = within(await screen.findByRole('region', { name: 'Propiedades' }))
+    const button = properties.getByRole('button', { name: 'Valor de la propiedad 1' })
+    expect(button.textContent).toContain('Vive')
+    await userEvent.click(button)
+    const list = properties.getByRole('listbox', { name: 'Valor de la propiedad 1' })
+    // El foco, en la elegida
+    expect(document.activeElement).toBe(within(list).getByRole('option', { name: 'Vive' }))
+    await userEvent.click(within(list).getByRole('option', { name: 'Ha muerto' }))
+    await waitFor(async () => expect(await saved(api)).toEqual([{ ...estado, value: 'Ha muerto' }]))
+    expect(properties.queryByRole('listbox')).toBeNull()
+    expect(document.activeElement).toBe(button)
+
+    // Con el teclado: flecha abajo abre, flechas mueven, Intro elige y Escape cierra sin cambiar nada
+    await userEvent.keyboard('{ArrowDown}')
+    await userEvent.keyboard('{ArrowDown}')
+    expect(document.activeElement?.textContent).toBe('No se sabe')
+    await userEvent.keyboard('{Enter}')
+    await waitFor(async () => expect(await saved(api)).toEqual([{ ...estado, value: 'No se sabe' }]))
+    await userEvent.keyboard('{ArrowDown}{Escape}')
+    expect(properties.queryByRole('listbox')).toBeNull()
+    expect(document.activeElement).toBe(button)
+  })
+
+  it('un valor que no está entre las opciones se ve marcado y no se pierde', async () => {
+    renderPort([{ name: 'Estado', type: 'choice', value: 'Prisionera', options: ['Vive', 'Ha muerto'] }])
+    const properties = within(await screen.findByRole('region', { name: 'Propiedades' }))
+    const button = properties.getByRole('button', { name: 'Valor de la propiedad 1' })
+    expect(button.textContent).toContain('Prisionera')
+    expect(button.getAttribute('title')).toBe('No está entre las opciones')
+  })
+
+  it('un reloj se marca pulsando sus segmentos, y se desmarca pulsando el último lleno', async () => {
+    const reloj: PageProperty = { name: 'Reloj', field: 'reloj', type: 'clock', value: 3, segments: 8 }
+    const { api } = renderPort([reloj])
+    const clock = within(await screen.findByRole('group', { name: 'Valor de la propiedad 1' }))
+    expect(clock.getByText('3 de 8')).toBeDefined()
+    expect(clock.getByRole('button', { name: 'Segmento 3 de 8' }).getAttribute('aria-pressed')).toBe('true')
+    await userEvent.click(clock.getByRole('button', { name: 'Segmento 5 de 8' }))
+    await waitFor(async () => expect(await saved(api)).toEqual([{ ...reloj, value: 5 }]))
+    await userEvent.click(clock.getByRole('button', { name: 'Segmento 5 de 8' }))
+    await waitFor(async () => expect(await saved(api)).toEqual([{ ...reloj, value: 4 }]))
+  })
+
+  it('un enlace a una sola página la cambia al elegir otra', async () => {
+    const region: PageProperty = { name: 'Región', field: 'region', type: 'pages', single: true, value: [COAST] }
+    const { api } = renderPort([region])
+    const properties = within(await screen.findByRole('region', { name: 'Propiedades' }))
+    await properties.findByRole('link', { name: 'Costa Gris' })
+    await userEvent.type(properties.getByLabelText('Valor de la propiedad 1'), 'Velaria{Enter}')
+    await waitFor(async () => {
+      const [property] = await saved(api)
+      expect(property).toMatchObject({ field: 'region', single: true })
+      expect(property?.type === 'pages' && property.value.length).toBe(1)
+      expect(property?.type === 'pages' && property.value[0]).not.toBe(COAST)
+    })
+  })
+
+  it('un enlace a una página que está en la papelera sale tachado, sin llevar a ella', async () => {
+    const { api } = renderPort([{ name: 'Región', type: 'pages', value: [COAST] }])
+    await api.client.call('deletePage', { pageId: COAST })
+    const properties = within(await screen.findByRole('region', { name: 'Propiedades' }))
+    expect(await properties.findByText('Costa Gris, en la papelera')).toBeDefined()
+    expect(properties.queryByRole('link', { name: 'Costa Gris' })).toBeNull()
+  })
+
+  it('a mano también hay opciones y relojes: el tipo se cambia y su forma se escribe al editarla', async () => {
+    const { api } = renderPort([{ name: 'Estado', type: 'text', value: 'Vive' }])
+    const properties = within(await screen.findByRole('region', { name: 'Propiedades' }))
+    await userEvent.selectOptions(properties.getByLabelText('Tipo de la propiedad 1'), 'Opciones')
+    // Lo escrito pasa a ser su primera opción
+    await waitFor(async () =>
+      expect(await saved(api)).toEqual([{ name: 'Estado', type: 'choice', value: 'Vive', options: ['Vive'] }])
+    )
+    await userEvent.click(properties.getByRole('button', { name: 'Valor de la propiedad 1' }))
+    await userEvent.type(properties.getByLabelText('Opciones de Estado'), 'Ha muerto{Enter}')
+    await waitFor(async () =>
+      expect(await saved(api)).toEqual([
+        { name: 'Estado', type: 'choice', value: 'Vive', options: ['Vive', 'Ha muerto'] }
+      ])
+    )
+    await userEvent.selectOptions(properties.getByLabelText('Tipo de la propiedad 1'), 'Reloj')
+    await waitFor(async () =>
+      expect(await saved(api)).toEqual([{ name: 'Estado', type: 'clock', value: 0, segments: 4 }])
+    )
   })
 
   it('un número que no lo es no se guarda, y lo dice', async () => {

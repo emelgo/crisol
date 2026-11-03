@@ -1,0 +1,171 @@
+/* Los controles de los campos de plantilla en el panel: flotan sin mover nada */
+
+.choice {
+  position: relative;
+}
+
+/* Como un valor más: sin borde hasta acercarse */
+.choiceButton {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  inline-size: 100%;
+  min-block-size: 2rem;
+  padding: 0.25rem 0.375rem;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.choiceButton:hover,
+.choiceButton[aria-expanded="true"] {
+  background: color-mix(in srgb, var(--color-text) 5%, transparent);
+}
+
+.choiceButton:focus-visible {
+  border-color: var(--color-field-border);
+  outline: none;
+}
+
+/* Un valor que no está entre las opciones: subrayado de aviso, y se conserva */
+.choiceButton[data-outside] > span {
+  text-decoration: underline wavy var(--color-warning);
+  text-underline-offset: 3px;
+}
+
+.placeholder {
+  color: var(--color-muted);
+}
+
+.chevron {
+  flex: none;
+  margin-inline-start: auto;
+  color: var(--color-muted);
+}
+
+.list {
+  position: absolute;
+  z-index: 20;
+  inset-inline: 0;
+  inset-block-start: calc(100% + var(--space-1));
+  display: flex;
+  flex-direction: column;
+  max-block-size: 15rem;
+  overflow-y: auto;
+  padding: var(--space-1);
+  border: 1px solid var(--color-frame);
+  border-radius: 8px;
+  background: var(--color-bg);
+  box-shadow: 0 0.5rem 1.5rem rgb(0 0 0 / 0.2);
+}
+
+.option {
+  padding: 0.375rem 0.5rem;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 0.875rem;
+  text-align: start;
+  cursor: pointer;
+}
+
+.option:focus {
+  background: var(--color-raised);
+  outline: none;
+}
+
+.option[aria-selected="true"] {
+  font-weight: 700;
+  color: var(--color-accent-text);
+}
+
+.none {
+  color: var(--color-muted);
+}
+
+/* El reloj: su esfera, los segmentos que se marcan y la cuenta */
+.clock {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0.25rem 0;
+  border: 0;
+  min-inline-size: 0;
+}
+
+.legend {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.face path {
+  fill: var(--color-border);
+  stroke: var(--color-surface);
+  stroke-width: 1;
+}
+
+.face path[data-full] {
+  fill: var(--color-h3);
+}
+
+.segments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.1875rem;
+}
+
+.segments button {
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
+  padding: 0;
+  border: 2px solid var(--color-h3);
+  border-radius: 3px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.segments button[aria-pressed="true"] {
+  background: var(--color-h3);
+}
+
+.count {
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+}
+
+/* Lo de la forma de una propiedad hecha a mano (sus opciones, sus segmentos): al acercarse, como su tipo */
+.shape {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: 0.8125rem;
+  color: var(--color-muted);
+}
+
+.segmentsInput {
+  inline-size: 4rem;
+  padding: 0.125rem 0.375rem;
+  border: 1px solid var(--color-field-border);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+}
+
+.trashed {
+  text-decoration: line-through;
+  color: var(--color-muted);
+}

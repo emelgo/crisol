@@ -30,7 +30,9 @@ amplía `@fugas` en la misma tarea. Cobertura ≥ 80 % de lo cambiado (bloquea d
   - Archivos: `packages/domain/src/properties.ts`, `packages/contracts/src/pages.ts`,
     `packages/editor/src/markdown/frontmatter.ts`, `apps/server/src/actions/{pages,page-content}.ts`.
 
-- [ ] **2. Los controles de los campos en el panel**
+- [x] **2. Los controles de los campos en el panel** — hecha. El buscador que enseña primero las páginas de los
+  `targets` va en la tarea 5 (hasta la 4 las páginas no saben su plantilla). La forma de una propiedad hecha a mano
+  (opciones, segmentos) está siempre a la vista: si salía al editarla, el panel se movía bajo el ratón.
   - Acepta:
     - Opciones con su desplegable. Enlace y enlaces con un buscador que enseña primero las páginas de sus `targets`, y
       «Todas las páginas» para el resto. Reloj con sus segmentos, que se marcan pulsando.
@@ -76,6 +78,8 @@ amplía `@fugas` en la misma tarea. Cobertura ≥ 80 % de lo cambiado (bloquea d
   - Acepta:
     - El recuadro «Desde plantilla» junto a Texto y Mapa abre la lista (tuyas primero y de serie, con buscador); Intro
       crea con la plantilla elegida, como en el lienzo.
+    - En los campos de enlace, el buscador enseña primero las páginas de sus `targets`, con «Todas las páginas» para el
+      resto (de la tarea 2).
     - La página nueva sale con sus campos en el panel y sus apartados en el texto.
     - Junto al título, la plantilla con su icono (sin enlace hasta la tarea 10).
   - Comprueba: pruebas de componentes y e2e (crear un PNJ desde plantilla y rellenar su Facción) con axe.

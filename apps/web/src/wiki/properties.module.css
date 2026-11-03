@@ -125,7 +125,8 @@
   display: grid;
   grid-template-areas:
     "name end"
-    "value value";
+    "value value"
+    "shape shape";
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   row-gap: 0.125rem;
@@ -141,6 +142,13 @@
 .propValue {
   grid-area: value;
   min-inline-size: 0;
+}
+
+/* Las opciones o los segmentos de una propiedad hecha a mano: siempre a la vista, pequeños (que nada se mueva) */
+.propShape {
+  grid-area: shape;
+  min-inline-size: 0;
+  font-size: 0.8125rem;
 }
 
 .nameInput,

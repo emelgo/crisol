@@ -267,6 +267,16 @@ export const es = {
     },
     reserved: { alias: 'Alias', etiquetas: 'Etiquetas', resumen: 'Resumen' }
   },
+  fields: {
+    choose: 'Elegir',
+    none: 'Ninguna',
+    outside: 'No está entre las opciones',
+    segment: 'Segmento {{count}} de {{max}}',
+    clockValue: '{{value}} de {{max}}',
+    options: 'Opciones de {{name}}',
+    segments: 'Segmentos de {{name}}',
+    trashed: '{{title}}, en la papelera'
+  },
   icon: {
     add: 'Añadir icono',
     short: 'Icono',
