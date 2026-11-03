@@ -730,6 +730,7 @@ export const es = {
       text: 'Texto',
       headings: 'Títulos',
       lists: 'Listas',
+      wiki: 'Páginas',
       boxes: 'Recuadros',
       sheet: 'Maquetación',
       master: 'Del máster'

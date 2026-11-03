@@ -14,7 +14,7 @@ import { type KeyboardEvent, useEffect, useId, useLayoutEffect, useRef, useState
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { useAnnounce } from '../components/announcer.tsx'
-import { BLOCKS, type BlockChoice, type BlockContext } from './blocks.ts'
+import { BLOCKS, type BlockChoice, type BlockContext, SECTIONS } from './blocks.ts'
 import styles from './drag-handle.module.css'
 import { addLine, GHOST_LINE } from './ghost-line.ts'
 import { copiesOf } from './separate.tsx'
@@ -311,7 +311,9 @@ export function BlockMenu({
   const id = useId()
   const menu = useRef<HTMLDivElement>(null)
   const convertible = CONVERTIBLE.includes(target.node.type.name)
-  const [expanded, setExpanded] = useState<SubmenuKey | null>(null)
+  // Una línea vacía: se puede poner en ella cualquier bloque (también los saltos, las columnas o una tabla), como con «/»
+  const empty = target.node.type.name === 'paragraph' && target.node.content.size === 0
+  const [expanded, setExpanded] = useState<string | null>(null)
   const $pos = editor.state.doc.resolve(target.pos)
   const first = $pos.index() === 0
   const last = $pos.index() === $pos.parent.childCount - 1
@@ -376,7 +378,8 @@ export function BlockMenu({
     }
   }
 
-  const blocks = BLOCKS.filter((block) => block.convert)
+  const blocks = empty ? BLOCKS : BLOCKS.filter((block) => block.convert)
+  const groups: readonly { key: string; match: (block: BlockChoice) => boolean }[] = empty ? SECTIONS : SUBMENUS
   return createPortal(
     <div
       ref={menu}
@@ -390,10 +393,10 @@ export function BlockMenu({
         // biome-ignore lint/a11y/useSemanticElements: un grupo de opciones del menú (ARIA), no un grupo de un formulario
         <div role="group" aria-labelledby={`${id}-convert`}>
           <div id={`${id}-convert`} className={styles.group}>
-            {t('blockMenu.convert')}
+            {t(empty ? 'blockMenu.addBlock' : 'blockMenu.convert')}
           </div>
           {/* Por grupos, cada uno en su desplegable (como en Everlore y en el Crisol antiguo) */}
-          {SUBMENUS.map(({ key, match }) => {
+          {groups.map(({ key, match }) => {
             const choices = blocks.filter(match)
             if (choices.length === 0) return null
             const shown = expanded === key
@@ -412,11 +415,15 @@ export function BlockMenu({
                     if (event.key === 'ArrowLeft' && shown) setExpanded(null)
                   }}
                 >
-                  {t(`blockMenu.groups.${key}`)}
+                  {t(`blockMenu.groups.${key as SubmenuKey | 'wiki'}`)}
                   <ChevronRight aria-hidden="true" size={14} />
                 </button>
                 {shown && (
-                  <div role="menu" aria-label={t(`blockMenu.groups.${key}`)} className={styles.submenuItems}>
+                  <div
+                    role="menu"
+                    aria-label={t(`blockMenu.groups.${key as SubmenuKey | 'wiki'}`)}
+                    className={styles.submenuItems}
+                  >
                     {choices.map((block) => (
                       <button
                         key={block.id}
@@ -426,7 +433,9 @@ export function BlockMenu({
                         className={styles.item}
                         onClick={act(
                           () => convert(editor, target, block, context),
-                          t('blockMenu.converted', { block: t(`blocks.${block.label}`).toLowerCase() })
+                          t(empty ? 'blocks.inserted' : 'blockMenu.converted', {
+                            block: t(`blocks.${block.label}`).toLowerCase()
+                          })
                         )}
                       >
                         {t(`blocks.${block.label}`)}
