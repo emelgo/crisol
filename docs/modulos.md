@@ -16,7 +16,7 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   migraciones 0035 y 0036).
 - **La próxima tanda**: los arreglos de «Por arreglar antes de probarlo» y los tres avisos de semgrep que bloquean la
   CI desde el 2026-11-12 (`${{ github.base_ref }}` en un `run` de `ci.yml`, `createDecipheriv` sin `authTagLength` en
-  `apps/server/src/secrets.ts` y las URL `ws://` de `apps/web/src/realtime/client.test.ts`).
+  `apps/server/src/secrets.ts` y las URL de WebSocket sin cifrar de `apps/web/src/realtime/client.test.ts`).
 
 ### Para retomar (2026-11-03, módulo 2)
 

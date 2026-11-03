@@ -39,12 +39,12 @@ describe('el cliente del canal en tiempo real', () => {
     vi.useRealTimers()
   })
 
-  const client = () => createRealtimeClient({ url: 'ws://crisol.test/api/realtime', WebSocket: FakeSocket as never })
+  const client = () => createRealtimeClient({ url: 'wss://crisol.test/api/realtime', WebSocket: FakeSocket as never })
 
   it('entrega los mensajes y deja de escuchar al desconectar', () => {
     const onMessage = vi.fn()
     const disconnect = client().connect({ onMessage })
-    expect(last().url).toBe('ws://crisol.test/api/realtime')
+    expect(last().url).toBe('wss://crisol.test/api/realtime')
     last().open()
     last().receive({ type: 'changed', what: 'worlds' })
     last().receive('no es JSON')
@@ -92,7 +92,7 @@ describe('el cliente del canal en tiempo real', () => {
     const onMessage = vi.fn()
     const onNewVersion = vi.fn()
     const connect = (build: string | null) =>
-      createRealtimeClient({ url: 'ws://crisol.test/api/realtime', WebSocket: FakeSocket as never, build }).connect({
+      createRealtimeClient({ url: 'wss://crisol.test/api/realtime', WebSocket: FakeSocket as never, build }).connect({
         onMessage,
         onNewVersion
       })

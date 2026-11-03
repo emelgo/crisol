@@ -31,7 +31,8 @@ export function sealSecret(secret: string, key: Buffer): string {
 export function openSecret(sealed: string, key: Buffer): string {
   const [version, iv, tag, encrypted] = sealed.split('.')
   if (version !== VERSION || !iv || !tag || !encrypted) throw new Error('Formato de secreto cifrado desconocido')
-  const decipher = createDecipheriv('aes-256-gcm', key, Buffer.from(iv, 'base64url'))
+  // La etiqueta, siempre entera (16 bytes): una recortada es más fácil de falsificar
+  const decipher = createDecipheriv('aes-256-gcm', key, Buffer.from(iv, 'base64url'), { authTagLength: 16 })
   decipher.setAuthTag(Buffer.from(tag, 'base64url'))
   return Buffer.concat([decipher.update(Buffer.from(encrypted, 'base64url')), decipher.final()]).toString('utf8')
 }
