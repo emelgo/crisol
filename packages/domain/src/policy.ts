@@ -91,7 +91,10 @@ const RULES = {
   'commonFiles.write': { sees: seesCommonFiles, allows: isOrganizationOwner },
   // Las etiquetas de la cuenta (ADR-0006): verlas (para ponerlas); crearlas, renombrarlas, darles color y borrarlas
   'tags.read': { sees: seesCommonFiles, allows: seesCommonFiles },
-  'tags.write': { sees: seesCommonFiles, allows: isOrganizationOwner }
+  'tags.write': { sees: seesCommonFiles, allows: isOrganizationOwner },
+  // Las plantillas de página de la cuenta (ADR-0009): verlas (para crear con ellas); crearlas, cambiarlas y borrarlas
+  'templates.read': { sees: seesCommonFiles, allows: seesCommonFiles },
+  'templates.write': { sees: seesCommonFiles, allows: isOrganizationOwner }
 } satisfies Record<string, { sees: Predicate; allows: Predicate }>
 
 export type Capability = keyof typeof RULES

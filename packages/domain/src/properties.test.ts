@@ -130,6 +130,17 @@ describe('dar a un valor la forma de un campo', () => {
     expect(conformTo(reloj, { name: 'Reloj', type: 'text', value: 'mucho' })).toBeNull()
   })
 
+  it('un número vacío (un campo de plantilla sin rellenar) vale y se lee de un texto vacío', () => {
+    const poblacion = { name: 'Población', field: 'poblacion', type: 'number', value: null } satisfies PageProperty
+    expect(propertiesProblem([poblacion])).toBeNull()
+    expect(conformTo(poblacion, { name: 'Población', type: 'text', value: '' })).toEqual(poblacion)
+    expect(conformTo({ name: 'Rol', type: 'text', value: '' }, poblacion)).toEqual({
+      name: 'Población',
+      type: 'text',
+      value: ''
+    })
+  })
+
   it('número, sí/no y texto, de lo que se pueda leer', () => {
     expect(
       conformTo(

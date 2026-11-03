@@ -89,7 +89,9 @@ describe('Actions', () => {
       updateMapPin: true,
       deleteMapPin: true,
       getWorldHome: true,
-      ensureWorldHome: true
+      ensureWorldHome: true,
+      listTemplates: true,
+      getTemplate: true
     }
     expect(Object.keys(names).sort()).toEqual(ACTIONS.map((a) => a.name).sort())
   })

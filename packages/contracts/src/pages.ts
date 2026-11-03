@@ -29,7 +29,7 @@ const linkTargets = z.array(templateRef).max(10)
  */
 export const pageProperty = z.discriminatedUnion('type', [
   z.object({ ...field, type: z.literal('text'), value: z.string().max(5000) }),
-  z.object({ ...field, type: z.literal('number'), value: z.number().finite() }),
+  z.object({ ...field, type: z.literal('number'), value: z.number().finite().nullable() }),
   z.object({ ...field, type: z.literal('boolean'), value: z.boolean() }),
   z.object({ ...field, type: z.literal('list'), value: z.array(z.string().trim().min(1).max(200)).max(200) }),
   z.object({
@@ -383,7 +383,7 @@ export const createPages = defineAction({
  */
 const propertyInput = z.discriminatedUnion('type', [
   z.object({ name: propertyName, type: z.literal('text'), value: z.string().max(5000) }),
-  z.object({ name: propertyName, type: z.literal('number'), value: z.number().finite() }),
+  z.object({ name: propertyName, type: z.literal('number'), value: z.number().finite().nullable() }),
   z.object({ name: propertyName, type: z.literal('boolean'), value: z.boolean() }),
   z.object({ name: propertyName, type: z.literal('list'), value: z.array(z.string().trim().min(1).max(200)).max(200) }),
   z.object({

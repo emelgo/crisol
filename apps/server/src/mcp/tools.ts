@@ -103,7 +103,10 @@ export const MCP_TOOLS: Record<string, McpTool> = {
   cambiar_pin: { action: 'updateMapPin' },
   quitar_pin: { action: 'deleteMapPin' },
   // El panel de bloques al lado de una página (ADR-0008); se lee con leer_pagina
-  cambiar_panel: { action: 'setPagePanel' }
+  cambiar_panel: { action: 'setPagePanel' },
+  // Las plantillas de página (ADR-0009)
+  listar_plantillas: { action: 'listTemplates' },
+  ver_plantilla: { action: 'getTemplate' }
 }
 
 const INSTRUCTIONS =

@@ -13,7 +13,7 @@ describe('herramientas MCP', () => {
     }
   })
 
-  it('las del módulo 0 y las de la wiki que ya hay', () => {
+  it('las del módulo 0, las de la wiki y las de las plantillas', () => {
     expect(Object.keys(MCP_TOOLS).sort()).toEqual([
       'borrar_etiqueta',
       'borrar_pagina',
@@ -40,6 +40,7 @@ describe('herramientas MCP', () => {
       'listar_archivos',
       'listar_etiquetas',
       'listar_mundos',
+      'listar_plantillas',
       'mover_pagina',
       'ordenar_subpaginas',
       'paginas_recientes',
@@ -52,6 +53,7 @@ describe('herramientas MCP', () => {
       'ver_historial',
       'ver_mapa',
       'ver_pestanas',
+      'ver_plantilla',
       'versiones_pagina'
     ])
   })

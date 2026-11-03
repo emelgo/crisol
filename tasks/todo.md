@@ -49,7 +49,10 @@ amplía `@fugas` en la misma tarea. Cobertura ≥ 80 % de lo cambiado (bloquea d
 
 ## Fase 2: Plantillas de serie y crear desde ellas
 
-- [ ] **3. Plantillas de serie: los datos y verlas**
+- [x] **3. Plantillas de serie: los datos y verlas** — hecha. El número admite estar vacío (Población, Número de
+  sesión), para que un campo sin rellenar no diga «0». Los bloques «Miembros» y demás tablas entran en sus paneles con
+  la tarea 7, cuando exista el bloque. La prueba del canal en tiempo real de la web falla a veces con todo a la vez
+  (por carga, ya pasaba): sola pasa.
   - Acepta:
     - Las seis de la spec en `packages/domain/src/templates.ts`, con el mismo formato que tendrán las propias: campos
       (id, nombre, tipo, forma, valor inicial), bloques del panel y esqueleto en Markdown.

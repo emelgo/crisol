@@ -93,7 +93,7 @@ const toDraft = (property: PageProperty): Draft => ({
     property.type === 'list'
       ? property.value.join(', ')
       : property.type === 'text' || property.type === 'number' || property.type === 'choice'
-        ? String(property.value)
+        ? String(property.value ?? '')
         : '',
   checked: property.type === 'boolean' ? property.value : false,
   pages: property.type === 'pages' ? property.value : [],
@@ -123,8 +123,10 @@ function fromDraft(draft: Draft): PageProperty | null {
     case 'text':
       return { name, ...field, type: 'text', value: draft.text }
     case 'number': {
+      // Vacío, sin valor (como un campo de plantilla aún sin rellenar)
+      if (draft.text.trim() === '') return { name, ...field, type: 'number', value: null }
       const value = Number(draft.text.replace(',', '.'))
-      return draft.text.trim() !== '' && Number.isFinite(value) ? { name, ...field, type: 'number', value } : null
+      return Number.isFinite(value) ? { name, ...field, type: 'number', value } : null
     }
     case 'boolean':
       return { name, ...field, type: 'boolean', value: draft.checked }
@@ -160,7 +162,7 @@ function PropertyValue({ property, worldId }: { property: PageProperty; worldId:
   const colorOf = useTagColor()
   switch (property.type) {
     case 'number':
-      return <>{property.value.toLocaleString('es')}</>
+      return <>{property.value?.toLocaleString('es') ?? ''}</>
     case 'boolean':
       return <>{t(property.value ? 'properties.yes' : 'properties.no')}</>
     case 'list':

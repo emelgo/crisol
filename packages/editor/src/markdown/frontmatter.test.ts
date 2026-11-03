@@ -64,20 +64,29 @@ describe('las propiedades en YAML', () => {
       { name: 'Estado', field: 'estado', type: 'choice', value: 'Ha muerto', options: ['Vive', 'Ha muerto'] },
       { name: 'Facción', field: 'faccion', type: 'pages', single: true, value: ['p1'] },
       { name: 'Lugar', field: 'lugar', type: 'pages', single: true, value: [] },
-      { name: 'Reloj', field: 'reloj', type: 'clock', value: 3, segments: 8 }
+      { name: 'Reloj', field: 'reloj', type: 'clock', value: 3, segments: 8 },
+      { name: 'Población', field: 'poblacion', type: 'number', value: null }
     ]
     const yaml = writeFrontmatter(fields, (id) => titles[id] ?? id)
     expect(yaml).toBe(
-      ['---', 'Estado: Ha muerto', 'Facción: "[[Consejo de la Lonja]]"', 'Lugar: ""', 'Reloj: "3/8"', '---', ''].join(
-        '\n'
-      )
+      [
+        '---',
+        'Estado: Ha muerto',
+        'Facción: "[[Consejo de la Lonja]]"',
+        'Lugar: ""',
+        'Reloj: "3/8"',
+        'Población:',
+        '---',
+        ''
+      ].join('\n')
     )
     // Se leen con los tipos de siempre: el servidor les devuelve su forma con la de la página o la plantilla
     expect(readFrontmatter(yaml).properties).toEqual([
       { name: 'Estado', type: 'text', value: 'Ha muerto' },
       { name: 'Facción', type: 'pages', value: ['Consejo de la Lonja'] },
       { name: 'Lugar', type: 'text', value: '' },
-      { name: 'Reloj', type: 'text', value: '3/8' }
+      { name: 'Reloj', type: 'text', value: '3/8' },
+      { name: 'Población', type: 'text', value: '' }
     ])
   })
 

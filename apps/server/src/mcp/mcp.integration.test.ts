@@ -202,6 +202,8 @@ describe('conector MCP con OAuth', () => {
       ['listar_archivos', { worldId: world.id }, 'read'],
       ['listar_etiquetas', {}, 'read'],
       ['ver_pestanas', { pageId: page.id }, 'read'],
+      ['listar_plantillas', {}, 'read'],
+      ['ver_plantilla', { templateId: 'pnj' }, 'read'],
       ['buscar_paginas', { worldId: world.id, query: 'lugares' }, 'read'],
       ['restaurar_version', { pageId: page.id, versionId: versions[0]?.id }, 'write'],
       ['crear_mundo', { name: 'Otro' }, 'write'],

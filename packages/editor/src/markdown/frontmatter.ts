@@ -20,7 +20,7 @@ export type ReadProperty =
 export type WritableProperty =
   | ReadProperty
   | { name: string; field?: string | undefined; type: 'text'; value: string }
-  | { name: string; field?: string | undefined; type: 'number'; value: number }
+  | { name: string; field?: string | undefined; type: 'number'; value: number | null }
   | { name: string; field?: string | undefined; type: 'boolean'; value: boolean }
   | { name: string; field?: string | undefined; type: 'list'; value: string[] }
   | {
@@ -84,7 +84,7 @@ export function writeFrontmatter(
         break
       case 'number':
       case 'boolean':
-        lines.push(`${name}: ${String(property.value)}`)
+        lines.push(property.value === null ? `${name}:` : `${name}: ${String(property.value)}`)
         break
       case 'list':
       case 'pages': {

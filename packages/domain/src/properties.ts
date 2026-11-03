@@ -12,7 +12,8 @@ interface Field {
 
 export type PageProperty =
   | (Field & { type: 'text'; value: string })
-  | (Field & { type: 'number'; value: number })
+  /** Sin valor (null): un campo de plantilla aún sin rellenar */
+  | (Field & { type: 'number'; value: number | null })
   | (Field & { type: 'boolean'; value: boolean })
   | (Field & { type: 'list'; value: string[] })
   /** Enlaces a páginas (sus ids). Con single, a una sola; targets, las plantillas que se buscan primero */
@@ -89,15 +90,16 @@ const numberIn = (text: string): number | null => {
  */
 export function conformTo(shape: PageProperty, read: PageProperty): PageProperty | null {
   const base = { name: read.name, ...(shape.field === undefined ? {} : { field: shape.field }) }
-  const text = read.type === 'text' ? read.value : read.type === 'number' ? String(read.value) : null
+  const text = read.type === 'text' ? read.value : read.type === 'number' ? String(read.value ?? '') : null
   switch (shape.type) {
     case 'text':
       if (read.type === 'text' || read.type === 'number' || read.type === 'boolean' || read.type === 'choice') {
-        return { ...base, type: 'text', value: String(read.value) }
+        return { ...base, type: 'text', value: String(read.value ?? '') }
       }
       return null
     case 'number': {
       if (read.type === 'number') return { ...base, type: 'number', value: read.value }
+      if (read.type === 'text' && read.value.trim() === '') return { ...base, type: 'number', value: null }
       const number = read.type === 'text' ? numberIn(read.value) : null
       return number === null ? null : { ...base, type: 'number', value: number }
     }
@@ -112,7 +114,7 @@ export function conformTo(shape: PageProperty, read: PageProperty): PageProperty
       return text === null ? null : { ...base, type: 'choice', value: text.trim(), options: shape.options }
     case 'clock': {
       if (read.type === 'clock') return { ...base, type: 'clock', value: read.value, segments: read.segments }
-      if (read.type === 'number') return { ...base, type: 'clock', value: read.value, segments: shape.segments }
+      if (read.type === 'number') return { ...base, type: 'clock', value: read.value ?? 0, segments: shape.segments }
       const match = read.type === 'text' ? /^\s*(\d+)\s*(?:\/\s*(\d+))?\s*$/.exec(read.value) : null
       if (!match)
         return read.type === 'text' && read.value.trim() === ''

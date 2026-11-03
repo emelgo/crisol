@@ -14,11 +14,20 @@ import type {
   Page,
   PageProperty,
   PageTabView,
+  PageTemplate,
   TagView,
   TrashItem,
   World
 } from '@crisol/contracts'
-import { removeTagIn, renameTagIn, tagKey, tagTree, uniqueTags } from '@crisol/domain'
+import {
+  BUILT_IN_TEMPLATES,
+  builtInTemplate,
+  removeTagIn,
+  renameTagIn,
+  tagKey,
+  tagTree,
+  uniqueTags
+} from '@crisol/domain'
 import { type ActionInput, type ActionName, type ActionOutput, type ApiClient, ApiError } from './client.ts'
 
 export function fakeApi(
@@ -695,6 +704,13 @@ export function fakeApi(
     },
     restorePageVersion: () => ({ restored: false }),
     // Por el título, sin tildes ni mayúsculas (la de verdad la prueban las del servidor)
+    // Las plantillas de serie, como el servidor (las de la cuenta, con la tarea 9)
+    listTemplates: () => ({ templates: structuredClone([...BUILT_IN_TEMPLATES]) as PageTemplate[] }),
+    getTemplate: ({ templateId }) => {
+      const found = builtInTemplate(templateId)
+      if (!found) throw new ApiError('NOT_FOUND', 404)
+      return structuredClone(found) as PageTemplate
+    },
     searchWiki: ({ worldId, query, page = 1 }) => {
       const fold = (text: string) => text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()
       const found = pages.filter((p) => p.worldId === worldId && fold(p.title).includes(fold(query)))

@@ -97,6 +97,7 @@ async function pageResolver(ctx: ActionContext, worldId: string) {
 /** Una propiedad que se escribe a mano: del YAML, o de la IA (que también da opciones y relojes) */
 type WantedProperty =
   | ReadProperty
+  | { name: string; type: 'number'; value: number | null }
   | { name: string; type: 'pages'; value: string[]; single?: true | undefined }
   | { name: string; type: 'choice'; value: string; options?: string[] | undefined }
   | { name: string; type: 'clock'; value: number; segments?: number | undefined }
