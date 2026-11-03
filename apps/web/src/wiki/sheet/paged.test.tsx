@@ -231,6 +231,7 @@ describe('la hoja al escribir', () => {
           callbacks.push(callback)
         }
         observe() {}
+        unobserve() {}
         disconnect() {}
       }
     )
