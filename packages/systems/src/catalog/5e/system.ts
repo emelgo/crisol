@@ -126,6 +126,23 @@ const RARITIES = [
   ['artefacto', 'Artefacto', 'Artifact']
 ] as const
 
+const GEAR_CATEGORIES = [
+  ['aventura', 'Equipo de aventureros', 'Adventuring gear'],
+  ['paquete', 'Paquete de equipo', 'Equipment pack'],
+  ['municion', 'Munición', 'Ammunition'],
+  ['canalizador_arcano', 'Canalizador arcano', 'Arcane focus'],
+  ['canalizador_druidico', 'Canalizador druídico', 'Druidic focus'],
+  ['simbolo_sagrado', 'Símbolo sagrado', 'Holy symbol'],
+  ['herramienta', 'Herramienta', 'Tool'],
+  ['herramienta_artesano', 'Herramientas de artesano', 'Artisan’s tools'],
+  ['juego', 'Juego', 'Gaming set'],
+  ['instrumento', 'Instrumento musical', 'Musical instrument'],
+  ['montura', 'Montura', 'Mount'],
+  ['arreos', 'Arreos y arneses', 'Tack and harness'],
+  ['vehiculo', 'Vehículo', 'Vehicle'],
+  ['mercancia', 'Mercancía', 'Trade good']
+] as const
+
 const abilityOptions = ABILITIES.map(([value, es, en]) => ({ value, label: t(es, en) }))
 
 /** Los campos de una característica: su puntuación, su modificador, su salvación y lo de lanzar conjuros con ella */
@@ -641,7 +658,12 @@ export const fiveE = {
       label: t('Equipo', 'Gear'),
       icon: 'backpack',
       fields: {
-        categoria: text('Categoría', 'Category'),
+        categoria: {
+          kind: 'choice',
+          label: t('Categoría', 'Category'),
+          options: options(GEAR_CATEGORIES),
+          default: 'aventura'
+        },
         equipado: yesNo('Equipado', 'Equipped'),
         ...goods,
         descripcion: description

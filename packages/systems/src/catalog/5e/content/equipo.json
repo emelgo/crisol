@@ -1,0 +1,5294 @@
+[
+  {
+    "type": "equipo",
+    "key": "abaco_2014",
+    "source": "srd51",
+    "concept": "abaco",
+    "data": {
+      "name": {
+        "es": "Ábaco",
+        "en": "Abacus"
+      },
+      "categoria": "aventura",
+      "peso": 2,
+      "coste": 2
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 70
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "acido_2014",
+    "source": "srd51",
+    "concept": "acido",
+    "data": {
+      "name": {
+        "es": "Ácido (vial)",
+        "en": "Acid (vial)"
+      },
+      "categoria": "aventura",
+      "peso": 1,
+      "coste": 25
+    },
+    "mechanics": {
+      "actions": [
+        {
+          "key": "lanzar",
+          "label": {
+            "es": "Lanzar",
+            "en": "Throw"
+          },
+          "activation": "action",
+          "range": {
+            "es": "6 m",
+            "en": "20 feet"
+          },
+          "attack": "@caracteristicas.des.mod",
+          "damage": [
+            {
+              "formula": "2d6",
+              "type": "acido"
+            }
+          ]
+        }
+      ],
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 70
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "fuego_de_alquimista_2014",
+    "source": "srd51",
+    "concept": "fuego_de_alquimista",
+    "data": {
+      "name": {
+        "es": "Fuego de alquimista (frasco)",
+        "en": "Alchemist’s fire (flask)"
+      },
+      "categoria": "aventura",
+      "peso": 1,
+      "coste": 50
+    },
+    "mechanics": {
+      "actions": [
+        {
+          "key": "lanzar",
+          "label": {
+            "es": "Lanzar",
+            "en": "Throw"
+          },
+          "activation": "action",
+          "range": {
+            "es": "6 m",
+            "en": "20 feet"
+          },
+          "attack": "@caracteristicas.des.mod",
+          "damage": [
+            {
+              "formula": "1d4",
+              "type": "fuego"
+            }
+          ]
+        }
+      ],
+      "automation": "partial",
+      "manual": {
+        "es": "El daño se repite al principio de cada turno hasta apagarlo (prueba de Destreza CD 10)",
+        "en": "The damage repeats at the start of each turn until extinguished (DC 10 Dexterity check)"
+      }
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "flechas_20_2014",
+    "source": "srd51",
+    "concept": "flechas_20",
+    "data": {
+      "name": {
+        "es": "Flechas (20)",
+        "en": "Arrows (20)"
+      },
+      "categoria": "municion",
+      "peso": 1,
+      "coste": 1
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "dardos_de_cerbatana_50_2014",
+    "source": "srd51",
+    "concept": "dardos_de_cerbatana_50",
+    "data": {
+      "name": {
+        "es": "Dardos de cerbatana (50)",
+        "en": "Blowgun needles (50)"
+      },
+      "categoria": "municion",
+      "peso": 1,
+      "coste": 1
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "virotes_de_ballesta_20_2014",
+    "source": "srd51",
+    "concept": "virotes_de_ballesta_20",
+    "data": {
+      "name": {
+        "es": "Virotes de ballesta (20)",
+        "en": "Crossbow bolts (20)"
+      },
+      "categoria": "municion",
+      "peso": 1.5,
+      "coste": 1
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "balas_de_honda_20_2014",
+    "source": "srd51",
+    "concept": "balas_de_honda_20",
+    "data": {
+      "name": {
+        "es": "Balas de honda (20)",
+        "en": "Sling bullets (20)"
+      },
+      "categoria": "municion",
+      "peso": 1.5,
+      "coste": 0.04
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "antitoxina_2014",
+    "source": "srd51",
+    "concept": "antitoxina",
+    "data": {
+      "name": {
+        "es": "Antitoxina (vial)",
+        "en": "Antitoxin (vial)"
+      },
+      "categoria": "aventura",
+      "peso": 0,
+      "coste": 50
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 70
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "cristal_canalizador_arcano_2014",
+    "source": "srd51",
+    "concept": "cristal_canalizador_arcano",
+    "data": {
+      "name": {
+        "es": "Cristal (canalizador arcano)",
+        "en": "Crystal (arcane focus)"
+      },
+      "categoria": "canalizador_arcano",
+      "peso": 1,
+      "coste": 10
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "orbe_canalizador_arcano_2014",
+    "source": "srd51",
+    "concept": "orbe_canalizador_arcano",
+    "data": {
+      "name": {
+        "es": "Orbe (canalizador arcano)",
+        "en": "Orb (arcane focus)"
+      },
+      "categoria": "canalizador_arcano",
+      "peso": 3,
+      "coste": 20
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "vara_canalizador_arcano_2014",
+    "source": "srd51",
+    "concept": "vara_canalizador_arcano",
+    "data": {
+      "name": {
+        "es": "Vara (canalizador arcano)",
+        "en": "Rod (arcane focus)"
+      },
+      "categoria": "canalizador_arcano",
+      "peso": 2,
+      "coste": 10
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "baston_canalizador_arcano_2014",
+    "source": "srd51",
+    "concept": "baston_canalizador_arcano",
+    "data": {
+      "name": {
+        "es": "Bastón (canalizador arcano)",
+        "en": "Staff (arcane focus)"
+      },
+      "categoria": "canalizador_arcano",
+      "peso": 4,
+      "coste": 5
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "varita_canalizador_arcano_2014",
+    "source": "srd51",
+    "concept": "varita_canalizador_arcano",
+    "data": {
+      "name": {
+        "es": "Varita (canalizador arcano)",
+        "en": "Wand (arcane focus)"
+      },
+      "categoria": "canalizador_arcano",
+      "peso": 1,
+      "coste": 10
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "mochila_2014",
+    "source": "srd51",
+    "concept": "mochila",
+    "data": {
+      "name": {
+        "es": "Mochila",
+        "en": "Backpack"
+      },
+      "categoria": "paquete",
+      "peso": 5,
+      "coste": 2
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "bolas_de_metal_2014",
+    "source": "srd51",
+    "concept": "bolas_de_metal",
+    "data": {
+      "name": {
+        "es": "Bolas de metal (bolsa de 1000)",
+        "en": "Ball bearings (bag of 1,000)"
+      },
+      "categoria": "aventura",
+      "peso": 2,
+      "coste": 1
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 70
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "barril_2014",
+    "source": "srd51",
+    "concept": "barril",
+    "data": {
+      "name": {
+        "es": "Barril",
+        "en": "Barrel"
+      },
+      "categoria": "aventura",
+      "peso": 70,
+      "coste": 2
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 70
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "cesta_2014",
+    "source": "srd51",
+    "concept": "cesta",
+    "data": {
+      "name": {
+        "es": "Cesta",
+        "en": "Basket"
+      },
+      "categoria": "aventura",
+      "peso": 2,
+      "coste": 0.4
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "petate_2014",
+    "source": "srd51",
+    "concept": "petate",
+    "data": {
+      "name": {
+        "es": "Petate",
+        "en": "Bedroll"
+      },
+      "categoria": "aventura",
+      "peso": 7,
+      "coste": 1
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "campana_2014",
+    "source": "srd51",
+    "concept": "campana",
+    "data": {
+      "name": {
+        "es": "Campana",
+        "en": "Bell"
+      },
+      "categoria": "aventura",
+      "peso": 0,
+      "coste": 1
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 70
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "manta_2014",
+    "source": "srd51",
+    "concept": "manta",
+    "data": {
+      "name": {
+        "es": "Manta",
+        "en": "Blanket"
+      },
+      "categoria": "aventura",
+      "peso": 3,
+      "coste": 0.5
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "polipasto_2014",
+    "source": "srd51",
+    "concept": "polipasto",
+    "data": {
+      "name": {
+        "es": "Polipasto",
+        "en": "Block and tackle"
+      },
+      "categoria": "aventura",
+      "peso": 5,
+      "coste": 1
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "libro_2014",
+    "source": "srd51",
+    "concept": "libro",
+    "data": {
+      "name": {
+        "es": "Libro",
+        "en": "Book"
+      },
+      "categoria": "aventura",
+      "peso": 5,
+      "coste": 25
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "botella_de_cristal_2014",
+    "source": "srd51",
+    "concept": "botella_de_cristal",
+    "data": {
+      "name": {
+        "es": "Botella de cristal",
+        "en": "Bottle, glass"
+      },
+      "categoria": "aventura",
+      "peso": 2,
+      "coste": 2
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 70
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "cubo_2014",
+    "source": "srd51",
+    "concept": "cubo",
+    "data": {
+      "name": {
+        "es": "Cubo",
+        "en": "Bucket"
+      },
+      "categoria": "aventura",
+      "peso": 2,
+      "coste": 0.05
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "abrojos_2014",
+    "source": "srd51",
+    "concept": "abrojos",
+    "data": {
+      "name": {
+        "es": "Abrojos (bolsa de 20)",
+        "en": "Caltrops (bag of 20)"
+      },
+      "categoria": "aventura",
+      "peso": 2,
+      "coste": 1
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 70
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "vela_2014",
+    "source": "srd51",
+    "concept": "vela",
+    "data": {
+      "name": {
+        "es": "Vela",
+        "en": "Candle"
+      },
+      "categoria": "aventura",
+      "peso": 0,
+      "coste": 0.01
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "estuche_para_virotes_de_ballesta_2014",
+    "source": "srd51",
+    "concept": "estuche_para_virotes_de_ballesta",
+    "data": {
+      "name": {
+        "es": "Estuche para virotes de ballesta",
+        "en": "Case, crossbow bolt"
+      },
+      "categoria": "aventura",
+      "peso": 1,
+      "coste": 1
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "estuche_para_mapas_o_pergaminos_2014",
+    "source": "srd51",
+    "concept": "estuche_para_mapas_o_pergaminos",
+    "data": {
+      "name": {
+        "es": "Estuche para mapa o pergamino",
+        "en": "Case, map or scroll"
+      },
+      "categoria": "aventura",
+      "peso": 1,
+      "coste": 1
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "cadena_2014",
+    "source": "srd51",
+    "concept": "cadena",
+    "data": {
+      "name": {
+        "es": "Cadena (3 m)",
+        "en": "Chain (10 feet)"
+      },
+      "categoria": "aventura",
+      "peso": 10,
+      "coste": 5
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 70
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "tiza_1_trozo_2014",
+    "source": "srd51",
+    "concept": "tiza_1_trozo",
+    "data": {
+      "name": {
+        "es": "Tiza (1 trozo)",
+        "en": "Chalk (1 piece)"
+      },
+      "categoria": "aventura",
+      "peso": 0,
+      "coste": 0.01
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "cofre_2014",
+    "source": "srd51",
+    "concept": "cofre",
+    "data": {
+      "name": {
+        "es": "Cofre",
+        "en": "Chest"
+      },
+      "categoria": "aventura",
+      "peso": 25,
+      "coste": 5
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "utiles_de_escalada_2014",
+    "source": "srd51",
+    "concept": "utiles_de_escalada",
+    "data": {
+      "name": {
+        "es": "Útiles de escalada",
+        "en": "Climber’s kit"
+      },
+      "categoria": "aventura",
+      "peso": 12,
+      "coste": 25
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "ropas_comunes_2014",
+    "source": "srd51",
+    "concept": "ropas_comunes",
+    "data": {
+      "name": {
+        "es": "Ropas comunes",
+        "en": "Clothes, common"
+      },
+      "categoria": "aventura",
+      "peso": 3,
+      "coste": 0.5
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "disfraz_2014",
+    "source": "srd51",
+    "concept": "disfraz",
+    "data": {
+      "name": {
+        "es": "Ropas, disfraz",
+        "en": "Clothes, costume"
+      },
+      "categoria": "aventura",
+      "peso": 4,
+      "coste": 5
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "ropas_de_calidad_2014",
+    "source": "srd51",
+    "concept": "ropas_de_calidad",
+    "data": {
+      "name": {
+        "es": "Ropas de calidad",
+        "en": "Clothes, fine"
+      },
+      "categoria": "aventura",
+      "peso": 6,
+      "coste": 15
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "ropas_de_viaje_2014",
+    "source": "srd51",
+    "concept": "ropas_de_viaje",
+    "data": {
+      "name": {
+        "es": "Ropas de viaje",
+        "en": "Clothes, traveler’s"
+      },
+      "categoria": "aventura",
+      "peso": 4,
+      "coste": 2
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "saquito_de_componentes_2014",
+    "source": "srd51",
+    "concept": "saquito_de_componentes",
+    "data": {
+      "name": {
+        "es": "Saquito de componentes",
+        "en": "Component pouch"
+      },
+      "categoria": "aventura",
+      "peso": 2,
+      "coste": 25
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "palanqueta_2014",
+    "source": "srd51",
+    "concept": "palanqueta",
+    "data": {
+      "name": {
+        "es": "Palanqueta",
+        "en": "Crowbar"
+      },
+      "categoria": "aventura",
+      "peso": 5,
+      "coste": 2
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "rama_de_muerdago_canalizador_druidico_2014",
+    "source": "srd51",
+    "concept": "rama_de_muerdago_canalizador_druidico",
+    "data": {
+      "name": {
+        "es": "Rama de muérdago (canalizador druídico)",
+        "en": "Sprig of mistletoe (druidic focus)"
+      },
+      "categoria": "canalizador_druidico",
+      "peso": 0,
+      "coste": 1
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "totem_canalizador_druidico_2014",
+    "source": "srd51",
+    "concept": "totem_canalizador_druidico",
+    "data": {
+      "name": {
+        "es": "Tótem (canalizador druídico)",
+        "en": "Totem (druidic focus)"
+      },
+      "categoria": "canalizador_druidico",
+      "peso": 0,
+      "coste": 1
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "baston_de_madera_canalizador_druidico_2014",
+    "source": "srd51",
+    "concept": "baston_de_madera_canalizador_druidico",
+    "data": {
+      "name": {
+        "es": "Bastón de madera (canalizador druídico)",
+        "en": "Wooden staff (druidic focus)"
+      },
+      "categoria": "canalizador_druidico",
+      "peso": 4,
+      "coste": 5
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "varita_de_tejo_canalizador_druidico_2014",
+    "source": "srd51",
+    "concept": "varita_de_tejo_canalizador_druidico",
+    "data": {
+      "name": {
+        "es": "Varita de tejo (canalizador druídico)",
+        "en": "Yew wand (druidic focus)"
+      },
+      "categoria": "canalizador_druidico",
+      "peso": 1,
+      "coste": 10
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "cana_de_pescar_2014",
+    "source": "srd51",
+    "concept": "cana_de_pescar",
+    "data": {
+      "name": {
+        "es": "Caña de pescar",
+        "en": "Fishing tackle"
+      },
+      "categoria": "aventura",
+      "peso": 4,
+      "coste": 1
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 70
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "frasco_2014",
+    "source": "srd51",
+    "concept": "frasco",
+    "data": {
+      "name": {
+        "es": "Frasco o jarra",
+        "en": "Flask or tankard"
+      },
+      "categoria": "aventura",
+      "peso": 1,
+      "coste": 0.02
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "garfio_de_escalada_2014",
+    "source": "srd51",
+    "concept": "garfio_de_escalada",
+    "data": {
+      "name": {
+        "es": "Garfio de escalada",
+        "en": "Grappling hook"
+      },
+      "categoria": "aventura",
+      "peso": 4,
+      "coste": 2
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "martillo_2014",
+    "source": "srd51",
+    "concept": "martillo",
+    "data": {
+      "name": {
+        "es": "Martillo",
+        "en": "Hammer"
+      },
+      "categoria": "aventura",
+      "peso": 3,
+      "coste": 1
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "mazo_2014",
+    "source": "srd51",
+    "concept": "mazo",
+    "data": {
+      "name": {
+        "es": "Mazo",
+        "en": "Hammer, sledge"
+      },
+      "categoria": "aventura",
+      "peso": 10,
+      "coste": 2
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "utiles_de_sanador_2014",
+    "source": "srd51",
+    "concept": "utiles_de_sanador",
+    "data": {
+      "name": {
+        "es": "Útiles de sanador",
+        "en": "Healer’s kit"
+      },
+      "categoria": "aventura",
+      "peso": 3,
+      "coste": 5
+    },
+    "mechanics": {
+      "resources": [
+        {
+          "key": "usos",
+          "label": {
+            "es": "Usos",
+            "en": "Uses"
+          },
+          "max": "10"
+        }
+      ],
+      "automation": "partial",
+      "manual": {
+        "es": "Estabilizar a una criatura gasta un uso",
+        "en": "Stabilizing a creature spends a use"
+      }
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "amuleto_simbolo_sagrado_2014",
+    "source": "srd51",
+    "concept": "amuleto_simbolo_sagrado",
+    "data": {
+      "name": {
+        "es": "Amuleto (símbolo sagrado)",
+        "en": "Amulet (holy symbol)"
+      },
+      "categoria": "simbolo_sagrado",
+      "peso": 1,
+      "coste": 5
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "emblema_simbolo_sagrado_2014",
+    "source": "srd51",
+    "concept": "emblema_simbolo_sagrado",
+    "data": {
+      "name": {
+        "es": "Emblema (símbolo sagrado)",
+        "en": "Emblem (holy symbol)"
+      },
+      "categoria": "simbolo_sagrado",
+      "peso": 0,
+      "coste": 5
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "relicario_simbolo_sagrado_2014",
+    "source": "srd51",
+    "concept": "relicario_simbolo_sagrado",
+    "data": {
+      "name": {
+        "es": "Relicario (símbolo sagrado)",
+        "en": "Reliquary (holy symbol)"
+      },
+      "categoria": "simbolo_sagrado",
+      "peso": 2,
+      "coste": 5
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "agua_bendita_2014",
+    "source": "srd51",
+    "concept": "agua_bendita",
+    "data": {
+      "name": {
+        "es": "Agua bendita (frasco)",
+        "en": "Holy water (flask)"
+      },
+      "categoria": "aventura",
+      "peso": 1,
+      "coste": 25
+    },
+    "mechanics": {
+      "actions": [
+        {
+          "key": "lanzar",
+          "label": {
+            "es": "Lanzar",
+            "en": "Throw"
+          },
+          "activation": "action",
+          "range": {
+            "es": "6 m",
+            "en": "20 feet"
+          },
+          "attack": "@caracteristicas.des.mod",
+          "damage": [
+            {
+              "formula": "2d6",
+              "type": "radiante"
+            }
+          ]
+        }
+      ],
+      "automation": "partial",
+      "manual": {
+        "es": "Solo daña a infernales y muertos vivientes",
+        "en": "Only harms fiends and undead"
+      }
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 70
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "reloj_de_arena_2014",
+    "source": "srd51",
+    "concept": "reloj_de_arena",
+    "data": {
+      "name": {
+        "es": "Reloj de arena",
+        "en": "Hourglass"
+      },
+      "categoria": "aventura",
+      "peso": 1,
+      "coste": 25
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "trampa_para_cazar_2014",
+    "source": "srd51",
+    "concept": "trampa_para_cazar",
+    "data": {
+      "name": {
+        "es": "Trampa para cazar",
+        "en": "Hunting trap"
+      },
+      "categoria": "aventura",
+      "peso": 25,
+      "coste": 5
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "tinta_2014",
+    "source": "srd51",
+    "concept": "tinta",
+    "data": {
+      "name": {
+        "es": "Tinta (frasco de 30 ml)",
+        "en": "Ink (1 ounce bottle)"
+      },
+      "categoria": "aventura",
+      "peso": 0,
+      "coste": 10
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "pluma_2014",
+    "source": "srd51",
+    "concept": "pluma",
+    "data": {
+      "name": {
+        "es": "Pluma (para escribir)",
+        "en": "Ink pen"
+      },
+      "categoria": "aventura",
+      "peso": 0,
+      "coste": 0.02
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "jarro_2014",
+    "source": "srd51",
+    "concept": "jarro",
+    "data": {
+      "name": {
+        "es": "Jarro o cántaro",
+        "en": "Jug or pitcher"
+      },
+      "categoria": "aventura",
+      "peso": 4,
+      "coste": 0.02
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "escalera_2014",
+    "source": "srd51",
+    "concept": "escalera",
+    "data": {
+      "name": {
+        "es": "Escalera (3 m)",
+        "en": "Ladder (10-foot)"
+      },
+      "categoria": "aventura",
+      "peso": 25,
+      "coste": 0.1
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "lampara_2014",
+    "source": "srd51",
+    "concept": "lampara",
+    "data": {
+      "name": {
+        "es": "Lámpara",
+        "en": "Lamp"
+      },
+      "categoria": "aventura",
+      "peso": 1,
+      "coste": 0.5
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "linterna_de_ojo_de_buey_2014",
+    "source": "srd51",
+    "concept": "linterna_de_ojo_de_buey",
+    "data": {
+      "name": {
+        "es": "Linterna de ojo de buey",
+        "en": "Lantern, bullseye"
+      },
+      "categoria": "aventura",
+      "peso": 2,
+      "coste": 10
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "linterna_sorda_2014",
+    "source": "srd51",
+    "concept": "linterna_sorda",
+    "data": {
+      "name": {
+        "es": "Linterna sorda",
+        "en": "Lantern, hooded"
+      },
+      "categoria": "aventura",
+      "peso": 2,
+      "coste": 5
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "cerradura_2014",
+    "source": "srd51",
+    "concept": "cerradura",
+    "data": {
+      "name": {
+        "es": "Cerradura",
+        "en": "Lock"
+      },
+      "categoria": "aventura",
+      "peso": 1,
+      "coste": 10
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "lupa_2014",
+    "source": "srd51",
+    "concept": "lupa",
+    "data": {
+      "name": {
+        "es": "Lupa",
+        "en": "Magnifying glass"
+      },
+      "categoria": "aventura",
+      "peso": 0,
+      "coste": 100
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "esposas_2014",
+    "source": "srd51",
+    "concept": "esposas",
+    "data": {
+      "name": {
+        "es": "Esposas",
+        "en": "Manacles"
+      },
+      "categoria": "aventura",
+      "peso": 6,
+      "coste": 2
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "utensilios_de_cocina_2014",
+    "source": "srd51",
+    "concept": "utensilios_de_cocina",
+    "data": {
+      "name": {
+        "es": "Utensilios de cocina",
+        "en": "Mess kit"
+      },
+      "categoria": "aventura",
+      "peso": 1,
+      "coste": 0.2
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "espejo_2014",
+    "source": "srd51",
+    "concept": "espejo",
+    "data": {
+      "name": {
+        "es": "Espejito de acero",
+        "en": "Mirror, steel"
+      },
+      "categoria": "aventura",
+      "peso": 0.5,
+      "coste": 5
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "aceite_2014",
+    "source": "srd51",
+    "concept": "aceite",
+    "data": {
+      "name": {
+        "es": "Aceite (frasco)",
+        "en": "Oil (flask)"
+      },
+      "categoria": "aventura",
+      "peso": 1,
+      "coste": 0.1
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 70
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "papel_2014",
+    "source": "srd51",
+    "concept": "papel",
+    "data": {
+      "name": {
+        "es": "Papel (una hoja)",
+        "en": "Paper (one sheet)"
+      },
+      "categoria": "aventura",
+      "peso": 0,
+      "coste": 0.2
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "pergamino_2014",
+    "source": "srd51",
+    "concept": "pergamino",
+    "data": {
+      "name": {
+        "es": "Pergamino (una hoja)",
+        "en": "Parchment (one sheet)"
+      },
+      "categoria": "aventura",
+      "peso": 0,
+      "coste": 0.1
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "perfume_2014",
+    "source": "srd51",
+    "concept": "perfume",
+    "data": {
+      "name": {
+        "es": "Perfume (un vial)",
+        "en": "Perfume (vial)"
+      },
+      "categoria": "aventura",
+      "peso": 0,
+      "coste": 5
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "pico_de_minero_2014",
+    "source": "srd51",
+    "concept": "pico_de_minero",
+    "data": {
+      "name": {
+        "es": "Pico de minero",
+        "en": "Pick, miner’s"
+      },
+      "categoria": "aventura",
+      "peso": 10,
+      "coste": 2
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "piton_2014",
+    "source": "srd51",
+    "concept": "piton",
+    "data": {
+      "name": {
+        "es": "Pitón",
+        "en": "Piton"
+      },
+      "categoria": "aventura",
+      "peso": 0.25,
+      "coste": 0.05
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "veneno_basico_2014",
+    "source": "srd51",
+    "concept": "veneno_basico",
+    "data": {
+      "name": {
+        "es": "Veneno básico (vial)",
+        "en": "Poison, basic (vial)"
+      },
+      "categoria": "aventura",
+      "peso": 0,
+      "coste": 100
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "vara_2014",
+    "source": "srd51",
+    "concept": "vara",
+    "data": {
+      "name": {
+        "es": "Vara (3 m)",
+        "en": "Pole (10-foot)"
+      },
+      "categoria": "aventura",
+      "peso": 7,
+      "coste": 0.05
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "olla_de_hierro_2014",
+    "source": "srd51",
+    "concept": "olla_de_hierro",
+    "data": {
+      "name": {
+        "es": "Olla de hierro",
+        "en": "Pot, iron"
+      },
+      "categoria": "aventura",
+      "peso": 10,
+      "coste": 2
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "pocion_de_curacion_2014",
+    "source": "srd51",
+    "concept": "pocion_de_curacion",
+    "data": {
+      "name": {
+        "es": "Poción de curación",
+        "en": "Potion of healing"
+      },
+      "categoria": "aventura",
+      "peso": 0.5,
+      "coste": 50
+    },
+    "mechanics": {
+      "actions": [
+        {
+          "key": "beber",
+          "label": {
+            "es": "Beber",
+            "en": "Drink"
+          },
+          "activation": "action",
+          "heal": "2d4 + 2"
+        }
+      ],
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "bolsa_2014",
+    "source": "srd51",
+    "concept": "bolsa",
+    "data": {
+      "name": {
+        "es": "Bolsa",
+        "en": "Pouch"
+      },
+      "categoria": "aventura",
+      "peso": 1,
+      "coste": 0.5
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 70
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "aljaba_2014",
+    "source": "srd51",
+    "concept": "aljaba",
+    "data": {
+      "name": {
+        "es": "Aljaba",
+        "en": "Quiver"
+      },
+      "categoria": "aventura",
+      "peso": 1,
+      "coste": 1
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 70
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "ariete_portatil_2014",
+    "source": "srd51",
+    "concept": "ariete_portatil",
+    "data": {
+      "name": {
+        "es": "Ariete portátil",
+        "en": "Ram, portable"
+      },
+      "categoria": "aventura",
+      "peso": 35,
+      "coste": 4
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 70
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "raciones_2014",
+    "source": "srd51",
+    "concept": "raciones",
+    "data": {
+      "name": {
+        "es": "Raciones (1 día)",
+        "en": "Rations (1 day)"
+      },
+      "categoria": "aventura",
+      "peso": 2,
+      "coste": 0.5
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "tunica_2014",
+    "source": "srd51",
+    "concept": "tunica",
+    "data": {
+      "name": {
+        "es": "Túnica",
+        "en": "Robes"
+      },
+      "categoria": "aventura",
+      "peso": 4,
+      "coste": 1
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "cuerda_2014",
+    "source": "srd51",
+    "concept": "cuerda",
+    "data": {
+      "name": {
+        "es": "Cuerda de cáñamo (15 m)",
+        "en": "Rope, hempen (50 feet)"
+      },
+      "categoria": "aventura",
+      "peso": 10,
+      "coste": 1
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "cuerda_de_seda_15_m_2014",
+    "source": "srd51",
+    "concept": "cuerda_de_seda_15_m",
+    "data": {
+      "name": {
+        "es": "Cuerda de seda (15 m)",
+        "en": "Rope, silk (50 feet)"
+      },
+      "categoria": "aventura",
+      "peso": 5,
+      "coste": 10
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "saco_2014",
+    "source": "srd51",
+    "concept": "saco",
+    "data": {
+      "name": {
+        "es": "Saco",
+        "en": "Sack"
+      },
+      "categoria": "aventura",
+      "peso": 0.5,
+      "coste": 0.01
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "balanza_de_mercader_2014",
+    "source": "srd51",
+    "concept": "balanza_de_mercader",
+    "data": {
+      "name": {
+        "es": "Balanza de mercader",
+        "en": "Scale, merchant’s"
+      },
+      "categoria": "aventura",
+      "peso": 3,
+      "coste": 5
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 70
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "lacre_2014",
+    "source": "srd51",
+    "concept": "lacre",
+    "data": {
+      "name": {
+        "es": "Lacre",
+        "en": "Sealing wax"
+      },
+      "categoria": "aventura",
+      "peso": 0,
+      "coste": 0.5
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "pala_2014",
+    "source": "srd51",
+    "concept": "pala",
+    "data": {
+      "name": {
+        "es": "Pala",
+        "en": "Shovel"
+      },
+      "categoria": "aventura",
+      "peso": 5,
+      "coste": 2
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "silbato_de_supervivencia_2014",
+    "source": "srd51",
+    "concept": "silbato_de_supervivencia",
+    "data": {
+      "name": {
+        "es": "Silbato de supervivencia",
+        "en": "Signal whistle"
+      },
+      "categoria": "aventura",
+      "peso": 0,
+      "coste": 0.05
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "anillo_de_sellar_2014",
+    "source": "srd51",
+    "concept": "anillo_de_sellar",
+    "data": {
+      "name": {
+        "es": "Anillo de sellar",
+        "en": "Signet ring"
+      },
+      "categoria": "aventura",
+      "peso": 0,
+      "coste": 5
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 70
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "jabon_2014",
+    "source": "srd51",
+    "concept": "jabon",
+    "data": {
+      "name": {
+        "es": "Jabón",
+        "en": "Soap"
+      },
+      "categoria": "aventura",
+      "peso": 0,
+      "coste": 0.02
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "libro_de_conjuros_2014",
+    "source": "srd51",
+    "concept": "libro_de_conjuros",
+    "data": {
+      "name": {
+        "es": "Libro de conjuros",
+        "en": "Spellbook"
+      },
+      "categoria": "aventura",
+      "peso": 3,
+      "coste": 50
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "puntas_de_hierro_2014",
+    "source": "srd51",
+    "concept": "puntas_de_hierro",
+    "data": {
+      "name": {
+        "es": "Pinchos de hierro (10)",
+        "en": "Spikes, iron (10)"
+      },
+      "categoria": "aventura",
+      "peso": 5,
+      "coste": 1
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "catalejo_2014",
+    "source": "srd51",
+    "concept": "catalejo",
+    "data": {
+      "name": {
+        "es": "Catalejo",
+        "en": "Spyglass"
+      },
+      "categoria": "aventura",
+      "peso": 1,
+      "coste": 1000
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "tienda_2014",
+    "source": "srd51",
+    "concept": "tienda",
+    "data": {
+      "name": {
+        "es": "Tienda para dos personas",
+        "en": "Tent, two-person"
+      },
+      "categoria": "aventura",
+      "peso": 20,
+      "coste": 2
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "yesquero_2014",
+    "source": "srd51",
+    "concept": "yesquero",
+    "data": {
+      "name": {
+        "es": "Yesquero",
+        "en": "Tinderbox"
+      },
+      "categoria": "aventura",
+      "peso": 1,
+      "coste": 0.5
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "antorcha_2014",
+    "source": "srd51",
+    "concept": "antorcha",
+    "data": {
+      "name": {
+        "es": "Antorcha",
+        "en": "Torch"
+      },
+      "categoria": "aventura",
+      "peso": 1,
+      "coste": 0.01
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 70
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "vial_2014",
+    "source": "srd51",
+    "concept": "vial",
+    "data": {
+      "name": {
+        "es": "Vial",
+        "en": "Vial"
+      },
+      "categoria": "aventura",
+      "peso": 0,
+      "coste": 1
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "cantimplora_2014",
+    "source": "srd51",
+    "concept": "cantimplora",
+    "data": {
+      "name": {
+        "es": "Cantimplora",
+        "en": "Waterskin"
+      },
+      "categoria": "aventura",
+      "peso": 5,
+      "coste": 0.2
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "piedra_de_afilar_2014",
+    "source": "srd51",
+    "concept": "piedra_de_afilar",
+    "data": {
+      "name": {
+        "es": "Piedra de afilar",
+        "en": "Whetstone"
+      },
+      "categoria": "aventura",
+      "peso": 1,
+      "coste": 0.01
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 69,
+        "es": 71
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "suministros_de_alquimista_2014",
+    "source": "srd51",
+    "concept": "suministros_de_alquimista",
+    "data": {
+      "name": {
+        "es": "Suministros de alquimista",
+        "en": "Alchemist’s supplies"
+      },
+      "categoria": "herramienta_artesano",
+      "peso": 8,
+      "coste": 50
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 70,
+        "es": 72
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "suministros_de_cervecero_2014",
+    "source": "srd51",
+    "concept": "suministros_de_cervecero",
+    "data": {
+      "name": {
+        "es": "Suministros de cervecero",
+        "en": "Brewer’s supplies"
+      },
+      "categoria": "herramienta_artesano",
+      "peso": 9,
+      "coste": 20
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 70,
+        "es": 72
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "suministros_de_caligrafo_2014",
+    "source": "srd51",
+    "concept": "suministros_de_caligrafo",
+    "data": {
+      "name": {
+        "es": "Suministros de calígrafo",
+        "en": "Calligrapher's supplies"
+      },
+      "categoria": "herramienta_artesano",
+      "peso": 5,
+      "coste": 10
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 70,
+        "es": 72
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "herramientas_de_carpintero_2014",
+    "source": "srd51",
+    "concept": "herramientas_de_carpintero",
+    "data": {
+      "name": {
+        "es": "Herramientas de carpintero",
+        "en": "Carpenter’s tools"
+      },
+      "categoria": "herramienta_artesano",
+      "peso": 6,
+      "coste": 8
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 70,
+        "es": 72
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "herramientas_de_cartografo_2014",
+    "source": "srd51",
+    "concept": "herramientas_de_cartografo",
+    "data": {
+      "name": {
+        "es": "Herramientas de cartógrafo",
+        "en": "Cartographer’s tools"
+      },
+      "categoria": "herramienta_artesano",
+      "peso": 6,
+      "coste": 15
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 70,
+        "es": 72
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "herramientas_de_zapatero_2014",
+    "source": "srd51",
+    "concept": "herramientas_de_zapatero",
+    "data": {
+      "name": {
+        "es": "Herramientas de zapatero",
+        "en": "Cobbler’s tools"
+      },
+      "categoria": "herramienta_artesano",
+      "peso": 5,
+      "coste": 5
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 70,
+        "es": 72
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "utiles_de_cocinero_2014",
+    "source": "srd51",
+    "concept": "utiles_de_cocinero",
+    "data": {
+      "name": {
+        "es": "Útiles de cocinero",
+        "en": "Cook’s utensils"
+      },
+      "categoria": "herramienta_artesano",
+      "peso": 8,
+      "coste": 1
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 70,
+        "es": 72
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "herramientas_de_soplador_de_vidrio_2014",
+    "source": "srd51",
+    "concept": "herramientas_de_soplador_de_vidrio",
+    "data": {
+      "name": {
+        "es": "Herramientas de soplador de vidrio",
+        "en": "Glassblower’s tools"
+      },
+      "categoria": "herramienta_artesano",
+      "peso": 5,
+      "coste": 30
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 70,
+        "es": 72
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "herramientas_de_joyero_2014",
+    "source": "srd51",
+    "concept": "herramientas_de_joyero",
+    "data": {
+      "name": {
+        "es": "Herramientas de joyero",
+        "en": "Jeweler’s tools"
+      },
+      "categoria": "herramienta_artesano",
+      "peso": 2,
+      "coste": 25
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 70,
+        "es": 72
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "herramientas_de_curtidor_2014",
+    "source": "srd51",
+    "concept": "herramientas_de_curtidor",
+    "data": {
+      "name": {
+        "es": "Herramientas de curtidor",
+        "en": "Leatherworker’s tools"
+      },
+      "categoria": "herramienta_artesano",
+      "peso": 5,
+      "coste": 5
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 70,
+        "es": 72
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "herramientas_de_albanil_2014",
+    "source": "srd51",
+    "concept": "herramientas_de_albanil",
+    "data": {
+      "name": {
+        "es": "Herramientas de albañil",
+        "en": "Mason’s tools"
+      },
+      "categoria": "herramienta_artesano",
+      "peso": 8,
+      "coste": 10
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 70,
+        "es": 72
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "suministros_de_pintor_2014",
+    "source": "srd51",
+    "concept": "suministros_de_pintor",
+    "data": {
+      "name": {
+        "es": "Suministros de pintor",
+        "en": "Painter’s supplies"
+      },
+      "categoria": "herramienta_artesano",
+      "peso": 5,
+      "coste": 10
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 70,
+        "es": 72
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "herramientas_de_alfarero_2014",
+    "source": "srd51",
+    "concept": "herramientas_de_alfarero",
+    "data": {
+      "name": {
+        "es": "Herramientas de alfarero",
+        "en": "Potter’s tools"
+      },
+      "categoria": "herramienta_artesano",
+      "peso": 3,
+      "coste": 10
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 70,
+        "es": 72
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "herramientas_de_herrero_2014",
+    "source": "srd51",
+    "concept": "herramientas_de_herrero",
+    "data": {
+      "name": {
+        "es": "Herramientas de herrero",
+        "en": "Smith’s tools"
+      },
+      "categoria": "herramienta_artesano",
+      "peso": 8,
+      "coste": 20
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 70,
+        "es": 72
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "herramientas_de_manitas_2014",
+    "source": "srd51",
+    "concept": "herramientas_de_manitas",
+    "data": {
+      "name": {
+        "es": "Herramientas de manitas",
+        "en": "Tinker’s tools"
+      },
+      "categoria": "herramienta_artesano",
+      "peso": 10,
+      "coste": 50
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 70,
+        "es": 72
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "herramientas_de_tejedor_2014",
+    "source": "srd51",
+    "concept": "herramientas_de_tejedor",
+    "data": {
+      "name": {
+        "es": "Herramientas de tejedor",
+        "en": "Weaver’s tools"
+      },
+      "categoria": "herramienta_artesano",
+      "peso": 5,
+      "coste": 1
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 70,
+        "es": 72
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "herramientas_de_ebanista_2014",
+    "source": "srd51",
+    "concept": "herramientas_de_ebanista",
+    "data": {
+      "name": {
+        "es": "Herramientas de ebanista",
+        "en": "Woodcarver’s tools"
+      },
+      "categoria": "herramienta_artesano",
+      "peso": 5,
+      "coste": 1
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 70,
+        "es": 72
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "utiles_para_disfrazarse_2014",
+    "source": "srd51",
+    "concept": "utiles_para_disfrazarse",
+    "data": {
+      "name": {
+        "es": "Útiles para disfrazarse",
+        "en": "Disguise kit"
+      },
+      "categoria": "herramienta",
+      "peso": 3,
+      "coste": 25
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 70,
+        "es": 72
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "utiles_para_falsificar_2014",
+    "source": "srd51",
+    "concept": "utiles_para_falsificar",
+    "data": {
+      "name": {
+        "es": "Útiles para falsificar",
+        "en": "Forgery kit"
+      },
+      "categoria": "herramienta",
+      "peso": 5,
+      "coste": 15
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 70,
+        "es": 72
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "dados_2014",
+    "source": "srd51",
+    "concept": "dados",
+    "data": {
+      "name": {
+        "es": "Dados",
+        "en": "Dice set"
+      },
+      "categoria": "juego",
+      "peso": 0,
+      "coste": 0.1
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 70,
+        "es": 72
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "naipes_2014",
+    "source": "srd51",
+    "concept": "naipes",
+    "data": {
+      "name": {
+        "es": "Naipes",
+        "en": "Playing card set"
+      },
+      "categoria": "juego",
+      "peso": 0,
+      "coste": 0.5
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 70,
+        "es": 72
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "utiles_de_herborista_2014",
+    "source": "srd51",
+    "concept": "utiles_de_herborista",
+    "data": {
+      "name": {
+        "es": "Útiles de herborista",
+        "en": "Herbalism kit"
+      },
+      "categoria": "herramienta",
+      "peso": 3,
+      "coste": 5
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 70,
+        "es": 72
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "gaita_2014",
+    "source": "srd51",
+    "concept": "gaita",
+    "data": {
+      "name": {
+        "es": "Gaita",
+        "en": "Bagpipes"
+      },
+      "categoria": "instrumento",
+      "peso": 6,
+      "coste": 30
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 70,
+        "es": 72
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "tambor_2014",
+    "source": "srd51",
+    "concept": "tambor",
+    "data": {
+      "name": {
+        "es": "Tambor",
+        "en": "Drum"
+      },
+      "categoria": "instrumento",
+      "peso": 3,
+      "coste": 6
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 70,
+        "es": 72
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "dulcemele_2014",
+    "source": "srd51",
+    "concept": "dulcemele",
+    "data": {
+      "name": {
+        "es": "Dulcémele",
+        "en": "Dulcimer"
+      },
+      "categoria": "instrumento",
+      "peso": 10,
+      "coste": 25
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 70,
+        "es": 72
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "flauta_2014",
+    "source": "srd51",
+    "concept": "flauta",
+    "data": {
+      "name": {
+        "es": "Flauta",
+        "en": "Flute"
+      },
+      "categoria": "instrumento",
+      "peso": 1,
+      "coste": 2
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 70,
+        "es": 72
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "laud_2014",
+    "source": "srd51",
+    "concept": "laud",
+    "data": {
+      "name": {
+        "es": "Laúd",
+        "en": "Lute"
+      },
+      "categoria": "instrumento",
+      "peso": 2,
+      "coste": 35
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 70,
+        "es": 72
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "lira_2014",
+    "source": "srd51",
+    "concept": "lira",
+    "data": {
+      "name": {
+        "es": "Lira",
+        "en": "Lyre"
+      },
+      "categoria": "instrumento",
+      "peso": 2,
+      "coste": 30
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 70,
+        "es": 72
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "cuerno_2014",
+    "source": "srd51",
+    "concept": "cuerno",
+    "data": {
+      "name": {
+        "es": "Cuerno",
+        "en": "Horn"
+      },
+      "categoria": "instrumento",
+      "peso": 2,
+      "coste": 3
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 70,
+        "es": 72
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "flauta_de_pan_2014",
+    "source": "srd51",
+    "concept": "flauta_de_pan",
+    "data": {
+      "name": {
+        "es": "Flauta de pan",
+        "en": "Pan flute"
+      },
+      "categoria": "instrumento",
+      "peso": 2,
+      "coste": 12
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 70,
+        "es": 72
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "chirimia_2014",
+    "source": "srd51",
+    "concept": "chirimia",
+    "data": {
+      "name": {
+        "es": "Chirimía",
+        "en": "Shawm"
+      },
+      "categoria": "instrumento",
+      "peso": 1,
+      "coste": 2
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 70,
+        "es": 72
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "viola_2014",
+    "source": "srd51",
+    "concept": "viola",
+    "data": {
+      "name": {
+        "es": "Viola",
+        "en": "Viol"
+      },
+      "categoria": "instrumento",
+      "peso": 1,
+      "coste": 30
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 70,
+        "es": 72
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "herramientas_de_navegante_2014",
+    "source": "srd51",
+    "concept": "herramientas_de_navegante",
+    "data": {
+      "name": {
+        "es": "Herramientas de navegante",
+        "en": "Navigator’s tools"
+      },
+      "categoria": "herramienta",
+      "peso": 2,
+      "coste": 25
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 70,
+        "es": 72
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "utiles_de_envenenador_2014",
+    "source": "srd51",
+    "concept": "utiles_de_envenenador",
+    "data": {
+      "name": {
+        "es": "Útiles de envenenador",
+        "en": "Poisoner’s kit"
+      },
+      "categoria": "herramienta",
+      "peso": 2,
+      "coste": 50
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 70,
+        "es": 72
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "herramientas_de_ladron_2014",
+    "source": "srd51",
+    "concept": "herramientas_de_ladron",
+    "data": {
+      "name": {
+        "es": "Herramientas de ladrón",
+        "en": "Thieves’ tools"
+      },
+      "categoria": "herramienta",
+      "peso": 1,
+      "coste": 25
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 70,
+        "es": 72
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "acido_2024",
+    "source": "srd521",
+    "concept": "acido",
+    "data": {
+      "name": {
+        "es": "Ácido",
+        "en": "Acid"
+      },
+      "categoria": "aventura",
+      "peso": 1,
+      "coste": 25
+    },
+    "mechanics": {
+      "actions": [
+        {
+          "key": "lanzar",
+          "label": {
+            "es": "Lanzar",
+            "en": "Throw"
+          },
+          "activation": "action",
+          "range": {
+            "es": "6 m",
+            "en": "20 feet"
+          },
+          "save": {
+            "ability": "des",
+            "dc": "8 + @caracteristicas.des.mod + @competencia",
+            "success": "none"
+          },
+          "damage": [
+            {
+              "formula": "2d6",
+              "type": "acido"
+            }
+          ]
+        }
+      ],
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "fuego_de_alquimista_2024",
+    "source": "srd521",
+    "concept": "fuego_de_alquimista",
+    "data": {
+      "name": {
+        "es": "Fuego de alquimista",
+        "en": "Alchemist’s Fire"
+      },
+      "categoria": "aventura",
+      "peso": 1,
+      "coste": 50
+    },
+    "mechanics": {
+      "actions": [
+        {
+          "key": "lanzar",
+          "label": {
+            "es": "Lanzar",
+            "en": "Throw"
+          },
+          "activation": "action",
+          "range": {
+            "es": "6 m",
+            "en": "20 feet"
+          },
+          "save": {
+            "ability": "des",
+            "dc": "8 + @caracteristicas.des.mod + @competencia",
+            "success": "none"
+          },
+          "damage": [
+            {
+              "formula": "1d4",
+              "type": "fuego"
+            }
+          ]
+        }
+      ],
+      "automation": "partial",
+      "manual": {
+        "es": "El objetivo queda en llamas",
+        "en": "The target starts burning"
+      }
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "antitoxina_2024",
+    "source": "srd521",
+    "concept": "antitoxina",
+    "data": {
+      "name": {
+        "es": "Antitoxina",
+        "en": "Antitoxin"
+      },
+      "categoria": "aventura",
+      "peso": 0,
+      "coste": 50
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "mochila_2024",
+    "source": "srd521",
+    "concept": "mochila",
+    "data": {
+      "name": {
+        "es": "Mochila",
+        "en": "Backpack"
+      },
+      "categoria": "paquete",
+      "peso": 5,
+      "coste": 2
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "bolas_de_metal_2024",
+    "source": "srd521",
+    "concept": "bolas_de_metal",
+    "data": {
+      "name": {
+        "es": "Bolas de metal",
+        "en": "Ball Bearings"
+      },
+      "categoria": "aventura",
+      "peso": 2,
+      "coste": 1
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "barril_2024",
+    "source": "srd521",
+    "concept": "barril",
+    "data": {
+      "name": {
+        "es": "Barril",
+        "en": "Barrel"
+      },
+      "categoria": "aventura",
+      "peso": 70,
+      "coste": 2
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "cesta_2024",
+    "source": "srd521",
+    "concept": "cesta",
+    "data": {
+      "name": {
+        "es": "Cesta",
+        "en": "Basket"
+      },
+      "categoria": "aventura",
+      "peso": 2,
+      "coste": 0.4
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "petate_2024",
+    "source": "srd521",
+    "concept": "petate",
+    "data": {
+      "name": {
+        "es": "Petate",
+        "en": "Bedroll"
+      },
+      "categoria": "aventura",
+      "peso": 7,
+      "coste": 1
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "campana_2024",
+    "source": "srd521",
+    "concept": "campana",
+    "data": {
+      "name": {
+        "es": "Campana",
+        "en": "Bell"
+      },
+      "categoria": "aventura",
+      "peso": 0,
+      "coste": 1
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "manta_2024",
+    "source": "srd521",
+    "concept": "manta",
+    "data": {
+      "name": {
+        "es": "Manta",
+        "en": "Blanket"
+      },
+      "categoria": "aventura",
+      "peso": 3,
+      "coste": 0.5
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "polipasto_2024",
+    "source": "srd521",
+    "concept": "polipasto",
+    "data": {
+      "name": {
+        "es": "Polipasto",
+        "en": "Block and Tackle"
+      },
+      "categoria": "aventura",
+      "peso": 5,
+      "coste": 1
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "libro_2024",
+    "source": "srd521",
+    "concept": "libro",
+    "data": {
+      "name": {
+        "es": "Libro",
+        "en": "Book"
+      },
+      "categoria": "aventura",
+      "peso": 5,
+      "coste": 25
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "botella_de_cristal_2024",
+    "source": "srd521",
+    "concept": "botella_de_cristal",
+    "data": {
+      "name": {
+        "es": "Botella de cristal",
+        "en": "Bottle, Glass"
+      },
+      "categoria": "aventura",
+      "peso": 2,
+      "coste": 2
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "cubo_2024",
+    "source": "srd521",
+    "concept": "cubo",
+    "data": {
+      "name": {
+        "es": "Cubo",
+        "en": "Bucket"
+      },
+      "categoria": "aventura",
+      "peso": 2,
+      "coste": 0.05
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "paquete_de_ladron_2024",
+    "source": "srd521",
+    "concept": "paquete_de_ladron",
+    "data": {
+      "name": {
+        "es": "Paquete de ladrón",
+        "en": "Burglar’s Pack"
+      },
+      "categoria": "paquete",
+      "peso": 42,
+      "coste": 16
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "abrojos_2024",
+    "source": "srd521",
+    "concept": "abrojos",
+    "data": {
+      "name": {
+        "es": "Abrojos",
+        "en": "Caltrops"
+      },
+      "categoria": "aventura",
+      "peso": 2,
+      "coste": 1
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "vela_2024",
+    "source": "srd521",
+    "concept": "vela",
+    "data": {
+      "name": {
+        "es": "Vela",
+        "en": "Candle"
+      },
+      "categoria": "aventura",
+      "peso": 0,
+      "coste": 0.01
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "estuche_para_virotes_de_ballesta_2024",
+    "source": "srd521",
+    "concept": "estuche_para_virotes_de_ballesta",
+    "data": {
+      "name": {
+        "es": "Estuche para virotes de ballesta",
+        "en": "Case, Crossbow Bolt"
+      },
+      "categoria": "aventura",
+      "peso": 1,
+      "coste": 1
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "estuche_para_mapas_o_pergaminos_2024",
+    "source": "srd521",
+    "concept": "estuche_para_mapas_o_pergaminos",
+    "data": {
+      "name": {
+        "es": "Estuche para mapas o pergaminos",
+        "en": "Case, Map or Scroll"
+      },
+      "categoria": "aventura",
+      "peso": 1,
+      "coste": 1
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "cadena_2024",
+    "source": "srd521",
+    "concept": "cadena",
+    "data": {
+      "name": {
+        "es": "Cadena",
+        "en": "Chain"
+      },
+      "categoria": "aventura",
+      "peso": 10,
+      "coste": 5
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "cofre_2024",
+    "source": "srd521",
+    "concept": "cofre",
+    "data": {
+      "name": {
+        "es": "Cofre",
+        "en": "Chest"
+      },
+      "categoria": "aventura",
+      "peso": 25,
+      "coste": 5
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "utiles_de_escalada_2024",
+    "source": "srd521",
+    "concept": "utiles_de_escalada",
+    "data": {
+      "name": {
+        "es": "Útiles de escalada",
+        "en": "Climber’s Kit"
+      },
+      "categoria": "aventura",
+      "peso": 12,
+      "coste": 25
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "ropas_de_calidad_2024",
+    "source": "srd521",
+    "concept": "ropas_de_calidad",
+    "data": {
+      "name": {
+        "es": "Ropas de calidad",
+        "en": "Clothes, Fine"
+      },
+      "categoria": "aventura",
+      "peso": 6,
+      "coste": 15
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "ropas_de_viaje_2024",
+    "source": "srd521",
+    "concept": "ropas_de_viaje",
+    "data": {
+      "name": {
+        "es": "Ropas de viaje",
+        "en": "Clothes, Traveler’s"
+      },
+      "categoria": "aventura",
+      "peso": 4,
+      "coste": 2
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "saquito_de_componentes_2024",
+    "source": "srd521",
+    "concept": "saquito_de_componentes",
+    "data": {
+      "name": {
+        "es": "Saquito de componentes",
+        "en": "Component Pouch"
+      },
+      "categoria": "aventura",
+      "peso": 2,
+      "coste": 25
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "disfraz_2024",
+    "source": "srd521",
+    "concept": "disfraz",
+    "data": {
+      "name": {
+        "es": "Disfraz",
+        "en": "Costume"
+      },
+      "categoria": "aventura",
+      "peso": 4,
+      "coste": 5
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "palanqueta_2024",
+    "source": "srd521",
+    "concept": "palanqueta",
+    "data": {
+      "name": {
+        "es": "Palanqueta",
+        "en": "Crowbar"
+      },
+      "categoria": "aventura",
+      "peso": 5,
+      "coste": 2
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "paquete_de_diplomatico_2024",
+    "source": "srd521",
+    "concept": "paquete_de_diplomatico",
+    "data": {
+      "name": {
+        "es": "Paquete de diplomático",
+        "en": "Diplomat’s Pack"
+      },
+      "categoria": "paquete",
+      "peso": 39,
+      "coste": 39
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "paquete_de_explorador_de_mazmorras_2024",
+    "source": "srd521",
+    "concept": "paquete_de_explorador_de_mazmorras",
+    "data": {
+      "name": {
+        "es": "Paquete de explorador de mazmorras",
+        "en": "Dungeoneer’s Pack"
+      },
+      "categoria": "paquete",
+      "peso": 55,
+      "coste": 12
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "paquete_de_artista_2024",
+    "source": "srd521",
+    "concept": "paquete_de_artista",
+    "data": {
+      "name": {
+        "es": "Paquete de artista",
+        "en": "Entertainer’s Pack"
+      },
+      "categoria": "paquete",
+      "peso": 58.5,
+      "coste": 40
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "paquete_de_explorador_2024",
+    "source": "srd521",
+    "concept": "paquete_de_explorador",
+    "data": {
+      "name": {
+        "es": "Paquete de explorador",
+        "en": "Explorer’s Pack"
+      },
+      "categoria": "paquete",
+      "peso": 55,
+      "coste": 10
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "frasco_2024",
+    "source": "srd521",
+    "concept": "frasco",
+    "data": {
+      "name": {
+        "es": "Frasco",
+        "en": "Flask"
+      },
+      "categoria": "aventura",
+      "peso": 1,
+      "coste": 0.02
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "garfio_de_escalada_2024",
+    "source": "srd521",
+    "concept": "garfio_de_escalada",
+    "data": {
+      "name": {
+        "es": "Garfio de escalada",
+        "en": "Grappling Hook"
+      },
+      "categoria": "aventura",
+      "peso": 4,
+      "coste": 2
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "utiles_de_sanador_2024",
+    "source": "srd521",
+    "concept": "utiles_de_sanador",
+    "data": {
+      "name": {
+        "es": "Útiles de sanador",
+        "en": "Healer’s Kit"
+      },
+      "categoria": "aventura",
+      "peso": 3,
+      "coste": 5
+    },
+    "mechanics": {
+      "resources": [
+        {
+          "key": "usos",
+          "label": {
+            "es": "Usos",
+            "en": "Uses"
+          },
+          "max": "10"
+        }
+      ],
+      "automation": "partial",
+      "manual": {
+        "es": "Estabilizar a una criatura gasta un uso",
+        "en": "Stabilizing a creature spends a use"
+      }
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "agua_bendita_2024",
+    "source": "srd521",
+    "concept": "agua_bendita",
+    "data": {
+      "name": {
+        "es": "Agua bendita",
+        "en": "Holy Water"
+      },
+      "categoria": "aventura",
+      "peso": 1,
+      "coste": 25
+    },
+    "mechanics": {
+      "actions": [
+        {
+          "key": "lanzar",
+          "label": {
+            "es": "Lanzar",
+            "en": "Throw"
+          },
+          "activation": "action",
+          "range": {
+            "es": "6 m",
+            "en": "20 feet"
+          },
+          "save": {
+            "ability": "des",
+            "dc": "8 + @caracteristicas.des.mod + @competencia",
+            "success": "none"
+          },
+          "damage": [
+            {
+              "formula": "2d8",
+              "type": "radiante"
+            }
+          ]
+        }
+      ],
+      "automation": "partial",
+      "manual": {
+        "es": "Solo daña a infernales y muertos vivientes",
+        "en": "Only harms fiends and undead"
+      }
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "trampa_para_cazar_2024",
+    "source": "srd521",
+    "concept": "trampa_para_cazar",
+    "data": {
+      "name": {
+        "es": "Trampa para cazar",
+        "en": "Hunting Trap"
+      },
+      "categoria": "aventura",
+      "peso": 25,
+      "coste": 5
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "tinta_2024",
+    "source": "srd521",
+    "concept": "tinta",
+    "data": {
+      "name": {
+        "es": "Tinta",
+        "en": "Ink"
+      },
+      "categoria": "aventura",
+      "peso": 0,
+      "coste": 10
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "pluma_2024",
+    "source": "srd521",
+    "concept": "pluma",
+    "data": {
+      "name": {
+        "es": "Pluma",
+        "en": "Ink Pen"
+      },
+      "categoria": "aventura",
+      "peso": 0,
+      "coste": 0.02
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "jarro_2024",
+    "source": "srd521",
+    "concept": "jarro",
+    "data": {
+      "name": {
+        "es": "Jarro",
+        "en": "Jug"
+      },
+      "categoria": "aventura",
+      "peso": 4,
+      "coste": 0.02
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "escalera_2024",
+    "source": "srd521",
+    "concept": "escalera",
+    "data": {
+      "name": {
+        "es": "Escalera",
+        "en": "Ladder"
+      },
+      "categoria": "aventura",
+      "peso": 25,
+      "coste": 0.1
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "lampara_2024",
+    "source": "srd521",
+    "concept": "lampara",
+    "data": {
+      "name": {
+        "es": "Lámpara",
+        "en": "Lamp"
+      },
+      "categoria": "aventura",
+      "peso": 1,
+      "coste": 0.5
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "linterna_de_ojo_de_buey_2024",
+    "source": "srd521",
+    "concept": "linterna_de_ojo_de_buey",
+    "data": {
+      "name": {
+        "es": "Linterna de ojo de buey",
+        "en": "Lantern, Bullseye"
+      },
+      "categoria": "aventura",
+      "peso": 2,
+      "coste": 10
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "linterna_sorda_2024",
+    "source": "srd521",
+    "concept": "linterna_sorda",
+    "data": {
+      "name": {
+        "es": "Linterna sorda",
+        "en": "Lantern, Hooded"
+      },
+      "categoria": "aventura",
+      "peso": 2,
+      "coste": 5
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "cerradura_2024",
+    "source": "srd521",
+    "concept": "cerradura",
+    "data": {
+      "name": {
+        "es": "Cerradura",
+        "en": "Lock"
+      },
+      "categoria": "aventura",
+      "peso": 1,
+      "coste": 10
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "lupa_2024",
+    "source": "srd521",
+    "concept": "lupa",
+    "data": {
+      "name": {
+        "es": "Lupa",
+        "en": "Magnifying Glass"
+      },
+      "categoria": "aventura",
+      "peso": 0,
+      "coste": 100
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "esposas_2024",
+    "source": "srd521",
+    "concept": "esposas",
+    "data": {
+      "name": {
+        "es": "Esposas",
+        "en": "Manacles"
+      },
+      "categoria": "aventura",
+      "peso": 6,
+      "coste": 2
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "mapa_2024",
+    "source": "srd521",
+    "concept": "mapa",
+    "data": {
+      "name": {
+        "es": "Mapa",
+        "en": "Map"
+      },
+      "categoria": "aventura",
+      "peso": 0,
+      "coste": 1
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "espejo_2024",
+    "source": "srd521",
+    "concept": "espejo",
+    "data": {
+      "name": {
+        "es": "Espejo",
+        "en": "Mirror"
+      },
+      "categoria": "aventura",
+      "peso": 0.5,
+      "coste": 5
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "red_2024",
+    "source": "srd521",
+    "concept": "red",
+    "data": {
+      "name": {
+        "es": "Red",
+        "en": "Net"
+      },
+      "categoria": "aventura",
+      "peso": 3,
+      "coste": 1
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "aceite_2024",
+    "source": "srd521",
+    "concept": "aceite",
+    "data": {
+      "name": {
+        "es": "Aceite",
+        "en": "Oil"
+      },
+      "categoria": "aventura",
+      "peso": 1,
+      "coste": 0.1
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "papel_2024",
+    "source": "srd521",
+    "concept": "papel",
+    "data": {
+      "name": {
+        "es": "Papel",
+        "en": "Paper"
+      },
+      "categoria": "aventura",
+      "peso": 0,
+      "coste": 0.2
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "pergamino_2024",
+    "source": "srd521",
+    "concept": "pergamino",
+    "data": {
+      "name": {
+        "es": "Pergamino",
+        "en": "Parchment"
+      },
+      "categoria": "aventura",
+      "peso": 0,
+      "coste": 0.1
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "perfume_2024",
+    "source": "srd521",
+    "concept": "perfume",
+    "data": {
+      "name": {
+        "es": "Perfume",
+        "en": "Perfume"
+      },
+      "categoria": "aventura",
+      "peso": 0,
+      "coste": 5
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "veneno_basico_2024",
+    "source": "srd521",
+    "concept": "veneno_basico",
+    "data": {
+      "name": {
+        "es": "Veneno básico",
+        "en": "Poison, Basic"
+      },
+      "categoria": "aventura",
+      "peso": 0,
+      "coste": 100
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "vara_2024",
+    "source": "srd521",
+    "concept": "vara",
+    "data": {
+      "name": {
+        "es": "Vara",
+        "en": "Pole"
+      },
+      "categoria": "aventura",
+      "peso": 7,
+      "coste": 0.05
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "olla_de_hierro_2024",
+    "source": "srd521",
+    "concept": "olla_de_hierro",
+    "data": {
+      "name": {
+        "es": "Olla de hierro",
+        "en": "Pot, Iron"
+      },
+      "categoria": "aventura",
+      "peso": 10,
+      "coste": 2
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "pocion_de_curacion_2024",
+    "source": "srd521",
+    "concept": "pocion_de_curacion",
+    "data": {
+      "name": {
+        "es": "Poción de curación",
+        "en": "Potion of Healing"
+      },
+      "categoria": "aventura",
+      "peso": 0.5,
+      "coste": 50
+    },
+    "mechanics": {
+      "actions": [
+        {
+          "key": "beber",
+          "label": {
+            "es": "Beber",
+            "en": "Drink"
+          },
+          "activation": "bonus",
+          "heal": "2d4 + 2"
+        }
+      ],
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "bolsa_2024",
+    "source": "srd521",
+    "concept": "bolsa",
+    "data": {
+      "name": {
+        "es": "Bolsa",
+        "en": "Pouch"
+      },
+      "categoria": "aventura",
+      "peso": 1,
+      "coste": 0.5
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "paquete_de_sacerdote_2024",
+    "source": "srd521",
+    "concept": "paquete_de_sacerdote",
+    "data": {
+      "name": {
+        "es": "Paquete de sacerdote",
+        "en": "Priest’s Pack"
+      },
+      "categoria": "paquete",
+      "peso": 29,
+      "coste": 33
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "aljaba_2024",
+    "source": "srd521",
+    "concept": "aljaba",
+    "data": {
+      "name": {
+        "es": "Aljaba",
+        "en": "Quiver"
+      },
+      "categoria": "aventura",
+      "peso": 1,
+      "coste": 1
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "ariete_portatil_2024",
+    "source": "srd521",
+    "concept": "ariete_portatil",
+    "data": {
+      "name": {
+        "es": "Ariete portátil",
+        "en": "Ram, Portable"
+      },
+      "categoria": "aventura",
+      "peso": 35,
+      "coste": 4
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "raciones_2024",
+    "source": "srd521",
+    "concept": "raciones",
+    "data": {
+      "name": {
+        "es": "Raciones",
+        "en": "Rations"
+      },
+      "categoria": "aventura",
+      "peso": 2,
+      "coste": 0.5
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "tunica_2024",
+    "source": "srd521",
+    "concept": "tunica",
+    "data": {
+      "name": {
+        "es": "Túnica",
+        "en": "Robe"
+      },
+      "categoria": "aventura",
+      "peso": 4,
+      "coste": 1
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "cuerda_2024",
+    "source": "srd521",
+    "concept": "cuerda",
+    "data": {
+      "name": {
+        "es": "Cuerda",
+        "en": "Rope"
+      },
+      "categoria": "aventura",
+      "peso": 5,
+      "coste": 1
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "saco_2024",
+    "source": "srd521",
+    "concept": "saco",
+    "data": {
+      "name": {
+        "es": "Saco",
+        "en": "Sack"
+      },
+      "categoria": "aventura",
+      "peso": 0.5,
+      "coste": 0.01
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "paquete_de_erudito_2024",
+    "source": "srd521",
+    "concept": "paquete_de_erudito",
+    "data": {
+      "name": {
+        "es": "Paquete de erudito",
+        "en": "Scholar’s Pack"
+      },
+      "categoria": "paquete",
+      "peso": 22,
+      "coste": 40
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "pala_2024",
+    "source": "srd521",
+    "concept": "pala",
+    "data": {
+      "name": {
+        "es": "Pala",
+        "en": "Shovel"
+      },
+      "categoria": "aventura",
+      "peso": 5,
+      "coste": 2
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "silbato_de_supervivencia_2024",
+    "source": "srd521",
+    "concept": "silbato_de_supervivencia",
+    "data": {
+      "name": {
+        "es": "Silbato de supervivencia",
+        "en": "Signal Whistle"
+      },
+      "categoria": "aventura",
+      "peso": 0,
+      "coste": 0.05
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "pergamino_de_conjuro_truco_2024",
+    "source": "srd521",
+    "concept": "pergamino_de_conjuro_truco",
+    "data": {
+      "name": {
+        "es": "Pergamino de conjuro (truco)",
+        "en": "Spell Scroll (Cantrip)"
+      },
+      "categoria": "aventura",
+      "peso": 0,
+      "coste": 30
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "pergamino_de_conjuro_nivel_1_2024",
+    "source": "srd521",
+    "concept": "pergamino_de_conjuro_nivel_1",
+    "data": {
+      "name": {
+        "es": "Pergamino de conjuro (nivel 1)",
+        "en": "Spell Scroll (Level 1)"
+      },
+      "categoria": "aventura",
+      "peso": 0,
+      "coste": 50
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "puntas_de_hierro_2024",
+    "source": "srd521",
+    "concept": "puntas_de_hierro",
+    "data": {
+      "name": {
+        "es": "Puntas de hierro",
+        "en": "Spikes, Iron"
+      },
+      "categoria": "aventura",
+      "peso": 5,
+      "coste": 1
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "catalejo_2024",
+    "source": "srd521",
+    "concept": "catalejo",
+    "data": {
+      "name": {
+        "es": "Catalejo",
+        "en": "Spyglass"
+      },
+      "categoria": "aventura",
+      "peso": 1,
+      "coste": 1000
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "cordel_2024",
+    "source": "srd521",
+    "concept": "cordel",
+    "data": {
+      "name": {
+        "es": "Cordel",
+        "en": "String"
+      },
+      "categoria": "aventura",
+      "peso": 0,
+      "coste": 0.1
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "tienda_2024",
+    "source": "srd521",
+    "concept": "tienda",
+    "data": {
+      "name": {
+        "es": "Tienda",
+        "en": "Tent"
+      },
+      "categoria": "aventura",
+      "peso": 20,
+      "coste": 2
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "yesquero_2024",
+    "source": "srd521",
+    "concept": "yesquero",
+    "data": {
+      "name": {
+        "es": "Yesquero",
+        "en": "Tinderbox"
+      },
+      "categoria": "aventura",
+      "peso": 1,
+      "coste": 0.5
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "antorcha_2024",
+    "source": "srd521",
+    "concept": "antorcha",
+    "data": {
+      "name": {
+        "es": "Antorcha",
+        "en": "Torch"
+      },
+      "categoria": "aventura",
+      "peso": 1,
+      "coste": 0.01
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "vial_2024",
+    "source": "srd521",
+    "concept": "vial",
+    "data": {
+      "name": {
+        "es": "Vial",
+        "en": "Vial"
+      },
+      "categoria": "aventura",
+      "peso": 0,
+      "coste": 1
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "cantimplora_2024",
+    "source": "srd521",
+    "concept": "cantimplora",
+    "data": {
+      "name": {
+        "es": "Cantimplora",
+        "en": "Waterskin"
+      },
+      "categoria": "aventura",
+      "peso": 5,
+      "coste": 0.2
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 95,
+        "es": 103
+      }
+    }
+  }
+]

@@ -121,10 +121,10 @@ export function weightOf(text: string): number | null {
   if (text === '—') return null
   const [amount = '0', unit = ''] = text.split(' ')
   if (unit.startsWith('lb')) {
-    const [a, b] = amount.split('/').map(Number)
+    const [a, b] = amount.replace('½', '.5').split('/').map(Number)
     return b ? (a as number) / b : (a as number)
   }
-  const value = Number(amount.replace(',', '.'))
+  const value = Number(amount.replace(',', '.').replace('½', '.5'))
   return unit === 'g' ? (value / 1000) * 2 : value * 2
 }
 
@@ -279,15 +279,17 @@ export function pair<R extends { name: string }>(
   signature: (r: R) => string,
   manual: Record<string, string> = {}
 ): [R, R][] {
+  const norm = (text: string) => text.replace(/[’‘]/g, "'")
+  const named = Object.fromEntries(Object.entries(manual).map(([k, v]) => [norm(k), norm(v)]))
   const pairs: [R, R][] = []
   const left = [...es]
   const take = (i: number) => left.splice(i, 1)[0] as R
   const pending: R[] = []
   for (const row of en) {
-    const named = manual[row.name]
-    if (named !== undefined) {
-      const i = left.findIndex((r) => r.name === named)
-      if (i < 0) throw new Error(`No está «${named}» en español`)
+    const wanted = named[norm(row.name)]
+    if (wanted !== undefined) {
+      const i = left.findIndex((r) => norm(r.name) === wanted)
+      if (i < 0) throw new Error(`No está «${wanted}» en español`)
       pairs.push([row, take(i)])
       continue
     }
@@ -306,11 +308,19 @@ export function pair<R extends { name: string }>(
   return pairs.sort((a, b) => en.indexOf(a[0]) - en.indexOf(b[0]))
 }
 
-/** El nombre en inglés de lo mismo en las dos ediciones («Crossbow, light» es «Light Crossbow»; «Padded», «Padded Armor») */
-export function sameName(name: string): string {
-  const lower = name.toLowerCase().replace(/ armor$/, '')
+/**
+ * El nombre en inglés de lo mismo en las dos ediciones («Crossbow, light» es «Light Crossbow»; «Padded», «Padded
+ * Armor»; «Acid (vial)», «Acid»), con los cambios de nombre que se digan
+ */
+export function sameName(name: string, renames: Record<string, string> = {}): string {
+  const lower = name
+    .toLowerCase()
+    .replace(/[’‘]/g, "'")
+    .replace(/ \(.*\)$/, '')
+    .replace(/ armor$/, '')
   const flipped = /^(.+), (.+)$/.exec(lower)
-  return flipped ? `${flipped[2]} ${flipped[1]}` : lower
+  const same = flipped ? `${flipped[2]} ${flipped[1]}` : lower
+  return renames[same] ?? same
 }
 
 const isRanged = (g: Group) => g.endsWith('_ranged')
@@ -392,11 +402,16 @@ export const armorSignature = (r: ArmorRow) =>
   `${r.group}|${/^\+?\d+/.exec(r.ac)?.[0]}|${r.strength}|${r.stealth}|${r.cost}`
 
 /** Los conceptos: el de 2024 por su nombre en español; el de 2014, el de su versión de 2024 (si la tiene) */
-export function concepts<R extends { name: string }>(newer: readonly [R, R][], older: readonly [R, R][]) {
-  const byEnglish = new Map(newer.map(([en, es]) => [sameName(en.name), slug(es.name)]))
+export function concepts<R extends { name: string }>(
+  newer: readonly [R, R][],
+  older: readonly [R, R][],
+  renames: Record<string, string> = {},
+  nameOf: (es: R) => string = (es) => es.name
+) {
+  const byEnglish = new Map(newer.map(([en, es]) => [sameName(en.name, renames), slug(nameOf(es))]))
   return {
-    newer: newer.map(([, es]) => slug(es.name)),
-    older: older.map(([en, es]) => byEnglish.get(sameName(en.name)) ?? slug(es.name))
+    newer: newer.map(([, es]) => slug(nameOf(es))),
+    older: older.map(([en, es]) => byEnglish.get(sameName(en.name, renames)) ?? slug(nameOf(es)))
   }
 }
 

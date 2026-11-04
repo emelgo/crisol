@@ -74,3 +74,81 @@ export function pagesOf(edition: Edition, lang: Lang, pages: readonly number[]):
     return lines
   })
 }
+
+/** Una palabra (o una celda, en el 5.1 inglés) con su sitio en la página, en puntos */
+export interface Box {
+  text: string
+  x: number
+  y: number
+  xMax: number
+  page: number
+}
+
+const boxCache = new Map<string, Box[]>()
+const widths = new Map<string, number>()
+
+/** El ancho de una página, en puntos (después de leer sus palabras) */
+export const widthOf = (edition: Edition, lang: Lang, page: number) => {
+  boxesOf(edition, lang, page)
+  return widths.get(`${edition}/${lang}/${page}`) ?? 612
+}
+
+const ENTITIES: Record<string, string> = {
+  '&amp;': '&',
+  '&lt;': '<',
+  '&gt;': '>',
+  '&quot;': '"',
+  '&#39;': "'",
+  '&apos;': "'"
+}
+
+/** Las palabras de una página con su sitio (`pdftotext -bbox`): para cortar las tablas por sus columnas */
+export function boxesOf(edition: Edition, lang: Lang, page: number): Box[] {
+  const id = `${edition}/${lang}/${page}`
+  const cached = boxCache.get(id)
+  if (cached) return cached
+  const file = new URL(PDFS[edition][lang], SRD_DIR)
+  if (!existsSync(file)) throw new Error(`Falta ${PDFS[edition][lang]} en datos-locales/srd/`)
+  const html = execFileSync('pdftotext', ['-bbox', '-f', String(page), '-l', String(page), file.pathname, '-'], {
+    encoding: 'utf8',
+    maxBuffer: 32 * 1024 * 1024
+  })
+  const width = Number(/<page width="([\d.]+)"/.exec(html)?.[1] ?? 612)
+  widths.set(id, width)
+  const boxes: Box[] = []
+  for (const m of html.matchAll(
+    /<word xMin="([\d.]+)" yMin="([\d.]+)" xMax="([\d.]+)" yMax="[\d.]+">([^<]*)<\/word>/g
+  )) {
+    const text = collapse(
+      clean((m[4] as string).replace(/&[a-z#0-9]+;/g, (e) => ENTITIES[e] ?? e).replace(/[\r ]/g, ' '))
+    )
+    if (text) boxes.push({ text, x: Number(m[1]), y: Number(m[2]), xMax: Number(m[3]), page })
+  }
+  boxCache.set(id, boxes)
+  return boxes
+}
+
+/** Una línea de una columna: sus palabras, de izquierda a derecha, y dónde empieza */
+export interface Row {
+  text: string
+  x: number
+  y: number
+  page: number
+}
+
+/** Las líneas de un trozo de la página (una columna de una tabla), juntando las palabras de la misma altura */
+export function rowsIn(boxes: readonly Box[], area: { x0: number; x1: number; y0?: number; y1?: number }): Row[] {
+  const inside = boxes
+    .filter((b) => b.x >= area.x0 - 1 && b.x < area.x1 && b.y > (area.y0 ?? -1) && b.y < (area.y1 ?? Infinity))
+    .sort((a, b) => a.y - b.y || a.x - b.x)
+  const rows: { boxes: Box[]; y: number }[] = []
+  for (const b of inside) {
+    const last = rows.at(-1)
+    if (last && Math.abs(last.y - b.y) < 3) last.boxes.push(b)
+    else rows.push({ boxes: [b], y: b.y })
+  }
+  return rows.map((r) => {
+    const sorted = r.boxes.sort((a, b) => a.x - b.x)
+    return { text: sorted.map((b) => b.text).join(' '), x: sorted[0]?.x ?? 0, y: r.y, page: sorted[0]?.page ?? 0 }
+  })
+}
