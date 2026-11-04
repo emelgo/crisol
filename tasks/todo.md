@@ -68,7 +68,7 @@ el 2026-11-12).
       sistema de 2 MB en menos de 500 ms.
   - Archivos: `packages/systems/src/{evaluate,modifiers}.ts` (+ pruebas y prueba de ritmo).
 
-- [ ] **4. Las tiradas del sistema y sus dados**
+- [x] **4. Las tiradas del sistema y sus dados** — hecha. `@crisol/dice` gana `CriticalRule` (none, d20, doubles, under), `rollTree` (tirar un árbol ya armado) y `doubleDice`.
   - Acepta:
     - las tiradas de la spec: fórmula y variantes, por cada elemento con `@este`, objetivo, franjas y modos;
     - los modos, sobre el árbol de dados, no sobre el texto: `1d20` dentro de `11d20` no se rompe;
@@ -80,7 +80,7 @@ el 2026-11-12).
 
 ### Punto de control 1
 
-- [ ] En local: el paquete entero en verde, y el ritmo apuntado en «Dónde estamos».
+- [x] En local: el paquete entero en verde (64 pruebas), y el ritmo apuntado en «Dónde estamos».
 
 ## Fase 2: El servidor
 

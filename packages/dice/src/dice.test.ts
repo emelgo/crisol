@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { withAdvantage } from './advantage.ts'
+import { doubleDice, withAdvantage } from './advantage.ts'
 import { describeFormula } from './describe.ts'
 import { DiceSyntaxError, formatDice, parseDice, splitComment } from './notation.ts'
-import { cryptoRoller, type DieRoller, rollDice } from './roll.ts'
+import { cryptoRoller, type DieRoller, rollDice, rollTree } from './roll.ts'
 
 /** Un dado trucado: da los valores en este orden */
 const fixed = (...values: number[]): DieRoller => {
@@ -204,5 +204,34 @@ describe('con ventaja o desventaja', () => {
     expect(withAdvantage('2d20kh1+5', 'none')).toBe('1d20+5')
     expect(withAdvantage('2d6+3', 'advantage')).toBeNull()
     expect(withAdvantage('no es una tirada', 'advantage')).toBeNull()
+  })
+})
+
+describe('los críticos de cada juego', () => {
+  it('ninguno, el natural del d20, dobles o tirar por debajo', () => {
+    expect(rollDice('1d20+5', fixed(20), { critical: 'none' }).critical).toBeNull()
+    expect(rollDice('1d20+5', fixed(20), { critical: 'd20' }).critical).toBe('high')
+    expect(rollDice('2d6', fixed(4, 4), { critical: 'doubles' }).critical).toBe('high')
+    expect(rollDice('2d6', fixed(4, 5), { critical: 'doubles' }).critical).toBeNull()
+    expect(rollDice('1d6', fixed(6), { critical: 'doubles' }).critical).toBeNull()
+    expect(rollDice('1d100', fixed(1), { critical: 'under' }).critical).toBe('high')
+    expect(rollDice('1d100', fixed(100), { critical: 'under' }).critical).toBe('low')
+    expect(rollDice('1d100', fixed(50), { critical: 'under' }).critical).toBeNull()
+    // Los descartados no cuentan, tampoco en dobles
+    expect(rollDice('3d6kh2', fixed(5, 5, 1), { critical: 'doubles' }).critical).toBe('high')
+  })
+
+  it('tirar un árbol ya armado, sin el límite de lo que escribe una persona', () => {
+    const tree = parseDice('1d20 + 5')
+    expect(rollTree(tree, fixed(14), { critical: 'none', comment: 'Ataque' })).toMatchObject({
+      total: 19,
+      comment: 'Ataque',
+      critical: null
+    })
+  })
+
+  it('el doble de dados para el daño de un crítico', () => {
+    expect(formatDice(doubleDice(parseDice('1d8+3')))).toBe('2d8+3')
+    expect(formatDice(doubleDice(parseDice('-(2d6+1d4)*2')))).toBe('-(4d6+2d4)×2')
   })
 })
