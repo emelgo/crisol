@@ -83,7 +83,8 @@ export function FormulaInput({
       event.preventDefault()
       setActive((i) => (i + (event.key === 'ArrowDown' ? 1 : options.length - 1)) % options.length)
     } else if (event.key === 'Enter' || event.key === 'Tab') {
-      event.preventDefault()
+      // Intro elige y se queda; Tab elige y sigue al siguiente campo
+      if (event.key === 'Enter') event.preventDefault()
       pick((options[active] ?? options[0])?.path ?? '')
     } else if (event.key === 'Escape') {
       event.preventDefault()
@@ -147,15 +148,11 @@ export function FormulaInput({
           </div>
         )}
       </div>
-      <p
-        id={`${id}-explain`}
-        className={problem ? styles.explainBad : compact ? styles.hidden : styles.explain}
-        aria-live="polite"
-      >
+      {/* Solo se anuncia lo que falla: al renombrar un campo cambian muchas a la vez */}
+      <p id={`${id}-explain`} className={problem ? styles.explainBad : compact ? styles.hidden : styles.explain}>
         {problem ? <TriangleAlert size={14} aria-hidden="true" /> : <Check size={14} aria-hidden="true" />}
-        {problem
-          ? problem.message
-          : t('systemEditor.formulaOk', { type: t(`systemEditor.formulaOkTypes.${checked.type}`) })}
+        <span aria-live="polite">{problem?.message}</span>
+        {!problem && t('systemEditor.formulaOk', { type: t(`systemEditor.formulaOkTypes.${checked.type}`) })}
       </p>
     </div>
   )

@@ -205,8 +205,8 @@ export function JsonCode({
           }}
         />
       </div>
-      <p id={`${id}-state`} className={state ? styles.explainBad : styles.note} aria-live="polite">
-        {state ?? t('systemEditor.jsonHint')}
+      <p id={`${id}-state`} className={styles.explainBad} aria-live="polite">
+        {state}
       </p>
     </div>
   )

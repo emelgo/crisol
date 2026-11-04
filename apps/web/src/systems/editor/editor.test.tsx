@@ -46,7 +46,7 @@ const openField = async (name: string) =>
 
 describe('el editor de un sistema', () => {
   beforeEach(() =>
-    localStorage.setItem('crisol.recorridos.enrique@crisol.test', JSON.stringify({ seen: ['sistemas'] }))
+    localStorage.setItem('crisol.recorridos.enrique@crisol.test', JSON.stringify({ seen: ['sistemas', 'sistema'] }))
   )
 
   it('sus partes, con los campos de cada tipo; un campo se abre con su clase, su clave fija y su fórmula', async () => {
@@ -178,7 +178,7 @@ describe('el editor de un sistema', () => {
     await userEvent.type(vigor, '2')
     const defensa = within(panel.getByRole('list', { name: 'De dónde sale Defensa' }))
     expect(defensa.getAllByRole('listitem').map((li) => li.textContent)).toEqual(['7Base', '+2Vigor'])
-    await userEvent.click(panel.getByRole('button', { name: 'Objeto' }))
+    await userEvent.click(panel.getByRole('button', { name: 'Añadir Objeto' }))
     await userEvent.click(panel.getByRole('checkbox', { name: 'Equipado' }))
     const bonus = panel.getAllByRole('spinbutton', { name: 'Defensa' })[0] as HTMLElement
     await userEvent.clear(bonus)

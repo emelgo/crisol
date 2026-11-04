@@ -10,7 +10,7 @@ import { useId, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ProblemList } from '../screen.tsx'
 import styles from './editor.module.css'
-import { keyFrom, renameKey } from './field.tsx'
+import { KeyField, keyFrom, renameKey } from './field.tsx'
 import { FormulaInput } from './formula-input.tsx'
 
 type Change = (fn: (draft: System) => void) => void
@@ -40,42 +40,6 @@ function useRowIds() {
       ids.current.splice(i, 1)
     }
   }
-}
-
-/** La clave de algo: se elige hasta guardarlo; después, fija (la usan las campañas y las hojas) */
-function KeyInput({
-  id,
-  value,
-  fixed,
-  onChange
-}: {
-  id: string
-  value: string
-  fixed: boolean
-  onChange: (value: string) => void
-}) {
-  const { t } = useTranslation()
-  return (
-    <div>
-      <label className={styles.label} htmlFor={id}>
-        {t('systemEditor.key')}
-      </label>
-      <input
-        id={id}
-        className={`${styles.input} ${styles.mono}`}
-        value={value}
-        readOnly={fixed}
-        spellCheck={false}
-        aria-describedby={fixed ? `${id}-note` : undefined}
-        onChange={(event) => onChange(event.currentTarget.value)}
-      />
-      {fixed && (
-        <p id={`${id}-note`} className={styles.note}>
-          {t('systemEditor.keyFixed')}
-        </p>
-      )}
-    </div>
-  )
 }
 
 function RemoveButton({ label, onClick }: { label: string; onClick: () => void }) {
@@ -210,12 +174,12 @@ export function RollsPart({ draft, original, change, problems, disabled }: PartP
                 }}
               />
             </div>
-            <KeyInput
+            <KeyField
               id={`${id}-key`}
               value={open}
               fixed={Boolean(original.rolls?.[open])}
+              taken={(key) => Boolean(draft.rolls?.[key])}
               onChange={(to) => {
-                if (to !== open && draft.rolls?.[to]) return
                 change((d) => {
                   d.rolls = renameKey(d.rolls ?? {}, open, to)
                 })
@@ -259,7 +223,7 @@ export function RollsPart({ draft, original, change, problems, disabled }: PartP
                 ))}
               </select>
             </div>
-            <fieldset className={`${styles.full} ${styles.checks}`} aria-describedby={`${id}-for-hint`}>
+            <fieldset className={`${styles.full} ${styles.checks}`}>
               <legend className={styles.label}>{t('systemEditor.forEach')}</legend>
               {byField.map(([key, f]) => (
                 <label key={key} className={styles.check}>
@@ -296,14 +260,10 @@ export function RollsPart({ draft, original, change, problems, disabled }: PartP
                   {t('systemEditor.eachOf', { name: textOf(f.label) || key })}
                 </label>
               ))}
-              <p id={`${id}-for-hint`} className={`${styles.note} ${styles.full}`}>
-                {t('systemEditor.forEachHint')}
-              </p>
             </fieldset>
           </div>
 
           <h3 className={styles.sub}>{t('systemEditor.variants')}</h3>
-          <p className={styles.note}>{t('systemEditor.variantsHint')}</p>
           <ul className={styles.rows}>
             {(roll.variants ?? []).map((variant, i) => (
               <li key={variantIds.at(i)} className={styles.rowVariant}>
@@ -367,7 +327,6 @@ export function RollsPart({ draft, original, change, problems, disabled }: PartP
           )}
 
           <h3 className={styles.sub}>{t('systemEditor.bands')}</h3>
-          <p className={styles.note}>{t('systemEditor.bandsHint')}</p>
           <ul className={styles.rows}>
             {(roll.bands ?? []).map((band, i) => (
               <li key={bandIds.at(i)} className={styles.rowBand}>
@@ -457,7 +416,6 @@ export function RollsPart({ draft, original, change, problems, disabled }: PartP
           )}
 
           <h3 className={styles.sub}>{t('systemEditor.modes')}</h3>
-          <p className={styles.note}>{t('systemEditor.modesHint')}</p>
           {(roll.modes ?? []).length > 0 && (
             <RowsHead
               className={styles.rowMode}
@@ -635,7 +593,6 @@ export function SourcesPart({ draft, original, change, problems, disabled }: Par
   return (
     <fieldset className={styles.part} disabled={disabled}>
       <legend className={styles.partTitle}>{t('systemEditor.sources')}</legend>
-      <p className={styles.note}>{t('systemEditor.sourcesHint')}</p>
       <ul className={styles.rows}>
         {sources.map((source, i) => (
           <li key={rowIds.at(i)} className={styles.card}>
@@ -656,10 +613,11 @@ export function SourcesPart({ draft, original, change, problems, disabled }: Par
                   }}
                 />
               </div>
-              <KeyInput
+              <KeyField
                 id={`${id}-${i}-key`}
                 value={source.key}
                 fixed={saved.has(source.key)}
+                taken={(key) => sources.some((other, j) => j !== i && other.key === key)}
                 onChange={(value) =>
                   set(i, (s) => {
                     s.key = value
@@ -788,7 +746,6 @@ export function SettingsPart({ draft, original, change, problems, disabled }: Pa
   return (
     <fieldset className={styles.part} disabled={disabled}>
       <legend className={styles.partTitle}>{t('systemEditor.settings')}</legend>
-      <p className={styles.note}>{t('systemEditor.settingsHint')}</p>
       <ul className={styles.rows}>
         {settings.map(([key, setting]) => (
           <li key={rowId(key)} className={styles.card}>
@@ -809,12 +766,12 @@ export function SettingsPart({ draft, original, change, problems, disabled }: Pa
                   }}
                 />
               </div>
-              <KeyInput
+              <KeyField
                 id={`${id}-${rowId(key)}-key`}
                 value={key}
                 fixed={Boolean(original.settings?.[key])}
+                taken={(other) => Boolean(draft.settings?.[other])}
                 onChange={(to) => {
-                  if (to !== key && draft.settings?.[to]) return
                   rows.current.set(to, rowId(key))
                   rows.current.delete(key)
                   change((d) => {

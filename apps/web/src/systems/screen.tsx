@@ -7,7 +7,7 @@ import type { SystemSummary } from '@crisol/contracts'
 import { type Problem, validateFile } from '@crisol/systems'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, Navigate, useNavigate } from '@tanstack/react-router'
-import { Copy, Download, FileUp, Lock, Plus, ScrollText, Settings } from 'lucide-react'
+import { CircleAlert, Copy, Download, FileUp, Info, Lock, Plus, ScrollText, Settings } from 'lucide-react'
 import { useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
@@ -129,8 +129,11 @@ function SystemCard({
       onPointerEnter={() => onHover(system.id)}
       onPointerLeave={() => onHover(null)}
       onFocus={() => onHover(system.id)}
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget)) onHover(null)
+      }}
     >
-      {system.builtIn && <Lock className={screen.lock} size={14} aria-label={t('systems.locked')} />}
+      {system.builtIn && <Lock className={screen.lock} size={14} role="img" aria-label={t('systems.locked')} />}
       <span className={screen.icon} aria-hidden="true">
         <ScrollText size={24} strokeWidth={1.5} />
       </span>
@@ -223,11 +226,22 @@ function SystemPreview({ system }: { system: SystemSummary }) {
 
 /** Los problemas de un sistema: dónde (por sus nombres), por qué y su ruta, en pequeño */
 export function ProblemList({ problems }: { problems: readonly Problem[] }) {
+  const { t } = useTranslation()
   return (
     <ul className={styles.problems}>
       {problems.map((p) => (
         <li key={`${p.path}:${p.message}`} className={p.severity === 'warning' ? styles.warning : styles.error}>
-          <span className={styles.where}>{p.where}</span>
+          <span className={styles.where}>
+            {p.severity === 'warning' ? (
+              <Info size={14} aria-hidden="true" />
+            ) : (
+              <CircleAlert size={14} aria-hidden="true" />
+            )}
+            <span className={styles.kindWord}>
+              {t(p.severity === 'warning' ? 'systems.warning' : 'systems.error')}
+            </span>
+            {p.where}
+          </span>
           <span>{p.message}</span>
           {p.path && <span className={styles.path}>{p.path}</span>}
         </li>
@@ -365,6 +379,7 @@ export function NewSystemDialog({ copyOf, onClose }: { copyOf: string | null; on
                 <ProblemList problems={file?.problems ?? []} />
               </div>
             )}
+            {errors.length === 0 && (file?.problems.length ?? 0) > 0 && <ProblemList problems={file?.problems ?? []} />}
             <FormError message={upload.error ? errorText(upload.error) : null} />
             <BusyButton type="submit" className={form.button} busy={upload.isPending} disabled={!file?.content}>
               {t('systems.upload')}

@@ -103,10 +103,22 @@
 }
 
 .warning {
-  border-inline-start: 2px solid var(--color-h3);
+  border-inline-start: 2px solid var(--color-warning);
+}
+
+/* «Error» o «Aviso»: para quien no ve el color */
+.kindWord {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
 }
 
 .where {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-weight: 600;
 }
 

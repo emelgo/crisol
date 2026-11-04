@@ -123,7 +123,7 @@ export async function skipTours(page: Page, email: string) {
     localStorage.setItem(
       key,
       JSON.stringify({
-        seen: ['mundos', 'mundo', 'campanas', 'archivos', 'etiquetas', 'plantillas', 'dados', 'sistemas']
+        seen: ['mundos', 'mundo', 'campanas', 'archivos', 'etiquetas', 'plantillas', 'dados', 'sistemas', 'sistema']
       })
     )
   }, `crisol.recorridos.${email}`)

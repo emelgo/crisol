@@ -53,7 +53,7 @@ const save = async () => userEvent.click(screen.getByRole('button', { name: 'Gua
 
 describe('el editor de un sistema: lo de juego', () => {
   beforeEach(() =>
-    localStorage.setItem('crisol.recorridos.enrique@crisol.test', JSON.stringify({ seen: ['sistemas'] }))
+    localStorage.setItem('crisol.recorridos.enrique@crisol.test', JSON.stringify({ seen: ['sistemas', 'sistema'] }))
   )
 
   it('Tiradas: la fórmula con @este, por cada campo, las franjas con @total y los modos; se guarda', async () => {

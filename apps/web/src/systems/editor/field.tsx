@@ -4,7 +4,7 @@
  */
 import type { Context, Field, Problem, SimpleField, System } from '@crisol/systems'
 import { textOf } from '@crisol/systems'
-import { useId } from 'react'
+import { type ComponentProps, useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ProblemList } from '../screen.tsx'
 import styles from './editor.module.css'
@@ -82,10 +82,144 @@ export function keyFrom(label: string, taken: Iterable<string>) {
 
 const num = (value: string) => (value.trim() === '' ? undefined : Number(value))
 
+/**
+ * La clave de algo (un campo, un tipo, una tirada): se elige hasta guardarlo; después, fija (la usan las fórmulas, las
+ * campañas y las hojas). Una que ya existe no se aplica (pisaría la otra): lo dice debajo, y al salir vuelve a la suya
+ */
+export function KeyField({
+  id,
+  value,
+  fixed,
+  taken,
+  onChange,
+  disabled
+}: {
+  id: string
+  value: string
+  fixed: boolean
+  /** Si otra ya tiene esa clave */
+  taken: (key: string) => boolean
+  onChange: (key: string) => void
+  disabled?: boolean | undefined
+}) {
+  const { t } = useTranslation()
+  const [text, setText] = useState(value)
+  const [seen, setSeen] = useState(value)
+  const clash = text !== value && taken(text)
+  // Si cambia por otro lado (Cancelar, otra pestaña), lo escrito sigue a lo de verdad
+  if (seen !== value) {
+    setSeen(value)
+    if (!clash) setText(value)
+  }
+  const described = clash ? `${id}-clash` : fixed ? `${id}-note` : undefined
+  return (
+    <div>
+      <label className={styles.label} htmlFor={id}>
+        {t('systemEditor.key')}
+      </label>
+      <input
+        id={id}
+        className={`${styles.input} ${styles.mono}`}
+        value={text}
+        readOnly={fixed}
+        disabled={disabled}
+        spellCheck={false}
+        autoComplete="off"
+        aria-invalid={clash || undefined}
+        aria-describedby={described}
+        onChange={(event) => {
+          const next = event.currentTarget.value
+          setText(next)
+          if (next !== value && !taken(next)) onChange(next)
+        }}
+        onBlur={() => setText(value)}
+      />
+      {clash && (
+        <p id={`${id}-clash`} className={styles.explainBad}>
+          {t('systemEditor.keyTaken')}
+        </p>
+      )}
+      {fixed && (
+        <p id={`${id}-note`} className={styles.hidden}>
+          {t('systemEditor.keyFixed')}
+        </p>
+      )}
+    </div>
+  )
+}
+
+/**
+ * Un número que se escribe: lo escrito se ve tal cual (vacío o a medias, como «-») y solo pasa cuando es un número;
+ * al salir, vuelve al de verdad
+ */
+export function NumberText({
+  value,
+  onValue,
+  ...props
+}: Omit<ComponentProps<'input'>, 'value' | 'onChange' | 'type'> & { value: number; onValue: (value: number) => void }) {
+  const [text, setText] = useState(String(value))
+  const [seen, setSeen] = useState(value)
+  if (seen !== value) {
+    setSeen(value)
+    if (Number(text) !== value) setText(String(value))
+  }
+  return (
+    <input
+      {...props}
+      type="number"
+      value={text}
+      onChange={(event) => {
+        const raw = event.currentTarget.value
+        setText(raw)
+        const n = Number(raw)
+        if (raw.trim() !== '' && Number.isFinite(n)) onValue(n)
+      }}
+      onBlur={() => setText(String(value))}
+    />
+  )
+}
+
+/**
+ * Un texto de una línea por cosa (las opciones, los elementos): mientras se escribe se ve tal cual (sin que el cursor
+ * salte ni se coma lo escrito) y cada cambio pasa ya leído; al salir, se ve como quedó
+ */
+export function LinesInput({
+  lines,
+  onLines,
+  ...props
+}: Omit<ComponentProps<'textarea'>, 'value' | 'onChange' | 'onFocus' | 'onBlur'> & {
+  lines: readonly string[]
+  onLines: (lines: string[]) => void
+}) {
+  const joined = lines.join('\n')
+  const [text, setText] = useState(joined)
+  const [focused, setFocused] = useState(false)
+  if (!focused && text !== joined) setText(joined)
+  return (
+    <textarea
+      {...props}
+      value={text}
+      onFocus={() => setFocused(true)}
+      onBlur={() => setFocused(false)}
+      onChange={(event) => {
+        const raw = event.currentTarget.value
+        setText(raw)
+        onLines(
+          raw
+            .split('\n')
+            .map((line) => line.trim())
+            .filter(Boolean)
+        )
+      }}
+    />
+  )
+}
+
 export function FieldEditor({
   fieldKey,
   field,
-  fixedKey,
+  saved,
+  taken,
   onKey,
   onChange,
   onRemove,
@@ -97,8 +231,10 @@ export function FieldEditor({
 }: {
   fieldKey: string
   field: Field | SimpleField
-  /** Ya guardada: no se cambia */
-  fixedKey: boolean
+  /** Cómo está guardado (si lo está): su clave ya no cambia, ni los valores de sus opciones */
+  saved: Field | SimpleField | undefined
+  /** Si otro campo ya tiene esa clave */
+  taken: (key: string) => boolean
   onKey: (key: string) => void
   onChange: (field: Field) => void
   onRemove: () => void
@@ -132,25 +268,14 @@ export function FieldEditor({
             onChange={(event) => set({ label: event.currentTarget.value })}
           />
         </div>
-        <div>
-          <label className={styles.label} htmlFor={`${id}-key`}>
-            {t('systemEditor.key')}
-          </label>
-          <input
-            id={`${id}-key`}
-            className={styles.input}
-            value={fieldKey}
-            readOnly={fixedKey}
-            disabled={disabled}
-            aria-describedby={fixedKey ? `${id}-key-note` : undefined}
-            onChange={(event) => onKey(event.currentTarget.value)}
-          />
-          {fixedKey && (
-            <p id={`${id}-key-note`} className={styles.note}>
-              {t('systemEditor.keyFixed')}
-            </p>
-          )}
-        </div>
+        <KeyField
+          id={`${id}-key`}
+          value={fieldKey}
+          fixed={Boolean(saved)}
+          taken={taken}
+          disabled={disabled}
+          onChange={onKey}
+        />
         <div>
           <label className={styles.label} htmlFor={`${id}-kind`}>
             {t('systemEditor.fieldKind')}
@@ -179,7 +304,6 @@ export function FieldEditor({
             id={`${id}-help`}
             className={styles.input}
             value={textOf(field.help)}
-            placeholder={t('systemEditor.optional')}
             disabled={disabled}
             onChange={(event) => set({ help: event.currentTarget.value || undefined })}
           />
@@ -273,21 +397,22 @@ export function FieldEditor({
             <label className={styles.label} htmlFor={`${id}-options`}>
               {t('systemEditor.options')}
             </label>
-            <textarea
+            <LinesInput
               id={`${id}-options`}
               className={styles.input}
               rows={Math.min(8, Math.max(3, field.options.length))}
-              value={field.options.map((o) => textOf(o.label)).join('\n')}
+              lines={field.options.map((o) => textOf(o.label))}
               aria-describedby={`${id}-options-hint`}
               disabled={disabled}
-              onChange={(event) => {
-                const labels = event.currentTarget.value.split('\n')
+              onLines={(labels) => {
+                // El valor de una opción guardada no cambia (lo usan los documentos); el de una nueva sale de su nombre
+                const fixed = new Set(saved?.kind === 'choice' ? saved.options.map((o) => o.value) : [])
                 const taken: string[] = []
-                const options = labels.map((label) => {
-                  const known = field.options.find((o) => textOf(o.label) === label)
-                  const value = known?.value ?? keyFrom(label || 'opcion', taken)
+                const options = labels.map((label, i) => {
+                  const before = field.options[i]?.value
+                  const value = before && fixed.has(before) ? before : keyFrom(label, taken)
                   taken.push(value)
-                  return { value, label: label || ' ' }
+                  return { value, label }
                 })
                 set({ options })
               }}
@@ -343,18 +468,18 @@ export function FieldEditor({
             <label className={styles.label} htmlFor={`${id}-elements`}>
               {t('systemEditor.elements')}
             </label>
-            <textarea
+            <LinesInput
               id={`${id}-elements`}
               className={styles.input}
               rows={Math.min(8, Math.max(3, field.elements.length))}
-              value={field.elements.map((e) => `${e.key}: ${textOf(e.label)}`).join('\n')}
+              lines={field.elements.map((e) => `${e.key}: ${textOf(e.label)}`)}
               aria-describedby={`${id}-elements-hint`}
               disabled={disabled}
-              onChange={(event) =>
+              onLines={(lines) =>
                 set({
-                  elements: event.currentTarget.value.split('\n').map((line) => {
+                  elements: lines.map((line) => {
                     const [key = '', ...rest] = line.split(':')
-                    return { key: key.trim(), label: rest.join(':').trim() || key.trim() || ' ' }
+                    return { key: key.trim(), label: rest.join(':').trim() || key.trim() }
                   })
                 })
               }

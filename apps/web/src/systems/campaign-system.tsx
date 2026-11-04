@@ -11,6 +11,7 @@ import { useId } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import styles from './campaign-system.module.css'
+import { NumberText } from './editor/field.tsx'
 import { useSystems } from './screen.tsx'
 
 export interface SystemDraft {
@@ -57,15 +58,17 @@ export function CampaignSystemFields({
         onChange={(event) => onChange({ system: event.currentTarget.value || null, choices: {} })}
       >
         <option value="">{t('campaignSystem.none')}</option>
-        <optgroup label={t('systems.mine')}>
-          {all
-            .filter((s) => !s.builtIn)
-            .map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name}
-              </option>
-            ))}
-        </optgroup>
+        {all.some((s) => !s.builtIn) && (
+          <optgroup label={t('systems.mine')}>
+            {all
+              .filter((s) => !s.builtIn)
+              .map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
+          </optgroup>
+        )}
         <optgroup label={t('systems.builtIn')}>
           {all
             .filter((s) => s.builtIn)
@@ -149,11 +152,10 @@ export function CampaignSystemFields({
               return (
                 <div key={key} className={styles.number}>
                   <label htmlFor={`${id}-${key}`}>{label}</label>
-                  <input
+                  <NumberText
                     id={`${id}-${key}`}
-                    type="number"
                     value={typeof current === 'number' ? current : 0}
-                    onChange={(event) => setting(key, event.currentTarget.valueAsNumber || 0)}
+                    onValue={(n) => setting(key, n)}
                   />
                 </div>
               )
@@ -176,8 +178,8 @@ export function CampaignSystemFields({
               )
             const list = Array.isArray(current) ? current : []
             return (
-              <div key={key} className={styles.many}>
-                <span className={styles.manyLabel}>{label}</span>
+              <fieldset key={key} className={styles.many}>
+                <legend className={styles.manyLabel}>{label}</legend>
                 {s.options?.map((o) => (
                   <label key={o.value} className={styles.check}>
                     <input
@@ -193,7 +195,7 @@ export function CampaignSystemFields({
                     {textOf(o.label)}
                   </label>
                 ))}
-              </div>
+              </fieldset>
             )
           })}
         </fieldset>

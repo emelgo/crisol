@@ -22,6 +22,8 @@ import { useId, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../../api/context.tsx'
 import { useErrorText } from '../../api/errors.ts'
+import { BusyButton } from '../../components/busy-button.tsx'
+import { NumberText } from './field.tsx'
 import styles from './try.module.css'
 
 type Data = Record<string, unknown>
@@ -42,6 +44,15 @@ export function TryPanel({ system, typeKey }: { system: System; typeKey: string 
   const fields = Object.entries(type.fields)
   const set = (key: string, value: unknown) => setData((d) => ({ ...d, [key]: value }))
   const itemTypes = fields.flatMap(([, f]) => (f.kind === 'items' ? f.of : []))
+  // Lo calculado: los calculados, los números guardados que reciben bonos (con su desglose) y los conjuntos con
+  // calculados en sus elementos
+  const shownComputed = fields.filter(
+    ([key, f]) =>
+      f.kind === 'derived' ||
+      (f.kind === 'number' && result.computed[key]) ||
+      (f.kind === 'set' && Object.values(f.fields).some((sub) => sub.kind === 'derived'))
+  )
+  if (fields.length === 0) return <p className={styles.empty}>{t('systemTry.none')}</p>
 
   return (
     <div className={styles.try}>
@@ -91,17 +102,17 @@ export function TryPanel({ system, typeKey }: { system: System; typeKey: string 
               }
             >
               <Plus size={14} aria-hidden="true" />
+              <span className={styles.hidden}>{t('systemTry.add')} </span>
               {t('systemTry.addItem', { type: textOf(system.types[itemType]?.label) || itemType })}
             </button>
           ))}
         </>
       )}
 
-      <p className={styles.sec}>{t('systemTry.computed')}</p>
+      {shownComputed.length > 0 && <p className={styles.sec}>{t('systemTry.computed')}</p>}
       <ul className={styles.computed}>
-        {fields
-          // Los calculados, y los números guardados que reciben bonos (con su desglose)
-          .filter(([key, f]) => f.kind === 'derived' || (f.kind === 'number' && result.computed[key]))
+        {shownComputed
+          .filter(([, f]) => f.kind !== 'set')
           .map(([key, field]) => {
             const value = result.computed[key]
             return (
@@ -204,11 +215,10 @@ function ValueInput({
       return (
         <div className={styles.value}>
           <label htmlFor={id}>{label}</label>
-          <input
+          <NumberText
             id={id}
-            type="number"
             value={typeof value === 'number' ? value : typeof computed === 'number' ? computed : 0}
-            onChange={(event) => onChange(event.currentTarget.valueAsNumber || 0)}
+            onValue={onChange}
           />
         </div>
       )
@@ -245,12 +255,7 @@ function ValueInput({
       return (
         <div className={styles.value}>
           <label htmlFor={id}>{label}</label>
-          <input
-            id={id}
-            type="number"
-            value={current.value ?? 0}
-            onChange={(event) => onChange({ ...current, value: event.currentTarget.valueAsNumber || 0 })}
-          />
+          <NumberText id={id} value={current.value ?? 0} onValue={(n) => onChange({ ...current, value: n })} />
         </div>
       )
     }
@@ -269,14 +274,12 @@ function ValueInput({
                   <label htmlFor={`${id}-${element.key}-${sub}`}>
                     {stored.length > 1 ? `${textOf(element.label)} · ${textOf(f.label)}` : textOf(element.label)}
                   </label>
-                  <input
+                  <NumberText
                     id={`${id}-${element.key}-${sub}`}
-                    type="number"
                     value={current[element.key]?.[sub] ?? (typeof shown === 'number' ? shown : 0)}
-                    onChange={(event) => {
-                      const n = event.currentTarget.valueAsNumber || 0
+                    onValue={(n) =>
                       onChange({ ...current, [element.key]: { ...(current[element.key] ?? {}), [sub]: n } })
-                    }}
+                    }
                   />
                 </div>
               )
@@ -353,13 +356,10 @@ function TryItem({
           ) : (
             <div key={key} className={styles.value}>
               <label htmlFor={`${id}-${key}`}>{textOf(field.label)}</label>
-              <input
+              <NumberText
                 id={`${id}-${key}`}
-                type="number"
                 value={typeof item.data[key] === 'number' ? (item.data[key] as number) : 0}
-                onChange={(event) =>
-                  onChange({ ...item, data: { ...item.data, [key]: event.currentTarget.valueAsNumber || 0 } })
-                }
+                onValue={(n) => onChange({ ...item, data: { ...item.data, [key]: n } })}
               />
             </div>
           )
@@ -489,10 +489,15 @@ function TryRolls({
                   />
                 </>
               )}
-              <button type="button" className={styles.go} onClick={() => roll.mutate(r.key)}>
+              <BusyButton
+                type="button"
+                className={styles.go}
+                busy={roll.isPending && roll.variables === r.key}
+                onClick={() => roll.mutate(r.key)}
+              >
                 <Dices size={14} aria-hidden="true" />
                 {t('systemTry.roll', { roll: r.label })}
-              </button>
+              </BusyButton>
             </li>
           )
         })}

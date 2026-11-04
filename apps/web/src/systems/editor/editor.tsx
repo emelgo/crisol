@@ -17,8 +17,8 @@ import {
   validateSystem
 } from '@crisol/systems'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Navigate, useNavigate, useParams } from '@tanstack/react-router'
-import { Copy, FlaskConical, GripVertical, Info, Plus } from 'lucide-react'
+import { Navigate, useBlocker, useNavigate, useParams } from '@tanstack/react-router'
+import { Copy, FlaskConical, Info, Plus } from 'lucide-react'
 import { useId, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../../account/context.tsx'
@@ -31,10 +31,13 @@ import { FormError } from '../../components/field.tsx'
 import form from '../../components/form.module.css'
 import { failed, LoadError } from '../../components/load-error.tsx'
 import { Modal } from '../../components/modal.tsx'
+import { PageTitle } from '../../components/page-title.tsx'
+import { Tour } from '../../components/tour.tsx'
+import cards from '../../routes/world-card.module.css'
 import { ProblemList } from '../screen.tsx'
 import { AdvancedTools, JsonCode, JsonProblems, shownProblems, useJsonText } from './advanced.tsx'
 import styles from './editor.module.css'
-import { blankField, FieldEditor, keyFrom, renameKey } from './field.tsx'
+import { blankField, FieldEditor, KeyField, keyFrom, renameKey } from './field.tsx'
 import { DicePart, RollsPart, SettingsPart, SourcesPart } from './game.tsx'
 import { TryPanel } from './try.tsx'
 
@@ -135,30 +138,22 @@ function SystemEditor({
   const firstActor = types.find(([, type]) => type.document === 'actor')?.[0] ?? types[0]?.[0] ?? null
   const tryType = [tryChoice, currentType, firstActor].find((k) => k && draft.types[k]) ?? null
   const [trying, setTrying] = useState(false)
-  const tryId = useId()
-  const tryPanel = !advanced && tryType && (
-    <>
-      <div className={styles.tryHead}>
-        <h2 className={styles.tryTitle}>{t('systemTry.title')}</h2>
-        <label htmlFor={tryId} className={styles.hidden}>
-          {t('systemTry.type')}
-        </label>
-        <select
-          id={tryId}
-          className={styles.trySelect}
-          value={tryType}
-          onChange={(event) => setTryChoice(event.currentTarget.value)}
-        >
-          {types.map(([key, type]) => (
-            <option key={key} value={key}>
-              {textOf(type.label) || key}
-            </option>
-          ))}
-        </select>
-      </div>
-      <TryPanel key={tryType} system={draft} typeKey={tryType} />
-    </>
-  )
+  // Cada sitio en que sale (al lado o en la hoja del móvil) lleva lo suyo: sus ids no se repiten
+  const tryPanel = () =>
+    !advanced &&
+    tryType && (
+      <>
+        <TryHead types={types} value={tryType} onPick={setTryChoice} />
+        <TryPanel key={tryType} system={draft} typeKey={tryType} />
+      </>
+    )
+  // Con cambios sin guardar, salir pregunta antes (también al cerrar la pestaña)
+  const blocker = useBlocker({
+    shouldBlockFn: () => dirty && !readOnly,
+    enableBeforeUnload: dirty && !readOnly,
+    withResolver: true
+  })
+  const firstError = errors[0]
 
   const parts = [
     {
@@ -194,7 +189,7 @@ function SystemEditor({
 
   return (
     <section className={styles.page}>
-      <aside className={styles.parts} aria-label={t('systemEditor.parts')}>
+      <aside className={styles.parts} aria-label={t('systemEditor.parts')} data-tour="sistema-partes">
         <p className={styles.partsHead}>{t('systemEditor.system')}</p>
         <ul className={styles.nav}>
           {parts.slice(0, 1).map((p) => (
@@ -226,7 +221,7 @@ function SystemEditor({
       <div className={styles.center}>
         <div className={styles.band}>
           <div className={styles.titleRow}>
-            <h1 className={styles.title}>{textOf(draft.name) || data.name}</h1>
+            <PageTitle className={styles.title}>{textOf(draft.name) || data.name}</PageTitle>
             <span className={styles.kind}>
               {t('systemEditor.kind')} · {t('systems.version', { version: data.builtIn ? data.release : data.version })}
             </span>
@@ -243,7 +238,7 @@ function SystemEditor({
             >
               {[...parts, ...gameParts].map((p) => (
                 <option key={p.id} value={p.id}>
-                  {p.label}
+                  {p.count > 0 ? `${p.label} · ${t('systemEditor.problems', { count: p.count })}` : p.label}
                 </option>
               ))}
             </select>
@@ -262,7 +257,7 @@ function SystemEditor({
             </BusyButton>
           </div>
         )}
-        <div className={styles.body}>
+        <div className={styles.body} data-tour="sistema-parte">
           <ChangesBar shown={(dirty || json.broken) && !readOnly}>
             <BusyButton
               type="button"
@@ -287,7 +282,15 @@ function SystemEditor({
           {json.broken ? (
             <p className={styles.cantSave}>{t('systemEditor.cantSaveJson')}</p>
           ) : (
-            dirty && errors.length > 0 && <p className={styles.cantSave}>{t('systemEditor.cantSave')}</p>
+            dirty &&
+            firstError && (
+              <p className={styles.cantSave}>
+                {t('systemEditor.cantSave')}{' '}
+                <button type="button" className={styles.toError} onClick={() => setPart(partOfPath(firstError.path))}>
+                  {t('systemEditor.toFirstError')}
+                </button>
+              </p>
+            )
           )}
           <FormError message={save.error ? errorText(save.error) : null} />
           {part === 'general' && (
@@ -366,23 +369,94 @@ function SystemEditor({
           />
         </aside>
       )}
-      {tryPanel && (
-        <aside className={styles.tryCard} aria-label={t('systemTry.title')}>
-          {tryPanel}
+      {tryPanel() && (
+        <aside className={styles.tryCard} aria-label={t('systemTry.title')} data-tour="sistema-probar">
+          {tryPanel()}
         </aside>
       )}
-      {tryPanel && (
+      {tryPanel() && (
         <button type="button" className={styles.tryButton} aria-haspopup="dialog" onClick={() => setTrying(true)}>
           <FlaskConical size={18} aria-hidden="true" />
           {t('systemTry.open')}
         </button>
       )}
-      {trying && tryPanel && (
+      {trying && tryPanel() && (
         <Modal aria-label={t('systemTry.title')} className={styles.trySheet} onClose={() => setTrying(false)}>
-          {tryPanel}
+          {tryPanel()}
+        </Modal>
+      )}
+      <Tour
+        id="sistema"
+        steps={[
+          { target: '[data-tour="sistema-partes"]', text: t('tour.system.parts') },
+          { target: '[data-tour="sistema-parte"]', text: t('tour.system.part') },
+          { target: '[data-tour="sistema-probar"]', text: t('tour.system.try') }
+        ]}
+      />
+      {blocker.status === 'blocked' && (
+        <Modal
+          role="alertdialog"
+          aria-labelledby={`${partId}-leave`}
+          className={cards.dialog}
+          onClose={() => blocker.reset()}
+        >
+          <div className={cards.form}>
+            <h2 id={`${partId}-leave`}>{t('systemEditor.leaveTitle')}</h2>
+            <p className={dialogStyles.description}>{t('systemEditor.leaveText', { name: textOf(draft.name) })}</p>
+            <div className={dialogStyles.actions}>
+              <button type="button" className={form.button} data-autofocus="" onClick={() => blocker.reset()}>
+                {t('systemEditor.stay')}
+              </button>
+              <button type="button" className={dialogStyles.cancel} onClick={() => blocker.proceed()}>
+                {t('systemEditor.leave')}
+              </button>
+            </div>
+          </div>
         </Modal>
       )}
     </section>
+  )
+}
+
+/** La parte del editor en que está una ruta (la de un problema) */
+function partOfPath(path: string) {
+  const [first, second] = path.split(/[.[]/)
+  if (first === 'types' && second) return `type:${second}`
+  if (first && (GAME_PARTS as readonly string[]).includes(first)) return first
+  return 'general'
+}
+
+/** La cabecera de «Probar»: su título y el tipo que se prueba */
+function TryHead({
+  types,
+  value,
+  onPick
+}: {
+  types: [string, System['types'][string]][]
+  value: string
+  onPick: (key: string) => void
+}) {
+  const { t } = useTranslation()
+  const id = useId()
+  return (
+    <div className={styles.tryHead}>
+      <h2 className={styles.tryTitle}>{t('systemTry.title')}</h2>
+      <label htmlFor={id} className={styles.hidden}>
+        {t('systemTry.type')}
+      </label>
+      <select
+        id={id}
+        className={styles.trySelect}
+        value={value}
+        onChange={(event) => onPick(event.currentTarget.value)}
+      >
+        {types.map(([key, type]) => (
+          <option key={key} value={key}>
+            {textOf(type.label) || key}
+          </option>
+        ))}
+      </select>
+    </div>
   )
 }
 
@@ -692,17 +766,13 @@ function TypePart({
           </select>
         </div>
         {!saved && (
-          <div>
-            <label className={styles.label} htmlFor={`${id}-key`}>
-              {t('systemEditor.key')}
-            </label>
-            <input
-              id={`${id}-key`}
-              className={styles.input}
-              value={typeKey}
-              onChange={(event) => onRenameType(event.currentTarget.value)}
-            />
-          </div>
+          <KeyField
+            id={`${id}-key`}
+            value={typeKey}
+            fixed={false}
+            taken={(key) => Boolean(draft.types[key])}
+            onChange={onRenameType}
+          />
         )}
       </fieldset>
       {typeProblems.length > 0 && <ProblemList problems={typeProblems} />}
@@ -719,19 +789,17 @@ function TypePart({
                 aria-expanded={open === key}
                 onClick={() => setOpen(open === key ? null : key)}
               >
-                <GripVertical size={14} aria-hidden="true" className={styles.grip} />
                 <span>{textOf(field.label) || key}</span>
                 <code className={styles.key}>@{key}</code>
-                {bad && (
-                  <span className={styles.dot} role="img" aria-label={t('systemEditor.problems', { count: 1 })} />
-                )}
+                {bad && <span className={styles.dot} role="img" aria-label={t('systemEditor.withProblems')} />}
                 <span className={styles.rowKind}>{t(`systemEditor.kinds.${field.kind}`)}</span>
               </button>
               {open === key && (
                 <FieldEditor
                   fieldKey={key}
                   field={field}
-                  fixedKey={Boolean(saved?.fields[key])}
+                  saved={saved?.fields[key]}
+                  taken={(other) => Boolean(type.fields[other])}
                   system={draft}
                   context={context}
                   problems={fieldProblems(key)}

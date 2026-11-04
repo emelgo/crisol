@@ -52,7 +52,7 @@ const pick = (content: unknown, name = 'sistema.json') => {
 describe('«Sistemas», en Mis mundos', () => {
   // Su tutorial guiado ya visto: si no, sale y se lleva el foco
   beforeEach(() =>
-    localStorage.setItem('crisol.recorridos.enrique@crisol.test', JSON.stringify({ seen: ['sistemas'] }))
+    localStorage.setItem('crisol.recorridos.enrique@crisol.test', JSON.stringify({ seen: ['sistemas', 'sistema'] }))
   )
 
   it('los tuyos y los de serie; al pasar por uno, lo que trae', async () => {
