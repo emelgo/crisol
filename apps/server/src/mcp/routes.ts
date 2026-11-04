@@ -1,6 +1,7 @@
 import { requireMcpAuth } from '@better-auth/mcp'
 import { loadMemberships } from '@crisol/db'
 import { actorFrom, ownedOrganizations } from '@crisol/domain'
+import { FILE_BYTES } from '@crisol/systems'
 import { createMcpHandler } from '@modelcontextprotocol/server'
 import type { FastifyInstance } from 'fastify'
 import type { ActionEnv } from '../actions/context.ts'
@@ -50,6 +51,19 @@ export function registerMcpRoutes(app: FastifyInstance, { auth, jwksUrl, approva
   app.route({
     method: ['POST', 'GET', 'DELETE'],
     url: '/mcp',
+    // Un sistema entero (crear_sistema, validar_sistema) puede pesar como su archivo
+    bodyLimit: FILE_BYTES + 1024 * 1024,
+    // Sin token no se lee el cuerpo: el 401, antes (el token se comprueba de verdad en protect)
+    onRequest: async (request, reply) => {
+      if (!/^Bearer \S+$/i.test(request.headers.authorization ?? '')) {
+        const response = await protect(new Request(new URL(request.url, publicUrl), { method: 'GET' }))
+        reply.status(response.status)
+        response.headers.forEach((value, key) => {
+          reply.header(key, value)
+        })
+        return reply.send(await response.text())
+      }
+    },
     handler: async (request, reply) => {
       const response = await protect(
         new Request(new URL(request.url, publicUrl), {

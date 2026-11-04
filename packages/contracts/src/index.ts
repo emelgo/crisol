@@ -67,12 +67,17 @@ import {
 } from './pages.ts'
 import { searchWiki } from './search.ts'
 import {
+  checkSystem,
   createSystem,
   deleteSystem,
   exportSystem,
   getSystem,
+  getSystemFormat,
+  getSystemParts,
   importSystem,
   listSystems,
+  tryFormula,
+  trySystemRoll,
   updateSystem
 } from './systems.ts'
 import { createTag, deleteTag, listAccountTags, setFileTags, updateTag } from './tags.ts'
@@ -211,7 +216,12 @@ export const ACTIONS = [
   updateSystem,
   deleteSystem,
   exportSystem,
-  importSystem
+  importSystem,
+  getSystemParts,
+  checkSystem,
+  tryFormula,
+  trySystemRoll,
+  getSystemFormat
 ]
 
 /** Las acciones por nombre, solo como tipo: la web las usa sin cargar zod */
@@ -317,4 +327,9 @@ export type Actions = {
   deleteSystem: typeof deleteSystem
   exportSystem: typeof exportSystem
   importSystem: typeof importSystem
+  getSystemParts: typeof getSystemParts
+  checkSystem: typeof checkSystem
+  tryFormula: typeof tryFormula
+  trySystemRoll: typeof trySystemRoll
+  getSystemFormat: typeof getSystemFormat
 }

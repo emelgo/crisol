@@ -5,35 +5,51 @@
  */
 import { randomUUID } from 'node:crypto'
 import {
+  checkSystem,
   createSystem,
   deleteSystem,
   exportSystem,
   getSystem,
+  getSystemFormat,
+  getSystemParts,
   importSystem,
   listSystems,
   type SystemFull,
   type SystemSummary,
+  tryFormula,
+  trySystemRoll,
   updateSystem
 } from '@crisol/contracts'
 import { campaignsRepo, systemsRepo } from '@crisol/db'
-import type { CriticalRule } from '@crisol/dice'
-import { authorize, NotFoundError } from '@crisol/domain'
+import { type CriticalRule, cryptoRoller, DiceSyntaxError } from '@crisol/dice'
+import { authorize, can, NotFoundError } from '@crisol/domain'
 import {
+  applyChanges,
   CATALOG,
+  ChangeError,
   catalogSystem,
+  FORMAT,
   fileName,
   normalizeChoices,
   type Problem,
+  pickPaths,
+  RollError,
+  SYSTEM_FILE,
   type System,
+  type SystemDocument,
+  systemDocs,
   systemOverview,
   textOf,
   toFile,
+  tryFormula as tryFormulaIn,
+  tryRoll,
   validateFile,
   validateSystem
 } from '@crisol/systems'
 import { systemsChanged } from '../realtime/events.ts'
 import { targetOrganization } from './access.ts'
-import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
+import { type ActionContext, historyContext, InvalidRequestError, TooManyRequestsError } from './context.ts'
+import { tooManyTries } from './dice.ts'
 import { implement } from './registry.ts'
 
 /** Hasta tantos por cuenta */
@@ -87,6 +103,19 @@ async function findReadable(ctx: ActionContext, organizationId: string, systemId
   const row = await systemsRepo.findSystem(ctx.db, systemId)
   if (!row || row.deletedAt || row.organizationId !== organizationId) throw new NotFoundError('system')
   return { document: row.document as unknown as System, row }
+}
+
+/**
+ * El nombre de un sistema que la cuenta ve, para el resumen de lo que la IA pide aprobar: si no lo ve, para ella no
+ * existe y no se pide nada
+ */
+export async function visibleSystemName(ctx: ActionContext, systemId: string) {
+  const catalog = catalogSystem(systemId)
+  if (catalog) return textOf(catalog.name)
+  const row = isUuid(systemId) ? await systemsRepo.findSystem(ctx.db, systemId) : null
+  if (!row || row.deletedAt || !can(ctx.actor, 'systems.read', { organizationId: row.organizationId }))
+    throw new NotFoundError('system')
+  return textOf((row.document as unknown as System).name)
 }
 
 /** Las campañas que usan cada sistema */
@@ -200,6 +229,40 @@ function validated(document: unknown): { system: System; warnings: Problem[] } {
 
 const changed = () => new InvalidRequestError('SYSTEM_CHANGED', 'lo ha cambiado otro mientras tanto: vuelve a leerlo')
 
+/** Lo que no se puede hacer en una ruta (que no exista, que no sea un objeto…), dicho para la IA */
+function byPath<T>(code: string, run: () => T): T {
+  try {
+    return run()
+  } catch (error) {
+    if (error instanceof ChangeError) throw new InvalidRequestError(code, error.message)
+    throw error
+  }
+}
+
+/** El documento de prueba que llega, con lo que falte vacío */
+const testDocument = (
+  given:
+    | {
+        data?: Record<string, unknown>
+        items?: { id: string; type: string; name: string; data?: Record<string, unknown> }[]
+      }
+    | undefined
+): SystemDocument => ({
+  data: given?.data ?? {},
+  items: (given?.items ?? []).map((item) => ({ ...item, data: item.data ?? {} }))
+})
+
+/** La documentación del formato: sale del esquema, que no cambia mientras corre el servidor */
+let docs: string | null = null
+export const formatDocs = () => {
+  docs ??= systemDocs()
+  return docs
+}
+
+/** Los problemas, como los da el contrato */
+const asProblems = (problems: readonly Problem[]) =>
+  problems.map(({ path, where, message, severity }) => ({ path, where, message, severity }))
+
 export const systemActions = [
   implement(listSystems, async (ctx, { organizationId }) => {
     const target = readableOrganization(ctx, organizationId)
@@ -233,15 +296,18 @@ export const systemActions = [
     return { ...own(row, counts.get(row.id) ?? 0, await namer(ctx, [row])), campaigns: using.get(row.id) ?? [] }
   }),
 
-  implement(createSystem, async (ctx, { organizationId, name, from }) => {
+  implement(createSystem, async (ctx, { organizationId, name, from, document }) => {
     const target = targetOrganization(ctx, organizationId)
     authorize(ctx.actor, 'systems.write', { organizationId: target })
     if ((await systemsRepo.countSystems(ctx.db, target)) >= MAX_SYSTEMS)
       throw new InvalidRequestError('TOO_MANY_SYSTEMS', `como mucho, ${MAX_SYSTEMS} por cuenta`)
-    const source = await findReadable(ctx, target, from)
+    // Con su documento, desde cero; si no, copiando otro
+    const source = document
+      ? { document: document as unknown as System, row: null, fresh: true }
+      : { ...(await findReadable(ctx, target, from)), fresh: false }
     const id = randomUUID()
     // La copia es de la cuenta: su id es el suyo y su nombre, el que se le da
-    const { system } = validated({ ...structuredClone(source.document), id, name })
+    const { system } = validated({ ...structuredClone(source.document), id, ...(name !== undefined ? { name } : {}) })
     const content = source.row
       ? (await systemsRepo.listContent(ctx.db, source.row.id)).map(({ type, key, source: s, data }) => ({
           type,
@@ -252,11 +318,18 @@ export const systemActions = [
       : []
     const row = await systemsRepo.createSystem(
       ctx.db,
-      historyContext(ctx, 'createSystem', { name, from: textOf(source.document.name) }, { organizationId: target }),
+      historyContext(
+        ctx,
+        'createSystem',
+        { name: textOf(system.name), ...(source.fresh ? {} : { from: textOf(source.document.name) }) },
+        { organizationId: target }
+      ),
       {
         id,
         organizationId: target,
-        basedOn: { id: source.row ? source.row.id : source.document.id, version: source.row ? source.row.version : 1 },
+        basedOn: source.fresh
+          ? null
+          : { id: source.row ? source.row.id : source.document.id, version: source.row ? source.row.version : 1 },
         document: system as unknown as Record<string, unknown>
       },
       content
@@ -265,12 +338,19 @@ export const systemActions = [
     return own(row, content.length, await namer(ctx, [row]))
   }),
 
-  implement(updateSystem, async (ctx, { systemId, version, document, name }) => {
-    if (!document && name === undefined)
-      throw new InvalidRequestError('NOTHING_TO_CHANGE', 'da el documento o el nombre')
+  implement(updateSystem, async (ctx, { systemId, version, changes, document, name }) => {
+    if (!document && !changes && name === undefined)
+      throw new InvalidRequestError('NOTHING_TO_CHANGE', 'da los cambios, el documento o el nombre')
+    if (document && changes) throw new InvalidRequestError('BAD_SYSTEM_CHANGE', 'o el documento entero o los cambios')
     const row = await ownWritable(ctx, systemId)
+    // Los cambios, sobre lo guardado (con la versión que se tenía: si otro lo cambió, no se guarda)
+    const base = changes
+      ? byPath('BAD_SYSTEM_CHANGE', () =>
+          applyChanges(row.document, changes as { path: string; value?: unknown; remove?: boolean }[])
+        )
+      : (document ?? row.document)
     // Su id es siempre el suyo, lo diga o no el documento
-    const next = { ...structuredClone(document ?? row.document), id: row.id, ...(name !== undefined ? { name } : {}) }
+    const next = { ...structuredClone(base), id: row.id, ...(name !== undefined ? { name } : {}) }
     const { system, warnings } = validated(next)
     let updated: systemsRepo.SystemRow
     try {
@@ -320,6 +400,67 @@ export const systemActions = [
         }))
       : []
     return { name: fileName(document), file: toFile(document, content) as unknown as Record<string, unknown> }
+  }),
+
+  implement(getSystemParts, async (ctx, { systemId, parts, organizationId }) => {
+    const target = readableOrganization(ctx, organizationId)
+    const { document, row } = await findReadable(ctx, target, systemId)
+    const picked = byPath('BAD_SYSTEM_PATH', () => pickPaths(document as unknown as Record<string, unknown>, parts))
+    return {
+      id: row ? row.id : document.id,
+      name: textOf(document.name),
+      version: row ? row.version : 1,
+      builtIn: !row,
+      parts: picked
+    }
+  }),
+
+  implement(getSystemFormat, async () => ({ format: FORMAT, docs: formatDocs() })),
+
+  // Validar no lee ni guarda nada de la cuenta: basta con haber entrado
+  implement(checkSystem, async (_ctx, { document }) => {
+    const { problems } = document.kind === SYSTEM_FILE ? validateFile(document) : validateSystem(document)
+    return { valid: !problems.some((p) => p.severity === 'error'), problems: asProblems(problems) }
+  }),
+
+  implement(tryFormula, async (ctx, { systemId, type, formula, document, organizationId }) => {
+    const target = readableOrganization(ctx, organizationId)
+    const { document: system } = await findReadable(ctx, target, systemId)
+    const tried = tryFormulaIn(system, type, formula, testDocument(document))
+    return { type: tried.type, value: tried.value, terms: tried.terms, problems: tried.problems }
+  }),
+
+  implement(trySystemRoll, async (ctx, input) => {
+    if (tooManyTries(ctx.actor.userId)) throw new TooManyRequestsError('TOO_MANY_ROLLS')
+    const target = readableOrganization(ctx, input.organizationId)
+    const { document: system } = await findReadable(ctx, target, input.systemId)
+    const typeKey = input.type ?? Object.entries(system.types).find(([, t]) => t.document === 'actor')?.[0]
+    if (!typeKey || !system.types[typeKey])
+      throw new InvalidRequestError(
+        'BAD_SYSTEM_TYPE',
+        input.type ? `no existe el tipo «${input.type}»` : 'no tiene personajes'
+      )
+    try {
+      const rolled = tryRoll(system, typeKey, testDocument(input.document), input.roll, {
+        ...(input.element ? { element: input.element } : {}),
+        ...(input.mode ? { mode: input.mode } : {}),
+        target: input.target ?? null,
+        roller: cryptoRoller
+      })
+      return {
+        label: rolled.label,
+        formula: rolled.formula,
+        total: rolled.total,
+        detail: rolled.detail,
+        critical: rolled.critical,
+        band: rolled.band,
+        modeApplied: rolled.modeApplied
+      }
+    } catch (error) {
+      if (error instanceof RollError || error instanceof DiceSyntaxError)
+        throw new InvalidRequestError('BAD_ROLL', error.message)
+      throw error
+    }
   }),
 
   implement(importSystem, async (ctx, { organizationId, file, into }) => {

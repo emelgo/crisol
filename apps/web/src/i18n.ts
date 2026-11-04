@@ -1807,6 +1807,10 @@ export const es = {
     BAD_SYSTEM: 'Ese sistema no existe',
     BAD_SYSTEM_CHOICES: 'Lo elegido del sistema no vale',
     NO_SYSTEM: 'La campaña no tiene sistema',
+    BAD_SYSTEM_CHANGE: 'Ese cambio del sistema no se puede hacer',
+    BAD_SYSTEM_PATH: 'Esa parte del sistema no existe',
+    BAD_SYSTEM_TYPE: 'Ese tipo no existe en el sistema',
+    BAD_ROLL: 'Esa tirada no se puede hacer',
     BAD_FORMULA: 'Esa tirada no se entiende',
     VISIBILITY_NOT_ALLOWED: 'No puedes tirar así en esta campaña',
     UNKNOWN: 'Algo ha fallado. Vuelve a intentarlo.'

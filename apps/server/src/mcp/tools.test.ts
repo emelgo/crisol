@@ -1,9 +1,11 @@
 import { ForbiddenError, NotFoundError } from '@crisol/domain'
+import { toFile } from '@crisol/systems'
+import { fronteras } from '@crisol/systems/fixtures'
 import { describe, expect, it } from 'vitest'
 import { UI_ONLY } from '../actions/ai.ts'
 import { InvalidRequestError } from '../actions/context.ts'
 import { errorText } from './approvals.ts'
-import { MCP_TOOLS, routeCall, toolActions, toolConfig } from './tools.ts'
+import { MCP_TOOLS, type McpTool, routeCall, toolActions, toolConfig } from './tools.ts'
 
 describe('herramientas MCP', () => {
   it('cada herramienta lleva a acciones que existen, con nombre en español', () => {
@@ -13,12 +15,13 @@ describe('herramientas MCP', () => {
     }
   })
 
-  it('las del módulo 0, las de la wiki, las de las plantillas y las de los dados', () => {
+  it('las del módulo 0, las de la wiki, las de las plantillas, las de los dados y las de los sistemas', () => {
     expect(Object.keys(MCP_TOOLS).sort()).toEqual([
       'borrar_etiqueta',
       'borrar_pagina',
       'borrar_pestana',
       'borrar_plantilla',
+      'borrar_sistema',
       'buscar_paginas',
       'cambiar_campana',
       'cambiar_etiqueta',
@@ -28,36 +31,44 @@ describe('herramientas MCP', () => {
       'cambiar_pestana',
       'cambiar_pin',
       'cambiar_plantilla',
+      'cambiar_sistema',
       'crear_campana',
       'crear_etiqueta',
       'crear_mundo',
       'crear_paginas',
       'crear_pestana',
       'crear_plantilla',
+      'crear_sistema',
       'deshacer',
       'editar_pagina',
       'enlace_invitacion',
       'enlaces_pagina',
       'etiquetar_archivo',
+      'formato_sistemas',
       'leer_pagina',
       'listar_archivos',
       'listar_etiquetas',
       'listar_mundos',
       'listar_plantillas',
+      'listar_sistemas',
       'mover_pagina',
       'ordenar_subpaginas',
       'paginas_recientes',
       'pendientes',
       'poner_pin',
+      'probar_formula',
+      'probar_tirada',
       'quitar_pin',
       'restaurar_version',
       'tirar_dados',
+      'validar_sistema',
       'ver_arbol',
       'ver_campana',
       'ver_historial',
       'ver_mapa',
       'ver_pestanas',
       'ver_plantilla',
+      'ver_sistema',
       'ver_tiradas',
       'versiones_pagina'
     ])
@@ -91,6 +102,25 @@ describe('herramientas MCP', () => {
     expect(route('open')).toEqual(['setInvitationsOpen', 'players', { campaignId, open: true }])
     expect(route('close')).toEqual(['setInvitationsOpen', 'players', { campaignId, open: false }])
     expect(() => route('borrar')).toThrow()
+  })
+
+  it('ver_sistema: entero o por partes; crear_sistema: copiando, con su documento o desde un archivo', () => {
+    const { ver_sistema, crear_sistema } = MCP_TOOLS
+    if (!ver_sistema || !crear_sistema) throw new Error('faltan herramientas de sistemas')
+    const route = (tool: McpTool, input: Record<string, unknown>) => {
+      const { impl, input: given } = routeCall(tool, input)
+      return [impl.action.name, given]
+    }
+    expect(route(ver_sistema, { systemId: 'blank' })).toEqual(['getSystem', { systemId: 'blank' }])
+    expect(route(ver_sistema, { systemId: 'blank', parts: ['dice'] })).toEqual([
+      'getSystemParts',
+      { systemId: 'blank', parts: ['dice'] }
+    ])
+    expect(route(crear_sistema, { name: 'Fronteras' })).toEqual(['createSystem', { name: 'Fronteras', from: 'blank' }])
+    const [action, input] = route(crear_sistema, { document: fronteras, name: 'Fronteras del norte' })
+    expect(action).toBe('createSystem')
+    expect(input).toMatchObject({ document: fronteras, name: 'Fronteras del norte' })
+    expect(route(crear_sistema, { file: toFile(fronteras, []) })[0]).toBe('importSystem')
   })
 
   it('a la IA le explica los errores de permisos con el código de la API', () => {

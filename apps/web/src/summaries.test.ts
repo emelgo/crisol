@@ -61,6 +61,22 @@ describe('las frases de la wiki', () => {
     expect(summaryOf(t, { action: 'deleteFile', details: { name: 'Mapa.png' } })).toBe('borró el archivo «Mapa.png»')
   })
 
+  it('lo que pide la IA con un sistema: el nombre sale de su entrada, del que toca o de su documento', () => {
+    const asks = (action: string, input: Record<string, unknown>, details: Record<string, unknown> = {}) =>
+      requestSummary(t, { action, input, details })
+    expect(asks('updateSystem', { systemId: 's', version: 1, changes: [] }, { system: 'Fronteras' })).toBe(
+      'cambiar el sistema «Fronteras»'
+    )
+    expect(asks('deleteSystem', { systemId: 's' }, { system: 'Fronteras' })).toBe('borrar el sistema «Fronteras»')
+    expect(asks('createSystem', { document: { name: { es: 'Fronteras', en: 'Frontiers' } } })).toBe(
+      'crear el sistema «Fronteras»'
+    )
+    expect(asks('createSystem', { name: 'Copia', from: 'blank' }, { system: 'En blanco' })).toBe(
+      'crear el sistema «Copia»'
+    )
+    expect(asks('importSystem', { file: { system: { name: 'Subido' } } })).toBe('subir el sistema «Subido»')
+  })
+
   it('lo que pide Claude, con los títulos de lo que toca', () => {
     expect(
       requestSummary(t, {

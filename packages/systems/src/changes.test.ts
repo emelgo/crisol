@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { applyChanges, ChangeError, parsePath } from './changes.ts'
+import { applyChanges, ChangeError, parsePath, pickPaths } from './changes.ts'
 import { fronteras } from './fixtures/index.ts'
 import { validateSystem } from './validate.ts'
 
@@ -56,5 +56,15 @@ describe('cambiar un sistema por rutas', () => {
   it('no toca los prototipos', () => {
     expect(() => applyChanges(doc(), [{ path: '__proto__.polluted', value: true }])).toThrow(ChangeError)
     expect(({} as Record<string, unknown>).polluted).toBeUndefined()
+  })
+
+  it('ver solo unas partes, por su ruta', () => {
+    const parts = pickPaths(doc(), ['rolls.atributo.bands[0]', 'dice'])
+    expect(parts).toEqual({
+      'rolls.atributo.bands[0]': { if: '@total >= 10', label: 'Éxito total', tone: 'success' },
+      dice: { default: '2d6', critical: 'none' }
+    })
+    expect(() => pickPaths(doc(), ['rolls.nada'])).toThrow('«rolls.nada»: no existe')
+    expect(() => pickPaths(doc(), ['name.es'])).toThrow(ChangeError)
   })
 })

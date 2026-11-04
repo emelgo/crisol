@@ -438,9 +438,41 @@ test('@fugas los sistemas de reglas son de la cuenta: la jugadora ni los ve ni s
     data: { systemId: created.id, version: 1, name: 'Reglas Escondidas' }
   })
   expect(changed.status()).toBe(200)
+  // Y su IA, por el MCP: crea uno con su documento, lo cambia por rutas y lo prueba
+  const claude = await connectClaude(page)
+  const document = {
+    format: 1,
+    id: 'x',
+    name: 'Sistema de la IA',
+    version: '1',
+    languages: ['es'],
+    types: {
+      personaje: {
+        document: 'actor',
+        label: 'Personaje',
+        fields: { vigor: { kind: 'number', label: 'Vigor', help: 'Ayuda que solo ve el máster' } }
+      }
+    },
+    rolls: { atributo: { label: 'Atributo', formula: '2d6 + @vigor' } }
+  }
+  const made = await claude.call('crear_sistema', { document })
+  expect(made.isError, made.text).toBeFalsy()
+  const madeId = (made.structuredContent as { id: string }).id
+  const edited = await claude.call('cambiar_sistema', {
+    systemId: madeId,
+    version: 1,
+    changes: [{ path: 'types.personaje.fields.vigor.label', value: 'Vigor oculto' }]
+  })
+  expect(edited.isError, edited.text).toBeFalsy()
+  const tried = await claude.call('probar_tirada', { systemId: madeId, roll: 'atributo' })
+  expect(tried.isError, tried.text).toBeFalsy()
 
   for (const [name, data] of [
     ['listSystems', { organizationId }],
+    ['getSystem', { systemId: madeId, organizationId }],
+    ['getSystemParts', { systemId: madeId, parts: ['types'], organizationId }],
+    ['tryFormula', { systemId: madeId, type: 'personaje', formula: '@vigor', organizationId }],
+    ['trySystemRoll', { systemId: madeId, roll: 'atributo', organizationId }],
     ['getSystem', { systemId: created.id, organizationId }],
     ['updateSystem', { systemId: created.id, version: 2, name: 'Mío' }],
     ['deleteSystem', { systemId: created.id }]
@@ -450,7 +482,16 @@ test('@fugas los sistemas de reglas son de la cuenta: la jugadora ni los ve ni s
   }
 
   const everything = await captured.all()
-  for (const leak of ['Sistema Secreto', 'Reglas Escondidas', created.id, '"systems"'])
+  for (const leak of [
+    'Sistema Secreto',
+    'Reglas Escondidas',
+    created.id,
+    '"systems"',
+    'Sistema de la IA',
+    'Vigor oculto',
+    'Ayuda que solo ve el máster',
+    madeId
+  ])
     expect(everything).not.toContain(leak)
   await player.close()
 })

@@ -355,4 +355,105 @@ describe('los sistemas de reglas', () => {
       expect((await ok200('deleteSystem', { systemId: system.id })).name).toBe('Fronteras')
     })
   })
+
+  it('cambiar por rutas: todo o nada, con la versión; lo que no vale dice su ruta', async () => {
+    const { system } = await ok200('importSystem', { file: toFile(fronteras, []) })
+    const { system: changed } = await ok200('updateSystem', {
+      systemId: system.id,
+      version: 1,
+      changes: [
+        { path: 'types.personaje.fields.defensa.formula', value: '8 + @vigor' },
+        { path: 'rolls.atributo.modes[1]', remove: true },
+        { path: 'rolls.dano', value: { label: 'Daño', formula: '1d6 + @vigor' } }
+      ]
+    })
+    expect(changed.version).toBe(2)
+    expect(changed.document.types.personaje.fields.defensa.formula).toBe('8 + @vigor')
+    expect(changed.document.rolls.atributo.modes).toHaveLength(1)
+    expect(changed.rolls.map((r: { key: string }) => r.key)).toEqual(['atributo', 'dano'])
+    // Con un error, nada: ni el primer cambio (cada problema, con su ruta, lo lee la IA: en las pruebas del MCP)
+    const bad = await call('updateSystem', {
+      systemId: system.id,
+      version: 2,
+      changes: [
+        { path: 'name', value: 'Otro' },
+        { path: 'types.personaje.fields.carga.formula', value: '3 + @nada' }
+      ]
+    })
+    expect(bad.json()).toMatchObject({ code: 'SYSTEM_INVALID' })
+    expect(
+      (await code('updateSystem', { systemId: system.id, version: 2, changes: [{ path: 'rolls.nada', remove: true }] }))
+        .code
+    ).toBe('BAD_SYSTEM_CHANGE')
+    expect(
+      (await code('updateSystem', { systemId: system.id, version: 2, changes: [{ path: '__proto__.x', value: 1 }] }))
+        .code
+    ).toBe('BAD_SYSTEM_CHANGE')
+    expect(
+      (await code('updateSystem', { systemId: system.id, version: 1, changes: [{ path: 'name', value: 'Otro' }] })).code
+    ).toBe('SYSTEM_CHANGED')
+    expect((await ok200('getSystem', { systemId: system.id })).name).toBe('Fronteras')
+  })
+
+  it('ver unas partes, validar sin guardar y probar una fórmula y una tirada', async () => {
+    const { system } = await ok200('importSystem', { file: toFile(fronteras, []) })
+    const parts = await ok200('getSystemParts', { systemId: system.id, parts: ['rolls.atributo.bands', 'dice'] })
+    expect(parts).toMatchObject({ id: system.id, version: 1, builtIn: false, parts: { dice: { default: '2d6' } } })
+    expect(parts.parts['rolls.atributo.bands']).toHaveLength(3)
+    expect((await code('getSystemParts', { systemId: system.id, parts: ['nada'] })).code).toBe('BAD_SYSTEM_PATH')
+    expect((await ok200('getSystemParts', { systemId: 'blank', parts: ['dice'] })).builtIn).toBe(true)
+
+    const broken = structuredClone(fronteras) as unknown as {
+      types: { personaje: { fields: { defensa: { formula: string } } } }
+    }
+    broken.types.personaje.fields.defensa.formula = '7 + @vigr'
+    const checked = await ok200('checkSystem', { document: broken })
+    expect(checked.valid).toBe(false)
+    expect(checked.problems[0]).toEqual({
+      path: 'types.personaje.fields.defensa.formula',
+      where: 'Personaje › Defensa › Fórmula',
+      message: 'No existe «@vigr» en Personaje. ¿Quizás «@vigor»?',
+      severity: 'error'
+    })
+    expect((await ok200('checkSystem', { document: toFile(fronteras, []) })).valid).toBe(true)
+
+    const formula = await ok200('tryFormula', {
+      systemId: system.id,
+      type: 'personaje',
+      formula: '@defensa',
+      document: {
+        data: { vigor: 2 },
+        items: [{ id: 'escudo', type: 'objeto', name: 'Escudo', data: { equipado: true, defensa: 1 } }]
+      }
+    })
+    expect(formula).toMatchObject({ type: 'number', value: 10, problems: [] })
+    expect(formula.terms).toEqual([{ label: 'Defensa', value: 10, kind: 'field' }])
+    expect(
+      (await ok200('tryFormula', { systemId: system.id, type: 'personaje', formula: '@nada' })).problems[0].message
+    ).toMatch(/No existe «@nada»/)
+
+    const rolled = await ok200('trySystemRoll', {
+      systemId: system.id,
+      roll: 'atributo',
+      element: 'vigor',
+      mode: 'ventaja',
+      document: { data: { vigor: 3 } }
+    })
+    expect(rolled.label).toBe('Atributo · Vigor')
+    expect(rolled.formula).toBe('3d6kh2+3[Vigor]')
+    expect(rolled.modeApplied).toBe(true)
+    expect(['Éxito total', 'Éxito con coste', 'Fallo']).toContain(rolled.band.label)
+    expect(rolled.critical).toBeNull()
+    expect((await code('trySystemRoll', { systemId: system.id, roll: 'nada' })).code).toBe('BAD_ROLL')
+    expect((await code('trySystemRoll', { systemId: system.id, roll: 'atributo', type: 'nada' })).code).toBe(
+      'BAD_SYSTEM_TYPE'
+    )
+    // Lo de otra cuenta no se ve
+    const other = await signUpTestUser(auth, { name: 'Otra', email: 'otra@crisol.test' })
+    await organization(other.userId, 'Otra')
+    expect(
+      (await code('tryFormula', { systemId: system.id, type: 'personaje', formula: '1' }, other.cookie)).status
+    ).toBe(404)
+    expect((await code('getSystemParts', { systemId: system.id, parts: ['dice'] }, other.cookie)).status).toBe(404)
+  })
 })

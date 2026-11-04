@@ -20,6 +20,15 @@ export interface TriedFormula {
 
 const TRIED = '__formula'
 
+const typeOfValue = (value: Computed['value']): ValueType =>
+  value === null
+    ? 'null'
+    : Array.isArray(value)
+      ? 'list'
+      : typeof value === 'object'
+        ? 'object'
+        : (typeof value as 'number' | 'string' | 'boolean')
+
 export function tryFormula(
   system: System,
   typeKey: string,
@@ -46,9 +55,11 @@ export function tryFormula(
     }
   }
   const computed = evaluate(withFormula, typeKey, doc, { language }).computed[TRIED]
+  const value = computed?.value ?? null
   return {
-    type: checked.type,
-    value: computed?.value ?? null,
+    // Con un valor calculado de por medio, lo que da se sabe al calcularla
+    type: checked.type === 'any' ? typeOfValue(value) : checked.type,
+    value,
     terms: computed?.terms ?? [],
     problems: computed?.error ? [{ message: computed.error }] : []
   }

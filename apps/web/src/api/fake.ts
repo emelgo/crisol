@@ -34,15 +34,22 @@ import {
   uniqueTags
 } from '@crisol/domain'
 import {
+  applyChanges,
   CATALOG,
+  ChangeError,
   type ContentItem,
   catalogSystem,
   fileName,
   normalizeChoices,
+  pickPaths,
+  RollError,
+  SYSTEM_FILE,
   type System,
   systemOverview,
   textOf,
   toFile,
+  tryFormula as tryFormulaIn,
+  tryRoll,
   validateFile,
   validateSystem
 } from '@crisol/systems'
@@ -996,11 +1003,20 @@ export function fakeApi(
       })
       return systemView(id)
     },
-    updateSystem: ({ systemId, version, document, name }) => {
+    updateSystem: ({ systemId, version, changes, document, name }) => {
       const own = ownSystems.find((s) => s.id === systemId && !s.deleted)
       if (!own) throw new ApiError('NOT_FOUND', 404)
+      let base: Record<string, unknown> = document ?? (own.document as unknown as Record<string, unknown>)
+      if (changes) {
+        try {
+          base = applyChanges(own.document as unknown as Record<string, unknown>, changes)
+        } catch (error) {
+          if (error instanceof ChangeError) throw new ApiError('BAD_SYSTEM_CHANGE', 400)
+          throw error
+        }
+      }
       const { system, warnings } = validSystem({
-        ...structuredClone(document ?? own.document),
+        ...structuredClone(base),
         id: systemId,
         ...(name !== undefined ? { name } : {})
       })
@@ -1021,6 +1037,56 @@ export function fakeApi(
       if (!document) throw new ApiError('NOT_FOUND', 404)
       const content = ownSystems.find((s) => s.id === systemId)?.content ?? []
       return { name: fileName(document), file: toFile(document, content) as unknown as Record<string, unknown> }
+    },
+    getSystemParts: ({ systemId, parts }) => {
+      const document = systemById(systemId)
+      if (!document) throw new ApiError('NOT_FOUND', 404)
+      const own = ownSystems.find((s) => s.id === systemId && !s.deleted)
+      try {
+        return {
+          id: systemId,
+          name: textOf(document.name),
+          version: own?.version ?? 1,
+          builtIn: !own,
+          parts: pickPaths(document as unknown as Record<string, unknown>, parts)
+        }
+      } catch (error) {
+        if (error instanceof ChangeError) throw new ApiError('BAD_SYSTEM_PATH', 400)
+        throw error
+      }
+    },
+    getSystemFormat: () => ({ format: 1, docs: '# El formato de los sistemas de Crisol' }),
+    checkSystem: ({ document }) => {
+      const { problems } = document.kind === SYSTEM_FILE ? validateFile(document) : validateSystem(document)
+      return {
+        valid: !problems.some((p) => p.severity === 'error'),
+        problems: problems.map(({ path, where, message, severity }) => ({ path, where, message, severity }))
+      }
+    },
+    tryFormula: ({ systemId, type, formula, document }) => {
+      const system = systemById(systemId)
+      if (!system) throw new ApiError('NOT_FOUND', 404)
+      const items = (document?.items ?? []).map((item) => ({ ...item, data: item.data ?? {} }))
+      return tryFormulaIn(system, type, formula, { data: document?.data ?? {}, items })
+    },
+    trySystemRoll: (input) => {
+      const system = systemById(input.systemId)
+      if (!system) throw new ApiError('NOT_FOUND', 404)
+      const typeKey = input.type ?? Object.entries(system.types).find(([, t]) => t.document === 'actor')?.[0]
+      if (!typeKey) throw new ApiError('BAD_SYSTEM_TYPE', 400)
+      const items = (input.document?.items ?? []).map((item) => ({ ...item, data: item.data ?? {} }))
+      try {
+        const rolled = tryRoll(system, typeKey, { data: input.document?.data ?? {}, items }, input.roll, {
+          ...(input.element ? { element: input.element } : {}),
+          ...(input.mode ? { mode: input.mode } : {}),
+          target: input.target ?? null
+        })
+        const { label, formula, total, detail, critical, band, modeApplied } = rolled
+        return { label, formula, total, detail, critical, band, modeApplied }
+      } catch (error) {
+        if (error instanceof RollError) throw new ApiError('BAD_ROLL', 400)
+        throw error
+      }
     },
     importSystem: ({ file, into }) => {
       const { file: valid, problems } = validateFile(file)

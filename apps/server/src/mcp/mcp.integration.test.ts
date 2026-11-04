@@ -1,8 +1,11 @@
 import { createHash, randomBytes } from 'node:crypto'
-import type { Approval, Campaign, HistoryEntry, Invitation, World } from '@crisol/contracts'
+import type { Approval, Campaign, HistoryEntry, Invitation, SystemFull, World } from '@crisol/contracts'
 import { aiRepo, connect, schema } from '@crisol/db'
 import { freshTestDatabase } from '@crisol/db/testing'
+import { toFile } from '@crisol/systems'
+import { fronteras } from '@crisol/systems/fixtures'
 import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/client'
+import { eq } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { startServer } from '../server.ts'
 import { TEST_AUTH_SECRET, testDataDir } from '../testing.ts'
@@ -189,6 +192,7 @@ describe('conector MCP con OAuth', () => {
     await api(cookie, 'editPage', { pageId: page.id, body: { mode: 'append', markdown: 'Texto.' } })
     const { versions } = await api<{ versions: { id: string }[] }>(cookie, 'listPageVersions', { pageId: page.id })
     const own = await api<{ id: string }>(cookie, 'createTemplate', { name: 'Frente' })
+    const system = (await api<{ system: SystemFull }>(cookie, 'importSystem', { file: toFile(fronteras, []) })).system
     const cases: Array<[string, Record<string, unknown>, 'read' | 'write' | 'players' | 'delete']> = [
       ['listar_mundos', {}, 'read'],
       ['ver_campana', { campaignId: campaign.id }, 'read'],
@@ -221,6 +225,17 @@ describe('conector MCP con OAuth', () => {
       ['tirar_dados', { formula: '1d20+5' }, 'read'],
       ['tirar_dados', { formula: '1d20+5', campaignId: campaign.id }, 'write'],
       ['ver_tiradas', { campaignId: campaign.id }, 'read'],
+      ['formato_sistemas', {}, 'read'],
+      ['listar_sistemas', {}, 'read'],
+      ['ver_sistema', { systemId: system.id }, 'read'],
+      ['ver_sistema', { systemId: system.id, parts: ['dice'] }, 'read'],
+      ['validar_sistema', { document: fronteras }, 'read'],
+      ['probar_formula', { systemId: system.id, type: 'personaje', formula: '7 + @vigor' }, 'read'],
+      ['probar_tirada', { systemId: system.id, roll: 'atributo', element: 'vigor' }, 'read'],
+      ['crear_sistema', { name: 'Otro' }, 'write'],
+      ['cambiar_sistema', { systemId: system.id, version: 1, changes: [{ path: 'summary', value: 'Otro' }] }, 'write'],
+      ['cambiar_campana', { campaignId: campaign.id, system: system.id }, 'write'],
+      ['borrar_sistema', { systemId: system.id }, 'delete'],
       ['deshacer', { operationId }, 'delete']
     ]
     const expected = {
@@ -230,6 +245,8 @@ describe('conector MCP con OAuth', () => {
     } as const
     for (const mode of ['readOnly', 'assistant', 'copilot'] as const) {
       await aiRepo.setAiMode(conn.db, userId, mode)
+      // Lo que esperaba del modo anterior no cuenta para el tope de la cola
+      await conn.db.delete(schema.approvals).where(eq(schema.approvals.userId, userId))
       for (const [tool, args, kind] of cases) {
         const result = await call(tool, args)
         const outcome = result.text.startsWith('READ_ONLY')
@@ -389,6 +406,77 @@ describe('conector MCP con OAuth', () => {
     expect(bad.text).toContain('No se entiende «1d20+» al final')
   })
 
+  it('criterio 1: la IA hace un sistema de 2d6, lo valida, prueba una tirada y una fórmula, y sale en «Sistemas»', async () => {
+    const { cookie, call } = await connected()
+    const format = await call<{ docs: string }>('formato_sistemas')
+    expect(format.data.docs).toContain('## Las fórmulas')
+    // Con una errata: validar dice su ruta, dónde está y por qué; crear no guarda nada y lo dice igual
+    const draft = structuredClone(fronteras) as unknown as {
+      types: { personaje: { fields: { defensa: { formula: string } } } }
+    }
+    draft.types.personaje.fields.defensa.formula = '7 + @vigr'
+    const checked = await call<{ valid: boolean; problems: { path: string; where: string }[] }>('validar_sistema', {
+      document: draft
+    })
+    expect(checked.data.valid).toBe(false)
+    expect(checked.data.problems[0]).toMatchObject({
+      path: 'types.personaje.fields.defensa.formula',
+      where: 'Personaje › Defensa › Fórmula'
+    })
+    const refused = await call('crear_sistema', { document: draft })
+    expect(refused.isError).toBe(true)
+    expect(refused.text).toContain(
+      'SYSTEM_INVALID: types.personaje.fields.defensa.formula (Personaje › Defensa › Fórmula): No existe «@vigr» en Personaje'
+    )
+    // Bien escrito: se crea, se prueba y se cambia por rutas
+    const created = await call<SystemFull>('crear_sistema', { document: fronteras })
+    expect(created.isError).toBeFalsy()
+    const id = created.data.id
+    const formula = await call<{ value: number; terms: { label: string }[] }>('probar_formula', {
+      systemId: id,
+      type: 'personaje',
+      formula: '7 + @vigor',
+      document: { data: { vigor: 2 } }
+    })
+    expect(formula.data.value).toBe(9)
+    expect(formula.data.terms.map((t) => t.label)).toEqual(['Base', 'Vigor'])
+    const roll = await call<{ label: string; band: { label: string } }>('probar_tirada', {
+      systemId: id,
+      roll: 'atributo',
+      element: 'astucia',
+      document: { data: { astucia: 1 } }
+    })
+    expect(roll.data.label).toBe('Atributo · Astucia')
+    expect(['Éxito total', 'Éxito con coste', 'Fallo']).toContain(roll.data.band.label)
+    const changed = await call<{ system: SystemFull }>('cambiar_sistema', {
+      systemId: id,
+      version: 1,
+      changes: [{ path: 'rolls.atributo.bands[0].label', value: 'Éxito pleno' }]
+    })
+    expect(changed.data.system.version).toBe(2)
+    const parts = await call<{ parts: Record<string, { label: string }> }>('ver_sistema', {
+      systemId: id,
+      parts: ['rolls.atributo.bands[0]']
+    })
+    expect(parts.data.parts['rolls.atributo.bands[0]']?.label).toBe('Éxito pleno')
+    // Sale en «Sistemas», en Mis mundos
+    const { systems } = await api<{ systems: { id: string; name: string; version: number }[] }>(
+      cookie,
+      'listSystems',
+      {}
+    )
+    expect(systems.find((s) => s.id === id)).toMatchObject({ name: 'Fronteras', version: 2 })
+  })
+
+  it('el formato de los sistemas, también como recurso', async () => {
+    const owner = await account('owner')
+    const token = await accessToken(owner.cookie, await oauthClient(owner.cookie))
+    const listed = await result(await rpc(token, 'resources/list'))
+    expect(listed.result.resources.map((r: { uri: string }) => r.uri)).toContain('crisol://sistemas/formato')
+    const read = await result(await rpc(token, 'resources/read', { uri: 'crisol://sistemas/formato' }))
+    expect(read.result.contents[0].text).toContain('# El formato de los sistemas de Crisol')
+  })
+
   it('Claude crea con plantilla; si un valor no cabe en su campo, el error le dice qué campos tiene', async () => {
     const { call } = await connected()
     const world = (await call<World>('crear_mundo', { name: 'Eana' })).data
@@ -417,6 +505,7 @@ describe('conector MCP con OAuth', () => {
       .data
     const theirOperation = (await other.call<History>('ver_historial', { worldId: theirWorld.id })).data.entries[0]?.id
     type Created = { pages: { id: string }[] }
+    const theirSystem = (await other.call<SystemFull>('crear_sistema', { document: fronteras })).data
     const theirPage = (
       await other.call<Created>('crear_paginas', {
         worldId: theirWorld.id,
@@ -426,6 +515,7 @@ describe('conector MCP con OAuth', () => {
     ).data.pages[0]?.id
 
     expect(JSON.stringify((await mine.call('listar_mundos')).data)).not.toMatch(/Ajeno|Secreta/)
+    expect(JSON.stringify((await mine.call('listar_sistemas')).data)).not.toContain(theirSystem.id)
     for (const [tool, args] of [
       ['ver_campana', { campaignId: theirCampaign.id }],
       ['enlace_invitacion', { campaignId: theirCampaign.id }],
@@ -435,7 +525,14 @@ describe('conector MCP con OAuth', () => {
       ['deshacer', { operationId: theirOperation }],
       ['leer_pagina', { pageId: theirPage }],
       ['editar_pagina', { pageId: theirPage, body: { mode: 'append', markdown: 'Intrusa' } }],
-      ['crear_paginas', { worldId: theirWorld.id, parentId: null, pages: [{ key: 'x', title: 'Intrusa' }] }]
+      ['crear_paginas', { worldId: theirWorld.id, parentId: null, pages: [{ key: 'x', title: 'Intrusa' }] }],
+      ['ver_sistema', { systemId: theirSystem.id }],
+      ['ver_sistema', { systemId: theirSystem.id, parts: ['dice'] }],
+      ['cambiar_sistema', { systemId: theirSystem.id, version: 1, changes: [{ path: 'name', value: 'Intruso' }] }],
+      ['probar_formula', { systemId: theirSystem.id, type: 'personaje', formula: '1' }],
+      ['probar_tirada', { systemId: theirSystem.id, roll: 'atributo' }],
+      ['borrar_sistema', { systemId: theirSystem.id }],
+      ['crear_sistema', { name: 'Copia', from: theirSystem.id }]
     ] as const) {
       const result = await mine.call(tool, args)
       expect(`${tool}: ${result.text}`).toMatch(new RegExp(`^${tool}: NOT_FOUND`))

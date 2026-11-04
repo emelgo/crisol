@@ -97,3 +97,18 @@ function removeIn(node: Container, segment: Segment, path: string) {
   if (typeof segment === 'number' || !Object.hasOwn(node, segment)) throw new ChangeError(`«${path}»: no existe`)
   delete node[segment]
 }
+
+/** Unas partes de un documento, cada una por su ruta (`types.personaje`, `rolls.atributo`); si una no está, lanza */
+export function pickPaths(document: Record<string, unknown>, paths: readonly string[]) {
+  const out: Record<string, unknown> = {}
+  for (const path of paths) {
+    let node: unknown = document
+    for (const segment of parsePath(path)) {
+      if (!isContainer(node)) throw new ChangeError(`«${path}»: no existe`)
+      node = Array.isArray(node) ? node[segment as number] : (node as Record<string, unknown>)[segment as string]
+      if (node === undefined) throw new ChangeError(`«${path}»: no existe`)
+    }
+    out[path] = structuredClone(node)
+  }
+  return out
+}

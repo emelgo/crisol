@@ -52,7 +52,7 @@ export function summaryOf(
     case 'updateSystem':
     case 'deleteSystem':
     case 'importSystem':
-      return say(action, { name: text(details.name) })
+      return say(action, { name: systemName(details) })
     case 'regenerateInvitation':
       return say('regenerateInvitation', { campaign: text(details.campaign) })
     case 'setInvitationsOpen':
@@ -190,6 +190,21 @@ export function undoLayers(details: Record<string, unknown>): { depth: number; r
     inner = { action: String(inner.details.action ?? ''), details: asRecord(inner.details.details) }
   }
   return { depth, root: inner }
+}
+
+/** Un texto de un sistema, en un idioma o en varios */
+const textIn = (value: unknown) =>
+  typeof value === 'string' ? value : String(asRecord(value).es ?? asRecord(value).en ?? '')
+
+/**
+ * El nombre del sistema de una entrada del historial o de lo que pide la IA: el suyo, el del sistema que toca, o el
+ * de su documento (al crearlo con él o al subir su archivo)
+ */
+function systemName(details: Record<string, unknown>) {
+  if (details.name !== undefined) return textIn(details.name)
+  if (typeof details.system === 'string') return details.system
+  const document = asRecord(details.document).name ?? asRecord(asRecord(details.file).system).name
+  return textIn(document)
 }
 
 /** «a», «b» y «c» */

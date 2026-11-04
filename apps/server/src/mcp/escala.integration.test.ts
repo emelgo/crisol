@@ -245,4 +245,53 @@ describe.skipIf(!process.env.CRISOL_ESCALA)('a la escala de Eana', () => {
     )
     expect(p95(inServer)).toBeLessThan(50)
   }, 300_000)
+
+  it('un sistema de 2 MB por el MCP: crearlo, validarlo, cambiarlo por rutas y verlo por partes, cada vez en menos de 3 s (módulo 3)', async () => {
+    const { call } = await connected()
+    const help = 'Una ayuda larga para que el sistema pese lo que pesa uno de verdad. '.repeat(6)
+    const types: Record<string, unknown> = {}
+    for (let t = 0; t < 34; t++) {
+      const fields: Record<string, unknown> = {}
+      for (let f = 0; f < 120; f++)
+        fields[`f${f}`] =
+          f % 4 === 0
+            ? { kind: 'derived', label: `F${f}`, help, formula: `@f${f + 1} + 1` }
+            : { kind: 'number', label: `F${f}`, help, min: 0, max: 99 }
+      types[`t${t}`] = { document: t === 0 ? 'actor' : 'item', label: `Tipo ${t}`, fields }
+    }
+    const document = { format: 1, id: 'grande', name: 'Grande', version: '1', languages: ['es'], types, rolls: {} }
+    const bytes = Buffer.byteLength(JSON.stringify(document))
+    expect(bytes).toBeGreaterThan(1.8 * 1024 * 1024)
+    const timed = async <T>(run: () => Promise<T>) => {
+      const began = performance.now()
+      const value = await run()
+      return { value, ms: performance.now() - began }
+    }
+    const checked = await timed(() => call<{ valid: boolean }>('validar_sistema', { document }))
+    expect(checked.value.data.valid).toBe(true)
+    const created = await timed(() => call<{ id: string }>('crear_sistema', { document }))
+    expect(created.value.isError).toBeFalsy()
+    const id = created.value.data.id
+    const changed = await timed(() =>
+      call<{ system: { version: number } }>('cambiar_sistema', {
+        systemId: id,
+        version: 1,
+        changes: [{ path: 'types.t0.fields.f1.max', value: 50 }]
+      })
+    )
+    expect(changed.value.data.system.version).toBe(2)
+    const parts = await timed(() =>
+      call<{ parts: Record<string, unknown> }>('ver_sistema', { systemId: id, parts: ['types.t0.fields.f1'] })
+    )
+    expect(parts.value.data.parts['types.t0.fields.f1']).toMatchObject({ max: 50 })
+    const whole = await timed(() => call<{ document: unknown }>('ver_sistema', { systemId: id }))
+    expect(Buffer.byteLength(JSON.stringify(whole.value.data.document))).toBeGreaterThan(1.8 * 1024 * 1024)
+    const times = { validar: checked.ms, crear: created.ms, cambiar: changed.ms, partes: parts.ms, entero: whole.ms }
+    process.stderr.write(
+      `escala: un sistema de ${(bytes / 1024 / 1024).toFixed(2)} MB por el MCP, ${Object.entries(times)
+        .map(([what, ms]) => `${what} ${Math.round(ms)} ms`)
+        .join(', ')}\n`
+    )
+    for (const ms of Object.values(times)) expect(ms).toBeLessThan(3000)
+  }, 120_000)
 })

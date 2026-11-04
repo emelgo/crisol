@@ -59,23 +59,150 @@ export const createSystem = defineAction({
   name: 'createSystem',
   kind: 'write',
   description:
-    'Crea un sistema de reglas de la cuenta copiando otro (from: uno de serie, como «blank» para empezar de cero, o uno propio), con el nombre que se le dé. La copia es de la cuenta y no cambia cuando cambia el original. Se cambia con updateSystem',
-  input: z.object({ organizationId: z.uuid().optional(), name: systemName, from: systemRef.default('blank') }),
+    'Crea un sistema de reglas de la cuenta copiando otro (from: uno de serie, como «blank» para empezar de cero, o uno propio), con el nombre que se le dé, o con su documento entero (document). La copia es de la cuenta y no cambia cuando cambia el original. Se valida entero: con errores no se guarda (SYSTEM_INVALID, con cada problema y su ruta). Se cambia con updateSystem',
+  input: z
+    .object({
+      organizationId: z.uuid().optional(),
+      name: systemName.optional().describe('Su nombre; con document, si no se da, el suyo'),
+      from: systemRef.default('blank'),
+      document: z.record(z.string(), z.unknown()).optional().describe('El sistema entero, en vez de copiar otro')
+    })
+    .refine((input) => input.name !== undefined || input.document !== undefined, 'Falta el nombre'),
   output: systemFull
 })
+
+/** Una ruta de un sistema, como las de sus problemas: types.personaje.fields.defensa.formula, rolls.atributo.bands[1].if */
+const systemPath = z.string().trim().min(1).max(500)
 
 export const updateSystem = defineAction({
   name: 'updateSystem',
   kind: 'write',
   description:
-    'Cambia un sistema de la cuenta: su documento entero, o solo su nombre. Pide la versión que se tenía (version): si otro lo cambió entre medias, no se guarda (SYSTEM_CHANGED). Se valida entero: con errores no se guarda (SYSTEM_INVALID, con cada problema); los avisos se devuelven',
+    'Cambia un sistema de la cuenta: por rutas (changes: cada una pone un valor o un trozo entero, o lo quita con remove; todo o nada), su documento entero o solo su nombre. Pide la versión que se tenía (version): si otro lo cambió entre medias, no se guarda (SYSTEM_CHANGED). Se valida entero: con errores no se guarda nada (SYSTEM_INVALID, con cada problema y su ruta); los avisos se devuelven',
   input: z.object({
     systemId: z.uuid(),
     version: z.int().min(1),
-    document: z.record(z.string(), z.unknown()).optional(),
+    changes: z
+      .array(
+        z.object({
+          path: systemPath,
+          value: z.unknown().optional().describe('Lo que se pone: un valor o un trozo entero (un campo, una tirada)'),
+          remove: z.boolean().optional().describe('Quitar lo que hay en la ruta')
+        })
+      )
+      .min(1)
+      .max(200)
+      .optional()
+      .describe('Los cambios, en orden. Lo que falte hasta la ruta se crea'),
+    document: z.record(z.string(), z.unknown()).optional().describe('El documento entero (sin changes)'),
     name: systemName.optional()
   }),
   output: z.object({ system: systemFull, warnings: z.array(systemProblem) })
+})
+
+export const getSystemParts = defineAction({
+  name: 'getSystemParts',
+  kind: 'read',
+  description:
+    'Unas partes de un sistema, cada una por su ruta (types.personaje, rolls.atributo, dice): para no leerlo entero si es grande. Con su versión, para cambiarlo después',
+  input: z.object({
+    systemId: systemRef,
+    parts: z.array(systemPath).min(1).max(50),
+    organizationId: z.uuid().optional()
+  }),
+  output: z.object({
+    id: systemRef,
+    name: z.string(),
+    version: z.int(),
+    builtIn: z.boolean(),
+    parts: z.record(z.string(), z.unknown()).describe('Cada parte pedida, por su ruta')
+  })
+})
+
+export const checkSystem = defineAction({
+  name: 'checkSystem',
+  kind: 'read',
+  description:
+    'Valida un sistema sin guardarlo: su documento, o el archivo entero de bajar uno (con su contenido). Da cada problema con su ruta, dónde está por sus nombres, por qué, y si impide guardarlo (error) o no (aviso)',
+  input: z.object({ document: z.record(z.string(), z.unknown()) }),
+  output: z.object({ valid: z.boolean().describe('Sin errores: se puede guardar'), problems: z.array(systemProblem) })
+})
+
+/** El documento de prueba de un tipo: sus valores y lo que lleva */
+const testDocument = z
+  .object({
+    data: z.record(z.string(), z.unknown()).optional().describe('Sus valores, por la clave de cada campo'),
+    items: z
+      .array(
+        z.object({
+          id: z.string().min(1).max(100),
+          type: z.string().min(1).max(100),
+          name: z.string().min(1).max(200),
+          data: z.record(z.string(), z.unknown()).optional()
+        })
+      )
+      .max(200)
+      .optional()
+      .describe('Lo que lleva: objetos de los tipos item, con sus valores (un escudo equipado)')
+  })
+  .optional()
+  .describe('El documento de prueba; sin él, los valores iniciales')
+
+const term = z.object({
+  label: z.string(),
+  value: z.number(),
+  kind: z.enum(['base', 'field', 'bonus', 'override']),
+  origin: z.string().optional().describe('El objeto del que sale un bono')
+})
+
+export const tryFormula = defineAction({
+  name: 'tryFormula',
+  kind: 'read',
+  description:
+    'Prueba una fórmula de un sistema con un documento de prueba de uno de sus tipos, sin guardar nada: lo que da, con su desglose, o por qué no se entiende (y dónde). Sin dados: los dados se prueban como tirada (trySystemRoll)',
+  input: z.object({
+    systemId: systemRef,
+    type: z.string().min(1).max(60).describe('La clave del tipo (personaje)'),
+    formula: z.string().min(1).max(2000),
+    document: testDocument,
+    organizationId: z.uuid().optional()
+  }),
+  output: z.object({
+    type: z.string().describe('Lo que da: number, boolean, string, list…'),
+    value: z.unknown(),
+    terms: z.array(term).describe('El desglose: de dónde sale cada parte'),
+    problems: z.array(
+      z
+        .object({ message: z.string(), start: z.int().optional(), end: z.int().optional() })
+        .describe('Con su sitio en la fórmula')
+    )
+  })
+})
+
+export const trySystemRoll = defineAction({
+  name: 'trySystemRoll',
+  kind: 'read',
+  description:
+    'Tira una tirada de un sistema con un documento de prueba, sin apuntarla en ninguna campaña: la fórmula armada, el resultado con su desglose, el crítico (con la regla del sistema) y su franja. El azar lo pone el servidor',
+  input: z.object({
+    systemId: systemRef,
+    roll: z.string().min(1).max(60).describe('La clave de la tirada'),
+    type: z.string().min(1).max(60).optional().describe('El tipo del documento; sin él, el primer personaje'),
+    element: z.string().min(1).max(60).optional().describe('Por qué se tira, si va por cada uno (vigor, des)'),
+    mode: z.string().min(1).max(60).optional().describe('La clave de un modo (ventaja)'),
+    target: z.number().optional().describe('La dificultad o la CA, si la pide'),
+    document: testDocument,
+    organizationId: z.uuid().optional()
+  }),
+  output: z.object({
+    label: z.string(),
+    formula: z.string(),
+    total: z.number(),
+    detail: z.string(),
+    critical: z.enum(['high', 'low']).nullable(),
+    band: z.object({ label: z.string(), tone: z.string() }).nullable().describe('La franja que sale'),
+    modeApplied: z.boolean().describe('Si el modo cambió algo')
+  })
 })
 
 export const deleteSystem = defineAction({
@@ -107,4 +234,13 @@ export const importSystem = defineAction({
     into: z.object({ systemId: z.uuid(), version: z.int().min(1) }).optional()
   }),
   output: z.object({ system: systemFull, warnings: z.array(systemProblem) })
+})
+
+export const getSystemFormat = defineAction({
+  name: 'getSystemFormat',
+  kind: 'read',
+  description:
+    'La documentación del formato de los sistemas: cada parte con lo que es, las clases de campo, el lenguaje de las fórmulas y dos ejemplos (un 2d6 + atributo y un 5e pequeño). Léela antes de crear o cambiar un sistema',
+  input: z.object({}),
+  output: z.object({ format: z.int().describe('La versión del formato'), docs: z.string().describe('En Markdown') })
 })

@@ -14,6 +14,7 @@ import {
   type Implementation,
   InvalidRequestError
 } from '../actions/context.ts'
+import { visibleSystemName } from '../actions/systems.ts'
 import { approvalsChanged } from '../realtime/events.ts'
 import { openJson } from '../secrets.ts'
 
@@ -106,6 +107,10 @@ async function describe(ctx: ActionContext, input: Record<string, unknown>) {
   if (Array.isArray(input.pages)) {
     details.titles = input.pages.map((page) => String((page as { title?: unknown }).title ?? ''))
   }
+  // Un sistema (el que se cambia o se borra, del que se copia o el que se reemplaza al subir un archivo)
+  const into = input.into as { systemId?: unknown } | undefined
+  for (const id of [input.systemId, input.from, into?.systemId])
+    if (typeof id === 'string') details.system = await visibleSystemName(ctx, id)
   if (typeof input.operationId === 'string') {
     const operation = await historyRepo.getOperation(ctx.db, input.operationId)
     // Como al deshacer: el historial de su mundo, o el de la organización

@@ -16,7 +16,8 @@ export const ROLLS_PER_MINUTE = 60
 
 /** Las de tryDice (sin apuntar), en la memoria del proceso: no guardan nada que contar */
 const tried = new Map<string, number[]>()
-function tooManyTries(userId: string) {
+/** Las de probar (tryDice y las tiradas de un sistema), que no se apuntan */
+export function tooManyTries(userId: string) {
   const now = Date.now()
   const recent = (tried.get(userId) ?? []).filter((at) => now - at < 60_000)
   if (recent.length >= ROLLS_PER_MINUTE) {
