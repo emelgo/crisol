@@ -37,8 +37,10 @@ export interface ActionOptions {
 }
 
 export interface DamagePart {
-  /** Ya armada y escalada: `10d6`, `1d8 + 3` */
+  /** Ya armada y escalada: `10d6`, `1d8+3` */
   formula: string
+  /** Lo que da de media, redondeado hacia abajo (el 63 de 18d6); con dados que se repiten o se quedan, no se sabe */
+  average: number | null
   type?: string
   label?: string
   tree: DiceNode
@@ -100,6 +102,29 @@ function plain(tree: DiceNode): string {
     }
   }
   return formatDice(strip(tree))
+}
+
+/** La media de unos dados (de lo que se suma, se resta, se multiplica o se divide) */
+function averageOf(n: DiceNode): number | null {
+  switch (n.kind) {
+    case 'number':
+      return n.value
+    case 'negate': {
+      const v = averageOf(n.value)
+      return v === null ? null : -v
+    }
+    case 'binary': {
+      const a = averageOf(n.left)
+      const b = averageOf(n.right)
+      if (a === null || b === null) return null
+      return n.op === '+' ? a + b : n.op === '-' ? a - b : n.op === '*' ? a * b : b === 0 ? null : a / b
+    }
+    case 'dice': {
+      const plain = !n.keep && !n.explode && !n.reroll && !n.success && !n.failure && !n.implodeOn
+      if (!plain) return null
+      return n.sides === 'F' ? 0 : (n.count * (n.sides + 1)) / 2
+    }
+  }
 }
 
 /** Suma `k` veces unos dados a otros: con los mismos dados, en el mismo término (8d6 y 2d6, 10d6) */
@@ -188,8 +213,10 @@ export function prepareAction(
     let tree = scale(arm(p.formula), index)
     // Un crítico dobla los dados del daño, no los de la curación
     if (options.critical && index !== 'heal') tree = doubleDice(tree)
+    const average = averageOf(tree)
     return {
       formula: plain(tree),
+      average: average === null ? null : Math.floor(average),
       tree,
       ...(p.type ? { type: p.type } : {}),
       ...(p.label ? { label: textOf(p.label, language) } : {})

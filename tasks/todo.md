@@ -43,7 +43,7 @@ Plan: `tasks/plan.md`. Spec: `docs/specs/srd-5e.md`. Cada tarea, con TDD y en un
 
 ### Punto de control 1
 
-- [ ] Los casos difíciles, escritos a mano en un fixture, dan lo que deben: Defensa sin armadura del monje, Bola de fuego
+- [x] Hecho (`fixtures/dificiles.ts`, `dificiles.test.ts`): además, la ventaja y la desventaja de los efectos se aplican solas en la tirada (el modo con `gives`), el daño dice su media y lo que concede un concepto puede decir su tipo. Los casos difíciles, escritos a mano en un fixture, dan lo que deben: Defensa sin armadura del monje, Bola de fuego
   a nivel 3 y 5, Escudo como reacción, el Anillo de protección sintonizado, la Furia activa y un dragón con sus acciones.
   El ritmo, en verde.
 

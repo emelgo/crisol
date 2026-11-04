@@ -259,7 +259,11 @@ function build(strict: boolean) {
           key,
           label: text(),
           from: formula.describe('Los dados que cambia (2d6), sin @'),
-          to: formula.describe('Por cuáles (3d6kh2: tres, y se quedan los dos mayores)')
+          to: formula.describe('Por cuáles (3d6kh2: tres, y se quedan los dos mayores)'),
+          gives: z
+            .enum(['advantage', 'disadvantage'])
+            .optional()
+            .describe('Si es el que ponen los efectos de ventaja (advantage) o de desventaja (disadvantage)')
         })
       )
       .max(10)

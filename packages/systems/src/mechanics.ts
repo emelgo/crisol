@@ -70,8 +70,9 @@ const grant = z
   .strictObject({
     // A partir de qué nivel (en una clase)
     level: z.int().min(1).max(30).optional(),
-    // Un documento, por su concepto (el rasgo, el conjuro)
+    // Un documento, por su concepto (el rasgo, el conjuro) y, si hay varios con ese concepto, su tipo
     concept: key.optional(),
+    type: key.optional(),
     // O una elección: cuántos, de qué tipo y, si se dice, de cuáles
     choose: z
       .strictObject({
@@ -211,6 +212,7 @@ export function validateMechanics(system: System, type: string, mechanics: unkno
   })
   m.grants?.forEach((g, i) => {
     const here = [...at, 'grants', i]
+    if (g.type && !own(system.types, g.type)) add([...here, 'type'], `No existe el tipo «${g.type}»`)
     if (!g.choose) return
     if (!own(system.types, g.choose.type)) add([...here, 'choose', 'type'], `No existe el tipo «${g.choose.type}»`)
     check(g.choose.count, [...here, 'choose', 'count'], 'Cuántos se eligen no lleva dados')

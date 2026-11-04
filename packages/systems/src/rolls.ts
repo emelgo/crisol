@@ -23,7 +23,7 @@ import { type Language, textOf } from './text.ts'
 export interface RollOptions {
   /** Por qué se tira: la clave del campo (`vigor`) o del elemento del conjunto (`des`) */
   element?: string
-  /** El modo: su clave (`ventaja`) */
+  /** El modo: su clave (`ventaja`); sin él, el que pongan los efectos (la Furia: ventaja); '', ninguno */
   mode?: string
   /** La dificultad o la CA, si la hay */
   target?: number | null
@@ -39,6 +39,9 @@ export interface SystemRoll extends RollResult {
   band: { label: string; tone: (typeof TONES)[number] } | null
   /** Si el modo pedido cambió algo (sin el dado que cambia, no) */
   modeApplied: boolean
+  /** El modo que se aplicó (su clave) y, si lo pusieron los efectos, por qué */
+  mode: string | null
+  because: { mode: 'advantage' | 'disadvantage'; label: string; origin: string }[]
 }
 
 export class RollError extends Error {
@@ -242,14 +245,18 @@ export function applyMode(tree: DiceNode, mode: { from: string; to: string }) {
   return replace(tree, from, parseDice(mode.to))
 }
 
-/** Los nombres de quien tira (sus valores ya calculados) y @ajustes, los de la campaña */
-export function rollScope(system: System, typeKey: string, doc: SystemDocument, options: RollOptions = {}) {
+/** Lo calculado de quien tira y sus nombres (sus valores y @ajustes, los de la campaña) */
+function rollContext(system: System, typeKey: string, doc: SystemDocument, options: RollOptions = {}) {
   const language = options.language ?? 'es'
-  const { values } = evaluate(system, typeKey, doc, { language, settings: options.settings ?? {} })
-  const scope: Record<string, Node> = Object.fromEntries(Object.entries(values).map(([k, v]) => [k, node(v)]))
+  const evaluated = evaluate(system, typeKey, doc, { language, settings: options.settings ?? {} })
+  const scope: Record<string, Node> = Object.fromEntries(Object.entries(evaluated.values).map(([k, v]) => [k, node(v)]))
   scope.ajustes = node(settingsOf(system, options.settings ?? {}))
-  return scope
+  return { scope, evaluated }
 }
+
+/** Los nombres de quien tira: sus valores ya calculados y @ajustes */
+export const rollScope = (system: System, typeKey: string, doc: SystemDocument, options: RollOptions = {}) =>
+  rollContext(system, typeKey, doc, options).scope
 
 /** Los valores de un objeto que lleva (sus campos, calculados), con su nombre: lo que es @este */
 export function itemValues(system: System, item: DocumentItem, language: Language = 'es'): Value {
@@ -270,7 +277,7 @@ export function prepareRoll(
   const roll = system.rolls ? own(system.rolls, rollKey) : undefined
   const type = own(system.types, typeKey)
   if (!roll || !type) throw new RollError(`No existe la tirada «${rollKey}»`)
-  const scope = rollScope(system, typeKey, doc, options)
+  const { scope, evaluated } = rollContext(system, typeKey, doc, options)
   const values = scope as Record<string, { value: Value }>
 
   // @este: el campo, el elemento o el objeto por el que se tira
@@ -299,16 +306,41 @@ export function prepareRoll(
   const text = variant?.formula ?? roll.formula
   let tree = armFormula(text, scope, (path) => labelOf(type.fields, path, esteLabel, language))
 
-  let modeApplied = false
+  // El modo pedido o, sin él, el que pongan los efectos: ventaja o desventaja (las dos a la vez se anulan)
+  let mode: NonNullable<Roll['modes']>[number] | undefined
+  let because: SystemRoll['because'] = []
   if (options.mode) {
-    const mode = roll.modes?.find((m) => m.key === options.mode)
+    mode = roll.modes?.find((m) => m.key === options.mode)
     if (!mode) throw new RollError(`No existe el modo «${options.mode}»`)
+  } else if (options.mode === undefined) {
+    const marks = [
+      ...(own(evaluated.advantages, rollKey) ?? []),
+      ...(options.element ? (own(evaluated.advantages, `${rollKey}.${options.element}`) ?? []) : [])
+    ]
+    const advantage = marks.some((m) => m.mode === 'advantage')
+    const disadvantage = marks.some((m) => m.mode === 'disadvantage')
+    if (advantage !== disadvantage) {
+      mode = roll.modes?.find((m) => m.gives === (advantage ? 'advantage' : 'disadvantage'))
+      if (mode) because = marks
+    }
+  }
+  let modeApplied = false
+  if (mode) {
     const changed = applyMode(tree, mode)
     tree = changed.tree
     modeApplied = changed.changed
   }
   const label = [textOf(roll.label, language), esteLabel].filter(Boolean).join(' · ')
-  return { tree, label, roll, scope, modeApplied, critical: (system.dice?.critical ?? 'd20') as CriticalRule }
+  return {
+    tree,
+    label,
+    roll,
+    scope,
+    modeApplied,
+    mode: mode?.key ?? null,
+    because,
+    critical: (system.dice?.critical ?? 'd20') as CriticalRule
+  }
 }
 
 /** La franja de una tirada ya hecha: la primera que se cumple con su total, su natural y su objetivo */
@@ -357,6 +389,8 @@ export function tryRoll(
     ...result,
     label: prepared.label,
     band,
-    modeApplied: prepared.modeApplied
+    modeApplied: prepared.modeApplied,
+    mode: prepared.mode,
+    because: prepared.because
   }
 }
