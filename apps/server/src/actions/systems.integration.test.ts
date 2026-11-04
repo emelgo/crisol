@@ -162,6 +162,118 @@ describe('los sistemas de reglas', () => {
     expect((await code('searchSystemContent', { systemId: copy.id }, other.cookie)).status).toBe(404)
   })
 
+  it('el contenido de uno de la cuenta: se guarda con su mecánica, se cambia, se busca, se lee y se quita', async () => {
+    const created = await ok200('createSystem', { name: 'Fronteras', document: fronteras })
+    const amuleto = {
+      type: 'objeto',
+      key: 'amuleto',
+      source: null,
+      concept: 'amuleto',
+      data: { name: { es: 'Amuleto', en: 'Amulet' } },
+      mechanics: { effects: [{ target: 'defensa', op: 'add', value: '1', when: '@este.equipado' }], automation: 'full' }
+    }
+    const saved = await ok200('putSystemContent', { systemId: created.id, version: created.version, items: [amuleto] })
+    expect(saved).toMatchObject({ version: created.version + 1, saved: ['amuleto'], created: 1, warnings: [] })
+    // Con la versión de antes, no; con un error, no se guarda nada
+    expect(
+      await code('putSystemContent', { systemId: created.id, version: created.version, items: [amuleto] })
+    ).toEqual({
+      status: 400,
+      code: 'SYSTEM_CHANGED'
+    })
+    const bad = { ...amuleto, key: 'roto', mechanics: { effects: [{ target: 'nada', op: 'add', value: '1' }] } }
+    expect(await code('putSystemContent', { systemId: created.id, version: saved.version, items: [bad] })).toEqual({
+      status: 400,
+      code: 'SYSTEM_INVALID'
+    })
+    // Cambiar el que ya está: por su clave
+    const changed = await ok200('putSystemContent', {
+      systemId: created.id,
+      version: saved.version,
+      items: [{ ...amuleto, data: { ...amuleto.data, peso: 0 } }]
+    })
+    expect(changed).toMatchObject({ created: 0 })
+    expect((await ok200('searchSystemContent', { systemId: created.id, query: 'amulet' })).items).toEqual([
+      expect.objectContaining({ key: 'amuleto', name: 'Amuleto', automation: 'full' })
+    ])
+    expect((await ok200('getSystemContent', { systemId: created.id, keys: ['amuleto'] })).items[0]).toMatchObject({
+      data: { peso: 0 },
+      mechanics: { effects: [{ target: 'defensa' }] }
+    })
+    // Probarlo: el amuleto equipado suma a la defensa
+    const tried = await ok200('tryFormula', {
+      systemId: created.id,
+      type: 'personaje',
+      formula: '@defensa',
+      document: { items: [{ id: 'a', content: 'amuleto', data: { equipado: true } }] }
+    })
+    expect(tried).toMatchObject({ value: 8 })
+    const removed = await ok200('deleteSystemContent', {
+      systemId: created.id,
+      version: changed.version,
+      keys: ['amuleto', 'nada']
+    })
+    expect(removed).toMatchObject({ deleted: ['amuleto'], missing: ['nada'] })
+    expect((await ok200('searchSystemContent', { systemId: created.id })).total).toBe(0)
+    // En el historial, con su sistema y cuántos
+    const { entries } = await ok200('listHistory', {})
+    expect(entries.map((e: { action: string }) => e.action)).toEqual(
+      expect.arrayContaining(['putSystemContent', 'deleteSystemContent'])
+    )
+    // Lo de serie no se cambia
+    expect(
+      (await code('putSystemContent', { systemId: crypto.randomUUID(), version: 1, items: [amuleto] })).status
+    ).toBe(404)
+  })
+
+  it('probar con el contenido del 5e: el guerrero de nivel 5, por sus claves, y su Tomar aliento', async () => {
+    const document = {
+      data: { caracteristicas: { fue: { puntuacion: 16 }, des: { puntuacion: 12 }, con: { puntuacion: 14 } } },
+      items: [
+        { id: 'guerrero', content: 'guerrero_2024', data: { nivel: 5, inicial: true } },
+        { id: 'aliento', content: 'guerrero_tomar_aliento_2024', from: 'guerrero' },
+        { id: 'ataque', content: 'guerrero_ataque_adicional_2024', from: 'guerrero' },
+        { id: 'cota', content: 'cota_de_malla_2024', data: { equipado: true } },
+        { id: 'espada', content: 'espada_larga_2024', data: { equipado: true } }
+      ]
+    }
+    const formula = (f: string) => ok200('tryFormula', { systemId: '5e', type: 'personaje', formula: f, document })
+    expect((await formula('@ca')).value).toBe(16)
+    expect((await formula('@pg_max')).value).toBe(44)
+    expect((await formula('@ataques')).value).toBe(2)
+    const roll = await ok200('trySystemRoll', { systemId: '5e', roll: 'ataque', element: 'espada', document })
+    expect(roll).toMatchObject({ label: 'Ataque · Espada larga', formula: expect.stringMatching(/^1d20\+6/) })
+    const action = await ok200('trySystemAction', { systemId: '5e', item: 'aliento', action: 'usar', document })
+    expect(action).toMatchObject({
+      label: 'Tomar aliento',
+      activation: 'bonus',
+      heal: { formula: '1d10+5', average: 10 }
+    })
+    expect(
+      await code('trySystemAction', {
+        systemId: '5e',
+        item: null,
+        action: 'x',
+        document: { items: [{ id: 'x', content: 'nada' }] }
+      })
+    ).toEqual({ status: 400, code: 'BAD_TEST_DOCUMENT' })
+  })
+
+  it('buscar con lo que eligió una campaña: sus fuentes y lo repetido', async () => {
+    const world = await ok200('createWorld', { name: 'Eana' })
+    const campaign = await ok200('createCampaign', { worldId: world.id, name: 'Los Cuervos' })
+    await ok200('updateCampaign', {
+      campaignId: campaign.id,
+      system: '5e',
+      systemChoices: { sources: ['srd51'], duplicates: 'both' }
+    })
+    const found = await ok200('searchSystemContent', { systemId: '5e', query: 'espada larga', campaignId: campaign.id })
+    expect(found.items.map((h: { key: string }) => h.key)).toEqual(['espada_larga_2014'])
+    expect((await code('searchSystemContent', { systemId: 'blank', campaignId: campaign.id })).code).toBe(
+      'BAD_CAMPAIGN'
+    )
+  })
+
   it('no se pisa lo que cambió otro, ni se guarda lo que tiene errores; los avisos vuelven', async () => {
     const created = await ok200('createSystem', { name: 'Fronteras' })
     await ok200('updateSystem', { systemId: created.id, version: 1, document: fronteras })

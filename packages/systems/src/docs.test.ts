@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { systemDocs } from './docs.ts'
+import { CONTENT_EXAMPLES, systemDocs } from './docs.ts'
+import { validateContent } from './file.ts'
 import { cinco, fronteras } from './fixtures/index.ts'
 import { FUNCTIONS } from './formulas/functions.ts'
 
@@ -26,9 +27,16 @@ describe('la documentación del formato, para la IA', () => {
     expect(docs).toContain('@este, @total, @natural, @objetivo')
   })
 
-  it('con sus dos ejemplos, enteros, y sin pasarse de tamaño', () => {
+  it('con sus dos ejemplos y su contenido, enteros, y sin pasarse de tamaño', () => {
     const examples = [...docs.matchAll(/```json\n([\s\S]*?)\n```/g)].map((m) => JSON.parse(m[1] as string))
-    expect(examples).toEqual([fronteras, cinco])
-    expect(docs.length).toBeLessThan(60_000)
+    expect(examples).toEqual([CONTENT_EXAMPLES.fronteras, CONTENT_EXAMPLES.cinco, fronteras, cinco])
+    expect(docs.length).toBeLessThan(64_000)
+  })
+
+  it('el contenido de los ejemplos valida con su sistema, con su mecánica', () => {
+    expect(validateContent(fronteras, CONTENT_EXAMPLES.fronteras)).toEqual([])
+    expect(validateContent(cinco, CONTENT_EXAMPLES.cinco)).toEqual([])
+    for (const part of ['`effects`', '`resources`', '`actions`', '`scaling`', '`grants`', '`toggle`', '@origen'])
+      expect(docs).toContain(part)
   })
 })

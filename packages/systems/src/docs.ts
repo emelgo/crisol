@@ -3,6 +3,7 @@
  * con el lenguaje de las fórmulas y dos ejemplos (un 5e pequeño y uno de 2d6). La lee en un recurso del MCP
  */
 import { z } from 'zod'
+import type { ContentItem } from './file.ts'
 import { cinco, fronteras } from './fixtures/index.ts'
 import { FORMAT, KEY, LIMITS, systemSchema } from './format.ts'
 import { RESERVED } from './formulas/check.ts'
@@ -45,6 +46,60 @@ const FUNCTION_HELP: Record<keyof typeof FUNCTIONS, string> = {
 }
 
 const FIELDS_SECTION = 'Los campos'
+
+/** Ejemplos de contenido para la documentación: validan con su sistema (lo comprueban las pruebas) */
+export const CONTENT_EXAMPLES: Record<'fronteras' | 'cinco', ContentItem[]> = {
+  fronteras: [
+    {
+      type: 'objeto',
+      key: 'amuleto_de_hueso',
+      source: null,
+      data: { name: 'Amuleto de hueso', peso: 0 },
+      mechanics: {
+        effects: [{ target: 'defensa', op: 'add', value: '1', when: '@este.equipado' }],
+        automation: 'full'
+      }
+    }
+  ],
+  cinco: [
+    {
+      type: 'objeto',
+      key: 'anillo_de_proteccion',
+      source: 'srd51',
+      concept: 'anillo_de_proteccion',
+      data: { name: { es: 'Anillo de protección', en: 'Ring of Protection' } },
+      mechanics: {
+        effects: [{ target: 'ca', op: 'add', value: '1', when: '@este.equipado' }],
+        automation: 'full'
+      }
+    },
+    {
+      type: 'objeto',
+      key: 'varita_de_bolas_de_fuego',
+      source: 'srd51',
+      concept: 'varita_de_bolas_de_fuego',
+      data: { name: { es: 'Varita de bolas de fuego', en: 'Wand of Fireballs' } },
+      mechanics: {
+        resources: [
+          { key: 'cargas', label: { es: 'Cargas', en: 'Charges' }, max: '7', recovery: 'dawn', amount: '1d6 + 1' }
+        ],
+        actions: [
+          {
+            key: 'lanzar',
+            label: { es: 'Bola de fuego', en: 'Fireball' },
+            activation: 'action',
+            uses: 'cargas',
+            save: { ability: 'des', dc: '15', success: 'half' },
+            damage: [{ formula: '8d6', type: 'fuego' }]
+          }
+        ],
+        scaling: { mode: 'slot', base: 3, per: '1d6' },
+        automation: 'partial',
+        manual: { es: 'Cada carga de más sube un nivel', en: 'Each extra charge raises it one level' }
+      }
+    }
+  ]
+}
 
 export function systemDocs(): string {
   const schema = z.toJSONSchema(systemSchema, { unrepresentable: 'any', io: 'input' }) as Json
@@ -163,12 +218,53 @@ export function systemDocs(): string {
     '- Un valor calculado (`derived`) no lleva dados ni depende de sí mismo. Un bono (`modifiers`) suma al campo de',
     '  quien lleva el objeto, con los campos del objeto.',
     '',
+    '## El contenido y su mecánica',
+    '',
+    'El contenido de un sistema son documentos de sus tipos (clases, conjuros, armas, criaturas): `type`, `key` (su',
+    'clave, única en el sistema), `source` (su fuente o null), `concept` (lo que une sus versiones de distintas',
+    'ediciones), `data` (su nombre en `name` y los valores de sus campos; un texto, en cada idioma) y `ref` (su página:',
+    '`{ "pages": { "es": 34, "en": 24 } }`). Su `mechanics` dice lo que hace, con fórmulas del sistema:',
+    '',
+    '- `effects`: lo que cambia de quien lo lleva. Cada uno, con `target` (un campo o el de un elemento:',
+    '  `ca`, `caracteristicas.des.salvacion_grado`), `op`, `value` (una fórmula, sin dados), `when` (sí o no) y `label`.',
+    '  Se aplican en este orden: `base` (sustituye a lo de siempre; de varias, la mayor: una armadura), `set`, `add`,',
+    '  `min` y `max`. `advantage` y `disadvantage` van a una tirada (`salvacion` o `salvacion.fue`) y la ponen solas;',
+    '  `append` añade a una lista (`"fuego"` a las resistencias). El grado de competencia es un `min` en su grado.',
+    '- `resources`: sus usos, con `max` (una fórmula), `recovery` (short, long, dawn u other) y `amount` (cuánto vuelve).',
+    '- `actions`: lo que se tira con él. `attack` es el bono que se suma a los dados del sistema; `save`, la',
+    '  salvación (`ability`, `dc`, `success`: half, none o special); `damage`, sus partes (`formula` con dados, `type`);',
+    '  `heal`; `uses` (uno de sus recursos), `recharge` («5-6»), `cost` y `activation`.',
+    '- `scaling`: cómo escala. `mode` slot (por el nivel al que se tira: el espacio de un conjuro) o level (por un nivel',
+    '  de quien lo lleva, en `by`: `@nivel`); `base`, `per` (lo que se suma por cada nivel por encima), `at` (desde un',
+    '  nivel, otra fórmula), `action` y `parts` (a qué acción y a qué partes de su daño).',
+    '- `grants`: lo que concede, desde un `level`: un documento por su `concept` (y su `type`) o una elección',
+    '  (`choose`): de un tipo (`type`, con `from`) o de un conjunto de quien lo lleva (`set`, `field`, `op`, `value`:',
+    '  «dos habilidades, competentes»). Lo elegido va en el documento que lo lleva.',
+    '- `toggle`: se activa y se desactiva (sus efectos piden `@este.activo`). `automation` (full, partial o text) y',
+    '  `manual` dicen cuánto calcula Crisol y qué se lleva a mano.',
+    '- En estas fórmulas, los nombres son los de quien lo lleva; `@este` es el propio documento; `@origen`, el que lo',
+    '  concedió (la clase de un rasgo: `@origen.nivel`); `@ajustes`, los de la campaña.',
+    '',
+    '## Ejemplo: contenido del juego de 2d6',
+    '',
+    '```json',
+    JSON.stringify(CONTENT_EXAMPLES.fronteras, null, 1),
+    '```',
+    '',
+    '## Ejemplo: contenido del 5e pequeño',
+    '',
+    '```json',
+    JSON.stringify(CONTENT_EXAMPLES.cinco, null, 1),
+    '```',
+    '',
     '## Cómo se trabaja',
     '',
     '- Crear: desde cero (copiando «blank»), copiando otro o con el documento entero. Cambiar: por rutas, todo o',
     '  nada, con la versión que se tenía (`types.personaje.fields.defensa.formula`, `rolls.atributo.bands[0].if`).',
     '- Antes de guardar se valida entero: cada problema dice su ruta, dónde está por sus nombres y por qué.',
     '- Probar: una fórmula con un documento de prueba (con su desglose) y una tirada, que tira el servidor sin apuntarla.',
+    '- El contenido: se guarda por documentos (con la versión del sistema) y se prueba poniéndolo, por su clave, en lo',
+    '  que lleva el documento de prueba; sus acciones se tiran a un nivel, con un modo o como crítico.',
     '',
     '## Ejemplo: un juego de 2d6 + atributo',
     '',

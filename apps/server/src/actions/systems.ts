@@ -8,6 +8,7 @@ import {
   checkSystem,
   createSystem,
   deleteSystem,
+  deleteSystemContent,
   exportSystem,
   getSystem,
   getSystemContent,
@@ -15,10 +16,12 @@ import {
   getSystemParts,
   importSystem,
   listSystems,
+  putSystemContent,
   type SystemFull,
   type SystemSummary,
   searchSystemContent,
   tryFormula,
+  trySystemAction,
   trySystemRoll,
   updateSystem
 } from '@crisol/contracts'
@@ -31,12 +34,17 @@ import {
   ChangeError,
   type ContentItem,
   catalogSystem,
+  type DocumentItem,
   FORMAT,
   fileName,
   fitsFormat,
+  type Language,
+  LIMITS,
+  type Mechanics,
   normalizeChoices,
   type Problem,
   pickPaths,
+  prepareAction,
   RollError,
   SYSTEM_FILE,
   type System,
@@ -46,14 +54,16 @@ import {
   systemOverview,
   textOf,
   toFile,
+  tryAction,
   tryFormula as tryFormulaIn,
   tryRoll,
+  validateContent,
   validateFile,
   validateSystem
 } from '@crisol/systems'
 import { catalogContent } from '@crisol/systems/catalog/content'
 import { systemsChanged } from '../realtime/events.ts'
-import { targetOrganization } from './access.ts'
+import { authorizedCampaign, targetOrganization } from './access.ts'
 import { type ActionContext, historyContext, InvalidRequestError, TooManyRequestsError } from './context.ts'
 import { implement } from './registry.ts'
 import { tooManyTries } from './tries.ts'
@@ -205,6 +215,21 @@ export async function systemRequest(ctx: ActionContext, action: string, input: R
     case 'deleteSystem': {
       const row = await ownWritable(ctx, String(input.systemId))
       return { system: textOf((row.document as unknown as System).name) }
+    }
+    // El contenido: comprobado ya (con un error, no se pide), y cuántos documentos
+    case 'putSystemContent': {
+      const row = await ownWritable(ctx, String(input.systemId))
+      const items = (Array.isArray(input.items) ? input.items : []) as ContentItem[]
+      const problems = validateContent(row.document as unknown as System, items)
+      if (problems.some((p) => p.severity === 'error')) invalid(problems)
+      return { system: textOf((row.document as unknown as System).name), count: items.length }
+    }
+    case 'deleteSystemContent': {
+      const row = await ownWritable(ctx, String(input.systemId))
+      return {
+        system: textOf((row.document as unknown as System).name),
+        count: Array.isArray(input.keys) ? input.keys.length : 0
+      }
     }
     default:
       return {}
@@ -370,17 +395,80 @@ function byPath<T>(code: string, run: () => T): T {
 }
 
 /** El documento de prueba que llega, con lo que falte vacío */
-const testDocument = (
-  given:
+type TestGiven = {
+  content?: string | undefined
+  data?: Record<string, unknown> | undefined
+  mechanics?: Record<string, unknown> | undefined
+  items?:
     | {
-        data?: Record<string, unknown>
-        items?: { id: string; type: string; name: string; data?: Record<string, unknown> }[]
-      }
+        id: string
+        content?: string | undefined
+        type?: string | undefined
+        name?: string | undefined
+        data?: Record<string, unknown> | undefined
+        mechanics?: Record<string, unknown> | undefined
+        from?: string | undefined
+        choices?: Record<string, string[]> | undefined
+        uses?: Record<string, number> | undefined
+      }[]
     | undefined
-): SystemDocument => ({
-  data: given?.data ?? {},
-  items: (given?.items ?? []).map((item) => ({ ...item, data: item.data ?? {} }))
-})
+}
+
+/** Un texto en sus idiomas ({ es, en }): en un documento del contenido, se queda el del idioma que se pide */
+const isText = (v: unknown): v is Record<string, string> =>
+  typeof v === 'object' &&
+  v !== null &&
+  !Array.isArray(v) &&
+  Object.keys(v).length > 0 &&
+  Object.entries(v).every(([k, x]) => (k === 'es' || k === 'en') && typeof x === 'string')
+const localized = (data: Record<string, unknown>, language: Language) =>
+  Object.fromEntries(Object.entries(data).map(([k, v]) => [k, isText(v) ? textOf(v, language) : v]))
+
+/**
+ * El documento de prueba: lo escrito, y lo que viene del contenido del sistema por su clave (su tipo, su nombre, sus
+ * valores en el idioma que se pide y su mecánica), con lo escrito encima
+ */
+async function testDocument(
+  ctx: ActionContext,
+  found: { document: System; row: systemsRepo.SystemRow | null } | null,
+  given: TestGiven | undefined,
+  language: Language = 'es'
+): Promise<SystemDocument> {
+  const keys = [given?.content, ...(given?.items ?? []).map((i) => i.content)].filter((k): k is string => Boolean(k))
+  const content = new Map<string, ContentItem>()
+  if (keys.length > 0) {
+    if (!found)
+      throw new InvalidRequestError('BAD_TEST_DOCUMENT', 'con un borrador no hay contenido del que sacar documentos')
+    const items = found.row
+      ? (await systemsRepo.contentByKeys(ctx.db, found.row.id, keys)).map(contentOf)
+      : catalogContent(found.document.id).filter((c) => keys.includes(c.key))
+    for (const c of items) content.set(c.key, c)
+    const missing = keys.filter((k) => !content.has(k))
+    if (missing.length > 0)
+      throw new InvalidRequestError('BAD_TEST_DOCUMENT', `no está en el contenido: ${missing.join(', ')}`)
+  }
+  const own = given?.content ? content.get(given.content) : undefined
+  const mechanics = given?.mechanics ?? own?.mechanics
+  return {
+    data: { ...(own ? localized(own.data, language) : {}), ...(given?.data ?? {}) },
+    ...(mechanics ? { mechanics: mechanics as Mechanics } : {}),
+    items: (given?.items ?? []).map((item): DocumentItem => {
+      const from = item.content ? content.get(item.content) : undefined
+      const data = { ...(from ? localized(from.data, language) : {}), ...(item.data ?? {}) }
+      const itemMechanics = item.mechanics ?? from?.mechanics
+      return {
+        id: item.id,
+        type: item.type ?? from?.type ?? '',
+        name: item.name ?? (from ? textOf(from.data.name as never, language) : item.id),
+        data,
+        ...(itemMechanics ? { mechanics: itemMechanics as Mechanics } : {}),
+        ...(item.from ? { from: item.from } : {}),
+        ...(item.choices ? { choices: item.choices } : {}),
+        ...(item.uses ? { uses: item.uses } : {})
+      }
+    })
+  }
+}
 
 /** La documentación del formato: sale del esquema, que no cambia mientras corre el servidor */
 let docs: string | null = null
@@ -534,9 +622,17 @@ export const systemActions = [
     }
   }),
 
-  implement(searchSystemContent, async (ctx, { systemId, organizationId, ...options }) => {
+  implement(searchSystemContent, async (ctx, { systemId, organizationId, campaignId, ...given }) => {
     const target = readableOrganization(ctx, organizationId)
     const found = await findReadable(ctx, target, systemId)
+    // Con una campaña de ese sistema: sus fuentes, lo repetido y su idioma, salvo lo que se diga
+    let options: Parameters<typeof searchContent>[2] = given
+    if (campaignId) {
+      const campaign = await authorizedCampaign(ctx, 'campaign.read', campaignId)
+      if (campaign.system !== systemId) throw new InvalidRequestError('BAD_CAMPAIGN', 'esa campaña no usa este sistema')
+      const { choices } = normalizeChoices(found.document, (campaign.systemChoices ?? {}) as Record<string, unknown>)
+      options = { sources: choices.sources, duplicates: choices.duplicates, language: choices.language, ...given }
+    }
     // Para buscar basta lo de cada documento que se ve en la lista: el de la cuenta, sin leerlo entero
     const entries = found.row
       ? await systemsRepo.contentIndex(ctx.db, found.row.id)
@@ -568,6 +664,134 @@ export const systemActions = [
     }
   }),
 
+  implement(trySystemAction, async (ctx, input) => {
+    if (tooManyTries(ctx.actor.userId)) throw new TooManyRequestsError('TOO_MANY_ROLLS')
+    const target = readableOrganization(ctx, input.organizationId)
+    const found = await findReadable(ctx, target, input.systemId)
+    const system = found.document
+    const typeKey = input.type ?? Object.entries(system.types).find(([, t]) => t.document === 'actor')?.[0]
+    if (!typeKey || !Object.hasOwn(system.types, typeKey))
+      throw new InvalidRequestError(
+        'BAD_SYSTEM_TYPE',
+        input.type ? `no existe el tipo «${input.type}»` : 'no tiene personajes'
+      )
+    const language = input.language ?? 'es'
+    const document = await testDocument(ctx, found, input.document, language)
+    try {
+      const options = {
+        ...(input.level !== undefined ? { level: input.level } : {}),
+        ...(input.mode ? { mode: input.mode } : {}),
+        ...(input.critical ? { critical: true } : {}),
+        language,
+        roller: cryptoRoller
+      }
+      const prepared = prepareAction(system, typeKey, document, input.item, input.action, options)
+      const rolled = tryAction(system, typeKey, document, input.item, input.action, options)
+      return {
+        label: rolled.label,
+        ...(rolled.level !== undefined ? { level: rolled.level } : {}),
+        ...(rolled.activation ? { activation: rolled.activation } : {}),
+        attack: rolled.attack
+          ? {
+              formula: prepared.attack ?? rolled.attack.formula,
+              total: rolled.attack.total,
+              detail: rolled.attack.detail,
+              critical: rolled.attack.critical
+            }
+          : null,
+        save: rolled.save,
+        damage: rolled.damage.map((d) => ({
+          formula: d.formula,
+          ...(d.type ? { type: d.type } : {}),
+          average: d.average,
+          total: d.result.total,
+          detail: d.result.detail
+        })),
+        heal: rolled.heal
+          ? {
+              formula: rolled.heal.formula,
+              average: rolled.heal.average,
+              total: rolled.heal.result.total,
+              detail: rolled.heal.result.detail
+            }
+          : null,
+        ...(rolled.uses ? { uses: rolled.uses } : {}),
+        ...(rolled.recharge ? { recharge: rolled.recharge } : {})
+      }
+    } catch (error) {
+      if (error instanceof RollError || error instanceof DiceSyntaxError)
+        throw new InvalidRequestError('BAD_ROLL', error.message)
+      throw error
+    }
+  }),
+
+  implement(putSystemContent, async (ctx, { systemId, version, items }) => {
+    const row = await ownWritable(ctx, systemId)
+    const system = row.document as unknown as System
+    const given = items as unknown as ContentItem[]
+    // Cada documento, validado con el sistema (su tipo, su clave, su fuente, su concepto y su mecánica)
+    const problems = validateContent(system, given)
+    if (problems.some((p) => p.severity === 'error')) invalid(problems)
+    const counts = await systemsRepo.contentCounts(ctx.db, [row.id])
+    if ((counts.get(row.id) ?? 0) + given.length > LIMITS.contentDocuments)
+      throw new InvalidRequestError('TOO_MUCH_CONTENT', `como mucho, ${LIMITS.contentDocuments} documentos`)
+    let saved: Awaited<ReturnType<typeof systemsRepo.putContent>>
+    try {
+      saved = await systemsRepo.putContent(
+        ctx.db,
+        historyContext(
+          ctx,
+          'putSystemContent',
+          { name: textOf(system.name), keys: given.map((i) => i.key).slice(0, 20), count: given.length },
+          { organizationId: row.organizationId }
+        ),
+        row.id,
+        version,
+        given.map(toValues)
+      )
+    } catch (error) {
+      if (error instanceof systemsRepo.SystemChangedError) throw changed()
+      throw error
+    }
+    ctx.realtime.publish(systemsChanged(row.organizationId))
+    return {
+      version: saved.system.version,
+      saved: given.map((i) => i.key),
+      created: saved.created,
+      warnings: problems.filter((p) => p.severity === 'warning')
+    }
+  }),
+
+  implement(deleteSystemContent, async (ctx, { systemId, version, keys }) => {
+    const row = await ownWritable(ctx, systemId)
+    const system = row.document as unknown as System
+    const wanted = [...new Set(keys)]
+    let done: Awaited<ReturnType<typeof systemsRepo.deleteContent>>
+    try {
+      done = await systemsRepo.deleteContent(
+        ctx.db,
+        historyContext(
+          ctx,
+          'deleteSystemContent',
+          { name: textOf(system.name), keys: wanted.slice(0, 20), count: wanted.length },
+          { organizationId: row.organizationId }
+        ),
+        row.id,
+        version,
+        wanted
+      )
+    } catch (error) {
+      if (error instanceof systemsRepo.SystemChangedError) throw changed()
+      throw error
+    }
+    ctx.realtime.publish(systemsChanged(row.organizationId))
+    return {
+      version: done.system.version,
+      deleted: done.deleted,
+      missing: wanted.filter((k) => !done.deleted.includes(k))
+    }
+  }),
+
   implement(getSystemParts, async (ctx, { systemId, parts, organizationId }) => {
     const target = readableOrganization(ctx, organizationId)
     const { document, row } = await findReadable(ctx, target, systemId)
@@ -594,8 +818,8 @@ export const systemActions = [
   implement(tryFormula, async (ctx, { systemId, type, formula, document, organizationId }) => {
     const target = readableOrganization(ctx, organizationId)
     if (tooManyTries(ctx.actor.userId)) throw new TooManyRequestsError('TOO_MANY_ROLLS')
-    const { document: system } = await findReadable(ctx, target, systemId)
-    const tried = tryFormulaIn(system, type, formula, testDocument(document))
+    const found = await findReadable(ctx, target, systemId)
+    const tried = tryFormulaIn(found.document, type, formula, await testDocument(ctx, found, document))
     return { type: tried.type, value: tried.value, terms: tried.terms, problems: tried.problems }
   }),
 
@@ -604,11 +828,16 @@ export const systemActions = [
     const target = readableOrganization(ctx, input.organizationId)
     // Uno guardado o el borrador del editor (sin guardar: con la forma de un sistema basta, lo demás lo dice al tirar)
     let system: System
+    let found: Awaited<ReturnType<typeof findReadable>> | null = null
     if (input.draft) {
       if (!fitsFormat(input.draft))
         throw new InvalidRequestError('BAD_SYSTEM', 'el borrador no tiene la forma de un sistema')
       system = input.draft
-    } else system = (await findReadable(ctx, target, input.systemId ?? '')).document
+    } else {
+      found = await findReadable(ctx, target, input.systemId ?? '')
+      system = found.document
+    }
+    const document = await testDocument(ctx, found, input.document)
     const typeKey = input.type ?? Object.entries(system.types).find(([, t]) => t.document === 'actor')?.[0]
     if (!typeKey || !Object.hasOwn(system.types, typeKey))
       throw new InvalidRequestError(
@@ -616,7 +845,7 @@ export const systemActions = [
         input.type ? `no existe el tipo «${input.type}»` : 'no tiene personajes'
       )
     try {
-      const rolled = tryRoll(system, typeKey, testDocument(input.document), input.roll, {
+      const rolled = tryRoll(system, typeKey, document, input.roll, {
         ...(input.element ? { element: input.element } : {}),
         ...(input.mode ? { mode: input.mode } : {}),
         target: input.target ?? null,

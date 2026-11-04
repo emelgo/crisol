@@ -85,17 +85,7 @@ Plan: `tasks/plan.md`. Spec: `docs/specs/srd-5e.md`. Cada tarea, con TDD y en un
   - Archivos: `apps/web/src/systems/campaign-system.tsx` (+ CSS, pruebas), `packages/systems/src/choices.ts`,
     `packages/contracts/src/campaigns.ts`.
 
-- [ ] **10. La IA: el contenido**
-  - Acepta (Enrique, 2026-11-04: «cuando se cree un sistema, el MCP debe poder crear las automatizaciones también»):
-    - crear, cambiar y borrar documentos del contenido de un sistema propio, con su mecánica (efectos, recursos,
-      acciones, escalado, lo que concede), validados enteros y por su ruta, con su historial y en cada modo de IA;
-    - la documentación del formato (`formato_sistemas`) explica el documento de contenido y su mecánica, con ejemplos
-      de 5e y de un 2d6, para que la IA la escriba en cualquier sistema;
-  - Acepta también: buscar y leer el contenido de un sistema; `probar_formula` y `probar_tirada` con documentos del contenido
-    (una clase con su nivel, lo equipado, lo sintonizado, lo activo): lo calculado con su desglose, los recursos, las
-    tiradas por cada objeto y las acciones (con su nivel); los textos del contenido, como datos.
-  - Comprueba: cada herramienta en cada modo de IA; el guerrero de nivel 5 con cota de malla y espada larga da CA 16,
-    PG 44 y un ataque de +6 (criterio 3); un conjuro por el MCP (criterio 4, con los conjuros de la tarea 12); `@fugas`.
+- [x] **10. La IA: el contenido** — hecha: `buscar_contenido` (con `campaignId`, lo que eligió la campaña), `leer_contenido`, `guardar_contenido` y `borrar_contenido` (con la versión del sistema, validados, con su historial; borrar pide aprobación también en copiloto) y `probar_accion`; en `probar_formula`, `probar_tirada` y `probar_accion`, documentos del contenido por su clave (con `from`, lo elegido y lo gastado); `formato_sistemas` explica el contenido y su mecánica con ejemplos de un 2d6 y de un 5e (validados). El guerrero de nivel 5 por la API: CA 16, PG 44, +6 y dos ataques
   - Archivos: `apps/server/src/mcp/tools.ts`, `packages/contracts/src/systems.ts` (+ pruebas).
 
 ### Punto de control 2

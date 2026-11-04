@@ -49,8 +49,10 @@ import {
   systemOverview,
   textOf,
   toFile,
+  tryAction,
   tryFormula as tryFormulaIn,
   tryRoll,
+  validateContent,
   validateFile,
   validateSystem
 } from '@crisol/systems'
@@ -446,6 +448,54 @@ export function fakeApi(
     content: structuredClone(options.systemContent?.[document.id] ?? []),
     deleted: false
   }))
+  /** El documento de prueba: lo escrito y lo que viene del contenido de un sistema de la cuenta, por su clave */
+  const testDocument = (
+    systemId: string,
+    given:
+      | {
+          content?: string | undefined
+          data?: Record<string, unknown> | undefined
+          mechanics?: Record<string, unknown> | undefined
+          items?:
+            | {
+                id: string
+                content?: string | undefined
+                type?: string | undefined
+                name?: string | undefined
+                data?: Record<string, unknown> | undefined
+                mechanics?: Record<string, unknown> | undefined
+                from?: string | undefined
+                choices?: Record<string, string[]> | undefined
+                uses?: Record<string, number> | undefined
+              }[]
+            | undefined
+        }
+      | undefined
+  ) => {
+    const content = ownSystems.find((s) => s.id === systemId)?.content ?? []
+    const find = (key: string | undefined) => (key ? content.find((c) => c.key === key) : undefined)
+    const name = (value: unknown) => (typeof value === 'string' ? value : textOf(value as never))
+    const own = find(given?.content)
+    const mechanics = given?.mechanics ?? own?.mechanics
+    return {
+      data: { ...(own?.data ?? {}), ...(given?.data ?? {}) },
+      ...(mechanics ? { mechanics: mechanics as never } : {}),
+      items: (given?.items ?? []).map((item) => {
+        const from = find(item.content)
+        const itemMechanics = item.mechanics ?? from?.mechanics
+        return {
+          id: item.id,
+          type: item.type ?? from?.type ?? '',
+          name: item.name ?? (from ? name(from.data.name) : item.id),
+          data: { ...(from?.data ?? {}), ...(item.data ?? {}) },
+          ...(itemMechanics ? { mechanics: itemMechanics as never } : {}),
+          ...(item.from ? { from: item.from } : {}),
+          ...(item.choices ? { choices: item.choices } : {}),
+          ...(item.uses ? { uses: item.uses } : {})
+        }
+      })
+    }
+  }
   const systemById = (id: string) =>
     catalogSystem(id) ?? ownSystems.find((s) => s.id === id && !s.deleted)?.document ?? null
   const systemView = (id: string) => {
@@ -1091,17 +1141,92 @@ export function fakeApi(
     tryFormula: ({ systemId, type, formula, document }) => {
       const system = systemById(systemId)
       if (!system) throw new ApiError('NOT_FOUND', 404)
-      const items = (document?.items ?? []).map((item) => ({ ...item, data: item.data ?? {} }))
-      return tryFormulaIn(system, type, formula, { data: document?.data ?? {}, items })
+      return tryFormulaIn(system, type, formula, testDocument(systemId, document))
+    },
+    trySystemAction: (input) => {
+      const system = systemById(input.systemId)
+      if (!system) throw new ApiError('NOT_FOUND', 404)
+      const typeKey = input.type ?? Object.entries(system.types).find(([, t]) => t.document === 'actor')?.[0]
+      if (!typeKey) throw new ApiError('BAD_SYSTEM_TYPE', 400)
+      try {
+        const rolled = tryAction(
+          system,
+          typeKey,
+          testDocument(input.systemId, input.document),
+          input.item,
+          input.action,
+          {
+            ...(input.level !== undefined ? { level: input.level } : {}),
+            ...(input.mode ? { mode: input.mode } : {}),
+            ...(input.critical ? { critical: true } : {})
+          }
+        )
+        return {
+          label: rolled.label,
+          attack: rolled.attack
+            ? {
+                formula: rolled.attack.formula,
+                total: rolled.attack.total,
+                detail: rolled.attack.detail,
+                critical: rolled.attack.critical
+              }
+            : null,
+          save: rolled.save,
+          damage: rolled.damage.map((d) => ({
+            formula: d.formula,
+            average: d.average,
+            total: d.result.total,
+            detail: d.result.detail
+          })),
+          heal: rolled.heal
+            ? {
+                formula: rolled.heal.formula,
+                average: rolled.heal.average,
+                total: rolled.heal.result.total,
+                detail: rolled.heal.result.detail
+              }
+            : null
+        }
+      } catch (error) {
+        if (error instanceof RollError) throw new ApiError('BAD_ROLL', 400)
+        throw error
+      }
+    },
+    putSystemContent: ({ systemId, version, items }) => {
+      const own = ownSystems.find((s) => s.id === systemId && !s.deleted)
+      if (!own) throw new ApiError('NOT_FOUND', 404)
+      if (own.version !== version) throw new ApiError('SYSTEM_CHANGED', 400)
+      const given = items as unknown as ContentItem[]
+      const problems = validateContent(own.document, given)
+      if (problems.some((p) => p.severity === 'error')) throw new ApiError('SYSTEM_INVALID', 400)
+      let created = 0
+      for (const item of given) {
+        const at = own.content.findIndex((c) => c.key === item.key)
+        if (at >= 0) own.content[at] = structuredClone(item)
+        else {
+          own.content.push(structuredClone(item))
+          created++
+        }
+      }
+      own.version++
+      return { version: own.version, saved: given.map((i) => i.key), created, warnings: problems }
+    },
+    deleteSystemContent: ({ systemId, version, keys }) => {
+      const own = ownSystems.find((s) => s.id === systemId && !s.deleted)
+      if (!own) throw new ApiError('NOT_FOUND', 404)
+      if (own.version !== version) throw new ApiError('SYSTEM_CHANGED', 400)
+      const deleted = keys.filter((k) => own.content.some((c) => c.key === k))
+      own.content = own.content.filter((c) => !keys.includes(c.key))
+      own.version++
+      return { version: own.version, deleted, missing: keys.filter((k) => !deleted.includes(k)) }
     },
     trySystemRoll: (input) => {
       const system = input.draft ? (input.draft as unknown as System) : systemById(input.systemId ?? '')
       if (!system) throw new ApiError('NOT_FOUND', 404)
       const typeKey = input.type ?? Object.entries(system.types).find(([, t]) => t.document === 'actor')?.[0]
       if (!typeKey) throw new ApiError('BAD_SYSTEM_TYPE', 400)
-      const items = (input.document?.items ?? []).map((item) => ({ ...item, data: item.data ?? {} }))
       try {
-        const rolled = tryRoll(system, typeKey, { data: input.document?.data ?? {}, items }, input.roll, {
+        const rolled = tryRoll(system, typeKey, testDocument(input.systemId ?? '', input.document), input.roll, {
           ...(input.element ? { element: input.element } : {}),
           ...(input.mode ? { mode: input.mode } : {}),
           target: input.target ?? null

@@ -244,6 +244,42 @@ describe('conector MCP con OAuth', () => {
       ['probar_tirada', { systemId: system.id, roll: 'atributo', element: 'vigor' }, 'read'],
       ['crear_sistema', { name: 'Otro' }, 'write'],
       ['cambiar_sistema', { systemId: system.id, version: 1, changes: [{ path: 'summary', value: 'Otro' }] }, 'write'],
+      ['buscar_contenido', { systemId: '5e', query: 'espada larga' }, 'read'],
+      ['leer_contenido', { systemId: '5e', keys: ['espada_larga_2024'] }, 'read'],
+      [
+        'probar_accion',
+        {
+          systemId: '5e',
+          item: 'aliento',
+          action: 'usar',
+          document: {
+            items: [
+              { id: 'guerrero', content: 'guerrero_2024', data: { nivel: 5, inicial: true } },
+              { id: 'aliento', content: 'guerrero_tomar_aliento_2024', from: 'guerrero' }
+            ]
+          }
+        },
+        'read'
+      ],
+      // En copiloto se hacen: cada uno sube la versión del sistema
+      [
+        'guardar_contenido',
+        {
+          systemId: system.id,
+          version: 2,
+          items: [
+            {
+              type: 'objeto',
+              key: 'amuleto',
+              source: null,
+              data: { name: 'Amuleto' },
+              mechanics: { effects: [{ target: 'defensa', op: 'add', value: '1', when: '@este.equipado' }] }
+            }
+          ]
+        },
+        'write'
+      ],
+      ['borrar_contenido', { systemId: system.id, version: 3, keys: ['amuleto'] }, 'delete'],
       ['cambiar_campana', { campaignId: campaign.id, system: system.id }, 'write'],
       ['borrar_sistema', { systemId: system.id }, 'delete'],
       ['deshacer', { operationId }, 'delete']
@@ -541,6 +577,18 @@ describe('conector MCP con OAuth', () => {
       ['cambiar_sistema', { systemId: theirSystem.id, version: 1, changes: [{ path: 'name', value: 'Intruso' }] }],
       ['probar_formula', { systemId: theirSystem.id, type: 'personaje', formula: '1' }],
       ['probar_tirada', { systemId: theirSystem.id, roll: 'atributo' }],
+      ['buscar_contenido', { systemId: theirSystem.id }],
+      ['leer_contenido', { systemId: theirSystem.id, keys: ['x'] }],
+      ['probar_accion', { systemId: theirSystem.id, item: null, action: 'x' }],
+      [
+        'guardar_contenido',
+        {
+          systemId: theirSystem.id,
+          version: 1,
+          items: [{ type: 'objeto', key: 'x', source: null, data: { name: 'X' } }]
+        }
+      ],
+      ['borrar_contenido', { systemId: theirSystem.id, version: 1, keys: ['x'] }],
       ['borrar_sistema', { systemId: theirSystem.id }],
       ['crear_sistema', { name: 'Copia', from: theirSystem.id }]
     ] as const) {

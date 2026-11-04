@@ -122,6 +122,7 @@ export function searchContent(
   {
     query = '',
     type,
+    sources: only,
     editions,
     duplicates = 'both',
     language = 'es',
@@ -130,6 +131,8 @@ export function searchContent(
   }: {
     query?: string
     type?: string
+    /** Solo de estas fuentes (las que eligió una campaña) */
+    sources?: readonly string[]
     editions?: readonly string[]
     duplicates?: Choices['duplicates']
     language?: 'es' | 'en'
@@ -138,6 +141,7 @@ export function searchContent(
   } = {}
 ): { items: ContentHit[]; total: number } {
   const sources = (system.sources ?? [])
+    .filter((s) => !only || only.includes(s.key))
     .filter((s) => !editions || (s.edition !== undefined && editions.includes(s.edition)))
     .map((s) => s.key)
   const seen = visibleContent(system, entries, { sources, duplicates })

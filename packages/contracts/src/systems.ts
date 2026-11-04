@@ -129,21 +129,48 @@ export const checkSystem = defineAction({
 })
 
 /** El documento de prueba de un tipo: sus valores y lo que lleva */
-const testDocument = z
+const mechanicsValue = z.record(z.string(), z.unknown())
+
+/** Un objeto del documento de prueba: escrito a mano o sacado del contenido del sistema por su clave */
+const testItem = z
   .object({
+    id: z.string().min(1).max(100),
+    content: z
+      .string()
+      .max(100)
+      .optional()
+      .describe(
+        'La clave de un documento del contenido del sistema: trae su tipo, su nombre, sus valores y su mecánica'
+      ),
+    type: z.string().min(1).max(100).optional(),
+    name: z.string().min(1).max(200).optional(),
+    data: z.record(z.string(), z.unknown()).optional().describe('Sus valores; con content, encima de los suyos'),
+    mechanics: mechanicsValue
+      .optional()
+      .describe('Su mecánica (efectos, recursos, acciones…), si no viene del contenido'),
+    from: z
+      .string()
+      .max(100)
+      .optional()
+      .describe('El id del objeto que lo concedió (la clase de un rasgo): su @origen'),
+    choices: z
+      .record(z.string(), z.array(z.string().max(100)).max(50))
+      .optional()
+      .describe('Lo elegido en cada elección de lo que concede (habilidades: [atletismo, percepcion])'),
+    uses: z.record(z.string(), z.number()).optional().describe('Lo gastado de cada uno de sus recursos')
+  })
+  .refine((i) => i.content !== undefined || (i.type !== undefined && i.name !== undefined), 'O content o type y name')
+
+export const testDocument = z
+  .object({
+    content: z.string().max(100).optional().describe('El documento entero del contenido (una criatura), por su clave'),
     data: z.record(z.string(), z.unknown()).optional().describe('Sus valores, por la clave de cada campo'),
+    mechanics: mechanicsValue.optional().describe('Su propia mecánica (las acciones de una criatura)'),
     items: z
-      .array(
-        z.object({
-          id: z.string().min(1).max(100),
-          type: z.string().min(1).max(100),
-          name: z.string().min(1).max(200),
-          data: z.record(z.string(), z.unknown()).optional()
-        })
-      )
+      .array(testItem)
       .max(200)
       .optional()
-      .describe('Lo que lleva: objetos de los tipos item, con sus valores (un escudo equipado)')
+      .describe('Lo que lleva: objetos de los tipos item (un escudo equipado) o del contenido, por su clave')
   })
   .optional()
   .describe('El documento de prueba; sin él, los valores iniciales')
@@ -211,6 +238,101 @@ export const trySystemRoll = defineAction({
   })
 })
 
+/** Un documento del contenido entero: sus valores (con sus textos en cada idioma), su mecánica y su página */
+export const contentItem = z.object({
+  type: z.string(),
+  key: z.string(),
+  source: z.string().nullable(),
+  concept: z.string().optional(),
+  data: z.record(z.string(), z.unknown()),
+  mechanics: z.record(z.string(), z.unknown()).optional(),
+  ref: z.record(z.string(), z.unknown()).optional()
+})
+
+export const trySystemAction = defineAction({
+  name: 'trySystemAction',
+  kind: 'read',
+  description:
+    'Tira una acción de un documento (el ataque, la salvación, el daño y la curación de un conjuro, un arma o una criatura) con un documento de prueba, sin apuntarla: a un nivel (el de su espacio), con un modo (ventaja) o como crítico. El azar lo pone el servidor',
+  input: z.object({
+    systemId: systemRef,
+    type: z.string().min(1).max(60).optional().describe('El tipo del documento; sin él, el primer personaje'),
+    item: z
+      .string()
+      .max(100)
+      .nullable()
+      .describe('El id del objeto del documento cuya acción es; null, la suya propia'),
+    action: z.string().min(1).max(60).describe('La clave de la acción'),
+    level: z.int().min(0).max(30).optional().describe('A qué nivel se tira (el del espacio de un conjuro)'),
+    mode: z.string().min(1).max(60).optional().describe('Un modo del sistema para el ataque (ventaja)'),
+    critical: z.boolean().optional().describe('Si el ataque fue crítico: los dados del daño, dobles'),
+    language: z.enum(['es', 'en']).optional(),
+    document: testDocument,
+    organizationId: z.uuid().optional()
+  }),
+  output: z.object({
+    label: z.string(),
+    level: z.int().optional(),
+    activation: z.string().optional(),
+    attack: z
+      .object({
+        formula: z.string(),
+        total: z.number(),
+        detail: z.string(),
+        critical: z.enum(['high', 'low']).nullable()
+      })
+      .nullable(),
+    save: z
+      .object({ ability: z.string(), abilityLabel: z.string(), dc: z.number(), success: z.string().optional() })
+      .nullable(),
+    damage: z.array(
+      z.object({
+        formula: z.string(),
+        type: z.string().optional(),
+        average: z.number().nullable(),
+        total: z.number(),
+        detail: z.string()
+      })
+    ),
+    heal: z
+      .object({ formula: z.string(), average: z.number().nullable(), total: z.number(), detail: z.string() })
+      .nullable(),
+    uses: z.string().optional(),
+    recharge: z.string().optional()
+  })
+})
+
+export const putSystemContent = defineAction({
+  name: 'putSystemContent',
+  kind: 'write',
+  description:
+    'Guarda documentos del contenido de un sistema de la cuenta, con su mecánica (efectos, recursos, acciones, escalado, lo que concede): los que ya están (por su clave), se cambian. Con la versión del sistema que se tenía; se validan todos: con un error no se guarda ninguno (SYSTEM_INVALID, con cada problema y su ruta). El formato, en formato_sistemas',
+  input: z.object({
+    systemId: z.uuid(),
+    version: z.int().min(1).describe('La versión del sistema que se leyó'),
+    items: z.array(contentItem).min(1).max(100)
+  }),
+  output: z.object({
+    version: z.int().describe('La versión nueva del sistema'),
+    saved: z.array(z.string()),
+    created: z.int().describe('Cuántos son nuevos'),
+    warnings: z.array(systemProblem)
+  })
+})
+
+export const deleteSystemContent = defineAction({
+  name: 'deleteSystemContent',
+  kind: 'delete',
+  description:
+    'Quita documentos del contenido de un sistema de la cuenta, por su clave, con la versión del sistema que se tenía',
+  input: z.object({
+    systemId: z.uuid(),
+    version: z.int().min(1),
+    keys: z.array(z.string().max(100)).min(1).max(100)
+  }),
+  output: z.object({ version: z.int(), deleted: z.array(z.string()), missing: z.array(z.string()) })
+})
+
 export const deleteSystem = defineAction({
   name: 'deleteSystem',
   kind: 'delete',
@@ -267,21 +389,16 @@ export const searchSystemContent = defineAction({
     editions: z.array(z.string().max(30)).max(10).optional(),
     duplicates: z.enum(['newest', 'both']).optional(),
     language: z.enum(['es', 'en']).optional(),
+    campaignId: z
+      .uuid()
+      .optional()
+      .describe(
+        'Con lo que eligió esa campaña de su sistema (sus fuentes, lo repetido y su idioma), si no se dice otra cosa'
+      ),
     limit: z.int().min(1).max(100).optional(),
     offset: z.int().min(0).max(10_000).optional()
   }),
   output: z.object({ items: z.array(contentHit), total: z.int() })
-})
-
-/** Un documento del contenido entero: sus valores (con sus textos en cada idioma), su mecánica y su página */
-export const contentItem = z.object({
-  type: z.string(),
-  key: z.string(),
-  source: z.string().nullable(),
-  concept: z.string().optional(),
-  data: z.record(z.string(), z.unknown()),
-  mechanics: z.record(z.string(), z.unknown()).optional(),
-  ref: z.record(z.string(), z.unknown()).optional()
 })
 
 export const getSystemContent = defineAction({
