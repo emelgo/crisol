@@ -118,7 +118,7 @@ export const diceActions = [
   // Sin apuntarla: para probar una fórmula (la IA) o tirar en un mundo sin campañas. No guarda nada
   implement(tryDice, async (ctx, input) => {
     if (tooManyTries(ctx.actor.userId)) throw new TooManyRequestsError('TOO_MANY_ROLLS')
-    const result = rolled(input.formula)
+    const result = rolled(input.formula, input.critical)
     return {
       formula: result.formula,
       label: result.comment ?? null,

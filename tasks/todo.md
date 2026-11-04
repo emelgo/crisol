@@ -172,7 +172,7 @@ el 2026-11-12).
     - e2e con axe, también en el móvil.
   - Archivos: `apps/web/src/systems/editor/{editor,parts,general,types,field,formula-input}.tsx` (+ CSS y pruebas).
 
-- [ ] **11. El editor: «Probar» al lado**
+- [x] **11. El editor: «Probar» al lado** — hecha. Las tiradas de prueba las tira el servidor (`tryDice`, que acepta la regla de críticos del sistema) y la franja se calcula en la web con `bandOf`. En el móvil, «Probar» se abre en una hoja.
   - Acepta:
     - un documento de prueba del tipo elegido, con sus valores y objetos de prueba (equipados o no);
     - los derivados con su desglose, al momento;

@@ -80,6 +80,8 @@ describe('«Sistemas», en Mis mundos', () => {
     await userEvent.click(dialog.getByRole('button', { name: 'Crear el sistema' }))
     await waitFor(() => expect(router.state.location.pathname).toMatch(/^\/sistemas\/[0-9a-f-]{36}$/))
     expect(await screen.findByRole('heading', { level: 1, name: 'Páramos' })).toBeDefined()
+    const { systems } = await api.client.call('listSystems', {})
+    expect(systems.find((each) => each.name === 'Páramos')?.basedOn?.id).toBe('blank')
   })
 
   it('copiar uno de serie, con su nombre de copia', async () => {

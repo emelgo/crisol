@@ -18,7 +18,7 @@ import {
 } from '@crisol/systems'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Navigate, useNavigate, useParams } from '@tanstack/react-router'
-import { Copy, GripVertical, Info, Plus } from 'lucide-react'
+import { Copy, FlaskConical, GripVertical, Info, Plus } from 'lucide-react'
 import { useId, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../../account/context.tsx'
@@ -30,9 +30,11 @@ import dialogStyles from '../../components/dialog.module.css'
 import { FormError } from '../../components/field.tsx'
 import form from '../../components/form.module.css'
 import { failed, LoadError } from '../../components/load-error.tsx'
+import { Modal } from '../../components/modal.tsx'
 import { ProblemList } from '../screen.tsx'
 import styles from './editor.module.css'
 import { blankField, FieldEditor, keyFrom } from './field.tsx'
+import { TryPanel } from './try.tsx'
 
 type Language = (typeof LANGUAGES)[number]
 
@@ -110,6 +112,35 @@ function SystemEditor({ data }: { data: SystemFull }) {
     problems.filter((p) => p.path === prefix || p.path.startsWith(`${prefix}.`) || p.path.startsWith(`${prefix}[`))
   const generalProblems = problems.filter((p) => !p.path.startsWith('types.'))
   const currentType = part.startsWith('type:') ? part.slice(5) : null
+  // Lo que se prueba: el tipo que se está viendo o, si no, el primer personaje
+  const [tryChoice, setTryChoice] = useState<string | null>(null)
+  const firstActor = types.find(([, type]) => type.document === 'actor')?.[0] ?? types[0]?.[0] ?? null
+  const tryType = [tryChoice, currentType, firstActor].find((k) => k && draft.types[k]) ?? null
+  const [trying, setTrying] = useState(false)
+  const tryId = useId()
+  const tryPanel = tryType && (
+    <>
+      <div className={styles.tryHead}>
+        <h2 className={styles.tryTitle}>{t('systemTry.title')}</h2>
+        <label htmlFor={tryId} className={styles.hidden}>
+          {t('systemTry.type')}
+        </label>
+        <select
+          id={tryId}
+          className={styles.trySelect}
+          value={tryType}
+          onChange={(event) => setTryChoice(event.currentTarget.value)}
+        >
+          {types.map(([key, type]) => (
+            <option key={key} value={key}>
+              {textOf(type.label) || key}
+            </option>
+          ))}
+        </select>
+      </div>
+      <TryPanel key={tryType} system={draft} typeKey={tryType} />
+    </>
+  )
 
   const parts = [
     {
@@ -234,6 +265,23 @@ function SystemEditor({ data }: { data: SystemFull }) {
           )}
         </div>
       </div>
+
+      {tryPanel && (
+        <aside className={styles.tryCard} aria-label={t('systemTry.title')}>
+          {tryPanel}
+        </aside>
+      )}
+      {tryPanel && (
+        <button type="button" className={styles.tryButton} aria-haspopup="dialog" onClick={() => setTrying(true)}>
+          <FlaskConical size={18} aria-hidden="true" />
+          {t('systemTry.open')}
+        </button>
+      )}
+      {trying && tryPanel && (
+        <Modal aria-label={t('systemTry.title')} className={styles.trySheet} onClose={() => setTrying(false)}>
+          {tryPanel}
+        </Modal>
+      )}
     </section>
   )
 }

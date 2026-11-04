@@ -144,6 +144,10 @@ test('el editor: un tipo con sus campos, una fórmula mal escrita que no deja gu
     .getByRole('button', { name: /^Personaje 1/ })
     .click()
   await expect(page.getByText('@campo_nuevo')).toBeVisible()
+  // «Probar», al lado: el calculado, con su valor
+  const trying = page.getByRole('complementary', { name: 'Probar' })
+  await expect(trying.getByText('Campo nuevo')).toBeVisible()
+  await expect(trying.getByRole('list', { name: 'De dónde sale Campo nuevo' })).toContainText('10Base')
 
   // En el móvil: la parte, en un selector
   await page.setViewportSize({ width: 390, height: 844 })
@@ -151,4 +155,8 @@ test('el editor: un tipo con sus campos, una fórmula mal escrita que no deja gu
   await page.getByLabel('Parte del sistema').selectOption({ label: 'General' })
   await expect(page.getByRole('group', { name: 'General' })).toBeVisible()
   await accessible(page, 'main')
+  // «Probar», en una hoja
+  await page.getByRole('button', { name: 'Probar' }).click()
+  await expect(page.getByRole('dialog', { name: 'Probar' }).getByText('Campo nuevo')).toBeVisible()
+  await accessible(page, 'dialog')
 })

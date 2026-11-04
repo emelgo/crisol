@@ -249,6 +249,29 @@ export function prepareRoll(
   return { tree, label, roll, scope, modeApplied, critical: (system.dice?.critical ?? 'd20') as CriticalRule }
 }
 
+/** La franja de una tirada ya hecha: la primera que se cumple con su total, su natural y su objetivo */
+export function bandOf(
+  prepared: ReturnType<typeof prepareRoll>,
+  result: { total: number; natural: number | null },
+  target: number | null,
+  language: Language = 'es'
+): SystemRoll['band'] {
+  const scope = {
+    ...prepared.scope,
+    total: node(result.total),
+    natural: node(result.natural),
+    objetivo: node(target)
+  }
+  const band = prepared.roll.bands?.find((b) => {
+    try {
+      return evaluateExpr(formula(b.if), scope as never, NO_RUNTIME) === true
+    } catch {
+      return false
+    }
+  })
+  return band ? { label: textOf(band.label, language), tone: band.tone } : null
+}
+
 /** Tira una tirada del sistema, sin apuntarla: da la fórmula armada, el resultado, el desglose y su franja */
 export function tryRoll(
   system: System,
@@ -262,24 +285,16 @@ export function tryRoll(
   const result = rollTree(prepared.tree, options.roller, { critical: prepared.critical })
   const first = result.terms.find((t) => typeof t.sides === 'number')
   const natural = first?.dice.find((d) => d.kept && !d.exploded)
-  const scope = {
-    ...prepared.scope,
-    total: node(result.total),
-    natural: node(natural ? (natural.natural ?? natural.value) : null),
-    objetivo: node(options.target ?? null)
-  }
-  const band =
-    prepared.roll.bands?.find((b) => {
-      try {
-        return evaluateExpr(formula(b.if), scope as never, NO_RUNTIME) === true
-      } catch {
-        return false
-      }
-    }) ?? null
+  const band = bandOf(
+    prepared,
+    { total: result.total, natural: natural ? (natural.natural ?? natural.value) : null },
+    options.target ?? null,
+    language
+  )
   return {
     ...result,
     label: prepared.label,
-    band: band ? { label: textOf(band.label, language), tone: band.tone } : null,
+    band,
     modeApplied: prepared.modeApplied
   }
 }

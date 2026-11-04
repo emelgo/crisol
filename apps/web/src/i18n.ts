@@ -923,6 +923,29 @@ export const es = {
     suggestions: 'Nombres que existen',
     signed: 'Con signo (+2)'
   },
+  // «Probar», al lado del editor de un sistema
+  systemTry: {
+    title: 'Probar',
+    open: 'Probar',
+    type: 'Tipo de prueba',
+    values: 'Valores',
+    items: 'Lleva',
+    newItem: '{{type}} de prueba',
+    addItem: '{{type}}',
+    itemName: 'Nombre del objeto',
+    removeItem: 'Quitar {{name}}',
+    computed: 'Calculado',
+    from: 'De dónde sale {{name}}',
+    rolls: 'Tiradas',
+    by: 'Por qué se tira {{roll}}',
+    mode: 'Modo de {{roll}}',
+    normal: 'Normal',
+    target: 'Objetivo de {{roll}}',
+    targetShort: 'Objetivo',
+    roll: 'Tirar {{roll}}',
+    notRecorded: 'De prueba: no se apunta en ninguna campaña',
+    none: 'Este tipo no tiene campos aún'
+  },
   // El sistema de una campaña, en su ventana
   campaignSystem: {
     system: 'Sistema',

@@ -951,9 +951,9 @@ export function fakeApi(
       rolls.push(roll)
       return { roll: { ...roll } }
     },
-    tryDice: ({ formula }) => {
+    tryDice: ({ formula, critical }) => {
       try {
-        const result = rollFormula(formula)
+        const result = rollFormula(formula, undefined, critical ? { critical } : {})
         return {
           formula: result.formula,
           label: result.comment ?? null,

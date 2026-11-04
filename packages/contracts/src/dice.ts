@@ -68,6 +68,12 @@ export const tryDice = defineAction({
   kind: 'read',
   description:
     'Tira una fórmula sin apuntarla en ninguna campaña: para probarla o para tirar fuera de la mesa. El azar lo pone el servidor',
-  input: z.object({ formula: z.string().min(1).max(300) }),
+  input: z.object({
+    formula: z.string().min(1).max(300),
+    critical: z
+      .enum(['none', 'd20', 'doubles', 'under'])
+      .optional()
+      .describe('Cuándo es crítica, la regla de un sistema (sin ella, la del d20)')
+  }),
   output: diceRoll.pick({ formula: true, label: true, total: true, detail: true, critical: true, dice: true })
 })

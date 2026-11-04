@@ -169,4 +169,33 @@ describe('el editor de un sistema', () => {
     await waitFor(() => expect(router.state.location.pathname).not.toBe('/sistemas/blank'))
     expect(await screen.findByRole('heading', { level: 1, name: 'En blanco (copia)' })).toBeDefined()
   })
+
+  it('«Probar» al lado: los valores cambian lo calculado, con su desglose; un objeto equipado suma', async () => {
+    renderEditor()
+    const panel = within(await screen.findByRole('complementary', { name: 'Probar' }))
+    const vigor = panel.getByRole('spinbutton', { name: 'Vigor' })
+    await userEvent.clear(vigor)
+    await userEvent.type(vigor, '2')
+    const defensa = within(panel.getByRole('list', { name: 'De dónde sale Defensa' }))
+    expect(defensa.getAllByRole('listitem').map((li) => li.textContent)).toEqual(['7Base', '+2Vigor'])
+    await userEvent.click(panel.getByRole('button', { name: 'Objeto' }))
+    await userEvent.click(panel.getByRole('checkbox', { name: 'Equipado' }))
+    const bonus = panel.getAllByRole('spinbutton', { name: 'Defensa' })[0] as HTMLElement
+    await userEvent.clear(bonus)
+    await userEvent.type(bonus, '1')
+    expect(
+      within(panel.getByRole('list', { name: 'De dónde sale Defensa' })).getByText('Objeto de prueba')
+    ).toBeDefined()
+  })
+
+  it('«Probar» tira las tiradas del tipo sin apuntarlas, con su franja', async () => {
+    const { api } = renderEditor()
+    const panel = within(await screen.findByRole('complementary', { name: 'Probar' }))
+    await userEvent.selectOptions(panel.getByRole('combobox', { name: 'Por qué se tira Atributo' }), 'astucia')
+    await userEvent.click(panel.getByRole('button', { name: 'Tirar Atributo' }))
+    expect(await panel.findByText('De prueba: no se apunta en ninguna campaña')).toBeDefined()
+    expect(panel.getByText(/^(Éxito total|Éxito con coste|Fallo)$/)).toBeDefined()
+    expect(api.calls).toContain('tryDice')
+    expect(api.calls).not.toContain('rollDice')
+  })
 })
