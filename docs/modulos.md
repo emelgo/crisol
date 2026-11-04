@@ -1268,3 +1268,32 @@ Notas: `research/foundry/sistemas-y-su-api.md` y `research/dndbeyond/creador-y-h
 9. **Métodos de características**: estándar, compra por puntos, tiradas y a mano, eligiendo el máster cuáles valen.
 10. **Inventario del grupo** compartido. *Propuesta: sí, en la campaña.*
 11. **Tablas aleatorias** (pasaron del módulo 2): ¿un bloque de la wiki que se tira con los dados? *Propuesta: sí.*
+
+#### Segunda parte de la entrevista (2026-11-04)
+
+- **Foundry: el orden del estudio**. Primero, los sistemas de Crisol como datos con la forma de los de Foundry; a la
+  vez, la consulta al abogado; luego, importar sus datos filtrando por licencia, y un prototipo en el que dnd5e solo
+  abre una hoja para leerla. Con eso se decide si se sigue con la capa que ejecuta su código.
+- **Personaje a medias, como en D&D Beyond**: sale en la lista desde el principio, marcado como incompleto.
+- **Subir de nivel cambiando el número** de la clase en el creador, y eligiendo lo que aparece (como D&D Beyond).
+- **Versiones del personaje, como las de las páginas**: cada cambio queda en el historial y se ven y restauran las
+  anteriores.
+- **2014 y 2024 se mezclan, como en D&D Beyond** (cambia lo de la primera parte): un solo sistema 5e con las dos como
+  fuentes (SRD 5.1 y SRD 5.2) que el máster activa en su campaña.
+- **Tiradas privadas**: «solo para mí» y «solo al máster»; el máster ve también las «solo para mí» y puede tirar en
+  oculto.
+- **La ventaja, propuesta**: si la hoja sabe que la hay, la tirada sale con ella marcada, dice por qué y se quita con un
+  clic.
+- **La hoja la componen el sistema y también el máster**: el máster recoloca los bloques de la hoja en su campaña sin
+  copiar el sistema.
+- **Características**: los cuatro métodos (valores estándar, compra por puntos, tiradas y a mano), y el máster elige
+  cuáles valen en su campaña.
+- **Inventario del grupo, en la campaña**: lo ven y cambian sus jugadores y el máster, y de él se pasan cosas a cada
+  personaje.
+- **Las tablas aleatorias, con el compendio (módulo 4)**, como en Foundry.
+- **Las preferencias, de cada personaje** (PG fijos o tirados, carga, privacidad…), como en D&D Beyond.
+- **El contenido del SRD, en español y en inglés**, y cada campaña elige. La traducción al español es nuestra (con la
+  IA y revisada), con su atribución y los términos habituales; si la editorial tiene una versión oficial en español con
+  la misma licencia, se parte de ella.
+- **Quién instala un sistema**: Crisol trae un catálogo de sistemas revisados (los de serie y, más adelante, los
+  importados de Foundry cuya licencia lo permita), y cada máster puede crear o subir el suyo para su cuenta.
