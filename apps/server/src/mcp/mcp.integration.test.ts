@@ -218,6 +218,9 @@ describe('conector MCP con OAuth', () => {
       ['crear_campana', { worldId: world.id, name: 'Otra' }, 'write'],
       ['enlace_invitacion', { campaignId: campaign.id, change: 'regenerate' }, 'players'],
       ['enlace_invitacion', { campaignId: campaign.id, change: 'close' }, 'players'],
+      ['tirar_dados', { formula: '1d20+5' }, 'read'],
+      ['tirar_dados', { formula: '1d20+5', campaignId: campaign.id }, 'write'],
+      ['ver_tiradas', { campaignId: campaign.id }, 'read'],
       ['deshacer', { operationId }, 'delete']
     ]
     const expected = {
@@ -357,6 +360,33 @@ describe('conector MCP con OAuth', () => {
     expect(recent[0]).toMatchObject({ status: 'done' })
     const { entries } = (await call<History>('ver_historial', { worldId: world.id })).data
     expect(entries[0]).toMatchObject({ action: 'editPage', via: 'ai', tool: 'editar_pagina' })
+  })
+
+  it('la IA tira: en una campaña, oculta por defecto y marcada como de la IA; sin campaña, solo el resultado', async () => {
+    const { call } = await connected()
+    const world = (await call<World>('crear_mundo', { name: 'Eana' })).data
+    const campaign = (await call<Campaign>('crear_campana', { worldId: world.id, name: 'La Marca' })).data
+    const hidden = await call<{ roll: { visibility: string; ai: boolean; label: string } }>('tirar_dados', {
+      campaignId: campaign.id,
+      formula: '1d8 # Encuentro en los muelles'
+    })
+    expect(hidden.data.roll).toMatchObject({ visibility: 'hidden', ai: true, label: 'Encuentro en los muelles' })
+    await call('tirar_dados', { campaignId: campaign.id, formula: '1d20 # Para todos', visibility: 'all' })
+    const listed = await call<{ rolls: { label: string; visibility: string }[] }>('ver_tiradas', {
+      campaignId: campaign.id
+    })
+    expect(listed.data.rolls.map((r) => [r.label, r.visibility])).toEqual([
+      ['Encuentro en los muelles', 'hidden'],
+      ['Para todos', 'all']
+    ])
+    const tried = await call<{ total: number; detail: string }>('tirar_dados', { formula: '4d6kh3' })
+    expect(tried.data.detail).toMatch(/^4d6kh3 → \[/)
+    // Sin apuntar: el registro sigue con dos
+    expect((await call<{ rolls: unknown[] }>('ver_tiradas', { campaignId: campaign.id })).data.rolls).toHaveLength(2)
+    // Una que no vale: le dice por qué
+    const bad = await call('tirar_dados', { formula: '1d20+' })
+    expect(bad.isError).toBe(true)
+    expect(bad.text).toContain('No se entiende «1d20+» al final')
   })
 
   it('Claude crea con plantilla; si un valor no cabe en su campo, el error le dice qué campos tiene', async () => {

@@ -33,6 +33,26 @@ const invitationInput = z.object({
     )
 })
 
+const diceInput = z.object({
+  formula: z
+    .string()
+    .min(1)
+    .max(300)
+    .describe(
+      'La tirada: 1d20+5, 2d20kh1 (ventaja), 2d20kl1 (desventaja), 4d6kh3, d%, 4dF, 1d6! (explota), 2d6r1 (repite), 5d10>=8 (éxitos), (1d8+2)*2; su nombre, con «# Nombre» al final'
+    ),
+  campaignId: z
+    .uuid()
+    .optional()
+    .describe('En esta campaña, en su registro. Sin campaña, solo da el resultado (para probar)'),
+  visibility: z
+    .enum(['all', 'hidden'])
+    .optional()
+    .describe(
+      'Con campaña: hidden (por defecto, solo la ve el máster) o all (la ve toda la campaña; solo si te lo pide)'
+    )
+})
+
 const linksInput = z.object({
   pageId: z
     .uuid()
@@ -109,7 +129,20 @@ export const MCP_TOOLS: Record<string, McpTool> = {
   ver_plantilla: { action: 'getTemplate' },
   crear_plantilla: { action: 'createTemplate' },
   cambiar_plantilla: { action: 'updateTemplate' },
-  borrar_plantilla: { action: 'deleteTemplate' }
+  borrar_plantilla: { action: 'deleteTemplate' },
+  // Los dados (ADR-0010): el servidor tira; con campaña queda en su registro
+  tirar_dados: {
+    description:
+      'Tira dados. Con campaignId, en el registro de esa campaña: por defecto oculta (solo la ve el máster); en público, con visibility all, solo si te lo pide. Sin campaña, solo da el resultado. El azar lo pone el servidor',
+    input: diceInput,
+    actions: ['rollDice', 'tryDice'],
+    route: (input) => {
+      const { formula, campaignId, visibility } = diceInput.parse(input)
+      if (!campaignId) return { action: 'tryDice', input: { formula } }
+      return { action: 'rollDice', input: { campaignId, formula, visibility: visibility ?? 'hidden' } }
+    }
+  },
+  ver_tiradas: { action: 'listRolls' }
 }
 
 const INSTRUCTIONS =
@@ -126,7 +159,9 @@ const INSTRUCTIONS =
   'Las páginas de un tipo (PNJ, Lugar, Facción… o las de la cuenta) se crean con su plantilla (listar_plantillas; ' +
   'template en crear_paginas): sus propiedades del YAML van a los campos que se llamen igual, y las tablas del panel ' +
   '(«Miembros», «Habitantes»…) se llenan solas con las páginas cuyo campo apunta a esta; para buscarlas, ' +
-  'buscar_paginas con template y field. Lo que cambies queda ' +
+  'buscar_paginas con template y field. Los dados los tira el servidor: tirar_dados (con campaignId, en su ' +
+  'registro, oculta salvo que te pidan que la vean todos) y ver_tiradas; en una página, una tirada se escribe ' +
+  '`dice: 2d6+3 # Nombre` y en partida se pulsa. Lo que cambies queda ' +
   'en el historial de Crisol y el máster puede deshacerlo. Según el modo de IA que elija el máster, algunas acciones ' +
   'esperan su aprobación en Crisol: no las repitas, mira cómo acabaron con pendientes; si rechaza una, no insistas.'
 

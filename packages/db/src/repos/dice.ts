@@ -39,15 +39,50 @@ export async function insertRoll(
     result: StoredRoll
   }
 ) {
-  const [created] = await db.insert(diceRolls).values(roll).returning({ id: diceRolls.id })
-  if (!created) throw new Error('La tirada no se guardó')
-  const [found] = await db
-    .select(view)
-    .from(diceRolls)
-    .innerJoin(user, eq(user.id, diceRolls.userId))
-    .where(eq(diceRolls.id, created.id))
+  // Guardarla y leerla con el nombre y el color de quien tira, en una consulta y sin esperar al disco: tirar va con
+  // prisa, y si la base de datos cae justo entonces, se pierde como mucho la última tirada (ADR-0010)
+  const rows = await db.transaction(async (tx) => {
+    await tx.execute(sql`set local synchronous_commit = off`)
+    return tx.execute<{
+      id: string
+      n: number
+      campaign_id: string
+      user_id: string
+      name: string
+      color: string | null
+      ai: boolean
+      formula: string
+      label: string | null
+      visibility: Visibility
+      result: StoredRoll
+      created_at: string | Date
+    }>(sql`
+    with inserted as (
+      insert into ${diceRolls} (campaign_id, world_id, user_id, ai, formula, label, visibility, result)
+      values (${roll.campaignId}, ${roll.worldId}, ${roll.userId}, ${roll.ai}, ${roll.formula}, ${roll.label},
+        ${roll.visibility}, ${JSON.stringify(roll.result)}::jsonb)
+      returning *
+    )
+    select inserted.*, ${user.name} as name, ${user.diceColor} as color
+    from inserted join ${user} on ${user.id} = inserted.user_id
+  `)
+  })
+  const found = [...rows][0]
   if (!found) throw new Error('La tirada no se guardó')
-  return found
+  return {
+    id: found.id,
+    n: Number(found.n),
+    campaignId: found.campaign_id,
+    userId: found.user_id,
+    name: found.name,
+    color: found.color,
+    ai: found.ai,
+    formula: found.formula,
+    label: found.label,
+    visibility: found.visibility,
+    result: found.result,
+    createdAt: new Date(found.created_at)
+  }
 }
 
 /**
