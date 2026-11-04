@@ -81,9 +81,9 @@ Lo nuevo del formato de sistemas (ADR-0012). Vale para cualquier sistema, no sol
   efecto lleva:
   - su **destino**: un campo o un elemento de un conjunto (`ca`, `caracteristicas.des.valor`,
     `habilidades.sigilo`);
-  - su **operación**: sumar, fijar, fijar la base (las CA alternativas, como Defensa sin armadura), mínimo, máximo,
-    grado de competencia (competente, pericia, media), ventaja o desventaja, o añadir a una lista (resistencias,
-    sentidos, idiomas, velocidades);
+  - su **operación**: sumar, fijar, fijar la base (las CA alternativas, como Defensa sin armadura: sustituye a la de
+    siempre y, de varias, gana la mayor), mínimo, máximo, grado de competencia (competente, pericia, media: un mínimo en
+    su grado), ventaja o desventaja, o añadir a una lista (resistencias, sentidos, idiomas, velocidades);
   - su **valor**: una fórmula del sistema;
   - su **condición**: una fórmula de sí o no sobre el estado (`@equipado`, `@sintonizado`, `!@armadura`,
     `@nivel >= 5`, un estado activo);

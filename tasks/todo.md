@@ -14,7 +14,7 @@ Plan: `tasks/plan.md`. Spec: `docs/specs/srd-5e.md`. Cada tarea, con TDD y en un
   - Comprueba: pruebas de cada parte nueva (válida y no válida); los fixtures de hoy siguen valiendo.
   - Archivos: `packages/systems/src/format.ts`, `file.ts`, `validate.ts` (+ pruebas).
 
-- [ ] **2. Los efectos al calcular**
+- [x] **2. Los efectos al calcular** — hecha (`evaluate.ts`; pruebas en `effects.test.ts`). La base sustituye a la de siempre (con armadura, la suya) y, de varias, gana la mayor; el grado de competencia es un mínimo en su grado; `evaluate` devuelve las ventajas por tirada y lee `settings` para `@ajustes`
   - Acepta:
     - `evaluate` aplica los efectos de lo que lleva (y de los estados activos) con sus operaciones, en su orden fijo
       (base, fijar, sumar, mínimo y máximo), con su condición;

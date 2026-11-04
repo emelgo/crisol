@@ -56,7 +56,24 @@ describe('el ritmo', () => {
       id: `o${i}`,
       type: 'objeto',
       name: `Objeto ${i}`,
-      data: { equipado: i % 3 === 0, bono_ca: i % 2, peso: i % 5 }
+      data: { equipado: i % 3 === 0, bono_ca: i % 2, peso: i % 5 },
+      // Efectos de su mecánica: un bono, una armadura, una ventaja
+      mechanics: {
+        effects: [
+          ...(i % 4 === 0 ? [{ target: 'ca', op: 'add' as const, value: '1', when: '@este.equipado' }] : []),
+          ...(i % 10 === 0
+            ? [
+                {
+                  target: 'ca',
+                  op: 'base' as const,
+                  value: `${11 + (i % 7)} + @caracteristicas.des.mod`,
+                  when: '@este.equipado'
+                }
+              ]
+            : []),
+          ...(i % 7 === 0 ? [{ target: 'caracteristica', op: 'advantage' as const, when: '@este.equipado' }] : [])
+        ]
+      }
     }))
     const doc = {
       data: {
@@ -72,7 +89,10 @@ describe('el ritmo', () => {
     expect(fieldCount).toBeGreaterThanOrEqual(300)
     const once = evaluate(system, 'personaje', doc)
     expect(once.computed.c29?.error).toBeUndefined()
-    expect(once.computed.ca?.terms.filter((t) => t.kind === 'bonus')).toHaveLength(17)
+    // 17 de los bonos del tipo y 9 de los efectos; la base, de la mejor armadura equipada (la del objeto 90: 17 + des)
+    expect(once.computed.ca?.terms.filter((t) => t.kind === 'bonus')).toHaveLength(26)
+    expect(once.computed.ca?.terms[0]).toMatchObject({ kind: 'base', value: 17, origin: 'o90' })
+    expect(once.advantages.caracteristica).toHaveLength(5)
     const ms = median(() => evaluate(system, 'personaje', doc), 30)
     console.info(`Nivel 20 (${fieldCount} campos, 100 objetos): ${ms.toFixed(2)} ms de mediana`)
     expect(ms).toBeLessThan(20)
