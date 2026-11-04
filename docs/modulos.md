@@ -1429,6 +1429,34 @@ Notas: `research/foundry/sistemas-y-su-api.md` y `research/dndbeyond/creador-y-h
 - **Las preferencias, de cada personaje** (PG fijos o tirados, carga, privacidad…), como en D&D Beyond.
 - **El contenido del SRD, en español y en inglés**, y cada campaña elige. La traducción al español es nuestra (con la
   IA y revisada), con su atribución y los términos habituales; si la editorial tiene una versión oficial en español con
-  la misma licencia, se parte de ella.
+  la misma licencia, se parte de ella (la hay: ver `srd-5e`, abajo).
 - **Quién instala un sistema**: Crisol trae un catálogo de sistemas revisados (los de serie y, más adelante, los
   importados de Foundry cuya licencia lo permita), y cada máster puede crear o subir el suyo para su cuenta.
+
+#### `srd-5e` (entrevista con Enrique, 2026-11-04)
+
+- **Hay SRD oficial en español de las dos ediciones**, con licencia Creative Commons: el 5.1 y el 5.2.1 (traducido en
+  diciembre de 2025), en la página del SRD de D&D Beyond. Se parte de ellos: no hace falta traducirlo con la IA.
+- **Todo el SRD, «como en D&D Beyond»**: las reglas que calculan el personaje y todo el contenido de las dos ediciones
+  (clases y subclases, especies, trasfondos, dotes, conjuros, equipo, objetos mágicos, criaturas, estados y el texto de
+  las reglas), en español y en inglés.
+- **Todo automatizado**: cada cosa lleva su mecánica (un conjuro, su ataque o su salvación y su daño por nivel; un
+  arma, su ataque y su daño; un objeto, sus bonos y su sintonía; un rasgo, sus usos y su descanso), y la hoja calcula y
+  tira sola. Lo muy complejo (Forma salvaje, Polimorfar, Deseo) va como texto y se lleva a mano, como en D&D Beyond.
+- **Preparado para todo el 5e oficial**: Enrique quiere un marketplace y negociar con Wizards para vender sus libros en
+  la app. El modelo tiene que valer para lo que no está en el SRD; cada cosa dice de qué libro sale y con qué licencia
+  (y, más adelante, qué cuentas lo tienen).
+- **Sin pantallas nuevas en `srd-5e`**: el 5e sale en «Sistemas» como uno de serie y se prueba en «Probar» (un guerrero
+  de nivel 5 con su equipo da su CA, su ataque y sus PG con el desglose) y por la IA. Buscar y leer el contenido, con el
+  compendio del módulo 4.
+- **Las dos ediciones en una campaña, como en D&D Beyond**: lo que está en las dos sale con su fuente y lo de 2014 como
+  «Legado»; la campaña activa o desactiva cada edición, esconde lo legado o deja solo lo más nuevo de lo repetido; las
+  reglas generales que cambian (el agotamiento, la sorpresa…) las decide un ajuste de la campaña. Antes de la spec, se
+  mira en D&D Beyond cómo lo hace.
+- **Hecho cuando**: todo lo de los dos SRD está dentro (contado por categorías) en los dos idiomas; unos personajes de
+  referencia (cada clase, en los niveles 1, 5, 11 y 20, en las dos ediciones) dan lo que dicen las reglas; el guerrero
+  de «Probar»; la IA consulta un conjuro y prueba su tirada; y las opciones de las ediciones en la campaña.
+- **Límites**: sala limpia (el contenido sale solo de los PDF oficiales del SRD, nada de D&D Beyond ni de Foundry), la
+  atribución CC BY 4.0 de cada uno y sin la marca «D&D» en la interfaz.
+- **Fuera de `srd-5e`**: el compendio (módulo 4), el creador y la hoja (`personajes`, `hoja`), el marketplace y los
+  libros que no son SRD (solo el modelo preparado), el contenido de Fateforge (módulo 4) e importar de Foundry.
