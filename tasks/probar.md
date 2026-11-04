@@ -20,6 +20,12 @@ Aún no está en staging: se prueba en el servidor de desarrollo (lo arranco cua
   - el color de tus dados en el perfil, y la hoja de dados en el móvil (menú de la llama → «Dados»).
 - [ ] **Punto de control 3**: los dados 3D: caen con tu color y quedan en lo que dice el registro; los de la jugadora
   caen en tu pantalla con el suyo; en las opciones de la ficha (el engranaje) se apaga «Ver caer los dados de los demás».
+- [ ] **Final (en staging, cuando se fusione)**: los criterios de éxito de `docs/specs/dados.md`:
+  - tú tiras `1d20+5` y a una jugadora le caen los dados con tu color y le sale en el registro al momento;
+  - ella tira «al máster»: tú lo ves marcado; una segunda jugadora no recibe nada; lo tuyo oculto, nadie más;
+  - en una página escribes `` `dice: 2d6+3` ``, la pulsas y sale en el registro;
+  - desde claude.ai, la IA tira en la campaña (oculta, salvo que le pidas que la vean todos) y lee las últimas;
+  - con el teclado: tirar, y el total se anuncia.
 
 
 

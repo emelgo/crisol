@@ -7,6 +7,26 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
+### Para retomar (2026-11-04, módulo 3: dados)
+
+- **El módulo 3 va por capacidades** (mapa aprobado en `docs/specs/modulo-3.md`): `dados` → `sistemas` → `srd-5e` →
+  `personajes` → `hoja` → `foundry`. La entrevista entera y los estudios, en «### 3. Sistemas, fichas y dados», al
+  final de este archivo.
+- **`dados` está construida** en la rama `modulo-3/dados`: las 11 tareas de `tasks/todo.md` (plan en `tasks/plan.md`,
+  spec `docs/specs/dados.md`, ADR-0010, diseño en el lienzo «Crisol: dados», aprobado):
+  - el paquete puro `@crisol/dice` (la notación del Crisol actual, con sus límites);
+  - las tiradas en el servidor, en `dice_rolls` (migración 0037, fuera del historial), con sus visibilidades, el aviso
+    en vivo, el límite de 60 por minuto y `tryDice` (sin apuntar);
+  - la ficha de dados (barra del mundo y campaña; en el móvil, hoja), su registro y el color de cada cuenta (0038);
+  - los dados 3D (three y cannon-es, cargados aparte: la tirada se simula entera y se numera para que salga lo del
+    servidor);
+  - la tirada escrita en las páginas (`` `dice: 2d6+3 # Nombre` ``) y la IA (`tirar_dados`, `ver_tiradas`).
+- **Ritmo**: tirar tarda 11 ms de mediana y 22 ms en el p95 en el servidor (20.000 tiradas en el registro). Por la API
+  son unos 31 ms, casi todo lo de cualquier petición (la sesión y las pertenencias): **apuntado** para mirarlo en toda
+  la app.
+- **Lo siguiente**: subir la tanda, pasar la CI una vez, fusionar y desplegar en staging; Enrique prueba los puntos de
+  control de `tasks/probar.md` y los criterios de la spec. Después, la spec de `sistemas`.
+
 ### Para retomar (2026-11-04, noche: arreglos y módulo 3)
 
 - **Lo que tiene que probar Enrique, en `tasks/probar.md`** («ve apuntando todas las cosas que tengo que probar»): el
@@ -994,7 +1014,7 @@ Estados: pendiente · en curso · hecho · descartado.
 | 0 | **Fundación**: monorepo, CI, despliegue, cuentas, organizaciones, mundos, campañas, roles, historial y deshacer, esqueleto del MCP | **hecho** (2026-10-29; Discord y Google, pospuestos) | Foundry: modelo de documentos y permisos; DDB: campañas e invitaciones |
 | 1 | **Wiki**: páginas y subpáginas, editor de bloques, enlaces, menciones, vista previa, propiedades, secretos, búsqueda, marcadores, etiquetas, versiones, recursos y archivos, **hojas con estilo** (tipo Homebrewery, con PDF), exportación MD, sus herramientas MCP | construido (tareas 1 a 26 hechas); falta la revisión de Enrique en staging | Foundry: Journal; DDB: contenido y referencias; Homebrewery (MIT): formato de hoja y descarga |
 | 2 | **Tipos de página y plantillas**: «Desde plantilla» (de serie y propias), campos en el panel, tablas que se llenan solas (en lugar de Dataview) | construido (tareas 1 a 14, 2026-11-03); falta la revisión de Enrique en staging | Foundry: tipos de documento; Kanka, LegendKeeper y World Anvil (web pública) |
-| 3 | Sistemas de reglas, fichas de personaje (creación, subida de nivel), dados y dados 3D | en marcha: entrevista y estudios hechos; mapa aprobado (`docs/specs/modulo-3.md`); spec de `dados` aprobada; diseño aprobado (lienzo «Crisol: dados»); ahora su plan | DDB: creador y hoja; Foundry: dnd5e, DataModel e instalar y crear sistemas |
+| 3 | Sistemas de reglas, fichas de personaje (creación, subida de nivel), dados y dados 3D | en marcha: mapa aprobado (`docs/specs/modulo-3.md`); `dados` construida (11 tareas, rama `modulo-3/dados`); después, `sistemas` | DDB: creador y hoja; Foundry: dnd5e, DataModel e instalar y crear sistemas |
 | 4 | Compendios (aparte de la wiki del mundo y **como los de Foundry**: antes, estudio a fondo con craft-anything), bestiario, statblocks, biblioteca; **buscar dentro de los PDF** (texto de cada página con pdf.js; el resultado abre el visor en esa página) **y por significado** (pgvector; antes, permiso para la imagen de Postgres y elegir quién calcula los embeddings) | pendiente | Foundry: compendium packs; DDB: listados |
 | 5 | Visibilidad por campaña: conocimiento de los jugadores, revelar, compartir | pendiente | Foundry: ownership |
 | 6 | **Mesa**: escenas, rejilla, fichas, medir y plantillas, niebla, muros, puertas, luz, visión, iniciativa, instantáneas, encuentros, UVTT | pendiente | Foundry: canvas, visión y muros; DDB Maps |
