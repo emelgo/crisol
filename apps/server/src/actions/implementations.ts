@@ -14,6 +14,7 @@ import { preferenceActions } from './preferences.ts'
 import { previewActions } from './preview.ts'
 import type { Implementation } from './registry.ts'
 import { searchActions } from './search.ts'
+import { systemActions } from './systems.ts'
 import { tagActions } from './tags.ts'
 import { templateActions } from './templates.ts'
 import { trashActions } from './trash.ts'
@@ -40,6 +41,7 @@ export const IMPLEMENTATIONS: Implementation[] = [
   ...searchActions,
   ...tagActions,
   ...templateActions,
+  ...systemActions,
   ...mapActions,
   ...preferenceActions
 ]

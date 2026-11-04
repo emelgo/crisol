@@ -71,3 +71,7 @@ Lo que dicen los estudios:
   abre la puerta al código.
 - Mejorar un sistema del catálogo con una versión de Crisol puede pedir su migración, escrita en el código, como las de
   la base de datos.
+- El documento se guarda como texto JSON, no en `jsonb`: `jsonb` reordena las claves, y en un sistema el orden (el de
+  sus tipos, sus campos y sus tiradas) es el que se ve. Así queda tal cual también en el historial y al deshacer.
+- Cada cambio guarda el documento entero en el historial (antes y después): con sistemas grandes, el historial crece.
+  Si un día pesa, se poda lo viejo, como el resto del historial.

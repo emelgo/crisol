@@ -66,6 +66,7 @@ import {
   updatePage
 } from './pages.ts'
 import { searchWiki } from './search.ts'
+import { createSystem, deleteSystem, getSystem, listSystems, updateSystem } from './systems.ts'
 import { createTag, deleteTag, listAccountTags, setFileTags, updateTag } from './tags.ts'
 import { createTemplate, deleteTemplate, getTemplate, listTemplates, updateTemplate } from './templates.ts'
 import {
@@ -94,6 +95,7 @@ export * from './pages.ts'
 export * from './panel.ts'
 export type * from './realtime.ts'
 export * from './search.ts'
+export * from './systems.ts'
 export * from './tags.ts'
 export * from './templates.ts'
 export * from './trash.ts'
@@ -194,7 +196,12 @@ export const ACTIONS = [
   deleteTemplate,
   rollDice,
   listRolls,
-  tryDice
+  tryDice,
+  listSystems,
+  getSystem,
+  createSystem,
+  updateSystem,
+  deleteSystem
 ]
 
 /** Las acciones por nombre, solo como tipo: la web las usa sin cargar zod */
@@ -293,4 +300,9 @@ export type Actions = {
   rollDice: typeof rollDice
   listRolls: typeof listRolls
   tryDice: typeof tryDice
+  listSystems: typeof listSystems
+  getSystem: typeof getSystem
+  createSystem: typeof createSystem
+  updateSystem: typeof updateSystem
+  deleteSystem: typeof deleteSystem
 }

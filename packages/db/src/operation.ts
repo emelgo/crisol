@@ -11,6 +11,7 @@ import { invitationLinks } from './schema/invitations.ts'
 import { mapElements, mapPins, maps, pageTabs } from './schema/maps.ts'
 import { organizationMembers, organizations } from './schema/organizations.ts'
 import { pages } from './schema/pages.ts'
+import { systemContent, systems } from './schema/systems.ts'
 import { tags } from './schema/tags.ts'
 import { pageTemplates } from './schema/templates.ts'
 import { pageBodies } from './schema/versions.ts'
@@ -31,6 +32,8 @@ export const TRACKED_TABLES = {
   file_folders: fileFolders,
   tags,
   page_templates: pageTemplates,
+  systems,
+  system_content: systemContent,
   page_tabs: pageTabs,
   maps,
   map_pins: mapPins,

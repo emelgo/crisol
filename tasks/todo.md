@@ -84,7 +84,7 @@ el 2026-11-12).
 
 ## Fase 2: El servidor
 
-- [ ] **5. Los sistemas de la cuenta en el servidor**
+- [x] **5. Los sistemas de la cuenta en el servidor** — hecha. El documento va en texto JSON (jsonb reordena las claves). Copiar uno propio copia también su contenido; el del catálogo (el 5e, con srd-5e) se decidirá con su tamaño. Cambiar uno de otra cuenta da 404, como si no existiera.
   - Acepta:
     - la migración 0039 con `systems` y `system_content`, que pasan por `operation()`;
     - los permisos `systems.read` y `systems.write`;

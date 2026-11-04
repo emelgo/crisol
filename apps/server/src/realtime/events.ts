@@ -47,6 +47,11 @@ export const templatesChanged = (organizationId: string): RealtimeEvent => ({
   message: { type: 'changed', what: 'templates', organizationId }
 })
 
+export const systemsChanged = (organizationId: string): RealtimeEvent => ({
+  to: { capability: 'systems.read', target: { organizationId } },
+  message: { type: 'changed', what: 'systems', organizationId }
+})
+
 /** El texto de una página se guardó: a quien la ve (lo que la enseña en otra se vuelve a pedir) */
 export const pageContentChanged = (
   wiki: { worldId: string; organizationId: string },
@@ -129,6 +134,10 @@ export function undoEvents(
         break
       case 'page_templates':
         events.push(templatesChanged(String(row.organization_id ?? context.organizationId)))
+        break
+      case 'systems':
+      case 'system_content':
+        if (context.organizationId) events.push(systemsChanged(String(row.organization_id ?? context.organizationId)))
         break
       case 'files':
       case 'file_folders':

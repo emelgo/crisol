@@ -414,3 +414,43 @@ test('@fugas las tiradas privadas solo le llegan a quien tira y al máster (ADR-
   await ana.close()
   await bruno.close()
 })
+
+test('@fugas los sistemas de reglas son de la cuenta: la jugadora ni los ve ni sabe que cambian (ADR-0011)', async ({
+  page,
+  browser
+}) => {
+  const link = await campaignLink(page)
+  let seen: ReturnType<typeof capture> | undefined
+  const player = await newPlayer(browser, link, 'Jugadora', (p) => {
+    seen = capture(p)
+  })
+  if (!seen) throw new Error('sin captura')
+  const captured = seen
+  await expect.poll(() => captured.frames.some((f) => f.includes('"hello"'))).toBe(true)
+
+  // El máster hace un sistema y lo cambia
+  const { organizations } = await (await page.request.post('/api/actions/listOrganizations', { data: {} })).json()
+  const organizationId = organizations[0].id as string
+  const created = await (
+    await page.request.post('/api/actions/createSystem', { data: { name: 'Sistema Secreto' } })
+  ).json()
+  const changed = await page.request.post('/api/actions/updateSystem', {
+    data: { systemId: created.id, version: 1, name: 'Reglas Escondidas' }
+  })
+  expect(changed.status()).toBe(200)
+
+  for (const [name, data] of [
+    ['listSystems', { organizationId }],
+    ['getSystem', { systemId: created.id, organizationId }],
+    ['updateSystem', { systemId: created.id, version: 2, name: 'Mío' }],
+    ['deleteSystem', { systemId: created.id }]
+  ] as const) {
+    const response = await player.request.post(`/api/actions/${name}`, { data })
+    expect(response.status(), name).toBe(404)
+  }
+
+  const everything = await captured.all()
+  for (const leak of ['Sistema Secreto', 'Reglas Escondidas', created.id, '"systems"'])
+    expect(everything).not.toContain(leak)
+  await player.close()
+})
