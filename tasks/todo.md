@@ -156,7 +156,7 @@ el 2026-11-12).
   - Archivos: `apps/web/src/routes/campaigns.tsx`, `apps/web/src/systems/campaign-system.tsx` (+ pruebas),
     `e2e/tests/sistemas.spec.ts`.
 
-- [ ] **10. El editor: sus partes, General y los tipos**
+- [x] **10. El editor: sus partes, General y los tipos** — hecha. El borrador entero se valida al momento en la web (lo mismo que el servidor). Los campos de dentro de un grupo, una lista de filas o un conjunto aún no se editan uno a uno (se ven y se cambian en Avanzado, tarea 12); en el móvil, el campo se despliega en su sitio en vez de en una hoja.
   - Acepta:
     - `/sistemas/:id` con sus partes a la izquierda y los problemas de cada una;
     - General;

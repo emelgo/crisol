@@ -117,3 +117,38 @@ test('elegir el sistema de una campaña: la ficha de dados propone su tirada por
     '2d6'
   )
 })
+
+test('el editor: un tipo con sus campos, una fórmula mal escrita que no deja guardar, y en el móvil', async ({
+  page
+}) => {
+  test.slow()
+  await freshOwner(page)
+  const created = await (await page.request.post('/api/actions/createSystem', { data: { name: 'Fronteras' } })).json()
+  await page.goto(`/sistemas/${created.id}`)
+  await expect(page.getByRole('heading', { level: 1, name: 'Fronteras' })).toBeVisible()
+  const parts = page.getByRole('complementary', { name: 'Partes del sistema' })
+  await parts.getByRole('button', { name: /^Personaje/ }).click()
+  await page.getByRole('button', { name: 'Campo nuevo' }).click()
+  await page.getByLabel('Clase', { exact: true }).selectOption('derived')
+  const formula = page.getByRole('combobox', { name: 'Fórmula' })
+  await formula.fill('10 + @nada')
+  await expect(page.getByText('No existe «@nada» en Personaje').first()).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Guardar' })).toBeDisabled()
+  await accessible(page, 'main')
+  await formula.fill('10')
+  await page.getByRole('button', { name: 'Guardar' }).click()
+  await expect(page.getByText('Guardado')).toBeVisible()
+  await page.reload()
+  await page
+    .getByRole('complementary', { name: 'Partes del sistema' })
+    .getByRole('button', { name: /^Personaje 1/ })
+    .click()
+  await expect(page.getByText('@campo_nuevo')).toBeVisible()
+
+  // En el móvil: la parte, en un selector
+  await page.setViewportSize({ width: 390, height: 844 })
+  await expect(parts).toBeHidden()
+  await page.getByLabel('Parte del sistema').selectOption({ label: 'General' })
+  await expect(page.getByRole('group', { name: 'General' })).toBeVisible()
+  await accessible(page, 'main')
+})
