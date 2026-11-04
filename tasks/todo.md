@@ -86,7 +86,12 @@ Plan: `tasks/plan.md`. Spec: `docs/specs/srd-5e.md`. Cada tarea, con TDD y en un
     `packages/contracts/src/campaigns.ts`.
 
 - [ ] **10. La IA: el contenido**
-  - Acepta: buscar y leer el contenido de un sistema; `probar_formula` y `probar_tirada` con documentos del contenido
+  - Acepta (Enrique, 2026-11-04: «cuando se cree un sistema, el MCP debe poder crear las automatizaciones también»):
+    - crear, cambiar y borrar documentos del contenido de un sistema propio, con su mecánica (efectos, recursos,
+      acciones, escalado, lo que concede), validados enteros y por su ruta, con su historial y en cada modo de IA;
+    - la documentación del formato (`formato_sistemas`) explica el documento de contenido y su mecánica, con ejemplos
+      de 5e y de un 2d6, para que la IA la escriba en cualquier sistema;
+  - Acepta también: buscar y leer el contenido de un sistema; `probar_formula` y `probar_tirada` con documentos del contenido
     (una clase con su nivel, lo equipado, lo sintonizado, lo activo): lo calculado con su desglose, los recursos, las
     tiradas por cada objeto y las acciones (con su nivel); los textos del contenido, como datos.
   - Comprueba: cada herramienta en cada modo de IA; el guerrero de nivel 5 con cota de malla y espada larga da CA 16,
