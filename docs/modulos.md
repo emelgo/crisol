@@ -7,16 +7,24 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
-### Para retomar (2026-11-04, pruebas)
+### Para retomar (2026-11-04, noche: arreglos y módulo 3)
 
 - **Lo que tiene que probar Enrique, en `tasks/probar.md`** («ve apuntando todas las cosas que tengo que probar»): el
-  módulo 2, lo que quedaba del 1 y lo que hay que arreglar antes. Se mantiene al día: lo nuevo que haya que probar va
-  ahí, y lo que diga, a su apartado «Lo que dijo».
-- **El módulo 2 está en `main` y en staging** (PR #93, fusionada el 2026-11-04 con `[skip ci]` tras la CI en verde;
-  migraciones 0035 y 0036).
-- **La próxima tanda**: los arreglos de «Por arreglar antes de probarlo» y los tres avisos de semgrep que bloquean la
-  CI desde el 2026-11-12 (`${{ github.base_ref }}` en un `run` de `ci.yml`, `createDecipheriv` sin `authTagLength` en
-  `apps/server/src/secrets.ts` y las URL de WebSocket sin cifrar de `apps/web/src/realtime/client.test.ts`).
+  módulo 2 y lo que quedaba del 1, ya con los arreglos. Se mantiene al día: lo nuevo que haya que probar va ahí, y lo
+  que diga, a su apartado «Lo que dijo».
+- **El módulo 2 está en `main` y en staging** (PR #93; migraciones 0035 y 0036).
+- **La tanda de arreglos, en la PR #94** (rama `tanda/arreglos-pruebas`): los puntos 1, 2, 3, 4, 6, 7 y 8 de «Lo que dijo
+  Enrique al probar» (el 7, deshacer lo de la IA tras abrir la página, era el párrafo que el editor añadía al abrir:
+  fuera el `trailingNode` de StarterKit; para seguir escribiendo está la línea de más), el aviso al borrar con los
+  campos que apuntan a la página (lo pedía la spec del módulo 2) y los tres avisos de semgrep. Todo en verde en local.
+- **El módulo 3 empezó**: la primera parte de la entrevista y los estudios de Foundry y D&D Beyond están en
+  «### 3. Sistemas, fichas y dados», al final de este archivo. **Lo siguiente**: la segunda parte de la entrevista con
+  sus 11 preguntas (la primera, si se sigue el orden del estudio de Foundry tras lo que dice de las licencias); después,
+  la spec y el ADR de los sistemas y del aislamiento.
+- **Apuntado**: el estudio de D&D Beyond abrió el perfil de Chromium de Enrique (`~/rea-workspace/chromium-ddb`) con una
+  sonda propia por tubería, porque el permiso de abrir el puerto de depuración se denegó; el perfil quedó actualizado a
+  Chromium 156. La prueba de la web `realtime.test.tsx` («se abre con la sesión…») falló una vez con todo a la vez por
+  la carga; sola pasa.
 
 ### Para retomar (2026-11-03, módulo 2)
 
