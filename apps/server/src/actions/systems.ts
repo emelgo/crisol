@@ -49,8 +49,8 @@ import {
 import { systemsChanged } from '../realtime/events.ts'
 import { targetOrganization } from './access.ts'
 import { type ActionContext, historyContext, InvalidRequestError, TooManyRequestsError } from './context.ts'
-import { tooManyTries } from './dice.ts'
 import { implement } from './registry.ts'
+import { tooManyTries } from './tries.ts'
 
 /** Hasta tantos por cuenta */
 export const MAX_SYSTEMS = 50

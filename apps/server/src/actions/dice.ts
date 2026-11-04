@@ -10,24 +10,7 @@ import { authorizedCampaign } from './access.ts'
 import { type ActionContext, InvalidRequestError, TooManyRequestsError } from './context.ts'
 import { implement } from './registry.ts'
 import { criticalRuleOf } from './systems.ts'
-
-/** Como mucho, tantas por minuto y persona: se cuentan en la tabla, así vale con varias instancias */
-export const ROLLS_PER_MINUTE = 60
-
-/** Las de tryDice (sin apuntar), en la memoria del proceso: no guardan nada que contar */
-const tried = new Map<string, number[]>()
-/** Las de probar (tryDice y las tiradas de un sistema), que no se apuntan */
-export function tooManyTries(userId: string) {
-  const now = Date.now()
-  const recent = (tried.get(userId) ?? []).filter((at) => now - at < 60_000)
-  if (recent.length >= ROLLS_PER_MINUTE) {
-    tried.set(userId, recent)
-    return true
-  }
-  recent.push(now)
-  tried.set(userId, recent)
-  return false
-}
+import { ROLLS_PER_MINUTE, tooManyTries } from './tries.ts'
 
 /** Los dados de un resultado, para guardarlos y para los dados 3D */
 const diceOf = (result: ReturnType<typeof roll>) =>
