@@ -24,7 +24,7 @@ Plan: `tasks/plan.md`. Spec: `docs/specs/srd-5e.md`. Cada tarea, con TDD y en un
     un objeto sin sintonizar no da nada; el ritmo de nivel 20.
   - Archivos: `packages/systems/src/evaluate.ts`, `formulas/system.ts` (+ pruebas, `ritmo.test.ts`).
 
-- [ ] **3. Recursos, tiradas por objeto y escalado**
+- [x] **3. Recursos, tiradas por objeto y escalado** — hecha (`actions.ts`, `rolls.ts`, `evaluate.ts`; pruebas en `actions.test.ts`). Los recursos salen en `evaluate(...).resources`, con lo gastado en `uses` del objeto (o del documento, en una criatura); `rollsOf` recibe el documento para las tiradas por objeto; `prepareAction`, `tryAction` y `actionsOf` arman y tiran las acciones de un documento, con su escalado (`by`, `action` y `parts`, nuevos) y el crítico. Queda para la tarea 4: `ajustes` como nombre reservado y `@ajustes` en las fórmulas del sistema
   - Acepta:
     - los recursos que da un objeto o un rasgo, con su máximo y cómo se recuperan, en lo calculado;
     - una tirada `for: { items }` sale por cada objeto que lleve, con `@este` como el objeto;

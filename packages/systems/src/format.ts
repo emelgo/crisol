@@ -223,10 +223,14 @@ function build(strict: boolean) {
     formula: formula.describe('Los dados y los campos del personaje (2d6 + @este, 1d20 + @caracteristicas.des.mod)'),
     // Una por cada uno de estos campos, o por cada elemento de un conjunto; dentro, @este es ese
     for: z
-      .union([obj({ fields: z.array(key).min(1).max(100) }), obj({ set: key })])
+      .union([
+        obj({ fields: z.array(key).min(1).max(100) }),
+        obj({ set: key }),
+        obj({ items: z.array(key).min(1).max(50) })
+      ])
       .optional()
       .describe(
-        'Una por cada uno de estos campos ({ fields: [vigor, astucia] }) o por cada elemento de un conjunto ({ set: caracteristicas }); dentro, @este es ese'
+        'Una por cada uno de estos campos ({ fields: [vigor, astucia] }), por cada elemento de un conjunto ({ set: caracteristicas }) o por cada objeto que lleve de estos tipos ({ items: [arma] }); dentro, @este es ese'
       ),
     target: z
       .enum(['none', 'optional', 'required'])

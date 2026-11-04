@@ -149,15 +149,21 @@ export function rollContexts(
   language: Language = 'es',
   scopes?: Map<string, Scope>
 ): { context: Context; result: Context } | null {
-  const wanted = roll.for ? ('fields' in roll.for ? roll.for.fields : [roll.for.set]) : []
+  const kinds = roll.for && 'items' in roll.for ? roll.for.items : null
+  const wanted = roll.for ? ('fields' in roll.for ? roll.for.fields : 'set' in roll.for ? [roll.for.set] : []) : []
   const actors = Object.entries(system.types).filter(([, t]) => t.document === 'actor')
-  const actor = actors.find(([, t]) => wanted.every((k) => t.fields[k])) ?? actors[0]
+  // Por objetos: el primero que los lleve; si no, el primero que tenga aquello por lo que va
+  const carries = (t: SystemType) =>
+    Object.values(t.fields).some((f) => f.kind === 'items' && f.of.some((o) => kinds?.includes(o)))
+  const actor =
+    (kinds ? actors.find(([, t]) => carries(t)) : actors.find(([, t]) => wanted.every((k) => t.fields[k]))) ?? actors[0]
   if (!actor) return null
   const [actorKey, actorType] = actor
   const owner = textOf(actorType.label, language) || actorKey
   const scope: Scope = { ...(scopes?.get(actorKey) ?? scopeOf(actorType.fields, '', owner, system, language)) }
   const first = wanted[0]
-  if (roll.for && first) {
+  if (kinds) scope.este = itemShape(system, kinds, owner, language)
+  else if (roll.for && first) {
     const shape = scope[first]
     // Si va por algo que no existe, ya se ha dicho: @este no da otro error
     scope.este = !shape
@@ -179,6 +185,20 @@ export function rollContexts(
       owner
     }
   }
+}
+
+/** @este en una tirada por objetos: los campos que tienen todos sus tipos, y su nombre */
+function itemShape(system: System, kinds: string[], owner: string, language: Language): Shape {
+  const scopes = kinds
+    .map((k) => (Object.hasOwn(system.types, k) ? system.types[k] : undefined))
+    .filter((t): t is SystemType => t?.document === 'item')
+    .map((t, i) => scopeOf(t.fields, `${kinds[i]}:`, owner, system, language))
+  const [first, ...rest] = scopes
+  if (!first) return { type: 'any', label: 'este' }
+  const fields: Scope = Object.fromEntries(
+    Object.entries(first).filter(([k]) => rest.every((r) => Object.hasOwn(r, k)))
+  )
+  return { type: 'object', label: 'este', fields: { ...fields, name: { type: 'string', label: 'nombre' } } }
 }
 
 function expectBoolean(formula: string, context: Context, path: Segment[], report: Report) {

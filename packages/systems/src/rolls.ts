@@ -13,7 +13,7 @@ import {
   type RollResult,
   rollTree
 } from '@crisol/dice'
-import { evaluate, evaluateExpr, type SystemDocument } from './evaluate.ts'
+import { type DocumentItem, evaluate, evaluateExpr, type SystemDocument, settingsOf } from './evaluate.ts'
 import type { Field, Roll, System, TONES } from './format.ts'
 import type { Value } from './formulas/functions.ts'
 import { type Expr, FormulaError, parseFormula } from './formulas/parse.ts'
@@ -29,6 +29,8 @@ export interface RollOptions {
   target?: number | null
   roller?: DieRoller
   language?: Language
+  /** Los ajustes de la campaña (`@ajustes`); sin ellos, sus valores iniciales */
+  settings?: Record<string, unknown>
 }
 
 export interface SystemRoll extends RollResult {
@@ -46,12 +48,12 @@ export class RollError extends Error {
   }
 }
 
-type Node = { kind: 'value'; value: Value; label?: string }
-const node = (value: Value, label?: string): Node =>
+export type Node = { kind: 'value'; value: Value; label?: string }
+export const node = (value: Value, label?: string): Node =>
   label === undefined ? { kind: 'value', value } : { kind: 'value', value, label }
 const NO_RUNTIME = { spend() {} }
 
-const formula = (text: string) => {
+export const formula = (text: string) => {
   try {
     return parseFormula(text)
   } catch (error) {
@@ -61,12 +63,16 @@ const formula = (text: string) => {
 }
 
 /** Las tiradas que tiene un tipo, cada una con sus elementos, para elegirlas en la hoja o en «Probar» */
-export function rollsOf(system: System, typeKey: string, language: Language = 'es') {
+export function rollsOf(system: System, typeKey: string, language: Language = 'es', doc?: SystemDocument) {
   const type = own(system.types, typeKey)
   if (!type) return []
   return Object.entries(system.rolls ?? {})
     .filter(([, roll]) => {
       if (!roll.for) return type.document === 'actor'
+      if ('items' in roll.for) {
+        const kinds = roll.for.items
+        return Object.values(type.fields).some((f) => f.kind === 'items' && f.of.some((o) => kinds.includes(o)))
+      }
       return 'fields' in roll.for
         ? roll.for.fields.every((f) => type.fields[f])
         : type.fields[roll.for.set]?.kind === 'set'
@@ -75,14 +81,19 @@ export function rollsOf(system: System, typeKey: string, language: Language = 'e
       key,
       label: textOf(roll.label, language),
       formula: roll.formula,
-      elements: elementsOf(type.fields, roll, language),
+      // Por objetos: los que lleva de esos tipos (sin el documento, ninguno)
+      elements: elementsOf(type.fields, roll, language, doc),
       modes: (roll.modes ?? []).map((m) => ({ key: m.key, label: textOf(m.label, language) })),
       target: roll.target ?? 'none'
     }))
 }
 
-function elementsOf(fields: Record<string, Field>, roll: Roll, language: Language) {
+function elementsOf(fields: Record<string, Field>, roll: Roll, language: Language, doc?: SystemDocument) {
   if (!roll.for) return []
+  if ('items' in roll.for) {
+    const kinds = roll.for.items
+    return (doc?.items ?? []).filter((it) => kinds.includes(it.type)).map((it) => ({ key: it.id, label: it.name }))
+  }
   if ('fields' in roll.for)
     return roll.for.fields.map((key) => ({ key, label: textOf(fields[key]?.label, language) || key }))
   const set = fields[roll.for.set]
@@ -90,7 +101,7 @@ function elementsOf(fields: Record<string, Field>, roll: Roll, language: Languag
 }
 
 /** El nombre de lo que nombra una referencia: el del elemento de un conjunto (Destreza) o el del campo */
-function labelOf(
+export function labelOf(
   fields: Record<string, Field>,
   path: (string | Expr)[],
   este: string | undefined,
@@ -139,45 +150,29 @@ function replace(tree: DiceNode, from: DiceTerm, to: DiceNode): { tree: DiceNode
   }
 }
 
-/** Arma una tirada: su fórmula (o la de su variante) con los valores puestos, y el modo aplicado. Sin tirarla */
-export function prepareRoll(
-  system: System,
-  typeKey: string,
-  doc: SystemDocument,
-  rollKey: string,
-  options: RollOptions = {}
-) {
-  const language = options.language ?? 'es'
-  const roll = system.rolls ? own(system.rolls, rollKey) : undefined
-  const type = own(system.types, typeKey)
-  if (!roll || !type) throw new RollError(`No existe la tirada «${rollKey}»`)
-  const { values } = evaluate(system, typeKey, doc, { language })
-  const scope: Record<string, Node> = Object.fromEntries(Object.entries(values).map(([k, v]) => [k, node(v)]))
-
-  // @este: el campo o el elemento por el que se tira
-  let esteLabel: string | undefined
-  if (roll.for) {
-    const elements = elementsOf(type.fields, roll, language)
-    const element = elements.find((e) => e.key === options.element)
-    if (!element) throw new RollError(`Elige por qué se tira: ${elements.map((e) => e.label).join(', ')}`)
-    esteLabel = element.label
-    const value =
-      'fields' in roll.for ? values[element.key] : (values[roll.for.set] as Record<string, Value> | null)?.[element.key]
-    scope.este = node(value ?? null)
+/** El valor de una fórmula sin dados con estos nombres; su error, como error de la tirada */
+export function valueIn(scope: Record<string, Node>, e: Expr): Value {
+  try {
+    return evaluateExpr(e, scope as never, NO_RUNTIME)
+  } catch (error) {
+    if (error instanceof FormulaError) throw new RollError(error.message)
+    throw error
   }
-  const evaluateTo = (e: Expr): Value => {
-    try {
-      return evaluateExpr(e, scope as never, NO_RUNTIME)
-    } catch (error) {
-      if (error instanceof FormulaError) throw new RollError(error.message)
-      throw error
-    }
-  }
+}
 
-  // La variante que se cumpla manda
-  const variant = roll.variants?.find((v) => evaluateTo(formula(v.if)) === true)
-  const text = variant?.formula ?? roll.formula
+const truthyValue = (v: Value) =>
+  v !== null && v !== false && v !== 0 && v !== '' && !(Array.isArray(v) && v.length === 0)
 
+/**
+ * Arma una fórmula con dados: los valores entran como números con su nombre (`labelFor`) y los dados se quedan como
+ * dados (también los de un campo de dados, como el dado de golpe). Sin tirarla
+ */
+export function armFormula(
+  text: string,
+  scope: Record<string, Node>,
+  labelFor: (path: (string | Expr)[]) => string | undefined
+): DiceNode {
+  const evaluateTo = (e: Expr) => valueIn(scope, e)
   const hasDice = (e: Expr): boolean => {
     switch (e.kind) {
       case 'dice':
@@ -208,11 +203,9 @@ export function prepareRoll(
           ? v.value
           : null
     if (value === null) throw new RollError(`«${text.slice(e.start, e.end).trim()}» no es un número`)
-    const label = e.kind === 'ref' ? labelOf(type.fields, e.path, esteLabel, language) : undefined
+    const label = e.kind === 'ref' ? labelFor(e.path) : undefined
     return label ? { kind: 'number', value, label } : { kind: 'number', value }
   }
-  const truthyValue = (v: Value) =>
-    v !== null && v !== false && v !== 0 && v !== '' && !(Array.isArray(v) && v.length === 0)
   const arm = (e: Expr): DiceNode => {
     if (!hasDice(e)) return number(e)
     switch (e.kind) {
@@ -239,15 +232,78 @@ export function prepareRoll(
     }
     throw new RollError('Los dados solo se suman, se restan, se multiplican o se dividen')
   }
-  let tree = arm(formula(text))
+  return arm(formula(text))
+}
+
+/** Aplica un modo (la ventaja) a una tirada ya armada: cambia sus dados `from` por `to` */
+export function applyMode(tree: DiceNode, mode: { from: string; to: string }) {
+  const from = parseDice(mode.from)
+  if (from.kind !== 'dice') throw new RollError('Un modo cambia unos dados por otros')
+  return replace(tree, from, parseDice(mode.to))
+}
+
+/** Los nombres de quien tira (sus valores ya calculados) y @ajustes, los de la campaña */
+export function rollScope(system: System, typeKey: string, doc: SystemDocument, options: RollOptions = {}) {
+  const language = options.language ?? 'es'
+  const { values } = evaluate(system, typeKey, doc, { language, settings: options.settings ?? {} })
+  const scope: Record<string, Node> = Object.fromEntries(Object.entries(values).map(([k, v]) => [k, node(v)]))
+  scope.ajustes = node(settingsOf(system, options.settings ?? {}))
+  return scope
+}
+
+/** Los valores de un objeto que lleva (sus campos, calculados), con su nombre: lo que es @este */
+export function itemValues(system: System, item: DocumentItem, language: Language = 'es'): Value {
+  const type = own(system.types, item.type)
+  const values = type ? evaluate(system, item.type, { data: item.data }, { language }).values : {}
+  return { ...values, name: item.name }
+}
+
+/** Arma una tirada: su fórmula (o la de su variante) con los valores puestos, y el modo aplicado. Sin tirarla */
+export function prepareRoll(
+  system: System,
+  typeKey: string,
+  doc: SystemDocument,
+  rollKey: string,
+  options: RollOptions = {}
+) {
+  const language = options.language ?? 'es'
+  const roll = system.rolls ? own(system.rolls, rollKey) : undefined
+  const type = own(system.types, typeKey)
+  if (!roll || !type) throw new RollError(`No existe la tirada «${rollKey}»`)
+  const scope = rollScope(system, typeKey, doc, options)
+  const values = scope as Record<string, { value: Value }>
+
+  // @este: el campo, el elemento o el objeto por el que se tira
+  let esteLabel: string | undefined
+  if (roll.for) {
+    const elements = elementsOf(type.fields, roll, language, doc)
+    const element = elements.find((e) => e.key === options.element)
+    if ('items' in roll.for) {
+      if (elements.length === 0) throw new RollError(`No lleva nada para «${textOf(roll.label, language)}»`)
+      if (!element) throw new RollError(`Elige con qué se tira: ${elements.map((e) => e.label).join(', ')}`)
+      const item = doc.items?.find((it) => it.id === element.key) as DocumentItem
+      scope.este = node(itemValues(system, item, language))
+    } else {
+      if (!element) throw new RollError(`Elige por qué se tira: ${elements.map((e) => e.label).join(', ')}`)
+      const value =
+        'fields' in roll.for
+          ? values[element.key]?.value
+          : (values[roll.for.set]?.value as Record<string, Value> | null)?.[element.key]
+      scope.este = node(value ?? null)
+    }
+    esteLabel = element.label
+  }
+
+  // La variante que se cumpla manda
+  const variant = roll.variants?.find((v) => valueIn(scope, formula(v.if)) === true)
+  const text = variant?.formula ?? roll.formula
+  let tree = armFormula(text, scope, (path) => labelOf(type.fields, path, esteLabel, language))
 
   let modeApplied = false
   if (options.mode) {
     const mode = roll.modes?.find((m) => m.key === options.mode)
     if (!mode) throw new RollError(`No existe el modo «${options.mode}»`)
-    const from = parseDice(mode.from)
-    if (from.kind !== 'dice') throw new RollError('Un modo cambia unos dados por otros')
-    const changed = replace(tree, from, parseDice(mode.to))
+    const changed = applyMode(tree, mode)
     tree = changed.tree
     modeApplied = changed.changed
   }

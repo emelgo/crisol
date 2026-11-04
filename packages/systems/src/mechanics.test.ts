@@ -133,6 +133,26 @@ describe('la mecánica de un documento de contenido', () => {
     ])
   })
 
+  it('el escalado: por nivel dice cuál, sin dados; a una acción que tiene', () => {
+    const golpe = { key: 'golpe', label: 'Golpe', damage: [{ formula: '1d8' }] }
+    expect(
+      problemsOf([
+        item({ actions: [golpe], scaling: { mode: 'level', by: '@vigor', at: [{ level: 5, formula: '2d8' }] } })
+      ])
+    ).toEqual([])
+    expect(
+      problemsOf([
+        item({ actions: [golpe], scaling: { mode: 'level' } }),
+        item({ actions: [golpe], scaling: { mode: 'level', by: '1d4' } }, { key: 'otro' }),
+        item({ actions: [golpe], scaling: { mode: 'slot', base: 1, per: '1d8', action: 'nada' } }, { key: 'tercero' })
+      ])
+    ).toEqual([
+      'content[0].mechanics.scaling.by: Por nivel: di cuál, como @nivel',
+      'content[1].mechanics.scaling.by: Un nivel no lleva dados',
+      'content[2].mechanics.scaling.action: No tiene la acción «nada»'
+    ])
+  })
+
   it('el concepto y la página, con su forma', () => {
     expect(
       problemsOf([item(undefined, { concept: 'Con Espacios' as never, ref: { pages: { en: 0 } } as never })])

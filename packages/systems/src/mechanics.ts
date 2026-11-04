@@ -87,14 +87,21 @@ const grant = z
   .refine((g) => (g.concept === undefined) !== (g.choose === undefined), 'Lleva un concepto o una elección')
 
 const scaling = z.strictObject({
-  // Por cada espacio por encima del base, o por el nivel de quien lo lanza (los trucos)
+  // Por el nivel al que se tira (el del espacio), o por un nivel de quien lo lleva (el del personaje, en los trucos)
   mode: z.enum(['slot', 'level']),
-  base: z.int().min(0).max(9).optional(),
+  // Por nivel: cuál (@nivel, el de una clase)
+  by: formula.optional(),
+  // Desde qué nivel: por debajo no se tira y, por cada uno por encima, se suma `per`
+  base: z.int().min(0).max(30).optional(),
   per: formula.optional(),
+  // A partir de un nivel, otra fórmula (la última que se alcance)
   at: z
     .array(z.strictObject({ level: z.int().min(1).max(30), formula }))
     .max(20)
-    .optional()
+    .optional(),
+  // A qué acción (sin ella, a todas) y a qué partes de su daño (sin ellas, a la primera o a la curación)
+  action: key.optional(),
+  parts: z.array(z.int().min(0).max(9)).max(10).optional()
 })
 
 export const mechanicsSchema = z.strictObject({
@@ -226,6 +233,11 @@ export function validateMechanics(system: System, type: string, mechanics: unkno
     check(g.choose.count, [...here, 'choose', 'count'], 'Cuántos se eligen no lleva dados')
     if (g.choose.when) yesOrNo(g.choose.when, [...here, 'choose', 'when'])
   })
-  if (m.scaling?.per) check(m.scaling.per, [...at, 'scaling', 'per'])
-  for (const [i, s] of (m.scaling?.at ?? []).entries()) check(s.formula, [...at, 'scaling', 'at', i, 'formula'])
+  const s = m.scaling
+  if (s?.mode === 'level' && !s.by) add([...at, 'scaling', 'by'], 'Por nivel: di cuál, como @nivel')
+  if (s?.by) check(s.by, [...at, 'scaling', 'by'], 'Un nivel no lleva dados')
+  if (s?.per) check(s.per, [...at, 'scaling', 'per'])
+  for (const [i, step] of (s?.at ?? []).entries()) check(step.formula, [...at, 'scaling', 'at', i, 'formula'])
+  if (s?.action && !m.actions?.some((a) => a.key === s.action))
+    add([...at, 'scaling', 'action'], `No tiene la acción «${s.action}»`)
 }

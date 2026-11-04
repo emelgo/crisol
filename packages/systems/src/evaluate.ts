@@ -18,11 +18,16 @@ export interface DocumentItem {
   data: Record<string, unknown>
   /** Su mecánica (la del contenido del que sale): sus efectos cambian a quien lo lleva */
   mechanics?: Mechanics
+  /** Lo gastado de cada uno de sus recursos, por su clave */
+  uses?: Record<string, number>
 }
 
 export interface SystemDocument {
   data: Record<string, unknown>
   items?: DocumentItem[]
+  /** Su propia mecánica (una criatura: sus acciones y sus recursos) y lo gastado de sus recursos */
+  mechanics?: Mechanics
+  uses?: Record<string, number>
   /** Valores fijados a mano, por su id (`ca`, `caracteristicas.des.mod`) */
   overrides?: Record<string, number>
 }
@@ -50,9 +55,42 @@ export interface Evaluated {
   problems: { path: string; message: string }[]
   /** La ventaja o la desventaja que dan los efectos, por tirada (`salvacion` o `salvacion.des`) */
   advantages: Record<string, { mode: 'advantage' | 'disadvantage'; label: string; origin: string }[]>
+  /** Los recursos de lo que lleva (y los suyos, con `item` null): su máximo, lo gastado y lo que queda */
+  resources: Resource[]
+}
+
+export interface Resource {
+  item: string | null
+  key: string
+  label: string
+  max: number
+  used: number
+  left: number
+  recovery?: string
+  /** Cuánto se recupera (una fórmula, con dados); sin ella, todo */
+  amount?: string
+  error?: string
 }
 
 export const BUDGET = 200_000
+
+/** Los ajustes de la campaña (`@ajustes`): los elegidos o, si no, su valor inicial */
+export function settingsOf(system: System, chosen: Record<string, unknown> = {}): Record<string, Value> {
+  return Object.fromEntries(
+    Object.entries(system.settings ?? {}).map(([k, st]) => [
+      k,
+      (own(chosen, k) ??
+        st.default ??
+        (st.kind === 'choices'
+          ? []
+          : st.kind === 'number'
+            ? 0
+            : st.kind === 'boolean'
+              ? false
+              : (st.options?.[0]?.value ?? null))) as Value
+    ])
+  )
+}
 
 class Stop extends Error {}
 
@@ -290,35 +328,20 @@ export function evaluate(
     return scope
   }
   // Los ajustes de la campaña: los elegidos o, si no, su valor inicial
-  const ajustes: Node = {
-    kind: 'value',
-    value: Object.fromEntries(
-      Object.entries(system.settings ?? {}).map(([k, st]) => [
-        k,
-        (own(settings, k) ??
-          st.default ??
-          (st.kind === 'choices'
-            ? []
-            : st.kind === 'number'
-              ? 0
-              : st.kind === 'boolean'
-                ? false
-                : (st.options?.[0]?.value ?? null))) as Value
-      ])
-    )
-  }
+  const ajustes: Node = { kind: 'value', value: settingsOf(system, settings) }
   /** Los nombres de un efecto: los del objeto (los bonos de siempre) o los de quien lo lleva, con @este y @ajustes */
   const ownerScopes = new Map<string, Record<string, Node>>()
-  const effectScope = (e: Effect): Record<string, Node> => {
-    if (e.legacy) return itemScope(e.item)
-    let names = ownerScopes.get(e.item.id)
+  /** Los nombres de quien lo lleva, con @este (el objeto) y @ajustes */
+  const ownerScope = (item: DocumentItem): Record<string, Node> => {
+    let names = ownerScopes.get(item.id)
     if (!names) {
-      const fields = { ...itemScope(e.item), name: { kind: 'value', value: e.item.name } as Node }
-      names = { ...scope, este: { kind: 'object', label: e.item.name, fields }, ajustes }
-      ownerScopes.set(e.item.id, names)
+      const fields = { ...itemScope(item), name: { kind: 'value', value: item.name } as Node }
+      names = { ...scope, este: { kind: 'object', label: item.name, fields }, ajustes }
+      ownerScopes.set(item.id, names)
     }
     return names
   }
+  const effectScope = (e: Effect): Record<string, Node> => (e.legacy ? itemScope(e.item) : ownerScope(e.item))
   const holds = (e: Effect) => !e.when || truthy(evaluateExpr(e.when, effectScope(e), runtime))
   const amount = (e: Effect) => (e.value ? toNumber(evaluateExpr(e.value, effectScope(e), runtime)) : 0)
 
@@ -650,7 +673,37 @@ export function evaluate(
     list.push({ mode: e.op as 'advantage' | 'disadvantage', label: e.label, origin: e.item.id })
     advantages[e.target as string] = list
   }
-  return { values, computed, problems, advantages }
+  // Los recursos, con su máximo calculado con los nombres de quien los lleva
+  const resources: Resource[] = []
+  const owners: [DocumentItem | null, Mechanics | undefined, Record<string, number> | undefined][] = [
+    [null, doc.mechanics, doc.uses],
+    ...items.map((it): [DocumentItem, Mechanics | undefined, Record<string, number> | undefined] => [
+      it,
+      it.mechanics,
+      it.uses
+    ])
+  ]
+  for (const [item, mechanics, uses] of owners)
+    for (const r of mechanics?.resources ?? []) {
+      const spent = own(uses ?? {}, r.key)
+      const used = typeof spent === 'number' && Number.isFinite(spent) ? Math.max(0, spent) : 0
+      const entry: Resource = { item: item?.id ?? null, key: r.key, label: label(r.label), max: 0, used, left: 0 }
+      if (r.recovery) entry.recovery = r.recovery
+      if (r.amount) entry.amount = r.amount
+      try {
+        const names = item
+          ? ownerScope(item)
+          : { ...scope, este: { kind: 'object', label: '', fields: scope } as Node, ajustes }
+        entry.max = Math.max(0, toNumber(evaluateExpr(exprOf(system, r.max), names, runtime)))
+        entry.left = Math.max(0, entry.max - used)
+      } catch (error) {
+        if (!(error instanceof Stop) && !(error instanceof FormulaError)) throw error
+        if (error instanceof Stop) left = 0
+        entry.error = error instanceof Stop ? 'La fórmula tarda demasiado' : error.message
+      }
+      resources.push(entry)
+    }
+  return { values, computed, problems, advantages, resources }
 }
 
 /** Un efecto que se aplica: de qué objeto sale, qué hace y con qué fórmulas ya leídas */

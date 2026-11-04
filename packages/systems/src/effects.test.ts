@@ -167,5 +167,15 @@ describe('los efectos de lo que lleva', () => {
     const r = evaluate(system, 'personaje', { data: {}, items: [raro] })
     expect(r.computed.ca?.error).toMatch(/depende de su propio valor/)
     expect(r.values.des).toBe(14)
+    // En un número guardado, igual; una ventaja cuya condición falla no se anota
+    const otro = thing('Otro', {
+      effects: [
+        { target: 'fue', op: 'add', value: '@fue' },
+        { target: 'salvacion', op: 'advantage', when: '@nada' }
+      ]
+    })
+    const r2 = evaluate(system, 'personaje', { data: {}, items: [otro] })
+    expect(r2.computed.fue).toMatchObject({ value: 10, error: expect.stringMatching(/depende de su propio valor/) })
+    expect(r2.advantages).toEqual({})
   })
 })

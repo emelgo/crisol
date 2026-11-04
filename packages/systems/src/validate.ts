@@ -14,6 +14,7 @@ import {
   systemSchema
 } from './format.ts'
 import { checkFormulas } from './formulas/system.ts'
+import { own } from './own.ts'
 import { type Language, textOf } from './text.ts'
 
 export interface Problem {
@@ -327,6 +328,12 @@ function checkReferences(
       })
     if (roll.for && 'set' in roll.for && !setFields.has(roll.for.set))
       add([...at, 'for', 'set'], `No existe el conjunto «${roll.for.set}»`)
+    if (roll.for && 'items' in roll.for)
+      roll.for.items.forEach((t, i) => {
+        const type = own(types, t)
+        if (!type) add([...at, 'for', 'items', i], `No existe el tipo «${t}»`)
+        else if (type.document !== 'item') add([...at, 'for', 'items', i], `«${t}» no es un tipo de objeto`)
+      })
     repeated(roll.modes?.map((m) => m.key) ?? [], (i, k) => add([...at, 'modes', i, 'key'], `«${k}» está repetido`))
     roll.modes?.forEach((mode, i) => {
       for (const part of ['from', 'to'] as const) diceFormula(mode[part], [...at, 'modes', i, part], add)
