@@ -1,6 +1,6 @@
 # Spec: dados (módulo 3)
 
-Estado: **borrador, por aprobar** (2026-11-04). Primera capacidad del módulo 3 (`docs/specs/modulo-3.md`). Las decisiones
+Estado: **aprobada** por Enrique el 2026-11-04 («ok»), con las tres propuestas de sus preguntas. Primera capacidad del módulo 3 (`docs/specs/modulo-3.md`). Las decisiones
 de Enrique, en `docs/modulos.md` § «### 3. Sistemas, fichas y dados».
 
 ## Objetivo
@@ -213,6 +213,8 @@ El del módulo 0 (`docs/specs/fundacion.md` § Estilo).
 
 ## Preguntas abiertas
 
-1. ¿Visto bueno para `three` y `cannon-es` (MIT) en la web, cargadas aparte?
-2. ¿Te vale que las tiradas de la IA vayan ocultas por defecto, y públicas solo si se lo pides?
-3. ¿Los dados de los demás caen en tu pantalla por defecto (se pueden apagar), o al revés?
+Resueltas al aprobarla (2026-11-04):
+
+1. `three` y `cannon-es` (MIT), en la web y cargadas aparte: **sí**.
+2. Las tiradas de la IA, ocultas por defecto y públicas solo si se le pide: **sí**.
+3. Los dados de los demás caen en tu pantalla por defecto y se pueden apagar: **sí**.
