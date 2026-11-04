@@ -20,8 +20,17 @@ Aún no está en staging: se prueba en el servidor de desarrollo (http://localho
   - su engranaje: cambiarle el nombre, bajarlo, en qué campañas está y borrarlo (solo si ninguna lo usa);
   - en la ventana de una campaña (y al crearla), elegir su sistema; con uno que tenga fuentes, idiomas o ajustes, sus
     opciones; y la ficha de dados de esa campaña empieza por su tirada por defecto.
-- [ ] **Punto de control 4** (cuando llegue el editor): hacer Fronteras (2d6 + atributo) en el editor y probarlo al
-  lado.
+- [ ] **Punto de control 4**: hacer Fronteras (2d6 + atributo) en el editor, desde una copia de «En blanco»:
+  - en Personaje, tres atributos (Vigor, Astucia, Presencia) y un calculado (Defensa = `7 + @vigor`): la fórmula se
+    comprueba al escribirla y `@` propone los nombres;
+  - en Tiradas, «Atributo» = `2d6 + @este`, una por cada atributo, con sus franjas (`@total >= 10` éxito, `@total >= 7`
+    parcial, `true` fallo) y un modo de ventaja (`2d6` por `3d6kh2`);
+  - en Dados, la tirada por defecto (`2d6`) y sin críticos; en Fuentes y Ajustes de campaña, una de cada;
+  - «Probar», al lado: cambiar los atributos cambia la Defensa, con su desglose, y la tirada sale con su franja;
+  - Avanzado: el JSON, con una errata a mano (la línea se marca y el problema de la lista lleva a ella); bajarlo y
+    subir un archivo roto (no cambia nada);
+  - elegirlo en una campaña: la ficha de dados empieza por `2d6`;
+  - en el móvil: la parte, en el selector; «Probar», en una hoja; en Avanzado, los problemas debajo.
 
 ## Módulo 3: dados (en staging)
 

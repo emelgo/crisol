@@ -182,7 +182,10 @@ el 2026-11-12).
   - Archivos: `apps/web/src/systems/editor/try.tsx` (+ CSS y pruebas), `packages/contracts/src/dice.ts` (si `tryDice`
     necesita la fórmula ya armada).
 
-- [ ] **12. El editor: Tiradas, Dados, Fuentes, Ajustes y Avanzado**
+- [x] **12. El editor: Tiradas, Dados, Fuentes, Ajustes y Avanzado** — hecha. Las partes de juego van en
+  `game.tsx` y Avanzado en `advanced.tsx`. Lo que se escribe en el JSON pasa al resto del editor si tiene la forma de
+  un sistema (`fitsFormat`), aunque algún valor no valga; la línea de cada problema sale de `jsonLines`. La parte que se
+  ve sigue al guardar. Los subcampos de los conjuntos, grupos y listas de filas siguen sin editor visual (en Avanzado).
   - Acepta:
     - Tiradas: fórmula, por cada, objetivo, franjas y modos;
     - Dados: la tirada por defecto y los críticos;
@@ -191,7 +194,7 @@ el 2026-11-12).
       - el JSON con su validación, las líneas marcadas y la lista de problemas que llevan a cada uno;
       - bajar el sistema, o subir un archivo que lo reemplaza (si está roto, no se guarda nada).
   - Comprueba: pruebas de la web de cada parte y e2e (criterio 2: Fronteras desde «En blanco»).
-  - Archivos: `apps/web/src/systems/editor/{rolls,dice,sources,settings,advanced}.tsx` (+ pruebas),
+  - Archivos: `apps/web/src/systems/editor/{game,advanced}.tsx` (+ pruebas), `packages/systems/src/lines.ts`,
     `e2e/tests/sistemas.spec.ts`.
 
 ### Punto de control 3

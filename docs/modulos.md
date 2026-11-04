@@ -32,10 +32,12 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
     bajar y subir con su contenido (rutas con más sitio que piden la sesión antes de leer), y la campaña con su sistema
     y sus críticos al tirar.
 
-  Hechas también las tareas 8 a 10: «Sistemas» en Mis mundos, la elección en la campaña y el editor (sus partes,
-  General y los tipos con sus campos y sus fórmulas). **Lo siguiente**: la tarea 11 («Probar» al lado del editor), la
-  12 (Tiradas, Dados, Fuentes, Ajustes y Avanzado) y la 13 (la IA y el cierre). El punto de control 3 ya se puede
-  probar en local (`tasks/probar.md`; la base de desarrollo tiene la migración 0039).
+  Hechas también las tareas 8 a 12: «Sistemas» en Mis mundos, la elección en la campaña y el editor entero (General,
+  los tipos con sus campos y sus fórmulas, «Probar» al lado, Tiradas, Dados, Fuentes, Ajustes de campaña y Avanzado,
+  con el JSON validado al escribirlo y sus líneas marcadas). **Lo siguiente**: la tarea 13 (la IA y el cierre). Los
+  puntos de control 3 y 4 ya se pueden probar en local (`tasks/probar.md`; la base de desarrollo tiene la migración
+  0039). Queda para después: un editor visual para los subcampos de los conjuntos, grupos y listas de filas (hoy, en
+  Avanzado).
 - **Ojo con el lint**: `biome check --write` arregla el formato pero los errores de lint se quedan; mirar siempre
   `pnpm lint` entero antes de guardar.
 - **Prueba con un sistema de Foundry de verdad** (Enrique, 2026-11-04: «mete también […] daggerheart/2.12.5/system.json»):
