@@ -49,7 +49,7 @@ Plan: `tasks/plan.md`. Spec: `docs/specs/srd-5e.md`. Cada tarea, con TDD y en un
 
 ## Fase 2: Un 5e de punta a punta
 
-- [ ] **5. El sistema 5e**
+- [ ] **5. El sistema 5e** — el motor que pedía, hecho (los valores de cada elemento de un conjunto, `@portador`, `first()`)
   - Acepta: el 5e de serie (id `5e`), con sus tipos y campos, sus fórmulas, sus tiradas, sus fuentes (SRD 5.1 y 5.2.1,
     con su atribución) y sus ajustes (las reglas de 2014 o de 2024, la multiclase mixta), en los dos idiomas.
   - Comprueba: valida; con un personaje escrito a mano, sus características, competencia, salvaciones, habilidades,
@@ -75,37 +75,28 @@ Plan: `tasks/plan.md`. Spec: `docs/specs/srd-5e.md`. Cada tarea, con TDD y en un
   - Archivos: `scripts/srd/{extraer,comprobar,texto}.ts`, `packages/systems/src/catalog/5e/{equipo,clases}.json`
     (+ pruebas).
 
-- [ ] **8. «Probar»: añadir del contenido**
-  - Acepta, como en el diseño aprobado:
-    - «Añadir del contenido» en «Probar»: el tipo, la búsqueda, las ediciones, «Legado» y el grado de automatización;
-    - una clase con su nivel, lo equipado, quitar;
-    - lo calculado y las tiradas con lo que lleva;
-    - en el móvil, en una hoja.
-  - Comprueba: pruebas de la web y e2e con axe: el guerrero de nivel 5 con cota de malla y espada larga da CA 16, PG
-    44 y un ataque de +6.
-  - Archivos: `apps/web/src/systems/editor/try.tsx` (+ un componente nuevo, CSS, pruebas), `e2e/tests/sistemas.spec.ts`.
-
-### Punto de control 2
-
-- [ ] En local, Enrique: el guerrero de nivel 5 en «Probar» (criterio 3).
+- [-] **8. «Probar»: añadir del contenido** — quitada: el editor de sistemas, con su «Probar», se quita entero al acabar
+  `srd-5e` (Enrique, 2026-11-04; `docs/diseno.md`). Probar con el contenido va en la tarea 10, con la IA.
 
 - [ ] **9. La campaña: ediciones, lo repetido, reglas y multiclase**
   - Acepta, como en el diseño aprobado: las ediciones, «Lo que está en las dos», las reglas generales, la multiclase
-    mixta y la muestra de lo que se ve; se guarda en la campaña y «Probar» lo respeta.
+    mixta y la muestra de lo que se ve; se guarda en la campaña y la IA lo respeta al buscar y al probar.
   - Comprueba: pruebas de la web, de integración y e2e con axe (criterio 5).
   - Archivos: `apps/web/src/systems/campaign-system.tsx` (+ CSS, pruebas), `packages/systems/src/choices.ts`,
     `packages/contracts/src/campaigns.ts`.
 
 - [ ] **10. La IA: el contenido**
-  - Acepta: buscar y leer el contenido de un sistema; `probar_formula` y `probar_tirada` con documentos del contenido;
-    los textos del contenido, como datos.
-  - Comprueba: cada herramienta en cada modo de IA; un conjuro por el MCP (criterio 4, con los conjuros de la tarea 12);
-    `@fugas`.
+  - Acepta: buscar y leer el contenido de un sistema; `probar_formula` y `probar_tirada` con documentos del contenido
+    (una clase con su nivel, lo equipado, lo sintonizado, lo activo): lo calculado con su desglose, los recursos, las
+    tiradas por cada objeto y las acciones (con su nivel); los textos del contenido, como datos.
+  - Comprueba: cada herramienta en cada modo de IA; el guerrero de nivel 5 con cota de malla y espada larga da CA 16,
+    PG 44 y un ataque de +6 (criterio 3); un conjuro por el MCP (criterio 4, con los conjuros de la tarea 12); `@fugas`.
   - Archivos: `apps/server/src/mcp/tools.ts`, `packages/contracts/src/systems.ts` (+ pruebas).
 
-### Punto de control 3
+### Punto de control 2
 
-- [ ] En local, Enrique: las ediciones de la campaña y lo que se ve en «Probar» (criterio 5).
+- [ ] En local, Enrique, desde claude.ai: el guerrero de nivel 5 con la IA (criterio 3) y las ediciones de la campaña,
+  en su muestra y en lo que encuentra la IA (criterio 5).
 
 ## Fase 3: El resto del contenido
 

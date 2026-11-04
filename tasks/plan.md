@@ -11,8 +11,9 @@ Se construye en cuatro fases:
 1. **La mecánica**, en el paquete puro: efectos, recursos, acciones por objeto, escalado, conceptos y ediciones. Se
    prueba con los casos más difíciles escritos a mano, antes de sacar nada de los PDF.
 2. **Un 5e de punta a punta, con poco contenido**: el sistema, su contenido de serie en el código, el equipo y el
-   Guerrero de las dos ediciones; «Probar» con «Añadir del contenido», las ediciones en la campaña y la IA. Así se ve
-   entero muy pronto (el guerrero de nivel 5), y el resto del contenido entra por un camino ya probado.
+   Guerrero de las dos ediciones; las ediciones en la campaña y la IA, que lo busca y lo prueba. Así se ve entero muy
+   pronto (el guerrero de nivel 5), y el resto del contenido entra por un camino ya probado. (Sin «Probar»: el editor
+   de sistemas se quita entero al acabar `srd-5e`; Enrique, 2026-11-04.)
 3. **El resto del contenido, por categorías**: estados y reglas, conjuros, objetos mágicos, criaturas, especies,
    trasfondos y dotes, y las demás clases y subclases.
 4. **Los personajes de referencia y el cierre.**
@@ -74,14 +75,12 @@ dragón. Además, el ritmo.
 5. El sistema 5e: tipos, campos, fórmulas, tiradas, fuentes y ajustes.
 6. El contenido de serie en el código y las acciones para buscarlo y leerlo; copiar el 5e lleva su contenido.
 7. Los scripts para sacar el contenido, con el equipo y el Guerrero de las dos ediciones.
-8. «Probar»: añadir del contenido (escritorio y móvil).
-
-**Punto de control 2** (Enrique, en local): el guerrero de nivel 5 en «Probar» (criterio 3).
-
+8. (Quitada: «Probar» con el contenido; el editor de sistemas se quita entero.)
 9. La campaña: las ediciones, lo que está en las dos, las reglas y la multiclase.
-10. La IA: buscar y leer el contenido, y probarlo.
+10. La IA: buscar y leer el contenido, y probarlo con documentos del contenido.
 
-**Punto de control 3** (Enrique, en local): las ediciones de la campaña (criterio 5).
+**Punto de control 2** (Enrique, desde claude.ai): el guerrero de nivel 5 con la IA (criterio 3) y las ediciones de
+la campaña (criterio 5).
 
 ### Fase 3: El resto del contenido
 

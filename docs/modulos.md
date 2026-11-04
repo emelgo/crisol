@@ -24,7 +24,14 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   orden y su origen (`evaluate.ts`); los recursos, las tiradas por cada objeto y las acciones con su escalado
   (`actions.ts`); lo que se ve con las ediciones de la campaña y las referencias por concepto (`content.ts`, y
   `duplicates` en lo que elige la campaña); `@ajustes` en todas las fórmulas. Los casos difíciles, escritos a mano
-  (`fixtures/dificiles.ts`), dan lo del SRD. **Lo siguiente**: la tarea 5, el sistema 5e de serie.
+  (`fixtures/dificiles.ts`), dan lo del SRD. **Ahora**: la tarea 5, el sistema 5e de serie (su motor ya está:
+  `@portador`, los valores de cada elemento de un conjunto, `first()`).
+- **Decidido por Enrique (2026-11-04): los sistemas se hacen con la IA** (`docs/diseno.md`). Al acabar `srd-5e`, una
+  tanda que quita el editor de sistemas entero (también «Probar»): en «Sistemas», la lista, subir de un archivo, bajar
+  cada uno y un sistema vacío, y un aviso de que los nuevos se hacen con la IA (también en las instrucciones del MCP).
+  Por eso la tarea 8 de `srd-5e` («Probar» con el contenido) se quitó y probar el contenido va con la IA (tarea 10).
+- **El servidor de desarrollo, en marcha** para que Enrique vea lo que se hace: la web en http://localhost:5173 (por
+  túnel SSH: `ssh -L 5173:127.0.0.1:5173`), que pasa `/api` al servidor (8130); los dos se recargan solos.
 - **El orden que pidió Enrique** (2026-11-04): terminar el módulo 3 en este mismo chat (`srd-5e`, `personajes`, `hoja`
   y `foundry`), después pulir la interfaz de todo lo del módulo 3 y, al acabar, el módulo 4 en un chat nuevo. Un chat
   cada vez: dos a la vez se pisarían la carpeta y las bases de datos de prueba.

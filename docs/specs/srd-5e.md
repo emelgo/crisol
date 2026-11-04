@@ -16,7 +16,9 @@ Es la base de lo que viene detrás:
 - `hoja` los pinta y tira desde ellos;
 - el compendio del módulo 4 lo enseña para buscarlo y leerlo.
 
-Por eso aquí no hay pantallas para el contenido: se ve en «Sistemas», se prueba en «Probar» y lo consulta la IA.
+Por eso aquí no hay pantallas para el contenido: va en el archivo del sistema y la IA lo consulta y lo prueba. El editor
+de sistemas, con su «Probar», se quita entero al acabar `srd-5e` (Enrique, 2026-11-04: los sistemas se hacen con la IA;
+`docs/diseno.md`).
 
 Y el modelo tiene que valer para **todo el 5e oficial**, no solo para el SRD: Enrique quiere un marketplace y vender
 libros de Wizards en la app. Cada cosa dice de qué fuente sale y con qué licencia; quién la tiene llegará con el
@@ -31,8 +33,8 @@ Usuarios:
 
 1. Como máster, elijo el 5e para mi campaña y decido qué vale: las dos ediciones o una, con lo legado o sin él, y de lo
    que está en las dos, las dos versiones o solo la más nueva. Y con qué reglas generales se juega (2014 o 2024).
-2. Como máster, en «Probar» hago un guerrero de nivel 5 con una cota de malla y una espada larga del contenido del 5e:
-   veo su CA, su ataque y sus PG, cada uno con su desglose, y tiro el ataque.
+2. Como máster, desde claude.ai le pido a la IA un guerrero de nivel 5 con una cota de malla y una espada larga del
+   contenido del 5e: me dice su CA, su ataque y sus PG, cada uno con su desglose, y tira el ataque.
 3. Como máster, desde claude.ai le pregunto a la IA por un conjuro (en español) y le pido que pruebe su tirada.
 4. Como máster, copio el 5e para hacer el de Eana: la copia lleva todo su contenido.
 
@@ -63,11 +65,10 @@ SRD de D&D Beyond, con licencia CC BY 4.0. Los españoles son los oficiales de W
 | `fuentes` | Cada documento con su fuente, su edición, su licencia y su concepto; la campaña elige ediciones, lo legado y lo más nuevo; las referencias por concepto | `mecanica` |
 | `reglas-5e` | El sistema 5e: sus tipos, sus campos, sus fórmulas y sus tiradas, y las reglas generales que cambian entre ediciones como ajustes de la campaña | `mecanica` |
 | `contenido` | El contenido de los dos SRD, sacado de los PDF oficiales en los dos idiomas, con su mecánica y comprobado | `reglas-5e`, `fuentes` |
-| `probar` | En «Probar», añadir documentos del contenido del sistema (clases con su nivel, armas, armaduras, objetos) | `contenido` |
-| `ia` | Las herramientas MCP para buscar y leer el contenido de un sistema y probarlo | `contenido` |
+| `ia` | Las herramientas MCP para buscar y leer el contenido de un sistema y probarlo con documentos del contenido (clases con su nivel, armas, armaduras, objetos) | `contenido` |
 
 Orden: `mecanica` → `fuentes` → `reglas-5e` → `contenido` (por categorías: equipo, estados, conjuros, objetos mágicos,
-criaturas, especies, trasfondos y dotes, clases y subclases, reglas) → `probar` → `ia`. Lo arriesgado va antes: el
+criaturas, especies, trasfondos y dotes, clases y subclases, reglas) → `ia`. Lo arriesgado va antes: el
 modelo de la mecánica tiene que poder con todo el SRD. Por eso se prueba con lo más difícil (el brujo, el monje, el
 mago, Bola de fuego, Escudo, el Anillo de protección y un dragón) antes de sacar el resto.
 
@@ -103,8 +104,8 @@ Lo nuevo del formato de sistemas (ADR-0012). Vale para cualquier sistema, no sol
   al superarla).
 - **Estados activables con duración** (la Furia, Mago armadura, Bendecir, los estados como Envenenado): un documento
   que, mientras está activo, aplica sus efectos. Valen para todo el contenido, también el propio.
-- **Grado de automatización** en cada documento: completo, parcial o solo texto, y qué se lleva a mano. Lo leen «Probar»
-  y la IA. Lo muy complejo (Forma salvaje, Polimorfar, Deseo) va como texto, con al menos una acción o un recurso que se
+- **Grado de automatización** en cada documento: completo, parcial o solo texto, y qué se lleva a mano. Lo lee la IA (y lo
+  leerán la hoja y el creador). Lo muy complejo (Forma salvaje, Polimorfar, Deseo) va como texto, con al menos una acción o un recurso que se
   tira y se cuenta.
 - **Los ajustes de la campaña en las fórmulas** (`@ajustes.reglas`), para lo que cambia según las reglas que elige.
 - **Validar todo**: cada efecto, recurso, concesión y escalado se comprueba como las fórmulas de hoy (su ruta, sus
@@ -170,27 +171,21 @@ Lo nuevo del formato de sistemas (ADR-0012). Vale para cualquier sistema, no sol
 - **El texto de las reglas**, como documentos de su tipo, para que la IA lo consulte (y el compendio, después).
 - **Copiar el 5e** copia su contenido a la cuenta (cabe en los límites de hoy: 5.000 documentos de hasta 64 KB).
 
-### `probar`
-
-- En «Probar», **añadir del contenido**: buscar un documento del sistema por su nombre, en su tipo, y ponerlo en el
-  documento de prueba (una clase con su nivel, una armadura, un arma, un objeto mágico sintonizado). Sus efectos y sus
-  recursos entran en lo calculado, con su desglose, y sus acciones en las tiradas.
-
 ### `ia`
 
 - **Herramientas**:
   - buscar en el contenido de un sistema por tipo, nombre, edición e idioma;
   - leer un documento;
-  - probar una tirada o una fórmula con documentos del contenido en el documento de prueba (amplía `probar_formula` y
-    `probar_tirada`).
+  - probar una tirada o una fórmula con documentos del contenido en el documento de prueba (una clase con su nivel, una
+    armadura, un arma, un objeto mágico sintonizado): sus efectos y sus recursos entran en lo calculado, con su
+    desglose, y sus acciones en las tiradas (amplía `probar_formula` y `probar_tirada`).
 - Los textos del contenido son datos, nunca órdenes para la IA.
 
 ### Interfaz
 
 - **Sin pantallas nuevas**. Lo que cambia:
-  - en «Probar», añadir del contenido;
   - en la ventana de la campaña, las opciones de las ediciones (lo legado, lo más nuevo) y las reglas generales.
-- Los dos se diseñan y se aprueban en el paso de diseño, antes del plan. Siguen `docs/diseno.md`; todo con el teclado y
+- Se diseña y se aprueba en el paso de diseño, antes del plan (el tablero de «Probar» quedó sin uso al quitar el editor). Siguen `docs/diseno.md`; todo con el teclado y
   en el móvil, WCAG 2.1 AA.
 
 ## Pila
@@ -216,7 +211,6 @@ packages/systems/src/catalog/5e/         El sistema 5e: su documento y su conten
 packages/systems/src/catalog/5e/referencia/  Los personajes de referencia y lo que deben dar
 scripts/srd/                             Los scripts para sacar el contenido de los PDF (solo desarrollo)
 datos-locales/srd/                       Los PDF oficiales y su texto (fuera de git)
-apps/web/src/systems/editor/try.tsx      «Probar», con el contenido
 apps/server/src/mcp/tools.ts             Las herramientas del contenido
 ```
 
@@ -238,8 +232,9 @@ del 5e en español (`fuerza`, `bola_de_fuego`).
   las tablas del SRD (competencia, espacios, dados de golpe, rasgos y recursos por nivel). Unos 24, hechos a mano con su
   equipo, dan su CA, su ataque, su CD y sus PG.
 - **Integración**: copiar el 5e con su contenido; la campaña con sus ediciones; las herramientas MCP en cada modo de IA.
-- **Web**: «Probar» con el contenido; las opciones de las ediciones en la campaña.
-- **E2E** (Playwright + axe): el guerrero de nivel 5 en «Probar»; elegir el 5e con sus ediciones en una campaña.
+- **Web**: las opciones de las ediciones en la campaña.
+- **E2E** (Playwright + axe): elegir el 5e con sus ediciones en una campaña.
+- **La IA**: el guerrero de nivel 5 con `probar_formula` y `probar_tirada`.
 - **Ritmo**: un personaje de nivel 20 con su clase, su equipo y sus objetos mágicos del SRD, en menos de 20 ms;
   buscar en el contenido, en menos de 100 ms.
 - Cobertura ≥ 80 % de las líneas nuevas o cambiadas, con TDD en cada porción.
@@ -263,11 +258,11 @@ del 5e en español (`fuerza`, `bola_de_fuego`).
 
 1. **Todo el SRD dentro**: lo de la tabla de arriba, contado por categoría, en los dos idiomas, y todo valida.
 2. **Los personajes de referencia** dan lo que dicen las reglas, en las dos ediciones.
-3. **En «Probar»**, Enrique hace un guerrero de nivel 5 con una cota de malla y una espada larga del 5e: ve su CA, su
+3. **Desde claude.ai**, la IA hace un guerrero de nivel 5 con una cota de malla y una espada larga del 5e: dice su CA, su
    ataque y sus PG con su desglose, y tira el ataque.
 4. **Desde claude.ai**, la IA consulta un conjuro (en español) y prueba su tirada.
 5. **En la campaña**, Enrique elige el 5e con solo 2014, con las dos ediciones sin lo legado y con solo lo más nuevo, y
-   las reglas de 2014 o de 2024. Se nota en lo que se puede elegir en «Probar».
+   las reglas de 2014 o de 2024. Se nota en la muestra de la campaña y en lo que encuentra la IA.
 6. **Una criatura del SRD** (un dragón adulto rojo) tiene sus acciones como datos, y su ataque y su daño se tiran.
 7. **Ritmo**: el personaje de nivel 20, en menos de 20 ms; buscar en el contenido, en menos de 100 ms.
 8. **Calidad**: la CI en verde, sin supresiones nuevas; axe sin fallos críticos ni graves; todo con el teclado y en el

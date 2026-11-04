@@ -63,6 +63,10 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
 - **Cada pantalla tiene su guía, aunque sea básica**: «debemos mantener el patrón siempre».
 
 ## Pantallas
+- **Los sistemas se hacen con la IA** (Enrique, 2026-11-04: crearlos con el editor «es poco intuitivo»). En «Sistemas»
+  no hay editor ni «Probar»: se ven los que hay (de serie y de la cuenta), se suben de un archivo y se bajan, cada uno
+  con su contenido, y también un sistema vacío para empezar. La pantalla dice que los nuevos se hacen con la IA; la IA
+  los prueba con `probar_formula` y `probar_tirada`. Se hace al acabar `srd-5e`.
 - **La wiki se edita en el sitio, como en el Crisol antiguo** (`docs/specs/wiki-edicion.md`): «no me gusta que todo sea
   como con botones, debe ser más ágil, poder cambiar todo en edición, incluso el título». Se abre la página y se
   escribe: el título es el propio encabezado (Intro guarda, Escape deshace) y todo se guarda solo («Guardando…»,
