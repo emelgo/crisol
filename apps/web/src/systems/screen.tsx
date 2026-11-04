@@ -237,9 +237,7 @@ export function ProblemList({ problems }: { problems: readonly Problem[] }) {
             ) : (
               <CircleAlert size={14} aria-hidden="true" />
             )}
-            <span className={styles.kindWord}>
-              {t(p.severity === 'warning' ? 'systems.warning' : 'systems.error')}
-            </span>
+            <span className={styles.kindWord}>{t(p.severity === 'warning' ? 'systems.warning' : 'systems.error')}</span>
             {p.where}
           </span>
           <span>{p.message}</span>
