@@ -8,7 +8,18 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   de propietario.
 - **En local**, con los cambios al momento: http://localhost:5173 (lo arranco cuando haga falta).
 
-## Módulo 2: tipos de página y plantillas
+## Módulo 3: dados (en local, en la rama `modulo-3/dados`)
+
+Aún no está en staging: se prueba en el servidor de desarrollo (lo arranco cuando quieras). Spec: `docs/specs/dados.md`.
+
+- [ ] **Punto de control 2**: tú y una jugadora en dos navegadores, con «Dados» en la barra:
+  - una tirada tuya «para todos» le llega al momento;
+  - una suya «al máster» te llega marcada, y una «para mí» suya te sale como «Para sí»;
+  - una «oculta» tuya no le llega;
+  - el desglose, «Repetir» y la tirada explicada mientras se escribe;
+  - el color de tus dados en el perfil, y la hoja de dados en el móvil (menú de la llama → «Dados»).
+
+
 
 Los criterios de éxito de `docs/specs/plantillas.md`, en el orden en que se usan.
 
