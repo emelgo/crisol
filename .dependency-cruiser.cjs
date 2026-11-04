@@ -17,9 +17,9 @@ module.exports = {
     },
     {
       name: 'dominio-sin-frameworks',
-      comment: 'El dominio, los contratos y el esquema del editor no dependen de React ni de Fastify',
+      comment: 'El dominio, los contratos, el esquema del editor y los dados no dependen de React ni de Fastify',
       severity: 'error',
-      from: { path: '^packages/(domain|contracts|editor)/' },
+      from: { path: '^packages/(domain|contracts|editor|dice)/' },
       to: { path: 'node_modules/(react|react-dom|fastify|@fastify|@tiptap/react)/' }
     },
     {

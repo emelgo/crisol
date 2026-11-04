@@ -3,6 +3,7 @@ import type {
   AiMode,
   Approval,
   Campaign,
+  DiceRoll,
   FileView,
   FolderView,
   HistoryEntry,
@@ -20,6 +21,7 @@ import type {
   TrashItem,
   World
 } from '@crisol/contracts'
+import { DiceSyntaxError, rollDice as rollFormula } from '@crisol/dice'
 import {
   applyTemplate,
   BUILT_IN_TEMPLATES,
@@ -61,12 +63,15 @@ export function fakeApi(
     files?: Array<Pick<FileView, 'worldId' | 'name'> & Partial<FileView> & { usedBy?: number }>
     /** Las carpetas de los archivos */
     folders?: FolderView[]
+    /** Las tiradas de las campañas, en el orden en que se tiraron */
+    rolls?: DiceRoll[]
   } = {}
 ) {
   const organizations = options.organizations ?? []
   const worlds = [...(options.worlds ?? [])]
   const campaigns = [...(options.campaigns ?? [])]
   const history = [...(options.history ?? [])]
+  const rolls = [...(options.rolls ?? [])]
   // Lo borrado, con lo que hace falta para devolverlo
   const trash: Array<{ item: TrashItem; world?: World; campaign?: Campaign }> = []
   const DAY = 24 * 60 * 60 * 1000
@@ -829,6 +834,56 @@ export function fakeApi(
       const fields = patch.fields?.map((f) => (f.field ? f : { ...f, field: crypto.randomUUID().slice(0, 8) }))
       Object.assign(found, { ...patch, ...(fields ? { fields } : {}) })
       return structuredClone(found) as PageTemplate
+    },
+    // Las tiradas: aquí las tira la web de pruebas; la de verdad, el servidor
+    rollDice: ({ campaignId, formula, visibility = 'all' }) => {
+      if (!campaigns.some((c) => c.id === campaignId)) throw new ApiError('NOT_FOUND', 404)
+      let result: ReturnType<typeof rollFormula>
+      try {
+        result = rollFormula(formula)
+      } catch (error) {
+        if (error instanceof DiceSyntaxError) throw new ApiError('BAD_FORMULA', 400)
+        throw error
+      }
+      const roll: DiceRoll = {
+        id: `00000000-0000-4000-8000-${String(rolls.length + 1).padStart(12, '0')}`,
+        campaignId,
+        // Quien tira en las pruebas: la cuenta de siempre
+        by: { userId: 'yo', name: 'Enrique', color: null },
+        ai: false,
+        formula: result.formula,
+        label: result.comment ?? null,
+        total: result.total,
+        detail: result.detail,
+        critical: result.critical,
+        dice: result.terms.flatMap((t) => t.dice.map((d) => ({ sides: t.sides, value: d.value, kept: d.kept }))),
+        visibility,
+        createdAt: new Date().toISOString()
+      }
+      rolls.push(roll)
+      return { roll: { ...roll } }
+    },
+    tryDice: ({ formula }) => {
+      try {
+        const result = rollFormula(formula)
+        return {
+          formula: result.formula,
+          label: result.comment ?? null,
+          total: result.total,
+          detail: result.detail,
+          critical: result.critical,
+          dice: result.terms.flatMap((t) => t.dice.map((d) => ({ sides: t.sides, value: d.value, kept: d.kept })))
+        }
+      } catch (error) {
+        if (error instanceof DiceSyntaxError) throw new ApiError('BAD_FORMULA', 400)
+        throw error
+      }
+    },
+    listRolls: ({ campaignId, before }) => {
+      const all = rolls.filter((r) => r.campaignId === campaignId)
+      const end = before ? all.findIndex((r) => r.id === before) : all.length
+      const page = all.slice(Math.max(0, end - 50), end)
+      return { rolls: page.map((r) => ({ ...r })), next: end > 50 ? (page[0]?.id ?? null) : null }
     },
     deleteTemplate: ({ templateId }) => {
       const found = ownTemplates.find((t) => t.id === templateId && !t.deleted)

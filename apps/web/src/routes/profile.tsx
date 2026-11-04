@@ -8,6 +8,7 @@ import { BusyButton } from '../components/busy-button.tsx'
 import { Field, FormError } from '../components/field.tsx'
 import styles from '../components/form.module.css'
 import { PageTitle } from '../components/page-title.tsx'
+import { DiceColorField } from '../dice/color-field.tsx'
 import page from './settings.module.css'
 
 /** El perfil: tus datos (el nombre de usuario, si no lo tiene otra cuenta) y la contraseña */
@@ -41,7 +42,8 @@ function ProfileData() {
     const result = await accounts.updateProfile({
       name: String(form.get('name')),
       firstName: String(form.get('firstName')),
-      lastName: String(form.get('lastName'))
+      lastName: String(form.get('lastName')),
+      diceColor: form.get('diceColor') === 'auto' ? null : String(form.get('diceColor'))
     })
     setBusy(false)
     setStatus(result)
@@ -83,6 +85,7 @@ function ProfileData() {
         readOnly
         hint={t('profile.emailNote')}
       />
+      <DiceColorField name="diceColor" value={account.diceColor} />
       <FormError
         message={status && !status.ok ? t(`errors.${status.code}`, { defaultValue: t('errors.UNKNOWN') }) : null}
       />

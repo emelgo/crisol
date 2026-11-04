@@ -69,6 +69,11 @@ export function fakeAccountClient(
       if (account) set({ ...account, ...profile })
       return { ok: true }
     },
+    async updateDice(dice): Promise<Result> {
+      calls.push(`updateDice ${dice.diceOthers}`)
+      if (account) set({ ...account, ...dice })
+      return { ok: true }
+    },
     async changePassword(current, next): Promise<Result> {
       if (!account || passwords.get(account.email) !== current) return { ok: false, code: 'WRONG_PASSWORD' }
       passwords.set(account.email, next)

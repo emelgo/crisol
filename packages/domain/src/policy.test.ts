@@ -178,7 +178,16 @@ describe('authorize', () => {
     ['un máster las ve (para ponerlas)', worldMaster, 'tags.read', { organizationId: ORG }, 'permite'],
     ['pero no las gestiona', worldMaster, 'tags.write', { organizationId: ORG }, 'prohíbe'],
     ['un jugador no los ve', player, 'commonFiles.read', { organizationId: ORG }, 'no lo ve'],
-    ['nadie de otra organización', outsider, 'commonFiles.read', { organizationId: ORG }, 'no lo ve']
+    ['nadie de otra organización', outsider, 'commonFiles.read', { organizationId: ORG }, 'no lo ve'],
+    // Las tiradas de una campaña (ADR-0010)
+    ['un jugador tira en su campaña', player, 'dice.roll', campaign, 'permite'],
+    ['y lee su registro', player, 'dice.read', campaign, 'permite'],
+    ['pero no recibe las privadas de los demás', player, 'dice.private', campaign, 'prohíbe'],
+    ['el máster de la campaña las recibe', master, 'dice.private', campaign, 'permite'],
+    ['el máster del mundo tira en cualquiera de sus campañas', owner, 'dice.roll', campaign, 'permite'],
+    ['y recibe sus privadas', owner, 'dice.private', campaign, 'permite'],
+    ['un jugador no tira en otra campaña', player, 'dice.roll', otherCampaign, 'no lo ve'],
+    ['nadie de otra organización', outsider, 'dice.read', campaign, 'no lo ve']
   ]
 
   it.each(cases)('%s', (_, who, capability, target, expected) => {

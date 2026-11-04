@@ -1,6 +1,9 @@
+import type { DiceRoll } from './dice.ts'
+
 /**
- * Lo que el servidor manda por el canal en tiempo real, ya proyectado para quien lo recibe. Solo avisa: los datos se
- * vuelven a pedir por la API, que decide qué ve cada cuenta.
+ * Lo que el servidor manda por el canal en tiempo real, ya proyectado para quien lo recibe. Casi todo solo avisa: los
+ * datos se vuelven a pedir por la API, que decide qué ve cada cuenta. Las tiradas llegan enteras (ADR-0010): solo a
+ * quien la puede ver, y así los dados caen al momento
  */
 export type RealtimeMessage =
   /**
@@ -30,3 +33,5 @@ export type RealtimeMessage =
   | { type: 'joined'; worldId: string; campaignId: string; campaign: string; member: { userId: string; name: string } }
   /** La cuenta ya no está en la campaña: la han expulsado o ha salido desde otra pestaña */
   | { type: 'revoked'; worldId: string; campaignId: string }
+  /** Una tirada nueva en el registro de la campaña */
+  | { type: 'rolled'; campaignId: string; roll: DiceRoll }

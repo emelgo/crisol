@@ -20,6 +20,7 @@ describe('el esquema del editor', () => {
         'codeBlock',
         'columnBreak',
         'columnsChange',
+        'diceRoll',
         'doc',
         'fileEmbed',
         'hardBreak',

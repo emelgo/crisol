@@ -30,7 +30,62 @@ export const es = {
     ai: 'IA',
     aiPending_one: ', {{count}} petición esperando',
     aiPending_other: ', {{count}} peticiones esperando',
-    theme: 'Tema'
+    theme: 'Tema',
+    dice: 'Dados'
+  },
+  // Una tirada escrita en una página
+  diceRoll: {
+    roll: 'Tirar {{formula}}',
+    rollNamed: 'Tirar {{formula}} · {{label}}',
+    wrong: 'Esta tirada no se entiende: {{why}}',
+    change: 'Cambiar la tirada',
+    title: 'La tirada',
+    formula: 'Tirada',
+    label: 'Nombre',
+    optional: 'Opcional',
+    done: 'Listo'
+  },
+  // Los dados de una campaña (docs/specs/dados.md)
+  dice: {
+    title: 'Dados',
+    campaign: 'Campaña',
+    close: 'Cerrar los dados',
+    noCampaign: 'Este mundo aún no tiene campañas.',
+    addDie: 'Añadir un dado',
+    add: 'Añadir un {{die}}',
+    advantage: 'Ventaja',
+    disadvantage: 'Desventaja',
+    formula: 'Tirada',
+    roll: 'Tirar',
+    who: 'Quién la ve',
+    visibility: { all: 'Todos', self: 'Para mí', master: 'Al máster', hidden: 'Oculta' },
+    rolled: '{{label}}: {{total}}',
+    heard: '{{who}} · {{label}}: {{total}}',
+    whoCritical: '{{who}} · ¡Crítico!',
+    rolledAlone: '{{label}}: {{total}} (sin campaña: no se apunta)',
+    options: 'Opciones de los dados',
+    others: 'Ver caer los dados de los demás',
+    log: 'Tiradas de la campaña',
+    older: 'Ver las anteriores',
+    me: 'Tú',
+    ai: 'IA',
+    breakdown: 'Desglose',
+    again: 'Repetir',
+    critical: 'Crítico',
+    fumble: 'Pifia',
+    flag: { master: 'Al máster', self: 'Para mí', selfOther: 'Para sí', hidden: 'Oculta' },
+    color: {
+      title: 'El color de tus dados',
+      auto: 'Automático',
+      red: 'Rojo',
+      teal: 'Verde azulado',
+      amber: 'Ámbar',
+      blue: 'Azul',
+      violet: 'Violeta',
+      pink: 'Rosa',
+      green: 'Verde',
+      copper: 'Cobre'
+    }
   },
   account: {
     signIn: 'Entrar',
@@ -335,6 +390,8 @@ export const es = {
     horizontalRule: 'Separador',
     pageLink: 'Enlace a página',
     pageLinkHint: 'O escribe [[',
+    diceRoll: 'Tirada',
+    diceRollHint: 'Se pulsa y tira',
     pageEmbed: 'Incrustar página',
     pageEmbedHint: 'O una sección',
     fileEmbed: 'Imagen o archivo',
@@ -1369,7 +1426,12 @@ export const es = {
       history: 'Lo que se ha hecho en este mundo, para deshacerlo si hace falta.',
       trash: 'Lo borrado de este mundo, por si hay que recuperarlo.',
       settings: 'Aquí se ajusta el mundo: cómo se ve y lo demás.',
+      dice: 'Los dados de tus campañas.',
       back: 'El Crisol te devuelve a tus mundos.'
+    },
+    dice: {
+      card: 'Aquí se tira y se ven las tiradas de la campaña, al momento.',
+      roll: 'Escribe la tirada o pulsa los dados, y elige quién la ve.'
     },
     campaigns: {
       create: 'Cada campaña reúne a un grupo de jugadores en este mundo.'
@@ -1453,6 +1515,9 @@ export const es = {
     INTERRUPTED: 'Se cortó mientras se hacía: vuelve a pedirlo',
     TOO_MANY_PENDING: 'Hay demasiadas peticiones esperando',
     UNAUTHENTICATED: 'Tu sesión ha acabado. Vuelve a entrar.',
+    TOO_MANY_ROLLS: 'Demasiadas tiradas seguidas: espera un poco',
+    BAD_FORMULA: 'Esa tirada no se entiende',
+    VISIBILITY_NOT_ALLOWED: 'No puedes tirar así en esta campaña',
     UNKNOWN: 'Algo ha fallado. Vuelve a intentarlo.'
   },
   load: {

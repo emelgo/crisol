@@ -44,6 +44,8 @@ const body: JSONContent = {
       { type: 'pageLink', attrs: { pageId: null, title: 'Maela Varn', anchor: 'Historia', label: 'la jefa' } },
       text(' y '),
       { type: 'pageLink', attrs: { pageId: null, title: 'Lugares/Notas', anchor: '^k3x9a1b2', label: null } },
+      text('. La trampa: '),
+      { type: 'diceRoll', attrs: { formula: '2d6+3', label: 'Trampa' } },
       text('.')
     ),
     { type: 'heading', attrs: { id: 'h2aaaaaa', level: 2 }, content: [text('Barrios')] },

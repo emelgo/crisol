@@ -33,7 +33,13 @@ const personName = z.string().trim().max(80)
  * El perfil que se guarda: nombre de usuario (el visible) de 1 a 80 caracteres, nombre y apellido(s) hasta 80 cada
  * uno, y sin imagen (no hay en el módulo 0)
  */
-function checkedProfile(user: { name?: unknown; firstName?: unknown; lastName?: unknown; image?: unknown }): {
+function checkedProfile(user: {
+  name?: unknown
+  firstName?: unknown
+  lastName?: unknown
+  image?: unknown
+  diceColor?: unknown
+}): {
   name?: string
   firstName?: string
   lastName?: string
@@ -47,6 +53,10 @@ function checkedProfile(user: { name?: unknown; firstName?: unknown; lastName?: 
     const name = displayName.safeParse(user.name)
     if (!name.success) throw invalid()
     checked.name = name.data
+  }
+  // El color de los dados: un #rrggbb o ninguno (va a un estilo en la web)
+  if (user.diceColor !== undefined && user.diceColor !== null && !/^#[0-9a-f]{6}$/i.test(String(user.diceColor))) {
+    throw new APIError('BAD_REQUEST', { message: 'Color no válido', code: 'INVALID_PROFILE' })
   }
   for (const key of ['firstName', 'lastName'] as const) {
     if (user[key] === undefined || user[key] === null) continue
@@ -82,7 +92,10 @@ export function createAuth({ db, secret, baseURL, trustedOrigins = [] }: AuthOpt
     user: {
       additionalFields: {
         firstName: { type: 'string', required: false, defaultValue: '', input: true },
-        lastName: { type: 'string', required: false, defaultValue: '', input: true }
+        lastName: { type: 'string', required: false, defaultValue: '', input: true },
+        // Los dados (docs/specs/dados.md): su color y si ver caer los de los demás
+        diceColor: { type: 'string', required: false, input: true },
+        diceOthers: { type: 'boolean', required: false, defaultValue: true, input: true }
       }
     },
     session: { expiresIn: 30 * DAY, updateAge: DAY },

@@ -13,7 +13,7 @@ describe('herramientas MCP', () => {
     }
   })
 
-  it('las del módulo 0, las de la wiki y las de las plantillas', () => {
+  it('las del módulo 0, las de la wiki, las de las plantillas y las de los dados', () => {
     expect(Object.keys(MCP_TOOLS).sort()).toEqual([
       'borrar_etiqueta',
       'borrar_pagina',
@@ -51,12 +51,14 @@ describe('herramientas MCP', () => {
       'poner_pin',
       'quitar_pin',
       'restaurar_version',
+      'tirar_dados',
       'ver_arbol',
       'ver_campana',
       'ver_historial',
       'ver_mapa',
       'ver_pestanas',
       'ver_plantilla',
+      'ver_tiradas',
       'versiones_pagina'
     ])
   })

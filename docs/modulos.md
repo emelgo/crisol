@@ -7,6 +7,44 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
+### Para retomar (2026-11-04, módulo 3: dados)
+
+- **El módulo 3 va por capacidades** (mapa aprobado en `docs/specs/modulo-3.md`): `dados` → `sistemas` → `srd-5e` →
+  `personajes` → `hoja` → `foundry`. La entrevista entera y los estudios, en «### 3. Sistemas, fichas y dados», al
+  final de este archivo.
+- **`dados` está construida** en la rama `modulo-3/dados`: las 11 tareas de `tasks/todo.md` (plan en `tasks/plan.md`,
+  spec `docs/specs/dados.md`, ADR-0010, diseño en el lienzo «Crisol: dados», aprobado):
+  - el paquete puro `@crisol/dice` (la notación del Crisol actual, con sus límites);
+  - las tiradas en el servidor, en `dice_rolls` (migración 0037, fuera del historial), con sus visibilidades, el aviso
+    en vivo, el límite de 60 por minuto y `tryDice` (sin apuntar);
+  - la ficha de dados (barra del mundo y campaña; en el móvil, hoja), su registro y el color de cada cuenta (0038);
+  - los dados 3D (three y cannon-es, cargados aparte: la tirada se simula entera y se numera para que salga lo del
+    servidor);
+  - la tirada escrita en las páginas (`` `dice: 2d6+3 # Nombre` ``) y la IA (`tirar_dados`, `ver_tiradas`).
+- **Ritmo**: tirar tarda 11 ms de mediana y 22 ms en el p95 en el servidor (20.000 tiradas en el registro). Por la API
+  son unos 31 ms, casi todo lo de cualquier petición (la sesión y las pertenencias): **apuntado** para mirarlo en toda
+  la app.
+- **Las revisiones** (código y seguridad) están arregladas, cada cosa con su prueba:
+  - «Repetir» no hace pública una tirada privada;
+  - como mucho 500 dados por tirada, contando los que se repiten y los que explotan;
+  - el límite por minuto, sin carreras (un cerrojo por persona); `tryDice`, con el suyo;
+  - lo que se escribe en `` `dice: …` `` (comillas, «#», 50.000 espacios) no rompe nada;
+  - los paréntesis no se pierden al guardar la fórmula;
+  - las privadas no caen en la pantalla del máster ni se anuncian;
+  - la física de los dados va en un worker (con 20 dados tardaba hasta 670 ms en la página);
+  - la escena comparte formas y texturas, tiene un tope de 60 dados a la vista y lo suelta todo al cerrar la sesión.
+- **Apuntado** de las revisiones, para cuando crezca:
+  - cada aviso en vivo (también cada tirada) recorre a todas las personas conectadas y lee de la base las pertenencias
+    de cada una para ver si le llega (así quitar a alguien es inmediato): con muchas mesas a la vez, apuntar a cada
+    conexión en sus campañas y guardar las pertenencias hasta que cambien;
+  - lo de cada petición (la sesión y las pertenencias, unos 20 ms) se podría guardar un momento en memoria.
+- **Apuntado**: con toda la batería a la vez (`pnpm test:coverage`: ocho paquetes, cada uno con varios procesos, más
+  Postgres, en los 6 núcleos del VPS), algunas pruebas de la web que tardan medio segundo pasan de los 3 s y fallan
+  (el mapa, el canal en tiempo real). No es por los dados: prueba a prueba tardan lo mismo que en `main`. En local,
+  `pnpm test:coverage --concurrency=3` pasa entera en 2 min 35 s.
+- **Lo siguiente**: subir la tanda, pasar la CI una vez, fusionar y desplegar en staging; Enrique prueba los puntos de
+  control de `tasks/probar.md` y los criterios de la spec. Después, la spec de `sistemas`.
+
 ### Para retomar (2026-11-04, noche: arreglos y módulo 3)
 
 - **Lo que tiene que probar Enrique, en `tasks/probar.md`** («ve apuntando todas las cosas que tengo que probar»): el
@@ -28,7 +66,7 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
 
 ### Para retomar (2026-11-03, módulo 2)
 
-- **El módulo 2 (tipos de página y plantillas) está construido**: las 14 tareas de `tasks/todo.md`, en la rama
+- **El módulo 2 (tipos de página y plantillas) está construido**: las 14 tareas de `tasks/plantillas/todo.md`, en la rama
   `modulo-2/campos` (PR #93). La spec es `docs/specs/plantillas.md`, el ADR-0009 y el diseño, el lienzo «Crisol:
   plantillas» (aprobados).
   - Campos con id y tipos nuevos (opciones, reloj, enlace a una sola página), con sus controles en el panel.
@@ -994,7 +1032,7 @@ Estados: pendiente · en curso · hecho · descartado.
 | 0 | **Fundación**: monorepo, CI, despliegue, cuentas, organizaciones, mundos, campañas, roles, historial y deshacer, esqueleto del MCP | **hecho** (2026-10-29; Discord y Google, pospuestos) | Foundry: modelo de documentos y permisos; DDB: campañas e invitaciones |
 | 1 | **Wiki**: páginas y subpáginas, editor de bloques, enlaces, menciones, vista previa, propiedades, secretos, búsqueda, marcadores, etiquetas, versiones, recursos y archivos, **hojas con estilo** (tipo Homebrewery, con PDF), exportación MD, sus herramientas MCP | construido (tareas 1 a 26 hechas); falta la revisión de Enrique en staging | Foundry: Journal; DDB: contenido y referencias; Homebrewery (MIT): formato de hoja y descarga |
 | 2 | **Tipos de página y plantillas**: «Desde plantilla» (de serie y propias), campos en el panel, tablas que se llenan solas (en lugar de Dataview) | construido (tareas 1 a 14, 2026-11-03); falta la revisión de Enrique en staging | Foundry: tipos de documento; Kanka, LegendKeeper y World Anvil (web pública) |
-| 3 | Sistemas de reglas, fichas de personaje (creación, subida de nivel), dados y dados 3D | pendiente | DDB: creador y hoja; Foundry: dnd5e, DataModel e instalar y crear sistemas |
+| 3 | Sistemas de reglas, fichas de personaje (creación, subida de nivel), dados y dados 3D | en marcha: mapa aprobado (`docs/specs/modulo-3.md`); `dados` construida (11 tareas, rama `modulo-3/dados`); después, `sistemas` | DDB: creador y hoja; Foundry: dnd5e, DataModel e instalar y crear sistemas |
 | 4 | Compendios (aparte de la wiki del mundo y **como los de Foundry**: antes, estudio a fondo con craft-anything), bestiario, statblocks, biblioteca; **buscar dentro de los PDF** (texto de cada página con pdf.js; el resultado abre el visor en esa página) **y por significado** (pgvector; antes, permiso para la imagen de Postgres y elegir quién calcula los embeddings) | pendiente | Foundry: compendium packs; DDB: listados |
 | 5 | Visibilidad por campaña: conocimiento de los jugadores, revelar, compartir | pendiente | Foundry: ownership |
 | 6 | **Mesa**: escenas, rejilla, fichas, medir y plantillas, niebla, muros, puertas, luz, visión, iniciativa, instantáneas, encuentros, UVTT | pendiente | Foundry: canvas, visión y muros; DDB Maps |
@@ -1268,3 +1306,32 @@ Notas: `research/foundry/sistemas-y-su-api.md` y `research/dndbeyond/creador-y-h
 9. **Métodos de características**: estándar, compra por puntos, tiradas y a mano, eligiendo el máster cuáles valen.
 10. **Inventario del grupo** compartido. *Propuesta: sí, en la campaña.*
 11. **Tablas aleatorias** (pasaron del módulo 2): ¿un bloque de la wiki que se tira con los dados? *Propuesta: sí.*
+
+#### Segunda parte de la entrevista (2026-11-04)
+
+- **Foundry: el orden del estudio**. Primero, los sistemas de Crisol como datos con la forma de los de Foundry; a la
+  vez, la consulta al abogado; luego, importar sus datos filtrando por licencia, y un prototipo en el que dnd5e solo
+  abre una hoja para leerla. Con eso se decide si se sigue con la capa que ejecuta su código.
+- **Personaje a medias, como en D&D Beyond**: sale en la lista desde el principio, marcado como incompleto.
+- **Subir de nivel cambiando el número** de la clase en el creador, y eligiendo lo que aparece (como D&D Beyond).
+- **Versiones del personaje, como las de las páginas**: cada cambio queda en el historial y se ven y restauran las
+  anteriores.
+- **2014 y 2024 se mezclan, como en D&D Beyond** (cambia lo de la primera parte): un solo sistema 5e con las dos como
+  fuentes (SRD 5.1 y SRD 5.2) que el máster activa en su campaña.
+- **Tiradas privadas**: «solo para mí» y «solo al máster»; el máster ve también las «solo para mí» y puede tirar en
+  oculto.
+- **La ventaja, propuesta**: si la hoja sabe que la hay, la tirada sale con ella marcada, dice por qué y se quita con un
+  clic.
+- **La hoja la componen el sistema y también el máster**: el máster recoloca los bloques de la hoja en su campaña sin
+  copiar el sistema.
+- **Características**: los cuatro métodos (valores estándar, compra por puntos, tiradas y a mano), y el máster elige
+  cuáles valen en su campaña.
+- **Inventario del grupo, en la campaña**: lo ven y cambian sus jugadores y el máster, y de él se pasan cosas a cada
+  personaje.
+- **Las tablas aleatorias, con el compendio (módulo 4)**, como en Foundry.
+- **Las preferencias, de cada personaje** (PG fijos o tirados, carga, privacidad…), como en D&D Beyond.
+- **El contenido del SRD, en español y en inglés**, y cada campaña elige. La traducción al español es nuestra (con la
+  IA y revisada), con su atribución y los términos habituales; si la editorial tiene una versión oficial en español con
+  la misma licencia, se parte de ella.
+- **Quién instala un sistema**: Crisol trae un catálogo de sistemas revisados (los de serie y, más adelante, los
+  importados de Foundry cuya licencia lo permita), y cada máster puede crear o subir el suyo para su cuenta.

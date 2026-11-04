@@ -3,9 +3,13 @@
  * MCP con crear_paginas, de 50 en 50. Cada llamada, en menos de 3 s, y al final ningún enlace sin resolver. Pesa: no va
  * en la CI normal; se lanza con CRISOL_ESCALA=1 (sus números van en el PR)
  */
-import { aiRepo, connect } from '@crisol/db'
+import { aiRepo, connect, loadMemberships } from '@crisol/db'
 import { freshTestDatabase } from '@crisol/db/testing'
+import { actorFrom } from '@crisol/domain'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import type { ActionContext } from '../actions/context.ts'
+import { implementationsByName } from '../actions/implementations.ts'
+import { createRealtime } from '../realtime/hub.ts'
 import { startServer } from '../server.ts'
 import { TEST_AUTH_SECRET, testDataDir } from '../testing.ts'
 import { mcpTestHelpers } from './test-client.ts'
@@ -179,4 +183,66 @@ describe.skipIf(!process.env.CRISOL_ESCALA)('a la escala de Eana', () => {
     expect(result.isError, result.text.slice(0, 300)).toBeFalsy()
     expect(time).toBeLessThan(3000)
   })
+
+  it('tirar dados en una campaña con su registro lleno: el 95 % en menos de 50 ms (módulo 3)', async () => {
+    const { cookie, call } = await connected()
+    const world = (await call<{ id: string }>('crear_mundo', { name: 'Eana' })).data
+    const campaign = (await call<{ id: string }>('crear_campana', { worldId: world.id, name: 'La Marca' })).data
+    // El límite es de 60 por minuto y persona: el registro se llena directo en la tabla, y se mide al tirar
+    await conn.sql`
+      insert into dice_rolls (campaign_id, world_id, user_id, formula, visibility, result, created_at)
+      select ${campaign.id}, ${world.id}, (select user_id from campaign_members where campaign_id = ${campaign.id} limit 1),
+        '1d20', 'all', '{"total": 10, "detail": "1d20 → [10] = 10", "critical": null, "dice": []}'::jsonb,
+        now() - interval '1 day'
+      from generate_series(1, 20000)
+    `
+    // En el servidor: la acción de tirar, con su base de datos (sin la red ni la sesión, que son de cualquier petición)
+    const [owner] = await conn.sql<
+      { user_id: string }[]
+    >`select user_id from campaign_members where campaign_id = ${campaign.id} limit 1`
+    const userId = owner?.user_id ?? ''
+    const realtime = createRealtime(async () => actorFrom(userId, await loadMemberships(conn.db, userId)))
+    const rollDice = implementationsByName.get('rollDice')
+    if (!rollDice) throw new Error('sin rollDice')
+    const inServer: number[] = []
+    for (let i = 0; i < 50; i++) {
+      // Como en la API, las pertenencias se leen en cada petición (y el límite por minuto deja 60)
+      if (i === 30)
+        await conn.sql`update dice_rolls set created_at = now() - interval '1 day' where created_at > now() - interval '1 minute'`
+      const ctx = {
+        db: conn.db,
+        publicUrl: BASE,
+        sealKey: Buffer.alloc(32),
+        realtime,
+        actions: implementationsByName,
+        actor: actorFrom(userId, await loadMemberships(conn.db, userId)),
+        via: 'ui'
+      } satisfies ActionContext
+      const began = performance.now()
+      await rollDice.handler(ctx, { campaignId: campaign.id, formula: '2d20kh1+5 # Ataque', visibility: 'all' })
+      inServer.push(performance.now() - began)
+    }
+    await conn.sql`update dice_rolls set created_at = now() - interval '1 day' where created_at > now() - interval '1 minute'`
+    // Y entera, por la API, para el informe
+    const times: number[] = []
+    for (let i = 0; i < 50; i++) {
+      const began = performance.now()
+      await api(cookie, 'rollDice', { campaignId: campaign.id, formula: '2d20kh1+5 # Ataque', visibility: 'all' })
+      times.push(performance.now() - began)
+    }
+    // Lo que tarda cualquier petición (la sesión, las pertenencias, la red local): una que solo lee la campaña
+    const base: number[] = []
+    for (let i = 0; i < 50; i++) {
+      const began = performance.now()
+      await api(cookie, 'getCampaign', { campaignId: campaign.id })
+      base.push(performance.now() - began)
+    }
+    const p95 = (list: number[]) => [...list].sort((a, b) => a - b)[Math.floor(list.length * 0.95)] ?? 0
+    process.stderr.write(
+      `escala: tirar con 20.000 tiradas, en el servidor mediana ${Math.round(median(inServer))} ms, p95 ${Math.round(p95(inServer))} ms; ` +
+        `por la API, mediana ${Math.round(median(times))} ms, p95 ${Math.round(p95(times))} ms; ` +
+        `una petición que solo lee, mediana ${Math.round(median(base))} ms, p95 ${Math.round(p95(base))} ms\n`
+    )
+    expect(p95(inServer)).toBeLessThan(50)
+  }, 300_000)
 })

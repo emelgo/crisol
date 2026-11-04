@@ -3,6 +3,8 @@ import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
   plugins: [react()],
+  // La física de los dados 3D va en un worker de módulo
+  worker: { format: 'es' },
   server: {
     host: '127.0.0.1',
     port: 5173,

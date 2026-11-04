@@ -255,6 +255,16 @@ describe('Claude lee y escribe páginas en Markdown', () => {
     )
   })
 
+  it('una tirada escrita (`dice: …`) se guarda como tirada y vuelve igual al leerla', async () => {
+    const markdown = 'La trampa hace `dice: 2d6+3 # Trampa del almacén` de daño; el resorte, `dice: 1d20+3`.\n'
+    const { pages } = await ok200('createPages', {
+      worldId,
+      parentId: null,
+      pages: [{ key: 'a', title: 'Almacén 7', markdown }]
+    })
+    expect((await ok200('readPage', { pageId: pages[0].id })).markdown).toBe(markdown)
+  })
+
   it('escribir en el texto o en un secreto pone al día la fecha de la página, sin subir su versión', async () => {
     const { pages } = await ok200('createPages', {
       worldId,

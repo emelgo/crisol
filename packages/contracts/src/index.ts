@@ -7,6 +7,7 @@ import {
   renameCampaign,
   updateCampaign
 } from './campaigns.ts'
+import { listRolls, rollDice, tryDice } from './dice.ts'
 import {
   createFolder,
   deleteFile,
@@ -81,6 +82,7 @@ import { createWorld, ensureWorldHome, getWorldHome, listWorlds, renameWorld, up
 export * from './action.ts'
 export * from './ai.ts'
 export * from './campaigns.ts'
+export * from './dice.ts'
 export * from './files.ts'
 export * from './history.ts'
 export * from './invitations.ts'
@@ -189,7 +191,10 @@ export const ACTIONS = [
   getTemplate,
   createTemplate,
   updateTemplate,
-  deleteTemplate
+  deleteTemplate,
+  rollDice,
+  listRolls,
+  tryDice
 ]
 
 /** Las acciones por nombre, solo como tipo: la web las usa sin cargar zod */
@@ -285,4 +290,7 @@ export type Actions = {
   createTemplate: typeof createTemplate
   updateTemplate: typeof updateTemplate
   deleteTemplate: typeof deleteTemplate
+  rollDice: typeof rollDice
+  listRolls: typeof listRolls
+  tryDice: typeof tryDice
 }

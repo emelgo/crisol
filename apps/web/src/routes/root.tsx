@@ -10,6 +10,9 @@ import { PageTitle, useFocusHeading } from '../components/page-title.tsx'
 import { Ribbon, useMasteredWorld } from '../components/ribbon.tsx'
 import { ThemeToggle } from '../components/theme-toggle.tsx'
 import { type WindowKind, WindowProvider } from '../components/window.tsx'
+import { DiceProvider } from '../dice/context.tsx'
+import { DicePanel } from '../dice/panel.tsx'
+import { DiceTray } from '../dice/tray.tsx'
 import { WikiPanelProvider } from '../wiki/panel.tsx'
 import { OrganizationHistory, WorldHistoryWindow } from './history.tsx'
 import { Profile } from './profile.tsx'
@@ -81,15 +84,20 @@ export function RootLayout() {
   return (
     <WindowProvider render={(kind) => <WindowContent kind={kind} />}>
       <WikiPanelProvider>
-        <div className={styles.app}>
-          {skip}
-          <Ribbon />
-          <main id="contenido" className={wide ? styles.wide : styles.main}>
-            <ApprovalQueue />
-            <Notices />
-            <Outlet />
-          </main>
-        </div>
+        <DiceProvider>
+          <DiceTray>
+            <div className={styles.app}>
+              {skip}
+              <Ribbon />
+              <main id="contenido" className={wide ? styles.wide : styles.main}>
+                <ApprovalQueue />
+                <Notices />
+                <Outlet />
+              </main>
+              <DicePanel />
+            </div>
+          </DiceTray>
+        </DiceProvider>
       </WikiPanelProvider>
     </WindowProvider>
   )

@@ -1,5 +1,6 @@
 import { aiActions } from './ai.ts'
 import { campaignActions } from './campaigns.ts'
+import { diceActions } from './dice.ts'
 import { fileActions } from './files.ts'
 import { historyActions } from './history.ts'
 import { invitationActions } from './invitations.ts'
@@ -24,6 +25,7 @@ export const IMPLEMENTATIONS: Implementation[] = [
   ...organizationActions,
   ...worldActions,
   ...campaignActions,
+  ...diceActions,
   ...invitationActions,
   ...memberActions,
   ...historyActions,

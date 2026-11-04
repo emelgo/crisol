@@ -366,3 +366,51 @@ test('@fugas los archivos son de la wiki: la jugadora ni los ve, ni los baja, ni
   for (const leak of ['Mapa del Tesoro', 'Mapa Escondido', file.id, '"files"']) expect(everything).not.toContain(leak)
   await player.close()
 })
+
+test('@fugas las tiradas privadas solo le llegan a quien tira y al máster (ADR-0010)', async ({ page, browser }) => {
+  const link = await campaignLink(page)
+  const campaignId = new URL(page.url()).pathname.split('/')[4] ?? ''
+  const ana = await newPlayer(browser, link, 'Ana')
+  let seen: ReturnType<typeof capture> | undefined
+  const bruno = await newPlayer(browser, link, 'Bruno', (p) => {
+    seen = capture(p)
+  })
+  if (!seen) throw new Error('sin captura')
+  const captured = seen
+  await expect.poll(() => captured.frames.some((f) => f.includes('"hello"'))).toBe(true)
+
+  const roll = async (who: typeof page, formula: string, visibility: string) => {
+    const response = await who.request.post('/api/actions/rollDice', { data: { campaignId, formula, visibility } })
+    expect(response.status(), formula).toBe(200)
+  }
+  await roll(page, '1d20 # Iniciativa de todos', 'all')
+  await roll(ana, '1d20+7 # Sigilo de Ana', 'master')
+  await roll(ana, '1d20 # Corazonada de Ana', 'self')
+  await roll(page, '1d20+2 # Emboscada del máster', 'hidden')
+  // Y lo que tira su IA (por el MCP), oculta por defecto
+  const claude = await connectClaude(page)
+  const ai = await claude.call('tirar_dados', { campaignId, formula: '1d8 # Encuentro de la IA' })
+  expect(ai.isError, ai.text).toBeFalsy()
+  // La pública le llega en vivo; después lee el registro
+  await expect.poll(() => captured.frames.some((f) => f.includes('Iniciativa de todos'))).toBe(true)
+  const read = await bruno.request.post('/api/actions/listRolls', { data: { campaignId } })
+  expect(read.status()).toBe(200)
+  // Ni puede tirar en oculto
+  const hidden = await bruno.request.post('/api/actions/rollDice', {
+    data: { campaignId, formula: '1d20 # Oculta de Bruno', visibility: 'hidden' }
+  })
+  expect(hidden.status()).toBe(400)
+
+  const everything = await captured.all()
+  expect(everything).toContain('Iniciativa de todos')
+  for (const leak of ['Sigilo de Ana', 'Corazonada de Ana', 'Emboscada del máster', 'Encuentro de la IA']) {
+    expect(everything).not.toContain(leak)
+  }
+  // Ana ve las suyas, pero no la oculta del máster
+  const forAna = await (await ana.request.post('/api/actions/listRolls', { data: { campaignId } })).text()
+  expect(forAna).toContain('Sigilo de Ana')
+  expect(forAna).toContain('Corazonada de Ana')
+  expect(forAna).not.toContain('Emboscada del máster')
+  await ana.close()
+  await bruno.close()
+})

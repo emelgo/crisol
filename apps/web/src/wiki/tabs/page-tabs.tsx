@@ -6,13 +6,14 @@ import type { Page, PageTabView } from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { ChevronDown, Clock, FileText, Map as MapIcon, Network, PenTool, Plus, Trash2 } from 'lucide-react'
-import { type CSSProperties, type RefObject, useEffect, useId, useRef, useState } from 'react'
+import { type CSSProperties, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../../api/context.tsx'
 import { useErrorText } from '../../api/errors.ts'
 import { useAnnounce } from '../../components/announcer.tsx'
 import { BusyButton } from '../../components/busy-button.tsx'
 import dialogStyles from '../../components/dialog.module.css'
+import { useDismiss } from '../../components/dismiss.ts'
 import { FormError } from '../../components/field.tsx'
 import { focusIsLost, focusOnMount } from '../../components/focus.ts'
 import form from '../../components/form.module.css'
@@ -30,32 +31,6 @@ export function usePageTabs(page: Page) {
     queryKey: tabsKey(page.worldId, page.id),
     queryFn: async () => (await api.call('listPageTabs', { pageId: page.id })).tabs
   })
-}
-
-/** Abierto: pulsar fuera lo cierra; Escape también, y el foco vuelve a su botón */
-function useDismiss(
-  open: boolean,
-  close: () => void,
-  root: RefObject<HTMLElement | null>,
-  trigger: RefObject<HTMLElement | null>
-) {
-  useEffect(() => {
-    if (!open) return
-    const outside = (event: Event) => {
-      if (!root.current?.contains(event.target as Node)) close()
-    }
-    const onEscape = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') return
-      close()
-      trigger.current?.focus()
-    }
-    document.addEventListener('pointerdown', outside)
-    document.addEventListener('keydown', onEscape)
-    return () => {
-      document.removeEventListener('pointerdown', outside)
-      document.removeEventListener('keydown', onEscape)
-    }
-  }, [open, close, root, trigger])
 }
 
 /**
