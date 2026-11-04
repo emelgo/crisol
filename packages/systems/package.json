@@ -10,7 +10,7 @@
   "scripts": {
     "typecheck": "tsc -p .",
     "test": "vitest run",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage --exclude src/ritmo.test.ts && vitest run src/ritmo.test.ts"
   },
   "dependencies": {
     "@crisol/dice": "workspace:*",

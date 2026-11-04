@@ -42,8 +42,27 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   esquema con dos ejemplos; también como recurso `crisol://sistemas/formato`), `listar_sistemas`, `ver_sistema`
   (entero o por partes), `crear_sistema`, `cambiar_sistema` (por rutas, todo o nada), `validar_sistema`,
   `probar_formula`, `probar_tirada` y `borrar_sistema`. Con un sistema de 2 MB por el MCP: validar ~0,3 s, crear y
-  cambiar ~0,6 s. **Lo siguiente**: arreglar lo que digan las revisiones (código, seguridad, interfaz), la batería
-  entera, una pasada de la CI, el PR, el merge con `[skip ci]` y staging.
+  cambiar ~0,6 s.
+- **Las revisiones (código, seguridad e interfaz), hechas y arregladas** lo importante:
+  - seguridad: tres maneras de bloquear el servidor con una sola petición (la expansión de lo que se lleva, la
+    sugerencia «¿Quizás…?» y copiar listas al calcular sin presupuesto), una expresión regular cuadrática, nombres
+    heredados de JavaScript (`constructor`), `/mcp` leyendo 11 MB con un token falso, validar sin permiso, un máster
+    viendo campañas de mundos ajenos, el tope de 50 con carreras y los jugadores recibiendo lo elegido del sistema;
+  - código: fórmulas de un grupo o un conjunto dentro de un objeto con los campos equivocados, tiradas que validaban y
+    no se podían tirar, «Probar» de la web distinto del servidor (ahora tira en el servidor con el borrador), el
+    borrador que se perdía si otro cambiaba el sistema, claves repetidas que borraban otro campo;
+  - interfaz: el título de la página, salir con cambios sin guardar pregunta, el recorrido del editor, los números y
+    las opciones que se escriben tal cual, los problemas que no dependen del color, sin textos de ayuda fijos.
+- **Queda para después** (apuntado, no bloquea):
+  - **por decidir con Enrique**: lo que la IA hace en copiloto sin aprobación y ven los jugadores (tirar en público,
+    cambiar el nombre o la descripción de la campaña) podría pedir aprobación, como «jugadores»: un sistema subido de
+    fuera podría llevar instrucciones para la IA en sus textos;
+  - la cola de aprobación guarda la entrada entera (un archivo de 10 MB): guardar un resumen;
+  - subir un archivo con miles de documentos los escribe uno a uno: por lotes;
+  - la versión de la que sale una copia del catálogo es siempre 1 (hará falta con el 5e);
+  - el editor visual de los subcampos de conjuntos, grupos y listas de filas, confirmar al quitar un tipo o una
+    tirada, la barra de «Guardar» pegada a la vista, y la espera y el error al elegir el sistema de una campaña.
+- **Lo siguiente**: la batería entera, una pasada de la CI, el PR, el merge con `[skip ci]` y staging.
 - **Ojo con el lint**: `biome check --write` arregla el formato pero los errores de lint se quedan; mirar siempre
   `pnpm lint` entero antes de guardar.
 - **Prueba con un sistema de Foundry de verdad** (Enrique, 2026-11-04: «mete también […] daggerheart/2.12.5/system.json»):

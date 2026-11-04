@@ -1,6 +1,7 @@
 /**
  * El ritmo que pide la spec: calcular un personaje de nivel 20 de un 5e grande (unos 300 campos y 100 objetos) en menos
- * de 20 ms, y validar un sistema de 2 MB en menos de 500 ms. Se mide la mediana, en el mismo proceso que las demás
+ * de 20 ms, y validar un sistema de 2 MB en menos de 500 ms. Se mide la mediana, en el mismo proceso que las demás. En
+ * test:coverage va aparte y sin la cobertura: el código instrumentado tarda varias veces más y no es el que se usa
  */
 import { describe, expect, it } from 'vitest'
 import { type DocumentItem, evaluate } from './evaluate.ts'
