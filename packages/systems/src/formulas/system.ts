@@ -84,7 +84,29 @@ export function checkFormulas(system: System, report: Report, language: Language
     for (const reserved of RESERVED)
       if (type.fields[reserved])
         report(['types', typeKey, 'fields', reserved], `«${reserved}» es un nombre que ponen las fórmulas: usa otro`)
-    const scope = { ...scopeOf(type.fields, '', owner, system, language), ajustes: settingsShape(system, language) }
+    // En un objeto, @portador es quien lo lleva: el primer personaje que lo puede llevar
+    const bearer =
+      type.document === 'item'
+        ? types.find(
+            ([, t]) =>
+              t.document === 'actor' &&
+              Object.values(t.fields).some((f) => f.kind === 'items' && f.of.includes(typeKey))
+          )
+        : undefined
+    const bearerLabel = bearer ? textOf(bearer[1].label, language) || bearer[0] : ''
+    const scope: Scope = {
+      ...scopeOf(type.fields, '', owner, system, language),
+      ajustes: settingsShape(system, language),
+      ...(bearer
+        ? {
+            portador: {
+              type: 'object',
+              label: 'portador',
+              fields: scopeOf(bearer[1].fields, '', bearerLabel, system, language)
+            }
+          }
+        : {})
+    }
     scopes.set(typeKey, scope)
     const derived = derivedOf(typeKey, type, scope, owner, system, language)
 

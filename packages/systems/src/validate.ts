@@ -415,6 +415,10 @@ function checkField(
       })
       break
     case 'set':
+      field.elements.forEach((e, i) => {
+        for (const k of Object.keys(e.values ?? {}))
+          if (!Object.hasOwn(field.fields, k)) add([...path, 'elements', i, 'values', k], `No existe el campo «${k}»`)
+      })
       repeated(
         field.elements.map((e) => e.key),
         (i, k) => add([...path, 'elements', i, 'key'], `«${k}» está repetido`)

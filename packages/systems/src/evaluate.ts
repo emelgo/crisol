@@ -57,6 +57,8 @@ export interface Evaluated {
   advantages: Record<string, { mode: 'advantage' | 'disadvantage'; label: string; origin: string }[]>
   /** Los recursos de lo que lleva (y los suyos, con `item` null): su máximo, lo gastado y lo que queda */
   resources: Resource[]
+  /** Lo que lleva, ya calculado (también lo que sale de quien lo lleva), con su nombre: por su id */
+  items: Record<string, Record<string, Value>>
 }
 
 export interface Resource {
@@ -318,14 +320,21 @@ export function evaluate(
     }
   }
   const itemScopes = new Map<string, Record<string, Node>>()
+  // En las fórmulas de un objeto, @portador es quien lo lleva (sus campos ya calculados)
+  const portador = (): Node => ({ kind: 'object', label: label(type.label), fields: scope })
   const itemScope = (item: DocumentItem) => {
-    let scope = itemScopes.get(item.id)
-    if (!scope) {
+    let fields = itemScopes.get(item.id)
+    if (!fields) {
       const itemType = own(system.types, item.type)
-      scope = itemType ? nodesOf(itemType.fields, item.data, `items.${item.id}.`, [], true).fields : {}
-      itemScopes.set(item.id, scope)
+      let names: Record<string, Node> | undefined
+      const root = () => {
+        names ??= { ...(fields ?? {}), portador: portador() }
+        return names
+      }
+      fields = itemType ? nodesOf(itemType.fields, item.data, `items.${item.id}.`, [], true, root).fields : {}
+      itemScopes.set(item.id, fields)
     }
-    return scope
+    return fields
   }
   // Los ajustes de la campaña: los elegidos o, si no, su valor inicial
   const ajustes: Node = { kind: 'value', value: settingsOf(system, settings) }
@@ -346,7 +355,7 @@ export function evaluate(
   const legacyScope = (item: DocumentItem) => {
     let names = legacyScopes.get(item.id)
     if (!names) {
-      names = { ...itemScope(item), ajustes }
+      names = { ...itemScope(item), ajustes, portador: portador() }
       legacyScopes.set(item.id, names)
     }
     return names
@@ -466,7 +475,8 @@ export function evaluate(
         const data = (raw ?? {}) as Record<string, Record<string, unknown>>
         const fields: Record<string, Node> = {}
         for (const element of field.elements) {
-          const values = data[element.key] ?? {}
+          // Lo guardado manda sobre los valores iniciales del elemento (Sigilo, con Destreza)
+          const values = { ...(element.values ?? {}), ...(data[element.key] ?? {}) }
           const elementLabel = label(element.label)
           const extra = () => ({
             key: { kind: 'value' as const, value: element.key },
@@ -716,7 +726,22 @@ export function evaluate(
       }
       resources.push(entry)
     }
-  return { values, computed, problems, advantages, resources }
+  // Lo que lleva, ya calculado, con su nombre
+  const carried: Evaluated['items'] = {}
+  for (const it of items)
+    carried[it.id] = {
+      ...Object.fromEntries(
+        Object.entries(itemScope(it)).map(([k, n]) => {
+          try {
+            return [k, materialize(n, copy)]
+          } catch {
+            return [k, null]
+          }
+        })
+      ),
+      name: it.name
+    }
+  return { values, computed, problems, advantages, resources, items: carried }
 }
 
 /** Un efecto que se aplica: de qué objeto sale, qué hace y con qué fórmulas ya leídas */

@@ -40,6 +40,7 @@ const FUNCTION_HELP: Record<keyof typeof FUNCTIONS, string> = {
   clamp: 'clamp(x, mínimo, máximo): x, sin salirse',
   sum: 'sum(lista): la suma (sum(@lleva.peso))',
   count: 'count(lista): cuántos hay, sin contar los vacíos ni los false (count(@lleva))',
+  first: 'first(lista): el primero que tenga algo (first(@clases.lanzamiento))',
   has: 'has(lista, valor): si está ("sigilo")'
 }
 
@@ -155,7 +156,8 @@ export function systemDocs(): string {
     `- Funciones: ${Object.values(FUNCTION_HELP).join('; ')}.`,
     `- Nombres que pone Crisol: ${RESERVED.map((r) => `@${r}`).join(', ')}. @este es el campo o el elemento por el que`,
     '  se tira una tirada que va por cada uno (y, dentro de un conjunto o de una lista de filas, el elemento o la fila);',
-    '  @total, @natural (el primer dado) y @objetivo, en las franjas de una tirada.',
+    '  @total, @natural (el primer dado) y @objetivo, en las franjas de una tirada; @ajustes, los ajustes de la',
+    '  campaña (@ajustes.reglas); @portador, en las fórmulas de un objeto, quien lo lleva (@portador.competencia).',
     '- Los dados van solo en las tiradas, en la misma fórmula: `2d6`, `1d20`, `4d6kh3` (se quedan los 3 mayores),',
     '  `2d20kl1` (el menor), `5d10>=8` (éxitos), `1d6!` (explota), `2d6r1` (repite los 1), `4dF`, `d%`.',
     '- Un valor calculado (`derived`) no lleva dados ni depende de sí mismo. Un bono (`modifiers`) suma al campo de',

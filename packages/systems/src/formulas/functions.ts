@@ -50,6 +50,14 @@ export const FUNCTIONS: Record<string, FormulaFunction> = {
     returns: 'number',
     call: ([l]) => listOf(l ?? []).filter((v) => v !== null && v !== false).length
   },
+  // El primero que tenga algo (first(@clases.lanzamiento): la característica de la primera clase que lanza)
+  first: {
+    min: 1,
+    max: 1,
+    args: ['list'],
+    returns: 'any',
+    call: ([l]) => listOf(l ?? []).find((v) => v !== null && v !== '' && v !== false) ?? null
+  },
   has: {
     min: 2,
     max: 2,

@@ -67,7 +67,7 @@ export type Field =
   | (FieldBase & { kind: 'table'; columns: Record<string, SimpleField>; max?: number })
   | (FieldBase & {
       kind: 'set'
-      elements: { key: string; label: Text; abbr?: Text }[]
+      elements: { key: string; label: Text; abbr?: Text; values?: Record<string, string | number | boolean> }[]
       fields: Record<string, SimpleField>
     })
   | (FieldBase & { kind: 'items'; of: string[] })
@@ -172,10 +172,20 @@ function build(strict: boolean) {
           'Unos elementos fijos, cada uno con los mismos campos (las características: @caracteristicas.des.mod)'
         ),
         elements: z
-          .array(obj({ key, label: text(), abbr: text(10).optional().describe('Su abreviatura (DES)') }))
+          .array(
+            obj({
+              key,
+              label: text(),
+              abbr: text(10).optional().describe('Su abreviatura (DES)'),
+              values: z
+                .record(key, z.union([z.string().max(200), z.number().finite(), z.boolean()]))
+                .optional()
+                .describe('Sus valores iniciales, si no son los del campo (Sigilo: { car: des })')
+            })
+          )
           .min(1)
           .max(100)
-          .describe('Los elementos: su clave, su nombre y su abreviatura'),
+          .describe('Los elementos: su clave, su nombre, su abreviatura y sus valores iniciales'),
         fields: recordOf(simpleField, 30).describe('Los campos de cada elemento')
       }),
       // Lo que lleva o tiene: documentos de esos tipos de objeto (una clase, una espada, un conjuro)

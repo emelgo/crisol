@@ -19,7 +19,7 @@ import type { System } from './format.ts'
 import type { Value } from './formulas/functions.ts'
 import type { Mechanics } from './mechanics.ts'
 import { own } from './own.ts'
-import { applyMode, armFormula, formula, itemValues, labelOf, node, RollError, rollScope, valueIn } from './rolls.ts'
+import { applyMode, armFormula, formula, labelOf, node, RollError, rollContext, valueIn } from './rolls.ts'
 import { type Language, textOf } from './text.ts'
 
 type Action = NonNullable<Mechanics['actions']>[number]
@@ -171,10 +171,10 @@ export function prepareAction(
   const { item, mechanics } = ownerOf(doc, itemId)
   const action = mechanics?.actions?.find((a) => a.key === actionKey)
   if (!action) throw new RollError(`No existe la acción «${actionKey}»`)
-  const scope = rollScope(system, typeKey, doc, options)
-  // @este: el objeto o, en una criatura, ella misma
+  const { scope, evaluated } = rollContext(system, typeKey, doc, options)
+  // @este: el objeto (ya calculado, con lo que sale de quien lo lleva) o, en una criatura, ella misma
   scope.este = item
-    ? node(itemValues(system, item, language))
+    ? node(evaluated.items[item.id] ?? null)
     : node(
         Object.fromEntries(Object.entries(scope).flatMap(([k, n]) => (k === 'ajustes' ? [] : [[k, n.value]]))) as Value
       )

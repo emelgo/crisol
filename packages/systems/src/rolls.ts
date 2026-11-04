@@ -246,7 +246,7 @@ export function applyMode(tree: DiceNode, mode: { from: string; to: string }) {
 }
 
 /** Lo calculado de quien tira y sus nombres (sus valores y @ajustes, los de la campaña) */
-function rollContext(system: System, typeKey: string, doc: SystemDocument, options: RollOptions = {}) {
+export function rollContext(system: System, typeKey: string, doc: SystemDocument, options: RollOptions = {}) {
   const language = options.language ?? 'es'
   const evaluated = evaluate(system, typeKey, doc, { language, settings: options.settings ?? {} })
   const scope: Record<string, Node> = Object.fromEntries(Object.entries(evaluated.values).map(([k, v]) => [k, node(v)]))
@@ -257,13 +257,6 @@ function rollContext(system: System, typeKey: string, doc: SystemDocument, optio
 /** Los nombres de quien tira: sus valores ya calculados y @ajustes */
 export const rollScope = (system: System, typeKey: string, doc: SystemDocument, options: RollOptions = {}) =>
   rollContext(system, typeKey, doc, options).scope
-
-/** Los valores de un objeto que lleva (sus campos, calculados), con su nombre: lo que es @este */
-export function itemValues(system: System, item: DocumentItem, language: Language = 'es'): Value {
-  const type = own(system.types, item.type)
-  const values = type ? evaluate(system, item.type, { data: item.data }, { language }).values : {}
-  return { ...values, name: item.name }
-}
 
 /** Arma una tirada: su fórmula (o la de su variante) con los valores puestos, y el modo aplicado. Sin tirarla */
 export function prepareRoll(
@@ -288,8 +281,7 @@ export function prepareRoll(
     if ('items' in roll.for) {
       if (elements.length === 0) throw new RollError(`No lleva nada para «${textOf(roll.label, language)}»`)
       if (!element) throw new RollError(`Elige con qué se tira: ${elements.map((e) => e.label).join(', ')}`)
-      const item = doc.items?.find((it) => it.id === element.key) as DocumentItem
-      scope.este = node(itemValues(system, item, language))
+      scope.este = node(evaluated.items[element.key] ?? null)
     } else {
       if (!element) throw new RollError(`Elige por qué se tira: ${elements.map((e) => e.label).join(', ')}`)
       const value =
