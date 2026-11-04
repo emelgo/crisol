@@ -3,7 +3,7 @@
  * tipo; una tirada con los del personaje, @este y, en sus franjas, @total, @natural y @objetivo), y los ciclos entre
  * valores calculados
  */
-import type { Field, System, SystemType } from '../format.ts'
+import type { Field, Roll, System, SystemType } from '../format.ts'
 import { type Language, textOf } from '../text.ts'
 import {
   type Checked,
@@ -111,29 +111,14 @@ export function checkFormulas(system: System, report: Report, language: Language
   }
 
   // Las tiradas, con los campos del personaje (el primero que tenga aquello por lo que va)
-  const actors = types.filter(([, t]) => t.document === 'actor')
   for (const [rollKey, roll] of Object.entries(system.rolls ?? {})) {
     const at: Segment[] = ['rolls', rollKey]
-    const wanted = roll.for ? ('fields' in roll.for ? roll.for.fields : [roll.for.set]) : []
-    const actor = actors.find(([, t]) => wanted.every((k) => t.fields[k])) ?? actors[0]
-    if (!actor) {
+    const contexts = rollContexts(system, roll, language, scopes)
+    if (!contexts) {
       report(at, 'Las tiradas necesitan un tipo de personaje')
       continue
     }
-    const [actorKey, actorType] = actor
-    const scope = { ...(scopes.get(actorKey) as Scope) }
-    const first = wanted[0]
-    if (roll.for && first) {
-      const shape = scope[first]
-      // Si va por algo que no existe, ya se ha dicho: @este no da otro error
-      scope.este = !shape
-        ? { type: 'any', label: 'este' }
-        : 'set' in roll.for && shape.type === 'object' && shape.element
-          ? shape.element
-          : shape
-    }
-    const owner = textOf(actorType.label, language) || actorKey
-    const context: Context = { scope, dice: true, owner }
+    const { context, result } = contexts
     const formula = checkFormula(roll.formula, context)
     for (const p of formula.problems) report([...at, 'formula'], p.message, p)
     if (formula.problems.length === 0 && !['number', 'dice', 'any'].includes(formula.type))
@@ -143,14 +128,8 @@ export function checkFormulas(system: System, report: Report, language: Language
       for (const p of checkFormula(variant.formula, context).problems)
         report([...at, 'variants', i, 'formula'], p.message, p)
     })
-    const result: Scope = {
-      ...scope,
-      total: { type: 'number', label: 'total' },
-      natural: { type: 'number', label: 'natural' },
-      objetivo: { type: 'number', label: 'objetivo' }
-    }
     roll.bands?.forEach((band, i) => {
-      expectBoolean(band.if, { scope: result, dice: false, owner }, [...at, 'bands', i, 'if'], report)
+      expectBoolean(band.if, result, [...at, 'bands', i, 'if'], report)
     })
     roll.modes?.forEach((mode, i) => {
       for (const part of ['from', 'to'] as const)
@@ -158,6 +137,48 @@ export function checkFormulas(system: System, report: Report, language: Language
     })
   }
   if (system.dice?.default?.includes('@')) report(['dice', 'default'], 'La tirada por defecto va sin @: solo dados')
+}
+
+/**
+ * Los nombres de una tirada: los campos del personaje (el primero que tenga aquello por lo que va) y, si va por cada
+ * uno, @este; en sus franjas, también @total, @natural y @objetivo. Sin personajes, no hay
+ */
+export function rollContexts(
+  system: System,
+  roll: Roll,
+  language: Language = 'es',
+  scopes?: Map<string, Scope>
+): { context: Context; result: Context } | null {
+  const wanted = roll.for ? ('fields' in roll.for ? roll.for.fields : [roll.for.set]) : []
+  const actors = Object.entries(system.types).filter(([, t]) => t.document === 'actor')
+  const actor = actors.find(([, t]) => wanted.every((k) => t.fields[k])) ?? actors[0]
+  if (!actor) return null
+  const [actorKey, actorType] = actor
+  const owner = textOf(actorType.label, language) || actorKey
+  const scope: Scope = { ...(scopes?.get(actorKey) ?? scopeOf(actorType.fields, '', owner, system, language)) }
+  const first = wanted[0]
+  if (roll.for && first) {
+    const shape = scope[first]
+    // Si va por algo que no existe, ya se ha dicho: @este no da otro error
+    scope.este = !shape
+      ? { type: 'any', label: 'este' }
+      : 'set' in roll.for && shape.type === 'object' && shape.element
+        ? shape.element
+        : shape
+  }
+  return {
+    context: { scope, dice: true, owner },
+    result: {
+      scope: {
+        ...scope,
+        total: { type: 'number', label: 'total' },
+        natural: { type: 'number', label: 'natural' },
+        objetivo: { type: 'number', label: 'objetivo' }
+      },
+      dice: false,
+      owner
+    }
+  }
 }
 
 function expectBoolean(formula: string, context: Context, path: Segment[], report: Report) {

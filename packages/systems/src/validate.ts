@@ -117,6 +117,10 @@ const PARTS: Record<string, string> = {
   attribution: 'Atribución',
   elements: 'Elementos',
   columns: 'Columnas',
+  fields: 'Campos',
+  types: 'Tipos',
+  rolls: 'Tiradas',
+  bands: 'Resultado',
   kind: 'Clase',
   document: 'Clase de documento',
   if: 'Si'
@@ -224,6 +228,22 @@ export function validateSystem(input: unknown, { language = 'es' as Language } =
   checkReferences(system, add)
   checkFormulas(system, (path, message, range) => add(path, message, 'error', range), language)
   return { system: problems.some((p) => p.severity === 'error') ? null : system, problems }
+}
+
+/** Si algún problema del formato es de forma: un valor que no es de su clase (un número donde va un texto, una lista…) */
+function misshapen(issues: readonly core.$ZodIssue[]): boolean {
+  return issues.some(
+    (issue) => issue.code === 'invalid_type' || (issue.code === 'invalid_union' && issue.errors.every(misshapen))
+  )
+}
+
+/**
+ * Si tiene la forma de un sistema, aunque algún valor no valga (un nombre vacío, una fórmula que falla): así lo puede
+ * leer el editor visual (Avanzado lo pasa al resto del editor) y sus problemas se ven donde están
+ */
+export function fitsFormat(input: unknown): input is System {
+  const parsed = systemSchema.safeParse(input)
+  return parsed.success || !misshapen(parsed.error.issues)
 }
 
 /** Lo que el esquema no ve: que lo que se nombra exista, los rangos y los repetidos */

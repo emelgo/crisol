@@ -6,7 +6,8 @@ import { describe, expect, it } from 'vitest'
 import { type DocumentItem, evaluate } from './evaluate.ts'
 import { cinco } from './fixtures/cinco.ts'
 import { FORMAT, type System } from './format.ts'
-import { validateSystem } from './validate.ts'
+import { jsonLines } from './lines.ts'
+import { fitsFormat, validateSystem } from './validate.ts'
 
 const median = (run: () => void, times: number) => {
   const samples: number[] = []
@@ -101,5 +102,17 @@ describe('el ritmo', () => {
     const ms = median(() => validateSystem(system), 5)
     console.info(`Validar ${(bytes / 1024 / 1024).toFixed(2)} MB: ${ms.toFixed(0)} ms de mediana`)
     expect(ms).toBeLessThan(500)
+
+    // Lo que hace Avanzado con cada tecla: leer el JSON, ver su forma, validarlo y saber la línea de cada ruta
+    const text = JSON.stringify(system, null, 2)
+    const typing = median(() => {
+      const parsed = JSON.parse(text) as unknown
+      if (fitsFormat(parsed)) validateSystem(parsed)
+      jsonLines(text)
+    }, 5)
+    console.info(
+      `Escribir en Avanzado (${(text.length / 1024 / 1024).toFixed(2)} MB de texto): ${typing.toFixed(0)} ms de mediana`
+    )
+    expect(typing).toBeLessThan(500)
   })
 })

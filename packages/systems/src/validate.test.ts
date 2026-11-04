@@ -5,7 +5,7 @@ import { cinco } from './fixtures/cinco.ts'
 import { fronteras } from './fixtures/fronteras.ts'
 import { FORMAT, LIMITS, type System } from './format.ts'
 import { textOf } from './text.ts'
-import { type Problem, validateSystem, whereOf } from './validate.ts'
+import { fitsFormat, type Problem, validateSystem, whereOf } from './validate.ts'
 
 /** Una copia que se puede cambiar sin tocar la de las pruebas */
 const copy = (system: System = fronteras): System & Record<string, unknown> => structuredClone(system)
@@ -331,5 +331,29 @@ describe('lo declarativo de un sistema de Foundry cabe en el formato', () => {
       }))
     }
     expect(validateSystem(system).problems).toEqual([])
+  })
+})
+
+describe('la forma de un sistema, para el editor', () => {
+  it('con valores que no valen, sí; con uno de otra clase, no', () => {
+    const good = structuredClone(fronteras)
+    expect(fitsFormat(good)).toBe(true)
+    const empty = structuredClone(fronteras)
+    empty.name = ''
+    ;(empty.rolls?.atributo?.bands?.[0] as { tone: string }).tone = 'otro'
+    expect(fitsFormat(empty)).toBe(true)
+    const wrong = structuredClone(fronteras) as unknown as { types: { personaje: { fields: unknown } } }
+    wrong.types.personaje.fields = []
+    expect(fitsFormat(wrong)).toBe(false)
+    const label = structuredClone(fronteras) as unknown as { name: unknown }
+    label.name = 5
+    expect(fitsFormat(label)).toBe(false)
+    const kind = structuredClone(fronteras) as unknown as {
+      types: { personaje: { fields: { vigor: { kind: string } } } }
+    }
+    kind.types.personaje.fields.vigor.kind = 'raro'
+    expect(fitsFormat(kind)).toBe(false)
+    expect(fitsFormat(5)).toBe(false)
+    expect(fitsFormat({})).toBe(false)
   })
 })
