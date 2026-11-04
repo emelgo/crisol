@@ -3,7 +3,7 @@
 Lista viva: todo lo que haya que probar se apunta aquí y se marca cuando lo pruebe. Lo que diga va a «Lo que dijo» (al
 final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interfaz.
 
-- **Staging**: https://neo.crisol.144-91-122-245.sslip.io (con el módulo 2 desde el 2026-11-04).
+- **Staging**: https://neo.crisol.144-91-122-245.sslip.io, con el módulo 2 y los arreglos del 2026-11-04 (PR #93 y #94).
 - **La IA**: el conector «Neo Crisol» de claude.ai (`https://neo.crisol.144-91-122-245.sslip.io/mcp`), con la cuenta
   de propietario.
 - **En local**, con los cambios al momento: http://localhost:5173 (lo arranco cuando haga falta).
