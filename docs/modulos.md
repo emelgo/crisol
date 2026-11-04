@@ -1217,3 +1217,46 @@ Preguntas con propuesta; lo que eligió:
   5e traen una al estilo de D&D Beyond, con el aspecto de Crisol.
 - **Pendiente de preguntar**: las tablas aleatorias (pasaron del módulo 2 a este), subir de nivel y el creador paso a
   paso con detalle (tras el estudio de D&D Beyond), e importar los PJ de Eana (por el MCP, como todo lo demás).
+
+#### Lo que dicen los estudios (2026-11-04, con craft-anything)
+
+Notas: `research/foundry/sistemas-y-su-api.md` y `research/dndbeyond/creador-y-hoja.md`.
+
+- **Foundry, para instalar sus sistemas «tal cual»**: un sistema corre entero en el navegador; dnd5e usa unos 490
+  miembros de la API de Foundry (unos 375 para abrir una hoja y tirar desde ella) y hereda 66 de sus clases, cuyo
+  comportamiento habría que imitar; cada versión de Foundry cambia cientos de puntos. Se aislaría en un iframe de otro
+  dominio, sin red, con un puente al servidor de Crisol (que pone los permisos, el azar de las tiradas y el historial).
+- **Licencias** (no es asesoría legal): su EULA prohíbe publicar código de Foundry, así que solo cabe una API propia
+  escrita en sala limpia. El código de dnd5e es MIT y su texto, SRD, pero sus fichas de criaturas, su arte y varios
+  iconos solo valen dentro de Foundry; en otros sistemas pasa igual o su contenido prohíbe cobrar (PF1 y CoC7, GPL).
+  Hay que preguntar a un abogado: la directiva 2009/24 (interoperabilidad), la marca y la ley del EULA.
+- **Orden que propone el estudio**: 1) sistemas propios como datos con la forma del manifiesto de Foundry; 2) a la vez,
+  el abogado y el ADR del aislamiento; 3) importar los datos de un sistema de Foundry, filtrando por licencia; 4) un
+  prototipo en el que dnd5e abre una hoja solo para leer, para medir y decidir si se sigue; 5) editar y tirar; 6) el
+  resto; 7) un segundo sistema (PF2e) antes de abrirlo a la comunidad.
+- **D&D Beyond**:
+  - el creador: una portada de preferencias y cinco pasos libres (clase, trasfondo, especie, características,
+    equipo), con lo pendiente marcado;
+  - subir de nivel es cambiar un número, sin asistente ni deshacer;
+  - la hoja: seis zonas y una caja con pestañas; todo número tira con un clic, y el registro de la campaña lleva el
+    desglose;
+  - el inventario, con contenedores, carga, sintonía, monedas y uno común del grupo.
+
+#### Para la segunda parte de la entrevista (con propuesta)
+
+1. **Foundry**, con lo que dice el estudio de licencias: ¿seguimos el orden del estudio, con los sistemas propios
+   primero y la capa de Foundry tras el abogado y el prototipo? *Propuesta: sí.*
+2. **Personaje a medias**: ¿un borrador que no sale en la lista hasta estar listo, o un personaje «a medias» como en
+   D&D Beyond? *Propuesta: el borrador.*
+3. **Subir de nivel**: ¿con un asistente paso a paso? ¿Sube el jugador solo o con el visto bueno del máster?
+   *Propuesta: asistente; sube el jugador y el máster lo ve en el historial y lo puede deshacer.*
+4. **Versiones del personaje** para volver atrás. *Propuesta: sí, como las de las páginas.*
+5. **Mezclar 2014 y 2024** en un personaje. *Propuesta: no; cada edición es su sistema.*
+6. **Tiradas privadas**: «solo para mí» y «solo al máster». *Propuesta: las dos; el máster ve también las «solo para
+   mí»*.
+7. **La ventaja**, cuando la hoja la conoce: ¿la propone sola? *Propuesta: la propone, y se puede quitar.*
+8. **Quién compone la hoja**: ¿solo el sistema, o también el máster? *Propuesta: el sistema; el máster, copiando el
+   sistema para hacer el suyo.*
+9. **Métodos de características**: estándar, compra por puntos, tiradas y a mano, eligiendo el máster cuáles valen.
+10. **Inventario del grupo** compartido. *Propuesta: sí, en la campaña.*
+11. **Tablas aleatorias** (pasaron del módulo 2): ¿un bloque de la wiki que se tira con los dados? *Propuesta: sí.*
