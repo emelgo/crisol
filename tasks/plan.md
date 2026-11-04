@@ -1,129 +1,121 @@
-# Plan: Módulo 3 — sistemas
+# Plan: Módulo 3 — srd-5e
 
-Spec: `docs/specs/sistemas.md` (aprobada) · ADR-0011 (aceptado) · Mapa del módulo: `docs/specs/modulo-3.md` · Diseño:
-lienzo «Crisol: sistemas» (aprobado; fuentes en `out/lienzo-sistemas/`) · Lo que hace el Crisol actual:
-`docs/inventario-sistemas.md` · Tareas con detalle: `tasks/todo.md` · Fecha: 2026-11-04. Los planes anteriores están en
-`tasks/fundacion/`, `tasks/wiki/`, `tasks/plantillas/` y `tasks/dados/`.
+Spec: `docs/specs/srd-5e.md` (aprobada) · ADR-0012 (aceptado) · Mapa del módulo: `docs/specs/modulo-3.md` · Diseño:
+fila 3 del lienzo «Crisol: sistemas» (aprobada; fuentes en `out/lienzo-sistemas/`) · Estudio:
+`research/dndbeyond/contenido-5e-y-mecanica.md` · Tareas con detalle: `tasks/todo.md` · Fecha: 2026-11-04. Los planes
+anteriores están en `tasks/fundacion/`, `tasks/wiki/`, `tasks/plantillas/`, `tasks/dados/` y `tasks/sistemas/`.
 
 ## Resumen
 
-Se construye en cuatro fases, que siguen el mapa de la spec:
-1. **El paquete puro**: el formato, las fórmulas y las tiradas, sin base de datos ni interfaz.
-2. **El servidor**: los sistemas de la cuenta, bajar y subir, y la campaña con su sistema.
-3. **La interfaz**: «Sistemas», la elección en la campaña y el editor con su panel para probar.
-4. **La IA y el cierre.**
+Se construye en cuatro fases:
+1. **La mecánica**, en el paquete puro: efectos, recursos, acciones por objeto, escalado, conceptos y ediciones. Se
+   prueba con los casos más difíciles escritos a mano, antes de sacar nada de los PDF.
+2. **Un 5e de punta a punta, con poco contenido**: el sistema, su contenido de serie en el código, el equipo y el
+   Guerrero de las dos ediciones; «Probar» con «Añadir del contenido», las ediciones en la campaña y la IA. Así se ve
+   entero muy pronto (el guerrero de nivel 5), y el resto del contenido entra por un camino ya probado.
+3. **El resto del contenido, por categorías**: estados y reglas, conjuros, objetos mágicos, criaturas, especies,
+   trasfondos y dotes, y las demás clases y subclases.
+4. **Los personajes de referencia y el cierre.**
 
-Cada tarea es una porción vertical, con sus pruebas. Todo va en la rama `modulo-3/sistemas`. Se comprueba en local y la
-CI (cuota mensual) se pasa una sola vez, al final de la tanda. Entonces se fusiona y se despliega en staging.
+Todo va en la rama `modulo-3/srd-5e`. Se comprueba en local y la CI (cuota mensual) se pasa una sola vez, al final de la
+tanda. Entonces se fusiona y se despliega en staging. Las tareas de contenido son las más largas del módulo: cada una
+puede llevar más de una sesión.
 
-Lo más arriesgado va pronto:
-- **el lenguaje de fórmulas** (tareas 2 y 3): que compruebe nombres, tipos y ciclos al guardar, que dé el desglose y
-  que calcule un personaje de 5e de nivel 20 en menos de 20 ms. Se mide antes de construir nada encima;
-- **que el formato reciba lo de Foundry** (tarea 1): un fragmento con la forma de dnd5e, escrito por nosotros, tiene
-  que caber en el formato.
+## Decisiones de la arquitectura
 
-## Decisiones de construcción
+- **El documento de contenido crece** (ADR-0012), además de su tipo, su clave, su fuente y sus valores:
+  - `concept`: la clave que une sus versiones entre ediciones;
+  - `mechanics`: sus efectos, recursos, acciones, lo que concede, su escalado y su grado de automatización;
+  - `ref`: la página del PDF de la que sale.
 
-- **El paquete `@crisol/systems`** (`packages/systems`): el formato (zod), las fórmulas, las tiradas del sistema y el
-  catálogo. Es puro: sin base de datos ni React, en la regla de límites de los paquetes de dominio. Depende de
-  `@crisol/dice`. Lo usan:
-  - el servidor, para validar, calcular y probar;
-  - la web, para comprobar mientras se escribe y para «Probar»;
-  - los contratos, para la forma de las acciones.
-- **El formato**:
-  - sus claves van en inglés, con la forma del manifiesto de Foundry: `id`, `name`, `version`, `format`, `types`
-    (`actor` y `item`), `fields`, `rolls`, `dice`, `sources`, `packs`, `languages` y `settings`;
-  - `sheet`, `creation` y `levelUp` se dejan sitio, con una forma mínima que comprueban `hoja` y `personajes`;
-  - las claves de cada sistema (sus tipos, campos y tiradas), las que elija quien lo hace;
-  - los textos son un texto o un `{ es, en }`.
-- **Validar** devuelve problemas con:
-  - la ruta, para la IA y el JSON (`types.personaje.fields.defensa.formula`);
-  - dónde está, por sus nombres («Personaje › Defensa › Fórmula»), para el editor;
-  - el motivo, en español;
-  - su gravedad: error, que no deja guardar, o aviso, que no lo impide (lo desconocido se conserva).
-- **Las fórmulas**: una gramática propia sobre la de `@crisol/dice`, más:
-  - referencias `@a.b`;
-  - las operaciones `+ - * / %`, las comparaciones, `&& || !` y `? :`;
-  - las funciones de una tabla fija (`floor`, `ceil`, `round`, `abs`, `max`, `min` y unas pocas para listas y tablas).
+  Las fuentes del sistema llevan su edición, su editorial, su fecha (para saber cuál es más nueva) y su atribución.
+- **Los efectos sustituyen a los bonos de hoy** (`modifiers` del tipo), que pasan a ser un caso de los efectos: lo
+  escrito sigue valiendo. Las operaciones:
+  - base (la CA: gana la mayor de las que se apliquen);
+  - fijar, sumar, mínimo y máximo;
+  - grado de competencia;
+  - ventaja y desventaja (se anotan para la tirada);
+  - añadir a una lista.
 
-  Se lee una vez a un árbol, se comprueba contra lo que hay en su tipo y se evalúa sin `eval`. Una fórmula con dados es
-  una tirada: el servidor pone los valores y tira con `@crisol/dice`. El presupuesto es por documento entero.
-- **El desglose**: cada valor derivado devuelve su valor y sus términos con su nombre, los bonos de los modificadores
-  con su origen (de los objetos del documento que cumplen su condición, como «equipado») y el valor fijado a mano, si
-  lo hay.
-- **Las tiradas del sistema**:
-  - cada una con su fórmula y sus variantes, por cada elemento con `@este`, contra un objetivo y con sus franjas;
-  - los modos, como la ventaja, son cambios sobre el árbol de dados;
-  - la tirada por defecto y los críticos (ninguno, el natural del d20, dobles o tirar por debajo) van en `dice`;
-  - `@crisol/dice` gana la regla de críticos y doblar los dados del crítico.
-- **La base de datos**, en la migración 0039:
-  - `systems`, de la organización: nombre, versión (un entero que sube en cada cambio), de cuál salió (`basedOn`: id
-    y versión), el documento en `jsonb` y `deletedAt`;
-  - `system_content`: el contenido de cada sistema (tipo, clave, fuente y datos);
-  - en `campaigns`, `system` (el id de uno del catálogo o el uuid de uno propio) y `systemChoices` (fuentes, idioma y
-    ajustes).
+  Se aplican en ese orden y salen en el desglose con su origen. La condición es una fórmula sobre el objeto y quien lo
+  lleva.
+- **Las tiradas por objeto**: una tirada del sistema puede ir «por cada objeto que lleve de estos tipos» (`for: { items
+  }`), con `@este` como el objeto. Es el ataque de cada arma y de cada conjuro. Un conjuro se tira a un nivel de espacio
+  (`level`), con su escalado.
+- **Los ajustes de la campaña, en las fórmulas** (`@ajustes.reglas`), y una función pura que dice qué contenido se ve
+  con lo que eligió la campaña (ediciones y «lo que está en las dos»), con la marca «Legado».
+- **El contenido de serie, en el código, fuera de la web**: JSON por categorías en `packages/systems/src/catalog/5e/`,
+  en una entrada aparte del paquete (`@crisol/systems/catalog/5e`) que solo importa el servidor. A la web llega por
+  acciones nuevas (buscar en el contenido y leer unos documentos), no en su paquete.
+- **Sacar el contenido, con scripts de desarrollo** (`scripts/srd/`): `pdftotext` de los cuatro PDF (en
+  `datos-locales/srd/`), un analizador por categoría (los conjuros, las criaturas y los objetos tienen forma fija), el
+  emparejamiento del inglés con el español por su orden y su nombre, y un borrador por documento. La IA ayuda a escribir
+  la mecánica, que comprueban las pruebas. Lo sacado se guarda en el repositorio; los PDF, no.
+- **Un documento por cosa, también los rasgos de clase**: una clase lleva su progresión (nivel, competencia, rasgos,
+  recursos, espacios) y sus rasgos son documentos propios. Así ninguno pasa de los 64 KB.
 
-  Los sistemas y su contenido pasan por `operation()`, como las plantillas propias.
-- **Cambios a la vez**: `updateSystem` pide la versión que tenía quien lo cambia. Si otra pestaña o la IA lo cambiaron
-  antes, devuelve un conflicto y no pisa nada.
-- **Permisos**, como los de las plantillas:
-  - `systems.read`: quien ve los archivos comunes;
-  - `systems.write`: el propietario de la cuenta;
-  - elegir el sistema de una campaña, con `campaign.rename` (el máster del mundo o de la campaña).
+## Fases y tareas
 
-  Los jugadores no leen sistemas hasta `personajes`.
-- **`rollDice`**: en una campaña con sistema, el crítico sale de su regla; sin sistema, como hoy. La ficha de dados
-  propone su tirada por defecto.
-- **La web** (`apps/web/src/systems/`):
-  - «Sistemas» va en la barra fuera de los mundos, en `/sistemas` y `/sistemas/:id`;
-  - el editor va por secciones, con «Probar» a la derecha (en el móvil, en una hoja);
-  - las fórmulas se comprueban mientras se escriben, con `@` como un combobox accesible;
-  - el JSON de «Avanzado» va en un área de texto con su validación, sin dependencias nuevas.
-- **Las herramientas MCP**, con los nombres de la spec. La documentación del formato sale de las descripciones del
-  esquema, con dos ejemplos: el 5e de prueba y Fronteras.
-- **Sala limpia**: las pruebas con «forma de dnd5e» las escribimos nosotros, con texto del SRD o propio. No entra ningún
-  archivo de Foundry ni de dnd5e.
+Detalle (acepta, comprueba, archivos) en `tasks/todo.md`.
 
-## Tareas
+### Fase 1: La mecánica
 
-| # | Tarea | Fase | Depende de | Tamaño |
-|---|---|---|---|---|
-| 1 | El paquete `@crisol/systems`: el formato, su validación y «En blanco» (riesgo) | Paquete | — | M |
-| 2 | Las fórmulas: leerlas y comprobarlas (nombres, tipos, ciclos) (riesgo) | Paquete | 1 | M |
-| 3 | Calcular un documento: derivados, desglose, modificadores y presupuesto; el ritmo (riesgo) | Paquete | 2 | M |
-| 4 | Las tiradas del sistema y sus dados; críticos y doblar en `@crisol/dice` | Paquete | 3 | M |
-| 5 | Los sistemas de la cuenta en el servidor: crear, copiar, cambiar, deshacer y borrar | Servidor | 1 | M |
-| 6 | Bajar y subir un sistema, con su contenido | Servidor | 5 | S |
-| 7 | La campaña con su sistema, y `rollDice` con sus críticos | Servidor | 4, 5 | M |
-| 8 | «Sistemas» en Mis mundos: la lista, crear, copiar, subir y su ventana | Interfaz | 6 | M |
-| 9 | La elección del sistema en la campaña | Interfaz | 7, 8 | S |
-| 10 | El editor: sus partes, General y los tipos con sus campos y fórmulas | Interfaz | 2, 8 | L |
-| 11 | El editor: «Probar» al lado, con el desglose y las tiradas de prueba | Interfaz | 4, 10 | M |
-| 12 | El editor: Tiradas, Dados, Fuentes, Ajustes y Avanzado | Interfaz | 11 | M |
-| 13 | La IA y el cierre | IA | 7, 12 | M |
+1. El documento de contenido: concepto, mecánica y página; las fuentes con su edición; su validación.
+2. Los efectos al calcular: las operaciones, su orden, sus condiciones y su desglose.
+3. Recursos, tiradas por objeto y escalado.
+4. Conceptos, ediciones y ajustes: lo que se ve en una campaña y `@ajustes`.
 
-### Puntos de control
+**Punto de control 1**: los casos difíciles escritos a mano dan lo que deben, entre ellos Defensa sin armadura del
+monje, Bola de fuego a nivel 3 y 5, Escudo como reacción, el Anillo de protección sintonizado, la Furia activa y un
+dragón. Además, el ritmo.
 
-1. **Tras las tareas 1 a 4**, en local: el paquete en verde, y apuntados el ritmo de calcular un nivel 20 y el de
-   validar 2 MB.
-2. **Tras las tareas 5 a 7**, en local: por la API, crear, copiar, deshacer, subir un archivo roto y elegir el sistema
-   en una campaña, con sus críticos al tirar.
-3. **Tras las tareas 8 y 9**, en local, con Enrique: la lista, crear, copiar, subir y elegir en una campaña.
-4. **Tras las tareas 10 a 12**, en local, con Enrique: hacer Fronteras en el editor y probarlo (criterio 2).
-5. **Final**, en staging, con Enrique: los criterios de éxito de la spec, también desde claude.ai.
+### Fase 2: Un 5e de punta a punta
+
+5. El sistema 5e: tipos, campos, fórmulas, tiradas, fuentes y ajustes.
+6. El contenido de serie en el código y las acciones para buscarlo y leerlo; copiar el 5e lleva su contenido.
+7. Los scripts para sacar el contenido, con el equipo y el Guerrero de las dos ediciones.
+8. «Probar»: añadir del contenido (escritorio y móvil).
+
+**Punto de control 2** (Enrique, en local): el guerrero de nivel 5 en «Probar» (criterio 3).
+
+9. La campaña: las ediciones, lo que está en las dos, las reglas y la multiclase.
+10. La IA: buscar y leer el contenido, y probarlo.
+
+**Punto de control 3** (Enrique, en local): las ediciones de la campaña (criterio 5).
+
+### Fase 3: El resto del contenido
+
+11. Los estados y el texto de las reglas, de las dos ediciones.
+12. Los conjuros de 2014.
+13. Los conjuros de 2024.
+14. Los objetos mágicos de las dos ediciones.
+15. Las criaturas de 2014.
+16. Las criaturas de 2024.
+17. Las especies, los trasfondos y las dotes.
+18. Las clases y subclases de 2014.
+19. Las clases y subclases de 2024.
+
+**Punto de control 4** (Enrique, en local): una muestra al azar de cada categoría contra el PDF, con su página al lado.
+
+### Fase 4: Las referencias y el cierre
+
+20. Los personajes de referencia (96 de las tablas y unos 24 hechos a mano) y lo que haya que arreglar.
+21. El cierre: revisiones, batería, una pasada de la CI, PR, merge con `[skip ci]` y staging.
+
+**Final** (Enrique, en staging): los criterios de éxito de la spec, también desde claude.ai.
 
 ## Riesgos
 
 | Riesgo | Impacto | Qué se hace |
 |---|---|---|
-| El lenguaje de fórmulas no llega al ritmo o se complica | Alto | Va primero (tareas 2 y 3), con su prueba de ritmo. Se lee una vez y el árbol se guarda; si no basta, se pasa a funciones ya preparadas (sin `eval`) |
-| El formato no recibe lo de Foundry | Medio | Un fragmento con la forma de dnd5e, escrito por nosotros, en las pruebas de la tarea 1 |
-| Validar 2 MB mientras se edita frena la web | Medio | Se valida la parte que se cambia al momento y el sistema entero un poco después; si hace falta, en un worker, como la física de los dados |
-| El editor es grande | Medio | Tres tareas (10 a 12), con los prototipos aprobados como guía |
-| Dos pestañas (o la IA) cambian el mismo sistema | Medio | Se guarda con la versión que se tenía; si cambió, conflicto y no se pisa |
-| Cambiar un sistema deja datos sin sitio | Bajo | Se conservan y se marcan; con `personajes`, su conversión |
-| Un archivo enorme o malicioso al subirlo | Bajo | Hasta 2 MB y 5.000 documentos; se valida entero con zod antes de guardar nada |
+| El texto de los PDF sale partido (dos columnas, guiones y espacios raros; el 5.1 inglés, palabra a palabra) | Alto | Normalizar antes; un analizador por categoría; la página en cada documento; contar contra lo medido |
+| El modelo de la mecánica no llega para algún rasgo | Alto | Los casos más difíciles primero (punto de control 1); lo que no llegue, como texto con su grado declarado |
+| Errores al escribir la mecánica de cientos de cosas | Alto | Las pruebas (validar, cada referencia en las dos ediciones, las criaturas contra sus valores del SRD, los personajes de referencia) y la muestra de Enrique |
+| El español y el inglés no se emparejan | Medio | Por orden y por nombre, con una prueba que exige los dos idiomas en cada documento; los que no casen, a mano |
+| El contenido pesa en la web | Medio | En una entrada aparte del paquete, solo en el servidor; a la web, por acciones y solo lo que se pide |
+| Un documento pasa de 64 KB (una clase con todo) | Bajo | Los rasgos, como documentos propios |
+| El ritmo con todo el contenido (efectos de muchos objetos) | Medio | El personaje de nivel 20 con su equipo en el ritmo de cada tarea; buscar con índice |
 
-## Preguntas abiertas
+## Lo que no está en este plan
 
-Ninguna: lo que quedaba se resolvió al aprobar la spec y el diseño.
+Lo que la spec deja fuera (el compendio, el creador, la hoja, el marketplace, Fateforge, Foundry y escalar una criatura).

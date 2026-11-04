@@ -15,6 +15,10 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   tiene una versión oficial en español con la misma licencia (`docs/specs/modulo-3.md`, punto 7). Pendiente de
   Enrique, sin bloquear: probar `sistemas` en staging (`tasks/probar.md`) y decidir si lo que la IA hace en copiloto y
   ven los jugadores pide aprobación (más abajo, «Queda para después»).
+- **`srd-5e`, en marcha** (rama `modulo-3/srd-5e`): la entrevista, el estudio
+  (`research/dndbeyond/contenido-5e-y-mecanica.md`), la spec (`docs/specs/srd-5e.md`) con el ADR-0012 y el diseño
+  (fila 3 del lienzo «Crisol: sistemas»), aprobados. El plan, en `tasks/plan.md` y `tasks/todo.md` (21 tareas, por
+  aprobar); el de `sistemas` pasó a `tasks/sistemas/`. Los cuatro PDF del SRD, en `datos-locales/srd/`.
 - **El orden que pidió Enrique** (2026-11-04): terminar el módulo 3 en este mismo chat (`srd-5e`, `personajes`, `hoja`
   y `foundry`), después pulir la interfaz de todo lo del módulo 3 y, al acabar, el módulo 4 en un chat nuevo. Un chat
   cada vez: dos a la vez se pisarían la carpeta y las bases de datos de prueba.
