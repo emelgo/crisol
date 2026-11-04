@@ -9,6 +9,20 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   de propietario.
 - **En local**, con los cambios al momento: http://localhost:5173 (lo arranco cuando haga falta).
 
+## Módulo 3: sistemas (en local, en la rama `modulo-3/sistemas`)
+
+Aún no está en staging: se prueba en el servidor de desarrollo (http://localhost:5173). Spec: `docs/specs/sistemas.md`.
+
+- [ ] **Punto de control 3**:
+  - «Sistemas» en la barra de Mis mundos (y en el menú de la llama del móvil), con «En blanco» de serie;
+  - «Sistema nuevo» desde cero, copiando «En blanco» y subiendo un archivo: uno roto dice qué falla (por sus nombres,
+    con la ruta debajo) y no sube nada;
+  - su engranaje: cambiarle el nombre, bajarlo, en qué campañas está y borrarlo (solo si ninguna lo usa);
+  - en la ventana de una campaña (y al crearla), elegir su sistema; con uno que tenga fuentes, idiomas o ajustes, sus
+    opciones; y la ficha de dados de esa campaña empieza por su tirada por defecto.
+- [ ] **Punto de control 4** (cuando llegue el editor): hacer Fronteras (2d6 + atributo) en el editor y probarlo al
+  lado.
+
 ## Módulo 3: dados (en staging)
 
 Ya en staging (PR #95): todo se puede probar allí. Spec: `docs/specs/dados.md`.
