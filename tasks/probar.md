@@ -3,15 +3,15 @@
 Lista viva: todo lo que haya que probar se apunta aquí y se marca cuando lo pruebe. Lo que diga va a «Lo que dijo» (al
 final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interfaz.
 
-- **Staging**: https://neo.crisol.144-91-122-245.sslip.io, con el módulo 2, los arreglos del 2026-11-04 y los dados
-  (PR #93, #94 y #95).
+- **Staging**: https://neo.crisol.144-91-122-245.sslip.io, con el módulo 2, los arreglos del 2026-11-04, los dados y
+  los sistemas (PR #93, #94, #95 y #96).
 - **La IA**: el conector «Neo Crisol» de claude.ai (`https://neo.crisol.144-91-122-245.sslip.io/mcp`), con la cuenta
   de propietario.
 - **En local**, con los cambios al momento: http://localhost:5173 (lo arranco cuando haga falta).
 
-## Módulo 3: sistemas (en local, en la rama `modulo-3/sistemas`)
+## Módulo 3: sistemas (en staging)
 
-Aún no está en staging: se prueba en el servidor de desarrollo (http://localhost:5173). Spec: `docs/specs/sistemas.md`.
+Ya en staging (PR #96): todo se puede probar allí. Spec: `docs/specs/sistemas.md`.
 
 - [ ] **Punto de control 3**:
   - «Sistemas» en la barra de Mis mundos (y en el menú de la llama del móvil), con «En blanco» de serie;
@@ -33,7 +33,7 @@ Aún no está en staging: se prueba en el servidor de desarrollo (http://localho
   - en el móvil: la parte, en el selector; «Probar», en una hoja; en Avanzado, los problemas debajo.
   - con cambios sin guardar, salir pregunta; y si otro lo cambia (otra pestaña, la IA), tus cambios siguen y avisa;
   - una clave que ya existe no se aplica: lo dice debajo.
-- [ ] **Final, desde claude.ai** (cuando esté en staging, con el conector «Neo Crisol»): pedirle a la IA un sistema
+- [ ] **Final, desde claude.ai** (con el conector «Neo Crisol»): pedirle a la IA un sistema
   de 2d6 + atributo. Debe leer el formato (`formato_sistemas`), crearlo, validarlo y probar una fórmula y una tirada;
   sale en «Sistemas». Después, que le cambie una tirada (por rutas) y que lo elija en una campaña. En modo asistente,
   crear y cambiar esperan tu aprobación, con el nombre del sistema en la cola; borrarlo, también.

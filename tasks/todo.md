@@ -207,9 +207,9 @@ el 2026-11-12).
 
 ## Fase 4: La IA y el cierre
 
-- [ ] **13. La IA y el cierre** — las herramientas, hechas (con `formato_sistemas`, una herramienta más que la spec:
-  en claude.ai la IA no lee los recursos por su cuenta, así que el formato también va por herramienta). Faltan las
-  revisiones, la batería entera, la CI, el PR y staging.
+- [x] **13. La IA y el cierre** — hecha (con `formato_sistemas`, una herramienta más que la spec: en claude.ai la IA
+  no lee los recursos por su cuenta, así que el formato también va por herramienta). Las revisiones de código,
+  seguridad e interfaz, arregladas; la batería y la CI en verde; en `main` (PR #96) y en staging.
   - Acepta:
     - las herramientas:
       - `listar_sistemas`, `ver_sistema` (entero o por partes), `crear_sistema` (desde cero, del catálogo o de un

@@ -62,7 +62,12 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   - la versión de la que sale una copia del catálogo es siempre 1 (hará falta con el 5e);
   - el editor visual de los subcampos de conjuntos, grupos y listas de filas, confirmar al quitar un tipo o una
     tirada, la barra de «Guardar» pegada a la vista, y la espera y el error al elegir el sistema de una campaña.
-- **Lo siguiente**: la batería entera, una pasada de la CI, el PR, el merge con `[skip ci]` y staging.
+- **`sistemas` está en `main` y en staging** (PR #96, migración 0039; 2026-11-04). Dos pasadas de la CI: la
+  primera falló por dos pruebas de axe que medían el contraste a medio fundido (en la CI, más lenta); ahora esperan a
+  que acaben las animaciones (`settled` en `e2e/tests/ayudas.ts`). Fusionada con `[skip ci]`.
+- **Lo siguiente**: que Enrique pruebe en staging (`tasks/probar.md`: puntos de control 3 y 4, y el final desde
+  claude.ai) y decida lo de la IA en copiloto (arriba, «Queda para después»). Después, la siguiente capacidad del
+  módulo 3 (`docs/specs/modulo-3.md`).
 - **Ojo con el lint**: `biome check --write` arregla el formato pero los errores de lint se quedan; mirar siempre
   `pnpm lint` entero antes de guardar.
 - **Prueba con un sistema de Foundry de verdad** (Enrique, 2026-11-04: «mete también […] daggerheart/2.12.5/system.json»):
