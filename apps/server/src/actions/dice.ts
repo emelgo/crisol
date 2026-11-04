@@ -4,11 +4,12 @@
  */
 import { type DiceRoll, listRolls, rollDice, tryDice, visibilitiesFor } from '@crisol/contracts'
 import { diceRepo } from '@crisol/db'
-import { cryptoRoller, DiceSyntaxError, rollDice as roll } from '@crisol/dice'
+import { type CriticalRule, cryptoRoller, DiceSyntaxError, rollDice as roll } from '@crisol/dice'
 import { can } from '@crisol/domain'
 import { authorizedCampaign } from './access.ts'
 import { type ActionContext, InvalidRequestError, TooManyRequestsError } from './context.ts'
 import { implement } from './registry.ts'
+import { criticalRuleOf } from './systems.ts'
 
 /** Como mucho, tantas por minuto y persona: se cuentan en la tabla, así vale con varias instancias */
 export const ROLLS_PER_MINUTE = 60
@@ -32,9 +33,9 @@ const diceOf = (result: ReturnType<typeof roll>) =>
   result.terms.flatMap((term) => term.dice.map((d) => ({ sides: term.sides, value: d.value, kept: d.kept })))
 
 /** Tirar, o decir por qué no se entiende */
-function rolled(formula: string) {
+function rolled(formula: string, critical: CriticalRule = 'd20') {
   try {
-    return roll(formula, cryptoRoller)
+    return roll(formula, cryptoRoller, { critical })
   } catch (error) {
     if (error instanceof DiceSyntaxError) throw new InvalidRequestError('BAD_FORMULA', error.message)
     throw error
@@ -70,7 +71,8 @@ export const diceActions = [
     if (!master && !visibilitiesFor('player').includes(input.visibility)) {
       throw new InvalidRequestError('VISIBILITY_NOT_ALLOWED')
     }
-    const result = rolled(input.formula)
+    // Los críticos, los del juego de la campaña (sin sistema, los del d20)
+    const result = rolled(input.formula, await criticalRuleOf(ctx, campaign.system))
     const row = await diceRepo.insertRoll(ctx.db, ROLLS_PER_MINUTE, {
       campaignId: campaign.id,
       worldId: campaign.worldId,

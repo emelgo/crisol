@@ -16,6 +16,14 @@ export const campaigns = pgTable(
     description: text().notNull().default(''),
     color: text(),
     cover: jsonb().$type<{ fileId: string; x: number; y: number; zoom?: number } | null>(),
+    /** Su sistema de reglas (ADR-0011): el id de uno de serie o el uuid de uno de la cuenta; sin él, null */
+    system: text(),
+    /** Lo que elige de su sistema: sus fuentes, el idioma del contenido y sus ajustes */
+    systemChoices: jsonb().$type<{
+      sources: string[]
+      language: 'es' | 'en'
+      settings: Record<string, unknown>
+    } | null>(),
     /** En la papelera desde entonces: no sale en ninguna vista y a los 30 días se purga */
     deletedAt: timestamp({ withTimezone: true })
   },

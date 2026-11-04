@@ -140,6 +140,8 @@ describe('repositorios', () => {
           description: '',
           color: null,
           cover: null,
+          system: null,
+          systemChoices: null,
           version: 1,
           role: 'master'
         }

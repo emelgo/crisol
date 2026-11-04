@@ -15,14 +15,17 @@ import {
   type SystemSummary,
   updateSystem
 } from '@crisol/contracts'
-import { systemsRepo } from '@crisol/db'
+import { campaignsRepo, systemsRepo } from '@crisol/db'
+import type { CriticalRule } from '@crisol/dice'
 import { authorize, NotFoundError } from '@crisol/domain'
 import {
   CATALOG,
   catalogSystem,
   fileName,
+  normalizeChoices,
   type Problem,
   type System,
+  systemOverview,
   textOf,
   toFile,
   validateFile,
@@ -43,21 +46,8 @@ function summarize(
   document: System,
   extra: { id: string; builtIn: boolean; version: number; basedOn: SystemSummary['basedOn']; content: number }
 ): SystemSummary {
-  return {
-    ...extra,
-    name: textOf(document.name),
-    summary: textOf(document.summary),
-    release: document.version,
-    license: document.license ? `${textOf(document.license.name)} · ${document.license.license}` : null,
-    types: Object.entries(document.types).map(([key, type]) => ({
-      key,
-      label: textOf(type.label) || key,
-      document: type.document,
-      fields: Object.keys(type.fields).length
-    })),
-    rolls: Object.entries(document.rolls ?? {}).map(([key, roll]) => ({ key, label: textOf(roll.label) || key })),
-    campaigns: []
-  }
+  const { defaultRoll: _, critical: __, ...overview } = systemOverview(document)
+  return { ...extra, ...overview, campaigns: [] }
 }
 
 const builtIn = (document: System): SystemFull => ({
@@ -99,6 +89,17 @@ async function findReadable(ctx: ActionContext, organizationId: string, systemId
   return { document: row.document as unknown as System, row }
 }
 
+/** Las campañas que usan cada sistema */
+async function usedBy(ctx: ActionContext, ids: readonly string[]) {
+  const using = new Map<string, { id: string; name: string }[]>()
+  for (const c of await campaignsRepo.campaignsUsingSystems(ctx.db, ids)) {
+    const list = using.get(c.system as string) ?? []
+    list.push({ id: c.id, name: c.name })
+    using.set(c.system as string, list)
+  }
+  return using
+}
+
 /** El nombre de aquel del que salió uno (si aún existe) */
 async function namer(ctx: ActionContext, rows: readonly systemsRepo.SystemRow[]) {
   const names = new Map<string, string>(CATALOG.map((s) => [s.id, textOf(s.name)]))
@@ -109,6 +110,72 @@ async function namer(ctx: ActionContext, rows: readonly systemsRepo.SystemRow[])
     if (found) names.set(id, textOf((found.document as unknown as System).name))
   }
   return (id: string) => names.get(id) ?? id
+}
+
+/** Lo que una campaña dice de su sistema: su nombre, su tirada por defecto y su regla de críticos */
+export interface CampaignSystem {
+  id: string
+  name: string
+  defaultRoll: string | null
+  critical: CriticalRule
+}
+
+const campaignSystem = (id: string, document: System): CampaignSystem => ({
+  id,
+  name: textOf(document.name),
+  defaultRoll: document.dice?.default ?? null,
+  critical: document.dice?.critical ?? 'd20'
+})
+
+/** Los sistemas de unas campañas, por su id (los de serie, del código; los propios, de una consulta) */
+export async function campaignSystems(ctx: ActionContext, ids: readonly (string | null)[]) {
+  const found = new Map<string, CampaignSystem>()
+  const own: string[] = []
+  for (const id of new Set(ids)) {
+    if (!id) continue
+    const catalog = catalogSystem(id)
+    if (catalog) found.set(id, campaignSystem(id, catalog))
+    else if (isUuid(id)) own.push(id)
+  }
+  for (const row of await systemsRepo.findSystems(ctx.db, own))
+    if (!row.deletedAt) found.set(row.id, campaignSystem(row.id, row.document as unknown as System))
+  return found
+}
+
+/** La regla de críticos con la que se tira en una campaña (sin sistema, la del d20, como siempre) */
+export async function criticalRuleOf(ctx: ActionContext, systemId: string | null): Promise<CriticalRule> {
+  if (!systemId) return 'd20'
+  return (await campaignSystems(ctx, [systemId])).get(systemId)?.critical ?? 'd20'
+}
+
+/**
+ * El sistema que elige una campaña y lo que elige de él, comprobados: el sistema, de serie o de la cuenta del mundo; lo
+ * elegido, completo (lo que falta, con su valor inicial). Sin cambio, null
+ */
+export async function chosenSystem(
+  ctx: ActionContext,
+  organizationId: string,
+  given: { system?: string | null | undefined; systemChoices?: Record<string, unknown> | undefined },
+  current: { system: string | null; systemChoices: unknown } = { system: null, systemChoices: null }
+) {
+  if (given.system === undefined && given.systemChoices === undefined) return null
+  const target = given.system !== undefined ? given.system : current.system
+  if (target === null) {
+    if (given.systemChoices) throw new InvalidRequestError('NO_SYSTEM', 'la campaña no tiene sistema del que elegir')
+    return { system: null, systemChoices: null }
+  }
+  let document: System
+  try {
+    document = (await findReadable(ctx, organizationId, target)).document
+  } catch (error) {
+    if (error instanceof NotFoundError) throw new InvalidRequestError('BAD_SYSTEM', `no existe el sistema «${target}»`)
+    throw error
+  }
+  // Al cambiar de sistema se empieza de cero; si no, sobre lo que ya tenía
+  const base = target === current.system ? ((current.systemChoices ?? {}) as Record<string, unknown>) : {}
+  const { choices, problems } = normalizeChoices(document, { ...base, ...(given.systemChoices ?? {}) })
+  if (problems.length > 0) throw new InvalidRequestError('BAD_SYSTEM_CHOICES', problems.join('; '))
+  return { system: target, systemChoices: choices, name: textOf(document.name) }
 }
 
 /** Con errores no se guarda: la IA lee cada problema (dónde y por qué) en el detalle */
@@ -142,9 +209,13 @@ export const systemActions = [
       rows.map((r) => r.id)
     )
     const name = await namer(ctx, rows)
+    const using = await usedBy(
+      ctx,
+      rows.map((r) => r.id)
+    )
     const mine = rows.map((row) => {
       const { document: _, ...summary } = own(row, counts.get(row.id) ?? 0, name)
-      return summary
+      return { ...summary, campaigns: using.get(row.id) ?? [] }
     })
     const serie = CATALOG.map((s) => {
       const { document: _, ...summary } = builtIn(s)
@@ -158,7 +229,8 @@ export const systemActions = [
     const { document, row } = await findReadable(ctx, target, systemId)
     if (!row) return builtIn(document)
     const counts = await systemsRepo.contentCounts(ctx.db, [row.id])
-    return own(row, counts.get(row.id) ?? 0, await namer(ctx, [row]))
+    const using = await usedBy(ctx, [row.id])
+    return { ...own(row, counts.get(row.id) ?? 0, await namer(ctx, [row])), campaigns: using.get(row.id) ?? [] }
   }),
 
   implement(createSystem, async (ctx, { organizationId, name, from }) => {
@@ -220,6 +292,12 @@ export const systemActions = [
 
   implement(deleteSystem, async (ctx, { systemId }) => {
     const row = await ownWritable(ctx, systemId)
+    const using = (await usedBy(ctx, [row.id])).get(row.id) ?? []
+    if (using.length > 0)
+      throw new InvalidRequestError(
+        'SYSTEM_IN_USE',
+        `lo usa${using.length > 1 ? 'n' : ''} ${using.map((c) => `«${c.name}»`).join(', ')}`
+      )
     const name = textOf((row.document as unknown as System).name)
     await systemsRepo.deleteSystem(
       ctx.db,

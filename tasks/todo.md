@@ -115,7 +115,7 @@ el 2026-11-12).
   - Archivos: `apps/server/src/actions/systems.ts`, `packages/db/src/repos/systems.ts`,
     `packages/contracts/src/systems.ts` (+ pruebas).
 
-- [ ] **7. La campaña con su sistema**
+- [x] **7. La campaña con su sistema** — hecha. La campaña dice su sistema con su tirada por defecto y su regla de críticos (opcional en el contrato: el servidor siempre lo manda); lo que elige se completa con los valores iniciales; la API falsa de la web ya tiene los sistemas.
   - Acepta:
     - `createCampaign` y `updateCampaign` admiten el sistema (del catálogo o de la cuenta del mundo, o ninguno) y sus
       elecciones (fuentes, idioma y ajustes), validadas contra lo que declara el sistema;
@@ -131,7 +131,7 @@ el 2026-11-12).
 
 ### Punto de control 2
 
-- [ ] En local, por la API: crear, copiar, deshacer, subir un archivo roto y elegir el sistema en una campaña.
+- [x] En local, por la API: crear, copiar, deshacer, subir un archivo roto y elegir el sistema en una campaña (las pruebas de integración de `systems.integration.test.ts`, 16).
 
 ## Fase 3: La interfaz
 

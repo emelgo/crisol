@@ -43,6 +43,7 @@ function changedBy(message: RealtimeMessage): QueryKey[] {
       if (message.what === 'commonFiles') return [['files'], ['commonFiles'], ['tags']]
       if (message.what === 'tags') return [['tags']]
       if (message.what === 'templates') return [['templates']]
+      if (message.what === 'systems') return [['systems']]
       // El texto de una página: lo que la enseña en otra y los enlaces (sus trozos)
       if (message.what === 'pageContent') {
         return [

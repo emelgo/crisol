@@ -1,4 +1,4 @@
-import { and, asc, eq, isNotNull, isNull, type SQL, sql } from 'drizzle-orm'
+import { and, asc, eq, inArray, isNotNull, isNull, type SQL, sql } from 'drizzle-orm'
 import type { Database } from '../client.ts'
 import { type OperationContext, operation } from '../operation.ts'
 import { campaignMembers, campaigns } from '../schema/campaigns.ts'
@@ -6,7 +6,13 @@ import { worlds } from '../schema/worlds.ts'
 import { type PreparedSecret, writeInvitation } from './invitations.ts'
 
 /** Lo que se ve de una campaña en su tarjeta, además del nombre */
-const appearance = { description: campaigns.description, color: campaigns.color, cover: campaigns.cover }
+const appearance = {
+  description: campaigns.description,
+  color: campaigns.color,
+  cover: campaigns.cover,
+  system: campaigns.system,
+  systemChoices: campaigns.systemChoices
+}
 
 /**
  * Las campañas de un mundo con el rol de la cuenta en cada una, en el orden en que se crearon (una nueva, al final).
@@ -53,10 +59,22 @@ export async function findCampaign(db: Database, campaignId: string) {
 export function createCampaignWithMaster(
   db: Database,
   context: OperationContext,
-  input: { worldId: string; name: string; masterId: string; invitation: PreparedSecret }
+  input: {
+    worldId: string
+    name: string
+    masterId: string
+    invitation: PreparedSecret
+    system?: string | null
+    systemChoices?: CampaignAppearance['systemChoices']
+  }
 ) {
   return operation(db, context, async (w) => {
-    const campaign = await w.insert(campaigns, { worldId: input.worldId, name: input.name })
+    const campaign = await w.insert(campaigns, {
+      worldId: input.worldId,
+      name: input.name,
+      system: input.system ?? null,
+      systemChoices: input.systemChoices ?? null
+    })
     await w.insert(campaignMembers, { campaignId: campaign.id, userId: input.masterId, role: 'master' })
     await writeInvitation(w, campaign.id, input.invitation)
     return campaign
@@ -73,8 +91,22 @@ export type CampaignAppearance = Partial<{
   description: string
   color: string | null
   cover: { fileId: string; x: number; y: number; zoom?: number } | null
+  /** Su sistema de reglas y lo que elige de él */
+  system: string | null
+  systemChoices: { sources: string[]; language: 'es' | 'en'; settings: Record<string, unknown> } | null
 }>
 
 export function updateCampaign(db: Database, context: OperationContext, campaignId: string, patch: CampaignAppearance) {
   return operation(db, context, (w) => w.update(campaigns, campaignId, patch))
+}
+
+/** Las campañas (no borradas, de mundos no borrados) que usan alguno de estos sistemas */
+export function campaignsUsingSystems(db: Database, systemIds: readonly string[]) {
+  if (systemIds.length === 0) return Promise.resolve([])
+  return db
+    .select({ id: campaigns.id, name: campaigns.name, system: campaigns.system })
+    .from(campaigns)
+    .innerJoin(worlds, eq(worlds.id, campaigns.worldId))
+    .where(and(inArray(campaigns.system, [...systemIds]), isNull(campaigns.deletedAt), isNull(worlds.deletedAt)))
+    .orderBy(asc(campaigns.createdAt), asc(campaigns.id))
 }

@@ -533,6 +533,9 @@ importers:
       '@crisol/editor':
         specifier: workspace:*
         version: link:../../packages/editor
+      '@crisol/systems':
+        specifier: workspace:*
+        version: link:../../packages/systems
       '@floating-ui/dom':
         specifier: 'catalog:'
         version: 1.8.0

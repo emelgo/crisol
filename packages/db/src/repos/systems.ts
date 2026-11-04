@@ -35,6 +35,16 @@ export async function findSystem(db: Database, id: string) {
   return found ? read(found) : null
 }
 
+/** Varios por sus ids (los que existan) */
+export async function findSystems(db: Database, ids: readonly string[]) {
+  if (ids.length === 0) return []
+  const rows = await db
+    .select()
+    .from(systems)
+    .where(inArray(systems.id, [...ids]))
+  return rows.map(read)
+}
+
 export async function countSystems(db: Database, organizationId: string) {
   const [row] = await db
     .select({ n: count() })

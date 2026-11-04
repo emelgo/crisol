@@ -260,4 +260,99 @@ describe('los sistemas de reglas', () => {
       )
     })
   })
+
+  describe('la campaña con su sistema', () => {
+    let worldId: string
+    beforeEach(async () => {
+      worldId = (await ok200('createWorld', { name: 'Eana' })).id
+    })
+    const fronterasSystem = async () => {
+      const created = await ok200('createSystem', { name: 'Fronteras' })
+      return (await ok200('updateSystem', { systemId: created.id, version: 1, document: fronteras })).system
+    }
+
+    it('se elige al crearla, con lo que se elige de él completo; sin sistema, null', async () => {
+      const blank = await ok200('createCampaign', { worldId, name: 'La Marca', system: 'blank' })
+      expect(blank.system).toEqual({ id: 'blank', name: 'En blanco', defaultRoll: '1d20', critical: 'd20' })
+      expect(blank.systemChoices).toEqual({ sources: [], language: 'es', settings: {} })
+      const none = await ok200('createCampaign', { worldId, name: 'Sin reglas' })
+      expect(none).toMatchObject({ system: null, systemChoices: null })
+      const listed = (await ok200('listCampaigns', { worldId })).campaigns
+      expect(listed.map((c: { system: { name: string } | null }) => c.system?.name ?? null)).toEqual([
+        'En blanco',
+        null
+      ])
+      expect((await ok200('getCampaign', { campaignId: blank.id })).campaign.system.name).toBe('En blanco')
+      const worlds = (await ok200('listWorldsWithCampaigns', {})).worlds
+      expect(worlds[0].campaigns[0].system.id).toBe('blank')
+    })
+
+    it('se cambia en sus ajustes, con sus elecciones; lo que no vale, no', async () => {
+      const system = await fronterasSystem()
+      const campaign = await ok200('createCampaign', { worldId, name: 'Los páramos' })
+      const chosen = await ok200('updateCampaign', { campaignId: campaign.id, system: system.id })
+      expect(chosen.system).toEqual({ id: system.id, name: 'Fronteras', defaultRoll: '2d6', critical: 'none' })
+      expect(chosen.systemChoices).toEqual({ sources: [], language: 'es', settings: { avance: 8 } })
+      const changed = await ok200('updateCampaign', {
+        campaignId: campaign.id,
+        systemChoices: { settings: { avance: 10 } }
+      })
+      expect(changed.systemChoices.settings).toEqual({ avance: 10 })
+      expect(
+        await code('updateCampaign', { campaignId: campaign.id, systemChoices: { settings: { avance: 'diez' } } })
+      ).toEqual({
+        status: 400,
+        code: 'BAD_SYSTEM_CHOICES'
+      })
+      expect(await code('updateCampaign', { campaignId: campaign.id, system: 'nada' })).toEqual({
+        status: 400,
+        code: 'BAD_SYSTEM'
+      })
+      expect(await code('updateCampaign', { campaignId: campaign.id, system: crypto.randomUUID() })).toEqual({
+        status: 400,
+        code: 'BAD_SYSTEM'
+      })
+      const removed = await ok200('updateCampaign', { campaignId: campaign.id, system: null })
+      expect(removed).toMatchObject({ system: null, systemChoices: null })
+      expect(await code('updateCampaign', { campaignId: campaign.id, systemChoices: { language: 'es' } })).toEqual({
+        status: 400,
+        code: 'NO_SYSTEM'
+      })
+    })
+
+    it('el sistema de otra cuenta no vale', async () => {
+      const other = await signUpTestUser(auth, { name: 'Otra', email: 'otra@crisol.test' })
+      await organization(other.userId, 'Otra cuenta')
+      const theirs = await ok200('createSystem', { name: 'Ajeno' }, other.cookie)
+      const campaign = await ok200('createCampaign', { worldId, name: 'La Marca' })
+      expect(await code('updateCampaign', { campaignId: campaign.id, system: theirs.id })).toEqual({
+        status: 400,
+        code: 'BAD_SYSTEM'
+      })
+    })
+
+    it('al tirar, los críticos son los del sistema de la campaña', async () => {
+      const system = await fronterasSystem()
+      const d20 = await ok200('createCampaign', { worldId, name: 'Con d20', system: 'blank' })
+      const none = await ok200('createCampaign', { worldId, name: 'Sin críticos', system: system.id })
+      // Con 100 d20, un 20 o un 1 sale casi seguro: con la regla del d20 hay crítico o pifia; sin críticos, nunca
+      const withRule = await ok200('rollDice', { campaignId: d20.id, formula: '100d20' })
+      expect(withRule.roll.critical).not.toBeNull()
+      const without = await ok200('rollDice', { campaignId: none.id, formula: '100d20' })
+      expect(without.roll.critical).toBeNull()
+    })
+
+    it('un sistema que usa una campaña no se borra; la lista dice cuáles lo usan', async () => {
+      const system = await fronterasSystem()
+      const campaign = await ok200('createCampaign', { worldId, name: 'Los páramos', system: system.id })
+      expect(await code('deleteSystem', { systemId: system.id })).toEqual({ status: 400, code: 'SYSTEM_IN_USE' })
+      const listed = (await ok200('listSystems', {})).systems.find((s: { id: string }) => s.id === system.id)
+      expect(listed.campaigns).toEqual([{ id: campaign.id, name: 'Los páramos' }])
+      expect((await ok200('getSystem', { systemId: system.id })).campaigns).toEqual([
+        { id: campaign.id, name: 'Los páramos' }
+      ])
+      await ok200('updateCampaign', { campaignId: campaign.id, system: null })
+      expect((await ok200('deleteSystem', { systemId: system.id })).name).toBe('Fronteras')
+    })
+  })
 })
