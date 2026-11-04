@@ -4,6 +4,7 @@
  */
 import type { JSONContent } from '@tiptap/core'
 import { fillJsonIds } from '../ids.ts'
+import type { ReadPage } from './page.ts'
 
 export type BodyEdit =
   | { mode: 'append' }
@@ -97,5 +98,21 @@ export function editBody(
       content: content.length > 0 ? content : [fillJsonIds({ type: 'paragraph' }, seen)]
     },
     changed: added.map((block) => String(block.attrs?.id ?? '')).filter(Boolean)
+  }
+}
+
+/**
+ * Al cambiar un bloque por uno solo del mismo tipo, lo nuevo se queda con su id: los enlaces siguen valiendo y un secreto
+ * sigue siendo el mismo documento aunque no traiga su ^s-id
+ */
+export function keepBlockId(read: ReadPage, blockId: string, type: string | undefined): ReadPage {
+  const blocks = read.body.content ?? []
+  const only = blocks[0]
+  const from = only?.attrs?.id
+  if (blocks.length !== 1 || !only || only.type !== type || from === blockId) return read
+  return {
+    ...read,
+    body: { ...read.body, content: [{ ...only, attrs: { ...only.attrs, id: blockId } }] },
+    separates: read.separates.map((separate) => (separate.id === from ? { ...separate, id: blockId } : separate))
   }
 }

@@ -218,14 +218,15 @@ export async function matchingSections(db: Database, pageIds: readonly string[],
   const query = tsQuery(terms)
   const rows = await db.execute<{
     page_id: string
+    document_id: string
     kind: string
     heading: string | null
     heading_id: string | null
     excerpt: string
   }>(sql`
     with q as (select ${query} as query)
-    select page_id, kind, heading, heading_id, excerpt from (
-      select s.page_id, s.kind, s.heading, s.heading_id, s.position,
+    select page_id, document_id, kind, heading, heading_id, excerpt from (
+      select s.page_id, s.document_id, s.kind, s.heading, s.heading_id, s.position,
         ts_headline('es_unaccent'::regconfig, s.body, q.query,
           'StartSel=**, StopSel=**, MaxWords=30, MinWords=12, MaxFragments=1, FragmentDelimiter=" … "') as excerpt,
         row_number() over (partition by s.page_id order by ts_rank(s.tsv, q.query) desc, s.position) as n
@@ -237,6 +238,7 @@ export async function matchingSections(db: Database, pageIds: readonly string[],
     ) ranked where n <= 3 order by page_id, n`)
   return [...rows].map((row) => ({
     pageId: row.page_id,
+    documentId: row.document_id,
     kind: row.kind as 'body' | 'secret' | 'note' | 'tab',
     heading: row.heading,
     headingId: row.heading_id,

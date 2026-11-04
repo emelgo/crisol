@@ -122,5 +122,14 @@ export const hiddenNoteTokenizer: MarkdownTokenizer = {
 
 export function renderHiddenNote(node: JSONContent, h: MarkdownRendererHelpers) {
   const inner = (node.content ?? []).map((child, index) => h.renderChild?.(child, index) ?? h.renderChildren([child]))
+  // Un solo párrafo de una línea, como se suele escribir: `%%texto%%`
+  const [only] = inner
+  const oneLine =
+    inner.length === 1 &&
+    node.content?.[0]?.type === 'paragraph' &&
+    only &&
+    !only.includes('\n') &&
+    !only.includes('%%')
+  if (oneLine && only.trim() !== '') return `%%${only.trim()}%%`
   return ['%%', ...(inner.join('') === '' ? [] : [inner.join('\n\n')]), '%%'].join('\n')
 }

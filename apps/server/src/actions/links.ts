@@ -10,6 +10,7 @@ import { findName, fragmentAround, plainText, textBlocks } from '@crisol/editor'
 import type { JSONContent } from '@tiptap/core'
 import { documentJson, readDocument, writeDocument } from '../wiki/content.ts'
 import { worldNames } from '../wiki/links.ts'
+import { propertiesOf } from '../wiki/properties.ts'
 import { authorizedPage, authorizedWiki } from './access.ts'
 import type { ActionContext } from './context.ts'
 import { implement } from './registry.ts'
@@ -134,7 +135,18 @@ export const linkActions = [
         inSecret: doc.kind === 'secret' || doc.kind === 'note'
       })
     }
-    return { incoming, outgoing, mentions }
+    // Las que la apuntan desde un campo de enlace, con el nombre de esos campos
+    const fields = (await pagesRepo.pagesPointingTo(ctx.db, { worldId: wiki.worldId, pageId: page.id })).map(
+      (other) => ({
+        pageId: other.id,
+        title: other.title,
+        path: [...pathOf(other.id)],
+        fields: propertiesOf(other.properties).flatMap((property) =>
+          property.type === 'pages' && property.value.includes(page.id) ? [property.name] : []
+        )
+      })
+    )
+    return { incoming, outgoing, mentions, fields }
   }),
 
   implement(listUnresolvedLinks, async (ctx, { worldId }) => {

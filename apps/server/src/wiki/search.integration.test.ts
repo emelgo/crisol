@@ -100,7 +100,12 @@ describe('buscar en la wiki, en español', () => {
           secret: false,
           excerpt: expect.stringContaining('**dragones**')
         }),
-        expect.objectContaining({ secret: true, excerpt: expect.stringContaining('**dragón**') })
+        // Lo de un secreto, con el título de la sección del cuerpo donde está
+        expect.objectContaining({
+          heading: 'Guaridas',
+          secret: true,
+          excerpt: expect.stringContaining('**dragón**')
+        })
       ])
     )
     // El título cuenta más que el texto

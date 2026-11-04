@@ -40,6 +40,12 @@ describe('secretos de enlaces', () => {
     expect(() => openSecret(tampered, key)).toThrow()
   })
 
+  it('una etiqueta recortada no se descifra', () => {
+    const [version, iv, tag = '', encrypted] = sealSecret('hola', key).split('.')
+    const short = Buffer.from(tag, 'base64url').subarray(0, 12).toString('base64url')
+    expect(() => openSecret([version, iv, short, encrypted].join('.'), key)).toThrow()
+  })
+
   it('un formato desconocido no se descifra', () => {
     expect(() => openSecret('v9.loquesea', key)).toThrow('Formato')
   })

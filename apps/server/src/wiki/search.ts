@@ -3,7 +3,7 @@
  * y la consulta. Indexar va con cada guardado; lo que no se indexó (lo de antes) se indexa al buscar en su mundo
  */
 import { documentsRepo, pagesRepo, searchRepo } from '@crisol/db'
-import { plainText, sectionsOf } from '@crisol/editor'
+import { plainText, sectionsOf, separateHeadings } from '@crisol/editor'
 import type { JSONContent } from '@tiptap/core'
 import type { ActionEnv } from '../actions/context.ts'
 import { documentJson } from './content.ts'
@@ -56,6 +56,25 @@ export interface SearchInput {
   page: number
 }
 
+/**
+ * Lo de un secreto o una nota oculta sin título propio lleva el de la sección del cuerpo donde está su bloque. Se mira
+ * al buscar, en el cuerpo de ahora: así sigue bien aunque se mueva el secreto o se cambie el título
+ */
+async function withBodyHeadings<
+  T extends { pageId: string; documentId: string; kind: string; heading: string | null; headingId: string | null }
+>(env: ActionEnv, sections: T[]): Promise<T[]> {
+  const loose = (section: T) => (section.kind === 'secret' || section.kind === 'note') && section.heading === null
+  const pageIds = [...new Set(sections.filter(loose).map((section) => section.pageId))]
+  const headings = new Map<string, { heading: string | null; headingId: string | null }>()
+  for (const pageId of pageIds) {
+    const body = await documentsRepo.findBody(env.db, pageId)
+    if (!body) continue
+    for (const [documentId, place] of separateHeadings(documentJson(env, { kind: 'body', pageId }, body.state)))
+      headings.set(documentId, place)
+  }
+  return sections.map((section) => (loose(section) ? { ...section, ...headings.get(section.documentId) } : section))
+}
+
 /** Las páginas que coinciden, con su ruta y las secciones donde sale lo buscado */
 export async function searchWorld(env: ActionEnv, input: SearchInput) {
   await indexMissing(env, input.worldId)
@@ -74,10 +93,13 @@ export async function searchWorld(env: ActionEnv, input: SearchInput) {
     input.query === undefined && input.template
       ? await searchRepo.templatePages(env.db, options)
       : await searchRepo.searchPages(env.db, { ...options, terms })
-  const sections = await searchRepo.matchingSections(
-    env.db,
-    pages.map((page) => page.id),
-    terms
+  const sections = await withBodyHeadings(
+    env,
+    await searchRepo.matchingSections(
+      env.db,
+      pages.map((page) => page.id),
+      terms
+    )
   )
   const paths = await pagesRepo.pagePaths(
     env.db,

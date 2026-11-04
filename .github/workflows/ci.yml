@@ -65,7 +65,10 @@ jobs:
         run: pnpm sala-limpia
       - name: Cobertura de lo cambiado (≥ 80 %)
         if: github.event_name == 'pull_request'
-        run: node scripts/avisa-hasta.ts "$AVISA_HASTA" node scripts/cobertura-diff.ts "origin/${{ github.base_ref }}"
+        # La rama base, por una variable: nada de GitHub va directo a la orden
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: node scripts/avisa-hasta.ts "$AVISA_HASTA" node scripts/cobertura-diff.ts "origin/$BASE_REF"
       - name: Límites entre módulos
         run: node scripts/avisa-hasta.ts "$AVISA_HASTA" pnpm limites
 

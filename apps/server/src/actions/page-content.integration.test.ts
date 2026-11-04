@@ -29,9 +29,7 @@ const PUERTO = [
   '> [!secreto]',
   '> La Hermandad quemó el faro.',
   '',
-  '%%',
-  'Preguntar por Maela.',
-  '%%',
+  '%%Preguntar por Maela.%%',
   '',
   '## Barrios',
   '',
@@ -255,6 +253,52 @@ describe('Claude lee y escribe páginas en Markdown', () => {
     expect((await ok200('readPage', { pageId })).markdown).toBe(
       '> [!secreto]\n> Segunda versión.\n\n> [!secreto]\n> Otro distinto.\n'
     )
+  })
+
+  it('escribir en el texto o en un secreto pone al día la fecha de la página, sin subir su versión', async () => {
+    const { pages } = await ok200('createPages', {
+      worldId,
+      parentId: null,
+      pages: [{ key: 'p', title: 'Fecha al día', markdown: 'Uno.\n\n> [!secreto]\n> Dentro.' }]
+    })
+    const pageId = pages[0].id
+    const row = async () => {
+      const [found] = await conn.db.select().from(schema.pages).where(eq(schema.pages.id, pageId))
+      return { updatedAt: found?.updatedAt.getTime() ?? 0, version: found?.version }
+    }
+    const first = await row()
+    await ok200('editPage', { pageId, body: { mode: 'append', markdown: 'Dos.' } })
+    const second = await row()
+    expect(second.updatedAt).toBeGreaterThan(first.updatedAt)
+    expect(second.version).toBe(first.version)
+    const secretId = /\^s-([a-z0-9]{8})/.exec((await ok200('readPage', { pageId, ids: true })).markdown)?.[1]
+    await ok200('editPage', {
+      pageId,
+      body: { mode: 'block', blockId: secretId, markdown: '> [!secreto]\n> Otra cosa.' }
+    })
+    const third = await row()
+    expect(third.updatedAt).toBeGreaterThan(second.updatedAt)
+    expect(third.version).toBe(first.version)
+  })
+
+  it('un secreto cambiado por bloque sin su ^s-id conserva su id y su documento', async () => {
+    const { pages } = await ok200('createPages', {
+      worldId,
+      parentId: null,
+      pages: [{ key: 'p', title: 'Torre Gris', markdown: '> [!secreto]\n> Primera versión.' }]
+    })
+    const pageId = pages[0].id
+    const idOf = async () => /\^s-([a-z0-9]{8})/.exec((await ok200('readPage', { pageId, ids: true })).markdown)?.[1]
+    const secretId = await idOf()
+    const before = (await documentsOf(pageId)).filter((d) => d.kind === 'secret')
+    await ok200('editPage', {
+      pageId,
+      body: { mode: 'block', blockId: secretId, markdown: '> [!secreto]\n> Segunda versión.' }
+    })
+    expect(await idOf()).toBe(secretId)
+    const after = (await documentsOf(pageId)).filter((d) => d.kind === 'secret')
+    expect(after.map((d) => d.id)).toEqual(before.map((d) => d.id))
+    expect(await storedText(before[0]?.id ?? '')).toContain('Segunda versión.')
   })
 
   it('lo que no se puede: una madre que no está, una página enlazada que no existe, un YAML roto, y nada queda a medias', async () => {

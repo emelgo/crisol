@@ -97,3 +97,27 @@ export function sectionsOf(doc: JSONContent): TextSection[] {
   close()
   return sections
 }
+
+const SEPARATE_TYPES = new Set(['secret', 'note'])
+
+/** Los secretos y notas ocultas de un cuerpo (por su documento), con el título de la sección del cuerpo donde están */
+export function separateHeadings(doc: JSONContent): Map<string, { heading: string | null; headingId: string | null }> {
+  const found = new Map<string, { heading: string | null; headingId: string | null }>()
+  let current = { heading: null as string | null, headingId: null as string | null }
+  const visit = (node: JSONContent) => {
+    const documentId = node.attrs?.documentId
+    if (node.type && SEPARATE_TYPES.has(node.type) && typeof documentId === 'string') found.set(documentId, current)
+    for (const child of node.content ?? []) visit(child)
+  }
+  for (const block of doc.content ?? []) {
+    if (block.type === 'heading') {
+      current = {
+        heading: (block.content ?? []).map(inlineText).join(''),
+        headingId: (block.attrs?.id as string | null | undefined) ?? null
+      }
+      continue
+    }
+    visit(block)
+  }
+  return found
+}

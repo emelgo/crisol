@@ -19,6 +19,8 @@ import { withCalloutView } from './callout.tsx'
 import { renderCaret } from './carets.ts'
 import { useCollabDocument } from './collab.tsx'
 import { withPageEmbedView } from './embed.tsx'
+import find from './find-in-page.module.css'
+import { FindInPage, nestedFinds } from './find-in-page.tsx'
 import { LinkSuggest, useLinksRef, withPageLinkView } from './page-links.tsx'
 import styles from './separate.module.css'
 import { SlashMenu } from './slash-menu.tsx'
@@ -169,6 +171,8 @@ function SeparateView({ node, editor, getPos, updateAttributes, selected }: Node
               links: () => links.current,
               announce: (title) => announce(t('links.inserted', { title }))
             }),
+            // Buscar en la página también mira aquí dentro
+            FindInPage.configure({ match: find.match ?? '', current: find.current ?? '' }),
             Collaboration.configure({ document: session.document }),
             ...(options
               ? [CollaborationCaret.configure({ provider: session.provider, user: options.caret, render: renderCaret })]
@@ -224,6 +228,12 @@ function SeparateView({ node, editor, getPos, updateAttributes, selected }: Node
   useEffect(() => {
     nested?.setEditable(editor.isEditable && Boolean(session))
   }, [nested, editor.isEditable, session])
+
+  // Para buscar en la página: este editor, con el sitio de su bloque en el cuerpo
+  useEffect(() => {
+    if (!nested || !session) return
+    return nestedFinds(editor).add({ editor: nested, at: () => (typeof getPos === 'function' ? getPos() : undefined) })
+  }, [nested, session, editor, getPos])
 
   // Los bloques de antes de tener ids reciben el suyo al abrirse
   useEffect(() => {

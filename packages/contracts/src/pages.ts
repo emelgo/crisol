@@ -566,7 +566,7 @@ export const getPageLinks = defineAction({
   name: 'getPageLinks',
   kind: 'read',
   description:
-    'Los enlaces de una página: las páginas que la enlazan (con el trozo donde lo hacen), adónde enlaza ella (y si esos enlaces están bien, sin resolver o rotos) y dónde se la nombra sin enlazarla',
+    'Los enlaces de una página: las páginas que la enlazan (con el trozo donde lo hacen), adónde enlaza ella (y si esos enlaces están bien, sin resolver o rotos), dónde se la nombra sin enlazarla y las páginas que la apuntan desde un campo',
   input: z.object({ pageId: z.uuid() }),
   output: z.object({
     incoming: z.array(linkingPage),
@@ -578,7 +578,11 @@ export const getPageLinks = defineAction({
         state: z.enum(['ok', 'missing', 'broken'])
       })
     ),
-    mentions: z.array(linkingPage)
+    mentions: z.array(linkingPage),
+    /** Las que la apuntan desde un campo de enlace (como la Facción de un PNJ), con el nombre de esos campos */
+    fields: z.array(
+      z.object({ pageId: z.uuid(), title: z.string(), path: z.array(z.string()), fields: z.array(z.string()) })
+    )
   })
 })
 

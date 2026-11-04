@@ -7,6 +7,25 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
+### Para retomar (2026-11-04, noche: arreglos y módulo 3)
+
+- **Lo que tiene que probar Enrique, en `tasks/probar.md`** («ve apuntando todas las cosas que tengo que probar»): el
+  módulo 2 y lo que quedaba del 1, ya con los arreglos. Se mantiene al día: lo nuevo que haya que probar va ahí, y lo
+  que diga, a su apartado «Lo que dijo».
+- **El módulo 2 está en `main` y en staging** (PR #93; migraciones 0035 y 0036).
+- **La tanda de arreglos, en la PR #94** (rama `tanda/arreglos-pruebas`): los puntos 1, 2, 3, 4, 6, 7 y 8 de «Lo que dijo
+  Enrique al probar» (el 7, deshacer lo de la IA tras abrir la página, era el párrafo que el editor añadía al abrir:
+  fuera el `trailingNode` de StarterKit; para seguir escribiendo está la línea de más), el aviso al borrar con los
+  campos que apuntan a la página (lo pedía la spec del módulo 2) y los tres avisos de semgrep. Todo en verde en local.
+- **El módulo 3 empezó**: la primera parte de la entrevista y los estudios de Foundry y D&D Beyond están en
+  «### 3. Sistemas, fichas y dados», al final de este archivo. **Lo siguiente**: la segunda parte de la entrevista con
+  sus 11 preguntas (la primera, si se sigue el orden del estudio de Foundry tras lo que dice de las licencias); después,
+  la spec y el ADR de los sistemas y del aislamiento.
+- **Apuntado**: el estudio de D&D Beyond abrió el perfil de Chromium de Enrique (`~/rea-workspace/chromium-ddb`) con una
+  sonda propia por tubería, porque el permiso de abrir el puerto de depuración se denegó; el perfil quedó actualizado a
+  Chromium 156. La prueba de la web `realtime.test.tsx` («se abre con la sesión…») falló una vez con todo a la vez por
+  la carga; sola pasa.
+
 ### Para retomar (2026-11-03, módulo 2)
 
 - **El módulo 2 (tipos de página y plantillas) está construido**: las 14 tareas de `tasks/todo.md`, en la rama
@@ -1179,3 +1198,73 @@ app: el 2026-10-30 dijo «luego apuntaremos por donde vamos y nos dedicaremos a 
   - lo que ven los jugadores de esas tablas (módulo 5).
 - **Hecho cuando**: Enrique crea un PNJ desde plantilla, le pone su facción y sale solo en «Miembros» de la facción;
   hace «Frente» desde cero y la usa; la IA hace lo mismo desde claude.ai.
+
+### 3. Sistemas, fichas y dados (entrevista con Enrique, 2026-11-04, primera parte)
+
+Preguntas con propuesta; lo que eligió:
+
+- **El contenido del creador** (clases, especies, trasfondos, dotes, conjuros): **lo trae cada sistema**, como en
+  Foundry, con el del SRD como datos. El módulo 4 añade las pantallas del compendio y el contenido propio (las clases
+  de Fateforge, por ejemplo).
+- **De serie, 5e 2014 y 5e 2024** (SRD 5.1 y SRD 5.2, CC BY 4.0). Fateforge parte de la de 2014.
+- **Compatibles con los sistemas de Foundry, también su código**: instalar un sistema de Foundry tal cual, con sus
+  hojas y su automatización. Se le avisó del coste (rehacer buena parte de su API en el navegador y aislar ese código) y
+  de que la licencia puede no permitirlo, y lo eligió igualmente. Antes de la spec:
+  - el estudio mide qué parte de la API de Foundry usa un sistema real (dnd5e) para dar el tamaño;
+  - se comprueba qué permiten las licencias: la de Foundry, la de cada sistema y el uso de su nombre (en la interfaz
+    no sale);
+  - un ADR nuevo: cómo se aísla el código de terceros en un SaaS (otro origen, sin acceso a la sesión ni a otros
+    mundos) y cómo encaja con los sistemas propios, que son datos.
+  - Propuesta de orden: primero los sistemas propios como datos con la forma de los de Foundry (manifiesto, tipos y
+    campos), que hacen falta igual para los de serie; luego la capa que ejecuta su código.
+- **La hoja de un PJ la llevan su jugador y el máster**: el jugador crea su PJ con el creador y lleva su hoja; el
+  máster ve y cambia todas. La wiki sigue siendo solo del máster hasta el módulo 5.
+- **Las tiradas las ve toda la campaña**: dados 3D y un historial de tiradas de la campaña en vivo; el máster ve las
+  de sus jugadores y puede tirar en oculto. El chat y los susurros, con la sala (módulo 7).
+- **La hoja, por bloques**: cada sistema compone la suya con bloques, como el diseño de hoja del Crisol actual; los de
+  5e traen una al estilo de D&D Beyond, con el aspecto de Crisol.
+- **Pendiente de preguntar**: las tablas aleatorias (pasaron del módulo 2 a este), subir de nivel y el creador paso a
+  paso con detalle (tras el estudio de D&D Beyond), e importar los PJ de Eana (por el MCP, como todo lo demás).
+
+#### Lo que dicen los estudios (2026-11-04, con craft-anything)
+
+Notas: `research/foundry/sistemas-y-su-api.md` y `research/dndbeyond/creador-y-hoja.md`.
+
+- **Foundry, para instalar sus sistemas «tal cual»**: un sistema corre entero en el navegador; dnd5e usa unos 490
+  miembros de la API de Foundry (unos 375 para abrir una hoja y tirar desde ella) y hereda 66 de sus clases, cuyo
+  comportamiento habría que imitar; cada versión de Foundry cambia cientos de puntos. Se aislaría en un iframe de otro
+  dominio, sin red, con un puente al servidor de Crisol (que pone los permisos, el azar de las tiradas y el historial).
+- **Licencias** (no es asesoría legal): su EULA prohíbe publicar código de Foundry, así que solo cabe una API propia
+  escrita en sala limpia. El código de dnd5e es MIT y su texto, SRD, pero sus fichas de criaturas, su arte y varios
+  iconos solo valen dentro de Foundry; en otros sistemas pasa igual o su contenido prohíbe cobrar (PF1 y CoC7, GPL).
+  Hay que preguntar a un abogado: la directiva 2009/24 (interoperabilidad), la marca y la ley del EULA.
+- **Orden que propone el estudio**: 1) sistemas propios como datos con la forma del manifiesto de Foundry; 2) a la vez,
+  el abogado y el ADR del aislamiento; 3) importar los datos de un sistema de Foundry, filtrando por licencia; 4) un
+  prototipo en el que dnd5e abre una hoja solo para leer, para medir y decidir si se sigue; 5) editar y tirar; 6) el
+  resto; 7) un segundo sistema (PF2e) antes de abrirlo a la comunidad.
+- **D&D Beyond**:
+  - el creador: una portada de preferencias y cinco pasos libres (clase, trasfondo, especie, características,
+    equipo), con lo pendiente marcado;
+  - subir de nivel es cambiar un número, sin asistente ni deshacer;
+  - la hoja: seis zonas y una caja con pestañas; todo número tira con un clic, y el registro de la campaña lleva el
+    desglose;
+  - el inventario, con contenedores, carga, sintonía, monedas y uno común del grupo.
+
+#### Para la segunda parte de la entrevista (con propuesta)
+
+1. **Foundry**, con lo que dice el estudio de licencias: ¿seguimos el orden del estudio, con los sistemas propios
+   primero y la capa de Foundry tras el abogado y el prototipo? *Propuesta: sí.*
+2. **Personaje a medias**: ¿un borrador que no sale en la lista hasta estar listo, o un personaje «a medias» como en
+   D&D Beyond? *Propuesta: el borrador.*
+3. **Subir de nivel**: ¿con un asistente paso a paso? ¿Sube el jugador solo o con el visto bueno del máster?
+   *Propuesta: asistente; sube el jugador y el máster lo ve en el historial y lo puede deshacer.*
+4. **Versiones del personaje** para volver atrás. *Propuesta: sí, como las de las páginas.*
+5. **Mezclar 2014 y 2024** en un personaje. *Propuesta: no; cada edición es su sistema.*
+6. **Tiradas privadas**: «solo para mí» y «solo al máster». *Propuesta: las dos; el máster ve también las «solo para
+   mí»*.
+7. **La ventaja**, cuando la hoja la conoce: ¿la propone sola? *Propuesta: la propone, y se puede quitar.*
+8. **Quién compone la hoja**: ¿solo el sistema, o también el máster? *Propuesta: el sistema; el máster, copiando el
+   sistema para hacer el suyo.*
+9. **Métodos de características**: estándar, compra por puntos, tiradas y a mano, eligiendo el máster cuáles valen.
+10. **Inventario del grupo** compartido. *Propuesta: sí, en la campaña.*
+11. **Tablas aleatorias** (pasaron del módulo 2): ¿un bloque de la wiki que se tira con los dados? *Propuesta: sí.*

@@ -13,6 +13,14 @@ export async function findBody(db: Database, pageId: string) {
 }
 
 /**
+ * La fecha de la página, al día cuando cambia su texto (también un secreto o una pestaña). Su versión no sube: es la
+ * de sus ajustes, la que mira deshacer
+ */
+async function touchPage(tx: Pick<Database, 'update'>, pageId: string | null) {
+  if (pageId) await tx.update(pages).set({ updatedAt: new Date() }).where(eq(pages.id, pageId))
+}
+
+/**
  * Guarda el cuerpo fusionando con lo que ya hay: merge recibe el estado guardado (o null) y devuelve el nuevo. Los
  * guardados del cuerpo de una página van de uno en uno (un cerrojo por página, también cuando aún no tiene fila: dos
  * altas a la vez se bloqueaban entre sí), así que no se pisan. Nunca se vuelve atrás: solo se fusiona
@@ -45,6 +53,7 @@ export function mergeBody(
           set: { state, updatedBy: page.userId, updatedAt: new Date() }
         })
     }
+    await touchPage(tx, page.pageId)
     return state.byteLength
   })
 }
@@ -86,7 +95,7 @@ export function mergeSeparate(
 ) {
   return db.transaction(async (tx) => {
     const [stored] = await tx
-      .select({ state: documents.state })
+      .select({ state: documents.state, pageId: documents.pageId })
       .from(documents)
       .where(eq(documents.id, documentId))
       .for('update')
@@ -96,6 +105,7 @@ export function mergeSeparate(
       .update(documents)
       .set({ state, updatedBy: userId, updatedAt: new Date() })
       .where(eq(documents.id, documentId))
+    await touchPage(tx, stored.pageId)
     return state.byteLength
   })
 }

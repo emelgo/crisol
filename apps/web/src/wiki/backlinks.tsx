@@ -104,5 +104,13 @@ export function useLinkedBy(page: Pick<Page, 'id' | 'worldId'>, enabled: boolean
     queryFn: () => api.call('getPageLinks', { pageId: page.id }),
     enabled
   })
-  return links.data ? links.data.incoming.length : null
+  return links.data ? linkingCount(links.data) : null
+}
+
+/** Cuántas páginas la enlazan: desde su texto o desde un campo (como la Facción de un PNJ), cada una una vez */
+export function linkingCount(links: {
+  incoming: readonly { pageId: string }[]
+  fields: readonly { pageId: string }[]
+}) {
+  return new Set([...links.incoming, ...links.fields].map((link) => link.pageId)).size
 }

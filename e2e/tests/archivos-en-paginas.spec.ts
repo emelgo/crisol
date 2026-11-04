@@ -58,10 +58,8 @@ test('una imagen con «/»: se sube, lleva su pie, se abre en grande y sale en e
   await page.keyboard.press('Escape')
   await expect(lightbox).toBeHidden()
 
-  // Con `![[`, los archivos del mundo
-  await body(page).click()
-  await page.keyboard.press('ControlOrMeta+End')
-  await page.keyboard.press('Enter')
+  // Con `![[`, los archivos del mundo: en la línea de más, debajo de la imagen (abrir la página no añade ninguna)
+  await body(page).locator('[data-ghost-line]').click()
   await page.keyboard.type('![[escu')
   await page
     .getByRole('listbox', { name: 'Páginas' })

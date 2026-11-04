@@ -24,6 +24,7 @@ import {
   EditTargetError,
   editBody,
   FrontmatterError,
+  keepBlockId,
   pageFromMarkdown,
   pageToMarkdown,
   type ReadPage,
@@ -438,9 +439,10 @@ export const pageContentActions = [
     const bodyInput =
       input.body ??
       (applied?.applied.append ? { mode: 'append' as const, markdown: applied.applied.append } : undefined)
-    const read = bodyInput ? parse(bodyInput.markdown) : null
+    const parsed = bodyInput ? parse(bodyInput.markdown) : null
     // Las propiedades: las que se dan; o, al cambiar el cuerpo entero, las de su YAML
-    const fromYaml = bodyInput?.mode === 'replace' && read && read.properties.length > 0 ? read.properties : undefined
+    const fromYaml =
+      bodyInput?.mode === 'replace' && parsed && parsed.properties.length > 0 ? parsed.properties : undefined
     const wanted = input.properties ?? fromYaml
     const properties = applied
       ? applied.applied.properties
@@ -460,7 +462,7 @@ export const pageContentActions = [
 
     // El cuerpo nuevo, comprobado contra lo de ahora antes de apuntar nada
     let incoming: JSONContent[] = []
-    if (edit && read) {
+    if (edit && parsed) {
       const current = await readDocument(ctx, { kind: 'body', pageId: page.id })
       try {
         editBody(current, edit, [])
@@ -468,6 +470,11 @@ export const pageContentActions = [
         if (error instanceof EditTargetError) throw new InvalidRequestError(error.code)
         throw error
       }
+      // Un bloque cambiado por otro del mismo tipo conserva su id (y un secreto, su documento)
+      const read =
+        edit.mode === 'block'
+          ? keepBlockId(parsed, edit.blockId, current.content?.find((block) => block.attrs?.id === edit.blockId)?.type)
+          : parsed
       const names = await worldNames(ctx, wiki.worldId)
       const files = await worldFiles(ctx, wiki.worldId)
       // Cada secreto: el que ya estaba (mismo id de bloque, de esta página) cambia su documento; uno nuevo, se crea
