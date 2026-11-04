@@ -14,8 +14,10 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   Su ciclo empieza por la entrevista (`interview-me`) frente al inventario; antes de su spec, mirar si la editorial
   tiene una versión oficial en español con la misma licencia (`docs/specs/modulo-3.md`, punto 7). Pendiente de
   Enrique, sin bloquear: probar `sistemas` en staging (`tasks/probar.md`) y decidir si lo que la IA hace en copiloto y
-  ven los jugadores pide aprobación (más abajo, «Queda para después»). Esta puesta al día va en la rama
-  `modulo-3/tras-sistemas`, que irá a `main` con la próxima tanda.
+  ven los jugadores pide aprobación (más abajo, «Queda para después»).
+- **El orden que pidió Enrique** (2026-11-04): terminar el módulo 3 en este mismo chat (`srd-5e`, `personajes`, `hoja`
+  y `foundry`), después pulir la interfaz de todo lo del módulo 3 y, al acabar, el módulo 4 en un chat nuevo. Un chat
+  cada vez: dos a la vez se pisarían la carpeta y las bases de datos de prueba.
 
 - **`dados` está en `main` y en staging** (PR #95, migraciones 0037 y 0038): una sola pasada de la CI, en verde, y
   fusionada con `[skip ci]`. Enrique la prueba con `tasks/probar.md` (puntos de control 2 y 3, lo de las revisiones y
