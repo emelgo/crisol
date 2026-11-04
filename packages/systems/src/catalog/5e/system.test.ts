@@ -6,6 +6,7 @@ import type { DieRoller } from '@crisol/dice'
 import { describe, expect, it } from 'vitest'
 import { prepareAction } from '../../actions.ts'
 import { type DocumentItem, evaluate, type SystemDocument } from '../../evaluate.ts'
+import { validateContent } from '../../file.ts'
 import type { Mechanics } from '../../mechanics.ts'
 import { rollsOf, tryRoll } from '../../rolls.ts'
 import { validateSystem } from '../../validate.ts'
@@ -267,5 +268,136 @@ describe('el 5e de serie', () => {
       hab.sigilo?.total,
       r.values.percepcion_pasiva
     ]).toEqual([6, 6, 13, 6, 23])
+  })
+})
+
+describe('las clases: lo que concede, lo elegido y lo que sale de su nivel', () => {
+  const guerrero = (nivel: number, choices: Record<string, string[]> = {}): DocumentItem => ({
+    id: 'guerrero',
+    type: 'clase',
+    name: 'Guerrero',
+    data: { nivel, inicial: true, dado: 10, dado_golpe: '1d10' },
+    choices,
+    mechanics: {
+      grants: [
+        {
+          choose: {
+            key: 'habilidades',
+            label: 'Habilidades',
+            count: '2',
+            set: 'habilidades',
+            from: ['acrobacias', 'atletismo', 'percepcion'],
+            when: '@este.inicial'
+          }
+        }
+      ]
+    }
+  })
+  const rasgo = (id: string, mechanics: Mechanics, from = 'guerrero'): DocumentItem => ({
+    id,
+    type: 'rasgo',
+    name: id,
+    data: {},
+    from,
+    mechanics
+  })
+  const tomarAliento = rasgo('tomar_aliento', {
+    resources: [
+      {
+        key: 'usos',
+        label: 'Usos',
+        max: '@origen.nivel >= 10 ? 4 : @origen.nivel >= 4 ? 3 : 2',
+        recovery: 'short',
+        amount: '1'
+      }
+    ],
+    actions: [{ key: 'usar', label: 'Tomar aliento', activation: 'bonus', heal: '1d10 + @origen.nivel', uses: 'usos' }]
+  })
+  const ataqueAdicional = rasgo('ataque_adicional', {
+    effects: [{ target: 'ataques', op: 'min', value: '@origen.nivel >= 20 ? 4 : @origen.nivel >= 11 ? 3 : 2' }]
+  })
+
+  it('un rasgo sale del nivel de la clase que lo concede (@origen): sus usos, su curación y sus ataques', () => {
+    const doc = pj({ fue: 16, con: 14 }, [guerrero(5), tomarAliento, ataqueAdicional])
+    const r = evaluate(fiveE, 'personaje', doc)
+    expect(r.values.ataques).toBe(2)
+    expect(r.resources).toEqual([
+      { item: 'tomar_aliento', key: 'usos', label: 'Usos', max: 3, used: 0, left: 3, recovery: 'short', amount: '1' }
+    ])
+    expect(prepareAction(fiveE, 'personaje', doc, 'tomar_aliento', 'usar')).toMatchObject({
+      heal: { formula: '1d10+5' }
+    })
+    expect(evaluate(fiveE, 'personaje', pj({}, [guerrero(11), ataqueAdicional])).values.ataques).toBe(3)
+    // Sin lo que lo concedió, cuenta como sin nivel
+    const suelto = { ...ataqueAdicional, from: 'nada' }
+    expect(evaluate(fiveE, 'personaje', pj({}, [suelto])).values.ataques).toBe(2)
+  })
+
+  it('lo elegido de un conjunto: las dos habilidades, competentes; de la lista, solo si es su primera clase', () => {
+    const doc = pj({ fue: 16, sab: 12 }, [guerrero(5, { habilidades: ['atletismo', 'percepcion'] })])
+    const hab = evaluate(fiveE, 'personaje', doc).values.habilidades as Record<string, { total: number }>
+    expect([hab.atletismo?.total, hab.percepcion?.total, hab.acrobacias?.total]).toEqual([6, 4, 0])
+    const segunda = guerrero(5, { habilidades: ['atletismo'] })
+    segunda.data.inicial = false
+    const otra = evaluate(fiveE, 'personaje', pj({ fue: 16 }, [segunda])).values.habilidades as Record<
+      string,
+      { total: number }
+    >
+    expect(otra.atletismo?.total).toBe(3)
+  })
+
+  it('la mejora de característica de 2014: +1 a dos (o +2 a una, eligiendo la misma dos veces)', () => {
+    const mejora = rasgo('mejora_4', {
+      grants: [
+        {
+          level: 4,
+          choose: { key: 'mejora', label: 'Mejora', count: '2', set: 'caracteristicas', field: 'puntuacion', op: 'add' }
+        }
+      ]
+    })
+    const elegida = (picks: string[], nivel = 4) =>
+      evaluate(
+        fiveE,
+        'personaje',
+        pj({ fue: 15, con: 14 }, [guerrero(nivel), { ...mejora, choices: { mejora: picks } }])
+      ).values.caracteristicas as Record<string, { puntuacion: number }>
+    expect([elegida(['fue', 'con']).fue?.puntuacion, elegida(['fue', 'con']).con?.puntuacion]).toEqual([16, 15])
+    expect(elegida(['fue', 'fue']).fue?.puntuacion).toBe(17)
+    // Antes de su nivel, nada
+    expect(elegida(['fue', 'fue'], 3).fue?.puntuacion).toBe(15)
+  })
+
+  it('el crítico mejorado del campeón: crítico con 19 en el ataque', () => {
+    const critico = rasgo(
+      'critico_mejorado',
+      { effects: [{ target: 'critico_desde', op: 'max', value: '19' }] },
+      'campeon'
+    )
+    const doc = pj({ fue: 16 }, [guerrero(3), critico, espada])
+    expect(evaluate(fiveE, 'personaje', doc).values.critico_desde).toBe(19)
+    expect(tryRoll(fiveE, 'personaje', doc, 'ataque', { element: 'espada_larga', roller: fixed(19) }).band?.tone).toBe(
+      'critical'
+    )
+  })
+
+  it('una elección de un conjunto que no existe, o con algo que no es suyo, se dice', () => {
+    const bad = (choose: Record<string, unknown>) =>
+      validateContent(fiveE, [
+        {
+          type: 'clase',
+          key: 'x',
+          source: null,
+          data: { name: 'X' },
+          mechanics: { grants: [{ choose: { key: 'c', label: 'C', count: '1', ...choose } }] }
+        }
+      ]).map((p) => `${p.path}: ${p.message}`)
+    expect(bad({ set: 'nada' })).toEqual([
+      'content[0].mechanics.grants[0].choose.set: Ningún personaje tiene el conjunto «nada»'
+    ])
+    expect(bad({ set: 'habilidades', field: 'nada', from: ['volar'] })).toEqual([
+      'content[0].mechanics.grants[0].choose.field: «habilidades» no tiene el campo «nada»',
+      'content[0].mechanics.grants[0].choose.from[0]: «habilidades» no tiene «volar»'
+    ])
+    expect(bad({ set: 'habilidades', type: 'rasgo' })[0]).toMatch(/Elige de un tipo o de un conjunto/)
   })
 })

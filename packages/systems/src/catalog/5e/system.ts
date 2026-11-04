@@ -161,6 +161,20 @@ const abilityFields = (bonus: string) => ({
     formula: 'floor((@este.puntuacion - 10) / 2)',
     signed: true
   },
+  prueba_grado: {
+    kind: 'number',
+    label: t('Competencia en las pruebas', 'Ability check proficiency'),
+    help: t('0,5: media (Atleta excepcional)', '0.5: half (Remarkable Athlete)'),
+    min: 0,
+    max: 1,
+    default: 0
+  },
+  prueba: {
+    kind: 'derived',
+    label: t('Prueba', 'Check'),
+    formula: '@este.mod + floor(@este.prueba_grado * @competencia)',
+    signed: true
+  },
   salvacion_grado: {
     kind: 'number',
     label: t('Competencia en la salvación', 'Saving throw proficiency'),
@@ -269,6 +283,9 @@ const shared = (bonus: { saves: string; skills: string }) => ({
   iniciativa: derived('Iniciativa', 'Initiative', '@caracteristicas.des.mod', { signed: true }),
   percepcion_pasiva: derived('Percepción pasiva', 'Passive Perception', '10 + @habilidades.percepcion.total'),
   cansancio: number('Cansancio', 'Exhaustion', { min: 0, max: 6, integer: true }),
+  // Lo que cambian los rasgos: cuántos ataques por acción de atacar y desde qué número es crítico
+  ataques: number('Ataques por acción de atacar', 'Attacks per Attack action', { min: 1, default: 1 }),
+  critico_desde: number('Crítico desde', 'Critical hit on', { min: 2, max: 20, default: 20 }),
   resistencias: list('Resistencias', 'Resistances', DAMAGE_TYPES),
   inmunidades: list('Inmunidades al daño', 'Damage immunities', DAMAGE_TYPES),
   vulnerabilidades: list('Vulnerabilidades', 'Vulnerabilities', DAMAGE_TYPES),
@@ -513,7 +530,7 @@ export const fiveE = {
       label: t('Rasgo', 'Feature'),
       icon: 'star',
       fields: {
-        origen: text('De dónde sale', 'Source'),
+        procedencia: text('De dónde sale', 'Source'),
         nivel: number('Nivel', 'Level', { min: 0, max: 20, integer: true }),
         activo: yesNo('Activo', 'Active'),
         descripcion: description
@@ -704,7 +721,7 @@ export const fiveE = {
   rolls: {
     prueba: {
       label: t('Prueba de característica', 'Ability check'),
-      formula: `1d20 + @este.mod${exhaustion}`,
+      formula: `1d20 + @este.prueba${exhaustion}`,
       for: { set: 'caracteristicas' },
       target: 'optional',
       bands: checkBands,
@@ -733,7 +750,7 @@ export const fiveE = {
       for: { items: ['arma'] },
       target: 'optional',
       bands: [
-        { if: '@natural == 20', label: t('Crítico', 'Critical hit'), tone: 'critical' },
+        { if: '@natural >= @critico_desde', label: t('Crítico', 'Critical hit'), tone: 'critical' },
         { if: '@natural == 1', label: t('Fallo', 'Miss'), tone: 'fumble' },
         { if: '@objetivo != null && @total >= @objetivo', label: t('Impacta', 'Hit'), tone: 'success' },
         { if: '@objetivo != null', label: t('Falla', 'Miss'), tone: 'failure' }

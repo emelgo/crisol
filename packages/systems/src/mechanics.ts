@@ -73,16 +73,22 @@ const grant = z
     // Un documento, por su concepto (el rasgo, el conjuro) y, si hay varios con ese concepto, su tipo
     concept: key.optional(),
     type: key.optional(),
-    // O una elección: cuántos, de qué tipo y, si se dice, de cuáles
+    // O una elección: cuántos, de qué tipo (o de qué conjunto de quien lo lleva) y, si se dice, de cuáles
     choose: z
       .strictObject({
         key,
         label: text(),
         count: formula,
-        type: key,
+        type: key.optional(),
+        // De un conjunto (las habilidades): a lo elegido se le aplica `op` con `value` en su campo (el grado, a 1)
+        set: key.optional(),
+        field: key.optional(),
+        op: z.enum(['min', 'add']).optional(),
+        value: formula.optional(),
         from: z.array(key).max(500).optional(),
         when: formula.optional()
       })
+      .refine((c) => (c.type === undefined) !== (c.set === undefined), 'Elige de un tipo o de un conjunto')
       .optional()
   })
   .refine((g) => (g.concept === undefined) !== (g.choose === undefined), 'Lleva un concepto o una elección')
@@ -165,7 +171,9 @@ export function validateMechanics(system: System, type: string, mechanics: unkno
   const scope: Scope = {
     ...(ownerType ? scopeOf(ownerType.fields, '', owner, system) : {}),
     este,
-    ajustes: settingsShape(system)
+    ajustes: settingsShape(system),
+    // Lo que lo concedió (la clase de un rasgo): de cualquier tipo
+    origen: { type: 'any', label: 'origen' }
   }
   const context = (dice: boolean): Context => ({ scope, dice, owner })
 
@@ -222,7 +230,19 @@ export function validateMechanics(system: System, type: string, mechanics: unkno
     const here = [...at, 'grants', i]
     if (g.type && !own(system.types, g.type)) add([...here, 'type'], `No existe el tipo «${g.type}»`)
     if (!g.choose) return
-    if (!own(system.types, g.choose.type)) add([...here, 'choose', 'type'], `No existe el tipo «${g.choose.type}»`)
+    const c = g.choose
+    if (c.type && !own(system.types, c.type)) add([...here, 'choose', 'type'], `No existe el tipo «${c.type}»`)
+    if (c.set) {
+      const set = actors.map(([, t]) => own(t.fields, c.set as string)).find((f) => f?.kind === 'set')
+      if (!set || set.kind !== 'set') add([...here, 'choose', 'set'], `Ningún personaje tiene el conjunto «${c.set}»`)
+      else {
+        const field = c.field ?? 'grado'
+        if (!own(set.fields, field)) add([...here, 'choose', 'field'], `«${c.set}» no tiene el campo «${field}»`)
+        for (const [j, k] of (c.from ?? []).entries())
+          if (!set.elements.some((e) => e.key === k)) add([...here, 'choose', 'from', j], `«${c.set}» no tiene «${k}»`)
+      }
+      if (c.value) check(c.value, [...here, 'choose', 'value'], 'Un valor no lleva dados')
+    }
     check(g.choose.count, [...here, 'choose', 'count'], 'Cuántos se eligen no lleva dados')
     if (g.choose.when) yesOrNo(g.choose.when, [...here, 'choose', 'when'])
   })

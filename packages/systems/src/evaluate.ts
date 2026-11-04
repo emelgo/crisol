@@ -20,6 +20,10 @@ export interface DocumentItem {
   mechanics?: Mechanics
   /** Lo gastado de cada uno de sus recursos, por su clave */
   uses?: Record<string, number>
+  /** El que lo concedió (la clase de un rasgo): en su mecánica, `@origen` */
+  from?: string
+  /** Lo elegido en cada elección de lo que concede, por su clave (las habilidades: ["atletismo", "percepcion"]) */
+  choices?: Record<string, string[]>
 }
 
 export interface SystemDocument {
@@ -318,6 +322,27 @@ export function evaluate(
       if (e.op === 'advantage' || e.op === 'disadvantage') pending.push({ ...effect, target: e.target })
       else push(e.target, effect)
     }
+    // Lo elegido de un conjunto (dos habilidades): a cada uno, su efecto (el grado, a 1), desde su nivel
+    for (const g of item.mechanics?.grants ?? []) {
+      const c = g.choose
+      if (!c?.set) continue
+      // Desde su nivel: el de lo que lo concedió (un rasgo, una subclase) o, si nada, el suyo (una clase)
+      const level = g.level
+        ? item.from
+          ? `@origen != null && @origen.nivel >= ${g.level}`
+          : `@este.nivel >= ${g.level}`
+        : null
+      const when = [c.when, level].filter(Boolean).join(' && ')
+      for (const element of item.choices?.[c.key] ?? [])
+        push(`${c.set}.${element}.${c.field ?? 'grado'}`, {
+          op: c.op ?? 'min',
+          item,
+          label: item.name,
+          legacy: false,
+          value: exprOf(system, c.value ?? '1'),
+          ...(when ? { when: exprOf(system, when) } : {})
+        })
+    }
   }
   const itemScopes = new Map<string, Record<string, Node>>()
   // En las fórmulas de un objeto, @portador es quien lo lleva (sus campos ya calculados)
@@ -345,7 +370,15 @@ export function evaluate(
     let names = ownerScopes.get(item.id)
     if (!names) {
       const fields = { ...itemScope(item), name: { kind: 'value', value: item.name } as Node }
-      names = { ...scope, este: { kind: 'object', label: item.name, fields }, ajustes }
+      const parent = item.from ? items.find((it) => it.id === item.from) : undefined
+      const origen: Node = parent
+        ? {
+            kind: 'object',
+            label: parent.name,
+            fields: { ...itemScope(parent), name: { kind: 'value', value: parent.name } }
+          }
+        : { kind: 'value', value: null }
+      names = { ...scope, este: { kind: 'object', label: item.name, fields }, ajustes, origen }
       ownerScopes.set(item.id, names)
     }
     return names

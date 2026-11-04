@@ -173,6 +173,8 @@ export function prepareAction(
   if (!action) throw new RollError(`No existe la acción «${actionKey}»`)
   const { scope, evaluated } = rollContext(system, typeKey, doc, options)
   // @este: el objeto (ya calculado, con lo que sale de quien lo lleva) o, en una criatura, ella misma
+  // @origen: lo que lo concedió (la clase de un rasgo, para su nivel)
+  scope.origen = node(item?.from ? (evaluated.items[item.from] ?? null) : null)
   scope.este = item
     ? node(evaluated.items[item.id] ?? null)
     : node(

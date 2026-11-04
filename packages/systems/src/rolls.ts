@@ -282,6 +282,8 @@ export function prepareRoll(
       if (elements.length === 0) throw new RollError(`No lleva nada para «${textOf(roll.label, language)}»`)
       if (!element) throw new RollError(`Elige con qué se tira: ${elements.map((e) => e.label).join(', ')}`)
       scope.este = node(evaluated.items[element.key] ?? null)
+      const from = doc.items?.find((it) => it.id === element.key)?.from
+      scope.origen = node(from ? (evaluated.items[from] ?? null) : null)
     } else {
       if (!element) throw new RollError(`Elige por qué se tira: ${elements.map((e) => e.label).join(', ')}`)
       const value =
