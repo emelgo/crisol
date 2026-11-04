@@ -65,7 +65,7 @@ Plan: `tasks/plan.md`. Spec: `docs/specs/srd-5e.md`. Cada tarea, con TDD y en un
   - Archivos: `packages/contracts/src/systems.ts`, `apps/server/src/actions/systems.ts`, `packages/systems/package.json`,
     `apps/web/src/api/fake.ts` (+ pruebas).
 
-- [ ] **7. Sacar el contenido: el equipo y el Guerrero** — en marcha. Hecho: los scripts (`scripts/srd/`: el texto por columnas con `pdftotext -bbox`, las tablas, el texto de las clases y el emparejado con sus listas revisadas), las armas, las armaduras, el equipo de aventurero y las herramientas de 2014, y el guerrero de las dos ediciones (con el campeón; el de nivel 5 hecho con el contenido da CA 16, PG 44 y +6). Falta: de 2024, las tablas de munición, canalizadores y símbolos sagrados y las herramientas; las monturas y vehículos de las dos ediciones y las mercancías de 2014; la descripción de cada objeto
+- [x] **7. Sacar el contenido: el equipo y el Guerrero** — hecha (`scripts/srd/`: `node scripts/srd/extraer.ts` y `comprobar.ts`, con los PDF en `datos-locales/srd/`): las armas, las armaduras, el equipo de aventurero, las herramientas, las monturas, los arreos, los vehículos y las mercancías de las dos ediciones, con su texto donde el SRD lo tiene, y el guerrero con el campeón (474 documentos, en los dos idiomas y con su página). El texto de las tablas se corta por sus columnas (`pdftotext -bbox`); lo que no se empareja solo va en listas revisadas (`pares.ts`); la mecánica escrita a mano, en `mecanica.ts` y `guerrero.ts`
   - Acepta:
     - los scripts de `scripts/srd/` sacan el texto normalizado de los cuatro PDF y emparejan inglés y español;
     - el equipo (armas con su maestría, armaduras, objetos, herramientas) y el Guerrero de las dos ediciones, con su

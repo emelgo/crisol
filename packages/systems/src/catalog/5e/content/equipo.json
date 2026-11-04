@@ -35,7 +35,11 @@
       },
       "categoria": "aventura",
       "peso": 1,
-      "coste": 25
+      "coste": 25,
+      "descripcion": {
+        "es": "Como acción, puedes esparcir el contenido de este vial sobre una criatura que esté a 1,5 m o menos de ti o lanzarlo hasta a 6 m, lo que hará que el vial se rompa con el impacto. En ambos casos, haz un ataque a distancia contra una criatura u objeto y trata el ácido como un arma improvisada. Si impacta, el objetivo sufre 2d6 de daño de ácido.",
+        "en": "As an action, you can splash the contents of this vial onto a creature within 5 feet of you or throw the vial up to 20 feet, shattering it on impact. In either case, make a ranged attack against a creature or object, treating the acid as an improvised weapon. On a hit, the target takes 2d6 acid damage."
+      }
     },
     "mechanics": {
       "actions": [
@@ -80,7 +84,11 @@
       },
       "categoria": "aventura",
       "peso": 1,
-      "coste": 50
+      "coste": 50,
+      "descripcion": {
+        "es": "Este fluido pegajoso y adherente prende al entrar en contacto con el aire. Como acción, puedes lanzar este frasco hasta a 6 m, lo que hará que se rompa con el impacto. Haz un ataque a distancia contra una criatura u objeto y trata el fuego de alquimista como un arma improvisada. Si impacta, el objetivo sufre 1d4 de daño de fuego al principio de cada uno de sus turnos. Una criatura puede poner fin a este efecto si usa su acción para realizar una prueba de Destreza con CD 10 para extinguir las llamas.",
+        "en": "This sticky, adhesive fluid ignites when exposed to air. As an action, you can throw this flask up to 20 feet, shattering it on impact. Make a ranged attack against a creature or object, treating the alchemist's fire as an improvised weapon. On a hit, the target takes 1d4 fire damage at the start of each of its turns. A creature can end this damage by using its action to make a DC 10 Dexterity check to extinguish the flames."
+      }
     },
     "mechanics": {
       "actions": [
@@ -225,7 +233,11 @@
       },
       "categoria": "aventura",
       "peso": 0,
-      "coste": 50
+      "coste": 50,
+      "descripcion": {
+        "es": "La criatura que beba el contenido de este vial obtendrá ventaja en las tiradas de salvación contra veneno durante 1 hora. No tendrá efecto en muertos vivientes o autómatas.",
+        "en": "A creature that drinks this vial of liquid gains advantage on saving throws against poison for 1 hour. It confers no benefit to undead or constructs."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -249,7 +261,11 @@
       },
       "categoria": "canalizador_arcano",
       "peso": 1,
-      "coste": 10
+      "coste": 10,
+      "descripcion": {
+        "es": "Un canalizador arcano es un objeto especial, diseñado para conducir el poder de los conjuros arcanos. Puede ser un orbe, un cristal, un cetro, un bastón fabricado específicamente con este fin, un trozo de madera con forma de varita o un objeto similar. Los brujos, hechiceros y magos pueden utilizar este objeto como canalizador mágico.",
+        "en": "An arcane focus is a special item— an orb, a crystal, a rod, a specially constructed staff, a wand-like length of wood, or some similar item— designed to channel the power of arcane spells. A sorcerer, warlock, or wizard can use such an item as a spellcasting focus."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -273,7 +289,11 @@
       },
       "categoria": "canalizador_arcano",
       "peso": 3,
-      "coste": 20
+      "coste": 20,
+      "descripcion": {
+        "es": "Un canalizador arcano es un objeto especial, diseñado para conducir el poder de los conjuros arcanos. Puede ser un orbe, un cristal, un cetro, un bastón fabricado específicamente con este fin, un trozo de madera con forma de varita o un objeto similar. Los brujos, hechiceros y magos pueden utilizar este objeto como canalizador mágico.",
+        "en": "An arcane focus is a special item— an orb, a crystal, a rod, a specially constructed staff, a wand-like length of wood, or some similar item— designed to channel the power of arcane spells. A sorcerer, warlock, or wizard can use such an item as a spellcasting focus."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -297,7 +317,11 @@
       },
       "categoria": "canalizador_arcano",
       "peso": 2,
-      "coste": 10
+      "coste": 10,
+      "descripcion": {
+        "es": "Un canalizador arcano es un objeto especial, diseñado para conducir el poder de los conjuros arcanos. Puede ser un orbe, un cristal, un cetro, un bastón fabricado específicamente con este fin, un trozo de madera con forma de varita o un objeto similar. Los brujos, hechiceros y magos pueden utilizar este objeto como canalizador mágico.",
+        "en": "An arcane focus is a special item— an orb, a crystal, a rod, a specially constructed staff, a wand-like length of wood, or some similar item— designed to channel the power of arcane spells. A sorcerer, warlock, or wizard can use such an item as a spellcasting focus."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -321,7 +345,11 @@
       },
       "categoria": "canalizador_arcano",
       "peso": 4,
-      "coste": 5
+      "coste": 5,
+      "descripcion": {
+        "es": "Un canalizador arcano es un objeto especial, diseñado para conducir el poder de los conjuros arcanos. Puede ser un orbe, un cristal, un cetro, un bastón fabricado específicamente con este fin, un trozo de madera con forma de varita o un objeto similar. Los brujos, hechiceros y magos pueden utilizar este objeto como canalizador mágico.",
+        "en": "An arcane focus is a special item— an orb, a crystal, a rod, a specially constructed staff, a wand-like length of wood, or some similar item— designed to channel the power of arcane spells. A sorcerer, warlock, or wizard can use such an item as a spellcasting focus."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -345,7 +373,11 @@
       },
       "categoria": "canalizador_arcano",
       "peso": 1,
-      "coste": 10
+      "coste": 10,
+      "descripcion": {
+        "es": "Un canalizador arcano es un objeto especial, diseñado para conducir el poder de los conjuros arcanos. Puede ser un orbe, un cristal, un cetro, un bastón fabricado específicamente con este fin, un trozo de madera con forma de varita o un objeto similar. Los brujos, hechiceros y magos pueden utilizar este objeto como canalizador mágico.",
+        "en": "An arcane focus is a special item— an orb, a crystal, a rod, a specially constructed staff, a wand-like length of wood, or some similar item— designed to channel the power of arcane spells. A sorcerer, warlock, or wizard can use such an item as a spellcasting focus."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -393,7 +425,11 @@
       },
       "categoria": "aventura",
       "peso": 2,
-      "coste": 1
+      "coste": 1,
+      "descripcion": {
+        "es": "Puedes usar tu acción para esparcir estas pequeñas esferas metálicas, que vienen en una bolsita, sobre una superficie cuadrada y nivelada de 3 m de lado. Las criaturas que se muevan a través de la zona afectada deberán superar una tirada de salvación de Destreza con CD 10 o serán derribadas. Sin embargo, si una criatura se desplaza por la zona a la mitad de su velocidad, no tendrá que hacer la tirada de salvación.",
+        "en": "As an action, you can spill these tiny metal balls from their pouch to cover a level, square area that is 10 feet on a side. A creature moving across the covered area must succeed on a DC 10 Dexterity saving throw or fall prone. A creature moving through the area at half speed doesn’t need to make the save."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -537,7 +573,11 @@
       },
       "categoria": "aventura",
       "peso": 5,
-      "coste": 1
+      "coste": 1,
+      "descripcion": {
+        "es": "Un conjunto de poleas recorridas por un cable que termina en un gancho, que se puede fijar a un objeto. Un polipasto te permite alzar cuatro veces el peso que podrías levantar en condiciones normales.",
+        "en": "A set of pulleys with a cable threaded through them and a hook to attach to objects, a block and tackle allows you to hoist up to four times the weight you can normally lift."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -561,7 +601,11 @@
       },
       "categoria": "aventura",
       "peso": 5,
-      "coste": 25
+      "coste": 25,
+      "descripcion": {
+        "es": "Un libro podría contener poemas, registros históricos, información perteneciente a un ámbito de conocimiento concreto, diagramas y notas sobre artilugios gnomos o prácticamente cualquier cosa que se pueda representar mediante texto o imágenes. Un libro que contenga conjuros recibe el nombre de “libro de conjuros” y se describe a continuación.",
+        "en": "A book might contain poetry, historical accounts, information pertaining to a particular field of lore, diagrams and notes on gnomish contraptions, or just about anything else that can be represented using text or pictures. A book of spells is a spellbook (described later in this section)."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -633,7 +677,11 @@
       },
       "categoria": "aventura",
       "peso": 2,
-      "coste": 1
+      "coste": 1,
+      "descripcion": {
+        "es": "Puedes usar tu acción para esparcir una bolsa de abrojos sobre una superficie cuadrada de 1,5 m de lado. Todas las criaturas que entren en la zona deberán superar una tirada de salvación de Destreza con CD 15 o no podrán moverse más ese turno y sufrirán 1 de daño perforante. Al sufrir este daño, la velocidad caminando de la criatura se reduce en 3 m hasta que recupere al menos 1 punto de golpe. Sin embargo, si una criatura se desplaza por la zona a la mitad de su velocidad, no tendrá que hacer la tirada de salvación.",
+        "en": "As an action, you can spread a bag of caltrops to cover a square area that is 5 feet on a side. Any creature that enters the area must succeed on a DC 15 Dexterity saving throw or stop moving this turn and take 1 piercing damage. Taking this damage reduces the creature’s walking speed by 10 feet until the creature regains at least 1 hit point. A creature moving through the area at half speed doesn’t need to make the save."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -657,7 +705,11 @@
       },
       "categoria": "aventura",
       "peso": 0,
-      "coste": 0.01
+      "coste": 0.01,
+      "descripcion": {
+        "es": "Emite luz brillante en un radio de 1,5 m y luz tenue 1,5 m más allá durante 1 hora.",
+        "en": "For 1 hour, a candle sheds bright light in a 5-foot radius and dim light for an additional 5 feet."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -681,7 +733,11 @@
       },
       "categoria": "aventura",
       "peso": 1,
-      "coste": 1
+      "coste": 1,
+      "descripcion": {
+        "es": "Esta caja de madera puede contener hasta veinte virotes de ballesta.",
+        "en": "This wooden case can hold up to twenty crossbow bolts."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -729,7 +785,11 @@
       },
       "categoria": "aventura",
       "peso": 10,
-      "coste": 5
+      "coste": 5,
+      "descripcion": {
+        "es": "Una cadena tiene 10 puntos de golpe. Para romperla, se debe superar una prueba de Fuerza con CD 20.",
+        "en": "A chain has 10 hit points. It can be burst with a successful DC 20 Strength check."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -801,7 +861,11 @@
       },
       "categoria": "aventura",
       "peso": 12,
-      "coste": 25
+      "coste": 25,
+      "descripcion": {
+        "es": "Entre estos útiles se incluyen pitones especiales, puntas para las botas y un arnés. Puedes usar una acción para anclarte mediante estos útiles. Cuando lo hayas hecho, no podrás caer más de 7,5 m desde el punto en el que te ancles y no podrás subir más de 7,5 m de ese punto sin desanclarte.",
+        "en": "A climber’s kit includes special pitons, boot tips, gloves, and a harness. You can use the climber’s kit as an action to anchor yourself; when you do, you can’t fall more than 25 feet from the point where you anchored yourself, and you can’t climb more than 25 feet away from that point without undoing the anchor."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -921,7 +985,11 @@
       },
       "categoria": "aventura",
       "peso": 2,
-      "coste": 25
+      "coste": 25,
+      "descripcion": {
+        "es": "Una pequeña bolsa hermética de cuero para el cinturón con bolsillos que contienen todos los componentes materiales y otros objetos especiales necesarios para lanzar conjuros. No incluye los componentes que tengan un coste específico (estos se indican en la descripción de cada conjuro).",
+        "en": "A component pouch is a small, watertight leather belt pouch that has compartments to hold all the material components and other special items you need to cast your spells, except for those components that have a specific cost (as indicated in a spell's description)."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -945,7 +1013,11 @@
       },
       "categoria": "aventura",
       "peso": 5,
-      "coste": 2
+      "coste": 2,
+      "descripcion": {
+        "es": "Una palanqueta te da ventaja en aquellas pruebas de Fuerza en las que resulte útil hacer palanca.",
+        "en": "Using a crowbar grants advantage to Strength checks where the crowbar’s leverage can be applied."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -969,7 +1041,11 @@
       },
       "categoria": "canalizador_druidico",
       "peso": 0,
-      "coste": 1
+      "coste": 1,
+      "descripcion": {
+        "es": "Un canalizador druídico puede ser una rama de muérdago o acebo, una varita o un cetro hechos de tejo o de otra madera especial, un bastón cortado de una pieza de un árbol o un tótem que contenga plumas, pelo, huesos y dientes de animales sagrados. Los druidas pueden utilizar estos objetos como canalizadores mágicos.",
+        "en": "A druidic focus might be a sprig of mistletoe or holly, a wand or scepter made of yew or another special wood, a staff drawn whole out of a living tree, or a totem object incorporating feathers, fur, bones, and teeth from sacred animals. A druid can use such an object as a spellcasting focus."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -993,7 +1069,11 @@
       },
       "categoria": "canalizador_druidico",
       "peso": 0,
-      "coste": 1
+      "coste": 1,
+      "descripcion": {
+        "es": "Un canalizador druídico puede ser una rama de muérdago o acebo, una varita o un cetro hechos de tejo o de otra madera especial, un bastón cortado de una pieza de un árbol o un tótem que contenga plumas, pelo, huesos y dientes de animales sagrados. Los druidas pueden utilizar estos objetos como canalizadores mágicos.",
+        "en": "A druidic focus might be a sprig of mistletoe or holly, a wand or scepter made of yew or another special wood, a staff drawn whole out of a living tree, or a totem object incorporating feathers, fur, bones, and teeth from sacred animals. A druid can use such an object as a spellcasting focus."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -1017,7 +1097,11 @@
       },
       "categoria": "canalizador_druidico",
       "peso": 4,
-      "coste": 5
+      "coste": 5,
+      "descripcion": {
+        "es": "Un canalizador druídico puede ser una rama de muérdago o acebo, una varita o un cetro hechos de tejo o de otra madera especial, un bastón cortado de una pieza de un árbol o un tótem que contenga plumas, pelo, huesos y dientes de animales sagrados. Los druidas pueden utilizar estos objetos como canalizadores mágicos.",
+        "en": "A druidic focus might be a sprig of mistletoe or holly, a wand or scepter made of yew or another special wood, a staff drawn whole out of a living tree, or a totem object incorporating feathers, fur, bones, and teeth from sacred animals. A druid can use such an object as a spellcasting focus."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -1041,7 +1125,11 @@
       },
       "categoria": "canalizador_druidico",
       "peso": 1,
-      "coste": 10
+      "coste": 10,
+      "descripcion": {
+        "es": "Un canalizador druídico puede ser una rama de muérdago o acebo, una varita o un cetro hechos de tejo o de otra madera especial, un bastón cortado de una pieza de un árbol o un tótem que contenga plumas, pelo, huesos y dientes de animales sagrados. Los druidas pueden utilizar estos objetos como canalizadores mágicos.",
+        "en": "A druidic focus might be a sprig of mistletoe or holly, a wand or scepter made of yew or another special wood, a staff drawn whole out of a living tree, or a totem object incorporating feathers, fur, bones, and teeth from sacred animals. A druid can use such an object as a spellcasting focus."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -1065,7 +1153,11 @@
       },
       "categoria": "aventura",
       "peso": 4,
-      "coste": 1
+      "coste": 1,
+      "descripcion": {
+        "es": "La caña viene acompañada de un sedal, corchos de pesca, anzuelos de acero, plomos, cebos de terciopelo y una sacadera.",
+        "en": "This kit includes a wooden rod, silken line, corkwood bobbers, steel hooks, lead sinkers, velvet lures, and narrow netting."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -1185,7 +1277,11 @@
       },
       "categoria": "aventura",
       "peso": 3,
-      "coste": 5
+      "coste": 5,
+      "descripcion": {
+        "es": "Este saquito de cuero contiene vendas, ungüentos y tablillas. Puedes utilizarlo diez veces. Como acción, puedes gastar uno de estos diez usos para estabilizar a una criatura que tenga 0 puntos de golpe, sin necesidad de hacer una prueba de Sabiduría (Medicina).",
+        "en": "This kit is a leather pouch containing bandages, salves, and splints. The kit has ten uses. As an action, you can expend one use of the kit to stabilize a creature that has 0 hit points, without needing to make a Wisdom (Medicine) check."
+      }
     },
     "mechanics": {
       "resources": [
@@ -1223,7 +1319,11 @@
       },
       "categoria": "simbolo_sagrado",
       "peso": 1,
-      "coste": 5
+      "coste": 5,
+      "descripcion": {
+        "es": "Un símbolo sagrado es la representación de un dios o un panteón. Puede tratarse de un amuleto con la forma del dios, o del mismo símbolo, pero cuidadosamente grabado o esculpido en un escudo, o de una cajita que contenga un fragmento de una reliquia sagrada. El apéndice MJ-B, “Panteones histórico-fantásticos”, indica los símbolos que normalmente se asocian a los muchos dioses de multiverso. Un clérigo o un paladín puede utilizar un símbolo sagrado como canalizador mágico. Para ello, el lanzador deberá sostener el símbolo en la mano, llevarlo bien visible en alguna parte del cuerpo o sujetar un escudo que lo tenga grabado. Tienda. Una lona bajo la que guarecerse, sencilla y transportable, en la que pueden dormir dos personas.",
+        "en": "A holy symbol is a representation of a god or pantheon. It might be an amulet depicting a symbol representing a deity, the same symbol carefully engraved or inlaid as an emblem on a shield, or a tiny box holding a fragment of a sacred relic. Appendix PH-B \"Fantasy-Historical Pantheons\" lists the symbols commonly associated with many gods in the multiverse. A cleric or paladin can use a holy symbol as a spellcasting focus. To use the symbol in this way, the caster must hold it in hand, wear it visibly, or bear it on a shield."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -1247,7 +1347,11 @@
       },
       "categoria": "simbolo_sagrado",
       "peso": 0,
-      "coste": 5
+      "coste": 5,
+      "descripcion": {
+        "es": "Un símbolo sagrado es la representación de un dios o un panteón. Puede tratarse de un amuleto con la forma del dios, o del mismo símbolo, pero cuidadosamente grabado o esculpido en un escudo, o de una cajita que contenga un fragmento de una reliquia sagrada. El apéndice MJ-B, “Panteones histórico-fantásticos”, indica los símbolos que normalmente se asocian a los muchos dioses de multiverso. Un clérigo o un paladín puede utilizar un símbolo sagrado como canalizador mágico. Para ello, el lanzador deberá sostener el símbolo en la mano, llevarlo bien visible en alguna parte del cuerpo o sujetar un escudo que lo tenga grabado. Tienda. Una lona bajo la que guarecerse, sencilla y transportable, en la que pueden dormir dos personas.",
+        "en": "A holy symbol is a representation of a god or pantheon. It might be an amulet depicting a symbol representing a deity, the same symbol carefully engraved or inlaid as an emblem on a shield, or a tiny box holding a fragment of a sacred relic. Appendix PH-B \"Fantasy-Historical Pantheons\" lists the symbols commonly associated with many gods in the multiverse. A cleric or paladin can use a holy symbol as a spellcasting focus. To use the symbol in this way, the caster must hold it in hand, wear it visibly, or bear it on a shield."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -1271,7 +1375,11 @@
       },
       "categoria": "simbolo_sagrado",
       "peso": 2,
-      "coste": 5
+      "coste": 5,
+      "descripcion": {
+        "es": "Un símbolo sagrado es la representación de un dios o un panteón. Puede tratarse de un amuleto con la forma del dios, o del mismo símbolo, pero cuidadosamente grabado o esculpido en un escudo, o de una cajita que contenga un fragmento de una reliquia sagrada. El apéndice MJ-B, “Panteones histórico-fantásticos”, indica los símbolos que normalmente se asocian a los muchos dioses de multiverso. Un clérigo o un paladín puede utilizar un símbolo sagrado como canalizador mágico. Para ello, el lanzador deberá sostener el símbolo en la mano, llevarlo bien visible en alguna parte del cuerpo o sujetar un escudo que lo tenga grabado. Tienda. Una lona bajo la que guarecerse, sencilla y transportable, en la que pueden dormir dos personas.",
+        "en": "A holy symbol is a representation of a god or pantheon. It might be an amulet depicting a symbol representing a deity, the same symbol carefully engraved or inlaid as an emblem on a shield, or a tiny box holding a fragment of a sacred relic. Appendix PH-B \"Fantasy-Historical Pantheons\" lists the symbols commonly associated with many gods in the multiverse. A cleric or paladin can use a holy symbol as a spellcasting focus. To use the symbol in this way, the caster must hold it in hand, wear it visibly, or bear it on a shield."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -1295,7 +1403,11 @@
       },
       "categoria": "aventura",
       "peso": 1,
-      "coste": 25
+      "coste": 25,
+      "descripcion": {
+        "es": "Como acción, puedes esparcir el contenido de este frasco sobre una criatura que",
+        "en": "As an action, you can splash the contents of this flask onto a creature within 5 feet of you or throw it up to 20 feet, shattering it on impact. In either case, make a ranged attack against a target creature, treating the holy water as an improvised weapon. If the target is a fiend or undead, it takes 2d6 radiant damage. A cleric or paladin may create holy water by performing a special ritual. The ritual takes 1 hour to perform, uses 25 gp worth of powdered silver, and requires the caster to expend a 1st-level spell slot."
+      }
     },
     "mechanics": {
       "actions": [
@@ -1368,7 +1480,11 @@
       },
       "categoria": "aventura",
       "peso": 25,
-      "coste": 5
+      "coste": 5,
+      "descripcion": {
+        "es": "Puedes usar tu acción para armar esta trampa: un anillo de afilados dientes de acero que se cierra cuando una criatura pisa la placa de presión que está en su centro. La trampa se fija mediante una pesada cadena a cualquier objeto inmóvil, como un árbol o una estaca clavada en el suelo. Si una criatura pisa la placa, deberá superar una tirada de salvación de Destreza con CD 13 o sufrirá 1d4 de daño perforante y dejará de moverse. A partir de ese momento y hasta que la criatura se libere de la trampa, su movimiento se verá limitado por la longitud de la cadena (normalmente 90 cm). Una criatura puede emplear su acción para hacer una prueba de Fuerza con CD 13. Si tiene éxito, podrá liberarse a sí misma o a otra criatura dentro de su alcance. Cada prueba fallida causa 1 de daño perforante a la criatura atrapada.",
+        "en": "When you use your action to set it, this trap forms a saw-toothed steel ring that snaps shut when a creature steps on a pressure plate in the center. The trap is affixed by a heavy chain to an immobile object, such as a tree or a spike driven into the ground. A creature that steps on the plate must succeed on a DC 13 Dexterity saving throw or take 1d4 piercing damage and stop moving. Thereafter, until the creature breaks free of the trap, its movement is limited by the length of the chain (typically 3 feet long). A creature can use its action to make a DC 13 Strength check, freeing itself or another creature within its reach on a success. Each failed check deals 1 piercing damage to the trapped creature."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -1488,7 +1604,11 @@
       },
       "categoria": "aventura",
       "peso": 1,
-      "coste": 0.5
+      "coste": 0.5,
+      "descripcion": {
+        "es": "Esta lámpara emite luz brillante en un radio de 4,5 m y luz tenue 9 m más allá. Puede estar encendida hasta 6 horas con un frasco (0,5 l) de aceite.",
+        "en": "A lamp casts bright light in a 15-foot radius and dim light for an additional 30 feet. Once lit, it burns for 6 hours on a flask (1 pint) of oil."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -1512,7 +1632,11 @@
       },
       "categoria": "aventura",
       "peso": 2,
-      "coste": 10
+      "coste": 10,
+      "descripcion": {
+        "es": "Esta linterna emite una luz brillante en un cono de 18 m y luz tenue otros 18 m más allá. Puede estar encendida hasta 6 horas con un frasco (0,5 l) de aceite.",
+        "en": "A bullseye lantern casts bright light in a 60-foot cone and dim light for an additional 60 feet. Once lit, it burns for 6 hours on a flask (1 pint) of oil."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -1536,7 +1660,11 @@
       },
       "categoria": "aventura",
       "peso": 2,
-      "coste": 5
+      "coste": 5,
+      "descripcion": {
+        "es": "Esta linterna emite luz brillante en un radio de 9 m y luz tenue otros 9 m más allá. Puede estar encendida hasta 6 horas con un frasco (0,5 l) de aceite. Como acción, puedes cubrir la abertura con la tapa y hacer que solo emita luz tenue en un radio de 1,5 m.",
+        "en": "A hooded lantern casts bright light in a 30-foot radius and dim light for an additional 30 feet. Once lit, it burns for 6 hours on a flask (1 pint) of oil. As an action, you can lower the hood, reducing the light to dim light in a 5-foot radius."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -1560,7 +1688,11 @@
       },
       "categoria": "aventura",
       "peso": 1,
-      "coste": 10
+      "coste": 10,
+      "descripcion": {
+        "es": "La cerradura viene acompañada de una llave. Sin ella, una criatura competente con herramientas de ladrón puede forzar la cerradura si supera una prueba de Destreza con CD 15. Tu GM podría decidir que hay cerraduras mejores disponibles, pero serán más caras. Cuerda. La cuerda, tanto si es de cáñamo como si es de seda, tiene 2 puntos de golpe y, para romperla, es necesaria una prueba de Fuerza con CD 17.",
+        "en": "A key is provided with the lock. Without the key, a creature proficient with thieves’ tools can pick this lock with a successful DC 15 Dexterity check. Your GM may decide that better locks are available for higher prices."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -1584,7 +1716,11 @@
       },
       "categoria": "aventura",
       "peso": 0,
-      "coste": 100
+      "coste": 100,
+      "descripcion": {
+        "es": "Esta lente te permite observar con más detalle objetos pequeños. También puede sustituir al chispero y pedernal para encender un fuego. Para encender un fuego con una lupa, se necesita una luz tan brillante como la del sol para enfocar, yesca para prender y unos 5 minutos para que se ponga en marcha. Además, la lupa te da ventaja en las pruebas de característica para tasar o inspeccionar un objeto pequeño o muy detallado.",
+        "en": "This lens allows a closer look at small objects. It is also useful as a substitute for flint and steel when starting fires. Lighting a fire with a magnifying glass requires light as bright as sunlight to focus, tinder to ignite, and about 5 minutes for the fire to ignite. A magnifying glass grants advantage on any ability check made to appraise or inspect an item that is small or highly detailed."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -1608,7 +1744,11 @@
       },
       "categoria": "aventura",
       "peso": 6,
-      "coste": 2
+      "coste": 2,
+      "descripcion": {
+        "es": "Estos grilletes de metal pueden sujetar a una criatura Pequeña o Mediana. Para escapar de ellos hay que superar una prueba de Destreza con CD 20. Romperlos requiere superar una de Fuerza con CD 20. Cada juego de esposas viene con una llave. Sin ella, una criatura competente con herramientas de ladrón puede forzar la cerradura de las esposas si supera una prueba de Destreza con CD 15. Las esposas tienen 15 puntos de golpe. Estuche para mapas o pergaminos. Esta caja de cuero cilíndrica puede contener hasta diez hojas de papel o cinco hojas de pergamino, enrolladas en ambos casos.",
+        "en": "These metal restraints can bind a Small or Medium creature. Escaping the manacles requires a successful DC 20 Dexterity check. Breaking them requires a successful DC 20 Strength check. Each set of manacles comes with one key. Without the key, a creature proficient with thieves’ tools can pick the manacles’ lock with a successful DC 15 Dexterity check. Manacles have 15 hit points."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -1632,7 +1772,11 @@
       },
       "categoria": "aventura",
       "peso": 1,
-      "coste": 0.2
+      "coste": 0.2,
+      "descripcion": {
+        "es": "Esta caja de hojalata contiene una copa y cubiertos sencillos. Se cierra al unirse dos mitades, una de las cuales puede servir como sartén y la otra, como plato o cuenco poco profundo.",
+        "en": "This tin box contains a cup and simple cutlery. The box clamps together, and one side can be used as a cooking pan and the other as a plate or shallow bowl."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -1680,7 +1824,11 @@
       },
       "categoria": "aventura",
       "peso": 1,
-      "coste": 0.1
+      "coste": 0.1,
+      "descripcion": {
+        "es": "El aceite suele venir en frascos de arcilla con capacidad para 0,5 l. Como acción, puedes esparcir el aceite de este frasco sobre una criatura que esté a 1,5 m o menos de ti o lanzarlo hasta a 6 m, lo que hará que el frasco se rompa con el impacto. En ambos casos, haz un ataque a distancia contra la criatura o el objeto y trata el aceite como un arma improvisada: si tienes éxito, el objetivo quedará cubierto de aceite. Si el objetivo sufre daño de fuego antes de que el aceite se seque (lo que ocurre tras 1 minuto), recibirá 5 de daño de fuego adicional debido al aceite ardiendo. También puedes derramar un frasco de aceite por el suelo, que cubrirá una zona de 1,5 m de lado, siempre y cuando la superficie esté nivelada. Si se prende, el aceite arderá durante 2 asaltos y causará 5 de daño de fuego a cualquier criatura que entre en la zona o acabe su turno en ella. Una criatura solo puede sufrir este daño una vez por turno.",
+        "en": "Oil usually comes in a clay flask that holds 1 pint. As an action, you can splash the oil in this flask onto a creature within 5 feet of you or throw it up to 20 feet, shattering it on impact. Make a ranged attack against a target creature or object, treating the oil as an improvised weapon. On a hit, the target is covered in oil. If the target takes any fire damage before the oil dries (after 1 minute), the target takes an additional 5 fire damage from the burning oil. You can also pour a flask of oil on the ground to cover a 5-foot-square area, provided that the surface is level. If lit, the oil burns for 2 rounds and deals 5 fire damage to any creature that enters the area or ends its turn in the area. A creature can take this damage only once per turn."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -1824,7 +1972,11 @@
       },
       "categoria": "aventura",
       "peso": 0,
-      "coste": 100
+      "coste": 100,
+      "descripcion": {
+        "es": "Puedes usar el veneno que contiene este vial para impregnar con él un arma cortante o perforante o hasta tres unidades de munición. Aplicar el veneno requiere una acción. Cualquier criatura impactada por el arma o munición envenenadas deberá superar una tirada de salvación de Constitución con CD 10 o sufrirá 1d4 de daño de veneno. Una vez aplicado, el veneno mantiene su efectividad durante 1 minuto antes de secarse.",
+        "en": "You can use the poison in this vial to coat one slashing or piercing weapon or up to three pieces of ammunition. Applying the poison takes an action. A creature hit by the poisoned weapon or ammunition must make a DC 10 Constitution saving throw or take 1d4 poison damage. Once applied, the poison retains potency for 1 minute before drying."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -1896,7 +2048,11 @@
       },
       "categoria": "aventura",
       "peso": 0.5,
-      "coste": 50
+      "coste": 50,
+      "descripcion": {
+        "es": "Un personaje que beba el fluido mágico de color rojo de este vial recuperará 2d4 + 2 puntos de golpe. Tanto beber como administrar la poción a otro requiere una acción.",
+        "en": "A character who drinks the magical red fluid in this vial regains 2d4 + 2 hit points. Drinking or administering a potion takes an action."
+      }
     },
     "mechanics": {
       "actions": [
@@ -1931,7 +2087,11 @@
       },
       "categoria": "aventura",
       "peso": 1,
-      "coste": 0.5
+      "coste": 0.5,
+      "descripcion": {
+        "es": "Una bolsita de cuero o tela que puede contener hasta 20 balas de honda o 50 dardos de cerbatana, entre otras cosas. Las bolsas con compartimentos para componentes de conjuros reciben el nombre de “saquitos de componentes” y se describen también en esta sección.",
+        "en": "A cloth or leather pouch can hold up to 20 sling bullets or 50 blowgun needles, among other things. A compartmentalized pouch for holding spell components is called a component pouch (described earlier in this section)."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -1955,7 +2115,11 @@
       },
       "categoria": "aventura",
       "peso": 1,
-      "coste": 1
+      "coste": 1,
+      "descripcion": {
+        "es": "Una aljaba puede contener hasta 20 flechas.",
+        "en": "A quiver can hold up to 20 arrows."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -1979,7 +2143,11 @@
       },
       "categoria": "aventura",
       "peso": 35,
-      "coste": 4
+      "coste": 4,
+      "descripcion": {
+        "es": "Puedes usar un ariete portátil para derribar puertas. Cuando lo hagas, obtendrás un bonificador de +4 a la prueba de Fuerza. Si otro personaje te ayuda a usar el ariete, tendrás ventaja en esta prueba.",
+        "en": "You can use a portable ram to break down doors. When doing so, you gain a +4 bonus on the Strength check. One other character can help you use the ram, giving you advantage on this check."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -2003,7 +2171,11 @@
       },
       "categoria": "aventura",
       "peso": 2,
-      "coste": 0.5
+      "coste": 0.5,
+      "descripcion": {
+        "es": "Las raciones contienen alimentos secos que resisten viajes largos, como cecina, fruta deshidratada, galletas y nueces.",
+        "en": "Rations consist of dry foods suitable for extended travel, including jerky, dried fruit, hardtack, and nuts. Rope. Rope, whether made of hemp or silk, has 2 hit points and can be burst with a DC 17 Strength check."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -2123,7 +2295,11 @@
       },
       "categoria": "aventura",
       "peso": 3,
-      "coste": 5
+      "coste": 5,
+      "descripcion": {
+        "es": "Esta balanza incluye bandejas para depositar objetos y un juego de pesas que llega hasta el kilo. Puedes utilizarla para calcular el peso exacto de objetos pequeños, como pueden ser metales preciosos o mercancías, para así poder determinar su valor.",
+        "en": "A scale includes a small balance, pans, and a suitable assortment of weights up to 2 pounds. With it, you can measure the exact weight of small objects, such as raw precious metals or trade goods, to help determine their worth."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -2267,7 +2443,11 @@
       },
       "categoria": "aventura",
       "peso": 3,
-      "coste": 50
+      "coste": 50,
+      "descripcion": {
+        "es": "Indispensable para los magos, un libro de conjuros es un tomo encuadernado en cuero con 100 páginas de vitela en blanco, adecuadas para escribir conjuros.",
+        "en": "Essential for wizards, a spellbook is a leather-bound tome with 100 blank vellum pages suitable for recording spells."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -2315,7 +2495,11 @@
       },
       "categoria": "aventura",
       "peso": 1,
-      "coste": 1000
+      "coste": 1000,
+      "descripcion": {
+        "es": "Los objetos que se observan a través de un catalejo se ven al doble de su tamaño real.",
+        "en": "Objects viewed through a spyglass are magnified to twice their size. Tent. A simple and portable canvas shelter, a tent sleeps two."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -2363,7 +2547,11 @@
       },
       "categoria": "aventura",
       "peso": 1,
-      "coste": 0.5
+      "coste": 0.5,
+      "descripcion": {
+        "es": "Esta pequeña caja contiene un pedernal, un chispero y yescas (normalmente, tela seca untada en aceite) que se utilizan para encender un fuego. Utilizar el yesquero para prender una antorcha (o cualquier otra cosa altamente inflamable) requiere una acción. Encender cualquier otro tipo de fuego lleva 1 minuto. Equipo de aventureros",
+        "en": "This small container holds flint, fire steel, and tinder (usually dry cloth soaked in light oil) used to kindle a fire. Using it to light a torch—or anything else with abundant, exposed fuel—takes an action. Lighting any other fire takes 1 minute."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -2387,7 +2575,11 @@
       },
       "categoria": "aventura",
       "peso": 1,
-      "coste": 0.01
+      "coste": 0.01,
+      "descripcion": {
+        "es": "Una antorcha arde durante 1 hora y emite luz brillante en un radio de 6 m y luz tenue otros 6 m más allá. Si realizas un ataque cuerpo a cuerpo con una antorcha encendida e impactas, causarás 1 de daño de fuego.",
+        "en": "A torch burns for 1 hour, providing bright light in a 20-foot radius and dim light for an additional 20 feet. If you make a melee attack with a burning torch and hit, it deals 1 fire damage."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -2483,7 +2675,11 @@
       },
       "categoria": "herramienta_artesano",
       "peso": 8,
-      "coste": 50
+      "coste": 50,
+      "descripcion": {
+        "es": "Estas herramientas especiales consisten en los objetos necesarios para llevar a cabo las tareas propias de un oficio. La tabla muestra ejemplos de las herramientas más habituales que proporcionan los útiles apropiados para una profesión concreta. La competencia con las herramientas de un oficio te permite sumar tu bonificador por competencia a cualquier prueba de característica que hagas con dichas herramientas, siempre y cuando las emplees en tareas de la profesión correspondiente. Cada tipo de herramientas de artesano requiere su propia competencia independiente.",
+        "en": "These special tools include the items needed to pursue a craft or trade. The table shows examples of the most common types of tools, each providing items related to a single craft. Proficiency with a set of artisan’s tools lets you add your proficiency bonus to any ability checks you make using the tools in your craft. Each type of artisan’s tools requires a separate proficiency."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -2507,7 +2703,11 @@
       },
       "categoria": "herramienta_artesano",
       "peso": 9,
-      "coste": 20
+      "coste": 20,
+      "descripcion": {
+        "es": "Estas herramientas especiales consisten en los objetos necesarios para llevar a cabo las tareas propias de un oficio. La tabla muestra ejemplos de las herramientas más habituales que proporcionan los útiles apropiados para una profesión concreta. La competencia con las herramientas de un oficio te permite sumar tu bonificador por competencia a cualquier prueba de característica que hagas con dichas herramientas, siempre y cuando las emplees en tareas de la profesión correspondiente. Cada tipo de herramientas de artesano requiere su propia competencia independiente.",
+        "en": "These special tools include the items needed to pursue a craft or trade. The table shows examples of the most common types of tools, each providing items related to a single craft. Proficiency with a set of artisan’s tools lets you add your proficiency bonus to any ability checks you make using the tools in your craft. Each type of artisan’s tools requires a separate proficiency."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -2531,7 +2731,11 @@
       },
       "categoria": "herramienta_artesano",
       "peso": 5,
-      "coste": 10
+      "coste": 10,
+      "descripcion": {
+        "es": "Estas herramientas especiales consisten en los objetos necesarios para llevar a cabo las tareas propias de un oficio. La tabla muestra ejemplos de las herramientas más habituales que proporcionan los útiles apropiados para una profesión concreta. La competencia con las herramientas de un oficio te permite sumar tu bonificador por competencia a cualquier prueba de característica que hagas con dichas herramientas, siempre y cuando las emplees en tareas de la profesión correspondiente. Cada tipo de herramientas de artesano requiere su propia competencia independiente.",
+        "en": "These special tools include the items needed to pursue a craft or trade. The table shows examples of the most common types of tools, each providing items related to a single craft. Proficiency with a set of artisan’s tools lets you add your proficiency bonus to any ability checks you make using the tools in your craft. Each type of artisan’s tools requires a separate proficiency."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -2555,7 +2759,11 @@
       },
       "categoria": "herramienta_artesano",
       "peso": 6,
-      "coste": 8
+      "coste": 8,
+      "descripcion": {
+        "es": "Estas herramientas especiales consisten en los objetos necesarios para llevar a cabo las tareas propias de un oficio. La tabla muestra ejemplos de las herramientas más habituales que proporcionan los útiles apropiados para una profesión concreta. La competencia con las herramientas de un oficio te permite sumar tu bonificador por competencia a cualquier prueba de característica que hagas con dichas herramientas, siempre y cuando las emplees en tareas de la profesión correspondiente. Cada tipo de herramientas de artesano requiere su propia competencia independiente.",
+        "en": "These special tools include the items needed to pursue a craft or trade. The table shows examples of the most common types of tools, each providing items related to a single craft. Proficiency with a set of artisan’s tools lets you add your proficiency bonus to any ability checks you make using the tools in your craft. Each type of artisan’s tools requires a separate proficiency."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -2579,7 +2787,11 @@
       },
       "categoria": "herramienta_artesano",
       "peso": 6,
-      "coste": 15
+      "coste": 15,
+      "descripcion": {
+        "es": "Estas herramientas especiales consisten en los objetos necesarios para llevar a cabo las tareas propias de un oficio. La tabla muestra ejemplos de las herramientas más habituales que proporcionan los útiles apropiados para una profesión concreta. La competencia con las herramientas de un oficio te permite sumar tu bonificador por competencia a cualquier prueba de característica que hagas con dichas herramientas, siempre y cuando las emplees en tareas de la profesión correspondiente. Cada tipo de herramientas de artesano requiere su propia competencia independiente.",
+        "en": "These special tools include the items needed to pursue a craft or trade. The table shows examples of the most common types of tools, each providing items related to a single craft. Proficiency with a set of artisan’s tools lets you add your proficiency bonus to any ability checks you make using the tools in your craft. Each type of artisan’s tools requires a separate proficiency."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -2603,7 +2815,11 @@
       },
       "categoria": "herramienta_artesano",
       "peso": 5,
-      "coste": 5
+      "coste": 5,
+      "descripcion": {
+        "es": "Estas herramientas especiales consisten en los objetos necesarios para llevar a cabo las tareas propias de un oficio. La tabla muestra ejemplos de las herramientas más habituales que proporcionan los útiles apropiados para una profesión concreta. La competencia con las herramientas de un oficio te permite sumar tu bonificador por competencia a cualquier prueba de característica que hagas con dichas herramientas, siempre y cuando las emplees en tareas de la profesión correspondiente. Cada tipo de herramientas de artesano requiere su propia competencia independiente.",
+        "en": "These special tools include the items needed to pursue a craft or trade. The table shows examples of the most common types of tools, each providing items related to a single craft. Proficiency with a set of artisan’s tools lets you add your proficiency bonus to any ability checks you make using the tools in your craft. Each type of artisan’s tools requires a separate proficiency."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -2627,7 +2843,11 @@
       },
       "categoria": "herramienta_artesano",
       "peso": 8,
-      "coste": 1
+      "coste": 1,
+      "descripcion": {
+        "es": "Estas herramientas especiales consisten en los objetos necesarios para llevar a cabo las tareas propias de un oficio. La tabla muestra ejemplos de las herramientas más habituales que proporcionan los útiles apropiados para una profesión concreta. La competencia con las herramientas de un oficio te permite sumar tu bonificador por competencia a cualquier prueba de característica que hagas con dichas herramientas, siempre y cuando las emplees en tareas de la profesión correspondiente. Cada tipo de herramientas de artesano requiere su propia competencia independiente.",
+        "en": "These special tools include the items needed to pursue a craft or trade. The table shows examples of the most common types of tools, each providing items related to a single craft. Proficiency with a set of artisan’s tools lets you add your proficiency bonus to any ability checks you make using the tools in your craft. Each type of artisan’s tools requires a separate proficiency."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -2651,7 +2871,11 @@
       },
       "categoria": "herramienta_artesano",
       "peso": 5,
-      "coste": 30
+      "coste": 30,
+      "descripcion": {
+        "es": "Estas herramientas especiales consisten en los objetos necesarios para llevar a cabo las tareas propias de un oficio. La tabla muestra ejemplos de las herramientas más habituales que proporcionan los útiles apropiados para una profesión concreta. La competencia con las herramientas de un oficio te permite sumar tu bonificador por competencia a cualquier prueba de característica que hagas con dichas herramientas, siempre y cuando las emplees en tareas de la profesión correspondiente. Cada tipo de herramientas de artesano requiere su propia competencia independiente.",
+        "en": "These special tools include the items needed to pursue a craft or trade. The table shows examples of the most common types of tools, each providing items related to a single craft. Proficiency with a set of artisan’s tools lets you add your proficiency bonus to any ability checks you make using the tools in your craft. Each type of artisan’s tools requires a separate proficiency."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -2675,7 +2899,11 @@
       },
       "categoria": "herramienta_artesano",
       "peso": 2,
-      "coste": 25
+      "coste": 25,
+      "descripcion": {
+        "es": "Estas herramientas especiales consisten en los objetos necesarios para llevar a cabo las tareas propias de un oficio. La tabla muestra ejemplos de las herramientas más habituales que proporcionan los útiles apropiados para una profesión concreta. La competencia con las herramientas de un oficio te permite sumar tu bonificador por competencia a cualquier prueba de característica que hagas con dichas herramientas, siempre y cuando las emplees en tareas de la profesión correspondiente. Cada tipo de herramientas de artesano requiere su propia competencia independiente.",
+        "en": "These special tools include the items needed to pursue a craft or trade. The table shows examples of the most common types of tools, each providing items related to a single craft. Proficiency with a set of artisan’s tools lets you add your proficiency bonus to any ability checks you make using the tools in your craft. Each type of artisan’s tools requires a separate proficiency."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -2699,7 +2927,11 @@
       },
       "categoria": "herramienta_artesano",
       "peso": 5,
-      "coste": 5
+      "coste": 5,
+      "descripcion": {
+        "es": "Estas herramientas especiales consisten en los objetos necesarios para llevar a cabo las tareas propias de un oficio. La tabla muestra ejemplos de las herramientas más habituales que proporcionan los útiles apropiados para una profesión concreta. La competencia con las herramientas de un oficio te permite sumar tu bonificador por competencia a cualquier prueba de característica que hagas con dichas herramientas, siempre y cuando las emplees en tareas de la profesión correspondiente. Cada tipo de herramientas de artesano requiere su propia competencia independiente.",
+        "en": "These special tools include the items needed to pursue a craft or trade. The table shows examples of the most common types of tools, each providing items related to a single craft. Proficiency with a set of artisan’s tools lets you add your proficiency bonus to any ability checks you make using the tools in your craft. Each type of artisan’s tools requires a separate proficiency."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -2723,7 +2955,11 @@
       },
       "categoria": "herramienta_artesano",
       "peso": 8,
-      "coste": 10
+      "coste": 10,
+      "descripcion": {
+        "es": "Estas herramientas especiales consisten en los objetos necesarios para llevar a cabo las tareas propias de un oficio. La tabla muestra ejemplos de las herramientas más habituales que proporcionan los útiles apropiados para una profesión concreta. La competencia con las herramientas de un oficio te permite sumar tu bonificador por competencia a cualquier prueba de característica que hagas con dichas herramientas, siempre y cuando las emplees en tareas de la profesión correspondiente. Cada tipo de herramientas de artesano requiere su propia competencia independiente.",
+        "en": "These special tools include the items needed to pursue a craft or trade. The table shows examples of the most common types of tools, each providing items related to a single craft. Proficiency with a set of artisan’s tools lets you add your proficiency bonus to any ability checks you make using the tools in your craft. Each type of artisan’s tools requires a separate proficiency."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -2747,7 +2983,11 @@
       },
       "categoria": "herramienta_artesano",
       "peso": 5,
-      "coste": 10
+      "coste": 10,
+      "descripcion": {
+        "es": "Estas herramientas especiales consisten en los objetos necesarios para llevar a cabo las tareas propias de un oficio. La tabla muestra ejemplos de las herramientas más habituales que proporcionan los útiles apropiados para una profesión concreta. La competencia con las herramientas de un oficio te permite sumar tu bonificador por competencia a cualquier prueba de característica que hagas con dichas herramientas, siempre y cuando las emplees en tareas de la profesión correspondiente. Cada tipo de herramientas de artesano requiere su propia competencia independiente.",
+        "en": "These special tools include the items needed to pursue a craft or trade. The table shows examples of the most common types of tools, each providing items related to a single craft. Proficiency with a set of artisan’s tools lets you add your proficiency bonus to any ability checks you make using the tools in your craft. Each type of artisan’s tools requires a separate proficiency."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -2771,7 +3011,11 @@
       },
       "categoria": "herramienta_artesano",
       "peso": 3,
-      "coste": 10
+      "coste": 10,
+      "descripcion": {
+        "es": "Estas herramientas especiales consisten en los objetos necesarios para llevar a cabo las tareas propias de un oficio. La tabla muestra ejemplos de las herramientas más habituales que proporcionan los útiles apropiados para una profesión concreta. La competencia con las herramientas de un oficio te permite sumar tu bonificador por competencia a cualquier prueba de característica que hagas con dichas herramientas, siempre y cuando las emplees en tareas de la profesión correspondiente. Cada tipo de herramientas de artesano requiere su propia competencia independiente.",
+        "en": "These special tools include the items needed to pursue a craft or trade. The table shows examples of the most common types of tools, each providing items related to a single craft. Proficiency with a set of artisan’s tools lets you add your proficiency bonus to any ability checks you make using the tools in your craft. Each type of artisan’s tools requires a separate proficiency."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -2795,7 +3039,11 @@
       },
       "categoria": "herramienta_artesano",
       "peso": 8,
-      "coste": 20
+      "coste": 20,
+      "descripcion": {
+        "es": "Estas herramientas especiales consisten en los objetos necesarios para llevar a cabo las tareas propias de un oficio. La tabla muestra ejemplos de las herramientas más habituales que proporcionan los útiles apropiados para una profesión concreta. La competencia con las herramientas de un oficio te permite sumar tu bonificador por competencia a cualquier prueba de característica que hagas con dichas herramientas, siempre y cuando las emplees en tareas de la profesión correspondiente. Cada tipo de herramientas de artesano requiere su propia competencia independiente.",
+        "en": "These special tools include the items needed to pursue a craft or trade. The table shows examples of the most common types of tools, each providing items related to a single craft. Proficiency with a set of artisan’s tools lets you add your proficiency bonus to any ability checks you make using the tools in your craft. Each type of artisan’s tools requires a separate proficiency."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -2819,7 +3067,11 @@
       },
       "categoria": "herramienta_artesano",
       "peso": 10,
-      "coste": 50
+      "coste": 50,
+      "descripcion": {
+        "es": "Estas herramientas especiales consisten en los objetos necesarios para llevar a cabo las tareas propias de un oficio. La tabla muestra ejemplos de las herramientas más habituales que proporcionan los útiles apropiados para una profesión concreta. La competencia con las herramientas de un oficio te permite sumar tu bonificador por competencia a cualquier prueba de característica que hagas con dichas herramientas, siempre y cuando las emplees en tareas de la profesión correspondiente. Cada tipo de herramientas de artesano requiere su propia competencia independiente.",
+        "en": "These special tools include the items needed to pursue a craft or trade. The table shows examples of the most common types of tools, each providing items related to a single craft. Proficiency with a set of artisan’s tools lets you add your proficiency bonus to any ability checks you make using the tools in your craft. Each type of artisan’s tools requires a separate proficiency."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -2843,7 +3095,11 @@
       },
       "categoria": "herramienta_artesano",
       "peso": 5,
-      "coste": 1
+      "coste": 1,
+      "descripcion": {
+        "es": "Estas herramientas especiales consisten en los objetos necesarios para llevar a cabo las tareas propias de un oficio. La tabla muestra ejemplos de las herramientas más habituales que proporcionan los útiles apropiados para una profesión concreta. La competencia con las herramientas de un oficio te permite sumar tu bonificador por competencia a cualquier prueba de característica que hagas con dichas herramientas, siempre y cuando las emplees en tareas de la profesión correspondiente. Cada tipo de herramientas de artesano requiere su propia competencia independiente.",
+        "en": "These special tools include the items needed to pursue a craft or trade. The table shows examples of the most common types of tools, each providing items related to a single craft. Proficiency with a set of artisan’s tools lets you add your proficiency bonus to any ability checks you make using the tools in your craft. Each type of artisan’s tools requires a separate proficiency."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -2867,7 +3123,11 @@
       },
       "categoria": "herramienta_artesano",
       "peso": 5,
-      "coste": 1
+      "coste": 1,
+      "descripcion": {
+        "es": "Estas herramientas especiales consisten en los objetos necesarios para llevar a cabo las tareas propias de un oficio. La tabla muestra ejemplos de las herramientas más habituales que proporcionan los útiles apropiados para una profesión concreta. La competencia con las herramientas de un oficio te permite sumar tu bonificador por competencia a cualquier prueba de característica que hagas con dichas herramientas, siempre y cuando las emplees en tareas de la profesión correspondiente. Cada tipo de herramientas de artesano requiere su propia competencia independiente.",
+        "en": "These special tools include the items needed to pursue a craft or trade. The table shows examples of the most common types of tools, each providing items related to a single craft. Proficiency with a set of artisan’s tools lets you add your proficiency bonus to any ability checks you make using the tools in your craft. Each type of artisan’s tools requires a separate proficiency."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -2891,7 +3151,11 @@
       },
       "categoria": "herramienta",
       "peso": 3,
-      "coste": 25
+      "coste": 25,
+      "descripcion": {
+        "es": "Esta bolsa con productos de maquillaje, tinte para el pelo y pequeños accesorios te ayuda a disfrazarte y cambiar así tu apariencia. La competencia con estos útiles te permite sumar tu bonificador por competencia a las pruebas de característica para crear un disfraz que engañe a la vista.",
+        "en": "This pouch of cosmetics, hair dye, and small props lets you create disguises that change your physical appearance. Proficiency with this kit lets you add your proficiency bonus to any ability checks you make to create a visual disguise."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -2915,7 +3179,11 @@
       },
       "categoria": "herramienta",
       "peso": 5,
-      "coste": 15
+      "coste": 15,
+      "descripcion": {
+        "es": "Esta cajita contiene varios tipos de papeles y pergaminos, plumas y tintas, sellos y lacres, y láminas de oro y plata, además de otros materiales necesarios para crear falsificaciones de documentos que resulten convincentes. La competencia con estos útiles te permite sumar tu bonificador por competencia a las pruebas de característica que hagas para falsificar un documento.",
+        "en": "This small box contains a variety of papers and parchments, pens and inks, seals and sealing wax, gold and silver leaf, and other supplies necessary to create convincing forgeries of physical documents. Proficiency with this kit lets you add your proficiency bonus to any ability checks you make to create a physical forgery of a document."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -2939,7 +3207,11 @@
       },
       "categoria": "juego",
       "peso": 0,
-      "coste": 0.1
+      "coste": 0.1,
+      "descripcion": {
+        "es": "Esta categoría de objetos incluye varios tipos de juegos de azar, normalmente basados en dados o cartas (como la Apuesta de los Tres Dragones). En la tabla “Herramientas” aparecen algunos ejemplos comunes, pero existen otros. Si eres competente con un juego, puedes sumar tu bonificador por competencia a las pruebas de característica que hagas para jugar con él. Cada tipo de juego requiere su propia competencia independiente.",
+        "en": "This item encompasses a wide range of game pieces, including dice and decks of cards (for games such as Three-Dragon Ante). A few common examples appear on the Tools table, but other kinds of gaming sets exist. If you are proficient with a gaming set, you can add your proficiency bonus to ability checks you make to play a game with that set. Each type of gaming set requires a separate proficiency."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -2963,7 +3235,11 @@
       },
       "categoria": "juego",
       "peso": 0,
-      "coste": 0.5
+      "coste": 0.5,
+      "descripcion": {
+        "es": "Esta categoría de objetos incluye varios tipos de juegos de azar, normalmente basados en dados o cartas (como la Apuesta de los Tres Dragones). En la tabla “Herramientas” aparecen algunos ejemplos comunes, pero existen otros. Si eres competente con un juego, puedes sumar tu bonificador por competencia a las pruebas de característica que hagas para jugar con él. Cada tipo de juego requiere su propia competencia independiente.",
+        "en": "This item encompasses a wide range of game pieces, including dice and decks of cards (for games such as Three-Dragon Ante). A few common examples appear on the Tools table, but other kinds of gaming sets exist. If you are proficient with a gaming set, you can add your proficiency bonus to ability checks you make to play a game with that set. Each type of gaming set requires a separate proficiency."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -2987,7 +3263,11 @@
       },
       "categoria": "herramienta",
       "peso": 3,
-      "coste": 5
+      "coste": 5,
+      "descripcion": {
+        "es": "Este conjunto de objetos incluye una gran variedad de herramientas utilizadas por los herboristas para crear remedios y pociones, como pueden ser unas cizallas, un mortero, bolsas y viales. La competencia con estos útiles te permite sumar tu bonificador por competencia a las pruebas de característica que hagas para identificar o aplicar hierbas. Además, se necesita competencia con estos útiles para elaborar antitoxinas y pociones de curación.",
+        "en": "This kit contains a variety of instruments such as clippers, mortar and pestle, and pouches and vials used by herbalists to create remedies and potions. Proficiency with this kit lets you add your proficiency bonus to any ability checks you make to identify or apply herbs. Also, proficiency with this kit is required to create antitoxin and potions of healing."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -3011,7 +3291,11 @@
       },
       "categoria": "instrumento",
       "peso": 6,
-      "coste": 30
+      "coste": 30,
+      "descripcion": {
+        "es": "La tabla muestra ejemplos de los instrumentos musicales más comunes. Si eres competente con uno en concreto, puedes sumar tu bonificador por competencia a las pruebas de característica que hagas para tocar música con él. Los bardos pueden utilizar un instrumento musical como canalizador mágico. Cada tipo de instrumento requiere su propia competencia independiente.",
+        "en": "Several of the most common types of musical instruments are shown on the table as examples. If you have proficiency with a given musical instrument, you can add your proficiency bonus to any ability checks you make to play music with the instrument. A bard can use a musical instrument as a spellcasting focus. Each type of musical instrument requires a separate proficiency."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -3035,7 +3319,11 @@
       },
       "categoria": "instrumento",
       "peso": 3,
-      "coste": 6
+      "coste": 6,
+      "descripcion": {
+        "es": "La tabla muestra ejemplos de los instrumentos musicales más comunes. Si eres competente con uno en concreto, puedes sumar tu bonificador por competencia a las pruebas de característica que hagas para tocar música con él. Los bardos pueden utilizar un instrumento musical como canalizador mágico. Cada tipo de instrumento requiere su propia competencia independiente.",
+        "en": "Several of the most common types of musical instruments are shown on the table as examples. If you have proficiency with a given musical instrument, you can add your proficiency bonus to any ability checks you make to play music with the instrument. A bard can use a musical instrument as a spellcasting focus. Each type of musical instrument requires a separate proficiency."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -3059,7 +3347,11 @@
       },
       "categoria": "instrumento",
       "peso": 10,
-      "coste": 25
+      "coste": 25,
+      "descripcion": {
+        "es": "La tabla muestra ejemplos de los instrumentos musicales más comunes. Si eres competente con uno en concreto, puedes sumar tu bonificador por competencia a las pruebas de característica que hagas para tocar música con él. Los bardos pueden utilizar un instrumento musical como canalizador mágico. Cada tipo de instrumento requiere su propia competencia independiente.",
+        "en": "Several of the most common types of musical instruments are shown on the table as examples. If you have proficiency with a given musical instrument, you can add your proficiency bonus to any ability checks you make to play music with the instrument. A bard can use a musical instrument as a spellcasting focus. Each type of musical instrument requires a separate proficiency."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -3083,7 +3375,11 @@
       },
       "categoria": "instrumento",
       "peso": 1,
-      "coste": 2
+      "coste": 2,
+      "descripcion": {
+        "es": "La tabla muestra ejemplos de los instrumentos musicales más comunes. Si eres competente con uno en concreto, puedes sumar tu bonificador por competencia a las pruebas de característica que hagas para tocar música con él. Los bardos pueden utilizar un instrumento musical como canalizador mágico. Cada tipo de instrumento requiere su propia competencia independiente.",
+        "en": "Several of the most common types of musical instruments are shown on the table as examples. If you have proficiency with a given musical instrument, you can add your proficiency bonus to any ability checks you make to play music with the instrument. A bard can use a musical instrument as a spellcasting focus. Each type of musical instrument requires a separate proficiency."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -3107,7 +3403,11 @@
       },
       "categoria": "instrumento",
       "peso": 2,
-      "coste": 35
+      "coste": 35,
+      "descripcion": {
+        "es": "La tabla muestra ejemplos de los instrumentos musicales más comunes. Si eres competente con uno en concreto, puedes sumar tu bonificador por competencia a las pruebas de característica que hagas para tocar música con él. Los bardos pueden utilizar un instrumento musical como canalizador mágico. Cada tipo de instrumento requiere su propia competencia independiente.",
+        "en": "Several of the most common types of musical instruments are shown on the table as examples. If you have proficiency with a given musical instrument, you can add your proficiency bonus to any ability checks you make to play music with the instrument. A bard can use a musical instrument as a spellcasting focus. Each type of musical instrument requires a separate proficiency."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -3131,7 +3431,11 @@
       },
       "categoria": "instrumento",
       "peso": 2,
-      "coste": 30
+      "coste": 30,
+      "descripcion": {
+        "es": "La tabla muestra ejemplos de los instrumentos musicales más comunes. Si eres competente con uno en concreto, puedes sumar tu bonificador por competencia a las pruebas de característica que hagas para tocar música con él. Los bardos pueden utilizar un instrumento musical como canalizador mágico. Cada tipo de instrumento requiere su propia competencia independiente.",
+        "en": "Several of the most common types of musical instruments are shown on the table as examples. If you have proficiency with a given musical instrument, you can add your proficiency bonus to any ability checks you make to play music with the instrument. A bard can use a musical instrument as a spellcasting focus. Each type of musical instrument requires a separate proficiency."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -3155,7 +3459,11 @@
       },
       "categoria": "instrumento",
       "peso": 2,
-      "coste": 3
+      "coste": 3,
+      "descripcion": {
+        "es": "La tabla muestra ejemplos de los instrumentos musicales más comunes. Si eres competente con uno en concreto, puedes sumar tu bonificador por competencia a las pruebas de característica que hagas para tocar música con él. Los bardos pueden utilizar un instrumento musical como canalizador mágico. Cada tipo de instrumento requiere su propia competencia independiente.",
+        "en": "Several of the most common types of musical instruments are shown on the table as examples. If you have proficiency with a given musical instrument, you can add your proficiency bonus to any ability checks you make to play music with the instrument. A bard can use a musical instrument as a spellcasting focus. Each type of musical instrument requires a separate proficiency."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -3179,7 +3487,11 @@
       },
       "categoria": "instrumento",
       "peso": 2,
-      "coste": 12
+      "coste": 12,
+      "descripcion": {
+        "es": "La tabla muestra ejemplos de los instrumentos musicales más comunes. Si eres competente con uno en concreto, puedes sumar tu bonificador por competencia a las pruebas de característica que hagas para tocar música con él. Los bardos pueden utilizar un instrumento musical como canalizador mágico. Cada tipo de instrumento requiere su propia competencia independiente.",
+        "en": "Several of the most common types of musical instruments are shown on the table as examples. If you have proficiency with a given musical instrument, you can add your proficiency bonus to any ability checks you make to play music with the instrument. A bard can use a musical instrument as a spellcasting focus. Each type of musical instrument requires a separate proficiency."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -3203,7 +3515,11 @@
       },
       "categoria": "instrumento",
       "peso": 1,
-      "coste": 2
+      "coste": 2,
+      "descripcion": {
+        "es": "La tabla muestra ejemplos de los instrumentos musicales más comunes. Si eres competente con uno en concreto, puedes sumar tu bonificador por competencia a las pruebas de característica que hagas para tocar música con él. Los bardos pueden utilizar un instrumento musical como canalizador mágico. Cada tipo de instrumento requiere su propia competencia independiente.",
+        "en": "Several of the most common types of musical instruments are shown on the table as examples. If you have proficiency with a given musical instrument, you can add your proficiency bonus to any ability checks you make to play music with the instrument. A bard can use a musical instrument as a spellcasting focus. Each type of musical instrument requires a separate proficiency."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -3227,7 +3543,11 @@
       },
       "categoria": "instrumento",
       "peso": 1,
-      "coste": 30
+      "coste": 30,
+      "descripcion": {
+        "es": "La tabla muestra ejemplos de los instrumentos musicales más comunes. Si eres competente con uno en concreto, puedes sumar tu bonificador por competencia a las pruebas de característica que hagas para tocar música con él. Los bardos pueden utilizar un instrumento musical como canalizador mágico. Cada tipo de instrumento requiere su propia competencia independiente.",
+        "en": "Several of the most common types of musical instruments are shown on the table as examples. If you have proficiency with a given musical instrument, you can add your proficiency bonus to any ability checks you make to play music with the instrument. A bard can use a musical instrument as a spellcasting focus. Each type of musical instrument requires a separate proficiency."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -3251,7 +3571,11 @@
       },
       "categoria": "herramienta",
       "peso": 2,
-      "coste": 25
+      "coste": 25,
+      "descripcion": {
+        "es": "Estos instrumentos se utilizan para orientarse en el mar. Si eres competente con ellos, podrás planear la ruta de un barco e interpretar cartas náuticas, además de sumar tu bonificador por competencia a cualquier prueba de característica que hagas para evitar perderte en el mar.",
+        "en": "This set of instruments is used for navigation at sea. Proficiency with navigator's tools lets you chart a ship's course and follow navigation charts. In addition, these tools allow you to add your proficiency bonus to any ability check you make to avoid getting lost at sea."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -3275,7 +3599,11 @@
       },
       "categoria": "herramienta",
       "peso": 2,
-      "coste": 50
+      "coste": 50,
+      "descripcion": {
+        "es": "Los útiles de envenenador incluyen viales, productos químicos y todo el equipo necesario para crear venenos. La competencia con estos útiles te permite sumar tu bonificador por competencia a las pruebas de característica que hagas para fabricar o usar venenos.",
+        "en": "A poisoner’s kit includes the vials, chemicals, and other equipment necessary for the creation of poisons. Proficiency with this kit lets you add your proficiency bonus to any ability checks you make to craft or use poisons."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -3299,7 +3627,11 @@
       },
       "categoria": "herramienta",
       "peso": 1,
-      "coste": 25
+      "coste": 25,
+      "descripcion": {
+        "es": "Este conjunto de herramientas incluye una lima pequeña, un juego de ganzúas, un espejito con un asa metálica, una serie de tijeras de punta estrecha y unas tenazas. Si tienes competencia con estas herramientas, podrás sumar tu bonificador por competencia a las pruebas de característica para desarmar trampas o forzar cerraduras.",
+        "en": "This set of tools includes a small file, a set of lock picks, a small mirror mounted on a metal handle, a set of narrow-bladed scissors, and a pair of pliers. Proficiency with these tools lets you add your proficiency bonus to any ability checks you make to disarm traps or open locks."
+      }
     },
     "mechanics": {
       "automation": "text"

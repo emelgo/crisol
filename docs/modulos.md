@@ -28,8 +28,10 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   `@portador`, los valores de cada elemento de un conjunto, `first()` y las listas con opciones) y la 6 (su contenido en
   `catalog/5e/content/`, que solo lee el servidor; buscar y leer el contenido; copiar, bajar y subir con su mecánica,
   migración 0040, ya en la base de desarrollo). **Ahora**: la tarea 7 (`tasks/todo.md` dice lo hecho y lo que falta):
-  ya están los scripts de `scripts/srd/` (`node scripts/srd/extraer.ts` y `comprobar.ts`, con los PDF), las armas, las
-  armaduras, el equipo y las herramientas de 2014 y el guerrero de las dos ediciones (356 documentos).
+  hecha también: los scripts de `scripts/srd/` (`node scripts/srd/extraer.ts` y `comprobar.ts`, con los PDF), todo el
+  equipo de las dos ediciones y el guerrero con el campeón (474 documentos). **Lo siguiente**: la tarea 9 (las ediciones
+  en la ventana de la campaña) y la 10 (la IA y el contenido, también crearlo con su mecánica); después, el punto de
+  control 2 desde claude.ai.
 - **Decidido por Enrique (2026-11-04): los sistemas se hacen con la IA** (`docs/diseno.md`). Al acabar `srd-5e`, una
   tanda que quita el editor de sistemas entero (también «Probar»): en «Sistemas», la lista, subir de un archivo, bajar
   cada uno y un sistema vacío, y un aviso de que los nuevos se hacen con la IA (también en las instrucciones del MCP).

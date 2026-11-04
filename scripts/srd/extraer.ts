@@ -30,6 +30,7 @@ import {
   gearDoc,
   gearSignature,
   gearTable,
+  runInTexts,
   subTables,
   type ToolRow,
   toolRows
@@ -109,6 +110,47 @@ function gear(edition: Edition): [GearRow | ToolRow, GearRow | ToolRow][] {
   return pair(of('en'), of('es'), gearSignature, GEAR_PAIRS[edition])
 }
 
+/** En 2014, el texto de cada objeto empieza con su nombre («Acid. As an action…»), y el de un grupo, con el del grupo */
+const RUN_IN_PAGES: Record<Lang, number[]> = { en: [66, 67, 68, 69, 70, 71], es: [67, 68, 69, 70, 71, 72, 73] }
+const GROUP_HEADINGS: Record<Lang, Record<string, string>> = {
+  en: {
+    canalizador_arcano: 'Arcane focus',
+    canalizador_druidico: 'Druidic focus',
+    simbolo_sagrado: 'Holy symbol',
+    herramienta_artesano: 'Artisan’s tools',
+    juego: 'Gaming set',
+    instrumento: 'Musical instrument'
+  },
+  es: {
+    canalizador_arcano: 'Canalizador arcano',
+    canalizador_druidico: 'Canalizador druídico',
+    simbolo_sagrado: 'Símbolo sagrado',
+    herramienta_artesano: 'Herramientas de artesano',
+    juego: 'Juegos',
+    instrumento: 'Instrumentos musicales'
+  }
+}
+const bareName = (name: string) => name.replace(/ \(.*\)$/, '')
+const RUN_IN_STOPS: Record<Lang, RegExp> = {
+  en: /^(Mounts and Vehicles|Equipment Packs|Tools|Trade Goods|Expenses|Container Capacity)$/,
+  es: /^(Monturas y vehículos|Paquetes de equipo|Herramientas|Mercancías|Gastos|Capacidad de los contenedores)$/
+}
+
+function runIn2014(lang: Lang, rows: readonly (GearRow | ToolRow)[]): (row: GearRow | ToolRow) => string {
+  const groups = GROUP_HEADINGS[lang]
+  const texts = runInTexts(
+    readingRows('2014', lang, RUN_IN_PAGES[lang]),
+    [...rows.map((r) => bareName(r.name)), ...Object.values(groups)],
+    RUN_IN_STOPS[lang]
+  )
+  return (row) => {
+    const own = texts.get(bareName(row.name).toLowerCase())
+    if (own) return own
+    const heading = groups[categoryOf(row)]
+    return heading ? (texts.get(heading.toLowerCase()) ?? '') : ''
+  }
+}
+
 /** Las monturas, los arreos, los vehículos y (en 2014) las mercancías */
 const MOUNT_PAGES: Record<Edition, Record<Lang, number[]>> = {
   '2014': { en: [71, 72], es: [73, 74, 75] },
@@ -173,6 +215,16 @@ export function extract(): Record<string, Doc[]> {
   const g24 = gear('2024')
   const g14 = gear('2014')
   const gc = concepts(g24, g14, GEAR_RENAMES, (es) => displayName(es, 'es'))
+  const text14 = {
+    en: runIn2014(
+      'en',
+      g14.map(([en]) => en)
+    ),
+    es: runIn2014(
+      'es',
+      g14.map(([, es]) => es)
+    )
+  }
   const gearOf = (edition: Edition) => (concept: string) => MECHANICS[`${concept}_${edition}`]
   const texts = { en: descriptions('en'), es: descriptions('es') }
   const m24 = mounts('2024')
@@ -196,7 +248,7 @@ export function extract(): Record<string, Doc[]> {
     'equipo.json': [
       ...g14.map(([en, es], i) => {
         const c = gc.older[i] as string
-        return gearDoc('2014', en, es, c, gearOf('2014')(c))
+        return gearDoc('2014', en, es, c, gearOf('2014')(c), { descripcion: { es: text14.es(es), en: text14.en(en) } })
       }),
       ...g24.map(([en, es], i) => {
         const c = gc.newer[i] as string

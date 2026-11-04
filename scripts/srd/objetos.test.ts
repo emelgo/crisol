@@ -9,6 +9,7 @@ import {
   gearDoc,
   gearRows,
   gearSignature,
+  runInTexts,
   subTables,
   toolRows
 } from './objetos.ts'
@@ -172,6 +173,24 @@ describe('lo de 2024 que va en el texto', () => {
       ['Herramientas de soplador de vidrio', 'Artisan’s Tools', 30, 5, 'int'],
       ['Dados', 'Gaming Set', 0.1, null, 'sab'],
       ['Naipes', 'Gaming Set', 0.5, null, 'sab']
+    ])
+  })
+})
+
+describe('los textos de 2014 que empiezan con su nombre', () => {
+  it('de cada nombre conocido, hasta el siguiente o hasta un título que corta', () => {
+    const rows = [
+      'Acid. As an action, you can splash',
+      'the contents of this vial.',
+      'Ball Bearings. As an action, you',
+      'can spill these.',
+      'Mounts and Vehicles',
+      'A good mount helps.'
+    ].map((text, i): Row => ({ text, x: 58, y: i * 10, page: 66 }))
+    const texts = runInTexts(rows, ['Acid', 'Ball bearings'], /^Mounts and Vehicles$/)
+    expect([...texts]).toEqual([
+      ['acid', 'As an action, you can splash the contents of this vial.'],
+      ['ball bearings', 'As an action, you can spill these.']
     ])
   })
 })

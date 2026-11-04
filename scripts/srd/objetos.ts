@@ -350,3 +350,46 @@ export function toolRows(found: readonly Entry[], lang: Lang): ToolRow[] {
   }
   return out
 }
+
+/**
+ * Los textos de 2014 que empiezan con su nombre («Acid. As an action…»): de cada nombre conocido, su texto hasta el
+ * siguiente. Los nombres se comparan sin mayúsculas
+ */
+export function runInTexts(rows: readonly Row[], names: readonly string[], stop?: RegExp): Map<string, string> {
+  const wanted = new Set(names.map((n) => n.toLowerCase()))
+  const out = new Map<string, string>()
+  let current: string | null = null
+  for (const row of rows) {
+    const m = /^([A-ZÁÉÍÓÚÑ][^.]{1,40})\. (.*)$/.exec(row.text)
+    const name = m?.[1]?.toLowerCase()
+    if (m && name && wanted.has(name)) {
+      current = name
+      out.set(name, m[2] as string)
+      continue
+    }
+    // Un título de sección corta el texto: uno de los que se dicen o uno sin punto
+    if (current && stop?.test(row.text)) {
+      current = null
+      continue
+    }
+    if (
+      current &&
+      row.text.length < 40 &&
+      !/[.,;:)]$/.test(row.text) &&
+      /^[A-ZÁÉÍÓÚÑ]/.test(row.text) &&
+      !/^[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+ [a-z]/.test(row.text)
+    ) {
+      current = null
+      continue
+    }
+    if (!current) continue
+    const text = out.get(current) ?? ''
+    out.set(
+      current,
+      /[a-záéíóúñ]-$/i.test(text) && /^[a-záéíóúñ]/.test(row.text)
+        ? text.slice(0, -1) + row.text
+        : `${text} ${row.text}`
+    )
+  }
+  return out
+}
