@@ -20,6 +20,10 @@ Aún no está en staging: se prueba en el servidor de desarrollo (lo arranco cua
   - el color de tus dados en el perfil, y la hoja de dados en el móvil (menú de la llama → «Dados»).
 - [ ] **Punto de control 3**: los dados 3D: caen con tu color y quedan en lo que dice el registro; los de la jugadora
   caen en tu pantalla con el suyo; en las opciones de la ficha (el engranaje) se apaga «Ver caer los dados de los demás».
+- [ ] **Lo de las revisiones** (arreglado; que lo veas tú):
+  - «Repetir» en una tirada «al máster» de la jugadora: la tuya sale «oculta», no para todos;
+  - `20d6` de golpe: la página no se para mientras caen;
+  - pulsar muy seguido una tirada de una página: pasadas 60 en un minuto, dice «Demasiadas tiradas seguidas».
 - [ ] **Final (en staging, cuando se fusione)**: los criterios de éxito de `docs/specs/dados.md`:
   - tú tiras `1d20+5` y a una jugadora le caen los dados con tu color y le sale en el registro al momento;
   - ella tira «al máster»: tú lo ves marcado; una segunda jugadora no recibe nada; lo tuyo oculto, nadie más;
