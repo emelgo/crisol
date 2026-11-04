@@ -105,6 +105,61 @@ describe('los sistemas de reglas', () => {
     expect(list).toEqual(['5e', 'En blanco', 'Fronteras del norte', 'Fronteras de Eana'])
   })
 
+  it('el contenido del 5e: buscarlo, leerlo, copiarlo con su mecánica y bajarlo', async () => {
+    const found = await ok200('searchSystemContent', { systemId: '5e', query: 'espada' })
+    expect(found).toEqual({
+      total: 2,
+      items: [
+        expect.objectContaining({ key: 'espada_larga_2014', name: 'Espada larga', edition: '2014', legacy: true }),
+        expect.objectContaining({ key: 'espada_larga_2024', name: 'Espada larga', edition: '2024', legacy: false })
+      ]
+    })
+    const newest = await ok200('searchSystemContent', {
+      systemId: '5e',
+      type: 'armadura',
+      duplicates: 'newest',
+      language: 'en'
+    })
+    expect(newest.items.map((h: { name: string }) => h.name)).toEqual(['Chain Mail'])
+    const read = await ok200('getSystemContent', { systemId: '5e', keys: ['cota_de_malla_2024', 'nada'] })
+    expect(read.missing).toEqual(['nada'])
+    expect(read.items).toEqual([
+      expect.objectContaining({
+        key: 'cota_de_malla_2024',
+        concept: 'cota_de_malla',
+        ref: { pages: { en: 92, es: 100 } },
+        mechanics: expect.objectContaining({ automation: 'full' })
+      })
+    ])
+    expect((await ok200('listSystems', {})).systems[0]).toMatchObject({ id: '5e', content: 4 })
+
+    // La copia lleva todo el contenido, también su mecánica, y se busca igual (de la base de datos)
+    const copy = await ok200('createSystem', { name: 'Eana', from: '5e' })
+    expect(copy).toMatchObject({ content: 4, basedOn: { id: '5e', version: 1 } })
+    const inCopy = await ok200('searchSystemContent', { systemId: copy.id, query: 'malla', editions: ['2014'] })
+    expect(inCopy).toMatchObject({
+      total: 1,
+      items: [{ key: 'cota_de_malla_2014', concept: 'cota_de_malla', automation: 'full' }]
+    })
+    const copied = await ok200('getSystemContent', { systemId: copy.id, keys: ['cota_de_malla_2014'] })
+    expect(copied.items[0].mechanics.effects).toHaveLength(3)
+
+    // Bajarlo lleva el contenido; subirlo en otra cuenta, también con su mecánica
+    const exported = await ok200('exportSystem', { systemId: '5e' })
+    expect(exported.file.content).toHaveLength(4)
+    const other = await signUpTestUser(auth, { name: 'Otra', email: 'otra@crisol.test' })
+    await organization(other.userId, 'Otra')
+    const { system } = await ok200('importSystem', { file: exported.file }, other.cookie)
+    const back = await ok200('getSystemContent', { systemId: system.id, keys: ['espada_larga_2024'] }, other.cookie)
+    expect(back.items[0]).toMatchObject({
+      concept: 'espada_larga',
+      data: { maestria: 'debilitar' },
+      ref: { pages: { en: 91 } }
+    })
+    // Otra cuenta no ve el contenido de este
+    expect((await code('searchSystemContent', { systemId: copy.id }, other.cookie)).status).toBe(404)
+  })
+
   it('no se pisa lo que cambió otro, ni se guarda lo que tiene errores; los avisos vuelven', async () => {
     const created = await ok200('createSystem', { name: 'Fronteras' })
     await ok200('updateSystem', { systemId: created.id, version: 1, document: fronteras })

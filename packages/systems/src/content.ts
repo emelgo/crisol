@@ -11,7 +11,7 @@ export interface Versioned {
   type: string
   key: string
   source: string | null
-  concept?: string
+  concept?: string | null | undefined
 }
 
 export interface Seen<T> {
@@ -77,4 +77,102 @@ export function resolveConcept<T extends Versioned>(
     (best, item) => (!best || releasedOf(system, item) > releasedOf(system, best) ? item : best),
     null
   )
+}
+
+/** Lo que hace falta para buscar un documento: su clave, su tipo, su fuente, su concepto, su nombre y su automatización */
+export interface ContentEntry extends Versioned {
+  name: unknown
+  automation?: string | null
+}
+
+export interface ContentHit {
+  key: string
+  type: string
+  name: string
+  source: string | null
+  edition: string | null
+  concept: string | null
+  legacy: boolean
+  automation: string | null
+}
+
+/** Para comparar nombres: sin mayúsculas ni tildes */
+const fold = (text: string) =>
+  text
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim()
+
+/** Los nombres de un documento: el de cada idioma (o el único que tiene) */
+const namesOf = (name: unknown): Record<string, string> =>
+  typeof name === 'string'
+    ? { es: name, en: name }
+    : name && typeof name === 'object'
+      ? (Object.fromEntries(Object.entries(name).filter(([, v]) => typeof v === 'string')) as Record<string, string>)
+      : {}
+
+/**
+ * Busca en el contenido de un sistema: por tipo, por nombre (en cualquiera de sus idiomas, sin tildes), por edición y
+ * con lo que se ve de lo que está en las dos. Primero lo que se llama así, luego lo que empieza así y luego lo demás
+ */
+export function searchContent(
+  system: System,
+  entries: readonly ContentEntry[],
+  {
+    query = '',
+    type,
+    editions,
+    duplicates = 'both',
+    language = 'es',
+    limit = 20,
+    offset = 0
+  }: {
+    query?: string
+    type?: string
+    editions?: readonly string[]
+    duplicates?: Choices['duplicates']
+    language?: 'es' | 'en'
+    limit?: number
+    offset?: number
+  } = {}
+): { items: ContentHit[]; total: number } {
+  const sources = (system.sources ?? [])
+    .filter((s) => !editions || (s.edition !== undefined && editions.includes(s.edition)))
+    .map((s) => s.key)
+  const seen = visibleContent(system, entries, { sources, duplicates })
+  const wanted = fold(query)
+  const ranked: { hit: ContentHit; rank: number }[] = []
+  for (const { item, legacy } of seen) {
+    if (type && item.type !== type) continue
+    const names = namesOf(item.name)
+    const folded = Object.values(names).map(fold)
+    const rank = !wanted
+      ? 2
+      : folded.includes(wanted)
+        ? 0
+        : folded.some((n) => n.startsWith(wanted))
+          ? 1
+          : folded.some((n) => n.includes(wanted))
+            ? 2
+            : -1
+    if (rank < 0) continue
+    ranked.push({
+      rank,
+      hit: {
+        key: item.key,
+        type: item.type,
+        name: names[language] ?? Object.values(names)[0] ?? item.key,
+        source: item.source,
+        edition: editionOf(system, item) ?? null,
+        concept: item.concept ?? null,
+        legacy,
+        automation: item.automation ?? null
+      }
+    })
+  }
+  ranked.sort(
+    (a, b) => a.rank - b.rank || a.hit.name.localeCompare(b.hit.name, language) || a.hit.key.localeCompare(b.hit.key)
+  )
+  return { items: ranked.slice(offset, offset + limit).map((r) => r.hit), total: ranked.length }
 }

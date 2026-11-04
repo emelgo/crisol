@@ -45,6 +45,7 @@ import {
   RollError,
   SYSTEM_FILE,
   type System,
+  searchContent,
   systemOverview,
   textOf,
   toFile,
@@ -1037,6 +1038,28 @@ export function fakeApi(
       if (!document) throw new ApiError('NOT_FOUND', 404)
       const content = ownSystems.find((s) => s.id === systemId)?.content ?? []
       return { name: fileName(document), file: toFile(document, content) as unknown as Record<string, unknown> }
+    },
+    // El contenido de los de la cuenta; el de serie es del servidor y no viene en la web
+    searchSystemContent: ({ systemId, organizationId: _, ...options }) => {
+      const document = systemById(systemId)
+      if (!document) throw new ApiError('NOT_FOUND', 404)
+      const content = ownSystems.find((s) => s.id === systemId && !s.deleted)?.content ?? []
+      const entries = content.map((item) => ({
+        key: item.key,
+        type: item.type,
+        source: item.source,
+        concept: item.concept ?? null,
+        name: item.data.name,
+        automation: item.mechanics?.automation ?? null
+      }))
+      return searchContent(document, entries, options)
+    },
+    getSystemContent: ({ systemId, keys }) => {
+      if (!systemById(systemId)) throw new ApiError('NOT_FOUND', 404)
+      const content = ownSystems.find((s) => s.id === systemId && !s.deleted)?.content ?? []
+      const wanted = [...new Set(keys)]
+      const items = wanted.flatMap((k) => content.filter((item) => item.key === k).map((item) => structuredClone(item)))
+      return { items, missing: wanted.filter((k) => !items.some((item) => item.key === k)) }
     },
     getSystemParts: ({ systemId, parts }) => {
       const document = systemById(systemId)

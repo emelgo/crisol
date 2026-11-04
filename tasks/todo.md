@@ -56,7 +56,7 @@ Plan: `tasks/plan.md`. Spec: `docs/specs/srd-5e.md`. Cada tarea, con TDD y en un
     CA, PG, iniciativa, pasiva y lanzamiento de conjuros.
   - Archivos: `packages/systems/src/catalog/5e/system.ts` (nuevo), `catalog/index.ts` (+ pruebas).
 
-- [ ] **6. El contenido de serie y las acciones para buscarlo**
+- [x] **6. El contenido de serie y las acciones para buscarlo** — hecha: `@crisol/systems/catalog/content` (JSON en `catalog/5e/content/`, que solo lee el servidor; la web tiene prohibido importarlo en `biome.json`), `searchSystemContent` y `getSystemContent`, y copiar, bajar y subir con el concepto, la mecánica y la página (migración 0040). Para empezar, cuatro documentos escritos a mano (la espada larga y la cota de malla de las dos ediciones), que la tarea 7 saca ya con los scripts
   - Acepta:
     - el contenido de los sistemas de serie, en una entrada aparte del paquete que solo usa el servidor;
     - las acciones para buscar en el contenido (por tipo, nombre, edición e idioma) y leer unos documentos;

@@ -105,6 +105,8 @@ describe('Actions', () => {
       updateSystem: true,
       deleteSystem: true,
       exportSystem: true,
+      getSystemContent: true,
+      searchSystemContent: true,
       importSystem: true,
       getSystemParts: true,
       checkSystem: true,

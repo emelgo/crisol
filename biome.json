@@ -35,5 +35,24 @@
         "organizeImports": "on"
       }
     }
-  }
+  },
+  "overrides": [
+    {
+      "includes": ["apps/web/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "paths": {
+                  "@crisol/systems/catalog/content": "El contenido de serie es del servidor: a la web llega por searchSystemContent y getSystemContent"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
 }

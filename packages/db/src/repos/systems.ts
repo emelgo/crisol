@@ -2,7 +2,7 @@
  * Los sistemas de reglas de una cuenta (ADR-0011). Todo lo que los escribe pasa por operation(): queda en el historial
  * y se deshace. Guardar pide la versión que se tenía: si cambió entre medias (otra pestaña, la IA), no se pisa nada
  */
-import { and, asc, count, eq, inArray, isNull } from 'drizzle-orm'
+import { and, asc, count, eq, inArray, isNull, sql } from 'drizzle-orm'
 import type { Database } from '../client.ts'
 import { type OperationContext, operation } from '../operation.ts'
 import { organizations } from '../schema/organizations.ts'
@@ -91,6 +91,37 @@ export interface ContentValues {
   key: string
   source: string | null
   data: Record<string, unknown>
+  concept?: string | null
+  mechanics?: Record<string, unknown> | null
+  ref?: Record<string, unknown> | null
+}
+
+/**
+ * Lo que hace falta para buscar en su contenido, sin leer cada documento entero: su clave, su tipo, su fuente, su
+ * concepto, su nombre (en sus idiomas) y cuánto está automatizado
+ */
+export function contentIndex(db: Database, systemId: string) {
+  return db
+    .select({
+      key: systemContent.key,
+      type: systemContent.type,
+      source: systemContent.source,
+      concept: systemContent.concept,
+      name: sql<unknown>`${systemContent.data} -> 'name'`,
+      automation: sql<string | null>`${systemContent.mechanics} ->> 'automation'`
+    })
+    .from(systemContent)
+    .where(eq(systemContent.systemId, systemId))
+    .orderBy(asc(systemContent.key))
+}
+
+/** Unos documentos de su contenido, por su clave */
+export function contentByKeys(db: Database, systemId: string, keys: readonly string[]) {
+  if (keys.length === 0) return Promise.resolve([])
+  return db
+    .select()
+    .from(systemContent)
+    .where(and(eq(systemContent.systemId, systemId), inArray(systemContent.key, [...keys])))
 }
 
 /** Uno nuevo, con su contenido (el de aquel del que se copia, o el del archivo que se sube) */

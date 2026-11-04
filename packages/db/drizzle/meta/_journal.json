@@ -281,6 +281,13 @@
       "when": 1793796580138,
       "tag": "0039_sistemas",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1793824294277,
+      "tag": "0040_contenido_con_mecanica",
+      "breakpoints": true
     }
   ]
 }

@@ -34,7 +34,11 @@ export const systemContent = pgTable(
     type: text().notNull(),
     key: text().notNull(),
     source: text(),
-    data: jsonb().$type<Record<string, unknown>>().notNull()
+    data: jsonb().$type<Record<string, unknown>>().notNull(),
+    // Lo que une sus versiones entre ediciones, su mecánica y su página (ADR-0012)
+    concept: text(),
+    mechanics: jsonb().$type<Record<string, unknown>>(),
+    ref: jsonb().$type<Record<string, unknown>>()
   },
   (t) => [uniqueIndex().on(t.systemId, t.key), index().on(t.systemId, t.type)]
 )

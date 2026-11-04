@@ -10,12 +10,14 @@ import {
   deleteSystem,
   exportSystem,
   getSystem,
+  getSystemContent,
   getSystemFormat,
   getSystemParts,
   importSystem,
   listSystems,
   type SystemFull,
   type SystemSummary,
+  searchSystemContent,
   tryFormula,
   trySystemRoll,
   updateSystem
@@ -27,6 +29,7 @@ import {
   applyChanges,
   CATALOG,
   ChangeError,
+  type ContentItem,
   catalogSystem,
   FORMAT,
   fileName,
@@ -38,6 +41,7 @@ import {
   SYSTEM_FILE,
   type System,
   type SystemDocument,
+  searchContent,
   systemDocs,
   systemOverview,
   textOf,
@@ -47,6 +51,7 @@ import {
   validateFile,
   validateSystem
 } from '@crisol/systems'
+import { catalogContent } from '@crisol/systems/catalog/content'
 import { systemsChanged } from '../realtime/events.ts'
 import { targetOrganization } from './access.ts'
 import { type ActionContext, historyContext, InvalidRequestError, TooManyRequestsError } from './context.ts'
@@ -70,7 +75,13 @@ function summarize(
 }
 
 const builtIn = (document: System): SystemFull => ({
-  ...summarize(document, { id: document.id, builtIn: true, version: 1, basedOn: null, content: 0 }),
+  ...summarize(document, {
+    id: document.id,
+    builtIn: true,
+    version: 1,
+    basedOn: null,
+    content: catalogContent(document.id).length
+  }),
   document: structuredClone(document) as Record<string, unknown>
 })
 
@@ -107,6 +118,44 @@ async function findReadable(ctx: ActionContext, organizationId: string, systemId
   if (!row || row.deletedAt || row.organizationId !== organizationId) throw new NotFoundError('system')
   return { document: row.document as unknown as System, row }
 }
+
+/** Un documento del contenido guardado, con lo que tenga (su concepto, su mecánica y su página, si los hay) */
+const contentOf = (row: {
+  type: string
+  key: string
+  source: string | null
+  data: Record<string, unknown>
+  concept: string | null
+  mechanics: Record<string, unknown> | null
+  ref: Record<string, unknown> | null
+}): ContentItem =>
+  ({
+    type: row.type,
+    key: row.key,
+    source: row.source,
+    data: row.data,
+    ...(row.concept !== null ? { concept: row.concept } : {}),
+    ...(row.mechanics !== null ? { mechanics: row.mechanics } : {}),
+    ...(row.ref !== null ? { ref: row.ref } : {})
+  }) as ContentItem
+
+/** Todo el contenido de un sistema: el de serie, del código; el de la cuenta, de la base de datos */
+async function allContent(ctx: ActionContext, found: { document: System; row: systemsRepo.SystemRow | null }) {
+  return found.row
+    ? (await systemsRepo.listContent(ctx.db, found.row.id)).map(contentOf)
+    : [...catalogContent(found.document.id)]
+}
+
+/** Lo que se guarda de un documento del contenido */
+const toValues = (item: ContentItem): systemsRepo.ContentValues => ({
+  type: item.type,
+  key: item.key,
+  source: item.source,
+  data: item.data,
+  concept: item.concept ?? null,
+  mechanics: (item.mechanics as Record<string, unknown> | undefined) ?? null,
+  ref: (item.ref as Record<string, unknown> | undefined) ?? null
+})
 
 /**
  * El nombre de un sistema que la cuenta ve, para el resumen de lo que la IA pide aprobar: si no lo ve, para ella no
@@ -394,14 +443,8 @@ export const systemActions = [
     const id = randomUUID()
     // La copia es de la cuenta: su id es el suyo y su nombre, el que se le da
     const { system } = validated({ ...structuredClone(source.document), id, ...(name !== undefined ? { name } : {}) })
-    const content = source.row
-      ? (await systemsRepo.listContent(ctx.db, source.row.id)).map(({ type, key, source: s, data }) => ({
-          type,
-          key,
-          source: s,
-          data
-        }))
-      : []
+    // Copiando otro, con todo su contenido (también el de uno de serie)
+    const content = source.fresh ? [] : (await allContent(ctx, source)).map(toValues)
     const row = await atMost(() =>
       systemsRepo.createSystem(
         ctx.db,
@@ -483,16 +526,46 @@ export const systemActions = [
 
   implement(exportSystem, async (ctx, { systemId, organizationId }) => {
     const target = readableOrganization(ctx, organizationId)
-    const { document, row } = await findReadable(ctx, target, systemId)
-    const content = row
-      ? (await systemsRepo.listContent(ctx.db, row.id)).map(({ type, key, source, data }) => ({
-          type,
-          key,
-          source,
-          data
+    const found = await findReadable(ctx, target, systemId)
+    const content = await allContent(ctx, found)
+    return {
+      name: fileName(found.document),
+      file: toFile(found.document, content) as unknown as Record<string, unknown>
+    }
+  }),
+
+  implement(searchSystemContent, async (ctx, { systemId, organizationId, ...options }) => {
+    const target = readableOrganization(ctx, organizationId)
+    const found = await findReadable(ctx, target, systemId)
+    // Para buscar basta lo de cada documento que se ve en la lista: el de la cuenta, sin leerlo entero
+    const entries = found.row
+      ? await systemsRepo.contentIndex(ctx.db, found.row.id)
+      : catalogContent(found.document.id).map((item) => ({
+          key: item.key,
+          type: item.type,
+          source: item.source,
+          concept: item.concept ?? null,
+          name: item.data.name,
+          automation: item.mechanics?.automation ?? null
         }))
-      : []
-    return { name: fileName(document), file: toFile(document, content) as unknown as Record<string, unknown> }
+    return searchContent(found.document, entries, options)
+  }),
+
+  implement(getSystemContent, async (ctx, { systemId, organizationId, keys }) => {
+    const target = readableOrganization(ctx, organizationId)
+    const found = await findReadable(ctx, target, systemId)
+    const wanted = [...new Set(keys)]
+    const items = found.row
+      ? (await systemsRepo.contentByKeys(ctx.db, found.row.id, wanted)).map(contentOf)
+      : catalogContent(found.document.id).filter((item) => wanted.includes(item.key))
+    const byKey = new Map(items.map((item) => [item.key, item]))
+    return {
+      items: wanted.flatMap((k) => {
+        const item = byKey.get(k)
+        return item ? [structuredClone(item)] : []
+      }),
+      missing: wanted.filter((k) => !byKey.has(k))
+    }
   }),
 
   implement(getSystemParts, async (ctx, { systemId, parts, organizationId }) => {
@@ -581,7 +654,7 @@ export const systemActions = [
           row.id,
           into.version,
           { ...valid.system, id: row.id } as unknown as Record<string, unknown>,
-          valid.content
+          valid.content.map(toValues)
         )
       } catch (error) {
         if (error instanceof systemsRepo.SystemChangedError) throw changed()
@@ -605,7 +678,7 @@ export const systemActions = [
           basedOn: null,
           document: { ...valid.system, id } as unknown as Record<string, unknown>
         },
-        valid.content,
+        valid.content.map(toValues),
         MAX_SYSTEMS
       )
     )
