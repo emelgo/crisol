@@ -311,3 +311,21 @@ export async function slash(page: Page, name: string) {
 export async function selectionToSecret(page: Page) {
   await page.getByRole('toolbar', { name: 'Formato' }).getByRole('button', { name: 'Secreto' }).click()
 }
+
+/**
+ * Espera a que acaben las animaciones y transiciones que están en marcha (una ventana que se abre, una tirada que
+ * entra): axe mide el contraste de lo que ve, y a medias de un fundido sale más claro de lo que es
+ */
+export async function settled(page: Page) {
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          document
+            .getAnimations()
+            .filter((a) => a.playState === 'running' && a.effect?.getTiming().iterations !== Number.POSITIVE_INFINITY)
+            .length
+      )
+    )
+    .toBe(0)
+}

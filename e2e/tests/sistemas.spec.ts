@@ -1,11 +1,12 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, type Page, test } from '@playwright/test'
-import { createCampaign, createWorld, freshOwner, toWorlds } from './ayudas.ts'
+import { createCampaign, createWorld, freshOwner, settled, toWorlds } from './ayudas.ts'
 
 /** Que axe no encuentre fallos críticos ni graves, en claro y en oscuro */
 async function accessible(page: Page, include: string) {
   for (const colorScheme of ['light', 'dark'] as const) {
     await page.emulateMedia({ colorScheme })
+    await settled(page)
     const { violations } = await new AxeBuilder({ page }).include(include).withTags(['wcag2a', 'wcag2aa']).analyze()
     const serious = violations.filter((v) => v.impact === 'critical' || v.impact === 'serious')
     expect(serious.map((v) => `${colorScheme} ${v.id}: ${v.help} ${v.nodes[0]?.target}`)).toEqual([])
