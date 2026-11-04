@@ -33,6 +33,12 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   tanda que quita el editor de sistemas entero (también «Probar»): en «Sistemas», la lista, subir de un archivo, bajar
   cada uno y un sistema vacío, y un aviso de que los nuevos se hacen con la IA (también en las instrucciones del MCP).
   Por eso la tarea 8 de `srd-5e` («Probar» con el contenido) se quitó y probar el contenido va con la IA (tarea 10).
+  En esa misma tanda, para otros juegos (Enrique, 2026-11-04: «¿se podrá adaptar a Daggerheart y otro TTRPG?»), lo que
+  falta en los dados, que es general: el número de dados (o sus caras) sacado de un campo (`@competencia d8`, las
+  reservas de Blades), leer cada dado de una tirada en sus franjas (Esperanza o Miedo: cuál de los dos d12 es mayor) y
+  modos que añaden dados o grupos («el mayor de estos dos», la ventaja de +1d6). La prueba: una hoja de Daggerheart
+  hecha por la IA. Su contenido no es CC BY (licencia de la comunidad de Darrington Press): traerlo de serie, solo si
+  Enrique lo decide tras leer la licencia.
 - **El servidor de desarrollo, en marcha** para que Enrique vea lo que se hace: la web en http://localhost:5173 (por
   túnel SSH: `ssh -L 5173:127.0.0.1:5173`), que pasa `/api` al servidor (8130); los dos se recargan solos.
 - **El orden que pidió Enrique** (2026-11-04): terminar el módulo 3 en este mismo chat (`srd-5e`, `personajes`, `hoja`
