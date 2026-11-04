@@ -14,6 +14,7 @@ import {
   type Implementation,
   InvalidRequestError
 } from '../actions/context.ts'
+import { systemRequest, visibleSystemName } from '../actions/systems.ts'
 import { approvalsChanged } from '../realtime/events.ts'
 import { openJson } from '../secrets.ts'
 
@@ -69,7 +70,7 @@ export async function callAsAi(env: ActionEnv, call: AiCall): Promise<ToolResult
     if (decision === 'run') {
       return success(impl.action.output.parse(await impl.handler(ctx, input)) as Record<string, unknown>)
     }
-    const details = await describe(ctx, input)
+    const details = await describe(ctx, impl.action.name, input)
     const now = new Date()
     const { pending } = await aiRepo.listApprovals(db, userId, now)
     if (pending.length >= MAX_PENDING_APPROVALS) return failure(TOO_MANY)
@@ -85,7 +86,7 @@ export async function callAsAi(env: ActionEnv, call: AiCall): Promise<ToolResult
  * existe y no se pide nada. Cubre lo que piden las herramientas: un mundo, una campaña, una página (y su madre) o una
  * operación del historial
  */
-async function describe(ctx: ActionContext, input: Record<string, unknown>) {
+async function describe(ctx: ActionContext, action: string, input: Record<string, unknown>) {
   const details: Record<string, unknown> = {}
   if (typeof input.worldId === 'string') {
     authorize(ctx.actor, 'world.read', { worldId: input.worldId })
@@ -106,6 +107,10 @@ async function describe(ctx: ActionContext, input: Record<string, unknown>) {
   if (Array.isArray(input.pages)) {
     details.titles = input.pages.map((page) => String((page as { title?: unknown }).title ?? ''))
   }
+  // Un sistema: lo que se haría, comprobado ya; y el que elige una campaña
+  Object.assign(details, await systemRequest(ctx, action, input))
+  if (action === 'updateCampaign' && typeof input.system === 'string')
+    details.system = await visibleSystemName(ctx, input.system)
   if (typeof input.operationId === 'string') {
     const operation = await historyRepo.getOperation(ctx.db, input.operationId)
     // Como al deshacer: el historial de su mundo, o el de la organización

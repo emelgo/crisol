@@ -28,6 +28,8 @@ export type RealtimeMessage =
   | { type: 'changed'; what: 'tags'; organizationId: string }
   /** Las plantillas de página de esa organización */
   | { type: 'changed'; what: 'templates'; organizationId: string }
+  /** Los sistemas de la cuenta */
+  | { type: 'changed'; what: 'systems'; organizationId: string }
   | { type: 'changed'; what: 'members' | 'invitation'; campaignId: string }
   /** Alguien ha entrado en la campaña con el enlace (al máster, con «Expulsar» a mano) */
   | { type: 'joined'; worldId: string; campaignId: string; campaign: string; member: { userId: string; name: string } }

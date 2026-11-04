@@ -65,6 +65,7 @@ cada módulo se decide qué se queda, qué cambia y qué se descarta (y se apunt
   creación paso a paso, subida de nivel, importar YAML.
 - Statblocks de criaturas (```statblock, maquetaciones de Fantasy Statblocks). Las tiradas del texto se vuelven botones.
 - Foto de la hoja para la IA (ventana oculta, o Chromium sin ventana en la web).
+- En detalle (secciones, fórmulas, tiradas, pasos, bloques, validación y lo frágil): `docs/inventario-sistemas.md`.
 
 ## 6. Campañas, visibilidad y secretos
 

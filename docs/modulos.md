@@ -7,12 +7,94 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
+### Para retomar (2026-11-04, módulo 3: sistemas)
+
+- **`dados` está en `main` y en staging** (PR #95, migraciones 0037 y 0038): una sola pasada de la CI, en verde, y
+  fusionada con `[skip ci]`. Enrique la prueba con `tasks/probar.md` (puntos de control 2 y 3, lo de las revisiones y
+  el final), ya en staging.
+- **La spec de `sistemas`, por aprobar**: `docs/specs/sistemas.md`, con el ADR-0011 (sistemas como datos, fórmulas
+  propias calculadas en el servidor). Enrique respondió sus preguntas: el editor visual ya, un lenguaje de fórmulas
+  nuevo con la forma de los de Foundry (`@des.mod`, los dados en la misma fórmula), la copia del catálogo no cambia
+  sola y los pasos del creador van con `personajes` (cambiado también en el mapa del módulo). Lo que hace el Crisol actual con los sistemas,
+  leído para ella, en `docs/inventario-sistemas.md`. Rama `modulo-3/sistemas`.
+- **La spec está aprobada** («ok») y el ADR-0011, aceptado.
+- **El diseño, aprobado** («ok»): el lienzo «Crisol: sistemas» en claude.ai (https://claude.ai/artifact/6pBhB7PhSaReB51W87vA8R;
+  fuentes en `out/lienzo-sistemas`, fuera de git), con seis tableros: la lista, el editor con «Probar», el móvil, las
+  tiradas, la campaña y los errores. Al diseñarlo se decidió que las claves del formato van en inglés y que los
+  problemas se dicen por sus nombres («Personaje › Defensa › Fórmula»), con la ruta debajo.
+- **El plan, aprobado** («ok»): `tasks/plan.md` y 13 tareas en `tasks/todo.md`, en cuatro fases (el paquete puro, el
+  servidor, la interfaz y la IA), con lo arriesgado primero: el lenguaje de fórmulas y su ritmo. El plan de dados pasó
+  a `tasks/dados/`.
+- **Ahora**: `/build` tarea a tarea en la rama `modulo-3/sistemas`. Hechas las tareas 1 a 7:
+  - el paquete puro `@crisol/systems`: el formato y su validación, el lenguaje de fórmulas, calcular un documento con su
+    desglose y las tiradas del sistema;
+  - el servidor: los sistemas de la cuenta (migración 0039; el documento en texto, que `jsonb` reordena las claves),
+    bajar y subir con su contenido (rutas con más sitio que piden la sesión antes de leer), y la campaña con su sistema
+    y sus críticos al tirar.
+
+  Hechas también las tareas 8 a 12: «Sistemas» en Mis mundos, la elección en la campaña y el editor entero (General,
+  los tipos con sus campos y sus fórmulas, «Probar» al lado, Tiradas, Dados, Fuentes, Ajustes de campaña y Avanzado,
+  con el JSON validado al escribirlo y sus líneas marcadas). **Lo siguiente**: la tarea 13 (la IA y el cierre). Los
+  puntos de control 3 y 4 ya se pueden probar en local (`tasks/probar.md`; la base de desarrollo tiene la migración
+  0039). Queda para después: un editor visual para los subcampos de los conjuntos, grupos y listas de filas (hoy, en
+  Avanzado).
+- **Tarea 13, las herramientas de la IA, hechas**: `formato_sistemas` (la documentación del formato, que sale del
+  esquema con dos ejemplos; también como recurso `crisol://sistemas/formato`), `listar_sistemas`, `ver_sistema`
+  (entero o por partes), `crear_sistema`, `cambiar_sistema` (por rutas, todo o nada), `validar_sistema`,
+  `probar_formula`, `probar_tirada` y `borrar_sistema`. Con un sistema de 2 MB por el MCP: validar ~0,3 s, crear y
+  cambiar ~0,6 s.
+- **Las revisiones (código, seguridad e interfaz), hechas y arregladas** lo importante:
+  - seguridad: tres maneras de bloquear el servidor con una sola petición (la expansión de lo que se lleva, la
+    sugerencia «¿Quizás…?» y copiar listas al calcular sin presupuesto), una expresión regular cuadrática, nombres
+    heredados de JavaScript (`constructor`), `/mcp` leyendo 11 MB con un token falso, validar sin permiso, un máster
+    viendo campañas de mundos ajenos, el tope de 50 con carreras y los jugadores recibiendo lo elegido del sistema;
+  - código: fórmulas de un grupo o un conjunto dentro de un objeto con los campos equivocados, tiradas que validaban y
+    no se podían tirar, «Probar» de la web distinto del servidor (ahora tira en el servidor con el borrador), el
+    borrador que se perdía si otro cambiaba el sistema, claves repetidas que borraban otro campo;
+  - interfaz: el título de la página, salir con cambios sin guardar pregunta, el recorrido del editor, los números y
+    las opciones que se escriben tal cual, los problemas que no dependen del color, sin textos de ayuda fijos.
+- **Queda para después** (apuntado, no bloquea):
+  - **por decidir con Enrique**: lo que la IA hace en copiloto sin aprobación y ven los jugadores (tirar en público,
+    cambiar el nombre o la descripción de la campaña) podría pedir aprobación, como «jugadores»: un sistema subido de
+    fuera podría llevar instrucciones para la IA en sus textos;
+  - la cola de aprobación guarda la entrada entera (un archivo de 10 MB): guardar un resumen;
+  - subir un archivo con miles de documentos los escribe uno a uno: por lotes;
+  - la versión de la que sale una copia del catálogo es siempre 1 (hará falta con el 5e);
+  - el editor visual de los subcampos de conjuntos, grupos y listas de filas, confirmar al quitar un tipo o una
+    tirada, la barra de «Guardar» pegada a la vista, y la espera y el error al elegir el sistema de una campaña.
+- **Lo siguiente**: la batería entera, una pasada de la CI, el PR, el merge con `[skip ci]` y staging.
+- **Ojo con el lint**: `biome check --write` arregla el formato pero los errores de lint se quedan; mirar siempre
+  `pnpm lint` entero antes de guardar.
+- **Prueba con un sistema de Foundry de verdad** (Enrique, 2026-11-04: «mete también […] daggerheart/2.12.5/system.json»):
+  su manifiesto, bajado a la carpeta temporal (no al repositorio, por la sala limpia) y pasado por un script de prueba,
+  cabe en el formato: sus 18 tipos de personaje y de objeto, y sus 13 paquetes de esos documentos. Para que cupieran,
+  un paquete pasó a ser de una clase de documento (`document`) que mezcla tipos, como en Foundry. **Apuntado para
+  `foundry`**:
+  - sus claves en camelCase (`domainCard`) se pasan a las nuestras (`domain_card`);
+  - sin sitio aún: los efectos activos (para nosotros, bonos), los subtipos de mensaje del chat (las tarjetas de las
+    tiradas), el combate (módulo 6) y los paquetes de diario y de tablas (módulo 4);
+  - el manifiesto no trae los campos de cada tipo (están en su código): para eso hay que leer sus modelos o sus datos.
+- **Y con 60 sistemas de Foundry** (Enrique: «aquí tienes más para probar», de su lista de sistemas): los 50 de su
+  primera página y 10 de los más usados (dnd5e, pf2e, swade, wfrp4e, CoC7, alienrpg, starwarsffg, cyberpunk-red-core,
+  sfrpg y worldbuilding). Sus manifiestos, en la carpeta temporal y fuera del repositorio. **Caben los 60**, con dos
+  arreglos al convertir: quitar los idiomas repetidos (pf2e los repite, un archivo por módulo) y no poner una
+  descripción vacía. **Apuntado para `foundry`**:
+  - 14 no declaran sus tipos en el manifiesto (los traen en `template.json`, como los de antes de la v11): el
+    importador tiene que leer ese archivo también;
+  - otras clases con subtipos, sin sitio aún: RegionBehavior (8), ActiveEffect (7), JournalEntryPage (7),
+    ChatMessage (7), Combat (5), Combatant (2) y Card (2);
+  - otros paquetes: de diario (55), de tablas (39), de macros (27: son código, nunca se importan), de efectos (9),
+    de escenas (8), de aventuras (4) y de cartas (3);
+  - idiomas: el formato solo trae español e inglés, y casi todos traen inglés; el alemán (35), el francés (26) y el
+    portugués (20) van detrás. Si un día se importa uno que solo esté en otro idioma, se amplía. **Ritmo** (punto de control 1): un personaje de nivel 20 con 353 campos y 100 objetos, 5 ms de
+  mediana (la spec pide menos de 20); validar un sistema de 1,85 MB, 71 ms (pide menos de 500).
+
 ### Para retomar (2026-11-04, módulo 3: dados)
 
 - **El módulo 3 va por capacidades** (mapa aprobado en `docs/specs/modulo-3.md`): `dados` → `sistemas` → `srd-5e` →
   `personajes` → `hoja` → `foundry`. La entrevista entera y los estudios, en «### 3. Sistemas, fichas y dados», al
   final de este archivo.
-- **`dados` está construida** en la rama `modulo-3/dados`: las 11 tareas de `tasks/todo.md` (plan en `tasks/plan.md`,
+- **`dados` está construida** en la rama `modulo-3/dados`: las 11 tareas de `tasks/dados/todo.md` (plan en `tasks/dados/plan.md`,
   spec `docs/specs/dados.md`, ADR-0010, diseño en el lienzo «Crisol: dados», aprobado):
   - el paquete puro `@crisol/dice` (la notación del Crisol actual, con sus límites);
   - las tiradas en el servidor, en `dice_rolls` (migración 0037, fuera del historial), con sus visibilidades, el aviso
@@ -1032,7 +1114,7 @@ Estados: pendiente · en curso · hecho · descartado.
 | 0 | **Fundación**: monorepo, CI, despliegue, cuentas, organizaciones, mundos, campañas, roles, historial y deshacer, esqueleto del MCP | **hecho** (2026-10-29; Discord y Google, pospuestos) | Foundry: modelo de documentos y permisos; DDB: campañas e invitaciones |
 | 1 | **Wiki**: páginas y subpáginas, editor de bloques, enlaces, menciones, vista previa, propiedades, secretos, búsqueda, marcadores, etiquetas, versiones, recursos y archivos, **hojas con estilo** (tipo Homebrewery, con PDF), exportación MD, sus herramientas MCP | construido (tareas 1 a 26 hechas); falta la revisión de Enrique en staging | Foundry: Journal; DDB: contenido y referencias; Homebrewery (MIT): formato de hoja y descarga |
 | 2 | **Tipos de página y plantillas**: «Desde plantilla» (de serie y propias), campos en el panel, tablas que se llenan solas (en lugar de Dataview) | construido (tareas 1 a 14, 2026-11-03); falta la revisión de Enrique en staging | Foundry: tipos de documento; Kanka, LegendKeeper y World Anvil (web pública) |
-| 3 | Sistemas de reglas, fichas de personaje (creación, subida de nivel), dados y dados 3D | en marcha: mapa aprobado (`docs/specs/modulo-3.md`); `dados` construida (11 tareas, rama `modulo-3/dados`); después, `sistemas` | DDB: creador y hoja; Foundry: dnd5e, DataModel e instalar y crear sistemas |
+| 3 | Sistemas de reglas, fichas de personaje (creación, subida de nivel), dados y dados 3D | en marcha: mapa aprobado (`docs/specs/modulo-3.md`); `dados` en `main` y en staging (PR #95); spec, diseño y plan de `sistemas` aprobados; construyéndose | DDB: creador y hoja; Foundry: dnd5e, DataModel e instalar y crear sistemas |
 | 4 | Compendios (aparte de la wiki del mundo y **como los de Foundry**: antes, estudio a fondo con craft-anything), bestiario, statblocks, biblioteca; **buscar dentro de los PDF** (texto de cada página con pdf.js; el resultado abre el visor en esa página) **y por significado** (pgvector; antes, permiso para la imagen de Postgres y elegir quién calcula los embeddings) | pendiente | Foundry: compendium packs; DDB: listados |
 | 5 | Visibilidad por campaña: conocimiento de los jugadores, revelar, compartir | pendiente | Foundry: ownership |
 | 6 | **Mesa**: escenas, rejilla, fichas, medir y plantillas, niebla, muros, puertas, luz, visión, iniciativa, instantáneas, encuentros, UVTT | pendiente | Foundry: canvas, visión y muros; DDB Maps |

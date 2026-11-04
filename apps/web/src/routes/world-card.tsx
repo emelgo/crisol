@@ -1,4 +1,4 @@
-import { type PageCover as Cover, WORLD_COLORS, type World } from '@crisol/contracts'
+import { type Campaign, type PageCover as Cover, WORLD_COLORS, type World } from '@crisol/contracts'
 import { TRASH_DAYS } from '@crisol/domain'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
@@ -19,6 +19,7 @@ import form from '../components/form.module.css'
 import { Modal } from '../components/modal.tsx'
 import { PageTitle } from '../components/page-title.tsx'
 import { ENTER_WORLD, enterWorld, LEAVE_WORLD, worldTransition } from '../components/world-transition.ts'
+import { CampaignSystemFields, type SystemDraft } from '../systems/campaign-system.tsx'
 import { coverStyle, useWorldFiles } from '../wiki/cover-look.ts'
 import styles from './world-card.module.css'
 import { CoverDialog, CoverViewer, type LocalImage } from './world-cover.tsx'
@@ -32,9 +33,15 @@ export interface Look {
   color: World['color']
   cover: Cover | null
   role: 'master' | 'player'
+  /** De una campaña: su sistema de reglas y lo que elige de él */
+  system?: Campaign['system']
+  systemChoices?: Campaign['systemChoices']
 }
 
-type LookPatch = Partial<Pick<Look, 'name' | 'description' | 'color' | 'cover'>>
+type LookPatch = Partial<Pick<Look, 'name' | 'description' | 'color' | 'cover'>> & {
+  system?: string | null
+  systemChoices?: SystemDraft['choices']
+}
 
 /**
  * Lo que cambia entre mundos y campañas: sus textos (worlds.* o campaigns.*), su lista de tarjetas, de qué mundo son las
@@ -42,6 +49,8 @@ type LookPatch = Partial<Pick<Look, 'name' | 'description' | 'color' | 'cover'>>
  */
 export interface LookKind {
   texts: 'worlds' | 'campaigns'
+  /** Si se elige su sistema de reglas (las campañas) */
+  systems?: boolean
   /** Su lista (la de card-transition) y la consulta que la pone al día */
   list: string
   queryKey: readonly unknown[]
@@ -72,6 +81,7 @@ export function useCampaignKind(worldId: string): LookKind {
   const api = useApi()
   return {
     texts: 'campaigns',
+    systems: true,
     list: `campanas-${worldId}`,
     queryKey: ['campaigns', worldId],
     worldOf: () => worldId,
@@ -89,6 +99,7 @@ export function useAllCampaignsKind(places: readonly { id: string; name: string 
   const api = useApi()
   return {
     texts: 'campaigns',
+    systems: true,
     list: 'campanas',
     queryKey: ['campaigns'],
     worldOf: (look, place) => (look as (Look & { worldId?: string }) | undefined)?.worldId ?? place,
@@ -577,6 +588,10 @@ function LookSettings({
   )
 }
 
+/** Sin las claves que no tienen valor (lo que no se cambia no se manda) */
+const withoutUndefined = <T extends Record<string, unknown>>(value: T) =>
+  Object.fromEntries(Object.entries(value).filter(([, v]) => v !== undefined)) as Partial<T>
+
 /** Descarga una imagen antes de enseñarla (como mucho, un par de segundos) */
 function preload(url: string) {
   const image = new Image()
@@ -589,12 +604,14 @@ interface Draft {
   name: string
   description: string
   color: World['color']
+  system: SystemDraft
 }
 
 const draftOf = (look?: Look): Draft => ({
   name: look?.name ?? '',
   description: look?.description ?? '',
-  color: look?.color ?? null
+  color: look?.color ?? null,
+  system: { system: look?.system?.id ?? null, choices: (look?.systemChoices ?? {}) as SystemDraft['choices'] }
 })
 
 /**
@@ -660,8 +677,16 @@ function LookDialog({
   const [viewing, setViewing] = useState(false)
   const [changingCover, setChangingCover] = useState(false)
 
+  // El sistema, solo en las campañas: si cambió el sistema o lo que se elige de él
+  const systemChanged = Boolean(kind.systems) && JSON.stringify(draft.system) !== JSON.stringify(draftOf(look).system)
+  const systemPatch = systemChanged
+    ? { system: draft.system.system, systemChoices: draft.system.system ? draft.system.choices : undefined }
+    : {}
   const changed = look
-    ? draft.name.trim() !== look.name || draft.description.trim() !== look.description || draft.color !== look.color
+    ? draft.name.trim() !== look.name ||
+      draft.description.trim() !== look.description ||
+      draft.color !== look.color ||
+      systemChanged
     : true
   const createdId = useRef<string | null>(null)
   const save = useMutation({
@@ -669,7 +694,19 @@ function LookDialog({
       const name = draft.name.trim()
       const appearance = { description: draft.description.trim(), color: draft.color }
       if (look) {
-        await kind.update(look.id, { ...(name !== look.name ? { name } : {}), ...appearance })
+        const updated = (await kind.update(look.id, {
+          ...(name !== look.name ? { name } : {}),
+          ...appearance,
+          ...withoutUndefined(systemPatch)
+        })) as Partial<Look> | undefined
+        // Lo que se elige del sistema vuelve completo (con sus valores iniciales): el borrador, como quedó
+        if (systemChanged && updated)
+          set({
+            system: {
+              system: updated.system?.id ?? null,
+              choices: (updated.systemChoices ?? {}) as SystemDraft['choices']
+            }
+          })
       } else {
         const created = await kind.create(name, place)
         // No sale en la lista hasta que su transición la enseña, saliendo de esta ventana
@@ -684,8 +721,12 @@ function LookDialog({
           )
           chosen = { ...newCover.cover, fileId: stored.id }
         } else if (newCover) chosen = newCover.cover
-        if (appearance.description || appearance.color || chosen) {
-          await kind.update(created.id, { ...appearance, ...(chosen ? { cover: chosen } : {}) })
+        if (appearance.description || appearance.color || chosen || systemChanged) {
+          await kind.update(created.id, {
+            ...appearance,
+            ...(chosen ? { cover: chosen } : {}),
+            ...withoutUndefined(systemPatch)
+          })
         }
         // La tarjeta sale ya con su portada: los archivos de su mundo pedidos y la imagen descargada antes de enseñarla
         if (chosen) {
@@ -818,6 +859,7 @@ function LookDialog({
           onChange={(event) => set({ description: event.currentTarget.value })}
         />
         <ColorChoices value={draft.color} onChange={(color) => set({ color })} />
+        {kind.systems && <CampaignSystemFields value={draft.system} onChange={(system) => set({ system })} />}
         <FormError message={save.error ? errorText(save.error) : null} />
         <ChangesBar shown={changed}>
           <BusyButton type="submit" className={form.button} busy={save.isPending}>

@@ -4,37 +4,22 @@
  */
 import { type DiceRoll, listRolls, rollDice, tryDice, visibilitiesFor } from '@crisol/contracts'
 import { diceRepo } from '@crisol/db'
-import { cryptoRoller, DiceSyntaxError, rollDice as roll } from '@crisol/dice'
+import { type CriticalRule, cryptoRoller, DiceSyntaxError, rollDice as roll } from '@crisol/dice'
 import { can } from '@crisol/domain'
 import { authorizedCampaign } from './access.ts'
 import { type ActionContext, InvalidRequestError, TooManyRequestsError } from './context.ts'
 import { implement } from './registry.ts'
-
-/** Como mucho, tantas por minuto y persona: se cuentan en la tabla, así vale con varias instancias */
-export const ROLLS_PER_MINUTE = 60
-
-/** Las de tryDice (sin apuntar), en la memoria del proceso: no guardan nada que contar */
-const tried = new Map<string, number[]>()
-function tooManyTries(userId: string) {
-  const now = Date.now()
-  const recent = (tried.get(userId) ?? []).filter((at) => now - at < 60_000)
-  if (recent.length >= ROLLS_PER_MINUTE) {
-    tried.set(userId, recent)
-    return true
-  }
-  recent.push(now)
-  tried.set(userId, recent)
-  return false
-}
+import { criticalRuleOf } from './systems.ts'
+import { ROLLS_PER_MINUTE, tooManyTries } from './tries.ts'
 
 /** Los dados de un resultado, para guardarlos y para los dados 3D */
 const diceOf = (result: ReturnType<typeof roll>) =>
   result.terms.flatMap((term) => term.dice.map((d) => ({ sides: term.sides, value: d.value, kept: d.kept })))
 
 /** Tirar, o decir por qué no se entiende */
-function rolled(formula: string) {
+function rolled(formula: string, critical: CriticalRule = 'd20') {
   try {
-    return roll(formula, cryptoRoller)
+    return roll(formula, cryptoRoller, { critical })
   } catch (error) {
     if (error instanceof DiceSyntaxError) throw new InvalidRequestError('BAD_FORMULA', error.message)
     throw error
@@ -70,7 +55,8 @@ export const diceActions = [
     if (!master && !visibilitiesFor('player').includes(input.visibility)) {
       throw new InvalidRequestError('VISIBILITY_NOT_ALLOWED')
     }
-    const result = rolled(input.formula)
+    // Los críticos, los del juego de la campaña (sin sistema, los del d20)
+    const result = rolled(input.formula, await criticalRuleOf(ctx, campaign.system))
     const row = await diceRepo.insertRoll(ctx.db, ROLLS_PER_MINUTE, {
       campaignId: campaign.id,
       worldId: campaign.worldId,
@@ -116,7 +102,7 @@ export const diceActions = [
   // Sin apuntarla: para probar una fórmula (la IA) o tirar en un mundo sin campañas. No guarda nada
   implement(tryDice, async (ctx, input) => {
     if (tooManyTries(ctx.actor.userId)) throw new TooManyRequestsError('TOO_MANY_ROLLS')
-    const result = rolled(input.formula)
+    const result = rolled(input.formula, input.critical)
     return {
       formula: result.formula,
       label: result.comment ?? null,

@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
-import { campaignLink, newPlayer } from './ayudas.ts'
+import { campaignLink, newPlayer, settled } from './ayudas.ts'
 
 test('el máster abre los dados en su campaña y tira: la tirada se explica y se anuncia el total', async ({ page }) => {
   await campaignLink(page)
@@ -96,6 +96,8 @@ test('en el móvil, los dados en una hoja que sube desde abajo, desde el menú d
   await expect(dice.getByRole('list', { name: 'Tiradas de la campaña' }).getByRole('listitem').last()).toContainText(
     'Daño'
   )
+  // La tirada nueva entra con una animación (sube y aparece): el contraste se mide cuando acaba, no a medias
+  await settled(page)
   for (const colorScheme of ['light', 'dark'] as const) {
     await page.emulateMedia({ colorScheme })
     const { violations } = await new AxeBuilder({ page })

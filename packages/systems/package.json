@@ -1,0 +1,24 @@
+{
+  "name": "@crisol/systems",
+  "private": true,
+  "license": "UNLICENSED",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./fixtures": "./src/fixtures/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p .",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage --exclude src/ritmo.test.ts && vitest run src/ritmo.test.ts"
+  },
+  "dependencies": {
+    "@crisol/dice": "workspace:*",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

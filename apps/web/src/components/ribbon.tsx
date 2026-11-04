@@ -10,6 +10,7 @@ import {
   LayoutTemplate,
   LogOut,
   type LucideIcon,
+  ScrollText,
   Settings,
   Trash2,
   User
@@ -106,6 +107,12 @@ export function Ribbon() {
     void queryClient.prefetchQuery({
       queryKey: ['templates'],
       queryFn: () => api.call('listTemplates', {}),
+      staleTime: 10_000
+    })
+  const prefetchSystems = () =>
+    void queryClient.prefetchQuery({
+      queryKey: ['systems'],
+      queryFn: () => api.call('listSystems', {}),
       staleTime: 10_000
     })
   // Al entrar en un mundo, «Mundos» sube a la llama y se funde con ella, que se aviva (el mundo se cocina en el crisol);
@@ -236,6 +243,20 @@ export function Ribbon() {
             onFocus={prefetchTemplates}
           >
             <Label icon={LayoutTemplate} text={t('ribbon.templates')} />
+          </Link>
+        )}
+        {/* Los sistemas de reglas de la cuenta (ADR-0011), junto a las plantillas */}
+        {isOwner && !merged && (
+          <Link
+            to="/sistemas"
+            viewTransition={SECTION}
+            className={worldsItem.filter(Boolean).join(' ')}
+            style={{ '--rise': '-18.8rem' } as CSSProperties}
+            data-tour="barra-sistemas"
+            onPointerEnter={prefetchSystems}
+            onFocus={prefetchSystems}
+          >
+            <Label icon={ScrollText} text={t('ribbon.systems')} />
           </Link>
         )}
         {panelsWorld && (
@@ -524,6 +545,13 @@ function MobileMenu({
                 text: t('ribbon.templates'),
                 current: path.startsWith('/plantillas'),
                 run: go('/plantillas')
+              },
+              {
+                key: 'sistemas',
+                icon: ScrollText,
+                text: t('ribbon.systems'),
+                current: path.startsWith('/sistemas'),
+                run: go('/sistemas')
               }
             ]
           : [])

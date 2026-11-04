@@ -200,21 +200,54 @@ function evaluate(
   }
 }
 
-/** El crítico de la regla de 5e: lo deciden los d20 que cuentan, sin los de más por explotar */
-function criticalOf(terms: readonly TermResult[]): RollResult['critical'] {
-  const d20 = terms
-    .filter((t) => t.sides === 20)
-    .flatMap((t) => t.dice.filter((d) => d.kept && !d.exploded))
-    .map((d) => d.natural ?? d.value)
-  if (d20.some((v) => v === 20)) return 'high'
-  if (d20.some((v) => v === 1)) return 'low'
-  return null
+/**
+ * Cuándo una tirada es crítica, según el juego (ADR-0010 lo dejó para cada sistema):
+ * - none: nunca;
+ * - d20: el 20 natural de un d20 que cuenta es crítico y el 1, pifia (la regla de 5e);
+ * - doubles: los dados que cuentan, todos iguales (dos o más) es crítico;
+ * - under: se tira por debajo, así que el 1 natural es crítico y la cara más alta, pifia
+ */
+export type CriticalRule = 'none' | 'd20' | 'doubles' | 'under'
+
+/** Los dados que cuentan para el crítico: los que se quedan, sin los de más por explotar */
+const counted = (terms: readonly TermResult[], sides?: number) =>
+  terms
+    .filter((t) => typeof t.sides === 'number' && (sides === undefined || t.sides === sides))
+    .flatMap((t) =>
+      t.dice
+        .filter((d) => d.kept && !d.exploded)
+        .map((d) => ({ value: d.natural ?? d.value, sides: t.sides as number }))
+    )
+
+export function criticalOf(terms: readonly TermResult[], rule: CriticalRule = 'd20'): RollResult['critical'] {
+  switch (rule) {
+    case 'none':
+      return null
+    case 'd20': {
+      const d20 = counted(terms, 20).map((d) => d.value)
+      if (d20.some((v) => v === 20)) return 'high'
+      if (d20.some((v) => v === 1)) return 'low'
+      return null
+    }
+    case 'doubles': {
+      const dice = counted(terms)
+      return dice.length >= 2 && dice.every((d) => d.value === dice[0]?.value) ? 'high' : null
+    }
+    case 'under': {
+      const dice = counted(terms)
+      if (dice.some((d) => d.value === 1)) return 'high'
+      if (dice.some((d) => d.value === d.sides)) return 'low'
+      return null
+    }
+  }
 }
 
-/** Tira una fórmula; lanza DiceSyntaxError si no se entiende */
-export function rollDice(formula: string, roll: DieRoller = cryptoRoller): RollResult {
-  const { comment } = splitComment(formula)
-  const tree = parseDice(formula)
+/** Tira un árbol ya leído (el de una tirada de un sistema, ya armada) */
+export function rollTree(
+  tree: DiceNode,
+  roll: DieRoller = cryptoRoller,
+  { critical = 'd20', comment }: { critical?: CriticalRule; comment?: string | null } = {}
+): RollResult {
   const terms: TermResult[] = []
   const { value, text } = evaluate(tree, roll, terms, { left: MAX_RESULTS })
   return {
@@ -223,6 +256,16 @@ export function rollDice(formula: string, roll: DieRoller = cryptoRoller): RollR
     terms,
     detail: `${formatDice(tree)} → ${text} = ${value}`,
     ...(comment ? { comment } : {}),
-    critical: criticalOf(terms)
+    critical: criticalOf(terms, critical)
   }
+}
+
+/** Tira una fórmula; lanza DiceSyntaxError si no se entiende */
+export function rollDice(
+  formula: string,
+  roll: DieRoller = cryptoRoller,
+  options: { critical?: CriticalRule } = {}
+): RollResult {
+  const { comment } = splitComment(formula)
+  return rollTree(parseDice(formula), roll, { ...options, comment })
 }

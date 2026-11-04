@@ -16,6 +16,7 @@
     "@crisol/dice": "workspace:*",
     "@crisol/domain": "workspace:*",
     "@crisol/editor": "workspace:*",
+    "@crisol/systems": "workspace:*",
     "@floating-ui/dom": "catalog:",
     "@fontsource/alegreya": "catalog:",
     "@fontsource/barlow": "catalog:",

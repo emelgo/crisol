@@ -33,6 +33,26 @@ import {
   tagTree,
   uniqueTags
 } from '@crisol/domain'
+import {
+  applyChanges,
+  CATALOG,
+  ChangeError,
+  type ContentItem,
+  catalogSystem,
+  fileName,
+  normalizeChoices,
+  pickPaths,
+  RollError,
+  SYSTEM_FILE,
+  type System,
+  systemOverview,
+  textOf,
+  toFile,
+  tryFormula as tryFormulaIn,
+  tryRoll,
+  validateFile,
+  validateSystem
+} from '@crisol/systems'
 import { type ActionInput, type ActionName, type ActionOutput, type ApiClient, ApiError } from './client.ts'
 
 export function fakeApi(
@@ -48,6 +68,8 @@ export function fakeApi(
     conflicts?: Record<string, HistoryEntry | null>
     /** Lo que pidió la IA de la cuenta */
     approvals?: Approval[]
+    /** Los sistemas de la cuenta (documentos), además de los de serie */
+    systems?: System[]
     /** Las páginas de la wiki, en su orden entre hermanas */
     pages?: Array<{
       id?: string
@@ -405,6 +427,75 @@ export function fakeApi(
   }
   const copyMap = (map: MapView): MapView => ({ ...map, pins: map.pins.map((pin) => ({ ...pin })) })
 
+  // Los sistemas de la cuenta: como en el servidor, validados enteros con @crisol/systems
+  const ownSystems: Array<{
+    id: string
+    version: number
+    basedOn: { id: string; version: number } | null
+    document: System
+    content: ContentItem[]
+    deleted: boolean
+  }> = (options.systems ?? []).map((document) => ({
+    id: document.id,
+    version: 1,
+    basedOn: null,
+    document: structuredClone(document),
+    content: [],
+    deleted: false
+  }))
+  const systemById = (id: string) =>
+    catalogSystem(id) ?? ownSystems.find((s) => s.id === id && !s.deleted)?.document ?? null
+  const systemView = (id: string) => {
+    const own = ownSystems.find((s) => s.id === id && !s.deleted)
+    const document = own?.document ?? catalogSystem(id)
+    if (!document) throw new ApiError('NOT_FOUND', 404)
+    const { defaultRoll: _, critical: __, ...overview } = systemOverview(document)
+    return {
+      id,
+      ...overview,
+      builtIn: !own,
+      version: own?.version ?? 1,
+      basedOn: own?.basedOn
+        ? { ...own.basedOn, name: textOf(systemById(own.basedOn.id)?.name) || own.basedOn.id }
+        : null,
+      content: own?.content.length ?? 0,
+      campaigns: campaigns.filter((c) => c.system?.id === id).map((c) => ({ id: c.id, name: c.name })),
+      document: structuredClone(document) as unknown as Record<string, unknown>
+    }
+  }
+  const validSystem = (document: unknown) => {
+    const { system, problems } = validateSystem(document)
+    if (!system) throw new ApiError('SYSTEM_INVALID', 400)
+    return { system, warnings: problems.filter((p) => p.severity === 'warning') }
+  }
+  /** El sistema de una campaña, como lo da la API */
+  const campaignSystem = (id: string) => {
+    const document = systemById(id)
+    if (!document) throw new ApiError('BAD_SYSTEM', 400)
+    const { name, defaultRoll, critical } = systemOverview(document)
+    return { id, name, defaultRoll, critical }
+  }
+  const chooseSystem = (
+    campaign: Campaign,
+    system: string | null | undefined,
+    choices: Record<string, unknown> | undefined
+  ) => {
+    if (system === undefined && choices === undefined) return
+    const target = system !== undefined ? system : (campaign.system?.id ?? null)
+    if (target === null) {
+      campaign.system = null
+      campaign.systemChoices = null
+      return
+    }
+    const document = systemById(target)
+    if (!document) throw new ApiError('BAD_SYSTEM', 400)
+    const base = target === campaign.system?.id ? (campaign.systemChoices ?? {}) : {}
+    const { choices: normalized, problems } = normalizeChoices(document, { ...base, ...(choices ?? {}) })
+    if (problems.length > 0) throw new ApiError('BAD_SYSTEM_CHOICES', 400)
+    campaign.system = campaignSystem(target)
+    campaign.systemChoices = normalized
+  }
+
   const handlers: { [N in ActionName]: (input: ActionInput<N>) => ActionOutput<N> } = {
     listOrganizations: () => ({ organizations }),
     // Copias, como las de la API real (JSON nuevo en cada respuesta)
@@ -449,7 +540,7 @@ export function fakeApi(
       // En el orden en que se crearon
       campaigns: campaigns.filter((c) => c.worldId === worldId).map((c) => ({ ...c }))
     }),
-    createCampaign: ({ worldId, name }) => {
+    createCampaign: ({ worldId, name, system, systemChoices }) => {
       const campaign: Campaign = {
         id: crypto.randomUUID(),
         worldId,
@@ -458,14 +549,18 @@ export function fakeApi(
         color: null,
         cover: null,
         role: 'master',
-        version: 1
+        version: 1,
+        system: null,
+        systemChoices: null
       }
+      chooseSystem(campaign, system, systemChoices)
       campaigns.push(campaign)
       return campaign
     },
-    updateCampaign: ({ campaignId, ...patch }) => {
+    updateCampaign: ({ campaignId, system, systemChoices, ...patch }) => {
       const campaign = campaigns.find((c) => c.id === campaignId)
       if (!campaign) throw new ApiError('NOT_FOUND', 404)
+      chooseSystem(campaign, system, systemChoices)
       if (patch.name !== undefined) campaign.name = patch.name.trim()
       if (patch.description !== undefined) campaign.description = patch.description.trim()
       if (patch.color !== undefined) campaign.color = patch.color
@@ -863,9 +958,9 @@ export function fakeApi(
       rolls.push(roll)
       return { roll: { ...roll } }
     },
-    tryDice: ({ formula }) => {
+    tryDice: ({ formula, critical }) => {
       try {
-        const result = rollFormula(formula)
+        const result = rollFormula(formula, undefined, critical ? { critical } : {})
         return {
           formula: result.formula,
           label: result.comment ?? null,
@@ -884,6 +979,138 @@ export function fakeApi(
       const end = before ? all.findIndex((r) => r.id === before) : all.length
       const page = all.slice(Math.max(0, end - 50), end)
       return { rolls: page.map((r) => ({ ...r })), next: end > 50 ? (page[0]?.id ?? null) : null }
+    },
+    listSystems: () => ({
+      systems: [...CATALOG.map((c) => c.id), ...ownSystems.filter((s) => !s.deleted).map((s) => s.id)].map((id) => {
+        const { document: _, ...summary } = systemView(id)
+        return summary
+      })
+    }),
+    getSystem: ({ systemId }) => systemView(systemId),
+    createSystem: ({ name, from = 'blank' }) => {
+      const source = systemById(from)
+      if (!source) throw new ApiError('NOT_FOUND', 404)
+      const id = crypto.randomUUID()
+      const { system } = validSystem({ ...structuredClone(source), id, name })
+      const own = ownSystems.find((s) => s.id === from)
+      ownSystems.push({
+        id,
+        version: 1,
+        basedOn: { id: from, version: own?.version ?? 1 },
+        document: system,
+        content: structuredClone(own?.content ?? []),
+        deleted: false
+      })
+      return systemView(id)
+    },
+    updateSystem: ({ systemId, version, changes, document, name }) => {
+      const own = ownSystems.find((s) => s.id === systemId && !s.deleted)
+      if (!own) throw new ApiError('NOT_FOUND', 404)
+      let base: Record<string, unknown> = document ?? (own.document as unknown as Record<string, unknown>)
+      if (changes) {
+        try {
+          base = applyChanges(own.document as unknown as Record<string, unknown>, changes)
+        } catch (error) {
+          if (error instanceof ChangeError) throw new ApiError('BAD_SYSTEM_CHANGE', 400)
+          throw error
+        }
+      }
+      const { system, warnings } = validSystem({
+        ...structuredClone(base),
+        id: systemId,
+        ...(name !== undefined ? { name } : {})
+      })
+      if (own.version !== version) throw new ApiError('SYSTEM_CHANGED', 400)
+      own.document = system
+      own.version++
+      return { system: systemView(systemId), warnings }
+    },
+    deleteSystem: ({ systemId }) => {
+      const own = ownSystems.find((s) => s.id === systemId && !s.deleted)
+      if (!own) throw new ApiError('NOT_FOUND', 404)
+      if (campaigns.some((c) => c.system?.id === systemId)) throw new ApiError('SYSTEM_IN_USE', 400)
+      own.deleted = true
+      return { id: systemId, name: textOf(own.document.name) }
+    },
+    exportSystem: ({ systemId }) => {
+      const document = systemById(systemId)
+      if (!document) throw new ApiError('NOT_FOUND', 404)
+      const content = ownSystems.find((s) => s.id === systemId)?.content ?? []
+      return { name: fileName(document), file: toFile(document, content) as unknown as Record<string, unknown> }
+    },
+    getSystemParts: ({ systemId, parts }) => {
+      const document = systemById(systemId)
+      if (!document) throw new ApiError('NOT_FOUND', 404)
+      const own = ownSystems.find((s) => s.id === systemId && !s.deleted)
+      try {
+        return {
+          id: systemId,
+          name: textOf(document.name),
+          version: own?.version ?? 1,
+          builtIn: !own,
+          parts: pickPaths(document as unknown as Record<string, unknown>, parts)
+        }
+      } catch (error) {
+        if (error instanceof ChangeError) throw new ApiError('BAD_SYSTEM_PATH', 400)
+        throw error
+      }
+    },
+    getSystemFormat: () => ({ format: 1, docs: '# El formato de los sistemas de Crisol' }),
+    checkSystem: ({ document }) => {
+      const { problems } = document.kind === SYSTEM_FILE ? validateFile(document) : validateSystem(document)
+      return {
+        valid: !problems.some((p) => p.severity === 'error'),
+        problems: problems.map(({ path, where, message, severity }) => ({ path, where, message, severity }))
+      }
+    },
+    tryFormula: ({ systemId, type, formula, document }) => {
+      const system = systemById(systemId)
+      if (!system) throw new ApiError('NOT_FOUND', 404)
+      const items = (document?.items ?? []).map((item) => ({ ...item, data: item.data ?? {} }))
+      return tryFormulaIn(system, type, formula, { data: document?.data ?? {}, items })
+    },
+    trySystemRoll: (input) => {
+      const system = input.draft ? (input.draft as unknown as System) : systemById(input.systemId ?? '')
+      if (!system) throw new ApiError('NOT_FOUND', 404)
+      const typeKey = input.type ?? Object.entries(system.types).find(([, t]) => t.document === 'actor')?.[0]
+      if (!typeKey) throw new ApiError('BAD_SYSTEM_TYPE', 400)
+      const items = (input.document?.items ?? []).map((item) => ({ ...item, data: item.data ?? {} }))
+      try {
+        const rolled = tryRoll(system, typeKey, { data: input.document?.data ?? {}, items }, input.roll, {
+          ...(input.element ? { element: input.element } : {}),
+          ...(input.mode ? { mode: input.mode } : {}),
+          target: input.target ?? null
+        })
+        const { label, formula, total, detail, critical, band, modeApplied } = rolled
+        return { label, formula, total, detail, critical, band, modeApplied }
+      } catch (error) {
+        if (error instanceof RollError) throw new ApiError('BAD_ROLL', 400)
+        throw error
+      }
+    },
+    importSystem: ({ file, into }) => {
+      const { file: valid, problems } = validateFile(file)
+      if (!valid) throw new ApiError('SYSTEM_INVALID', 400)
+      const warnings = problems.filter((p) => p.severity === 'warning')
+      if (into) {
+        const own = ownSystems.find((s) => s.id === into.systemId && !s.deleted)
+        if (!own) throw new ApiError('NOT_FOUND', 404)
+        if (own.version !== into.version) throw new ApiError('SYSTEM_CHANGED', 400)
+        own.document = { ...valid.system, id: own.id }
+        own.content = valid.content
+        own.version++
+        return { system: systemView(own.id), warnings }
+      }
+      const id = crypto.randomUUID()
+      ownSystems.push({
+        id,
+        version: 1,
+        basedOn: null,
+        document: { ...valid.system, id },
+        content: valid.content,
+        deleted: false
+      })
+      return { system: systemView(id), warnings }
     },
     deleteTemplate: ({ templateId }) => {
       const found = ownTemplates.find((t) => t.id === templateId && !t.deleted)

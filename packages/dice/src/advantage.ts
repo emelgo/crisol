@@ -44,3 +44,17 @@ export function withAdvantage(formula: string, mode: Advantage): string | null {
   if (!changed) return null
   return `${formatDice(node).replace(/×/g, '*')}${comment ? ` # ${comment}` : ''}`
 }
+
+/** Los mismos dados, el doble de cada uno (el daño de un crítico: 1d8+3 → 2d8+3); los números no cambian */
+export function doubleDice(node: DiceNode): DiceNode {
+  switch (node.kind) {
+    case 'number':
+      return node
+    case 'negate':
+      return { ...node, value: doubleDice(node.value) }
+    case 'binary':
+      return { ...node, left: doubleDice(node.left), right: doubleDice(node.right) }
+    case 'dice':
+      return { ...node, count: node.count * 2 }
+  }
+}

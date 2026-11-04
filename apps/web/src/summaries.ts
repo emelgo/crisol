@@ -40,9 +40,21 @@ export function summaryOf(
     case 'renameCampaign':
       return say('renameCampaign', { from: text(details.from), to: text(details.to) })
     case 'updateCampaign':
-      return details.from !== undefined
-        ? say('renameCampaign', { from: text(details.from), to: text(details.to) })
-        : say('updateCampaign', { name: text(details.name) })
+      if (details.from !== undefined) return say('renameCampaign', { from: text(details.from), to: text(details.to) })
+      // Su sistema: elegirlo, quitarlo o cambiar lo que elige de él
+      if (details.system !== undefined)
+        return details.system === null
+          ? say('campaignNoSystem', { name: text(details.name) })
+          : say('campaignSystem', { name: text(details.name), system: text(details.system) })
+      if (details.systemChoices) return say('campaignSystemChoices', { name: text(details.name) })
+      return say('updateCampaign', { name: text(details.name) })
+    case 'createSystem':
+    case 'importSystem':
+      return say(action, { name: systemName(details) })
+    // Lo que se cambia o se borra se dice por el nombre que tiene ahora (aunque el cambio sea renombrarlo)
+    case 'updateSystem':
+    case 'deleteSystem':
+      return say(action, { name: typeof details.system === 'string' ? details.system : systemName(details) })
     case 'regenerateInvitation':
       return say('regenerateInvitation', { campaign: text(details.campaign) })
     case 'setInvitationsOpen':
@@ -180,6 +192,21 @@ export function undoLayers(details: Record<string, unknown>): { depth: number; r
     inner = { action: String(inner.details.action ?? ''), details: asRecord(inner.details.details) }
   }
   return { depth, root: inner }
+}
+
+/** Un texto de un sistema, en un idioma o en varios */
+const textIn = (value: unknown) =>
+  typeof value === 'string' ? value : String(asRecord(value).es ?? asRecord(value).en ?? '')
+
+/**
+ * El nombre del sistema de una entrada del historial o de lo que pide la IA: el suyo, el del sistema que toca, o el
+ * de su documento (al crearlo con él o al subir su archivo)
+ */
+function systemName(details: Record<string, unknown>) {
+  if (details.name !== undefined && details.name !== null) return textIn(details.name)
+  if (typeof details.system === 'string') return details.system
+  const document = asRecord(details.document).name ?? asRecord(asRecord(details.file).system).name
+  return textIn(document)
 }
 
 /** «a», «b» y «c» */

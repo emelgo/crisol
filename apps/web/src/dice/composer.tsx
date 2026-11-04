@@ -5,7 +5,7 @@
 import { type Campaign, type DiceRoll, visibilitiesFor } from '@crisol/contracts'
 import { withAdvantage } from '@crisol/dice'
 import { useMutation } from '@tanstack/react-query'
-import { type FormEvent, useId, useState } from 'react'
+import { type FormEvent, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
@@ -33,7 +33,15 @@ export function Composer({ campaign, onRolled }: { campaign: Campaign; onRolled?
   const announce = useAnnounce()
   const errorText = useErrorText()
   const id = useId()
-  const [formula, setFormula] = useState('1d20')
+  // Empieza por la tirada por defecto del sistema de la campaña (sin sistema, 1d20); al cambiar de campaña, la suya, si
+  // no se ha escrito otra
+  const fallback = campaign.system?.defaultRoll ?? '1d20'
+  const [formula, setFormula] = useState(fallback)
+  const last = useRef(fallback)
+  useEffect(() => {
+    setFormula((current) => (current === last.current ? fallback : current))
+    last.current = fallback
+  }, [fallback])
   const options = visibilitiesFor(campaign.role)
   const dice = useDice()
   // Si la campaña cambia y lo elegido no vale en ella, todos
