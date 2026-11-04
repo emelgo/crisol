@@ -112,6 +112,8 @@ test('los dados 3D caen al tirar: la escena se carga aparte, solo la primera vez
   page.on('request', (request) => {
     if (request.resourceType() === 'script') scripts.push(new URL(request.url()).pathname)
   })
+  const workers: string[] = []
+  page.on('worker', (worker) => workers.push(new URL(worker.url()).pathname))
   await campaignLink(page)
   await page.getByRole('navigation', { name: 'Secciones' }).getByRole('button', { name: 'Dados' }).click()
   const dice = page.getByRole('complementary', { name: 'Dados' })
@@ -122,6 +124,9 @@ test('los dados 3D caen al tirar: la escena se carga aparte, solo la primera vez
   await expect.poll(() => scripts.some((path) => /\/scene-[^/]+\.js$/.test(path))).toBe(true)
   // Al pararse, el total
   await expect(page.getByTestId('total-tirada')).toBeVisible({ timeout: 6000 })
+  // La física, en su worker: la página no tuvo que simularla (ni cargó la de respaldo)
+  expect(workers.some((path) => /\/throw\.worker-[^/]+\.js$/.test(path))).toBe(true)
+  expect(scripts.some((path) => /\/throw-[^/]+\.js$/.test(path))).toBe(false)
   await page.screenshot({ path: test.info().outputPath('dados-3d.png') })
 })
 
