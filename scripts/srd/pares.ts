@@ -98,7 +98,22 @@ export const GEAR_PAIRS: Record<'2014' | '2024', Record<string, string>> = {
     'Magnifying Glass': 'Lupa',
     'Poison, Basic': 'Veneno básico',
     Parchment: 'Pergamino',
-    String: 'Cordel'
+    String: 'Cordel',
+    // Las herramientas, sus variantes y las tablas pequeñas
+    "Cobbler's Tools": 'Herramientas de zapatero',
+    "Leatherworker's Tools": 'Herramientas de curtidor',
+    "Weaver's Tools": 'Herramientas de tejedor',
+    "Woodcarver's Tools": 'Herramientas de ebanista',
+    "Calligrapher's Supplies": 'Suministros de calígrafo',
+    "Painter's Supplies": 'Suministros de pintor',
+    Flute: 'Flauta',
+    Shawm: 'Chirimía',
+    Dragonchess: 'Ajedrez dragón',
+    'Three-dragon ante': 'Apuesta de los tres dragones',
+    'Arrows (20)': 'Flechas (20)',
+    'Needles (50)': 'Dardos (50)',
+    Crystal: 'Cristal',
+    Wand: 'Varita'
   }
 }
 
@@ -110,5 +125,9 @@ export const GEAR_RENAMES: Record<string, string> = {
   'flask or tankard': 'flask',
   'jug or pitcher': 'jug',
   'steel mirror': 'mirror',
-  'two-person tent': 'tent'
+  'two-person tent': 'tent',
+  'blowgun needles': 'needles',
+  'crossbow bolts': 'bolts',
+  'dice set': 'dice',
+  'playing card set': 'playing cards'
 }

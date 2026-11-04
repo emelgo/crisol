@@ -682,6 +682,8 @@ export const fiveE = {
           options: options(GEAR_CATEGORIES),
           default: 'aventura'
         },
+        // Una herramienta de 2024: con qué característica se usa
+        caracteristica: { kind: 'choice', label: t('Característica', 'Ability'), options: abilityOptions },
         equipado: yesNo('Equipado', 'Equipped'),
         ...goods,
         descripcion: description

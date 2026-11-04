@@ -1,7 +1,17 @@
 import { describe, expect, it } from 'vitest'
 import { concepts, pair, sameName } from './equipo.ts'
 import { MECHANICS } from './mecanica.ts'
-import { categoryOf, displayName, type GearRow, gearDoc, gearRows, gearSignature } from './objetos.ts'
+import {
+  categoryOf,
+  displayName,
+  entries,
+  type GearRow,
+  gearDoc,
+  gearRows,
+  gearSignature,
+  subTables,
+  toolRows
+} from './objetos.ts'
 import { GEAR_RENAMES } from './pares.ts'
 import type { Row } from './texto.ts'
 
@@ -104,5 +114,64 @@ describe('el equipo de aventurero', () => {
       ref: { pages: { en: 95, es: 103 } }
     })
     expect(gearDoc('2014', potion, potion, 'x').mechanics).toEqual({ automation: 'text' })
+  })
+})
+
+describe('lo de 2024 que va en el texto', () => {
+  const r = (text: string, y: number, x = 58, page = 96): Row => ({ text, x, y, page })
+
+  it('las tablas pequeñas: su grupo es su título; un nombre que sigue abajo; acaban con el texto', () => {
+    const rows = subTables(
+      [
+        r('Munición', 0),
+        r('Tipo Cantidad Recipiente Peso Precio', 10),
+        r('Balas de 10 Bolsa 1 kg 3 po', 20),
+        r('arma de', 30),
+        r('fuego', 40),
+        r('Flechas 20 Aljaba 0,5 kg 1 po', 50),
+        r('Un texto que ya no es de la tabla.', 70),
+        r('Canalizadores arcanos', 90),
+        r('Canalizador Peso Precio', 100),
+        r('Bastón de madera (también bastón) 2 kg 5 po', 110)
+      ],
+      'es'
+    )
+    expect(rows.map((x) => [x.group, x.name, x.cost, x.weight])).toEqual([
+      ['Munición', 'Balas de arma de fuego (10)', 3, 2],
+      ['Munición', 'Flechas (20)', 1, 1],
+      ['Canalizadores arcanos', 'Bastón de madera', 5, 4]
+    ])
+  })
+
+  it('las entradas: cada una con su texto; un título partido antes de su precio; las secciones', () => {
+    const found = entries(
+      [
+        r('Herramientas de artesano', 0),
+        r('Herramientas de soplador de vidrio', 10),
+        r('(30 po)', 20),
+        r('Característica: Inteligencia Peso: 2,5 kg', 30),
+        r('Utilizar: distinguir lo que ha contenido un objeto de vi-', 40),
+        r('drio (CD 15)', 50),
+        r('Otras herramientas', 60),
+        r('Juego (variable)', 70),
+        r('Característica: Sabiduría Peso: —', 80),
+        r('Variantes: dados (1 pp), naipes (5 pp)', 90)
+      ],
+      'es',
+      /^(Herramientas de artesano|Otras herramientas)$/
+    )
+    expect(found.map((e) => [e.section, e.name, e.cost])).toEqual([
+      ['Herramientas de artesano', 'Herramientas de soplador de vidrio', 30],
+      ['Otras herramientas', 'Juego', null]
+    ])
+    expect(found[0]?.text).toBe(
+      'Característica: Inteligencia Peso: 2,5 kg\nUtilizar: distinguir lo que ha contenido un objeto de vidrio (CD 15)'
+    )
+    const tools = toolRows(found, 'es')
+    expect(tools.map((t) => [t.name, t.group, t.cost, t.weight, t.ability])).toEqual([
+      ['Herramientas de soplador de vidrio', 'Artisan’s Tools', 30, 5, 'int'],
+      ['Dados', 'Gaming Set', 0.1, null, 'sab'],
+      ['Naipes', 'Gaming Set', 0.5, null, 'sab']
+    ])
   })
 })

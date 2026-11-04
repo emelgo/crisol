@@ -128,7 +128,8 @@ export function gearDoc(
   en: GearRow,
   es: GearRow,
   concept: string,
-  mechanics: Record<string, unknown> = { automation: 'text' }
+  mechanics: Record<string, unknown> = { automation: 'text' },
+  extra: { descripcion?: { es: string; en: string }; caracteristica?: string | null } = {}
 ): Doc {
   return {
     type: 'equipo',
@@ -138,8 +139,10 @@ export function gearDoc(
     data: {
       name: { es: displayName(es, 'es'), en: displayName(en, 'en') },
       categoria: categoryOf(en),
+      ...(extra.caracteristica ? { caracteristica: extra.caracteristica } : {}),
       peso: en.weight ?? 0,
-      coste: en.cost
+      coste: en.cost,
+      ...(extra.descripcion?.es && extra.descripcion.en ? { descripcion: extra.descripcion } : {})
     },
     mechanics,
     ref: { pages: { en: en.page, es: es.page } }
@@ -148,3 +151,202 @@ export function gearDoc(
 
 /** La firma de un objeto: su tabla, si es de un grupo, su precio y su peso */
 export const gearSignature = (r: GearRow) => `${categoryOf(r)}|${r.cost}|${r.weight}`
+
+/** Una entrada de 2024 («Acid (25 GP)» y su texto), en el orden de lectura */
+export interface Entry {
+  name: string
+  /** Su precio en piezas de oro (null: «Varies») */
+  cost: number | null
+  text: string
+  page: number
+  /** La sección en la que está («Artisan’s Tools», «Other Tools») */
+  section: string | null
+}
+
+const ENTRY: Record<Lang, RegExp> = {
+  en: /^(?<name>[A-Z][^()]*?(?: \([^)]*\))??) \((?<cost>[\d,]+ (?:CP|SP|GP)|Varies)\)$/,
+  es: /^(?<name>[A-ZÁÉÍÓÚÑ][^()]*?(?: \([^)]*\))??) \((?<cost>[\d.]+ (?:pc|pp|po)|variable|Variable)\)$/
+}
+
+/** Solo el precio, en su línea: el título de la entrada estaba en la de arriba */
+const ALONE: Record<Lang, RegExp> = {
+  en: /^\((?:[\d,]+ (?:CP|SP|GP)|Varies)\)$/,
+  es: /^\((?:[\d.]+ (?:pc|pp|po)|variable|Variable)\)$/
+}
+
+/** Las entradas de unas líneas en orden de lectura: cada una hasta la siguiente; las secciones, por su título */
+export function entries(rows: readonly Row[], lang: Lang, sectionTitles: RegExp): Entry[] {
+  const out: Entry[] = []
+  let current: Entry | null = null
+  let section: string | null = null
+  // El texto de la entrada antes de su última línea: si la siguiente es solo el precio, esa línea era un título partido
+  let before = ''
+  let lastLine = ''
+  for (const row of rows) {
+    if (sectionTitles.test(row.text)) {
+      section = row.text
+      current = null
+      continue
+    }
+    const alone = ALONE[lang].exec(row.text)
+    if (alone && lastLine) {
+      if (current) current.text = before
+      const cost = /var/i.test(row.text)
+        ? null
+        : costOf(
+            row.text.slice(1, -1).replace(/ [A-Z]+$/, (u) => u.toLowerCase()),
+            lang
+          )
+      current = { name: lastLine, cost, text: '', page: row.page, section }
+      out.push(current)
+      lastLine = ''
+      continue
+    }
+    const m = ENTRY[lang].exec(row.text)
+    if (m?.groups) {
+      const cost = /var/i.test(m.groups.cost as string)
+        ? null
+        : costOf(
+            (m.groups.cost as string).replace(/ [A-Z]+$/, (u) => u.toLowerCase()),
+            lang
+          )
+      current = { name: m.groups.name as string, cost, text: '', page: row.page, section }
+      out.push(current)
+      continue
+    }
+    lastLine = row.text
+    if (!current) {
+      before = ''
+      continue
+    }
+    before = current.text
+    const line = row.text
+    if (!current.text) current.text = line
+    else if (/[a-záéíóúñ]-$/i.test(current.text) && /^[a-záéíóúñ]/.test(line))
+      current.text = current.text.slice(0, -1) + line
+    else
+      current.text = `${current.text}${/^(Ability|Utilize|Craft|Variants|Característica|Utilizar|Fabricar|Variantes):/.test(line) ? '\n' : ' '}${line}`
+  }
+  return out
+}
+
+/** Las tablas pequeñas de 2024 dentro del texto (la munición, los canalizadores, los símbolos sagrados), por su cabecera */
+const SUB_HEADER: Record<Lang, RegExp> = {
+  en: /^(Type Amount Storage Weight Cost|Focus Weight Cost|Symbol Weight Cost)$/,
+  es: /^(Tipo Cantidad Recipiente Peso Precio|Canalizador Peso Precio|Símbolo Peso Precio)$/
+}
+
+/** Sin lo de entre paréntesis que aclara («Staff (also a Quarterstaff)», «Amulet (worn or held)») */
+const bare = (name: string) => name.replace(/ \([^)]*\)$/, '')
+
+export function subTables(rows: readonly Row[], lang: Lang): GearRow[] {
+  const out: GearRow[] = []
+  const ammo = new RegExp(
+    `^(?<name>.+?) (?<amount>\\d+) (?<storage>\\S+) (?<weight>${WEIGHT[lang]}) (?<cost>${COST[lang]})$`
+  )
+  const plain = new RegExp(`^(?<name>.+?) (?<weight>${WEIGHT[lang]}) (?<cost>${COST[lang]})$`)
+  let group: string | null = null
+  let isAmmo = false
+  let last: { row: Row; out: GearRow } | null = null
+  for (const [i, row] of rows.entries()) {
+    if (SUB_HEADER[lang].test(row.text)) {
+      group = rows[i - 1]?.text ?? null
+      isAmmo = /^(Type|Tipo) /.test(row.text)
+      last = null
+      continue
+    }
+    if (!group) continue
+    const m = (isAmmo ? ammo : plain).exec(row.text)
+    if (m?.groups) {
+      const entry: GearRow = {
+        name: isAmmo ? `${m.groups.name} (${m.groups.amount})` : bare(m.groups.name as string),
+        table: 'gear',
+        group,
+        cost: costOf(
+          (m.groups.cost as string).replace(/ [A-Z]+$/, (u) => u.toLowerCase()),
+          lang
+        ),
+        weight: weightOf(m.groups.weight as string),
+        page: row.page
+      }
+      out.push(entry)
+      last = { row, out: entry }
+      continue
+    }
+    // Un nombre que sigue abajo (en la munición, el número va en la primera línea)
+    if (last && /^[a-záéíóúñ]/.test(row.text) && row.text.length < 25 && row.y - last.row.y < 30) {
+      last.out.name = last.out.name.replace(/ \((\d+)\)$/, ` ${row.text} ($1)`)
+      last.row = row
+      continue
+    }
+    // Acaba la tabla
+    if (last) group = null
+    last = null
+  }
+  return out
+}
+
+/** Las herramientas de 2024: cada una con su característica y su texto; las variantes (juegos, instrumentos), sueltas */
+export interface ToolRow extends GearRow {
+  ability: string | null
+  text: string
+}
+
+const ABILITY_NAMES: Record<string, string> = {
+  strength: 'fue',
+  dexterity: 'des',
+  constitution: 'con',
+  intelligence: 'int',
+  wisdom: 'sab',
+  charisma: 'car',
+  fuerza: 'fue',
+  destreza: 'des',
+  constitución: 'con',
+  inteligencia: 'int',
+  sabiduría: 'sab',
+  carisma: 'car'
+}
+
+export function toolRows(found: readonly Entry[], lang: Lang): ToolRow[] {
+  const out: ToolRow[] = []
+  for (const e of found) {
+    const ability = /^(?:Ability|Característica): (\S+)/.exec(e.text)?.[1]?.toLowerCase()
+    const weight = /(?:Weight|Peso): ([\d,/½]+ (?:lb\.|kg|g)|—)/.exec(e.text)?.[1]
+    const artisan = /artisan|artesano/i.test(e.section ?? '')
+    const base: Omit<ToolRow, 'name' | 'cost' | 'weight' | 'group'> = {
+      table: 'tools',
+      page: e.page,
+      ability: ability ? (ABILITY_NAMES[ability] ?? null) : null,
+      text: e.text
+    }
+    const variants = /^(?:Variants|Variantes): (.+)$/m.exec(e.text)?.[1]
+    if (variants) {
+      const group = /gaming|juego/i.test(e.name) ? 'Gaming Set' : 'Musical Instrument'
+      for (const v of variants.matchAll(
+        /([^,()]+?) \(([\d.,]+ (?:CP|SP|GP|pc|pp|po))(?:, ([\d,/½]+ (?:lb\.|kg|g)))?\)/g
+      )) {
+        const name = (v[1] as string).trim()
+        out.push({
+          ...base,
+          name: name.charAt(0).toUpperCase() + name.slice(1),
+          group,
+          cost: costOf(
+            (v[2] as string).replace(/ [A-Z]+$/, (u) => u.toLowerCase()),
+            lang
+          ),
+          weight: v[3] ? weightOf(v[3]) : null
+        })
+      }
+      continue
+    }
+    if (e.cost === null) continue
+    out.push({
+      ...base,
+      name: e.name,
+      group: artisan ? 'Artisan’s Tools' : null,
+      cost: e.cost,
+      weight: weight ? weightOf(weight) : null
+    })
+  }
+  return out
+}

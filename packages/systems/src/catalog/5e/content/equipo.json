@@ -143,9 +143,9 @@
   },
   {
     "type": "equipo",
-    "key": "dardos_de_cerbatana_50_2014",
+    "key": "dardos_50_2014",
     "source": "srd51",
-    "concept": "dardos_de_cerbatana_50",
+    "concept": "dardos_50",
     "data": {
       "name": {
         "es": "Dardos de cerbatana (50)",
@@ -167,9 +167,9 @@
   },
   {
     "type": "equipo",
-    "key": "virotes_de_ballesta_20_2014",
+    "key": "virotes_20_2014",
     "source": "srd51",
-    "concept": "virotes_de_ballesta_20",
+    "concept": "virotes_20",
     "data": {
       "name": {
         "es": "Virotes de ballesta (20)",
@@ -191,9 +191,9 @@
   },
   {
     "type": "equipo",
-    "key": "balas_de_honda_20_2014",
+    "key": "proyectiles_de_honda_20_2014",
     "source": "srd51",
-    "concept": "balas_de_honda_20",
+    "concept": "proyectiles_de_honda_20",
     "data": {
       "name": {
         "es": "Balas de honda (20)",
@@ -3323,7 +3323,11 @@
       },
       "categoria": "aventura",
       "peso": 1,
-      "coste": 25
+      "coste": 25,
+      "descripcion": {
+        "es": "Cuando lleves a cabo la acción de atacar, puedes sustituir uno de tus ataques por lanzar un vial de ácido. Haz objetivo a una criatura u objeto que puedas ver a 6 m o menos de ti. El objetivo deberá superar una tirada de salvación de Destreza (CD 8 más tu modificador por Destreza y tu bonificador por competencia) o sufrirá 2d6 de daño de ácido.",
+        "en": "When you take the Attack action, you can replace one of your attacks with throwing a vial of Acid. Target one creature or object you can see within 20 feet of yourself. The target must succeed on a Dexterity saving throw (DC 8 plus your Dexterity modifier and Proficiency Bonus) or take 2d6 Acid damage."
+      }
     },
     "mechanics": {
       "actions": [
@@ -3372,7 +3376,11 @@
       },
       "categoria": "aventura",
       "peso": 1,
-      "coste": 50
+      "coste": 50,
+      "descripcion": {
+        "es": "Cuando lleves a cabo la acción de atacar, puedes sustituir uno de tus ataques por lanzar un frasco de fuego de alquimista. Haz objetivo a una criatura u objeto que puedas ver a 6 m o menos de ti. El objetivo deberá superar una tirada de salvación de Destreza (CD 8 más tu modificador por Destreza y tu bonificador por competencia) o sufrirá 1d4 de daño de fuego y comenzará a arder (consulta el capítulo “Glosario de reglas”).",
+        "en": "When you take the Attack action, you can replace one of your attacks with throwing a flask of Alchemist’s Fire. Target one creature or object you can see within 20 feet of yourself. The target must succeed on a Dexterity saving throw (DC 8 plus your Dexterity modifier and Proficiency Bonus) or take 1d4 Fire damage and start burning (see “Rules Glossary”)."
+      }
     },
     "mechanics": {
       "actions": [
@@ -3425,7 +3433,11 @@
       },
       "categoria": "aventura",
       "peso": 0,
-      "coste": 50
+      "coste": 50,
+      "descripcion": {
+        "es": "Como acción adicional, puedes beber un vial de antitoxina para obtener ventaja en las tiradas de salvación para evitar o poner fin al estado de envenenado durante 1 hora.",
+        "en": "As a Bonus Action, you can drink a vial of Antitoxin to gain Advantage on saving throws to avoid or end the Poisoned condition for 1 hour."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -3449,7 +3461,11 @@
       },
       "categoria": "paquete",
       "peso": 5,
-      "coste": 2
+      "coste": 2,
+      "descripcion": {
+        "es": "Una mochila soporta hasta 15 kg en un volumen de 30 l. También puede servir de alforja.",
+        "en": "A Backpack holds up to 30 pounds within 1 cubic foot. It can also serve as a saddlebag."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -3473,7 +3489,11 @@
       },
       "categoria": "aventura",
       "peso": 2,
-      "coste": 1
+      "coste": 1,
+      "descripcion": {
+        "es": "Como acción de utilizar, puedes verter las bolas de metal de su bolsa. Se esparcirán para cubrir una zona cuadrada y plana de 3 m de lado a 3 m o menos de ti. Las criaturas que entren en esta zona por primera vez en un turno deberán superar una tirada de salvación de Destreza con CD 10 o tendrán el estado de derribadas. Se tarda 10 minutos en recuperar las bolas de metal.",
+        "en": "As a Utilize action, you can spill Ball Bearings from their pouch. They spread to cover a level, 10-footsquare area within 10 feet of yourself. A creature that enters this area for the first time on a turn must succeed on a DC 10 Dexterity saving throw or have the Prone condition. It takes 10 minutes to recover the Ball Bearings."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -3497,7 +3517,11 @@
       },
       "categoria": "aventura",
       "peso": 70,
-      "coste": 2
+      "coste": 2,
+      "descripcion": {
+        "es": "En un barril caben 160 l de líquido o un volumen de 120 l de mercancías secas.",
+        "en": "A Barrel holds up to 40 gallons of liquid or up to 4 cubic feet of dry goods."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -3521,7 +3545,11 @@
       },
       "categoria": "aventura",
       "peso": 2,
-      "coste": 0.4
+      "coste": 0.4,
+      "descripcion": {
+        "es": "Una cesta soporta hasta 20 kg en un volumen de 60 l.",
+        "en": "A Basket holds up to 40 pounds within 2 cubic feet."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -3545,7 +3573,11 @@
       },
       "categoria": "aventura",
       "peso": 7,
-      "coste": 1
+      "coste": 1,
+      "descripcion": {
+        "es": "En un petate puede dormir una criatura Pequeña o Mediana. Mientras estés en un petate, superarás automáticamente las tiradas de salvación contra el frío extremo (consulta el capítulo “Herramientas del juego”).",
+        "en": "A Bedroll sleeps one Small or Medium creature. While in a Bedroll, you automatically succeed on saving throws against extreme cold (see “Gameplay Toolbox”)."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -3569,7 +3601,11 @@
       },
       "categoria": "aventura",
       "peso": 0,
-      "coste": 1
+      "coste": 1,
+      "descripcion": {
+        "es": "Al tañer una campana como acción de utilizar, producirá un sonido audible a 18 m de distancia.",
+        "en": "When rung as a Utilize action, a Bell produces a sound that can be heard up to 60 feet away."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -3593,7 +3629,11 @@
       },
       "categoria": "aventura",
       "peso": 3,
-      "coste": 0.5
+      "coste": 0.5,
+      "descripcion": {
+        "es": "Mientras te envuelvas en una manta, tendrás ventaja en las tiradas de salvación contra el frío extremo (consulta el capítulo “Herramientas del juego”).",
+        "en": "While wrapped in a blanket, you have Advantage on saving throws against extreme cold (see “Gameplay Toolbox”)."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -3617,7 +3657,11 @@
       },
       "categoria": "aventura",
       "peso": 5,
-      "coste": 1
+      "coste": 1,
+      "descripcion": {
+        "es": "Un polipasto te permite levantar hasta cuatro veces el peso que normalmente puedes levantar.",
+        "en": "A Block and Tackle allows you to hoist up to four times the weight you can normally lift."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -3641,7 +3685,11 @@
       },
       "categoria": "aventura",
       "peso": 5,
-      "coste": 25
+      "coste": 25,
+      "descripcion": {
+        "es": "Un libro contiene ficción o no ficción. Si consultas un libro veraz de no ficción para saber algo sobre su materia, ganarás un bonificador de +5 a las p ruebas de Inteligencia (Conocimiento arcano, Historia, Naturaleza o Religión) que hagas sobre esa materia.",
+        "en": "A Book contains fiction or nonfiction. If you consult an accurate nonfiction Book about its topic, you gain a +5 bonus to Intelligence (Arcana, History, Nature, or Religion) checks you make about that topic."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -3665,7 +3713,11 @@
       },
       "categoria": "aventura",
       "peso": 2,
-      "coste": 2
+      "coste": 2,
+      "descripcion": {
+        "es": "En una botella de cristal caben hasta 0,75 l de líquido.",
+        "en": "A Glass Bottle holds up to 11/2 pints."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -3689,7 +3741,11 @@
       },
       "categoria": "aventura",
       "peso": 2,
-      "coste": 0.05
+      "coste": 0.05,
+      "descripcion": {
+        "es": "En un cubo cabe un volumen de 15 l de contenido.",
+        "en": "A Bucket holds up to half a cubic foot of contents."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -3713,7 +3769,11 @@
       },
       "categoria": "paquete",
       "peso": 42,
-      "coste": 16
+      "coste": 16,
+      "descripcion": {
+        "es": "Un paquete de ladrón contiene los siguientes objetos: bolas de metal, campana, cantimplora, cuerda, 7 frascos de aceite, linterna sorda, mochila, palanqueta, raciones para 5 días, 10 velas y yesquero.",
+        "en": "A Burglar’s Pack contains the following items: Backpack, Ball Bearings, Bell, 10 Candles, Crowbar, Hooded Lantern, 7 flasks of Oil, 5 days of Rations, Rope, Tinderbox, and Waterskin."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -3737,7 +3797,11 @@
       },
       "categoria": "aventura",
       "peso": 2,
-      "coste": 1
+      "coste": 1,
+      "descripcion": {
+        "es": "Como acción de utilizar, puedes esparcir los abrojos de tu bolsa para cubrir una zona cuadrada de 1,5 m de lado a 1,5 m o menos de ti. Las criaturas que entren en esta zona por primera vez en un turno deberán superar una tirada de salvación de Destreza con CD 15 o sufrirán 1 de daño perforante y su velocidad se reducirá a 0 hasta el principio de su siguiente turno. Se tarda 10 minutos en recuperar los abrojos.",
+        "en": "As a Utilize action, you can spread Caltrops from their bag to cover a 5-foot-square area within 5 feet of yourself. A creature that enters this area for the first time on a turn must succeed on a DC 15 Dexterity saving throw or take 1 Piercing damage and have its Speed reduced to 0 until the start of its next turn. It takes 10 minutes to recover the Caltrops."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -3761,7 +3825,11 @@
       },
       "categoria": "aventura",
       "peso": 0,
-      "coste": 0.01
+      "coste": 0.01,
+      "descripcion": {
+        "es": "Durante 1 hora, una vela encendida emite luz brillante en un radio de 1,5 m y luz tenue 1,5 m más allá.",
+        "en": "For 1 hour, a lit Candle sheds Bright Light in a 5-foot radius and Dim Light for an additional 5 feet."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -3785,7 +3853,11 @@
       },
       "categoria": "aventura",
       "peso": 1,
-      "coste": 1
+      "coste": 1,
+      "descripcion": {
+        "es": "En un estuche para virotes de ballesta caben hasta 20 virotes.",
+        "en": "A Crossbow Bolt Case holds up to 20 Bolts."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -3809,7 +3881,11 @@
       },
       "categoria": "aventura",
       "peso": 1,
-      "coste": 1
+      "coste": 1,
+      "descripcion": {
+        "es": "En un estuche para mapas o pergaminos caben hasta 10 hojas de papel o 5 hojas de pergamino.",
+        "en": "A Map or Scroll Case holds up to 10 sheets of paper or 5 sheets of parchment."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -3833,7 +3909,11 @@
       },
       "categoria": "aventura",
       "peso": 10,
-      "coste": 5
+      "coste": 5,
+      "descripcion": {
+        "es": "Como acción de utilizar, puedes atar con una cadena a una criatura no voluntaria a 1,5 m o menos de ti que tenga el estado de agarrada, apresada o incapacitada si superas una prueba de Fuerza (Atletismo) con CD 13. Si la criatura tiene las piernas atadas, tendrá el estado de apresada hasta que se libere. Para liberarse de la cadena, deberá superar una prueba de Destreza (Acrobacias) con CD 18 como acción. Romper la cadena requiere superar una prueba de Fuerza (Atletismo) con CD 20 como acción.",
+        "en": "As a Utilize action, you can wrap a Chain around an unwilling creature within 5 feet of yourself that has the Grappled, Incapacitated, or Restrained condition if you succeed on a DC 13 Strength (Athletics) check. If the creature’s legs are bound, the creature has the Restrained condition until it escapes. Escaping the Chain requires the creature to make a successful DC 18 Dexterity (Acrobatics) check as an action. Bursting the Chain requires a successful DC 20 Strength (Athletics) check as an action."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -3857,7 +3937,11 @@
       },
       "categoria": "aventura",
       "peso": 25,
-      "coste": 5
+      "coste": 5,
+      "descripcion": {
+        "es": "En un cofre cabe un volumen de hasta 360 l de contenido.",
+        "en": "A Chest holds up to 12 cubic feet of contents."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -3881,7 +3965,11 @@
       },
       "categoria": "aventura",
       "peso": 12,
-      "coste": 25
+      "coste": 25,
+      "descripcion": {
+        "es": "Los útiles de escalada incluyen arnés, guantes, pitones y puntas para las botas. Como acción de utilizar, puedes emplear los útiles de escalada para anclarte; cuando lo hagas, no podrás caer más de 7,5 m desde el punto de anclaje ni podrás alejarte más de 7,5 m de ahí si no quitas la sujeción como acción adicional.",
+        "en": "A Climber’s Kit includes boot tips, gloves, pitons, and a harness. As a Utilize action, you can use the Climber’s Kit to anchor yourself; when you do, you can’t fall more than 25 feet from the anchor point, and you can’t move more than 25 feet from there without undoing the anchor as a Bonus Action."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -3905,7 +3993,11 @@
       },
       "categoria": "aventura",
       "peso": 6,
-      "coste": 15
+      "coste": 15,
+      "descripcion": {
+        "es": "Las ropas de calidad están confeccionadas con telas caras y ornamentadas con detalles elaborados por manos expertas. Algunos eventos y lugares admiten solo a gente que lleve esta indumentaria.",
+        "en": "Fine Clothes are made of expensive fabrics and adorned with expertly crafted details. Some events and locations admit only people wearing these clothes."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -3929,7 +4021,11 @@
       },
       "categoria": "aventura",
       "peso": 4,
-      "coste": 2
+      "coste": 2,
+      "descripcion": {
+        "es": "Las ropas de viaje son prendas resistentes y diseñadas para viajar por diversos entornos.",
+        "en": "Traveler’s Clothes are resilient garments designed for travel in various environments."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -3953,7 +4049,11 @@
       },
       "categoria": "aventura",
       "peso": 2,
-      "coste": 25
+      "coste": 25,
+      "descripcion": {
+        "es": "Un saquito de componentes es una bolsa hermética y llena de compartimentos que contienen todos los componentes materiales gratuitos para tus conjuros.",
+        "en": "A Component Pouch is watertight and filled with compartments that hold all the free Material components of your spells."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -3977,7 +4077,11 @@
       },
       "categoria": "aventura",
       "peso": 4,
-      "coste": 5
+      "coste": 5,
+      "descripcion": {
+        "es": "Mientras lleves puesto un disfraz, tienes ventaja en cualquier prueba de característica que hagas para hacerte pasar por la persona o tipo de persona que representa.",
+        "en": "While wearing a Costume, you have Advantage on any ability check you make to impersonate the person or type of person it represents."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -4001,7 +4105,11 @@
       },
       "categoria": "aventura",
       "peso": 5,
-      "coste": 2
+      "coste": 2,
+      "descripcion": {
+        "es": "Una palanqueta te da ventaja en las pruebas de Fuerza en las que se pueda hacer palanca.",
+        "en": "Using a Crowbar gives you Advantage on Strength checks where the Crowbar’s leverage can be applied."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -4025,7 +4133,11 @@
       },
       "categoria": "paquete",
       "peso": 39,
-      "coste": 39
+      "coste": 39,
+      "descripcion": {
+        "es": "Un paquete de diplomático contiene los siguientes objetos: cofre, 2 estuches para mapas o pergaminos, 4 frascos de aceite, 5 hojas de papel, 5 hojas de pergamino, lámpara, perfume, 5 plumas, ropas de calidad, tinta y yesquero.",
+        "en": "A Diplomat’s Pack contains the following items: Chest, Fine Clothes, Ink, 5 Ink Pens, Lamp, 2 Map or Scroll Cases, 4 flasks of Oil, 5 sheets of Paper, 5 sheets of Parchment, Perfume, and Tinderbox."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -4049,7 +4161,11 @@
       },
       "categoria": "paquete",
       "peso": 55,
-      "coste": 12
+      "coste": 12,
+      "descripcion": {
+        "es": "Un paquete de explorador de mazmorras c ontiene los siguientes objetos: abrojos, 10 antorchas, cantimplora, cuerda, 2 frascos de aceite, mochila, palanqueta, raciones para 10 días y yesquero.",
+        "en": "A Dungeoneer’s Pack contains the following items: Backpack, Caltrops, Crowbar, 2 flasks of Oil, 10 days of Rations, Rope, Tinderbox, 10 Torches, and Waterskin."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -4073,7 +4189,11 @@
       },
       "categoria": "paquete",
       "peso": 58.5,
-      "coste": 40
+      "coste": 40,
+      "descripcion": {
+        "es": "Un paquete de artista contiene los siguientes objetos: campana, cantimplora, 3 disfraces, espejo, 8 frascos de aceite, linterna de ojo de buey, mochila, petate, raciones para 9 días y yesquero.",
+        "en": "An Entertainer’s Pack contains the following items: Backpack, Bedroll, Bell, Bullseye Lantern, 3 Costumes, Mirror, 8 flasks of Oil, 9 days of Rations, Tinderbox, and Waterskin."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -4097,7 +4217,11 @@
       },
       "categoria": "paquete",
       "peso": 55,
-      "coste": 10
+      "coste": 10,
+      "descripcion": {
+        "es": "Un paquete de explorador contiene los siguientes objetos: 10 antorchas, cantimplora, cuerda, 2 frascos de aceite, mochila, petate, raciones para 10 días y yesquero.",
+        "en": "An Explorer’s Pack contains the following items: Backpack, Bedroll, 2 flasks of Oil, 10 days of Rations, Rope, Tinderbox, 10 Torches, and Waterskin."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -4121,7 +4245,11 @@
       },
       "categoria": "aventura",
       "peso": 1,
-      "coste": 0.02
+      "coste": 0.02,
+      "descripcion": {
+        "es": "En un frasco caben hasta 0,5 l de líquido.",
+        "en": "A Flask holds up to 1 pint."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -4145,7 +4273,11 @@
       },
       "categoria": "aventura",
       "peso": 4,
-      "coste": 2
+      "coste": 2,
+      "descripcion": {
+        "es": "Como acción de utilizar, puedes lanzar un garfio de escalada a una barandilla, cornisa u otro saliente a 15 m o menos de ti, y el garfio se enganchará si superas una prueba de Destreza (Acrobacias) con CD 13. Si el garfio tiene una cuerda atada, podrás escalar.",
+        "en": "As a Utilize action, you can throw the Grappling Hook at a railing, a ledge, or another catch within 50 feet of yourself, and the hook catches on if you succeed on a DC 13 Dexterity (Acrobatics) check. If you tied a Rope to the hook, you can then climb it."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -4169,7 +4301,11 @@
       },
       "categoria": "aventura",
       "peso": 3,
-      "coste": 5
+      "coste": 5,
+      "descripcion": {
+        "es": "Los útiles de sanador tienen diez usos. Como acción de utilizar, puedes gastar uno de ellos para estabilizar a una criatura inconsciente que tenga 0 puntos de golpe sin necesidad de hacer una prueba de Sabiduría (Medicina).",
+        "en": "A Healer’s Kit has ten uses. As a Utilize action, you can expend one of its uses to stabilize an Unconscious creature that has 0 Hit Points without needing to make a Wisdom (Medicine) check."
+      }
     },
     "mechanics": {
       "resources": [
@@ -4207,7 +4343,11 @@
       },
       "categoria": "aventura",
       "peso": 1,
-      "coste": 25
+      "coste": 25,
+      "descripcion": {
+        "es": "Cuando lleves a cabo la acción de atacar, puedes sustituir uno de tus ataques por lanzar un frasco de agua bendita. Haz objetivo a una criatura que puedas ver a 6 m o menos de ti. El objetivo deberá superar una tirada de salvación de Destreza (CD 8 más tu modificador por Destreza y tu bonificador por competencia) o sufrirá 2d8 de daño radiante si es un infernal o un muerto viviente.",
+        "en": "When you take the Attack action, you can replace one of your attacks with throwing a flask of Holy Water. Target one creature you can see within 20 feet of yourself. The target must succeed on a Dexterity saving throw (DC 8 plus your Dexterity modifier and Proficiency Bonus) or take 2d8 Radiant damage if it is a Fiend or an Undead."
+      }
     },
     "mechanics": {
       "actions": [
@@ -4260,7 +4400,11 @@
       },
       "categoria": "aventura",
       "peso": 25,
-      "coste": 5
+      "coste": 5,
+      "descripcion": {
+        "es": "Como acción de utilizar, puedes poner una trampa para cazar, que consiste en una anilla dentada de acero que se cierra cuando una criatura pisa una placa de presión situada en su centro. La trampa se fija mediante una pesada cadena a cualquier objeto inmóvil, como un árbol o una estaca clavada en el suelo. Si una criatura pisa la placa, deberá superar una tirada de salvación de Destreza con CD 13 o sufrirá 1d4 de daño perforante y su velocidad se reducirá a 0 hasta el principio de su siguiente turno. A partir de ese momento y hasta que la criatura se libere de la trampa, su movimiento se verá limitado por la longitud de la cadena (normalmente 90 cm). Una criatura puede emplear su acción para hacer una prueba de Fuerza (Atletismo) con CD 13 para liberarse a sí misma o a otra criatura que esté a su alcance si la supera. Cada prueba fallida causa 1 de daño perforante a la criatura atrapada.",
+        "en": "As a Utilize action, you can set a Hunting Trap, which is a sawtooth steel ring that snaps shut when a creature steps on a pressure plate in the center. The trap is affixed by a heavy chain to an immobile object, such as a tree or a spike driven into the ground. A creature that steps on the plate must succeed on a DC 13 Dexterity saving throw or take 1d4 Piercing damage and have its Speed reduced to 0 until the start of its next turn. Thereafter, until the creature breaks free of the trap, its movement is limited by the length of the chain (typically 3 feet). A creature can use its action to make a DC 13 Strength (Athletics) check, freeing itself or another creature within its reach on a success. Each failed check deals 1 Piercing damage to the trapped creature."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -4284,7 +4428,11 @@
       },
       "categoria": "aventura",
       "peso": 0,
-      "coste": 10
+      "coste": 10,
+      "descripcion": {
+        "es": "La tinta viene en un frasco de 30 ml que basta para escribir unas 500 páginas.",
+        "en": "Ink comes in a 1-ounce bottle, which provides enough ink to write about 500 pages."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -4308,7 +4456,11 @@
       },
       "categoria": "aventura",
       "peso": 0,
-      "coste": 0.02
+      "coste": 0.02,
+      "descripcion": {
+        "es": "Una pluma sirve para escribir o dibujar con tinta.",
+        "en": "Using Ink, an Ink Pen is used to write or draw."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -4332,7 +4484,11 @@
       },
       "categoria": "aventura",
       "peso": 4,
-      "coste": 0.02
+      "coste": 0.02,
+      "descripcion": {
+        "es": "En un jarro caben hasta 4 l de líquido.",
+        "en": "A Jug holds up to 1 gallon."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -4356,7 +4512,11 @@
       },
       "categoria": "aventura",
       "peso": 25,
-      "coste": 0.1
+      "coste": 0.1,
+      "descripcion": {
+        "es": "Una escalera mide 3 m de altura. Debes trepar para subir o bajar por ella.",
+        "en": "A Ladder is 10 feet tall. You must climb to move up or down it."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -4380,7 +4540,11 @@
       },
       "categoria": "aventura",
       "peso": 1,
-      "coste": 0.5
+      "coste": 0.5,
+      "descripcion": {
+        "es": "Una lámpara quema aceite como combustible para emitir luz brillante en un radio de 4,5 m y luz tenue 9 m más allá.",
+        "en": "A Lamp burns Oil as fuel to cast Bright Light in a 15- foot radius and Dim Light for an additional 30 feet."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -4404,7 +4568,11 @@
       },
       "categoria": "aventura",
       "peso": 2,
-      "coste": 10
+      "coste": 10,
+      "descripcion": {
+        "es": "Una linterna de ojo de buey quema aceite como combustible para emitir luz brillante en un cono de 18 m y luz tenue 18 m más allá.",
+        "en": "A Bullseye Lantern burns Oil as fuel to cast Bright Light in a 60-foot Cone and Dim Light for an additional 60 feet."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -4428,7 +4596,11 @@
       },
       "categoria": "aventura",
       "peso": 2,
-      "coste": 5
+      "coste": 5,
+      "descripcion": {
+        "es": "Una linterna sorda quema aceite como combustible para emitir luz brillante en un radio de 9 m y luz tenue 9 m más allá. Como acción adicional, puedes cubrir la abertura con la tapa y hacer que solo emita luz tenue en un radio de 1,5 m, o abrirla de nuevo.",
+        "en": "A Hooded Lantern burns Oil as fuel to cast Bright Light in a 30-foot radius and Dim Light for an additional 30 feet. As a Bonus Action, you can lower the hood, reducing the light to Dim Light in a 5-foot radius, or raise it again."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -4452,7 +4624,11 @@
       },
       "categoria": "aventura",
       "peso": 1,
-      "coste": 10
+      "coste": 10,
+      "descripcion": {
+        "es": "Una cerradura viene con una llave. Sin la llave, una criatura puede usar herramientas de ladrón para forzar la cerradura si supera una prueba de Destreza (Juego de manos) con CD 15.",
+        "en": "A Lock comes with a key. Without the key, a creature can use Thieves’ Tools to pick this Lock with a successful DC 15 Dexterity (Sleight of Hand) check."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -4476,7 +4652,11 @@
       },
       "categoria": "aventura",
       "peso": 0,
-      "coste": 100
+      "coste": 100,
+      "descripcion": {
+        "es": "Una lupa te da ventaja en las pruebas de característica que hagas para tasar o inspeccionar un objeto muy detallado. Para encender un fuego con una lupa, se necesita una luz tan brillante como la del sol para enfocar, yesca para prender y unos 5 minutos para que se encienda el fuego.",
+        "en": "A Magnifying Glass grants Advantage on any ability check made to appraise or inspect a highly detailed item. Lighting a fire with a Magnifying Glass requires light as bright as sunlight to focus, tinder to ignite, and about 5 minutes for the fire to ignite."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -4500,7 +4680,11 @@
       },
       "categoria": "aventura",
       "peso": 6,
-      "coste": 2
+      "coste": 2,
+      "descripcion": {
+        "es": "Como acción de utilizar, puedes esposar a una criatura Pequeña o Mediana no voluntaria que esté a 1,5 m o menos de ti que tenga el estado de agarrada, apresada o incapacitada si superas una prueba de Destreza (Juego de manos) con CD 13. Mientras esté esposada, la criatura tendrá desventaja en las tiradas de ataque y estará apresada si las esposas están sujetas a una cadena o garfio fijados en el sitio. Para liberarse de las esposas, deberá superar una prueba de Destreza (Juego de manos) con CD 20 como acción. Para romperlas, deberá superar una prueba de Fuerza (Atletismo) con CD 25 como acción. Cada juego de esposas viene con una llave. Sin la llave, una criatura puede usar herramientas de ladrón para forzar la cerradura de las esposas si supera una prueba de Destreza (Juego de manos) con CD 15.",
+        "en": "As a Utilize action, you can use Manacles to bind an unwilling Small or Medium creature within 5 feet of yourself that has the Grappled, Incapacitated, or Restrained condition if you succeed on a DC 13 Dexterity (Sleight of Hand) check. While bound, a creature has Disadvantage on attack rolls, and the creature is Restrained if the Manacles are attached to a chain or hook that is fixed in place. Escaping the Manacles requires a successful DC 20 Dexterity (Sleight of Hand) check as an action. Bursting them requires a successful DC 25 Strength (Athletics) check as an action. Each set of Manacles comes with a key. Without the key, a creature can use Thieves’ Tools to pick the Manacles’ lock with a successful DC 15 Dexterity (Sleight of Hand) check."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -4524,7 +4708,11 @@
       },
       "categoria": "aventura",
       "peso": 0,
-      "coste": 1
+      "coste": 1,
+      "descripcion": {
+        "es": "Si consultas un mapa preciso, recibes un bonificador de +5 a las pruebas de Sabiduría (Supervivencia) que hagas para orientarte en el lugar representado en él.",
+        "en": "If you consult an accurate Map, you gain a +5 bonus to Wisdom (Survival) checks you make to find your way in the place represented on it."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -4548,7 +4736,11 @@
       },
       "categoria": "aventura",
       "peso": 0.5,
-      "coste": 5
+      "coste": 5,
+      "descripcion": {
+        "es": "Un espejito de acero portátil resulta útil para arreglarse, pero también para mirar por las esquinas y reflejar la luz a modo de señal.",
+        "en": "A handheld steel Mirror is useful for personal cosmetics but also for peeking around corners and reflecting light as a signal."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -4572,7 +4764,11 @@
       },
       "categoria": "aventura",
       "peso": 3,
-      "coste": 1
+      "coste": 1,
+      "descripcion": {
+        "es": "Cuando lleves a cabo la acción de atacar, puedes sustituir uno de tus ataques por lanzar una red. Haz objetivo a una criatura que puedas ver a 4,5 m o menos de ti. El objetivo deberá superar una tirada de salvación de Destreza (CD 8 más tu modificador por Destreza y tu bonificador por competencia) o tendrá el estado de apresado hasta que se l ibere. El objetivo la superará automáticamente si es Enorme o más grande. Para liberarse, el objetivo o una criatura que esté a 1,5 m o menos de él deberá usar una acción para hacer una prueba de Fuerza (Atletismo) con CD 10; si la supera, la criatura apresada se liberará. Si se destruye la red (CA 10, 5 pg; inmunidad al daño contundente, psíquico y de veneno), también se libera al objetivo y se pone fin al efecto.",
+        "en": "When you take the Attack action, you can replace one of your attacks with throwing a Net. Target a creature you can see within 15 feet of yourself. The target must succeed on a Dexterity saving throw (DC 8 plus your Dexterity modifier and Proficiency Bonus) or have the Restrained condition until it escapes. The target succeeds automatically if it is Huge or larger. To escape, the target or a creature within 5 feet of it must take an action to make a DC 10 Strength (Athletics) check, freeing the Restrained creature on a success. Destroying the Net (AC 10; 5 HP; Immunity to Bludgeoning, Poison, and Psychic damage) also frees the target, ending the effect."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -4596,7 +4792,11 @@
       },
       "categoria": "aventura",
       "peso": 1,
-      "coste": 0.1
+      "coste": 0.1,
+      "descripcion": {
+        "es": "Puedes empapar de aceite a una criatura, un objeto o un espacio o utilizarlo como combustible, como se detalla a continuación. Empapar a una criatura o un objeto. Cuando lleves a cabo la acción de atacar, puedes sustituir uno de tus ataques por lanzar un frasco de aceite. Haz objetivo a una criatura u objeto a 6 m o menos de ti. El objetivo deberá superar una tirada de salvación de Destreza (CD 8 más tu modificador por Destreza y tu bonificador por competencia) o quedará cubierto de aceite. Si el objetivo sufre daño de fuego antes de que el aceite se seque (tras 1 minuto), recibirá 5 de daño de fuego adicional debido a que el aceite arderá. Empapar un espacio. Puedes llevar a cabo la acción de utilizar para verter un frasco de aceite sobre un suelo plano para cubrir una zona cuadrada de 1,5 m de lado a 1,5 m o menos de ti. Si se prende, el aceite arderá durante 2 asaltos desde que se prendió (o 12 segundos) hasta el final de ese turno y hará 5 de daño de fuego a cualquier criatura que entre en la zona o termine su turno en ella. Una criatura solo puede sufrir este daño una vez por turno. Combustible. El aceite sirve de combustible para lámparas y linternas. Un frasco de aceite prendido arde durante 6 horas en una lámpara o linterna. Esa duración no tiene que ser consecutiva; puedes apagar el aceite ardiendo (como acción de utilizar) y volver a encenderlo hasta que haya ardido durante un total de 6 horas.",
+        "en": "You can douse a creature, object, or space with Oil or use it as fuel, as detailed below. Dousing a Creature or an Object. When you take the Attack action, you can replace one of your attacks with throwing an Oil flask. Target one creature or object within 20 feet of yourself. The target must succeed on a Dexterity saving throw (DC 8 plus your Dexterity modifier and Proficiency Bonus) or be covered in oil. If the target takes Fire damage before the oil dries (after 1 minute), the target takes an extra 5 Fire damage from burning oil. Dousing a Space. You can take the Utilize action to pour an Oil flask on level ground to cover a 5-foot-square area within 5 feet of yourself. If lit, the oil burns until the end of the turn 2 rounds from when the oil was lit (or 12 seconds) and deals 5 Fire damage to any creature that enters the area or ends its turn there. A creature can take this damage only once per turn. Fuel. Oil serves as fuel for Lamps and Lanterns. Once lit, a flask of Oil burns for 6 hours in a Lamp or Lantern. That duration doesn’t need to be consecutive; you can extinguish the burning Oil (as a Utilize action) and rekindle it again until it has burned for a total of 6 hours."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -4620,7 +4820,11 @@
       },
       "categoria": "aventura",
       "peso": 0,
-      "coste": 0.2
+      "coste": 0.2,
+      "descripcion": {
+        "es": "En una hoja de papel caben unas 250 palabras escritas a mano.",
+        "en": "One sheet of Paper can hold about 250 handwritten words."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -4644,7 +4848,11 @@
       },
       "categoria": "aventura",
       "peso": 0,
-      "coste": 0.1
+      "coste": 0.1,
+      "descripcion": {
+        "es": "En una hoja de pergamino caben unas 250 palabras escritas a mano. Pergamino de conjuro (truco, 30 po; nivel 1, 50 po) Un pergamino de conjuro (truco) o un pergamino de conjuro (nivel 1) es un objeto mágico que contiene las palabras de un truco o de un conjuro de nivel 1, respectivamente, según lo determine el creador del pergamino. Si el conjuro está en la lista de conjuros de tu clase, puedes leer el pergamino y lanzar el conjuro con su tiempo de lanzamiento normal y sin necesidad de componentes materiales. Si el conjuro requiere una tirada de salvación o una tirada de ataque, la CD de salvación de conjuros será 13 y el bonificador de ataque será de +5. El pergamino se desintegra cuando se completa el lanzamiento.",
+        "en": "One sheet of Parchment can hold about 250 handwritten words."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -4668,7 +4876,11 @@
       },
       "categoria": "aventura",
       "peso": 0,
-      "coste": 5
+      "coste": 5,
+      "descripcion": {
+        "es": "El perfume viene en un vial de 120 ml. Después de ponerte el perfume, durante 1 hora tendrás ventaja en las pruebas de Carisma (Persuasión) que hagas para influir en un humanoide indiferente situado a 1,5 m o menos de ti.",
+        "en": "Perfume comes in a 4-ounce vial. For 1 hour after applying Perfume to yourself, you have Advantage on Charisma (Persuasion) checks made to influence an Indifferent Humanoid within 5 feet of yourself."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -4692,7 +4904,11 @@
       },
       "categoria": "aventura",
       "peso": 0,
-      "coste": 100
+      "coste": 100,
+      "descripcion": {
+        "es": "Como acción adicional, puedes usar un vial de veneno básico para impregnar un arma o hasta tres unidades de munición. Las criaturas que sufran daño cortante o perforante por el arma o munición envenenadas recibirán 1d4 de daño de veneno adicional. Una vez aplicado, el veneno mantiene su efectividad durante 1 minuto o hasta que inflija su daño, lo que ocurra primero.",
+        "en": "As a Bonus Action, you can use a vial of Basic Poison to coat one weapon or up to three pieces of ammunition. A creature that takes Piercing or Slashing damage from the poisoned weapon or ammunition takes an extra 1d4 Poison damage. Once applied, the poison retains potency for 1 minute or until its damage is dealt, whichever comes first."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -4716,7 +4932,11 @@
       },
       "categoria": "aventura",
       "peso": 7,
-      "coste": 0.05
+      "coste": 0.05,
+      "descripcion": {
+        "es": "Una vara mide 3 m de longitud. Puedes usarla para tocar algo que esté a hasta 3 m de distancia. Si tienes que hacer una prueba de Fuerza (Atletismo) como parte de un salto de altura o longitud, puedes impulsarte con la vara, lo que te dará ventaja en la prueba.",
+        "en": "A Pole is 10 feet long. You can use it to touch something up to 10 feet away. If you must make a Strength (Athletics) check as part of a High or Long Jump, you can use the Pole to vault, giving yourself Advantage on the check."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -4740,7 +4960,11 @@
       },
       "categoria": "aventura",
       "peso": 10,
-      "coste": 2
+      "coste": 2,
+      "descripcion": {
+        "es": "En una olla de hierro caben hasta 4 l.",
+        "en": "An Iron Pot holds up to 1 gallon."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -4764,7 +4988,11 @@
       },
       "categoria": "aventura",
       "peso": 0.5,
-      "coste": 50
+      "coste": 50,
+      "descripcion": {
+        "es": "Esta poción es un objeto mágico. Como acción adicional, puedes beberla o administrarla a otra criatura que se encuentre a 1,5 m o menos de ti. La criatura que beba el fluido mágico de color rojo de este vial recuperará 2d4 + 2 puntos de golpe.",
+        "en": "This potion is a magic item. As a Bonus Action, you can drink it or administer it to another creature within 5 feet of yourself. The creature that drinks the magical red fluid in this vial regains 2d4 + 2 Hit Points."
+      }
     },
     "mechanics": {
       "actions": [
@@ -4799,7 +5027,11 @@
       },
       "categoria": "aventura",
       "peso": 1,
-      "coste": 0.5
+      "coste": 0.5,
+      "descripcion": {
+        "es": "Una bolsa soporta hasta 3 kg en un volumen de 6 l.",
+        "en": "A Pouch holds up to 6 pounds within one-fifth of a cubic foot."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -4823,7 +5055,11 @@
       },
       "categoria": "paquete",
       "peso": 29,
-      "coste": 33
+      "coste": 33,
+      "descripcion": {
+        "es": "Un paquete de sacerdote contiene los siguientes objetos: agua bendita, lámpara, manta, mochila, raciones para 7 días, túnica y yesquero.",
+        "en": "A Priest’s Pack contains the following items: Backpack, Blanket, Holy Water, Lamp, 7 days of Rations, Robe, and Tinderbox."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -4847,7 +5083,11 @@
       },
       "categoria": "aventura",
       "peso": 1,
-      "coste": 1
+      "coste": 1,
+      "descripcion": {
+        "es": "En una aljaba caben hasta 20 flechas.",
+        "en": "A Quiver holds up to 20 Arrows."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -4871,7 +5111,11 @@
       },
       "categoria": "aventura",
       "peso": 35,
-      "coste": 4
+      "coste": 4,
+      "descripcion": {
+        "es": "Puedes usar un ariete portátil para derribar puertas. Cuando lo hagas, obtendrás un bonificador de +4 a la prueba de Fuerza. Si otro personaje te ayuda a usar el ariete, tendrás ventaja en esta prueba.",
+        "en": "You can use a Portable Ram to break down doors. When doing so, you gain a +4 bonus to the Strength check. One other character can help you use the ram, giving you Advantage on this check."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -4895,7 +5139,11 @@
       },
       "categoria": "aventura",
       "peso": 2,
-      "coste": 0.5
+      "coste": 0.5,
+      "descripcion": {
+        "es": "Las raciones se componen de alimentos propicios para viajar, como cecina, fruta deshidratada, galletas y frutos secos. Consulta “Desnutrición” en el capítulo “Glosario de reglas” para saber los riesgos que implica no comer.",
+        "en": "Rations consist of travel-ready food, including jerky, dried fruit, hardtack, and nuts. See “Malnutrition” in “Rules Glossary” for the risks of not eating."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -4919,7 +5167,11 @@
       },
       "categoria": "aventura",
       "peso": 4,
-      "coste": 1
+      "coste": 1,
+      "descripcion": {
+        "es": "Una túnica tiene un significado vocacional y ceremonial. Algunos eventos y lugares admiten solo a gente que vista una túnica con determinados colores o símbolos.",
+        "en": "A Robe has vocational or ceremonial significance. Some events and locations admit only people wearing a Robe bearing certain colors or symbols."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -4943,7 +5195,11 @@
       },
       "categoria": "aventura",
       "peso": 5,
-      "coste": 1
+      "coste": 1,
+      "descripcion": {
+        "es": "Como acción de utilizar, puedes hacer un nudo con una cuerda si superas una prueba de Destreza (Juego de manos) con CD 10. Para romper la cuerda, se debe superar una prueba de Fuerza (Atletismo) con CD 20. Puedes atar a una criatura no voluntaria con la cuerda solo si tiene el estado de agarrada, apresada o incapacitada. Si la criatura tiene las piernas atadas, tendrá el estado de apresada hasta que se libere. Para liberarse de la cuerda, deberá superar una prueba de Destreza (Acrobacias) con CD 15 como acción.",
+        "en": "As a Utilize action, you can tie a knot with Rope if you succeed on a DC 10 Dexterity (Sleight of Hand) check. The Rope can be burst with a successful DC 20 Strength (Athletics) check. You can bind an unwilling creature with the Rope only if the creature has the Grappled, Incapacitated, or Restrained condition. If the creature’s legs are bound, the creature has the Restrained condition until it escapes. Escaping the Rope requires the creature to make a successful DC 15 Dexterity (Acrobatics) check as an action."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -4967,7 +5223,11 @@
       },
       "categoria": "aventura",
       "peso": 0.5,
-      "coste": 0.01
+      "coste": 0.01,
+      "descripcion": {
+        "es": "Un saco soporta hasta 15 kg en un volumen de 30 l.",
+        "en": "A Sack holds up to 30 pounds within 1 cubic foot."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -4991,7 +5251,11 @@
       },
       "categoria": "paquete",
       "peso": 22,
-      "coste": 40
+      "coste": 40,
+      "descripcion": {
+        "es": "Un paquete de erudito contiene los siguientes objetos: 10 frascos de aceite, 10 hojas de pergamino, lámpara, libro, mochila, pluma, tinta y yesquero.",
+        "en": "A Scholar’s Pack contains the following items: Backpack, Book, Ink, Ink Pen, Lamp, 10 flasks of Oil, 10 sheets of Parchment, and Tinderbox."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -5015,7 +5279,11 @@
       },
       "categoria": "aventura",
       "peso": 5,
-      "coste": 2
+      "coste": 2,
+      "descripcion": {
+        "es": "Con 1 hora de trabajo, puedes usar una pala para cavar un agujero cúbico de 1,5 m de lado en la tierra o en un material similar.",
+        "en": "Working for 1 hour, you can use a Shovel to dig a hole that is 5 feet on each side in soil or similar material."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -5039,7 +5307,11 @@
       },
       "categoria": "aventura",
       "peso": 0,
-      "coste": 0.05
+      "coste": 0.05,
+      "descripcion": {
+        "es": "Cuando se sopla como acción de utilizar, un silbato de supervivencia produce un sonido que se puede oír a 180 m de distancia.",
+        "en": "When blown as a Utilize action, a Signal Whistle produces a sound that can be heard up to 600 feet away. Spell Scroll (Cantrip, 30 GP; Level 1, 50 GP) A Spell Scroll (Cantrip) or Spell Scroll (Level 1) is a magic item that bears the words of a cantrip or level 1 spell, respectively, determined by the scroll’s creator. If the spell is on your class’s spell list, you can read the scroll and cast the spell using its normal casting time and without providing any Material components. If the spell requires a saving throw or an attack roll, the spell save DC is 13, and the attack bonus is +5. The scroll disintegrates when the casting is completed."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -5063,7 +5335,11 @@
       },
       "categoria": "aventura",
       "peso": 0,
-      "coste": 30
+      "coste": 30,
+      "descripcion": {
+        "es": "Un pergamino de conjuro (truco) o un pergamino de conjuro (nivel 1) es un objeto mágico que contiene las palabras de un truco o de un conjuro de nivel 1, respectivamente, según lo determine el creador del pergamino. Si el conjuro está en la lista de conjuros de tu clase, puedes leer el pergamino y lanzar el conjuro con su tiempo de lanzamiento normal y sin necesidad de componentes materiales. Si el conjuro requiere una tirada de salvación o una tirada de ataque, la CD de salvación de conjuros será 13 y el bonificador de ataque será de +5. El pergamino se desintegra cuando se completa el lanzamiento.",
+        "en": "A Spell Scroll (Cantrip) or Spell Scroll (Level 1) is a magic item that bears the words of a cantrip or level 1 spell, respectively, determined by the scroll’s creator. If the spell is on your class’s spell list, you can read the scroll and cast the spell using its normal casting time and without providing any Material components. If the spell requires a saving throw or an attack roll, the spell save DC is 13, and the attack bonus is +5. The scroll disintegrates when the casting is completed."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -5087,7 +5363,11 @@
       },
       "categoria": "aventura",
       "peso": 0,
-      "coste": 50
+      "coste": 50,
+      "descripcion": {
+        "es": "Un pergamino de conjuro (truco) o un pergamino de conjuro (nivel 1) es un objeto mágico que contiene las palabras de un truco o de un conjuro de nivel 1, respectivamente, según lo determine el creador del pergamino. Si el conjuro está en la lista de conjuros de tu clase, puedes leer el pergamino y lanzar el conjuro con su tiempo de lanzamiento normal y sin necesidad de componentes materiales. Si el conjuro requiere una tirada de salvación o una tirada de ataque, la CD de salvación de conjuros será 13 y el bonificador de ataque será de +5. El pergamino se desintegra cuando se completa el lanzamiento.",
+        "en": "A Spell Scroll (Cantrip) or Spell Scroll (Level 1) is a magic item that bears the words of a cantrip or level 1 spell, respectively, determined by the scroll’s creator. If the spell is on your class’s spell list, you can read the scroll and cast the spell using its normal casting time and without providing any Material components. If the spell requires a saving throw or an attack roll, the spell save DC is 13, and the attack bonus is +5. The scroll disintegrates when the casting is completed."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -5111,7 +5391,11 @@
       },
       "categoria": "aventura",
       "peso": 5,
-      "coste": 1
+      "coste": 1,
+      "descripcion": {
+        "es": "Las puntas de hierro vienen en lotes de diez. Como acción de utilizar, puedes usar un objeto romo, como un martillo ligero, para clavar una punta en una superficie de madera, tierra u otra materia similar. Puedes hacerlo para atrancar una puerta o para después atar una cuerda o cadena a la punta.",
+        "en": "Iron Spikes come in bundles of ten. As a Utilize action, you can use a blunt object, such as a Light Hammer, to hammer a spike into wood, earth, or a similar material. You can do so to jam a door shut or to then tie a Rope or Chain to the Spike."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -5135,7 +5419,11 @@
       },
       "categoria": "aventura",
       "peso": 1,
-      "coste": 1000
+      "coste": 1000,
+      "descripcion": {
+        "es": "Los objetos que se observan a través de un catalejo se ven al doble de su tamaño real.",
+        "en": "Objects viewed through a Spyglass are magnified to twice their size."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -5159,7 +5447,11 @@
       },
       "categoria": "aventura",
       "peso": 0,
-      "coste": 0.1
+      "coste": 0.1,
+      "descripcion": {
+        "es": "Un cordel mide 3 m de longitud. Puedes atar un nudo con él como acción de utilizar.",
+        "en": "String is 10 feet long. You can tie a knot in it as a Utilize action."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -5183,7 +5475,11 @@
       },
       "categoria": "aventura",
       "peso": 20,
-      "coste": 2
+      "coste": 2,
+      "descripcion": {
+        "es": "En una tienda pueden dormir hasta dos criaturas Pequeñas o Medianas.",
+        "en": "A Tent sleeps up to two Small or Medium creatures."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -5207,7 +5503,11 @@
       },
       "categoria": "aventura",
       "peso": 1,
-      "coste": 0.5
+      "coste": 0.5,
+      "descripcion": {
+        "es": "Un yesquero es un pequeño recipiente que contiene un pedernal, un chispero y yescas (normalmente, tela seca untada en aceite) y se utiliza para encender un fuego. Se necesita una acción adicional para prender con él una antorcha, lámpara, linterna o vela (o cualquier otra cosa con combustible expuesto). Encender cualquier otro tipo de fuego lleva 1 minuto.",
+        "en": "A Tinderbox is a small container holding flint, fire steel, and tinder (usually dry cloth soaked in light oil) used to kindle a fire. Using it to light a Candle, Lamp, Lantern, or Torch—or anything else with exposed fuel—takes a Bonus Action. Lighting any other fire takes 1 minute."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -5231,7 +5531,11 @@
       },
       "categoria": "aventura",
       "peso": 1,
-      "coste": 0.01
+      "coste": 0.01,
+      "descripcion": {
+        "es": "Una antorcha arde durante 1 hora y emite luz brillante en un radio de 6 m y luz tenue 6 m más allá. Cuando llevas a cabo la acción de atacar, puedes hacerlo con la antorcha como si fuera un arma cuerpo a cuerpo sencilla. Si acierta, el objetivo sufre 1 de daño de fuego.",
+        "en": "A Torch burns for 1 hour, casting Bright Light in a 20-foot radius and Dim Light for an additional 20 feet. When you take the Attack action, you can attack with the Torch, using it as a Simple Melee weapon. On a hit, the target takes 1 Fire damage."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -5255,7 +5559,11 @@
       },
       "categoria": "aventura",
       "peso": 0,
-      "coste": 1
+      "coste": 1,
+      "descripcion": {
+        "es": "En un vial caben 120 ml de líquido.",
+        "en": "A Vial holds up to 4 ounces."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -5279,7 +5587,11 @@
       },
       "categoria": "aventura",
       "peso": 5,
-      "coste": 0.2
+      "coste": 0.2,
+      "descripcion": {
+        "es": "En una cantimplora caben hasta 2 l de líquido. Si no bebes suficiente agua, te arriesgas a sufrir deshidratación (consulta el capítulo “Glosario de reglas”).",
+        "en": "A Waterskin holds up to 4 pints. If you don’t drink sufficient water, you risk dehydration (see “Rules Glossary”)."
+      }
     },
     "mechanics": {
       "automation": "text"
@@ -5288,6 +5600,1527 @@
       "pages": {
         "en": 95,
         "es": 103
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "flechas_20_2024",
+    "source": "srd521",
+    "concept": "flechas_20",
+    "data": {
+      "name": {
+        "es": "Flechas (20)",
+        "en": "Arrows (20)"
+      },
+      "categoria": "municion",
+      "peso": 1,
+      "coste": 1,
+      "descripcion": {
+        "es": "Las armas que tienen la propiedad de munición requieren munición. La descripción del arma especifica el tipo de munición que utiliza. La tabla “Munición” indica los diferentes tipos y la cantidad que obtienes cuando los compras. También incluye el objeto que se usa normalmente para almacenar cada tipo, que debe comprarse por separado. Munición Tipo Cantidad Recipiente Peso Precio Balas de 10 Bolsa 1 kg 3 po arma de fuego Dardos 50 Bolsa 0,5 kg 1 po Flechas 20 Aljaba 0,5 kg 1 po Proyectiles 20 Bolsa 0,75 kg 4 pc de honda Virotes 20 Estuche 0,75 kg 1 po",
+        "en": "Ammunition is required by a weapon that has the Ammunition property. A weapon’s description specifies the type of ammunition used by the weapon. The Ammunition table lists the different types and the amount you get when you buy them. The table also lists the item that is typically used to store each type; storage must be bought separately."
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 96,
+        "es": 106
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "virotes_20_2024",
+    "source": "srd521",
+    "concept": "virotes_20",
+    "data": {
+      "name": {
+        "es": "Virotes (20)",
+        "en": "Bolts (20)"
+      },
+      "categoria": "municion",
+      "peso": 1.5,
+      "coste": 1,
+      "descripcion": {
+        "es": "Las armas que tienen la propiedad de munición requieren munición. La descripción del arma especifica el tipo de munición que utiliza. La tabla “Munición” indica los diferentes tipos y la cantidad que obtienes cuando los compras. También incluye el objeto que se usa normalmente para almacenar cada tipo, que debe comprarse por separado. Munición Tipo Cantidad Recipiente Peso Precio Balas de 10 Bolsa 1 kg 3 po arma de fuego Dardos 50 Bolsa 0,5 kg 1 po Flechas 20 Aljaba 0,5 kg 1 po Proyectiles 20 Bolsa 0,75 kg 4 pc de honda Virotes 20 Estuche 0,75 kg 1 po",
+        "en": "Ammunition is required by a weapon that has the Ammunition property. A weapon’s description specifies the type of ammunition used by the weapon. The Ammunition table lists the different types and the amount you get when you buy them. The table also lists the item that is typically used to store each type; storage must be bought separately."
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 96,
+        "es": 106
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "balas_de_arma_de_fuego_10_2024",
+    "source": "srd521",
+    "concept": "balas_de_arma_de_fuego_10",
+    "data": {
+      "name": {
+        "es": "Balas de arma de fuego (10)",
+        "en": "Bullets, Firearm (10)"
+      },
+      "categoria": "municion",
+      "peso": 2,
+      "coste": 3,
+      "descripcion": {
+        "es": "Las armas que tienen la propiedad de munición requieren munición. La descripción del arma especifica el tipo de munición que utiliza. La tabla “Munición” indica los diferentes tipos y la cantidad que obtienes cuando los compras. También incluye el objeto que se usa normalmente para almacenar cada tipo, que debe comprarse por separado. Munición Tipo Cantidad Recipiente Peso Precio Balas de 10 Bolsa 1 kg 3 po arma de fuego Dardos 50 Bolsa 0,5 kg 1 po Flechas 20 Aljaba 0,5 kg 1 po Proyectiles 20 Bolsa 0,75 kg 4 pc de honda Virotes 20 Estuche 0,75 kg 1 po",
+        "en": "Ammunition is required by a weapon that has the Ammunition property. A weapon’s description specifies the type of ammunition used by the weapon. The Ammunition table lists the different types and the amount you get when you buy them. The table also lists the item that is typically used to store each type; storage must be bought separately."
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 96,
+        "es": 106
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "proyectiles_de_honda_20_2024",
+    "source": "srd521",
+    "concept": "proyectiles_de_honda_20",
+    "data": {
+      "name": {
+        "es": "Proyectiles de honda (20)",
+        "en": "Bullets, Sling (20)"
+      },
+      "categoria": "municion",
+      "peso": 1.5,
+      "coste": 0.04,
+      "descripcion": {
+        "es": "Las armas que tienen la propiedad de munición requieren munición. La descripción del arma especifica el tipo de munición que utiliza. La tabla “Munición” indica los diferentes tipos y la cantidad que obtienes cuando los compras. También incluye el objeto que se usa normalmente para almacenar cada tipo, que debe comprarse por separado. Munición Tipo Cantidad Recipiente Peso Precio Balas de 10 Bolsa 1 kg 3 po arma de fuego Dardos 50 Bolsa 0,5 kg 1 po Flechas 20 Aljaba 0,5 kg 1 po Proyectiles 20 Bolsa 0,75 kg 4 pc de honda Virotes 20 Estuche 0,75 kg 1 po",
+        "en": "Ammunition is required by a weapon that has the Ammunition property. A weapon’s description specifies the type of ammunition used by the weapon. The Ammunition table lists the different types and the amount you get when you buy them. The table also lists the item that is typically used to store each type; storage must be bought separately."
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 96,
+        "es": 106
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "dardos_50_2024",
+    "source": "srd521",
+    "concept": "dardos_50",
+    "data": {
+      "name": {
+        "es": "Dardos (50)",
+        "en": "Needles (50)"
+      },
+      "categoria": "municion",
+      "peso": 1,
+      "coste": 1,
+      "descripcion": {
+        "es": "Las armas que tienen la propiedad de munición requieren munición. La descripción del arma especifica el tipo de munición que utiliza. La tabla “Munición” indica los diferentes tipos y la cantidad que obtienes cuando los compras. También incluye el objeto que se usa normalmente para almacenar cada tipo, que debe comprarse por separado. Munición Tipo Cantidad Recipiente Peso Precio Balas de 10 Bolsa 1 kg 3 po arma de fuego Dardos 50 Bolsa 0,5 kg 1 po Flechas 20 Aljaba 0,5 kg 1 po Proyectiles 20 Bolsa 0,75 kg 4 pc de honda Virotes 20 Estuche 0,75 kg 1 po",
+        "en": "Ammunition is required by a weapon that has the Ammunition property. A weapon’s description specifies the type of ammunition used by the weapon. The Ammunition table lists the different types and the amount you get when you buy them. The table also lists the item that is typically used to store each type; storage must be bought separately."
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 96,
+        "es": 106
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "cristal_canalizador_arcano_2024",
+    "source": "srd521",
+    "concept": "cristal_canalizador_arcano",
+    "data": {
+      "name": {
+        "es": "Cristal (canalizador arcano)",
+        "en": "Crystal (arcane focus)"
+      },
+      "categoria": "canalizador_arcano",
+      "peso": 1,
+      "coste": 10,
+      "descripcion": {
+        "es": "Un canalizador arcano puede ser uno de los objetos de la tabla “Canalizadores arcanos” y está ornamentado o tallado para canalizar la magia arcana. Los brujos, hechiceros o magos pueden utilizar estos objetos como canalizadores mágicos. Canalizadores arcanos Canalizador Peso Precio Bastón 2 kg 5 po Cristal 0,5 kg 10 po Orbe 1,5 kg 20 po Vara 1 kg 10 po Varita 0,5 kg 10 po",
+        "en": "An Arcane Focus takes one of the forms in the Arcane Focuses table and is bejeweled or carved to channel arcane magic. A Sorcerer, Warlock, or Wizard can use such an item as a Spellcasting Focus. Arcane Focuses Focus Weight Cost Crystal 1 lb. 10 GP Orb 3 lb. 20 GP Rod 2 lb. 10 GP Staff (also a Quarterstaff) 4 lb. 5 GP Wand 1 lb. 10 GP"
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 96,
+        "es": 105
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "orbe_canalizador_arcano_2024",
+    "source": "srd521",
+    "concept": "orbe_canalizador_arcano",
+    "data": {
+      "name": {
+        "es": "Orbe (canalizador arcano)",
+        "en": "Orb (arcane focus)"
+      },
+      "categoria": "canalizador_arcano",
+      "peso": 3,
+      "coste": 20,
+      "descripcion": {
+        "es": "Un canalizador arcano puede ser uno de los objetos de la tabla “Canalizadores arcanos” y está ornamentado o tallado para canalizar la magia arcana. Los brujos, hechiceros o magos pueden utilizar estos objetos como canalizadores mágicos. Canalizadores arcanos Canalizador Peso Precio Bastón 2 kg 5 po Cristal 0,5 kg 10 po Orbe 1,5 kg 20 po Vara 1 kg 10 po Varita 0,5 kg 10 po",
+        "en": "An Arcane Focus takes one of the forms in the Arcane Focuses table and is bejeweled or carved to channel arcane magic. A Sorcerer, Warlock, or Wizard can use such an item as a Spellcasting Focus. Arcane Focuses Focus Weight Cost Crystal 1 lb. 10 GP Orb 3 lb. 20 GP Rod 2 lb. 10 GP Staff (also a Quarterstaff) 4 lb. 5 GP Wand 1 lb. 10 GP"
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 96,
+        "es": 105
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "vara_canalizador_arcano_2024",
+    "source": "srd521",
+    "concept": "vara_canalizador_arcano",
+    "data": {
+      "name": {
+        "es": "Vara (canalizador arcano)",
+        "en": "Rod (arcane focus)"
+      },
+      "categoria": "canalizador_arcano",
+      "peso": 2,
+      "coste": 10,
+      "descripcion": {
+        "es": "Una vara mide 3 m de longitud. Puedes usarla para tocar algo que esté a hasta 3 m de distancia. Si tienes que hacer una prueba de Fuerza (Atletismo) como parte de un salto de altura o longitud, puedes impulsarte con la vara, lo que te dará ventaja en la prueba.",
+        "en": "An Arcane Focus takes one of the forms in the Arcane Focuses table and is bejeweled or carved to channel arcane magic. A Sorcerer, Warlock, or Wizard can use such an item as a Spellcasting Focus. Arcane Focuses Focus Weight Cost Crystal 1 lb. 10 GP Orb 3 lb. 20 GP Rod 2 lb. 10 GP Staff (also a Quarterstaff) 4 lb. 5 GP Wand 1 lb. 10 GP"
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 96,
+        "es": 105
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "baston_canalizador_arcano_2024",
+    "source": "srd521",
+    "concept": "baston_canalizador_arcano",
+    "data": {
+      "name": {
+        "es": "Bastón (canalizador arcano)",
+        "en": "Staff (arcane focus)"
+      },
+      "categoria": "canalizador_arcano",
+      "peso": 4,
+      "coste": 5,
+      "descripcion": {
+        "es": "Un canalizador arcano puede ser uno de los objetos de la tabla “Canalizadores arcanos” y está ornamentado o tallado para canalizar la magia arcana. Los brujos, hechiceros o magos pueden utilizar estos objetos como canalizadores mágicos. Canalizadores arcanos Canalizador Peso Precio Bastón 2 kg 5 po Cristal 0,5 kg 10 po Orbe 1,5 kg 20 po Vara 1 kg 10 po Varita 0,5 kg 10 po",
+        "en": "An Arcane Focus takes one of the forms in the Arcane Focuses table and is bejeweled or carved to channel arcane magic. A Sorcerer, Warlock, or Wizard can use such an item as a Spellcasting Focus. Arcane Focuses Focus Weight Cost Crystal 1 lb. 10 GP Orb 3 lb. 20 GP Rod 2 lb. 10 GP Staff (also a Quarterstaff) 4 lb. 5 GP Wand 1 lb. 10 GP"
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 96,
+        "es": 105
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "varita_canalizador_arcano_2024",
+    "source": "srd521",
+    "concept": "varita_canalizador_arcano",
+    "data": {
+      "name": {
+        "es": "Varita (canalizador arcano)",
+        "en": "Wand (arcane focus)"
+      },
+      "categoria": "canalizador_arcano",
+      "peso": 1,
+      "coste": 10,
+      "descripcion": {
+        "es": "Un canalizador arcano puede ser uno de los objetos de la tabla “Canalizadores arcanos” y está ornamentado o tallado para canalizar la magia arcana. Los brujos, hechiceros o magos pueden utilizar estos objetos como canalizadores mágicos. Canalizadores arcanos Canalizador Peso Precio Bastón 2 kg 5 po Cristal 0,5 kg 10 po Orbe 1,5 kg 20 po Vara 1 kg 10 po Varita 0,5 kg 10 po",
+        "en": "An Arcane Focus takes one of the forms in the Arcane Focuses table and is bejeweled or carved to channel arcane magic. A Sorcerer, Warlock, or Wizard can use such an item as a Spellcasting Focus. Arcane Focuses Focus Weight Cost Crystal 1 lb. 10 GP Orb 3 lb. 20 GP Rod 2 lb. 10 GP Staff (also a Quarterstaff) 4 lb. 5 GP Wand 1 lb. 10 GP"
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 96,
+        "es": 105
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "rama_de_muerdago_canalizador_druidico_2024",
+    "source": "srd521",
+    "concept": "rama_de_muerdago_canalizador_druidico",
+    "data": {
+      "name": {
+        "es": "Rama de muérdago (canalizador druídico)",
+        "en": "Sprig of mistletoe (druidic focus)"
+      },
+      "categoria": "canalizador_druidico",
+      "peso": 0,
+      "coste": 1,
+      "descripcion": {
+        "es": "Un canalizador druídico puede ser uno de los objetos de la tabla “Canalizadores druídicos” y está tallado, atado con un lazo o pintado para canalizar la magia primigenia. Los druidas o exploradores pueden utilizar estos objetos como canalizadores mágicos. Canalizadores druídicos Canalizador Peso Precio Bastón de madera (también bastón) 2 kg 5 po Rama de muérdago — 1 po Varita de tejo 0,5 kg 10 po",
+        "en": "A Druidic Focus takes one of the forms in the Druidic Focuses table and is carved, tied with ribbon, or painted to channel primal magic. A Druid or Ranger can use such an object as a Spellcasting Focus. Druidic Focuses Focus Weight Cost Sprig of mistletoe — 1 GP Wooden staff (also a Quarterstaff) 4 lb. 5 GP Yew wand 1 lb. 10 GP"
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 97,
+        "es": 105
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "baston_de_madera_canalizador_druidico_2024",
+    "source": "srd521",
+    "concept": "baston_de_madera_canalizador_druidico",
+    "data": {
+      "name": {
+        "es": "Bastón de madera (canalizador druídico)",
+        "en": "Wooden staff (druidic focus)"
+      },
+      "categoria": "canalizador_druidico",
+      "peso": 4,
+      "coste": 5,
+      "descripcion": {
+        "es": "Un canalizador druídico puede ser uno de los objetos de la tabla “Canalizadores druídicos” y está tallado, atado con un lazo o pintado para canalizar la magia primigenia. Los druidas o exploradores pueden utilizar estos objetos como canalizadores mágicos. Canalizadores druídicos Canalizador Peso Precio Bastón de madera (también bastón) 2 kg 5 po Rama de muérdago — 1 po Varita de tejo 0,5 kg 10 po",
+        "en": "A Druidic Focus takes one of the forms in the Druidic Focuses table and is carved, tied with ribbon, or painted to channel primal magic. A Druid or Ranger can use such an object as a Spellcasting Focus. Druidic Focuses Focus Weight Cost Sprig of mistletoe — 1 GP Wooden staff (also a Quarterstaff) 4 lb. 5 GP Yew wand 1 lb. 10 GP"
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 97,
+        "es": 105
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "varita_de_tejo_canalizador_druidico_2024",
+    "source": "srd521",
+    "concept": "varita_de_tejo_canalizador_druidico",
+    "data": {
+      "name": {
+        "es": "Varita de tejo (canalizador druídico)",
+        "en": "Yew wand (druidic focus)"
+      },
+      "categoria": "canalizador_druidico",
+      "peso": 1,
+      "coste": 10,
+      "descripcion": {
+        "es": "Un canalizador druídico puede ser uno de los objetos de la tabla “Canalizadores druídicos” y está tallado, atado con un lazo o pintado para canalizar la magia primigenia. Los druidas o exploradores pueden utilizar estos objetos como canalizadores mágicos. Canalizadores druídicos Canalizador Peso Precio Bastón de madera (también bastón) 2 kg 5 po Rama de muérdago — 1 po Varita de tejo 0,5 kg 10 po",
+        "en": "A Druidic Focus takes one of the forms in the Druidic Focuses table and is carved, tied with ribbon, or painted to channel primal magic. A Druid or Ranger can use such an object as a Spellcasting Focus. Druidic Focuses Focus Weight Cost Sprig of mistletoe — 1 GP Wooden staff (also a Quarterstaff) 4 lb. 5 GP Yew wand 1 lb. 10 GP"
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 97,
+        "es": 105
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "amuleto_simbolo_sagrado_2024",
+    "source": "srd521",
+    "concept": "amuleto_simbolo_sagrado",
+    "data": {
+      "name": {
+        "es": "Amuleto (símbolo sagrado)",
+        "en": "Amulet (holy symbol)"
+      },
+      "categoria": "simbolo_sagrado",
+      "peso": 1,
+      "coste": 5,
+      "descripcion": {
+        "es": "Un símbolo sagrado puede ser uno de los objetos de la tabla “Símbolos sagrados” y está ornamentado o pintado para canalizar la magia divina. Los clérigos o paladines pueden utilizar un símbolo sagrado como canalizador mágico. La tabla indica si un símbolo sagrado se debe sostener, llevar puesto o mostrar en tela (como un tabardo o un estandarte) o en un escudo. Símbolos sagrados Símbolo Peso Precio Amuleto (puesto o sostenido) 0,5 kg 5 po Emblema (en tela o en escudo) — 5 po Relicario (sostenido) 1 kg 5 po",
+        "en": "A Holy Symbol takes one of the forms in the Holy Symbol table and is bejeweled or painted to channel divine magic. A Cleric or Paladin can use a Holy Symbol as a Spellcasting Focus. The table indicates whether a Holy Symbol needs to be held, worn, or borne on fabric (such as a tabard or banner) or a Shield. Holy Symbols Symbol Weight Cost Amulet (worn or held) 1 lb. 5 GP Emblem (borne on fabric or a Shield) — 5 GP Reliquary (held) 2 lb. 5 GP"
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 97,
+        "es": 108
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "emblema_simbolo_sagrado_2024",
+    "source": "srd521",
+    "concept": "emblema_simbolo_sagrado",
+    "data": {
+      "name": {
+        "es": "Emblema (símbolo sagrado)",
+        "en": "Emblem (holy symbol)"
+      },
+      "categoria": "simbolo_sagrado",
+      "peso": 0,
+      "coste": 5,
+      "descripcion": {
+        "es": "Un símbolo sagrado puede ser uno de los objetos de la tabla “Símbolos sagrados” y está ornamentado o pintado para canalizar la magia divina. Los clérigos o paladines pueden utilizar un símbolo sagrado como canalizador mágico. La tabla indica si un símbolo sagrado se debe sostener, llevar puesto o mostrar en tela (como un tabardo o un estandarte) o en un escudo. Símbolos sagrados Símbolo Peso Precio Amuleto (puesto o sostenido) 0,5 kg 5 po Emblema (en tela o en escudo) — 5 po Relicario (sostenido) 1 kg 5 po",
+        "en": "A Holy Symbol takes one of the forms in the Holy Symbol table and is bejeweled or painted to channel divine magic. A Cleric or Paladin can use a Holy Symbol as a Spellcasting Focus. The table indicates whether a Holy Symbol needs to be held, worn, or borne on fabric (such as a tabard or banner) or a Shield. Holy Symbols Symbol Weight Cost Amulet (worn or held) 1 lb. 5 GP Emblem (borne on fabric or a Shield) — 5 GP Reliquary (held) 2 lb. 5 GP"
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 97,
+        "es": 108
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "relicario_simbolo_sagrado_2024",
+    "source": "srd521",
+    "concept": "relicario_simbolo_sagrado",
+    "data": {
+      "name": {
+        "es": "Relicario (símbolo sagrado)",
+        "en": "Reliquary (holy symbol)"
+      },
+      "categoria": "simbolo_sagrado",
+      "peso": 2,
+      "coste": 5,
+      "descripcion": {
+        "es": "Un símbolo sagrado puede ser uno de los objetos de la tabla “Símbolos sagrados” y está ornamentado o pintado para canalizar la magia divina. Los clérigos o paladines pueden utilizar un símbolo sagrado como canalizador mágico. La tabla indica si un símbolo sagrado se debe sostener, llevar puesto o mostrar en tela (como un tabardo o un estandarte) o en un escudo. Símbolos sagrados Símbolo Peso Precio Amuleto (puesto o sostenido) 0,5 kg 5 po Emblema (en tela o en escudo) — 5 po Relicario (sostenido) 1 kg 5 po",
+        "en": "A Holy Symbol takes one of the forms in the Holy Symbol table and is bejeweled or painted to channel divine magic. A Cleric or Paladin can use a Holy Symbol as a Spellcasting Focus. The table indicates whether a Holy Symbol needs to be held, worn, or borne on fabric (such as a tabard or banner) or a Shield. Holy Symbols Symbol Weight Cost Amulet (worn or held) 1 lb. 5 GP Emblem (borne on fabric or a Shield) — 5 GP Reliquary (held) 2 lb. 5 GP"
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 97,
+        "es": 108
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "suministros_de_alquimista_2024",
+    "source": "srd521",
+    "concept": "suministros_de_alquimista",
+    "data": {
+      "name": {
+        "es": "Suministros de alquimista",
+        "en": "Alchemist’s Supplies"
+      },
+      "categoria": "herramienta_artesano",
+      "caracteristica": "int",
+      "peso": 8,
+      "coste": 50,
+      "descripcion": {
+        "es": "Característica: Inteligencia Peso: 4 kg\nUtilizar: identificar una sustancia (CD 15) o encender un fuego (CD 15)\nFabricar: aceite, ácido, fuego de alquimista, papel, perfume, saquito de componentes",
+        "en": "Ability: Intelligence Weight: 8 lb.\nUtilize: Identify a substance (DC 15), or start a fire (DC 15)\nCraft: Acid, Alchemist’s Fire, Component Pouch, Oil, Paper, Perfume"
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 93,
+        "es": 102
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "suministros_de_cervecero_2024",
+    "source": "srd521",
+    "concept": "suministros_de_cervecero",
+    "data": {
+      "name": {
+        "es": "Suministros de cervecero",
+        "en": "Brewer’s Supplies"
+      },
+      "categoria": "herramienta_artesano",
+      "caracteristica": "int",
+      "peso": 9,
+      "coste": 20,
+      "descripcion": {
+        "es": "Característica: Inteligencia Peso: 4,5 kg\nUtilizar: detectar bebida envenenada (CD 15) o identificar alcohol (CD 10)\nFabricar: antitoxina",
+        "en": "Ability: Intelligence Weight: 9 lb.\nUtilize: Detect poisoned drink (DC 15), or identify alcohol (DC 10)\nCraft: Antitoxin"
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 93,
+        "es": 102
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "suministros_de_caligrafo_2024",
+    "source": "srd521",
+    "concept": "suministros_de_caligrafo",
+    "data": {
+      "name": {
+        "es": "Suministros de calígrafo",
+        "en": "Calligrapher’s Supplies"
+      },
+      "categoria": "herramienta_artesano",
+      "caracteristica": "des",
+      "peso": 5,
+      "coste": 10,
+      "descripcion": {
+        "es": "Característica: Destreza Peso: 2,5 kg\nUtilizar: escribir texto lleno de florituras que no se pueda falsificar (CD 15)\nFabricar: pergamino de conjuro, tinta",
+        "en": "Ability: Dexterity Weight: 5 lb.\nUtilize: Write text with impressive flourishes that guard against forgery (DC 15)\nCraft: Ink, Spell Scroll"
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 93,
+        "es": 102
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "herramientas_de_carpintero_2024",
+    "source": "srd521",
+    "concept": "herramientas_de_carpintero",
+    "data": {
+      "name": {
+        "es": "Herramientas de carpintero",
+        "en": "Carpenter’s Tools"
+      },
+      "categoria": "herramienta_artesano",
+      "caracteristica": "fue",
+      "peso": 6,
+      "coste": 8,
+      "descripcion": {
+        "es": "Característica: Fuerza Peso: 3 kg\nUtilizar: sellar o forzar una puerta o un recipiente (CD 20)\nFabricar: bastón, garrote, garrote grande, antorcha, ariete portátil, barril, cofre, escalera, vara",
+        "en": "Ability: Strength Weight: 6 lb.\nUtilize: Seal or pry open a door or container (DC 20)\nCraft: Club, Greatclub, Quarterstaff, Barrel, Chest, Ladder, Pole, Portable Ram, Torch"
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 93,
+        "es": 101
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "herramientas_de_cartografo_2024",
+    "source": "srd521",
+    "concept": "herramientas_de_cartografo",
+    "data": {
+      "name": {
+        "es": "Herramientas de cartógrafo",
+        "en": "Cartographer’s Tools"
+      },
+      "categoria": "herramienta_artesano",
+      "caracteristica": "sab",
+      "peso": 6,
+      "coste": 15,
+      "descripcion": {
+        "es": "Característica: Sabiduría Peso: 3 kg\nUtilizar: dibujar un mapa de una zona pequeña (CD 15)\nFabricar: mapa",
+        "en": "Ability: Wisdom Weight: 6 lb.\nUtilize: Draft a map of a small area (DC 15)\nCraft: Map"
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 93,
+        "es": 101
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "herramientas_de_zapatero_2024",
+    "source": "srd521",
+    "concept": "herramientas_de_zapatero",
+    "data": {
+      "name": {
+        "es": "Herramientas de zapatero",
+        "en": "Cobbler’s Tools"
+      },
+      "categoria": "herramienta_artesano",
+      "caracteristica": "des",
+      "peso": 5,
+      "coste": 5,
+      "descripcion": {
+        "es": "Característica: Destreza Peso: 2,5 kg\nUtilizar: modificar calzado para dar ventaja a la siguiente prueba de Destreza (Acrobacias) de quien lo lleve (CD 10)\nFabricar: útiles de escalada",
+        "en": "Ability: Dexterity Weight: 5 lb.\nUtilize: Modify footwear to give Advantage on the wearer’s next Dexterity (Acrobatics) check (DC 10)\nCraft: Climber’s Kit"
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 93,
+        "es": 102
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "utiles_de_cocinero_2024",
+    "source": "srd521",
+    "concept": "utiles_de_cocinero",
+    "data": {
+      "name": {
+        "es": "Útiles de cocinero",
+        "en": "Cook’s Utensils"
+      },
+      "categoria": "herramienta_artesano",
+      "caracteristica": "sab",
+      "peso": 8,
+      "coste": 1,
+      "descripcion": {
+        "es": "Característica: Sabiduría Peso: 4 kg\nUtilizar: mejorar el sabor de la comida (CD 10) o detectar alimentos podridos o envenenados (CD 15)\nFabricar: raciones",
+        "en": "Ability: Wisdom Weight: 8 lb.\nUtilize: Improve food’s flavor (DC 10), or detect spoiled or poisoned food (DC 15)\nCraft: Rations"
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 93,
+        "es": 102
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "herramientas_de_soplador_de_vidrio_2024",
+    "source": "srd521",
+    "concept": "herramientas_de_soplador_de_vidrio",
+    "data": {
+      "name": {
+        "es": "Herramientas de soplador de vidrio",
+        "en": "Glassblower’s Tools"
+      },
+      "categoria": "herramienta_artesano",
+      "caracteristica": "int",
+      "peso": 5,
+      "coste": 30,
+      "descripcion": {
+        "es": "Característica: Inteligencia Peso: 2,5 kg\nUtilizar: distinguir lo que ha contenido un objeto de vidrio durante las últimas 24 horas (CD 15)\nFabricar: botella de cristal, catalejo, lupa, vial",
+        "en": "Ability: Intelligence Weight: 5 lb.\nUtilize: Discern what a glass object held in the past 24 hours (DC 15)\nCraft: Glass Bottle, Magnifying Glass, Spyglass, Vial"
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 93,
+        "es": 101
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "herramientas_de_joyero_2024",
+    "source": "srd521",
+    "concept": "herramientas_de_joyero",
+    "data": {
+      "name": {
+        "es": "Herramientas de joyero",
+        "en": "Jeweler’s Tools"
+      },
+      "categoria": "herramienta_artesano",
+      "caracteristica": "int",
+      "peso": 2,
+      "coste": 25,
+      "descripcion": {
+        "es": "Característica: Inteligencia Peso: 1 kg\nUtilizar: discernir el valor de una gema (CD 15)\nFabricar: canalizador arcano, símbolo sagrado",
+        "en": "Ability: Intelligence Weight: 2 lb.\nUtilize: Discern a gem’s value (DC 15)\nCraft: Arcane Focus, Holy Symbol"
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 93,
+        "es": 101
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "herramientas_de_curtidor_2024",
+    "source": "srd521",
+    "concept": "herramientas_de_curtidor",
+    "data": {
+      "name": {
+        "es": "Herramientas de curtidor",
+        "en": "Leatherworker’s Tools"
+      },
+      "categoria": "herramienta_artesano",
+      "caracteristica": "des",
+      "peso": 5,
+      "coste": 5,
+      "descripcion": {
+        "es": "Característica: Destreza Peso: 2,5 kg\nUtilizar: añadir un diseño a un objeto de cuero (CD 10)\nFabricar: honda, látigo, armadura de cuero, armadura de cuero tachonado, armadura de pieles, aljaba, bolsa, cantimplora, estuche para mapas o pergaminos, estuche para virotes de ballesta, mochila, pergamino",
+        "en": "Ability: Dexterity Weight: 5 lb.\nUtilize: Add a design to a leather item (DC 10)\nCraft: Sling, Whip, Hide Armor, Leather Armor, Studded Leather Armor, Backpack, Crossbow Bolt Case, Map or Scroll Case, Parchment, Pouch, Quiver, Waterskin"
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 93,
+        "es": 101
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "herramientas_de_albanil_2024",
+    "source": "srd521",
+    "concept": "herramientas_de_albanil",
+    "data": {
+      "name": {
+        "es": "Herramientas de albañil",
+        "en": "Mason’s Tools"
+      },
+      "categoria": "herramienta_artesano",
+      "caracteristica": "fue",
+      "peso": 8,
+      "coste": 10,
+      "descripcion": {
+        "es": "Característica: Fuerza Peso: 4 kg\nUtilizar: esculpir un símbolo o un agujero en la piedra (CD 10)\nFabricar: polipasto",
+        "en": "Ability: Strength Weight: 8 lb.\nUtilize: Chisel a symbol or hole in stone (DC 10)\nCraft: Block and Tackle"
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 93,
+        "es": 101
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "suministros_de_pintor_2024",
+    "source": "srd521",
+    "concept": "suministros_de_pintor",
+    "data": {
+      "name": {
+        "es": "Suministros de pintor",
+        "en": "Painter’s Supplies"
+      },
+      "categoria": "herramienta_artesano",
+      "caracteristica": "sab",
+      "peso": 5,
+      "coste": 10,
+      "descripcion": {
+        "es": "Característica: Sabiduría Peso: 2,5 kg\nUtilizar: pintar una imagen reconocible de algo que hayas visto (CD 10)\nFabricar: canalizador druídico, símbolo sagrado",
+        "en": "Ability: Wisdom Weight: 5 lb.\nUtilize: Paint a recognizable image of something you’ve seen (DC 10)\nCraft: Druidic Focus, Holy Symbol"
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 93,
+        "es": 102
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "herramientas_de_alfarero_2024",
+    "source": "srd521",
+    "concept": "herramientas_de_alfarero",
+    "data": {
+      "name": {
+        "es": "Herramientas de alfarero",
+        "en": "Potter’s Tools"
+      },
+      "categoria": "herramienta_artesano",
+      "caracteristica": "int",
+      "peso": 3,
+      "coste": 10,
+      "descripcion": {
+        "es": "Característica: Inteligencia Peso: 1,5 kg\nUtilizar: distinguir lo que ha contenido un objeto de cerámica durante las últimas 24 horas (CD 15)\nFabricar: jarro, lámpara",
+        "en": "Ability: Intelligence Weight: 3 lb.\nUtilize: Discern what a ceramic object held in the past 24 hours (DC 15)\nCraft: Jug, Lamp"
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 93,
+        "es": 101
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "herramientas_de_herrero_2024",
+    "source": "srd521",
+    "concept": "herramientas_de_herrero",
+    "data": {
+      "name": {
+        "es": "Herramientas de herrero",
+        "en": "Smith’s Tools"
+      },
+      "categoria": "herramienta_artesano",
+      "caracteristica": "fue",
+      "peso": 8,
+      "coste": 20,
+      "descripcion": {
+        "es": "Característica: Fuerza Peso: 4 kg\nUtilizar: forzar una puerta o un recipiente (CD 20)\nFabricar: cualquier arma cuerpo a cuerpo (salvo bastón, garrote, garrote grande y látigo), armaduras medias (salvo de pieles), armaduras pesadas, abrojos, balas de arma de fuego, bolas de metal, cadena, cubo, garfio de escalada, olla de hierro, palanqueta, proyectiles de honda, puntas de hierro",
+        "en": "Ability: Strength Weight: 8 lb.\nUtilize: Pry open a door or container (DC 20)\nCraft: Any Melee weapon (except Club, Greatclub, Quarterstaff, and Whip), Medium armor (except Hide), Heavy armor, Ball Bearings, Bucket, Caltrops, Chain, Crowbar, Firearm Bullets, Grappling Hook, Iron Pot, Iron Spikes, Sling Bullets"
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 93,
+        "es": 101
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "herramientas_de_manitas_2024",
+    "source": "srd521",
+    "concept": "herramientas_de_manitas",
+    "data": {
+      "name": {
+        "es": "Herramientas de manitas",
+        "en": "Tinker’s Tools"
+      },
+      "categoria": "herramienta_artesano",
+      "caracteristica": "des",
+      "peso": 10,
+      "coste": 50,
+      "descripcion": {
+        "es": "Característica: Destreza Peso: 5 kg\nUtilizar: montar un objeto Diminuto compuesto de chatarra, que se desarmará tras 1 minuto (CD 20)\nFabricar: mosquete, pistola, campana, cerradura, espejo, esposas, frasco, linterna de ojo de buey, linterna sorda, pala, silbato de supervivencia, trampa para cazar, yesquero",
+        "en": "Ability: Dexterity Weight: 10 lb.\nUtilize: Assemble a Tiny item composed of scrap, which falls apart in 1 minute (DC 20)\nCraft: Musket, Pistol, Bell, Bullseye Lantern, Flask, Hooded Lantern, Hunting Trap, Lock, Manacles, Mirror, Shovel, Signal Whistle, Tinderbox"
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 94,
+        "es": 101
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "herramientas_de_tejedor_2024",
+    "source": "srd521",
+    "concept": "herramientas_de_tejedor",
+    "data": {
+      "name": {
+        "es": "Herramientas de tejedor",
+        "en": "Weaver’s Tools"
+      },
+      "categoria": "herramienta_artesano",
+      "caracteristica": "des",
+      "peso": 5,
+      "coste": 1,
+      "descripcion": {
+        "es": "Característica: Destreza Peso: 2,5 kg\nUtilizar: remendar un roto en una prenda (CD 10) o coser un diseño Diminuto (CD 10)\nFabricar: armadura acolchada, cesta, cordel, cuerda, manta, petate, red, ropas de calidad, ropas de viaje, saco, tienda, túnica",
+        "en": "Ability: Dexterity Weight: 5 lb.\nUtilize: Mend a tear in clothing (DC 10), or sew a Tiny design (DC 10)\nCraft: Padded Armor, Basket, Bedroll, Blanket, Fine Clothes, Net, Robe, Rope, Sack, String, Tent, Traveler’s Clothes"
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 94,
+        "es": 102
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "herramientas_de_ebanista_2024",
+    "source": "srd521",
+    "concept": "herramientas_de_ebanista",
+    "data": {
+      "name": {
+        "es": "Herramientas de ebanista",
+        "en": "Woodcarver’s Tools"
+      },
+      "categoria": "herramienta_artesano",
+      "caracteristica": "des",
+      "peso": 5,
+      "coste": 1,
+      "descripcion": {
+        "es": "Característica: Destreza Peso: 2,5 kg\nUtilizar: tallar un dibujo en madera (CD 10)\nFabricar: bastón, garrote, garrote grande, armas a distancia (salvo honda, mosquete y pistola), canalizador arcano, canalizador druídico, dardos, flechas, pluma, virotes",
+        "en": "Ability: Dexterity Weight: 5 lb.\nUtilize: Carve a pattern in wood (DC 10)\nCraft: Club, Greatclub, Quarterstaff, Ranged weapons (except Pistol, Musket, and Sling), Arcane Focus, Arrows, Bolts, Druidic Focus, Ink Pen, Needles"
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 94,
+        "es": 101
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "utiles_para_disfrazarse_2024",
+    "source": "srd521",
+    "concept": "utiles_para_disfrazarse",
+    "data": {
+      "name": {
+        "es": "Útiles para disfrazarse",
+        "en": "Disguise Kit"
+      },
+      "categoria": "herramienta",
+      "caracteristica": "car",
+      "peso": 3,
+      "coste": 25,
+      "descripcion": {
+        "es": "Característica: Carisma Peso: 1,5 kg\nUtilizar: maquillar (CD 10)\nFabricar: disfraz",
+        "en": "Ability: Charisma Weight: 3 lb.\nUtilize: Apply makeup (DC 10)\nCraft: Costume"
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 94,
+        "es": 102
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "utiles_para_falsificar_2024",
+    "source": "srd521",
+    "concept": "utiles_para_falsificar",
+    "data": {
+      "name": {
+        "es": "Útiles para falsificar",
+        "en": "Forgery Kit"
+      },
+      "categoria": "herramienta",
+      "caracteristica": "des",
+      "peso": 5,
+      "coste": 15,
+      "descripcion": {
+        "es": "Característica: Destreza Peso: 2,5 kg\nUtilizar: escribir 10 o menos palabras imitando la letra de otra persona (CD 15) o duplicar un sello de cera (CD 20)",
+        "en": "Ability: Dexterity Weight: 5 lb.\nUtilize: Mimic 10 or fewer words of someone else’s handwriting (DC 15), or duplicate a wax seal (DC 20)"
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 94,
+        "es": 102
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "dados_2024",
+    "source": "srd521",
+    "concept": "dados",
+    "data": {
+      "name": {
+        "es": "Dados",
+        "en": "Dice"
+      },
+      "categoria": "juego",
+      "caracteristica": "sab",
+      "peso": 0,
+      "coste": 0.1,
+      "descripcion": {
+        "es": "Característica: Sabiduría Peso: —\nUtilizar: distinguir si alguien hace trampas (CD 10) o ganar la partida (CD 20)\nVariantes: ajedrez dragón (1 po), apuesta de los tres dragones (1 po), dados (1 pp), naipes (5 pp)",
+        "en": "Ability: Wisdom Weight: —\nUtilize: Discern whether someone is cheating (DC 10), or win the game (DC 20)\nVariants: Dice (1 SP), dragonchess (1 GP), playing cards (5 SP), three-dragon ante (1 GP)"
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 94,
+        "es": 102
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "ajedrez_dragon_2024",
+    "source": "srd521",
+    "concept": "ajedrez_dragon",
+    "data": {
+      "name": {
+        "es": "Ajedrez dragón",
+        "en": "Dragonchess"
+      },
+      "categoria": "juego",
+      "caracteristica": "sab",
+      "peso": 0,
+      "coste": 1,
+      "descripcion": {
+        "es": "Característica: Sabiduría Peso: —\nUtilizar: distinguir si alguien hace trampas (CD 10) o ganar la partida (CD 20)\nVariantes: ajedrez dragón (1 po), apuesta de los tres dragones (1 po), dados (1 pp), naipes (5 pp)",
+        "en": "Ability: Wisdom Weight: —\nUtilize: Discern whether someone is cheating (DC 10), or win the game (DC 20)\nVariants: Dice (1 SP), dragonchess (1 GP), playing cards (5 SP), three-dragon ante (1 GP)"
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 94,
+        "es": 102
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "naipes_2024",
+    "source": "srd521",
+    "concept": "naipes",
+    "data": {
+      "name": {
+        "es": "Naipes",
+        "en": "Playing cards"
+      },
+      "categoria": "juego",
+      "caracteristica": "sab",
+      "peso": 0,
+      "coste": 0.5,
+      "descripcion": {
+        "es": "Característica: Sabiduría Peso: —\nUtilizar: distinguir si alguien hace trampas (CD 10) o ganar la partida (CD 20)\nVariantes: ajedrez dragón (1 po), apuesta de los tres dragones (1 po), dados (1 pp), naipes (5 pp)",
+        "en": "Ability: Wisdom Weight: —\nUtilize: Discern whether someone is cheating (DC 10), or win the game (DC 20)\nVariants: Dice (1 SP), dragonchess (1 GP), playing cards (5 SP), three-dragon ante (1 GP)"
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 94,
+        "es": 102
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "apuesta_de_los_tres_dragones_2024",
+    "source": "srd521",
+    "concept": "apuesta_de_los_tres_dragones",
+    "data": {
+      "name": {
+        "es": "Apuesta de los tres dragones",
+        "en": "Three-dragon ante"
+      },
+      "categoria": "juego",
+      "caracteristica": "sab",
+      "peso": 0,
+      "coste": 1,
+      "descripcion": {
+        "es": "Característica: Sabiduría Peso: —\nUtilizar: distinguir si alguien hace trampas (CD 10) o ganar la partida (CD 20)\nVariantes: ajedrez dragón (1 po), apuesta de los tres dragones (1 po), dados (1 pp), naipes (5 pp)",
+        "en": "Ability: Wisdom Weight: —\nUtilize: Discern whether someone is cheating (DC 10), or win the game (DC 20)\nVariants: Dice (1 SP), dragonchess (1 GP), playing cards (5 SP), three-dragon ante (1 GP)"
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 94,
+        "es": 102
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "utiles_de_herborista_2024",
+    "source": "srd521",
+    "concept": "utiles_de_herborista",
+    "data": {
+      "name": {
+        "es": "Útiles de herborista",
+        "en": "Herbalism Kit"
+      },
+      "categoria": "herramienta",
+      "caracteristica": "int",
+      "peso": 3,
+      "coste": 5,
+      "descripcion": {
+        "es": "Característica: Inteligencia Peso: 1,5 kg\nUtilizar: identificar una planta (CD 10)\nFabricar: antitoxina, poción de curación, útiles de sanador, vela",
+        "en": "Ability: Intelligence Weight: 3 lb.\nUtilize: Identify a plant (DC 10)\nCraft: Antitoxin, Candle, Healer’s Kit, Potion of Healing"
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 94,
+        "es": 102
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "gaita_2024",
+    "source": "srd521",
+    "concept": "gaita",
+    "data": {
+      "name": {
+        "es": "Gaita",
+        "en": "Bagpipes"
+      },
+      "categoria": "instrumento",
+      "caracteristica": "car",
+      "peso": 6,
+      "coste": 30,
+      "descripcion": {
+        "es": "Característica: Carisma Peso: variable\nUtilizar: tocar una melodía conocida (CD 10) o improvisar una canción (CD 15)\nVariantes: chirimía (2 po, 0,5 kg), cuerno (3 po, 1 kg), dulcémele (25 po, 5 kg), flauta (2 po, 0,5 kg), flauta de pan (12 po, 1 kg), gaita (30 po, 3 kg), laúd (35 po, 1 kg), lira (30 po, 1 kg), tambor (6 po, 1,5 kg), viola (30 po, 0,5 kg)",
+        "en": "Ability: Charisma Weight: Varies\nUtilize: Play a known tune (DC 10), or improvise a song (DC 15)\nVariants: Bagpipes (30 GP, 6 lb.), drum (6 GP, 3 lb.), dulcimer (25 GP, 10 lb.), flute (2 GP, 1 lb.), horn (3 GP, 2 lb.), lute (35 GP, 2 lb.), lyre (30 GP, 2 lb.), pan flute (12 GP, 2 lb.), shawm (2 GP, 1 lb.), viol (30 GP, 1 lb.)"
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 94,
+        "es": 102
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "tambor_2024",
+    "source": "srd521",
+    "concept": "tambor",
+    "data": {
+      "name": {
+        "es": "Tambor",
+        "en": "Drum"
+      },
+      "categoria": "instrumento",
+      "caracteristica": "car",
+      "peso": 3,
+      "coste": 6,
+      "descripcion": {
+        "es": "Característica: Carisma Peso: variable\nUtilizar: tocar una melodía conocida (CD 10) o improvisar una canción (CD 15)\nVariantes: chirimía (2 po, 0,5 kg), cuerno (3 po, 1 kg), dulcémele (25 po, 5 kg), flauta (2 po, 0,5 kg), flauta de pan (12 po, 1 kg), gaita (30 po, 3 kg), laúd (35 po, 1 kg), lira (30 po, 1 kg), tambor (6 po, 1,5 kg), viola (30 po, 0,5 kg)",
+        "en": "Ability: Charisma Weight: Varies\nUtilize: Play a known tune (DC 10), or improvise a song (DC 15)\nVariants: Bagpipes (30 GP, 6 lb.), drum (6 GP, 3 lb.), dulcimer (25 GP, 10 lb.), flute (2 GP, 1 lb.), horn (3 GP, 2 lb.), lute (35 GP, 2 lb.), lyre (30 GP, 2 lb.), pan flute (12 GP, 2 lb.), shawm (2 GP, 1 lb.), viol (30 GP, 1 lb.)"
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 94,
+        "es": 102
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "dulcemele_2024",
+    "source": "srd521",
+    "concept": "dulcemele",
+    "data": {
+      "name": {
+        "es": "Dulcémele",
+        "en": "Dulcimer"
+      },
+      "categoria": "instrumento",
+      "caracteristica": "car",
+      "peso": 10,
+      "coste": 25,
+      "descripcion": {
+        "es": "Característica: Carisma Peso: variable\nUtilizar: tocar una melodía conocida (CD 10) o improvisar una canción (CD 15)\nVariantes: chirimía (2 po, 0,5 kg), cuerno (3 po, 1 kg), dulcémele (25 po, 5 kg), flauta (2 po, 0,5 kg), flauta de pan (12 po, 1 kg), gaita (30 po, 3 kg), laúd (35 po, 1 kg), lira (30 po, 1 kg), tambor (6 po, 1,5 kg), viola (30 po, 0,5 kg)",
+        "en": "Ability: Charisma Weight: Varies\nUtilize: Play a known tune (DC 10), or improvise a song (DC 15)\nVariants: Bagpipes (30 GP, 6 lb.), drum (6 GP, 3 lb.), dulcimer (25 GP, 10 lb.), flute (2 GP, 1 lb.), horn (3 GP, 2 lb.), lute (35 GP, 2 lb.), lyre (30 GP, 2 lb.), pan flute (12 GP, 2 lb.), shawm (2 GP, 1 lb.), viol (30 GP, 1 lb.)"
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 94,
+        "es": 102
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "flauta_2024",
+    "source": "srd521",
+    "concept": "flauta",
+    "data": {
+      "name": {
+        "es": "Flauta",
+        "en": "Flute"
+      },
+      "categoria": "instrumento",
+      "caracteristica": "car",
+      "peso": 1,
+      "coste": 2,
+      "descripcion": {
+        "es": "Característica: Carisma Peso: variable\nUtilizar: tocar una melodía conocida (CD 10) o improvisar una canción (CD 15)\nVariantes: chirimía (2 po, 0,5 kg), cuerno (3 po, 1 kg), dulcémele (25 po, 5 kg), flauta (2 po, 0,5 kg), flauta de pan (12 po, 1 kg), gaita (30 po, 3 kg), laúd (35 po, 1 kg), lira (30 po, 1 kg), tambor (6 po, 1,5 kg), viola (30 po, 0,5 kg)",
+        "en": "Ability: Charisma Weight: Varies\nUtilize: Play a known tune (DC 10), or improvise a song (DC 15)\nVariants: Bagpipes (30 GP, 6 lb.), drum (6 GP, 3 lb.), dulcimer (25 GP, 10 lb.), flute (2 GP, 1 lb.), horn (3 GP, 2 lb.), lute (35 GP, 2 lb.), lyre (30 GP, 2 lb.), pan flute (12 GP, 2 lb.), shawm (2 GP, 1 lb.), viol (30 GP, 1 lb.)"
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 94,
+        "es": 102
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "cuerno_2024",
+    "source": "srd521",
+    "concept": "cuerno",
+    "data": {
+      "name": {
+        "es": "Cuerno",
+        "en": "Horn"
+      },
+      "categoria": "instrumento",
+      "caracteristica": "car",
+      "peso": 2,
+      "coste": 3,
+      "descripcion": {
+        "es": "Característica: Carisma Peso: variable\nUtilizar: tocar una melodía conocida (CD 10) o improvisar una canción (CD 15)\nVariantes: chirimía (2 po, 0,5 kg), cuerno (3 po, 1 kg), dulcémele (25 po, 5 kg), flauta (2 po, 0,5 kg), flauta de pan (12 po, 1 kg), gaita (30 po, 3 kg), laúd (35 po, 1 kg), lira (30 po, 1 kg), tambor (6 po, 1,5 kg), viola (30 po, 0,5 kg)",
+        "en": "Ability: Charisma Weight: Varies\nUtilize: Play a known tune (DC 10), or improvise a song (DC 15)\nVariants: Bagpipes (30 GP, 6 lb.), drum (6 GP, 3 lb.), dulcimer (25 GP, 10 lb.), flute (2 GP, 1 lb.), horn (3 GP, 2 lb.), lute (35 GP, 2 lb.), lyre (30 GP, 2 lb.), pan flute (12 GP, 2 lb.), shawm (2 GP, 1 lb.), viol (30 GP, 1 lb.)"
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 94,
+        "es": 102
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "laud_2024",
+    "source": "srd521",
+    "concept": "laud",
+    "data": {
+      "name": {
+        "es": "Laúd",
+        "en": "Lute"
+      },
+      "categoria": "instrumento",
+      "caracteristica": "car",
+      "peso": 2,
+      "coste": 35,
+      "descripcion": {
+        "es": "Característica: Carisma Peso: variable\nUtilizar: tocar una melodía conocida (CD 10) o improvisar una canción (CD 15)\nVariantes: chirimía (2 po, 0,5 kg), cuerno (3 po, 1 kg), dulcémele (25 po, 5 kg), flauta (2 po, 0,5 kg), flauta de pan (12 po, 1 kg), gaita (30 po, 3 kg), laúd (35 po, 1 kg), lira (30 po, 1 kg), tambor (6 po, 1,5 kg), viola (30 po, 0,5 kg)",
+        "en": "Ability: Charisma Weight: Varies\nUtilize: Play a known tune (DC 10), or improvise a song (DC 15)\nVariants: Bagpipes (30 GP, 6 lb.), drum (6 GP, 3 lb.), dulcimer (25 GP, 10 lb.), flute (2 GP, 1 lb.), horn (3 GP, 2 lb.), lute (35 GP, 2 lb.), lyre (30 GP, 2 lb.), pan flute (12 GP, 2 lb.), shawm (2 GP, 1 lb.), viol (30 GP, 1 lb.)"
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 94,
+        "es": 102
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "lira_2024",
+    "source": "srd521",
+    "concept": "lira",
+    "data": {
+      "name": {
+        "es": "Lira",
+        "en": "Lyre"
+      },
+      "categoria": "instrumento",
+      "caracteristica": "car",
+      "peso": 2,
+      "coste": 30,
+      "descripcion": {
+        "es": "Característica: Carisma Peso: variable\nUtilizar: tocar una melodía conocida (CD 10) o improvisar una canción (CD 15)\nVariantes: chirimía (2 po, 0,5 kg), cuerno (3 po, 1 kg), dulcémele (25 po, 5 kg), flauta (2 po, 0,5 kg), flauta de pan (12 po, 1 kg), gaita (30 po, 3 kg), laúd (35 po, 1 kg), lira (30 po, 1 kg), tambor (6 po, 1,5 kg), viola (30 po, 0,5 kg)",
+        "en": "Ability: Charisma Weight: Varies\nUtilize: Play a known tune (DC 10), or improvise a song (DC 15)\nVariants: Bagpipes (30 GP, 6 lb.), drum (6 GP, 3 lb.), dulcimer (25 GP, 10 lb.), flute (2 GP, 1 lb.), horn (3 GP, 2 lb.), lute (35 GP, 2 lb.), lyre (30 GP, 2 lb.), pan flute (12 GP, 2 lb.), shawm (2 GP, 1 lb.), viol (30 GP, 1 lb.)"
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 94,
+        "es": 102
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "flauta_de_pan_2024",
+    "source": "srd521",
+    "concept": "flauta_de_pan",
+    "data": {
+      "name": {
+        "es": "Flauta de pan",
+        "en": "Pan flute"
+      },
+      "categoria": "instrumento",
+      "caracteristica": "car",
+      "peso": 2,
+      "coste": 12,
+      "descripcion": {
+        "es": "Característica: Carisma Peso: variable\nUtilizar: tocar una melodía conocida (CD 10) o improvisar una canción (CD 15)\nVariantes: chirimía (2 po, 0,5 kg), cuerno (3 po, 1 kg), dulcémele (25 po, 5 kg), flauta (2 po, 0,5 kg), flauta de pan (12 po, 1 kg), gaita (30 po, 3 kg), laúd (35 po, 1 kg), lira (30 po, 1 kg), tambor (6 po, 1,5 kg), viola (30 po, 0,5 kg)",
+        "en": "Ability: Charisma Weight: Varies\nUtilize: Play a known tune (DC 10), or improvise a song (DC 15)\nVariants: Bagpipes (30 GP, 6 lb.), drum (6 GP, 3 lb.), dulcimer (25 GP, 10 lb.), flute (2 GP, 1 lb.), horn (3 GP, 2 lb.), lute (35 GP, 2 lb.), lyre (30 GP, 2 lb.), pan flute (12 GP, 2 lb.), shawm (2 GP, 1 lb.), viol (30 GP, 1 lb.)"
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 94,
+        "es": 102
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "chirimia_2024",
+    "source": "srd521",
+    "concept": "chirimia",
+    "data": {
+      "name": {
+        "es": "Chirimía",
+        "en": "Shawm"
+      },
+      "categoria": "instrumento",
+      "caracteristica": "car",
+      "peso": 1,
+      "coste": 2,
+      "descripcion": {
+        "es": "Característica: Carisma Peso: variable\nUtilizar: tocar una melodía conocida (CD 10) o improvisar una canción (CD 15)\nVariantes: chirimía (2 po, 0,5 kg), cuerno (3 po, 1 kg), dulcémele (25 po, 5 kg), flauta (2 po, 0,5 kg), flauta de pan (12 po, 1 kg), gaita (30 po, 3 kg), laúd (35 po, 1 kg), lira (30 po, 1 kg), tambor (6 po, 1,5 kg), viola (30 po, 0,5 kg)",
+        "en": "Ability: Charisma Weight: Varies\nUtilize: Play a known tune (DC 10), or improvise a song (DC 15)\nVariants: Bagpipes (30 GP, 6 lb.), drum (6 GP, 3 lb.), dulcimer (25 GP, 10 lb.), flute (2 GP, 1 lb.), horn (3 GP, 2 lb.), lute (35 GP, 2 lb.), lyre (30 GP, 2 lb.), pan flute (12 GP, 2 lb.), shawm (2 GP, 1 lb.), viol (30 GP, 1 lb.)"
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 94,
+        "es": 102
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "viola_2024",
+    "source": "srd521",
+    "concept": "viola",
+    "data": {
+      "name": {
+        "es": "Viola",
+        "en": "Viol"
+      },
+      "categoria": "instrumento",
+      "caracteristica": "car",
+      "peso": 1,
+      "coste": 30,
+      "descripcion": {
+        "es": "Característica: Carisma Peso: variable\nUtilizar: tocar una melodía conocida (CD 10) o improvisar una canción (CD 15)\nVariantes: chirimía (2 po, 0,5 kg), cuerno (3 po, 1 kg), dulcémele (25 po, 5 kg), flauta (2 po, 0,5 kg), flauta de pan (12 po, 1 kg), gaita (30 po, 3 kg), laúd (35 po, 1 kg), lira (30 po, 1 kg), tambor (6 po, 1,5 kg), viola (30 po, 0,5 kg)",
+        "en": "Ability: Charisma Weight: Varies\nUtilize: Play a known tune (DC 10), or improvise a song (DC 15)\nVariants: Bagpipes (30 GP, 6 lb.), drum (6 GP, 3 lb.), dulcimer (25 GP, 10 lb.), flute (2 GP, 1 lb.), horn (3 GP, 2 lb.), lute (35 GP, 2 lb.), lyre (30 GP, 2 lb.), pan flute (12 GP, 2 lb.), shawm (2 GP, 1 lb.), viol (30 GP, 1 lb.)"
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 94,
+        "es": 102
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "herramientas_de_navegante_2024",
+    "source": "srd521",
+    "concept": "herramientas_de_navegante",
+    "data": {
+      "name": {
+        "es": "Herramientas de navegante",
+        "en": "Navigator’s Tools"
+      },
+      "categoria": "herramienta",
+      "caracteristica": "sab",
+      "peso": 2,
+      "coste": 25,
+      "descripcion": {
+        "es": "Característica: Sabiduría Peso: 1 kg\nUtilizar: trazar un rumbo (CD 10) o determinar la posición contemplando las estrellas (CD 15)",
+        "en": "Ability: Wisdom Weight: 2 lb.\nUtilize: Plot a course (DC 10), or determine position by stargazing (DC 15)"
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 94,
+        "es": 102
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "utiles_de_envenenador_2024",
+    "source": "srd521",
+    "concept": "utiles_de_envenenador",
+    "data": {
+      "name": {
+        "es": "Útiles de envenenador",
+        "en": "Poisoner’s Kit"
+      },
+      "categoria": "herramienta",
+      "caracteristica": "int",
+      "peso": 2,
+      "coste": 50,
+      "descripcion": {
+        "es": "Característica: Inteligencia Peso: 1 kg\nUtilizar: detectar un objeto envenenado (CD 10)\nFabricar: veneno básico",
+        "en": "Ability: Intelligence Weight: 2 lb.\nUtilize: Detect a poisoned object (DC 10)\nCraft: Basic Poison"
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 94,
+        "es": 102
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "herramientas_de_ladron_2024",
+    "source": "srd521",
+    "concept": "herramientas_de_ladron",
+    "data": {
+      "name": {
+        "es": "Herramientas de ladrón",
+        "en": "Thieves’ Tools"
+      },
+      "categoria": "herramienta",
+      "caracteristica": "des",
+      "peso": 1,
+      "coste": 25,
+      "descripcion": {
+        "es": "Característica: Destreza Peso: 0,5 kg\nUtilizar: forzar una cerradura (CD 15) o desarmar una trampa (CD 15)",
+        "en": "Ability: Dexterity Weight: 1 lb.\nUtilize: Pick a lock (DC 15), or disarm a trap (DC 15)"
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 94,
+        "es": 102
       }
     }
   }

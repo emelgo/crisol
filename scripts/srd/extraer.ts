@@ -4,7 +4,7 @@
  */
 import { writeFileSync } from 'node:fs'
 import { consoleIo, type Io } from '../io.ts'
-import { classDocs } from './clases.ts'
+import { classDocs, readingRows } from './clases.ts'
 import {
   type ArmorGroup,
   armorDoc,
@@ -20,7 +20,19 @@ import {
 } from './equipo.ts'
 import { FIGHTER, FIGHTER_CLASS, FIGHTER_FEATURES } from './guerrero.ts'
 import { MECHANICS } from './mecanica.ts'
-import { displayName, gearDoc, gearSignature, gearTable } from './objetos.ts'
+import {
+  categoryOf,
+  displayName,
+  type Entry,
+  entries,
+  type GearRow,
+  gearDoc,
+  gearSignature,
+  gearTable,
+  subTables,
+  type ToolRow,
+  toolRows
+} from './objetos.ts'
 import { GEAR_PAIRS, GEAR_RENAMES } from './pares.ts'
 import { boxesOf, type Edition, type Lang, pagesOf, widthOf } from './texto.ts'
 
@@ -66,14 +78,76 @@ const GEAR_PAGES: Record<Edition, Record<Lang, number[]>> = {
   '2024': { en: [95], es: [103] }
 }
 
-function gear(edition: Edition) {
-  const of = (lang: Lang) =>
-    gearTable(
+/** En 2024, las herramientas y el texto de cada objeto van en entradas; la munición y los canalizadores, en tablas pequeñas */
+const TOOL_PAGES: Record<Lang, number[]> = { en: [93, 94], es: [101, 102] }
+const DESCRIPTION_PAGES: Record<Lang, number[]> = {
+  en: [94, 95, 96, 97, 98, 99, 100],
+  es: [102, 103, 104, 105, 106, 107, 108, 109]
+}
+const SECTIONS: Record<Lang, RegExp> = {
+  en: /^(Artisan’s Tools|Other Tools|Adventuring Gear|Mounts and Vehicles)$/,
+  es: /^(Herramientas de artesano|Otras herramientas|Equipo de aventureros|Monturas y vehículos)$/
+}
+
+function gear(edition: Edition): [GearRow | ToolRow, GearRow | ToolRow][] {
+  const of = (lang: Lang): (GearRow | ToolRow)[] => {
+    const table = gearTable(
       GEAR_PAGES[edition][lang].map((p) => ({ boxes: boxesOf(edition, lang, p), width: widthOf(edition, lang, p) })),
       edition,
       lang
     )
+    if (edition === '2014') return table
+    const tools = toolRows(
+      entries(readingRows(edition, lang, TOOL_PAGES[lang]), lang, SECTIONS[lang]).filter(
+        (e) => !/Adventuring|aventureros/.test(e.section ?? '')
+      ),
+      lang
+    )
+    return [...table, ...subTables(readingRows(edition, lang, DESCRIPTION_PAGES[lang]), lang), ...tools]
+  }
   return pair(of('en'), of('es'), gearSignature, GEAR_PAIRS[edition])
+}
+
+/** El pergamino de conjuro de 2024: su título va partido en dos líneas («Spell Scroll (Cantrip, 30 GP;» / «Level 1…») */
+function scrollText(lang: Lang): string {
+  const rows = readingRows('2024', lang, DESCRIPTION_PAGES[lang])
+  const start = rows.findIndex((r) => /^(Spell Scroll|Pergamino de conjuro) \(/.test(r.text) && r.text.endsWith(';'))
+  if (start < 0) return ''
+  const lines: string[] = []
+  for (const row of rows.slice(start + 2)) {
+    if (/^[A-ZÁÉÍÓÚÑ][^()]* \((?:[\d,.]+ (?:GP|SP|CP|po|pp|pc)|Varies|variable)\)$/.test(row.text)) break
+    lines.push(row.text)
+  }
+  return lines.join(' ').replace(/([a-záéíóúñ])- ([a-záéíóúñ])/gi, '$1$2')
+}
+
+/** El texto de un grupo de 2024 («Arcane Focus (Varies)»), por su categoría */
+const GROUP_ENTRIES: Record<string, RegExp> = {
+  municion: /^(Ammunition|Munición)$/,
+  canalizador_arcano: /^(Arcane Focus|Canalizador arcano)$/,
+  canalizador_druidico: /^(Druidic Focus|Canalizador druídico)$/,
+  simbolo_sagrado: /^(Holy Symbol|Símbolo sagrado)$/
+}
+const groupTexts = new Map<string, string | undefined>()
+function groupText(lang: Lang, category: string) {
+  const id = `${lang}/${category}`
+  if (!groupTexts.has(id)) {
+    const re = GROUP_ENTRIES[category]
+    groupTexts.set(id, re ? [...descriptions(lang).values()].find((e) => re.test(e.name))?.text : undefined)
+  }
+  return groupTexts.get(id)
+}
+
+/** El texto de cada objeto de 2024, por su nombre en cada idioma */
+const described = new Map<Lang, Map<string, Entry>>()
+function descriptions(lang: Lang): Map<string, Entry> {
+  let found = described.get(lang)
+  if (!found) {
+    const all = entries(readingRows('2024', lang, DESCRIPTION_PAGES[lang]), lang, SECTIONS[lang])
+    found = new Map(all.filter((e) => /Adventuring|aventureros/.test(e.section ?? '')).map((e) => [e.name, e]))
+    described.set(lang, found)
+  }
+  return found
 }
 
 /** Todo lo sacado, por archivo */
@@ -88,6 +162,21 @@ export function extract(): Record<string, Doc[]> {
   const g14 = gear('2014')
   const gc = concepts(g24, g14, GEAR_RENAMES, (es) => displayName(es, 'es'))
   const gearOf = (edition: Edition) => (concept: string) => MECHANICS[`${concept}_${edition}`]
+  const texts = { en: descriptions('en'), es: descriptions('es') }
+  /** Lo de más de un objeto de 2024: su texto (el de su entrada o, en una herramienta, el suyo) y su característica */
+  const extra2024 = (en: GearRow | ToolRow, es: GearRow | ToolRow) => {
+    // Lo de un grupo (una flecha, un canalizador) lleva el texto de su grupo
+    const text = (row: GearRow | ToolRow, lang: Lang) =>
+      'text' in row
+        ? row.text
+        : (texts[lang].get(row.name)?.text ??
+          (/^(Spell Scroll|Pergamino de conjuro) /.test(row.name) ? scrollText(lang) : undefined) ??
+          (row.group ? (groupText(lang, categoryOf(row)) ?? '') : ''))
+    return {
+      descripcion: { es: text(es, 'es'), en: text(en, 'en') },
+      ...('ability' in en ? { caracteristica: en.ability } : {})
+    }
+  }
   return {
     'equipo.json': [
       ...g14.map(([en, es], i) => {
@@ -96,7 +185,7 @@ export function extract(): Record<string, Doc[]> {
       }),
       ...g24.map(([en, es], i) => {
         const c = gc.newer[i] as string
-        return gearDoc('2024', en, es, c, gearOf('2024')(c))
+        return gearDoc('2024', en, es, c, gearOf('2024')(c), extra2024(en, es))
       })
     ],
     'clases.json': (['2014', '2024'] as const).flatMap((edition) =>
