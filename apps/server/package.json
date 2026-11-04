@@ -23,6 +23,7 @@
     "@better-auth/oauth-provider": "catalog:",
     "@crisol/contracts": "workspace:*",
     "@crisol/db": "workspace:*",
+    "@crisol/dice": "workspace:*",
     "@crisol/domain": "workspace:*",
     "@crisol/editor": "workspace:*",
     "@fastify/rate-limit": "catalog:",

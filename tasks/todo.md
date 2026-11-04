@@ -27,7 +27,7 @@ amplía `@fugas` en la misma tarea. Cobertura ≥ 80 % de lo cambiado (bloquea d
 
 ## Fase 2: Registro
 
-- [ ] **2. Tirar en el servidor y leer el registro (riesgo)**
+- [x] **2. Tirar en el servidor y leer el registro (riesgo)** — hecha. El porqué de una fórmula que no vale va a la IA por el MCP (tarea 11); la web lo calcula al escribirla.
   - Acepta:
     - la tabla `dice_rolls` (migración 0037) y su repositorio;
     - los permisos `dice.roll`, `dice.read` y `dice.private`;

@@ -94,7 +94,12 @@ const RULES = {
   'tags.write': { sees: seesCommonFiles, allows: isOrganizationOwner },
   // Las plantillas de página de la cuenta (ADR-0009): verlas (para crear con ellas); crearlas, cambiarlas y borrarlas
   'templates.read': { sees: seesCommonFiles, allows: seesCommonFiles },
-  'templates.write': { sees: seesCommonFiles, allows: isOrganizationOwner }
+  'templates.write': { sees: seesCommonFiles, allows: isOrganizationOwner },
+  // Las tiradas de una campaña (ADR-0010): tiran y leen sus miembros y el máster del mundo; las privadas le llegan
+  // al máster del mundo o de la campaña
+  'dice.roll': { sees: seesCampaign, allows: seesCampaign },
+  'dice.read': { sees: seesCampaign, allows: seesCampaign },
+  'dice.private': { sees: seesCampaign, allows: any(isWorldMaster, isCampaignMaster) }
 } satisfies Record<string, { sees: Predicate; allows: Predicate }>
 
 export type Capability = keyof typeof RULES

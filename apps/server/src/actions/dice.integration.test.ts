@@ -1,0 +1,132 @@
+import { diceRoll } from '@crisol/contracts'
+import { connect, schema } from '@crisol/db'
+import { freshTestDatabase, resetDatabase } from '@crisol/db/testing'
+import type { FastifyInstance } from 'fastify'
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { buildApp } from '../app.ts'
+import type { Auth } from '../auth/auth.ts'
+import { createTestAuth, signUpTestUser, TEST_SEAL_KEY } from '../testing.ts'
+
+const BASE_URL = 'http://localhost:5173'
+const ok = async () => undefined
+
+describe('las tiradas de una campaña', () => {
+  let conn: ReturnType<typeof connect>
+  let auth: Auth
+  let app: FastifyInstance
+  let master: { userId: string; cookie: string }
+  let ana: { userId: string; cookie: string }
+  let bruno: { userId: string; cookie: string }
+  let carla: { userId: string; cookie: string }
+  let campaignId: string
+
+  const call = (name: string, payload: object, cookie: string) =>
+    app.inject({ method: 'POST', url: `/api/actions/${name}`, payload, headers: { origin: BASE_URL, cookie } })
+  const roll = async (who: { cookie: string }, formula: string, visibility: string) => {
+    const response = await call('rollDice', { campaignId, formula, visibility }, who.cookie)
+    expect(response.statusCode, response.body).toBe(200)
+    return response.json().roll
+  }
+  const labels = async (who: { cookie: string }) => {
+    const response = await call('listRolls', { campaignId }, who.cookie)
+    expect(response.statusCode, response.body).toBe(200)
+    return response.json().rolls.map((r: { label: string }) => r.label)
+  }
+
+  beforeAll(async () => {
+    conn = connect(await freshTestDatabase('crisol_test_dice'), { max: 4 })
+  })
+
+  beforeEach(async () => {
+    await resetDatabase(conn.sql)
+    auth = createTestAuth(conn.db, BASE_URL)
+    app = buildApp({
+      checks: { postgres: ok, valkey: ok },
+      accounts: { auth, db: conn.db, publicUrl: BASE_URL, sealKey: TEST_SEAL_KEY }
+    })
+    master = await signUpTestUser(auth, { name: 'Enrique', email: 'enrique@crisol.test' })
+    const [org] = await conn.db.insert(schema.organizations).values({ name: 'Fateforge' }).returning()
+    const organizationId = org?.id ?? ''
+    await conn.db.insert(schema.organizationMembers).values({ organizationId, userId: master.userId, role: 'owner' })
+    const worldId = (await call('createWorld', { name: 'Eana' }, master.cookie)).json().id
+    campaignId = (await call('createCampaign', { worldId, name: 'La Marca' }, master.cookie)).json().id
+    const player = async (name: string, email: string) => {
+      const who = await signUpTestUser(auth, { name, email })
+      await conn.db.insert(schema.organizationMembers).values({ organizationId, userId: who.userId, role: 'member' })
+      await conn.db.insert(schema.campaignMembers).values({ campaignId, userId: who.userId, role: 'player' })
+      return who
+    }
+    ana = await player('Ana', 'ana@crisol.test')
+    bruno = await player('Bruno', 'bruno@crisol.test')
+    carla = await signUpTestUser(auth, { name: 'Carla', email: 'carla@crisol.test' })
+  })
+
+  afterAll(async () => {
+    await app?.close()
+    await conn?.close()
+  })
+
+  it('el servidor tira: el total, cada dado y su desglose, de quién y con su visibilidad', async () => {
+    const done = await roll(ana, '1d20+4 # Percepción', 'all')
+    expect(diceRoll.safeParse(done).success).toBe(true)
+    expect(done).toMatchObject({ formula: '1d20+4', label: 'Percepción', visibility: 'all', ai: false })
+    expect(done.by).toEqual({ userId: ana.userId, name: 'Ana' })
+    expect(done.total).toBeGreaterThanOrEqual(5)
+    expect(done.total).toBeLessThanOrEqual(24)
+    expect(done.dice).toHaveLength(1)
+    expect(done.dice[0]).toMatchObject({ sides: 20, kept: true })
+    expect(done.detail).toBe(`1d20+4 → [${done.dice[0].value}] + 4 = ${done.total}`)
+    expect(done.critical).toBe(done.dice[0].value === 20 ? 'high' : done.dice[0].value === 1 ? 'low' : null)
+  })
+
+  it('cada uno lee lo que puede ver: el máster, todo; cada jugadora, lo de todos y lo suyo', async () => {
+    await roll(ana, '1d20+4 # Percepción', 'all')
+    await roll(ana, '1d20+7 # Sigilo', 'master')
+    await roll(bruno, '1d20+1 # ¿Me miente?', 'self')
+    await roll(master, '1d20+2 # ¿La oyen?', 'hidden')
+    expect(await labels(master)).toEqual(['Percepción', 'Sigilo', '¿Me miente?', '¿La oyen?'])
+    expect(await labels(ana)).toEqual(['Percepción', 'Sigilo'])
+    expect(await labels(bruno)).toEqual(['Percepción', '¿Me miente?'])
+  })
+
+  it('cada visibilidad, solo quien puede: las jugadoras no tiran en oculto y el máster no tira «para mí»', async () => {
+    const hidden = await call('rollDice', { campaignId, formula: '1d20', visibility: 'hidden' }, ana.cookie)
+    expect(hidden.statusCode).toBe(400)
+    expect(hidden.json()).toMatchObject({ code: 'VISIBILITY_NOT_ALLOWED' })
+    for (const visibility of ['self', 'master']) {
+      const response = await call('rollDice', { campaignId, formula: '1d20', visibility }, master.cookie)
+      expect(response.json()).toMatchObject({ code: 'VISIBILITY_NOT_ALLOWED' })
+    }
+  })
+
+  it('una fórmula que no vale se rechaza (el porqué lo dice la web al escribirla, y a la IA el MCP)', async () => {
+    const response = await call('rollDice', { campaignId, formula: '1d20+', visibility: 'all' }, ana.cookie)
+    expect(response.statusCode).toBe(400)
+    expect(response.json()).toEqual({ code: 'BAD_FORMULA' })
+    expect(await labels(ana)).toEqual([])
+  })
+
+  it('quien no es de la campaña ni tira ni lee', async () => {
+    expect((await call('rollDice', { campaignId, formula: '1d20', visibility: 'all' }, carla.cookie)).statusCode).toBe(
+      404
+    )
+    expect((await call('listRolls', { campaignId }, carla.cookie)).statusCode).toBe(404)
+  })
+
+  it('el registro se lee hacia atrás, de 50 en 50, cada página en el orden en que se tiró', async () => {
+    for (let i = 1; i <= 55; i++) await roll(master, `1d6 # Tirada ${i}`, 'all')
+    const first = (await call('listRolls', { campaignId }, ana.cookie)).json()
+    expect(first.rolls).toHaveLength(50)
+    expect(first.rolls[0].label).toBe('Tirada 6')
+    expect(first.rolls.at(-1).label).toBe('Tirada 55')
+    const rest = (await call('listRolls', { campaignId, before: first.next }, ana.cookie)).json()
+    expect(rest.rolls.map((r: { label: string }) => r.label)).toEqual([
+      'Tirada 1',
+      'Tirada 2',
+      'Tirada 3',
+      'Tirada 4',
+      'Tirada 5'
+    ])
+    expect(rest.next).toBeNull()
+  })
+})

@@ -2,6 +2,7 @@
 export * from './ai.ts'
 export * from './auth.ts'
 export * from './campaigns.ts'
+export * from './dice.ts'
 export * from './documents.ts'
 export * from './files.ts'
 export * from './history.ts'

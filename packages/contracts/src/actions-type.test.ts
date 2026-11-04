@@ -95,7 +95,9 @@ describe('Actions', () => {
       getPageTables: true,
       createTemplate: true,
       updateTemplate: true,
-      deleteTemplate: true
+      deleteTemplate: true,
+      rollDice: true,
+      listRolls: true
     }
     expect(Object.keys(names).sort()).toEqual(ACTIONS.map((a) => a.name).sort())
   })

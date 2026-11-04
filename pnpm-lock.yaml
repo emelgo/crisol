@@ -418,6 +418,9 @@ importers:
       '@crisol/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@crisol/dice':
+        specifier: workspace:*
+        version: link:../../packages/dice
       '@crisol/domain':
         specifier: workspace:*
         version: link:../../packages/domain
