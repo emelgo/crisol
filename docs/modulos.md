@@ -24,6 +24,20 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
 - **Ritmo**: tirar tarda 11 ms de mediana y 22 ms en el p95 en el servidor (20.000 tiradas en el registro). Por la API
   son unos 31 ms, casi todo lo de cualquier petición (la sesión y las pertenencias): **apuntado** para mirarlo en toda
   la app.
+- **Las revisiones** (código y seguridad) están arregladas, cada cosa con su prueba:
+  - «Repetir» no hace pública una tirada privada;
+  - como mucho 500 dados por tirada, contando los que se repiten y los que explotan;
+  - el límite por minuto, sin carreras (un cerrojo por persona); `tryDice`, con el suyo;
+  - lo que se escribe en `` `dice: …` `` (comillas, «#», 50.000 espacios) no rompe nada;
+  - los paréntesis no se pierden al guardar la fórmula;
+  - las privadas no caen en la pantalla del máster ni se anuncian;
+  - la física de los dados va en un worker (con 20 dados tardaba hasta 670 ms en la página);
+  - la escena comparte formas y texturas, tiene un tope de 60 dados a la vista y lo suelta todo al cerrar la sesión.
+- **Apuntado** de las revisiones, para cuando crezca:
+  - cada aviso en vivo (también cada tirada) recorre a todas las personas conectadas y lee de la base las pertenencias
+    de cada una para ver si le llega (así quitar a alguien es inmediato): con muchas mesas a la vez, apuntar a cada
+    conexión en sus campañas y guardar las pertenencias hasta que cambien;
+  - lo de cada petición (la sesión y las pertenencias, unos 20 ms) se podría guardar un momento en memoria.
 - **Lo siguiente**: subir la tanda, pasar la CI una vez, fusionar y desplegar en staging; Enrique prueba los puntos de
   control de `tasks/probar.md` y los criterios de la spec. Después, la spec de `sistemas`.
 

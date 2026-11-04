@@ -18,8 +18,9 @@ import {
   WebGLRenderer
 } from 'three'
 import type { FallingDie } from '../falling.ts'
-import { type DieKind, faceNormal, type Solid, solidOf, type Vec } from './solids.ts'
-import { sizeOf, type Thrown, TRAY, throwDice } from './throw.ts'
+import { simulator } from './simulate.ts'
+import { type DieKind, faceNormal, type Solid, sizeOf, solidOf, TRAY, type Vec } from './solids.ts'
+import type { Thrown } from './throw.ts'
 
 export interface DiceScene {
   play(dice: readonly FallingDie[], color: string, onLanded: () => void): void
@@ -30,6 +31,8 @@ const FRAME_MS = 1000 / 60
 /** Cuánto se quedan quietos a la vista y cuánto tardan en irse */
 const STAY_MS = 2200
 const FADE_MS = 600
+/** Como mucho, tantos dados a la vez: si se tira más deprisa, los más viejos se van antes */
+const MAX_ON_SCREEN = 60
 
 const sub = (a: Vec, b: Vec): Vec => [a[0] - b[0], a[1] - b[1], a[2] - b[2]]
 const dot = (a: Vec, b: Vec) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
@@ -71,15 +74,28 @@ function faceTexture(color: string, marks: readonly { text: string; u: number; v
   return texture
 }
 
-/** El dado como malla: cada cara, con su textura; las coordenadas de textura, centradas en la cara */
-function dieMesh(kind: DieKind, labels: readonly string[], color: string) {
+interface Mark {
+  /** De qué cara es el número: la suya o, en el d4, la de enfrente de cada vértice */
+  face: number
+  u: number
+  v: number
+}
+
+/** La forma de un tipo de dado (igual para todos los de ese tipo) y dónde va el número en cada cara */
+interface Shape {
+  geometry: BufferGeometry
+  marks: Mark[][]
+}
+
+/** Cada cara, con su grupo de material; las coordenadas de textura, centradas en la cara */
+function shapeOf(kind: DieKind): Shape {
   const solid: Solid = solidOf(kind)
   const scale = sizeOf(kind)
   const positions: number[] = []
   const normals: number[] = []
   const uvs: number[] = []
   const geometry = new BufferGeometry()
-  const materials: MeshStandardMaterial[] = []
+  const marks: Mark[][] = []
   let start = 0
   solid.faces.forEach((face, f) => {
     const pts = face.map((i) => solid.verts[i] ?? ([0, 0, 0] as Vec))
@@ -106,36 +122,32 @@ function dieMesh(kind: DieKind, labels: readonly string[], color: string) {
     geometry.addGroup(start, count, f)
     start += count
     // En el d4 se lee el vértice de arriba: cada esquina lleva el número de la cara de enfrente
-    const marks =
+    marks.push(
       kind === 4
         ? face.map((vertex) => {
-            const opposite = solid.faces.findIndex((other) => !other.includes(vertex))
             const [cu, cv] = uv(solid.verts[vertex] ?? center)
-            return { text: labels[opposite] ?? '', u: 0.5 + (cu - 0.5) * 0.62, v: 0.5 + (cv - 0.5) * 0.62 }
+            return {
+              face: solid.faces.findIndex((other) => !other.includes(vertex)),
+              u: 0.5 + (cu - 0.5) * 0.62,
+              v: 0.5 + (cv - 0.5) * 0.62
+            }
           })
-        : [{ text: labels[f] ?? '', u: 0.5, v: 0.5 }]
-    materials.push(
-      new MeshStandardMaterial({
-        map: faceTexture(color, marks, kind === 4 || kind === 'T' || kind === 20),
-        roughness: 0.45,
-        metalness: 0.05,
-        transparent: true,
-        flatShading: true
-      })
+        : [{ face: f, u: 0.5, v: 0.5 }]
     )
   })
   geometry.setAttribute('position', new Float32BufferAttribute(positions, 3))
   geometry.setAttribute('normal', new Float32BufferAttribute(normals, 3))
   geometry.setAttribute('uv', new Float32BufferAttribute(uvs, 2))
-  return { mesh: new Mesh(geometry, materials), materials }
+  return { geometry, marks }
 }
 
-interface Playing {
-  mesh: Mesh
-  materials: MeshStandardMaterial[]
-  thrown: Thrown
-  die: FallingDie
+/** Una tirada a la vista: sus dados y las texturas que comparten (diez d6 del mismo color, seis texturas) */
+interface Throw {
+  dice: { mesh: Mesh; materials: MeshStandardMaterial[]; thrown: Thrown; die: FallingDie }[]
+  textures: CanvasTexture[]
   start: number
+  /** Todos sus dados tienen los mismos fotogramas */
+  frames: number
 }
 
 export function createScene(canvas: HTMLCanvasElement): DiceScene {
@@ -165,59 +177,123 @@ export function createScene(canvas: HTMLCanvasElement): DiceScene {
   resize()
   window.addEventListener('resize', resize)
 
-  let playing: Playing[] = []
+  const shapes = new Map<DieKind, Shape>()
+  const shape = (kind: DieKind) => {
+    let found = shapes.get(kind)
+    if (!found) {
+      found = shapeOf(kind)
+      shapes.set(kind, found)
+    }
+    return found
+  }
+  const physics = simulator()
+  let throws: Throw[] = []
   let raf = 0
+  let disposed = false
   const gold = new Color('#f2c260')
+
+  const free = (t: Throw) => {
+    for (const { mesh, materials } of t.dice) {
+      scene.remove(mesh)
+      for (const material of materials) material.dispose()
+    }
+    for (const texture of t.textures) texture.dispose()
+  }
+
   const draw = (now: number) => {
-    playing = playing.filter((p) => {
-      const frames = p.thrown.frames
-      const elapsed = now - p.start
-      const index = Math.min(frames.length - 1, Math.floor(elapsed / FRAME_MS))
-      const frame = frames[index]
-      if (frame) {
-        p.mesh.position.set(frame.position[0], frame.position[1], frame.position[2])
-        p.mesh.quaternion.set(frame.quaternion[0], frame.quaternion[1], frame.quaternion[2], frame.quaternion[3])
-      }
-      const landedFor = elapsed - frames.length * FRAME_MS
+    throws = throws.filter((t) => {
+      const elapsed = now - t.start
+      const index = Math.min(t.frames - 1, Math.floor(elapsed / FRAME_MS))
+      const landedFor = elapsed - t.frames * FRAME_MS
       const fade = landedFor > STAY_MS ? 1 - (landedFor - STAY_MS) / FADE_MS : 1
-      for (const material of p.materials) {
-        material.opacity = Math.max(0, fade) * (landedFor > 0 && !p.die.kept ? 0.45 : 1)
-        if (p.die.critical && landedFor > 0) {
-          material.emissive.copy(gold)
-          material.emissiveIntensity = 0.35 + 0.25 * Math.sin(now / 160)
+      for (const { mesh, materials, thrown, die } of t.dice) {
+        const frame = thrown.frames[index]
+        if (frame) {
+          mesh.position.set(frame.position[0], frame.position[1], frame.position[2])
+          mesh.quaternion.set(frame.quaternion[0], frame.quaternion[1], frame.quaternion[2], frame.quaternion[3])
+        }
+        for (const material of materials) {
+          material.opacity = Math.max(0, fade) * (landedFor > 0 && !die.kept ? 0.45 : 1)
+          if (die.critical && landedFor > 0) {
+            material.emissive.copy(gold)
+            material.emissiveIntensity = 0.35 + 0.25 * Math.sin(now / 160)
+          }
         }
       }
       if (fade > 0) return true
-      scene.remove(p.mesh)
-      p.mesh.geometry.dispose()
-      for (const material of p.materials) {
-        material.map?.dispose()
-        material.dispose()
-      }
+      free(t)
       return false
     })
     renderer.render(scene, camera)
-    raf = playing.length > 0 ? requestAnimationFrame(draw) : 0
+    raf = throws.length > 0 ? requestAnimationFrame(draw) : 0
+  }
+
+  const show = (thrown: Thrown[], dice: readonly FallingDie[], color: string) => {
+    // Las texturas de esta tirada, una por número distinto
+    const textures = new Map<string, CanvasTexture>()
+    const texture = (marks: { text: string; u: number; v: number }[], small: boolean) => {
+      const key = `${small}|${marks.map((m) => `${m.text}@${m.u.toFixed(3)},${m.v.toFixed(3)}`).join(';')}`
+      let found = textures.get(key)
+      if (!found) {
+        found = faceTexture(color, marks, small)
+        textures.set(key, found)
+      }
+      return found
+    }
+    const t: Throw = { dice: [], textures: [], start: performance.now(), frames: thrown[0]?.frames.length ?? 0 }
+    thrown.forEach((one, i) => {
+      const die = dice[i]
+      if (!die) return
+      const { geometry, marks } = shape(one.kind)
+      const small = one.kind === 4 || one.kind === 'T' || one.kind === 20
+      const materials = marks.map(
+        (face) =>
+          new MeshStandardMaterial({
+            map: texture(
+              face.map((m) => ({ text: one.labels[m.face] ?? '', u: m.u, v: m.v })),
+              small
+            ),
+            roughness: 0.45,
+            metalness: 0.05,
+            transparent: true,
+            flatShading: true
+          })
+      )
+      const mesh = new Mesh(geometry, materials)
+      scene.add(mesh)
+      t.dice.push({ mesh, materials, thrown: one, die })
+    })
+    t.textures = [...textures.values()]
+    // Si hay demasiados a la vista, se van los más viejos
+    let onScreen = throws.reduce((n, other) => n + other.dice.length, t.dice.length)
+    while (onScreen > MAX_ON_SCREEN && throws.length > 0) {
+      const oldest = throws.shift()
+      if (oldest) {
+        onScreen -= oldest.dice.length
+        free(oldest)
+      }
+    }
+    throws.push(t)
+    if (!raf) raf = requestAnimationFrame(draw)
+    return t.frames * FRAME_MS
   }
 
   return {
     play(dice, color, onLanded) {
-      const thrown = throwDice(dice)
-      const start = performance.now()
-      thrown.forEach((t, i) => {
-        const die = dice[i]
-        if (!die) return
-        const { mesh, materials } = dieMesh(t.kind, t.labels, color)
-        scene.add(mesh)
-        playing.push({ mesh, materials, thrown: t, die, start })
+      void physics.run(dice.map((d) => ({ kind: d.kind, label: d.label }))).then((thrown) => {
+        if (disposed) return
+        window.setTimeout(onLanded, show(thrown, dice, color))
       })
-      const longest = Math.max(...thrown.map((t) => t.frames.length))
-      window.setTimeout(onLanded, longest * FRAME_MS)
-      if (!raf) raf = requestAnimationFrame(draw)
     },
     dispose() {
+      disposed = true
       window.removeEventListener('resize', resize)
       cancelAnimationFrame(raf)
+      physics.stop()
+      for (const t of throws) free(t)
+      throws = []
+      for (const { geometry } of shapes.values()) geometry.dispose()
+      shapes.clear()
       renderer.dispose()
     }
   }

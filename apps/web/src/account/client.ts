@@ -7,6 +7,8 @@ import { inferAdditionalFields } from 'better-auth/client/plugins'
 import { createAuthClient } from 'better-auth/react'
 
 export interface Account {
+  /** Su id (para saber qué es suyo: sus tiradas) */
+  id?: string
   /** El nombre de usuario: el apodo que se ve en la app */
   name: string
   email: string
@@ -127,6 +129,7 @@ export function createAccountClient(): AccountClient {
       return {
         account: data
           ? {
+              id: data.user.id,
               name: data.user.name,
               email: data.user.email,
               firstName: typeof extra.firstName === 'string' ? extra.firstName : '',

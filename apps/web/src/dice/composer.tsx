@@ -2,7 +2,7 @@
  * Lo de abajo de la ficha de dados: los dados rápidos, la ventaja, la tirada (explicada mientras se escribe), quién la
  * ve y «Tirar». La tira el servidor; aquí solo se pide
  */
-import type { Campaign, DiceRoll, RollVisibility } from '@crisol/contracts'
+import { type Campaign, type DiceRoll, visibilitiesFor } from '@crisol/contracts'
 import { withAdvantage } from '@crisol/dice'
 import { useMutation } from '@tanstack/react-query'
 import { type FormEvent, useId, useState } from 'react'
@@ -13,12 +13,6 @@ import { useAnnounce } from '../components/announcer.tsx'
 import { useDice } from './context.tsx'
 import styles from './dice.module.css'
 import { addDie, explain } from './formula.ts'
-
-/** Lo que puede usar cada uno (ADR-0010) */
-const VISIBILITIES: Record<Campaign['role'], readonly RollVisibility[]> = {
-  master: ['all', 'hidden'],
-  player: ['all', 'self', 'master']
-}
 
 /** Los dados rápidos, con su silueta */
 const QUICK: readonly { sides: number; path: string }[] = [
@@ -40,7 +34,7 @@ export function Composer({ campaign, onRolled }: { campaign: Campaign; onRolled?
   const errorText = useErrorText()
   const id = useId()
   const [formula, setFormula] = useState('1d20')
-  const options = VISIBILITIES[campaign.role]
+  const options = visibilitiesFor(campaign.role)
   const dice = useDice()
   // Si la campaña cambia y lo elegido no vale en ella, todos
   const visibility = options.includes(dice.visibility) ? dice.visibility : 'all'

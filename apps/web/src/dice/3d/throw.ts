@@ -4,7 +4,7 @@
  * dado, sus números y su recorrido (un fotograma cada 1/60 s), que la bandeja reproduce
  */
 import { Body, ContactMaterial, ConvexPolyhedron, Material, Plane, Quaternion, Vec3, World } from 'cannon-es'
-import { type DieKind, labelsFor, type Quat, readFace, relabel, solidOf, type Vec } from './solids.ts'
+import { type DieKind, labelsFor, type Quat, readFace, relabel, sizeOf, solidOf, TRAY, type Vec } from './solids.ts'
 
 export interface Frame {
   position: Vec
@@ -19,19 +19,11 @@ export interface Thrown {
   settled: boolean
 }
 
-/** La bandeja: el suelo y cuatro paredes, en unidades de la física (un dado mide 1) */
-export const TRAY = { halfWidth: 7, halfDepth: 4.5 }
-
 const STEP = 1 / 60
 /** Lo que se enseña: como mucho, 2 s de tirada */
 export const MAX_FRAMES = 120
 /** Lo que se simula: hasta que se paren (casi siempre antes de 2 s; si no, se enseña más deprisa) */
 const MAX_STEPS = 360
-/** El tamaño de cada dado, para que se vean parecidos (la física y el dibujo usan el mismo) */
-const SIZE: Record<DieKind, number> = { 4: 1.1, 6: 0.85, 8: 0.95, 10: 0.95, T: 0.95, 12: 0.95, 20: 1, F: 0.85 }
-
-export const sizeOf = (kind: DieKind) => SIZE[kind]
-
 /** Un azar con semilla (mulberry32): la misma tirada con la misma semilla, para las pruebas */
 function seeded(seed: number) {
   let a = seed >>> 0
@@ -74,7 +66,7 @@ export function throwDice(
 
   const bodies = dice.map((die, i) => {
     const shape = solidOf(die.kind)
-    const size = SIZE[die.kind]
+    const size = sizeOf(die.kind)
     const body = new Body({
       mass: 1,
       material: plastic,

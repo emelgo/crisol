@@ -14,6 +14,14 @@ export interface Solid {
   faces: number[][]
 }
 
+/** La bandeja: el suelo y cuatro paredes, en unidades de la física (un dado mide 1) */
+export const TRAY = { halfWidth: 7, halfDepth: 4.5 }
+
+/** El tamaño de cada dado, para que se vean parecidos (la física y el dibujo usan el mismo) */
+const SIZE: Record<DieKind, number> = { 4: 1.1, 6: 0.85, 8: 0.95, 10: 0.95, T: 0.95, 12: 0.95, 20: 1, F: 0.85 }
+
+export const sizeOf = (kind: DieKind) => SIZE[kind]
+
 const PHI = (1 + Math.sqrt(5)) / 2
 const sub = (a: Vec, b: Vec): Vec => [a[0] - b[0], a[1] - b[1], a[2] - b[2]]
 const dot = (a: Vec, b: Vec) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2]

@@ -5,14 +5,14 @@
  */
 import type { Campaign, DiceRoll } from '@crisol/contracts'
 import { useQueryClient } from '@tanstack/react-query'
-import { createContext, type ReactNode, useCallback, useContext, useMemo, useRef, useState } from 'react'
+import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useRolled } from '../realtime/context.tsx'
 import type { DiceScene } from './3d/scene.ts'
 import { useWorldInPath } from './context.tsx'
 import { fallingDice } from './falling.ts'
-import { colorOf } from './rolls.ts'
+import { colorOf, isMine } from './rolls.ts'
 import styles from './tray.module.css'
 
 /** Cuánto se ve el total, desde que se paran los dados */
@@ -45,9 +45,10 @@ export function DiceTray({ children }: { children: ReactNode }) {
     (roll: DiceRoll) => {
       const dice = fallingDice(roll.dice)
       const target = canvas.current
-      if (dice.length === 0 || !target) return
+      // Con la pestaña escondida no se dibuja: la tirada sigue en el registro
+      if (dice.length === 0 || !target || document.hidden) return
       scene.current ??= import('./3d/scene.ts').then(({ createScene }) => createScene(target)).catch(() => null)
-      const mine = roll.by.name === account?.name
+      const mine = isMine(roll, account)
       const color = colorOf(roll.by.userId, mine ? (account?.diceColor ?? roll.by.color) : roll.by.color)
       const total: Shown = {
         id: roll.id,
@@ -63,15 +64,25 @@ export function DiceTray({ children }: { children: ReactNode }) {
         })
       )
     },
-    [account?.name, account?.diceColor, t]
+    [account, t]
   )
 
   // Las de los demás: en el mundo en el que se está y si no se ha apagado; las tuyas ya cayeron al tirarlas
   useRolled((roll) => {
-    if (roll.by.name === account?.name || account?.diceOthers === false || !worldId) return
+    // Solo las públicas: lo privado de un jugador no cae en la pantalla del máster (puede estar compartiéndola)
+    if (roll.visibility !== 'all' || isMine(roll, account) || account?.diceOthers === false || !worldId) return
     const here = queryClient.getQueryData<{ campaigns: Campaign[] }>(['campaigns', worldId])
     if (here?.campaigns.some((c) => c.id === roll.campaignId)) play(roll)
   })
+
+  // Al salir (cerrar la sesión), la escena se suelta entera
+  useEffect(
+    () => () => {
+      void scene.current?.then((s) => s?.dispose())
+      scene.current = null
+    },
+    []
+  )
 
   const value = useMemo(() => ({ play }), [play])
   return (

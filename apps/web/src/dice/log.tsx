@@ -2,7 +2,7 @@
  * El registro de tiradas de una campaña, en la ficha de dados: en el orden en que se tiraron, la última abajo. Llegan
  * en vivo (las de los demás se anuncian); las anteriores, al pedirlas, de 50 en 50
  */
-import type { Campaign, DiceRoll, RollVisibility } from '@crisol/contracts'
+import { type Campaign, type DiceRoll, visibilitiesFor } from '@crisol/contracts'
 import { describeFormula } from '@crisol/dice'
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Crown, EyeOff, List, Repeat } from 'lucide-react'
@@ -10,25 +10,32 @@ import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
+import { useErrorText } from '../api/errors.ts'
 import { useAnnounce } from '../components/announcer.tsx'
 import { useRolled } from '../realtime/context.tsx'
 import styles from './log.module.css'
-import { appendRoll, colorOf, type RollsPage, rollsKey } from './rolls.ts'
+import { appendRoll, colorOf, isMine, type RollsPage, rollsKey } from './rolls.ts'
 import { useTray } from './tray.tsx'
 
-/** Lo que puede usar cada uno: Repetir vuelve a tirar con la misma visibilidad, si se puede; si no, para todos */
-const ALLOWED: Record<Campaign['role'], readonly RollVisibility[]> = {
-  master: ['all', 'hidden'],
-  player: ['all', 'self', 'master']
-}
-
 const clock = new Intl.DateTimeFormat('es', { hour: '2-digit', minute: '2-digit' })
+
+/**
+ * Con qué se repite una tirada: la suya, con la misma visibilidad si aún vale; una pública, para todos; una privada
+ * de otro, nunca para todos: con la más privada que tenga quien repite (oculta el máster, «para mí» un jugador)
+ */
+export function againVisibility(roll: DiceRoll, mine: boolean, role: Campaign['role']) {
+  const allowed = visibilitiesFor(role)
+  if (mine && allowed.includes(roll.visibility)) return roll.visibility
+  if (roll.visibility === 'all') return 'all'
+  return role === 'master' ? 'hidden' : 'self'
+}
 
 export function RollLog({ campaign }: { campaign: Campaign }) {
   const { t } = useTranslation()
   const api = useApi()
   const queryClient = useQueryClient()
   const announce = useAnnounce()
+  const errorText = useErrorText()
   const { account } = useAccounts().useAccount()
   const list = useRef<HTMLOListElement>(null)
   const tray = useTray()
@@ -47,7 +54,8 @@ export function RollLog({ campaign }: { campaign: Campaign }) {
     if (last && list.current) list.current.scrollTop = list.current.scrollHeight
   }, [last])
   useRolled((roll) => {
-    if (roll.campaignId !== campaign.id || roll.by.name === account?.name) return
+    // Lo «para mí» de un jugador le llega al máster sin aviso
+    if (roll.campaignId !== campaign.id || isMine(roll, account) || roll.visibility === 'self') return
     announce(t('dice.heard', { who: roll.by.name, label: roll.label ?? roll.formula, total: roll.total }))
   })
   const again = useMutation({
@@ -55,14 +63,14 @@ export function RollLog({ campaign }: { campaign: Campaign }) {
       api.call('rollDice', {
         campaignId: campaign.id,
         formula: roll.label ? `${roll.formula} # ${roll.label}` : roll.formula,
-        visibility:
-          roll.by.name === account?.name && ALLOWED[campaign.role].includes(roll.visibility) ? roll.visibility : 'all'
+        visibility: againVisibility(roll, isMine(roll, account), campaign.role)
       }),
     onSuccess: ({ roll }) => {
       appendRoll(queryClient, roll)
       tray.play(roll)
       announce(t('dice.rolled', { label: roll.label ?? roll.formula, total: roll.total }))
-    }
+    },
+    onError: (error) => announce(errorText(error))
   })
   return (
     <div className={styles.wrap}>
@@ -78,7 +86,7 @@ export function RollLog({ campaign }: { campaign: Campaign }) {
       )}
       <ol ref={list} className={styles.log} aria-label={t('dice.log')}>
         {all.map((roll) => (
-          <Entry key={roll.id} roll={roll} mine={roll.by.name === account?.name} onAgain={() => again.mutate(roll)} />
+          <Entry key={roll.id} roll={roll} mine={isMine(roll, account)} onAgain={() => again.mutate(roll)} />
         ))}
       </ol>
     </div>

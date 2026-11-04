@@ -6,9 +6,19 @@ export type RollsPage = { rolls: DiceRoll[]; next: string | null }
 
 export const rollsKey = (campaignId: string) => ['rolls', campaignId] as const
 
+/** Si la tirada es de esta cuenta */
+export const isMine = (roll: DiceRoll, account: { id?: string; name: string } | null | undefined) =>
+  Boolean(account) && (account?.id ? roll.by.userId === account.id : roll.by.name === account?.name)
+
 /** Una tirada nueva, abajo del todo de la página más reciente; si ya está (llegó por los dos caminos), nada */
 export function appendRoll(queryClient: QueryClient, roll: DiceRoll) {
-  queryClient.setQueryData<InfiniteData<RollsPage>>(rollsKey(roll.campaignId), (data) => {
+  const key = rollsKey(roll.campaignId)
+  // Si se está pidiendo el registro, la respuesta la pisaría: que se vuelva a pedir, ya con ella (está guardada)
+  if (queryClient.isFetching({ queryKey: key }) > 0) {
+    void queryClient.invalidateQueries({ queryKey: key })
+    return
+  }
+  queryClient.setQueryData<InfiniteData<RollsPage>>(key, (data) => {
     if (!data || data.pages.some((page) => page.rolls.some((r) => r.id === roll.id))) return data
     const [latest, ...older] = data.pages
     if (!latest) return data

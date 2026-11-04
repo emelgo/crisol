@@ -34,6 +34,11 @@ historial, que deshace (ADR-0001). Una tirada no es un cambio que se pueda desha
 - **La IA tira con la cuenta del máster** (`ai` marcado). Su acción es de escritura (`write`), como en los modos de IA;
   por defecto tira en oculto, y en público solo si se le pide.
 - **Un límite**: 60 tiradas por minuto y persona, contadas en la propia tabla, para que valga con varias instancias.
+  Contar y guardar van en una transacción con un cerrojo por persona (`pg_advisory_xact_lock`): dos peticiones a la
+  vez no se cuelan las dos. `tryDice`, que no guarda nada, tiene el suyo en memoria.
+- **Tirar no espera al disco** (`synchronous_commit = off`, solo en esa transacción): si la base se cae, se pueden
+  perder las tiradas de sus últimos 600 ms o así, pero nunca queda la base a medias. Para una tirada vale; para
+  cualquier otra escritura, no.
 
 ## Consecuencias
 

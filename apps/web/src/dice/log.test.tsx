@@ -9,6 +9,7 @@ import { App } from '../app.tsx'
 import { fakeRealtime } from '../realtime/fake.ts'
 import { createAppRouter } from '../router.tsx'
 import { announced } from '../testing.ts'
+import { againVisibility } from './log.tsx'
 
 const ORG = { id: crypto.randomUUID(), name: 'Fateforge', role: 'owner' as const }
 const WORLD: World = {
@@ -147,5 +148,16 @@ describe('el registro de la campaña', () => {
     await waitFor(() => expect(log.getAllByRole('listitem')).toHaveLength(55))
     expect(entries(log)[0]).toContain('Tirada 1')
     expect(dice.queryByRole('button', { name: 'Ver las anteriores' })).toBeNull()
+  })
+})
+
+describe('repetir una tirada', () => {
+  const of = (visibility: DiceRoll['visibility']) => rollOf('Ana', 'Sigilo', 11, { visibility })
+  it('la suya, igual; una pública, para todos; una privada de otro, nunca para todos', () => {
+    expect(againVisibility(of('master'), true, 'player')).toBe('master')
+    expect(againVisibility(of('all'), false, 'master')).toBe('all')
+    expect(againVisibility(of('master'), false, 'master')).toBe('hidden')
+    expect(againVisibility(of('self'), false, 'player')).toBe('self')
+    expect(againVisibility(of('hidden'), true, 'player')).toBe('self')
   })
 })

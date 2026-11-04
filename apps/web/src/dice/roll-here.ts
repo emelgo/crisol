@@ -2,21 +2,16 @@
  * Tirar desde donde se está (una tirada escrita en una página): en la campaña elegida en la ficha de dados y con su
  * visibilidad (si vale en ella). Si el mundo no tiene campañas, sin apuntar, y se dice
  */
-import type { DiceRoll, RollVisibility } from '@crisol/contracts'
+import { type DiceRoll, visibilitiesFor } from '@crisol/contracts'
 import { useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
+import { useErrorText } from '../api/errors.ts'
 import { useAnnounce } from '../components/announcer.tsx'
 import { useDice, useWorldInPath } from './context.tsx'
-import { useDiceCampaign } from './panel.tsx'
 import { appendRoll } from './rolls.ts'
 import { useTray } from './tray.tsx'
-
-const ALLOWED: Record<'master' | 'player', readonly RollVisibility[]> = {
-  master: ['all', 'hidden'],
-  player: ['all', 'self', 'master']
-}
 
 export function useRollHere() {
   const { t } = useTranslation()
@@ -27,14 +22,23 @@ export function useRollHere() {
   const dice = useDice()
   const { account } = useAccounts().useAccount()
   const worldId = useWorldInPath()
-  const { chosen } = useDiceCampaign(worldId)
-  return async (formula: string) => {
+  const errorText = useErrorText()
+  const roll = async (formula: string) => {
+    // La campaña elegida en la ficha (o la primera); si aún se están pidiendo, se espera a ellas
+    const data = worldId
+      ? await queryClient.ensureQueryData({
+          queryKey: ['campaigns', worldId],
+          queryFn: () => api.call('listCampaigns', { worldId })
+        })
+      : null
+    const campaigns = data?.campaigns ?? []
+    const chosen = campaigns.find((c) => c.id === (worldId && dice.campaignFor(worldId))) ?? campaigns[0]
     if (chosen) {
-      const visibility = ALLOWED[chosen.role].includes(dice.visibility) ? dice.visibility : 'all'
-      const { roll } = await api.call('rollDice', { campaignId: chosen.id, formula, visibility })
-      appendRoll(queryClient, roll)
-      tray.play(roll)
-      announce(t('dice.rolled', { label: roll.label ?? roll.formula, total: roll.total }))
+      const visibility = visibilitiesFor(chosen.role).includes(dice.visibility) ? dice.visibility : 'all'
+      const { roll: done } = await api.call('rollDice', { campaignId: chosen.id, formula, visibility })
+      appendRoll(queryClient, done)
+      tray.play(done)
+      announce(t('dice.rolled', { label: done.label ?? done.formula, total: done.total }))
       return
     }
     const tried = await api.call('tryDice', { formula })
@@ -42,7 +46,7 @@ export function useRollHere() {
       ...tried,
       id: crypto.randomUUID(),
       campaignId: '',
-      by: { userId: '', name: account?.name ?? '', color: account?.diceColor ?? null },
+      by: { userId: account?.id ?? '', name: account?.name ?? '', color: account?.diceColor ?? null },
       ai: false,
       visibility: 'all',
       createdAt: new Date().toISOString()
@@ -50,4 +54,6 @@ export function useRollHere() {
     tray.play(alone)
     announce(t('dice.rolledAlone', { label: tried.label ?? tried.formula, total: tried.total }))
   }
+  // Lo que falle (el límite por minuto, la red) se dice, como en la ficha
+  return (formula: string) => roll(formula).catch((error: unknown) => announce(errorText(error)))
 }

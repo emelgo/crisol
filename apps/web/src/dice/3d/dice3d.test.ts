@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
+import { simulator } from './simulate.ts'
 import { type DieKind, faceNormal, labelsFor, readFace, relabel, rotate, SOLIDS, solidOf } from './solids.ts'
 import { MAX_FRAMES, throwDice } from './throw.ts'
 
@@ -82,5 +83,57 @@ describe('que caiga lo que dijo el servidor', () => {
       expect(Math.abs(end?.[2] ?? 99)).toBeLessThan(5)
       expect(end?.[1] ?? -1).toBeGreaterThan(0)
     }
+  })
+})
+
+describe('la simulación, fuera de la página', () => {
+  const dice = [
+    { kind: 20 as const, label: '17' },
+    { kind: 6 as const, label: '3' }
+  ]
+
+  it('sin workers, se simula aquí mismo', async () => {
+    vi.stubGlobal('Worker', undefined)
+    const physics = simulator()
+    const thrown = await physics.run(dice)
+    expect(thrown.map((t) => t.kind)).toEqual([20, 6])
+    expect(thrown[0]?.frames.length).toBeGreaterThan(0)
+    physics.stop()
+    vi.unstubAllGlobals()
+  })
+
+  it('en un worker; si falla, lo que esperaba se simula aquí', async () => {
+    const workers: FakeWorker[] = []
+    class FakeWorker extends EventTarget {
+      sent: unknown[] = []
+      terminated = false
+      constructor() {
+        super()
+        workers.push(this)
+      }
+      postMessage(message: unknown) {
+        this.sent.push(message)
+      }
+      terminate() {
+        this.terminated = true
+      }
+    }
+    vi.stubGlobal('Worker', FakeWorker)
+    const physics = simulator()
+    const first = physics.run(dice)
+    const worker = workers[0]
+    expect(worker?.sent).toEqual([{ id: 0, dice }])
+    // El worker contesta con su recorrido
+    const answer = throwDice(dice, { seed: 1 })
+    worker?.dispatchEvent(new MessageEvent('message', { data: { id: 0, thrown: answer } }))
+    expect(await first).toEqual(answer)
+    // Se rompe con una tirada a medias: se simula aquí, y las siguientes también
+    const second = physics.run(dice)
+    worker?.dispatchEvent(new Event('error'))
+    expect(worker?.terminated).toBe(true)
+    expect((await second).map((t) => t.kind)).toEqual([20, 6])
+    expect((await physics.run(dice)).length).toBe(2)
+    expect(worker?.sent).toHaveLength(2)
+    vi.unstubAllGlobals()
   })
 })
