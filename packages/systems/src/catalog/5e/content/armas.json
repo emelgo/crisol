@@ -1,0 +1,2266 @@
+[
+  {
+    "type": "arma",
+    "key": "garrote_2014",
+    "source": "srd51",
+    "concept": "garrote",
+    "data": {
+      "name": {
+        "es": "Garrote",
+        "en": "Club"
+      },
+      "categoria": "sencilla",
+      "base": "garrote",
+      "distancia": false,
+      "propiedades": ["ligera"],
+      "dano": "1d4",
+      "tipo_dano": "contundente",
+      "peso": 2,
+      "coste": 0.1
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 66,
+        "es": 67
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "daga_2014",
+    "source": "srd51",
+    "concept": "daga",
+    "data": {
+      "name": {
+        "es": "Daga",
+        "en": "Dagger"
+      },
+      "categoria": "sencilla",
+      "base": "daga",
+      "distancia": false,
+      "propiedades": ["sutil", "ligera", "arrojadiza"],
+      "dano": "1d4",
+      "tipo_dano": "perforante",
+      "alcance_distancia": "20/60",
+      "peso": 1,
+      "coste": 2
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 66,
+        "es": 67
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "garrote_grande_2014",
+    "source": "srd51",
+    "concept": "garrote_grande",
+    "data": {
+      "name": {
+        "es": "Garrote grande",
+        "en": "Greatclub"
+      },
+      "categoria": "sencilla",
+      "base": "garrote_grande",
+      "distancia": false,
+      "propiedades": ["a_dos_manos"],
+      "dano": "1d8",
+      "tipo_dano": "contundente",
+      "peso": 10,
+      "coste": 0.2
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 66,
+        "es": 67
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "hacha_de_mano_2014",
+    "source": "srd51",
+    "concept": "hacha_de_mano",
+    "data": {
+      "name": {
+        "es": "Hacha de mano",
+        "en": "Handaxe"
+      },
+      "categoria": "sencilla",
+      "base": "hacha_de_mano",
+      "distancia": false,
+      "propiedades": ["ligera", "arrojadiza"],
+      "dano": "1d6",
+      "tipo_dano": "cortante",
+      "alcance_distancia": "20/60",
+      "peso": 2,
+      "coste": 5
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 66,
+        "es": 67
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "jabalina_2014",
+    "source": "srd51",
+    "concept": "jabalina",
+    "data": {
+      "name": {
+        "es": "Jabalina",
+        "en": "Javelin"
+      },
+      "categoria": "sencilla",
+      "base": "jabalina",
+      "distancia": false,
+      "propiedades": ["arrojadiza"],
+      "dano": "1d6",
+      "tipo_dano": "perforante",
+      "alcance_distancia": "30/120",
+      "peso": 2,
+      "coste": 0.5
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 66,
+        "es": 67
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "martillo_ligero_2014",
+    "source": "srd51",
+    "concept": "martillo_ligero",
+    "data": {
+      "name": {
+        "es": "Martillo ligero",
+        "en": "Light hammer"
+      },
+      "categoria": "sencilla",
+      "base": "martillo_ligero",
+      "distancia": false,
+      "propiedades": ["ligera", "arrojadiza"],
+      "dano": "1d4",
+      "tipo_dano": "contundente",
+      "alcance_distancia": "20/60",
+      "peso": 2,
+      "coste": 2
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 66,
+        "es": 67
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "maza_2014",
+    "source": "srd51",
+    "concept": "maza",
+    "data": {
+      "name": {
+        "es": "Maza",
+        "en": "Mace"
+      },
+      "categoria": "sencilla",
+      "base": "maza",
+      "distancia": false,
+      "propiedades": [],
+      "dano": "1d6",
+      "tipo_dano": "contundente",
+      "peso": 4,
+      "coste": 5
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 66,
+        "es": 67
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "baston_2014",
+    "source": "srd51",
+    "concept": "baston",
+    "data": {
+      "name": {
+        "es": "Bastón",
+        "en": "Quarterstaff"
+      },
+      "categoria": "sencilla",
+      "base": "baston",
+      "distancia": false,
+      "propiedades": ["versatil"],
+      "dano": "1d6",
+      "dano_versatil": "1d8",
+      "tipo_dano": "contundente",
+      "peso": 4,
+      "coste": 0.2
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 66,
+        "es": 67
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "hoz_2014",
+    "source": "srd51",
+    "concept": "hoz",
+    "data": {
+      "name": {
+        "es": "Hoz",
+        "en": "Sickle"
+      },
+      "categoria": "sencilla",
+      "base": "hoz",
+      "distancia": false,
+      "propiedades": ["ligera"],
+      "dano": "1d4",
+      "tipo_dano": "cortante",
+      "peso": 2,
+      "coste": 1
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 66,
+        "es": 67
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "lanza_2014",
+    "source": "srd51",
+    "concept": "lanza",
+    "data": {
+      "name": {
+        "es": "Lanza",
+        "en": "Spear"
+      },
+      "categoria": "sencilla",
+      "base": "lanza",
+      "distancia": false,
+      "propiedades": ["arrojadiza", "versatil"],
+      "dano": "1d6",
+      "dano_versatil": "1d8",
+      "tipo_dano": "perforante",
+      "alcance_distancia": "20/60",
+      "peso": 3,
+      "coste": 1
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 66,
+        "es": 67
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "ballesta_ligera_2014",
+    "source": "srd51",
+    "concept": "ballesta_ligera",
+    "data": {
+      "name": {
+        "es": "Ballesta ligera",
+        "en": "Crossbow, light"
+      },
+      "categoria": "sencilla",
+      "base": "ballesta_ligera",
+      "distancia": true,
+      "propiedades": ["municion", "recarga", "a_dos_manos"],
+      "dano": "1d8",
+      "tipo_dano": "perforante",
+      "alcance_distancia": "80/320",
+      "peso": 5,
+      "coste": 25
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 66,
+        "es": 67
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "dardo_2014",
+    "source": "srd51",
+    "concept": "dardo",
+    "data": {
+      "name": {
+        "es": "Dardo",
+        "en": "Dart"
+      },
+      "categoria": "sencilla",
+      "base": "dardo",
+      "distancia": true,
+      "propiedades": ["sutil", "arrojadiza"],
+      "dano": "1d4",
+      "tipo_dano": "perforante",
+      "alcance_distancia": "20/60",
+      "peso": 0.25,
+      "coste": 0.05
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 66,
+        "es": 67
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "arco_corto_2014",
+    "source": "srd51",
+    "concept": "arco_corto",
+    "data": {
+      "name": {
+        "es": "Arco corto",
+        "en": "Shortbow"
+      },
+      "categoria": "sencilla",
+      "base": "arco_corto",
+      "distancia": true,
+      "propiedades": ["municion", "a_dos_manos"],
+      "dano": "1d6",
+      "tipo_dano": "perforante",
+      "alcance_distancia": "80/320",
+      "peso": 2,
+      "coste": 25
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 66,
+        "es": 67
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "honda_2014",
+    "source": "srd51",
+    "concept": "honda",
+    "data": {
+      "name": {
+        "es": "Honda",
+        "en": "Sling"
+      },
+      "categoria": "sencilla",
+      "base": "honda",
+      "distancia": true,
+      "propiedades": ["municion"],
+      "dano": "1d4",
+      "tipo_dano": "contundente",
+      "alcance_distancia": "30/120",
+      "peso": 0,
+      "coste": 0.1
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 66,
+        "es": 67
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "hacha_de_guerra_2014",
+    "source": "srd51",
+    "concept": "hacha_de_guerra",
+    "data": {
+      "name": {
+        "es": "Hacha de guerra",
+        "en": "Battleaxe"
+      },
+      "categoria": "marcial",
+      "base": "hacha_de_guerra",
+      "distancia": false,
+      "propiedades": ["versatil"],
+      "dano": "1d8",
+      "dano_versatil": "1d10",
+      "tipo_dano": "cortante",
+      "peso": 4,
+      "coste": 10
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 66,
+        "es": 67
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "mangual_2014",
+    "source": "srd51",
+    "concept": "mangual",
+    "data": {
+      "name": {
+        "es": "Mangual",
+        "en": "Flail"
+      },
+      "categoria": "marcial",
+      "base": "mangual",
+      "distancia": false,
+      "propiedades": [],
+      "dano": "1d8",
+      "tipo_dano": "contundente",
+      "peso": 2,
+      "coste": 10
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 66,
+        "es": 67
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "guja_2014",
+    "source": "srd51",
+    "concept": "guja",
+    "data": {
+      "name": {
+        "es": "Guja",
+        "en": "Glaive"
+      },
+      "categoria": "marcial",
+      "base": "guja",
+      "distancia": false,
+      "propiedades": ["pesada", "alcance", "a_dos_manos"],
+      "dano": "1d10",
+      "tipo_dano": "cortante",
+      "peso": 6,
+      "coste": 20
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 66,
+        "es": 67
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "hacha_a_dos_manos_2014",
+    "source": "srd51",
+    "concept": "hacha_a_dos_manos",
+    "data": {
+      "name": {
+        "es": "Hacha a dos manos",
+        "en": "Greataxe"
+      },
+      "categoria": "marcial",
+      "base": "hacha_a_dos_manos",
+      "distancia": false,
+      "propiedades": ["pesada", "a_dos_manos"],
+      "dano": "1d12",
+      "tipo_dano": "cortante",
+      "peso": 7,
+      "coste": 30
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 66,
+        "es": 67
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "espadon_2014",
+    "source": "srd51",
+    "concept": "espadon",
+    "data": {
+      "name": {
+        "es": "Espadón",
+        "en": "Greatsword"
+      },
+      "categoria": "marcial",
+      "base": "espadon",
+      "distancia": false,
+      "propiedades": ["pesada", "a_dos_manos"],
+      "dano": "2d6",
+      "tipo_dano": "cortante",
+      "peso": 6,
+      "coste": 50
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 66,
+        "es": 67
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "alabarda_2014",
+    "source": "srd51",
+    "concept": "alabarda",
+    "data": {
+      "name": {
+        "es": "Alabarda",
+        "en": "Halberd"
+      },
+      "categoria": "marcial",
+      "base": "alabarda",
+      "distancia": false,
+      "propiedades": ["pesada", "alcance", "a_dos_manos"],
+      "dano": "1d10",
+      "tipo_dano": "cortante",
+      "peso": 6,
+      "coste": 20
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 66,
+        "es": 67
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "lanza_de_caballeria_2014",
+    "source": "srd51",
+    "concept": "lanza_de_caballeria",
+    "data": {
+      "name": {
+        "es": "Lanza de caballería",
+        "en": "Lance"
+      },
+      "categoria": "marcial",
+      "base": "lanza_de_caballeria",
+      "distancia": false,
+      "propiedades": ["alcance", "especial"],
+      "dano": "1d12",
+      "tipo_dano": "perforante",
+      "peso": 6,
+      "coste": 10
+    },
+    "mechanics": {
+      "automation": "partial",
+      "manual": {
+        "es": "Su propiedad especial se lleva a mano",
+        "en": "Its special property is tracked by hand"
+      }
+    },
+    "ref": {
+      "pages": {
+        "en": 66,
+        "es": 67
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "espada_larga_2014",
+    "source": "srd51",
+    "concept": "espada_larga",
+    "data": {
+      "name": {
+        "es": "Espada larga",
+        "en": "Longsword"
+      },
+      "categoria": "marcial",
+      "base": "espada_larga",
+      "distancia": false,
+      "propiedades": ["versatil"],
+      "dano": "1d8",
+      "dano_versatil": "1d10",
+      "tipo_dano": "cortante",
+      "peso": 3,
+      "coste": 15
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 66,
+        "es": 67
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "maza_a_dos_manos_2014",
+    "source": "srd51",
+    "concept": "maza_a_dos_manos",
+    "data": {
+      "name": {
+        "es": "Maza a dos manos",
+        "en": "Maul"
+      },
+      "categoria": "marcial",
+      "base": "maza_a_dos_manos",
+      "distancia": false,
+      "propiedades": ["pesada", "a_dos_manos"],
+      "dano": "2d6",
+      "tipo_dano": "contundente",
+      "peso": 10,
+      "coste": 10
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 66,
+        "es": 67
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "lucero_del_alba_2014",
+    "source": "srd51",
+    "concept": "lucero_del_alba",
+    "data": {
+      "name": {
+        "es": "Lucero del alba",
+        "en": "Morningstar"
+      },
+      "categoria": "marcial",
+      "base": "lucero_del_alba",
+      "distancia": false,
+      "propiedades": [],
+      "dano": "1d8",
+      "tipo_dano": "perforante",
+      "peso": 4,
+      "coste": 15
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 66,
+        "es": 67
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "pica_2014",
+    "source": "srd51",
+    "concept": "pica",
+    "data": {
+      "name": {
+        "es": "Pica",
+        "en": "Pike"
+      },
+      "categoria": "marcial",
+      "base": "pica",
+      "distancia": false,
+      "propiedades": ["pesada", "alcance", "a_dos_manos"],
+      "dano": "1d10",
+      "tipo_dano": "perforante",
+      "peso": 18,
+      "coste": 5
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 66,
+        "es": 67
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "estoque_2014",
+    "source": "srd51",
+    "concept": "estoque",
+    "data": {
+      "name": {
+        "es": "Estoque",
+        "en": "Rapier"
+      },
+      "categoria": "marcial",
+      "base": "estoque",
+      "distancia": false,
+      "propiedades": ["sutil"],
+      "dano": "1d8",
+      "tipo_dano": "perforante",
+      "peso": 2,
+      "coste": 25
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 66,
+        "es": 67
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "cimitarra_2014",
+    "source": "srd51",
+    "concept": "cimitarra",
+    "data": {
+      "name": {
+        "es": "Cimitarra",
+        "en": "Scimitar"
+      },
+      "categoria": "marcial",
+      "base": "cimitarra",
+      "distancia": false,
+      "propiedades": ["sutil", "ligera"],
+      "dano": "1d6",
+      "tipo_dano": "cortante",
+      "peso": 3,
+      "coste": 25
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 66,
+        "es": 67
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "espada_corta_2014",
+    "source": "srd51",
+    "concept": "espada_corta",
+    "data": {
+      "name": {
+        "es": "Espada corta",
+        "en": "Shortsword"
+      },
+      "categoria": "marcial",
+      "base": "espada_corta",
+      "distancia": false,
+      "propiedades": ["sutil", "ligera"],
+      "dano": "1d6",
+      "tipo_dano": "perforante",
+      "peso": 2,
+      "coste": 10
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 66,
+        "es": 67
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "tridente_2014",
+    "source": "srd51",
+    "concept": "tridente",
+    "data": {
+      "name": {
+        "es": "Tridente",
+        "en": "Trident"
+      },
+      "categoria": "marcial",
+      "base": "tridente",
+      "distancia": false,
+      "propiedades": ["arrojadiza", "versatil"],
+      "dano": "1d6",
+      "dano_versatil": "1d8",
+      "tipo_dano": "perforante",
+      "alcance_distancia": "20/60",
+      "peso": 4,
+      "coste": 5
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 66,
+        "es": 67
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "pico_de_guerra_2014",
+    "source": "srd51",
+    "concept": "pico_de_guerra",
+    "data": {
+      "name": {
+        "es": "Pico de guerra",
+        "en": "War pick"
+      },
+      "categoria": "marcial",
+      "base": "pico_de_guerra",
+      "distancia": false,
+      "propiedades": [],
+      "dano": "1d8",
+      "tipo_dano": "perforante",
+      "peso": 2,
+      "coste": 5
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 66,
+        "es": 67
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "martillo_de_guerra_2014",
+    "source": "srd51",
+    "concept": "martillo_de_guerra",
+    "data": {
+      "name": {
+        "es": "Martillo de guerra",
+        "en": "Warhammer"
+      },
+      "categoria": "marcial",
+      "base": "martillo_de_guerra",
+      "distancia": false,
+      "propiedades": ["versatil"],
+      "dano": "1d8",
+      "dano_versatil": "1d10",
+      "tipo_dano": "contundente",
+      "peso": 2,
+      "coste": 15
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 66,
+        "es": 67
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "latigo_2014",
+    "source": "srd51",
+    "concept": "latigo",
+    "data": {
+      "name": {
+        "es": "Látigo",
+        "en": "Whip"
+      },
+      "categoria": "marcial",
+      "base": "latigo",
+      "distancia": false,
+      "propiedades": ["sutil", "alcance"],
+      "dano": "1d4",
+      "tipo_dano": "cortante",
+      "peso": 3,
+      "coste": 2
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 66,
+        "es": 67
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "cerbatana_2014",
+    "source": "srd51",
+    "concept": "cerbatana",
+    "data": {
+      "name": {
+        "es": "Cerbatana",
+        "en": "Blowgun"
+      },
+      "categoria": "marcial",
+      "base": "cerbatana",
+      "distancia": true,
+      "propiedades": ["municion", "recarga"],
+      "dano": "1",
+      "tipo_dano": "perforante",
+      "alcance_distancia": "25/100",
+      "peso": 1,
+      "coste": 10
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 66,
+        "es": 68
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "ballesta_de_mano_2014",
+    "source": "srd51",
+    "concept": "ballesta_de_mano",
+    "data": {
+      "name": {
+        "es": "Ballesta de mano",
+        "en": "Crossbow, hand"
+      },
+      "categoria": "marcial",
+      "base": "ballesta_de_mano",
+      "distancia": true,
+      "propiedades": ["municion", "ligera", "recarga"],
+      "dano": "1d6",
+      "tipo_dano": "perforante",
+      "alcance_distancia": "30/120",
+      "peso": 3,
+      "coste": 75
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 66,
+        "es": 68
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "ballesta_pesada_2014",
+    "source": "srd51",
+    "concept": "ballesta_pesada",
+    "data": {
+      "name": {
+        "es": "Ballesta pesada",
+        "en": "Crossbow, heavy"
+      },
+      "categoria": "marcial",
+      "base": "ballesta_pesada",
+      "distancia": true,
+      "propiedades": ["municion", "pesada", "recarga", "a_dos_manos"],
+      "dano": "1d10",
+      "tipo_dano": "perforante",
+      "alcance_distancia": "100/400",
+      "peso": 18,
+      "coste": 50
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 66,
+        "es": 68
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "arco_largo_2014",
+    "source": "srd51",
+    "concept": "arco_largo",
+    "data": {
+      "name": {
+        "es": "Arco largo",
+        "en": "Longbow"
+      },
+      "categoria": "marcial",
+      "base": "arco_largo",
+      "distancia": true,
+      "propiedades": ["municion", "pesada", "a_dos_manos"],
+      "dano": "1d8",
+      "tipo_dano": "perforante",
+      "alcance_distancia": "150/600",
+      "peso": 2,
+      "coste": 50
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 66,
+        "es": 68
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "red_2014",
+    "source": "srd51",
+    "concept": "red",
+    "data": {
+      "name": {
+        "es": "Red",
+        "en": "Net"
+      },
+      "categoria": "marcial",
+      "base": "red",
+      "distancia": true,
+      "propiedades": ["especial", "arrojadiza"],
+      "dano": "0",
+      "alcance_distancia": "5/15",
+      "peso": 3,
+      "coste": 1
+    },
+    "mechanics": {
+      "automation": "partial",
+      "manual": {
+        "es": "Su propiedad especial se lleva a mano",
+        "en": "Its special property is tracked by hand"
+      }
+    },
+    "ref": {
+      "pages": {
+        "en": 66,
+        "es": 68
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "garrote_2024",
+    "source": "srd521",
+    "concept": "garrote",
+    "data": {
+      "name": {
+        "es": "Garrote",
+        "en": "Club"
+      },
+      "categoria": "sencilla",
+      "base": "garrote",
+      "distancia": false,
+      "propiedades": ["ligera"],
+      "dano": "1d4",
+      "tipo_dano": "contundente",
+      "maestria": "ralentizar",
+      "peso": 2,
+      "coste": 0.1
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 91,
+        "es": 99
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "daga_2024",
+    "source": "srd521",
+    "concept": "daga",
+    "data": {
+      "name": {
+        "es": "Daga",
+        "en": "Dagger"
+      },
+      "categoria": "sencilla",
+      "base": "daga",
+      "distancia": false,
+      "propiedades": ["sutil", "ligera", "arrojadiza"],
+      "dano": "1d4",
+      "tipo_dano": "perforante",
+      "alcance_distancia": "20/60",
+      "maestria": "mellar",
+      "peso": 1,
+      "coste": 2
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 91,
+        "es": 99
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "garrote_grande_2024",
+    "source": "srd521",
+    "concept": "garrote_grande",
+    "data": {
+      "name": {
+        "es": "Garrote grande",
+        "en": "Greatclub"
+      },
+      "categoria": "sencilla",
+      "base": "garrote_grande",
+      "distancia": false,
+      "propiedades": ["a_dos_manos"],
+      "dano": "1d8",
+      "tipo_dano": "contundente",
+      "maestria": "empujar",
+      "peso": 10,
+      "coste": 0.2
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 91,
+        "es": 99
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "hacha_de_mano_2024",
+    "source": "srd521",
+    "concept": "hacha_de_mano",
+    "data": {
+      "name": {
+        "es": "Hacha de mano",
+        "en": "Handaxe"
+      },
+      "categoria": "sencilla",
+      "base": "hacha_de_mano",
+      "distancia": false,
+      "propiedades": ["ligera", "arrojadiza"],
+      "dano": "1d6",
+      "tipo_dano": "cortante",
+      "alcance_distancia": "20/60",
+      "maestria": "molestar",
+      "peso": 2,
+      "coste": 5
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 91,
+        "es": 99
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "jabalina_2024",
+    "source": "srd521",
+    "concept": "jabalina",
+    "data": {
+      "name": {
+        "es": "Jabalina",
+        "en": "Javelin"
+      },
+      "categoria": "sencilla",
+      "base": "jabalina",
+      "distancia": false,
+      "propiedades": ["arrojadiza"],
+      "dano": "1d6",
+      "tipo_dano": "perforante",
+      "alcance_distancia": "30/120",
+      "maestria": "ralentizar",
+      "peso": 2,
+      "coste": 0.5
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 91,
+        "es": 99
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "martillo_ligero_2024",
+    "source": "srd521",
+    "concept": "martillo_ligero",
+    "data": {
+      "name": {
+        "es": "Martillo ligero",
+        "en": "Light Hammer"
+      },
+      "categoria": "sencilla",
+      "base": "martillo_ligero",
+      "distancia": false,
+      "propiedades": ["ligera", "arrojadiza"],
+      "dano": "1d4",
+      "tipo_dano": "contundente",
+      "alcance_distancia": "20/60",
+      "maestria": "mellar",
+      "peso": 2,
+      "coste": 2
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 91,
+        "es": 99
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "maza_2024",
+    "source": "srd521",
+    "concept": "maza",
+    "data": {
+      "name": {
+        "es": "Maza",
+        "en": "Mace"
+      },
+      "categoria": "sencilla",
+      "base": "maza",
+      "distancia": false,
+      "propiedades": [],
+      "dano": "1d6",
+      "tipo_dano": "contundente",
+      "maestria": "debilitar",
+      "peso": 4,
+      "coste": 5
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 91,
+        "es": 99
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "baston_2024",
+    "source": "srd521",
+    "concept": "baston",
+    "data": {
+      "name": {
+        "es": "Bastón",
+        "en": "Quarterstaff"
+      },
+      "categoria": "sencilla",
+      "base": "baston",
+      "distancia": false,
+      "propiedades": ["versatil"],
+      "dano": "1d6",
+      "dano_versatil": "1d8",
+      "tipo_dano": "contundente",
+      "maestria": "derribar",
+      "peso": 4,
+      "coste": 0.2
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 91,
+        "es": 99
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "hoz_2024",
+    "source": "srd521",
+    "concept": "hoz",
+    "data": {
+      "name": {
+        "es": "Hoz",
+        "en": "Sickle"
+      },
+      "categoria": "sencilla",
+      "base": "hoz",
+      "distancia": false,
+      "propiedades": ["ligera"],
+      "dano": "1d4",
+      "tipo_dano": "cortante",
+      "maestria": "mellar",
+      "peso": 2,
+      "coste": 1
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 91,
+        "es": 99
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "lanza_2024",
+    "source": "srd521",
+    "concept": "lanza",
+    "data": {
+      "name": {
+        "es": "Lanza",
+        "en": "Spear"
+      },
+      "categoria": "sencilla",
+      "base": "lanza",
+      "distancia": false,
+      "propiedades": ["arrojadiza", "versatil"],
+      "dano": "1d6",
+      "dano_versatil": "1d8",
+      "tipo_dano": "perforante",
+      "alcance_distancia": "20/60",
+      "maestria": "debilitar",
+      "peso": 3,
+      "coste": 1
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 91,
+        "es": 99
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "dardo_2024",
+    "source": "srd521",
+    "concept": "dardo",
+    "data": {
+      "name": {
+        "es": "Dardo",
+        "en": "Dart"
+      },
+      "categoria": "sencilla",
+      "base": "dardo",
+      "distancia": true,
+      "propiedades": ["sutil", "arrojadiza"],
+      "dano": "1d4",
+      "tipo_dano": "perforante",
+      "alcance_distancia": "20/60",
+      "maestria": "molestar",
+      "peso": 0.25,
+      "coste": 0.05
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 91,
+        "es": 99
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "ballesta_ligera_2024",
+    "source": "srd521",
+    "concept": "ballesta_ligera",
+    "data": {
+      "name": {
+        "es": "Ballesta ligera",
+        "en": "Light Crossbow"
+      },
+      "categoria": "sencilla",
+      "base": "ballesta_ligera",
+      "distancia": true,
+      "propiedades": ["municion", "recarga", "a_dos_manos"],
+      "dano": "1d8",
+      "tipo_dano": "perforante",
+      "alcance_distancia": "80/320",
+      "maestria": "ralentizar",
+      "peso": 5,
+      "coste": 25
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 91,
+        "es": 99
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "arco_corto_2024",
+    "source": "srd521",
+    "concept": "arco_corto",
+    "data": {
+      "name": {
+        "es": "Arco corto",
+        "en": "Shortbow"
+      },
+      "categoria": "sencilla",
+      "base": "arco_corto",
+      "distancia": true,
+      "propiedades": ["municion", "a_dos_manos"],
+      "dano": "1d6",
+      "tipo_dano": "perforante",
+      "alcance_distancia": "80/320",
+      "maestria": "molestar",
+      "peso": 2,
+      "coste": 25
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 91,
+        "es": 99
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "honda_2024",
+    "source": "srd521",
+    "concept": "honda",
+    "data": {
+      "name": {
+        "es": "Honda",
+        "en": "Sling"
+      },
+      "categoria": "sencilla",
+      "base": "honda",
+      "distancia": true,
+      "propiedades": ["municion"],
+      "dano": "1d4",
+      "tipo_dano": "contundente",
+      "alcance_distancia": "30/120",
+      "maestria": "ralentizar",
+      "peso": 0,
+      "coste": 0.1
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 91,
+        "es": 99
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "hacha_de_guerra_2024",
+    "source": "srd521",
+    "concept": "hacha_de_guerra",
+    "data": {
+      "name": {
+        "es": "Hacha de guerra",
+        "en": "Battleaxe"
+      },
+      "categoria": "marcial",
+      "base": "hacha_de_guerra",
+      "distancia": false,
+      "propiedades": ["versatil"],
+      "dano": "1d8",
+      "dano_versatil": "1d10",
+      "tipo_dano": "cortante",
+      "maestria": "derribar",
+      "peso": 4,
+      "coste": 10
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 91,
+        "es": 99
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "mangual_2024",
+    "source": "srd521",
+    "concept": "mangual",
+    "data": {
+      "name": {
+        "es": "Mangual",
+        "en": "Flail"
+      },
+      "categoria": "marcial",
+      "base": "mangual",
+      "distancia": false,
+      "propiedades": [],
+      "dano": "1d8",
+      "tipo_dano": "contundente",
+      "maestria": "debilitar",
+      "peso": 2,
+      "coste": 10
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 91,
+        "es": 99
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "guja_2024",
+    "source": "srd521",
+    "concept": "guja",
+    "data": {
+      "name": {
+        "es": "Guja",
+        "en": "Glaive"
+      },
+      "categoria": "marcial",
+      "base": "guja",
+      "distancia": false,
+      "propiedades": ["pesada", "alcance", "a_dos_manos"],
+      "dano": "1d10",
+      "tipo_dano": "cortante",
+      "maestria": "rozar",
+      "peso": 6,
+      "coste": 20
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 91,
+        "es": 99
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "hacha_a_dos_manos_2024",
+    "source": "srd521",
+    "concept": "hacha_a_dos_manos",
+    "data": {
+      "name": {
+        "es": "Hacha a dos manos",
+        "en": "Greataxe"
+      },
+      "categoria": "marcial",
+      "base": "hacha_a_dos_manos",
+      "distancia": false,
+      "propiedades": ["pesada", "a_dos_manos"],
+      "dano": "1d12",
+      "tipo_dano": "cortante",
+      "maestria": "hender",
+      "peso": 7,
+      "coste": 30
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 91,
+        "es": 99
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "espadon_2024",
+    "source": "srd521",
+    "concept": "espadon",
+    "data": {
+      "name": {
+        "es": "Espadón",
+        "en": "Greatsword"
+      },
+      "categoria": "marcial",
+      "base": "espadon",
+      "distancia": false,
+      "propiedades": ["pesada", "a_dos_manos"],
+      "dano": "2d6",
+      "tipo_dano": "cortante",
+      "maestria": "rozar",
+      "peso": 6,
+      "coste": 50
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 91,
+        "es": 99
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "alabarda_2024",
+    "source": "srd521",
+    "concept": "alabarda",
+    "data": {
+      "name": {
+        "es": "Alabarda",
+        "en": "Halberd"
+      },
+      "categoria": "marcial",
+      "base": "alabarda",
+      "distancia": false,
+      "propiedades": ["pesada", "alcance", "a_dos_manos"],
+      "dano": "1d10",
+      "tipo_dano": "cortante",
+      "maestria": "hender",
+      "peso": 6,
+      "coste": 20
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 91,
+        "es": 99
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "lanza_de_caballeria_2024",
+    "source": "srd521",
+    "concept": "lanza_de_caballeria",
+    "data": {
+      "name": {
+        "es": "Lanza de caballería",
+        "en": "Lance"
+      },
+      "categoria": "marcial",
+      "base": "lanza_de_caballeria",
+      "distancia": false,
+      "propiedades": ["pesada", "alcance", "a_dos_manos"],
+      "dano": "1d10",
+      "tipo_dano": "perforante",
+      "maestria": "derribar",
+      "peso": 6,
+      "coste": 10
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 91,
+        "es": 99
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "espada_larga_2024",
+    "source": "srd521",
+    "concept": "espada_larga",
+    "data": {
+      "name": {
+        "es": "Espada larga",
+        "en": "Longsword"
+      },
+      "categoria": "marcial",
+      "base": "espada_larga",
+      "distancia": false,
+      "propiedades": ["versatil"],
+      "dano": "1d8",
+      "dano_versatil": "1d10",
+      "tipo_dano": "cortante",
+      "maestria": "debilitar",
+      "peso": 3,
+      "coste": 15
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 91,
+        "es": 99
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "maza_a_dos_manos_2024",
+    "source": "srd521",
+    "concept": "maza_a_dos_manos",
+    "data": {
+      "name": {
+        "es": "Maza a dos manos",
+        "en": "Maul"
+      },
+      "categoria": "marcial",
+      "base": "maza_a_dos_manos",
+      "distancia": false,
+      "propiedades": ["pesada", "a_dos_manos"],
+      "dano": "2d6",
+      "tipo_dano": "contundente",
+      "maestria": "derribar",
+      "peso": 10,
+      "coste": 10
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 91,
+        "es": 99
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "lucero_del_alba_2024",
+    "source": "srd521",
+    "concept": "lucero_del_alba",
+    "data": {
+      "name": {
+        "es": "Lucero del alba",
+        "en": "Morningstar"
+      },
+      "categoria": "marcial",
+      "base": "lucero_del_alba",
+      "distancia": false,
+      "propiedades": [],
+      "dano": "1d8",
+      "tipo_dano": "perforante",
+      "maestria": "debilitar",
+      "peso": 4,
+      "coste": 15
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 91,
+        "es": 99
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "pica_2024",
+    "source": "srd521",
+    "concept": "pica",
+    "data": {
+      "name": {
+        "es": "Pica",
+        "en": "Pike"
+      },
+      "categoria": "marcial",
+      "base": "pica",
+      "distancia": false,
+      "propiedades": ["pesada", "alcance", "a_dos_manos"],
+      "dano": "1d10",
+      "tipo_dano": "perforante",
+      "maestria": "empujar",
+      "peso": 18,
+      "coste": 5
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 91,
+        "es": 99
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "estoque_2024",
+    "source": "srd521",
+    "concept": "estoque",
+    "data": {
+      "name": {
+        "es": "Estoque",
+        "en": "Rapier"
+      },
+      "categoria": "marcial",
+      "base": "estoque",
+      "distancia": false,
+      "propiedades": ["sutil"],
+      "dano": "1d8",
+      "tipo_dano": "perforante",
+      "maestria": "molestar",
+      "peso": 2,
+      "coste": 25
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 91,
+        "es": 99
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "cimitarra_2024",
+    "source": "srd521",
+    "concept": "cimitarra",
+    "data": {
+      "name": {
+        "es": "Cimitarra",
+        "en": "Scimitar"
+      },
+      "categoria": "marcial",
+      "base": "cimitarra",
+      "distancia": false,
+      "propiedades": ["sutil", "ligera"],
+      "dano": "1d6",
+      "tipo_dano": "cortante",
+      "maestria": "mellar",
+      "peso": 3,
+      "coste": 25
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 91,
+        "es": 99
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "espada_corta_2024",
+    "source": "srd521",
+    "concept": "espada_corta",
+    "data": {
+      "name": {
+        "es": "Espada corta",
+        "en": "Shortsword"
+      },
+      "categoria": "marcial",
+      "base": "espada_corta",
+      "distancia": false,
+      "propiedades": ["sutil", "ligera"],
+      "dano": "1d6",
+      "tipo_dano": "perforante",
+      "maestria": "molestar",
+      "peso": 2,
+      "coste": 10
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 91,
+        "es": 99
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "tridente_2024",
+    "source": "srd521",
+    "concept": "tridente",
+    "data": {
+      "name": {
+        "es": "Tridente",
+        "en": "Trident"
+      },
+      "categoria": "marcial",
+      "base": "tridente",
+      "distancia": false,
+      "propiedades": ["arrojadiza", "versatil"],
+      "dano": "1d8",
+      "dano_versatil": "1d10",
+      "tipo_dano": "perforante",
+      "alcance_distancia": "20/60",
+      "maestria": "derribar",
+      "peso": 4,
+      "coste": 5
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 91,
+        "es": 99
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "martillo_de_guerra_2024",
+    "source": "srd521",
+    "concept": "martillo_de_guerra",
+    "data": {
+      "name": {
+        "es": "Martillo de guerra",
+        "en": "Warhammer"
+      },
+      "categoria": "marcial",
+      "base": "martillo_de_guerra",
+      "distancia": false,
+      "propiedades": ["versatil"],
+      "dano": "1d8",
+      "dano_versatil": "1d10",
+      "tipo_dano": "contundente",
+      "maestria": "empujar",
+      "peso": 5,
+      "coste": 15
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 91,
+        "es": 99
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "pico_de_guerra_2024",
+    "source": "srd521",
+    "concept": "pico_de_guerra",
+    "data": {
+      "name": {
+        "es": "Pico de guerra",
+        "en": "War Pick"
+      },
+      "categoria": "marcial",
+      "base": "pico_de_guerra",
+      "distancia": false,
+      "propiedades": ["versatil"],
+      "dano": "1d8",
+      "dano_versatil": "1d10",
+      "tipo_dano": "perforante",
+      "maestria": "debilitar",
+      "peso": 2,
+      "coste": 5
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 91,
+        "es": 99
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "latigo_2024",
+    "source": "srd521",
+    "concept": "latigo",
+    "data": {
+      "name": {
+        "es": "Látigo",
+        "en": "Whip"
+      },
+      "categoria": "marcial",
+      "base": "latigo",
+      "distancia": false,
+      "propiedades": ["sutil", "alcance"],
+      "dano": "1d4",
+      "tipo_dano": "cortante",
+      "maestria": "ralentizar",
+      "peso": 3,
+      "coste": 2
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 91,
+        "es": 99
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "cerbatana_2024",
+    "source": "srd521",
+    "concept": "cerbatana",
+    "data": {
+      "name": {
+        "es": "Cerbatana",
+        "en": "Blowgun"
+      },
+      "categoria": "marcial",
+      "base": "cerbatana",
+      "distancia": true,
+      "propiedades": ["municion", "recarga"],
+      "dano": "1",
+      "tipo_dano": "perforante",
+      "alcance_distancia": "25/100",
+      "maestria": "molestar",
+      "peso": 1,
+      "coste": 10
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 91,
+        "es": 99
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "ballesta_de_mano_2024",
+    "source": "srd521",
+    "concept": "ballesta_de_mano",
+    "data": {
+      "name": {
+        "es": "Ballesta de mano",
+        "en": "Hand Crossbow"
+      },
+      "categoria": "marcial",
+      "base": "ballesta_de_mano",
+      "distancia": true,
+      "propiedades": ["municion", "ligera", "recarga"],
+      "dano": "1d6",
+      "tipo_dano": "perforante",
+      "alcance_distancia": "30/120",
+      "maestria": "molestar",
+      "peso": 3,
+      "coste": 75
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 91,
+        "es": 99
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "ballesta_pesada_2024",
+    "source": "srd521",
+    "concept": "ballesta_pesada",
+    "data": {
+      "name": {
+        "es": "Ballesta pesada",
+        "en": "Heavy Crossbow"
+      },
+      "categoria": "marcial",
+      "base": "ballesta_pesada",
+      "distancia": true,
+      "propiedades": ["municion", "pesada", "recarga", "a_dos_manos"],
+      "dano": "1d10",
+      "tipo_dano": "perforante",
+      "alcance_distancia": "100/400",
+      "maestria": "empujar",
+      "peso": 18,
+      "coste": 50
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 91,
+        "es": 99
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "arco_largo_2024",
+    "source": "srd521",
+    "concept": "arco_largo",
+    "data": {
+      "name": {
+        "es": "Arco largo",
+        "en": "Longbow"
+      },
+      "categoria": "marcial",
+      "base": "arco_largo",
+      "distancia": true,
+      "propiedades": ["municion", "pesada", "a_dos_manos"],
+      "dano": "1d8",
+      "tipo_dano": "perforante",
+      "alcance_distancia": "150/600",
+      "maestria": "ralentizar",
+      "peso": 2,
+      "coste": 50
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 91,
+        "es": 99
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "mosquete_2024",
+    "source": "srd521",
+    "concept": "mosquete",
+    "data": {
+      "name": {
+        "es": "Mosquete",
+        "en": "Musket"
+      },
+      "categoria": "marcial",
+      "base": "mosquete",
+      "distancia": true,
+      "propiedades": ["municion", "recarga", "a_dos_manos"],
+      "dano": "1d12",
+      "tipo_dano": "perforante",
+      "alcance_distancia": "40/120",
+      "maestria": "ralentizar",
+      "peso": 10,
+      "coste": 500
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 91,
+        "es": 99
+      }
+    }
+  },
+  {
+    "type": "arma",
+    "key": "pistola_2024",
+    "source": "srd521",
+    "concept": "pistola",
+    "data": {
+      "name": {
+        "es": "Pistola",
+        "en": "Pistol"
+      },
+      "categoria": "marcial",
+      "base": "pistola",
+      "distancia": true,
+      "propiedades": ["municion", "recarga"],
+      "dano": "1d10",
+      "tipo_dano": "perforante",
+      "alcance_distancia": "30/90",
+      "maestria": "molestar",
+      "peso": 3,
+      "coste": 250
+    },
+    "mechanics": {
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 91,
+        "es": 99
+      }
+    }
+  }
+]

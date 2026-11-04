@@ -1,0 +1,1170 @@
+[
+  {
+    "type": "armadura",
+    "key": "armadura_acolchada_2014",
+    "source": "srd51",
+    "concept": "armadura_acolchada",
+    "data": {
+      "name": {
+        "es": "Acolchada",
+        "en": "Padded"
+      },
+      "categoria": "ligera",
+      "ca_base": 11,
+      "suma_des": true,
+      "sigilo_desventaja": true,
+      "peso": 8,
+      "coste": 5
+    },
+    "mechanics": {
+      "effects": [
+        {
+          "target": "ca",
+          "op": "base",
+          "value": "@este.ca",
+          "when": "@este.puesta"
+        },
+        {
+          "target": "habilidad.sigilo",
+          "op": "disadvantage",
+          "when": "@este.puesta && @este.sigilo_desventaja"
+        },
+        {
+          "target": "velocidad",
+          "op": "add",
+          "value": "-10",
+          "when": "@este.puesta && @caracteristicas.fue.puntuacion < @este.fuerza"
+        }
+      ],
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 63,
+        "es": 65
+      }
+    }
+  },
+  {
+    "type": "armadura",
+    "key": "armadura_de_cuero_2014",
+    "source": "srd51",
+    "concept": "armadura_de_cuero",
+    "data": {
+      "name": {
+        "es": "Cuero",
+        "en": "Leather"
+      },
+      "categoria": "ligera",
+      "ca_base": 11,
+      "suma_des": true,
+      "peso": 10,
+      "coste": 10
+    },
+    "mechanics": {
+      "effects": [
+        {
+          "target": "ca",
+          "op": "base",
+          "value": "@este.ca",
+          "when": "@este.puesta"
+        },
+        {
+          "target": "habilidad.sigilo",
+          "op": "disadvantage",
+          "when": "@este.puesta && @este.sigilo_desventaja"
+        },
+        {
+          "target": "velocidad",
+          "op": "add",
+          "value": "-10",
+          "when": "@este.puesta && @caracteristicas.fue.puntuacion < @este.fuerza"
+        }
+      ],
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 64,
+        "es": 65
+      }
+    }
+  },
+  {
+    "type": "armadura",
+    "key": "armadura_de_cuero_tachonado_2014",
+    "source": "srd51",
+    "concept": "armadura_de_cuero_tachonado",
+    "data": {
+      "name": {
+        "es": "Cuero tachonado",
+        "en": "Studded leather"
+      },
+      "categoria": "ligera",
+      "ca_base": 12,
+      "suma_des": true,
+      "peso": 13,
+      "coste": 45
+    },
+    "mechanics": {
+      "effects": [
+        {
+          "target": "ca",
+          "op": "base",
+          "value": "@este.ca",
+          "when": "@este.puesta"
+        },
+        {
+          "target": "habilidad.sigilo",
+          "op": "disadvantage",
+          "when": "@este.puesta && @este.sigilo_desventaja"
+        },
+        {
+          "target": "velocidad",
+          "op": "add",
+          "value": "-10",
+          "when": "@este.puesta && @caracteristicas.fue.puntuacion < @este.fuerza"
+        }
+      ],
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 64,
+        "es": 65
+      }
+    }
+  },
+  {
+    "type": "armadura",
+    "key": "armadura_de_pieles_2014",
+    "source": "srd51",
+    "concept": "armadura_de_pieles",
+    "data": {
+      "name": {
+        "es": "Pieles",
+        "en": "Hide"
+      },
+      "categoria": "media",
+      "ca_base": 12,
+      "suma_des": true,
+      "des_max": 2,
+      "peso": 12,
+      "coste": 10
+    },
+    "mechanics": {
+      "effects": [
+        {
+          "target": "ca",
+          "op": "base",
+          "value": "@este.ca",
+          "when": "@este.puesta"
+        },
+        {
+          "target": "habilidad.sigilo",
+          "op": "disadvantage",
+          "when": "@este.puesta && @este.sigilo_desventaja"
+        },
+        {
+          "target": "velocidad",
+          "op": "add",
+          "value": "-10",
+          "when": "@este.puesta && @caracteristicas.fue.puntuacion < @este.fuerza"
+        }
+      ],
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 64,
+        "es": 65
+      }
+    }
+  },
+  {
+    "type": "armadura",
+    "key": "camisa_de_malla_2014",
+    "source": "srd51",
+    "concept": "camisa_de_malla",
+    "data": {
+      "name": {
+        "es": "Camisa de malla",
+        "en": "Chain shirt"
+      },
+      "categoria": "media",
+      "ca_base": 13,
+      "suma_des": true,
+      "des_max": 2,
+      "peso": 20,
+      "coste": 50
+    },
+    "mechanics": {
+      "effects": [
+        {
+          "target": "ca",
+          "op": "base",
+          "value": "@este.ca",
+          "when": "@este.puesta"
+        },
+        {
+          "target": "habilidad.sigilo",
+          "op": "disadvantage",
+          "when": "@este.puesta && @este.sigilo_desventaja"
+        },
+        {
+          "target": "velocidad",
+          "op": "add",
+          "value": "-10",
+          "when": "@este.puesta && @caracteristicas.fue.puntuacion < @este.fuerza"
+        }
+      ],
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 64,
+        "es": 65
+      }
+    }
+  },
+  {
+    "type": "armadura",
+    "key": "cota_de_escamas_2014",
+    "source": "srd51",
+    "concept": "cota_de_escamas",
+    "data": {
+      "name": {
+        "es": "Cota de escamas",
+        "en": "Scale mail"
+      },
+      "categoria": "media",
+      "ca_base": 14,
+      "suma_des": true,
+      "des_max": 2,
+      "sigilo_desventaja": true,
+      "peso": 45,
+      "coste": 50
+    },
+    "mechanics": {
+      "effects": [
+        {
+          "target": "ca",
+          "op": "base",
+          "value": "@este.ca",
+          "when": "@este.puesta"
+        },
+        {
+          "target": "habilidad.sigilo",
+          "op": "disadvantage",
+          "when": "@este.puesta && @este.sigilo_desventaja"
+        },
+        {
+          "target": "velocidad",
+          "op": "add",
+          "value": "-10",
+          "when": "@este.puesta && @caracteristicas.fue.puntuacion < @este.fuerza"
+        }
+      ],
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 64,
+        "es": 65
+      }
+    }
+  },
+  {
+    "type": "armadura",
+    "key": "coraza_2014",
+    "source": "srd51",
+    "concept": "coraza",
+    "data": {
+      "name": {
+        "es": "Coraza",
+        "en": "Breastplate"
+      },
+      "categoria": "media",
+      "ca_base": 14,
+      "suma_des": true,
+      "des_max": 2,
+      "peso": 20,
+      "coste": 400
+    },
+    "mechanics": {
+      "effects": [
+        {
+          "target": "ca",
+          "op": "base",
+          "value": "@este.ca",
+          "when": "@este.puesta"
+        },
+        {
+          "target": "habilidad.sigilo",
+          "op": "disadvantage",
+          "when": "@este.puesta && @este.sigilo_desventaja"
+        },
+        {
+          "target": "velocidad",
+          "op": "add",
+          "value": "-10",
+          "when": "@este.puesta && @caracteristicas.fue.puntuacion < @este.fuerza"
+        }
+      ],
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 64,
+        "es": 65
+      }
+    }
+  },
+  {
+    "type": "armadura",
+    "key": "media_armadura_2014",
+    "source": "srd51",
+    "concept": "media_armadura",
+    "data": {
+      "name": {
+        "es": "Media armadura",
+        "en": "Half plate"
+      },
+      "categoria": "media",
+      "ca_base": 15,
+      "suma_des": true,
+      "des_max": 2,
+      "sigilo_desventaja": true,
+      "peso": 40,
+      "coste": 750
+    },
+    "mechanics": {
+      "effects": [
+        {
+          "target": "ca",
+          "op": "base",
+          "value": "@este.ca",
+          "when": "@este.puesta"
+        },
+        {
+          "target": "habilidad.sigilo",
+          "op": "disadvantage",
+          "when": "@este.puesta && @este.sigilo_desventaja"
+        },
+        {
+          "target": "velocidad",
+          "op": "add",
+          "value": "-10",
+          "when": "@este.puesta && @caracteristicas.fue.puntuacion < @este.fuerza"
+        }
+      ],
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 64,
+        "es": 65
+      }
+    }
+  },
+  {
+    "type": "armadura",
+    "key": "cota_guarnecida_2014",
+    "source": "srd51",
+    "concept": "cota_guarnecida",
+    "data": {
+      "name": {
+        "es": "Cota guarnecida",
+        "en": "Ring mail"
+      },
+      "categoria": "pesada",
+      "ca_base": 14,
+      "sigilo_desventaja": true,
+      "peso": 40,
+      "coste": 30
+    },
+    "mechanics": {
+      "effects": [
+        {
+          "target": "ca",
+          "op": "base",
+          "value": "@este.ca",
+          "when": "@este.puesta"
+        },
+        {
+          "target": "habilidad.sigilo",
+          "op": "disadvantage",
+          "when": "@este.puesta && @este.sigilo_desventaja"
+        },
+        {
+          "target": "velocidad",
+          "op": "add",
+          "value": "-10",
+          "when": "@este.puesta && @caracteristicas.fue.puntuacion < @este.fuerza"
+        }
+      ],
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 64,
+        "es": 65
+      }
+    }
+  },
+  {
+    "type": "armadura",
+    "key": "cota_de_malla_2014",
+    "source": "srd51",
+    "concept": "cota_de_malla",
+    "data": {
+      "name": {
+        "es": "Cota de malla",
+        "en": "Chain mail"
+      },
+      "categoria": "pesada",
+      "ca_base": 16,
+      "fuerza": 13,
+      "sigilo_desventaja": true,
+      "peso": 55,
+      "coste": 75
+    },
+    "mechanics": {
+      "effects": [
+        {
+          "target": "ca",
+          "op": "base",
+          "value": "@este.ca",
+          "when": "@este.puesta"
+        },
+        {
+          "target": "habilidad.sigilo",
+          "op": "disadvantage",
+          "when": "@este.puesta && @este.sigilo_desventaja"
+        },
+        {
+          "target": "velocidad",
+          "op": "add",
+          "value": "-10",
+          "when": "@este.puesta && @caracteristicas.fue.puntuacion < @este.fuerza"
+        }
+      ],
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 64,
+        "es": 65
+      }
+    }
+  },
+  {
+    "type": "armadura",
+    "key": "armadura_de_bandas_2014",
+    "source": "srd51",
+    "concept": "armadura_de_bandas",
+    "data": {
+      "name": {
+        "es": "Armadura de bandas",
+        "en": "Splint"
+      },
+      "categoria": "pesada",
+      "ca_base": 17,
+      "fuerza": 15,
+      "sigilo_desventaja": true,
+      "peso": 60,
+      "coste": 200
+    },
+    "mechanics": {
+      "effects": [
+        {
+          "target": "ca",
+          "op": "base",
+          "value": "@este.ca",
+          "when": "@este.puesta"
+        },
+        {
+          "target": "habilidad.sigilo",
+          "op": "disadvantage",
+          "when": "@este.puesta && @este.sigilo_desventaja"
+        },
+        {
+          "target": "velocidad",
+          "op": "add",
+          "value": "-10",
+          "when": "@este.puesta && @caracteristicas.fue.puntuacion < @este.fuerza"
+        }
+      ],
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 64,
+        "es": 65
+      }
+    }
+  },
+  {
+    "type": "armadura",
+    "key": "armadura_de_placas_2014",
+    "source": "srd51",
+    "concept": "armadura_de_placas",
+    "data": {
+      "name": {
+        "es": "Armadura de placas",
+        "en": "Plate"
+      },
+      "categoria": "pesada",
+      "ca_base": 18,
+      "fuerza": 15,
+      "sigilo_desventaja": true,
+      "peso": 65,
+      "coste": 1500
+    },
+    "mechanics": {
+      "effects": [
+        {
+          "target": "ca",
+          "op": "base",
+          "value": "@este.ca",
+          "when": "@este.puesta"
+        },
+        {
+          "target": "habilidad.sigilo",
+          "op": "disadvantage",
+          "when": "@este.puesta && @este.sigilo_desventaja"
+        },
+        {
+          "target": "velocidad",
+          "op": "add",
+          "value": "-10",
+          "when": "@este.puesta && @caracteristicas.fue.puntuacion < @este.fuerza"
+        }
+      ],
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 64,
+        "es": 65
+      }
+    }
+  },
+  {
+    "type": "armadura",
+    "key": "escudo_2014",
+    "source": "srd51",
+    "concept": "escudo",
+    "data": {
+      "name": {
+        "es": "Escudo",
+        "en": "Shield"
+      },
+      "categoria": "escudo",
+      "ca_base": 2,
+      "peso": 6,
+      "coste": 10
+    },
+    "mechanics": {
+      "effects": [
+        {
+          "target": "ca",
+          "op": "add",
+          "value": "@este.ca",
+          "when": "@este.embrazado"
+        }
+      ],
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 64,
+        "es": 65
+      }
+    }
+  },
+  {
+    "type": "armadura",
+    "key": "armadura_acolchada_2024",
+    "source": "srd521",
+    "concept": "armadura_acolchada",
+    "data": {
+      "name": {
+        "es": "Armadura acolchada",
+        "en": "Padded Armor"
+      },
+      "categoria": "ligera",
+      "ca_base": 11,
+      "suma_des": true,
+      "sigilo_desventaja": true,
+      "peso": 8,
+      "coste": 5
+    },
+    "mechanics": {
+      "effects": [
+        {
+          "target": "ca",
+          "op": "base",
+          "value": "@este.ca",
+          "when": "@este.puesta"
+        },
+        {
+          "target": "habilidad.sigilo",
+          "op": "disadvantage",
+          "when": "@este.puesta && @este.sigilo_desventaja"
+        },
+        {
+          "target": "velocidad",
+          "op": "add",
+          "value": "-10",
+          "when": "@este.puesta && @caracteristicas.fue.puntuacion < @este.fuerza"
+        }
+      ],
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 92,
+        "es": 100
+      }
+    }
+  },
+  {
+    "type": "armadura",
+    "key": "armadura_de_cuero_2024",
+    "source": "srd521",
+    "concept": "armadura_de_cuero",
+    "data": {
+      "name": {
+        "es": "Armadura de cuero",
+        "en": "Leather Armor"
+      },
+      "categoria": "ligera",
+      "ca_base": 11,
+      "suma_des": true,
+      "peso": 10,
+      "coste": 10
+    },
+    "mechanics": {
+      "effects": [
+        {
+          "target": "ca",
+          "op": "base",
+          "value": "@este.ca",
+          "when": "@este.puesta"
+        },
+        {
+          "target": "habilidad.sigilo",
+          "op": "disadvantage",
+          "when": "@este.puesta && @este.sigilo_desventaja"
+        },
+        {
+          "target": "velocidad",
+          "op": "add",
+          "value": "-10",
+          "when": "@este.puesta && @caracteristicas.fue.puntuacion < @este.fuerza"
+        }
+      ],
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 92,
+        "es": 100
+      }
+    }
+  },
+  {
+    "type": "armadura",
+    "key": "armadura_de_cuero_tachonado_2024",
+    "source": "srd521",
+    "concept": "armadura_de_cuero_tachonado",
+    "data": {
+      "name": {
+        "es": "Armadura de cuero tachonado",
+        "en": "Studded Leather Armor"
+      },
+      "categoria": "ligera",
+      "ca_base": 12,
+      "suma_des": true,
+      "peso": 13,
+      "coste": 45
+    },
+    "mechanics": {
+      "effects": [
+        {
+          "target": "ca",
+          "op": "base",
+          "value": "@este.ca",
+          "when": "@este.puesta"
+        },
+        {
+          "target": "habilidad.sigilo",
+          "op": "disadvantage",
+          "when": "@este.puesta && @este.sigilo_desventaja"
+        },
+        {
+          "target": "velocidad",
+          "op": "add",
+          "value": "-10",
+          "when": "@este.puesta && @caracteristicas.fue.puntuacion < @este.fuerza"
+        }
+      ],
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 92,
+        "es": 100
+      }
+    }
+  },
+  {
+    "type": "armadura",
+    "key": "armadura_de_pieles_2024",
+    "source": "srd521",
+    "concept": "armadura_de_pieles",
+    "data": {
+      "name": {
+        "es": "Armadura de pieles",
+        "en": "Hide Armor"
+      },
+      "categoria": "media",
+      "ca_base": 12,
+      "suma_des": true,
+      "des_max": 2,
+      "peso": 12,
+      "coste": 10
+    },
+    "mechanics": {
+      "effects": [
+        {
+          "target": "ca",
+          "op": "base",
+          "value": "@este.ca",
+          "when": "@este.puesta"
+        },
+        {
+          "target": "habilidad.sigilo",
+          "op": "disadvantage",
+          "when": "@este.puesta && @este.sigilo_desventaja"
+        },
+        {
+          "target": "velocidad",
+          "op": "add",
+          "value": "-10",
+          "when": "@este.puesta && @caracteristicas.fue.puntuacion < @este.fuerza"
+        }
+      ],
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 92,
+        "es": 100
+      }
+    }
+  },
+  {
+    "type": "armadura",
+    "key": "camisa_de_malla_2024",
+    "source": "srd521",
+    "concept": "camisa_de_malla",
+    "data": {
+      "name": {
+        "es": "Camisa de malla",
+        "en": "Chain Shirt"
+      },
+      "categoria": "media",
+      "ca_base": 13,
+      "suma_des": true,
+      "des_max": 2,
+      "peso": 20,
+      "coste": 50
+    },
+    "mechanics": {
+      "effects": [
+        {
+          "target": "ca",
+          "op": "base",
+          "value": "@este.ca",
+          "when": "@este.puesta"
+        },
+        {
+          "target": "habilidad.sigilo",
+          "op": "disadvantage",
+          "when": "@este.puesta && @este.sigilo_desventaja"
+        },
+        {
+          "target": "velocidad",
+          "op": "add",
+          "value": "-10",
+          "when": "@este.puesta && @caracteristicas.fue.puntuacion < @este.fuerza"
+        }
+      ],
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 92,
+        "es": 100
+      }
+    }
+  },
+  {
+    "type": "armadura",
+    "key": "cota_de_escamas_2024",
+    "source": "srd521",
+    "concept": "cota_de_escamas",
+    "data": {
+      "name": {
+        "es": "Cota de escamas",
+        "en": "Scale Mail"
+      },
+      "categoria": "media",
+      "ca_base": 14,
+      "suma_des": true,
+      "des_max": 2,
+      "sigilo_desventaja": true,
+      "peso": 45,
+      "coste": 50
+    },
+    "mechanics": {
+      "effects": [
+        {
+          "target": "ca",
+          "op": "base",
+          "value": "@este.ca",
+          "when": "@este.puesta"
+        },
+        {
+          "target": "habilidad.sigilo",
+          "op": "disadvantage",
+          "when": "@este.puesta && @este.sigilo_desventaja"
+        },
+        {
+          "target": "velocidad",
+          "op": "add",
+          "value": "-10",
+          "when": "@este.puesta && @caracteristicas.fue.puntuacion < @este.fuerza"
+        }
+      ],
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 92,
+        "es": 100
+      }
+    }
+  },
+  {
+    "type": "armadura",
+    "key": "coraza_2024",
+    "source": "srd521",
+    "concept": "coraza",
+    "data": {
+      "name": {
+        "es": "Coraza",
+        "en": "Breastplate"
+      },
+      "categoria": "media",
+      "ca_base": 14,
+      "suma_des": true,
+      "des_max": 2,
+      "peso": 20,
+      "coste": 400
+    },
+    "mechanics": {
+      "effects": [
+        {
+          "target": "ca",
+          "op": "base",
+          "value": "@este.ca",
+          "when": "@este.puesta"
+        },
+        {
+          "target": "habilidad.sigilo",
+          "op": "disadvantage",
+          "when": "@este.puesta && @este.sigilo_desventaja"
+        },
+        {
+          "target": "velocidad",
+          "op": "add",
+          "value": "-10",
+          "when": "@este.puesta && @caracteristicas.fue.puntuacion < @este.fuerza"
+        }
+      ],
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 92,
+        "es": 100
+      }
+    }
+  },
+  {
+    "type": "armadura",
+    "key": "media_armadura_2024",
+    "source": "srd521",
+    "concept": "media_armadura",
+    "data": {
+      "name": {
+        "es": "Media armadura",
+        "en": "Half Plate Armor"
+      },
+      "categoria": "media",
+      "ca_base": 15,
+      "suma_des": true,
+      "des_max": 2,
+      "sigilo_desventaja": true,
+      "peso": 40,
+      "coste": 750
+    },
+    "mechanics": {
+      "effects": [
+        {
+          "target": "ca",
+          "op": "base",
+          "value": "@este.ca",
+          "when": "@este.puesta"
+        },
+        {
+          "target": "habilidad.sigilo",
+          "op": "disadvantage",
+          "when": "@este.puesta && @este.sigilo_desventaja"
+        },
+        {
+          "target": "velocidad",
+          "op": "add",
+          "value": "-10",
+          "when": "@este.puesta && @caracteristicas.fue.puntuacion < @este.fuerza"
+        }
+      ],
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 92,
+        "es": 100
+      }
+    }
+  },
+  {
+    "type": "armadura",
+    "key": "cota_guarnecida_2024",
+    "source": "srd521",
+    "concept": "cota_guarnecida",
+    "data": {
+      "name": {
+        "es": "Cota guarnecida",
+        "en": "Ring Mail"
+      },
+      "categoria": "pesada",
+      "ca_base": 14,
+      "sigilo_desventaja": true,
+      "peso": 40,
+      "coste": 30
+    },
+    "mechanics": {
+      "effects": [
+        {
+          "target": "ca",
+          "op": "base",
+          "value": "@este.ca",
+          "when": "@este.puesta"
+        },
+        {
+          "target": "habilidad.sigilo",
+          "op": "disadvantage",
+          "when": "@este.puesta && @este.sigilo_desventaja"
+        },
+        {
+          "target": "velocidad",
+          "op": "add",
+          "value": "-10",
+          "when": "@este.puesta && @caracteristicas.fue.puntuacion < @este.fuerza"
+        }
+      ],
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 92,
+        "es": 100
+      }
+    }
+  },
+  {
+    "type": "armadura",
+    "key": "cota_de_malla_2024",
+    "source": "srd521",
+    "concept": "cota_de_malla",
+    "data": {
+      "name": {
+        "es": "Cota de malla",
+        "en": "Chain Mail"
+      },
+      "categoria": "pesada",
+      "ca_base": 16,
+      "fuerza": 13,
+      "sigilo_desventaja": true,
+      "peso": 55,
+      "coste": 75
+    },
+    "mechanics": {
+      "effects": [
+        {
+          "target": "ca",
+          "op": "base",
+          "value": "@este.ca",
+          "when": "@este.puesta"
+        },
+        {
+          "target": "habilidad.sigilo",
+          "op": "disadvantage",
+          "when": "@este.puesta && @este.sigilo_desventaja"
+        },
+        {
+          "target": "velocidad",
+          "op": "add",
+          "value": "-10",
+          "when": "@este.puesta && @caracteristicas.fue.puntuacion < @este.fuerza"
+        }
+      ],
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 92,
+        "es": 100
+      }
+    }
+  },
+  {
+    "type": "armadura",
+    "key": "armadura_de_bandas_2024",
+    "source": "srd521",
+    "concept": "armadura_de_bandas",
+    "data": {
+      "name": {
+        "es": "Armadura de bandas",
+        "en": "Splint Armor"
+      },
+      "categoria": "pesada",
+      "ca_base": 17,
+      "fuerza": 15,
+      "sigilo_desventaja": true,
+      "peso": 60,
+      "coste": 200
+    },
+    "mechanics": {
+      "effects": [
+        {
+          "target": "ca",
+          "op": "base",
+          "value": "@este.ca",
+          "when": "@este.puesta"
+        },
+        {
+          "target": "habilidad.sigilo",
+          "op": "disadvantage",
+          "when": "@este.puesta && @este.sigilo_desventaja"
+        },
+        {
+          "target": "velocidad",
+          "op": "add",
+          "value": "-10",
+          "when": "@este.puesta && @caracteristicas.fue.puntuacion < @este.fuerza"
+        }
+      ],
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 92,
+        "es": 100
+      }
+    }
+  },
+  {
+    "type": "armadura",
+    "key": "armadura_de_placas_2024",
+    "source": "srd521",
+    "concept": "armadura_de_placas",
+    "data": {
+      "name": {
+        "es": "Armadura de placas",
+        "en": "Plate Armor"
+      },
+      "categoria": "pesada",
+      "ca_base": 18,
+      "fuerza": 15,
+      "sigilo_desventaja": true,
+      "peso": 65,
+      "coste": 1500
+    },
+    "mechanics": {
+      "effects": [
+        {
+          "target": "ca",
+          "op": "base",
+          "value": "@este.ca",
+          "when": "@este.puesta"
+        },
+        {
+          "target": "habilidad.sigilo",
+          "op": "disadvantage",
+          "when": "@este.puesta && @este.sigilo_desventaja"
+        },
+        {
+          "target": "velocidad",
+          "op": "add",
+          "value": "-10",
+          "when": "@este.puesta && @caracteristicas.fue.puntuacion < @este.fuerza"
+        }
+      ],
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 92,
+        "es": 100
+      }
+    }
+  },
+  {
+    "type": "armadura",
+    "key": "escudo_2024",
+    "source": "srd521",
+    "concept": "escudo",
+    "data": {
+      "name": {
+        "es": "Escudo",
+        "en": "Shield"
+      },
+      "categoria": "escudo",
+      "ca_base": 2,
+      "peso": 6,
+      "coste": 10
+    },
+    "mechanics": {
+      "effects": [
+        {
+          "target": "ca",
+          "op": "add",
+          "value": "@este.ca",
+          "when": "@este.embrazado"
+        }
+      ],
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 92,
+        "es": 100
+      }
+    }
+  }
+]
