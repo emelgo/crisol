@@ -114,7 +114,7 @@ amplía `@fugas` en la misma tarea. Cobertura ≥ 80 % de lo cambiado (bloquea d
 
 ## Fase 5: Las tiradas escritas
 
-- [ ] **9. La tirada en el texto: el nodo y su Markdown**
+- [x] **9. La tirada en el texto: el nodo y su Markdown** — hecha. Su texto para buscar es el nombre y la fórmula.
   - Acepta: el nodo en línea `diceRoll` (fórmula y etiqueta) y `` `dice: 1d20+5 # Nombre` `` de ida y vuelta, también
     por la IA (`crear_paginas`, `editar_pagina`, `leer_pagina`) y al exportar.
   - Comprueba: pruebas del Markdown (ida y vuelta, junto a código en línea normal) e integración del MCP.
