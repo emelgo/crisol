@@ -41,7 +41,20 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   - sus claves en camelCase (`domainCard`) se pasan a las nuestras (`domain_card`);
   - sin sitio aún: los efectos activos (para nosotros, bonos), los subtipos de mensaje del chat (las tarjetas de las
     tiradas), el combate (módulo 6) y los paquetes de diario y de tablas (módulo 4);
-  - el manifiesto no trae los campos de cada tipo (están en su código): para eso hay que leer sus modelos o sus datos. **Ritmo** (punto de control 1): un personaje de nivel 20 con 353 campos y 100 objetos, 5 ms de
+  - el manifiesto no trae los campos de cada tipo (están en su código): para eso hay que leer sus modelos o sus datos.
+- **Y con 60 sistemas de Foundry** (Enrique: «aquí tienes más para probar», de su lista de sistemas): los 50 de su
+  primera página y 10 de los más usados (dnd5e, pf2e, swade, wfrp4e, CoC7, alienrpg, starwarsffg, cyberpunk-red-core,
+  sfrpg y worldbuilding). Sus manifiestos, en la carpeta temporal y fuera del repositorio. **Caben los 60**, con dos
+  arreglos al convertir: quitar los idiomas repetidos (pf2e los repite, un archivo por módulo) y no poner una
+  descripción vacía. **Apuntado para `foundry`**:
+  - 14 no declaran sus tipos en el manifiesto (los traen en `template.json`, como los de antes de la v11): el
+    importador tiene que leer ese archivo también;
+  - otras clases con subtipos, sin sitio aún: RegionBehavior (8), ActiveEffect (7), JournalEntryPage (7),
+    ChatMessage (7), Combat (5), Combatant (2) y Card (2);
+  - otros paquetes: de diario (55), de tablas (39), de macros (27: son código, nunca se importan), de efectos (9),
+    de escenas (8), de aventuras (4) y de cartas (3);
+  - idiomas: el formato solo trae español e inglés, y casi todos traen inglés; el alemán (35), el francés (26) y el
+    portugués (20) van detrás. Si un día se importa uno que solo esté en otro idioma, se amplía. **Ritmo** (punto de control 1): un personaje de nivel 20 con 353 campos y 100 objetos, 5 ms de
   mediana (la spec pide menos de 20); validar un sistema de 1,85 MB, 71 ms (pide menos de 500).
 
 ### Para retomar (2026-11-04, módulo 3: dados)
