@@ -1,0 +1,2107 @@
+[
+  {
+    "type": "clase",
+    "key": "guerrero_2014",
+    "source": "srd51",
+    "concept": "guerrero",
+    "data": {
+      "name": {
+        "es": "Guerrero",
+        "en": "Fighter"
+      },
+      "dado": 10,
+      "dado_golpe": "1d10",
+      "lanzamiento": ""
+    },
+    "mechanics": {
+      "effects": [
+        {
+          "target": "caracteristicas.fue.salvacion_grado",
+          "op": "min",
+          "value": "1",
+          "when": "@este.inicial"
+        },
+        {
+          "target": "caracteristicas.con.salvacion_grado",
+          "op": "min",
+          "value": "1",
+          "when": "@este.inicial"
+        },
+        {
+          "target": "competencias_armas",
+          "op": "append",
+          "value": "\"sencilla\""
+        },
+        {
+          "target": "competencias_armas",
+          "op": "append",
+          "value": "\"marcial\""
+        },
+        {
+          "target": "competencias_armaduras",
+          "op": "append",
+          "value": "\"ligera\""
+        },
+        {
+          "target": "competencias_armaduras",
+          "op": "append",
+          "value": "\"media\""
+        },
+        {
+          "target": "competencias_armaduras",
+          "op": "append",
+          "value": "\"escudo\""
+        },
+        {
+          "target": "competencias_armaduras",
+          "op": "append",
+          "value": "\"pesada\"",
+          "when": "@este.inicial"
+        }
+      ],
+      "grants": [
+        {
+          "choose": {
+            "key": "habilidades",
+            "label": {
+              "es": "Habilidades",
+              "en": "Skills"
+            },
+            "count": "2",
+            "set": "habilidades",
+            "from": [
+              "acrobacias",
+              "trato_con_animales",
+              "atletismo",
+              "historia",
+              "perspicacia",
+              "intimidacion",
+              "percepcion",
+              "supervivencia"
+            ],
+            "when": "@este.inicial"
+          }
+        },
+        {
+          "level": 3,
+          "choose": {
+            "key": "subclase",
+            "label": {
+              "es": "Subclase",
+              "en": "Subclass"
+            },
+            "count": "1",
+            "type": "subclase",
+            "from": ["campeon"]
+          }
+        },
+        {
+          "level": 1,
+          "concept": "guerrero_estilo_de_combate",
+          "type": "rasgo"
+        },
+        {
+          "level": 1,
+          "concept": "guerrero_tomar_aliento",
+          "type": "rasgo"
+        },
+        {
+          "level": 2,
+          "concept": "guerrero_accion_subita",
+          "type": "rasgo"
+        },
+        {
+          "level": 3,
+          "concept": "guerrero_arquetipo_marcial",
+          "type": "rasgo"
+        },
+        {
+          "level": 4,
+          "concept": "guerrero_mejora_de_caracteristica",
+          "type": "rasgo"
+        },
+        {
+          "level": 6,
+          "concept": "guerrero_mejora_de_caracteristica",
+          "type": "rasgo"
+        },
+        {
+          "level": 8,
+          "concept": "guerrero_mejora_de_caracteristica",
+          "type": "rasgo"
+        },
+        {
+          "level": 12,
+          "concept": "guerrero_mejora_de_caracteristica",
+          "type": "rasgo"
+        },
+        {
+          "level": 14,
+          "concept": "guerrero_mejora_de_caracteristica",
+          "type": "rasgo"
+        },
+        {
+          "level": 16,
+          "concept": "guerrero_mejora_de_caracteristica",
+          "type": "rasgo"
+        },
+        {
+          "level": 19,
+          "concept": "guerrero_mejora_de_caracteristica",
+          "type": "rasgo"
+        },
+        {
+          "level": 5,
+          "concept": "guerrero_ataque_adicional",
+          "type": "rasgo"
+        },
+        {
+          "level": 9,
+          "concept": "guerrero_indomito",
+          "type": "rasgo"
+        }
+      ],
+      "automation": "partial",
+      "manual": {
+        "es": "El equipo inicial se elige a mano",
+        "en": "Starting equipment is chosen by hand"
+      }
+    },
+    "ref": {
+      "pages": {
+        "en": 24,
+        "es": 34
+      }
+    }
+  },
+  {
+    "type": "subclase",
+    "key": "campeon_2014",
+    "source": "srd51",
+    "concept": "campeon",
+    "data": {
+      "name": {
+        "es": "Campeón",
+        "en": "Champion"
+      },
+      "clase": "guerrero",
+      "descripcion": {
+        "es": "El Campeón arquetípico se centra en desarrollar su poderío físico en bruto hasta alcanzar una perfección letal. Aquellos que deciden emular este arquetipo combinan un riguroso entrenamiento con un estado físico excelente para asestar golpes devastadores.",
+        "en": "The archetypal Champion focuses on the development of raw physical power honed to deadly perfection. Those who model themselves on this archetype combine rigorous training with physical excellence to deal devastating blows."
+      }
+    },
+    "mechanics": {
+      "grants": [
+        {
+          "level": 3,
+          "concept": "campeon_critico_mejorado",
+          "type": "rasgo"
+        },
+        {
+          "level": 7,
+          "concept": "campeon_atleta_sobresaliente",
+          "type": "rasgo"
+        },
+        {
+          "level": 10,
+          "concept": "campeon_estilo_de_combate_adicional",
+          "type": "rasgo"
+        },
+        {
+          "level": 15,
+          "concept": "campeon_critico_superior",
+          "type": "rasgo"
+        },
+        {
+          "level": 18,
+          "concept": "campeon_superviviente",
+          "type": "rasgo"
+        }
+      ],
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 25,
+        "es": 35
+      }
+    }
+  },
+  {
+    "type": "rasgo",
+    "key": "guerrero_estilo_de_combate_2014",
+    "source": "srd51",
+    "concept": "guerrero_estilo_de_combate",
+    "data": {
+      "name": {
+        "es": "Estilo de Combate",
+        "en": "Fighting Style"
+      },
+      "procedencia": {
+        "es": "Guerrero",
+        "en": "Fighter"
+      },
+      "nivel": 1,
+      "descripcion": {
+        "es": "Adoptas un estilo de combate concreto como tu especialidad. Elige una de las siguientes opciones. No puedes escoger el mismo Estilo de Combate más de una vez, incluso aunque luego puedas elegir de nuevo un Estilo de Combate.",
+        "en": "You adopt a particular style of fighting as your specialty. Choose one of the following options. You can’t take a Fighting Style option more than once, even if you later get to choose again."
+      }
+    },
+    "mechanics": {
+      "grants": [
+        {
+          "choose": {
+            "key": "estilo",
+            "label": {
+              "es": "Estilo de combate",
+              "en": "Fighting Style"
+            },
+            "count": "1",
+            "type": "rasgo",
+            "from": [
+              "estilo_de_combate_tiro_con_arco",
+              "estilo_de_combate_defensa",
+              "estilo_de_combate_duelo",
+              "estilo_de_combate_combate_con_armas_a_dos_manos",
+              "estilo_de_combate_proteccion",
+              "estilo_de_combate_combate_con_dos_armas"
+            ]
+          }
+        }
+      ],
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 24,
+        "es": 34
+      }
+    }
+  },
+  {
+    "type": "rasgo",
+    "key": "estilo_de_combate_tiro_con_arco_2014",
+    "source": "srd51",
+    "concept": "estilo_de_combate_tiro_con_arco",
+    "data": {
+      "name": {
+        "es": "Tiro con Arco",
+        "en": "Archery"
+      },
+      "procedencia": {
+        "es": "Guerrero",
+        "en": "Fighter"
+      },
+      "nivel": 0,
+      "descripcion": {
+        "es": "Recibes un bonificador de +2 a las tiradas de ataque con armas a distancia.",
+        "en": "You gain a +2 bonus to attack rolls you make with ranged weapons."
+      }
+    },
+    "mechanics": {
+      "effects": [
+        {
+          "target": "bono_ataque_distancia",
+          "op": "add",
+          "value": "2"
+        }
+      ],
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 24,
+        "es": 35
+      }
+    }
+  },
+  {
+    "type": "rasgo",
+    "key": "estilo_de_combate_defensa_2014",
+    "source": "srd51",
+    "concept": "estilo_de_combate_defensa",
+    "data": {
+      "name": {
+        "es": "Defensa",
+        "en": "Defense"
+      },
+      "procedencia": {
+        "es": "Guerrero",
+        "en": "Fighter"
+      },
+      "nivel": 0,
+      "descripcion": {
+        "es": "Recibes un bonificador de +1 a la CA cuando lleves puesta cualquier armadura.",
+        "en": "While you are wearing armor, you gain a +1 bonus to AC."
+      }
+    },
+    "mechanics": {
+      "effects": [
+        {
+          "target": "ca",
+          "op": "add",
+          "value": "1",
+          "when": "@con_armadura"
+        }
+      ],
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 24,
+        "es": 34
+      }
+    }
+  },
+  {
+    "type": "rasgo",
+    "key": "estilo_de_combate_duelo_2014",
+    "source": "srd51",
+    "concept": "estilo_de_combate_duelo",
+    "data": {
+      "name": {
+        "es": "Duelo",
+        "en": "Dueling"
+      },
+      "procedencia": {
+        "es": "Guerrero",
+        "en": "Fighter"
+      },
+      "nivel": 0,
+      "descripcion": {
+        "es": "Cuando empuñes una única arma cuerpo a cuerpo con una mano, recibes un bonificador de +2 a tus tiradas de daño con esa arma.",
+        "en": "When you are wielding a melee weapon in one hand and no other weapons, you gain a +2 bonus to damage rolls with that weapon."
+      }
+    },
+    "mechanics": {
+      "automation": "partial",
+      "manual": {
+        "es": "+2 al daño con un arma cuerpo a cuerpo en una mano y sin otra",
+        "en": "+2 damage with a one-handed melee weapon and no other"
+      }
+    },
+    "ref": {
+      "pages": {
+        "en": 24,
+        "es": 34
+      }
+    }
+  },
+  {
+    "type": "rasgo",
+    "key": "estilo_de_combate_combate_con_armas_a_dos_manos_2014",
+    "source": "srd51",
+    "concept": "estilo_de_combate_combate_con_armas_a_dos_manos",
+    "data": {
+      "name": {
+        "es": "Combate con Armas a Dos Manos",
+        "en": "Great Weapon Fighting"
+      },
+      "procedencia": {
+        "es": "Guerrero",
+        "en": "Fighter"
+      },
+      "nivel": 0,
+      "descripcion": {
+        "es": "Si sacas un 1 o un 2 en alguno de los dados de daño de un ataque hecho con un arma cuerpo a cuerpo que empuñes con las dos manos, puedes volver a tirar el dado en cuestión. Debes usar el nuevo resultado, incluso aunque este sea un 1 o un 2. Para obtener este beneficio, el arma debe poseer la propiedad “versátil” o “a dos manos”.",
+        "en": "When you roll a 1 or 2 on a damage die for an attack you make with a melee weapon that you are wielding with two hands, you can reroll the die and must use the new roll, even if the new roll is a 1 or a 2. The weapon must have the two-handed or versatile property for you to gain this benefit."
+      }
+    },
+    "mechanics": {
+      "automation": "partial",
+      "manual": {
+        "es": "Repite los 1 y los 2 del daño con armas a dos manos o versátiles",
+        "en": "Reroll 1s and 2s on damage with two-handed or versatile weapons"
+      }
+    },
+    "ref": {
+      "pages": {
+        "en": 24,
+        "es": 34
+      }
+    }
+  },
+  {
+    "type": "rasgo",
+    "key": "estilo_de_combate_proteccion_2014",
+    "source": "srd51",
+    "concept": "estilo_de_combate_proteccion",
+    "data": {
+      "name": {
+        "es": "Protección",
+        "en": "Protection"
+      },
+      "procedencia": {
+        "es": "Guerrero",
+        "en": "Fighter"
+      },
+      "nivel": 0,
+      "descripcion": {
+        "es": "Cuando una criatura que puedas ver ataque a un objetivo que esté a 1,5 mo menos de ti y no seas tú mismo, puedes utilizar tu reacción para dar desventaja a la tirada de ataque. Debes estar embrazando un escudo.",
+        "en": "When a creature you can see attacks a target other than you that is within 5 feet of you, you can use your reaction to impose disadvantage on the attack roll. You must be wielding a shield."
+      }
+    },
+    "mechanics": {
+      "actions": [
+        {
+          "key": "proteger",
+          "label": {
+            "es": "Proteger",
+            "en": "Protect"
+          },
+          "activation": "reaction"
+        }
+      ],
+      "automation": "partial",
+      "manual": {
+        "es": "Con escudo, da desventaja a un ataque contra otro a 1,5 m",
+        "en": "With a shield, impose disadvantage on an attack against another within 5 feet"
+      }
+    },
+    "ref": {
+      "pages": {
+        "en": 24,
+        "es": 34
+      }
+    }
+  },
+  {
+    "type": "rasgo",
+    "key": "estilo_de_combate_combate_con_dos_armas_2014",
+    "source": "srd51",
+    "concept": "estilo_de_combate_combate_con_dos_armas",
+    "data": {
+      "name": {
+        "es": "Combate con Dos Armas",
+        "en": "Two-Weapon Fighting"
+      },
+      "procedencia": {
+        "es": "Guerrero",
+        "en": "Fighter"
+      },
+      "nivel": 0,
+      "descripcion": {
+        "es": "Cuando estés combatiendo con dos armas, puedes sumar tu modificador por característica al daño del segundo ataque.",
+        "en": "When you engage in two-weapon fighting, you can add your ability modifier to the damage of the second attack."
+      }
+    },
+    "mechanics": {
+      "automation": "partial",
+      "manual": {
+        "es": "Suma el modificador al daño del segundo ataque",
+        "en": "Add your modifier to the second attack’s damage"
+      }
+    },
+    "ref": {
+      "pages": {
+        "en": 24,
+        "es": 34
+      }
+    }
+  },
+  {
+    "type": "rasgo",
+    "key": "guerrero_tomar_aliento_2014",
+    "source": "srd51",
+    "concept": "guerrero_tomar_aliento",
+    "data": {
+      "name": {
+        "es": "Tomar Aliento",
+        "en": "Second Wind"
+      },
+      "procedencia": {
+        "es": "Guerrero",
+        "en": "Fighter"
+      },
+      "nivel": 1,
+      "descripcion": {
+        "es": "Posees una pequeña reserva de energías a la que puedes recurrir para protegerte del peligro. Puedes usar una acción adicional durante tu turno para recuperar una cantidad de puntos de golpe igual a 1d10 + tu nivel de guerrero. Una vez utilizado este rasgo, deberás terminar un descanso corto o largo para poder emplearlo de nuevo.",
+        "en": "You have a limited well of stamina that you can draw on to protect yourself from harm. On your turn, you can use a bonus action to regain hit points equal to 1d10 + your fighter level. Once you use this feature, you must finish a short or long rest before you can use it again."
+      }
+    },
+    "mechanics": {
+      "resources": [
+        {
+          "key": "usos",
+          "label": {
+            "es": "Usos",
+            "en": "Uses"
+          },
+          "max": "1",
+          "recovery": "short"
+        }
+      ],
+      "actions": [
+        {
+          "key": "usar",
+          "label": {
+            "es": "Tomar aliento",
+            "en": "Second Wind"
+          },
+          "activation": "bonus",
+          "heal": "1d10 + @origen.nivel",
+          "uses": "usos"
+        }
+      ],
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 24,
+        "es": 35
+      }
+    }
+  },
+  {
+    "type": "rasgo",
+    "key": "guerrero_accion_subita_2014",
+    "source": "srd51",
+    "concept": "guerrero_accion_subita",
+    "data": {
+      "name": {
+        "es": "Acción Súbita",
+        "en": "Action Surge"
+      },
+      "procedencia": {
+        "es": "Guerrero",
+        "en": "Fighter"
+      },
+      "nivel": 2,
+      "descripcion": {
+        "es": "A partir del nivel 2, puedes superar tus límites normales durante un instante. Durante tu turno, puedes llevar a cabo una acción más, además de tu acción y acción adicional habituales.\n\nUna vez utilizado este rasgo, deberás terminar un descanso corto o largo para poder emplearlo de nuevo. A partir del nivel 17, puedes usar este rasgo dos veces antes de descansar, pero solo una vez por turno.",
+        "en": "Starting at 2nd level, you can push yourself beyond your normal limits for a moment. On your turn, you can take one additional action on top of your regular action and a possible bonus action.\n\nOnce you use this feature, you must finish a short or long rest before you can use it again. Starting at 17th level, you can use it twice before a rest, but only once on the same turn."
+      }
+    },
+    "mechanics": {
+      "resources": [
+        {
+          "key": "usos",
+          "label": {
+            "es": "Usos",
+            "en": "Uses"
+          },
+          "max": "@origen.nivel >= 17 ? 2 : 1",
+          "recovery": "short"
+        }
+      ],
+      "actions": [
+        {
+          "key": "usar",
+          "label": {
+            "es": "Acción súbita",
+            "en": "Action Surge"
+          },
+          "activation": "free",
+          "uses": "usos"
+        }
+      ],
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 25,
+        "es": 35
+      }
+    }
+  },
+  {
+    "type": "rasgo",
+    "key": "guerrero_arquetipo_marcial_2014",
+    "source": "srd51",
+    "concept": "guerrero_arquetipo_marcial",
+    "data": {
+      "name": {
+        "es": "Arquetipo Marcial",
+        "en": "Martial Archetype"
+      },
+      "procedencia": {
+        "es": "Guerrero",
+        "en": "Fighter"
+      },
+      "nivel": 3,
+      "descripcion": {
+        "es": "A nivel 3, escoges un arquetipo al que aspiras emular con tu estilo y técnicas de combate, como el de Campeón. El arquetipo que elijas te proporciona ciertos rasgos cuando alcanzas los niveles 3, 7, 10, 15 y 18.",
+        "en": "At 3rd level, you choose an archetype that you strive to emulate in your combat styles and techniques, such as Champion. The archetype you choose grants you features at 3rd level and again at 7th, 10th, 15th, and 18th level."
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 25,
+        "es": 35
+      }
+    }
+  },
+  {
+    "type": "rasgo",
+    "key": "guerrero_mejora_de_caracteristica_2014",
+    "source": "srd51",
+    "concept": "guerrero_mejora_de_caracteristica",
+    "data": {
+      "name": {
+        "es": "Mejora de Característica",
+        "en": "Ability Score Improvement"
+      },
+      "procedencia": {
+        "es": "Guerrero",
+        "en": "Fighter"
+      },
+      "nivel": 4,
+      "descripcion": {
+        "es": "Cuando alcances los niveles 4, 6, 8, 12, 14, 16 y 19, podrás elegir una puntuación de característica y aumentarla en 2, o dos puntuaciones de característica y aumentarlas en 1 cada una. Como es habitual, no puedes aumentar una puntuación de característica por encima de 20 con este rasgo.",
+        "en": "When you reach 4th level, and again at 6th, 8th, 12th, 14th, 16th, and 19th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can’t increase an ability score above 20 using this feature."
+      }
+    },
+    "mechanics": {
+      "grants": [
+        {
+          "choose": {
+            "key": "mejora",
+            "label": {
+              "es": "Mejora de característica",
+              "en": "Ability Score Improvement"
+            },
+            "count": "2",
+            "set": "caracteristicas",
+            "field": "puntuacion",
+            "op": "add"
+          }
+        }
+      ],
+      "automation": "partial",
+      "manual": {
+        "es": "Como mucho 20 en cada característica",
+        "en": "At most 20 in each ability"
+      }
+    },
+    "ref": {
+      "pages": {
+        "en": 25,
+        "es": 35
+      }
+    }
+  },
+  {
+    "type": "rasgo",
+    "key": "guerrero_ataque_adicional_2014",
+    "source": "srd51",
+    "concept": "guerrero_ataque_adicional",
+    "data": {
+      "name": {
+        "es": "Ataque Adicional",
+        "en": "Extra Attack"
+      },
+      "procedencia": {
+        "es": "Guerrero",
+        "en": "Fighter"
+      },
+      "nivel": 5,
+      "descripcion": {
+        "es": "A partir del nivel 5, cuando lleves a cabo la acción de atacar durante tu turno, podrás hacer dos ataques en lugar de uno.\n\nLa cantidad de ataques aumenta a tres cuando alcanzas el nivel 11 de esta clase y a cuatro cuando alcanzas el 20.",
+        "en": "Beginning at 5th level, you can attack twice, instead of once, whenever you take the Attack action on your turn.\n\nThe number of attacks increases to three when you reach 11th level in this class and to four when you reach 20th level in this class."
+      }
+    },
+    "mechanics": {
+      "effects": [
+        {
+          "target": "ataques",
+          "op": "min",
+          "value": "@origen.nivel >= 20 ? 4 : @origen.nivel >= 11 ? 3 : 2"
+        }
+      ],
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 25,
+        "es": 35
+      }
+    }
+  },
+  {
+    "type": "rasgo",
+    "key": "guerrero_indomito_2014",
+    "source": "srd51",
+    "concept": "guerrero_indomito",
+    "data": {
+      "name": {
+        "es": "Indómito",
+        "en": "Indomitable"
+      },
+      "procedencia": {
+        "es": "Guerrero",
+        "en": "Fighter"
+      },
+      "nivel": 9,
+      "descripcion": {
+        "es": "A partir del nivel 9, puedes repetir una tirada de salvación que hayas fallado. Si lo haces, deberás quedarte con el nuevo resultado y no podrás volver a utilizar este rasgo hasta que finalices un descanso largo.\n\nPuedes emplear este rasgo dos veces entre descansos largos cuando alcanzas el nivel 13 y tres veces entre descansos largos a partir del nivel 17.",
+        "en": "Beginning at 9th level, you can reroll a saving throw that you fail. If you do so, you must use the new roll, and you can’t use this feature again until you finish a long rest.\n\nYou can use this feature twice between long rests starting at 13th level and three times between long rests starting at 17th level."
+      }
+    },
+    "mechanics": {
+      "resources": [
+        {
+          "key": "usos",
+          "label": {
+            "es": "Usos",
+            "en": "Uses"
+          },
+          "max": "@origen.nivel >= 17 ? 3 : @origen.nivel >= 13 ? 2 : 1",
+          "recovery": "long"
+        }
+      ],
+      "automation": "partial",
+      "manual": {
+        "es": "Repite una salvación fallida",
+        "en": "Reroll a failed saving throw"
+      }
+    },
+    "ref": {
+      "pages": {
+        "en": 25,
+        "es": 35
+      }
+    }
+  },
+  {
+    "type": "rasgo",
+    "key": "campeon_critico_mejorado_2014",
+    "source": "srd51",
+    "concept": "campeon_critico_mejorado",
+    "data": {
+      "name": {
+        "es": "Crítico Mejorado",
+        "en": "Improved Critical"
+      },
+      "procedencia": {
+        "es": "Campeón",
+        "en": "Champion"
+      },
+      "nivel": 3,
+      "descripcion": {
+        "es": "A partir del momento en el que eliges este arquetipo a nivel 3, tus ataques con arma causarán críticos con un resultado de 19 o 20 en la tirada.",
+        "en": "Beginning when you choose this archetype at 3rd level, your weapon attacks score a critical hit on a roll of 19 or 20."
+      }
+    },
+    "mechanics": {
+      "effects": [
+        {
+          "target": "critico_desde",
+          "op": "max",
+          "value": "19"
+        }
+      ],
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 25,
+        "es": 35
+      }
+    }
+  },
+  {
+    "type": "rasgo",
+    "key": "campeon_atleta_sobresaliente_2014",
+    "source": "srd51",
+    "concept": "campeon_atleta_sobresaliente",
+    "data": {
+      "name": {
+        "es": "Atleta Sobresaliente",
+        "en": "Remarkable Athlete"
+      },
+      "procedencia": {
+        "es": "Campeón",
+        "en": "Champion"
+      },
+      "nivel": 7,
+      "descripcion": {
+        "es": "A partir del nivel 7, puedes sumar la mitad de tu bonificador por competencia (redondeado hacia arriba) a cualquier prueba de Fuerza, Destreza o Constitución que hagas que no se beneficie ya de tu bonificador por competencia.\n\nAdemás, cuando hagas un salto de longitud con carrerilla, podrás aumentar la distancia que saltas en tantos metros como tu modificador por Fuerza multiplicado por 0,3.",
+        "en": "Starting at 7th level, you can add half your proficiency bonus (round up) to any Strength, Dexterity, or Constitution check you make that doesn’t already use your proficiency bonus.\n\nIn addition, when you make a running long jump, the distance you can cover increases by a number of feet equal to your Strength modifier."
+      }
+    },
+    "mechanics": {
+      "effects": [
+        {
+          "target": "caracteristicas.fue.prueba_grado",
+          "op": "min",
+          "value": "0.5"
+        },
+        {
+          "target": "caracteristicas.des.prueba_grado",
+          "op": "min",
+          "value": "0.5"
+        },
+        {
+          "target": "caracteristicas.con.prueba_grado",
+          "op": "min",
+          "value": "0.5"
+        },
+        {
+          "target": "habilidades.atletismo.grado",
+          "op": "min",
+          "value": "0.5"
+        },
+        {
+          "target": "habilidades.acrobacias.grado",
+          "op": "min",
+          "value": "0.5"
+        },
+        {
+          "target": "habilidades.juego_de_manos.grado",
+          "op": "min",
+          "value": "0.5"
+        },
+        {
+          "target": "habilidades.sigilo.grado",
+          "op": "min",
+          "value": "0.5"
+        }
+      ],
+      "automation": "partial",
+      "manual": {
+        "es": "El salto largo con carrerilla, más largo",
+        "en": "Longer running long jump"
+      }
+    },
+    "ref": {
+      "pages": {
+        "en": 25,
+        "es": 35
+      }
+    }
+  },
+  {
+    "type": "rasgo",
+    "key": "campeon_estilo_de_combate_adicional_2014",
+    "source": "srd51",
+    "concept": "campeon_estilo_de_combate_adicional",
+    "data": {
+      "name": {
+        "es": "Estilo de Combate Adicional",
+        "en": "Additional Fighting Style"
+      },
+      "procedencia": {
+        "es": "Campeón",
+        "en": "Champion"
+      },
+      "nivel": 10,
+      "descripcion": {
+        "es": "A nivel 10, puedes escoger una segunda opción del rasgo Estilo de Combate.",
+        "en": "At 10th level, you can choose a second option from the Fighting Style class feature."
+      }
+    },
+    "mechanics": {
+      "grants": [
+        {
+          "choose": {
+            "key": "estilo",
+            "label": {
+              "es": "Estilo de combate",
+              "en": "Fighting Style"
+            },
+            "count": "1",
+            "type": "rasgo",
+            "from": [
+              "estilo_de_combate_tiro_con_arco",
+              "estilo_de_combate_defensa",
+              "estilo_de_combate_duelo",
+              "estilo_de_combate_combate_con_armas_a_dos_manos",
+              "estilo_de_combate_proteccion",
+              "estilo_de_combate_combate_con_dos_armas"
+            ]
+          }
+        }
+      ],
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 25,
+        "es": 35
+      }
+    }
+  },
+  {
+    "type": "rasgo",
+    "key": "campeon_critico_superior_2014",
+    "source": "srd51",
+    "concept": "campeon_critico_superior",
+    "data": {
+      "name": {
+        "es": "Crítico Superior",
+        "en": "Superior Critical"
+      },
+      "procedencia": {
+        "es": "Campeón",
+        "en": "Champion"
+      },
+      "nivel": 15,
+      "descripcion": {
+        "es": "A partir del nivel 15, tus ataques con armas causarán críticos con un resultado de 18 a 20 en la tirada.",
+        "en": "Starting at 15th level, your weapon attacks score a critical hit on a roll of 18–20."
+      }
+    },
+    "mechanics": {
+      "effects": [
+        {
+          "target": "critico_desde",
+          "op": "max",
+          "value": "18"
+        }
+      ],
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 25,
+        "es": 35
+      }
+    }
+  },
+  {
+    "type": "rasgo",
+    "key": "campeon_superviviente_2014",
+    "source": "srd51",
+    "concept": "campeon_superviviente",
+    "data": {
+      "name": {
+        "es": "Superviviente",
+        "en": "Survivor"
+      },
+      "procedencia": {
+        "es": "Campeón",
+        "en": "Champion"
+      },
+      "nivel": 18,
+      "descripcion": {
+        "es": "A nivel 18, alcanzas la cumbre de la resistencia en batalla. Al comienzo de cada uno de tus turnos, recuperas una cantidad de puntos de golpe igual a 5 + tu modificador por Constitución si no te quedan más de la mitad de tus puntos de golpe. No recibes este beneficio si tienes 0 puntos de golpe.",
+        "en": "At 18th level, you attain the pinnacle of resilience in battle. At the start of each of your turns, you regain hit points equal to 5 + your Constitution modifier if you have no more than half of your hit points left. You don’t gain this benefit if you have 0 hit points."
+      }
+    },
+    "mechanics": {
+      "automation": "partial",
+      "manual": {
+        "es": "Al empezar tu turno, con la mitad de los PG o menos, recuperas 5 + Con",
+        "en": "At the start of your turn, at half HP or less, regain 5 + Con"
+      }
+    },
+    "ref": {
+      "pages": {
+        "en": 25,
+        "es": 35
+      }
+    }
+  },
+  {
+    "type": "clase",
+    "key": "guerrero_2024",
+    "source": "srd521",
+    "concept": "guerrero",
+    "data": {
+      "name": {
+        "es": "Guerrero",
+        "en": "Fighter"
+      },
+      "dado": 10,
+      "dado_golpe": "1d10",
+      "lanzamiento": ""
+    },
+    "mechanics": {
+      "effects": [
+        {
+          "target": "caracteristicas.fue.salvacion_grado",
+          "op": "min",
+          "value": "1",
+          "when": "@este.inicial"
+        },
+        {
+          "target": "caracteristicas.con.salvacion_grado",
+          "op": "min",
+          "value": "1",
+          "when": "@este.inicial"
+        },
+        {
+          "target": "competencias_armas",
+          "op": "append",
+          "value": "\"sencilla\"",
+          "when": "@este.inicial"
+        },
+        {
+          "target": "competencias_armas",
+          "op": "append",
+          "value": "\"marcial\""
+        },
+        {
+          "target": "competencias_armaduras",
+          "op": "append",
+          "value": "\"ligera\""
+        },
+        {
+          "target": "competencias_armaduras",
+          "op": "append",
+          "value": "\"media\""
+        },
+        {
+          "target": "competencias_armaduras",
+          "op": "append",
+          "value": "\"escudo\""
+        },
+        {
+          "target": "competencias_armaduras",
+          "op": "append",
+          "value": "\"pesada\"",
+          "when": "@este.inicial"
+        }
+      ],
+      "grants": [
+        {
+          "choose": {
+            "key": "habilidades",
+            "label": {
+              "es": "Habilidades",
+              "en": "Skills"
+            },
+            "count": "2",
+            "set": "habilidades",
+            "from": [
+              "acrobacias",
+              "trato_con_animales",
+              "atletismo",
+              "historia",
+              "perspicacia",
+              "intimidacion",
+              "persuasion",
+              "percepcion",
+              "supervivencia"
+            ],
+            "when": "@este.inicial"
+          }
+        },
+        {
+          "level": 3,
+          "choose": {
+            "key": "subclase",
+            "label": {
+              "es": "Subclase",
+              "en": "Subclass"
+            },
+            "count": "1",
+            "type": "subclase",
+            "from": ["campeon"]
+          }
+        },
+        {
+          "level": 1,
+          "concept": "guerrero_estilo_de_combate",
+          "type": "rasgo"
+        },
+        {
+          "level": 1,
+          "concept": "guerrero_tomar_aliento",
+          "type": "rasgo"
+        },
+        {
+          "level": 1,
+          "concept": "guerrero_maestria_con_armas",
+          "type": "rasgo"
+        },
+        {
+          "level": 2,
+          "concept": "guerrero_accion_subita",
+          "type": "rasgo"
+        },
+        {
+          "level": 2,
+          "concept": "guerrero_mente_tactica",
+          "type": "rasgo"
+        },
+        {
+          "level": 3,
+          "concept": "guerrero_subclase_de_guerrero",
+          "type": "rasgo"
+        },
+        {
+          "level": 4,
+          "concept": "guerrero_mejora_de_caracteristica",
+          "type": "rasgo"
+        },
+        {
+          "level": 6,
+          "concept": "guerrero_mejora_de_caracteristica",
+          "type": "rasgo"
+        },
+        {
+          "level": 8,
+          "concept": "guerrero_mejora_de_caracteristica",
+          "type": "rasgo"
+        },
+        {
+          "level": 12,
+          "concept": "guerrero_mejora_de_caracteristica",
+          "type": "rasgo"
+        },
+        {
+          "level": 14,
+          "concept": "guerrero_mejora_de_caracteristica",
+          "type": "rasgo"
+        },
+        {
+          "level": 16,
+          "concept": "guerrero_mejora_de_caracteristica",
+          "type": "rasgo"
+        },
+        {
+          "level": 5,
+          "concept": "guerrero_ataque_adicional",
+          "type": "rasgo"
+        },
+        {
+          "level": 5,
+          "concept": "guerrero_desplazamiento_tactico",
+          "type": "rasgo"
+        },
+        {
+          "level": 9,
+          "concept": "guerrero_indomito",
+          "type": "rasgo"
+        },
+        {
+          "level": 9,
+          "concept": "guerrero_maestro_tactico",
+          "type": "rasgo"
+        },
+        {
+          "level": 11,
+          "concept": "guerrero_dos_ataques_adicionales",
+          "type": "rasgo"
+        },
+        {
+          "level": 13,
+          "concept": "guerrero_ataques_estudiados",
+          "type": "rasgo"
+        },
+        {
+          "level": 19,
+          "concept": "guerrero_don_epico",
+          "type": "rasgo"
+        },
+        {
+          "level": 20,
+          "concept": "guerrero_tres_ataques_adicionales",
+          "type": "rasgo"
+        }
+      ],
+      "automation": "partial",
+      "manual": {
+        "es": "El equipo inicial se elige a mano",
+        "en": "Starting equipment is chosen by hand"
+      }
+    },
+    "ref": {
+      "pages": {
+        "en": 47,
+        "es": 62
+      }
+    }
+  },
+  {
+    "type": "subclase",
+    "key": "campeon_2024",
+    "source": "srd521",
+    "concept": "campeon",
+    "data": {
+      "name": {
+        "es": "Campeón",
+        "en": "Champion"
+      },
+      "clase": "guerrero",
+      "descripcion": {
+        "es": "Aspira a la excelencia física en combate. Un campeón se centra en desarrollar su destreza marcial en su incansable afán de victoria. Los campeones combinan un entrenamiento riguroso con un estado físico excelente para asestar golpes devastadores, resistir ante el peligro y alcanzar la gloria. Ya sea en una competición atlética o en una sangrienta batalla, los campeones luchan por coronarse como vencedores.",
+        "en": "Pursue Physical Excellence in Combat A Champion focuses on the development of martial prowess in a relentless pursuit of victory. Champions combine rigorous training with physical excellence to deal devastating blows, withstand peril, and garner glory. Whether in athletic contests or bloody battle, Champions strive for the crown of the victor."
+      }
+    },
+    "mechanics": {
+      "grants": [
+        {
+          "level": 3,
+          "concept": "campeon_critico_mejorado",
+          "type": "rasgo"
+        },
+        {
+          "level": 3,
+          "concept": "campeon_atleta_sobresaliente",
+          "type": "rasgo"
+        },
+        {
+          "level": 7,
+          "concept": "campeon_estilo_de_combate_adicional",
+          "type": "rasgo"
+        },
+        {
+          "level": 10,
+          "concept": "campeon_guerrero_heroico",
+          "type": "rasgo"
+        },
+        {
+          "level": 15,
+          "concept": "campeon_critico_superior",
+          "type": "rasgo"
+        },
+        {
+          "level": 18,
+          "concept": "campeon_superviviente",
+          "type": "rasgo"
+        }
+      ],
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 49,
+        "es": 64
+      }
+    }
+  },
+  {
+    "type": "rasgo",
+    "key": "guerrero_estilo_de_combate_2024",
+    "source": "srd521",
+    "concept": "guerrero_estilo_de_combate",
+    "data": {
+      "name": {
+        "es": "Estilo de combate",
+        "en": "Fighting Style"
+      },
+      "procedencia": {
+        "es": "Guerrero",
+        "en": "Fighter"
+      },
+      "nivel": 1,
+      "descripcion": {
+        "es": "Has pulido tu destreza marcial y obtienes una dote de estilo de combate de tu elección (consulta el capítulo “Dotes”). Se recomienda Defensa. Tomar Maestría con aliento armas armas, Tomar aliento 2 3\n\n2 3\n\n2 3\n\n3 4\n\ntáctico 3 4\n\n3 4\n\n3 4\n\n3 4\n\n3 4\n\n4 5\n\n4 5\n\n4 5\n\n4 5\n\n4 5\n\n4 5\n\n4 6\n\n(tres usos) 4 6\n\n4 6\n\n4 6\n\n4 6 Cada vez que subas un nivel de guerrero, puedes sustituir la dote que hayas elegido por otra dote de estilo de combate.",
+        "en": "You have honed your martial prowess and gain a Fighting Style feat of your choice (see “Feats”). Defense is recommended.\n\nWhenever you gain a Fighter level, you can replace the feat you chose with a different Fighting Style feat. Second Weapon\n\nWind Mastery\n\nMastery 2 3 Mind 2 3\n\n2 3\n\n3 4\n\n3 4\n\n3 4\n\n3 4\n\n3 4 Master 3 4\n\n4 5\n\n4 5\n\n4 5\n\nAttacks 4 5\n\n4 5\n\n4 5\n\n4 6\n\n(three uses) 4 6\n\n4 6\n\n4 6\n\n4 6"
+      }
+    },
+    "mechanics": {
+      "grants": [
+        {
+          "choose": {
+            "key": "estilo",
+            "label": {
+              "es": "Estilo de combate",
+              "en": "Fighting Style"
+            },
+            "count": "1",
+            "type": "dote"
+          }
+        }
+      ],
+      "automation": "partial",
+      "manual": {
+        "es": "Una dote de estilo de combate",
+        "en": "A Fighting Style feat"
+      }
+    },
+    "ref": {
+      "pages": {
+        "en": 47,
+        "es": 62
+      }
+    }
+  },
+  {
+    "type": "rasgo",
+    "key": "guerrero_tomar_aliento_2024",
+    "source": "srd521",
+    "concept": "guerrero_tomar_aliento",
+    "data": {
+      "name": {
+        "es": "Tomar aliento",
+        "en": "Second Wind"
+      },
+      "procedencia": {
+        "es": "Guerrero",
+        "en": "Fighter"
+      },
+      "nivel": 1,
+      "descripcion": {
+        "es": "Posees una pequeña reserva de resistencia física y mental a la que puedes recurrir. Como acción adicional, puedes usarla para recuperar una cantidad de puntos de golpe igual a 1d10 más tu nivel de guerrero.\n\nPuedes usar este rasgo dos veces. Recuperas uno de los usos gastados tras finalizar un descanso corto y todos tras finalizar un descanso largo.\n\nObtienes usos adicionales cuando alcanzas ciertos niveles de guerrero, como se muestra en la columna “Tomar aliento” de la tabla “Rasgos de guerrero”.",
+        "en": "You have a limited well of physical and mental stamina that you can draw on. As a Bonus Action, you can use it to regain Hit Points equal to 1d10 plus your Fighter level.\n\nYou can use this feature twice. You regain one expended use when you finish a Short Rest, and you regain all expended uses when you finish a Long Rest.\n\nWhen you reach certain Fighter levels, you gain more uses of this feature, as shown in the Second Wind column of the Fighter Features table."
+      }
+    },
+    "mechanics": {
+      "resources": [
+        {
+          "key": "usos",
+          "label": {
+            "es": "Usos",
+            "en": "Uses"
+          },
+          "max": "@origen.nivel >= 10 ? 4 : @origen.nivel >= 4 ? 3 : 2",
+          "recovery": "short",
+          "amount": "1"
+        }
+      ],
+      "actions": [
+        {
+          "key": "usar",
+          "label": {
+            "es": "Tomar aliento",
+            "en": "Second Wind"
+          },
+          "activation": "bonus",
+          "heal": "1d10 + @origen.nivel",
+          "uses": "usos"
+        }
+      ],
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 48,
+        "es": 63
+      }
+    }
+  },
+  {
+    "type": "rasgo",
+    "key": "guerrero_maestria_con_armas_2024",
+    "source": "srd521",
+    "concept": "guerrero_maestria_con_armas",
+    "data": {
+      "name": {
+        "es": "Maestría con armas",
+        "en": "Weapon Mastery"
+      },
+      "procedencia": {
+        "es": "Guerrero",
+        "en": "Fighter"
+      },
+      "nivel": 1,
+      "descripcion": {
+        "es": "Tu entrenamiento con armas te permite utilizar las propiedades de maestría con tres tipos de armas sencillas o marciales de tu elección. Tras finalizar un descanso largo, puedes llevar a cabo ejercicios con armas y cambiar una de dichas elecciones.\n\nCuando alcances ciertos niveles de guerrero, adquirirás la capacidad de usar las propiedades de maestría con más tipos de armas, como se muestra en la columna “Maestría con armas” de la tabla “Rasgos de guerrero”.",
+        "en": "Your training with weapons allows you to use the mastery properties of three kinds of Simple or Martial weapons of your choice. Whenever you finish a Long Rest, you can practice weapon drills and change one of those weapon choices.\n\nWhen you reach certain Fighter levels, you gain the ability to use the mastery properties of more kinds of weapons, as shown in the Weapon Mastery column of the Fighter Features table."
+      }
+    },
+    "mechanics": {
+      "grants": [
+        {
+          "choose": {
+            "key": "maestrias",
+            "label": {
+              "es": "Maestrías",
+              "en": "Masteries"
+            },
+            "count": "@origen.nivel >= 16 ? 6 : @origen.nivel >= 10 ? 5 : @origen.nivel >= 4 ? 4 : 3",
+            "type": "arma"
+          }
+        }
+      ],
+      "automation": "partial",
+      "manual": {
+        "es": "Usas la propiedad de maestría de las armas elegidas",
+        "en": "You use the mastery property of the chosen weapons"
+      }
+    },
+    "ref": {
+      "pages": {
+        "en": 48,
+        "es": 63
+      }
+    }
+  },
+  {
+    "type": "rasgo",
+    "key": "guerrero_accion_subita_2024",
+    "source": "srd521",
+    "concept": "guerrero_accion_subita",
+    "data": {
+      "name": {
+        "es": "Acción súbita",
+        "en": "Action Surge"
+      },
+      "procedencia": {
+        "es": "Guerrero",
+        "en": "Fighter"
+      },
+      "nivel": 2,
+      "descripcion": {
+        "es": "Puedes superar tus límites normales durante un instante. En tu turno, puedes llevar a cabo una acción más, salvo la acción de magia.\n\nCuando uses este rasgo, no podrás volver a hacerlo hasta que finalices un descanso corto o largo. A partir del nivel 17, podrás usarlo dos veces antes de descansar, pero solo una vez por turno.",
+        "en": "You can push yourself beyond your normal limits for a moment. On your turn, you can take one additional action, except the Magic action.\n\nOnce you use this feature, you can’t do so again until you finish a Short or Long Rest. Starting at level 17, you can use it twice before a rest but only once on a turn."
+      }
+    },
+    "mechanics": {
+      "resources": [
+        {
+          "key": "usos",
+          "label": {
+            "es": "Usos",
+            "en": "Uses"
+          },
+          "max": "@origen.nivel >= 17 ? 2 : 1",
+          "recovery": "short"
+        }
+      ],
+      "actions": [
+        {
+          "key": "usar",
+          "label": {
+            "es": "Acción súbita",
+            "en": "Action Surge"
+          },
+          "activation": "free",
+          "uses": "usos"
+        }
+      ],
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 48,
+        "es": 63
+      }
+    }
+  },
+  {
+    "type": "rasgo",
+    "key": "guerrero_mente_tactica_2024",
+    "source": "srd521",
+    "concept": "guerrero_mente_tactica",
+    "data": {
+      "name": {
+        "es": "Mente táctica",
+        "en": "Tactical Mind"
+      },
+      "procedencia": {
+        "es": "Guerrero",
+        "en": "Fighter"
+      },
+      "nivel": 2,
+      "descripcion": {
+        "es": "Tienes facilidad para la estrategia dentro y fuera del campo de batalla. Cuando falles una prueba de característica, podrás gastar un uso de tu rasgo Tomar aliento para esforzarte por superarla. En vez de recuperar puntos de golpe, tiras 1d10 y sumas el resultado a la prueba de característica, lo que podría convertir el fallo en un éxito. Si sigues sin superar la prueba, este uso de Tomar aliento no se gasta.",
+        "en": "You have a mind for tactics on and off the battlefield. When you fail an ability check, you can expend a use of your Second Wind to push yourself toward success. Rather than regaining Hit Points, you roll 1d10 and add the number rolled to the ability check, potentially turning it into a success. If the check still fails, this use of Second Wind isn’t expended."
+      }
+    },
+    "mechanics": {
+      "automation": "partial",
+      "manual": {
+        "es": "Gasta un uso de Tomar aliento para sumar 1d10 a una prueba fallida",
+        "en": "Spend a Second Wind use to add 1d10 to a failed check"
+      }
+    },
+    "ref": {
+      "pages": {
+        "en": 48,
+        "es": 63
+      }
+    }
+  },
+  {
+    "type": "rasgo",
+    "key": "guerrero_subclase_de_guerrero_2024",
+    "source": "srd521",
+    "concept": "guerrero_subclase_de_guerrero",
+    "data": {
+      "name": {
+        "es": "Subclase de guerrero",
+        "en": "Fighter Subclass"
+      },
+      "procedencia": {
+        "es": "Guerrero",
+        "en": "Fighter"
+      },
+      "nivel": 3,
+      "descripcion": {
+        "es": "Consigues una subclase de guerrero de tu elección. La subclase de campeón se detalla tras la descripción de esta clase. Una subclase es una especialización que te proporciona rasgos cuando alcanzas ciertos niveles de guerrero. De aquí en adelante, obtienes todos los rasgos de tu subclase que sean de tu nivel de guerrero e inferiores.",
+        "en": "You gain a Fighter subclass of your choice. The Champion subclass is detailed after this class’s description. A subclass is a specialization that grants you features at certain Fighter levels. For the rest of your career, you gain each of your subclass’s features that are of your Fighter level or lower."
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 48,
+        "es": 63
+      }
+    }
+  },
+  {
+    "type": "rasgo",
+    "key": "guerrero_mejora_de_caracteristica_2024",
+    "source": "srd521",
+    "concept": "guerrero_mejora_de_caracteristica",
+    "data": {
+      "name": {
+        "es": "Mejora de característica",
+        "en": "Ability Score Improvement"
+      },
+      "procedencia": {
+        "es": "Guerrero",
+        "en": "Fighter"
+      },
+      "nivel": 4,
+      "descripcion": {
+        "es": "Obtienes la dote Mejora de característica (consulta el capítulo “Dotes”) u otra dote de tu elección para la que cumplas las condiciones. Vuelves a obtener este rasgo en los niveles 6, 8, 12, 14 y 16 de guerrero.",
+        "en": "You gain the Ability Score Improvement feat (see “Feats”) or another feat of your choice for which you qualify. You gain this feature again at Fighter levels 6, 8, 12, 14, and 16."
+      }
+    },
+    "mechanics": {
+      "grants": [
+        {
+          "choose": {
+            "key": "dote",
+            "label": {
+              "es": "Dote",
+              "en": "Feat"
+            },
+            "count": "1",
+            "type": "dote"
+          }
+        }
+      ],
+      "automation": "partial",
+      "manual": {
+        "es": "La dote Mejora de característica u otra",
+        "en": "The Ability Score Improvement feat or another"
+      }
+    },
+    "ref": {
+      "pages": {
+        "en": 48,
+        "es": 63
+      }
+    }
+  },
+  {
+    "type": "rasgo",
+    "key": "guerrero_ataque_adicional_2024",
+    "source": "srd521",
+    "concept": "guerrero_ataque_adicional",
+    "data": {
+      "name": {
+        "es": "Ataque adicional",
+        "en": "Extra Attack"
+      },
+      "procedencia": {
+        "es": "Guerrero",
+        "en": "Fighter"
+      },
+      "nivel": 5,
+      "descripcion": {
+        "es": "Cuando lleves a cabo la acción de atacar en tu turno, podrás hacer dos ataques en lugar de uno.",
+        "en": "You can attack twice instead of once whenever you take the Attack action on your turn."
+      }
+    },
+    "mechanics": {
+      "effects": [
+        {
+          "target": "ataques",
+          "op": "min",
+          "value": "2"
+        }
+      ],
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 48,
+        "es": 63
+      }
+    }
+  },
+  {
+    "type": "rasgo",
+    "key": "guerrero_desplazamiento_tactico_2024",
+    "source": "srd521",
+    "concept": "guerrero_desplazamiento_tactico",
+    "data": {
+      "name": {
+        "es": "Desplazamiento táctico",
+        "en": "Tactical Shift"
+      },
+      "procedencia": {
+        "es": "Guerrero",
+        "en": "Fighter"
+      },
+      "nivel": 5,
+      "descripcion": {
+        "es": "Cuando uses tu rasgo Tomar aliento con una acción adicional, podrás moverte hasta la mitad de tu velocidad sin provocar ataques de oportunidad.",
+        "en": "Whenever you activate your Second Wind with a Bonus Action, you can move up to half your Speed without provoking Opportunity Attacks."
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 48,
+        "es": 63
+      }
+    }
+  },
+  {
+    "type": "rasgo",
+    "key": "guerrero_indomito_2024",
+    "source": "srd521",
+    "concept": "guerrero_indomito",
+    "data": {
+      "name": {
+        "es": "Indómito",
+        "en": "Indomitable"
+      },
+      "procedencia": {
+        "es": "Guerrero",
+        "en": "Fighter"
+      },
+      "nivel": 9,
+      "descripcion": {
+        "es": "Si fallas una tirada de salvación, puedes repetirla con un bonificador igual a tu nivel de guerrero. Deberás quedarte con el nuevo resultado y no podrás volver a utilizar este rasgo hasta que finalices un descanso largo.\n\nPuedes usar este rasgo dos veces entre descansos largos a partir del nivel 13 y tres veces entre descansos largos a partir del nivel 17.",
+        "en": "If you fail a saving throw, you can reroll it with a bonus equal to your Fighter level. You must use the new roll, and you can’t use this feature again until you finish a Long Rest.\n\nYou can use this feature twice before a Long Rest starting at level 13 and three times before a Long Rest starting at level 17."
+      }
+    },
+    "mechanics": {
+      "resources": [
+        {
+          "key": "usos",
+          "label": {
+            "es": "Usos",
+            "en": "Uses"
+          },
+          "max": "@origen.nivel >= 17 ? 3 : @origen.nivel >= 13 ? 2 : 1",
+          "recovery": "long"
+        }
+      ],
+      "automation": "partial",
+      "manual": {
+        "es": "Repite una salvación fallida con un bonificador igual a tu nivel de guerrero",
+        "en": "Reroll a failed save with a bonus equal to your Fighter level"
+      }
+    },
+    "ref": {
+      "pages": {
+        "en": 48,
+        "es": 63
+      }
+    }
+  },
+  {
+    "type": "rasgo",
+    "key": "guerrero_maestro_tactico_2024",
+    "source": "srd521",
+    "concept": "guerrero_maestro_tactico",
+    "data": {
+      "name": {
+        "es": "Maestro táctico",
+        "en": "Tactical Master"
+      },
+      "procedencia": {
+        "es": "Guerrero",
+        "en": "Fighter"
+      },
+      "nivel": 9,
+      "descripcion": {
+        "es": "Cuando ataques usando un arma con la que puedas utilizar su propiedad de maestría, puedes sustituir la propiedad para ese ataque por la de debilitar, empujar o ralentizar.",
+        "en": "When you attack with a weapon whose mastery property you can use, you can replace that property with the Push, Sap, or Slow property for that attack."
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 48,
+        "es": 63
+      }
+    }
+  },
+  {
+    "type": "rasgo",
+    "key": "guerrero_dos_ataques_adicionales_2024",
+    "source": "srd521",
+    "concept": "guerrero_dos_ataques_adicionales",
+    "data": {
+      "name": {
+        "es": "Dos ataques adicionales",
+        "en": "Two Extra Attacks"
+      },
+      "procedencia": {
+        "es": "Guerrero",
+        "en": "Fighter"
+      },
+      "nivel": 11,
+      "descripcion": {
+        "es": "Cuando lleves a cabo la acción de atacar en tu turno, podrás hacer tres ataques en lugar de uno.",
+        "en": "You can attack three times instead of once whenever you take the Attack action on your turn."
+      }
+    },
+    "mechanics": {
+      "effects": [
+        {
+          "target": "ataques",
+          "op": "min",
+          "value": "3"
+        }
+      ],
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 48,
+        "es": 63
+      }
+    }
+  },
+  {
+    "type": "rasgo",
+    "key": "guerrero_ataques_estudiados_2024",
+    "source": "srd521",
+    "concept": "guerrero_ataques_estudiados",
+    "data": {
+      "name": {
+        "es": "Ataques estudiados",
+        "en": "Studied Attacks"
+      },
+      "procedencia": {
+        "es": "Guerrero",
+        "en": "Fighter"
+      },
+      "nivel": 13,
+      "descripcion": {
+        "es": "Estudias a tus adversarios y aprendes con cada ataque que realizas. Si haces una tirada de ataque contra una criatura y fallas, tendrás ventaja en tu siguiente tirada de ataque contra esa criatura antes del final de tu siguiente turno.",
+        "en": "You study your opponents and learn from each attack you make. If you make an attack roll against a creature and miss, you have Advantage on your next attack roll against that creature before the end of your next turn."
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 48,
+        "es": 63
+      }
+    }
+  },
+  {
+    "type": "rasgo",
+    "key": "guerrero_don_epico_2024",
+    "source": "srd521",
+    "concept": "guerrero_don_epico",
+    "data": {
+      "name": {
+        "es": "Don épico",
+        "en": "Epic Boon"
+      },
+      "procedencia": {
+        "es": "Guerrero",
+        "en": "Fighter"
+      },
+      "nivel": 19,
+      "descripcion": {
+        "es": "Obtienes una dote de don épico (consulta el capítulo “Dotes”) u otra dote de tu elección para la que cumplas las condiciones. Se recomienda Don de la pericia en combate.",
+        "en": "You gain an Epic Boon feat (see “Feats”) or another feat of your choice for which you qualify. Boon of Combat Prowess is recommended."
+      }
+    },
+    "mechanics": {
+      "grants": [
+        {
+          "choose": {
+            "key": "don",
+            "label": {
+              "es": "Don épico",
+              "en": "Epic Boon"
+            },
+            "count": "1",
+            "type": "dote"
+          }
+        }
+      ],
+      "automation": "partial",
+      "manual": {
+        "es": "Una dote de don épico",
+        "en": "An Epic Boon feat"
+      }
+    },
+    "ref": {
+      "pages": {
+        "en": 48,
+        "es": 63
+      }
+    }
+  },
+  {
+    "type": "rasgo",
+    "key": "guerrero_tres_ataques_adicionales_2024",
+    "source": "srd521",
+    "concept": "guerrero_tres_ataques_adicionales",
+    "data": {
+      "name": {
+        "es": "Tres ataques adicionales",
+        "en": "Three Extra Attacks"
+      },
+      "procedencia": {
+        "es": "Guerrero",
+        "en": "Fighter"
+      },
+      "nivel": 20,
+      "descripcion": {
+        "es": "Cuando lleves a cabo la acción de atacar en tu turno, podrás hacer cuatro ataques en lugar de uno.",
+        "en": "You can attack four times instead of once whenever you take the Attack action on your turn."
+      }
+    },
+    "mechanics": {
+      "effects": [
+        {
+          "target": "ataques",
+          "op": "min",
+          "value": "4"
+        }
+      ],
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 48,
+        "es": 63
+      }
+    }
+  },
+  {
+    "type": "rasgo",
+    "key": "campeon_critico_mejorado_2024",
+    "source": "srd521",
+    "concept": "campeon_critico_mejorado",
+    "data": {
+      "name": {
+        "es": "Crítico mejorado",
+        "en": "Improved Critical"
+      },
+      "procedencia": {
+        "es": "Campeón",
+        "en": "Champion"
+      },
+      "nivel": 3,
+      "descripcion": {
+        "es": "Tus tiradas de ataque con armas y tus ataques sin armas pueden causar críticos con un resultado de 19 o 20 en el d20.",
+        "en": "Your attack rolls with weapons and Unarmed Strikes can score a Critical Hit on a roll of 19 or 20 on the d20."
+      }
+    },
+    "mechanics": {
+      "effects": [
+        {
+          "target": "critico_desde",
+          "op": "max",
+          "value": "19"
+        }
+      ],
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 49,
+        "es": 64
+      }
+    }
+  },
+  {
+    "type": "rasgo",
+    "key": "campeon_atleta_sobresaliente_2024",
+    "source": "srd521",
+    "concept": "campeon_atleta_sobresaliente",
+    "data": {
+      "name": {
+        "es": "Atleta sobresaliente",
+        "en": "Remarkable Athlete"
+      },
+      "procedencia": {
+        "es": "Campeón",
+        "en": "Champion"
+      },
+      "nivel": 3,
+      "descripcion": {
+        "es": "Gracias a tus capacidades atléticas, tienes ventaja en las tiradas de iniciativa y las pruebas de Fuerza (Atletismo).\n\nAdemás, justo después de causar un crítico, puedes moverte hasta la mitad de tu velocidad sin provocar ataques de oportunidad.",
+        "en": "Thanks to your athleticism, you have Advantage on Initiative rolls and Strength (Athletics) checks.\n\nIn addition, immediately after you score a Critical Hit, you can move up to half your Speed without provoking Opportunity Attacks."
+      }
+    },
+    "mechanics": {
+      "effects": [
+        {
+          "target": "iniciativa",
+          "op": "advantage"
+        },
+        {
+          "target": "habilidad.atletismo",
+          "op": "advantage"
+        }
+      ],
+      "automation": "partial",
+      "manual": {
+        "es": "Tras un crítico, te mueves la mitad de tu velocidad",
+        "en": "After a critical hit, move half your speed"
+      }
+    },
+    "ref": {
+      "pages": {
+        "en": 49,
+        "es": 64
+      }
+    }
+  },
+  {
+    "type": "rasgo",
+    "key": "campeon_estilo_de_combate_adicional_2024",
+    "source": "srd521",
+    "concept": "campeon_estilo_de_combate_adicional",
+    "data": {
+      "name": {
+        "es": "Estilo de combate adicional",
+        "en": "Additional Fighting Style"
+      },
+      "procedencia": {
+        "es": "Campeón",
+        "en": "Champion"
+      },
+      "nivel": 7,
+      "descripcion": {
+        "es": "Obtienes otra dote de estilo de combate de tu elección.",
+        "en": "You gain another Fighting Style feat of your choice."
+      }
+    },
+    "mechanics": {
+      "grants": [
+        {
+          "choose": {
+            "key": "estilo",
+            "label": {
+              "es": "Estilo de combate",
+              "en": "Fighting Style"
+            },
+            "count": "1",
+            "type": "dote"
+          }
+        }
+      ],
+      "automation": "partial",
+      "manual": {
+        "es": "Otra dote de estilo de combate",
+        "en": "Another Fighting Style feat"
+      }
+    },
+    "ref": {
+      "pages": {
+        "en": 49,
+        "es": 64
+      }
+    }
+  },
+  {
+    "type": "rasgo",
+    "key": "campeon_guerrero_heroico_2024",
+    "source": "srd521",
+    "concept": "campeon_guerrero_heroico",
+    "data": {
+      "name": {
+        "es": "Guerrero heroico",
+        "en": "Heroic Warrior"
+      },
+      "procedencia": {
+        "es": "Campeón",
+        "en": "Champion"
+      },
+      "nivel": 10,
+      "descripcion": {
+        "es": "La emoción de la batalla te empuja hacia la victoria. Durante un combate, puedes otorgarte inspiración heroica siempre que empieces tu turno sin ella.",
+        "en": "The thrill of battle drives you toward victory. During combat, you can give yourself Heroic Inspiration whenever you start your turn without it."
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 49,
+        "es": 64
+      }
+    }
+  },
+  {
+    "type": "rasgo",
+    "key": "campeon_critico_superior_2024",
+    "source": "srd521",
+    "concept": "campeon_critico_superior",
+    "data": {
+      "name": {
+        "es": "Crítico superior",
+        "en": "Superior Critical"
+      },
+      "procedencia": {
+        "es": "Campeón",
+        "en": "Champion"
+      },
+      "nivel": 15,
+      "descripcion": {
+        "es": "Tus tiradas de ataque con armas y tus ataques sin armas ahora pueden causar críticos con un resultado de 18 a 20 en el d20.",
+        "en": "Your attack rolls with weapons and Unarmed Strikes can now score a Critical Hit on a roll of 18–20 on the d20."
+      }
+    },
+    "mechanics": {
+      "effects": [
+        {
+          "target": "critico_desde",
+          "op": "max",
+          "value": "18"
+        }
+      ],
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 49,
+        "es": 64
+      }
+    }
+  },
+  {
+    "type": "rasgo",
+    "key": "campeon_superviviente_2024",
+    "source": "srd521",
+    "concept": "campeon_superviviente",
+    "data": {
+      "name": {
+        "es": "Superviviente",
+        "en": "Survivor"
+      },
+      "procedencia": {
+        "es": "Campeón",
+        "en": "Champion"
+      },
+      "nivel": 18,
+      "descripcion": {
+        "es": "Alcanzas la cumbre de la resistencia en batalla, lo que te otorga estos beneficios:\n\nDesafiar a la muerte. Tienes ventaja en las tiradas de salvación contra muerte. Asimismo, cuando saques de 18 a 20 en una tirada de salvación contra muerte, obtendrás el beneficio de sacar un 20 en ella.\n\nMejoría heroica. Al principio de cada uno de tus turnos, recuperas una cantidad de puntos de golpe igual a 5 más tu modificador por Constitución si estás maltrecho y tienes al menos 1 punto de golpe.",
+        "en": "You attain the pinnacle of resilience in battle, giving you these benefits.\n\nDefy Death. You have Advantage on Death Saving Throws. Moreover, when you roll 18–20 on a Death Saving Throw, you gain the benefit of rolling a 20 on it.\n\nHeroic Rally. At the start of each of your turns, you regain Hit Points equal to 5 plus your Constitution modifier if you are Bloodied and have at least 1 Hit Point."
+      }
+    },
+    "mechanics": {
+      "effects": [
+        {
+          "target": "salvacion_muerte",
+          "op": "advantage"
+        }
+      ],
+      "automation": "partial",
+      "manual": {
+        "es": "Un 18 a 20 en la salvación contra muerte cuenta como un 20; ensangrentado, recuperas 5 + Con al empezar tu turno",
+        "en": "An 18–20 on a death save counts as a 20; while bloodied, regain 5 + Con at the start of your turn"
+      }
+    },
+    "ref": {
+      "pages": {
+        "en": 49,
+        "es": 64
+      }
+    }
+  }
+]

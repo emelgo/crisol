@@ -4,6 +4,7 @@
  */
 import { writeFileSync } from 'node:fs'
 import { consoleIo, type Io } from '../io.ts'
+import { classDocs } from './clases.ts'
 import {
   type ArmorGroup,
   armorDoc,
@@ -17,6 +18,7 @@ import {
   weaponRows,
   weaponSignature
 } from './equipo.ts'
+import { FIGHTER, FIGHTER_CLASS, FIGHTER_FEATURES } from './guerrero.ts'
 import { MECHANICS } from './mecanica.ts'
 import { displayName, gearDoc, gearSignature, gearTable } from './objetos.ts'
 import { GEAR_PAIRS, GEAR_RENAMES } from './pares.ts'
@@ -97,6 +99,9 @@ export function extract(): Record<string, Doc[]> {
         return gearDoc('2024', en, es, c, gearOf('2024')(c))
       })
     ],
+    'clases.json': (['2014', '2024'] as const).flatMap((edition) =>
+      classDocs(FIGHTER[edition], FIGHTER_CLASS[edition], FIGHTER_FEATURES[edition])
+    ),
     'armas.json': [
       ...w14.map(([en, es], i) => weaponDoc('2014', en, es, wc.older[i] as string)),
       ...w24.map(([en, es], i) => weaponDoc('2024', en, es, wc.newer[i] as string))
