@@ -9,6 +9,23 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   de propietario.
 - **En local**, con los cambios al momento: http://localhost:5173 (lo arranco cuando haga falta).
 
+## Módulo 3: srd-5e (en local; la IA, cuando esté en staging)
+
+El 5e de serie con su contenido de las dos ediciones (de momento, todo el equipo y el guerrero con el campeón: 474
+documentos). Spec: `docs/specs/srd-5e.md`.
+
+- [ ] **Punto de control 2, en local** (http://localhost:5173):
+  - en «Sistemas», «De serie»: el **5e** el primero, con sus tipos, sus campos en los dos idiomas, sus tiradas, sus dos
+    fuentes con su atribución y sus ajustes (reglas generales, multiclase mixta);
+  - en la ventana de una campaña, elegir el **5e**: sus dos ediciones, «Lo que está en las dos» (solo con las dos
+    activas), las reglas generales 2024/2014, «Así se ve al elegir» con cosas de verdad (lo de 2014, «Legado», si se
+    ven las dos versiones), la atribución; sin ninguna edición avisa y no guarda.
+- [ ] **Punto de control 2, desde claude.ai** (cuando esté en staging): pedirle a la IA que busque en el contenido del
+  5e (`buscar_contenido`, también con la campaña), que lea la cota de malla y la espada larga (`leer_contenido`) y que
+  pruebe un guerrero de nivel 5 con ellas (`probar_formula`, `probar_tirada`, `probar_accion`): CA 16, PG 44, un ataque
+  de +6 y Tomar aliento de 1d10 + 5. Después, que haga un sistema propio con contenido con su mecánica
+  (`guardar_contenido`) y que lo pruebe.
+
 ## Módulo 3: sistemas (en staging)
 
 Ya en staging (PR #96): todo se puede probar allí. Spec: `docs/specs/sistemas.md`.
