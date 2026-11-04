@@ -70,13 +70,18 @@ import {
   checkSystem,
   createSystem,
   deleteSystem,
+  deleteSystemContent,
   exportSystem,
   getSystem,
+  getSystemContent,
   getSystemFormat,
   getSystemParts,
   importSystem,
   listSystems,
+  putSystemContent,
+  searchSystemContent,
   tryFormula,
+  trySystemAction,
   trySystemRoll,
   updateSystem
 } from './systems.ts'
@@ -215,7 +220,12 @@ export const ACTIONS = [
   createSystem,
   updateSystem,
   deleteSystem,
+  deleteSystemContent,
   exportSystem,
+  putSystemContent,
+  trySystemAction,
+  getSystemContent,
+  searchSystemContent,
   importSystem,
   getSystemParts,
   checkSystem,
@@ -325,7 +335,12 @@ export type Actions = {
   createSystem: typeof createSystem
   updateSystem: typeof updateSystem
   deleteSystem: typeof deleteSystem
+  deleteSystemContent: typeof deleteSystemContent
   exportSystem: typeof exportSystem
+  putSystemContent: typeof putSystemContent
+  trySystemAction: typeof trySystemAction
+  getSystemContent: typeof getSystemContent
+  searchSystemContent: typeof searchSystemContent
   importSystem: typeof importSystem
   getSystemParts: typeof getSystemParts
   checkSystem: typeof checkSystem

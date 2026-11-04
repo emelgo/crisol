@@ -3,15 +3,32 @@
 Lista viva: todo lo que haya que probar se apunta aquí y se marca cuando lo pruebe. Lo que diga va a «Lo que dijo» (al
 final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interfaz.
 
-- **Staging**: https://neo.crisol.144-91-122-245.sslip.io, con el módulo 2, los arreglos del 2026-11-04 y los dados
-  (PR #93, #94 y #95).
+- **Staging**: https://neo.crisol.144-91-122-245.sslip.io, con el módulo 2, los arreglos del 2026-11-04, los dados y
+  los sistemas (PR #93, #94, #95 y #96).
 - **La IA**: el conector «Neo Crisol» de claude.ai (`https://neo.crisol.144-91-122-245.sslip.io/mcp`), con la cuenta
   de propietario.
 - **En local**, con los cambios al momento: http://localhost:5173 (lo arranco cuando haga falta).
 
-## Módulo 3: sistemas (en local, en la rama `modulo-3/sistemas`)
+## Módulo 3: srd-5e (en local; la IA, cuando esté en staging)
 
-Aún no está en staging: se prueba en el servidor de desarrollo (http://localhost:5173). Spec: `docs/specs/sistemas.md`.
+El 5e de serie con su contenido de las dos ediciones (de momento, todo el equipo y el guerrero con el campeón: 474
+documentos). Spec: `docs/specs/srd-5e.md`.
+
+- [ ] **Punto de control 2, en local** (http://localhost:5173):
+  - en «Sistemas», «De serie»: el **5e** el primero, con sus tipos, sus campos en los dos idiomas, sus tiradas, sus dos
+    fuentes con su atribución y sus ajustes (reglas generales, multiclase mixta);
+  - en la ventana de una campaña, elegir el **5e**: sus dos ediciones, «Lo que está en las dos» (solo con las dos
+    activas), las reglas generales 2024/2014, «Así se ve al elegir» con cosas de verdad (lo de 2014, «Legado», si se
+    ven las dos versiones), la atribución; sin ninguna edición avisa y no guarda.
+- [ ] **Punto de control 2, desde claude.ai** (cuando esté en staging): pedirle a la IA que busque en el contenido del
+  5e (`buscar_contenido`, también con la campaña), que lea la cota de malla y la espada larga (`leer_contenido`) y que
+  pruebe un guerrero de nivel 5 con ellas (`probar_formula`, `probar_tirada`, `probar_accion`): CA 16, PG 44, un ataque
+  de +6 y Tomar aliento de 1d10 + 5. Después, que haga un sistema propio con contenido con su mecánica
+  (`guardar_contenido`) y que lo pruebe.
+
+## Módulo 3: sistemas (en staging)
+
+Ya en staging (PR #96): todo se puede probar allí. Spec: `docs/specs/sistemas.md`.
 
 - [ ] **Punto de control 3**:
   - «Sistemas» en la barra de Mis mundos (y en el menú de la llama del móvil), con «En blanco» de serie;
@@ -33,7 +50,7 @@ Aún no está en staging: se prueba en el servidor de desarrollo (http://localho
   - en el móvil: la parte, en el selector; «Probar», en una hoja; en Avanzado, los problemas debajo.
   - con cambios sin guardar, salir pregunta; y si otro lo cambia (otra pestaña, la IA), tus cambios siguen y avisa;
   - una clave que ya existe no se aplica: lo dice debajo.
-- [ ] **Final, desde claude.ai** (cuando esté en staging, con el conector «Neo Crisol»): pedirle a la IA un sistema
+- [ ] **Final, desde claude.ai** (con el conector «Neo Crisol»): pedirle a la IA un sistema
   de 2d6 + atributo. Debe leer el formato (`formato_sistemas`), crearlo, validarlo y probar una fórmula y una tirada;
   sale en «Sistemas». Después, que le cambie una tirada (por rutas) y que lo elija en una campaña. En modo asistente,
   crear y cambiar esperan tu aprobación, con el nombre del sistema en la cola; borrarlo, también.

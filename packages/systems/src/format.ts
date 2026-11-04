@@ -52,7 +52,7 @@ export type SimpleField = FieldBase &
     | { kind: 'text'; default?: string; max?: number; lines?: number }
     | { kind: 'number'; default?: number; min?: number; max?: number; integer?: boolean }
     | { kind: 'boolean'; default?: boolean }
-    | { kind: 'list'; default?: string[]; max?: number }
+    | { kind: 'list'; default?: string[]; max?: number; options?: { value: string; label: Text }[] }
     | { kind: 'choice'; options: { value: string; label: Text }[]; default?: string }
     | { kind: 'link'; to: string; multiple?: boolean }
     | { kind: 'clock'; segments: number; default?: number }
@@ -67,7 +67,7 @@ export type Field =
   | (FieldBase & { kind: 'table'; columns: Record<string, SimpleField>; max?: number })
   | (FieldBase & {
       kind: 'set'
-      elements: { key: string; label: Text; abbr?: Text }[]
+      elements: { key: string; label: Text; abbr?: Text; values?: Record<string, string | number | boolean> }[]
       fields: Record<string, SimpleField>
     })
   | (FieldBase & { kind: 'items'; of: string[] })
@@ -105,7 +105,13 @@ function build(strict: boolean) {
       ...base,
       kind: kind('list', 'Una lista de textos cortos (idiomas, rasgos)'),
       default: z.array(z.string().max(200)).max(200).optional(),
-      max: z.int().min(1).max(200).optional()
+      max: z.int().min(1).max(200).optional(),
+      options: z
+        .array(obj({ value: key, label: text() }))
+        .min(1)
+        .max(200)
+        .optional()
+        .describe('Si solo valen unas, cuáles: su valor (una clave) y su nombre (los tipos de daño)')
     }),
     obj({
       ...base,
@@ -172,10 +178,20 @@ function build(strict: boolean) {
           'Unos elementos fijos, cada uno con los mismos campos (las características: @caracteristicas.des.mod)'
         ),
         elements: z
-          .array(obj({ key, label: text(), abbr: text(10).optional().describe('Su abreviatura (DES)') }))
+          .array(
+            obj({
+              key,
+              label: text(),
+              abbr: text(10).optional().describe('Su abreviatura (DES)'),
+              values: z
+                .record(key, z.union([z.string().max(200), z.number().finite(), z.boolean()]))
+                .optional()
+                .describe('Sus valores iniciales, si no son los del campo (Sigilo: { car: des })')
+            })
+          )
           .min(1)
           .max(100)
-          .describe('Los elementos: su clave, su nombre y su abreviatura'),
+          .describe('Los elementos: su clave, su nombre, su abreviatura y sus valores iniciales'),
         fields: recordOf(simpleField, 30).describe('Los campos de cada elemento')
       }),
       // Lo que lleva o tiene: documentos de esos tipos de objeto (una clase, una espada, un conjuro)
@@ -223,10 +239,14 @@ function build(strict: boolean) {
     formula: formula.describe('Los dados y los campos del personaje (2d6 + @este, 1d20 + @caracteristicas.des.mod)'),
     // Una por cada uno de estos campos, o por cada elemento de un conjunto; dentro, @este es ese
     for: z
-      .union([obj({ fields: z.array(key).min(1).max(100) }), obj({ set: key })])
+      .union([
+        obj({ fields: z.array(key).min(1).max(100) }),
+        obj({ set: key }),
+        obj({ items: z.array(key).min(1).max(50) })
+      ])
       .optional()
       .describe(
-        'Una por cada uno de estos campos ({ fields: [vigor, astucia] }) o por cada elemento de un conjunto ({ set: caracteristicas }); dentro, @este es ese'
+        'Una por cada uno de estos campos ({ fields: [vigor, astucia] }), por cada elemento de un conjunto ({ set: caracteristicas }) o por cada objeto que lleve de estos tipos ({ items: [arma] }); dentro, @este es ese'
       ),
     target: z
       .enum(['none', 'optional', 'required'])
@@ -255,7 +275,11 @@ function build(strict: boolean) {
           key,
           label: text(),
           from: formula.describe('Los dados que cambia (2d6), sin @'),
-          to: formula.describe('Por cuáles (3d6kh2: tres, y se quedan los dos mayores)')
+          to: formula.describe('Por cuáles (3d6kh2: tres, y se quedan los dos mayores)'),
+          gives: z
+            .enum(['advantage', 'disadvantage'])
+            .optional()
+            .describe('Si es el que ponen los efectos de ventaja (advantage) o de desventaja (disadvantage)')
         })
       )
       .max(10)
@@ -268,7 +292,16 @@ function build(strict: boolean) {
     name: text().describe('Su nombre (SRD 5.1)'),
     license: z.string().trim().min(1).max(200).describe('Su licencia (CC BY 4.0, Propia)'),
     attribution: text(4000).describe('La atribución que pide su licencia'),
-    url: z.url({ protocol: /^https?$/ }).optional()
+    url: z.url({ protocol: /^https?$/ }).optional(),
+    edition: z
+      .string()
+      .trim()
+      .min(1)
+      .max(40)
+      .optional()
+      .describe('Su edición («2014», «2024»): la campaña elige cuáles valen'),
+    publisher: text().optional().describe('Su editorial'),
+    released: z.iso.date().optional().describe('Cuándo salió (AAAA-MM-DD): de lo repetido, gana lo más nuevo')
   })
   const setting = obj({
     label: text().describe('Su nombre'),

@@ -7,15 +7,26 @@ describe('lo que una campaña elige de su sistema', () => {
   it('sin elegir nada: todas las fuentes, el primer idioma y el valor inicial de cada ajuste', () => {
     expect(defaultChoices(cinco)).toEqual({
       sources: ['srd51', 'srd52'],
+      duplicates: 'newest',
       language: 'es',
       settings: { metodos: ['estandar', 'compra'] }
     })
-    expect(defaultChoices(fronteras)).toEqual({ sources: [], language: 'es', settings: { avance: 8 } })
+    expect(defaultChoices(fronteras)).toEqual({
+      sources: [],
+      duplicates: 'newest',
+      language: 'es',
+      settings: { avance: 8 }
+    })
   })
 
   it('lo elegido se completa con lo que falta', () => {
     expect(normalizeChoices(cinco, { sources: ['srd52'], language: 'en' })).toEqual({
-      choices: { sources: ['srd52'], language: 'en', settings: { metodos: ['estandar', 'compra'] } },
+      choices: {
+        sources: ['srd52'],
+        duplicates: 'newest',
+        language: 'en',
+        settings: { metodos: ['estandar', 'compra'] }
+      },
       problems: []
     })
     expect(normalizeChoices(cinco, { settings: { metodos: ['tiradas', 'a_mano'] } }).choices.settings).toEqual({
@@ -33,6 +44,7 @@ describe('lo que una campaña elige de su sistema', () => {
       }).problems
     ).toEqual([
       'No existe la fuente «srd99»',
+      'Activa al menos una fuente',
       'El sistema no trae el idioma «fr»',
       '«Métodos de características» no vale así',
       'No existe el ajuste «otro»'

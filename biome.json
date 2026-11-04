@@ -6,7 +6,15 @@
     "useIgnoreFile": true
   },
   "files": {
-    "includes": ["**", "!**/*.md", "!**/coverage", "!**/.turbo", "!research", "!datos-locales"]
+    "includes": [
+      "**",
+      "!**/*.md",
+      "!**/coverage",
+      "!**/.turbo",
+      "!research",
+      "!datos-locales",
+      "!packages/systems/src/catalog/5e/content"
+    ]
   },
   "formatter": {
     "enabled": true,
@@ -35,5 +43,24 @@
         "organizeImports": "on"
       }
     }
-  }
+  },
+  "overrides": [
+    {
+      "includes": ["apps/web/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "paths": {
+                  "@crisol/systems/catalog/content": "El contenido de serie es del servidor: a la web llega por searchSystemContent y getSystemContent"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
 }

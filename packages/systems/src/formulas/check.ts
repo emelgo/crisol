@@ -26,7 +26,24 @@ export type Shape =
 export type Scope = Record<string, Shape>
 
 /** Los nombres que ponen las fórmulas: no pueden ser campos de primer nivel */
-export const RESERVED = ['este', 'total', 'natural', 'objetivo'] as const
+export const RESERVED = ['este', 'total', 'natural', 'objetivo', 'ajustes', 'portador', 'origen'] as const
+
+/** Los ajustes de la campaña, como nombres de las fórmulas (`@ajustes.reglas`) */
+export function settingsShape(system: System, language: 'es' | 'en' = 'es'): Shape {
+  const fields: Scope = {}
+  for (const [k, s] of Object.entries(system.settings ?? {})) {
+    const label = textOf(s.label, language) || k
+    fields[k] =
+      s.kind === 'boolean'
+        ? { type: 'boolean', label }
+        : s.kind === 'number'
+          ? { type: 'number', label }
+          : s.kind === 'choice'
+            ? { type: 'string', label }
+            : { type: 'list', label, of: { type: 'string', label } }
+  }
+  return { type: 'object', label: 'ajustes', fields }
+}
 
 export interface FormulaProblem {
   message: string

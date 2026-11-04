@@ -7,7 +7,46 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
-### Para retomar (2026-11-04, módulo 3: sistemas)
+### Para retomar (2026-11-04, módulo 3: `srd-5e` en marcha, fase 1 hecha)
+
+- **Ahora**: `sistemas` está terminado, en `main` y en staging (PR #96). **Lo siguiente es `srd-5e`** (el 5e de serie:
+  un solo sistema con el SRD 5.1 y el 5.2 como fuentes que el máster activa en su campaña, en español y en inglés).
+  Su ciclo empieza por la entrevista (`interview-me`) frente al inventario; antes de su spec, mirar si la editorial
+  tiene una versión oficial en español con la misma licencia (`docs/specs/modulo-3.md`, punto 7). Pendiente de
+  Enrique, sin bloquear: probar `sistemas` en staging (`tasks/probar.md`) y decidir si lo que la IA hace en copiloto y
+  ven los jugadores pide aprobación (más abajo, «Queda para después»).
+- **`srd-5e`, en marcha** (rama `modulo-3/srd-5e`): la entrevista, el estudio
+  (`research/dndbeyond/contenido-5e-y-mecanica.md`), la spec (`docs/specs/srd-5e.md`) con el ADR-0012 y el diseño
+  (fila 3 del lienzo «Crisol: sistemas»), aprobados. El plan, aprobado, en `tasks/plan.md` y `tasks/todo.md` (21
+  tareas); el de `sistemas` pasó a `tasks/sistemas/`. Los cuatro PDF del SRD, en `datos-locales/srd/`.
+- **Hecha la fase 1 (la mecánica) y su punto de control**, en el paquete puro (sin pasar aún por el servidor ni la web):
+  el documento de contenido con su concepto, su mecánica y su página (`mechanics.ts`); los efectos al calcular, con su
+  orden y su origen (`evaluate.ts`); los recursos, las tiradas por cada objeto y las acciones con su escalado
+  (`actions.ts`); lo que se ve con las ediciones de la campaña y las referencias por concepto (`content.ts`, y
+  `duplicates` en lo que elige la campaña); `@ajustes` en todas las fórmulas. Los casos difíciles, escritos a mano
+  (`fixtures/dificiles.ts`), dan lo del SRD. Hechas también la tarea 5 (el 5e de serie en el catálogo, con
+  `@portador`, los valores de cada elemento de un conjunto, `first()` y las listas con opciones) y la 6 (su contenido en
+  `catalog/5e/content/`, que solo lee el servidor; buscar y leer el contenido; copiar, bajar y subir con su mecánica,
+  migración 0040, ya en la base de desarrollo). **Ahora**: la tarea 7 (`tasks/todo.md` dice lo hecho y lo que falta):
+  hecha también: los scripts de `scripts/srd/` (`node scripts/srd/extraer.ts` y `comprobar.ts`, con los PDF), todo el
+  equipo de las dos ediciones y el guerrero con el campeón (474 documentos). **Lo siguiente**: la tarea 9 (las ediciones
+  en la ventana de la campaña) y la 10 (la IA y el contenido, también crearlo con su mecánica); después, el punto de
+  control 2 desde claude.ai.
+- **Decidido por Enrique (2026-11-04): los sistemas se hacen con la IA** (`docs/diseno.md`). Al acabar `srd-5e`, una
+  tanda que quita el editor de sistemas entero (también «Probar»): en «Sistemas», la lista, subir de un archivo, bajar
+  cada uno y un sistema vacío, y un aviso de que los nuevos se hacen con la IA (también en las instrucciones del MCP).
+  Por eso la tarea 8 de `srd-5e` («Probar» con el contenido) se quitó y probar el contenido va con la IA (tarea 10).
+  En esa misma tanda, para otros juegos (Enrique, 2026-11-04: «¿se podrá adaptar a Daggerheart y otro TTRPG?»), lo que
+  falta en los dados, que es general: el número de dados (o sus caras) sacado de un campo (`@competencia d8`, las
+  reservas de Blades), leer cada dado de una tirada en sus franjas (Esperanza o Miedo: cuál de los dos d12 es mayor) y
+  modos que añaden dados o grupos («el mayor de estos dos», la ventaja de +1d6). La prueba: una hoja de Daggerheart
+  hecha por la IA. Su contenido no es CC BY (licencia de la comunidad de Darrington Press): traerlo de serie, solo si
+  Enrique lo decide tras leer la licencia.
+- **El servidor de desarrollo, en marcha** para que Enrique vea lo que se hace: la web en http://localhost:5173 (por
+  túnel SSH: `ssh -L 5173:127.0.0.1:5173`), que pasa `/api` al servidor (8130); los dos se recargan solos.
+- **El orden que pidió Enrique** (2026-11-04): terminar el módulo 3 en este mismo chat (`srd-5e`, `personajes`, `hoja`
+  y `foundry`), después pulir la interfaz de todo lo del módulo 3 y, al acabar, el módulo 4 en un chat nuevo. Un chat
+  cada vez: dos a la vez se pisarían la carpeta y las bases de datos de prueba.
 
 - **`dados` está en `main` y en staging** (PR #95, migraciones 0037 y 0038): una sola pasada de la CI, en verde, y
   fusionada con `[skip ci]`. Enrique la prueba con `tasks/probar.md` (puntos de control 2 y 3, lo de las revisiones y
@@ -62,7 +101,12 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   - la versión de la que sale una copia del catálogo es siempre 1 (hará falta con el 5e);
   - el editor visual de los subcampos de conjuntos, grupos y listas de filas, confirmar al quitar un tipo o una
     tirada, la barra de «Guardar» pegada a la vista, y la espera y el error al elegir el sistema de una campaña.
-- **Lo siguiente**: la batería entera, una pasada de la CI, el PR, el merge con `[skip ci]` y staging.
+- **`sistemas` está en `main` y en staging** (PR #96, migración 0039; 2026-11-04). Dos pasadas de la CI: la
+  primera falló por dos pruebas de axe que medían el contraste a medio fundido (en la CI, más lenta); ahora esperan a
+  que acaben las animaciones (`settled` en `e2e/tests/ayudas.ts`). Fusionada con `[skip ci]`.
+- **Lo siguiente**: que Enrique pruebe en staging (`tasks/probar.md`: puntos de control 3 y 4, y el final desde
+  claude.ai) y decida lo de la IA en copiloto (arriba, «Queda para después»). Después, la siguiente capacidad del
+  módulo 3 (`docs/specs/modulo-3.md`).
 - **Ojo con el lint**: `biome check --write` arregla el formato pero los errores de lint se quedan; mirar siempre
   `pnpm lint` entero antes de guardar.
 - **Prueba con un sistema de Foundry de verdad** (Enrique, 2026-11-04: «mete también […] daggerheart/2.12.5/system.json»):
@@ -1414,6 +1458,34 @@ Notas: `research/foundry/sistemas-y-su-api.md` y `research/dndbeyond/creador-y-h
 - **Las preferencias, de cada personaje** (PG fijos o tirados, carga, privacidad…), como en D&D Beyond.
 - **El contenido del SRD, en español y en inglés**, y cada campaña elige. La traducción al español es nuestra (con la
   IA y revisada), con su atribución y los términos habituales; si la editorial tiene una versión oficial en español con
-  la misma licencia, se parte de ella.
+  la misma licencia, se parte de ella (la hay: ver `srd-5e`, abajo).
 - **Quién instala un sistema**: Crisol trae un catálogo de sistemas revisados (los de serie y, más adelante, los
   importados de Foundry cuya licencia lo permita), y cada máster puede crear o subir el suyo para su cuenta.
+
+#### `srd-5e` (entrevista con Enrique, 2026-11-04)
+
+- **Hay SRD oficial en español de las dos ediciones**, con licencia Creative Commons: el 5.1 y el 5.2.1 (traducido en
+  diciembre de 2025), en la página del SRD de D&D Beyond. Se parte de ellos: no hace falta traducirlo con la IA.
+- **Todo el SRD, «como en D&D Beyond»**: las reglas que calculan el personaje y todo el contenido de las dos ediciones
+  (clases y subclases, especies, trasfondos, dotes, conjuros, equipo, objetos mágicos, criaturas, estados y el texto de
+  las reglas), en español y en inglés.
+- **Todo automatizado**: cada cosa lleva su mecánica (un conjuro, su ataque o su salvación y su daño por nivel; un
+  arma, su ataque y su daño; un objeto, sus bonos y su sintonía; un rasgo, sus usos y su descanso), y la hoja calcula y
+  tira sola. Lo muy complejo (Forma salvaje, Polimorfar, Deseo) va como texto y se lleva a mano, como en D&D Beyond.
+- **Preparado para todo el 5e oficial**: Enrique quiere un marketplace y negociar con Wizards para vender sus libros en
+  la app. El modelo tiene que valer para lo que no está en el SRD; cada cosa dice de qué libro sale y con qué licencia
+  (y, más adelante, qué cuentas lo tienen).
+- **Sin pantallas nuevas en `srd-5e`**: el 5e sale en «Sistemas» como uno de serie y se prueba en «Probar» (un guerrero
+  de nivel 5 con su equipo da su CA, su ataque y sus PG con el desglose) y por la IA. Buscar y leer el contenido, con el
+  compendio del módulo 4.
+- **Las dos ediciones en una campaña, como en D&D Beyond**: lo que está en las dos sale con su fuente y lo de 2014 como
+  «Legado»; la campaña activa o desactiva cada edición, esconde lo legado o deja solo lo más nuevo de lo repetido; las
+  reglas generales que cambian (el agotamiento, la sorpresa…) las decide un ajuste de la campaña. Antes de la spec, se
+  mira en D&D Beyond cómo lo hace.
+- **Hecho cuando**: todo lo de los dos SRD está dentro (contado por categorías) en los dos idiomas; unos personajes de
+  referencia (cada clase, en los niveles 1, 5, 11 y 20, en las dos ediciones) dan lo que dicen las reglas; el guerrero
+  de «Probar»; la IA consulta un conjuro y prueba su tirada; y las opciones de las ediciones en la campaña.
+- **Límites**: sala limpia (el contenido sale solo de los PDF oficiales del SRD, nada de D&D Beyond ni de Foundry), la
+  atribución CC BY 4.0 de cada uno y sin la marca «D&D» en la interfaz.
+- **Fuera de `srd-5e`**: el compendio (módulo 4), el creador y la hoja (`personajes`, `hoja`), el marketplace y los
+  libros que no son SRD (solo el modelo preparado), el contenido de Fateforge (módulo 4) e importar de Foundry.

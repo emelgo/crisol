@@ -466,6 +466,13 @@ test('@fugas los sistemas de reglas son de la cuenta: la jugadora ni los ve ni s
   expect(edited.isError, edited.text).toBeFalsy()
   const tried = await claude.call('probar_tirada', { systemId: madeId, roll: 'atributo' })
   expect(tried.isError, tried.text).toBeFalsy()
+  // Su contenido, con un nombre que el jugador no debe ver
+  const saved = await claude.call('guardar_contenido', {
+    systemId: madeId,
+    version: 2,
+    items: [{ type: 'personaje', key: 'amuleto_secreto', source: null, data: { name: 'Amuleto Secreto de la IA' } }]
+  })
+  expect(saved.isError, saved.text).toBeFalsy()
 
   for (const [name, data] of [
     ['listSystems', { organizationId }],
@@ -473,6 +480,14 @@ test('@fugas los sistemas de reglas son de la cuenta: la jugadora ni los ve ni s
     ['getSystemParts', { systemId: madeId, parts: ['types'], organizationId }],
     ['tryFormula', { systemId: madeId, type: 'personaje', formula: '@vigor', organizationId }],
     ['trySystemRoll', { systemId: madeId, roll: 'atributo', organizationId }],
+    ['searchSystemContent', { systemId: madeId, organizationId }],
+    ['getSystemContent', { systemId: madeId, keys: ['amuleto_secreto'], organizationId }],
+    ['trySystemAction', { systemId: madeId, item: null, action: 'x', organizationId }],
+    [
+      'putSystemContent',
+      { systemId: madeId, version: 3, items: [{ type: 'objeto', key: 'x', source: null, data: { name: 'X' } }] }
+    ],
+    ['deleteSystemContent', { systemId: madeId, version: 3, keys: ['amuleto_secreto'] }],
     ['getSystem', { systemId: created.id, organizationId }],
     ['updateSystem', { systemId: created.id, version: 2, name: 'Mío' }],
     ['deleteSystem', { systemId: created.id }]
@@ -489,6 +504,7 @@ test('@fugas los sistemas de reglas son de la cuenta: la jugadora ni los ve ni s
     '"systems"',
     'Sistema de la IA',
     'Vigor oculto',
+    'Amuleto Secreto de la IA',
     'Ayuda que solo ve el máster',
     madeId
   ])

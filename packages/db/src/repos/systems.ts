@@ -2,7 +2,7 @@
  * Los sistemas de reglas de una cuenta (ADR-0011). Todo lo que los escribe pasa por operation(): queda en el historial
  * y se deshace. Guardar pide la versión que se tenía: si cambió entre medias (otra pestaña, la IA), no se pisa nada
  */
-import { and, asc, count, eq, inArray, isNull } from 'drizzle-orm'
+import { and, asc, count, eq, inArray, isNull, sql } from 'drizzle-orm'
 import type { Database } from '../client.ts'
 import { type OperationContext, operation } from '../operation.ts'
 import { organizations } from '../schema/organizations.ts'
@@ -91,6 +91,37 @@ export interface ContentValues {
   key: string
   source: string | null
   data: Record<string, unknown>
+  concept?: string | null
+  mechanics?: Record<string, unknown> | null
+  ref?: Record<string, unknown> | null
+}
+
+/**
+ * Lo que hace falta para buscar en su contenido, sin leer cada documento entero: su clave, su tipo, su fuente, su
+ * concepto, su nombre (en sus idiomas) y cuánto está automatizado
+ */
+export function contentIndex(db: Database, systemId: string) {
+  return db
+    .select({
+      key: systemContent.key,
+      type: systemContent.type,
+      source: systemContent.source,
+      concept: systemContent.concept,
+      name: sql<unknown>`${systemContent.data} -> 'name'`,
+      automation: sql<string | null>`${systemContent.mechanics} ->> 'automation'`
+    })
+    .from(systemContent)
+    .where(eq(systemContent.systemId, systemId))
+    .orderBy(asc(systemContent.key))
+}
+
+/** Unos documentos de su contenido, por su clave */
+export function contentByKeys(db: Database, systemId: string, keys: readonly string[]) {
+  if (keys.length === 0) return Promise.resolve([])
+  return db
+    .select()
+    .from(systemContent)
+    .where(and(eq(systemContent.systemId, systemId), inArray(systemContent.key, [...keys])))
 }
 
 /** Uno nuevo, con su contenido (el de aquel del que se copia, o el del archivo que se sube) */
@@ -156,6 +187,66 @@ export function updateSystem(
       for (const item of content) await w.insert(systemContent, { ...item, systemId: id })
     }
     return row
+  })
+}
+
+/**
+ * Guarda unos documentos de su contenido, por su clave (los que ya están, se cambian), si la versión del sistema es la
+ * que se tenía; el sistema sube de versión
+ */
+export function putContent(
+  db: Database,
+  context: OperationContext,
+  systemId: string,
+  version: number,
+  items: readonly ContentValues[]
+) {
+  return operation(db, context, async (w) => {
+    const [current] = await w.read
+      .select({ version: systems.version })
+      .from(systems)
+      .where(eq(systems.id, systemId))
+      .for('update')
+    if (!current || current.version !== version) throw new SystemChangedError()
+    const keys = items.map((i) => i.key)
+    const existing = await w.read
+      .select({ id: systemContent.id, key: systemContent.key })
+      .from(systemContent)
+      .where(and(eq(systemContent.systemId, systemId), inArray(systemContent.key, keys)))
+    const byKey = new Map(existing.map((e) => [e.key, e.id]))
+    for (const item of items) {
+      const id = byKey.get(item.key)
+      if (id) await w.update(systemContent, id, { ...item })
+      else await w.insert(systemContent, { ...item, systemId })
+    }
+    return {
+      system: read(await w.update(systems, systemId, {})),
+      created: items.filter((i) => !byKey.has(i.key)).length
+    }
+  })
+}
+
+/** Quita unos documentos de su contenido por su clave (los que no están, no cuentan); el sistema sube de versión */
+export function deleteContent(
+  db: Database,
+  context: OperationContext,
+  systemId: string,
+  version: number,
+  keys: readonly string[]
+) {
+  return operation(db, context, async (w) => {
+    const [current] = await w.read
+      .select({ version: systems.version })
+      .from(systems)
+      .where(eq(systems.id, systemId))
+      .for('update')
+    if (!current || current.version !== version) throw new SystemChangedError()
+    const found = await w.read
+      .select({ id: systemContent.id, key: systemContent.key })
+      .from(systemContent)
+      .where(and(eq(systemContent.systemId, systemId), inArray(systemContent.key, [...keys])))
+    for (const row of found) await w.remove(systemContent, row.id)
+    return { system: read(await w.update(systems, systemId, {})), deleted: found.map((r) => r.key) }
   })
 }
 

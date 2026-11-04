@@ -15,13 +15,15 @@ describe('herramientas MCP', () => {
     }
   })
 
-  it('las del módulo 0, las de la wiki, las de las plantillas, las de los dados y las de los sistemas', () => {
+  it('las del módulo 0, las de la wiki, las de las plantillas, las de los dados y las de los sistemas (con su contenido)', () => {
     expect(Object.keys(MCP_TOOLS).sort()).toEqual([
+      'borrar_contenido',
       'borrar_etiqueta',
       'borrar_pagina',
       'borrar_pestana',
       'borrar_plantilla',
       'borrar_sistema',
+      'buscar_contenido',
       'buscar_paginas',
       'cambiar_campana',
       'cambiar_etiqueta',
@@ -45,6 +47,8 @@ describe('herramientas MCP', () => {
       'enlaces_pagina',
       'etiquetar_archivo',
       'formato_sistemas',
+      'guardar_contenido',
+      'leer_contenido',
       'leer_pagina',
       'listar_archivos',
       'listar_etiquetas',
@@ -56,6 +60,7 @@ describe('herramientas MCP', () => {
       'paginas_recientes',
       'pendientes',
       'poner_pin',
+      'probar_accion',
       'probar_formula',
       'probar_tirada',
       'quitar_pin',

@@ -1,0 +1,1678 @@
+[
+  {
+    "type": "equipo",
+    "key": "camello_2014",
+    "source": "srd51",
+    "concept": "camello",
+    "data": {
+      "name": {
+        "es": "Camello",
+        "en": "Camel"
+      },
+      "categoria": "montura",
+      "peso": 0,
+      "coste": 50,
+      "descripcion": {
+        "es": "Velocidad 15 m; capacidad de carga 240 kg.",
+        "en": "Speed 50 ft.; carrying capacity 480 lb."
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 71,
+        "es": 74
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "mula_2014",
+    "source": "srd51",
+    "concept": "mula",
+    "data": {
+      "name": {
+        "es": "Burro o mula",
+        "en": "Donkey or mule"
+      },
+      "categoria": "montura",
+      "peso": 0,
+      "coste": 8,
+      "descripcion": {
+        "es": "Velocidad 12 m; capacidad de carga 210 kg.",
+        "en": "Speed 40 ft.; carrying capacity 420 lb."
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 71,
+        "es": 74
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "elefante_2014",
+    "source": "srd51",
+    "concept": "elefante",
+    "data": {
+      "name": {
+        "es": "Elefante",
+        "en": "Elephant"
+      },
+      "categoria": "montura",
+      "peso": 0,
+      "coste": 200,
+      "descripcion": {
+        "es": "Velocidad 12 m; capacidad de carga 660 kg.",
+        "en": "Speed 40 ft.; carrying capacity 1,320 lb."
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 71,
+        "es": 74
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "caballo_de_tiro_2014",
+    "source": "srd51",
+    "concept": "caballo_de_tiro",
+    "data": {
+      "name": {
+        "es": "Caballo de tiro",
+        "en": "Horse, draft"
+      },
+      "categoria": "montura",
+      "peso": 0,
+      "coste": 50,
+      "descripcion": {
+        "es": "Velocidad 12 m; capacidad de carga 270 kg.",
+        "en": "Speed 40 ft.; carrying capacity 540 lb."
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 72,
+        "es": 74
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "caballo_de_monta_2014",
+    "source": "srd51",
+    "concept": "caballo_de_monta",
+    "data": {
+      "name": {
+        "es": "Caballo de monta",
+        "en": "Horse, riding"
+      },
+      "categoria": "montura",
+      "peso": 0,
+      "coste": 75,
+      "descripcion": {
+        "es": "Velocidad 18 m; capacidad de carga 240 kg.",
+        "en": "Speed 60 ft.; carrying capacity 480 lb."
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 72,
+        "es": 74
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "mastin_2014",
+    "source": "srd51",
+    "concept": "mastin",
+    "data": {
+      "name": {
+        "es": "Mastín",
+        "en": "Mastiff"
+      },
+      "categoria": "montura",
+      "peso": 0,
+      "coste": 25,
+      "descripcion": {
+        "es": "Velocidad 12 m; capacidad de carga 97,5 kg.",
+        "en": "Speed 40 ft.; carrying capacity 195 lb."
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 72,
+        "es": 74
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "poni_2014",
+    "source": "srd51",
+    "concept": "poni",
+    "data": {
+      "name": {
+        "es": "Poni",
+        "en": "Pony"
+      },
+      "categoria": "montura",
+      "peso": 0,
+      "coste": 30,
+      "descripcion": {
+        "es": "Velocidad 12 m; capacidad de carga 112,5 kg.",
+        "en": "Speed 40 ft.; carrying capacity 225 lb."
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 72,
+        "es": 74
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "caballo_de_guerra_2014",
+    "source": "srd51",
+    "concept": "caballo_de_guerra",
+    "data": {
+      "name": {
+        "es": "Caballo de guerra",
+        "en": "Warhorse"
+      },
+      "categoria": "montura",
+      "peso": 0,
+      "coste": 400,
+      "descripcion": {
+        "es": "Velocidad 18 m; capacidad de carga 270 kg.",
+        "en": "Speed 60 ft.; carrying capacity 540 lb."
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 72,
+        "es": 74
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "bocado_y_bridas_2014",
+    "source": "srd51",
+    "concept": "bocado_y_bridas",
+    "data": {
+      "name": {
+        "es": "Bocado y bridas",
+        "en": "Bit and bridle"
+      },
+      "categoria": "arreos",
+      "peso": 1,
+      "coste": 2
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 72,
+        "es": 74
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "carruaje_2014",
+    "source": "srd51",
+    "concept": "carruaje",
+    "data": {
+      "name": {
+        "es": "Carruaje",
+        "en": "Carriage"
+      },
+      "categoria": "vehiculo",
+      "peso": 600,
+      "coste": 100
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 72,
+        "es": 74
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "carreta_2014",
+    "source": "srd51",
+    "concept": "carreta",
+    "data": {
+      "name": {
+        "es": "Carreta",
+        "en": "Cart"
+      },
+      "categoria": "vehiculo",
+      "peso": 200,
+      "coste": 15
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 72,
+        "es": 74
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "carro_de_guerra_2014",
+    "source": "srd51",
+    "concept": "carro_de_guerra",
+    "data": {
+      "name": {
+        "es": "Carro de guerra",
+        "en": "Chariot"
+      },
+      "categoria": "vehiculo",
+      "peso": 100,
+      "coste": 250
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 72,
+        "es": 74
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "alimento_por_dia_2014",
+    "source": "srd51",
+    "concept": "alimento_por_dia",
+    "data": {
+      "name": {
+        "es": "Alimento (por día)",
+        "en": "Feed (per day)"
+      },
+      "categoria": "arreos",
+      "peso": 10,
+      "coste": 0.05
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 72,
+        "es": 74
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "silla_exotica_2014",
+    "source": "srd51",
+    "concept": "silla_exotica",
+    "data": {
+      "name": {
+        "es": "Silla exótica",
+        "en": "Exotic saddle"
+      },
+      "categoria": "arreos",
+      "peso": 40,
+      "coste": 60
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 72,
+        "es": 74
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "silla_militar_2014",
+    "source": "srd51",
+    "concept": "silla_militar",
+    "data": {
+      "name": {
+        "es": "Silla militar",
+        "en": "Military saddle"
+      },
+      "categoria": "arreos",
+      "peso": 30,
+      "coste": 20
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 72,
+        "es": 74
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "silla_de_tiro_2014",
+    "source": "srd51",
+    "concept": "silla_de_tiro",
+    "data": {
+      "name": {
+        "es": "Silla de tiro",
+        "en": "Pack saddle"
+      },
+      "categoria": "arreos",
+      "peso": 15,
+      "coste": 5
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 72,
+        "es": 74
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "silla_de_monta_2014",
+    "source": "srd51",
+    "concept": "silla_de_monta",
+    "data": {
+      "name": {
+        "es": "Silla de monta",
+        "en": "Riding saddle"
+      },
+      "categoria": "arreos",
+      "peso": 25,
+      "coste": 10
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 72,
+        "es": 74
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "alforjas_2014",
+    "source": "srd51",
+    "concept": "alforjas",
+    "data": {
+      "name": {
+        "es": "Alforjas",
+        "en": "Saddlebags"
+      },
+      "categoria": "arreos",
+      "peso": 8,
+      "coste": 4
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 72,
+        "es": 74
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "trineo_2014",
+    "source": "srd51",
+    "concept": "trineo",
+    "data": {
+      "name": {
+        "es": "Trineo",
+        "en": "Sled"
+      },
+      "categoria": "vehiculo",
+      "peso": 300,
+      "coste": 20
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 72,
+        "es": 74
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "estabulado_por_dia_2014",
+    "source": "srd51",
+    "concept": "estabulado_por_dia",
+    "data": {
+      "name": {
+        "es": "Estabulado (por día)",
+        "en": "Stabling (per day)"
+      },
+      "categoria": "arreos",
+      "peso": 0,
+      "coste": 0.5
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 72,
+        "es": 74
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "carro_2014",
+    "source": "srd51",
+    "concept": "carro",
+    "data": {
+      "name": {
+        "es": "Carro",
+        "en": "Wagon"
+      },
+      "categoria": "vehiculo",
+      "peso": 400,
+      "coste": 35
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 72,
+        "es": 74
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "galera_2014",
+    "source": "srd51",
+    "concept": "galera",
+    "data": {
+      "name": {
+        "es": "Galera",
+        "en": "Galley"
+      },
+      "categoria": "vehiculo",
+      "peso": 0,
+      "coste": 30000,
+      "descripcion": {
+        "es": "Velocidad 6 km/h.",
+        "en": "Speed 4 mph."
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 72,
+        "es": 74
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "barcaza_2014",
+    "source": "srd51",
+    "concept": "barcaza",
+    "data": {
+      "name": {
+        "es": "Barcaza",
+        "en": "Keelboat"
+      },
+      "categoria": "vehiculo",
+      "peso": 0,
+      "coste": 3000,
+      "descripcion": {
+        "es": "Velocidad 1,5 km/h.",
+        "en": "Speed 1 mph."
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 72,
+        "es": 74
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "drakkar_2014",
+    "source": "srd51",
+    "concept": "drakkar",
+    "data": {
+      "name": {
+        "es": "Drakkar",
+        "en": "Longship"
+      },
+      "categoria": "vehiculo",
+      "peso": 0,
+      "coste": 10000,
+      "descripcion": {
+        "es": "Velocidad 4,5 km/h.",
+        "en": "Speed 3 mph."
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 72,
+        "es": 74
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "bote_de_remos_2014",
+    "source": "srd51",
+    "concept": "bote_de_remos",
+    "data": {
+      "name": {
+        "es": "Bote de remos",
+        "en": "Rowboat"
+      },
+      "categoria": "vehiculo",
+      "peso": 0,
+      "coste": 50,
+      "descripcion": {
+        "es": "Velocidad 2,25 km/h.",
+        "en": "Speed 1½ mph."
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 72,
+        "es": 74
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "velero_2014",
+    "source": "srd51",
+    "concept": "velero",
+    "data": {
+      "name": {
+        "es": "Velero",
+        "en": "Sailing ship"
+      },
+      "categoria": "vehiculo",
+      "peso": 0,
+      "coste": 10000,
+      "descripcion": {
+        "es": "Velocidad 3 km/h.",
+        "en": "Speed 2 mph."
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 72,
+        "es": 74
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "navio_de_guerra_2014",
+    "source": "srd51",
+    "concept": "navio_de_guerra",
+    "data": {
+      "name": {
+        "es": "Navío de guerra",
+        "en": "Warship"
+      },
+      "categoria": "vehiculo",
+      "peso": 0,
+      "coste": 25000,
+      "descripcion": {
+        "es": "Velocidad 3,75 km/h.",
+        "en": "Speed 2½ mph."
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 72,
+        "es": 74
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "mercancia_0_5_kg_de_trigo_2014",
+    "source": "srd51",
+    "concept": "mercancia_0_5_kg_de_trigo",
+    "data": {
+      "name": {
+        "es": "0,5 kg de trigo",
+        "en": "1 lb. of wheat"
+      },
+      "categoria": "mercancia",
+      "peso": 0,
+      "coste": 0.01
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 72,
+        "es": 74
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "mercancia_0_5_kg_de_harina_o_un_pollo_2014",
+    "source": "srd51",
+    "concept": "mercancia_0_5_kg_de_harina_o_un_pollo",
+    "data": {
+      "name": {
+        "es": "0,5 kg de harina o un pollo",
+        "en": "1 lb. of flour or one chicken"
+      },
+      "categoria": "mercancia",
+      "peso": 0,
+      "coste": 0.02
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 72,
+        "es": 74
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "mercancia_0_5_kg_de_sal_2014",
+    "source": "srd51",
+    "concept": "mercancia_0_5_kg_de_sal",
+    "data": {
+      "name": {
+        "es": "0,5 kg de sal",
+        "en": "1 lb. of salt"
+      },
+      "categoria": "mercancia",
+      "peso": 0,
+      "coste": 0.05
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 72,
+        "es": 74
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "mercancia_0_5_kg_de_hierro_o_0_8_m_de_lona_2014",
+    "source": "srd51",
+    "concept": "mercancia_0_5_kg_de_hierro_o_0_8_m_de_lona",
+    "data": {
+      "name": {
+        "es": "0,5 kg de hierro o 0,8 m² de lona",
+        "en": "1 lb. of iron or 1 sq. yd. of canvas"
+      },
+      "categoria": "mercancia",
+      "peso": 0,
+      "coste": 0.1
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 72,
+        "es": 74
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "mercancia_0_5_kg_de_cobre_o_0_8_m_de_tela_de_algodon_2014",
+    "source": "srd51",
+    "concept": "mercancia_0_5_kg_de_cobre_o_0_8_m_de_tela_de_algodon",
+    "data": {
+      "name": {
+        "es": "0,5 kg de cobre o 0,8 m² de tela de algodón",
+        "en": "1 lb. of copper or 1 sq. yd. of cotton cloth"
+      },
+      "categoria": "mercancia",
+      "peso": 0,
+      "coste": 0.5
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 72,
+        "es": 74
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "mercancia_0_5_kg_de_jengibre_o_una_cabra_2014",
+    "source": "srd51",
+    "concept": "mercancia_0_5_kg_de_jengibre_o_una_cabra",
+    "data": {
+      "name": {
+        "es": "0,5 kg de jengibre o una cabra",
+        "en": "1 lb. of ginger or one goat"
+      },
+      "categoria": "mercancia",
+      "peso": 0,
+      "coste": 1
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 72,
+        "es": 74
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "mercancia_0_5_kg_de_canela_o_pimienta_o_una_oveja_2014",
+    "source": "srd51",
+    "concept": "mercancia_0_5_kg_de_canela_o_pimienta_o_una_oveja",
+    "data": {
+      "name": {
+        "es": "0,5 kg de canela o pimienta, o una oveja",
+        "en": "1 lb. of cinnamon or pepper, or one sheep"
+      },
+      "categoria": "mercancia",
+      "peso": 0,
+      "coste": 2
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 72,
+        "es": 74
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "mercancia_0_5_kg_de_clavo_o_un_cerdo_2014",
+    "source": "srd51",
+    "concept": "mercancia_0_5_kg_de_clavo_o_un_cerdo",
+    "data": {
+      "name": {
+        "es": "0,5 kg de clavo o un cerdo",
+        "en": "1 lb. of cloves or one pig"
+      },
+      "categoria": "mercancia",
+      "peso": 0,
+      "coste": 3
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 72,
+        "es": 74
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "mercancia_0_5_kg_de_plata_o_0_8_m_de_lino_2014",
+    "source": "srd51",
+    "concept": "mercancia_0_5_kg_de_plata_o_0_8_m_de_lino",
+    "data": {
+      "name": {
+        "es": "0,5 kg de plata o 0,8 m² de lino",
+        "en": "1 lb. of silver or 1 sq. yd. of linen"
+      },
+      "categoria": "mercancia",
+      "peso": 0,
+      "coste": 5
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 72,
+        "es": 74
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "mercancia_0_8_m_de_seda_o_una_vaca_2014",
+    "source": "srd51",
+    "concept": "mercancia_0_8_m_de_seda_o_una_vaca",
+    "data": {
+      "name": {
+        "es": "0,8 m² de seda o una vaca",
+        "en": "1 sq. yd. of silk or one cow"
+      },
+      "categoria": "mercancia",
+      "peso": 0,
+      "coste": 10
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 72,
+        "es": 74
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "mercancia_0_5_kg_de_azafran_o_un_buey_2014",
+    "source": "srd51",
+    "concept": "mercancia_0_5_kg_de_azafran_o_un_buey",
+    "data": {
+      "name": {
+        "es": "0,5 kg de azafrán o un buey",
+        "en": "1 lb. of saffron or one ox"
+      },
+      "categoria": "mercancia",
+      "peso": 0,
+      "coste": 15
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 72,
+        "es": 74
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "mercancia_0_5_kg_de_oro_2014",
+    "source": "srd51",
+    "concept": "mercancia_0_5_kg_de_oro",
+    "data": {
+      "name": {
+        "es": "0,5 kg de oro",
+        "en": "1 lb. of gold"
+      },
+      "categoria": "mercancia",
+      "peso": 0,
+      "coste": 50
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 72,
+        "es": 74
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "mercancia_0_5_kg_de_platino_2014",
+    "source": "srd51",
+    "concept": "mercancia_0_5_kg_de_platino",
+    "data": {
+      "name": {
+        "es": "0,5 kg de platino",
+        "en": "1 lb. of platinum"
+      },
+      "categoria": "mercancia",
+      "peso": 0,
+      "coste": 500
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 72,
+        "es": 74
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "camello_2024",
+    "source": "srd521",
+    "concept": "camello",
+    "data": {
+      "name": {
+        "es": "Camello",
+        "en": "Camel"
+      },
+      "categoria": "montura",
+      "peso": 0,
+      "coste": 50,
+      "descripcion": {
+        "es": "Capacidad de carga 225 kg.",
+        "en": "Carrying capacity 450 lb."
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 100,
+        "es": 109
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "elefante_2024",
+    "source": "srd521",
+    "concept": "elefante",
+    "data": {
+      "name": {
+        "es": "Elefante",
+        "en": "Elephant"
+      },
+      "categoria": "montura",
+      "peso": 0,
+      "coste": 200,
+      "descripcion": {
+        "es": "Capacidad de carga 660 kg.",
+        "en": "Carrying capacity 1,320 lb."
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 100,
+        "es": 109
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "caballo_de_tiro_2024",
+    "source": "srd521",
+    "concept": "caballo_de_tiro",
+    "data": {
+      "name": {
+        "es": "Caballo de tiro",
+        "en": "Horse, Draft"
+      },
+      "categoria": "montura",
+      "peso": 0,
+      "coste": 50,
+      "descripcion": {
+        "es": "Capacidad de carga 270 kg.",
+        "en": "Carrying capacity 540 lb."
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 100,
+        "es": 109
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "caballo_de_monta_2024",
+    "source": "srd521",
+    "concept": "caballo_de_monta",
+    "data": {
+      "name": {
+        "es": "Caballo de monta",
+        "en": "Horse, Riding"
+      },
+      "categoria": "montura",
+      "peso": 0,
+      "coste": 75,
+      "descripcion": {
+        "es": "Capacidad de carga 240 kg.",
+        "en": "Carrying capacity 480 lb."
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 100,
+        "es": 109
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "mastin_2024",
+    "source": "srd521",
+    "concept": "mastin",
+    "data": {
+      "name": {
+        "es": "Mastín",
+        "en": "Mastiff"
+      },
+      "categoria": "montura",
+      "peso": 0,
+      "coste": 25,
+      "descripcion": {
+        "es": "Capacidad de carga 97,5 kg.",
+        "en": "Carrying capacity 195 lb."
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 100,
+        "es": 109
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "mula_2024",
+    "source": "srd521",
+    "concept": "mula",
+    "data": {
+      "name": {
+        "es": "Mula",
+        "en": "Mule"
+      },
+      "categoria": "montura",
+      "peso": 0,
+      "coste": 8,
+      "descripcion": {
+        "es": "Capacidad de carga 210 kg.",
+        "en": "Carrying capacity 420 lb."
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 100,
+        "es": 109
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "poni_2024",
+    "source": "srd521",
+    "concept": "poni",
+    "data": {
+      "name": {
+        "es": "Poni",
+        "en": "Pony"
+      },
+      "categoria": "montura",
+      "peso": 0,
+      "coste": 30,
+      "descripcion": {
+        "es": "Capacidad de carga 112,5 kg.",
+        "en": "Carrying capacity 225 lb."
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 100,
+        "es": 109
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "caballo_de_guerra_2024",
+    "source": "srd521",
+    "concept": "caballo_de_guerra",
+    "data": {
+      "name": {
+        "es": "Caballo de guerra",
+        "en": "Warhorse"
+      },
+      "categoria": "montura",
+      "peso": 0,
+      "coste": 400,
+      "descripcion": {
+        "es": "Capacidad de carga 270 kg.",
+        "en": "Carrying capacity 540 lb."
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 100,
+        "es": 109
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "carruaje_2024",
+    "source": "srd521",
+    "concept": "carruaje",
+    "data": {
+      "name": {
+        "es": "Carruaje",
+        "en": "Carriage"
+      },
+      "categoria": "vehiculo",
+      "peso": 600,
+      "coste": 100
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 100,
+        "es": 109
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "carreta_2024",
+    "source": "srd521",
+    "concept": "carreta",
+    "data": {
+      "name": {
+        "es": "Carreta",
+        "en": "Cart"
+      },
+      "categoria": "vehiculo",
+      "peso": 200,
+      "coste": 15
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 100,
+        "es": 109
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "carro_de_guerra_2024",
+    "source": "srd521",
+    "concept": "carro_de_guerra",
+    "data": {
+      "name": {
+        "es": "Carro de guerra",
+        "en": "Chariot"
+      },
+      "categoria": "vehiculo",
+      "peso": 100,
+      "coste": 250
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 100,
+        "es": 109
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "alimento_por_dia_2024",
+    "source": "srd521",
+    "concept": "alimento_por_dia",
+    "data": {
+      "name": {
+        "es": "Alimento por día",
+        "en": "Feed per day"
+      },
+      "categoria": "arreos",
+      "peso": 10,
+      "coste": 0.05
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 100,
+        "es": 109
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "silla_exotica_2024",
+    "source": "srd521",
+    "concept": "silla_exotica",
+    "data": {
+      "name": {
+        "es": "Silla exótica",
+        "en": "Exotic saddle"
+      },
+      "categoria": "arreos",
+      "peso": 40,
+      "coste": 60
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 100,
+        "es": 109
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "silla_militar_2024",
+    "source": "srd521",
+    "concept": "silla_militar",
+    "data": {
+      "name": {
+        "es": "Silla militar",
+        "en": "Military saddle"
+      },
+      "categoria": "arreos",
+      "peso": 30,
+      "coste": 20
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 100,
+        "es": 109
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "silla_de_monta_2024",
+    "source": "srd521",
+    "concept": "silla_de_monta",
+    "data": {
+      "name": {
+        "es": "Silla de monta",
+        "en": "Riding saddle"
+      },
+      "categoria": "arreos",
+      "peso": 25,
+      "coste": 10
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 100,
+        "es": 109
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "trineo_2024",
+    "source": "srd521",
+    "concept": "trineo",
+    "data": {
+      "name": {
+        "es": "Trineo",
+        "en": "Sled"
+      },
+      "categoria": "vehiculo",
+      "peso": 300,
+      "coste": 20
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 100,
+        "es": 109
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "estabulado_por_dia_2024",
+    "source": "srd521",
+    "concept": "estabulado_por_dia",
+    "data": {
+      "name": {
+        "es": "Estabulado por día",
+        "en": "Stabling per day"
+      },
+      "categoria": "arreos",
+      "peso": 0,
+      "coste": 0.5
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 100,
+        "es": 109
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "carro_2024",
+    "source": "srd521",
+    "concept": "carro",
+    "data": {
+      "name": {
+        "es": "Carro",
+        "en": "Wagon"
+      },
+      "categoria": "vehiculo",
+      "peso": 400,
+      "coste": 35
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 100,
+        "es": 109
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "aeronave_2024",
+    "source": "srd521",
+    "concept": "aeronave",
+    "data": {
+      "name": {
+        "es": "Aeronave",
+        "en": "Airship"
+      },
+      "categoria": "vehiculo",
+      "peso": 0,
+      "coste": 40000,
+      "descripcion": {
+        "es": "Velocidad 12 km/h; tripulación 10; pasajeros 20; cargamento (t) 1; CA 13; PG 300; umbral de daño —.",
+        "en": "Speed 8 mph; crew 10; passengers 20; cargo (tons) 1; AC 13; HP 300; damage threshold —."
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 101,
+        "es": 110
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "galera_2024",
+    "source": "srd521",
+    "concept": "galera",
+    "data": {
+      "name": {
+        "es": "Galera",
+        "en": "Galley"
+      },
+      "categoria": "vehiculo",
+      "peso": 0,
+      "coste": 30000,
+      "descripcion": {
+        "es": "Velocidad 6 km/h; tripulación 80; pasajeros —; cargamento (t) 150; CA 15; PG 500; umbral de daño 20.",
+        "en": "Speed 4 mph; crew 80; passengers —; cargo (tons) 150; AC 15; HP 500; damage threshold 20."
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 101,
+        "es": 110
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "barcaza_2024",
+    "source": "srd521",
+    "concept": "barcaza",
+    "data": {
+      "name": {
+        "es": "Barcaza",
+        "en": "Keelboat"
+      },
+      "categoria": "vehiculo",
+      "peso": 0,
+      "coste": 3000,
+      "descripcion": {
+        "es": "Velocidad 1,5 km/h; tripulación 1; pasajeros 6; cargamento (t) 1/2; CA 15; PG 100; umbral de daño 10.",
+        "en": "Speed 1 mph; crew 1; passengers 6; cargo (tons) 1/2; AC 15; HP 100; damage threshold 10."
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 101,
+        "es": 110
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "drakkar_2024",
+    "source": "srd521",
+    "concept": "drakkar",
+    "data": {
+      "name": {
+        "es": "Drakkar",
+        "en": "Longship"
+      },
+      "categoria": "vehiculo",
+      "peso": 0,
+      "coste": 10000,
+      "descripcion": {
+        "es": "Velocidad 4,5 km/h; tripulación 40; pasajeros 150; cargamento (t) 10; CA 15; PG 300; umbral de daño 15.",
+        "en": "Speed 3 mph; crew 40; passengers 150; cargo (tons) 10; AC 15; HP 300; damage threshold 15."
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 101,
+        "es": 110
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "bote_de_remos_2024",
+    "source": "srd521",
+    "concept": "bote_de_remos",
+    "data": {
+      "name": {
+        "es": "Bote de remos",
+        "en": "Rowboat"
+      },
+      "categoria": "vehiculo",
+      "peso": 0,
+      "coste": 50,
+      "descripcion": {
+        "es": "Velocidad 2,4 km/h; tripulación 1; pasajeros 3; cargamento (t) —; CA 11; PG 50; umbral de daño —.",
+        "en": "Speed 1½ mph; crew 1; passengers 3; cargo (tons) —; AC 11; HP 50; damage threshold —."
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 101,
+        "es": 110
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "velero_2024",
+    "source": "srd521",
+    "concept": "velero",
+    "data": {
+      "name": {
+        "es": "Velero",
+        "en": "Sailing Ship"
+      },
+      "categoria": "vehiculo",
+      "peso": 0,
+      "coste": 10000,
+      "descripcion": {
+        "es": "Velocidad 3 km/h; tripulación 20; pasajeros 20; cargamento (t) 100; CA 15; PG 300; umbral de daño 15.",
+        "en": "Speed 2 mph; crew 20; passengers 20; cargo (tons) 100; AC 15; HP 300; damage threshold 15."
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 101,
+        "es": 110
+      }
+    }
+  },
+  {
+    "type": "equipo",
+    "key": "navio_de_guerra_2024",
+    "source": "srd521",
+    "concept": "navio_de_guerra",
+    "data": {
+      "name": {
+        "es": "Navío de guerra",
+        "en": "Warship"
+      },
+      "categoria": "vehiculo",
+      "peso": 0,
+      "coste": 25000,
+      "descripcion": {
+        "es": "Velocidad 4 km/h; tripulación 60; pasajeros 60; cargamento (t) 200; CA 15; PG 500; umbral de daño 20.",
+        "en": "Speed 2½ mph; crew 60; passengers 60; cargo (tons) 200; AC 15; HP 500; damage threshold 20."
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 101,
+        "es": 110
+      }
+    }
+  }
+]

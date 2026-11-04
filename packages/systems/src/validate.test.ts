@@ -25,8 +25,8 @@ describe('el formato', () => {
     }
   })
 
-  it('el catálogo trae «En blanco» con su id fijo', () => {
-    expect(CATALOG.map((s) => s.id)).toEqual(['blank'])
+  it('el catálogo trae el 5e y «En blanco», con su id fijo', () => {
+    expect(CATALOG.map((s) => s.id)).toEqual(['5e', 'blank'])
     expect(catalogSystem('blank')?.dice?.critical).toBe('d20')
     expect(catalogSystem('nada')).toBeNull()
   })

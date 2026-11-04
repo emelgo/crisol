@@ -14,6 +14,7 @@ import {
   systemSchema
 } from './format.ts'
 import { checkFormulas } from './formulas/system.ts'
+import { own } from './own.ts'
 import { type Language, textOf } from './text.ts'
 
 export interface Problem {
@@ -51,7 +52,7 @@ const KINDS: Record<string, string> = {
 
 /** Los mensajes de zod, cortos y en español; los que no están aquí, con su traducción */
 const spanish = z.locales.es().localeError
-const errorMap: core.$ZodErrorMap = (issue) => {
+export const errorMap: core.$ZodErrorMap = (issue) => {
   switch (issue.code) {
     case 'invalid_type':
       return issue.input === undefined ? 'Falta' : `Tiene que ser ${KINDS[issue.expected] ?? issue.expected}`
@@ -172,7 +173,7 @@ export function whereOf(system: unknown, path: readonly Segment[], language: Lan
 }
 
 /** Si un bono tiene a qué sumarse en esa ruta: un número o un calculado, también dentro de un grupo o de un conjunto */
-function bonusTarget(fields: Record<string, Field | SimpleField>, segments: readonly string[]): boolean {
+export function bonusTarget(fields: Record<string, Field | SimpleField>, segments: readonly string[]): boolean {
   const [first, ...rest] = segments
   const field = first === undefined || !Object.hasOwn(fields, first) ? undefined : fields[first]
   if (!field) return false
@@ -327,6 +328,12 @@ function checkReferences(
       })
     if (roll.for && 'set' in roll.for && !setFields.has(roll.for.set))
       add([...at, 'for', 'set'], `No existe el conjunto «${roll.for.set}»`)
+    if (roll.for && 'items' in roll.for)
+      roll.for.items.forEach((t, i) => {
+        const type = own(types, t)
+        if (!type) add([...at, 'for', 'items', i], `No existe el tipo «${t}»`)
+        else if (type.document !== 'item') add([...at, 'for', 'items', i], `«${t}» no es un tipo de objeto`)
+      })
     repeated(roll.modes?.map((m) => m.key) ?? [], (i, k) => add([...at, 'modes', i, 'key'], `«${k}» está repetido`))
     roll.modes?.forEach((mode, i) => {
       for (const part of ['from', 'to'] as const) diceFormula(mode[part], [...at, 'modes', i, part], add)
@@ -384,6 +391,18 @@ function checkField(
       if (field.default !== undefined && !field.options.some((o) => o.value === field.default))
         add([...path, 'default'], `«${field.default}» no es una de sus opciones`)
       break
+    case 'list':
+      if (field.options) {
+        const options = field.options
+        repeated(
+          options.map((o) => o.value),
+          (i, k) => add([...path, 'options', i, 'value'], `«${k}» está repetida`)
+        )
+        field.default?.forEach((v, i) => {
+          if (!options.some((o) => o.value === v)) add([...path, 'default', i], `«${v}» no es una de sus opciones`)
+        })
+      }
+      break
     case 'clock':
       if (field.default !== undefined && field.default > field.segments)
         add([...path, 'default'], `Como mucho, ${field.segments}`)
@@ -408,6 +427,10 @@ function checkField(
       })
       break
     case 'set':
+      field.elements.forEach((e, i) => {
+        for (const k of Object.keys(e.values ?? {}))
+          if (!Object.hasOwn(field.fields, k)) add([...path, 'elements', i, 'values', k], `No existe el campo «${k}»`)
+      })
       repeated(
         field.elements.map((e) => e.key),
         (i, k) => add([...path, 'elements', i, 'key'], `«${k}» está repetido`)

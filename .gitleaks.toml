@@ -1,0 +1,14 @@
+# gitleaks: sus reglas de siempre y, aparte, lo que no es un secreto
+[extend]
+useDefault = true
+
+# El contenido del 5e sale del SRD (lo escribe scripts/srd/extraer.ts) y su «key» es la clave de un documento, en
+# minúsculas y con guiones bajos (cota_de_malla_2014), no una credencial
+[[allowlists]]
+description = "Las claves de los documentos del contenido"
+paths = ['''^packages/systems/src/catalog/5e/content/[a-z]+\.json$''']
+
+[[allowlists]]
+description = "Una clave de documento en el código y sus pruebas (key: 'guerrero_tomar_aliento_2014')"
+regexTarget = "match"
+regexes = ['''key["']?\s*[:=]\s*["'][a-z0-9]+(?:_[a-z0-9]+)+["']''']

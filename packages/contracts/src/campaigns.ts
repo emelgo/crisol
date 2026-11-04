@@ -6,9 +6,11 @@ import { world, worldColor, worldCover } from './worlds.ts'
 const campaignName = z.string().trim().min(1).max(120)
 const campaignDescription = z.string().trim().max(280)
 
-/** Lo que una campaña elige de su sistema: sus fuentes, el idioma del contenido y sus ajustes */
+/** Lo que una campaña elige de su sistema: sus fuentes, qué se ve de lo repetido, el idioma del contenido y sus ajustes */
 export const systemChoices = z.object({
   sources: z.array(z.string().max(60)).max(50),
+  // De lo que está en las dos ediciones: solo lo más nuevo o las dos versiones (sin decirlo, solo lo más nuevo)
+  duplicates: z.enum(['newest', 'both']).optional(),
   language: z.enum(['es', 'en']),
   settings: z.record(z.string().max(60), z.unknown())
 })

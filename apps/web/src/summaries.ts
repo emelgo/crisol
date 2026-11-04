@@ -55,6 +55,17 @@ export function summaryOf(
     case 'updateSystem':
     case 'deleteSystem':
       return say(action, { name: typeof details.system === 'string' ? details.system : systemName(details) })
+    // El contenido de un sistema: cuántos documentos y de cuál
+    case 'putSystemContent':
+    case 'deleteSystemContent': {
+      const keys = Array.isArray(details.keys)
+        ? details.keys.length
+        : Array.isArray(details.items)
+          ? details.items.length
+          : 0
+      const count = typeof details.count === 'number' ? details.count : keys
+      return say(action, { name: typeof details.system === 'string' ? details.system : systemName(details), count })
+    }
     case 'regenerateInvitation':
       return say('regenerateInvitation', { campaign: text(details.campaign) })
     case 'setInvitationsOpen':

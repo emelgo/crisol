@@ -7,6 +7,7 @@
 import type { Field, SimpleField, System } from './format.ts'
 import { FUNCTIONS, type Value } from './formulas/functions.ts'
 import { type Expr, FormulaError, parseFormula } from './formulas/parse.ts'
+import type { EFFECT_OPS, Mechanics } from './mechanics.ts'
 import { own } from './own.ts'
 import { type Language, textOf } from './text.ts'
 
@@ -15,11 +16,22 @@ export interface DocumentItem {
   type: string
   name: string
   data: Record<string, unknown>
+  /** Su mecánica (la del contenido del que sale): sus efectos cambian a quien lo lleva */
+  mechanics?: Mechanics
+  /** Lo gastado de cada uno de sus recursos, por su clave */
+  uses?: Record<string, number>
+  /** El que lo concedió (la clase de un rasgo): en su mecánica, `@origen` */
+  from?: string
+  /** Lo elegido en cada elección de lo que concede, por su clave (las habilidades: ["atletismo", "percepcion"]) */
+  choices?: Record<string, string[]>
 }
 
 export interface SystemDocument {
   data: Record<string, unknown>
   items?: DocumentItem[]
+  /** Su propia mecánica (una criatura: sus acciones y sus recursos) y lo gastado de sus recursos */
+  mechanics?: Mechanics
+  uses?: Record<string, number>
   /** Valores fijados a mano, por su id (`ca`, `caracteristicas.des.mod`) */
   overrides?: Record<string, number>
 }
@@ -45,9 +57,46 @@ export interface Evaluated {
   computed: Record<string, Computed>
   /** Lo guardado que no cuadra: se marca y se conserva */
   problems: { path: string; message: string }[]
+  /** La ventaja o la desventaja que dan los efectos, por tirada (`salvacion` o `salvacion.des`) */
+  advantages: Record<string, { mode: 'advantage' | 'disadvantage'; label: string; origin: string }[]>
+  /** Los recursos de lo que lleva (y los suyos, con `item` null): su máximo, lo gastado y lo que queda */
+  resources: Resource[]
+  /** Lo que lleva, ya calculado (también lo que sale de quien lo lleva), con su nombre: por su id */
+  items: Record<string, Record<string, Value>>
+}
+
+export interface Resource {
+  item: string | null
+  key: string
+  label: string
+  max: number
+  used: number
+  left: number
+  recovery?: string
+  /** Cuánto se recupera (una fórmula, con dados); sin ella, todo */
+  amount?: string
+  error?: string
 }
 
 export const BUDGET = 200_000
+
+/** Los ajustes de la campaña (`@ajustes`): los elegidos o, si no, su valor inicial */
+export function settingsOf(system: System, chosen: Record<string, unknown> = {}): Record<string, Value> {
+  return Object.fromEntries(
+    Object.entries(system.settings ?? {}).map(([k, st]) => [
+      k,
+      (own(chosen, k) ??
+        st.default ??
+        (st.kind === 'choices'
+          ? []
+          : st.kind === 'number'
+            ? 0
+            : st.kind === 'boolean'
+              ? false
+              : (st.options?.[0]?.value ?? null))) as Value
+    ])
+  )
+}
 
 class Stop extends Error {}
 
@@ -223,7 +272,11 @@ export function evaluate(
   system: System,
   typeKey: string,
   doc: SystemDocument,
-  { budget = BUDGET, language = 'es' as Language } = {}
+  {
+    budget = BUDGET,
+    language = 'es' as Language,
+    settings = {}
+  }: { budget?: number; language?: Language; settings?: Record<string, unknown> } = {}
 ): Evaluated {
   const type = own(system.types, typeKey)
   if (!type) throw new Error(`No existe el tipo «${typeKey}»`)
@@ -237,45 +290,154 @@ export function evaluate(
   }
   const label = (t: Parameters<typeof textOf>[0]) => textOf(t, language)
 
-  // Los bonos de lo que lleva, por el id de su objetivo
+  // Los efectos de lo que lleva, por el id de su destino: los bonos del tipo (de siempre, con los campos del objeto) y
+  // los de su mecánica (con los de quien lo lleva, @este y @ajustes)
   const items = doc.items ?? []
-  const bonuses = new Map<string, { item: DocumentItem; value: Expr; when?: Expr }[]>()
+  const effects = new Map<string, Effect[]>()
+  const pending: Effect[] = []
+  const push = (target: string, effect: Effect) => {
+    const list = effects.get(target) ?? []
+    list.push(effect)
+    effects.set(target, list)
+  }
   for (const item of items) {
-    for (const modifier of own(system.types, item.type)?.modifiers ?? []) {
-      const list = bonuses.get(modifier.target) ?? []
-      list.push({
+    for (const modifier of own(system.types, item.type)?.modifiers ?? [])
+      push(modifier.target, {
+        op: 'add',
         item,
+        label: item.name,
+        legacy: true,
         value: exprOf(system, modifier.value),
         ...(modifier.when ? { when: exprOf(system, modifier.when) } : {})
       })
-      bonuses.set(modifier.target, list)
+    for (const e of item.mechanics?.effects ?? []) {
+      const effect: Effect = {
+        op: e.op,
+        item,
+        label: e.label ? label(e.label) : item.name,
+        legacy: false,
+        ...(e.value ? { value: exprOf(system, e.value) } : {}),
+        ...(e.when ? { when: exprOf(system, e.when) } : {})
+      }
+      if (e.op === 'advantage' || e.op === 'disadvantage') pending.push({ ...effect, target: e.target })
+      else push(e.target, effect)
+    }
+    // Lo elegido de un conjunto (dos habilidades): a cada uno, su efecto (el grado, a 1), desde su nivel
+    for (const g of item.mechanics?.grants ?? []) {
+      const c = g.choose
+      if (!c?.set) continue
+      // Desde su nivel: el de lo que lo concedió (un rasgo, una subclase) o, si nada, el suyo (una clase)
+      const level = g.level
+        ? item.from
+          ? `@origen != null && @origen.nivel >= ${g.level}`
+          : `@este.nivel >= ${g.level}`
+        : null
+      const when = [c.when, level].filter(Boolean).join(' && ')
+      for (const element of item.choices?.[c.key] ?? [])
+        push(`${c.set}.${element}.${c.field ?? 'grado'}`, {
+          op: c.op ?? 'min',
+          item,
+          label: item.name,
+          legacy: false,
+          value: exprOf(system, c.value ?? '1'),
+          ...(when ? { when: exprOf(system, when) } : {})
+        })
     }
   }
   const itemScopes = new Map<string, Record<string, Node>>()
+  // En las fórmulas de un objeto, @portador es quien lo lleva (sus campos ya calculados)
+  const portador = (): Node => ({ kind: 'object', label: label(type.label), fields: scope })
   const itemScope = (item: DocumentItem) => {
-    let scope = itemScopes.get(item.id)
-    if (!scope) {
+    let fields = itemScopes.get(item.id)
+    if (!fields) {
       const itemType = own(system.types, item.type)
-      scope = itemType ? nodesOf(itemType.fields, item.data, `items.${item.id}.`, [], true).fields : {}
-      itemScopes.set(item.id, scope)
+      let names: Record<string, Node> | undefined
+      const root = () => {
+        names ??= { ...(fields ?? {}), portador: portador() }
+        return names
+      }
+      fields = itemType ? nodesOf(itemType.fields, item.data, `items.${item.id}.`, [], true, root).fields : {}
+      itemScopes.set(item.id, fields)
     }
-    return scope
+    return fields
   }
+  // Los ajustes de la campaña: los elegidos o, si no, su valor inicial
+  const ajustes: Node = { kind: 'value', value: settingsOf(system, settings) }
+  /** Los nombres de un efecto: los del objeto (los bonos de siempre) o los de quien lo lleva, con @este y @ajustes */
+  const ownerScopes = new Map<string, Record<string, Node>>()
+  /** Los nombres de quien lo lleva, con @este (el objeto) y @ajustes */
+  const ownerScope = (item: DocumentItem): Record<string, Node> => {
+    let names = ownerScopes.get(item.id)
+    if (!names) {
+      const fields = { ...itemScope(item), name: { kind: 'value', value: item.name } as Node }
+      const parent = item.from ? items.find((it) => it.id === item.from) : undefined
+      const origen: Node = parent
+        ? {
+            kind: 'object',
+            label: parent.name,
+            fields: { ...itemScope(parent), name: { kind: 'value', value: parent.name } }
+          }
+        : { kind: 'value', value: null }
+      names = { ...scope, este: { kind: 'object', label: item.name, fields }, ajustes, origen }
+      ownerScopes.set(item.id, names)
+    }
+    return names
+  }
+  const legacyScopes = new Map<string, Record<string, Node>>()
+  /** Los bonos de siempre: los campos del objeto y @ajustes */
+  const legacyScope = (item: DocumentItem) => {
+    let names = legacyScopes.get(item.id)
+    if (!names) {
+      names = { ...itemScope(item), ajustes, portador: portador() }
+      legacyScopes.set(item.id, names)
+    }
+    return names
+  }
+  const effectScope = (e: Effect): Record<string, Node> => (e.legacy ? legacyScope(e.item) : ownerScope(e.item))
+  const holds = (e: Effect) => !e.when || truthy(evaluateExpr(e.when, effectScope(e), runtime))
+  const amount = (e: Effect) => (e.value ? toNumber(evaluateExpr(e.value, effectScope(e), runtime)) : 0)
 
-  /** Los bonos activos a un id, como términos */
-  const bonusTerms = (id: string): Term[] => {
-    const out: Term[] = []
-    for (const b of bonuses.get(id) ?? []) {
-      const scope = itemScope(b.item)
-      if (b.when && !truthy(evaluateExpr(b.when, scope, runtime))) continue
-      out.push({
-        label: b.item.name,
-        value: toNumber(evaluateExpr(b.value, scope, runtime)),
-        kind: 'bonus',
-        origin: b.item.id
+  /** Aplica a un valor los efectos a su id, en su orden (base, fijar, sumar, mínimo y máximo), con su desglose */
+  const applyEffects = (id: string, value: number, terms: Term[]): { value: number; terms: Term[] } => {
+    const active = (effects.get(id) ?? []).filter(holds)
+    let v = value
+    let t = terms
+    // La base: la mayor de las que se aplican sustituye a la de siempre, aunque dé menos (con armadura, la de la armadura)
+    let best: { e: Effect; n: number } | undefined
+    for (const e of active.filter((x) => x.op === 'base')) {
+      const n = amount(e)
+      if (!best || n > best.n) best = { e, n }
+    }
+    if (best?.e.value) {
+      const { e } = best
+      const names = effectScope(e)
+      v = best.n
+      t = additive(best.e.value).map(({ expr: part, sign }) => {
+        const named = termLabel(part, names, '')
+        const partValue = sign * toNumber(evaluateExpr(part, names, runtime))
+        // Un valor del propio objeto (la CA de la armadura) lleva su nombre
+        const fromItem = part.kind === 'ref' && part.path[0] === 'este'
+        return named.kind === 'base' || fromItem
+          ? { label: e.label, value: partValue, kind: 'base' as const, origin: e.item.id }
+          : { label: named.label, value: partValue, kind: named.kind }
       })
     }
-    return out
+    for (const e of active.filter((x) => x.op === 'set')) {
+      v = amount(e)
+      t = [{ label: e.label, value: v, kind: 'base', origin: e.item.id }]
+    }
+    for (const e of active.filter((x) => x.op === 'add')) {
+      const n = amount(e)
+      v += n
+      t = [...t, { label: e.label, value: n, kind: 'bonus', origin: e.item.id }]
+    }
+    for (const e of active.filter((x) => x.op === 'min' || x.op === 'max')) {
+      const n = amount(e)
+      if (e.op === 'min' ? v >= n : v <= n) continue
+      t = [...t, { label: e.label, value: n - v, kind: 'bonus', origin: e.item.id }]
+      v = n
+    }
+    return { value: v, terms: t }
   }
 
   const scope: Record<string, Node> = {}
@@ -321,7 +483,7 @@ export function evaluate(
       case 'number': {
         const value = stored(field, raw, path)
         // Un número con bonos (un +1 a Vigor) se calcula: lo guardado más los bonos
-        if (!item && bonuses.has(id)) return withBonuses(id, name, value as number)
+        if (!item && effects.has(id)) return withBonuses(id, name, value as number)
         return { kind: 'value', value, label: name }
       }
       case 'resource': {
@@ -348,7 +510,8 @@ export function evaluate(
         const data = (raw ?? {}) as Record<string, Record<string, unknown>>
         const fields: Record<string, Node> = {}
         for (const element of field.elements) {
-          const values = data[element.key] ?? {}
+          // Lo guardado manda sobre los valores iniciales del elemento (Sigilo, con Destreza)
+          const values = { ...(element.values ?? {}), ...(data[element.key] ?? {}) }
           const elementLabel = label(element.label)
           const extra = () => ({
             key: { kind: 'value' as const, value: element.key },
@@ -380,6 +543,30 @@ export function evaluate(
         const mine = items.filter((it) => field.of.includes(it.type))
         return { kind: 'list', items: mine.map((it) => ({ kind: 'object', label: it.name, fields: itemScope(it) })) }
       }
+      case 'list': {
+        const value = stored(field, raw, path) as Value[]
+        if (item || !effects.has(id)) return { kind: 'value', value, label: name }
+        // Lo que añaden los efectos (una resistencia, un idioma), sin repetir
+        return {
+          kind: 'computed',
+          id,
+          label: name,
+          get: () => {
+            const extra: Value[] = []
+            for (const e of (effects.get(id) ?? []).filter((x) => x.op === 'append'))
+              try {
+                if (e.value && holds(e)) extra.push(evaluateExpr(e.value, effectScope(e), runtime))
+              } catch (error) {
+                // Un efecto que falla no se lleva la lista: se dice y se sigue
+                if (!(error instanceof Stop) && !(error instanceof FormulaError)) throw error
+                if (error instanceof Stop) left = 0
+                const why = error instanceof Stop ? 'tarda demasiado' : error.message
+                problems.push({ path: id, message: `Lo que añade «${e.item.name}» no se pudo calcular: ${why}` })
+              }
+            return [...value, ...extra.filter((v) => !value.includes(v))]
+          }
+        }
+      }
       default:
         return { kind: 'value', value: stored(field, raw, path), label: name }
     }
@@ -387,19 +574,18 @@ export function evaluate(
 
   function withBonuses(id: string, name: string, base: number): Node {
     let done: Value | undefined
+    let busy = false
     return {
       kind: 'computed',
       id,
       label: name,
       get: () => {
         if (done !== undefined) return done
+        if (busy) throw new FormulaError(`«${name}» depende de su propio valor`, 0, 0)
+        busy = true
         try {
-          const terms: Term[] = [{ label: name, value: base, kind: 'field' }, ...bonusTerms(id)]
-          done = finish(
-            id,
-            terms.reduce((a, t) => a + t.value, 0),
-            terms
-          )
+          const applied = applyEffects(id, base, [{ label: name, value: base, kind: 'field' }])
+          done = finish(id, applied.value, applied.terms)
         } catch (error) {
           if (!(error instanceof Stop) && !(error instanceof FormulaError)) throw error
           if (error instanceof Stop) left = 0
@@ -448,12 +634,12 @@ export function evaluate(
           const names = local()
           const value = evaluateExpr(expr, names, runtime)
           if (typeof value === 'number' && !item) {
-            const extra = bonusTerms(id)
             const terms: Term[] = additive(expr).map(({ expr: part, sign }) => {
               const { label: termName, kind } = termLabel(part, names, formula)
               return { label: termName, value: sign * toNumber(evaluateExpr(part, names, runtime)), kind }
             })
-            result = finish(id, value + extra.reduce((a, t) => a + t.value, 0), [...terms, ...extra])
+            const applied = applyEffects(id, value, terms)
+            result = finish(id, applied.value, applied.terms)
           } else {
             result = value
             if (!item) computed[id] = { value, terms: [] }
@@ -501,8 +687,14 @@ export function evaluate(
         if (typeof raw !== 'string' || !field.options.some((o) => o.value === raw))
           flag(`«${String(raw)}» no es una de sus opciones`)
         return typeof raw === 'string' ? raw : fallback
-      case 'list':
-        return Array.isArray(raw) ? (raw.filter((v) => typeof v === 'string') as string[]) : fallback
+      case 'list': {
+        if (!Array.isArray(raw)) return fallback
+        const texts = raw.filter((v) => typeof v === 'string') as string[]
+        // Con opciones, solo valen ellas: lo demás se marca y se conserva
+        const allowed = field.options ? new Set(field.options.map((o) => o.value)) : null
+        for (const v of texts) if (allowed && !allowed.has(v)) flag(`«${v}» no es una de sus opciones`)
+        return texts
+      }
       default: {
         if (typeof raw !== 'string') return fallback
         // Un texto o unos dados guardados, con su tope (el de su campo o el del formato)
@@ -513,7 +705,10 @@ export function evaluate(
     }
   }
 
-  Object.assign(scope, nodesOf(type.fields, doc.data, '', []).fields)
+  const fieldNodes = nodesOf(type.fields, doc.data, '', []).fields
+  Object.assign(scope, fieldNodes)
+  // @ajustes, después de los campos: empezar el ámbito con él lo hace el doble de lento
+  if (!Object.hasOwn(scope, 'ajustes')) scope.ajustes = ajustes
   // Todo, ya calculado (y cada valor calculado en `computed`), con su propio presupuesto para copiarlo
   let copying = BUDGET
   const copy: Runtime = {
@@ -522,7 +717,7 @@ export function evaluate(
     }
   }
   const values = Object.fromEntries(
-    Object.entries(scope).map(([k, n]) => {
+    Object.entries(fieldNodes).map(([k, n]) => {
       try {
         return [k, materialize(n, copy)]
       } catch {
@@ -530,7 +725,76 @@ export function evaluate(
       }
     })
   ) as Record<string, Value>
-  return { values, computed, problems }
+  // La ventaja y la desventaja, por tirada, de los efectos que se cumplen
+  const advantages: Evaluated['advantages'] = {}
+  for (const e of pending) {
+    try {
+      if (!holds(e)) continue
+    } catch {
+      continue
+    }
+    const list = advantages[e.target as string] ?? []
+    list.push({ mode: e.op as 'advantage' | 'disadvantage', label: e.label, origin: e.item.id })
+    advantages[e.target as string] = list
+  }
+  // Los recursos, con su máximo calculado con los nombres de quien los lleva
+  const resources: Resource[] = []
+  const owners: [DocumentItem | null, Mechanics | undefined, Record<string, number> | undefined][] = [
+    [null, doc.mechanics, doc.uses],
+    ...items.map((it): [DocumentItem, Mechanics | undefined, Record<string, number> | undefined] => [
+      it,
+      it.mechanics,
+      it.uses
+    ])
+  ]
+  for (const [item, mechanics, uses] of owners)
+    for (const r of mechanics?.resources ?? []) {
+      const spent = own(uses ?? {}, r.key)
+      const used = typeof spent === 'number' && Number.isFinite(spent) ? Math.max(0, spent) : 0
+      const entry: Resource = { item: item?.id ?? null, key: r.key, label: label(r.label), max: 0, used, left: 0 }
+      if (r.recovery) entry.recovery = r.recovery
+      if (r.amount) entry.amount = r.amount
+      try {
+        const names = item
+          ? ownerScope(item)
+          : { ...scope, este: { kind: 'object', label: '', fields: scope } as Node, ajustes }
+        entry.max = Math.max(0, toNumber(evaluateExpr(exprOf(system, r.max), names, runtime)))
+        entry.left = Math.max(0, entry.max - used)
+      } catch (error) {
+        if (!(error instanceof Stop) && !(error instanceof FormulaError)) throw error
+        if (error instanceof Stop) left = 0
+        entry.error = error instanceof Stop ? 'La fórmula tarda demasiado' : error.message
+      }
+      resources.push(entry)
+    }
+  // Lo que lleva, ya calculado, con su nombre
+  const carried: Evaluated['items'] = {}
+  for (const it of items)
+    carried[it.id] = {
+      ...Object.fromEntries(
+        Object.entries(itemScope(it)).map(([k, n]) => {
+          try {
+            return [k, materialize(n, copy)]
+          } catch {
+            return [k, null]
+          }
+        })
+      ),
+      name: it.name
+    }
+  return { values, computed, problems, advantages, resources, items: carried }
+}
+
+/** Un efecto que se aplica: de qué objeto sale, qué hace y con qué fórmulas ya leídas */
+interface Effect {
+  op: (typeof EFFECT_OPS)[number]
+  item: DocumentItem
+  label: string
+  /** Los bonos de siempre (del tipo): sus fórmulas, con los campos del objeto */
+  legacy: boolean
+  value?: Expr
+  when?: Expr
+  target?: string
 }
 
 function defaultOf(field: Field | SimpleField): Value {
