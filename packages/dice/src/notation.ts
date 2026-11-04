@@ -258,20 +258,27 @@ export function meets(value: number, c: Condition): boolean {
 const conditionText = (c: Condition, bareEquals: boolean): string =>
   `${c.op === '=' && bareEquals ? '' : c.op}${c.value}`
 
+/**
+ * Si un lado de una cuenta lleva paréntesis para que se lea (y se vuelva a leer) igual: una suma dentro de un producto,
+ * y a la derecha de una resta o de un producto, cualquier cuenta: (1d8+2)×2, 10-(1d4+1), 12/(2×3)
+ */
+export function needsParentheses(parent: DiceNode & { kind: 'binary' }, child: DiceNode, right: boolean): boolean {
+  if (child.kind !== 'binary') return false
+  const strong = parent.op === '*' || parent.op === '/'
+  const weak = child.op === '+' || child.op === '-'
+  return (strong && weak) || (right && strong) || (right && parent.op === '-' && weak)
+}
+
 /** El texto de una fórmula, para enseñarla */
 export function formatDice(node: DiceNode): string {
   switch (node.kind) {
     case 'number':
       return `${node.value}${node.label ? `[${node.label}]` : ''}`
     case 'negate':
-      return `-${formatDice(node.value)}`
+      return node.value.kind === 'binary' ? `-(${formatDice(node.value)})` : `-${formatDice(node.value)}`
     case 'binary': {
-      // Paréntesis donde hacen falta: (1d8+2)×2
-      const strong = node.op === '*' || node.op === '/'
-      const wrap = (child: DiceNode, right: boolean) => {
-        const weak = child.kind === 'binary' && (child.op === '+' || child.op === '-')
-        return (strong && weak) || (right && node.op === '-' && weak) ? `(${formatDice(child)})` : formatDice(child)
-      }
+      const wrap = (child: DiceNode, right: boolean) =>
+        needsParentheses(node, child, right) ? `(${formatDice(child)})` : formatDice(child)
       return `${wrap(node.left, false)}${node.op === '*' ? '×' : node.op}${wrap(node.right, true)}`
     }
     case 'dice': {

@@ -5,14 +5,17 @@
  */
 import { mergeAttributes, Node } from '@tiptap/core'
 
-/** `` `dice: fórmula` `` o `` `dice: fórmula # nombre` `` */
-const ROLL = /^`dice:\s*([^`#]+?)\s*(?:#\s*([^`]*?)\s*)?`/
+/** `` `dice: fórmula` `` o `` `dice: fórmula # nombre` ``: lo de dentro, de una vez (y se parte por la #), sin atascarse */
+const ROLL = /^`dice:([^`]*)`/
 
 /** Lo que se lee de un elemento (sin depender de los tipos del DOM, que este paquete no carga) */
 type Element = { getAttribute(name: string): string | null; textContent: string | null }
 
+/** Sin comillas invertidas (cerrarían la tirada) ni, en la fórmula, almohadillas (empezarían el nombre) */
 export function diceRollMarkdown({ formula, label }: { formula: string; label: string | null }) {
-  return `\`dice: ${formula}${label ? ` # ${label}` : ''}\``
+  const clean = formula.replace(/[`#]/g, '').trim()
+  const name = (label ?? '').replace(/`/g, '').trim()
+  return `\`dice: ${clean}${name ? ` # ${name}` : ''}\``
 }
 
 export const DiceRoll = Node.create({
@@ -49,7 +52,16 @@ export const DiceRoll = Node.create({
     tokenize: (src) => {
       const match = ROLL.exec(src)
       if (!match) return undefined
-      return { type: 'diceRoll', raw: match[0], formula: (match[1] ?? '').trim(), label: match[2]?.trim() || null }
+      const inside = match[1] ?? ''
+      const hash = inside.indexOf('#')
+      const formula = (hash < 0 ? inside : inside.slice(0, hash)).trim()
+      if (!formula) return undefined
+      return {
+        type: 'diceRoll',
+        raw: match[0],
+        formula,
+        label: hash < 0 ? null : inside.slice(hash + 1).trim() || null
+      }
     }
   },
   parseMarkdown: (token, helpers) =>

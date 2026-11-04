@@ -113,13 +113,14 @@ describe('las tiradas de una campaña', () => {
     expect(await labels(bruno)).toEqual(['Percepción', '¿Me miente?'])
   })
 
-  it('cada visibilidad, solo quien puede: las jugadoras no tiran en oculto y el máster no tira «para mí»', async () => {
+  it('cada visibilidad, solo quien puede: las jugadoras no tiran en oculto; el máster, cualquiera', async () => {
     const hidden = await call('rollDice', { campaignId, formula: '1d20', visibility: 'hidden' }, ana.cookie)
     expect(hidden.statusCode).toBe(400)
     expect(hidden.json()).toMatchObject({ code: 'VISIBILITY_NOT_ALLOWED' })
-    for (const visibility of ['self', 'master']) {
+    // Por si dirige el mundo y además juega en la campaña: la web le ofrece todos u oculta
+    for (const visibility of ['all', 'self', 'master', 'hidden']) {
       const response = await call('rollDice', { campaignId, formula: '1d20', visibility }, master.cookie)
-      expect(response.json()).toMatchObject({ code: 'VISIBILITY_NOT_ALLOWED' })
+      expect(response.statusCode, visibility).toBe(200)
     }
   })
 
@@ -199,5 +200,41 @@ describe('las tiradas de una campaña', () => {
     expect(response.json().dice).toHaveLength(2)
     expect(await labels(master)).toEqual([])
     expect((await call('tryDice', { formula: '2d' }, carla.cookie)).json()).toEqual({ code: 'BAD_FORMULA' })
+  })
+
+  it('con muchas peticiones a la vez no se pasa del límite: 60 tiran y el resto, 429', async () => {
+    const responses = await Promise.all(
+      Array.from({ length: 90 }, () => call('rollDice', { campaignId, formula: '1d6', visibility: 'all' }, ana.cookie))
+    )
+    expect(responses.filter((r) => r.statusCode === 200)).toHaveLength(60)
+    expect(responses.filter((r) => r.statusCode === 429)).toHaveLength(30)
+  })
+
+  it('tirar sin apuntar también tiene su límite por minuto', async () => {
+    for (let i = 0; i < 60; i++) expect((await call('tryDice', { formula: '1d6' }, bruno.cookie)).statusCode).toBe(200)
+    expect((await call('tryDice', { formula: '1d6' }, bruno.cookie)).statusCode).toBe(429)
+  })
+
+  it('el cursor de las anteriores es de la campaña: el id de una tirada de otra no sirve', async () => {
+    const worldId = (await call('createWorld', { name: 'Otro' }, master.cookie)).json().id
+    const other = (await call('createCampaign', { worldId, name: 'La Otra' }, master.cookie)).json().id
+    const elsewhere = (
+      await call('rollDice', { campaignId: other, formula: '1d6 # Fuera', visibility: 'all' }, master.cookie)
+    ).json().roll.id
+    await roll(master, '1d6 # Aquí', 'all')
+    const page = (await call('listRolls', { campaignId, before: elsewhere }, master.cookie)).json()
+    expect(page.rolls.map((r: { label: string }) => r.label)).toEqual(['Aquí'])
+  })
+
+  it('el color de los dados solo se guarda si es un color de verdad', async () => {
+    const save = (diceColor: string) =>
+      app.inject({
+        method: 'POST',
+        url: '/api/auth/update-user',
+        payload: { diceColor },
+        headers: { origin: BASE_URL, cookie: ana.cookie }
+      })
+    expect((await save('url(https://fuera.example)')).statusCode).toBe(400)
+    expect((await save('#2a9d8f')).statusCode).toBe(200)
   })
 })

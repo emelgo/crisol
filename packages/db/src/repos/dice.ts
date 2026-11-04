@@ -2,7 +2,7 @@
  * Las tiradas de una campaña (ADR-0010): se guardan ya resueltas y se leen filtradas por quién las ve. No pasan por
  * operation(): una tirada no se deshace
  */
-import { and, desc, eq, gt, lt, or, sql } from 'drizzle-orm'
+import { and, desc, eq, lt, or, sql } from 'drizzle-orm'
 import type { Database } from '../client.ts'
 import { user } from '../schema/auth.ts'
 import { diceRolls, type StoredRoll } from '../schema/dice.ts'
@@ -28,6 +28,7 @@ const view = {
 
 export async function insertRoll(
   db: Database,
+  limit: number,
   roll: {
     campaignId: string
     worldId: string
@@ -39,10 +40,17 @@ export async function insertRoll(
     result: StoredRoll
   }
 ) {
-  // Guardarla y leerla con el nombre y el color de quien tira, en una consulta y sin esperar al disco: tirar va con
-  // prisa, y si la base de datos cae justo entonces, se pierde como mucho la última tirada (ADR-0010)
+  // Con un cerrojo por cuenta, contar las del último minuto y guardarla, a la vez: con muchas peticiones juntas no se
+  // pasa del límite. Se lee con el nombre y el color de quien tira, en una consulta y sin esperar al disco: tirar va
+  // con prisa, y si la base de datos cae justo entonces, se pierden las de ese momento (ADR-0010)
   const rows = await db.transaction(async (tx) => {
     await tx.execute(sql`set local synchronous_commit = off`)
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${`dados:${roll.userId}`}, 0))`)
+    const [recent] = await tx
+      .select({ count: sql<number>`count(*)::int` })
+      .from(diceRolls)
+      .where(and(eq(diceRolls.userId, roll.userId), sql`${diceRolls.createdAt} > now() - interval '1 minute'`))
+    if ((recent?.count ?? 0) >= limit) return null
     return tx.execute<{
       id: string
       n: number
@@ -67,6 +75,8 @@ export async function insertRoll(
     from inserted join ${user} on ${user.id} = inserted.user_id
   `)
   })
+  // Ya tiró las del último minuto
+  if (rows === null) return null
   const found = [...rows][0]
   if (!found) throw new Error('La tirada no se guardó')
   return {
@@ -93,8 +103,14 @@ export async function listRolls(
   db: Database,
   input: { campaignId: string; viewerId: string; master: boolean; before?: string | undefined }
 ) {
+  // El cursor, de esta campaña (otro id no sirve: como si no se diera)
   const cursor = input.before
-    ? (await db.select({ n: diceRolls.n }).from(diceRolls).where(eq(diceRolls.id, input.before)))[0]?.n
+    ? (
+        await db
+          .select({ n: diceRolls.n })
+          .from(diceRolls)
+          .where(and(eq(diceRolls.id, input.before), eq(diceRolls.campaignId, input.campaignId)))
+      )[0]?.n
     : undefined
   const rows = await db
     .select(view)
@@ -111,13 +127,4 @@ export async function listRolls(
     .limit(ROLLS_PAGE + 1)
   const page = rows.slice(0, ROLLS_PAGE)
   return { rolls: page.reverse(), next: rows.length > ROLLS_PAGE ? (page[0]?.id ?? null) : null }
-}
-
-/** Cuántas ha tirado una cuenta desde esa hora (para el límite por minuto) */
-export async function countSince(db: Database, userId: string, since: Date) {
-  const [found] = await db
-    .select({ count: sql<number>`count(*)::int` })
-    .from(diceRolls)
-    .where(and(eq(diceRolls.userId, userId), gt(diceRolls.createdAt, since)))
-  return found?.count ?? 0
 }

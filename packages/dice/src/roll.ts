@@ -2,7 +2,16 @@
  * Tirar una fórmula: cada dado con su valor, el total y el desglose. El azar entra de fuera: en el servidor, el
  * criptográfico; en las pruebas, una secuencia fija. La web nunca tira: el resultado lo decide el servidor
  */
-import { type DiceNode, type DiceTerm, formatDice, meets, parseDice, splitComment } from './notation.ts'
+import {
+  type DiceNode,
+  DiceSyntaxError,
+  type DiceTerm,
+  formatDice,
+  meets,
+  needsParentheses,
+  parseDice,
+  splitComment
+} from './notation.ts'
 
 /** Un entero al azar entre 1 y las caras */
 export type DieRoller = (sides: number) => number
@@ -28,6 +37,8 @@ export interface DieResult {
   subtract?: boolean
   /** Contando éxitos: 1 si es un éxito, -1 si es un fallo */
   success?: 1 | -1
+  /** En una explosión acumulada (!!), lo que salió primero: decide el crítico */
+  natural?: number
 }
 
 export interface TermResult {
@@ -55,9 +66,23 @@ export interface RollResult {
 
 const MAX_EXPLOSIONS = 100
 const MAX_REROLLS = 100
+/** Como mucho, tantos dados por tirada contando los que se repiten y los que explotan: una fórmula no pesa más */
+export const MAX_RESULTS = 500
 
-function rollTerm(term: DiceTerm, roll: DieRoller): TermResult {
-  const one = () => (term.sides === 'F' ? roll(3) - 2 : roll(term.sides))
+/** Lo que queda de los dados de una tirada: cada uno que se tira lo gasta */
+type Budget = { left: number }
+const spend = (budget: Budget) => {
+  if (--budget.left < 0)
+    throw new DiceSyntaxError(
+      `Como mucho, ${MAX_RESULTS} dados por tirada, contando los que se repiten y los que explotan`
+    )
+}
+
+function rollTerm(term: DiceTerm, roll: DieRoller, budget: Budget): TermResult {
+  const one = () => {
+    spend(budget)
+    return term.sides === 'F' ? roll(3) - 2 : roll(term.sides)
+  }
   const explodes = (value: number): boolean =>
     term.explode && term.sides !== 'F' && (term.explodeOn ? meets(value, term.explodeOn) : value === term.sides)
   const dice: DieResult[] = []
@@ -73,12 +98,13 @@ function rollTerm(term: DiceTerm, roll: DieRoller): TermResult {
       value = one()
     }
     if (term.compound) {
+      const natural = value
       let total = value
       for (let explosions = 0; explodes(value) && explosions < MAX_EXPLOSIONS; explosions++) {
         value = one()
         total += value
       }
-      dice.push({ value: total, kept: true, exploded: false })
+      dice.push({ value: total, kept: true, exploded: false, ...(total !== natural ? { natural } : {}) })
       continue
     }
     const first = value
@@ -127,16 +153,21 @@ function rollTerm(term: DiceTerm, roll: DieRoller): TermResult {
   }
 }
 
-function evaluate(node: DiceNode, roll: DieRoller, terms: TermResult[]): { value: number; text: string } {
+function evaluate(
+  node: DiceNode,
+  roll: DieRoller,
+  terms: TermResult[],
+  budget: Budget
+): { value: number; text: string } {
   switch (node.kind) {
     case 'number':
       return { value: node.value, text: `${node.value}${node.label ? ` (${node.label})` : ''}` }
     case 'negate': {
-      const inner = evaluate(node.value, roll, terms)
-      return { value: -inner.value, text: `-${inner.text}` }
+      const inner = evaluate(node.value, roll, terms, budget)
+      return { value: -inner.value, text: node.value.kind === 'binary' ? `-(${inner.text})` : `-${inner.text}` }
     }
     case 'dice': {
-      const result = rollTerm(node, roll)
+      const result = rollTerm(node, roll, budget)
       terms.push(result)
       const shown = result.dice
         .map((d) => {
@@ -148,8 +179,8 @@ function evaluate(node: DiceNode, roll: DieRoller, terms: TermResult[]): { value
       return { value: result.total, text: `[${shown}]${successes}${result.label ? ` (${result.label})` : ''}` }
     }
     case 'binary': {
-      const left = evaluate(node.left, roll, terms)
-      const right = evaluate(node.right, roll, terms)
+      const left = evaluate(node.left, roll, terms, budget)
+      const right = evaluate(node.right, roll, terms, budget)
       const value =
         node.op === '+'
           ? left.value + right.value
@@ -158,16 +189,25 @@ function evaluate(node: DiceNode, roll: DieRoller, terms: TermResult[]): { value
             : node.op === '*'
               ? left.value * right.value
               : Math.floor(left.value / (right.value || 1))
-      return { value, text: `${left.text} ${node.op === '*' ? '×' : node.op} ${right.text}` }
+      // Los mismos paréntesis que la fórmula: ([3] + 2) × 2
+      const side = (child: DiceNode, text: string, right: boolean) =>
+        needsParentheses(node, child, right) ? `(${text})` : text
+      return {
+        value,
+        text: `${side(node.left, left.text, false)} ${node.op === '*' ? '×' : node.op} ${side(node.right, right.text, true)}`
+      }
     }
   }
 }
 
 /** El crítico de la regla de 5e: lo deciden los d20 que cuentan, sin los de más por explotar */
 function criticalOf(terms: readonly TermResult[]): RollResult['critical'] {
-  const d20 = terms.filter((t) => t.sides === 20).flatMap((t) => t.dice.filter((d) => d.kept && !d.exploded))
-  if (d20.some((d) => d.value === 20)) return 'high'
-  if (d20.some((d) => d.value === 1)) return 'low'
+  const d20 = terms
+    .filter((t) => t.sides === 20)
+    .flatMap((t) => t.dice.filter((d) => d.kept && !d.exploded))
+    .map((d) => d.natural ?? d.value)
+  if (d20.some((v) => v === 20)) return 'high'
+  if (d20.some((v) => v === 1)) return 'low'
   return null
 }
 
@@ -176,7 +216,7 @@ export function rollDice(formula: string, roll: DieRoller = cryptoRoller): RollR
   const { comment } = splitComment(formula)
   const tree = parseDice(formula)
   const terms: TermResult[] = []
-  const { value, text } = evaluate(tree, roll, terms)
+  const { value, text } = evaluate(tree, roll, terms, { left: MAX_RESULTS })
   return {
     formula: formatDice(tree),
     total: value,

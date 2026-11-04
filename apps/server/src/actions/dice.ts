@@ -2,7 +2,7 @@
  * Las tiradas de una campaña (ADR-0010): el servidor pone el azar, guarda la tirada ya resuelta y la deja leer a quien
  * la puede ver. Las privadas, solo a quien tira y al máster
  */
-import { type DiceRoll, listRolls, type RollVisibility, rollDice, tryDice } from '@crisol/contracts'
+import { type DiceRoll, listRolls, rollDice, tryDice, visibilitiesFor } from '@crisol/contracts'
 import { diceRepo } from '@crisol/db'
 import { cryptoRoller, DiceSyntaxError, rollDice as roll } from '@crisol/dice'
 import { can } from '@crisol/domain'
@@ -10,19 +10,41 @@ import { authorizedCampaign } from './access.ts'
 import { type ActionContext, InvalidRequestError, TooManyRequestsError } from './context.ts'
 import { implement } from './registry.ts'
 
-/** Lo que puede usar cada uno: los jugadores, todos, para mí y al máster; el máster, todos y oculta */
-const ALLOWED: Record<'master' | 'player', readonly RollVisibility[]> = {
-  master: ['all', 'hidden'],
-  player: ['all', 'self', 'master']
-}
-
 /** Como mucho, tantas por minuto y persona: se cuentan en la tabla, así vale con varias instancias */
 export const ROLLS_PER_MINUTE = 60
+
+/** Las de tryDice (sin apuntar), en la memoria del proceso: no guardan nada que contar */
+const tried = new Map<string, number[]>()
+function tooManyTries(userId: string) {
+  const now = Date.now()
+  const recent = (tried.get(userId) ?? []).filter((at) => now - at < 60_000)
+  if (recent.length >= ROLLS_PER_MINUTE) {
+    tried.set(userId, recent)
+    return true
+  }
+  recent.push(now)
+  tried.set(userId, recent)
+  return false
+}
+
+/** Los dados de un resultado, para guardarlos y para los dados 3D */
+const diceOf = (result: ReturnType<typeof roll>) =>
+  result.terms.flatMap((term) => term.dice.map((d) => ({ sides: term.sides, value: d.value, kept: d.kept })))
+
+/** Tirar, o decir por qué no se entiende */
+function rolled(formula: string) {
+  try {
+    return roll(formula, cryptoRoller)
+  } catch (error) {
+    if (error instanceof DiceSyntaxError) throw new InvalidRequestError('BAD_FORMULA', error.message)
+    throw error
+  }
+}
 
 const isMaster = (ctx: ActionContext, campaign: { id: string; worldId: string }) =>
   can(ctx.actor, 'dice.private', { campaignId: campaign.id, worldId: campaign.worldId })
 
-type Row = Awaited<ReturnType<typeof diceRepo.insertRoll>>
+type Row = NonNullable<Awaited<ReturnType<typeof diceRepo.insertRoll>>>
 
 export const present = (row: Row): DiceRoll => ({
   id: row.id,
@@ -44,20 +66,12 @@ export const diceActions = [
   implement(rollDice, async (ctx, input) => {
     const campaign = await authorizedCampaign(ctx, 'dice.roll', input.campaignId)
     const master = isMaster(ctx, campaign)
-    if (!ALLOWED[master ? 'master' : 'player'].includes(input.visibility)) {
+    // El máster puede cualquiera (la web le ofrece todos u oculta); los jugadores, las suyas
+    if (!master && !visibilitiesFor('player').includes(input.visibility)) {
       throw new InvalidRequestError('VISIBILITY_NOT_ALLOWED')
     }
-    if ((await diceRepo.countSince(ctx.db, ctx.actor.userId, new Date(Date.now() - 60_000))) >= ROLLS_PER_MINUTE) {
-      throw new TooManyRequestsError('TOO_MANY_ROLLS')
-    }
-    let result: ReturnType<typeof roll>
-    try {
-      result = roll(input.formula, cryptoRoller)
-    } catch (error) {
-      if (error instanceof DiceSyntaxError) throw new InvalidRequestError('BAD_FORMULA', error.message)
-      throw error
-    }
-    const row = await diceRepo.insertRoll(ctx.db, {
+    const result = rolled(input.formula)
+    const row = await diceRepo.insertRoll(ctx.db, ROLLS_PER_MINUTE, {
       campaignId: campaign.id,
       worldId: campaign.worldId,
       userId: ctx.actor.userId,
@@ -69,11 +83,10 @@ export const diceActions = [
         total: result.total,
         detail: result.detail,
         critical: result.critical,
-        dice: result.terms.flatMap((term) =>
-          term.dice.map((d) => ({ sides: term.sides, value: d.value, kept: d.kept }))
-        )
+        dice: diceOf(result)
       }
     })
+    if (!row) throw new TooManyRequestsError('TOO_MANY_ROLLS')
     const view = present(row)
     // En vivo, a quien la puede ver: una pública, a la campaña; una privada, a quien tira y al máster (una vez)
     const target = { campaignId: campaign.id, worldId: campaign.worldId }
@@ -101,21 +114,16 @@ export const diceActions = [
   }),
 
   // Sin apuntarla: para probar una fórmula (la IA) o tirar en un mundo sin campañas. No guarda nada
-  implement(tryDice, async (_ctx, input) => {
-    let result: ReturnType<typeof roll>
-    try {
-      result = roll(input.formula, cryptoRoller)
-    } catch (error) {
-      if (error instanceof DiceSyntaxError) throw new InvalidRequestError('BAD_FORMULA', error.message)
-      throw error
-    }
+  implement(tryDice, async (ctx, input) => {
+    if (tooManyTries(ctx.actor.userId)) throw new TooManyRequestsError('TOO_MANY_ROLLS')
+    const result = rolled(input.formula)
     return {
       formula: result.formula,
       label: result.comment ?? null,
       total: result.total,
       detail: result.detail,
       critical: result.critical,
-      dice: result.terms.flatMap((term) => term.dice.map((d) => ({ sides: term.sides, value: d.value, kept: d.kept })))
+      dice: diceOf(result)
     }
   })
 ]

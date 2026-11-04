@@ -31,4 +31,29 @@ describe('una tirada escrita en el texto', () => {
     expect(plainText(read.body)).toBe('Iniciativa 1d20')
     expect(() => getSchema(editorExtensions()).nodeFromJSON(read.body).check()).not.toThrow()
   })
+
+  it('una que no se cierra, con muchos espacios, se lee al momento (sin atascarse)', () => {
+    const began = performance.now()
+    pageFromMarkdown(`x \`dice: a#${' '.repeat(50_000)}`)
+    expect(performance.now() - began).toBeLessThan(500)
+    expect(pageFromMarkdown('`dice:   1d6   #   Daño   `').body.content?.[0]?.content?.[0]?.attrs).toEqual({
+      formula: '1d6',
+      label: 'Daño'
+    })
+  })
+
+  it('una comilla invertida o una almohadilla de más no estropean la página: se quitan al escribirla', () => {
+    const body = {
+      type: 'doc',
+      content: [
+        { type: 'paragraph', content: [{ type: 'diceRoll', attrs: { formula: '1d6#x`', label: 'Ataque `rápido`' } }] }
+      ]
+    }
+    const markdown = pageToMarkdown({ properties: [], body, separate: () => null })
+    expect(markdown).toBe('`dice: 1d6x # Ataque rápido`\n')
+    expect(pageFromMarkdown(markdown).body.content?.[0]?.content?.[0]?.attrs).toEqual({
+      formula: '1d6x',
+      label: 'Ataque rápido'
+    })
+  })
 })

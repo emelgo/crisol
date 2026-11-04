@@ -28,6 +28,16 @@ describe('la notación', () => {
     expect(formatDice(parseDice('1d20 − 1'))).toBe('1d20-1')
   })
 
+  it('no pierde paréntesis: lo que se guarda se repite igual', () => {
+    for (const formula of ['-(1d6+2)', '12/(2*3)', '8/(4/2)', '10-(1d4+1)', '(1d8+2)*2', '2*(3-1)']) {
+      const written = formatDice(parseDice(formula))
+      expect(rollDice(written, fixed(3)).total, `${formula} → ${written}`).toBe(rollDice(formula, fixed(3)).total)
+    }
+    expect(formatDice(parseDice('-(1d6+2)'))).toBe('-(1d6+2)')
+    expect(formatDice(parseDice('12/(2*3)'))).toBe('12/(2×3)')
+    expect(rollDice('(1d8+2)*2', fixed(3)).detail).toBe('(1d8+2)×2 → ([3] + 2) × 2 = 10')
+  })
+
   it('aparta el comentario y guarda las etiquetas', () => {
     expect(splitComment('1d20+5 # Espada larga')).toEqual({ formula: '1d20+5 ', comment: 'Espada larga' })
     expect(splitComment('1d20')).toEqual({ formula: '1d20', comment: null })
@@ -50,6 +60,12 @@ describe('la notación', () => {
     expect(() => parseDice('1d1')).toThrow('Un dado tiene al menos 2 caras')
     expect(() => parseDice('3d6kh4')).toThrow('No se puede quedar con 4 de 3 dados')
     expect(formatDice(parseDice('100d6'))).toBe('100d6')
+  })
+
+  it('como mucho 500 dados por tirada, contando los que se repiten y los que explotan', () => {
+    expect(() => rollDice('100d2r<=2!>=1!-<=2', fixed(1, 2))).toThrow('Como mucho, 500 dados por tirada')
+    expect(() => rollDice('100d6!', fixed(6))).toThrow('Como mucho, 500 dados por tirada')
+    expect(rollDice('100d6', fixed(3)).total).toBe(300)
   })
 
   it('no ejecuta nada: es un intérprete propio', () => {
@@ -90,6 +106,7 @@ describe('la tirada', () => {
     expect(compound.terms[0]?.dice).toHaveLength(1)
     // Como mucho 100 explosiones: un dado trucado que siempre explota acaba
     expect(rollDice('1d6!', fixed(6)).total).toBe(6 * 101)
+    expect(rollDice('1d6!', fixed(6)).terms[0]?.dice).toHaveLength(101)
   })
 
   it('cuenta éxitos y fallos', () => {
@@ -103,6 +120,10 @@ describe('la tirada', () => {
     expect(r.formula).toBe('1d20[ataque]+5[Fuerza]')
     expect(r.comment).toBe('Espada larga')
     expect(r.detail).toBe('1d20[ataque]+5[Fuerza] → [14] (ataque) + 5 (Fuerza) = 19')
+  })
+
+  it('en una explosión acumulada cuenta el primer dado: un 20 natural sigue siendo crítico', () => {
+    expect(rollDice('1d20!!', fixed(20, 3)).critical).toBe('high')
   })
 
   it('el 20 natural del d20 es crítico y el 1, pifia; los descartados no cuentan', () => {
