@@ -387,6 +387,10 @@ test('@fugas las tiradas privadas solo le llegan a quien tira y al máster (ADR-
   await roll(ana, '1d20+7 # Sigilo de Ana', 'master')
   await roll(ana, '1d20 # Corazonada de Ana', 'self')
   await roll(page, '1d20+2 # Emboscada del máster', 'hidden')
+  // Y lo que tira su IA (por el MCP), oculta por defecto
+  const claude = await connectClaude(page)
+  const ai = await claude.call('tirar_dados', { campaignId, formula: '1d8 # Encuentro de la IA' })
+  expect(ai.isError, ai.text).toBeFalsy()
   // La pública le llega en vivo; después lee el registro
   await expect.poll(() => captured.frames.some((f) => f.includes('Iniciativa de todos'))).toBe(true)
   const read = await bruno.request.post('/api/actions/listRolls', { data: { campaignId } })
@@ -399,7 +403,7 @@ test('@fugas las tiradas privadas solo le llegan a quien tira y al máster (ADR-
 
   const everything = await captured.all()
   expect(everything).toContain('Iniciativa de todos')
-  for (const leak of ['Sigilo de Ana', 'Corazonada de Ana', 'Emboscada del máster']) {
+  for (const leak of ['Sigilo de Ana', 'Corazonada de Ana', 'Emboscada del máster', 'Encuentro de la IA']) {
     expect(everything).not.toContain(leak)
   }
   // Ana ve las suyas, pero no la oculta del máster

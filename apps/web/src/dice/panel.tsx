@@ -6,10 +6,11 @@
 import type { Campaign } from '@crisol/contracts'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Settings, X } from 'lucide-react'
-import { useId, useState } from 'react'
+import { useCallback, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
+import { useDismiss } from '../components/dismiss.ts'
 import { Tour } from '../components/tour.tsx'
 import { Composer } from './composer.tsx'
 import { useDice, useWorldInPath } from './context.tsx'
@@ -48,6 +49,14 @@ function DiceCard({ worldId }: { worldId: string }) {
   const accounts = useAccounts()
   const { account } = accounts.useAccount()
   const [options, setOptions] = useState(false)
+  const optionsRoot = useRef<HTMLDivElement>(null)
+  const gear = useRef<HTMLButtonElement>(null)
+  useDismiss(
+    options,
+    useCallback(() => setOptions(false), []),
+    optionsRoot,
+    gear
+  )
   const { list, chosen, loading } = useDiceCampaign(worldId)
   return (
     <>
@@ -79,6 +88,7 @@ function DiceCard({ worldId }: { worldId: string }) {
             chosen && <span className={styles.campaignName}>{chosen.name}</span>
           )}
           <button
+            ref={gear}
             type="button"
             className={styles.gear}
             aria-label={t('dice.options')}
@@ -88,7 +98,7 @@ function DiceCard({ worldId }: { worldId: string }) {
             <Settings size={16} aria-hidden="true" />
           </button>
           {options && (
-            <div className={styles.options}>
+            <div ref={optionsRoot} className={styles.options}>
               <label className={styles.check}>
                 <input
                   type="checkbox"

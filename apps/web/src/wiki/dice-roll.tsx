@@ -7,8 +7,9 @@ import { describeFormula } from '@crisol/dice'
 import type { Node } from '@tiptap/core'
 import { type NodeViewProps, NodeViewWrapper, ReactNodeViewRenderer } from '@tiptap/react'
 import { Dices, Pencil } from 'lucide-react'
-import { type KeyboardEvent, useEffect, useId, useState } from 'react'
+import { type KeyboardEvent, useCallback, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useDismiss } from '../components/dismiss.ts'
 import { explain } from '../dice/formula.ts'
 import { useRollHere } from '../dice/roll-here.ts'
 import styles from './dice-roll.module.css'
@@ -40,6 +41,14 @@ function DiceRollView({ node, editor, getPos, selected, updateAttributes }: Node
     if (selected && editor.isEditable) setEditing(true)
   }, [selected, editor])
   const open = editor.isEditable && editing
+  const root = useRef<HTMLSpanElement>(null)
+  const pencil = useRef<HTMLButtonElement>(null)
+  useDismiss(
+    open,
+    useCallback(() => setEditing(false), []),
+    root,
+    pencil
+  )
   // Cerrar el cuadro: el cursor, justo después de la tirada
   const close = () => {
     setEditing(false)
@@ -59,7 +68,7 @@ function DiceRollView({ node, editor, getPos, selected, updateAttributes }: Node
   }
   return (
     <NodeViewWrapper as="span" className={styles.wrap} contentEditable={false}>
-      <span data-dice-ui="">
+      <span ref={root} data-dice-ui="">
         <button
           type="button"
           className={explained.ok ? styles.chip : styles.wrong}
@@ -78,10 +87,11 @@ function DiceRollView({ node, editor, getPos, selected, updateAttributes }: Node
           }}
         >
           <Dices size={14} aria-hidden="true" />
-          {formula}
+          <span translate="no">{formula}</span>
         </button>
         {editor.isEditable && (
           <button
+            ref={pencil}
             type="button"
             className={styles.edit}
             aria-label={t('diceRoll.change')}
@@ -119,6 +129,7 @@ function DiceRollView({ node, editor, getPos, selected, updateAttributes }: Node
               className={styles.input}
               value={label ?? ''}
               maxLength={80}
+              autoComplete="off"
               placeholder={t('diceRoll.optional')}
               onChange={(event) => updateAttributes({ label: event.currentTarget.value || null })}
               onKeyDown={onKeyDown}

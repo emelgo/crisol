@@ -118,7 +118,9 @@ function Entry({ roll, mine, onAgain }: { roll: DiceRoll; mine: boolean; onAgain
       <div className={styles.line}>
         <div className={styles.what}>
           <span className={styles.label}>{roll.label ?? describeFormula(roll.formula)}</span>
-          <span className={styles.formula}>{roll.formula}</span>
+          <span className={styles.formula} translate="no">
+            {roll.formula}
+          </span>
         </div>
         <div className={styles.result}>
           <span
