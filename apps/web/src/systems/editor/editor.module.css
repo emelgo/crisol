@@ -1011,9 +1011,11 @@
 }
 
 @media (max-width: 72rem) {
+  /* Abajo, el sitio del botón de «Probar», que va fijo: no tapa el último campo */
   .page {
     grid-template-columns: minmax(0, 1fr);
-    padding: var(--space-5) var(--space-4) var(--space-8);
+    padding: var(--space-5) var(--space-4) calc(var(--space-8) + 4rem);
+    scroll-padding-block-end: 9rem;
   }
 
   .parts {

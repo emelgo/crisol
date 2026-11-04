@@ -220,12 +220,16 @@ export async function operation<R>(
       .returning({ id: operations.id })
     if (!op) throw new Error('No se pudo guardar la operación')
     if (context.undoes) await tx.update(operations).set({ undoneById: op.id }).where(eq(operations.id, context.undoes))
-    await tx
-      .insert(changes)
-      .values(recorded.map((change, index) => ({ ...change, operationId: op.id, seq: index + 1 })))
+    // En tandas: una operación grande (subir un sistema con miles de documentos) no pasa del tope de parámetros
+    const rows = recorded.map((change, index) => ({ ...change, operationId: op.id, seq: index + 1 }))
+    for (let i = 0; i < rows.length; i += CHANGES_PER_INSERT)
+      await tx.insert(changes).values(rows.slice(i, i + CHANGES_PER_INSERT))
     return result
   })
 }
+
+/** Cada cambio lleva 6 valores; Postgres admite 65.535 por consulta */
+const CHANGES_PER_INSERT = 2000
 
 /** El primer ámbito que aparece en los cambios: la fila de esa tabla o la columna que apunta a ella */
 function scopeOf(recorded: Change[], table: string, column: string): string | null {
