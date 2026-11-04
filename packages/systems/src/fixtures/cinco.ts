@@ -122,7 +122,7 @@ export const cinco: System = {
       attribution: 'Incluye material del SRD 5.2 (Wizards of the Coast), con licencia CC BY 4.0.'
     }
   ],
-  packs: [{ key: 'objetos', label: { es: 'Objetos', en: 'Items' }, type: 'objeto' }],
+  packs: [{ key: 'objetos', label: { es: 'Objetos', en: 'Items' }, document: 'item', types: ['objeto'] }],
   settings: {
     metodos: {
       kind: 'choices',

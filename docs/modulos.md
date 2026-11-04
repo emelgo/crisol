@@ -32,7 +32,16 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
     bajar y subir con su contenido (rutas con más sitio que piden la sesión antes de leer), y la campaña con su sistema
     y sus críticos al tirar.
 
-  Lo siguiente, la tarea 8: «Sistemas» en Mis mundos (la API falsa de la web ya tiene los sistemas). **Ritmo** (punto de control 1): un personaje de nivel 20 con 353 campos y 100 objetos, 5 ms de
+  Hechas también las tareas 8 y 9: «Sistemas» en Mis mundos y la elección en la campaña.
+- **Prueba con un sistema de Foundry de verdad** (Enrique, 2026-11-04: «mete también […] daggerheart/2.12.5/system.json»):
+  su manifiesto, bajado a la carpeta temporal (no al repositorio, por la sala limpia) y pasado por un script de prueba,
+  cabe en el formato: sus 18 tipos de personaje y de objeto, y sus 13 paquetes de esos documentos. Para que cupieran,
+  un paquete pasó a ser de una clase de documento (`document`) que mezcla tipos, como en Foundry. **Apuntado para
+  `foundry`**:
+  - sus claves en camelCase (`domainCard`) se pasan a las nuestras (`domain_card`);
+  - sin sitio aún: los efectos activos (para nosotros, bonos), los subtipos de mensaje del chat (las tarjetas de las
+    tiradas), el combate (módulo 6) y los paquetes de diario y de tablas (módulo 4);
+  - el manifiesto no trae los campos de cada tipo (están en su código): para eso hay que leer sus modelos o sus datos. **Ritmo** (punto de control 1): un personaje de nivel 20 con 353 campos y 100 objetos, 5 ms de
   mediana (la spec pide menos de 20); validar un sistema de 1,85 MB, 71 ms (pide menos de 500).
 
 ### Para retomar (2026-11-04, módulo 3: dados)

@@ -282,7 +282,12 @@ function checkReferences(
   repeated(system.sources?.map((s) => s.key) ?? [], (i, k) => add(['sources', i, 'key'], `«${k}» está repetida`))
   repeated(system.packs?.map((p) => p.key) ?? [], (i, k) => add(['packs', i, 'key'], `«${k}» está repetido`))
   system.packs?.forEach((pack, i) => {
-    if (!types[pack.type]) add(['packs', i, 'type'], `No existe el tipo «${pack.type}»`)
+    pack.types?.forEach((type, j) => {
+      const found = types[type]
+      if (!found) add(['packs', i, 'types', j], `No existe el tipo «${type}»`)
+      else if (found.document !== pack.document)
+        add(['packs', i, 'types', j], `«${type}» no es de ${pack.document === 'actor' ? 'personajes' : 'objetos'}`)
+    })
   })
   for (const [settingKey, setting] of Object.entries(system.settings ?? {})) {
     const at: Segment[] = ['settings', settingKey]

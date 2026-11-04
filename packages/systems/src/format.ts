@@ -222,8 +222,10 @@ function build(strict: boolean) {
     rolls: recordOf(roll, LIMITS.rolls).optional(),
     dice: obj({ default: formula.optional(), critical: z.enum(CRITICAL_RULES) }).optional(),
     sources: z.array(source).max(50).optional(),
+    // Como en Foundry, un paquete es de una clase de documento y puede mezclar sus tipos (armas, armaduras…); types, si
+    // solo lleva algunos
     packs: z
-      .array(obj({ key, label: text(), type: key }))
+      .array(obj({ key, label: text(), document: z.enum(['actor', 'item']), types: z.array(key).max(50).optional() }))
       .max(100)
       .optional(),
     settings: recordOf(setting, 50).optional(),

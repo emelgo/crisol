@@ -167,8 +167,11 @@ describe('cada problema dice dónde y por qué', () => {
     Object.assign(set.rolls?.caracteristica as object, { for: { set: 'habilidades' } })
     expect(only(set).message).toBe('No existe el conjunto «habilidades»')
     const pack = copy(cinco)
-    ;(pack.packs as { type: string }[])[0] = { key: 'objetos', label: 'Objetos', type: 'arma' } as never
-    expect(only(pack).message).toBe('No existe el tipo «arma»')
+    ;(pack.packs as unknown[])[0] = { key: 'objetos', label: 'Objetos', document: 'item', types: ['arma'] }
+    expect(only(pack)).toMatchObject({ path: 'packs[0].types[0]', message: 'No existe el tipo «arma»' })
+    const wrongClass = copy(cinco)
+    ;(wrongClass.packs as unknown[])[0] = { key: 'gente', label: 'Gente', document: 'item', types: ['personaje'] }
+    expect(only(wrongClass).message).toBe('«personaje» no es de objetos')
   })
 
   it('solo los objetos dan bonos', () => {
@@ -320,7 +323,12 @@ describe('lo declarativo de un sistema de Foundry cabe en el formato', () => {
       version: manifest.version,
       languages: manifest.languages.map((l) => l.lang),
       types,
-      packs: manifest.packs.map((p) => ({ key: p.name, label: p.label, type: 'weapon' }))
+      // Un paquete es de una clase de documento, y puede mezclar sus tipos
+      packs: manifest.packs.map((p) => ({
+        key: p.name,
+        label: p.label,
+        document: p.type === 'Actor' ? 'actor' : 'item'
+      }))
     }
     expect(validateSystem(system).problems).toEqual([])
   })
