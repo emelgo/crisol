@@ -1,5 +1,6 @@
 import { editorExtensions } from '@crisol/editor'
 import { Editor } from '@tiptap/core'
+import { Selection } from '@tiptap/pm/state'
 import { afterEach, describe, expect, it } from 'vitest'
 import { GHOST_LINE, GhostLine, needsGhostLine } from './ghost-line.ts'
 
@@ -87,5 +88,23 @@ describe('la línea de más', () => {
     // Ya está la vacía al final: otra vez abajo no añade más
     expect(keyDown(e, 'ArrowDown')).toBe(false)
     expect(e.state.doc.childCount).toBe(3)
+  })
+
+  it('Intro al final del todo, si lo último es un bloque sin texto (una imagen, un secreto), abre una línea después', () => {
+    const e = open('')
+    e.commands.setContent({
+      type: 'doc',
+      content: [
+        { type: 'paragraph', content: [{ type: 'text', text: 'Hola' }] },
+        { type: 'secret', attrs: { id: 'bbbbbbbb', documentId: null } }
+      ]
+    })
+    // Como Ctrl+Fin: el final del documento, que es el bloque
+    e.view.dispatch(e.state.tr.setSelection(Selection.atEnd(e.state.doc)))
+    expect(keyDown(e, 'Enter')).toBe(true)
+    expect(e.state.doc.childCount).toBe(3)
+    expect(e.state.doc.child(1).type.name).toBe('secret')
+    expect(e.state.doc.lastChild?.type.name).toBe('paragraph')
+    expect(e.state.selection.from).toBe(e.state.doc.content.size - 1)
   })
 })

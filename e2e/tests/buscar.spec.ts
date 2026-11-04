@@ -33,7 +33,8 @@ test('buscar en español: sin tildes y con erratas, por secciones, con lo de un 
   const results = page.getByRole('list', { name: 'Resultados' })
   await expect(results.getByRole('link').first()).toHaveText('Dragón rojo')
   const mountain = results.getByRole('listitem').filter({ hasText: 'La Montaña Gris' }).first()
-  await expect(mountain.getByText('Guaridas')).toBeVisible()
+  // Lo del cuerpo y lo del secreto, los dos en «Guaridas», la sección donde está el secreto
+  await expect(mountain.getByText('Guaridas')).toHaveCount(2)
   await expect(mountain.getByText('Secreto')).toBeVisible()
   await expect(mountain.locator('mark').first()).toBeVisible()
 
