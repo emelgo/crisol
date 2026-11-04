@@ -82,7 +82,10 @@ export function createAuth({ db, secret, baseURL, trustedOrigins = [] }: AuthOpt
     user: {
       additionalFields: {
         firstName: { type: 'string', required: false, defaultValue: '', input: true },
-        lastName: { type: 'string', required: false, defaultValue: '', input: true }
+        lastName: { type: 'string', required: false, defaultValue: '', input: true },
+        // Los dados (docs/specs/dados.md): su color y si ver caer los de los demás
+        diceColor: { type: 'string', required: false, input: true },
+        diceOthers: { type: 'boolean', required: false, defaultValue: true, input: true }
       }
     },
     session: { expiresIn: 30 * DAY, updateAge: DAY },

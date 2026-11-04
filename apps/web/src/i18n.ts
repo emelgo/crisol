@@ -57,7 +57,19 @@ export const es = {
     again: 'Repetir',
     critical: 'Crítico',
     fumble: 'Pifia',
-    flag: { master: 'Al máster', self: 'Para mí', selfOther: 'Para sí', hidden: 'Oculta' }
+    flag: { master: 'Al máster', self: 'Para mí', selfOther: 'Para sí', hidden: 'Oculta' },
+    color: {
+      title: 'El color de tus dados',
+      auto: 'Automático',
+      red: 'Rojo',
+      teal: 'Verde azulado',
+      amber: 'Ámbar',
+      blue: 'Azul',
+      violet: 'Violeta',
+      pink: 'Rosa',
+      green: 'Verde',
+      copper: 'Cobre'
+    }
   },
   account: {
     signIn: 'Entrar',

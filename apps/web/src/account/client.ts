@@ -3,6 +3,7 @@
  * las pruebas usan account/fake.ts.
  */
 import { oauthProviderClient } from '@better-auth/oauth-provider/client'
+import { inferAdditionalFields } from 'better-auth/client/plugins'
 import { createAuthClient } from 'better-auth/react'
 
 export interface Account {
@@ -11,6 +12,10 @@ export interface Account {
   email: string
   firstName?: string
   lastName?: string
+  /** El color de sus dados (#rrggbb), o null sin elegir */
+  diceColor?: string | null
+  /** Si le caen en la pantalla los dados de los demás */
+  diceOthers?: boolean
 }
 
 /** redirected: la página se va a otra dirección (OAuth) y no tiene que navegar */
@@ -46,7 +51,14 @@ export interface AccountClient {
   refreshSession(): void
   rename(name: string): Promise<Result>
   /** Nombre de usuario (si no lo tiene otra cuenta), nombre y apellido(s) */
-  updateProfile(profile: { name: string; firstName: string; lastName: string }): Promise<Result>
+  updateProfile(profile: {
+    name: string
+    firstName: string
+    lastName: string
+    diceColor?: string | null
+  }): Promise<Result>
+  /** Las preferencias de los dados: si ver caer los de los demás */
+  updateDice(dice: { diceOthers: boolean }): Promise<Result>
   /** Con la actual; cierra las demás sesiones */
   changePassword(current: string, next: string): Promise<Result>
   bootstrapInfo(secret: string): Promise<{ organizationName: string } | null>
@@ -87,19 +99,40 @@ async function joinRequest(url: string, body: object): Promise<JoinResult> {
 
 export function createAccountClient(): AccountClient {
   // El plugin añade la consulta firmada de la página (oauth_query) a las peticiones de entrar y de consentir
-  const auth = createAuthClient({ basePath: '/api/auth', plugins: [oauthProviderClient()] })
+  const auth = createAuthClient({
+    basePath: '/api/auth',
+    plugins: [
+      oauthProviderClient(),
+      // Los campos propios de la cuenta (additionalFields en el servidor), con su tipo
+      inferAdditionalFields({
+        user: {
+          firstName: { type: 'string', required: false },
+          lastName: { type: 'string', required: false },
+          diceColor: { type: 'string', required: false },
+          diceOthers: { type: 'boolean', required: false }
+        }
+      })
+    ]
+  })
   return {
     useAccount() {
       const { data, isPending } = auth.useSession()
       // Nombre y apellido(s) son campos propios de la cuenta (additionalFields en el servidor)
-      const extra = (data?.user ?? {}) as { firstName?: unknown; lastName?: unknown }
+      const extra = (data?.user ?? {}) as {
+        firstName?: unknown
+        lastName?: unknown
+        diceColor?: unknown
+        diceOthers?: unknown
+      }
       return {
         account: data
           ? {
               name: data.user.name,
               email: data.user.email,
               firstName: typeof extra.firstName === 'string' ? extra.firstName : '',
-              lastName: typeof extra.lastName === 'string' ? extra.lastName : ''
+              lastName: typeof extra.lastName === 'string' ? extra.lastName : '',
+              diceColor: typeof extra.diceColor === 'string' ? extra.diceColor : null,
+              diceOthers: extra.diceOthers !== false
             }
           : null,
         pending: isPending
@@ -127,6 +160,10 @@ export function createAccountClient(): AccountClient {
       const { error } = await auth.updateUser(profile as { name: string })
       if (!error) return { ok: true }
       return { ok: false, code: error.code === 'USERNAME_TAKEN' ? 'USERNAME_TAKEN' : errorCode(error.status) }
+    },
+    async updateDice(dice) {
+      const { error } = await auth.updateUser(dice)
+      return error ? { ok: false, code: errorCode(error.status) } : { ok: true }
     },
     async changePassword(current, next) {
       const { error } = await auth.changePassword({

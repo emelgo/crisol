@@ -849,7 +849,7 @@ export function fakeApi(
         id: `00000000-0000-4000-8000-${String(rolls.length + 1).padStart(12, '0')}`,
         campaignId,
         // Quien tira en las pruebas: la cuenta de siempre
-        by: { userId: 'yo', name: 'Enrique' },
+        by: { userId: 'yo', name: 'Enrique', color: null },
         ai: false,
         formula: result.formula,
         label: result.comment ?? null,

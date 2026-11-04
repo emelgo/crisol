@@ -16,11 +16,22 @@ export function appendRoll(queryClient: QueryClient, roll: DiceRoll) {
   })
 }
 
-/** Los colores de los dados: uno por cuenta, siempre el mismo, de una paleta que se distingue en claro y en oscuro */
-const PALETTE = ['#d1453f', '#2a9d8f', '#d39b3a', '#5a7fd6', '#8a7fd6', '#c2569b', '#5c9e4a', '#b5763c']
+/** Los colores de los dados: una paleta que se distingue en claro y en oscuro, cada uno con su nombre */
+export const DICE_COLORS = [
+  { key: 'red', value: '#d1453f' },
+  { key: 'teal', value: '#2a9d8f' },
+  { key: 'amber', value: '#d39b3a' },
+  { key: 'blue', value: '#5a7fd6' },
+  { key: 'violet', value: '#8a7fd6' },
+  { key: 'pink', value: '#c2569b' },
+  { key: 'green', value: '#5c9e4a' },
+  { key: 'copper', value: '#b5763c' }
+] as const
 
-export function colorOf(userId: string): string {
+/** El color de los dados de una cuenta: el que eligió o, si no, uno de la paleta, siempre el mismo */
+export function colorOf(userId: string, chosen?: string | null): string {
+  if (chosen && /^#[0-9a-f]{6}$/i.test(chosen)) return chosen
   let hash = 0
   for (const char of userId) hash = (hash * 31 + char.charCodeAt(0)) >>> 0
-  return PALETTE[hash % PALETTE.length] ?? '#d1453f'
+  return DICE_COLORS[hash % DICE_COLORS.length]?.value ?? '#d1453f'
 }

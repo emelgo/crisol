@@ -97,7 +97,11 @@ function Entry({ roll, mine, onAgain }: { roll: DiceRoll; mine: boolean; onAgain
   return (
     <li className={flag ? styles.private : styles.entry}>
       <div className={styles.who}>
-        <span className={styles.dot} style={{ background: colorOf(roll.by.userId) }} aria-hidden="true" />
+        <span
+          className={styles.dot}
+          style={{ background: colorOf(roll.by.userId, roll.by.color) }}
+          aria-hidden="true"
+        />
         <b>{mine ? t('dice.me') : roll.by.name}</b>
         {roll.ai && <span>{t('dice.ai')}</span>}
         <time dateTime={roll.createdAt}>{clock.format(new Date(roll.createdAt))}</time>

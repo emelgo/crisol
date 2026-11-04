@@ -13,7 +13,11 @@ export type RollVisibility = z.infer<typeof rollVisibility>
 export const diceRoll = z.object({
   id: z.uuid(),
   campaignId: z.uuid(),
-  by: z.object({ userId: z.string(), name: z.string() }),
+  by: z.object({
+    userId: z.string(),
+    name: z.string(),
+    color: z.string().nullable().describe('El color de sus dados (#rrggbb); sin elegir, null')
+  }),
   ai: z.boolean().describe('La tiró la IA del máster'),
   formula: z.string(),
   label: z.string().nullable().describe('El nombre de la tirada: el comentario de la fórmula («# Sigilo»)'),

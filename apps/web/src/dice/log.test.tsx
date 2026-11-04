@@ -36,7 +36,7 @@ let n = 0
 const rollOf = (who: string, label: string, total: number, extra: Partial<DiceRoll> = {}): DiceRoll => ({
   id: `00000000-0000-4000-9000-${String(++n).padStart(12, '0')}`,
   campaignId: CAMPAIGN.id,
-  by: { userId: who.toLowerCase(), name: who },
+  by: { userId: who.toLowerCase(), name: who, color: null },
   ai: false,
   formula: '1d20+4',
   label,

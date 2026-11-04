@@ -1,5 +1,5 @@
 import { createMemoryHistory } from '@tanstack/react-router'
-import { render, screen } from '@testing-library/react'
+import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { ApiError } from '../api/client.ts'
@@ -108,6 +108,20 @@ describe('perfil y salir', () => {
     expect(liveRegion().map((status) => status.textContent)).toEqual(['Guardado'])
     // El nombre nuevo, en el menú de la cuenta
     expect(screen.getByRole('button', { name: 'Enrique M.', expanded: false })).toBeDefined()
+  })
+
+  it('el color de tus dados: se elige en el perfil y se queda', async () => {
+    const fake = signedIn()
+    renderAt('/perfil', fake)
+    const colors = within(await screen.findByRole('radiogroup', { name: 'El color de tus dados' }))
+    expect((colors.getByRole('radio', { name: 'Automático' }) as HTMLInputElement).checked).toBe(true)
+    await userEvent.click(colors.getByRole('radio', { name: 'Verde azulado' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Guardar' }))
+    expect(await inMain().findByText('Guardado')).toBeDefined()
+    cleanup()
+    renderAt('/perfil', fake)
+    const again = within(await screen.findByRole('radiogroup', { name: 'El color de tus dados' }))
+    expect((again.getByRole('radio', { name: 'Verde azulado' }) as HTMLInputElement).checked).toBe(true)
   })
 
   it('salir cierra la sesión y lleva a entrar', async () => {

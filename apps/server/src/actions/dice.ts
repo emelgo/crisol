@@ -27,7 +27,8 @@ type Row = Awaited<ReturnType<typeof diceRepo.insertRoll>>
 export const present = (row: Row): DiceRoll => ({
   id: row.id,
   campaignId: row.campaignId,
-  by: { userId: row.userId, name: row.name },
+  // Solo un color de verdad: lo guarda la cuenta, y va a un estilo en la web
+  by: { userId: row.userId, name: row.name, color: row.color && /^#[0-9a-f]{6}$/i.test(row.color) ? row.color : null },
   ai: row.ai,
   formula: row.formula,
   label: row.label,

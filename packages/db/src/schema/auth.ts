@@ -8,6 +8,10 @@ export const user = pgTable('user', {
   /** Nombre y apellido(s), aparte: solo los ve quien tiene que verlos (su perfil) */
   firstName: text('first_name').notNull().default(''),
   lastName: text('last_name').notNull().default(''),
+  /** El color de sus dados (#rrggbb); sin elegir, uno de la paleta según la cuenta */
+  diceColor: text('dice_color'),
+  /** Si le caen en la pantalla los dados de los demás */
+  diceOthers: boolean('dice_others').notNull().default(true),
   email: text('email').notNull().unique(),
   emailVerified: boolean('email_verified').default(false).notNull(),
   image: text('image'),

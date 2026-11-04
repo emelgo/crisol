@@ -424,6 +424,7 @@ function MobileMenu({
   const accounts = useAccounts()
   const windows = useWindow()
   const wikiPanel = useWikiPanel()
+  const dice = useDice()
   const path = useRouterState({ select: (state) => state.location.pathname })
   const trigger = useRef<HTMLButtonElement>(null)
   const dialog = useRef<HTMLDialogElement>(null)
@@ -487,7 +488,17 @@ function MobileMenu({
                 run: go(`/mundos/${world.id}/archivos`)
               }
             ]
-          : [])
+          : []),
+        // Los dados: la hoja de dados sube desde abajo
+        {
+          key: 'dados',
+          icon: Dices,
+          text: t('ribbon.dice'),
+          current: dice.open,
+          run: then(() => {
+            if (!dice.open) dice.toggle()
+          })
+        }
       ]
     : [
         { key: 'mundos', icon: FlameIcon, text: t('ribbon.worlds'), current: path === '/mundos', run: go('/mundos') },

@@ -78,7 +78,7 @@ amplía `@fugas` en la misma tarea. Cobertura ≥ 80 % de lo cambiado (bloquea d
   - Archivos: `apps/web/src/dice/log.tsx` (+ CSS), `apps/web/src/realtime/context.tsx`, `apps/web/src/api/fake.ts`,
     `e2e/tests/dados.spec.ts`.
 
-- [ ] **6. El color de los dados y el móvil**
+- [x] **6. El color de los dados y el móvil** — hecha. El color va en la cuenta (migración 0038, con «ver caer los de los demás» para la tarea 8) y solo vale si es un #rrggbb; en el móvil, la hoja con su asa y la página oscurecida (pulsar fuera la cierra).
   - Acepta:
     - el color de cada cuenta en el perfil (sin elegir, uno de la paleta según la cuenta), y en el registro;
     - en el móvil, la ficha es una hoja que sube desde abajo, con su asa, y «Dados» está en el menú de la llama.

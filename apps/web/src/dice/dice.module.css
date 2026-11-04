@@ -215,3 +215,60 @@
   clip-path: inset(50%);
   white-space: nowrap;
 }
+
+/* El fondo y el asa, solo en el móvil */
+.backdrop,
+.grip {
+  display: none;
+}
+
+/* En el móvil, una hoja que sube desde abajo, con su asa y la página oscurecida detrás (docs/diseno.md) */
+@media (max-width: 48rem) {
+  .backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 19;
+    border: 0;
+    background: rgb(0 0 0 / 0.45);
+  }
+
+  .card {
+    top: auto;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: auto;
+    height: min(75dvh, 40rem);
+    border-radius: 16px 16px 0 0;
+    border-bottom: 0;
+    animation: rises 0.25s ease-out;
+  }
+
+  .grip {
+    display: block;
+    width: 40px;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--color-frame);
+    margin: 0 auto var(--space-2);
+  }
+
+  .quick {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .quickDie,
+  .pill,
+  .roll {
+    min-height: var(--target);
+  }
+}
+
+@keyframes rises {
+  from {
+    transform: translateY(100%);
+  }
+}

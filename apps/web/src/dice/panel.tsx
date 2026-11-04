@@ -49,51 +49,56 @@ function DiceCard({ worldId }: { worldId: string }) {
   const queryClient = useQueryClient()
   const { list, chosen, loading } = useDiceCampaign(worldId)
   return (
-    <aside className={styles.card} aria-label={t('dice.title')} data-tour="ficha-dados">
-      <header className={styles.head}>
-        <h2 className={styles.title}>{t('dice.title')}</h2>
-        {list.length > 1 && chosen ? (
+    <>
+      {/* En el móvil, la hoja sube desde abajo con la página oscurecida detrás: pulsar fuera la cierra */}
+      <button type="button" className={styles.backdrop} aria-hidden="true" tabIndex={-1} onClick={dice.close} />
+      <aside className={styles.card} aria-label={t('dice.title')} data-tour="ficha-dados">
+        <span className={styles.grip} aria-hidden="true" />
+        <header className={styles.head}>
+          <h2 className={styles.title}>{t('dice.title')}</h2>
+          {list.length > 1 && chosen ? (
+            <>
+              <label className={styles.hidden} htmlFor={`${id}-campaign`}>
+                {t('dice.campaign')}
+              </label>
+              <select
+                id={`${id}-campaign`}
+                className={styles.campaign}
+                value={chosen.id}
+                onChange={(event) => dice.setCampaign(worldId, event.currentTarget.value)}
+              >
+                {list.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </>
+          ) : (
+            chosen && <span className={styles.campaignName}>{chosen.name}</span>
+          )}
+          <button type="button" className={styles.close} aria-label={t('dice.close')} onClick={dice.close}>
+            <X size={16} aria-hidden="true" />
+          </button>
+        </header>
+        {chosen ? (
           <>
-            <label className={styles.hidden} htmlFor={`${id}-campaign`}>
-              {t('dice.campaign')}
-            </label>
-            <select
-              id={`${id}-campaign`}
-              className={styles.campaign}
-              value={chosen.id}
-              onChange={(event) => dice.setCampaign(worldId, event.currentTarget.value)}
-            >
-              {list.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
+            <RollLog key={chosen.id} campaign={chosen} />
+            <div data-tour="tirada">
+              <Composer key={chosen.id} campaign={chosen} onRolled={(roll) => appendRoll(queryClient, roll)} />
+            </div>
           </>
         ) : (
-          chosen && <span className={styles.campaignName}>{chosen.name}</span>
+          !loading && <p className={styles.empty}>{t('dice.noCampaign')}</p>
         )}
-        <button type="button" className={styles.close} aria-label={t('dice.close')} onClick={dice.close}>
-          <X size={16} aria-hidden="true" />
-        </button>
-      </header>
-      {chosen ? (
-        <>
-          <RollLog key={chosen.id} campaign={chosen} />
-          <div data-tour="tirada">
-            <Composer key={chosen.id} campaign={chosen} onRolled={(roll) => appendRoll(queryClient, roll)} />
-          </div>
-        </>
-      ) : (
-        !loading && <p className={styles.empty}>{t('dice.noCampaign')}</p>
-      )}
-      <Tour
-        id="dados"
-        steps={[
-          { target: '[data-tour="ficha-dados"]', text: t('tour.dice.card'), placement: 'left' },
-          { target: '[data-tour="tirada"]', text: t('tour.dice.roll'), placement: 'left' }
-        ]}
-      />
-    </aside>
+        <Tour
+          id="dados"
+          steps={[
+            { target: '[data-tour="ficha-dados"]', text: t('tour.dice.card'), placement: 'left' },
+            { target: '[data-tour="tirada"]', text: t('tour.dice.roll'), placement: 'left' }
+          ]}
+        />
+      </aside>
+    </>
   )
 }

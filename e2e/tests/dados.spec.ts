@@ -76,3 +76,33 @@ test('el máster y una jugadora en dos pestañas: la pública llega al momento; 
   expect(serious, JSON.stringify(serious.map((v) => [v.id, v.nodes[0]?.target]))).toEqual([])
   await ana.close()
 })
+
+test('en el móvil, los dados en una hoja que sube desde abajo, desde el menú de la llama', async ({ page }) => {
+  await campaignLink(page)
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.getByRole('button', { name: 'Menú' }).click()
+  await page.getByRole('dialog').getByRole('button', { name: 'Dados' }).click()
+  const dice = page.getByRole('complementary', { name: 'Dados' })
+  await expect(dice).toBeVisible()
+  // Abajo del todo y de lado a lado, cuando acaba de subir
+  await expect
+    .poll(async () => {
+      const box = await dice.boundingBox()
+      return [Math.round((box?.y ?? 0) + (box?.height ?? 0)), Math.round(box?.width ?? 0)]
+    })
+    .toEqual([844, 390])
+  await dice.getByRole('textbox', { name: 'Tirada' }).fill('2d6+3 # Daño')
+  await dice.getByRole('button', { name: 'Tirar' }).click()
+  await expect(dice.getByRole('list', { name: 'Tiradas de la campaña' }).getByRole('listitem').last()).toContainText(
+    'Daño'
+  )
+  for (const colorScheme of ['light', 'dark'] as const) {
+    await page.emulateMedia({ colorScheme })
+    const { violations } = await new AxeBuilder({ page })
+      .include('[data-tour="ficha-dados"]')
+      .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+      .analyze()
+    const serious = violations.filter((v) => v.impact === 'critical' || v.impact === 'serious')
+    expect(serious, `${colorScheme}: ${JSON.stringify(serious.map((v) => [v.id, v.nodes[0]?.target]))}`).toEqual([])
+  }
+})

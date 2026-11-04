@@ -267,6 +267,13 @@
       "when": 1793781055313,
       "tag": "0037_tiradas",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1793782504250,
+      "tag": "0038_dados_de_la_cuenta",
+      "breakpoints": true
     }
   ]
 }

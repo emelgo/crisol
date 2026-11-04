@@ -1,6 +1,7 @@
 import { diceRoll, type RealtimeMessage } from '@crisol/contracts'
 import { connect, schema } from '@crisol/db'
 import { freshTestDatabase, resetDatabase } from '@crisol/db/testing'
+import { eq } from 'drizzle-orm'
 import type { FastifyInstance } from 'fastify'
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { buildApp } from '../app.ts'
@@ -93,7 +94,7 @@ describe('las tiradas de una campaña', () => {
     const done = await roll(ana, '1d20+4 # Percepción', 'all')
     expect(diceRoll.safeParse(done).success).toBe(true)
     expect(done).toMatchObject({ formula: '1d20+4', label: 'Percepción', visibility: 'all', ai: false })
-    expect(done.by).toEqual({ userId: ana.userId, name: 'Ana' })
+    expect(done.by).toEqual({ userId: ana.userId, name: 'Ana', color: null })
     expect(done.total).toBeGreaterThanOrEqual(5)
     expect(done.total).toBeLessThanOrEqual(24)
     expect(done.dice).toHaveLength(1)
@@ -178,5 +179,16 @@ describe('las tiradas de una campaña', () => {
     expect(tooMany.json()).toEqual({ code: 'TOO_MANY_ROLLS' })
     // A las demás no les afecta
     await roll(bruno, '1d6 # Sigue', 'all')
+  })
+
+  it('el color de quien tira va con la tirada, si es un color de verdad', async () => {
+    await conn.db.update(schema.user).set({ diceColor: '#2a9d8f' }).where(eq(schema.user.id, ana.userId))
+    expect((await roll(ana, '1d6', 'all')).by.color).toBe('#2a9d8f')
+    await conn.db
+      .update(schema.user)
+      .set({ diceColor: 'url(https://fuera.example)' })
+      .where(eq(schema.user.id, ana.userId))
+    expect((await roll(ana, '1d6', 'all')).by.color).toBeNull()
+    expect((await roll(bruno, '1d6', 'all')).by.color).toBeNull()
   })
 })

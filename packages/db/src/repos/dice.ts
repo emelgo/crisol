@@ -17,6 +17,7 @@ const view = {
   campaignId: diceRolls.campaignId,
   userId: diceRolls.userId,
   name: user.name,
+  color: user.diceColor,
   ai: diceRolls.ai,
   formula: diceRolls.formula,
   label: diceRolls.label,
