@@ -225,6 +225,28 @@ describe('los enlaces entre páginas', () => {
     ])
   })
 
+  it('las páginas que la apuntan desde un campo, con el nombre del campo; las de la papelera, no', async () => {
+    const [raqisa, maela, faro] = await create([
+      { key: 'r', title: 'Raqisa' },
+      {
+        key: 'm',
+        title: 'Maela Varn',
+        markdown: '---\nFacción: "[[Raqisa]]"\nAliados:\n  - "[[Raqisa]]"\n---\nTexto.'
+      },
+      { key: 'f', title: 'El Faro', markdown: '---\nDueños: "[[Raqisa]]"\n---\nSin más.' }
+    ])
+    const links = await ok200('getPageLinks', { pageId: raqisa?.id })
+    expect(links.incoming).toEqual([])
+    expect(links.fields).toEqual([
+      { pageId: faro?.id, title: 'El Faro', path: [], fields: ['Dueños'] },
+      { pageId: maela?.id, title: 'Maela Varn', path: [], fields: ['Facción', 'Aliados'] }
+    ])
+    await ok200('deletePage', { pageId: faro?.id })
+    expect((await ok200('getPageLinks', { pageId: raqisa?.id })).fields.map((p: { title: string }) => p.title)).toEqual(
+      ['Maela Varn']
+    )
+  })
+
   it('desde un secreto, el entrante lo dice', async () => {
     const [maela, faro] = await create([
       { key: 'm', title: 'Maela Varn' },

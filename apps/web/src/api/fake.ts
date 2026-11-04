@@ -780,7 +780,7 @@ export function fakeApi(
     // Sin documentos en estas pruebas: sin enlaces
     getPageLinks: ({ pageId }) => {
       pageById(pageId)
-      return { incoming: [], outgoing: [], mentions: [] }
+      return { incoming: [], outgoing: [], mentions: [], fields: [] }
     },
     listUnresolvedLinks: () => ({ links: [] }),
     listPageVersions: () => ({ versions: [] }),

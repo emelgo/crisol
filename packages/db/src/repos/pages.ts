@@ -496,6 +496,23 @@ export function relatedPages(
     .limit(input.limit + 1)
 }
 
+/** Las páginas del mundo (fuera de la papelera) que apuntan a esta desde un campo de enlace */
+export function pagesPointingTo(db: Database, input: { worldId: string; pageId: string }) {
+  const contains = JSON.stringify([{ type: 'pages', value: [input.pageId] }])
+  return db
+    .select({ id: pages.id, title: pages.title, properties: pages.properties })
+    .from(pages)
+    .where(
+      and(
+        eq(pages.worldId, input.worldId),
+        isNull(pages.deletedAt),
+        sql`${pages.id} <> ${input.pageId}`,
+        sql`${pages.properties} @> ${contains}::jsonb`
+      )
+    )
+    .orderBy(sql`lower(${pages.title})`, pages.id)
+}
+
 /** Todas las páginas del mundo fuera de la papelera, en su orden (para exportar) */
 export function worldPages(db: Database, worldId: string) {
   return db
