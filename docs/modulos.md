@@ -38,6 +38,10 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
     de cada una para ver si le llega (así quitar a alguien es inmediato): con muchas mesas a la vez, apuntar a cada
     conexión en sus campañas y guardar las pertenencias hasta que cambien;
   - lo de cada petición (la sesión y las pertenencias, unos 20 ms) se podría guardar un momento en memoria.
+- **Apuntado**: con toda la batería a la vez (`pnpm test:coverage`: ocho paquetes, cada uno con varios procesos, más
+  Postgres, en los 6 núcleos del VPS), algunas pruebas de la web que tardan medio segundo pasan de los 3 s y fallan
+  (el mapa, el canal en tiempo real). No es por los dados: prueba a prueba tardan lo mismo que en `main`. En local,
+  `pnpm test:coverage --concurrency=3` pasa entera en 2 min 35 s.
 - **Lo siguiente**: subir la tanda, pasar la CI una vez, fusionar y desplegar en staging; Enrique prueba los puntos de
   control de `tasks/probar.md` y los criterios de la spec. Después, la spec de `sistemas`.
 

@@ -132,6 +132,8 @@ describe('operation', () => {
     notTracked.add('page_links').add('file_embeds').add('search_sections').add('search_words')
     // Las versiones del texto: las nombra page_bodies, que sí pasa por el historial (solo con ids y huellas)
     notTracked.add('page_versions').add('snapshots').add('version_documents')
+    // Las tiradas: no se deshacen, como en una mesa de verdad; el registro es su propia lista (ADR-0010)
+    notTracked.add('dice_rolls')
     const tables = await conn.sql<
       { name: string }[]
     >`select tablename as name from pg_tables where schemaname = 'public'`

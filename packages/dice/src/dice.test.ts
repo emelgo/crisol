@@ -174,6 +174,20 @@ describe('dicha en español', () => {
     expect(describeFormula('1d20[ataque]+5 # Espada')).toBe('1d20 (ataque) + 5')
   })
 
+  it('quedarse, descartar, repetir y contar, con todas sus formas', () => {
+    expect(describeFormula('4d6kl2')).toBe('4d6, se quedan los 2 menores')
+    expect(describeFormula('4d6dh1')).toBe('4d6, se descarta el mayor')
+    expect(describeFormula('4d6dh2')).toBe('4d6, se descartan los 2 mayores')
+    expect(describeFormula('4d6dl2')).toBe('4d6, se descartan los 2 menores')
+    expect(describeFormula('1d6r<3')).toBe('1d6, se repiten los menores de 3')
+    expect(describeFormula('2d6r<=2')).toBe('2d6, se repiten los de 2 o menos')
+    expect(describeFormula('1d6!>4')).toBe('1d6 explosivo con más de 4')
+    expect(describeFormula('5d10<3')).toBe('5d10, éxitos con menos de 3')
+    expect(describeFormula('5d10=10')).toBe('5d10, éxitos con 10')
+    expect(describeFormula('-(1d6+2)')).toBe('−(1d6 + 2)')
+    expect(describeFormula('-1d4')).toBe('−1d4')
+  })
+
   it('lo que no se entiende lo devuelve tal cual', () => {
     expect(describeFormula('hola')).toBe('hola')
   })
