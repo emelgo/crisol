@@ -11,7 +11,7 @@ amplía `@fugas` en la misma tarea. Cobertura ≥ 80 % de lo cambiado (bloquea d
 
 ## Fase 1: Notación
 
-- [ ] **1. El paquete `@crisol/dice`**
+- [x] **1. El paquete `@crisol/dice`** — hecha. La notación del Crisol actual, con nombres en inglés y los límites de la spec (200 caracteres, 100 dados, 1.000 caras, 100 explosiones).
   - Acepta:
     - la notación de la spec: dados, `d%` y `dF`; quedarse con los altos o los bajos y descartarlos; repetir y
       explotar; éxitos y fallos; aritmética con paréntesis; etiquetas y comentario;
