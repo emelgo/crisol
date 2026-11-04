@@ -25,9 +25,14 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
 - **El plan, aprobado** («ok»): `tasks/plan.md` y 13 tareas en `tasks/todo.md`, en cuatro fases (el paquete puro, el
   servidor, la interfaz y la IA), con lo arriesgado primero: el lenguaje de fórmulas y su ritmo. El plan de dados pasó
   a `tasks/dados/`.
-- **Ahora**: `/build` tarea a tarea en la rama `modulo-3/sistemas`. Hechas las tareas 1 a 4 (el paquete puro
-  `@crisol/systems`: el formato y su validación, el lenguaje de fórmulas, calcular un documento con su desglose y las
-  tiradas del sistema). **Ritmo** (punto de control 1): un personaje de nivel 20 con 353 campos y 100 objetos, 5 ms de
+- **Ahora**: `/build` tarea a tarea en la rama `modulo-3/sistemas`. Hechas las tareas 1 a 7:
+  - el paquete puro `@crisol/systems`: el formato y su validación, el lenguaje de fórmulas, calcular un documento con su
+    desglose y las tiradas del sistema;
+  - el servidor: los sistemas de la cuenta (migración 0039; el documento en texto, que `jsonb` reordena las claves),
+    bajar y subir con su contenido (rutas con más sitio que piden la sesión antes de leer), y la campaña con su sistema
+    y sus críticos al tirar.
+
+  Lo siguiente, la tarea 8: «Sistemas» en Mis mundos (la API falsa de la web ya tiene los sistemas). **Ritmo** (punto de control 1): un personaje de nivel 20 con 353 campos y 100 objetos, 5 ms de
   mediana (la spec pide menos de 20); validar un sistema de 1,85 MB, 71 ms (pide menos de 500).
 
 ### Para retomar (2026-11-04, módulo 3: dados)
