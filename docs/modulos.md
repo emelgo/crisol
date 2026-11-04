@@ -38,6 +38,12 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   puntos de control 3 y 4 ya se pueden probar en local (`tasks/probar.md`; la base de desarrollo tiene la migración
   0039). Queda para después: un editor visual para los subcampos de los conjuntos, grupos y listas de filas (hoy, en
   Avanzado).
+- **Tarea 13, las herramientas de la IA, hechas**: `formato_sistemas` (la documentación del formato, que sale del
+  esquema con dos ejemplos; también como recurso `crisol://sistemas/formato`), `listar_sistemas`, `ver_sistema`
+  (entero o por partes), `crear_sistema`, `cambiar_sistema` (por rutas, todo o nada), `validar_sistema`,
+  `probar_formula`, `probar_tirada` y `borrar_sistema`. Con un sistema de 2 MB por el MCP: validar ~0,3 s, crear y
+  cambiar ~0,6 s. **Lo siguiente**: arreglar lo que digan las revisiones (código, seguridad, interfaz), la batería
+  entera, una pasada de la CI, el PR, el merge con `[skip ci]` y staging.
 - **Ojo con el lint**: `biome check --write` arregla el formato pero los errores de lint se quedan; mirar siempre
   `pnpm lint` entero antes de guardar.
 - **Prueba con un sistema de Foundry de verdad** (Enrique, 2026-11-04: «mete también […] daggerheart/2.12.5/system.json»):

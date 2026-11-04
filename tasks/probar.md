@@ -31,6 +31,10 @@ Aún no está en staging: se prueba en el servidor de desarrollo (http://localho
     subir un archivo roto (no cambia nada);
   - elegirlo en una campaña: la ficha de dados empieza por `2d6`;
   - en el móvil: la parte, en el selector; «Probar», en una hoja; en Avanzado, los problemas debajo.
+- [ ] **Final, desde claude.ai** (cuando esté en staging, con el conector «Neo Crisol»): pedirle a la IA un sistema
+  de 2d6 + atributo. Debe leer el formato (`formato_sistemas`), crearlo, validarlo y probar una fórmula y una tirada;
+  sale en «Sistemas». Después, que le cambie una tirada (por rutas) y que lo elija en una campaña. En modo asistente,
+  crear y cambiar esperan tu aprobación, con el nombre del sistema en la cola; borrarlo, también.
 
 ## Módulo 3: dados (en staging)
 
