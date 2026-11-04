@@ -37,7 +37,7 @@ el 2026-11-12).
   - Archivos: `packages/systems/{package.json,tsconfig.json,vitest.config.ts}`,
     `packages/systems/src/{format,validate,catalog/blank,index}.ts` (+ pruebas y `fixtures/`), `.dependency-cruiser.cjs`.
 
-- [ ] **2. Las fórmulas: leerlas y comprobarlas (riesgo)**
+- [x] **2. Las fórmulas: leerlas y comprobarlas (riesgo)** — hecha. Los dados se leen con `@crisol/dice` (un término reconocido por su forma), sin tocar su analizador; los modificadores van pegados al dado (`5d10>=8` cuenta éxitos; `2d6 >= 10` compara). El tipo de cada valor calculado se sabe en una primera pasada; los ciclos, con la ruta de cada paso.
   - Acepta:
     - la gramática de la spec: `@referencias`, dados (los de `@crisol/dice`), `+ - * / %`, comparaciones, `&& || !`,
       `? :` y las funciones de su tabla;

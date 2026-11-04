@@ -233,7 +233,8 @@ describe('cada problema dice dónde y por qué', () => {
     const set = copy(cinco)
     const elements = (set.types.personaje?.fields.caracteristicas as { elements: { key: string }[] }).elements
     elements[1] = { ...(elements[0] as { key: string }) }
-    expect(only(set).message).toBe('«fue» está repetido')
+    // Sin «des», la fórmula de la CA, que lo usa, también falla
+    expect(errors(set).map((p) => p.message)).toEqual(['«fue» está repetido', '«des» no existe en «@caracteristicas»'])
   })
 })
 

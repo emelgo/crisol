@@ -1,4 +1,7 @@
 export * from './catalog/index.ts'
 export * from './format.ts'
+export * from './formulas/check.ts'
+export * from './formulas/functions.ts'
+export * from './formulas/parse.ts'
 export * from './text.ts'
 export * from './validate.ts'

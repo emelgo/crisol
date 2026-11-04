@@ -13,6 +13,7 @@ import {
   strictSystemSchema,
   systemSchema
 } from './format.ts'
+import { checkFormulas } from './formulas/system.ts'
 import { type Language, textOf } from './text.ts'
 
 export interface Problem {
@@ -22,6 +23,8 @@ export interface Problem {
   where: string
   message: string
   severity: 'error' | 'warning'
+  /** En una fórmula, qué parte (para subrayarla) */
+  range?: { start: number; end: number }
 }
 
 export interface Validated {
@@ -188,8 +191,14 @@ const bytesOf = (value: unknown) => new TextEncoder().encode(JSON.stringify(valu
 
 export function validateSystem(input: unknown, { language = 'es' as Language } = {}): Validated {
   const problems: Problem[] = []
-  const add = (path: Segment[], message: string, severity: Problem['severity'] = 'error') =>
-    problems.push({ path: pathText(path), where: whereOf(input, path, language) || 'El sistema', message, severity })
+  const add = (path: Segment[], message: string, severity: Problem['severity'] = 'error', range?: Problem['range']) =>
+    problems.push({
+      path: pathText(path),
+      where: whereOf(input, path, language) || 'El sistema',
+      message,
+      severity,
+      ...(range ? { range: { start: range.start, end: range.end } } : {})
+    })
 
   const bytes = bytesOf(input)
   if (bytes > LIMITS.bytes) {
@@ -213,6 +222,7 @@ export function validateSystem(input: unknown, { language = 'es' as Language } =
 
   const system = parsed.data
   checkReferences(system, add)
+  checkFormulas(system, (path, message, range) => add(path, message, 'error', range), language)
   return { system: problems.some((p) => p.severity === 'error') ? null : system, problems }
 }
 
