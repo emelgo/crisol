@@ -1,4 +1,5 @@
 export * from './catalog/index.ts'
+export * from './evaluate.ts'
 export * from './format.ts'
 export * from './formulas/check.ts'
 export * from './formulas/functions.ts'

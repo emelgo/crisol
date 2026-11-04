@@ -54,7 +54,7 @@ el 2026-11-12).
   - Archivos: `packages/systems/src/formulas/{parse,check,functions}.ts` (+ pruebas), `packages/dice/src/notation.ts`
     (leer un término de dados desde otra gramática).
 
-- [ ] **3. Calcular un documento: derivados, desglose, modificadores y presupuesto (riesgo)**
+- [x] **3. Calcular un documento: derivados, desglose, modificadores y presupuesto (riesgo)** — hecha. Ritmo: un nivel 20 con 353 campos y 100 objetos, 5 ms de mediana (el límite es 20); validar 1,85 MB, 71 ms (el límite es 500). Un número guardado también puede recibir bonos (lo guardado más el bono, con su desglose).
   - Acepta:
     - `evaluate(system, type, data, items)` da cada derivado con su valor y su desglose:
       - los términos con su nombre;
