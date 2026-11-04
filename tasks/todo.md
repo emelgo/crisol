@@ -16,7 +16,7 @@ el 2026-11-12).
 
 ## Fase 1: El paquete
 
-- [ ] **1. El paquete `@crisol/systems`: el formato, su validación y «En blanco» (riesgo)**
+- [x] **1. El paquete `@crisol/systems`: el formato, su validación y «En blanco» (riesgo)** — hecha. Validar usa un esquema flexible (lo que se guarda, con lo desconocido) y otro estricto (solo para avisar de ello), y los mensajes de zod, cortos y en español.
   - Acepta:
     - el esquema del sistema (claves en inglés, con la forma del manifiesto de Foundry), con sus tipos de actor y de
       objeto;
