@@ -146,7 +146,7 @@ el 2026-11-12).
   - Archivos: `apps/web/src/systems/{screen,new,settings}.tsx` (+ CSS y pruebas), `apps/web/src/components/ribbon.tsx`,
     `apps/web/src/router.tsx`, `apps/web/src/i18n.ts`, `apps/web/src/api/fake.ts`, `e2e/tests/sistemas.spec.ts`.
 
-- [ ] **9. La elección del sistema en la campaña**
+- [x] **9. La elección del sistema en la campaña** — hecha. Va en la ventana común de mundos y campañas (solo en las campañas), en el mismo borrador: «Guardar» y «Cancelar» la incluyen. La ficha de dados empieza por la tirada por defecto del sistema.
   - Acepta:
     - en la ventana de la campaña y en «Nueva campaña», el sistema;
     - con él, sus fuentes, su idioma y sus ajustes;

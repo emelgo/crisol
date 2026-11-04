@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, type Page, test } from '@playwright/test'
-import { freshOwner } from './ayudas.ts'
+import { createCampaign, createWorld, freshOwner, toWorlds } from './ayudas.ts'
 
 /** Que axe no encuentre fallos críticos ni graves, en claro y en oscuro */
 async function accessible(page: Page, include: string) {
@@ -79,4 +79,41 @@ test('«Sistemas»: hacer uno desde cero, copiar uno de serie, subir un archivo 
   await confirm.getByLabel('Nombre').fill('En blanco (copia)')
   await confirm.getByRole('button', { name: 'Borrar el sistema' }).click()
   await expect(mine.getByRole('link')).toHaveText(['Fronteras'])
+})
+
+test('elegir el sistema de una campaña: la ficha de dados propone su tirada por defecto', async ({ page }) => {
+  test.slow()
+  await freshOwner(page)
+  // Un sistema de 2d6, subido por la API (el editor llega después)
+  const file = {
+    kind: 'crisol-system',
+    format: 1,
+    system: {
+      format: 1,
+      id: 'x',
+      name: 'Fronteras',
+      version: '1',
+      languages: ['es'],
+      types: { personaje: { document: 'actor', label: 'Personaje', fields: {} } },
+      dice: { default: '2d6', critical: 'none' }
+    },
+    content: []
+  }
+  expect((await page.request.post('/api/actions/importSystem', { data: { file } })).status()).toBe(200)
+  await createWorld(page, 'Eana')
+  await createCampaign(page, 'Los páramos')
+  await toWorlds(page)
+  await page.getByRole('button', { name: 'Ajustes de Los páramos' }).click()
+  const dialog = page.getByRole('dialog', { name: 'Ajustes de Los páramos' })
+  await dialog.getByLabel('Sistema').selectOption({ label: 'Fronteras' })
+  await accessible(page, 'dialog')
+  await dialog.getByRole('button', { name: 'Guardar' }).click()
+  // Guardado, «Guardar» se va; la ventana se cierra con su X
+  await expect(dialog.getByRole('button', { name: 'Guardar' })).toBeHidden()
+  await dialog.getByRole('button', { name: 'Cerrar' }).click()
+  await page.getByRole('link', { name: 'Los páramos', exact: true }).click()
+  await page.getByRole('navigation', { name: 'Secciones' }).getByRole('button', { name: 'Dados' }).click()
+  await expect(page.getByRole('complementary', { name: 'Dados' }).getByRole('textbox', { name: 'Tirada' })).toHaveValue(
+    '2d6'
+  )
 })

@@ -1,0 +1,139 @@
+import type { Campaign, World } from '@crisol/contracts'
+import { cinco, fronteras } from '@crisol/systems/fixtures'
+import { createMemoryHistory } from '@tanstack/react-router'
+import { render, screen, waitFor, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { beforeEach, describe, expect, it } from 'vitest'
+import { fakeAccountClient } from '../account/fake.ts'
+import { fakeApi } from '../api/fake.ts'
+import { App } from '../app.tsx'
+import { createAppRouter } from '../router.tsx'
+
+const ORG = { id: crypto.randomUUID(), name: 'Fateforge', role: 'owner' as const }
+const WORLD: World = {
+  id: crypto.randomUUID(),
+  organizationId: ORG.id,
+  name: 'Eana',
+  description: '',
+  icon: null,
+  color: null,
+  cover: null,
+  role: 'master',
+  version: 1
+}
+const CINCO = { ...structuredClone(cinco), id: crypto.randomUUID() }
+const FRONTERAS = { ...structuredClone(fronteras), id: crypto.randomUUID() }
+const MARCA: Campaign = {
+  id: crypto.randomUUID(),
+  worldId: WORLD.id,
+  name: 'La Marca',
+  description: '',
+  color: null,
+  cover: null,
+  role: 'master',
+  version: 1,
+  system: null,
+  systemChoices: null
+}
+
+function renderCampaigns(path = `/mundos/${WORLD.id}/campanas`) {
+  const api = fakeApi({
+    organizations: [ORG],
+    worlds: [WORLD],
+    campaigns: [structuredClone(MARCA)],
+    systems: [CINCO, FRONTERAS]
+  })
+  const router = createAppRouter(createMemoryHistory({ initialEntries: [path] }))
+  render(
+    <App
+      router={router}
+      accounts={fakeAccountClient({ account: { name: 'Enrique', email: 'enrique@crisol.test' } }).client}
+      api={api.client}
+    />
+  )
+  return { api, router }
+}
+
+const settingsOf = async (name: string) => {
+  await userEvent.click(await screen.findByRole('button', { name: `Ajustes de ${name}` }))
+  return within(await screen.findByRole('dialog', { name: `Ajustes de ${name}` }))
+}
+
+describe('el sistema de una campaña', () => {
+  beforeEach(() =>
+    localStorage.setItem(
+      'crisol.recorridos.enrique@crisol.test',
+      JSON.stringify({ seen: ['mundos', 'mundo', 'campanas', 'dados'] })
+    )
+  )
+
+  it('en su ventana: sin sistema, los dados de siempre; con uno, sus fuentes, su idioma y sus ajustes', async () => {
+    const { api } = renderCampaigns()
+    const dialog = await settingsOf('La Marca')
+    const select = dialog.getByRole<HTMLSelectElement>('combobox', { name: 'Sistema' })
+    expect(select.value).toBe('')
+    expect(dialog.getByText('Los dados van como siempre: sin reglas de ningún juego.')).toBeDefined()
+    // Sin cambios, ni «Guardar»
+    expect(dialog.queryByRole('button', { name: 'Guardar' })).toBeNull()
+    await userEvent.selectOptions(select, CINCO.id)
+    const sources = within(await dialog.findByRole('group', { name: 'Fuentes' }))
+    expect(sources.getByRole<HTMLInputElement>('checkbox', { name: /SRD 5\.1/ }).checked).toBe(true)
+    await userEvent.click(sources.getByRole('checkbox', { name: /SRD 5\.2/ }))
+    await userEvent.click(
+      within(dialog.getByRole('group', { name: 'Idioma del contenido' })).getByRole('radio', { name: 'English' })
+    )
+    const settings = within(dialog.getByRole('group', { name: 'Ajustes de 5e de prueba' }))
+    expect(settings.getByRole<HTMLInputElement>('checkbox', { name: 'Compra por puntos' }).checked).toBe(true)
+    await userEvent.click(settings.getByRole('checkbox', { name: 'Tiradas' }))
+    expect(dialog.getByRole('link', { name: 'Abrir 5e de prueba' })).toBeDefined()
+    await userEvent.click(dialog.getByRole('button', { name: 'Guardar' }))
+    // Guardado, ya no hay cambios: «Guardar» se va
+    await waitFor(() => expect(dialog.queryByRole('button', { name: 'Guardar' })).toBeNull())
+    await waitFor(async () => {
+      const { campaigns } = await api.client.call('listCampaigns', { worldId: WORLD.id })
+      expect(campaigns[0]).toMatchObject({
+        system: { id: CINCO.id, name: '5e de prueba', defaultRoll: '1d20', critical: 'd20' },
+        systemChoices: { sources: ['srd51'], language: 'en', settings: { metodos: ['estandar', 'compra', 'tiradas'] } }
+      })
+    })
+  })
+
+  it('«Cancelar» deja lo que había; quitarlo deja la campaña sin sistema', async () => {
+    const { api } = renderCampaigns()
+    await api.client.call('updateCampaign', { campaignId: MARCA.id, system: FRONTERAS.id })
+    const dialog = await settingsOf('La Marca')
+    const select = dialog.getByRole<HTMLSelectElement>('combobox', { name: 'Sistema' })
+    expect(select.value).toBe(FRONTERAS.id)
+    expect(await dialog.findByRole('spinbutton', { name: 'Marcas de experiencia para avanzar' })).toBeDefined()
+    await userEvent.selectOptions(select, '')
+    await userEvent.click(dialog.getByRole('button', { name: 'Cancelar' }))
+    expect(select.value).toBe(FRONTERAS.id)
+    await userEvent.selectOptions(select, '')
+    await userEvent.click(dialog.getByRole('button', { name: 'Guardar' }))
+    await waitFor(async () => {
+      const { campaigns } = await api.client.call('listCampaigns', { worldId: WORLD.id })
+      expect(campaigns[0]).toMatchObject({ system: null, systemChoices: null })
+    })
+  })
+
+  it('al crear una campaña, con su sistema', async () => {
+    const { api } = renderCampaigns()
+    await userEvent.click(await screen.findByRole('button', { name: 'Nueva campaña' }))
+    const dialog = within(await screen.findByRole('dialog', { name: 'Nueva campaña' }))
+    await userEvent.type(dialog.getByLabelText('Nombre de la campaña'), 'Los páramos')
+    await userEvent.selectOptions(dialog.getByRole('combobox', { name: 'Sistema' }), FRONTERAS.id)
+    await userEvent.click(dialog.getByRole('button', { name: 'Crear la campaña' }))
+    await waitFor(async () => {
+      const { campaigns } = await api.client.call('listCampaigns', { worldId: WORLD.id })
+      expect(campaigns.find((c) => c.name === 'Los páramos')?.system?.id).toBe(FRONTERAS.id)
+    })
+  })
+
+  it('la ficha de dados propone la tirada por defecto de su sistema', async () => {
+    const { api } = renderCampaigns(`/mundos/${WORLD.id}/campanas/${MARCA.id}`)
+    await api.client.call('updateCampaign', { campaignId: MARCA.id, system: FRONTERAS.id })
+    await userEvent.click(await screen.findByRole('button', { name: 'Dados' }))
+    const dice = within(await screen.findByRole('complementary', { name: 'Dados' }))
+    expect(await dice.findByDisplayValue('2d6')).toBeDefined()
+  })
+})

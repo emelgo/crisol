@@ -833,6 +833,17 @@ export const es = {
     content: 'Contenido',
     loading: 'Cargando el sistema'
   },
+  // El sistema de una campaña, en su ventana
+  campaignSystem: {
+    system: 'Sistema',
+    none: 'Sin sistema',
+    noneHint: 'Los dados van como siempre: sin reglas de ningún juego.',
+    open: 'Abrir {{name}}',
+    sources: 'Fuentes',
+    language: 'Idioma del contenido',
+    languages: { es: 'Español', en: 'English' },
+    settings: 'Ajustes de {{name}}'
+  },
   pageTabs: {
     label: 'Pestañas de la página',
     text: 'Texto',
