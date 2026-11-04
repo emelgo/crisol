@@ -72,11 +72,6 @@
   background: var(--color-raised);
 }
 
-.log {
-  flex: 1;
-  min-height: 0;
-}
-
 .empty {
   margin: var(--space-2) var(--space-1);
   color: var(--color-muted);

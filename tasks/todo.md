@@ -67,7 +67,7 @@ amplía `@fugas` en la misma tarea. Cobertura ≥ 80 % de lo cambiado (bloquea d
   - Archivos: `apps/web/src/dice/{panel,composer}.tsx` (+ CSS), `apps/web/src/components/ribbon.tsx`,
     `apps/web/src/routes/campaign.tsx`, `apps/web/src/i18n.ts`, `e2e/tests/dados.spec.ts`.
 
-- [ ] **5. El registro en la ficha**
+- [x] **5. El registro en la ficha** — hecha. Lo tuyo sale como «Tú» (por el nombre de usuario, que es único); «Repetir» tira lo mismo, con la misma visibilidad si es tuya y se puede.
   - Acepta:
     - las tiradas en el orden en que se hicieron, la última abajo, con quién, cuándo, la fórmula, el total, el crítico
       o la pifia y las marcas de las privadas;

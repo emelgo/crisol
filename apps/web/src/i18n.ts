@@ -47,7 +47,17 @@ export const es = {
     roll: 'Tirar',
     who: 'Quién la ve',
     visibility: { all: 'Todos', self: 'Para mí', master: 'Al máster', hidden: 'Oculta' },
-    rolled: '{{label}}: {{total}}'
+    rolled: '{{label}}: {{total}}',
+    heard: '{{who}} · {{label}}: {{total}}',
+    log: 'Tiradas de la campaña',
+    older: 'Ver las anteriores',
+    me: 'Tú',
+    ai: 'IA',
+    breakdown: 'Desglose',
+    again: 'Repetir',
+    critical: 'Crítico',
+    fumble: 'Pifia',
+    flag: { master: 'Al máster', self: 'Para mí', selfOther: 'Para sí', hidden: 'Oculta' }
   },
   account: {
     signIn: 'Entrar',

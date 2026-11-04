@@ -4,7 +4,7 @@
  * la tirada
  */
 import type { Campaign } from '@crisol/contracts'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useRouterState } from '@tanstack/react-router'
 import { X } from 'lucide-react'
 import { useId } from 'react'
@@ -14,6 +14,8 @@ import { Tour } from '../components/tour.tsx'
 import { Composer } from './composer.tsx'
 import { useDice } from './context.tsx'
 import styles from './dice.module.css'
+import { RollLog } from './log.tsx'
+import { appendRoll } from './rolls.ts'
 
 /** El mundo en el que se está, si se está en uno */
 export function useWorldInPath() {
@@ -44,6 +46,7 @@ function DiceCard({ worldId }: { worldId: string }) {
   const { t } = useTranslation()
   const dice = useDice()
   const id = useId()
+  const queryClient = useQueryClient()
   const { list, chosen, loading } = useDiceCampaign(worldId)
   return (
     <aside className={styles.card} aria-label={t('dice.title')} data-tour="ficha-dados">
@@ -74,11 +77,13 @@ function DiceCard({ worldId }: { worldId: string }) {
           <X size={16} aria-hidden="true" />
         </button>
       </header>
-      <div className={styles.log} />
       {chosen ? (
-        <div data-tour="tirada">
-          <Composer key={chosen.id} campaign={chosen} />
-        </div>
+        <>
+          <RollLog key={chosen.id} campaign={chosen} />
+          <div data-tour="tirada">
+            <Composer key={chosen.id} campaign={chosen} onRolled={(roll) => appendRoll(queryClient, roll)} />
+          </div>
+        </>
       ) : (
         !loading && <p className={styles.empty}>{t('dice.noCampaign')}</p>
       )}

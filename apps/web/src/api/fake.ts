@@ -848,7 +848,8 @@ export function fakeApi(
       const roll: DiceRoll = {
         id: `00000000-0000-4000-8000-${String(rolls.length + 1).padStart(12, '0')}`,
         campaignId,
-        by: { userId: 'yo', name: 'Tú' },
+        // Quien tira en las pruebas: la cuenta de siempre
+        by: { userId: 'yo', name: 'Enrique' },
         ai: false,
         formula: result.formula,
         label: result.comment ?? null,
