@@ -15,7 +15,8 @@ Los criterios de éxito de `docs/specs/plantillas.md`, en el orden en que se usa
 ### Campos
 
 - [ ] En una página cualquiera, desde el panel: un campo de opciones, un enlace a una sola página y un reloj.
-- [ ] Mandar a la papelera una página enlazada desde un campo: el campo la enseña tachada.
+- [ ] Mandar a la papelera una página enlazada desde un campo: el aviso al borrarla cuenta también las páginas que la
+  apuntan desde un campo, y el campo la enseña tachada.
 
 ### Crear desde plantilla
 
@@ -60,8 +61,16 @@ Los criterios de éxito de `docs/specs/plantillas.md`, en el orden en que se usa
 
 ## Módulo 1: wiki (pendiente desde el 2026-10-30)
 
-- [ ] **Deshacer con versiones** (punto 7 de sus pruebas): reproducirlo juntos. Escribir, que la IA cambie algo y
-  deshacerlo desde el historial; si alguien escribió después, se niega y dice por qué.
+- [ ] **Deshacer con versiones** (punto 7 de sus pruebas). Arreglado el 2026-11-04: era el párrafo vacío que el editor
+  añadía al abrir una página (punto 6), que dejaba una versión a tu nombre. Probar: que la IA añada algo al final de
+  una página, abrirla y deshacer lo de la IA desde el historial.
+- [ ] **Lo demás de tus pruebas, arreglado el 2026-11-04** (con la IA desde claude.ai):
+  - cambiar un secreto por bloque sin su `^s-id`: conserva su id (1);
+  - la fecha de la página cambia al escribir en el texto (2);
+  - buscar algo de un secreto dice en qué sección está (3);
+  - una nota oculta de una línea, `%%…%%`, vuelve en una línea (4);
+  - abrir una página ya no le añade un párrafo vacío al final (6);
+  - «Buscar en la página» (Ctrl+Alt+F) mira también dentro de los secretos y de los enlaces (8).
 - [ ] **Punto 6**: el PDF de una hoja de dos columnas con statblock, nota lateral y tabla (ningún bloque partido y nada
   de la interfaz en el papel), e «Imprimir» en Chrome, Firefox y Safari.
 - [ ] **Final**: los criterios de éxito de `docs/specs/wiki.md` que aún no ha probado:
@@ -74,18 +83,7 @@ Los criterios de éxito de `docs/specs/plantillas.md`, en el orden en que se usa
 
 ## Por arreglar antes de probarlo
 
-Lo hago yo; cuando esté, pasa arriba. Son los puntos de «Lo que dijo Enrique al probar» (`docs/modulos.md`) que siguen
-abiertos:
-
-- el id de un secreto cambia al reemplazarlo por bloque (1);
-- la fecha de la página no cambia al escribir en el texto (2);
-- la búsqueda no dice en qué título está un secreto (3);
-- una nota oculta de una línea vuelve en tres (4);
-- un párrafo vacío al abrir una página (6, va con el 7);
-- buscar en la página no mira dentro de los secretos ni de los enlaces (8).
-
-Y uno del módulo 2 que se quedó fuera del plan: el aviso al borrar una página no cuenta los campos que la apuntan (lo
-pide la spec).
+Nada ahora mismo.
 
 ## Lo que dijo
 
