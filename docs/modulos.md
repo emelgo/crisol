@@ -7,7 +7,15 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
-### Para retomar (2026-11-04, módulo 3: sistemas)
+### Para retomar (2026-11-04, módulo 3: sistemas hecho; lo siguiente, `srd-5e`)
+
+- **Ahora**: `sistemas` está terminado, en `main` y en staging (PR #96). **Lo siguiente es `srd-5e`** (el 5e de serie:
+  un solo sistema con el SRD 5.1 y el 5.2 como fuentes que el máster activa en su campaña, en español y en inglés).
+  Su ciclo empieza por la entrevista (`interview-me`) frente al inventario; antes de su spec, mirar si la editorial
+  tiene una versión oficial en español con la misma licencia (`docs/specs/modulo-3.md`, punto 7). Pendiente de
+  Enrique, sin bloquear: probar `sistemas` en staging (`tasks/probar.md`) y decidir si lo que la IA hace en copiloto y
+  ven los jugadores pide aprobación (más abajo, «Queda para después»). Esta puesta al día va en la rama
+  `modulo-3/tras-sistemas`, que irá a `main` con la próxima tanda.
 
 - **`dados` está en `main` y en staging** (PR #95, migraciones 0037 y 0038): una sola pasada de la CI, en verde, y
   fusionada con `[skip ci]`. Enrique la prueba con `tasks/probar.md` (puntos de control 2 y 3, lo de las revisiones y
