@@ -56,7 +56,7 @@ amplía `@fugas` en la misma tarea. Cobertura ≥ 80 % de lo cambiado (bloquea d
 
 ## Fase 3: La ficha de dados
 
-- [ ] **4. La ficha de dados: abrirla y tirar**
+- [x] **4. La ficha de dados: abrirla y tirar** — hecha. La ficha va fija a la derecha (encima del panel de la página), y la visibilidad son radios de verdad (las flechas del teclado van solas).
   - Acepta:
     - «Dados» en la barra del mundo y en la página de la campaña abre y cierra la ficha en el sitio del panel; la
       campaña elegida se recuerda por mundo (con varias, un selector);

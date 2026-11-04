@@ -75,6 +75,7 @@ export function WorldPage() {
               { target: '[data-tour="buscador"]', text: t('tour.world.search'), placement: 'right' },
               { target: '[data-tour="panel-bloques"]', text: t('tour.world.panel'), placement: 'left' },
               { target: '[data-tour="barra-archivos-mundo"]', text: t('tour.world.files'), placement: 'right' },
+              { target: '[data-tour="barra-dados"]', text: t('tour.world.dice'), placement: 'right' },
               { target: '[data-tour="barra-historial"]', text: t('tour.world.history'), placement: 'right' },
               { target: '[data-tour="barra-papelera"]', text: t('tour.world.trash'), placement: 'right' },
               { target: '[data-tour="engranaje"]', text: t('tour.world.settings') }
@@ -82,7 +83,10 @@ export function WorldPage() {
           : []),
         ...(master
           ? []
-          : ([{ target: '[data-tour="barra-inicio"]', text: t('tour.world.home'), placement: 'right' }] as const)),
+          : ([
+              { target: '[data-tour="barra-inicio"]', text: t('tour.world.home'), placement: 'right' },
+              { target: '[data-tour="barra-dados"]', text: t('tour.world.dice'), placement: 'right' }
+            ] as const)),
         { target: '[data-tour="barra-llama"]', text: t('tour.world.back'), placement: 'right' },
         { target: '[data-tour="menu-movil"]', text: t('tour.menu') }
       ]}

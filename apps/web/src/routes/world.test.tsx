@@ -135,7 +135,7 @@ describe('el Inicio de un mundo', () => {
     expect(ribbon().queryByRole('button', { name: 'Páginas' })).toBeNull()
   })
 
-  it('dentro de un mundo que se dirige, la barra lleva el mundo (sus páginas) y Archivos', async () => {
+  it('dentro de un mundo que se dirige, la barra lleva el mundo (sus páginas), Archivos y Dados', async () => {
     const w = world()
     const router = renderAt(`/mundos/${w.id}`, fakeApi({ organizations: [ORG], worlds: [w] }))
     await screen.findByRole('heading', { level: 1, name: 'Eana' })
@@ -144,8 +144,8 @@ describe('el Inicio de un mundo', () => {
       [...screen.getByRole('navigation', { name: 'Secciones' }).querySelectorAll('a, button')]
         .map((item) => item.textContent)
         .filter(Boolean)
-    // La llama no tiene texto (lleva su nombre como etiqueta)
-    expect(items()).toEqual(['Eana', 'Archivos'])
+    // La llama no tiene texto (lleva su nombre como etiqueta); «Dados», la excepción de docs/diseno.md
+    expect(items()).toEqual(['Eana', 'Archivos', 'Dados'])
 
     // Los archivos, en su pantalla
     await userEvent.click(ribbon().getByRole('link', { name: 'Archivos' }))

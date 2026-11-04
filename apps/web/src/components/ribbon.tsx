@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router'
 import {
+  Dices,
   Folder,
   Globe,
   Hash,
@@ -18,6 +19,7 @@ import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
 import { historyQuery, trashQuery } from '../api/queries.ts'
+import { useDice } from '../dice/context.tsx'
 import { useNarrow, useWikiPanel, type WikiPanel } from '../wiki/panel.tsx'
 import { AccountMenu } from './account-menu.tsx'
 import { CrisolMark } from './brand.tsx'
@@ -304,20 +306,40 @@ function WorldPanels({ worldId, worldName, master }: { worldId: string; worldNam
   const prefetchHome = prefetch(['campaigns', worldId], () => api.call('listCampaigns', { worldId }))
   // Quien lo dirige: sus páginas, buscar y sus marcadores (el mundo se abre en su portada, la primera del árbol)
   if (master) return <WikiPanels worldId={worldId} worldName={worldName} />
-  // Quien juega, sin páginas: su Inicio con sus campañas
+  // Quien juega, sin páginas: su Inicio con sus campañas, y los dados
   return (
-    <Link
-      to="/mundos/$worldId"
-      params={{ worldId }}
-      activeOptions={{ exact: true }}
+    <>
+      <Link
+        to="/mundos/$worldId"
+        params={{ worldId }}
+        activeOptions={{ exact: true }}
+        className={styles.item}
+        viewTransition={SECTION}
+        onPointerEnter={prefetchHome}
+        onFocus={prefetchHome}
+        data-tour="barra-inicio"
+      >
+        <Label icon={House} text={t('ribbon.home')} />
+      </Link>
+      <DiceButton />
+    </>
+  )
+}
+
+/** «Dados»: abre y cierra la ficha de dados del mundo (la excepción a una barra con solo el mundo y Archivos) */
+function DiceButton() {
+  const { t } = useTranslation()
+  const dice = useDice()
+  return (
+    <button
+      type="button"
       className={styles.item}
-      viewTransition={SECTION}
-      onPointerEnter={prefetchHome}
-      onFocus={prefetchHome}
-      data-tour="barra-inicio"
+      aria-pressed={dice.open}
+      data-tour="barra-dados"
+      onClick={dice.toggle}
     >
-      <Label icon={House} text={t('ribbon.home')} />
-    </Link>
+      <Label icon={Dices} text={t('ribbon.dice')} />
+    </button>
   )
 }
 
@@ -373,6 +395,7 @@ function WikiPanels({ worldId, worldName }: { worldId: string; worldName: string
       >
         <Label icon={Folder} text={t('ribbon.files')} />
       </Link>
+      <DiceButton />
     </>
   )
 }
