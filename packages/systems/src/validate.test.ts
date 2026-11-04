@@ -357,3 +357,17 @@ describe('la forma de un sistema, para el editor', () => {
     expect(fitsFormat({})).toBe(false)
   })
 })
+
+describe('los bonos de un objeto, a una ruta que existe', () => {
+  it('una ruta a medias o a algo que no es un número no vale', () => {
+    for (const target of ['vigor.zzz', 'lleva', 'experiencia']) {
+      const system = copy()
+      ;(system.types.objeto?.modifiers as { target: string }[])[0] = { target, value: '1' } as never
+      expect(
+        validateSystem(system).problems.some((p) => p.path === 'types.objeto.modifiers[0].target'),
+        target
+      ).toBe(true)
+    }
+    expect(validateSystem(copy()).problems.filter((p) => p.severity === 'error')).toEqual([])
+  })
+})

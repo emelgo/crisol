@@ -4,6 +4,7 @@ import { cinco } from './fixtures/cinco.ts'
 import { fronteras } from './fixtures/fronteras.ts'
 import type { System } from './format.ts'
 import { prepareRoll, RollError, rollsOf, tryRoll } from './rolls.ts'
+import { validateSystem } from './validate.ts'
 
 /** Un dado trucado: da los valores en este orden */
 const fixed = (...values: number[]): DieRoller => {
@@ -163,5 +164,36 @@ describe('las tiradas del 5e de prueba', () => {
     expect(() => tryRoll(system, 'personaje', doc, 'max')).toThrow(
       'Los dados solo se suman, se restan, se multiplican o se dividen'
     )
+  })
+})
+
+describe('lo que valida el validador se puede tirar', () => {
+  const withRoll = (formula: string) =>
+    ({
+      ...structuredClone(fronteras),
+      rolls: { prueba: { label: 'Prueba', formula } }
+    }) as typeof fronteras
+
+  it('dados en las ramas de «? :»: se tira la elegida', () => {
+    const system = withRoll('@vigor >= 2 ? 2d6 : 1d6')
+    expect(validateSystem(system).problems.filter((p) => p.severity === 'error')).toEqual([])
+    expect(tryRoll(system, 'personaje', { data: { vigor: 3 } }, 'prueba').formula).toBe('2d6')
+    expect(tryRoll(system, 'personaje', { data: { vigor: 0 } }, 'prueba').formula).toBe('1d6')
+  })
+
+  it('dados dentro de una función, con % o en una comparación: no valen, y lo dice', () => {
+    for (const formula of ['max(1d6, 3)', '1d20 % 3', '1d20 > 10 ? 1 : 0'])
+      expect(
+        validateSystem(withRoll(formula)).problems.some((p) => p.path === 'rolls.prueba.formula'),
+        formula
+      ).toBe(true)
+  })
+
+  it('el valor inicial de un campo de dados, también comprobado', () => {
+    const system = structuredClone(fronteras) as unknown as {
+      types: { personaje: { fields: Record<string, unknown> } }
+    }
+    system.types.personaje.fields.golpe = { kind: 'dice', label: 'Golpe', default: '1d8+' }
+    expect(validateSystem(system).problems.map((p) => p.path)).toContain('types.personaje.fields.golpe.default')
   })
 })

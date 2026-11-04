@@ -287,19 +287,20 @@ export function evaluate(
     prefix: string,
     path: string[],
     item = false,
+    /** Los campos del documento (el personaje o el objeto): con ellos se calcula, también dentro de un grupo */
+    root?: () => Record<string, Node>,
     este?: { label: string; fields: () => Record<string, Node> }
   ): { kind: 'object'; fields: Record<string, Node> } {
     const out: Record<string, Node> = {}
+    const top = root ?? (item ? () => out : () => scope)
     const local = () =>
       este
-        ? { ...scope, este: { kind: 'object' as const, label: este.label, fields: { ...este.fields(), ...out } } }
-        : item
-          ? out
-          : scope
+        ? { ...top(), este: { kind: 'object' as const, label: este.label, fields: { ...este.fields(), ...out } } }
+        : top()
     for (const [key, field] of Object.entries(fields)) {
       const id = `${prefix}${key}`
       const here = [...path, key]
-      out[key] = nodeOf(field, data[key], id, here, local, item)
+      out[key] = nodeOf(field, data[key], id, here, local, item, top)
     }
     return { kind: 'object', fields: out }
   }
@@ -310,7 +311,8 @@ export function evaluate(
     id: string,
     path: string[],
     local: () => Record<string, Node>,
-    item: boolean
+    item: boolean,
+    root: () => Record<string, Node>
   ): Node {
     const name = label(field.label)
     switch (field.kind) {
@@ -339,7 +341,7 @@ export function evaluate(
       }
       case 'group':
         return {
-          ...nodesOf(field.fields, (raw ?? {}) as Record<string, unknown>, `${id}.`, [...path, 'fields'], item),
+          ...nodesOf(field.fields, (raw ?? {}) as Record<string, unknown>, `${id}.`, path, item, root),
           label: name
         }
       case 'set': {
@@ -352,7 +354,7 @@ export function evaluate(
             key: { kind: 'value' as const, value: element.key },
             label: { kind: 'value' as const, value: elementLabel }
           })
-          const node = nodesOf(field.fields, values, `${id}.${element.key}.`, [...path, element.key], item, {
+          const node = nodesOf(field.fields, values, `${id}.${element.key}.`, [...path, element.key], item, root, {
             label: elementLabel,
             fields: extra
           })
@@ -366,7 +368,7 @@ export function evaluate(
           kind: 'list',
           items: rows.map((row, i) => {
             const rowId = typeof row.id === 'string' ? row.id : String(i)
-            const node = nodesOf(field.columns, row, `${id}.${rowId}.`, [...path, String(i)], item, {
+            const node = nodesOf(field.columns, row, `${id}.${rowId}.`, [...path, String(i)], item, root, {
               label: name,
               fields: () => ({})
             })

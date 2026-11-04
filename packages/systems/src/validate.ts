@@ -171,6 +171,20 @@ export function whereOf(system: unknown, path: readonly Segment[], language: Lan
   return out.join(' › ')
 }
 
+/** Si un bono tiene a qué sumarse en esa ruta: un número o un calculado, también dentro de un grupo o de un conjunto */
+function bonusTarget(fields: Record<string, Field | SimpleField>, segments: readonly string[]): boolean {
+  const [first, ...rest] = segments
+  const field = first === undefined || !Object.hasOwn(fields, first) ? undefined : fields[first]
+  if (!field) return false
+  if (rest.length === 0) return field.kind === 'number' || field.kind === 'derived'
+  if (field.kind === 'group') return bonusTarget(field.fields, rest)
+  if (field.kind === 'set') {
+    const [element, ...inner] = rest
+    return field.elements.some((e) => e.key === element) && bonusTarget(field.fields, inner)
+  }
+  return false
+}
+
 /** Todos los campos de un tipo, también los de dentro de grupos, listas y conjuntos, con su ruta */
 export function* fieldsOf(
   fields: Record<string, Field | SimpleField>,
@@ -278,6 +292,7 @@ function checkReferences(
     .filter((t) => t.document === 'actor')
     .map((t) => new Set(Object.keys(t.fields)))
   const anyActorHas = (key: string) => actorFields.some((keys) => keys.has(key))
+  const actors = Object.values(types).filter((t) => t.document === 'actor')
   for (const [typeKey, type] of Object.entries(types)) {
     let count = 0
     for (const { field, path, depth } of fieldsOf(type.fields, ['types', typeKey, 'fields'])) {
@@ -289,8 +304,12 @@ function checkReferences(
       add(['types', typeKey, 'fields'], `Como mucho, ${LIMITS.fieldsPerType} campos por tipo`)
     type.modifiers?.forEach((modifier, i) => {
       if (type.document !== 'item') add(['types', typeKey, 'modifiers', i], 'Solo los objetos dan bonos')
-      const target = modifier.target.split('.')[0] ?? ''
-      if (!anyActorHas(target)) add(['types', typeKey, 'modifiers', i, 'target'], `Ningún personaje tiene «${target}»`)
+      const at = ['types', typeKey, 'modifiers', i, 'target']
+      const first = modifier.target.split('.')[0] ?? ''
+      if (!anyActorHas(first)) add(at, `Ningún personaje tiene «${first}»`)
+      // La ruta entera: un bono se suma a un número o a un calculado (caracteristicas.des.valor, defensa)
+      else if (!actors.some((actor) => bonusTarget(actor.fields, modifier.target.split('.'))))
+        add(at, `«${modifier.target}» no es un número ni un calculado de los personajes: el bono no se sumaría`)
     })
   }
   const setFields = new Set(
@@ -370,12 +389,22 @@ function checkField(
         add([...path, 'default'], `Como mucho, ${field.segments}`)
       break
     case 'link':
-      if (!types[field.to]) add([...path, 'to'], `No existe el tipo «${field.to}»`)
+      if (!Object.hasOwn(types, field.to)) add([...path, 'to'], `No existe el tipo «${field.to}»`)
+      break
+    case 'dice':
+      // Lo que se guarda en un campo de dados es dados: se tira dentro de las tiradas
+      if (field.default) {
+        if (field.default.includes('@')) add([...path, 'default'], 'Unos dados van sin @: solo dados (1d8)')
+        else diceFormula(field.default, [...path, 'default'], add)
+      }
       break
     case 'items':
       field.of.forEach((t, i) => {
         if (!itemTypes.has(t))
-          add([...path, 'of', i], types[t] ? `«${t}» no es un tipo de objeto` : `No existe el tipo «${t}»`)
+          add(
+            [...path, 'of', i],
+            Object.hasOwn(types, t) ? `«${t}» no es un tipo de objeto` : `No existe el tipo «${t}»`
+          )
       })
       break
     case 'set':

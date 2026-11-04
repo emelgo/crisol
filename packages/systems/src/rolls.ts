@@ -109,13 +109,12 @@ function labelOf(
   return textOf(field.label, language)
 }
 
-const sameDice = (a: DiceTerm, b: DiceTerm) =>
-  a.count === b.count &&
-  a.sides === b.sides &&
-  JSON.stringify(a.keep) === JSON.stringify(b.keep) &&
-  a.explode === b.explode &&
-  JSON.stringify(a.reroll) === JSON.stringify(b.reroll) &&
-  JSON.stringify(a.success) === JSON.stringify(b.success)
+/** Los mismos dados, con todo lo que les cambia la tirada (lo que se queda, explota, se repite, cuenta…); sin el nombre */
+const sameDice = (a: DiceTerm, b: DiceTerm) => {
+  const { label: _a, ...left } = a
+  const { label: _b, ...right } = b
+  return JSON.stringify(left) === JSON.stringify(right)
+}
 
 /** Cambia en el árbol los dados `from` por `to` (los dados, no el texto) */
 function replace(tree: DiceNode, from: DiceTerm, to: DiceNode): { tree: DiceNode; changed: boolean } {
@@ -212,6 +211,8 @@ export function prepareRoll(
     const label = e.kind === 'ref' ? labelOf(type.fields, e.path, esteLabel, language) : undefined
     return label ? { kind: 'number', value, label } : { kind: 'number', value }
   }
+  const truthyValue = (v: Value) =>
+    v !== null && v !== false && v !== 0 && v !== '' && !(Array.isArray(v) && v.length === 0)
   const arm = (e: Expr): DiceNode => {
     if (!hasDice(e)) return number(e)
     switch (e.kind) {
@@ -232,6 +233,9 @@ export function prepareRoll(
         if (e.op === '+' || e.op === '-' || e.op === '*' || e.op === '/')
           return { kind: 'binary', op: e.op, left: arm(e.left), right: arm(e.right) }
         break
+      case 'conditional':
+        // La condición va sin dados: elige la rama, y se tira la elegida (@nivel >= 5 ? 2d6 : 1d6)
+        return arm(truthyValue(evaluateTo(e.test)) ? e.yes : e.no)
     }
     throw new RollError('Los dados solo se suman, se restan, se multiplican o se dividen')
   }

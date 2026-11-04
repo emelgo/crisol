@@ -121,6 +121,10 @@ export function checkExpr(expr: Expr, context: Context): Checked {
   const deps = new Set<string>()
   const report = (e: Expr, message: string) => problems.push({ message, start: e.start, end: e.end })
 
+  // Los dados que no se pueden tirar: dentro de una función o de una comparación (la condición de «? :» elige la rama)
+  const diceInside = (e: Expr, where: string) =>
+    report(e, `Los dados no van dentro de ${where}: van sumados en la tirada (2d6 + @este)`)
+
   const typeOfShape = (s: Shape): ValueType => (s.type === 'object' && s.number ? 'number' : s.type)
 
   const resolve = (e: Extract<Expr, { kind: 'ref' }>): Shape | null => {
@@ -231,6 +235,9 @@ export function checkExpr(expr: Expr, context: Context): Checked {
             const what = { '+': 'sumar', '-': 'restar', '*': 'multiplicar', '/': 'dividir', '%': 'dividir' }[e.op]
             numeric(e.left, left, what)
             numeric(e.right, right, what)
+            // Al tirar, los dados se suman, restan, multiplican o dividen; el resto no se puede armar
+            if (e.op === '%' && (left === 'dice' || right === 'dice'))
+              report(e, 'Con dados no se saca el resto (%): súmalos, réstalos, multiplícalos o divídelos')
             return left === 'dice' || right === 'dice' ? 'dice' : 'number'
           }
           case '<':
@@ -239,6 +246,7 @@ export function checkExpr(expr: Expr, context: Context): Checked {
           case '>=':
             if (left !== 'null') numeric(e.left, left, 'comparar')
             if (right !== 'null') numeric(e.right, right, 'comparar')
+            if (left === 'dice' || right === 'dice') diceInside(e, 'una comparación')
             return 'boolean'
           case '==':
           case '!=':
@@ -250,7 +258,9 @@ export function checkExpr(expr: Expr, context: Context): Checked {
         }
       }
       case 'conditional': {
-        logical(e.test, visit(e.test))
+        const test = visit(e.test)
+        logical(e.test, test)
+        if (test === 'dice') diceInside(e.test, 'la condición de «? :»')
         const then = visit(e.yes)
         const otherwise = visit(e.no)
         if (then === 'any' || then === 'null') return otherwise
@@ -274,6 +284,7 @@ export function checkExpr(expr: Expr, context: Context): Checked {
         args.forEach((t, i) => {
           const wanted = fn.args[Math.min(i, fn.args.length - 1)] as ValueType
           const arg = e.args[i] as Expr
+          if (t === 'dice') diceInside(arg, `${e.name}(…)`)
           if (wanted === 'number') numeric(arg, t, `usar en ${e.name}`)
           if (wanted === 'list' && t !== 'list' && t !== 'any')
             report(arg, `${e.name} va con una lista, no con ${TYPE_NAMES[t]}`)

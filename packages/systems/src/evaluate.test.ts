@@ -174,3 +174,55 @@ describe('las fórmulas al calcular', () => {
     expect(() => evaluate(cinco, 'nada', { data: {} })).toThrow('No existe el tipo «nada»')
   })
 })
+
+describe('dentro de un objeto, las fórmulas de un grupo o de un conjunto van con los campos del objeto', () => {
+  it('un grupo y un conjunto del arma leen el peso del arma, no el del personaje', () => {
+    const system = {
+      format: 1,
+      id: 'x',
+      name: 'X',
+      version: '1',
+      languages: ['es'],
+      types: {
+        personaje: {
+          document: 'actor',
+          label: 'P',
+          fields: {
+            peso: { kind: 'number', label: 'Peso' },
+            lleva: { kind: 'items', label: 'Lleva', of: ['arma'] },
+            total: { kind: 'derived', label: 'Total', formula: 'sum(@lleva.stats.total)' },
+            dobles: { kind: 'derived', label: 'Dobles', formula: 'sum(@lleva.partes.a.doble)' }
+          }
+        },
+        arma: {
+          document: 'item',
+          label: 'Arma',
+          fields: {
+            peso: { kind: 'number', label: 'Peso' },
+            stats: {
+              kind: 'group',
+              label: 'Stats',
+              fields: {
+                base: { kind: 'number', label: 'Base' },
+                total: { kind: 'derived', label: 'Total', formula: '@peso + @stats.base' }
+              }
+            },
+            partes: {
+              kind: 'set',
+              label: 'Partes',
+              elements: [{ key: 'a', label: 'A' }],
+              fields: { doble: { kind: 'derived', label: 'Doble', formula: '@peso * 2' } }
+            }
+          }
+        }
+      }
+    } as unknown as System
+    const doc = {
+      data: { peso: 100 },
+      items: [{ id: 'espada', type: 'arma', name: 'Espada', data: { peso: 3, stats: { base: 4 } } }]
+    }
+    const result = evaluate(system, 'personaje', doc)
+    expect(result.computed.total?.value).toBe(7)
+    expect(result.computed.dobles?.value).toBe(6)
+  })
+})
