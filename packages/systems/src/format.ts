@@ -268,7 +268,7 @@ function build(strict: boolean) {
     name: text().describe('Su nombre (SRD 5.1)'),
     license: z.string().trim().min(1).max(200).describe('Su licencia (CC BY 4.0, Propia)'),
     attribution: text(4000).describe('La atribución que pide su licencia'),
-    url: z.url().optional()
+    url: z.url({ protocol: /^https?$/ }).optional()
   })
   const setting = obj({
     label: text().describe('Su nombre'),

@@ -19,7 +19,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Navigate, useBlocker, useNavigate, useParams } from '@tanstack/react-router'
 import { Copy, FlaskConical, Info, Plus } from 'lucide-react'
-import { useId, useMemo, useRef, useState } from 'react'
+import { useDeferredValue, useId, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../../account/context.tsx'
 import { useApi } from '../../api/context.tsx'
@@ -53,16 +53,13 @@ export function SystemView() {
   const api = useApi()
   const { account, pending } = useAccounts().useAccount()
   const system = useQuery({ queryKey: ['systems', systemId], queryFn: () => api.call('getSystem', { systemId }) })
-  // La parte que se ve sigue al guardar (el editor empieza de nuevo con la versión nueva)
+  // La parte que se ve, fuera del editor: sigue aunque cambie lo de dentro
   const [part, setPart] = useState('general')
   if (pending) return null
   if (!account) return <Navigate to="/entrar" replace />
   if (failed(system)) return <LoadError error={system.error} onRetry={() => system.refetch()} />
   if (!system.data) return null
-  // Con otra versión (guardada aquí o en otra pestaña), el borrador empieza de nuevo
-  return (
-    <SystemEditor key={`${system.data.id}:${system.data.version}`} data={system.data} part={part} setPart={setPart} />
-  )
+  return <SystemEditor key={system.data.id} data={system.data} part={part} setPart={setPart} />
 }
 
 /** Lo que hay que cambiar en el borrador: una copia, cambiada */
@@ -83,8 +80,23 @@ function SystemEditor({
   const navigate = useNavigate()
   const errorText = useErrorText()
   const partId = useId()
-  const original = data.document as unknown as System
+  // La versión de la que sale el borrador. Una nueva (guardada aquí, o de otro sin cambios aquí) se toma; si otro lo
+  // cambia mientras hay cambios sin guardar, no se tiran: se avisa
+  const [base, setBase] = useState(data)
+  const original = base.document as unknown as System
   const [draft, setDraft] = useState<System>(() => structuredClone(original))
+  const savedHere = useRef<number | null>(null)
+  // Lo que se mandó al guardar: lo que se escriba mientras tanto no se pierde
+  const sent = useRef<string | null>(null)
+  const settled = useDeferredValue(draft)
+  const dirtyNow = useMemo(() => JSON.stringify(settled) !== JSON.stringify(original), [settled, original])
+  const newer = data.version !== base.version
+  if (newer && (data.version === savedHere.current || !dirtyNow)) {
+    setBase(data)
+    const untouched = data.version !== savedHere.current || JSON.stringify(draft) === sent.current
+    if (untouched) setDraft(structuredClone(data.document as unknown as System))
+  }
+  const conflict = newer && data.version !== savedHere.current && dirtyNow
   // Si la parte ya no está (un tipo que se quitó en otra pestaña), General
   const part = !chosen.startsWith('type:') || draft.types[chosen.slice(5)] ? chosen : 'general'
   const change: Change = (fn) =>
@@ -93,23 +105,32 @@ function SystemEditor({
       fn(next)
       return next
     })
-  const dirty = useMemo(() => JSON.stringify(draft) !== JSON.stringify(original), [draft, original])
-  const problems = useMemo(() => validateSystem(draft).problems, [draft])
+  // Lo que pesa (comparar y validar el documento entero) va un paso por detrás de lo que se escribe
+  const dirty = dirtyNow
+  const problems = useMemo(() => validateSystem(settled).problems, [settled])
   const errors = problems.filter((p) => p.severity === 'error')
   const readOnly = data.builtIn
   const types = Object.entries(draft.types)
   const advanced = part === 'advanced'
   const json = useJsonText(draft, setDraft, advanced)
   const [goto, setGoto] = useState<{ line: number; n: number } | null>(null)
+  // Con el JSON de Avanzado roto no se sale de él: lo escrito desde lo último que valía se perdería
+  const pick = (next: string) => {
+    if (advanced && json.broken && next !== 'advanced') return
+    setPart(next)
+  }
 
   const save = useMutation({
-    mutationFn: () =>
-      api.call('updateSystem', {
+    mutationFn: () => {
+      sent.current = JSON.stringify(draft)
+      return api.call('updateSystem', {
         systemId: data.id,
-        version: data.version,
+        version: base.version,
         document: draft as unknown as Record<string, unknown>
-      }),
+      })
+    },
     onSuccess: ({ system }) => {
+      savedHere.current = system.version
       queryClient.setQueryData(['systems', data.id], system)
       void queryClient.invalidateQueries({ queryKey: ['systems'], exact: true })
     }
@@ -193,13 +214,13 @@ function SystemEditor({
         <p className={styles.partsHead}>{t('systemEditor.system')}</p>
         <ul className={styles.nav}>
           {parts.slice(0, 1).map((p) => (
-            <PartButton key={p.id} part={p} current={part === p.id} onPick={() => setPart(p.id)} />
+            <PartButton key={p.id} part={p} current={part === p.id} onPick={() => pick(p.id)} />
           ))}
         </ul>
         <p className={styles.partsHead}>{t('systemEditor.types')}</p>
         <ul className={styles.nav}>
           {parts.slice(1).map((p) => (
-            <PartButton key={p.id} part={p} current={part === p.id} onPick={() => setPart(p.id)} />
+            <PartButton key={p.id} part={p} current={part === p.id} onPick={() => pick(p.id)} />
           ))}
           {!readOnly && (
             <li>
@@ -213,7 +234,7 @@ function SystemEditor({
         <p className={styles.partsHead}>{t('systemEditor.game')}</p>
         <ul className={styles.nav}>
           {gameParts.map((p) => (
-            <PartButton key={p.id} part={p} current={part === p.id} onPick={() => setPart(p.id)} />
+            <PartButton key={p.id} part={p} current={part === p.id} onPick={() => pick(p.id)} />
           ))}
         </ul>
       </aside>
@@ -223,7 +244,7 @@ function SystemEditor({
           <div className={styles.titleRow}>
             <PageTitle className={styles.title}>{textOf(draft.name) || data.name}</PageTitle>
             <span className={styles.kind}>
-              {t('systemEditor.kind')} · {t('systems.version', { version: data.builtIn ? data.release : data.version })}
+              {t('systemEditor.kind')} · {t('systems.version', { version: data.builtIn ? data.release : base.version })}
             </span>
           </div>
           <div className={styles.tabs}>
@@ -234,7 +255,7 @@ function SystemEditor({
               id={partId}
               className={styles.partSelect}
               value={part}
-              onChange={(event) => setPart(event.currentTarget.value)}
+              onChange={(event) => pick(event.currentTarget.value)}
             >
               {[...parts, ...gameParts].map((p) => (
                 <option key={p.id} value={p.id}>
@@ -258,6 +279,21 @@ function SystemEditor({
           </div>
         )}
         <div className={styles.body} data-tour="sistema-parte">
+          {conflict && (
+            <div className={styles.conflict} role="status">
+              <span>{t('systemEditor.changedElsewhere')}</span>
+              <button
+                type="button"
+                className={styles.toError}
+                onClick={() => {
+                  setBase(data)
+                  setDraft(structuredClone(data.document as unknown as System))
+                }}
+              >
+                {t('systemEditor.takeNewer')}
+              </button>
+            </div>
+          )}
           <ChangesBar shown={(dirty || json.broken) && !readOnly}>
             <BusyButton
               type="button"
@@ -286,7 +322,7 @@ function SystemEditor({
             firstError && (
               <p className={styles.cantSave}>
                 {t('systemEditor.cantSave')}{' '}
-                <button type="button" className={styles.toError} onClick={() => setPart(partOfPath(firstError.path))}>
+                <button type="button" className={styles.toError} onClick={() => pick(partOfPath(firstError.path))}>
                   {t('systemEditor.toFirstError')}
                 </button>
               </p>
@@ -740,7 +776,8 @@ function TypePart({
             onChange={(event) => {
               const value = event.currentTarget.value
               change((d) => {
-                ;(d.types[typeKey] as System['types'][string]).label = value
+                const target = d.types[typeKey] as System['types'][string]
+                target.label = setText(target.label, value)
               })
             }}
           />

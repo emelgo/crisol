@@ -7,6 +7,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { fakeAccountClient } from '../../account/fake.ts'
 import { fakeApi } from '../../api/fake.ts'
 import { App } from '../../app.tsx'
+import { fakeRealtime } from '../../realtime/fake.ts'
 import { createAppRouter } from '../../router.tsx'
 
 const ORG = { id: crypto.randomUUID(), name: 'Fateforge', role: 'owner' as const }
@@ -159,6 +160,34 @@ describe('el editor de un sistema', () => {
     expect(await screen.findByText('Lo ha cambiado alguien mientras tanto: vuelve a abrirlo')).toBeDefined()
   })
 
+  it('si otro lo cambia con cambios sin guardar aquí, no se tiran: lo avisa y se puede cargar lo nuevo', async () => {
+    const realtime = fakeRealtime()
+    const api = fakeApi({
+      organizations: [ORG],
+      worlds: [WORLD],
+      systems: [{ ...structuredClone(fronteras), id: OWN.id }]
+    })
+    const router = createAppRouter(createMemoryHistory({ initialEntries: [`/sistemas/${OWN.id}`] }))
+    render(
+      <App
+        router={router}
+        accounts={fakeAccountClient({ account: { name: 'Enrique', email: 'enrique@crisol.test' } }).client}
+        api={api.client}
+        realtime={realtime.client}
+      />
+    )
+    await openType('Personaje')
+    await openField('Vigor')
+    await userEvent.type(screen.getByRole('textbox', { name: 'Ayuda' }), '!')
+    await api.client.call('updateSystem', { systemId: OWN.id, version: 1, name: 'Otro nombre' })
+    realtime.emit({ type: 'changed', what: 'systems', organizationId: ORG.id })
+    expect(await screen.findByText(/Lo ha cambiado alguien mientras tanto/)).toBeDefined()
+    expect(screen.getByRole<HTMLInputElement>('textbox', { name: 'Ayuda' }).value).toBe('De −1 a +3!')
+    await userEvent.click(screen.getByRole('button', { name: 'Cargar lo nuevo' }))
+    expect(await screen.findByRole('heading', { level: 1, name: 'Otro nombre' })).toBeDefined()
+    expect(screen.queryByText(/Lo ha cambiado alguien mientras tanto/)).toBeNull()
+  })
+
   it('uno de serie se abre para leer, con «Copiar para cambiarlo»', async () => {
     const { router } = renderEditor('blank')
     expect(await screen.findByText('De serie: no se cambia.')).toBeDefined()
@@ -195,7 +224,7 @@ describe('el editor de un sistema', () => {
     await userEvent.click(panel.getByRole('button', { name: 'Tirar Atributo' }))
     expect(await panel.findByText('De prueba: no se apunta en ninguna campaña')).toBeDefined()
     expect(panel.getByText(/^(Éxito total|Éxito con coste|Fallo)$/)).toBeDefined()
-    expect(api.calls).toContain('tryDice')
+    expect(api.calls).toContain('trySystemRoll')
     expect(api.calls).not.toContain('rollDice')
   })
 })

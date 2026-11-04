@@ -78,7 +78,7 @@ const createSystemInput = z.object({
     .min(1)
     .max(200)
     .optional()
-    .describe('Su nombre; con document o file, el de dentro si no se da'),
+    .describe('Su nombre; con document, si no se da, el suyo; con file, el del archivo'),
   from: systemId.optional().describe('Copiar este (de serie o propio); «blank», el de por defecto, es empezar de cero'),
   document: z
     .record(z.string(), z.unknown())

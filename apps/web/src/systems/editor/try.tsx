@@ -1,21 +1,9 @@
 /**
  * «Probar», al lado del editor (docs/specs/sistemas.md § editor): un documento de prueba del tipo elegido, con sus
  * valores y los objetos que lleva (equipados o no). Al cambiarlos, cada valor calculado con su desglose, al momento; y
- * sus tiradas, que tira el servidor sin apuntarlas (tryDice), con su franja
+ * sus tiradas, que tira el servidor con el borrador sin apuntarlas (trySystemRoll), con su franja
  */
-
-import { formatDice } from '@crisol/dice'
-import {
-  bandOf,
-  type DocumentItem,
-  evaluate,
-  type Field,
-  prepareRoll,
-  RollError,
-  rollsOf,
-  type System,
-  textOf
-} from '@crisol/systems'
+import { type DocumentItem, evaluate, type Field, RollError, rollsOf, type System, textOf } from '@crisol/systems'
 import { useMutation } from '@tanstack/react-query'
 import { Dices, Plus, X } from 'lucide-react'
 import { useId, useMemo, useState } from 'react'
@@ -396,26 +384,26 @@ function TryRolls({
     critical: string | null
   } | null>(null)
   const roll = useMutation({
+    // La tira el servidor con el borrador, como en la partida: el mismo armado, el mismo natural y la misma franja
     mutationFn: async (key: string) => {
       const options = choice[key] ?? {}
       const entry = rolls.find((r) => r.key === key)
       const element = options.element ?? entry?.elements[0]?.key
-      const prepared = prepareRoll(system, typeKey, { data, items }, key, {
-        ...options,
-        ...(element ? { element } : {})
+      const done = await api.call('trySystemRoll', {
+        draft: system as unknown as Record<string, unknown>,
+        type: typeKey,
+        roll: key,
+        ...(element ? { element } : {}),
+        ...(options.mode ? { mode: options.mode } : {}),
+        ...(typeof options.target === 'number' ? { target: options.target } : {}),
+        document: { data, items: items.map((item) => ({ ...item, name: item.name || item.type })) }
       })
-      const done = await api.call('tryDice', {
-        formula: formatDice(prepared.tree).replace(/×/g, '*'),
-        critical: prepared.critical
-      })
-      const first = done.dice.find((d) => typeof d.sides === 'number' && d.kept)
-      const band = bandOf(prepared, { total: done.total, natural: first?.value ?? null }, options.target ?? null)
       return {
         key,
-        label: prepared.label,
+        label: done.label,
         total: done.total,
         detail: done.detail,
-        band: band?.label ?? null,
+        band: done.band?.label ?? null,
         critical: done.critical
       }
     },

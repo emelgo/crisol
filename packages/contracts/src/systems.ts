@@ -183,17 +183,23 @@ export const trySystemRoll = defineAction({
   name: 'trySystemRoll',
   kind: 'read',
   description:
-    'Tira una tirada de un sistema con un documento de prueba, sin apuntarla en ninguna campaña: la fórmula armada, el resultado con su desglose, el crítico (con la regla del sistema) y su franja. El azar lo pone el servidor',
-  input: z.object({
-    systemId: systemRef,
-    roll: z.string().min(1).max(60).describe('La clave de la tirada'),
-    type: z.string().min(1).max(60).optional().describe('El tipo del documento; sin él, el primer personaje'),
-    element: z.string().min(1).max(60).optional().describe('Por qué se tira, si va por cada uno (vigor, des)'),
-    mode: z.string().min(1).max(60).optional().describe('La clave de un modo (ventaja)'),
-    target: z.number().optional().describe('La dificultad o la CA, si la pide'),
-    document: testDocument,
-    organizationId: z.uuid().optional()
-  }),
+    'Tira una tirada de un sistema (uno guardado, o el borrador entero en draft) con un documento de prueba, sin apuntarla en ninguna campaña: la fórmula armada, el resultado con su desglose, el crítico (con la regla del sistema) y su franja. El azar lo pone el servidor',
+  input: z
+    .object({
+      systemId: systemRef.optional().describe('Uno guardado; o, sin él, draft'),
+      draft: z
+        .record(z.string(), z.unknown())
+        .optional()
+        .describe('El sistema entero sin guardar (para probarlo antes de guardarlo)'),
+      roll: z.string().min(1).max(60).describe('La clave de la tirada'),
+      type: z.string().min(1).max(60).optional().describe('El tipo del documento; sin él, el primer personaje'),
+      element: z.string().min(1).max(60).optional().describe('Por qué se tira, si va por cada uno (vigor, des)'),
+      mode: z.string().min(1).max(60).optional().describe('La clave de un modo (ventaja)'),
+      target: z.number().optional().describe('La dificultad o la CA, si la pide'),
+      document: testDocument,
+      organizationId: z.uuid().optional()
+    })
+    .refine((input) => (input.systemId === undefined) !== (input.draft === undefined), 'O systemId o draft'),
   output: z.object({
     label: z.string(),
     formula: z.string(),

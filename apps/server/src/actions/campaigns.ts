@@ -20,6 +20,9 @@ import { presentWorld } from './worlds.ts'
 
 type CampaignRow = { color: string | null; system: string | null; systemChoices: unknown }
 
+/** Si quien la ve juega en ella (lo dice su papel, si la fila lo lleva) */
+const player = (row: object) => 'role' in row && row.role === 'player'
+
 /** Una campaña de la base de datos, como la da la API: el color, solo si es de los que se ofrecen; con su sistema */
 function presentCampaign<T extends CampaignRow>(row: T, systems: ReadonlyMap<string, CampaignSystem>) {
   const color = worldColor.safeParse(row.color)
@@ -27,7 +30,8 @@ function presentCampaign<T extends CampaignRow>(row: T, systems: ReadonlyMap<str
     ...row,
     color: color.success ? color.data : null,
     system: row.system ? (systems.get(row.system) ?? null) : null,
-    systemChoices: (row.system ? row.systemChoices : null) as Campaign['systemChoices']
+    // Lo elegido del sistema (fuentes, ajustes) es del máster; un jugador solo ve el sistema, para sus dados
+    systemChoices: (row.system && player(row) === false ? row.systemChoices : null) as Campaign['systemChoices']
   }
 }
 

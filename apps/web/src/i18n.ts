@@ -854,6 +854,8 @@ export const es = {
     cancel: 'Cancelar',
     cantSave: 'Con errores no se guarda: arréglalos antes',
     toFirstError: 'Ir al primero',
+    changedElsewhere: 'Lo ha cambiado alguien mientras tanto; tus cambios siguen aquí, sin guardar.',
+    takeNewer: 'Cargar lo nuevo',
     leaveTitle: '¿Salir sin guardar?',
     leaveText: 'Se pierden los cambios de {{name}}.',
     stay: 'Seguir aquí',

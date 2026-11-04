@@ -1070,7 +1070,7 @@ export function fakeApi(
       return tryFormulaIn(system, type, formula, { data: document?.data ?? {}, items })
     },
     trySystemRoll: (input) => {
-      const system = systemById(input.systemId)
+      const system = input.draft ? (input.draft as unknown as System) : systemById(input.systemId ?? '')
       if (!system) throw new ApiError('NOT_FOUND', 404)
       const typeKey = input.type ?? Object.entries(system.types).find(([, t]) => t.document === 'actor')?.[0]
       if (!typeKey) throw new ApiError('BAD_SYSTEM_TYPE', 400)

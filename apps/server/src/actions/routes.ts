@@ -53,4 +53,4 @@ export function registerActionRoutes(app: FastifyInstance, env: ActionEnv, auth:
 }
 
 /** Las acciones que llevan un sistema entero o su archivo */
-export const BIG_ACTIONS = ['updateSystem', 'importSystem', 'checkSystem'] as const
+export const BIG_ACTIONS = ['updateSystem', 'importSystem', 'checkSystem', 'trySystemRoll', 'createSystem'] as const

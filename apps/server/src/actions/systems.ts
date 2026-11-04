@@ -30,6 +30,7 @@ import {
   catalogSystem,
   FORMAT,
   fileName,
+  fitsFormat,
   normalizeChoices,
   type Problem,
   pickPaths,
@@ -63,7 +64,9 @@ function summarize(
   extra: { id: string; builtIn: boolean; version: number; basedOn: SystemSummary['basedOn']; content: number }
 ): SystemSummary {
   const { defaultRoll: _, critical: __, ...overview } = systemOverview(document)
-  return { ...extra, ...overview, campaigns: [] }
+  // En la lista, el resumen corto: el entero está en el sistema (y la lista la lee la IA de cualquier sistema subido)
+  const summary = overview.summary.length > 300 ? `${overview.summary.slice(0, 299)}…` : overview.summary
+  return { ...extra, ...overview, summary, campaigns: [] }
 }
 
 const builtIn = (document: System): SystemFull => ({
@@ -337,6 +340,10 @@ export const formatDocs = () => {
   return docs
 }
 
+/** Un nombre nuevo, sin perder los demás idiomas: en un texto por idiomas cambia el español */
+const withName = (current: unknown, name: string) =>
+  current && typeof current === 'object' ? { ...(current as Record<string, string>), es: name } : name
+
 /** Los problemas, como los da el contrato */
 const asProblems = (problems: readonly Problem[]) =>
   problems.map(({ path, where, message, severity }) => ({ path, where, message, severity }))
@@ -432,7 +439,11 @@ export const systemActions = [
         )
       : (document ?? row.document)
     // Su id es siempre el suyo, lo diga o no el documento
-    const next = { ...structuredClone(base), id: row.id, ...(name !== undefined ? { name } : {}) }
+    const next = {
+      ...structuredClone(base),
+      id: row.id,
+      ...(name !== undefined ? { name: withName((base as { name?: unknown }).name, name) } : {})
+    }
     const { system, warnings } = validated(next)
     let updated: systemsRepo.SystemRow
     try {
@@ -518,7 +529,13 @@ export const systemActions = [
   implement(trySystemRoll, async (ctx, input) => {
     if (tooManyTries(ctx.actor.userId)) throw new TooManyRequestsError('TOO_MANY_ROLLS')
     const target = readableOrganization(ctx, input.organizationId)
-    const { document: system } = await findReadable(ctx, target, input.systemId)
+    // Uno guardado o el borrador del editor (sin guardar: con la forma de un sistema basta, lo demás lo dice al tirar)
+    let system: System
+    if (input.draft) {
+      if (!fitsFormat(input.draft))
+        throw new InvalidRequestError('BAD_SYSTEM', 'el borrador no tiene la forma de un sistema')
+      system = input.draft
+    } else system = (await findReadable(ctx, target, input.systemId ?? '')).document
     const typeKey = input.type ?? Object.entries(system.types).find(([, t]) => t.document === 'actor')?.[0]
     if (!typeKey || !Object.hasOwn(system.types, typeKey))
       throw new InvalidRequestError(
