@@ -3,14 +3,15 @@
 Lista viva: todo lo que haya que probar se apunta aquí y se marca cuando lo pruebe. Lo que diga va a «Lo que dijo» (al
 final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interfaz.
 
-- **Staging**: https://neo.crisol.144-91-122-245.sslip.io, con el módulo 2 y los arreglos del 2026-11-04 (PR #93 y #94).
+- **Staging**: https://neo.crisol.144-91-122-245.sslip.io, con el módulo 2, los arreglos del 2026-11-04 y los dados
+  (PR #93, #94 y #95).
 - **La IA**: el conector «Neo Crisol» de claude.ai (`https://neo.crisol.144-91-122-245.sslip.io/mcp`), con la cuenta
   de propietario.
 - **En local**, con los cambios al momento: http://localhost:5173 (lo arranco cuando haga falta).
 
-## Módulo 3: dados (en local, en la rama `modulo-3/dados`)
+## Módulo 3: dados (en staging)
 
-Aún no está en staging: se prueba en el servidor de desarrollo (lo arranco cuando quieras). Spec: `docs/specs/dados.md`.
+Ya en staging (PR #95): todo se puede probar allí. Spec: `docs/specs/dados.md`.
 
 - [ ] **Punto de control 2**: tú y una jugadora en dos navegadores, con «Dados» en la barra:
   - una tirada tuya «para todos» le llega al momento;
@@ -24,7 +25,7 @@ Aún no está en staging: se prueba en el servidor de desarrollo (lo arranco cua
   - «Repetir» en una tirada «al máster» de la jugadora: la tuya sale «oculta», no para todos;
   - `20d6` de golpe: la página no se para mientras caen;
   - pulsar muy seguido una tirada de una página: pasadas 60 en un minuto, dice «Demasiadas tiradas seguidas».
-- [ ] **Final (en staging, cuando se fusione)**: los criterios de éxito de `docs/specs/dados.md`:
+- [ ] **Final**: los criterios de éxito de `docs/specs/dados.md`:
   - tú tiras `1d20+5` y a una jugadora le caen los dados con tu color y le sale en el registro al momento;
   - ella tira «al máster»: tú lo ves marcado; una segunda jugadora no recibe nada; lo tuyo oculto, nadie más;
   - en una página escribes `` `dice: 2d6+3` ``, la pulsas y sale en el registro;

@@ -7,6 +7,17 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
+### Para retomar (2026-11-04, módulo 3: sistemas)
+
+- **`dados` está en `main` y en staging** (PR #95, migraciones 0037 y 0038): una sola pasada de la CI, en verde, y
+  fusionada con `[skip ci]`. Enrique la prueba con `tasks/probar.md` (puntos de control 2 y 3, lo de las revisiones y
+  el final), ya en staging.
+- **La spec de `sistemas`, por aprobar**: `docs/specs/sistemas.md`, con el ADR-0011 (sistemas como datos, fórmulas
+  propias calculadas en el servidor) y cinco preguntas con propuesta. Lo que hace el Crisol actual con los sistemas,
+  leído para ella, en `docs/inventario-sistemas.md`. Rama `modulo-3/sistemas`.
+- **Lo siguiente**: que Enrique apruebe la spec (o la cambie); después, el diseño de «Sistemas» y de la elección en la
+  campaña, el plan y la construcción.
+
 ### Para retomar (2026-11-04, módulo 3: dados)
 
 - **El módulo 3 va por capacidades** (mapa aprobado en `docs/specs/modulo-3.md`): `dados` → `sistemas` → `srd-5e` →
@@ -1032,7 +1043,7 @@ Estados: pendiente · en curso · hecho · descartado.
 | 0 | **Fundación**: monorepo, CI, despliegue, cuentas, organizaciones, mundos, campañas, roles, historial y deshacer, esqueleto del MCP | **hecho** (2026-10-29; Discord y Google, pospuestos) | Foundry: modelo de documentos y permisos; DDB: campañas e invitaciones |
 | 1 | **Wiki**: páginas y subpáginas, editor de bloques, enlaces, menciones, vista previa, propiedades, secretos, búsqueda, marcadores, etiquetas, versiones, recursos y archivos, **hojas con estilo** (tipo Homebrewery, con PDF), exportación MD, sus herramientas MCP | construido (tareas 1 a 26 hechas); falta la revisión de Enrique en staging | Foundry: Journal; DDB: contenido y referencias; Homebrewery (MIT): formato de hoja y descarga |
 | 2 | **Tipos de página y plantillas**: «Desde plantilla» (de serie y propias), campos en el panel, tablas que se llenan solas (en lugar de Dataview) | construido (tareas 1 a 14, 2026-11-03); falta la revisión de Enrique en staging | Foundry: tipos de documento; Kanka, LegendKeeper y World Anvil (web pública) |
-| 3 | Sistemas de reglas, fichas de personaje (creación, subida de nivel), dados y dados 3D | en marcha: mapa aprobado (`docs/specs/modulo-3.md`); `dados` construida (11 tareas, rama `modulo-3/dados`); después, `sistemas` | DDB: creador y hoja; Foundry: dnd5e, DataModel e instalar y crear sistemas |
+| 3 | Sistemas de reglas, fichas de personaje (creación, subida de nivel), dados y dados 3D | en marcha: mapa aprobado (`docs/specs/modulo-3.md`); `dados` en `main` y en staging (PR #95); spec de `sistemas` por aprobar | DDB: creador y hoja; Foundry: dnd5e, DataModel e instalar y crear sistemas |
 | 4 | Compendios (aparte de la wiki del mundo y **como los de Foundry**: antes, estudio a fondo con craft-anything), bestiario, statblocks, biblioteca; **buscar dentro de los PDF** (texto de cada página con pdf.js; el resultado abre el visor en esa página) **y por significado** (pgvector; antes, permiso para la imagen de Postgres y elegir quién calcula los embeddings) | pendiente | Foundry: compendium packs; DDB: listados |
 | 5 | Visibilidad por campaña: conocimiento de los jugadores, revelar, compartir | pendiente | Foundry: ownership |
 | 6 | **Mesa**: escenas, rejilla, fichas, medir y plantillas, niebla, muros, puertas, luz, visión, iniciativa, instantáneas, encuentros, UVTT | pendiente | Foundry: canvas, visión y muros; DDB Maps |
