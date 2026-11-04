@@ -6,7 +6,15 @@
     "useIgnoreFile": true
   },
   "files": {
-    "includes": ["**", "!**/*.md", "!**/coverage", "!**/.turbo", "!research", "!datos-locales"]
+    "includes": [
+      "**",
+      "!**/*.md",
+      "!**/coverage",
+      "!**/.turbo",
+      "!research",
+      "!datos-locales",
+      "!packages/systems/src/catalog/5e/content"
+    ]
   },
   "formatter": {
     "enabled": true,

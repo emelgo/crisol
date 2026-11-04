@@ -92,7 +92,9 @@
             },
             "count": "1",
             "type": "subclase",
-            "from": ["campeon"]
+            "from": [
+              "campeon"
+            ]
           }
         },
         {
@@ -1090,7 +1092,9 @@
             },
             "count": "1",
             "type": "subclase",
-            "from": ["campeon"]
+            "from": [
+              "campeon"
+            ]
           }
         },
         {

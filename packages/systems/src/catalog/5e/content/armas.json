@@ -12,7 +12,9 @@
       "categoria": "sencilla",
       "base": "garrote",
       "distancia": false,
-      "propiedades": ["ligera"],
+      "propiedades": [
+        "ligera"
+      ],
       "dano": "1d4",
       "tipo_dano": "contundente",
       "peso": 2,
@@ -41,7 +43,11 @@
       "categoria": "sencilla",
       "base": "daga",
       "distancia": false,
-      "propiedades": ["sutil", "ligera", "arrojadiza"],
+      "propiedades": [
+        "sutil",
+        "ligera",
+        "arrojadiza"
+      ],
       "dano": "1d4",
       "tipo_dano": "perforante",
       "alcance_distancia": "20/60",
@@ -71,7 +77,9 @@
       "categoria": "sencilla",
       "base": "garrote_grande",
       "distancia": false,
-      "propiedades": ["a_dos_manos"],
+      "propiedades": [
+        "a_dos_manos"
+      ],
       "dano": "1d8",
       "tipo_dano": "contundente",
       "peso": 10,
@@ -100,7 +108,10 @@
       "categoria": "sencilla",
       "base": "hacha_de_mano",
       "distancia": false,
-      "propiedades": ["ligera", "arrojadiza"],
+      "propiedades": [
+        "ligera",
+        "arrojadiza"
+      ],
       "dano": "1d6",
       "tipo_dano": "cortante",
       "alcance_distancia": "20/60",
@@ -130,7 +141,9 @@
       "categoria": "sencilla",
       "base": "jabalina",
       "distancia": false,
-      "propiedades": ["arrojadiza"],
+      "propiedades": [
+        "arrojadiza"
+      ],
       "dano": "1d6",
       "tipo_dano": "perforante",
       "alcance_distancia": "30/120",
@@ -160,7 +173,10 @@
       "categoria": "sencilla",
       "base": "martillo_ligero",
       "distancia": false,
-      "propiedades": ["ligera", "arrojadiza"],
+      "propiedades": [
+        "ligera",
+        "arrojadiza"
+      ],
       "dano": "1d4",
       "tipo_dano": "contundente",
       "alcance_distancia": "20/60",
@@ -219,7 +235,9 @@
       "categoria": "sencilla",
       "base": "baston",
       "distancia": false,
-      "propiedades": ["versatil"],
+      "propiedades": [
+        "versatil"
+      ],
       "dano": "1d6",
       "dano_versatil": "1d8",
       "tipo_dano": "contundente",
@@ -249,7 +267,9 @@
       "categoria": "sencilla",
       "base": "hoz",
       "distancia": false,
-      "propiedades": ["ligera"],
+      "propiedades": [
+        "ligera"
+      ],
       "dano": "1d4",
       "tipo_dano": "cortante",
       "peso": 2,
@@ -278,7 +298,10 @@
       "categoria": "sencilla",
       "base": "lanza",
       "distancia": false,
-      "propiedades": ["arrojadiza", "versatil"],
+      "propiedades": [
+        "arrojadiza",
+        "versatil"
+      ],
       "dano": "1d6",
       "dano_versatil": "1d8",
       "tipo_dano": "perforante",
@@ -309,7 +332,11 @@
       "categoria": "sencilla",
       "base": "ballesta_ligera",
       "distancia": true,
-      "propiedades": ["municion", "recarga", "a_dos_manos"],
+      "propiedades": [
+        "municion",
+        "recarga",
+        "a_dos_manos"
+      ],
       "dano": "1d8",
       "tipo_dano": "perforante",
       "alcance_distancia": "80/320",
@@ -339,7 +366,10 @@
       "categoria": "sencilla",
       "base": "dardo",
       "distancia": true,
-      "propiedades": ["sutil", "arrojadiza"],
+      "propiedades": [
+        "sutil",
+        "arrojadiza"
+      ],
       "dano": "1d4",
       "tipo_dano": "perforante",
       "alcance_distancia": "20/60",
@@ -369,7 +399,10 @@
       "categoria": "sencilla",
       "base": "arco_corto",
       "distancia": true,
-      "propiedades": ["municion", "a_dos_manos"],
+      "propiedades": [
+        "municion",
+        "a_dos_manos"
+      ],
       "dano": "1d6",
       "tipo_dano": "perforante",
       "alcance_distancia": "80/320",
@@ -399,7 +432,9 @@
       "categoria": "sencilla",
       "base": "honda",
       "distancia": true,
-      "propiedades": ["municion"],
+      "propiedades": [
+        "municion"
+      ],
       "dano": "1d4",
       "tipo_dano": "contundente",
       "alcance_distancia": "30/120",
@@ -429,7 +464,9 @@
       "categoria": "marcial",
       "base": "hacha_de_guerra",
       "distancia": false,
-      "propiedades": ["versatil"],
+      "propiedades": [
+        "versatil"
+      ],
       "dano": "1d8",
       "dano_versatil": "1d10",
       "tipo_dano": "cortante",
@@ -488,7 +525,11 @@
       "categoria": "marcial",
       "base": "guja",
       "distancia": false,
-      "propiedades": ["pesada", "alcance", "a_dos_manos"],
+      "propiedades": [
+        "pesada",
+        "alcance",
+        "a_dos_manos"
+      ],
       "dano": "1d10",
       "tipo_dano": "cortante",
       "peso": 6,
@@ -517,7 +558,10 @@
       "categoria": "marcial",
       "base": "hacha_a_dos_manos",
       "distancia": false,
-      "propiedades": ["pesada", "a_dos_manos"],
+      "propiedades": [
+        "pesada",
+        "a_dos_manos"
+      ],
       "dano": "1d12",
       "tipo_dano": "cortante",
       "peso": 7,
@@ -546,7 +590,10 @@
       "categoria": "marcial",
       "base": "espadon",
       "distancia": false,
-      "propiedades": ["pesada", "a_dos_manos"],
+      "propiedades": [
+        "pesada",
+        "a_dos_manos"
+      ],
       "dano": "2d6",
       "tipo_dano": "cortante",
       "peso": 6,
@@ -575,7 +622,11 @@
       "categoria": "marcial",
       "base": "alabarda",
       "distancia": false,
-      "propiedades": ["pesada", "alcance", "a_dos_manos"],
+      "propiedades": [
+        "pesada",
+        "alcance",
+        "a_dos_manos"
+      ],
       "dano": "1d10",
       "tipo_dano": "cortante",
       "peso": 6,
@@ -604,7 +655,10 @@
       "categoria": "marcial",
       "base": "lanza_de_caballeria",
       "distancia": false,
-      "propiedades": ["alcance", "especial"],
+      "propiedades": [
+        "alcance",
+        "especial"
+      ],
       "dano": "1d12",
       "tipo_dano": "perforante",
       "peso": 6,
@@ -637,7 +691,9 @@
       "categoria": "marcial",
       "base": "espada_larga",
       "distancia": false,
-      "propiedades": ["versatil"],
+      "propiedades": [
+        "versatil"
+      ],
       "dano": "1d8",
       "dano_versatil": "1d10",
       "tipo_dano": "cortante",
@@ -667,7 +723,10 @@
       "categoria": "marcial",
       "base": "maza_a_dos_manos",
       "distancia": false,
-      "propiedades": ["pesada", "a_dos_manos"],
+      "propiedades": [
+        "pesada",
+        "a_dos_manos"
+      ],
       "dano": "2d6",
       "tipo_dano": "contundente",
       "peso": 10,
@@ -725,7 +784,11 @@
       "categoria": "marcial",
       "base": "pica",
       "distancia": false,
-      "propiedades": ["pesada", "alcance", "a_dos_manos"],
+      "propiedades": [
+        "pesada",
+        "alcance",
+        "a_dos_manos"
+      ],
       "dano": "1d10",
       "tipo_dano": "perforante",
       "peso": 18,
@@ -754,7 +817,9 @@
       "categoria": "marcial",
       "base": "estoque",
       "distancia": false,
-      "propiedades": ["sutil"],
+      "propiedades": [
+        "sutil"
+      ],
       "dano": "1d8",
       "tipo_dano": "perforante",
       "peso": 2,
@@ -783,7 +848,10 @@
       "categoria": "marcial",
       "base": "cimitarra",
       "distancia": false,
-      "propiedades": ["sutil", "ligera"],
+      "propiedades": [
+        "sutil",
+        "ligera"
+      ],
       "dano": "1d6",
       "tipo_dano": "cortante",
       "peso": 3,
@@ -812,7 +880,10 @@
       "categoria": "marcial",
       "base": "espada_corta",
       "distancia": false,
-      "propiedades": ["sutil", "ligera"],
+      "propiedades": [
+        "sutil",
+        "ligera"
+      ],
       "dano": "1d6",
       "tipo_dano": "perforante",
       "peso": 2,
@@ -841,7 +912,10 @@
       "categoria": "marcial",
       "base": "tridente",
       "distancia": false,
-      "propiedades": ["arrojadiza", "versatil"],
+      "propiedades": [
+        "arrojadiza",
+        "versatil"
+      ],
       "dano": "1d6",
       "dano_versatil": "1d8",
       "tipo_dano": "perforante",
@@ -901,7 +975,9 @@
       "categoria": "marcial",
       "base": "martillo_de_guerra",
       "distancia": false,
-      "propiedades": ["versatil"],
+      "propiedades": [
+        "versatil"
+      ],
       "dano": "1d8",
       "dano_versatil": "1d10",
       "tipo_dano": "contundente",
@@ -931,7 +1007,10 @@
       "categoria": "marcial",
       "base": "latigo",
       "distancia": false,
-      "propiedades": ["sutil", "alcance"],
+      "propiedades": [
+        "sutil",
+        "alcance"
+      ],
       "dano": "1d4",
       "tipo_dano": "cortante",
       "peso": 3,
@@ -960,7 +1039,10 @@
       "categoria": "marcial",
       "base": "cerbatana",
       "distancia": true,
-      "propiedades": ["municion", "recarga"],
+      "propiedades": [
+        "municion",
+        "recarga"
+      ],
       "dano": "1",
       "tipo_dano": "perforante",
       "alcance_distancia": "25/100",
@@ -990,7 +1072,11 @@
       "categoria": "marcial",
       "base": "ballesta_de_mano",
       "distancia": true,
-      "propiedades": ["municion", "ligera", "recarga"],
+      "propiedades": [
+        "municion",
+        "ligera",
+        "recarga"
+      ],
       "dano": "1d6",
       "tipo_dano": "perforante",
       "alcance_distancia": "30/120",
@@ -1020,7 +1106,12 @@
       "categoria": "marcial",
       "base": "ballesta_pesada",
       "distancia": true,
-      "propiedades": ["municion", "pesada", "recarga", "a_dos_manos"],
+      "propiedades": [
+        "municion",
+        "pesada",
+        "recarga",
+        "a_dos_manos"
+      ],
       "dano": "1d10",
       "tipo_dano": "perforante",
       "alcance_distancia": "100/400",
@@ -1050,7 +1141,11 @@
       "categoria": "marcial",
       "base": "arco_largo",
       "distancia": true,
-      "propiedades": ["municion", "pesada", "a_dos_manos"],
+      "propiedades": [
+        "municion",
+        "pesada",
+        "a_dos_manos"
+      ],
       "dano": "1d8",
       "tipo_dano": "perforante",
       "alcance_distancia": "150/600",
@@ -1080,7 +1175,10 @@
       "categoria": "marcial",
       "base": "red",
       "distancia": true,
-      "propiedades": ["especial", "arrojadiza"],
+      "propiedades": [
+        "especial",
+        "arrojadiza"
+      ],
       "dano": "0",
       "alcance_distancia": "5/15",
       "peso": 3,
@@ -1113,7 +1211,9 @@
       "categoria": "sencilla",
       "base": "garrote",
       "distancia": false,
-      "propiedades": ["ligera"],
+      "propiedades": [
+        "ligera"
+      ],
       "dano": "1d4",
       "tipo_dano": "contundente",
       "maestria": "ralentizar",
@@ -1143,7 +1243,11 @@
       "categoria": "sencilla",
       "base": "daga",
       "distancia": false,
-      "propiedades": ["sutil", "ligera", "arrojadiza"],
+      "propiedades": [
+        "sutil",
+        "ligera",
+        "arrojadiza"
+      ],
       "dano": "1d4",
       "tipo_dano": "perforante",
       "alcance_distancia": "20/60",
@@ -1174,7 +1278,9 @@
       "categoria": "sencilla",
       "base": "garrote_grande",
       "distancia": false,
-      "propiedades": ["a_dos_manos"],
+      "propiedades": [
+        "a_dos_manos"
+      ],
       "dano": "1d8",
       "tipo_dano": "contundente",
       "maestria": "empujar",
@@ -1204,7 +1310,10 @@
       "categoria": "sencilla",
       "base": "hacha_de_mano",
       "distancia": false,
-      "propiedades": ["ligera", "arrojadiza"],
+      "propiedades": [
+        "ligera",
+        "arrojadiza"
+      ],
       "dano": "1d6",
       "tipo_dano": "cortante",
       "alcance_distancia": "20/60",
@@ -1235,7 +1344,9 @@
       "categoria": "sencilla",
       "base": "jabalina",
       "distancia": false,
-      "propiedades": ["arrojadiza"],
+      "propiedades": [
+        "arrojadiza"
+      ],
       "dano": "1d6",
       "tipo_dano": "perforante",
       "alcance_distancia": "30/120",
@@ -1266,7 +1377,10 @@
       "categoria": "sencilla",
       "base": "martillo_ligero",
       "distancia": false,
-      "propiedades": ["ligera", "arrojadiza"],
+      "propiedades": [
+        "ligera",
+        "arrojadiza"
+      ],
       "dano": "1d4",
       "tipo_dano": "contundente",
       "alcance_distancia": "20/60",
@@ -1327,7 +1441,9 @@
       "categoria": "sencilla",
       "base": "baston",
       "distancia": false,
-      "propiedades": ["versatil"],
+      "propiedades": [
+        "versatil"
+      ],
       "dano": "1d6",
       "dano_versatil": "1d8",
       "tipo_dano": "contundente",
@@ -1358,7 +1474,9 @@
       "categoria": "sencilla",
       "base": "hoz",
       "distancia": false,
-      "propiedades": ["ligera"],
+      "propiedades": [
+        "ligera"
+      ],
       "dano": "1d4",
       "tipo_dano": "cortante",
       "maestria": "mellar",
@@ -1388,7 +1506,10 @@
       "categoria": "sencilla",
       "base": "lanza",
       "distancia": false,
-      "propiedades": ["arrojadiza", "versatil"],
+      "propiedades": [
+        "arrojadiza",
+        "versatil"
+      ],
       "dano": "1d6",
       "dano_versatil": "1d8",
       "tipo_dano": "perforante",
@@ -1420,7 +1541,10 @@
       "categoria": "sencilla",
       "base": "dardo",
       "distancia": true,
-      "propiedades": ["sutil", "arrojadiza"],
+      "propiedades": [
+        "sutil",
+        "arrojadiza"
+      ],
       "dano": "1d4",
       "tipo_dano": "perforante",
       "alcance_distancia": "20/60",
@@ -1451,7 +1575,11 @@
       "categoria": "sencilla",
       "base": "ballesta_ligera",
       "distancia": true,
-      "propiedades": ["municion", "recarga", "a_dos_manos"],
+      "propiedades": [
+        "municion",
+        "recarga",
+        "a_dos_manos"
+      ],
       "dano": "1d8",
       "tipo_dano": "perforante",
       "alcance_distancia": "80/320",
@@ -1482,7 +1610,10 @@
       "categoria": "sencilla",
       "base": "arco_corto",
       "distancia": true,
-      "propiedades": ["municion", "a_dos_manos"],
+      "propiedades": [
+        "municion",
+        "a_dos_manos"
+      ],
       "dano": "1d6",
       "tipo_dano": "perforante",
       "alcance_distancia": "80/320",
@@ -1513,7 +1644,9 @@
       "categoria": "sencilla",
       "base": "honda",
       "distancia": true,
-      "propiedades": ["municion"],
+      "propiedades": [
+        "municion"
+      ],
       "dano": "1d4",
       "tipo_dano": "contundente",
       "alcance_distancia": "30/120",
@@ -1544,7 +1677,9 @@
       "categoria": "marcial",
       "base": "hacha_de_guerra",
       "distancia": false,
-      "propiedades": ["versatil"],
+      "propiedades": [
+        "versatil"
+      ],
       "dano": "1d8",
       "dano_versatil": "1d10",
       "tipo_dano": "cortante",
@@ -1605,7 +1740,11 @@
       "categoria": "marcial",
       "base": "guja",
       "distancia": false,
-      "propiedades": ["pesada", "alcance", "a_dos_manos"],
+      "propiedades": [
+        "pesada",
+        "alcance",
+        "a_dos_manos"
+      ],
       "dano": "1d10",
       "tipo_dano": "cortante",
       "maestria": "rozar",
@@ -1635,7 +1774,10 @@
       "categoria": "marcial",
       "base": "hacha_a_dos_manos",
       "distancia": false,
-      "propiedades": ["pesada", "a_dos_manos"],
+      "propiedades": [
+        "pesada",
+        "a_dos_manos"
+      ],
       "dano": "1d12",
       "tipo_dano": "cortante",
       "maestria": "hender",
@@ -1665,7 +1807,10 @@
       "categoria": "marcial",
       "base": "espadon",
       "distancia": false,
-      "propiedades": ["pesada", "a_dos_manos"],
+      "propiedades": [
+        "pesada",
+        "a_dos_manos"
+      ],
       "dano": "2d6",
       "tipo_dano": "cortante",
       "maestria": "rozar",
@@ -1695,7 +1840,11 @@
       "categoria": "marcial",
       "base": "alabarda",
       "distancia": false,
-      "propiedades": ["pesada", "alcance", "a_dos_manos"],
+      "propiedades": [
+        "pesada",
+        "alcance",
+        "a_dos_manos"
+      ],
       "dano": "1d10",
       "tipo_dano": "cortante",
       "maestria": "hender",
@@ -1725,7 +1874,11 @@
       "categoria": "marcial",
       "base": "lanza_de_caballeria",
       "distancia": false,
-      "propiedades": ["pesada", "alcance", "a_dos_manos"],
+      "propiedades": [
+        "pesada",
+        "alcance",
+        "a_dos_manos"
+      ],
       "dano": "1d10",
       "tipo_dano": "perforante",
       "maestria": "derribar",
@@ -1755,7 +1908,9 @@
       "categoria": "marcial",
       "base": "espada_larga",
       "distancia": false,
-      "propiedades": ["versatil"],
+      "propiedades": [
+        "versatil"
+      ],
       "dano": "1d8",
       "dano_versatil": "1d10",
       "tipo_dano": "cortante",
@@ -1786,7 +1941,10 @@
       "categoria": "marcial",
       "base": "maza_a_dos_manos",
       "distancia": false,
-      "propiedades": ["pesada", "a_dos_manos"],
+      "propiedades": [
+        "pesada",
+        "a_dos_manos"
+      ],
       "dano": "2d6",
       "tipo_dano": "contundente",
       "maestria": "derribar",
@@ -1846,7 +2004,11 @@
       "categoria": "marcial",
       "base": "pica",
       "distancia": false,
-      "propiedades": ["pesada", "alcance", "a_dos_manos"],
+      "propiedades": [
+        "pesada",
+        "alcance",
+        "a_dos_manos"
+      ],
       "dano": "1d10",
       "tipo_dano": "perforante",
       "maestria": "empujar",
@@ -1876,7 +2038,9 @@
       "categoria": "marcial",
       "base": "estoque",
       "distancia": false,
-      "propiedades": ["sutil"],
+      "propiedades": [
+        "sutil"
+      ],
       "dano": "1d8",
       "tipo_dano": "perforante",
       "maestria": "molestar",
@@ -1906,7 +2070,10 @@
       "categoria": "marcial",
       "base": "cimitarra",
       "distancia": false,
-      "propiedades": ["sutil", "ligera"],
+      "propiedades": [
+        "sutil",
+        "ligera"
+      ],
       "dano": "1d6",
       "tipo_dano": "cortante",
       "maestria": "mellar",
@@ -1936,7 +2103,10 @@
       "categoria": "marcial",
       "base": "espada_corta",
       "distancia": false,
-      "propiedades": ["sutil", "ligera"],
+      "propiedades": [
+        "sutil",
+        "ligera"
+      ],
       "dano": "1d6",
       "tipo_dano": "perforante",
       "maestria": "molestar",
@@ -1966,7 +2136,10 @@
       "categoria": "marcial",
       "base": "tridente",
       "distancia": false,
-      "propiedades": ["arrojadiza", "versatil"],
+      "propiedades": [
+        "arrojadiza",
+        "versatil"
+      ],
       "dano": "1d8",
       "dano_versatil": "1d10",
       "tipo_dano": "perforante",
@@ -1998,7 +2171,9 @@
       "categoria": "marcial",
       "base": "martillo_de_guerra",
       "distancia": false,
-      "propiedades": ["versatil"],
+      "propiedades": [
+        "versatil"
+      ],
       "dano": "1d8",
       "dano_versatil": "1d10",
       "tipo_dano": "contundente",
@@ -2029,7 +2204,9 @@
       "categoria": "marcial",
       "base": "pico_de_guerra",
       "distancia": false,
-      "propiedades": ["versatil"],
+      "propiedades": [
+        "versatil"
+      ],
       "dano": "1d8",
       "dano_versatil": "1d10",
       "tipo_dano": "perforante",
@@ -2060,7 +2237,10 @@
       "categoria": "marcial",
       "base": "latigo",
       "distancia": false,
-      "propiedades": ["sutil", "alcance"],
+      "propiedades": [
+        "sutil",
+        "alcance"
+      ],
       "dano": "1d4",
       "tipo_dano": "cortante",
       "maestria": "ralentizar",
@@ -2090,7 +2270,10 @@
       "categoria": "marcial",
       "base": "cerbatana",
       "distancia": true,
-      "propiedades": ["municion", "recarga"],
+      "propiedades": [
+        "municion",
+        "recarga"
+      ],
       "dano": "1",
       "tipo_dano": "perforante",
       "alcance_distancia": "25/100",
@@ -2121,7 +2304,11 @@
       "categoria": "marcial",
       "base": "ballesta_de_mano",
       "distancia": true,
-      "propiedades": ["municion", "ligera", "recarga"],
+      "propiedades": [
+        "municion",
+        "ligera",
+        "recarga"
+      ],
       "dano": "1d6",
       "tipo_dano": "perforante",
       "alcance_distancia": "30/120",
@@ -2152,7 +2339,12 @@
       "categoria": "marcial",
       "base": "ballesta_pesada",
       "distancia": true,
-      "propiedades": ["municion", "pesada", "recarga", "a_dos_manos"],
+      "propiedades": [
+        "municion",
+        "pesada",
+        "recarga",
+        "a_dos_manos"
+      ],
       "dano": "1d10",
       "tipo_dano": "perforante",
       "alcance_distancia": "100/400",
@@ -2183,7 +2375,11 @@
       "categoria": "marcial",
       "base": "arco_largo",
       "distancia": true,
-      "propiedades": ["municion", "pesada", "a_dos_manos"],
+      "propiedades": [
+        "municion",
+        "pesada",
+        "a_dos_manos"
+      ],
       "dano": "1d8",
       "tipo_dano": "perforante",
       "alcance_distancia": "150/600",
@@ -2214,7 +2410,11 @@
       "categoria": "marcial",
       "base": "mosquete",
       "distancia": true,
-      "propiedades": ["municion", "recarga", "a_dos_manos"],
+      "propiedades": [
+        "municion",
+        "recarga",
+        "a_dos_manos"
+      ],
       "dano": "1d12",
       "tipo_dano": "perforante",
       "alcance_distancia": "40/120",
@@ -2245,7 +2445,10 @@
       "categoria": "marcial",
       "base": "pistola",
       "distancia": true,
-      "propiedades": ["municion", "recarga"],
+      "propiedades": [
+        "municion",
+        "recarga"
+      ],
       "dano": "1d10",
       "tipo_dano": "perforante",
       "alcance_distancia": "30/90",

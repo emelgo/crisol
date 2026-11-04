@@ -131,3 +131,10 @@ export const GEAR_RENAMES: Record<string, string> = {
   'dice set': 'dice',
   'playing card set': 'playing cards'
 }
+
+/** Lo mismo con otro nombre entre las monturas y los arreos de 2014 y de 2024 */
+export const MOUNT_RENAMES: Record<string, string> = {
+  'donkey or mule': 'mule',
+  'feed per day': 'feed',
+  'stabling per day': 'stabling'
+}

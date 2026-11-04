@@ -109,7 +109,8 @@ const ARMOR_ROW: Record<Edition, Record<Lang, RegExp>> = {
 
 /** Un precio en piezas de oro («1,500 GP», «5 pp») */
 export function costOf(text: string, lang: Lang): number {
-  const [amount = '0', unit = ''] = text.split(' ')
+  // En español, los miles van con un espacio («10 000 po»)
+  const [amount = '0', unit = ''] = text.replace(/(\d) (?=\d{3}\b)/g, '$1').split(' ')
   const value = Number(amount.replace(/[,.]/g, ''))
   const rate = COINS[lang][unit.toLowerCase()]
   if (rate === undefined) throw new Error(`Moneda desconocida: ${text}`)
@@ -121,7 +122,11 @@ export function weightOf(text: string): number | null {
   if (text === '—') return null
   const [amount = '0', unit = ''] = text.split(' ')
   if (unit.startsWith('lb')) {
-    const [a, b] = amount.replace('½', '.5').split('/').map(Number)
+    const [a, b] = amount
+      .replace('½', '.5')
+      .replace(/,(?=\d{3})/g, '')
+      .split('/')
+      .map(Number)
     return b ? (a as number) / b : (a as number)
   }
   const value = Number(amount.replace(',', '.').replace('½', '.5'))

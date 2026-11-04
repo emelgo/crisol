@@ -20,6 +20,7 @@ import {
 } from './equipo.ts'
 import { FIGHTER, FIGHTER_CLASS, FIGHTER_FEATURES } from './guerrero.ts'
 import { MECHANICS } from './mecanica.ts'
+import { type MountRow, mountDoc, mountRows, mountSignature } from './monturas.ts'
 import {
   categoryOf,
   displayName,
@@ -33,7 +34,7 @@ import {
   type ToolRow,
   toolRows
 } from './objetos.ts'
-import { GEAR_PAIRS, GEAR_RENAMES } from './pares.ts'
+import { GEAR_PAIRS, GEAR_RENAMES, MOUNT_RENAMES } from './pares.ts'
 import { boxesOf, type Edition, type Lang, pagesOf, widthOf } from './texto.ts'
 
 export const CONTENT_DIR = new URL('../../packages/systems/src/catalog/5e/content/', import.meta.url)
@@ -108,6 +109,17 @@ function gear(edition: Edition): [GearRow | ToolRow, GearRow | ToolRow][] {
   return pair(of('en'), of('es'), gearSignature, GEAR_PAIRS[edition])
 }
 
+/** Las monturas, los arreos, los vehículos y (en 2014) las mercancías */
+const MOUNT_PAGES: Record<Edition, Record<Lang, number[]>> = {
+  '2014': { en: [71, 72], es: [73, 74, 75] },
+  '2024': { en: [100, 101], es: [109, 110] }
+}
+
+function mounts(edition: Edition): [MountRow, MountRow][] {
+  const of = (lang: Lang) => mountRows(readingRows(edition, lang, MOUNT_PAGES[edition][lang]), edition, lang)
+  return pair(of('en'), of('es'), mountSignature)
+}
+
 /** El pergamino de conjuro de 2024: su título va partido en dos líneas («Spell Scroll (Cantrip, 30 GP;» / «Level 1…») */
 function scrollText(lang: Lang): string {
   const rows = readingRows('2024', lang, DESCRIPTION_PAGES[lang])
@@ -163,6 +175,9 @@ export function extract(): Record<string, Doc[]> {
   const gc = concepts(g24, g14, GEAR_RENAMES, (es) => displayName(es, 'es'))
   const gearOf = (edition: Edition) => (concept: string) => MECHANICS[`${concept}_${edition}`]
   const texts = { en: descriptions('en'), es: descriptions('es') }
+  const m24 = mounts('2024')
+  const m14 = mounts('2014')
+  const mc = concepts(m24, m14, MOUNT_RENAMES)
   /** Lo de más de un objeto de 2024: su texto (el de su entrada o, en una herramienta, el suyo) y su característica */
   const extra2024 = (en: GearRow | ToolRow, es: GearRow | ToolRow) => {
     // Lo de un grupo (una flecha, un canalizador) lleva el texto de su grupo
@@ -187,6 +202,10 @@ export function extract(): Record<string, Doc[]> {
         const c = gc.newer[i] as string
         return gearDoc('2024', en, es, c, gearOf('2024')(c), extra2024(en, es))
       })
+    ],
+    'monturas.json': [
+      ...m14.map(([en, es], i) => mountDoc('2014', en, es, mc.older[i] as string)),
+      ...m24.map(([en, es], i) => mountDoc('2024', en, es, mc.newer[i] as string))
     ],
     'clases.json': (['2014', '2024'] as const).flatMap((edition) =>
       classDocs(FIGHTER[edition], FIGHTER_CLASS[edition], FIGHTER_FEATURES[edition])
