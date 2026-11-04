@@ -78,7 +78,7 @@ Plan: `tasks/plan.md`. Spec: `docs/specs/srd-5e.md`. Cada tarea, con TDD y en un
 - [-] **8. «Probar»: añadir del contenido** — quitada: el editor de sistemas, con su «Probar», se quita entero al acabar
   `srd-5e` (Enrique, 2026-11-04; `docs/diseno.md`). Probar con el contenido va en la tarea 10, con la IA.
 
-- [ ] **9. La campaña: ediciones, lo repetido, reglas y multiclase**
+- [x] **9. La campaña: ediciones, lo repetido, reglas y multiclase** — hecha (`campaign-system.tsx`): las ediciones con sus fuentes, «Lo que está en las dos», los ajustes de pocas opciones en botones juntos (las reglas generales) con su ayuda, la muestra hecha con el contenido de verdad y la atribución; sin ninguna fuente no se guarda (tampoco en el servidor). La multiclase mixta sale siempre, como un ajuste más
   - Acepta, como en el diseño aprobado: las ediciones, «Lo que está en las dos», las reglas generales, la multiclase
     mixta y la muestra de lo que se ve; se guarda en la campaña y la IA lo respeta al buscar y al probar.
   - Comprueba: pruebas de la web, de integración y e2e con axe (criterio 5).

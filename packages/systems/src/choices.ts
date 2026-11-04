@@ -50,6 +50,8 @@ export function normalizeChoices(
   const sources = new Set(base.sources)
   const chosen = given?.sources ?? base.sources
   for (const s of chosen) if (!sources.has(s)) problems.push(`No existe la fuente «${s}»`)
+  // Con fuentes, al menos una: sin ninguna, no hay contenido que ver
+  if (sources.size > 0 && !chosen.some((s) => sources.has(s))) problems.push('Activa al menos una fuente')
   let duplicates = base.duplicates
   if (given?.duplicates !== undefined) {
     if ((DUPLICATES as readonly string[]).includes(given.duplicates)) duplicates = given.duplicates

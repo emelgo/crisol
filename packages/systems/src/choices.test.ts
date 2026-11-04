@@ -44,6 +44,7 @@ describe('lo que una campaña elige de su sistema', () => {
       }).problems
     ).toEqual([
       'No existe la fuente «srd99»',
+      'Activa al menos una fuente',
       'El sistema no trae el idioma «fr»',
       '«Métodos de características» no vale así',
       'No existe el ajuste «otro»'

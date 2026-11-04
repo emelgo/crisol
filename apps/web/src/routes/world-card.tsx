@@ -675,6 +675,7 @@ function LookDialog({
   const pool = filesWorld ? files.data?.files : common.data?.files
   const coverUrl = newCover?.local?.url ?? pool?.find((f) => f.id === cover?.fileId)?.url
   const [viewing, setViewing] = useState(false)
+  const [systemProblem, setSystemProblem] = useState<string | null>(null)
   const [changingCover, setChangingCover] = useState(false)
 
   // El sistema, solo en las campañas: si cambió el sistema o lo que se elige de él
@@ -818,6 +819,8 @@ function LookDialog({
         className={styles.form}
         onSubmit={(event) => {
           event.preventDefault()
+          // Lo que impide guardar el sistema (sin ninguna edición) ya se dice junto a él
+          if (systemProblem) return
           save.mutate()
         }}
       >
@@ -859,7 +862,13 @@ function LookDialog({
           onChange={(event) => set({ description: event.currentTarget.value })}
         />
         <ColorChoices value={draft.color} onChange={(color) => set({ color })} />
-        {kind.systems && <CampaignSystemFields value={draft.system} onChange={(system) => set({ system })} />}
+        {kind.systems && (
+          <CampaignSystemFields
+            value={draft.system}
+            onChange={(system) => set({ system })}
+            onProblem={setSystemProblem}
+          />
+        )}
         <FormError message={save.error ? errorText(save.error) : null} />
         <ChangesBar shown={changed}>
           <BusyButton type="submit" className={form.button} busy={save.isPending}>

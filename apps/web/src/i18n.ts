@@ -1049,7 +1049,20 @@ export const es = {
     sources: 'Fuentes',
     language: 'Idioma del contenido',
     languages: { es: 'Español', en: 'English' },
-    settings: 'Ajustes de {{name}}'
+    settings: 'Ajustes de {{name}}',
+    editions: 'Ediciones',
+    atLeastOneEdition: 'Activa al menos una edición',
+    atLeastOneSource: 'Activa al menos una fuente',
+    duplicates: 'Lo que está en las dos',
+    newest: 'Solo la versión de {{edition}}',
+    newestHint: 'La de {{older}} no sale',
+    both: 'Las dos versiones',
+    bothHint: 'La de {{older}}, marcada «Legado»',
+    look: 'Así se ve al elegir',
+    lookNone: 'Nada: no hay ninguna edición activa.',
+    legacy: 'Legado',
+    attribution: 'Contiene material de {{sources}} de {{publisher}}, con licencia {{license}}.',
+    attributionPlain: 'Contiene material de {{sources}}, con licencia {{license}}.'
   },
   pageTabs: {
     label: 'Pestañas de la página',

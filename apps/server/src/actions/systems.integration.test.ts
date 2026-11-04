@@ -348,6 +348,25 @@ describe('los sistemas de reglas', () => {
       expect(worlds[0].campaigns[0].system.id).toBe('blank')
     })
 
+    it('el 5e, con sus ediciones, lo que está en las dos y sus reglas; sin ninguna fuente, no', async () => {
+      const campaign = await ok200('createCampaign', { worldId, name: 'La Marca' })
+      const chosen = await ok200('updateCampaign', {
+        campaignId: campaign.id,
+        system: '5e',
+        systemChoices: { sources: ['srd51'], duplicates: 'both', settings: { reglas: 'e2014' } }
+      })
+      expect(chosen.systemChoices).toEqual({
+        sources: ['srd51'],
+        duplicates: 'both',
+        language: 'es',
+        settings: { reglas: 'e2014', multiclase_mixta: false }
+      })
+      expect(await code('updateCampaign', { campaignId: campaign.id, systemChoices: { sources: [] } })).toEqual({
+        status: 400,
+        code: 'BAD_SYSTEM_CHOICES'
+      })
+    })
+
     it('se cambia en sus ajustes, con sus elecciones; lo que no vale, no', async () => {
       const system = await fronterasSystem()
       const campaign = await ok200('createCampaign', { worldId, name: 'Los páramos' })

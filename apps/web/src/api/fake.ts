@@ -71,6 +71,8 @@ export function fakeApi(
     approvals?: Approval[]
     /** Los sistemas de la cuenta (documentos), además de los de serie */
     systems?: System[]
+    /** El contenido de los de la cuenta, por su id */
+    systemContent?: Record<string, ContentItem[]>
     /** Las páginas de la wiki, en su orden entre hermanas */
     pages?: Array<{
       id?: string
@@ -441,7 +443,7 @@ export function fakeApi(
     version: 1,
     basedOn: null,
     document: structuredClone(document),
-    content: [],
+    content: structuredClone(options.systemContent?.[document.id] ?? []),
     deleted: false
   }))
   const systemById = (id: string) =>

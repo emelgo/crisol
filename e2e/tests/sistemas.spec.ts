@@ -124,6 +124,36 @@ test('elegir el sistema de una campaña: la ficha de dados propone su tirada por
   )
 })
 
+test('criterio 5: el 5e en una campaña, con sus ediciones, lo que está en las dos y sus reglas', async ({ page }) => {
+  test.slow()
+  await freshOwner(page)
+  await createWorld(page, 'Eana')
+  await createCampaign(page, 'La Marca')
+  await toWorlds(page)
+  await page.getByRole('button', { name: 'Ajustes de La Marca' }).click()
+  const dialog = page.getByRole('dialog', { name: 'Ajustes de La Marca' })
+  await dialog.getByLabel('Sistema').selectOption({ label: '5e' })
+  const editions = dialog.getByRole('group', { name: 'Ediciones' })
+  await expect(editions.getByRole('checkbox', { name: /^2024/ })).toBeChecked()
+  await expect(editions.getByRole('checkbox', { name: /^2014/ })).toBeChecked()
+  // Lo de serie se ve como saldría: con las dos versiones, la de 2014 marcada «Legado»
+  const look = dialog.getByRole('region', { name: 'Así se ve al elegir' })
+  await expect(look.getByRole('listitem').first()).toContainText('2024')
+  await dialog.getByRole('radio', { name: /Las dos versiones/ }).check()
+  await expect(look.getByText(/2014 · Legado/).first()).toBeVisible()
+  await dialog.getByRole('group', { name: 'Reglas generales' }).getByText('2014').click()
+  await accessible(page, 'dialog')
+  // Sin ninguna edición, no se guarda
+  await editions.getByRole('checkbox', { name: /^2024/ }).uncheck()
+  await editions.getByRole('checkbox', { name: /^2014/ }).uncheck()
+  await expect(editions.getByRole('alert')).toHaveText('Activa al menos una edición')
+  await editions.getByRole('checkbox', { name: /^2014/ }).check()
+  await dialog.getByRole('button', { name: 'Guardar' }).click()
+  await expect(dialog.getByRole('button', { name: 'Guardar' })).toBeHidden()
+  const saved = await (await page.request.post('/api/actions/listWorldsWithCampaigns', { data: {} })).json()
+  expect(saved.worlds[0].campaigns[0].system.id).toBe('5e')
+})
+
 test('el editor: un tipo con sus campos, una fórmula mal escrita que no deja guardar, y en el móvil', async ({
   page
 }) => {
