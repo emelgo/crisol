@@ -191,4 +191,13 @@ describe('las tiradas de una campaña', () => {
     expect((await roll(ana, '1d6', 'all')).by.color).toBeNull()
     expect((await roll(bruno, '1d6', 'all')).by.color).toBeNull()
   })
+
+  it('tirar sin apuntar: da el resultado y no deja nada en el registro', async () => {
+    const response = await call('tryDice', { formula: '2d6+3 # Prueba' }, carla.cookie)
+    expect(response.statusCode, response.body).toBe(200)
+    expect(response.json()).toMatchObject({ formula: '2d6+3', label: 'Prueba' })
+    expect(response.json().dice).toHaveLength(2)
+    expect(await labels(master)).toEqual([])
+    expect((await call('tryDice', { formula: '2d' }, carla.cookie)).json()).toEqual({ code: 'BAD_FORMULA' })
+  })
 })

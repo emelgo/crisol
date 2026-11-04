@@ -33,6 +33,18 @@ export const es = {
     theme: 'Tema',
     dice: 'Dados'
   },
+  // Una tirada escrita en una página
+  diceRoll: {
+    roll: 'Tirar {{formula}}',
+    rollNamed: 'Tirar {{formula}} · {{label}}',
+    wrong: 'Esta tirada no se entiende: {{why}}',
+    change: 'Cambiar la tirada',
+    title: 'La tirada',
+    formula: 'Tirada',
+    label: 'Nombre',
+    optional: 'Opcional',
+    done: 'Listo'
+  },
   // Los dados de una campaña (docs/specs/dados.md)
   dice: {
     title: 'Dados',
@@ -50,6 +62,7 @@ export const es = {
     rolled: '{{label}}: {{total}}',
     heard: '{{who}} · {{label}}: {{total}}',
     whoCritical: '{{who}} · ¡Crítico!',
+    rolledAlone: '{{label}}: {{total}} (sin campaña: no se apunta)',
     options: 'Opciones de los dados',
     others: 'Ver caer los dados de los demás',
     log: 'Tiradas de la campaña',
@@ -377,6 +390,8 @@ export const es = {
     horizontalRule: 'Separador',
     pageLink: 'Enlace a página',
     pageLinkHint: 'O escribe [[',
+    diceRoll: 'Tirada',
+    diceRollHint: 'Se pulsa y tira',
     pageEmbed: 'Incrustar página',
     pageEmbedHint: 'O una sección',
     fileEmbed: 'Imagen o archivo',

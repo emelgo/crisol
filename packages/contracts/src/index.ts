@@ -7,7 +7,7 @@ import {
   renameCampaign,
   updateCampaign
 } from './campaigns.ts'
-import { listRolls, rollDice } from './dice.ts'
+import { listRolls, rollDice, tryDice } from './dice.ts'
 import {
   createFolder,
   deleteFile,
@@ -193,7 +193,8 @@ export const ACTIONS = [
   updateTemplate,
   deleteTemplate,
   rollDice,
-  listRolls
+  listRolls,
+  tryDice
 ]
 
 /** Las acciones por nombre, solo como tipo: la web las usa sin cargar zod */
@@ -291,4 +292,5 @@ export type Actions = {
   deleteTemplate: typeof deleteTemplate
   rollDice: typeof rollDice
   listRolls: typeof listRolls
+  tryDice: typeof tryDice
 }

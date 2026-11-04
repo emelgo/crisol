@@ -19,15 +19,16 @@ import { appendRoll } from './rolls.ts'
 import { useTray } from './tray.tsx'
 
 /** Las campañas del mundo en las que puede tirar la cuenta, y la elegida */
-export function useDiceCampaign(worldId: string) {
+export function useDiceCampaign(worldId: string | undefined) {
   const api = useApi()
   const dice = useDice()
   const campaigns = useQuery({
     queryKey: ['campaigns', worldId],
-    queryFn: () => api.call('listCampaigns', { worldId })
+    queryFn: () => api.call('listCampaigns', { worldId: worldId ?? '' }),
+    enabled: Boolean(worldId)
   })
   const list = campaigns.data?.campaigns ?? []
-  const chosen: Campaign | undefined = list.find((c) => c.id === dice.campaignFor(worldId)) ?? list[0]
+  const chosen: Campaign | undefined = list.find((c) => c.id === (worldId && dice.campaignFor(worldId))) ?? list[0]
   return { list, chosen, loading: campaigns.isPending }
 }
 

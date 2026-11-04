@@ -120,7 +120,7 @@ amplía `@fugas` en la misma tarea. Cobertura ≥ 80 % de lo cambiado (bloquea d
   - Comprueba: pruebas del Markdown (ida y vuelta, junto a código en línea normal) e integración del MCP.
   - Archivos: `packages/editor/src/nodes/dice.ts`, `packages/editor/src/markdown/syntax.ts`, `packages/editor/src/schema.ts`.
 
-- [ ] **10. La tirada en la página**
+- [x] **10. La tirada en la página** — hecha. Sin campañas tira con `tryDice` (el servidor, sin apuntar). La visibilidad elegida en la ficha la usan también las tiradas de las páginas. Elegida con el teclado abre su cuadro; con el ratón, el lápiz.
   - Acepta:
     - «/» → Tirada pone una y abre su cuadro (la tirada, con su descripción o su error, y el nombre); «Cambiar» al
       pasar por ella;

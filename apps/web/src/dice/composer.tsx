@@ -10,6 +10,7 @@ import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
 import { useAnnounce } from '../components/announcer.tsx'
+import { useDice } from './context.tsx'
 import styles from './dice.module.css'
 import { addDie, explain } from './formula.ts'
 
@@ -40,9 +41,9 @@ export function Composer({ campaign, onRolled }: { campaign: Campaign; onRolled?
   const id = useId()
   const [formula, setFormula] = useState('1d20')
   const options = VISIBILITIES[campaign.role]
-  const [chosen, setChosen] = useState<RollVisibility>('all')
+  const dice = useDice()
   // Si la campaña cambia y lo elegido no vale en ella, todos
-  const visibility = options.includes(chosen) ? chosen : 'all'
+  const visibility = options.includes(dice.visibility) ? dice.visibility : 'all'
   const explained = explain(formula)
   const advantage = /2d20kh1/i.test(formula) ? 'advantage' : /2d20kl1/i.test(formula) ? 'disadvantage' : null
   const roll = useMutation({
@@ -129,7 +130,7 @@ export function Composer({ campaign, onRolled }: { campaign: Campaign; onRolled?
               name={`${id}-who`}
               value={option}
               checked={visibility === option}
-              onChange={() => setChosen(option)}
+              onChange={() => dice.setVisibility(option)}
             />
             {t(`dice.visibility.${option}`)}
           </label>

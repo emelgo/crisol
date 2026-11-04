@@ -54,3 +54,12 @@ export const listRolls = defineAction({
   input: z.object({ campaignId: z.uuid(), before: z.uuid().optional() }),
   output: z.object({ rolls: z.array(diceRoll), next: z.uuid().nullable() })
 })
+
+export const tryDice = defineAction({
+  name: 'tryDice',
+  kind: 'read',
+  description:
+    'Tira una fórmula sin apuntarla en ninguna campaña: para probarla o para tirar fuera de la mesa. El azar lo pone el servidor',
+  input: z.object({ formula: z.string().min(1).max(300) }),
+  output: diceRoll.pick({ formula: true, label: true, total: true, detail: true, critical: true, dice: true })
+})

@@ -26,6 +26,8 @@ describe('los bloques del menú «/»', () => {
       'callout-danger',
       'callout-read-aloud'
     ])
+    expect(ids('tir')).toEqual(['diceRoll'])
+    expect(ids('dados')).toEqual(['diceRoll'])
     expect(ids('xyz')).toEqual([])
   })
 

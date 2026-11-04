@@ -2,7 +2,7 @@
  * Las tiradas de una campaña (ADR-0010): el servidor pone el azar, guarda la tirada ya resuelta y la deja leer a quien
  * la puede ver. Las privadas, solo a quien tira y al máster
  */
-import { type DiceRoll, listRolls, type RollVisibility, rollDice } from '@crisol/contracts'
+import { type DiceRoll, listRolls, type RollVisibility, rollDice, tryDice } from '@crisol/contracts'
 import { diceRepo } from '@crisol/db'
 import { cryptoRoller, DiceSyntaxError, rollDice as roll } from '@crisol/dice'
 import { can } from '@crisol/domain'
@@ -98,5 +98,24 @@ export const diceActions = [
       before: input.before
     })
     return { rolls: page.rolls.map(present), next: page.next }
+  }),
+
+  // Sin apuntarla: para probar una fórmula (la IA) o tirar en un mundo sin campañas. No guarda nada
+  implement(tryDice, async (_ctx, input) => {
+    let result: ReturnType<typeof roll>
+    try {
+      result = roll(input.formula, cryptoRoller)
+    } catch (error) {
+      if (error instanceof DiceSyntaxError) throw new InvalidRequestError('BAD_FORMULA', error.message)
+      throw error
+    }
+    return {
+      formula: result.formula,
+      label: result.comment ?? null,
+      total: result.total,
+      detail: result.detail,
+      critical: result.critical,
+      dice: result.terms.flatMap((term) => term.dice.map((d) => ({ sides: term.sides, value: d.value, kept: d.kept })))
+    }
   })
 ]

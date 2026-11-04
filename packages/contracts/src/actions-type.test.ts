@@ -97,7 +97,8 @@ describe('Actions', () => {
       updateTemplate: true,
       deleteTemplate: true,
       rollDice: true,
-      listRolls: true
+      listRolls: true,
+      tryDice: true
     }
     expect(Object.keys(names).sort()).toEqual(ACTIONS.map((a) => a.name).sort())
   })

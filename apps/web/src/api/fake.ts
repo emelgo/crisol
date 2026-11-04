@@ -863,6 +863,22 @@ export function fakeApi(
       rolls.push(roll)
       return { roll: { ...roll } }
     },
+    tryDice: ({ formula }) => {
+      try {
+        const result = rollFormula(formula)
+        return {
+          formula: result.formula,
+          label: result.comment ?? null,
+          total: result.total,
+          detail: result.detail,
+          critical: result.critical,
+          dice: result.terms.flatMap((t) => t.dice.map((d) => ({ sides: t.sides, value: d.value, kept: d.kept })))
+        }
+      } catch (error) {
+        if (error instanceof DiceSyntaxError) throw new ApiError('BAD_FORMULA', 400)
+        throw error
+      }
+    },
     listRolls: ({ campaignId, before }) => {
       const all = rolls.filter((r) => r.campaignId === campaignId)
       const end = before ? all.findIndex((r) => r.id === before) : all.length
