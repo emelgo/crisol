@@ -4,6 +4,7 @@
  * lo que no vale se dice
  */
 import type { System } from './format.ts'
+import { own } from './own.ts'
 import { LANGUAGES, type Language, textOf } from './text.ts'
 
 export type SettingValue = boolean | number | string | string[]
@@ -49,7 +50,7 @@ export function normalizeChoices(
     problems.push(`El sistema no trae el idioma «${language}»`)
   const settings = { ...base.settings }
   for (const [key, value] of Object.entries(given?.settings ?? {})) {
-    const setting = system.settings?.[key]
+    const setting = system.settings ? own(system.settings, key) : undefined
     if (!setting) {
       problems.push(`No existe el ajuste «${key}»`)
       continue

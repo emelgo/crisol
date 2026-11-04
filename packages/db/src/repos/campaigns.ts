@@ -104,7 +104,7 @@ export function updateCampaign(db: Database, context: OperationContext, campaign
 export function campaignsUsingSystems(db: Database, systemIds: readonly string[]) {
   if (systemIds.length === 0) return Promise.resolve([])
   return db
-    .select({ id: campaigns.id, name: campaigns.name, system: campaigns.system })
+    .select({ id: campaigns.id, name: campaigns.name, system: campaigns.system, worldId: campaigns.worldId })
     .from(campaigns)
     .innerJoin(worlds, eq(worlds.id, campaigns.worldId))
     .where(and(inArray(campaigns.system, [...systemIds]), isNull(campaigns.deletedAt), isNull(worlds.deletedAt)))

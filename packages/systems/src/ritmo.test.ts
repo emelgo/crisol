@@ -7,7 +7,9 @@ import { type DocumentItem, evaluate } from './evaluate.ts'
 import { cinco } from './fixtures/cinco.ts'
 import { FORMAT, type System } from './format.ts'
 import { jsonLines } from './lines.ts'
-import { fitsFormat, validateSystem } from './validate.ts'
+import { tryRoll } from './rolls.ts'
+import { tryFormula } from './try.ts'
+import { fitsFormat, MAX_PROBLEMS, validateSystem } from './validate.ts'
 
 const median = (run: () => void, times: number) => {
   const samples: number[] = []
@@ -114,5 +116,101 @@ describe('el ritmo', () => {
       `Escribir en Avanzado (${(text.length / 1024 / 1024).toFixed(2)} MB de texto): ${typing.toFixed(0)} ms de mediana`
     )
     expect(typing).toBeLessThan(500)
+  })
+
+  // Los ataques de las revisiones de código y de seguridad: un documento pequeño no puede bloquear el servidor
+  describe('lo que no puede tardar', () => {
+    const base = { format: FORMAT, version: '1', languages: ['es' as const] }
+    const ms = (run: () => unknown) => {
+      const began = performance.now()
+      run()
+      return performance.now() - began
+    }
+
+    it('tipos de objeto que se llevan unos a otros', () => {
+      const types: Record<string, unknown> = { personaje: { document: 'actor', label: 'P', fields: {} } }
+      const all = Array.from({ length: 14 }, (_, i) => `o${i}`)
+      for (const key of all)
+        types[key] = { document: 'item', label: key, fields: { dentro: { kind: 'items', label: 'D', of: all } } }
+      expect(ms(() => validateSystem({ ...base, id: 'a', name: 'A', types }))).toBeLessThan(500)
+    })
+
+    it('muchas referencias que no existen, con nombres largos', () => {
+      const fields: Record<string, unknown> = {}
+      for (let f = 0; f < 500; f++) fields[`campo_${'x'.repeat(48)}_${f}`] = { kind: 'number', label: `C${f}` }
+      for (let f = 0; f < 300; f++)
+        fields[`d${f}`] = {
+          kind: 'derived',
+          label: `D${f}`,
+          formula: Array.from({ length: 30 }, (_, i) => `@z${'q'.repeat(55)}${i}`).join(' + ')
+        }
+      const system = { ...base, id: 'b', name: 'B', types: { personaje: { document: 'actor', label: 'P', fields } } }
+      let found = 0
+      expect(ms(() => (found = validateSystem(system).problems.length))).toBeLessThan(1000)
+      expect(found).toBeLessThanOrEqual(MAX_PROBLEMS + 1)
+      // Un nombre de más de 60 no se lee, ni se compara
+      expect(
+        validateSystem({
+          ...system,
+          types: {
+            personaje: {
+              document: 'actor',
+              label: 'P',
+              fields: { d: { kind: 'derived', label: 'D', formula: `@${'z'.repeat(1990)}` } }
+            }
+          }
+        }).problems[0]?.message
+      ).toBe('Un nombre tiene como mucho 60 caracteres')
+    })
+
+    it('calcular con 200 objetos que se cuentan muchas veces: se para por el presupuesto', () => {
+      const big: Record<string, unknown> = {}
+      for (let f = 0; f < 500; f++) big[`f${f}`] = { kind: 'number', label: `F${f}` }
+      const counts = Array.from({ length: 142 }, () => 'count(@lleva)').join(' + ')
+      const fields: Record<string, unknown> = { lleva: { kind: 'items', label: 'Lleva', of: ['cosa'] } }
+      for (let d = 0; d < 5; d++) fields[`d${d}`] = { kind: 'derived', label: `D${d}`, formula: counts }
+      const system = {
+        ...base,
+        id: 'c',
+        name: 'C',
+        types: {
+          personaje: { document: 'actor', label: 'P', fields },
+          cosa: { document: 'item', label: 'Cosa', fields: big }
+        }
+      } as unknown as System
+      const items = Array.from({ length: 200 }, (_, i) => ({ id: `i${i}`, type: 'cosa', name: `Cosa ${i}`, data: {} }))
+      expect(ms(() => tryFormula(system, 'personaje', '@d0 + @d1', { data: {}, items }))).toBeLessThan(2000)
+    })
+
+    it('unos dados guardados con un millón de cifras', () => {
+      const system = {
+        ...base,
+        id: 'd',
+        name: 'D',
+        types: { personaje: { document: 'actor', label: 'P', fields: { golpe: { kind: 'dice', label: 'Golpe' } } } },
+        rolls: { dano: { label: 'Daño', formula: '@golpe + 1' } }
+      } as unknown as System
+      expect(
+        ms(() => {
+          try {
+            tryRoll(system, 'personaje', { data: { golpe: '1'.repeat(1_000_000) } }, 'dano')
+          } catch {
+            // No son dados: que lo diga, pero enseguida
+          }
+        })
+      ).toBeLessThan(200)
+    })
+
+    it('nombres que JavaScript hereda (constructor, toString…) no existen', () => {
+      const types = {
+        personaje: {
+          document: 'actor',
+          label: 'P',
+          fields: { d: { kind: 'derived', label: 'D', formula: 'constructor(1) + @toString' } }
+        }
+      }
+      const problems = validateSystem({ ...base, id: 'e', name: 'E', types }).problems.map((p) => p.message)
+      expect(problems.some((m) => m.startsWith('No existe la función «constructor»'))).toBe(true)
+    })
   })
 })

@@ -7,6 +7,7 @@
 import type { Field, SimpleField, System } from './format.ts'
 import { FUNCTIONS, type Value } from './formulas/functions.ts'
 import { type Expr, FormulaError, parseFormula } from './formulas/parse.ts'
+import { own } from './own.ts'
 import { type Language, textOf } from './text.ts'
 
 export interface DocumentItem {
@@ -91,16 +92,18 @@ interface Runtime {
   spend(): void
 }
 
-function materialize(node: Node): Value {
+/** El valor de un nodo, entero: cada nodo que se copia gasta del presupuesto (una lista de 200 objetos pesa) */
+function materialize(node: Node, runtime: Runtime): Value {
+  runtime.spend()
   switch (node.kind) {
     case 'value':
       return node.value
     case 'computed':
       return node.get()
     case 'object':
-      return Object.fromEntries(Object.entries(node.fields).map(([k, n]) => [k, materialize(n)]))
+      return Object.fromEntries(Object.entries(node.fields).map(([k, n]) => [k, materialize(n, runtime)]))
     case 'list':
-      return node.items.map(materialize)
+      return node.items.map((item) => materialize(item, runtime))
   }
 }
 
@@ -118,7 +121,7 @@ export function evaluateExpr(expr: Expr, scope: Record<string, Node>, runtime: R
       case 'dice':
         throw new FormulaError('Un valor calculado no lleva dados: los dados van en las tiradas', e.start, e.end)
       case 'ref':
-        return materialize(lookup(e))
+        return materialize(lookup(e), runtime)
       case 'unary': {
         const v = visit(e.value)
         return e.op === '-' ? -toNumber(v) : !truthy(v)
@@ -153,7 +156,7 @@ export function evaluateExpr(expr: Expr, scope: Record<string, Node>, runtime: R
       case 'conditional':
         return truthy(visit(e.test)) ? visit(e.yes) : visit(e.no)
       case 'call': {
-        const fn = FUNCTIONS[e.name]
+        const fn = own(FUNCTIONS, e.name)
         if (!fn) throw new FormulaError(`No existe la función «${e.name}»`, e.start, e.end)
         return fn.call(e.args.map(visit))
       }
@@ -162,22 +165,26 @@ export function evaluateExpr(expr: Expr, scope: Record<string, Node>, runtime: R
 
   const lookup = (e: Extract<Expr, { kind: 'ref' }>): Node => {
     const [first, ...rest] = e.path as [string, ...(string | Expr)[]]
-    let node: Node | undefined = scope[first]
+    let node: Node | undefined = own(scope, first)
     if (!node) throw new FormulaError(`No existe «@${first}»`, e.start, e.end)
     for (const segment of rest) {
       const key = typeof segment === 'string' ? segment : String(visit(segment))
       if (node.kind === 'computed') node = { kind: 'value', value: node.get() }
       if (node.kind === 'value') {
         const v: Value = node.value
-        const inner: Value | undefined = v !== null && typeof v === 'object' && !Array.isArray(v) ? v[key] : undefined
+        const inner: Value | undefined =
+          v !== null && typeof v === 'object' && !Array.isArray(v) ? own(v as Record<string, Value>, key) : undefined
         node = { kind: 'value', value: inner ?? null }
       } else if (node.kind === 'object') {
-        node = node.fields[key] ?? { kind: 'value', value: null }
+        node = own(node.fields, key) ?? { kind: 'value', value: null }
       } else {
         // De una lista, lo mismo de cada fila
-        const items: Node[] = node.items.map((item) =>
-          item.kind === 'object' ? (item.fields[key] ?? { kind: 'value', value: null }) : { kind: 'value', value: null }
-        )
+        const items: Node[] = node.items.map((item) => {
+          runtime.spend()
+          return item.kind === 'object'
+            ? (own(item.fields, key) ?? { kind: 'value', value: null })
+            : { kind: 'value', value: null }
+        })
         node = { kind: 'list', items }
       }
     }
@@ -218,7 +225,7 @@ export function evaluate(
   doc: SystemDocument,
   { budget = BUDGET, language = 'es' as Language } = {}
 ): Evaluated {
-  const type = system.types[typeKey]
+  const type = own(system.types, typeKey)
   if (!type) throw new Error(`No existe el tipo «${typeKey}»`)
   const problems: Evaluated['problems'] = []
   const computed: Record<string, Computed> = {}
@@ -234,7 +241,7 @@ export function evaluate(
   const items = doc.items ?? []
   const bonuses = new Map<string, { item: DocumentItem; value: Expr; when?: Expr }[]>()
   for (const item of items) {
-    for (const modifier of system.types[item.type]?.modifiers ?? []) {
+    for (const modifier of own(system.types, item.type)?.modifiers ?? []) {
       const list = bonuses.get(modifier.target) ?? []
       list.push({
         item,
@@ -248,7 +255,7 @@ export function evaluate(
   const itemScope = (item: DocumentItem) => {
     let scope = itemScopes.get(item.id)
     if (!scope) {
-      const itemType = system.types[item.type]
+      const itemType = own(system.types, item.type)
       scope = itemType ? nodesOf(itemType.fields, item.data, `items.${item.id}.`, [], true).fields : {}
       itemScopes.set(item.id, scope)
     }
@@ -494,17 +501,28 @@ export function evaluate(
         return typeof raw === 'string' ? raw : fallback
       case 'list':
         return Array.isArray(raw) ? (raw.filter((v) => typeof v === 'string') as string[]) : fallback
-      default:
-        return typeof raw === 'string' ? raw : fallback
+      default: {
+        if (typeof raw !== 'string') return fallback
+        // Un texto o unos dados guardados, con su tope (el de su campo o el del formato)
+        const max = field.kind === 'text' ? (field.max ?? 20000) : 300
+        if (raw.length > max) flag(`Como mucho, ${max} caracteres`)
+        return raw.length > max ? raw.slice(0, max) : raw
+      }
     }
   }
 
   Object.assign(scope, nodesOf(type.fields, doc.data, '', []).fields)
-  // Todo, ya calculado (y cada valor calculado en `computed`)
+  // Todo, ya calculado (y cada valor calculado en `computed`), con su propio presupuesto para copiarlo
+  let copying = BUDGET
+  const copy: Runtime = {
+    spend() {
+      if (--copying < 0) throw new Stop()
+    }
+  }
   const values = Object.fromEntries(
     Object.entries(scope).map(([k, n]) => {
       try {
-        return [k, materialize(n)]
+        return [k, materialize(n, copy)]
       } catch {
         return [k, null]
       }

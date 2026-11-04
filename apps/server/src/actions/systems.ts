@@ -118,10 +118,57 @@ export async function visibleSystemName(ctx: ActionContext, systemId: string) {
   return textOf((row.document as unknown as System).name)
 }
 
-/** Las campañas que usan cada sistema */
-async function usedBy(ctx: ActionContext, ids: readonly string[]) {
+/**
+ * Lo que la IA pide hacer con un sistema, comprobado antes de pedir la aprobación: que la cuenta lo pueda hacer y que lo
+ * que se guardaría valga (si no, se dice ya, con cada problema). Da los nombres para la cola: el que tendrá y el del
+ * sistema que toca
+ */
+export async function systemRequest(ctx: ActionContext, action: string, input: Record<string, unknown>) {
+  switch (action) {
+    case 'createSystem': {
+      if (input.document && typeof input.document === 'object') {
+        const named = { ...(input.document as Record<string, unknown>), id: 'nuevo' }
+        const { system } = validated(typeof input.name === 'string' ? { ...named, name: input.name } : named)
+        return { name: textOf(system.name) }
+      }
+      return { name: input.name, system: await visibleSystemName(ctx, String(input.from ?? 'blank')) }
+    }
+    case 'importSystem': {
+      const { file, problems } = validateFile(input.file)
+      if (!file) return invalid(problems)
+      const into = input.into as { systemId?: unknown } | undefined
+      if (typeof into?.systemId !== 'string') return { name: textOf(file.system.name) }
+      const row = await ownWritable(ctx, into.systemId)
+      return { name: textOf(file.system.name), system: textOf((row.document as unknown as System).name) }
+    }
+    case 'updateSystem': {
+      const row = await ownWritable(ctx, String(input.systemId))
+      const changes = input.changes as { path: string; value?: unknown; remove?: boolean }[] | undefined
+      const base = changes
+        ? byPath('BAD_SYSTEM_CHANGE', () => applyChanges(row.document, changes))
+        : ((input.document as Record<string, unknown> | undefined) ?? row.document)
+      validated({ ...base, id: row.id, ...(typeof input.name === 'string' ? { name: input.name } : {}) })
+      return { system: textOf((row.document as unknown as System).name) }
+    }
+    case 'deleteSystem': {
+      const row = await ownWritable(ctx, String(input.systemId))
+      return { system: textOf((row.document as unknown as System).name) }
+    }
+    default:
+      return {}
+  }
+}
+
+/**
+ * Las campañas que usan cada sistema. Para enseñarlas (visible), solo las que la cuenta ve: un máster no sabe de las
+ * campañas de los mundos que no son suyos. Para no borrar uno en uso, todas
+ */
+async function usedBy(ctx: ActionContext, ids: readonly string[], visibleIn: string | null = null) {
   const using = new Map<string, { id: string; name: string }[]>()
+  // El propietario de la organización las ve todas
+  const all = visibleIn === null || can(ctx.actor, 'systems.write', { organizationId: visibleIn })
   for (const c of await campaignsRepo.campaignsUsingSystems(ctx.db, ids)) {
+    if (!all && !can(ctx.actor, 'campaign.read', { campaignId: c.id, worldId: c.worldId })) continue
     const list = using.get(c.system as string) ?? []
     list.push({ id: c.id, name: c.name })
     using.set(c.system as string, list)
@@ -156,7 +203,14 @@ const campaignSystem = (id: string, document: System): CampaignSystem => ({
   critical: document.dice?.critical ?? 'd20'
 })
 
-/** Los sistemas de unas campañas, por su id (los de serie, del código; los propios, de una consulta) */
+/**
+ * Lo que las campañas dicen de su sistema, por id y versión: se lee el documento (hasta 2 MB) solo la primera vez, y no
+ * con cada tirada. Una versión nueva es otra entrada; las viejas salen cuando hay demasiadas
+ */
+const known = new Map<string, CampaignSystem>()
+const KNOWN_MAX = 500
+
+/** Los sistemas de unas campañas, por su id (los de serie, del código; los propios, de la base de datos) */
 export async function campaignSystems(ctx: ActionContext, ids: readonly (string | null)[]) {
   const found = new Map<string, CampaignSystem>()
   const own: string[] = []
@@ -166,8 +220,20 @@ export async function campaignSystems(ctx: ActionContext, ids: readonly (string 
     if (catalog) found.set(id, campaignSystem(id, catalog))
     else if (isUuid(id)) own.push(id)
   }
-  for (const row of await systemsRepo.findSystems(ctx.db, own))
-    if (!row.deletedAt) found.set(row.id, campaignSystem(row.id, row.document as unknown as System))
+  const missing: string[] = []
+  for (const row of await systemsRepo.systemVersions(ctx.db, own)) {
+    if (row.deletedAt) continue
+    const cached = known.get(`${row.id}:${row.version}`)
+    if (cached) found.set(row.id, cached)
+    else missing.push(row.id)
+  }
+  for (const row of await systemsRepo.findSystems(ctx.db, missing)) {
+    if (row.deletedAt) continue
+    const seen = campaignSystem(row.id, row.document as unknown as System)
+    found.set(row.id, seen)
+    if (known.size >= KNOWN_MAX) known.delete(known.keys().next().value as string)
+    known.set(`${row.id}:${row.version}`, seen)
+  }
   return found
 }
 
@@ -229,6 +295,18 @@ function validated(document: unknown): { system: System; warnings: Problem[] } {
 
 const changed = () => new InvalidRequestError('SYSTEM_CHANGED', 'lo ha cambiado otro mientras tanto: vuelve a leerlo')
 
+const tooMany = () => new InvalidRequestError('TOO_MANY_SYSTEMS', `como mucho, ${MAX_SYSTEMS} por cuenta`)
+
+/** Crear, con el tope contado dentro de la transacción */
+async function atMost<T>(create: () => Promise<T>): Promise<T> {
+  try {
+    return await create()
+  } catch (error) {
+    if (error instanceof systemsRepo.TooManySystemsError) throw tooMany()
+    throw error
+  }
+}
+
 /** Lo que no se puede hacer en una ruta (que no exista, que no sea un objeto…), dicho para la IA */
 function byPath<T>(code: string, run: () => T): T {
   try {
@@ -274,7 +352,8 @@ export const systemActions = [
     const name = await namer(ctx, rows)
     const using = await usedBy(
       ctx,
-      rows.map((r) => r.id)
+      rows.map((r) => r.id),
+      target
     )
     const mine = rows.map((row) => {
       const { document: _, ...summary } = own(row, counts.get(row.id) ?? 0, name)
@@ -292,7 +371,7 @@ export const systemActions = [
     const { document, row } = await findReadable(ctx, target, systemId)
     if (!row) return builtIn(document)
     const counts = await systemsRepo.contentCounts(ctx.db, [row.id])
-    const using = await usedBy(ctx, [row.id])
+    const using = await usedBy(ctx, [row.id], target)
     return { ...own(row, counts.get(row.id) ?? 0, await namer(ctx, [row])), campaigns: using.get(row.id) ?? [] }
   }),
 
@@ -316,23 +395,26 @@ export const systemActions = [
           data
         }))
       : []
-    const row = await systemsRepo.createSystem(
-      ctx.db,
-      historyContext(
-        ctx,
-        'createSystem',
-        { name: textOf(system.name), ...(source.fresh ? {} : { from: textOf(source.document.name) }) },
-        { organizationId: target }
-      ),
-      {
-        id,
-        organizationId: target,
-        basedOn: source.fresh
-          ? null
-          : { id: source.row ? source.row.id : source.document.id, version: source.row ? source.row.version : 1 },
-        document: system as unknown as Record<string, unknown>
-      },
-      content
+    const row = await atMost(() =>
+      systemsRepo.createSystem(
+        ctx.db,
+        historyContext(
+          ctx,
+          'createSystem',
+          { name: textOf(system.name), ...(source.fresh ? {} : { from: textOf(source.document.name) }) },
+          { organizationId: target }
+        ),
+        {
+          id,
+          organizationId: target,
+          basedOn: source.fresh
+            ? null
+            : { id: source.row ? source.row.id : source.document.id, version: source.row ? source.row.version : 1 },
+          document: system as unknown as Record<string, unknown>
+        },
+        content,
+        MAX_SYSTEMS
+      )
     )
     ctx.realtime.publish(systemsChanged(target))
     return own(row, content.length, await namer(ctx, [row]))
@@ -417,14 +499,17 @@ export const systemActions = [
 
   implement(getSystemFormat, async () => ({ format: FORMAT, docs: formatDocs() })),
 
-  // Validar no lee ni guarda nada de la cuenta: basta con haber entrado
-  implement(checkSystem, async (_ctx, { document }) => {
+  // Validar no lee ni guarda nada, pero cuesta: solo quien puede ver los sistemas, y con el límite de las de probar
+  implement(checkSystem, async (ctx, { document, organizationId }) => {
+    readableOrganization(ctx, organizationId)
+    if (tooManyTries(ctx.actor.userId)) throw new TooManyRequestsError('TOO_MANY_ROLLS')
     const { problems } = document.kind === SYSTEM_FILE ? validateFile(document) : validateSystem(document)
     return { valid: !problems.some((p) => p.severity === 'error'), problems: asProblems(problems) }
   }),
 
   implement(tryFormula, async (ctx, { systemId, type, formula, document, organizationId }) => {
     const target = readableOrganization(ctx, organizationId)
+    if (tooManyTries(ctx.actor.userId)) throw new TooManyRequestsError('TOO_MANY_ROLLS')
     const { document: system } = await findReadable(ctx, target, systemId)
     const tried = tryFormulaIn(system, type, formula, testDocument(document))
     return { type: tried.type, value: tried.value, terms: tried.terms, problems: tried.problems }
@@ -435,7 +520,7 @@ export const systemActions = [
     const target = readableOrganization(ctx, input.organizationId)
     const { document: system } = await findReadable(ctx, target, input.systemId)
     const typeKey = input.type ?? Object.entries(system.types).find(([, t]) => t.document === 'actor')?.[0]
-    if (!typeKey || !system.types[typeKey])
+    if (!typeKey || !Object.hasOwn(system.types, typeKey))
       throw new InvalidRequestError(
         'BAD_SYSTEM_TYPE',
         input.type ? `no existe el tipo «${input.type}»` : 'no tiene personajes'
@@ -493,16 +578,19 @@ export const systemActions = [
     if ((await systemsRepo.countSystems(ctx.db, target)) >= MAX_SYSTEMS)
       throw new InvalidRequestError('TOO_MANY_SYSTEMS', `como mucho, ${MAX_SYSTEMS} por cuenta`)
     const id = randomUUID()
-    const row = await systemsRepo.createSystem(
-      ctx.db,
-      historyContext(ctx, 'importSystem', { name }, { organizationId: target }),
-      {
-        id,
-        organizationId: target,
-        basedOn: null,
-        document: { ...valid.system, id } as unknown as Record<string, unknown>
-      },
-      valid.content
+    const row = await atMost(() =>
+      systemsRepo.createSystem(
+        ctx.db,
+        historyContext(ctx, 'importSystem', { name }, { organizationId: target }),
+        {
+          id,
+          organizationId: target,
+          basedOn: null,
+          document: { ...valid.system, id } as unknown as Record<string, unknown>
+        },
+        valid.content,
+        MAX_SYSTEMS
+      )
     )
     ctx.realtime.publish(systemsChanged(target))
     return { system: own(row, valid.content.length, await namer(ctx, [row])), warnings }

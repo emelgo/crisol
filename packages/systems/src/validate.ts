@@ -193,9 +193,14 @@ export function* fieldsOf(
 
 const bytesOf = (value: unknown) => new TextEncoder().encode(JSON.stringify(value) ?? '').length
 
+/** Como mucho, tantos problemas: con más, se para (no hace falta ver mil erratas para arreglar la primera) */
+export const MAX_PROBLEMS = 200
+class Enough extends Error {}
+
 export function validateSystem(input: unknown, { language = 'es' as Language } = {}): Validated {
   const problems: Problem[] = []
-  const add = (path: Segment[], message: string, severity: Problem['severity'] = 'error', range?: Problem['range']) =>
+  const add = (path: Segment[], message: string, severity: Problem['severity'] = 'error', range?: Problem['range']) => {
+    if (problems.length >= MAX_PROBLEMS) throw new Enough()
     problems.push({
       path: pathText(path),
       where: whereOf(input, path, language) || 'El sistema',
@@ -203,6 +208,7 @@ export function validateSystem(input: unknown, { language = 'es' as Language } =
       severity,
       ...(range ? { range: { start: range.start, end: range.end } } : {})
     })
+  }
 
   const bytes = bytesOf(input)
   if (bytes > LIMITS.bytes) {
@@ -215,18 +221,28 @@ export function validateSystem(input: unknown, { language = 'es' as Language } =
     for (const issue of parsed.error.issues.slice(0, 50)) add(issue.path as Segment[], issue.message)
     return { system: null, problems }
   }
-  // Lo que el formato no conoce: se conserva y se avisa
-  const strict = strictSystemSchema.safeParse(input, { error: errorMap })
-  if (!strict.success) {
-    for (const issue of strict.error.issues)
-      if (issue.code === 'unrecognized_keys')
-        for (const k of issue.keys)
-          add([...(issue.path as Segment[]), k], `Crisol no conoce «${k}»: se guarda tal cual, sin usarlo`, 'warning')
-  }
-
   const system = parsed.data
-  checkReferences(system, add)
-  checkFormulas(system, (path, message, range) => add(path, message, 'error', range), language)
+  try {
+    // Lo que el formato no conoce: se conserva y se avisa
+    const strict = strictSystemSchema.safeParse(input, { error: errorMap })
+    if (!strict.success) {
+      for (const issue of strict.error.issues)
+        if (issue.code === 'unrecognized_keys')
+          for (const k of issue.keys)
+            add([...(issue.path as Segment[]), k], `Crisol no conoce «${k}»: se guarda tal cual, sin usarlo`, 'warning')
+    }
+    checkReferences(system, add)
+    checkFormulas(system, (path, message, range) => add(path, message, 'error', range), language)
+  } catch (error) {
+    if (!(error instanceof Enough)) throw error
+    // Con tantos, se para: si no hay ningún error entre ellos, no se sabe si lo que queda está bien
+    problems.push({
+      path: '',
+      where: 'El sistema',
+      message: `Hay más de ${MAX_PROBLEMS} problemas: arregla estos y vuelve a validarlo`,
+      severity: 'error'
+    })
+  }
   return { system: problems.some((p) => p.severity === 'error') ? null : system, problems }
 }
 

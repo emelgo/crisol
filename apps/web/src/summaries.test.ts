@@ -75,6 +75,10 @@ describe('las frases de la wiki', () => {
       'crear el sistema «Copia»'
     )
     expect(asks('importSystem', { file: { system: { name: 'Subido' } } })).toBe('subir el sistema «Subido»')
+    // Renombrar se dice con el nombre de ahora, no con el que pide
+    expect(asks('updateSystem', { systemId: 's', version: 1, name: 'Otro' }, { system: 'Fronteras' })).toBe(
+      'cambiar el sistema «Fronteras»'
+    )
   })
 
   it('lo que pide Claude, con los títulos de lo que toca', () => {

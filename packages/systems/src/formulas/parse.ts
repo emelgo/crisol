@@ -43,6 +43,8 @@ const MODIFIER = `(?:kh\\d*|kl\\d*|k\\d*|dh\\d*|dl\\d*|!-${COND}?\\d+|!!(?:${CON
 /** Un término de dados, como lo entiende `@crisol/dice`: 4d6kh3, d%, 2d20kl1[ataque], 1d6!>4 */
 const DICE = new RegExp(`^\\d*d(?:\\d+|%|f)${MODIFIER}*(?:\\[[^\\]]*\\])?`, 'i')
 const NAME = /^[a-zA-Z_][a-zA-Z0-9_]*/
+/** Como las claves de un sistema: ningún nombre es más largo */
+const MAX_NAME = 60
 const NUMBER = /^\d+(?:\.\d+)?/
 
 /** Lo que escribe una persona: ×, ÷ y el signo menos tipográfico */
@@ -54,6 +56,11 @@ export function parseFormula(input: string): Expr {
   if (text.length > MAX_FORMULA) throw new FormulaError(`Como mucho, ${MAX_FORMULA} caracteres`, 0, text.length)
   let pos = 0
   let depth = 0
+
+  const long = (name: string, at: number) => {
+    if (name.length > MAX_NAME)
+      throw new FormulaError(`Un nombre tiene como mucho ${MAX_NAME} caracteres`, at, at + name.length)
+  }
 
   const space = () => {
     while (pos < text.length && /\s/.test(text[pos] as string)) pos++
@@ -177,6 +184,7 @@ export function parseFormula(input: string): Expr {
     }
     const name = NAME.exec(rest())
     if (name) {
+      long(name[0], pos)
       pos += name[0].length
       const word = name[0]
       if (word === 'true' || word === 'false') return { kind: 'boolean', value: word === 'true', start, end: pos }
@@ -202,12 +210,14 @@ export function parseFormula(input: string): Expr {
   const reference = (start: number): Expr => {
     const first = NAME.exec(rest())
     if (!first) throw new FormulaError('Falta el nombre tras «@»', start, pos)
+    long(first[0], pos)
     pos += first[0].length
     const path: (string | Expr)[] = [first[0]]
     for (;;) {
       if (text[pos] === '.') {
         const name = NAME.exec(text.slice(pos + 1))
         if (!name) throw new FormulaError('Falta el nombre tras «.»', pos, pos + 1)
+        long(name[0], pos + 1)
         pos += 1 + name[0].length
         path.push(name[0])
         continue

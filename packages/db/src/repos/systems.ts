@@ -5,12 +5,21 @@
 import { and, asc, count, eq, inArray, isNull } from 'drizzle-orm'
 import type { Database } from '../client.ts'
 import { type OperationContext, operation } from '../operation.ts'
+import { organizations } from '../schema/organizations.ts'
 import { systemContent, systems } from '../schema/systems.ts'
 
 /** Una fila, con el documento ya leído */
 export type SystemRow = Omit<typeof systems.$inferSelect, 'document'> & { document: Record<string, unknown> }
 
 const read = (row: typeof systems.$inferSelect): SystemRow => ({ ...row, document: JSON.parse(row.document) })
+
+/** Ya hay tantos como caben en la cuenta (contados dentro de la misma transacción: dos a la vez no se pasan) */
+export class TooManySystemsError extends Error {
+  constructor() {
+    super('No caben más sistemas en la cuenta')
+    this.name = 'TooManySystemsError'
+  }
+}
 
 /** Lo cambió otro mientras tanto: no se guarda nada */
 export class SystemChangedError extends Error {
@@ -53,6 +62,15 @@ export async function countSystems(db: Database, organizationId: string) {
   return row?.n ?? 0
 }
 
+/** La versión de cada uno, sin leer su documento: para saber si lo que se tiene leído sigue valiendo */
+export function systemVersions(db: Database, ids: readonly string[]) {
+  if (ids.length === 0) return Promise.resolve([])
+  return db
+    .select({ id: systems.id, version: systems.version, deletedAt: systems.deletedAt })
+    .from(systems)
+    .where(inArray(systems.id, [...ids]))
+}
+
 /** Cuántos documentos de contenido tiene cada sistema */
 export async function contentCounts(db: Database, ids: readonly string[]) {
   if (ids.length === 0) return new Map<string, number>()
@@ -85,9 +103,24 @@ export function createSystem(
     basedOn: { id: string; version: number } | null
     document: Record<string, unknown>
   },
-  content: readonly ContentValues[] = []
+  content: readonly ContentValues[] = [],
+  /** Como mucho, tantos en la organización */
+  max = Number.POSITIVE_INFINITY
 ) {
   return operation(db, context, async (w) => {
+    if (Number.isFinite(max)) {
+      // La organización, bloqueada: quien crea otro a la vez espera y cuenta este
+      await w.read
+        .select({ id: organizations.id })
+        .from(organizations)
+        .where(eq(organizations.id, values.organizationId))
+        .for('update')
+      const [row] = await w.read
+        .select({ n: count() })
+        .from(systems)
+        .where(and(eq(systems.organizationId, values.organizationId), isNull(systems.deletedAt)))
+      if ((row?.n ?? 0) >= max) throw new TooManySystemsError()
+    }
     const row = await w.insert(systems, { ...values, document: JSON.stringify(values.document) })
     for (const item of content) await w.insert(systemContent, { ...item, systemId: row.id })
     return read(row)

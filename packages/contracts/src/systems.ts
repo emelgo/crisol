@@ -124,7 +124,7 @@ export const checkSystem = defineAction({
   kind: 'read',
   description:
     'Valida un sistema sin guardarlo: su documento, o el archivo entero de bajar uno (con su contenido). Da cada problema con su ruta, dónde está por sus nombres, por qué, y si impide guardarlo (error) o no (aviso)',
-  input: z.object({ document: z.record(z.string(), z.unknown()) }),
+  input: z.object({ document: z.record(z.string(), z.unknown()), organizationId: z.uuid().optional() }),
   output: z.object({ valid: z.boolean().describe('Sin errores: se puede guardar'), problems: z.array(systemProblem) })
 })
 

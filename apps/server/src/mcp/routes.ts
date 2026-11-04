@@ -48,21 +48,28 @@ export function registerMcpRoutes(app: FastifyInstance, { auth, jwksUrl, approva
     { resource: mcpResource(publicUrl), jwksUrl }
   )
 
+  // Solo comprueba el token (antes de leer el cuerpo): lo demás lo hace protect
+  const verified = requireMcpAuth(auth, async () => new Response(null, { status: 204 }), {
+    resource: mcpResource(publicUrl),
+    jwksUrl
+  })
+
   app.route({
     method: ['POST', 'GET', 'DELETE'],
     url: '/mcp',
     // Un sistema entero (crear_sistema, validar_sistema) puede pesar como su archivo
     bodyLimit: FILE_BYTES + 1024 * 1024,
-    // Sin token no se lee el cuerpo: el 401, antes (el token se comprueba de verdad en protect)
+    // Sin un token que valga no se lee el cuerpo: se comprueba antes (la firma, el recurso y la caducidad)
     onRequest: async (request, reply) => {
-      if (!/^Bearer \S+$/i.test(request.headers.authorization ?? '')) {
-        const response = await protect(new Request(new URL(request.url, publicUrl), { method: 'GET' }))
-        reply.status(response.status)
-        response.headers.forEach((value, key) => {
-          reply.header(key, value)
-        })
-        return reply.send(await response.text())
-      }
+      const response = await verified(
+        new Request(new URL(request.url, publicUrl), { method: 'POST', headers: toHeaders(request.headers) })
+      )
+      if (response.status === 204) return
+      reply.status(response.status)
+      response.headers.forEach((value, key) => {
+        reply.header(key, value)
+      })
+      return reply.send(await response.text())
     },
     handler: async (request, reply) => {
       const response = await protect(

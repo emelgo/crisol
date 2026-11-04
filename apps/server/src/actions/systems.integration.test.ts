@@ -456,4 +456,21 @@ describe('los sistemas de reglas', () => {
     ).toBe(404)
     expect((await code('getSystemParts', { systemId: system.id, parts: ['dice'] }, other.cookie)).status).toBe(404)
   })
+
+  it('validar pide poder ver sistemas: quien no tiene cuenta propia ni mundos no valida nada', async () => {
+    const stranger = await signUpTestUser(auth, { name: 'Nadie', email: 'nadie@crisol.test' })
+    expect((await call('checkSystem', { document: fronteras }, stranger.cookie)).statusCode).not.toBe(200)
+    expect((await call('checkSystem', { document: fronteras })).statusCode).toBe(200)
+  })
+
+  it('el tope de sistemas se cuenta en la transacción: muchos a la vez no se pasan', async () => {
+    for (let i = 0; i < MAX_SYSTEMS - 2; i++) await ok200('createSystem', { name: `S${i}` })
+    const results = await Promise.all(
+      Array.from({ length: 6 }, (_, i) => call('createSystem', { name: `A la vez ${i}` }))
+    )
+    expect(results.filter((r) => r.statusCode === 200)).toHaveLength(2)
+    expect(results.filter((r) => r.json().code === 'TOO_MANY_SYSTEMS')).toHaveLength(4)
+    const { systems } = await ok200('listSystems', {})
+    expect(systems.filter((s: { builtIn: boolean }) => !s.builtIn)).toHaveLength(MAX_SYSTEMS)
+  })
 })

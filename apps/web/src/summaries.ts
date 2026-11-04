@@ -49,10 +49,12 @@ export function summaryOf(
       if (details.systemChoices) return say('campaignSystemChoices', { name: text(details.name) })
       return say('updateCampaign', { name: text(details.name) })
     case 'createSystem':
-    case 'updateSystem':
-    case 'deleteSystem':
     case 'importSystem':
       return say(action, { name: systemName(details) })
+    // Lo que se cambia o se borra se dice por el nombre que tiene ahora (aunque el cambio sea renombrarlo)
+    case 'updateSystem':
+    case 'deleteSystem':
+      return say(action, { name: typeof details.system === 'string' ? details.system : systemName(details) })
     case 'regenerateInvitation':
       return say('regenerateInvitation', { campaign: text(details.campaign) })
     case 'setInvitationsOpen':
@@ -201,7 +203,7 @@ const textIn = (value: unknown) =>
  * de su documento (al crearlo con él o al subir su archivo)
  */
 function systemName(details: Record<string, unknown>) {
-  if (details.name !== undefined) return textIn(details.name)
+  if (details.name !== undefined && details.name !== null) return textIn(details.name)
   if (typeof details.system === 'string') return details.system
   const document = asRecord(details.document).name ?? asRecord(asRecord(details.file).system).name
   return textIn(document)

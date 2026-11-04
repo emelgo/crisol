@@ -177,6 +177,16 @@ describe('conector MCP con OAuth', () => {
     expect(clients.some((c) => c.clientId === 'https://malo.example/oauth/client.json')).toBe(false)
   })
 
+  it('con un token falso no se lee el cuerpo, aunque sea grande', async () => {
+    const response = await fetch(new URL('/mcp', BASE), {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: 'Bearer falso' },
+      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list', params: { relleno: 'x'.repeat(5_000_000) } })
+    })
+    expect(response.status).toBe(401)
+    expect(response.headers.get('www-authenticate')).toContain('resource_metadata')
+  })
+
   it('un token falso no sirve', async () => {
     expect((await rpc('no-es-un-token', 'tools/list')).status).toBe(401)
   })

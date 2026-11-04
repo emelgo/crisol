@@ -17,6 +17,7 @@ import { evaluate, evaluateExpr, type SystemDocument } from './evaluate.ts'
 import type { Field, Roll, System, TONES } from './format.ts'
 import type { Value } from './formulas/functions.ts'
 import { type Expr, FormulaError, parseFormula } from './formulas/parse.ts'
+import { own } from './own.ts'
 import { type Language, textOf } from './text.ts'
 
 export interface RollOptions {
@@ -61,7 +62,7 @@ const formula = (text: string) => {
 
 /** Las tiradas que tiene un tipo, cada una con sus elementos, para elegirlas en la hoja o en «Probar» */
 export function rollsOf(system: System, typeKey: string, language: Language = 'es') {
-  const type = system.types[typeKey]
+  const type = own(system.types, typeKey)
   if (!type) return []
   return Object.entries(system.rolls ?? {})
     .filter(([, roll]) => {
@@ -148,8 +149,8 @@ export function prepareRoll(
   options: RollOptions = {}
 ) {
   const language = options.language ?? 'es'
-  const roll = system.rolls?.[rollKey]
-  const type = system.types[typeKey]
+  const roll = system.rolls ? own(system.rolls, rollKey) : undefined
+  const type = own(system.types, typeKey)
   if (!roll || !type) throw new RollError(`No existe la tirada «${rollKey}»`)
   const { values } = evaluate(system, typeKey, doc, { language })
   const scope: Record<string, Node> = Object.fromEntries(Object.entries(values).map(([k, v]) => [k, node(v)]))
@@ -184,7 +185,8 @@ export function prepareRoll(
         return true
       case 'ref': {
         const v = evaluateTo(e)
-        return typeof v === 'string' && /\d*d(\d|%|f)/i.test(v)
+        // Lineal (sin «\d*» delante, que con muchas cifras seguidas iba cuadrático) y con un tope de largo
+        return typeof v === 'string' && v.length <= 300 && /d[\d%f]/i.test(v)
       }
       case 'unary':
         return hasDice(e.value)

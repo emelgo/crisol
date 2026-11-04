@@ -3,6 +3,7 @@
  * conjuros…). Al subirlo se valida entero: con un solo error, no se guarda nada
  */
 import { FORMAT, LIMITS, type System } from './format.ts'
+import { own } from './own.ts'
 import { type Language, textOf } from './text.ts'
 import { type Problem, pathText, validateSystem } from './validate.ts'
 
@@ -79,7 +80,8 @@ export function validateContent(
       continue
     }
     const { type, key, source, data } = item
-    if (typeof type !== 'string' || !system.types[type]) add([...at, 'type'], `No existe el tipo «${String(type)}»`)
+    if (typeof type !== 'string' || !own(system.types, type))
+      add([...at, 'type'], `No existe el tipo «${String(type)}»`)
     if (typeof key !== 'string' || !CONTENT_KEY.test(key))
       add([...at, 'key'], 'Una clave va en minúsculas, sin espacios ni tildes')
     else if (seen.has(key)) add([...at, 'key'], `«${key}» está repetida`)

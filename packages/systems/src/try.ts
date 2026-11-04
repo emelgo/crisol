@@ -7,6 +7,7 @@ import { type Computed, evaluate, type SystemDocument } from './evaluate.ts'
 import type { System } from './format.ts'
 import { checkFormula, type FormulaProblem, scopeOf } from './formulas/check.ts'
 import type { ValueType } from './formulas/functions.ts'
+import { own } from './own.ts'
 import { type Language, textOf } from './text.ts'
 
 export interface TriedFormula {
@@ -36,7 +37,7 @@ export function tryFormula(
   doc: SystemDocument = { data: {} },
   language: Language = 'es'
 ): TriedFormula {
-  const type = system.types[typeKey]
+  const type = own(system.types, typeKey)
   if (!type) return { type: 'any', value: null, terms: [], problems: [{ message: `No existe el tipo «${typeKey}»` }] }
   const owner = textOf(type.label, language) || typeKey
   const checked = checkFormula(formula, {

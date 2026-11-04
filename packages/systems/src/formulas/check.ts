@@ -3,6 +3,7 @@
  * parece a algo), que los tipos casen, que las funciones existan y que ningún valor dependa de sí mismo
  */
 import type { Field, SimpleField, System } from '../format.ts'
+import { own } from '../own.ts'
 import { textOf } from '../text.ts'
 import { FUNCTIONS, type ValueType } from './functions.ts'
 import { type Expr, FormulaError, parseFormula } from './parse.ts'
@@ -52,34 +53,59 @@ const TYPE_NAMES: Record<ValueType, string> = {
   any: 'cualquier cosa'
 }
 
-/** El más parecido de los candidatos, si se parece lo bastante (una errata) */
+/**
+ * El más parecido de los candidatos, si se parece lo bastante (una errata): a dos letras como mucho o, si no, uno que
+ * empiece igual. Acotado: solo se mira la franja de esas dos letras, y lo hallado se guarda por ámbito
+ */
 export function closest(name: string, candidates: Iterable<string>): string | null {
+  if (name.length > 60) return null
+  const lower = name.toLowerCase()
+  const max = Math.max(1, Math.min(2, Math.floor(name.length / 3)))
   let best: string | null = null
-  let bestDistance = Number.POSITIVE_INFINITY
+  let bestDistance = max + 1
+  let sameStart: string | null = null
   for (const candidate of candidates) {
-    const d = distance(name.toLowerCase(), candidate.toLowerCase())
+    const other = candidate.toLowerCase()
+    if (!sameStart && name.length >= 3 && other.startsWith(lower.slice(0, 3))) sameStart = candidate
+    const d = within(lower, other, max)
     if (d < bestDistance) {
       best = candidate
       bestDistance = d
     }
   }
-  if (best === null) return null
-  const sharesStart = name.length >= 3 && best.toLowerCase().startsWith(name.slice(0, 3).toLowerCase())
-  return bestDistance <= Math.max(1, Math.min(2, Math.floor(name.length / 3))) || sharesStart ? best : null
+  return best ?? sameStart
 }
 
-function distance(a: string, b: string): number {
-  const row = Array.from({ length: b.length + 1 }, (_, i) => i)
+/** La distancia de Levenshtein si es como mucho max; si no, max + 1. Solo se calcula la franja |i − j| ≤ max */
+function within(a: string, b: string, max: number): number {
+  const far = max + 1
+  if (Math.abs(a.length - b.length) > max) return far
+  let previous = Array.from({ length: b.length + 1 }, (_, j) => (j <= max ? j : far))
   for (let i = 1; i <= a.length; i++) {
-    let previous = row[0] as number
-    row[0] = i
-    for (let j = 1; j <= b.length; j++) {
-      const current = row[j] as number
-      row[j] = Math.min((row[j] as number) + 1, (row[j - 1] as number) + 1, previous + (a[i - 1] === b[j - 1] ? 0 : 1))
-      previous = current
+    const row = new Array<number>(b.length + 1).fill(far)
+    if (i <= max) row[0] = i
+    let least = row[0] as number
+    for (let j = Math.max(1, i - max); j <= Math.min(b.length, i + max); j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1
+      row[j] = Math.min((previous[j] as number) + 1, (row[j - 1] as number) + 1, (previous[j - 1] as number) + cost)
+      if ((row[j] as number) < least) least = row[j] as number
     }
+    if (least > max) return far
+    previous = row
   }
-  return row[b.length] as number
+  return Math.min(previous[b.length] as number, far)
+}
+
+/** Lo sugerido para cada nombre, por ámbito: una errata repetida en cien fórmulas se busca una vez */
+const suggested = new WeakMap<object, Map<string, string | null>>()
+function closestIn(name: string, fields: Record<string, unknown>): string | null {
+  let cache = suggested.get(fields)
+  if (!cache) {
+    cache = new Map()
+    suggested.set(fields, cache)
+  }
+  if (!cache.has(name)) cache.set(name, closest(name, Object.keys(fields)))
+  return cache.get(name) ?? null
 }
 
 export interface Checked {
@@ -99,9 +125,9 @@ export function checkExpr(expr: Expr, context: Context): Checked {
 
   const resolve = (e: Extract<Expr, { kind: 'ref' }>): Shape | null => {
     const [first, ...rest] = e.path as [string, ...(string | Expr)[]]
-    let shape: Shape | undefined = context.scope[first]
+    let shape: Shape | undefined = own(context.scope, first)
     if (!shape) {
-      const near = closest(first, Object.keys(context.scope))
+      const near = closestIn(first, context.scope)
       report(e, `No existe «@${first}» en ${context.owner}${near ? `. ¿Quizás «@${near}»?` : ''}`)
       return null
     }
@@ -127,16 +153,16 @@ export function checkExpr(expr: Expr, context: Context): Checked {
       if (shape.type === 'list') {
         // De una lista, lo mismo de cada fila: @lleva.peso es la lista de los pesos
         const of: Shape = shape.of
-        if (of.type !== 'object' || !of.fields[segment]) {
-          const near = of.type === 'object' ? closest(segment, Object.keys(of.fields)) : null
+        if (of.type !== 'object' || !own(of.fields, segment)) {
+          const near = of.type === 'object' ? closestIn(segment, of.fields) : null
           report(e, `«${segment}» no existe en «${written}»${near ? `. ¿Quizás «${near}»?` : ''}`)
           return null
         }
-        shape = { type: 'list', label: shape.label, of: of.fields[segment] as Shape }
+        shape = { type: 'list', label: shape.label, of: own(of.fields, segment) as Shape }
       } else if (shape.type === 'object') {
-        const next: Shape | undefined = shape.fields[segment]
+        const next: Shape | undefined = own(shape.fields, segment)
         if (!next) {
-          const near = closest(segment, Object.keys(shape.fields))
+          const near = closestIn(segment, shape.fields)
           report(e, `«${segment}» no existe en «${written}»${near ? `. ¿Quizás «${near}»?` : ''}`)
           return null
         }
@@ -234,7 +260,7 @@ export function checkExpr(expr: Expr, context: Context): Checked {
         return 'any'
       }
       case 'call': {
-        const fn = FUNCTIONS[e.name]
+        const fn = own(FUNCTIONS, e.name)
         const args = e.args.map(visit)
         if (!fn) {
           const near = closest(e.name, Object.keys(FUNCTIONS))
@@ -333,13 +359,18 @@ export function shapeOf(
       }
     }
     case 'items': {
-      // Los campos de los tipos de objeto que lleva (si son varios, los de todos); un tipo que se lleva a sí mismo, una vez
+      // Los campos de los tipos de objeto que lleva (si son varios, los de todos). Lo que lleva lo que se lleva no se
+      // despliega otra vez: sería un camino por cada combinación de tipos, que crece sin fin
+      if (expanding.size > 0) return { type: 'list', label, of: { type: 'any', label } }
       const fields: Scope = {}
       for (const type of field.of) {
-        if (expanding.has(type)) continue
+        const itemType = system ? own(system.types, type) : undefined
         expanding.add(type)
-        Object.assign(fields, scopeOf(system?.types[type]?.fields ?? {}, `${type}:`, owner, system, language))
-        expanding.delete(type)
+        try {
+          Object.assign(fields, scopeOf(itemType?.fields ?? {}, `${type}:`, owner, system, language))
+        } finally {
+          expanding.delete(type)
+        }
       }
       return { type: 'list', label, of: { type: 'object', label, fields } }
     }

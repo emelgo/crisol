@@ -105,8 +105,9 @@ export function pickPaths(document: Record<string, unknown>, paths: readonly str
     let node: unknown = document
     for (const segment of parsePath(path)) {
       if (!isContainer(node)) throw new ChangeError(`«${path}»: no existe`)
+      // Solo lo suyo: lo heredado (toString, constructor) no es parte del documento
+      if (!Object.hasOwn(node, segment)) throw new ChangeError(`«${path}»: no existe`)
       node = Array.isArray(node) ? node[segment as number] : (node as Record<string, unknown>)[segment as string]
-      if (node === undefined) throw new ChangeError(`«${path}»: no existe`)
     }
     out[path] = structuredClone(node)
   }
