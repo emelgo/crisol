@@ -90,8 +90,11 @@ poder recibir los datos de un sistema de Foundry (lo prueba un fragmento de dnd5
   ejemplo, «equipado»). Se suman al derivado y salen en su desglose con su origen.
 - **La hoja y los pasos del creador**: el formato les deja su sitio (`sheet`, `creation`, `levelUp`). Su contenido lo
   definen `hoja` y `personajes`; aquí solo se comprueba que su forma es válida.
-- **Validar** dice cada problema con una ruta legible (`tipos.personaje.campos.ca.formula`) y un motivo corto en
-  español. Lo que el formato no conoce no se pierde: se avisa y se conserva.
+- **Las claves del formato, en inglés** (`types`, `fields`, `rolls`…), con la forma del manifiesto de Foundry; las de
+  cada sistema (sus tipos, campos y tiradas), las que elija quien lo hace (`personaje`, `defensa`).
+- **Validar** dice cada problema con un motivo corto en español y dónde está: por sus nombres en el editor
+  («Personaje › Defensa › Fórmula») y por su ruta para la IA y el JSON (`types.personaje.fields.defensa.formula`). Lo
+  que el formato no conoce no se pierde: se avisa y se conserva.
 - **Límites**: el manifiesto, hasta 2 MB; hasta 500 campos por tipo y 5.000 documentos de contenido, de hasta 64 KB
   cada uno.
 
