@@ -14,6 +14,7 @@ import { useAnnounce } from '../components/announcer.tsx'
 import { useRolled } from '../realtime/context.tsx'
 import styles from './log.module.css'
 import { appendRoll, colorOf, type RollsPage, rollsKey } from './rolls.ts'
+import { useTray } from './tray.tsx'
 
 /** Lo que puede usar cada uno: Repetir vuelve a tirar con la misma visibilidad, si se puede; si no, para todos */
 const ALLOWED: Record<Campaign['role'], readonly RollVisibility[]> = {
@@ -30,6 +31,7 @@ export function RollLog({ campaign }: { campaign: Campaign }) {
   const announce = useAnnounce()
   const { account } = useAccounts().useAccount()
   const list = useRef<HTMLOListElement>(null)
+  const tray = useTray()
   const rolls = useInfiniteQuery({
     queryKey: rollsKey(campaign.id),
     queryFn: ({ pageParam }): Promise<RollsPage> =>
@@ -58,6 +60,7 @@ export function RollLog({ campaign }: { campaign: Campaign }) {
       }),
     onSuccess: ({ roll }) => {
       appendRoll(queryClient, roll)
+      tray.play(roll)
       announce(t('dice.rolled', { label: roll.label ?? roll.formula, total: roll.total }))
     }
   })

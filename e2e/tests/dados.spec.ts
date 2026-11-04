@@ -106,3 +106,21 @@ test('en el móvil, los dados en una hoja que sube desde abajo, desde el menú d
     expect(serious, `${colorScheme}: ${JSON.stringify(serious.map((v) => [v.id, v.nodes[0]?.target]))}`).toEqual([])
   }
 })
+
+test('los dados 3D caen al tirar: la escena se carga aparte, solo la primera vez que se tira', async ({ page }) => {
+  const scripts: string[] = []
+  page.on('request', (request) => {
+    if (request.resourceType() === 'script') scripts.push(new URL(request.url()).pathname)
+  })
+  await campaignLink(page)
+  await page.getByRole('navigation', { name: 'Secciones' }).getByRole('button', { name: 'Dados' }).click()
+  const dice = page.getByRole('complementary', { name: 'Dados' })
+  await expect(dice).toBeVisible()
+  expect(scripts.some((path) => /\/scene-[^/]+\.js$/.test(path))).toBe(false)
+  await dice.getByRole('textbox', { name: 'Tirada' }).fill('1d20+2d6+1d8 # Golpe')
+  await dice.getByRole('button', { name: 'Tirar' }).click()
+  await expect.poll(() => scripts.some((path) => /\/scene-[^/]+\.js$/.test(path))).toBe(true)
+  // Al pararse, el total
+  await expect(page.getByTestId('total-tirada')).toBeVisible({ timeout: 6000 })
+  await page.screenshot({ path: test.info().outputPath('dados-3d.png') })
+})

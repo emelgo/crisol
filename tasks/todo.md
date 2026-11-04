@@ -98,7 +98,7 @@ amplía `@fugas` en la misma tarea. Cobertura ≥ 80 % de lo cambiado (bloquea d
   - Comprueba: pruebas de la numeración (qué cara queda arriba con cada resultado) y una página de prueba en local.
   - Archivos: `apps/web/src/dice/3d/{solids,numbering,throw}.ts` (+ pruebas), `apps/web/package.json`.
 
-- [ ] **8. La bandeja 3D**
+- [x] **8. La bandeja 3D** — hecha. La tirada entra en el registro al momento (no al pararse los dados: así se anuncia enseguida). Sin WebGL no caen dados y todo sigue igual. La escena va en su propio trozo (605 kB) y no se carga al arrancar.
   - Acepta:
     - los dados caen sobre la pantalla con el color de quien tira, y el crítico brilla;
     - las tiradas públicas de los demás también caen, salvo que se apague en la ficha (se guarda en la cuenta);

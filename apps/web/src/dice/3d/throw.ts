@@ -27,8 +27,10 @@ const STEP = 1 / 60
 export const MAX_FRAMES = 120
 /** Lo que se simula: hasta que se paren (casi siempre antes de 2 s; si no, se enseña más deprisa) */
 const MAX_STEPS = 360
-/** El tamaño de cada dado, para que se vean parecidos */
+/** El tamaño de cada dado, para que se vean parecidos (la física y el dibujo usan el mismo) */
 const SIZE: Record<DieKind, number> = { 4: 1.1, 6: 0.85, 8: 0.95, 10: 0.95, T: 0.95, 12: 0.95, 20: 1, F: 0.85 }
+
+export const sizeOf = (kind: DieKind) => SIZE[kind]
 
 /** Un azar con semilla (mulberry32): la misma tirada con la misma semilla, para las pruebas */
 function seeded(seed: number) {

@@ -55,8 +55,12 @@
   background: var(--color-raised);
 }
 
-.close {
+.gear {
   margin-left: auto;
+}
+
+.gear,
+.close {
   display: grid;
   place-items: center;
   background: none;
@@ -67,6 +71,7 @@
   cursor: pointer;
 }
 
+.gear:hover,
 .close:hover {
   color: var(--color-text);
   background: var(--color-raised);
@@ -271,4 +276,25 @@
   from {
     transform: translateY(100%);
   }
+}
+
+.options {
+  position: absolute;
+  z-index: 2;
+  top: 2.75rem;
+  right: var(--space-3);
+  background: var(--color-surface);
+  border: 1px solid var(--color-frame);
+  border-radius: 8px;
+  box-shadow: 0 16px 40px rgb(0 0 0 / 0.35);
+  padding: var(--space-1);
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  font-size: 0.875rem;
+  cursor: pointer;
 }

@@ -12,6 +12,7 @@ import { ThemeToggle } from '../components/theme-toggle.tsx'
 import { type WindowKind, WindowProvider } from '../components/window.tsx'
 import { DiceProvider } from '../dice/context.tsx'
 import { DicePanel } from '../dice/panel.tsx'
+import { DiceTray } from '../dice/tray.tsx'
 import { WikiPanelProvider } from '../wiki/panel.tsx'
 import { OrganizationHistory, WorldHistoryWindow } from './history.tsx'
 import { Profile } from './profile.tsx'
@@ -84,16 +85,18 @@ export function RootLayout() {
     <WindowProvider render={(kind) => <WindowContent kind={kind} />}>
       <WikiPanelProvider>
         <DiceProvider>
-          <div className={styles.app}>
-            {skip}
-            <Ribbon />
-            <main id="contenido" className={wide ? styles.wide : styles.main}>
-              <ApprovalQueue />
-              <Notices />
-              <Outlet />
-            </main>
-            <DicePanel />
-          </div>
+          <DiceTray>
+            <div className={styles.app}>
+              {skip}
+              <Ribbon />
+              <main id="contenido" className={wide ? styles.wide : styles.main}>
+                <ApprovalQueue />
+                <Notices />
+                <Outlet />
+              </main>
+              <DicePanel />
+            </div>
+          </DiceTray>
         </DiceProvider>
       </WikiPanelProvider>
     </WindowProvider>

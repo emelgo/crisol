@@ -2,6 +2,7 @@
  * Los dados de un mundo: si la ficha está abierta y en qué campaña se tira en cada mundo. Se recuerda en el navegador.
  * Lo usan la barra (abrir y cerrar), la ficha y las tiradas escritas en las páginas (en qué campaña tiran)
  */
+import { useRouterState } from '@tanstack/react-router'
 import { createContext, type ReactNode, useCallback, useContext, useMemo, useState } from 'react'
 
 const OPEN = 'crisol.dados'
@@ -66,4 +67,9 @@ export function useDice() {
   const dice = useContext(DiceContext)
   if (!dice) throw new Error('useDice fuera de DiceProvider')
   return dice
+}
+
+/** El mundo en el que se está, si se está en uno */
+export function useWorldInPath() {
+  return useRouterState({ select: (state) => /^\/mundos\/([^/]+)/.exec(state.location.pathname)?.[1] })
 }
