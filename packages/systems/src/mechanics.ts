@@ -5,7 +5,7 @@
  */
 import { z } from 'zod'
 import { type Field, KEY, KEY_MESSAGE, LIMITS, type SimpleField, type System } from './format.ts'
-import { type Context, checkFormula, type Scope, type Shape, scopeOf } from './formulas/check.ts'
+import { type Context, checkFormula, type Scope, type Shape, scopeOf, settingsShape } from './formulas/check.ts'
 import { own } from './own.ts'
 import { text, textOf } from './text.ts'
 import { bonusTarget, errorMap } from './validate.ts'
@@ -129,23 +129,6 @@ export const conceptSchema = key
 type Segment = string | number
 type Add = (path: Segment[], message: string) => void
 
-/** Los ajustes de la campaña, como nombres de las fórmulas */
-function settingsScope(system: System): Scope {
-  const fields: Scope = {}
-  for (const [k, s] of Object.entries(system.settings ?? {})) {
-    const label = textOf(s.label) || k
-    fields[k] =
-      s.kind === 'boolean'
-        ? { type: 'boolean', label }
-        : s.kind === 'number'
-          ? { type: 'number', label }
-          : s.kind === 'choice'
-            ? { type: 'string', label }
-            : { type: 'list', label, of: { type: 'string', label } }
-  }
-  return fields
-}
-
 /** Si una ruta lleva a una lista de quien lo lleva (añadir: los idiomas, las resistencias) */
 function listTarget(fields: Record<string, Field | SimpleField>, segments: readonly string[]): boolean {
   const [first, ...rest] = segments
@@ -178,7 +161,7 @@ export function validateMechanics(system: System, type: string, mechanics: unkno
   const scope: Scope = {
     ...(ownerType ? scopeOf(ownerType.fields, '', owner, system) : {}),
     este,
-    ajustes: { type: 'object', label: 'ajustes', fields: settingsScope(system) }
+    ajustes: settingsShape(system)
   }
   const context = (dice: boolean): Context => ({ scope, dice, owner })
 

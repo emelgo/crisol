@@ -32,7 +32,7 @@ Plan: `tasks/plan.md`. Spec: `docs/specs/srd-5e.md`. Cada tarea, con TDD y en un
   - Comprueba: pruebas de cada recurso, la tirada de cada arma y Bola de fuego a nivel 3 y 5.
   - Archivos: `packages/systems/src/rolls.ts`, `evaluate.ts`, `format.ts` (+ pruebas).
 
-- [ ] **4. Conceptos, ediciones y ajustes**
+- [x] **4. Conceptos, ediciones y ajustes** — hecha (`content.ts`, `choices.ts`; pruebas en `content.test.ts`). `visibleContent` dice lo que se ve con las fuentes activas y `duplicates` (nuevo en lo que elige la campaña: `newest`, por defecto, o `both`), con «Legado» cuando la versión de otra edición más nueva también se ve; `resolveConcept` resuelve por tipo y concepto con la edición de quien pide; `@ajustes` vale en todas las fórmulas del sistema y `ajustes` es un nombre reservado
   - Acepta:
     - una función pura dice qué contenido se ve con lo que eligió la campaña (ediciones y «lo que está en las dos»),
       con «Legado» en lo de 2014 que tiene versión de 2024;

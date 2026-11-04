@@ -1,7 +1,7 @@
 /**
- * Lo que una campaña elige de su sistema: sus fuentes, el idioma del contenido y sus ajustes. Se normaliza contra lo
- * que el sistema declara: lo que falta toma su valor inicial (todas las fuentes, el primer idioma, el de cada ajuste) y
- * lo que no vale se dice
+ * Lo que una campaña elige de su sistema: sus fuentes, qué se ve de lo que está en las dos ediciones, el idioma del
+ * contenido y sus ajustes. Se normaliza contra lo que el sistema declara: lo que falta toma su valor inicial (todas las
+ * fuentes, solo lo más nuevo, el primer idioma, el de cada ajuste) y lo que no vale se dice
  */
 import type { System } from './format.ts'
 import { own } from './own.ts'
@@ -9,8 +9,12 @@ import { LANGUAGES, type Language, textOf } from './text.ts'
 
 export type SettingValue = boolean | number | string | string[]
 
+/** De lo que está en las dos ediciones: solo la versión más nueva o las dos (la vieja, marcada «Legado») */
+export const DUPLICATES = ['newest', 'both'] as const
+
 export interface Choices {
   sources: string[]
+  duplicates: (typeof DUPLICATES)[number]
   language: Language
   settings: Record<string, SettingValue>
 }
@@ -18,6 +22,7 @@ export interface Choices {
 export function defaultChoices(system: System): Choices {
   return {
     sources: (system.sources ?? []).map((s) => s.key),
+    duplicates: 'newest',
     language: system.languages[0] ?? 'es',
     settings: Object.fromEntries(
       Object.entries(system.settings ?? {}).map(([key, s]) => [
@@ -45,6 +50,11 @@ export function normalizeChoices(
   const sources = new Set(base.sources)
   const chosen = given?.sources ?? base.sources
   for (const s of chosen) if (!sources.has(s)) problems.push(`No existe la fuente «${s}»`)
+  let duplicates = base.duplicates
+  if (given?.duplicates !== undefined) {
+    if ((DUPLICATES as readonly string[]).includes(given.duplicates)) duplicates = given.duplicates
+    else problems.push(`«${String(given.duplicates)}» no vale para lo que está en las dos ediciones`)
+  }
   const language = given?.language ?? base.language
   if (!system.languages.includes(language) || !(LANGUAGES as readonly string[]).includes(language))
     problems.push(`El sistema no trae el idioma «${language}»`)
@@ -68,5 +78,5 @@ export function normalizeChoices(
     if (!ok) problems.push(`«${name}» no vale así`)
     else settings[key] = value
   }
-  return { choices: { sources: chosen.filter((s) => sources.has(s)), language, settings }, problems }
+  return { choices: { sources: chosen.filter((s) => sources.has(s)), duplicates, language, settings }, problems }
 }

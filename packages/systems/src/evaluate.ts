@@ -341,7 +341,17 @@ export function evaluate(
     }
     return names
   }
-  const effectScope = (e: Effect): Record<string, Node> => (e.legacy ? itemScope(e.item) : ownerScope(e.item))
+  const legacyScopes = new Map<string, Record<string, Node>>()
+  /** Los bonos de siempre: los campos del objeto y @ajustes */
+  const legacyScope = (item: DocumentItem) => {
+    let names = legacyScopes.get(item.id)
+    if (!names) {
+      names = { ...itemScope(item), ajustes }
+      legacyScopes.set(item.id, names)
+    }
+    return names
+  }
+  const effectScope = (e: Effect): Record<string, Node> => (e.legacy ? legacyScope(e.item) : ownerScope(e.item))
   const holds = (e: Effect) => !e.when || truthy(evaluateExpr(e.when, effectScope(e), runtime))
   const amount = (e: Effect) => (e.value ? toNumber(evaluateExpr(e.value, effectScope(e), runtime)) : 0)
 
@@ -644,7 +654,10 @@ export function evaluate(
     }
   }
 
-  Object.assign(scope, nodesOf(type.fields, doc.data, '', []).fields)
+  const fieldNodes = nodesOf(type.fields, doc.data, '', []).fields
+  Object.assign(scope, fieldNodes)
+  // @ajustes, después de los campos: empezar el ámbito con él lo hace el doble de lento
+  if (!Object.hasOwn(scope, 'ajustes')) scope.ajustes = ajustes
   // Todo, ya calculado (y cada valor calculado en `computed`), con su propio presupuesto para copiarlo
   let copying = BUDGET
   const copy: Runtime = {
@@ -653,7 +666,7 @@ export function evaluate(
     }
   }
   const values = Object.fromEntries(
-    Object.entries(scope).map(([k, n]) => {
+    Object.entries(fieldNodes).map(([k, n]) => {
       try {
         return [k, materialize(n, copy)]
       } catch {

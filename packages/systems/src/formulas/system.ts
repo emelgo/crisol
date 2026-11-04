@@ -13,6 +13,7 @@ import {
   type Scope,
   type Shape,
   scopeOf,
+  settingsShape,
   shapeOf
 } from './check.ts'
 import type { ValueType } from './functions.ts'
@@ -83,7 +84,7 @@ export function checkFormulas(system: System, report: Report, language: Language
     for (const reserved of RESERVED)
       if (type.fields[reserved])
         report(['types', typeKey, 'fields', reserved], `«${reserved}» es un nombre que ponen las fórmulas: usa otro`)
-    const scope = scopeOf(type.fields, '', owner, system, language)
+    const scope = { ...scopeOf(type.fields, '', owner, system, language), ajustes: settingsShape(system, language) }
     scopes.set(typeKey, scope)
     const derived = derivedOf(typeKey, type, scope, owner, system, language)
 

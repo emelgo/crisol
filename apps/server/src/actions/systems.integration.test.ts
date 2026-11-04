@@ -274,7 +274,7 @@ describe('los sistemas de reglas', () => {
     it('se elige al crearla, con lo que se elige de él completo; sin sistema, null', async () => {
       const blank = await ok200('createCampaign', { worldId, name: 'La Marca', system: 'blank' })
       expect(blank.system).toEqual({ id: 'blank', name: 'En blanco', defaultRoll: '1d20', critical: 'd20' })
-      expect(blank.systemChoices).toEqual({ sources: [], language: 'es', settings: {} })
+      expect(blank.systemChoices).toEqual({ sources: [], duplicates: 'newest', language: 'es', settings: {} })
       const none = await ok200('createCampaign', { worldId, name: 'Sin reglas' })
       expect(none).toMatchObject({ system: null, systemChoices: null })
       const listed = (await ok200('listCampaigns', { worldId })).campaigns
@@ -292,7 +292,12 @@ describe('los sistemas de reglas', () => {
       const campaign = await ok200('createCampaign', { worldId, name: 'Los páramos' })
       const chosen = await ok200('updateCampaign', { campaignId: campaign.id, system: system.id })
       expect(chosen.system).toEqual({ id: system.id, name: 'Fronteras', defaultRoll: '2d6', critical: 'none' })
-      expect(chosen.systemChoices).toEqual({ sources: [], language: 'es', settings: { avance: 8 } })
+      expect(chosen.systemChoices).toEqual({
+        sources: [],
+        duplicates: 'newest',
+        language: 'es',
+        settings: { avance: 8 }
+      })
       const changed = await ok200('updateCampaign', {
         campaignId: campaign.id,
         systemChoices: { settings: { avance: 10 } }

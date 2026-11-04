@@ -5,7 +5,7 @@
  */
 import { type Computed, evaluate, type SystemDocument } from './evaluate.ts'
 import type { System } from './format.ts'
-import { checkFormula, type FormulaProblem, scopeOf } from './formulas/check.ts'
+import { checkFormula, type FormulaProblem, scopeOf, settingsShape } from './formulas/check.ts'
 import type { ValueType } from './formulas/functions.ts'
 import { own } from './own.ts'
 import { type Language, textOf } from './text.ts'
@@ -41,7 +41,7 @@ export function tryFormula(
   if (!type) return { type: 'any', value: null, terms: [], problems: [{ message: `No existe el tipo «${typeKey}»` }] }
   const owner = textOf(type.label, language) || typeKey
   const checked = checkFormula(formula, {
-    scope: scopeOf(type.fields, '', owner, system, language),
+    scope: { ...scopeOf(type.fields, '', owner, system, language), ajustes: settingsShape(system, language) },
     dice: false,
     owner
   })
