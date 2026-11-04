@@ -1,9 +1,9 @@
 # Spec: srd-5e (módulo 3)
 
-Estado: **por aprobar**. Tercera capacidad del módulo 3 (`docs/specs/modulo-3.md`), después de `sistemas`. Lo que
+Estado: **aprobada** por Enrique el 2026-11-04 («Ok»), con las propuestas de las preguntas abiertas. Tercera capacidad del módulo 3 (`docs/specs/modulo-3.md`), después de `sistemas`. Lo que
 decidió Enrique, en `docs/modulos.md` § «#### `srd-5e`». El estudio, en `research/dndbeyond/contenido-5e-y-mecanica.md`
-(y las fuentes y lo legado en `research/dndbeyond/creador-y-hoja.md`). La decisión de arquitectura, en ADR-0012 (por
-aprobar con esta spec).
+(y las fuentes y lo legado en `research/dndbeyond/creador-y-hoja.md`). La decisión de arquitectura, en ADR-0012 (aceptada con
+esta spec).
 
 ## Objetivo
 
@@ -284,6 +284,8 @@ del 5e en español (`fuerza`, `bola_de_fuego`).
 - Escalar una criatura a otro VD.
 
 ## Preguntas abiertas
+
+Respondidas por Enrique (2026-11-04: «Ok» a las propuestas):
 
 1. **Lo que trae una campaña nueva con el 5e**: *propuesta*, las dos ediciones activas, lo legado escondido y las reglas
    de 2024 (en Fateforge, Enrique pone las de 2014).

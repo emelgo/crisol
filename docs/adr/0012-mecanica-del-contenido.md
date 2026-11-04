@@ -1,6 +1,6 @@
 # ADR-0012: La mecánica del contenido y sus fuentes por concepto
 
-Estado: propuesta con la spec de `srd-5e` · `docs/specs/srd-5e.md`
+Estado: aceptada con la spec de `srd-5e` (Enrique, 2026-11-04: «Ok») · `docs/specs/srd-5e.md`
 
 ## Contexto
 
