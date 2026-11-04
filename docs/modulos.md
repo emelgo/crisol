@@ -13,7 +13,9 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   fusionada con `[skip ci]`. Enrique la prueba con `tasks/probar.md` (puntos de control 2 y 3, lo de las revisiones y
   el final), ya en staging.
 - **La spec de `sistemas`, por aprobar**: `docs/specs/sistemas.md`, con el ADR-0011 (sistemas como datos, fórmulas
-  propias calculadas en el servidor) y cinco preguntas con propuesta. Lo que hace el Crisol actual con los sistemas,
+  propias calculadas en el servidor). Enrique respondió sus preguntas: el editor visual ya, un lenguaje de fórmulas
+  nuevo con la forma de los de Foundry (`@des.mod`, los dados en la misma fórmula), la copia del catálogo no cambia
+  sola y los pasos del creador van con `personajes` (cambiado también en el mapa del módulo). Lo que hace el Crisol actual con los sistemas,
   leído para ella, en `docs/inventario-sistemas.md`. Rama `modulo-3/sistemas`.
 - **Lo siguiente**: que Enrique apruebe la spec (o la cambie); después, el diseño de «Sistemas» y de la elección en la
   campaña, el plan y la construcción.

@@ -27,8 +27,9 @@ Lo que dicen los estudios:
   suyo case uno a uno. No hay código de terceros: lo que un sistema calcula, lo dicen sus fórmulas.
 - **Un paquete puro, `packages/systems`**: el formato, el lenguaje de fórmulas, las tiradas del sistema y el catálogo.
   Lo usan el servidor y la web por igual. Va en la regla de límites de los paquetes puros, como `@crisol/dice`.
-- **Las fórmulas, con un intérprete propio**. Parte del lenguaje del Crisol actual, sin `eval` ni `new Function`, y
-  con:
+- **Las fórmulas, un lenguaje nuevo con la forma de las de Foundry** (Enrique, 2026-11-04): los valores con `@` y los
+  dados en la misma fórmula, sobre la gramática de `@crisol/dice`. Así las de los datos de dnd5e entran tal cual al
+  importar. Un intérprete propio, sin `eval` ni `new Function`, con:
   - comprobación al guardar (nombres, tipos y ciclos);
   - un presupuesto por documento;
   - un resultado con desglose: los términos con su nombre y los bonos con su origen.
@@ -50,8 +51,12 @@ Lo que dicen los estudios:
 
 - **Sistemas como código (JavaScript del máster o de terceros)**: haría falta aislarlo como a Foundry, el servidor no
   sabría calcular y la IA no podría leer los derivados. Queda para la capa de Foundry, con su propio ADR.
+- **El lenguaje del Crisol actual**: pasaba el sistema de Eana sin reescribirlo, pero no casa con las fórmulas de
+  Foundry y arrastra rarezas. El de Eana se reescribe al pasarlo con la IA.
+- **Uno como el de una hoja de cálculo** (`SI(nivel >= 5; 2; 1)`): más familiar sin programar, pero habría que traducir
+  cada fórmula de Foundry al importar.
 - **Un lenguaje de expresiones de fuera** (JSONLogic, una librería de fórmulas): no da el desglose ni la comprobación de
-  ciclos que queremos, y obligaría a reescribir el sistema de Eana.
+  ciclos que queremos.
 - **Calcular solo en la web**: es lo de Foundry. El servidor no podría validar y la IA tendría que repetir la cuenta.
 - **Que una copia siga al original del catálogo**: cada mejora de Crisol cambiaría las campañas sin que el máster lo
   decida.

@@ -1,6 +1,6 @@
 # Spec: sistemas (módulo 3)
 
-Estado: **por aprobar**. Segunda capacidad del módulo 3 (`docs/specs/modulo-3.md`), después de `dados`. Las
+Estado: **por aprobar**, con las respuestas de Enrique a sus preguntas (2026-11-04). Segunda capacidad del módulo 3 (`docs/specs/modulo-3.md`), después de `dados`. Las
 decisiones de Enrique, en `docs/modulos.md` § «### 3. Sistemas, fichas y dados». Los estudios, en
 `research/foundry/sistemas-y-su-api.md` y `research/foundry/tipos-de-documento.md`. Lo que hace el Crisol actual, en
 `docs/inventario-sistemas.md`. La decisión de arquitectura, en ADR-0011 (por aprobar con esta spec).
@@ -34,11 +34,10 @@ Usuarios:
 
    Sale en «Sistemas», en Mis mundos.
 3. Como máster, copio un sistema del catálogo para hacer mi variante («5e de Eana») y le cambio un campo o una tirada.
-4. Como máster, abro un sistema y veo:
-   - sus tipos y sus campos;
-   - cómo se calcula cada valor, con su desglose;
-   - sus tiradas, que puedo probar;
-   - lo que no cuadra, si algo falla.
+4. Como máster, abro un sistema en su editor, por secciones:
+   - le pongo tipos y campos, y escribo la fórmula de un valor (`10 + @des.mod`), que se comprueba mientras escribo;
+   - lo pruebo: relleno un documento de prueba y veo cada valor calculado con su desglose, y tiro sus tiradas;
+   - veo lo que no cuadra, si algo falla.
 5. Como máster, bajo un sistema en un archivo y lo subo en otra cuenta.
 6. Como máster, tiro dados en una campaña con sistema: los críticos son los de su juego, no siempre los del d20.
 
@@ -51,10 +50,11 @@ Usuarios:
 | `tiradas` | Las tiradas que define el sistema, sobre `@crisol/dice`, y los críticos de su juego | `formulas` |
 | `guardar` | Los sistemas de la cuenta en la base de datos, el catálogo en el código, copiar, bajar y subir | `formato` |
 | `campana` | La campaña elige su sistema, sus fuentes, su idioma y sus ajustes | `guardar` |
-| `interfaz` | «Sistemas» en Mis mundos (ver, probar, copiar, bajar, subir) y la elección en la campaña | `campana`, `tiradas` |
+| `interfaz` | «Sistemas» en Mis mundos (la lista, copiar, bajar, subir) y la elección en la campaña | `campana` |
 | `ia` | Las herramientas MCP para ver, crear, cambiar, validar y probar sistemas | `guardar`, `tiradas` |
+| `editor` | El editor visual por secciones, con las fórmulas comprobadas al escribir y el panel para probar | `interfaz`, `tiradas` |
 
-Orden: `formato` → `formulas` → `tiradas` → `guardar` → `campana` → `interfaz` → `ia`. Lo arriesgado va antes. El
+Orden: `formato` → `formulas` → `tiradas` → `guardar` → `campana` → `interfaz` → `ia` → `editor`. Lo arriesgado va antes. El
 lenguaje de fórmulas tiene que poder con un 5e entero (con su desglose y sin pasarse de tiempo), y el formato tiene que
 poder recibir los datos de un sistema de Foundry (lo prueba un fragmento de dnd5e convertido a mano, en las pruebas).
 
@@ -97,10 +97,17 @@ poder recibir los datos de un sistema de Foundry (lo prueba un fragmento de dnd5
 
 ### `formulas`
 
-- **Un lenguaje propio, sin ejecutar código**: el del Crisol actual (su gramática y sus funciones, en español), para
-  pasar el sistema de Eana sin reescribirlo. Le quitamos sus rarezas:
-  - `=`, `|` y `&` ya no valen por `==`, `||` y `&&`;
-  - una variable que no existe es un error, no un null.
+- **Un lenguaje nuevo, con la forma de las fórmulas de Foundry**, y un intérprete propio que no ejecuta código:
+  - los valores van con `@` (`@des.mod`, `@nivel`) y los dados caben en la misma fórmula (`1d20 + @fue.mod +
+    @competencia`): con dados es una tirada; sin ellos, un valor;
+  - sus operaciones: `+ - * / %`, comparaciones, `&& || !` y `? :`;
+  - sus funciones, las de matemáticas de Foundry (`floor`, `ceil`, `round`, `abs`, `max`, `min`…) y unas pocas propias
+    para listas y tablas;
+  - una sola gramática: la de `@crisol/dice` más las referencias y las funciones.
+
+  Así, las fórmulas de los datos de dnd5e (`@mod`, `@prof`) entran tal cual al importar de Foundry, solo cambiando a
+  qué apunta cada nombre. El sistema de Eana se reescribe al pasarlo con la IA (no hay importador).
+- **Una referencia que no existe es un error**, no un vacío.
 - **Lo mismo en el servidor y en la web**: un paquete puro.
   - El servidor manda: calcula, comprueba y es lo que lee la IA.
   - La web calcula al momento lo que se ve.
@@ -121,7 +128,7 @@ poder recibir los datos de un sistema de Foundry (lo prueba un fragmento de dnd5
 ### `tiradas`
 
 - **Las tiradas del sistema**: característica, salvación, habilidad, ataque, daño…
-  - Cada una con su fórmula (una plantilla que da una fórmula de dados) y sus variantes.
+  - Cada una con su fórmula (`1d20 + @este.total`) y sus variantes.
   - Pueden ir contra un objetivo (CD o CA).
   - Pueden tener franjas de resultado (crítico, éxito, fallo, pifia…).
   - Pueden ir por cada elemento de un conjunto o de una lista («una por habilidad»). Una fila de una lista se
@@ -165,15 +172,29 @@ poder recibir los datos de un sistema de Foundry (lo prueba un fragmento de dnd5
 ### `interfaz`
 
 - **«Sistemas», en Mis mundos**, junto a «Plantillas»: los del catálogo y los de la cuenta.
-- **Abrir un sistema muestra**:
-  - su resumen, su fuente y su licencia;
-  - sus tipos con sus campos, y los derivados con su fórmula y su desglose sobre un documento en blanco;
-  - sus tiradas, cada una con «Probar»;
-  - sus fuentes, idiomas y ajustes;
-  - sus problemas, si los hay.
-- **Acciones**: copiar, renombrar, borrar (si no lo usa ninguna campaña), bajar y subir.
+- **Acciones**: crear (en blanco o copiando otro), copiar, renombrar, borrar (si no lo usa ninguna campaña), bajar y
+  subir.
 - **En la campaña**: elegir el sistema, sus fuentes, su idioma y sus ajustes.
-- Sin editor visual en esta capacidad: los sistemas se hacen con la IA o subiendo el archivo (pregunta 1).
+
+### `editor`
+
+- **El editor de un sistema, por secciones**, como el del Crisol actual:
+  - general: nombre, resumen, fuente y licencia, idiomas;
+  - tipos: cada uno con sus campos (clase, nombre, valor inicial, rango, ayuda, si es del máster) y sus derivados con
+    su fórmula;
+  - tiradas: fórmula, variantes, objetivo, franjas y por qué elementos va;
+  - dados: la tirada por defecto y los críticos;
+  - fuentes y ajustes de campaña;
+  - avanzado: el documento entero en JSON, validado.
+- **Las fórmulas, comprobadas al escribirlas**: el error dice qué y dónde, y `@` propone los nombres que existen.
+- **Probar, al lado**: un documento de prueba de un tipo, con sus valores. Al cambiarlos, se ven los derivados con su
+  desglose y se pueden tirar sus tiradas (sin apuntarlas).
+- **Los problemas, en cada sección**, con un enlace a lo que falla.
+- **Guardar** sube la versión y se deshace desde el historial. Los del catálogo se abren para leer, con «Copiar para
+  cambiarlo».
+- **Las claves no se cambian** una vez guardadas: se cambia el nombre. Quitar un campo avisa si algo lo usa.
+- El contenido (las clases, los conjuros…) se ve contado por tipo. Editarlo uno a uno es del compendio (módulo 4); hasta
+  entonces, con la IA o con el archivo.
 
 ### `ia`
 
@@ -191,7 +212,8 @@ poder recibir los datos de un sistema de Foundry (lo prueba un fragmento de dnd5
 
 ### Interfaz
 
-- Pantallas nuevas: «Sistemas» (lista y detalle, con «Probar») y la elección del sistema en la campaña.
+- Pantallas nuevas: «Sistemas» (la lista y el editor, con su panel para probar) y la elección del sistema en la
+  campaña.
 - Siguen las normas de `docs/diseno.md`. Los prototipos se hacen y se aprueban en el paso de diseño, antes del plan.
 - Todo usable en el móvil y con el teclado; WCAG 2.1 AA.
 
@@ -212,7 +234,7 @@ packages/systems/catalog/            Los sistemas de serie («En blanco»; el 5e
 packages/contracts/src/systems.ts    Las acciones de sistemas
 packages/db/src/schema/systems.ts    Los sistemas de la cuenta y la elección de cada campaña
 apps/server/src/actions/systems.ts   Ver, crear, cambiar, validar, probar y elegir
-apps/web/src/systems/                «Sistemas» y la elección en la campaña
+apps/web/src/systems/                «Sistemas», su editor con el panel para probar y la elección en la campaña
 ```
 
 ## Estilo
@@ -237,8 +259,9 @@ El del módulo 0 (`docs/specs/fundacion.md` § Estilo).
   - quien no es de la cuenta no ve sus sistemas;
   - `rollDice` con los críticos del sistema de la campaña.
 - **MCP**: cada herramienta en cada modo de IA.
-- **Web**: «Sistemas» (lista, detalle, probar, subir con errores) y la elección en la campaña.
-- **E2E** (Playwright + axe): copiar un sistema, probar una tirada y elegirlo en una campaña.
+- **Web**: «Sistemas» (lista, subir con errores), el editor (cada sección, una fórmula mal escrita, probar) y la
+  elección en la campaña.
+- **E2E** (Playwright + axe): hacer un sistema en el editor, probarlo y elegirlo en una campaña.
 - **Ritmo**: calcular todos los derivados de un personaje de 5e de nivel 20 (unos 300 campos y 100 objetos) y validar
   un sistema de 2 MB.
 - Cobertura ≥ 80 % de las líneas nuevas o cambiadas, con TDD en cada porción.
@@ -261,16 +284,19 @@ El del módulo 0 (`docs/specs/fundacion.md` § Estilo).
 
 1. **Desde claude.ai**, la IA crea un sistema de 2d6 + atributo, lo valida, prueba una tirada y una fórmula, y
    Enrique lo ve en «Sistemas».
-2. **Una errata no pasa**: una fórmula que nombra un campo que no existe, o una CA que depende de sí misma, no se
-   guarda. El motivo y la ruta salen en la interfaz y en la IA.
-3. **Copiar «En blanco»** (o el 5e, cuando llegue), cambiarle una tirada y elegirlo en una campaña. Al tirar en esa
+2. **En el editor**, Enrique hace un sistema de 2d6 desde «En blanco»: un tipo, tres campos, un derivado y una
+   tirada. Lo prueba al lado y lo elige en una campaña.
+3. **Una errata no pasa**: una fórmula que nombra un campo que no existe, o una CA que depende de sí misma, no se
+   guarda. El motivo y la ruta salen en el editor (al escribirla) y en la IA.
+4. **Copiar «En blanco»** (o el 5e, cuando llegue), cambiarle una tirada y elegirlo en una campaña. Al tirar en esa
    campaña, los críticos son los del sistema.
-4. **Bajar un sistema y subirlo en otra cuenta**: llega igual. Un archivo roto no guarda nada y dice por qué.
-5. **El desglose**: con el 5e de prueba, la CA dice de dónde sale cada punto.
-6. **Ritmo**:
+5. **Bajar un sistema y subirlo en otra cuenta**: llega igual. Un archivo roto no guarda nada y dice por qué.
+6. **El desglose**: con el 5e de prueba, la CA dice de dónde sale cada punto.
+7. **Ritmo**:
    - todos los derivados de un personaje de nivel 20, en menos de 20 ms en el servidor;
-   - validar un sistema de 2 MB, en menos de 500 ms.
-7. **Calidad**:
+   - validar un sistema de 2 MB, en menos de 500 ms (también en la web, mientras se edita);
+   - comprobar una fórmula al escribirla, al momento (menos de 16 ms).
+8. **Calidad**:
    - la CI en verde, sin supresiones nuevas;
    - axe sin fallos críticos ni graves;
    - todo con el teclado y en el móvil.
@@ -282,19 +308,17 @@ El del módulo 0 (`docs/specs/fundacion.md` § Estilo).
 - La hoja por bloques y las tiradas desde ella: `hoja`.
 - Las pantallas del compendio y el contenido propio del mundo: módulo 4.
 - Importar un sistema de Foundry y ejecutar su código: `foundry`, después del abogado.
-- Un editor visual de sistemas por secciones (pregunta 1).
+- Editar el contenido uno a uno (clases, conjuros…): con el compendio (módulo 4).
+- Los pasos del creador y de subir de nivel: su formato y su motor, con `personajes`.
 - Los estados en la mesa, las criaturas y la mesa: módulos 4 y 6.
 
 ## Preguntas abiertas
 
-Con propuesta:
+Respondidas por Enrique (2026-11-04):
 
-1. **Hacer un sistema**: ¿por ahora con la IA y subiendo el archivo, con una pantalla para verlo y probarlo, y el editor
-   visual por secciones más adelante, cuando haya hoja que enseñar? *Propuesta: sí.*
-2. **Las fórmulas**: ¿el lenguaje del Crisol actual (las mismas funciones, en español), quitándole sus rarezas, para
-   pasar el sistema de Eana sin reescribirlo? *Propuesta: sí.*
-3. **Una copia del catálogo**: ¿es tuya y no cambia sola cuando Crisol mejora el original (como las plantillas)?
-   *Propuesta: sí. Se ve de cuál salió y en qué versión.*
-4. **Los pasos del creador**: el mapa los pone en esta capacidad. ¿Dejamos aquí solo su sitio en el formato y que
-   `personajes` diga cómo son y los recorra, ya que es quien los usa y los prueba de verdad? *Propuesta: sí.*
-5. **Una campaña sin sistema**: ¿se puede, y los dados van como hoy? *Propuesta: sí.*
+1. Hacer un sistema: **el editor visual ya**, en esta capacidad (no solo con la IA y el archivo).
+2. Las fórmulas: **un lenguaje nuevo, con la forma de las de Foundry** (`@des.mod`, los dados en la misma fórmula), en
+   lugar del del Crisol actual o uno de hoja de cálculo.
+3. Una copia del catálogo **es tuya y no cambia sola**; se ve de cuál salió y en qué versión.
+4. Los pasos del creador **van con `personajes`**: aquí solo su sitio en el formato.
+5. Una campaña puede no tener sistema, y los dados van como hoy (la propuesta, que no cambió).
