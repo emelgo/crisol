@@ -87,8 +87,9 @@ que se les dice (un prototipo al empezar `dados-3d`).
 
 ### `panel`
 
-- **«Dados»**, en la barra de iconos dentro de un mundo y en la página de una campaña (la que tienen los jugadores).
-  Abre un panel lateral con:
+- **«Dados»**, en la barra de iconos dentro de un mundo (una excepción a la norma de que esa barra solo lleve el mundo y
+  Archivos) y en la página de una campaña (la que tienen los jugadores). Abre y cierra la ficha de dados a la derecha,
+  en el sitio del panel de la página, sin tapar el texto. La ficha lleva:
   - el campo de la fórmula, con su descripción en español mientras se escribe y el error si no vale;
   - botones rápidos (d4, d6, d8, d10, d12, d20, d%) y ventaja o desventaja;
   - la visibilidad (cada uno solo ve las que puede usar);
@@ -103,7 +104,8 @@ que se les dice (un prototipo al empezar `dados-3d`).
 - **Los dados caen en 3D** sobre la pantalla con el resultado que dio el servidor: d4, d6, d8, d10, d% (dos d10), d12,
   d20 y dF, con el color de quien tira. El crítico brilla.
 - **Las tiradas públicas de los demás también caen** en tu pantalla, con su color. Se puede apagar en el panel.
-- **Con «reducir movimiento»** del sistema no hay animación: sale el resultado.
+- **La animación, siempre entera**, aunque el sistema pida menos movimiento (norma de `docs/diseno.md`). El total se
+  anuncia a los lectores de pantalla.
 - **Se carga aparte**, solo al tirar la primera vez, para no pesar en el arranque. Con más de 20 dados, caen los 20
   primeros y el resto va solo en el registro.
 - **Dependencias nuevas**: `three` y `cannon-es`, las dos MIT, como en el Crisol actual. **Hace falta el visto bueno de
