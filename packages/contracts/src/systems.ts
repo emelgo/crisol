@@ -86,3 +86,25 @@ export const deleteSystem = defineAction({
   input: z.object({ systemId: z.uuid() }),
   output: z.object({ id: z.uuid(), name: z.string() })
 })
+
+export const exportSystem = defineAction({
+  name: 'exportSystem',
+  kind: 'read',
+  description:
+    'Baja un sistema (de serie o de la cuenta) en un archivo: su documento y su contenido, para subirlo en otra cuenta',
+  input: z.object({ systemId: systemRef, organizationId: z.uuid().optional() }),
+  output: z.object({ name: z.string().describe('El nombre del archivo'), file: z.record(z.string(), z.unknown()) })
+})
+
+export const importSystem = defineAction({
+  name: 'importSystem',
+  kind: 'write',
+  description:
+    'Sube el archivo de un sistema: crea uno nuevo en la cuenta o, con into, reemplaza uno propio (con la versión que se tenía), contenido incluido. Se valida entero: con un solo error no se guarda nada (SYSTEM_INVALID, con cada problema)',
+  input: z.object({
+    organizationId: z.uuid().optional(),
+    file: z.record(z.string(), z.unknown()),
+    into: z.object({ systemId: z.uuid(), version: z.int().min(1) }).optional()
+  }),
+  output: z.object({ system: systemFull, warnings: z.array(systemProblem) })
+})

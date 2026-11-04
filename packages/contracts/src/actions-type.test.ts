@@ -99,11 +99,13 @@ describe('Actions', () => {
       rollDice: true,
       listRolls: true,
       tryDice: true,
-  listSystems: true,
-  getSystem: true,
-  createSystem: true,
-  updateSystem: true,
-  deleteSystem: true
+      listSystems: true,
+      getSystem: true,
+      createSystem: true,
+      updateSystem: true,
+      deleteSystem: true,
+      exportSystem: true,
+      importSystem: true
     }
     expect(Object.keys(names).sort()).toEqual(ACTIONS.map((a) => a.name).sort())
   })

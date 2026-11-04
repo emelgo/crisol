@@ -7,7 +7,9 @@ import { randomUUID } from 'node:crypto'
 import {
   createSystem,
   deleteSystem,
+  exportSystem,
   getSystem,
+  importSystem,
   listSystems,
   type SystemFull,
   type SystemSummary,
@@ -15,7 +17,17 @@ import {
 } from '@crisol/contracts'
 import { systemsRepo } from '@crisol/db'
 import { authorize, NotFoundError } from '@crisol/domain'
-import { CATALOG, catalogSystem, type Problem, type System, textOf, validateSystem } from '@crisol/systems'
+import {
+  CATALOG,
+  catalogSystem,
+  fileName,
+  type Problem,
+  type System,
+  textOf,
+  toFile,
+  validateFile,
+  validateSystem
+} from '@crisol/systems'
 import { systemsChanged } from '../realtime/events.ts'
 import { targetOrganization } from './access.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
@@ -99,22 +111,27 @@ async function namer(ctx: ActionContext, rows: readonly systemsRepo.SystemRow[])
   return (id: string) => names.get(id) ?? id
 }
 
-/** Validar entero; con errores no se guarda: la IA lee cada problema (dónde y por qué) en el detalle */
+/** Con errores no se guarda: la IA lee cada problema (dónde y por qué) en el detalle */
+function invalid(problems: readonly Problem[]): never {
+  const errors = problems.filter((p) => p.severity === 'error')
+  const detail = errors
+    .slice(0, 20)
+    .map((p) => `${p.path} (${p.where}): ${p.message}`)
+    .join('; ')
+  throw new InvalidRequestError(
+    'SYSTEM_INVALID',
+    errors.length > 20 ? `${detail}; y ${errors.length - 20} más` : detail
+  )
+}
+
+/** Validar entero */
 function validated(document: unknown): { system: System; warnings: Problem[] } {
   const { system, problems } = validateSystem(document)
-  if (!system) {
-    const errors = problems.filter((p) => p.severity === 'error')
-    const detail = errors
-      .slice(0, 20)
-      .map((p) => `${p.path} (${p.where}): ${p.message}`)
-      .join('; ')
-    throw new InvalidRequestError(
-      'SYSTEM_INVALID',
-      errors.length > 20 ? `${detail}; y ${errors.length - 20} más` : detail
-    )
-  }
+  if (!system) return invalid(problems)
   return { system, warnings: problems.filter((p) => p.severity === 'warning') }
 }
+
+const changed = () => new InvalidRequestError('SYSTEM_CHANGED', 'lo ha cambiado otro mientras tanto: vuelve a leerlo')
 
 export const systemActions = [
   implement(listSystems, async (ctx, { organizationId }) => {
@@ -193,8 +210,7 @@ export const systemActions = [
         system as unknown as Record<string, unknown>
       )
     } catch (error) {
-      if (error instanceof systemsRepo.SystemChangedError)
-        throw new InvalidRequestError('SYSTEM_CHANGED', 'lo ha cambiado otro mientras tanto: vuelve a leerlo')
+      if (error instanceof systemsRepo.SystemChangedError) throw changed()
       throw error
     }
     ctx.realtime.publish(systemsChanged(row.organizationId))
@@ -212,5 +228,64 @@ export const systemActions = [
     )
     ctx.realtime.publish(systemsChanged(row.organizationId))
     return { id: row.id, name }
+  }),
+
+  implement(exportSystem, async (ctx, { systemId, organizationId }) => {
+    const target = readableOrganization(ctx, organizationId)
+    const { document, row } = await findReadable(ctx, target, systemId)
+    const content = row
+      ? (await systemsRepo.listContent(ctx.db, row.id)).map(({ type, key, source, data }) => ({
+          type,
+          key,
+          source,
+          data
+        }))
+      : []
+    return { name: fileName(document), file: toFile(document, content) as unknown as Record<string, unknown> }
+  }),
+
+  implement(importSystem, async (ctx, { organizationId, file, into }) => {
+    const { file: valid, problems } = validateFile(file)
+    if (!valid) return invalid(problems)
+    const warnings = problems.filter((p) => p.severity === 'warning')
+    const name = textOf(valid.system.name)
+    if (into) {
+      // Encima de uno propio: su documento y todo su contenido, con la versión que se tenía
+      const row = await ownWritable(ctx, into.systemId)
+      let updated: systemsRepo.SystemRow
+      try {
+        updated = await systemsRepo.updateSystem(
+          ctx.db,
+          historyContext(ctx, 'importSystem', { name }, { organizationId: row.organizationId }),
+          row.id,
+          into.version,
+          { ...valid.system, id: row.id } as unknown as Record<string, unknown>,
+          valid.content
+        )
+      } catch (error) {
+        if (error instanceof systemsRepo.SystemChangedError) throw changed()
+        throw error
+      }
+      ctx.realtime.publish(systemsChanged(row.organizationId))
+      return { system: own(updated, valid.content.length, await namer(ctx, [updated])), warnings }
+    }
+    const target = targetOrganization(ctx, organizationId)
+    authorize(ctx.actor, 'systems.write', { organizationId: target })
+    if ((await systemsRepo.countSystems(ctx.db, target)) >= MAX_SYSTEMS)
+      throw new InvalidRequestError('TOO_MANY_SYSTEMS', `como mucho, ${MAX_SYSTEMS} por cuenta`)
+    const id = randomUUID()
+    const row = await systemsRepo.createSystem(
+      ctx.db,
+      historyContext(ctx, 'importSystem', { name }, { organizationId: target }),
+      {
+        id,
+        organizationId: target,
+        basedOn: null,
+        document: { ...valid.system, id } as unknown as Record<string, unknown>
+      },
+      valid.content
+    )
+    ctx.realtime.publish(systemsChanged(target))
+    return { system: own(row, valid.content.length, await namer(ctx, [row])), warnings }
   })
 ]

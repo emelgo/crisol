@@ -66,7 +66,15 @@ import {
   updatePage
 } from './pages.ts'
 import { searchWiki } from './search.ts'
-import { createSystem, deleteSystem, getSystem, listSystems, updateSystem } from './systems.ts'
+import {
+  createSystem,
+  deleteSystem,
+  exportSystem,
+  getSystem,
+  importSystem,
+  listSystems,
+  updateSystem
+} from './systems.ts'
 import { createTag, deleteTag, listAccountTags, setFileTags, updateTag } from './tags.ts'
 import { createTemplate, deleteTemplate, getTemplate, listTemplates, updateTemplate } from './templates.ts'
 import {
@@ -201,7 +209,9 @@ export const ACTIONS = [
   getSystem,
   createSystem,
   updateSystem,
-  deleteSystem
+  deleteSystem,
+  exportSystem,
+  importSystem
 ]
 
 /** Las acciones por nombre, solo como tipo: la web las usa sin cargar zod */
@@ -305,4 +315,6 @@ export type Actions = {
   createSystem: typeof createSystem
   updateSystem: typeof updateSystem
   deleteSystem: typeof deleteSystem
+  exportSystem: typeof exportSystem
+  importSystem: typeof importSystem
 }

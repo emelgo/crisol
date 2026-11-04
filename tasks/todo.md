@@ -104,7 +104,7 @@ el 2026-11-12).
     `packages/domain/src/policy.ts`, `packages/contracts/src/systems.ts`, `apps/server/src/actions/systems.ts`
     (+ pruebas).
 
-- [ ] **6. Bajar y subir un sistema, con su contenido**
+- [x] **6. Bajar y subir un sistema, con su contenido** — hecha. El archivo, hasta 10 MB; `updateSystem` e `importSystem` van por rutas propias con más sitio (11 MB) que piden la sesión antes de leer el cuerpo; el resto sigue con 1 MiB.
   - Acepta:
     - `exportSystem` da el sistema y su contenido en un archivo JSON;
     - `importSystem` crea uno nuevo, o reemplaza uno propio, desde un archivo:

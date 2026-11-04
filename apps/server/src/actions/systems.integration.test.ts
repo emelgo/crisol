@@ -1,7 +1,8 @@
 import { systemFull } from '@crisol/contracts'
 import { connect, schema } from '@crisol/db'
 import { freshTestDatabase, resetDatabase } from '@crisol/db/testing'
-import { fronteras } from '@crisol/systems/fixtures'
+import { FILE_BYTES, FORMAT, toFile } from '@crisol/systems'
+import { cinco, fronteras } from '@crisol/systems/fixtures'
 import type { FastifyInstance } from 'fastify'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { buildApp } from '../app.ts'
@@ -165,5 +166,98 @@ describe('los sistemas de reglas', () => {
   it(`como mucho ${MAX_SYSTEMS} por cuenta`, async () => {
     for (let i = 0; i < MAX_SYSTEMS; i++) await ok200('createSystem', { name: `S${i}` })
     expect(await code('createSystem', { name: 'Uno más' })).toEqual({ status: 400, code: 'TOO_MANY_SYSTEMS' })
+  })
+
+  describe('bajar y subir', () => {
+    const anillo = {
+      type: 'objeto',
+      key: 'anillo',
+      source: 'srd51',
+      data: { name: 'Anillo de protección', bono_ca: 1 }
+    }
+
+    it('ida y vuelta, también en otra cuenta, con su contenido', async () => {
+      const created = await ok200('createSystem', { name: 'Fronteras' })
+      await ok200('updateSystem', { systemId: created.id, version: 1, document: fronteras })
+      const exported = await ok200('exportSystem', { systemId: created.id })
+      expect(exported.name).toBe('fronteras.crisol-system.json')
+      expect(exported.file).toMatchObject({ kind: 'crisol-system', format: FORMAT, content: [] })
+
+      const other = await signUpTestUser(auth, { name: 'Otra', email: 'otra@crisol.test' })
+      await organization(other.userId, 'Otra cuenta')
+      const { system } = await ok200('importSystem', { file: exported.file }, other.cookie)
+      expect(system).toMatchObject({ name: 'Fronteras', basedOn: null, version: 1, content: 0 })
+      expect(system.id).not.toBe(created.id)
+      expect(system.document.types).toEqual(JSON.parse(JSON.stringify(fronteras.types)))
+
+      const withContent = await ok200('importSystem', { file: toFile(cinco, [anillo]) })
+      expect(withContent.system).toMatchObject({ name: '5e de prueba', content: 1 })
+      const again = await ok200('exportSystem', { systemId: withContent.system.id })
+      expect(again.file.content).toEqual([anillo])
+      // Los de serie también se bajan
+      expect((await ok200('exportSystem', { systemId: 'blank' })).name).toBe('en-blanco.crisol-system.json')
+    })
+
+    it('un archivo roto, de otra versión o demasiado grande no guarda nada', async () => {
+      const broken = structuredClone(fronteras)
+      Object.assign(broken.types.personaje?.fields.defensa as object, { formula: '@defensa' })
+      expect(await code('importSystem', { file: toFile(broken, []) })).toEqual({ status: 400, code: 'SYSTEM_INVALID' })
+      expect(await code('importSystem', { file: { ...toFile(fronteras, []), format: FORMAT + 1 } })).toEqual({
+        status: 400,
+        code: 'SYSTEM_INVALID'
+      })
+      expect(await code('importSystem', { file: toFile(cinco, [{ ...anillo, type: 'arma' }]) })).toEqual({
+        status: 400,
+        code: 'SYSTEM_INVALID'
+      })
+      const tooBig = await call('importSystem', {
+        file: toFile(cinco, [{ ...anillo, data: { name: 'x', relleno: 'x'.repeat(FILE_BYTES + 2 * 1024 * 1024) } }])
+      })
+      expect(tooBig.statusCode).toBe(413)
+      expect((await ok200('listSystems', {})).systems).toHaveLength(1)
+    })
+
+    it('sin sesión, un cuerpo grande ni se lee', async () => {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/actions/importSystem',
+        payload: { file: { relleno: 'x'.repeat(5 * 1024 * 1024) } },
+        headers: { origin: BASE_URL }
+      })
+      expect(response.statusCode).toBe(401)
+    })
+
+    it('subir encima de uno propio: su documento y su contenido, con la versión que se tenía', async () => {
+      const { system } = await ok200('importSystem', { file: toFile(cinco, [anillo]) })
+      const replaced = await ok200('importSystem', {
+        file: toFile(fronteras, []),
+        into: { systemId: system.id, version: system.version }
+      })
+      expect(replaced.system).toMatchObject({ id: system.id, name: 'Fronteras', version: 2, content: 0 })
+      expect(
+        await code('importSystem', { file: toFile(fronteras, []), into: { systemId: system.id, version: 1 } })
+      ).toEqual({
+        status: 400,
+        code: 'SYSTEM_CHANGED'
+      })
+    })
+
+    it('un sistema grande (1,5 MB) se guarda', async () => {
+      const created = await ok200('createSystem', { name: 'Grande' })
+      const document = structuredClone(fronteras) as typeof fronteras
+      const help = 'Una ayuda larga. '.repeat(25)
+      for (let t = 0; t < 34; t++)
+        document.types[`t${t}`] = {
+          document: 'item',
+          label: `Tipo ${t}`,
+          fields: Object.fromEntries(
+            Array.from({ length: 100 }, (_, f) => [`f${f}`, { kind: 'number', label: `F${f}`, help }])
+          )
+        }
+      expect(JSON.stringify(document).length).toBeGreaterThan(1.5 * 1024 * 1024)
+      expect((await ok200('updateSystem', { systemId: created.id, version: 1, document })).system.types).toHaveLength(
+        37
+      )
+    })
   })
 })

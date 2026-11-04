@@ -1,7 +1,8 @@
 import { ACTIONS, openApi } from '@crisol/contracts'
 import { loadMemberships } from '@crisol/db'
 import { actorFrom, ForbiddenError, NotFoundError } from '@crisol/domain'
-import type { FastifyInstance } from 'fastify'
+import { FILE_BYTES } from '@crisol/systems'
+import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
 import type { Auth } from '../auth/auth.ts'
 import { toHeaders } from '../http.ts'
 import { type ActionEnv, InvalidRequestError, TooManyRequestsError } from './context.ts'
@@ -11,8 +12,8 @@ export function registerActionRoutes(app: FastifyInstance, env: ActionEnv, auth:
   const { db } = env
   app.get('/api/openapi.json', async () => openApi(ACTIONS))
 
-  app.post<{ Params: { name: string } }>('/api/actions/:name', async (request, reply) => {
-    const impl = implementationsByName.get(request.params.name)
+  const run = async (name: string, request: FastifyRequest, reply: FastifyReply) => {
+    const impl = implementationsByName.get(name)
     if (!impl) return reply.code(404).send({ code: 'UNKNOWN_ACTION' })
     const session = await auth.api.getSession({ headers: toHeaders(request.headers) })
     if (!session) return reply.code(401).send({ code: 'UNAUTHENTICATED' })
@@ -32,5 +33,24 @@ export function registerActionRoutes(app: FastifyInstance, env: ActionEnv, auth:
       if (error instanceof InvalidRequestError) return reply.code(400).send({ code: error.code })
       throw error
     }
-  })
+  }
+
+  app.post<{ Params: { name: string } }>('/api/actions/:name', (request, reply) =>
+    run(request.params.name, request, reply)
+  )
+
+  // Un sistema entero (hasta 2 MB) y el archivo de uno con su contenido (hasta 10 MB): con más sitio, y solo con sesión,
+  // que se mira antes de leer el cuerpo
+  for (const name of BIG_ACTIONS)
+    app.post(`/api/actions/${name}`, {
+      bodyLimit: FILE_BYTES + 1024 * 1024,
+      onRequest: async (request, reply) => {
+        if (!(await auth.api.getSession({ headers: toHeaders(request.headers) })))
+          return reply.code(401).send({ code: 'UNAUTHENTICATED' })
+      },
+      handler: (request, reply) => run(name, request, reply)
+    })
 }
+
+/** Las acciones que llevan un sistema entero o su archivo */
+export const BIG_ACTIONS = ['updateSystem', 'importSystem'] as const
