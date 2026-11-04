@@ -17,6 +17,10 @@ ignoredOptionalDependencies:
 # Versiones compartidas por todos los paquetes (se usan con "catalog:")
 catalog:
   "@biomejs/biome": 2.6.4
+  # Los dados 3D (docs/specs/dados.md): el dibujo y la física, los dos MIT, cargados aparte en la web
+  three: 0.185.1
+  "@types/three": 0.185.3
+  cannon-es: 0.20.0
   "@axe-core/playwright": ^4.14.0
   "@better-auth/cimd": 1.7.14
   "@better-auth/drizzle-adapter": 1.7.14

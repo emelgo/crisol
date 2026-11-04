@@ -92,7 +92,7 @@ amplía `@fugas` en la misma tarea. Cobertura ≥ 80 % de lo cambiado (bloquea d
 
 ## Fase 4: Los dados 3D
 
-- [ ] **7. Prototipo de los dados 3D (riesgo)**
+- [x] **7. Prototipo de los dados 3D (riesgo)** — hecha, sin plan B. Valores de la física probados con 30 tiradas de cada dado; si uno tarda más de 2 s en pararse, se enseña más deprisa. En el d4 se lee el vértice de arriba (el número de la cara de abajo). La página de prueba es la propia bandeja (tarea 8).
   - Acepta: con `three` y `cannon-es`, los siete dados (d4, d6, d8, d10, d%, d12, d20) y el dF caen con física y quedan en
     el resultado que se les da, en menos de 2 s. Si no se consigue, el plan B: el giro guionizado del lienzo.
   - Comprueba: pruebas de la numeración (qué cara queda arriba con cada resultado) y una página de prueba en local.
