@@ -1,6 +1,6 @@
 # Plan: Módulo 3 — srd-5e
 
-Spec: `docs/specs/srd-5e.md` (aprobada) · ADR-0012 (aceptado) · Mapa del módulo: `docs/specs/modulo-3.md` · Diseño:
+Estado: **aprobado** por Enrique el 2026-11-04 («ok»). Spec: `docs/specs/srd-5e.md` (aprobada) · ADR-0012 (aceptado) · Mapa del módulo: `docs/specs/modulo-3.md` · Diseño:
 fila 3 del lienzo «Crisol: sistemas» (aprobada; fuentes en `out/lienzo-sistemas/`) · Estudio:
 `research/dndbeyond/contenido-5e-y-mecanica.md` · Tareas con detalle: `tasks/todo.md` · Fecha: 2026-11-04. Los planes
 anteriores están en `tasks/fundacion/`, `tasks/wiki/`, `tasks/plantillas/`, `tasks/dados/` y `tasks/sistemas/`.

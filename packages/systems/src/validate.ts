@@ -51,7 +51,7 @@ const KINDS: Record<string, string> = {
 
 /** Los mensajes de zod, cortos y en español; los que no están aquí, con su traducción */
 const spanish = z.locales.es().localeError
-const errorMap: core.$ZodErrorMap = (issue) => {
+export const errorMap: core.$ZodErrorMap = (issue) => {
   switch (issue.code) {
     case 'invalid_type':
       return issue.input === undefined ? 'Falta' : `Tiene que ser ${KINDS[issue.expected] ?? issue.expected}`
@@ -172,7 +172,7 @@ export function whereOf(system: unknown, path: readonly Segment[], language: Lan
 }
 
 /** Si un bono tiene a qué sumarse en esa ruta: un número o un calculado, también dentro de un grupo o de un conjunto */
-function bonusTarget(fields: Record<string, Field | SimpleField>, segments: readonly string[]): boolean {
+export function bonusTarget(fields: Record<string, Field | SimpleField>, segments: readonly string[]): boolean {
   const [first, ...rest] = segments
   const field = first === undefined || !Object.hasOwn(fields, first) ? undefined : fields[first]
   if (!field) return false

@@ -5,7 +5,7 @@ Plan: `tasks/plan.md`. Spec: `docs/specs/srd-5e.md`. Cada tarea, con TDD y en un
 
 ## Fase 1: La mecánica
 
-- [ ] **1. El documento de contenido: concepto, mecánica y página**
+- [x] **1. El documento de contenido: concepto, mecánica y página** — hecha (`packages/systems/src/mechanics.ts`). En un efecto, los nombres son los de quien lo lleva, `@este` es el documento y `@ajustes`, los de la campaña
   - Acepta:
     - un documento de contenido lleva `concept`, `mechanics` (efectos, recursos, acciones, concesiones, escalado y
       grado de automatización) y `ref` (fuente y página);

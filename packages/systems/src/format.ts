@@ -268,7 +268,16 @@ function build(strict: boolean) {
     name: text().describe('Su nombre (SRD 5.1)'),
     license: z.string().trim().min(1).max(200).describe('Su licencia (CC BY 4.0, Propia)'),
     attribution: text(4000).describe('La atribución que pide su licencia'),
-    url: z.url({ protocol: /^https?$/ }).optional()
+    url: z.url({ protocol: /^https?$/ }).optional(),
+    edition: z
+      .string()
+      .trim()
+      .min(1)
+      .max(40)
+      .optional()
+      .describe('Su edición («2014», «2024»): la campaña elige cuáles valen'),
+    publisher: text().optional().describe('Su editorial'),
+    released: z.iso.date().optional().describe('Cuándo salió (AAAA-MM-DD): de lo repetido, gana lo más nuevo')
   })
   const setting = obj({
     label: text().describe('Su nombre'),

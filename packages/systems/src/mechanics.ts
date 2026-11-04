@@ -1,0 +1,230 @@
+/**
+ * La mecánica de un documento de contenido (ADR-0012): lo que cambia de quien lo lleva (efectos), sus usos (recursos),
+ * lo que se tira con él (acciones), lo que concede, cómo escala y cuánto está automatizado. Vale para cualquier sistema.
+ * En sus fórmulas, los nombres son los de quien lo lleva, `@este` es el propio documento y `@ajustes`, los de la campaña
+ */
+import { z } from 'zod'
+import { type Field, KEY, KEY_MESSAGE, LIMITS, type SimpleField, type System } from './format.ts'
+import { type Context, checkFormula, type Scope, type Shape, scopeOf } from './formulas/check.ts'
+import { own } from './own.ts'
+import { text, textOf } from './text.ts'
+import { bonusTarget, errorMap } from './validate.ts'
+
+const key = z.string().regex(KEY, KEY_MESSAGE)
+const formula = z.string().trim().min(1).max(LIMITS.formula)
+
+/**
+ * Lo que hace un efecto con su destino, en este orden al calcular: base (gana la mayor, como las CA alternativas), fijar,
+ * sumar, mínimo y máximo. Ventaja y desventaja se anotan para la tirada; añadir, a una lista (resistencias, idiomas)
+ */
+export const EFFECT_OPS = ['base', 'set', 'add', 'min', 'max', 'advantage', 'disadvantage', 'append'] as const
+/** Cuándo se recupera un uso */
+export const RECOVERIES = ['short', 'long', 'dawn', 'other'] as const
+/** Cuánto cuesta hacer una acción */
+export const ACTIVATIONS = ['action', 'bonus', 'reaction', 'free', 'legendary', 'special'] as const
+/** Cuánto lo automatiza Crisol: todo, una parte (lo demás se lleva a mano) o solo el texto */
+export const AUTOMATION = ['full', 'partial', 'text'] as const
+
+const effect = z.strictObject({
+  target: z.string().trim().min(1).max(200),
+  op: z.enum(EFFECT_OPS),
+  value: formula.optional(),
+  when: formula.optional(),
+  label: text().optional()
+})
+
+const damage = z.strictObject({ formula, type: key.optional(), label: text().optional() })
+
+const resource = z.strictObject({
+  key,
+  label: text(),
+  max: formula,
+  recovery: z.enum(RECOVERIES).optional(),
+  // Cuánto se recupera (sin él, todo)
+  amount: formula.optional()
+})
+
+const action = z.strictObject({
+  key,
+  label: text(),
+  activation: z.enum(ACTIVATIONS).optional(),
+  // El bono de ataque, lo que se suma al d20
+  attack: formula.optional(),
+  save: z
+    .strictObject({ ability: key, dc: formula, success: z.enum(['half', 'none', 'special']).optional() })
+    .optional(),
+  damage: z.array(damage).max(10).optional(),
+  heal: formula.optional(),
+  range: text(100).optional(),
+  // Lo que gasta: un recurso suyo, una recarga (5-6) o su coste en acciones legendarias
+  uses: key.optional(),
+  recharge: z
+    .string()
+    .regex(/^[1-6](-6)?$/, 'Una recarga es un número del dado, como 5-6')
+    .optional(),
+  cost: z.int().min(1).max(10).optional()
+})
+
+const grant = z
+  .strictObject({
+    // A partir de qué nivel (en una clase)
+    level: z.int().min(1).max(30).optional(),
+    // Un documento, por su concepto (el rasgo, el conjuro)
+    concept: key.optional(),
+    // O una elección: cuántos, de qué tipo y, si se dice, de cuáles
+    choose: z
+      .strictObject({
+        key,
+        label: text(),
+        count: formula,
+        type: key,
+        from: z.array(key).max(500).optional(),
+        when: formula.optional()
+      })
+      .optional()
+  })
+  .refine((g) => (g.concept === undefined) !== (g.choose === undefined), 'Lleva un concepto o una elección')
+
+const scaling = z.strictObject({
+  // Por cada espacio por encima del base, o por el nivel de quien lo lanza (los trucos)
+  mode: z.enum(['slot', 'level']),
+  base: z.int().min(0).max(9).optional(),
+  per: formula.optional(),
+  at: z
+    .array(z.strictObject({ level: z.int().min(1).max(30), formula }))
+    .max(20)
+    .optional()
+})
+
+export const mechanicsSchema = z.strictObject({
+  effects: z.array(effect).max(100).optional(),
+  resources: z.array(resource).max(20).optional(),
+  actions: z.array(action).max(50).optional(),
+  grants: z.array(grant).max(300).optional(),
+  scaling: scaling.optional(),
+  // Se activa y se desactiva (la Furia, Mago armadura): sus efectos piden `@este.activo`
+  toggle: z.strictObject({ label: text().optional(), duration: text(100).optional() }).optional(),
+  automation: z.enum(AUTOMATION).optional(),
+  // Lo que se lleva a mano, si no está todo automatizado
+  manual: text(2000).optional()
+})
+
+export type Mechanics = z.infer<typeof mechanicsSchema>
+
+/** De dónde sale un documento: su página en cada PDF */
+export const refSchema = z.strictObject({
+  pages: z.strictObject({ en: z.int().min(1).optional(), es: z.int().min(1).optional() }).optional()
+})
+
+export const conceptSchema = key
+
+type Segment = string | number
+type Add = (path: Segment[], message: string) => void
+
+/** Los ajustes de la campaña, como nombres de las fórmulas */
+function settingsScope(system: System): Scope {
+  const fields: Scope = {}
+  for (const [k, s] of Object.entries(system.settings ?? {})) {
+    const label = textOf(s.label) || k
+    fields[k] =
+      s.kind === 'boolean'
+        ? { type: 'boolean', label }
+        : s.kind === 'number'
+          ? { type: 'number', label }
+          : s.kind === 'choice'
+            ? { type: 'string', label }
+            : { type: 'list', label, of: { type: 'string', label } }
+  }
+  return fields
+}
+
+/** Si una ruta lleva a una lista de quien lo lleva (añadir: los idiomas, las resistencias) */
+function listTarget(fields: Record<string, Field | SimpleField>, segments: readonly string[]): boolean {
+  const [first, ...rest] = segments
+  const field = first === undefined ? undefined : own(fields, first)
+  if (!field) return false
+  if (rest.length === 0) return field.kind === 'list'
+  return field.kind === 'group' && listTarget(field.fields, rest)
+}
+
+/** Valida la mecánica de un documento de su tipo; cada problema, con su ruta */
+export function validateMechanics(system: System, type: string, mechanics: unknown, at: Segment[], add: Add) {
+  const parsed = mechanicsSchema.safeParse(mechanics, { error: errorMap })
+  if (!parsed.success) {
+    for (const issue of parsed.error.issues.slice(0, 30)) add([...at, ...(issue.path as Segment[])], issue.message)
+    return
+  }
+  const m = parsed.data
+  const actors = Object.entries(system.types).filter(([, t]) => t.document === 'actor')
+  const [ownerKey, ownerType] = actors[0] ?? []
+  const owner = ownerType ? textOf(ownerType.label) || (ownerKey as string) : 'el personaje'
+  const itemType = own(system.types, type)
+  const este: Shape = {
+    type: 'object',
+    label: 'este',
+    fields: {
+      ...(itemType ? scopeOf(itemType.fields, `${type}:`, owner, system) : {}),
+      name: { type: 'string', label: 'nombre' }
+    }
+  }
+  const scope: Scope = {
+    ...(ownerType ? scopeOf(ownerType.fields, '', owner, system) : {}),
+    este,
+    ajustes: { type: 'object', label: 'ajustes', fields: settingsScope(system) }
+  }
+  const context = (dice: boolean): Context => ({ scope, dice, owner })
+
+  /** Una fórmula en su sitio: los problemas de siempre y, si da dados donde no van, el porqué */
+  const check = (value: string, path: Segment[], noDice?: string) => {
+    const checked = checkFormula(value, context(true))
+    for (const p of checked.problems) add(path, p.message)
+    if (noDice && checked.problems.length === 0 && checked.type === 'dice') add(path, noDice)
+    return checked
+  }
+  const yesOrNo = (value: string, path: Segment[]) => {
+    const checked = check(value, path, 'Una condición no lleva dados')
+    if (checked.problems.length === 0 && !['boolean', 'any', 'null', 'dice'].includes(checked.type))
+      add(path, 'Aquí va sí o no: una comparación, como @nivel >= 5')
+  }
+
+  m.effects?.forEach((e, i) => {
+    const here = [...at, 'effects', i]
+    const segments = e.target.split('.')
+    const first = segments[0] ?? ''
+    if (e.op === 'advantage' || e.op === 'disadvantage') {
+      if (!system.rolls || !own(system.rolls, first)) add([...here, 'target'], `No existe la tirada «${first}»`)
+    } else {
+      if (!e.value) add([...here, 'value'], 'Esta operación necesita un valor')
+      if (!actors.some(([, t]) => own(t.fields, first))) add([...here, 'target'], `Ningún personaje tiene «${first}»`)
+      else if (e.op === 'append') {
+        if (!actors.some(([, t]) => listTarget(t.fields, segments)))
+          add([...here, 'target'], `«${e.target}» no es una lista de los personajes`)
+      } else if (!actors.some(([, t]) => bonusTarget(t.fields, segments)))
+        add([...here, 'target'], `«${e.target}» no es un número ni un calculado de los personajes`)
+    }
+    if (e.value) check(e.value, [...here, 'value'], 'Un efecto no lleva dados: los dados van en las acciones')
+    if (e.when) yesOrNo(e.when, [...here, 'when'])
+  })
+  m.resources?.forEach((r, i) => {
+    const here = [...at, 'resources', i]
+    check(r.max, [...here, 'max'], 'El máximo de un recurso no lleva dados')
+    if (r.amount) check(r.amount, [...here, 'amount'])
+  })
+  m.actions?.forEach((a, i) => {
+    const here = [...at, 'actions', i]
+    if (a.attack) check(a.attack, [...here, 'attack'], 'Un bono de ataque no lleva dados: es lo que se suma al dado')
+    if (a.save) check(a.save.dc, [...here, 'save', 'dc'], 'Una CD no lleva dados')
+    for (const [j, d] of (a.damage ?? []).entries()) check(d.formula, [...here, 'damage', j, 'formula'])
+    if (a.heal) check(a.heal, [...here, 'heal'])
+    if (a.uses && !m.resources?.some((r) => r.key === a.uses)) add([...here, 'uses'], `No tiene el recurso «${a.uses}»`)
+  })
+  m.grants?.forEach((g, i) => {
+    const here = [...at, 'grants', i]
+    if (!g.choose) return
+    if (!own(system.types, g.choose.type)) add([...here, 'choose', 'type'], `No existe el tipo «${g.choose.type}»`)
+    check(g.choose.count, [...here, 'choose', 'count'], 'Cuántos se eligen no lleva dados')
+    if (g.choose.when) yesOrNo(g.choose.when, [...here, 'choose', 'when'])
+  })
+  if (m.scaling?.per) check(m.scaling.per, [...at, 'scaling', 'per'])
+  for (const [i, s] of (m.scaling?.at ?? []).entries()) check(s.formula, [...at, 'scaling', 'at', i, 'formula'])
+}

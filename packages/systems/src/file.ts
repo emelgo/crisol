@@ -3,9 +3,10 @@
  * conjuros…). Al subirlo se valida entero: con un solo error, no se guarda nada
  */
 import { FORMAT, LIMITS, type System } from './format.ts'
+import { conceptSchema, type Mechanics, refSchema, validateMechanics } from './mechanics.ts'
 import { own } from './own.ts'
 import { type Language, textOf } from './text.ts'
-import { type Problem, pathText, validateSystem } from './validate.ts'
+import { errorMap, type Problem, pathText, validateSystem } from './validate.ts'
 
 export const SYSTEM_FILE = 'crisol-system'
 /** El archivo entero: el sistema (hasta 2 MB) y su contenido */
@@ -19,6 +20,12 @@ export interface ContentItem {
   source: string | null
   /** Su nombre (`name`) y los valores de sus campos */
   data: Record<string, unknown>
+  /** Lo que une sus versiones entre ediciones (el Guerrero de 2014 y el de 2024) */
+  concept?: string
+  /** Su mecánica: efectos, recursos, acciones, lo que concede, su escalado y su automatización */
+  mechanics?: Mechanics
+  /** De dónde sale: su página en cada PDF */
+  ref?: { pages?: { en?: number; es?: number } }
 }
 
 export interface SystemFile {
@@ -79,7 +86,7 @@ export function validateContent(
       add(at, 'Tiene que ser un documento')
       continue
     }
-    const { type, key, source, data } = item
+    const { type, key, source, data, concept, mechanics, ref } = item
     if (typeof type !== 'string' || !own(system.types, type))
       add([...at, 'type'], `No existe el tipo «${String(type)}»`)
     if (typeof key !== 'string' || !CONTENT_KEY.test(key))
@@ -88,6 +95,18 @@ export function validateContent(
     else seen.add(key)
     if (source !== null && source !== undefined && (typeof source !== 'string' || !sources.has(source)))
       add([...at, 'source'], `No existe la fuente «${String(source)}»`)
+    if (concept !== undefined) {
+      const checked = conceptSchema.safeParse(concept, { error: errorMap })
+      if (!checked.success) add([...at, 'concept'], checked.error.issues[0]?.message ?? 'No vale')
+    }
+    if (ref !== undefined) {
+      const checked = refSchema.safeParse(ref, { error: errorMap })
+      if (!checked.success)
+        for (const issue of checked.error.issues)
+          add([...at, 'ref', ...(issue.path as (string | number)[])], issue.message)
+    }
+    if (mechanics !== undefined && typeof type === 'string')
+      validateMechanics(system, type, mechanics, [...at, 'mechanics'], add)
     if (!isObject(data)) {
       add([...at, 'data'], 'Tiene que ser un objeto')
       continue
@@ -110,7 +129,28 @@ function whereOfContent(content: unknown, path: (string | number)[]): string {
   if (typeof index !== 'number' || !Array.isArray(content)) return 'Contenido'
   const item = content[index] as { data?: { name?: unknown }; key?: unknown } | undefined
   const name = textOf(item?.data?.name as never) || (typeof item?.key === 'string' ? item.key : `${index + 1}.º`)
-  const part = { type: 'Tipo', key: 'Clave', source: 'Fuente', data: 'Datos', name: 'Nombre' }
+  const part = {
+    type: 'Tipo',
+    key: 'Clave',
+    source: 'Fuente',
+    data: 'Datos',
+    name: 'Nombre',
+    concept: 'Concepto',
+    ref: 'Página',
+    mechanics: 'Mecánica',
+    effects: 'Efectos',
+    resources: 'Recursos',
+    actions: 'Acciones',
+    grants: 'Concede',
+    scaling: 'Escalado',
+    damage: 'Daño',
+    attack: 'Ataque',
+    save: 'Salvación',
+    value: 'Valor',
+    target: 'Destino',
+    when: 'Cuándo',
+    max: 'Máximo'
+  }
   return ['Contenido', name, ...rest.map((r) => part[r as keyof typeof part] ?? String(r))].join(' › ')
 }
 
