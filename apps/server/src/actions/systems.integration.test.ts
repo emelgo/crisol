@@ -57,9 +57,10 @@ describe('los sistemas de reglas', () => {
     await conn?.close()
   })
 
-  it('los de serie: «En blanco», entero y de solo lectura', async () => {
+  it('los de serie: el 5e y «En blanco», enteros y de solo lectura', async () => {
     const { systems } = await ok200('listSystems', {})
     expect(systems).toEqual([
+      expect.objectContaining({ id: '5e', name: '5e', builtIn: true, version: 1, basedOn: null, campaigns: [] }),
       expect.objectContaining({
         id: 'blank',
         name: 'En blanco',
@@ -101,7 +102,7 @@ describe('los sistemas de reglas', () => {
     expect(copy.basedOn).toEqual({ id: created.id, name: 'Fronteras del norte', version: 3 })
     expect(copy.document.types).toEqual(system.document.types)
     const list = (await ok200('listSystems', {})).systems.map((s: { name: string }) => s.name)
-    expect(list).toEqual(['En blanco', 'Fronteras del norte', 'Fronteras de Eana'])
+    expect(list).toEqual(['5e', 'En blanco', 'Fronteras del norte', 'Fronteras de Eana'])
   })
 
   it('no se pisa lo que cambió otro, ni se guarda lo que tiene errores; los avisos vuelven', async () => {
@@ -141,7 +142,7 @@ describe('los sistemas de reglas', () => {
 
     expect(await ok200('deleteSystem', { systemId: created.id })).toEqual({ id: created.id, name: 'Fronteras' })
     expect((await code('getSystem', { systemId: created.id })).status).toBe(404)
-    expect((await ok200('listSystems', {})).systems).toHaveLength(1)
+    expect((await ok200('listSystems', {})).systems.filter((s: { builtIn: boolean }) => !s.builtIn)).toEqual([])
     const deletion = (await history()).find((e) => e.action === 'deleteSystem')
     await ok200('undoOperation', { operationId: deletion?.id })
     expect((await ok200('getSystem', { systemId: created.id })).name).toBe('Fronteras')
@@ -160,7 +161,10 @@ describe('los sistemas de reglas', () => {
       404
     )
     expect((await code('deleteSystem', { systemId: created.id }, other.cookie)).status).toBe(404)
-    expect((await ok200('listSystems', {}, other.cookie)).systems.map((s: { id: string }) => s.id)).toEqual(['blank'])
+    expect((await ok200('listSystems', {}, other.cookie)).systems.map((s: { id: string }) => s.id)).toEqual([
+      '5e',
+      'blank'
+    ])
   })
 
   it(`como mucho ${MAX_SYSTEMS} por cuenta`, async () => {
@@ -214,7 +218,7 @@ describe('los sistemas de reglas', () => {
         file: toFile(cinco, [{ ...anillo, data: { name: 'x', relleno: 'x'.repeat(FILE_BYTES + 2 * 1024 * 1024) } }])
       })
       expect(tooBig.statusCode).toBe(413)
-      expect((await ok200('listSystems', {})).systems).toHaveLength(1)
+      expect((await ok200('listSystems', {})).systems.filter((s: { builtIn: boolean }) => !s.builtIn)).toEqual([])
     })
 
     it('sin sesión, un cuerpo grande ni se lee', async () => {

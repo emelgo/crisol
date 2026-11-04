@@ -130,13 +130,16 @@ export const conceptSchema = key
 type Segment = string | number
 type Add = (path: Segment[], message: string) => void
 
-/** Si una ruta lleva a una lista de quien lo lleva (añadir: los idiomas, las resistencias) */
-function listTarget(fields: Record<string, Field | SimpleField>, segments: readonly string[]): boolean {
+/** La lista de quien lo lleva a la que lleva una ruta (añadir: los idiomas, las resistencias) */
+function listTarget(
+  fields: Record<string, Field | SimpleField>,
+  segments: readonly string[]
+): (Field & { kind: 'list' }) | null {
   const [first, ...rest] = segments
   const field = first === undefined ? undefined : own(fields, first)
-  if (!field) return false
-  if (rest.length === 0) return field.kind === 'list'
-  return field.kind === 'group' && listTarget(field.fields, rest)
+  if (!field) return null
+  if (rest.length === 0) return field.kind === 'list' ? field : null
+  return field.kind === 'group' ? listTarget(field.fields, rest) : null
 }
 
 /** Valida la mecánica de un documento de su tipo; cada problema, con su ruta */
@@ -189,8 +192,13 @@ export function validateMechanics(system: System, type: string, mechanics: unkno
       if (!e.value) add([...here, 'value'], 'Esta operación necesita un valor')
       if (!actors.some(([, t]) => own(t.fields, first))) add([...here, 'target'], `Ningún personaje tiene «${first}»`)
       else if (e.op === 'append') {
-        if (!actors.some(([, t]) => listTarget(t.fields, segments)))
-          add([...here, 'target'], `«${e.target}» no es una lista de los personajes`)
+        const lists = actors.map(([, t]) => listTarget(t.fields, segments)).filter((l) => l !== null)
+        if (lists.length === 0) add([...here, 'target'], `«${e.target}» no es una lista de los personajes`)
+        // Un texto escrito tal cual que no es una de sus opciones (un tipo de daño mal escrito)
+        const literal = e.value?.trim().match(/^"([^"]*)"$/)?.[1]
+        const options = lists.find((l) => l.options)?.options
+        if (literal !== undefined && options && !options.some((o) => o.value === literal))
+          add([...here, 'value'], `«${literal}» no es una de sus opciones`)
       } else if (!actors.some(([, t]) => bonusTarget(t.fields, segments)))
         add([...here, 'target'], `«${e.target}» no es un número ni un calculado de los personajes`)
     }

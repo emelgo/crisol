@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { evaluate } from './evaluate.ts'
+import { validateContent } from './file.ts'
 import type { System } from './format.ts'
 import { tryRoll } from './rolls.ts'
 import { tryFormula } from './try.ts'
@@ -97,5 +98,58 @@ describe('first', () => {
     expect(tryFormula(system, 'personaje', 'first(@lleva.marca)', two).value).toBe('Enana')
     expect(tryFormula(system, 'personaje', 'first(@lleva.bono)', two).value).toBe(1)
     expect(tryFormula(system, 'personaje', 'first(@lleva.marca)', { data: {} }).value).toBeNull()
+  })
+})
+
+describe('las listas con opciones', () => {
+  const danos = {
+    ...system,
+    types: {
+      ...system.types,
+      personaje: {
+        ...(system.types.personaje as System['types'][string]),
+        fields: {
+          ...(system.types.personaje?.fields ?? {}),
+          resistencias: {
+            kind: 'list',
+            label: 'Resistencias',
+            options: [
+              { value: 'fuego', label: { es: 'Fuego', en: 'Fire' } },
+              { value: 'frio', label: { es: 'Frío', en: 'Cold' } }
+            ]
+          }
+        }
+      }
+    }
+  } as System
+
+  it('solo valen sus opciones: lo guardado que no lo es se marca y se conserva', () => {
+    expect(validateSystem(danos).problems).toEqual([])
+    const r = evaluate(danos, 'personaje', { data: { resistencias: ['fuego', 'agua'] } })
+    expect(r.values.resistencias).toEqual(['fuego', 'agua'])
+    expect(r.problems).toEqual([{ path: 'resistencias', message: '«agua» no es una de sus opciones' }])
+  })
+
+  it('al validar: un valor inicial que no es una opción, una opción repetida y lo que añade un efecto', () => {
+    const bad = structuredClone(danos)
+    const list = bad.types.personaje?.fields.resistencias as { default?: string[]; options: { value: string }[] }
+    list.default = ['agua']
+    list.options.push({ value: 'fuego', label: 'Otra' } as never)
+    expect(validateSystem(bad).problems.map((p) => `${p.path}: ${p.message}`)).toEqual([
+      'types.personaje.fields.resistencias.options[2].value: «fuego» está repetida',
+      'types.personaje.fields.resistencias.default[0]: «agua» no es una de sus opciones'
+    ])
+    const content = [
+      {
+        type: 'arma',
+        key: 'x',
+        source: null,
+        data: { name: 'X' },
+        mechanics: { effects: [{ target: 'resistencias', op: 'append', value: '"agua"' }] }
+      }
+    ]
+    expect(validateContent(danos, content).map((p) => `${p.path}: ${p.message}`)).toEqual([
+      'content[0].mechanics.effects[0].value: «agua» no es una de sus opciones'
+    ])
   })
 })

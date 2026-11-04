@@ -52,7 +52,7 @@ export type SimpleField = FieldBase &
     | { kind: 'text'; default?: string; max?: number; lines?: number }
     | { kind: 'number'; default?: number; min?: number; max?: number; integer?: boolean }
     | { kind: 'boolean'; default?: boolean }
-    | { kind: 'list'; default?: string[]; max?: number }
+    | { kind: 'list'; default?: string[]; max?: number; options?: { value: string; label: Text }[] }
     | { kind: 'choice'; options: { value: string; label: Text }[]; default?: string }
     | { kind: 'link'; to: string; multiple?: boolean }
     | { kind: 'clock'; segments: number; default?: number }
@@ -105,7 +105,13 @@ function build(strict: boolean) {
       ...base,
       kind: kind('list', 'Una lista de textos cortos (idiomas, rasgos)'),
       default: z.array(z.string().max(200)).max(200).optional(),
-      max: z.int().min(1).max(200).optional()
+      max: z.int().min(1).max(200).optional(),
+      options: z
+        .array(obj({ value: key, label: text() }))
+        .min(1)
+        .max(200)
+        .optional()
+        .describe('Si solo valen unas, cuáles: su valor (una clave) y su nombre (los tipos de daño)')
     }),
     obj({
       ...base,

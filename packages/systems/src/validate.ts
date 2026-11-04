@@ -391,6 +391,18 @@ function checkField(
       if (field.default !== undefined && !field.options.some((o) => o.value === field.default))
         add([...path, 'default'], `«${field.default}» no es una de sus opciones`)
       break
+    case 'list':
+      if (field.options) {
+        const options = field.options
+        repeated(
+          options.map((o) => o.value),
+          (i, k) => add([...path, 'options', i, 'value'], `«${k}» está repetida`)
+        )
+        field.default?.forEach((v, i) => {
+          if (!options.some((o) => o.value === v)) add([...path, 'default', i], `«${v}» no es una de sus opciones`)
+        })
+      }
+      break
     case 'clock':
       if (field.default !== undefined && field.default > field.segments)
         add([...path, 'default'], `Como mucho, ${field.segments}`)

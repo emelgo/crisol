@@ -31,7 +31,12 @@ test('«Sistemas»: hacer uno desde cero, copiar uno de serie, subir un archivo 
   await page.goBack()
 
   // Copiar uno de serie
-  await page.getByRole('list', { name: 'De serie' }).getByRole('button', { name: 'Copiar' }).click()
+  await page
+    .getByRole('list', { name: 'De serie' })
+    .getByRole('listitem')
+    .filter({ hasText: 'En blanco' })
+    .getByRole('button', { name: 'Copiar' })
+    .click()
   await expect(page.getByRole('dialog', { name: 'Sistema nuevo' }).getByLabel('Nombre')).toHaveValue(
     'En blanco (copia)'
   )
@@ -166,7 +171,12 @@ test('criterio 2: un sistema de 2d6 desde «En blanco», probado al lado y elegi
   test.slow()
   await freshOwner(page)
   await page.goto('/sistemas')
-  await page.getByRole('list', { name: 'De serie' }).getByRole('button', { name: 'Copiar' }).click()
+  await page
+    .getByRole('list', { name: 'De serie' })
+    .getByRole('listitem')
+    .filter({ hasText: 'En blanco' })
+    .getByRole('button', { name: 'Copiar' })
+    .click()
   const create = page.getByRole('dialog', { name: 'Sistema nuevo' })
   await create.getByLabel('Nombre').fill('Fronteras')
   await create.getByRole('button', { name: 'Crear el sistema' }).click()

@@ -49,7 +49,7 @@ Plan: `tasks/plan.md`. Spec: `docs/specs/srd-5e.md`. Cada tarea, con TDD y en un
 
 ## Fase 2: Un 5e de punta a punta
 
-- [ ] **5. El sistema 5e** — el motor que pedía, hecho (los valores de cada elemento de un conjunto, `@portador`, `first()`)
+- [x] **5. El sistema 5e** — hecho (`catalog/5e/system.ts`; pruebas en `catalog/5e/system.test.ts`), con lo que pedía al motor: los valores de cada elemento de un conjunto, `@portador`, `first()` y las listas con opciones (tipos de daño, propiedades). Las clases suman al personaje con efectos (sus salvaciones, sus competencias, su nivel de lanzador, la magia de pacto); las distancias van en pies y los pesos en libras (enseñarlos en metros y kilos en español, con la hoja)
   - Acepta: el 5e de serie (id `5e`), con sus tipos y campos, sus fórmulas, sus tiradas, sus fuentes (SRD 5.1 y 5.2.1,
     con su atribución) y sus ajustes (las reglas de 2014 o de 2024, la multiclase mixta), en los dos idiomas.
   - Comprueba: valida; con un personaje escrito a mano, sus características, competencia, salvaciones, habilidades,

@@ -382,7 +382,9 @@ export function evaluate(
       t = additive(best.e.value).map(({ expr: part, sign }) => {
         const named = termLabel(part, names, '')
         const partValue = sign * toNumber(evaluateExpr(part, names, runtime))
-        return named.kind === 'base'
+        // Un valor del propio objeto (la CA de la armadura) lleva su nombre
+        const fromItem = part.kind === 'ref' && part.path[0] === 'este'
+        return named.kind === 'base' || fromItem
           ? { label: e.label, value: partValue, kind: 'base' as const, origin: e.item.id }
           : { label: named.label, value: partValue, kind: named.kind }
       })
@@ -652,8 +654,14 @@ export function evaluate(
         if (typeof raw !== 'string' || !field.options.some((o) => o.value === raw))
           flag(`«${String(raw)}» no es una de sus opciones`)
         return typeof raw === 'string' ? raw : fallback
-      case 'list':
-        return Array.isArray(raw) ? (raw.filter((v) => typeof v === 'string') as string[]) : fallback
+      case 'list': {
+        if (!Array.isArray(raw)) return fallback
+        const texts = raw.filter((v) => typeof v === 'string') as string[]
+        // Con opciones, solo valen ellas: lo demás se marca y se conserva
+        const allowed = field.options ? new Set(field.options.map((o) => o.value)) : null
+        for (const v of texts) if (allowed && !allowed.has(v)) flag(`«${v}» no es una de sus opciones`)
+        return texts
+      }
       default: {
         if (typeof raw !== 'string') return fallback
         // Un texto o unos dados guardados, con su tope (el de su campo o el del formato)
