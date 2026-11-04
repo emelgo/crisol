@@ -18,6 +18,8 @@ Aún no está en staging: se prueba en el servidor de desarrollo (lo arranco cua
   - una «oculta» tuya no le llega;
   - el desglose, «Repetir» y la tirada explicada mientras se escribe;
   - el color de tus dados en el perfil, y la hoja de dados en el móvil (menú de la llama → «Dados»).
+- [ ] **Punto de control 3**: los dados 3D: caen con tu color y quedan en lo que dice el registro; los de la jugadora
+  caen en tu pantalla con el suyo; en las opciones de la ficha (el engranaje) se apaga «Ver caer los dados de los demás».
 
 
 
