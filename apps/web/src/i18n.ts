@@ -909,7 +909,16 @@ export const es = {
     subfields: 'Sus campos',
     formula: 'Fórmula',
     formulaOk: 'Da {{type}}',
-    formulaOkTypes: { number: 'un número', string: 'un texto', boolean: 'sí o no', dice: 'dados', any: 'un valor', list: 'una lista', object: 'un grupo', null: 'nada' },
+    formulaOkTypes: {
+      number: 'un número',
+      string: 'un texto',
+      boolean: 'sí o no',
+      dice: 'dados',
+      any: 'un valor',
+      list: 'una lista',
+      object: 'un grupo',
+      null: 'nada'
+    },
     maxFormula: 'Máximo (un número o una fórmula)',
     suggestions: 'Nombres que existen',
     signed: 'Con signo (+2)'
