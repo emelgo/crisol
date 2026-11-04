@@ -1,6 +1,6 @@
 # ADR-0011: Sistemas de reglas como datos, con fórmulas propias calculadas en el servidor
 
-Estado: propuesta, con la spec de `sistemas` (`docs/specs/sistemas.md`), por aprobar
+Estado: aceptada con la spec de `sistemas` (Enrique, 2026-11-04: «ok») · `docs/specs/sistemas.md`
 
 ## Contexto
 
