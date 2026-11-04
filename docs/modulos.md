@@ -24,8 +24,11 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   orden y su origen (`evaluate.ts`); los recursos, las tiradas por cada objeto y las acciones con su escalado
   (`actions.ts`); lo que se ve con las ediciones de la campaña y las referencias por concepto (`content.ts`, y
   `duplicates` en lo que elige la campaña); `@ajustes` en todas las fórmulas. Los casos difíciles, escritos a mano
-  (`fixtures/dificiles.ts`), dan lo del SRD. **Ahora**: la tarea 5, el sistema 5e de serie (su motor ya está:
-  `@portador`, los valores de cada elemento de un conjunto, `first()`).
+  (`fixtures/dificiles.ts`), dan lo del SRD. Hechas también la tarea 5 (el 5e de serie en el catálogo, con
+  `@portador`, los valores de cada elemento de un conjunto, `first()` y las listas con opciones) y la 6 (su contenido en
+  `catalog/5e/content/`, que solo lee el servidor; buscar y leer el contenido; copiar, bajar y subir con su mecánica,
+  migración 0040, ya en la base de desarrollo). **Ahora**: la tarea 7, los scripts que sacan el contenido de los PDF
+  (el equipo y el Guerrero).
 - **Decidido por Enrique (2026-11-04): los sistemas se hacen con la IA** (`docs/diseno.md`). Al acabar `srd-5e`, una
   tanda que quita el editor de sistemas entero (también «Probar»): en «Sistemas», la lista, subir de un archivo, bajar
   cada uno y un sistema vacío, y un aviso de que los nuevos se hacen con la IA (también en las instrucciones del MCP).
