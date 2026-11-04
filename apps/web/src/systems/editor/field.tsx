@@ -58,6 +58,11 @@ export function blankField(kind: Field['kind'], label: string, types: System['ty
   }
 }
 
+/** Cambia la clave de una entrada sin moverla de su sitio (el orden de los campos es el de la hoja) */
+export function renameKey<T>(record: Record<string, T>, from: string, to: string): Record<string, T> {
+  return Object.fromEntries(Object.entries(record).map(([key, value]) => [key === from ? to : key, value]))
+}
+
 /** Una clave a partir de un nombre: en minúsculas, sin tildes ni espacios, que no esté ya */
 export function keyFrom(label: string, taken: Iterable<string>) {
   const base =

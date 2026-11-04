@@ -4,7 +4,7 @@
  */
 import { type Context, checkFormula, type Shape } from '@crisol/systems'
 import { Check, TriangleAlert } from 'lucide-react'
-import { type KeyboardEvent, useId, useMemo, useRef, useState } from 'react'
+import { type KeyboardEvent, type ReactNode, useId, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import styles from './editor.module.css'
 
@@ -43,21 +43,25 @@ export function FormulaInput({
   value,
   onChange,
   context,
-  disabled
+  disabled,
+  compact
 }: {
   id: string
-  label: string
+  label: ReactNode
   value: string
   onChange: (value: string) => void
   context: Context
   disabled?: boolean
+  /** En una fila: lo que da se dice solo si falla */
+  compact?: boolean
 }) {
   const { t } = useTranslation()
   const listId = useId()
   const input = useRef<HTMLInputElement>(null)
   const [caret, setCaret] = useState(value.length)
   const [active, setActive] = useState(0)
-  const [closed, setClosed] = useState(false)
+  // Los nombres se proponen al escribir, no al abrirla
+  const [closed, setClosed] = useState(true)
   const checked = useMemo(() => checkFormula(value, context), [value, context])
   const problem = checked.problems[0]
   const writing = typing(value, caret)
@@ -108,7 +112,7 @@ export function FormulaInput({
           aria-autocomplete="list"
           aria-activedescendant={open ? `${listId}-${active}` : undefined}
           aria-invalid={Boolean(problem)}
-          aria-describedby={`${id}-explain`}
+          aria-describedby={compact && !problem ? undefined : `${id}-explain`}
           onChange={(event) => {
             onChange(event.currentTarget.value)
             setCaret(event.currentTarget.selectionStart ?? event.currentTarget.value.length)
@@ -143,7 +147,11 @@ export function FormulaInput({
           </div>
         )}
       </div>
-      <p id={`${id}-explain`} className={problem ? styles.explainBad : styles.explain} aria-live="polite">
+      <p
+        id={`${id}-explain`}
+        className={problem ? styles.explainBad : compact ? styles.hidden : styles.explain}
+        aria-live="polite"
+      >
         {problem ? <TriangleAlert size={14} aria-hidden="true" /> : <Check size={14} aria-hidden="true" />}
         {problem
           ? problem.message

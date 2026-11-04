@@ -32,34 +32,48 @@ import form from '../../components/form.module.css'
 import { failed, LoadError } from '../../components/load-error.tsx'
 import { Modal } from '../../components/modal.tsx'
 import { ProblemList } from '../screen.tsx'
+import { AdvancedTools, JsonCode, JsonProblems, shownProblems, useJsonText } from './advanced.tsx'
 import styles from './editor.module.css'
-import { blankField, FieldEditor, keyFrom } from './field.tsx'
+import { blankField, FieldEditor, keyFrom, renameKey } from './field.tsx'
+import { DicePart, RollsPart, SettingsPart, SourcesPart } from './game.tsx'
 import { TryPanel } from './try.tsx'
 
 type Language = (typeof LANGUAGES)[number]
+
+/** Las partes «de juego»: lo de cada una (sus problemas) va en ella, y no en General */
+const GAME_PARTS = ['rolls', 'dice', 'sources', 'settings'] as const
+const under = (p: Problem, prefix: string) =>
+  p.path === prefix || p.path.startsWith(`${prefix}.`) || p.path.startsWith(`${prefix}[`)
 
 export function SystemView() {
   const { systemId } = useParams({ from: '/sistemas/$systemId' })
   const api = useApi()
   const { account, pending } = useAccounts().useAccount()
   const system = useQuery({ queryKey: ['systems', systemId], queryFn: () => api.call('getSystem', { systemId }) })
+  // La parte que se ve sigue al guardar (el editor empieza de nuevo con la versión nueva)
+  const [part, setPart] = useState('general')
   if (pending) return null
   if (!account) return <Navigate to="/entrar" replace />
   if (failed(system)) return <LoadError error={system.error} onRetry={() => system.refetch()} />
   if (!system.data) return null
   // Con otra versión (guardada aquí o en otra pestaña), el borrador empieza de nuevo
-  return <SystemEditor key={`${system.data.id}:${system.data.version}`} data={system.data} />
+  return (
+    <SystemEditor key={`${system.data.id}:${system.data.version}`} data={system.data} part={part} setPart={setPart} />
+  )
 }
 
 /** Lo que hay que cambiar en el borrador: una copia, cambiada */
 type Change = (fn: (draft: System) => void) => void
 
-/** Cambia la clave de una entrada sin moverla de su sitio (el orden de los campos es el de la hoja) */
-function renameKey<T>(record: Record<string, T>, from: string, to: string): Record<string, T> {
-  return Object.fromEntries(Object.entries(record).map(([key, value]) => [key === from ? to : key, value]))
-}
-
-function SystemEditor({ data }: { data: SystemFull }) {
+function SystemEditor({
+  data,
+  part: chosen,
+  setPart
+}: {
+  data: SystemFull
+  part: string
+  setPart: (part: string) => void
+}) {
   const { t } = useTranslation()
   const api = useApi()
   const queryClient = useQueryClient()
@@ -68,7 +82,8 @@ function SystemEditor({ data }: { data: SystemFull }) {
   const partId = useId()
   const original = data.document as unknown as System
   const [draft, setDraft] = useState<System>(() => structuredClone(original))
-  const [part, setPart] = useState('general')
+  // Si la parte ya no está (un tipo que se quitó en otra pestaña), General
+  const part = !chosen.startsWith('type:') || draft.types[chosen.slice(5)] ? chosen : 'general'
   const change: Change = (fn) =>
     setDraft((current) => {
       const next = structuredClone(current)
@@ -80,6 +95,9 @@ function SystemEditor({ data }: { data: SystemFull }) {
   const errors = problems.filter((p) => p.severity === 'error')
   const readOnly = data.builtIn
   const types = Object.entries(draft.types)
+  const advanced = part === 'advanced'
+  const json = useJsonText(draft, setDraft, advanced)
+  const [goto, setGoto] = useState<{ line: number; n: number } | null>(null)
 
   const save = useMutation({
     mutationFn: () =>
@@ -108,9 +126,9 @@ function SystemEditor({ data }: { data: SystemFull }) {
     })
     setPart(`type:${key}`)
   }
-  const inPart = (prefix: string) =>
-    problems.filter((p) => p.path === prefix || p.path.startsWith(`${prefix}.`) || p.path.startsWith(`${prefix}[`))
-  const generalProblems = problems.filter((p) => !p.path.startsWith('types.'))
+  const inPart = (prefix: string) => problems.filter((p) => under(p, prefix))
+  const errorsIn = (prefix: string) => inPart(prefix).filter((p) => p.severity === 'error').length
+  const generalProblems = problems.filter((p) => !under(p, 'types') && !GAME_PARTS.some((g) => under(p, g)))
   const currentType = part.startsWith('type:') ? part.slice(5) : null
   // Lo que se prueba: el tipo que se está viendo o, si no, el primer personaje
   const [tryChoice, setTryChoice] = useState<string | null>(null)
@@ -118,7 +136,7 @@ function SystemEditor({ data }: { data: SystemFull }) {
   const tryType = [tryChoice, currentType, firstActor].find((k) => k && draft.types[k]) ?? null
   const [trying, setTrying] = useState(false)
   const tryId = useId()
-  const tryPanel = tryType && (
+  const tryPanel = !advanced && tryType && (
     <>
       <div className={styles.tryHead}>
         <h2 className={styles.tryTitle}>{t('systemTry.title')}</h2>
@@ -156,6 +174,23 @@ function SystemEditor({ data }: { data: SystemFull }) {
       fields: Object.keys(type.fields).length
     }))
   ]
+  const gameParts = [
+    {
+      id: 'rolls',
+      label: t('systemEditor.rolls'),
+      count: errorsIn('rolls'),
+      fields: Object.keys(draft.rolls ?? {}).length
+    },
+    { id: 'dice', label: t('systemEditor.dice'), count: errorsIn('dice'), fields: null },
+    { id: 'sources', label: t('systemEditor.sources'), count: errorsIn('sources'), fields: draft.sources?.length ?? 0 },
+    {
+      id: 'settings',
+      label: t('systemEditor.settings'),
+      count: errorsIn('settings'),
+      fields: Object.keys(draft.settings ?? {}).length
+    },
+    { id: 'advanced', label: t('systemEditor.advanced'), count: 0, fields: null }
+  ]
 
   return (
     <section className={styles.page}>
@@ -180,6 +215,12 @@ function SystemEditor({ data }: { data: SystemFull }) {
             </li>
           )}
         </ul>
+        <p className={styles.partsHead}>{t('systemEditor.game')}</p>
+        <ul className={styles.nav}>
+          {gameParts.map((p) => (
+            <PartButton key={p.id} part={p} current={part === p.id} onPick={() => setPart(p.id)} />
+          ))}
+        </ul>
       </aside>
 
       <div className={styles.center}>
@@ -200,7 +241,7 @@ function SystemEditor({ data }: { data: SystemFull }) {
               value={part}
               onChange={(event) => setPart(event.currentTarget.value)}
             >
-              {parts.map((p) => (
+              {[...parts, ...gameParts].map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.label}
                 </option>
@@ -222,21 +263,32 @@ function SystemEditor({ data }: { data: SystemFull }) {
           </div>
         )}
         <div className={styles.body}>
-          <ChangesBar shown={dirty && !readOnly}>
+          <ChangesBar shown={(dirty || json.broken) && !readOnly}>
             <BusyButton
               type="button"
               className={form.button}
               busy={save.isPending}
-              disabled={errors.length > 0}
+              disabled={errors.length > 0 || json.broken}
               onClick={() => save.mutate()}
             >
               {t('systemEditor.save')}
             </BusyButton>
-            <button type="button" className={dialogStyles.cancel} onClick={() => setDraft(structuredClone(original))}>
+            <button
+              type="button"
+              className={dialogStyles.cancel}
+              onClick={() => {
+                setDraft(structuredClone(original))
+                json.reset()
+              }}
+            >
               {t('systemEditor.cancel')}
             </button>
           </ChangesBar>
-          {dirty && errors.length > 0 && <p className={styles.cantSave}>{t('systemEditor.cantSave')}</p>}
+          {json.broken ? (
+            <p className={styles.cantSave}>{t('systemEditor.cantSaveJson')}</p>
+          ) : (
+            dirty && errors.length > 0 && <p className={styles.cantSave}>{t('systemEditor.cantSave')}</p>
+          )}
           <FormError message={save.error ? errorText(save.error) : null} />
           {part === 'general' && (
             <GeneralPart draft={draft} change={change} problems={generalProblems} disabled={readOnly} />
@@ -263,9 +315,57 @@ function SystemEditor({ data }: { data: SystemFull }) {
               }}
             />
           )}
+          {part === 'rolls' && (
+            <RollsPart
+              draft={draft}
+              original={original}
+              change={change}
+              problems={inPart('rolls')}
+              disabled={readOnly}
+            />
+          )}
+          {part === 'dice' && <DicePart draft={draft} change={change} problems={inPart('dice')} disabled={readOnly} />}
+          {part === 'sources' && (
+            <SourcesPart
+              draft={draft}
+              original={original}
+              change={change}
+              problems={inPart('sources')}
+              disabled={readOnly}
+            />
+          )}
+          {part === 'settings' && (
+            <SettingsPart
+              draft={draft}
+              original={original}
+              change={change}
+              problems={inPart('settings')}
+              disabled={readOnly}
+            />
+          )}
+          {advanced && (
+            <section className={styles.part} aria-labelledby={`${partId}-advanced`}>
+              <div className={styles.typeHead}>
+                <h2 id={`${partId}-advanced`} className={styles.partTitle}>
+                  {t('systemEditor.advanced')}
+                </h2>
+                <AdvancedTools data={data} dirty={dirty} />
+              </div>
+              <JsonCode json={json} problems={shownProblems(json, problems)} goto={goto} readOnly={readOnly} />
+            </section>
+          )}
         </div>
       </div>
 
+      {advanced && (
+        <aside className={styles.problemsCard} aria-label={t('systemEditor.problemsTitle')}>
+          <JsonProblems
+            json={json}
+            problems={shownProblems(json, problems)}
+            onGo={(line) => setGoto((g) => ({ line, n: (g?.n ?? 0) + 1 }))}
+          />
+        </aside>
+      )}
       {tryPanel && (
         <aside className={styles.tryCard} aria-label={t('systemTry.title')}>
           {tryPanel}
