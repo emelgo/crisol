@@ -135,7 +135,7 @@ el 2026-11-12).
 
 ## Fase 3: La interfaz
 
-- [ ] **8. «Sistemas» en Mis mundos**
+- [x] **8. «Sistemas» en Mis mundos** — hecha. El archivo se valida en la web antes de subirlo (los problemas, por sus nombres y con su ruta). `/sistemas/:id` enseña el sistema para leerlo hasta que llegue el editor (tarea 10).
   - Acepta:
     - «Sistemas» en la barra fuera de los mundos (y en el menú de la llama del móvil);
     - la lista con los tuyos y los de serie, y la vista previa al pasar;

@@ -52,3 +52,22 @@ describe('las frases del historial: orden, pestañas, mapas y etiquetas', () => 
     expect(say('updateTag', { tag: 'lugar', name: 'sitio' })).toContain('«sitio»')
   })
 })
+
+describe('las frases del historial: los sistemas y el de una campaña', () => {
+  it('crear, cambiar, subir y borrar un sistema', () => {
+    expect(say('createSystem', { name: 'Fronteras' })).toBe('creó el sistema «Fronteras»')
+    expect(say('updateSystem', { name: 'Fronteras' })).toBe('cambió el sistema «Fronteras»')
+    expect(say('importSystem', { name: 'Fronteras' })).toBe('subió el sistema «Fronteras»')
+    expect(say('deleteSystem', { name: 'Fronteras' })).toBe('borró el sistema «Fronteras»')
+  })
+
+  it('elegir el sistema de una campaña, quitarlo o cambiar lo que elige de él', () => {
+    expect(say('updateCampaign', { name: 'La Marca', system: 'Fronteras' })).toBe(
+      'eligió el sistema «Fronteras» para la campaña «La Marca»'
+    )
+    expect(say('updateCampaign', { name: 'La Marca', system: null })).toBe('quitó el sistema de la campaña «La Marca»')
+    expect(say('updateCampaign', { name: 'La Marca', systemChoices: true })).toBe(
+      'cambió lo que elige la campaña «La Marca» de su sistema'
+    )
+  })
+})

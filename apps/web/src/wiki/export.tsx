@@ -12,19 +12,7 @@ import { useErrorText } from '../api/errors.ts'
 import { useAnnounce } from '../components/announcer.tsx'
 import { BusyButton } from '../components/busy-button.tsx'
 import list from '../components/list.module.css'
-
-/** Guarda unos bytes como archivo, con un enlace que se pulsa y se quita */
-function save(name: string, data: Blob) {
-  const url = URL.createObjectURL(data)
-  const link = document.createElement('a')
-  link.href = url
-  link.download = name
-  link.style.display = 'none'
-  document.body.append(link)
-  link.click()
-  link.remove()
-  setTimeout(() => URL.revokeObjectURL(url), 1000)
-}
+import { saveFile as save } from '../components/save-file.ts'
 
 export function useExport() {
   const { t } = useTranslation()

@@ -1,0 +1,173 @@
+/* «Sistemas»: lo propio de su pantalla, sobre la de plantillas (templates/screen.module.css) */
+
+/* Tres maneras de empezar en vez de dos */
+.modes {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+/* La versión a la izquierda y el engranaje (o «Copiar») a la derecha */
+.foot {
+  justify-content: space-between;
+  align-items: center;
+}
+
+.version {
+  font-size: 0.75rem;
+  color: var(--color-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.summary {
+  margin: var(--space-3) 0 0;
+  font-size: 0.875rem;
+}
+
+/* El archivo: se suelta encima o se elige */
+.drop {
+  margin: 0;
+  min-inline-size: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-5) var(--space-3);
+  border: 1px dashed var(--color-frame);
+  border-radius: 8px;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+  text-align: center;
+}
+
+.pick {
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: var(--space-2) var(--space-3);
+  color: var(--color-text);
+  font-weight: 600;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+
+.picked {
+  color: var(--color-text);
+  font-size: 0.8125rem;
+  overflow-wrap: anywhere;
+}
+
+.pick:hover {
+  background: var(--color-raised);
+}
+
+.fileInput {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+.fileInput:focus-visible + .pick,
+.drop:has(.fileInput:focus-visible) .pick {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.notUploaded {
+  margin: var(--space-3) 0 var(--space-2);
+  font-weight: 600;
+}
+
+/* Cada problema: dónde (por sus nombres), por qué y, en pequeño, su ruta */
+.problems {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  max-block-size: 18rem;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) transparent;
+}
+
+.problems li {
+  display: flex;
+  flex-direction: column;
+  padding-inline-start: var(--space-3);
+  font-size: 0.875rem;
+}
+
+.error {
+  border-inline-start: 2px solid var(--color-accent);
+}
+
+.warning {
+  border-inline-start: 2px solid var(--color-h3);
+}
+
+.where {
+  font-weight: 600;
+}
+
+.path {
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 0.6875rem;
+  color: var(--color-muted);
+  overflow-wrap: anywhere;
+}
+
+/* Lo de la ventana del engranaje: una fila por cosa, con su acción a la derecha */
+.rows {
+  margin: var(--space-4) 0 0;
+}
+
+.rows > div {
+  padding: var(--space-3) 0;
+  border-block-end: 1px solid var(--color-border);
+}
+
+.rows > div:last-child {
+  border-block-end: 0;
+}
+
+.rows dt {
+  font-size: 0.875rem;
+}
+
+.rows dd {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--color-muted);
+}
+
+.rowAction {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: none;
+  padding: var(--space-2) var(--space-3);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.rowAction:hover {
+  background: var(--color-raised);
+}
+
+.inUse {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--color-muted);
+}

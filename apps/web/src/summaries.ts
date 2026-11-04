@@ -40,9 +40,19 @@ export function summaryOf(
     case 'renameCampaign':
       return say('renameCampaign', { from: text(details.from), to: text(details.to) })
     case 'updateCampaign':
-      return details.from !== undefined
-        ? say('renameCampaign', { from: text(details.from), to: text(details.to) })
-        : say('updateCampaign', { name: text(details.name) })
+      if (details.from !== undefined) return say('renameCampaign', { from: text(details.from), to: text(details.to) })
+      // Su sistema: elegirlo, quitarlo o cambiar lo que elige de él
+      if (details.system !== undefined)
+        return details.system === null
+          ? say('campaignNoSystem', { name: text(details.name) })
+          : say('campaignSystem', { name: text(details.name), system: text(details.system) })
+      if (details.systemChoices) return say('campaignSystemChoices', { name: text(details.name) })
+      return say('updateCampaign', { name: text(details.name) })
+    case 'createSystem':
+    case 'updateSystem':
+    case 'deleteSystem':
+    case 'importSystem':
+      return say(action, { name: text(details.name) })
     case 'regenerateInvitation':
       return say('regenerateInvitation', { campaign: text(details.campaign) })
     case 'setInvitationsOpen':
