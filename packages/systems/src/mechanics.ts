@@ -234,7 +234,7 @@ export function validateMechanics(system: System, type: string, mechanics: unkno
     if (c.type && !own(system.types, c.type)) add([...here, 'choose', 'type'], `No existe el tipo «${c.type}»`)
     if (c.set) {
       const set = actors.map(([, t]) => own(t.fields, c.set as string)).find((f) => f?.kind === 'set')
-      if (!set || set.kind !== 'set') add([...here, 'choose', 'set'], `Ningún personaje tiene el conjunto «${c.set}»`)
+      if (set?.kind !== 'set') add([...here, 'choose', 'set'], `Ningún personaje tiene el conjunto «${c.set}»`)
       else {
         const field = c.field ?? 'grado'
         if (!own(set.fields, field)) add([...here, 'choose', 'field'], `«${c.set}» no tiene el campo «${field}»`)
