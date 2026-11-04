@@ -13,7 +13,7 @@ import {
   type RollResult,
   rollTree
 } from '@crisol/dice'
-import { type DocumentItem, evaluate, evaluateExpr, type SystemDocument, settingsOf } from './evaluate.ts'
+import { evaluate, evaluateExpr, type SystemDocument, settingsOf } from './evaluate.ts'
 import type { Field, Roll, System, TONES } from './format.ts'
 import type { Value } from './formulas/functions.ts'
 import { type Expr, FormulaError, parseFormula } from './formulas/parse.ts'
