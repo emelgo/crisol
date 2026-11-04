@@ -512,6 +512,9 @@ importers:
       '@crisol/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
+      '@crisol/dice':
+        specifier: workspace:*
+        version: link:../../packages/dice
       '@crisol/domain':
         specifier: workspace:*
         version: link:../../packages/domain

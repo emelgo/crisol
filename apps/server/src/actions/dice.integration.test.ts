@@ -1,14 +1,16 @@
-import { diceRoll } from '@crisol/contracts'
+import { diceRoll, type RealtimeMessage } from '@crisol/contracts'
 import { connect, schema } from '@crisol/db'
 import { freshTestDatabase, resetDatabase } from '@crisol/db/testing'
 import type { FastifyInstance } from 'fastify'
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { buildApp } from '../app.ts'
 import type { Auth } from '../auth/auth.ts'
 import { createTestAuth, signUpTestUser, TEST_SEAL_KEY } from '../testing.ts'
 
 const BASE_URL = 'http://localhost:5173'
 const ok = async () => undefined
+type WebSocket = Awaited<ReturnType<FastifyInstance['injectWS']>>
+const settle = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 describe('las tiradas de una campaña', () => {
   let conn: ReturnType<typeof connect>
@@ -19,6 +21,7 @@ describe('las tiradas de una campaña', () => {
   let bruno: { userId: string; cookie: string }
   let carla: { userId: string; cookie: string }
   let campaignId: string
+  const sockets: WebSocket[] = []
 
   const call = (name: string, payload: object, cookie: string) =>
     app.inject({ method: 'POST', url: `/api/actions/${name}`, payload, headers: { origin: BASE_URL, cookie } })
@@ -44,6 +47,7 @@ describe('las tiradas de una campaña', () => {
       checks: { postgres: ok, valkey: ok },
       accounts: { auth, db: conn.db, publicUrl: BASE_URL, sealKey: TEST_SEAL_KEY }
     })
+    await app.ready()
     master = await signUpTestUser(auth, { name: 'Enrique', email: 'enrique@crisol.test' })
     const [org] = await conn.db.insert(schema.organizations).values({ name: 'Fateforge' }).returning()
     const organizationId = org?.id ?? ''
@@ -61,10 +65,29 @@ describe('las tiradas de una campaña', () => {
     carla = await signUpTestUser(auth, { name: 'Carla', email: 'carla@crisol.test' })
   })
 
+  afterEach(async () => {
+    for (const ws of sockets.splice(0)) ws.terminate()
+    await app.close()
+  })
+
   afterAll(async () => {
-    await app?.close()
     await conn?.close()
   })
+
+  /** Las tiradas que le llegan en vivo a una cuenta */
+  const listen = async (who: { cookie: string }) => {
+    const ws = await app.injectWS('/api/realtime', { headers: { origin: BASE_URL, cookie: who.cookie } })
+    sockets.push(ws)
+    const got: string[] = []
+    ws.on('message', (data: Buffer) => {
+      const message = JSON.parse(String(data)) as RealtimeMessage
+      if (message.type === 'rolled') got.push(message.roll.label ?? '')
+    })
+    return got
+  }
+  const until = async (check: () => boolean) => {
+    for (let i = 0; i < 40 && !check(); i++) await settle(50)
+  }
 
   it('el servidor tira: el total, cada dado y su desglose, de quién y con su visibilidad', async () => {
     const done = await roll(ana, '1d20+4 # Percepción', 'all')
@@ -128,5 +151,32 @@ describe('las tiradas de una campaña', () => {
       'Tirada 5'
     ])
     expect(rest.next).toBeNull()
+  })
+
+  it('en vivo, cada tirada le llega a quien la puede ver, una sola vez, y a nadie más', async () => {
+    const toMaster = await listen(master)
+    const toAna = await listen(ana)
+    const toBruno = await listen(bruno)
+    const toCarla = await listen(carla)
+    await roll(master, '1d20 # Iniciativa', 'all')
+    await until(() => toMaster.length > 0 && toAna.length > 0 && toBruno.length > 0)
+    await roll(ana, '1d20+7 # Sigilo', 'master')
+    await roll(bruno, '1d20+1 # ¿Me miente?', 'self')
+    await roll(master, '1d20+2 # ¿La oyen?', 'hidden')
+    await until(() => toMaster.length >= 4)
+    await settle(200)
+    expect(toMaster).toEqual(['Iniciativa', 'Sigilo', '¿Me miente?', '¿La oyen?'])
+    expect(toAna).toEqual(['Iniciativa', 'Sigilo'])
+    expect(toBruno).toEqual(['Iniciativa', '¿Me miente?'])
+    expect(toCarla).toEqual([])
+  })
+
+  it('como mucho 60 tiradas por minuto y persona', async () => {
+    for (let i = 0; i < 60; i++) await roll(ana, '1d6', 'all')
+    const tooMany = await call('rollDice', { campaignId, formula: '1d6', visibility: 'all' }, ana.cookie)
+    expect(tooMany.statusCode).toBe(429)
+    expect(tooMany.json()).toEqual({ code: 'TOO_MANY_ROLLS' })
+    // A las demás no les afecta
+    await roll(bruno, '1d6 # Sigue', 'all')
   })
 })

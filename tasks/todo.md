@@ -41,7 +41,7 @@ amplía `@fugas` en la misma tarea. Cobertura ≥ 80 % de lo cambiado (bloquea d
     `packages/domain/src/policy.ts`, `packages/contracts/src/dice.ts`, `apps/server/src/actions/dice.ts`,
     `docs/adr/0010-tiradas.md`.
 
-- [ ] **3. En vivo, la prueba de fugas y el límite (riesgo)**
+- [x] **3. En vivo, la prueba de fugas y el límite (riesgo)** — hecha. Las tiradas llegan enteras por el canal (las demás cosas solo avisan), a quien las puede ver y una sola vez.
   - Acepta:
     - el mensaje `rolled`, que llega a quien puede ver la tirada y a nadie más;
     - como mucho 60 tiradas por minuto y persona (`429` después);
@@ -52,7 +52,7 @@ amplía `@fugas` en la misma tarea. Cobertura ≥ 80 % de lo cambiado (bloquea d
 
 ### Punto de control 1
 
-- [ ] En local: el máster y una jugadora por la API; `@fugas` en verde.
+- [x] En local: el máster y una jugadora por la API; `@fugas` en verde (con pruebas: integración del tiempo real y `@fugas`).
 
 ## Fase 3: La ficha de dados
 

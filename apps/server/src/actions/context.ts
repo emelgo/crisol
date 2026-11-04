@@ -52,6 +52,14 @@ export class InvalidRequestError extends Error {
   }
 }
 
+/** Demasiadas seguidas: hay que esperar un poco (429) */
+export class TooManyRequestsError extends InvalidRequestError {
+  constructor(code: string) {
+    super(code)
+    this.name = 'TooManyRequestsError'
+  }
+}
+
 /** El código de la API de un error esperado (no existe, sin permiso, petición que no se puede atender); si no, null */
 export function errorCode(error: unknown): string | null {
   if (error instanceof NotFoundError) return 'NOT_FOUND'

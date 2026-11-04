@@ -4,7 +4,7 @@ import { actorFrom, ForbiddenError, NotFoundError } from '@crisol/domain'
 import type { FastifyInstance } from 'fastify'
 import type { Auth } from '../auth/auth.ts'
 import { toHeaders } from '../http.ts'
-import { type ActionEnv, InvalidRequestError } from './context.ts'
+import { type ActionEnv, InvalidRequestError, TooManyRequestsError } from './context.ts'
 import { implementationsByName } from './implementations.ts'
 
 export function registerActionRoutes(app: FastifyInstance, env: ActionEnv, auth: Auth) {
@@ -28,6 +28,7 @@ export function registerActionRoutes(app: FastifyInstance, env: ActionEnv, auth:
     } catch (error) {
       if (error instanceof NotFoundError) return reply.code(404).send({ code: 'NOT_FOUND' })
       if (error instanceof ForbiddenError) return reply.code(403).send({ code: 'FORBIDDEN' })
+      if (error instanceof TooManyRequestsError) return reply.code(429).send({ code: error.code })
       if (error instanceof InvalidRequestError) return reply.code(400).send({ code: error.code })
       throw error
     }
