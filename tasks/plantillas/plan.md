@@ -1,7 +1,7 @@
 # Plan: Módulo 2 — Tipos de página y plantillas
 
 Spec: `docs/specs/plantillas.md` (aprobada) · ADR: 0003, 0006, 0008 y 0009 · Diseño: lienzo «Crisol: plantillas»
-(aprobado; fuentes en `out/lienzo-plantillas/`) · Tareas con detalle: `tasks/todo.md` · Fecha: 2026-11-03. Los planes
+(aprobado; fuentes en `out/lienzo-plantillas/`) · Tareas con detalle: `tasks/plantillas/todo.md` · Fecha: 2026-11-03. Los planes
 de los módulos 0 y 1 están en `tasks/fundacion/` y `tasks/wiki/`.
 
 ## Resumen

@@ -1,6 +1,6 @@
 # Tareas: Módulo 2 — Tipos de página y plantillas
 
-Plan: `tasks/plan.md` · Spec: `docs/specs/plantillas.md` · ADR-0009. Cada tarea: TDD → comprobación local → commit en
+Plan: `tasks/plantillas/plan.md` · Spec: `docs/specs/plantillas.md` · ADR-0009. Cada tarea: TDD → comprobación local → commit en
 la rama de la tanda (`modulo-2/campos`, PR #93) → «Dónde estamos» al día. La CI gasta cuota mensual (Enrique,
 2026-11-03): se sube y se pasa una sola vez tras muchas tareas; entonces merge y `scripts/desplegar-staging.sh`. Los
 puntos de control intermedios se prueban en el servidor de desarrollo local.
