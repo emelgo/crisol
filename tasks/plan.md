@@ -1,95 +1,128 @@
-# Plan: Módulo 3 — dados
+# Plan: Módulo 3 — sistemas
 
-Spec: `docs/specs/dados.md` (aprobada) · Mapa del módulo: `docs/specs/modulo-3.md` · Diseño: lienzo «Crisol: dados»
-(aprobado; fuentes en `out/lienzo-dados/`) · Tareas con detalle: `tasks/todo.md` · Fecha: 2026-11-04. Los planes
-anteriores están en `tasks/fundacion/`, `tasks/wiki/` y `tasks/plantillas/`.
+Spec: `docs/specs/sistemas.md` (aprobada) · ADR-0011 (aceptado) · Mapa del módulo: `docs/specs/modulo-3.md` · Diseño:
+lienzo «Crisol: sistemas» (aprobado; fuentes en `out/lienzo-sistemas/`) · Lo que hace el Crisol actual:
+`docs/inventario-sistemas.md` · Tareas con detalle: `tasks/todo.md` · Fecha: 2026-11-04. Los planes anteriores están en
+`tasks/fundacion/`, `tasks/wiki/`, `tasks/plantillas/` y `tasks/dados/`.
 
 ## Resumen
 
-Se construye en cinco fases, que siguen el mapa de la spec: la notación, el registro en el servidor, la ficha de dados,
-los dados 3D y las tiradas escritas, y la IA con el cierre. Cada tarea es una porción vertical, con sus datos, su API,
-su interfaz, sus herramientas MCP y sus pruebas. Todo va en la rama `modulo-3/dados`; se comprueba en local y la CI
-(cuota mensual) se pasa una sola vez, al final de la tanda. Entonces se fusiona y se despliega en staging.
+Se construye en cuatro fases, que siguen el mapa de la spec:
+1. **El paquete puro**: el formato, las fórmulas y las tiradas, sin base de datos ni interfaz.
+2. **El servidor**: los sistemas de la cuenta, bajar y subir, y la campaña con su sistema.
+3. **La interfaz**: «Sistemas», la elección en la campaña y el editor con su panel para probar.
+4. **La IA y el cierre.**
+
+Cada tarea es una porción vertical, con sus pruebas. Todo va en la rama `modulo-3/sistemas`. Se comprueba en local y la
+CI (cuota mensual) se pasa una sola vez, al final de la tanda. Entonces se fusiona y se despliega en staging.
 
 Lo más arriesgado va pronto:
-- **que nadie reciba una tirada que no puede ver** (tareas 2 y 3), con la prueba de fugas ampliada antes de hacer la
-  interfaz;
-- **que los dados 3D caigan en el resultado del servidor** (tarea 7), con un prototipo antes de la bandeja. Si la
-  física no lo consigue a tiempo, queda el plan B del lienzo: un giro guionizado que acaba en la cara pedida, sin
-  física.
+- **el lenguaje de fórmulas** (tareas 2 y 3): que compruebe nombres, tipos y ciclos al guardar, que dé el desglose y
+  que calcule un personaje de 5e de nivel 20 en menos de 20 ms. Se mide antes de construir nada encima;
+- **que el formato reciba lo de Foundry** (tarea 1): un fragmento con la forma de dnd5e, escrito por nosotros, tiene
+  que caber en el formato.
 
 ## Decisiones de construcción
 
-- **El paquete `@crisol/dice`** (`packages/dice`): la notación, el intérprete y la tirada, puros, sin base de datos ni
-  React. Lo usan el servidor (para tirar) y la web (para describir la fórmula mientras se escribe; la web nunca tira).
-  Entra en la regla de límites de los paquetes de dominio.
-- **El azar**: la tirada recibe una función `random(caras)`. El servidor le pasa `crypto.randomInt`; las pruebas, una
-  secuencia fija.
-- **La tabla `dice_rolls`** (migración 0037):
-  - campos: campaña, mundo, quién (`user_id`), si fue la IA, fórmula, etiqueta, resultado (`jsonb`: total, cada dado,
-    crítico o pifia y el desglose), visibilidad y hora;
-  - un índice por campaña y hora.
+- **El paquete `@crisol/systems`** (`packages/systems`): el formato (zod), las fórmulas, las tiradas del sistema y el
+  catálogo. Es puro: sin base de datos ni React, en la regla de límites de los paquetes de dominio. Depende de
+  `@crisol/dice`. Lo usan:
+  - el servidor, para validar, calcular y probar;
+  - la web, para comprobar mientras se escribe y para «Probar»;
+  - los contratos, para la forma de las acciones.
+- **El formato**:
+  - sus claves van en inglés, con la forma del manifiesto de Foundry: `id`, `name`, `version`, `format`, `types`
+    (`actor` y `item`), `fields`, `rolls`, `dice`, `sources`, `packs`, `languages` y `settings`;
+  - `sheet`, `creation` y `levelUp` se dejan sitio, con una forma mínima que comprueban `hoja` y `personajes`;
+  - las claves de cada sistema (sus tipos, campos y tiradas), las que elija quien lo hace;
+  - los textos son un texto o un `{ es, en }`.
+- **Validar** devuelve problemas con:
+  - la ruta, para la IA y el JSON (`types.personaje.fields.defensa.formula`);
+  - dónde está, por sus nombres («Personaje › Defensa › Fórmula»), para el editor;
+  - el motivo, en español;
+  - su gravedad: error, que no deja guardar, o aviso, que no lo impide (lo desconocido se conserva).
+- **Las fórmulas**: una gramática propia sobre la de `@crisol/dice`, más:
+  - referencias `@a.b`;
+  - las operaciones `+ - * / %`, las comparaciones, `&& || !` y `? :`;
+  - las funciones de una tabla fija (`floor`, `ceil`, `round`, `abs`, `max`, `min` y unas pocas para listas y tablas).
 
-  **No pasa por `operation()`**: una tirada no se deshace, y el registro es su propia lista. Va en el **ADR-0010**
-  (tiradas en el servidor y su registro, fuera del historial).
-- **Visibilidad**, en el código `all`, `self` («para mí»), `master` («al máster») y `hidden` («oculta»).
-  - Los jugadores usan `all`, `self` y `master`; el máster, `all` y `hidden`.
-  - Quien tira y el máster ven las privadas; los demás no saben que existen.
-- **Permisos nuevos** en la capa de políticas:
-  - `dice.roll` y `dice.read`: los miembros de la campaña;
-  - `dice.private`: el máster del mundo o de la campaña, que recibe las privadas.
-- **En vivo**: el mensaje `rolled`, con la tirada ya filtrada.
-  - Una pública va a quien tiene `dice.read` sobre la campaña.
-  - Una privada va a quien tira y a quien tiene `dice.private` sobre la campaña.
-- **El límite**: como mucho, 60 tiradas por minuto y persona. Se cuentan en la propia tabla, así vale con varias
-  instancias.
-- **El color de los dados y «ver caer los de los demás»**: dos campos nuevos de la cuenta, como el nombre y los
-  apellidos. Sin elegir, el color sale de una paleta fija según la cuenta.
-- **La web** (`apps/web/src/dice/`):
-  - «Dados» en la barra del mundo y en la página de la campaña abre y cierra la ficha, en el sitio del panel;
-  - la campaña elegida se recuerda por mundo;
-  - en el móvil, la ficha es una hoja que sube desde abajo, con su asa.
-- **Los dados 3D**: `three` y `cannon-es` (MIT, aprobadas), cargadas aparte la primera vez que se tira. La técnica:
-  simular la tirada entera antes de enseñarla y poner los números de modo que la cara que queda arriba sea la del
-  servidor; después se reproduce. Lo confirma el prototipo de la tarea 7.
-- **La tirada en el texto**: un nodo en línea `diceRoll` (fórmula y etiqueta). En Markdown se escribe
-  `` `dice: 1d20+5 # Nombre` ``, con su tokenizador antes del de código en línea. Pulsarla tira en la campaña elegida
-  en la ficha de dados.
-- **Textos**: por i18n. Los nombres de las visibilidades salen de la spec: «Todos», «Para mí», «Al máster», «Oculta».
+  Se lee una vez a un árbol, se comprueba contra lo que hay en su tipo y se evalúa sin `eval`. Una fórmula con dados es
+  una tirada: el servidor pone los valores y tira con `@crisol/dice`. El presupuesto es por documento entero.
+- **El desglose**: cada valor derivado devuelve su valor y sus términos con su nombre, los bonos de los modificadores
+  con su origen (de los objetos del documento que cumplen su condición, como «equipado») y el valor fijado a mano, si
+  lo hay.
+- **Las tiradas del sistema**:
+  - cada una con su fórmula y sus variantes, por cada elemento con `@este`, contra un objetivo y con sus franjas;
+  - los modos, como la ventaja, son cambios sobre el árbol de dados;
+  - la tirada por defecto y los críticos (ninguno, el natural del d20, dobles o tirar por debajo) van en `dice`;
+  - `@crisol/dice` gana la regla de críticos y doblar los dados del crítico.
+- **La base de datos**, en la migración 0039:
+  - `systems`, de la organización: nombre, versión (un entero que sube en cada cambio), de cuál salió (`basedOn`: id
+    y versión), el documento en `jsonb` y `deletedAt`;
+  - `system_content`: el contenido de cada sistema (tipo, clave, fuente y datos);
+  - en `campaigns`, `system` (el id de uno del catálogo o el uuid de uno propio) y `systemChoices` (fuentes, idioma y
+    ajustes).
+
+  Los sistemas y su contenido pasan por `operation()`, como las plantillas propias.
+- **Cambios a la vez**: `updateSystem` pide la versión que tenía quien lo cambia. Si otra pestaña o la IA lo cambiaron
+  antes, devuelve un conflicto y no pisa nada.
+- **Permisos**, como los de las plantillas:
+  - `systems.read`: quien ve los archivos comunes;
+  - `systems.write`: el propietario de la cuenta;
+  - elegir el sistema de una campaña, con `campaign.rename` (el máster del mundo o de la campaña).
+
+  Los jugadores no leen sistemas hasta `personajes`.
+- **`rollDice`**: en una campaña con sistema, el crítico sale de su regla; sin sistema, como hoy. La ficha de dados
+  propone su tirada por defecto.
+- **La web** (`apps/web/src/systems/`):
+  - «Sistemas» va en la barra fuera de los mundos, en `/sistemas` y `/sistemas/:id`;
+  - el editor va por secciones, con «Probar» a la derecha (en el móvil, en una hoja);
+  - las fórmulas se comprueban mientras se escriben, con `@` como un combobox accesible;
+  - el JSON de «Avanzado» va en un área de texto con su validación, sin dependencias nuevas.
+- **Las herramientas MCP**, con los nombres de la spec. La documentación del formato sale de las descripciones del
+  esquema, con dos ejemplos: el 5e de prueba y Fronteras.
+- **Sala limpia**: las pruebas con «forma de dnd5e» las escribimos nosotros, con texto del SRD o propio. No entra ningún
+  archivo de Foundry ni de dnd5e.
 
 ## Tareas
 
 | # | Tarea | Fase | Depende de | Tamaño |
 |---|---|---|---|---|
-| 1 | El paquete `@crisol/dice`: notación, tirada, descripción y límites | Notación | — | M |
-| 2 | Tirar en el servidor y leer el registro, con su visibilidad (riesgo) | Registro | 1 | M |
-| 3 | En vivo y la prueba de fugas; el límite por minuto (riesgo) | Registro | 2 | M |
-| 4 | La ficha de dados: abrirla y tirar | Ficha | 3 | M |
-| 5 | El registro en la ficha: en vivo, desglose, repetir y anterior | Ficha | 4 | M |
-| 6 | El color de los dados en el perfil y en el móvil | Ficha | 5 | S |
-| 7 | Prototipo de los dados 3D que caen en el resultado (riesgo) | 3D | 4 | M |
-| 8 | La bandeja 3D: los dados de todos, el crítico y «ver caer los de los demás» | 3D | 6, 7 | M |
-| 9 | La tirada en el texto: el nodo y su Markdown | Texto | 1 | S |
-| 10 | La tirada en la página: «/», su cuadro y pulsarla | Texto | 5, 9 | M |
-| 11 | La IA (`tirar_dados`, `ver_tiradas`) y el cierre | IA | 3, 10 | M |
+| 1 | El paquete `@crisol/systems`: el formato, su validación y «En blanco» (riesgo) | Paquete | — | M |
+| 2 | Las fórmulas: leerlas y comprobarlas (nombres, tipos, ciclos) (riesgo) | Paquete | 1 | M |
+| 3 | Calcular un documento: derivados, desglose, modificadores y presupuesto; el ritmo (riesgo) | Paquete | 2 | M |
+| 4 | Las tiradas del sistema y sus dados; críticos y doblar en `@crisol/dice` | Paquete | 3 | M |
+| 5 | Los sistemas de la cuenta en el servidor: crear, copiar, cambiar, deshacer y borrar | Servidor | 1 | M |
+| 6 | Bajar y subir un sistema, con su contenido | Servidor | 5 | S |
+| 7 | La campaña con su sistema, y `rollDice` con sus críticos | Servidor | 4, 5 | M |
+| 8 | «Sistemas» en Mis mundos: la lista, crear, copiar, subir y su ventana | Interfaz | 6 | M |
+| 9 | La elección del sistema en la campaña | Interfaz | 7, 8 | S |
+| 10 | El editor: sus partes, General y los tipos con sus campos y fórmulas | Interfaz | 2, 8 | L |
+| 11 | El editor: «Probar» al lado, con el desglose y las tiradas de prueba | Interfaz | 4, 10 | M |
+| 12 | El editor: Tiradas, Dados, Fuentes, Ajustes y Avanzado | Interfaz | 11 | M |
+| 13 | La IA y el cierre | IA | 7, 12 | M |
 
 ### Puntos de control
 
-1. Tras las tareas 2 y 3, en local: el máster y una jugadora por la API, y la prueba de fugas en verde.
-2. Tras las tareas 4 a 6, en local, con Enrique: dos navegadores, tiradas públicas y privadas en el registro.
-3. Tras las tareas 7 y 8, en local, con Enrique: los dados 3D.
-4. Final, en staging, con Enrique: los criterios de éxito de la spec (también desde claude.ai).
+1. **Tras las tareas 1 a 4**, en local: el paquete en verde, y apuntados el ritmo de calcular un nivel 20 y el de
+   validar 2 MB.
+2. **Tras las tareas 5 a 7**, en local: por la API, crear, copiar, deshacer, subir un archivo roto y elegir el sistema
+   en una campaña, con sus críticos al tirar.
+3. **Tras las tareas 8 y 9**, en local, con Enrique: la lista, crear, copiar, subir y elegir en una campaña.
+4. **Tras las tareas 10 a 12**, en local, con Enrique: hacer Fronteras en el editor y probarlo (criterio 2).
+5. **Final**, en staging, con Enrique: los criterios de éxito de la spec, también desde claude.ai.
 
 ## Riesgos
 
 | Riesgo | Impacto | Qué se hace |
 |---|---|---|
-| Una privada llega a quien no debe | Alto | Se filtra en el servidor al leer y al avisar, con `@fugas` (API, WebSocket y MCP) en la tarea 3, antes de la interfaz |
-| Los dados 3D no caen en el resultado | Medio | Prototipo en la tarea 7; plan B, el giro guionizado del lienzo |
-| `three` pesa en el arranque | Medio | Se cargan aparte, solo al tirar; la compilación lo comprueba (aviso de trozos grandes) |
-| `` `dice:` `` choca con el código en línea del Markdown | Bajo | Su tokenizador va antes; pruebas de ida y vuelta |
-| Muchas tiradas a la vez (spam) | Bajo | 60 por minuto y persona, contadas en la tabla |
-| El registro crece sin fin | Bajo | Se guarda todo; leerlo va de 50 en 50 con su índice. Si un día pesa, se limpia lo viejo (apuntado) |
+| El lenguaje de fórmulas no llega al ritmo o se complica | Alto | Va primero (tareas 2 y 3), con su prueba de ritmo. Se lee una vez y el árbol se guarda; si no basta, se pasa a funciones ya preparadas (sin `eval`) |
+| El formato no recibe lo de Foundry | Medio | Un fragmento con la forma de dnd5e, escrito por nosotros, en las pruebas de la tarea 1 |
+| Validar 2 MB mientras se edita frena la web | Medio | Se valida la parte que se cambia al momento y el sistema entero un poco después; si hace falta, en un worker, como la física de los dados |
+| El editor es grande | Medio | Tres tareas (10 a 12), con los prototipos aprobados como guía |
+| Dos pestañas (o la IA) cambian el mismo sistema | Medio | Se guarda con la versión que se tenía; si cambió, conflicto y no se pisa |
+| Cambiar un sistema deja datos sin sitio | Bajo | Se conservan y se marcan; con `personajes`, su conversión |
+| Un archivo enorme o malicioso al subirlo | Bajo | Hasta 2 MB y 5.000 documentos; se valida entero con zod antes de guardar nada |
 
 ## Preguntas abiertas
 

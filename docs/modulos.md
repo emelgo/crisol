@@ -18,18 +18,21 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   sola y los pasos del creador van con `personajes` (cambiado también en el mapa del módulo). Lo que hace el Crisol actual con los sistemas,
   leído para ella, en `docs/inventario-sistemas.md`. Rama `modulo-3/sistemas`.
 - **La spec está aprobada** («ok») y el ADR-0011, aceptado.
-- **El diseño, por aprobar**: el lienzo «Crisol: sistemas» en claude.ai (https://claude.ai/artifact/6pBhB7PhSaReB51W87vA8R;
+- **El diseño, aprobado** («ok»): el lienzo «Crisol: sistemas» en claude.ai (https://claude.ai/artifact/6pBhB7PhSaReB51W87vA8R;
   fuentes en `out/lienzo-sistemas`, fuera de git), con seis tableros: la lista, el editor con «Probar», el móvil, las
   tiradas, la campaña y los errores. Al diseñarlo se decidió que las claves del formato van en inglés y que los
   problemas se dicen por sus nombres («Personaje › Defensa › Fórmula»), con la ruta debajo.
-- **Lo siguiente**: que Enrique pruebe y apruebe el lienzo; después, el plan de `sistemas` y la construcción.
+- **El plan, por aprobar**: `tasks/plan.md` y 13 tareas en `tasks/todo.md`, en cuatro fases (el paquete puro, el
+  servidor, la interfaz y la IA), con lo arriesgado primero: el lenguaje de fórmulas y su ritmo. El plan de dados pasó
+  a `tasks/dados/`.
+- **Lo siguiente**: que Enrique apruebe el plan; después, `/build` tarea a tarea en la rama `modulo-3/sistemas`.
 
 ### Para retomar (2026-11-04, módulo 3: dados)
 
 - **El módulo 3 va por capacidades** (mapa aprobado en `docs/specs/modulo-3.md`): `dados` → `sistemas` → `srd-5e` →
   `personajes` → `hoja` → `foundry`. La entrevista entera y los estudios, en «### 3. Sistemas, fichas y dados», al
   final de este archivo.
-- **`dados` está construida** en la rama `modulo-3/dados`: las 11 tareas de `tasks/todo.md` (plan en `tasks/plan.md`,
+- **`dados` está construida** en la rama `modulo-3/dados`: las 11 tareas de `tasks/dados/todo.md` (plan en `tasks/dados/plan.md`,
   spec `docs/specs/dados.md`, ADR-0010, diseño en el lienzo «Crisol: dados», aprobado):
   - el paquete puro `@crisol/dice` (la notación del Crisol actual, con sus límites);
   - las tiradas en el servidor, en `dice_rolls` (migración 0037, fuera del historial), con sus visibilidades, el aviso
@@ -1049,7 +1052,7 @@ Estados: pendiente · en curso · hecho · descartado.
 | 0 | **Fundación**: monorepo, CI, despliegue, cuentas, organizaciones, mundos, campañas, roles, historial y deshacer, esqueleto del MCP | **hecho** (2026-10-29; Discord y Google, pospuestos) | Foundry: modelo de documentos y permisos; DDB: campañas e invitaciones |
 | 1 | **Wiki**: páginas y subpáginas, editor de bloques, enlaces, menciones, vista previa, propiedades, secretos, búsqueda, marcadores, etiquetas, versiones, recursos y archivos, **hojas con estilo** (tipo Homebrewery, con PDF), exportación MD, sus herramientas MCP | construido (tareas 1 a 26 hechas); falta la revisión de Enrique en staging | Foundry: Journal; DDB: contenido y referencias; Homebrewery (MIT): formato de hoja y descarga |
 | 2 | **Tipos de página y plantillas**: «Desde plantilla» (de serie y propias), campos en el panel, tablas que se llenan solas (en lugar de Dataview) | construido (tareas 1 a 14, 2026-11-03); falta la revisión de Enrique en staging | Foundry: tipos de documento; Kanka, LegendKeeper y World Anvil (web pública) |
-| 3 | Sistemas de reglas, fichas de personaje (creación, subida de nivel), dados y dados 3D | en marcha: mapa aprobado (`docs/specs/modulo-3.md`); `dados` en `main` y en staging (PR #95); spec de `sistemas` aprobada; su diseño, por aprobar (lienzo «Crisol: sistemas») | DDB: creador y hoja; Foundry: dnd5e, DataModel e instalar y crear sistemas |
+| 3 | Sistemas de reglas, fichas de personaje (creación, subida de nivel), dados y dados 3D | en marcha: mapa aprobado (`docs/specs/modulo-3.md`); `dados` en `main` y en staging (PR #95); spec y diseño de `sistemas` aprobados; su plan, por aprobar | DDB: creador y hoja; Foundry: dnd5e, DataModel e instalar y crear sistemas |
 | 4 | Compendios (aparte de la wiki del mundo y **como los de Foundry**: antes, estudio a fondo con craft-anything), bestiario, statblocks, biblioteca; **buscar dentro de los PDF** (texto de cada página con pdf.js; el resultado abre el visor en esa página) **y por significado** (pgvector; antes, permiso para la imagen de Postgres y elegir quién calcula los embeddings) | pendiente | Foundry: compendium packs; DDB: listados |
 | 5 | Visibilidad por campaña: conocimiento de los jugadores, revelar, compartir | pendiente | Foundry: ownership |
 | 6 | **Mesa**: escenas, rejilla, fichas, medir y plantillas, niebla, muros, puertas, luz, visión, iniciativa, instantáneas, encuentros, UVTT | pendiente | Foundry: canvas, visión y muros; DDB Maps |
