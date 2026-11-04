@@ -55,8 +55,8 @@ describe('leer una fórmula', () => {
     expect(tree('@nivel >= 5 ? 2 : 1')).toMatchObject({
       kind: 'conditional',
       test: { op: '>=' },
-      then: { value: 2 },
-      else: { value: 1 }
+      yes: { value: 2 },
+      no: { value: 1 }
     })
     expect(tree('@a && !@b || @c')).toMatchObject({ op: '||', left: { op: '&&', right: { kind: 'unary', op: '!' } } })
     expect(tree('@objetivo != null')).toMatchObject({ op: '!=', right: { kind: 'null' } })
@@ -230,8 +230,9 @@ describe('las fórmulas de un sistema, al validarlo', () => {
       ['types.personaje.fields.peso.formula', '«Peso» depende de su propio valor: peso → carga → peso']
     ])
     const set = copy(cinco)
-    const fields = (set.types.personaje?.fields.caracteristicas as { fields: Record<string, { formula?: string }> })
-      .fields
+    const fields = (
+      (set.types.personaje?.fields.caracteristicas ?? {}) as { fields: Record<string, { formula?: string }> }
+    ).fields
     ;(fields.mod as { formula: string }).formula = '@este.mod + 1'
     expect(errors(set).map((p) => p.message)).toEqual([
       '«Modificador» depende de su propio valor: caracteristicas.mod → caracteristicas.mod'

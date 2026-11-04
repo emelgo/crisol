@@ -191,7 +191,7 @@ export function prepareRoll(
       case 'binary':
         return hasDice(e.left) || hasDice(e.right)
       case 'conditional':
-        return hasDice(e.test) || hasDice(e.then) || hasDice(e.else)
+        return hasDice(e.test) || hasDice(e.yes) || hasDice(e.no)
       case 'call':
         return e.args.some(hasDice)
       default:

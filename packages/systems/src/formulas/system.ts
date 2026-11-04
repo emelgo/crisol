@@ -149,9 +149,9 @@ export function checkFormulas(system: System, report: Report, language: Language
       natural: { type: 'number', label: 'natural' },
       objetivo: { type: 'number', label: 'objetivo' }
     }
-    roll.bands?.forEach((band, i) =>
+    roll.bands?.forEach((band, i) => {
       expectBoolean(band.if, { scope: result, dice: false, owner }, [...at, 'bands', i, 'if'], report)
-    )
+    })
     roll.modes?.forEach((mode, i) => {
       for (const part of ['from', 'to'] as const)
         if (mode[part].includes('@')) report([...at, 'modes', i, part], 'Un modo cambia dados por dados, sin @')

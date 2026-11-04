@@ -234,7 +234,7 @@ describe('cada problema dice dónde y por qué', () => {
     const found = errors(system).map((p) => p.message)
     expect(found).toEqual(['«es» está repetido', '«srd51» está repetida'])
     const set = copy(cinco)
-    const elements = (set.types.personaje?.fields.caracteristicas as { elements: { key: string }[] }).elements
+    const elements = ((set.types.personaje?.fields.caracteristicas ?? {}) as { elements: { key: string }[] }).elements
     elements[1] = { ...(elements[0] as { key: string }) }
     // Sin «des», la fórmula de la CA, que lo usa, también falla
     expect(errors(set).map((p) => p.message)).toEqual(['«fue» está repetido', '«des» no existe en «@caracteristicas»'])
@@ -254,7 +254,7 @@ describe('lo que el formato no conoce', () => {
         severity: 'warning'
       }
     ])
-    expect((valid?.types.personaje?.fields.vigor as unknown as Record<string, unknown>).icon).toBe('musculo')
+    expect(((valid?.types.personaje?.fields.vigor ?? {}) as unknown as Record<string, unknown>).icon).toBe('musculo')
   })
 })
 

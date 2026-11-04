@@ -155,7 +155,7 @@ describe('las fórmulas al calcular', () => {
 
   it('un bono a un número guardado: lo guardado más el bono, con su desglose', () => {
     const system: System = structuredClone(fronteras)
-    ;(system.types.objeto?.modifiers as unknown[]).push({ target: 'vigor', value: '1', when: '@equipado' })
+    ;((system.types.objeto?.modifiers ?? []) as unknown[]).push({ target: 'vigor', value: '1', when: '@equipado' })
     const r = evaluate(system, 'personaje', { data: { vigor: 1 }, items: [escudo(true)] })
     expect(r.computed.vigor).toEqual({
       value: 2,

@@ -151,7 +151,7 @@ export function evaluateExpr(expr: Expr, scope: Record<string, Node>, runtime: R
         }
       }
       case 'conditional':
-        return truthy(visit(e.test)) ? visit(e.then) : visit(e.else)
+        return truthy(visit(e.test)) ? visit(e.yes) : visit(e.no)
       case 'call': {
         const fn = FUNCTIONS[e.name]
         if (!fn) throw new FormulaError(`No existe la función «${e.name}»`, e.start, e.end)

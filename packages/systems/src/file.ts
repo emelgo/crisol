@@ -72,9 +72,12 @@ export function validateContent(
   const sources = new Set((system.sources ?? []).map((s) => s.key))
   const seen = new Set<string>()
   const encoder = new TextEncoder()
-  content.forEach((item, i) => {
+  for (const [i, item] of content.entries()) {
     const at = [...prefix, i]
-    if (!isObject(item)) return add(at, 'Tiene que ser un documento')
+    if (!isObject(item)) {
+      add(at, 'Tiene que ser un documento')
+      continue
+    }
     const { type, key, source, data } = item
     if (typeof type !== 'string' || !system.types[type]) add([...at, 'type'], `No existe el tipo «${String(type)}»`)
     if (typeof key !== 'string' || !CONTENT_KEY.test(key))
@@ -83,7 +86,10 @@ export function validateContent(
     else seen.add(key)
     if (source !== null && source !== undefined && (typeof source !== 'string' || !sources.has(source)))
       add([...at, 'source'], `No existe la fuente «${String(source)}»`)
-    if (!isObject(data)) return add([...at, 'data'], 'Tiene que ser un objeto')
+    if (!isObject(data)) {
+      add([...at, 'data'], 'Tiene que ser un objeto')
+      continue
+    }
     const name = data.name
     if (
       !(typeof name === 'string' && name.trim()) &&
@@ -92,7 +98,7 @@ export function validateContent(
       add([...at, 'data', 'name'], 'Falta su nombre')
     if (encoder.encode(JSON.stringify(data)).length > LIMITS.contentBytes)
       add([...at, 'data'], `Como mucho, ${LIMITS.contentBytes / 1024} KB por documento`)
-  })
+  }
   return problems
 }
 

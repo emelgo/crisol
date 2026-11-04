@@ -82,8 +82,6 @@ function distance(a: string, b: string): number {
   return row[b.length] as number
 }
 
-const isNumber = (s: Shape) => s.type === 'number' || s.type === 'any' || (s.type === 'object' && !!s.number)
-
 export interface Checked {
   type: ValueType
   /** Los valores calculados de los que depende (para los ciclos) */
@@ -227,8 +225,8 @@ export function checkExpr(expr: Expr, context: Context): Checked {
       }
       case 'conditional': {
         logical(e.test, visit(e.test))
-        const then = visit(e.then)
-        const otherwise = visit(e.else)
+        const then = visit(e.yes)
+        const otherwise = visit(e.no)
         if (then === 'any' || then === 'null') return otherwise
         if (otherwise === 'any' || otherwise === 'null' || then === otherwise) return then
         if ((then === 'dice' || otherwise === 'dice') && (then === 'number' || otherwise === 'number')) return 'dice'

@@ -19,7 +19,7 @@ export type Expr = (
   | { kind: 'dice'; term: DiceTerm; text: string }
   | { kind: 'unary'; op: '-' | '!'; value: Expr }
   | { kind: 'binary'; op: BinaryOp; left: Expr; right: Expr }
-  | { kind: 'conditional'; test: Expr; then: Expr; else: Expr }
+  | { kind: 'conditional'; test: Expr; yes: Expr; no: Expr }
   | { kind: 'call'; name: string; args: Expr[] }
 ) & { start: number; end: number }
 
@@ -92,14 +92,15 @@ export function parseFormula(input: string): Expr {
   }
 
   const conditional = (): Expr => {
-    const start = (space(), pos)
+    space()
+    const start = pos
     const test = or()
     if (!at('?')) return test
     pos++
     const then = nested(conditional)
     expect(':', 'en «… ? … : …»')
     const otherwise = nested(conditional)
-    return { kind: 'conditional', test, then, else: otherwise, start, end: otherwise.end }
+    return { kind: 'conditional', test, yes: then, no: otherwise, start, end: otherwise.end }
   }
   const binary = (next: () => Expr, ops: readonly BinaryOp[]) => (): Expr => {
     let left = next()
@@ -245,8 +246,8 @@ export function referencesOf(expr: Expr): Extract<Expr, { kind: 'ref' }>[] {
         break
       case 'conditional':
         walk(e.test)
-        walk(e.then)
-        walk(e.else)
+        walk(e.yes)
+        walk(e.no)
         break
       case 'call':
         e.args.forEach(walk)
