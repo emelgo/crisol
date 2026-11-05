@@ -8,7 +8,7 @@ import * as index from '../index.ts'
 import type { Mechanics } from '../mechanics.ts'
 import { tryRoll } from '../rolls.ts'
 import { MEASURED } from './5e/measured.ts'
-import { fiveE } from './5e/system.ts'
+import { fiveE, SKILLS } from './5e/system.ts'
 import { catalogContent } from './content.ts'
 
 describe('el contenido de los sistemas de serie', () => {
@@ -266,6 +266,66 @@ describe('el contenido de los sistemas de serie', () => {
     expect(content.find((c) => c.key === 'varita_de_bolas_de_fuego_2014')?.mechanics?.resources).toEqual([
       expect.objectContaining({ max: '7', recovery: 'dawn', amount: '1d6+1' })
     ])
+  })
+
+  it('las criaturas: sus fórmulas dan lo que dice su perfil (salvaciones, habilidades, pasiva, iniciativa, ataques y CD)', () => {
+    const wrong: string[] = []
+    let checked = 0
+    const num = (text: string) => Number(text.replace('−', '-'))
+    const ABBR: Record<string, string> = { str: 'fue', dex: 'des', con: 'con', int: 'int', wis: 'sab', cha: 'car' }
+    const SKILL_KEYS: Record<string, string> = Object.fromEntries(SKILLS.map(([key, , en]) => [en.toLowerCase(), key]))
+    for (const item of catalogContent('5e').filter((c) => c.type === 'criatura')) {
+      const text = (item.data.descripcion as { en: string }).en
+      const doc = { data: item.data, items: [], ...(item.mechanics ? { mechanics: item.mechanics as Mechanics } : {}) }
+      const r = evaluate(fiveE, 'criatura', doc)
+      const values = r.values as {
+        caracteristicas: Record<string, { salvacion: number }>
+        habilidades: Record<string, { total: number }>
+        percepcion_pasiva: number
+        iniciativa: number
+      }
+      const check = (what: string, got: unknown, want: number) => {
+        checked++
+        if (got !== want) wrong.push(`${item.key} ${what}: ${String(got)} ≠ ${want}`)
+      }
+      for (const m of /\*\*Saving Throws\*\* ([^\n]*)/.exec(text)?.[1]?.matchAll(/(\w+) ([+−-]\d+)/g) ?? [])
+        check(
+          `salvación ${m[1]}`,
+          values.caracteristicas[ABBR[(m[1] as string).toLowerCase()] ?? '']?.salvacion,
+          num(m[2] as string)
+        )
+      const saves = text.split('\n').find((l) => /^\| [+−]\d+ \|/.test(l))
+      if (saves)
+        saves
+          .split('|')
+          .map((c) => c.trim())
+          .filter(Boolean)
+          .forEach((v, i) => {
+            check(`salvación ${i}`, Object.values(values.caracteristicas)[i]?.salvacion, num(v))
+          })
+      for (const m of /\*\*Skills\*\* ([^\n]*)/.exec(text)?.[1]?.matchAll(/([A-Za-z][A-Za-z ]+?) ([+−-]\d+)/g) ?? [])
+        check(
+          `habilidad ${m[1]}`,
+          values.habilidades[SKILL_KEYS[(m[1] as string).trim().toLowerCase()] ?? '']?.total,
+          num(m[2] as string)
+        )
+      const passive = /passive Perception (\d+)/i.exec(text)?.[1]
+      if (passive) check('pasiva', values.percepcion_pasiva, Number(passive))
+      const initiative = /\*\*Initiative\*\* ([+−-]\d+)/.exec(text)?.[1]
+      if (initiative) check('iniciativa', values.iniciativa, num(initiative))
+      // Cada ataque y cada CD, lo que dice su texto
+      for (const action of (item.mechanics?.actions ?? []) as { key: string; label: { en: string } }[]) {
+        const line = text.split('\n').find((l) => l.startsWith(`**${action.label.en}.**`)) ?? ''
+        const prepared = prepareAction(fiveE, 'criatura', doc, null, action.key)
+        const hit = /Attack(?: Roll)?: \+(\d+)/.exec(line)?.[1]
+        if (hit) check(`ataque ${action.key}`, prepared.bonus, Number(hit))
+        const dc = /DC (\d+) \w+ saving throw|Saving Throw: DC (\d+)/i.exec(line)
+        if (dc) check(`CD ${action.key}`, prepared.save?.dc, Number(dc[1] ?? dc[2]))
+      }
+    }
+    expect(wrong).toEqual([])
+    // Las salvaciones de las 330 de 2024 (seis cada una), las pasivas y unos cientos de ataques
+    expect(checked).toBeGreaterThan(4000)
   })
 
   it('el texto de las reglas: lo de 2014 con versión de 2024 se esconde con lo más nuevo; se busca en los dos idiomas', () => {

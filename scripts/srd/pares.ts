@@ -368,3 +368,34 @@ export const MAGIC_ITEM_RENAMES: Record<string, string> = {
   'arrow of slaying': 'ammunition of slaying',
   'deck of many things': 'mysterious deck'
 }
+
+/** Las criaturas que dicen lo mismo en su VD, sus PG, su CA y sus puntuaciones (hoy, ninguna) */
+export const CREATURE_PAIRS: Record<'2014' | '2024', Record<string, string>> = { '2014': {}, '2024': {} }
+
+/** Las criaturas de 2014 que en 2024 son la misma con otro nombre (en inglés, en minúsculas) */
+export const CREATURE_RENAMES: Record<string, string> = {
+  'flying sword': 'animated flying sword',
+  'rug of smothering': 'animated rug of smothering',
+  azer: 'azer sentinel',
+  bugbear: 'bugbear warrior',
+  centaur: 'centaur trooper',
+  shrieker: 'shrieker fungus',
+  gnoll: 'gnoll warrior',
+  goblin: 'goblin warrior',
+  hobgoblin: 'hobgoblin warrior',
+  kobold: 'kobold warrior',
+  merfolk: 'merfolk skirmisher',
+  minotaur: 'minotaur of baphomet',
+  sahuagin: 'sahuagin warrior',
+  acolyte: 'priest acolyte',
+  'cult fanatic': 'cultist fanatic',
+  thug: 'tough',
+  'tribal warrior': 'warrior infantry',
+  veteran: 'warrior veteran',
+  quipper: 'piranha',
+  'swarm of quippers': 'swarm of piranhas',
+  'half-red dragon veteran': 'half-dragon',
+  androsphinx: 'sphinx of valor',
+  gynosphinx: 'sphinx of lore',
+  'succubus/incubus': 'succubus'
+}

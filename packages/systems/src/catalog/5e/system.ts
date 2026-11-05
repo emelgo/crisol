@@ -281,7 +281,9 @@ const shared = (bonus: { saves: string; skills: string }) => ({
   caracteristicas: abilities(bonus.saves),
   habilidades: skills(bonus.skills),
   // Una prueba de Destreza: lo que suma a las pruebas (media competencia) suma también aquí
-  iniciativa: derived('Iniciativa', 'Initiative', '@caracteristicas.des.prueba', { signed: true }),
+  iniciativa: derived('Iniciativa', 'Initiative', '@caracteristicas.des.prueba + @bono_iniciativa', { signed: true }),
+  // Lo que suma aparte (la competencia en la iniciativa de una criatura de 2024, la dote Alerta)
+  bono_iniciativa: number('Bono a la iniciativa', 'Initiative bonus'),
   percepcion_pasiva: derived('Percepción pasiva', 'Passive Perception', '10 + @habilidades.percepcion.total'),
   cansancio: number('Cansancio', 'Exhaustion', { min: 0, max: 6, integer: true }),
   // Lo que cambian los rasgos: cuántos ataques por acción de atacar y desde qué número es crítico

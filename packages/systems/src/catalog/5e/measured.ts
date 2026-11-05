@@ -19,5 +19,7 @@ export const MEASURED: Record<string, Record<'2014' | '2024', number>> = {
   // larga, en sus 19 apartados
   regla: { '2014': 72, '2024': 188 },
   conjuro: { '2014': 319, '2024': 339 },
-  objeto_magico: { '2014': 238, '2024': 258 }
+  objeto_magico: { '2014': 238, '2024': 258 },
+  // Los monstruos y, en 2014, las criaturas diversas y los PNJ de sus apéndices; en 2024, los animales
+  criatura: { '2014': 317, '2024': 330 }
 }

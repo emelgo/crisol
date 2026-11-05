@@ -7,6 +7,7 @@ import { consoleIo, type Io } from '../io.ts'
 import { ruleDocs } from './capitulos.ts'
 import { classDocs, readingRows } from './clases.ts'
 import { spellDocs } from './conjuros.ts'
+import { creatureDocs } from './criaturas.ts'
 import {
   type ArmorGroup,
   armorDoc,
@@ -281,6 +282,7 @@ export function extract(): Record<string, Doc[]> {
   const taken = () => new Set(Object.values(files).flatMap((docs) => docs.map((d) => d.concept)))
   files['conjuros.json'] = spellDocs(taken())
   files['objetos_magicos.json'] = magicDocs(taken())
+  files['criaturas.json'] = creatureDocs(taken())
   return files
 }
 
