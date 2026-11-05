@@ -431,8 +431,16 @@ function Options({
 }) {
   const { t } = useTranslation()
   const titleId = useId()
+  // Elegida una, las demás esperan a que llegue lo guardado: un doble clic no añade dos
+  // (con cada estado que llega del servidor, también si falló, se puede volver a elegir)
+  const [picked, setPicked] = useState<string | null>(null)
+  const [source, setSource] = useState(step)
+  if (source !== step) {
+    setSource(step)
+    setPicked(null)
+  }
   return (
-    <section className={styles.options} aria-labelledby={titleId}>
+    <section className={styles.options} aria-labelledby={titleId} aria-busy={picked !== null}>
       <div className={styles.optionsHead}>
         <h2 id={titleId}>{title}</h2>
         {onCancel && (
@@ -444,7 +452,18 @@ function Options({
       <ul className={styles.optionList}>
         {step.options.map((o) => (
           <li key={o.value}>
-            <button type="button" className={styles.option} disabled={!o.available} onClick={() => onPick(o.value)}>
+            <button
+              type="button"
+              className={styles.option}
+              disabled={!o.available}
+              aria-disabled={picked !== null && picked !== o.value ? true : undefined}
+              aria-pressed={picked === o.value ? true : undefined}
+              onClick={() => {
+                if (picked !== null) return
+                setPicked(o.value)
+                onPick(o.value)
+              }}
+            >
               <span className={styles.optionName}>{o.label}</span>
               {o.reason && <span className={styles.reason}>{o.reason}</span>}
             </button>
@@ -498,7 +517,7 @@ function FieldInput({
       <div className={styles.field}>
         <label htmlFor={id}>{field.label}</label>
         <select id={id} value={shown} onChange={(event) => onCommit(event.currentTarget.value)}>
-          <option value="" />
+          <option value="">—</option>
           {field.options.map((o) => (
             <option key={o.value} value={o.value}>
               {o.label}

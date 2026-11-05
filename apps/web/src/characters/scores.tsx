@@ -5,11 +5,13 @@
  */
 import type { Build } from '@crisol/systems'
 import { useMutation } from '@tanstack/react-query'
-import { useId } from 'react'
+import { useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ActionOutput } from '../api/client.ts'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
+import { useAnnounce } from '../components/announcer.tsx'
+import { BusyButton } from '../components/busy-button.tsx'
 import { FormError } from '../components/field.tsx'
 import { Pending } from './characters.tsx'
 import styles from './creator.module.css'
@@ -37,6 +39,7 @@ export function ScoresStep({
   const { t } = useTranslation()
   const api = useApi()
   const errorText = useErrorText()
+  const announce = useAnnounce()
   const methodName = useId()
   const method = step.methods.find((m) => m.key === build.scores?.method) ?? step.methods[0]
   const base = build.scores?.base ?? {}
@@ -60,7 +63,9 @@ export function ScoresStep({
         rolls.push(rolled.total)
       }
       await setScores({ method: m.key, base: {}, rolls })
-    }
+      return rolls
+    },
+    onSuccess: (rolls) => announce(`${t('creator.rolled')} ${rolls.join(', ')}`)
   })
   // Los valores que se reparten: los de la matriz o los tirados; cada uno, una vez
   const pool =
@@ -86,7 +91,14 @@ export function ScoresStep({
               type="radio"
               name={methodName}
               checked={m.key === method?.key}
-              onChange={() => setScores({ method: m.key, base: {} })}
+              // Lo repartido no vale para otro método; lo tirado (ya en el registro) se queda
+              onChange={() =>
+                setScores({
+                  method: m.key,
+                  base: {},
+                  ...(build.scores?.rolls ? { rolls: build.scores.rolls } : {})
+                })
+              }
             />
             {m.label}
           </label>
@@ -105,14 +117,9 @@ export function ScoresStep({
               <span className={styles.pendingFrom}>{t('creator.inLog')}</span>
             </p>
           ) : (
-            <button
-              type="button"
-              className={styles.primary}
-              disabled={roll.isPending}
-              onClick={() => roll.mutate(method)}
-            >
-              {t('creator.roll', { formula: method.formula ?? '' })}
-            </button>
+            <BusyButton className={styles.primary} busy={roll.isPending} onClick={() => roll.mutate(method)}>
+              {roll.isPending ? t('creator.rolling') : t('creator.roll', { formula: method.formula ?? '' })}
+            </BusyButton>
           )}
           <FormError message={roll.error ? errorText(roll.error) : null} />
         </div>
@@ -187,16 +194,12 @@ export function ScoresStep({
                         ))}
                     </select>
                   ) : (
-                    <input
+                    <ManualScore
                       id={inputId}
-                      type="number"
+                      value={typeof value === 'number' ? value : null}
                       min={method?.min}
                       max={method?.max}
-                      value={typeof value === 'number' ? value : ''}
-                      onChange={(event) => {
-                        const n = Number(event.currentTarget.value)
-                        if (event.currentTarget.value !== '' && Number.isFinite(n)) void setBase(element.key, n)
-                      }}
+                      onCommit={(n) => void setBase(element.key, n)}
                     />
                   )}
                 </td>
@@ -208,5 +211,52 @@ export function ScoresStep({
         </tbody>
       </table>
     </div>
+  )
+}
+
+/** Una puntuación escrita a mano: se guarda al salir del campo (o con Intro); vacía, se quita; fuera de sus límites, vuelve */
+function ManualScore({
+  id,
+  value,
+  min,
+  max,
+  onCommit
+}: {
+  id: string
+  value: number | null
+  min: number | undefined
+  max: number | undefined
+  onCommit: (value: number | null) => void
+}) {
+  const written = value === null ? '' : String(value)
+  const [draft, setDraft] = useState(written)
+  const [source, setSource] = useState(written)
+  if (source !== written) {
+    setSource(written)
+    setDraft(written)
+  }
+  const commit = () => {
+    if (draft === written) return
+    if (draft.trim() === '') return onCommit(null)
+    const n = Number(draft)
+    const fits = Number.isInteger(n) && (min === undefined || n >= min) && (max === undefined || n <= max)
+    if (fits) onCommit(n)
+    else setDraft(written)
+  }
+  return (
+    <input
+      id={id}
+      type="number"
+      inputMode="numeric"
+      autoComplete="off"
+      min={min}
+      max={max}
+      value={draft}
+      onChange={(event) => setDraft(event.currentTarget.value)}
+      onBlur={commit}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter') commit()
+      }}
+    />
   )
 }

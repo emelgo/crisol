@@ -373,3 +373,17 @@
     display: none;
   }
 }
+
+/* Al pasar por encima, lo que se pulsa se marca */
+.clear:hover {
+  background: var(--color-raised);
+  color: var(--color-text);
+}
+
+.more:hover:not([aria-disabled="true"]) {
+  border-color: var(--color-accent);
+}
+
+.back:hover {
+  text-decoration: underline;
+}

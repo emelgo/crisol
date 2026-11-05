@@ -172,3 +172,23 @@
   clip-path: inset(50%);
   white-space: nowrap;
 }
+
+.noCampaign {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+/* Al pasar por encima, lo que se pulsa se marca */
+.reset:hover:not(:disabled) {
+  background: var(--color-raised);
+}
+
+.add:hover {
+  border-color: var(--color-accent);
+}
+
+/* Las filas ya sacadas se apagan también en sus campos */
+.rows tr[data-drawn] input {
+  color: var(--color-muted);
+}

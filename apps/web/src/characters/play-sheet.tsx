@@ -16,12 +16,13 @@ import {
 } from '@crisol/systems'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { Dices, Minus, Moon, Plus, Sun, Trash2 } from 'lucide-react'
-import { useDeferredValue, useId, useRef, useState } from 'react'
+import { useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ActionOutput } from '../api/client.ts'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
 import { FormError } from '../components/field.tsx'
+import { useSettled } from '../components/settled.ts'
 import { useDice } from '../dice/context.tsx'
 import styles from './play-sheet.module.css'
 import { type Change, pickId } from './save.ts'
@@ -107,7 +108,7 @@ export function PlaySheet({
   const layout = state.layout as SheetBlockView[]
   return (
     <div className={styles.sheet}>
-      <div className={styles.rollBar}>
+      <div className={styles.rollBar} data-tour="hoja-tirar">
         {modes.length > 0 && (
           <fieldset className={styles.modes}>
             <legend className={styles.hidden}>{t('playSheet.rollWith')}</legend>
@@ -561,7 +562,7 @@ function AddFromCompendium({
   const id = useId()
   const [query, setQuery] = useState('')
   // Se busca lo escrito cuando se deja de escribir, no con cada tecla
-  const wanted = useDeferredValue(query.trim())
+  const wanted = useSettled(query.trim())
   const found = useQuery({
     queryKey: ['compendium', campaignId, 'add', types.join(','), wanted],
     queryFn: async () => {

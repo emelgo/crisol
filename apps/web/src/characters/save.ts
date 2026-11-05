@@ -31,6 +31,8 @@ export function useCharacterSave(characterId: string, campaignId: string) {
   const waiting = useRef<((play: Play) => Play)[]>([])
   const [busy, setBusy] = useState(0)
   const [error, setError] = useState<unknown>(null)
+  // Si lo último se guardó (antes de guardar nada, ni lo uno ni lo otro)
+  const [saved, setSaved] = useState(false)
   const save = useCallback(
     (change: Change) => {
       const key = characterKey(characterId)
@@ -94,10 +96,12 @@ export function useCharacterSave(characterId: string, campaignId: string) {
             }
           })
           setError(null)
+          setSaved(true)
           void queryClient.invalidateQueries({ queryKey: ['characters', campaignId] })
           if (change.confirm) void queryClient.invalidateQueries({ queryKey: ['characterVersions', characterId] })
         } catch (failure) {
           setError(failure)
+          setSaved(false)
           waiting.current = []
           confirmed.current = null
           await queryClient.invalidateQueries({ queryKey: key })
@@ -109,7 +113,7 @@ export function useCharacterSave(characterId: string, campaignId: string) {
     },
     [api, queryClient, characterId, campaignId]
   )
-  return { save, busy: busy > 0, error }
+  return { save, busy: busy > 0, error, saved }
 }
 
 /** Un id corto para algo elegido */

@@ -57,7 +57,12 @@ async function renderTable() {
 }
 
 describe('la pestaña «Tabla» de una página', () => {
-  beforeEach(() => localStorage.setItem(`crisol.recorridos.${EMAIL}`, JSON.stringify({ seen: ['mundo'] })))
+  beforeEach(() =>
+    localStorage.setItem(
+      `crisol.recorridos.${EMAIL}`,
+      JSON.stringify({ seen: ['mundo', 'campana', 'personajes', 'personaje', 'compendio', 'tabla'] })
+    )
+  )
 
   it('sus filas: añadir, escribir, ver lo que falla (que se pisen) y guardar; sin fórmula, 1dN', async () => {
     const { api, tab } = await renderTable()
@@ -71,7 +76,7 @@ describe('la pestaña «Tabla» de una página', () => {
     const to = screen.getByRole('spinbutton', { name: 'Hasta, en «Lobos»' })
     await userEvent.clear(to)
     await userEvent.type(to, '2')
-    expect(await screen.findByRole('alert')).toHaveProperty('textContent', expect.stringContaining('se pisan'))
+    expect(await screen.findByText('Las filas 1–2 y 2–2 se pisan')).toBeDefined()
     expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Guardar' }).disabled).toBe(true)
     await userEvent.clear(to)
     await userEvent.type(to, '1')
@@ -98,7 +103,10 @@ describe('la pestaña «Tabla» de una página', () => {
     // Ya no queda nada: dice por qué
     await userEvent.click(screen.getByRole('button', { name: 'Tirar' }))
     expect(await screen.findByText('Ya ha salido todo: reiníciala')).toBeDefined()
+    // Reiniciar no se deshace: se pregunta antes
     await userEvent.click(screen.getByRole('button', { name: 'Reiniciar' }))
+    const ask = within(await screen.findByRole('dialog', { name: '¿Reiniciar la tabla?' }))
+    await userEvent.click(ask.getByRole('button', { name: 'Reiniciar' }))
     await waitFor(() => expect(screen.queryByText('Una sacada')).toBeNull())
     // Quién la ve: oculta
     await userEvent.click(
