@@ -1,10 +1,10 @@
 # Spec: personajes (módulo 3)
 
-Estado: **borrador**, pendiente de Enrique. Cuarta capacidad del módulo 3 (`docs/specs/modulo-3.md`), después de
+Estado: **aprobada** por Enrique el 2026-11-05 («ok»), con las propuestas de las preguntas abiertas. Cuarta capacidad del módulo 3 (`docs/specs/modulo-3.md`), después de
 `srd-5e`. Lo que decidió Enrique, en `docs/modulos.md` § «#### `personajes` (entrevista con Enrique, 2026-11-05)». Los
 estudios, en `research/dndbeyond/creador-y-hoja.md` (el creador y subir de nivel en D&D Beyond) y
 `research/foundry/avances-y-tablas.md` (los avances de dnd5e y las tablas aleatorias de Foundry). La decisión de
-arquitectura, en un ADR nuevo (ADR-0013, que se acepta con esta spec).
+arquitectura, en ADR-0013 (aceptada con esta spec).
 
 ## Objetivo
 
@@ -208,7 +208,7 @@ inglés y las del sistema en español.
 
 ## Preguntas abiertas
 
-Con su propuesta:
+Respondidas por Enrique (2026-11-05: «ok» a las propuestas):
 
 1. **Dónde viven las tablas del máster**: *propuesta*, en la wiki, como una pestaña «Tabla» de una página (como los
    mapas), con lo que ve cada uno de la página; las del sistema, en su contenido.
