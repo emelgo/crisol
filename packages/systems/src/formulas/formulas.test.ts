@@ -269,7 +269,7 @@ describe('las fórmulas de un sistema, al validarlo', () => {
       ['rolls.atributo.formula', 'No existe «@suerte» en Personaje'],
       ['rolls.atributo.variants[1].if', 'Aquí va sí o no: una comparación, como @total >= 10'],
       ['rolls.atributo.bands[0].if', 'Aquí va sí o no: una comparación, como @total >= 10'],
-      ['rolls.atributo.modes[0].to', 'Un modo cambia dados por dados, sin @']
+      ['rolls.atributo.modes[0].to', 'Un modo va con dados, sin @']
     ])
   })
 

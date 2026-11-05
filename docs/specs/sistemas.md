@@ -147,6 +147,14 @@ poder recibir los datos de un sistema de Foundry (lo prueba un fragmento de dnd5
   En una campaña con sistema, `rollDice` usa los suyos (ADR-0010 lo dejó para aquí).
 - **Probar una tirada** con un documento de prueba (o en blanco), sin apuntarla: da la fórmula, el resultado, la franja
   y el desglose.
+- **Para otros juegos** (2026-11-05, Enrique: «¿se podrá adaptar a Daggerheart y otro TTRPG?»):
+  - tantos dados como diga un número: `dados(@competencia, 8)`, `dados(@accion, 6, "kh1")`;
+  - cada dado en las franjas, `@dados` (los que cuentan, en orden): cuál de dos d12 es mayor
+    (`@dados[0] > @dados[1]`), dobles (`@dados[0] == @dados[1]`) o cuántos seises (`count(@dados, 6)`); una lista se
+    lee por su posición, desde 0;
+  - modos que suman dados (`add: "1d6"`) o los restan (`add: "-1d6"`), además de los que cambian unos por otros.
+  - Queda para cuando un juego lo pida: tirar dos veces la tirada entera y quedarse con la mayor («el mayor de estos
+    dos»), que pide grupos en la notación de dados.
 
 ### `guardar`
 

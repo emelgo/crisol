@@ -155,8 +155,8 @@ export function checkFormulas(system: System, report: Report, language: Language
       expectBoolean(band.if, result, [...at, 'bands', i, 'if'], report)
     })
     roll.modes?.forEach((mode, i) => {
-      for (const part of ['from', 'to'] as const)
-        if (mode[part].includes('@')) report([...at, 'modes', i, part], 'Un modo cambia dados por dados, sin @')
+      for (const part of ['from', 'to', 'add'] as const)
+        if (mode[part]?.includes('@')) report([...at, 'modes', i, part], 'Un modo va con dados, sin @')
     })
   }
   if (system.dice?.default?.includes('@')) report(['dice', 'default'], 'La tirada por defecto va sin @: solo dados')
@@ -202,7 +202,8 @@ export function rollContexts(
         ...scope,
         total: { type: 'number', label: 'total' },
         natural: { type: 'number', label: 'natural' },
-        objetivo: { type: 'number', label: 'objetivo' }
+        objetivo: { type: 'number', label: 'objetivo' },
+        dados: { type: 'list', label: 'dados', of: { type: 'number', label: 'dado' } }
       },
       dice: false,
       owner
