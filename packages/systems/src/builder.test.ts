@@ -13,6 +13,12 @@ const campaign = { sources: ['srd51', 'srd521'], duplicates: 'both' as const }
 const scores = { fue: 15, des: 14, con: 13, int: 12, sab: 10, car: 8 }
 const build = (b: Build) => buildCharacter(fiveE, content, campaign, b)
 
+/** Un valor de la hoja calculada, por su ruta («habilidades.atletismo.grado») */
+const at = (values: unknown, path: string): unknown =>
+  path
+    .split('.')
+    .reduce<unknown>((v, k) => (v && typeof v === 'object' ? (v as Record<string, unknown>)[k] : undefined), values)
+
 describe('el creador: montar un personaje de sus elecciones', () => {
   it('sin nada, todo pendiente y en creación; los pasos del 5e en su orden', () => {
     const empty = build({})
@@ -60,14 +66,14 @@ describe('el creador: montar un personaje de sus elecciones', () => {
     expect(built.decisions.filter((d) => d.pending)).toEqual([])
     expect(built.complete).toBe(true)
     expect(built.steps.every((s) => s.pending === 0)).toBe(true)
-    const sheet = evaluate(fiveE, built.type, built.document).values as Record<string, any>
-    expect(sheet.habilidades.atletismo.grado).toBe(1)
-    expect(sheet.habilidades.perspicacia.grado).toBe(1) // del acólito
+    const sheet = evaluate(fiveE, built.type, built.document).values
+    expect(at(sheet, 'habilidades.atletismo.grado')).toBe(1)
+    expect(at(sheet, 'habilidades.perspicacia.grado')).toBe(1) // del acólito
     // Enano de las colinas: +2 Con (enano) y +1 Sab (colinas); su PG por nivel
-    expect(sheet.caracteristicas.con.puntuacion).toBe(15)
-    expect(sheet.caracteristicas.sab.puntuacion).toBe(11)
-    expect(sheet.pg_max).toBe(10 + 2 + 1)
-    expect(sheet.velocidad).toBe(25)
+    expect(at(sheet, 'caracteristicas.con.puntuacion')).toBe(15)
+    expect(at(sheet, 'caracteristicas.sab.puntuacion')).toBe(11)
+    expect(at(sheet, 'pg_max')).toBe(10 + 2 + 1)
+    expect(at(sheet, 'velocidad')).toBe(25)
   })
 
   it('lo de un nivel más alto entra al subir: la subclase a nivel 3; a nivel 5, igual que el de referencia', () => {
@@ -80,14 +86,14 @@ describe('el creador: montar un personaje de sus elecciones', () => {
     expect(at(2).decisions.map((d) => d.id)).not.toContain('c1>subclase@3')
     const five = at(5)
     expect(five.decisions.find((d) => d.id === 'c1>subclase@3')).toMatchObject({ pending: false, chosen: ['campeon'] })
-    const mine = evaluate(fiveE, 'personaje', five.document).values as Record<string, any>
+    const mine = evaluate(fiveE, 'personaje', five.document).values
     const reference = evaluate(
       fiveE,
       'personaje',
       referenceCharacter(content, { klass: 'guerrero', edition: '2014', level: 5, scores })
-    ).values as Record<string, any>
+    ).values
     for (const key of ['nivel', 'competencia', 'pg_max', 'ca', 'ataques', 'critico_desde'])
-      expect([key, mine[key]]).toEqual([key, reference[key]])
+      expect([key, at(mine, key)]).toEqual([key, at(reference, key)])
   })
 
   it('una elección que ya no vale se quita; lo que ya no está en el contenido de la campaña sale como pendiente', () => {
@@ -199,8 +205,8 @@ describe('el creador: montar un personaje de sus elecciones', () => {
     const built = build(b(['fue', 'fue', 'fue']))
     const asi = built.decisions.find((d) => d.id === 'c1>barbaro_mejora_de_caracteristica@4>mejora')
     expect(asi).toMatchObject({ count: 2, repeat: true, most: 2, chosen: ['fue', 'fue'], pending: false })
-    const sheet = evaluate(fiveE, 'personaje', built.document).values as Record<string, any>
-    expect(sheet.caracteristicas.fue.puntuacion).toBe(17)
+    const sheet = evaluate(fiveE, 'personaje', built.document).values
+    expect(at(sheet, 'caracteristicas.fue.puntuacion')).toBe(17)
   })
 
   it('los aumentos de un trasfondo de 2024: de sus tres características, +2 y +1 o +1 a las tres', () => {
@@ -213,8 +219,8 @@ describe('el creador: montar un personaje de sus elecciones', () => {
     const increases = built.decisions.find((d) => d.id === 't1>aumentos')
     expect(increases?.options.map((o) => o.value)).toEqual(['int', 'sab', 'car'])
     expect(increases).toMatchObject({ count: 3, most: 2, pending: false })
-    const sheet = evaluate(fiveE, 'personaje', built.document).values as Record<string, any>
-    expect([sheet.caracteristicas.int.puntuacion, sheet.caracteristicas.sab.puntuacion]).toEqual([14, 11])
+    const sheet = evaluate(fiveE, 'personaje', built.document).values
+    expect([at(sheet, 'caracteristicas.int.puntuacion'), at(sheet, 'caracteristicas.sab.puntuacion')]).toEqual([14, 11])
   })
 
   it('a nivel 20, lo pendiente se calcula en menos de 20 ms', () => {
