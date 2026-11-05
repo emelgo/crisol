@@ -44,14 +44,18 @@ test('con el teclado: el modo de IA con flechas y las invitaciones con espacio, 
 test('al navegar, el foco va al título de la página, y la pestaña lo dice', async ({ page }) => {
   await campaignLink(page)
   await expect(page).toHaveTitle('La Marca · Crisol')
-  // El mundo: su portada
-  await sections(page).getByRole('button', { name: 'Eana' }).click()
-  await expect(page.getByRole('heading', { level: 1, name: 'Eana' })).toBeFocused()
-  await expect(page).toHaveTitle('Eana · Crisol')
+  // Dentro de la campaña, su barra: el compendio
+  await sections(page).getByRole('link', { name: 'Compendio' }).click()
+  await expect(page.getByRole('heading', { level: 1, name: 'Compendio' })).toBeFocused()
+  await expect(page).toHaveTitle('Compendio · Crisol')
   // La llama de la barra vuelve a Mis mundos
   await sections(page).getByRole('link', { name: 'Crisol' }).click()
   await expect(page.getByRole('heading', { level: 1, name: 'Mis mundos' })).toBeFocused()
   await expect(page).toHaveTitle('Mis mundos · Crisol')
+  // El mundo: su portada
+  await page.getByRole('link', { name: 'Eana', exact: true }).click()
+  await expect(page.getByRole('heading', { level: 1, name: 'Eana' })).toBeFocused()
+  await expect(page).toHaveTitle('Eana · Crisol')
 })
 
 test('las confirmaciones: el foco va a ellas, vuelve al cancelar y, si algo desaparece, va al siguiente', async ({
