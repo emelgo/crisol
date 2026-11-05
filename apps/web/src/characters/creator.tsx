@@ -339,6 +339,52 @@ function PickStep({
         }
       }
     })
+  // Un paso de varios (dos movimientos): se añaden hasta su máximo y se quitan uno a uno
+  if (step.max > 1)
+    return (
+      <>
+        {step.picks.map((pick) => (
+          <article key={pick.id} className={styles.pick} aria-labelledby={`name-${pick.id}`}>
+            <header className={styles.pickHead}>
+              <h2 id={`name-${pick.id}`} className={styles.pickName}>
+                {pick.name}
+              </h2>
+              <button
+                type="button"
+                className={styles.remove}
+                aria-label={t('creator.removeClass', { name: pick.name })}
+                onClick={() =>
+                  void save({
+                    build: (b) => ({
+                      ...b,
+                      picks: (b.picks ?? []).filter((p) => p.id !== pick.id),
+                      decisions: Object.fromEntries(
+                        Object.entries(b.decisions ?? {}).filter(([k]) => !k.startsWith(`${pick.id}>`))
+                      )
+                    })
+                  })
+                }
+              >
+                <X size={16} aria-hidden="true" />
+              </button>
+            </header>
+            <Granted owner={pick.id} state={state} onDecide={onDecide} campaignId={campaignId} />
+          </article>
+        ))}
+        {step.picks.length < step.max && (
+          <Options
+            step={step}
+            title={t('creator.chooseUpTo', { what: step.label, left: step.max - step.picks.length })}
+            onPick={(key) =>
+              void save({
+                build: (b) => ({ ...b, picks: [...(b.picks ?? []), { id: pickId(), step: step.key, key }] })
+              })
+            }
+            onCancel={undefined}
+          />
+        )}
+      </>
+    )
   if (step.picks.length === 0 || changing)
     return (
       <Options
@@ -441,7 +487,11 @@ function FieldInput({
   onCommit: (value: unknown) => void
 }) {
   const id = useId()
-  const shown = Array.isArray(value) ? value.join(', ') : typeof value === 'string' ? value : ''
+  const shown = Array.isArray(value)
+    ? value.join(', ')
+    : typeof value === 'string' || typeof value === 'number'
+      ? String(value)
+      : ''
   const [text, setText] = useState(shown)
   if (field.kind === 'choice' && field.options)
     return (
@@ -459,6 +509,11 @@ function FieldInput({
     )
   const commit = () => {
     if (text === shown) return
+    if (field.kind === 'number') {
+      const n = Number(text)
+      if (text.trim() !== '' && Number.isFinite(n)) onCommit(n)
+      return
+    }
     onCommit(
       field.kind === 'list'
         ? text
@@ -474,7 +529,13 @@ function FieldInput({
       {field.kind === 'text' ? (
         <textarea id={id} rows={4} value={text} onChange={(e) => setText(e.currentTarget.value)} onBlur={commit} />
       ) : (
-        <input id={id} value={text} onChange={(e) => setText(e.currentTarget.value)} onBlur={commit} />
+        <input
+          id={id}
+          type={field.kind === 'number' ? 'number' : 'text'}
+          value={text}
+          onChange={(e) => setText(e.currentTarget.value)}
+          onBlur={commit}
+        />
       )}
     </div>
   )

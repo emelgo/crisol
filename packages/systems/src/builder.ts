@@ -665,7 +665,11 @@ export function applyChoices(system: System, build: Build, choose: Choose, newId
   for (const a of choose.add ?? []) {
     const step = steps.find((s) => s.key === a.step)
     if (step?.kind !== 'content') throw new ChooseError(`No hay un paso de contenido «${a.step}»`)
-    if (!step.levels) for (const p of picks) if (p.step === a.step) removed.add(p.id)
+    // En uno de una sola cosa, lo nuevo sustituye a lo que había; en uno de varias, se suma (hasta su máximo)
+    const max = step.max ?? step.min ?? 1
+    if (!step.levels && max <= 1) for (const p of picks) if (p.step === a.step) removed.add(p.id)
+    if (!step.levels && max > 1 && picks.filter((p) => p.step === a.step && !removed.has(p.id)).length >= max)
+      throw new ChooseError(`En «${a.step}», como mucho ${max}`)
     picks.push({ id: newId(), step: a.step, key: a.key, ...(step.levels ? { level: a.level ?? 1 } : {}) })
   }
   for (const id of Object.keys(choose.levels ?? {}))

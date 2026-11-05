@@ -265,6 +265,9 @@ describe('los límites', () => {
     ;(big as Record<string, unknown>).relleno = 'x'.repeat(LIMITS.bytes)
     expect(only(big).message).toMatch(/^Como mucho, 2 MB/)
     const many = copy()
+    // Sin sus pasos ni su tarjeta: nombran campos que esta copia no tiene
+    delete many.creation
+    delete many.card
     many.types.personaje = {
       document: 'actor',
       label: 'Personaje',

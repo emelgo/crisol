@@ -264,6 +264,7 @@ export const es = {
     removeClass: 'Quitar {{name}}',
     missing: 'Ya no está en el contenido de la campaña.',
     chooseOne: 'Elige: {{what}}',
+    chooseUpTo: '{{what}}: elige {{left}} más',
     addAnother: 'Añadir otra',
     change: 'Cambiar',
     cancel: 'Cancelar',

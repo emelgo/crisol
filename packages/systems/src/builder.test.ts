@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { type Build, buildCharacter, stepOptions, summarize } from './builder.ts'
+import { applyChoices, type Build, buildCharacter, stepOptions, summarize } from './builder.ts'
 import { referenceCharacter } from './catalog/5e/referencia.ts'
 import { catalogContent } from './catalog/content.ts'
 import { CATALOG } from './catalog/index.ts'
 import { evaluate } from './evaluate.ts'
+import type { ContentItem } from './file.ts'
 
 const fiveE = CATALOG.find((s) => s.id === '5e')
 if (!fiveE) throw new Error('Falta el 5e')
@@ -226,5 +227,38 @@ describe('el creador: montar un personaje de sus elecciones', () => {
     const start = performance.now()
     for (let i = 0; i < 5; i++) build(b)
     expect((performance.now() - start) / 5).toBeLessThan(20)
+  })
+})
+
+describe('el creador de otro juego: el de 2d6, con sus pasos', () => {
+  it('sus atributos a mano y dos movimientos; su tarjeta, con la defensa', async () => {
+    const { fronteras } = await import('./fixtures/fronteras.ts')
+    const move = (key: string, name: string): ContentItem => ({
+      type: 'movimiento',
+      key,
+      source: null,
+      data: { name, atributo: 'vigor', descripcion: name }
+    })
+    const content = [move('cargar', 'Cargar'), move('esquivar', 'Esquivar'), move('enganar', 'Engañar')]
+    const choices = { sources: [], duplicates: 'both' as const }
+    const empty = buildCharacter(fronteras, content, choices, {})
+    expect(empty.steps.map((s) => [s.key, s.pending])).toEqual([
+      ['atributos', 0],
+      ['movimientos', 1],
+      ['resumen', 0]
+    ])
+    let b: Build = { values: { vigor: 2, astucia: 1, presencia: 0 } }
+    b = applyChoices(fronteras, b, { add: [{ step: 'movimientos', key: 'cargar' }] }, () => 'm1')
+    b = applyChoices(fronteras, b, { add: [{ step: 'movimientos', key: 'esquivar' }] }, () => 'm2')
+    expect(() => applyChoices(fronteras, b, { add: [{ step: 'movimientos', key: 'enganar' }] }, () => 'm3')).toThrow(
+      'como mucho 2'
+    )
+    const built = buildCharacter(fronteras, content, choices, b)
+    expect(built.complete).toBe(true)
+    const values = evaluate(fronteras, built.type, built.document).values
+    expect(values.defensa).toBe(9)
+    expect(summarize(fronteras, content, choices, b, built, values).stats).toEqual([
+      { key: 'defensa', label: 'Defensa', value: '9' }
+    ])
   })
 })
