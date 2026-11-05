@@ -49,7 +49,9 @@ import {
   compendiumTypes,
   fileName,
   normalizeChoices,
+  type Play,
   pickPaths,
+  playedDocument,
   RollError,
   SYSTEM_FILE,
   type System,
@@ -1256,6 +1258,26 @@ export function fakeApi(
         build: build as Record<string, unknown>,
         ...(confirm ? { confirm } : {})
       })
+    },
+    rollForCharacter: ({ characterId, roll, visibility = 'all' }) => {
+      const character = visibleCharacter(characterId)
+      const document = systemById(character.system)
+      const campaign = campaigns.find((c) => c.id === character.campaignId)
+      if (!document || !campaign || !roll) throw new ApiError('BAD_ROLL', 400)
+      const { choices } = normalizeChoices(document, (campaign.systemChoices ?? {}) as Partial<Choices>)
+      const content = ownSystems.find((s) => s.id === document.id && !s.deleted)?.content ?? []
+      const { type, document: doc } = playedDocument(
+        document,
+        content,
+        choices,
+        character.build as Build,
+        character.play as Play
+      )
+      const result = tryRoll(document, type, doc, roll.key, roll.element ? { element: roll.element } : {})
+      const out = handlers.rollDice({ campaignId: campaign.id, formula: result.formula, visibility })
+      const stored = rolls.find((r) => r.id === out.roll.id)
+      for (const each of stored ? [out.roll, stored] : [out.roll]) each.label = `${character.name} · ${result.label}`
+      return { roll: out.roll }
     },
     deleteCharacter: ({ characterId }) => {
       visibleCharacter(characterId)

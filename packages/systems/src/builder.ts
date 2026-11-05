@@ -5,15 +5,16 @@
  * cada paso, su nivel y si ya tiene lo que su sistema pide. Puro: igual en el servidor y en la web
  */
 import { z } from 'zod'
+import { actionsOf } from './actions.ts'
 import type { Choices } from './choices.ts'
 import { editionOf, resolveConcept, type Seen, visibleContent } from './content.ts'
-import { actionsOf } from './actions.ts'
 import { type DocumentItem, evaluate, evaluateWith, type Resource, type SystemDocument } from './evaluate.ts'
 import type { ContentItem } from './file.ts'
 import type { System } from './format.ts'
 import type { Value } from './formulas/functions.ts'
 import type { Mechanics } from './mechanics.ts'
 import { fillResources, type Play, withPlay } from './play.ts'
+import { rollsOf } from './rolls.ts'
 import { type Text, textOf } from './text.ts'
 
 /** Algo elegido del contenido en un paso: su clave (con su edición) y, si el paso es de niveles (las clases), su nivel */
@@ -652,8 +653,18 @@ export function characterView(
         heal: a.heal?.formula ?? null,
         ...(a.error ? { error: a.error } : {})
       })),
+      rolls: rollsOf(system, built.type, language, played.document).map((r) => ({
+        key: r.key,
+        label: r.label,
+        elements: r.elements,
+        modes: r.modes
+      })),
       // Lo que lleva del compendio (su estado) y lo que ya no está en él
-      carried: (play.items ?? []).map((it) => ({ ...it, name: byKey.get(it.key) ? say(labelOf(byKey.get(it.key) as ContentItem)) : it.key, type: byKey.get(it.key)?.type ?? null })),
+      carried: (play.items ?? []).map((it) => ({
+        ...it,
+        name: byKey.get(it.key) ? say(labelOf(byKey.get(it.key) as ContentItem)) : it.key,
+        type: byKey.get(it.key)?.type ?? null
+      })),
       playMissing: played.missing,
       // Los campos del personaje, con sus nombres: para pintar su ficha mínima en cualquier sistema
       fields: Object.entries(fields).map(([key, f]) => ({
@@ -868,4 +879,20 @@ export function checkBuild(
       problems.push(`«${textOf(decision.label, choices.language)}»: lo mismo, como mucho ${decision.most} veces`)
   }
   return { build, problems: [...new Set(problems)] }
+}
+
+/** El documento de un personaje (sus elecciones con lo de la partida encima), para tirar por él */
+export function playedDocument(
+  system: System,
+  content: readonly ContentItem[],
+  choices: Pick<Choices, 'sources' | 'duplicates' | 'language'> & { settings?: Record<string, unknown> },
+  build: Build,
+  play: Play = {}
+) {
+  const built = buildCharacter(system, content, choices, build)
+  const { byKey } = viewOf(system, content, choices)
+  return {
+    type: built.type,
+    document: withPlay(system, built.type, built.document, play, byKey, choices.language).document
+  }
 }

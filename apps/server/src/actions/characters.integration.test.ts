@@ -325,6 +325,69 @@ describe('los personajes de una campaña', () => {
     ).toBe(404)
   })
 
+  it('tirar por un personaje: una tirada de su sistema y un ataque con lo que lleva, a su registro', async () => {
+    const created = (await ok200('createCharacter', { campaignId, name: 'Thora' }, ana.cookie)).character
+    const saved = await ok200(
+      'updateCharacter',
+      {
+        characterId: created.id,
+        version: 1,
+        build: complete(),
+        play: { items: [{ id: 'e1', key: 'espada_larga_2024', equipped: true }] }
+      },
+      ana.cookie
+    )
+    expect(saved.state.carried).toMatchObject([{ id: 'e1', name: 'Espada larga', type: 'arma', equipped: true }])
+    expect(saved.state.rolls.map((r: { key: string }) => r.key)).toEqual(
+      expect.arrayContaining(['habilidad', 'ataque'])
+    )
+    const athletics = await ok200(
+      'rollForCharacter',
+      { characterId: created.id, roll: { key: 'habilidad', element: 'atletismo' } },
+      ana.cookie
+    )
+    expect(athletics.roll.label).toMatch(/^Thora · .*Atletismo/)
+    expect(athletics.roll.formula).toMatch(/^1d20/)
+    const attack = await ok200(
+      'rollForCharacter',
+      { characterId: created.id, roll: { key: 'ataque', element: 'p:e1' }, visibility: 'self' },
+      ana.cookie
+    )
+    expect(attack.roll).toMatchObject({ visibility: 'self', label: expect.stringContaining('Espada larga') })
+    const { rolls } = await ok200('listRolls', { campaignId })
+    expect(rolls.map((r: { label: string }) => r.label)).toEqual(expect.arrayContaining([athletics.roll.label]))
+    // Lo que no vale: oculta (jugadora), una tirada que no existe, otra persona
+    expect(
+      (
+        await fails(
+          'rollForCharacter',
+          { characterId: created.id, roll: { key: 'habilidad', element: 'atletismo' }, visibility: 'hidden' },
+          ana.cookie
+        )
+      ).code
+    ).toBe('VISIBILITY_NOT_ALLOWED')
+    expect((await fails('rollForCharacter', { characterId: created.id, roll: { key: 'nada' } }, ana.cookie)).code).toBe(
+      'BAD_ROLL'
+    )
+    expect(
+      (await fails('rollForCharacter', { characterId: created.id, roll: { key: 'iniciativa' } }, bruno.cookie)).status
+    ).toBe(404)
+    // Lo de la partida: algo que no está en el contenido no se añade
+    expect(
+      (
+        await fails(
+          'updateCharacter',
+          {
+            characterId: created.id,
+            version: saved.character.version,
+            play: { items: [{ id: 'x', key: 'nada_2024' }] }
+          },
+          ana.cookie
+        )
+      ).code
+    ).toBe('BAD_PLAY')
+  })
+
   it('una campaña sin sistema no tiene personajes', async () => {
     const world = (await ok200('listWorlds', {})).worlds[0]
     const none = await ok200('createCampaign', { worldId: world.id, name: 'Sin reglas' })

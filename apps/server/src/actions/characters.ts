@@ -14,9 +14,12 @@ import {
   listCharacters,
   listCharacterVersions,
   restoreCharacterVersion,
-  updateCharacter
+  rollForCharacter,
+  updateCharacter,
+  visibilitiesFor
 } from '@crisol/contracts'
 import { campaignsRepo, charactersRepo, membersRepo, systemsRepo } from '@crisol/db'
+import { cryptoRoller } from '@crisol/dice'
 import { authorize, can, NotFoundError } from '@crisol/domain'
 import {
   applyChoices,
@@ -27,15 +30,20 @@ import {
   catalogSystem,
   characterView,
   checkBuild,
+  normalizeChoices,
   PLAY_BYTES,
   type Play,
+  playedDocument,
   playSchema,
-  normalizeChoices,
-  type System
+  RollError,
+  type System,
+  tryAction,
+  tryRoll
 } from '@crisol/systems'
 import { catalogContent } from '@crisol/systems/catalog/content'
 import { authorizedCampaign } from './access.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
+import { saveRoll, storedOf } from './dice.ts'
 import { implement } from './registry.ts'
 import { contentOf } from './systems.ts'
 
@@ -130,12 +138,18 @@ async function stateOf(
 function checkedPlay(given: unknown, previous: Record<string, unknown>, missing: readonly string[]) {
   const parsed = playSchema.safeParse(given)
   if (!parsed.success)
-    throw new InvalidRequestError('BAD_PLAY', parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('. '))
+    throw new InvalidRequestError(
+      'BAD_PLAY',
+      parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('. ')
+    )
   if (JSON.stringify(parsed.data).length > PLAY_BYTES) throw new InvalidRequestError('BAD_PLAY', 'demasiado grande')
   const before = new Set(((previous as Play).items ?? []).map((it) => it.key))
   const added = (parsed.data.items ?? []).filter((it) => !before.has(it.key) && missing.includes(it.key))
   if (added.length > 0)
-    throw new InvalidRequestError('BAD_PLAY', `no está en el contenido de la campaña: ${added.map((it) => it.key).join(', ')}`)
+    throw new InvalidRequestError(
+      'BAD_PLAY',
+      `no está en el contenido de la campaña: ${added.map((it) => it.key).join(', ')}`
+    )
   return parsed.data as Record<string, unknown>
 }
 
@@ -248,6 +262,68 @@ export const characterActions = [
       throw error
     }
     return save(ctx, row, version, { build: build as Record<string, unknown> }, confirm)
+  }),
+
+  implement(rollForCharacter, async (ctx, { characterId, roll, action, visibility }) => {
+    const { row } = await readable(ctx, characterId)
+    if (Boolean(roll) === Boolean(action)) throw new InvalidRequestError('BAD_ROLL', 'una tirada o una acción')
+    const campaign = await authorizedCampaign(ctx, 'dice.roll', row.campaignId)
+    const master = can(ctx.actor, 'dice.private', { campaignId: campaign.id, worldId: campaign.worldId })
+    if (!master && !visibilitiesFor('player').includes(visibility))
+      throw new InvalidRequestError('VISIBILITY_NOT_ALLOWED')
+    const { document, content, choices } = await contextOf(ctx, row.campaignId, row.system)
+    const { type, document: doc } = playedDocument(document, content, choices, row.build as Build, row.play as Play)
+    const options = { roller: cryptoRoller, settings: choices.settings, language: choices.language }
+    try {
+      if (roll) {
+        const result = tryRoll(document, type, doc, roll.key, {
+          ...options,
+          ...(roll.element ? { element: roll.element } : {}),
+          ...(roll.mode !== undefined ? { mode: roll.mode } : {})
+        })
+        const view = await saveRoll(ctx, campaign, {
+          formula: result.formula,
+          label: `${row.name} · ${result.label}`,
+          visibility,
+          result: storedOf(result)
+        })
+        return { roll: view }
+      }
+      if (!action) throw new InvalidRequestError('BAD_ROLL', 'una tirada o una acción')
+      const rolled = tryAction(document, type, doc, action.item, action.key, {
+        ...options,
+        ...(action.level !== undefined ? { level: action.level } : {}),
+        ...(action.mode !== undefined ? { mode: action.mode } : {}),
+        ...(action.critical ? { critical: true } : {})
+      })
+      const parts =
+        action.part === 'attack'
+          ? rolled.attack
+            ? [{ result: rolled.attack }]
+            : []
+          : action.part === 'heal'
+            ? rolled.heal
+              ? [rolled.heal]
+              : []
+            : rolled.damage
+      if (parts.length === 0) throw new InvalidRequestError('BAD_ROLL', 'esa acción no tiene eso')
+      const stored = parts.map((p) => storedOf(p.result))
+      const view = await saveRoll(ctx, campaign, {
+        formula: parts.map((p) => p.result.formula).join(' + '),
+        label: `${row.name} · ${rolled.label}${action.part === 'attack' ? '' : action.part === 'heal' ? ' · curación' : ' · daño'}`,
+        visibility,
+        result: {
+          total: stored.reduce((n, p) => n + p.total, 0),
+          detail: stored.map((p) => p.detail).join(' + '),
+          critical: action.part === 'attack' ? (stored[0]?.critical ?? null) : null,
+          dice: stored.flatMap((p) => p.dice)
+        }
+      })
+      return { roll: view }
+    } catch (error) {
+      if (error instanceof RollError) throw new InvalidRequestError('BAD_ROLL', error.message)
+      throw error
+    }
   }),
 
   implement(deleteCharacter, async (ctx, { characterId }) => {

@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { defineAction } from './action.ts'
+import { diceRoll } from './dice.ts'
 
 /** Lo que se ve de un personaje en su tarjeta: su línea («Enano · Guerrero 4»), su nivel y unos valores de su hoja */
 export const characterSummary = z.object({
@@ -152,6 +153,16 @@ export const characterState = z.object({
       })
     )
     .describe('Lo que puede hacer (ataques, conjuros): su ataque, su salvación y su daño, armados'),
+  rolls: z
+    .array(
+      z.object({
+        key: z.string(),
+        label: z.string(),
+        elements: z.array(z.object({ key: z.string(), label: z.string() })),
+        modes: z.array(z.object({ key: z.string(), label: z.string() }))
+      })
+    )
+    .describe('Las tiradas de su sistema que puede hacer, con sus elementos y sus modos'),
   carried: z
     .array(
       z.object({
@@ -274,6 +285,35 @@ export const chooseForCharacter = defineAction({
     confirm: z.enum(['created', 'level']).optional()
   }),
   output: z.object({ character, state: characterState })
+})
+
+export const rollForCharacter = defineAction({
+  name: 'rollForCharacter',
+  kind: 'write',
+  description:
+    'Tira por un personaje, en su campaña y a su registro: una tirada de su sistema (roll: su clave y, si es por un elemento, cuál: una característica, una habilidad, un arma) o una parte de una acción de lo que lleva (action: su objeto, su clave y attack, damage o heal). El servidor calcula la fórmula con su hoja del momento y tira',
+  input: z.object({
+    characterId: z.uuid(),
+    roll: z
+      .object({
+        key: z.string().max(60),
+        element: z.string().max(300).optional(),
+        mode: z.string().max(60).optional().describe('Un modo del sistema (ventaja); sin él, el que pongan sus efectos')
+      })
+      .optional(),
+    action: z
+      .object({
+        item: z.string().max(300).nullable(),
+        key: z.string().max(60),
+        part: z.enum(['attack', 'damage', 'heal']),
+        level: z.int().min(0).max(30).optional(),
+        mode: z.string().max(60).optional(),
+        critical: z.boolean().optional()
+      })
+      .optional(),
+    visibility: z.enum(['all', 'self', 'master', 'hidden']).default('all')
+  }),
+  output: z.object({ roll: diceRoll })
 })
 
 export const deleteCharacter = defineAction({
