@@ -160,7 +160,8 @@ describe('los sistemas de reglas', () => {
     })
     // Otra cuenta no ve el contenido de este
     expect((await code('searchSystemContent', { systemId: copy.id }, other.cookie)).status).toBe(404)
-  })
+    // Con la cobertura y la máquina cargada, más de 20 s
+  }, 60_000)
 
   it('el contenido de uno de la cuenta: se guarda con su mecánica, se cambia, se busca, se lee y se quita', async () => {
     const created = await ok200('createSystem', { name: 'Fronteras', document: fronteras })

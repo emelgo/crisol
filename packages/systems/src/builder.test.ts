@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { applyChoices, type Build, buildCharacter, stepOptions, summarize } from './builder.ts'
+import {
+  applyChoices,
+  type Build,
+  buildCharacter,
+  characterView,
+  checkBuild,
+  stepOptions,
+  summarize
+} from './builder.ts'
 import { referenceCharacter } from './catalog/5e/referencia.ts'
 import { catalogContent } from './catalog/content.ts'
 import { CATALOG } from './catalog/index.ts'
@@ -287,5 +295,100 @@ describe('el creador de otro juego: el de 2d6, con sus pasos', () => {
     expect(summarize(fronteras, content, choices, b, built, values).stats).toEqual([
       { key: 'defensa', label: 'Defensa', value: '9' }
     ])
+  })
+})
+
+describe('las reglas al guardar unas elecciones (checkBuild)', () => {
+  const base: Build = {
+    scores: { method: 'matriz', base: scores },
+    picks: [
+      { id: 'c1', step: 'clase', key: 'guerrero_2024', level: 4 },
+      { id: 'e1', step: 'especie', key: 'enano_2024' },
+      { id: 't1', step: 'trasfondo', key: 'acolito_2024' }
+    ]
+  }
+  const values = evaluate(fiveE, 'personaje', build(base).document).values
+  const check = (given: unknown, previous: Build = base) =>
+    checkBuild(fiveE, content, campaign, given, previous, values).problems
+
+  it('lo de antes vale tal cual; la forma y lo que no se escribe en ningún paso, no', () => {
+    expect(check(base)).toEqual([])
+    expect(check({ cosa: 1 })[0]).toMatch(/Unrecognized key/)
+    expect(check({ ...base, values: { pg_max: 9 } })).toEqual(['«pg_max» no se escribe en ningún paso'])
+    expect(check({ ...base, values: { notas: 'Hola' } })).toEqual([])
+    expect(check({ ...base, scores: { method: 'nada', base: { suerte: 3 } } })).toEqual([
+      'No hay un método «nada»',
+      '«suerte» no es de las puntuaciones'
+    ])
+  })
+
+  it('lo añadido: que exista y sea de su paso, sin repetir, hasta nivel 20 y con lo que pide la multiclase', () => {
+    const add = (pick: Record<string, unknown>) => check({ ...base, picks: [...(base.picks ?? []), pick] })
+    expect(add({ id: 'x', step: 'clase', key: 'no_existe_2024', level: 1 })).toEqual([
+      '«no_existe_2024» no es de clase en el contenido de la campaña'
+    ])
+    expect(add({ id: 'x', step: 'magia', key: 'mago_2024' })).toContain('No hay un paso «magia»')
+    expect(add({ id: 'x', step: 'clase', key: 'guerrero_2024', level: 1 })).toContain('En «clase», la misma dos veces')
+    expect(add({ id: 'x', step: 'clase', key: 'picaro_2024', level: 17 })).toContain('Como mucho, nivel 20 en total')
+    expect(add({ id: 'x', step: 'clase', key: 'mago_2024', level: 1 })).toEqual(['Necesitas Inteligencia 13'])
+    expect(add({ id: 'x', step: 'especie', key: 'humano_2024' })).toEqual(['En «especie», como mucho 1'])
+    expect(add({ id: 'c1', step: 'clase', key: 'picaro_2024', level: 1 })).toContain(
+      'Hay dos cosas elegidas con el mismo id'
+    )
+    // Lo de antes que ya no está en el contenido no es un error (sale como pendiente)
+    const old: Build = { ...base, picks: [...(base.picks ?? []), { id: 'z', step: 'especie', key: 'perdida_2024' }] }
+    expect(
+      checkBuild(fiveE, content, campaign, { ...old, picks: old.picks?.slice(0, 3) }, old, values).problems
+    ).toEqual([])
+  })
+
+  it('lo decidido: de una decisión que está, de sus opciones, sin pasarse de cuántos ni de las veces', () => {
+    const skills = build(base).decisions.find((d) => d.id === 'c1>habilidades')
+    const options = skills?.options.map((o) => o.value) ?? []
+    const decide = (decisions: Record<string, string[]>) => check({ ...base, decisions })
+    expect(decide({ 'c1>habilidades': options.slice(0, 2) })).toEqual([])
+    expect(decide({ 'c1>habilidades': options.slice(0, 3) })).toEqual(['«Habilidades»: como mucho 2'])
+    expect(decide({ 'c1>habilidades': ['volar'] })).toEqual(['«volar» no vale en «Habilidades»'])
+    expect(decide({ 'c1>habilidades': [options[0] ?? '', options[0] ?? ''] })).toEqual([
+      '«Habilidades»: lo mismo, como mucho 1 veces'
+    ])
+    expect(decide({ 'c9>nada': ['x'] })).toEqual(['No hay nada que decidir con el id «c9>nada»'])
+  })
+})
+
+describe('el estado de un personaje para la pantalla y la IA (characterView)', () => {
+  it('sus pasos con lo suyo, en el idioma de la campaña: opciones, métodos, campos; su resumen y su hoja', () => {
+    const { view } = characterView(
+      fiveE,
+      content,
+      { ...campaign, language: 'en' },
+      {
+        scores: { method: 'matriz', base: scores },
+        picks: [{ id: 'c1', step: 'clase', key: 'guerrero_2024', level: 1 }]
+      }
+    )
+    const [klass, species, , abilities, details] = view.steps
+    expect(klass).toMatchObject({
+      kind: 'content',
+      label: 'Class',
+      levels: true,
+      picks: [{ name: 'Fighter', level: 1 }]
+    })
+    expect(species).toMatchObject({ kind: 'content', pending: 1 })
+    expect(species?.kind === 'content' && species.options.some((o) => o.label === 'Dwarf')).toBe(true)
+    expect(abilities).toMatchObject({
+      kind: 'scores',
+      methods: expect.arrayContaining([expect.objectContaining({ label: 'Point buy' })])
+    })
+    expect(details).toMatchObject({ kind: 'fields', fields: [{ key: 'idiomas' }, { key: 'notas', label: 'Notes' }] })
+    expect(view.summary.line).toBe('Fighter 1')
+    expect(view.items.find((i) => i.id === 'c1')).toMatchObject({ type: 'clase', key: 'guerrero_2024', from: null })
+    expect(view.fields.find((f) => f.key === 'caracteristicas')?.elements?.length).toBe(6)
+    expect(view.fields.find((f) => f.key === 'rasgos')).toMatchObject({
+      kind: 'items',
+      of: expect.arrayContaining(['rasgo'])
+    })
+    expect(view.sheet.nivel).toBe(1)
+    expect(view.decisions.map((d) => d.label)).toContain('Skills')
   })
 })

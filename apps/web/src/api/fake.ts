@@ -1320,8 +1320,12 @@ export function fakeApi(
       if (!row) throw new ApiError('TABLE_EMPTY', 400)
       if (!table.replacement) draws.set(key, [...drawn, row.id])
       const { roll } = handlers.rollDice({ campaignId, formula, visibility })
-      roll.label = table.name
-      roll.table = { name: table.name, results: [{ text: row.text, page: row.page ?? null }] }
+      // La guardada, también con su tabla
+      const stored = rolls.find((r) => r.id === roll.id)
+      for (const each of stored ? [roll, stored] : [roll]) {
+        each.label = table.name
+        each.table = { name: table.name, results: [{ text: row.text, page: row.page ?? null }] }
+      }
       return { roll, drawn: [...(draws.get(key) ?? [])] }
     },
     resetTableDraws: ({ tabId, campaignId }) => {

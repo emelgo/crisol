@@ -305,7 +305,8 @@ describe('conector MCP con OAuth', () => {
         expect(`${mode} ${tool} ${kind}: ${outcome}`).toBe(`${mode} ${tool} ${kind}: ${expected[mode][kind]}`)
       }
     }
-  })
+    // Con la cobertura y la máquina cargada, más de 20 s
+  }, 60_000)
 
   it('en copiloto, Claude crea una campaña sin preguntar y regenerar el enlace espera; al aprobarlo se hace', async () => {
     const { cookie, call } = await connected()
