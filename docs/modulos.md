@@ -7,20 +7,24 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
-### Para retomar (2026-11-05, módulo 3: `srd-5e`, fase 3 en marcha)
+### Para retomar (2026-11-05, módulo 3: `srd-5e`, fases 3 y 4 en el PR #98)
 
-- **Rama `modulo-3/srd-5e-contenido`** (sin PR aún), sobre `main`. Hechas las tareas 11 a 17 de `tasks/todo.md`: los
-  estados y el texto de las reglas (`scripts/srd/estados.ts`, `capitulos.ts`, `reglas.ts`), los 658 conjuros
-  (`conjuros.ts`), los 496 objetos mágicos (`magicos.ts`), las 647 criaturas (`criaturas.ts`; una prueba comprueba en
-  todas que sus fórmulas dan lo de su perfil) y las especies, trasfondos y dotes con sus rasgos (`origenes.ts`); 2735
-  documentos, que validan (`node scripts/srd/comprobar.ts`). En el motor: la operación `mul` en los efectos; en el 5e,
-  `mod` en el conjuro, `bono_iniciativa` y el cansancio de 2024 en la salvación contra muerte; en la base de datos,
-  `insertMany` y `removeMany` (copiar el 5e ya no va fila a fila).
-- **Lo siguiente**: las clases y subclases (tareas 18 y 19: las 11 que faltan de cada edición, como el guerrero de
-  `guerrero.ts` y `clases.ts`), luego el punto de control 4 y la fase 4. Cómo se saca cada cosa: el texto de los PDF en
-  orden de lectura con el alto de cada palabra (`ruleRows` y los perfiles de `capitulos.ts`: qué alto es título, tabla
-  o recuadro en cada PDF), cortado por sus títulos y pasado a Markdown (`textOf`); inglés y español se emparejan por su
-  firma o su parecido y una lista revisada (`pares.ts`).
+- **Rama `modulo-3/srd-5e-contenido`, PR #98** (con su pasada de la CI). Hechas las tareas 11 a 20 de `tasks/todo.md`:
+  todo el contenido de los dos SRD (3170 documentos: estados, reglas, conjuros, objetos mágicos, criaturas, especies,
+  trasfondos, dotes y las 12 clases, con su mecánica) y los personajes de referencia (96 contra las tablas del SRD y
+  24 hechos a mano). Los scripts, en `scripts/srd/` (`node scripts/srd/extraer.ts` y `comprobar.ts`, con los PDF de
+  `datos-locales/srd/`). Revisión de código hecha, con lo importante arreglado. **Pendiente de Enrique**: el punto de
+  control 4 (`tasks/muestra-srd-5e.md`). **Lo siguiente**: cerrar la tarea 21 (merge y staging) y seguir con
+  `personajes` (el creador: lo que concede cada cosa por nivel ya va en los `grants` del contenido;
+  `catalog/5e/referencia.ts` monta un personaje como lo hará él).
+- **Importar de Foundry (Enrique, 2026-11-05)**: «el importador debería coger eso [el compendio del zip del
+  manifiesto del sistema]; si no, es trabajo extra cada vez que se añade un sistema». Va a la capacidad `foundry`
+  (`docs/specs/modulo-3.md`: importar los datos de un sistema de Foundry filtrando por licencia, tras el abogado y su
+  ADR). Para su entrevista: lo importa quien usa Crisol (no va en el repositorio); la licencia de cada paquete
+  (código MIT no es contenido libre: el de pf2e es ORC/OGL, el de Daggerheart, su licencia de comunidad); los
+  compendios de Foundry 11+ van en LevelDB (un lector, con su licencia comprobada); los textos y los valores se pueden
+  traer igual para cualquier sistema, pero su automatización (los Active Effects de cada sistema) se traduce por
+  sistema. El 5e de serie sale de los PDF por la sala limpia y por el texto oficial en español.
 - Lo de antes de esta rama, abajo.
 
 ### Para retomar (2026-11-04, módulo 3: `srd-5e` en marcha, fase 1 hecha)
@@ -111,6 +115,9 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   - interfaz: el título de la página, salir con cambios sin guardar pregunta, el recorrido del editor, los números y
     las opciones que se escriben tal cual, los problemas que no dependen del color, sin textos de ayuda fijos.
 - **Queda para después** (apuntado, no bloquea):
+  - (srd-5e, revisión) Deshacer la copia de un sistema con mucho contenido (el 5e: 3170 documentos) va fila a fila en
+    `repos/undo.ts`: medirlo antes de producción y, si hace falta, por tandas como `insertMany`. Y en algún texto inglés
+    se pierde el guion de una palabra partida a final de línea («selfexpression», «twohanded»).
   - **por decidir con Enrique**: lo que la IA hace en copiloto sin aprobación y ven los jugadores (tirar en público,
     cambiar el nombre o la descripción de la campaña) podría pedir aprobación, como «jugadores»: un sistema subido de
     fuera podría llevar instrucciones para la IA en sus textos;
