@@ -3,8 +3,9 @@
  * eligió. A la izquierda, el buscador (en sus dos idiomas, sin tildes), los tipos y la lista; en el centro, lo
  * elegido; a la derecha, su edición, su nombre en inglés, su otra versión y la atribución de su fuente
  */
+import { visibilitiesFor } from '@crisol/contracts'
 import { type Text, textOf } from '@crisol/systems'
-import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
+import { useInfiniteQuery, useMutation, useQuery } from '@tanstack/react-query'
 import { getRouteApi, Navigate } from '@tanstack/react-router'
 import { ArrowLeft, ChevronRight, Search, SlidersHorizontal, X } from 'lucide-react'
 import { type ReactNode, useEffect, useId, useState } from 'react'
@@ -12,12 +13,16 @@ import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import type { ActionOutput } from '../api/client.ts'
 import { useApi } from '../api/context.tsx'
+import { useErrorText } from '../api/errors.ts'
+import { useAnnounce } from '../components/announcer.tsx'
 import { Loading } from '../components/brand.tsx'
 import { BusyButton } from '../components/busy-button.tsx'
+import { FormError } from '../components/field.tsx'
 import { failed, LoadError } from '../components/load-error.tsx'
 import { PageTitle } from '../components/page-title.tsx'
 import { useSettled } from '../components/settled.ts'
 import { Tour } from '../components/tour.tsx'
+import { useDice } from '../dice/context.tsx'
 import { useNarrow } from '../wiki/panel.tsx'
 import styles from './compendium.module.css'
 import { ContentText } from './content-text.tsx'
@@ -550,6 +555,27 @@ function Entry({
   const { t } = useTranslation()
   const api = useApi()
   const titleId = useId()
+  const errorText = useErrorText()
+  const announce = useAnnounce()
+  // Sus tablas de tirar se tiran en la campaña, para quien elijan los dados (si vale en ella)
+  const dice = useDice()
+  const campaign = useQuery({
+    queryKey: ['campaign', campaignId],
+    queryFn: () => api.call('getCampaign', { campaignId })
+  })
+  const visibility = visibilitiesFor(campaign.data?.campaign.role ?? 'player').includes(dice.visibility)
+    ? dice.visibility
+    : 'all'
+  const rolling = useMutation({
+    mutationFn: (table: number) => api.call('rollContentTable', { campaignId, key: entryKey, table, visibility }),
+    onSuccess: (out) =>
+      announce(t('compendium.rolledTable', { total: out.roll.total, text: out.roll.table?.results[0]?.text ?? '' }))
+  })
+  const roll = (table: number) =>
+    rolling
+      .mutateAsync(table)
+      .then((out) => out.row)
+      .catch(() => null)
   const read = useQuery({
     queryKey: ['compendium', campaignId, 'entry', entryKey],
     queryFn: () => api.call('getCampaignContent', { campaignId, keys: [entryKey] })
@@ -607,7 +633,8 @@ function Entry({
           </dl>
         )}
         {item.play && <InPlay play={item.play} titleId={titleId} />}
-        {body && <ContentText text={body} />}
+        <FormError message={rolling.error ? errorText(rolling.error) : null} />
+        {body && <ContentText text={body} onRoll={roll} />}
         {item.granted.length > 0 && (
           <section className={styles.granted} aria-labelledby={`${titleId}-granted`}>
             <h3 id={`${titleId}-granted`}>{t('compendium.byLevel')}</h3>

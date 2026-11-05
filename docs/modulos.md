@@ -30,9 +30,15 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   `comparar-dnd5e.ts` cruza nuestras criaturas con las suyas. Arreglado el extractor de criaturas (de 473 a 615 de 647
   iguales; de 131 etiquetas sin traducir a 26) y traída de dnd5e la mecánica de los objetos mágicos que el texto no da
   (de 15 a 157 con acciones). Del SRD no falta nada: lo que dnd5e tiene de más son variantes, invocaciones, personajes
-  de ejemplo y algo que no es del SRD. **Lo siguiente**: lo que queda de las criaturas (20 acciones, 26 etiquetas), las
-  tablas del SRD como tablas que se tiran, los filtros del compendio y ampliar el formato de la mecánica (estados que
-  imponen los conjuros, conjuros dentro de un perfil): `research/foundry/compendio.md` § propuestas.
+  de ejemplo y algo que no es del SRD. 
+- **Filtros y tablas que se tiran (PR #107)**: en la biblioteca del compendio, «Filtrar» en cada tipo
+  (`compendium.types[tipo].filters`: los conjuros por escuela, clases, concentración y ritual; las criaturas por VD y
+  tamaño; los objetos mágicos por rareza y sintonía; las armas por propiedades y maestría). Las tablas de dado del
+  texto de un documento (la Bolsa de trucos, Confusión, las Fichas de pluma: 58) se tiran en la campaña desde el
+  compendio (`rollContentTable`, MCP `tirar_tabla_compendio`) y lo que sale queda marcado. Arreglado el ritual de los
+  conjuros de 2024. **Lo siguiente**: lo que queda de las criaturas (20 acciones, 26 etiquetas) y ampliar el formato
+  de la mecánica (estados que imponen los conjuros, conjuros dentro de un perfil), con un ADR:
+  `research/foundry/compendio.md` § propuestas. Pendiente de Enrique: si quitar una clase en el creador pregunta antes.
 - **La CI del módulo 3 pasó entera en la PR #103** (calidad, seguridad, secretos, e2e y accesibilidad).
 - **El pulido del módulo 3, primera tanda (PR #104)**: revisada su interfaz con las pautas y `docs/diseno.md`;
   hechos los tutoriales de cada vista (campaña, Personajes, el personaje, Compendio y Tabla), sin dobles clics, avisos

@@ -50,3 +50,34 @@
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
+
+/* El dado de una tabla de tirar: se pulsa para tirar en la campaña */
+.roll {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 0.125rem var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: inherit;
+  letter-spacing: 0;
+  text-transform: none;
+  cursor: pointer;
+}
+
+.roll:hover {
+  border-color: var(--color-accent);
+}
+
+.roll[aria-disabled="true"] {
+  cursor: progress;
+  opacity: 0.7;
+}
+
+/* Lo que salió */
+.hit {
+  background: color-mix(in srgb, var(--color-accent) 14%, transparent);
+  font-weight: 600;
+}

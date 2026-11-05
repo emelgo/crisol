@@ -42,6 +42,9 @@ const IN_PLAY = new Set(['equipado', 'activo', 'preparado', 'sintonizado', 'cant
 const longText = (fields: Record<string, Field>) =>
   Object.entries(fields).find(([, f]) => f.kind === 'text' && (f.lines ?? 1) > 1)?.[0] ?? null
 
+/** El campo del texto largo de un tipo de un sistema (su descripción); sin él, null */
+export const textFieldOf = (system: System, type: string) => longText(system.types[type]?.fields ?? {})
+
 /** Los tipos con contenido en lo que se ve, en el orden del sistema, con cuántos hay y los campos que se leen */
 export function compendiumTypes(
   system: System,

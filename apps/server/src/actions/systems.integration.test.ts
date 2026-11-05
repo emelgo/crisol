@@ -337,6 +337,37 @@ describe('los sistemas de reglas', () => {
     expect(read.items[0].play.scaling).toMatch(/^Con un espacio de más nivel que el 3/)
     expect(read.items[1].granted).toContainEqual({ level: 1, key: 'barbaro_furia_2014', type: 'rasgo', name: 'Furia' })
 
+    // Una tabla de su texto, tirada en la campaña: la Bolsa de trucos gris (1d8), con lo que salió
+    const bag = await ok200(
+      'rollContentTable',
+      { campaignId: campaign.id, key: 'bolsa_de_trucos_2024', table: 0 },
+      player.cookie
+    )
+    expect(bag.roll).toMatchObject({ formula: '1d8', label: 'Bolsa de trucos', visibility: 'all' })
+    expect(bag.row).toBeGreaterThanOrEqual(0)
+    expect(bag.roll.table.results[0].text).not.toBe('')
+    expect(
+      (
+        await code(
+          'rollContentTable',
+          { campaignId: campaign.id, key: 'bolsa_de_trucos_2024', table: 0, visibility: 'hidden' },
+          player.cookie
+        )
+      ).status
+    ).toBe(400)
+    expect(
+      (
+        await code(
+          'rollContentTable',
+          { campaignId: campaign.id, key: 'bolsa_de_trucos_2024', table: 9 },
+          player.cookie
+        )
+      ).status
+    ).toBe(400)
+    expect(
+      (await code('rollContentTable', { campaignId: campaign.id, key: 'nada', table: 0 }, player.cookie)).status
+    ).toBe(404)
+
     // Con solo la de 2014, lo de 2024 no se lee
     await ok200('updateCampaign', {
       campaignId: campaign.id,
@@ -356,6 +387,7 @@ describe('los sistemas de reglas', () => {
       ['getCampaignCompendium', { campaignId: campaign.id }],
       ['searchCampaignContent', { campaignId: campaign.id }],
       ['browseCampaignContent', { campaignId: campaign.id, type: 'conjuro' }],
+      ['rollContentTable', { campaignId: campaign.id, key: 'bolsa_de_trucos_2024', table: 0 }],
       ['getCampaignContent', { campaignId: campaign.id, keys: ['bola_de_fuego_2014'] }]
     ] as const)
       expect((await code(name, payload, stranger.cookie)).status).toBe(404)

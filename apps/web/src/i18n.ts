@@ -378,6 +378,8 @@ export const es = {
     clearFilters: 'Quitar los filtros',
     any: 'Cualquiera',
     noMatch: 'Nada con esos filtros',
+    rollTable: 'Tirar {{formula}} en «{{what}}»',
+    rolledTable: 'Salió {{total}}: {{text}}',
     searchHint: 'Un conjuro, una criatura…',
     otherVersion: 'Otra versión',
     clear: 'Borrar la búsqueda',

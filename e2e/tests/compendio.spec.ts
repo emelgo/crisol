@@ -87,6 +87,14 @@ test('la campaña en su vista: la jugadora entra, abre el compendio, busca «fir
   await expect(player.getByRole('article', { name: 'Bárbaro' })).toBeVisible()
   await player.screenshot({ path: test.info().outputPath('compendio-clase.png'), fullPage: false })
 
+  // Una tabla de su texto se tira en la campaña: la Bolsa de trucos gris
+  await player.getByRole('searchbox', { name: 'Buscar en el compendio' }).fill('bolsa de trucos')
+  await list.getByRole('button', { name: /^Bolsa de trucos.*2024/ }).click()
+  const bag = player.getByRole('article', { name: 'Bolsa de trucos' })
+  await bag.getByRole('button', { name: 'Tirar 1d8 en «Criatura»' }).first().click()
+  await expect(bag.locator('td[class*="hit"]')).toHaveCount(2)
+  await player.screenshot({ path: test.info().outputPath('compendio-tabla.png'), fullPage: false })
+
   // El máster también lo lee; axe, en claro y en oscuro
   await sections.getByRole('link', { name: 'Compendio' }).click()
   await page.getByRole('searchbox', { name: 'Buscar en el compendio' }).fill('aboleth')

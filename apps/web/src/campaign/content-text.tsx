@@ -3,7 +3,10 @@
  * párrafos, títulos, negrita, cursiva, listas y tablas. Se construye con elementos de React, nunca con HTML: sus textos
  * son datos
  */
-import { Fragment, type ReactNode } from 'react'
+import { type ContentTable, diceTableOf } from '@crisol/systems'
+import { Dices } from 'lucide-react'
+import { Fragment, type ReactNode, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import styles from './content-text.module.css'
 
 /** Cada parte de un texto fijo con su id: su sitio no cambia */
@@ -38,7 +41,16 @@ const cells = (line: string) =>
 
 const isRule = (line: string) => /^\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?$/.test(line.trim())
 
-function table(lines: readonly string[], key: string): ReactNode {
+/** Una tabla de tirar: su botón (con lo que se tira) y, si ya salió algo, dónde está */
+interface Rollable {
+  dice: ContentTable
+  label: string
+  busy: boolean
+  onRoll: () => void
+  hit: { line: number; column: number; width: number } | null
+}
+
+function table(lines: readonly string[], key: string, rollable: Rollable | null = null): ReactNode {
   const head = withIds(cells(lines[0] ?? ''), `${key}-h`)
   const rows = withIds(
     lines.slice(2).map((line, r) => withIds(cells(line), `${key}-${r}`)),
@@ -49,19 +61,41 @@ function table(lines: readonly string[], key: string): ReactNode {
       <table className={styles.table}>
         <thead>
           <tr>
-            {head.map(({ id, part }) => (
+            {head.map(({ id, part }, i) => (
               <th key={id} scope="col">
-                {inline(part, id)}
+                {i === 0 && rollable ? (
+                  <button
+                    type="button"
+                    className={styles.roll}
+                    aria-label={rollable.label}
+                    aria-disabled={rollable.busy || undefined}
+                    onClick={() => {
+                      if (!rollable.busy) rollable.onRoll()
+                    }}
+                  >
+                    <Dices size={14} aria-hidden="true" />
+                    {inline(part, id)}
+                  </button>
+                ) : (
+                  inline(part, id)
+                )}
               </th>
             ))}
           </tr>
         </thead>
         <tbody>
-          {rows.map(({ id, part: row }) => (
+          {rows.map(({ id, part: row }, line) => (
             <tr key={id}>
-              {row.map((cell) => (
-                <td key={cell.id}>{inline(cell.part, cell.id)}</td>
-              ))}
+              {row.map((cell, column) => {
+                // Lo que salió, marcado: su línea y sus columnas (en una tabla en dos mitades, solo la suya)
+                const hit = rollable?.hit
+                const on = hit && hit.line === line && column >= hit.column && column < hit.column + hit.width
+                return (
+                  <td key={cell.id} className={on ? styles.hit : undefined}>
+                    {inline(cell.part, cell.id)}
+                  </td>
+                )
+              })}
             </tr>
           ))}
         </tbody>
@@ -70,7 +104,7 @@ function table(lines: readonly string[], key: string): ReactNode {
   )
 }
 
-function block(text: string, key: string): ReactNode {
+function block(text: string, key: string, rollableOf: (lines: readonly string[]) => Rollable | null): ReactNode {
   const lines = text.split('\n').filter((l) => l.trim() !== '')
   const heading = /^(#{1,6})\s+(.*)$/.exec(lines[0] ?? '')
   if (heading && lines.length === 1) {
@@ -93,7 +127,7 @@ function block(text: string, key: string): ReactNode {
     )
   }
   if (lines.length >= 2 && lines.every((l) => l.trim().startsWith('|')) && isRule(lines[1] ?? '')) {
-    return table(lines, key)
+    return table(lines, key, rollableOf(lines))
   }
   // Un párrafo: sus líneas seguidas, una bajo otra
   return (
@@ -108,10 +142,40 @@ function block(text: string, key: string): ReactNode {
   )
 }
 
-export function ContentText({ text }: { text: string }) {
+/**
+ * El texto de un documento. Con `onRoll` (en el compendio de una campaña), sus tablas de tirar llevan su botón: se tira
+ * en el servidor (`onRoll`, con su orden entre las de tirar) y lo que sale queda marcado
+ */
+export function ContentText({ text, onRoll }: { text: string; onRoll?: (table: number) => Promise<number | null> }) {
+  const { t } = useTranslation()
+  const [hit, setHit] = useState<{ table: number; line: number; column: number; width: number } | null>(null)
+  const [busy, setBusy] = useState<number | null>(null)
   const blocks = withIds(
     text.split(/\n\s*\n/).filter((b) => b.trim() !== ''),
     'b'
   )
-  return <div className={styles.text}>{blocks.map(({ id, part }) => block(part, id))}</div>
+  // Cada tabla de tirar, con su orden entre ellas (el que entiende el servidor)
+  let next = 0
+  const rollableOf = (lines: readonly string[]): Rollable | null => {
+    const dice = onRoll ? diceTableOf(lines.map((l) => l.trim())) : null
+    if (!dice || !onRoll) return null
+    const index = next++
+    const what = dice.header[1]?.replace(/[*_]/g, '') ?? ''
+    return {
+      dice,
+      label: t('compendium.rollTable', { formula: dice.formula, what }),
+      busy: busy === index,
+      hit: hit?.table === index ? hit : null,
+      onRoll: () => {
+        setBusy(index)
+        void onRoll(index)
+          .then((row) => {
+            const found = row === null ? null : dice.rows[row]
+            setHit(found ? { table: index, line: found.line, column: found.column, width: found.cells.length } : null)
+          })
+          .finally(() => setBusy(null))
+      }
+    }
+  }
+  return <div className={styles.text}>{blocks.map(({ id, part }) => block(part, id, rollableOf))}</div>
 }

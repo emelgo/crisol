@@ -78,6 +78,7 @@ describe('herramientas MCP', () => {
       'tirar_dados',
       'tirar_en_tabla',
       'tirar_por_personaje',
+      'tirar_tabla_compendio',
       'validar_sistema',
       'ver_arbol',
       'ver_campana',
