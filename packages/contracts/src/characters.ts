@@ -118,7 +118,54 @@ export const characterState = z.object({
     level: z.int(),
     stats: z.array(z.object({ key: z.string(), label: z.string(), value: z.string() }))
   }),
-  sheet: z.record(z.string(), z.unknown()).describe('Su hoja calculada'),
+  sheet: z.record(z.string(), z.unknown()).describe('Su hoja calculada, con lo de la partida encima'),
+  resources: z
+    .array(
+      z.object({
+        item: z.string().nullable(),
+        key: z.string(),
+        label: z.string(),
+        max: z.number(),
+        used: z.number(),
+        left: z.number(),
+        recovery: z.string().optional(),
+        amount: z.string().optional(),
+        error: z.string().optional()
+      })
+    )
+    .describe('Los usos de lo que lleva (la Furia, las cargas): su máximo, lo gastado y cuándo se recuperan'),
+  actions: z
+    .array(
+      z.object({
+        item: z.string().nullable(),
+        key: z.string(),
+        label: z.string(),
+        activation: z.string().optional(),
+        attack: z.string().nullable(),
+        bonus: z.number().nullable(),
+        save: z
+          .object({ ability: z.string(), abilityLabel: z.string(), dc: z.number(), success: z.string().optional() })
+          .nullable(),
+        damage: z.array(z.object({ formula: z.string(), type: z.string().optional() })),
+        heal: z.string().nullable(),
+        error: z.string().optional()
+      })
+    )
+    .describe('Lo que puede hacer (ataques, conjuros): su ataque, su salvación y su daño, armados'),
+  carried: z
+    .array(
+      z.object({
+        id: z.string(),
+        key: z.string(),
+        name: z.string(),
+        type: z.string().nullable(),
+        quantity: z.int().optional(),
+        equipped: z.boolean().optional(),
+        attuned: z.boolean().optional()
+      })
+    )
+    .describe('Lo que lleva del compendio, con su estado'),
+  playMissing: z.array(z.string()).describe('Lo que lleva que ya no está en el contenido de la campaña'),
   fields: z
     .array(
       z.object({

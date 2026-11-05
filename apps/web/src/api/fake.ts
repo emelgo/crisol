@@ -585,7 +585,7 @@ export function fakeApi(
     if (!document) throw new ApiError('NOT_FOUND', 404)
     const { choices } = normalizeChoices(document, (campaign?.systemChoices ?? {}) as Partial<Choices>)
     const content = ownSystems.find((s) => s.id === document.id && !s.deleted)?.content ?? []
-    return characterView(document, content, choices, character.build as Build).view
+    return characterView(document, content, choices, character.build as Build, character.play as Play).view
   }
   const touch = (character: Character) => {
     character.version++

@@ -27,6 +27,9 @@ import {
   catalogSystem,
   characterView,
   checkBuild,
+  PLAY_BYTES,
+  type Play,
+  playSchema,
   normalizeChoices,
   type System
 } from '@crisol/systems'
@@ -112,9 +115,28 @@ async function contextOf(ctx: ActionContext, campaignId: string, systemId: strin
   return { document, content, choices }
 }
 
-async function stateOf(ctx: ActionContext, campaignId: string, systemId: string, build: Record<string, unknown>) {
+async function stateOf(
+  ctx: ActionContext,
+  campaignId: string,
+  systemId: string,
+  build: Record<string, unknown>,
+  play: Record<string, unknown> = {}
+) {
   const { document, content, choices } = await contextOf(ctx, campaignId, systemId)
-  return characterView(document, content, choices, build as Build)
+  return characterView(document, content, choices, build as Build, play as Play)
+}
+
+/** Lo de la partida nuevo: su forma, su tamaño, y lo que se añade a lo que lleva, que esté en el contenido */
+function checkedPlay(given: unknown, previous: Record<string, unknown>, missing: readonly string[]) {
+  const parsed = playSchema.safeParse(given)
+  if (!parsed.success)
+    throw new InvalidRequestError('BAD_PLAY', parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('. '))
+  if (JSON.stringify(parsed.data).length > PLAY_BYTES) throw new InvalidRequestError('BAD_PLAY', 'demasiado grande')
+  const before = new Set(((previous as Play).items ?? []).map((it) => it.key))
+  const added = (parsed.data.items ?? []).filter((it) => !before.has(it.key) && missing.includes(it.key))
+  if (added.length > 0)
+    throw new InvalidRequestError('BAD_PLAY', `no está en el contenido de la campaña: ${added.map((it) => it.key).join(', ')}`)
+  return parsed.data as Record<string, unknown>
 }
 
 /** Unas elecciones nuevas que valen: su forma, su tamaño y las reglas de lo que cambia (si no, dice qué falla) */
@@ -146,7 +168,8 @@ async function save(
     patch.ownerId = ownerId
   }
   // Montado con lo nuevo: su resumen se guarda; terminarlo pide lo que su sistema pide
-  const { view } = await stateOf(ctx, row.campaignId, row.system, given.build ?? row.build)
+  const { view } = await stateOf(ctx, row.campaignId, row.system, patch.build ?? row.build, given.play ?? row.play)
+  if (given.play) patch.play = checkedPlay(given.play, row.play, view.playMissing)
   if (given.build) patch.summary = view.summary
   if (confirm === 'created') {
     if (!view.complete) throw new InvalidRequestError('INCOMPLETE', 'aún le falta algo de lo que pide su sistema')
@@ -181,7 +204,7 @@ export const characterActions = [
 
   implement(getCharacter, async (ctx, { characterId }) => {
     const { row } = await readable(ctx, characterId)
-    const { view } = await stateOf(ctx, row.campaignId, row.system, row.build)
+    const { view } = await stateOf(ctx, row.campaignId, row.system, row.build, row.play)
     return { character: characterOf(row), state: view }
   }),
 
@@ -269,7 +292,7 @@ export const characterActions = [
     )
     const fresh = await charactersRepo.findCharacter(ctx.db, characterId)
     if (!fresh) throw new NotFoundError('character')
-    const { view } = await stateOf(ctx, fresh.campaignId, fresh.system, fresh.build)
+    const { view } = await stateOf(ctx, fresh.campaignId, fresh.system, fresh.build, fresh.play)
     return { character: characterOf(fresh), state: view }
   })
 ]
