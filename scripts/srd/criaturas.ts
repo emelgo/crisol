@@ -116,8 +116,12 @@ export interface Statblock {
   sections: Section[]
 }
 
-/** Lo que empieza una entrada: su nombre en mayúscula y un punto («Tentacle.», «Fire Breath (Recharge 5–6).») */
-const ENTRY = /^([A-ZÁÉÍÓÚÑ¡¿][^.:]{0,70}?(?: \([^)]*\))?)\. (.*)$/
+/**
+ * Lo que empieza una entrada: su nombre en mayúscula y un punto («Tentacle.», «Fire Breath (Recharge 5–6).»). Un
+ * nombre no lleva comas ni cifras (salvo en su paréntesis): «DC 21, each creature in a 60-foot Cone.» y «Slashing damage
+ * plus 3 (1d6) Acid damage.» siguen a la entrada de antes
+ */
+const ENTRY = /^([A-ZÁÉÍÓÚÑ¡¿][^.:,\d]{0,70}?(?: \([^)]*\))?)\. (.*)$/
 
 /** Un perfil a partir de sus líneas */
 export function parseStatblock(name: string, rows: readonly Row[], page: number): Statblock {
@@ -181,7 +185,8 @@ export function parseStatblock(name: string, rows: readonly Row[], page: number)
       }
       header = false
     }
-    const entry = ENTRY.exec(row.text)
+    // («Bludgeoning damage.» al principio de una línea sigue al daño de la de antes)
+    const entry = /\bdamage$/i.test(ENTRY.exec(row.text)?.[1] ?? '') ? null : ENTRY.exec(row.text)
     const ended = !last || /[.:)]$/.test(last.text) || SECTIONS.some(([re]) => re.test(last?.text ?? ''))
     if (entry && ended) current.entries.push({ name: entry[1] as string, text: entry[2] as string })
     else {
@@ -298,9 +303,13 @@ function damageFormula(dice: string, scores: readonly number[], ability: string 
 /** El daño de un texto: «12 (2d6 + 5) Bludgeoning damage plus 7 (2d6) fire damage», o «1 piercing damage» */
 function damageOf(text: string, scores: readonly number[], ability: string | null) {
   const out: { formula: string; type: string }[] = []
-  for (const m of minus(text).matchAll(/(\d+)(?: \((\d+d\d+(?:\s*[+-]\s*\d+)?)\))? (\w+) damage/gi)) {
+  const written = minus(text)
+  for (const m of written.matchAll(/(\d+)(?: \((\d+d\d+(?:\s*[+-]\s*\d+)?)\))? (\w+) damage/gi)) {
     const type = DAMAGE[(m[3] as string).toLowerCase()]
     if (!type) continue
+    // Un daño que solo va a veces («plus 2 (1d4) Slashing damage if the attack roll had Advantage») no se suma siempre
+    const after = written.slice((m.index ?? 0) + m[0].length).split(/[.;]/)[0] ?? ''
+    if (/^\s*if\b/i.test(after)) continue
     out.push({ formula: m[2] ? damageFormula(m[2], scores, ability) : (m[1] as string), type })
   }
   return out
@@ -377,7 +386,24 @@ export function actionOf(
   return { action }
 }
 
-/** Las acciones de un perfil, con su nombre en los dos idiomas (el español, el de la misma posición) */
+/** Los números que dicen lo que hace una entrada, en los dos idiomas: su bono de ataque, su CD y sus dados */
+const signatureOf = (text: string) =>
+  [...minus(text).matchAll(/[+-]\d+(?=[,.\s])|(?:DC|CD) \d+|\d+d\d+/g)].map((m) => m[0].replace(/^CD/, 'DC')).join(' ')
+
+/**
+ * Su nombre en español: el de la entrada con los mismos números (su ataque, su CD y sus dados), si solo hay una así; si
+ * no, el de la misma posición, si las dos secciones tienen las mismas entradas
+ */
+function spanishName(entry: Entry, index: number, section: Section, other: Section | undefined): string | undefined {
+  if (!other) return undefined
+  // Primero, por sus números (el orden puede cambiar de un idioma a otro); si no deciden, por su posición
+  const signature = signatureOf(entry.text)
+  const same = signature ? other.entries.filter((e) => signatureOf(e.text) === signature) : []
+  if (same.length === 1) return same[0]?.name
+  return other.entries.length === section.entries.length ? other.entries[index]?.name : undefined
+}
+
+/** Las acciones de un perfil, con su nombre en los dos idiomas (el español, el de la misma posición o sus números) */
 export function creatureMechanics(en: Statblock, es: Statblock): Mechanics {
   const cr = crOf(en.fields.cr)
   const prof = proficiency(cr)
@@ -386,10 +412,19 @@ export function creatureMechanics(en: Statblock, es: Statblock): Mechanics {
   const taken = new Set<string>()
   for (const section of en.sections) {
     const other = es.sections.find((s) => s.kind === section.kind)
+    // «Breath Weapons (Recharge 5–6). The dragon uses one of the following»: su recarga es la de los alientos de debajo
+    let shared: string | null = null
     section.entries.forEach((entry, i) => {
-      const esName = other && other.entries.length === section.entries.length ? other.entries[i]?.name : undefined
+      const esName = spanishName(entry, i, section, other)
       const found = actionOf(entry, section.kind, en.scores, prof, t(esName ?? entry.name, entry.name))
-      if (!found) return
+      const recharge = /\(Recharge (\d)(?:[–-]6)?\)/.exec(entry.name)
+      if (!found) {
+        shared =
+          recharge && /one of the following/i.test(entry.text) ? (recharge[1] === '6' ? '6' : `${recharge[1]}-6`) : null
+        return
+      }
+      if (shared && /Breath$/i.test(entry.name) && !found.action.recharge) found.action.recharge = shared
+      else if (!/Breath$/i.test(entry.name)) shared = null
       let key = found.action.key as string
       for (let n = 2; taken.has(key); n++) key = `${found.action.key}_${n}`
       taken.add(key)
@@ -485,9 +520,12 @@ export function creatureData(edition: Edition, en: Statblock, es: Statblock): Re
 /** Su tipo y su alineamiento, sin el tamaño («Large aberration, lawful evil») */
 function metaOf(meta: string): [string, string] {
   const [first = '', ...rest] = meta.split(',')
+  // Sin el tamaño, y sin la «o» que deja «Mediano o Pequeño» («Humanoide o» → «Humanoide»)
   const type = SIZE.reduce((text, [re]) => text.replace(re, ''), first)
     .replace(/\s+/g, ' ')
     .trim()
+    .replace(/^(?:o|or)\s+/i, '')
+    .replace(/\s+(?:o|or)$/i, '')
   return [type.charAt(0).toUpperCase() + type.slice(1), rest.join(',').trim()]
 }
 

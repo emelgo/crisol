@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest'
+import { afterAll, describe, expect, it } from 'vitest'
+import { useDnd5eSource } from './dnd5e.ts'
 import {
   headerOf,
   likeness,
@@ -12,6 +13,10 @@ import {
   withoutStrayColumns
 } from './magicos.ts'
 import type { Row } from './texto.ts'
+
+// Sin los compendios de dnd5e (datos locales): lo que se prueba es lo que sale del texto
+const restore = useDnd5eSource(() => null)
+afterAll(() => restore())
 
 const row = (text: string, h = 11.5): Row => ({ text, x: 58, y: 0, h, page: 207 })
 const item = (over: Partial<MagicRow>): MagicRow => ({
@@ -148,6 +153,54 @@ describe('emparejar los objetos mágicos', () => {
     ).toEqual(['Botas élficas', 'Talismán de salud'])
     expect(() => pairByLikeness([boots], [talisman])).toThrow('Sin pareja: Boots of Elvenkind')
     expect(() => pairByLikeness([boots], [botas], { 'Boots of Elvenkind': 'Nada' })).toThrow('No está «Nada»')
+  })
+})
+
+describe('la mecánica que el texto no da, de dnd5e', () => {
+  it('lanzar un conjuro, con lo que gasta de sus cargas (las del texto); sin cargas, sin gastar', () => {
+    const wand = {
+      name: 'Wand of Fireballs',
+      type: 'equipment',
+      system: {
+        uses: { max: '7' },
+        activities: {
+          a: {
+            type: 'cast',
+            activation: { type: 'action' },
+            spell: { uuid: 'Compendium.dnd5e.spells24.Item.f', challenge: { save: 15, override: true } },
+            consumption: { targets: [{ type: 'itemUses', value: '1' }] }
+          }
+        }
+      }
+    }
+    const spell = {
+      name: 'Fireball',
+      system: {
+        activities: {
+          a: {
+            type: 'save',
+            save: { ability: 'dex' },
+            damage: { parts: [{ number: 8, denomination: 6, types: ['fire'] }] }
+          }
+        }
+      }
+    }
+    const back = useDnd5eSource((pack) =>
+      pack === 'equipment24' ? { '!items!w': wand } : pack === 'spells24' ? { '!items!f': spell } : null
+    )
+    const wandName = { es: 'Varita de bolas de fuego', en: 'Wand of Fireballs' }
+    const charged = magicMechanics(
+      '2024',
+      item({ name: 'Wand of Fireballs', text: 'This wand has 7 charges.' }),
+      wandName
+    )
+    expect(charged.actions).toEqual([expect.objectContaining({ key: 'bola_de_fuego', uses: 'cargas' })])
+    expect((charged.resources as unknown[]).length).toBe(1)
+    // Sin cargas en el texto, las de dnd5e
+    expect(magicMechanics('2024', item({ name: 'Wand of Fireballs', text: '' }), wandName).resources).toEqual([
+      { key: 'cargas', label: { es: 'Cargas', en: 'Charges' }, max: '7' }
+    ])
+    back()
   })
 })
 

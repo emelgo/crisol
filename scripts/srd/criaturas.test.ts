@@ -261,6 +261,97 @@ describe('sus acciones, con fórmulas que dan los valores del SRD', () => {
   })
 })
 
+describe('lo que se cruzó con dnd5e (scripts/srd/comparar-dnd5e.ts)', () => {
+  const dragon = (lines: string[]) =>
+    parseStatblock(
+      'Adult Red Dragon',
+      rows(
+        'Huge Dragon (Chromatic), Chaotic Evil',
+        'AC 19 Initiative +12 (22)',
+        'HP 256 (19d12 + 133)',
+        'CR 17 (18,000 XP; PB +6)',
+        'Actions',
+        ...lines
+      ),
+      280
+    )
+
+  it('una línea que sigue a «Saving Throw:» o a «(2d6 + 3)» no empieza otra entrada', () => {
+    const s = dragon([
+      'Rend. Melee Attack Roll: +14, reach 10 ft. Hit: 13 (1d10 + 8)',
+      'Slashing damage plus 5 (2d4) Fire damage.',
+      'Fire Breath (Recharge 5–6). Dexterity Saving Throw:',
+      'DC 21, each creature in a 60-foot Cone. Failure: 59',
+      '(17d6) Fire damage. Success: Half damage.'
+    ])
+    const actions = s.sections.find((x) => x.kind === 'actions')?.entries ?? []
+    expect(actions.map((e) => e.name)).toEqual(['Rend', 'Fire Breath (Recharge 5–6)'])
+    const m = creatureMechanics(s, s)
+    expect(m.actions).toMatchObject([
+      { key: 'rend', damage: [{ type: 'cortante' }, { formula: '2d4', type: 'fuego' }] },
+      { recharge: '5-6', save: { ability: 'des' }, damage: [{ formula: '17d6', type: 'fuego' }] }
+    ])
+  })
+
+  it('su nombre en español, por sus números aunque cambie el orden; un daño «si…» no se suma siempre', () => {
+    const en = dragon([
+      'Bite. Melee Attack Roll: +7, reach 5 ft. Hit: 15 (2d10 + 4) Piercing damage.',
+      'Claw. Melee Attack Roll: +7, reach 5 ft. Hit: 13 (2d8 + 4) Slashing damage, plus 2 (1d4) Slashing damage if',
+      'the attack roll had Advantage.'
+    ])
+    const es: Statblock = {
+      ...en,
+      sections: [
+        {
+          kind: 'actions',
+          intro: '',
+          entries: [
+            {
+              name: 'Garra',
+              text: 'Tirada de ataque: +7, alcance 1,5 m. Impacto: 13 (2d8 + 4) de daño cortante, más 2 (1d4) si tenía ventaja.'
+            },
+            {
+              name: 'Mordisco',
+              text: 'Tirada de ataque: +7, alcance 1,5 m. Impacto: 15 (2d10 + 4) de daño perforante.'
+            },
+            { name: 'Ataque extra', text: 'Hace algo.' }
+          ]
+        }
+      ]
+    }
+    const actions = creatureMechanics(en, es).actions as { label: { es: string }; damage: unknown[] }[]
+    expect(actions.map((a) => a.label.es)).toEqual(['Mordisco', 'Garra'])
+    expect(actions[1]?.damage).toHaveLength(1)
+  })
+
+  it('los alientos de un dragón de 2014 llevan la recarga de su «Breath Weapons»; el tipo, sin la «o» del tamaño', () => {
+    const s = parseStatblock(
+      'Adult Bronze Dragon',
+      rows(
+        'Huge dragon, lawful good',
+        'Armor Class 19 (natural armor)',
+        'Hit Points 212 (17d12 + 102)',
+        'Challenge 15 (13,000 XP)',
+        'Actions',
+        'Breath Weapons (Recharge 5–6). The dragon uses one of the following breath weapons.',
+        'Lightning Breath. Each creature must make a DC 19 Dexterity saving throw, taking 66 (12d10) lightning damage.',
+        'Tail. Melee Weapon Attack: +12 to hit, reach 15 ft. Hit: 16 (2d8 + 7) bludgeoning damage.'
+      ),
+      120
+    )
+    expect(
+      (creatureMechanics(s, s).actions as { key: string; recharge?: string }[]).map((a) => [a.key, a.recharge])
+    ).toEqual([
+      ['lightning_breath', '5-6'],
+      ['tail', undefined]
+    ])
+    const human = { ...aboleth2014, meta: 'Medium or Small Humanoid, Neutral' }
+    expect(creatureData('2024', human, { ...human, meta: 'Humanoide Mediano o Pequeño, neutral' })).toMatchObject({
+      tipo: { es: 'Humanoide', en: 'Humanoid' }
+    })
+  })
+})
+
 describe('sus datos y su texto', () => {
   it('sus campos: tamaño, tipo, VD, PX, CA, PG, velocidad, salvaciones y habilidades con su grado', () => {
     const es = {

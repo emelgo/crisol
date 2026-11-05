@@ -48,6 +48,13 @@ En un personaje terminado, su «Ficha»:
 - [ ] **Con el teclado**: las pestañas con las flechas, Inicio y Fin.
 - [ ] **Desde claude.ai**: `partida_personaje` (daño, curación, gastar un uso, descansar) y `tirar_por_personaje`.
 
+## Módulo 3: el contenido, cruzado con dnd5e (PR #106)
+
+- [ ] **Criaturas**: el Dragón rojo adulto (2024) con «Desgarro» y su «Aliento de fuego (recarga 5–6)»; el Guerrero
+  goblin sin el 1d4 de más; el Asesino, «Humanoide». En el compendio, su «En juego».
+- [ ] **Objetos mágicos**: la Varita de bolas de fuego lanza «Bola de fuego» (CD 15, 8d6, gasta una carga); el Bastón
+  de fuego, sus tres conjuros con tu CD de conjuros. Llevarlos en la hoja de un personaje y tirarlos.
+
 ## Módulo 3: el compendio como el de Foundry (PR #105)
 
 - [ ] **La biblioteca**: en el Compendio, sin buscar, por edición (2024 y 2014 · Legado) y, dentro, sus secciones
