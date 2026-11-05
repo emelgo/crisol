@@ -19,6 +19,10 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   `dados(@competencia, 8)`, `@dados` en las franjas (`@dados[0] > @dados[1]`, `count(@dados, 6)`), listas por posición
   y modos que suman dados (`add: "1d6"`); en `docs/specs/sistemas.md` § tiradas. Probado con un juego propio en
   `packages/systems/src/otros-juegos.test.ts`; la prueba con la IA (un Daggerheart), en `tasks/probar.md`.
+- **La CI del módulo 3 pasó entera en la PR #103** (calidad, seguridad, secretos, e2e y accesibilidad).
+- **El pulido del módulo 3, primera tanda (PR #104)**: revisada su interfaz con las pautas y `docs/diseno.md`;
+  hechos los tutoriales de cada vista (campaña, Personajes, el personaje, Compendio y Tabla), sin dobles clics, avisos
+  de las tablas por i18n y lo demás de `tasks/todo.md` § Pulido del módulo 3; lo que queda está allí.
   **Lo siguiente**: que Enrique pruebe el módulo 3 (`tasks/probar.md`) y pulir su interfaz con él, en local
   (memoria «Pulir en local»); después, el módulo 4 en un chat nuevo. `foundry` espera al abogado.
 - **`personajes`** (lo que fue la rama `modulo-3/personajes`). Hechos la entrevista, el estudio
