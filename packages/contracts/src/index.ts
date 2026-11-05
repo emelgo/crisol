@@ -14,7 +14,9 @@ import {
   getCharacter,
   listCharacters,
   listCharacterVersions,
+  playCharacter,
   restoreCharacterVersion,
+  rollForCharacter,
   updateCharacter
 } from './characters.ts'
 import { listRolls, rollDice, tryDice } from './dice.ts'
@@ -248,6 +250,8 @@ export const ACTIONS = [
   createCharacter,
   updateCharacter,
   chooseForCharacter,
+  rollForCharacter,
+  playCharacter,
   deleteCharacter,
   listCharacterVersions,
   restoreCharacterVersion,
@@ -379,6 +383,8 @@ export type Actions = {
   createCharacter: typeof createCharacter
   updateCharacter: typeof updateCharacter
   chooseForCharacter: typeof chooseForCharacter
+  rollForCharacter: typeof rollForCharacter
+  playCharacter: typeof playCharacter
   deleteCharacter: typeof deleteCharacter
   listCharacterVersions: typeof listCharacterVersions
   restoreCharacterVersion: typeof restoreCharacterVersion

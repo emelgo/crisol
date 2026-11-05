@@ -124,6 +124,8 @@ describe('Actions', () => {
       createCharacter: true,
       updateCharacter: true,
       chooseForCharacter: true,
+      rollForCharacter: true,
+      playCharacter: true,
       deleteCharacter: true,
       listCharacterVersions: true,
       restoreCharacterVersion: true,

@@ -2,6 +2,7 @@
  * Validar un sistema: cada problema dice dónde está (por su ruta, para la IA y el JSON, y por sus nombres, para el
  * editor), por qué, y si impide guardarlo (error) o no (aviso). Lo que el formato no conoce se avisa y se conserva
  */
+
 import { DiceSyntaxError, parseDice } from '@crisol/dice'
 import { type core, z } from 'zod'
 import {
@@ -15,6 +16,7 @@ import {
 } from './format.ts'
 import { checkFormulas } from './formulas/system.ts'
 import { own } from './own.ts'
+import { checkSheet } from './sheet.ts'
 import { type Language, textOf } from './text.ts'
 
 export interface Problem {
@@ -316,6 +318,7 @@ function checkReferences(
   add: (path: Segment[], message: string, severity?: Problem['severity']) => void
 ) {
   checkSteps(system, add)
+  checkSheet(system, add)
   const types = system.types
   const itemTypes = new Set(
     Object.entries(types)

@@ -285,7 +285,7 @@ const shared = (bonus: { saves: string; skills: string }) => ({
   // Lo que suma aparte (la competencia en la iniciativa de una criatura de 2024, la dote Alerta)
   bono_iniciativa: number('Bono a la iniciativa', 'Initiative bonus'),
   percepcion_pasiva: derived('Percepción pasiva', 'Passive Perception', '10 + @habilidades.percepcion.total'),
-  cansancio: number('Cansancio', 'Exhaustion', { min: 0, max: 6, integer: true }),
+  cansancio: number('Cansancio', 'Exhaustion', { min: 0, max: 6, integer: true, play: true }),
   // Lo que cambian los rasgos: cuántos ataques por acción de atacar y desde qué número es crítico
   ataques: number('Ataques por acción de atacar', 'Attacks per Attack action', { min: 1, default: 1 }),
   critico_desde: number('Crítico desde', 'Critical hit on', { min: 2, max: 20, default: 20 }),
@@ -351,7 +351,7 @@ export const fiveE = {
       icon: 'user',
       fields: {
         nivel: derived('Nivel', 'Level', 'max(1, sum(@clases.nivel))'),
-        experiencia: number('Experiencia', 'Experience points', { min: 0, integer: true }),
+        experiencia: number('Experiencia', 'Experience points', { min: 0, integer: true, play: true }),
         competencia: derived('Bonificador por competencia', 'Proficiency bonus', 'ceil(@nivel / 4) + 1', {
           signed: true
         }),
@@ -364,16 +364,17 @@ export const fiveE = {
         pg_con: derived('Por la Constitución', 'From Constitution', '@nivel * @caracteristicas.con.mod'),
         pg_max: derived('Puntos de golpe máximos', 'Hit point maximum', '@pg_clases + @pg_con'),
         pg: { kind: 'resource', label: t('Puntos de golpe', 'Hit points'), max: '@pg_max' },
-        pg_temporales: number('Puntos de golpe temporales', 'Temporary hit points', { min: 0 }),
+        pg_temporales: number('Puntos de golpe temporales', 'Temporary hit points', { min: 0, play: true }),
         salvaciones_muerte: {
           kind: 'group',
           label: t('Salvaciones contra muerte', 'Death saving throws'),
+          play: true,
           fields: {
             exitos: number('Éxitos', 'Successes', { min: 0, max: 3, integer: true }),
             fallos: number('Fallos', 'Failures', { min: 0, max: 3, integer: true })
           }
         },
-        inspiracion: yesNo('Inspiración heroica', 'Heroic Inspiration'),
+        inspiracion: { ...yesNo('Inspiración heroica', 'Heroic Inspiration'), play: true },
         // Lanzar conjuros: la característica de la primera clase que lanza, su CD, su ataque y sus espacios
         caracteristica_conjuros: derived(
           'Característica para lanzar conjuros',
@@ -403,7 +404,12 @@ export const fiveE = {
         // La magia de pacto: la ponen sus clases
         pacto_espacios: number('Espacios de pacto', 'Pact slots', { min: 0 }),
         pacto_nivel: number('Nivel de los espacios de pacto', 'Pact slot level', { min: 0, max: 9 }),
-        pacto: { kind: 'resource', label: t('Magia de pacto', 'Pact Magic'), max: '@pacto_espacios' },
+        pacto: {
+          kind: 'resource',
+          label: t('Magia de pacto', 'Pact Magic'),
+          max: '@pacto_espacios',
+          recovery: 'short'
+        },
         // Lo que suman los efectos a muchos sitios a la vez (el anillo, la Furia, un estilo de combate)
         bono_salvaciones: number('Bono a las salvaciones', 'Saving throw bonus'),
         bono_ataque_cac: number('Bono al ataque cuerpo a cuerpo', 'Melee attack bonus'),
@@ -419,6 +425,7 @@ export const fiveE = {
         monedas: {
           kind: 'group',
           label: t('Monedas', 'Coins'),
+          play: true,
           fields: {
             pc: number('Cobre', 'Copper', { min: 0, integer: true }),
             pp: number('Plata', 'Silver', { min: 0, integer: true }),
@@ -434,7 +441,8 @@ export const fiveE = {
         inventario: {
           kind: 'items',
           label: t('Inventario', 'Inventory'),
-          of: ['arma', 'armadura', 'equipo', 'objeto_magico']
+          of: ['arma', 'armadura', 'equipo', 'objeto_magico'],
+          play: true
         },
         rasgos: {
           kind: 'items',
@@ -442,8 +450,8 @@ export const fiveE = {
           of: ['subclase', 'especie', 'trasfondo', 'dote', 'rasgo']
         },
         conjuros: { kind: 'items', label: t('Conjuros', 'Spells'), of: ['conjuro'] },
-        estados: { kind: 'items', label: t('Estados', 'Conditions'), of: ['estado'] },
-        notas: text('Notas', 'Notes', { lines: 6 })
+        estados: { kind: 'items', label: t('Estados', 'Conditions'), of: ['estado'], play: true },
+        notas: text('Notas', 'Notes', { lines: 6, play: true })
       }
     },
     criatura: {
@@ -844,6 +852,84 @@ export const fiveE = {
   // El creador (ADR-0013): la clase con sus niveles, la especie, el trasfondo, las características y los detalles; lo
   // que se elige de lo concedido lo calcula Crisol
   card: ['nivel', 'pg_max', 'ca'],
+  // La hoja, al estilo de D&D Beyond con el aspecto de Crisol (docs/specs/hoja.md)
+  sheet: {
+    blocks: [
+      { kind: 'header' },
+      {
+        kind: 'stats',
+        fields: ['ca', 'iniciativa', 'velocidad', 'competencia', 'percepcion_pasiva'],
+        rolls: { iniciativa: 'iniciativa' }
+      },
+      { kind: 'resource', field: 'pg' },
+      {
+        kind: 'columns',
+        blocks: [
+          { kind: 'stats', fields: ['inspiracion', 'cansancio'] },
+          { kind: 'group', field: 'salvaciones_muerte' },
+          { kind: 'items', field: 'estados' }
+        ]
+      },
+      {
+        kind: 'columns',
+        blocks: [
+          { kind: 'set', field: 'caracteristicas', columns: ['puntuacion', 'mod'], roll: 'prueba' },
+          {
+            kind: 'set',
+            label: t('Salvaciones', 'Saving throws'),
+            field: 'caracteristicas',
+            columns: ['salvacion'],
+            roll: 'salvacion'
+          },
+          { kind: 'set', field: 'habilidades', columns: ['total'], roll: 'habilidad' }
+        ]
+      },
+      {
+        kind: 'tabs',
+        tabs: [
+          {
+            label: t('Acciones', 'Actions'),
+            blocks: [
+              {
+                kind: 'items',
+                label: t('Armas', 'Weapons'),
+                field: 'inventario',
+                types: ['arma'],
+                columns: ['ataque', 'dano'],
+                rolls: ['ataque', 'dano']
+              },
+              { kind: 'actions' },
+              { kind: 'uses' }
+            ]
+          },
+          {
+            label: t('Inventario', 'Inventory'),
+            blocks: [
+              { kind: 'items', field: 'inventario', columns: ['cantidad', 'peso'] },
+              { kind: 'group', field: 'monedas' }
+            ]
+          },
+          {
+            label: t('Conjuros', 'Spells'),
+            blocks: [
+              { kind: 'stats', fields: ['cd_conjuros', 'ataque_conjuros'] },
+              { kind: 'group', field: 'espacios' },
+              { kind: 'items', field: 'conjuros', columns: ['nivel', 'tiempo', 'alcance'] }
+            ]
+          },
+          {
+            label: t('Rasgos', 'Features'),
+            blocks: [
+              { kind: 'items', field: 'rasgos' },
+              { kind: 'list', fields: ['idiomas', 'competencias_armas', 'competencias_armaduras', 'sentidos'] },
+              { kind: 'list', fields: ['resistencias', 'inmunidades', 'vulnerabilidades'] }
+            ]
+          },
+          { label: t('Notas', 'Notes'), blocks: [{ kind: 'text', field: 'notas' }] }
+        ]
+      }
+    ]
+  },
   creation: [
     { key: 'clase', kind: 'content', type: 'clase', label: t('Clase', 'Class'), levels: true },
     { key: 'especie', kind: 'content', type: 'especie', label: t('Especie', 'Species'), creation: true },

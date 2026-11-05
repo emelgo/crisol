@@ -5,13 +5,17 @@
  * cada paso, su nivel y si ya tiene lo que su sistema pide. Puro: igual en el servidor y en la web
  */
 import { z } from 'zod'
+import { actionsOf } from './actions.ts'
 import type { Choices } from './choices.ts'
 import { editionOf, resolveConcept, type Seen, visibleContent } from './content.ts'
-import { type DocumentItem, evaluate, evaluateWith, type SystemDocument } from './evaluate.ts'
+import { type DocumentItem, evaluate, evaluateWith, type Resource, type SystemDocument } from './evaluate.ts'
 import type { ContentItem } from './file.ts'
 import type { System } from './format.ts'
 import type { Value } from './formulas/functions.ts'
 import type { Mechanics } from './mechanics.ts'
+import { fillResources, type Play, withPlay } from './play.ts'
+import { rollsOf } from './rolls.ts'
+import { sheetView } from './sheet.ts'
 import { type Text, textOf } from './text.ts'
 
 /** Algo elegido del contenido en un paso: su clave (con su edición) y, si el paso es de niveles (las clases), su nivel */
@@ -534,19 +538,30 @@ export function characterView(
   system: System,
   content: readonly ContentItem[],
   choices: Pick<Choices, 'sources' | 'duplicates' | 'language'> & { settings?: Record<string, unknown> },
-  build: Build
+  build: Build,
+  play: Play = {}
 ) {
   const language = choices.language
   const say = sayIn(language)
   const built = buildCharacter(system, content, choices, build)
+  const { byKey } = viewOf(system, content, choices)
+  const fields = system.types[built.type]?.fields ?? {}
+  // Lo de la partida, encima: los PG, lo gastado, lo que lleva y lo activo
+  const played = withPlay(system, built.type, built.document, play, byKey, language)
   let values: Record<string, Value> = {}
+  let resources: Resource[] = []
+  let itemValues: Record<string, Record<string, Value>> = {}
+  let actions: ReturnType<typeof actionsOf> = []
   try {
-    values = evaluate(system, built.type, built.document, { settings: choices.settings ?? {}, language }).values
+    const evaluated = evaluate(system, built.type, played.document, { settings: choices.settings ?? {}, language })
+    values = evaluated.values
+    resources = evaluated.resources
+    itemValues = evaluated.items
+    actions = actionsOf(system, built.type, played.document, { language, settings: choices.settings ?? {} })
   } catch {
     values = {}
   }
-  const { byKey } = viewOf(system, content, choices)
-  const fields = system.types[built.type]?.fields ?? {}
+  fillResources(fields, values, play)
   const option = (o: BuildOption) => ({
     value: o.value,
     label: say(o.label),
@@ -620,6 +635,8 @@ export function characterView(
   })
   return {
     built,
+    // Lo de la partida que no vale: lo que no se lleva y los valores que no se cambian jugando (o sin su forma)
+    played: { refused: played.refused, problems: played.problems },
     view: {
       steps,
       decisions: built.decisions.map((d) => ({ ...d, label: say(d.label), options: d.options.map(option) })),
@@ -628,6 +645,36 @@ export function characterView(
       missing: built.missing,
       summary: summarize(system, content, choices, build, built, values, language),
       sheet: values,
+      resources,
+      // Los valores calculados de cada cosa que lleva (el ataque de una espada), por su id
+      itemValues,
+      actions: actions.map((a) => ({
+        item: a.item,
+        key: a.key,
+        label: a.label,
+        ...(a.activation ? { activation: a.activation } : {}),
+        attack: a.attack,
+        bonus: a.bonus,
+        save: a.save,
+        damage: a.damage.map((d) => ({ formula: d.formula, ...(d.type ? { type: d.type } : {}) })),
+        heal: a.heal?.formula ?? null,
+        ...(a.error ? { error: a.error } : {})
+      })),
+      // Los bloques de su hoja, con sus nombres
+      layout: sheetView(system, built.type, language),
+      rolls: rollsOf(system, built.type, language, played.document).map((r) => ({
+        key: r.key,
+        label: r.label,
+        elements: r.elements,
+        modes: r.modes
+      })),
+      // Lo que lleva del compendio (su estado) y lo que ya no está en él
+      carried: (play.items ?? []).map((it) => ({
+        ...it,
+        name: byKey.get(it.key) ? say(labelOf(byKey.get(it.key) as ContentItem)) : it.key,
+        type: byKey.get(it.key)?.type ?? null
+      })),
+      playMissing: played.missing,
       // Los campos del personaje, con sus nombres: para pintar su ficha mínima en cualquier sistema
       fields: Object.entries(fields).map(([key, f]) => ({
         key,
@@ -841,4 +888,20 @@ export function checkBuild(
       problems.push(`«${textOf(decision.label, choices.language)}»: lo mismo, como mucho ${decision.most} veces`)
   }
   return { build, problems: [...new Set(problems)] }
+}
+
+/** El documento de un personaje (sus elecciones con lo de la partida encima), para tirar por él */
+export function playedDocument(
+  system: System,
+  content: readonly ContentItem[],
+  choices: Pick<Choices, 'sources' | 'duplicates' | 'language'> & { settings?: Record<string, unknown> },
+  build: Build,
+  play: Play = {}
+) {
+  const built = buildCharacter(system, content, choices, build)
+  const { byKey } = viewOf(system, content, choices)
+  return {
+    type: built.type,
+    document: withPlay(system, built.type, built.document, play, byKey, choices.language).document
+  }
 }

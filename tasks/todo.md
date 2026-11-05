@@ -47,13 +47,13 @@ Plan: `tasks/plan.md`. Spec: `docs/specs/personajes.md`. Cada tarea, con TDD y e
 Spec: `docs/specs/hoja.md` (en marcha, sin entrevista: Enrique, «termina el módulo 3 de una vez»). Rama
 `modulo-3/hoja`, desde `main` tras fusionar `personajes`.
 
-- [ ] **H1. Lo de la partida en el cálculo**: `play` (valores, usos gastados, lo que lleva con su estado) entra en el
+- [x] **H1. Lo de la partida en el cálculo**: `play` (valores, usos gastados, lo que lleva con su estado) entra en el
   documento que monta el motor; daño y curación a un recurso; descansar (corto, largo).
-- [ ] **H2. Los bloques de la hoja** en el formato (`sheet`), validados; la hoja por defecto; la del 5e.
-- [ ] **H3. Tirar desde la hoja**: una tirada del sistema o una acción de lo que lleva, por el personaje, en el
+- [x] **H2. Los bloques de la hoja** en el formato (`sheet`), validados; la hoja por defecto; la del 5e.
+- [x] **H3. Tirar desde la hoja**: una tirada del sistema o una acción de lo que lleva, por el personaje, en el
   servidor y al registro (`rollForCharacter`).
-- [ ] **H4. La pantalla**: la ficha por bloques, el panel con el desglose de cada valor, los PG, los usos, el
+- [x] **H4. La pantalla**: la ficha por bloques, el panel con el desglose de cada valor, los PG, los usos, el
   inventario (añadir del compendio, equipar) y el móvil.
-- [ ] **H5. La IA**: ver la hoja, tirar por el personaje, daño y curación, descansar.
-- [ ] **H6. Cierre**: e2e (Atletismo y un ataque desde la hoja, daño, descanso, un escudo que sube la CA), axe,
+- [x] **H5. La IA**: ver la hoja, tirar por el personaje, daño y curación, descansar.
+- [x] **H6. Cierre**: e2e (Atletismo y un ataque desde la hoja, daño, descanso, un escudo que sube la CA), axe,
   revisión, PR y staging.

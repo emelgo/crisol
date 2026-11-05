@@ -9,7 +9,7 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   de propietario.
 - **En local**, con los cambios al momento: http://localhost:5173 (lo arranco cuando haga falta).
 
-## Módulo 3: personajes (en local, `localhost:5173`; aún no en staging)
+## Módulo 3: personajes (en staging: PR #100)
 
 En una campaña con el 5e (en sus ajustes, «5e» y sus ediciones):
 - [ ] **La campaña en su vista**: al entrar en ella, la barra cambia (su nombre, Personajes, Compendio, Dados); la
@@ -27,7 +27,26 @@ En una campaña con el 5e (en sus ajustes, «5e» y sus ediciones):
 - [ ] **La ficha y sus versiones**: «Creado · Nivel 1» y cada nivel confirmado; «Restaurar» (se deshace desde el
   historial).
 - [ ] **Lo que ve cada uno**: una jugadora ve solo los suyos; el máster, todos.
-- [ ] **Desde claude.ai**: que la IA haga un personaje con `crear_personaje` y `elegir_personaje`, y lo suba de nivel.
+- [ ] **Las tablas aleatorias**: en una página, «+» → «Tabla»; sus filas (lo que se pisa o deja huecos, avisado), «Sin
+  reemplazo», tirar en una campaña (la fila sale marcada «Ahora» y la tirada, en el registro de dados), «Reiniciar».
+- [ ] **Desde claude.ai**: que la IA haga un personaje con `crear_personaje` y `elegir_personaje`, y lo suba de nivel;
+  que haga una tabla y tire en ella (`tirar_en_tabla`).
+
+## Módulo 3: la hoja en partida
+
+En un personaje terminado, su «Ficha»:
+- [ ] **Tirar a un clic**: una característica, una habilidad, la iniciativa y el ataque de un arma; arriba, «Con
+  ventaja» o «Con desventaja» y quién la ve (la tirada sale en el registro de dados con su nombre: «Thora · Atletismo»).
+- [ ] **Los PG**: «Cuánto» y «Daño» (primero se van los temporales), «Curar», «Temporales»; varios clics seguidos se
+  suman.
+- [ ] **Lo que se cambia jugando**: la inspiración, el cansancio, las salvaciones contra muerte, las monedas y las
+  notas; tras recargar, sigue ahí.
+- [ ] **Lo que lleva**: en «Inventario», «Añadir» del compendio, «Equipado» (un escudo sube la CA), cantidad y
+  quitar; los estados (Envenenado…) arriba, con su «Añadir».
+- [ ] **Usos y descansos**: gastar una Furia; «Descanso corto» (un brujo recupera la magia de pacto; los PG no) y
+  «Descanso largo» (todo lleno).
+- [ ] **Con el teclado**: las pestañas con las flechas, Inicio y Fin.
+- [ ] **Desde claude.ai**: `partida_personaje` (daño, curación, gastar un uso, descansar) y `tirar_por_personaje`.
 
 ## Módulo 3: srd-5e, punto de control 4 y final (todo el contenido, en staging: PR #98)
 

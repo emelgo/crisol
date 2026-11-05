@@ -246,6 +246,38 @@ export const es = {
     saving: 'Guardando…',
     saved: 'Guardado'
   },
+  // La hoja de un personaje en partida
+  playSheet: {
+    values: 'Sus valores',
+    rollOf: 'Tirar {{what}} ({{value}})',
+    rollFor: 'Tirar por {{what}}',
+    rollItem: '{{roll}} con {{what}}',
+    attackOf: 'Ataque con {{what}}, {{bonus}}',
+    damageOf: 'Daño de {{what}}',
+    healOf: 'Curación de {{what}}',
+    saveDc: 'Salvación de {{ability}}, CD {{dc}}',
+    amount: 'Cuánto',
+    damage: 'Daño',
+    heal: 'Curar',
+    setTemp: 'Temporales',
+    temp: '+{{temp}} temporales',
+    less: 'Uno menos de {{what}}',
+    more: 'Uno más de {{what}}',
+    left: '{{left}} de {{max}}',
+    none: 'Ninguno',
+    add: 'Añadir',
+    search: 'Buscar en el compendio',
+    equipped: 'Equipado',
+    remove: 'Quitar {{what}}',
+    nothing: 'Nada',
+    actions: 'Acciones',
+    uses: 'Usos',
+    recovery: { short: 'Descanso corto', long: 'Descanso largo', dawn: 'Al amanecer', other: 'A mano' },
+    rest: 'Descansar',
+    rollWith: 'Tirar con',
+    shortRest: 'Descanso corto',
+    longRest: 'Descanso largo'
+  },
   // El creador de un personaje
   creator: {
     steps: 'Pasos',
@@ -289,9 +321,6 @@ export const es = {
     modifier: 'Modificador'
   },
   // La ficha mínima y las versiones de un personaje
-  characterSheet: {
-    values: 'Sus valores'
-  },
   characterVersions: {
     title: 'Versiones',
     none: 'Al terminar de crearlo y al confirmar cada nivel, se guarda una.',
@@ -1793,6 +1822,7 @@ export const es = {
     BAD_SYSTEM_PATH: 'Esa parte del sistema no existe',
     BAD_SYSTEM_TYPE: 'Ese tipo no existe en el sistema',
     BAD_ROLL: 'Esa tirada no se puede hacer',
+    BAD_PLAY: 'Eso no se puede cambiar así',
     BAD_FORMULA: 'Esa tirada no se entiende',
     VISIBILITY_NOT_ALLOWED: 'No puedes tirar así en esta campaña',
     UNKNOWN: 'Algo ha fallado. Vuelve a intentarlo.'

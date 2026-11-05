@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { defineAction } from './action.ts'
+import { diceRoll } from './dice.ts'
 
 /** Lo que se ve de un personaje en su tarjeta: su línea («Enano · Guerrero 4»), su nivel y unos valores de su hoja */
 export const characterSummary = z.object({
@@ -118,7 +119,70 @@ export const characterState = z.object({
     level: z.int(),
     stats: z.array(z.object({ key: z.string(), label: z.string(), value: z.string() }))
   }),
-  sheet: z.record(z.string(), z.unknown()).describe('Su hoja calculada'),
+  sheet: z.record(z.string(), z.unknown()).describe('Su hoja calculada, con lo de la partida encima'),
+  resources: z
+    .array(
+      z.object({
+        item: z.string().nullable(),
+        key: z.string(),
+        label: z.string(),
+        max: z.number(),
+        used: z.number(),
+        left: z.number(),
+        recovery: z.string().optional(),
+        amount: z.string().optional(),
+        error: z.string().optional()
+      })
+    )
+    .describe('Los usos de lo que lleva (la Furia, las cargas): su máximo, lo gastado y cuándo se recuperan'),
+  itemValues: z
+    .record(z.string(), z.record(z.string(), z.unknown()))
+    .describe('Los valores calculados de cada cosa que lleva, por su id'),
+  actions: z
+    .array(
+      z.object({
+        item: z.string().nullable(),
+        key: z.string(),
+        label: z.string(),
+        activation: z.string().optional(),
+        attack: z.string().nullable(),
+        bonus: z.number().nullable(),
+        save: z
+          .object({ ability: z.string(), abilityLabel: z.string(), dc: z.number(), success: z.string().optional() })
+          .nullable(),
+        damage: z.array(z.object({ formula: z.string(), type: z.string().optional() })),
+        heal: z.string().nullable(),
+        error: z.string().optional()
+      })
+    )
+    .describe('Lo que puede hacer (ataques, conjuros): su ataque, su salvación y su daño, armados'),
+  layout: z
+    .array(z.record(z.string(), z.unknown()))
+    .describe('Los bloques de su hoja (los del sistema o los de por defecto), con sus nombres'),
+  rolls: z
+    .array(
+      z.object({
+        key: z.string(),
+        label: z.string(),
+        elements: z.array(z.object({ key: z.string(), label: z.string() })),
+        modes: z.array(z.object({ key: z.string(), label: z.string() }))
+      })
+    )
+    .describe('Las tiradas de su sistema que puede hacer, con sus elementos y sus modos'),
+  carried: z
+    .array(
+      z.object({
+        id: z.string(),
+        key: z.string(),
+        name: z.string(),
+        type: z.string().nullable(),
+        quantity: z.int().optional(),
+        equipped: z.boolean().optional(),
+        attuned: z.boolean().optional()
+      })
+    )
+    .describe('Lo que lleva del compendio, con su estado'),
+  playMissing: z.array(z.string()).describe('Lo que lleva que ya no está en el contenido de la campaña'),
   fields: z
     .array(
       z.object({
@@ -225,6 +289,60 @@ export const chooseForCharacter = defineAction({
       .optional(),
     values: z.record(z.string().max(60), z.unknown()).optional(),
     confirm: z.enum(['created', 'level']).optional()
+  }),
+  output: z.object({ character, state: characterState })
+})
+
+export const rollForCharacter = defineAction({
+  name: 'rollForCharacter',
+  kind: 'write',
+  description:
+    'Tira por un personaje, en su campaña y a su registro: una tirada de su sistema (roll: su clave y, si es por un elemento, cuál: una característica, una habilidad, un arma) o una parte de una acción de lo que lleva (action: su objeto, su clave y attack, damage o heal). El servidor calcula la fórmula con su hoja del momento y tira',
+  input: z.object({
+    characterId: z.uuid(),
+    roll: z
+      .object({
+        key: z.string().max(60),
+        element: z.string().max(300).optional(),
+        mode: z.string().max(60).optional().describe('Un modo del sistema (ventaja); sin él, el que pongan sus efectos')
+      })
+      .optional(),
+    action: z
+      .object({
+        item: z.string().max(300).nullable(),
+        key: z.string().max(60),
+        part: z.enum(['attack', 'damage', 'heal']),
+        level: z.int().min(0).max(30).optional(),
+        mode: z.string().max(60).optional(),
+        critical: z.boolean().optional()
+      })
+      .optional(),
+    visibility: z.enum(['all', 'self', 'master', 'hidden']).default('all')
+  }),
+  output: z.object({ roll: diceRoll })
+})
+
+export const playCharacter = defineAction({
+  name: 'playCharacter',
+  kind: 'players',
+  description:
+    'Lo de la partida de un personaje (con la versión que se leyó): daño, curación o temporales a un recurso (sin decirlo, el primero, los PG), gastar o recuperar usos de lo que lleva (spend: su objeto, su recurso y cuántos; negativo, recuperar) o descansar (short o long). Devuelve su estado',
+  input: z.object({
+    characterId: z.uuid(),
+    version: z.int().min(1),
+    resource: z.string().max(120).optional().describe('La ruta del recurso (pg, espacios.n1)'),
+    damage: z.int().min(0).max(100_000).optional(),
+    heal: z.int().min(0).max(100_000).optional(),
+    temp: z.int().min(0).max(100_000).optional(),
+    spend: z
+      .object({ item: z.string().max(300).nullable(), key: z.string().max(60), by: z.int().min(-100).max(100) })
+      .optional(),
+    rest: z
+      .enum(['short', 'long'])
+      .optional()
+      .describe(
+        'Descansar: el corto recupera lo de los descansos cortos (y la magia de pacto); el largo, todo y los PG. Lo que vuelve con dados lo tira el servidor'
+      )
   }),
   output: z.object({ character, state: characterState })
 })

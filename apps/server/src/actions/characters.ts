@@ -13,10 +13,14 @@ import {
   getCharacter,
   listCharacters,
   listCharacterVersions,
+  playCharacter,
   restoreCharacterVersion,
-  updateCharacter
+  rollForCharacter,
+  updateCharacter,
+  visibilitiesFor
 } from '@crisol/contracts'
 import { campaignsRepo, charactersRepo, membersRepo, systemsRepo } from '@crisol/db'
+import { cryptoRoller, rollDice } from '@crisol/dice'
 import { authorize, can, NotFoundError } from '@crisol/domain'
 import {
   applyChoices,
@@ -25,14 +29,26 @@ import {
   ChooseError,
   type ContentItem,
   catalogSystem,
+  changeResource,
   characterView,
   checkBuild,
   normalizeChoices,
-  type System
+  PLAY_BYTES,
+  type Play,
+  playedDocument,
+  playSchema,
+  RollError,
+  resourcePaths,
+  rest,
+  type System,
+  spend,
+  tryAction,
+  tryRoll
 } from '@crisol/systems'
 import { catalogContent } from '@crisol/systems/catalog/content'
 import { authorizedCampaign } from './access.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
+import { saveRoll, storedOf } from './dice.ts'
 import { implement } from './registry.ts'
 import { contentOf } from './systems.ts'
 
@@ -112,9 +128,53 @@ async function contextOf(ctx: ActionContext, campaignId: string, systemId: strin
   return { document, content, choices }
 }
 
-async function stateOf(ctx: ActionContext, campaignId: string, systemId: string, build: Record<string, unknown>) {
+async function stateOf(
+  ctx: ActionContext,
+  campaignId: string,
+  systemId: string,
+  build: Record<string, unknown>,
+  play: Record<string, unknown> = {}
+) {
   const { document, content, choices } = await contextOf(ctx, campaignId, systemId)
-  return characterView(document, content, choices, build as Build)
+  return { ...characterView(document, content, choices, build as Build, play as Play), document }
+}
+
+/** Lo de la partida nuevo, con su forma y su tamaño (antes de montarlo) */
+function parsedPlay(given: unknown): Play {
+  const parsed = playSchema.safeParse(given)
+  if (!parsed.success)
+    throw new InvalidRequestError(
+      'BAD_PLAY',
+      parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('. ')
+    )
+  if (JSON.stringify(parsed.data).length > PLAY_BYTES) throw new InvalidRequestError('BAD_PLAY', 'demasiado grande')
+  return parsed.data
+}
+
+/**
+ * Lo de la partida nuevo, ya montado: lo que se añade a lo que lleva, que esté en el contenido y se lleve; y los
+ * valores, que se cambien jugando y con su forma (lo que ya estaba guardado y no vale se deja fuera, sin más)
+ */
+function checkedPlay(
+  play: Play,
+  previous: Play,
+  missing: readonly string[],
+  played: { refused: readonly string[]; problems: readonly { key: string; message: string }[] }
+): Play {
+  const before = new Set((previous.items ?? []).map((it) => it.key))
+  const added = (play.items ?? []).filter((it) => !before.has(it.key))
+  const absent = added.filter((it) => missing.includes(it.key)).map((it) => it.key)
+  if (absent.length > 0)
+    throw new InvalidRequestError('BAD_PLAY', `no está en el contenido de la campaña: ${absent.join(', ')}`)
+  const refused = added.filter((it) => played.refused.includes(it.key)).map((it) => it.key)
+  if (refused.length > 0) throw new InvalidRequestError('BAD_PLAY', `no se lleva: ${refused.join(', ')}`)
+  const same = (key: string) => JSON.stringify(play.values?.[key]) === JSON.stringify(previous.values?.[key])
+  const wrong = played.problems.filter((p) => !same(p.key))
+  if (wrong.length > 0) throw new InvalidRequestError('BAD_PLAY', wrong.map((p) => `${p.key}: ${p.message}`).join('. '))
+  if (played.problems.length === 0) return play
+  const values = { ...(play.values ?? {}) }
+  for (const p of played.problems) delete values[p.key]
+  return { ...play, values }
 }
 
 /** Unas elecciones nuevas que valen: su forma, su tamaño y las reglas de lo que cambia (si no, dice qué falla) */
@@ -145,9 +205,17 @@ async function save(
     if (ownerId) await assertMember(ctx, row.campaignId, ownerId)
     patch.ownerId = ownerId
   }
+  const play = given.play ? parsedPlay(given.play) : undefined
   // Montado con lo nuevo: su resumen se guarda; terminarlo pide lo que su sistema pide
-  const { view } = await stateOf(ctx, row.campaignId, row.system, given.build ?? row.build)
-  if (given.build) patch.summary = view.summary
+  const { view, played } = await stateOf(
+    ctx,
+    row.campaignId,
+    row.system,
+    patch.build ?? row.build,
+    (play ?? row.play) as Record<string, unknown>
+  )
+  if (play) patch.play = checkedPlay(play, row.play as Play, view.playMissing, played) as Record<string, unknown>
+  if (given.build || play) patch.summary = view.summary
   if (confirm === 'created') {
     if (!view.complete) throw new InvalidRequestError('INCOMPLETE', 'aún le falta algo de lo que pide su sistema')
     patch.status = 'ready'
@@ -181,7 +249,7 @@ export const characterActions = [
 
   implement(getCharacter, async (ctx, { characterId }) => {
     const { row } = await readable(ctx, characterId)
-    const { view } = await stateOf(ctx, row.campaignId, row.system, row.build)
+    const { view } = await stateOf(ctx, row.campaignId, row.system, row.build, row.play)
     return { character: characterOf(row), state: view }
   }),
 
@@ -227,6 +295,108 @@ export const characterActions = [
     return save(ctx, row, version, { build: build as Record<string, unknown> }, confirm)
   }),
 
+  implement(rollForCharacter, async (ctx, { characterId, roll, action, visibility }) => {
+    const { row } = await readable(ctx, characterId)
+    if (Boolean(roll) === Boolean(action)) throw new InvalidRequestError('BAD_ROLL', 'una tirada o una acción')
+    const campaign = await authorizedCampaign(ctx, 'dice.roll', row.campaignId)
+    const master = can(ctx.actor, 'dice.private', { campaignId: campaign.id, worldId: campaign.worldId })
+    if (!master && !visibilitiesFor('player').includes(visibility))
+      throw new InvalidRequestError('VISIBILITY_NOT_ALLOWED')
+    const { document, content, choices } = await contextOf(ctx, row.campaignId, row.system)
+    const { type, document: doc } = playedDocument(document, content, choices, row.build as Build, row.play as Play)
+    const options = { roller: cryptoRoller, settings: choices.settings, language: choices.language }
+    try {
+      if (roll) {
+        const result = tryRoll(document, type, doc, roll.key, {
+          ...options,
+          ...(roll.element ? { element: roll.element } : {}),
+          ...(roll.mode !== undefined ? { mode: roll.mode } : {})
+        })
+        const view = await saveRoll(ctx, campaign, {
+          formula: result.formula,
+          label: `${row.name} · ${result.label}`,
+          visibility,
+          result: storedOf(result)
+        })
+        return { roll: view }
+      }
+      if (!action) throw new InvalidRequestError('BAD_ROLL', 'una tirada o una acción')
+      const rolled = tryAction(document, type, doc, action.item, action.key, {
+        ...options,
+        ...(action.level !== undefined ? { level: action.level } : {}),
+        ...(action.mode !== undefined ? { mode: action.mode } : {}),
+        ...(action.critical ? { critical: true } : {})
+      })
+      const parts =
+        action.part === 'attack'
+          ? rolled.attack
+            ? [{ result: rolled.attack }]
+            : []
+          : action.part === 'heal'
+            ? rolled.heal
+              ? [rolled.heal]
+              : []
+            : rolled.damage
+      if (parts.length === 0) throw new InvalidRequestError('BAD_ROLL', 'esa acción no tiene eso')
+      const stored = parts.map((p) => storedOf(p.result))
+      const view = await saveRoll(ctx, campaign, {
+        formula: parts.map((p) => p.result.formula).join(' + '),
+        label: `${row.name} · ${rolled.label}${action.part === 'attack' ? '' : action.part === 'heal' ? ' · curación' : ' · daño'}`,
+        visibility,
+        result: {
+          total: stored.reduce((n, p) => n + p.total, 0),
+          detail: stored.map((p) => p.detail).join(' + '),
+          critical: action.part === 'attack' ? (stored[0]?.critical ?? null) : null,
+          dice: stored.flatMap((p) => p.dice)
+        }
+      })
+      return { roll: view }
+    } catch (error) {
+      if (error instanceof RollError) throw new InvalidRequestError('BAD_ROLL', error.message)
+      throw error
+    }
+  }),
+
+  implement(
+    playCharacter,
+    async (ctx, { characterId, version, resource, damage, heal, temp, spend: used, rest: kind }) => {
+      const { row } = await readable(ctx, characterId)
+      const { view, built, document } = await stateOf(ctx, row.campaignId, row.system, row.build, row.play)
+      let play = structuredClone(row.play) as Play
+      const paths = resourcePaths(document.types[built.type]?.fields ?? {})
+      if (damage !== undefined || heal !== undefined || temp !== undefined) {
+        const path = resource ?? paths[0]?.path
+        const at = path
+          ? (path.split('.').reduce<unknown>((v, k) => (v as Record<string, unknown>)?.[k], view.sheet) as
+              | { max?: number }
+              | undefined)
+          : undefined
+        if (!path || !paths.some((p) => p.path === path) || typeof at?.max !== 'number')
+          throw new InvalidRequestError('BAD_PLAY', `no hay un recurso «${resource ?? ''}»`)
+        play = changeResource(play, path, at.max, {
+          ...(damage !== undefined ? { damage } : {}),
+          ...(heal !== undefined ? { heal } : {}),
+          ...(temp !== undefined ? { temp } : {})
+        })
+      }
+      if (used) {
+        const found = view.resources.find((r) => r.item === used.item && r.key === used.key)
+        if (!found) throw new InvalidRequestError('BAD_PLAY', `no hay un uso «${used.key}»`)
+        play = spend(play, found, used.by)
+      }
+      // Lo que vuelve con dados (las cargas de una varita) lo tira el servidor; si no se puede tirar, vuelve todo
+      const roll = (formula: string) => {
+        try {
+          return rollDice(formula, cryptoRoller).total
+        } catch {
+          return Number.POSITIVE_INFINITY
+        }
+      }
+      if (kind) play = rest(play, view.resources, kind, paths, roll)
+      return save(ctx, row, version, { play: play as Record<string, unknown> }, undefined)
+    }
+  ),
+
   implement(deleteCharacter, async (ctx, { characterId }) => {
     const { row } = await readable(ctx, characterId)
     await charactersRepo.deleteCharacter(
@@ -269,7 +439,7 @@ export const characterActions = [
     )
     const fresh = await charactersRepo.findCharacter(ctx.db, characterId)
     if (!fresh) throw new NotFoundError('character')
-    const { view } = await stateOf(ctx, fresh.campaignId, fresh.system, fresh.build)
+    const { view } = await stateOf(ctx, fresh.campaignId, fresh.system, fresh.build, fresh.play)
     return { character: characterOf(fresh), state: view }
   })
 ]

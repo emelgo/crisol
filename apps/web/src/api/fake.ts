@@ -49,8 +49,12 @@ import {
   compendiumTypes,
   fileName,
   normalizeChoices,
+  type Play,
   pickPaths,
+  playedDocument,
   RollError,
+  resourcePaths,
+  rest,
   SYSTEM_FILE,
   type System,
   searchContent,
@@ -585,7 +589,7 @@ export function fakeApi(
     if (!document) throw new ApiError('NOT_FOUND', 404)
     const { choices } = normalizeChoices(document, (campaign?.systemChoices ?? {}) as Partial<Choices>)
     const content = ownSystems.find((s) => s.id === document.id && !s.deleted)?.content ?? []
-    return characterView(document, content, choices, character.build as Build).view
+    return characterView(document, content, choices, character.build as Build, character.play as Play).view
   }
   const touch = (character: Character) => {
     character.version++
@@ -1256,6 +1260,39 @@ export function fakeApi(
         build: build as Record<string, unknown>,
         ...(confirm ? { confirm } : {})
       })
+    },
+    rollForCharacter: ({ characterId, roll, visibility = 'all' }) => {
+      const character = visibleCharacter(characterId)
+      const document = systemById(character.system)
+      const campaign = campaigns.find((c) => c.id === character.campaignId)
+      if (!document || !campaign || !roll) throw new ApiError('BAD_ROLL', 400)
+      const { choices } = normalizeChoices(document, (campaign.systemChoices ?? {}) as Partial<Choices>)
+      const content = ownSystems.find((s) => s.id === document.id && !s.deleted)?.content ?? []
+      const { type, document: doc } = playedDocument(
+        document,
+        content,
+        choices,
+        character.build as Build,
+        character.play as Play
+      )
+      const result = tryRoll(document, type, doc, roll.key, {
+        ...(roll.element ? { element: roll.element } : {}),
+        ...(roll.mode ? { mode: roll.mode } : {})
+      })
+      const out = handlers.rollDice({ campaignId: campaign.id, formula: result.formula, visibility })
+      const stored = rolls.find((r) => r.id === out.roll.id)
+      for (const each of stored ? [out.roll, stored] : [out.roll]) each.label = `${character.name} · ${result.label}`
+      return { roll: out.roll }
+    },
+    playCharacter: ({ characterId, version, rest: kind }) => {
+      const character = visibleCharacter(characterId)
+      const state = stateOf(character)
+      let play = structuredClone(character.play) as Play
+      const fields = Object.values(systemById(character.system)?.types ?? {}).find(
+        (t) => t.document === 'actor'
+      )?.fields
+      if (kind) play = rest(play, state.resources, kind, resourcePaths(fields ?? {}))
+      return handlers.updateCharacter({ characterId, version, play: play as Record<string, unknown> })
     },
     deleteCharacter: ({ characterId }) => {
       visibleCharacter(characterId)

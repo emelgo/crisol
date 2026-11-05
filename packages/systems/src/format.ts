@@ -46,6 +46,8 @@ interface FieldBase {
   help?: Text
   /** Solo lo ve el máster */
   master?: boolean
+  /** Se cambia jugando, desde la hoja (las monedas, la inspiración, las notas); los recursos, siempre */
+  play?: boolean
 }
 
 /** Las clases de campo que caben en una columna o dentro de un conjunto */
@@ -59,7 +61,7 @@ export type SimpleField = FieldBase &
     | { kind: 'link'; to: string; multiple?: boolean }
     | { kind: 'clock'; segments: number; default?: number }
     | { kind: 'dice'; default?: string }
-    | { kind: 'resource'; max?: number | string; default?: number }
+    | { kind: 'resource'; max?: number | string; default?: number; recovery?: 'short' | 'long' }
     | { kind: 'derived'; formula: string; signed?: boolean }
   )
 
@@ -81,7 +83,13 @@ function build(strict: boolean) {
   const base = {
     label: text().describe('Su nombre'),
     help: text(500).optional().describe('Una ayuda corta, para quien rellena la hoja'),
-    master: z.boolean().optional().describe('Solo lo ve el máster')
+    master: z.boolean().optional().describe('Solo lo ve el máster'),
+    play: z
+      .boolean()
+      .optional()
+      .describe(
+        'Se cambia jugando, desde la hoja (las monedas, la inspiración, las notas; en uno de objetos, lo que se añade del compendio, como el inventario); los recursos, siempre'
+      )
   }
   const kind = (value: string, what: string) => z.literal(value).describe(what)
 
@@ -146,7 +154,11 @@ function build(strict: boolean) {
       ...base,
       kind: kind('resource', 'Algo que se gasta y se recupera (los PG), con su máximo'),
       max: z.union([z.number().finite(), formula]).optional().describe('Un número o una fórmula'),
-      default: z.number().finite().optional()
+      default: z.number().finite().optional(),
+      recovery: z
+        .enum(['short', 'long'])
+        .optional()
+        .describe('Con qué descanso se llena: short (el corto y el largo) o long (solo el largo, sin decirlo)')
     }),
     obj({
       ...base,
@@ -305,6 +317,68 @@ function build(strict: boolean) {
     publisher: text().optional().describe('Su editorial'),
     released: z.iso.date().optional().describe('Cuándo salió (AAAA-MM-DD): de lo repetido, gana lo más nuevo')
   })
+  // Los bloques de la hoja: tipos neutros; cada uno dice qué campos lee y qué se tira desde él
+  const label = text().optional().describe('Su título (sin él, el del campo)')
+  const leaf = [
+    obj({
+      kind: z.literal('header').describe('Su nombre, su línea y su retrato')
+    }),
+    obj({
+      kind: z
+        .literal('stats')
+        .describe(
+          'Cifras grandes (la CA, la iniciativa) o un sí o no (la inspiración): una por campo; las que se cambian jugando, se escriben'
+        ),
+      label,
+      fields: z.array(key).min(1).max(12),
+      rolls: z.record(key, key).optional().describe('Por campo, la tirada que se hace al pulsarlo (iniciativa)')
+    }),
+    obj({
+      kind: z.literal('resource').describe('Un recurso con daño, curación y temporales (los PG)'),
+      label,
+      field: key
+    }),
+    obj({
+      kind: z.literal('set').describe('Un conjunto en tabla (las características, las habilidades), con su tirada'),
+      label,
+      field: key,
+      columns: z.array(key).min(1).max(6),
+      roll: key.optional().describe('La tirada por cada elemento (prueba, salvación, habilidad)')
+    }),
+    obj({ kind: z.literal('group').describe('Un grupo de campos (las monedas, los espacios)'), label, field: key }),
+    obj({
+      kind: z.literal('list').describe('Campos de lista (idiomas, competencias)'),
+      label,
+      fields: z.array(key).min(1).max(12)
+    }),
+    obj({
+      kind: z.literal('items').describe('Lo que lleva de un campo de objetos (el inventario), con sus tiradas'),
+      label,
+      field: key,
+      types: z.array(key).max(20).optional().describe('Solo de estos tipos (las armas)'),
+      columns: z.array(key).max(6).optional().describe('Sus campos que se ven'),
+      rolls: z.array(key).max(4).optional().describe('Las tiradas por cada uno (ataque, daño)')
+    }),
+    obj({ kind: z.literal('actions').describe('Lo que puede hacer (ataques, conjuros), de la mecánica'), label }),
+    obj({ kind: z.literal('uses').describe('Los usos limitados (la Furia), con su recuperación'), label }),
+    obj({ kind: z.literal('text').describe('Un texto (las notas)'), label, field: key })
+  ] as const
+  const leafBlock = z.discriminatedUnion('kind', [...leaf])
+  const block = z.discriminatedUnion('kind', [
+    ...leaf,
+    obj({
+      kind: z.literal('columns').describe('Bloques uno al lado de otro'),
+      blocks: z.array(leafBlock).min(1).max(4)
+    }),
+    obj({
+      kind: z.literal('tabs').describe('Pestañas con sus bloques'),
+      tabs: z
+        .array(obj({ label: text(), blocks: z.array(leafBlock).max(20) }))
+        .min(1)
+        .max(8)
+    })
+  ])
+
   // Los pasos del creador: tipos neutros, sin nada de un juego concreto
   const scoreMethod = z.discriminatedUnion('kind', [
     obj({
@@ -430,7 +504,11 @@ function build(strict: boolean) {
       .optional()
       .describe('Los ajustes de campaña: reglas opcionales que elige cada campaña'),
     // Su sitio para la hoja y los pasos del creador: los dicen `hoja` y `personajes`
-    sheet: z.record(z.string(), z.unknown()).optional().describe('La hoja: llega después; se guarda tal cual'),
+    sheet: obj({ blocks: z.array(block).max(60) })
+      .optional()
+      .describe(
+        'La hoja del personaje, por bloques (docs/specs/hoja.md): cifras, un recurso, un conjunto, un grupo, listas, objetos, acciones, usos y texto, en pestañas o columnas. Sin ella, una por defecto de sus campos'
+      ),
     card: z
       .array(key)
       .max(4)

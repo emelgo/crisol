@@ -1,5 +1,6 @@
 import { connect, schema } from '@crisol/db'
 import { freshTestDatabase, resetDatabase } from '@crisol/db/testing'
+import { eq } from 'drizzle-orm'
 import type { FastifyInstance } from 'fastify'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { buildApp } from '../app.ts'
@@ -319,6 +320,188 @@ describe('los personajes de una campaña', () => {
         await fails(
           'restoreCharacterVersion',
           { characterId: created.id, versionId: versions[0].id, version: done.character.version },
+          bruno.cookie
+        )
+      ).status
+    ).toBe(404)
+  })
+
+  it('tirar por un personaje: una tirada de su sistema y un ataque con lo que lleva, a su registro', async () => {
+    const created = (await ok200('createCharacter', { campaignId, name: 'Thora' }, ana.cookie)).character
+    const saved = await ok200(
+      'updateCharacter',
+      {
+        characterId: created.id,
+        version: 1,
+        build: complete(),
+        play: { items: [{ id: 'e1', key: 'espada_larga_2024', equipped: true }] }
+      },
+      ana.cookie
+    )
+    expect(saved.state.carried).toMatchObject([{ id: 'e1', name: 'Espada larga', type: 'arma', equipped: true }])
+    expect(saved.state.rolls.map((r: { key: string }) => r.key)).toEqual(
+      expect.arrayContaining(['habilidad', 'ataque'])
+    )
+    const athletics = await ok200(
+      'rollForCharacter',
+      { characterId: created.id, roll: { key: 'habilidad', element: 'atletismo' } },
+      ana.cookie
+    )
+    expect(athletics.roll.label).toMatch(/^Thora · .*Atletismo/)
+    expect(athletics.roll.formula).toMatch(/^1d20/)
+    const attack = await ok200(
+      'rollForCharacter',
+      { characterId: created.id, roll: { key: 'ataque', element: 'p:e1' }, visibility: 'self' },
+      ana.cookie
+    )
+    expect(attack.roll).toMatchObject({ visibility: 'self', label: expect.stringContaining('Espada larga') })
+    const { rolls } = await ok200('listRolls', { campaignId })
+    expect(rolls.map((r: { label: string }) => r.label)).toEqual(expect.arrayContaining([athletics.roll.label]))
+    // Lo que no vale: oculta (jugadora), una tirada que no existe, otra persona
+    expect(
+      (
+        await fails(
+          'rollForCharacter',
+          { characterId: created.id, roll: { key: 'habilidad', element: 'atletismo' }, visibility: 'hidden' },
+          ana.cookie
+        )
+      ).code
+    ).toBe('VISIBILITY_NOT_ALLOWED')
+    expect((await fails('rollForCharacter', { characterId: created.id, roll: { key: 'nada' } }, ana.cookie)).code).toBe(
+      'BAD_ROLL'
+    )
+    expect(
+      (await fails('rollForCharacter', { characterId: created.id, roll: { key: 'iniciativa' } }, bruno.cookie)).status
+    ).toBe(404)
+    // Lo de la partida: algo que no está en el contenido no se añade
+    expect(
+      (
+        await fails(
+          'updateCharacter',
+          {
+            characterId: created.id,
+            version: saved.character.version,
+            play: { items: [{ id: 'x', key: 'nada_2024' }] }
+          },
+          ana.cookie
+        )
+      ).code
+    ).toBe('BAD_PLAY')
+  })
+
+  it('lo de la partida solo cambia lo que se cambia jugando, con su forma, y lleva solo lo que se lleva', async () => {
+    const created = (await ok200('createCharacter', { campaignId, name: 'Thora' }, ana.cookie)).character
+    const ready = await ok200('updateCharacter', { characterId: created.id, version: 1, build: complete() }, ana.cookie)
+    const update = (play: unknown, version = ready.character.version) =>
+      fails('updateCharacter', { characterId: created.id, version, play }, ana.cookie)
+    // Lo calculado, lo elegido al crearlo o con otra forma, no
+    for (const values of [{ pg_max: 999 }, { cansancio: 9 }, { inspiracion: 'sí' }, { pg: { value: -1 } }])
+      expect((await update({ values })).code).toBe('BAD_PLAY')
+    // Una clase no se lleva; con mala forma, un 400 (no un 500)
+    expect((await update({ items: [{ id: 'c', key: 'guerrero_2024' }] })).code).toBe('BAD_PLAY')
+    const shapeless = await update({ items: 'todo', values: [] })
+    expect(shapeless).toMatchObject({ status: 400, code: 'BAD_PLAY' })
+    // Lo que se cambia jugando, sí: las monedas, la inspiración, las notas
+    const played = await ok200(
+      'updateCharacter',
+      {
+        characterId: created.id,
+        version: ready.character.version,
+        play: { values: { monedas: { po: 12 }, inspiracion: true, notas: 'Le debe 10 po a Brom' } }
+      },
+      ana.cookie
+    )
+    expect(played.state.sheet.monedas.po).toBe(12)
+    expect(played.state.sheet.inspiracion).toBe(true)
+    // Algo guardado de antes que ya no vale se deja fuera, sin impedir lo demás
+    await conn.db
+      .update(schema.characters)
+      .set({ play: { values: { pg_max: 5, notas: 'x' } } })
+      .where(eq(schema.characters.id, created.id))
+    const after = await ok200(
+      'updateCharacter',
+      {
+        characterId: created.id,
+        version: played.character.version,
+        play: { values: { pg_max: 5, notas: 'y' } }
+      },
+      ana.cookie
+    )
+    expect(after.character.play).toEqual({ values: { notas: 'y' } })
+  })
+
+  it('el descanso corto llena la magia de pacto; el largo, todo', async () => {
+    const created = (await ok200('createCharacter', { campaignId, name: 'Vex' }, ana.cookie)).character
+    const ready = await ok200(
+      'updateCharacter',
+      { characterId: created.id, version: 1, build: complete('brujo_2024', 3) },
+      ana.cookie
+    )
+    const pact = ready.state.sheet.pacto as { value: number; max: number }
+    expect(pact.max).toBeGreaterThan(0)
+    const spent = await ok200(
+      'playCharacter',
+      { characterId: created.id, version: ready.character.version, resource: 'pacto', damage: pact.max },
+      ana.cookie
+    )
+    expect(spent.state.sheet.pacto.value).toBe(0)
+    const hurt = await ok200(
+      'playCharacter',
+      { characterId: created.id, version: spent.character.version, damage: 3 },
+      ana.cookie
+    )
+    const short = await ok200(
+      'playCharacter',
+      { characterId: created.id, version: hurt.character.version, rest: 'short' },
+      ana.cookie
+    )
+    expect(short.state.sheet.pacto.value).toBe(pact.max)
+    expect(short.state.sheet.pg.value).toBe(short.state.sheet.pg.max - 3)
+  })
+
+  it('lo de la partida (la IA): daño, curación, gastar usos y descansar, con su estado', async () => {
+    const created = (await ok200('createCharacter', { campaignId, name: 'Thora' }, ana.cookie)).character
+    const ready = await ok200(
+      'updateCharacter',
+      { characterId: created.id, version: 1, build: complete('barbaro_2024', 2) },
+      ana.cookie
+    )
+    const max = ready.state.sheet.pg.max as number
+    expect(ready.state.sheet.pg.value).toBe(max)
+    const hurt = await ok200(
+      'playCharacter',
+      { characterId: created.id, version: ready.character.version, damage: 5, temp: 3 },
+      ana.cookie
+    )
+    expect(hurt.state.sheet.pg).toMatchObject({ value: max - 5, temp: 3 })
+    const rage = hurt.state.resources.find((r: { key: string }) => r.key === 'furias')
+    const raged = await ok200(
+      'playCharacter',
+      { characterId: created.id, version: hurt.character.version, spend: { item: rage.item, key: 'furias', by: 1 } },
+      ana.cookie
+    )
+    expect(raged.state.resources.find((r: { key: string }) => r.key === 'furias').used).toBe(1)
+    const rested = await ok200(
+      'playCharacter',
+      { characterId: created.id, version: raged.character.version, rest: 'long' },
+      ana.cookie
+    )
+    expect(rested.state.sheet.pg.value).toBe(max)
+    expect(rested.state.resources.find((r: { key: string }) => r.key === 'furias').used).toBe(0)
+    expect(
+      (
+        await fails(
+          'playCharacter',
+          { characterId: created.id, version: rested.character.version, resource: 'nada', damage: 1 },
+          ana.cookie
+        )
+      ).code
+    ).toBe('BAD_PLAY')
+    expect(
+      (
+        await fails(
+          'playCharacter',
+          { characterId: created.id, version: rested.character.version, rest: 'long' },
           bruno.cookie
         )
       ).status
