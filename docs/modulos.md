@@ -7,6 +7,18 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
+### Para retomar (2026-11-05, módulo 3: `personajes`, en diseño)
+
+- **Ahora: `personajes`** (rama `modulo-3/personajes`, sin subir). Hechos la entrevista, el estudio
+  (`research/foundry/avances-y-tablas.md`), la spec aprobada (`docs/specs/personajes.md`) y su ADR-0013. **Prototipos
+  publicados** en el lienzo «Crisol: personajes» de claude.ai (https://claude.ai/artifact/Hx1Hmo1feqo5iAu7MdQEpp;
+  fuentes en `out/lienzo-personajes/`): la vista propia de la campaña con su barra y sus personajes, el creador (clase y
+  subir de nivel, multiclase, características, elegir lo pendiente), las versiones, el compendio, las tablas aleatorias
+  y el móvil. **Pendiente de Enrique: aprobarlos**. Después, `/plan` y `/build`.
+- **Sin editor de sistemas: PR #99, en `main`** (sin desplegar a staging; la CI del PR se canceló, todo verde en
+  local). Ver más abajo, en el módulo 3.
+- Servidor de desarrollo en marcha para Enrique: web en `localhost:5173`, API en `8130` (las dos se recargan solas).
+
 ### Para retomar (2026-11-05, módulo 3: `srd-5e` terminado, en `main` y en staging)
 
 - **`srd-5e` terminado: PR #98, en `main` y en staging** (la CI pasó, con un arreglo de gitleaks). Hechas las tareas
@@ -57,7 +69,7 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   prueba el punto de control 2 (`tasks/probar.md`). **Lo siguiente**: la fase 3 en la misma rama (la tarea 11, los
   estados y el texto de las reglas; luego conjuros, objetos mágicos, criaturas, especies, trasfondos, dotes y clases).
 - **Decidido por Enrique (2026-11-04): los sistemas se hacen con la IA** (`docs/diseno.md`). **Hecho (2026-11-05,
-  rama `modulo-3/sin-editor`)**: fuera el editor de sistemas entero (también «Probar» y el enlace desde la campaña); en
+  PR #99, en `main`)**: fuera el editor de sistemas entero (también «Probar» y el enlace desde la campaña); en
   «Sistemas», la lista (cada uno abre su ventana: bajarlo, sus campañas y, si es tuyo, renombrarlo y borrarlo), subir
   de un archivo y bajar uno vacío, con el aviso de que los nuevos se hacen con la IA (también en las instrucciones del
   MCP).
