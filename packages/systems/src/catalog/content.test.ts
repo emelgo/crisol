@@ -133,6 +133,87 @@ describe('el contenido de los sistemas de serie', () => {
     expect(tryRoll(fiveE, 'personaje', doc, 'ataque', { element: 'espada_larga', roller: () => 10 }).total).toBe(16)
   })
 
+  it('los estados: envenenado da desventaja; el cansancio, lo de cada nivel con las reglas que elige la campaña', () => {
+    const content = catalogContent('5e')
+    const carry = (key: string, data: Record<string, unknown> = {}): DocumentItem => {
+      const item = content.find((c) => c.key === key) as ContentItem
+      return {
+        id: item.concept ?? key,
+        type: item.type,
+        name: (item.data.name as { es: string }).es,
+        data: { ...item.data, ...data },
+        ...(item.mechanics ? { mechanics: item.mechanics as Mechanics } : {})
+      }
+    }
+    const data = { caracteristicas: { des: { puntuacion: 14 }, con: { puntuacion: 14 } } }
+    const clase = carry('guerrero_2024', { nivel: 1, inicial: true })
+    const poisoned = evaluate(fiveE, 'personaje', { data, items: [carry('envenenado_2024')] })
+    expect(Object.keys(poisoned.advantages).sort()).toEqual(['ataque', 'habilidad', 'iniciativa', 'prueba'])
+    expect(poisoned.advantages.ataque).toEqual([{ mode: 'disadvantage', label: 'Envenenado', origin: 'envenenado' }])
+    // Desactivado, nada
+    const off = evaluate(fiveE, 'personaje', { data, items: [carry('envenenado_2024', { activo: false })] })
+    expect(off.advantages).toEqual({})
+
+    const tired = (reglas: string) =>
+      evaluate(
+        fiveE,
+        'personaje',
+        { data, items: [clase, carry('cansancio_2024', { nivel: 3 })] },
+        { settings: { reglas } }
+      )
+    // 2014: velocidad a la mitad, desventaja en pruebas, ataques y salvaciones (también contra la muerte)
+    const old = tired('e2014')
+    expect(old.values).toMatchObject({ cansancio: 3, velocidad: 15, pg_max: 12 })
+    expect(Object.keys(old.advantages).sort()).toEqual([
+      'ataque',
+      'habilidad',
+      'iniciativa',
+      'prueba',
+      'salvacion',
+      'salvacion_muerte'
+    ])
+    expect(
+      evaluate(
+        fiveE,
+        'personaje',
+        { data, items: [clase, carry('cansancio_2014', { nivel: 4 })] },
+        {
+          settings: { reglas: 'e2014' }
+        }
+      ).values
+    ).toMatchObject({ pg_max: 6, velocidad: 15 })
+    // 2024: 1,5 m menos por nivel y −2 por nivel a las pruebas d20, sin desventajas
+    const now = tired('e2024')
+    expect(now.values).toMatchObject({ cansancio: 3, velocidad: 15, pg_max: 12 })
+    expect(now.advantages).toEqual({})
+    const doc = { data, items: [clase, carry('cansancio_2024', { nivel: 3 })] }
+    const roll = (key: string) =>
+      tryRoll(fiveE, 'personaje', doc, key, { element: 'des', roller: () => 10, settings: { reglas: 'e2024' } }).total
+    expect([roll('prueba'), roll('salvacion_muerte')]).toEqual([6, 4])
+
+    const stone = evaluate(fiveE, 'personaje', { data, items: [carry('petrificado_2014')] })
+    expect(stone.values).toMatchObject({ velocidad: 0, inmunidades: ['veneno'], inmunidades_estados: ['envenenado'] })
+    expect(stone.values.resistencias).toHaveLength(13)
+  })
+
+  it('el texto de las reglas: lo de 2014 con versión de 2024 se esconde con lo más nuevo; se busca en los dos idiomas', () => {
+    const content = catalogContent('5e')
+    const cover = (duplicates: 'newest' | 'both') =>
+      visibleContent(fiveE, content, { sources: ['srd51', 'srd521'], duplicates })
+        .filter((s) => s.item.concept === 'regla_cobertura')
+        .map((s) => [s.item.key, s.legacy])
+    expect(cover('newest')).toEqual([['regla_cobertura_2024', false]])
+    expect(cover('both')).toEqual([
+      ['regla_cobertura_2024', false],
+      ['regla_cobertura_2014', true]
+    ])
+    const entries = content.map((c) => ({ ...c, name: c.data.name }))
+    const found = searchContent(fiveE, entries, { query: 'opportunity attacks', type: 'regla' })
+    expect(found.items[0]).toMatchObject({ key: 'regla_ataques_de_oportunidad_2024', name: 'Ataques de oportunidad' })
+    const glossary = content.find((c) => c.key === 'regla_ataques_de_oportunidad_2024')
+    expect(glossary?.data).toMatchObject({ capitulo: { es: 'Glosario de reglas', en: 'Rules Glossary' } })
+  })
+
   it('se lee una vez; sin contenido, ninguno; no sale en la entrada del paquete (la web no lo lleva)', () => {
     expect(catalogContent('5e')).toBe(catalogContent('5e'))
     expect(catalogContent('blank')).toEqual([])

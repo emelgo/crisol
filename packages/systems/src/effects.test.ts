@@ -109,7 +109,7 @@ describe('los efectos de lo que lleva', () => {
     ).toBe(12)
   })
 
-  it('en su orden: base, fijar, sumar, mínimo y máximo', () => {
+  it('en su orden: base, fijar, sumar, multiplicar, mínimo y máximo', () => {
     const fija = thing('Fija', { effects: [{ target: 'ca', op: 'set', value: '18' }] })
     const suma = thing('Suma', { effects: [{ target: 'ca', op: 'add', value: '1' }] })
     expect(ca([suma, fija])?.value).toBe(19)
@@ -119,6 +119,15 @@ describe('los efectos de lo que lleva', () => {
     const r = evaluate(system, 'personaje', { data: { fue: 12 }, items: [cinturon] })
     expect(r.values.fue).toBe(21)
     expect(evaluate(system, 'personaje', { data: { fue: 24 }, items: [cinturon] }).values.fue).toBe(24)
+  })
+
+  it('multiplicar va después de sumar y antes del mínimo y el máximo (la velocidad a la mitad)', () => {
+    const mitad = thing('Mitad', { effects: [{ target: 'ca', op: 'mul', value: '0.5' }] })
+    const suma = thing('Suma', { effects: [{ target: 'ca', op: 'add', value: '2' }] })
+    expect(ca([mitad, suma])?.value).toBe(7)
+    expect(ca([mitad, suma])?.terms.at(-1)).toEqual({ label: 'Mitad', value: -7, kind: 'bonus', origin: 'mitad' })
+    const suelo = thing('Suelo', { effects: [{ target: 'ca', op: 'min', value: '10' }] })
+    expect(ca([mitad, suelo])?.value).toBe(10)
   })
 
   it('el grado de competencia es un mínimo en su grado: competente, pericia o media', () => {

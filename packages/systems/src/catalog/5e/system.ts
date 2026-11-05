@@ -264,7 +264,7 @@ const goods = {
   coste: number('Coste (po)', 'Cost (gp)', { min: 0 })
 }
 
-/** El cansancio de 2024 resta 2 por nivel a las pruebas d20; el de 2014 va como estado */
+/** El cansancio de 2024 resta 2 por nivel a las pruebas d20; lo de 2014, con sus niveles, va en el estado */
 const exhaustion = ' - (@ajustes.reglas == "e2024" ? 2 * @cansancio : 0)'
 
 const modes = [
@@ -773,7 +773,7 @@ export const fiveE = {
     },
     salvacion_muerte: {
       label: t('Salvación contra muerte', 'Death saving throw'),
-      formula: '1d20',
+      formula: `1d20${exhaustion}`,
       bands: [
         { if: '@natural == 20', label: t('Recupera 1 PG', 'Regain 1 HP'), tone: 'critical' },
         { if: '@natural == 1', label: t('Dos fallos', 'Two failures'), tone: 'fumble' },

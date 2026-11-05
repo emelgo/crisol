@@ -42,7 +42,7 @@ export interface Shape {
 /** Une una línea al texto: sin el guion de una palabra partida; con un párrafo nuevo si va sangrada */
 function append(text: string, raw: string, newParagraph: boolean): string {
   // Una consonante suelta es un trozo de la palabra que sigue, partida en el PDF («d estreza»)
-  const line = raw.replace(/(^| )([b-df-hj-np-tv-xz]) (?=[a-záéíóúñ])/g, '$1$2')
+  const line = raw.replace(/(^|[^\d\s] )([b-df-hj-np-tv-xz]) (?=[a-záéíóúñ])/g, '$1$2')
   if (!text) return line
   if (/[a-záéíóúñ]-$/i.test(text) && /^[a-záéíóúñ]/.test(line)) return text.slice(0, -1) + line
   return `${text}${newParagraph ? '\n\n' : ' '}${line}`

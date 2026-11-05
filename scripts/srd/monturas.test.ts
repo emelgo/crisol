@@ -3,7 +3,7 @@ import { costOf } from './equipo.ts'
 import { mountDoc, mountRows, mountSignature, statsText } from './monturas.ts'
 import type { Row } from './texto.ts'
 
-const rows = (...texts: string[]): Row[] => texts.map((text, i) => ({ text, x: 58, y: i * 10, page: 100 }))
+const rows = (...texts: string[]): Row[] => texts.map((text, i) => ({ text, x: 58, y: i * 10, h: 10, page: 100 }))
 
 describe('las monturas, los arreos y los vehículos', () => {
   it('los miles en español van con un espacio', () => {

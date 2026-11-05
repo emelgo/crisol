@@ -98,8 +98,7 @@ Plan: `tasks/plan.md`. Spec: `docs/specs/srd-5e.md`. Cada tarea, con TDD y en un
 Cada una: sacarlo con los scripts, escribir su mecánica, su página, los dos idiomas y sus pruebas (valida, cuenta,
 referencias en las dos ediciones).
 
-- [ ] **11. Los estados y el texto de las reglas** (las dos ediciones; los estados con sus efectos; las reglas que
-  cambian, como ajustes).
+- [x] **11. Los estados y el texto de las reglas** — hecha (`scripts/srd/estados.ts`, `capitulos.ts` y `reglas.ts`): los 15 estados de cada edición con su mecánica (desventajas en las tiradas, velocidad a 0, resistencias; el cansancio con lo de cada nivel según las reglas de la campaña: en 2014, por niveles; en 2024, −2 a las pruebas d20 y −5 pies por nivel), y 260 documentos de reglas (72 de 2014 y 188 de 2024: cada sección de los capítulos de reglas, con sus apartados, tablas y recuadros en Markdown, y las 140 entradas del glosario de 2024). El motor tiene una operación nueva, `mul` (multiplicar: la velocidad a la mitad). Las tablas de armas y armaduras no van en el texto (ya son contenido). Rarezas de maquetación conocidas: algún recuadro cae en la sección de al lado en un idioma
 - [ ] **12. Los conjuros de 2014** (319, con su ataque o su salvación, su daño en partes, su escalado y su duración).
 - [ ] **13. Los conjuros de 2024** (339).
 - [ ] **14. Los objetos mágicos** (unos 236 de 2014 y 254 de 2024, con sus efectos, su sintonía y sus cargas).

@@ -439,7 +439,7 @@
       },
       "nivel": 0,
       "descripcion": {
-        "es": "Cuando una criatura que puedas ver ataque a un objetivo que esté a 1,5 mo menos de ti y no seas tú mismo, puedes utilizar tu reacción para dar desventaja a la tirada de ataque. Debes estar embrazando un escudo.",
+        "es": "Cuando una criatura que puedas ver ataque a un objetivo que esté a 1,5 m o menos de ti y no seas tú mismo, puedes utilizar tu reacción para dar desventaja a la tirada de ataque. Debes estar embrazando un escudo.",
         "en": "When a creature you can see attacks a target other than you that is within 5 feet of you, you can use your reaction to impose disadvantage on the attack roll. You must be wielding a shield."
       }
     },

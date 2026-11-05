@@ -4,6 +4,7 @@
  */
 import { writeFileSync } from 'node:fs'
 import { consoleIo, type Io } from '../io.ts'
+import { ruleDocs } from './capitulos.ts'
 import { classDocs, readingRows } from './clases.ts'
 import {
   type ArmorGroup,
@@ -18,6 +19,7 @@ import {
   weaponRows,
   weaponSignature
 } from './equipo.ts'
+import { conditionDocs } from './estados.ts'
 import { FIGHTER, FIGHTER_CLASS, FIGHTER_FEATURES } from './guerrero.ts'
 import { MECHANICS } from './mecanica.ts'
 import { type MountRow, mountDoc, mountRows, mountSignature } from './monturas.ts'
@@ -266,6 +268,8 @@ export function extract(): Record<string, Doc[]> {
       ...w14.map(([en, es], i) => weaponDoc('2014', en, es, wc.older[i] as string)),
       ...w24.map(([en, es], i) => weaponDoc('2024', en, es, wc.newer[i] as string))
     ],
+    'estados.json': [...conditionDocs('2014'), ...conditionDocs('2024')],
+    'reglas.json': ruleDocs(),
     'armaduras.json': [
       ...a14.map(([en, es], i) => armorDoc('2014', en, es, ac.older[i] as string)),
       ...a24.map(([en, es], i) => armorDoc('2024', en, es, ac.newer[i] as string))

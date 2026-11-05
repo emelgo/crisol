@@ -81,6 +81,8 @@ export interface Box {
   x: number
   y: number
   xMax: number
+  /** Su alto (el tamaño de la letra): lo que distingue un título del texto */
+  h: number
   page: number
 }
 
@@ -117,12 +119,13 @@ export function boxesOf(edition: Edition, lang: Lang, page: number): Box[] {
   widths.set(id, width)
   const boxes: Box[] = []
   for (const m of html.matchAll(
-    /<word xMin="([\d.]+)" yMin="([\d.]+)" xMax="([\d.]+)" yMax="[\d.]+">([^<]*)<\/word>/g
+    /<word xMin="([\d.]+)" yMin="([\d.]+)" xMax="([\d.]+)" yMax="([\d.]+)">([^<]*)<\/word>/g
   )) {
     const text = collapse(
-      clean((m[4] as string).replace(/&[a-z#0-9]+;/g, (e) => ENTITIES[e] ?? e).replace(/[\r ]/g, ' '))
+      clean((m[5] as string).replace(/&[a-z#0-9]+;/g, (e) => ENTITIES[e] ?? e).replace(/[\r ]/g, ' '))
     )
-    if (text) boxes.push({ text, x: Number(m[1]), y: Number(m[2]), xMax: Number(m[3]), page })
+    const h = Math.round((Number(m[4]) - Number(m[2])) * 10) / 10
+    if (text) boxes.push({ text, x: Number(m[1]), y: Number(m[2]), xMax: Number(m[3]), h, page })
   }
   boxCache.set(id, boxes)
   return boxes
@@ -133,7 +136,23 @@ export interface Row {
   text: string
   x: number
   y: number
+  /** El alto de la mayoría de sus palabras (un título, todas) */
+  h: number
   page: number
+  /** Sus celdas, si es la fila de una tabla: las palabras separadas por un hueco grande */
+  cells?: string[]
+}
+
+/** El hueco, en puntos, que separa dos celdas de una tabla (entre dos palabras hay menos) */
+const CELL_GAP = 7
+
+/** El valor que más se repite (de dos igual de repetidos, el primero) */
+function modeOf(values: readonly number[]): number {
+  const counts = new Map<number, number>()
+  for (const v of values) counts.set(v, (counts.get(v) ?? 0) + 1)
+  let best = values[0] ?? 0
+  for (const [v, n] of counts) if (n > (counts.get(best) ?? 0)) best = v
+  return best
 }
 
 /** Las líneas de un trozo de la página (una columna de una tabla), juntando las palabras de la misma altura */
@@ -149,6 +168,19 @@ export function rowsIn(boxes: readonly Box[], area: { x0: number; x1: number; y0
   }
   return rows.map((r) => {
     const sorted = r.boxes.sort((a, b) => a.x - b.x)
-    return { text: sorted.map((b) => b.text).join(' '), x: sorted[0]?.x ?? 0, y: r.y, page: sorted[0]?.page ?? 0 }
+    const cells: string[] = []
+    sorted.forEach((b, i) => {
+      const before = sorted[i - 1]
+      if (before && b.x - before.xMax <= CELL_GAP) cells[cells.length - 1] += ` ${b.text}`
+      else cells.push(b.text)
+    })
+    return {
+      text: sorted.map((b) => b.text).join(' '),
+      x: sorted[0]?.x ?? 0,
+      y: r.y,
+      h: modeOf(sorted.map((b) => b.h)),
+      page: sorted[0]?.page ?? 0,
+      cells
+    }
   })
 }
