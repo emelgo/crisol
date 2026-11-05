@@ -48,6 +48,16 @@ En un personaje terminado, su «Ficha»:
 - [ ] **Con el teclado**: las pestañas con las flechas, Inicio y Fin.
 - [ ] **Desde claude.ai**: `partida_personaje` (daño, curación, gastar un uso, descansar) y `tirar_por_personaje`.
 
+## Módulo 3: el compendio como el de Foundry (PR #105)
+
+- [ ] **La biblioteca**: en el Compendio, sin buscar, por edición (2024 y 2014 · Legado) y, dentro, sus secciones
+  (Reglas, Clases, Orígenes, Rasgos, Dotes, Conjuros, Equipo, Objetos mágicos, Criaturas) y sus carpetas (los conjuros
+  por nivel, las criaturas por tipo, el equipo por categoría). Se abre y se cierra.
+- [ ] **En juego**: cada entrada con mecánica dice sus acciones, sus usos, lo que cambia y cómo escala, y cuánto lo
+  calcula Crisol (Bola de fuego, la Furia, la Varita de bolas de fuego).
+- [ ] **La dirección**: lo abierto del compendio y «Ficha | Creador» de un personaje se pueden enlazar y recargar.
+- [ ] **El creador**: al elegir, quitar o cambiar, el foco no se pierde; abrir una decisión lleva el foco a ella.
+
 ## Módulo 3: el pulido (PR #104)
 
 - [ ] **Los tutoriales guiados** de la campaña, Personajes, un personaje, el Compendio y la pestaña Tabla: salen la
