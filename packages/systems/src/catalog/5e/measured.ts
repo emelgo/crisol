@@ -17,5 +17,6 @@ export const MEASURED: Record<string, Record<'2014' | '2024', number>> = {
   // El texto de las reglas: cada sección de los capítulos de reglas (y su introducción) y, en 2024, las 140 entradas del
   // glosario que no son estados. Sin las listas de objetos (ya son contenido); la introducción de los monstruos de 2014,
   // larga, en sus 19 apartados
-  regla: { '2014': 72, '2024': 188 }
+  regla: { '2014': 72, '2024': 188 },
+  conjuro: { '2014': 319, '2024': 339 }
 }

@@ -6,6 +6,7 @@ import { writeFileSync } from 'node:fs'
 import { consoleIo, type Io } from '../io.ts'
 import { ruleDocs } from './capitulos.ts'
 import { classDocs, readingRows } from './clases.ts'
+import { spellDocs } from './conjuros.ts'
 import {
   type ArmorGroup,
   armorDoc,
@@ -246,7 +247,7 @@ export function extract(): Record<string, Doc[]> {
       ...('ability' in en ? { caracteristica: en.ability } : {})
     }
   }
-  return {
+  const files: Record<string, Doc[]> = {
     'equipo.json': [
       ...g14.map(([en, es], i) => {
         const c = gc.older[i] as string
@@ -275,6 +276,10 @@ export function extract(): Record<string, Doc[]> {
       ...a24.map(([en, es], i) => armorDoc('2024', en, es, ac.newer[i] as string))
     ]
   }
+  // Los conjuros, con un concepto que no sea ya de otro tipo
+  const taken = new Set(Object.values(files).flatMap((docs) => docs.map((d) => d.concept)))
+  files['conjuros.json'] = spellDocs(taken)
+  return files
 }
 
 export function main(io: Io = consoleIo) {

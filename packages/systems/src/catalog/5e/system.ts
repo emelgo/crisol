@@ -568,6 +568,13 @@ export const fiveE = {
           '@caracteristica != "" ? @portador.caracteristicas[@caracteristica].ataque_conjuros + @portador.bono_ataque_conjuros : @portador.ataque_conjuros',
           { signed: true }
         ),
+        // Lo que suman los conjuros que dicen «más tu modificador por característica para lanzar conjuros» (sin ella, 0)
+        mod: derived(
+          'Modificador por característica',
+          'Spellcasting ability modifier',
+          '@caracteristica != "" ? @portador.caracteristicas[@caracteristica].mod : @portador.caracteristica_conjuros != null ? @portador.caracteristicas[@portador.caracteristica_conjuros].mod : 0',
+          { signed: true }
+        ),
         descripcion: description
       }
     },

@@ -196,6 +196,50 @@ describe('el contenido de los sistemas de serie', () => {
     expect(stone.values.resistencias).toHaveLength(13)
   })
 
+  it('los conjuros: su salvación, su daño y su escalado; la curación con su modificador; Armadura de mago', () => {
+    const content = catalogContent('5e')
+    const carry = (key: string, data: Record<string, unknown> = {}): DocumentItem => {
+      const item = content.find((c) => c.key === key) as ContentItem
+      return {
+        id: item.concept ?? key,
+        type: item.type,
+        name: (item.data.name as { es: string }).es,
+        data: { ...item.data, ...data },
+        ...(item.mechanics ? { mechanics: item.mechanics as Mechanics } : {})
+      }
+    }
+    const data = { caracteristicas: { des: { puntuacion: 14 }, int: { puntuacion: 16 }, sab: { puntuacion: 16 } } }
+    const fireball = { data, items: [carry('bola_de_fuego_2014', { caracteristica: 'int' })] }
+    expect(prepareAction(fiveE, 'personaje', fireball, 'bola_de_fuego', 'lanzar', { level: 3 })).toMatchObject({
+      save: { ability: 'des', dc: 13, success: 'half' },
+      damage: [{ formula: '8d6', type: 'fuego' }]
+    })
+    expect(
+      prepareAction(fiveE, 'personaje', fireball, 'bola_de_fuego', 'lanzar', { level: 5 }).damage[0]?.formula
+    ).toBe('10d6')
+    expect(content.find((c) => c.key === 'bola_de_fuego_2014')?.data.clases).toEqual(['hechicero', 'mago'])
+    // Un truco escala con el nivel del personaje
+    const bolt = { data, items: [carry('guerrero_2024', { nivel: 5 }), carry('descarga_de_fuego_2024')] }
+    expect(prepareAction(fiveE, 'personaje', bolt, 'descarga_de_fuego', 'lanzar')).toMatchObject({
+      attack: expect.stringMatching(/^1d20/),
+      damage: [{ formula: '2d10', type: 'fuego' }]
+    })
+    const cure = { data, items: [carry('curar_heridas_2024', { caracteristica: 'sab' })] }
+    expect(prepareAction(fiveE, 'personaje', cure, 'curar_heridas', 'lanzar', { level: 2 }).heal).toMatchObject({
+      formula: '4d8+3'
+    })
+    // Sin armadura, 13 + Des; con armadura, la de la armadura
+    const mage = (armor: boolean) =>
+      evaluate(fiveE, 'personaje', {
+        data,
+        items: [
+          carry('armadura_de_mago_2024', { activo: true }),
+          ...(armor ? [carry('cota_de_malla_2024', { equipado: true })] : [])
+        ]
+      }).values.ca
+    expect([mage(false), mage(true)]).toEqual([15, 16])
+  })
+
   it('el texto de las reglas: lo de 2014 con versión de 2024 se esconde con lo más nuevo; se busca en los dos idiomas', () => {
     const content = catalogContent('5e')
     const cover = (duplicates: 'newest' | 'both') =>
@@ -233,7 +277,7 @@ describe('el contenido de los sistemas de serie', () => {
     const names = (options: Parameters<typeof searchContent>[2]) =>
       searchContent(fiveE, entries, options).items.map((h) => `${h.name} ${h.edition}${h.legacy ? ' (legado)' : ''}`)
     expect(names({ query: 'espada larga' })).toEqual(['Espada larga 2014 (legado)', 'Espada larga 2024'])
-    expect(names({ query: 'espada' })).toEqual([
+    expect(names({ query: 'espada', type: 'arma' })).toEqual([
       'Espada corta 2014 (legado)',
       'Espada corta 2024',
       'Espada larga 2014 (legado)',

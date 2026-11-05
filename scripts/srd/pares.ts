@@ -289,3 +289,51 @@ export const RULE_RENAMES: Record<string, string> = {
   'Activating an Item': 'Activating a Magic Item',
   Objects: 'Breaking Objects'
 }
+
+/** Los conjuros que dicen lo mismo en su cabecera y en sus dados: el inglés y su español, revisados a mano */
+export const SPELL_PAIRS: Record<'2014' | '2024', Record<string, string>> = {
+  '2014': {
+    Bane: 'Perdición',
+    Bless: 'Bendición',
+    Barkskin: 'Piel robliza',
+    'Spider Climb': 'Trepar cual arácnido',
+    Contagion: 'Contagio',
+    'Illusory Script': 'Texto ilusorio',
+    'Ray of Frost': 'Rayo de escarcha',
+    'Sacred Flame': 'Llama sagrada',
+    'Wall of Force': 'Muro de fuerza',
+    'Wall of Stone': 'Muro de piedra',
+    Weird: 'Terror abyecto'
+  },
+  '2024': {
+    Bane: 'Perdición',
+    Bless: 'Bendición',
+    Banishment: 'Destierro',
+    'Resilient Sphere': 'Esfera elástica',
+    'Calm Emotions': 'Calmar emociones',
+    Enthrall: 'Embelesar',
+    'Detect Evil and Good': 'Detectar el bien y el mal',
+    'Detect Magic': 'Detectar magia',
+    Druidcraft: 'Saber druídico',
+    Elementalism: 'Elementalismo',
+    'Enhance Ability': 'Potenciar característica',
+    'Spider Climb': 'Trepar cual arácnido',
+    'Find Steed': 'Hallar corcel',
+    Foresight: 'Presciencia',
+    'Hypnotic Pattern': 'Patrón hipnótico',
+    'Raise Dead': 'Alzar a los muertos',
+    'Ray of Enfeeblement': 'Rayo debilitador',
+    'Ray of Frost': 'Rayo de escarcha',
+    'Sacred Flame': 'Llama sagrada',
+    'Starry Wisp': 'Voluta estelar',
+    Resurrection: 'Resurrección',
+    'Wall of Force': 'Muro de fuerza',
+    'Wall of Stone': 'Muro de piedra'
+  }
+}
+
+/** Los conjuros de 2014 que en 2024 se llaman de otra forma (en inglés, en minúsculas) */
+export const SPELL_RENAMES: Record<string, string> = {
+  'branding smite': 'shining smite',
+  feeblemind: 'befuddlement'
+}
