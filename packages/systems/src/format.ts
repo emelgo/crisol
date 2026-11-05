@@ -305,6 +305,64 @@ function build(strict: boolean) {
     publisher: text().optional().describe('Su editorial'),
     released: z.iso.date().optional().describe('Cuándo salió (AAAA-MM-DD): de lo repetido, gana lo más nuevo')
   })
+  // Los bloques de la hoja: tipos neutros; cada uno dice qué campos lee y qué se tira desde él
+  const label = text().optional().describe('Su título (sin él, el del campo)')
+  const leaf = [
+    obj({
+      kind: z.literal('header').describe('Su nombre, su línea y su retrato')
+    }),
+    obj({
+      kind: z.literal('stats').describe('Cifras grandes (la CA, la iniciativa): una por campo'),
+      label,
+      fields: z.array(key).min(1).max(12),
+      rolls: z.record(key, key).optional().describe('Por campo, la tirada que se hace al pulsarlo (iniciativa)')
+    }),
+    obj({
+      kind: z.literal('resource').describe('Un recurso con daño, curación y temporales (los PG)'),
+      label,
+      field: key
+    }),
+    obj({
+      kind: z.literal('set').describe('Un conjunto en tabla (las características, las habilidades), con su tirada'),
+      label,
+      field: key,
+      columns: z.array(key).min(1).max(6),
+      roll: key.optional().describe('La tirada por cada elemento (prueba, salvación, habilidad)')
+    }),
+    obj({ kind: z.literal('group').describe('Un grupo de campos (las monedas, los espacios)'), label, field: key }),
+    obj({
+      kind: z.literal('list').describe('Campos de lista (idiomas, competencias)'),
+      label,
+      fields: z.array(key).min(1).max(12)
+    }),
+    obj({
+      kind: z.literal('items').describe('Lo que lleva de un campo de objetos (el inventario), con sus tiradas'),
+      label,
+      field: key,
+      types: z.array(key).max(20).optional().describe('Solo de estos tipos (las armas)'),
+      columns: z.array(key).max(6).optional().describe('Sus campos que se ven'),
+      rolls: z.array(key).max(4).optional().describe('Las tiradas por cada uno (ataque, daño)')
+    }),
+    obj({ kind: z.literal('actions').describe('Lo que puede hacer (ataques, conjuros), de la mecánica'), label }),
+    obj({ kind: z.literal('uses').describe('Los usos limitados (la Furia), con su recuperación'), label }),
+    obj({ kind: z.literal('text').describe('Un texto (las notas)'), label, field: key })
+  ] as const
+  const leafBlock = z.discriminatedUnion('kind', [...leaf])
+  const block = z.discriminatedUnion('kind', [
+    ...leaf,
+    obj({
+      kind: z.literal('columns').describe('Bloques uno al lado de otro'),
+      blocks: z.array(leafBlock).min(1).max(4)
+    }),
+    obj({
+      kind: z.literal('tabs').describe('Pestañas con sus bloques'),
+      tabs: z
+        .array(obj({ label: text(), blocks: z.array(leafBlock).max(20) }))
+        .min(1)
+        .max(8)
+    })
+  ])
+
   // Los pasos del creador: tipos neutros, sin nada de un juego concreto
   const scoreMethod = z.discriminatedUnion('kind', [
     obj({
@@ -430,7 +488,11 @@ function build(strict: boolean) {
       .optional()
       .describe('Los ajustes de campaña: reglas opcionales que elige cada campaña'),
     // Su sitio para la hoja y los pasos del creador: los dicen `hoja` y `personajes`
-    sheet: z.record(z.string(), z.unknown()).optional().describe('La hoja: llega después; se guarda tal cual'),
+    sheet: obj({ blocks: z.array(block).max(60) })
+      .optional()
+      .describe(
+        'La hoja del personaje, por bloques (docs/specs/hoja.md): cifras, un recurso, un conjunto, un grupo, listas, objetos, acciones, usos y texto, en pestañas o columnas. Sin ella, una por defecto de sus campos'
+      ),
     card: z
       .array(key)
       .max(4)

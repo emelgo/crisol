@@ -153,6 +153,9 @@ export const characterState = z.object({
       })
     )
     .describe('Lo que puede hacer (ataques, conjuros): su ataque, su salvación y su daño, armados'),
+  layout: z
+    .array(z.record(z.string(), z.unknown()))
+    .describe('Los bloques de su hoja (los del sistema o los de por defecto), con sus nombres'),
   rolls: z
     .array(
       z.object({

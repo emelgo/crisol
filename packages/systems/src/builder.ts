@@ -15,6 +15,7 @@ import type { Value } from './formulas/functions.ts'
 import type { Mechanics } from './mechanics.ts'
 import { fillResources, type Play, withPlay } from './play.ts'
 import { rollsOf } from './rolls.ts'
+import { sheetView } from './sheet.ts'
 import { type Text, textOf } from './text.ts'
 
 /** Algo elegido del contenido en un paso: su clave (con su edición) y, si el paso es de niveles (las clases), su nivel */
@@ -653,6 +654,8 @@ export function characterView(
         heal: a.heal?.formula ?? null,
         ...(a.error ? { error: a.error } : {})
       })),
+      // Los bloques de su hoja, con sus nombres
+      layout: sheetView(system, built.type, language),
       rolls: rollsOf(system, built.type, language, played.document).map((r) => ({
         key: r.key,
         label: r.label,

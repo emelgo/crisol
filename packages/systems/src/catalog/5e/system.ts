@@ -844,6 +844,76 @@ export const fiveE = {
   // El creador (ADR-0013): la clase con sus niveles, la especie, el trasfondo, las características y los detalles; lo
   // que se elige de lo concedido lo calcula Crisol
   card: ['nivel', 'pg_max', 'ca'],
+  // La hoja, al estilo de D&D Beyond con el aspecto de Crisol (docs/specs/hoja.md)
+  sheet: {
+    blocks: [
+      { kind: 'header' },
+      {
+        kind: 'stats',
+        fields: ['ca', 'iniciativa', 'velocidad', 'competencia', 'percepcion_pasiva'],
+        rolls: { iniciativa: 'iniciativa' }
+      },
+      { kind: 'resource', field: 'pg' },
+      {
+        kind: 'columns',
+        blocks: [
+          { kind: 'set', field: 'caracteristicas', columns: ['puntuacion', 'mod'], roll: 'prueba' },
+          {
+            kind: 'set',
+            label: t('Salvaciones', 'Saving throws'),
+            field: 'caracteristicas',
+            columns: ['salvacion'],
+            roll: 'salvacion'
+          },
+          { kind: 'set', field: 'habilidades', columns: ['total'], roll: 'habilidad' }
+        ]
+      },
+      {
+        kind: 'tabs',
+        tabs: [
+          {
+            label: t('Acciones', 'Actions'),
+            blocks: [
+              {
+                kind: 'items',
+                label: t('Armas', 'Weapons'),
+                field: 'inventario',
+                types: ['arma'],
+                columns: ['ataque', 'dano'],
+                rolls: ['ataque', 'dano']
+              },
+              { kind: 'actions' },
+              { kind: 'uses' }
+            ]
+          },
+          {
+            label: t('Inventario', 'Inventory'),
+            blocks: [
+              { kind: 'items', field: 'inventario', columns: ['cantidad', 'peso'] },
+              { kind: 'group', field: 'monedas' }
+            ]
+          },
+          {
+            label: t('Conjuros', 'Spells'),
+            blocks: [
+              { kind: 'stats', fields: ['cd_conjuros', 'ataque_conjuros'] },
+              { kind: 'group', field: 'espacios' },
+              { kind: 'items', field: 'conjuros', columns: ['nivel', 'tiempo', 'alcance'] }
+            ]
+          },
+          {
+            label: t('Rasgos', 'Features'),
+            blocks: [
+              { kind: 'items', field: 'rasgos' },
+              { kind: 'list', fields: ['idiomas', 'competencias_armas', 'competencias_armaduras', 'sentidos'] },
+              { kind: 'list', fields: ['resistencias', 'inmunidades', 'vulnerabilidades'] }
+            ]
+          },
+          { label: t('Notas', 'Notes'), blocks: [{ kind: 'text', field: 'notas' }] }
+        ]
+      }
+    ]
+  },
   creation: [
     { key: 'clase', kind: 'content', type: 'clase', label: t('Clase', 'Class'), levels: true },
     { key: 'especie', kind: 'content', type: 'especie', label: t('Especie', 'Species'), creation: true },
