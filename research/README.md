@@ -14,6 +14,12 @@ Para el módulo 2 se estudian además **Kanka**, **LegendKeeper** y **World Anvi
 (documentación, ayuda, changelogs, blogs y foros), sin cuenta y sin abrir su código, que en Kanka es copyleft (ver
 `research/kanka/`, `research/legendkeeper/` y `research/worldanvil/`).
 
+## Desde el ADR-0014 (2026-11-05)
+
+Crisol es, de momento, de uso privado: el código, los textos y los datos de lo estudiado se pueden llevar a `apps/` y
+`packages/` cuando sirvan, con su origen marcado y su entrada en `docs/terceros.md`. Estas notas siguen siendo prosa
+propia, y las reglas de abajo valen para lo que se escribe aquí.
+
 ## Reglas de sala limpia
 
 1. Solo prosa propia, tablas y diagramas propios. **Nunca** código, pseudocódigo descompilado literal, textos, datos,

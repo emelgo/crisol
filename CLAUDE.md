@@ -30,10 +30,11 @@ porciones verticales con TDD → `/agent-skills:review` (la interfaz, también c
 
 ## Normas
 
-- **Sala limpia**: Foundry y D&D Beyond se estudian para entender cómo resuelven los problemas, nunca para copiar. Ni
-  código, ni textos, ni datos, ni imágenes suyos en el repo. Contenido de reglas: solo SRD (CC BY 4.0) o propio.
-- Nada de dependencias con licencia copyleft (GPL, AGPL, SSPL…): Crisol se venderá. Comprueba la licencia antes de
-  añadir una dependencia.
+- **Uso privado (ADR-0014)**: de momento Crisol es solo para Enrique y sus jugadores, así que se puede usar código,
+  textos y datos de Foundry, dnd5e y D&D Beyond cuando sirva (visto bueno de su abogado). Cada cosa traída lleva su
+  origen en una cabecera (de dónde, versión, licencia) y una entrada en `docs/terceros.md`, por si algún día se vende.
+- Nada de dependencias con licencia copyleft (GPL, AGPL, SSPL…), por si Crisol se vende. Comprueba la licencia antes
+  de añadir una dependencia.
 - Identificadores en inglés; textos de la interfaz en español por i18n, cortos y sin sobreexplicar. En la interfaz no
   salen «Obsidian», «Atlas», «Foundry» ni «D&D Beyond».
 - Estilo: sin punto y coma, comillas simples, líneas largas (lo aplica Biome), comentarios breves en español.
