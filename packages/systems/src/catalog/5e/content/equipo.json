@@ -37,7 +37,7 @@
       "peso": 1,
       "coste": 25,
       "descripcion": {
-        "es": "Como acción, puedes esparcir el contenido de este vial sobre una criatura que esté a 1,5 m o menos de ti o lanzarlo hasta a 6 m, lo que hará que el vial se rompa con el impacto. En ambos casos, haz un ataque a distancia contra una criatura u objeto y trata el ácido como un arma improvisada. Si impacta, el objetivo sufre 2d6 de daño de ácido.",
+        "es": "Como acción, puedes esparcir el contenido de este vial sobre una criatura que esté a 5 pies o menos de ti o lanzarlo hasta a 20 pies, lo que hará que el vial se rompa con el impacto. En ambos casos, haz un ataque a distancia contra una criatura u objeto y trata el ácido como un arma improvisada. Si impacta, el objetivo sufre 2d6 de daño de ácido.",
         "en": "As an action, you can splash the contents of this vial onto a creature within 5 feet of you or throw the vial up to 20 feet, shattering it on impact. In either case, make a ranged attack against a creature or object, treating the acid as an improvised weapon. On a hit, the target takes 2d6 acid damage."
       }
     },
@@ -51,7 +51,7 @@
           },
           "activation": "action",
           "range": {
-            "es": "6 m",
+            "es": "20 pies",
             "en": "20 feet"
           },
           "attack": "@caracteristicas.des.mod",
@@ -86,7 +86,7 @@
       "peso": 1,
       "coste": 50,
       "descripcion": {
-        "es": "Este fluido pegajoso y adherente prende al entrar en contacto con el aire. Como acción, puedes lanzar este frasco hasta a 6 m, lo que hará que se rompa con el impacto. Haz un ataque a distancia contra una criatura u objeto y trata el fuego de alquimista como un arma improvisada. Si impacta, el objetivo sufre 1d4 de daño de fuego al principio de cada uno de sus turnos. Una criatura puede poner fin a este efecto si usa su acción para realizar una prueba de Destreza con CD 10 para extinguir las llamas.",
+        "es": "Este fluido pegajoso y adherente prende al entrar en contacto con el aire. Como acción, puedes lanzar este frasco hasta a 20 pies, lo que hará que se rompa con el impacto. Haz un ataque a distancia contra una criatura u objeto y trata el fuego de alquimista como un arma improvisada. Si impacta, el objetivo sufre 1d4 de daño de fuego al principio de cada uno de sus turnos. Una criatura puede poner fin a este efecto si usa su acción para realizar una prueba de Destreza con CD 10 para extinguir las llamas.",
         "en": "This sticky, adhesive fluid ignites when exposed to air. As an action, you can throw this flask up to 20 feet, shattering it on impact. Make a ranged attack against a creature or object, treating the alchemist's fire as an improvised weapon. On a hit, the target takes 1d4 fire damage at the start of each of its turns. A creature can end this damage by using its action to make a DC 10 Dexterity check to extinguish the flames."
       }
     },
@@ -100,7 +100,7 @@
           },
           "activation": "action",
           "range": {
-            "es": "6 m",
+            "es": "20 pies",
             "en": "20 feet"
           },
           "attack": "@caracteristicas.des.mod",
@@ -427,7 +427,7 @@
       "peso": 2,
       "coste": 1,
       "descripcion": {
-        "es": "Puedes usar tu acción para esparcir estas pequeñas esferas metálicas, que vienen en una bolsita, sobre una superficie cuadrada y nivelada de 3 m de lado. Las criaturas que se muevan a través de la zona afectada deberán superar una tirada de salvación de Destreza con CD 10 o serán derribadas. Sin embargo, si una criatura se desplaza por la zona a la mitad de su velocidad, no tendrá que hacer la tirada de salvación.",
+        "es": "Puedes usar tu acción para esparcir estas pequeñas esferas metálicas, que vienen en una bolsita, sobre una superficie cuadrada y nivelada de 10 pies de lado. Las criaturas que se muevan a través de la zona afectada deberán superar una tirada de salvación de Destreza con CD 10 o serán derribadas. Sin embargo, si una criatura se desplaza por la zona a la mitad de su velocidad, no tendrá que hacer la tirada de salvación.",
         "en": "As an action, you can spill these tiny metal balls from their pouch to cover a level, square area that is 10 feet on a side. A creature moving across the covered area must succeed on a DC 10 Dexterity saving throw or fall prone. A creature moving through the area at half speed doesn’t need to make the save."
       }
     },
@@ -679,7 +679,7 @@
       "peso": 2,
       "coste": 1,
       "descripcion": {
-        "es": "Puedes usar tu acción para esparcir una bolsa de abrojos sobre una superficie cuadrada de 1,5 m de lado. Todas las criaturas que entren en la zona deberán superar una tirada de salvación de Destreza con CD 15 o no podrán moverse más ese turno y sufrirán 1 de daño perforante. Al sufrir este daño, la velocidad caminando de la criatura se reduce en 3 m hasta que recupere al menos 1 punto de golpe. Sin embargo, si una criatura se desplaza por la zona a la mitad de su velocidad, no tendrá que hacer la tirada de salvación.",
+        "es": "Puedes usar tu acción para esparcir una bolsa de abrojos sobre una superficie cuadrada de 5 pies de lado. Todas las criaturas que entren en la zona deberán superar una tirada de salvación de Destreza con CD 15 o no podrán moverse más ese turno y sufrirán 1 de daño perforante. Al sufrir este daño, la velocidad caminando de la criatura se reduce en 10 pies hasta que recupere al menos 1 punto de golpe. Sin embargo, si una criatura se desplaza por la zona a la mitad de su velocidad, no tendrá que hacer la tirada de salvación.",
         "en": "As an action, you can spread a bag of caltrops to cover a square area that is 5 feet on a side. Any creature that enters the area must succeed on a DC 15 Dexterity saving throw or stop moving this turn and take 1 piercing damage. Taking this damage reduces the creature’s walking speed by 10 feet until the creature regains at least 1 hit point. A creature moving through the area at half speed doesn’t need to make the save."
       }
     },
@@ -707,7 +707,7 @@
       "peso": 0,
       "coste": 0.01,
       "descripcion": {
-        "es": "Emite luz brillante en un radio de 1,5 m y luz tenue 1,5 m más allá durante 1 hora.",
+        "es": "Emite luz brillante en un radio de 5 pies y luz tenue 5 pies más allá durante 1 hora.",
         "en": "For 1 hour, a candle sheds bright light in a 5-foot radius and dim light for an additional 5 feet."
       }
     },
@@ -780,7 +780,7 @@
     "concept": "cadena",
     "data": {
       "name": {
-        "es": "Cadena (3 m)",
+        "es": "Cadena (10 pies)",
         "en": "Chain (10 feet)"
       },
       "categoria": "aventura",
@@ -863,7 +863,7 @@
       "peso": 12,
       "coste": 25,
       "descripcion": {
-        "es": "Entre estos útiles se incluyen pitones especiales, puntas para las botas y un arnés. Puedes usar una acción para anclarte mediante estos útiles. Cuando lo hayas hecho, no podrás caer más de 7,5 m desde el punto en el que te ancles y no podrás subir más de 7,5 m de ese punto sin desanclarte.",
+        "es": "Entre estos útiles se incluyen pitones especiales, puntas para las botas y un arnés. Puedes usar una acción para anclarte mediante estos útiles. Cuando lo hayas hecho, no podrás caer más de 25 pies desde el punto en el que te ancles y no podrás subir más de 25 pies de ese punto sin desanclarte.",
         "en": "A climber’s kit includes special pitons, boot tips, gloves, and a harness. You can use the climber’s kit as an action to anchor yourself; when you do, you can’t fall more than 25 feet from the point where you anchored yourself, and you can’t climb more than 25 feet away from that point without undoing the anchor."
       }
     },
@@ -1419,7 +1419,7 @@
           },
           "activation": "action",
           "range": {
-            "es": "6 m",
+            "es": "20 pies",
             "en": "20 feet"
           },
           "attack": "@caracteristicas.des.mod",
@@ -1482,7 +1482,7 @@
       "peso": 25,
       "coste": 5,
       "descripcion": {
-        "es": "Puedes usar tu acción para armar esta trampa: un anillo de afilados dientes de acero que se cierra cuando una criatura pisa la placa de presión que está en su centro. La trampa se fija mediante una pesada cadena a cualquier objeto inmóvil, como un árbol o una estaca clavada en el suelo. Si una criatura pisa la placa, deberá superar una tirada de salvación de Destreza con CD 13 o sufrirá 1d4 de daño perforante y dejará de moverse. A partir de ese momento y hasta que la criatura se libere de la trampa, su movimiento se verá limitado por la longitud de la cadena (normalmente 90 cm). Una criatura puede emplear su acción para hacer una prueba de Fuerza con CD 13. Si tiene éxito, podrá liberarse a sí misma o a otra criatura dentro de su alcance. Cada prueba fallida causa 1 de daño perforante a la criatura atrapada.",
+        "es": "Puedes usar tu acción para armar esta trampa: un anillo de afilados dientes de acero que se cierra cuando una criatura pisa la placa de presión que está en su centro. La trampa se fija mediante una pesada cadena a cualquier objeto inmóvil, como un árbol o una estaca clavada en el suelo. Si una criatura pisa la placa, deberá superar una tirada de salvación de Destreza con CD 13 o sufrirá 1d4 de daño perforante y dejará de moverse. A partir de ese momento y hasta que la criatura se libere de la trampa, su movimiento se verá limitado por la longitud de la cadena (normalmente 3 pies). Una criatura puede emplear su acción para hacer una prueba de Fuerza con CD 13. Si tiene éxito, podrá liberarse a sí misma o a otra criatura dentro de su alcance. Cada prueba fallida causa 1 de daño perforante a la criatura atrapada.",
         "en": "When you use your action to set it, this trap forms a saw-toothed steel ring that snaps shut when a creature steps on a pressure plate in the center. The trap is affixed by a heavy chain to an immobile object, such as a tree or a spike driven into the ground. A creature that steps on the plate must succeed on a DC 13 Dexterity saving throw or take 1d4 piercing damage and stop moving. Thereafter, until the creature breaks free of the trap, its movement is limited by the length of the chain (typically 3 feet long). A creature can use its action to make a DC 13 Strength check, freeing itself or another creature within its reach on a success. Each failed check deals 1 piercing damage to the trapped creature."
       }
     },
@@ -1575,7 +1575,7 @@
     "concept": "escalera",
     "data": {
       "name": {
-        "es": "Escalera (3 m)",
+        "es": "Escalera (10 pies)",
         "en": "Ladder (10-foot)"
       },
       "categoria": "aventura",
@@ -1606,7 +1606,7 @@
       "peso": 1,
       "coste": 0.5,
       "descripcion": {
-        "es": "Esta lámpara emite luz brillante en un radio de 4,5 m y luz tenue 9 m más allá. Puede estar encendida hasta 6 horas con un frasco (0,5 l) de aceite.",
+        "es": "Esta lámpara emite luz brillante en un radio de 15 pies y luz tenue 30 pies más allá. Puede estar encendida hasta 6 horas con un frasco (1/4 galones) de aceite.",
         "en": "A lamp casts bright light in a 15-foot radius and dim light for an additional 30 feet. Once lit, it burns for 6 hours on a flask (1 pint) of oil."
       }
     },
@@ -1634,7 +1634,7 @@
       "peso": 2,
       "coste": 10,
       "descripcion": {
-        "es": "Esta linterna emite una luz brillante en un cono de 18 m y luz tenue otros 18 m más allá. Puede estar encendida hasta 6 horas con un frasco (0,5 l) de aceite.",
+        "es": "Esta linterna emite una luz brillante en un cono de 60 pies y luz tenue otros 60 pies más allá. Puede estar encendida hasta 6 horas con un frasco (1/4 galones) de aceite.",
         "en": "A bullseye lantern casts bright light in a 60-foot cone and dim light for an additional 60 feet. Once lit, it burns for 6 hours on a flask (1 pint) of oil."
       }
     },
@@ -1662,7 +1662,7 @@
       "peso": 2,
       "coste": 5,
       "descripcion": {
-        "es": "Esta linterna emite luz brillante en un radio de 9 m y luz tenue otros 9 m más allá. Puede estar encendida hasta 6 horas con un frasco (0,5 l) de aceite. Como acción, puedes cubrir la abertura con la tapa y hacer que solo emita luz tenue en un radio de 1,5 m.",
+        "es": "Esta linterna emite luz brillante en un radio de 30 pies y luz tenue otros 30 pies más allá. Puede estar encendida hasta 6 horas con un frasco (1/4 galones) de aceite. Como acción, puedes cubrir la abertura con la tapa y hacer que solo emita luz tenue en un radio de 5 pies.",
         "en": "A hooded lantern casts bright light in a 30-foot radius and dim light for an additional 30 feet. Once lit, it burns for 6 hours on a flask (1 pint) of oil. As an action, you can lower the hood, reducing the light to dim light in a 5-foot radius."
       }
     },
@@ -1826,7 +1826,7 @@
       "peso": 1,
       "coste": 0.1,
       "descripcion": {
-        "es": "El aceite suele venir en frascos de arcilla con capacidad para 0,5 l. Como acción, puedes esparcir el aceite de este frasco sobre una criatura que esté a 1,5 m o menos de ti o lanzarlo hasta a 6 m, lo que hará que el frasco se rompa con el impacto. En ambos casos, haz un ataque a distancia contra la criatura o el objeto y trata el aceite como un arma improvisada: si tienes éxito, el objetivo quedará cubierto de aceite. Si el objetivo sufre daño de fuego antes de que el aceite se seque (lo que ocurre tras 1 minuto), recibirá 5 de daño de fuego adicional debido al aceite ardiendo. También puedes derramar un frasco de aceite por el suelo, que cubrirá una zona de 1,5 m de lado, siempre y cuando la superficie esté nivelada. Si se prende, el aceite arderá durante 2 asaltos y causará 5 de daño de fuego a cualquier criatura que entre en la zona o acabe su turno en ella. Una criatura solo puede sufrir este daño una vez por turno.",
+        "es": "El aceite suele venir en frascos de arcilla con capacidad para 1/4 galones. Como acción, puedes esparcir el aceite de este frasco sobre una criatura que esté a 5 pies o menos de ti o lanzarlo hasta a 20 pies, lo que hará que el frasco se rompa con el impacto. En ambos casos, haz un ataque a distancia contra la criatura o el objeto y trata el aceite como un arma improvisada: si tienes éxito, el objetivo quedará cubierto de aceite. Si el objetivo sufre daño de fuego antes de que el aceite se seque (lo que ocurre tras 1 minuto), recibirá 5 de daño de fuego adicional debido al aceite ardiendo. También puedes derramar un frasco de aceite por el suelo, que cubrirá una zona de 5 pies de lado, siempre y cuando la superficie esté nivelada. Si se prende, el aceite arderá durante 2 asaltos y causará 5 de daño de fuego a cualquier criatura que entre en la zona o acabe su turno en ella. Una criatura solo puede sufrir este daño una vez por turno.",
         "en": "Oil usually comes in a clay flask that holds 1 pint. As an action, you can splash the oil in this flask onto a creature within 5 feet of you or throw it up to 20 feet, shattering it on impact. Make a ranged attack against a target creature or object, treating the oil as an improvised weapon. On a hit, the target is covered in oil. If the target takes any fire damage before the oil dries (after 1 minute), the target takes an additional 5 fire damage from the burning oil. You can also pour a flask of oil on the ground to cover a 5-foot-square area, provided that the surface is level. If lit, the oil burns for 2 rounds and deals 5 fire damage to any creature that enters the area or ends its turn in the area. A creature can take this damage only once per turn."
       }
     },
@@ -1995,7 +1995,7 @@
     "concept": "vara",
     "data": {
       "name": {
-        "es": "Vara (3 m)",
+        "es": "Vara (10 pies)",
         "en": "Pole (10-foot)"
       },
       "categoria": "aventura",
@@ -2218,7 +2218,7 @@
     "concept": "cuerda",
     "data": {
       "name": {
-        "es": "Cuerda de cáñamo (15 m)",
+        "es": "Cuerda de cáñamo (50 pies)",
         "en": "Rope, hempen (50 feet)"
       },
       "categoria": "aventura",
@@ -2242,7 +2242,7 @@
     "concept": "cuerda_de_seda_15_m",
     "data": {
       "name": {
-        "es": "Cuerda de seda (15 m)",
+        "es": "Cuerda de seda (50 pies)",
         "en": "Rope, silk (50 feet)"
       },
       "categoria": "aventura",
@@ -2577,7 +2577,7 @@
       "peso": 1,
       "coste": 0.01,
       "descripcion": {
-        "es": "Una antorcha arde durante 1 hora y emite luz brillante en un radio de 6 m y luz tenue otros 6 m más allá. Si realizas un ataque cuerpo a cuerpo con una antorcha encendida e impactas, causarás 1 de daño de fuego.",
+        "es": "Una antorcha arde durante 1 hora y emite luz brillante en un radio de 20 pies y luz tenue otros 20 pies más allá. Si realizas un ataque cuerpo a cuerpo con una antorcha encendida e impactas, causarás 1 de daño de fuego.",
         "en": "A torch burns for 1 hour, providing bright light in a 20-foot radius and dim light for an additional 20 feet. If you make a melee attack with a burning torch and hit, it deals 1 fire damage."
       }
     },
@@ -3657,7 +3657,7 @@
       "peso": 1,
       "coste": 25,
       "descripcion": {
-        "es": "Cuando lleves a cabo la acción de atacar, puedes sustituir uno de tus ataques por lanzar un vial de ácido. Haz objetivo a una criatura u objeto que puedas ver a 6 m o menos de ti. El objetivo deberá superar una tirada de salvación de Destreza (CD 8 más tu modificador por Destreza y tu bonificador por competencia) o sufrirá 2d6 de daño de ácido.",
+        "es": "Cuando lleves a cabo la acción de atacar, puedes sustituir uno de tus ataques por lanzar un vial de ácido. Haz objetivo a una criatura u objeto que puedas ver a 20 pies o menos de ti. El objetivo deberá superar una tirada de salvación de Destreza (CD 8 más tu modificador por Destreza y tu bonificador por competencia) o sufrirá 2d6 de daño de ácido.",
         "en": "When you take the Attack action, you can replace one of your attacks with throwing a vial of Acid. Target one creature or object you can see within 20 feet of yourself. The target must succeed on a Dexterity saving throw (DC 8 plus your Dexterity modifier and Proficiency Bonus) or take 2d6 Acid damage."
       }
     },
@@ -3671,7 +3671,7 @@
           },
           "activation": "action",
           "range": {
-            "es": "6 m",
+            "es": "20 pies",
             "en": "20 feet"
           },
           "save": {
@@ -3710,7 +3710,7 @@
       "peso": 1,
       "coste": 50,
       "descripcion": {
-        "es": "Cuando lleves a cabo la acción de atacar, puedes sustituir uno de tus ataques por lanzar un frasco de fuego de alquimista. Haz objetivo a una criatura u objeto que puedas ver a 6 m o menos de ti. El objetivo deberá superar una tirada de salvación de Destreza (CD 8 más tu modificador por Destreza y tu bonificador por competencia) o sufrirá 1d4 de daño de fuego y comenzará a arder (consulta el capítulo “Glosario de reglas”).",
+        "es": "Cuando lleves a cabo la acción de atacar, puedes sustituir uno de tus ataques por lanzar un frasco de fuego de alquimista. Haz objetivo a una criatura u objeto que puedas ver a 20 pies o menos de ti. El objetivo deberá superar una tirada de salvación de Destreza (CD 8 más tu modificador por Destreza y tu bonificador por competencia) o sufrirá 1d4 de daño de fuego y comenzará a arder (consulta el capítulo “Glosario de reglas”).",
         "en": "When you take the Attack action, you can replace one of your attacks with throwing a flask of Alchemist’s Fire. Target one creature or object you can see within 20 feet of yourself. The target must succeed on a Dexterity saving throw (DC 8 plus your Dexterity modifier and Proficiency Bonus) or take 1d4 Fire damage and start burning (see “Rules Glossary”)."
       }
     },
@@ -3724,7 +3724,7 @@
           },
           "activation": "action",
           "range": {
-            "es": "6 m",
+            "es": "20 pies",
             "en": "20 feet"
           },
           "save": {
@@ -3795,7 +3795,7 @@
       "peso": 5,
       "coste": 2,
       "descripcion": {
-        "es": "Una mochila soporta hasta 15 kg en un volumen de 30 l. También puede servir de alforja.",
+        "es": "Una mochila soporta hasta 30 lb en un volumen de 7 y 1/2 galones. También puede servir de alforja.",
         "en": "A Backpack holds up to 30 pounds within 1 cubic foot. It can also serve as a saddlebag."
       }
     },
@@ -3823,7 +3823,7 @@
       "peso": 2,
       "coste": 1,
       "descripcion": {
-        "es": "Como acción de utilizar, puedes verter las bolas de metal de su bolsa. Se esparcirán para cubrir una zona cuadrada y plana de 3 m de lado a 3 m o menos de ti. Las criaturas que entren en esta zona por primera vez en un turno deberán superar una tirada de salvación de Destreza con CD 10 o tendrán el estado de derribadas. Se tarda 10 minutos en recuperar las bolas de metal.",
+        "es": "Como acción de utilizar, puedes verter las bolas de metal de su bolsa. Se esparcirán para cubrir una zona cuadrada y plana de 10 pies de lado a 10 pies o menos de ti. Las criaturas que entren en esta zona por primera vez en un turno deberán superar una tirada de salvación de Destreza con CD 10 o tendrán el estado de derribadas. Se tarda 10 minutos en recuperar las bolas de metal.",
         "en": "As a Utilize action, you can spill Ball Bearings from their pouch. They spread to cover a level, 10-footsquare area within 10 feet of yourself. A creature that enters this area for the first time on a turn must succeed on a DC 10 Dexterity saving throw or have the Prone condition. It takes 10 minutes to recover the Ball Bearings."
       }
     },
@@ -3851,7 +3851,7 @@
       "peso": 70,
       "coste": 2,
       "descripcion": {
-        "es": "En un barril caben 160 l de líquido o un volumen de 120 l de mercancías secas.",
+        "es": "En un barril caben 40 galones de líquido o un volumen de 30 galones de mercancías secas.",
         "en": "A Barrel holds up to 40 gallons of liquid or up to 4 cubic feet of dry goods."
       }
     },
@@ -3879,7 +3879,7 @@
       "peso": 2,
       "coste": 0.4,
       "descripcion": {
-        "es": "Una cesta soporta hasta 20 kg en un volumen de 60 l.",
+        "es": "Una cesta soporta hasta 40 lb en un volumen de 15 galones.",
         "en": "A Basket holds up to 40 pounds within 2 cubic feet."
       }
     },
@@ -3935,7 +3935,7 @@
       "peso": 0,
       "coste": 1,
       "descripcion": {
-        "es": "Al tañer una campana como acción de utilizar, producirá un sonido audible a 18 m de distancia.",
+        "es": "Al tañer una campana como acción de utilizar, producirá un sonido audible a 60 pies de distancia.",
         "en": "When rung as a Utilize action, a Bell produces a sound that can be heard up to 60 feet away."
       }
     },
@@ -4047,7 +4047,7 @@
       "peso": 2,
       "coste": 2,
       "descripcion": {
-        "es": "En una botella de cristal caben hasta 0,75 l de líquido.",
+        "es": "En una botella de cristal caben hasta 1/4 galones de líquido.",
         "en": "A Glass Bottle holds up to 11/2 pints."
       }
     },
@@ -4075,7 +4075,7 @@
       "peso": 2,
       "coste": 0.05,
       "descripcion": {
-        "es": "En un cubo cabe un volumen de 15 l de contenido.",
+        "es": "En un cubo cabe un volumen de 3 y 3/4 galones de contenido.",
         "en": "A Bucket holds up to half a cubic foot of contents."
       }
     },
@@ -4131,7 +4131,7 @@
       "peso": 2,
       "coste": 1,
       "descripcion": {
-        "es": "Como acción de utilizar, puedes esparcir los abrojos de tu bolsa para cubrir una zona cuadrada de 1,5 m de lado a 1,5 m o menos de ti. Las criaturas que entren en esta zona por primera vez en un turno deberán superar una tirada de salvación de Destreza con CD 15 o sufrirán 1 de daño perforante y su velocidad se reducirá a 0 hasta el principio de su siguiente turno. Se tarda 10 minutos en recuperar los abrojos.",
+        "es": "Como acción de utilizar, puedes esparcir los abrojos de tu bolsa para cubrir una zona cuadrada de 5 pies de lado a 5 pies o menos de ti. Las criaturas que entren en esta zona por primera vez en un turno deberán superar una tirada de salvación de Destreza con CD 15 o sufrirán 1 de daño perforante y su velocidad se reducirá a 0 hasta el principio de su siguiente turno. Se tarda 10 minutos en recuperar los abrojos.",
         "en": "As a Utilize action, you can spread Caltrops from their bag to cover a 5-foot-square area within 5 feet of yourself. A creature that enters this area for the first time on a turn must succeed on a DC 15 Dexterity saving throw or take 1 Piercing damage and have its Speed reduced to 0 until the start of its next turn. It takes 10 minutes to recover the Caltrops."
       }
     },
@@ -4159,7 +4159,7 @@
       "peso": 0,
       "coste": 0.01,
       "descripcion": {
-        "es": "Durante 1 hora, una vela encendida emite luz brillante en un radio de 1,5 m y luz tenue 1,5 m más allá.",
+        "es": "Durante 1 hora, una vela encendida emite luz brillante en un radio de 5 pies y luz tenue 5 pies más allá.",
         "en": "For 1 hour, a lit Candle sheds Bright Light in a 5-foot radius and Dim Light for an additional 5 feet."
       }
     },
@@ -4243,7 +4243,7 @@
       "peso": 10,
       "coste": 5,
       "descripcion": {
-        "es": "Como acción de utilizar, puedes atar con una cadena a una criatura no voluntaria a 1,5 m o menos de ti que tenga el estado de agarrada, apresada o incapacitada si superas una prueba de Fuerza (Atletismo) con CD 13. Si la criatura tiene las piernas atadas, tendrá el estado de apresada hasta que se libere. Para liberarse de la cadena, deberá superar una prueba de Destreza (Acrobacias) con CD 18 como acción. Romper la cadena requiere superar una prueba de Fuerza (Atletismo) con CD 20 como acción.",
+        "es": "Como acción de utilizar, puedes atar con una cadena a una criatura no voluntaria a 5 pies o menos de ti que tenga el estado de agarrada, apresada o incapacitada si superas una prueba de Fuerza (Atletismo) con CD 13. Si la criatura tiene las piernas atadas, tendrá el estado de apresada hasta que se libere. Para liberarse de la cadena, deberá superar una prueba de Destreza (Acrobacias) con CD 18 como acción. Romper la cadena requiere superar una prueba de Fuerza (Atletismo) con CD 20 como acción.",
         "en": "As a Utilize action, you can wrap a Chain around an unwilling creature within 5 feet of yourself that has the Grappled, Incapacitated, or Restrained condition if you succeed on a DC 13 Strength (Athletics) check. If the creature’s legs are bound, the creature has the Restrained condition until it escapes. Escaping the Chain requires the creature to make a successful DC 18 Dexterity (Acrobatics) check as an action. Bursting the Chain requires a successful DC 20 Strength (Athletics) check as an action."
       }
     },
@@ -4271,7 +4271,7 @@
       "peso": 25,
       "coste": 5,
       "descripcion": {
-        "es": "En un cofre cabe un volumen de hasta 360 l de contenido.",
+        "es": "En un cofre cabe un volumen de hasta 90 galones de contenido.",
         "en": "A Chest holds up to 12 cubic feet of contents."
       }
     },
@@ -4299,7 +4299,7 @@
       "peso": 12,
       "coste": 25,
       "descripcion": {
-        "es": "Los útiles de escalada incluyen arnés, guantes, pitones y puntas para las botas. Como acción de utilizar, puedes emplear los útiles de escalada para anclarte; cuando lo hagas, no podrás caer más de 7,5 m desde el punto de anclaje ni podrás alejarte más de 7,5 m de ahí si no quitas la sujeción como acción adicional.",
+        "es": "Los útiles de escalada incluyen arnés, guantes, pitones y puntas para las botas. Como acción de utilizar, puedes emplear los útiles de escalada para anclarte; cuando lo hagas, no podrás caer más de 25 pies desde el punto de anclaje ni podrás alejarte más de 25 pies de ahí si no quitas la sujeción como acción adicional.",
         "en": "A Climber’s Kit includes boot tips, gloves, pitons, and a harness. As a Utilize action, you can use the Climber’s Kit to anchor yourself; when you do, you can’t fall more than 25 feet from the anchor point, and you can’t move more than 25 feet from there without undoing the anchor as a Bonus Action."
       }
     },
@@ -4579,7 +4579,7 @@
       "peso": 1,
       "coste": 0.02,
       "descripcion": {
-        "es": "En un frasco caben hasta 0,5 l de líquido.",
+        "es": "En un frasco caben hasta 1/4 galones de líquido.",
         "en": "A Flask holds up to 1 pint."
       }
     },
@@ -4607,7 +4607,7 @@
       "peso": 4,
       "coste": 2,
       "descripcion": {
-        "es": "Como acción de utilizar, puedes lanzar un garfio de escalada a una barandilla, cornisa u otro saliente a 15 m o menos de ti, y el garfio se enganchará si superas una prueba de Destreza (Acrobacias) con CD 13. Si el garfio tiene una cuerda atada, podrás escalar.",
+        "es": "Como acción de utilizar, puedes lanzar un garfio de escalada a una barandilla, cornisa u otro saliente a 50 pies o menos de ti, y el garfio se enganchará si superas una prueba de Destreza (Acrobacias) con CD 13. Si el garfio tiene una cuerda atada, podrás escalar.",
         "en": "As a Utilize action, you can throw the Grappling Hook at a railing, a ledge, or another catch within 50 feet of yourself, and the hook catches on if you succeed on a DC 13 Dexterity (Acrobatics) check. If you tied a Rope to the hook, you can then climb it."
       }
     },
@@ -4677,7 +4677,7 @@
       "peso": 1,
       "coste": 25,
       "descripcion": {
-        "es": "Cuando lleves a cabo la acción de atacar, puedes sustituir uno de tus ataques por lanzar un frasco de agua bendita. Haz objetivo a una criatura que puedas ver a 6 m o menos de ti. El objetivo deberá superar una tirada de salvación de Destreza (CD 8 más tu modificador por Destreza y tu bonificador por competencia) o sufrirá 2d8 de daño radiante si es un infernal o un muerto viviente.",
+        "es": "Cuando lleves a cabo la acción de atacar, puedes sustituir uno de tus ataques por lanzar un frasco de agua bendita. Haz objetivo a una criatura que puedas ver a 20 pies o menos de ti. El objetivo deberá superar una tirada de salvación de Destreza (CD 8 más tu modificador por Destreza y tu bonificador por competencia) o sufrirá 2d8 de daño radiante si es un infernal o un muerto viviente.",
         "en": "When you take the Attack action, you can replace one of your attacks with throwing a flask of Holy Water. Target one creature you can see within 20 feet of yourself. The target must succeed on a Dexterity saving throw (DC 8 plus your Dexterity modifier and Proficiency Bonus) or take 2d8 Radiant damage if it is a Fiend or an Undead."
       }
     },
@@ -4691,7 +4691,7 @@
           },
           "activation": "action",
           "range": {
-            "es": "6 m",
+            "es": "20 pies",
             "en": "20 feet"
           },
           "save": {
@@ -4734,7 +4734,7 @@
       "peso": 25,
       "coste": 5,
       "descripcion": {
-        "es": "Como acción de utilizar, puedes poner una trampa para cazar, que consiste en una anilla dentada de acero que se cierra cuando una criatura pisa una placa de presión situada en su centro. La trampa se fija mediante una pesada cadena a cualquier objeto inmóvil, como un árbol o una estaca clavada en el suelo. Si una criatura pisa la placa, deberá superar una tirada de salvación de Destreza con CD 13 o sufrirá 1d4 de daño perforante y su velocidad se reducirá a 0 hasta el principio de su siguiente turno. A partir de ese momento y hasta que la criatura se libere de la trampa, su movimiento se verá limitado por la longitud de la cadena (normalmente 90 cm). Una criatura puede emplear su acción para hacer una prueba de Fuerza (Atletismo) con CD 13 para liberarse a sí misma o a otra criatura que esté a su alcance si la supera. Cada prueba fallida causa 1 de daño perforante a la criatura atrapada.",
+        "es": "Como acción de utilizar, puedes poner una trampa para cazar, que consiste en una anilla dentada de acero que se cierra cuando una criatura pisa una placa de presión situada en su centro. La trampa se fija mediante una pesada cadena a cualquier objeto inmóvil, como un árbol o una estaca clavada en el suelo. Si una criatura pisa la placa, deberá superar una tirada de salvación de Destreza con CD 13 o sufrirá 1d4 de daño perforante y su velocidad se reducirá a 0 hasta el principio de su siguiente turno. A partir de ese momento y hasta que la criatura se libere de la trampa, su movimiento se verá limitado por la longitud de la cadena (normalmente 3 pies). Una criatura puede emplear su acción para hacer una prueba de Fuerza (Atletismo) con CD 13 para liberarse a sí misma o a otra criatura que esté a su alcance si la supera. Cada prueba fallida causa 1 de daño perforante a la criatura atrapada.",
         "en": "As a Utilize action, you can set a Hunting Trap, which is a sawtooth steel ring that snaps shut when a creature steps on a pressure plate in the center. The trap is affixed by a heavy chain to an immobile object, such as a tree or a spike driven into the ground. A creature that steps on the plate must succeed on a DC 13 Dexterity saving throw or take 1d4 Piercing damage and have its Speed reduced to 0 until the start of its next turn. Thereafter, until the creature breaks free of the trap, its movement is limited by the length of the chain (typically 3 feet). A creature can use its action to make a DC 13 Strength (Athletics) check, freeing itself or another creature within its reach on a success. Each failed check deals 1 Piercing damage to the trapped creature."
       }
     },
@@ -4818,7 +4818,7 @@
       "peso": 4,
       "coste": 0.02,
       "descripcion": {
-        "es": "En un jarro caben hasta 4 l de líquido.",
+        "es": "En un jarro caben hasta 1 galón de líquido.",
         "en": "A Jug holds up to 1 gallon."
       }
     },
@@ -4846,7 +4846,7 @@
       "peso": 25,
       "coste": 0.1,
       "descripcion": {
-        "es": "Una escalera mide 3 m de altura. Debes trepar para subir o bajar por ella.",
+        "es": "Una escalera mide 10 pies de altura. Debes trepar para subir o bajar por ella.",
         "en": "A Ladder is 10 feet tall. You must climb to move up or down it."
       }
     },
@@ -4874,7 +4874,7 @@
       "peso": 1,
       "coste": 0.5,
       "descripcion": {
-        "es": "Una lámpara quema aceite como combustible para emitir luz brillante en un radio de 4,5 m y luz tenue 9 m más allá.",
+        "es": "Una lámpara quema aceite como combustible para emitir luz brillante en un radio de 15 pies y luz tenue 30 pies más allá.",
         "en": "A Lamp burns Oil as fuel to cast Bright Light in a 15- foot radius and Dim Light for an additional 30 feet."
       }
     },
@@ -4902,7 +4902,7 @@
       "peso": 2,
       "coste": 10,
       "descripcion": {
-        "es": "Una linterna de ojo de buey quema aceite como combustible para emitir luz brillante en un cono de 18 m y luz tenue 18 m más allá.",
+        "es": "Una linterna de ojo de buey quema aceite como combustible para emitir luz brillante en un cono de 60 pies y luz tenue 60 pies más allá.",
         "en": "A Bullseye Lantern burns Oil as fuel to cast Bright Light in a 60-foot Cone and Dim Light for an additional 60 feet."
       }
     },
@@ -4930,7 +4930,7 @@
       "peso": 2,
       "coste": 5,
       "descripcion": {
-        "es": "Una linterna sorda quema aceite como combustible para emitir luz brillante en un radio de 9 m y luz tenue 9 m más allá. Como acción adicional, puedes cubrir la abertura con la tapa y hacer que solo emita luz tenue en un radio de 1,5 m, o abrirla de nuevo.",
+        "es": "Una linterna sorda quema aceite como combustible para emitir luz brillante en un radio de 30 pies y luz tenue 30 pies más allá. Como acción adicional, puedes cubrir la abertura con la tapa y hacer que solo emita luz tenue en un radio de 5 pies, o abrirla de nuevo.",
         "en": "A Hooded Lantern burns Oil as fuel to cast Bright Light in a 30-foot radius and Dim Light for an additional 30 feet. As a Bonus Action, you can lower the hood, reducing the light to Dim Light in a 5-foot radius, or raise it again."
       }
     },
@@ -5014,7 +5014,7 @@
       "peso": 6,
       "coste": 2,
       "descripcion": {
-        "es": "Como acción de utilizar, puedes esposar a una criatura Pequeña o Mediana no voluntaria que esté a 1,5 m o menos de ti que tenga el estado de agarrada, apresada o incapacitada si superas una prueba de Destreza (Juego de manos) con CD 13. Mientras esté esposada, la criatura tendrá desventaja en las tiradas de ataque y estará apresada si las esposas están sujetas a una cadena o garfio fijados en el sitio. Para liberarse de las esposas, deberá superar una prueba de Destreza (Juego de manos) con CD 20 como acción. Para romperlas, deberá superar una prueba de Fuerza (Atletismo) con CD 25 como acción. Cada juego de esposas viene con una llave. Sin la llave, una criatura puede usar herramientas de ladrón para forzar la cerradura de las esposas si supera una prueba de Destreza (Juego de manos) con CD 15.",
+        "es": "Como acción de utilizar, puedes esposar a una criatura Pequeña o Mediana no voluntaria que esté a 5 pies o menos de ti que tenga el estado de agarrada, apresada o incapacitada si superas una prueba de Destreza (Juego de manos) con CD 13. Mientras esté esposada, la criatura tendrá desventaja en las tiradas de ataque y estará apresada si las esposas están sujetas a una cadena o garfio fijados en el sitio. Para liberarse de las esposas, deberá superar una prueba de Destreza (Juego de manos) con CD 20 como acción. Para romperlas, deberá superar una prueba de Fuerza (Atletismo) con CD 25 como acción. Cada juego de esposas viene con una llave. Sin la llave, una criatura puede usar herramientas de ladrón para forzar la cerradura de las esposas si supera una prueba de Destreza (Juego de manos) con CD 15.",
         "en": "As a Utilize action, you can use Manacles to bind an unwilling Small or Medium creature within 5 feet of yourself that has the Grappled, Incapacitated, or Restrained condition if you succeed on a DC 13 Dexterity (Sleight of Hand) check. While bound, a creature has Disadvantage on attack rolls, and the creature is Restrained if the Manacles are attached to a chain or hook that is fixed in place. Escaping the Manacles requires a successful DC 20 Dexterity (Sleight of Hand) check as an action. Bursting them requires a successful DC 25 Strength (Athletics) check as an action. Each set of Manacles comes with a key. Without the key, a creature can use Thieves’ Tools to pick the Manacles’ lock with a successful DC 15 Dexterity (Sleight of Hand) check."
       }
     },
@@ -5098,7 +5098,7 @@
       "peso": 3,
       "coste": 1,
       "descripcion": {
-        "es": "Cuando lleves a cabo la acción de atacar, puedes sustituir uno de tus ataques por lanzar una red. Haz objetivo a una criatura que puedas ver a 4,5 m o menos de ti. El objetivo deberá superar una tirada de salvación de Destreza (CD 8 más tu modificador por Destreza y tu bonificador por competencia) o tendrá el estado de apresado hasta que se l ibere. El objetivo la superará automáticamente si es Enorme o más grande. Para liberarse, el objetivo o una criatura que esté a 1,5 m o menos de él deberá usar una acción para hacer una prueba de Fuerza (Atletismo) con CD 10; si la supera, la criatura apresada se liberará. Si se destruye la red (CA 10, 5 pg; inmunidad al daño contundente, psíquico y de veneno), también se libera al objetivo y se pone fin al efecto.",
+        "es": "Cuando lleves a cabo la acción de atacar, puedes sustituir uno de tus ataques por lanzar una red. Haz objetivo a una criatura que puedas ver a 15 pies o menos de ti. El objetivo deberá superar una tirada de salvación de Destreza (CD 8 más tu modificador por Destreza y tu bonificador por competencia) o tendrá el estado de apresado hasta que se l ibere. El objetivo la superará automáticamente si es Enorme o más grande. Para liberarse, el objetivo o una criatura que esté a 5 pies o menos de él deberá usar una acción para hacer una prueba de Fuerza (Atletismo) con CD 10; si la supera, la criatura apresada se liberará. Si se destruye la red (CA 10, 5 pg; inmunidad al daño contundente, psíquico y de veneno), también se libera al objetivo y se pone fin al efecto.",
         "en": "When you take the Attack action, you can replace one of your attacks with throwing a Net. Target a creature you can see within 15 feet of yourself. The target must succeed on a Dexterity saving throw (DC 8 plus your Dexterity modifier and Proficiency Bonus) or have the Restrained condition until it escapes. The target succeeds automatically if it is Huge or larger. To escape, the target or a creature within 5 feet of it must take an action to make a DC 10 Strength (Athletics) check, freeing the Restrained creature on a success. Destroying the Net (AC 10; 5 HP; Immunity to Bludgeoning, Poison, and Psychic damage) also frees the target, ending the effect."
       }
     },
@@ -5126,7 +5126,7 @@
       "peso": 1,
       "coste": 0.1,
       "descripcion": {
-        "es": "Puedes empapar de aceite a una criatura, un objeto o un espacio o utilizarlo como combustible, como se detalla a continuación. Empapar a una criatura o un objeto. Cuando lleves a cabo la acción de atacar, puedes sustituir uno de tus ataques por lanzar un frasco de aceite. Haz objetivo a una criatura u objeto a 6 m o menos de ti. El objetivo deberá superar una tirada de salvación de Destreza (CD 8 más tu modificador por Destreza y tu bonificador por competencia) o quedará cubierto de aceite. Si el objetivo sufre daño de fuego antes de que el aceite se seque (tras 1 minuto), recibirá 5 de daño de fuego adicional debido a que el aceite arderá. Empapar un espacio. Puedes llevar a cabo la acción de utilizar para verter un frasco de aceite sobre un suelo plano para cubrir una zona cuadrada de 1,5 m de lado a 1,5 m o menos de ti. Si se prende, el aceite arderá durante 2 asaltos desde que se prendió (o 12 segundos) hasta el final de ese turno y hará 5 de daño de fuego a cualquier criatura que entre en la zona o termine su turno en ella. Una criatura solo puede sufrir este daño una vez por turno. Combustible. El aceite sirve de combustible para lámparas y linternas. Un frasco de aceite prendido arde durante 6 horas en una lámpara o linterna. Esa duración no tiene que ser consecutiva; puedes apagar el aceite ardiendo (como acción de utilizar) y volver a encenderlo hasta que haya ardido durante un total de 6 horas.",
+        "es": "Puedes empapar de aceite a una criatura, un objeto o un espacio o utilizarlo como combustible, como se detalla a continuación. Empapar a una criatura o un objeto. Cuando lleves a cabo la acción de atacar, puedes sustituir uno de tus ataques por lanzar un frasco de aceite. Haz objetivo a una criatura u objeto a 20 pies o menos de ti. El objetivo deberá superar una tirada de salvación de Destreza (CD 8 más tu modificador por Destreza y tu bonificador por competencia) o quedará cubierto de aceite. Si el objetivo sufre daño de fuego antes de que el aceite se seque (tras 1 minuto), recibirá 5 de daño de fuego adicional debido a que el aceite arderá. Empapar un espacio. Puedes llevar a cabo la acción de utilizar para verter un frasco de aceite sobre un suelo plano para cubrir una zona cuadrada de 5 pies de lado a 5 pies o menos de ti. Si se prende, el aceite arderá durante 2 asaltos desde que se prendió (o 12 segundos) hasta el final de ese turno y hará 5 de daño de fuego a cualquier criatura que entre en la zona o termine su turno en ella. Una criatura solo puede sufrir este daño una vez por turno. Combustible. El aceite sirve de combustible para lámparas y linternas. Un frasco de aceite prendido arde durante 6 horas en una lámpara o linterna. Esa duración no tiene que ser consecutiva; puedes apagar el aceite ardiendo (como acción de utilizar) y volver a encenderlo hasta que haya ardido durante un total de 6 horas.",
         "en": "You can douse a creature, object, or space with Oil or use it as fuel, as detailed below. Dousing a Creature or an Object. When you take the Attack action, you can replace one of your attacks with throwing an Oil flask. Target one creature or object within 20 feet of yourself. The target must succeed on a Dexterity saving throw (DC 8 plus your Dexterity modifier and Proficiency Bonus) or be covered in oil. If the target takes Fire damage before the oil dries (after 1 minute), the target takes an extra 5 Fire damage from burning oil. Dousing a Space. You can take the Utilize action to pour an Oil flask on level ground to cover a 5-foot-square area within 5 feet of yourself. If lit, the oil burns until the end of the turn 2 rounds from when the oil was lit (or 12 seconds) and deals 5 Fire damage to any creature that enters the area or ends its turn there. A creature can take this damage only once per turn. Fuel. Oil serves as fuel for Lamps and Lanterns. Once lit, a flask of Oil burns for 6 hours in a Lamp or Lantern. That duration doesn’t need to be consecutive; you can extinguish the burning Oil (as a Utilize action) and rekindle it again until it has burned for a total of 6 hours."
       }
     },
@@ -5210,7 +5210,7 @@
       "peso": 0,
       "coste": 5,
       "descripcion": {
-        "es": "El perfume viene en un vial de 120 ml. Después de ponerte el perfume, durante 1 hora tendrás ventaja en las pruebas de Carisma (Persuasión) que hagas para influir en un humanoide indiferente situado a 1,5 m o menos de ti.",
+        "es": "El perfume viene en un vial de 120 ml. Después de ponerte el perfume, durante 1 hora tendrás ventaja en las pruebas de Carisma (Persuasión) que hagas para influir en un humanoide indiferente situado a 5 pies o menos de ti.",
         "en": "Perfume comes in a 4-ounce vial. For 1 hour after applying Perfume to yourself, you have Advantage on Charisma (Persuasion) checks made to influence an Indifferent Humanoid within 5 feet of yourself."
       }
     },
@@ -5266,7 +5266,7 @@
       "peso": 7,
       "coste": 0.05,
       "descripcion": {
-        "es": "Una vara mide 3 m de longitud. Puedes usarla para tocar algo que esté a hasta 3 m de distancia. Si tienes que hacer una prueba de Fuerza (Atletismo) como parte de un salto de altura o longitud, puedes impulsarte con la vara, lo que te dará ventaja en la prueba.",
+        "es": "Una vara mide 10 pies de longitud. Puedes usarla para tocar algo que esté a hasta 10 pies de distancia. Si tienes que hacer una prueba de Fuerza (Atletismo) como parte de un salto de altura o longitud, puedes impulsarte con la vara, lo que te dará ventaja en la prueba.",
         "en": "A Pole is 10 feet long. You can use it to touch something up to 10 feet away. If you must make a Strength (Athletics) check as part of a High or Long Jump, you can use the Pole to vault, giving yourself Advantage on the check."
       }
     },
@@ -5294,7 +5294,7 @@
       "peso": 10,
       "coste": 2,
       "descripcion": {
-        "es": "En una olla de hierro caben hasta 4 l.",
+        "es": "En una olla de hierro caben hasta 1 galón.",
         "en": "An Iron Pot holds up to 1 gallon."
       }
     },
@@ -5322,7 +5322,7 @@
       "peso": 0.5,
       "coste": 50,
       "descripcion": {
-        "es": "Esta poción es un objeto mágico. Como acción adicional, puedes beberla o administrarla a otra criatura que se encuentre a 1,5 m o menos de ti. La criatura que beba el fluido mágico de color rojo de este vial recuperará 2d4 + 2 puntos de golpe.",
+        "es": "Esta poción es un objeto mágico. Como acción adicional, puedes beberla o administrarla a otra criatura que se encuentre a 5 pies o menos de ti. La criatura que beba el fluido mágico de color rojo de este vial recuperará 2d4 + 2 puntos de golpe.",
         "en": "This potion is a magic item. As a Bonus Action, you can drink it or administer it to another creature within 5 feet of yourself. The creature that drinks the magical red fluid in this vial regains 2d4 + 2 Hit Points."
       }
     },
@@ -5361,7 +5361,7 @@
       "peso": 1,
       "coste": 0.5,
       "descripcion": {
-        "es": "Una bolsa soporta hasta 3 kg en un volumen de 6 l.",
+        "es": "Una bolsa soporta hasta 6 lb en un volumen de 1 y 1/2 galones.",
         "en": "A Pouch holds up to 6 pounds within one-fifth of a cubic foot."
       }
     },
@@ -5557,7 +5557,7 @@
       "peso": 0.5,
       "coste": 0.01,
       "descripcion": {
-        "es": "Un saco soporta hasta 15 kg en un volumen de 30 l.",
+        "es": "Un saco soporta hasta 30 lb en un volumen de 7 y 1/2 galones.",
         "en": "A Sack holds up to 30 pounds within 1 cubic foot."
       }
     },
@@ -5613,7 +5613,7 @@
       "peso": 5,
       "coste": 2,
       "descripcion": {
-        "es": "Con 1 hora de trabajo, puedes usar una pala para cavar un agujero cúbico de 1,5 m de lado en la tierra o en un material similar.",
+        "es": "Con 1 hora de trabajo, puedes usar una pala para cavar un agujero cúbico de 5 pies de lado en la tierra o en un material similar.",
         "en": "Working for 1 hour, you can use a Shovel to dig a hole that is 5 feet on each side in soil or similar material."
       }
     },
@@ -5641,7 +5641,7 @@
       "peso": 0,
       "coste": 0.05,
       "descripcion": {
-        "es": "Cuando se sopla como acción de utilizar, un silbato de supervivencia produce un sonido que se puede oír a 180 m de distancia.",
+        "es": "Cuando se sopla como acción de utilizar, un silbato de supervivencia produce un sonido que se puede oír a 600 pies de distancia.",
         "en": "When blown as a Utilize action, a Signal Whistle produces a sound that can be heard up to 600 feet away. Spell Scroll (Cantrip, 30 GP; Level 1, 50 GP) A Spell Scroll (Cantrip) or Spell Scroll (Level 1) is a magic item that bears the words of a cantrip or level 1 spell, respectively, determined by the scroll’s creator. If the spell is on your class’s spell list, you can read the scroll and cast the spell using its normal casting time and without providing any Material components. If the spell requires a saving throw or an attack roll, the spell save DC is 13, and the attack bonus is +5. The scroll disintegrates when the casting is completed."
       }
     },
@@ -5781,7 +5781,7 @@
       "peso": 0,
       "coste": 0.1,
       "descripcion": {
-        "es": "Un cordel mide 3 m de longitud. Puedes atar un nudo con él como acción de utilizar.",
+        "es": "Un cordel mide 10 pies de longitud. Puedes atar un nudo con él como acción de utilizar.",
         "en": "String is 10 feet long. You can tie a knot in it as a Utilize action."
       }
     },
@@ -5865,7 +5865,7 @@
       "peso": 1,
       "coste": 0.01,
       "descripcion": {
-        "es": "Una antorcha arde durante 1 hora y emite luz brillante en un radio de 6 m y luz tenue 6 m más allá. Cuando llevas a cabo la acción de atacar, puedes hacerlo con la antorcha como si fuera un arma cuerpo a cuerpo sencilla. Si acierta, el objetivo sufre 1 de daño de fuego.",
+        "es": "Una antorcha arde durante 1 hora y emite luz brillante en un radio de 20 pies y luz tenue 20 pies más allá. Cuando llevas a cabo la acción de atacar, puedes hacerlo con la antorcha como si fuera un arma cuerpo a cuerpo sencilla. Si acierta, el objetivo sufre 1 de daño de fuego.",
         "en": "A Torch burns for 1 hour, casting Bright Light in a 20-foot radius and Dim Light for an additional 20 feet. When you take the Attack action, you can attack with the Torch, using it as a Simple Melee weapon. On a hit, the target takes 1 Fire damage."
       }
     },
@@ -5921,7 +5921,7 @@
       "peso": 5,
       "coste": 0.2,
       "descripcion": {
-        "es": "En una cantimplora caben hasta 2 l de líquido. Si no bebes suficiente agua, te arriesgas a sufrir deshidratación (consulta el capítulo “Glosario de reglas”).",
+        "es": "En una cantimplora caben hasta 1/2 galones de líquido. Si no bebes suficiente agua, te arriesgas a sufrir deshidratación (consulta el capítulo “Glosario de reglas”).",
         "en": "A Waterskin holds up to 4 pints. If you don’t drink sufficient water, you risk dehydration (see “Rules Glossary”)."
       }
     },
@@ -5949,7 +5949,7 @@
       "peso": 1,
       "coste": 1,
       "descripcion": {
-        "es": "Las armas que tienen la propiedad de munición requieren munición. La descripción del arma especifica el tipo de munición que utiliza. La tabla “Munición” indica los diferentes tipos y la cantidad que obtienes cuando los compras. También incluye el objeto que se usa normalmente para almacenar cada tipo, que debe comprarse por separado. Munición Tipo Cantidad Recipiente Peso Precio Balas de 10 Bolsa 1 kg 3 po arma de fuego Dardos 50 Bolsa 0,5 kg 1 po Flechas 20 Aljaba 0,5 kg 1 po Proyectiles 20 Bolsa 0,75 kg 4 pc de honda Virotes 20 Estuche 0,75 kg 1 po",
+        "es": "Las armas que tienen la propiedad de munición requieren munición. La descripción del arma especifica el tipo de munición que utiliza. La tabla “Munición” indica los diferentes tipos y la cantidad que obtienes cuando los compras. También incluye el objeto que se usa normalmente para almacenar cada tipo, que debe comprarse por separado. Munición Tipo Cantidad Recipiente Peso Precio Balas de 10 Bolsa 2 lb 3 po arma de fuego Dardos 50 Bolsa 1 lb 1 po Flechas 20 Aljaba 1 lb 1 po Proyectiles 20 Bolsa 1 y 1/2 lb 4 pc de honda Virotes 20 Estuche 1 y 1/2 lb 1 po",
         "en": "Ammunition is required by a weapon that has the Ammunition property. A weapon’s description specifies the type of ammunition used by the weapon. The Ammunition table lists the different types and the amount you get when you buy them. The table also lists the item that is typically used to store each type; storage must be bought separately."
       }
     },
@@ -5977,7 +5977,7 @@
       "peso": 1.5,
       "coste": 1,
       "descripcion": {
-        "es": "Las armas que tienen la propiedad de munición requieren munición. La descripción del arma especifica el tipo de munición que utiliza. La tabla “Munición” indica los diferentes tipos y la cantidad que obtienes cuando los compras. También incluye el objeto que se usa normalmente para almacenar cada tipo, que debe comprarse por separado. Munición Tipo Cantidad Recipiente Peso Precio Balas de 10 Bolsa 1 kg 3 po arma de fuego Dardos 50 Bolsa 0,5 kg 1 po Flechas 20 Aljaba 0,5 kg 1 po Proyectiles 20 Bolsa 0,75 kg 4 pc de honda Virotes 20 Estuche 0,75 kg 1 po",
+        "es": "Las armas que tienen la propiedad de munición requieren munición. La descripción del arma especifica el tipo de munición que utiliza. La tabla “Munición” indica los diferentes tipos y la cantidad que obtienes cuando los compras. También incluye el objeto que se usa normalmente para almacenar cada tipo, que debe comprarse por separado. Munición Tipo Cantidad Recipiente Peso Precio Balas de 10 Bolsa 2 lb 3 po arma de fuego Dardos 50 Bolsa 1 lb 1 po Flechas 20 Aljaba 1 lb 1 po Proyectiles 20 Bolsa 1 y 1/2 lb 4 pc de honda Virotes 20 Estuche 1 y 1/2 lb 1 po",
         "en": "Ammunition is required by a weapon that has the Ammunition property. A weapon’s description specifies the type of ammunition used by the weapon. The Ammunition table lists the different types and the amount you get when you buy them. The table also lists the item that is typically used to store each type; storage must be bought separately."
       }
     },
@@ -6005,7 +6005,7 @@
       "peso": 2,
       "coste": 3,
       "descripcion": {
-        "es": "Las armas que tienen la propiedad de munición requieren munición. La descripción del arma especifica el tipo de munición que utiliza. La tabla “Munición” indica los diferentes tipos y la cantidad que obtienes cuando los compras. También incluye el objeto que se usa normalmente para almacenar cada tipo, que debe comprarse por separado. Munición Tipo Cantidad Recipiente Peso Precio Balas de 10 Bolsa 1 kg 3 po arma de fuego Dardos 50 Bolsa 0,5 kg 1 po Flechas 20 Aljaba 0,5 kg 1 po Proyectiles 20 Bolsa 0,75 kg 4 pc de honda Virotes 20 Estuche 0,75 kg 1 po",
+        "es": "Las armas que tienen la propiedad de munición requieren munición. La descripción del arma especifica el tipo de munición que utiliza. La tabla “Munición” indica los diferentes tipos y la cantidad que obtienes cuando los compras. También incluye el objeto que se usa normalmente para almacenar cada tipo, que debe comprarse por separado. Munición Tipo Cantidad Recipiente Peso Precio Balas de 10 Bolsa 2 lb 3 po arma de fuego Dardos 50 Bolsa 1 lb 1 po Flechas 20 Aljaba 1 lb 1 po Proyectiles 20 Bolsa 1 y 1/2 lb 4 pc de honda Virotes 20 Estuche 1 y 1/2 lb 1 po",
         "en": "Ammunition is required by a weapon that has the Ammunition property. A weapon’s description specifies the type of ammunition used by the weapon. The Ammunition table lists the different types and the amount you get when you buy them. The table also lists the item that is typically used to store each type; storage must be bought separately."
       }
     },
@@ -6033,7 +6033,7 @@
       "peso": 1.5,
       "coste": 0.04,
       "descripcion": {
-        "es": "Las armas que tienen la propiedad de munición requieren munición. La descripción del arma especifica el tipo de munición que utiliza. La tabla “Munición” indica los diferentes tipos y la cantidad que obtienes cuando los compras. También incluye el objeto que se usa normalmente para almacenar cada tipo, que debe comprarse por separado. Munición Tipo Cantidad Recipiente Peso Precio Balas de 10 Bolsa 1 kg 3 po arma de fuego Dardos 50 Bolsa 0,5 kg 1 po Flechas 20 Aljaba 0,5 kg 1 po Proyectiles 20 Bolsa 0,75 kg 4 pc de honda Virotes 20 Estuche 0,75 kg 1 po",
+        "es": "Las armas que tienen la propiedad de munición requieren munición. La descripción del arma especifica el tipo de munición que utiliza. La tabla “Munición” indica los diferentes tipos y la cantidad que obtienes cuando los compras. También incluye el objeto que se usa normalmente para almacenar cada tipo, que debe comprarse por separado. Munición Tipo Cantidad Recipiente Peso Precio Balas de 10 Bolsa 2 lb 3 po arma de fuego Dardos 50 Bolsa 1 lb 1 po Flechas 20 Aljaba 1 lb 1 po Proyectiles 20 Bolsa 1 y 1/2 lb 4 pc de honda Virotes 20 Estuche 1 y 1/2 lb 1 po",
         "en": "Ammunition is required by a weapon that has the Ammunition property. A weapon’s description specifies the type of ammunition used by the weapon. The Ammunition table lists the different types and the amount you get when you buy them. The table also lists the item that is typically used to store each type; storage must be bought separately."
       }
     },
@@ -6061,7 +6061,7 @@
       "peso": 1,
       "coste": 1,
       "descripcion": {
-        "es": "Las armas que tienen la propiedad de munición requieren munición. La descripción del arma especifica el tipo de munición que utiliza. La tabla “Munición” indica los diferentes tipos y la cantidad que obtienes cuando los compras. También incluye el objeto que se usa normalmente para almacenar cada tipo, que debe comprarse por separado. Munición Tipo Cantidad Recipiente Peso Precio Balas de 10 Bolsa 1 kg 3 po arma de fuego Dardos 50 Bolsa 0,5 kg 1 po Flechas 20 Aljaba 0,5 kg 1 po Proyectiles 20 Bolsa 0,75 kg 4 pc de honda Virotes 20 Estuche 0,75 kg 1 po",
+        "es": "Las armas que tienen la propiedad de munición requieren munición. La descripción del arma especifica el tipo de munición que utiliza. La tabla “Munición” indica los diferentes tipos y la cantidad que obtienes cuando los compras. También incluye el objeto que se usa normalmente para almacenar cada tipo, que debe comprarse por separado. Munición Tipo Cantidad Recipiente Peso Precio Balas de 10 Bolsa 2 lb 3 po arma de fuego Dardos 50 Bolsa 1 lb 1 po Flechas 20 Aljaba 1 lb 1 po Proyectiles 20 Bolsa 1 y 1/2 lb 4 pc de honda Virotes 20 Estuche 1 y 1/2 lb 1 po",
         "en": "Ammunition is required by a weapon that has the Ammunition property. A weapon’s description specifies the type of ammunition used by the weapon. The Ammunition table lists the different types and the amount you get when you buy them. The table also lists the item that is typically used to store each type; storage must be bought separately."
       }
     },
@@ -6089,7 +6089,7 @@
       "peso": 1,
       "coste": 10,
       "descripcion": {
-        "es": "Un canalizador arcano puede ser uno de los objetos de la tabla “Canalizadores arcanos” y está ornamentado o tallado para canalizar la magia arcana. Los brujos, hechiceros o magos pueden utilizar estos objetos como canalizadores mágicos. Canalizadores arcanos Canalizador Peso Precio Bastón 2 kg 5 po Cristal 0,5 kg 10 po Orbe 1,5 kg 20 po Vara 1 kg 10 po Varita 0,5 kg 10 po",
+        "es": "Un canalizador arcano puede ser uno de los objetos de la tabla “Canalizadores arcanos” y está ornamentado o tallado para canalizar la magia arcana. Los brujos, hechiceros o magos pueden utilizar estos objetos como canalizadores mágicos. Canalizadores arcanos Canalizador Peso Precio Bastón 4 lb 5 po Cristal 1 lb 10 po Orbe 3 lb 20 po Vara 2 lb 10 po Varita 1 lb 10 po",
         "en": "An Arcane Focus takes one of the forms in the Arcane Focuses table and is bejeweled or carved to channel arcane magic. A Sorcerer, Warlock, or Wizard can use such an item as a Spellcasting Focus. Arcane Focuses Focus Weight Cost Crystal 1 lb. 10 GP Orb 3 lb. 20 GP Rod 2 lb. 10 GP Staff (also a Quarterstaff) 4 lb. 5 GP Wand 1 lb. 10 GP"
       }
     },
@@ -6117,7 +6117,7 @@
       "peso": 3,
       "coste": 20,
       "descripcion": {
-        "es": "Un canalizador arcano puede ser uno de los objetos de la tabla “Canalizadores arcanos” y está ornamentado o tallado para canalizar la magia arcana. Los brujos, hechiceros o magos pueden utilizar estos objetos como canalizadores mágicos. Canalizadores arcanos Canalizador Peso Precio Bastón 2 kg 5 po Cristal 0,5 kg 10 po Orbe 1,5 kg 20 po Vara 1 kg 10 po Varita 0,5 kg 10 po",
+        "es": "Un canalizador arcano puede ser uno de los objetos de la tabla “Canalizadores arcanos” y está ornamentado o tallado para canalizar la magia arcana. Los brujos, hechiceros o magos pueden utilizar estos objetos como canalizadores mágicos. Canalizadores arcanos Canalizador Peso Precio Bastón 4 lb 5 po Cristal 1 lb 10 po Orbe 3 lb 20 po Vara 2 lb 10 po Varita 1 lb 10 po",
         "en": "An Arcane Focus takes one of the forms in the Arcane Focuses table and is bejeweled or carved to channel arcane magic. A Sorcerer, Warlock, or Wizard can use such an item as a Spellcasting Focus. Arcane Focuses Focus Weight Cost Crystal 1 lb. 10 GP Orb 3 lb. 20 GP Rod 2 lb. 10 GP Staff (also a Quarterstaff) 4 lb. 5 GP Wand 1 lb. 10 GP"
       }
     },
@@ -6145,7 +6145,7 @@
       "peso": 2,
       "coste": 10,
       "descripcion": {
-        "es": "Una vara mide 3 m de longitud. Puedes usarla para tocar algo que esté a hasta 3 m de distancia. Si tienes que hacer una prueba de Fuerza (Atletismo) como parte de un salto de altura o longitud, puedes impulsarte con la vara, lo que te dará ventaja en la prueba.",
+        "es": "Una vara mide 10 pies de longitud. Puedes usarla para tocar algo que esté a hasta 10 pies de distancia. Si tienes que hacer una prueba de Fuerza (Atletismo) como parte de un salto de altura o longitud, puedes impulsarte con la vara, lo que te dará ventaja en la prueba.",
         "en": "An Arcane Focus takes one of the forms in the Arcane Focuses table and is bejeweled or carved to channel arcane magic. A Sorcerer, Warlock, or Wizard can use such an item as a Spellcasting Focus. Arcane Focuses Focus Weight Cost Crystal 1 lb. 10 GP Orb 3 lb. 20 GP Rod 2 lb. 10 GP Staff (also a Quarterstaff) 4 lb. 5 GP Wand 1 lb. 10 GP"
       }
     },
@@ -6173,7 +6173,7 @@
       "peso": 4,
       "coste": 5,
       "descripcion": {
-        "es": "Un canalizador arcano puede ser uno de los objetos de la tabla “Canalizadores arcanos” y está ornamentado o tallado para canalizar la magia arcana. Los brujos, hechiceros o magos pueden utilizar estos objetos como canalizadores mágicos. Canalizadores arcanos Canalizador Peso Precio Bastón 2 kg 5 po Cristal 0,5 kg 10 po Orbe 1,5 kg 20 po Vara 1 kg 10 po Varita 0,5 kg 10 po",
+        "es": "Un canalizador arcano puede ser uno de los objetos de la tabla “Canalizadores arcanos” y está ornamentado o tallado para canalizar la magia arcana. Los brujos, hechiceros o magos pueden utilizar estos objetos como canalizadores mágicos. Canalizadores arcanos Canalizador Peso Precio Bastón 4 lb 5 po Cristal 1 lb 10 po Orbe 3 lb 20 po Vara 2 lb 10 po Varita 1 lb 10 po",
         "en": "An Arcane Focus takes one of the forms in the Arcane Focuses table and is bejeweled or carved to channel arcane magic. A Sorcerer, Warlock, or Wizard can use such an item as a Spellcasting Focus. Arcane Focuses Focus Weight Cost Crystal 1 lb. 10 GP Orb 3 lb. 20 GP Rod 2 lb. 10 GP Staff (also a Quarterstaff) 4 lb. 5 GP Wand 1 lb. 10 GP"
       }
     },
@@ -6201,7 +6201,7 @@
       "peso": 1,
       "coste": 10,
       "descripcion": {
-        "es": "Un canalizador arcano puede ser uno de los objetos de la tabla “Canalizadores arcanos” y está ornamentado o tallado para canalizar la magia arcana. Los brujos, hechiceros o magos pueden utilizar estos objetos como canalizadores mágicos. Canalizadores arcanos Canalizador Peso Precio Bastón 2 kg 5 po Cristal 0,5 kg 10 po Orbe 1,5 kg 20 po Vara 1 kg 10 po Varita 0,5 kg 10 po",
+        "es": "Un canalizador arcano puede ser uno de los objetos de la tabla “Canalizadores arcanos” y está ornamentado o tallado para canalizar la magia arcana. Los brujos, hechiceros o magos pueden utilizar estos objetos como canalizadores mágicos. Canalizadores arcanos Canalizador Peso Precio Bastón 4 lb 5 po Cristal 1 lb 10 po Orbe 3 lb 20 po Vara 2 lb 10 po Varita 1 lb 10 po",
         "en": "An Arcane Focus takes one of the forms in the Arcane Focuses table and is bejeweled or carved to channel arcane magic. A Sorcerer, Warlock, or Wizard can use such an item as a Spellcasting Focus. Arcane Focuses Focus Weight Cost Crystal 1 lb. 10 GP Orb 3 lb. 20 GP Rod 2 lb. 10 GP Staff (also a Quarterstaff) 4 lb. 5 GP Wand 1 lb. 10 GP"
       }
     },
@@ -6229,7 +6229,7 @@
       "peso": 0,
       "coste": 1,
       "descripcion": {
-        "es": "Un canalizador druídico puede ser uno de los objetos de la tabla “Canalizadores druídicos” y está tallado, atado con un lazo o pintado para canalizar la magia primigenia. Los druidas o exploradores pueden utilizar estos objetos como canalizadores mágicos. Canalizadores druídicos Canalizador Peso Precio Bastón de madera (también bastón) 2 kg 5 po Rama de muérdago — 1 po Varita de tejo 0,5 kg 10 po",
+        "es": "Un canalizador druídico puede ser uno de los objetos de la tabla “Canalizadores druídicos” y está tallado, atado con un lazo o pintado para canalizar la magia primigenia. Los druidas o exploradores pueden utilizar estos objetos como canalizadores mágicos. Canalizadores druídicos Canalizador Peso Precio Bastón de madera (también bastón) 4 lb 5 po Rama de muérdago — 1 po Varita de tejo 1 lb 10 po",
         "en": "A Druidic Focus takes one of the forms in the Druidic Focuses table and is carved, tied with ribbon, or painted to channel primal magic. A Druid or Ranger can use such an object as a Spellcasting Focus. Druidic Focuses Focus Weight Cost Sprig of mistletoe — 1 GP Wooden staff (also a Quarterstaff) 4 lb. 5 GP Yew wand 1 lb. 10 GP"
       }
     },
@@ -6257,7 +6257,7 @@
       "peso": 4,
       "coste": 5,
       "descripcion": {
-        "es": "Un canalizador druídico puede ser uno de los objetos de la tabla “Canalizadores druídicos” y está tallado, atado con un lazo o pintado para canalizar la magia primigenia. Los druidas o exploradores pueden utilizar estos objetos como canalizadores mágicos. Canalizadores druídicos Canalizador Peso Precio Bastón de madera (también bastón) 2 kg 5 po Rama de muérdago — 1 po Varita de tejo 0,5 kg 10 po",
+        "es": "Un canalizador druídico puede ser uno de los objetos de la tabla “Canalizadores druídicos” y está tallado, atado con un lazo o pintado para canalizar la magia primigenia. Los druidas o exploradores pueden utilizar estos objetos como canalizadores mágicos. Canalizadores druídicos Canalizador Peso Precio Bastón de madera (también bastón) 4 lb 5 po Rama de muérdago — 1 po Varita de tejo 1 lb 10 po",
         "en": "A Druidic Focus takes one of the forms in the Druidic Focuses table and is carved, tied with ribbon, or painted to channel primal magic. A Druid or Ranger can use such an object as a Spellcasting Focus. Druidic Focuses Focus Weight Cost Sprig of mistletoe — 1 GP Wooden staff (also a Quarterstaff) 4 lb. 5 GP Yew wand 1 lb. 10 GP"
       }
     },
@@ -6285,7 +6285,7 @@
       "peso": 1,
       "coste": 10,
       "descripcion": {
-        "es": "Un canalizador druídico puede ser uno de los objetos de la tabla “Canalizadores druídicos” y está tallado, atado con un lazo o pintado para canalizar la magia primigenia. Los druidas o exploradores pueden utilizar estos objetos como canalizadores mágicos. Canalizadores druídicos Canalizador Peso Precio Bastón de madera (también bastón) 2 kg 5 po Rama de muérdago — 1 po Varita de tejo 0,5 kg 10 po",
+        "es": "Un canalizador druídico puede ser uno de los objetos de la tabla “Canalizadores druídicos” y está tallado, atado con un lazo o pintado para canalizar la magia primigenia. Los druidas o exploradores pueden utilizar estos objetos como canalizadores mágicos. Canalizadores druídicos Canalizador Peso Precio Bastón de madera (también bastón) 4 lb 5 po Rama de muérdago — 1 po Varita de tejo 1 lb 10 po",
         "en": "A Druidic Focus takes one of the forms in the Druidic Focuses table and is carved, tied with ribbon, or painted to channel primal magic. A Druid or Ranger can use such an object as a Spellcasting Focus. Druidic Focuses Focus Weight Cost Sprig of mistletoe — 1 GP Wooden staff (also a Quarterstaff) 4 lb. 5 GP Yew wand 1 lb. 10 GP"
       }
     },
@@ -6313,7 +6313,7 @@
       "peso": 1,
       "coste": 5,
       "descripcion": {
-        "es": "Un símbolo sagrado puede ser uno de los objetos de la tabla “Símbolos sagrados” y está ornamentado o pintado para canalizar la magia divina. Los clérigos o paladines pueden utilizar un símbolo sagrado como canalizador mágico. La tabla indica si un símbolo sagrado se debe sostener, llevar puesto o mostrar en tela (como un tabardo o un estandarte) o en un escudo. Símbolos sagrados Símbolo Peso Precio Amuleto (puesto o sostenido) 0,5 kg 5 po Emblema (en tela o en escudo) — 5 po Relicario (sostenido) 1 kg 5 po",
+        "es": "Un símbolo sagrado puede ser uno de los objetos de la tabla “Símbolos sagrados” y está ornamentado o pintado para canalizar la magia divina. Los clérigos o paladines pueden utilizar un símbolo sagrado como canalizador mágico. La tabla indica si un símbolo sagrado se debe sostener, llevar puesto o mostrar en tela (como un tabardo o un estandarte) o en un escudo. Símbolos sagrados Símbolo Peso Precio Amuleto (puesto o sostenido) 1 lb 5 po Emblema (en tela o en escudo) — 5 po Relicario (sostenido) 2 lb 5 po",
         "en": "A Holy Symbol takes one of the forms in the Holy Symbol table and is bejeweled or painted to channel divine magic. A Cleric or Paladin can use a Holy Symbol as a Spellcasting Focus. The table indicates whether a Holy Symbol needs to be held, worn, or borne on fabric (such as a tabard or banner) or a Shield. Holy Symbols Symbol Weight Cost Amulet (worn or held) 1 lb. 5 GP Emblem (borne on fabric or a Shield) — 5 GP Reliquary (held) 2 lb. 5 GP"
       }
     },
@@ -6341,7 +6341,7 @@
       "peso": 0,
       "coste": 5,
       "descripcion": {
-        "es": "Un símbolo sagrado puede ser uno de los objetos de la tabla “Símbolos sagrados” y está ornamentado o pintado para canalizar la magia divina. Los clérigos o paladines pueden utilizar un símbolo sagrado como canalizador mágico. La tabla indica si un símbolo sagrado se debe sostener, llevar puesto o mostrar en tela (como un tabardo o un estandarte) o en un escudo. Símbolos sagrados Símbolo Peso Precio Amuleto (puesto o sostenido) 0,5 kg 5 po Emblema (en tela o en escudo) — 5 po Relicario (sostenido) 1 kg 5 po",
+        "es": "Un símbolo sagrado puede ser uno de los objetos de la tabla “Símbolos sagrados” y está ornamentado o pintado para canalizar la magia divina. Los clérigos o paladines pueden utilizar un símbolo sagrado como canalizador mágico. La tabla indica si un símbolo sagrado se debe sostener, llevar puesto o mostrar en tela (como un tabardo o un estandarte) o en un escudo. Símbolos sagrados Símbolo Peso Precio Amuleto (puesto o sostenido) 1 lb 5 po Emblema (en tela o en escudo) — 5 po Relicario (sostenido) 2 lb 5 po",
         "en": "A Holy Symbol takes one of the forms in the Holy Symbol table and is bejeweled or painted to channel divine magic. A Cleric or Paladin can use a Holy Symbol as a Spellcasting Focus. The table indicates whether a Holy Symbol needs to be held, worn, or borne on fabric (such as a tabard or banner) or a Shield. Holy Symbols Symbol Weight Cost Amulet (worn or held) 1 lb. 5 GP Emblem (borne on fabric or a Shield) — 5 GP Reliquary (held) 2 lb. 5 GP"
       }
     },
@@ -6369,7 +6369,7 @@
       "peso": 2,
       "coste": 5,
       "descripcion": {
-        "es": "Un símbolo sagrado puede ser uno de los objetos de la tabla “Símbolos sagrados” y está ornamentado o pintado para canalizar la magia divina. Los clérigos o paladines pueden utilizar un símbolo sagrado como canalizador mágico. La tabla indica si un símbolo sagrado se debe sostener, llevar puesto o mostrar en tela (como un tabardo o un estandarte) o en un escudo. Símbolos sagrados Símbolo Peso Precio Amuleto (puesto o sostenido) 0,5 kg 5 po Emblema (en tela o en escudo) — 5 po Relicario (sostenido) 1 kg 5 po",
+        "es": "Un símbolo sagrado puede ser uno de los objetos de la tabla “Símbolos sagrados” y está ornamentado o pintado para canalizar la magia divina. Los clérigos o paladines pueden utilizar un símbolo sagrado como canalizador mágico. La tabla indica si un símbolo sagrado se debe sostener, llevar puesto o mostrar en tela (como un tabardo o un estandarte) o en un escudo. Símbolos sagrados Símbolo Peso Precio Amuleto (puesto o sostenido) 1 lb 5 po Emblema (en tela o en escudo) — 5 po Relicario (sostenido) 2 lb 5 po",
         "en": "A Holy Symbol takes one of the forms in the Holy Symbol table and is bejeweled or painted to channel divine magic. A Cleric or Paladin can use a Holy Symbol as a Spellcasting Focus. The table indicates whether a Holy Symbol needs to be held, worn, or borne on fabric (such as a tabard or banner) or a Shield. Holy Symbols Symbol Weight Cost Amulet (worn or held) 1 lb. 5 GP Emblem (borne on fabric or a Shield) — 5 GP Reliquary (held) 2 lb. 5 GP"
       }
     },
@@ -6398,7 +6398,7 @@
       "peso": 8,
       "coste": 50,
       "descripcion": {
-        "es": "Característica: Inteligencia Peso: 4 kg\nUtilizar: identificar una sustancia (CD 15) o encender un fuego (CD 15)\nFabricar: aceite, ácido, fuego de alquimista, papel, perfume, saquito de componentes",
+        "es": "Característica: Inteligencia Peso: 8 lb\nUtilizar: identificar una sustancia (CD 15) o encender un fuego (CD 15)\nFabricar: aceite, ácido, fuego de alquimista, papel, perfume, saquito de componentes",
         "en": "Ability: Intelligence Weight: 8 lb.\nUtilize: Identify a substance (DC 15), or start a fire (DC 15)\nCraft: Acid, Alchemist’s Fire, Component Pouch, Oil, Paper, Perfume"
       }
     },
@@ -6427,7 +6427,7 @@
       "peso": 9,
       "coste": 20,
       "descripcion": {
-        "es": "Característica: Inteligencia Peso: 4,5 kg\nUtilizar: detectar bebida envenenada (CD 15) o identificar alcohol (CD 10)\nFabricar: antitoxina",
+        "es": "Característica: Inteligencia Peso: 9 lb\nUtilizar: detectar bebida envenenada (CD 15) o identificar alcohol (CD 10)\nFabricar: antitoxina",
         "en": "Ability: Intelligence Weight: 9 lb.\nUtilize: Detect poisoned drink (DC 15), or identify alcohol (DC 10)\nCraft: Antitoxin"
       }
     },
@@ -6456,7 +6456,7 @@
       "peso": 5,
       "coste": 10,
       "descripcion": {
-        "es": "Característica: Destreza Peso: 2,5 kg\nUtilizar: escribir texto lleno de florituras que no se pueda falsificar (CD 15)\nFabricar: pergamino de conjuro, tinta",
+        "es": "Característica: Destreza Peso: 5 lb\nUtilizar: escribir texto lleno de florituras que no se pueda falsificar (CD 15)\nFabricar: pergamino de conjuro, tinta",
         "en": "Ability: Dexterity Weight: 5 lb.\nUtilize: Write text with impressive flourishes that guard against forgery (DC 15)\nCraft: Ink, Spell Scroll"
       }
     },
@@ -6485,7 +6485,7 @@
       "peso": 6,
       "coste": 8,
       "descripcion": {
-        "es": "Característica: Fuerza Peso: 3 kg\nUtilizar: sellar o forzar una puerta o un recipiente (CD 20)\nFabricar: bastón, garrote, garrote grande, antorcha, ariete portátil, barril, cofre, escalera, vara",
+        "es": "Característica: Fuerza Peso: 6 lb\nUtilizar: sellar o forzar una puerta o un recipiente (CD 20)\nFabricar: bastón, garrote, garrote grande, antorcha, ariete portátil, barril, cofre, escalera, vara",
         "en": "Ability: Strength Weight: 6 lb.\nUtilize: Seal or pry open a door or container (DC 20)\nCraft: Club, Greatclub, Quarterstaff, Barrel, Chest, Ladder, Pole, Portable Ram, Torch"
       }
     },
@@ -6514,7 +6514,7 @@
       "peso": 6,
       "coste": 15,
       "descripcion": {
-        "es": "Característica: Sabiduría Peso: 3 kg\nUtilizar: dibujar un mapa de una zona pequeña (CD 15)\nFabricar: mapa",
+        "es": "Característica: Sabiduría Peso: 6 lb\nUtilizar: dibujar un mapa de una zona pequeña (CD 15)\nFabricar: mapa",
         "en": "Ability: Wisdom Weight: 6 lb.\nUtilize: Draft a map of a small area (DC 15)\nCraft: Map"
       }
     },
@@ -6543,7 +6543,7 @@
       "peso": 5,
       "coste": 5,
       "descripcion": {
-        "es": "Característica: Destreza Peso: 2,5 kg\nUtilizar: modificar calzado para dar ventaja a la siguiente prueba de Destreza (Acrobacias) de quien lo lleve (CD 10)\nFabricar: útiles de escalada",
+        "es": "Característica: Destreza Peso: 5 lb\nUtilizar: modificar calzado para dar ventaja a la siguiente prueba de Destreza (Acrobacias) de quien lo lleve (CD 10)\nFabricar: útiles de escalada",
         "en": "Ability: Dexterity Weight: 5 lb.\nUtilize: Modify footwear to give Advantage on the wearer’s next Dexterity (Acrobatics) check (DC 10)\nCraft: Climber’s Kit"
       }
     },
@@ -6572,7 +6572,7 @@
       "peso": 8,
       "coste": 1,
       "descripcion": {
-        "es": "Característica: Sabiduría Peso: 4 kg\nUtilizar: mejorar el sabor de la comida (CD 10) o detectar alimentos podridos o envenenados (CD 15)\nFabricar: raciones",
+        "es": "Característica: Sabiduría Peso: 8 lb\nUtilizar: mejorar el sabor de la comida (CD 10) o detectar alimentos podridos o envenenados (CD 15)\nFabricar: raciones",
         "en": "Ability: Wisdom Weight: 8 lb.\nUtilize: Improve food’s flavor (DC 10), or detect spoiled or poisoned food (DC 15)\nCraft: Rations"
       }
     },
@@ -6601,7 +6601,7 @@
       "peso": 5,
       "coste": 30,
       "descripcion": {
-        "es": "Característica: Inteligencia Peso: 2,5 kg\nUtilizar: distinguir lo que ha contenido un objeto de vidrio durante las últimas 24 horas (CD 15)\nFabricar: botella de cristal, catalejo, lupa, vial",
+        "es": "Característica: Inteligencia Peso: 5 lb\nUtilizar: distinguir lo que ha contenido un objeto de vidrio durante las últimas 24 horas (CD 15)\nFabricar: botella de cristal, catalejo, lupa, vial",
         "en": "Ability: Intelligence Weight: 5 lb.\nUtilize: Discern what a glass object held in the past 24 hours (DC 15)\nCraft: Glass Bottle, Magnifying Glass, Spyglass, Vial"
       }
     },
@@ -6630,7 +6630,7 @@
       "peso": 2,
       "coste": 25,
       "descripcion": {
-        "es": "Característica: Inteligencia Peso: 1 kg\nUtilizar: discernir el valor de una gema (CD 15)\nFabricar: canalizador arcano, símbolo sagrado",
+        "es": "Característica: Inteligencia Peso: 2 lb\nUtilizar: discernir el valor de una gema (CD 15)\nFabricar: canalizador arcano, símbolo sagrado",
         "en": "Ability: Intelligence Weight: 2 lb.\nUtilize: Discern a gem’s value (DC 15)\nCraft: Arcane Focus, Holy Symbol"
       }
     },
@@ -6659,7 +6659,7 @@
       "peso": 5,
       "coste": 5,
       "descripcion": {
-        "es": "Característica: Destreza Peso: 2,5 kg\nUtilizar: añadir un diseño a un objeto de cuero (CD 10)\nFabricar: honda, látigo, armadura de cuero, armadura de cuero tachonado, armadura de pieles, aljaba, bolsa, cantimplora, estuche para mapas o pergaminos, estuche para virotes de ballesta, mochila, pergamino",
+        "es": "Característica: Destreza Peso: 5 lb\nUtilizar: añadir un diseño a un objeto de cuero (CD 10)\nFabricar: honda, látigo, armadura de cuero, armadura de cuero tachonado, armadura de pieles, aljaba, bolsa, cantimplora, estuche para mapas o pergaminos, estuche para virotes de ballesta, mochila, pergamino",
         "en": "Ability: Dexterity Weight: 5 lb.\nUtilize: Add a design to a leather item (DC 10)\nCraft: Sling, Whip, Hide Armor, Leather Armor, Studded Leather Armor, Backpack, Crossbow Bolt Case, Map or Scroll Case, Parchment, Pouch, Quiver, Waterskin"
       }
     },
@@ -6688,7 +6688,7 @@
       "peso": 8,
       "coste": 10,
       "descripcion": {
-        "es": "Característica: Fuerza Peso: 4 kg\nUtilizar: esculpir un símbolo o un agujero en la piedra (CD 10)\nFabricar: polipasto",
+        "es": "Característica: Fuerza Peso: 8 lb\nUtilizar: esculpir un símbolo o un agujero en la piedra (CD 10)\nFabricar: polipasto",
         "en": "Ability: Strength Weight: 8 lb.\nUtilize: Chisel a symbol or hole in stone (DC 10)\nCraft: Block and Tackle"
       }
     },
@@ -6717,7 +6717,7 @@
       "peso": 5,
       "coste": 10,
       "descripcion": {
-        "es": "Característica: Sabiduría Peso: 2,5 kg\nUtilizar: pintar una imagen reconocible de algo que hayas visto (CD 10)\nFabricar: canalizador druídico, símbolo sagrado",
+        "es": "Característica: Sabiduría Peso: 5 lb\nUtilizar: pintar una imagen reconocible de algo que hayas visto (CD 10)\nFabricar: canalizador druídico, símbolo sagrado",
         "en": "Ability: Wisdom Weight: 5 lb.\nUtilize: Paint a recognizable image of something you’ve seen (DC 10)\nCraft: Druidic Focus, Holy Symbol"
       }
     },
@@ -6746,7 +6746,7 @@
       "peso": 3,
       "coste": 10,
       "descripcion": {
-        "es": "Característica: Inteligencia Peso: 1,5 kg\nUtilizar: distinguir lo que ha contenido un objeto de cerámica durante las últimas 24 horas (CD 15)\nFabricar: jarro, lámpara",
+        "es": "Característica: Inteligencia Peso: 3 lb\nUtilizar: distinguir lo que ha contenido un objeto de cerámica durante las últimas 24 horas (CD 15)\nFabricar: jarro, lámpara",
         "en": "Ability: Intelligence Weight: 3 lb.\nUtilize: Discern what a ceramic object held in the past 24 hours (DC 15)\nCraft: Jug, Lamp"
       }
     },
@@ -6775,7 +6775,7 @@
       "peso": 8,
       "coste": 20,
       "descripcion": {
-        "es": "Característica: Fuerza Peso: 4 kg\nUtilizar: forzar una puerta o un recipiente (CD 20)\nFabricar: cualquier arma cuerpo a cuerpo (salvo bastón, garrote, garrote grande y látigo), armaduras medias (salvo de pieles), armaduras pesadas, abrojos, balas de arma de fuego, bolas de metal, cadena, cubo, garfio de escalada, olla de hierro, palanqueta, proyectiles de honda, puntas de hierro",
+        "es": "Característica: Fuerza Peso: 8 lb\nUtilizar: forzar una puerta o un recipiente (CD 20)\nFabricar: cualquier arma cuerpo a cuerpo (salvo bastón, garrote, garrote grande y látigo), armaduras medias (salvo de pieles), armaduras pesadas, abrojos, balas de arma de fuego, bolas de metal, cadena, cubo, garfio de escalada, olla de hierro, palanqueta, proyectiles de honda, puntas de hierro",
         "en": "Ability: Strength Weight: 8 lb.\nUtilize: Pry open a door or container (DC 20)\nCraft: Any Melee weapon (except Club, Greatclub, Quarterstaff, and Whip), Medium armor (except Hide), Heavy armor, Ball Bearings, Bucket, Caltrops, Chain, Crowbar, Firearm Bullets, Grappling Hook, Iron Pot, Iron Spikes, Sling Bullets"
       }
     },
@@ -6804,7 +6804,7 @@
       "peso": 10,
       "coste": 50,
       "descripcion": {
-        "es": "Característica: Destreza Peso: 5 kg\nUtilizar: montar un objeto Diminuto compuesto de chatarra, que se desarmará tras 1 minuto (CD 20)\nFabricar: mosquete, pistola, campana, cerradura, espejo, esposas, frasco, linterna de ojo de buey, linterna sorda, pala, silbato de supervivencia, trampa para cazar, yesquero",
+        "es": "Característica: Destreza Peso: 10 lb\nUtilizar: montar un objeto Diminuto compuesto de chatarra, que se desarmará tras 1 minuto (CD 20)\nFabricar: mosquete, pistola, campana, cerradura, espejo, esposas, frasco, linterna de ojo de buey, linterna sorda, pala, silbato de supervivencia, trampa para cazar, yesquero",
         "en": "Ability: Dexterity Weight: 10 lb.\nUtilize: Assemble a Tiny item composed of scrap, which falls apart in 1 minute (DC 20)\nCraft: Musket, Pistol, Bell, Bullseye Lantern, Flask, Hooded Lantern, Hunting Trap, Lock, Manacles, Mirror, Shovel, Signal Whistle, Tinderbox"
       }
     },
@@ -6833,7 +6833,7 @@
       "peso": 5,
       "coste": 1,
       "descripcion": {
-        "es": "Característica: Destreza Peso: 2,5 kg\nUtilizar: remendar un roto en una prenda (CD 10) o coser un diseño Diminuto (CD 10)\nFabricar: armadura acolchada, cesta, cordel, cuerda, manta, petate, red, ropas de calidad, ropas de viaje, saco, tienda, túnica",
+        "es": "Característica: Destreza Peso: 5 lb\nUtilizar: remendar un roto en una prenda (CD 10) o coser un diseño Diminuto (CD 10)\nFabricar: armadura acolchada, cesta, cordel, cuerda, manta, petate, red, ropas de calidad, ropas de viaje, saco, tienda, túnica",
         "en": "Ability: Dexterity Weight: 5 lb.\nUtilize: Mend a tear in clothing (DC 10), or sew a Tiny design (DC 10)\nCraft: Padded Armor, Basket, Bedroll, Blanket, Fine Clothes, Net, Robe, Rope, Sack, String, Tent, Traveler’s Clothes"
       }
     },
@@ -6862,7 +6862,7 @@
       "peso": 5,
       "coste": 1,
       "descripcion": {
-        "es": "Característica: Destreza Peso: 2,5 kg\nUtilizar: tallar un dibujo en madera (CD 10)\nFabricar: bastón, garrote, garrote grande, armas a distancia (salvo honda, mosquete y pistola), canalizador arcano, canalizador druídico, dardos, flechas, pluma, virotes",
+        "es": "Característica: Destreza Peso: 5 lb\nUtilizar: tallar un dibujo en madera (CD 10)\nFabricar: bastón, garrote, garrote grande, armas a distancia (salvo honda, mosquete y pistola), canalizador arcano, canalizador druídico, dardos, flechas, pluma, virotes",
         "en": "Ability: Dexterity Weight: 5 lb.\nUtilize: Carve a pattern in wood (DC 10)\nCraft: Club, Greatclub, Quarterstaff, Ranged weapons (except Pistol, Musket, and Sling), Arcane Focus, Arrows, Bolts, Druidic Focus, Ink Pen, Needles"
       }
     },
@@ -6891,7 +6891,7 @@
       "peso": 3,
       "coste": 25,
       "descripcion": {
-        "es": "Característica: Carisma Peso: 1,5 kg\nUtilizar: maquillar (CD 10)\nFabricar: disfraz",
+        "es": "Característica: Carisma Peso: 3 lb\nUtilizar: maquillar (CD 10)\nFabricar: disfraz",
         "en": "Ability: Charisma Weight: 3 lb.\nUtilize: Apply makeup (DC 10)\nCraft: Costume"
       }
     },
@@ -6920,7 +6920,7 @@
       "peso": 5,
       "coste": 15,
       "descripcion": {
-        "es": "Característica: Destreza Peso: 2,5 kg\nUtilizar: escribir 10 o menos palabras imitando la letra de otra persona (CD 15) o duplicar un sello de cera (CD 20)",
+        "es": "Característica: Destreza Peso: 5 lb\nUtilizar: escribir 10 o menos palabras imitando la letra de otra persona (CD 15) o duplicar un sello de cera (CD 20)",
         "en": "Ability: Dexterity Weight: 5 lb.\nUtilize: Mimic 10 or fewer words of someone else’s handwriting (DC 15), or duplicate a wax seal (DC 20)"
       }
     },
@@ -7065,7 +7065,7 @@
       "peso": 3,
       "coste": 5,
       "descripcion": {
-        "es": "Característica: Inteligencia Peso: 1,5 kg\nUtilizar: identificar una planta (CD 10)\nFabricar: antitoxina, poción de curación, útiles de sanador, vela",
+        "es": "Característica: Inteligencia Peso: 3 lb\nUtilizar: identificar una planta (CD 10)\nFabricar: antitoxina, poción de curación, útiles de sanador, vela",
         "en": "Ability: Intelligence Weight: 3 lb.\nUtilize: Identify a plant (DC 10)\nCraft: Antitoxin, Candle, Healer’s Kit, Potion of Healing"
       }
     },
@@ -7094,7 +7094,7 @@
       "peso": 6,
       "coste": 30,
       "descripcion": {
-        "es": "Característica: Carisma Peso: variable\nUtilizar: tocar una melodía conocida (CD 10) o improvisar una canción (CD 15)\nVariantes: chirimía (2 po, 0,5 kg), cuerno (3 po, 1 kg), dulcémele (25 po, 5 kg), flauta (2 po, 0,5 kg), flauta de pan (12 po, 1 kg), gaita (30 po, 3 kg), laúd (35 po, 1 kg), lira (30 po, 1 kg), tambor (6 po, 1,5 kg), viola (30 po, 0,5 kg)",
+        "es": "Característica: Carisma Peso: variable\nUtilizar: tocar una melodía conocida (CD 10) o improvisar una canción (CD 15)\nVariantes: chirimía (2 po, 1 lb), cuerno (3 po, 2 lb), dulcémele (25 po, 10 lb), flauta (2 po, 1 lb), flauta de pan (12 po, 2 lb), gaita (30 po, 6 lb), laúd (35 po, 2 lb), lira (30 po, 2 lb), tambor (6 po, 3 lb), viola (30 po, 1 lb)",
         "en": "Ability: Charisma Weight: Varies\nUtilize: Play a known tune (DC 10), or improvise a song (DC 15)\nVariants: Bagpipes (30 GP, 6 lb.), drum (6 GP, 3 lb.), dulcimer (25 GP, 10 lb.), flute (2 GP, 1 lb.), horn (3 GP, 2 lb.), lute (35 GP, 2 lb.), lyre (30 GP, 2 lb.), pan flute (12 GP, 2 lb.), shawm (2 GP, 1 lb.), viol (30 GP, 1 lb.)"
       }
     },
@@ -7123,7 +7123,7 @@
       "peso": 3,
       "coste": 6,
       "descripcion": {
-        "es": "Característica: Carisma Peso: variable\nUtilizar: tocar una melodía conocida (CD 10) o improvisar una canción (CD 15)\nVariantes: chirimía (2 po, 0,5 kg), cuerno (3 po, 1 kg), dulcémele (25 po, 5 kg), flauta (2 po, 0,5 kg), flauta de pan (12 po, 1 kg), gaita (30 po, 3 kg), laúd (35 po, 1 kg), lira (30 po, 1 kg), tambor (6 po, 1,5 kg), viola (30 po, 0,5 kg)",
+        "es": "Característica: Carisma Peso: variable\nUtilizar: tocar una melodía conocida (CD 10) o improvisar una canción (CD 15)\nVariantes: chirimía (2 po, 1 lb), cuerno (3 po, 2 lb), dulcémele (25 po, 10 lb), flauta (2 po, 1 lb), flauta de pan (12 po, 2 lb), gaita (30 po, 6 lb), laúd (35 po, 2 lb), lira (30 po, 2 lb), tambor (6 po, 3 lb), viola (30 po, 1 lb)",
         "en": "Ability: Charisma Weight: Varies\nUtilize: Play a known tune (DC 10), or improvise a song (DC 15)\nVariants: Bagpipes (30 GP, 6 lb.), drum (6 GP, 3 lb.), dulcimer (25 GP, 10 lb.), flute (2 GP, 1 lb.), horn (3 GP, 2 lb.), lute (35 GP, 2 lb.), lyre (30 GP, 2 lb.), pan flute (12 GP, 2 lb.), shawm (2 GP, 1 lb.), viol (30 GP, 1 lb.)"
       }
     },
@@ -7152,7 +7152,7 @@
       "peso": 10,
       "coste": 25,
       "descripcion": {
-        "es": "Característica: Carisma Peso: variable\nUtilizar: tocar una melodía conocida (CD 10) o improvisar una canción (CD 15)\nVariantes: chirimía (2 po, 0,5 kg), cuerno (3 po, 1 kg), dulcémele (25 po, 5 kg), flauta (2 po, 0,5 kg), flauta de pan (12 po, 1 kg), gaita (30 po, 3 kg), laúd (35 po, 1 kg), lira (30 po, 1 kg), tambor (6 po, 1,5 kg), viola (30 po, 0,5 kg)",
+        "es": "Característica: Carisma Peso: variable\nUtilizar: tocar una melodía conocida (CD 10) o improvisar una canción (CD 15)\nVariantes: chirimía (2 po, 1 lb), cuerno (3 po, 2 lb), dulcémele (25 po, 10 lb), flauta (2 po, 1 lb), flauta de pan (12 po, 2 lb), gaita (30 po, 6 lb), laúd (35 po, 2 lb), lira (30 po, 2 lb), tambor (6 po, 3 lb), viola (30 po, 1 lb)",
         "en": "Ability: Charisma Weight: Varies\nUtilize: Play a known tune (DC 10), or improvise a song (DC 15)\nVariants: Bagpipes (30 GP, 6 lb.), drum (6 GP, 3 lb.), dulcimer (25 GP, 10 lb.), flute (2 GP, 1 lb.), horn (3 GP, 2 lb.), lute (35 GP, 2 lb.), lyre (30 GP, 2 lb.), pan flute (12 GP, 2 lb.), shawm (2 GP, 1 lb.), viol (30 GP, 1 lb.)"
       }
     },
@@ -7181,7 +7181,7 @@
       "peso": 1,
       "coste": 2,
       "descripcion": {
-        "es": "Característica: Carisma Peso: variable\nUtilizar: tocar una melodía conocida (CD 10) o improvisar una canción (CD 15)\nVariantes: chirimía (2 po, 0,5 kg), cuerno (3 po, 1 kg), dulcémele (25 po, 5 kg), flauta (2 po, 0,5 kg), flauta de pan (12 po, 1 kg), gaita (30 po, 3 kg), laúd (35 po, 1 kg), lira (30 po, 1 kg), tambor (6 po, 1,5 kg), viola (30 po, 0,5 kg)",
+        "es": "Característica: Carisma Peso: variable\nUtilizar: tocar una melodía conocida (CD 10) o improvisar una canción (CD 15)\nVariantes: chirimía (2 po, 1 lb), cuerno (3 po, 2 lb), dulcémele (25 po, 10 lb), flauta (2 po, 1 lb), flauta de pan (12 po, 2 lb), gaita (30 po, 6 lb), laúd (35 po, 2 lb), lira (30 po, 2 lb), tambor (6 po, 3 lb), viola (30 po, 1 lb)",
         "en": "Ability: Charisma Weight: Varies\nUtilize: Play a known tune (DC 10), or improvise a song (DC 15)\nVariants: Bagpipes (30 GP, 6 lb.), drum (6 GP, 3 lb.), dulcimer (25 GP, 10 lb.), flute (2 GP, 1 lb.), horn (3 GP, 2 lb.), lute (35 GP, 2 lb.), lyre (30 GP, 2 lb.), pan flute (12 GP, 2 lb.), shawm (2 GP, 1 lb.), viol (30 GP, 1 lb.)"
       }
     },
@@ -7210,7 +7210,7 @@
       "peso": 2,
       "coste": 3,
       "descripcion": {
-        "es": "Característica: Carisma Peso: variable\nUtilizar: tocar una melodía conocida (CD 10) o improvisar una canción (CD 15)\nVariantes: chirimía (2 po, 0,5 kg), cuerno (3 po, 1 kg), dulcémele (25 po, 5 kg), flauta (2 po, 0,5 kg), flauta de pan (12 po, 1 kg), gaita (30 po, 3 kg), laúd (35 po, 1 kg), lira (30 po, 1 kg), tambor (6 po, 1,5 kg), viola (30 po, 0,5 kg)",
+        "es": "Característica: Carisma Peso: variable\nUtilizar: tocar una melodía conocida (CD 10) o improvisar una canción (CD 15)\nVariantes: chirimía (2 po, 1 lb), cuerno (3 po, 2 lb), dulcémele (25 po, 10 lb), flauta (2 po, 1 lb), flauta de pan (12 po, 2 lb), gaita (30 po, 6 lb), laúd (35 po, 2 lb), lira (30 po, 2 lb), tambor (6 po, 3 lb), viola (30 po, 1 lb)",
         "en": "Ability: Charisma Weight: Varies\nUtilize: Play a known tune (DC 10), or improvise a song (DC 15)\nVariants: Bagpipes (30 GP, 6 lb.), drum (6 GP, 3 lb.), dulcimer (25 GP, 10 lb.), flute (2 GP, 1 lb.), horn (3 GP, 2 lb.), lute (35 GP, 2 lb.), lyre (30 GP, 2 lb.), pan flute (12 GP, 2 lb.), shawm (2 GP, 1 lb.), viol (30 GP, 1 lb.)"
       }
     },
@@ -7239,7 +7239,7 @@
       "peso": 2,
       "coste": 35,
       "descripcion": {
-        "es": "Característica: Carisma Peso: variable\nUtilizar: tocar una melodía conocida (CD 10) o improvisar una canción (CD 15)\nVariantes: chirimía (2 po, 0,5 kg), cuerno (3 po, 1 kg), dulcémele (25 po, 5 kg), flauta (2 po, 0,5 kg), flauta de pan (12 po, 1 kg), gaita (30 po, 3 kg), laúd (35 po, 1 kg), lira (30 po, 1 kg), tambor (6 po, 1,5 kg), viola (30 po, 0,5 kg)",
+        "es": "Característica: Carisma Peso: variable\nUtilizar: tocar una melodía conocida (CD 10) o improvisar una canción (CD 15)\nVariantes: chirimía (2 po, 1 lb), cuerno (3 po, 2 lb), dulcémele (25 po, 10 lb), flauta (2 po, 1 lb), flauta de pan (12 po, 2 lb), gaita (30 po, 6 lb), laúd (35 po, 2 lb), lira (30 po, 2 lb), tambor (6 po, 3 lb), viola (30 po, 1 lb)",
         "en": "Ability: Charisma Weight: Varies\nUtilize: Play a known tune (DC 10), or improvise a song (DC 15)\nVariants: Bagpipes (30 GP, 6 lb.), drum (6 GP, 3 lb.), dulcimer (25 GP, 10 lb.), flute (2 GP, 1 lb.), horn (3 GP, 2 lb.), lute (35 GP, 2 lb.), lyre (30 GP, 2 lb.), pan flute (12 GP, 2 lb.), shawm (2 GP, 1 lb.), viol (30 GP, 1 lb.)"
       }
     },
@@ -7268,7 +7268,7 @@
       "peso": 2,
       "coste": 30,
       "descripcion": {
-        "es": "Característica: Carisma Peso: variable\nUtilizar: tocar una melodía conocida (CD 10) o improvisar una canción (CD 15)\nVariantes: chirimía (2 po, 0,5 kg), cuerno (3 po, 1 kg), dulcémele (25 po, 5 kg), flauta (2 po, 0,5 kg), flauta de pan (12 po, 1 kg), gaita (30 po, 3 kg), laúd (35 po, 1 kg), lira (30 po, 1 kg), tambor (6 po, 1,5 kg), viola (30 po, 0,5 kg)",
+        "es": "Característica: Carisma Peso: variable\nUtilizar: tocar una melodía conocida (CD 10) o improvisar una canción (CD 15)\nVariantes: chirimía (2 po, 1 lb), cuerno (3 po, 2 lb), dulcémele (25 po, 10 lb), flauta (2 po, 1 lb), flauta de pan (12 po, 2 lb), gaita (30 po, 6 lb), laúd (35 po, 2 lb), lira (30 po, 2 lb), tambor (6 po, 3 lb), viola (30 po, 1 lb)",
         "en": "Ability: Charisma Weight: Varies\nUtilize: Play a known tune (DC 10), or improvise a song (DC 15)\nVariants: Bagpipes (30 GP, 6 lb.), drum (6 GP, 3 lb.), dulcimer (25 GP, 10 lb.), flute (2 GP, 1 lb.), horn (3 GP, 2 lb.), lute (35 GP, 2 lb.), lyre (30 GP, 2 lb.), pan flute (12 GP, 2 lb.), shawm (2 GP, 1 lb.), viol (30 GP, 1 lb.)"
       }
     },
@@ -7297,7 +7297,7 @@
       "peso": 2,
       "coste": 12,
       "descripcion": {
-        "es": "Característica: Carisma Peso: variable\nUtilizar: tocar una melodía conocida (CD 10) o improvisar una canción (CD 15)\nVariantes: chirimía (2 po, 0,5 kg), cuerno (3 po, 1 kg), dulcémele (25 po, 5 kg), flauta (2 po, 0,5 kg), flauta de pan (12 po, 1 kg), gaita (30 po, 3 kg), laúd (35 po, 1 kg), lira (30 po, 1 kg), tambor (6 po, 1,5 kg), viola (30 po, 0,5 kg)",
+        "es": "Característica: Carisma Peso: variable\nUtilizar: tocar una melodía conocida (CD 10) o improvisar una canción (CD 15)\nVariantes: chirimía (2 po, 1 lb), cuerno (3 po, 2 lb), dulcémele (25 po, 10 lb), flauta (2 po, 1 lb), flauta de pan (12 po, 2 lb), gaita (30 po, 6 lb), laúd (35 po, 2 lb), lira (30 po, 2 lb), tambor (6 po, 3 lb), viola (30 po, 1 lb)",
         "en": "Ability: Charisma Weight: Varies\nUtilize: Play a known tune (DC 10), or improvise a song (DC 15)\nVariants: Bagpipes (30 GP, 6 lb.), drum (6 GP, 3 lb.), dulcimer (25 GP, 10 lb.), flute (2 GP, 1 lb.), horn (3 GP, 2 lb.), lute (35 GP, 2 lb.), lyre (30 GP, 2 lb.), pan flute (12 GP, 2 lb.), shawm (2 GP, 1 lb.), viol (30 GP, 1 lb.)"
       }
     },
@@ -7326,7 +7326,7 @@
       "peso": 1,
       "coste": 2,
       "descripcion": {
-        "es": "Característica: Carisma Peso: variable\nUtilizar: tocar una melodía conocida (CD 10) o improvisar una canción (CD 15)\nVariantes: chirimía (2 po, 0,5 kg), cuerno (3 po, 1 kg), dulcémele (25 po, 5 kg), flauta (2 po, 0,5 kg), flauta de pan (12 po, 1 kg), gaita (30 po, 3 kg), laúd (35 po, 1 kg), lira (30 po, 1 kg), tambor (6 po, 1,5 kg), viola (30 po, 0,5 kg)",
+        "es": "Característica: Carisma Peso: variable\nUtilizar: tocar una melodía conocida (CD 10) o improvisar una canción (CD 15)\nVariantes: chirimía (2 po, 1 lb), cuerno (3 po, 2 lb), dulcémele (25 po, 10 lb), flauta (2 po, 1 lb), flauta de pan (12 po, 2 lb), gaita (30 po, 6 lb), laúd (35 po, 2 lb), lira (30 po, 2 lb), tambor (6 po, 3 lb), viola (30 po, 1 lb)",
         "en": "Ability: Charisma Weight: Varies\nUtilize: Play a known tune (DC 10), or improvise a song (DC 15)\nVariants: Bagpipes (30 GP, 6 lb.), drum (6 GP, 3 lb.), dulcimer (25 GP, 10 lb.), flute (2 GP, 1 lb.), horn (3 GP, 2 lb.), lute (35 GP, 2 lb.), lyre (30 GP, 2 lb.), pan flute (12 GP, 2 lb.), shawm (2 GP, 1 lb.), viol (30 GP, 1 lb.)"
       }
     },
@@ -7355,7 +7355,7 @@
       "peso": 1,
       "coste": 30,
       "descripcion": {
-        "es": "Característica: Carisma Peso: variable\nUtilizar: tocar una melodía conocida (CD 10) o improvisar una canción (CD 15)\nVariantes: chirimía (2 po, 0,5 kg), cuerno (3 po, 1 kg), dulcémele (25 po, 5 kg), flauta (2 po, 0,5 kg), flauta de pan (12 po, 1 kg), gaita (30 po, 3 kg), laúd (35 po, 1 kg), lira (30 po, 1 kg), tambor (6 po, 1,5 kg), viola (30 po, 0,5 kg)",
+        "es": "Característica: Carisma Peso: variable\nUtilizar: tocar una melodía conocida (CD 10) o improvisar una canción (CD 15)\nVariantes: chirimía (2 po, 1 lb), cuerno (3 po, 2 lb), dulcémele (25 po, 10 lb), flauta (2 po, 1 lb), flauta de pan (12 po, 2 lb), gaita (30 po, 6 lb), laúd (35 po, 2 lb), lira (30 po, 2 lb), tambor (6 po, 3 lb), viola (30 po, 1 lb)",
         "en": "Ability: Charisma Weight: Varies\nUtilize: Play a known tune (DC 10), or improvise a song (DC 15)\nVariants: Bagpipes (30 GP, 6 lb.), drum (6 GP, 3 lb.), dulcimer (25 GP, 10 lb.), flute (2 GP, 1 lb.), horn (3 GP, 2 lb.), lute (35 GP, 2 lb.), lyre (30 GP, 2 lb.), pan flute (12 GP, 2 lb.), shawm (2 GP, 1 lb.), viol (30 GP, 1 lb.)"
       }
     },
@@ -7384,7 +7384,7 @@
       "peso": 2,
       "coste": 25,
       "descripcion": {
-        "es": "Característica: Sabiduría Peso: 1 kg\nUtilizar: trazar un rumbo (CD 10) o determinar la posición contemplando las estrellas (CD 15)",
+        "es": "Característica: Sabiduría Peso: 2 lb\nUtilizar: trazar un rumbo (CD 10) o determinar la posición contemplando las estrellas (CD 15)",
         "en": "Ability: Wisdom Weight: 2 lb.\nUtilize: Plot a course (DC 10), or determine position by stargazing (DC 15)"
       }
     },
@@ -7413,7 +7413,7 @@
       "peso": 2,
       "coste": 50,
       "descripcion": {
-        "es": "Característica: Inteligencia Peso: 1 kg\nUtilizar: detectar un objeto envenenado (CD 10)\nFabricar: veneno básico",
+        "es": "Característica: Inteligencia Peso: 2 lb\nUtilizar: detectar un objeto envenenado (CD 10)\nFabricar: veneno básico",
         "en": "Ability: Intelligence Weight: 2 lb.\nUtilize: Detect a poisoned object (DC 10)\nCraft: Basic Poison"
       }
     },
@@ -7442,7 +7442,7 @@
       "peso": 1,
       "coste": 25,
       "descripcion": {
-        "es": "Característica: Destreza Peso: 0,5 kg\nUtilizar: forzar una cerradura (CD 15) o desarmar una trampa (CD 15)",
+        "es": "Característica: Destreza Peso: 1 lb\nUtilizar: forzar una cerradura (CD 15) o desarmar una trampa (CD 15)",
         "en": "Ability: Dexterity Weight: 1 lb.\nUtilize: Pick a lock (DC 15), or disarm a trap (DC 15)"
       }
     },

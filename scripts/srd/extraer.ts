@@ -44,6 +44,7 @@ import { allOriginDocs } from './origenes.ts'
 import { GEAR_PAIRS, GEAR_RENAMES, MOUNT_RENAMES } from './pares.ts'
 import { allClassDocs } from './rasgos.ts'
 import { boxesOf, type Edition, type Lang, pagesOf, widthOf } from './texto.ts'
+import { imperialTexts } from './unidades.ts'
 
 export const CONTENT_DIR = new URL('../../packages/systems/src/catalog/5e/content/', import.meta.url)
 
@@ -295,7 +296,8 @@ export function extract(): Record<string, Doc[]> {
 export function main(io: Io = consoleIo) {
   const files = extract()
   for (const [name, docs] of Object.entries(files)) {
-    writeFileSync(new URL(name, CONTENT_DIR), `${JSON.stringify(docs, null, 2)}\n`)
+    // Las medidas, en las de D&D (pies, millas, libras), también en español
+    writeFileSync(new URL(name, CONTENT_DIR), `${JSON.stringify(imperialTexts(docs), null, 2)}\n`)
     io.out(`${name}: ${docs.length} documentos`)
   }
 }

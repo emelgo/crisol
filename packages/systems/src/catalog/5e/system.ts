@@ -1,7 +1,7 @@
 /**
  * El 5e de serie (srd-5e): las reglas que calculan un personaje y una criatura, con el SRD 5.1 (2014) y el 5.2.1
  * (2024) como fuentes que la campaña activa. Términos de las traducciones oficiales de los dos SRD (CC BY 4.0). Las
- * distancias van en pies y los pesos en libras (en español se enseñan en metros y kilos: ×0,3 y ×0,5)
+ * distancias van en pies y los pesos en libras, también en español (Enrique, 2026-11-06: las de D&D, sin pasarlas)
  */
 import { FORMAT, type System } from '../../format.ts'
 
