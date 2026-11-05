@@ -1,0 +1,1483 @@
+[
+  {
+    "type": "estado",
+    "key": "agarrado_2014",
+    "source": "srd51",
+    "concept": "agarrado",
+    "data": {
+      "name": {
+        "es": "Agarrado",
+        "en": "Grappled"
+      },
+      "activo": true,
+      "descripcion": {
+        "es": "- La velocidad de una criatura agarrada pasa a ser 0 y no puede beneficiarse de ningún bonificador a su velocidad.\n- El estado termina si quien agarra queda incapacitado (consulta dicho estado).\n- El estado termina también si algún efecto aleja a la criatura agarrada de quien la agarra o del efecto que causa el agarre, como cuando el conjuro ola atronadora hace que una criatura salga despedida.",
+        "en": "- A grappled creature’s speed becomes 0, and it can’t benefit from any bonus to its speed.\n- The condition ends if the grappler is incapacitated (see the condition).\n- The condition also ends if an effect removes the grappled creature from the reach of the grappler or grappling effect, such as when a creature is hurled away by the thunder-wave spell."
+      }
+    },
+    "mechanics": {
+      "effects": [
+        {
+          "target": "velocidad",
+          "op": "max",
+          "value": "0",
+          "when": "@este.activo"
+        }
+      ],
+      "toggle": {},
+      "automation": "partial",
+      "manual": {
+        "es": "Termina si quien agarra queda incapacitado o se aleja.",
+        "en": "Ends if the grappler is incapacitated or moved away."
+      }
+    },
+    "ref": {
+      "pages": {
+        "en": 358,
+        "es": 389
+      }
+    }
+  },
+  {
+    "type": "estado",
+    "key": "apresado_2014",
+    "source": "srd51",
+    "concept": "apresado",
+    "data": {
+      "name": {
+        "es": "Apresado",
+        "en": "Restrained"
+      },
+      "activo": true,
+      "descripcion": {
+        "es": "- La velocidad de una criatura apresada pasa a ser 0 y no puede beneficiarse de ningún bonificador a su velocidad.\n- Las tiradas de ataque contra la criatura tienen ventaja y las tiradas de ataque realizadas por la criatura tienen desventaja.\n- La criatura tiene desventaja en las tiradas de salvación de Destreza.",
+        "en": "- A restrained creature’s speed becomes 0, and it can’t benefit from any bonus to its speed.\n- Attack rolls against the creature have advantage, and the creature’s attack rolls have disadvantage.\n- The creature has disadvantage on Dexterity saving throws."
+      }
+    },
+    "mechanics": {
+      "effects": [
+        {
+          "target": "velocidad",
+          "op": "max",
+          "value": "0",
+          "when": "@este.activo"
+        },
+        {
+          "target": "ataque",
+          "op": "disadvantage",
+          "when": "@este.activo"
+        },
+        {
+          "target": "salvacion.des",
+          "op": "disadvantage",
+          "when": "@este.activo"
+        }
+      ],
+      "toggle": {},
+      "automation": "partial",
+      "manual": {
+        "es": "Los ataques contra él tienen ventaja.",
+        "en": "Attack rolls against it have advantage."
+      }
+    },
+    "ref": {
+      "pages": {
+        "en": 359,
+        "es": 389
+      }
+    }
+  },
+  {
+    "type": "estado",
+    "key": "asustado_2014",
+    "source": "srd51",
+    "concept": "asustado",
+    "data": {
+      "name": {
+        "es": "Asustado",
+        "en": "Frightened"
+      },
+      "activo": true,
+      "descripcion": {
+        "es": "- Una criatura asustada tiene desventaja en las pruebas de característica y tiradas de ataque mientras pueda ver a la fuente de su miedo.\n- La criatura no puede acercarse voluntariamente a la fuente de su miedo.",
+        "en": "- A frightened creature has disadvantage on ability checks and attack rolls while the source of its fear is within line of sight.\n- The creature can’t willingly move closer to the source of its fear."
+      }
+    },
+    "mechanics": {
+      "effects": [
+        {
+          "target": "prueba",
+          "op": "disadvantage",
+          "when": "@este.activo"
+        },
+        {
+          "target": "habilidad",
+          "op": "disadvantage",
+          "when": "@este.activo"
+        },
+        {
+          "target": "iniciativa",
+          "op": "disadvantage",
+          "when": "@este.activo"
+        },
+        {
+          "target": "ataque",
+          "op": "disadvantage",
+          "when": "@este.activo"
+        }
+      ],
+      "toggle": {},
+      "automation": "partial",
+      "manual": {
+        "es": "Solo mientras ve la fuente de su miedo (desactívalo si no la ve). No puede acercarse a ella.",
+        "en": "Only while the source of its fear is in sight (turn it off otherwise). Can’t move closer to it."
+      }
+    },
+    "ref": {
+      "pages": {
+        "en": 358,
+        "es": 389
+      }
+    }
+  },
+  {
+    "type": "estado",
+    "key": "aturdido_2014",
+    "source": "srd51",
+    "concept": "aturdido",
+    "data": {
+      "name": {
+        "es": "Aturdido",
+        "en": "Stunned"
+      },
+      "activo": true,
+      "descripcion": {
+        "es": "- Una criatura aturdida está incapacitada (consulta dicho estado), no puede moverse y solo puede hablar con voz entrecortada.\n- La criatura falla automáticamente las tiradas de salvación de Fuerza y Destreza.\n- Las tiradas de ataque contra ella tienen ventaja.",
+        "en": "- A stunned creature is incapacitated (see the condition), can’t move, and can speak only falteringly.\n- The creature automatically fails Strength and Dexterity saving throws.\n- Attack rolls against the creature have advantage."
+      }
+    },
+    "mechanics": {
+      "effects": [
+        {
+          "target": "velocidad",
+          "op": "max",
+          "value": "0",
+          "when": "@este.activo"
+        }
+      ],
+      "toggle": {},
+      "automation": "partial",
+      "manual": {
+        "es": "Incapacitado. Falla las salvaciones de Fuerza y Destreza. Los ataques contra él tienen ventaja.",
+        "en": "Incapacitated. Fails Strength and Dexterity saving throws. Attack rolls against it have advantage."
+      }
+    },
+    "ref": {
+      "pages": {
+        "en": 359,
+        "es": 389
+      }
+    }
+  },
+  {
+    "type": "estado",
+    "key": "cansancio_2014",
+    "source": "srd51",
+    "concept": "cansancio",
+    "data": {
+      "name": {
+        "es": "Cansancio",
+        "en": "Exhaustion"
+      },
+      "activo": true,
+      "nivel": 1,
+      "descripcion": {
+        "es": "Algunas capacidades especiales y ciertos peligros ambientales, como la inanición o una larga exposición a los efectos de unas temperaturas particularmente frías o calientes, pueden producir un estado especial llamado “cansancio”. El cansancio se mide con seis niveles. Un efecto puede sumar uno o más niveles de cansancio a una criatura, según se especifique en la descripción de dicho efecto.\n\n| Nivel | Efecto |\n| --- | --- |\n| 1 | Desventaja en pruebas de característica. |\n| 2 | Velocidad reducida a la mitad. |\n| 3 | Desventaja en tiradas de ataque y de salvación. |\n| 4 | Puntos de golpe máximos reducidos a la mitad. |\n| 5 | Velocidad reducida a 0. |\n| 6 | Muerte. |\n\nSi una criatura que ya está cansada sufre un efecto que provoca cansancio, su nivel de cansancio actual aumentará en la cantidad especificada en la descripción de dicho efecto.\n\nUna criatura sufre el efecto de su nivel de cansancio actual, pero también el de los niveles inferiores. Por ejemplo, si sufre un nivel de cansancio 2, tendrá su velocidad reducida a la mitad y desventaja en las pruebas de característica.\n\nLos efectos que eliminan cansancio reducen el nivel de este en la cantidad que especifique su descripción y todos sus efectos desaparecen si el nivel de cansancio de una criatura desciende a menos de 1.\n\nSi se finaliza un descanso largo, el nivel de cansancio de una criatura se reduce en 1, siempre que haya podido comer y beber algo.",
+        "en": "Some special abilities and environmental hazards, such as starvation and the long-term effects of freezing or scorching temperatures, can lead to a special condition called exhaustion. Exhaustion is measured in six levels. An effect can give a creature one or more levels of exhaustion, as specified in the effect’s description.\n\n| Level | Effect |\n| --- | --- |\n| 1 | Disadvantage on ability checks |\n| 2 | Speed halved |\n| 3 | Disadvantage on attack rolls and saving throws |\n| 4 | Hit point maximum halved |\n| 5 | Speed reduced to 0 |\n| 6 | Death |\n\nIf an already exhausted creature suffers another effect that causes exhaustion, its current level of exhaustion increases by the amount specified in the effect’s description.\n\nA creature suffers the effect of its current level of exhaustion as well as all lower levels. For example, a creature suffering level 2 exhaustion has its speed halved and has disadvantage on ability checks.\n\nAn effect that removes exhaustion reduces its level as specified in the effect’s description, with all exhaustion effects ending if a creature’s exhaustion level is reduced below 1.\n\nFinishing a long rest reduces a creature’s exhaustion level by 1, provided that the creature has also ingested some food and drink."
+      }
+    },
+    "mechanics": {
+      "effects": [
+        {
+          "target": "cansancio",
+          "op": "min",
+          "value": "@este.nivel",
+          "when": "@este.activo"
+        },
+        {
+          "target": "prueba",
+          "op": "disadvantage",
+          "when": "@este.activo && @ajustes.reglas == \"e2014\" && @cansancio >= 1"
+        },
+        {
+          "target": "habilidad",
+          "op": "disadvantage",
+          "when": "@este.activo && @ajustes.reglas == \"e2014\" && @cansancio >= 1"
+        },
+        {
+          "target": "iniciativa",
+          "op": "disadvantage",
+          "when": "@este.activo && @ajustes.reglas == \"e2014\" && @cansancio >= 1"
+        },
+        {
+          "target": "velocidad",
+          "op": "mul",
+          "value": "0.5",
+          "when": "@este.activo && @ajustes.reglas == \"e2014\" && @cansancio >= 2"
+        },
+        {
+          "target": "ataque",
+          "op": "disadvantage",
+          "when": "@este.activo && @ajustes.reglas == \"e2014\" && @cansancio >= 3"
+        },
+        {
+          "target": "salvacion",
+          "op": "disadvantage",
+          "when": "@este.activo && @ajustes.reglas == \"e2014\" && @cansancio >= 3"
+        },
+        {
+          "target": "salvacion_muerte",
+          "op": "disadvantage",
+          "when": "@este.activo && @ajustes.reglas == \"e2014\" && @cansancio >= 3"
+        },
+        {
+          "target": "pg_max",
+          "op": "mul",
+          "value": "0.5",
+          "when": "@este.activo && @ajustes.reglas == \"e2014\" && @cansancio >= 4"
+        },
+        {
+          "target": "velocidad",
+          "op": "max",
+          "value": "0",
+          "when": "@este.activo && @ajustes.reglas == \"e2014\" && @cansancio >= 5"
+        },
+        {
+          "target": "velocidad",
+          "op": "add",
+          "value": "-5 * @cansancio",
+          "when": "@este.activo && @ajustes.reglas == \"e2024\""
+        },
+        {
+          "target": "velocidad",
+          "op": "min",
+          "value": "0",
+          "when": "@este.activo && @ajustes.reglas == \"e2024\""
+        }
+      ],
+      "toggle": {},
+      "automation": "partial",
+      "manual": {
+        "es": "Con el nivel 6, muere. Un descanso largo quita un nivel.",
+        "en": "At level 6, it dies. A long rest removes one level."
+      }
+    },
+    "ref": {
+      "pages": {
+        "en": 358,
+        "es": 389
+      }
+    }
+  },
+  {
+    "type": "estado",
+    "key": "cegado_2014",
+    "source": "srd51",
+    "concept": "cegado",
+    "data": {
+      "name": {
+        "es": "Cegado",
+        "en": "Blinded"
+      },
+      "activo": true,
+      "descripcion": {
+        "es": "- Una criatura cegada no puede ver y falla automáticamente todas las pruebas de característica que requieran la vista.\n- Las tiradas de ataque contra la criatura tienen ventaja y las tiradas de ataque realizadas por la criatura tienen desventaja.",
+        "en": "- A blinded creature can’t see and automatically fails any ability check that requires sight.\n- Attack rolls against the creature have advantage, and the creature’s attack rolls have disadvantage."
+      }
+    },
+    "mechanics": {
+      "effects": [
+        {
+          "target": "ataque",
+          "op": "disadvantage",
+          "when": "@este.activo"
+        }
+      ],
+      "toggle": {},
+      "automation": "partial",
+      "manual": {
+        "es": "No ve: falla las pruebas que piden ver. Los ataques contra él tienen ventaja.",
+        "en": "Can’t see: fails checks that require sight. Attack rolls against it have advantage."
+      }
+    },
+    "ref": {
+      "pages": {
+        "en": 358,
+        "es": 389
+      }
+    }
+  },
+  {
+    "type": "estado",
+    "key": "derribado_2014",
+    "source": "srd51",
+    "concept": "derribado",
+    "data": {
+      "name": {
+        "es": "Derribado",
+        "en": "Prone"
+      },
+      "activo": true,
+      "descripcion": {
+        "es": "- Una criatura derribada solo podrá moverse arrastrándose, salvo que se levante para concluir este estado.\n- La criatura tiene desventaja en las tiradas de ataque.\n- Las tiradas de ataque contra la criatura tienen ventaja si el atacante está a 1,5 m o menos de ella. Si no es así, las tiradas de ataque tienen desventaja.",
+        "en": "- A prone creature’s only movement option is to crawl, unless it stands up and thereby ends the condition.\n- The creature has disadvantage on attack rolls.\n- An attack roll against the creature has advantage if the attacker is within 5 feet of the creature. Otherwise, the attack roll has disadvantage."
+      }
+    },
+    "mechanics": {
+      "effects": [
+        {
+          "target": "ataque",
+          "op": "disadvantage",
+          "when": "@este.activo"
+        }
+      ],
+      "toggle": {},
+      "automation": "partial",
+      "manual": {
+        "es": "Solo se arrastra o se levanta (con la mitad de su velocidad). Los ataques contra él tienen ventaja a 1,5 m o menos y desventaja más lejos.",
+        "en": "Can only crawl or stand up (half its speed). Attack rolls against it have advantage within 5 feet and disadvantage otherwise."
+      }
+    },
+    "ref": {
+      "pages": {
+        "en": 359,
+        "es": 389
+      }
+    }
+  },
+  {
+    "type": "estado",
+    "key": "ensordecido_2014",
+    "source": "srd51",
+    "concept": "ensordecido",
+    "data": {
+      "name": {
+        "es": "Ensordecido",
+        "en": "Deafened"
+      },
+      "activo": true,
+      "descripcion": {
+        "es": "- Una criatura ensordecida no puede oír y falla automáticamente cualquier prueba de característica que requiera el oído.",
+        "en": "- A deafened creature can’t hear and automatically fails any ability check that requires hearing."
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 358,
+        "es": 389
+      }
+    }
+  },
+  {
+    "type": "estado",
+    "key": "envenenado_2014",
+    "source": "srd51",
+    "concept": "envenenado",
+    "data": {
+      "name": {
+        "es": "Envenenado",
+        "en": "Poisoned"
+      },
+      "activo": true,
+      "descripcion": {
+        "es": "- Una criatura envenenada tiene desventaja en las tiradas de ataque y las pruebas de característica.",
+        "en": "- A poisoned creature has disadvantage on attack rolls and ability checks."
+      }
+    },
+    "mechanics": {
+      "effects": [
+        {
+          "target": "prueba",
+          "op": "disadvantage",
+          "when": "@este.activo"
+        },
+        {
+          "target": "habilidad",
+          "op": "disadvantage",
+          "when": "@este.activo"
+        },
+        {
+          "target": "iniciativa",
+          "op": "disadvantage",
+          "when": "@este.activo"
+        },
+        {
+          "target": "ataque",
+          "op": "disadvantage",
+          "when": "@este.activo"
+        }
+      ],
+      "toggle": {},
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 359,
+        "es": 390
+      }
+    }
+  },
+  {
+    "type": "estado",
+    "key": "hechizado_2014",
+    "source": "srd51",
+    "concept": "hechizado",
+    "data": {
+      "name": {
+        "es": "Hechizado",
+        "en": "Charmed"
+      },
+      "activo": true,
+      "descripcion": {
+        "es": "- Una criatura hechizada no puede atacar ni elegir como objetivo de efectos dañinos o mágicos a quien la hechizó.\n- Quien hechizó a la criatura tiene ventaja en las pruebas de característica para interaccionar socialmente con ella.",
+        "en": "- A charmed creature can’t attack the charmer or target the charmer with harmful abilities or magical effects.\n- The charmer has advantage on any ability check to interact socially with the creature."
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 358,
+        "es": 390
+      }
+    }
+  },
+  {
+    "type": "estado",
+    "key": "incapacitado_2014",
+    "source": "srd51",
+    "concept": "incapacitado",
+    "data": {
+      "name": {
+        "es": "Incapacitado",
+        "en": "Incapacitated"
+      },
+      "activo": true,
+      "descripcion": {
+        "es": "- Una criatura incapacitada no puede llevar a cabo acciones ni reacciones.",
+        "en": "- An incapacitated creature can’t take actions or reactions."
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 358,
+        "es": 390
+      }
+    }
+  },
+  {
+    "type": "estado",
+    "key": "inconsciente_2014",
+    "source": "srd51",
+    "concept": "inconsciente",
+    "data": {
+      "name": {
+        "es": "Inconsciente",
+        "en": "Unconscious"
+      },
+      "activo": true,
+      "descripcion": {
+        "es": "- Una criatura inconsciente está incapacitada (consulta el estado), no puede moverse ni hablar y no es consciente de su entorno.\n- La criatura suelta cualquier cosa que esté sujetando y cae derribada.\n- La criatura falla automáticamente las tiradas de salvación de Fuerza y Destreza.\n- Las tiradas de ataque contra ella tienen ventaja.\n- Los ataques que impacten a la criatura serán críticos si el atacante está a 1,5 m o menos.",
+        "en": "- An unconscious creature is incapacitated (see the condition), can’t move or speak, and is unaware of its surroundings\n- The creature drops whatever it’s holding and falls prone.\n- The creature automatically fails Strength and Dexterity saving throws.\n- Attack rolls against the creature have advantage.\n- Any attack that hits the creature is a critical hit if the attacker is within 5 feet of the creature."
+      }
+    },
+    "mechanics": {
+      "effects": [
+        {
+          "target": "velocidad",
+          "op": "max",
+          "value": "0",
+          "when": "@este.activo"
+        }
+      ],
+      "toggle": {},
+      "automation": "partial",
+      "manual": {
+        "es": "Incapacitado y derribado; suelta lo que lleva en las manos. Falla las salvaciones de Fuerza y Destreza. Los ataques contra él tienen ventaja y, a 1,5 m o menos, son críticos.",
+        "en": "Incapacitated and prone; drops whatever it’s holding. Fails Strength and Dexterity saving throws. Attack rolls against it have advantage and, within 5 feet, are critical hits."
+      }
+    },
+    "ref": {
+      "pages": {
+        "en": 359,
+        "es": 390
+      }
+    }
+  },
+  {
+    "type": "estado",
+    "key": "invisible_2014",
+    "source": "srd51",
+    "concept": "invisible",
+    "data": {
+      "name": {
+        "es": "Invisible",
+        "en": "Invisible"
+      },
+      "activo": true,
+      "descripcion": {
+        "es": "- Es imposible ver a una criatura invisible sin la ayuda de magia o sentidos especiales. Respecto a esconderse, la criatura está en una zona muy oscura, pero se puede detectar su ubicación si hace ruido o deja huellas.\n- Las tiradas de ataque contra la criatura tienen desventaja y las tiradas de ataque realizadas por la criatura tienen ventaja.",
+        "en": "- An invisible creature is impossible to see without the aid of magic or a special sense. For the purpose of hiding, the creature is heavily obscured. The creature’s location can be detected by any noise it makes or any tracks it leaves.\n- Attack rolls against the creature have disadvantage, and the creature’s attack rolls have advantage."
+      }
+    },
+    "mechanics": {
+      "effects": [
+        {
+          "target": "ataque",
+          "op": "advantage",
+          "when": "@este.activo"
+        }
+      ],
+      "toggle": {},
+      "automation": "partial",
+      "manual": {
+        "es": "Los ataques contra él tienen desventaja; no le afecta lo que pide verlo.",
+        "en": "Attack rolls against it have disadvantage; effects that require seeing it don’t affect it."
+      }
+    },
+    "ref": {
+      "pages": {
+        "en": 358,
+        "es": 390
+      }
+    }
+  },
+  {
+    "type": "estado",
+    "key": "paralizado_2014",
+    "source": "srd51",
+    "concept": "paralizado",
+    "data": {
+      "name": {
+        "es": "Paralizado",
+        "en": "Paralyzed"
+      },
+      "activo": true,
+      "descripcion": {
+        "es": "- Una criatura paralizada está incapacitada (consulta dicho estado) y no puede moverse ni hablar.\n- La criatura falla automáticamente las tiradas de salvación de Fuerza y Destreza.\n- Las tiradas de ataque contra ella tienen ventaja.\n- Los ataques que impacten a la criatura serán críticos si el atacante está a 1,5 m o menos.",
+        "en": "- A paralyzed creature is incapacitated (see the condition) and can’t move or speak.\n- The creature automatically fails Strength and Dexterity saving throws.\n- Attack rolls against the creature have advantage.\n- Any attack that hits the creature is a critical hit if the attacker is within 5 feet of the creature."
+      }
+    },
+    "mechanics": {
+      "effects": [
+        {
+          "target": "velocidad",
+          "op": "max",
+          "value": "0",
+          "when": "@este.activo"
+        }
+      ],
+      "toggle": {},
+      "automation": "partial",
+      "manual": {
+        "es": "Incapacitado. Falla las salvaciones de Fuerza y Destreza. Los ataques contra él tienen ventaja y, a 1,5 m o menos, son críticos.",
+        "en": "Incapacitated. Fails Strength and Dexterity saving throws. Attack rolls against it have advantage and, within 5 feet, are critical hits."
+      }
+    },
+    "ref": {
+      "pages": {
+        "en": 358,
+        "es": 390
+      }
+    }
+  },
+  {
+    "type": "estado",
+    "key": "petrificado_2014",
+    "source": "srd51",
+    "concept": "petrificado",
+    "data": {
+      "name": {
+        "es": "Petrificado",
+        "en": "Petrified"
+      },
+      "activo": true,
+      "descripcion": {
+        "es": "- Una criatura petrificada se transforma, junto con cualquier objeto no mágico que vista o lleve con ella, en una sustancia inanimada sólida (en general, piedra). Su peso se multiplica por diez y deja de envejecer.\n- Está incapacitada (consulta dicho estado), no puede moverse ni hablar y no es consciente de su entorno.\n- Las tiradas de ataque contra ella tienen ventaja.\n- La criatura falla automáticamente las tiradas de salvación de Fuerza y Destreza.\n- Tiene resistencia contra todo el daño.\n- La criatura es inmune a venenos y enfermedades, pero si un veneno o enfermedad ya está en su sistema, queda en suspenso, no neutralizado.",
+        "en": "- A petrified creature is transformed, along with any nonmagical object it is wearing or carrying, into a solid inanimate substance (usually stone). Its weight increases by a factor of ten, and it ceases aging.\n- The creature is incapacitated (see the condition), can’t move or speak, and is unaware of its surroundings.\n- Attack rolls against the creature have advantage.\n- The creature automatically fails Strength and Dexterity saving throws.\n- The creature has resistance to all damage.\n- The creature is immune to poison and disease, although a poison or disease already in its system is suspended, not neutralized."
+      }
+    },
+    "mechanics": {
+      "effects": [
+        {
+          "target": "velocidad",
+          "op": "max",
+          "value": "0",
+          "when": "@este.activo"
+        },
+        {
+          "target": "resistencias",
+          "op": "append",
+          "value": "\"acido\"",
+          "when": "@este.activo"
+        },
+        {
+          "target": "resistencias",
+          "op": "append",
+          "value": "\"contundente\"",
+          "when": "@este.activo"
+        },
+        {
+          "target": "resistencias",
+          "op": "append",
+          "value": "\"cortante\"",
+          "when": "@este.activo"
+        },
+        {
+          "target": "resistencias",
+          "op": "append",
+          "value": "\"frio\"",
+          "when": "@este.activo"
+        },
+        {
+          "target": "resistencias",
+          "op": "append",
+          "value": "\"fuego\"",
+          "when": "@este.activo"
+        },
+        {
+          "target": "resistencias",
+          "op": "append",
+          "value": "\"fuerza\"",
+          "when": "@este.activo"
+        },
+        {
+          "target": "resistencias",
+          "op": "append",
+          "value": "\"necrotico\"",
+          "when": "@este.activo"
+        },
+        {
+          "target": "resistencias",
+          "op": "append",
+          "value": "\"perforante\"",
+          "when": "@este.activo"
+        },
+        {
+          "target": "resistencias",
+          "op": "append",
+          "value": "\"psiquico\"",
+          "when": "@este.activo"
+        },
+        {
+          "target": "resistencias",
+          "op": "append",
+          "value": "\"radiante\"",
+          "when": "@este.activo"
+        },
+        {
+          "target": "resistencias",
+          "op": "append",
+          "value": "\"relampago\"",
+          "when": "@este.activo"
+        },
+        {
+          "target": "resistencias",
+          "op": "append",
+          "value": "\"trueno\"",
+          "when": "@este.activo"
+        },
+        {
+          "target": "resistencias",
+          "op": "append",
+          "value": "\"veneno\"",
+          "when": "@este.activo"
+        },
+        {
+          "target": "inmunidades",
+          "op": "append",
+          "value": "\"veneno\"",
+          "when": "@este.activo"
+        },
+        {
+          "target": "inmunidades_estados",
+          "op": "append",
+          "value": "\"envenenado\"",
+          "when": "@este.activo"
+        }
+      ],
+      "toggle": {},
+      "automation": "partial",
+      "manual": {
+        "es": "Incapacitado. Falla las salvaciones de Fuerza y Destreza. Los ataques contra él tienen ventaja. Pesa diez veces más.",
+        "en": "Incapacitated. Fails Strength and Dexterity saving throws. Attack rolls against it have advantage. Its weight increases tenfold."
+      }
+    },
+    "ref": {
+      "pages": {
+        "en": 359,
+        "es": 390
+      }
+    }
+  },
+  {
+    "type": "estado",
+    "key": "agarrado_2024",
+    "source": "srd521",
+    "concept": "agarrado",
+    "data": {
+      "name": {
+        "es": "Agarrado",
+        "en": "Grappled"
+      },
+      "activo": true,
+      "descripcion": {
+        "es": "Mientras tengas el estado de agarrado, experimentarás los siguientes efectos:\n\nVelocidad 0. Tu velocidad es 0 y no puede aumentar.\n\nAtaques afectados. Tienes desventaja en las tiradas de ataque contra cualquier objetivo que no sea quien te agarra.\n\nDesplazable. Quien te agarra puede arrastrarte o transportarte al moverse, pero cada metro de movimiento le cuesta 1 m adicional, salvo que seas Diminuto o tu tamaño sea dos o más categorías inferior al suyo.",
+        "en": "While you have the Grappled condition, you experience the following effects.\n\nSpeed 0. Your Speed is 0 and can’t increase.\n\nAttacks Affected. You have Disadvantage on attack rolls against any target other than the grappler.\n\nMovable. The grappler can drag or carry you when it moves, but every foot of movement costs it 1 extra foot unless you are Tiny or two or more sizes smaller than it."
+      }
+    },
+    "mechanics": {
+      "effects": [
+        {
+          "target": "velocidad",
+          "op": "max",
+          "value": "0",
+          "when": "@este.activo"
+        }
+      ],
+      "toggle": {},
+      "automation": "partial",
+      "manual": {
+        "es": "Desventaja en los ataques contra quien no sea quien lo agarra. Quien agarra puede arrastrarlo.",
+        "en": "Disadvantage on attack rolls against any target other than the grappler. The grappler can drag it."
+      }
+    },
+    "ref": {
+      "pages": {
+        "en": 182,
+        "es": 194
+      }
+    }
+  },
+  {
+    "type": "estado",
+    "key": "apresado_2024",
+    "source": "srd521",
+    "concept": "apresado",
+    "data": {
+      "name": {
+        "es": "Apresado",
+        "en": "Restrained"
+      },
+      "activo": true,
+      "descripcion": {
+        "es": "Mientras tengas el estado de apresado, experimentarás los siguientes efectos:\n\nVelocidad 0. Tu velocidad es 0 y no puede aumentar.\n\nAtaques afectados. Las tiradas de ataque contra ti tienen ventaja y tus tiradas de ataque tienen desventaja.\n\nTiradas de salvación afectadas. Tienes desventaja en las tiradas de salvación de Destreza.",
+        "en": "While you have the Restrained condition, you experience the following effects.\n\nSpeed 0. Your Speed is 0 and can’t increase.\n\nAttacks Affected. Attack rolls against you have Advantage, and your attack rolls have Disadvantage.\n\nSaving Throws Affected. You have Disadvantage on Dexterity saving throws."
+      }
+    },
+    "mechanics": {
+      "effects": [
+        {
+          "target": "velocidad",
+          "op": "max",
+          "value": "0",
+          "when": "@este.activo"
+        },
+        {
+          "target": "ataque",
+          "op": "disadvantage",
+          "when": "@este.activo"
+        },
+        {
+          "target": "salvacion.des",
+          "op": "disadvantage",
+          "when": "@este.activo"
+        }
+      ],
+      "toggle": {},
+      "automation": "partial",
+      "manual": {
+        "es": "Los ataques contra él tienen ventaja.",
+        "en": "Attack rolls against it have advantage."
+      }
+    },
+    "ref": {
+      "pages": {
+        "en": 187,
+        "es": 195
+      }
+    }
+  },
+  {
+    "type": "estado",
+    "key": "asustado_2024",
+    "source": "srd521",
+    "concept": "asustado",
+    "data": {
+      "name": {
+        "es": "Asustado",
+        "en": "Frightened"
+      },
+      "activo": true,
+      "descripcion": {
+        "es": "Mientras tengas el estado de asustado, experimentarás los siguientes efectos:\n\nPruebas de característica y ataques afectados. Tienes desventaja en las pruebas de característica y las tiradas de ataque mientras la fuente de tu miedo esté en tu línea de visión.\n\nNo puedes acercarte. No puedes acercarte voluntariamente a la fuente de tu miedo.",
+        "en": "While you have the Frightened condition, you experience the following effects.\n\nAbility Checks and Attacks Affected. You have Disadvantage on ability checks and attack rolls while the source of fear is within line of sight.\n\nCan’t Approach. You can’t willingly move closer to the source of fear."
+      }
+    },
+    "mechanics": {
+      "effects": [
+        {
+          "target": "prueba",
+          "op": "disadvantage",
+          "when": "@este.activo"
+        },
+        {
+          "target": "habilidad",
+          "op": "disadvantage",
+          "when": "@este.activo"
+        },
+        {
+          "target": "iniciativa",
+          "op": "disadvantage",
+          "when": "@este.activo"
+        },
+        {
+          "target": "ataque",
+          "op": "disadvantage",
+          "when": "@este.activo"
+        }
+      ],
+      "toggle": {},
+      "automation": "partial",
+      "manual": {
+        "es": "Solo mientras ve la fuente de su miedo (desactívalo si no la ve). No puede acercarse a ella.",
+        "en": "Only while the source of its fear is in sight (turn it off otherwise). Can’t move closer to it."
+      }
+    },
+    "ref": {
+      "pages": {
+        "en": 182,
+        "es": 196
+      }
+    }
+  },
+  {
+    "type": "estado",
+    "key": "aturdido_2024",
+    "source": "srd521",
+    "concept": "aturdido",
+    "data": {
+      "name": {
+        "es": "Aturdido",
+        "en": "Stunned"
+      },
+      "activo": true,
+      "descripcion": {
+        "es": "Mientras tengas el estado de aturdido, experimentarás los siguientes efectos:\n\nIncapacitado. Tienes el estado de incapacitado.\n\nTiradas de salvación afectadas. Fallas automáticamente las tiradas de salvación de Fuerza y Destreza.\n\nAtaques afectados. Las tiradas de ataque contra ti tienen ventaja.",
+        "en": "While you have the Stunned condition, you experience the following effects.\n\nIncapacitated. You have the Incapacitated condition.\n\nSaving Throws Affected. You automatically fail Strength and Dexterity saving throws.\n\nAttacks Affected. Attack rolls against you have Advantage."
+      }
+    },
+    "mechanics": {
+      "effects": [
+        {
+          "target": "iniciativa",
+          "op": "disadvantage",
+          "when": "@este.activo"
+        }
+      ],
+      "toggle": {},
+      "automation": "partial",
+      "manual": {
+        "es": "Incapacitado. Falla las salvaciones de Fuerza y Destreza. Los ataques contra él tienen ventaja.",
+        "en": "Incapacitated. Fails Strength and Dexterity saving throws. Attack rolls against it have advantage."
+      }
+    },
+    "ref": {
+      "pages": {
+        "en": 189,
+        "es": 196
+      }
+    }
+  },
+  {
+    "type": "estado",
+    "key": "cansancio_2024",
+    "source": "srd521",
+    "concept": "cansancio",
+    "data": {
+      "name": {
+        "es": "Cansancio",
+        "en": "Exhaustion"
+      },
+      "activo": true,
+      "nivel": 1,
+      "descripcion": {
+        "es": "Mientras tengas el estado de cansancio, experimentarás los siguientes efectos:\n\nNiveles de cansancio. Este estado es acumulativo. Cada vez que lo recibas, sumas 1 nivel de cansancio. Morirás si tu nivel de cansancio es 6.\n\nPruebas con d20 afectadas. Cuando hagas una prueba con d20, el resultado se reduce en 2 × tu nivel de cansancio.\n\nVelocidad reducida. Tu velocidad se reduce en 1,5 m × tu nivel de cansancio.\n\nEliminar niveles de cansancio. Tras finalizar un descanso largo, resta 1 nivel de cansancio. Cuando tus niveles de cansancio se reduzcan a 0, el estado terminará.",
+        "en": "While you have the Exhaustion condition, you experience the following effects.\n\nExhaustion Levels. This condition is cumulative. Each time you receive it, you gain 1 Exhaustion level. You die if your Exhaustion level is 6.\n\nD20 Tests Affected. When you make a D20 Test, the roll is reduced by 2 times your Exhaustion level.\n\nSpeed Reduced. Your Speed is reduced by a number of feet equal to 5 times your Exhaustion level.\n\nRemoving Exhaustion Levels. Finishing a Long Rest removes 1 of your Exhaustion levels. When your Exhaustion level reaches 0, the condition ends."
+      }
+    },
+    "mechanics": {
+      "effects": [
+        {
+          "target": "cansancio",
+          "op": "min",
+          "value": "@este.nivel",
+          "when": "@este.activo"
+        },
+        {
+          "target": "prueba",
+          "op": "disadvantage",
+          "when": "@este.activo && @ajustes.reglas == \"e2014\" && @cansancio >= 1"
+        },
+        {
+          "target": "habilidad",
+          "op": "disadvantage",
+          "when": "@este.activo && @ajustes.reglas == \"e2014\" && @cansancio >= 1"
+        },
+        {
+          "target": "iniciativa",
+          "op": "disadvantage",
+          "when": "@este.activo && @ajustes.reglas == \"e2014\" && @cansancio >= 1"
+        },
+        {
+          "target": "velocidad",
+          "op": "mul",
+          "value": "0.5",
+          "when": "@este.activo && @ajustes.reglas == \"e2014\" && @cansancio >= 2"
+        },
+        {
+          "target": "ataque",
+          "op": "disadvantage",
+          "when": "@este.activo && @ajustes.reglas == \"e2014\" && @cansancio >= 3"
+        },
+        {
+          "target": "salvacion",
+          "op": "disadvantage",
+          "when": "@este.activo && @ajustes.reglas == \"e2014\" && @cansancio >= 3"
+        },
+        {
+          "target": "salvacion_muerte",
+          "op": "disadvantage",
+          "when": "@este.activo && @ajustes.reglas == \"e2014\" && @cansancio >= 3"
+        },
+        {
+          "target": "pg_max",
+          "op": "mul",
+          "value": "0.5",
+          "when": "@este.activo && @ajustes.reglas == \"e2014\" && @cansancio >= 4"
+        },
+        {
+          "target": "velocidad",
+          "op": "max",
+          "value": "0",
+          "when": "@este.activo && @ajustes.reglas == \"e2014\" && @cansancio >= 5"
+        },
+        {
+          "target": "velocidad",
+          "op": "add",
+          "value": "-5 * @cansancio",
+          "when": "@este.activo && @ajustes.reglas == \"e2024\""
+        },
+        {
+          "target": "velocidad",
+          "op": "min",
+          "value": "0",
+          "when": "@este.activo && @ajustes.reglas == \"e2024\""
+        }
+      ],
+      "toggle": {},
+      "automation": "partial",
+      "manual": {
+        "es": "Con el nivel 6, muere. Un descanso largo quita un nivel.",
+        "en": "At level 6, it dies. A long rest removes one level."
+      }
+    },
+    "ref": {
+      "pages": {
+        "en": 181,
+        "es": 197
+      }
+    }
+  },
+  {
+    "type": "estado",
+    "key": "cegado_2024",
+    "source": "srd521",
+    "concept": "cegado",
+    "data": {
+      "name": {
+        "es": "Cegado",
+        "en": "Blinded"
+      },
+      "activo": true,
+      "descripcion": {
+        "es": "Mientras tengas el estado de cegado, experimentarás los siguientes efectos:\n\nNo puedes ver. No puedes ver y fallas automáticamente todas las pruebas de característica que requieran la vista.\n\nAtaques afectados. Las tiradas de ataque contra ti tienen ventaja y tus tiradas de ataque tienen desventaja.",
+        "en": "While you have the Blinded condition, you experience the following effects.\n\nCan’t See. You can’t see and automatically fail any ability check that requires sight.\n\nAttacks Affected. Attack rolls against you have Advantage, and your attack rolls have Disadvantage."
+      }
+    },
+    "mechanics": {
+      "effects": [
+        {
+          "target": "ataque",
+          "op": "disadvantage",
+          "when": "@este.activo"
+        }
+      ],
+      "toggle": {},
+      "automation": "partial",
+      "manual": {
+        "es": "No ve: falla las pruebas que piden ver. Los ataques contra él tienen ventaja.",
+        "en": "Can’t see: fails checks that require sight. Attack rolls against it have advantage."
+      }
+    },
+    "ref": {
+      "pages": {
+        "en": 177,
+        "es": 197
+      }
+    }
+  },
+  {
+    "type": "estado",
+    "key": "derribado_2024",
+    "source": "srd521",
+    "concept": "derribado",
+    "data": {
+      "name": {
+        "es": "Derribado",
+        "en": "Prone"
+      },
+      "activo": true,
+      "descripcion": {
+        "es": "Mientras tengas el estado de derribado, experimentarás los siguientes efectos:\n\nMovimiento restringido. Tus únicas opciones de movimiento son arrastrarte o gastar una cantidad de movimiento igual a la mitad de tu velocidad (redondeando hacia abajo) para levantarte y, por tanto, poner fin a este estado. Si tu velocidad es 0, no puedes levantarte.\n\nAtaques afectados. Tienes desventaja en las tiradas de ataque. Las tiradas de ataque contra ti tienen ventaja si el atacante está a 1,5 m o menos de ti. De lo contrario, las tiradas de ataque tienen desventaja.",
+        "en": "While you have the Prone condition, you experience the following effects.\n\nRestricted Movement. Your only movement options are to crawl or to spend an amount of movement equal to half your Speed (round down) to right yourself and thereby end the condition. If your Speed is 0, you can’t right yourself.\n\nAttacks Affected. You have Disadvantage on attack rolls. An attack roll against you has Advantage if the attacker is within 5 feet of you. Otherwise, that attack roll has Disadvantage."
+      }
+    },
+    "mechanics": {
+      "effects": [
+        {
+          "target": "ataque",
+          "op": "disadvantage",
+          "when": "@este.activo"
+        }
+      ],
+      "toggle": {},
+      "automation": "partial",
+      "manual": {
+        "es": "Solo se arrastra o se levanta (con la mitad de su velocidad). Los ataques contra él tienen ventaja a 1,5 m o menos y desventaja más lejos.",
+        "en": "Can only crawl or stand up (half its speed). Attack rolls against it have advantage within 5 feet and disadvantage otherwise."
+      }
+    },
+    "ref": {
+      "pages": {
+        "en": 186,
+        "es": 199
+      }
+    }
+  },
+  {
+    "type": "estado",
+    "key": "ensordecido_2024",
+    "source": "srd521",
+    "concept": "ensordecido",
+    "data": {
+      "name": {
+        "es": "Ensordecido",
+        "en": "Deafened"
+      },
+      "activo": true,
+      "descripcion": {
+        "es": "Mientras tengas el estado de ensordecido, experimentarás el siguiente efecto:\n\nNo puedes oír. No puedes oír y fallas automáticamente las pruebas de característica que requieran el oído.",
+        "en": "While you have the Deafened condition, you experience the following effect.\n\nCan’t Hear. You can’t hear and automatically fail any ability check that requires hearing."
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 181,
+        "es": 200
+      }
+    }
+  },
+  {
+    "type": "estado",
+    "key": "envenenado_2024",
+    "source": "srd521",
+    "concept": "envenenado",
+    "data": {
+      "name": {
+        "es": "Envenenado",
+        "en": "Poisoned"
+      },
+      "activo": true,
+      "descripcion": {
+        "es": "Mientras tengas el estado de envenenado, experimentarás el siguiente efecto:\n\nPruebas de característica y ataques afectados. Tienes desventaja en las tiradas de ataque y las pruebas de característica.",
+        "en": "While you have the Poisoned condition, you experience the following effect.\n\nAbility Checks and Attacks Affected. You have Disadvantage on attack rolls and ability checks."
+      }
+    },
+    "mechanics": {
+      "effects": [
+        {
+          "target": "prueba",
+          "op": "disadvantage",
+          "when": "@este.activo"
+        },
+        {
+          "target": "habilidad",
+          "op": "disadvantage",
+          "when": "@este.activo"
+        },
+        {
+          "target": "iniciativa",
+          "op": "disadvantage",
+          "when": "@este.activo"
+        },
+        {
+          "target": "ataque",
+          "op": "disadvantage",
+          "when": "@este.activo"
+        }
+      ],
+      "toggle": {},
+      "automation": "full"
+    },
+    "ref": {
+      "pages": {
+        "en": 186,
+        "es": 201
+      }
+    }
+  },
+  {
+    "type": "estado",
+    "key": "hechizado_2024",
+    "source": "srd521",
+    "concept": "hechizado",
+    "data": {
+      "name": {
+        "es": "Hechizado",
+        "en": "Charmed"
+      },
+      "activo": true,
+      "descripcion": {
+        "es": "Mientras tengas el estado de hechizado, experimentarás los siguientes efectos:\n\nNo puedes dañar a quien te haya hechizado. No puedes atacar ni elegir como objetivo de efectos dañinos o mágicos a quien te haya hechizado.\n\nVentaja social. Quien te haya hechizado tiene ventaja en las pruebas de característica para interactuar socialmente contigo.",
+        "en": "While you have the Charmed condition, you experience the following effects.\n\nCan’t Harm the Charmer. You can’t attack the charmer or target the charmer with damaging abilities or magical effects.\n\nSocial Advantage. The charmer has Advantage on any ability check to interact with you socially."
+      }
+    },
+    "mechanics": {
+      "automation": "text"
+    },
+    "ref": {
+      "pages": {
+        "en": 178,
+        "es": 202
+      }
+    }
+  },
+  {
+    "type": "estado",
+    "key": "incapacitado_2024",
+    "source": "srd521",
+    "concept": "incapacitado",
+    "data": {
+      "name": {
+        "es": "Incapacitado",
+        "en": "Incapacitated"
+      },
+      "activo": true,
+      "descripcion": {
+        "es": "Mientras tengas el estado de incapacitado, experimentarás los siguientes efectos:\n\nInactivo. No puedes llevar a cabo ninguna acción, acción adicional o reacción.\n\nPérdida de concentración. Pierdes la concentración.\n\nMudo. No puedes hablar.\n\nSorprendido. Si tienes el estado de incapacitado cuando tiras iniciativa, tendrás desventaja en la tirada.",
+        "en": "While you have the Incapacitated condition, you experience the following effects.\n\nInactive. You can’t take any action, Bonus Action, or Reaction.\n\nNo Concentration. Your Concentration is broken.\n\nSpeechless. You can’t speak.\n\nSurprised. If you’re Incapacitated when you roll Initiative, you have Disadvantage on the roll."
+      }
+    },
+    "mechanics": {
+      "effects": [
+        {
+          "target": "iniciativa",
+          "op": "disadvantage",
+          "when": "@este.activo"
+        }
+      ],
+      "toggle": {},
+      "automation": "partial",
+      "manual": {
+        "es": "No puede hacer acciones, acciones adicionales ni reacciones; pierde la concentración y no puede hablar.",
+        "en": "Can’t take actions, Bonus Actions or Reactions; Concentration is broken and it can’t speak."
+      }
+    },
+    "ref": {
+      "pages": {
+        "en": 184,
+        "es": 202
+      }
+    }
+  },
+  {
+    "type": "estado",
+    "key": "inconsciente_2024",
+    "source": "srd521",
+    "concept": "inconsciente",
+    "data": {
+      "name": {
+        "es": "Inconsciente",
+        "en": "Unconscious"
+      },
+      "activo": true,
+      "descripcion": {
+        "es": "Mientras tengas el estado de inconsciente, experimentarás los siguientes efectos:\n\nInerte. Tienes los estados de derribado e incapacitado y sueltas lo que estés sujetando. Cuando concluya este estado, permanecerás derribado.\n\nVelocidad 0. Tu velocidad es 0 y no puede aumentar.\n\nAtaques afectados. Las tiradas de ataque contra ti tienen ventaja.\n\nTiradas de salvación afectadas. Fallas automáticamente las tiradas de salvación de Fuerza y Destreza.\n\nCríticos automáticos. Cualquier tirada de ataque que te acierte es un crítico si el atacante está a 1,5 m o menos de ti.\n\nIgnorante. No eres consciente de tu entorno.",
+        "en": "While you have the Unconscious condition, you experience the following effects.\n\nInert. You have the Incapacitated and Prone conditions, and you drop whatever you’re holding. When this condition ends, you remain Prone.\n\nSpeed 0. Your Speed is 0 and can’t increase.\n\nAttacks Affected. Attack rolls against you have Advantage.\n\nSaving Throws Affected. You automatically fail Strength and Dexterity saving throws.\n\nAutomatic Critical Hits. Any attack roll that hits you is a Critical Hit if the attacker is within 5 feet of you.\n\nUnaware. You’re unaware of your surroundings."
+      }
+    },
+    "mechanics": {
+      "effects": [
+        {
+          "target": "velocidad",
+          "op": "max",
+          "value": "0",
+          "when": "@este.activo"
+        },
+        {
+          "target": "iniciativa",
+          "op": "disadvantage",
+          "when": "@este.activo"
+        }
+      ],
+      "toggle": {},
+      "automation": "partial",
+      "manual": {
+        "es": "Incapacitado y derribado; suelta lo que lleva en las manos. Falla las salvaciones de Fuerza y Destreza. Los ataques contra él tienen ventaja y, a 1,5 m o menos, son críticos.",
+        "en": "Incapacitated and prone; drops whatever it’s holding. Fails Strength and Dexterity saving throws. Attack rolls against it have advantage and, within 5 feet, are critical hits."
+      }
+    },
+    "ref": {
+      "pages": {
+        "en": 191,
+        "es": 202
+      }
+    }
+  },
+  {
+    "type": "estado",
+    "key": "invisible_2024",
+    "source": "srd521",
+    "concept": "invisible",
+    "data": {
+      "name": {
+        "es": "Invisible",
+        "en": "Invisible"
+      },
+      "activo": true,
+      "descripcion": {
+        "es": "Mientras tengas el estado de invisible, experimentarás los siguientes efectos:\n\nSorpresa. Si tienes el estado de invisible cuando tiras iniciativa, tendrás ventaja en la tirada.\n\nOculto. No te afecta ningún efecto que requiera ver a su objetivo, salvo que el creador del efecto pueda verte de alguna forma. Cualquier equipo que vistas o lleves contigo también se oculta.\n\nAtaques afectados. Las tiradas de ataque contra ti tienen desventaja y tus tiradas de ataque tienen ventaja. Si una criatura puede verte de alguna forma, no obtienes este beneficio contra esa criatura.",
+        "en": "While you have the Invisible condition, you experience the following effects.\n\nSurprise. If you’re Invisible when you roll Initiative, you have Advantage on the roll.\n\nConcealed. You aren’t affected by any effect that requires its target to be seen unless the effect’s creator can somehow see you. Any equipment you are wearing or carrying is also concealed.\n\nAttacks Affected. Attack rolls against you have Disadvantage, and your attack rolls have Advantage. If a creature can somehow see you, you don’t gain this benefit against that creature."
+      }
+    },
+    "mechanics": {
+      "effects": [
+        {
+          "target": "iniciativa",
+          "op": "advantage",
+          "when": "@este.activo"
+        },
+        {
+          "target": "ataque",
+          "op": "advantage",
+          "when": "@este.activo"
+        }
+      ],
+      "toggle": {},
+      "automation": "partial",
+      "manual": {
+        "es": "Los ataques contra él tienen desventaja; no le afecta lo que pide verlo.",
+        "en": "Attack rolls against it have disadvantage; effects that require seeing it don’t affect it."
+      }
+    },
+    "ref": {
+      "pages": {
+        "en": 184,
+        "es": 203
+      }
+    }
+  },
+  {
+    "type": "estado",
+    "key": "paralizado_2024",
+    "source": "srd521",
+    "concept": "paralizado",
+    "data": {
+      "name": {
+        "es": "Paralizado",
+        "en": "Paralyzed"
+      },
+      "activo": true,
+      "descripcion": {
+        "es": "Mientras tengas el estado de paralizado, experimentarás los siguientes efectos:\n\nIncapacitado. Tienes el estado de incapacitado.\n\nVelocidad 0. Tu velocidad es 0 y no puede aumentar.\n\nTiradas de salvación afectadas. Fallas automáticamente las tiradas de salvación de Fuerza y Destreza.\n\nAtaques afectados. Las tiradas de ataque contra ti tienen ventaja.\n\nCríticos automáticos. Cualquier tirada de ataque que te acierte es un crítico si el atacante está a 1,5 m o menos de ti.",
+        "en": "While you have the Paralyzed condition, you experience the following effects.\n\nIncapacitated. You have the Incapacitated condition.\n\nSpeed 0. Your Speed is 0 and can’t increase.\n\nSaving Throws Affected. You automatically fail Strength and Dexterity saving throws.\n\nAttacks Affected. Attack rolls against you have Advantage.\n\nAutomatic Critical Hits. Any attack roll that hits you is a Critical Hit if the attacker is within 5 feet of you."
+      }
+    },
+    "mechanics": {
+      "effects": [
+        {
+          "target": "velocidad",
+          "op": "max",
+          "value": "0",
+          "when": "@este.activo"
+        },
+        {
+          "target": "iniciativa",
+          "op": "disadvantage",
+          "when": "@este.activo"
+        }
+      ],
+      "toggle": {},
+      "automation": "partial",
+      "manual": {
+        "es": "Incapacitado. Falla las salvaciones de Fuerza y Destreza. Los ataques contra él tienen ventaja y, a 1,5 m o menos, son críticos.",
+        "en": "Incapacitated. Fails Strength and Dexterity saving throws. Attack rolls against it have advantage and, within 5 feet, are critical hits."
+      }
+    },
+    "ref": {
+      "pages": {
+        "en": 186,
+        "es": 204
+      }
+    }
+  },
+  {
+    "type": "estado",
+    "key": "petrificado_2024",
+    "source": "srd521",
+    "concept": "petrificado",
+    "data": {
+      "name": {
+        "es": "Petrificado",
+        "en": "Petrified"
+      },
+      "activo": true,
+      "descripcion": {
+        "es": "Mientras tengas el estado de petrificado, experimentarás los siguientes efectos:\n\nTransformación en sustancia inanimada. Te transformas, junto con cualquier objeto no mágico que vistas o lleves contigo, en una sustancia sólida e inanimada (normalmente piedra). Tu peso se multiplica por diez y dejas de envejecer.\n\nIncapacitado. Tienes el estado de incapacitado.\n\nVelocidad 0. Tu velocidad es 0 y no puede aumentar.\n\nAtaques afectados. Las tiradas de ataque contra ti tienen ventaja.\n\nTiradas de salvación afectadas. Fallas automáticamente las tiradas de salvación de Fuerza y Destreza.\n\nResistencia al daño. Tienes resistencia a todo el daño.\n\nInmunidad al veneno. Tienes inmunidad al estado de envenenado.",
+        "en": "While you have the Petrified condition, you experience the following effects.\n\nTurned to Inanimate Substance. You are transformed, along with any nonmagical objects you are wearing and carrying, into a solid inanimate substance (usually stone). Your weight increases by a factor of ten, and you cease aging.\n\nIncapacitated. You have the Incapacitated condition.\n\nSpeed 0. Your Speed is 0 and can’t increase.\n\nAttacks Affected. Attack rolls against you have Advantage.\n\nSaving Throws Affected. You automatically fail Strength and Dexterity saving throws.\n\nResist Damage. You have Resistance to all damage.\n\nPoison Immunity. You have Immunity to the Poisoned condition."
+      }
+    },
+    "mechanics": {
+      "effects": [
+        {
+          "target": "velocidad",
+          "op": "max",
+          "value": "0",
+          "when": "@este.activo"
+        },
+        {
+          "target": "iniciativa",
+          "op": "disadvantage",
+          "when": "@este.activo"
+        },
+        {
+          "target": "resistencias",
+          "op": "append",
+          "value": "\"acido\"",
+          "when": "@este.activo"
+        },
+        {
+          "target": "resistencias",
+          "op": "append",
+          "value": "\"contundente\"",
+          "when": "@este.activo"
+        },
+        {
+          "target": "resistencias",
+          "op": "append",
+          "value": "\"cortante\"",
+          "when": "@este.activo"
+        },
+        {
+          "target": "resistencias",
+          "op": "append",
+          "value": "\"frio\"",
+          "when": "@este.activo"
+        },
+        {
+          "target": "resistencias",
+          "op": "append",
+          "value": "\"fuego\"",
+          "when": "@este.activo"
+        },
+        {
+          "target": "resistencias",
+          "op": "append",
+          "value": "\"fuerza\"",
+          "when": "@este.activo"
+        },
+        {
+          "target": "resistencias",
+          "op": "append",
+          "value": "\"necrotico\"",
+          "when": "@este.activo"
+        },
+        {
+          "target": "resistencias",
+          "op": "append",
+          "value": "\"perforante\"",
+          "when": "@este.activo"
+        },
+        {
+          "target": "resistencias",
+          "op": "append",
+          "value": "\"psiquico\"",
+          "when": "@este.activo"
+        },
+        {
+          "target": "resistencias",
+          "op": "append",
+          "value": "\"radiante\"",
+          "when": "@este.activo"
+        },
+        {
+          "target": "resistencias",
+          "op": "append",
+          "value": "\"relampago\"",
+          "when": "@este.activo"
+        },
+        {
+          "target": "resistencias",
+          "op": "append",
+          "value": "\"trueno\"",
+          "when": "@este.activo"
+        },
+        {
+          "target": "resistencias",
+          "op": "append",
+          "value": "\"veneno\"",
+          "when": "@este.activo"
+        },
+        {
+          "target": "inmunidades_estados",
+          "op": "append",
+          "value": "\"envenenado\"",
+          "when": "@este.activo"
+        }
+      ],
+      "toggle": {},
+      "automation": "partial",
+      "manual": {
+        "es": "Incapacitado. Falla las salvaciones de Fuerza y Destreza. Los ataques contra él tienen ventaja. Pesa diez veces más.",
+        "en": "Incapacitated. Fails Strength and Dexterity saving throws. Attack rolls against it have advantage. Its weight increases tenfold."
+      }
+    },
+    "ref": {
+      "pages": {
+        "en": 186,
+        "es": 205
+      }
+    }
+  }
+]

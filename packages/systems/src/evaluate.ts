@@ -397,7 +397,7 @@ export function evaluate(
   const holds = (e: Effect) => !e.when || truthy(evaluateExpr(e.when, effectScope(e), runtime))
   const amount = (e: Effect) => (e.value ? toNumber(evaluateExpr(e.value, effectScope(e), runtime)) : 0)
 
-  /** Aplica a un valor los efectos a su id, en su orden (base, fijar, sumar, mínimo y máximo), con su desglose */
+  /** Aplica a un valor los efectos a su id, en su orden (base, fijar, sumar, multiplicar, mínimo y máximo), con su desglose */
   const applyEffects = (id: string, value: number, terms: Term[]): { value: number; terms: Term[] } => {
     const active = (effects.get(id) ?? []).filter(holds)
     let v = value
@@ -430,6 +430,12 @@ export function evaluate(
       const n = amount(e)
       v += n
       t = [...t, { label: e.label, value: n, kind: 'bonus', origin: e.item.id }]
+    }
+    // Multiplicar redondea hacia abajo (la velocidad a la mitad de 25 pies son 12)
+    for (const e of active.filter((x) => x.op === 'mul')) {
+      const n = Math.floor(v * amount(e))
+      t = [...t, { label: e.label, value: n - v, kind: 'bonus', origin: e.item.id }]
+      v = n
     }
     for (const e of active.filter((x) => x.op === 'min' || x.op === 'max')) {
       const n = amount(e)

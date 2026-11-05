@@ -4,7 +4,10 @@
  */
 import { writeFileSync } from 'node:fs'
 import { consoleIo, type Io } from '../io.ts'
+import { ruleDocs } from './capitulos.ts'
 import { classDocs, readingRows } from './clases.ts'
+import { spellDocs } from './conjuros.ts'
+import { creatureDocs } from './criaturas.ts'
 import {
   type ArmorGroup,
   armorDoc,
@@ -18,7 +21,9 @@ import {
   weaponRows,
   weaponSignature
 } from './equipo.ts'
+import { conditionDocs } from './estados.ts'
 import { FIGHTER, FIGHTER_CLASS, FIGHTER_FEATURES } from './guerrero.ts'
+import { magicDocs } from './magicos.ts'
 import { MECHANICS } from './mecanica.ts'
 import { type MountRow, mountDoc, mountRows, mountSignature } from './monturas.ts'
 import {
@@ -35,7 +40,9 @@ import {
   type ToolRow,
   toolRows
 } from './objetos.ts'
+import { allOriginDocs } from './origenes.ts'
 import { GEAR_PAIRS, GEAR_RENAMES, MOUNT_RENAMES } from './pares.ts'
+import { allClassDocs } from './rasgos.ts'
 import { boxesOf, type Edition, type Lang, pagesOf, widthOf } from './texto.ts'
 
 export const CONTENT_DIR = new URL('../../packages/systems/src/catalog/5e/content/', import.meta.url)
@@ -244,7 +251,7 @@ export function extract(): Record<string, Doc[]> {
       ...('ability' in en ? { caracteristica: en.ability } : {})
     }
   }
-  return {
+  const files: Record<string, Doc[]> = {
     'equipo.json': [
       ...g14.map(([en, es], i) => {
         const c = gc.older[i] as string
@@ -259,18 +266,30 @@ export function extract(): Record<string, Doc[]> {
       ...m14.map(([en, es], i) => mountDoc('2014', en, es, mc.older[i] as string)),
       ...m24.map(([en, es], i) => mountDoc('2024', en, es, mc.newer[i] as string))
     ],
-    'clases.json': (['2014', '2024'] as const).flatMap((edition) =>
-      classDocs(FIGHTER[edition], FIGHTER_CLASS[edition], FIGHTER_FEATURES[edition])
-    ),
+    'clases.json': [
+      ...(['2014', '2024'] as const).flatMap((edition) =>
+        classDocs(FIGHTER[edition], FIGHTER_CLASS[edition], FIGHTER_FEATURES[edition])
+      ),
+      ...allClassDocs()
+    ],
     'armas.json': [
       ...w14.map(([en, es], i) => weaponDoc('2014', en, es, wc.older[i] as string)),
       ...w24.map(([en, es], i) => weaponDoc('2024', en, es, wc.newer[i] as string))
     ],
+    'estados.json': [...conditionDocs('2014'), ...conditionDocs('2024')],
+    'reglas.json': ruleDocs(),
     'armaduras.json': [
       ...a14.map(([en, es], i) => armorDoc('2014', en, es, ac.older[i] as string)),
       ...a24.map(([en, es], i) => armorDoc('2024', en, es, ac.newer[i] as string))
     ]
   }
+  // Los conjuros y los objetos mágicos, con un concepto que no sea ya de otro tipo
+  const taken = () => new Set(Object.values(files).flatMap((docs) => docs.map((d) => d.concept)))
+  files['conjuros.json'] = spellDocs(taken())
+  files['objetos_magicos.json'] = magicDocs(taken())
+  files['criaturas.json'] = creatureDocs(taken())
+  files['origenes.json'] = allOriginDocs(taken())
+  return files
 }
 
 export function main(io: Io = consoleIo) {

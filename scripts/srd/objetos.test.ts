@@ -16,7 +16,7 @@ import {
 import { GEAR_RENAMES } from './pares.ts'
 import type { Row } from './texto.ts'
 
-const row = (text: string, x = 58, y = 0, page = 69): Row => ({ text, x, y, page })
+const row = (text: string, x = 58, y = 0, page = 69): Row => ({ text, x, y, h: 10, page })
 
 describe('el equipo de aventurero', () => {
   it('los objetos de una columna: los de un grupo, sangrados; el título de la tabla; un nombre que sigue abajo', () => {
@@ -119,7 +119,7 @@ describe('el equipo de aventurero', () => {
 })
 
 describe('lo de 2024 que va en el texto', () => {
-  const r = (text: string, y: number, x = 58, page = 96): Row => ({ text, x, y, page })
+  const r = (text: string, y: number, x = 58, page = 96): Row => ({ text, x, y, h: 10, page })
 
   it('las tablas pequeñas: su grupo es su título; un nombre que sigue abajo; acaban con el texto', () => {
     const rows = subTables(
@@ -186,7 +186,7 @@ describe('los textos de 2014 que empiezan con su nombre', () => {
       'can spill these.',
       'Mounts and Vehicles',
       'A good mount helps.'
-    ].map((text, i): Row => ({ text, x: 58, y: i * 10, page: 66 }))
+    ].map((text, i): Row => ({ text, x: 58, y: i * 10, h: 10, page: 66 }))
     const texts = runInTexts(rows, ['Acid', 'Ball bearings'], /^Mounts and Vehicles$/)
     expect([...texts]).toEqual([
       ['acid', 'As an action, you can splash the contents of this vial.'],

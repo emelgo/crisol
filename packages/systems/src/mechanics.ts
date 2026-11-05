@@ -15,10 +15,11 @@ const formula = z.string().trim().min(1).max(LIMITS.formula)
 
 /**
  * Lo que hace un efecto con su destino, en este orden al calcular: base (sustituye a lo de siempre y, de varias, gana la
- * mayor: la armadura, Defensa sin armadura), fijar, sumar, mínimo y máximo. El grado de competencia es un mínimo en su
- * grado (1, competente; 2, pericia; 0.5, media). Ventaja y desventaja se anotan para la tirada; añadir, a una lista
+ * mayor: la armadura, Defensa sin armadura), fijar, sumar, multiplicar (la velocidad a la mitad, redondeando hacia abajo), mínimo y máximo. El
+ * grado de competencia es un mínimo en su grado (1, competente; 2, pericia; 0.5, media). Ventaja y desventaja se anotan
+ * para la tirada; añadir, a una lista
  */
-export const EFFECT_OPS = ['base', 'set', 'add', 'min', 'max', 'advantage', 'disadvantage', 'append'] as const
+export const EFFECT_OPS = ['base', 'set', 'add', 'mul', 'min', 'max', 'advantage', 'disadvantage', 'append'] as const
 /** Cuándo se recupera un uso */
 export const RECOVERIES = ['short', 'long', 'dawn', 'other'] as const
 /** Cuánto cuesta hacer una acción */

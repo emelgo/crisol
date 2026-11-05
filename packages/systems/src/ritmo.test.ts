@@ -4,6 +4,10 @@
  * test:coverage va aparte y sin la cobertura: el código instrumentado tarda varias veces más y no es el que se usa
  */
 import { describe, expect, it } from 'vitest'
+import { referenceCharacter } from './catalog/5e/referencia.ts'
+import { fiveE } from './catalog/5e/system.ts'
+import { catalogContent } from './catalog/content.ts'
+import { searchContent } from './content.ts'
 import { type DocumentItem, evaluate } from './evaluate.ts'
 import { cinco } from './fixtures/cinco.ts'
 import { FORMAT, type System } from './format.ts'
@@ -49,6 +53,40 @@ function big(): System {
 }
 
 describe('el ritmo', () => {
+  it('el 5e de serie: un mago de nivel 20 con todo (rasgos, 40 conjuros y equipo), en menos de 20 ms', () => {
+    const content = catalogContent('5e')
+    const doc = referenceCharacter(content, {
+      klass: 'mago',
+      edition: '2024',
+      level: 20,
+      scores: { fue: 8, des: 14, con: 14, int: 20, sab: 12, car: 10 },
+      gear: ['baston_2024', 'anillo_de_proteccion_2024', 'capa_de_proteccion_2024']
+    })
+    const spells = content.filter((c) => c.type === 'conjuro' && c.source === 'srd521').slice(0, 40)
+    doc.items = [
+      ...(doc.items ?? []),
+      ...spells.map((c) => ({
+        id: c.key,
+        type: c.type,
+        name: c.key,
+        data: { ...c.data, preparado: true },
+        ...(c.mechanics ? { mechanics: c.mechanics } : {})
+      }))
+    ]
+    expect(evaluate(fiveE, 'personaje', doc).problems).toEqual([])
+    expect(median(() => evaluate(fiveE, 'personaje', doc), 15)).toBeLessThan(20)
+  })
+
+  it('buscar en todo el contenido del 5e de serie (más de 3000 documentos), en menos de 100 ms', () => {
+    const entries = catalogContent('5e').map((c) => ({
+      ...c,
+      name: c.data.name,
+      automation: c.mechanics?.automation ?? null
+    }))
+    expect(searchContent(fiveE, entries, { query: 'bola de fuego' }).total).toBeGreaterThan(0)
+    expect(median(() => searchContent(fiveE, entries, { query: 'espada', duplicates: 'newest' }), 15)).toBeLessThan(100)
+  })
+
   it('un personaje de nivel 20 con 100 objetos, en menos de 20 ms', () => {
     const system = big()
     const cars = ['fue', 'des', 'con', 'int', 'sab', 'car']

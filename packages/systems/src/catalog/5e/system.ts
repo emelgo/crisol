@@ -264,7 +264,7 @@ const goods = {
   coste: number('Coste (po)', 'Cost (gp)', { min: 0 })
 }
 
-/** El cansancio de 2024 resta 2 por nivel a las pruebas d20; el de 2014 va como estado */
+/** El cansancio de 2024 resta 2 por nivel a las pruebas d20; lo de 2014, con sus niveles, va en el estado */
 const exhaustion = ' - (@ajustes.reglas == "e2024" ? 2 * @cansancio : 0)'
 
 const modes = [
@@ -281,7 +281,9 @@ const shared = (bonus: { saves: string; skills: string }) => ({
   caracteristicas: abilities(bonus.saves),
   habilidades: skills(bonus.skills),
   // Una prueba de Destreza: lo que suma a las pruebas (media competencia) suma también aquí
-  iniciativa: derived('Iniciativa', 'Initiative', '@caracteristicas.des.prueba', { signed: true }),
+  iniciativa: derived('Iniciativa', 'Initiative', '@caracteristicas.des.prueba + @bono_iniciativa', { signed: true }),
+  // Lo que suma aparte (la competencia en la iniciativa de una criatura de 2024, la dote Alerta)
+  bono_iniciativa: number('Bono a la iniciativa', 'Initiative bonus'),
   percepcion_pasiva: derived('Percepción pasiva', 'Passive Perception', '10 + @habilidades.percepcion.total'),
   cansancio: number('Cansancio', 'Exhaustion', { min: 0, max: 6, integer: true }),
   // Lo que cambian los rasgos: cuántos ataques por acción de atacar y desde qué número es crítico
@@ -568,6 +570,13 @@ export const fiveE = {
           '@caracteristica != "" ? @portador.caracteristicas[@caracteristica].ataque_conjuros + @portador.bono_ataque_conjuros : @portador.ataque_conjuros',
           { signed: true }
         ),
+        // Lo que suman los conjuros que dicen «más tu modificador por característica para lanzar conjuros» (sin ella, 0)
+        mod: derived(
+          'Modificador por característica',
+          'Spellcasting ability modifier',
+          '@caracteristica != "" ? @portador.caracteristicas[@caracteristica].mod : @portador.caracteristica_conjuros != null ? @portador.caracteristicas[@portador.caracteristica_conjuros].mod : 0',
+          { signed: true }
+        ),
         descripcion: description
       }
     },
@@ -773,7 +782,7 @@ export const fiveE = {
     },
     salvacion_muerte: {
       label: t('Salvación contra muerte', 'Death saving throw'),
-      formula: '1d20',
+      formula: `1d20${exhaustion}`,
       bands: [
         { if: '@natural == 20', label: t('Recupera 1 PG', 'Regain 1 HP'), tone: 'critical' },
         { if: '@natural == 1', label: t('Dos fallos', 'Two failures'), tone: 'fumble' },

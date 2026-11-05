@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { sections } from './clases.ts'
 import type { Row } from './texto.ts'
 
-const row = (text: string, x = 58, page = 48): Row => ({ text, x, y: 0, page })
+const row = (text: string, x = 58, page = 48): Row => ({ text, x, y: 0, h: 10, page })
 
 describe('el texto de una clase, en secciones', () => {
   it('cada rasgo con su nivel; la subclase y los suyos; sin sus tablas; hasta la clase siguiente', () => {

@@ -7,6 +7,26 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
+### Para retomar (2026-11-05, módulo 3: `srd-5e`, fases 3 y 4 en el PR #98)
+
+- **Rama `modulo-3/srd-5e-contenido`, PR #98** (con su pasada de la CI). Hechas las tareas 11 a 20 de `tasks/todo.md`:
+  todo el contenido de los dos SRD (3170 documentos: estados, reglas, conjuros, objetos mágicos, criaturas, especies,
+  trasfondos, dotes y las 12 clases, con su mecánica) y los personajes de referencia (96 contra las tablas del SRD y
+  24 hechos a mano). Los scripts, en `scripts/srd/` (`node scripts/srd/extraer.ts` y `comprobar.ts`, con los PDF de
+  `datos-locales/srd/`). Revisión de código hecha, con lo importante arreglado. **Pendiente de Enrique**: el punto de
+  control 4 (`tasks/muestra-srd-5e.md`). **Lo siguiente**: cerrar la tarea 21 (merge y staging) y seguir con
+  `personajes` (el creador: lo que concede cada cosa por nivel ya va en los `grants` del contenido;
+  `catalog/5e/referencia.ts` monta un personaje como lo hará él).
+- **Importar de Foundry (Enrique, 2026-11-05)**: «el importador debería coger eso [el compendio del zip del
+  manifiesto del sistema]; si no, es trabajo extra cada vez que se añade un sistema». Va a la capacidad `foundry`
+  (`docs/specs/modulo-3.md`: importar los datos de un sistema de Foundry filtrando por licencia, tras el abogado y su
+  ADR). Para su entrevista: lo importa quien usa Crisol (no va en el repositorio); la licencia de cada paquete
+  (código MIT no es contenido libre: el de pf2e es ORC/OGL, el de Daggerheart, su licencia de comunidad); los
+  compendios de Foundry 11+ van en LevelDB (un lector, con su licencia comprobada); los textos y los valores se pueden
+  traer igual para cualquier sistema, pero su automatización (los Active Effects de cada sistema) se traduce por
+  sistema. El 5e de serie sale de los PDF por la sala limpia y por el texto oficial en español.
+- Lo de antes de esta rama, abajo.
+
 ### Para retomar (2026-11-04, módulo 3: `srd-5e` en marcha, fase 1 hecha)
 
 - **Ahora**: `sistemas` está terminado, en `main` y en staging (PR #96). **Lo siguiente es `srd-5e`** (el 5e de serie:
@@ -29,9 +49,11 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   `catalog/5e/content/`, que solo lee el servidor; buscar y leer el contenido; copiar, bajar y subir con su mecánica,
   migración 0040, ya en la base de desarrollo). **Ahora**: la tarea 7 (`tasks/todo.md` dice lo hecho y lo que falta):
   hecha también: los scripts de `scripts/srd/` (`node scripts/srd/extraer.ts` y `comprobar.ts`, con los PDF), todo el
-  equipo de las dos ediciones y el guerrero con el campeón (474 documentos). **Lo siguiente**: la tarea 9 (las ediciones
-  en la ventana de la campaña) y la 10 (la IA y el contenido, también crearlo con su mecánica); después, el punto de
-  control 2 desde claude.ai.
+  equipo de las dos ediciones y el guerrero con el campeón (474 documentos). Hechas también la 9 (las ediciones en la
+  campaña) y la 10 (la IA: buscar, leer, guardar y quitar el contenido con su mecánica, y probarlo). **Fases 1 y 2, en
+  `main` y en staging** (PR #97, migración 0040; la CI pasó, con un arreglo de gitleaks: `.gitleaks.toml`). Enrique
+  prueba el punto de control 2 (`tasks/probar.md`). **Lo siguiente**: la fase 3 en la misma rama (la tarea 11, los
+  estados y el texto de las reglas; luego conjuros, objetos mágicos, criaturas, especies, trasfondos, dotes y clases).
 - **Decidido por Enrique (2026-11-04): los sistemas se hacen con la IA** (`docs/diseno.md`). Al acabar `srd-5e`, una
   tanda que quita el editor de sistemas entero (también «Probar»): en «Sistemas», la lista, subir de un archivo, bajar
   cada uno y un sistema vacío, y un aviso de que los nuevos se hacen con la IA (también en las instrucciones del MCP).
@@ -93,11 +115,14 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   - interfaz: el título de la página, salir con cambios sin guardar pregunta, el recorrido del editor, los números y
     las opciones que se escriben tal cual, los problemas que no dependen del color, sin textos de ayuda fijos.
 - **Queda para después** (apuntado, no bloquea):
+  - (srd-5e, revisión) Deshacer la copia de un sistema con mucho contenido (el 5e: 3170 documentos) va fila a fila en
+    `repos/undo.ts`: medirlo antes de producción y, si hace falta, por tandas como `insertMany`. Y en algún texto inglés
+    se pierde el guion de una palabra partida a final de línea («selfexpression», «twohanded»).
   - **por decidir con Enrique**: lo que la IA hace en copiloto sin aprobación y ven los jugadores (tirar en público,
     cambiar el nombre o la descripción de la campaña) podría pedir aprobación, como «jugadores»: un sistema subido de
     fuera podría llevar instrucciones para la IA en sus textos;
   - la cola de aprobación guarda la entrada entera (un archivo de 10 MB): guardar un resumen;
-  - subir un archivo con miles de documentos los escribe uno a uno: por lotes;
+  - ~~subir un archivo con miles de documentos los escribe uno a uno~~: hecho, por tandas (`insertMany`, PR #98);
   - la versión de la que sale una copia del catálogo es siempre 1 (hará falta con el 5e);
   - el editor visual de los subcampos de conjuntos, grupos y listas de filas, confirmar al quitar un tipo o una
     tirada, la barra de «Guardar» pegada a la vista, y la espera y el error al elegir el sistema de una campaña.

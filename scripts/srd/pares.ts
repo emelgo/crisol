@@ -138,3 +138,305 @@ export const MOUNT_RENAMES: Record<string, string> = {
   'feed per day': 'feed',
   'stabling per day': 'stabling'
 }
+
+/** Las entradas del glosario de reglas de 2024 (sin los estados): el inglés y su español, que va en otro orden */
+export const GLOSSARY_PAIRS: Record<string, string> = {
+  'Ability Check': 'Prueba de característica',
+  'Ability Score and Modifier': 'Puntuación de característica y modificador',
+  Action: 'Acción',
+  Advantage: 'Ventaja',
+  Adventure: 'Aventura',
+  Alignment: 'Alineamiento',
+  Ally: 'Aliado',
+  'Area of Effect': 'Área de efecto',
+  'Armor Class': 'Clase de armadura',
+  'Armor Training': 'Entrenamiento con armaduras',
+  'Attack [Action]': 'Atacar [acción]',
+  'Attack Roll': 'Tirada de ataque',
+  Attitude: 'Actitud',
+  Attunement: 'Sintonización',
+  Blindsight: 'Visión ciega',
+  Bloodied: 'Maltrecho',
+  'Bonus Action': 'Acción adicional',
+  'Breaking Objects': 'Romper objetos',
+  'Bright Light': 'Luz brillante',
+  'Burning [Hazard]': 'Fuego [peligro]',
+  'Burrow Speed': 'Velocidad excavando',
+  Campaign: 'Campaña',
+  Cantrip: 'Truco',
+  'Carrying Capacity': 'Capacidad de carga',
+  'Challenge Rating': 'Valor de desafío',
+  'Character Sheet': 'Hoja de personaje',
+  Climbing: 'Trepar',
+  'Climb Speed': 'Velocidad trepando',
+  Concentration: 'Concentración',
+  Condition: 'Estado',
+  'Cone [Area of Effect]': 'Cono [área de efecto]',
+  Cover: 'Cobertura',
+  Crawling: 'Arrastrarse',
+  Creature: 'Criatura',
+  'Creature Type': 'Tipo de criatura',
+  'Critical Hit': 'Crítico',
+  'Cube [Area of Effect]': 'Cubo [área de efecto]',
+  Curses: 'Maldiciones',
+  'Cylinder [Area of Effect]': 'Cilindro [área de efecto]',
+  'D20 Test': 'Prueba con d20',
+  Damage: 'Daño',
+  'Damage Roll': 'Tirada de daño',
+  'Damage Threshold': 'Umbral de daño',
+  'Damage Types': 'Tipos de daño',
+  Darkness: 'Oscuridad',
+  Darkvision: 'Visión en la oscuridad',
+  'Dash [Action]': 'Correr [acción]',
+  Dead: 'Muerto',
+  'Death Saving Throw': 'Tirada de salvación contra muerte',
+  'Dehydration [Hazard]': 'Deshidratación [peligro]',
+  'Difficult Terrain': 'Terreno difícil',
+  'Difficulty Class': 'Clase de dificultad',
+  'Dim Light': 'Luz tenue',
+  Disadvantage: 'Desventaja',
+  'Disengage [Action]': 'Destrabarse [acción]',
+  'Dodge [Action]': 'Esquivar [acción]',
+  'Emanation [Area of Effect]': 'Emanación [área de efecto]',
+  Encounter: 'Encuentro',
+  Enemy: 'Enemigo',
+  'Experience Points': 'Puntos de experiencia',
+  Expertise: 'Pericia',
+  'Falling [Hazard]': 'Caídas [peligro]',
+  Flying: 'Volar',
+  'Fly Speed': 'Velocidad volando',
+  'Friendly [Attitude]': 'Amistosa [actitud]',
+  Grappling: 'Agarrar',
+  Hazard: 'Peligro',
+  Healing: 'Curación',
+  'Heavily Obscured': 'Muy oscuro',
+  'Help [Action]': 'Ayudar [acción]',
+  'Heroic Inspiration': 'Inspiración heroica',
+  'Hide [Action]': 'Esconderse [acción]',
+  'High Jump': 'Salto de altura',
+  'Hit Point Dice': 'Dados de puntos de golpe',
+  'Hit Points': 'Puntos de golpe',
+  'Hostile [Attitude]': 'Hostil [actitud]',
+  Hover: 'Levitar',
+  Illusions: 'Ilusiones',
+  Immunity: 'Inmunidad',
+  'Improvised Weapons': 'Armas improvisadas',
+  'Indifferent [Attitude]': 'Indiferente [actitud]',
+  'Influence [Action]': 'Influir [acción]',
+  Initiative: 'Iniciativa',
+  Jumping: 'Saltar',
+  'Knocking Out a Creature': 'Noquear a una criatura',
+  'Lightly Obscured': 'Ligeramente oscuro',
+  'Line [Area of Effect]': 'Línea [área de efecto]',
+  'Long Jump': 'Salto de longitud',
+  'Long Rest': 'Descanso largo',
+  'Magic [Action]': 'Magia [acción]',
+  'Magical Effect': 'Efecto mágico',
+  'Malnutrition [Hazard]': 'Desnutrición [peligro]',
+  Monster: 'Monstruo',
+  'Nonplayer Character': 'Personaje no jugador',
+  Object: 'Objeto',
+  'Occupied Space': 'Espacio ocupado',
+  'Opportunity Attacks': 'Ataques de oportunidad',
+  'Passive Perception': 'Percepción pasiva',
+  'Per Day': 'Al día',
+  'Player Character': 'Personaje jugador',
+  Possession: 'Posesión',
+  Proficiency: 'Competencia',
+  Reach: 'Alcance',
+  Reaction: 'Reacción',
+  'Ready [Action]': 'Preparar una acción [acción]',
+  Resistance: 'Resistencia',
+  Ritual: 'Ritual',
+  'Round Down': 'Redondear hacia abajo',
+  Save: 'Salvación',
+  'Saving Throw': 'Tirada de salvación',
+  'Search [Action]': 'Buscar [acción]',
+  'Shape-Shifting': 'Cambio de forma',
+  'Short Rest': 'Descanso corto',
+  'Simultaneous Effects': 'Efectos simultáneos',
+  Size: 'Tamaño',
+  Skill: 'Habilidad',
+  Speed: 'Velocidad',
+  Spell: 'Conjuro',
+  'Spell Attack': 'Ataque de conjuro',
+  'Spellcasting Focus': 'Canalizador mágico',
+  'Sphere [Area of Effect]': 'Esfera [área de efecto]',
+  Stable: 'Estable',
+  'Stat Block': 'Perfil',
+  'Study [Action]': 'Estudiar [acción]',
+  'Suffocation [Hazard]': 'Asfixia [peligro]',
+  Surprise: 'Sorpresa',
+  Swimming: 'Nadar',
+  'Swim Speed': 'Velocidad nadando',
+  Target: 'Objetivo',
+  Telepathy: 'Telepatía',
+  Teleportation: 'Teletransporte',
+  'Temporary Hit Points': 'Puntos de golpe temporales',
+  Tremorsense: 'Sentir vibraciones',
+  Truesight: 'Visión verdadera',
+  'Unarmed Strike': 'Ataque sin armas',
+  'Unoccupied Space': 'Espacio sin ocupar',
+  'Utilize [Action]': 'Utilizar [acción]',
+  Vulnerability: 'Vulnerabilidad',
+  Weapon: 'Arma',
+  'Weapon Attack': 'Ataque con arma'
+}
+
+/** Las reglas de 2014 que tienen versión en 2024 con otro nombre (en inglés) */
+export const RULE_RENAMES: Record<string, string> = {
+  Poisons: 'Poison',
+  'Activating an Item': 'Activating a Magic Item',
+  Objects: 'Breaking Objects'
+}
+
+/** Los conjuros que dicen lo mismo en su cabecera y en sus dados: el inglés y su español, revisados a mano */
+export const SPELL_PAIRS: Record<'2014' | '2024', Record<string, string>> = {
+  '2014': {
+    Bane: 'Perdición',
+    Bless: 'Bendición',
+    Barkskin: 'Piel robliza',
+    'Spider Climb': 'Trepar cual arácnido',
+    Contagion: 'Contagio',
+    'Illusory Script': 'Texto ilusorio',
+    'Ray of Frost': 'Rayo de escarcha',
+    'Sacred Flame': 'Llama sagrada',
+    'Wall of Force': 'Muro de fuerza',
+    'Wall of Stone': 'Muro de piedra',
+    Weird: 'Terror abyecto'
+  },
+  '2024': {
+    Bane: 'Perdición',
+    Bless: 'Bendición',
+    Banishment: 'Destierro',
+    'Resilient Sphere': 'Esfera elástica',
+    'Calm Emotions': 'Calmar emociones',
+    Enthrall: 'Embelesar',
+    'Detect Evil and Good': 'Detectar el bien y el mal',
+    'Detect Magic': 'Detectar magia',
+    Druidcraft: 'Saber druídico',
+    Elementalism: 'Elementalismo',
+    'Enhance Ability': 'Potenciar característica',
+    'Spider Climb': 'Trepar cual arácnido',
+    'Find Steed': 'Hallar corcel',
+    Foresight: 'Presciencia',
+    'Hypnotic Pattern': 'Patrón hipnótico',
+    'Raise Dead': 'Alzar a los muertos',
+    'Ray of Enfeeblement': 'Rayo debilitador',
+    'Ray of Frost': 'Rayo de escarcha',
+    'Sacred Flame': 'Llama sagrada',
+    'Starry Wisp': 'Voluta estelar',
+    Resurrection: 'Resurrección',
+    'Wall of Force': 'Muro de fuerza',
+    'Wall of Stone': 'Muro de piedra'
+  }
+}
+
+/** Los conjuros de 2014 que en 2024 se llaman de otra forma (en inglés, en minúsculas) */
+export const SPELL_RENAMES: Record<string, string> = {
+  'branding smite': 'shining smite',
+  feeblemind: 'befuddlement'
+}
+
+/**
+ * Los objetos mágicos que no se emparejan solos por su parecido: los que dicen sus números de otra forma y los que se
+ * parecen demasiado entre sí (los manuales y los tomos, que solo cambian de característica)
+ */
+const BOOKS = {
+  'Manual of Bodily Health': 'Manual de la salud corporal',
+  'Manual of Gainful Exercise': 'Manual del ejercicio beneficioso',
+  'Manual of Quickness of Action': 'Manual de rapidez de acción',
+  'Tome of Clear Thought': 'Tomo de pensamiento claro',
+  'Tome of Leadership and Influence': 'Tomo de liderazgo e influencia',
+  'Tome of Understanding': 'Tomo de entendimiento'
+}
+export const MAGIC_ITEM_PAIRS: Record<'2014' | '2024', Record<string, string>> = {
+  '2014': { ...BOOKS, 'Boots of the Winterlands': 'Botas de las tierras invernales' },
+  '2024': {
+    ...BOOKS,
+    'Armor of Resistance': 'Armadura de resistencia',
+    'Ring of Warmth': 'Anillo de calidez',
+    'Potion of Gaseous Form': 'Poción de forma gaseosa',
+    'Potion of Invisibility': 'Poción de invisibilidad'
+  }
+}
+
+/** Los objetos mágicos de 2014 que en 2024 se llaman de otra forma (en inglés, en minúsculas) */
+export const MAGIC_ITEM_RENAMES: Record<string, string> = {
+  'potion of healing': 'potions of healing',
+  'iron bands of binding': 'iron bands',
+  'arrow of slaying': 'ammunition of slaying',
+  'deck of many things': 'mysterious deck'
+}
+
+/** Las criaturas que dicen lo mismo en su VD, sus PG, su CA y sus puntuaciones (hoy, ninguna) */
+export const CREATURE_PAIRS: Record<'2014' | '2024', Record<string, string>> = { '2014': {}, '2024': {} }
+
+/** Las criaturas de 2014 que en 2024 son la misma con otro nombre (en inglés, en minúsculas) */
+export const CREATURE_RENAMES: Record<string, string> = {
+  'flying sword': 'animated flying sword',
+  'rug of smothering': 'animated rug of smothering',
+  azer: 'azer sentinel',
+  bugbear: 'bugbear warrior',
+  centaur: 'centaur trooper',
+  shrieker: 'shrieker fungus',
+  gnoll: 'gnoll warrior',
+  goblin: 'goblin warrior',
+  hobgoblin: 'hobgoblin warrior',
+  kobold: 'kobold warrior',
+  merfolk: 'merfolk skirmisher',
+  minotaur: 'minotaur of baphomet',
+  sahuagin: 'sahuagin warrior',
+  acolyte: 'priest acolyte',
+  'cult fanatic': 'cultist fanatic',
+  thug: 'tough',
+  'tribal warrior': 'warrior infantry',
+  veteran: 'warrior veteran',
+  quipper: 'piranha',
+  'swarm of quippers': 'swarm of piranhas',
+  'half-red dragon veteran': 'half-dragon',
+  androsphinx: 'sphinx of valor',
+  gynosphinx: 'sphinx of lore',
+  'succubus/incubus': 'succubus'
+}
+
+/**
+ * Los rasgos de las especies: el inglés y su español (en 2024, cada idioma los ordena por orden alfabético; en 2014, la
+ * edad y el alineamiento van al revés). Sin mayúsculas ni tildes al compararlos
+ */
+export const TRAIT_PAIRS: Record<string, string> = {
+  'Ability Score Increase': 'Mejora de característica',
+  Age: 'Edad',
+  Alignment: 'Alineamiento',
+  Size: 'Tamaño',
+  Speed: 'Velocidad',
+  Languages: 'Idiomas',
+  'Draconic Ancestry': 'Linaje dracónico',
+  'Breath Weapon': 'Ataque de aliento',
+  'Damage Resistance': 'Resistencia al daño',
+  Darkvision: 'Visión en la oscuridad',
+  'Draconic Flight': 'Vuelo dracónico',
+  'Dwarven Resilience': 'Resistencia enana',
+  'Dwarven Toughness': 'Aguante enano',
+  Stonecunning: 'Afinidad con la piedra',
+  'Elven Lineage': 'Linaje élfico',
+  'Fey Ancestry': 'Linaje feérico',
+  'Keen Senses': 'Sentidos agudos',
+  Trance: 'Trance',
+  'Gnomish Cunning': 'Astucia gnoma',
+  'Gnomish Lineage': 'Linaje gnomo',
+  'Giant Ancestry': 'Linaje gigante',
+  'Large Form': 'Forma grande',
+  'Powerful Build': 'Constitución poderosa',
+  Brave: 'Valiente',
+  'Halfling Nimbleness': 'Agilidad de mediano',
+  Luck: 'Fortuna',
+  'Naturally Stealthy': 'Sigiloso por naturaleza',
+  Resourceful: 'Ingenioso',
+  Skillful: 'Diestro',
+  Versatile: 'Versátil',
+  'Adrenaline Rush': 'Descarga de adrenalina',
+  'Relentless Endurance': 'Aguante incansable',
+  'Fiendish Legacy': 'Legado infernal',
+  'Otherworldly Presence': 'Presencia sobrenatural'
+}

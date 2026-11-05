@@ -83,14 +83,14 @@ Lo nuevo del formato de sistemas (ADR-0012). Vale para cualquier sistema, no sol
   - su **destino**: un campo o un elemento de un conjunto (`ca`, `caracteristicas.des.valor`,
     `habilidades.sigilo`);
   - su **operación**: sumar, fijar, fijar la base (las CA alternativas, como Defensa sin armadura: sustituye a la de
-    siempre y, de varias, gana la mayor), mínimo, máximo, grado de competencia (competente, pericia, media: un mínimo en
+    siempre y, de varias, gana la mayor), multiplicar (la velocidad a la mitad, hacia abajo), mínimo, máximo, grado de competencia (competente, pericia, media: un mínimo en
     su grado), ventaja o desventaja, o añadir a una lista (resistencias, sentidos, idiomas, velocidades);
   - su **valor**: una fórmula del sistema;
   - su **condición**: una fórmula de sí o no sobre el estado (`@equipado`, `@sintonizado`, `!@armadura`,
     `@nivel >= 5`, un estado activo);
   - su **origen**, que sale en el desglose.
 
-  El orden de aplicación es fijo (base, fijar, sumar, mínimo y máximo) y sale en el desglose. Lo que depende del
+  El orden de aplicación es fijo (base, fijar, sumar, multiplicar, mínimo y máximo) y sale en el desglose. Lo que depende del
   objetivo («contra aberraciones») va en la tirada como propuesta, que el jugador confirma.
 - **Recursos**: los usos de un rasgo o de un objeto, con su máximo (una fórmula: `@competencia`,
   `@caracteristicas.car.mod`, «1 a nivel 1, 2 a nivel 6»), cuándo se recuperan (descanso corto, largo, al amanecer u
