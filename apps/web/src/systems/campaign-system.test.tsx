@@ -136,7 +136,6 @@ describe('el sistema de una campaña', () => {
     const settings = within(dialog.getByRole('group', { name: 'Ajustes de 5e de prueba' }))
     expect(settings.getByRole<HTMLInputElement>('checkbox', { name: 'Compra por puntos' }).checked).toBe(true)
     await userEvent.click(settings.getByRole('checkbox', { name: 'Tiradas' }))
-    expect(dialog.getByRole('link', { name: 'Abrir 5e de prueba' })).toBeDefined()
     await userEvent.click(dialog.getByRole('button', { name: 'Guardar' }))
     // Guardado, ya no hay cambios: «Guardar» se va
     await waitFor(() => expect(dialog.queryByRole('button', { name: 'Guardar' })).toBeNull())

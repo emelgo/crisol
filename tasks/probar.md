@@ -43,26 +43,14 @@ documentos). Spec: `docs/specs/srd-5e.md`.
 
 Ya en staging (PR #96): todo se puede probar allí. Spec: `docs/specs/sistemas.md`.
 
-- [ ] **Punto de control 3**:
-  - «Sistemas» en la barra de Mis mundos (y en el menú de la llama del móvil), con «En blanco» de serie;
-  - «Sistema nuevo» desde cero, copiando «En blanco» y subiendo un archivo: uno roto dice qué falla (por sus nombres,
-    con la ruta debajo) y no sube nada;
-  - su engranaje: cambiarle el nombre, bajarlo, en qué campañas está y borrarlo (solo si ninguna lo usa);
+- [ ] **Punto de control 3** (sin editor desde el 2026-11-05: los sistemas se hacen con la IA):
+  - «Sistemas» en la barra de Mis mundos (y en el menú de la llama del móvil), con «5e» y «En blanco» de serie;
+  - «Sistema nuevo» dice que se hacen con la IA; sube un archivo (uno roto dice qué falla, por sus nombres y con la
+    ruta debajo, y no sube nada; el bueno sale en los tuyos) y baja uno vacío;
+  - cada sistema abre su ventana: bajarlo y en qué campañas está; si es tuyo, también cambiarle el nombre y borrarlo
+    (solo si ninguna campaña lo usa);
   - en la ventana de una campaña (y al crearla), elegir su sistema; con uno que tenga fuentes, idiomas o ajustes, sus
     opciones; y la ficha de dados de esa campaña empieza por su tirada por defecto.
-- [ ] **Punto de control 4**: hacer Fronteras (2d6 + atributo) en el editor, desde una copia de «En blanco»:
-  - en Personaje, tres atributos (Vigor, Astucia, Presencia) y un calculado (Defensa = `7 + @vigor`): la fórmula se
-    comprueba al escribirla y `@` propone los nombres;
-  - en Tiradas, «Atributo» = `2d6 + @este`, una por cada atributo, con sus franjas (`@total >= 10` éxito, `@total >= 7`
-    parcial, `true` fallo) y un modo de ventaja (`2d6` por `3d6kh2`);
-  - en Dados, la tirada por defecto (`2d6`) y sin críticos; en Fuentes y Ajustes de campaña, una de cada;
-  - «Probar», al lado: cambiar los atributos cambia la Defensa, con su desglose, y la tirada sale con su franja;
-  - Avanzado: el JSON, con una errata a mano (la línea se marca y el problema de la lista lleva a ella); bajarlo y
-    subir un archivo roto (no cambia nada);
-  - elegirlo en una campaña: la ficha de dados empieza por `2d6`;
-  - en el móvil: la parte, en el selector; «Probar», en una hoja; en Avanzado, los problemas debajo.
-  - con cambios sin guardar, salir pregunta; y si otro lo cambia (otra pestaña, la IA), tus cambios siguen y avisa;
-  - una clave que ya existe no se aplica: lo dice debajo.
 - [ ] **Final, desde claude.ai** (con el conector «Neo Crisol»): pedirle a la IA un sistema
   de 2d6 + atributo. Debe leer el formato (`formato_sistemas`), crearlo, validarlo y probar una fórmula y una tirada;
   sale en «Sistemas». Después, que le cambie una tirada (por rutas) y que lo elija en una campaña. En modo asistente,

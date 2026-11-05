@@ -1,13 +1,13 @@
 /**
- * «Sistemas», en la zona de Mis mundos (docs/specs/sistemas.md): los tuyos, con su engranaje, y los de serie, con su
- * candado y «Copiar». Al pasar por uno, a la izquierda, lo que trae. «Sistema nuevo» va como un recuadro más, tras los
- * tuyos: desde cero, copiando otro o de un archivo (que se valida aquí antes de subirlo)
+ * «Sistemas», en la zona de Mis mundos (docs/specs/sistemas.md): los tuyos y los de serie, con su candado; cada uno abre
+ * su ventana. Al pasar por uno, a la izquierda, lo que trae. Se hacen con la IA (no hay editor): «Sistema nuevo» sube
+ * su archivo o baja uno vacío
  */
 import type { SystemSummary } from '@crisol/contracts'
 import { type Problem, validateFile } from '@crisol/systems'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Link, Navigate, useNavigate } from '@tanstack/react-router'
-import { CircleAlert, Copy, Download, FileUp, Info, Lock, Plus, ScrollText, Settings } from 'lucide-react'
+import { Navigate } from '@tanstack/react-router'
+import { CircleAlert, Download, FileUp, Info, Lock, Plus, ScrollText, Sparkles } from 'lucide-react'
 import { useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
@@ -48,7 +48,7 @@ export function SystemsScreen() {
   const { account, pending } = useAccounts().useAccount()
   const systems = useSystems()
   const [hovered, setHovered] = useState<string | null>(null)
-  const [creating, setCreating] = useState<{ copyOf: string | null } | null>(null)
+  const [creating, setCreating] = useState(false)
   if (pending) return null
   if (!account) return <Navigate to="/entrar" replace />
   const all = systems.data?.systems ?? []
@@ -75,7 +75,7 @@ export function SystemsScreen() {
                   type="button"
                   className={screen.newCard}
                   data-tour="sistemas-nuevo"
-                  onClick={() => setCreating({ copyOf: null })}
+                  onClick={() => setCreating(true)}
                 >
                   <Plus aria-hidden="true" size={22} />
                   {t('systems.new')}
@@ -85,18 +85,13 @@ export function SystemsScreen() {
             <h2 className={screen.section}>{t('systems.builtIn')}</h2>
             <ul className={screen.grid} aria-label={t('systems.builtIn')} data-tour="sistemas-serie">
               {builtIn.map((system) => (
-                <SystemCard
-                  key={system.id}
-                  system={system}
-                  onHover={setHovered}
-                  onCopy={() => setCreating({ copyOf: system.id })}
-                />
+                <SystemCard key={system.id} system={system} onHover={setHovered} />
               ))}
             </ul>
           </>
         )}
       </div>
-      {creating && <NewSystemDialog copyOf={creating.copyOf} onClose={() => setCreating(null)} />}
+      {creating && <NewSystemDialog onClose={() => setCreating(false)} />}
       {systems.data && (
         <Tour
           id="sistemas"
@@ -110,19 +105,11 @@ export function SystemsScreen() {
   )
 }
 
-function SystemCard({
-  system,
-  onHover,
-  onCopy
-}: {
-  system: SystemSummary
-  onHover: (id: string | null) => void
-  onCopy?: () => void
-}) {
+function SystemCard({ system, onHover }: { system: SystemSummary; onHover: (id: string | null) => void }) {
   const { t } = useTranslation()
   const origin = useOrigin()
-  const [settings, setSettings] = useState(false)
-  const gear = useRef<HTMLButtonElement>(null)
+  const [open, setOpen] = useState(false)
+  const opener = useRef<HTMLButtonElement>(null)
   return (
     <li
       className={screen.card}
@@ -138,40 +125,28 @@ function SystemCard({
         <ScrollText size={24} strokeWidth={1.5} />
       </span>
       <h3 className={screen.name}>
-        <Link to="/sistemas/$systemId" params={{ systemId: system.id }} className={screen.open}>
+        <button
+          ref={opener}
+          type="button"
+          className={`${screen.open} ${styles.opener}`}
+          aria-haspopup="dialog"
+          onClick={() => setOpen(true)}
+        >
           {system.name}
-        </Link>
+        </button>
       </h3>
       <p className={screen.meta}>{origin(system)}</p>
-      <div className={`${screen.foot} ${styles.foot}`}>
+      <div className={screen.foot}>
         <span className={styles.version}>
           {t('systems.version', { version: system.builtIn ? system.release : system.version })}
         </span>
-        {system.builtIn ? (
-          <button type="button" className={screen.copy} onClick={onCopy}>
-            <Copy size={14} aria-hidden="true" />
-            {t('systems.copy')}
-          </button>
-        ) : (
-          <button
-            ref={gear}
-            type="button"
-            className={screen.gear}
-            aria-label={t('systems.settingsOf', { name: system.name })}
-            title={t('systems.settingsOf', { name: system.name })}
-            aria-haspopup="dialog"
-            onClick={() => setSettings(true)}
-          >
-            <Settings size={16} aria-hidden="true" />
-          </button>
-        )}
       </div>
-      {settings && (
-        <SystemSettings
+      {open && (
+        <SystemWindow
           system={system}
           onClose={(gone) => {
-            setSettings(false)
-            if (!gone) gear.current?.focus()
+            setOpen(false)
+            if (!gone) opener.current?.focus()
           }}
         />
       )}
@@ -248,44 +223,29 @@ export function ProblemList({ problems }: { problems: readonly Problem[] }) {
   )
 }
 
-type Mode = 'scratch' | 'copy' | 'file'
-
-/** «Sistema nuevo»: desde cero, copiando otro o de un archivo. Creado, se abre en su editor */
-export function NewSystemDialog({ copyOf, onClose }: { copyOf: string | null; onClose: () => void }) {
+/** «Sistema nuevo»: se hacen con la IA; aquí se sube su archivo (que se valida antes de subirlo) o se baja uno vacío */
+export function NewSystemDialog({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation()
   const api = useApi()
   const queryClient = useQueryClient()
-  const navigate = useNavigate()
   const errorText = useErrorText()
   const dialog = useRef<HTMLDialogElement>(null)
   const titleId = useId()
-  const baseId = useId()
   const fileId = useId()
-  const systems = useSystems().data?.systems ?? []
-  const [mode, setMode] = useState<Mode>(copyOf ? 'copy' : 'scratch')
-  const [base, setBase] = useState(copyOf ?? systems[0]?.id ?? 'blank')
-  const chosen = systems.find((s) => s.id === base)
-  const [name, setName] = useState(chosen && copyOf ? t('systems.copyName', { name: chosen.name }) : '')
   const [file, setFile] = useState<{
     name: string
     content: Record<string, unknown> | null
     problems: Problem[]
   } | null>(null)
 
-  const opened = async (id: string) => {
-    void queryClient.invalidateQueries({ queryKey: ['systems'] })
-    dialog.current?.close()
-    onClose()
-    await navigate({ to: '/sistemas/$systemId', params: { systemId: id } })
-  }
-  const create = useMutation({
-    mutationFn: () => api.call('createSystem', { name: name.trim(), from: mode === 'copy' ? base : 'blank' }),
-    onSuccess: (created) => opened(created.id)
-  })
   const upload = useMutation({
     mutationFn: () => api.call('importSystem', { file: file?.content ?? {} }),
-    onSuccess: ({ system }) => opened(system.id)
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['systems'] })
+      dialog.current?.close()
+    }
   })
+  const blank = useDownload('blank')
 
   /** Leer el archivo y validarlo aquí: si está roto, se dice qué falla sin subir nada */
   const read = async (picked: File | undefined) => {
@@ -312,101 +272,77 @@ export function NewSystemDialog({ copyOf, onClose }: { copyOf: string | null; on
         className={cards.form}
         onSubmit={(event) => {
           event.preventDefault()
-          if (mode === 'file') {
-            if (file?.content) upload.mutate()
-          } else if (name.trim()) create.mutate()
+          if (file?.content) upload.mutate()
         }}
       >
         <h2 id={titleId}>{t('systems.new')}</h2>
-        <fieldset className={`${screen.modes} ${styles.modes}`}>
-          <legend className={screen.hidden}>{t('systems.how')}</legend>
-          {(['scratch', 'copy', 'file'] as const).map((each) => (
-            <label key={each} className={screen.mode}>
-              <input type="radio" name={`${titleId}-modo`} checked={mode === each} onChange={() => setMode(each)} />
-              {each === 'scratch' ? (
-                <Plus size={18} aria-hidden="true" />
-              ) : each === 'copy' ? (
-                <Copy size={18} aria-hidden="true" />
-              ) : (
-                <FileUp size={18} aria-hidden="true" />
-              )}
-              {t(each === 'scratch' ? 'systems.fromScratch' : each === 'copy' ? 'systems.copying' : 'systems.fromFile')}
-            </label>
-          ))}
+        <p className={styles.withAi}>
+          <Sparkles size={16} aria-hidden="true" />
+          {t('systems.withAi')}
+        </p>
+        <fieldset
+          className={styles.drop}
+          onDragOver={(event) => event.preventDefault()}
+          onDrop={(event) => {
+            event.preventDefault()
+            void read(event.dataTransfer.files[0])
+          }}
+        >
+          <legend className={screen.hidden}>{t('systems.file')}</legend>
+          <FileUp size={26} aria-hidden="true" strokeWidth={1.5} />
+          <span>{t('systems.dropFile')}</span>
+          <label htmlFor={fileId} className={styles.pick}>
+            {t('systems.pickFile')}
+          </label>
+          {file && <span className={styles.picked}>{file.name}</span>}
+          <input
+            id={fileId}
+            type="file"
+            accept=".json,application/json"
+            className={styles.fileInput}
+            onChange={(event) => void read(event.currentTarget.files?.[0])}
+          />
         </fieldset>
-        {mode === 'copy' && (
-          <div className={screen.baseField}>
-            <label htmlFor={baseId}>{t('systems.copyWhich')}</label>
-            <select id={baseId} value={base} onChange={(event) => setBase(event.currentTarget.value)}>
-              {systems.map((each) => (
-                <option key={each.id} value={each.id}>
-                  {each.name}
-                </option>
-              ))}
-            </select>
+        {errors.length > 0 && (
+          <div role="alert">
+            <p className={styles.notUploaded}>{t('systems.notUploaded', { count: errors.length })}</p>
+            <ProblemList problems={file?.problems ?? []} />
           </div>
         )}
-        {mode === 'file' ? (
-          <>
-            <fieldset
-              className={styles.drop}
-              onDragOver={(event) => event.preventDefault()}
-              onDrop={(event) => {
-                event.preventDefault()
-                void read(event.dataTransfer.files[0])
-              }}
-            >
-              <legend className={screen.hidden}>{t('systems.file')}</legend>
-              <FileUp size={26} aria-hidden="true" strokeWidth={1.5} />
-              <span>{t('systems.dropFile')}</span>
-              <label htmlFor={fileId} className={styles.pick}>
-                {t('systems.pickFile')}
-              </label>
-              {file && <span className={styles.picked}>{file.name}</span>}
-              <input
-                id={fileId}
-                type="file"
-                accept=".json,application/json"
-                className={styles.fileInput}
-                onChange={(event) => void read(event.currentTarget.files?.[0])}
-              />
-            </fieldset>
-            {errors.length > 0 && (
-              <div role="alert">
-                <p className={styles.notUploaded}>{t('systems.notUploaded', { count: errors.length })}</p>
-                <ProblemList problems={file?.problems ?? []} />
-              </div>
-            )}
-            {errors.length === 0 && (file?.problems.length ?? 0) > 0 && <ProblemList problems={file?.problems ?? []} />}
-            <FormError message={upload.error ? errorText(upload.error) : null} />
-            <BusyButton type="submit" className={form.button} busy={upload.isPending} disabled={!file?.content}>
-              {t('systems.upload')}
-            </BusyButton>
-          </>
-        ) : (
-          <>
-            <Field
-              label={t('systems.name')}
-              value={name}
-              required
-              maxLength={200}
-              autoComplete="off"
-              data-autofocus=""
-              onChange={(event) => setName(event.currentTarget.value)}
-            />
-            <FormError message={create.error ? errorText(create.error) : null} />
-            <BusyButton type="submit" className={form.button} busy={create.isPending}>
-              {t('systems.create')}
-            </BusyButton>
-          </>
-        )}
+        {errors.length === 0 && (file?.problems.length ?? 0) > 0 && <ProblemList problems={file?.problems ?? []} />}
+        <FormError message={upload.error ? errorText(upload.error) : null} />
+        <BusyButton type="submit" className={form.button} busy={upload.isPending} disabled={!file?.content}>
+          {t('systems.upload')}
+        </BusyButton>
+        <p className={styles.blank}>
+          <BusyButton type="button" className={styles.rowAction} busy={blank.isPending} onClick={() => blank.mutate()}>
+            <Download size={14} aria-hidden="true" />
+            {t('systems.blank')}
+          </BusyButton>
+          {t('systems.blankHint')}
+        </p>
+        <FormError message={blank.error ? errorText(blank.error) : null} />
       </form>
     </Modal>
   )
 }
 
-/** La ventana de un sistema tuyo: su nombre, su versión, bajarlo, en qué campañas está y borrarlo. onClose(gone): si se borró */
-function SystemSettings({ system, onClose }: { system: SystemSummary; onClose: (gone: boolean) => void }) {
+/** Bajar un sistema (de serie o tuyo) con su contenido, en un archivo */
+function useDownload(systemId: string) {
+  const api = useApi()
+  return useMutation({
+    mutationFn: async () => {
+      const { name, file } = await api.call('exportSystem', { systemId })
+      saveFile(name, new Blob([JSON.stringify(file, null, 2)], { type: 'application/json' }))
+    }
+  })
+}
+
+/**
+ * La ventana de un sistema: su versión, bajarlo y en qué campañas está; si es tuyo, también su nombre y borrarlo.
+ * onClose(gone): si se borró
+ */
+function SystemWindow({ system, onClose }: { system: SystemSummary; onClose: (gone: boolean) => void }) {
   const { t } = useTranslation()
   const api = useApi()
   const queryClient = useQueryClient()
@@ -424,12 +360,7 @@ function SystemSettings({ system, onClose }: { system: SystemSummary; onClose: (
     },
     onSuccess: () => dialog.current?.close()
   })
-  const download = useMutation({
-    mutationFn: async () => {
-      const { name: fileName, file } = await api.call('exportSystem', { systemId: system.id })
-      saveFile(fileName, new Blob([JSON.stringify(file, null, 2)], { type: 'application/json' }))
-    }
-  })
+  const download = useDownload(system.id)
   const remove = async () => {
     await api.call('deleteSystem', { systemId: system.id })
     gone.current = true
@@ -446,33 +377,32 @@ function SystemSettings({ system, onClose }: { system: SystemSummary; onClose: (
           if (changed && name.trim()) save.mutate()
         }}
       >
-        <h2 id={titleId}>{t('systems.settingsOf', { name: system.name })}</h2>
-        <Field
-          label={t('systems.name')}
-          value={name}
-          required
-          maxLength={200}
-          autoComplete="off"
-          onChange={(event) => setName(event.currentTarget.value)}
-        />
-        <FormError message={save.error ? errorText(save.error) : null} />
-        <ChangesBar shown={changed}>
-          <BusyButton type="submit" className={form.button} busy={save.isPending}>
-            {t('systems.save')}
-          </BusyButton>
-          <button type="button" className={dialogStyles.cancel} onClick={() => setName(system.name)}>
-            {t('systems.cancel')}
-          </button>
-        </ChangesBar>
+        <h2 id={titleId}>{system.builtIn ? system.name : t('systems.settingsOf', { name: system.name })}</h2>
+        {!system.builtIn && (
+          <>
+            <Field
+              label={t('systems.name')}
+              value={name}
+              required
+              maxLength={200}
+              autoComplete="off"
+              onChange={(event) => setName(event.currentTarget.value)}
+            />
+            <FormError message={save.error ? errorText(save.error) : null} />
+            <ChangesBar shown={changed}>
+              <BusyButton type="submit" className={form.button} busy={save.isPending}>
+                {t('systems.save')}
+              </BusyButton>
+              <button type="button" className={dialogStyles.cancel} onClick={() => setName(system.name)}>
+                {t('systems.cancel')}
+              </button>
+            </ChangesBar>
+          </>
+        )}
         <dl className={styles.rows}>
           <div>
             <dt>{t('systems.versionLong')}</dt>
-            <dd>
-              {t('systems.version', { version: system.version })}
-              <Link to="/sistemas/$systemId" params={{ systemId: system.id }} className={styles.rowAction}>
-                {t('systems.open')}
-              </Link>
-            </dd>
+            <dd>{t('systems.version', { version: system.builtIn ? system.release : system.version })}</dd>
           </div>
           <div>
             <dt>{t('systems.download')}</dt>
@@ -496,24 +426,26 @@ function SystemSettings({ system, onClose }: { system: SystemSummary; onClose: (
         </dl>
         <FormError message={download.error ? errorText(download.error) : null} />
       </form>
-      <div className={cards.dangerArea}>
-        <DangerZone>
-          {inUse ? (
-            <p className={styles.inUse}>
-              {t('systems.inUse', { names: system.campaigns.map((c) => `«${c.name}»`).join(', ') })}
-            </p>
-          ) : (
-            <ConfirmByName
-              name={system.name}
-              action={t('systems.delete')}
-              title={t('systems.deleteTitle', { name: system.name })}
-              warning={t('systems.deleteWarning')}
-              label={t('systems.name')}
-              onConfirm={remove}
-            />
-          )}
-        </DangerZone>
-      </div>
+      {!system.builtIn && (
+        <div className={cards.dangerArea}>
+          <DangerZone>
+            {inUse ? (
+              <p className={styles.inUse}>
+                {t('systems.inUse', { names: system.campaigns.map((c) => `«${c.name}»`).join(', ') })}
+              </p>
+            ) : (
+              <ConfirmByName
+                name={system.name}
+                action={t('systems.delete')}
+                title={t('systems.deleteTitle', { name: system.name })}
+                warning={t('systems.deleteWarning')}
+                label={t('systems.name')}
+                onConfirm={remove}
+              />
+            )}
+          </DangerZone>
+        </div>
+      )}
     </Modal>
   )
 }

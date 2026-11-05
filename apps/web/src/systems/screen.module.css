@@ -1,14 +1,41 @@
 /* «Sistemas»: lo propio de su pantalla, sobre la de plantillas (templates/screen.module.css) */
 
-/* Tres maneras de empezar en vez de dos */
-.modes {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+/* El nombre abre su ventana: un botón que se ve como el enlace de las otras tarjetas */
+.opener {
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
 }
 
-/* La versión a la izquierda y el engranaje (o «Copiar») a la derecha */
-.foot {
-  justify-content: space-between;
+/* Se hacen con la IA: dicho arriba, en una línea */
+.withAi {
+  display: flex;
+  gap: var(--space-2);
+  align-items: flex-start;
+  margin: 0 0 var(--space-3);
+  font-size: 0.875rem;
+  color: var(--color-muted);
+}
+
+.withAi svg {
+  flex: none;
+  margin-block-start: 2px;
+  color: var(--color-accent);
+}
+
+/* Bajar uno vacío, abajo y en pequeño */
+.blank {
+  display: flex;
   align-items: center;
+  gap: var(--space-3);
+  margin: var(--space-4) 0 0;
+  padding-block-start: var(--space-3);
+  border-block-start: 1px solid var(--color-border);
+  font-size: 0.8125rem;
+  color: var(--color-muted);
 }
 
 .version {

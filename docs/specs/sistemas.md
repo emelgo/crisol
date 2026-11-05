@@ -1,6 +1,8 @@
 # Spec: sistemas (módulo 3)
 
-Estado: **aprobada** por Enrique el 2026-11-04 («ok»), con sus respuestas a las preguntas. Segunda capacidad del módulo 3 (`docs/specs/modulo-3.md`), después de `dados`. Las
+Estado: **aprobada** por Enrique el 2026-11-04 («ok»), con sus respuestas a las preguntas. **Cambio (2026-11-05)**: el
+editor y «Probar» se quitaron (Enrique: los sistemas se hacen con la IA); § `editor` queda como registro de lo que hubo.
+«Sistemas» lista los de serie y los tuyos, sube un archivo, baja cada uno y uno vacío. Segunda capacidad del módulo 3 (`docs/specs/modulo-3.md`), después de `dados`. Las
 decisiones de Enrique, en `docs/modulos.md` § «### 3. Sistemas, fichas y dados». Los estudios, en
 `research/foundry/sistemas-y-su-api.md` y `research/foundry/tipos-de-documento.md`. Lo que hace el Crisol actual, en
 `docs/inventario-sistemas.md`. La decisión de arquitectura, en ADR-0011 (por aprobar con esta spec).
@@ -179,7 +181,7 @@ poder recibir los datos de un sistema de Foundry (lo prueba un fragmento de dnd5
   subir.
 - **En la campaña**: elegir el sistema, sus fuentes, su idioma y sus ajustes.
 
-### `editor`
+### `editor` (quitado el 2026-11-05)
 
 - **El editor de un sistema, por secciones**, como el del Crisol actual:
   - general: nombre, resumen, fuente y licencia, idiomas;

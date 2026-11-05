@@ -5,14 +5,13 @@
  */
 import { type Choices, normalizeChoices, type SettingValue, type System, textOf } from '@crisol/systems'
 import { useQuery } from '@tanstack/react-query'
-import { Link } from '@tanstack/react-router'
 import type { TFunction } from 'i18next'
-import { ArrowRight, CircleAlert } from 'lucide-react'
+import { CircleAlert } from 'lucide-react'
 import { useEffect, useId } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
+import { NumberText } from '../components/number-text.tsx'
 import styles from './campaign-system.module.css'
-import { NumberText } from './editor/field.tsx'
 import { useSystems } from './screen.tsx'
 
 export interface SystemDraft {
@@ -57,7 +56,6 @@ export function CampaignSystemFields({
   const id = useId()
   const systems = useSystems()
   const all = systems.data?.systems ?? []
-  const selected = all.find((s) => s.id === value.system)
   const document = useQuery({
     queryKey: ['systems', value.system],
     queryFn: () => api.call('getSystem', { systemId: value.system ?? '' }),
@@ -107,12 +105,6 @@ export function CampaignSystemFields({
         </optgroup>
       </select>
       {!value.system && <p className={styles.hint}>{t('campaignSystem.noneHint')}</p>}
-      {selected && (
-        <Link to="/sistemas/$systemId" params={{ systemId: selected.id }} className={styles.open}>
-          {t('campaignSystem.open', { name: selected.name })}
-          <ArrowRight size={14} aria-hidden="true" />
-        </Link>
-      )}
 
       {system && chosen && editions && (
         <fieldset className={styles.group}>

@@ -40,20 +40,6 @@
   color: var(--color-muted);
 }
 
-.open {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  align-self: flex-start;
-  font-size: 0.875rem;
-  color: var(--color-link);
-  text-decoration: none;
-}
-
-.open:hover {
-  text-decoration: underline;
-}
-
 .group {
   display: flex;
   flex-direction: column;
