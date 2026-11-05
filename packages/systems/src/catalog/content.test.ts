@@ -11,7 +11,8 @@ import { MEASURED } from './5e/measured.ts'
 import { fiveE, SKILLS } from './5e/system.ts'
 import { catalogContent } from './content.ts'
 
-describe('el contenido de los sistemas de serie', () => {
+// Recorren el contenido entero del 5e (más de 3000 documentos): con la cobertura instrumentada, tardan varios segundos
+describe('el contenido de los sistemas de serie', { timeout: 60_000 }, () => {
   it('el del 5e valida, con sus dos idiomas y su página en cada documento', () => {
     const content = catalogContent('5e')
     expect(content.length).toBeGreaterThan(0)
