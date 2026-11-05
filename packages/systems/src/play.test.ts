@@ -63,11 +63,11 @@ describe('lo de la partida', () => {
     expect(spent.resources.find((r) => r.key === 'furias')).toMatchObject({ used: 1 })
     expect(spend(play, { ...rages, used: rages.max }, 5).uses?.[rages.item ?? '']?.furias).toBe(rages.max)
     // La Furia se recupera con un descanso corto (una) o largo (todas): aquí, el largo
-    const afterLong = sheetOf(rest(fiveE, 'personaje', play, spent.resources, 'long'))
+    const afterLong = sheetOf(rest(play, spent.resources, 'long', resourcePaths(fiveE.types.personaje?.fields ?? {})))
     expect(afterLong.resources.find((r) => r.key === 'furias')?.used).toBe(0)
     expect(pg(afterLong.values).value).toBe(pg(afterLong.values).max)
     // El corto no llena los PG
-    const afterShort = sheetOf(rest(fiveE, 'personaje', play, spent.resources, 'short'))
+    const afterShort = sheetOf(rest(play, spent.resources, 'short', resourcePaths(fiveE.types.personaje?.fields ?? {})))
     expect(pg(afterShort.values).value).toBe(pg(fresh.values).max - 5)
     expect(resourcePaths(fiveE.types.personaje?.fields ?? {})).toEqual(
       expect.arrayContaining(['pg', 'pacto', 'espacios.n1', 'espacios.n9'])

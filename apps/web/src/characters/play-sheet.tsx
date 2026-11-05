@@ -1,0 +1,681 @@
+/**
+ * La hoja de un personaje en partida (docs/specs/hoja.md § pantalla): los bloques que compone su sistema (o los de
+ * por defecto) con sus valores calculados y lo de la partida. Tirar a un clic (el servidor tira por él, a su
+ * registro), los PG con daño, curación y temporales, los usos, lo que lleva, las notas y descansar
+ */
+import {
+  changeResource,
+  type Play,
+  type PlayItem,
+  resourcePathsOf,
+  rest,
+  type SheetBlockView,
+  spend
+} from '@crisol/systems'
+import { useMutation, useQuery } from '@tanstack/react-query'
+import { Dices, Minus, Moon, Plus, Sun, Trash2 } from 'lucide-react'
+import { useId, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import type { ActionOutput } from '../api/client.ts'
+import { useApi } from '../api/context.tsx'
+import { useErrorText } from '../api/errors.ts'
+import { FormError } from '../components/field.tsx'
+import styles from './play-sheet.module.css'
+import { type Change, pickId } from './save.ts'
+
+type Loaded = ActionOutput<'getCharacter'>
+type Character = Loaded['character']
+type State = Loaded['state']
+type DiceRoll = ActionOutput<'rollForCharacter'>['roll']
+
+const signed = (n: number) => (n >= 0 ? `+${n}` : `−${-n}`)
+const get = (values: unknown, path: string): unknown =>
+  path
+    .split('.')
+    .reduce<unknown>((v, k) => (v && typeof v === 'object' ? (v as Record<string, unknown>)[k] : undefined), values)
+const shown = (value: unknown, signedWhen = false): string => {
+  if (typeof value === 'number') return signedWhen ? signed(value) : String(value)
+  if (typeof value === 'boolean') return value ? '✓' : ''
+  if (Array.isArray(value)) return value.join(', ')
+  if (value && typeof value === 'object' && 'value' in value) return shown((value as { value: unknown }).value)
+  return value === null || value === undefined ? '' : String(value)
+}
+
+interface Ctx {
+  character: Character
+  state: State
+  save: (change: Change) => Promise<void>
+  roll: (input: {
+    roll?: { key: string; element?: string }
+    action?: { item: string | null; key: string; part: 'attack' | 'damage' | 'heal' }
+  }) => void
+}
+
+export function PlaySheet({
+  character,
+  state,
+  save
+}: {
+  character: Character
+  state: State
+  save: (change: Change) => Promise<void>
+}) {
+  const { t } = useTranslation()
+  const api = useApi()
+  const errorText = useErrorText()
+  const [last, setLast] = useState<DiceRoll | null>(null)
+  const rolling = useMutation({
+    mutationFn: (input: Parameters<Ctx['roll']>[0]) =>
+      api.call('rollForCharacter', { characterId: character.id, ...input }),
+    onSuccess: (out) => setLast(out.roll)
+  })
+  const ctx: Ctx = { character, state, save, roll: (input) => rolling.mutate(input) }
+  const layout = state.layout as SheetBlockView[]
+  return (
+    <div className={styles.sheet}>
+      {last && (
+        <p className={styles.last} role="status">
+          <Dices size={16} aria-hidden="true" />
+          <span>{last.label}</span>
+          <strong className={styles.total}>{last.total}</strong>
+          <span className={styles.detail}>{last.detail}</span>
+        </p>
+      )}
+      <FormError message={rolling.error ? errorText(rolling.error) : null} />
+      {layout.map((block, i) => (
+        <Block key={`${block.kind}-${i.toString(36)}`} block={block} ctx={ctx} />
+      ))}
+      <Rests ctx={ctx} label={t('playSheet.rest')} />
+    </div>
+  )
+}
+
+function Block({ block, ctx }: { block: SheetBlockView; ctx: Ctx }) {
+  switch (block.kind) {
+    case 'header':
+      return null
+    case 'stats':
+      return <Stats block={block} ctx={ctx} />
+    case 'resource':
+      return <ResourceBlock block={block} ctx={ctx} />
+    case 'set':
+      return <SetBlock block={block} ctx={ctx} />
+    case 'group':
+      return <GroupBlock block={block} ctx={ctx} />
+    case 'list':
+      return <ListBlock block={block} ctx={ctx} />
+    case 'items':
+      return <ItemsBlock block={block} ctx={ctx} />
+    case 'actions':
+      return <ActionsBlock block={block} ctx={ctx} />
+    case 'uses':
+      return <UsesBlock block={block} ctx={ctx} />
+    case 'text':
+      return <TextBlock block={block} ctx={ctx} />
+    case 'columns':
+      return (
+        <div className={styles.columns}>
+          {block.blocks.map((inner, i) => (
+            <Block key={`${inner.kind}-${i.toString(36)}`} block={inner} ctx={ctx} />
+          ))}
+        </div>
+      )
+    case 'tabs':
+      return <Tabs block={block} ctx={ctx} />
+  }
+}
+
+function Stats({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'stats' }>; ctx: Ctx }) {
+  const { t } = useTranslation()
+  return (
+    <ul className={styles.stats} aria-label={block.label ?? t('playSheet.values')}>
+      {block.fields.map((f) => {
+        const value = ctx.state.sheet[f.key]
+        const rollKey = f.roll
+        return (
+          <li key={f.key} className={styles.stat}>
+            <span className={styles.statLabel}>{f.label}</span>
+            {rollKey ? (
+              <button
+                type="button"
+                className={styles.statRoll}
+                aria-label={t('playSheet.rollOf', { what: f.label, value: shown(value, true) })}
+                onClick={() => ctx.roll({ roll: { key: rollKey } })}
+              >
+                {shown(value, f.key === 'iniciativa')}
+              </button>
+            ) : (
+              <span className={styles.statValue}>{shown(value)}</span>
+            )}
+          </li>
+        )
+      })}
+    </ul>
+  )
+}
+
+function ResourceBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'resource' }>; ctx: Ctx }) {
+  const { t } = useTranslation()
+  const id = useId()
+  const [amount, setAmount] = useState('')
+  const raw = (ctx.state.sheet[block.field] ?? {}) as { value?: number; max?: number; temp?: number }
+  const current = { value: raw.value ?? raw.max ?? 0, max: raw.max ?? 0, temp: raw.temp ?? 0 }
+  const n = Math.max(0, Math.floor(Number(amount) || 0))
+  const apply = (change: { damage?: number; heal?: number; temp?: number }) => {
+    if (n === 0) return
+    void ctx.save({ play: (play) => changeResource(play, block.field, current, change) })
+    setAmount('')
+  }
+  return (
+    <section className={styles.resource} aria-labelledby={`${id}-t`}>
+      <h2 id={`${id}-t`} className={styles.blockTitle}>
+        {block.label}
+      </h2>
+      <p className={styles.resourceValue}>
+        <strong>{current.value}</strong> / {current.max}
+        {current.temp > 0 && <span className={styles.temp}>{t('playSheet.temp', { temp: current.temp })}</span>}
+      </p>
+      <div className={styles.resourceControls}>
+        <label htmlFor={id} className={styles.hidden}>
+          {t('playSheet.amount')}
+        </label>
+        <input
+          id={id}
+          type="number"
+          min={0}
+          inputMode="numeric"
+          value={amount}
+          onChange={(event) => setAmount(event.currentTarget.value)}
+        />
+        <button type="button" onClick={() => apply({ damage: n })}>
+          {t('playSheet.damage')}
+        </button>
+        <button type="button" onClick={() => apply({ heal: n })}>
+          {t('playSheet.heal')}
+        </button>
+        <button type="button" onClick={() => apply({ temp: n })}>
+          {t('playSheet.setTemp')}
+        </button>
+      </div>
+    </section>
+  )
+}
+
+function SetBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'set' }>; ctx: Ctx }) {
+  const { t } = useTranslation()
+  const id = useId()
+  const values = (ctx.state.sheet[block.field] ?? {}) as Record<string, Record<string, unknown>>
+  const rollKey = block.roll
+  return (
+    <section className={styles.block} aria-labelledby={id}>
+      <h2 id={id} className={styles.blockTitle}>
+        {block.label}
+      </h2>
+      <table className={styles.table}>
+        <thead>
+          <tr>
+            <th scope="col">
+              <span className={styles.hidden}>{block.label}</span>
+            </th>
+            {block.columns.map((c) => (
+              <th key={c.key} scope="col">
+                {c.label}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {block.elements.map((e) => (
+            <tr key={e.key}>
+              <th scope="row">
+                {rollKey ? (
+                  <button
+                    type="button"
+                    className={styles.rowRoll}
+                    onClick={() => ctx.roll({ roll: { key: rollKey, element: e.key } })}
+                    aria-label={t('playSheet.rollFor', { what: e.label })}
+                  >
+                    {e.label}
+                  </button>
+                ) : (
+                  e.label
+                )}
+              </th>
+              {block.columns.map((c) => {
+                const v = values[e.key]?.[c.key]
+                const isBonus = c.key !== 'puntuacion' && typeof v === 'number'
+                return <td key={c.key}>{shown(v, isBonus)}</td>
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </section>
+  )
+}
+
+function GroupBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'group' }>; ctx: Ctx }) {
+  const id = useId()
+  const { t } = useTranslation()
+  const values = (ctx.state.sheet[block.field] ?? {}) as Record<string, unknown>
+  // De los recursos de dentro (los espacios), solo los que tienen máximo
+  const fields = block.fields.filter((f) => {
+    const v = values[f.key] as { max?: number } | undefined
+    return f.kind !== 'resource' || (typeof v?.max === 'number' && v.max > 0)
+  })
+  if (fields.length === 0) return null
+  return (
+    <section className={styles.block} aria-labelledby={id}>
+      <h2 id={id} className={styles.blockTitle}>
+        {block.label}
+      </h2>
+      <ul className={styles.group}>
+        {fields.map((f) => {
+          const v = values[f.key]
+          if (f.kind === 'resource') {
+            const r = v as { value?: number; max?: number }
+            const current = { value: r.value ?? r.max ?? 0, max: r.max ?? 0, temp: 0 }
+            const path = `${block.field}.${f.key}`
+            return (
+              <li key={f.key} className={styles.groupResource}>
+                <span>{f.label}</span>
+                <Stepper
+                  label={f.label}
+                  value={`${current.value} / ${current.max}`}
+                  onLess={
+                    current.value > 0
+                      ? () => void ctx.save({ play: (p) => changeResource(p, path, current, { damage: 1 }) })
+                      : undefined
+                  }
+                  onMore={
+                    current.value < current.max
+                      ? () => void ctx.save({ play: (p) => changeResource(p, path, current, { heal: 1 }) })
+                      : undefined
+                  }
+                />
+              </li>
+            )
+          }
+          return (
+            <li key={f.key}>
+              <span className={styles.statLabel}>{f.label}</span> {shown(v) || t('playSheet.none')}
+            </li>
+          )
+        })}
+      </ul>
+    </section>
+  )
+}
+
+function Stepper({
+  label,
+  value,
+  onLess,
+  onMore
+}: {
+  label: string
+  value: string
+  onLess: (() => void) | undefined
+  onMore: (() => void) | undefined
+}) {
+  const { t } = useTranslation()
+  return (
+    <span className={styles.stepper}>
+      <button type="button" aria-label={t('playSheet.less', { what: label })} disabled={!onLess} onClick={onLess}>
+        <Minus size={14} aria-hidden="true" />
+      </button>
+      <output>{value}</output>
+      <button type="button" aria-label={t('playSheet.more', { what: label })} disabled={!onMore} onClick={onMore}>
+        <Plus size={14} aria-hidden="true" />
+      </button>
+    </span>
+  )
+}
+
+function ListBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'list' }>; ctx: Ctx }) {
+  const items = block.fields.filter(
+    (f) => Array.isArray(ctx.state.sheet[f.key]) && (ctx.state.sheet[f.key] as unknown[]).length > 0
+  )
+  if (items.length === 0) return null
+  return (
+    <dl className={styles.list}>
+      {items.map((f) => (
+        <div key={f.key}>
+          <dt>{f.label}</dt>
+          <dd>{shown(ctx.state.sheet[f.key])}</dd>
+        </div>
+      ))}
+    </dl>
+  )
+}
+
+/** Lo que lleva de un campo de objetos: lo concedido (sin tocar) y lo del inventario (equipar, cantidad, quitar) */
+function ItemsBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'items' }>; ctx: Ctx }) {
+  const { t } = useTranslation()
+  const id = useId()
+  const [adding, setAdding] = useState(false)
+  const granted = ctx.state.items.filter((it) => block.types.includes(it.type) && it.from !== null)
+  // Lo que lleva, tal como se acaba de guardar (equipar se ve al momento); su nombre y su tipo, del estado
+  const known = new Map(ctx.state.carried.map((it) => [it.id, it]))
+  const carried = ((ctx.character.play as Play).items ?? [])
+    .map((it) => ({ ...it, name: known.get(it.id)?.name ?? it.key, type: known.get(it.id)?.type ?? null }))
+    .filter((it) => it.type !== null && block.types.includes(it.type))
+  const update = (itemId: string, change: (it: PlayItem) => PlayItem | null) =>
+    void ctx.save({
+      play: (play) => ({
+        ...play,
+        items: (play.items ?? []).flatMap((it) => {
+          if (it.id !== itemId) return [it]
+          const next = change(it)
+          return next ? [next] : []
+        })
+      })
+    })
+  const row = (itemId: string, name: string, extra?: React.ReactNode) => {
+    const values = ctx.state.itemValues[itemId] ?? {}
+    return (
+      <li key={itemId} className={styles.item}>
+        <span className={styles.itemName}>{name}</span>
+        {block.columns.map((c) => (
+          <span key={c.key} className={styles.itemValue}>
+            <span className={styles.hidden}>{c.label}: </span>
+            {shown(values[c.key], c.key === 'ataque')}
+          </span>
+        ))}
+        {block.rolls.map((r) => (
+          <button
+            key={r}
+            type="button"
+            className={styles.smallRoll}
+            onClick={() => ctx.roll({ roll: { key: r, element: itemId } })}
+            aria-label={t('playSheet.rollItem', {
+              what: name,
+              roll: ctx.state.rolls.find((x) => x.key === r)?.label ?? r
+            })}
+          >
+            <Dices size={14} aria-hidden="true" />
+            {ctx.state.rolls.find((x) => x.key === r)?.label ?? r}
+          </button>
+        ))}
+        {extra}
+      </li>
+    )
+  }
+  return (
+    <section className={styles.block} aria-labelledby={id}>
+      <div className={styles.blockHead}>
+        <h2 id={id} className={styles.blockTitle}>
+          {block.label}
+        </h2>
+        <button type="button" className={styles.add} onClick={() => setAdding(!adding)} aria-expanded={adding}>
+          <Plus size={14} aria-hidden="true" />
+          {t('playSheet.add')}
+        </button>
+      </div>
+      {adding && (
+        <AddFromCompendium
+          campaignId={ctx.character.campaignId}
+          types={block.types}
+          onAdd={(key) => {
+            setAdding(false)
+            void ctx.save({
+              play: (play) => ({ ...play, items: [...(play.items ?? []), { id: pickId(), key, quantity: 1 }] })
+            })
+          }}
+        />
+      )}
+      <ul className={styles.items}>
+        {granted.map((it) => row(it.id, it.name))}
+        {carried.map((it) =>
+          row(
+            `p:${it.id}`,
+            it.name,
+            <span className={styles.itemControls}>
+              <label className={styles.check}>
+                <input
+                  type="checkbox"
+                  checked={it.equipped === true}
+                  onChange={(event) => update(it.id, (x) => ({ ...x, equipped: event.currentTarget.checked }))}
+                />
+                {t('playSheet.equipped')}
+              </label>
+              <Stepper
+                label={it.name}
+                value={String(it.quantity ?? 1)}
+                onLess={
+                  (it.quantity ?? 1) > 1
+                    ? () => update(it.id, (x) => ({ ...x, quantity: (x.quantity ?? 1) - 1 }))
+                    : undefined
+                }
+                onMore={() => update(it.id, (x) => ({ ...x, quantity: (x.quantity ?? 1) + 1 }))}
+              />
+              <button
+                type="button"
+                className={styles.icon}
+                aria-label={t('playSheet.remove', { what: it.name })}
+                onClick={() => update(it.id, () => null)}
+              >
+                <Trash2 size={14} aria-hidden="true" />
+              </button>
+            </span>
+          )
+        )}
+        {granted.length === 0 && carried.length === 0 && <li className={styles.none}>{t('playSheet.nothing')}</li>}
+      </ul>
+    </section>
+  )
+}
+
+/** Añadir del compendio de la campaña: buscar por su nombre, de los tipos del bloque */
+function AddFromCompendium({
+  campaignId,
+  types,
+  onAdd
+}: {
+  campaignId: string
+  types: string[]
+  onAdd: (key: string) => void
+}) {
+  const { t } = useTranslation()
+  const api = useApi()
+  const id = useId()
+  const [query, setQuery] = useState('')
+  const found = useQuery({
+    queryKey: ['compendium', campaignId, 'add', types.join(','), query.trim()],
+    queryFn: async () => {
+      const results = await Promise.all(
+        types.map((type) =>
+          api.call('searchCampaignContent', {
+            campaignId,
+            type,
+            ...(query.trim() ? { query: query.trim() } : {}),
+            limit: 10
+          })
+        )
+      )
+      return results.flatMap((r) => r.items).slice(0, 12)
+    }
+  })
+  return (
+    <div className={styles.addBox}>
+      <label htmlFor={id}>{t('playSheet.search')}</label>
+      <input id={id} type="search" value={query} onChange={(event) => setQuery(event.currentTarget.value)} />
+      <ul className={styles.addList}>
+        {found.data?.map((hit) => (
+          <li key={hit.key}>
+            <button type="button" onClick={() => onAdd(hit.key)}>
+              {hit.name}
+              {hit.edition && <span className={styles.edition}>{hit.edition}</span>}
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+function ActionsBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'actions' }>; ctx: Ctx }) {
+  const { t } = useTranslation()
+  const id = useId()
+  const actions = ctx.state.actions.filter((a) => !a.error)
+  if (actions.length === 0) return null
+  return (
+    <section className={styles.block} aria-labelledby={id}>
+      <h2 id={id} className={styles.blockTitle}>
+        {block.label ?? t('playSheet.actions')}
+      </h2>
+      <ul className={styles.items}>
+        {actions.map((a) => (
+          <li key={`${a.item}-${a.key}`} className={styles.item}>
+            <span className={styles.itemName}>{a.label}</span>
+            {a.bonus !== null && (
+              <button
+                type="button"
+                className={styles.smallRoll}
+                onClick={() => ctx.roll({ action: { item: a.item, key: a.key, part: 'attack' } })}
+                aria-label={t('playSheet.attackOf', { what: a.label, bonus: signed(a.bonus) })}
+              >
+                {signed(a.bonus)}
+              </button>
+            )}
+            {a.save && (
+              <span className={styles.itemValue}>
+                {t('playSheet.saveDc', { ability: a.save.abilityLabel, dc: a.save.dc })}
+              </span>
+            )}
+            {a.damage.length > 0 && (
+              <button
+                type="button"
+                className={styles.smallRoll}
+                onClick={() => ctx.roll({ action: { item: a.item, key: a.key, part: 'damage' } })}
+                aria-label={t('playSheet.damageOf', { what: a.label })}
+              >
+                {a.damage.map((d) => d.formula).join(' + ')}
+              </button>
+            )}
+            {a.heal && (
+              <button
+                type="button"
+                className={styles.smallRoll}
+                onClick={() => ctx.roll({ action: { item: a.item, key: a.key, part: 'heal' } })}
+                aria-label={t('playSheet.healOf', { what: a.label })}
+              >
+                {a.heal}
+              </button>
+            )}
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}
+
+function UsesBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'uses' }>; ctx: Ctx }) {
+  const { t } = useTranslation()
+  const id = useId()
+  const uses = ctx.state.resources.filter((r) => !r.error && r.max > 0)
+  if (uses.length === 0) return null
+  return (
+    <section className={styles.block} aria-labelledby={id}>
+      <h2 id={id} className={styles.blockTitle}>
+        {block.label ?? t('playSheet.uses')}
+      </h2>
+      <ul className={styles.items}>
+        {uses.map((r) => (
+          <li key={`${r.item}-${r.key}`} className={styles.item}>
+            <span className={styles.itemName}>{r.label}</span>
+            {r.recovery && (
+              <span className={styles.itemValue}>{t(`playSheet.recovery.${r.recovery}`, r.recovery)}</span>
+            )}
+            <Stepper
+              label={r.label}
+              value={t('playSheet.left', { left: r.left, max: r.max })}
+              onLess={r.left > 0 ? () => void ctx.save({ play: (p) => spend(p, r, 1) }) : undefined}
+              onMore={r.used > 0 ? () => void ctx.save({ play: (p) => spend(p, r, -1) }) : undefined}
+            />
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}
+
+function TextBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'text' }>; ctx: Ctx }) {
+  const id = useId()
+  const value = shown(get(ctx.state.sheet, block.field))
+  const [text, setText] = useState(value)
+  return (
+    <div className={styles.text}>
+      <label htmlFor={id} className={styles.blockTitle}>
+        {block.label}
+      </label>
+      <textarea
+        id={id}
+        rows={8}
+        value={text}
+        onChange={(event) => setText(event.currentTarget.value)}
+        onBlur={() => {
+          if (text !== value)
+            void ctx.save({ play: (play) => ({ ...play, values: { ...(play.values ?? {}), [block.field]: text } }) })
+        }}
+      />
+    </div>
+  )
+}
+
+function Tabs({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'tabs' }>; ctx: Ctx }) {
+  const id = useId()
+  const [shownTab, setShownTab] = useState(0)
+  const tab = block.tabs[shownTab] ?? block.tabs[0]
+  return (
+    <div className={styles.tabs}>
+      <div role="tablist" className={styles.tabList}>
+        {block.tabs.map((each, i) => (
+          <button
+            key={each.label}
+            type="button"
+            role="tab"
+            id={`${id}-tab-${i}`}
+            aria-selected={i === shownTab}
+            aria-controls={`${id}-panel`}
+            tabIndex={i === shownTab ? 0 : -1}
+            className={styles.tab}
+            onClick={() => setShownTab(i)}
+            onKeyDown={(event) => {
+              if (event.key === 'ArrowRight') setShownTab((shownTab + 1) % block.tabs.length)
+              if (event.key === 'ArrowLeft') setShownTab((shownTab - 1 + block.tabs.length) % block.tabs.length)
+            }}
+          >
+            {each.label}
+          </button>
+        ))}
+      </div>
+      <div role="tabpanel" id={`${id}-panel`} aria-labelledby={`${id}-tab-${shownTab}`} className={styles.panel}>
+        {tab?.blocks.map((inner, i) => (
+          <Block key={`${shownTab}-${inner.kind}-${i.toString(36)}`} block={inner} ctx={ctx} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/** Descansar: el corto recupera lo de los descansos cortos; el largo, todo y los PG */
+function Rests({ ctx, label }: { ctx: Ctx; label: string }) {
+  const { t } = useTranslation()
+  const paths = resourcePathsOf(ctx.state.fields)
+  const restNow = (kind: 'short' | 'long') =>
+    void ctx.save({ play: (play: Play) => rest(play, ctx.state.resources, kind, paths) })
+  return (
+    <fieldset className={styles.rests}>
+      <legend className={styles.hidden}>{label}</legend>
+      <button type="button" onClick={() => restNow('short')}>
+        <Sun size={15} aria-hidden="true" />
+        {t('playSheet.shortRest')}
+      </button>
+      <button type="button" onClick={() => restNow('long')}>
+        <Moon size={15} aria-hidden="true" />
+        {t('playSheet.longRest')}
+      </button>
+    </fieldset>
+  )
+}

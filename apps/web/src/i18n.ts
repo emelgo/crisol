@@ -246,6 +246,37 @@ export const es = {
     saving: 'Guardando…',
     saved: 'Guardado'
   },
+  // La hoja de un personaje en partida
+  playSheet: {
+    values: 'Sus valores',
+    rollOf: 'Tirar {{what}} ({{value}})',
+    rollFor: 'Tirar por {{what}}',
+    rollItem: '{{roll}} con {{what}}',
+    attackOf: 'Ataque con {{what}}, {{bonus}}',
+    damageOf: 'Daño de {{what}}',
+    healOf: 'Curación de {{what}}',
+    saveDc: 'Salvación de {{ability}}, CD {{dc}}',
+    amount: 'Cuánto',
+    damage: 'Daño',
+    heal: 'Curar',
+    setTemp: 'Temporales',
+    temp: '+{{temp}} temporales',
+    less: 'Uno menos de {{what}}',
+    more: 'Uno más de {{what}}',
+    left: '{{left}} de {{max}}',
+    none: 'Ninguno',
+    add: 'Añadir',
+    search: 'Buscar en el compendio',
+    equipped: 'Equipado',
+    remove: 'Quitar {{what}}',
+    nothing: 'Nada',
+    actions: 'Acciones',
+    uses: 'Usos',
+    recovery: { short: 'Descanso corto', long: 'Descanso largo', dawn: 'Al amanecer' },
+    rest: 'Descansar',
+    shortRest: 'Descanso corto',
+    longRest: 'Descanso largo'
+  },
   // El creador de un personaje
   creator: {
     steps: 'Pasos',

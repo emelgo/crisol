@@ -135,6 +135,9 @@ export const characterState = z.object({
       })
     )
     .describe('Los usos de lo que lleva (la Furia, las cargas): su máximo, lo gastado y cuándo se recuperan'),
+  itemValues: z
+    .record(z.string(), z.record(z.string(), z.unknown()))
+    .describe('Los valores calculados de cada cosa que lleva, por su id'),
   actions: z
     .array(
       z.object({

@@ -16,8 +16,8 @@ import { failed, LoadError } from '../components/load-error.tsx'
 import { PageTitle } from '../components/page-title.tsx'
 import styles from './character.module.css'
 import { Creator } from './creator.tsx'
+import { PlaySheet } from './play-sheet.tsx'
 import { characterKey, useCharacterSave } from './save.ts'
-import { MinimalSheet } from './sheet.tsx'
 import { Versions } from './versions.tsx'
 
 const route = getRouteApi('/mundos/$worldId/campanas/$campaignId/personajes/$characterId')
@@ -78,7 +78,7 @@ export function CharacterScreen() {
         <Creator character={character} state={state} save={save} busy={busy} campaignId={campaignId} />
       ) : (
         <div className={styles.sheetLayout}>
-          <MinimalSheet state={state} />
+          <PlaySheet character={character} state={state} save={save} />
           <Versions character={character} />
         </div>
       )}

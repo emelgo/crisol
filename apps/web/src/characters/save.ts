@@ -2,7 +2,7 @@
  * Guardar un personaje mientras se crea: cada cambio sale en orden (con la versión de la respuesta anterior) y se ve
  * al momento en sus elecciones; su estado (lo pendiente, su hoja) llega con la respuesta
  */
-import type { Build } from '@crisol/systems'
+import type { Build, Play } from '@crisol/systems'
 import { useQueryClient } from '@tanstack/react-query'
 import { useCallback, useRef, useState } from 'react'
 import type { ActionOutput } from '../api/client.ts'
@@ -14,6 +14,8 @@ export const characterKey = (characterId: string) => ['character', characterId] 
 
 export interface Change {
   build?: (build: Build) => Build
+  /** Lo de la partida (los PG, los usos, lo que lleva) */
+  play?: (play: Play) => Play
   name?: string
   confirm?: 'created' | 'level'
 }
@@ -33,10 +35,15 @@ export function useCharacterSave(characterId: string, campaignId: string) {
       const before = queryClient.getQueryData<Loaded>(key)
       if (!before) return Promise.resolve()
       const build = change.build ? change.build(structuredClone(before.character.build) as Build) : undefined
-      if (build)
+      const play = change.play ? change.play(structuredClone(before.character.play) as Play) : undefined
+      if (build || play)
         queryClient.setQueryData<Loaded>(key, {
           ...before,
-          character: { ...before.character, build: build as Record<string, unknown> }
+          character: {
+            ...before.character,
+            ...(build ? { build: build as Record<string, unknown> } : {}),
+            ...(play ? { play: play as Record<string, unknown> } : {})
+          }
         })
       setBusy((n) => n + 1)
       chain.current = chain.current.then(async () => {
@@ -47,6 +54,7 @@ export function useCharacterSave(characterId: string, campaignId: string) {
             characterId,
             version: current.character.version,
             ...(build ? { build: current.character.build } : {}),
+            ...(play ? { play: current.character.play } : {}),
             ...(change.name !== undefined ? { name: change.name } : {}),
             ...(change.confirm ? { confirm: change.confirm } : {})
           })
@@ -54,7 +62,11 @@ export function useCharacterSave(characterId: string, campaignId: string) {
           const latest = queryClient.getQueryData<Loaded>(key)
           queryClient.setQueryData<Loaded>(key, {
             ...out,
-            character: { ...out.character, build: latest?.character.build ?? out.character.build }
+            character: {
+              ...out.character,
+              build: latest?.character.build ?? out.character.build,
+              play: latest?.character.play ?? out.character.play
+            }
           })
           setError(null)
           void queryClient.invalidateQueries({ queryKey: ['characters', campaignId] })

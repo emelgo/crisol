@@ -186,14 +186,13 @@ const RECOVERS: Record<'short' | 'long', readonly string[]> = {
 
 /**
  * Descansar: lo gastado de los recursos que recupera ese descanso vuelve a 0 y, en el largo, los recursos del
- * personaje (los PG, los espacios) se llenan
+ * personaje (por sus rutas: los PG, los espacios) se llenan
  */
 export function rest(
-  system: System,
-  type: string,
   play: Play,
   resources: readonly Resource[],
-  kind: 'short' | 'long'
+  kind: 'short' | 'long',
+  paths: readonly string[]
 ): Play {
   const uses: Record<string, Record<string, number>> = structuredClone(play.uses ?? {})
   for (const r of resources) {
@@ -203,11 +202,24 @@ export function rest(
   }
   let values = { ...(play.values ?? {}) }
   if (kind === 'long')
-    for (const path of resourcePaths(system.types[type]?.fields ?? {})) {
+    for (const path of paths) {
       const [head, ...rest] = path.split('.')
       if (!head) continue
       if (rest.length === 0) delete values[head]
       else values = setPath(values, path, undefined)
     }
   return { ...play, uses, values }
+}
+
+/** Las rutas de los recursos de un personaje, de sus campos tal como los da su estado (los de un grupo, dentro) */
+export function resourcePathsOf(
+  fields: readonly { key: string; kind: string; columns?: { key: string; kind: string }[] }[]
+) {
+  return fields.flatMap((f) =>
+    f.kind === 'resource'
+      ? [f.key]
+      : f.kind === 'group'
+        ? (f.columns ?? []).filter((c) => c.kind === 'resource').map((c) => `${f.key}.${c.key}`)
+        : []
+  )
 }

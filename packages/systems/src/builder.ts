@@ -550,11 +550,13 @@ export function characterView(
   const played = withPlay(system, built.type, built.document, play, byKey, language)
   let values: Record<string, Value> = {}
   let resources: Resource[] = []
+  let itemValues: Record<string, Record<string, Value>> = {}
   let actions: ReturnType<typeof actionsOf> = []
   try {
     const evaluated = evaluate(system, built.type, played.document, { settings: choices.settings ?? {}, language })
     values = evaluated.values
     resources = evaluated.resources
+    itemValues = evaluated.items
     actions = actionsOf(system, built.type, played.document, { language, settings: choices.settings ?? {} })
   } catch {
     values = {}
@@ -642,6 +644,8 @@ export function characterView(
       summary: summarize(system, content, choices, build, built, values, language),
       sheet: values,
       resources,
+      // Los valores calculados de cada cosa que lleva (el ataque de una espada), por su id
+      itemValues,
       actions: actions.map((a) => ({
         item: a.item,
         key: a.key,
