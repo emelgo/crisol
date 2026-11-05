@@ -26,7 +26,7 @@ export const isTableRule = (line: string) => /^\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?
 const plain = (cell: string) => cell.replace(/[*_]/g, '').trim()
 
 /** Un número de una fila: «00» en un d100 (o «0» en un d10) es el máximo */
-const valueOf = (written: string, sides: number) => {
+const rangeValue = (written: string, sides: number) => {
   const n = Number(written)
   return n === 0 ? sides : n
 }
@@ -49,8 +49,8 @@ export function diceTableOf(lines: readonly string[]): ContentTable | null {
       const cells = tableCells(line).slice(column, starts[g + 1] ?? header.length)
       const range = /^(\d+)(?:\s*[–—-]\s*(\d+))?$/.exec(plain(cells[0] ?? ''))
       if (!range) return []
-      const from = valueOf(range[1] as string, sides)
-      const to = range[2] === undefined ? from : valueOf(range[2], sides)
+      const from = rangeValue(range[1] as string, sides)
+      const to = range[2] === undefined ? from : rangeValue(range[2], sides)
       return [{ from, to, cells, line: at, column }]
     })
   )

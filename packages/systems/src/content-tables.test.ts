@@ -42,7 +42,8 @@ describe('las tablas de tirar del texto de un documento', () => {
 
   it('las del SRD: la Bolsa de trucos gris (1d8) y Confusión (1d10)', () => {
     const content = catalogContent('5e')
-    const text = (key: string) => (content.find((i) => i.key === key)?.data.descripcion as { es: string }).es
+    const text = (key: string) =>
+      (content.find((i) => i.key === key)?.data.descripcion as { es?: string } | undefined)?.es ?? ''
     const bag = contentTables(text('bolsa_de_trucos_2024'))
     expect(bag.map((t) => t.formula)).toEqual(['1d8', '1d8', '1d8'])
     expect(bag[0]?.rows).toHaveLength(8)
