@@ -178,6 +178,8 @@ describe('operation', () => {
     notTracked.add('page_versions').add('snapshots').add('version_documents')
     // Las tiradas: no se deshacen, como en una mesa de verdad; el registro es su propia lista (ADR-0010)
     notTracked.add('dice_rolls')
+    // Lo sacado de una tabla sin reemplazo en una campaña: como las tiradas, no se deshace
+    notTracked.add('random_table_draws')
     const tables = await conn.sql<
       { name: string }[]
     >`select tablename as name from pg_tables where schemaname = 'public'`

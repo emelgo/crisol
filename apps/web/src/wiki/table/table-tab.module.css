@@ -1,0 +1,174 @@
+/* La pestaña «Tabla»: su fórmula arriba, sus filas en una tabla y, abajo, tirar en una campaña */
+.tab {
+  display: grid;
+  gap: var(--space-4);
+  max-inline-size: 52rem;
+  margin: var(--space-6) auto;
+  padding: var(--space-5) var(--space-6);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+}
+
+.head,
+.roll {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.formula,
+.rows input,
+.roll select {
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--color-field-border);
+  border-radius: 6px;
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.formula {
+  inline-size: 8rem;
+  font-family: var(--font-mono, monospace);
+}
+
+.check,
+.visibility label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: 2.75rem;
+}
+
+.visibility {
+  display: inline-flex;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.rows {
+  border-collapse: collapse;
+  inline-size: 100%;
+}
+
+.rows th,
+.rows td {
+  padding: var(--space-1) var(--space-2) var(--space-1) 0;
+  border-block-end: 1px solid var(--color-border);
+  text-align: start;
+}
+
+.rows thead th {
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.rows input[type="number"] {
+  inline-size: 4.5rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.text {
+  inline-size: 100%;
+}
+
+.text input {
+  inline-size: 100%;
+}
+
+/* La que acaba de salir, marcada; las ya sacadas (sin reemplazo), apagadas */
+.rows tr[data-now] td {
+  background: color-mix(in srgb, var(--color-accent) 14%, transparent);
+}
+
+.rows tr[data-drawn] td {
+  color: var(--color-muted);
+}
+
+.now,
+.out {
+  display: inline-block;
+  margin-block-start: var(--space-1);
+  padding: 0 0.5rem;
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+}
+
+.now {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+.out {
+  border: 1px solid var(--color-border);
+  color: var(--color-muted);
+}
+
+.icon,
+.reset {
+  display: inline-grid;
+  place-items: center;
+  min-inline-size: 2.25rem;
+  block-size: 2.25rem;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+.reset {
+  display: inline-flex;
+  gap: var(--space-1);
+  padding: 0 var(--space-2);
+  color: var(--color-link);
+}
+
+.icon:hover {
+  background: var(--color-raised);
+  color: var(--color-text);
+}
+
+.add {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1px dashed var(--color-frame);
+  border-radius: 6px;
+  background: none;
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.problems {
+  margin: 0;
+  padding-inline-start: var(--space-5);
+  color: var(--color-danger);
+  font-size: 0.875rem;
+}
+
+.drawnCount {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+.hidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

@@ -162,7 +162,8 @@ describe('al cambiar de cuenta en la misma pestaña', () => {
 
     release()
     await screen.findByRole('heading', { level: 1, name: 'La Marca' })
-    await screen.findByText('Jugadora')
+    // Su nombre, en los miembros (y en su menú de la cuenta)
+    expect((await screen.findAllByText('Jugadora')).length).toBeGreaterThan(0)
     expect(screen.queryByLabelText('Enlace de invitación')).toBeNull()
   })
 

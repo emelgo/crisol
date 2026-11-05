@@ -726,8 +726,10 @@
   padding: 0 var(--space-6) var(--space-6);
 }
 
+/* Su raya acaba antes de la X de cerrar, que va arriba a la derecha */
 .form h2 {
   margin: 0;
+  margin-inline-end: var(--target);
 }
 
 /* La zona de peligro, al final, con el mismo margen que el formulario */

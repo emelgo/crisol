@@ -7,16 +7,46 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
-### Para retomar (2026-11-05, módulo 3: `srd-5e`, fases 3 y 4 en el PR #98)
+### Para retomar (2026-11-05, módulo 3: `personajes`, en diseño)
 
-- **Rama `modulo-3/srd-5e-contenido`, PR #98** (con su pasada de la CI). Hechas las tareas 11 a 20 de `tasks/todo.md`:
+- **Ahora: `personajes`** (rama `modulo-3/personajes`, sin subir). Hechos la entrevista, el estudio
+  (`research/foundry/avances-y-tablas.md`), la spec aprobada (`docs/specs/personajes.md`) y su ADR-0013. **Prototipos
+  publicados** en el lienzo «Crisol: personajes» de claude.ai (https://claude.ai/artifact/Hx1Hmo1feqo5iAu7MdQEpp;
+  fuentes en `out/lienzo-personajes/`): la vista propia de la campaña con su barra y sus personajes, el creador (clase y
+  subir de nivel, multiclase, características, elegir lo pendiente), las versiones, el compendio, las tablas aleatorias
+  y el móvil. Enrique: «termina el módulo 3 de una vez» (2026-11-05) y «muy bien» a las fotos del compendio. Plan en
+  `tasks/plan.md`, tareas en `tasks/todo.md`. **Hecha la fase 1** (tareas 1–3): la campaña en su propia vista (la
+  barra cambia al entrar: su inicio, Compendio y Dados; la llama vuelve a Mis mundos) y su compendio (acciones
+  `getCampaignCompendium`, `searchCampaignContent` y `getCampaignContent`, que lee cualquiera de la campaña; e2e
+  `compendio.spec.ts`). Hechas también la tarea 4 (tablas `characters` y `character_versions`, migración 0041, y sus
+  acciones con permisos: cada uno los suyos, el máster todos) y el motor (tarea 8: `packages/systems/src/builder.ts`,
+  `buildCharacter`, `stepOptions`, `summarize` y `characterView`; los pasos del 5e en `catalog/5e/system.ts`,
+  `creation`, y `card` para la tarjeta). El servidor monta el estado del personaje y lo devuelve en `getCharacter` y
+  `updateCharacter` (sin bajar el contenido al navegador). **Hechas las pantallas** (tareas 5, 6 y 11–13:
+  `apps/web/src/characters/`: la lista, la página con «Ficha | Creador», el creador por pasos con el panel de
+  elecciones, las características con sus cuatro métodos, la ficha mínima genérica y las versiones; e2e
+  `personajes.spec.ts`). Hechos también: el 5e para el creador (requisitos de multiclase, mejora de característica,
+  aumentos de los trasfondos de 2024; contenido regenerado), validar los pasos, las tablas aleatorias (pestaña
+  «Tabla», migración 0042, `tablas.spec.ts`) y las herramientas MCP (`elegir_personaje`, `tirar_en_tabla`…).
+  **Queda para después** (anotado): los PG tirados al subir (van por la media), el equipo inicial como paso, los
+  conjuros conocidos o preparados en el creador y las tablas del SRD (los rasgos del acólito de 2014). **Lo
+  siguiente**: el cierre de `personajes` (batería, revisión, PR y staging) y después `hoja`.
+- **Sin editor de sistemas: PR #99, en `main` y en staging** (la CI del PR se canceló, todo verde en local). Ver más
+  abajo, en el módulo 3; qué probar, en `tasks/probar.md` (punto de control 3 de `sistemas`).
+- Servidor de desarrollo en marcha para Enrique: web en `localhost:5173`, API en `8130` (las dos se recargan solas).
+
+### Para retomar (2026-11-05, módulo 3: `srd-5e` terminado, en `main` y en staging)
+
+- **`srd-5e` terminado: PR #98, en `main` y en staging** (la CI pasó, con un arreglo de gitleaks). Hechas las tareas
+  11 a 21 de `tasks/todo.md`:
   todo el contenido de los dos SRD (3170 documentos: estados, reglas, conjuros, objetos mágicos, criaturas, especies,
   trasfondos, dotes y las 12 clases, con su mecánica) y los personajes de referencia (96 contra las tablas del SRD y
   24 hechos a mano). Los scripts, en `scripts/srd/` (`node scripts/srd/extraer.ts` y `comprobar.ts`, con los PDF de
   `datos-locales/srd/`). Revisión de código hecha, con lo importante arreglado. **Pendiente de Enrique**: el punto de
-  control 4 (`tasks/muestra-srd-5e.md`). **Lo siguiente**: cerrar la tarea 21 (merge y staging) y seguir con
-  `personajes` (el creador: lo que concede cada cosa por nivel ya va en los `grants` del contenido;
-  `catalog/5e/referencia.ts` monta un personaje como lo hará él).
+  control 4 (`tasks/muestra-srd-5e.md`) y la prueba final en staging desde claude.ai (`tasks/probar.md`). **Lo
+  siguiente**: `personajes` (el creador), que empieza por su entrevista (`interview-me`) con Enrique; lo que concede
+  cada cosa por nivel ya va en los `grants` del contenido y `catalog/5e/referencia.ts` monta un personaje como lo hará
+  él.
 - **Importar de Foundry (Enrique, 2026-11-05)**: «el importador debería coger eso [el compendio del zip del
   manifiesto del sistema]; si no, es trabajo extra cada vez que se añade un sistema». Va a la capacidad `foundry`
   (`docs/specs/modulo-3.md`: importar los datos de un sistema de Foundry filtrando por licencia, tras el abogado y su
@@ -55,7 +85,7 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   prueba el punto de control 2 (`tasks/probar.md`). **Lo siguiente**: la fase 3 en la misma rama (la tarea 11, los
   estados y el texto de las reglas; luego conjuros, objetos mágicos, criaturas, especies, trasfondos, dotes y clases).
 - **Decidido por Enrique (2026-11-04): los sistemas se hacen con la IA** (`docs/diseno.md`). **Hecho (2026-11-05,
-  rama `modulo-3/sin-editor`)**: fuera el editor de sistemas entero (también «Probar» y el enlace desde la campaña); en
+  PR #99, en `main` y en staging)**: fuera el editor de sistemas entero (también «Probar» y el enlace desde la campaña); en
   «Sistemas», la lista (cada uno abre su ventana: bajarlo, sus campañas y, si es tuyo, renombrarlo y borrarlo), subir
   de un archivo y bajar uno vacío, con el aviso de que los nuevos se hacen con la IA (también en las instrucciones del
   MCP).
@@ -1416,6 +1446,40 @@ Preguntas con propuesta; lo que eligió:
   5e traen una al estilo de D&D Beyond, con el aspecto de Crisol.
 - **Pendiente de preguntar**: las tablas aleatorias (pasaron del módulo 2 a este), subir de nivel y el creador paso a
   paso con detalle (tras el estudio de D&D Beyond), e importar los PJ de Eana (por el MCP, como todo lo demás).
+
+#### `personajes` (entrevista con Enrique, 2026-11-05)
+
+Lo que quiere (confirmado con un «sí»):
+
+- **Quién crea**: los tres. Sus jugadores (cada uno los suyos), él como máster (ve y cambia todos) y la IA por el MCP,
+  que tiene que poder hacer un personaje entero con las mismas piezas que la pantalla.
+- **Para cualquier sistema**: el motor del creador es común y **los pasos se escriben para cada sistema**, como parte
+  de él («si no, es un caos»). Los del 5e van de serie; los de los demás los escribe la IA al hacer el sistema.
+- **El creador, como el de D&D Beyond**: pasos con navegación libre, lo pendiente marcado con (!), y lo que hay que
+  elegir lo dicen el contenido y lo que concede (clase, especie, trasfondo, dotes, subclase, conjuros). Las
+  características, con matriz estándar, compra por puntos, 4d6 y manual.
+- **Subir de nivel, también como en D&D Beyond**: sin un asistente aparte, cambiando el nivel de la clase y eligiendo
+  lo que toca en el nivel nuevo, con multiclase (y el motivo cuando una clase no se puede tomar).
+- **Versiones, visibles y automáticas**: una al terminar de crearlo y otra en cada subida de nivel («Nivel 5»), que se
+  ven y se restauran desde la ficha. Sin versiones a mano.
+- **Tablas aleatorias, como pieza común**: datos que se tiran en el servidor con su registro; las usa el creador
+  (rasgos de personalidad, bagatelas) y sobre todo el máster (desde la wiki o la IA: `tirar_en_tabla`). Sus pantallas
+  del compendio y sus colecciones, en el módulo 4.
+- **Los PJ de Eana, al final**: Enrique hará el sistema de Fateforge y los pasará él con la IA. En `personajes`, solo
+  que la IA pueda hacer un personaje entero por el MCP.
+- **Hecho cuando**: un jugador hace su PJ de 5e de nivel 1 y lo sube a 5 con multiclase; la IA crea uno entero desde
+  claude.ai; Enrique vuelve a una versión anterior desde la ficha.
+- **Fuera**: la hoja y tirar desde ella (`hoja`); las pantallas del compendio (módulo 4); los PJ de Eana; versiones a
+  mano.
+
+Lo que dice el estudio de Foundry (`research/foundry/avances-y-tablas.md`, 2026-11-05): dnd5e describe lo que se gana
+en cada nivel con nueve tipos de «avance», guarda lo elegido en la copia de la clase que lleva el personaje y escribe
+parte a pelo en él (con fallos conocidos cuando algo llega de dos sitios); no tiene creador, ni versiones, ni genera
+características, y al bajar de nivel pierde lo elegido. Para Crisol: pasos de tipos neutros (sin nada de 5e) escritos
+por sistema; las elecciones son la verdad y la hoja se calcula de ellas; el personaje apunta al contenido en vez de
+copiarlo; la lista de pasos se calcula siempre (eso da la navegación libre con (!)); un borrador en el servidor que se
+confirma de una vez con su versión; la IA recibe la misma lista de decisiones pendientes; las tablas aleatorias, con el
+modelo de Foundry pero tiradas en el servidor, con su registro y lo sacado por campaña.
 
 #### Lo que dicen los estudios (2026-11-04, con craft-anything)
 

@@ -178,8 +178,17 @@ for (const lang of ['en', 'es'] as const) {
 }
 
 /** Las competencias de la clase y lo que concede, en cada edición */
+/** Para tomarla como otra clase (la multiclase): Fuerza o Destreza 13 */
+const FIGHTER_REQUIRES = [
+  {
+    formula: '@caracteristicas.fue.puntuacion >= 13 || @caracteristicas.des.puntuacion >= 13',
+    reason: t('Necesitas Fuerza 13 o Destreza 13', 'Requires Strength 13 or Dexterity 13')
+  }
+]
+
 export const FIGHTER_CLASS: Record<'2014' | '2024', Record<string, unknown>> = {
   '2014': {
+    requires: FIGHTER_REQUIRES,
     effects: proficiencies(true),
     grants: [
       skills([
@@ -198,6 +207,7 @@ export const FIGHTER_CLASS: Record<'2014' | '2024', Record<string, unknown>> = {
     manual: t('El equipo inicial se elige a mano', 'Starting equipment is chosen by hand')
   },
   '2024': {
+    requires: FIGHTER_REQUIRES,
     effects: proficiencies(false),
     grants: [
       skills([
@@ -297,7 +307,10 @@ export const FIGHTER_FEATURES: Record<'2014' | '2024', Record<string, Record<str
             count: '2',
             set: 'caracteristicas',
             field: 'puntuacion',
-            op: 'add'
+            op: 'add',
+            value: '1',
+            repeat: true,
+            most: 2
           }
         }
       ],

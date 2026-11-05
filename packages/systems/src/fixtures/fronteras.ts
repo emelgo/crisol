@@ -70,5 +70,12 @@ export const fronteras: System = {
     }
   },
   dice: { default: '2d6', critical: 'none' },
+  // Su creador: los atributos a mano y dos movimientos; en su tarjeta, la defensa
+  card: ['defensa'],
+  creation: [
+    { key: 'atributos', kind: 'fields', label: 'Atributos', fields: ['vigor', 'astucia', 'presencia'] },
+    { key: 'movimientos', kind: 'content', label: 'Movimientos', type: 'movimiento', min: 2, max: 2 },
+    { key: 'resumen', kind: 'summary', label: 'Resumen' }
+  ],
   settings: { avance: { kind: 'number', label: 'Marcas de experiencia para avanzar', default: 8 } }
 }

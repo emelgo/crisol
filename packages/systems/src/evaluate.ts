@@ -243,6 +243,28 @@ export function evaluateExpr(expr: Expr, scope: Record<string, Node>, runtime: R
   return visit(expr)
 }
 
+/**
+ * Una fórmula sobre unos valores ya calculados (los de un personaje y, como @este, los de lo que lleva): para las
+ * condiciones y los requisitos del creador. Si no se puede calcular, lanza
+ */
+export function evaluateWith(
+  formula: string,
+  values: Record<string, Value>,
+  este?: Record<string, Value>,
+  budget = 20_000
+): Value {
+  const scope: Record<string, Node> = Object.fromEntries(
+    Object.entries(values).map(([k, v]): [string, Node] => [k, { kind: 'value', value: v }])
+  )
+  if (este) scope.este = { kind: 'value', value: este }
+  let left = budget
+  return evaluateExpr(parseFormula(formula), scope, {
+    spend() {
+      if (--left < 0) throw new Stop()
+    }
+  })
+}
+
 /** El término de un trozo de la fórmula: su nombre (el de lo que nombra) y su valor */
 function termLabel(e: Expr, scope: Record<string, Node>, source: string): { label: string; kind: Term['kind'] } {
   if (e.kind === 'number') return { label: 'Base', kind: 'base' }

@@ -259,7 +259,27 @@ export function traitMechanics(text: string): Mechanics {
 }
 
 /** Lo que hace una dote (por su nombre en inglés), escrito a mano donde es claro */
+/** Elegir aumentos de característica: tantos de +1, como mucho dos al mismo (+2 a una o +1 a dos) */
+export const abilityIncreases = (key: string, label: { es: string; en: string }, count: number, from?: string[]) => ({
+  choose: {
+    key,
+    label,
+    count: String(count),
+    set: 'caracteristicas',
+    field: 'puntuacion',
+    op: 'add' as const,
+    value: '1',
+    repeat: true,
+    most: 2,
+    ...(from ? { from } : {})
+  }
+})
+
 const FEAT_MECHANICS: Record<string, Mechanics> = {
+  'Ability Score Improvement': {
+    grants: [abilityIncreases('mejora', t('Mejora de característica', 'Ability Score Improvement'), 2)],
+    automation: 'full'
+  },
   Alert: { effects: [{ target: 'bono_iniciativa', op: 'add', value: '@competencia' }], automation: 'partial' },
   Archery: { effects: [{ target: 'bono_ataque_distancia', op: 'add', value: '2' }], automation: 'full' },
   Defense: { effects: [{ target: 'ca', op: 'add', value: '1', when: '@con_armadura' }], automation: 'full' },
@@ -276,6 +296,13 @@ const FEAT_MECHANICS: Record<string, Mechanics> = {
     ],
     automation: 'partial'
   }
+}
+
+/** Las características de un trasfondo de 2024: «Intelligence, Wisdom, Charisma» */
+export function abilitiesOf(text: string | undefined): string[] {
+  return [...(text ?? '').matchAll(/[A-Z][a-z]+/g)]
+    .map((m) => ABILITY[m[0].toLowerCase()])
+    .filter((k): k is string => Boolean(k))
 }
 
 /** Las habilidades de un trasfondo: «Insight and Religion», «Insight, Religion» */
@@ -335,9 +362,23 @@ export function originDocs(
     const feat = /^([A-Z][A-Za-z ]+?)(?: \(|$)/.exec(a.header.Feat ?? '')?.[1]
     const featConcept = feat ? featConcepts.get(feat) : undefined
     if (featConcept) grants.push({ concept: featConcept, type: 'dote' })
+    // Los aumentos de un trasfondo de 2024: +2 a una y +1 a otra, o +1 a tres, de las tres que dice
+    const abilities = abilitiesOf(a.header['Ability Scores'])
+    if (abilities.length > 0)
+      grants.push(
+        abilityIncreases('aumentos', t('Aumentos de característica', 'Ability Score Increases'), 3, abilities)
+      )
+    // Lo que pide una dote, como fórmula: el nivel de las generales (4+) y de los dones épicos (19+)
+    const level = /Level (\d+)\+/.exec(a.category)?.[1]
+    const requires = level
+      ? [{ formula: `@nivel >= ${level}`, reason: t(`Pide nivel ${level} o más`, `Requires level ${level}+`) }]
+      : []
     const base =
       item.type === 'dote'
-        ? (FEAT_MECHANICS[item.en] ?? { automation: 'text' })
+        ? {
+            ...(FEAT_MECHANICS[item.en] ?? { automation: 'text' }),
+            ...(requires.length > 0 ? { requires } : {})
+          }
         : effects.length > 0 || grants.length > 0
           ? {
               ...(effects.length > 0 ? { effects } : {}),

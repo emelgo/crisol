@@ -48,6 +48,19 @@ export function summaryOf(
           : say('campaignSystem', { name: text(details.name), system: text(details.system) })
       if (details.systemChoices) return say('campaignSystemChoices', { name: text(details.name) })
       return say('updateCampaign', { name: text(details.name) })
+    // Los personajes: por su nombre
+    case 'createCharacter':
+      return say('createCharacter', { name: text(details.name), campaign: text(details.campaign) })
+    case 'updateCharacter':
+      if (details.confirm === 'created') return say('characterCreated', { name: text(details.name) })
+      if (details.confirm === 'level') return say('characterLevel', { name: text(details.name) })
+      if (details.from !== undefined)
+        return say('renameCharacter', { from: text(details.from), name: text(details.name) })
+      if (details.owner) return say('characterOwner', { name: text(details.name) })
+      return say('updateCharacter', { name: text(details.name) })
+    case 'deleteCharacter':
+    case 'restoreCharacterVersion':
+      return say(action, { name: text(details.name) })
     case 'createSystem':
     case 'importSystem':
       return say(action, { name: systemName(details) })
@@ -156,6 +169,11 @@ export function summaryOf(
       return say('createWorldHome', { title: text(details.title) })
     // Las pestañas de una página y sus mapas (ADR-0007)
     case 'createPageTab':
+      if (details.kind === 'table')
+        return say('createTableTab', { name: text(details.name), title: text(details.title) })
+      return say(action, { name: text(details.name), title: text(details.title ?? details.page) })
+    case 'updateRandomTable':
+      return say('updateRandomTable', { name: text(details.name), title: text(details.title) })
     case 'deletePageTab':
       return say(action, { name: text(details.name), title: text(details.title ?? details.page) })
     case 'updatePageTab':

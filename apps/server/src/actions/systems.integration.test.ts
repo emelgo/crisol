@@ -110,8 +110,8 @@ describe('los sistemas de reglas', () => {
     expect(found).toEqual({
       total: 2,
       items: [
-        expect.objectContaining({ key: 'espada_larga_2014', name: 'Espada larga', edition: '2014', legacy: true }),
-        expect.objectContaining({ key: 'espada_larga_2024', name: 'Espada larga', edition: '2024', legacy: false })
+        expect.objectContaining({ key: 'espada_larga_2024', name: 'Espada larga', edition: '2024', legacy: false }),
+        expect.objectContaining({ key: 'espada_larga_2014', name: 'Espada larga', edition: '2014', legacy: true })
       ]
     })
     const newest = await ok200('searchSystemContent', {
@@ -160,7 +160,8 @@ describe('los sistemas de reglas', () => {
     })
     // Otra cuenta no ve el contenido de este
     expect((await code('searchSystemContent', { systemId: copy.id }, other.cookie)).status).toBe(404)
-  })
+    // Con la cobertura y la máquina cargada, más de 20 s
+  }, 60_000)
 
   it('el contenido de uno de la cuenta: se guarda con su mecánica, se cambia, se busca, se lee y se quita', async () => {
     const created = await ok200('createSystem', { name: 'Fronteras', document: fronteras })
@@ -272,6 +273,83 @@ describe('los sistemas de reglas', () => {
     expect((await code('searchSystemContent', { systemId: 'blank', campaignId: campaign.id })).code).toBe(
       'BAD_CAMPAIGN'
     )
+  })
+
+  it('el compendio de una campaña: lo leen el máster y sus jugadores, solo con sus fuentes; quien no está, nada', async () => {
+    const world = await ok200('createWorld', { name: 'Eana' })
+    const campaign = await ok200('createCampaign', { worldId: world.id, name: 'La Marca' })
+    await ok200('updateCampaign', {
+      campaignId: campaign.id,
+      system: '5e',
+      systemChoices: { sources: ['srd51', 'srd521'], duplicates: 'both' }
+    })
+    const url = (await ok200('getInvitation', { campaignId: campaign.id })).url as string
+    const player = await signUpTestUser(auth, { name: 'Ana', email: 'ana@crisol.test' })
+    await app.inject({
+      method: 'POST',
+      url: '/api/join',
+      payload: { secret: url.split('/unirse/')[1] },
+      headers: { origin: BASE_URL, cookie: player.cookie }
+    })
+    const stranger = await signUpTestUser(auth, { name: 'Bruno', email: 'bruno@crisol.test' })
+
+    // La jugadora: los tipos, con sus nombres en el idioma de la campaña, y las fuentes con su atribución
+    const compendium = await ok200('getCampaignCompendium', { campaignId: campaign.id }, player.cookie)
+    expect(compendium.system).toEqual({ id: '5e', name: '5e' })
+    expect(compendium.sources.map((s: { edition: string }) => s.edition)).toEqual(['2014', '2024'])
+    expect(compendium.sources[0].attribution).toContain('Wizards of the Coast')
+    const spells = compendium.types.find((t: { key: string }) => t.key === 'conjuro')
+    expect(spells).toMatchObject({ label: 'Conjuro', count: 658, text: 'descripcion' })
+    expect(spells.fields.find((f: { key: string }) => f.key === 'escuela').options[0]).toEqual({
+      value: 'abjuracion',
+      label: 'Abjuración'
+    })
+
+    // Buscar, también por el nombre en inglés; leer, con su otra versión y lo que concede
+    const found = await ok200('searchCampaignContent', { campaignId: campaign.id, query: 'fireball' }, player.cookie)
+    expect(found.items.map((h: { key: string }) => h.key).slice(0, 2)).toEqual([
+      'bola_de_fuego_2024',
+      'bola_de_fuego_2014'
+    ])
+    const read = await ok200(
+      'getCampaignContent',
+      { campaignId: campaign.id, keys: ['bola_de_fuego_2014', 'barbaro_2014', 'nada'] },
+      player.cookie
+    )
+    expect(read.missing).toEqual(['nada'])
+    expect(read.items[0]).toMatchObject({ edition: '2014', legacy: true, versions: [{ key: 'bola_de_fuego_2024' }] })
+    expect(read.items[1].granted).toContainEqual({ level: 1, key: 'barbaro_furia_2014', type: 'rasgo', name: 'Furia' })
+
+    // Con solo la de 2014, lo de 2024 no se lee
+    await ok200('updateCampaign', {
+      campaignId: campaign.id,
+      system: '5e',
+      systemChoices: { sources: ['srd51'], duplicates: 'both' }
+    })
+    const only = await ok200(
+      'getCampaignContent',
+      { campaignId: campaign.id, keys: ['bola_de_fuego_2024', 'bola_de_fuego_2014'] },
+      player.cookie
+    )
+    expect(only.missing).toEqual(['bola_de_fuego_2024'])
+    expect(only.items[0].versions).toEqual([])
+
+    // Quien no está en la campaña: ni el compendio, ni buscar, ni leer
+    for (const [name, payload] of [
+      ['getCampaignCompendium', { campaignId: campaign.id }],
+      ['searchCampaignContent', { campaignId: campaign.id }],
+      ['getCampaignContent', { campaignId: campaign.id, keys: ['bola_de_fuego_2014'] }]
+    ] as const)
+      expect((await code(name, payload, stranger.cookie)).status).toBe(404)
+
+    // Sin sistema, vacío
+    const none = await ok200('createCampaign', { worldId: world.id, name: 'Sin reglas' })
+    expect(await ok200('getCampaignCompendium', { campaignId: none.id })).toEqual({
+      system: null,
+      language: 'es',
+      sources: [],
+      types: []
+    })
   })
 
   it('no se pisa lo que cambió otro, ni se guarda lo que tiene errores; los avisos vuelven', async () => {

@@ -5,7 +5,7 @@
 import type { Page, PageTabView } from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
-import { ChevronDown, Clock, FileText, Map as MapIcon, Network, PenTool, Plus, Trash2 } from 'lucide-react'
+import { ChevronDown, Clock, Dices, FileText, Map as MapIcon, Network, PenTool, Plus, Trash2 } from 'lucide-react'
 import { type CSSProperties, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../../api/context.tsx'
@@ -135,6 +135,8 @@ export function PageTabs({ page, tabs, active }: { page: Page; tabs: PageTabView
             >
               {tab.kind === 'text' ? (
                 <FileText aria-hidden="true" size={14} />
+              ) : tab.kind === 'table' ? (
+                <Dices aria-hidden="true" size={14} />
               ) : (
                 <MapIcon aria-hidden="true" size={14} />
               )}
@@ -167,6 +169,7 @@ export function PageTabs({ page, tabs, active }: { page: Page; tabs: PageTabView
 const KINDS = [
   { kind: 'text', icon: FileText, ready: true },
   { kind: 'map', icon: MapIcon, ready: true },
+  { kind: 'table', icon: Dices, ready: true },
   { kind: 'board', icon: PenTool, ready: false },
   { kind: 'timeline', icon: Clock, ready: false },
   { kind: 'tree', icon: Network, ready: false }
@@ -181,7 +184,7 @@ function NewTab({ page }: { page: Page }) {
   const errorText = useErrorText()
   const [open, setOpen] = useState(false)
   const [name, setName] = useState('')
-  const [kind, setKind] = useState<'text' | 'map'>('text')
+  const [kind, setKind] = useState<'text' | 'map' | 'table'>('text')
   const titleId = useId()
   const dialog = useRef<HTMLDialogElement>(null)
   const trigger = useRef<HTMLButtonElement>(null)
@@ -245,7 +248,7 @@ function NewTab({ page }: { page: Page }) {
                     disabled={!ready}
                     checked={kind === option}
                     onChange={() => {
-                      if (option === 'text' || option === 'map') setKind(option)
+                      if (option === 'text' || option === 'map' || option === 'table') setKind(option)
                     }}
                   />
                   <Icon aria-hidden="true" size={20} />

@@ -3,7 +3,7 @@
  * la puede ver. Las privadas, solo a quien tira y al máster
  */
 import { type DiceRoll, listRolls, rollDice, tryDice, visibilitiesFor } from '@crisol/contracts'
-import { diceRepo } from '@crisol/db'
+import { diceRepo, type schema } from '@crisol/db'
 import { type CriticalRule, cryptoRoller, DiceSyntaxError, rollDice as roll } from '@crisol/dice'
 import { can } from '@crisol/domain'
 import { authorizedCampaign } from './access.ts'
@@ -44,8 +44,52 @@ export const present = (row: Row): DiceRoll => ({
   critical: row.result.critical,
   dice: row.result.dice,
   visibility: row.visibility,
+  ...(row.result.table ? { table: row.result.table } : {}),
   createdAt: row.createdAt.toISOString()
 })
+
+/**
+ * Guarda una tirada ya resuelta en el registro de su campaña y se la manda al momento a quien la puede ver: una
+ * pública, a la campaña; una privada, a quien tira y al máster (una vez)
+ */
+export async function saveRoll(
+  ctx: ActionContext,
+  campaign: { id: string; worldId: string },
+  roll: { formula: string; label: string | null; visibility: DiceRoll['visibility']; result: schema.StoredRoll }
+): Promise<DiceRoll> {
+  const master = isMaster(ctx, campaign)
+  const row = await diceRepo.insertRoll(ctx.db, ROLLS_PER_MINUTE, {
+    campaignId: campaign.id,
+    worldId: campaign.worldId,
+    userId: ctx.actor.userId,
+    ai: ctx.via === 'ai',
+    ...roll
+  })
+  if (!row) throw new TooManyRequestsError('TOO_MANY_ROLLS')
+  const view = present(row)
+  const target = { campaignId: campaign.id, worldId: campaign.worldId }
+  const message = { type: 'rolled' as const, campaignId: campaign.id, roll: view }
+  if (view.visibility === 'all') ctx.realtime.publish({ to: { capability: 'dice.read', target }, message })
+  else if (master) ctx.realtime.publish({ to: { capability: 'dice.private', target }, message })
+  else {
+    ctx.realtime.publish(
+      { to: { userId: ctx.actor.userId }, message },
+      { to: { capability: 'dice.private', target }, message }
+    )
+  }
+  return view
+}
+
+/** Lo que se guarda de un resultado */
+export const storedOf = (result: ReturnType<typeof roll>): schema.StoredRoll => ({
+  total: result.total,
+  detail: result.detail,
+  critical: result.critical,
+  dice: diceOf(result)
+})
+
+/** Tirar en el servidor (lo usan las tablas), o decir por qué no se entiende */
+export { rolled }
 
 export const diceActions = [
   implement(rollDice, async (ctx, input) => {
@@ -57,34 +101,12 @@ export const diceActions = [
     }
     // Los críticos, los del juego de la campaña (sin sistema, los del d20)
     const result = rolled(input.formula, await criticalRuleOf(ctx, campaign.system))
-    const row = await diceRepo.insertRoll(ctx.db, ROLLS_PER_MINUTE, {
-      campaignId: campaign.id,
-      worldId: campaign.worldId,
-      userId: ctx.actor.userId,
-      ai: ctx.via === 'ai',
+    const view = await saveRoll(ctx, campaign, {
       formula: result.formula,
       label: result.comment ?? null,
       visibility: input.visibility,
-      result: {
-        total: result.total,
-        detail: result.detail,
-        critical: result.critical,
-        dice: diceOf(result)
-      }
+      result: storedOf(result)
     })
-    if (!row) throw new TooManyRequestsError('TOO_MANY_ROLLS')
-    const view = present(row)
-    // En vivo, a quien la puede ver: una pública, a la campaña; una privada, a quien tira y al máster (una vez)
-    const target = { campaignId: campaign.id, worldId: campaign.worldId }
-    const message = { type: 'rolled' as const, campaignId: campaign.id, roll: view }
-    if (view.visibility === 'all') ctx.realtime.publish({ to: { capability: 'dice.read', target }, message })
-    else if (master) ctx.realtime.publish({ to: { capability: 'dice.private', target }, message })
-    else {
-      ctx.realtime.publish(
-        { to: { userId: ctx.actor.userId }, message },
-        { to: { capability: 'dice.private', target }, message }
-      )
-    }
     return { roll: view }
   }),
 

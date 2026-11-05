@@ -23,7 +23,9 @@ export const LIMITS = {
   depth: 3,
   formula: 2000,
   contentDocuments: 5000,
-  contentBytes: 64 * 1024
+  contentBytes: 64 * 1024,
+  /** Los pasos del creador */
+  steps: 20
 } as const
 
 /** Una clave de un sistema: la de un tipo, un campo, una tirada… No cambia aunque cambie su nombre */
@@ -303,6 +305,72 @@ function build(strict: boolean) {
     publisher: text().optional().describe('Su editorial'),
     released: z.iso.date().optional().describe('Cuándo salió (AAAA-MM-DD): de lo repetido, gana lo más nuevo')
   })
+  // Los pasos del creador: tipos neutros, sin nada de un juego concreto
+  const scoreMethod = z.discriminatedUnion('kind', [
+    obj({
+      key,
+      label: text(),
+      kind: z.literal('array').describe('Repartir unos valores fijos (15, 14, 13, 12, 10, 8)'),
+      values: z.array(z.int().min(-100).max(1000)).min(1).max(20)
+    }),
+    obj({
+      key,
+      label: text(),
+      kind: z.literal('pointbuy').describe('Comprar con puntos: lo que cuesta cada valor'),
+      budget: z.int().min(0).max(1000),
+      costs: z
+        .record(z.string().regex(/^-?\d+$/), z.int().min(0).max(1000))
+        .describe('Lo que cuesta cada valor, por su número («8»: 0, «15»: 9)')
+    }),
+    obj({
+      key,
+      label: text(),
+      kind: z.literal('roll').describe('Tirar cada uno en el servidor (4d6kh3) y repartirlos'),
+      formula
+    }),
+    obj({
+      key,
+      label: text(),
+      kind: z.literal('manual').describe('Escribirlos a mano, entre un mínimo y un máximo'),
+      min: z.int().min(-100).max(1000),
+      max: z.int().min(-100).max(1000)
+    })
+  ])
+  const stepBase = {
+    key,
+    label: text().describe('Su nombre en la barra de pasos'),
+    help: text(500).optional().describe('Una ayuda corta'),
+    when: formula.optional().describe('Solo sale si se cumple (sobre el personaje)'),
+    creation: z.boolean().optional().describe('Solo al crearlo: al subir de nivel no sale')
+  }
+  const step = z.discriminatedUnion('kind', [
+    obj({
+      ...stepBase,
+      kind: z
+        .literal('content')
+        .describe('Elegir documentos del contenido de un tipo (la clase, la especie, el trasfondo)'),
+      type: key.describe('El tipo de lo que se elige'),
+      min: z.int().min(0).max(20).optional().describe('Cuántos hacen falta (sin decirlo, 1)'),
+      max: z.int().min(1).max(20).optional().describe('Cuántos como mucho (sin decirlo, como min)'),
+      levels: z
+        .boolean()
+        .optional()
+        .describe('Cada uno lleva su nivel (las clases): el del personaje es la suma; el primero es el inicial')
+    }),
+    obj({
+      ...stepBase,
+      kind: z.literal('scores').describe('Generar las puntuaciones de un conjunto (las características)'),
+      set: key.describe('El conjunto del personaje'),
+      field: key.describe('El campo de cada elemento que se rellena (la puntuación)'),
+      methods: z.array(scoreMethod).min(1).max(6)
+    }),
+    obj({
+      ...stepBase,
+      kind: z.literal('fields').describe('Escribir o elegir campos del personaje (su alineamiento, sus notas)'),
+      fields: z.array(key).min(1).max(20)
+    }),
+    obj({ ...stepBase, kind: z.literal('summary').describe('El resumen, al final') })
+  ])
   const setting = obj({
     label: text().describe('Su nombre'),
     help: text(500).optional().describe('Una ayuda corta'),
@@ -363,7 +431,18 @@ function build(strict: boolean) {
       .describe('Los ajustes de campaña: reglas opcionales que elige cada campaña'),
     // Su sitio para la hoja y los pasos del creador: los dicen `hoja` y `personajes`
     sheet: z.record(z.string(), z.unknown()).optional().describe('La hoja: llega después; se guarda tal cual'),
-    creation: z.array(z.unknown()).max(100).optional().describe('Los pasos del creador: llegan después'),
+    card: z
+      .array(key)
+      .max(4)
+      .optional()
+      .describe('Los campos del personaje que se ven en su tarjeta y su vista previa (el nivel, los PG, la CA)'),
+    creation: z
+      .array(step)
+      .max(LIMITS.steps)
+      .optional()
+      .describe(
+        'Los pasos del creador de personajes (ADR-0013), en su orden: elegir del contenido, generar puntuaciones o escribir campos; lo que hay que elegir de lo concedido lo calcula Crisol'
+      ),
     levelUp: z.array(z.unknown()).max(100).optional().describe('Subir de nivel: llega después')
   })
 }

@@ -511,3 +511,100 @@ test('@fugas los sistemas de reglas son de la cuenta: la jugadora ni los ve ni s
     expect(everything).not.toContain(leak)
   await player.close()
 })
+
+test('@fugas los personajes de otro y las tablas del máster: la jugadora no los ve, ni sus tiradas ocultas', async ({
+  page,
+  browser
+}) => {
+  const link = await campaignLink(page)
+  const campaignId = new URL(page.url()).pathname.split('/campanas/')[1] ?? ''
+  const worldId = new URL(page.url()).pathname.split('/')[2] ?? ''
+  const chosen = await page.request.post('/api/actions/updateCampaign', {
+    data: { campaignId, system: '5e', systemChoices: { sources: ['srd521'], duplicates: 'newest' } }
+  })
+  expect(chosen.status()).toBe(200)
+  let seen: ReturnType<typeof capture> | undefined
+  const player = await newPlayer(browser, link, 'Jugadora', (p) => {
+    seen = capture(p)
+  })
+  if (!seen) throw new Error('sin captura')
+  const captured = seen
+  await expect.poll(() => captured.frames.some((f) => f.includes('"hello"'))).toBe(true)
+  const bruno = await newPlayer(browser, link, 'Bruno')
+
+  // Bruno hace su personaje, lo termina y lo sube
+  const mine = await (
+    await bruno.request.post('/api/actions/createCharacter', {
+      data: { campaignId, name: 'Personaje Secreto de Bruno' }
+    })
+  ).json()
+  const build = {
+    scores: { method: 'matriz', base: { fue: 15, des: 14, con: 13, int: 12, sab: 10, car: 8 } },
+    picks: [
+      { id: 'c1', step: 'clase', key: 'guerrero_2024', level: 1 },
+      { id: 'e1', step: 'especie', key: 'enano_2024' },
+      { id: 't1', step: 'trasfondo', key: 'acolito_2024' }
+    ],
+    values: { notas: 'Notas privadas de Bruno' }
+  }
+  const done = await bruno.request.post('/api/actions/updateCharacter', {
+    data: { characterId: mine.character.id, version: 1, build, confirm: 'created' }
+  })
+  expect(done.status(), await done.text()).toBe(200)
+  const version = (await done.json()).character.version as number
+  const { versions } = await (
+    await bruno.request.post('/api/actions/listCharacterVersions', { data: { characterId: mine.character.id } })
+  ).json()
+
+  // El máster: una tabla con una fila secreta, tirada en oculto en la campaña
+  const secretPage = await (
+    await page.request.post('/api/actions/createPage', { data: { worldId, title: 'Tablas del máster' } })
+  ).json()
+  const tab = await (
+    await page.request.post('/api/actions/createPageTab', {
+      data: { pageId: secretPage.id, kind: 'table', name: 'Tabla Secreta' }
+    })
+  ).json()
+  await page.request.post('/api/actions/updateRandomTable', {
+    data: { tabId: tab.id, version: 1, rows: [{ id: 'f1', from: 1, to: 1, text: 'Fila Secreta del máster' }] }
+  })
+  const hidden = await page.request.post('/api/actions/rollOnTable', {
+    data: { tabId: tab.id, campaignId, visibility: 'hidden' }
+  })
+  expect(hidden.status()).toBe(200)
+
+  // La jugadora: su lista no lo trae, y nada de él ni de la tabla responde
+  const listed = await (await player.request.post('/api/actions/listCharacters', { data: { campaignId } })).json()
+  expect(listed.characters).toEqual([])
+  const characterId = mine.character.id as string
+  for (const [name, data] of [
+    ['getCharacter', { characterId }],
+    ['updateCharacter', { characterId, version, name: 'Mío' }],
+    ['chooseForCharacter', { characterId, version, values: { notas: 'mías' } }],
+    ['listCharacterVersions', { characterId }],
+    ['restoreCharacterVersion', { characterId, versionId: versions[0].id, version }],
+    ['deleteCharacter', { characterId }],
+    ['getRandomTable', { tabId: tab.id }],
+    ['updateRandomTable', { tabId: tab.id, version: 2, rows: [] }],
+    ['rollOnTable', { tabId: tab.id, campaignId }],
+    ['resetTableDraws', { tabId: tab.id, campaignId }]
+  ] as const) {
+    const response = await player.request.post(`/api/actions/${name}`, { data })
+    expect(response.status(), name).toBe(404)
+  }
+  // Su registro de tiradas no trae la oculta del máster
+  await player.request.post('/api/actions/listRolls', { data: { campaignId } })
+
+  const everything = await captured.all()
+  for (const leak of [
+    'Personaje Secreto de Bruno',
+    'Notas privadas de Bruno',
+    characterId,
+    'Tabla Secreta',
+    'Fila Secreta del máster',
+    tab.id
+  ])
+    expect(everything).not.toContain(leak)
+  await bruno.close()
+  await player.close()
+})

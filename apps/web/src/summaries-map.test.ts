@@ -71,3 +71,20 @@ describe('las frases del historial: los sistemas y el de una campaña', () => {
     )
   })
 })
+
+describe('las frases del historial: personajes', () => {
+  it('crearlo, cambiarlo (nombre, dueño, terminarlo, confirmar un nivel), borrarlo y volver a una versión', () => {
+    expect(say('createCharacter', { name: 'Thora', campaign: 'La Marca' })).toBe(
+      'creó el personaje «Thora» en «La Marca»'
+    )
+    expect(say('updateCharacter', { name: 'Thora' })).toBe('cambió el personaje «Thora»')
+    expect(say('updateCharacter', { name: 'Thora P.', from: 'Thora' })).toBe(
+      'renombró el personaje «Thora» a «Thora P.»'
+    )
+    expect(say('updateCharacter', { name: 'Thora', owner: true })).toBe('cambió quién juega el personaje «Thora»')
+    expect(say('updateCharacter', { name: 'Thora', confirm: 'created' })).toBe('terminó de crear el personaje «Thora»')
+    expect(say('updateCharacter', { name: 'Thora', confirm: 'level' })).toBe('confirmó el nivel del personaje «Thora»')
+    expect(say('deleteCharacter', { name: 'Thora' })).toBe('borró el personaje «Thora»')
+    expect(say('restoreCharacterVersion', { name: 'Thora' })).toBe('volvió el personaje «Thora» a una versión anterior')
+  })
+})

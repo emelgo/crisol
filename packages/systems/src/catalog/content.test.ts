@@ -372,7 +372,19 @@ describe('el contenido de los sistemas de serie', { timeout: 60_000 }, () => {
     const alert = evaluate(fiveE, 'personaje', { data: {}, items: [carry('alerta_2024')] }).values
     expect(alert.iniciativa).toBe(2)
     const acolyte = carry('acolito_2024')
-    expect(acolyte.mechanics?.grants).toEqual([{ concept: 'iniciado_en_la_magia', type: 'dote' }])
+    expect(acolyte.mechanics?.grants).toEqual([
+      { concept: 'iniciado_en_la_magia', type: 'dote' },
+      {
+        choose: expect.objectContaining({
+          key: 'aumentos',
+          count: '3',
+          set: 'caracteristicas',
+          repeat: true,
+          most: 2,
+          from: ['int', 'sab', 'car']
+        })
+      }
+    ])
     const hab = evaluate(fiveE, 'personaje', { data: {}, items: [acolyte] }).values.habilidades as Record<
       string,
       { total: number }
@@ -500,18 +512,18 @@ describe('el contenido de los sistemas de serie', { timeout: 60_000 }, () => {
     }))
     const names = (options: Parameters<typeof searchContent>[2]) =>
       searchContent(fiveE, entries, options).items.map((h) => `${h.name} ${h.edition}${h.legacy ? ' (legado)' : ''}`)
-    expect(names({ query: 'espada larga' })).toEqual(['Espada larga 2014 (legado)', 'Espada larga 2024'])
+    expect(names({ query: 'espada larga' })).toEqual(['Espada larga 2024', 'Espada larga 2014 (legado)'])
     expect(names({ query: 'espada', type: 'arma' })).toEqual([
-      'Espada corta 2014 (legado)',
       'Espada corta 2024',
-      'Espada larga 2014 (legado)',
-      'Espada larga 2024'
+      'Espada corta 2014 (legado)',
+      'Espada larga 2024',
+      'Espada larga 2014 (legado)'
     ])
-    expect(names({ query: 'LONGSWORD', language: 'en' })).toEqual(['Longsword 2014 (legado)', 'Longsword 2024'])
+    expect(names({ query: 'LONGSWORD', language: 'en' })).toEqual(['Longsword 2024', 'Longsword 2014 (legado)'])
     expect(names({ query: 'cota de malla', duplicates: 'newest' })).toEqual(['Cota de malla 2024'])
     expect(names({ type: 'armadura', editions: ['2014'] })).toHaveLength(13)
     expect(names({ type: 'armadura', editions: ['2014'] })).toContain('Cota de malla 2014')
-    expect(searchContent(fiveE, entries, { query: 'cota de malla' }).items[0]).toMatchObject({
+    expect(searchContent(fiveE, entries, { query: 'cota de malla' }).items[1]).toMatchObject({
       key: 'cota_de_malla_2014',
       type: 'armadura',
       source: 'srd51',

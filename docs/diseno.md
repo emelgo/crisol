@@ -41,6 +41,9 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   «Inicio»: el mundo se abre en su portada). Historial y Papelera enseñan los de ese mundo. **La excepción, «Dados»**
   (2026-11-04, con el lienzo de dados): abre y cierra la ficha de dados a la derecha, en el sitio del panel de la
   página, sin tapar el texto; también está en la página de una campaña.
+- **La campaña se abre en su propia vista, como un mundo** (Enrique, 2026-11-05): al entrar, la barra cambia y enseña
+  lo de la campaña (sus personajes, su compendio, los dados…), con la transición de entrar. **El compendio** (el
+  contenido del sistema que usa la campaña: clases, conjuros, criaturas, reglas…, con sus ediciones) **se ve ahí**.
 - **El mundo se abre en su portada**, como la Home de LegendKeeper: una página más, que se crea sola con un texto de
   bienvenida, va la primera del árbol con su casa, no se borra ni se mete en otra, y lleva «Inicio» junto al título.
   Por detrás, la portada del mundo (su tarjeta al entrar: **esa transición no se toca**).

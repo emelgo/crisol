@@ -402,7 +402,7 @@ function SystemWindow({ system, onClose }: { system: SystemSummary; onClose: (go
         <dl className={styles.rows}>
           <div>
             <dt>{t('systems.versionLong')}</dt>
-            <dd>{t('systems.version', { version: system.builtIn ? system.release : system.version })}</dd>
+            <dd>{system.builtIn ? system.release : system.version}</dd>
           </div>
           <div>
             <dt>{t('systems.download')}</dt>

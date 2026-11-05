@@ -115,7 +115,22 @@ describe('Actions', () => {
       checkSystem: true,
       tryFormula: true,
       trySystemRoll: true,
-      getSystemFormat: true
+      getSystemFormat: true,
+      getCampaignCompendium: true,
+      searchCampaignContent: true,
+      getCampaignContent: true,
+      listCharacters: true,
+      getCharacter: true,
+      createCharacter: true,
+      updateCharacter: true,
+      chooseForCharacter: true,
+      deleteCharacter: true,
+      listCharacterVersions: true,
+      restoreCharacterVersion: true,
+      getRandomTable: true,
+      updateRandomTable: true,
+      rollOnTable: true,
+      resetTableDraws: true
     }
     expect(Object.keys(names).sort()).toEqual(ACTIONS.map((a) => a.name).sort())
   })

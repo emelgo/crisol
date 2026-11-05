@@ -1,5 +1,7 @@
 import { aiActions } from './ai.ts'
 import { campaignActions } from './campaigns.ts'
+import { characterActions } from './characters.ts'
+import { compendiumActions } from './compendium.ts'
 import { diceActions } from './dice.ts'
 import { fileActions } from './files.ts'
 import { historyActions } from './history.ts'
@@ -15,6 +17,7 @@ import { previewActions } from './preview.ts'
 import type { Implementation } from './registry.ts'
 import { searchActions } from './search.ts'
 import { systemActions } from './systems.ts'
+import { tableActions } from './tables.ts'
 import { tagActions } from './tags.ts'
 import { templateActions } from './templates.ts'
 import { trashActions } from './trash.ts'
@@ -42,6 +45,9 @@ export const IMPLEMENTATIONS: Implementation[] = [
   ...tagActions,
   ...templateActions,
   ...systemActions,
+  ...compendiumActions,
+  ...characterActions,
+  ...tableActions,
   ...mapActions,
   ...preferenceActions
 ]

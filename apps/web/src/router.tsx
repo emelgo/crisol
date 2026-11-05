@@ -1,4 +1,7 @@
 import { createRootRoute, createRoute, createRouter, type RouterHistory } from '@tanstack/react-router'
+import { CompendiumScreen } from './campaign/compendium.tsx'
+import { CharacterScreen } from './characters/character.tsx'
+import { CharactersScreen } from './characters/characters.tsx'
 import { AiSettings } from './routes/ai-settings.tsx'
 import { Bootstrap } from './routes/bootstrap.tsx'
 import { CampaignPage } from './routes/campaign.tsx'
@@ -40,6 +43,21 @@ const campaignRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/mundos/$worldId/campanas/$campaignId',
   component: CampaignPage
+})
+const charactersRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/mundos/$worldId/campanas/$campaignId/personajes',
+  component: CharactersScreen
+})
+const characterRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/mundos/$worldId/campanas/$campaignId/personajes/$characterId',
+  component: CharacterScreen
+})
+const compendiumRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/mundos/$worldId/campanas/$campaignId/compendio',
+  component: CompendiumScreen
 })
 const wikiRoute = createRoute({ getParentRoute: () => rootRoute, path: '/mundos/$worldId/wiki', component: WikiHome })
 const wikiPageRoute = createRoute({
@@ -118,6 +136,9 @@ const routeTree = rootRoute.addChildren([
   worldRoute,
   campaignsRoute,
   campaignRoute,
+  compendiumRoute,
+  charactersRoute,
+  characterRoute,
   wikiRoute,
   wikiPageRoute,
   tagsRoute,

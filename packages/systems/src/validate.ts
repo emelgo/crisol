@@ -278,10 +278,44 @@ export function fitsFormat(input: unknown): input is System {
 }
 
 /** Lo que el esquema no ve: que lo que se nombra exista, los rangos y los repetidos */
+/** Los pasos del creador: sus claves sin repetir, y lo que nombran (un tipo, un conjunto, un campo) existe */
+function checkSteps(system: System, add: (path: Segment[], message: string, severity?: Problem['severity']) => void) {
+  const steps = system.creation ?? []
+  if (steps.length === 0) return
+  const actor = Object.entries(system.types).find(([, t]) => t.document === 'actor')
+  if (!actor) {
+    add(['creation'], 'Los pasos del creador son de un personaje: el sistema no tiene ningún tipo de personaje (actor)')
+    return
+  }
+  const [actorKey, actorType] = actor
+  const seen = new Set<string>()
+  steps.forEach((step, i) => {
+    const at: Segment[] = ['creation', i]
+    if (seen.has(step.key)) add([...at, 'key'], `Ya hay un paso «${step.key}»`)
+    seen.add(step.key)
+    if (step.kind === 'content' && !system.types[step.type]) add([...at, 'type'], `No existe el tipo «${step.type}»`)
+    if (step.kind === 'content' && step.max !== undefined && step.max < (step.min ?? 1))
+      add([...at, 'max'], 'El máximo no puede ser menor que el mínimo')
+    if (step.kind === 'scores') {
+      const set = actorType.fields[step.set]
+      if (set?.kind !== 'set') add([...at, 'set'], `«${step.set}» no es un conjunto de ${actorKey}`)
+      else if (!(step.field in set.fields))
+        add([...at, 'field'], `Los elementos de «${step.set}» no tienen «${step.field}»`)
+    }
+    if (step.kind === 'fields')
+      step.fields.forEach((field, j) => {
+        if (!(field in actorType.fields)) add([...at, 'fields', j], `${actorKey} no tiene el campo «${field}»`)
+      })
+  })
+  for (const [i, key] of (system.card ?? []).entries())
+    if (!(key in actorType.fields)) add(['card', i], `${actorKey} no tiene el campo «${key}»`)
+}
+
 function checkReferences(
   system: System,
   add: (path: Segment[], message: string, severity?: Problem['severity']) => void
 ) {
+  checkSteps(system, add)
   const types = system.types
   const itemTypes = new Set(
     Object.entries(types)

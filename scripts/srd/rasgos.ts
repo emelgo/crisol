@@ -535,9 +535,44 @@ function casterEffects(edition: Edition, caster: Caster): Record<string, unknown
 }
 
 /** Lo de la clase: sus salvaciones y competencias (de la primera, todas), sus habilidades, su subclase y su lanzador */
+/** Lo que pide cada clase para tomarla como otra (la multiclase): características a 13 */
+const MULTICLASS: Record<string, string[][]> = {
+  barbaro: [['fue']],
+  bardo: [['car']],
+  clerigo: [['sab']],
+  druida: [['sab']],
+  monje: [['des'], ['sab']],
+  paladin: [['fue'], ['car']],
+  explorador: [['des'], ['sab']],
+  picaro: [['des']],
+  hechicero: [['car']],
+  brujo: [['car']],
+  mago: [['int']]
+}
+const ABILITY_NAMES: Record<string, [string, string]> = {
+  fue: ['Fuerza', 'Strength'],
+  des: ['Destreza', 'Dexterity'],
+  con: ['Constitución', 'Constitution'],
+  int: ['Inteligencia', 'Intelligence'],
+  sab: ['Sabiduría', 'Wisdom'],
+  car: ['Carisma', 'Charisma']
+}
+
+/** Sus requisitos de multiclase: cada grupo, una característica a 13 (de las de dentro, cualquiera) */
+export function multiclassRequires(concept: string) {
+  return (MULTICLASS[concept] ?? []).map((group) => ({
+    formula: group.map((a) => `@caracteristicas.${a}.puntuacion >= 13`).join(' || '),
+    reason: t(
+      `Necesitas ${group.map((a) => `${ABILITY_NAMES[a]?.[0]} 13`).join(' o ')}`,
+      `Requires ${group.map((a) => `${ABILITY_NAMES[a]?.[1]} 13`).join(' or ')}`
+    )
+  }))
+}
+
 export function classMechanics(klass: ClassSpec, edition: Edition, subclassLevel: number, subclass: string): Mechanics {
   const first = '@este.inicial'
   return {
+    requires: multiclassRequires(klass.concept),
     effects: [
       ...klass.saves.map((s) => ({
         target: `caracteristicas.${s}.salvacion_grado`,
@@ -587,6 +622,32 @@ const byLevel = (steps: [number, string][]) =>
 /** La mecánica de los rasgos clave, por clase y nombre en inglés (lo demás, su texto) */
 export function featureMechanics(klass: string, name: string, edition: Edition): Mechanics | null {
   const key = `${klass}:${name}`
+  // La mejora de característica: en 2014, +2 a una o +1 a dos; en 2024, una dote (la de Mejora de característica u otra)
+  if (name === 'Ability Score Improvement')
+    return edition === '2014'
+      ? {
+          grants: [
+            {
+              choose: {
+                key: 'mejora',
+                label: t('Mejora de característica', 'Ability Score Improvement'),
+                count: '2',
+                set: 'caracteristicas',
+                field: 'puntuacion',
+                op: 'add',
+                value: '1',
+                repeat: true,
+                most: 2
+              }
+            }
+          ],
+          automation: 'full'
+        }
+      : {
+          grants: [{ choose: { key: 'dote', label: t('Dote', 'Feat'), count: '1', type: 'dote' } }],
+          automation: 'partial',
+          manual: t('La dote Mejora de característica u otra', 'The Ability Score Improvement feat or another')
+        }
   switch (key) {
     case 'barbaro:Rage':
       return {

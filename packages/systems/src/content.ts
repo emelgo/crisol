@@ -176,7 +176,12 @@ export function searchContent(
     })
   }
   ranked.sort(
-    (a, b) => a.rank - b.rank || a.hit.name.localeCompare(b.hit.name, language) || a.hit.key.localeCompare(b.hit.key)
+    (a, b) =>
+      a.rank - b.rank ||
+      a.hit.name.localeCompare(b.hit.name, language) ||
+      // De lo mismo, la versión nueva antes que la de legado
+      Number(a.hit.legacy) - Number(b.hit.legacy) ||
+      a.hit.key.localeCompare(b.hit.key)
   )
   return { items: ranked.slice(offset, offset + limit).map((r) => r.hit), total: ranked.length }
 }

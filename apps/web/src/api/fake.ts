@@ -3,6 +3,7 @@ import type {
   AiMode,
   Approval,
   Campaign,
+  Character,
   DiceRoll,
   FileView,
   FolderView,
@@ -17,11 +18,12 @@ import type {
   PageTables,
   PageTabView,
   PageTemplate,
+  RandomTable,
   TagView,
   TrashItem,
   World
 } from '@crisol/contracts'
-import { DiceSyntaxError, rollDice as rollFormula } from '@crisol/dice'
+import { DiceSyntaxError, rollDice as rollFormula, rowFor, tableFormula, tableProblems } from '@crisol/dice'
 import {
   applyTemplate,
   BUILT_IN_TEMPLATES,
@@ -35,10 +37,16 @@ import {
 } from '@crisol/domain'
 import {
   applyChanges,
+  applyChoices,
+  type Build,
   CATALOG,
   ChangeError,
+  type Choices,
   type ContentItem,
   catalogSystem,
+  characterView,
+  compendiumEntry,
+  compendiumTypes,
   fileName,
   normalizeChoices,
   pickPaths,
@@ -47,6 +55,7 @@ import {
   type System,
   searchContent,
   systemOverview,
+  type Text,
   textOf,
   toFile,
   tryAction,
@@ -54,7 +63,8 @@ import {
   tryRoll,
   validateContent,
   validateFile,
-  validateSystem
+  validateSystem,
+  visibleContent
 } from '@crisol/systems'
 import { type ActionInput, type ActionName, type ActionOutput, type ApiClient, ApiError } from './client.ts'
 
@@ -72,6 +82,8 @@ export function fakeApi(
     /** Lo que pidió la IA de la cuenta */
     approvals?: Approval[]
     /** Los sistemas de la cuenta (documentos), además de los de serie */
+    /** Los personajes de las campañas (la cuenta de las pruebas es «yo») */
+    characters?: Character[]
     systems?: System[]
     /** El contenido de los de la cuenta, por su id */
     systemContent?: Record<string, ContentItem[]>
@@ -547,6 +559,62 @@ export function fakeApi(
     if (problems.length > 0) throw new ApiError('BAD_SYSTEM_CHOICES', 400)
     campaign.system = campaignSystem(target)
     campaign.systemChoices = normalized
+  }
+
+  // Los personajes y sus versiones: «yo» ve los suyos o, si es máster de su campaña, todos
+  const characters: Character[] = structuredClone(options.characters ?? [])
+  const characterVersions: Array<{
+    id: string
+    characterId: string
+    kind: 'created' | 'level'
+    level: number
+    snapshot: Pick<Character, 'name' | 'status' | 'build' | 'play' | 'summary'>
+    createdAt: string
+  }> = []
+  const visibleCharacter = (characterId: string) => {
+    const found = characters.find((c) => c.id === characterId)
+    const campaign = campaigns.find((c) => c.id === found?.campaignId)
+    if (!found || !campaign || (campaign.role !== 'master' && found.owner?.id !== 'yo'))
+      throw new ApiError('NOT_FOUND', 404)
+    return found
+  }
+  /** Monta un personaje con su sistema y lo que eligió su campaña (en la falsa, el contenido de los de la cuenta) */
+  const stateOf = (character: Character) => {
+    const document = systemById(character.system)
+    const campaign = campaigns.find((c) => c.id === character.campaignId)
+    if (!document) throw new ApiError('NOT_FOUND', 404)
+    const { choices } = normalizeChoices(document, (campaign?.systemChoices ?? {}) as Partial<Choices>)
+    const content = ownSystems.find((s) => s.id === document.id && !s.deleted)?.content ?? []
+    return characterView(document, content, choices, character.build as Build).view
+  }
+  const touch = (character: Character) => {
+    character.version++
+    character.updatedAt = new Date().toISOString()
+  }
+
+  // Las tablas aleatorias de las pestañas «Tabla» (se crean vacías con la pestaña) y lo sacado por campaña
+  const randomTables = new Map<string, RandomTable>()
+  const draws = new Map<string, string[]>()
+  const tableOf = (tabId: string) => {
+    const tab = pageTabs.find((t) => t.id === tabId && t.kind === 'table')
+    if (!tab) throw new ApiError('NOT_FOUND', 404)
+    let table = randomTables.get(tabId)
+    if (!table) {
+      table = { tabId, name: tab.name, pageId: tab.pageId, formula: null, replacement: true, rows: [], version: 1 }
+      randomTables.set(tabId, table)
+    }
+    return table
+  }
+
+  /** El sistema de una campaña, con lo que eligió y su contenido (en la falsa, el de los de la cuenta) */
+  const compendiumOf = (campaignId: string) => {
+    const campaign = campaigns.find((c) => c.id === campaignId)
+    if (!campaign) throw new ApiError('NOT_FOUND', 404)
+    const document = campaign.system ? systemById(campaign.system.id) : null
+    if (!campaign.system || !document) return null
+    const { choices } = normalizeChoices(document, (campaign.systemChoices ?? {}) as Partial<Choices>)
+    const content = ownSystems.find((s) => s.id === document.id && !s.deleted)?.content ?? []
+    return { document, choices, content }
   }
 
   const handlers: { [N in ActionName]: (input: ActionInput<N>) => ActionOutput<N> } = {
@@ -1111,6 +1179,225 @@ export function fakeApi(
       const content = ownSystems.find((s) => s.id === systemId && !s.deleted)?.content ?? []
       const wanted = [...new Set(keys)]
       const items = wanted.flatMap((k) => content.filter((item) => item.key === k).map((item) => structuredClone(item)))
+      return { items, missing: wanted.filter((k) => !items.some((item) => item.key === k)) }
+    },
+    listCharacters: ({ campaignId }) => {
+      const campaign = campaigns.find((c) => c.id === campaignId)
+      if (!campaign) throw new ApiError('NOT_FOUND', 404)
+      return {
+        characters: characters
+          .filter((c) => c.campaignId === campaignId && (campaign.role === 'master' || c.owner?.id === 'yo'))
+          .map(({ build: _, play: __, ...card }) => structuredClone(card))
+      }
+    },
+    getCharacter: ({ characterId }) => {
+      const character = visibleCharacter(characterId)
+      return { character: structuredClone(character), state: stateOf(character) }
+    },
+    createCharacter: ({ campaignId, name, ownerId }) => {
+      const campaign = campaigns.find((c) => c.id === campaignId)
+      if (!campaign) throw new ApiError('NOT_FOUND', 404)
+      if (!campaign.system) throw new ApiError('NO_SYSTEM', 400)
+      const owner = ownerId ? (membersOf(campaignId).members.find((m) => m.userId === ownerId) ?? null) : null
+      const character: Character = {
+        id: crypto.randomUUID(),
+        campaignId,
+        owner: owner ? { id: owner.userId, name: owner.name } : { id: 'yo', name: 'Enrique' },
+        name: name?.trim() || 'Sin nombre',
+        system: campaign.system.id,
+        status: 'creating',
+        summary: {},
+        version: 1,
+        updatedAt: new Date().toISOString(),
+        build: {},
+        play: {}
+      }
+      characters.push(character)
+      return { character: structuredClone(character), state: stateOf(character) }
+    },
+    updateCharacter: ({ characterId, version, name, build, play, ownerId, confirm }) => {
+      const character = visibleCharacter(characterId)
+      if (character.version !== version) throw new ApiError('CHARACTER_CHANGED', 400)
+      if (name !== undefined) character.name = name.trim()
+      if (build !== undefined) character.build = structuredClone(build)
+      if (play !== undefined) character.play = structuredClone(play)
+      if (ownerId !== undefined) {
+        const member = ownerId ? membersOf(character.campaignId).members.find((m) => m.userId === ownerId) : null
+        character.owner = member ? { id: member.userId, name: member.name } : null
+      }
+      const state = stateOf(character)
+      if (build !== undefined) character.summary = state.summary
+      if (confirm === 'created') {
+        if (!state.complete) throw new ApiError('INCOMPLETE', 400)
+        character.status = 'ready'
+      }
+      touch(character)
+      if (confirm) {
+        const { name: now, status, build: chosen, play: playing, summary } = structuredClone(character)
+        characterVersions.unshift({
+          id: crypto.randomUUID(),
+          characterId,
+          kind: confirm,
+          level: state.level,
+          snapshot: { name: now, status, build: chosen, play: playing, summary },
+          createdAt: new Date().toISOString()
+        })
+      }
+      return { character: structuredClone(character), state }
+    },
+    chooseForCharacter: ({ characterId, version, confirm, ...choose }) => {
+      const character = visibleCharacter(characterId)
+      const document = systemById(character.system)
+      if (!document) throw new ApiError('NOT_FOUND', 404)
+      const build = applyChoices(document, character.build as Build, choose, () => crypto.randomUUID().slice(0, 8))
+      return handlers.updateCharacter({
+        characterId,
+        version,
+        build: build as Record<string, unknown>,
+        ...(confirm ? { confirm } : {})
+      })
+    },
+    deleteCharacter: ({ characterId }) => {
+      visibleCharacter(characterId)
+      characters.splice(
+        characters.findIndex((c) => c.id === characterId),
+        1
+      )
+      return { ok: true as const }
+    },
+    listCharacterVersions: ({ characterId }) => {
+      visibleCharacter(characterId)
+      return {
+        versions: characterVersions
+          .filter((v) => v.characterId === characterId)
+          .map((v) => ({
+            id: v.id,
+            kind: v.kind,
+            level: v.level,
+            name: v.snapshot.name,
+            summary: structuredClone(v.snapshot.summary),
+            createdAt: v.createdAt
+          }))
+      }
+    },
+    restoreCharacterVersion: ({ characterId, versionId, version }) => {
+      const character = visibleCharacter(characterId)
+      const chosen = characterVersions.find((v) => v.id === versionId && v.characterId === characterId)
+      if (!chosen) throw new ApiError('NOT_FOUND', 404)
+      if (character.version !== version) throw new ApiError('CHARACTER_CHANGED', 400)
+      Object.assign(character, structuredClone(chosen.snapshot))
+      touch(character)
+      return { character: structuredClone(character), state: stateOf(character) }
+    },
+    // Las tablas aleatorias: la de cada pestaña «Tabla», y lo sacado por campaña
+    getRandomTable: ({ tabId, campaignId }) => {
+      const table = tableOf(tabId)
+      return { table: structuredClone(table), drawn: [...(draws.get(`${campaignId}:${tabId}`) ?? [])] }
+    },
+    updateRandomTable: ({ tabId, version, ...patch }) => {
+      const table = tableOf(tabId)
+      if (table.version !== version) throw new ApiError('TABLE_CHANGED', 400)
+      const rows = patch.rows ?? table.rows
+      const formula = patch.formula === undefined ? table.formula : patch.formula
+      if (tableProblems(formula, rows).length > 0) throw new ApiError('BAD_TABLE', 400)
+      Object.assign(table, {
+        formula: formula || null,
+        ...(patch.replacement !== undefined ? { replacement: patch.replacement } : {}),
+        rows: structuredClone(rows).map((r) => ({ ...r, page: r.page ?? null, table: r.table ?? null })),
+        version: table.version + 1
+      })
+      return { table: structuredClone(table) }
+    },
+    rollOnTable: ({ tabId, campaignId, visibility = 'all' }) => {
+      const table = tableOf(tabId)
+      const key = `${campaignId}:${tabId}`
+      const drawn = table.replacement ? [] : (draws.get(key) ?? [])
+      const left = table.rows.filter((r) => !drawn.includes(r.id))
+      if (left.length === 0) throw new ApiError('TABLE_EMPTY', 400)
+      const formula = tableFormula(table.formula, table.rows)
+      const result = rollFormula(formula)
+      const row = rowFor(left, result.total) ?? left[0]
+      if (!row) throw new ApiError('TABLE_EMPTY', 400)
+      if (!table.replacement) draws.set(key, [...drawn, row.id])
+      const { roll } = handlers.rollDice({ campaignId, formula, visibility })
+      // La guardada, también con su tabla
+      const stored = rolls.find((r) => r.id === roll.id)
+      for (const each of stored ? [roll, stored] : [roll]) {
+        each.label = table.name
+        each.table = { name: table.name, results: [{ text: row.text, page: row.page ?? null }] }
+      }
+      return { roll, drawn: [...(draws.get(key) ?? [])] }
+    },
+    resetTableDraws: ({ tabId, campaignId }) => {
+      tableOf(tabId)
+      draws.delete(`${campaignId}:${tabId}`)
+      return { ok: true as const }
+    },
+    // El compendio de una campaña: el contenido de su sistema (en la falsa, solo el de los de la cuenta)
+    getCampaignCompendium: ({ campaignId }) => {
+      const found = compendiumOf(campaignId)
+      if (!found) return { system: null, language: 'es' as const, sources: [], types: [] }
+      const { document, choices, content } = found
+      const say = (text: Text | undefined) => textOf(text, choices.language)
+      return {
+        system: { id: document.id, name: say(document.name) },
+        language: choices.language,
+        sources: (document.sources ?? [])
+          .filter((each) => choices.sources.includes(each.key))
+          .map((each) => ({
+            key: each.key,
+            name: say(each.name),
+            edition: each.edition ?? null,
+            license: each.license,
+            attribution: say(each.attribution)
+          })),
+        types: compendiumTypes(document, content, choices).map((type) => ({
+          ...type,
+          label: say(type.label),
+          fields: type.fields.map(({ options: given, ...field }) => ({
+            ...field,
+            label: say(field.label),
+            ...(given ? { options: given.map((o) => ({ value: o.value, label: say(o.label) })) } : {})
+          }))
+        }))
+      }
+    },
+    searchCampaignContent: ({ campaignId, ...options }) => {
+      const found = compendiumOf(campaignId)
+      if (!found) return { items: [], total: 0 }
+      const { document, choices, content } = found
+      const entries = content.map((item) => ({ ...item, concept: item.concept ?? null, name: item.data.name }))
+      return searchContent(document, entries, {
+        sources: choices.sources,
+        duplicates: choices.duplicates,
+        language: choices.language,
+        ...options
+      })
+    },
+    getCampaignContent: ({ campaignId, keys }) => {
+      const wanted = [...new Set(keys)]
+      const found = compendiumOf(campaignId)
+      if (!found) return { items: [], missing: wanted }
+      const { document, choices, content } = found
+      const entries = content.map((item) => ({ ...item, name: item.data.name }))
+      const seen = visibleContent(document, entries, choices)
+      const items = wanted.flatMap((k) => {
+        const item = seen.find((each) => each.item.key === k)?.item
+        if (!item) return []
+        const entry = compendiumEntry(document, seen, item)
+        const { name: _, ...plain } = structuredClone(item)
+        return [
+          {
+            ...plain,
+            ...entry,
+            granted: entry.granted.map((g) =>
+              'choose' in g
+                ? { level: g.level, choose: textOf(g.choose, choices.language), count: g.count }
+                : { level: g.level, key: g.key, type: g.type, name: textOf(g.name as Text, choices.language) }
+            )
+          }
+        ]
+      })
       return { items, missing: wanted.filter((k) => !items.some((item) => item.key === k)) }
     },
     getSystemParts: ({ systemId, parts }) => {

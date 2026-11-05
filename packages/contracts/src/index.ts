@@ -7,6 +7,16 @@ import {
   renameCampaign,
   updateCampaign
 } from './campaigns.ts'
+import {
+  chooseForCharacter,
+  createCharacter,
+  deleteCharacter,
+  getCharacter,
+  listCharacters,
+  listCharacterVersions,
+  restoreCharacterVersion,
+  updateCharacter
+} from './characters.ts'
 import { listRolls, rollDice, tryDice } from './dice.ts'
 import {
   createFolder,
@@ -72,6 +82,8 @@ import {
   deleteSystem,
   deleteSystemContent,
   exportSystem,
+  getCampaignCompendium,
+  getCampaignContent,
   getSystem,
   getSystemContent,
   getSystemFormat,
@@ -79,12 +91,14 @@ import {
   importSystem,
   listSystems,
   putSystemContent,
+  searchCampaignContent,
   searchSystemContent,
   tryFormula,
   trySystemAction,
   trySystemRoll,
   updateSystem
 } from './systems.ts'
+import { getRandomTable, resetTableDraws, rollOnTable, updateRandomTable } from './tables.ts'
 import { createTag, deleteTag, listAccountTags, setFileTags, updateTag } from './tags.ts'
 import { createTemplate, deleteTemplate, getTemplate, listTemplates, updateTemplate } from './templates.ts'
 import {
@@ -101,6 +115,7 @@ import { createWorld, ensureWorldHome, getWorldHome, listWorlds, renameWorld, up
 export * from './action.ts'
 export * from './ai.ts'
 export * from './campaigns.ts'
+export * from './characters.ts'
 export * from './dice.ts'
 export * from './files.ts'
 export * from './history.ts'
@@ -114,6 +129,7 @@ export * from './panel.ts'
 export type * from './realtime.ts'
 export * from './search.ts'
 export * from './systems.ts'
+export * from './tables.ts'
 export * from './tags.ts'
 export * from './templates.ts'
 export * from './trash.ts'
@@ -224,6 +240,21 @@ export const ACTIONS = [
   exportSystem,
   putSystemContent,
   trySystemAction,
+  getCampaignCompendium,
+  getCampaignContent,
+  searchCampaignContent,
+  listCharacters,
+  getCharacter,
+  createCharacter,
+  updateCharacter,
+  chooseForCharacter,
+  deleteCharacter,
+  listCharacterVersions,
+  restoreCharacterVersion,
+  getRandomTable,
+  updateRandomTable,
+  rollOnTable,
+  resetTableDraws,
   getSystemContent,
   searchSystemContent,
   importSystem,
@@ -340,6 +371,21 @@ export type Actions = {
   putSystemContent: typeof putSystemContent
   trySystemAction: typeof trySystemAction
   getSystemContent: typeof getSystemContent
+  getCampaignCompendium: typeof getCampaignCompendium
+  getCampaignContent: typeof getCampaignContent
+  searchCampaignContent: typeof searchCampaignContent
+  listCharacters: typeof listCharacters
+  getCharacter: typeof getCharacter
+  createCharacter: typeof createCharacter
+  updateCharacter: typeof updateCharacter
+  chooseForCharacter: typeof chooseForCharacter
+  deleteCharacter: typeof deleteCharacter
+  listCharacterVersions: typeof listCharacterVersions
+  restoreCharacterVersion: typeof restoreCharacterVersion
+  getRandomTable: typeof getRandomTable
+  updateRandomTable: typeof updateRandomTable
+  rollOnTable: typeof rollOnTable
+  resetTableDraws: typeof resetTableDraws
   searchSystemContent: typeof searchSystemContent
   importSystem: typeof importSystem
   getSystemParts: typeof getSystemParts

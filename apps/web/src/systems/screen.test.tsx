@@ -120,7 +120,7 @@ describe('«Sistemas», en Mis mundos', () => {
     const created = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:x')
     await userEvent.click(await screen.findByRole('button', { name: 'Fronteras' }))
     const dialog = within(screen.getByRole('dialog', { name: 'Ajustes de Fronteras' }))
-    expect(dialog.getByText('Versión 1')).toBeDefined()
+    expect(within(dialog.getByText('Versión').closest('div') as HTMLElement).getByText('1')).toBeDefined()
     expect(dialog.getByText('Ninguna')).toBeDefined()
     await userEvent.click(dialog.getByRole('button', { name: 'Bajar' }))
     await waitFor(() => expect(created).toHaveBeenCalled())
