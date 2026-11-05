@@ -16,7 +16,7 @@ import {
 } from '@crisol/systems'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { Dices, Minus, Moon, Plus, Sun, Trash2 } from 'lucide-react'
-import { useId, useRef, useState } from 'react'
+import { useDeferredValue, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ActionOutput } from '../api/client.ts'
 import { useApi } from '../api/context.tsx'
@@ -95,7 +95,15 @@ export function PlaySheet({
     },
     onSuccess: (out) => setLast(out.roll)
   })
-  const ctx: Ctx = { character, state, save, roll: (input) => rolling.mutate(input) }
+  // Un doble clic no tira dos veces: mientras sale una, las demás esperan
+  const ctx: Ctx = {
+    character,
+    state,
+    save,
+    roll: (input) => {
+      if (!rolling.isPending) rolling.mutate(input)
+    }
+  }
   const layout = state.layout as SheetBlockView[]
   return (
     <div className={styles.sheet}>
@@ -245,6 +253,7 @@ function ResourceBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: 
           type="number"
           min={0}
           inputMode="numeric"
+          autoComplete="off"
           value={amount}
           onChange={(event) => setAmount(event.currentTarget.value)}
         />
@@ -551,17 +560,14 @@ function AddFromCompendium({
   const api = useApi()
   const id = useId()
   const [query, setQuery] = useState('')
+  // Se busca lo escrito cuando se deja de escribir, no con cada tecla
+  const wanted = useDeferredValue(query.trim())
   const found = useQuery({
-    queryKey: ['compendium', campaignId, 'add', types.join(','), query.trim()],
+    queryKey: ['compendium', campaignId, 'add', types.join(','), wanted],
     queryFn: async () => {
       const results = await Promise.all(
         types.map((type) =>
-          api.call('searchCampaignContent', {
-            campaignId,
-            type,
-            ...(query.trim() ? { query: query.trim() } : {}),
-            limit: 10
-          })
+          api.call('searchCampaignContent', { campaignId, type, ...(wanted ? { query: wanted } : {}), limit: 10 })
         )
       )
       return results.flatMap((r) => r.items).slice(0, 12)
@@ -570,7 +576,14 @@ function AddFromCompendium({
   return (
     <div className={styles.addBox}>
       <label htmlFor={id}>{t('playSheet.search')}</label>
-      <input id={id} type="search" value={query} onChange={(event) => setQuery(event.currentTarget.value)} />
+      <input
+        id={id}
+        type="search"
+        autoComplete="off"
+        value={query}
+        onChange={(event) => setQuery(event.currentTarget.value)}
+      />
+      {found.data?.length === 0 && <p className={styles.none}>{t('playSheet.noResults')}</p>}
       <ul className={styles.addList}>
         {found.data?.map((hit) => (
           <li key={hit.key}>
@@ -775,6 +788,7 @@ function PlayValue({
       className={styles.playValue}
       aria-label={field.label}
       inputMode={number ? 'numeric' : undefined}
+      autoComplete="off"
       min={field.min}
       max={field.max}
       value={draft}
@@ -788,13 +802,14 @@ function PlayValue({
 }
 
 function Tabs({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'tabs' }>; ctx: Ctx }) {
+  const { t } = useTranslation()
   const id = useId()
   const [shownTab, setShownTab] = useState(0)
   const tabs = useRef<(HTMLButtonElement | null)[]>([])
   const tab = block.tabs[shownTab] ?? block.tabs[0]
   return (
     <div className={styles.tabs}>
-      <div role="tablist" className={styles.tabList}>
+      <div role="tablist" className={styles.tabList} aria-label={t('playSheet.sections')}>
         {block.tabs.map((each, i) => (
           <button
             key={each.label}

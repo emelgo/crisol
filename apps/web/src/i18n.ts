@@ -267,6 +267,8 @@ export const es = {
     none: 'Ninguno',
     add: 'Añadir',
     search: 'Buscar en el compendio',
+    noResults: 'Nada con ese nombre',
+    sections: 'Partes de la hoja',
     equipped: 'Equipado',
     remove: 'Quitar {{what}}',
     nothing: 'Nada',

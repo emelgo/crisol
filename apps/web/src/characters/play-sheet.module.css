@@ -471,6 +471,7 @@
   color: var(--color-text);
   font: inherit;
   font-size: 0.875rem;
+  cursor: pointer;
 }
 
 .mode[aria-pressed="true"] {
@@ -498,4 +499,23 @@
 .useLabel {
   color: var(--color-muted);
   font-weight: 400;
+}
+
+/* Al pasar por encima, lo que se pulsa se marca */
+.mode:hover:not([aria-pressed="true"]),
+.resourceControls button:hover,
+.rests button:hover,
+.add:hover,
+.addList button:hover,
+.stepper button:hover:not(:disabled) {
+  border-color: var(--color-accent);
+}
+
+.icon:hover {
+  background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+  color: var(--color-text);
+}
+
+.tab:hover {
+  color: var(--color-text);
 }
