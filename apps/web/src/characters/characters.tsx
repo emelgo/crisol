@@ -21,6 +21,7 @@ import form from '../components/form.module.css'
 import { failed, LoadError } from '../components/load-error.tsx'
 import { Modal } from '../components/modal.tsx'
 import { PageTitle } from '../components/page-title.tsx'
+import { Tour } from '../components/tour.tsx'
 import cards from '../routes/world-card.module.css'
 import screen from '../templates/screen.module.css'
 import styles from './characters.module.css'
@@ -77,6 +78,22 @@ export function CharactersScreen() {
         <PageTitle>{t('characters.title')}</PageTitle>
         {noSystem ? (
           <p className={styles.note}>{t('characters.noSystem')}</p>
+        ) : list.length === 0 ? (
+          // Sin personajes: qué es uno y el botón grande para hacer el primero
+          <div className={cards.empty}>
+            <UserRound aria-hidden="true" size={44} strokeWidth={1.25} />
+            <h2>{t('characters.empty')}</h2>
+            <p>{t('characters.emptyHint')}</p>
+            <button
+              type="button"
+              className={`${form.button} ${cards.big}`}
+              data-tour="personaje-nuevo"
+              onClick={() => setCreating(true)}
+            >
+              <Plus aria-hidden="true" size={18} />
+              {t('characters.new')}
+            </button>
+          </div>
         ) : (
           <ul className={screen.grid} aria-label={t('characters.title')}>
             {list.map((character) => (
@@ -89,7 +106,12 @@ export function CharactersScreen() {
               />
             ))}
             <li>
-              <button type="button" className={screen.newCard} onClick={() => setCreating(true)}>
+              <button
+                type="button"
+                className={screen.newCard}
+                data-tour="personaje-nuevo"
+                onClick={() => setCreating(true)}
+              >
                 <Plus aria-hidden="true" size={22} />
                 {t('characters.new')}
               </button>
@@ -97,6 +119,12 @@ export function CharactersScreen() {
           </ul>
         )}
       </div>
+      {!noSystem && (
+        <Tour
+          id="personajes"
+          steps={[{ target: '[data-tour="personaje-nuevo"]', text: t('tour.characters.create') }]}
+        />
+      )}
       {creating && (
         <NewCharacterDialog
           worldId={worldId}
@@ -381,6 +409,8 @@ function CharacterWindow({
           <div className={screen.baseField}>
             <label htmlFor={ownerId}>{t('characters.whoPlays')}</label>
             <select id={ownerId} value={owner} onChange={(event) => setOwner(event.currentTarget.value)}>
+              {/* Sin nadie (si quien lo jugaba ya no está en la campaña) */}
+              {!members.data?.members.some((m) => m.userId === owner) && <option value={owner}>—</option>}
               {members.data?.members.map((m) => (
                 <option key={m.userId} value={m.userId}>
                   {m.name}

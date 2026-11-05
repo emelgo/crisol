@@ -64,7 +64,10 @@ function renderAt(path: string) {
 
 describe('los personajes de una campaña', () => {
   beforeEach(() =>
-    localStorage.setItem('crisol.recorridos.enrique@crisol.test', JSON.stringify({ seen: ['mundo', 'mundos'] }))
+    localStorage.setItem(
+      'crisol.recorridos.enrique@crisol.test',
+      JSON.stringify({ seen: ['mundo', 'mundos', 'campana', 'personajes', 'personaje', 'compendio', 'tabla'] })
+    )
   )
 
   it('«Personaje nuevo»: se crea y se abre en el creador; sus pasos con lo que falta y terminarlo', async () => {
@@ -152,7 +155,7 @@ describe('los personajes de una campaña', () => {
     await userEvent.click(card.getByRole('button', { name: 'Ajustes de Lisandro' }))
     const window = within(screen.getByRole('dialog', { name: 'Ajustes de Lisandro' }))
     await userEvent.click(window.getByRole('button', { name: 'Borrar el personaje' }))
-    const confirm = within(screen.getByRole('dialog', { name: '¿Borrar el personaje Lisandro?' }))
+    const confirm = within(screen.getByRole('dialog', { name: '¿Borrar «Lisandro»?' }))
     await userEvent.type(confirm.getByRole('textbox', { name: 'Nombre' }), 'Lisandro')
     await userEvent.click(confirm.getByRole('button', { name: 'Borrar el personaje' }))
     await waitFor(() => expect(screen.queryByRole('link', { name: 'Lisandro' })).toBeNull())

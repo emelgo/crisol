@@ -139,7 +139,12 @@ function renderCompendium(campaign: Campaign = CAMPAIGN) {
 }
 
 describe('el compendio de una campaña', () => {
-  beforeEach(() => localStorage.setItem('crisol.recorridos.ana@crisol.test', JSON.stringify({ seen: ['mundo'] })))
+  beforeEach(() =>
+    localStorage.setItem(
+      'crisol.recorridos.ana@crisol.test',
+      JSON.stringify({ seen: ['mundo', 'campana', 'personajes', 'personaje', 'compendio', 'tabla'] })
+    )
+  )
 
   it('sus tipos, la lista con sus ediciones y, en el centro, el primero con sus datos y su texto', async () => {
     renderCompendium()

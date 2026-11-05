@@ -55,7 +55,10 @@ const renderCampaign = (c: Campaign, w: World = world) => {
 describe('una campaña y su enlace de invitación', () => {
   it('desde Mis mundos se entra en la campaña, por su tarjeta', async () => {
     // Los tutoriales guiados ya hechos: que no se pongan en medio
-    localStorage.setItem('crisol.recorridos.e@x.es', JSON.stringify({ seen: ['mundo', 'campanas'] }))
+    localStorage.setItem(
+      'crisol.recorridos.e@x.es',
+      JSON.stringify({ seen: ['mundo', 'campanas', 'campana', 'personajes', 'personaje', 'compendio', 'tabla'] })
+    )
     const c = campaign()
     const api = fakeApi({ organizations: [ORG], worlds: [world], campaigns: [c] })
     const router = createAppRouter(createMemoryHistory({ initialEntries: ['/mundos'] }))

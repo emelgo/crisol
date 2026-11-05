@@ -146,7 +146,10 @@ async function renderSheet() {
 
 describe('la hoja en partida', () => {
   beforeEach(() =>
-    localStorage.setItem('crisol.recorridos.enrique@crisol.test', JSON.stringify({ seen: ['mundo', 'mundos'] }))
+    localStorage.setItem(
+      'crisol.recorridos.enrique@crisol.test',
+      JSON.stringify({ seen: ['mundo', 'mundos', 'campana', 'personajes', 'personaje', 'compendio', 'tabla'] })
+    )
   )
 
   it('lo que se cambia jugando se escribe; lo demás, no; dos daños seguidos se suman y el descanso lo llena', async () => {

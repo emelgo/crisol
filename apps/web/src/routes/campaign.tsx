@@ -18,6 +18,7 @@ import styles from '../components/list.module.css'
 import { failed, LoadError } from '../components/load-error.tsx'
 import { PageTitle } from '../components/page-title.tsx'
 import { RemovedMessage, RemoveMemberConfirm, useRemoveMember } from '../components/remove-member.tsx'
+import { Tour } from '../components/tour.tsx'
 
 const route = getRouteApi('/mundos/$worldId/campanas/$campaignId')
 
@@ -62,6 +63,18 @@ export function CampaignPage() {
       <CampaignBanner campaign={campaign} worldName={world.name} />
       <MembersPanel campaign={campaign} />
       {campaign.role === 'master' && <InvitationPanel campaignId={campaignId} />}
+      <Tour
+        id="campana"
+        // Un paso por cada botón de la barra de la campaña
+        steps={[
+          { target: '[data-tour="barra-campana"]', text: t('tour.campaign.home'), placement: 'right' },
+          { target: '[data-tour="barra-personajes"]', text: t('tour.campaign.characters'), placement: 'right' },
+          { target: '[data-tour="barra-compendio"]', text: t('tour.campaign.compendium'), placement: 'right' },
+          { target: '[data-tour="barra-dados"]', text: t('tour.world.dice'), placement: 'right' },
+          { target: '[data-tour="barra-llama"]', text: t('tour.world.back'), placement: 'right' },
+          { target: '[data-tour="menu-movil"]', text: t('tour.menu') }
+        ]}
+      />
     </section>
   )
 }

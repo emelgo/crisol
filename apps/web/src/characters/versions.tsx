@@ -8,10 +8,12 @@ import { useTranslation } from 'react-i18next'
 import type { ActionOutput } from '../api/client.ts'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
+import { Loading } from '../components/brand.tsx'
 import { BusyButton } from '../components/busy-button.tsx'
 import dialogStyles from '../components/dialog.module.css'
 import { FormError } from '../components/field.tsx'
 import form from '../components/form.module.css'
+import { LoadError } from '../components/load-error.tsx'
 import { Modal } from '../components/modal.tsx'
 import cards from '../routes/world-card.module.css'
 import { characterKey } from './save.ts'
@@ -28,6 +30,7 @@ export function Versions({ character }: { character: Character }) {
     queryFn: () => api.call('listCharacterVersions', { characterId: character.id })
   })
   const [restoring, setRestoring] = useState<Version | null>(null)
+  const headingId = useId()
   const list = versions.data?.versions ?? []
   const date = (iso: string) => new Date(iso).toLocaleDateString(i18n.language, { day: 'numeric', month: 'short' })
   const titleOf = (v: Version) =>
@@ -35,11 +38,15 @@ export function Versions({ character }: { character: Character }) {
       ? t('characterVersions.created', { level: v.level })
       : t('characterVersions.level', { level: v.level })
   return (
-    <aside className={styles.versions} aria-labelledby="versiones">
-      <h2 id="versiones" className={styles.sideTitle}>
+    <aside className={styles.versions} aria-labelledby={headingId} data-tour="versiones">
+      <h2 id={headingId} className={styles.sideTitle}>
         {t('characterVersions.title')}
       </h2>
-      {list.length === 0 ? (
+      {versions.isPending ? (
+        <Loading />
+      ) : versions.isError ? (
+        <LoadError error={versions.error} onRetry={() => void versions.refetch()} />
+      ) : list.length === 0 ? (
         <p className={styles.none}>{t('characterVersions.none')}</p>
       ) : (
         <ul className={styles.versionList}>
@@ -54,7 +61,12 @@ export function Versions({ character }: { character: Character }) {
                 {v.summary.line ? ` · ${v.summary.line}` : ''}
               </span>
               {i > 0 && (
-                <button type="button" className={styles.restore} onClick={() => setRestoring(v)}>
+                <button
+                  type="button"
+                  className={styles.restore}
+                  aria-label={t('characterVersions.restoreTitle', { version: titleOf(v) })}
+                  onClick={() => setRestoring(v)}
+                >
                   {t('characterVersions.restore')}
                 </button>
               )}
@@ -108,7 +120,11 @@ function RestoreDialog({
     <Modal ref={dialog} aria-labelledby={titleId} className={cards.dialog} onClose={onClose}>
       <div className={cards.form}>
         <h2 id={titleId}>{t('characterVersions.restoreTitle', { version: title })}</h2>
-        <p>{t('characterVersions.restoreText', { name: character.name, line: version.summary.line ?? '' })}</p>
+        <p>
+          {version.summary.line
+            ? t('characterVersions.restoreText', { name: character.name, line: version.summary.line })
+            : t('characterVersions.restoreBare', { name: character.name })}
+        </p>
         <p className={styles.none}>{t('characterVersions.undoable')}</p>
         <FormError message={restore.error ? errorText(restore.error) : null} />
         <div className={styles.actions}>

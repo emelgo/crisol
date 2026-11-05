@@ -78,7 +78,7 @@ describe('la bandeja de dados 3D', () => {
     localStorage.clear()
     localStorage.setItem(
       'crisol.recorridos.enrique@crisol.test',
-      JSON.stringify({ seen: ['mundo', 'campaña', 'dados'] })
+      JSON.stringify({ seen: ['mundo', 'campaña', 'dados', 'campana'] })
     )
     played.length = 0
   })

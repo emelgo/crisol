@@ -14,6 +14,7 @@ import { Loading } from '../components/brand.tsx'
 import { FormError } from '../components/field.tsx'
 import { failed, LoadError } from '../components/load-error.tsx'
 import { PageTitle } from '../components/page-title.tsx'
+import { Tour } from '../components/tour.tsx'
 import styles from './character.module.css'
 import { Creator } from './creator.tsx'
 import { PlaySheet } from './play-sheet.tsx'
@@ -35,7 +36,7 @@ export function CharacterScreen() {
     // Lo que se elige se guarda en orden y su respuesta trae el estado: volver a la pestaña no lo recarga
     refetchOnWindowFocus: false
   })
-  const { save, busy, error } = useCharacterSave(characterId, campaignId)
+  const { save, busy, error, saved } = useCharacterSave(characterId, campaignId)
   const [tab, setTab] = useState<'sheet' | 'creator' | null>(null)
   if (pending) return null
   if (!account) return <Navigate to="/entrar" replace />
@@ -57,9 +58,9 @@ export function CharacterScreen() {
           </p>
         </div>
         <span className={styles.saved} aria-live="polite">
-          {busy ? t('characters.saving') : t('characters.saved')}
+          {busy ? t('characters.saving') : saved ? t('characters.saved') : ''}
         </span>
-        <nav className={styles.tabs} aria-label={t('characters.views')}>
+        <nav className={styles.tabs} aria-label={t('characters.views')} data-tour="vistas-personaje">
           {(['sheet', 'creator'] as const).map((each) => (
             <button
               key={each}
@@ -82,6 +83,14 @@ export function CharacterScreen() {
           <Versions character={character} />
         </div>
       )}
+      <Tour
+        id="personaje"
+        steps={[
+          { target: '[data-tour="vistas-personaje"]', text: t('tour.characters.views') },
+          { target: '[data-tour="hoja-tirar"]', text: t('tour.characters.roll') },
+          { target: '[data-tour="versiones"]', text: t('tour.characters.versions'), placement: 'left' }
+        ]}
+      />
     </div>
   )
 }

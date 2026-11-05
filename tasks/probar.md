@@ -48,6 +48,13 @@ En un personaje terminado, su «Ficha»:
 - [ ] **Con el teclado**: las pestañas con las flechas, Inicio y Fin.
 - [ ] **Desde claude.ai**: `partida_personaje` (daño, curación, gastar un uso, descansar) y `tirar_por_personaje`.
 
+## Módulo 3: el pulido (PR #104)
+
+- [ ] **Los tutoriales guiados** de la campaña, Personajes, un personaje, el Compendio y la pestaña Tabla: salen la
+  primera vez y, para verlos otra vez, su botón de ayuda («Tutorial guiado de esta vista»).
+- [ ] **Sin personajes**, la pantalla vacía con su botón grande.
+- [ ] **«Reiniciar» una tabla** pregunta antes; lo que sale al tirar se anuncia.
+
 ## Módulo 3: los dados para otros juegos
 
 - [ ] **Un Daggerheart hecho por la IA**: pídele en claude.ai que te haga un sistema de Daggerheart para una campaña

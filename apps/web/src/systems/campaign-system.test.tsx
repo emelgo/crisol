@@ -114,7 +114,7 @@ describe('el sistema de una campaña', () => {
   beforeEach(() =>
     localStorage.setItem(
       'crisol.recorridos.enrique@crisol.test',
-      JSON.stringify({ seen: ['mundos', 'mundo', 'campanas', 'dados'] })
+      JSON.stringify({ seen: ['mundos', 'mundo', 'campanas', 'dados', 'campana'] })
     )
   )
 

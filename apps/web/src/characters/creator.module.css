@@ -565,3 +565,17 @@
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
+
+/* Al pasar por encima, lo que se pulsa se marca */
+.expand:hover {
+  background: var(--color-raised);
+  color: var(--color-text);
+}
+
+.primary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-accent) 85%, black);
+}
+
+.stepper button:hover:not(:disabled) {
+  border-color: var(--color-accent);
+}

@@ -217,7 +217,22 @@ export const es = {
     roll: 'Tirar',
     drawnCount: '{{count}} sacadas',
     drawnCount_one: 'Una sacada',
-    reset: 'Reiniciar'
+    reset: 'Reiniciar',
+    resetTitle: '¿Reiniciar la tabla?',
+    resetText: 'Todas sus filas podrán volver a salir en esta campaña.',
+    noCampaign: 'Para tirar en ella, el mundo necesita una campaña.',
+    rolled: 'Salió {{total}}: {{text}}',
+    problems: {
+      notIntegers: 'La fila {{from}}–{{to}} no es de enteros',
+      backwards: 'La fila {{from}}–{{to}} empieza después de acabar',
+      overlap: 'Las filas {{from}}–{{to}} y {{nextFrom}}–{{nextTo}} se pisan',
+      gap: 'Falta del {{from}} al {{to}}',
+      formula: 'No se entiende la fórmula «{{formula}}»',
+      below: 'Con {{formula}} puede salir {{min}}, y la primera fila empieza en {{first}}',
+      above: 'Con {{formula}} puede salir {{max}}, y la última fila acaba en {{last}}',
+      outside: 'Con {{formula}} solo sale del {{min}} al {{max}}',
+      empty: 'Falta un número en una fila'
+    }
   },
   // Los personajes de una campaña
   characters: {
@@ -234,11 +249,13 @@ export const es = {
     pending: 'Con cosas por elegir',
     noClass: 'Sin clase',
     noSystem: 'Esta campaña aún no tiene sistema: el máster lo elige en sus ajustes.',
+    empty: 'Aún no hay personajes',
+    emptyHint: 'Cada uno se hace con las reglas de la campaña, paso a paso.',
     settingsOf: 'Ajustes de {{name}}',
     save: 'Guardar',
     cancel: 'Cancelar',
     delete: 'Borrar el personaje',
-    deleteTitle: '¿Borrar el personaje {{name}}?',
+    deleteTitle: '¿Borrar «{{name}}»?',
     deleteWarning: 'Se borra con sus versiones y se puede deshacer desde el historial.',
     views: 'Vistas del personaje',
     sheet: 'Ficha',
@@ -267,6 +284,8 @@ export const es = {
     none: 'Ninguno',
     add: 'Añadir',
     search: 'Buscar en el compendio',
+    noResults: 'Nada con ese nombre',
+    sections: 'Partes de la hoja',
     equipped: 'Equipado',
     remove: 'Quitar {{what}}',
     nothing: 'Nada',
@@ -314,6 +333,7 @@ export const es = {
     method: 'Método',
     points: 'Te quedan {{left}} de {{budget}} puntos',
     rolled: 'Salieron',
+    rolling: 'Tirando…',
     inLog: 'en el registro de la campaña',
     roll: 'Tirar ({{formula}})',
     base: 'Base',
@@ -330,6 +350,7 @@ export const es = {
     restore: 'Restaurar',
     restoreTitle: 'Restaurar «{{version}}»',
     restoreText: '{{name}} vuelve a como era entonces: {{line}}.',
+    restoreBare: '{{name}} vuelve a como era entonces.',
     undoable: 'El máster puede deshacerlo desde el historial.'
   },
   // El compendio de una campaña: el contenido de su sistema
@@ -338,12 +359,15 @@ export const es = {
     systemWith: '{{system}} · {{editions}}',
     and: ' y ',
     search: 'Buscar en el compendio',
+    searchHint: 'Un conjuro, una criatura…',
+    otherVersion: 'Otra versión',
     clear: 'Borrar la búsqueda',
     types: 'Tipos',
     all: 'Todo',
     results: 'Resultados',
     none: 'Nada con ese nombre',
     more: 'Mostrar más',
+    loadingMore: 'Cargando…',
     legacy: '{{edition}} · Legado',
     yes: 'Sí',
     back: 'Volver a la lista',
@@ -1719,6 +1743,25 @@ export const es = {
     },
     campaigns: {
       create: 'Cada campaña reúne a un grupo de jugadores en este mundo.'
+    },
+    campaign: {
+      home: 'La campaña y quién juega en ella.',
+      characters: 'Los personajes de la campaña.',
+      compendium: 'Las reglas y el contenido del juego de la campaña.'
+    },
+    characters: {
+      create: 'Cada personaje se hace con las reglas de la campaña, paso a paso.',
+      views: 'Su ficha, para jugar, y su creador, para hacerlo o subirlo de nivel.',
+      roll: 'Se tira a un clic. Aquí, con ventaja o desventaja y quién lo ve.',
+      versions: 'Al terminarlo y en cada nivel se guarda una versión, por si hay que volver atrás.'
+    },
+    compendium: {
+      search: 'Busca en todo el contenido del juego.',
+      types: 'O mira solo un tipo.'
+    },
+    table: {
+      rows: 'Cada fila, con los números que la sacan.',
+      roll: 'Se tira en una campaña y queda en su registro de dados.'
     },
     files: {
       upload: 'Desde aquí se suben imágenes, PDF, audio y textos; también puedes soltarlos en la pantalla.',

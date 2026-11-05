@@ -170,7 +170,10 @@ async function renderCreator() {
 
 describe('el creador, con clases por niveles', () => {
   beforeEach(() =>
-    localStorage.setItem('crisol.recorridos.enrique@crisol.test', JSON.stringify({ seen: ['mundo', 'mundos'] }))
+    localStorage.setItem(
+      'crisol.recorridos.enrique@crisol.test',
+      JSON.stringify({ seen: ['mundo', 'mundos', 'campana', 'personajes', 'personaje', 'compendio', 'tabla'] })
+    )
   )
 
   it('la clase, su nivel, lo que concede y elegir en el panel (una y «+1 y +1»); añadir otra y quitarla', async () => {
@@ -225,7 +228,8 @@ describe('el creador, con clases por niveles', () => {
     await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Fuerza' }), '12')
     expect(await screen.findByText('Te quedan 1 de 5 puntos')).toBeDefined()
     await userEvent.click(screen.getByRole('radio', { name: 'A mano' }))
-    await userEvent.type(screen.getByRole('spinbutton', { name: 'Fuerza' }), '9')
+    // A mano se guarda al acabar (con Intro o al salir del campo), no con cada tecla
+    await userEvent.type(screen.getByRole('spinbutton', { name: 'Fuerza' }), '9{Enter}')
     await waitFor(() => expect(screen.getByRole('row', { name: /Fuerza/ }).textContent).toContain('9'))
     await userEvent.click(steps.getByRole('button', { name: 'Resumen' }))
     expect(await screen.findByText('Sin clase')).toBeDefined()

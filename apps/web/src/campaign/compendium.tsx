@@ -7,14 +7,17 @@ import { type Text, textOf } from '@crisol/systems'
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import { getRouteApi, Navigate } from '@tanstack/react-router'
 import { ArrowLeft, Search, X } from 'lucide-react'
-import { useDeferredValue, useEffect, useId, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import type { ActionOutput } from '../api/client.ts'
 import { useApi } from '../api/context.tsx'
 import { Loading } from '../components/brand.tsx'
+import { BusyButton } from '../components/busy-button.tsx'
 import { failed, LoadError } from '../components/load-error.tsx'
 import { PageTitle } from '../components/page-title.tsx'
+import { useSettled } from '../components/settled.ts'
+import { Tour } from '../components/tour.tsx'
 import { useNarrow } from '../wiki/panel.tsx'
 import styles from './compendium.module.css'
 import { ContentText } from './content-text.tsx'
@@ -77,7 +80,8 @@ export function CompendiumScreen() {
   const [query, setQuery] = useState('')
   const [type, setType] = useState<string | null>(null)
   const [selected, setSelected] = useState<string | null>(null)
-  const wanted = useDeferredValue(query.trim())
+  // Se busca al dejar de escribir, no con cada tecla
+  const wanted = useSettled(query.trim())
   const hits = useInfiniteQuery({
     queryKey: ['compendium', campaignId, 'search', wanted, type],
     queryFn: ({ pageParam }) =>
@@ -131,7 +135,7 @@ export function CompendiumScreen() {
               : system.name}
           </span>
         </div>
-        <div className={styles.search}>
+        <div className={styles.search} data-tour="compendio-buscar">
           <Search size={16} aria-hidden="true" />
           <label htmlFor={searchId} className={styles.hidden}>
             {t('compendium.search')}
@@ -139,7 +143,7 @@ export function CompendiumScreen() {
           <input
             id={searchId}
             type="search"
-            placeholder={t('compendium.search')}
+            placeholder={t('compendium.searchHint')}
             value={query}
             autoComplete="off"
             onChange={(event) => {
@@ -161,7 +165,7 @@ export function CompendiumScreen() {
             </button>
           )}
         </div>
-        <fieldset className={styles.types}>
+        <fieldset className={styles.types} data-tour="compendio-tipos">
           <legend className={styles.hidden}>{t('compendium.types')}</legend>
           {[null, ...types.map((each) => each.key)].map((key) => (
             <button
@@ -190,15 +194,11 @@ export function CompendiumScreen() {
           ))}
           {hits.data && items.length === 0 && <li className={styles.none}>{t('compendium.none')}</li>}
         </ul>
+        {hits.isError && <LoadError error={hits.error} onRetry={() => void hits.refetch()} />}
         {hits.hasNextPage && (
-          <button
-            type="button"
-            className={styles.more}
-            disabled={hits.isFetchingNextPage}
-            onClick={() => void hits.fetchNextPage()}
-          >
-            {t('compendium.more')}
-          </button>
+          <BusyButton className={styles.more} busy={hits.isFetchingNextPage} onClick={() => void hits.fetchNextPage()}>
+            {hits.isFetchingNextPage ? t('compendium.loadingMore') : t('compendium.more')}
+          </BusyButton>
         )}
       </aside>
       {shown ? (
@@ -215,6 +215,13 @@ export function CompendiumScreen() {
       ) : (
         !narrow && <div className={styles.reading} />
       )}
+      <Tour
+        id="compendio"
+        steps={[
+          { target: '[data-tour="compendio-buscar"]', text: t('tour.compendium.search') },
+          { target: '[data-tour="compendio-tipos"]', text: t('tour.compendium.types') }
+        ]}
+      />
     </div>
   )
 }
@@ -359,7 +366,9 @@ function Entry({
               <dd>
                 {item.versions.map((v) => (
                   <button key={v.key} type="button" className={styles.link} onClick={() => onOpen(v.key)}>
-                    {v.legacy ? t('compendium.legacy', { edition: v.edition ?? '' }) : v.edition}
+                    {v.legacy
+                      ? t('compendium.legacy', { edition: v.edition ?? '' })
+                      : (v.edition ?? t('compendium.otherVersion'))}
                   </button>
                 ))}
               </dd>

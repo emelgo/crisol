@@ -47,7 +47,7 @@ describe('el Inicio de un mundo', () => {
   beforeEach(() =>
     localStorage.setItem(
       'crisol.recorridos.enrique@crisol.test',
-      JSON.stringify({ seen: ['mundos', 'mundo', 'campanas'] })
+      JSON.stringify({ seen: ['mundos', 'mundo', 'campanas', 'campana'] })
     )
   )
 
