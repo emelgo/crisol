@@ -9,6 +9,19 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   de propietario.
 - **En local**, con los cambios al momento: http://localhost:5173 (lo arranco cuando haga falta).
 
+## Módulo 3: srd-5e, punto de control 4 (fase 3: todo el contenido; en la rama, aún no en staging)
+
+Todo el contenido de los dos SRD ya está sacado: 3170 documentos (estados, texto de las reglas, conjuros, objetos
+mágicos, criaturas, especies, trasfondos, dotes y las 12 clases con su subclase), en los dos idiomas y con su página.
+
+- [ ] **Una muestra al azar contra el PDF**: `tasks/muestra-srd-5e.md` lleva unos 20 de cada tipo (263), con su
+  página en cada PDF y lo primero de su texto. Abrir el PDF en esa página y mirar que el nombre, los números y el texto
+  cuadran en los dos idiomas; lo que esté mal, apuntarlo al lado. Los PDF, en `datos-locales/srd/`.
+- Lo sabido, para no buscarlo: en el texto de las reglas, algún recuadro cae en la sección de al lado en un idioma (el
+  PDF los coloca en otra página); las tablas grandes de armas y armaduras no van en el texto (ya son contenido).
+- Cuando esté en staging (al cerrar `srd-5e`), lo mismo desde claude.ai: «búscame la bola de fuego del 5e y léemela»,
+  «¿qué hace el estado de apresado?», «hazme un bárbaro de nivel 5 y dime su CA en furia».
+
 ## Módulo 3: srd-5e (fases 1 y 2, en staging: PR #97)
 
 El 5e de serie con su contenido de las dos ediciones (de momento, todo el equipo y el guerrero con el campeón: 474

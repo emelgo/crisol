@@ -110,7 +110,8 @@ referencias en las dos ediciones).
 
 ### Punto de control 4
 
-- [ ] En local, Enrique: una muestra al azar de cada categoría (unos 20) contra el PDF, con su página al lado.
+- [ ] En local, Enrique: una muestra al azar de cada categoría (unos 20) contra el PDF, con su página al lado. Lista:
+  `tasks/muestra-srd-5e.md` (`node scripts/srd/muestra.ts`, siempre la misma); cómo, en `tasks/probar.md`.
 
 ## Fase 4: Las referencias y el cierre
 
