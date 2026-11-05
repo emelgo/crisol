@@ -122,7 +122,7 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
     cambiar el nombre o la descripción de la campaña) podría pedir aprobación, como «jugadores»: un sistema subido de
     fuera podría llevar instrucciones para la IA en sus textos;
   - la cola de aprobación guarda la entrada entera (un archivo de 10 MB): guardar un resumen;
-  - subir un archivo con miles de documentos los escribe uno a uno: por lotes;
+  - ~~subir un archivo con miles de documentos los escribe uno a uno~~: hecho, por tandas (`insertMany`, PR #98);
   - la versión de la que sale una copia del catálogo es siempre 1 (hará falta con el 5e);
   - el editor visual de los subcampos de conjuntos, grupos y listas de filas, confirmar al quitar un tipo o una
     tirada, la barra de «Guardar» pegada a la vista, y la espera y el error al elegir el sistema de una campaña.
