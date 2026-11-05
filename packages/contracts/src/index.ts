@@ -72,6 +72,8 @@ import {
   deleteSystem,
   deleteSystemContent,
   exportSystem,
+  getCampaignCompendium,
+  getCampaignContent,
   getSystem,
   getSystemContent,
   getSystemFormat,
@@ -79,6 +81,7 @@ import {
   importSystem,
   listSystems,
   putSystemContent,
+  searchCampaignContent,
   searchSystemContent,
   tryFormula,
   trySystemAction,
@@ -224,6 +227,9 @@ export const ACTIONS = [
   exportSystem,
   putSystemContent,
   trySystemAction,
+  getCampaignCompendium,
+  getCampaignContent,
+  searchCampaignContent,
   getSystemContent,
   searchSystemContent,
   importSystem,
@@ -340,6 +346,9 @@ export type Actions = {
   putSystemContent: typeof putSystemContent
   trySystemAction: typeof trySystemAction
   getSystemContent: typeof getSystemContent
+  getCampaignCompendium: typeof getCampaignCompendium
+  getCampaignContent: typeof getCampaignContent
+  searchCampaignContent: typeof searchCampaignContent
   searchSystemContent: typeof searchSystemContent
   importSystem: typeof importSystem
   getSystemParts: typeof getSystemParts

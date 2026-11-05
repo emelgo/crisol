@@ -130,7 +130,7 @@ async function findReadable(ctx: ActionContext, organizationId: string, systemId
 }
 
 /** Un documento del contenido guardado, con lo que tenga (su concepto, su mecánica y su página, si los hay) */
-const contentOf = (row: {
+export const contentOf = (row: {
   type: string
   key: string
   source: string | null

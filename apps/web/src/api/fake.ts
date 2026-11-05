@@ -37,8 +37,11 @@ import {
   applyChanges,
   CATALOG,
   ChangeError,
+  type Choices,
   type ContentItem,
   catalogSystem,
+  compendiumEntry,
+  compendiumTypes,
   fileName,
   normalizeChoices,
   pickPaths,
@@ -47,6 +50,7 @@ import {
   type System,
   searchContent,
   systemOverview,
+  type Text,
   textOf,
   toFile,
   tryAction,
@@ -54,7 +58,8 @@ import {
   tryRoll,
   validateContent,
   validateFile,
-  validateSystem
+  validateSystem,
+  visibleContent
 } from '@crisol/systems'
 import { type ActionInput, type ActionName, type ActionOutput, type ApiClient, ApiError } from './client.ts'
 
@@ -547,6 +552,17 @@ export function fakeApi(
     if (problems.length > 0) throw new ApiError('BAD_SYSTEM_CHOICES', 400)
     campaign.system = campaignSystem(target)
     campaign.systemChoices = normalized
+  }
+
+  /** El sistema de una campaña, con lo que eligió y su contenido (en la falsa, el de los de la cuenta) */
+  const compendiumOf = (campaignId: string) => {
+    const campaign = campaigns.find((c) => c.id === campaignId)
+    if (!campaign) throw new ApiError('NOT_FOUND', 404)
+    const document = campaign.system ? systemById(campaign.system.id) : null
+    if (!campaign.system || !document) return null
+    const { choices } = normalizeChoices(document, (campaign.systemChoices ?? {}) as Partial<Choices>)
+    const content = ownSystems.find((s) => s.id === document.id && !s.deleted)?.content ?? []
+    return { document, choices, content }
   }
 
   const handlers: { [N in ActionName]: (input: ActionInput<N>) => ActionOutput<N> } = {
@@ -1111,6 +1127,73 @@ export function fakeApi(
       const content = ownSystems.find((s) => s.id === systemId && !s.deleted)?.content ?? []
       const wanted = [...new Set(keys)]
       const items = wanted.flatMap((k) => content.filter((item) => item.key === k).map((item) => structuredClone(item)))
+      return { items, missing: wanted.filter((k) => !items.some((item) => item.key === k)) }
+    },
+    // El compendio de una campaña: el contenido de su sistema (en la falsa, solo el de los de la cuenta)
+    getCampaignCompendium: ({ campaignId }) => {
+      const found = compendiumOf(campaignId)
+      if (!found) return { system: null, language: 'es' as const, sources: [], types: [] }
+      const { document, choices, content } = found
+      const say = (text: Text | undefined) => textOf(text, choices.language)
+      return {
+        system: { id: document.id, name: say(document.name) },
+        language: choices.language,
+        sources: (document.sources ?? [])
+          .filter((each) => choices.sources.includes(each.key))
+          .map((each) => ({
+            key: each.key,
+            name: say(each.name),
+            edition: each.edition ?? null,
+            license: each.license,
+            attribution: say(each.attribution)
+          })),
+        types: compendiumTypes(document, content, choices).map((type) => ({
+          ...type,
+          label: say(type.label),
+          fields: type.fields.map(({ options: given, ...field }) => ({
+            ...field,
+            label: say(field.label),
+            ...(given ? { options: given.map((o) => ({ value: o.value, label: say(o.label) })) } : {})
+          }))
+        }))
+      }
+    },
+    searchCampaignContent: ({ campaignId, ...options }) => {
+      const found = compendiumOf(campaignId)
+      if (!found) return { items: [], total: 0 }
+      const { document, choices, content } = found
+      const entries = content.map((item) => ({ ...item, concept: item.concept ?? null, name: item.data.name }))
+      return searchContent(document, entries, {
+        sources: choices.sources,
+        duplicates: choices.duplicates,
+        language: choices.language,
+        ...options
+      })
+    },
+    getCampaignContent: ({ campaignId, keys }) => {
+      const wanted = [...new Set(keys)]
+      const found = compendiumOf(campaignId)
+      if (!found) return { items: [], missing: wanted }
+      const { document, choices, content } = found
+      const entries = content.map((item) => ({ ...item, name: item.data.name }))
+      const seen = visibleContent(document, entries, choices)
+      const items = wanted.flatMap((k) => {
+        const item = seen.find((each) => each.item.key === k)?.item
+        if (!item) return []
+        const entry = compendiumEntry(document, seen, item)
+        const { name: _, ...plain } = structuredClone(item)
+        return [
+          {
+            ...plain,
+            ...entry,
+            granted: entry.granted.map((g) =>
+              'choose' in g
+                ? { level: g.level, choose: textOf(g.choose, choices.language), count: g.count }
+                : { level: g.level, key: g.key, type: g.type, name: textOf(g.name as Text, choices.language) }
+            )
+          }
+        ]
+      })
       return { items, missing: wanted.filter((k) => !items.some((item) => item.key === k)) }
     },
     getSystemParts: ({ systemId, parts }) => {

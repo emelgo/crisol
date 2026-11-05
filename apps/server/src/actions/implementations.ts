@@ -1,5 +1,6 @@
 import { aiActions } from './ai.ts'
 import { campaignActions } from './campaigns.ts'
+import { compendiumActions } from './compendium.ts'
 import { diceActions } from './dice.ts'
 import { fileActions } from './files.ts'
 import { historyActions } from './history.ts'
@@ -42,6 +43,7 @@ export const IMPLEMENTATIONS: Implementation[] = [
   ...tagActions,
   ...templateActions,
   ...systemActions,
+  ...compendiumActions,
   ...mapActions,
   ...preferenceActions
 ]
