@@ -3,6 +3,7 @@ import type {
   AiMode,
   Approval,
   Campaign,
+  Character,
   DiceRoll,
   FileView,
   FolderView,
@@ -77,6 +78,8 @@ export function fakeApi(
     /** Lo que pidió la IA de la cuenta */
     approvals?: Approval[]
     /** Los sistemas de la cuenta (documentos), además de los de serie */
+    /** Los personajes de las campañas (la cuenta de las pruebas es «yo») */
+    characters?: Character[]
     systems?: System[]
     /** El contenido de los de la cuenta, por su id */
     systemContent?: Record<string, ContentItem[]>
@@ -552,6 +555,28 @@ export function fakeApi(
     if (problems.length > 0) throw new ApiError('BAD_SYSTEM_CHOICES', 400)
     campaign.system = campaignSystem(target)
     campaign.systemChoices = normalized
+  }
+
+  // Los personajes y sus versiones: «yo» ve los suyos o, si es máster de su campaña, todos
+  const characters: Character[] = structuredClone(options.characters ?? [])
+  const characterVersions: Array<{
+    id: string
+    characterId: string
+    kind: 'created' | 'level'
+    level: number
+    snapshot: Pick<Character, 'name' | 'status' | 'build' | 'play' | 'summary'>
+    createdAt: string
+  }> = []
+  const visibleCharacter = (characterId: string) => {
+    const found = characters.find((c) => c.id === characterId)
+    const campaign = campaigns.find((c) => c.id === found?.campaignId)
+    if (!found || !campaign || (campaign.role !== 'master' && found.owner?.id !== 'yo'))
+      throw new ApiError('NOT_FOUND', 404)
+    return found
+  }
+  const touch = (character: Character) => {
+    character.version++
+    character.updatedAt = new Date().toISOString()
   }
 
   /** El sistema de una campaña, con lo que eligió y su contenido (en la falsa, el de los de la cuenta) */
@@ -1128,6 +1153,94 @@ export function fakeApi(
       const wanted = [...new Set(keys)]
       const items = wanted.flatMap((k) => content.filter((item) => item.key === k).map((item) => structuredClone(item)))
       return { items, missing: wanted.filter((k) => !items.some((item) => item.key === k)) }
+    },
+    listCharacters: ({ campaignId }) => {
+      const campaign = campaigns.find((c) => c.id === campaignId)
+      if (!campaign) throw new ApiError('NOT_FOUND', 404)
+      return {
+        characters: characters
+          .filter((c) => c.campaignId === campaignId && (campaign.role === 'master' || c.owner?.id === 'yo'))
+          .map(({ build: _, play: __, ...card }) => structuredClone(card))
+      }
+    },
+    getCharacter: ({ characterId }) => ({ character: structuredClone(visibleCharacter(characterId)) }),
+    createCharacter: ({ campaignId, name, ownerId }) => {
+      const campaign = campaigns.find((c) => c.id === campaignId)
+      if (!campaign) throw new ApiError('NOT_FOUND', 404)
+      if (!campaign.system) throw new ApiError('NO_SYSTEM', 400)
+      const owner = ownerId ? (membersOf(campaignId).members.find((m) => m.userId === ownerId) ?? null) : null
+      const character: Character = {
+        id: crypto.randomUUID(),
+        campaignId,
+        owner: owner ? { id: owner.userId, name: owner.name } : { id: 'yo', name: 'Enrique' },
+        name: name?.trim() || 'Sin nombre',
+        system: campaign.system.id,
+        status: 'creating',
+        summary: {},
+        version: 1,
+        updatedAt: new Date().toISOString(),
+        build: {},
+        play: {}
+      }
+      characters.push(character)
+      return { character: structuredClone(character) }
+    },
+    updateCharacter: ({ characterId, version, name, build, play, ownerId, confirm }) => {
+      const character = visibleCharacter(characterId)
+      if (character.version !== version) throw new ApiError('CHARACTER_CHANGED', 400)
+      if (name !== undefined) character.name = name.trim()
+      if (build !== undefined) character.build = structuredClone(build)
+      if (play !== undefined) character.play = structuredClone(play)
+      if (ownerId !== undefined) {
+        const member = ownerId ? membersOf(character.campaignId).members.find((m) => m.userId === ownerId) : null
+        character.owner = member ? { id: member.userId, name: member.name } : null
+      }
+      if (confirm === 'created') character.status = 'ready'
+      touch(character)
+      if (confirm) {
+        const { name: now, status, build: chosen, play: state, summary } = structuredClone(character)
+        characterVersions.unshift({
+          id: crypto.randomUUID(),
+          characterId,
+          kind: confirm,
+          level: character.summary.level ?? 1,
+          snapshot: { name: now, status, build: chosen, play: state, summary },
+          createdAt: new Date().toISOString()
+        })
+      }
+      return { character: structuredClone(character) }
+    },
+    deleteCharacter: ({ characterId }) => {
+      visibleCharacter(characterId)
+      characters.splice(
+        characters.findIndex((c) => c.id === characterId),
+        1
+      )
+      return { ok: true as const }
+    },
+    listCharacterVersions: ({ characterId }) => {
+      visibleCharacter(characterId)
+      return {
+        versions: characterVersions
+          .filter((v) => v.characterId === characterId)
+          .map((v) => ({
+            id: v.id,
+            kind: v.kind,
+            level: v.level,
+            name: v.snapshot.name,
+            summary: structuredClone(v.snapshot.summary),
+            createdAt: v.createdAt
+          }))
+      }
+    },
+    restoreCharacterVersion: ({ characterId, versionId, version }) => {
+      const character = visibleCharacter(characterId)
+      const chosen = characterVersions.find((v) => v.id === versionId && v.characterId === characterId)
+      if (!chosen) throw new ApiError('NOT_FOUND', 404)
+      if (character.version !== version) throw new ApiError('CHARACTER_CHANGED', 400)
+      Object.assign(character, structuredClone(chosen.snapshot))
+      touch(character)
+      return { character: structuredClone(character) }
     },
     // El compendio de una campaña: el contenido de su sistema (en la falsa, solo el de los de la cuenta)
     getCampaignCompendium: ({ campaignId }) => {

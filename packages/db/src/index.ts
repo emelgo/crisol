@@ -11,6 +11,7 @@ export {
 export * as aiRepo from './repos/ai.ts'
 export * as bootstrapRepo from './repos/bootstrap.ts'
 export * as campaignsRepo from './repos/campaigns.ts'
+export * as charactersRepo from './repos/characters.ts'
 export * as diceRepo from './repos/dice.ts'
 export * as documentsRepo from './repos/documents.ts'
 export type { FileScope } from './repos/files.ts'

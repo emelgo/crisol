@@ -65,6 +65,8 @@ const RULES = {
   'world.rename': { sees: seesWorld, allows: isWorldMaster },
   'campaign.create': { sees: seesWorld, allows: isWorldMaster },
   'campaign.read': { sees: seesCampaign, allows: seesCampaign },
+  // Los personajes de una campaña: cada uno ve y cambia los suyos (lo mira la acción); el máster, todos
+  'characters.manage': { sees: seesCampaign, allows: any(isWorldMaster, isCampaignMaster) },
   'campaign.rename': { sees: seesCampaign, allows: any(isWorldMaster, isCampaignMaster) },
   // El enlace de invitación: verlo, regenerarlo, abrir o cerrar las invitaciones
   'campaign.invite': { sees: seesCampaign, allows: any(isWorldMaster, isCampaignMaster) },

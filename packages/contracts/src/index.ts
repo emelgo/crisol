@@ -7,6 +7,15 @@ import {
   renameCampaign,
   updateCampaign
 } from './campaigns.ts'
+import {
+  createCharacter,
+  deleteCharacter,
+  getCharacter,
+  listCharacters,
+  listCharacterVersions,
+  restoreCharacterVersion,
+  updateCharacter
+} from './characters.ts'
 import { listRolls, rollDice, tryDice } from './dice.ts'
 import {
   createFolder,
@@ -104,6 +113,7 @@ import { createWorld, ensureWorldHome, getWorldHome, listWorlds, renameWorld, up
 export * from './action.ts'
 export * from './ai.ts'
 export * from './campaigns.ts'
+export * from './characters.ts'
 export * from './dice.ts'
 export * from './files.ts'
 export * from './history.ts'
@@ -230,6 +240,13 @@ export const ACTIONS = [
   getCampaignCompendium,
   getCampaignContent,
   searchCampaignContent,
+  listCharacters,
+  getCharacter,
+  createCharacter,
+  updateCharacter,
+  deleteCharacter,
+  listCharacterVersions,
+  restoreCharacterVersion,
   getSystemContent,
   searchSystemContent,
   importSystem,
@@ -349,6 +366,13 @@ export type Actions = {
   getCampaignCompendium: typeof getCampaignCompendium
   getCampaignContent: typeof getCampaignContent
   searchCampaignContent: typeof searchCampaignContent
+  listCharacters: typeof listCharacters
+  getCharacter: typeof getCharacter
+  createCharacter: typeof createCharacter
+  updateCharacter: typeof updateCharacter
+  deleteCharacter: typeof deleteCharacter
+  listCharacterVersions: typeof listCharacterVersions
+  restoreCharacterVersion: typeof restoreCharacterVersion
   searchSystemContent: typeof searchSystemContent
   importSystem: typeof importSystem
   getSystemParts: typeof getSystemParts

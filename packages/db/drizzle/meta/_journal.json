@@ -288,6 +288,13 @@
       "when": 1793824294277,
       "tag": "0040_contenido_con_mecanica",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1793888068540,
+      "tag": "0041_personajes",
+      "breakpoints": true
     }
   ]
 }
