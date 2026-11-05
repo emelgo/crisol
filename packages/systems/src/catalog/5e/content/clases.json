@@ -11310,7 +11310,18 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "imponer_manos",
+          "label": {
+            "es": "Imponer las manos",
+            "en": "Lay on Hands"
+          },
+          "max": "5 * @origen.nivel",
+          "recovery": "long"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {

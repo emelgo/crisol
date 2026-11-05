@@ -115,7 +115,7 @@ referencias en las dos ediciones).
 
 ## Fase 4: Las referencias y el cierre
 
-- [ ] **20. Los personajes de referencia**
+- [x] **20. Los personajes de referencia** — hechos (`catalog/5e/referencia.ts` y su prueba): los 96 (las 12 clases a nivel 1, 5, 11 y 20, en las dos ediciones) dan lo de las tablas del SRD (nivel, competencia, PG, nivel de lanzador y espacios de cada nivel, ataques, furias, ki, puntos de hechicería, imponer las manos, magia de pacto y ataque furtivo), y los 24 hechos a mano con su equipo, su CA, su ataque, su CD y sus PG. Arreglado lo que falló (imponer las manos de 2024). El ritmo: un mago de nivel 20 con sus rasgos, 40 conjuros y equipo, unos 5 ms; buscar en todo el contenido, unos 15 ms
   - Acepta: 96 personajes (cada clase en los niveles 1, 5, 11 y 20, en las dos ediciones) dan lo que dicen las tablas del
     SRD; unos 24, hechos a mano con su equipo, dan su CA, su ataque, su CD y sus PG. Lo que falle, arreglado.
   - Comprueba: sus pruebas; el ritmo (nivel 20 con todo, < 20 ms; buscar, < 100 ms).

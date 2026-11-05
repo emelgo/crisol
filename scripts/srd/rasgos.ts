@@ -650,6 +650,7 @@ export function featureMechanics(klass: string, name: string, edition: Edition):
         automation: 'partial'
       }
     case 'paladin:Lay on Hands':
+    case 'paladin:Lay On Hands':
       return {
         resources: [
           {
