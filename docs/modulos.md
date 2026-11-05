@@ -7,7 +7,7 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
-### Para retomar (2026-11-05, módulo 3: `hoja` hecha; ahora el pulido y la CI)
+### Para retomar (2026-11-05, módulo 3 hecho salvo `foundry`; ahora, que lo pruebe Enrique y pulir)
 
 - **`hoja`, en `main` y en staging (PR #102)**: lo de la partida (`packages/systems/src/play.ts`: solo lo marcado con
   `play` y los recursos, validado), la hoja por bloques en el formato (`sheet.ts`; la del 5e con inspiración,
@@ -15,8 +15,12 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   ve), daño, usos y descansos en el servidor (`playCharacter`; el corto llena la magia de pacto), la ficha
   (`apps/web/src/characters/play-sheet.tsx`; los cambios parten de lo último guardado, así los clics seguidos se
   suman) y la IA (`tirar_por_personaje`, `partida_personaje`). Qué probar: `tasks/probar.md` § la hoja en partida.
-  **Lo siguiente**: el pulido del módulo 3 (lo de los dados para otros juegos), después la CI una vez y avisar a
-  Enrique; `foundry` espera al abogado.
+- **Los dados para otros juegos, en `main` y en staging (PR #103, con la pasada de la CI del módulo)**:
+  `dados(@competencia, 8)`, `@dados` en las franjas (`@dados[0] > @dados[1]`, `count(@dados, 6)`), listas por posición
+  y modos que suman dados (`add: "1d6"`); en `docs/specs/sistemas.md` § tiradas. Probado con un juego propio en
+  `packages/systems/src/otros-juegos.test.ts`; la prueba con la IA (un Daggerheart), en `tasks/probar.md`.
+  **Lo siguiente**: que Enrique pruebe el módulo 3 (`tasks/probar.md`) y pulir su interfaz con él, en local
+  (memoria «Pulir en local»); después, el módulo 4 en un chat nuevo. `foundry` espera al abogado.
 - **`personajes`** (lo que fue la rama `modulo-3/personajes`). Hechos la entrevista, el estudio
   (`research/foundry/avances-y-tablas.md`), la spec aprobada (`docs/specs/personajes.md`) y su ADR-0013. **Prototipos
   publicados** en el lienzo «Crisol: personajes» de claude.ai (https://claude.ai/artifact/Hx1Hmo1feqo5iAu7MdQEpp;
