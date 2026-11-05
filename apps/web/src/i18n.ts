@@ -32,7 +32,8 @@ export const es = {
     aiPending_one: ', {{count}} petición esperando',
     aiPending_other: ', {{count}} peticiones esperando',
     theme: 'Tema',
-    dice: 'Dados'
+    dice: 'Dados',
+    compendium: 'Compendio'
   },
   // Una tirada escrita en una página
   diceRoll: {
@@ -192,6 +193,31 @@ export const es = {
     delete: 'Borrar la campaña',
     deleteTitle: '¿Borrar «{{name}}»?',
     deleteWarning: 'Irá a la papelera y sus jugadores dejarán de verla. Se podrá recuperar durante {{days}} días.'
+  },
+  // El compendio de una campaña: el contenido de su sistema
+  compendium: {
+    title: 'Compendio',
+    systemWith: '{{system}} · {{editions}}',
+    and: ' y ',
+    search: 'Buscar en el compendio',
+    clear: 'Borrar la búsqueda',
+    types: 'Tipos',
+    all: 'Todo',
+    results: 'Resultados',
+    none: 'Nada con ese nombre',
+    more: 'Mostrar más',
+    legacy: '{{edition}} · Legado',
+    yes: 'Sí',
+    back: 'Volver a la lista',
+    byLevel: 'Por nivel',
+    level: 'Nivel {{level}}',
+    start: 'Al empezar',
+    choose: '{{what}}: elige {{count}}',
+    about: 'Sobre este documento',
+    edition: 'Edición',
+    english: 'En inglés',
+    alsoIn: 'También en',
+    noSystem: 'Esta campaña aún no tiene sistema: el máster lo elige en sus ajustes.'
   },
   campaign: {
     notFound: 'Esta campaña no existe',

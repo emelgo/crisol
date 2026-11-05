@@ -1,0 +1,375 @@
+/* El compendio: la lista a la izquierda, lo elegido en el centro y su edición a la derecha, cada uno en su caja */
+.page {
+  display: grid;
+  grid-template-columns: minmax(16rem, 19rem) minmax(0, 1fr) minmax(13rem, 17rem);
+  gap: var(--space-6);
+  align-items: start;
+  padding: var(--space-6);
+}
+
+.empty {
+  padding: var(--space-8) var(--space-6);
+}
+
+.side,
+.reading,
+.about {
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+}
+
+/* La lista llega hasta abajo de la ventana y se desplaza dentro */
+.side {
+  position: sticky;
+  inset-block-start: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  max-block-size: calc(100dvh - 2 * var(--space-6));
+  padding: var(--space-4);
+}
+
+.sideHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-block-end: var(--space-3);
+}
+
+.title {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text);
+}
+
+.system {
+  color: var(--color-muted);
+  font-size: 0.75rem;
+}
+
+.search {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-field-border);
+  border-radius: 6px;
+  background: var(--color-bg);
+  color: var(--color-muted);
+}
+
+.search:focus-within {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 1px;
+}
+
+.search input {
+  flex: 1;
+  min-inline-size: 0;
+  block-size: 2.5rem;
+  border: 0;
+  background: none;
+  color: var(--color-text);
+}
+
+.search input:focus {
+  outline: none;
+}
+
+.clear {
+  display: grid;
+  place-items: center;
+  inline-size: 1.75rem;
+  block-size: 1.75rem;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+.hidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Los tipos, como fichas: la elegida, en el color de la marca */
+.types {
+  min-inline-size: 0;
+  border: 0;
+  border-block-end: 1px solid var(--color-border);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: var(--space-3) 0;
+  padding: 0 0 var(--space-3);
+}
+
+.type {
+  padding: 0.25rem 0.625rem;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: none;
+  color: var(--color-text);
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.type:hover {
+  background: var(--color-raised);
+}
+
+.type[aria-pressed="true"] {
+  border-color: var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 15%, transparent);
+}
+
+.list {
+  flex: 1;
+  min-block-size: 0;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.hit {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-2);
+  inline-size: 100%;
+  padding: var(--space-2);
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--color-text);
+  text-align: start;
+  cursor: pointer;
+}
+
+.hit:hover {
+  background: var(--color-raised);
+}
+
+.hit[aria-current="true"] {
+  background: var(--color-raised);
+  box-shadow: inset 2px 0 0 var(--color-accent);
+}
+
+.hitText {
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 0;
+}
+
+.hitName {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.hitType {
+  color: var(--color-muted);
+  font-size: 0.75rem;
+}
+
+.none {
+  padding: var(--space-3) var(--space-2);
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+.more {
+  margin-block-start: var(--space-2);
+  padding: var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: none;
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+/* «2024» o «2014 · Legado» */
+.edition {
+  flex: none;
+  padding: 0.0625rem 0.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  color: var(--color-muted);
+  font-size: 0.6875rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.legacy {
+  border-style: dashed;
+}
+
+/* Lo elegido: su cabecera con el color de la marca que se apaga hacia abajo */
+.reading {
+  min-inline-size: 0;
+  min-block-size: 20rem;
+  padding: 0 var(--space-6) var(--space-6);
+  overflow: hidden;
+}
+
+.head {
+  margin: 0 calc(-1 * var(--space-6)) var(--space-5);
+  padding: var(--space-8) var(--space-6) var(--space-5);
+  border-block-end: 1px solid var(--color-border);
+  background: linear-gradient(160deg, color-mix(in srgb, var(--color-accent) 28%, transparent), transparent 70%);
+}
+
+.kind {
+  margin: 0 0 var(--space-1);
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+.name {
+  margin: 0 0 var(--space-2);
+  padding: 0;
+  border: 0;
+  color: var(--color-text);
+  font-size: 2.25rem;
+  line-height: 1.1;
+}
+
+.fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+  gap: var(--space-3) var(--space-6);
+  margin: 0 0 var(--space-5);
+}
+
+.fields dt,
+.aboutList dt {
+  color: var(--color-muted);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.fields dd,
+.aboutList dd {
+  margin: var(--space-1) 0 0;
+}
+
+.granted {
+  margin-block: var(--space-5) 0;
+}
+
+.granted ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.granted li {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+  border-block-end: 1px solid var(--color-border);
+}
+
+.level {
+  flex: none;
+  inline-size: 5.5rem;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+.link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-link);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-block-start: var(--space-4);
+  padding: var(--space-2) 0;
+  border: 0;
+  background: none;
+  color: var(--color-link);
+  cursor: pointer;
+}
+
+/* Su edición, su nombre en inglés, su otra versión y la atribución de su fuente */
+.about {
+  position: sticky;
+  inset-block-start: var(--space-6);
+  padding: var(--space-4);
+}
+
+.aboutList {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+}
+
+.aboutList dd {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.attribution {
+  margin: var(--space-4) 0 0;
+  overflow-wrap: anywhere;
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+/* Mediano: la edición, debajo de lo elegido */
+@media (max-width: 75rem) {
+  .page {
+    grid-template-columns: minmax(16rem, 19rem) minmax(0, 1fr);
+  }
+
+  .about {
+    position: static;
+    grid-column: 2;
+  }
+}
+
+/* Estrecho: la lista y, al elegir, lo elegido (con la vuelta a la lista) */
+@media (max-width: 48rem) {
+  .page {
+    grid-template-columns: minmax(0, 1fr);
+    padding: var(--space-4);
+  }
+
+  .side {
+    position: static;
+    max-block-size: none;
+  }
+
+  .about {
+    grid-column: 1;
+  }
+
+  .page[data-reading] .side {
+    display: none;
+  }
+}
