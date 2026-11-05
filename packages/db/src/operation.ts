@@ -13,6 +13,7 @@ import { mapElements, mapPins, maps, pageTabs } from './schema/maps.ts'
 import { organizationMembers, organizations } from './schema/organizations.ts'
 import { pages } from './schema/pages.ts'
 import { systemContent, systems } from './schema/systems.ts'
+import { randomTables } from './schema/tables.ts'
 import { tags } from './schema/tags.ts'
 import { pageTemplates } from './schema/templates.ts'
 import { pageBodies } from './schema/versions.ts'
@@ -40,7 +41,8 @@ export const TRACKED_TABLES = {
   map_pins: mapPins,
   map_elements: mapElements,
   characters,
-  character_versions: characterVersions
+  character_versions: characterVersions,
+  random_tables: randomTables
 }
 
 export type TrackedTable = (typeof TRACKED_TABLES)[keyof typeof TRACKED_TABLES]

@@ -6,7 +6,7 @@ import { z } from 'zod'
 import { defineAction } from './action.ts'
 import { worldColor } from './worlds.ts'
 
-export const PAGE_TAB_KINDS = ['map', 'text'] as const
+export const PAGE_TAB_KINDS = ['map', 'text', 'table'] as const
 
 const tabName = z.string().trim().min(1).max(60)
 

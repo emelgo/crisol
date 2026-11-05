@@ -56,7 +56,7 @@ const pinView = (row: PinRow): MapPinView => ({
 })
 
 /** Una pestaña y su página, si la cuenta puede hacer eso en ella; si no existe, 404 */
-async function authorizedTab(ctx: ActionContext, capability: Capability, tabId: string) {
+export async function authorizedTab(ctx: ActionContext, capability: Capability, tabId: string) {
   const tab = await mapsRepo.findTab(ctx.db, tabId)
   const { page, wiki } = await authorizedPage(ctx, capability, tab?.pageId ?? '')
   if (!tab) throw new NotFoundError('tab')
@@ -124,7 +124,7 @@ export const mapActions = [
     const { page, wiki } = await authorizedPage(ctx, 'page.write', pageId)
     const tabs = await mapsRepo.listTabs(ctx.db, pageId)
     if (tabs.length >= MAX_PAGE_TABS) throw new InvalidRequestError('TOO_MANY_TABS', `como mucho ${MAX_PAGE_TABS}`)
-    const base = kind === 'text' ? 'Texto' : 'Mapa'
+    const base = kind === 'text' ? 'Texto' : kind === 'table' ? 'Tabla' : 'Mapa'
     const same = tabs.filter((tab) => tab.kind === kind).length
     // La de texto cuenta con la principal («Texto»): la primera añadida es «Texto 2»; el segundo mapa, «Mapa 2»
     const named = name ?? (kind === 'text' ? `${base} ${same + 2}` : same > 0 ? `${base} ${same + 1}` : base)

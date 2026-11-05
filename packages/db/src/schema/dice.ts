@@ -10,6 +10,8 @@ export interface StoredRoll {
   detail: string
   critical: 'high' | 'low' | null
   dice: { sides: number | 'F'; value: number; kept: boolean }[]
+  /** Si fue en una tabla aleatoria: su nombre y lo que salió (con lo de sus tablas anidadas) */
+  table?: { name: string; results: { text: string; page: string | null }[] }
 }
 
 /**

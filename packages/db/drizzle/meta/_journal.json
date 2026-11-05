@@ -295,6 +295,13 @@
       "when": 1793888068540,
       "tag": "0041_personajes",
       "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1793890412417,
+      "tag": "0042_tablas_aleatorias",
+      "breakpoints": true
     }
   ]
 }

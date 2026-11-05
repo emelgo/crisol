@@ -8,6 +8,7 @@ import { type OperationContext, operation } from '../operation.ts'
 import { files } from '../schema/files.ts'
 import { mapElements, mapPins, maps, pageTabs } from '../schema/maps.ts'
 import { pages } from '../schema/pages.ts'
+import { randomTables } from '../schema/tables.ts'
 
 export type PageTabRow = typeof pageTabs.$inferSelect
 export type MapRow = typeof maps.$inferSelect
@@ -59,6 +60,7 @@ export function createTab(
   return operation(db, context, async (w) => {
     const tab = await w.insert(pageTabs, values)
     if (values.kind === 'map') await w.insert(maps, { worldId: values.worldId, tabId: tab.id })
+    if (values.kind === 'table') await w.insert(randomTables, { worldId: values.worldId, tabId: tab.id })
     return tab
   })
 }
@@ -86,6 +88,9 @@ export function deleteTab(db: Database, context: OperationContext, tabId: string
       for (const element of elements) await w.remove(mapElements, element.id)
       await w.remove(maps, map.id)
     }
+    // Su tabla aleatoria, al historial: deshacer la devuelve con sus filas
+    const [table] = await w.read.select({ id: randomTables.id }).from(randomTables).where(eq(randomTables.tabId, tabId))
+    if (table) await w.remove(randomTables, table.id)
     await w.remove(pageTabs, tabId)
   })
 }

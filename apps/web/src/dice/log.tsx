@@ -149,6 +149,16 @@ function Entry({ roll, mine, onAgain }: { roll: DiceRoll; mine: boolean; onAgain
           )}
         </div>
       </div>
+      {/* En una tabla: lo que salió (y lo de sus tablas anidadas) */}
+      {roll.table && (
+        <ul className={styles.tableResults}>
+          {roll.table.results
+            .map((result, i) => ({ id: `${roll.id}-${i}`, text: result.text }))
+            .map((result) => (
+              <li key={result.id}>{result.text}</li>
+            ))}
+        </ul>
+      )}
       <div className={styles.more}>
         <button type="button" aria-expanded={open} onClick={() => setOpen(!open)}>
           <List size={13} aria-hidden="true" />

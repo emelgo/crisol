@@ -211,6 +211,11 @@ export const MCP_TOOLS: Record<string, McpTool> = {
   probar_tirada: { action: 'trySystemRoll' },
   probar_accion: { action: 'trySystemAction' },
   borrar_sistema: { action: 'deleteSystem' },
+  // Las tablas aleatorias del máster: la pestaña «Tabla» de una página (crear_pestana con kind table)
+  ver_tabla: { action: 'getRandomTable' },
+  cambiar_tabla: { action: 'updateRandomTable' },
+  tirar_en_tabla: { action: 'rollOnTable' },
+  reiniciar_tabla: { action: 'resetTableDraws' },
   // Los personajes de una campaña (ADR-0013): sus elecciones son la verdad; lo pendiente, con sus opciones, sale en ver_personaje
   listar_personajes: { action: 'listCharacters' },
   ver_personaje: { action: 'getCharacter' },

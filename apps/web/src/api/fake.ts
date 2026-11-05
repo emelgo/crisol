@@ -18,11 +18,12 @@ import type {
   PageTables,
   PageTabView,
   PageTemplate,
+  RandomTable,
   TagView,
   TrashItem,
   World
 } from '@crisol/contracts'
-import { DiceSyntaxError, rollDice as rollFormula } from '@crisol/dice'
+import { DiceSyntaxError, rollDice as rollFormula, rowFor, tableFormula, tableProblems } from '@crisol/dice'
 import {
   applyTemplate,
   BUILT_IN_TEMPLATES,
@@ -589,6 +590,20 @@ export function fakeApi(
   const touch = (character: Character) => {
     character.version++
     character.updatedAt = new Date().toISOString()
+  }
+
+  // Las tablas aleatorias de las pestañas «Tabla» (se crean vacías con la pestaña) y lo sacado por campaña
+  const randomTables = new Map<string, RandomTable>()
+  const draws = new Map<string, string[]>()
+  const tableOf = (tabId: string) => {
+    const tab = pageTabs.find((t) => t.id === tabId && t.kind === 'table')
+    if (!tab) throw new ApiError('NOT_FOUND', 404)
+    let table = randomTables.get(tabId)
+    if (!table) {
+      table = { tabId, name: tab.name, pageId: tab.pageId, formula: null, replacement: true, rows: [], version: 1 }
+      randomTables.set(tabId, table)
+    }
+    return table
   }
 
   /** El sistema de una campaña, con lo que eligió y su contenido (en la falsa, el de los de la cuenta) */
@@ -1273,6 +1288,46 @@ export function fakeApi(
       Object.assign(character, structuredClone(chosen.snapshot))
       touch(character)
       return { character: structuredClone(character), state: stateOf(character) }
+    },
+    // Las tablas aleatorias: la de cada pestaña «Tabla», y lo sacado por campaña
+    getRandomTable: ({ tabId, campaignId }) => {
+      const table = tableOf(tabId)
+      return { table: structuredClone(table), drawn: [...(draws.get(`${campaignId}:${tabId}`) ?? [])] }
+    },
+    updateRandomTable: ({ tabId, version, ...patch }) => {
+      const table = tableOf(tabId)
+      if (table.version !== version) throw new ApiError('TABLE_CHANGED', 400)
+      const rows = patch.rows ?? table.rows
+      const formula = patch.formula === undefined ? table.formula : patch.formula
+      if (tableProblems(formula, rows).length > 0) throw new ApiError('BAD_TABLE', 400)
+      Object.assign(table, {
+        formula: formula || null,
+        ...(patch.replacement !== undefined ? { replacement: patch.replacement } : {}),
+        rows: structuredClone(rows).map((r) => ({ ...r, page: r.page ?? null, table: r.table ?? null })),
+        version: table.version + 1
+      })
+      return { table: structuredClone(table) }
+    },
+    rollOnTable: ({ tabId, campaignId, visibility = 'all' }) => {
+      const table = tableOf(tabId)
+      const key = `${campaignId}:${tabId}`
+      const drawn = table.replacement ? [] : (draws.get(key) ?? [])
+      const left = table.rows.filter((r) => !drawn.includes(r.id))
+      if (left.length === 0) throw new ApiError('TABLE_EMPTY', 400)
+      const formula = tableFormula(table.formula, table.rows)
+      const result = rollFormula(formula)
+      const row = rowFor(left, result.total) ?? left[0]
+      if (!row) throw new ApiError('TABLE_EMPTY', 400)
+      if (!table.replacement) draws.set(key, [...drawn, row.id])
+      const { roll } = handlers.rollDice({ campaignId, formula, visibility })
+      roll.label = table.name
+      roll.table = { name: table.name, results: [{ text: row.text, page: row.page ?? null }] }
+      return { roll, drawn: [...(draws.get(key) ?? [])] }
+    },
+    resetTableDraws: ({ tabId, campaignId }) => {
+      tableOf(tabId)
+      draws.delete(`${campaignId}:${tabId}`)
+      return { ok: true as const }
     },
     // El compendio de una campaña: el contenido de su sistema (en la falsa, solo el de los de la cuenta)
     getCampaignCompendium: ({ campaignId }) => {

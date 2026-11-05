@@ -98,6 +98,7 @@ import {
   trySystemRoll,
   updateSystem
 } from './systems.ts'
+import { getRandomTable, resetTableDraws, rollOnTable, updateRandomTable } from './tables.ts'
 import { createTag, deleteTag, listAccountTags, setFileTags, updateTag } from './tags.ts'
 import { createTemplate, deleteTemplate, getTemplate, listTemplates, updateTemplate } from './templates.ts'
 import {
@@ -128,6 +129,7 @@ export * from './panel.ts'
 export type * from './realtime.ts'
 export * from './search.ts'
 export * from './systems.ts'
+export * from './tables.ts'
 export * from './tags.ts'
 export * from './templates.ts'
 export * from './trash.ts'
@@ -249,6 +251,10 @@ export const ACTIONS = [
   deleteCharacter,
   listCharacterVersions,
   restoreCharacterVersion,
+  getRandomTable,
+  updateRandomTable,
+  rollOnTable,
+  resetTableDraws,
   getSystemContent,
   searchSystemContent,
   importSystem,
@@ -376,6 +382,10 @@ export type Actions = {
   deleteCharacter: typeof deleteCharacter
   listCharacterVersions: typeof listCharacterVersions
   restoreCharacterVersion: typeof restoreCharacterVersion
+  getRandomTable: typeof getRandomTable
+  updateRandomTable: typeof updateRandomTable
+  rollOnTable: typeof rollOnTable
+  resetTableDraws: typeof resetTableDraws
   searchSystemContent: typeof searchSystemContent
   importSystem: typeof importSystem
   getSystemParts: typeof getSystemParts

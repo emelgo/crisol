@@ -31,6 +31,7 @@ import { PanelBlocks } from './panel-blocks.tsx'
 import { PageProperties, type PropertyAdder } from './properties.tsx'
 import { QuickSwitcher } from './quick-switcher.tsx'
 import { SheetMenu, SheetPaper } from './sheet/controls.tsx'
+import { TableTab } from './table/table-tab.tsx'
 import { PageTabs, usePageTabs } from './tabs/page-tabs.tsx'
 import { PageTree } from './tree.tsx'
 import { Versions } from './versions.tsx'
@@ -771,6 +772,8 @@ export function EntryView({
                 <PageBody key={active.id} page={page} documentId={active.documentId} />
               </SheetPaper>
             </div>
+          ) : active?.kind === 'table' ? (
+            <TableTab key={active.id} page={page} tab={active} />
           ) : active ? (
             <MapTab key={active.id} page={page} tab={active} />
           ) : (

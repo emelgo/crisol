@@ -36,6 +36,13 @@ export const diceRoll = z.object({
     .array(z.object({ sides: z.union([z.number().int(), z.literal('F')]), value: z.number().int(), kept: z.boolean() }))
     .describe('Cada dado, para los dados 3D'),
   visibility: rollVisibility,
+  table: z
+    .object({
+      name: z.string(),
+      results: z.array(z.object({ text: z.string(), page: z.uuid().nullable() }))
+    })
+    .optional()
+    .describe('Si fue en una tabla aleatoria: su nombre y lo que salió (con lo de sus tablas anidadas)'),
   createdAt: z.string()
 })
 

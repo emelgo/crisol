@@ -169,6 +169,11 @@ export function summaryOf(
       return say('createWorldHome', { title: text(details.title) })
     // Las pestañas de una página y sus mapas (ADR-0007)
     case 'createPageTab':
+      if (details.kind === 'table')
+        return say('createTableTab', { name: text(details.name), title: text(details.title) })
+      return say(action, { name: text(details.name), title: text(details.title ?? details.page) })
+    case 'updateRandomTable':
+      return say('updateRandomTable', { name: text(details.name), title: text(details.title) })
     case 'deletePageTab':
       return say(action, { name: text(details.name), title: text(details.title ?? details.page) })
     case 'updatePageTab':
