@@ -7,6 +7,7 @@
 import {
   type CriticalRule,
   type DiceNode,
+  DiceSyntaxError,
   type DiceTerm,
   type DieRoller,
   parseDice,
@@ -192,9 +193,27 @@ export function armFormula(
       case 'conditional':
         return hasDice(e.test) || hasDice(e.yes) || hasDice(e.no)
       case 'call':
-        return e.args.some(hasDice)
+        return e.name === 'dados' || e.args.some(hasDice)
       default:
         return false
+    }
+  }
+  // dados(cuántos, caras, "kh1"): los dados de un número (dados(@competencia, 8))
+  const counted = (e: Extract<Expr, { kind: 'call' }>): DiceNode => {
+    const [count, sides, extra] = e.args.map(evaluateTo)
+    const written = text.slice(e.start, e.end).trim()
+    if (typeof count !== 'number' || !Number.isInteger(count) || count < 1)
+      throw new RollError(`«${written}»: hacen falta dados (un número entero, 1 o más)`)
+    const faces = typeof sides === 'string' && sides.toUpperCase() === 'F' ? 'F' : sides
+    if (faces !== 'F' && (typeof faces !== 'number' || !Number.isInteger(faces) || faces < 1))
+      throw new RollError(`«${written}»: las caras son un número entero (o "F")`)
+    try {
+      const term = parseDice(`${count}d${faces}${typeof extra === 'string' ? extra : ''}`)
+      if (term.kind !== 'dice') throw new RollError(`«${written}»: no son dados`)
+      return term
+    } catch (error) {
+      if (error instanceof DiceSyntaxError) throw new RollError(`«${written}»: ${error.message || 'no son dados'}`)
+      throw error
     }
   }
   const number = (e: Expr): DiceNode => {
@@ -232,17 +251,37 @@ export function armFormula(
       case 'conditional':
         // La condición va sin dados: elige la rama, y se tira la elegida (@nivel >= 5 ? 2d6 : 1d6)
         return arm(truthyValue(evaluateTo(e.test)) ? e.yes : e.no)
+      case 'call':
+        if (e.name === 'dados') return counted(e)
+        break
     }
     throw new RollError('Los dados solo se suman, se restan, se multiplican o se dividen')
   }
   return arm(formula(text))
 }
 
-/** Aplica un modo (la ventaja) a una tirada ya armada: cambia sus dados `from` por `to` */
-export function applyMode(tree: DiceNode, mode: { from: string; to: string }) {
-  const from = parseDice(mode.from)
-  if (from.kind !== 'dice') throw new RollError('Un modo cambia unos dados por otros')
-  return replace(tree, from, parseDice(mode.to))
+/**
+ * Aplica un modo (la ventaja) a una tirada ya armada: cambia sus dados `from` por `to` y suma (o resta, con «-») los
+ * de `add`
+ */
+export function applyMode(tree: DiceNode, mode: { from?: string; to?: string; add?: string }) {
+  let out = { tree, changed: false }
+  if (mode.from && mode.to) {
+    const from = parseDice(mode.from)
+    if (from.kind !== 'dice') throw new RollError('Un modo cambia unos dados por otros')
+    out = replace(tree, from, parseDice(mode.to))
+  }
+  if (mode.add) {
+    const added = parseDice(mode.add)
+    out = {
+      tree:
+        added.kind === 'negate'
+          ? { kind: 'binary', op: '-', left: out.tree, right: added.value }
+          : { kind: 'binary', op: '+', left: out.tree, right: added },
+      changed: true
+    }
+  }
+  return out
 }
 
 /** Lo calculado de quien tira y sus nombres (sus valores y @ajustes, los de la campaña) */
@@ -340,7 +379,7 @@ export function prepareRoll(
 /** La franja de una tirada ya hecha: la primera que se cumple con su total, su natural y su objetivo */
 export function bandOf(
   prepared: ReturnType<typeof prepareRoll>,
-  result: { total: number; natural: number | null },
+  result: { total: number; natural: number | null; dice?: number[] },
   target: number | null,
   language: Language = 'es'
 ): SystemRoll['band'] {
@@ -348,7 +387,9 @@ export function bandOf(
     ...prepared.scope,
     total: node(result.total),
     natural: node(result.natural),
-    objetivo: node(target)
+    objetivo: node(target),
+    // Cada dado que cuenta, en orden: cuál de dos es mayor (@dados[0] > @dados[1]), cuántos seises (count(@dados, 6))
+    dados: node(result.dice ?? [])
   }
   const band = prepared.roll.bands?.find((b) => {
     try {
@@ -375,7 +416,11 @@ export function tryRoll(
   const natural = first?.dice.find((d) => d.kept && !d.exploded)
   const band = bandOf(
     prepared,
-    { total: result.total, natural: natural ? (natural.natural ?? natural.value) : null },
+    {
+      total: result.total,
+      natural: natural ? (natural.natural ?? natural.value) : null,
+      dice: result.terms.flatMap((t) => t.dice.filter((d) => d.kept).map((d) => d.value))
+    },
     options.target ?? null,
     language
   )

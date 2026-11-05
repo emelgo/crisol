@@ -207,6 +207,8 @@ export function evaluateExpr(expr: Expr, scope: Record<string, Node>, runtime: R
       case 'call': {
         const fn = own(FUNCTIONS, e.name)
         if (!fn) throw new FormulaError(`No existe la función «${e.name}»`, e.start, e.end)
+        if (fn.returns === 'dice')
+          throw new FormulaError('Un valor calculado no lleva dados: los dados van en las tiradas', e.start, e.end)
         return fn.call(e.args.map(visit))
       }
     }
@@ -217,8 +219,21 @@ export function evaluateExpr(expr: Expr, scope: Record<string, Node>, runtime: R
     let node: Node | undefined = own(scope, first)
     if (!node) throw new FormulaError(`No existe «@${first}»`, e.start, e.end)
     for (const segment of rest) {
-      const key = typeof segment === 'string' ? segment : String(visit(segment))
+      const at = typeof segment === 'string' ? segment : visit(segment)
       if (node.kind === 'computed') node = { kind: 'value', value: node.get() }
+      // Un elemento de una lista, por su posición (desde 0): @dados[0]
+      if (typeof at === 'number') {
+        const index = Number.isInteger(at) && at >= 0 ? at : -1
+        if (node.kind === 'list') {
+          node = node.items[index] ?? { kind: 'value', value: null }
+          continue
+        }
+        if (node.kind === 'value' && Array.isArray(node.value)) {
+          node = { kind: 'value', value: node.value[index] ?? null }
+          continue
+        }
+      }
+      const key = String(at)
       if (node.kind === 'value') {
         const v: Value = node.value
         const inner: Value | undefined =

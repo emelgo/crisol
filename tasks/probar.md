@@ -4,7 +4,7 @@ Lista viva: todo lo que haya que probar se apunta aquí y se marca cuando lo pru
 final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interfaz.
 
 - **Staging**: https://neo.crisol.144-91-122-245.sslip.io, con el módulo 2, los arreglos del 2026-11-04, los dados,
-  los sistemas y srd-5e entero (PR #93 a #98).
+  los sistemas, srd-5e entero, los personajes y su hoja (PR #93 a #103).
 - **La IA**: el conector «Neo Crisol» de claude.ai (`https://neo.crisol.144-91-122-245.sslip.io/mcp`), con la cuenta
   de propietario.
 - **En local**, con los cambios al momento: http://localhost:5173 (lo arranco cuando haga falta).
@@ -47,6 +47,13 @@ En un personaje terminado, su «Ficha»:
   «Descanso largo» (todo lleno).
 - [ ] **Con el teclado**: las pestañas con las flechas, Inicio y Fin.
 - [ ] **Desde claude.ai**: `partida_personaje` (daño, curación, gastar un uso, descansar) y `tirar_por_personaje`.
+
+## Módulo 3: los dados para otros juegos
+
+- [ ] **Un Daggerheart hecho por la IA**: pídele en claude.ai que te haga un sistema de Daggerheart para una campaña
+  (sus dos d12 de Esperanza y Miedo, la ventaja de +1d6, el daño con tantos dados como su competencia). Después,
+  un personaje en esa campaña y tirar desde su hoja: el resultado dice «con Esperanza» o «con Miedo», los dobles son
+  crítico, y «Con ventaja» suma 1d6.
 
 ## Módulo 3: srd-5e, punto de control 4 y final (todo el contenido, en staging: PR #98)
 

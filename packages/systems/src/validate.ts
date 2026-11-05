@@ -373,7 +373,12 @@ function checkReferences(
       })
     repeated(roll.modes?.map((m) => m.key) ?? [], (i, k) => add([...at, 'modes', i, 'key'], `«${k}» está repetido`))
     roll.modes?.forEach((mode, i) => {
-      for (const part of ['from', 'to'] as const) diceFormula(mode[part], [...at, 'modes', i, part], add)
+      if (!(mode.from && mode.to) && !mode.add)
+        add([...at, 'modes', i], 'Un modo cambia unos dados por otros (from y to) o suma dados (add)')
+      for (const part of ['from', 'to', 'add'] as const) {
+        const written = mode[part]
+        if (written) diceFormula(written, [...at, 'modes', i, part], add)
+      }
     })
   }
   if (system.dice?.default) diceFormula(system.dice.default, ['dice', 'default'], add)

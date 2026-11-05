@@ -43,12 +43,13 @@ export const FUNCTIONS: Record<string, FormulaFunction> = {
     returns: 'number',
     call: ([l]) => many(listOf(l ?? [])).reduce((a, b) => a + b, 0)
   },
+  // Cuántos hay (sin los vacíos) o, con un valor, cuántos son ese valor (count(@dados, 6): los seises)
   count: {
     min: 1,
-    max: 1,
-    args: ['list'],
+    max: 2,
+    args: ['list', 'any'],
     returns: 'number',
-    call: ([l]) => listOf(l ?? []).filter((v) => v !== null && v !== false).length
+    call: ([l, v]) => listOf(l ?? []).filter((x) => (v === undefined ? x !== null && x !== false : x === v)).length
   },
   // El primero que tenga algo (first(@clases.lanzamiento): la característica de la primera clase que lanza)
   first: {
@@ -64,5 +65,16 @@ export const FUNCTIONS: Record<string, FormulaFunction> = {
     args: ['list', 'any'],
     returns: 'boolean',
     call: ([l, v]) => listOf(l ?? []).includes(v ?? null)
+  },
+  // Tantos dados como diga un número (dados(@competencia, 8), dados(@accion, 6, "kh1")): solo en las tiradas, que
+  // los arman (rolls.ts); como valor no se calcula
+  dados: {
+    min: 2,
+    max: 3,
+    args: ['number', 'any', 'string'],
+    returns: 'dice',
+    call: () => {
+      throw new Error('Un valor calculado no lleva dados: los dados van en las tiradas')
+    }
   }
 }

@@ -40,9 +40,12 @@ const FUNCTION_HELP: Record<keyof typeof FUNCTIONS, string> = {
   min: 'min(a, b, …) o min(lista): el menor',
   clamp: 'clamp(x, mínimo, máximo): x, sin salirse',
   sum: 'sum(lista): la suma (sum(@lleva.peso))',
-  count: 'count(lista): cuántos hay, sin contar los vacíos ni los false (count(@lleva))',
+  count:
+    'count(lista) o count(lista, valor): cuántos hay, sin contar los vacíos ni los false (count(@lleva)), o cuántos son ese valor (count(@dados, 6))',
   first: 'first(lista): el primero que tenga algo (first(@clases.lanzamiento))',
-  has: 'has(lista, valor): si está ("sigilo")'
+  has: 'has(lista, valor): si está ("sigilo")',
+  dados:
+    'dados(cuántos, caras) o dados(cuántos, caras, "kh1"): tantos dados como diga un número, solo en las tiradas (dados(@competencia, 8); "kh1", lo que va detrás, como en 4d6kh3)'
 }
 
 const FIELDS_SECTION = 'Los campos'
@@ -216,9 +219,11 @@ export function systemDocs(): string {
     `- Funciones: ${Object.values(FUNCTION_HELP).join('; ')}.`,
     `- Nombres que pone Crisol: ${RESERVED.map((r) => `@${r}`).join(', ')}. @este es el campo o el elemento por el que`,
     '  se tira una tirada que va por cada uno (y, dentro de un conjunto o de una lista de filas, el elemento o la fila);',
-    '  @total, @natural (el primer dado) y @objetivo, en las franjas de una tirada; @ajustes, los ajustes de la',
+    '  @total, @natural (el primer dado), @objetivo y @dados (cada dado que cuenta, en orden: @dados[0] > @dados[1],',
+    '  count(@dados, 6)), en las franjas de una tirada; @ajustes, los ajustes de la',
     '  campaña (@ajustes.reglas); @portador, en las fórmulas de un objeto, quien lo lleva (@portador.competencia).',
     '- Los dados van solo en las tiradas, en la misma fórmula: `2d6`, `1d20`, `4d6kh3` (se quedan los 3 mayores),',
+    '  `dados(@competencia, 8)` (tantos como diga un número), `1d12[luz] + 1d12[sombra]` (cada uno con su nombre),',
     '  `2d20kl1` (el menor), `5d10>=8` (éxitos), `1d6!` (explota), `2d6r1` (repite los 1), `4dF`, `d%`.',
     '- Un valor calculado (`derived`) no lleva dados ni depende de sí mismo. Un bono (`modifiers`) suma al campo de',
     '  quien lleva el objeto, con los campos del objeto.',

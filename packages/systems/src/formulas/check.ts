@@ -26,7 +26,7 @@ export type Shape =
 export type Scope = Record<string, Shape>
 
 /** Los nombres que ponen las fórmulas: no pueden ser campos de primer nivel */
-export const RESERVED = ['este', 'total', 'natural', 'objetivo', 'ajustes', 'portador', 'origen'] as const
+export const RESERVED = ['este', 'total', 'natural', 'objetivo', 'dados', 'ajustes', 'portador', 'origen'] as const
 
 /** Los ajustes de la campaña, como nombres de las fórmulas (`@ajustes.reglas`) */
 export function settingsShape(system: System, language: 'es' | 'en' = 'es'): Shape {
@@ -161,6 +161,14 @@ export function checkExpr(expr: Expr, context: Context): Checked {
       }
       if (typeof segment !== 'string') {
         const index = visit(segment)
+        // De una lista, uno por su posición (desde 0): @dados[0]
+        if (shape.type === 'list') {
+          if (index !== 'number' && index !== 'any')
+            report(segment, `Un elemento de una lista se elige por su posición (desde 0); esto es ${TYPE_NAMES[index]}`)
+          shape = shape.of
+          written += '[…]'
+          continue
+        }
         if (index !== 'string' && index !== 'any')
           report(segment, `Un elemento se elige por su clave, un texto; esto es ${TYPE_NAMES[index]}`)
         if (shape.type !== 'object' || !shape.element) {
@@ -294,6 +302,8 @@ export function checkExpr(expr: Expr, context: Context): Checked {
           report(e, `No existe la función «${e.name}»${near ? `. ¿Quizás «${near}»?` : ''}`)
           return 'any'
         }
+        if (fn.returns === 'dice' && !context.dice)
+          report(e, 'Un valor calculado no lleva dados: los dados van en las tiradas')
         if (args.length < fn.min || args.length > fn.max) {
           const wanted = fn.min === fn.max ? `${fn.min}` : `de ${fn.min} a ${fn.max}`
           report(e, `${e.name} lleva ${wanted} ${fn.max === 1 ? 'valor' : 'valores'}`)

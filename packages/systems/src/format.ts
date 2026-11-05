@@ -288,8 +288,13 @@ function build(strict: boolean) {
         obj({
           key,
           label: text(),
-          from: formula.describe('Los dados que cambia (2d6), sin @'),
-          to: formula.describe('Por cuáles (3d6kh2: tres, y se quedan los dos mayores)'),
+          from: formula.optional().describe('Los dados que cambia (2d6), sin @'),
+          to: formula.optional().describe('Por cuáles (3d6kh2: tres, y se quedan los dos mayores)'),
+          add: formula
+            .optional()
+            .describe(
+              'Dados que se suman a la tirada (1d6) o, con «-», se restan (-1d6); sin @. Con from y to o en su lugar'
+            ),
           gives: z
             .enum(['advantage', 'disadvantage'])
             .optional()
