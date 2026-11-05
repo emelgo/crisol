@@ -61,7 +61,7 @@ export function checkSheet(system: System, add: (path: (string | number)[], mess
   const leaf = (b: Leaf, at: (string | number)[]) => {
     switch (b.kind) {
       case 'stats':
-        b.fields.forEach((k, i) => field([...at, 'fields', i], k, ['number', 'derived']))
+        for (const [i, k] of b.fields.entries()) field([...at, 'fields', i], k, ['number', 'derived', 'boolean'])
         for (const [k, r] of Object.entries(b.rolls ?? {})) {
           if (!b.fields.includes(k)) add([...at, 'rolls', k], `«${k}» no está entre sus cifras`)
           roll([...at, 'rolls', k], r)
@@ -83,14 +83,14 @@ export function checkSheet(system: System, add: (path: (string | number)[], mess
         field([...at, 'field'], b.field, ['group'])
         return
       case 'list':
-        b.fields.forEach((k, i) => field([...at, 'fields', i], k, ['list']))
+        for (const [i, k] of b.fields.entries()) field([...at, 'fields', i], k, ['list'])
         return
       case 'items':
         field([...at, 'field'], b.field, ['items'])
         b.types?.forEach((t, i) => {
           if (!system.types[t]) add([...at, 'types', i], `No existe el tipo «${t}»`)
         })
-        b.rolls?.forEach((r, i) => roll([...at, 'rolls', i], r))
+        for (const [i, r] of (b.rolls ?? []).entries()) roll([...at, 'rolls', i], r)
         return
       case 'text':
         field([...at, 'field'], b.field, ['text'])
@@ -99,41 +99,62 @@ export function checkSheet(system: System, add: (path: (string | number)[], mess
         return
     }
   }
-  blocks.forEach((b, i) => {
+  for (const [i, b] of blocks.entries()) {
     const at = ['sheet', 'blocks', i]
-    if (b.kind === 'columns') b.blocks.forEach((inner, j) => leaf(inner, [...at, 'blocks', j]))
+    if (b.kind === 'columns') for (const [j, inner] of b.blocks.entries()) leaf(inner, [...at, 'blocks', j])
     else if (b.kind === 'tabs')
-      b.tabs.forEach((tab, j) => tab.blocks.forEach((inner, k) => leaf(inner, [...at, 'tabs', j, 'blocks', k])))
+      for (const [j, tab] of b.tabs.entries())
+        for (const [k, inner] of tab.blocks.entries()) leaf(inner, [...at, 'tabs', j, 'blocks', k])
     else leaf(b, at)
-  })
+  }
+}
+
+/** Un campo de un bloque: su nombre, su clase, si lleva signo, si se cambia jugando y sus límites */
+export interface ValueView {
+  key: string
+  label: string
+  kind: string
+  signed: boolean
+  play: boolean
+  min?: number
+  max?: number
 }
 
 /** Un bloque con sus nombres ya en su idioma, para pintarlo */
 export type SheetBlockView =
   | { kind: 'header' }
-  | { kind: 'stats'; label: string | null; fields: { key: string; label: string; roll: string | null }[] }
+  | { kind: 'stats'; label: string | null; fields: (ValueView & { roll: string | null })[] }
   | { kind: 'resource'; label: string; field: string }
   | {
       kind: 'set'
       label: string
       field: string
-      columns: { key: string; label: string }[]
+      columns: ValueView[]
       elements: { key: string; label: string }[]
       roll: string | null
     }
-  | { kind: 'group'; label: string; field: string; fields: { key: string; label: string; kind: string }[] }
+  | {
+      kind: 'group'
+      label: string
+      field: string
+      /** Lo de dentro se cambia jugando (las monedas); sus recursos, siempre */
+      play: boolean
+      fields: ValueView[]
+    }
   | { kind: 'list'; label: string | null; fields: { key: string; label: string }[] }
   | {
       kind: 'items'
       label: string
       field: string
       types: string[]
-      columns: { key: string; label: string }[]
+      /** Se añade jugando, del compendio (el inventario) */
+      play: boolean
+      columns: ValueView[]
       rolls: string[]
     }
   | { kind: 'actions'; label: string | null }
   | { kind: 'uses'; label: string | null }
-  | { kind: 'text'; label: string; field: string }
+  | { kind: 'text'; label: string; field: string; play: boolean }
   | { kind: 'columns'; blocks: SheetBlockView[] }
   | { kind: 'tabs'; tabs: { label: string; blocks: SheetBlockView[] }[] }
 
@@ -143,6 +164,15 @@ export function sheetView(system: System, type: string, language: Language = 'es
   const say = (text: Text | undefined, fallback: string) => (text ? textOf(text, language) : fallback)
   const name = (key: string) => say(fields[key]?.label, key)
   const own = (label: Text | undefined) => (label ? textOf(label, language) : null)
+  const viewOfField = (key: string, f: Field | undefined, play = false): ValueView => ({
+    key,
+    label: say(f?.label, key),
+    kind: f?.kind ?? 'text',
+    signed: f?.kind === 'derived' && f.signed === true,
+    play: f?.kind !== 'derived' && (play || f?.play === true),
+    ...(f?.kind === 'number' && f.min !== undefined ? { min: f.min } : {}),
+    ...(f?.kind === 'number' && f.max !== undefined ? { max: f.max } : {})
+  })
   const leaf = (b: Leaf): SheetBlockView => {
     switch (b.kind) {
       case 'header':
@@ -151,7 +181,7 @@ export function sheetView(system: System, type: string, language: Language = 'es
         return {
           kind: 'stats',
           label: own(b.label),
-          fields: b.fields.map((k) => ({ key: k, label: name(k), roll: b.rolls?.[k] ?? null }))
+          fields: b.fields.map((k) => ({ ...viewOfField(k, fields[k]), roll: b.rolls?.[k] ?? null }))
         }
       case 'resource':
         return { kind: 'resource', label: say(b.label, name(b.field)), field: b.field }
@@ -162,7 +192,7 @@ export function sheetView(system: System, type: string, language: Language = 'es
           kind: 'set',
           label: say(b.label, name(b.field)),
           field: b.field,
-          columns: b.columns.map((c) => ({ key: c, label: say(set?.fields[c]?.label, c) })),
+          columns: b.columns.map((c) => viewOfField(c, set?.fields[c])),
           elements: (set?.elements ?? []).map((e) => ({ key: e.key, label: textOf(e.label, language) })),
           roll: b.roll ?? null
         }
@@ -173,10 +203,9 @@ export function sheetView(system: System, type: string, language: Language = 'es
           kind: 'group',
           label: say(b.label, name(b.field)),
           field: b.field,
+          play: f?.play === true,
           fields:
-            f?.kind === 'group'
-              ? Object.entries(f.fields).map(([k, c]) => ({ key: k, label: textOf(c.label, language), kind: c.kind }))
-              : []
+            f?.kind === 'group' ? Object.entries(f.fields).map(([k, c]) => viewOfField(k, c, f.play === true)) : []
         }
       }
       case 'list':
@@ -190,7 +219,8 @@ export function sheetView(system: System, type: string, language: Language = 'es
           label: say(b.label, name(b.field)),
           field: b.field,
           types,
-          columns: (b.columns ?? []).map((c) => ({ key: c, label: say(sample?.[c]?.label, c) })),
+          play: f?.kind === 'items' && f.play === true,
+          columns: (b.columns ?? []).map((c) => viewOfField(c, sample?.[c])),
           rolls: b.rolls ?? []
         }
       }
@@ -199,7 +229,12 @@ export function sheetView(system: System, type: string, language: Language = 'es
       case 'uses':
         return { kind: 'uses', label: own(b.label) }
       case 'text':
-        return { kind: 'text', label: say(b.label, name(b.field)), field: b.field }
+        return {
+          kind: 'text',
+          label: say(b.label, name(b.field)),
+          field: b.field,
+          play: fields[b.field]?.play === true
+        }
     }
   }
   return sheetOf(system, type).map((b) => {

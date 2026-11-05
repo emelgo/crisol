@@ -272,8 +272,9 @@ export const es = {
     nothing: 'Nada',
     actions: 'Acciones',
     uses: 'Usos',
-    recovery: { short: 'Descanso corto', long: 'Descanso largo', dawn: 'Al amanecer' },
+    recovery: { short: 'Descanso corto', long: 'Descanso largo', dawn: 'Al amanecer', other: 'A mano' },
     rest: 'Descansar',
+    rollWith: 'Tirar con',
     shortRest: 'Descanso corto',
     longRest: 'Descanso largo'
   },
@@ -1821,6 +1822,7 @@ export const es = {
     BAD_SYSTEM_PATH: 'Esa parte del sistema no existe',
     BAD_SYSTEM_TYPE: 'Ese tipo no existe en el sistema',
     BAD_ROLL: 'Esa tirada no se puede hacer',
+    BAD_PLAY: 'Eso no se puede cambiar así',
     BAD_FORMULA: 'Esa tirada no se entiende',
     VISIBILITY_NOT_ALLOWED: 'No puedes tirar así en esta campaña',
     UNKNOWN: 'Algo ha fallado. Vuelve a intentarlo.'

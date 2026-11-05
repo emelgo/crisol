@@ -364,6 +364,29 @@
   gap: var(--space-1);
 }
 
+.prose {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+/* Lo que se cambia jugando: las monedas, el cansancio, las salvaciones contra muerte */
+.playValue {
+  inline-size: 5rem;
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--color-field-border);
+  border-radius: 6px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+}
+
+.toggle {
+  inline-size: 1.25rem;
+  block-size: 1.25rem;
+  accent-color: var(--color-accent);
+}
+
 .text textarea {
   padding: var(--space-2);
   border: 1px solid var(--color-field-border);
@@ -421,4 +444,58 @@
   overflow: hidden;
   clip-path: inset(50%);
   white-space: nowrap;
+}
+
+/* Cómo se tira desde la hoja: con ventaja o desventaja, y quién lo ve */
+.rollBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-3);
+}
+
+.modes {
+  display: inline-flex;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.mode {
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--color-field-border);
+  border-radius: 999px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.875rem;
+}
+
+.mode[aria-pressed="true"] {
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+.who {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 0.875rem;
+}
+
+.who select {
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--color-field-border);
+  border-radius: 6px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: inherit;
+}
+
+.useLabel {
+  color: var(--color-muted);
+  font-weight: 400;
 }

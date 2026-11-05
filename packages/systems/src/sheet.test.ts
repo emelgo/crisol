@@ -14,9 +14,39 @@ describe('la hoja por bloques', () => {
     expect(view[0]).toEqual({ kind: 'header' })
     expect(view[1]).toMatchObject({
       kind: 'stats',
-      fields: expect.arrayContaining([{ key: 'iniciativa', label: 'Iniciativa', roll: 'iniciativa' }])
+      fields: expect.arrayContaining([
+        { key: 'iniciativa', label: 'Iniciativa', kind: 'derived', signed: true, play: false, roll: 'iniciativa' }
+      ])
     })
-    const columns = view.find((b) => b.kind === 'columns')
+    // Lo que se cambia jugando: la inspiración (sí o no), el cansancio (con sus límites), las salvaciones contra
+    // muerte, los estados, el inventario y las notas; lo calculado y lo elegido al crearlo, no
+    const all = view.flatMap((b) =>
+      b.kind === 'columns' ? b.blocks : b.kind === 'tabs' ? b.tabs.flatMap((t) => t.blocks) : [b]
+    )
+    const stats = all.find((b) => b.kind === 'stats' && b.fields.some((f) => f.key === 'inspiracion'))
+    expect(stats?.kind === 'stats' && stats.fields).toEqual([
+      { key: 'inspiracion', label: 'Inspiración heroica', kind: 'boolean', signed: false, play: true, roll: null },
+      { key: 'cansancio', label: 'Cansancio', kind: 'number', signed: false, play: true, min: 0, max: 6, roll: null }
+    ])
+    expect(all.find((b) => b.kind === 'group' && b.field === 'salvaciones_muerte')).toMatchObject({
+      play: true,
+      fields: [
+        expect.objectContaining({ key: 'exitos', play: true, max: 3 }),
+        expect.objectContaining({ key: 'fallos' })
+      ]
+    })
+    const items = (field: string) => all.find((b) => b.kind === 'items' && b.field === field)
+    expect(items('estados')).toMatchObject({ play: true })
+    expect(items('inventario')).toMatchObject({ play: true })
+    expect(items('rasgos')).toMatchObject({ play: false })
+    expect(all.find((b) => b.kind === 'text')).toMatchObject({ field: 'notas', play: true })
+    expect(all.find((b) => b.kind === 'set')).toMatchObject({
+      columns: [
+        expect.objectContaining({ key: 'puntuacion', signed: false }),
+        expect.objectContaining({ key: 'mod', signed: true })
+      ]
+    })
+    const columns = view.find((b) => b.kind === 'columns' && b.blocks[0]?.kind === 'set')
     expect(columns?.kind === 'columns' && columns.blocks[0]).toMatchObject({
       kind: 'set',
       label: 'Características',
@@ -32,6 +62,12 @@ describe('la hoja por bloques', () => {
       'Notas'
     ])
     expect(sheetView(fiveE, 'personaje', 'en')[2]).toMatchObject({ kind: 'resource', label: 'Hit points' })
+    // Un sí o no también va en las cifras
+    expect(
+      validateSystem({ ...fiveE, sheet: { blocks: [{ kind: 'stats', fields: ['inspiracion'] }] } }).problems.filter(
+        (p) => p.severity === 'error'
+      )
+    ).toEqual([])
   })
 
   it('sin hoja en el sistema, una por defecto de sus campos', () => {
@@ -39,7 +75,7 @@ describe('la hoja por bloques', () => {
     expect(blocks.map((b) => b.kind)).toEqual(['header', 'stats', 'resource', 'items', 'actions', 'uses'])
     expect(sheetView(fronteras, 'personaje')[1]).toMatchObject({
       kind: 'stats',
-      fields: expect.arrayContaining([{ key: 'defensa', label: 'Defensa', roll: null }])
+      fields: expect.arrayContaining([expect.objectContaining({ key: 'defensa', label: 'Defensa', roll: null })])
     })
   })
 

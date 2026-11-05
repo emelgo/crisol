@@ -1,5 +1,6 @@
 import { connect, schema } from '@crisol/db'
 import { freshTestDatabase, resetDatabase } from '@crisol/db/testing'
+import { eq } from 'drizzle-orm'
 import type { FastifyInstance } from 'fastify'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { buildApp } from '../app.ts'
@@ -386,6 +387,76 @@ describe('los personajes de una campaña', () => {
         )
       ).code
     ).toBe('BAD_PLAY')
+  })
+
+  it('lo de la partida solo cambia lo que se cambia jugando, con su forma, y lleva solo lo que se lleva', async () => {
+    const created = (await ok200('createCharacter', { campaignId, name: 'Thora' }, ana.cookie)).character
+    const ready = await ok200('updateCharacter', { characterId: created.id, version: 1, build: complete() }, ana.cookie)
+    const update = (play: unknown, version = ready.character.version) =>
+      fails('updateCharacter', { characterId: created.id, version, play }, ana.cookie)
+    // Lo calculado, lo elegido al crearlo o con otra forma, no
+    for (const values of [{ pg_max: 999 }, { cansancio: 9 }, { inspiracion: 'sí' }, { pg: { value: -1 } }])
+      expect((await update({ values })).code).toBe('BAD_PLAY')
+    // Una clase no se lleva; con mala forma, un 400 (no un 500)
+    expect((await update({ items: [{ id: 'c', key: 'guerrero_2024' }] })).code).toBe('BAD_PLAY')
+    const shapeless = await update({ items: 'todo', values: [] })
+    expect(shapeless).toMatchObject({ status: 400, code: 'BAD_PLAY' })
+    // Lo que se cambia jugando, sí: las monedas, la inspiración, las notas
+    const played = await ok200(
+      'updateCharacter',
+      {
+        characterId: created.id,
+        version: ready.character.version,
+        play: { values: { monedas: { po: 12 }, inspiracion: true, notas: 'Le debe 10 po a Brom' } }
+      },
+      ana.cookie
+    )
+    expect(played.state.sheet.monedas.po).toBe(12)
+    expect(played.state.sheet.inspiracion).toBe(true)
+    // Algo guardado de antes que ya no vale se deja fuera, sin impedir lo demás
+    await conn.db
+      .update(schema.characters)
+      .set({ play: { values: { pg_max: 5, notas: 'x' } } })
+      .where(eq(schema.characters.id, created.id))
+    const after = await ok200(
+      'updateCharacter',
+      {
+        characterId: created.id,
+        version: played.character.version,
+        play: { values: { pg_max: 5, notas: 'y' } }
+      },
+      ana.cookie
+    )
+    expect(after.character.play).toEqual({ values: { notas: 'y' } })
+  })
+
+  it('el descanso corto llena la magia de pacto; el largo, todo', async () => {
+    const created = (await ok200('createCharacter', { campaignId, name: 'Vex' }, ana.cookie)).character
+    const ready = await ok200(
+      'updateCharacter',
+      { characterId: created.id, version: 1, build: complete('brujo_2024', 3) },
+      ana.cookie
+    )
+    const pact = ready.state.sheet.pacto as { value: number; max: number }
+    expect(pact.max).toBeGreaterThan(0)
+    const spent = await ok200(
+      'playCharacter',
+      { characterId: created.id, version: ready.character.version, resource: 'pacto', damage: pact.max },
+      ana.cookie
+    )
+    expect(spent.state.sheet.pacto.value).toBe(0)
+    const hurt = await ok200(
+      'playCharacter',
+      { characterId: created.id, version: spent.character.version, damage: 3 },
+      ana.cookie
+    )
+    const short = await ok200(
+      'playCharacter',
+      { characterId: created.id, version: hurt.character.version, rest: 'short' },
+      ana.cookie
+    )
+    expect(short.state.sheet.pacto.value).toBe(pact.max)
+    expect(short.state.sheet.pg.value).toBe(short.state.sheet.pg.max - 3)
   })
 
   it('lo de la partida (la IA): daño, curación, gastar usos y descansar, con su estado', async () => {

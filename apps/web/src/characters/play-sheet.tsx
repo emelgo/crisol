@@ -3,23 +3,26 @@
  * por defecto) con sus valores calculados y lo de la partida. Tirar a un clic (el servidor tira por él, a su
  * registro), los PG con daño, curación y temporales, los usos, lo que lleva, las notas y descansar
  */
+
+import { visibilitiesFor } from '@crisol/contracts'
 import {
   changeResource,
   type Play,
   type PlayItem,
-  resourcePathsOf,
-  rest,
   type SheetBlockView,
-  spend
+  setValue,
+  spend,
+  type ValueView
 } from '@crisol/systems'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { Dices, Minus, Moon, Plus, Sun, Trash2 } from 'lucide-react'
-import { useId, useState } from 'react'
+import { useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ActionOutput } from '../api/client.ts'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
 import { FormError } from '../components/field.tsx'
+import { useDice } from '../dice/context.tsx'
 import styles from './play-sheet.module.css'
 import { type Change, pickId } from './save.ts'
 
@@ -64,15 +67,71 @@ export function PlaySheet({
   const api = useApi()
   const errorText = useErrorText()
   const [last, setLast] = useState<DiceRoll | null>(null)
+  const [mode, setMode] = useState<string | null>(null)
+  const dice = useDice()
+  const campaign = useQuery({
+    queryKey: ['campaign', character.campaignId],
+    queryFn: () => api.call('getCampaign', { campaignId: character.campaignId })
+  })
+  const options = visibilitiesFor(campaign.data?.campaign.role ?? 'player')
+  // Quién la ve: lo elegido en los dados, si vale en esta campaña
+  const visibility = options.includes(dice.visibility) ? dice.visibility : 'all'
+  // Los modos (ventaja, desventaja) de sus tiradas
+  const modes = [...new Map(state.rolls.flatMap((r) => r.modes).map((m) => [m.key, m.label] as const)).entries()].map(
+    ([key, label]) => ({ key, label })
+  )
   const rolling = useMutation({
-    mutationFn: (input: Parameters<Ctx['roll']>[0]) =>
-      api.call('rollForCharacter', { characterId: character.id, ...input }),
+    mutationFn: (input: Parameters<Ctx['roll']>[0]) => {
+      const fits = input.roll
+        ? state.rolls.find((r) => r.key === input.roll?.key)?.modes.some((m) => m.key === mode)
+        : true
+      const withMode = mode && fits ? { mode } : {}
+      return api.call('rollForCharacter', {
+        characterId: character.id,
+        visibility,
+        ...(input.roll ? { roll: { ...input.roll, ...withMode } } : {}),
+        ...(input.action ? { action: { ...input.action, ...(input.action.part === 'attack' ? withMode : {}) } } : {})
+      })
+    },
     onSuccess: (out) => setLast(out.roll)
   })
   const ctx: Ctx = { character, state, save, roll: (input) => rolling.mutate(input) }
   const layout = state.layout as SheetBlockView[]
   return (
     <div className={styles.sheet}>
+      <div className={styles.rollBar}>
+        {modes.length > 0 && (
+          <fieldset className={styles.modes}>
+            <legend className={styles.hidden}>{t('playSheet.rollWith')}</legend>
+            {modes.map((m) => (
+              <button
+                key={m.key}
+                type="button"
+                className={styles.mode}
+                aria-pressed={mode === m.key}
+                onClick={() => setMode(mode === m.key ? null : m.key)}
+              >
+                {m.label}
+              </button>
+            ))}
+          </fieldset>
+        )}
+        {options.length > 1 && (
+          <label className={styles.who}>
+            <span>{t('dice.who')}</span>
+            <select
+              value={visibility}
+              onChange={(event) => dice.setVisibility(event.currentTarget.value as typeof visibility)}
+            >
+              {options.map((option) => (
+                <option key={option} value={option}>
+                  {t(`dice.visibility.${option}`)}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+      </div>
       {last && (
         <p className={styles.last} role="status">
           <Dices size={16} aria-hidden="true" />
@@ -142,10 +201,12 @@ function Stats({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'stats' 
                 aria-label={t('playSheet.rollOf', { what: f.label, value: shown(value, true) })}
                 onClick={() => ctx.roll({ roll: { key: rollKey } })}
               >
-                {shown(value, f.key === 'iniciativa')}
+                {shown(value, f.signed)}
               </button>
+            ) : f.play ? (
+              <PlayValue field={f} path={f.key} value={value} ctx={ctx} />
             ) : (
-              <span className={styles.statValue}>{shown(value)}</span>
+              <span className={styles.statValue}>{shown(value, f.signed)}</span>
             )}
           </li>
         )
@@ -163,7 +224,7 @@ function ResourceBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: 
   const n = Math.max(0, Math.floor(Number(amount) || 0))
   const apply = (change: { damage?: number; heal?: number; temp?: number }) => {
     if (n === 0) return
-    void ctx.save({ play: (play) => changeResource(play, block.field, current, change) })
+    void ctx.save({ play: (play) => changeResource(play, block.field, current.max, change) })
     setAmount('')
   }
   return (
@@ -242,9 +303,7 @@ function SetBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'set'
                 )}
               </th>
               {block.columns.map((c) => {
-                const v = values[e.key]?.[c.key]
-                const isBonus = c.key !== 'puntuacion' && typeof v === 'number'
-                return <td key={c.key}>{shown(v, isBonus)}</td>
+                return <td key={c.key}>{shown(values[e.key]?.[c.key], c.signed)}</td>
               })}
             </tr>
           ))}
@@ -284,12 +343,12 @@ function GroupBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'gr
                   value={`${current.value} / ${current.max}`}
                   onLess={
                     current.value > 0
-                      ? () => void ctx.save({ play: (p) => changeResource(p, path, current, { damage: 1 }) })
+                      ? () => void ctx.save({ play: (p) => changeResource(p, path, current.max, { damage: 1 }) })
                       : undefined
                   }
                   onMore={
                     current.value < current.max
-                      ? () => void ctx.save({ play: (p) => changeResource(p, path, current, { heal: 1 }) })
+                      ? () => void ctx.save({ play: (p) => changeResource(p, path, current.max, { heal: 1 }) })
                       : undefined
                   }
                 />
@@ -298,7 +357,12 @@ function GroupBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'gr
           }
           return (
             <li key={f.key}>
-              <span className={styles.statLabel}>{f.label}</span> {shown(v) || t('playSheet.none')}
+              <span className={styles.statLabel}>{f.label}</span>{' '}
+              {f.play ? (
+                <PlayValue field={f} path={`${block.field}.${f.key}`} value={v} ctx={ctx} />
+              ) : (
+                shown(v, f.signed) || t('playSheet.none')
+              )}
             </li>
           )
         })}
@@ -379,7 +443,7 @@ function ItemsBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'it
         {block.columns.map((c) => (
           <span key={c.key} className={styles.itemValue}>
             <span className={styles.hidden}>{c.label}: </span>
-            {shown(values[c.key], c.key === 'ataque')}
+            {shown(values[c.key], c.signed)}
           </span>
         ))}
         {block.rolls.map((r) => (
@@ -407,19 +471,23 @@ function ItemsBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'it
         <h2 id={id} className={styles.blockTitle}>
           {block.label}
         </h2>
-        <button type="button" className={styles.add} onClick={() => setAdding(!adding)} aria-expanded={adding}>
-          <Plus size={14} aria-hidden="true" />
-          {t('playSheet.add')}
-        </button>
+        {block.play && (
+          <button type="button" className={styles.add} onClick={() => setAdding(!adding)} aria-expanded={adding}>
+            <Plus size={14} aria-hidden="true" />
+            {t('playSheet.add')}
+          </button>
+        )}
       </div>
-      {adding && (
+      {adding && block.play && (
         <AddFromCompendium
           campaignId={ctx.character.campaignId}
           types={block.types}
           onAdd={(key) => {
             setAdding(false)
+            // El id, fuera: el cambio se aplica otra vez sobre lo guardado y tiene que dar lo mismo
+            const itemId = pickId()
             void ctx.save({
-              play: (play) => ({ ...play, items: [...(play.items ?? []), { id: pickId(), key, quantity: 1 }] })
+              play: (play) => ({ ...play, items: [...(play.items ?? []), { id: itemId, key, quantity: 1 }] })
             })
           }}
         />
@@ -435,7 +503,10 @@ function ItemsBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'it
                 <input
                   type="checkbox"
                   checked={it.equipped === true}
-                  onChange={(event) => update(it.id, (x) => ({ ...x, equipped: event.currentTarget.checked }))}
+                  onChange={(event) => {
+                    const equipped = event.currentTarget.checked
+                    update(it.id, (x) => ({ ...x, equipped }))
+                  }}
                 />
                 {t('playSheet.equipped')}
               </label>
@@ -574,6 +645,11 @@ function UsesBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'use
   const { t } = useTranslation()
   const id = useId()
   const uses = ctx.state.resources.filter((r) => !r.error && r.max > 0)
+  // De quién es cada uno (Tomar aliento, la Furia): lo que da, o lo que lleva
+  const owners = new Map([
+    ...ctx.state.items.map((it) => [it.id, it.name] as const),
+    ...ctx.state.carried.map((it) => [`p:${it.id}`, it.name] as const)
+  ])
   if (uses.length === 0) return null
   return (
     <section className={styles.block} aria-labelledby={id}>
@@ -581,29 +657,55 @@ function UsesBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'use
         {block.label ?? t('playSheet.uses')}
       </h2>
       <ul className={styles.items}>
-        {uses.map((r) => (
-          <li key={`${r.item}-${r.key}`} className={styles.item}>
-            <span className={styles.itemName}>{r.label}</span>
-            {r.recovery && (
-              <span className={styles.itemValue}>{t(`playSheet.recovery.${r.recovery}`, r.recovery)}</span>
-            )}
-            <Stepper
-              label={r.label}
-              value={t('playSheet.left', { left: r.left, max: r.max })}
-              onLess={r.left > 0 ? () => void ctx.save({ play: (p) => spend(p, r, 1) }) : undefined}
-              onMore={r.used > 0 ? () => void ctx.save({ play: (p) => spend(p, r, -1) }) : undefined}
-            />
-          </li>
-        ))}
+        {uses.map((r) => {
+          const owner = r.item ? owners.get(r.item) : undefined
+          return (
+            <li key={`${r.item}-${r.key}`} className={styles.item}>
+              <span className={styles.itemName}>
+                {owner ?? r.label}
+                {owner && <span className={styles.useLabel}> · {r.label}</span>}
+              </span>
+              {r.recovery && (
+                <span className={styles.itemValue}>{t(`playSheet.recovery.${r.recovery}`, r.recovery)}</span>
+              )}
+              <Stepper
+                label={owner ? `${owner} · ${r.label}` : r.label}
+                value={t('playSheet.left', { left: r.left, max: r.max })}
+                onLess={r.left > 0 ? () => void ctx.save({ play: (p) => spend(p, r, 1) }) : undefined}
+                onMore={r.used > 0 ? () => void ctx.save({ play: (p) => spend(p, r, -1) }) : undefined}
+              />
+            </li>
+          )
+        })}
       </ul>
     </section>
   )
 }
 
+/** Un valor que sigue al de fuera mientras no se escribe en él (si llega otro, se pone el nuevo) */
+function useDraft(value: string) {
+  const [draft, setDraft] = useState(value)
+  const [source, setSource] = useState(value)
+  if (source !== value) {
+    setSource(value)
+    setDraft(value)
+  }
+  return [draft, setDraft] as const
+}
+
 function TextBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'text' }>; ctx: Ctx }) {
   const id = useId()
   const value = shown(get(ctx.state.sheet, block.field))
-  const [text, setText] = useState(value)
+  const [text, setText] = useDraft(value)
+  if (!block.play)
+    return (
+      <section className={styles.text} aria-labelledby={id}>
+        <h2 id={id} className={styles.blockTitle}>
+          {block.label}
+        </h2>
+        <p className={styles.prose}>{value}</p>
+      </section>
+    )
   return (
     <div className={styles.text}>
       <label htmlFor={id} className={styles.blockTitle}>
@@ -615,17 +717,80 @@ function TextBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'tex
         value={text}
         onChange={(event) => setText(event.currentTarget.value)}
         onBlur={() => {
-          if (text !== value)
-            void ctx.save({ play: (play) => ({ ...play, values: { ...(play.values ?? {}), [block.field]: text } }) })
+          if (text !== value) void ctx.save({ play: (play) => setValue(play, block.field, text) })
         }}
       />
     </div>
   )
 }
 
+/** Un valor que se cambia jugando: un sí o no se marca; un número o un texto se escribe (se guarda al salir) */
+function PlayValue({
+  field,
+  path,
+  value: computed,
+  ctx
+}: {
+  field: ValueView
+  path: string
+  value: unknown
+  ctx: Ctx
+}) {
+  // Lo recién cambiado se ve ya (lo de la partida, antes de que responda el servidor); si no, lo calculado
+  const stored = get((ctx.character.play as Play).values ?? {}, path)
+  const value = stored !== undefined ? stored : computed
+  const [draft, setDraft] = useDraft(value === undefined || value === null ? '' : String(value))
+  if (field.kind === 'boolean')
+    return (
+      <input
+        type="checkbox"
+        className={styles.toggle}
+        aria-label={field.label}
+        checked={value === true}
+        onChange={(event) => {
+          const checked = event.currentTarget.checked
+          void ctx.save({ play: (play) => setValue(play, path, checked) })
+        }}
+      />
+    )
+  const number = field.kind === 'number'
+  const commit = () => {
+    if (draft === (value === undefined || value === null ? '' : String(value))) return
+    if (!number) {
+      void ctx.save({ play: (play) => setValue(play, path, draft) })
+      return
+    }
+    const n = Number(draft)
+    const fits =
+      draft.trim() !== '' &&
+      Number.isFinite(n) &&
+      (field.min === undefined || n >= field.min) &&
+      (field.max === undefined || n <= field.max)
+    if (fits) void ctx.save({ play: (play) => setValue(play, path, n) })
+    else setDraft(value === undefined || value === null ? '' : String(value))
+  }
+  return (
+    <input
+      type={number ? 'number' : 'text'}
+      className={styles.playValue}
+      aria-label={field.label}
+      inputMode={number ? 'numeric' : undefined}
+      min={field.min}
+      max={field.max}
+      value={draft}
+      onChange={(event) => setDraft(event.currentTarget.value)}
+      onBlur={commit}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter') commit()
+      }}
+    />
+  )
+}
+
 function Tabs({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'tabs' }>; ctx: Ctx }) {
   const id = useId()
   const [shownTab, setShownTab] = useState(0)
+  const tabs = useRef<(HTMLButtonElement | null)[]>([])
   const tab = block.tabs[shownTab] ?? block.tabs[0]
   return (
     <div className={styles.tabs}>
@@ -641,9 +806,25 @@ function Tabs({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'tabs' }>
             tabIndex={i === shownTab ? 0 : -1}
             className={styles.tab}
             onClick={() => setShownTab(i)}
+            ref={(node) => {
+              tabs.current[i] = node
+            }}
             onKeyDown={(event) => {
-              if (event.key === 'ArrowRight') setShownTab((shownTab + 1) % block.tabs.length)
-              if (event.key === 'ArrowLeft') setShownTab((shownTab - 1 + block.tabs.length) % block.tabs.length)
+              const n = block.tabs.length
+              const next =
+                event.key === 'ArrowRight'
+                  ? (shownTab + 1) % n
+                  : event.key === 'ArrowLeft'
+                    ? (shownTab - 1 + n) % n
+                    : event.key === 'Home'
+                      ? 0
+                      : event.key === 'End'
+                        ? n - 1
+                        : null
+              if (next === null) return
+              event.preventDefault()
+              setShownTab(next)
+              tabs.current[next]?.focus()
             }}
           >
             {each.label}
@@ -662,9 +843,7 @@ function Tabs({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'tabs' }>
 /** Descansar: el corto recupera lo de los descansos cortos; el largo, todo y los PG */
 function Rests({ ctx, label }: { ctx: Ctx; label: string }) {
   const { t } = useTranslation()
-  const paths = resourcePathsOf(ctx.state.fields)
-  const restNow = (kind: 'short' | 'long') =>
-    void ctx.save({ play: (play: Play) => rest(play, ctx.state.resources, kind, paths) })
+  const restNow = (kind: 'short' | 'long') => void ctx.save({ rest: kind })
   return (
     <fieldset className={styles.rests}>
       <legend className={styles.hidden}>{label}</legend>

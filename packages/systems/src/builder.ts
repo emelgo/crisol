@@ -635,6 +635,8 @@ export function characterView(
   })
   return {
     built,
+    // Lo de la partida que no vale: lo que no se lleva y los valores que no se cambian jugando (o sin su forma)
+    played: { refused: played.refused, problems: played.problems },
     view: {
       steps,
       decisions: built.decisions.map((d) => ({ ...d, label: say(d.label), options: d.options.map(option) })),

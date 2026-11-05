@@ -52,7 +52,7 @@ test('la hoja en partida: tirar Atletismo y un ataque, un escudo que sube la CA,
     .first()
   const before = Number((await ca.textContent())?.replace(/\D+/g, ''))
   await page.getByRole('tab', { name: 'Inventario' }).click()
-  await page.getByRole('button', { name: 'Añadir' }).first().click()
+  await page.getByRole('tabpanel').getByRole('button', { name: 'Añadir' }).first().click()
   await page.getByRole('searchbox', { name: 'Buscar en el compendio' }).fill('escudo')
   await page
     .getByRole('button', { name: /^Escudo/ })
@@ -63,7 +63,7 @@ test('la hoja en partida: tirar Atletismo y un ataque, un escudo que sube la CA,
 
   // Una espada larga, y su ataque
   await page.getByRole('tab', { name: 'Acciones' }).click()
-  await page.getByRole('button', { name: 'Añadir' }).first().click()
+  await page.getByRole('tabpanel').getByRole('button', { name: 'Añadir' }).first().click()
   await page.getByRole('searchbox', { name: 'Buscar en el compendio' }).fill('espada larga')
   await page
     .getByRole('button', { name: /^Espada larga/ })
@@ -71,7 +71,7 @@ test('la hoja en partida: tirar Atletismo y un ataque, un escudo que sube la CA,
     .click()
   await page.getByRole('button', { name: /^Ataque con Espada larga/ }).click()
   await expect(page.getByRole('status').filter({ hasText: 'Espada larga' })).toBeVisible()
-  await page.screenshot({ path: test.info().outputPath('ficha.png') })
+  await page.screenshot({ path: test.info().outputPath('ficha.png'), fullPage: true })
 
   // Daño: 5 menos; descanso largo: lleno otra vez
   const hp = page.getByRole('region', { name: 'Puntos de golpe' })
@@ -81,5 +81,16 @@ test('la hoja en partida: tirar Atletismo y un ataque, un escudo que sube la CA,
   await expect(hp.locator('strong')).toHaveText(String(full - 5))
   await page.getByRole('button', { name: 'Descanso largo' }).click()
   await expect(hp.locator('strong')).toHaveText(String(full))
+
+  // Lo que se cambia jugando: la inspiración y el cansancio
+  await page.getByRole('checkbox', { name: 'Inspiración heroica' }).check()
+  const exhaustion = page.getByRole('spinbutton', { name: 'Cansancio' })
+  await exhaustion.fill('1')
+  const saved = page.waitForResponse((r) => r.url().endsWith('/updateCharacter') && r.ok())
+  await exhaustion.press('Enter')
+  await saved
+  await page.reload()
+  await expect(page.getByRole('checkbox', { name: 'Inspiración heroica' })).toBeChecked()
+  await expect(page.getByRole('spinbutton', { name: 'Cansancio' })).toHaveValue('1')
   await accessible(page)
 })

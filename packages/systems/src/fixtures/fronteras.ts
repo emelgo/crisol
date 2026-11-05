@@ -21,7 +21,7 @@ export const fronteras: System = {
         experiencia: { kind: 'clock', label: 'Experiencia', segments: 8 },
         defensa: { kind: 'derived', label: 'Defensa', formula: '7 + @vigor' },
         carga: { kind: 'derived', label: 'Carga', formula: '3 + @vigor' },
-        lleva: { kind: 'items', label: 'Lleva', of: ['objeto'] }
+        lleva: { kind: 'items', label: 'Lleva', of: ['objeto'], play: true }
       }
     },
     objeto: {

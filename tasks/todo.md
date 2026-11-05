@@ -55,5 +55,5 @@ Spec: `docs/specs/hoja.md` (en marcha, sin entrevista: Enrique, «termina el mó
 - [x] **H4. La pantalla**: la ficha por bloques, el panel con el desglose de cada valor, los PG, los usos, el
   inventario (añadir del compendio, equipar) y el móvil.
 - [x] **H5. La IA**: ver la hoja, tirar por el personaje, daño y curación, descansar.
-- [ ] **H6. Cierre**: e2e (Atletismo y un ataque desde la hoja, daño, descanso, un escudo que sube la CA), axe,
+- [x] **H6. Cierre**: e2e (Atletismo y un ataque desde la hoja, daño, descanso, un escudo que sube la CA), axe,
   revisión, PR y staging.

@@ -179,14 +179,19 @@ export function systemDocs(): string {
 
   const field = Object.values(defs).find((d) => variantsOf(d)) ?? null
   const variants = field ? (variantsOf(field) ?? []) : []
-  const base = ['label', 'help', 'master', 'kind']
+  const base = ['label', 'help', 'master', 'play', 'kind']
   lines.push('', `## ${FIELDS_SECTION}`, '', 'Cada campo lleva `kind` (su clase) y:', '')
   const first = variants[0]
   const props = first?.properties ?? {}
   if (first)
     describe(
       {
-        properties: { label: props.label ?? {}, help: props.help ?? {}, master: props.master ?? {} },
+        properties: {
+          label: props.label ?? {},
+          help: props.help ?? {},
+          master: props.master ?? {},
+          play: props.play ?? {}
+        },
         required: first.required ?? []
       },
       0

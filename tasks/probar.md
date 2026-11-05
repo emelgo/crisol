@@ -32,6 +32,22 @@ En una campaña con el 5e (en sus ajustes, «5e» y sus ediciones):
 - [ ] **Desde claude.ai**: que la IA haga un personaje con `crear_personaje` y `elegir_personaje`, y lo suba de nivel;
   que haga una tabla y tire en ella (`tirar_en_tabla`).
 
+## Módulo 3: la hoja en partida
+
+En un personaje terminado, su «Ficha»:
+- [ ] **Tirar a un clic**: una característica, una habilidad, la iniciativa y el ataque de un arma; arriba, «Con
+  ventaja» o «Con desventaja» y quién la ve (la tirada sale en el registro de dados con su nombre: «Thora · Atletismo»).
+- [ ] **Los PG**: «Cuánto» y «Daño» (primero se van los temporales), «Curar», «Temporales»; varios clics seguidos se
+  suman.
+- [ ] **Lo que se cambia jugando**: la inspiración, el cansancio, las salvaciones contra muerte, las monedas y las
+  notas; tras recargar, sigue ahí.
+- [ ] **Lo que lleva**: en «Inventario», «Añadir» del compendio, «Equipado» (un escudo sube la CA), cantidad y
+  quitar; los estados (Envenenado…) arriba, con su «Añadir».
+- [ ] **Usos y descansos**: gastar una Furia; «Descanso corto» (un brujo recupera la magia de pacto; los PG no) y
+  «Descanso largo» (todo lleno).
+- [ ] **Con el teclado**: las pestañas con las flechas, Inicio y Fin.
+- [ ] **Desde claude.ai**: `partida_personaje` (daño, curación, gastar un uso, descansar) y `tirar_por_personaje`.
+
 ## Módulo 3: srd-5e, punto de control 4 y final (todo el contenido, en staging: PR #98)
 
 Todo el contenido de los dos SRD ya está sacado: 3170 documentos (estados, texto de las reglas, conjuros, objetos

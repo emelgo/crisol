@@ -29,14 +29,17 @@ hoja, tira por el personaje, aplica daño o curación y descansa.
 
 - **Lo de la partida va aparte** de las elecciones (ADR-0013): `play` guarda los valores que cambian jugando (por la
   clave del campo), los usos gastados de cada recurso (por objeto) y lo que lleva (por su clave del contenido, con su
-  id, su cantidad y su estado). La hoja es `evaluate` de las elecciones más eso.
+  id, su cantidad y su estado). La hoja es `evaluate` de las elecciones más eso. Solo se escribe jugando lo que el
+  sistema marca con `play` (las monedas, la inspiración, las notas; en un campo de objetos, lo que se lleva) y los
+  recursos, con su forma y sus límites; lo demás se rechaza (y lo guardado de antes que ya no vale se deja fuera).
 - **Bloques neutros**, sin nada de un juego concreto: cada uno dice qué campos lee y qué se puede tirar. Los del 5e
   (identidad, franja vital, características, salvaciones, habilidades, acciones, usos, conjuros, inventario, rasgos,
   notas) son una composición de esos bloques en su sistema.
 - **Tirar a un clic**, con su nombre («Thora · Atletismo»): el servidor calcula la fórmula con la hoja del momento y
   tira; queda en el registro de la campaña con su visibilidad. Ventaja y desventaja, y el crítico de los daños.
-- **Daño y curación** a un recurso (los PG, con los temporales primero); **descansar** recupera lo que dice cada
-  recurso (corto, largo, al amanecer) y, en el largo, los PG.
+- **Daño y curación** a un recurso (los PG, con los temporales primero); **descansar** lo hace el servidor: recupera
+  lo que dice cada recurso (corto, largo, al amanecer; lo que vuelve con dados, tirado) y llena los recursos del
+  personaje: en el corto, los que llevan `recovery: short` (la magia de pacto); en el largo, todos.
 - **El inventario**: añadir del compendio, quitar, cantidad, equipar y sintonizar (lo equipado entra en el cálculo).
 - **Todo con el teclado y en el móvil**, WCAG 2.1 AA.
 

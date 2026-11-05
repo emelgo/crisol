@@ -337,7 +337,12 @@ export const playCharacter = defineAction({
     spend: z
       .object({ item: z.string().max(300).nullable(), key: z.string().max(60), by: z.int().min(-100).max(100) })
       .optional(),
-    rest: z.enum(['short', 'long']).optional()
+    rest: z
+      .enum(['short', 'long'])
+      .optional()
+      .describe(
+        'Descansar: el corto recupera lo de los descansos cortos (y la magia de pacto); el largo, todo y los PG. Lo que vuelve con dados lo tira el servidor'
+      )
   }),
   output: z.object({ character, state: characterState })
 })
