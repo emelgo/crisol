@@ -322,6 +322,26 @@ export const rollForCharacter = defineAction({
   output: z.object({ roll: diceRoll })
 })
 
+export const playCharacter = defineAction({
+  name: 'playCharacter',
+  kind: 'players',
+  description:
+    'Lo de la partida de un personaje (con la versión que se leyó): daño, curación o temporales a un recurso (sin decirlo, el primero, los PG), gastar o recuperar usos de lo que lleva (spend: su objeto, su recurso y cuántos; negativo, recuperar) o descansar (short o long). Devuelve su estado',
+  input: z.object({
+    characterId: z.uuid(),
+    version: z.int().min(1),
+    resource: z.string().max(120).optional().describe('La ruta del recurso (pg, espacios.n1)'),
+    damage: z.int().min(0).max(100_000).optional(),
+    heal: z.int().min(0).max(100_000).optional(),
+    temp: z.int().min(0).max(100_000).optional(),
+    spend: z
+      .object({ item: z.string().max(300).nullable(), key: z.string().max(60), by: z.int().min(-100).max(100) })
+      .optional(),
+    rest: z.enum(['short', 'long']).optional()
+  }),
+  output: z.object({ character, state: characterState })
+})
+
 export const deleteCharacter = defineAction({
   name: 'deleteCharacter',
   kind: 'delete',

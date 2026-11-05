@@ -13,6 +13,7 @@ import {
   getCharacter,
   listCharacters,
   listCharacterVersions,
+  playCharacter,
   restoreCharacterVersion,
   rollForCharacter,
   updateCharacter,
@@ -28,6 +29,7 @@ import {
   ChooseError,
   type ContentItem,
   catalogSystem,
+  changeResource,
   characterView,
   checkBuild,
   normalizeChoices,
@@ -36,7 +38,10 @@ import {
   playedDocument,
   playSchema,
   RollError,
+  resourcePathsOf,
+  rest,
   type System,
+  spend,
   tryAction,
   tryRoll
 } from '@crisol/systems'
@@ -325,6 +330,43 @@ export const characterActions = [
       throw error
     }
   }),
+
+  implement(
+    playCharacter,
+    async (ctx, { characterId, version, resource, damage, heal, temp, spend: used, rest: kind }) => {
+      const { row } = await readable(ctx, characterId)
+      const { view } = await stateOf(ctx, row.campaignId, row.system, row.build, row.play)
+      let play = structuredClone(row.play) as Play
+      const paths = resourcePathsOf(view.fields)
+      if (damage !== undefined || heal !== undefined || temp !== undefined) {
+        const path = resource ?? paths[0]
+        const at = path
+          ? (path.split('.').reduce<unknown>((v, k) => (v as Record<string, unknown>)?.[k], view.sheet) as
+              | { value?: number; max?: number; temp?: number }
+              | undefined)
+          : undefined
+        if (!path || typeof at?.max !== 'number')
+          throw new InvalidRequestError('BAD_PLAY', `no hay un recurso «${resource ?? ''}»`)
+        play = changeResource(
+          play,
+          path,
+          { value: at.value ?? at.max, max: at.max, temp: at.temp ?? 0 },
+          {
+            ...(damage !== undefined ? { damage } : {}),
+            ...(heal !== undefined ? { heal } : {}),
+            ...(temp !== undefined ? { temp } : {})
+          }
+        )
+      }
+      if (used) {
+        const found = view.resources.find((r) => r.item === used.item && r.key === used.key)
+        if (!found) throw new InvalidRequestError('BAD_PLAY', `no hay un uso «${used.key}»`)
+        play = spend(play, found, used.by)
+      }
+      if (kind) play = rest(play, view.resources, kind, paths)
+      return save(ctx, row, version, { play: play as Record<string, unknown> }, undefined)
+    }
+  ),
 
   implement(deleteCharacter, async (ctx, { characterId }) => {
     const { row } = await readable(ctx, characterId)

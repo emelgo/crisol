@@ -53,6 +53,8 @@ import {
   pickPaths,
   playedDocument,
   RollError,
+  resourcePathsOf,
+  rest,
   SYSTEM_FILE,
   type System,
   searchContent,
@@ -1278,6 +1280,13 @@ export function fakeApi(
       const stored = rolls.find((r) => r.id === out.roll.id)
       for (const each of stored ? [out.roll, stored] : [out.roll]) each.label = `${character.name} · ${result.label}`
       return { roll: out.roll }
+    },
+    playCharacter: ({ characterId, version, rest: kind }) => {
+      const character = visibleCharacter(characterId)
+      const state = stateOf(character)
+      let play = structuredClone(character.play) as Play
+      if (kind) play = rest(play, state.resources, kind, resourcePathsOf(state.fields))
+      return handlers.updateCharacter({ characterId, version, play: play as Record<string, unknown> })
     },
     deleteCharacter: ({ characterId }) => {
       visibleCharacter(characterId)

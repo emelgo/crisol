@@ -388,6 +388,55 @@ describe('los personajes de una campaña', () => {
     ).toBe('BAD_PLAY')
   })
 
+  it('lo de la partida (la IA): daño, curación, gastar usos y descansar, con su estado', async () => {
+    const created = (await ok200('createCharacter', { campaignId, name: 'Thora' }, ana.cookie)).character
+    const ready = await ok200(
+      'updateCharacter',
+      { characterId: created.id, version: 1, build: complete('barbaro_2024', 2) },
+      ana.cookie
+    )
+    const max = ready.state.sheet.pg.max as number
+    expect(ready.state.sheet.pg.value).toBe(max)
+    const hurt = await ok200(
+      'playCharacter',
+      { characterId: created.id, version: ready.character.version, damage: 5, temp: 3 },
+      ana.cookie
+    )
+    expect(hurt.state.sheet.pg).toMatchObject({ value: max - 5, temp: 3 })
+    const rage = hurt.state.resources.find((r: { key: string }) => r.key === 'furias')
+    const raged = await ok200(
+      'playCharacter',
+      { characterId: created.id, version: hurt.character.version, spend: { item: rage.item, key: 'furias', by: 1 } },
+      ana.cookie
+    )
+    expect(raged.state.resources.find((r: { key: string }) => r.key === 'furias').used).toBe(1)
+    const rested = await ok200(
+      'playCharacter',
+      { characterId: created.id, version: raged.character.version, rest: 'long' },
+      ana.cookie
+    )
+    expect(rested.state.sheet.pg.value).toBe(max)
+    expect(rested.state.resources.find((r: { key: string }) => r.key === 'furias').used).toBe(0)
+    expect(
+      (
+        await fails(
+          'playCharacter',
+          { characterId: created.id, version: rested.character.version, resource: 'nada', damage: 1 },
+          ana.cookie
+        )
+      ).code
+    ).toBe('BAD_PLAY')
+    expect(
+      (
+        await fails(
+          'playCharacter',
+          { characterId: created.id, version: rested.character.version, rest: 'long' },
+          bruno.cookie
+        )
+      ).status
+    ).toBe(404)
+  })
+
   it('una campaña sin sistema no tiene personajes', async () => {
     const world = (await ok200('listWorlds', {})).worlds[0]
     const none = await ok200('createCampaign', { worldId: world.id, name: 'Sin reglas' })

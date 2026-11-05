@@ -14,6 +14,7 @@ import {
   getCharacter,
   listCharacters,
   listCharacterVersions,
+  playCharacter,
   restoreCharacterVersion,
   rollForCharacter,
   updateCharacter
@@ -250,6 +251,7 @@ export const ACTIONS = [
   updateCharacter,
   chooseForCharacter,
   rollForCharacter,
+  playCharacter,
   deleteCharacter,
   listCharacterVersions,
   restoreCharacterVersion,
@@ -382,6 +384,7 @@ export type Actions = {
   updateCharacter: typeof updateCharacter
   chooseForCharacter: typeof chooseForCharacter
   rollForCharacter: typeof rollForCharacter
+  playCharacter: typeof playCharacter
   deleteCharacter: typeof deleteCharacter
   listCharacterVersions: typeof listCharacterVersions
   restoreCharacterVersion: typeof restoreCharacterVersion
