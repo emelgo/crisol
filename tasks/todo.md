@@ -15,7 +15,7 @@ Plan: `tasks/plan.md`. Spec: `docs/specs/personajes.md`. Cada tarea, con TDD y e
 
 ## Fase 2: el personaje
 
-- [ ] **4. El personaje en la base de datos**: tabla, versiones, permisos (dueño y máster), historial; acciones de
+- [x] **4. El personaje en la base de datos**: tabla, versiones, permisos (dueño y máster), historial; acciones de
   crear, listar, leer, cambiar, borrar y cambiar el dueño; fugas.
 - [ ] **5. «Personajes» en la campaña**: tarjetas, «Personaje nuevo» (con quién lo juega, para el máster), su ventana,
   la vista previa al pasar.
@@ -23,8 +23,8 @@ Plan: `tasks/plan.md`. Spec: `docs/specs/personajes.md`. Cada tarea, con TDD y e
 
 ## Fase 3: los pasos
 
-- [ ] **7. El formato de los pasos** (`steps`) y su validación.
-- [ ] **8. El motor de lo pendiente**: pasos + `grants` por nivel, opciones válidas y su motivo, requisitos.
+- [ ] **7. El formato de los pasos** (`creation`) y su validación. Hecho el formato (`packages/systems/src/format.ts`); falta validar sus referencias y fórmulas.
+- [x] **8. El motor de lo pendiente**: pasos + `grants` por nivel, opciones válidas y su motivo, requisitos.
 - [ ] **9. Subir y bajar de nivel, multiclase y PG** (media o tirados en el servidor).
 - [ ] **10. Los pasos del 5e** y lo que su contenido necesita; los personajes de referencia, por los pasos.
 

@@ -18,7 +18,14 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   `tasks/plan.md`, tareas en `tasks/todo.md`. **Hecha la fase 1** (tareas 1–3): la campaña en su propia vista (la
   barra cambia al entrar: su inicio, Compendio y Dados; la llama vuelve a Mis mundos) y su compendio (acciones
   `getCampaignCompendium`, `searchCampaignContent` y `getCampaignContent`, que lee cualquiera de la campaña; e2e
-  `compendio.spec.ts`). **Lo siguiente**: la fase 2, el personaje (tarea 4: la tabla y sus acciones).
+  `compendio.spec.ts`). Hechas también la tarea 4 (tablas `characters` y `character_versions`, migración 0041, y sus
+  acciones con permisos: cada uno los suyos, el máster todos) y el motor (tarea 8: `packages/systems/src/builder.ts`,
+  `buildCharacter`, `stepOptions`, `summarize` y `characterView`; los pasos del 5e en `catalog/5e/system.ts`,
+  `creation`, y `card` para la tarjeta). El servidor monta el estado del personaje y lo devuelve en `getCharacter` y
+  `updateCharacter` (sin bajar el contenido al navegador). **Lo siguiente**: las pantallas (tareas 5, 6 y 11–13: la
+  lista de personajes, la ficha mínima y el creador), y luego validar los pasos (7), subir de nivel con PG (9) y los
+  datos del 5e que faltan (10: requisitos de multiclase, mejora de característica, aumentos de los trasfondos de 2024,
+  equipo inicial, conjuros por nivel).
 - **Sin editor de sistemas: PR #99, en `main` y en staging** (la CI del PR se canceló, todo verde en local). Ver más
   abajo, en el módulo 3; qué probar, en `tasks/probar.md` (punto de control 3 de `sistemas`).
 - Servidor de desarrollo en marcha para Enrique: web en `localhost:5173`, API en `8130` (las dos se recargan solas).
