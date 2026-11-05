@@ -121,7 +121,7 @@ referencias en las dos ediciones).
   - Comprueba: sus pruebas; el ritmo (nivel 20 con todo, < 20 ms; buscar, < 100 ms).
   - Archivos: `packages/systems/src/catalog/5e/referencia/` (+ pruebas).
 
-- [ ] **21. El cierre**
+- [x] **21. El cierre** — hecho: revisión de código (con lo importante arreglado: el redondeo de `mul`, lo que se colaba entre textos, los rasgos sin mecánica; una prueba nueva compara las tablas de los dos idiomas), la batería entera en verde en local, una pasada de la CI (con un arreglo de gitleaks), PR #98, merge con `[skip ci]` y staging (el 5e, con sus 3170 documentos, comprobado desde la IA). Sin interfaz nueva, no hubo revisión de interfaz
   - Acepta: las revisiones de código, seguridad e interfaz, con lo importante arreglado; la batería entera en verde;
     una pasada de la CI; PR; merge con `[skip ci]`; staging.
   - Comprueba: la batería (`pnpm test:coverage --concurrency=3`, lint, tipos, licencias, sala limpia, límites,

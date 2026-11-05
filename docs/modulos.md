@@ -7,16 +7,18 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
-### Para retomar (2026-11-05, módulo 3: `srd-5e`, fases 3 y 4 en el PR #98)
+### Para retomar (2026-11-05, módulo 3: `srd-5e` terminado, en `main` y en staging)
 
-- **Rama `modulo-3/srd-5e-contenido`, PR #98** (con su pasada de la CI). Hechas las tareas 11 a 20 de `tasks/todo.md`:
+- **`srd-5e` terminado: PR #98, en `main` y en staging** (la CI pasó, con un arreglo de gitleaks). Hechas las tareas
+  11 a 21 de `tasks/todo.md`:
   todo el contenido de los dos SRD (3170 documentos: estados, reglas, conjuros, objetos mágicos, criaturas, especies,
   trasfondos, dotes y las 12 clases, con su mecánica) y los personajes de referencia (96 contra las tablas del SRD y
   24 hechos a mano). Los scripts, en `scripts/srd/` (`node scripts/srd/extraer.ts` y `comprobar.ts`, con los PDF de
   `datos-locales/srd/`). Revisión de código hecha, con lo importante arreglado. **Pendiente de Enrique**: el punto de
-  control 4 (`tasks/muestra-srd-5e.md`). **Lo siguiente**: cerrar la tarea 21 (merge y staging) y seguir con
-  `personajes` (el creador: lo que concede cada cosa por nivel ya va en los `grants` del contenido;
-  `catalog/5e/referencia.ts` monta un personaje como lo hará él).
+  control 4 (`tasks/muestra-srd-5e.md`) y la prueba final en staging desde claude.ai (`tasks/probar.md`). **Lo
+  siguiente**: `personajes` (el creador), que empieza por su entrevista (`interview-me`) con Enrique; lo que concede
+  cada cosa por nivel ya va en los `grants` del contenido y `catalog/5e/referencia.ts` monta un personaje como lo hará
+  él.
 - **Importar de Foundry (Enrique, 2026-11-05)**: «el importador debería coger eso [el compendio del zip del
   manifiesto del sistema]; si no, es trabajo extra cada vez que se añade un sistema». Va a la capacidad `foundry`
   (`docs/specs/modulo-3.md`: importar los datos de un sistema de Foundry filtrando por licencia, tras el abogado y su
