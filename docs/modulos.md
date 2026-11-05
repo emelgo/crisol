@@ -1444,6 +1444,15 @@ Lo que quiere (confirmado con un «sí»):
 - **Fuera**: la hoja y tirar desde ella (`hoja`); las pantallas del compendio (módulo 4); los PJ de Eana; versiones a
   mano.
 
+Lo que dice el estudio de Foundry (`research/foundry/avances-y-tablas.md`, 2026-11-05): dnd5e describe lo que se gana
+en cada nivel con nueve tipos de «avance», guarda lo elegido en la copia de la clase que lleva el personaje y escribe
+parte a pelo en él (con fallos conocidos cuando algo llega de dos sitios); no tiene creador, ni versiones, ni genera
+características, y al bajar de nivel pierde lo elegido. Para Crisol: pasos de tipos neutros (sin nada de 5e) escritos
+por sistema; las elecciones son la verdad y la hoja se calcula de ellas; el personaje apunta al contenido en vez de
+copiarlo; la lista de pasos se calcula siempre (eso da la navegación libre con (!)); un borrador en el servidor que se
+confirma de una vez con su versión; la IA recibe la misma lista de decisiones pendientes; las tablas aleatorias, con el
+modelo de Foundry pero tiradas en el servidor, con su registro y lo sacado por campaña.
+
 #### Lo que dicen los estudios (2026-11-04, con craft-anything)
 
 Notas: `research/foundry/sistemas-y-su-api.md` y `research/dndbeyond/creador-y-hoja.md`.
