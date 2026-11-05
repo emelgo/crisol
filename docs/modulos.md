@@ -1419,6 +1419,31 @@ Preguntas con propuesta; lo que eligió:
 - **Pendiente de preguntar**: las tablas aleatorias (pasaron del módulo 2 a este), subir de nivel y el creador paso a
   paso con detalle (tras el estudio de D&D Beyond), e importar los PJ de Eana (por el MCP, como todo lo demás).
 
+#### `personajes` (entrevista con Enrique, 2026-11-05)
+
+Lo que quiere (confirmado con un «sí»):
+
+- **Quién crea**: los tres. Sus jugadores (cada uno los suyos), él como máster (ve y cambia todos) y la IA por el MCP,
+  que tiene que poder hacer un personaje entero con las mismas piezas que la pantalla.
+- **Para cualquier sistema**: el motor del creador es común y **los pasos se escriben para cada sistema**, como parte
+  de él («si no, es un caos»). Los del 5e van de serie; los de los demás los escribe la IA al hacer el sistema.
+- **El creador, como el de D&D Beyond**: pasos con navegación libre, lo pendiente marcado con (!), y lo que hay que
+  elegir lo dicen el contenido y lo que concede (clase, especie, trasfondo, dotes, subclase, conjuros). Las
+  características, con matriz estándar, compra por puntos, 4d6 y manual.
+- **Subir de nivel, también como en D&D Beyond**: sin un asistente aparte, cambiando el nivel de la clase y eligiendo
+  lo que toca en el nivel nuevo, con multiclase (y el motivo cuando una clase no se puede tomar).
+- **Versiones, visibles y automáticas**: una al terminar de crearlo y otra en cada subida de nivel («Nivel 5»), que se
+  ven y se restauran desde la ficha. Sin versiones a mano.
+- **Tablas aleatorias, como pieza común**: datos que se tiran en el servidor con su registro; las usa el creador
+  (rasgos de personalidad, bagatelas) y sobre todo el máster (desde la wiki o la IA: `tirar_en_tabla`). Sus pantallas
+  del compendio y sus colecciones, en el módulo 4.
+- **Los PJ de Eana, al final**: Enrique hará el sistema de Fateforge y los pasará él con la IA. En `personajes`, solo
+  que la IA pueda hacer un personaje entero por el MCP.
+- **Hecho cuando**: un jugador hace su PJ de 5e de nivel 1 y lo sube a 5 con multiclase; la IA crea uno entero desde
+  claude.ai; Enrique vuelve a una versión anterior desde la ficha.
+- **Fuera**: la hoja y tirar desde ella (`hoja`); las pantallas del compendio (módulo 4); los PJ de Eana; versiones a
+  mano.
+
 #### Lo que dicen los estudios (2026-11-04, con craft-anything)
 
 Notas: `research/foundry/sistemas-y-su-api.md` y `research/dndbeyond/creador-y-hoja.md`.
