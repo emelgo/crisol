@@ -39,6 +39,7 @@ import {
   applyChanges,
   applyChoices,
   type Build,
+  browseContent,
   CATALOG,
   ChangeError,
   type Choices,
@@ -46,6 +47,7 @@ import {
   catalogSystem,
   characterView,
   compendiumEntry,
+  compendiumSections,
   compendiumTypes,
   fileName,
   normalizeChoices,
@@ -1373,9 +1375,10 @@ export function fakeApi(
     // El compendio de una campaña: el contenido de su sistema (en la falsa, solo el de los de la cuenta)
     getCampaignCompendium: ({ campaignId }) => {
       const found = compendiumOf(campaignId)
-      if (!found) return { system: null, language: 'es' as const, sources: [], types: [] }
+      if (!found) return { system: null, language: 'es' as const, sources: [], types: [], sections: [] }
       const { document, choices, content } = found
       const say = (text: Text | undefined) => textOf(text, choices.language)
+      const types = compendiumTypes(document, content, choices)
       return {
         system: { id: document.id, name: say(document.name) },
         language: choices.language,
@@ -1388,7 +1391,12 @@ export function fakeApi(
             license: each.license,
             attribution: say(each.attribution)
           })),
-        types: compendiumTypes(document, content, choices).map((type) => ({
+        sections: compendiumSections(document, types).map((section) => ({
+          key: section.key,
+          label: say(section.label),
+          types: section.types.map((type) => ({ key: type.key, label: say(type.label) }))
+        })),
+        types: types.map((type) => ({
           ...type,
           label: say(type.label),
           fields: type.fields.map(({ options: given, ...field }) => ({
@@ -1398,6 +1406,17 @@ export function fakeApi(
           }))
         }))
       }
+    },
+    browseCampaignContent: ({ campaignId, type }) => {
+      const found = compendiumOf(campaignId)
+      if (!found) return { items: [], folders: [] }
+      const { document, choices, content } = found
+      return browseContent(document, content, {
+        type,
+        sources: choices.sources,
+        duplicates: choices.duplicates,
+        language: choices.language
+      })
     },
     searchCampaignContent: ({ campaignId, ...options }) => {
       const found = compendiumOf(campaignId)

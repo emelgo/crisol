@@ -6,8 +6,8 @@
 import { type Text, textOf } from '@crisol/systems'
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import { getRouteApi, Navigate } from '@tanstack/react-router'
-import { ArrowLeft, Search, X } from 'lucide-react'
-import { useEffect, useId, useState } from 'react'
+import { ArrowLeft, ChevronRight, Search, X } from 'lucide-react'
+import { type ReactNode, useEffect, useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import type { ActionOutput } from '../api/client.ts'
@@ -68,6 +68,8 @@ function EditionTag({ edition, legacy }: { edition: string | null; legacy: boole
 export function CompendiumScreen() {
   const { t } = useTranslation()
   const { campaignId } = route.useParams()
+  const { ver } = route.useSearch()
+  const navigate = route.useNavigate()
   const api = useApi()
   const { account, pending } = useAccounts().useAccount()
   const narrow = useNarrow()
@@ -78,30 +80,31 @@ export function CompendiumScreen() {
     enabled: Boolean(account)
   })
   const [query, setQuery] = useState('')
-  const [type, setType] = useState<string | null>(null)
-  const [selected, setSelected] = useState<string | null>(null)
   // Se busca al dejar de escribir, no con cada tecla
   const wanted = useSettled(query.trim())
   const hits = useInfiniteQuery({
-    queryKey: ['compendium', campaignId, 'search', wanted, type],
+    queryKey: ['compendium', campaignId, 'search', wanted],
     queryFn: ({ pageParam }) =>
-      api.call('searchCampaignContent', {
-        campaignId,
-        ...(wanted ? { query: wanted } : {}),
-        ...(type ? { type } : {}),
-        limit: PAGE,
-        offset: pageParam
-      }),
+      api.call('searchCampaignContent', { campaignId, query: wanted, limit: PAGE, offset: pageParam }),
     initialPageParam: 0,
     getNextPageParam: (last, pages) => {
       const seen = pages.reduce((n, p) => n + p.items.length, 0)
       return seen < last.total ? seen : undefined
     },
-    enabled: Boolean(compendium.data?.system)
+    enabled: Boolean(compendium.data?.system) && wanted !== ''
   })
   const items = hits.data?.pages.flatMap((p) => p.items) ?? []
-  // En lo ancho, sin nada elegido, el primero de la lista
-  const shown = selected ?? (narrow ? null : (items[0]?.key ?? null))
+  // Lo abierto va en la dirección: se enlaza y, en el móvil, «atrás» vuelve a la lista
+  const shown = ver ?? null
+  const open = (key: string) => void navigate({ search: { ver: key } })
+  const back = () => void navigate({ search: {} })
+  // Al volver a la lista (en lo estrecho), el foco va a lo que estaba abierto
+  const [lastShown, setLastShown] = useState<string | null>(null)
+  if (shown && shown !== lastShown) setLastShown(shown)
+  useEffect(() => {
+    if (shown || !lastShown || !narrow) return
+    document.querySelector<HTMLElement>(`[data-entry="${CSS.escape(lastShown)}"]`)?.focus()
+  }, [shown, lastShown, narrow])
 
   if (pending) return null
   if (!account) return <Navigate to="/entrar" replace />
@@ -112,7 +115,7 @@ export function CompendiumScreen() {
       <Loading />
     )
   }
-  const { system, types, sources, language } = compendium.data
+  const { system, types, sources, sections, language } = compendium.data
   if (!system) {
     return (
       <section className={styles.empty}>
@@ -146,59 +149,46 @@ export function CompendiumScreen() {
             placeholder={t('compendium.searchHint')}
             value={query}
             autoComplete="off"
-            onChange={(event) => {
-              setQuery(event.currentTarget.value)
-              setSelected(null)
-            }}
+            onChange={(event) => setQuery(event.currentTarget.value)}
           />
           {query && (
             <button
               type="button"
               className={styles.clear}
               aria-label={t('compendium.clear')}
-              onClick={() => {
-                setQuery('')
-                setSelected(null)
-              }}
+              onClick={() => setQuery('')}
             >
               <X size={14} aria-hidden="true" />
             </button>
           )}
         </div>
-        <fieldset className={styles.types} data-tour="compendio-tipos">
-          <legend className={styles.hidden}>{t('compendium.types')}</legend>
-          {[null, ...types.map((each) => each.key)].map((key) => (
-            <button
-              key={key ?? 'todo'}
-              type="button"
-              className={styles.type}
-              aria-pressed={type === key}
-              onClick={() => {
-                setType(key)
-                setSelected(null)
-              }}
-            >
-              {key ? (typeOf(key)?.label ?? key) : t('compendium.all')}
-            </button>
-          ))}
-        </fieldset>
-        <ul className={styles.list} aria-label={t('compendium.results')} aria-busy={hits.isFetching}>
-          {items.map((hit) => (
-            <HitRow
-              key={hit.key}
-              hit={hit}
-              typeLabel={typeOf(hit.type)?.label ?? hit.type}
-              current={hit.key === shown}
-              onOpen={() => setSelected(hit.key)}
-            />
-          ))}
-          {hits.data && items.length === 0 && <li className={styles.none}>{t('compendium.none')}</li>}
-        </ul>
-        {hits.isError && <LoadError error={hits.error} onRetry={() => void hits.refetch()} />}
-        {hits.hasNextPage && (
-          <BusyButton className={styles.more} busy={hits.isFetchingNextPage} onClick={() => void hits.fetchNextPage()}>
-            {hits.isFetchingNextPage ? t('compendium.loadingMore') : t('compendium.more')}
-          </BusyButton>
+        {wanted ? (
+          <>
+            <ul className={styles.list} aria-label={t('compendium.results')} aria-busy={hits.isFetching}>
+              {items.map((hit) => (
+                <HitRow
+                  key={hit.key}
+                  hit={hit}
+                  typeLabel={typeOf(hit.type)?.label ?? hit.type}
+                  current={hit.key === shown}
+                  onOpen={() => open(hit.key)}
+                />
+              ))}
+              {hits.data && items.length === 0 && <li className={styles.none}>{t('compendium.none')}</li>}
+            </ul>
+            {hits.isError && <LoadError error={hits.error} onRetry={() => void hits.refetch()} />}
+            {hits.hasNextPage && (
+              <BusyButton
+                className={styles.more}
+                busy={hits.isFetchingNextPage}
+                onClick={() => void hits.fetchNextPage()}
+              >
+                {hits.isFetchingNextPage ? t('compendium.loadingMore') : t('compendium.more')}
+              </BusyButton>
+            )}
+          </>
+        ) : (
+          <Library campaignId={campaignId} sections={sections} types={types} current={shown} onOpen={open} />
         )}
       </aside>
       {shown ? (
@@ -209,20 +199,246 @@ export function CompendiumScreen() {
           types={types}
           sources={sources}
           language={language}
-          onOpen={setSelected}
-          onBack={narrow ? () => setSelected(null) : undefined}
+          onOpen={open}
+          onBack={narrow ? back : undefined}
         />
       ) : (
-        !narrow && <div className={styles.reading} />
+        !narrow && (
+          <div className={styles.reading}>
+            <p className={styles.pick}>{t('compendium.pick')}</p>
+          </div>
+        )
       )}
       <Tour
         id="compendio"
         steps={[
           { target: '[data-tour="compendio-buscar"]', text: t('tour.compendium.search') },
-          { target: '[data-tour="compendio-tipos"]', text: t('tour.compendium.types') }
+          { target: '[data-tour="compendio-estantes"]', text: t('tour.compendium.types') }
         ]}
       />
     </div>
+  )
+}
+
+type Section = ActionOutput<'getCampaignCompendium'>['sections'][number]
+type Browsed = ActionOutput<'browseCampaignContent'>
+
+/**
+ * El compendio como una biblioteca, igual que el de Foundry: por edición (si hay más de una), sus secciones (Reglas,
+ * Clases, Conjuros…), en cada una sus tipos y, en cada tipo, sus carpetas (los conjuros por nivel); dentro, lo suyo.
+ * Todo se abre y se cierra; cada tipo se pide al abrirlo
+ */
+function Library({
+  campaignId,
+  sections,
+  types,
+  current,
+  onOpen
+}: {
+  campaignId: string
+  sections: Section[]
+  types: CompendiumType[]
+  current: string | null
+  onOpen: (key: string) => void
+}) {
+  const { t } = useTranslation()
+  const [opened, setOpened] = useState<ReadonlySet<string>>(new Set())
+  const toggle = (id: string) =>
+    setOpened((was) => {
+      const next = new Set(was)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  const editions = [...new Set(types.flatMap((type) => Object.keys(type.editions)))].sort((a, b) => b.localeCompare(a))
+  const byEdition = editions.length > 1
+  const newest = editions[0] ?? ''
+  const countOf = (typeKey: string, edition: string | null) => {
+    const type = types.find((each) => each.key === typeKey)
+    return edition === null ? (type?.count ?? 0) : (type?.editions[edition] ?? 0)
+  }
+  const shelves = (edition: string | null, prefix: string) => (
+    <ul className={styles.shelf}>
+      {sections.map((section) => {
+        const count = section.types.reduce((n, type) => n + countOf(type.key, edition), 0)
+        if (count === 0) return null
+        const id = `${prefix}${section.key}`
+        return (
+          <li key={section.key}>
+            <Disclosure label={section.label} count={count} open={opened.has(id)} onToggle={() => toggle(id)}>
+              {section.types.length === 1 && section.types[0] ? (
+                <TypeShelf
+                  campaignId={campaignId}
+                  type={section.types[0].key}
+                  edition={edition}
+                  idPrefix={`${id}/`}
+                  opened={opened}
+                  onToggle={toggle}
+                  current={current}
+                  onOpen={onOpen}
+                />
+              ) : (
+                <ul className={styles.shelf}>
+                  {section.types.map((type) => {
+                    const typeCount = countOf(type.key, edition)
+                    if (typeCount === 0) return null
+                    const typeId = `${id}/${type.key}`
+                    return (
+                      <li key={type.key}>
+                        <Disclosure
+                          label={type.label}
+                          count={typeCount}
+                          open={opened.has(typeId)}
+                          onToggle={() => toggle(typeId)}
+                        >
+                          <TypeShelf
+                            campaignId={campaignId}
+                            type={type.key}
+                            edition={edition}
+                            idPrefix={`${typeId}/`}
+                            opened={opened}
+                            onToggle={toggle}
+                            current={current}
+                            onOpen={onOpen}
+                          />
+                        </Disclosure>
+                      </li>
+                    )
+                  })}
+                </ul>
+              )}
+            </Disclosure>
+          </li>
+        )
+      })}
+    </ul>
+  )
+  return (
+    <nav className={styles.library} aria-label={t('compendium.library')} data-tour="compendio-estantes">
+      {byEdition ? (
+        <ul className={styles.shelf}>
+          {editions.map((edition) => {
+            const id = `e:${edition}`
+            const label = edition
+              ? edition === newest
+                ? edition
+                : t('compendium.legacy', { edition })
+              : t('compendium.noEdition')
+            const count = types.reduce((n, type) => n + (type.editions[edition] ?? 0), 0)
+            return (
+              <li key={edition}>
+                <Disclosure label={label} count={count} open={opened.has(id)} onToggle={() => toggle(id)} edition>
+                  {shelves(edition, `${id}/`)}
+                </Disclosure>
+              </li>
+            )
+          })}
+        </ul>
+      ) : (
+        shelves(null, '')
+      )}
+    </nav>
+  )
+}
+
+/** Una carpeta que se abre y se cierra, con su nombre y cuántos lleva */
+function Disclosure({
+  label,
+  count,
+  open,
+  onToggle,
+  edition = false,
+  children
+}: {
+  label: string
+  count: number
+  open: boolean
+  onToggle: () => void
+  edition?: boolean
+  children: ReactNode
+}) {
+  return (
+    <>
+      <button
+        type="button"
+        className={edition ? `${styles.folder} ${styles.editionFolder}` : styles.folder}
+        aria-expanded={open}
+        onClick={onToggle}
+      >
+        <ChevronRight size={14} aria-hidden="true" className={styles.chevron} />
+        <span className={styles.folderName}>{label}</span>
+        <span className={styles.folderCount}>{count}</span>
+      </button>
+      {open && children}
+    </>
+  )
+}
+
+/** Lo de un tipo: se pide al abrirlo (una vez para todas las ediciones) y se reparte en sus carpetas */
+function TypeShelf({
+  campaignId,
+  type,
+  edition,
+  idPrefix,
+  opened,
+  onToggle,
+  current,
+  onOpen
+}: {
+  campaignId: string
+  type: string
+  edition: string | null
+  idPrefix: string
+  opened: ReadonlySet<string>
+  onToggle: (id: string) => void
+  current: string | null
+  onOpen: (key: string) => void
+}) {
+  const { t } = useTranslation()
+  const api = useApi()
+  const browsed = useQuery({
+    queryKey: ['compendium', campaignId, 'browse', type],
+    queryFn: () => api.call('browseCampaignContent', { campaignId, type })
+  })
+  if (!browsed.data)
+    return failed(browsed) ? (
+      <LoadError error={browsed.error} onRetry={() => void browsed.refetch()} />
+    ) : (
+      <p className={styles.none}>{t('compendium.loadingMore')}</p>
+    )
+  const inEdition = (item: Browsed['items'][number]) => edition === null || (item.edition ?? '') === edition
+  const items = browsed.data.items.filter(inEdition)
+  const loose = items.filter((item) => item.folder === null)
+  const entry = (item: Browsed['items'][number]) => (
+    <li key={item.key}>
+      <button
+        type="button"
+        className={styles.entry}
+        data-entry={item.key}
+        aria-current={item.key === current ? 'true' : undefined}
+        onClick={() => onOpen(item.key)}
+      >
+        <span className={styles.entryName}>{item.name}</span>
+        {edition === null && <EditionTag edition={item.edition} legacy={item.legacy} />}
+      </button>
+    </li>
+  )
+  return (
+    <ul className={styles.shelf}>
+      {browsed.data.folders.map((folder) => {
+        const inside = items.filter((item) => item.folder === folder.key)
+        if (inside.length === 0) return null
+        const id = `${idPrefix}${folder.key}`
+        return (
+          <li key={folder.key}>
+            <Disclosure label={folder.label} count={inside.length} open={opened.has(id)} onToggle={() => onToggle(id)}>
+              <ul className={styles.shelf}>{inside.map(entry)}</ul>
+            </Disclosure>
+          </li>
+        )
+      })}
+      {loose.map(entry)}
+    </ul>
   )
 }
 
@@ -276,10 +492,14 @@ function Entry({
     queryFn: () => api.call('getCampaignContent', { campaignId, keys: [entryKey] })
   })
   const item = read.data?.items[0]
-  // Al abrir otro, arriba
+  // Al abrir otro, arriba; en lo estrecho (con «Volver a la lista»), el foco va a su título
+  const narrow = Boolean(onBack)
   useEffect(() => {
-    if (item) document.getElementById(titleId)?.scrollIntoView?.({ block: 'nearest' })
-  }, [item, titleId])
+    if (!item) return
+    const title = document.getElementById(titleId)
+    title?.scrollIntoView?.({ block: 'nearest' })
+    if (narrow) title?.focus()
+  }, [item, titleId, narrow])
   if (!read.data) {
     return (
       <div className={styles.reading}>
@@ -308,7 +528,7 @@ function Entry({
         )}
         <header className={styles.head}>
           <p className={styles.kind}>{type?.label ?? item.type}</p>
-          <h2 id={titleId} className={styles.name}>
+          <h2 id={titleId} className={styles.name} tabIndex={-1}>
             {name}
           </h2>
           <EditionTag edition={item.edition} legacy={item.legacy} />

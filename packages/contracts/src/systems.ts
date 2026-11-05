@@ -428,7 +428,17 @@ export const compendiumType = z.object({
       options: z.array(z.object({ value: z.string(), label: z.string() })).optional()
     })
   ),
-  text: z.string().nullable().describe('El campo de su texto largo (la descripción)')
+  text: z.string().nullable().describe('El campo de su texto largo (la descripción)'),
+  editions: z
+    .record(z.string(), z.int())
+    .describe('Cuántos hay de cada edición (por su nombre; sin edición, la clave vacía)')
+})
+
+/** Una sección del compendio (Conjuros, Equipo), con sus tipos y su nombre como carpeta */
+export const compendiumSection = z.object({
+  key: z.string(),
+  label: z.string(),
+  types: z.array(z.object({ key: z.string(), label: z.string() }))
 })
 
 export const getCampaignCompendium = defineAction({
@@ -449,7 +459,28 @@ export const getCampaignCompendium = defineAction({
         attribution: z.string()
       })
     ),
-    types: z.array(compendiumType)
+    types: z.array(compendiumType),
+    sections: z.array(compendiumSection).describe('Cómo se ordena: sus secciones, con sus tipos, en su orden')
+  })
+})
+
+export const browseCampaignContent = defineAction({
+  name: 'browseCampaignContent',
+  kind: 'read',
+  description:
+    'Todo lo de un tipo del compendio de una campaña, cada uno en su carpeta (los conjuros por nivel, las criaturas por tipo), con sus carpetas en orden. Lo ve cualquiera de la campaña',
+  input: z.object({ campaignId: z.uuid(), type: z.string().max(60) }),
+  output: z.object({
+    items: z.array(
+      z.object({
+        key: z.string(),
+        name: z.string(),
+        edition: z.string().nullable(),
+        legacy: z.boolean(),
+        folder: z.string().nullable()
+      })
+    ),
+    folders: z.array(z.object({ key: z.string(), label: z.string() }))
   })
 })
 

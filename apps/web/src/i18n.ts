@@ -364,6 +364,9 @@ export const es = {
     systemWith: '{{system}} · {{editions}}',
     and: ' y ',
     search: 'Buscar en el compendio',
+    library: 'Biblioteca del compendio',
+    pick: 'Abre algo del compendio para leerlo.',
+    noEdition: 'Sin edición',
     searchHint: 'Un conjuro, una criatura…',
     otherVersion: 'Otra versión',
     clear: 'Borrar la búsqueda',
@@ -1762,7 +1765,7 @@ export const es = {
     },
     compendium: {
       search: 'Busca en todo el contenido del juego.',
-      types: 'O mira solo un tipo.'
+      types: 'O recórrelo por estantes: cada sección, con sus carpetas.'
     },
     table: {
       rows: 'Cada fila, con los números que la sacan.',

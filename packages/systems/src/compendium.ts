@@ -6,7 +6,7 @@ import type { Choices } from './choices.ts'
 import { editionOf, resolveConcept, type Seen, type Versioned, visibleContent } from './content.ts'
 import type { Field, System } from './format.ts'
 import type { Mechanics } from './mechanics.ts'
-import type { Text } from './text.ts'
+import { type Language, type Text, textOf } from './text.ts'
 
 /** Un campo que se lee en el compendio: su nombre, su clase y, si es de opciones, sus opciones */
 export interface CompendiumField {
@@ -24,6 +24,8 @@ export interface CompendiumType {
   fields: CompendiumField[]
   /** Su texto largo (la descripción), si lo tiene */
   text: string | null
+  /** Cuántos hay de cada edición (sin edición, la clave vacía) */
+  editions: Record<string, number>
 }
 
 /** Lo de un documento que se ve en el compendio, sin su texto ni su mecánica */
@@ -47,8 +49,14 @@ export function compendiumTypes(
   choices: Pick<Choices, 'sources' | 'duplicates'>
 ): CompendiumType[] {
   const counts = new Map<string, number>()
-  for (const { item } of visibleContent(system, content, choices))
+  const editions = new Map<string, Record<string, number>>()
+  for (const { item } of visibleContent(system, content, choices)) {
     counts.set(item.type, (counts.get(item.type) ?? 0) + 1)
+    const byEdition = editions.get(item.type) ?? {}
+    const edition = editionOf(system, item) ?? ''
+    byEdition[edition] = (byEdition[edition] ?? 0) + 1
+    editions.set(item.type, byEdition)
+  }
   return Object.entries(system.types).flatMap(([key, type]) => {
     const count = counts.get(key) ?? 0
     if (count === 0) return []
@@ -63,7 +71,7 @@ export function compendiumTypes(
             if ((f.kind === 'choice' || f.kind === 'list') && f.options) read.options = f.options
             return [read]
           })
-    return [{ key, label: type.label, document: type.document, count, fields, text }]
+    return [{ key, label: type.label, document: type.document, count, fields, text, editions: editions.get(key) ?? {} }]
   })
 }
 
@@ -107,4 +115,146 @@ export function compendiumEntry<T extends Named>(
     .sort((a, b) => (a.g.level ?? 0) - (b.g.level ?? 0) || a.i - b.i)
     .map(({ g }) => g)
   return { edition, legacy, versions, granted }
+}
+
+/** Una sección del compendio (Conjuros, Equipo), con sus tipos y su nombre como carpeta (Armas) */
+export interface CompendiumSection {
+  key: string
+  label: Text
+  types: { key: string; label: Text }[]
+}
+
+/**
+ * Sus secciones, como los estantes de una biblioteca: las que dice el sistema, con sus tipos que tienen contenido;
+ * los tipos que no nombra (o sin compendio en el sistema), cada uno en la suya, detrás
+ */
+export function compendiumSections(system: System, types: readonly CompendiumType[]): CompendiumSection[] {
+  const present = new Map(types.map((t) => [t.key, t]))
+  const labelOf = (key: string): Text => system.compendium?.types?.[key]?.label ?? present.get(key)?.label ?? key
+  const used = new Set<string>()
+  const sections: CompendiumSection[] = (system.compendium?.sections ?? []).flatMap((s) => {
+    const inside = s.types.filter((k) => present.has(k) && !used.has(k))
+    for (const k of inside) used.add(k)
+    return inside.length > 0
+      ? [{ key: s.key, label: s.label, types: inside.map((k) => ({ key: k, label: labelOf(k) })) }]
+      : []
+  })
+  for (const t of types)
+    if (!used.has(t.key))
+      sections.push({ key: t.key, label: labelOf(t.key), types: [{ key: t.key, label: labelOf(t.key) }] })
+  return sections
+}
+
+/** Un documento del compendio en su carpeta (o suelto, con null) */
+export interface BrowseHit {
+  key: string
+  name: string
+  edition: string | null
+  legacy: boolean
+  folder: string | null
+}
+
+const folded = (text: string) =>
+  text
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim()
+
+/** De un texto, lo de delante: «Dragón (cromático)» → «Dragón»; «Humanoide o bestia» → «Humanoide» */
+const baseOf = (text: string) => (text.split(' (')[0] ?? text).split(/ (?:o|or)(?: |$)/)[0]?.trim() ?? text
+
+const nameOf = (data: Record<string, unknown> | undefined, language: Language, fallback: string) => {
+  const name = data?.name
+  return (typeof name === 'string' ? name : textOf(name as Text | undefined, language)) || fallback
+}
+
+/**
+ * Los documentos de un tipo que se ven en una campaña, cada uno en su carpeta (por el campo que dice el sistema: el
+ * nivel de un conjuro, el tipo de una criatura), y sus carpetas en orden: los números de menor a mayor, las opciones
+ * en su orden y los textos por su nombre. Dentro, por su nombre (de lo mismo, el nuevo antes)
+ */
+export function browseContent<T extends Versioned & { data?: Record<string, unknown> }>(
+  system: System,
+  content: readonly T[],
+  {
+    type,
+    sources,
+    duplicates,
+    language
+  }: { type: string } & Pick<Choices, 'sources' | 'duplicates'> & { language: Language }
+): { items: BrowseHit[]; folders: { key: string; label: string }[] } {
+  const spec = system.compendium?.types?.[type]?.folder
+  const field = spec ? system.types[type]?.fields[spec.field] : undefined
+  const options = field?.kind === 'choice' || field?.kind === 'list' ? (field.options ?? []) : []
+  const folders = new Map<string, { label: string; order: number | string }>()
+  const folderOf = (value: unknown): string | null => {
+    if (!spec || value === undefined || value === null || value === '') return null
+    const named = (key: string) => (spec.labels?.[key] ? textOf(spec.labels[key], language) : null)
+    const templated = (key: string) => (spec.template ? textOf(spec.template, language).replace('{valor}', key) : key)
+    let key: string
+    let label: string
+    let order: number | string
+    if (typeof value === 'number') {
+      key = String(value)
+      label = named(key) ?? templated(key)
+      order = value
+    } else if (options.length > 0) {
+      key = String(value)
+      const at = options.findIndex((o) => o.value === value)
+      label = named(key) ?? (at >= 0 ? textOf(options[at]?.label, language) : key)
+      order = at >= 0 ? at : options.length
+    } else {
+      const text = typeof value === 'string' ? value : textOf(value as Text, language)
+      const shown = spec.base ? baseOf(text) : text
+      if (!shown) return null
+      key = folded(shown)
+      label = named(key) ?? shown.charAt(0).toUpperCase() + shown.slice(1)
+      order = label
+    }
+    if (!folders.has(key)) folders.set(key, { label, order })
+    return key
+  }
+  const items: BrowseHit[] = visibleContent(system, content, { sources, duplicates })
+    .filter(({ item }) => item.type === type)
+    .map(({ item, legacy }) => ({
+      key: item.key,
+      name: nameOf(item.data, language, item.key),
+      edition: editionOf(system, item) ?? null,
+      legacy,
+      folder: folderOf(spec ? item.data?.[spec.field] : undefined)
+    }))
+    .sort(
+      (a, b) =>
+        a.name.localeCompare(b.name, language) || Number(a.legacy) - Number(b.legacy) || a.key.localeCompare(b.key)
+    )
+  const ordered = [...folders.entries()]
+    .sort(([, a], [, b]) =>
+      typeof a.order === 'number' && typeof b.order === 'number'
+        ? a.order - b.order
+        : String(a.order).localeCompare(String(b.order), language)
+    )
+    .map(([key, f]) => ({ key, label: f.label }))
+  return { items, folders: ordered }
+}
+
+/** Lo que no vale del compendio de un sistema: que sus tipos existan, que no se repitan y que sus carpetas sean campos */
+export function checkCompendium(system: System, add: (path: (string | number)[], message: string) => void) {
+  const layout = system.compendium
+  if (!layout) return
+  const seen = new Set<string>()
+  layout.sections.forEach((section, i) => {
+    section.types.forEach((type, j) => {
+      const at = ['compendium', 'sections', i, 'types', j]
+      if (!system.types[type]) add(at, `No existe el tipo «${type}»`)
+      else if (seen.has(type)) add(at, `«${type}» ya está en otra sección`)
+      seen.add(type)
+    })
+  })
+  for (const [type, spec] of Object.entries(layout.types ?? {})) {
+    const fields = system.types[type]?.fields
+    if (!fields) add(['compendium', 'types', type], `No existe el tipo «${type}»`)
+    else if (spec.folder && !fields[spec.folder.field])
+      add(['compendium', 'types', type, 'folder', 'field'], `«${type}» no tiene el campo «${spec.folder.field}»`)
+  }
 }

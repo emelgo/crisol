@@ -5,6 +5,7 @@
 
 import { DiceSyntaxError, parseDice } from '@crisol/dice'
 import { type core, z } from 'zod'
+import { checkCompendium } from './compendium.ts'
 import {
   type Field,
   KEY_MESSAGE,
@@ -319,6 +320,7 @@ function checkReferences(
 ) {
   checkSteps(system, add)
   checkSheet(system, add)
+  checkCompendium(system, add)
   const types = system.types
   const itemTypes = new Set(
     Object.entries(types)

@@ -118,6 +118,7 @@ describe('Actions', () => {
       getSystemFormat: true,
       getCampaignCompendium: true,
       searchCampaignContent: true,
+      browseCampaignContent: true,
       getCampaignContent: true,
       listCharacters: true,
       getCharacter: true,

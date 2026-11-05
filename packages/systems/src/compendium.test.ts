@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { catalogContent } from './catalog/content.ts'
 import { CATALOG } from './catalog/index.ts'
-import { compendiumEntry, compendiumTypes } from './compendium.ts'
+import { browseContent, compendiumEntry, compendiumSections, compendiumTypes } from './compendium.ts'
 import { visibleContent } from './content.ts'
+import { validateSystem } from './validate.ts'
 
 const fiveE = CATALOG.find((s) => s.id === '5e')
 if (!fiveE) throw new Error('Falta el 5e')
@@ -69,5 +70,94 @@ describe('un documento del compendio', () => {
     const levels = barbarian.granted.map((g) => g.level ?? 0)
     expect(levels).toEqual([...levels].sort((a, b) => a - b))
     expect(entry('bola_de_fuego_2024').granted).toEqual([])
+  })
+})
+
+describe('el compendio ordenado como una biblioteca: secciones, tipos y carpetas', () => {
+  const newest = { sources: ['srd51', 'srd521'], duplicates: 'newest' as const }
+
+  it('las secciones del 5e, en su orden, con los tipos que tienen contenido', () => {
+    const sections = compendiumSections(fiveE, compendiumTypes(fiveE, content, newest))
+    expect(sections.map((s) => s.key)).toEqual([
+      'reglas',
+      'clases',
+      'origenes',
+      'rasgos',
+      'dotes',
+      'conjuros',
+      'equipo',
+      'objetos_magicos',
+      'criaturas'
+    ])
+    expect(sections.find((s) => s.key === 'equipo')?.types.map((t) => t.key)).toEqual(['arma', 'armadura', 'equipo'])
+    expect(sections.find((s) => s.key === 'equipo')?.types[0]?.label).toEqual({ es: 'Armas', en: 'Weapons' })
+  })
+
+  it('sin compendio en el sistema, una sección por tipo; los tipos que no nombra, al final', () => {
+    const bare = { ...structuredClone(fiveE), compendium: undefined }
+    const types = compendiumTypes(bare, content, newest)
+    expect(compendiumSections(bare, types).map((s) => s.key)).toEqual(types.map((t) => t.key))
+    const partial = {
+      ...structuredClone(fiveE),
+      compendium: { sections: [{ key: 'magia', label: 'Magia', types: ['conjuro'] }] }
+    }
+    const sections = compendiumSections(partial, compendiumTypes(partial, content, newest))
+    expect(sections[0]).toMatchObject({ key: 'magia', types: [{ key: 'conjuro' }] })
+    expect(sections.map((s) => s.key)).toContain('criatura')
+  })
+
+  it('los conjuros, por nivel: «Trucos» y «Nivel N», en orden; dentro, por su nombre', () => {
+    const { items, folders } = browseContent(fiveE, content, { type: 'conjuro', ...newest, language: 'es' })
+    expect(folders.map((f) => f.label)).toEqual(['Trucos', ...Array.from({ length: 9 }, (_, i) => `Nivel ${i + 1}`)])
+    const fireball = items.find((i) => i.name === 'Bola de fuego' && !i.legacy)
+    expect(fireball).toMatchObject({ folder: '3', edition: '2024' })
+    const third = items.filter((i) => i.folder === '3').map((i) => i.name)
+    expect(third).toEqual([...third].sort((a, b) => a.localeCompare(b, 'es')))
+  })
+
+  it('las criaturas, por su tipo sin lo de dentro del paréntesis; el equipo, por su categoría con su nombre', () => {
+    const creatures = browseContent(fiveE, content, { type: 'criatura', ...newest, language: 'es' })
+    const labels = creatures.folders.map((f) => f.label)
+    expect(labels).toContain('Dragón')
+    expect(labels).not.toContain('Dragón (cromático)')
+    // «Humanoide o bestia» (o cortado: «Humanoide o») va con «Humanoide»
+    expect(labels.filter((l) => l.startsWith('Humanoide'))).toEqual(['Humanoide'])
+    const subclasses = browseContent(fiveE, content, { type: 'subclase', ...newest, language: 'es' })
+    expect(subclasses.folders.map((f) => f.label)).toContain('Bárbaro')
+    expect(labels).toEqual([...labels].sort((a, b) => a.localeCompare(b, 'es')))
+    expect(creatures.items.find((i) => i.name === 'Dragón rojo adulto')?.folder).toBe(
+      creatures.folders.find((f) => f.label === 'Dragón')?.key
+    )
+    const gear = browseContent(fiveE, content, { type: 'arma', ...newest, language: 'es' })
+    expect(gear.folders.map((f) => f.label)).toEqual(['Sencillas', 'Marciales'])
+    const english = browseContent(fiveE, content, { type: 'conjuro', ...newest, language: 'en' })
+    expect(english.folders[0]?.label).toBe('Cantrips')
+  })
+
+  it('un tipo sin carpetas: todo suelto', () => {
+    const { folders, items } = browseContent(fiveE, content, { type: 'estado', ...newest, language: 'es' })
+    expect(folders).toEqual([])
+    expect(items.every((i) => i.folder === null)).toBe(true)
+  })
+
+  it('lo que nombra el compendio de un sistema existe', () => {
+    const broken = structuredClone(fiveE)
+    broken.compendium = {
+      sections: [
+        { key: 'a', label: 'A', types: ['conjuro', 'nada'] },
+        { key: 'b', label: 'B', types: ['conjuro'] }
+      ],
+      types: { nada: {}, conjuro: { folder: { field: 'nivelx' } } }
+    }
+    const messages = validateSystem(broken).problems.map((p) => `${p.path}: ${p.message}`)
+    expect(messages).toEqual(
+      expect.arrayContaining([
+        'compendium.sections[0].types[1]: No existe el tipo «nada»',
+        'compendium.sections[1].types[0]: «conjuro» ya está en otra sección',
+        'compendium.types.nada: No existe el tipo «nada»',
+        'compendium.types.conjuro.folder.field: «conjuro» no tiene el campo «nivelx»'
+      ])
+    )
+    expect(validateSystem(fiveE).problems.filter((p) => p.severity === 'error')).toEqual([])
   })
 })

@@ -2,15 +2,22 @@
  * El compendio de una campaña (docs/specs/personajes.md § campana): el contenido del sistema que eligió, con sus
  * fuentes. Lo ve cualquiera de la campaña (no solo quien ve los sistemas de la cuenta), y solo lo de esas fuentes
  */
-import { getCampaignCompendium, getCampaignContent, searchCampaignContent } from '@crisol/contracts'
+import {
+  browseCampaignContent,
+  getCampaignCompendium,
+  getCampaignContent,
+  searchCampaignContent
+} from '@crisol/contracts'
 import { systemsRepo } from '@crisol/db'
 import { NotFoundError } from '@crisol/domain'
 import {
+  browseContent,
   type Choices,
   type ContentEntry,
   type ContentItem,
   catalogSystem,
   compendiumEntry,
+  compendiumSections,
   compendiumTypes,
   normalizeChoices,
   type System,
@@ -51,7 +58,7 @@ async function campaignSystem(ctx: ActionContext, campaignId: string) {
 export const compendiumActions = [
   implement(getCampaignCompendium, async (ctx, { campaignId }) => {
     const found = await campaignSystem(ctx, campaignId)
-    if (!found) return { system: null, language: 'es' as const, sources: [], types: [] }
+    if (!found) return { system: null, language: 'es' as const, sources: [], types: [], sections: [] }
     const { document, choices, entries } = found
     const language = choices.language
     const say = (text: Text | undefined) => textOf(text, language)
@@ -67,6 +74,11 @@ export const compendiumActions = [
           license: s.license,
           attribution: say(s.attribution)
         })),
+      sections: compendiumSections(document, compendiumTypes(document, entries, choices)).map((section) => ({
+        key: section.key,
+        label: say(section.label),
+        types: section.types.map((type) => ({ key: type.key, label: say(type.label) }))
+      })),
       types: compendiumTypes(document, entries, choices).map((type) => ({
         ...type,
         label: say(type.label),
@@ -88,6 +100,22 @@ export const compendiumActions = [
       duplicates: choices.duplicates,
       language: choices.language,
       ...given
+    })
+  }),
+
+  implement(browseCampaignContent, async (ctx, { campaignId, type }) => {
+    const found = await campaignSystem(ctx, campaignId)
+    if (!found) return { items: [], folders: [] }
+    const { document, row, choices } = found
+    // Las carpetas salen de sus valores: de un sistema de la cuenta, el contenido de ese tipo entero
+    const items: ContentItem[] = row
+      ? (await systemsRepo.listContentOfType(ctx.db, row.id, type)).map(contentOf)
+      : catalogContent(document.id).filter((item) => item.type === type)
+    return browseContent(document, items, {
+      type,
+      sources: choices.sources,
+      duplicates: choices.duplicates,
+      language: choices.language
     })
   }),
 

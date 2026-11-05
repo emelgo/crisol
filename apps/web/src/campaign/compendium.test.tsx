@@ -146,23 +146,30 @@ describe('el compendio de una campaña', () => {
     )
   )
 
-  it('sus tipos, la lista con sus ediciones y, en el centro, el primero con sus datos y su texto', async () => {
+  it('la biblioteca: por edición, sus secciones y lo suyo; al abrirlo, sus datos, su texto y su otra versión', async () => {
     renderCompendium()
     expect(await screen.findByRole('heading', { level: 1, name: 'Compendio' })).toBeDefined()
     expect(screen.getByText('Quinta · 2014 y 2024')).toBeDefined()
-    const types = within(screen.getByRole('group', { name: 'Tipos' }))
-    expect(types.getAllByRole('button').map((b) => b.textContent)).toEqual(['Todo', 'Conjuro', 'Clase', 'Rasgo'])
-    const list = within(await screen.findByRole('list', { name: 'Resultados' }))
-    await waitFor(() => expect(list.getAllByRole('button')).toHaveLength(4))
-    expect(list.getAllByRole('button')[1]?.textContent).toBe('Bola de fuegoConjuro2024')
-    expect(list.getAllByRole('button')[2]?.textContent).toBe('Bola de fuegoConjuro2014 · Legado')
-    // Abre la de 2024: sus datos (sin «no» ni lo de la partida), su texto y, al lado, la otra versión
-    await userEvent.click(list.getAllByRole('button')[1] as HTMLElement)
+    expect(screen.getByText('Abre algo del compendio para leerlo.')).toBeDefined()
+    const library = within(screen.getByRole('navigation', { name: 'Biblioteca del compendio' }))
+    expect(library.getAllByRole('button').map((b) => b.textContent)).toEqual(['20243', '2014 · Legado1'])
+    await userEvent.click(library.getByRole('button', { name: /^2024/ }))
+    // Sin compendio en el sistema, una sección por tipo
+    expect(library.getAllByRole('button').map((b) => b.textContent)).toEqual([
+      '20243',
+      'Conjuro1',
+      'Clase1',
+      'Rasgo1',
+      '2014 · Legado1'
+    ])
+    await userEvent.click(library.getByRole('button', { name: /^Conjuro/ }))
+    await userEvent.click(await library.findByRole('button', { name: 'Bola de fuego' }))
     const article = within(await screen.findByRole('article', { name: 'Bola de fuego' }))
     expect(await article.findByText('Evocación')).toBeDefined()
     expect(article.getByText('3')).toBeDefined()
     expect(article.queryByText('Ritual')).toBeNull()
     expect(article.getByText('explosión').tagName).toBe('STRONG')
+    expect(library.getByRole('button', { name: 'Bola de fuego' }).getAttribute('aria-current')).toBe('true')
     const about = within(screen.getByRole('complementary', { name: 'Sobre este documento' }))
     expect(about.getByText('2024 · Nuevo')).toBeDefined()
     expect(about.getByText('Fireball')).toBeDefined()
@@ -172,19 +179,26 @@ describe('el compendio de una campaña', () => {
     expect(
       within(screen.getByRole('complementary', { name: 'Sobre este documento' })).getByText('2014 · Viejo')
     ).toBeDefined()
+    // Cerrar una carpeta la cierra
+    await userEvent.click(library.getByRole('button', { name: /^2024/ }))
+    expect(library.queryByRole('button', { name: /^Conjuro/ })).toBeNull()
   })
 
-  it('buscar por el nombre en inglés y filtrar por tipo; una clase, con lo que concede por nivel', async () => {
+  it('buscar por el nombre en inglés; sin nada, lo dice; una clase, con lo que concede por nivel', async () => {
     renderCompendium()
     const search = await screen.findByRole('searchbox', { name: 'Buscar en el compendio' })
     await userEvent.type(search, 'fireball')
-    const list = within(screen.getByRole('list', { name: 'Resultados' }))
+    const list = within(await screen.findByRole('list', { name: 'Resultados' }))
     await waitFor(() => expect(list.getAllByRole('button')).toHaveLength(2))
+    expect(list.getAllByRole('button')[0]?.textContent).toBe('Bola de fuegoConjuro2024')
+    expect(list.getAllByRole('button')[1]?.textContent).toBe('Bola de fuegoConjuro2014 · Legado')
     await userEvent.type(search, 'xyz')
     expect(await list.findByText('Nada con ese nombre')).toBeDefined()
     await userEvent.click(screen.getByRole('button', { name: 'Borrar la búsqueda' }))
-    await userEvent.click(within(screen.getByRole('group', { name: 'Tipos' })).getByRole('button', { name: 'Clase' }))
-    await waitFor(() => expect(list.getAllByRole('button').map((b) => b.textContent)).toEqual(['BárbaroClase2024']))
+    const library = within(await screen.findByRole('navigation', { name: 'Biblioteca del compendio' }))
+    await userEvent.click(library.getByRole('button', { name: /^2024/ }))
+    await userEvent.click(library.getByRole('button', { name: /^Clase/ }))
+    await userEvent.click(await library.findByRole('button', { name: 'Bárbaro' }))
     const article = within(await screen.findByRole('article', { name: 'Bárbaro' }))
     const levels = within(await article.findByRole('region', { name: 'Por nivel' }))
     expect(levels.getAllByRole('listitem').map((li) => li.textContent)).toEqual([

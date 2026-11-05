@@ -79,6 +79,7 @@ import {
 } from './pages.ts'
 import { searchWiki } from './search.ts'
 import {
+  browseCampaignContent,
   checkSystem,
   createSystem,
   deleteSystem,
@@ -245,6 +246,7 @@ export const ACTIONS = [
   getCampaignCompendium,
   getCampaignContent,
   searchCampaignContent,
+  browseCampaignContent,
   listCharacters,
   getCharacter,
   createCharacter,
@@ -378,6 +380,7 @@ export type Actions = {
   getCampaignCompendium: typeof getCampaignCompendium
   getCampaignContent: typeof getCampaignContent
   searchCampaignContent: typeof searchCampaignContent
+  browseCampaignContent: typeof browseCampaignContent
   listCharacters: typeof listCharacters
   getCharacter: typeof getCharacter
   createCharacter: typeof createCharacter

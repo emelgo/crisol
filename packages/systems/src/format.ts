@@ -526,7 +526,44 @@ function build(strict: boolean) {
       .describe(
         'Los pasos del creador de personajes (ADR-0013), en su orden: elegir del contenido, generar puntuaciones o escribir campos; lo que hay que elegir de lo concedido lo calcula Crisol'
       ),
-    levelUp: z.array(z.unknown()).max(100).optional().describe('Subir de nivel: llega después')
+    levelUp: z.array(z.unknown()).max(100).optional().describe('Subir de nivel: llega después'),
+    compendium: obj({
+      sections: z
+        .array(
+          obj({
+            key,
+            label: text().describe('Su nombre, en plural (Conjuros, Equipo)'),
+            types: z.array(key).min(1).max(20).describe('Los tipos que lleva, en su orden')
+          })
+        )
+        .min(1)
+        .max(30)
+        .describe('Sus secciones, como los estantes de una biblioteca, en su orden'),
+      types: recordOf(
+        obj({
+          label: text().optional().describe('Su nombre en plural, como carpeta dentro de su sección (Armas)'),
+          folder: obj({
+            field: key.describe('El campo que reparte sus documentos en carpetas (el nivel de un conjuro)'),
+            base: z
+              .boolean()
+              .optional()
+              .describe('De un texto, solo lo de delante: «Dragón (cromático)» va con «Dragón»'),
+            labels: z
+              .record(z.string().max(60), text())
+              .optional()
+              .describe('El nombre de algún valor (el nivel 0 de un conjuro, «Trucos»)'),
+            template: text().optional().describe('El nombre de los demás, con {valor} («Nivel {valor}»)')
+          })
+            .optional()
+            .describe('Sus carpetas: por el valor de un campo')
+        }),
+        100
+      ).optional()
+    })
+      .optional()
+      .describe(
+        'Cómo se ordena su compendio: sus secciones (Reglas, Clases, Conjuros, Equipo, Criaturas…) con sus tipos y, en cada tipo, sus carpetas (los conjuros por nivel, las criaturas por tipo). Sin él, una sección por tipo'
+      )
   })
 }
 

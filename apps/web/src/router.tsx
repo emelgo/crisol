@@ -60,7 +60,10 @@ const characterRoute = createRoute({
 const compendiumRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/mundos/$worldId/campanas/$campaignId/compendio',
-  component: CompendiumScreen
+  component: CompendiumScreen,
+  // ?ver=<clave>: lo abierto, para enlazarlo y que «atrás» vuelva a la lista
+  validateSearch: (search: Record<string, unknown>): { ver?: string } =>
+    typeof search.ver === 'string' && search.ver ? { ver: search.ver } : {}
 })
 const wikiRoute = createRoute({ getParentRoute: () => rootRoute, path: '/mundos/$worldId/wiki', component: WikiHome })
 const wikiPageRoute = createRoute({
