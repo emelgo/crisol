@@ -14,7 +14,6 @@ import { SignIn } from './routes/sign-in.tsx'
 import { OrganizationTrash, WorldTrash } from './routes/trash.tsx'
 import { WorldPage } from './routes/world.tsx'
 import { Worlds } from './routes/worlds.tsx'
-import { SystemView } from './systems/editor/editor.tsx'
 import { SystemsScreen } from './systems/screen.tsx'
 import { TemplateView } from './templates/editor.tsx'
 import { TemplatesScreen } from './templates/screen.tsx'
@@ -99,7 +98,6 @@ const commonFilesRoute = createRoute({ getParentRoute: () => rootRoute, path: '/
 const accountTagsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/etiquetas', component: AccountTags })
 // Los sistemas de reglas de la cuenta, también en la zona de Mis mundos (ADR-0011)
 const systemsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/sistemas', component: SystemsScreen })
-const systemRoute = createRoute({ getParentRoute: () => rootRoute, path: '/sistemas/$systemId', component: SystemView })
 // Las plantillas de página de la cuenta, también en la zona de Mis mundos (ADR-0009)
 const templatesRoute = createRoute({ getParentRoute: () => rootRoute, path: '/plantillas', component: TemplatesScreen })
 const templateRoute = createRoute({
@@ -136,7 +134,6 @@ const routeTree = rootRoute.addChildren([
   accountTagsRoute,
   templatesRoute,
   systemsRoute,
-  systemRoute,
   templateRoute,
   consentRoute,
   bootstrapRoute,

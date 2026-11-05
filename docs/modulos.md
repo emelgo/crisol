@@ -54,11 +54,13 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   `main` y en staging** (PR #97, migración 0040; la CI pasó, con un arreglo de gitleaks: `.gitleaks.toml`). Enrique
   prueba el punto de control 2 (`tasks/probar.md`). **Lo siguiente**: la fase 3 en la misma rama (la tarea 11, los
   estados y el texto de las reglas; luego conjuros, objetos mágicos, criaturas, especies, trasfondos, dotes y clases).
-- **Decidido por Enrique (2026-11-04): los sistemas se hacen con la IA** (`docs/diseno.md`). Al acabar `srd-5e`, una
-  tanda que quita el editor de sistemas entero (también «Probar»): en «Sistemas», la lista, subir de un archivo, bajar
-  cada uno y un sistema vacío, y un aviso de que los nuevos se hacen con la IA (también en las instrucciones del MCP).
+- **Decidido por Enrique (2026-11-04): los sistemas se hacen con la IA** (`docs/diseno.md`). **Hecho (2026-11-05,
+  rama `modulo-3/sin-editor`)**: fuera el editor de sistemas entero (también «Probar» y el enlace desde la campaña); en
+  «Sistemas», la lista (cada uno abre su ventana: bajarlo, sus campañas y, si es tuyo, renombrarlo y borrarlo), subir
+  de un archivo y bajar uno vacío, con el aviso de que los nuevos se hacen con la IA (también en las instrucciones del
+  MCP).
   Por eso la tarea 8 de `srd-5e` («Probar» con el contenido) se quitó y probar el contenido va con la IA (tarea 10).
-  En esa misma tanda, para otros juegos (Enrique, 2026-11-04: «¿se podrá adaptar a Daggerheart y otro TTRPG?»), lo que
+  Con el pulido del módulo 3, para otros juegos (Enrique, 2026-11-04: «¿se podrá adaptar a Daggerheart y otro TTRPG?»), lo que
   falta en los dados, que es general: el número de dados (o sus caras) sacado de un campo (`@competencia d8`, las
   reservas de Blades), leer cada dado de una tirada en sus franjas (Esperanza o Miedo: cuál de los dos d12 es mayor) y
   modos que añaden dados o grupos («el mayor de estos dos», la ventaja de +1d6). La prueba: una hoja de Daggerheart

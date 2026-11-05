@@ -235,7 +235,8 @@ const INSTRUCTIONS =
   'buscar_paginas con template y field. Los dados los tira el servidor: tirar_dados (con campaignId, en su ' +
   'registro, oculta salvo que te pidan que la vean todos) y ver_tiradas; en una página, una tirada se escribe ' +
   '`dice: 2d6+3 # Nombre` y en partida se pulsa. Las reglas de cada juego son un sistema (listar_sistemas; los de ' +
-  'serie se copian, y «blank» es empezar de cero) y cada campaña elige el suyo con cambiar_campana: antes de crear ' +
+  'serie se copian, y «blank» es empezar de cero) y cada campaña elige el suyo con cambiar_campana. Crisol no tiene ' +
+  'editor de sistemas: se hacen y se cambian contigo (el máster solo los sube y los baja en archivo). Antes de crear ' +
   'o cambiar uno, lee su formato con formato_sistemas; crea con crear_sistema, cambia por rutas con cambiar_sistema ' +
   '(con la versión que leíste), comprueba con validar_sistema y prueba con probar_formula y probar_tirada. Su ' +
   'contenido (clases, conjuros, armas, criaturas) se busca con buscar_contenido (con campaignId, lo que eligió la ' +
