@@ -659,32 +659,82 @@ function DecisionPanel({
         {decision.from.name}
         {decision.level ? ` · ${t('creator.level', { level: decision.level })}` : ''}
       </p>
-      <fieldset className={styles.choices}>
-        <legend>
-          {t('creator.pickN', { count: decision.count })}{' '}
-          <strong>{t('creator.chosenOf', { chosen: decision.chosen.length, count: decision.count })}</strong>
-        </legend>
-        {decision.options.map((o) => (
-          <label key={o.value} className={styles.choice} data-disabled={o.available ? undefined : ''}>
-            <input
-              type={single ? 'radio' : 'checkbox'}
-              name={name}
-              checked={decision.chosen.includes(o.value)}
-              disabled={!o.available && !decision.chosen.includes(o.value)}
-              onChange={() => toggle(o.value)}
-            />
-            <span>
-              {o.label}
-              {o.reason && <span className={styles.reason}>{o.reason}</span>}
-            </span>
-          </label>
-        ))}
-      </fieldset>
+      {decision.repeat ? (
+        <RepeatChoices decision={decision} onChoose={onChoose} />
+      ) : (
+        <fieldset className={styles.choices}>
+          <legend>
+            {t('creator.pickN', { count: decision.count })}{' '}
+            <strong>{t('creator.chosenOf', { chosen: decision.chosen.length, count: decision.count })}</strong>
+          </legend>
+          {decision.options.map((o) => (
+            <label key={o.value} className={styles.choice} data-disabled={o.available ? undefined : ''}>
+              <input
+                type={single ? 'radio' : 'checkbox'}
+                name={name}
+                checked={decision.chosen.includes(o.value)}
+                disabled={!o.available && !decision.chosen.includes(o.value)}
+                onChange={() => toggle(o.value)}
+              />
+              <span>
+                {o.label}
+                {o.reason && <span className={styles.reason}>{o.reason}</span>}
+              </span>
+            </label>
+          ))}
+        </fieldset>
+      )}
       {next && (
         <button type="button" className={styles.change} onClick={() => onNext(next)}>
           {t('creator.goTo', { what: next.label })}
         </button>
       )}
+    </div>
+  )
+}
+
+/** Elegir lo mismo varias veces (+1 y +1 a la misma): cuántas veces cada una, como mucho las que dice */
+function RepeatChoices({ decision, onChoose }: { decision: Decision; onChoose: (values: string[]) => void }) {
+  const { t } = useTranslation()
+  const times = (value: string) => decision.chosen.filter((v) => v === value).length
+  const left = decision.count - decision.chosen.length
+  const add = (value: string) => onChoose([...decision.chosen, value])
+  const take = (value: string) => {
+    const at = decision.chosen.lastIndexOf(value)
+    onChoose(decision.chosen.filter((_, i) => i !== at))
+  }
+  return (
+    <div className={styles.choices}>
+      <p className={styles.repeatHead}>
+        {t('creator.pickN', { count: decision.count })}{' '}
+        <strong>{t('creator.chosenOf', { chosen: decision.chosen.length, count: decision.count })}</strong>
+      </p>
+      <ul className={styles.repeat}>
+        {decision.options.map((o) => (
+          <li key={o.value} className={styles.repeatRow}>
+            <span>{o.label}</span>
+            <span className={styles.stepper}>
+              <button
+                type="button"
+                aria-label={t('creator.less', { name: o.label })}
+                disabled={times(o.value) === 0}
+                onClick={() => take(o.value)}
+              >
+                −
+              </button>
+              <output aria-live="polite">{times(o.value) > 0 ? `+${times(o.value)}` : '0'}</output>
+              <button
+                type="button"
+                aria-label={t('creator.plus', { name: o.label })}
+                disabled={left === 0 || times(o.value) >= decision.most || !o.available}
+                onClick={() => add(o.value)}
+              >
+                +
+              </button>
+            </span>
+          </li>
+        ))}
+      </ul>
     </div>
   )
 }

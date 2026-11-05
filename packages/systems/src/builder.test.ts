@@ -170,6 +170,52 @@ describe('el creador: montar un personaje de sus elecciones', () => {
     expect(masteries(1)?.options.length).toBeGreaterThan(10)
   })
 
+  it('la multiclase: la primera clase no pide nada; añadir otra pide lo suyo y lo de las que tiene, con su motivo', () => {
+    const first = stepOptions(fiveE, content, campaign, {}, 'clase', { caracteristicas: { int: { puntuacion: 8 } } })
+    expect(first.find((o) => o.value === 'mago_2014')?.available).toBe(true)
+    const withFighter: Build = { picks: [{ id: 'c1', step: 'clase', key: 'guerrero_2014', level: 4 }] }
+    const low = { caracteristicas: { fue: { puntuacion: 15 }, int: { puntuacion: 12 }, des: { puntuacion: 10 } } }
+    expect(
+      stepOptions(fiveE, content, campaign, withFighter, 'clase', low).find((o) => o.value === 'mago_2014')
+    ).toEqual({
+      value: 'mago_2014',
+      label: { es: 'Mago', en: 'Wizard' },
+      available: false,
+      reason: { es: 'Necesitas Inteligencia 13', en: 'Requires Intelligence 13' }
+    })
+    const high = { caracteristicas: { ...low.caracteristicas, int: { puntuacion: 13 } } }
+    expect(
+      stepOptions(fiveE, content, campaign, withFighter, 'clase', high).find((o) => o.value === 'mago_2014')?.available
+    ).toBe(true)
+  })
+
+  it('la mejora de característica (2014): +2 a una o +1 a dos, como mucho dos veces la misma', () => {
+    const b = (chosen: string[]): Build => ({
+      scores: { base: scores },
+      picks: [{ id: 'c1', step: 'clase', key: 'barbaro_2014', level: 4 }],
+      decisions: { 'c1>barbaro_mejora_de_caracteristica@4>mejora': chosen }
+    })
+    const built = build(b(['fue', 'fue', 'fue']))
+    const asi = built.decisions.find((d) => d.id === 'c1>barbaro_mejora_de_caracteristica@4>mejora')
+    expect(asi).toMatchObject({ count: 2, repeat: true, most: 2, chosen: ['fue', 'fue'], pending: false })
+    const sheet = evaluate(fiveE, 'personaje', built.document).values as Record<string, any>
+    expect(sheet.caracteristicas.fue.puntuacion).toBe(17)
+  })
+
+  it('los aumentos de un trasfondo de 2024: de sus tres características, +2 y +1 o +1 a las tres', () => {
+    const b = (chosen: string[]): Build => ({
+      scores: { base: scores },
+      picks: [{ id: 't1', step: 'trasfondo', key: 'acolito_2024' }],
+      decisions: { 't1>aumentos': chosen }
+    })
+    const built = build(b(['int', 'int', 'sab']))
+    const increases = built.decisions.find((d) => d.id === 't1>aumentos')
+    expect(increases?.options.map((o) => o.value)).toEqual(['int', 'sab', 'car'])
+    expect(increases).toMatchObject({ count: 3, most: 2, pending: false })
+    const sheet = evaluate(fiveE, 'personaje', built.document).values as Record<string, any>
+    expect([sheet.caracteristicas.int.puntuacion, sheet.caracteristicas.sab.puntuacion]).toEqual([14, 11])
+  })
+
   it('a nivel 20, lo pendiente se calcula en menos de 20 ms', () => {
     const b: Build = {
       scores: { base: scores },

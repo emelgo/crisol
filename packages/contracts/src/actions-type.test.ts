@@ -123,6 +123,7 @@ describe('Actions', () => {
       getCharacter: true,
       createCharacter: true,
       updateCharacter: true,
+      chooseForCharacter: true,
       deleteCharacter: true,
       listCharacterVersions: true,
       restoreCharacterVersion: true

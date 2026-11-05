@@ -36,6 +36,7 @@ import {
 } from '@crisol/domain'
 import {
   applyChanges,
+  applyChoices,
   type Build,
   CATALOG,
   ChangeError,
@@ -1228,6 +1229,18 @@ export function fakeApi(
         })
       }
       return { character: structuredClone(character), state }
+    },
+    chooseForCharacter: ({ characterId, version, confirm, ...choose }) => {
+      const character = visibleCharacter(characterId)
+      const document = systemById(character.system)
+      if (!document) throw new ApiError('NOT_FOUND', 404)
+      const build = applyChoices(document, character.build as Build, choose, () => crypto.randomUUID().slice(0, 8))
+      return handlers.updateCharacter({
+        characterId,
+        version,
+        build: build as Record<string, unknown>,
+        ...(confirm ? { confirm } : {})
+      })
     },
     deleteCharacter: ({ characterId }) => {
       visibleCharacter(characterId)

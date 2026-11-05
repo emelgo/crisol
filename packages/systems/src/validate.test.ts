@@ -371,3 +371,45 @@ describe('los bonos de un objeto, a una ruta que existe', () => {
     expect(validateSystem(copy()).problems.filter((p) => p.severity === 'error')).toEqual([])
   })
 })
+
+describe('los pasos del creador', () => {
+  it('sus claves no se repiten y lo que nombran existe: el tipo, el conjunto y su campo, los campos y la tarjeta', () => {
+    const system = structuredClone(cinco) as Record<string, unknown>
+    system.creation = [
+      { key: 'clase', kind: 'content', type: 'clase', label: 'Clase' },
+      { key: 'clase', kind: 'content', type: 'objeto', label: 'Otra', min: 2, max: 1 },
+      {
+        key: 'puntos',
+        kind: 'scores',
+        set: 'nivel',
+        field: 'x',
+        label: 'Puntos',
+        methods: [{ key: 'm', kind: 'manual', label: 'A mano', min: 1, max: 20 }]
+      },
+      {
+        key: 'puntos2',
+        kind: 'scores',
+        set: 'caracteristicas',
+        field: 'nada',
+        label: 'Puntos',
+        methods: [{ key: 'm', kind: 'manual', label: 'A mano', min: 1, max: 20 }]
+      },
+      { key: 'datos', kind: 'fields', fields: ['nivel', 'alineamiento'], label: 'Datos' }
+    ]
+    system.card = ['nivel', 'nada']
+    const messages = validateSystem(system).problems.map((p) => `${p.path}: ${p.message}`)
+    expect(messages).toEqual(
+      expect.arrayContaining([
+        'creation[0].type: No existe el tipo «clase»',
+        'creation[1].key: Ya hay un paso «clase»',
+        'creation[1].max: El máximo no puede ser menor que el mínimo',
+        'creation[2].set: «nivel» no es un conjunto de personaje',
+        'creation[3].field: Los elementos de «caracteristicas» no tienen «nada»',
+        'creation[4].fields[1]: personaje no tiene el campo «alineamiento»',
+        'card[1]: personaje no tiene el campo «nada»'
+      ])
+    )
+    const fiveE = catalogSystem('5e')
+    expect(validateSystem(fiveE).problems.filter((p) => p.severity === 'error')).toEqual([])
+  })
+})

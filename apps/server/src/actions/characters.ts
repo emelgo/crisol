@@ -2,9 +2,12 @@
  * Los personajes de una campaña (docs/specs/personajes.md § personaje, ADR-0013): cada uno ve y cambia los suyos; el
  * máster de la campaña, todos (y su dueño). Lo de otro, para quien no puede verlo, no existe
  */
+
+import { randomUUID } from 'node:crypto'
 import {
   type Character,
   type CharacterCard,
+  chooseForCharacter,
   createCharacter,
   deleteCharacter,
   getCharacter,
@@ -16,8 +19,10 @@ import {
 import { campaignsRepo, charactersRepo, membersRepo, systemsRepo } from '@crisol/db'
 import { authorize, can, NotFoundError } from '@crisol/domain'
 import {
+  applyChoices,
   type Build,
   type Choices,
+  ChooseError,
   type ContentItem,
   catalogSystem,
   characterView,
@@ -102,6 +107,50 @@ async function stateOf(ctx: ActionContext, campaignId: string, systemId: string,
   return characterView(document, content, choices, build as Build)
 }
 
+/**
+ * Guarda un cambio de un personaje con la versión que se leyó: lo monta con lo nuevo (su resumen se guarda), y
+ * terminarlo pide lo que su sistema pide. Al terminarlo o confirmar un nivel, deja una versión suya
+ */
+async function save(
+  ctx: ActionContext,
+  row: charactersRepo.CharacterRow,
+  version: number,
+  given: { name?: string; build?: Record<string, unknown>; play?: Record<string, unknown>; ownerId?: string | null },
+  confirm: 'created' | 'level' | undefined
+) {
+  const { ownerId, ...rest } = given
+  const patch: charactersRepo.CharacterPatch = { ...rest }
+  if (ownerId !== undefined && ownerId !== row.ownerId) {
+    authorize(ctx.actor, 'characters.manage', { campaignId: row.campaignId, worldId: row.worldId })
+    if (ownerId) await assertMember(ctx, row.campaignId, ownerId)
+    patch.ownerId = ownerId
+  }
+  // Montado con lo nuevo: su resumen se guarda; terminarlo pide lo que su sistema pide
+  const { view } = await stateOf(ctx, row.campaignId, row.system, given.build ?? row.build)
+  if (given.build) patch.summary = view.summary
+  if (confirm === 'created') {
+    if (!view.complete) throw new InvalidRequestError('INCOMPLETE', 'aún le falta algo de lo que pide su sistema')
+    patch.status = 'ready'
+  }
+  const details: Record<string, unknown> = { name: given.name ?? row.name }
+  if (given.name && given.name !== row.name) details.from = row.name
+  if (patch.ownerId !== undefined) details.owner = true
+  if (confirm) details.confirm = confirm
+  const saved = await updated(() =>
+    charactersRepo.updateCharacter(
+      ctx.db,
+      historyContext(ctx, 'updateCharacter', details, row),
+      row.id,
+      version,
+      patch,
+      confirm ? { kind: confirm, level: view.level } : undefined
+    )
+  )
+  const fresh = await charactersRepo.findCharacter(ctx.db, saved.id)
+  if (!fresh) throw new NotFoundError('character')
+  return { character: characterOf(fresh), state: view }
+}
+
 export const characterActions = [
   implement(listCharacters, async (ctx, { campaignId }) => {
     const campaign = await authorizedCampaign(ctx, 'campaign.read', campaignId)
@@ -142,37 +191,20 @@ export const characterActions = [
 
   implement(updateCharacter, async (ctx, { characterId, version, ownerId, confirm, ...given }) => {
     const { row } = await readable(ctx, characterId)
-    const patch: charactersRepo.CharacterPatch = { ...given }
-    if (ownerId !== undefined && ownerId !== row.ownerId) {
-      authorize(ctx.actor, 'characters.manage', { campaignId: row.campaignId, worldId: row.worldId })
-      if (ownerId) await assertMember(ctx, row.campaignId, ownerId)
-      patch.ownerId = ownerId
+    return save(ctx, row, version, { ...given, ...(ownerId !== undefined ? { ownerId } : {}) }, confirm)
+  }),
+
+  implement(chooseForCharacter, async (ctx, { characterId, version, confirm, ...choose }) => {
+    const { row } = await readable(ctx, characterId)
+    const { document } = await systemOf(ctx, row.system)
+    let build: Build
+    try {
+      build = applyChoices(document, row.build as Build, choose, () => randomUUID().slice(0, 8))
+    } catch (error) {
+      if (error instanceof ChooseError) throw new InvalidRequestError('BAD_CHOICE', error.message)
+      throw error
     }
-    // Montado con lo nuevo: su resumen se guarda; terminarlo pide lo que su sistema pide
-    const { view } = await stateOf(ctx, row.campaignId, row.system, given.build ?? row.build)
-    if (given.build) patch.summary = view.summary
-    if (confirm === 'created') {
-      if (!view.complete) throw new InvalidRequestError('INCOMPLETE', 'aún le falta algo de lo que pide su sistema')
-      patch.status = 'ready'
-    }
-    const level = view.level
-    const details: Record<string, unknown> = { name: given.name ?? row.name }
-    if (given.name && given.name !== row.name) details.from = row.name
-    if (patch.ownerId !== undefined) details.owner = true
-    if (confirm) details.confirm = confirm
-    const saved = await updated(() =>
-      charactersRepo.updateCharacter(
-        ctx.db,
-        historyContext(ctx, 'updateCharacter', details, row),
-        characterId,
-        version,
-        patch,
-        confirm ? { kind: confirm, level } : undefined
-      )
-    )
-    const fresh = await charactersRepo.findCharacter(ctx.db, saved.id)
-    if (!fresh) throw new NotFoundError('character')
-    return { character: characterOf(fresh), state: view }
+    return save(ctx, row, version, { build: build as Record<string, unknown> }, confirm)
   }),
 
   implement(deleteCharacter, async (ctx, { characterId }) => {

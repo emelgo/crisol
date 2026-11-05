@@ -515,3 +515,53 @@
     padding-inline: var(--space-4);
   }
 }
+
+/* Elegir lo mismo varias veces: cada opción con su «−» y su «+» */
+.repeatHead {
+  margin: 0 0 var(--space-2);
+  font-size: 0.875rem;
+}
+
+.repeat {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.repeatRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-1) 0;
+  border-block-end: 1px solid var(--color-border);
+}
+
+.stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.stepper button {
+  inline-size: 2.25rem;
+  block-size: 2.25rem;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: none;
+  color: var(--color-text);
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.stepper button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.stepper output {
+  min-inline-size: 2rem;
+  text-align: center;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}

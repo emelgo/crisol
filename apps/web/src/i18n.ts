@@ -251,6 +251,8 @@ export const es = {
     confirmLevel: 'Confirmar el nivel {{level}}',
     close: 'Cerrar',
     pickN: 'Elige {{count}}',
+    less: 'Uno menos a {{name}}',
+    plus: 'Uno más a {{name}}',
     goTo: 'Ir a: {{what}}',
     method: 'Método',
     points: 'Te quedan {{left}} de {{budget}} puntos',

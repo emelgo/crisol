@@ -202,6 +202,50 @@ describe('los personajes de una campaña', () => {
     expect((await ok200('listCharacterVersions', { characterId: created.id }, ana.cookie)).versions).toHaveLength(1)
   })
 
+  it('elegir por partes (la IA): varias cosas de una vez, lo pendiente con sus opciones, y lo que no existe no vale', async () => {
+    const created = (await ok200('createCharacter', { campaignId, name: 'Lisandro' }, bruno.cookie)).character
+    const chosen = await ok200(
+      'chooseForCharacter',
+      {
+        characterId: created.id,
+        version: 1,
+        add: [
+          { step: 'clase', key: 'picaro_2024', level: 1 },
+          { step: 'especie', key: 'humano_2024' },
+          { step: 'trasfondo', key: 'criminal_2024' }
+        ],
+        scores: { method: 'matriz', base: { fue: 8, des: 15, con: 14, int: 12, sab: 10, car: 13 } }
+      },
+      bruno.cookie
+    )
+    expect(chosen.state.complete).toBe(true)
+    expect(chosen.character.summary.line).toBe('Humano · Pícaro 1')
+    const pending = chosen.state.decisions.filter((d: { pending: boolean }) => d.pending)
+    const skills = pending.find((d: { label: string }) => d.label === 'Habilidades')
+    expect(skills.options.length).toBeGreaterThan(4)
+    const decided = await ok200(
+      'chooseForCharacter',
+      {
+        characterId: created.id,
+        version: chosen.character.version,
+        decisions: { [skills.id]: skills.options.slice(0, skills.count).map((o: { value: string }) => o.value) },
+        confirm: 'created'
+      },
+      bruno.cookie
+    )
+    expect(decided.character.status).toBe('ready')
+    expect(decided.state.decisions.find((d: { id: string }) => d.id === skills.id).pending).toBe(false)
+    expect(
+      (
+        await fails(
+          'chooseForCharacter',
+          { characterId: created.id, version: decided.character.version, add: [{ step: 'magia', key: 'x' }] },
+          bruno.cookie
+        )
+      ).code
+    ).toBe('BAD_CHOICE')
+  })
+
   it('una campaña sin sistema no tiene personajes', async () => {
     const world = (await ok200('listWorlds', {})).worlds[0]
     const none = await ok200('createCampaign', { worldId: world.id, name: 'Sin reglas' })

@@ -100,6 +100,7 @@ export const characterDecision = z.object({
   level: z.int().nullable(),
   count: z.int(),
   repeat: z.boolean(),
+  most: z.int().describe('Lo mismo, como mucho tantas veces'),
   options: z.array(buildOption),
   chosen: z.array(z.string()),
   pending: z.boolean()
@@ -200,6 +201,30 @@ export const updateCharacter = defineAction({
       .enum(['created', 'level'])
       .optional()
       .describe('created: termina de crearlo; level: confirma su nivel. Los dos dejan una versión suya')
+  }),
+  output: z.object({ character, state: characterState })
+})
+
+export const chooseForCharacter = defineAction({
+  name: 'chooseForCharacter',
+  kind: 'players',
+  description:
+    'Elige para un personaje, por partes y varias cosas de una vez (con la versión que se leyó): añadir lo elegido en un paso de contenido (add: su paso y su clave; en los pasos sin niveles, sustituye lo que había; en los de niveles, como la clase, añade otra), cambiar el nivel de lo elegido (levels: por su id), quitar algo (remove), decidir lo pendiente (decisions: por el id de cada decisión, las opciones elegidas), las puntuaciones (scores) y los campos (values). Devuelve su estado: lo que sigue pendiente, con sus opciones',
+  input: z.object({
+    characterId: z.uuid(),
+    version: z.int().min(1),
+    add: z
+      .array(z.object({ step: z.string().max(60), key: z.string().max(100), level: z.int().min(1).max(30).optional() }))
+      .max(20)
+      .optional(),
+    levels: z.record(z.string().max(60), z.int().min(1).max(30)).optional(),
+    remove: z.array(z.string().max(60)).max(20).optional(),
+    decisions: z.record(z.string().max(300), z.array(z.string().max(100)).max(50)).optional(),
+    scores: z
+      .object({ method: z.string().max(60).optional(), base: z.record(z.string().max(60), z.int()).optional() })
+      .optional(),
+    values: z.record(z.string().max(60), z.unknown()).optional(),
+    confirm: z.enum(['created', 'level']).optional()
   }),
   output: z.object({ character, state: characterState })
 })

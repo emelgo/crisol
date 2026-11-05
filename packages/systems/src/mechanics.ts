@@ -88,8 +88,9 @@ const grant = z
         value: formula.optional(),
         from: z.array(key).max(500).optional(),
         when: formula.optional(),
-        // Se puede elegir lo mismo más de una vez (+1 y +1 a la misma característica)
-        repeat: z.boolean().optional()
+        // Se puede elegir lo mismo más de una vez (+1 y +1 a la misma característica), como mucho `most` veces
+        repeat: z.boolean().optional(),
+        most: z.int().min(1).max(10).optional()
       })
       .refine((c) => (c.type === undefined) !== (c.set === undefined), 'Elige de un tipo o de un conjunto')
       .optional()

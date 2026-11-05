@@ -8,6 +8,7 @@ import {
   updateCampaign
 } from './campaigns.ts'
 import {
+  chooseForCharacter,
   createCharacter,
   deleteCharacter,
   getCharacter,
@@ -244,6 +245,7 @@ export const ACTIONS = [
   getCharacter,
   createCharacter,
   updateCharacter,
+  chooseForCharacter,
   deleteCharacter,
   listCharacterVersions,
   restoreCharacterVersion,
@@ -370,6 +372,7 @@ export type Actions = {
   getCharacter: typeof getCharacter
   createCharacter: typeof createCharacter
   updateCharacter: typeof updateCharacter
+  chooseForCharacter: typeof chooseForCharacter
   deleteCharacter: typeof deleteCharacter
   listCharacterVersions: typeof listCharacterVersions
   restoreCharacterVersion: typeof restoreCharacterVersion

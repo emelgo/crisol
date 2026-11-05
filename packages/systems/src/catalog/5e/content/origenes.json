@@ -3827,6 +3827,27 @@
         {
           "concept": "iniciado_en_la_magia",
           "type": "dote"
+        },
+        {
+          "choose": {
+            "key": "aumentos",
+            "label": {
+              "es": "Aumentos de característica",
+              "en": "Ability Score Increases"
+            },
+            "count": "3",
+            "set": "caracteristicas",
+            "field": "puntuacion",
+            "op": "add",
+            "value": "1",
+            "repeat": true,
+            "most": 2,
+            "from": [
+              "int",
+              "sab",
+              "car"
+            ]
+          }
         }
       ],
       "automation": "partial"
@@ -3870,6 +3891,27 @@
         {
           "concept": "alerta",
           "type": "dote"
+        },
+        {
+          "choose": {
+            "key": "aumentos",
+            "label": {
+              "es": "Aumentos de característica",
+              "en": "Ability Score Increases"
+            },
+            "count": "3",
+            "set": "caracteristicas",
+            "field": "puntuacion",
+            "op": "add",
+            "value": "1",
+            "repeat": true,
+            "most": 2,
+            "from": [
+              "des",
+              "con",
+              "int"
+            ]
+          }
         }
       ],
       "automation": "partial"
@@ -3913,6 +3955,27 @@
         {
           "concept": "iniciado_en_la_magia",
           "type": "dote"
+        },
+        {
+          "choose": {
+            "key": "aumentos",
+            "label": {
+              "es": "Aumentos de característica",
+              "en": "Ability Score Increases"
+            },
+            "count": "3",
+            "set": "caracteristicas",
+            "field": "puntuacion",
+            "op": "add",
+            "value": "1",
+            "repeat": true,
+            "most": 2,
+            "from": [
+              "con",
+              "int",
+              "sab"
+            ]
+          }
         }
       ],
       "automation": "partial"
@@ -3956,6 +4019,27 @@
         {
           "concept": "atacante_salvaje",
           "type": "dote"
+        },
+        {
+          "choose": {
+            "key": "aumentos",
+            "label": {
+              "es": "Aumentos de característica",
+              "en": "Ability Score Increases"
+            },
+            "count": "3",
+            "set": "caracteristicas",
+            "field": "puntuacion",
+            "op": "add",
+            "value": "1",
+            "repeat": true,
+            "most": 2,
+            "from": [
+              "fue",
+              "des",
+              "con"
+            ]
+          }
         }
       ],
       "automation": "partial"
@@ -5583,7 +5667,34 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "grants": [
+        {
+          "choose": {
+            "key": "mejora",
+            "label": {
+              "es": "Mejora de característica",
+              "en": "Ability Score Improvement"
+            },
+            "count": "2",
+            "set": "caracteristicas",
+            "field": "puntuacion",
+            "op": "add",
+            "value": "1",
+            "repeat": true,
+            "most": 2
+          }
+        }
+      ],
+      "automation": "full",
+      "requires": [
+        {
+          "formula": "@nivel >= 4",
+          "reason": {
+            "es": "Pide nivel 4 o más",
+            "en": "Requires level 4+"
+          }
+        }
+      ]
     },
     "ref": {
       "pages": {
@@ -5617,7 +5728,16 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "automation": "text",
+      "requires": [
+        {
+          "formula": "@nivel >= 4",
+          "reason": {
+            "es": "Pide nivel 4 o más",
+            "en": "Requires level 4+"
+          }
+        }
+      ]
     },
     "ref": {
       "pages": {
@@ -5802,7 +5922,16 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "automation": "text",
+      "requires": [
+        {
+          "formula": "@nivel >= 19",
+          "reason": {
+            "es": "Pide nivel 19 o más",
+            "en": "Requires level 19+"
+          }
+        }
+      ]
     },
     "ref": {
       "pages": {
@@ -5836,7 +5965,16 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "automation": "text",
+      "requires": [
+        {
+          "formula": "@nivel >= 19",
+          "reason": {
+            "es": "Pide nivel 19 o más",
+            "en": "Requires level 19+"
+          }
+        }
+      ]
     },
     "ref": {
       "pages": {
@@ -5870,7 +6008,16 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "automation": "text",
+      "requires": [
+        {
+          "formula": "@nivel >= 19",
+          "reason": {
+            "es": "Pide nivel 19 o más",
+            "en": "Requires level 19+"
+          }
+        }
+      ]
     },
     "ref": {
       "pages": {
@@ -5904,7 +6051,16 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "automation": "text",
+      "requires": [
+        {
+          "formula": "@nivel >= 19",
+          "reason": {
+            "es": "Pide nivel 19 o más",
+            "en": "Requires level 19+"
+          }
+        }
+      ]
     },
     "ref": {
       "pages": {
@@ -5938,7 +6094,16 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "automation": "text",
+      "requires": [
+        {
+          "formula": "@nivel >= 19",
+          "reason": {
+            "es": "Pide nivel 19 o más",
+            "en": "Requires level 19+"
+          }
+        }
+      ]
     },
     "ref": {
       "pages": {
@@ -5972,7 +6137,16 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "automation": "text",
+      "requires": [
+        {
+          "formula": "@nivel >= 19",
+          "reason": {
+            "es": "Pide nivel 19 o más",
+            "en": "Requires level 19+"
+          }
+        }
+      ]
     },
     "ref": {
       "pages": {
@@ -6006,7 +6180,16 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "automation": "text",
+      "requires": [
+        {
+          "formula": "@nivel >= 19",
+          "reason": {
+            "es": "Pide nivel 19 o más",
+            "en": "Requires level 19+"
+          }
+        }
+      ]
     },
     "ref": {
       "pages": {

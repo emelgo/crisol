@@ -52,6 +52,8 @@ export interface Decision {
   level: number | null
   count: number
   repeat: boolean
+  /** Lo mismo, como mucho tantas veces */
+  most: number
   options: BuildOption[]
   chosen: string[]
   pending: boolean
@@ -259,11 +261,22 @@ export function buildCharacter(
         level: g.level ?? null,
         count: countOf(c.count, {}, item.data as Record<string, Value>),
         repeat: c.repeat === true,
+        most: c.repeat ? (c.most ?? 99) : 1,
         chosen
       })
       decisionOptions.set(id, { grant: g, edition, item })
       if (c.set) {
-        item.choices = { ...(item.choices ?? {}), [c.key]: chosen }
+        // Lo mismo, como mucho `most` veces (sin repetir, una); cuántos, al final, con la hoja
+        const most = c.repeat ? (c.most ?? 99) : 1
+        const times = new Map<string, number>()
+        item.choices = {
+          ...(item.choices ?? {}),
+          [c.key]: chosen.filter((v) => {
+            const n = (times.get(v) ?? 0) + 1
+            times.set(v, n)
+            return n <= most
+          })
+        }
         continue
       }
       for (const value of chosen) {
@@ -347,7 +360,16 @@ export function buildCharacter(
         : d.count
     const valid = new Set(options.map((o) => o.value))
     const chosen = d.chosen.filter((v) => valid.has(v))
-    const distinct = (d.repeat ? chosen : [...new Set(chosen)]).slice(0, count)
+    // Lo mismo, como mucho `most` veces (sin repetir, una)
+    const most = d.repeat ? (c?.most ?? count) : 1
+    const times = new Map<string, number>()
+    const distinct = chosen
+      .filter((v) => {
+        const n = (times.get(v) ?? 0) + 1
+        times.set(v, n)
+        return n <= most
+      })
+      .slice(0, count)
     return {
       ...d,
       count,
@@ -356,8 +378,13 @@ export function buildCharacter(
       pending: distinct.length < Math.min(count, d.repeat ? count : options.length)
     }
   })
-  // Las que no piden nada (cuántos: 0), fuera
+  // Las que no piden nada (cuántos: 0), fuera; lo elegido de un conjunto, ya recortado, a lo que lo concede
   decisions.splice(0, decisions.length, ...decisions.filter((d) => d.count > 0))
+  for (const d of decisions) {
+    const meta = decisionOptions.get(d.id)
+    const key = meta?.grant.choose?.key
+    if (meta?.grant.choose?.set && key) meta.item.choices = { ...(meta.item.choices ?? {}), [key]: d.chosen }
+  }
 
   // Cada paso, con lo que le falta
   const base = build.scores?.base ?? {}
@@ -414,8 +441,13 @@ export function stepOptions(
     .filter((item) => !granted.has(`${item.concept ?? item.key}|${editionOf(system, item) ?? ''}`))
     .map((item) => {
       const already = current.some((c) => c.key === item.key)
-      let reason: Text | null = already ? { es: 'Ya la tienes', en: 'Already chosen' } : unmetRequirement(item, values)
-      // Para añadir otra en un paso de niveles, también lo que piden las que ya tiene
+      // En un paso de niveles, la primera no pide nada; añadir otra (la multiclase) pide lo suyo y lo de las que tiene
+      const adding = !step.levels || current.length > 0
+      let reason: Text | null = already
+        ? { es: 'Ya la tienes', en: 'Already chosen' }
+        : adding
+          ? unmetRequirement(item, values)
+          : null
       if (!reason && step.levels && current.length > 0)
         for (const c of current) {
           reason = unmetRequirement(c, values)
@@ -609,3 +641,56 @@ export function characterView(
 }
 
 export type CharacterView = ReturnType<typeof characterView>['view']
+
+/** Elegir por partes (para la IA): añadir, cambiar de nivel, quitar, decidir, puntuaciones y campos */
+export interface Choose {
+  add?: { step: string; key: string; level?: number }[]
+  levels?: Record<string, number>
+  remove?: string[]
+  decisions?: Record<string, string[]>
+  scores?: { method?: string; base?: Record<string, number> }
+  values?: Record<string, unknown>
+}
+
+export class ChooseError extends Error {}
+
+/**
+ * Lo elegido por partes, sobre sus elecciones: en un paso sin niveles, lo añadido sustituye a lo que había; en uno de
+ * niveles, se suma. Lo quitado se lleva sus decisiones
+ */
+export function applyChoices(system: System, build: Build, choose: Choose, newId: () => string): Build {
+  const steps = system.creation ?? []
+  const removed = new Set(choose.remove ?? [])
+  const picks = [...(build.picks ?? [])]
+  for (const a of choose.add ?? []) {
+    const step = steps.find((s) => s.key === a.step)
+    if (step?.kind !== 'content') throw new ChooseError(`No hay un paso de contenido «${a.step}»`)
+    if (!step.levels) for (const p of picks) if (p.step === a.step) removed.add(p.id)
+    picks.push({ id: newId(), step: a.step, key: a.key, ...(step.levels ? { level: a.level ?? 1 } : {}) })
+  }
+  for (const id of Object.keys(choose.levels ?? {}))
+    if (!picks.some((p) => p.id === id)) throw new ChooseError(`No hay nada elegido con el id «${id}»`)
+  const kept = picks
+    .filter((p) => !removed.has(p.id))
+    .map((p) => (choose.levels?.[p.id] ? { ...p, level: choose.levels[p.id] } : p))
+  const decisions = Object.fromEntries(
+    Object.entries({ ...(build.decisions ?? {}), ...(choose.decisions ?? {}) }).filter(
+      ([k]) => ![...removed].some((id) => k.startsWith(`${id}>`))
+    )
+  )
+  return {
+    ...build,
+    picks: kept,
+    decisions,
+    ...(choose.scores
+      ? {
+          scores: {
+            ...build.scores,
+            ...(choose.scores.method ? { method: choose.scores.method } : {}),
+            base: { ...(build.scores?.base ?? {}), ...(choose.scores.base ?? {}) }
+          }
+        }
+      : {}),
+    ...(choose.values ? { values: { ...(build.values ?? {}), ...choose.values } } : {})
+  }
+}

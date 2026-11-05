@@ -14,6 +14,15 @@
       "lanzamiento": ""
     },
     "mechanics": {
+      "requires": [
+        {
+          "formula": "@caracteristicas.fue.puntuacion >= 13 || @caracteristicas.des.puntuacion >= 13",
+          "reason": {
+            "es": "Necesitas Fuerza 13 o Destreza 13",
+            "en": "Requires Strength 13 or Dexterity 13"
+          }
+        }
+      ],
       "effects": [
         {
           "target": "caracteristicas.fue.salvacion_grado",
@@ -668,7 +677,10 @@
             "count": "2",
             "set": "caracteristicas",
             "field": "puntuacion",
-            "op": "add"
+            "op": "add",
+            "value": "1",
+            "repeat": true,
+            "most": 2
           }
         }
       ],
@@ -1012,6 +1024,15 @@
       "lanzamiento": ""
     },
     "mechanics": {
+      "requires": [
+        {
+          "formula": "@caracteristicas.fue.puntuacion >= 13 || @caracteristicas.des.puntuacion >= 13",
+          "reason": {
+            "es": "Necesitas Fuerza 13 o Destreza 13",
+            "en": "Requires Strength 13 or Dexterity 13"
+          }
+        }
+      ],
       "effects": [
         {
           "target": "caracteristicas.fue.salvacion_grado",
@@ -2123,6 +2144,15 @@
       "lanzamiento": ""
     },
     "mechanics": {
+      "requires": [
+        {
+          "formula": "@caracteristicas.fue.puntuacion >= 13",
+          "reason": {
+            "es": "Necesitas Fuerza 13",
+            "en": "Requires Strength 13"
+          }
+        }
+      ],
       "effects": [
         {
           "target": "caracteristicas.fue.salvacion_grado",
@@ -2585,7 +2615,25 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "grants": [
+        {
+          "choose": {
+            "key": "mejora",
+            "label": {
+              "es": "Mejora de característica",
+              "en": "Ability Score Improvement"
+            },
+            "count": "2",
+            "set": "caracteristicas",
+            "field": "puntuacion",
+            "op": "add",
+            "value": "1",
+            "repeat": true,
+            "most": 2
+          }
+        }
+      ],
+      "automation": "full"
     },
     "ref": {
       "pages": {
@@ -3003,6 +3051,15 @@
       "lanzamiento": ""
     },
     "mechanics": {
+      "requires": [
+        {
+          "formula": "@caracteristicas.fue.puntuacion >= 13",
+          "reason": {
+            "es": "Necesitas Fuerza 13",
+            "en": "Requires Strength 13"
+          }
+        }
+      ],
       "effects": [
         {
           "target": "caracteristicas.fue.salvacion_grado",
@@ -3535,7 +3592,24 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "grants": [
+        {
+          "choose": {
+            "key": "dote",
+            "label": {
+              "es": "Dote",
+              "en": "Feat"
+            },
+            "count": "1",
+            "type": "dote"
+          }
+        }
+      ],
+      "automation": "partial",
+      "manual": {
+        "es": "La dote Mejora de característica u otra",
+        "en": "The Ability Score Improvement feat or another"
+      }
     },
     "ref": {
       "pages": {
@@ -4073,6 +4147,15 @@
       "lanzamiento": "car"
     },
     "mechanics": {
+      "requires": [
+        {
+          "formula": "@caracteristicas.car.puntuacion >= 13",
+          "reason": {
+            "es": "Necesitas Carisma 13",
+            "en": "Requires Charisma 13"
+          }
+        }
+      ],
       "effects": [
         {
           "target": "caracteristicas.des.salvacion_grado",
@@ -4500,7 +4583,25 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "grants": [
+        {
+          "choose": {
+            "key": "mejora",
+            "label": {
+              "es": "Mejora de característica",
+              "en": "Ability Score Improvement"
+            },
+            "count": "2",
+            "set": "caracteristicas",
+            "field": "puntuacion",
+            "op": "add",
+            "value": "1",
+            "repeat": true,
+            "most": 2
+          }
+        }
+      ],
+      "automation": "full"
     },
     "ref": {
       "pages": {
@@ -4764,6 +4865,15 @@
       "lanzamiento": "car"
     },
     "mechanics": {
+      "requires": [
+        {
+          "formula": "@caracteristicas.car.puntuacion >= 13",
+          "reason": {
+            "es": "Necesitas Carisma 13",
+            "en": "Requires Charisma 13"
+          }
+        }
+      ],
       "effects": [
         {
           "target": "caracteristicas.des.salvacion_grado",
@@ -5146,7 +5256,24 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "grants": [
+        {
+          "choose": {
+            "key": "dote",
+            "label": {
+              "es": "Dote",
+              "en": "Feat"
+            },
+            "count": "1",
+            "type": "dote"
+          }
+        }
+      ],
+      "automation": "partial",
+      "manual": {
+        "es": "La dote Mejora de característica u otra",
+        "en": "The Ability Score Improvement feat or another"
+      }
     },
     "ref": {
       "pages": {
@@ -5500,6 +5627,15 @@
       "lanzamiento": "sab"
     },
     "mechanics": {
+      "requires": [
+        {
+          "formula": "@caracteristicas.sab.puntuacion >= 13",
+          "reason": {
+            "es": "Necesitas Sabiduría 13",
+            "en": "Requires Wisdom 13"
+          }
+        }
+      ],
       "effects": [
         {
           "target": "caracteristicas.sab.salvacion_grado",
@@ -5810,7 +5946,25 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "grants": [
+        {
+          "choose": {
+            "key": "mejora",
+            "label": {
+              "es": "Mejora de característica",
+              "en": "Ability Score Improvement"
+            },
+            "count": "2",
+            "set": "caracteristicas",
+            "field": "puntuacion",
+            "op": "add",
+            "value": "1",
+            "repeat": true,
+            "most": 2
+          }
+        }
+      ],
+      "automation": "full"
     },
     "ref": {
       "pages": {
@@ -6074,6 +6228,15 @@
       "lanzamiento": "sab"
     },
     "mechanics": {
+      "requires": [
+        {
+          "formula": "@caracteristicas.sab.puntuacion >= 13",
+          "reason": {
+            "es": "Necesitas Sabiduría 13",
+            "en": "Requires Wisdom 13"
+          }
+        }
+      ],
       "effects": [
         {
           "target": "caracteristicas.sab.salvacion_grado",
@@ -6414,7 +6577,24 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "grants": [
+        {
+          "choose": {
+            "key": "dote",
+            "label": {
+              "es": "Dote",
+              "en": "Feat"
+            },
+            "count": "1",
+            "type": "dote"
+          }
+        }
+      ],
+      "automation": "partial",
+      "manual": {
+        "es": "La dote Mejora de característica u otra",
+        "en": "The Ability Score Improvement feat or another"
+      }
     },
     "ref": {
       "pages": {
@@ -6798,6 +6978,15 @@
       "lanzamiento": "sab"
     },
     "mechanics": {
+      "requires": [
+        {
+          "formula": "@caracteristicas.sab.puntuacion >= 13",
+          "reason": {
+            "es": "Necesitas Sabiduría 13",
+            "en": "Requires Wisdom 13"
+          }
+        }
+      ],
       "effects": [
         {
           "target": "caracteristicas.int.salvacion_grado",
@@ -7151,7 +7340,25 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "grants": [
+        {
+          "choose": {
+            "key": "mejora",
+            "label": {
+              "es": "Mejora de característica",
+              "en": "Ability Score Improvement"
+            },
+            "count": "2",
+            "set": "caracteristicas",
+            "field": "puntuacion",
+            "op": "add",
+            "value": "1",
+            "repeat": true,
+            "most": 2
+          }
+        }
+      ],
+      "automation": "full"
     },
     "ref": {
       "pages": {
@@ -7445,6 +7652,15 @@
       "lanzamiento": "sab"
     },
     "mechanics": {
+      "requires": [
+        {
+          "formula": "@caracteristicas.sab.puntuacion >= 13",
+          "reason": {
+            "es": "Necesitas Sabiduría 13",
+            "en": "Requires Wisdom 13"
+          }
+        }
+      ],
       "effects": [
         {
           "target": "caracteristicas.int.salvacion_grado",
@@ -7858,7 +8074,24 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "grants": [
+        {
+          "choose": {
+            "key": "dote",
+            "label": {
+              "es": "Dote",
+              "en": "Feat"
+            },
+            "count": "1",
+            "type": "dote"
+          }
+        }
+      ],
+      "automation": "partial",
+      "manual": {
+        "es": "La dote Mejora de característica u otra",
+        "en": "The Ability Score Improvement feat or another"
+      }
     },
     "ref": {
       "pages": {
@@ -8242,6 +8475,22 @@
       "lanzamiento": ""
     },
     "mechanics": {
+      "requires": [
+        {
+          "formula": "@caracteristicas.des.puntuacion >= 13",
+          "reason": {
+            "es": "Necesitas Destreza 13",
+            "en": "Requires Dexterity 13"
+          }
+        },
+        {
+          "formula": "@caracteristicas.sab.puntuacion >= 13",
+          "reason": {
+            "es": "Necesitas Sabiduría 13",
+            "en": "Requires Wisdom 13"
+          }
+        }
+      ],
       "effects": [
         {
           "target": "caracteristicas.fue.salvacion_grado",
@@ -8702,7 +8951,25 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "grants": [
+        {
+          "choose": {
+            "key": "mejora",
+            "label": {
+              "es": "Mejora de característica",
+              "en": "Ability Score Improvement"
+            },
+            "count": "2",
+            "set": "caracteristicas",
+            "field": "puntuacion",
+            "op": "add",
+            "value": "1",
+            "repeat": true,
+            "most": 2
+          }
+        }
+      ],
+      "automation": "full"
     },
     "ref": {
       "pages": {
@@ -9213,6 +9480,22 @@
       "lanzamiento": ""
     },
     "mechanics": {
+      "requires": [
+        {
+          "formula": "@caracteristicas.des.puntuacion >= 13",
+          "reason": {
+            "es": "Necesitas Destreza 13",
+            "en": "Requires Dexterity 13"
+          }
+        },
+        {
+          "formula": "@caracteristicas.sab.puntuacion >= 13",
+          "reason": {
+            "es": "Necesitas Sabiduría 13",
+            "en": "Requires Wisdom 13"
+          }
+        }
+      ],
       "effects": [
         {
           "target": "caracteristicas.fue.salvacion_grado",
@@ -9698,7 +9981,24 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "grants": [
+        {
+          "choose": {
+            "key": "dote",
+            "label": {
+              "es": "Dote",
+              "en": "Feat"
+            },
+            "count": "1",
+            "type": "dote"
+          }
+        }
+      ],
+      "automation": "partial",
+      "manual": {
+        "es": "La dote Mejora de característica u otra",
+        "en": "The Ability Score Improvement feat or another"
+      }
     },
     "ref": {
       "pages": {
@@ -10269,6 +10569,22 @@
       "lanzamiento": "car"
     },
     "mechanics": {
+      "requires": [
+        {
+          "formula": "@caracteristicas.fue.puntuacion >= 13",
+          "reason": {
+            "es": "Necesitas Fuerza 13",
+            "en": "Requires Strength 13"
+          }
+        },
+        {
+          "formula": "@caracteristicas.car.puntuacion >= 13",
+          "reason": {
+            "es": "Necesitas Carisma 13",
+            "en": "Requires Charisma 13"
+          }
+        }
+      ],
       "effects": [
         {
           "target": "caracteristicas.sab.salvacion_grado",
@@ -10757,7 +11073,25 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "grants": [
+        {
+          "choose": {
+            "key": "mejora",
+            "label": {
+              "es": "Mejora de característica",
+              "en": "Ability Score Improvement"
+            },
+            "count": "2",
+            "set": "caracteristicas",
+            "field": "puntuacion",
+            "op": "add",
+            "value": "1",
+            "repeat": true,
+            "most": 2
+          }
+        }
+      ],
+      "automation": "full"
     },
     "ref": {
       "pages": {
@@ -11118,6 +11452,22 @@
       "lanzamiento": "car"
     },
     "mechanics": {
+      "requires": [
+        {
+          "formula": "@caracteristicas.fue.puntuacion >= 13",
+          "reason": {
+            "es": "Necesitas Fuerza 13",
+            "en": "Requires Strength 13"
+          }
+        },
+        {
+          "formula": "@caracteristicas.car.puntuacion >= 13",
+          "reason": {
+            "es": "Necesitas Carisma 13",
+            "en": "Requires Charisma 13"
+          }
+        }
+      ],
       "effects": [
         {
           "target": "caracteristicas.sab.salvacion_grado",
@@ -11601,7 +11951,24 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "grants": [
+        {
+          "choose": {
+            "key": "dote",
+            "label": {
+              "es": "Dote",
+              "en": "Feat"
+            },
+            "count": "1",
+            "type": "dote"
+          }
+        }
+      ],
+      "automation": "partial",
+      "manual": {
+        "es": "La dote Mejora de característica u otra",
+        "en": "The Ability Score Improvement feat or another"
+      }
     },
     "ref": {
       "pages": {
@@ -12082,6 +12449,22 @@
       "lanzamiento": "sab"
     },
     "mechanics": {
+      "requires": [
+        {
+          "formula": "@caracteristicas.des.puntuacion >= 13",
+          "reason": {
+            "es": "Necesitas Destreza 13",
+            "en": "Requires Dexterity 13"
+          }
+        },
+        {
+          "formula": "@caracteristicas.sab.puntuacion >= 13",
+          "reason": {
+            "es": "Necesitas Sabiduría 13",
+            "en": "Requires Wisdom 13"
+          }
+        }
+      ],
       "effects": [
         {
           "target": "caracteristicas.fue.salvacion_grado",
@@ -12515,7 +12898,25 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "grants": [
+        {
+          "choose": {
+            "key": "mejora",
+            "label": {
+              "es": "Mejora de característica",
+              "en": "Ability Score Improvement"
+            },
+            "count": "2",
+            "set": "caracteristicas",
+            "field": "puntuacion",
+            "op": "add",
+            "value": "1",
+            "repeat": true,
+            "most": 2
+          }
+        }
+      ],
+      "automation": "full"
     },
     "ref": {
       "pages": {
@@ -12846,6 +13247,22 @@
       "lanzamiento": "sab"
     },
     "mechanics": {
+      "requires": [
+        {
+          "formula": "@caracteristicas.des.puntuacion >= 13",
+          "reason": {
+            "es": "Necesitas Destreza 13",
+            "en": "Requires Dexterity 13"
+          }
+        },
+        {
+          "formula": "@caracteristicas.sab.puntuacion >= 13",
+          "reason": {
+            "es": "Necesitas Sabiduría 13",
+            "en": "Requires Wisdom 13"
+          }
+        }
+      ],
       "effects": [
         {
           "target": "caracteristicas.fue.salvacion_grado",
@@ -13284,7 +13701,24 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "grants": [
+        {
+          "choose": {
+            "key": "dote",
+            "label": {
+              "es": "Dote",
+              "en": "Feat"
+            },
+            "count": "1",
+            "type": "dote"
+          }
+        }
+      ],
+      "automation": "partial",
+      "manual": {
+        "es": "La dote Mejora de característica u otra",
+        "en": "The Ability Score Improvement feat or another"
+      }
     },
     "ref": {
       "pages": {
@@ -13795,6 +14229,15 @@
       "lanzamiento": ""
     },
     "mechanics": {
+      "requires": [
+        {
+          "formula": "@caracteristicas.des.puntuacion >= 13",
+          "reason": {
+            "es": "Necesitas Destreza 13",
+            "en": "Requires Dexterity 13"
+          }
+        }
+      ],
       "effects": [
         {
           "target": "caracteristicas.des.salvacion_grado",
@@ -14246,7 +14689,25 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "grants": [
+        {
+          "choose": {
+            "key": "mejora",
+            "label": {
+              "es": "Mejora de característica",
+              "en": "Ability Score Improvement"
+            },
+            "count": "2",
+            "set": "caracteristicas",
+            "field": "puntuacion",
+            "op": "add",
+            "value": "1",
+            "repeat": true,
+            "most": 2
+          }
+        }
+      ],
+      "automation": "full"
     },
     "ref": {
       "pages": {
@@ -14630,6 +15091,15 @@
       "lanzamiento": ""
     },
     "mechanics": {
+      "requires": [
+        {
+          "formula": "@caracteristicas.des.puntuacion >= 13",
+          "reason": {
+            "es": "Necesitas Destreza 13",
+            "en": "Requires Dexterity 13"
+          }
+        }
+      ],
       "effects": [
         {
           "target": "caracteristicas.des.salvacion_grado",
@@ -15141,7 +15611,24 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "grants": [
+        {
+          "choose": {
+            "key": "dote",
+            "label": {
+              "es": "Dote",
+              "en": "Feat"
+            },
+            "count": "1",
+            "type": "dote"
+          }
+        }
+      ],
+      "automation": "partial",
+      "manual": {
+        "es": "La dote Mejora de característica u otra",
+        "en": "The Ability Score Improvement feat or another"
+      }
     },
     "ref": {
       "pages": {
@@ -15615,6 +16102,15 @@
       "lanzamiento": "car"
     },
     "mechanics": {
+      "requires": [
+        {
+          "formula": "@caracteristicas.car.puntuacion >= 13",
+          "reason": {
+            "es": "Necesitas Carisma 13",
+            "en": "Requires Charisma 13"
+          }
+        }
+      ],
       "effects": [
         {
           "target": "caracteristicas.con.salvacion_grado",
@@ -15944,7 +16440,25 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "grants": [
+        {
+          "choose": {
+            "key": "mejora",
+            "label": {
+              "es": "Mejora de característica",
+              "en": "Ability Score Improvement"
+            },
+            "count": "2",
+            "set": "caracteristicas",
+            "field": "puntuacion",
+            "op": "add",
+            "value": "1",
+            "repeat": true,
+            "most": 2
+          }
+        }
+      ],
+      "automation": "full"
     },
     "ref": {
       "pages": {
@@ -16161,6 +16675,15 @@
       "lanzamiento": "car"
     },
     "mechanics": {
+      "requires": [
+        {
+          "formula": "@caracteristicas.car.puntuacion >= 13",
+          "reason": {
+            "es": "Necesitas Carisma 13",
+            "en": "Requires Charisma 13"
+          }
+        }
+      ],
       "effects": [
         {
           "target": "caracteristicas.con.salvacion_grado",
@@ -16520,7 +17043,24 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "grants": [
+        {
+          "choose": {
+            "key": "dote",
+            "label": {
+              "es": "Dote",
+              "en": "Feat"
+            },
+            "count": "1",
+            "type": "dote"
+          }
+        }
+      ],
+      "automation": "partial",
+      "manual": {
+        "es": "La dote Mejora de característica u otra",
+        "en": "The Ability Score Improvement feat or another"
+      }
     },
     "ref": {
       "pages": {
@@ -16887,6 +17427,15 @@
       "lanzamiento": "car"
     },
     "mechanics": {
+      "requires": [
+        {
+          "formula": "@caracteristicas.car.puntuacion >= 13",
+          "reason": {
+            "es": "Necesitas Carisma 13",
+            "en": "Requires Charisma 13"
+          }
+        }
+      ],
       "effects": [
         {
           "target": "caracteristicas.sab.salvacion_grado",
@@ -17227,7 +17776,25 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "grants": [
+        {
+          "choose": {
+            "key": "mejora",
+            "label": {
+              "es": "Mejora de característica",
+              "en": "Ability Score Improvement"
+            },
+            "count": "2",
+            "set": "caracteristicas",
+            "field": "puntuacion",
+            "op": "add",
+            "value": "1",
+            "repeat": true,
+            "most": 2
+          }
+        }
+      ],
+      "automation": "full"
     },
     "ref": {
       "pages": {
@@ -17461,6 +18028,15 @@
       "lanzamiento": "car"
     },
     "mechanics": {
+      "requires": [
+        {
+          "formula": "@caracteristicas.car.puntuacion >= 13",
+          "reason": {
+            "es": "Necesitas Carisma 13",
+            "en": "Requires Charisma 13"
+          }
+        }
+      ],
       "effects": [
         {
           "target": "caracteristicas.sab.salvacion_grado",
@@ -17791,7 +18367,24 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "grants": [
+        {
+          "choose": {
+            "key": "dote",
+            "label": {
+              "es": "Dote",
+              "en": "Feat"
+            },
+            "count": "1",
+            "type": "dote"
+          }
+        }
+      ],
+      "automation": "partial",
+      "manual": {
+        "es": "La dote Mejora de característica u otra",
+        "en": "The Ability Score Improvement feat or another"
+      }
     },
     "ref": {
       "pages": {
@@ -18145,6 +18738,15 @@
       "lanzamiento": "int"
     },
     "mechanics": {
+      "requires": [
+        {
+          "formula": "@caracteristicas.int.puntuacion >= 13",
+          "reason": {
+            "es": "Necesitas Inteligencia 13",
+            "en": "Requires Intelligence 13"
+          }
+        }
+      ],
       "effects": [
         {
           "target": "caracteristicas.int.salvacion_grado",
@@ -18434,7 +19036,25 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "grants": [
+        {
+          "choose": {
+            "key": "mejora",
+            "label": {
+              "es": "Mejora de característica",
+              "en": "Ability Score Improvement"
+            },
+            "count": "2",
+            "set": "caracteristicas",
+            "field": "puntuacion",
+            "op": "add",
+            "value": "1",
+            "repeat": true,
+            "most": 2
+          }
+        }
+      ],
+      "automation": "full"
     },
     "ref": {
       "pages": {
@@ -18668,6 +19288,15 @@
       "lanzamiento": "int"
     },
     "mechanics": {
+      "requires": [
+        {
+          "formula": "@caracteristicas.int.puntuacion >= 13",
+          "reason": {
+            "es": "Necesitas Inteligencia 13",
+            "en": "Requires Intelligence 13"
+          }
+        }
+      ],
       "effects": [
         {
           "target": "caracteristicas.int.salvacion_grado",
@@ -19017,7 +19646,24 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "grants": [
+        {
+          "choose": {
+            "key": "dote",
+            "label": {
+              "es": "Dote",
+              "en": "Feat"
+            },
+            "count": "1",
+            "type": "dote"
+          }
+        }
+      ],
+      "automation": "partial",
+      "manual": {
+        "es": "La dote Mejora de característica u otra",
+        "en": "The Ability Score Improvement feat or another"
+      }
     },
     "ref": {
       "pages": {
