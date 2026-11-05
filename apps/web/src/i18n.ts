@@ -33,7 +33,8 @@ export const es = {
     aiPending_other: ', {{count}} peticiones esperando',
     theme: 'Tema',
     dice: 'Dados',
-    compendium: 'Compendio'
+    compendium: 'Compendio',
+    characters: 'Personajes'
   },
   // Una tirada escrita en una página
   diceRoll: {
@@ -193,6 +194,87 @@ export const es = {
     delete: 'Borrar la campaña',
     deleteTitle: '¿Borrar «{{name}}»?',
     deleteWarning: 'Irá a la papelera y sus jugadores dejarán de verla. Se podrá recuperar durante {{days}} días.'
+  },
+  // Los personajes de una campaña
+  characters: {
+    title: 'Personajes',
+    preview: 'Vista previa',
+    new: 'Personaje nuevo',
+    create: 'Crear el personaje',
+    name: 'Nombre',
+    unnamed: 'Sin nombre',
+    whoPlays: 'Quién lo juega',
+    me: '{{name}} (tú)',
+    owner: 'Quién lo juega',
+    creating: 'En creación',
+    pending: 'Con cosas por elegir',
+    noClass: 'Sin clase',
+    noSystem: 'Esta campaña aún no tiene sistema: el máster lo elige en sus ajustes.',
+    settingsOf: 'Ajustes de {{name}}',
+    save: 'Guardar',
+    cancel: 'Cancelar',
+    delete: 'Borrar el personaje',
+    deleteTitle: '¿Borrar el personaje {{name}}?',
+    deleteWarning: 'Se borra con sus versiones y se puede deshacer desde el historial.',
+    views: 'Vistas del personaje',
+    sheet: 'Ficha',
+    creator: 'Creador',
+    saving: 'Guardando…',
+    saved: 'Guardado'
+  },
+  // El creador de un personaje
+  creator: {
+    steps: 'Pasos',
+    pendingCount: '{{count}} por elegir',
+    pendingCount_one: 'Una cosa por elegir',
+    toChoose: 'Por elegir',
+    overview: 'Resumen',
+    level: 'Nivel {{level}}',
+    levelLabel: 'Nivel',
+    start: 'Al empezar',
+    choices: '{{count}} elecciones',
+    choices_one: '1 elección',
+    more: 'Más de {{name}}',
+    first: 'Primera clase',
+    multiclass: 'Multiclase',
+    removeClass: 'Quitar {{name}}',
+    missing: 'Ya no está en el contenido de la campaña.',
+    chooseOne: 'Elige: {{what}}',
+    addAnother: 'Añadir otra',
+    change: 'Cambiar',
+    cancel: 'Cancelar',
+    nothingLeft: 'No falta nada por elegir.',
+    pending: 'Pendiente',
+    chosenOf: '{{chosen}} de {{count}}',
+    finish: 'Terminar',
+    finishHint: 'Para terminarlo, elige lo marcado en cada paso.',
+    confirmLevel: 'Confirmar el nivel {{level}}',
+    close: 'Cerrar',
+    pickN: 'Elige {{count}}',
+    goTo: 'Ir a: {{what}}',
+    method: 'Método',
+    points: 'Te quedan {{left}} de {{budget}} puntos',
+    rolled: 'Salieron',
+    inLog: 'en el registro de la campaña',
+    roll: 'Tirar ({{formula}})',
+    base: 'Base',
+    total: 'Total',
+    modifier: 'Modificador'
+  },
+  // La ficha mínima y las versiones de un personaje
+  characterSheet: {
+    values: 'Sus valores'
+  },
+  characterVersions: {
+    title: 'Versiones',
+    none: 'Al terminar de crearlo y al confirmar cada nivel, se guarda una.',
+    created: 'Creado · Nivel {{level}}',
+    level: 'Nivel {{level}}',
+    current: 'Actual',
+    restore: 'Restaurar',
+    restoreTitle: 'Restaurar «{{version}}»',
+    restoreText: '{{name}} vuelve a como era entonces: {{line}}.',
+    undoable: 'Se puede deshacer desde el historial.'
   },
   // El compendio de una campaña: el contenido de su sistema
   compendium: {

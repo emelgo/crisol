@@ -118,7 +118,28 @@ export const characterState = z.object({
     stats: z.array(z.object({ key: z.string(), label: z.string(), value: z.string() }))
   }),
   sheet: z.record(z.string(), z.unknown()).describe('Su hoja calculada'),
-  items: z.array(z.object({ id: z.string(), type: z.string(), name: z.string(), from: z.string().nullable() }))
+  fields: z
+    .array(
+      z.object({
+        key: z.string(),
+        label: z.string(),
+        kind: z.string(),
+        elements: z.array(z.object({ key: z.string(), label: z.string(), abbr: z.string().optional() })).optional(),
+        columns: z.array(z.object({ key: z.string(), label: z.string(), kind: z.string() })).optional(),
+        of: z.array(z.string()).optional().describe('Los tipos que lleva (un campo de objetos)')
+      })
+    )
+    .describe('Los campos del personaje con sus nombres, para pintar su ficha'),
+  items: z.array(
+    z.object({
+      id: z.string(),
+      type: z.string(),
+      name: z.string(),
+      from: z.string().nullable(),
+      level: z.int().nullable().describe('El nivel en que entra (lo concedido)'),
+      key: z.string().nullable().describe('Su clave en el contenido')
+    })
+  )
 })
 
 export type CharacterState = z.infer<typeof characterState>

@@ -1,0 +1,110 @@
+/* «Personajes»: lo propio de sus tarjetas, sobre las de plantillas (templates/screen.module.css) */
+
+/* El retrato: arriba, de lado a lado (hasta que se puedan subir, una silueta) */
+.card {
+  padding-block-start: 0;
+}
+
+.portrait {
+  display: grid;
+  place-items: end center;
+  block-size: 6.5rem;
+  margin: 0 calc(-1 * var(--space-4)) var(--space-3);
+  overflow: hidden;
+  background: linear-gradient(
+    170deg,
+    color-mix(in srgb, var(--color-accent) 35%, var(--color-raised)),
+    var(--color-raised)
+  );
+  color: color-mix(in srgb, var(--color-text) 45%, transparent);
+}
+
+.name {
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+/* «En creación (!)», sobre el retrato */
+.creating {
+  position: absolute;
+  inset-block-start: var(--space-3);
+  inset-inline-start: var(--space-3);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0.125rem 0.5rem;
+  border-radius: 999px;
+  background: var(--color-surface);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* La marca de lo que falta: roja, con su número si hay más de una */
+.pending {
+  display: inline-grid;
+  place-items: center;
+  min-inline-size: 1.125rem;
+  block-size: 1.125rem;
+  padding: 0 0.25rem;
+  border-radius: 3px;
+  background: var(--color-danger);
+  color: #fff;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  line-height: 1;
+  clip-path: polygon(3px 0, 100% 0, 100% calc(100% - 3px), calc(100% - 3px) 100%, 0 100%, 0 3px);
+}
+
+.foot {
+  justify-content: space-between;
+  align-items: center;
+}
+
+.owner {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-inline-size: 0;
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+}
+
+.avatar {
+  display: grid;
+  place-items: center;
+  flex: none;
+  inline-size: 1.375rem;
+  block-size: 1.375rem;
+  border-radius: 50%;
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  font-size: 0.6875rem;
+  font-weight: 700;
+}
+
+/* Sus valores en la vista previa: el nivel, los PG, la CA */
+.stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  margin: var(--space-4) 0;
+}
+
+.stats dt {
+  color: var(--color-muted);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.stats dd {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.note {
+  color: var(--color-muted);
+}

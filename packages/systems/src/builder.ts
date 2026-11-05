@@ -77,6 +77,10 @@ export interface Built {
   complete: boolean
   /** Lo elegido que ya no está en el contenido de la campaña: sale como pendiente, sin romperse */
   missing: string[]
+  /** El nivel en que entra cada cosa concedida (por su id) */
+  levels: Record<string, number>
+  /** La clave en el contenido de cada cosa que lleva (por su id) */
+  keys: Record<string, string>
 }
 
 type Step = NonNullable<System['creation']>[number]
@@ -205,16 +209,21 @@ export function buildCharacter(
   const level = picks.reduce((n, p) => n + (levelsStep(p.step) && byKey.has(p.key) ? Math.max(1, p.level ?? 1) : 0), 0)
 
   const items: DocumentItem[] = []
+  const levels: Record<string, number> = {}
+  const keys: Record<string, string> = {}
   const pendingDecisions: Omit<Decision, 'options' | 'pending'>[] = []
-  const decisionOptions = new Map<string, { grant: Grant; edition: string | undefined }>()
-  const carry = (item: ContentItem, id: string, extra: Record<string, unknown> = {}, from?: string): DocumentItem => ({
-    id,
-    type: item.type,
-    name: nameOf(item, choices.language),
-    data: { ...structuredClone(item.data), ...extra },
-    ...(item.mechanics ? { mechanics: structuredClone(item.mechanics) as Mechanics } : {}),
-    ...(from ? { from } : {})
-  })
+  const decisionOptions = new Map<string, { grant: Grant; edition: string | undefined; item: DocumentItem }>()
+  const carry = (item: ContentItem, id: string, extra: Record<string, unknown> = {}, from?: string): DocumentItem => {
+    keys[id] = item.key
+    return {
+      id,
+      type: item.type,
+      name: nameOf(item, choices.language),
+      data: { ...structuredClone(item.data), ...extra },
+      ...(item.mechanics ? { mechanics: structuredClone(item.mechanics) as Mechanics } : {}),
+      ...(from ? { from } : {})
+    }
+  }
   const resolve = (concept: string, typeKey: string | undefined, edition: string | undefined) =>
     resolveConcept(system, byConcept.get(concept) ?? [], concept, { ...(typeKey ? { type: typeKey } : {}), edition })
 
@@ -232,6 +241,7 @@ export function buildCharacter(
           continue
         }
         const child = carry(found, `${item.id}>${g.concept}${suffix}`, {}, origin)
+        levels[child.id] = g.level ?? levels[item.id] ?? 0
         items.push(child)
         expand(child, found, at, step, origin, depth + 1)
         continue
@@ -251,7 +261,7 @@ export function buildCharacter(
         repeat: c.repeat === true,
         chosen
       })
-      decisionOptions.set(id, { grant: g, edition })
+      decisionOptions.set(id, { grant: g, edition, item })
       if (c.set) {
         item.choices = { ...(item.choices ?? {}), [c.key]: chosen }
         continue
@@ -263,6 +273,7 @@ export function buildCharacter(
           continue
         }
         const child = carry(doc, `${id}=${value}`, {}, origin)
+        levels[child.id] = g.level ?? levels[item.id] ?? 0
         items.push(child)
         expand(child, doc, at, step, origin, depth + 1)
       }
@@ -324,16 +335,29 @@ export function buildCharacter(
         }
       })
     }
+    // Cuántos, con la hoja ya calculada y lo que lo concedió (@origen: la maestría con armas, por el nivel)
+    const origin = meta?.item.from ? items.find((i) => i.id === meta.item.from) : undefined
+    const count =
+      c && meta
+        ? countOf(
+            c.count,
+            { ...sheet, origen: (origin?.data ?? null) as Value },
+            meta.item.data as Record<string, Value>
+          )
+        : d.count
     const valid = new Set(options.map((o) => o.value))
     const chosen = d.chosen.filter((v) => valid.has(v))
-    const distinct = d.repeat ? chosen : [...new Set(chosen)]
+    const distinct = (d.repeat ? chosen : [...new Set(chosen)]).slice(0, count)
     return {
       ...d,
+      count,
       options,
       chosen: distinct,
-      pending: distinct.length < Math.min(d.count, d.repeat ? d.count : options.length)
+      pending: distinct.length < Math.min(count, d.repeat ? count : options.length)
     }
   })
+  // Las que no piden nada (cuántos: 0), fuera
+  decisions.splice(0, decisions.length, ...decisions.filter((d) => d.count > 0))
 
   // Cada paso, con lo que le falta
   const base = build.scores?.base ?? {}
@@ -353,7 +377,7 @@ export function buildCharacter(
   // Lo que su sistema pide: lo elegido en cada paso de contenido y las puntuaciones
   const complete = steps.every((step) => !contentMissing(step) && !scoresMissing(step))
 
-  return { type, document, decisions, steps: stepStates, level, complete, missing: [...new Set(missing)] }
+  return { type, document, decisions, steps: stepStates, level, complete, missing: [...new Set(missing)], levels, keys }
 }
 
 /**
@@ -369,8 +393,8 @@ export function stepOptions(
   stepKey: string,
   values: Record<string, Value>
 ): BuildOption[] {
-  const step = (system.creation ?? []).find((s) => s.key === stepKey)
-  if (!step || step.kind !== 'content') return []
+  const step = (system.creation ?? []).find((s) => s.key === stepKey && s.kind === 'content')
+  if (step?.kind !== 'content') return []
   const { seen } = viewOf(system, content, choices)
   const ofType = seen.map((s) => s.item).filter((item) => item.type === step.type)
   // Lo concedido por otro del mismo tipo (la raza de una subraza) no se elige solo
@@ -552,11 +576,33 @@ export function characterView(
       missing: built.missing,
       summary: summarize(system, content, choices, build, built, values, language),
       sheet: values,
+      // Los campos del personaje, con sus nombres: para pintar su ficha mínima en cualquier sistema
+      fields: Object.entries(fields).map(([key, f]) => ({
+        key,
+        label: say(f.label),
+        kind: f.kind,
+        ...(f.kind === 'set'
+          ? {
+              elements: f.elements.map((e) => ({
+                key: e.key,
+                label: say(e.label),
+                ...(e.abbr ? { abbr: say(e.abbr) } : {})
+              })),
+              columns: Object.entries(f.fields).map(([k, c]) => ({ key: k, label: say(c.label), kind: c.kind }))
+            }
+          : {}),
+        ...(f.kind === 'group'
+          ? { columns: Object.entries(f.fields).map(([k, c]) => ({ key: k, label: say(c.label), kind: c.kind })) }
+          : {}),
+        ...(f.kind === 'items' ? { of: [...f.of] } : {})
+      })),
       items: (built.document.items ?? []).map((item) => ({
         id: item.id,
         type: item.type,
         name: item.name,
-        from: item.from ?? null
+        from: item.from ?? null,
+        level: built.levels[item.id] ?? null,
+        key: built.keys[item.id] ?? null
       }))
     }
   }

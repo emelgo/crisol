@@ -1,0 +1,517 @@
+/* El creador: la barra de pasos, el paso en el centro y, a la derecha, su resumen y lo pendiente (o la elección) */
+.creator {
+  border: 1px solid var(--color-border);
+  border-block-start: 0;
+  border-radius: 0 0 8px 8px;
+  background: var(--color-surface);
+}
+
+.steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-5);
+  padding: 0 var(--space-6);
+  border-block-end: 1px solid var(--color-border);
+}
+
+.step {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) 0;
+  border: 0;
+  border-block-end: 2px solid transparent;
+  background: none;
+  color: var(--color-muted);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.step:hover {
+  color: var(--color-text);
+}
+
+.step[aria-current="step"] {
+  border-block-end-color: var(--color-accent);
+  color: var(--color-text);
+}
+
+.body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(16rem, 21rem);
+  align-items: start;
+}
+
+.main {
+  min-inline-size: 0;
+  padding: var(--space-5) var(--space-6) var(--space-6);
+}
+
+.side {
+  position: sticky;
+  inset-block-start: var(--space-4);
+  margin: var(--space-5) var(--space-5) var(--space-5) 0;
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-bg);
+}
+
+/* Lo elegido: su nombre, su etiqueta, su nivel y lo que concede */
+.pick {
+  margin-block-end: var(--space-6);
+}
+
+.pickHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  padding-block-end: var(--space-2);
+  border-block-end: 1px solid var(--color-border);
+}
+
+.pickName {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-size: 1.5rem;
+}
+
+.tag {
+  padding: 0.0625rem 0.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  color: var(--color-muted);
+  font-size: 0.75rem;
+}
+
+.levelField {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-inline-start: auto;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+.levelField select,
+.field select,
+.field input,
+.field textarea,
+.scoreTable select,
+.scoreTable input {
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--color-field-border);
+  border-radius: 6px;
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.remove {
+  display: grid;
+  place-items: center;
+  inline-size: 2rem;
+  block-size: 2rem;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+.remove:hover {
+  background: var(--color-raised);
+  color: var(--color-text);
+}
+
+.missing {
+  color: var(--color-danger);
+  font-size: 0.875rem;
+}
+
+.granted {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.grantedRow {
+  border-block-end: 1px solid var(--color-border);
+}
+
+.grantedHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  min-block-size: 2.75rem;
+}
+
+.grantedName {
+  flex: 1 1 12rem;
+  font-weight: 600;
+}
+
+.grantedLevel {
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+}
+
+.grantedText {
+  padding: 0 0 var(--space-3);
+  color: var(--color-text);
+}
+
+.decide {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: none;
+  color: var(--color-text);
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.decide:hover {
+  background: var(--color-raised);
+}
+
+.expand {
+  display: grid;
+  place-items: center;
+  inline-size: 2rem;
+  block-size: 2rem;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+.add,
+.change {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1px dashed var(--color-frame);
+  border-radius: 6px;
+  background: none;
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.change {
+  border-style: solid;
+  border-color: var(--color-border);
+  font-size: 0.875rem;
+}
+
+.add:hover,
+.change:hover {
+  background: var(--color-raised);
+}
+
+/* Lo que se puede elegir: lo que no vale, apagado y con su motivo */
+.options h2 {
+  margin-block-start: 0;
+}
+
+.optionsHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.optionList {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.option {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-1);
+  inline-size: 100%;
+  min-block-size: 2.75rem;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  text-align: start;
+  cursor: pointer;
+}
+
+.option:hover:not(:disabled) {
+  border-color: var(--color-accent);
+}
+
+.option:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.optionName {
+  font-weight: 600;
+}
+
+.reason {
+  display: block;
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+}
+
+/* Los campos y las puntuaciones */
+.fields {
+  display: grid;
+  gap: var(--space-4);
+  max-inline-size: 36rem;
+}
+
+.field {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.scores {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.methods {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.methods legend {
+  margin-block-end: var(--space-2);
+  font-weight: 600;
+}
+
+.methodChoice {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: 2.75rem;
+}
+
+.budget,
+.rolls p {
+  margin: 0;
+}
+
+.scoreTable {
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+.scoreTable th,
+.scoreTable td {
+  padding: var(--space-2) var(--space-4) var(--space-2) 0;
+  border-block-end: 1px solid var(--color-border);
+  text-align: start;
+}
+
+.scoreTable thead th {
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.scoreTable tbody th {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.number {
+  font-weight: 700;
+}
+
+/* El panel de la derecha */
+.overview,
+.decision {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  margin: 0;
+}
+
+.stats dt,
+.pendingStep {
+  color: var(--color-muted);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.stats dd {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.sideTitle {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  color: var(--color-text);
+  font-size: 0.8125rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.pendingList {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.pendingList ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pendingStep {
+  margin: 0 0 var(--space-1);
+}
+
+.pendingItem {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  inline-size: 100%;
+  padding: var(--space-2) 0;
+  border: 0;
+  background: none;
+  color: var(--color-text);
+  font-weight: 600;
+  text-align: start;
+  cursor: pointer;
+}
+
+.pendingItem:hover {
+  color: var(--color-accent-text);
+}
+
+.pendingFrom {
+  display: block;
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  font-weight: 400;
+}
+
+.none,
+.hint {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+.confirm {
+  display: grid;
+  gap: var(--space-2);
+  padding-block-start: var(--space-3);
+  border-block-start: 1px solid var(--color-border);
+}
+
+.primary {
+  justify-self: start;
+  padding: var(--space-2) var(--space-4);
+  border: 0;
+  border-radius: 6px;
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.primary:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.decisionHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.choices {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.choices legend {
+  margin-block-end: var(--space-2);
+  font-size: 0.875rem;
+}
+
+.choice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-2) 0;
+  border-block-end: 1px solid var(--color-border);
+  cursor: pointer;
+}
+
+.choice input {
+  margin-block-start: 0.25rem;
+}
+
+.choice[data-disabled] {
+  color: var(--color-muted);
+  cursor: not-allowed;
+}
+
+.summary h2 {
+  margin-block-start: 0;
+}
+
+/* Estrecho: el panel, debajo del paso */
+@media (max-width: 60rem) {
+  .body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .side {
+    position: static;
+    margin: 0 var(--space-4) var(--space-4);
+  }
+
+  .main {
+    padding-inline: var(--space-4);
+  }
+
+  .steps {
+    padding-inline: var(--space-4);
+  }
+}

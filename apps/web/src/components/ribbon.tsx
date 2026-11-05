@@ -15,7 +15,8 @@ import {
   Settings,
   Shield,
   Trash2,
-  User
+  User,
+  Users
 } from 'lucide-react'
 import { type CSSProperties, type MouseEvent, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -397,6 +398,15 @@ function CampaignPanels({ worldId, campaignId, name }: { worldId: string; campai
         <Label icon={Shield} text={name} />
       </Link>
       <Link
+        to="/mundos/$worldId/campanas/$campaignId/personajes"
+        params={{ worldId, campaignId }}
+        className={styles.item}
+        viewTransition={SECTION}
+        data-tour="barra-personajes"
+      >
+        <Label icon={Users} text={t('ribbon.characters')} />
+      </Link>
+      <Link
         to="/mundos/$worldId/campanas/$campaignId/compendio"
         params={{ worldId, campaignId }}
         className={styles.item}
@@ -552,6 +562,13 @@ function MobileMenu({
             text: campaign.name,
             current: path === `/mundos/${world.id}/campanas/${campaign.id}`,
             run: go(`/mundos/${world.id}/campanas/${campaign.id}`)
+          },
+          {
+            key: 'personajes',
+            icon: Users,
+            text: t('ribbon.characters'),
+            current: path.startsWith(`/mundos/${world.id}/campanas/${campaign.id}/personajes`),
+            run: go(`/mundos/${world.id}/campanas/${campaign.id}/personajes`)
           },
           {
             key: 'compendio',

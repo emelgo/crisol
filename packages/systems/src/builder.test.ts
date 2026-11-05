@@ -160,6 +160,16 @@ describe('el creador: montar un personaje de sus elecciones', () => {
     expect(built.document.items?.find((i) => i.id === 'c2')?.data).toMatchObject({ nivel: 1, inicial: false })
   })
 
+  it('cuántos se eligen sale de una fórmula sobre lo que lo concede: las maestrías del guerrero, por su nivel', () => {
+    const masteries = (level: number) =>
+      build({ picks: [{ id: 'c1', step: 'clase', key: 'guerrero_2024', level }] }).decisions.find((d) =>
+        d.id.endsWith('>maestrias')
+      )
+    expect(masteries(1)?.count).toBe(3)
+    expect(masteries(4)?.count).toBe(4)
+    expect(masteries(1)?.options.length).toBeGreaterThan(10)
+  })
+
   it('a nivel 20, lo pendiente se calcula en menos de 20 ms', () => {
     const b: Build = {
       scores: { base: scores },
