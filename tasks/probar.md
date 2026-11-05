@@ -9,6 +9,26 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   de propietario.
 - **En local**, con los cambios al momento: http://localhost:5173 (lo arranco cuando haga falta).
 
+## Módulo 3: personajes (en local, `localhost:5173`; aún no en staging)
+
+En una campaña con el 5e (en sus ajustes, «5e» y sus ediciones):
+- [ ] **La campaña en su vista**: al entrar en ella, la barra cambia (su nombre, Personajes, Compendio, Dados); la
+  llama vuelve a Mis mundos.
+- [ ] **El compendio**: buscar en español o en inglés («fireball»), filtrar por tipo, leer un conjuro, una criatura y
+  una clase (con lo que concede por nivel); «2014 · Legado» lleva a la otra versión. Una jugadora también lo ve.
+- [ ] **Personajes**: «Personaje nuevo» (el máster elige quién lo juega); su tarjeta y su vista previa; su ventana
+  (nombre, quién lo juega, borrar).
+- [ ] **El creador**: elegir clase, especie y trasfondo; lo que falta sale con (!) en los pasos y a la derecha; elegir
+  en el panel (las habilidades, el estilo de combate; la mejora de característica a nivel 4 y los aumentos de un
+  trasfondo de 2024, con «−» y «+»); las características con sus cuatro métodos (los 4d6, en el registro de dados);
+  «Terminar».
+- [ ] **Subir de nivel y multiclase**: cambiar el nivel de la clase, «Añadir otra» (la que no se puede, con su
+  motivo: «Necesitas Inteligencia 13»), «Confirmar el nivel N».
+- [ ] **La ficha y sus versiones**: «Creado · Nivel 1» y cada nivel confirmado; «Restaurar» (se deshace desde el
+  historial).
+- [ ] **Lo que ve cada uno**: una jugadora ve solo los suyos; el máster, todos.
+- [ ] **Desde claude.ai**: que la IA haga un personaje con `crear_personaje` y `elegir_personaje`, y lo suba de nivel.
+
 ## Módulo 3: srd-5e, punto de control 4 y final (todo el contenido, en staging: PR #98)
 
 Todo el contenido de los dos SRD ya está sacado: 3170 documentos (estados, texto de las reglas, conjuros, objetos
