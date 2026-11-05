@@ -7,6 +7,20 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
+### Para retomar (2026-11-05, módulo 3: `srd-5e`, fase 3 en marcha)
+
+- **Rama `modulo-3/srd-5e-contenido`** (sin PR aún), sobre `main`. Hechas las tareas 11 a 14 de `tasks/todo.md`: los
+  estados y el texto de las reglas (`scripts/srd/estados.ts`, `capitulos.ts`, `reglas.ts`), los 658 conjuros
+  (`conjuros.ts`) y los 496 objetos mágicos (`magicos.ts`); 1918 documentos en total, que validan
+  (`node scripts/srd/comprobar.ts`). En el motor: la operación `mul` en los efectos; en el 5e, el campo `mod` del
+  conjuro y el cansancio de 2024 en la salvación contra muerte; en la base de datos, `insertMany` y `removeMany` (copiar
+  el 5e ya no va fila a fila).
+- **Lo siguiente**: las criaturas (tareas 15 y 16), luego especies, trasfondos y dotes (17) y las clases (18 y 19).
+  Cómo se saca cada cosa: el texto de los PDF en orden de lectura con el alto de cada palabra (`ruleRows` y los
+  perfiles de `capitulos.ts`: qué alto es título, tabla o recuadro en cada PDF), cortado por sus títulos y pasado a
+  Markdown (`textOf`); inglés y español se emparejan por su firma o su parecido y una lista revisada (`pares.ts`).
+- Lo de antes de esta rama, abajo.
+
 ### Para retomar (2026-11-04, módulo 3: `srd-5e` en marcha, fase 1 hecha)
 
 - **Ahora**: `sistemas` está terminado, en `main` y en staging (PR #96). **Lo siguiente es `srd-5e`** (el 5e de serie:
