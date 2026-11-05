@@ -39,10 +39,11 @@ Para quién:
 | `tablas` | Las tablas aleatorias como datos (del sistema y del mundo), su tirada en el servidor con su registro y lo sacado por campaña | `dados` |
 | `personaje` | El personaje de una campaña: su dueño, lo que ve cada uno, sus elecciones y su contenido por referencia, la hoja calculada, su historial y sus versiones | `srd-5e` |
 | `pasos` | El formato de los pasos del creador en un sistema (tipos neutros) y su motor puro: la lista de pasos y de lo pendiente, calculada siempre de las elecciones | `personaje`, `tablas` |
-| `creador` | Las pantallas: crear y subir de nivel (como D&D Beyond), las versiones del personaje y tirar en una tabla | `pasos` |
+| `campana` | La vista de la campaña (como la de un mundo), con sus personajes y su compendio (el contenido de su sistema, por tipo, con buscador y su lectura) | `personaje` |
+| `creador` | Las pantallas: crear y subir de nivel (como D&D Beyond), las versiones del personaje y tirar en una tabla | `pasos`, `campana` |
 | `ia` | Las herramientas MCP para hacer, subir y ver personajes, sus versiones y tirar en una tabla | `pasos`, `tablas` |
 
-Orden: `tablas` → `personaje` → `pasos` → `creador` y `ia`. Lo arriesgado va antes: el motor de los pasos (puro y con
+Orden: `tablas` → `personaje` → `pasos` → `campana` → `creador` y `ia`. Lo arriesgado va antes: el motor de los pasos (puro y con
 sus pruebas) se prueba con el 5e entero y con un sistema de otro juego antes de las pantallas.
 
 ## Requisitos
@@ -109,6 +110,16 @@ sus pruebas) se prueba con el 5e entero y con un sistema de otro juego antes de 
   de cada clase y trasfondo como opciones, cuántos conjuros conoce o prepara cada clase por nivel, y sus tablas
   aleatorias del SRD.
 - **Puro** (`packages/systems`): igual en el servidor y en la web, con el ritmo de `evaluate`.
+
+### `campana`
+
+- **La campaña se abre en su propia vista, como un mundo** (Enrique, 2026-11-05; `docs/diseno.md`): la barra cambia y
+  enseña lo suyo (sus personajes, su compendio, los dados), con la transición de entrar.
+- **El compendio se ve ahí**: el contenido del sistema de la campaña con sus ediciones (clases, especies, trasfondos,
+  dotes, conjuros, objetos mágicos, criaturas, reglas, estados y tablas), por tipo, con su buscador (en cualquier
+  idioma y sin tildes) y cada documento con sus datos y su texto. Lo de 2014 con versión de 2024, marcado «Legado»
+  cuando se ven las dos. Es la misma lista y la misma lectura que usa el creador. Lo que queda para el módulo 4: el
+  contenido propio del mundo en el compendio, las colecciones y lo demás de sus pantallas.
 
 ### `creador`
 
@@ -201,7 +212,8 @@ inglés y las del sistema en español.
 ## Fuera de `personajes`
 
 - La hoja por bloques, tirar desde ella, el inventario y los recursos en partida: `hoja`.
-- Las pantallas del compendio y las colecciones de tablas: módulo 4.
+- El contenido propio del mundo en el compendio, sus colecciones y las de tablas: módulo 4 (la lectura del compendio en
+  la campaña sí va aquí, en `campana`).
 - Pasar los PJ de Eana: al final, con el sistema de Fateforge que hará Enrique.
 - Versiones a mano.
 - Importar personajes de Foundry: `foundry`.
