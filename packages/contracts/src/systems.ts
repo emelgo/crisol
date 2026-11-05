@@ -505,11 +505,23 @@ const granted = z.union([
   z.object({ level: z.int().nullable(), choose: z.string(), count: z.string() })
 ])
 
+/** Su mecánica en palabras (sus acciones, sus usos, lo que cambia, cómo escala), en el idioma de la campaña */
+const mechanicsText = z.object({
+  actions: z.array(z.object({ label: z.string(), parts: z.array(z.string()) })),
+  resources: z.array(z.object({ label: z.string(), parts: z.array(z.string()) })),
+  effects: z.array(z.string()),
+  scaling: z.string().nullable(),
+  toggle: z.string().nullable(),
+  automation: z.enum(['full', 'partial', 'text']).nullable(),
+  manual: z.string().nullable()
+})
+
 export const compendiumItem = contentItem.extend({
   edition: z.string().nullable(),
   legacy: z.boolean(),
   versions: z.array(z.object({ key: z.string(), edition: z.string().nullable(), legacy: z.boolean() })),
-  granted: z.array(granted)
+  granted: z.array(granted),
+  play: mechanicsText.nullable().describe('Su mecánica, en palabras')
 })
 
 export const getCampaignContent = defineAction({

@@ -367,6 +367,12 @@ export const es = {
     library: 'Biblioteca del compendio',
     pick: 'Abre algo del compendio para leerlo.',
     noEdition: 'Sin edición',
+    inPlay: 'En juego',
+    automation: {
+      full: 'Crisol lo calcula todo',
+      partial: 'Crisol calcula una parte',
+      text: 'Solo texto: a mano'
+    },
     searchHint: 'Un conjuro, una criatura…',
     otherVersion: 'Otra versión',
     clear: 'Borrar la búsqueda',

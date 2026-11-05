@@ -5,7 +5,7 @@
 
 import { DiceSyntaxError, parseDice } from '@crisol/dice'
 import { type core, z } from 'zod'
-import { checkCompendium } from './compendium.ts'
+import { checkCompendium } from './compendium-check.ts'
 import {
   type Field,
   KEY_MESSAGE,

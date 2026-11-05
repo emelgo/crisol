@@ -44,6 +44,8 @@ test('la campaña en su vista: la jugadora entra, abre el compendio, busca «fir
   await list.getByRole('button').first().click()
   const article = player.getByRole('article', { name: 'Bola de fuego' })
   await expect(article).toContainText('8d6')
+  // Su mecánica, en palabras
+  await expect(article.getByRole('region', { name: 'En juego' })).toContainText('8d6 de fuego')
   const about = player.getByRole('complementary', { name: 'Sobre este documento' })
   await expect(about).toContainText('Fireball')
   await player.screenshot({ path: test.info().outputPath('compendio.png'), fullPage: false })

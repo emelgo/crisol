@@ -543,6 +543,7 @@ function Entry({
             ))}
           </dl>
         )}
+        {item.play && <InPlay play={item.play} titleId={titleId} />}
         {body && <ContentText text={body} />}
         {item.granted.length > 0 && (
           <section className={styles.granted} aria-labelledby={`${titleId}-granted`}>
@@ -598,5 +599,48 @@ function Entry({
         {source && <p className={styles.attribution}>{source.attribution}</p>}
       </aside>
     </>
+  )
+}
+
+type PlayText = NonNullable<ActionOutput<'getCampaignContent'>['items'][number]['play']>
+
+/** Su mecánica, en palabras: sus acciones, sus usos, lo que cambia, cómo escala y cuánto lo calcula Crisol */
+function InPlay({ play, titleId }: { play: PlayText; titleId: string }) {
+  const { t } = useTranslation()
+  const rows = [
+    ...play.actions.map((a) => ({ key: `a-${a.label}`, label: a.label, text: a.parts.join(' · ') })),
+    ...play.resources.map((r) => ({ key: `r-${r.label}`, label: r.label, text: r.parts.join(' · ') }))
+  ]
+  const lines = [...play.effects, ...(play.scaling ? [play.scaling] : []), ...(play.toggle ? [play.toggle] : [])]
+  if (rows.length === 0 && lines.length === 0 && !play.manual && !play.automation) return null
+  return (
+    <section className={styles.play} aria-labelledby={`${titleId}-play`}>
+      <div className={styles.playHead}>
+        <h3 id={`${titleId}-play`}>{t('compendium.inPlay')}</h3>
+        {play.automation && (
+          <span className={styles.automation} data-level={play.automation}>
+            {t(`compendium.automation.${play.automation}`)}
+          </span>
+        )}
+      </div>
+      {rows.length > 0 && (
+        <dl className={styles.playRows}>
+          {rows.map((row) => (
+            <div key={row.key}>
+              <dt>{row.label}</dt>
+              <dd>{row.text}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
+      {lines.length > 0 && (
+        <ul className={styles.playLines}>
+          {lines.map((line) => (
+            <li key={line}>{line}</li>
+          ))}
+        </ul>
+      )}
+      {play.manual && <p className={styles.manual}>{play.manual}</p>}
+    </section>
   )
 }

@@ -50,6 +50,8 @@ import {
   compendiumSections,
   compendiumTypes,
   fileName,
+  type Mechanics,
+  mechanicsText,
   normalizeChoices,
   type Play,
   pickPaths,
@@ -1446,6 +1448,7 @@ export function fakeApi(
           {
             ...plain,
             ...entry,
+            play: mechanicsText(document, item.type, item.mechanics as Mechanics | undefined, choices.language),
             granted: entry.granted.map((g) =>
               'choose' in g
                 ? { level: g.level, choose: textOf(g.choose, choices.language), count: g.count }

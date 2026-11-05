@@ -78,6 +78,18 @@ const spell = (source: string, edition: string): ContentItem => ({
     escuela: 'evocacion',
     ritual: false,
     descripcion: { es: `Una **explosión** de ${edition}.`, en: 'A blast.' }
+  },
+  mechanics: {
+    actions: [
+      {
+        key: 'lanzar',
+        label: { es: 'Bola de fuego', en: 'Fireball' },
+        activation: 'action',
+        damage: [{ formula: '8d6' }]
+      }
+    ],
+    scaling: { mode: 'slot', base: 3, per: '1d6' },
+    automation: 'partial'
   }
 })
 const CONTENT: ContentItem[] = [
@@ -169,13 +181,18 @@ describe('el compendio de una campaña', () => {
     expect(article.getByText('3')).toBeDefined()
     expect(article.queryByText('Ritual')).toBeNull()
     expect(article.getByText('explosión').tagName).toBe('STRONG')
+    // Su mecánica, en palabras
+    const play = within(article.getByRole('region', { name: 'En juego' }))
+    expect(play.getByText('Crisol calcula una parte')).toBeDefined()
+    expect(play.getByText('Acción · 8d6')).toBeDefined()
+    expect(play.getByText('Con un espacio de más nivel que el 3: +1d6 por cada nivel de más')).toBeDefined()
     expect(library.getByRole('button', { name: 'Bola de fuego' }).getAttribute('aria-current')).toBe('true')
     const about = within(screen.getByRole('complementary', { name: 'Sobre este documento' }))
     expect(about.getByText('2024 · Nuevo')).toBeDefined()
     expect(about.getByText('Fireball')).toBeDefined()
     expect(about.getByText('Material del Nuevo')).toBeDefined()
     await userEvent.click(about.getByRole('button', { name: '2014 · Legado' }))
-    expect(await screen.findByText('Una', { exact: false })).toBeDefined()
+    expect(await screen.findByText(/de 2014\./)).toBeDefined()
     expect(
       within(screen.getByRole('complementary', { name: 'Sobre este documento' })).getByText('2014 · Viejo')
     ).toBeDefined()

@@ -2,7 +2,7 @@ import type { Campaign, Member, World } from '@crisol/contracts'
 import { createMemoryHistory } from '@tanstack/react-router'
 import { act, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { fakeAccountClient } from '../account/fake.ts'
 import { ApiError } from '../api/client.ts'
 import { fakeApi } from '../api/fake.ts'
@@ -68,6 +68,11 @@ function renderAt(path: string, options: { role?: Campaign['role'] } = {}) {
 const campaignPath = `/mundos/${world.id}/campanas/${campaign.id}`
 
 describe('el canal en tiempo real en la web', () => {
+  // Los tutoriales, ya hechos: el de Mis mundos se llevaría el foco mientras se abre el menú de la cuenta
+  beforeEach(() =>
+    localStorage.setItem('crisol.recorridos.e@crisol.test', JSON.stringify({ seen: ['mundos', 'mundo', 'campana'] }))
+  )
+
   it('se abre con la sesión y se cierra al salir', async () => {
     const { realtime } = renderAt('/mundos')
     await screen.findByRole('heading', { name: 'Mis mundos' })

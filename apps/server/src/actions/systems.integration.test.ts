@@ -328,6 +328,9 @@ describe('los sistemas de reglas', () => {
     )
     expect(read.missing).toEqual(['nada'])
     expect(read.items[0]).toMatchObject({ edition: '2014', legacy: true, versions: [{ key: 'bola_de_fuego_2024' }] })
+    // Su mecánica, en palabras
+    expect(read.items[0].play.actions[0].parts).toContain('Acción')
+    expect(read.items[0].play.scaling).toMatch(/^Con un espacio de más nivel que el 3/)
     expect(read.items[1].granted).toContainEqual({ level: 1, key: 'barbaro_furia_2014', type: 'rasgo', name: 'Furia' })
 
     // Con solo la de 2014, lo de 2024 no se lee

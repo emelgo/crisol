@@ -19,6 +19,8 @@ import {
   compendiumEntry,
   compendiumSections,
   compendiumTypes,
+  type Mechanics,
+  mechanicsText,
   normalizeChoices,
   type System,
   searchContent,
@@ -142,6 +144,7 @@ export const compendiumActions = [
           {
             ...structuredClone(item),
             ...entry,
+            play: mechanicsText(document, item.type, item.mechanics as Mechanics | undefined, choices.language),
             granted: entry.granted.map((g) =>
               'choose' in g
                 ? { level: g.level, choose: textOf(g.choose, choices.language), count: g.count }

@@ -50,20 +50,28 @@ export function Creator({
   const decision = state.decisions.find((d) => d.id === deciding) ?? null
   const choose = (d: Decision, values: string[]) =>
     save({ build: (b) => ({ ...b, decisions: { ...(b.decisions ?? {}), [d.id]: values } }) })
+  const root = useRef<HTMLDivElement>(null)
   const main = useRef<HTMLElement>(null)
   const side = useRef<HTMLElement>(null)
+  const open = useRef(deciding)
+  open.current = deciding
   // Si desaparece lo que tenía el foco (una opción elegida, la X de una clase, «Cambiar»), el foco no se pierde:
   // va al panel de la decisión abierta o al paso
-  const rescue = (event: React.FocusEvent) => {
-    const lost = event.target
-    if (event.relatedTarget) return
-    requestAnimationFrame(() => {
-      if (lost.isConnected || (document.activeElement && document.activeElement !== document.body)) return
-      ;(deciding ? side.current : main.current)?.focus()
-    })
-  }
+  useEffect(() => {
+    const element = root.current
+    const rescue = (event: FocusEvent) => {
+      const lost = event.target as Element | null
+      if (event.relatedTarget || !lost) return
+      requestAnimationFrame(() => {
+        if (lost.isConnected || (document.activeElement && document.activeElement !== document.body)) return
+        ;(open.current ? side.current : main.current)?.focus()
+      })
+    }
+    element?.addEventListener('focusout', rescue)
+    return () => element?.removeEventListener('focusout', rescue)
+  }, [])
   return (
-    <div className={styles.creator} onBlur={rescue}>
+    <div className={styles.creator} ref={root}>
       <nav className={styles.steps} aria-label={t('creator.steps')}>
         {state.steps.map((s) => (
           <button
