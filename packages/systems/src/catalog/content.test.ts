@@ -371,6 +371,68 @@ describe('el contenido de los sistemas de serie', () => {
     expect([hab.perspicacia?.total, hab.religion?.total]).toEqual([2, 2])
   })
 
+  it('las clases: un bárbaro con su furia, el nivel de lanzador de un mago, un paladín y un brujo, el ataque furtivo', () => {
+    const content = catalogContent('5e')
+    const carry = (key: string, data: Record<string, unknown> = {}): DocumentItem => {
+      const item = content.find((c) => c.key === key) as ContentItem
+      if (!item) throw new Error(key)
+      return {
+        id: item.concept ?? key,
+        type: item.type,
+        name: (item.data.name as { es: string }).es,
+        data: { ...item.data, ...data },
+        ...(item.mechanics ? { mechanics: item.mechanics as Mechanics } : {})
+      }
+    }
+    // Una clase de un nivel con lo que concede hasta él (como lo pondrá el creador)
+    const klass = (
+      key: string,
+      nivel: number,
+      edition: string,
+      extra: Record<string, Record<string, unknown>> = {}
+    ) => {
+      const item = carry(key, { nivel, inicial: true })
+      return [
+        item,
+        ...(item.mechanics?.grants ?? [])
+          .filter((g) => g.concept && (g.level ?? 0) <= nivel)
+          .map((g) => carry(`${g.concept}_${edition}`, extra[g.concept as string] ?? {}))
+          .map((it) => ({ ...it, from: item.id }))
+      ]
+    }
+    const data = { caracteristicas: { fue: { puntuacion: 16 }, des: { puntuacion: 14 }, con: { puntuacion: 16 } } }
+    const barbarian = (rage: boolean) =>
+      evaluate(fiveE, 'personaje', {
+        data,
+        items: klass('barbaro_2014', 5, '2014', { barbaro_furia: { activo: rage } })
+      })
+    const calm = barbarian(false)
+    expect(calm.values).toMatchObject({ ca: 15, ataques: 2, bono_dano_fue: 0, resistencias: [] })
+    expect(calm.resources.find((r) => r.key === 'furias')).toMatchObject({ max: 3, recovery: 'long' })
+    expect(barbarian(true).values).toMatchObject({
+      bono_dano_fue: 2,
+      resistencias: ['contundente', 'cortante', 'perforante']
+    })
+    expect(barbarian(true).advantages).toMatchObject({
+      'salvacion.fue': [expect.objectContaining({ mode: 'advantage' })]
+    })
+
+    const caster = (key: string, nivel: number, edition: string) =>
+      evaluate(fiveE, 'personaje', { data: {}, items: klass(key, nivel, edition) }).values as Record<string, unknown>
+    expect(caster('mago_2024', 5, '2024')).toMatchObject({ nivel_lanzador: 5, caracteristica_conjuros: 'int' })
+    expect([
+      caster('paladin_2014', 1, '2014').nivel_lanzador,
+      caster('paladin_2014', 5, '2014').nivel_lanzador
+    ]).toEqual([0, 3])
+    expect(caster('paladin_2024', 1, '2024').nivel_lanzador).toBe(1)
+    expect(caster('brujo_2024', 5, '2024')).toMatchObject({ pacto_espacios: 2, pacto_nivel: 3, nivel_lanzador: 0 })
+
+    const rogue = { data, items: klass('picaro_2014', 5, '2014') }
+    expect(prepareAction(fiveE, 'personaje', rogue, 'picaro_ataque_furtivo', 'ataque_furtivo').damage[0]?.formula).toBe(
+      '3d6'
+    )
+  })
+
   it('el texto de las reglas: lo de 2014 con versión de 2024 se esconde con lo más nuevo; se busca en los dos idiomas', () => {
     const content = catalogContent('5e')
     const cover = (duplicates: 'newest' | 'both') =>

@@ -34960,9 +34960,9 @@
   },
   {
     "type": "criatura",
-    "key": "druida_2014",
+    "key": "criatura_druida_2014",
     "source": "srd51",
-    "concept": "druida",
+    "concept": "criatura_druida",
     "data": {
       "name": {
         "es": "Druida",
@@ -35381,9 +35381,9 @@
   },
   {
     "type": "criatura",
-    "key": "mago_2014",
+    "key": "criatura_mago_2014",
     "source": "srd51",
-    "concept": "mago",
+    "concept": "criatura_mago",
     "data": {
       "name": {
         "es": "Mago",
@@ -44153,9 +44153,9 @@
   },
   {
     "type": "criatura",
-    "key": "druida_2024",
+    "key": "criatura_druida_2024",
     "source": "srd521",
-    "concept": "druida",
+    "concept": "criatura_druida",
     "data": {
       "name": {
         "es": "Druida",
@@ -51479,9 +51479,9 @@
   },
   {
     "type": "criatura",
-    "key": "mago_2024",
+    "key": "criatura_mago_2024",
     "source": "srd521",
-    "concept": "mago",
+    "concept": "criatura_mago",
     "data": {
       "name": {
         "es": "Mago",

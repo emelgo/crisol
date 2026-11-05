@@ -42,6 +42,7 @@ import {
 } from './objetos.ts'
 import { allOriginDocs } from './origenes.ts'
 import { GEAR_PAIRS, GEAR_RENAMES, MOUNT_RENAMES } from './pares.ts'
+import { allClassDocs } from './rasgos.ts'
 import { boxesOf, type Edition, type Lang, pagesOf, widthOf } from './texto.ts'
 
 export const CONTENT_DIR = new URL('../../packages/systems/src/catalog/5e/content/', import.meta.url)
@@ -265,9 +266,12 @@ export function extract(): Record<string, Doc[]> {
       ...m14.map(([en, es], i) => mountDoc('2014', en, es, mc.older[i] as string)),
       ...m24.map(([en, es], i) => mountDoc('2024', en, es, mc.newer[i] as string))
     ],
-    'clases.json': (['2014', '2024'] as const).flatMap((edition) =>
-      classDocs(FIGHTER[edition], FIGHTER_CLASS[edition], FIGHTER_FEATURES[edition])
-    ),
+    'clases.json': [
+      ...(['2014', '2024'] as const).flatMap((edition) =>
+        classDocs(FIGHTER[edition], FIGHTER_CLASS[edition], FIGHTER_FEATURES[edition])
+      ),
+      ...allClassDocs()
+    ],
     'armas.json': [
       ...w14.map(([en, es], i) => weaponDoc('2014', en, es, wc.older[i] as string)),
       ...w24.map(([en, es], i) => weaponDoc('2024', en, es, wc.newer[i] as string))
