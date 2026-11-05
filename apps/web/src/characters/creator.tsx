@@ -6,11 +6,14 @@
 import { type Build, type BuildPick, type Text, textOf } from '@crisol/systems'
 import { useQuery } from '@tanstack/react-query'
 import { ChevronDown, ChevronUp, Plus, X } from 'lucide-react'
-import { useId, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ActionOutput } from '../api/client.ts'
 import { useApi } from '../api/context.tsx'
 import { ContentText } from '../campaign/content-text.tsx'
+import { BusyButton } from '../components/busy-button.tsx'
+import fieldStyles from '../components/form.module.css'
+import { failed } from '../components/load-error.tsx'
 import { Pending } from './characters.tsx'
 import styles from './creator.module.css'
 import { type Change, pickId } from './save.ts'
@@ -47,8 +50,28 @@ export function Creator({
   const decision = state.decisions.find((d) => d.id === deciding) ?? null
   const choose = (d: Decision, values: string[]) =>
     save({ build: (b) => ({ ...b, decisions: { ...(b.decisions ?? {}), [d.id]: values } }) })
+  const root = useRef<HTMLDivElement>(null)
+  const main = useRef<HTMLElement>(null)
+  const side = useRef<HTMLElement>(null)
+  const open = useRef(deciding)
+  open.current = deciding
+  // Si desaparece lo que tenía el foco (una opción elegida, la X de una clase, «Cambiar»), el foco no se pierde:
+  // va al panel de la decisión abierta o al paso
+  useEffect(() => {
+    const element = root.current
+    const rescue = (event: FocusEvent) => {
+      const lost = event.target as Element | null
+      if (event.relatedTarget || !lost) return
+      requestAnimationFrame(() => {
+        if (lost.isConnected || (document.activeElement && document.activeElement !== document.body)) return
+        ;(open.current ? side.current : main.current)?.focus()
+      })
+    }
+    element?.addEventListener('focusout', rescue)
+    return () => element?.removeEventListener('focusout', rescue)
+  }, [])
   return (
-    <div className={styles.creator}>
+    <div className={styles.creator} ref={root}>
       <nav className={styles.steps} aria-label={t('creator.steps')}>
         {state.steps.map((s) => (
           <button
@@ -67,7 +90,7 @@ export function Creator({
         ))}
       </nav>
       <div className={styles.body}>
-        <section className={styles.main} aria-label={step?.label}>
+        <section className={styles.main} aria-label={step?.label} ref={main} tabIndex={-1}>
           {step?.kind === 'content' && step.levels && (
             <LevelsStep
               step={step}
@@ -96,7 +119,12 @@ export function Creator({
             />
           )}
         </section>
-        <aside className={styles.side} aria-label={decision ? decision.label : t('creator.overview')}>
+        <aside
+          className={styles.side}
+          aria-label={decision ? decision.label : t('creator.overview')}
+          ref={side}
+          tabIndex={-1}
+        >
           {decision ? (
             <DecisionPanel
               decision={{ ...decision, chosen: build.decisions?.[decision.id] ?? decision.chosen }}
@@ -200,9 +228,20 @@ function GrantedText({ contentKey, campaignId }: { contentKey: string | null; ca
     queryFn: () => api.call('getCampaignContent', { campaignId, keys: [contentKey ?? ''] }),
     enabled: Boolean(contentKey)
   })
+  const { t } = useTranslation()
   const item = read.data?.items[0]
   const text = item ? textOf(item.data.descripcion as Text, 'es') : ''
-  if (!text) return null
+  // Desplegado, siempre dice algo: cargando, que falló o que no tiene texto
+  if (!text)
+    return (
+      <p className={styles.grantedNote}>
+        {read.isPending && contentKey
+          ? t('creator.loadingText')
+          : failed(read)
+            ? t('creator.textFailed')
+            : t('creator.noText')}
+      </p>
+    )
   return (
     <div className={styles.grantedText}>
       <ContentText text={text} />
@@ -512,6 +551,8 @@ function FieldInput({
       ? String(value)
       : ''
   const [text, setText] = useState(shown)
+  const [wrong, setWrong] = useState(false)
+  const { t } = useTranslation()
   if (field.kind === 'choice' && field.options)
     return (
       <div className={styles.field}>
@@ -530,7 +571,9 @@ function FieldInput({
     if (text === shown) return
     if (field.kind === 'number') {
       const n = Number(text)
-      if (text.trim() !== '' && Number.isFinite(n)) onCommit(n)
+      const fits = text.trim() !== '' && Number.isFinite(n)
+      setWrong(!fits)
+      if (fits) onCommit(n)
       return
     }
     onCommit(
@@ -551,10 +594,19 @@ function FieldInput({
         <input
           id={id}
           type={field.kind === 'number' ? 'number' : 'text'}
+          autoComplete="off"
+          placeholder={field.kind === 'list' ? t('creator.listHint') : undefined}
+          aria-invalid={wrong || undefined}
+          aria-describedby={wrong ? `${id}-error` : undefined}
           value={text}
           onChange={(e) => setText(e.currentTarget.value)}
           onBlur={commit}
         />
+      )}
+      {wrong && (
+        <small id={`${id}-error`} className={fieldStyles.fieldError}>
+          {t('creator.notANumber')}
+        </small>
       )}
     </div>
   )
@@ -683,19 +735,19 @@ function Overview({
       <PendingList state={state} onGo={onGo} onDecide={onDecide} />
       <div className={styles.confirm}>
         {creating && (
-          <button
-            type="button"
+          <BusyButton
             className={styles.primary}
-            disabled={!state.complete || busy}
+            busy={busy}
+            disabled={!state.complete}
             onClick={() => onConfirm('created')}
           >
-            {t('creator.finish')}
-          </button>
+            {busy ? t('characters.saving') : t('creator.finish')}
+          </BusyButton>
         )}
         {confirmLevel && (
-          <button type="button" className={styles.primary} disabled={busy} onClick={() => onConfirm('level')}>
-            {t('creator.confirmLevel', { level: state.level })}
-          </button>
+          <BusyButton className={styles.primary} busy={busy} onClick={() => onConfirm('level')}>
+            {busy ? t('characters.saving') : t('creator.confirmLevel', { level: state.level })}
+          </BusyButton>
         )}
         {creating && !state.complete && <p className={styles.hint}>{t('creator.finishHint')}</p>}
       </div>
@@ -719,6 +771,11 @@ function DecisionPanel({
 }) {
   const { t } = useTranslation()
   const name = useId()
+  const heading = useRef<HTMLHeadingElement>(null)
+  // Al abrirla (o pasar a la siguiente), el foco va a su título: en lo estrecho, el panel queda debajo del paso
+  useEffect(() => {
+    if (decision.id) heading.current?.focus()
+  }, [decision.id])
   const single = decision.count === 1
   const toggle = (value: string) => {
     if (single) return onChoose([value])
@@ -730,7 +787,9 @@ function DecisionPanel({
   return (
     <div className={styles.decision}>
       <div className={styles.decisionHead}>
-        <h2 className={styles.sideTitle}>{decision.label}</h2>
+        <h2 className={styles.sideTitle} ref={heading} tabIndex={-1}>
+          {decision.label}
+        </h2>
         <button type="button" className={styles.remove} aria-label={t('creator.close')} onClick={onClose}>
           <X size={16} aria-hidden="true" />
         </button>

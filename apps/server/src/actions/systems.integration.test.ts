@@ -304,6 +304,16 @@ describe('los sistemas de reglas', () => {
       value: 'abjuracion',
       label: 'Abjuración'
     })
+    expect(spells.editions).toEqual({ '2014': 319, '2024': 339 })
+    // Ordenado como una biblioteca: sus secciones y, al abrir un tipo, sus carpetas
+    expect(compendium.sections.find((s: { key: string }) => s.key === 'conjuros')).toEqual({
+      key: 'conjuros',
+      label: 'Conjuros',
+      types: [{ key: 'conjuro', label: 'Conjuros' }]
+    })
+    const browsed = await ok200('browseCampaignContent', { campaignId: campaign.id, type: 'conjuro' }, player.cookie)
+    expect(browsed.folders[0]).toEqual({ key: '0', label: 'Trucos' })
+    expect(browsed.items.find((i: { key: string }) => i.key === 'bola_de_fuego_2024')).toMatchObject({ folder: '3' })
 
     // Buscar, también por el nombre en inglés; leer, con su otra versión y lo que concede
     const found = await ok200('searchCampaignContent', { campaignId: campaign.id, query: 'fireball' }, player.cookie)
@@ -318,6 +328,9 @@ describe('los sistemas de reglas', () => {
     )
     expect(read.missing).toEqual(['nada'])
     expect(read.items[0]).toMatchObject({ edition: '2014', legacy: true, versions: [{ key: 'bola_de_fuego_2024' }] })
+    // Su mecánica, en palabras
+    expect(read.items[0].play.actions[0].parts).toContain('Acción')
+    expect(read.items[0].play.scaling).toMatch(/^Con un espacio de más nivel que el 3/)
     expect(read.items[1].granted).toContainEqual({ level: 1, key: 'barbaro_furia_2014', type: 'rasgo', name: 'Furia' })
 
     // Con solo la de 2014, lo de 2024 no se lee
@@ -338,6 +351,7 @@ describe('los sistemas de reglas', () => {
     for (const [name, payload] of [
       ['getCampaignCompendium', { campaignId: campaign.id }],
       ['searchCampaignContent', { campaignId: campaign.id }],
+      ['browseCampaignContent', { campaignId: campaign.id, type: 'conjuro' }],
       ['getCampaignContent', { campaignId: campaign.id, keys: ['bola_de_fuego_2014'] }]
     ] as const)
       expect((await code(name, payload, stranger.cookie)).status).toBe(404)
@@ -348,7 +362,12 @@ describe('los sistemas de reglas', () => {
       system: null,
       language: 'es',
       sources: [],
-      types: []
+      types: [],
+      sections: []
+    })
+    expect(await ok200('browseCampaignContent', { campaignId: none.id, type: 'conjuro' })).toEqual({
+      items: [],
+      folders: []
     })
   })
 

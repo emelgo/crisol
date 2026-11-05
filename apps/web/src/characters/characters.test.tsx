@@ -105,7 +105,7 @@ describe('los personajes de una campaña', () => {
       expect((screen.getByRole('button', { name: 'Terminar' }) as HTMLButtonElement).disabled).toBe(false)
     )
     await userEvent.click(screen.getByRole('button', { name: 'Terminar' }))
-    await userEvent.click(screen.getByRole('button', { name: 'Ficha' }))
+    await userEvent.click(screen.getByRole('link', { name: 'Ficha' }))
     const values = within(await screen.findByRole('list', { name: 'Sus valores' }))
     expect(values.getByText('Defensa').parentElement?.textContent).toBe('Defensa9')
     const versions = within(screen.getByRole('complementary', { name: 'Versiones' }))

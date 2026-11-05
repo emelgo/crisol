@@ -86,6 +86,15 @@ export function listContent(db: Database, systemId: string) {
   return db.select().from(systemContent).where(eq(systemContent.systemId, systemId)).orderBy(asc(systemContent.key))
 }
 
+/** Su contenido de un tipo (para repartirlo en las carpetas de su compendio) */
+export function listContentOfType(db: Database, systemId: string, type: string) {
+  return db
+    .select()
+    .from(systemContent)
+    .where(and(eq(systemContent.systemId, systemId), eq(systemContent.type, type)))
+    .orderBy(asc(systemContent.key))
+}
+
 export interface ContentValues {
   type: string
   key: string

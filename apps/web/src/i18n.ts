@@ -334,6 +334,11 @@ export const es = {
     points: 'Te quedan {{left}} de {{budget}} puntos',
     rolled: 'Salieron',
     rolling: 'Tirando…',
+    loadingText: 'Cargando…',
+    textFailed: 'No se ha podido cargar su texto.',
+    noText: 'Sin texto.',
+    notANumber: 'Escribe un número.',
+    listHint: 'Separados por comas…',
     inLog: 'en el registro de la campaña',
     roll: 'Tirar ({{formula}})',
     base: 'Base',
@@ -359,6 +364,15 @@ export const es = {
     systemWith: '{{system}} · {{editions}}',
     and: ' y ',
     search: 'Buscar en el compendio',
+    library: 'Biblioteca del compendio',
+    pick: 'Abre algo del compendio para leerlo.',
+    noEdition: 'Sin edición',
+    inPlay: 'En juego',
+    automation: {
+      full: 'Crisol lo calcula todo',
+      partial: 'Crisol calcula una parte',
+      text: 'Solo texto: a mano'
+    },
     searchHint: 'Un conjuro, una criatura…',
     otherVersion: 'Otra versión',
     clear: 'Borrar la búsqueda',
@@ -1757,7 +1771,7 @@ export const es = {
     },
     compendium: {
       search: 'Busca en todo el contenido del juego.',
-      types: 'O mira solo un tipo.'
+      types: 'O recórrelo por estantes: cada sección, con sus carpetas.'
     },
     table: {
       rows: 'Cada fila, con los números que la sacan.',

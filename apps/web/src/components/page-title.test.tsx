@@ -49,7 +49,10 @@ const h1 = (name: string) => screen.findByRole('heading', { level: 1, name })
 describe('el título de cada página', () => {
   // Los tutoriales guiados ya hechos: que no se lleven el foco
   beforeEach(() =>
-    localStorage.setItem('crisol.recorridos.e@crisol.test', JSON.stringify({ seen: ['mundos', 'mundo', 'campanas', 'campana'] }))
+    localStorage.setItem(
+      'crisol.recorridos.e@crisol.test',
+      JSON.stringify({ seen: ['mundos', 'mundo', 'campanas', 'campana'] })
+    )
   )
 
   it('la portada, sin sesión, lleva solo el nombre', async () => {

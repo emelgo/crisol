@@ -44,17 +44,39 @@ test('la campaña en su vista: la jugadora entra, abre el compendio, busca «fir
   await list.getByRole('button').first().click()
   const article = player.getByRole('article', { name: 'Bola de fuego' })
   await expect(article).toContainText('8d6')
+  // Su mecánica, en palabras
+  await expect(article.getByRole('region', { name: 'En juego' })).toContainText('8d6 de fuego')
   const about = player.getByRole('complementary', { name: 'Sobre este documento' })
   await expect(about).toContainText('Fireball')
   await player.screenshot({ path: test.info().outputPath('compendio.png'), fullPage: false })
   await about.getByRole('button', { name: '2014 · Legado' }).click()
   await expect(player.getByRole('complementary', { name: 'Sobre este documento' })).toContainText('2014 · SRD 5.1')
 
-  // Una clase, con lo que concede por nivel
+  // Sin buscar, la biblioteca: por edición, sus secciones y sus carpetas (los conjuros, por nivel)
   await player.getByRole('searchbox', { name: 'Buscar en el compendio' }).fill('')
-  await player.getByRole('group', { name: 'Tipos' }).getByRole('button', { name: 'Clase', exact: true }).click()
-  await list.getByRole('button', { name: /Bárbaro.*2024/ }).click()
+  const library = player.getByRole('navigation', { name: 'Biblioteca del compendio' })
+  await library.getByRole('button', { name: /^2024/ }).click()
+  await library.getByRole('button', { name: /^Conjuros/ }).click()
+  await library.getByRole('button', { name: /^Nivel 3/ }).click()
+  await expect(library.getByRole('button', { name: 'Bola de fuego' })).toBeVisible()
+  await library.getByRole('button', { name: /^Criaturas/ }).click()
+  await library.getByRole('button', { name: /^Dragón/ }).click()
+  await player.screenshot({ path: test.info().outputPath('compendio-biblioteca.png'), fullPage: false })
+
+  // Una clase, con lo que concede por nivel
+  await library
+    .getByRole('button', { name: /^Clases/ })
+    .first()
+    .click()
+  await library
+    .getByRole('button', { name: /^Clases/ })
+    .nth(1)
+    .click()
+  await library.getByRole('button', { name: 'Bárbaro' }).click()
   await expect(player.getByRole('region', { name: 'Por nivel' })).toContainText('Furia')
+  // Lo abierto va en la dirección: al recargar, sigue abierto
+  await player.reload()
+  await expect(player.getByRole('article', { name: 'Bárbaro' })).toBeVisible()
   await player.screenshot({ path: test.info().outputPath('compendio-clase.png'), fullPage: false })
 
   // El máster también lo lee; axe, en claro y en oscuro

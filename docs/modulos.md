@@ -19,6 +19,14 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   `dados(@competencia, 8)`, `@dados` en las franjas (`@dados[0] > @dados[1]`, `count(@dados, 6)`), listas por posición
   y modos que suman dados (`add: "1d6"`); en `docs/specs/sistemas.md` § tiradas. Probado con un juego propio en
   `packages/systems/src/otros-juegos.test.ts`; la prueba con la IA (un Daggerheart), en `tasks/probar.md`.
+- **Uso privado (ADR-0014, 2026-11-05)**: el abogado de Enrique da el visto bueno y, de momento, Crisol es para él y
+  sus jugadores; se puede usar código y datos de Foundry, dnd5e y D&D Beyond, con su origen en `docs/terceros.md`.
+- **El compendio, como el de Foundry (PR #105)**: estudio en `research/foundry/compendio.md`; la biblioteca por
+  edición, secciones y carpetas (`compendium` en el formato del sistema, `browseCampaignContent`), «En juego» con la
+  mecánica en palabras (`mechanicsText`) y lo abierto en la dirección. Con él, el resto del pulido (el foco del
+  creador, «Ficha | Creador» en la dirección, el borrador de una tabla). **Lo siguiente**: el contenido con dnd5e
+  (Enrique, «me parece bien»: textos de los PDF y mecánica de dnd5e): el comparador `scripts/srd/comparar-dnd5e.ts`
+  y los arreglos del extractor de criaturas, en la rama `modulo-3/contenido-dnd5e` (en un stash si no está).
 - **La CI del módulo 3 pasó entera en la PR #103** (calidad, seguridad, secretos, e2e y accesibilidad).
 - **El pulido del módulo 3, primera tanda (PR #104)**: revisada su interfaz con las pautas y `docs/diseno.md`;
   hechos los tutoriales de cada vista (campaña, Personajes, el personaje, Compendio y Tabla), sin dobles clics, avisos

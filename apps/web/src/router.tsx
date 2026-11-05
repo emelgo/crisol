@@ -52,12 +52,18 @@ const charactersRoute = createRoute({
 const characterRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/mundos/$worldId/campanas/$campaignId/personajes/$characterId',
-  component: CharacterScreen
+  component: CharacterScreen,
+  // ?vista=ficha o ?vista=creador: la vista del personaje, para enlazarla y que no se pierda al recargar
+  validateSearch: (search: Record<string, unknown>): { vista?: 'ficha' | 'creador' } =>
+    search.vista === 'ficha' || search.vista === 'creador' ? { vista: search.vista } : {}
 })
 const compendiumRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/mundos/$worldId/campanas/$campaignId/compendio',
-  component: CompendiumScreen
+  component: CompendiumScreen,
+  // ?ver=<clave>: lo abierto, para enlazarlo y que «atrás» vuelva a la lista
+  validateSearch: (search: Record<string, unknown>): { ver?: string } =>
+    typeof search.ver === 'string' && search.ver ? { ver: search.ver } : {}
 })
 const wikiRoute = createRoute({ getParentRoute: () => rootRoute, path: '/mundos/$worldId/wiki', component: WikiHome })
 const wikiPageRoute = createRoute({

@@ -66,6 +66,7 @@
   background: none;
   color: var(--color-muted);
   font-weight: 600;
+  text-decoration: none;
   cursor: pointer;
 }
 

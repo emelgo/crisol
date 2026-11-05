@@ -852,6 +852,79 @@ export const fiveE = {
   // El creador (ADR-0013): la clase con sus niveles, la especie, el trasfondo, las características y los detalles; lo
   // que se elige de lo concedido lo calcula Crisol
   card: ['nivel', 'pg_max', 'ca'],
+  // Su compendio, como los estantes del de Foundry: por secciones y, dentro, por carpetas
+  compendium: {
+    sections: [
+      { key: 'reglas', label: t('Reglas', 'Rules'), types: ['regla', 'estado'] },
+      { key: 'clases', label: t('Clases', 'Classes'), types: ['clase', 'subclase'] },
+      { key: 'origenes', label: t('Orígenes', 'Origins'), types: ['especie', 'trasfondo'] },
+      { key: 'rasgos', label: t('Rasgos', 'Features'), types: ['rasgo'] },
+      { key: 'dotes', label: t('Dotes', 'Feats'), types: ['dote'] },
+      { key: 'conjuros', label: t('Conjuros', 'Spells'), types: ['conjuro'] },
+      { key: 'equipo', label: t('Equipo', 'Equipment'), types: ['arma', 'armadura', 'equipo'] },
+      { key: 'objetos_magicos', label: t('Objetos mágicos', 'Magic items'), types: ['objeto_magico'] },
+      { key: 'criaturas', label: t('Criaturas', 'Creatures'), types: ['criatura'] }
+    ],
+    types: {
+      regla: { label: t('Reglamento', 'Rulebook'), folder: { field: 'capitulo' } },
+      estado: { label: t('Estados', 'Conditions') },
+      clase: { label: t('Clases', 'Classes') },
+      subclase: {
+        label: t('Subclases', 'Subclasses'),
+        folder: {
+          field: 'clase',
+          labels: {
+            barbaro: t('Bárbaro', 'Barbarian'),
+            bardo: t('Bardo', 'Bard'),
+            brujo: t('Brujo', 'Warlock'),
+            clerigo: t('Clérigo', 'Cleric'),
+            druida: t('Druida', 'Druid'),
+            explorador: t('Explorador', 'Ranger'),
+            guerrero: t('Guerrero', 'Fighter'),
+            hechicero: t('Hechicero', 'Sorcerer'),
+            mago: t('Mago', 'Wizard'),
+            monje: t('Monje', 'Monk'),
+            paladin: t('Paladín', 'Paladin'),
+            picaro: t('Pícaro', 'Rogue')
+          }
+        }
+      },
+      rasgo: { label: t('Rasgos', 'Features'), folder: { field: 'procedencia' } },
+      especie: { label: t('Especies', 'Species') },
+      trasfondo: { label: t('Trasfondos', 'Backgrounds') },
+      dote: { label: t('Dotes', 'Feats'), folder: { field: 'categoria' } },
+      conjuro: {
+        label: t('Conjuros', 'Spells'),
+        folder: {
+          field: 'nivel',
+          labels: { '0': t('Trucos', 'Cantrips') },
+          template: t('Nivel {valor}', 'Level {valor}')
+        }
+      },
+      arma: {
+        label: t('Armas', 'Weapons'),
+        folder: {
+          field: 'categoria',
+          labels: { sencilla: t('Sencillas', 'Simple'), marcial: t('Marciales', 'Martial') }
+        }
+      },
+      armadura: {
+        label: t('Armaduras', 'Armor'),
+        folder: {
+          field: 'categoria',
+          labels: {
+            ligera: t('Ligeras', 'Light'),
+            media: t('Medias', 'Medium'),
+            pesada: t('Pesadas', 'Heavy'),
+            escudo: t('Escudos', 'Shields')
+          }
+        }
+      },
+      equipo: { label: t('Equipo', 'Gear'), folder: { field: 'categoria' } },
+      objeto_magico: { label: t('Objetos mágicos', 'Magic items'), folder: { field: 'tipo', base: true } },
+      criatura: { label: t('Criaturas', 'Creatures'), folder: { field: 'tipo', base: true } }
+    }
+  },
   // La hoja, al estilo de D&D Beyond con el aspecto de Crisol (docs/specs/hoja.md)
   sheet: {
     blocks: [
