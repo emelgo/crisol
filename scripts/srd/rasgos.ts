@@ -349,14 +349,20 @@ export function withoutIntro(text: string): string {
   return text
     .split('\n\n')
     .filter((block) => {
-      if (INTRO_HEADING.test(block)) return !(intro = true)
+      if (INTRO_HEADING.test(block)) {
+        intro = true
+        return false
+      }
       // Una etiqueta («Skills: Choose two from…») y lo que sigue de ella, partido en otra línea
-      if (INTRO_LABEL.test(block)) return !(label = true)
+      if (INTRO_LABEL.test(block)) {
+        label = true
+        return false
+      }
       if (SKILL_LIST.test(block)) return false
       // (una lista corta: «Persuasion, and Religion», «Perspicacia, Persuasión y Religión.»)
-      if (label && block.length < 80 && /,/.test(block) && !/\b(you|can|tu|puedes)\b/i.test(block))
-        return (label = false)
+      const rest = label && block.length < 80 && /,/.test(block) && !/\b(you|can|tu|puedes)\b/i.test(block)
       label = false
+      if (rest) return false
       if (intro && INTRO_TEXT.test(block)) return false
       intro = false
       return true
