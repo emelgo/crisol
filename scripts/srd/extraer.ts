@@ -22,6 +22,7 @@ import {
 } from './equipo.ts'
 import { conditionDocs } from './estados.ts'
 import { FIGHTER, FIGHTER_CLASS, FIGHTER_FEATURES } from './guerrero.ts'
+import { magicDocs } from './magicos.ts'
 import { MECHANICS } from './mecanica.ts'
 import { type MountRow, mountDoc, mountRows, mountSignature } from './monturas.ts'
 import {
@@ -276,9 +277,10 @@ export function extract(): Record<string, Doc[]> {
       ...a24.map(([en, es], i) => armorDoc('2024', en, es, ac.newer[i] as string))
     ]
   }
-  // Los conjuros, con un concepto que no sea ya de otro tipo
-  const taken = new Set(Object.values(files).flatMap((docs) => docs.map((d) => d.concept)))
-  files['conjuros.json'] = spellDocs(taken)
+  // Los conjuros y los objetos mágicos, con un concepto que no sea ya de otro tipo
+  const taken = () => new Set(Object.values(files).flatMap((docs) => docs.map((d) => d.concept)))
+  files['conjuros.json'] = spellDocs(taken())
+  files['objetos_magicos.json'] = magicDocs(taken())
   return files
 }
 

@@ -337,3 +337,34 @@ export const SPELL_RENAMES: Record<string, string> = {
   'branding smite': 'shining smite',
   feeblemind: 'befuddlement'
 }
+
+/**
+ * Los objetos mágicos que no se emparejan solos por su parecido: los que dicen sus números de otra forma y los que se
+ * parecen demasiado entre sí (los manuales y los tomos, que solo cambian de característica)
+ */
+const BOOKS = {
+  'Manual of Bodily Health': 'Manual de la salud corporal',
+  'Manual of Gainful Exercise': 'Manual del ejercicio beneficioso',
+  'Manual of Quickness of Action': 'Manual de rapidez de acción',
+  'Tome of Clear Thought': 'Tomo de pensamiento claro',
+  'Tome of Leadership and Influence': 'Tomo de liderazgo e influencia',
+  'Tome of Understanding': 'Tomo de entendimiento'
+}
+export const MAGIC_ITEM_PAIRS: Record<'2014' | '2024', Record<string, string>> = {
+  '2014': { ...BOOKS, 'Boots of the Winterlands': 'Botas de las tierras invernales' },
+  '2024': {
+    ...BOOKS,
+    'Armor of Resistance': 'Armadura de resistencia',
+    'Ring of Warmth': 'Anillo de calidez',
+    'Potion of Gaseous Form': 'Poción de forma gaseosa',
+    'Potion of Invisibility': 'Poción de invisibilidad'
+  }
+}
+
+/** Los objetos mágicos de 2014 que en 2024 se llaman de otra forma (en inglés, en minúsculas) */
+export const MAGIC_ITEM_RENAMES: Record<string, string> = {
+  'potion of healing': 'potions of healing',
+  'iron bands of binding': 'iron bands',
+  'arrow of slaying': 'ammunition of slaying',
+  'deck of many things': 'mysterious deck'
+}

@@ -240,6 +240,34 @@ describe('el contenido de los sistemas de serie', () => {
     expect([mage(false), mage(true)]).toEqual([15, 16])
   })
 
+  it('los objetos mágicos: el Anillo de protección sintonizado da +1 a la CA y a las salvaciones; el Amuleto de salud, Con 19', () => {
+    const content = catalogContent('5e')
+    const carry = (key: string, data: Record<string, unknown> = {}): DocumentItem => {
+      const item = content.find((c) => c.key === key) as ContentItem
+      return {
+        id: item.concept ?? key,
+        type: item.type,
+        name: (item.data.name as { es: string }).es,
+        data: { ...item.data, ...data },
+        ...(item.mechanics ? { mechanics: item.mechanics as Mechanics } : {})
+      }
+    }
+    const data = { caracteristicas: { des: { puntuacion: 14 }, con: { puntuacion: 10 } } }
+    const worn = (attuned: boolean) =>
+      evaluate(fiveE, 'personaje', {
+        data,
+        items: [
+          carry('anillo_de_proteccion_2014', { sintonizado: attuned }),
+          carry('amuleto_de_salud_2024', { sintonizado: attuned })
+        ]
+      }).values as { ca: number; caracteristicas: Record<string, { puntuacion: number; salvacion: number }> }
+    expect(worn(true)).toMatchObject({ ca: 13, caracteristicas: { con: { puntuacion: 19 }, des: { salvacion: 3 } } })
+    expect(worn(false)).toMatchObject({ ca: 12, caracteristicas: { con: { puntuacion: 10 }, des: { salvacion: 2 } } })
+    expect(content.find((c) => c.key === 'varita_de_bolas_de_fuego_2014')?.mechanics?.resources).toEqual([
+      expect.objectContaining({ max: '7', recovery: 'dawn', amount: '1d6+1' })
+    ])
+  })
+
   it('el texto de las reglas: lo de 2014 con versión de 2024 se esconde con lo más nuevo; se busca en los dos idiomas', () => {
     const content = catalogContent('5e')
     const cover = (duplicates: 'newest' | 'both') =>

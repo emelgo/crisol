@@ -18,5 +18,6 @@ export const MEASURED: Record<string, Record<'2014' | '2024', number>> = {
   // glosario que no son estados. Sin las listas de objetos (ya son contenido); la introducción de los monstruos de 2014,
   // larga, en sus 19 apartados
   regla: { '2014': 72, '2024': 188 },
-  conjuro: { '2014': 319, '2024': 339 }
+  conjuro: { '2014': 319, '2024': 339 },
+  objeto_magico: { '2014': 238, '2024': 258 }
 }
