@@ -107,7 +107,7 @@ export const compendiumActions = [
 
   implement(browseCampaignContent, async (ctx, { campaignId, type }) => {
     const found = await campaignSystem(ctx, campaignId)
-    if (!found) return { items: [], folders: [] }
+    if (!found) return { items: [], folders: [], filters: [] }
     const { document, row, choices } = found
     // Las carpetas salen de sus valores: de un sistema de la cuenta, el contenido de ese tipo entero
     const items: ContentItem[] = row

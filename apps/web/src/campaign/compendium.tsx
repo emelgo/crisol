@@ -6,7 +6,7 @@
 import { type Text, textOf } from '@crisol/systems'
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import { getRouteApi, Navigate } from '@tanstack/react-router'
-import { ArrowLeft, ChevronRight, Search, X } from 'lucide-react'
+import { ArrowLeft, ChevronRight, Search, SlidersHorizontal, X } from 'lucide-react'
 import { type ReactNode, useEffect, useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
@@ -221,6 +221,12 @@ export function CompendiumScreen() {
 }
 
 type Section = ActionOutput<'getCampaignCompendium'>['sections'][number]
+/** Lo filtrado de cada tipo, y cómo cambiarlo */
+interface Filtering {
+  chosen: Record<string, Record<string, string>>
+  choose: (type: string, field: string, value: string) => void
+  clear: (type: string) => void
+}
 type Browsed = ActionOutput<'browseCampaignContent'>
 
 /**
@@ -243,6 +249,14 @@ function Library({
 }) {
   const { t } = useTranslation()
   const [opened, setOpened] = useState<ReadonlySet<string>>(new Set())
+  // Lo filtrado de cada tipo (por su campo, el valor elegido): se queda aunque se cierre su carpeta
+  const [chosen, setChosen] = useState<Record<string, Record<string, string>>>({})
+  const filtering = {
+    chosen,
+    choose: (type: string, field: string, value: string) =>
+      setChosen((was) => ({ ...was, [type]: { ...(was[type] ?? {}), [field]: value } })),
+    clear: (type: string) => setChosen(({ [type]: _, ...rest }) => rest)
+  }
   const toggle = (id: string) =>
     setOpened((was) => {
       const next = new Set(was)
@@ -276,6 +290,7 @@ function Library({
                   onToggle={toggle}
                   current={current}
                   onOpen={onOpen}
+                  filtering={filtering}
                 />
               ) : (
                 <ul className={styles.shelf}>
@@ -300,6 +315,7 @@ function Library({
                             onToggle={toggle}
                             current={current}
                             onOpen={onOpen}
+                            filtering={filtering}
                           />
                         </Disclosure>
                       </li>
@@ -383,7 +399,8 @@ function TypeShelf({
   opened,
   onToggle,
   current,
-  onOpen
+  onOpen,
+  filtering
 }: {
   campaignId: string
   type: string
@@ -393,9 +410,11 @@ function TypeShelf({
   onToggle: (id: string) => void
   current: string | null
   onOpen: (key: string) => void
+  filtering: Filtering
 }) {
   const { t } = useTranslation()
   const api = useApi()
+  const filtersId = useId()
   const browsed = useQuery({
     queryKey: ['compendium', campaignId, 'browse', type],
     queryFn: () => api.call('browseCampaignContent', { campaignId, type })
@@ -407,7 +426,11 @@ function TypeShelf({
       <p className={styles.none}>{t('compendium.loadingMore')}</p>
     )
   const inEdition = (item: Browsed['items'][number]) => edition === null || (item.edition ?? '') === edition
-  const items = browsed.data.items.filter(inEdition)
+  const wanted = Object.entries(filtering.chosen[type] ?? {}).filter(([, value]) => value)
+  const fits = (item: Browsed['items'][number]) => wanted.every(([field, value]) => item.values[field]?.includes(value))
+  const items = browsed.data.items.filter((item) => inEdition(item) && fits(item))
+  const filters = browsed.data.filters.filter((f) => f.options.length > 1)
+  const filtersOpen = opened.has(`${idPrefix}filtros`)
   const loose = items.filter((item) => item.folder === null)
   const entry = (item: Browsed['items'][number]) => (
     <li key={item.key}>
@@ -425,6 +448,46 @@ function TypeShelf({
   )
   return (
     <ul className={styles.shelf}>
+      {filters.length > 0 && (
+        <li className={styles.filtering}>
+          <button
+            type="button"
+            className={styles.filterToggle}
+            aria-expanded={filtersOpen}
+            aria-controls={filtersId}
+            onClick={() => onToggle(`${idPrefix}filtros`)}
+          >
+            <SlidersHorizontal size={14} aria-hidden="true" />
+            {wanted.length > 0 ? t('compendium.filtering', { count: wanted.length }) : t('compendium.filter')}
+          </button>
+          {wanted.length > 0 && (
+            <button type="button" className={styles.clearFilters} onClick={() => filtering.clear(type)}>
+              {t('compendium.clearFilters')}
+            </button>
+          )}
+          {filtersOpen && (
+            <div id={filtersId} className={styles.filters}>
+              {filters.map((filter) => (
+                <label key={filter.key} className={styles.filter}>
+                  <span>{filter.label}</span>
+                  <select
+                    value={filtering.chosen[type]?.[filter.key] ?? ''}
+                    onChange={(event) => filtering.choose(type, filter.key, event.currentTarget.value)}
+                  >
+                    <option value="">{t('compendium.any')}</option>
+                    {filter.options.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ))}
+            </div>
+          )}
+        </li>
+      )}
+      {items.length === 0 && wanted.length > 0 && <li className={styles.none}>{t('compendium.noMatch')}</li>}
       {browsed.data.folders.map((folder) => {
         const inside = items.filter((item) => item.folder === folder.key)
         if (inside.length === 0) return null

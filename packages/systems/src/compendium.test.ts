@@ -134,6 +134,23 @@ describe('el compendio ordenado como una biblioteca: secciones, tipos y carpetas
     expect(english.folders[0]?.label).toBe('Cantrips')
   })
 
+  it('sus filtros, con los valores que tiene alguno: la escuela, las clases (con su nombre), sí o no, el VD en orden', () => {
+    const spells = browseContent(fiveE, content, { type: 'conjuro', ...newest, language: 'es' })
+    expect(spells.filters.map((f) => f.key)).toEqual(['escuela', 'clases', 'concentracion', 'ritual'])
+    const classes = spells.filters.find((f) => f.key === 'clases')
+    expect(classes?.options).toContainEqual({ value: 'mago', label: 'Mago' })
+    expect(spells.filters.find((f) => f.key === 'ritual')?.options).toEqual([
+      { value: 'true', label: 'Sí' },
+      { value: 'false', label: 'No' }
+    ])
+    const fireball = spells.items.find((i) => i.name === 'Bola de fuego' && !i.legacy)
+    expect(fireball?.values).toMatchObject({ escuela: ['evocacion'], clases: expect.arrayContaining(['mago']) })
+    const creatures = browseContent(fiveE, content, { type: 'criatura', ...newest, language: 'es' })
+    const cr = creatures.filters.find((f) => f.key === 'vd')?.options.map((o) => o.label) ?? []
+    expect(cr.slice(0, 4)).toEqual(['0', '1/8', '1/4', '1/2'])
+    expect(browseContent(fiveE, content, { type: 'estado', ...newest, language: 'en' }).filters).toEqual([])
+  })
+
   it('un tipo sin carpetas: todo suelto', () => {
     const { folders, items } = browseContent(fiveE, content, { type: 'estado', ...newest, language: 'es' })
     expect(folders).toEqual([])
@@ -147,7 +164,7 @@ describe('el compendio ordenado como una biblioteca: secciones, tipos y carpetas
         { key: 'a', label: 'A', types: ['conjuro', 'nada'] },
         { key: 'b', label: 'B', types: ['conjuro'] }
       ],
-      types: { nada: {}, conjuro: { folder: { field: 'nivelx' } } }
+      types: { nada: {}, conjuro: { folder: { field: 'nivelx' }, filters: [{ field: 'escuelax' }] } }
     }
     const messages = validateSystem(broken).problems.map((p) => `${p.path}: ${p.message}`)
     expect(messages).toEqual(
@@ -155,7 +172,8 @@ describe('el compendio ordenado como una biblioteca: secciones, tipos y carpetas
         'compendium.sections[0].types[1]: No existe el tipo «nada»',
         'compendium.sections[1].types[0]: «conjuro» ya está en otra sección',
         'compendium.types.nada: No existe el tipo «nada»',
-        'compendium.types.conjuro.folder.field: «conjuro» no tiene el campo «nivelx»'
+        'compendium.types.conjuro.folder.field: «conjuro» no tiene el campo «nivelx»',
+        'compendium.types.conjuro.filters[0].field: «conjuro» no tiene el campo «escuelax»'
       ])
     )
     expect(validateSystem(fiveE).problems.filter((p) => p.severity === 'error')).toEqual([])

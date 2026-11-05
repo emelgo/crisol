@@ -19220,7 +19220,7 @@
         "en": "8 hours"
       },
       "concentracion": false,
-      "ritual": false,
+      "ritual": true,
       "clases": [
         "explorador",
         "mago"
@@ -19383,7 +19383,7 @@
         "en": "24 hours"
       },
       "concentracion": false,
-      "ritual": false,
+      "ritual": true,
       "clases": [
         "bardo",
         "druida",
@@ -20093,7 +20093,7 @@
         "en": "Instantaneous"
       },
       "concentracion": false,
-      "ritual": false,
+      "ritual": true,
       "clases": [
         "clerigo",
         "druida",
@@ -22027,7 +22027,7 @@
         "en": "1 minute"
       },
       "concentracion": false,
-      "ritual": false,
+      "ritual": true,
       "clases": [
         "clerigo"
       ],
@@ -22075,7 +22075,7 @@
         "en": "Instantaneous"
       },
       "concentracion": false,
-      "ritual": false,
+      "ritual": true,
       "clases": [
         "druida",
         "explorador"
@@ -22124,7 +22124,7 @@
         "en": "1 hour"
       },
       "concentracion": false,
-      "ritual": false,
+      "ritual": true,
       "clases": [
         "bardo",
         "hechicero",
@@ -22788,7 +22788,7 @@
         "en": "1 minute"
       },
       "concentracion": false,
-      "ritual": false,
+      "ritual": true,
       "clases": [
         "brujo",
         "mago"
@@ -23897,7 +23897,7 @@
         "en": "Concentration, up to 10 minutes"
       },
       "concentracion": true,
-      "ritual": false,
+      "ritual": true,
       "clases": [
         "bardo",
         "clerigo",
@@ -23952,7 +23952,7 @@
         "en": "Concentration, up to 10 minutes"
       },
       "concentracion": true,
-      "ritual": false,
+      "ritual": true,
       "clases": [
         "clerigo",
         "druida",
@@ -24453,7 +24453,7 @@
         "en": "Instantaneous"
       },
       "concentracion": false,
-      "ritual": false,
+      "ritual": true,
       "clases": [
         "clerigo",
         "druida",
@@ -26104,7 +26104,7 @@
         "en": "Instantaneous"
       },
       "concentracion": false,
-      "ritual": false,
+      "ritual": true,
       "clases": [
         "mago"
       ],
@@ -26956,7 +26956,7 @@
         "en": "1 hour"
       },
       "concentracion": false,
-      "ritual": false,
+      "ritual": true,
       "clases": [
         "mago"
       ],
@@ -27105,7 +27105,7 @@
         "en": "1 day"
       },
       "concentracion": false,
-      "ritual": false,
+      "ritual": true,
       "clases": [
         "clerigo"
       ],
@@ -27584,7 +27584,7 @@
         "en": "10 days"
       },
       "concentracion": false,
-      "ritual": false,
+      "ritual": true,
       "clases": [
         "clerigo",
         "paladin",
@@ -29618,7 +29618,7 @@
         "en": "Instantaneous"
       },
       "concentracion": false,
-      "ritual": false,
+      "ritual": true,
       "clases": [
         "bardo",
         "mago"
@@ -29667,7 +29667,7 @@
         "en": "10 days"
       },
       "concentracion": false,
-      "ritual": false,
+      "ritual": true,
       "clases": [
         "bardo",
         "brujo",
@@ -30002,7 +30002,7 @@
         "en": "Until dispelled"
       },
       "concentracion": false,
-      "ritual": false,
+      "ritual": true,
       "clases": [
         "mago"
       ],
@@ -30558,7 +30558,7 @@
         "en": "Instantaneous"
       },
       "concentracion": false,
-      "ritual": false,
+      "ritual": true,
       "clases": [
         "bardo",
         "druida",
@@ -31107,7 +31107,7 @@
         "en": "Until dispelled"
       },
       "concentracion": false,
-      "ritual": false,
+      "ritual": true,
       "clases": [
         "bardo",
         "mago"
@@ -31599,7 +31599,7 @@
         "en": "8 hours"
       },
       "concentracion": false,
-      "ritual": false,
+      "ritual": true,
       "clases": [
         "clerigo",
         "druida",
@@ -32700,7 +32700,7 @@
         "en": "1 hour"
       },
       "concentracion": false,
-      "ritual": false,
+      "ritual": true,
       "clases": [
         "mago"
       ],
@@ -33956,7 +33956,7 @@
         "en": "Instantaneous"
       },
       "concentracion": false,
-      "ritual": false,
+      "ritual": true,
       "clases": [
         "clerigo",
         "druida",
@@ -35839,7 +35839,7 @@
         "en": "Concentration, up to 10 minutes"
       },
       "concentracion": true,
-      "ritual": false,
+      "ritual": true,
       "clases": [
         "bardo",
         "clerigo",
@@ -36308,7 +36308,7 @@
         "en": "10 minutes"
       },
       "concentracion": false,
-      "ritual": false,
+      "ritual": true,
       "clases": [
         "bardo",
         "druida",
@@ -37482,7 +37482,7 @@
         "en": "1 hour"
       },
       "concentracion": false,
-      "ritual": false,
+      "ritual": true,
       "clases": [
         "bardo",
         "mago"
@@ -37822,7 +37822,7 @@
         "en": "8 hours"
       },
       "concentracion": false,
-      "ritual": false,
+      "ritual": true,
       "clases": [
         "bardo",
         "mago"
@@ -38310,7 +38310,7 @@
         "en": "1 hour"
       },
       "concentracion": false,
-      "ritual": false,
+      "ritual": true,
       "clases": [
         "bardo",
         "brujo",
@@ -38987,7 +38987,7 @@
         "en": "24 hours"
       },
       "concentracion": false,
-      "ritual": false,
+      "ritual": true,
       "clases": [
         "druida",
         "explorador",
@@ -39038,7 +39038,7 @@
         "en": "1 hour"
       },
       "concentracion": false,
-      "ritual": false,
+      "ritual": true,
       "clases": [
         "clerigo",
         "druida",

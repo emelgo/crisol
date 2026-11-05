@@ -477,10 +477,20 @@ export const browseCampaignContent = defineAction({
         name: z.string(),
         edition: z.string().nullable(),
         legacy: z.boolean(),
-        folder: z.string().nullable()
+        folder: z.string().nullable(),
+        values: z.record(z.string(), z.array(z.string())).describe('Sus valores en los campos que se filtran')
       })
     ),
-    folders: z.array(z.object({ key: z.string(), label: z.string() }))
+    folders: z.array(z.object({ key: z.string(), label: z.string() })),
+    filters: z
+      .array(
+        z.object({
+          key: z.string(),
+          label: z.string(),
+          options: z.array(z.object({ value: z.string(), label: z.string() }))
+        })
+      )
+      .describe('Sus filtros, con los valores que tiene alguno')
   })
 })
 

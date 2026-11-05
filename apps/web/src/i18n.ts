@@ -373,6 +373,11 @@ export const es = {
       partial: 'Crisol calcula una parte',
       text: 'Solo texto: a mano'
     },
+    filter: 'Filtrar',
+    filtering: 'Filtrar ({{count}})',
+    clearFilters: 'Quitar los filtros',
+    any: 'Cualquiera',
+    noMatch: 'Nada con esos filtros',
     searchHint: 'Un conjuro, una criatura…',
     otherVersion: 'Otra versión',
     clear: 'Borrar la búsqueda',

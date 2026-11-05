@@ -145,14 +145,27 @@ export function compendiumSections(system: System, types: readonly CompendiumTyp
   return sections
 }
 
-/** Un documento del compendio en su carpeta (o suelto, con null) */
+/** Un documento del compendio en su carpeta (o suelto, con null), con sus valores en los campos que se filtran */
 export interface BrowseHit {
   key: string
   name: string
   edition: string | null
   legacy: boolean
   folder: string | null
+  values: Record<string, string[]>
 }
+
+/** Un filtro de un tipo: su campo, su nombre y sus valores (solo los que tiene alguno) */
+export interface BrowseFilter {
+  key: string
+  label: string
+  options: { value: string; label: string }[]
+}
+
+const YES_NO = { es: ['Sí', 'No'], en: ['Yes', 'No'] }
+
+/** Un número como se dice: 0.125 → «1/8» (el VD de una criatura) */
+const numberText = (n: number) => (n > 0 && n < 1 && Number.isInteger(1 / n) ? `1/${1 / n}` : String(n))
 
 const folded = (text: string) =>
   text
@@ -183,8 +196,20 @@ export function browseContent<T extends Versioned & { data?: Record<string, unkn
     duplicates,
     language
   }: { type: string } & Pick<Choices, 'sources' | 'duplicates'> & { language: Language }
-): { items: BrowseHit[]; folders: { key: string; label: string }[] } {
+): { items: BrowseHit[]; folders: { key: string; label: string }[]; filters: BrowseFilter[] } {
   const spec = system.compendium?.types?.[type]?.folder
+  const filterSpecs = (system.compendium?.types?.[type]?.filters ?? []).filter(
+    (f) => system.types[type]?.fields[f.field]
+  )
+  // Los valores de un documento en un campo que se filtra, como textos (una lista, cada uno)
+  const valuesOf = (data: Record<string, unknown> | undefined): Record<string, string[]> =>
+    Object.fromEntries(
+      filterSpecs.map((f) => {
+        const value = data?.[f.field]
+        const list = Array.isArray(value) ? value : value === undefined || value === null || value === '' ? [] : [value]
+        return [f.field, list.map((v) => String(v))]
+      })
+    )
   const field = spec ? system.types[type]?.fields[spec.field] : undefined
   const options = field?.kind === 'choice' || field?.kind === 'list' ? (field.options ?? []) : []
   const folders = new Map<string, { label: string; order: number | string }>()
@@ -222,7 +247,8 @@ export function browseContent<T extends Versioned & { data?: Record<string, unkn
       name: nameOf(item.data, language, item.key),
       edition: editionOf(system, item) ?? null,
       legacy,
-      folder: folderOf(spec ? item.data?.[spec.field] : undefined)
+      folder: folderOf(spec ? item.data?.[spec.field] : undefined),
+      values: valuesOf(item.data)
     }))
     .sort(
       (a, b) =>
@@ -235,5 +261,30 @@ export function browseContent<T extends Versioned & { data?: Record<string, unkn
         : String(a.order).localeCompare(String(b.order), language)
     )
     .map(([key, f]) => ({ key, label: f.label }))
-  return { items, folders: ordered }
+  // Cada filtro, con los valores que tiene alguno, en su orden: el de sus opciones, sí y no, o de menor a mayor
+  const filters = filterSpecs.map((spec): BrowseFilter => {
+    const field = system.types[type]?.fields[spec.field]
+    const present = new Set(items.flatMap((i) => i.values[spec.field] ?? []))
+    const named = (value: string) => (spec.labels?.[value] ? textOf(spec.labels[value], language) : null)
+    const fieldOptions = field?.kind === 'choice' || field?.kind === 'list' ? (field.options ?? []) : []
+    let options: { value: string; label: string }[]
+    if (field?.kind === 'boolean')
+      options = ['true', 'false']
+        .filter((v) => present.has(v))
+        .map((v) => ({ value: v, label: YES_NO[language][v === 'true' ? 0 : 1] as string }))
+    else if (fieldOptions.length > 0)
+      options = fieldOptions
+        .filter((o) => present.has(o.value))
+        .map((o) => ({ value: o.value, label: named(o.value) ?? textOf(o.label, language) }))
+    else if (field?.kind === 'number')
+      options = [...present]
+        .sort((a, b) => Number(a) - Number(b))
+        .map((v) => ({ value: v, label: named(v) ?? numberText(Number(v)) }))
+    else
+      options = [...present]
+        .map((v) => ({ value: v, label: named(v) ?? v }))
+        .sort((a, b) => a.label.localeCompare(b.label, language))
+    return { key: spec.field, label: field ? textOf(field.label, language) : spec.field, options }
+  })
+  return { items, folders: ordered, filters }
 }

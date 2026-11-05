@@ -1411,7 +1411,7 @@ export function fakeApi(
     },
     browseCampaignContent: ({ campaignId, type }) => {
       const found = compendiumOf(campaignId)
-      if (!found) return { items: [], folders: [] }
+      if (!found) return { items: [], folders: [], filters: [] }
       const { document, choices, content } = found
       return browseContent(document, content, {
         type,

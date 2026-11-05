@@ -285,5 +285,9 @@ describe('las listas de 2014 y el documento', () => {
       mechanics: { actions: [{ damage: [{ formula: '8d6' }] }] },
       ref: { pages: { en: 141, es: 160 } }
     })
+    expect(doc.data.ritual).toBe(false)
+    // En 2024, el ritual va en su tiempo de lanzamiento
+    const ritual = spellDoc('2024', spell({ castingTime: 'Action or Ritual' }), spell({}), 'detectar_magia', [])
+    expect(ritual.data.ritual).toBe(true)
   })
 })

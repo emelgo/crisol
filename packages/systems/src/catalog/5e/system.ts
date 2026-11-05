@@ -143,6 +143,22 @@ const GEAR_CATEGORIES = [
   ['mercancia', 'Mercancía', 'Trade good']
 ] as const
 
+/** El nombre de cada clase, por su clave (las subclases y los conjuros la guardan así) */
+const CLASS_NAMES = {
+  barbaro: t('Bárbaro', 'Barbarian'),
+  bardo: t('Bardo', 'Bard'),
+  brujo: t('Brujo', 'Warlock'),
+  clerigo: t('Clérigo', 'Cleric'),
+  druida: t('Druida', 'Druid'),
+  explorador: t('Explorador', 'Ranger'),
+  guerrero: t('Guerrero', 'Fighter'),
+  hechicero: t('Hechicero', 'Sorcerer'),
+  mago: t('Mago', 'Wizard'),
+  monje: t('Monje', 'Monk'),
+  paladin: t('Paladín', 'Paladin'),
+  picaro: t('Pícaro', 'Rogue')
+}
+
 const abilityOptions = ABILITIES.map(([value, es, en]) => ({ value, label: t(es, en) }))
 
 /** Los campos de una característica: su puntuación, su modificador, su salvación y lo de lanzar conjuros con ella */
@@ -869,26 +885,7 @@ export const fiveE = {
       regla: { label: t('Reglamento', 'Rulebook'), folder: { field: 'capitulo' } },
       estado: { label: t('Estados', 'Conditions') },
       clase: { label: t('Clases', 'Classes') },
-      subclase: {
-        label: t('Subclases', 'Subclasses'),
-        folder: {
-          field: 'clase',
-          labels: {
-            barbaro: t('Bárbaro', 'Barbarian'),
-            bardo: t('Bardo', 'Bard'),
-            brujo: t('Brujo', 'Warlock'),
-            clerigo: t('Clérigo', 'Cleric'),
-            druida: t('Druida', 'Druid'),
-            explorador: t('Explorador', 'Ranger'),
-            guerrero: t('Guerrero', 'Fighter'),
-            hechicero: t('Hechicero', 'Sorcerer'),
-            mago: t('Mago', 'Wizard'),
-            monje: t('Monje', 'Monk'),
-            paladin: t('Paladín', 'Paladin'),
-            picaro: t('Pícaro', 'Rogue')
-          }
-        }
-      },
+      subclase: { label: t('Subclases', 'Subclasses'), folder: { field: 'clase', labels: CLASS_NAMES } },
       rasgo: { label: t('Rasgos', 'Features'), folder: { field: 'procedencia' } },
       especie: { label: t('Especies', 'Species') },
       trasfondo: { label: t('Trasfondos', 'Backgrounds') },
@@ -899,14 +896,21 @@ export const fiveE = {
           field: 'nivel',
           labels: { '0': t('Trucos', 'Cantrips') },
           template: t('Nivel {valor}', 'Level {valor}')
-        }
+        },
+        filters: [
+          { field: 'escuela' },
+          { field: 'clases', labels: CLASS_NAMES },
+          { field: 'concentracion' },
+          { field: 'ritual' }
+        ]
       },
       arma: {
         label: t('Armas', 'Weapons'),
         folder: {
           field: 'categoria',
           labels: { sencilla: t('Sencillas', 'Simple'), marcial: t('Marciales', 'Martial') }
-        }
+        },
+        filters: [{ field: 'propiedades' }, { field: 'maestria' }]
       },
       armadura: {
         label: t('Armaduras', 'Armor'),
@@ -921,8 +925,16 @@ export const fiveE = {
         }
       },
       equipo: { label: t('Equipo', 'Gear'), folder: { field: 'categoria' } },
-      objeto_magico: { label: t('Objetos mágicos', 'Magic items'), folder: { field: 'tipo', base: true } },
-      criatura: { label: t('Criaturas', 'Creatures'), folder: { field: 'tipo', base: true } }
+      objeto_magico: {
+        label: t('Objetos mágicos', 'Magic items'),
+        folder: { field: 'tipo', base: true },
+        filters: [{ field: 'rareza' }, { field: 'sintonia' }]
+      },
+      criatura: {
+        label: t('Criaturas', 'Creatures'),
+        folder: { field: 'tipo', base: true },
+        filters: [{ field: 'vd' }, { field: 'tamano' }]
+      }
     }
   },
   // La hoja, al estilo de D&D Beyond con el aspecto de Crisol (docs/specs/hoja.md)

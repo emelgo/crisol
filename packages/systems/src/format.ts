@@ -555,7 +555,20 @@ function build(strict: boolean) {
             template: text().optional().describe('El nombre de los demás, con {valor} («Nivel {valor}»)')
           })
             .optional()
-            .describe('Sus carpetas: por el valor de un campo')
+            .describe('Sus carpetas: por el valor de un campo'),
+          filters: z
+            .array(
+              obj({
+                field: key.describe('El campo por el que se filtra (la escuela de un conjuro, el VD de una criatura)'),
+                labels: z
+                  .record(z.string().max(60), text())
+                  .optional()
+                  .describe('El nombre de algún valor (mago → Mago), si el campo no los tiene')
+              })
+            )
+            .max(8)
+            .optional()
+            .describe('Sus filtros, en este orden: solo salen los valores que tiene')
         }),
         100
       ).optional()

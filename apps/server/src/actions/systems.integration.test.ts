@@ -313,7 +313,11 @@ describe('los sistemas de reglas', () => {
     })
     const browsed = await ok200('browseCampaignContent', { campaignId: campaign.id, type: 'conjuro' }, player.cookie)
     expect(browsed.folders[0]).toEqual({ key: '0', label: 'Trucos' })
-    expect(browsed.items.find((i: { key: string }) => i.key === 'bola_de_fuego_2024')).toMatchObject({ folder: '3' })
+    expect(browsed.items.find((i: { key: string }) => i.key === 'bola_de_fuego_2024')).toMatchObject({
+      folder: '3',
+      values: { escuela: ['evocacion'] }
+    })
+    expect(browsed.filters.map((f: { key: string }) => f.key)).toEqual(['escuela', 'clases', 'concentracion', 'ritual'])
 
     // Buscar, también por el nombre en inglés; leer, con su otra versión y lo que concede
     const found = await ok200('searchCampaignContent', { campaignId: campaign.id, query: 'fireball' }, player.cookie)
@@ -367,7 +371,8 @@ describe('los sistemas de reglas', () => {
     })
     expect(await ok200('browseCampaignContent', { campaignId: none.id, type: 'conjuro' })).toEqual({
       items: [],
-      folders: []
+      folders: [],
+      filters: []
     })
   })
 
