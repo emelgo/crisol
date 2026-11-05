@@ -9,6 +9,7 @@ import { fakeAccountClient } from '../account/fake.ts'
 import { fakeApi } from '../api/fake.ts'
 import { App } from '../app.tsx'
 import { createAppRouter } from '../router.tsx'
+import { announced } from '../testing.ts'
 
 const ORG = { id: crypto.randomUUID(), name: 'Fateforge', role: 'owner' as const }
 const WORLD: World = {
@@ -56,7 +57,10 @@ const SYSTEM: System = {
         escuela: {
           kind: 'choice',
           label: { es: 'Escuela', en: 'School' },
-          options: [{ value: 'evocacion', label: { es: 'Evocación', en: 'Evocation' } }]
+          options: [
+            { value: 'evocacion', label: { es: 'Evocación', en: 'Evocation' } },
+            { value: 'adivinacion', label: { es: 'Adivinación', en: 'Divination' } }
+          ]
         },
         ritual: { kind: 'boolean', label: { es: 'Ritual', en: 'Ritual' } },
         preparado: { kind: 'boolean', label: { es: 'Preparado', en: 'Prepared' } },
@@ -65,6 +69,11 @@ const SYSTEM: System = {
     },
     clase: { document: 'item', label: { es: 'Clase', en: 'Class' }, fields: {} },
     rasgo: { document: 'item', label: { es: 'Rasgo', en: 'Feature' }, fields: {} }
+  },
+  // Los conjuros, con un filtro por su escuela
+  compendium: {
+    sections: [{ key: 'conjuros', label: { es: 'Conjuros', en: 'Spells' }, types: ['conjuro'] }],
+    types: { conjuro: { filters: [{ field: 'escuela' }] } }
   }
 }
 const spell = (source: string, edition: string): ContentItem => ({
@@ -95,6 +104,28 @@ const spell = (source: string, edition: string): ContentItem => ({
 const CONTENT: ContentItem[] = [
   spell('viejo', '2014'),
   spell('nuevo', '2024'),
+  {
+    type: 'conjuro',
+    key: 'confusion_2024',
+    source: 'nuevo',
+    concept: 'confusion',
+    data: {
+      name: { es: 'Confusión', en: 'Confusion' },
+      nivel: 4,
+      escuela: 'evocacion',
+      descripcion: {
+        es: 'Tira en la tabla.\n\n| 1d4 | Comportamiento |\n| --- | --- |\n| 1–2 | Se queda quieto |\n| 3–4 | Ataca |',
+        en: 'Roll.'
+      }
+    }
+  },
+  {
+    type: 'conjuro',
+    key: 'detectar_magia_2024',
+    source: 'nuevo',
+    concept: 'detectar_magia',
+    data: { name: { es: 'Detectar magia', en: 'Detect Magic' }, nivel: 1, escuela: 'adivinacion' }
+  },
   {
     type: 'clase',
     key: 'barbaro_2024',
@@ -164,17 +195,23 @@ describe('el compendio de una campaña', () => {
     expect(screen.getByText('Quinta · 2014 y 2024')).toBeDefined()
     expect(screen.getByText('Abre algo del compendio para leerlo.')).toBeDefined()
     const library = within(screen.getByRole('navigation', { name: 'Biblioteca del compendio' }))
-    expect(library.getAllByRole('button').map((b) => b.textContent)).toEqual(['20243', '2014 · Legado1'])
+    expect(library.getAllByRole('button').map((b) => b.textContent)).toEqual(['20245', '2014 · Legado1'])
     await userEvent.click(library.getByRole('button', { name: /^2024/ }))
-    // Sin compendio en el sistema, una sección por tipo
+    // Las secciones del sistema y, detrás, una por cada tipo que no nombra
     expect(library.getAllByRole('button').map((b) => b.textContent)).toEqual([
-      '20243',
-      'Conjuro1',
+      '20245',
+      'Conjuros3',
       'Clase1',
       'Rasgo1',
       '2014 · Legado1'
     ])
-    await userEvent.click(library.getByRole('button', { name: /^Conjuro/ }))
+    await userEvent.click(library.getByRole('button', { name: /^Conjuros/ }))
+    // Sus filtros: por su escuela
+    await userEvent.click(await library.findByRole('button', { name: 'Filtrar' }))
+    await userEvent.selectOptions(library.getByRole('combobox', { name: 'Escuela' }), 'adivinacion')
+    expect(library.queryByRole('button', { name: 'Bola de fuego' })).toBeNull()
+    expect(library.getByRole('button', { name: 'Detectar magia' })).toBeDefined()
+    await userEvent.click(library.getByRole('button', { name: 'Quitar los filtros' }))
     await userEvent.click(await library.findByRole('button', { name: 'Bola de fuego' }))
     const article = within(await screen.findByRole('article', { name: 'Bola de fuego' }))
     expect(await article.findByText('Evocación')).toBeDefined()
@@ -198,7 +235,7 @@ describe('el compendio de una campaña', () => {
     ).toBeDefined()
     // Cerrar una carpeta la cierra
     await userEvent.click(library.getByRole('button', { name: /^2024/ }))
-    expect(library.queryByRole('button', { name: /^Conjuro/ })).toBeNull()
+    expect(library.queryByRole('button', { name: /^Conjuros/ })).toBeNull()
   })
 
   it('buscar por el nombre en inglés; sin nada, lo dice; una clase, con lo que concede por nivel', async () => {
@@ -224,6 +261,21 @@ describe('el compendio de una campaña', () => {
     ])
     await userEvent.click(levels.getByRole('button', { name: 'Furia' }))
     expect(await screen.findByRole('article', { name: 'Furia' })).toBeDefined()
+  })
+
+  it('una tabla de su texto se tira en la campaña: lo que sale, marcado, anunciado y en el registro', async () => {
+    const { api } = renderCompendium()
+    await userEvent.type(await screen.findByRole('searchbox', { name: 'Buscar en el compendio' }), 'confusion')
+    await userEvent.click(
+      await within(await screen.findByRole('list', { name: 'Resultados' })).findByRole('button', { name: /^Confusión/ })
+    )
+    const article = within(await screen.findByRole('article', { name: 'Confusión' }))
+    await userEvent.click(await article.findByRole('button', { name: 'Tirar 1d4 en «Comportamiento»' }))
+    await waitFor(() => expect(announced()).toMatch(/^Salió [1-4]: (Se queda quieto|Ataca)$/))
+    const { rolls } = await api.client.call('listRolls', { campaignId: CAMPAIGN.id })
+    expect(rolls[0]).toMatchObject({ formula: '1d4', label: 'Confusión' })
+    const marked = article.getAllByRole('cell').filter((cell) => cell.className.includes('hit'))
+    expect(marked.length).toBe(2)
   })
 
   it('sin sistema, lo dice', async () => {

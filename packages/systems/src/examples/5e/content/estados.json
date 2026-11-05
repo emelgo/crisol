@@ -329,7 +329,7 @@
       },
       "activo": true,
       "descripcion": {
-        "es": "- Una criatura derribada solo podrá moverse arrastrándose, salvo que se levante para concluir este estado.\n- La criatura tiene desventaja en las tiradas de ataque.\n- Las tiradas de ataque contra la criatura tienen ventaja si el atacante está a 1,5 m o menos de ella. Si no es así, las tiradas de ataque tienen desventaja.",
+        "es": "- Una criatura derribada solo podrá moverse arrastrándose, salvo que se levante para concluir este estado.\n- La criatura tiene desventaja en las tiradas de ataque.\n- Las tiradas de ataque contra la criatura tienen ventaja si el atacante está a 5 pies o menos de ella. Si no es así, las tiradas de ataque tienen desventaja.",
         "en": "- A prone creature’s only movement option is to crawl, unless it stands up and thereby ends the condition.\n- The creature has disadvantage on attack rolls.\n- An attack roll against the creature has advantage if the attacker is within 5 feet of the creature. Otherwise, the attack roll has disadvantage."
       }
     },
@@ -344,7 +344,7 @@
       "toggle": {},
       "automation": "partial",
       "manual": {
-        "es": "Solo se arrastra o se levanta (con la mitad de su velocidad). Los ataques contra él tienen ventaja a 1,5 m o menos y desventaja más lejos.",
+        "es": "Solo se arrastra o se levanta (con la mitad de su velocidad). Los ataques contra él tienen ventaja a 5 pies o menos y desventaja más lejos.",
         "en": "Can only crawl or stand up (half its speed). Attack rolls against it have advantage within 5 feet and disadvantage otherwise."
       }
     },
@@ -494,7 +494,7 @@
       },
       "activo": true,
       "descripcion": {
-        "es": "- Una criatura inconsciente está incapacitada (consulta el estado), no puede moverse ni hablar y no es consciente de su entorno.\n- La criatura suelta cualquier cosa que esté sujetando y cae derribada.\n- La criatura falla automáticamente las tiradas de salvación de Fuerza y Destreza.\n- Las tiradas de ataque contra ella tienen ventaja.\n- Los ataques que impacten a la criatura serán críticos si el atacante está a 1,5 m o menos.",
+        "es": "- Una criatura inconsciente está incapacitada (consulta el estado), no puede moverse ni hablar y no es consciente de su entorno.\n- La criatura suelta cualquier cosa que esté sujetando y cae derribada.\n- La criatura falla automáticamente las tiradas de salvación de Fuerza y Destreza.\n- Las tiradas de ataque contra ella tienen ventaja.\n- Los ataques que impacten a la criatura serán críticos si el atacante está a 5 pies o menos.",
         "en": "- An unconscious creature is incapacitated (see the condition), can’t move or speak, and is unaware of its surroundings\n- The creature drops whatever it’s holding and falls prone.\n- The creature automatically fails Strength and Dexterity saving throws.\n- Attack rolls against the creature have advantage.\n- Any attack that hits the creature is a critical hit if the attacker is within 5 feet of the creature."
       }
     },
@@ -510,7 +510,7 @@
       "toggle": {},
       "automation": "partial",
       "manual": {
-        "es": "Incapacitado y derribado; suelta lo que lleva en las manos. Falla las salvaciones de Fuerza y Destreza. Los ataques contra él tienen ventaja y, a 1,5 m o menos, son críticos.",
+        "es": "Incapacitado y derribado; suelta lo que lleva en las manos. Falla las salvaciones de Fuerza y Destreza. Los ataques contra él tienen ventaja y, a 5 pies o menos, son críticos.",
         "en": "Incapacitated and prone; drops whatever it’s holding. Fails Strength and Dexterity saving throws. Attack rolls against it have advantage and, within 5 feet, are critical hits."
       }
     },
@@ -571,7 +571,7 @@
       },
       "activo": true,
       "descripcion": {
-        "es": "- Una criatura paralizada está incapacitada (consulta dicho estado) y no puede moverse ni hablar.\n- La criatura falla automáticamente las tiradas de salvación de Fuerza y Destreza.\n- Las tiradas de ataque contra ella tienen ventaja.\n- Los ataques que impacten a la criatura serán críticos si el atacante está a 1,5 m o menos.",
+        "es": "- Una criatura paralizada está incapacitada (consulta dicho estado) y no puede moverse ni hablar.\n- La criatura falla automáticamente las tiradas de salvación de Fuerza y Destreza.\n- Las tiradas de ataque contra ella tienen ventaja.\n- Los ataques que impacten a la criatura serán críticos si el atacante está a 5 pies o menos.",
         "en": "- A paralyzed creature is incapacitated (see the condition) and can’t move or speak.\n- The creature automatically fails Strength and Dexterity saving throws.\n- Attack rolls against the creature have advantage.\n- Any attack that hits the creature is a critical hit if the attacker is within 5 feet of the creature."
       }
     },
@@ -587,7 +587,7 @@
       "toggle": {},
       "automation": "partial",
       "manual": {
-        "es": "Incapacitado. Falla las salvaciones de Fuerza y Destreza. Los ataques contra él tienen ventaja y, a 1,5 m o menos, son críticos.",
+        "es": "Incapacitado. Falla las salvaciones de Fuerza y Destreza. Los ataques contra él tienen ventaja y, a 5 pies o menos, son críticos.",
         "en": "Incapacitated. Fails Strength and Dexterity saving throws. Attack rolls against it have advantage and, within 5 feet, are critical hits."
       }
     },
@@ -739,7 +739,7 @@
       },
       "activo": true,
       "descripcion": {
-        "es": "Mientras tengas el estado de agarrado, experimentarás los siguientes efectos:\n\nVelocidad 0. Tu velocidad es 0 y no puede aumentar.\n\nAtaques afectados. Tienes desventaja en las tiradas de ataque contra cualquier objetivo que no sea quien te agarra.\n\nDesplazable. Quien te agarra puede arrastrarte o transportarte al moverse, pero cada metro de movimiento le cuesta 1 m adicional, salvo que seas Diminuto o tu tamaño sea dos o más categorías inferior al suyo.",
+        "es": "Mientras tengas el estado de agarrado, experimentarás los siguientes efectos:\n\nVelocidad 0. Tu velocidad es 0 y no puede aumentar.\n\nAtaques afectados. Tienes desventaja en las tiradas de ataque contra cualquier objetivo que no sea quien te agarra.\n\nDesplazable. Quien te agarra puede arrastrarte o transportarte al moverse, pero cada metro de movimiento le cuesta 3 pies adicional, salvo que seas Diminuto o tu tamaño sea dos o más categorías inferior al suyo.",
         "en": "While you have the Grappled condition, you experience the following effects.\n\nSpeed 0. Your Speed is 0 and can’t increase.\n\nAttacks Affected. You have Disadvantage on attack rolls against any target other than the grappler.\n\nMovable. The grappler can drag or carry you when it moves, but every foot of movement costs it 1 extra foot unless you are Tiny or two or more sizes smaller than it."
       }
     },
@@ -919,7 +919,7 @@
       "activo": true,
       "nivel": 1,
       "descripcion": {
-        "es": "Mientras tengas el estado de cansancio, experimentarás los siguientes efectos:\n\nNiveles de cansancio. Este estado es acumulativo. Cada vez que lo recibas, sumas 1 nivel de cansancio. Morirás si tu nivel de cansancio es 6.\n\nPruebas con d20 afectadas. Cuando hagas una prueba con d20, el resultado se reduce en 2 × tu nivel de cansancio.\n\nVelocidad reducida. Tu velocidad se reduce en 1,5 m × tu nivel de cansancio.\n\nEliminar niveles de cansancio. Tras finalizar un descanso largo, resta 1 nivel de cansancio. Cuando tus niveles de cansancio se reduzcan a 0, el estado terminará.",
+        "es": "Mientras tengas el estado de cansancio, experimentarás los siguientes efectos:\n\nNiveles de cansancio. Este estado es acumulativo. Cada vez que lo recibas, sumas 1 nivel de cansancio. Morirás si tu nivel de cansancio es 6.\n\nPruebas con d20 afectadas. Cuando hagas una prueba con d20, el resultado se reduce en 2 × tu nivel de cansancio.\n\nVelocidad reducida. Tu velocidad se reduce en 5 pies × tu nivel de cansancio.\n\nEliminar niveles de cansancio. Tras finalizar un descanso largo, resta 1 nivel de cansancio. Cuando tus niveles de cansancio se reduzcan a 0, el estado terminará.",
         "en": "While you have the Exhaustion condition, you experience the following effects.\n\nExhaustion Levels. This condition is cumulative. Each time you receive it, you gain 1 Exhaustion level. You die if your Exhaustion level is 6.\n\nD20 Tests Affected. When you make a D20 Test, the roll is reduced by 2 times your Exhaustion level.\n\nSpeed Reduced. Your Speed is reduced by a number of feet equal to 5 times your Exhaustion level.\n\nRemoving Exhaustion Levels. Finishing a Long Rest removes 1 of your Exhaustion levels. When your Exhaustion level reaches 0, the condition ends."
       }
     },
@@ -1056,7 +1056,7 @@
       },
       "activo": true,
       "descripcion": {
-        "es": "Mientras tengas el estado de derribado, experimentarás los siguientes efectos:\n\nMovimiento restringido. Tus únicas opciones de movimiento son arrastrarte o gastar una cantidad de movimiento igual a la mitad de tu velocidad (redondeando hacia abajo) para levantarte y, por tanto, poner fin a este estado. Si tu velocidad es 0, no puedes levantarte.\n\nAtaques afectados. Tienes desventaja en las tiradas de ataque. Las tiradas de ataque contra ti tienen ventaja si el atacante está a 1,5 m o menos de ti. De lo contrario, las tiradas de ataque tienen desventaja.",
+        "es": "Mientras tengas el estado de derribado, experimentarás los siguientes efectos:\n\nMovimiento restringido. Tus únicas opciones de movimiento son arrastrarte o gastar una cantidad de movimiento igual a la mitad de tu velocidad (redondeando hacia abajo) para levantarte y, por tanto, poner fin a este estado. Si tu velocidad es 0, no puedes levantarte.\n\nAtaques afectados. Tienes desventaja en las tiradas de ataque. Las tiradas de ataque contra ti tienen ventaja si el atacante está a 5 pies o menos de ti. De lo contrario, las tiradas de ataque tienen desventaja.",
         "en": "While you have the Prone condition, you experience the following effects.\n\nRestricted Movement. Your only movement options are to crawl or to spend an amount of movement equal to half your Speed (round down) to right yourself and thereby end the condition. If your Speed is 0, you can’t right yourself.\n\nAttacks Affected. You have Disadvantage on attack rolls. An attack roll against you has Advantage if the attacker is within 5 feet of you. Otherwise, that attack roll has Disadvantage."
       }
     },
@@ -1071,7 +1071,7 @@
       "toggle": {},
       "automation": "partial",
       "manual": {
-        "es": "Solo se arrastra o se levanta (con la mitad de su velocidad). Los ataques contra él tienen ventaja a 1,5 m o menos y desventaja más lejos.",
+        "es": "Solo se arrastra o se levanta (con la mitad de su velocidad). Los ataques contra él tienen ventaja a 5 pies o menos y desventaja más lejos.",
         "en": "Can only crawl or stand up (half its speed). Attack rolls against it have advantage within 5 feet and disadvantage otherwise."
       }
     },
@@ -1233,7 +1233,7 @@
       },
       "activo": true,
       "descripcion": {
-        "es": "Mientras tengas el estado de inconsciente, experimentarás los siguientes efectos:\n\nInerte. Tienes los estados de derribado e incapacitado y sueltas lo que estés sujetando. Cuando concluya este estado, permanecerás derribado.\n\nVelocidad 0. Tu velocidad es 0 y no puede aumentar.\n\nAtaques afectados. Las tiradas de ataque contra ti tienen ventaja.\n\nTiradas de salvación afectadas. Fallas automáticamente las tiradas de salvación de Fuerza y Destreza.\n\nCríticos automáticos. Cualquier tirada de ataque que te acierte es un crítico si el atacante está a 1,5 m o menos de ti.\n\nIgnorante. No eres consciente de tu entorno.",
+        "es": "Mientras tengas el estado de inconsciente, experimentarás los siguientes efectos:\n\nInerte. Tienes los estados de derribado e incapacitado y sueltas lo que estés sujetando. Cuando concluya este estado, permanecerás derribado.\n\nVelocidad 0. Tu velocidad es 0 y no puede aumentar.\n\nAtaques afectados. Las tiradas de ataque contra ti tienen ventaja.\n\nTiradas de salvación afectadas. Fallas automáticamente las tiradas de salvación de Fuerza y Destreza.\n\nCríticos automáticos. Cualquier tirada de ataque que te acierte es un crítico si el atacante está a 5 pies o menos de ti.\n\nIgnorante. No eres consciente de tu entorno.",
         "en": "While you have the Unconscious condition, you experience the following effects.\n\nInert. You have the Incapacitated and Prone conditions, and you drop whatever you’re holding. When this condition ends, you remain Prone.\n\nSpeed 0. Your Speed is 0 and can’t increase.\n\nAttacks Affected. Attack rolls against you have Advantage.\n\nSaving Throws Affected. You automatically fail Strength and Dexterity saving throws.\n\nAutomatic Critical Hits. Any attack roll that hits you is a Critical Hit if the attacker is within 5 feet of you.\n\nUnaware. You’re unaware of your surroundings."
       }
     },
@@ -1254,7 +1254,7 @@
       "toggle": {},
       "automation": "partial",
       "manual": {
-        "es": "Incapacitado y derribado; suelta lo que lleva en las manos. Falla las salvaciones de Fuerza y Destreza. Los ataques contra él tienen ventaja y, a 1,5 m o menos, son críticos.",
+        "es": "Incapacitado y derribado; suelta lo que lleva en las manos. Falla las salvaciones de Fuerza y Destreza. Los ataques contra él tienen ventaja y, a 5 pies o menos, son críticos.",
         "en": "Incapacitated and prone; drops whatever it’s holding. Fails Strength and Dexterity saving throws. Attack rolls against it have advantage and, within 5 feet, are critical hits."
       }
     },
@@ -1320,7 +1320,7 @@
       },
       "activo": true,
       "descripcion": {
-        "es": "Mientras tengas el estado de paralizado, experimentarás los siguientes efectos:\n\nIncapacitado. Tienes el estado de incapacitado.\n\nVelocidad 0. Tu velocidad es 0 y no puede aumentar.\n\nTiradas de salvación afectadas. Fallas automáticamente las tiradas de salvación de Fuerza y Destreza.\n\nAtaques afectados. Las tiradas de ataque contra ti tienen ventaja.\n\nCríticos automáticos. Cualquier tirada de ataque que te acierte es un crítico si el atacante está a 1,5 m o menos de ti.",
+        "es": "Mientras tengas el estado de paralizado, experimentarás los siguientes efectos:\n\nIncapacitado. Tienes el estado de incapacitado.\n\nVelocidad 0. Tu velocidad es 0 y no puede aumentar.\n\nTiradas de salvación afectadas. Fallas automáticamente las tiradas de salvación de Fuerza y Destreza.\n\nAtaques afectados. Las tiradas de ataque contra ti tienen ventaja.\n\nCríticos automáticos. Cualquier tirada de ataque que te acierte es un crítico si el atacante está a 5 pies o menos de ti.",
         "en": "While you have the Paralyzed condition, you experience the following effects.\n\nIncapacitated. You have the Incapacitated condition.\n\nSpeed 0. Your Speed is 0 and can’t increase.\n\nSaving Throws Affected. You automatically fail Strength and Dexterity saving throws.\n\nAttacks Affected. Attack rolls against you have Advantage.\n\nAutomatic Critical Hits. Any attack roll that hits you is a Critical Hit if the attacker is within 5 feet of you."
       }
     },
@@ -1341,7 +1341,7 @@
       "toggle": {},
       "automation": "partial",
       "manual": {
-        "es": "Incapacitado. Falla las salvaciones de Fuerza y Destreza. Los ataques contra él tienen ventaja y, a 1,5 m o menos, son críticos.",
+        "es": "Incapacitado. Falla las salvaciones de Fuerza y Destreza. Los ataques contra él tienen ventaja y, a 5 pies o menos, son críticos.",
         "en": "Incapacitated. Fails Strength and Dexterity saving throws. Attack rolls against it have advantage and, within 5 feet, are critical hits."
       }
     },

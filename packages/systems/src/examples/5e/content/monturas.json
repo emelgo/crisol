@@ -13,7 +13,7 @@
       "peso": 0,
       "coste": 50,
       "descripcion": {
-        "es": "Velocidad 15 m; capacidad de carga 240 kg.",
+        "es": "Velocidad 50 pies; capacidad de carga 480 lb.",
         "en": "Speed 50 ft.; carrying capacity 480 lb."
       }
     },
@@ -41,7 +41,7 @@
       "peso": 0,
       "coste": 8,
       "descripcion": {
-        "es": "Velocidad 12 m; capacidad de carga 210 kg.",
+        "es": "Velocidad 40 pies; capacidad de carga 420 lb.",
         "en": "Speed 40 ft.; carrying capacity 420 lb."
       }
     },
@@ -69,7 +69,7 @@
       "peso": 0,
       "coste": 200,
       "descripcion": {
-        "es": "Velocidad 12 m; capacidad de carga 660 kg.",
+        "es": "Velocidad 40 pies; capacidad de carga 1320 lb.",
         "en": "Speed 40 ft.; carrying capacity 1,320 lb."
       }
     },
@@ -97,7 +97,7 @@
       "peso": 0,
       "coste": 50,
       "descripcion": {
-        "es": "Velocidad 12 m; capacidad de carga 270 kg.",
+        "es": "Velocidad 40 pies; capacidad de carga 540 lb.",
         "en": "Speed 40 ft.; carrying capacity 540 lb."
       }
     },
@@ -125,7 +125,7 @@
       "peso": 0,
       "coste": 75,
       "descripcion": {
-        "es": "Velocidad 18 m; capacidad de carga 240 kg.",
+        "es": "Velocidad 60 pies; capacidad de carga 480 lb.",
         "en": "Speed 60 ft.; carrying capacity 480 lb."
       }
     },
@@ -153,7 +153,7 @@
       "peso": 0,
       "coste": 25,
       "descripcion": {
-        "es": "Velocidad 12 m; capacidad de carga 97,5 kg.",
+        "es": "Velocidad 40 pies; capacidad de carga 195 lb.",
         "en": "Speed 40 ft.; carrying capacity 195 lb."
       }
     },
@@ -181,7 +181,7 @@
       "peso": 0,
       "coste": 30,
       "descripcion": {
-        "es": "Velocidad 12 m; capacidad de carga 112,5 kg.",
+        "es": "Velocidad 40 pies; capacidad de carga 225 lb.",
         "en": "Speed 40 ft.; carrying capacity 225 lb."
       }
     },
@@ -209,7 +209,7 @@
       "peso": 0,
       "coste": 400,
       "descripcion": {
-        "es": "Velocidad 18 m; capacidad de carga 270 kg.",
+        "es": "Velocidad 60 pies; capacidad de carga 540 lb.",
         "en": "Speed 60 ft.; carrying capacity 540 lb."
       }
     },
@@ -549,7 +549,7 @@
       "peso": 0,
       "coste": 30000,
       "descripcion": {
-        "es": "Velocidad 6 km/h.",
+        "es": "Velocidad 4 millas/h.",
         "en": "Speed 4 mph."
       }
     },
@@ -577,7 +577,7 @@
       "peso": 0,
       "coste": 3000,
       "descripcion": {
-        "es": "Velocidad 1,5 km/h.",
+        "es": "Velocidad 1 milla/h.",
         "en": "Speed 1 mph."
       }
     },
@@ -605,7 +605,7 @@
       "peso": 0,
       "coste": 10000,
       "descripcion": {
-        "es": "Velocidad 4,5 km/h.",
+        "es": "Velocidad 3 millas/h.",
         "en": "Speed 3 mph."
       }
     },
@@ -633,7 +633,7 @@
       "peso": 0,
       "coste": 50,
       "descripcion": {
-        "es": "Velocidad 2,25 km/h.",
+        "es": "Velocidad 1 y 1/2 millas/h.",
         "en": "Speed 1½ mph."
       }
     },
@@ -661,7 +661,7 @@
       "peso": 0,
       "coste": 10000,
       "descripcion": {
-        "es": "Velocidad 3 km/h.",
+        "es": "Velocidad 2 millas/h.",
         "en": "Speed 2 mph."
       }
     },
@@ -689,7 +689,7 @@
       "peso": 0,
       "coste": 25000,
       "descripcion": {
-        "es": "Velocidad 3,75 km/h.",
+        "es": "Velocidad 2 y 1/2 millas/h.",
         "en": "Speed 2½ mph."
       }
     },
@@ -710,7 +710,7 @@
     "concept": "mercancia_0_5_kg_de_trigo",
     "data": {
       "name": {
-        "es": "0,5 kg de trigo",
+        "es": "1 lb de trigo",
         "en": "1 lb. of wheat"
       },
       "categoria": "mercancia",
@@ -734,7 +734,7 @@
     "concept": "mercancia_0_5_kg_de_harina_o_un_pollo",
     "data": {
       "name": {
-        "es": "0,5 kg de harina o un pollo",
+        "es": "1 lb de harina o un pollo",
         "en": "1 lb. of flour or one chicken"
       },
       "categoria": "mercancia",
@@ -758,7 +758,7 @@
     "concept": "mercancia_0_5_kg_de_sal",
     "data": {
       "name": {
-        "es": "0,5 kg de sal",
+        "es": "1 lb de sal",
         "en": "1 lb. of salt"
       },
       "categoria": "mercancia",
@@ -782,7 +782,7 @@
     "concept": "mercancia_0_5_kg_de_hierro_o_0_8_m_de_lona",
     "data": {
       "name": {
-        "es": "0,5 kg de hierro o 0,8 m² de lona",
+        "es": "1 lb de hierro o 9 pies cuadrados de lona",
         "en": "1 lb. of iron or 1 sq. yd. of canvas"
       },
       "categoria": "mercancia",
@@ -806,7 +806,7 @@
     "concept": "mercancia_0_5_kg_de_cobre_o_0_8_m_de_tela_de_algodon",
     "data": {
       "name": {
-        "es": "0,5 kg de cobre o 0,8 m² de tela de algodón",
+        "es": "1 lb de cobre o 9 pies cuadrados de tela de algodón",
         "en": "1 lb. of copper or 1 sq. yd. of cotton cloth"
       },
       "categoria": "mercancia",
@@ -830,7 +830,7 @@
     "concept": "mercancia_0_5_kg_de_jengibre_o_una_cabra",
     "data": {
       "name": {
-        "es": "0,5 kg de jengibre o una cabra",
+        "es": "1 lb de jengibre o una cabra",
         "en": "1 lb. of ginger or one goat"
       },
       "categoria": "mercancia",
@@ -854,7 +854,7 @@
     "concept": "mercancia_0_5_kg_de_canela_o_pimienta_o_una_oveja",
     "data": {
       "name": {
-        "es": "0,5 kg de canela o pimienta, o una oveja",
+        "es": "1 lb de canela o pimienta, o una oveja",
         "en": "1 lb. of cinnamon or pepper, or one sheep"
       },
       "categoria": "mercancia",
@@ -878,7 +878,7 @@
     "concept": "mercancia_0_5_kg_de_clavo_o_un_cerdo",
     "data": {
       "name": {
-        "es": "0,5 kg de clavo o un cerdo",
+        "es": "1 lb de clavo o un cerdo",
         "en": "1 lb. of cloves or one pig"
       },
       "categoria": "mercancia",
@@ -902,7 +902,7 @@
     "concept": "mercancia_0_5_kg_de_plata_o_0_8_m_de_lino",
     "data": {
       "name": {
-        "es": "0,5 kg de plata o 0,8 m² de lino",
+        "es": "1 lb de plata o 9 pies cuadrados de lino",
         "en": "1 lb. of silver or 1 sq. yd. of linen"
       },
       "categoria": "mercancia",
@@ -926,7 +926,7 @@
     "concept": "mercancia_0_8_m_de_seda_o_una_vaca",
     "data": {
       "name": {
-        "es": "0,8 m² de seda o una vaca",
+        "es": "9 pies cuadrados de seda o una vaca",
         "en": "1 sq. yd. of silk or one cow"
       },
       "categoria": "mercancia",
@@ -950,7 +950,7 @@
     "concept": "mercancia_0_5_kg_de_azafran_o_un_buey",
     "data": {
       "name": {
-        "es": "0,5 kg de azafrán o un buey",
+        "es": "1 lb de azafrán o un buey",
         "en": "1 lb. of saffron or one ox"
       },
       "categoria": "mercancia",
@@ -974,7 +974,7 @@
     "concept": "mercancia_0_5_kg_de_oro",
     "data": {
       "name": {
-        "es": "0,5 kg de oro",
+        "es": "1 lb de oro",
         "en": "1 lb. of gold"
       },
       "categoria": "mercancia",
@@ -998,7 +998,7 @@
     "concept": "mercancia_0_5_kg_de_platino",
     "data": {
       "name": {
-        "es": "0,5 kg de platino",
+        "es": "1 lb de platino",
         "en": "1 lb. of platinum"
       },
       "categoria": "mercancia",
@@ -1029,7 +1029,7 @@
       "peso": 0,
       "coste": 50,
       "descripcion": {
-        "es": "Capacidad de carga 225 kg.",
+        "es": "Capacidad de carga 450 lb.",
         "en": "Carrying capacity 450 lb."
       }
     },
@@ -1057,7 +1057,7 @@
       "peso": 0,
       "coste": 200,
       "descripcion": {
-        "es": "Capacidad de carga 660 kg.",
+        "es": "Capacidad de carga 1320 lb.",
         "en": "Carrying capacity 1,320 lb."
       }
     },
@@ -1085,7 +1085,7 @@
       "peso": 0,
       "coste": 50,
       "descripcion": {
-        "es": "Capacidad de carga 270 kg.",
+        "es": "Capacidad de carga 540 lb.",
         "en": "Carrying capacity 540 lb."
       }
     },
@@ -1113,7 +1113,7 @@
       "peso": 0,
       "coste": 75,
       "descripcion": {
-        "es": "Capacidad de carga 240 kg.",
+        "es": "Capacidad de carga 480 lb.",
         "en": "Carrying capacity 480 lb."
       }
     },
@@ -1141,7 +1141,7 @@
       "peso": 0,
       "coste": 25,
       "descripcion": {
-        "es": "Capacidad de carga 97,5 kg.",
+        "es": "Capacidad de carga 195 lb.",
         "en": "Carrying capacity 195 lb."
       }
     },
@@ -1169,7 +1169,7 @@
       "peso": 0,
       "coste": 8,
       "descripcion": {
-        "es": "Capacidad de carga 210 kg.",
+        "es": "Capacidad de carga 420 lb.",
         "en": "Carrying capacity 420 lb."
       }
     },
@@ -1197,7 +1197,7 @@
       "peso": 0,
       "coste": 30,
       "descripcion": {
-        "es": "Capacidad de carga 112,5 kg.",
+        "es": "Capacidad de carga 225 lb.",
         "en": "Carrying capacity 225 lb."
       }
     },
@@ -1225,7 +1225,7 @@
       "peso": 0,
       "coste": 400,
       "descripcion": {
-        "es": "Capacidad de carga 270 kg.",
+        "es": "Capacidad de carga 540 lb.",
         "en": "Carrying capacity 540 lb."
       }
     },
@@ -1493,7 +1493,7 @@
       "peso": 0,
       "coste": 40000,
       "descripcion": {
-        "es": "Velocidad 12 km/h; tripulación 10; pasajeros 20; cargamento (t) 1; CA 13; PG 300; umbral de daño —.",
+        "es": "Velocidad 8 millas/h; tripulación 10; pasajeros 20; cargamento (t) 1; CA 13; PG 300; umbral de daño —.",
         "en": "Speed 8 mph; crew 10; passengers 20; cargo (tons) 1; AC 13; HP 300; damage threshold —."
       }
     },
@@ -1521,7 +1521,7 @@
       "peso": 0,
       "coste": 30000,
       "descripcion": {
-        "es": "Velocidad 6 km/h; tripulación 80; pasajeros —; cargamento (t) 150; CA 15; PG 500; umbral de daño 20.",
+        "es": "Velocidad 4 millas/h; tripulación 80; pasajeros —; cargamento (t) 150; CA 15; PG 500; umbral de daño 20.",
         "en": "Speed 4 mph; crew 80; passengers —; cargo (tons) 150; AC 15; HP 500; damage threshold 20."
       }
     },
@@ -1549,7 +1549,7 @@
       "peso": 0,
       "coste": 3000,
       "descripcion": {
-        "es": "Velocidad 1,5 km/h; tripulación 1; pasajeros 6; cargamento (t) 1/2; CA 15; PG 100; umbral de daño 10.",
+        "es": "Velocidad 1 milla/h; tripulación 1; pasajeros 6; cargamento (t) 1/2; CA 15; PG 100; umbral de daño 10.",
         "en": "Speed 1 mph; crew 1; passengers 6; cargo (tons) 1/2; AC 15; HP 100; damage threshold 10."
       }
     },
@@ -1577,7 +1577,7 @@
       "peso": 0,
       "coste": 10000,
       "descripcion": {
-        "es": "Velocidad 4,5 km/h; tripulación 40; pasajeros 150; cargamento (t) 10; CA 15; PG 300; umbral de daño 15.",
+        "es": "Velocidad 3 millas/h; tripulación 40; pasajeros 150; cargamento (t) 10; CA 15; PG 300; umbral de daño 15.",
         "en": "Speed 3 mph; crew 40; passengers 150; cargo (tons) 10; AC 15; HP 300; damage threshold 15."
       }
     },
@@ -1605,7 +1605,7 @@
       "peso": 0,
       "coste": 50,
       "descripcion": {
-        "es": "Velocidad 2,4 km/h; tripulación 1; pasajeros 3; cargamento (t) —; CA 11; PG 50; umbral de daño —.",
+        "es": "Velocidad 1 y 1/2 millas/h; tripulación 1; pasajeros 3; cargamento (t) —; CA 11; PG 50; umbral de daño —.",
         "en": "Speed 1½ mph; crew 1; passengers 3; cargo (tons) —; AC 11; HP 50; damage threshold —."
       }
     },
@@ -1633,7 +1633,7 @@
       "peso": 0,
       "coste": 10000,
       "descripcion": {
-        "es": "Velocidad 3 km/h; tripulación 20; pasajeros 20; cargamento (t) 100; CA 15; PG 300; umbral de daño 15.",
+        "es": "Velocidad 2 millas/h; tripulación 20; pasajeros 20; cargamento (t) 100; CA 15; PG 300; umbral de daño 15.",
         "en": "Speed 2 mph; crew 20; passengers 20; cargo (tons) 100; AC 15; HP 300; damage threshold 15."
       }
     },
@@ -1661,7 +1661,7 @@
       "peso": 0,
       "coste": 25000,
       "descripcion": {
-        "es": "Velocidad 4 km/h; tripulación 60; pasajeros 60; cargamento (t) 200; CA 15; PG 500; umbral de daño 20.",
+        "es": "Velocidad 2 y 3/4 millas/h; tripulación 60; pasajeros 60; cargamento (t) 200; CA 15; PG 500; umbral de daño 20.",
         "en": "Speed 2½ mph; crew 60; passengers 60; cargo (tons) 200; AC 15; HP 500; damage threshold 20."
       }
     },

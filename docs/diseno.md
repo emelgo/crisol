@@ -250,6 +250,10 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
 - **Sin género en lo que se escribe sobre nombres que pone el máster** (2026-11-03, con las plantillas): «Página nueva ·
   Frente», nunca «Nuevo Frente»; y las opciones de serie, neutras («Vive», «Ha muerto», «En paradero desconocido»).
 
+- **Las medidas, en las de D&D, también en español** (2026-11-06: «lo quiero todo en el sistema de dnd, no hace falta
+  pasarlo»): pies, millas, libras, pulgadas y galones, nunca metros ni kilos. El SRD en español viene en métrico: al
+  sacarlo se devuelve a las de D&D (`scripts/srd/unidades.ts`).
+
 ## Tutorial guiado de cada vista
 
 - **Se llama «tutorial guiado de la vista»**, no «recorrido».

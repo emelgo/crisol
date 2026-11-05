@@ -59,6 +59,14 @@ test('la campaña en su vista: la jugadora entra, abre el compendio, busca «fir
   await library.getByRole('button', { name: /^Conjuros/ }).click()
   await library.getByRole('button', { name: /^Nivel 3/ }).click()
   await expect(library.getByRole('button', { name: 'Bola de fuego' })).toBeVisible()
+  // Sus filtros: los conjuros de mago, de evocación
+  await library.getByRole('button', { name: 'Filtrar' }).first().click()
+  await library.getByRole('combobox', { name: 'Clases' }).selectOption({ label: 'Mago' })
+  await library.getByRole('combobox', { name: 'Escuela' }).selectOption({ label: 'Evocación' })
+  await expect(library.getByRole('button', { name: 'Bola de fuego' })).toBeVisible()
+  await expect(library.getByRole('button', { name: /^Filtrar \(2\)/ })).toBeVisible()
+  await player.screenshot({ path: test.info().outputPath('compendio-filtros.png'), fullPage: false })
+  await library.getByRole('button', { name: 'Quitar los filtros' }).click()
   await library.getByRole('button', { name: /^Criaturas/ }).click()
   await library.getByRole('button', { name: /^Dragón/ }).click()
   await player.screenshot({ path: test.info().outputPath('compendio-biblioteca.png'), fullPage: false })
@@ -78,6 +86,14 @@ test('la campaña en su vista: la jugadora entra, abre el compendio, busca «fir
   await player.reload()
   await expect(player.getByRole('article', { name: 'Bárbaro' })).toBeVisible()
   await player.screenshot({ path: test.info().outputPath('compendio-clase.png'), fullPage: false })
+
+  // Una tabla de su texto se tira en la campaña: la Bolsa de trucos gris
+  await player.getByRole('searchbox', { name: 'Buscar en el compendio' }).fill('bolsa de trucos')
+  await list.getByRole('button', { name: /^Bolsa de trucos.*2024/ }).click()
+  const bag = player.getByRole('article', { name: 'Bolsa de trucos' })
+  await bag.getByRole('button', { name: 'Tirar 1d8 en «Criatura»' }).first().click()
+  await expect(bag.locator('td[class*="hit"]')).toHaveCount(2)
+  await player.screenshot({ path: test.info().outputPath('compendio-tabla.png'), fullPage: false })
 
   // El máster también lo lee; axe, en claro y en oscuro
   await sections.getByRole('link', { name: 'Compendio' }).click()

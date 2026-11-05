@@ -94,6 +94,7 @@ import {
   importSystem,
   listSystems,
   putSystemContent,
+  rollContentTable,
   searchCampaignContent,
   searchSystemContent,
   tryFormula,
@@ -247,6 +248,7 @@ export const ACTIONS = [
   getCampaignContent,
   searchCampaignContent,
   browseCampaignContent,
+  rollContentTable,
   listCharacters,
   getCharacter,
   createCharacter,
@@ -381,6 +383,7 @@ export type Actions = {
   getCampaignContent: typeof getCampaignContent
   searchCampaignContent: typeof searchCampaignContent
   browseCampaignContent: typeof browseCampaignContent
+  rollContentTable: typeof rollContentTable
   listCharacters: typeof listCharacters
   getCharacter: typeof getCharacter
   createCharacter: typeof createCharacter

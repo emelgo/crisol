@@ -49,6 +49,7 @@ import {
   compendiumEntry,
   compendiumSections,
   compendiumTypes,
+  contentTables,
   fileName,
   type Mechanics,
   mechanicsText,
@@ -64,6 +65,8 @@ import {
   searchContent,
   systemOverview,
   type Text,
+  tableRowOf,
+  textFieldOf,
   textOf,
   toFile,
   tryAction,
@@ -1409,9 +1412,27 @@ export function fakeApi(
         }))
       }
     },
+    rollContentTable: ({ campaignId, key, table, visibility = 'all' }) => {
+      const found = compendiumOf(campaignId)
+      const item = found?.content.find((each) => each.key === key)
+      if (!found || !item) throw new ApiError('NOT_FOUND', 404)
+      const field = textFieldOf(found.document, item.type)
+      const text = field ? textOf(item.data[field] as Text, found.choices.language) : ''
+      const chosen = contentTables(text)[table]
+      if (!chosen) throw new ApiError('BAD_TABLE', 400)
+      const out = handlers.rollDice({ campaignId, formula: chosen.formula, visibility })
+      const hit = tableRowOf(chosen, out.roll.total)
+      const name = textOf(item.data.name as Text, found.choices.language) || item.key
+      const stored = rolls.find((r) => r.id === out.roll.id)
+      for (const each of stored ? [out.roll, stored] : [out.roll]) {
+        each.label = name
+        each.table = { name, results: hit ? [{ text: hit.cells.slice(1).join(' · '), page: null }] : [] }
+      }
+      return { roll: out.roll, row: hit ? chosen.rows.indexOf(hit) : null }
+    },
     browseCampaignContent: ({ campaignId, type }) => {
       const found = compendiumOf(campaignId)
-      if (!found) return { items: [], folders: [] }
+      if (!found) return { items: [], folders: [], filters: [] }
       const { document, choices, content } = found
       return browseContent(document, content, {
         type,

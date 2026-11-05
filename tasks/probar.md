@@ -48,6 +48,13 @@ En un personaje terminado, su «Ficha»:
 - [ ] **Con el teclado**: las pestañas con las flechas, Inicio y Fin.
 - [ ] **Desde claude.ai**: `partida_personaje` (daño, curación, gastar un uso, descansar) y `tirar_por_personaje`.
 
+## Módulo 3: filtros y tablas que se tiran (PR #107)
+
+- [ ] **Filtrar**: en el compendio, en Conjuros, «Filtrar» (escuela, clases, concentración, ritual); en Criaturas (VD,
+  tamaño); en Objetos mágicos (rareza, sintonía). Las carpetas cuentan lo filtrado; «Quitar los filtros».
+- [ ] **Tablas que se tiran**: en la Bolsa de trucos, Confusión o las Fichas de pluma, el dado de su tabla tira en la
+  campaña (sale en el registro de dados) y marca lo que salió. Desde claude.ai, `tirar_tabla_compendio`.
+
 ## Módulo 3: el contenido, cruzado con dnd5e (PR #106)
 
 - [ ] **Criaturas**: el Dragón rojo adulto (2024) con «Desgarro» y su «Aliento de fuego (recarga 5–6)»; el Guerrero

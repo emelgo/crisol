@@ -64,13 +64,14 @@ Revisión de su interfaz con las pautas (`web-design-guidelines`) y `docs/diseno
 `modulo-3/pulido-hoja` (PR #104): tutoriales de cada vista, sin dobles clics, «Guardado» de verdad, avisos de las
 tablas por i18n, la pantalla vacía de Personajes, cargas y errores. Queda, para pulirlo con Enrique en local:
 
-- [ ] El creador: el foco se pierde al elegir, cambiar o quitar (llevarlo al título nuevo o al panel); abrir una
+- [x] El creador: el foco se pierde al elegir, cambiar o quitar (llevarlo al título nuevo o al panel); abrir una
   decisión no lleva el foco al panel (en lo estrecho queda debajo); «Terminar» y «Confirmar el nivel» con `BusyButton`.
 - [ ] El creador: quitar una clase (con sus decisiones) sin confirmar; se deshace desde el historial, pero ¿preguntar?
-- [ ] El creador: lo concedido, al desplegarlo mientras carga o con error, no dice nada; un número inválido en un campo
+- [x] El creador: lo concedido, al desplegarlo mientras carga o con error, no dice nada; un número inválido en un campo
   se ignora sin aviso; el de idiomas, sin ejemplo en el placeholder.
-- [ ] Ficha | Creador, y la búsqueda, el tipo y lo abierto del compendio, en la URL (enlazar un conjuro; «atrás» en el
+- [x] Ficha | Creador, y la búsqueda, el tipo y lo abierto del compendio, en la URL (enlazar un conjuro; «atrás» en el
   móvil vuelve a la lista).
-- [ ] El compendio en lo estrecho: al abrir un resultado y al volver, el foco.
-- [ ] La tabla: el borrador se pierde al cambiar de pestaña de la página, sin avisar.
-- [ ] Las tablas del texto del compendio, desplazables con el teclado en Safari (`tabIndex`, región con nombre).
+- [x] El compendio en lo estrecho: al abrir un resultado y al volver, el foco.
+- [x] La tabla: el borrador se pierde al cambiar de pestaña de la página, sin avisar.
+- [x] Las tablas del texto del compendio: parten su texto y caben en su columna (sin desplazarse, no hace falta
+  enfocarlas; una región enfocable pedía una supresión de lint nueva).

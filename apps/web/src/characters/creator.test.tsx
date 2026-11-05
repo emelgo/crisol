@@ -206,6 +206,14 @@ describe('el creador, con clases por niveles', () => {
     expect(await screen.findByRole('heading', { level: 2, name: 'Ladrón' })).toBeDefined()
     expect(screen.getByText('Multiclase')).toBeDefined()
     await userEvent.click(screen.getByRole('button', { name: 'Quitar Ladrón' }))
+    // Se pregunta antes: cancelar no quita nada
+    const ask = await screen.findByRole('dialog', { name: '¿Quitar «Ladrón»?' })
+    await userEvent.click(within(ask).getByRole('button', { name: 'Cancelar' }))
+    expect(screen.getByRole('heading', { level: 2, name: 'Ladrón' })).toBeDefined()
+    await userEvent.click(screen.getByRole('button', { name: 'Quitar Ladrón' }))
+    await userEvent.click(
+      within(await screen.findByRole('dialog', { name: '¿Quitar «Ladrón»?' })).getByRole('button', { name: 'Quitar' })
+    )
     await waitFor(() => expect(screen.queryByRole('heading', { level: 2, name: 'Ladrón' })).toBeNull())
     await waitFor(async () => {
       const saved = (await api.client.call('getCharacter', { characterId: character.id })).character

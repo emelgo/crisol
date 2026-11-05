@@ -420,7 +420,8 @@ export function spellDoc(
       componentes: t(es.components, en.components),
       duracion: t(es.duration, en.duration),
       concentracion: /^concentration/i.test(en.duration),
-      ritual: en.ritual,
+      // En 2014, «(ritual)» va en la línea del nivel; en 2024, en el tiempo de lanzamiento («Action or Ritual»)
+      ritual: en.ritual || /\britual\b/i.test(en.castingTime),
       clases: [...classes],
       descripcion: t(es.text, en.text)
     },

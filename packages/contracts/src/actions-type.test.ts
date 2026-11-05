@@ -119,6 +119,7 @@ describe('Actions', () => {
       getCampaignCompendium: true,
       searchCampaignContent: true,
       browseCampaignContent: true,
+      rollContentTable: true,
       getCampaignContent: true,
       listCharacters: true,
       getCharacter: true,

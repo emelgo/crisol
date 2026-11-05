@@ -17,7 +17,13 @@ export function checkCompendium(system: System, add: (path: (string | number)[],
   for (const [type, spec] of Object.entries(layout.types ?? {})) {
     const fields = system.types[type]?.fields
     if (!fields) add(['compendium', 'types', type], `No existe el tipo «${type}»`)
-    else if (spec.folder && !fields[spec.folder.field])
-      add(['compendium', 'types', type, 'folder', 'field'], `«${type}» no tiene el campo «${spec.folder.field}»`)
+    else {
+      if (spec.folder && !fields[spec.folder.field])
+        add(['compendium', 'types', type, 'folder', 'field'], `«${type}» no tiene el campo «${spec.folder.field}»`)
+      spec.filters?.forEach((filter, i) => {
+        if (!fields[filter.field])
+          add(['compendium', 'types', type, 'filters', i, 'field'], `«${type}» no tiene el campo «${filter.field}»`)
+      })
+    }
   }
 }

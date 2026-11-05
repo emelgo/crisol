@@ -6,10 +6,12 @@ import {
   browseCampaignContent,
   getCampaignCompendium,
   getCampaignContent,
-  searchCampaignContent
+  rollContentTable,
+  searchCampaignContent,
+  visibilitiesFor
 } from '@crisol/contracts'
 import { systemsRepo } from '@crisol/db'
-import { NotFoundError } from '@crisol/domain'
+import { can, NotFoundError } from '@crisol/domain'
 import {
   browseContent,
   type Choices,
@@ -19,18 +21,22 @@ import {
   compendiumEntry,
   compendiumSections,
   compendiumTypes,
+  contentTables,
   type Mechanics,
   mechanicsText,
   normalizeChoices,
   type System,
   searchContent,
   type Text,
+  tableRowOf,
+  textFieldOf,
   textOf,
   visibleContent
 } from '@crisol/systems'
 import { catalogContent } from '@crisol/systems/catalog/content'
 import { authorizedCampaign } from './access.ts'
-import type { ActionContext } from './context.ts'
+import { type ActionContext, InvalidRequestError } from './context.ts'
+import { rolled, saveRoll, storedOf } from './dice.ts'
 import { implement } from './registry.ts'
 import { contentOf } from './systems.ts'
 
@@ -107,7 +113,7 @@ export const compendiumActions = [
 
   implement(browseCampaignContent, async (ctx, { campaignId, type }) => {
     const found = await campaignSystem(ctx, campaignId)
-    if (!found) return { items: [], folders: [] }
+    if (!found) return { items: [], folders: [], filters: [] }
     const { document, row, choices } = found
     // Las carpetas salen de sus valores: de un sistema de la cuenta, el contenido de ese tipo entero
     const items: ContentItem[] = row
@@ -119,6 +125,39 @@ export const compendiumActions = [
       duplicates: choices.duplicates,
       language: choices.language
     })
+  }),
+
+  implement(rollContentTable, async (ctx, { campaignId, key, table, visibility }) => {
+    const campaign = await authorizedCampaign(ctx, 'dice.roll', campaignId)
+    // Como en los dados: el máster, cualquiera; los jugadores, las suyas
+    const master = can(ctx.actor, 'dice.private', { campaignId, worldId: campaign.worldId })
+    if (!master && !visibilitiesFor('player').includes(visibility))
+      throw new InvalidRequestError('VISIBILITY_NOT_ALLOWED')
+    const found = await campaignSystem(ctx, campaignId)
+    if (!found) throw new NotFoundError('content')
+    const { document, row, choices, entries } = found
+    if (!visibleContent(document, entries, choices).some((s) => s.item.key === key)) throw new NotFoundError('content')
+    const [item] = row
+      ? (await systemsRepo.contentByKeys(ctx.db, row.id, [key])).map(contentOf)
+      : catalogContent(document.id).filter((each) => each.key === key)
+    if (!item) throw new NotFoundError('content')
+    const field = textFieldOf(document, item.type)
+    const text = field ? textOf(item.data[field] as Text | undefined, choices.language) : ''
+    const chosen = contentTables(text)[table]
+    if (!chosen) throw new InvalidRequestError('BAD_TABLE', `no tiene la tabla ${table}`)
+    const result = rolled(chosen.formula)
+    const hit = tableRowOf(chosen, result.total)
+    const name = textOf(item.data.name as Text | undefined, choices.language) || item.key
+    const roll = await saveRoll(ctx, campaign, {
+      formula: result.formula,
+      label: name,
+      visibility,
+      result: {
+        ...storedOf(result),
+        table: { name, results: hit ? [{ text: hit.cells.slice(1).join(' · '), page: null }] : [] }
+      }
+    })
+    return { roll, row: hit ? chosen.rows.indexOf(hit) : null }
   }),
 
   implement(getCampaignContent, async (ctx, { campaignId, keys }) => {
