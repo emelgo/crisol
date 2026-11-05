@@ -62,6 +62,50 @@ describe('operation', () => {
     expect(rows.map((c) => c.tableName)).toEqual(['worlds', 'world_members'])
   })
 
+  it('insertar muchas de una vez: por tandas, en su orden, cada una con su cambio en el historial', async () => {
+    const names = Array.from({ length: 1203 }, (_, i) => `Mundo ${i}`)
+    const rows = await operation(conn.db, ctx(), (w) =>
+      w.insertMany(
+        worlds,
+        names.map((name) => ({ organizationId, name }))
+      )
+    )
+    expect(rows.map((r) => r.name)).toEqual(names)
+    expect(rows[0]).toMatchObject({ version: 1, createdBy: 'u1', updatedBy: 'u1' })
+    const recorded = await conn.db.select().from(changes).orderBy(changes.seq)
+    expect(recorded).toHaveLength(1203)
+    expect(recorded.map((c) => c.rowId)).toEqual(rows.map((r) => r.id))
+    expect(recorded[1202]).toMatchObject({
+      seq: 1203,
+      before: null,
+      after: expect.objectContaining({ name: 'Mundo 1202' })
+    })
+    expect(await operation(conn.db, ctx(), (w) => w.insertMany(worlds, []))).toEqual([])
+
+    // Y quitarlas, también de una vez, con cómo estaban
+    await operation(conn.db, { ...ctx(), action: 'deleteWorld' }, (w) =>
+      w.removeMany(
+        worlds,
+        rows.map((r) => r.id)
+      )
+    )
+    expect(await conn.db.select().from(worlds)).toEqual([])
+    const last = await conn.db.select().from(operations).orderBy(operations.createdAt)
+    const gone = await conn.db
+      .select()
+      .from(changes)
+      .where(eq(changes.operationId, last.at(-1)?.id ?? ''))
+    expect(gone).toHaveLength(1203)
+    expect(gone.find((c) => c.seq === 1)).toMatchObject({
+      rowId: rows[0]?.id,
+      after: null,
+      before: expect.objectContaining({ name: 'Mundo 0' })
+    })
+    await expect(
+      operation(conn.db, ctx(), (w) => w.removeMany(worlds, ['00000000-0000-0000-0000-000000000000']))
+    ).rejects.toThrow('No existe worlds')
+  })
+
   it('una actualización sube la versión y guarda cómo estaba antes', async () => {
     const world = await operation(conn.db, ctx(), (w) => w.insert(worlds, { organizationId, name: 'Eana' }))
     await conn.db.insert(user).values({ id: 'u2', name: 'IA', email: 'ia@crisol.test' })

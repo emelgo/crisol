@@ -153,7 +153,10 @@ export function createSystem(
       if ((row?.n ?? 0) >= max) throw new TooManySystemsError()
     }
     const row = await w.insert(systems, { ...values, document: JSON.stringify(values.document) })
-    for (const item of content) await w.insert(systemContent, { ...item, systemId: row.id })
+    await w.insertMany(
+      systemContent,
+      content.map((item) => ({ ...item, systemId: row.id }))
+    )
     return read(row)
   })
 }
@@ -183,8 +186,14 @@ export function updateSystem(
         .select({ id: systemContent.id })
         .from(systemContent)
         .where(eq(systemContent.systemId, id))
-      for (const item of old) await w.remove(systemContent, item.id)
-      for (const item of content) await w.insert(systemContent, { ...item, systemId: id })
+      await w.removeMany(
+        systemContent,
+        old.map((item) => item.id)
+      )
+      await w.insertMany(
+        systemContent,
+        content.map((item) => ({ ...item, systemId: id }))
+      )
     }
     return row
   })

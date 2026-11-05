@@ -2,7 +2,7 @@
  * El único camino de escritura de las tablas de dominio. Cada operación es una transacción que apunta en el historial
  * cada fila que toca, completa antes y después (to_jsonb de Postgres), y pone la versión y la autoría.
  */
-import { eq, getTableName, type InferInsertModel, type InferSelectModel, sql } from 'drizzle-orm'
+import { eq, getTableName, type InferInsertModel, type InferSelectModel, inArray, sql } from 'drizzle-orm'
 import type { Database } from './client.ts'
 import { campaignMembers, campaigns } from './schema/campaigns.ts'
 import { fileFolders, files } from './schema/files.ts'
@@ -66,8 +66,12 @@ export interface OperationContext {
 
 export interface Writer {
   insert<T extends TrackedTable>(table: T, values: Values<T>): Promise<InferSelectModel<T>>
+  /** Muchas filas de una tabla, por tandas y en su orden (el contenido de un sistema): igual que insertar una a una */
+  insertMany<T extends TrackedTable>(table: T, values: readonly Values<T>[]): Promise<InferSelectModel<T>[]>
   update<T extends TrackedTable>(table: T, id: string, patch: Partial<Values<T>>): Promise<InferSelectModel<T>>
   remove(table: TrackedTable, id: string): Promise<void>
+  /** Muchas filas de una tabla, por tandas (al subir un sistema encima de otro): igual que quitarlas una a una */
+  removeMany(table: TrackedTable, ids: readonly string[]): Promise<void>
   /**
    * Deja una fila como la guarda el historial (to_jsonb, con su id y su versión): la actualiza si existe o la vuelve
    * a poner si no. Para deshacer
@@ -143,6 +147,36 @@ export async function operation<R>(
         recorded.push({ tableName: name, rowId: row.id, before: null, after: await snapshot(name, row.id) })
         return row as InferSelectModel<typeof table>
       },
+      async insertMany(table, values) {
+        const name = getTableName(table)
+        const out: InferSelectModel<typeof table>[] = []
+        for (let i = 0; i < values.length; i += ROWS_PER_INSERT) {
+          const rows = await tx
+            .insert(table)
+            .values(
+              values
+                .slice(i, i + ROWS_PER_INSERT)
+                .map((v) => ({ ...v, createdBy: context.actorId, updatedBy: context.actorId })) as InferInsertModel<
+                typeof table
+              >[]
+            )
+            .returning()
+          // Cómo quedaron, de una vez
+          const ids = rows.map((r) => r.id)
+          const columns = await generatedColumns(tx, name)
+          const after = new Map(
+            [
+              ...(await tx.execute<{ row: Json }>(
+                sql`select to_jsonb(t) as row from ${sql.identifier(name)} t where t.id in ${ids}`
+              ))
+            ].map(({ row }) => [String(row.id), without(row, columns)])
+          )
+          for (const row of rows)
+            recorded.push({ tableName: name, rowId: row.id, before: null, after: after.get(row.id) ?? null })
+          out.push(...(rows as InferSelectModel<typeof table>[]))
+        }
+        return out
+      },
       async update(table, id, patch) {
         const name = getTableName(table)
         const before = await existing(name, id)
@@ -160,6 +194,25 @@ export async function operation<R>(
         const before = await existing(name, id)
         await tx.delete(table).where(eq(table.id, id))
         recorded.push({ tableName: name, rowId: id, before, after: null })
+      },
+      async removeMany(table, ids) {
+        const name = getTableName(table)
+        const columns = await generatedColumns(tx, name)
+        for (let i = 0; i < ids.length; i += ROWS_PER_INSERT) {
+          const chunk = ids.slice(i, i + ROWS_PER_INSERT)
+          const before = new Map(
+            [
+              ...(await tx.execute<{ row: Json }>(
+                sql`select to_jsonb(t) as row from ${sql.identifier(name)} t where t.id in ${chunk} for update`
+              ))
+            ].map(({ row }) => [String(row.id), without(row, columns)])
+          )
+          const missing = chunk.find((id) => !before.has(id))
+          if (missing) throw new Error(`No existe ${name} ${missing}`)
+          await tx.delete(table).where(inArray(table.id, chunk))
+          for (const id of chunk)
+            recorded.push({ tableName: name, rowId: id, before: before.get(id) ?? null, after: null })
+        }
       },
       async restore(table, given) {
         const name = getTableName(table)
@@ -230,6 +283,8 @@ export async function operation<R>(
 
 /** Cada cambio lleva 6 valores; Postgres admite 65.535 por consulta */
 const CHANGES_PER_INSERT = 2000
+/** Filas por consulta al insertar muchas: con sus columnas (unas veinte, como mucho), por debajo del tope */
+const ROWS_PER_INSERT = 500
 
 /** El primer ámbito que aparece en los cambios: la fila de esa tabla o la columna que apunta a ella */
 function scopeOf(recorded: Change[], table: string, column: string): string | null {
