@@ -81,7 +81,7 @@ describe('el registro de la campaña', () => {
     localStorage.clear()
     localStorage.setItem(
       'crisol.recorridos.enrique@crisol.test',
-      JSON.stringify({ seen: ['mundo', 'campaña', 'dados'] })
+      JSON.stringify({ seen: ['mundo', 'campaña', 'dados', 'campana'] })
     )
     n = 0
   })

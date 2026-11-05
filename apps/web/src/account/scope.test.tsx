@@ -108,7 +108,7 @@ describe('al cambiar de cuenta en la misma pestaña', () => {
   // Los tutoriales guiados de Mis mundos ya hechos: que no se pongan en medio
   beforeEach(() => {
     for (const email of ['e@crisol.test', 'j@crisol.test']) {
-      localStorage.setItem(`crisol.recorridos.${email}`, JSON.stringify({ seen: ['mundos'] }))
+      localStorage.setItem(`crisol.recorridos.${email}`, JSON.stringify({ seen: ['mundos', 'campana'] }))
     }
   })
 

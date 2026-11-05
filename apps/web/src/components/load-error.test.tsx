@@ -72,7 +72,7 @@ describe('si no llega lo que necesita una página', () => {
   beforeEach(() => {
     vi.useFakeTimers({ shouldAdvanceTime: true })
     // Los tutoriales guiados ya hechos: que no se pongan en medio
-    localStorage.setItem('crisol.recorridos.e@crisol.test', JSON.stringify({ seen: ['mundos', 'mundo', 'campanas'] }))
+    localStorage.setItem('crisol.recorridos.e@crisol.test', JSON.stringify({ seen: ['mundos', 'mundo', 'campanas', 'campana'] }))
   })
   afterEach(() => {
     vi.useRealTimers()

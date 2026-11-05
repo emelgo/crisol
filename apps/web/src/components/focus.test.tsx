@@ -90,7 +90,7 @@ async function openDelete(name: string) {
 
 describe('el foco en las confirmaciones', () => {
   // El tutorial guiado ya hecho: que no se lleve el foco
-  beforeEach(() => localStorage.setItem('crisol.recorridos.e@crisol.test', JSON.stringify({ seen: ['mundos'] })))
+  beforeEach(() => localStorage.setItem('crisol.recorridos.e@crisol.test', JSON.stringify({ seen: ['mundos', 'campana'] })))
 
   it('borrar: va al campo del nombre, junto al aviso; cancelar lo devuelve; borrado, va al siguiente', async () => {
     renderAt('/mundos')

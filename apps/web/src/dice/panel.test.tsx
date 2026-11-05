@@ -60,7 +60,7 @@ describe('la ficha de dados', () => {
     localStorage.clear()
     localStorage.setItem(
       'crisol.recorridos.enrique@crisol.test',
-      JSON.stringify({ seen: ['mundo', 'campaña', 'dados'] })
+      JSON.stringify({ seen: ['mundo', 'campaña', 'dados', 'campana'] })
     )
   })
 
