@@ -3,9 +3,8 @@
  * creación abre en el creador; lo que ya está hecho, en su ficha, con sus versiones al lado
  */
 import { useQuery } from '@tanstack/react-query'
-import { getRouteApi, Navigate } from '@tanstack/react-router'
+import { getRouteApi, Link, Navigate } from '@tanstack/react-router'
 import { UserRound } from 'lucide-react'
-import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
@@ -25,7 +24,8 @@ const route = getRouteApi('/mundos/$worldId/campanas/$campaignId/personajes/$cha
 
 export function CharacterScreen() {
   const { t } = useTranslation()
-  const { campaignId, characterId } = route.useParams()
+  const { worldId, campaignId, characterId } = route.useParams()
+  const { vista } = route.useSearch()
   const api = useApi()
   const errorText = useErrorText()
   const { account, pending } = useAccounts().useAccount()
@@ -37,14 +37,21 @@ export function CharacterScreen() {
     refetchOnWindowFocus: false
   })
   const { save, busy, error, saved } = useCharacterSave(characterId, campaignId)
-  const [tab, setTab] = useState<'sheet' | 'creator' | null>(null)
   if (pending) return null
   if (!account) return <Navigate to="/entrar" replace />
   if (!loaded.data) {
     return failed(loaded) ? <LoadError error={loaded.error} onRetry={() => loaded.refetch()} /> : <Loading />
   }
   const { character, state } = loaded.data
-  const shown = tab ?? (character.status === 'creating' ? 'creator' : 'sheet')
+  // La vista de la dirección o, sin ella, el creador mientras se crea y la ficha después
+  const shown =
+    vista === 'creador'
+      ? 'creator'
+      : vista === 'ficha'
+        ? 'sheet'
+        : character.status === 'creating'
+          ? 'creator'
+          : 'sheet'
   return (
     <div className={styles.page}>
       <header className={styles.head}>
@@ -62,15 +69,17 @@ export function CharacterScreen() {
         </span>
         <nav className={styles.tabs} aria-label={t('characters.views')} data-tour="vistas-personaje">
           {(['sheet', 'creator'] as const).map((each) => (
-            <button
+            <Link
               key={each}
-              type="button"
+              to="/mundos/$worldId/campanas/$campaignId/personajes/$characterId"
+              params={{ worldId, campaignId, characterId }}
+              search={{ vista: each === 'sheet' ? 'ficha' : 'creador' }}
+              replace
               className={styles.tab}
               aria-current={shown === each ? 'page' : undefined}
-              onClick={() => setTab(each)}
             >
               {t(each === 'sheet' ? 'characters.sheet' : 'characters.creator')}
-            </button>
+            </Link>
           ))}
         </nav>
       </header>

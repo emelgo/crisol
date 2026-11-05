@@ -579,3 +579,20 @@
 .stepper button:hover:not(:disabled) {
   border-color: var(--color-accent);
 }
+
+.grantedNote {
+  margin: var(--space-1) 0 0;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+/* Lo que recibe el foco al desaparecer lo pulsado o al abrir una decisión: sin recuadro, no es un control (como el
+   título de una página) */
+.main:focus,
+.main:focus-visible,
+.side:focus,
+.side:focus-visible,
+.sideTitle:focus,
+.sideTitle:focus-visible {
+  outline: none;
+}

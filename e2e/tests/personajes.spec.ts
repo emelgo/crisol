@@ -83,20 +83,17 @@ test('una jugadora hace su personaje de 5e con el creador, lo termina y lo sube 
   await expect(finish).toBeEnabled()
   await finish.click()
   await expect(player.getByText('Guardado')).toBeVisible()
-  await player.getByRole('navigation', { name: 'Vistas del personaje' }).getByRole('button', { name: 'Ficha' }).click()
+  await player.getByRole('navigation', { name: 'Vistas del personaje' }).getByRole('link', { name: 'Ficha' }).click()
   const versions = player.getByRole('complementary', { name: 'Versiones' })
   await expect(versions).toContainText('Creado · Nivel 1')
   await shot(player, 'ficha')
 
   // Subir a nivel 2 y confirmarlo
-  await player
-    .getByRole('navigation', { name: 'Vistas del personaje' })
-    .getByRole('button', { name: 'Creador' })
-    .click()
+  await player.getByRole('navigation', { name: 'Vistas del personaje' }).getByRole('link', { name: 'Creador' }).click()
   await steps.getByRole('button', { name: /Clase/ }).click()
   await player.getByLabel('Nivel', { exact: true }).selectOption('2')
   await player.getByRole('button', { name: 'Confirmar el nivel 2' }).click()
-  await player.getByRole('navigation', { name: 'Vistas del personaje' }).getByRole('button', { name: 'Ficha' }).click()
+  await player.getByRole('navigation', { name: 'Vistas del personaje' }).getByRole('link', { name: 'Ficha' }).click()
   await expect(versions.getByRole('listitem').first()).toContainText('Nivel 2Actual')
 
   // El máster ve a Thora, y la vuelve a su versión de nivel 1

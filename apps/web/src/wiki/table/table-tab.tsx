@@ -25,6 +25,10 @@ import styles from './table-tab.module.css'
 
 const newId = () => crypto.randomUUID().slice(0, 8)
 
+type Draft = { formula: string; replacement: boolean; rows: TableRow[] }
+/** Lo que se está cambiando de cada tabla, por su pestaña: cambiar de pestaña de la página no lo pierde */
+const drafts = new Map<string, Draft>()
+
 export function TableTab({ page, tab }: { page: Page; tab: PageTabView }) {
   const { t } = useTranslation()
   const api = useApi()
@@ -45,7 +49,12 @@ export function TableTab({ page, tab }: { page: Page; tab: PageTabView }) {
     queryKey: key,
     queryFn: () => api.call('getRandomTable', { tabId: tab.id, ...(campaign ? { campaignId: campaign } : {}) })
   })
-  const [draft, setDraft] = useState<{ formula: string; replacement: boolean; rows: TableRow[] } | null>(null)
+  const [draft, setDraftState] = useState<Draft | null>(() => drafts.get(tab.id) ?? null)
+  const setDraft = (next: Draft | null) => {
+    if (next) drafts.set(tab.id, next)
+    else drafts.delete(tab.id)
+    setDraftState(next)
+  }
   const [visibility, setVisibility] = useState<'all' | 'hidden'>('all')
   const [last, setLast] = useState<string | null>(null)
   const [resetting, setResetting] = useState(false)

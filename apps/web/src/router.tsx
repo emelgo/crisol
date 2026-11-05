@@ -52,7 +52,10 @@ const charactersRoute = createRoute({
 const characterRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/mundos/$worldId/campanas/$campaignId/personajes/$characterId',
-  component: CharacterScreen
+  component: CharacterScreen,
+  // ?vista=ficha o ?vista=creador: la vista del personaje, para enlazarla y que no se pierda al recargar
+  validateSearch: (search: Record<string, unknown>): { vista?: 'ficha' | 'creador' } =>
+    search.vista === 'ficha' || search.vista === 'creador' ? { vista: search.vista } : {}
 })
 const compendiumRoute = createRoute({
   getParentRoute: () => rootRoute,
