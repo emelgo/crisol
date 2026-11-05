@@ -36,11 +36,13 @@ import {
 } from '@crisol/domain'
 import {
   applyChanges,
+  type Build,
   CATALOG,
   ChangeError,
   type Choices,
   type ContentItem,
   catalogSystem,
+  characterView,
   compendiumEntry,
   compendiumTypes,
   fileName,
@@ -573,6 +575,15 @@ export function fakeApi(
     if (!found || !campaign || (campaign.role !== 'master' && found.owner?.id !== 'yo'))
       throw new ApiError('NOT_FOUND', 404)
     return found
+  }
+  /** Monta un personaje con su sistema y lo que eligió su campaña (en la falsa, el contenido de los de la cuenta) */
+  const stateOf = (character: Character) => {
+    const document = systemById(character.system)
+    const campaign = campaigns.find((c) => c.id === character.campaignId)
+    if (!document) throw new ApiError('NOT_FOUND', 404)
+    const { choices } = normalizeChoices(document, (campaign?.systemChoices ?? {}) as Partial<Choices>)
+    const content = ownSystems.find((s) => s.id === document.id && !s.deleted)?.content ?? []
+    return characterView(document, content, choices, character.build as Build).view
   }
   const touch = (character: Character) => {
     character.version++
@@ -1163,7 +1174,10 @@ export function fakeApi(
           .map(({ build: _, play: __, ...card }) => structuredClone(card))
       }
     },
-    getCharacter: ({ characterId }) => ({ character: structuredClone(visibleCharacter(characterId)) }),
+    getCharacter: ({ characterId }) => {
+      const character = visibleCharacter(characterId)
+      return { character: structuredClone(character), state: stateOf(character) }
+    },
     createCharacter: ({ campaignId, name, ownerId }) => {
       const campaign = campaigns.find((c) => c.id === campaignId)
       if (!campaign) throw new ApiError('NOT_FOUND', 404)
@@ -1183,7 +1197,7 @@ export function fakeApi(
         play: {}
       }
       characters.push(character)
-      return { character: structuredClone(character) }
+      return { character: structuredClone(character), state: stateOf(character) }
     },
     updateCharacter: ({ characterId, version, name, build, play, ownerId, confirm }) => {
       const character = visibleCharacter(characterId)
@@ -1195,20 +1209,25 @@ export function fakeApi(
         const member = ownerId ? membersOf(character.campaignId).members.find((m) => m.userId === ownerId) : null
         character.owner = member ? { id: member.userId, name: member.name } : null
       }
-      if (confirm === 'created') character.status = 'ready'
+      const state = stateOf(character)
+      if (build !== undefined) character.summary = state.summary
+      if (confirm === 'created') {
+        if (!state.complete) throw new ApiError('INCOMPLETE', 400)
+        character.status = 'ready'
+      }
       touch(character)
       if (confirm) {
-        const { name: now, status, build: chosen, play: state, summary } = structuredClone(character)
+        const { name: now, status, build: chosen, play: playing, summary } = structuredClone(character)
         characterVersions.unshift({
           id: crypto.randomUUID(),
           characterId,
           kind: confirm,
-          level: character.summary.level ?? 1,
-          snapshot: { name: now, status, build: chosen, play: state, summary },
+          level: state.level,
+          snapshot: { name: now, status, build: chosen, play: playing, summary },
           createdAt: new Date().toISOString()
         })
       }
-      return { character: structuredClone(character) }
+      return { character: structuredClone(character), state }
     },
     deleteCharacter: ({ characterId }) => {
       visibleCharacter(characterId)
@@ -1240,7 +1259,7 @@ export function fakeApi(
       if (character.version !== version) throw new ApiError('CHARACTER_CHANGED', 400)
       Object.assign(character, structuredClone(chosen.snapshot))
       touch(character)
-      return { character: structuredClone(character) }
+      return { character: structuredClone(character), state: stateOf(character) }
     },
     // El compendio de una campaña: el contenido de su sistema (en la falsa, solo el de los de la cuenta)
     getCampaignCompendium: ({ campaignId }) => {

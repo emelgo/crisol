@@ -27,6 +27,102 @@ export const character = characterCard.extend({
   play: z.record(z.string(), z.unknown()).describe('Lo de la partida: PG gastados, recursos usados, notas')
 })
 
+/** Una opción de un paso o de una decisión: si vale y, si no, por qué */
+const buildOption = z.object({
+  value: z.string(),
+  label: z.string(),
+  available: z.boolean(),
+  reason: z.string().optional()
+})
+const stepBase = {
+  key: z.string(),
+  label: z.string(),
+  help: z.string().nullable(),
+  creation: z.boolean().describe('Solo al crearlo'),
+  pending: z.int().describe('Cuántas cosas le faltan (lo marcado con (!))')
+}
+
+/** Un paso del creador con lo suyo: lo elegido y lo que se puede elegir, los métodos de las puntuaciones o los campos */
+export const characterStep = z.discriminatedUnion('kind', [
+  z.object({
+    ...stepBase,
+    kind: z.literal('content'),
+    type: z.string(),
+    min: z.int(),
+    max: z.int(),
+    levels: z.boolean().describe('Cada uno lleva su nivel (las clases)'),
+    picks: z.array(
+      z.object({ id: z.string(), key: z.string(), level: z.int().nullable(), name: z.string(), missing: z.boolean() })
+    ),
+    options: z.array(buildOption)
+  }),
+  z.object({
+    ...stepBase,
+    kind: z.literal('scores'),
+    set: z.string(),
+    field: z.string(),
+    elements: z.array(z.object({ key: z.string(), label: z.string() })),
+    methods: z.array(
+      z.object({
+        key: z.string(),
+        label: z.string(),
+        kind: z.enum(['array', 'pointbuy', 'roll', 'manual']),
+        values: z.array(z.int()).optional(),
+        budget: z.int().optional(),
+        costs: z.record(z.string(), z.int()).optional(),
+        formula: z.string().optional(),
+        min: z.int().optional(),
+        max: z.int().optional()
+      })
+    )
+  }),
+  z.object({
+    ...stepBase,
+    kind: z.literal('fields'),
+    fields: z.array(
+      z.object({
+        key: z.string(),
+        label: z.string(),
+        kind: z.string(),
+        options: z.array(z.object({ value: z.string(), label: z.string() })).optional()
+      })
+    )
+  }),
+  z.object({ ...stepBase, kind: z.literal('summary') })
+])
+
+/** Algo que decidir de lo concedido: cuántos, de qué opciones, lo elegido y si falta */
+export const characterDecision = z.object({
+  id: z.string(),
+  step: z.string(),
+  label: z.string(),
+  from: z.object({ id: z.string(), name: z.string() }),
+  level: z.int().nullable(),
+  count: z.int(),
+  repeat: z.boolean(),
+  options: z.array(buildOption),
+  chosen: z.array(z.string()),
+  pending: z.boolean()
+})
+
+/** El personaje montado de sus elecciones: sus pasos, lo que hay que decidir, su resumen y su hoja calculada */
+export const characterState = z.object({
+  steps: z.array(characterStep),
+  decisions: z.array(characterDecision),
+  level: z.int(),
+  complete: z.boolean().describe('Tiene lo que su sistema pide para terminar de crearlo'),
+  missing: z.array(z.string()).describe('Lo elegido que ya no está en el contenido de la campaña'),
+  summary: z.object({
+    line: z.string(),
+    level: z.int(),
+    stats: z.array(z.object({ key: z.string(), label: z.string(), value: z.string() }))
+  }),
+  sheet: z.record(z.string(), z.unknown()).describe('Su hoja calculada'),
+  items: z.array(z.object({ id: z.string(), type: z.string(), name: z.string(), from: z.string().nullable() }))
+})
+
+export type CharacterState = z.infer<typeof characterState>
+
 export type CharacterCard = z.infer<typeof characterCard>
 export type Character = z.infer<typeof character>
 
@@ -48,9 +144,10 @@ export const listCharacters = defineAction({
 export const getCharacter = defineAction({
   name: 'getCharacter',
   kind: 'read',
-  description: 'Un personaje entero: sus elecciones y lo de la partida. Lo ve su dueño y el máster de su campaña',
+  description:
+    'Un personaje entero: sus elecciones, lo de la partida y su estado (sus pasos con lo que se puede elegir, lo que falta por decidir con sus opciones, su resumen y su hoja calculada). Lo ve su dueño y el máster de su campaña',
   input: z.object({ characterId: z.uuid() }),
-  output: z.object({ character })
+  output: z.object({ character, state: characterState })
 })
 
 export const createCharacter = defineAction({
@@ -63,7 +160,7 @@ export const createCharacter = defineAction({
     name: name.optional().describe('Sin nombre, «Sin nombre»'),
     ownerId: z.string().min(1).max(100).optional().describe('Solo el máster: el miembro que lo juega')
   }),
-  output: z.object({ character })
+  output: z.object({ character, state: characterState })
 })
 
 export const updateCharacter = defineAction({
@@ -83,7 +180,7 @@ export const updateCharacter = defineAction({
       .optional()
       .describe('created: termina de crearlo; level: confirma su nivel. Los dos dejan una versión suya')
   }),
-  output: z.object({ character })
+  output: z.object({ character, state: characterState })
 })
 
 export const deleteCharacter = defineAction({
@@ -118,5 +215,5 @@ export const restoreCharacterVersion = defineAction({
   description:
     'Vuelve un personaje a como era en una de sus versiones (con la versión del personaje que se leyó). Se deshace desde el historial',
   input: z.object({ characterId: z.uuid(), versionId: z.uuid(), version: z.int().min(1) }),
-  output: z.object({ character })
+  output: z.object({ character, state: characterState })
 })

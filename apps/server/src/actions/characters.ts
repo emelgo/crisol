@@ -13,11 +13,22 @@ import {
   restoreCharacterVersion,
   updateCharacter
 } from '@crisol/contracts'
-import { charactersRepo, membersRepo } from '@crisol/db'
+import { campaignsRepo, charactersRepo, membersRepo, systemsRepo } from '@crisol/db'
 import { authorize, can, NotFoundError } from '@crisol/domain'
+import {
+  type Build,
+  type Choices,
+  type ContentItem,
+  catalogSystem,
+  characterView,
+  normalizeChoices,
+  type System
+} from '@crisol/systems'
+import { catalogContent } from '@crisol/systems/catalog/content'
 import { authorizedCampaign } from './access.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
 import { implement } from './registry.ts'
+import { contentOf } from './systems.ts'
 
 /** Sin nombre al crearlo */
 export const UNNAMED = 'Sin nombre'
@@ -70,6 +81,27 @@ async function updated<T>(write: () => Promise<T>) {
   }
 }
 
+/** El sistema de un personaje (de serie o de la cuenta) y todo su contenido */
+async function systemOf(ctx: ActionContext, systemId: string): Promise<{ document: System; content: ContentItem[] }> {
+  const catalog = catalogSystem(systemId)
+  if (catalog) return { document: catalog, content: [...catalogContent(catalog.id)] }
+  const row = await systemsRepo.findSystem(ctx.db, systemId)
+  if (!row) throw new NotFoundError('system')
+  return {
+    document: row.document as unknown as System,
+    content: (await systemsRepo.listContent(ctx.db, row.id)).map(contentOf)
+  }
+}
+
+/** Monta un personaje de sus elecciones, con lo que eligió su campaña de su sistema */
+async function stateOf(ctx: ActionContext, campaignId: string, systemId: string, build: Record<string, unknown>) {
+  const campaign = await campaignsRepo.findCampaign(ctx.db, campaignId)
+  if (!campaign) throw new NotFoundError('campaign')
+  const { document, content } = await systemOf(ctx, systemId)
+  const { choices } = normalizeChoices(document, (campaign.systemChoices ?? {}) as Partial<Choices>)
+  return characterView(document, content, choices, build as Build)
+}
+
 export const characterActions = [
   implement(listCharacters, async (ctx, { campaignId }) => {
     const campaign = await authorizedCampaign(ctx, 'campaign.read', campaignId)
@@ -80,7 +112,8 @@ export const characterActions = [
 
   implement(getCharacter, async (ctx, { characterId }) => {
     const { row } = await readable(ctx, characterId)
-    return { character: characterOf(row) }
+    const { view } = await stateOf(ctx, row.campaignId, row.system, row.build)
+    return { character: characterOf(row), state: view }
   }),
 
   implement(createCharacter, async (ctx, { campaignId, name, ownerId }) => {
@@ -103,7 +136,8 @@ export const characterActions = [
     )
     const row = await charactersRepo.findCharacter(ctx.db, created.id)
     if (!row) throw new NotFoundError('character')
-    return { character: characterOf(row) }
+    const { view } = await stateOf(ctx, row.campaignId, row.system, row.build)
+    return { character: characterOf(row), state: view }
   }),
 
   implement(updateCharacter, async (ctx, { characterId, version, ownerId, confirm, ...given }) => {
@@ -114,8 +148,14 @@ export const characterActions = [
       if (ownerId) await assertMember(ctx, row.campaignId, ownerId)
       patch.ownerId = ownerId
     }
-    if (confirm === 'created') patch.status = 'ready'
-    const level = row.summary.level ?? 1
+    // Montado con lo nuevo: su resumen se guarda; terminarlo pide lo que su sistema pide
+    const { view } = await stateOf(ctx, row.campaignId, row.system, given.build ?? row.build)
+    if (given.build) patch.summary = view.summary
+    if (confirm === 'created') {
+      if (!view.complete) throw new InvalidRequestError('INCOMPLETE', 'aún le falta algo de lo que pide su sistema')
+      patch.status = 'ready'
+    }
+    const level = view.level
     const details: Record<string, unknown> = { name: given.name ?? row.name }
     if (given.name && given.name !== row.name) details.from = row.name
     if (patch.ownerId !== undefined) details.owner = true
@@ -132,7 +172,7 @@ export const characterActions = [
     )
     const fresh = await charactersRepo.findCharacter(ctx.db, saved.id)
     if (!fresh) throw new NotFoundError('character')
-    return { character: characterOf(fresh) }
+    return { character: characterOf(fresh), state: view }
   }),
 
   implement(deleteCharacter, async (ctx, { characterId }) => {
@@ -177,6 +217,7 @@ export const characterActions = [
     )
     const fresh = await charactersRepo.findCharacter(ctx.db, characterId)
     if (!fresh) throw new NotFoundError('character')
-    return { character: characterOf(fresh) }
+    const { view } = await stateOf(ctx, fresh.campaignId, fresh.system, fresh.build)
+    return { character: characterOf(fresh), state: view }
   })
 ]

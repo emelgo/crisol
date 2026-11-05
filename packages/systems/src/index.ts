@@ -1,4 +1,5 @@
 export * from './actions.ts'
+export * from './builder.ts'
 export * from './catalog/index.ts'
 export * from './changes.ts'
 export * from './choices.ts'

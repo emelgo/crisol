@@ -9,6 +9,16 @@ import { createTestAuth, signUpTestUser, TEST_SEAL_KEY } from '../testing.ts'
 const BASE_URL = 'http://localhost:5173'
 const ok = async () => undefined
 
+/** Un enano guerrero acólito, con sus características: lo que el 5e pide para terminarlo */
+const complete = (klass = 'guerrero_2024', level = 1) => ({
+  scores: { method: 'matriz', base: { fue: 15, des: 14, con: 13, int: 12, sab: 10, car: 8 } },
+  picks: [
+    { id: 'c1', step: 'clase', key: klass, level },
+    { id: 'e1', step: 'especie', key: 'enano_2024' },
+    { id: 't1', step: 'trasfondo', key: 'acolito_2024' }
+  ]
+})
+
 describe('los personajes de una campaña', () => {
   let conn: ReturnType<typeof connect>
   let auth: Auth
@@ -124,12 +134,22 @@ describe('los personajes de una campaña', () => {
 
   it('se cambia con la versión que se leyó; al terminarlo y al confirmar un nivel deja versiones, y se restaura', async () => {
     const created = (await ok200('createCharacter', { campaignId, name: 'Thora' }, ana.cookie)).character
-    const step = await ok200(
-      'updateCharacter',
-      { characterId: created.id, version: 1, build: { clase: 'guerrero' } },
-      ana.cookie
-    )
-    expect(step.character).toMatchObject({ version: 2, build: { clase: 'guerrero' } })
+    // Sin lo que pide su sistema, no se termina
+    expect(
+      (await fails('updateCharacter', { characterId: created.id, version: 1, confirm: 'created' }, ana.cookie)).code
+    ).toBe('INCOMPLETE')
+    const step = await ok200('updateCharacter', { characterId: created.id, version: 1, build: complete() }, ana.cookie)
+    expect(step.character).toMatchObject({ version: 2, summary: { line: 'Enano · Guerrero 1', level: 1 } })
+    expect(step.state).toMatchObject({ level: 1, complete: true })
+    expect(step.state.steps.map((st: { key: string }) => st.key)).toEqual([
+      'clase',
+      'especie',
+      'trasfondo',
+      'caracteristicas',
+      'detalles',
+      'resumen'
+    ])
+    expect(step.state.decisions.map((d: { label: string }) => d.label)).toContain('Habilidades')
     expect(
       (await fails('updateCharacter', { characterId: created.id, version: 1, name: 'Otra' }, ana.cookie)).code
     ).toBe('CHARACTER_CHANGED')
@@ -137,20 +157,27 @@ describe('los personajes de una campaña', () => {
     expect(done.character.status).toBe('ready')
     const later = await ok200(
       'updateCharacter',
-      { characterId: created.id, version: 3, name: 'Thora Piedrahonda', build: { clase: 'mago' }, confirm: 'level' },
+      {
+        characterId: created.id,
+        version: 3,
+        name: 'Thora Piedrahonda',
+        build: complete('guerrero_2024', 2),
+        confirm: 'level'
+      },
       ana.cookie
     )
     const { versions } = await ok200('listCharacterVersions', { characterId: created.id }, ana.cookie)
-    expect(versions.map((v: { kind: string; name: string }) => [v.kind, v.name])).toEqual([
-      ['level', 'Thora Piedrahonda'],
-      ['created', 'Thora']
+    expect(versions.map((v: { kind: string; name: string; level: number }) => [v.kind, v.name, v.level])).toEqual([
+      ['level', 'Thora Piedrahonda', 2],
+      ['created', 'Thora', 1]
     ])
     const back = await ok200(
       'restoreCharacterVersion',
       { characterId: created.id, versionId: versions[1].id, version: later.character.version },
       ana.cookie
     )
-    expect(back.character).toMatchObject({ name: 'Thora', status: 'ready', build: { clase: 'guerrero' } })
+    expect(back.character).toMatchObject({ name: 'Thora', status: 'ready', summary: { level: 1 } })
+    expect(back.state.level).toBe(1)
     // Restaurar es un cambio más: el máster lo deshace desde el historial
     const history = await ok200('listHistory', {})
     const restored = history.entries.find((e: { action: string }) => e.action === 'restoreCharacterVersion')
@@ -161,7 +188,11 @@ describe('los personajes de una campaña', () => {
 
   it('borrar uno se lleva sus versiones, y deshacerlo lo devuelve entero', async () => {
     const created = (await ok200('createCharacter', { campaignId, name: 'Thora' }, ana.cookie)).character
-    await ok200('updateCharacter', { characterId: created.id, version: 1, confirm: 'created' }, ana.cookie)
+    await ok200(
+      'updateCharacter',
+      { characterId: created.id, version: 1, build: complete(), confirm: 'created' },
+      ana.cookie
+    )
     await ok200('deleteCharacter', { characterId: created.id }, ana.cookie)
     expect((await fails('getCharacter', { characterId: created.id }, ana.cookie)).status).toBe(404)
     const history = await ok200('listHistory', {})

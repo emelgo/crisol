@@ -82,9 +82,11 @@ export interface Built {
 type Step = NonNullable<System['creation']>[number]
 type Grant = NonNullable<Mechanics['grants']>[number]
 
-const nameOf = (item: ContentItem) => {
+const nameOf = (item: ContentItem, language: 'es' | 'en' = 'es') => {
   const name = item.data.name
-  return typeof name === 'string' ? name : ((name as { es?: string; en?: string })?.es ?? item.key)
+  if (typeof name === 'string') return name
+  const names = (name ?? {}) as { es?: string; en?: string }
+  return names[language] ?? names.es ?? names.en ?? item.key
 }
 const labelOf = (item: ContentItem): Text => (item.data.name as Text | undefined) ?? item.key
 
@@ -172,7 +174,7 @@ function viewOf(
 export function buildCharacter(
   system: System,
   content: readonly ContentItem[],
-  choices: Pick<Choices, 'sources' | 'duplicates'> & { settings?: Record<string, unknown> },
+  choices: Pick<Choices, 'sources' | 'duplicates'> & { settings?: Record<string, unknown>; language?: 'es' | 'en' },
   build: Build
 ): Built {
   const type = characterType(system)
@@ -208,7 +210,7 @@ export function buildCharacter(
   const carry = (item: ContentItem, id: string, extra: Record<string, unknown> = {}, from?: string): DocumentItem => ({
     id,
     type: item.type,
-    name: nameOf(item),
+    name: nameOf(item, choices.language),
     data: { ...structuredClone(item.data), ...extra },
     ...(item.mechanics ? { mechanics: structuredClone(item.mechanics) as Mechanics } : {}),
     ...(from ? { from } : {})
@@ -443,3 +445,121 @@ export function summarize(
   })
   return { line: parts.join(' · '), level: built.level, stats }
 }
+
+/** Un texto en un idioma */
+const sayIn = (language: 'es' | 'en') => (text: Text | undefined) =>
+  text === undefined ? '' : typeof text === 'string' ? text : (text[language] ?? Object.values(text)[0] ?? '')
+
+/**
+ * El estado de un personaje para el creador y la IA, en el idioma de su campaña: cada paso con lo suyo (las opciones de
+ * los de contenido, los métodos de las puntuaciones, los campos), lo que hay que decidir, su resumen y su hoja calculada
+ */
+export function characterView(
+  system: System,
+  content: readonly ContentItem[],
+  choices: Pick<Choices, 'sources' | 'duplicates' | 'language'> & { settings?: Record<string, unknown> },
+  build: Build
+) {
+  const language = choices.language
+  const say = sayIn(language)
+  const built = buildCharacter(system, content, choices, build)
+  let values: Record<string, Value> = {}
+  try {
+    values = evaluate(system, built.type, built.document, { settings: choices.settings ?? {}, language }).values
+  } catch {
+    values = {}
+  }
+  const { byKey } = viewOf(system, content, choices)
+  const fields = system.types[built.type]?.fields ?? {}
+  const option = (o: BuildOption) => ({
+    value: o.value,
+    label: say(o.label),
+    available: o.available,
+    ...(o.reason ? { reason: say(o.reason) } : {})
+  })
+  const steps = (system.creation ?? []).map((step, i) => {
+    const base = {
+      key: step.key,
+      label: say(step.label),
+      help: step.help ? say(step.help) : null,
+      creation: step.creation === true,
+      pending: built.steps[i]?.pending ?? 0
+    }
+    switch (step.kind) {
+      case 'content':
+        return {
+          ...base,
+          kind: 'content' as const,
+          type: step.type,
+          min: step.min ?? 1,
+          max: step.max ?? step.min ?? 1,
+          levels: step.levels === true,
+          picks: (build.picks ?? [])
+            .filter((p) => p.step === step.key)
+            .map((p) => {
+              const item = byKey.get(p.key)
+              return {
+                id: p.id,
+                key: p.key,
+                level: p.level ?? null,
+                name: item ? say(labelOf(item)) : p.key,
+                missing: !item
+              }
+            }),
+          options: stepOptions(system, content, choices, build, step.key, values).map(option)
+        }
+      case 'scores': {
+        const set = fields[step.set]
+        return {
+          ...base,
+          kind: 'scores' as const,
+          set: step.set,
+          field: step.field,
+          elements: set?.kind === 'set' ? set.elements.map((e) => ({ key: e.key, label: say(e.label) })) : [],
+          methods: step.methods.map((m) => ({ ...m, label: say(m.label) }))
+        }
+      }
+      case 'fields':
+        return {
+          ...base,
+          kind: 'fields' as const,
+          fields: step.fields.flatMap((key) => {
+            const f = fields[key]
+            if (!f) return []
+            return [
+              {
+                key,
+                label: say(f.label),
+                kind: f.kind,
+                ...((f.kind === 'choice' || f.kind === 'list') && f.options
+                  ? { options: f.options.map((o) => ({ value: o.value, label: say(o.label) })) }
+                  : {})
+              }
+            ]
+          })
+        }
+      default:
+        return { ...base, kind: 'summary' as const }
+    }
+  })
+  return {
+    built,
+    view: {
+      steps,
+      decisions: built.decisions.map((d) => ({ ...d, label: say(d.label), options: d.options.map(option) })),
+      level: built.level,
+      complete: built.complete,
+      missing: built.missing,
+      summary: summarize(system, content, choices, build, built, values, language),
+      sheet: values,
+      items: (built.document.items ?? []).map((item) => ({
+        id: item.id,
+        type: item.type,
+        name: item.name,
+        from: item.from ?? null
+      }))
+    }
+  }
+}
+
+export type CharacterView = ReturnType<typeof characterView>['view']
