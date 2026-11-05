@@ -7,15 +7,16 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
-### Para retomar (2026-11-05, módulo 3: `personajes` hecho; ahora `hoja`)
+### Para retomar (2026-11-05, módulo 3: `hoja` hecha; ahora el pulido y la CI)
 
-- **`personajes`, en `main` y en staging (PR #100)**. Lo que probar, en `tasks/probar.md` § personajes. **Ahora:
-  `hoja`** (rama `modulo-3/hoja`): spec `docs/specs/hoja.md`, tareas H1–H6 en `tasks/todo.md`. Hechas H1–H5: lo de
-  la partida (`packages/systems/src/play.ts`), los bloques de la hoja en el formato (`sheet.ts`; la del 5e), tirar
-  por un personaje (`rollForCharacter`), la ficha por bloques (`apps/web/src/characters/play-sheet.tsx`; e2e
-  `ficha.spec.ts`) y la IA (`playCharacter`, `tirar_por_personaje`, `partida_personaje`). **Lo siguiente**: H6, el
-  cierre (batería, revisión, PR y staging); después, el pulido del módulo 3 y la CI una vez; `foundry` espera al
-  abogado.
+- **`hoja`, en `main` y en staging (PR #102)**: lo de la partida (`packages/systems/src/play.ts`: solo lo marcado con
+  `play` y los recursos, validado), la hoja por bloques en el formato (`sheet.ts`; la del 5e con inspiración,
+  cansancio, salvaciones contra muerte y estados), tirar por un personaje (`rollForCharacter`, con ventaja y quién la
+  ve), daño, usos y descansos en el servidor (`playCharacter`; el corto llena la magia de pacto), la ficha
+  (`apps/web/src/characters/play-sheet.tsx`; los cambios parten de lo último guardado, así los clics seguidos se
+  suman) y la IA (`tirar_por_personaje`, `partida_personaje`). Qué probar: `tasks/probar.md` § la hoja en partida.
+  **Lo siguiente**: el pulido del módulo 3 (lo de los dados para otros juegos), después la CI una vez y avisar a
+  Enrique; `foundry` espera al abogado.
 - **`personajes`** (lo que fue la rama `modulo-3/personajes`). Hechos la entrevista, el estudio
   (`research/foundry/avances-y-tablas.md`), la spec aprobada (`docs/specs/personajes.md`) y su ADR-0013. **Prototipos
   publicados** en el lienzo «Crisol: personajes» de claude.ai (https://claude.ai/artifact/Hx1Hmo1feqo5iAu7MdQEpp;
