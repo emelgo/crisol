@@ -301,7 +301,7 @@ export const es = {
     restore: 'Restaurar',
     restoreTitle: 'Restaurar «{{version}}»',
     restoreText: '{{name}} vuelve a como era entonces: {{line}}.',
-    undoable: 'Se puede deshacer desde el historial.'
+    undoable: 'El máster puede deshacerlo desde el historial.'
   },
   // El compendio de una campaña: el contenido de su sistema
   compendium: {

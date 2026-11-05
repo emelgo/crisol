@@ -14,7 +14,7 @@ const scores = { fue: 15, des: 14, con: 13, int: 12, sab: 10, car: 8 }
 const build = (b: Build) => buildCharacter(fiveE, content, campaign, b)
 
 /** Un valor de la hoja calculada, por su ruta («habilidades.atletismo.grado») */
-const at = (values: unknown, path: string): unknown =>
+const valueAt = (values: unknown, path: string): unknown =>
   path
     .split('.')
     .reduce<unknown>((v, k) => (v && typeof v === 'object' ? (v as Record<string, unknown>)[k] : undefined), values)
@@ -67,13 +67,13 @@ describe('el creador: montar un personaje de sus elecciones', () => {
     expect(built.complete).toBe(true)
     expect(built.steps.every((s) => s.pending === 0)).toBe(true)
     const sheet = evaluate(fiveE, built.type, built.document).values
-    expect(at(sheet, 'habilidades.atletismo.grado')).toBe(1)
-    expect(at(sheet, 'habilidades.perspicacia.grado')).toBe(1) // del acólito
+    expect(valueAt(sheet, 'habilidades.atletismo.grado')).toBe(1)
+    expect(valueAt(sheet, 'habilidades.perspicacia.grado')).toBe(1) // del acólito
     // Enano de las colinas: +2 Con (enano) y +1 Sab (colinas); su PG por nivel
-    expect(at(sheet, 'caracteristicas.con.puntuacion')).toBe(15)
-    expect(at(sheet, 'caracteristicas.sab.puntuacion')).toBe(11)
-    expect(at(sheet, 'pg_max')).toBe(10 + 2 + 1)
-    expect(at(sheet, 'velocidad')).toBe(25)
+    expect(valueAt(sheet, 'caracteristicas.con.puntuacion')).toBe(15)
+    expect(valueAt(sheet, 'caracteristicas.sab.puntuacion')).toBe(11)
+    expect(valueAt(sheet, 'pg_max')).toBe(10 + 2 + 1)
+    expect(valueAt(sheet, 'velocidad')).toBe(25)
   })
 
   it('lo de un nivel más alto entra al subir: la subclase a nivel 3; a nivel 5, igual que el de referencia', () => {
@@ -93,7 +93,7 @@ describe('el creador: montar un personaje de sus elecciones', () => {
       referenceCharacter(content, { klass: 'guerrero', edition: '2014', level: 5, scores })
     ).values
     for (const key of ['nivel', 'competencia', 'pg_max', 'ca', 'ataques', 'critico_desde'])
-      expect([key, at(mine, key)]).toEqual([key, at(reference, key)])
+      expect([key, valueAt(mine, key)]).toEqual([key, valueAt(reference, key)])
   })
 
   it('una elección que ya no vale se quita; lo que ya no está en el contenido de la campaña sale como pendiente', () => {
@@ -206,7 +206,7 @@ describe('el creador: montar un personaje de sus elecciones', () => {
     const asi = built.decisions.find((d) => d.id === 'c1>barbaro_mejora_de_caracteristica@4>mejora')
     expect(asi).toMatchObject({ count: 2, repeat: true, most: 2, chosen: ['fue', 'fue'], pending: false })
     const sheet = evaluate(fiveE, 'personaje', built.document).values
-    expect(at(sheet, 'caracteristicas.fue.puntuacion')).toBe(17)
+    expect(valueAt(sheet, 'caracteristicas.fue.puntuacion')).toBe(17)
   })
 
   it('los aumentos de un trasfondo de 2024: de sus tres características, +2 y +1 o +1 a las tres', () => {
@@ -220,7 +220,28 @@ describe('el creador: montar un personaje de sus elecciones', () => {
     expect(increases?.options.map((o) => o.value)).toEqual(['int', 'sab', 'car'])
     expect(increases).toMatchObject({ count: 3, most: 2, pending: false })
     const sheet = evaluate(fiveE, 'personaje', built.document).values
-    expect([at(sheet, 'caracteristicas.int.puntuacion'), at(sheet, 'caracteristicas.sab.puntuacion')]).toEqual([14, 11])
+    expect([
+      valueAt(sheet, 'caracteristicas.int.puntuacion'),
+      valueAt(sheet, 'caracteristicas.sab.puntuacion')
+    ]).toEqual([14, 11])
+  })
+
+  it('lo elegido que sobra (al bajar de nivel) o no vale no entra en la hoja, aunque siga en sus elecciones', () => {
+    const level4 = build({ picks: [{ id: 'c1', step: 'clase', key: 'guerrero_2024', level: 4 }] })
+    const masteries = level4.decisions.find((d) => d.id.endsWith('>maestrias'))
+    const weapons = masteries?.options.map((o) => o.value) ?? []
+    const at = (level: number, chosen: string[]) =>
+      build({
+        picks: [{ id: 'c1', step: 'clase', key: 'guerrero_2024', level }],
+        decisions: { [masteries?.id ?? '']: chosen }
+      })
+    const carried = (b: ReturnType<typeof build>) =>
+      (b.document.items ?? []).filter((i) => i.id.includes('>maestrias=')).length
+    expect(carried(at(4, weapons.slice(0, 4)))).toBe(4)
+    expect(carried(at(3, weapons.slice(0, 4)))).toBe(3)
+    expect(carried(at(1, weapons.slice(0, 12)))).toBe(3)
+    // Una clave de otro tipo no vale aunque exista
+    expect(carried(at(1, ['bola_de_fuego_2024']))).toBe(0)
   })
 
   it('a nivel 20, lo pendiente se calcula en menos de 20 ms', () => {

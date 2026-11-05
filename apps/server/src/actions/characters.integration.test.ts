@@ -246,6 +246,85 @@ describe('los personajes de una campaña', () => {
     ).toBe('BAD_CHOICE')
   })
 
+  it('el servidor hace cumplir las reglas: lo que no existe, de otro tipo, repetido, por encima de 20 o sin lo que pide, no', async () => {
+    const created = (await ok200('createCharacter', { campaignId, name: 'Thora' }, ana.cookie)).character
+    const base = complete('guerrero_2024', 4)
+    const saved = await ok200('updateCharacter', { characterId: created.id, version: 1, build: base }, ana.cookie)
+    const bad = async (build: unknown) =>
+      (await fails('updateCharacter', { characterId: created.id, version: saved.character.version, build }, ana.cookie))
+        .code
+    expect(
+      await bad({ ...base, picks: [...base.picks, { id: 'x', step: 'clase', key: 'no_existe_2024', level: 1 }] })
+    ).toBe('BAD_CHOICE')
+    expect(await bad({ ...base, picks: [...base.picks, { id: 'x', step: 'clase', key: 'bola_de_fuego_2024' }] })).toBe(
+      'BAD_CHOICE'
+    )
+    expect(
+      await bad({ ...base, picks: [...base.picks, { id: 'x', step: 'clase', key: 'guerrero_2024', level: 1 }] })
+    ).toBe('BAD_CHOICE')
+    expect(await bad({ ...base, picks: base.picks.map((p) => (p.id === 'c1' ? { ...p, level: 25 } : p)) })).toBe(
+      'BAD_CHOICE'
+    )
+    expect(await bad({ ...base, values: { pg_max: 999 } })).toBe('BAD_CHOICE')
+    expect(await bad({ ...base, decisions: { 'c1>habilidades': ['volar', 'nadar'] } })).toBe('BAD_CHOICE')
+    expect(await bad({ ...base, decisions: { 'c1>habilidades': ['atletismo', 'atletismo'] } })).toBe('BAD_CHOICE')
+    expect(await bad({ cualquier: 'cosa' })).toBe('BAD_CHOICE')
+    // La multiclase: Inteligencia 12 no llega para el mago (con la elección por partes, igual)
+    expect(await bad({ ...base, picks: [...base.picks, { id: 'm', step: 'clase', key: 'mago_2024', level: 1 }] })).toBe(
+      'BAD_CHOICE'
+    )
+    expect(
+      (
+        await fails(
+          'chooseForCharacter',
+          { characterId: created.id, version: saved.character.version, add: [{ step: 'clase', key: 'mago_2024' }] },
+          ana.cookie
+        )
+      ).code
+    ).toBe('BAD_CHOICE')
+    // Con Inteligencia 13, sí
+    const smarter = { ...base, scores: { method: 'mano', base: { ...base.scores.base, int: 13 } } }
+    const ready = await ok200(
+      'updateCharacter',
+      { characterId: created.id, version: saved.character.version, build: smarter },
+      ana.cookie
+    )
+    const multi = await ok200(
+      'chooseForCharacter',
+      { characterId: created.id, version: ready.character.version, add: [{ step: 'clase', key: 'mago_2024' }] },
+      ana.cookie
+    )
+    expect(multi.character.summary.line).toBe('Enano · Guerrero 4 · Mago 1')
+  })
+
+  it('otro jugador no elige ni restaura en un personaje que no es suyo', async () => {
+    const created = (await ok200('createCharacter', { campaignId, name: 'Thora' }, ana.cookie)).character
+    const done = await ok200(
+      'updateCharacter',
+      { characterId: created.id, version: 1, build: complete(), confirm: 'created' },
+      ana.cookie
+    )
+    const { versions } = await ok200('listCharacterVersions', { characterId: created.id }, ana.cookie)
+    expect(
+      (
+        await fails(
+          'chooseForCharacter',
+          { characterId: created.id, version: done.character.version, values: { notas: 'mío' } },
+          bruno.cookie
+        )
+      ).status
+    ).toBe(404)
+    expect(
+      (
+        await fails(
+          'restoreCharacterVersion',
+          { characterId: created.id, versionId: versions[0].id, version: done.character.version },
+          bruno.cookie
+        )
+      ).status
+    ).toBe(404)
+  })
+
   it('una campaña sin sistema no tiene personajes', async () => {
     const world = (await ok200('listWorlds', {})).worlds[0]
     const none = await ok200('createCampaign', { worldId: world.id, name: 'Sin reglas' })

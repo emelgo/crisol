@@ -11,6 +11,8 @@ describe('las tablas aleatorias', () => {
     expect(tableProblems(null, [row(1, 1)])).toEqual([])
     expect(boundsOf('2d6')).toEqual({ min: 2, max: 12 })
     expect(boundsOf('d%')).toEqual({ min: 1, max: 100 })
+    expect(boundsOf('10-1d6')).toEqual({ min: 4, max: 9 })
+    expect(tableProblems('10-1d6', [row(4, 9)])).toEqual([])
     expect(boundsOf('esto no')).toBeNull()
   })
 

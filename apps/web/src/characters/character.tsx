@@ -31,7 +31,9 @@ export function CharacterScreen() {
   const loaded = useQuery({
     queryKey: characterKey(characterId),
     queryFn: () => api.call('getCharacter', { characterId }),
-    enabled: Boolean(account)
+    enabled: Boolean(account),
+    // Lo que se elige se guarda en orden y su respuesta trae el estado: volver a la pestaña no lo recarga
+    refetchOnWindowFocus: false
   })
   const { save, busy, error } = useCharacterSave(characterId, campaignId)
   const [tab, setTab] = useState<'sheet' | 'creator' | null>(null)

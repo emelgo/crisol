@@ -2,10 +2,11 @@
  * Las tablas aleatorias del máster: la de una pestaña, cambiarla con su versión, y lo sacado por campaña (las que
  * van sin reemplazo)
  */
-import { and, eq, sql } from 'drizzle-orm'
+import { and, eq, isNull, sql } from 'drizzle-orm'
 import type { Database } from '../client.ts'
 import { type OperationContext, operation } from '../operation.ts'
 import { pageTabs } from '../schema/maps.ts'
+import { pages } from '../schema/pages.ts'
 import { randomTableDraws, randomTables, type TableRow } from '../schema/tables.ts'
 
 export class TableChangedError extends Error {
@@ -31,7 +32,9 @@ export async function tableOfTab(db: Database, tabId: string) {
     })
     .from(randomTables)
     .innerJoin(pageTabs, eq(pageTabs.id, randomTables.tabId))
-    .where(eq(randomTables.tabId, tabId))
+    // La de una página en la papelera, no: ni se tira ni se anida
+    .innerJoin(pages, eq(pages.id, pageTabs.pageId))
+    .where(and(eq(randomTables.tabId, tabId), isNull(pages.deletedAt)))
   return found ?? null
 }
 

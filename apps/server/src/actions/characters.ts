@@ -26,6 +26,7 @@ import {
   type ContentItem,
   catalogSystem,
   characterView,
+  checkBuild,
   normalizeChoices,
   type System
 } from '@crisol/systems'
@@ -87,9 +88,13 @@ async function updated<T>(write: () => Promise<T>) {
 }
 
 /** El sistema de un personaje (de serie o de la cuenta) y todo su contenido */
-async function systemOf(ctx: ActionContext, systemId: string): Promise<{ document: System; content: ContentItem[] }> {
+async function systemOf(
+  ctx: ActionContext,
+  systemId: string
+): Promise<{ document: System; content: readonly ContentItem[] }> {
   const catalog = catalogSystem(systemId)
-  if (catalog) return { document: catalog, content: [...catalogContent(catalog.id)] }
+  // El de serie, tal cual (siempre el mismo): así el motor lo tiene ya preparado
+  if (catalog) return { document: catalog, content: catalogContent(catalog.id) }
   const row = await systemsRepo.findSystem(ctx.db, systemId)
   if (!row) throw new NotFoundError('system')
   return {
@@ -99,12 +104,26 @@ async function systemOf(ctx: ActionContext, systemId: string): Promise<{ documen
 }
 
 /** Monta un personaje de sus elecciones, con lo que eligió su campaña de su sistema */
-async function stateOf(ctx: ActionContext, campaignId: string, systemId: string, build: Record<string, unknown>) {
+async function contextOf(ctx: ActionContext, campaignId: string, systemId: string) {
   const campaign = await campaignsRepo.findCampaign(ctx.db, campaignId)
   if (!campaign) throw new NotFoundError('campaign')
   const { document, content } = await systemOf(ctx, systemId)
   const { choices } = normalizeChoices(document, (campaign.systemChoices ?? {}) as Partial<Choices>)
+  return { document, content, choices }
+}
+
+async function stateOf(ctx: ActionContext, campaignId: string, systemId: string, build: Record<string, unknown>) {
+  const { document, content, choices } = await contextOf(ctx, campaignId, systemId)
   return characterView(document, content, choices, build as Build)
+}
+
+/** Unas elecciones nuevas que valen: su forma, su tamaño y las reglas de lo que cambia (si no, dice qué falla) */
+async function checked(ctx: ActionContext, row: charactersRepo.CharacterRow, given: unknown) {
+  const { document, content, choices } = await contextOf(ctx, row.campaignId, row.system)
+  const previous = characterView(document, content, choices, row.build as Build)
+  const { build, problems } = checkBuild(document, content, choices, given, row.build as Build, previous.view.sheet)
+  if (!build || problems.length > 0) throw new InvalidRequestError('BAD_CHOICE', problems.join('. '))
+  return build
 }
 
 /**
@@ -120,6 +139,7 @@ async function save(
 ) {
   const { ownerId, ...rest } = given
   const patch: charactersRepo.CharacterPatch = { ...rest }
+  if (given.build) patch.build = (await checked(ctx, row, given.build)) as Record<string, unknown>
   if (ownerId !== undefined && ownerId !== row.ownerId) {
     authorize(ctx.actor, 'characters.manage', { campaignId: row.campaignId, worldId: row.worldId })
     if (ownerId) await assertMember(ctx, row.campaignId, ownerId)

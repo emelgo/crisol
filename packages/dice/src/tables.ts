@@ -22,7 +22,10 @@ export function tableFormula(formula: string | null | undefined, rows: readonly 
 /** Lo menos y lo más que puede salir con una fórmula (si no se entiende, null) */
 export function boundsOf(formula: string): { min: number; max: number } | null {
   try {
-    return { min: rollDice(formula, () => 1).total, max: rollDice(formula, (sides) => sides).total }
+    // Con todos los dados al mínimo y al máximo (lo que resta, al revés: 10 - 1d6 va del 4 al 9)
+    const low = rollDice(formula, () => 1).total
+    const high = rollDice(formula, (sides) => sides).total
+    return { min: Math.min(low, high), max: Math.max(low, high) }
   } catch {
     return null
   }

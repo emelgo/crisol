@@ -27,6 +27,8 @@ export function useCharacterSave(characterId: string, campaignId: string) {
   const save = useCallback(
     (change: Change) => {
       const key = characterKey(characterId)
+      // Una recarga a medias no pisa lo elegido: se cancela, y la pantalla no recarga mientras se guarda
+      void queryClient.cancelQueries({ queryKey: key })
       // Lo elegido se ve ya; lo que se calcula, al llegar la respuesta
       const before = queryClient.getQueryData<Loaded>(key)
       if (!before) return Promise.resolve()

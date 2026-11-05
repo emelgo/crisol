@@ -4,6 +4,7 @@
  * sistema y de lo que concede lo elegido a su nivel, con sus opciones y el motivo de las que no valen), el estado de
  * cada paso, su nivel y si ya tiene lo que su sistema pide. Puro: igual en el servidor y en la web
  */
+import { z } from 'zod'
 import type { Choices } from './choices.ts'
 import { editionOf, resolveConcept, type Seen, visibleContent } from './content.ts'
 import { type DocumentItem, evaluate, evaluateWith, type SystemDocument } from './evaluate.ts'
@@ -11,7 +12,7 @@ import type { ContentItem } from './file.ts'
 import type { System } from './format.ts'
 import type { Value } from './formulas/functions.ts'
 import type { Mechanics } from './mechanics.ts'
-import type { Text } from './text.ts'
+import { type Text, textOf } from './text.ts'
 
 /** Algo elegido del contenido en un paso: su clave (con su edición) y, si el paso es de niveles (las clases), su nivel */
 export interface BuildPick {
@@ -279,8 +280,10 @@ export function buildCharacter(
         }
         continue
       }
-      for (const value of chosen) {
-        const doc = resolve(value, c.type, edition) ?? byKey.get(value) ?? null
+      for (const value of [...new Set(chosen)]) {
+        // Por su concepto (de su edición) o por su clave, pero siempre del tipo que se elige
+        const byItsKey = byKey.get(value)
+        const doc = resolve(value, c.type, edition) ?? (byItsKey?.type === c.type ? byItsKey : null)
         if (!doc) {
           missing.push(value)
           continue
@@ -378,6 +381,23 @@ export function buildCharacter(
       pending: distinct.length < Math.min(count, d.repeat ? count : options.length)
     }
   })
+  // Lo elegido que sobra o no vale (al bajar de nivel, más de lo que toca) sale de la hoja, con lo que cuelga de ello;
+  // queda en sus elecciones, y al volver a subir se propone
+  const allowed = new Map(decisions.map((d) => [d.id, new Set(d.count > 0 ? d.chosen : [])]))
+  const fits = (id: string) => {
+    for (const match of id.matchAll(/=([^>]+)/g)) {
+      const decision = id.slice(0, match.index)
+      const value = match[1] ?? ''
+      if (!allowed.get(decision)?.has(value)) return false
+    }
+    return true
+  }
+  const dropped = new Set(items.filter((item) => !fits(item.id)).map((item) => item.id))
+  if (dropped.size > 0) {
+    items.splice(0, items.length, ...items.filter((item) => !dropped.has(item.id)))
+    const gone = (id: string) => [...dropped].some((d) => id === d || id.startsWith(`${d}>`))
+    decisions.splice(0, decisions.length, ...decisions.filter((d) => !gone(d.from.id)))
+  }
   // Las que no piden nada (cuántos: 0), fuera; lo elegido de un conjunto, ya recortado, a lo que lo concede
   decisions.splice(0, decisions.length, ...decisions.filter((d) => d.count > 0))
   for (const d of decisions) {
@@ -697,4 +717,128 @@ export function applyChoices(system: System, build: Build, choose: Choose, newId
       : {}),
     ...(choose.values ? { values: { ...(build.values ?? {}), ...choose.values } } : {})
   }
+}
+
+/** El nivel más alto de un personaje (la suma de sus clases) */
+export const LEVEL_CAP = 20
+/** Lo que ocupan sus elecciones, como mucho */
+export const BUILD_BYTES = 256 * 1024
+
+const pickSchema = z.strictObject({
+  id: z.string().min(1).max(60),
+  step: z.string().min(1).max(60),
+  key: z.string().min(1).max(100),
+  level: z.int().min(1).max(30).optional()
+})
+/** La forma de las elecciones de un personaje, para no guardar cualquier cosa */
+export const buildSchema = z.strictObject({
+  values: z.record(z.string().max(60), z.unknown()).optional(),
+  scores: z
+    .strictObject({
+      method: z.string().max(60).optional(),
+      base: z.record(z.string().max(60), z.int().min(-1000).max(1000)).optional(),
+      rolls: z.array(z.int().min(-1000).max(1000)).max(50).optional()
+    })
+    .optional(),
+  picks: z.array(pickSchema).max(100).optional(),
+  decisions: z
+    .record(z.string().max(300), z.array(z.string().max(100)).max(50))
+    .refine((d) => Object.keys(d).length <= 500, 'Como mucho, 500 decisiones')
+    .optional()
+})
+
+/**
+ * Lo que no vale de unas elecciones nuevas frente a las de antes (lo que cambia; lo de antes que ya no está en el
+ * contenido sigue como pendiente): la forma y el tamaño, los campos que se escriben, lo que se añade (que exista, de su
+ * tipo, sin repetir y con lo que pide), los niveles y lo decidido (de sus opciones, sin pasarse de cuántos)
+ */
+export function checkBuild(
+  system: System,
+  content: readonly ContentItem[],
+  choices: Pick<Choices, 'sources' | 'duplicates'> & { settings?: Record<string, unknown>; language?: 'es' | 'en' },
+  given: unknown,
+  previous: Build,
+  previousValues: Record<string, Value>
+): { build: Build | null; problems: string[] } {
+  const parsed = buildSchema.safeParse(given)
+  if (!parsed.success)
+    return { build: null, problems: parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`) }
+  const build = parsed.data as Build
+  const problems: string[] = []
+  if (JSON.stringify(build).length > BUILD_BYTES) problems.push('Demasiado grande')
+  const steps = system.creation ?? []
+  const type = characterType(system)
+  const writable = new Set(steps.flatMap((s) => (s.kind === 'fields' ? s.fields : [])))
+  for (const key of Object.keys(build.values ?? {}))
+    if (!writable.has(key)) problems.push(`«${key}» no se escribe en ningún paso`)
+  const scoreSteps = steps.filter((s) => s.kind === 'scores')
+  if (
+    build.scores?.method &&
+    !scoreSteps.some((s) => s.kind === 'scores' && s.methods.some((m) => m.key === build.scores?.method))
+  )
+    problems.push(`No hay un método «${build.scores.method}»`)
+  const elements = new Set(
+    scoreSteps.flatMap((s) => {
+      const f = type ? system.types[type]?.fields[s.set] : undefined
+      return f?.kind === 'set' ? f.elements.map((e) => e.key) : []
+    })
+  )
+  for (const key of Object.keys(build.scores?.base ?? {}))
+    if (!elements.has(key)) problems.push(`«${key}» no es de las puntuaciones`)
+
+  const { byKey } = viewOf(system, content, choices)
+  const before = new Map((previous.picks ?? []).map((p) => [p.id, p]))
+  const picks = build.picks ?? []
+  if (new Set(picks.map((p) => p.id)).size !== picks.length) problems.push('Hay dos cosas elegidas con el mismo id')
+  for (const step of steps) {
+    if (step.kind !== 'content') continue
+    const here = picks.filter((p) => p.step === step.key)
+    if (!step.levels && here.length > Math.max(step.max ?? step.min ?? 1, 1))
+      problems.push(`En «${step.key}», como mucho ${step.max ?? step.min ?? 1}`)
+    if (step.levels) {
+      const total = here.reduce((n, p) => n + (p.level ?? 1), 0)
+      if (total > LEVEL_CAP) problems.push(`Como mucho, nivel ${LEVEL_CAP} en total`)
+      if (new Set(here.map((p) => p.key)).size !== here.length) problems.push(`En «${step.key}», la misma dos veces`)
+    }
+    for (const p of here) {
+      const old = before.get(p.id)
+      if (old && old.key === p.key) continue
+      const item = byKey.get(p.key)
+      if (!item || item.type !== step.type) {
+        problems.push(`«${p.key}» no es de ${step.key} en el contenido de la campaña`)
+        continue
+      }
+      // Lo que pide: en un paso de niveles, al añadir otra (no la primera)
+      const others = here.filter((o) => o.id !== p.id && before.has(o.id))
+      if (step.levels && others.length === 0) continue
+      const reason = unmetRequirement(item, previousValues)
+      if (reason) problems.push(textOf(reason, choices.language))
+    }
+  }
+  for (const p of picks)
+    if (!steps.some((s) => s.key === p.step && s.kind === 'content')) problems.push(`No hay un paso «${p.step}»`)
+
+  // Lo decidido que cambia: de una decisión que está, de sus opciones, sin pasarse
+  const built = buildCharacter(system, content, choices, build)
+  for (const [id, values] of Object.entries(build.decisions ?? {})) {
+    const old = previous.decisions?.[id] ?? []
+    if (JSON.stringify(old) === JSON.stringify(values)) continue
+    const decision = built.decisions.find((d) => d.id === id)
+    if (!decision) {
+      if (values.length > 0) problems.push(`No hay nada que decidir con el id «${id}»`)
+      continue
+    }
+    if (values.length > decision.count)
+      problems.push(`«${textOf(decision.label, choices.language)}»: como mucho ${decision.count}`)
+    const times = new Map<string, number>()
+    for (const v of values) {
+      const option = decision.options.find((o) => o.value === v)
+      if (!option || (!option.available && !old.includes(v)))
+        problems.push(`«${v}» no vale en «${textOf(decision.label, choices.language)}»`)
+      times.set(v, (times.get(v) ?? 0) + 1)
+    }
+    if ([...times.values()].some((n) => n > decision.most))
+      problems.push(`«${textOf(decision.label, choices.language)}»: lo mismo, como mucho ${decision.most} veces`)
+  }
+  return { build, problems: [...new Set(problems)] }
 }
