@@ -14,7 +14,11 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   publicados** en el lienzo «Crisol: personajes» de claude.ai (https://claude.ai/artifact/Hx1Hmo1feqo5iAu7MdQEpp;
   fuentes en `out/lienzo-personajes/`): la vista propia de la campaña con su barra y sus personajes, el creador (clase y
   subir de nivel, multiclase, características, elegir lo pendiente), las versiones, el compendio, las tablas aleatorias
-  y el móvil. **Pendiente de Enrique: aprobarlos**. Después, `/plan` y `/build`.
+  y el móvil. Enrique: «termina el módulo 3 de una vez» (2026-11-05) y «muy bien» a las fotos del compendio. Plan en
+  `tasks/plan.md`, tareas en `tasks/todo.md`. **Hecha la fase 1** (tareas 1–3): la campaña en su propia vista (la
+  barra cambia al entrar: su inicio, Compendio y Dados; la llama vuelve a Mis mundos) y su compendio (acciones
+  `getCampaignCompendium`, `searchCampaignContent` y `getCampaignContent`, que lee cualquiera de la campaña; e2e
+  `compendio.spec.ts`). **Lo siguiente**: la fase 2, el personaje (tarea 4: la tabla y sus acciones).
 - **Sin editor de sistemas: PR #99, en `main` y en staging** (la CI del PR se canceló, todo verde en local). Ver más
   abajo, en el módulo 3; qué probar, en `tasks/probar.md` (punto de control 3 de `sistemas`).
 - Servidor de desarrollo en marcha para Enrique: web en `localhost:5173`, API en `8130` (las dos se recargan solas).

@@ -5,11 +5,11 @@ Plan: `tasks/plan.md`. Spec: `docs/specs/personajes.md`. Cada tarea, con TDD y e
 
 ## Fase 1: la campaña en su vista, con su compendio
 
-- [ ] **1. Leer el contenido desde la campaña**: `searchCampaignContent` y `getCampaignContent` (permiso de leer la
+- [x] **1. Leer el contenido desde la campaña**: `searchCampaignContent` y `getCampaignContent` (permiso de leer la
   campaña; solo lo de sus fuentes). Pruebas de integración y de fugas (quien no está en la campaña no ve nada).
-- [ ] **2. La vista de la campaña**: rutas de inicio y compendio; la barra con Inicio (nombre de la campaña), Personajes,
+- [x] **2. La vista de la campaña**: rutas de inicio y compendio; la barra con Inicio (nombre de la campaña), Personajes,
   Compendio y Dados al entrar, con su animación; la llama vuelve a Mis mundos.
-- [ ] **3. El compendio**: tipos, buscador (sin tildes, en los dos idiomas), lista con «2024» / «2014 · Legado», la
+- [x] **3. El compendio**: tipos, buscador (sin tildes, en los dos idiomas), lista con «2024» / «2014 · Legado», la
   lectura de cada tipo (conjuro, criatura, clase con sus rasgos por nivel, objeto, regla…) y el panel con la edición,
   el nombre en inglés y la otra versión. En el móvil, lista y lectura una tras otra.
 
