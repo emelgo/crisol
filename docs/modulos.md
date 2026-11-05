@@ -25,9 +25,12 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   `updateCharacter` (sin bajar el contenido al navegador). **Hechas las pantallas** (tareas 5, 6 y 11–13:
   `apps/web/src/characters/`: la lista, la página con «Ficha | Creador», el creador por pasos con el panel de
   elecciones, las características con sus cuatro métodos, la ficha mínima genérica y las versiones; e2e
-  `personajes.spec.ts`). **Lo siguiente**: los datos del 5e que faltan (10: requisitos de multiclase, mejora de
-  característica, aumentos de los trasfondos de 2024, equipo inicial, conjuros por nivel), validar los pasos (7),
-  los PG tirados (9), las tablas (14) y las herramientas MCP (15).
+  `personajes.spec.ts`). Hechos también: el 5e para el creador (requisitos de multiclase, mejora de característica,
+  aumentos de los trasfondos de 2024; contenido regenerado), validar los pasos, las tablas aleatorias (pestaña
+  «Tabla», migración 0042, `tablas.spec.ts`) y las herramientas MCP (`elegir_personaje`, `tirar_en_tabla`…).
+  **Queda para después** (anotado): los PG tirados al subir (van por la media), el equipo inicial como paso, los
+  conjuros conocidos o preparados en el creador y las tablas del SRD (los rasgos del acólito de 2014). **Lo
+  siguiente**: el cierre de `personajes` (batería, revisión, PR y staging) y después `hoja`.
 - **Sin editor de sistemas: PR #99, en `main` y en staging** (la CI del PR se canceló, todo verde en local). Ver más
   abajo, en el módulo 3; qué probar, en `tasks/probar.md` (punto de control 3 de `sistemas`).
 - Servidor de desarrollo en marcha para Enrique: web en `localhost:5173`, API en `8130` (las dos se recargan solas).

@@ -23,10 +23,10 @@ Plan: `tasks/plan.md`. Spec: `docs/specs/personajes.md`. Cada tarea, con TDD y e
 
 ## Fase 3: los pasos
 
-- [ ] **7. El formato de los pasos** (`creation`) y su validación. Hecho el formato (`packages/systems/src/format.ts`); falta validar sus referencias y fórmulas.
+- [x] **7. El formato de los pasos** (`creation`) y su validación (sus referencias; las fórmulas de `when`, al calcular).
 - [x] **8. El motor de lo pendiente**: pasos + `grants` por nivel, opciones válidas y su motivo, requisitos.
-- [ ] **9. Subir y bajar de nivel, multiclase y PG** (media o tirados en el servidor).
-- [ ] **10. Los pasos del 5e** y lo que su contenido necesita; los personajes de referencia, por los pasos.
+- [ ] **9. Subir y bajar de nivel, multiclase y PG** (media o tirados en el servidor). Hechos subir, bajar y la multiclase con sus requisitos; **quedan los PG tirados** (por la media, ya).
+- [x] **10. Los pasos del 5e** y lo que su contenido necesita; los personajes de referencia, por los pasos.
 
 ## Fase 4: el creador
 
@@ -36,8 +36,8 @@ Plan: `tasks/plan.md`. Spec: `docs/specs/personajes.md`. Cada tarea, con TDD y e
 
 ## Fase 5: tablas e IA
 
-- [ ] **14. Las tablas**: el dato, su validación, la tirada con su registro, sin reemplazo por campaña; la pestaña
+- [x] **14. Las tablas**: el dato, su validación, la tirada con su registro, sin reemplazo por campaña; la pestaña
   «Tabla»; las del SRD.
-- [ ] **15. Las herramientas MCP** de personajes y tablas, con sus aprobaciones; los pasos en `formato_sistemas`.
+- [x] **15. Las herramientas MCP** de personajes y tablas, con sus aprobaciones; los pasos en `formato_sistemas`.
 - [ ] **16. Cierre**: e2e (crear de nivel 1, subir a 5 con multiclase, restaurar, tirar en una tabla), axe, ritmo,
   revisión, PR y staging.
