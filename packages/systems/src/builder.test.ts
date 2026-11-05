@@ -1,0 +1,174 @@
+import { describe, expect, it } from 'vitest'
+import { type Build, buildCharacter, stepOptions, summarize } from './builder.ts'
+import { referenceCharacter } from './catalog/5e/referencia.ts'
+import { catalogContent } from './catalog/content.ts'
+import { CATALOG } from './catalog/index.ts'
+import { evaluate } from './evaluate.ts'
+
+const fiveE = CATALOG.find((s) => s.id === '5e')
+if (!fiveE) throw new Error('Falta el 5e')
+const content = catalogContent('5e')
+const campaign = { sources: ['srd51', 'srd521'], duplicates: 'both' as const }
+const scores = { fue: 15, des: 14, con: 13, int: 12, sab: 10, car: 8 }
+const build = (b: Build) => buildCharacter(fiveE, content, campaign, b)
+
+describe('el creador: montar un personaje de sus elecciones', () => {
+  it('sin nada, todo pendiente y en creación; los pasos del 5e en su orden', () => {
+    const empty = build({})
+    expect(empty.steps.map((s) => [s.key, s.pending])).toEqual([
+      ['clase', 1],
+      ['especie', 1],
+      ['trasfondo', 1],
+      ['caracteristicas', 1],
+      ['detalles', 0],
+      ['resumen', 0]
+    ])
+    expect(empty).toMatchObject({ type: 'personaje', level: 0, complete: false, decisions: [] })
+  })
+
+  it('un guerrero de nivel 1: lo que concede entra solo y lo que se elige sale como decisión, con sus opciones', () => {
+    const built = build({ picks: [{ id: 'c1', step: 'clase', key: 'guerrero_2014', level: 1 }] })
+    expect(built.level).toBe(1)
+    const ids = built.decisions.map((d) => d.id)
+    expect(ids).toEqual(expect.arrayContaining(['c1>habilidades', 'c1>guerrero_estilo_de_combate@1>estilo']))
+    const skills = built.decisions.find((d) => d.id === 'c1>habilidades')
+    expect(skills).toMatchObject({ step: 'clase', count: 2, pending: true, chosen: [] })
+    expect(skills?.options.map((o) => o.value)).toContain('atletismo')
+    const style = built.decisions.find((d) => d.id === 'c1>guerrero_estilo_de_combate@1>estilo')
+    expect(style?.options.map((o) => o.label)).toContainEqual({ es: 'Defensa', en: 'Defense' })
+    // Su rasgo de nivel 1 está; el de nivel 2, aún no
+    const names = built.document.items?.map((i) => i.name) ?? []
+    expect(names).toContain('Tomar Aliento')
+    expect(names).not.toContain('Acción Súbita')
+  })
+
+  it('lo elegido entra: el estilo (con su efecto en la CA) y las habilidades (con su grado)', () => {
+    const b: Build = {
+      scores: { base: scores },
+      picks: [
+        { id: 'c1', step: 'clase', key: 'guerrero_2014', level: 1 },
+        { id: 'e1', step: 'especie', key: 'enano_de_las_colinas_2014' },
+        { id: 't1', step: 'trasfondo', key: 'acolito_2014' }
+      ],
+      decisions: {
+        'c1>habilidades': ['atletismo', 'intimidacion'],
+        'c1>guerrero_estilo_de_combate@1>estilo': ['estilo_de_combate_defensa']
+      }
+    }
+    const built = build(b)
+    expect(built.decisions.filter((d) => d.pending)).toEqual([])
+    expect(built.complete).toBe(true)
+    expect(built.steps.every((s) => s.pending === 0)).toBe(true)
+    const sheet = evaluate(fiveE, built.type, built.document).values as Record<string, any>
+    expect(sheet.habilidades.atletismo.grado).toBe(1)
+    expect(sheet.habilidades.perspicacia.grado).toBe(1) // del acólito
+    // Enano de las colinas: +2 Con (enano) y +1 Sab (colinas); su PG por nivel
+    expect(sheet.caracteristicas.con.puntuacion).toBe(15)
+    expect(sheet.caracteristicas.sab.puntuacion).toBe(11)
+    expect(sheet.pg_max).toBe(10 + 2 + 1)
+    expect(sheet.velocidad).toBe(25)
+  })
+
+  it('lo de un nivel más alto entra al subir: la subclase a nivel 3; a nivel 5, igual que el de referencia', () => {
+    const at = (level: number) =>
+      build({
+        scores: { base: scores },
+        picks: [{ id: 'c1', step: 'clase', key: 'guerrero_2014', level }],
+        decisions: { 'c1>subclase@3': ['campeon'] }
+      })
+    expect(at(2).decisions.map((d) => d.id)).not.toContain('c1>subclase@3')
+    const five = at(5)
+    expect(five.decisions.find((d) => d.id === 'c1>subclase@3')).toMatchObject({ pending: false, chosen: ['campeon'] })
+    const mine = evaluate(fiveE, 'personaje', five.document).values as Record<string, any>
+    const reference = evaluate(
+      fiveE,
+      'personaje',
+      referenceCharacter(content, { klass: 'guerrero', edition: '2014', level: 5, scores })
+    ).values as Record<string, any>
+    for (const key of ['nivel', 'competencia', 'pg_max', 'ca', 'ataques', 'critico_desde'])
+      expect([key, mine[key]]).toEqual([key, reference[key]])
+  })
+
+  it('una elección que ya no vale se quita; lo que ya no está en el contenido de la campaña sale como pendiente', () => {
+    const built = build({
+      picks: [
+        { id: 'c1', step: 'clase', key: 'guerrero_2014', level: 1 },
+        { id: 'e1', step: 'especie', key: 'no_existe_2014' }
+      ],
+      decisions: { 'c1>habilidades': ['atletismo', 'volar'] }
+    })
+    expect(built.decisions.find((d) => d.id === 'c1>habilidades')?.chosen).toEqual(['atletismo'])
+    expect(built.missing).toEqual(['no_existe_2014'])
+    expect(built.steps.find((s) => s.key === 'especie')?.pending).toBe(2)
+    // Con solo la de 2014, lo de 2024 no está
+    const only2014 = buildCharacter(
+      fiveE,
+      content,
+      { sources: ['srd51'], duplicates: 'both' },
+      {
+        picks: [{ id: 'c1', step: 'clase', key: 'guerrero_2024', level: 1 }]
+      }
+    )
+    expect(only2014.missing).toEqual(['guerrero_2024'])
+    expect(only2014.level).toBe(0)
+  })
+
+  it('las opciones de un paso: la subraza, no la raza que concede; la que ya tiene, no; y su motivo', () => {
+    const species = stepOptions(fiveE, content, campaign, {}, 'especie', {})
+    const keys = species.map((o) => o.value)
+    expect(keys).toContain('enano_de_las_colinas_2014')
+    expect(keys).not.toContain('enano_2014')
+    expect(keys).toContain('humano_2014')
+    const classes = stepOptions(
+      fiveE,
+      content,
+      campaign,
+      { picks: [{ id: 'c1', step: 'clase', key: 'guerrero_2014', level: 1 }] },
+      'clase',
+      {}
+    )
+    expect(classes.find((o) => o.value === 'guerrero_2014')).toMatchObject({
+      available: false,
+      reason: { es: 'Ya la tienes' }
+    })
+    expect(stepOptions(fiveE, content, campaign, {}, 'caracteristicas', {})).toEqual([])
+  })
+
+  it('su resumen: la especie y las clases con su nivel, y los campos de la tarjeta', () => {
+    const b: Build = {
+      scores: { base: scores },
+      picks: [
+        { id: 'c1', step: 'clase', key: 'guerrero_2014', level: 4 },
+        { id: 'c2', step: 'clase', key: 'mago_2014', level: 1 },
+        { id: 'e1', step: 'especie', key: 'enano_de_las_colinas_2014' },
+        { id: 't1', step: 'trasfondo', key: 'acolito_2014' }
+      ]
+    }
+    const built = build(b)
+    expect(built.level).toBe(5)
+    const values = evaluate(fiveE, built.type, built.document).values
+    expect(summarize(fiveE, content, campaign, b, built, values)).toEqual({
+      line: 'Enano de las colinas · Guerrero 4 · Mago 1',
+      level: 5,
+      stats: [
+        { key: 'nivel', label: 'Nivel', value: '5' },
+        { key: 'pg_max', label: 'Puntos de golpe máximos', value: expect.any(String) },
+        { key: 'ca', label: 'Clase de armadura', value: '12' }
+      ]
+    })
+    // El mago, la segunda: no es la inicial (sus salvaciones no cuentan)
+    expect(built.document.items?.find((i) => i.id === 'c2')?.data).toMatchObject({ nivel: 1, inicial: false })
+  })
+
+  it('a nivel 20, lo pendiente se calcula en menos de 20 ms', () => {
+    const b: Build = {
+      scores: { base: scores },
+      picks: [{ id: 'c1', step: 'clase', key: 'mago_2024', level: 20 }],
+      decisions: { 'c1>subclase@3': ['evocador'] }
+    }
+    build(b)
+    const start = performance.now()
+    for (let i = 0; i < 5; i++) build(b)
+    expect((performance.now() - start) / 5).toBeLessThan(20)
+  })
+})

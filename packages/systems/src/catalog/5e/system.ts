@@ -840,5 +840,40 @@ export const fiveE = {
       kind: 'boolean',
       default: false
     }
-  }
+  },
+  // El creador (ADR-0013): la clase con sus niveles, la especie, el trasfondo, las características y los detalles; lo
+  // que se elige de lo concedido lo calcula Crisol
+  card: ['nivel', 'pg_max', 'ca'],
+  creation: [
+    { key: 'clase', kind: 'content', type: 'clase', label: t('Clase', 'Class'), levels: true },
+    { key: 'especie', kind: 'content', type: 'especie', label: t('Especie', 'Species'), creation: true },
+    { key: 'trasfondo', kind: 'content', type: 'trasfondo', label: t('Trasfondo', 'Background'), creation: true },
+    {
+      key: 'caracteristicas',
+      kind: 'scores',
+      label: t('Características', 'Abilities'),
+      set: 'caracteristicas',
+      field: 'puntuacion',
+      creation: true,
+      methods: [
+        {
+          key: 'matriz',
+          kind: 'array',
+          label: t('Matriz estándar', 'Standard array'),
+          values: [15, 14, 13, 12, 10, 8]
+        },
+        {
+          key: 'compra',
+          kind: 'pointbuy',
+          label: t('Compra por puntos', 'Point buy'),
+          budget: 27,
+          costs: { '8': 0, '9': 1, '10': 2, '11': 3, '12': 4, '13': 5, '14': 7, '15': 9 }
+        },
+        { key: 'dados', kind: 'roll', label: t('4d6', '4d6'), formula: '4d6kh3' },
+        { key: 'mano', kind: 'manual', label: t('A mano', 'Manual'), min: 3, max: 20 }
+      ]
+    },
+    { key: 'detalles', kind: 'fields', label: t('Detalles', 'Details'), fields: ['idiomas', 'notas'], creation: true },
+    { key: 'resumen', kind: 'summary', label: t('Resumen', 'Summary') }
+  ]
 } as unknown as System

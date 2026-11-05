@@ -87,7 +87,9 @@ const grant = z
         op: z.enum(['min', 'add']).optional(),
         value: formula.optional(),
         from: z.array(key).max(500).optional(),
-        when: formula.optional()
+        when: formula.optional(),
+        // Se puede elegir lo mismo más de una vez (+1 y +1 a la misma característica)
+        repeat: z.boolean().optional()
       })
       .refine((c) => (c.type === undefined) !== (c.set === undefined), 'Elige de un tipo o de un conjunto')
       .optional()
@@ -122,7 +124,12 @@ export const mechanicsSchema = z.strictObject({
   toggle: z.strictObject({ label: text().optional(), duration: text(100).optional() }).optional(),
   automation: z.enum(AUTOMATION).optional(),
   // Lo que se lleva a mano, si no está todo automatizado
-  manual: text(2000).optional()
+  manual: text(2000).optional(),
+  // Lo que pide para elegirlo (una dote, la multiclase): una fórmula sobre quien lo elige y su motivo si no se cumple
+  requires: z
+    .array(z.strictObject({ formula, reason: text() }))
+    .max(10)
+    .optional()
 })
 
 export type Mechanics = z.infer<typeof mechanicsSchema>
