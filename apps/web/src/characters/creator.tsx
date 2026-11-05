@@ -12,8 +12,10 @@ import type { ActionOutput } from '../api/client.ts'
 import { useApi } from '../api/context.tsx'
 import { ContentText } from '../campaign/content-text.tsx'
 import { BusyButton } from '../components/busy-button.tsx'
+import dialogStyles from '../components/dialog.module.css'
 import fieldStyles from '../components/form.module.css'
 import { failed } from '../components/load-error.tsx'
+import { Modal } from '../components/modal.tsx'
 import { Pending } from './characters.tsx'
 import styles from './creator.module.css'
 import { type Change, pickId } from './save.ts'
@@ -309,16 +311,7 @@ function LevelsStep({
                   ))}
                 </select>
               </span>
-              {i > 0 && (
-                <button
-                  type="button"
-                  className={styles.remove}
-                  aria-label={t('creator.removeClass', { name: pick.name })}
-                  onClick={() => remove(pick.id)}
-                >
-                  <X size={16} aria-hidden="true" />
-                </button>
-              )}
+              {i > 0 && <RemoveButton name={pick.name} onConfirm={() => void remove(pick.id)} />}
             </header>
             {pick.missing && <p className={styles.missing}>{t('creator.missing')}</p>}
             <Granted owner={pick.id} state={state} onDecide={onDecide} campaignId={campaignId} />
@@ -388,11 +381,9 @@ function PickStep({
               <h2 id={`name-${pick.id}`} className={styles.pickName}>
                 {pick.name}
               </h2>
-              <button
-                type="button"
-                className={styles.remove}
-                aria-label={t('creator.removeClass', { name: pick.name })}
-                onClick={() =>
+              <RemoveButton
+                name={pick.name}
+                onConfirm={() =>
                   void save({
                     build: (b) => ({
                       ...b,
@@ -403,9 +394,7 @@ function PickStep({
                     })
                   })
                 }
-              >
-                <X size={16} aria-hidden="true" />
-              </button>
+              />
             </header>
             <Granted owner={pick.id} state={state} onDecide={onDecide} campaignId={campaignId} />
           </article>
@@ -875,5 +864,49 @@ function RepeatChoices({ decision, onChoose }: { decision: Decision; onChoose: (
         ))}
       </ul>
     </div>
+  )
+}
+
+/** Quitar algo elegido (una clase, una opción) se lleva sus elecciones: se pregunta antes, como en otros creadores */
+function RemoveButton({ name, onConfirm }: { name: string; onConfirm: () => void }) {
+  const { t } = useTranslation()
+  const [asking, setAsking] = useState(false)
+  const dialog = useRef<HTMLDialogElement>(null)
+  const titleId = useId()
+  return (
+    <>
+      <button
+        type="button"
+        className={styles.remove}
+        aria-label={t('creator.removeClass', { name })}
+        onClick={() => setAsking(true)}
+      >
+        <X size={16} aria-hidden="true" />
+      </button>
+      {asking && (
+        <Modal ref={dialog} aria-labelledby={titleId} className={dialogStyles.dialog} onClose={() => setAsking(false)}>
+          <div className={dialogStyles.body}>
+            <h2 id={titleId}>{t('creator.removeTitle', { name })}</h2>
+            <p className={dialogStyles.description}>{t('creator.removeText')}</p>
+            <div className={dialogStyles.actions}>
+              <button
+                type="button"
+                className={fieldStyles.button}
+                data-autofocus=""
+                onClick={() => {
+                  onConfirm()
+                  dialog.current?.close()
+                }}
+              >
+                {t('creator.removeConfirm')}
+              </button>
+              <button type="button" className={dialogStyles.cancel} onClick={() => dialog.current?.close()}>
+                {t('creator.cancel')}
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+    </>
   )
 }
