@@ -22,10 +22,12 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   acciones con permisos: cada uno los suyos, el máster todos) y el motor (tarea 8: `packages/systems/src/builder.ts`,
   `buildCharacter`, `stepOptions`, `summarize` y `characterView`; los pasos del 5e en `catalog/5e/system.ts`,
   `creation`, y `card` para la tarjeta). El servidor monta el estado del personaje y lo devuelve en `getCharacter` y
-  `updateCharacter` (sin bajar el contenido al navegador). **Lo siguiente**: las pantallas (tareas 5, 6 y 11–13: la
-  lista de personajes, la ficha mínima y el creador), y luego validar los pasos (7), subir de nivel con PG (9) y los
-  datos del 5e que faltan (10: requisitos de multiclase, mejora de característica, aumentos de los trasfondos de 2024,
-  equipo inicial, conjuros por nivel).
+  `updateCharacter` (sin bajar el contenido al navegador). **Hechas las pantallas** (tareas 5, 6 y 11–13:
+  `apps/web/src/characters/`: la lista, la página con «Ficha | Creador», el creador por pasos con el panel de
+  elecciones, las características con sus cuatro métodos, la ficha mínima genérica y las versiones; e2e
+  `personajes.spec.ts`). **Lo siguiente**: los datos del 5e que faltan (10: requisitos de multiclase, mejora de
+  característica, aumentos de los trasfondos de 2024, equipo inicial, conjuros por nivel), validar los pasos (7),
+  los PG tirados (9), las tablas (14) y las herramientas MCP (15).
 - **Sin editor de sistemas: PR #99, en `main` y en staging** (la CI del PR se canceló, todo verde en local). Ver más
   abajo, en el módulo 3; qué probar, en `tasks/probar.md` (punto de control 3 de `sistemas`).
 - Servidor de desarrollo en marcha para Enrique: web en `localhost:5173`, API en `8130` (las dos se recargan solas).

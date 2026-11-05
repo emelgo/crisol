@@ -17,9 +17,9 @@ Plan: `tasks/plan.md`. Spec: `docs/specs/personajes.md`. Cada tarea, con TDD y e
 
 - [x] **4. El personaje en la base de datos**: tabla, versiones, permisos (dueño y máster), historial; acciones de
   crear, listar, leer, cambiar, borrar y cambiar el dueño; fugas.
-- [ ] **5. «Personajes» en la campaña**: tarjetas, «Personaje nuevo» (con quién lo juega, para el máster), su ventana,
+- [x] **5. «Personajes» en la campaña**: tarjetas, «Personaje nuevo» (con quién lo juega, para el máster), su ventana,
   la vista previa al pasar.
-- [ ] **6. La ficha mínima**, calculada con `evaluate` desde sus elecciones.
+- [x] **6. La ficha mínima**, calculada con `evaluate` desde sus elecciones.
 
 ## Fase 3: los pasos
 
@@ -30,9 +30,9 @@ Plan: `tasks/plan.md`. Spec: `docs/specs/personajes.md`. Cada tarea, con TDD y e
 
 ## Fase 4: el creador
 
-- [ ] **11. La cabecera y la barra de pasos** con sus (!); clase con sus niveles y rasgos; elegir en el panel.
-- [ ] **12. Especie, trasfondo, características (sus métodos), equipo y resumen.**
-- [ ] **13. Las versiones**: al terminar y al confirmar cada nivel; verlas y restaurar.
+- [x] **11. La cabecera y la barra de pasos** con sus (!); clase con sus niveles y rasgos; elegir en el panel.
+- [x] **12. Especie, trasfondo, características (sus métodos), equipo y resumen.**
+- [x] **13. Las versiones**: al terminar y al confirmar cada nivel; verlas y restaurar.
 
 ## Fase 5: tablas e IA
 
