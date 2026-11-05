@@ -328,6 +328,49 @@ describe('el contenido de los sistemas de serie', () => {
     expect(checked).toBeGreaterThan(4000)
   })
 
+  it('las especies, los trasfondos y las dotes: un enano de las colinas con lo que le conceden; Alerta; el acólito', () => {
+    const content = catalogContent('5e')
+    const carry = (key: string, data: Record<string, unknown> = {}): DocumentItem => {
+      const item = content.find((c) => c.key === key) as ContentItem
+      return {
+        id: item.concept ?? key,
+        type: item.type,
+        name: (item.data.name as { es: string }).es,
+        data: { ...item.data, ...data },
+        ...(item.mechanics ? { mechanics: item.mechanics as Mechanics } : {})
+      }
+    }
+    // Lo que concede cada uno (como lo pondrá el creador): sus rasgos y, la subraza, su especie
+    const granted = (key: string, edition: string): DocumentItem[] => {
+      const item = carry(key)
+      return [
+        item,
+        ...(item.mechanics?.grants ?? [])
+          .filter((g) => g.concept)
+          .flatMap((g) => granted(`${g.concept}_${edition}`, edition).map((it) => ({ ...it, from: item.id })))
+      ]
+    }
+    const items = [carry('guerrero_2014', { nivel: 3, inicial: true }), ...granted('enano_de_las_colinas_2014', '2014')]
+    const data = { caracteristicas: { con: { puntuacion: 14 }, sab: { puntuacion: 10 } } }
+    const r = evaluate(fiveE, 'personaje', { data, items })
+    expect(r.values).toMatchObject({
+      caracteristicas: { con: { puntuacion: 16 }, sab: { puntuacion: 11 } },
+      velocidad: 25,
+      resistencias: ['veneno']
+    })
+    // Guerrero de nivel 3: 10 + 2 × 6 de la clase, más 3 × Con (+3) y 3 de la dureza enana
+    expect(r.values.pg_max).toBe(34)
+    const alert = evaluate(fiveE, 'personaje', { data: {}, items: [carry('alerta_2024')] }).values
+    expect(alert.iniciativa).toBe(2)
+    const acolyte = carry('acolito_2024')
+    expect(acolyte.mechanics?.grants).toEqual([{ concept: 'iniciado_en_la_magia', type: 'dote' }])
+    const hab = evaluate(fiveE, 'personaje', { data: {}, items: [acolyte] }).values.habilidades as Record<
+      string,
+      { total: number }
+    >
+    expect([hab.perspicacia?.total, hab.religion?.total]).toEqual([2, 2])
+  })
+
   it('el texto de las reglas: lo de 2014 con versión de 2024 se esconde con lo más nuevo; se busca en los dos idiomas', () => {
     const content = catalogContent('5e')
     const cover = (duplicates: 'newest' | 'both') =>

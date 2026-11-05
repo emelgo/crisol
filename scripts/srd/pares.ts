@@ -399,3 +399,44 @@ export const CREATURE_RENAMES: Record<string, string> = {
   gynosphinx: 'sphinx of lore',
   'succubus/incubus': 'succubus'
 }
+
+/**
+ * Los rasgos de las especies: el inglés y su español (en 2024, cada idioma los ordena por orden alfabético; en 2014, la
+ * edad y el alineamiento van al revés). Sin mayúsculas ni tildes al compararlos
+ */
+export const TRAIT_PAIRS: Record<string, string> = {
+  'Ability Score Increase': 'Mejora de característica',
+  Age: 'Edad',
+  Alignment: 'Alineamiento',
+  Size: 'Tamaño',
+  Speed: 'Velocidad',
+  Languages: 'Idiomas',
+  'Draconic Ancestry': 'Linaje dracónico',
+  'Breath Weapon': 'Ataque de aliento',
+  'Damage Resistance': 'Resistencia al daño',
+  Darkvision: 'Visión en la oscuridad',
+  'Draconic Flight': 'Vuelo dracónico',
+  'Dwarven Resilience': 'Resistencia enana',
+  'Dwarven Toughness': 'Aguante enano',
+  Stonecunning: 'Afinidad con la piedra',
+  'Elven Lineage': 'Linaje élfico',
+  'Fey Ancestry': 'Linaje feérico',
+  'Keen Senses': 'Sentidos agudos',
+  Trance: 'Trance',
+  'Gnomish Cunning': 'Astucia gnoma',
+  'Gnomish Lineage': 'Linaje gnomo',
+  'Giant Ancestry': 'Linaje gigante',
+  'Large Form': 'Forma grande',
+  'Powerful Build': 'Constitución poderosa',
+  Brave: 'Valiente',
+  'Halfling Nimbleness': 'Agilidad de mediano',
+  Luck: 'Fortuna',
+  'Naturally Stealthy': 'Sigiloso por naturaleza',
+  Resourceful: 'Ingenioso',
+  Skillful: 'Diestro',
+  Versatile: 'Versátil',
+  'Adrenaline Rush': 'Descarga de adrenalina',
+  'Relentless Endurance': 'Aguante incansable',
+  'Fiendish Legacy': 'Legado infernal',
+  'Otherworldly Presence': 'Presencia sobrenatural'
+}

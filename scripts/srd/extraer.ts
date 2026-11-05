@@ -40,6 +40,7 @@ import {
   type ToolRow,
   toolRows
 } from './objetos.ts'
+import { allOriginDocs } from './origenes.ts'
 import { GEAR_PAIRS, GEAR_RENAMES, MOUNT_RENAMES } from './pares.ts'
 import { boxesOf, type Edition, type Lang, pagesOf, widthOf } from './texto.ts'
 
@@ -283,6 +284,7 @@ export function extract(): Record<string, Doc[]> {
   files['conjuros.json'] = spellDocs(taken())
   files['objetos_magicos.json'] = magicDocs(taken())
   files['criaturas.json'] = creatureDocs(taken())
+  files['origenes.json'] = allOriginDocs(taken())
   return files
 }
 
