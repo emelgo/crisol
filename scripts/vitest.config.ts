@@ -7,7 +7,17 @@ export default defineConfig({
       // Con include salen también los archivos que ninguna prueba carga
       include: ['*.ts', 'srd/*.ts'],
       // Lo de leer los PDF y escribir el contenido solo corre en local, con los PDF
-      exclude: ['*.test.ts', 'srd/*.test.ts', 'vitest.config.ts', 'srd/texto.ts', 'srd/extraer.ts', 'srd/comprobar.ts'],
+      exclude: [
+        '*.test.ts',
+        'srd/*.test.ts',
+        'vitest.config.ts',
+        'srd/texto.ts',
+        'srd/extraer.ts',
+        'srd/comprobar.ts',
+        // Solo en local, con los datos de dnd5e exportados: no son lógica que se pruebe aquí
+        'srd/dnd5e-exportar.ts',
+        'srd/comparar-dnd5e.ts'
+      ],
       reporter: ['lcov', 'text-summary']
     }
   }

@@ -53,8 +53,11 @@ interface Item {
   }
 }
 
+/** De dónde salen sus compendios: los exportados o, en las pruebas, unos de ejemplo */
+type Source = (pack: string) => Record<string, unknown> | null
+
 const cache = new Map<string, Record<string, unknown> | null>()
-const read = (pack: string): Record<string, unknown> | null => {
+let read: Source = (pack: string): Record<string, unknown> | null => {
   if (!cache.has(pack)) {
     const file = join(DIR, `${pack}.json`)
     cache.set(pack, existsSync(file) ? (JSON.parse(readFileSync(file, 'utf8')) as Record<string, unknown>) : null)
@@ -245,4 +248,13 @@ export function dnd5eItemMechanics(
     action.key = key
   }
   return { actions, charges }
+}
+
+/** Para las pruebas: lee los compendios de aquí en vez de los exportados (y devuelve cómo volver) */
+export function useDnd5eSource(source: Source): () => void {
+  const before = read
+  read = source
+  return () => {
+    read = before
+  }
 }
