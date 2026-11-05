@@ -320,9 +320,6 @@ export const es = {
     modifier: 'Modificador'
   },
   // La ficha mínima y las versiones de un personaje
-  characterSheet: {
-    values: 'Sus valores'
-  },
   characterVersions: {
     title: 'Versiones',
     none: 'Al terminar de crearlo y al confirmar cada nivel, se guarda una.',
