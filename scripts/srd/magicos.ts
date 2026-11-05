@@ -5,6 +5,7 @@
  */
 import { ABILITIES, DAMAGE_TYPES } from '../../packages/systems/src/catalog/5e/system.ts'
 import { PROFILES, range } from './capitulos.ts'
+import { dnd5eItemMechanics } from './dnd5e.ts'
 import { concepts, type Doc } from './equipo.ts'
 import { MAGIC_ITEM_PAIRS, MAGIC_ITEM_RENAMES } from './pares.ts'
 import { basesOf, cut, joinLine, ruleRows, textOf } from './reglas.ts'
@@ -411,6 +412,19 @@ export function magicMechanics(edition: Edition, en: MagicRow, name: { es: strin
       activation: edition === '2024' ? 'bonus' : 'action',
       heal: (drink[1] as string).replace(/\s+/g, '')
     })
+  // Lo que el texto no dice con números (lanzar un conjuro, sus cargas), de dnd5e, si está exportado (ADR-0014)
+  const theirs = dnd5eItemMechanics(edition, name)
+  if (theirs) {
+    if (theirs.charges && resources.length === 0) resources.push(theirs.charges)
+    if (actions.length === 0)
+      actions.push(
+        ...theirs.actions.map((a) =>
+          a.uses && resources.length === 0
+            ? Object.fromEntries(Object.entries(a).filter(([k]) => k !== 'uses' && k !== 'cost'))
+            : a
+        )
+      )
+  }
   if (effects.length === 0 && resources.length === 0 && actions.length === 0) return { automation: 'text' }
   return {
     ...(effects.length > 0 ? { effects } : {}),

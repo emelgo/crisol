@@ -153,7 +153,18 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "actions": [
+        {
+          "key": "desplazamiento_entre_planos",
+          "label": {
+            "es": "Desplazamiento entre planos",
+            "en": "Plane Shift"
+          },
+          "activation": "special",
+          "attack": "@ataque_conjuros"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -409,7 +420,28 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "actions": [
+        {
+          "key": "flecha_asesina",
+          "label": {
+            "es": "Flecha asesina",
+            "en": "Arrow of Slaying"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "con",
+            "dc": "17",
+            "success": "half"
+          },
+          "damage": [
+            {
+              "formula": "6d10",
+              "type": "perforante"
+            }
+          ]
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -440,7 +472,39 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "12"
+        }
+      ],
+      "actions": [
+        {
+          "key": "bolsa_de_judias",
+          "label": {
+            "es": "Bolsa de judías",
+            "en": "Bag of Beans"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "15",
+            "success": "half"
+          },
+          "damage": [
+            {
+              "formula": "5d4",
+              "type": "fuego"
+            }
+          ],
+          "uses": "cargas"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -564,7 +628,33 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1"
+        }
+      ],
+      "actions": [
+        {
+          "key": "canica_de_fuerza",
+          "label": {
+            "es": "Canica de fuerza",
+            "en": "Bead of Force"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "15",
+            "success": "half"
+          },
+          "uses": "cargas"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -718,7 +808,22 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "actions": [
+        {
+          "key": "levitar",
+          "label": {
+            "es": "Levitar",
+            "en": "Levitate"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "con",
+            "dc": "@cd_conjuros",
+            "success": "none"
+          }
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -749,7 +854,18 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1",
+          "recovery": "long"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -850,7 +966,18 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1",
+          "recovery": "dawn"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -951,7 +1078,18 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1",
+          "recovery": "dawn"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -1052,7 +1190,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -1083,7 +1231,35 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1",
+          "recovery": "dawn"
+        }
+      ],
+      "actions": [
+        {
+          "key": "puerta_dimensional",
+          "label": {
+            "es": "Puerta dimensional",
+            "en": "Dimension Door"
+          },
+          "activation": "action",
+          "damage": [
+            {
+              "formula": "4d6",
+              "type": "fuerza"
+            }
+          ],
+          "uses": "cargas"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -1145,7 +1321,18 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1",
+          "recovery": "dawn"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -1176,7 +1363,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "10"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -1207,7 +1404,36 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1",
+          "recovery": "dawn"
+        }
+      ],
+      "actions": [
+        {
+          "key": "rayo_abrasador",
+          "label": {
+            "es": "Rayo abrasador",
+            "en": "Scorching Ray"
+          },
+          "activation": "action",
+          "attack": "5",
+          "damage": [
+            {
+              "formula": "2d6",
+              "type": "fuego"
+            }
+          ],
+          "uses": "cargas"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -1244,6 +1470,33 @@
           "op": "append",
           "value": "\"veneno\"",
           "when": "@este.sintonizado"
+        }
+      ],
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1",
+          "recovery": "dawn"
+        }
+      ],
+      "actions": [
+        {
+          "key": "telarana",
+          "label": {
+            "es": "Telaraña",
+            "en": "Web"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "13",
+            "success": "none"
+          },
+          "uses": "cargas"
         }
       ],
       "automation": "partial"
@@ -1384,7 +1637,18 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1",
+          "recovery": "dawn"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -1446,7 +1710,22 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "actions": [
+        {
+          "key": "escudrinar",
+          "label": {
+            "es": "Escudriñar",
+            "en": "Scrying"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "sab",
+            "dc": "17",
+            "success": "none"
+          }
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -1477,7 +1756,19 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "36",
+          "recovery": "long",
+          "amount": "1d20"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -1551,7 +1842,39 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1",
+          "recovery": "dawn"
+        }
+      ],
+      "actions": [
+        {
+          "key": "daga_de_la_ponzona",
+          "label": {
+            "es": "Daga de la ponzoña",
+            "en": "Dagger of Venom"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "con",
+            "dc": "15",
+            "success": "half"
+          },
+          "damage": [
+            {
+              "formula": "2d10",
+              "type": "veneno"
+            }
+          ]
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -1613,7 +1936,28 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "actions": [
+        {
+          "key": "decantador_de_agua_interminable",
+          "label": {
+            "es": "Decantador de agua interminable",
+            "en": "Decanter of Endless Water"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "fue",
+            "dc": "13",
+            "success": "half"
+          },
+          "damage": [
+            {
+              "formula": "1d4",
+              "type": "contundente"
+            }
+          ]
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -1644,7 +1988,33 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "36"
+        }
+      ],
+      "actions": [
+        {
+          "key": "baraja_de_ilusiones",
+          "label": {
+            "es": "Baraja de ilusiones",
+            "en": "Deck of Illusions"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "int",
+            "dc": "15",
+            "success": "half"
+          },
+          "uses": "cargas"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -1675,7 +2045,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "22"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -1784,7 +2164,22 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "actions": [
+        {
+          "key": "grilletes_dimensionales",
+          "label": {
+            "es": "Grilletes dimensionales",
+            "en": "Dimensional Shackles"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "fue",
+            "dc": "30",
+            "success": "half"
+          }
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -1821,6 +2216,17 @@
           "op": "add",
           "value": "1",
           "when": "@este.sintonizado"
+        }
+      ],
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1",
+          "recovery": "dawn"
         }
       ],
       "automation": "partial"
@@ -1885,7 +2291,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -1916,7 +2332,39 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "10"
+        }
+      ],
+      "actions": [
+        {
+          "key": "polvo_de_sequedad",
+          "label": {
+            "es": "Polvo de sequedad",
+            "en": "Dust of Dryness"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "con",
+            "dc": "13",
+            "success": "half"
+          },
+          "damage": [
+            {
+              "formula": "10d6",
+              "type": "necrotico"
+            }
+          ],
+          "uses": "cargas"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -1947,7 +2395,33 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1"
+        }
+      ],
+      "actions": [
+        {
+          "key": "polvo_de_estornudar_y_atragantarse",
+          "label": {
+            "es": "Polvo de estornudar y atragantarse",
+            "en": "Dust of Sneezing and Choking"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "con",
+            "dc": "15",
+            "success": "half"
+          },
+          "uses": "cargas"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -2079,7 +2553,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "4"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -2211,7 +2695,34 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "3",
+          "recovery": "dawn"
+        }
+      ],
+      "actions": [
+        {
+          "key": "hechizar_persona",
+          "label": {
+            "es": "Hechizar persona",
+            "en": "Charm Person"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "sab",
+            "dc": "13",
+            "success": "none"
+          },
+          "uses": "cargas"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -2485,6 +2996,22 @@
           "max": "50"
         }
       ],
+      "actions": [
+        {
+          "key": "gema_del_resplandor",
+          "label": {
+            "es": "Gema del resplandor",
+            "en": "Gem of Brightness"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "con",
+            "dc": "15",
+            "success": "half"
+          },
+          "uses": "cargas"
+        }
+      ],
       "automation": "partial"
     },
     "ref": {
@@ -2734,6 +3261,34 @@
           "amount": "1d4+1"
         }
       ],
+      "actions": [
+        {
+          "key": "martillo_de_rayos_giant_s_bane_on_crit",
+          "label": {
+            "es": "Martillo de rayos: Giant's Bane (On Crit)",
+            "en": "Hammer of Thunderbolts: Giant's Bane (On Crit)"
+          },
+          "activation": "special",
+          "save": {
+            "ability": "con",
+            "dc": "17",
+            "success": "half"
+          }
+        },
+        {
+          "key": "martillo_de_rayos_thunderclap",
+          "label": {
+            "es": "Martillo de rayos: Thunderclap",
+            "en": "Hammer of Thunderbolts: Thunderclap"
+          },
+          "activation": "special",
+          "save": {
+            "ability": "con",
+            "dc": "17",
+            "success": "half"
+          }
+        }
+      ],
       "automation": "partial"
     },
     "ref": {
@@ -2874,6 +3429,59 @@
           "when": "@este.sintonizado"
         }
       ],
+      "actions": [
+        {
+          "key": "bola_de_fuego",
+          "label": {
+            "es": "Bola de fuego",
+            "en": "Fireball"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "18",
+            "success": "half"
+          },
+          "damage": [
+            {
+              "formula": "8d6",
+              "type": "fuego"
+            }
+          ]
+        },
+        {
+          "key": "rociada_prismatica",
+          "label": {
+            "es": "Rociada prismática",
+            "en": "Prismatic Spray"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "18",
+            "success": "none"
+          }
+        },
+        {
+          "key": "muro_de_fuego",
+          "label": {
+            "es": "Muro de fuego",
+            "en": "Wall of Fire"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "18",
+            "success": "half"
+          },
+          "damage": [
+            {
+              "formula": "5d8",
+              "type": "fuego"
+            }
+          ]
+        }
+      ],
       "automation": "partial"
     },
     "ref": {
@@ -2936,7 +3544,35 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "actions": [
+        {
+          "key": "detectar_pensamientos",
+          "label": {
+            "es": "Detectar pensamientos",
+            "en": "Detect Thoughts"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "sab",
+            "dc": "13",
+            "success": "none"
+          }
+        },
+        {
+          "key": "sugestion",
+          "label": {
+            "es": "Sugestión",
+            "en": "Suggestion"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "sab",
+            "dc": "13",
+            "success": "none"
+          }
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -2977,6 +3613,23 @@
           "max": "3",
           "recovery": "dawn",
           "amount": "1d3"
+        }
+      ],
+      "actions": [
+        {
+          "key": "teletransporte",
+          "label": {
+            "es": "Teletransporte",
+            "en": "Teleport"
+          },
+          "activation": "action",
+          "damage": [
+            {
+              "formula": "3d10",
+              "type": "fuerza"
+            }
+          ],
+          "uses": "cargas"
         }
       ],
       "automation": "partial"
@@ -3041,7 +3694,28 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "actions": [
+        {
+          "key": "cuerno_de_estallido",
+          "label": {
+            "es": "Cuerno de estallido",
+            "en": "Horn of Blasting"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "con",
+            "dc": "15",
+            "success": "half"
+          },
+          "damage": [
+            {
+              "formula": "5d6",
+              "type": "trueno"
+            }
+          ]
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -3196,7 +3870,28 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "actions": [
+        {
+          "key": "fortaleza_instantanea",
+          "label": {
+            "es": "Fortaleza instantánea",
+            "en": "Instant Fortress"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "15",
+            "success": "half"
+          },
+          "damage": [
+            {
+              "formula": "10d10",
+              "type": "contundente"
+            }
+          ]
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -3265,7 +3960,18 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1",
+          "recovery": "dawn"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -3296,7 +4002,22 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "actions": [
+        {
+          "key": "frasco_de_hierro",
+          "label": {
+            "es": "Frasco de hierro",
+            "en": "Iron Flask"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "sab",
+            "dc": "17",
+            "success": "half"
+          }
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -3327,7 +4048,40 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1",
+          "recovery": "dawn"
+        }
+      ],
+      "actions": [
+        {
+          "key": "jabalina_del_relampago",
+          "label": {
+            "es": "Jabalina del relámpago",
+            "en": "Javelin of Lightning"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "13",
+            "success": "half"
+          },
+          "damage": [
+            {
+              "formula": "4d6",
+              "type": "relampago"
+            }
+          ],
+          "uses": "cargas"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -3358,7 +4112,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -3428,7 +4192,36 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "actions": [
+        {
+          "key": "maza_disruptiva_save_vs_destruction",
+          "label": {
+            "es": "Maza disruptiva: Save vs Destruction",
+            "en": "Mace of Disruption: Save vs Destruction"
+          },
+          "activation": "special",
+          "save": {
+            "ability": "sab",
+            "dc": "15",
+            "success": "half"
+          }
+        },
+        {
+          "key": "maza_disruptiva_construct_damage",
+          "label": {
+            "es": "Maza disruptiva: Construct Damage",
+            "en": "Mace of Disruption: Construct Damage"
+          },
+          "activation": "special",
+          "damage": [
+            {
+              "formula": "2d6",
+              "type": "radiante"
+            }
+          ]
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -3459,7 +4252,23 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "actions": [
+        {
+          "key": "maza_castigadora_natural_20_damage",
+          "label": {
+            "es": "Maza castigadora: Natural 20 Damage",
+            "en": "Mace of Smiting: Natural 20 Damage"
+          },
+          "activation": "special",
+          "damage": [
+            {
+              "formula": "2d6",
+              "type": "contundente"
+            }
+          ]
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -3500,6 +4309,22 @@
           "max": "3",
           "recovery": "dawn",
           "amount": "1d3"
+        }
+      ],
+      "actions": [
+        {
+          "key": "maza_del_terror",
+          "label": {
+            "es": "Maza del terror",
+            "en": "Mace of Terror"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "sab",
+            "dc": "15",
+            "success": "half"
+          },
+          "uses": "cargas"
         }
       ],
       "automation": "partial"
@@ -3564,7 +4389,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -3595,7 +4430,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -3626,7 +4471,34 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1"
+        }
+      ],
+      "actions": [
+        {
+          "key": "manual_de_golems",
+          "label": {
+            "es": "Manual de gólems",
+            "en": "Manual of Golems"
+          },
+          "activation": "special",
+          "damage": [
+            {
+              "formula": "6d6",
+              "type": "psiquico"
+            }
+          ],
+          "uses": "cargas"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -3657,7 +4529,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -3731,6 +4613,22 @@
           "amount": "1d3"
         }
       ],
+      "actions": [
+        {
+          "key": "detectar_pensamientos",
+          "label": {
+            "es": "Detectar pensamientos",
+            "en": "Detect Thoughts"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "sab",
+            "dc": "13",
+            "success": "none"
+          },
+          "uses": "cargas"
+        }
+      ],
       "automation": "partial"
     },
     "ref": {
@@ -3762,7 +4660,33 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "12"
+        }
+      ],
+      "actions": [
+        {
+          "key": "espejo_atrapavidas",
+          "label": {
+            "es": "Espejo atrapavidas",
+            "en": "Mirror of Life Trapping"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "car",
+            "dc": "15",
+            "success": "half"
+          },
+          "uses": "cargas"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -3855,7 +4779,39 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "9"
+        }
+      ],
+      "actions": [
+        {
+          "key": "bola_de_fuego",
+          "label": {
+            "es": "Bola de fuego",
+            "en": "Fireball"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "15",
+            "success": "half"
+          },
+          "damage": [
+            {
+              "formula": "8d6",
+              "type": "fuego"
+            }
+          ],
+          "uses": "cargas"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -3886,7 +4842,44 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1",
+          "recovery": "dawn"
+        }
+      ],
+      "actions": [
+        {
+          "key": "curar_heridas",
+          "label": {
+            "es": "Curar heridas",
+            "en": "Cure Wounds"
+          },
+          "activation": "bonus",
+          "heal": "1d8",
+          "uses": "cargas"
+        },
+        {
+          "key": "castigo_marcador",
+          "label": {
+            "es": "Castigo marcador",
+            "en": "Branding Smite"
+          },
+          "activation": "bonus",
+          "damage": [
+            {
+              "formula": "2d6",
+              "type": "radiante"
+            }
+          ]
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -3948,7 +4941,34 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1",
+          "recovery": "dawn"
+        }
+      ],
+      "actions": [
+        {
+          "key": "arco_juramentado_damage_vs_sworn_enemy",
+          "label": {
+            "es": "Arco juramentado: Damage vs Sworn Enemy",
+            "en": "Oathbow: Damage vs Sworn Enemy"
+          },
+          "activation": "action",
+          "damage": [
+            {
+              "formula": "3d6",
+              "type": "perforante"
+            }
+          ]
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -3979,7 +4999,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -4010,7 +5040,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -4041,7 +5081,32 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1"
+        }
+      ],
+      "actions": [
+        {
+          "key": "grasa",
+          "label": {
+            "es": "Grasa",
+            "en": "Grease"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "@cd_conjuros",
+            "success": "none"
+          }
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -4072,7 +5137,18 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1",
+          "recovery": "dawn"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -4196,7 +5272,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -4227,7 +5313,35 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "3",
+          "recovery": "long",
+          "amount": "1d3"
+        }
+      ],
+      "actions": [
+        {
+          "key": "flauta_de_la_aparicion",
+          "label": {
+            "es": "Flauta de la aparición",
+            "en": "Pipes of Haunting"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "sab",
+            "dc": "15",
+            "success": "half"
+          },
+          "uses": "cargas"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -4258,7 +5372,19 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "3",
+          "recovery": "long",
+          "amount": "1d3"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -4289,7 +5415,18 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1",
+          "recovery": "dawn"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -4320,7 +5457,22 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "actions": [
+        {
+          "key": "agujero_portatil",
+          "label": {
+            "es": "Agujero portátil",
+            "en": "Portable Hole"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "fue",
+            "dc": "10",
+            "success": "half"
+          }
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -4351,7 +5503,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -4382,7 +5544,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -4413,7 +5585,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -4444,7 +5626,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -4475,7 +5667,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -4506,7 +5708,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -4567,7 +5779,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -4597,7 +5819,29 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1"
+        }
+      ],
+      "actions": [
+        {
+          "key": "pocion_de_curacion_drink",
+          "label": {
+            "es": "Poción de curación: Drink",
+            "en": "Potion of Healing: Drink"
+          },
+          "activation": "action",
+          "heal": "2d4 + 2",
+          "uses": "cargas"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -4628,7 +5872,29 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1"
+        }
+      ],
+      "actions": [
+        {
+          "key": "pocion_de_heroismo_drink",
+          "label": {
+            "es": "Poción de heroísmo: Drink",
+            "en": "Potion of Heroism: Drink"
+          },
+          "activation": "action",
+          "heal": "10",
+          "uses": "cargas"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -4659,7 +5925,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -4690,7 +5966,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -4721,7 +6007,47 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1"
+        }
+      ],
+      "actions": [
+        {
+          "key": "pocion_de_veneno",
+          "label": {
+            "es": "Poción de veneno",
+            "en": "Potion of Poison"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "con",
+            "dc": "13",
+            "success": "half"
+          },
+          "uses": "cargas"
+        },
+        {
+          "key": "pocion_de_veneno_2",
+          "label": {
+            "es": "Poción de veneno",
+            "en": "Potion of Poison"
+          },
+          "activation": "action",
+          "damage": [
+            {
+              "formula": "3d6",
+              "type": "veneno"
+            }
+          ]
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -4783,7 +6109,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -4814,7 +6150,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -4845,7 +6191,29 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "5"
+        }
+      ],
+      "actions": [
+        {
+          "key": "unguento_reparador_apply_ointment",
+          "label": {
+            "es": "Ungüento reparador: Apply Ointment",
+            "en": "Restorative Ointment: Apply Ointment"
+          },
+          "activation": "action",
+          "heal": "2d8 + 2",
+          "uses": "cargas"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -4888,6 +6256,36 @@
           "amount": "1d3"
         }
       ],
+      "actions": [
+        {
+          "key": "encantar_animal",
+          "label": {
+            "es": "Encantar animal",
+            "en": "Animal Friendship"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "sab",
+            "dc": "13",
+            "success": "none"
+          },
+          "uses": "cargas"
+        },
+        {
+          "key": "terror",
+          "label": {
+            "es": "Terror",
+            "en": "Fear"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "sab",
+            "dc": "13",
+            "success": "none"
+          },
+          "uses": "cargas"
+        }
+      ],
       "automation": "partial"
     },
     "ref": {
@@ -4919,7 +6317,18 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1",
+          "recovery": "dawn"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -5256,7 +6665,18 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "actions": [
+        {
+          "key": "anillo_de_regeneracion",
+          "label": {
+            "es": "Anillo de regeneración",
+            "en": "Ring of Regeneration"
+          },
+          "activation": "special",
+          "heal": "1d6"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -5330,6 +6750,55 @@
           "amount": "1d6"
         }
       ],
+      "actions": [
+        {
+          "key": "anillo_de_estrellas_fugaces_shooting_star",
+          "label": {
+            "es": "Anillo de estrellas fugaces: Shooting Star",
+            "en": "Ring of Shooting Stars: Shooting Star"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "15",
+            "success": "half"
+          },
+          "damage": [
+            {
+              "formula": "5d4",
+              "type": "fuego"
+            }
+          ],
+          "uses": "cargas"
+        },
+        {
+          "key": "luz",
+          "label": {
+            "es": "Luz",
+            "en": "Light"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "@cd_conjuros",
+            "success": "none"
+          }
+        },
+        {
+          "key": "fuego_feerico",
+          "label": {
+            "es": "Fuego feérico",
+            "en": "Faerie Fire"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "@cd_conjuros",
+            "success": "none"
+          },
+          "uses": "cargas"
+        }
+      ],
       "automation": "partial"
     },
     "ref": {
@@ -5361,7 +6830,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "5"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -5528,7 +7007,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "3"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -5629,7 +7118,22 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "actions": [
+        {
+          "key": "anillo_de_vision_de_rayos_x",
+          "label": {
+            "es": "Anillo de visión de rayos X",
+            "en": "Ring of X-ray Vision"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "con",
+            "dc": "15",
+            "success": "half"
+          }
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -5660,7 +7164,35 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "actions": [
+        {
+          "key": "tunica_de_los_ojos_save_vs_light",
+          "label": {
+            "es": "Túnica de los ojos: Save vs. Light",
+            "en": "Robe of Eyes: Save vs. Light"
+          },
+          "activation": "special",
+          "save": {
+            "ability": "con",
+            "dc": "11",
+            "success": "half"
+          }
+        },
+        {
+          "key": "tunica_de_los_ojos_save_vs_daylight",
+          "label": {
+            "es": "Túnica de los ojos: Save vs. Daylight",
+            "en": "Robe of Eyes: Save vs. Daylight"
+          },
+          "activation": "special",
+          "save": {
+            "ability": "con",
+            "dc": "15",
+            "success": "half"
+          }
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -5703,6 +7235,22 @@
           "amount": "1d3"
         }
       ],
+      "actions": [
+        {
+          "key": "tunica_de_colores_hipnoticos",
+          "label": {
+            "es": "Túnica de colores hipnóticos",
+            "en": "Robe of Scintillating Colors"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "sab",
+            "dc": "15",
+            "success": "half"
+          },
+          "uses": "cargas"
+        }
+      ],
       "automation": "partial"
     },
     "ref": {
@@ -5740,6 +7288,34 @@
           "op": "add",
           "value": "1",
           "when": "@este.sintonizado"
+        }
+      ],
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "6",
+          "amount": "1d6"
+        }
+      ],
+      "actions": [
+        {
+          "key": "proyectil_magico",
+          "label": {
+            "es": "Proyectil mágico",
+            "en": "Magic Missile"
+          },
+          "activation": "action",
+          "damage": [
+            {
+              "formula": "1d4 + 1",
+              "type": "fuerza"
+            }
+          ],
+          "uses": "cargas"
         }
       ],
       "automation": "partial"
@@ -5835,7 +7411,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "50"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -5878,6 +7464,17 @@
           "op": "add",
           "value": "1",
           "when": "@este.sintonizado"
+        }
+      ],
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1",
+          "recovery": "dawn"
         }
       ],
       "automation": "partial"
@@ -5942,7 +7539,34 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1",
+          "recovery": "dawn"
+        }
+      ],
+      "actions": [
+        {
+          "key": "cetro_de_mando",
+          "label": {
+            "es": "Cetro de mando",
+            "en": "Rod of Rulership"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "sab",
+            "dc": "15",
+            "success": "half"
+          },
+          "uses": "cargas"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -5973,7 +7597,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -6004,7 +7638,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "20"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -6035,7 +7679,22 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "actions": [
+        {
+          "key": "cuerda_enredadora",
+          "label": {
+            "es": "Cuerda enredadora",
+            "en": "Rope of Entanglement"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "15",
+            "success": "half"
+          }
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -6231,7 +7890,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "7"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -6323,7 +7992,28 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "actions": [
+        {
+          "key": "esfera_de_aniquilacion",
+          "label": {
+            "es": "Esfera de aniquilación",
+            "en": "Sphere of Annihilation"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "13",
+            "success": "half"
+          },
+          "damage": [
+            {
+              "formula": "4d10",
+              "type": "fuerza"
+            }
+          ]
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -6354,7 +8044,49 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "10",
+          "recovery": "dawn",
+          "amount": "1d8+2"
+        }
+      ],
+      "actions": [
+        {
+          "key": "hechizar_persona",
+          "label": {
+            "es": "Hechizar persona",
+            "en": "Charm Person"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "sab",
+            "dc": "@cd_conjuros",
+            "success": "none"
+          },
+          "uses": "cargas"
+        },
+        {
+          "key": "orden_imperiosa",
+          "label": {
+            "es": "Orden imperiosa",
+            "en": "Command"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "sab",
+            "dc": "@cd_conjuros",
+            "success": "none"
+          },
+          "uses": "cargas"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -6403,6 +8135,70 @@
           "max": "10",
           "recovery": "dawn",
           "amount": "1d6+4"
+        }
+      ],
+      "actions": [
+        {
+          "key": "manos_ardientes",
+          "label": {
+            "es": "Manos ardientes",
+            "en": "Burning Hands"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "@cd_conjuros",
+            "success": "half"
+          },
+          "damage": [
+            {
+              "formula": "3d6",
+              "type": "fuego"
+            }
+          ],
+          "uses": "cargas"
+        },
+        {
+          "key": "bola_de_fuego",
+          "label": {
+            "es": "Bola de fuego",
+            "en": "Fireball"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "@cd_conjuros",
+            "success": "half"
+          },
+          "damage": [
+            {
+              "formula": "8d6",
+              "type": "fuego"
+            }
+          ],
+          "uses": "cargas",
+          "cost": 3
+        },
+        {
+          "key": "muro_de_fuego",
+          "label": {
+            "es": "Muro de fuego",
+            "en": "Wall of Fire"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "@cd_conjuros",
+            "success": "half"
+          },
+          "damage": [
+            {
+              "formula": "5d8",
+              "type": "fuego"
+            }
+          ],
+          "uses": "cargas",
+          "cost": 4
         }
       ],
       "automation": "partial"
@@ -6456,6 +8252,75 @@
           "amount": "1d6+4"
         }
       ],
+      "actions": [
+        {
+          "key": "cono_de_frio",
+          "label": {
+            "es": "Cono de frío",
+            "en": "Cone of Cold"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "con",
+            "dc": "@cd_conjuros",
+            "success": "half"
+          },
+          "damage": [
+            {
+              "formula": "8d8",
+              "type": "frio"
+            }
+          ],
+          "uses": "cargas",
+          "cost": 5
+        },
+        {
+          "key": "tormenta_de_hielo",
+          "label": {
+            "es": "Tormenta de hielo",
+            "en": "Ice Storm"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "@cd_conjuros",
+            "success": "half"
+          },
+          "damage": [
+            {
+              "formula": "2d8",
+              "type": "contundente"
+            },
+            {
+              "formula": "4d6",
+              "type": "frio"
+            }
+          ],
+          "uses": "cargas",
+          "cost": 4
+        },
+        {
+          "key": "muro_de_hielo",
+          "label": {
+            "es": "Muro de hielo",
+            "en": "Wall of Ice"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "@cd_conjuros",
+            "success": "half"
+          },
+          "damage": [
+            {
+              "formula": "10d6",
+              "type": "frio"
+            }
+          ],
+          "uses": "cargas",
+          "cost": 4
+        }
+      ],
       "automation": "partial"
     },
     "ref": {
@@ -6497,6 +8362,29 @@
           "max": "10",
           "recovery": "dawn",
           "amount": "1d6+4"
+        }
+      ],
+      "actions": [
+        {
+          "key": "curar_heridas",
+          "label": {
+            "es": "Curar heridas",
+            "en": "Cure Wounds"
+          },
+          "activation": "action",
+          "heal": "1d8",
+          "uses": "cargas"
+        },
+        {
+          "key": "curar_heridas_en_masa",
+          "label": {
+            "es": "Curar heridas en masa",
+            "en": "Mass Cure Wounds"
+          },
+          "activation": "action",
+          "heal": "3d8",
+          "uses": "cargas",
+          "cost": 5
         }
       ],
       "automation": "partial"
@@ -6548,6 +8436,154 @@
           "max": "20",
           "recovery": "dawn",
           "amount": "2d8+4"
+        }
+      ],
+      "actions": [
+        {
+          "key": "cono_de_frio",
+          "label": {
+            "es": "Cono de frío",
+            "en": "Cone of Cold"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "con",
+            "dc": "@cd_conjuros",
+            "success": "half"
+          },
+          "damage": [
+            {
+              "formula": "8d8",
+              "type": "frio"
+            }
+          ],
+          "uses": "cargas",
+          "cost": 5
+        },
+        {
+          "key": "bola_de_fuego",
+          "label": {
+            "es": "Bola de fuego",
+            "en": "Fireball"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "@cd_conjuros",
+            "success": "half"
+          },
+          "damage": [
+            {
+              "formula": "8d6",
+              "type": "fuego"
+            }
+          ],
+          "uses": "cargas",
+          "cost": 5
+        },
+        {
+          "key": "inmovilizar_monstruo",
+          "label": {
+            "es": "Inmovilizar monstruo",
+            "en": "Hold Monster"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "sab",
+            "dc": "@cd_conjuros",
+            "success": "half"
+          },
+          "uses": "cargas",
+          "cost": 5
+        },
+        {
+          "key": "levitar",
+          "label": {
+            "es": "Levitar",
+            "en": "Levitate"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "con",
+            "dc": "@cd_conjuros",
+            "success": "none"
+          },
+          "uses": "cargas",
+          "cost": 2
+        },
+        {
+          "key": "relampago",
+          "label": {
+            "es": "Relámpago",
+            "en": "Lightning Bolt"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "@cd_conjuros",
+            "success": "half"
+          },
+          "damage": [
+            {
+              "formula": "8d6",
+              "type": "relampago"
+            }
+          ],
+          "uses": "cargas",
+          "cost": 5
+        },
+        {
+          "key": "proyectil_magico",
+          "label": {
+            "es": "Proyectil mágico",
+            "en": "Magic Missile"
+          },
+          "activation": "action",
+          "damage": [
+            {
+              "formula": "1d4 + 1",
+              "type": "fuerza"
+            }
+          ],
+          "uses": "cargas"
+        },
+        {
+          "key": "rayo_debilitador",
+          "label": {
+            "es": "Rayo debilitador",
+            "en": "Ray of Enfeeblement"
+          },
+          "activation": "action",
+          "attack": "@ataque_conjuros",
+          "uses": "cargas"
+        },
+        {
+          "key": "baston_de_poder_power_strike",
+          "label": {
+            "es": "Bastón de poder: Power Strike",
+            "en": "Staff of Power: Power Strike"
+          },
+          "activation": "special",
+          "damage": [
+            {
+              "formula": "1d6",
+              "type": "fuerza"
+            }
+          ],
+          "uses": "cargas"
+        },
+        {
+          "key": "baston_de_poder_retributive_strike",
+          "label": {
+            "es": "Bastón de poder: Retributive Strike",
+            "en": "Staff of Power: Retributive Strike"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "17",
+            "success": "half"
+          }
         }
       ],
       "automation": "partial"
@@ -6636,6 +8672,29 @@
           "amount": "1d6+4"
         }
       ],
+      "actions": [
+        {
+          "key": "plaga_de_insectos",
+          "label": {
+            "es": "Plaga de insectos",
+            "en": "Insect Plague"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "con",
+            "dc": "@cd_conjuros",
+            "success": "half"
+          },
+          "damage": [
+            {
+              "formula": "4d10",
+              "type": "perforante"
+            }
+          ],
+          "uses": "cargas",
+          "cost": 5
+        }
+      ],
       "automation": "partial"
     },
     "ref": {
@@ -6677,6 +8736,182 @@
           "max": "50",
           "recovery": "dawn",
           "amount": "4d6+2"
+        }
+      ],
+      "actions": [
+        {
+          "key": "bola_de_fuego",
+          "label": {
+            "es": "Bola de fuego",
+            "en": "Fireball"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "@cd_conjuros",
+            "success": "half"
+          },
+          "damage": [
+            {
+              "formula": "8d6",
+              "type": "fuego"
+            }
+          ],
+          "uses": "cargas",
+          "cost": 7
+        },
+        {
+          "key": "esfera_de_llamas",
+          "label": {
+            "es": "Esfera de llamas",
+            "en": "Flaming Sphere"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "@cd_conjuros",
+            "success": "half"
+          },
+          "damage": [
+            {
+              "formula": "2d6",
+              "type": "fuego"
+            }
+          ],
+          "uses": "cargas",
+          "cost": 2
+        },
+        {
+          "key": "tormenta_de_hielo",
+          "label": {
+            "es": "Tormenta de hielo",
+            "en": "Ice Storm"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "@cd_conjuros",
+            "success": "half"
+          },
+          "damage": [
+            {
+              "formula": "2d8",
+              "type": "contundente"
+            },
+            {
+              "formula": "4d6",
+              "type": "frio"
+            }
+          ],
+          "uses": "cargas",
+          "cost": 4
+        },
+        {
+          "key": "relampago",
+          "label": {
+            "es": "Relámpago",
+            "en": "Lightning Bolt"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "@cd_conjuros",
+            "success": "half"
+          },
+          "damage": [
+            {
+              "formula": "8d6",
+              "type": "relampago"
+            }
+          ],
+          "uses": "cargas",
+          "cost": 7
+        },
+        {
+          "key": "desplazamiento_entre_planos",
+          "label": {
+            "es": "Desplazamiento entre planos",
+            "en": "Plane Shift"
+          },
+          "activation": "action",
+          "attack": "@ataque_conjuros",
+          "uses": "cargas",
+          "cost": 7
+        },
+        {
+          "key": "muro_de_fuego",
+          "label": {
+            "es": "Muro de fuego",
+            "en": "Wall of Fire"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "@cd_conjuros",
+            "success": "half"
+          },
+          "damage": [
+            {
+              "formula": "5d8",
+              "type": "fuego"
+            }
+          ],
+          "uses": "cargas",
+          "cost": 4
+        },
+        {
+          "key": "telarana",
+          "label": {
+            "es": "Telaraña",
+            "en": "Web"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "@cd_conjuros",
+            "success": "none"
+          },
+          "uses": "cargas",
+          "cost": 2
+        },
+        {
+          "key": "agrandar_reducir",
+          "label": {
+            "es": "Agrandar/reducir",
+            "en": "Enlarge/Reduce"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "con",
+            "dc": "@cd_conjuros",
+            "success": "half"
+          }
+        },
+        {
+          "key": "luz",
+          "label": {
+            "es": "Luz",
+            "en": "Light"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "@cd_conjuros",
+            "success": "none"
+          }
+        },
+        {
+          "key": "baston_de_los_magos_retributive_strike",
+          "label": {
+            "es": "Bastón de los magos: Retributive Strike",
+            "en": "Staff of the Magi: Retributive Strike"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "17",
+            "success": "half"
+          }
         }
       ],
       "automation": "partial"
@@ -6753,6 +8988,43 @@
           "amount": "1d6+4"
         }
       ],
+      "actions": [
+        {
+          "key": "encantar_animal",
+          "label": {
+            "es": "Encantar animal",
+            "en": "Animal Friendship"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "sab",
+            "dc": "@cd_conjuros",
+            "success": "none"
+          },
+          "uses": "cargas"
+        },
+        {
+          "key": "muro_de_espinas",
+          "label": {
+            "es": "Muro de espinas",
+            "en": "Wall of Thorns"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "@cd_conjuros",
+            "success": "half"
+          },
+          "damage": [
+            {
+              "formula": "7d8",
+              "type": "perforante"
+            }
+          ],
+          "uses": "cargas",
+          "cost": 6
+        }
+      ],
       "automation": "partial"
     },
     "ref": {
@@ -6827,6 +9099,37 @@
           "amount": "1d3"
         }
       ],
+      "actions": [
+        {
+          "key": "baston_de_marchitamiento",
+          "label": {
+            "es": "Bastón de marchitamiento",
+            "en": "Staff of Withering"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "con",
+            "dc": "15",
+            "success": "half"
+          },
+          "uses": "cargas"
+        },
+        {
+          "key": "baston_de_marchitamiento_wither",
+          "label": {
+            "es": "Bastón de marchitamiento: Wither",
+            "en": "Staff of Withering: Wither"
+          },
+          "activation": "special",
+          "damage": [
+            {
+              "formula": "2d10",
+              "type": "necrotico"
+            }
+          ],
+          "uses": "cargas"
+        }
+      ],
       "automation": "partial"
     },
     "ref": {
@@ -6858,7 +9161,18 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1",
+          "recovery": "dawn"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -7054,6 +9368,42 @@
           "max": "7"
         }
       ],
+      "actions": [
+        {
+          "key": "talisman_del_bien_puro",
+          "label": {
+            "es": "Talismán del bien puro",
+            "en": "Talisman of Pure Good"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "20",
+            "success": "half"
+          },
+          "damage": [
+            {
+              "formula": "6d6",
+              "type": "radiante"
+            }
+          ],
+          "uses": "cargas"
+        },
+        {
+          "key": "talisman_del_bien_puro_2",
+          "label": {
+            "es": "Talismán del bien puro",
+            "en": "Talisman of Pure Good"
+          },
+          "activation": "action",
+          "damage": [
+            {
+              "formula": "8d6"
+            }
+          ],
+          "uses": "cargas"
+        }
+      ],
       "automation": "partial"
     },
     "ref": {
@@ -7126,6 +9476,42 @@
           "max": "6"
         }
       ],
+      "actions": [
+        {
+          "key": "talisman_del_mal_definitivo",
+          "label": {
+            "es": "Talismán del mal definitivo",
+            "en": "Talisman of Ultimate Evil"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "20",
+            "success": "half"
+          },
+          "damage": [
+            {
+              "formula": "6d6",
+              "type": "necrotico"
+            }
+          ],
+          "uses": "cargas"
+        },
+        {
+          "key": "talisman_del_mal_definitivo_2",
+          "label": {
+            "es": "Talismán del mal definitivo",
+            "en": "Talisman of Ultimate Evil"
+          },
+          "activation": "action",
+          "damage": [
+            {
+              "formula": "8d6"
+            }
+          ],
+          "uses": "cargas"
+        }
+      ],
       "automation": "partial"
     },
     "ref": {
@@ -7157,7 +9543,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -7188,7 +9584,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -7219,7 +9625,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -7262,6 +9678,22 @@
           "amount": "1d3"
         }
       ],
+      "actions": [
+        {
+          "key": "dominar_bestia",
+          "label": {
+            "es": "Dominar bestia",
+            "en": "Dominate Beast"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "sab",
+            "dc": "15",
+            "success": "none"
+          },
+          "uses": "cargas"
+        }
+      ],
       "automation": "partial"
     },
     "ref": {
@@ -7293,7 +9725,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -7398,6 +9840,38 @@
           "amount": "1d6+1"
         }
       ],
+      "actions": [
+        {
+          "key": "inmovilizar_monstruo",
+          "label": {
+            "es": "Inmovilizar monstruo",
+            "en": "Hold Monster"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "sab",
+            "dc": "17",
+            "success": "half"
+          },
+          "uses": "cargas",
+          "cost": 5
+        },
+        {
+          "key": "inmovilizar_persona",
+          "label": {
+            "es": "Inmovilizar persona",
+            "en": "Hold Person"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "sab",
+            "dc": "17",
+            "success": "none"
+          },
+          "uses": "cargas",
+          "cost": 2
+        }
+      ],
       "automation": "partial"
     },
     "ref": {
@@ -7484,6 +9958,36 @@
           "amount": "1d6+1"
         }
       ],
+      "actions": [
+        {
+          "key": "orden_imperiosa",
+          "label": {
+            "es": "Orden imperiosa",
+            "en": "Command"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "sab",
+            "dc": "15",
+            "success": "none"
+          }
+        },
+        {
+          "key": "varita_del_terror_cone_of_fear",
+          "label": {
+            "es": "Varita del terror: Cone of Fear",
+            "en": "Wand of Fear: Cone of Fear"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "sab",
+            "dc": "15",
+            "success": "none"
+          },
+          "uses": "cargas",
+          "cost": 2
+        }
+      ],
       "automation": "partial"
     },
     "ref": {
@@ -7527,6 +10031,28 @@
           "amount": "1d6+1"
         }
       ],
+      "actions": [
+        {
+          "key": "bola_de_fuego",
+          "label": {
+            "es": "Bola de fuego",
+            "en": "Fireball"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "15",
+            "success": "half"
+          },
+          "damage": [
+            {
+              "formula": "8d6",
+              "type": "fuego"
+            }
+          ],
+          "uses": "cargas"
+        }
+      ],
       "automation": "partial"
     },
     "ref": {
@@ -7568,6 +10094,28 @@
           "max": "7",
           "recovery": "dawn",
           "amount": "1d6+1"
+        }
+      ],
+      "actions": [
+        {
+          "key": "relampago",
+          "label": {
+            "es": "Relámpago",
+            "en": "Lightning Bolt"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "15",
+            "success": "half"
+          },
+          "damage": [
+            {
+              "formula": "8d6",
+              "type": "relampago"
+            }
+          ],
+          "uses": "cargas"
         }
       ],
       "automation": "partial"
@@ -7656,6 +10204,23 @@
           "amount": "1d6+1"
         }
       ],
+      "actions": [
+        {
+          "key": "proyectil_magico",
+          "label": {
+            "es": "Proyectil mágico",
+            "en": "Magic Missile"
+          },
+          "activation": "action",
+          "damage": [
+            {
+              "formula": "1d4 + 1",
+              "type": "fuerza"
+            }
+          ],
+          "uses": "cargas"
+        }
+      ],
       "automation": "partial"
     },
     "ref": {
@@ -7697,6 +10262,22 @@
           "max": "7",
           "recovery": "dawn",
           "amount": "1d6+1"
+        }
+      ],
+      "actions": [
+        {
+          "key": "varita_de_paralisis_paralyzing_beam",
+          "label": {
+            "es": "Varita de parálisis: Paralyzing Beam",
+            "en": "Wand of Paralysis: Paralyzing Beam"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "con",
+            "dc": "15",
+            "success": "none"
+          },
+          "uses": "cargas"
         }
       ],
       "automation": "partial"
@@ -7859,6 +10440,22 @@
           "amount": "1d6+1"
         }
       ],
+      "actions": [
+        {
+          "key": "telarana",
+          "label": {
+            "es": "Telaraña",
+            "en": "Web"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "15",
+            "success": "none"
+          },
+          "uses": "cargas"
+        }
+      ],
       "automation": "partial"
     },
     "ref": {
@@ -7900,6 +10497,125 @@
           "max": "7",
           "recovery": "dawn",
           "amount": "1d6+1"
+        }
+      ],
+      "actions": [
+        {
+          "key": "ralentizar",
+          "label": {
+            "es": "Ralentizar",
+            "en": "Slow"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "sab",
+            "dc": "15",
+            "success": "half"
+          }
+        },
+        {
+          "key": "fuego_feerico",
+          "label": {
+            "es": "Fuego feérico",
+            "en": "Faerie Fire"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "15",
+            "success": "none"
+          }
+        },
+        {
+          "key": "rafaga_de_viento",
+          "label": {
+            "es": "Ráfaga de viento",
+            "en": "Gust of Wind"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "fue",
+            "dc": "15",
+            "success": "half"
+          }
+        },
+        {
+          "key": "detectar_pensamientos",
+          "label": {
+            "es": "Detectar pensamientos",
+            "en": "Detect Thoughts"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "sab",
+            "dc": "15",
+            "success": "none"
+          }
+        },
+        {
+          "key": "nube_apestosa",
+          "label": {
+            "es": "Nube apestosa",
+            "en": "Stinking Cloud"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "con",
+            "dc": "15",
+            "success": "none"
+          }
+        },
+        {
+          "key": "relampago",
+          "label": {
+            "es": "Relámpago",
+            "en": "Lightning Bolt"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "15",
+            "success": "half"
+          },
+          "damage": [
+            {
+              "formula": "8d6",
+              "type": "relampago"
+            }
+          ]
+        },
+        {
+          "key": "bola_de_fuego",
+          "label": {
+            "es": "Bola de fuego",
+            "en": "Fireball"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "15",
+            "success": "half"
+          },
+          "damage": [
+            {
+              "formula": "8d6",
+              "type": "fuego"
+            }
+          ]
+        },
+        {
+          "key": "varita_de_las_maravillas_point_wand_at_target",
+          "label": {
+            "es": "Varita de las maravillas: Point Wand at Target",
+            "en": "Wand of Wonder: Point Wand at Target"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "15",
+            "success": "half"
+          },
+          "uses": "cargas"
         }
       ],
       "automation": "partial"
@@ -7964,7 +10680,33 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1"
+        }
+      ],
+      "actions": [
+        {
+          "key": "pozo_de_los_muchos_mundos",
+          "label": {
+            "es": "Pozo de los muchos mundos",
+            "en": "Well of Many Worlds"
+          },
+          "activation": "action",
+          "damage": [
+            {
+              "formula": "1d4 + 1"
+            }
+          ],
+          "uses": "cargas"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -7995,7 +10737,47 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1"
+        }
+      ],
+      "actions": [
+        {
+          "key": "abanico_del_viento",
+          "label": {
+            "es": "Abanico del viento",
+            "en": "Wind Fan"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "fue",
+            "dc": "13",
+            "success": "half"
+          },
+          "uses": "cargas"
+        },
+        {
+          "key": "abanico_del_viento_2",
+          "label": {
+            "es": "Abanico del viento",
+            "en": "Wind Fan"
+          },
+          "activation": "action",
+          "damage": [
+            {
+              "formula": "1d4 + 1"
+            }
+          ],
+          "uses": "cargas"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -8057,7 +10839,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -8150,7 +10942,28 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "actions": [
+        {
+          "key": "municion_asesina_slaying_save",
+          "label": {
+            "es": "Munición asesina: Slaying Save",
+            "en": "Ammunition of Slaying: Slaying Save"
+          },
+          "activation": "special",
+          "save": {
+            "ability": "con",
+            "dc": "17",
+            "success": "half"
+          },
+          "damage": [
+            {
+              "formula": "6d10",
+              "type": "fuerza"
+            }
+          ]
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -8375,7 +11188,18 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1",
+          "recovery": "dawn"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -8507,7 +11331,39 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "12"
+        }
+      ],
+      "actions": [
+        {
+          "key": "bolsa_de_judias_dump_beans",
+          "label": {
+            "es": "Bolsa de judías: Dump Beans",
+            "en": "Bag of Beans: Dump Beans"
+          },
+          "activation": "special",
+          "save": {
+            "ability": "des",
+            "dc": "15",
+            "success": "half"
+          },
+          "damage": [
+            {
+              "formula": "5d4",
+              "type": "fuerza"
+            }
+          ],
+          "uses": "cargas"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -8631,7 +11487,39 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1"
+        }
+      ],
+      "actions": [
+        {
+          "key": "canica_de_fuerza_throw_bead",
+          "label": {
+            "es": "Canica de fuerza: Throw Bead",
+            "en": "Bead of Force: Throw Bead"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "15",
+            "success": "none"
+          },
+          "damage": [
+            {
+              "formula": "5d4",
+              "type": "fuerza"
+            }
+          ],
+          "uses": "cargas"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -8662,7 +11550,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -8824,7 +11722,22 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "actions": [
+        {
+          "key": "levitar",
+          "label": {
+            "es": "Levitar",
+            "en": "Levitate"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "con",
+            "dc": "@cd_conjuros",
+            "success": "half"
+          }
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -8855,7 +11768,18 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "600",
+          "recovery": "long"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -8956,7 +11880,18 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1",
+          "recovery": "dawn"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -9057,7 +11992,18 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1",
+          "recovery": "dawn"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -9158,7 +12104,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "240"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -9189,7 +12145,34 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1",
+          "recovery": "dawn"
+        }
+      ],
+      "actions": [
+        {
+          "key": "puerta_dimensional",
+          "label": {
+            "es": "Puerta dimensional",
+            "en": "Dimension Door"
+          },
+          "activation": "action",
+          "damage": [
+            {
+              "formula": "4d6",
+              "type": "fuerza"
+            }
+          ]
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -9251,7 +12234,18 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1",
+          "recovery": "dawn"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -9282,7 +12276,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "10"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -9313,7 +12317,36 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1",
+          "recovery": "dawn"
+        }
+      ],
+      "actions": [
+        {
+          "key": "rayo_abrasador",
+          "label": {
+            "es": "Rayo abrasador",
+            "en": "Scorching Ray"
+          },
+          "activation": "action",
+          "attack": "5",
+          "damage": [
+            {
+              "formula": "2d6",
+              "type": "fuego"
+            }
+          ],
+          "uses": "cargas"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -9350,6 +12383,39 @@
           "op": "append",
           "value": "\"veneno\"",
           "when": "@este.sintonizado"
+        }
+      ],
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1",
+          "recovery": "dawn"
+        }
+      ],
+      "actions": [
+        {
+          "key": "telarana",
+          "label": {
+            "es": "Telaraña",
+            "en": "Web"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "13",
+            "success": "none"
+          },
+          "damage": [
+            {
+              "formula": "2d4",
+              "type": "fuego"
+            }
+          ],
+          "uses": "cargas"
         }
       ],
       "automation": "partial"
@@ -9533,7 +12599,34 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1",
+          "recovery": "dawn"
+        }
+      ],
+      "actions": [
+        {
+          "key": "polimorfar",
+          "label": {
+            "es": "Polimorfar",
+            "en": "Polymorph"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "sab",
+            "dc": "@cd_conjuros",
+            "success": "half"
+          },
+          "uses": "cargas"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -9595,7 +12688,22 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "actions": [
+        {
+          "key": "escudrinar",
+          "label": {
+            "es": "Escudriñar",
+            "en": "Scrying"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "sab",
+            "dc": "17",
+            "success": "half"
+          }
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -9626,7 +12734,35 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "actions": [
+        {
+          "key": "escudrinar",
+          "label": {
+            "es": "Escudriñar",
+            "en": "Scrying"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "sab",
+            "dc": "17",
+            "success": "half"
+          }
+        },
+        {
+          "key": "detectar_pensamientos",
+          "label": {
+            "es": "Detectar pensamientos",
+            "en": "Detect Thoughts"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "sab",
+            "dc": "@cd_conjuros",
+            "success": "half"
+          }
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -9657,7 +12793,47 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1",
+          "recovery": "dawn"
+        }
+      ],
+      "actions": [
+        {
+          "key": "escudrinar",
+          "label": {
+            "es": "Escudriñar",
+            "en": "Scrying"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "sab",
+            "dc": "17",
+            "success": "half"
+          }
+        },
+        {
+          "key": "sugestion",
+          "label": {
+            "es": "Sugestión",
+            "en": "Suggestion"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "sab",
+            "dc": "17",
+            "success": "half"
+          },
+          "uses": "cargas"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -9688,7 +12864,22 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "actions": [
+        {
+          "key": "escudrinar",
+          "label": {
+            "es": "Escudriñar",
+            "en": "Scrying"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "sab",
+            "dc": "@cd_conjuros",
+            "success": "half"
+          }
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -9719,7 +12910,36 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "10",
+          "recovery": "dawn",
+          "amount": "1d6"
+        }
+      ],
+      "actions": [
+        {
+          "key": "esfera_elastica",
+          "label": {
+            "es": "Esfera elástica",
+            "en": "Resilient Sphere"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "17",
+            "success": "half"
+          },
+          "uses": "cargas",
+          "cost": 4
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -9793,7 +13013,39 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1",
+          "recovery": "dawn"
+        }
+      ],
+      "actions": [
+        {
+          "key": "daga_de_la_ponzona_poison_save",
+          "label": {
+            "es": "Daga de la ponzoña: Poison Save",
+            "en": "Dagger of Venom: Poison Save"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "con",
+            "dc": "15",
+            "success": "none"
+          },
+          "damage": [
+            {
+              "formula": "2d10",
+              "type": "veneno"
+            }
+          ]
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -9855,7 +13107,28 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "actions": [
+        {
+          "key": "decantador_de_agua_interminable_geyser",
+          "label": {
+            "es": "Decantador de agua interminable: Geyser",
+            "en": "Decanter of Endless Water: Geyser"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "fue",
+            "dc": "13",
+            "success": "none"
+          },
+          "damage": [
+            {
+              "formula": "1d4",
+              "type": "contundente"
+            }
+          ]
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -9886,7 +13159,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "34"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -10038,6 +13321,56 @@
           "amount": "1d4+3"
         }
       ],
+      "actions": [
+        {
+          "key": "orbe_dragontino_attunement_save",
+          "label": {
+            "es": "Orbe Dragontino: Attunement Save",
+            "en": "Dragon Orb: Attunement Save"
+          },
+          "activation": "special",
+          "save": {
+            "ability": "car",
+            "dc": "15",
+            "success": "half"
+          }
+        },
+        {
+          "key": "sugestion",
+          "label": {
+            "es": "Sugestión",
+            "en": "Suggestion"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "sab",
+            "dc": "18",
+            "success": "half"
+          }
+        },
+        {
+          "key": "curar_heridas",
+          "label": {
+            "es": "Curar heridas",
+            "en": "Cure Wounds"
+          },
+          "activation": "action",
+          "heal": "2d8"
+        },
+        {
+          "key": "escudrinar",
+          "label": {
+            "es": "Escudriñar",
+            "en": "Scrying"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "sab",
+            "dc": "18",
+            "success": "half"
+          }
+        }
+      ],
       "automation": "partial"
     },
     "ref": {
@@ -10139,7 +13472,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -10170,7 +13513,39 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "10"
+        }
+      ],
+      "actions": [
+        {
+          "key": "polvo_de_sequedad_sprinkle_on_elemental",
+          "label": {
+            "es": "Polvo de sequedad: Sprinkle on Elemental",
+            "en": "Dust of Dryness: Sprinkle on Elemental"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "con",
+            "dc": "13",
+            "success": "half"
+          },
+          "damage": [
+            {
+              "formula": "10d6",
+              "type": "necrotico"
+            }
+          ],
+          "uses": "cargas"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -10201,7 +13576,33 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1"
+        }
+      ],
+      "actions": [
+        {
+          "key": "polvo_de_estornudar_y_atragantarse",
+          "label": {
+            "es": "Polvo de estornudar y atragantarse",
+            "en": "Dust of Sneezing and Choking"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "con",
+            "dc": "15",
+            "success": "none"
+          },
+          "uses": "cargas"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -10333,7 +13734,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "4"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -10364,7 +13775,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -10395,7 +13816,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -10465,7 +13896,22 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "actions": [
+        {
+          "key": "arco_de_energia_arrow_of_restraint",
+          "label": {
+            "es": "Arco de energía: Arrow of Restraint",
+            "en": "Energy Bow: Arrow of Restraint"
+          },
+          "activation": "special",
+          "save": {
+            "ability": "fue",
+            "dc": "15",
+            "success": "none"
+          }
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -10527,7 +13973,34 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "3",
+          "recovery": "dawn"
+        }
+      ],
+      "actions": [
+        {
+          "key": "hechizar_persona",
+          "label": {
+            "es": "Hechizar persona",
+            "en": "Charm Person"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "sab",
+            "dc": "13",
+            "success": "half"
+          },
+          "uses": "cargas"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -10619,7 +14092,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -10838,6 +14321,37 @@
             "en": "Charges"
           },
           "max": "50"
+        }
+      ],
+      "actions": [
+        {
+          "key": "gema_del_resplandor_second_command_word",
+          "label": {
+            "es": "Gema del resplandor: Second Command Word",
+            "en": "Gem of Brightness: Second Command Word"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "con",
+            "dc": "15",
+            "success": "half"
+          },
+          "uses": "cargas"
+        },
+        {
+          "key": "gema_del_resplandor_third_command_word",
+          "label": {
+            "es": "Gema del resplandor: Third Command Word",
+            "en": "Gem of Brightness: Third Command Word"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "con",
+            "dc": "15",
+            "success": "half"
+          },
+          "uses": "cargas",
+          "cost": 5
         }
       ],
       "automation": "partial"
@@ -11120,6 +14634,26 @@
           "amount": "1d4+1"
         }
       ],
+      "actions": [
+        {
+          "key": "martillo_de_rayos_giants_bane_on_crit",
+          "label": {
+            "es": "Martillo de rayos: Giants' Bane (On Crit)",
+            "en": "Hammer of Thunderbolts: Giants' Bane (On Crit)"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "con",
+            "dc": "17",
+            "success": "none"
+          },
+          "damage": [
+            {
+              "formula": "1000"
+            }
+          ]
+        }
+      ],
       "automation": "partial"
     },
     "ref": {
@@ -11213,7 +14747,112 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "actions": [
+        {
+          "key": "agrandar_reducir",
+          "label": {
+            "es": "Agrandar/reducir",
+            "en": "Enlarge/Reduce"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "con",
+            "dc": "@cd_conjuros",
+            "success": "half"
+          }
+        },
+        {
+          "key": "fuego_feerico",
+          "label": {
+            "es": "Fuego feérico",
+            "en": "Faerie Fire"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "@cd_conjuros",
+            "success": "half"
+          }
+        },
+        {
+          "key": "bola_de_fuego",
+          "label": {
+            "es": "Bola de fuego",
+            "en": "Fireball"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "@cd_conjuros",
+            "success": "half"
+          },
+          "damage": [
+            {
+              "formula": "8d6",
+              "type": "fuego"
+            }
+          ]
+        },
+        {
+          "key": "relampago",
+          "label": {
+            "es": "Relámpago",
+            "en": "Lightning Bolt"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "@cd_conjuros",
+            "success": "half"
+          },
+          "damage": [
+            {
+              "formula": "8d6",
+              "type": "relampago"
+            }
+          ]
+        },
+        {
+          "key": "fuerza_fantasmal",
+          "label": {
+            "es": "Fuerza fantasmal",
+            "en": "Phantasmal Force"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "int",
+            "dc": "@cd_conjuros",
+            "success": "none"
+          }
+        },
+        {
+          "key": "polimorfar",
+          "label": {
+            "es": "Polimorfar",
+            "en": "Polymorph"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "sab",
+            "dc": "@cd_conjuros",
+            "success": "half"
+          }
+        },
+        {
+          "key": "nube_apestosa",
+          "label": {
+            "es": "Nube apestosa",
+            "en": "Stinking Cloud"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "con",
+            "dc": "@cd_conjuros",
+            "success": "none"
+          }
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -11291,6 +14930,92 @@
           "when": "@este.sintonizado"
         }
       ],
+      "actions": [
+        {
+          "key": "yelmo_de_fulgor_diamond_light",
+          "label": {
+            "es": "Yelmo de fulgor: Diamond Light",
+            "en": "Helm of Brilliance: Diamond Light"
+          },
+          "activation": "special",
+          "damage": [
+            {
+              "formula": "1d6",
+              "type": "radiante"
+            }
+          ]
+        },
+        {
+          "key": "bola_de_fuego",
+          "label": {
+            "es": "Bola de fuego",
+            "en": "Fireball"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "18",
+            "success": "half"
+          },
+          "damage": [
+            {
+              "formula": "8d6",
+              "type": "fuego"
+            }
+          ]
+        },
+        {
+          "key": "rociada_prismatica",
+          "label": {
+            "es": "Rociada prismática",
+            "en": "Prismatic Spray"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "18",
+            "success": "half"
+          },
+          "damage": [
+            {
+              "formula": "12d6",
+              "type": "acido"
+            }
+          ]
+        },
+        {
+          "key": "muro_de_fuego",
+          "label": {
+            "es": "Muro de fuego",
+            "en": "Wall of Fire"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "18",
+            "success": "half"
+          },
+          "damage": [
+            {
+              "formula": "5d8",
+              "type": "fuego"
+            }
+          ]
+        },
+        {
+          "key": "yelmo_de_fulgor_explosive_emanation",
+          "label": {
+            "es": "Yelmo de fulgor: Explosive Emanation",
+            "en": "Helm of Brilliance: Explosive Emanation"
+          },
+          "activation": "special",
+          "save": {
+            "ability": "des",
+            "dc": "17",
+            "success": "half"
+          }
+        }
+      ],
       "automation": "partial"
     },
     "ref": {
@@ -11353,7 +15078,35 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "actions": [
+        {
+          "key": "detectar_pensamientos",
+          "label": {
+            "es": "Detectar pensamientos",
+            "en": "Detect Thoughts"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "sab",
+            "dc": "13",
+            "success": "half"
+          }
+        },
+        {
+          "key": "sugestion",
+          "label": {
+            "es": "Sugestión",
+            "en": "Suggestion"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "sab",
+            "dc": "13",
+            "success": "half"
+          }
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -11458,7 +15211,56 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "actions": [
+        {
+          "key": "cuerno_de_estallido_blow_horn",
+          "label": {
+            "es": "Cuerno de estallido: Blow Horn",
+            "en": "Horn of Blasting: Blow Horn"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "con",
+            "dc": "15",
+            "success": "half"
+          },
+          "damage": [
+            {
+              "formula": "5d8",
+              "type": "trueno"
+            }
+          ]
+        },
+        {
+          "key": "cuerno_de_estallido_object_damage",
+          "label": {
+            "es": "Cuerno de estallido: Object Damage",
+            "en": "Horn of Blasting: Object Damage"
+          },
+          "activation": "special",
+          "damage": [
+            {
+              "formula": "10d8",
+              "type": "trueno"
+            }
+          ]
+        },
+        {
+          "key": "cuerno_de_estallido_explosion_damage",
+          "label": {
+            "es": "Cuerno de estallido: Explosion Damage",
+            "en": "Horn of Blasting: Explosion Damage"
+          },
+          "activation": "action",
+          "damage": [
+            {
+              "formula": "10d6",
+              "type": "fuerza"
+            }
+          ]
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -11489,7 +15291,19 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "7",
+          "recovery": "dawn",
+          "amount": "1"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -11713,7 +15527,22 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "actions": [
+        {
+          "key": "frasco_de_hierro_attempt_to_trap_creature",
+          "label": {
+            "es": "Frasco de hierro: Attempt to Trap Creature",
+            "en": "Iron Flask: Attempt to Trap Creature"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "sab",
+            "dc": "17",
+            "success": "half"
+          }
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -11744,7 +15573,28 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "actions": [
+        {
+          "key": "jabalina_del_relampago_lightning_bolt",
+          "label": {
+            "es": "Jabalina del relámpago: Lightning Bolt",
+            "en": "Javelin of Lightning: Lightning Bolt"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "13",
+            "success": "half"
+          },
+          "damage": [
+            {
+              "formula": "4d6",
+              "type": "relampago"
+            }
+          ]
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -11775,7 +15625,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -11814,6 +15674,16 @@
           "when": "@este.sintonizado"
         }
       ],
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "3"
+        }
+      ],
       "automation": "partial"
     },
     "ref": {
@@ -11845,7 +15715,22 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "actions": [
+        {
+          "key": "maza_disruptiva",
+          "label": {
+            "es": "Maza disruptiva",
+            "en": "Mace of Disruption"
+          },
+          "activation": "special",
+          "save": {
+            "ability": "sab",
+            "dc": "15",
+            "success": "none"
+          }
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -11919,6 +15804,22 @@
           "amount": "1d3"
         }
       ],
+      "actions": [
+        {
+          "key": "maza_del_terror_wave_of_terror",
+          "label": {
+            "es": "Maza del terror: Wave of Terror",
+            "en": "Mace of Terror: Wave of Terror"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "sab",
+            "dc": "15",
+            "success": "half"
+          },
+          "uses": "cargas"
+        }
+      ],
       "automation": "partial"
     },
     "ref": {
@@ -11981,7 +15882,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "48"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -12012,7 +15923,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "48"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -12074,7 +15995,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "48"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -12105,7 +16036,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "4"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -12148,6 +16089,22 @@
           "amount": "1d4"
         }
       ],
+      "actions": [
+        {
+          "key": "detectar_pensamientos",
+          "label": {
+            "es": "Detectar pensamientos",
+            "en": "Detect Thoughts"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "sab",
+            "dc": "13",
+            "success": "half"
+          },
+          "uses": "cargas"
+        }
+      ],
       "automation": "partial"
     },
     "ref": {
@@ -12179,7 +16136,32 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "12"
+        }
+      ],
+      "actions": [
+        {
+          "key": "espejo_atrapavidas",
+          "label": {
+            "es": "Espejo atrapavidas",
+            "en": "Mirror of Life Trapping"
+          },
+          "activation": "special",
+          "save": {
+            "ability": "car",
+            "dc": "15",
+            "success": "half"
+          }
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -12241,7 +16223,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "22"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -12303,7 +16295,39 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "9"
+        }
+      ],
+      "actions": [
+        {
+          "key": "bola_de_fuego",
+          "label": {
+            "es": "Bola de fuego",
+            "en": "Fireball"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "15",
+            "success": "half"
+          },
+          "damage": [
+            {
+              "formula": "8d6",
+              "type": "fuego"
+            }
+          ],
+          "uses": "cargas"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -12334,7 +16358,51 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "actions": [
+        {
+          "key": "curar_heridas",
+          "label": {
+            "es": "Curar heridas",
+            "en": "Cure Wounds"
+          },
+          "activation": "bonus",
+          "heal": "2d8"
+        },
+        {
+          "key": "castigo_brillante",
+          "label": {
+            "es": "Castigo brillante",
+            "en": "Shining Smite"
+          },
+          "activation": "action",
+          "damage": [
+            {
+              "formula": "2d6",
+              "type": "radiante"
+            }
+          ]
+        },
+        {
+          "key": "guardian_de_la_fe",
+          "label": {
+            "es": "Guardián de la fe",
+            "en": "Guardian of Faith"
+          },
+          "activation": "bonus",
+          "save": {
+            "ability": "des",
+            "dc": "@cd_conjuros",
+            "success": "half"
+          },
+          "damage": [
+            {
+              "formula": "20",
+              "type": "radiante"
+            }
+          ]
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -12365,7 +16433,32 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "9"
+        }
+      ],
+      "actions": [
+        {
+          "key": "ladrona_de_nueve_vidas_life_stealing",
+          "label": {
+            "es": "Ladrona de nueve vidas: Life Stealing",
+            "en": "Nine Lives Stealer: Life Stealing"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "con",
+            "dc": "15",
+            "success": "none"
+          }
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -12427,7 +16520,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -12458,7 +16561,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -12489,7 +16602,32 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1"
+        }
+      ],
+      "actions": [
+        {
+          "key": "grasa",
+          "label": {
+            "es": "Grasa",
+            "en": "Grease"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "@cd_conjuros",
+            "success": "half"
+          }
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -12520,7 +16658,18 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1",
+          "recovery": "dawn"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -12551,7 +16700,30 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1",
+          "recovery": "dawn"
+        }
+      ],
+      "actions": [
+        {
+          "key": "talisman_de_salud",
+          "label": {
+            "es": "Talismán de salud",
+            "en": "Periapt of Health"
+          },
+          "activation": "action",
+          "heal": "2d4 + 2",
+          "uses": "cargas"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -12644,7 +16816,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -12675,7 +16857,35 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "3",
+          "recovery": "dawn",
+          "amount": "1d3"
+        }
+      ],
+      "actions": [
+        {
+          "key": "flauta_de_la_aparicion_play_pipes",
+          "label": {
+            "es": "Flauta de la aparición: Play Pipes",
+            "en": "Pipes of Haunting: Play Pipes"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "sab",
+            "dc": "15",
+            "success": "half"
+          },
+          "uses": "cargas"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -12706,7 +16916,34 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "3",
+          "recovery": "dawn",
+          "amount": "1d3"
+        }
+      ],
+      "actions": [
+        {
+          "key": "flauta_de_las_cloacas_sway_rats",
+          "label": {
+            "es": "Flauta de las cloacas: Sway Rats",
+            "en": "Pipes of the Sewers: Sway Rats"
+          },
+          "activation": "special",
+          "save": {
+            "ability": "sab",
+            "dc": "15",
+            "success": "half"
+          }
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -12799,7 +17036,33 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1"
+        }
+      ],
+      "actions": [
+        {
+          "key": "encantar_animal",
+          "label": {
+            "es": "Encantar animal",
+            "en": "Animal Friendship"
+          },
+          "activation": "bonus",
+          "save": {
+            "ability": "sab",
+            "dc": "@cd_conjuros",
+            "success": "half"
+          },
+          "uses": "cargas"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -12830,7 +17093,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -12861,7 +17134,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -12892,7 +17175,33 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1"
+        }
+      ],
+      "actions": [
+        {
+          "key": "agrandar_reducir",
+          "label": {
+            "es": "Agrandar/reducir",
+            "en": "Enlarge/Reduce"
+          },
+          "activation": "bonus",
+          "save": {
+            "ability": "con",
+            "dc": "@cd_conjuros",
+            "success": "half"
+          },
+          "uses": "cargas"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -12923,7 +17232,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -12954,7 +17273,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -12984,7 +17313,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -13015,7 +17354,33 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1"
+        }
+      ],
+      "actions": [
+        {
+          "key": "agrandar_reducir",
+          "label": {
+            "es": "Agrandar/reducir",
+            "en": "Enlarge/Reduce"
+          },
+          "activation": "bonus",
+          "save": {
+            "ability": "con",
+            "dc": "@cd_conjuros",
+            "success": "half"
+          },
+          "uses": "cargas"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -13076,7 +17441,29 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1"
+        }
+      ],
+      "actions": [
+        {
+          "key": "pocion_de_heroismo_drink",
+          "label": {
+            "es": "Poción de heroísmo: Drink",
+            "en": "Potion of Heroism: Drink"
+          },
+          "activation": "bonus",
+          "heal": "10",
+          "uses": "cargas"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -13107,7 +17494,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -13138,7 +17535,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -13169,7 +17576,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -13200,7 +17617,22 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "actions": [
+        {
+          "key": "detectar_pensamientos",
+          "label": {
+            "es": "Detectar pensamientos",
+            "en": "Detect Thoughts"
+          },
+          "activation": "bonus",
+          "save": {
+            "ability": "sab",
+            "dc": "13",
+            "success": "half"
+          }
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -13231,7 +17663,39 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1"
+        }
+      ],
+      "actions": [
+        {
+          "key": "pocion_de_veneno_drink",
+          "label": {
+            "es": "Poción de veneno: Drink",
+            "en": "Potion of Poison: Drink"
+          },
+          "activation": "bonus",
+          "save": {
+            "ability": "con",
+            "dc": "13",
+            "success": "none"
+          },
+          "damage": [
+            {
+              "formula": "4d6",
+              "type": "veneno"
+            }
+          ],
+          "uses": "cargas"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -13262,7 +17726,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -13293,7 +17767,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -13324,7 +17808,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -13355,7 +17849,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -13386,7 +17890,18 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1",
+          "recovery": "short"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -13429,6 +17944,36 @@
           "amount": "1d3"
         }
       ],
+      "actions": [
+        {
+          "key": "encantar_animal",
+          "label": {
+            "es": "Encantar animal",
+            "en": "Animal Friendship"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "sab",
+            "dc": "13",
+            "success": "half"
+          },
+          "uses": "cargas"
+        },
+        {
+          "key": "terror",
+          "label": {
+            "es": "Terror",
+            "en": "Fear"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "sab",
+            "dc": "13",
+            "success": "half"
+          },
+          "uses": "cargas"
+        }
+      ],
       "automation": "partial"
     },
     "ref": {
@@ -13460,7 +18005,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -13791,7 +18346,18 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "actions": [
+        {
+          "key": "anillo_de_regeneracion",
+          "label": {
+            "es": "Anillo de regeneración",
+            "en": "Ring of Regeneration"
+          },
+          "activation": "special",
+          "heal": "1d6"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -13863,6 +18429,55 @@
           "max": "6",
           "recovery": "dawn",
           "amount": "1d6"
+        }
+      ],
+      "actions": [
+        {
+          "key": "fuego_feerico",
+          "label": {
+            "es": "Fuego feérico",
+            "en": "Faerie Fire"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "@cd_conjuros",
+            "success": "half"
+          },
+          "uses": "cargas"
+        },
+        {
+          "key": "anillo_de_estrellas_fugaces_lightning_sphere_save",
+          "label": {
+            "es": "Anillo de estrellas fugaces: Lightning Sphere Save",
+            "en": "Ring of Shooting Stars: Lightning Sphere Save"
+          },
+          "activation": "special",
+          "save": {
+            "ability": "des",
+            "dc": "15",
+            "success": "half"
+          }
+        },
+        {
+          "key": "anillo_de_estrellas_fugaces_shooting_stars",
+          "label": {
+            "es": "Anillo de estrellas fugaces: Shooting Stars",
+            "en": "Ring of Shooting Stars: Shooting Stars"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "15",
+            "success": "half"
+          },
+          "damage": [
+            {
+              "formula": "5d4",
+              "type": "radiante"
+            }
+          ],
+          "uses": "cargas"
         }
       ],
       "automation": "partial"
@@ -13989,7 +18604,22 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "actions": [
+        {
+          "key": "telequinesis",
+          "label": {
+            "es": "Telequinesis",
+            "en": "Telekinesis"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "fue",
+            "dc": "@cd_conjuros",
+            "success": "none"
+          }
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -14063,7 +18693,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "3"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -14156,7 +18796,22 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "actions": [
+        {
+          "key": "anillo_de_vision_de_rayos_x",
+          "label": {
+            "es": "Anillo de visión de rayos X",
+            "en": "Ring of X-ray Vision"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "con",
+            "dc": "15",
+            "success": "half"
+          }
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -14187,7 +18842,35 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "actions": [
+        {
+          "key": "tunica_de_los_ojos_light_save",
+          "label": {
+            "es": "Túnica de los ojos: Light Save",
+            "en": "Robe of Eyes: Light Save"
+          },
+          "activation": "special",
+          "save": {
+            "ability": "con",
+            "dc": "11",
+            "success": "half"
+          }
+        },
+        {
+          "key": "tunica_de_los_ojos_daylight_save",
+          "label": {
+            "es": "Túnica de los ojos: Daylight Save",
+            "en": "Robe of Eyes: Daylight Save"
+          },
+          "activation": "special",
+          "save": {
+            "ability": "con",
+            "dc": "15",
+            "success": "half"
+          }
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -14230,6 +18913,21 @@
           "amount": "1d3"
         }
       ],
+      "actions": [
+        {
+          "key": "tunica_de_colores_hipnoticos",
+          "label": {
+            "es": "Túnica de colores hipnóticos",
+            "en": "Robe of Scintillating Colors"
+          },
+          "activation": "special",
+          "save": {
+            "ability": "sab",
+            "dc": "15",
+            "success": "half"
+          }
+        }
+      ],
       "automation": "partial"
     },
     "ref": {
@@ -14267,6 +18965,34 @@
           "op": "add",
           "value": "1",
           "when": "@este.sintonizado"
+        }
+      ],
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "6",
+          "amount": "1d6"
+        }
+      ],
+      "actions": [
+        {
+          "key": "proyectil_magico",
+          "label": {
+            "es": "Proyectil mágico",
+            "en": "Magic Missile"
+          },
+          "activation": "action",
+          "damage": [
+            {
+              "formula": "1d4 + 1",
+              "type": "fuerza"
+            }
+          ],
+          "uses": "cargas"
         }
       ],
       "automation": "partial"
@@ -14362,7 +19088,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "50"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -14407,6 +19143,17 @@
           "when": "@este.sintonizado"
         }
       ],
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1",
+          "recovery": "dawn"
+        }
+      ],
       "automation": "partial"
     },
     "ref": {
@@ -14438,7 +19185,54 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "actions": [
+        {
+          "key": "cetro_de_poder_senorial_drain_life",
+          "label": {
+            "es": "Cetro de poder señorial: Drain Life",
+            "en": "Rod of Lordly Might: Drain Life"
+          },
+          "activation": "special",
+          "save": {
+            "ability": "con",
+            "dc": "17",
+            "success": "none"
+          },
+          "damage": [
+            {
+              "formula": "4d6",
+              "type": "necrotico"
+            }
+          ]
+        },
+        {
+          "key": "cetro_de_poder_senorial_paralyze",
+          "label": {
+            "es": "Cetro de poder señorial: Paralyze",
+            "en": "Rod of Lordly Might: Paralyze"
+          },
+          "activation": "special",
+          "save": {
+            "ability": "con",
+            "dc": "17",
+            "success": "none"
+          }
+        },
+        {
+          "key": "cetro_de_poder_senorial_terrify",
+          "label": {
+            "es": "Cetro de poder señorial: Terrify",
+            "en": "Rod of Lordly Might: Terrify"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "sab",
+            "dc": "17",
+            "success": "none"
+          }
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -14481,6 +19275,18 @@
           "amount": "1"
         }
       ],
+      "actions": [
+        {
+          "key": "curar",
+          "label": {
+            "es": "Curar",
+            "en": "Heal"
+          },
+          "activation": "action",
+          "heal": "70",
+          "uses": "cargas"
+        }
+      ],
       "automation": "partial"
     },
     "ref": {
@@ -14512,7 +19318,34 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1",
+          "recovery": "dawn"
+        }
+      ],
+      "actions": [
+        {
+          "key": "cetro_de_mando_command_obedience",
+          "label": {
+            "es": "Cetro de mando: Command Obedience",
+            "en": "Rod of Rulership: Command Obedience"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "sab",
+            "dc": "15",
+            "success": "half"
+          },
+          "uses": "cargas"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -14543,7 +19376,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -14574,7 +19417,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "20"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -14605,7 +19458,32 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "20"
+        }
+      ],
+      "actions": [
+        {
+          "key": "cuerda_enredadora_entangle",
+          "label": {
+            "es": "Cuerda enredadora: Entangle",
+            "en": "Rope of Entanglement: Entangle"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "15",
+            "success": "half"
+          }
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -14716,7 +19594,18 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1",
+          "recovery": "dawn"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -14848,6 +19737,17 @@
           "when": "@este.sintonizado"
         }
       ],
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1",
+          "recovery": "dawn"
+        }
+      ],
       "automation": "partial"
     },
     "ref": {
@@ -14910,7 +19810,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "7"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -14971,7 +19881,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -15002,7 +19922,42 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "actions": [
+        {
+          "key": "esfera_de_aniquilacion_engulfed",
+          "label": {
+            "es": "Esfera de aniquilación: Engulfed",
+            "en": "Sphere of Annihilation: Engulfed"
+          },
+          "activation": "special",
+          "damage": [
+            {
+              "formula": "8d10",
+              "type": "fuerza"
+            }
+          ]
+        },
+        {
+          "key": "esfera_de_aniquilacion",
+          "label": {
+            "es": "Esfera de aniquilación",
+            "en": "Sphere of Annihilation"
+          },
+          "activation": "special",
+          "save": {
+            "ability": "des",
+            "dc": "19",
+            "success": "none"
+          },
+          "damage": [
+            {
+              "formula": "8d10",
+              "type": "fuerza"
+            }
+          ]
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -15043,6 +19998,36 @@
           "max": "10",
           "recovery": "dawn",
           "amount": "1d8+2"
+        }
+      ],
+      "actions": [
+        {
+          "key": "hechizar_persona",
+          "label": {
+            "es": "Hechizar persona",
+            "en": "Charm Person"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "sab",
+            "dc": "@cd_conjuros",
+            "success": "half"
+          },
+          "uses": "cargas"
+        },
+        {
+          "key": "orden_imperiosa",
+          "label": {
+            "es": "Orden imperiosa",
+            "en": "Command"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "sab",
+            "dc": "@cd_conjuros",
+            "success": "half"
+          },
+          "uses": "cargas"
         }
       ],
       "automation": "partial"
@@ -15096,6 +20081,70 @@
           "amount": "1d6+4"
         }
       ],
+      "actions": [
+        {
+          "key": "manos_ardientes",
+          "label": {
+            "es": "Manos ardientes",
+            "en": "Burning Hands"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "@cd_conjuros",
+            "success": "half"
+          },
+          "damage": [
+            {
+              "formula": "3d6",
+              "type": "fuego"
+            }
+          ],
+          "uses": "cargas"
+        },
+        {
+          "key": "bola_de_fuego",
+          "label": {
+            "es": "Bola de fuego",
+            "en": "Fireball"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "@cd_conjuros",
+            "success": "half"
+          },
+          "damage": [
+            {
+              "formula": "8d6",
+              "type": "fuego"
+            }
+          ],
+          "uses": "cargas",
+          "cost": 3
+        },
+        {
+          "key": "muro_de_fuego",
+          "label": {
+            "es": "Muro de fuego",
+            "en": "Wall of Fire"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "@cd_conjuros",
+            "success": "half"
+          },
+          "damage": [
+            {
+              "formula": "5d8",
+              "type": "fuego"
+            }
+          ],
+          "uses": "cargas",
+          "cost": 4
+        }
+      ],
       "automation": "partial"
     },
     "ref": {
@@ -15147,6 +20196,75 @@
           "amount": "1d6+4"
         }
       ],
+      "actions": [
+        {
+          "key": "cono_de_frio",
+          "label": {
+            "es": "Cono de frío",
+            "en": "Cone of Cold"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "con",
+            "dc": "@cd_conjuros",
+            "success": "half"
+          },
+          "damage": [
+            {
+              "formula": "8d8",
+              "type": "frio"
+            }
+          ],
+          "uses": "cargas",
+          "cost": 5
+        },
+        {
+          "key": "tormenta_de_hielo",
+          "label": {
+            "es": "Tormenta de hielo",
+            "en": "Ice Storm"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "@cd_conjuros",
+            "success": "half"
+          },
+          "damage": [
+            {
+              "formula": "2d10",
+              "type": "contundente"
+            },
+            {
+              "formula": "4d6",
+              "type": "frio"
+            }
+          ],
+          "uses": "cargas",
+          "cost": 4
+        },
+        {
+          "key": "muro_de_hielo",
+          "label": {
+            "es": "Muro de hielo",
+            "en": "Wall of Ice"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "@cd_conjuros",
+            "success": "half"
+          },
+          "damage": [
+            {
+              "formula": "10d6",
+              "type": "frio"
+            }
+          ],
+          "uses": "cargas",
+          "cost": 4
+        }
+      ],
       "automation": "partial"
     },
     "ref": {
@@ -15188,6 +20306,29 @@
           "max": "10",
           "recovery": "dawn",
           "amount": "1d6+4"
+        }
+      ],
+      "actions": [
+        {
+          "key": "curar_heridas",
+          "label": {
+            "es": "Curar heridas",
+            "en": "Cure Wounds"
+          },
+          "activation": "action",
+          "heal": "2d8",
+          "uses": "cargas"
+        },
+        {
+          "key": "curar_heridas_en_masa",
+          "label": {
+            "es": "Curar heridas en masa",
+            "en": "Mass Cure Wounds"
+          },
+          "activation": "action",
+          "heal": "5d8",
+          "uses": "cargas",
+          "cost": 5
         }
       ],
       "automation": "partial"
@@ -15239,6 +20380,143 @@
           "max": "20",
           "recovery": "dawn",
           "amount": "2d8+4"
+        }
+      ],
+      "actions": [
+        {
+          "key": "cono_de_frio",
+          "label": {
+            "es": "Cono de frío",
+            "en": "Cone of Cold"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "con",
+            "dc": "@cd_conjuros",
+            "success": "half"
+          },
+          "damage": [
+            {
+              "formula": "8d8",
+              "type": "frio"
+            }
+          ],
+          "uses": "cargas",
+          "cost": 5
+        },
+        {
+          "key": "bola_de_fuego",
+          "label": {
+            "es": "Bola de fuego",
+            "en": "Fireball"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "@cd_conjuros",
+            "success": "half"
+          },
+          "damage": [
+            {
+              "formula": "8d6",
+              "type": "fuego"
+            }
+          ],
+          "uses": "cargas",
+          "cost": 5
+        },
+        {
+          "key": "inmovilizar_monstruo",
+          "label": {
+            "es": "Inmovilizar monstruo",
+            "en": "Hold Monster"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "sab",
+            "dc": "@cd_conjuros",
+            "success": "half"
+          },
+          "uses": "cargas",
+          "cost": 5
+        },
+        {
+          "key": "levitar",
+          "label": {
+            "es": "Levitar",
+            "en": "Levitate"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "con",
+            "dc": "@cd_conjuros",
+            "success": "half"
+          },
+          "uses": "cargas",
+          "cost": 2
+        },
+        {
+          "key": "relampago",
+          "label": {
+            "es": "Relámpago",
+            "en": "Lightning Bolt"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "@cd_conjuros",
+            "success": "half"
+          },
+          "damage": [
+            {
+              "formula": "8d6",
+              "type": "relampago"
+            }
+          ],
+          "uses": "cargas",
+          "cost": 5
+        },
+        {
+          "key": "proyectil_magico",
+          "label": {
+            "es": "Proyectil mágico",
+            "en": "Magic Missile"
+          },
+          "activation": "action",
+          "damage": [
+            {
+              "formula": "1d4 + 1",
+              "type": "fuerza"
+            }
+          ],
+          "uses": "cargas"
+        },
+        {
+          "key": "rayo_debilitador",
+          "label": {
+            "es": "Rayo debilitador",
+            "en": "Ray of Enfeeblement"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "con",
+            "dc": "@cd_conjuros",
+            "success": "half"
+          },
+          "uses": "cargas"
+        },
+        {
+          "key": "baston_de_poder_retributive_strike_save",
+          "label": {
+            "es": "Bastón de poder: Retributive Strike: Save",
+            "en": "Staff of Power: Retributive Strike: Save"
+          },
+          "activation": "special",
+          "save": {
+            "ability": "des",
+            "dc": "17",
+            "success": "half"
+          }
         }
       ],
       "automation": "partial"
@@ -15327,6 +20605,29 @@
           "amount": "1d6+4"
         }
       ],
+      "actions": [
+        {
+          "key": "plaga_de_insectos",
+          "label": {
+            "es": "Plaga de insectos",
+            "en": "Insect Plague"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "con",
+            "dc": "@cd_conjuros",
+            "success": "half"
+          },
+          "damage": [
+            {
+              "formula": "4d10",
+              "type": "perforante"
+            }
+          ],
+          "uses": "cargas",
+          "cost": 5
+        }
+      ],
       "automation": "partial"
     },
     "ref": {
@@ -15368,6 +20669,179 @@
           "max": "50",
           "recovery": "dawn",
           "amount": "4d6+2"
+        }
+      ],
+      "actions": [
+        {
+          "key": "agrandar_reducir",
+          "label": {
+            "es": "Agrandar/reducir",
+            "en": "Enlarge/Reduce"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "con",
+            "dc": "@cd_conjuros",
+            "success": "half"
+          }
+        },
+        {
+          "key": "bola_de_fuego",
+          "label": {
+            "es": "Bola de fuego",
+            "en": "Fireball"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "@cd_conjuros",
+            "success": "half"
+          },
+          "damage": [
+            {
+              "formula": "8d6",
+              "type": "fuego"
+            }
+          ],
+          "uses": "cargas",
+          "cost": 7
+        },
+        {
+          "key": "esfera_de_llamas",
+          "label": {
+            "es": "Esfera de llamas",
+            "en": "Flaming Sphere"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "@cd_conjuros",
+            "success": "half"
+          },
+          "damage": [
+            {
+              "formula": "2d6",
+              "type": "fuego"
+            }
+          ],
+          "uses": "cargas",
+          "cost": 2
+        },
+        {
+          "key": "tormenta_de_hielo",
+          "label": {
+            "es": "Tormenta de hielo",
+            "en": "Ice Storm"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "@cd_conjuros",
+            "success": "half"
+          },
+          "damage": [
+            {
+              "formula": "2d10",
+              "type": "contundente"
+            },
+            {
+              "formula": "4d6",
+              "type": "frio"
+            }
+          ],
+          "uses": "cargas",
+          "cost": 4
+        },
+        {
+          "key": "relampago",
+          "label": {
+            "es": "Relámpago",
+            "en": "Lightning Bolt"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "@cd_conjuros",
+            "success": "half"
+          },
+          "damage": [
+            {
+              "formula": "8d6",
+              "type": "relampago"
+            }
+          ],
+          "uses": "cargas",
+          "cost": 7
+        },
+        {
+          "key": "telequinesis",
+          "label": {
+            "es": "Telequinesis",
+            "en": "Telekinesis"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "fue",
+            "dc": "@cd_conjuros",
+            "success": "none"
+          },
+          "uses": "cargas",
+          "cost": 5
+        },
+        {
+          "key": "muro_de_fuego",
+          "label": {
+            "es": "Muro de fuego",
+            "en": "Wall of Fire"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "@cd_conjuros",
+            "success": "half"
+          },
+          "damage": [
+            {
+              "formula": "5d8",
+              "type": "fuego"
+            }
+          ],
+          "uses": "cargas",
+          "cost": 4
+        },
+        {
+          "key": "telarana",
+          "label": {
+            "es": "Telaraña",
+            "en": "Web"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "@cd_conjuros",
+            "success": "none"
+          },
+          "damage": [
+            {
+              "formula": "2d4",
+              "type": "fuego"
+            }
+          ],
+          "uses": "cargas",
+          "cost": 2
+        },
+        {
+          "key": "baston_de_los_magos_retributive_strike_save",
+          "label": {
+            "es": "Bastón de los magos: Retributive Strike: Save",
+            "en": "Staff of the Magi: Retributive Strike: Save"
+          },
+          "activation": "special",
+          "save": {
+            "ability": "des",
+            "dc": "17",
+            "success": "half"
+          }
         }
       ],
       "automation": "partial"
@@ -15444,6 +20918,43 @@
           "amount": "1d6"
         }
       ],
+      "actions": [
+        {
+          "key": "encantar_animal",
+          "label": {
+            "es": "Encantar animal",
+            "en": "Animal Friendship"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "sab",
+            "dc": "@cd_conjuros",
+            "success": "half"
+          },
+          "uses": "cargas"
+        },
+        {
+          "key": "muro_de_espinas",
+          "label": {
+            "es": "Muro de espinas",
+            "en": "Wall of Thorns"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "@cd_conjuros",
+            "success": "half"
+          },
+          "damage": [
+            {
+              "formula": "7d8",
+              "type": "perforante"
+            }
+          ],
+          "uses": "cargas",
+          "cost": 6
+        }
+      ],
       "automation": "partial"
     },
     "ref": {
@@ -15475,7 +20986,104 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1",
+          "recovery": "dawn"
+        }
+      ],
+      "actions": [
+        {
+          "key": "baston_de_truenos_y_relampagos_thunder",
+          "label": {
+            "es": "Bastón de truenos y relámpagos: Thunder",
+            "en": "Staff of Thunder and Lightning: Thunder"
+          },
+          "activation": "special",
+          "save": {
+            "ability": "con",
+            "dc": "17",
+            "success": "half"
+          }
+        },
+        {
+          "key": "baston_de_truenos_y_relampagos_lightning",
+          "label": {
+            "es": "Bastón de truenos y relámpagos: Lightning",
+            "en": "Staff of Thunder and Lightning: Lightning"
+          },
+          "activation": "special",
+          "damage": [
+            {
+              "formula": "2d6",
+              "type": "relampago"
+            }
+          ]
+        },
+        {
+          "key": "baston_de_truenos_y_relampagos_thunder_lightning",
+          "label": {
+            "es": "Bastón de truenos y relámpagos: Thunder & Lightning",
+            "en": "Staff of Thunder and Lightning: Thunder & Lightning"
+          },
+          "activation": "bonus",
+          "save": {
+            "ability": "con",
+            "dc": "17",
+            "success": "none"
+          },
+          "damage": [
+            {
+              "formula": "2d6",
+              "type": "relampago"
+            }
+          ]
+        },
+        {
+          "key": "baston_de_truenos_y_relampagos_lightning_strike",
+          "label": {
+            "es": "Bastón de truenos y relámpagos: Lightning Strike",
+            "en": "Staff of Thunder and Lightning: Lightning Strike"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "17",
+            "success": "half"
+          },
+          "damage": [
+            {
+              "formula": "9d6",
+              "type": "relampago"
+            }
+          ]
+        },
+        {
+          "key": "baston_de_truenos_y_relampagos_thunderclap",
+          "label": {
+            "es": "Bastón de truenos y relámpagos: Thunderclap",
+            "en": "Staff of Thunder and Lightning: Thunderclap"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "con",
+            "dc": "17",
+            "success": "half"
+          },
+          "damage": [
+            {
+              "formula": "2d6",
+              "type": "trueno"
+            }
+          ]
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -15518,6 +21126,28 @@
           "amount": "1d3"
         }
       ],
+      "actions": [
+        {
+          "key": "baston_de_marchitamiento_damage_save",
+          "label": {
+            "es": "Bastón de marchitamiento: Damage & Save",
+            "en": "Staff of Withering: Damage & Save"
+          },
+          "activation": "special",
+          "save": {
+            "ability": "con",
+            "dc": "15",
+            "success": "none"
+          },
+          "damage": [
+            {
+              "formula": "2d10",
+              "type": "necrotico"
+            }
+          ],
+          "uses": "cargas"
+        }
+      ],
       "automation": "partial"
     },
     "ref": {
@@ -15549,7 +21179,18 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1",
+          "recovery": "dawn"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -15704,7 +21345,22 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "actions": [
+        {
+          "key": "espada_hiriente_sword_of_wounding_save",
+          "label": {
+            "es": "Espada hiriente: Sword of Wounding Save",
+            "en": "Sword of Wounding: Sword of Wounding Save"
+          },
+          "activation": "special",
+          "save": {
+            "ability": "con",
+            "dc": "15",
+            "success": "half"
+          }
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -15743,6 +21399,42 @@
             "en": "Charges"
           },
           "max": "7"
+        }
+      ],
+      "actions": [
+        {
+          "key": "talisman_del_bien_puro_fiend_and_undead_damage",
+          "label": {
+            "es": "Talismán del bien puro: Fiend and Undead Damage",
+            "en": "Talisman of Pure Good: Fiend and Undead Damage"
+          },
+          "activation": "special",
+          "damage": [
+            {
+              "formula": "8d6",
+              "type": "radiante"
+            }
+          ]
+        },
+        {
+          "key": "talisman_del_bien_puro_pure_rebuke",
+          "label": {
+            "es": "Talismán del bien puro: Pure Rebuke",
+            "en": "Talisman of Pure Good: Pure Rebuke"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "20",
+            "success": "none"
+          },
+          "damage": [
+            {
+              "formula": "4d6",
+              "type": "psiquico"
+            }
+          ],
+          "uses": "cargas"
         }
       ],
       "automation": "partial"
@@ -15817,6 +21509,42 @@
           "max": "6"
         }
       ],
+      "actions": [
+        {
+          "key": "talisman_del_mal_definitivo_non_fiend_or_undead_da",
+          "label": {
+            "es": "Talismán del mal definitivo: Non-Fiend or Undead Damage",
+            "en": "Talisman of Ultimate Evil: Non-Fiend or Undead Damage"
+          },
+          "activation": "special",
+          "damage": [
+            {
+              "formula": "8d6",
+              "type": "necrotico"
+            }
+          ]
+        },
+        {
+          "key": "talisman_del_mal_definitivo_ultimate_end",
+          "label": {
+            "es": "Talismán del mal definitivo: Ultimate End",
+            "en": "Talisman of Ultimate Evil: Ultimate End"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "20",
+            "success": "none"
+          },
+          "damage": [
+            {
+              "formula": "4d6",
+              "type": "psiquico"
+            }
+          ],
+          "uses": "cargas"
+        }
+      ],
       "automation": "partial"
     },
     "ref": {
@@ -15848,7 +21576,87 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1",
+          "recovery": "dawn"
+        }
+      ],
+      "actions": [
+        {
+          "key": "garrote_grande_atronador_clap_of_thunder",
+          "label": {
+            "es": "Garrote grande atronador: Clap of Thunder",
+            "en": "Thunderous Greatclub: Clap of Thunder"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "fue",
+            "dc": "15",
+            "success": "half"
+          }
+        },
+        {
+          "key": "garrote_grande_atronador_earthquake_save",
+          "label": {
+            "es": "Garrote grande atronador: Earthquake: Save",
+            "en": "Thunderous Greatclub: Earthquake: Save"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "20",
+            "success": "half"
+          },
+          "uses": "cargas"
+        },
+        {
+          "key": "garrote_grande_atronador_earthquake_object_damage",
+          "label": {
+            "es": "Garrote grande atronador: Earthquake: Object Damage",
+            "en": "Thunderous Greatclub: Earthquake: Object Damage"
+          },
+          "activation": "special",
+          "damage": [
+            {
+              "formula": "50",
+              "type": "contundente"
+            }
+          ]
+        },
+        {
+          "key": "garrote_grande_atronador_earthquake_fissure",
+          "label": {
+            "es": "Garrote grande atronador: Earthquake: Fissure",
+            "en": "Thunderous Greatclub: Earthquake: Fissure"
+          },
+          "activation": "special",
+          "save": {
+            "ability": "des",
+            "dc": "20",
+            "success": "none"
+          }
+        },
+        {
+          "key": "garrote_grande_atronador_earthquake_concentration_",
+          "label": {
+            "es": "Garrote grande atronador: Earthquake: Concentration Save",
+            "en": "Thunderous Greatclub: Earthquake: Concentration Save"
+          },
+          "activation": "special",
+          "save": {
+            "ability": "con",
+            "dc": "20",
+            "success": "none"
+          }
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -15879,7 +21687,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "48"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -15910,7 +21728,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "48"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -15941,7 +21769,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "48"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -15984,6 +21822,22 @@
           "amount": "1d3"
         }
       ],
+      "actions": [
+        {
+          "key": "dominar_bestia",
+          "label": {
+            "es": "Dominar bestia",
+            "en": "Dominate Beast"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "sab",
+            "dc": "15",
+            "success": "half"
+          },
+          "uses": "cargas"
+        }
+      ],
       "automation": "partial"
     },
     "ref": {
@@ -16015,7 +21869,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "7"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -16120,6 +21984,38 @@
           "amount": "1d6+1"
         }
       ],
+      "actions": [
+        {
+          "key": "inmovilizar_monstruo",
+          "label": {
+            "es": "Inmovilizar monstruo",
+            "en": "Hold Monster"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "sab",
+            "dc": "17",
+            "success": "half"
+          },
+          "uses": "cargas",
+          "cost": 5
+        },
+        {
+          "key": "inmovilizar_persona",
+          "label": {
+            "es": "Inmovilizar persona",
+            "en": "Hold Person"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "sab",
+            "dc": "17",
+            "success": "half"
+          },
+          "uses": "cargas",
+          "cost": 2
+        }
+      ],
       "automation": "partial"
     },
     "ref": {
@@ -16206,6 +22102,37 @@
           "amount": "1d6+1"
         }
       ],
+      "actions": [
+        {
+          "key": "orden_imperiosa",
+          "label": {
+            "es": "Orden imperiosa",
+            "en": "Command"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "sab",
+            "dc": "15",
+            "success": "half"
+          },
+          "uses": "cargas"
+        },
+        {
+          "key": "terror",
+          "label": {
+            "es": "Terror",
+            "en": "Fear"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "sab",
+            "dc": "15",
+            "success": "half"
+          },
+          "uses": "cargas",
+          "cost": 3
+        }
+      ],
       "automation": "partial"
     },
     "ref": {
@@ -16249,6 +22176,28 @@
           "amount": "1d6+1"
         }
       ],
+      "actions": [
+        {
+          "key": "bola_de_fuego",
+          "label": {
+            "es": "Bola de fuego",
+            "en": "Fireball"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "15",
+            "success": "half"
+          },
+          "damage": [
+            {
+              "formula": "8d6",
+              "type": "fuego"
+            }
+          ],
+          "uses": "cargas"
+        }
+      ],
       "automation": "partial"
     },
     "ref": {
@@ -16290,6 +22239,28 @@
           "max": "7",
           "recovery": "dawn",
           "amount": "1d6+1"
+        }
+      ],
+      "actions": [
+        {
+          "key": "relampago",
+          "label": {
+            "es": "Relámpago",
+            "en": "Lightning Bolt"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "15",
+            "success": "half"
+          },
+          "damage": [
+            {
+              "formula": "8d6",
+              "type": "relampago"
+            }
+          ],
+          "uses": "cargas"
         }
       ],
       "automation": "partial"
@@ -16378,6 +22349,23 @@
           "amount": "1d6+1"
         }
       ],
+      "actions": [
+        {
+          "key": "proyectil_magico",
+          "label": {
+            "es": "Proyectil mágico",
+            "en": "Magic Missile"
+          },
+          "activation": "action",
+          "damage": [
+            {
+              "formula": "1d4 + 1",
+              "type": "fuerza"
+            }
+          ],
+          "uses": "cargas"
+        }
+      ],
       "automation": "partial"
     },
     "ref": {
@@ -16421,6 +22409,22 @@
           "amount": "1d6+1"
         }
       ],
+      "actions": [
+        {
+          "key": "varita_de_paralisis_paralyze",
+          "label": {
+            "es": "Varita de parálisis: Paralyze",
+            "en": "Wand of Paralysis: Paralyze"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "con",
+            "dc": "15",
+            "success": "half"
+          },
+          "uses": "cargas"
+        }
+      ],
       "automation": "partial"
     },
     "ref": {
@@ -16462,6 +22466,21 @@
           "max": "7",
           "recovery": "dawn",
           "amount": "1d6+1"
+        }
+      ],
+      "actions": [
+        {
+          "key": "polimorfar",
+          "label": {
+            "es": "Polimorfar",
+            "en": "Polymorph"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "sab",
+            "dc": "15",
+            "success": "half"
+          }
         }
       ],
       "automation": "partial"
@@ -16581,6 +22600,27 @@
           "amount": "1d6+1"
         }
       ],
+      "actions": [
+        {
+          "key": "telarana",
+          "label": {
+            "es": "Telaraña",
+            "en": "Web"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "des",
+            "dc": "13",
+            "success": "none"
+          },
+          "damage": [
+            {
+              "formula": "2d4",
+              "type": "fuego"
+            }
+          ]
+        }
+      ],
       "automation": "partial"
     },
     "ref": {
@@ -16622,6 +22662,161 @@
           "max": "7",
           "recovery": "dawn",
           "amount": "1d6+1"
+        }
+      ],
+      "actions": [
+        {
+          "key": "fuego_feerico",
+          "label": {
+            "es": "Fuego feérico",
+            "en": "Faerie Fire"
+          },
+          "activation": "special",
+          "save": {
+            "ability": "des",
+            "dc": "15",
+            "success": "half"
+          },
+          "uses": "cargas"
+        },
+        {
+          "key": "bola_de_fuego",
+          "label": {
+            "es": "Bola de fuego",
+            "en": "Fireball"
+          },
+          "activation": "special",
+          "save": {
+            "ability": "des",
+            "dc": "15",
+            "success": "half"
+          },
+          "damage": [
+            {
+              "formula": "8d6",
+              "type": "fuego"
+            }
+          ],
+          "uses": "cargas"
+        },
+        {
+          "key": "ralentizar",
+          "label": {
+            "es": "Ralentizar",
+            "en": "Slow"
+          },
+          "activation": "special",
+          "save": {
+            "ability": "sab",
+            "dc": "15",
+            "success": "half"
+          },
+          "uses": "cargas"
+        },
+        {
+          "key": "nube_apestosa",
+          "label": {
+            "es": "Nube apestosa",
+            "en": "Stinking Cloud"
+          },
+          "activation": "special",
+          "save": {
+            "ability": "con",
+            "dc": "15",
+            "success": "none"
+          },
+          "uses": "cargas"
+        },
+        {
+          "key": "rafaga_de_viento",
+          "label": {
+            "es": "Ráfaga de viento",
+            "en": "Gust of Wind"
+          },
+          "activation": "special",
+          "save": {
+            "ability": "fue",
+            "dc": "15",
+            "success": "half"
+          },
+          "uses": "cargas"
+        },
+        {
+          "key": "relampago",
+          "label": {
+            "es": "Relámpago",
+            "en": "Lightning Bolt"
+          },
+          "activation": "special",
+          "save": {
+            "ability": "des",
+            "dc": "15",
+            "success": "half"
+          },
+          "damage": [
+            {
+              "formula": "8d6",
+              "type": "relampago"
+            }
+          ],
+          "uses": "cargas"
+        },
+        {
+          "key": "agrandar_reducir",
+          "label": {
+            "es": "Agrandar/reducir",
+            "en": "Enlarge/Reduce"
+          },
+          "activation": "special",
+          "save": {
+            "ability": "con",
+            "dc": "15",
+            "success": "half"
+          },
+          "uses": "cargas"
+        },
+        {
+          "key": "varita_de_las_maravillas_burst_of_colorful_light_7",
+          "label": {
+            "es": "Varita de las maravillas: Burst of Colorful Light (78-82)",
+            "en": "Wand of Wonder: Burst of Colorful Light (78-82)"
+          },
+          "activation": "special",
+          "save": {
+            "ability": "con",
+            "dc": "15",
+            "success": "half"
+          },
+          "uses": "cargas"
+        },
+        {
+          "key": "varita_de_las_maravillas_stream_of_gems_88_92",
+          "label": {
+            "es": "Varita de las maravillas: Stream of Gems (88-92)",
+            "en": "Wand of Wonder: Stream of Gems (88-92)"
+          },
+          "activation": "special",
+          "damage": [
+            {
+              "formula": "1d4 * 10",
+              "type": "contundente"
+            }
+          ],
+          "uses": "cargas"
+        },
+        {
+          "key": "polimorfar",
+          "label": {
+            "es": "Polimorfar",
+            "en": "Polymorph"
+          },
+          "activation": "special",
+          "save": {
+            "ability": "sab",
+            "dc": "15",
+            "success": "half"
+          },
+          "uses": "cargas"
         }
       ],
       "automation": "partial"
@@ -16717,7 +22912,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -16748,7 +22953,34 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "5",
+          "recovery": "dawn"
+        }
+      ],
+      "actions": [
+        {
+          "key": "rafaga_de_viento",
+          "label": {
+            "es": "Ráfaga de viento",
+            "en": "Gust of Wind"
+          },
+          "activation": "action",
+          "save": {
+            "ability": "fue",
+            "dc": "13",
+            "success": "half"
+          },
+          "uses": "cargas"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -16779,7 +23011,19 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "4",
+          "recovery": "dawn",
+          "amount": "1d4"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
@@ -16810,7 +23054,17 @@
       }
     },
     "mechanics": {
-      "automation": "text"
+      "resources": [
+        {
+          "key": "cargas",
+          "label": {
+            "es": "Cargas",
+            "en": "Charges"
+          },
+          "max": "1"
+        }
+      ],
+      "automation": "partial"
     },
     "ref": {
       "pages": {
