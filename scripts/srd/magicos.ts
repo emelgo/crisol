@@ -104,6 +104,18 @@ export function parseMagicItem(
   return { name, header: line.trim(), ...head, text: textRows(rows.slice(used)), page }
 }
 
+/**
+ * Sin la columna «Bajada» (Down) de las palancas del aparato del crustáceo, que la maquetación del 5.2.1 español deja en
+ * el objeto de al lado (el arco de energía): fuera de él, no va
+ */
+export function withoutStrayColumns(name: string, text: string): string {
+  if (/Apparatus|Aparato/.test(name)) return text
+  return text
+    .split('\n\n')
+    .filter((block) => !/^\| (Bajada|Down) \|\n\| --- \|/.test(block))
+    .join('\n\n')
+}
+
 /** Los objetos mágicos de una edición en un idioma, en su orden */
 export function magicRows(edition: Edition, lang: Lang): MagicRow[] {
   const { pages, stop } = PAGES[edition][lang]
@@ -117,7 +129,11 @@ export function magicRows(edition: Edition, lang: Lang): MagicRow[] {
   return entries
     .slice(start + 1)
     .filter((e) => name.includes(e.h))
-    .map((e) => parseMagicItem(e.name, e.rows, e.page, header, (own) => textOf(own, { bases, profile: profile.text })))
+    .map((e) =>
+      parseMagicItem(e.name, e.rows, e.page, header, (own) =>
+        withoutStrayColumns(e.name, textOf(own, { bases, profile: profile.text }))
+      )
+    )
     .filter((r): r is MagicRow => r !== null)
 }
 

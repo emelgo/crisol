@@ -128,6 +128,8 @@ describe('los efectos de lo que lleva', () => {
     expect(ca([mitad, suma])?.terms.at(-1)).toEqual({ label: 'Mitad', value: -7, kind: 'bonus', origin: 'mitad' })
     const suelo = thing('Suelo', { effects: [{ target: 'ca', op: 'min', value: '10' }] })
     expect(ca([mitad, suelo])?.value).toBe(10)
+    // Redondea hacia abajo: 13 a la mitad son 6
+    expect(ca([mitad, thing('Uno', { effects: [{ target: 'ca', op: 'add', value: '1' }] })])?.value).toBe(6)
   })
 
   it('el grado de competencia es un mínimo en su grado: competente, pericia o media', () => {

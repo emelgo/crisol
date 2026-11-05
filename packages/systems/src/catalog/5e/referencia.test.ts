@@ -69,8 +69,12 @@ describe('los personajes de referencia: cada clase a nivel 1, 5, 11 y 20, en las
           expect(r.problems).toEqual([])
           expect(v.nivel).toBe(level)
           expect(v.competencia).toBe(PROFICIENCY[level])
-          // Los PG: el dado entero a nivel 1 y su media (la mitad más 1) en cada nivel más, con Con 14 (+2)
-          expect(v.pg_max).toBe(spec.die + 2 + (level - 1) * (spec.die / 2 + 1 + 2))
+          // Los PG: el dado entero a nivel 1 y su media (la mitad más 1) en cada nivel más, con Con 14 (+2); el
+          // campeón primordial (nivel 20) sube Con a 18 (+4) y la resistencia dracónica suma 1 por nivel (en 2024,
+          // desde el 3)
+          const con = klass === 'barbaro' && level === 20 ? 4 : 2
+          const draconic = klass === 'hechicero' && (edition === '2014' || level >= 3) ? level : 0
+          expect(v.pg_max).toBe(spec.die + con + (level - 1) * (spec.die / 2 + 1 + con) + draconic)
           // Los espacios de conjuro, por su nivel de lanzador
           const caster = CASTER[spec.caster]?.[edition][level] ?? 0
           expect(v.nivel_lanzador).toBe(caster)
@@ -167,13 +171,14 @@ const HANDMADE: {
     weapon: 'daga',
     want: { ca: 14, ataque: 6, pg: 38 }
   },
-  // Sin armadura 10 + Des 2; daga 5; CD 8 + 3 + Car 3; d6: 6 + 2 + 4 × (4 + 2)
+  // Resistencia dracónica: 13 + Des 2 (2014) o 10 + Des 2 + Car 3 (2024); daga 5; CD 8 + 3 + Car 3; d6: 6 + 2 + 4 ×
+  // (4 + 2), más 5 de la resistencia dracónica
   {
     klass: 'hechicero',
     scores: { des: 14, con: 14, car: 16 },
     gear: [],
     weapon: 'daga',
-    want: { ca: 12, ataque: 5, cd: 14, pg: 32 }
+    want: { ca: 15, ataque: 5, cd: 14, pg: 37 }
   },
   // Cuero 11 + Des 2; daga 5; CD 14; 38
   {

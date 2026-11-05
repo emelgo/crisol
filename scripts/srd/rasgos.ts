@@ -4,6 +4,7 @@
  * lanzamiento de conjuros) y la mecánica de los rasgos clave (la furia, la defensa sin armadura, los recursos de cada
  * clase) van escritos a mano aquí
  */
+import { SKILLS } from '../../packages/systems/src/catalog/5e/system.ts'
 import { PROFILES, range } from './capitulos.ts'
 import type { Doc } from './equipo.ts'
 import { likeness } from './magicos.ts'
@@ -327,6 +328,42 @@ export function alsoOf(text: string): number[] {
   return m ? [...(m[1] as string).matchAll(/(\d+)(?:st|nd|rd|th)/g)].map((x) => Number(x[1])) : []
 }
 
+/** Una línea que solo es una lista de habilidades (lo que sigue de «Skills: Choose two from…», partido) */
+const SKILL_NAMES = SKILLS.flatMap(([, es, en]) => [es, en]).join('|')
+const SKILL_LIST = new RegExp(`^(and |y )?((${SKILL_NAMES})(, and |, y |, | and | y )?)+\\.?$`, 'i')
+
+/** Lo de la introducción de una clase (sus PG, sus competencias, su equipo), que ya va en sus datos */
+const INTRO_HEADING = /^#### (Hit Points|Proficiencies|Equipment|Puntos de golpe|Competencias|Equipo)$/
+const INTRO_LABEL =
+  /^(Hit Dice|Hit Points at|Armor|Weapons|Tools|Saving Throws|Skills|Dados de golpe|Puntos de golpe a nivel|Armaduras?|Armas|Herramientas|Tiradas de salvación|Habilidades):/
+const INTRO_TEXT =
+  /^(You start with the following equipment|Empiezas con el siguiente equipo|Además del que obtengas por tu trasfondo|- \(?[a-c]\))/i
+
+/**
+ * El texto de un rasgo de 2014 sin lo de la introducción de su clase ni su tabla, que el orden de lectura mezcla con el
+ * primer rasgo (van en la columna de al lado)
+ */
+export function withoutIntro(text: string): string {
+  let intro = false
+  let label = false
+  return text
+    .split('\n\n')
+    .filter((block) => {
+      if (INTRO_HEADING.test(block)) return !(intro = true)
+      // Una etiqueta («Skills: Choose two from…») y lo que sigue de ella, partido en otra línea
+      if (INTRO_LABEL.test(block)) return !(label = true)
+      if (SKILL_LIST.test(block)) return false
+      // (una lista corta: «Persuasion, and Religion», «Perspicacia, Persuasión y Religión.»)
+      if (label && block.length < 80 && /,/.test(block) && !/\b(you|can|tu|puedes)\b/i.test(block))
+        return (label = false)
+      label = false
+      if (intro && INTRO_TEXT.test(block)) return false
+      intro = false
+      return true
+    })
+    .join('\n\n')
+}
+
 /** Los rasgos de una clase en una edición e idioma, con los de su subclase */
 export function classTexts(klass: ClassSpec, edition: Edition, lang: Lang): ClassText {
   const [from, to, next] = klass.pages[edition][lang]
@@ -338,7 +375,13 @@ export function classTexts(klass: ClassSpec, edition: Edition, lang: Lang): Clas
   const end = all.findIndex((r, i) => i > start && r.h === h.klass && r.text.startsWith(next))
   const rows = all.slice(start + 1, end < 0 ? undefined : end)
   const bases = basesOf(rows, profile.text)
-  const text = (own: readonly Row[]) => textOf(own, { bases, profile: profile.text })
+  // La tabla de la clase («The Bard», «Barbarian Features») va en la columna de al lado o en la página entera: sus filas no
+  // van en ningún rasgo (lo que dice ya va en sus datos y su mecánica)
+  const dropTables =
+    edition === '2024'
+      ? /^(.+ Features|Rasgos de .+)$/
+      : new RegExp(`^(The ${klass.name.en}|(El|La) ${klass.name.es.toLowerCase()})$`)
+  const text = (own: readonly Row[]) => withoutIntro(textOf(own, { bases, profile: profile.text, dropTables }))
   if (edition === '2014') {
     const features = cut(rows, (r) => r.h === h.feature)
     const subclass = features.at(-1)
@@ -607,6 +650,53 @@ export function featureMechanics(klass: string, name: string, edition: Edition):
             target: 'ca',
             op: 'base',
             value: '10 + @caracteristicas.des.mod + @caracteristicas.sab.mod',
+            when: '!@con_armadura && !@con_escudo'
+          }
+        ],
+        automation: 'full'
+      }
+    case 'hechicero:Draconic Resilience':
+      // CA sin armadura (13 + Des en 2014; 10 + Des + Car en 2024) y 1 PG más por nivel de hechicero
+      return {
+        effects: [
+          {
+            target: 'ca',
+            op: 'base',
+            value:
+              edition === '2014'
+                ? '13 + @caracteristicas.des.mod'
+                : '10 + @caracteristicas.des.mod + @caracteristicas.car.mod',
+            when: '!@con_armadura'
+          },
+          { target: 'pg_max', op: 'add', value: '@origen.nivel' }
+        ],
+        automation: 'full'
+      }
+    case 'barbaro:Primal Champion':
+      return {
+        effects: ['fue', 'con'].map((k) => ({ target: `caracteristicas.${k}.puntuacion`, op: 'add', value: '4' })),
+        automation: 'partial',
+        manual: t('El máximo de las dos sube a 24 (25 en 2024)', 'Their maximum rises to 24 (25 in 2024)')
+      }
+    case 'barbaro:Fast Movement':
+      return {
+        effects: [{ target: 'velocidad', op: 'add', value: '10' }],
+        automation: 'partial',
+        manual: t('Solo sin armadura pesada', 'Only while not wearing heavy armor')
+      }
+    case 'monje:Unarmored Movement':
+      return {
+        effects: [
+          {
+            target: 'velocidad',
+            op: 'add',
+            value: byLevel([
+              [2, '10'],
+              [6, '15'],
+              [10, '20'],
+              [14, '25'],
+              [18, '30']
+            ]),
             when: '!@con_armadura && !@con_escudo'
           }
         ],

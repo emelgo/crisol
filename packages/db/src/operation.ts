@@ -70,7 +70,7 @@ export interface Writer {
   insertMany<T extends TrackedTable>(table: T, values: readonly Values<T>[]): Promise<InferSelectModel<T>[]>
   update<T extends TrackedTable>(table: T, id: string, patch: Partial<Values<T>>): Promise<InferSelectModel<T>>
   remove(table: TrackedTable, id: string): Promise<void>
-  /** Muchas filas de una tabla, por tandas (al subir un sistema encima de otro): igual que quitarlas una a una */
+  /** Muchas filas de una tabla, por tandas (al subir un sistema encima de otro): igual que quitarlas una a una (sin ids repetidos) */
   removeMany(table: TrackedTable, ids: readonly string[]): Promise<void>
   /**
    * Deja una fila como la guarda el historial (to_jsonb, con su id y su versión): la actualiza si existe o la vuelve

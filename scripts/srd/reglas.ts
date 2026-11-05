@@ -114,7 +114,8 @@ export function textOf(rows: readonly Row[], options: TextOptions = {}): string 
         row.h === profile.sidebar?.title ||
         row.h === profile.sidebar?.body ||
         profile.tableTitles.includes(row.h)
-      const kept = blocks.at(-1)?.kind === 'title' || blocks.at(-1)?.kind === 'table'
+      // Las filas de una tabla con su título (o tras un apartado) sí van
+      const kept = ['title', 'table', 'h'].includes(blocks.at(-1)?.kind ?? '')
       if (!known && !(kept && profile.cells.includes(row.h))) continue
     }
     // Una consonante suelta es un trozo de la palabra que sigue, partida en el PDF («d estreza»)

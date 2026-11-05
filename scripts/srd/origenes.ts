@@ -392,7 +392,76 @@ export function allOriginDocs(taken: ReadonlySet<string> = new Set()): Doc[] {
       .filter((it) => it.type === 'dote')
       .map((it) => [it.en, conceptOf(it)])
   )
-  return (['2014', '2024'] as const).flatMap((edition) =>
-    originDocs(edition, originTexts(edition, 'en'), originTexts(edition, 'es'), conceptOf, feats)
-  )
+  return (['2014', '2024'] as const).flatMap((edition) => {
+    const en = originTexts(edition, 'en')
+    const es = originTexts(edition, 'es')
+    if (edition === '2024') {
+      mergeSplitTables(en, 'en')
+      mergeSplitTables(es, 'es')
+    }
+    return originDocs(edition, en, es, conceptOf, feats)
+  })
+}
+
+/** Las tablas partidas en dos mitades de las especies de 2024: su título y de quién son, por su primera cabecera */
+const SPLIT_TABLES: { left: RegExp; owner: { en: string; es: string }; title: { en: string; es: string } }[] = [
+  {
+    left: /^\| (Lineage|Linaje) \|/,
+    owner: { en: 'Elf', es: 'Elfo' },
+    title: { en: 'Elven Lineages', es: 'Linajes élficos' }
+  },
+  {
+    left: /^\| (Legacy|Legado) \|/,
+    owner: { en: 'Tiefling', es: 'Tiefling' },
+    title: { en: 'Fiendish Legacies', es: 'Legados infernales' }
+  }
+]
+const RIGHT_HALF = /^\| (Level|Nivel) 3 \|/
+const SPLIT_TITLE = /^\*\*(Elven Lineages|Fiendish Legacies|Linajes élficos|Legados infernales)\*\*$/
+
+/**
+ * Las tablas de linajes élficos y legados infernales de 2024 van partidas en dos mitades (columnas) que la maquetación
+ * deja en especies vecinas: se quitan de donde caigan y se juntan, fila a fila, en su especie (las mitades derechas, en
+ * su orden de lectura: la primera es la de los elfos)
+ */
+export function mergeSplitTables(texts: Map<string, OriginText>, lang: Lang): void {
+  const lefts = new Map<number, string[][]>()
+  const rights: string[][][] = []
+  const rowsOf = (block: string) =>
+    block
+      .split('\n')
+      .filter((_, i) => i !== 1)
+      .map((l) => l.replace(/^\| | \|$/g, '').split(' | '))
+  for (const [name, entry] of texts) {
+    const kept = entry.text.split('\n\n').filter((block) => {
+      if (SPLIT_TITLE.test(block)) return false
+      const owner = SPLIT_TABLES.findIndex((table) => table.left.test(block))
+      if (owner >= 0) {
+        lefts.set(owner, rowsOf(block))
+        return false
+      }
+      if (RIGHT_HALF.test(block)) {
+        rights.push(rowsOf(block))
+        return false
+      }
+      return true
+    })
+    texts.set(name, { ...entry, text: kept.join('\n\n') })
+  }
+  SPLIT_TABLES.forEach((table, i) => {
+    const left = lefts.get(i)
+    const owner = texts.get(table.owner[lang])
+    if (!left || !owner) return
+    const right = rights[i] ?? []
+    const [head = [], ...body] = left.map((row, j) => [...row, ...(right[j] ?? [])])
+    const markdown = [
+      `| ${head.join(' | ')} |`,
+      `| ${head.map(() => '---').join(' | ')} |`,
+      ...body.map((r) => `| ${r.join(' | ')} |`)
+    ]
+    texts.set(table.owner[lang], {
+      ...owner,
+      text: `${owner.text}\n\n**${table.title[lang]}**\n\n${markdown.join('\n')}`
+    })
+  })
 }

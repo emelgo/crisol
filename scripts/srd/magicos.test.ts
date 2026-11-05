@@ -8,7 +8,8 @@ import {
   magicMechanics,
   numbersOf,
   pairByLikeness,
-  parseMagicItem
+  parseMagicItem,
+  withoutStrayColumns
 } from './magicos.ts'
 import type { Row } from './texto.ts'
 
@@ -220,5 +221,13 @@ describe('la mecánica de un objeto mágico, del texto en inglés', () => {
       ref: { pages: { en: 241, es: 260 } }
     })
     expect(magicDoc('2014', item({ rarity: null }), item({}), 'x').data).not.toHaveProperty('rareza')
+  })
+})
+
+describe('la columna suelta de otro objeto', () => {
+  it('la de las palancas del aparato del crustáceo no va en otro objeto; en el suyo, sí', () => {
+    const text = 'An arrow.\n\n| Bajada |\n| --- |\n| Las patas se retraen. |'
+    expect(withoutStrayColumns('Arco de energía', text)).toBe('An arrow.')
+    expect(withoutStrayColumns('Aparato del crustáceo', text)).toBe(text)
   })
 })

@@ -183,6 +183,14 @@ describe('el contenido de los sistemas de serie', { timeout: 60_000 }, () => {
         }
       ).values
     ).toMatchObject({ pg_max: 6, velocidad: 15 })
+    // A la mitad, hacia abajo: 25 pies son 12
+    const slow = evaluate(
+      fiveE,
+      'personaje',
+      { data: { ...data, velocidad: 25 }, items: [carry('cansancio_2014', { nivel: 2 })] },
+      { settings: { reglas: 'e2014' } }
+    )
+    expect(slow.values.velocidad).toBe(12)
     // 2024: 1,5 m menos por nivel y −2 por nivel a las pruebas d20, sin desventajas
     const now = tired('e2024')
     expect(now.values).toMatchObject({ cansancio: 3, velocidad: 15, pg_max: 12 })
@@ -450,6 +458,28 @@ describe('el contenido de los sistemas de serie', { timeout: 60_000 }, () => {
     expect(found.items[0]).toMatchObject({ key: 'regla_ataques_de_oportunidad_2024', name: 'Ataques de oportunidad' })
     const glossary = content.find((c) => c.key === 'regla_ataques_de_oportunidad_2024')
     expect(glossary?.data).toMatchObject({ capitulo: { es: 'Glosario de reglas', en: 'Rules Glossary' } })
+  })
+
+  it('el texto de cada documento lleva las mismas tablas en los dos idiomas (salvo las reglas que las parten distinto)', () => {
+    // Lo que se cuela de un documento en otro (la tabla de una clase, una columna suelta) se nota así. Estas seis son
+    // del texto de las reglas, donde cada PDF parte o junta sus tablas a su manera
+    const KNOWN = [
+      'regla_convenciones_del_glosario_2024',
+      'regla_crear_tu_personaje_2024',
+      'regla_encuentros_de_combate_2024',
+      'regla_ritmo_de_viaje_2024',
+      'regla_terreno_dificil_2024',
+      'regla_trampas_2024'
+    ]
+    const tables = (text: string) => text.match(/^\| ---/gm)?.length ?? 0
+    const differ = catalogContent('5e')
+      .filter((c) => {
+        const text = c.data.descripcion as { es: string; en: string } | undefined
+        return text && typeof text === 'object' && tables(text.en) !== tables(text.es)
+      })
+      .map((c) => c.key)
+      .sort()
+    expect(differ).toEqual(KNOWN)
   })
 
   it('se lee una vez; sin contenido, ninguno; no sale en la entrada del paquete (la web no lo lleva)', () => {

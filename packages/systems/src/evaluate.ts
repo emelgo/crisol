@@ -431,8 +431,9 @@ export function evaluate(
       v += n
       t = [...t, { label: e.label, value: n, kind: 'bonus', origin: e.item.id }]
     }
+    // Multiplicar redondea hacia abajo (la velocidad a la mitad de 25 pies son 12)
     for (const e of active.filter((x) => x.op === 'mul')) {
-      const n = v * amount(e)
+      const n = Math.floor(v * amount(e))
       t = [...t, { label: e.label, value: n - v, kind: 'bonus', origin: e.item.id }]
       v = n
     }

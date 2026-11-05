@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { type OriginText, originDocs, pairTraits, skillsOf, traitMechanics, traitsOf } from './origenes.ts'
+import {
+  mergeSplitTables,
+  type OriginText,
+  originDocs,
+  pairTraits,
+  skillsOf,
+  traitMechanics,
+  traitsOf
+} from './origenes.ts'
 
 describe('los rasgos de una especie', () => {
   it('los párrafos que empiezan con su nombre; no las frases ni las opciones de un rasgo', () => {
@@ -200,5 +208,25 @@ describe('los documentos de una edición', () => {
     expect(byKey.get('acolyte_2024')?.data.descripcion).toMatchObject({
       en: expect.stringContaining('**Feat:** Magic Initiate')
     })
+  })
+})
+
+describe('las tablas partidas de las especies de 2024', () => {
+  it('se quitan de donde caigan y se juntan, fila a fila, en su especie', () => {
+    const entry = (name: string, text: string): OriginText => ({ name, header: {}, category: '', text, page: 84 })
+    const texts = new Map([
+      [
+        'Elf',
+        entry('Elf', 'Elf text.\n\n**Elven Lineages**\n\n| Lineage | Level 1 |\n| --- | --- |\n| Drow | Darkvision |')
+      ],
+      ['Gnome', entry('Gnome', 'Gnome text.\n\n| Level 3 | Level 5 |\n| --- | --- |\n| Faerie Fire | Darkness |')],
+      ['Tiefling', entry('Tiefling', 'Tiefling text.')]
+    ])
+    mergeSplitTables(texts, 'en')
+    expect(texts.get('Gnome')?.text).toBe('Gnome text.')
+    expect(texts.get('Elf')?.text).toBe(
+      'Elf text.\n\n**Elven Lineages**\n\n| Lineage | Level 1 | Level 3 | Level 5 |\n| --- | --- | --- | --- |\n| Drow | Darkvision | Faerie Fire | Darkness |'
+    )
+    expect(texts.get('Tiefling')?.text).toBe('Tiefling text.')
   })
 })

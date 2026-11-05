@@ -8,7 +8,8 @@ import {
   type FeatureText,
   featureMechanics,
   levelOf,
-  pairFeatures
+  pairFeatures,
+  withoutIntro
 } from './rasgos.ts'
 
 const f = (name: string, text: string, level: number | null = null, page = 8): FeatureText => ({
@@ -147,5 +148,22 @@ describe('los documentos de una clase', () => {
       expect.arrayContaining(['senda_del_berserker_frenesi_2014', 'senda_del_berserker_frenesi_6_2014'])
     )
     expect(byKey.get('senda_del_berserker_frenesi_6_2014')?.data.nivel).toBe(6)
+  })
+})
+
+describe('el texto de un rasgo, sin la introducción de su clase', () => {
+  it('quita sus apartados (PG, competencias, equipo), sus etiquetas y la lista partida de habilidades', () => {
+    const text = [
+      'You can cast spells.',
+      'Skills: Choose two from History, Insight, Medicine,',
+      'Persuasion, and Religion',
+      '#### Equipment',
+      'You start with the following equipment, in addition to the equipment granted by your background:',
+      '- (a) a mace or (b) a warhammer',
+      '#### Cantrips',
+      'You know three cantrips.',
+      'Perspicacia y Religión.'
+    ].join('\n\n')
+    expect(withoutIntro(text)).toBe('You can cast spells.\n\n#### Cantrips\n\nYou know three cantrips.')
   })
 })
