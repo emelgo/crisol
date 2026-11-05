@@ -24,9 +24,15 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
 - **El compendio, como el de Foundry (PR #105)**: estudio en `research/foundry/compendio.md`; la biblioteca por
   edición, secciones y carpetas (`compendium` en el formato del sistema, `browseCampaignContent`), «En juego» con la
   mecánica en palabras (`mechanicsText`) y lo abierto en la dirección. Con él, el resto del pulido (el foco del
-  creador, «Ficha | Creador» en la dirección, el borrador de una tabla). **Lo siguiente**: el contenido con dnd5e
-  (Enrique, «me parece bien»: textos de los PDF y mecánica de dnd5e): el comparador `scripts/srd/comparar-dnd5e.ts`
-  y los arreglos del extractor de criaturas, en la rama `modulo-3/contenido-dnd5e` (en un stash si no está).
+  creador, «Ficha | Creador» en la dirección, el borrador de una tabla). 
+- **El contenido, cruzado con dnd5e (PR #106)** (Enrique, «me parece bien»: los textos, de los PDF; la mecánica, de
+  dnd5e donde es mejor). `scripts/srd/dnd5e-exportar.ts` copia sus compendios a `datos-locales/dnd5e/` (fuera de git) y
+  `comparar-dnd5e.ts` cruza nuestras criaturas con las suyas. Arreglado el extractor de criaturas (de 473 a 615 de 647
+  iguales; de 131 etiquetas sin traducir a 26) y traída de dnd5e la mecánica de los objetos mágicos que el texto no da
+  (de 15 a 157 con acciones). Del SRD no falta nada: lo que dnd5e tiene de más son variantes, invocaciones, personajes
+  de ejemplo y algo que no es del SRD. **Lo siguiente**: lo que queda de las criaturas (20 acciones, 26 etiquetas), las
+  tablas del SRD como tablas que se tiran, los filtros del compendio y ampliar el formato de la mecánica (estados que
+  imponen los conjuros, conjuros dentro de un perfil): `research/foundry/compendio.md` § propuestas.
 - **La CI del módulo 3 pasó entera en la PR #103** (calidad, seguridad, secretos, e2e y accesibilidad).
 - **El pulido del módulo 3, primera tanda (PR #104)**: revisada su interfaz con las pautas y `docs/diseno.md`;
   hechos los tutoriales de cada vista (campaña, Personajes, el personaje, Compendio y Tabla), sin dobles clics, avisos
