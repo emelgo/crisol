@@ -1780,7 +1780,6 @@ export const es = {
     CHARACTER_CHANGED: 'Lo ha cambiado alguien mientras tanto: vuelve a abrirlo',
     BAD_CHOICE: 'Eso no se puede elegir',
     INCOMPLETE: 'Aún le falta algo de lo que pide su sistema',
-    NO_SYSTEM: 'La campaña aún no tiene sistema',
     NOT_A_MEMBER: 'Quien lo juega tiene que estar en la campaña',
     TABLE_EMPTY: 'Ya ha salido todo: reiníciala',
     BAD_TABLE: 'Las filas no cubren bien la fórmula',
