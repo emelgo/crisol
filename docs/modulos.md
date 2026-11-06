@@ -55,8 +55,6 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   arrancar, staging se puso a leer sus PDF y a calcular los vectores de la wiki. Planes en `tasks/<capacidad>/`.
 - **Lo siguiente**: que Enrique pruebe el módulo 4 (`tasks/probar.md` § «Módulo 4»: sobre todo, la calidad de la
   búsqueda por significado con libros de verdad y «Descargar PDF» con el Chromium de Debian) y empezar el módulo 5.
-- Pendiente de Enrique, sin bloquear: cerrar los tres avisos MCP como se le propuso (descartar `ver_escena`, «no se
-  arregla» `query_document` de LightRAG por el parche de las palabras clave, dejar abierta la mejora de craft).
 - Ojo: la API de desarrollo (`node --watch`) no siempre se recarga al añadir archivos; `touch apps/server/src/main.ts`.
 
 ### Antes (2026-11-06, módulo 3 terminado)
