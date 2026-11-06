@@ -103,6 +103,9 @@ export function LibraryScreen() {
         </search>
         {wanted ? (
           <section aria-label={t('library.results')} aria-busy={found.isFetching}>
+            <p className={styles.hidden} role="status">
+              {found.data ? t('library.found', { count: found.data.books.length }) : ''}
+            </p>
             {found.data?.books.length === 0 && found.data.pages.length === 0 && (
               <p className={styles.muted}>{t('library.nothing')}</p>
             )}
@@ -199,13 +202,13 @@ export function LibraryScreen() {
             <div className={styles.readerHead}>
               <span className={styles.bookName}>{open.name}</span>
               <span className={styles.scope}>{scope(open.common)}</span>
-              <a href={`/api/files/${open.fileId}`} target="_blank" rel="noopener" className={styles.openApart}>
+              <a href={open.url} target="_blank" rel="noopener" className={styles.openApart}>
                 {t('pdf.open')}
               </a>
             </div>
             <PdfPages
-              key={`${open.fileId}-${search.pagina ?? 1}`}
-              url={`/api/files/${open.fileId}`}
+              key={open.url}
+              url={open.url}
               name={open.name}
               first={search.pagina ?? 1}
               highlight={search.q ? search.q.split(/\s+/) : []}

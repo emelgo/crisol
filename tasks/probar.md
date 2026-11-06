@@ -19,6 +19,8 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   que sale solo por significado lleva «Por significado». Dime si lo que encuentra tiene sentido.
 - [ ] **También en las páginas**: si la wiki habla de lo mismo, sale debajo con su enlace.
 - [ ] **La IA**: pídele que busque algo en tus libros y te diga en qué página está.
+- [ ] **El PDF de una hoja**, tras subir esto a staging: la imagen de la app pasa a Debian (con otro Chromium). En una
+  página con hoja, «Descargar PDF» tiene que seguir funcionando.
 
 ## Módulo 4: el inventario del grupo (rama `modulo-4/grupo`; en local, aún no en staging)
 

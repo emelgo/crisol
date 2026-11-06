@@ -57,6 +57,19 @@ Como se propuso, con estas precisiones al construirlo:
 - **La IA**: `buscar_libros` (palabras y significado), `leer_libro` y `ver_biblioteca`; `buscar_paginas` sigue igual.
 - **Los ya subidos** se leen al arrancar el servidor y al abrir la biblioteca.
 
+Tras la revisión:
+- **Cada PDF se lee en su propio hilo**, con 512 MB y 10 minutos como mucho, hasta 3.000 páginas y 5 millones de
+  caracteres: un PDF enorme o malicioso solo hace fallar su lectura.
+- **Búsqueda con filtro**: usa el recorrido iterativo de pgvector, porque con filtro el índice devolvía muy pocos.
+- **Las colas**:
+  - no bloquean si Valkey se cae;
+  - apuntan qué documentos de la wiki cambiaron;
+  - cada pasada de significado dura unos minutos y deja paso a los libros;
+  - un trozo con el que el modelo no puede se marca y no estorba;
+  - lo que se quedó a medias más de 20 minutos se vuelve a pedir.
+- **El hilo del modelo** ya no deja peticiones colgadas.
+- **Los trozos de la wiki** guardan de qué parte salen, para dejar fuera los secretos cuando haya jugadores (módulo 5).
+
 Queda: la portada de cada libro en la lista (hoy, un icono), buscar dentro de un libro desde el visor, el significado
 en la búsqueda general y en el compendio, y medir la calidad con libros de verdad (`tasks/probar.md`).
 

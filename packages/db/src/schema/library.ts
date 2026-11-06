@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm'
-import { check, index, integer, pgTable, primaryKey, text, timestamp, uuid, vector } from 'drizzle-orm/pg-core'
+import { boolean, check, index, integer, pgTable, primaryKey, text, timestamp, uuid, vector } from 'drizzle-orm/pg-core'
 import { documents } from './documents.ts'
 import { files } from './files.ts'
 import { pages } from './pages.ts'
@@ -64,13 +64,17 @@ export const searchChunks = pgTable(
     position: integer().notNull().default(0),
     text: text().notNull(),
     hash: text().notNull(),
-    embedding: vector({ dimensions: EMBEDDING_DIMENSIONS })
+    /** De la wiki, de qué parte sale (body, tab o secret: los secretos, para dejarlos fuera de lo de los jugadores) */
+    kind: text(),
+    embedding: vector({ dimensions: EMBEDDING_DIMENSIONS }),
+    /** El modelo no pudo con él: no se vuelve a intentar hasta que cambie */
+    failed: boolean().notNull().default(false)
   },
   (t) => [
     index().on(t.fileId),
     index().on(t.documentId),
     index().on(t.worldId),
-    index('search_chunks_pending').on(t.id).where(sql`${t.embedding} is null`),
+    index('search_chunks_pending').on(t.id).where(sql`${t.embedding} is null and not ${t.failed}`),
     index('search_chunks_embedding').using('hnsw', t.embedding.op('vector_cosine_ops')),
     check('search_chunks_source', sql`${t.source} in ('book', 'page')`)
   ]

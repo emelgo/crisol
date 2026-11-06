@@ -12,6 +12,7 @@ export const textStatus = z
 export const libraryBook = z.object({
   fileId: z.uuid(),
   name: z.string(),
+  url: z.string().describe('Para abrirlo (con su versión: tras cambiarlo, no se mezcla con lo de antes)'),
   common: z.boolean().describe('De los comunes de la cuenta (si no, del mundo)'),
   size: z.int(),
   status: textStatus,

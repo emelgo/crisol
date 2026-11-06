@@ -165,6 +165,13 @@
   line-height: 1.45;
 }
 
+@media (forced-colors: active) {
+  .excerpt mark {
+    background: Mark;
+    color: MarkText;
+  }
+}
+
 .excerpt mark {
   border-radius: 2px;
   background: color-mix(in srgb, #f5c400 40%, transparent);

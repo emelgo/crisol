@@ -116,12 +116,17 @@ export const libraryActions = [
     const books: LibraryBook[] = []
     for (const file of found) {
       const text = statuses.get(file.id)
-      // Sin leer o cambiado después (otra huella): a la cola
-      const stale = !text || text.hash !== file.hash
+      // Sin leer, cambiado después (otra huella) o que se quedó a medias hace mucho: a la cola
+      const stuck =
+        text &&
+        (text.status === 'pending' || text.status === 'reading') &&
+        Date.now() - text.updatedAt.getTime() > libraryRepo.STALE_MINUTES * 60_000
+      const stale = !text || text.hash !== file.hash || Boolean(stuck)
       if (stale) await ctx.library?.enqueue(file.id)
       books.push({
         fileId: file.id,
         name: file.name,
+        url: `/api/files/${file.id}?v=${file.version}`,
         common: file.worldId === null,
         size: file.size,
         status: stale ? 'pending' : text.status,

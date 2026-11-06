@@ -105,3 +105,10 @@
   border-radius: 2px;
   background: color-mix(in srgb, #f5c400 45%, transparent);
 }
+
+@media (forced-colors: active) {
+  .textLayer .hit {
+    background: Mark;
+    color: MarkText;
+  }
+}

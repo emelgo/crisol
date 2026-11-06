@@ -2,7 +2,7 @@
  * La biblioteca (docs/specs/biblioteca.md): el texto de los PDF por página, cómo va su lectura y buscar en ellos. Sale
  * de los archivos: no pasa por el historial
  */
-import { and, asc, eq, gte, inArray, isNull, lte, notInArray, sql } from 'drizzle-orm'
+import { and, asc, eq, gte, inArray, isNull, lte, notInArray, type SQL, sql } from 'drizzle-orm'
 import type { Database } from '../client.ts'
 import { files } from '../schema/files.ts'
 import { filePages, fileTexts, searchChunks } from '../schema/library.ts'
@@ -10,8 +10,14 @@ import { tsQuery } from './search.ts'
 
 export type TextStatus = (typeof fileTexts.$inferSelect)['status']
 
-/** Los PDF que hay que leer: los que no se han leído o se cambiaron después (otra huella), fuera de la papelera */
-export async function pdfsToRead(db: Database, limit = 200) {
+/** Lo que se lee o espera desde hace tanto se da por perdido (una cola que se vació, un servidor que se paró) */
+export const STALE_MINUTES = 20
+
+/**
+ * Los PDF que hay que leer, de tanda en tanda por su id: los que no se han leído, los cambiados después (otra huella)
+ * y los que se quedaron a medias (leyendo o pendientes hace mucho), fuera de la papelera
+ */
+export async function pdfsToRead(db: Database, after: string | null = null, limit = 200) {
   return db
     .select({ id: files.id, hash: files.hash })
     .from(files)
@@ -20,9 +26,13 @@ export async function pdfsToRead(db: Database, limit = 200) {
       and(
         eq(files.kind, 'pdf'),
         isNull(files.deletedAt),
-        sql`(${fileTexts.fileId} is null or ${fileTexts.hash} <> ${files.hash})`
+        after ? sql`${files.id} > ${after}` : undefined,
+        sql`(${fileTexts.fileId} is null or ${fileTexts.hash} <> ${files.hash}
+          or (${fileTexts.status} in ('pending', 'reading')
+            and ${fileTexts.updatedAt} < now() - make_interval(mins => ${STALE_MINUTES})))`
       )
     )
+    .orderBy(asc(files.id))
     .limit(limit)
 }
 
@@ -185,33 +195,46 @@ export async function syncBookChunks(
   })
 }
 
-/** La huella de una sección de la wiki, como la calcula Postgres */
-const sectionHash = sql`md5(coalesce(s.heading, '') || E'\\n' || s.body)`
+/** La huella de una sección de la wiki, como la calcula Postgres: su sitio, su título y su texto */
+const sectionHash = sql`md5(s.position::text || E'\n' || coalesce(s.heading_id, '') || E'\n' || coalesce(s.heading, '') || E'\n' || s.body)`
 
 /**
  * Los trozos de la wiki, sacados de sus secciones (lo del cuerpo, las pestañas y los secretos; un trozo por sección,
- * su título delante): los que cambiaron, de nuevo y sin vector; los de secciones que ya no están, fuera
+ * su título delante): los que cambiaron, de nuevo y sin vector; los de secciones que ya no están, fuera. De esos
+ * documentos (los que se acaban de guardar) o, sin decirlos, de todos (al arrancar)
  */
-export async function syncWikiChunks(db: Database) {
+export async function syncWikiChunks(db: Database, documentIds?: readonly string[]) {
+  if (documentIds && documentIds.length === 0) return
+  const ids = documentIds
+    ? sql`(${sql.join(
+        documentIds.map((id) => sql`${id}::uuid`),
+        sql`, `
+      )})`
+    : null
   await db.execute(sql`
-    delete from search_chunks c where c.source = 'page' and not exists (
-      select 1 from search_sections s where s.document_id = c.document_id and ${sectionHash} = c.hash)`)
+    delete from search_chunks c where c.source = 'page' ${ids ? sql`and c.document_id in ${ids}` : sql``}
+      and not exists (select 1 from search_sections s where s.document_id = c.document_id and ${sectionHash} = c.hash)`)
   await db.execute(sql`
-    insert into search_chunks (organization_id, world_id, source, document_id, page_id, heading_id, position, text, hash)
-    select w.organization_id, s.world_id, 'page', s.document_id, s.page_id, s.heading_id, s.position,
-      left(coalesce(s.heading || E'\\n', '') || s.body, 2000), ${sectionHash}
+    insert into search_chunks (organization_id, world_id, source, document_id, page_id, heading_id, position, kind, text, hash)
+    select w.organization_id, s.world_id, 'page', s.document_id, s.page_id, s.heading_id, s.position, s.kind,
+      left(coalesce(s.heading || E'\n', '') || s.body, 2000), ${sectionHash}
     from search_sections s join worlds w on w.id = s.world_id
-    where s.kind in ('body', 'tab', 'secret') and length(s.body) >= 30
+    where s.kind in ('body', 'tab', 'secret') and length(s.body) >= 30 ${ids ? sql`and s.document_id in ${ids}` : sql``}
       and not exists (select 1 from search_chunks c where c.document_id = s.document_id and c.hash = ${sectionHash})`)
 }
 
-/** Unos trozos que aún no tienen vector */
+/** Unos trozos que aún no tienen vector (los que el modelo no pudo, aparte) */
 export function pendingChunks(db: Database, limit: number) {
   return db
     .select({ id: searchChunks.id, text: searchChunks.text })
     .from(searchChunks)
-    .where(isNull(searchChunks.embedding))
+    .where(and(isNull(searchChunks.embedding), eq(searchChunks.failed, false)))
     .limit(limit)
+}
+
+/** Uno con el que el modelo no pudo: no se vuelve a intentar hasta que cambie (otra huella, otro trozo) */
+export async function markChunkFailed(db: Database, id: string) {
+  await db.update(searchChunks).set({ failed: true }).where(eq(searchChunks.id, id))
 }
 
 /** Sus vectores, ya calculados */
@@ -220,6 +243,18 @@ export async function setEmbeddings(db: Database, rows: readonly { id: string; v
     await db.execute(
       sql`update search_chunks set embedding = ${vectorLiteral(row.vector)}::vector where id = ${row.id}`
     )
+}
+
+/**
+ * Lo más cercano a un vector con el índice HNSW y un filtro (el mundo, los comunes): con el recorrido iterativo de
+ * pgvector, que sigue buscando hasta llenar lo pedido (si no, con un filtro que deja pocos trozos, salen muy pocos)
+ */
+function nearest<T>(db: Database, query: SQL) {
+  return db.transaction(async (tx) => {
+    await tx.execute(sql`set local hnsw.iterative_scan = relaxed_order`)
+    await tx.execute(sql`set local hnsw.ef_search = 100`)
+    return [...(await tx.execute<T & Record<string, unknown>>(query))]
+  })
 }
 
 /** Los trozos de libros más cercanos a un vector, en lo que ve quien busca: su libro, su página y su parecido */
@@ -231,40 +266,48 @@ export async function nearestBookChunks(db: Database, scope: LibraryScope, vecto
     ],
     sql` or `
   )
-  const rows = await db.execute<{
+  const target = sql`${vectorLiteral(vector)}::vector`
+  // El recorrido iterativo puede desordenar un poco: se ordena otra vez fuera
+  const rows = await nearest<{
     file_id: string
     name: string
     world_id: string | null
     page: number
     text: string
-    similarity: number
-  }>(sql`
-    select c.file_id, f.name, f.world_id, c.page, c.text, (1 - (c.embedding <=> ${vectorLiteral(vector)}::vector))::float8 as similarity
-    from search_chunks c join files f on f.id = c.file_id
-    where c.source = 'book' and c.embedding is not null and f.deleted_at is null and (${where})
-      ${scope.fileId ? sql`and f.id = ${scope.fileId}` : sql``}
-    order by c.embedding <=> ${vectorLiteral(vector)}::vector
-    limit ${limit}`)
-  return [...rows].map((row) => ({
+    distance: number
+  }>(
+    db,
+    sql`select * from (
+      select c.file_id, f.name, f.world_id, c.page, c.text, (c.embedding <=> ${target})::float8 as distance
+      from search_chunks c join files f on f.id = c.file_id
+      where c.source = 'book' and c.embedding is not null and f.deleted_at is null and (${where})
+        ${scope.fileId ? sql`and f.id = ${scope.fileId}` : sql``}
+      order by c.embedding <=> ${target}
+      limit ${limit}
+    ) near order by distance`
+  )
+  return rows.map((row) => ({
     fileId: row.file_id,
     name: row.name,
     common: row.world_id === null,
     page: row.page,
     text: row.text,
-    similarity: row.similarity
+    similarity: 1 - row.distance
   }))
 }
 
 /** Las páginas de la wiki de un mundo más cercanas a un vector (por su mejor sección), fuera de la papelera */
 export async function nearestPages(db: Database, worldId: string, vector: readonly number[], limit: number) {
-  const rows = await db.execute<{ page_id: string; title: string; similarity: number }>(sql`
-    select p.id as page_id, p.title, max(1 - (c.embedding <=> ${vectorLiteral(vector)}::vector))::float8 as similarity
-    from (
-      select page_id, embedding from search_chunks
-      where source = 'page' and world_id = ${worldId} and embedding is not null
-      order by embedding <=> ${vectorLiteral(vector)}::vector limit ${limit * 4}
-    ) c join pages p on p.id = c.page_id
-    where p.deleted_at is null
-    group by p.id, p.title order by similarity desc limit ${limit}`)
-  return [...rows].map((row) => ({ pageId: row.page_id, title: row.title, similarity: row.similarity }))
+  const target = sql`${vectorLiteral(vector)}::vector`
+  const rows = await nearest<{ page_id: string; title: string; distance: number }>(
+    db,
+    sql`select page_id, title, min(distance)::float8 as distance from (
+      select c.page_id, p.title, (c.embedding <=> ${target}) as distance
+      from search_chunks c join pages p on p.id = c.page_id
+      where c.source = 'page' and c.world_id = ${worldId} and c.embedding is not null and p.deleted_at is null
+      order by c.embedding <=> ${target}
+      limit ${limit * 4}
+    ) near group by page_id, title order by distance limit ${limit}`
+  )
+  return rows.map((row) => ({ pageId: row.page_id, title: row.title, similarity: 1 - row.distance }))
 }

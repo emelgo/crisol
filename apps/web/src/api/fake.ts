@@ -2424,6 +2424,7 @@ export function fakeApi(
             return {
               fileId: f.id,
               name: f.name,
+              url: f.url,
               common: f.worldId === null,
               size: f.size,
               status: pages ? (pages.length > 0 ? ('done' as const) : ('empty' as const)) : ('pending' as const),

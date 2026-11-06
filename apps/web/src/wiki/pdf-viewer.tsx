@@ -49,6 +49,19 @@ type Loaded = { state: 'loading' } | { state: 'failed' } | { state: 'ready'; doc
 /** Para comparar: sin tildes ni mayúsculas */
 const folded = (text: string) => text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()
 
+/** Las palabras que no dicen nada (no se marcan): «qué hace la guardia» marca «guardia» y «hace» */
+const EMPTY_WORDS = new Set(
+  'que como cual cuales quien quienes donde cuando cuanto para por con sin los las del una uno unos unas este esta esto ese esa eso sus mas pero tambien the and for with from that this what which who'.split(
+    ' '
+  )
+)
+
+/** Las palabras de lo buscado que se marcan: sin signos, de 3 letras o más y sin las vacías */
+const wordsOf = (query: readonly string[]) =>
+  query
+    .flatMap((part) => folded(part).split(/[^\p{L}\p{N}]+/u))
+    .filter((word) => word.length >= 3 && !EMPTY_WORDS.has(word))
+
 /**
  * Las páginas de un PDF, una a una, con su capa de texto (se puede seleccionar) y, si se dice, lo buscado marcado: las
  * líneas que llevan alguna de esas palabras (sin tildes)
@@ -69,8 +82,7 @@ export function PdfPages({
   const frame = useRef<HTMLElement>(null)
   const canvas = useRef<HTMLCanvasElement>(null)
   const textLayer = useRef<HTMLDivElement>(null)
-  const words = highlight.map(folded).filter((word) => word.length >= 3)
-  const marked = words.join(' ')
+  const marked = wordsOf(highlight).join(' ')
   const [loaded, setLoaded] = useState<Loaded>({ state: 'loading' })
   const [current, setCurrent] = useState(first)
   const [typed, setTyped] = useState(String(first))
@@ -92,9 +104,6 @@ export function PdfPages({
       const doc = await task.promise
       if (cancelled) return
       setLoaded({ state: 'ready', doc })
-      const start = Math.min(Math.max(1, first), doc.numPages)
-      setCurrent(start)
-      setTyped(String(start))
     }
     load().catch(() => {
       if (!cancelled) setLoaded({ state: 'failed' })
@@ -103,7 +112,15 @@ export function PdfPages({
       cancelled = true
       void destroy?.()
     }
-  }, [url, first])
+  }, [url])
+
+  // La página de entrada (la de un resultado): ir a ella sin volver a abrir el documento
+  useEffect(() => {
+    if (loaded.state !== 'ready') return
+    const start = Math.min(Math.max(1, first), loaded.doc.numPages)
+    setCurrent(start)
+    setTyped(String(start))
+  }, [loaded, first])
 
   // La página que toca, al ancho del visor, con su capa de texto encima
   useEffect(() => {
@@ -127,24 +144,27 @@ export function PdfPages({
       task = pdfPage.render({ canvas: target, viewport })
       if (text) {
         const { TextLayer } = await import('pdfjs-dist')
-        text.replaceChildren()
-        const shown = pdfPage.getViewport({ scale })
-        text.style.setProperty('--total-scale-factor', String(scale))
-        text.style.setProperty('--scale-factor', String(scale))
+        if (cancelled) return
+        // En un contenedor nuevo, que sustituye al de antes al acabar: otra página a medias no se mezcla
+        const fresh = document.createElement('div')
         const textLayerTask = new TextLayer({
           textContentSource: pdfPage.streamTextContent(),
-          container: text,
-          viewport: shown
+          container: fresh,
+          viewport: pdfPage.getViewport({ scale })
         })
         layer = textLayerTask
         await textLayerTask.render()
-        // Lo buscado, marcado: las líneas que lo llevan
+        if (cancelled) return
+        // Lo buscado, marcado: las líneas que llevan alguna de sus palabras enteras
         const wanted = marked ? marked.split(' ') : []
         if (wanted.length > 0)
-          for (const span of text.querySelectorAll('span')) {
-            const line = folded(span.textContent ?? '')
-            if (wanted.some((word) => line.includes(word))) span.classList.add(styles.hit ?? 'hit')
+          for (const span of fresh.querySelectorAll('span')) {
+            const words = new Set(folded(span.textContent ?? '').split(/[^\p{L}\p{N}]+/u))
+            if (wanted.some((word) => words.has(word))) span.classList.add(styles.hit ?? 'hit')
           }
+        text.style.setProperty('--total-scale-factor', String(scale))
+        text.style.setProperty('--scale-factor', String(scale))
+        text.replaceChildren(...fresh.childNodes)
       }
       await task.promise
     }

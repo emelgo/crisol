@@ -351,6 +351,13 @@
       "when": 1793982291818,
       "tag": "0049_busqueda_por_significado",
       "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1793985447913,
+      "tag": "0050_trozos_clase_y_fallos",
+      "breakpoints": true
     }
   ]
 }
