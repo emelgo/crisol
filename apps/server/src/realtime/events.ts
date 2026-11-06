@@ -18,9 +18,12 @@ export const campaignsChanged = (scope: CampaignScope): RealtimeEvent => ({
   message: { type: 'changed', what: 'campaigns', worldId: scope.worldId }
 })
 
-/** La wiki de un mundo: su árbol o la fila de una página. A quien la ve (el máster y el propietario) */
+/**
+ * La wiki de un mundo: su árbol o la fila de una página. A quien la lee (ADR-0017: también los jugadores, que vuelven a
+ * pedir lo suyo, ya proyectado; el aviso no dice qué cambió)
+ */
 export const pagesChanged = (wiki: { worldId: string; organizationId: string }): RealtimeEvent => ({
-  to: { capability: 'page.read', target: wiki },
+  to: { capability: 'page.view', target: wiki },
   message: { type: 'changed', what: 'pages', worldId: wiki.worldId }
 })
 
@@ -89,7 +92,8 @@ export const pageContentChanged = (
   wiki: { worldId: string; organizationId: string },
   pageId: string
 ): RealtimeEvent => ({
-  to: { capability: 'page.read', target: wiki },
+  // A un jugador, solo si ve esa página
+  to: { capability: 'page.view', target: wiki, page: pageId },
   message: { type: 'changed', what: 'pageContent', worldId: wiki.worldId, pageId }
 })
 

@@ -5,6 +5,7 @@
  */
 import { campaignsRepo, charactersRepo, knowledgeRepo, worldsRepo } from '@crisol/db'
 import {
+  type Actor,
   authorize,
   can,
   explainPage,
@@ -190,6 +191,17 @@ export async function playerOpensFile(ctx: ActionContext, worldId: string, fileI
           ? view.seesSecret(e.documentId, e.pageId)
           : e.kind === 'tab' && e.tabId !== null && view.seesTab({ id: e.tabId, pageId: e.pageId, hidden: e.hidden })
     if (uses.embeds.some(seesEmbed)) return true
+  }
+  return false
+}
+
+/** Si una cuenta ve una página desde alguna de sus campañas del mundo (para los avisos en tiempo real) */
+export async function actorSeesPage(db: ActionContext['db'], actor: Actor, worldId: string, pageId: string) {
+  const ctx = { db, actor } as ActionContext
+  const wiki = { worldId, organizationId: '' }
+  for (const campaignId of campaignsIn(ctx, worldId)) {
+    const view = await viewFor(ctx, worldId, await readerFor(ctx, wiki, { campaignId }))
+    if (view.seesPage(pageId)) return true
   }
   return false
 }

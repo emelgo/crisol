@@ -1,8 +1,14 @@
 import type { RealtimeMessage } from '@crisol/contracts'
 import { type Actor, type Capability, can, type Target } from '@crisol/domain'
 
-/** A quién le llega: a una cuenta, o a quienes pueden eso sobre eso con sus pertenencias de ese momento */
-export type Audience = { userId: string } | { capability: Capability; target: Target }
+/**
+ * A quién le llega: a una cuenta, o a quienes pueden eso sobre eso con sus pertenencias de ese momento. Con page, a un
+ * jugador solo si ve esa página del mundo del destino (ADR-0017); a quien lleva la wiki, siempre
+ */
+export type Audience = { userId: string } | { capability: Capability; target: Target; page?: string }
+
+/** Si un jugador ve una página de un mundo (lo que sabe alguna de sus campañas allí) */
+export type SeesPage = (actor: Actor, worldId: string, pageId: string) => Promise<boolean>
 
 export interface RealtimeEvent {
   to: Audience
@@ -31,7 +37,8 @@ export interface Realtime {
 /** El bus del proceso. loadActor lee las pertenencias de la base de datos en cada publicación: revocar es inmediato */
 export function createRealtime(
   loadActor: (userId: string) => Promise<Actor>,
-  onError: (error: unknown) => void = () => {}
+  onError: (error: unknown) => void = () => {},
+  seesPage: SeesPage = async () => false
 ): Realtime {
   const sockets = new Map<string, Set<RealtimeSocket>>()
   let queue = Promise.resolve()
@@ -43,12 +50,29 @@ export function createRealtime(
       actors.set(userId, loaded)
       return loaded
     }
+    const seen = new Map<string, Promise<boolean>>()
+    /** Si le llega lo de esa página: quien lleva la wiki, siempre; un jugador, si la ve */
+    const pageFor = async (userId: string, actor: Actor, target: Target, pageId: string) => {
+      if (can(actor, 'page.read', target)) return true
+      const worldId = 'worldId' in target ? target.worldId : ''
+      const key = `${userId}|${worldId}|${pageId}`
+      const known = seen.get(key) ?? seesPage(actor, worldId, pageId)
+      seen.set(key, known)
+      return known
+    }
     for (const event of events) {
       const data = JSON.stringify(event.message)
       for (const [userId, connections] of sockets) {
         try {
           const to = event.to
-          const receives = 'userId' in to ? to.userId === userId : can(await actorOf(userId), to.capability, to.target)
+          let receives = false
+          if ('userId' in to) receives = to.userId === userId
+          else {
+            const actor = await actorOf(userId)
+            receives =
+              can(actor, to.capability, to.target) &&
+              (to.page === undefined || (await pageFor(userId, actor, to.target, to.page)))
+          }
           if (!receives) continue
         } catch (error) {
           onError(error)
