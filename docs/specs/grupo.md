@@ -1,6 +1,6 @@
 # Spec: grupo (módulo 4)
 
-Estado: **en marcha** (2026-11-06). Quinta capacidad del módulo 4 (`docs/specs/modulo-4.md`). Decisión de antes:
+Estado: **construido** (2026-11-06, rama `modulo-4/grupo`; ver § «Construido»). Quinta capacidad del módulo 4 (`docs/specs/modulo-4.md`). Decisión de antes:
 «Inventario del grupo, en la campaña: lo ven y cambian sus jugadores y el máster, y de él se pasan cosas a cada
 personaje» (`docs/modulos.md` § 3, segunda parte de la entrevista). Estudios: `research/dndbeyond/criaturas-y-grupo.md`
 § 4 y propuestas 10 a 12; `research/foundry/criaturas-y-capas.md` § 4 y propuesta 7.
@@ -37,6 +37,20 @@ Para quién: los jugadores y el máster, en partida y entre sesiones; la IA, que
 1. **«Mover», no arrastrar** (Foundry copia al arrastrar y mueve con una tecla); arrastrar puede añadirse después.
 2. **Sin PX del grupo** de momento (Foundry los lleva en su actor de grupo): no hay PX en el formato del sistema.
 3. **Lo escrito a mano** no tiene mecánica: si se quiere que haga algo, se copia al compendio del mundo.
+
+## Construido (2026-11-06)
+
+Como se propuso, con estas precisiones al construirlo:
+- **Qué campos**: los dice `party` en el sistema (`items`, `coins`); si no, el primer campo de objetos y el primer grupo
+  de números enteros sin tope que se cambian jugando (el 5e: `inventario` y `monedas`). Sin monedas, el grupo no tiene.
+- **Lo escrito a mano se queda en el grupo**: un personaje solo lleva lo del compendio.
+- **Repartir es del máster**, porque cambia los personajes de todos; pasar monedas con un personaje, su dueño o el
+  máster.
+- **Los movimientos** salen en «Grupo» para todos los de la campaña (las últimas operaciones del grupo, con quién).
+- **Con la IA**, mover, pasar monedas y repartir esperan al máster, como lo de los personajes.
+
+Queda: arrastrar (decisión 1), el peso de cada contenedor y la sintonía; y que una criatura o un PNJ del máster lleve
+cosas del grupo.
 
 ## Pruebas
 

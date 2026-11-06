@@ -7,7 +7,7 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
-### Para retomar (2026-11-06, módulo 4: `compendio-mundo`, `criaturas`, `imagenes` y `tablas-compendio` construidos; lo siguiente, `grupo`)
+### Para retomar (2026-11-06, módulo 4: todo construido salvo `biblioteca`, lo siguiente)
 
 - **Rama `modulo-4/compendio`** (sin PR aún). Entrevista con Enrique (abajo, § «### 4. Compendio, criaturas y
   biblioteca»); estudios `research/foundry/criaturas-y-capas.md` y `research/dndbeyond/criaturas-y-grupo.md`; el mapa
@@ -37,8 +37,14 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   (`content_table_draws`, `resetContentTable`); los RollTable de Foundry llegan con sus filas (dnd5e real: 97 tablas,
   906 filas, sin errores ni avisos); la vista y el editor de filas en el compendio; la IA
   (`reiniciar_tabla_compendio`, `table` en `guardar_contenido`). E2E `tablas-compendio.spec.ts`. Las tablas de un
-  sistema ya importado pasan a filas al volver a importarlo. **Lo siguiente**: `grupo` y luego `biblioteca`
-  (`docs/specs/modulo-4.md`); abrir un PR con las dos ramas (imágenes y tablas) y pasar la CI una vez.
+  sistema ya importado pasan a filas al volver a importarlo. Planes en `tasks/tablas-compendio/`.
+- **`grupo`, construido** (rama `modulo-4/grupo`, sobre la de tablas, sin PR aún; `tasks/plan.md`, `tasks/todo.md`):
+  `party` en el formato (o deducido), el motor (`packages/systems/src/party.ts`), `campaign_party` (migración 0047, con
+  historial), las acciones (mover en una sola operación con el personaje y su resumen), la IA (`ver_grupo`,
+  `cambiar_grupo`, `mover_en_grupo`, `monedas_grupo`), «Grupo» en la barra de la campaña y «Mío | Del grupo» en la hoja.
+  E2E `grupo.spec.ts`. **Lo siguiente**: `biblioteca` (pide permiso: imagen propia de Postgres con pgvector, el límite
+  de memoria de la app a 1 GB y el modelo de embeddings); abrir un PR con las tres ramas (imágenes, tablas y grupo) y
+  pasar la CI una vez.
 - Pendiente de Enrique, sin bloquear: cerrar los tres avisos MCP como se le propuso (descartar `ver_escena`, «no se
   arregla» `query_document` de LightRAG por el parche de las palabras clave, dejar abierta la mejora de craft).
 - Ojo: la API de desarrollo (`node --watch`) no siempre se recarga al añadir archivos; `touch apps/server/src/main.ts`.

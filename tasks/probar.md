@@ -9,6 +9,17 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   de propietario.
 - **En local**, con los cambios al momento: http://localhost:5173 (lo arranco cuando haga falta).
 
+## Módulo 4: el inventario del grupo (rama `modulo-4/grupo`; en local, aún no en staging)
+
+- [ ] **«Grupo» en la campaña**: en la barra de una campaña, «Grupo». Añade algo del compendio y algo escrito a mano,
+  crea un contenedor («El carro») y mueve cosas entre ellos.
+- [ ] **Mover a un personaje y de vuelta**: «Mover» → «A Thora» (con cuántas); en la hoja de Thora, Inventario, sale
+  en «Mío»; «Mover» → «Al grupo» lo devuelve. Nada se duplica, y deshacer en el historial lo deja como estaba.
+- [ ] **Las monedas**: pon monedas al grupo y, en «Gestionar», dáselas a un personaje o repártelas entre varios (lo
+  que sobra se queda en el grupo).
+- [ ] **Con una jugadora**: ve el grupo y lo cambia, mueve con su personaje pero no con los de otros, y no reparte.
+- [ ] **La IA**: pídele que reparta el botín de la última sesión entre los personajes (espera tu aprobación).
+
 ## Módulo 4: las tablas aleatorias del compendio (rama `modulo-4/tablas`; en local, aún no en staging)
 
 - [ ] **Una tabla del mundo**: en el compendio de una campaña, «Nueva entrada» → En el mundo, tipo «Tabla»; escribe la

@@ -343,4 +343,9 @@ Respondidas por Enrique (2026-11-04):
 - **`roll` en un campo recurso**: cómo se tira su máximo (los PG de una criatura al ponerla en juego: `@dados_golpe`).
 - **`damage` en el tipo**: sus campos de lista con los tipos de daño que resiste, que no le hacen nada y que le hacen
   el doble, para aplicarle daño desde una tirada.
+- **El tipo «Tabla» (`tabla`) de Crisol**, que tiene todo sistema aunque no lo declare, con sus filas en `table` en el
+  contenido (`docs/specs/tablas-compendio.md`).
+- **`party`** (`items` y `coins`): el campo de objetos del personaje al que va lo que coge del grupo y su grupo de
+  monedas. Sin él, el primer campo de objetos y el primer grupo de números enteros sin tope que se cambian jugando
+  (`docs/specs/grupo.md`).
 
