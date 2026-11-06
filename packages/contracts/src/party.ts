@@ -131,7 +131,7 @@ export const moveCoins = defineAction({
 
 export const splitCoins = defineAction({
   name: 'splitCoins',
-  kind: 'write',
+  kind: 'players',
   description:
     'Reparte las monedas del grupo a partes iguales entre unos personajes de la campaña (solo el máster): las que se digan o, sin decirlas, todas. Lo que sobra se queda en el grupo',
   input: z.object({
