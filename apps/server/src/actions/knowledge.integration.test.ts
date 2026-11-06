@@ -423,7 +423,7 @@ describe('lo que lee un jugador (docs/specs/conocimiento.md)', () => {
       { pageId: null, title: '', anchor: null, label: 'el viejo' }
     ])
     // Revelado a Lía, lo ve su dueña; a Bram, no
-    const [rey, heredero] = await secretsOf(page.Aldoria)
+    const [rey, heredero] = await secretsOf(page.Aldoria ?? '')
     await mark({ kind: 'secret', targetId: rey?.id, characters: [lia] })
     await mark({ kind: 'secret', targetId: heredero?.id, characters: [bram] })
     const after = JSON.stringify((await ok200('getPageContent', { pageId: page.Aldoria }, ana.cookie)).blocks)
@@ -472,7 +472,7 @@ describe('lo que lee un jugador (docs/specs/conocimiento.md)', () => {
   })
 
   it('ver como un personaje: el máster lee lo que lee su dueño', async () => {
-    const [rey] = await secretsOf(page.Aldoria)
+    const [rey] = await secretsOf(page.Aldoria ?? '')
     await mark({ kind: 'secret', targetId: rey?.id, characters: [lia] })
     const asLia = await ok200('getPageContent', { pageId: page.Aldoria, campaignId: marca, asCharacterId: lia })
     expect(JSON.stringify(asLia.blocks)).toContain('El rey ha muerto')
