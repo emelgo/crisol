@@ -718,3 +718,32 @@
   color: var(--color-muted);
   font-size: 0.875rem;
 }
+
+/* Las imágenes del sistema: una miniatura en la lista y el retrato en la cabecera de la entrada */
+.thumb {
+  flex: none;
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+.withPortrait {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: var(--space-4);
+}
+
+.withPortrait > :not(.portrait) {
+  grid-column: 2;
+}
+
+.portrait {
+  grid-row: 1 / span 4;
+  inline-size: 6rem;
+  block-size: 6rem;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  object-fit: cover;
+  background: var(--color-raised);
+}

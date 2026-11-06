@@ -18,6 +18,7 @@ import { BusyButton } from '../components/busy-button.tsx'
 import { FormError } from '../components/field.tsx'
 import { failed, LoadError } from '../components/load-error.tsx'
 import { PageTitle } from '../components/page-title.tsx'
+import { SystemImage } from '../components/system-image.tsx'
 import { Tour } from '../components/tour.tsx'
 import { RollLog } from '../dice/log.tsx'
 import styles from './in-play.module.css'
@@ -64,8 +65,9 @@ export function InPlayScreen() {
   const groups = new Map<string, Creature[]>()
   for (const c of creatures.filter((each) => !each.unique)) groups.set(c.key, [...(groups.get(c.key) ?? []), c])
   const uniques = creatures.filter((c) => c.unique)
+  const systemId = campaign.data.campaign.system?.id ?? null
   const row = (c: Creature) => (
-    <CreatureRow key={c.id} creature={c} current={c.id === shown?.id} onOpen={() => open(c.id)} />
+    <CreatureRow key={c.id} creature={c} systemId={systemId} current={c.id === shown?.id} onOpen={() => open(c.id)} />
   )
   return (
     <div className={styles.page}>
@@ -124,6 +126,7 @@ export function InPlayScreen() {
           key={shown.id}
           creatureId={shown.id}
           campaignId={campaignId}
+          systemId={systemId}
           onRemoved={() => void navigate({ search: {} })}
         />
       ) : (
@@ -146,7 +149,17 @@ export function InPlayScreen() {
 }
 
 /** Una en la lista: su nombre, su vida en barra y cómo está */
-function CreatureRow({ creature, current, onOpen }: { creature: Creature; current: boolean; onOpen: () => void }) {
+function CreatureRow({
+  creature,
+  systemId,
+  current,
+  onOpen
+}: {
+  creature: Creature
+  systemId: string | null
+  current: boolean
+  onOpen: () => void
+}) {
   const { t } = useTranslation()
   const life = creature.life
   const share = life && life.max > 0 ? Math.max(0, Math.min(1, life.value / life.max)) : 0
@@ -161,6 +174,7 @@ function CreatureRow({ creature, current, onOpen }: { creature: Creature; curren
       >
         <span className={styles.rowHead}>
           <span className={styles.rowName}>
+            <SystemImage systemId={systemId} path={creature.img} className={styles.avatar} />
             {creature.unique && <Star size={14} aria-label={t('inPlay.unique')} />}
             {creature.name}
           </span>
@@ -195,10 +209,12 @@ function CreatureRow({ creature, current, onOpen }: { creature: Creature; curren
 function CreatureSheet({
   creatureId,
   campaignId,
+  systemId,
   onRemoved
 }: {
   creatureId: string
   campaignId: string
+  systemId: string | null
   onRemoved: () => void
 }) {
   const { t } = useTranslation()
@@ -239,6 +255,7 @@ function CreatureSheet({
   return (
     <article className={styles.reading} aria-labelledby={titleId}>
       <header className={styles.head}>
+        <SystemImage systemId={systemId} path={creature.img} className={styles.portrait} />
         <h2 id={titleId} className={styles.name}>
           {creature.name}
         </h2>

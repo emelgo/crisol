@@ -419,6 +419,7 @@ export const es = {
     edition: 'Edición',
     english: 'En inglés',
     alsoIn: 'También en',
+    imageCredit: 'Imagen',
     noSystem: 'Esta campaña aún no tiene sistema: el máster lo elige en sus ajustes.',
     layers: 'Qué enseñar',
     layer: { all: 'Todo', system: 'Del sistema', world: 'Del mundo' },

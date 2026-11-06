@@ -12,7 +12,7 @@ import {
   searchCampaignContent,
   visibilitiesFor
 } from '@crisol/contracts'
-import { systemsRepo, worldContentRepo } from '@crisol/db'
+import { systemImagesRepo, systemsRepo, worldContentRepo } from '@crisol/db'
 import { can, NotFoundError } from '@crisol/domain'
 import {
   browseContent,
@@ -163,13 +163,29 @@ export const compendiumActions = [
     // Las carpetas salen de sus valores: de un sistema de la cuenta, el contenido de ese tipo entero
     const items = row ? await layers.contentOfType(ctx, row.id, world, type) : []
     const own = new Set(items.filter((i) => i.world).map((i) => i.key))
+    // Su imagen, si el sistema la tiene
+    const images = row
+      ? await systemImagesRepo.existingPaths(
+          ctx.db,
+          row.id,
+          items.flatMap((i) => (i.img ? [i.img] : []))
+        )
+      : new Map()
+    const imgOf = new Map(items.flatMap((i) => (i.img && images.has(i.img) ? [[i.key, i.img] as const] : [])))
     const result = browseContent(document, items, {
       type,
       sources: choices.sources,
       duplicates: choices.duplicates,
       language: choices.language
     })
-    return { ...result, items: result.items.map((item) => (own.has(item.key) ? { ...item, world: true } : item)) }
+    return {
+      ...result,
+      items: result.items.map((item) => ({
+        ...item,
+        ...(own.has(item.key) ? { world: true } : {}),
+        ...(imgOf.has(item.key) ? { img: imgOf.get(item.key) } : {})
+      }))
+    }
   }),
 
   implement(rollContentTable, async (ctx, { campaignId, key, table, visibility }) => {
@@ -214,6 +230,13 @@ export const compendiumActions = [
     const items: ContentItem[] = row ? await layers.contentByKeys(ctx, row.id, world, visible) : []
     const byKey = new Map(items.map((item) => [item.key, item]))
     const own = world ? await worldEntries(ctx, world, choices.language, visible) : new Map<string, WorldView>()
+    const images = row
+      ? await systemImagesRepo.existingPaths(
+          ctx.db,
+          row.id,
+          items.flatMap((i) => (i.img ? [i.img] : []))
+        )
+      : new Map()
     const name = (value: unknown) =>
       typeof value === 'string' ? value : textOf(value as Text | undefined, choices.language)
     return {
@@ -226,6 +249,14 @@ export const compendiumActions = [
             ...structuredClone(item),
             ...entry,
             play: mechanicsText(document, item.type, item.mechanics as Mechanics | undefined, choices.language),
+            ...(item.img && images.has(item.img)
+              ? {
+                  image: {
+                    credit: images.get(item.img)?.credit ?? null,
+                    license: images.get(item.img)?.license ?? 'unknown'
+                  }
+                }
+              : {}),
             ...(own.has(k) ? { world: own.get(k) } : {}),
             granted: entry.granted.map((g) =>
               'choose' in g

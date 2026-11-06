@@ -9,7 +9,7 @@ Plan: `tasks/plan.md` · Spec: `docs/specs/imagenes.md`. Cada tarea con sus prue
 - [x] **3. Subir y servir**: `putSystemImages` (en tandas, con su licencia y su crédito; solo el dueño del sistema) y la
   ruta que las sirve con permisos; la purga al borrar el sistema.
 - [x] **4. Traer de Foundry en la web**: el resumen de licencias con su casilla y la subida tras importar, con su avance.
-- [ ] **5. Verlas**: en el compendio (lista y entrada, con el crédito), la hoja de la criatura y «En juego»; el icono del
+- [x] **5. Verlas**: en el compendio (lista y entrada, con el crédito), la hoja de la criatura y «En juego»; el icono del
   tipo si no hay. **Punto de control 2.**
-- [ ] **6. Cierre**: e2e con un zip de prueba con imágenes, fugas (la jugadora de otra campaña no las baja),
+- [x] **6. Cierre**: e2e con un zip de prueba con imágenes, fugas (la jugadora de otra campaña no las baja),
   `tasks/probar.md`.

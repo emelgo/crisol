@@ -15,6 +15,7 @@ export const creatureInPlay = z.object({
   number: z.int().nullable().describe('Su número de copia; las únicas, sin número'),
   unique: z.boolean(),
   type: z.string(),
+  img: z.string().nullable().describe('La imagen de su entrada: /api/system-images/<sistema>?path=…'),
   version: z.int(),
   life: z
     .object({ path: z.string(), value: z.number(), max: z.number(), temp: z.number() })

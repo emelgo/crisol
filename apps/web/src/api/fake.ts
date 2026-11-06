@@ -733,6 +733,7 @@ export function fakeApi(
         number: row.number,
         unique: row.unique,
         type: entry.type,
+        img: entry.img ?? null,
         version: row.version,
         life,
         stats,

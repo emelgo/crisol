@@ -503,7 +503,8 @@ export const browseCampaignContent = defineAction({
         legacy: z.boolean(),
         folder: z.string().nullable(),
         values: z.record(z.string(), z.array(z.string())).describe('Sus valores en los campos que se filtran'),
-        world: z.boolean().optional().describe('Del compendio del mundo')
+        world: z.boolean().optional().describe('Del compendio del mundo'),
+        img: z.string().optional().describe('Su imagen (si el sistema la tiene): /api/system-images/<sistema>?path=…')
       })
     ),
     folders: z.array(z.object({ key: z.string(), label: z.string() })),
@@ -558,6 +559,10 @@ export const compendiumItem = contentItem.extend({
   versions: z.array(z.object({ key: z.string(), edition: z.string().nullable(), legacy: z.boolean() })),
   granted: z.array(granted),
   play: mechanicsText.nullable().describe('Su mecánica, en palabras'),
+  image: z
+    .object({ credit: z.string().nullable(), license: z.string() })
+    .optional()
+    .describe('Su imagen, si el sistema la tiene (por su img): su crédito y su licencia'),
   world: z
     .object({
       id: z.uuid(),

@@ -9,6 +9,14 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   de propietario.
 - **En local**, con los cambios al momento: http://localhost:5173 (lo arranco cuando haga falta).
 
+## Módulo 4: las imágenes de lo traído de Foundry (rama `modulo-4/imagenes`; en local, aún no en staging)
+
+- [ ] **Traer el dnd5e con sus imágenes**: en Sistemas → «Sistema nuevo», suelta el .zip del dnd5e; tras «Traer de
+  Foundry», dice cuántas imágenes trae con cada licencia (las de uso restringido, marcadas) y «Subir N imágenes».
+- [ ] **Verlas**: en el compendio de una campaña con ese sistema, la miniatura en la lista y el retrato en la entrada,
+  con su crédito; en «En juego», la miniatura de cada criatura y su retrato en la hoja.
+- [ ] Sin imagen (los objetos y conjuros con iconos de serie de Foundry), nada.
+
 ## Módulo 4: las criaturas en juego (en staging: PR #110)
 
 Una criatura del compendio se pone en juego en la campaña: copias numeradas o una única (un PNJ que guarda sus PG). Hasta
