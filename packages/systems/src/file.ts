@@ -26,6 +26,8 @@ export interface ContentItem {
   mechanics?: Mechanics
   /** De dónde sale: su página en cada PDF */
   ref?: { pages?: { en?: number; es?: number } }
+  /** Su imagen: su ruta entre las del sistema (la de un zip de Foundry: systems/dnd5e/tokens/…) */
+  img?: string
 }
 
 export interface SystemFile {
@@ -86,7 +88,9 @@ export function validateContent(
       add(at, 'Tiene que ser un documento')
       continue
     }
-    const { type, key, source, data, concept, mechanics, ref } = item
+    const { type, key, source, data, concept, mechanics, ref, img } = item
+    if (img !== undefined && (typeof img !== 'string' || img.length === 0 || img.length > 500 || img.includes('..')))
+      add([...at, 'img'], 'Su imagen va con su ruta, de hasta 500 caracteres')
     if (typeof type !== 'string' || !own(system.types, type))
       add([...at, 'type'], `No existe el tipo «${String(type)}»`)
     if (typeof key !== 'string' || !CONTENT_KEY.test(key))

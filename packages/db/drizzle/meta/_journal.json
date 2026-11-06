@@ -316,6 +316,13 @@
       "when": 1793962873881,
       "tag": "0044_criaturas_en_juego",
       "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1793966277881,
+      "tag": "0045_imagenes_del_contenido",
+      "breakpoints": true
     }
   ]
 }

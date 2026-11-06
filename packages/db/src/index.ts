@@ -26,6 +26,7 @@ export { isOwner, listMemberOrganizations, loadMemberships, type Memberships } f
 export * as pagesRepo from './repos/pages.ts'
 export * as preferencesRepo from './repos/preferences.ts'
 export * as searchRepo from './repos/search.ts'
+export * as systemImagesRepo from './repos/system-images.ts'
 export * as systemsRepo from './repos/systems.ts'
 export * as tablesRepo from './repos/tables.ts'
 export * as tagsRepo from './repos/tags.ts'

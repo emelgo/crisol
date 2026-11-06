@@ -1,4 +1,4 @@
-import { index, jsonb, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core'
+import { index, integer, jsonb, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core'
 import { organizations } from './organizations.ts'
 import { trackedColumns } from './tracked.ts'
 import { worlds } from './worlds.ts'
@@ -39,9 +39,34 @@ export const systemContent = pgTable(
     // Lo que une sus versiones entre ediciones, su mecánica y su página (ADR-0012)
     concept: text(),
     mechanics: jsonb().$type<Record<string, unknown>>(),
-    ref: jsonb().$type<Record<string, unknown>>()
+    ref: jsonb().$type<Record<string, unknown>>(),
+    // Su imagen, por su ruta entre las del sistema (system_images): la de un zip de Foundry o una subida
+    img: text()
   },
   (t) => [uniqueIndex().on(t.systemId, t.key), index().on(t.systemId, t.type)]
+)
+
+/**
+ * Las imágenes de un sistema (docs/specs/imagenes.md): las de su contenido (un zip de Foundry), por su ruta, con su
+ * licencia y su crédito. Sus bytes, en el almacenamiento de archivos; no pasan por el historial (se rehacen al importar)
+ */
+export const systemImages = pgTable(
+  'system_images',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    systemId: uuid()
+      .notNull()
+      .references(() => systems.id, { onDelete: 'cascade' }),
+    path: text().notNull(),
+    storageKey: text().notNull(),
+    mime: text().notNull(),
+    bytes: integer().notNull(),
+    /** foundry-only, cc-by, cc-by-nc-sa, mit o unknown */
+    license: text().notNull(),
+    credit: text(),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow()
+  },
+  (t) => [uniqueIndex().on(t.systemId, t.path)]
 )
 
 /** De dónde sale una entrada copiada: su capa, su sistema, su clave y cómo era al copiarla (para ver lo que cambió) */
@@ -79,6 +104,7 @@ export const worldContent = pgTable(
     concept: text(),
     mechanics: jsonb().$type<Record<string, unknown>>(),
     ref: jsonb().$type<Record<string, unknown>>(),
+    img: text(),
     origin: jsonb().$type<ContentOrigin>()
   },
   (t) => [uniqueIndex().on(t.worldId, t.systemId, t.key), index().on(t.worldId, t.systemId, t.type)]

@@ -148,6 +148,7 @@ export const worldContentActions = [
           concept: item.concept ?? null,
           mechanics: item.mechanics ?? null,
           ref: item.ref ?? null,
+          img: item.img ?? null,
           ...(item.version !== undefined ? { version: item.version } : {})
         }))
       )
@@ -205,6 +206,7 @@ export const worldContentActions = [
               concept: null,
               mechanics: original.mechanics ? structuredClone(original.mechanics) : null,
               ref: original.ref,
+              img: original.img,
               origin: {
                 layer: 'system',
                 systemId: row.id,
@@ -236,7 +238,8 @@ export const worldContentActions = [
       data,
       concept: entry.concept,
       mechanics: entry.mechanics,
-      ref: entry.ref
+      ref: entry.ref,
+      img: entry.img
     }
     // Como putSystemContent: validada con el sistema de ahora (la clave también) y con su límite
     const problems = validateContent(system, [contentOf(values)])

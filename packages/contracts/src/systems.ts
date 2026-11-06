@@ -247,7 +247,8 @@ export const contentItem = z.object({
   concept: z.string().optional(),
   data: z.record(z.string(), z.unknown()),
   mechanics: z.record(z.string(), z.unknown()).optional(),
-  ref: z.record(z.string(), z.unknown()).optional()
+  ref: z.record(z.string(), z.unknown()).optional(),
+  img: z.string().max(500).optional().describe('Su imagen: su ruta entre las del sistema')
 })
 
 export const trySystemAction = defineAction({

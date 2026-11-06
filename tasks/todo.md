@@ -2,7 +2,7 @@
 
 Plan: `tasks/plan.md` · Spec: `docs/specs/imagenes.md`. Cada tarea con sus pruebas antes (TDD) y su commit.
 
-- [ ] **1. La imagen del contenido**: `img` en el contenido (migración 0045, contratos, archivo de sistema, copiar entre
+- [x] **1. La imagen del contenido**: `img` en el contenido (migración 0045, contratos, archivo de sistema, copiar entre
   capas) y la tabla `system_images` con su repo.
 - [ ] **2. El convertidor**: la `img` de cada documento y el retrato del mapa de arte de los actores; las imágenes que
   nombran (`imagesOf`) y la licencia de cada una por los avisos del zip (`licenseOf`).
