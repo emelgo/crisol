@@ -5,4 +5,4 @@
 - [x] 3. La web: «Biblioteca» en la campaña, la lista de libros, buscar y el visor en la página marcada
 - [x] 4. pgvector: la imagen propia de Postgres (desarrollo, CI y staging) y `search_chunks` (0049)
 - [x] 5. El modelo en un hilo aparte (cargar, descargar), los trozos de los libros y de la wiki, y la búsqueda híbrida
-- [ ] 6. La imagen de la app en Debian con el modelo, 1 GB; E2E, documentación y revisión
+- [~] 6. La imagen de la app en Debian con el modelo, 1 GB; E2E, documentación y revisión

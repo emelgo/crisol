@@ -45,7 +45,9 @@ export function modelEmbedder(options: {
   const load = () => {
     ready ??= new Promise<Worker>((resolve, reject) => {
       const started = new Worker(new URL('./model-worker.ts', import.meta.url), {
-        workerData: { dir, threads: options.threads ?? 2 }
+        workerData: { dir, threads: options.threads ?? 2 },
+        // Sin las opciones de Node que no valen para un archivo (--input-type, de un -e)
+        execArgv: process.execArgv.filter((arg) => !arg.startsWith('--input-type'))
       })
       started.on('message', (reply: Reply) => {
         if ('ready' in reply) {

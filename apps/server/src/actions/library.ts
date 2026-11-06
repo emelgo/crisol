@@ -25,7 +25,7 @@ async function authorizedBook(ctx: ActionContext, capability: 'page.read' | 'pag
 }
 
 /** Lo que se parece de verdad: lo de debajo, aunque sea lo más cercano, no se enseña */
-const SIMILAR = 0.8
+const SIMILAR = 0.78
 /** El peso del puesto en la mezcla por rango (RRF) */
 const RRF = 60
 

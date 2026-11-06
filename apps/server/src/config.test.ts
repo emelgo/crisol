@@ -17,7 +17,7 @@ describe('loadConfig', () => {
       NODE_ENV: 'development',
       DATA_DIR: 'datos-locales',
       QUEUE_PREFIX: 'crisol',
-      MODEL_DIR: 'datos-locales/modelos/multilingual-e5-small'
+      MODEL_DIR: expect.stringMatching(/datos-locales\/modelos\/multilingual-e5-small$/)
     })
   })
 

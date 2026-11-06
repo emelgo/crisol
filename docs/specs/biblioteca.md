@@ -1,6 +1,6 @@
 # Spec: biblioteca (módulo 4)
 
-Estado: **en marcha** (2026-11-06). Sexta capacidad del módulo 4 (`docs/specs/modulo-4.md`). Decisiones: memoria
+Estado: **construido** (2026-11-06, rama `modulo-4/biblioteca`; ver § «Construido»). Decisión: ADR-0016. Sexta capacidad del módulo 4 (`docs/specs/modulo-4.md`). Decisiones: memoria
 «Búsqueda: PDF y pgvector» (2026-10-30) y la entrevista del módulo 4 (pgvector con permiso; «modelo propio si puede
 correr en el vps»). La medida del modelo, en `docs/specs/modulo-4.md` § «La medida del modelo de embeddings».
 
@@ -45,6 +45,20 @@ Para quién: el máster que prepara (y, con el módulo 5, los jugadores en lo qu
    se empieza por los libros.
 3. **Sin modelos más grandes** de momento: si la calidad no basta con textos de prueba, se mide `multilingual-e5-base`
    (unos 280 MB más) antes de cambiar.
+
+## Construido (2026-11-06)
+
+Como se propuso, con estas precisiones al construirlo:
+- **La app pasa a Debian** (ADR-0016): el modelo nativo no carga en Alpine. Postgres sigue en Alpine con pgvector.
+- **La biblioteca va en la barra de la campaña** (como en el lienzo), del máster hasta el módulo 5.
+- **Buscar por significado, en los libros y en la wiki** (lo de la wiki sale en la biblioteca como «También en las
+  páginas»); el compendio, todavía no (son miles de entradas por sistema: se añade si hace falta). La búsqueda general
+  de la wiki (Ctrl+K) sigue por palabras.
+- **La IA**: `buscar_libros` (palabras y significado), `leer_libro` y `ver_biblioteca`; `buscar_paginas` sigue igual.
+- **Los ya subidos** se leen al arrancar el servidor y al abrir la biblioteca.
+
+Queda: la portada de cada libro en la lista (hoy, un icono), buscar dentro de un libro desde el visor, el significado
+en la búsqueda general y en el compendio, y medir la calidad con libros de verdad (`tasks/probar.md`).
 
 ## Pruebas
 

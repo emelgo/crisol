@@ -7,7 +7,7 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
-### Para retomar (2026-11-06, módulo 4: todo construido salvo `biblioteca`, lo siguiente)
+### Para retomar (2026-11-06, módulo 4 construido entero; lo siguiente, subirlo a staging y el módulo 5)
 
 - **Rama `modulo-4/compendio`** (sin PR aún). Entrevista con Enrique (abajo, § «### 4. Compendio, criaturas y
   biblioteca»); estudios `research/foundry/criaturas-y-capas.md` y `research/dndbeyond/criaturas-y-grupo.md`; el mapa
@@ -42,9 +42,16 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   `party` en el formato (o deducido), el motor (`packages/systems/src/party.ts`), `campaign_party` (migración 0047, con
   historial), las acciones (mover en una sola operación con el personaje y su resumen), la IA (`ver_grupo`,
   `cambiar_grupo`, `mover_en_grupo`, `monedas_grupo`), «Grupo» en la barra de la campaña y «Mío | Del grupo» en la hoja.
-  E2E `grupo.spec.ts`. **Lo siguiente**: `biblioteca` (pide permiso: imagen propia de Postgres con pgvector, el límite
-  de memoria de la app a 1 GB y el modelo de embeddings); abrir un PR con las tres ramas (imágenes, tablas y grupo) y
-  pasar la CI una vez.
+  E2E `grupo.spec.ts`. Planes en `tasks/grupo/`.
+- **`biblioteca`, construido** (rama `modulo-4/biblioteca`, sobre la del grupo; `tasks/plan.md`, `tasks/todo.md`;
+  ADR-0016 con el permiso de Enrique): el texto de los PDF con pdf.js en segundo plano (`file_texts`, `file_pages`,
+  migración 0048), buscar en los libros y el visor en la página marcada («Biblioteca» en la barra de la campaña), y la
+  búsqueda por significado: Postgres propio con pgvector (`docker/postgres`; `search_chunks`, migración 0049; el de
+  desarrollo ya va con él), `multilingual-e5-small` en un hilo aparte (en desarrollo, en `datos-locales/modelos/`), la
+  mezcla por rango y «También en las páginas». La imagen de la app pasa a Debian (el modelo nativo no carga en Alpine)
+  con 1 GB. Cada servidor, su espacio de colas (`QUEUE_PREFIX`). E2E `biblioteca.spec.ts`.
+- **Lo siguiente**: abrir un PR con las cuatro ramas (imágenes, tablas, grupo y biblioteca), pasar la CI una vez y
+  desplegar staging (construye también Postgres con pgvector y aplica las migraciones 0045 a 0049). Luego, el módulo 5.
 - Pendiente de Enrique, sin bloquear: cerrar los tres avisos MCP como se le propuso (descartar `ver_escena`, «no se
   arregla» `query_document` de LightRAG por el parche de las palabras clave, dejar abierta la mejora de craft).
 - Ojo: la API de desarrollo (`node --watch`) no siempre se recarga al añadir archivos; `touch apps/server/src/main.ts`.

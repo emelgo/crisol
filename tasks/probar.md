@@ -9,6 +9,17 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   de propietario.
 - **En local**, con los cambios al momento: http://localhost:5173 (lo arranco cuando haga falta).
 
+## Módulo 4: la biblioteca (rama `modulo-4/biblioteca`; en local, aún no en staging)
+
+- [ ] **Un libro de verdad**: sube a los archivos del mundo (o a los comunes) un PDF con texto, como un manual. En una
+  campaña, «Biblioteca»: sale el libro «Leyendo…» y, al poco, «Se puede buscar» con sus páginas.
+- [ ] **Buscar dentro**: busca una palabra que sepas que está (con o sin tildes): sale el libro con sus páginas y el
+  fragmento; al pulsar una, el visor abre en esa página con la línea marcada.
+- [ ] **Por significado**: busca una idea con otras palabras («cómo se recupera la vida», «qué pasa al caer a 0»): lo
+  que sale solo por significado lleva «Por significado». Dime si lo que encuentra tiene sentido.
+- [ ] **También en las páginas**: si la wiki habla de lo mismo, sale debajo con su enlace.
+- [ ] **La IA**: pídele que busque algo en tus libros y te diga en qué página está.
+
 ## Módulo 4: el inventario del grupo (rama `modulo-4/grupo`; en local, aún no en staging)
 
 - [ ] **«Grupo» en la campaña**: en la barra de una campaña, «Grupo». Añade algo del compendio y algo escrito a mano,

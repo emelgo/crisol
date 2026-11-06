@@ -1,3 +1,4 @@
+import { join } from 'node:path'
 import { z } from 'zod'
 
 const schema = z.object({
@@ -23,7 +24,9 @@ const schema = z.object({
   // El Chromium del sistema para sacar los PDF de las hojas (en la imagen); sin él, el que instala Playwright
   CHROMIUM_PATH: z.string().optional(),
   // El modelo de la búsqueda por significado (model.onnx y sentencepiece.bpe.model); sin él, solo por palabras
-  MODEL_DIR: z.string().default('datos-locales/modelos/multilingual-e5-small')
+  MODEL_DIR: z
+    .string()
+    .default(join(import.meta.dirname, '..', '..', '..', 'datos-locales', 'modelos', 'multilingual-e5-small'))
 })
 
 export type Config = z.infer<typeof schema>
