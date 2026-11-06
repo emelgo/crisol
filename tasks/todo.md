@@ -1,9 +1,8 @@
-# Tareas: grupo
+# Tareas: biblioteca
 
-- [x] 1. El motor: los campos del grupo (`party` o deducidos), poner y sacar, monedas y repartir (`packages/systems`)
-- [x] 2. La base de datos y los contratos: `campaign_party` (0047), leer y cambiar el grupo, mover y monedas
-- [x] 3. El servidor: las acciones con sus permisos, una sola operación al mover, tiempo real y deshacer
-- [x] 4. La IA: ver, cambiar y mover
-- [x] 5. La web: «Grupo» en la campaña
-- [x] 6. La web: «Mío | Del grupo» y «Mover» en la hoja
-- [x] 7. E2E, documentación y revisión
+- [x] 1. El texto de los PDF: `file_texts` y `file_pages` (0048), sacarlo con pdf.js, la cola y los ya subidos
+- [x] 2. Buscar en los libros: `searchLibrary`, `getBookPages`, permisos; la IA (`buscar_libros`, `leer_libro`)
+- [ ] 3. La web: «Biblioteca» en la campaña, la lista de libros, buscar y el visor en la página marcada
+- [ ] 4. pgvector: la imagen propia de Postgres (desarrollo, CI y staging) y `search_chunks` (0049)
+- [ ] 5. El modelo en un hilo aparte (cargar, descargar), los trozos de los libros y de la wiki, y la búsqueda híbrida
+- [ ] 6. La imagen de la app en Debian con el modelo, 1 GB; E2E, documentación y revisión

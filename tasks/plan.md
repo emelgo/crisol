@@ -1,26 +1,30 @@
-# Plan: Módulo 4 — grupo
+# Plan: Módulo 4 — biblioteca
 
-Estado: en marcha (2026-11-06). Spec: `docs/specs/grupo.md` · Diseño: lienzo «Crisol: compendio y criaturas», tablero
-Grupo (`out/lienzo-compendio/project/Grupo.dc.html`) · Tareas: `tasks/todo.md`. Los planes anteriores, en
-`tasks/<capacidad>/`.
+Estado: en marcha (2026-11-06). Spec: `docs/specs/biblioteca.md` · Diseño: lienzo «Crisol: compendio y criaturas»,
+tablero Biblioteca (`out/lienzo-compendio/project/Biblioteca.dc.html`) · Tareas: `tasks/todo.md`. Los planes
+anteriores, en `tasks/<capacidad>/`.
 
 ## Cómo
 
-- **Qué campos**: el inventario del personaje es su campo `items` que se cambia jugando, y las monedas, su grupo de
-  números que se cambia jugando (el 5e: `inventario` y `monedas`). El sistema puede decirlos con `party` (`{ items,
-  coins }`, ampliación pequeña de ADR-0011); si no, se deducen así. Sin campo de monedas, el grupo no tiene monedas.
-- **El grupo**, una fila por campaña (`campaign_party`, con historial; migración 0047): sus contenedores (uno de
-  serie, «Del grupo»), sus objetos (del compendio, por su clave y con su nombre guardado; o escritos a mano, con un
-  nombre y una nota) con su cantidad y su contenedor, y sus monedas.
-- **El motor** (`packages/systems/src/party.ts`): poner y sacar del grupo y de lo que lleva un personaje (parte o todo,
-  juntando lo igual), mover monedas sin quedar en negativo y repartirlas a partes iguales (lo que sobra, al grupo).
-- **Mover** es una sola operación con el grupo y el personaje (historial y deshacer). Lo escrito a mano se queda en el
-  grupo (un personaje solo lleva lo del compendio). Un jugador mueve con su personaje; el máster, con cualquiera.
-- **Web**: «Grupo» en la barra de la campaña (sus contenedores, sus monedas, mover y repartir) y, en la hoja, «Mío |
-  Del grupo» en el inventario y «Mover» en cada cosa que lleva.
-- **IA**: `ver_grupo`, `cambiar_grupo` y `mover_grupo` (objetos y monedas, y repartir).
+- **El texto de cada página** de un PDF lo saca el servidor con pdf.js (`pdfjs-dist`, Apache-2.0) en segundo plano: al
+  subirlo y, para los ya subidos, al arrancar. En tablas fuera del historial (salen del archivo): `file_texts` (su
+  estado: pendiente, leyendo con su avance, hecho, sin texto o fallido; y sus páginas) y `file_pages` (el texto de cada
+  página con su vector de búsqueda en `es_unaccent`, como la wiki). La cola, en BullMQ; en las pruebas, en el proceso.
+- **Buscar dentro**: `searchLibrary` (los libros del mundo y los comunes que ve quien busca, por libro, con sus mejores
+  páginas y su fragmento) y `getBookPages` (el texto de unas páginas, para la IA).
+- **Por significado**: pgvector en una imagen propia de Postgres (`docker/postgres/`: `postgres:17-alpine` con pgvector
+  compilado; en la CI, `pgvector/pgvector`), `search_chunks` con trozos de unos 300 tokens (de los libros, por página;
+  de la wiki, por sección) y su vector de 384, con índice HNSW. El modelo (`multilingual-e5-small` cuantizado, MIT)
+  con `onnxruntime-node` y SentencePiece en wasm, en un hilo aparte que se carga al usarlo y se descarga tras un rato.
+  La búsqueda mezcla palabras y significado por rango (RRF); sin modelo, solo palabras.
+- **La imagen de la app pasa a Debian** (`node:24-bookworm-slim`): la librería de `onnxruntime-node` es para glibc y
+  no carga en Alpine (probado, también con `gcompat`); en wasm, el doble de lento y el triple de memoria (medido).
+  Postgres sigue en Alpine (no cambia el orden del texto de sus índices). Límite de la app, 1 GB (permiso de Enrique).
+- **Web**: «Biblioteca» en la barra de la campaña (del máster, como la wiki, hasta el módulo 5): buscar en los libros,
+  la lista de libros con su estado, y el visor en la página con lo buscado marcado.
+- **IA**: `buscar_libros` y `leer_libro`.
 
 ## Puntos de control
 
-1. Tras la tarea 3: mover por la API una poción del grupo a un personaje y de vuelta, y repartir monedas.
-2. Tras la 6: verlo en la web, en la campaña y en la hoja.
+1. Tras la tarea 2: subir un PDF de prueba por la API, ver su estado y buscar una palabra de su página 3.
+2. Tras la 5: buscar «qué hace la guardia» y que salga lo que dice «vigilancia de la ciudad».

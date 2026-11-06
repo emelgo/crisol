@@ -17,6 +17,7 @@ import type { Storage } from './files/storage.ts'
 import { type HealthChecks, registerHealth } from './health.ts'
 import { redactSecrets, registerOriginGuard } from './http.ts'
 import { registerJoinRoutes } from './join.ts'
+import type { LibraryJobs } from './library/jobs.ts'
 import { registerMcpRoutes } from './mcp/routes.ts'
 import { createRealtime } from './realtime/hub.ts'
 import { type RealtimeRouteOptions, registerRealtimeRoutes } from './realtime/routes.ts'
@@ -50,6 +51,8 @@ export interface AppDeps {
   maxFileBytes?: number
   /** El PDF de las hojas, con la dirección por dentro del servidor (sin él, «Descargar PDF» no está) */
   pdf?: { renderer: PdfRenderer; internalUrl: string }
+  /** Leer el texto de los PDF en segundo plano; sin ello, no se leen */
+  library?: LibraryJobs
 }
 
 export function buildApp(deps: AppDeps): FastifyInstance {
@@ -89,7 +92,8 @@ export function buildApp(deps: AppDeps): FastifyInstance {
       realtime,
       collab,
       actions: implementationsByName,
-      ...(deps.storage ? { storage: deps.storage } : {})
+      ...(deps.storage ? { storage: deps.storage } : {}),
+      ...(deps.library ? { library: deps.library } : {})
     }
     // Límite de intentos solo donde se pide (las rutas de Better Auth tienen el suyo)
     app.register(fastifyRateLimit, { global: false })

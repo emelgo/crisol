@@ -3,6 +3,7 @@ import type { Database, OperationContext } from '@crisol/db'
 import { type Actor, ForbiddenError, NotFoundError } from '@crisol/domain'
 import type { Collab } from '../collab/server.ts'
 import type { Storage } from '../files/storage.ts'
+import type { LibraryJobs } from '../library/jobs.ts'
 import type { Realtime } from '../realtime/hub.ts'
 
 /** Una acción del contrato con su servicio */
@@ -26,6 +27,8 @@ export interface ActionEnv {
   actions: ReadonlyMap<string, Implementation>
   /** Donde van los bytes de los archivos */
   storage?: Storage
+  /** Leer el texto de los PDF en segundo plano (docs/specs/biblioteca.md) */
+  library?: LibraryJobs
 }
 
 /** Con qué se ejecuta una acción: el servidor y quién la pide, por dónde */

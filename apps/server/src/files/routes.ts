@@ -138,6 +138,8 @@ export function registerFileRoutes(
       )
       // Las páginas que ya lo usaban por su nombre lo encuentran (con un común, en todos los mundos)
       await filesTouched(ctx, place, [file.name])
+      // Un PDF: su texto, en segundo plano
+      if (file.kind === 'pdf') await env.library?.enqueue(file.id)
       return reply.code(201).send(fileView(file))
     } catch (error) {
       return fail(reply, error)
@@ -159,6 +161,7 @@ export function registerFileRoutes(
       await filesRepo.updateFile(ctx.db, context, file.id, content)
       await filesTouched(ctx, place)
       const replaced = await filesRepo.findFile(ctx.db, file.id)
+      if (replaced?.kind === 'pdf') await env.library?.enqueue(replaced.id)
       return reply.send(replaced ? fileView(replaced) : null)
     } catch (error) {
       return fail(reply, error)

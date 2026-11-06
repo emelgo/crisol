@@ -180,6 +180,8 @@ describe('operation', () => {
     notTracked.add('dice_rolls')
     // Lo sacado de una tabla sin reemplazo en una campaña: como las tiradas, no se deshace
     notTracked.add('random_table_draws').add('content_table_draws')
+    // El texto de los PDF: sale del archivo y se vuelve a leer (docs/specs/biblioteca.md)
+    notTracked.add('file_texts').add('file_pages')
     // Las imágenes de un sistema: se rehacen al importarlo; sus bytes, en el almacenamiento (docs/specs/imagenes.md)
     notTracked.add('system_images')
     const tables = await conn.sql<

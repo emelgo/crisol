@@ -42,6 +42,7 @@
     "fastify": "catalog:",
     "fflate": "catalog:",
     "ioredis": "catalog:",
+    "pdfjs-dist": "catalog:",
     "playwright-core": "catalog:",
     "y-protocols": "catalog:",
     "yjs": "catalog:",

@@ -309,6 +309,10 @@ export const MCP_TOOLS: Record<string, McpTool> = {
     }
   },
   reiniciar_tabla_compendio: { action: 'resetContentTable' },
+  // La biblioteca: los PDF del mundo y los comunes, con su texto por página
+  ver_biblioteca: { action: 'listLibrary' },
+  buscar_libros: { action: 'searchLibrary' },
+  leer_libro: { action: 'getBookPages' },
   // El inventario del grupo de una campaña: lo ven y lo cambian todos; mover con un personaje, su dueño o el máster
   ver_grupo: { action: 'getParty' },
   cambiar_grupo: { action: 'updateParty' },
@@ -425,6 +429,8 @@ const INSTRUCTIONS =
   'lleva a otra entrada o a otra tabla, su clave); se crean con guardar_contenido y se tiran con tirar_tabla_compendio ' +
   '(su clave; las que no repiten se reinician con reiniciar_tabla_compendio). Las tablas del texto de un documento (la ' +
   'Bolsa de trucos, Confusión) se tiran también con tirar_tabla_compendio, con el orden de la tabla. ' +
+  'Los PDF de un mundo y los comunes (los libros del juego, los suplementos) se buscan por dentro con buscar_libros ' +
+  '(con su página) y se leen con leer_libro; ver_biblioteca dice cuáles hay y si ya se pueden buscar. ' +
   'El inventario del grupo de una campaña (el botín, el carro) se ve con ver_grupo y se cambia con cambiar_grupo (con ' +
   'su versión): objetos del compendio por su clave o escritos a mano, contenedores y monedas; mover_en_grupo pasa un ' +
   'objeto entre el grupo y un personaje sin duplicarlo, y monedas_grupo pasa o reparte monedas. ' +

@@ -337,6 +337,13 @@
       "when": 1793972981791,
       "tag": "0047_grupo",
       "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1793981259418,
+      "tag": "0048_biblioteca_texto",
+      "breakpoints": true
     }
   ]
 }

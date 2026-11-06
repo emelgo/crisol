@@ -8,6 +8,7 @@ import { fileActions } from './files.ts'
 import { foundryActions } from './foundry.ts'
 import { historyActions } from './history.ts'
 import { invitationActions } from './invitations.ts'
+import { libraryActions } from './library.ts'
 import { linkActions } from './links.ts'
 import { mapActions } from './maps.ts'
 import { memberActions } from './members.ts'
@@ -55,6 +56,7 @@ export const IMPLEMENTATIONS: Implementation[] = [
   ...characterActions,
   ...creatureActions,
   ...partyActions,
+  ...libraryActions,
   ...tableActions,
   ...mapActions,
   ...preferenceActions
