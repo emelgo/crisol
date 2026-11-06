@@ -19,6 +19,7 @@ import { Tour } from '../components/tour.tsx'
 import { Backlinks } from '../wiki/backlinks.tsx'
 import { ContentView, NewSecretsContext } from '../wiki/content.tsx'
 import { PageCoverImage } from '../wiki/cover.tsx'
+import { MapTab } from '../wiki/map/map-tab.tsx'
 import panelStyles from '../wiki/panel-blocks.module.css'
 import { usePageContent } from '../wiki/preview.tsx'
 import { PageProperties } from '../wiki/properties.tsx'
@@ -258,8 +259,8 @@ function PlayerEntry({ page }: { page: Page }) {
     queryKey: playerKey(page.worldId, readAs, 'tabs', page.id),
     queryFn: () => api.call('listPageTabs', { pageId: page.id, ...readAsInput(readAs) })
   })
-  // De sus pestañas, por ahora las de texto (los mapas, con mapas-jugadores)
-  const texts = (tabs.data?.tabs ?? []).filter((tab) => tab.kind === 'text')
+  // Sus pestañas que ve: las de texto y los mapas
+  const texts = (tabs.data?.tabs ?? []).filter((tab) => tab.kind === 'text' || tab.kind === 'map')
   const { pestana } = pageRoute.useSearch()
   const navigate = useNavigate()
   const tabId = pestana ?? null
@@ -271,7 +272,7 @@ function PlayerEntry({ page }: { page: Page }) {
       replace: true
     })
   const active = texts.find((tab) => tab.id === tabId) ?? null
-  const content = usePageContent(page.worldId, page.id, null, false, active?.id)
+  const content = usePageContent(page.worldId, page.id, null, false, active?.kind === 'text' ? active.id : undefined)
   // Lo nuevo de esta página, también lo que llega con ella abierta: se marca mientras se lee y deja de ser nuevo
   const news = useNews(page.worldId)
   const queryClient = useQueryClient()
@@ -319,15 +320,19 @@ function PlayerEntry({ page }: { page: Page }) {
               ))}
             </div>
           )}
-          <div className={wiki.column}>
-            {content.data ? (
-              <NewSecretsContext.Provider value={fresh}>
-                <ContentView blocks={content.data.blocks} worldId={page.worldId} />
-              </NewSecretsContext.Provider>
-            ) : failed(content) ? (
-              <LoadError error={content.error} onRetry={() => content.refetch()} />
-            ) : null}
-          </div>
+          {active?.kind === 'map' ? (
+            <MapTab key={active.id} page={page} tab={active} />
+          ) : (
+            <div className={wiki.column}>
+              {content.data ? (
+                <NewSecretsContext.Provider value={fresh}>
+                  <ContentView blocks={content.data.blocks} worldId={page.worldId} />
+                </NewSecretsContext.Provider>
+              ) : failed(content) ? (
+                <LoadError error={content.error} onRetry={() => content.refetch()} />
+              ) : null}
+            </div>
+          )}
         </article>
         <aside aria-label={t('wiki.pagePanel')} className={wiki.entryPanel}>
           <Backlinks page={page} />

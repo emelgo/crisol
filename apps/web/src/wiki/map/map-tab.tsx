@@ -29,6 +29,7 @@ import list from '../../components/list.module.css'
 import { failed, LoadError } from '../../components/load-error.tsx'
 import { Tour } from '../../components/tour.tsx'
 import { useWorldFiles } from '../cover-look.ts'
+import { readAsInput, readAsKey, useReadAs } from '../read-as.tsx'
 import styles from './map.module.css'
 import { PinPanel } from './pin-panel.tsx'
 import { PinShape, tipAnchored } from './pin-shape.tsx'
@@ -64,7 +65,12 @@ function naturalSize(url: string) {
 export function MapTab({ page, tab }: { page: Page; tab: PageTabView }) {
   const { t } = useTranslation()
   const api = useApi()
-  const map = useQuery({ queryKey: mapKey(page.worldId, tab.id), queryFn: () => api.call('getMap', { tabId: tab.id }) })
+  // Leyendo como jugador, el mapa con lo que ve (ADR-0017)
+  const readAs = useReadAs()
+  const map = useQuery({
+    queryKey: [...mapKey(page.worldId, tab.id), ...readAsKey(readAs)],
+    queryFn: () => api.call('getMap', { tabId: tab.id, ...readAsInput(readAs) })
+  })
   if (!map.data) {
     return failed(map) ? <LoadError error={map.error} onRetry={() => map.refetch()} /> : <Loading />
   }
@@ -202,6 +208,7 @@ type PinDrag = { id: string; startX: number; startY: number; x0: number; y0: num
 function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapView }) {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const readAs = useReadAs()
   const announce = useAnnounce()
   const errorText = useErrorText()
   const image = map.image as NonNullable<MapView['image']>
@@ -458,6 +465,7 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
                   <button
                     type="button"
                     className={styles.pin}
+                    data-hidden={pin.hidden || undefined}
                     data-tour={index === 0 ? 'mapa-pin' : undefined}
                     data-anchor={tipAnchored(pin) ? 'tip' : 'center'}
                     data-display={pin.display}
@@ -479,10 +487,17 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
                     }}
                     onDoubleClick={() => {
                       if (!pin.pageId || !pin.pageTitle) return
-                      void navigate({
-                        to: '/mundos/$worldId/wiki/$pageId',
-                        params: { worldId: page.worldId, pageId: pin.pageId }
-                      })
+                      if (readAs)
+                        void navigate({
+                          to: '/mundos/$worldId/campanas/$campaignId/paginas/$pageId',
+                          params: { worldId: page.worldId, campaignId: readAs.campaignId, pageId: pin.pageId },
+                          search: readAs.asCharacterId ? { como: readAs.asCharacterId } : {}
+                        })
+                      else
+                        void navigate({
+                          to: '/mundos/$worldId/wiki/$pageId',
+                          params: { worldId: page.worldId, pageId: pin.pageId }
+                        })
                     }}
                   >
                     {pin.variant === 2 ? (

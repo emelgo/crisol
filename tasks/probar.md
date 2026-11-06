@@ -9,6 +9,14 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   de propietario.
 - **En local**, con los cambios al momento: http://localhost:5173 (lo arranco cuando haga falta).
 
+## Módulo 5: los mapas para los jugadores (rama `modulo-5/visibilidad`; en local, aún no en staging)
+
+- [ ] **Un pin oculto**: en el panel de un pin, «Oculto a los jugadores»: lo ves atenuado. En el menú (▾) de una
+  pestaña, «Oculta a los jugadores».
+- [ ] **La jugadora** ve el mapa de una página que conoce, sin lo oculto; un pin a una página que no conoce, con su
+  nombre y sin «Abrir».
+- [ ] **Revelar…** un pin o una pestaña desde su panel o su menú: le aparece y le llega el aviso.
+
 ## Módulo 5: revelar en partida (rama `modulo-5/visibilidad`; en local, aún no en staging)
 
 - [ ] **Revelar un secreto**: en el secreto, «Revelar» → elige a quién (toda la campaña o unos personajes) → «Revelar».

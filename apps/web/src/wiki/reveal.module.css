@@ -135,3 +135,23 @@
 .secondary:hover {
   border-color: var(--color-frame);
 }
+
+/* En un panel: debajo, en su sitio */
+.wrapInline {
+  display: grid;
+  flex-basis: 100%;
+  gap: var(--space-2);
+  justify-items: start;
+}
+
+.menuInline {
+  display: grid;
+  gap: var(--space-3);
+  inline-size: 100%;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-size: 0.875rem;
+}

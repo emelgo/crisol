@@ -77,6 +77,42 @@ export function SecretReveal({ worldId, pageId, documentId }: { worldId: string;
   )
 }
 
+/** «Revelar…» de un pin o de una pestaña (en su panel o su menú): con aviso, como un secreto */
+export function TargetReveal({
+  worldId,
+  pageId,
+  kind,
+  targetId
+}: {
+  worldId: string
+  pageId: string
+  kind: 'pin' | 'tab'
+  targetId: string
+}) {
+  const { t } = useTranslation()
+  const known = useSecretsKnowledge(worldId, pageId)
+  const { open, setOpen, wrap } = usePopover()
+  if (!known.data || known.data.campaigns.length === 0) return null
+  return (
+    <div ref={wrap} className={styles.wrapInline}>
+      <button type="button" className={styles.link} aria-expanded={open} onClick={() => setOpen(!open)}>
+        {t('reveal.revealMore')}
+      </button>
+      {open && (
+        <RevealMenu
+          worldId={worldId}
+          kind={kind}
+          targetId={targetId}
+          campaigns={known.data.campaigns}
+          current={() => 'none'}
+          onDone={() => setOpen(false)}
+          inline
+        />
+      )}
+    </div>
+  )
+}
+
 /** «Revelar» en la cabecera de una página: la página entera, con aviso */
 export function PageRevealButton({ page }: { page: Page }) {
   const { t } = useTranslation()
@@ -119,16 +155,19 @@ function RevealMenu({
   campaigns,
   current,
   onDone,
-  floating = false
+  floating = false,
+  inline = false
 }: {
   worldId: string
-  kind: 'secret' | 'page'
+  kind: 'secret' | 'page' | 'pin' | 'tab'
   targetId: string
   campaigns: Campaigns
   /** A quién se le ha revelado ya en esa campaña */
   current: (campaignId: string) => Audience
   onDone: () => void
   floating?: boolean
+  /** Dentro de un panel que recorta lo que se sale (el de un pin, el menú de una pestaña): sin flotar */
+  inline?: boolean
 }) {
   const { t } = useTranslation()
   const api = useApi()
@@ -141,7 +180,7 @@ function RevealMenu({
   const [picked, setPicked] = useState<string[]>([])
   const [alsoPage, setAlsoPage] = useState(true)
   const already = current(campaignId)
-  const pageUnknown = kind === 'secret' && campaign?.seesPage === 'none'
+  const pageUnknown = kind !== 'page' && campaign?.seesPage === 'none'
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['pages', worldId] })
   const reveal = useMutation({
     mutationFn: () =>
@@ -175,7 +214,7 @@ function RevealMenu({
     <div
       role="dialog"
       aria-labelledby={`${id}-title`}
-      className={floating ? styles.menuRight : styles.menu}
+      className={inline ? styles.menuInline : floating ? styles.menuRight : styles.menu}
       onKeyDown={(event) => {
         if (event.key === 'Escape') {
           event.stopPropagation()
@@ -184,7 +223,7 @@ function RevealMenu({
       }}
     >
       <h2 id={`${id}-title`} className={styles.title}>
-        {t(kind === 'page' ? 'reveal.page' : 'reveal.secret')}
+        {t(`reveal.titles.${kind}`)}
       </h2>
       {campaigns.length > 1 && (
         <label className={styles.field}>

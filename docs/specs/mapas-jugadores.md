@@ -1,6 +1,6 @@
 # Spec: mapas-jugadores (módulo 5)
 
-Estado: **en marcha** (2026-11-06). Tercera capacidad del módulo 5 (`docs/specs/modulo-5.md`). Entrevista:
+Estado: **construido** (2026-11-06; en la rama `modulo-5/visibilidad`, aún sin PR). Tercera capacidad del módulo 5 (`docs/specs/modulo-5.md`). Entrevista:
 `docs/modulos.md` § «### 5. Visibilidad por campaña». ADR-0017 y ADR-0007 (pestañas de página y mapas). Estudio:
 `research/foundry/visibilidad-y-revelar.md` (los pines de una escena).
 
@@ -34,6 +34,18 @@ Para quién: el máster; los jugadores, en la wiki de su campaña; la IA.
 1. **Un pin a lo que no se ve, con su etiqueta y sin enlace**: el pin es parte del mapa; si no debe verse, se oculta.
 2. **Las capas** del Crisol actual no existen aún en Crisol (los mapas de mundo con capas son el módulo 9): cuando
    lleguen, se ocultan igual que una pestaña.
+
+## Construido (2026-11-06) y lo que queda
+
+- **Servidor** (con `conocimiento`): `listPageTabs` y `getMap` le dan al jugador las pestañas y los pines que ve
+  (siguen a su página; `hidden` es la marca del mundo; una campaña la cambia con su marca, también por personajes); un
+  pin a una página que no ve llega sin ella; la imagen del mapa se le sirve. Se revelan con `reveal` (aviso y lo nuevo).
+- **Web**: el jugador ve los mapas de sus páginas en lectura (con una ficha del pin: su nombre y «Abrir» si conoce la
+  página); el máster ve atenuados los pines ocultos y, en el panel de un pin y en el menú de una pestaña, «Oculto a los
+  jugadores» y «Revelar…».
+- **Pruebas**: las de `knowledge.integration.test.ts` y la e2e `mapas-jugadores.spec.ts`.
+- **Queda**: el botón derecho sobre un pin con «Ocultar a los jugadores / Revelar…» (hoy, en su panel); las regiones y
+  las rutas (aún no se dibujan en el mapa, `map_elements`); lo nuevo marcado en el mapa.
 
 ## Pruebas
 

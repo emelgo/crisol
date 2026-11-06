@@ -1059,6 +1059,13 @@ export const es = {
     knownBy: 'Lo saben: {{names}}',
     page: 'Revelar la página',
     secret: 'Revelar el secreto',
+    revealMore: 'Revelar…',
+    titles: {
+      page: 'Revelar la página',
+      secret: 'Revelar el secreto',
+      pin: 'Revelar el pin',
+      tab: 'Revelar la pestaña'
+    },
     campaign: 'Campaña',
     to: 'A quién',
     everyone: 'Toda la campaña',
@@ -1394,6 +1401,7 @@ export const es = {
     attributionPlain: 'Contiene material de {{sources}}, con licencia {{license}}.'
   },
   pageTabs: {
+    hiddenFromPlayers: 'Oculta a los jugadores',
     label: 'Pestañas de la página',
     text: 'Texto',
     add: 'Pestaña nueva',
@@ -1439,6 +1447,7 @@ export const es = {
     pins: 'Pines del mapa',
     loading: 'Cargando la imagen…',
     pin: {
+      hiddenFromPlayers: 'Oculto a los jugadores',
       title: 'Pin',
       name: 'Nombre',
       page: 'Página',
