@@ -187,7 +187,20 @@ export function EntryEditor({
         {!item && targets.length > 1 && (
           <div className={formStyles.field}>
             <label htmlFor={whereId}>{t('compendium.where')}</label>
-            <select id={whereId} value={where} onChange={(event) => setWhere(Number(event.currentTarget.value))}>
+            <select
+              id={whereId}
+              value={where}
+              onChange={(event) => {
+                const next = Number(event.currentTarget.value)
+                setWhere(next)
+                // El tipo, si el otro sitio no lo tiene, el primero suyo
+                const kinds = targets[next]?.types ?? []
+                if (!kinds.some((each) => each.key === typeKey)) {
+                  setTypeKey(kinds[0]?.key ?? '')
+                  setValues({})
+                }
+              }}
+            >
               {targets.map((each, i) => (
                 <option key={each.layer} value={i}>
                   {each.layer === 'world' ? t('compendium.whereWorld') : t('compendium.whereSystem')}

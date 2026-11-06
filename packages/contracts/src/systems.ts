@@ -527,6 +527,7 @@ export const searchCampaignContent = defineAction({
     campaignId: z.uuid(),
     query: z.string().trim().max(100).optional(),
     type: z.string().max(60).optional(),
+    layer: z.enum(['system', 'world']).optional().describe('Solo lo del sistema o solo lo del mundo'),
     limit: z.int().min(1).max(200).optional(),
     offset: z.int().min(0).max(10_000).optional()
   }),

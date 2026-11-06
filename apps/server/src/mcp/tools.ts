@@ -332,7 +332,8 @@ const INSTRUCTIONS =
   'objetos, un PNJ con su statblock). Sale en el compendio de sus campañas con ese sistema (buscar_contenido con ' +
   'campaignId, leer_compendio), marcado con world; se guarda y se quita con worldId en guardar_contenido y ' +
   'borrar_contenido. Para cambiar algo del sistema solo en un mundo, cópialo con copiar_contenido (to world) y cambia ' +
-  'la copia; si su original cambia, origen_contenido dice qué cambió y traer_original trae lo que elijas. ' +
+  'la copia; si su original cambia, origen_contenido dice qué cambió (con la huella del original) y traer_original ' +
+  'trae lo que elijas, con esa huella. ' +
   'Los personajes de una campaña (listar_personajes) se hacen por pasos: crear_personaje y luego elegir_personaje (lo de ' +
   'cada paso por su clave del contenido, y lo pendiente por el id de cada decisión, varias cosas de una vez); ' +
   'ver_personaje dice lo que falta con sus opciones válidas y el motivo de las que no. Terminarlo (confirm created) y ' +

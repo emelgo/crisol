@@ -103,7 +103,8 @@ export function putContent(
     const saved: WorldContentRow[] = []
     for (const { version, ...item } of items) {
       const found = byKey.get(item.key)
-      if (found && version !== undefined && found.version !== version) throw new WorldContentChangedError(item.key)
+      // Con versión, tiene que estar y ser esa: si la borraron entretanto, no se vuelve a crear
+      if (version !== undefined && found?.version !== version) throw new WorldContentChangedError(item.key)
       if (found) saved.push(await w.update(worldContent, found.id, item))
       else saved.push(await w.insert(worldContent, { ...item, worldId, systemId }))
     }

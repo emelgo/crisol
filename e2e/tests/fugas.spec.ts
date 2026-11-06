@@ -661,11 +661,20 @@ test('@fugas el compendio del mundo es del máster: la jugadora ni lo ve ni sabe
     ['deleteWorldContent', { worldId, systemId, keys: ['hoja_secreta'] }],
     ['copyContent', { worldId, systemId, key: 'guerrero_goblin_2014', to: 'world' }],
     ['getContentOrigin', { worldId, systemId, key: copyKey }],
-    ['pullContentOrigin', { worldId, systemId, key: copyKey, version: 1, fields: [] }]
+    ['pullContentOrigin', { worldId, systemId, key: copyKey, version: 1, fingerprint: 'x', fields: [] }]
   ] as const) {
     const response = await player.request.post(`/api/actions/${name}`, { data })
     expect(response.status(), name).toBe(404)
   }
+
+  // Ni por su personaje: no puede ponerle algo del mundo aunque sepa su clave
+  const created = await player.request.post('/api/actions/createCharacter', { data: { campaignId, name: 'Curiosa' } })
+  const characterId = (await created.json()).character.id as string
+  const sneaked = await player.request.post('/api/actions/updateCharacter', {
+    data: { characterId, version: 1, play: { items: [{ id: 'x', key: 'hoja_secreta' }] } }
+  })
+  expect(sneaked.status()).toBe(400)
+  expect(await sneaked.text()).not.toContain('Hoja Secreta del Valle')
 
   const everything = await captured.all()
   for (const leak of ['Hoja Secreta del Valle', 'Jefe Escondido', 'hoja_secreta', copyKey, '"worldContent"'])

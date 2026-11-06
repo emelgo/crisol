@@ -175,15 +175,44 @@ describe('el compendio del mundo (docs/specs/compendio-mundo.md)', () => {
     })
   })
 
-  it('pero lo que lleva su personaje del mundo, sí, en su hoja', async () => {
+  it('la jugadora no añade lo del mundo por su clave; lo que el máster le da a su personaje, sí sale en su hoja', async () => {
     await putWorld([espada])
     const created = (await ok200('createCharacter', { campaignId, name: 'Thora' }, ana.cookie)).character
-    const saved = await ok200(
+    const tried = await call(
       'updateCharacter',
       { characterId: created.id, version: 1, play: { items: [{ id: 'e1', key: 'espada_de_valdren' }] } },
       ana.cookie
     )
-    expect(saved.state.carried).toMatchObject([{ id: 'e1', name: 'Espada de Valdren', type: 'arma' }])
+    expect(tried.statusCode).toBe(400)
+    expect(tried.body).not.toContain('Espada de Valdren')
+    // Como si no existiera: lo mismo que una clave que no está
+    const nothing = await call(
+      'updateCharacter',
+      { characterId: created.id, version: 1, play: { items: [{ id: 'e1', key: 'no_existe' }] } },
+      ana.cookie
+    )
+    expect(tried.json().code).toBe(nothing.json().code)
+    expect(tried.json().message?.replace('espada_de_valdren', 'no_existe')).toBe(nothing.json().message)
+
+    const given = await ok200('updateCharacter', {
+      characterId: created.id,
+      version: 1,
+      play: { items: [{ id: 'e1', key: 'espada_de_valdren' }] }
+    })
+    expect(given.state.carried).toMatchObject([{ id: 'e1', name: 'Espada de Valdren', type: 'arma' }])
+    const hers = await ok200('getCharacter', { characterId: created.id }, ana.cookie)
+    expect(hers.state.carried).toMatchObject([{ id: 'e1', name: 'Espada de Valdren' }])
+    // Lo que ya tiene se queda al cambiar otra cosa
+    const kept = await ok200(
+      'updateCharacter',
+      {
+        characterId: created.id,
+        version: given.character.version,
+        play: { items: [{ id: 'e1', key: 'espada_de_valdren', equipped: true }] }
+      },
+      ana.cookie
+    )
+    expect(kept.state.carried).toMatchObject([{ id: 'e1', equipped: true }])
   })
 
   it('otra campaña del mundo con otro sistema, u otro mundo, no lo ven', async () => {
@@ -226,6 +255,14 @@ describe('el compendio del mundo (docs/specs/compendio-mundo.md)', () => {
       expect(await read(['otra'])).toEqual([])
       expect((await read(['espada_de_valdren']))[0].data.dano).toBe('1d10')
 
+      // Con la versión de una que ya no está, no se vuelve a crear
+      expect(
+        await code('putWorldContent', {
+          worldId,
+          systemId: five,
+          items: [{ ...espada, key: 'nunca_estuvo', version: 1 }]
+        })
+      ).toEqual({ status: 400, code: 'CONTENT_CHANGED' })
       const deleted = await ok200('deleteWorldContent', {
         worldId,
         systemId: five,
@@ -288,27 +325,55 @@ describe('el compendio del mundo (docs/specs/compendio-mundo.md)', () => {
         items: [{ type: 'criatura', key: named.key, data: { ...copy.data, name: { es: 'Goblin jefe' }, ca: 17 } }]
       })
       const origin = await ok200('getContentOrigin', { worldId, systemId: five, key: named.key })
-      expect(origin.origin).toMatchObject({ key: 'guerrero_goblin_2014', name: 'Goblin', missing: false })
+      expect(origin.origin).toMatchObject({
+        key: 'guerrero_goblin_2014',
+        name: 'Goblin',
+        missing: false,
+        changed: true
+      })
       expect(origin.changes).toEqual([
         { key: 'ca', label: expect.any(String), before: 15, after: 16, copy: 17 },
         { key: 'pg_max', label: expect.any(String), before: 7, after: 9, copy: 7 }
       ])
       const [before] = await read([named.key])
       expect(before.world.origin.changed).toBe(true)
+      // Si el original vuelve a cambiar con la ventana abierta, lo nuevo no se da por visto
+      const seen = origin.origin.fingerprint
+      const later = await ok200('getSystem', { systemId: five })
+      const [now] = (await ok200('getSystemContent', { systemId: five, keys: ['guerrero_goblin_2014'] })).items
+      await ok200('putSystemContent', {
+        systemId: five,
+        version: later.version,
+        items: [{ ...now, data: { ...now.data, velocidad: 35 } }]
+      })
+      expect(
+        await code('pullContentOrigin', {
+          worldId,
+          systemId: five,
+          key: named.key,
+          version: before.world.version,
+          fingerprint: seen,
+          fields: ['pg_max']
+        })
+      ).toEqual({ status: 400, code: 'ORIGIN_CHANGED' })
+      const again = await ok200('getContentOrigin', { worldId, systemId: five, key: named.key })
+      expect(again.changes.map((c: { key: string }) => c.key)).toEqual(['ca', 'pg_max', 'velocidad'])
       const pulled = await ok200('pullContentOrigin', {
         worldId,
         systemId: five,
         key: named.key,
         version: before.world.version,
-        fields: ['pg_max']
+        fingerprint: again.origin.fingerprint,
+        // Lo que no cambió no se trae aunque se pida
+        fields: ['pg_max', 'name']
       })
       const [after] = await read([named.key])
       expect(after.world).toMatchObject({ version: pulled.version, origin: { changed: false } })
-      expect(after.data).toMatchObject({ pg_max: 9, ca: 17, name: { es: 'Goblin jefe' } })
+      expect(after.data).toMatchObject({ pg_max: 9, ca: 17, velocidad: 30, name: { es: 'Goblin jefe' } })
       expect((await ok200('getContentOrigin', { worldId, systemId: five, key: named.key })).changes).toEqual([])
     })
 
-    it('llevar al sistema una del mundo, quitándola del mundo', async () => {
+    it('llevar al sistema una del mundo y quitarla del mundo (un borrado aparte)', async () => {
       await ok200('putWorldContent', { worldId, systemId: five, items: [espada] })
       const system = await ok200('getSystem', { systemId: five })
       const moved = await ok200('copyContent', {
@@ -316,10 +381,21 @@ describe('el compendio del mundo (docs/specs/compendio-mundo.md)', () => {
         systemId: five,
         key: 'espada_de_valdren',
         to: 'system',
-        remove: true,
         version: system.version
       })
       expect(moved).toEqual({ key: 'espada_de_valdren', to: 'system', version: system.version + 1 })
+      // Validada con el sistema: con una clave que no vale, nada
+      expect(
+        await code('copyContent', {
+          worldId,
+          systemId: five,
+          key: 'espada_de_valdren',
+          to: 'system',
+          newKey: 'No Vale',
+          version: moved.version
+        })
+      ).toEqual({ status: 400, code: 'SYSTEM_INVALID' })
+      await ok200('deleteWorldContent', { worldId, systemId: five, keys: ['espada_de_valdren'] })
       const [inSystem] = (await ok200('getSystemContent', { systemId: five, keys: ['espada_de_valdren'] })).items
       expect(inSystem).toMatchObject({ source: null, data: { name: { es: 'Espada de Valdren' } } })
       const [now] = await read(['espada_de_valdren'])

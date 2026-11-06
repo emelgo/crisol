@@ -114,10 +114,18 @@ export function CompendiumScreen() {
   const [query, setQuery] = useState('')
   // Se busca al dejar de escribir, no con cada tecla
   const wanted = useSettled(query.trim())
+  const [layer, setLayer] = useState<Layer>('all')
   const hits = useInfiniteQuery({
-    queryKey: ['compendium', campaignId, 'search', wanted],
+    queryKey: ['compendium', campaignId, 'search', wanted, layer],
+    // Solo una capa, si se elige: la filtra el servidor (antes de paginar)
     queryFn: ({ pageParam }) =>
-      api.call('searchCampaignContent', { campaignId, query: wanted, limit: PAGE, offset: pageParam }),
+      api.call('searchCampaignContent', {
+        campaignId,
+        query: wanted,
+        limit: PAGE,
+        offset: pageParam,
+        ...(layer === 'all' ? {} : { layer })
+      }),
     initialPageParam: 0,
     getNextPageParam: (last, pages) => {
       const seen = pages.reduce((n, p) => n + p.items.length, 0)
@@ -139,7 +147,6 @@ export function CompendiumScreen() {
   }, [shown, lastShown, narrow])
 
   const [creating, setCreating] = useState(false)
-  const [layer, setLayer] = useState<Layer>('all')
   // Lo recién copiado al mundo se abre para cambiarlo
   const [editing, setEditing] = useState<string | null>(null)
   if (pending) return null
@@ -172,7 +179,6 @@ export function CompendiumScreen() {
       : null
   // Lo nuevo va al mundo; al sistema, si se elige y se puede
   const newTargets = [worldTarget, systemTarget].filter((each): each is EntryTarget => each !== null)
-  const shownHits = items.filter((hit) => inLayer(layer, hit.world))
 
   return (
     <div className={styles.page} data-reading={narrow && shown ? '' : undefined}>
@@ -230,7 +236,7 @@ export function CompendiumScreen() {
         {wanted ? (
           <>
             <ul className={styles.list} aria-label={t('compendium.results')} aria-busy={hits.isFetching}>
-              {shownHits.map((hit) => (
+              {items.map((hit) => (
                 <HitRow
                   key={hit.key}
                   hit={hit}
@@ -239,7 +245,7 @@ export function CompendiumScreen() {
                   onOpen={() => open(hit.key)}
                 />
               ))}
-              {hits.data && shownHits.length === 0 && <li className={styles.none}>{t('compendium.none')}</li>}
+              {hits.data && items.length === 0 && <li className={styles.none}>{t('compendium.none')}</li>}
             </ul>
             {hits.isError && <LoadError error={hits.error} onRetry={() => void hits.refetch()} />}
             {hits.hasNextPage && (

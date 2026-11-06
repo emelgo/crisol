@@ -52,7 +52,7 @@ export const systemsChanged = (organizationId: string): RealtimeEvent => ({
   message: { type: 'changed', what: 'systems', organizationId }
 })
 
-/** El compendio de un mundo: a quien lo ve (lo que ven las hojas de sus personajes se vuelve a pedir con él) */
+/** El compendio de un mundo: a quien lo ve (hasta el módulo 5, quien lo lleva; las hojas de los jugadores, al volver a pedirlas) */
 export const worldContentChanged = (wiki: { worldId: string; organizationId: string }): RealtimeEvent => ({
   to: { capability: 'worldContent.read', target: wiki },
   message: { type: 'changed', what: 'worldContent', worldId: wiki.worldId }

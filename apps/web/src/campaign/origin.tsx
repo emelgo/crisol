@@ -105,7 +105,15 @@ function OriginChanges({
   const [skipped, setSkipped] = useState<ReadonlySet<string>>(new Set())
   const fields = (changes.data?.changes ?? []).map((c) => c.key).filter((k) => !skipped.has(k))
   const pull = useMutation({
-    mutationFn: () => api.call('pullContentOrigin', { ...where, key: item.key, version: item.world.version, fields }),
+    // Con la huella de lo que se vio: si el original vuelve a cambiar entretanto, no se da por visto
+    mutationFn: () =>
+      api.call('pullContentOrigin', {
+        ...where,
+        key: item.key,
+        version: item.world.version,
+        fingerprint: changes.data?.origin?.fingerprint ?? '',
+        fields
+      }),
     onSuccess: async () => {
       await client.invalidateQueries({ queryKey: ['compendium', campaignId] })
       dialog.current?.close()
@@ -140,7 +148,9 @@ function OriginChanges({
             <table className={styles.changes}>
               <thead>
                 <tr>
-                  <td />
+                  <th scope="col">
+                    <span className={styles.hidden}>{t('compendium.pullColumn')}</span>
+                  </th>
                   <th scope="col">{t('compendium.field')}</th>
                   <th scope="col">{t('compendium.inCopy')}</th>
                   <th scope="col">{t('compendium.inOriginal')}</th>
@@ -169,15 +179,18 @@ function OriginChanges({
         )}
         <FormError message={pull.error ? errorText(pull.error) : null} />
         <div className={dialogStyles.actions}>
-          {changes.data && changes.data.changes.length > 0 && (
+          {changes.data?.origin?.changed && (
             <BusyButton
               className={formStyles.button}
               busy={pull.isPending}
-              disabled={fields.length === 0}
+              disabled={changes.data.changes.length > 0 && fields.length === 0}
               data-autofocus=""
               onClick={() => pull.mutate()}
             >
-              {t('compendium.pull', { count: fields.length })}
+              {/* Si no hay campos que traer (solo cambió su tipo), se da por visto */}
+              {changes.data.changes.length === 0
+                ? t('compendium.dismiss')
+                : t('compendium.pull', { count: fields.length })}
             </BusyButton>
           )}
           <button type="button" className={dialogStyles.cancel} onClick={() => dialog.current?.close()}>
@@ -216,7 +229,11 @@ export function ToSystem({
   const titleId = useId()
   const [remove, setRemove] = useState(false)
   const move = useMutation({
-    mutationFn: () => api.call('copyContent', { ...where, key: item.key, to: 'system', remove, version }),
+    // Quitarla del mundo es un borrado aparte (con su entrada en el historial)
+    mutationFn: async () => {
+      await api.call('copyContent', { ...where, key: item.key, to: 'system', version })
+      if (remove) await api.call('deleteWorldContent', { ...where, keys: [item.key] })
+    },
     onSuccess: async () => {
       await client.invalidateQueries({ queryKey: ['compendium', campaignId] })
       onMoved(remove)

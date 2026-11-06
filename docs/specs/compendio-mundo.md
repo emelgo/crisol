@@ -38,8 +38,10 @@ de la entrevista es la del sistema. Si un día hay sistemas compartidos que no s
   cambiarla (el nombre ya dice «(copia)» si se copia sin cambiar el nombre).
 - **El original ha cambiado**: si la entrada del sistema de la que salió cambia, la copia lo dice y deja ver qué
   campos cambiaron y traerlos (todos o los que se elijan). Si el original desaparece, lo dice y la copia sigue.
-- **Llevar al sistema** una entrada del mundo, para quien puede cambiar el sistema: se copia al sistema con su origen
-  (el mundo del que sale) y la del mundo se queda o se quita, a elegir.
+- **Llevar al sistema** una entrada del mundo, para quien puede cambiar el sistema: se copia al sistema (validada con
+  él, con su límite y su versión) y la del mundo se queda o se quita, a elegir; quitarla es un borrado aparte, con su
+  propia entrada en el historial (y, para la IA, con su aprobación de borrar). El contenido de un sistema no guarda
+  origen: la copia del sistema no sabe de qué mundo salió.
 - **Crear, cambiar y borrar** en la app con el editor de entradas de hoy (el nombre, los campos de su tipo y su
   texto); «Nueva entrada» crea en el mundo, y en el sistema solo si se elige y se puede. Borrar pasa por el historial y
   se deshace.
@@ -60,9 +62,13 @@ de la entrevista es la del sistema. Si un día hay sistemas compartidos que no s
    pide además poder cambiar los sistemas de la cuenta.
 4. **Colecciones del mundo** (los grupos de Foundry): no hacen falta todavía; lo del mundo se ordena con las secciones
    y carpetas del sistema. La visibilidad por colección o por entrada, con el módulo 5.
-5. **Los personajes montan con las dos capas** (decidido al construirlo): lo que lleva un personaje y lo que ofrece el
-   creador incluyen lo del mundo (una clase o un objeto propios del mundo), aunque el jugador no pueda hojear el
-   compendio del mundo hasta el módulo 5.
+5. **Los personajes montan con las dos capas, pero el jugador no elige lo del mundo** (tras la revisión): quien lleva
+   el mundo monta, elige y da a un personaje cualquier cosa del mundo (una clase u objeto propios); un jugador solo
+   monta con lo del mundo que su personaje ya tiene (lo que le dio el máster), no lo ve en el creador ni puede
+   añadirlo por su clave. Con el módulo 5, lo que el máster enseñe.
+6. **Traer los cambios del original es con lo que se vio**: `getContentOrigin` da la huella del original que enseña y
+   `pullContentOrigin` la pide; si el original volvió a cambiar entretanto, `ORIGIN_CHANGED`. Si solo cambió lo que no
+   se compara (su tipo), se da por visto sin traer nada.
 
 ## Pruebas
 

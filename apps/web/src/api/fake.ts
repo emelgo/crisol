@@ -1534,11 +1534,13 @@ export function fakeApi(
       })
       return { ...result, items: result.items.map((i) => (worldKeys.has(i.key) ? { ...i, world: true } : i)) }
     },
-    searchCampaignContent: ({ campaignId, ...options }) => {
+    searchCampaignContent: ({ campaignId, layer, ...options }) => {
       const found = compendiumOf(campaignId)
       if (!found) return { items: [], total: 0 }
       const { document, choices, content, worldKeys } = found
-      const entries = content.map((item) => ({ ...item, concept: item.concept ?? null, name: item.data.name }))
+      const entries = content
+        .filter((item) => !layer || worldKeys.has(item.key) === (layer === 'world'))
+        .map((item) => ({ ...item, concept: item.concept ?? null, name: item.data.name }))
       const result = searchContent(document, entries, {
         sources: choices.sources,
         duplicates: choices.duplicates,
@@ -1631,7 +1633,7 @@ export function fakeApi(
       for (const key of deleted) worldEntries.splice(worldEntries.indexOf(worldEntry(worldId, systemId, key)), 1)
       return { deleted, missing: keys.filter((k) => !deleted.includes(k)) }
     },
-    copyContent: ({ worldId, systemId, key, to, name, newKey, remove, version }) => {
+    copyContent: ({ worldId, systemId, key, to, name, newKey, version }) => {
       const own = ownSystems.find((s) => s.id === systemId && !s.deleted)
       if (!own || !leadsWorlds()) throw new ApiError('NOT_FOUND', 404)
       const rename = (value: unknown) =>
@@ -1664,19 +1666,21 @@ export function fakeApi(
       if (own.content.some((c) => c.key === systemKey)) throw new ApiError('KEY_TAKEN', 400)
       own.content.push({ ...structuredClone(entry.item), key: systemKey })
       own.version++
-      if (remove) worldEntries.splice(worldEntries.indexOf(entry), 1)
       return { key: systemKey, to, version: own.version }
     },
     getContentOrigin: ({ worldId, systemId, key }) => {
       const entry = worldEntry(worldId, systemId, key)
       if (!entry.origin) return { origin: null, changes: [] }
       const original = originalNow(entry.origin)
+      const fingerprint = original ? contentFingerprint(original) : null
       const origin = {
         layer: 'system' as const,
         systemId: entry.origin.systemId,
         key: entry.origin.key,
         name: original ? textOf(original.data.name as Text) : null,
-        missing: !original
+        missing: !original,
+        changed: fingerprint !== null && fingerprint !== entry.origin.fingerprint,
+        fingerprint
       }
       if (!original) return { origin, changes: [] }
       const fields = systemById(systemId)?.types[entry.item.type]?.fields ?? {}
@@ -1696,11 +1700,12 @@ export function fakeApi(
       )
       return { origin, changes }
     },
-    pullContentOrigin: ({ worldId, systemId, key, version, fields }) => {
+    pullContentOrigin: ({ worldId, systemId, key, version, fingerprint, fields }) => {
       const entry = worldEntry(worldId, systemId, key)
       if (entry.version !== version) throw new ApiError('CONTENT_CHANGED', 400)
       const original = entry.origin ? originalNow(entry.origin) : null
       if (!entry.origin || !original) throw new ApiError('ORIGIN_MISSING', 400)
+      if (contentFingerprint(original) !== fingerprint) throw new ApiError('ORIGIN_CHANGED', 400)
       const pulled = pullFields(entry.item, original, fields)
       entry.item = { ...pulled, mechanics: (pulled.mechanics ?? undefined) as Mechanics | undefined }
       entry.origin = originOf(entry.origin.systemId, original)

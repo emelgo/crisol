@@ -87,7 +87,7 @@ export function pullFields<T extends Compared>(copy: T, original: Compared, keys
   const data = { ...copy.data }
   for (const key of keys) {
     if (key === 'mechanics') continue
-    if (key in original.data) data[key] = structuredClone(original.data[key])
+    if (Object.hasOwn(original.data, key)) data[key] = structuredClone(original.data[key])
     else delete data[key]
   }
   const mechanics = keys.includes('mechanics') ? structuredClone(original.mechanics ?? null) : copy.mechanics

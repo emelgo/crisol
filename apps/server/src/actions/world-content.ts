@@ -25,7 +25,7 @@ import {
   textOf,
   validateContent
 } from '@crisol/systems'
-import { worldContentChanged } from '../realtime/events.ts'
+import { systemsChanged, worldContentChanged } from '../realtime/events.ts'
 import { authorizedWiki, type WikiTarget } from './access.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
 import { implement } from './registry.ts'
@@ -86,6 +86,20 @@ async function worldEntry(ctx: ActionContext, worldId: string, systemId: string,
   const [row] = await worldContentRepo.contentByKeys(ctx.db, worldId, systemId, [key])
   if (!row) throw new NotFoundError('content')
   return row
+}
+
+/** Una clave que ya está (dos a la vez): KEY_TAKEN, no un error del servidor */
+async function takenAs<T>(key: string, where: string, write: () => Promise<T>): Promise<T> {
+  try {
+    return await write()
+  } catch (error) {
+    if (
+      (error as { code?: string; cause?: { code?: string } }).code === '23505' ||
+      (error as { cause?: { code?: string } }).cause?.code === '23505'
+    )
+      throw new InvalidRequestError('KEY_TAKEN', `ya hay una entrada «${key}» en el ${where}`)
+    throw error
+  }
 }
 
 /** Que quepan: como mucho, las mismas que en un sistema */
@@ -160,7 +174,7 @@ export const worldContentActions = [
     return { deleted: done.deleted, missing: wanted.filter((k) => !done.deleted.includes(k)) }
   }),
 
-  implement(copyContent, async (ctx, { worldId, systemId, key, to, name, newKey, remove, version }) => {
+  implement(copyContent, async (ctx, { worldId, systemId, key, to, name, newKey, version }) => {
     const { wiki, system, row } = await worldAndSystem(ctx, 'worldContent.write', worldId, systemId)
     if (to === 'world') {
       const [original] = await systemsRepo.contentByKeys(ctx.db, row.id, [key])
@@ -173,30 +187,32 @@ export const worldContentActions = [
       const problems = validateContent(system, [{ ...candidate, key: copyKey, data }])
       if (problems.some((p) => p.severity === 'error')) invalid(problems)
       await checkRoom(ctx, worldId, systemId, 1)
-      const saved = await worldContentRepo.putContent(
-        ctx.db,
-        historyContext(ctx, 'copyContent', { name: nameOf(data, 'es', copyKey), to }, wiki),
-        worldId,
-        systemId,
-        [
-          {
-            type: original.type,
-            key: copyKey,
-            data,
-            // Una copia no es otra edición de lo mismo: sin concepto, no se junta con su original
-            concept: null,
-            mechanics: original.mechanics ? structuredClone(original.mechanics) : null,
-            ref: original.ref,
-            origin: {
-              layer: 'system',
-              systemId: row.id,
-              key: original.key,
-              fingerprint: contentFingerprint(original),
-              data: original.data,
-              mechanics: original.mechanics
+      const saved = await takenAs(copyKey, 'mundo', () =>
+        worldContentRepo.putContent(
+          ctx.db,
+          historyContext(ctx, 'copyContent', { name: nameOf(data, 'es', copyKey), to }, wiki),
+          worldId,
+          systemId,
+          [
+            {
+              type: original.type,
+              key: copyKey,
+              data,
+              // Una copia no es otra edición de lo mismo: sin concepto, no se junta con su original
+              concept: null,
+              mechanics: original.mechanics ? structuredClone(original.mechanics) : null,
+              ref: original.ref,
+              origin: {
+                layer: 'system',
+                systemId: row.id,
+                key: original.key,
+                fingerprint: contentFingerprint(original),
+                data: original.data,
+                mechanics: original.mechanics
+              }
             }
-          }
-        ]
+          ]
+        )
       )
       ctx.realtime.publish(worldContentChanged(wiki))
       return { key: copyKey, to, version: saved.saved[0]?.version ?? 1 }
@@ -210,6 +226,21 @@ export const worldContentActions = [
     if ((await systemsRepo.contentByKeys(ctx.db, row.id, [systemKey])).length > 0)
       throw new InvalidRequestError('KEY_TAKEN', `ya hay una entrada «${systemKey}» en el sistema`)
     const data = name ? { ...entry.data, name: copyName(entry.data.name, name) } : entry.data
+    const values = {
+      type: entry.type,
+      key: systemKey,
+      source: null,
+      data,
+      concept: entry.concept,
+      mechanics: entry.mechanics,
+      ref: entry.ref
+    }
+    // Como putSystemContent: validada con el sistema de ahora (la clave también) y con su límite
+    const problems = validateContent(system, [contentOf(values)])
+    if (problems.some((p) => p.severity === 'error')) invalid(problems)
+    const counts = await systemsRepo.contentCounts(ctx.db, [row.id])
+    if ((counts.get(row.id) ?? 0) + 1 > LIMITS.contentDocuments)
+      throw new InvalidRequestError('TOO_MUCH_CONTENT', `como mucho, ${LIMITS.contentDocuments} documentos`)
     let saved: Awaited<ReturnType<typeof systemsRepo.putContent>>
     try {
       saved = await systemsRepo.putContent(
@@ -222,31 +253,15 @@ export const worldContentActions = [
         ),
         row.id,
         version,
-        [
-          {
-            type: entry.type,
-            key: systemKey,
-            source: null,
-            data,
-            concept: entry.concept,
-            mechanics: entry.mechanics,
-            ref: entry.ref
-          }
-        ]
+        [values]
       )
     } catch (error) {
       if (error instanceof systemsRepo.SystemChangedError)
         throw new InvalidRequestError('SYSTEM_CHANGED', 'lo ha cambiado otro mientras tanto: vuelve a leerlo')
       throw error
     }
-    if (remove)
-      await worldContentRepo.deleteContent(
-        ctx.db,
-        historyContext(ctx, 'deleteWorldContent', { keys: [entry.key], count: 1 }, wiki),
-        worldId,
-        systemId,
-        [entry.key]
-      )
+    // Cambia el sistema: lo ven las campañas de todos los mundos con él
+    ctx.realtime.publish(systemsChanged(row.organizationId))
     ctx.realtime.publish(worldContentChanged(wiki))
     return { key: systemKey, to, version: saved.system.version }
   }),
@@ -256,12 +271,15 @@ export const worldContentActions = [
     const entry = await worldEntry(ctx, worldId, systemId, key)
     if (!entry.origin) return { origin: null, changes: [] }
     const original = await originalOf(ctx, entry.origin, worldId)
+    const fingerprint = original ? contentFingerprint(original) : null
     const origin = {
       layer: entry.origin.layer,
       systemId: entry.origin.systemId,
       key: entry.origin.key,
       name: original ? nameOf(original.data, language, original.key) : null,
-      missing: !original
+      missing: !original,
+      changed: fingerprint !== null && fingerprint !== entry.origin.fingerprint,
+      fingerprint
     }
     if (!original) return { origin, changes: [] }
     const then = { data: entry.origin.data, mechanics: entry.origin.mechanics ?? null }
@@ -275,13 +293,24 @@ export const worldContentActions = [
     return { origin, changes }
   }),
 
-  implement(pullContentOrigin, async (ctx, { worldId, systemId, key, version, fields }) => {
+  implement(pullContentOrigin, async (ctx, { worldId, systemId, key, version, fingerprint, fields }) => {
     const { wiki, system } = await worldAndSystem(ctx, 'worldContent.write', worldId, systemId)
     const entry = await worldEntry(ctx, worldId, systemId, key)
     if (!entry.origin) throw new InvalidRequestError('NO_ORIGIN', 'no es una copia')
     const original = await originalOf(ctx, entry.origin, worldId)
     if (!original) throw new InvalidRequestError('ORIGIN_MISSING', 'su original ya no está')
-    const pulled = pullFields({ data: entry.data, mechanics: entry.mechanics }, original, fields)
+    // Se trae lo que se vio: si el original volvió a cambiar, no se da por visto lo nuevo
+    if (contentFingerprint(original) !== fingerprint)
+      throw new InvalidRequestError('ORIGIN_CHANGED', 'el original ha vuelto a cambiar: míralo otra vez')
+    // Solo los campos que de verdad cambiaron
+    const changed = new Set(
+      contentDiff({ data: entry.origin.data, mechanics: entry.origin.mechanics ?? null }, original).map((c) => c.key)
+    )
+    const pulled = pullFields(
+      { data: entry.data, mechanics: entry.mechanics },
+      original,
+      fields.filter((field) => changed.has(field))
+    )
     const problems = validateContent(system, [
       { type: entry.type, key: entry.key, source: null, data: pulled.data, mechanics: pulled.mechanics ?? undefined }
     ])

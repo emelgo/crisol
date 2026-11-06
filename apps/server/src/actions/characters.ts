@@ -106,27 +106,51 @@ async function updated<T>(write: () => Promise<T>) {
 async function systemOf(
   ctx: ActionContext,
   systemId: string,
-  worldId?: string
+  worldId?: string,
+  /** De lo del mundo, solo esto (lo que ya tiene el personaje de un jugador); sin ello, todo */
+  only?: ReadonlySet<string>
 ): Promise<{ document: System; content: readonly ContentItem[] }> {
   const catalog = catalogSystem(systemId)
   // El de serie, tal cual (siempre el mismo): así el motor lo tiene ya preparado
   if (catalog) return { document: catalog, content: [] }
   const row = await systemsRepo.findSystem(ctx.db, systemId)
   if (!row) throw new NotFoundError('system')
+  const content = await layers.allContent(ctx, row.id, worldId ? { worldId, systemId: row.id } : null)
   return {
     document: row.document as unknown as System,
-    content: await layers.allContent(ctx, row.id, worldId ? { worldId, systemId: row.id } : null)
+    content: only ? content.filter((item) => !item.world || only.has(item.key)) : content
   }
 }
 
+/** Los textos que hay en unas elecciones y lo de la partida: entre ellos, las claves del contenido que nombran */
+function namedIn(...values: unknown[]): Set<string> {
+  const found = new Set<string>()
+  const walk = (value: unknown) => {
+    if (typeof value === 'string') found.add(value)
+    else if (Array.isArray(value)) for (const each of value) walk(each)
+    else if (value && typeof value === 'object') for (const each of Object.values(value)) walk(each)
+  }
+  for (const value of values) walk(value)
+  return found
+}
+
+/** Lo guardado de un personaje: de lo del mundo, un jugador solo monta con lo que ya nombra */
+interface Stored {
+  build: unknown
+  play?: unknown
+}
+
 /**
- * Monta un personaje de sus elecciones, con lo que eligió su campaña de su sistema y el compendio de su mundo (lo que
- * lleva o eligió de él; el creador también lo ofrece)
+ * Monta un personaje de sus elecciones, con lo que eligió su campaña de su sistema y el compendio de su mundo. Quien
+ * lleva el mundo, con todo lo suyo (lo da a un personaje y el creador lo ofrece); un jugador, hasta el módulo 5, solo
+ * con lo del mundo que su personaje ya tiene guardado: ni lo ve en el creador ni lo añade por su clave
  */
-async function contextOf(ctx: ActionContext, campaignId: string, systemId: string) {
+async function contextOf(ctx: ActionContext, campaignId: string, systemId: string, stored: Stored) {
   const campaign = await campaignsRepo.findCampaign(ctx.db, campaignId)
   if (!campaign) throw new NotFoundError('campaign')
-  const { document, content } = await systemOf(ctx, systemId, campaign.worldId)
+  const wiki = { worldId: campaign.worldId, organizationId: campaign.organizationId }
+  const only = can(ctx.actor, 'worldContent.read', wiki) ? undefined : namedIn(stored.build, stored.play)
+  const { document, content } = await systemOf(ctx, systemId, campaign.worldId, only)
   const { choices } = normalizeChoices(document, (campaign.systemChoices ?? {}) as Partial<Choices>)
   return { document, content, choices }
 }
@@ -136,9 +160,10 @@ async function stateOf(
   campaignId: string,
   systemId: string,
   build: Record<string, unknown>,
-  play: Record<string, unknown> = {}
+  play: Record<string, unknown> = {},
+  stored: Stored = { build, play }
 ) {
-  const { document, content, choices } = await contextOf(ctx, campaignId, systemId)
+  const { document, content, choices } = await contextOf(ctx, campaignId, systemId, stored)
   return { ...characterView(document, content, choices, build as Build, play as Play), document }
 }
 
@@ -182,7 +207,7 @@ function checkedPlay(
 
 /** Unas elecciones nuevas que valen: su forma, su tamaño y las reglas de lo que cambia (si no, dice qué falla) */
 async function checked(ctx: ActionContext, row: charactersRepo.CharacterRow, given: unknown) {
-  const { document, content, choices } = await contextOf(ctx, row.campaignId, row.system)
+  const { document, content, choices } = await contextOf(ctx, row.campaignId, row.system, row)
   const previous = characterView(document, content, choices, row.build as Build)
   const { build, problems } = checkBuild(document, content, choices, given, row.build as Build, previous.view.sheet)
   if (!build || problems.length > 0) throw new InvalidRequestError('BAD_CHOICE', problems.join('. '))
@@ -210,12 +235,14 @@ async function save(
   }
   const play = given.play ? parsedPlay(given.play) : undefined
   // Montado con lo nuevo: su resumen se guarda; terminarlo pide lo que su sistema pide
+  // Con lo del mundo que ya tenía (si es un jugador): lo nuevo no puede traer más
   const { view, played } = await stateOf(
     ctx,
     row.campaignId,
     row.system,
     patch.build ?? row.build,
-    (play ?? row.play) as Record<string, unknown>
+    (play ?? row.play) as Record<string, unknown>,
+    row
   )
   if (play) patch.play = checkedPlay(play, row.play as Play, view.playMissing, played) as Record<string, unknown>
   if (given.build || play) patch.summary = view.summary
@@ -305,7 +332,7 @@ export const characterActions = [
     const master = can(ctx.actor, 'dice.private', { campaignId: campaign.id, worldId: campaign.worldId })
     if (!master && !visibilitiesFor('player').includes(visibility))
       throw new InvalidRequestError('VISIBILITY_NOT_ALLOWED')
-    const { document, content, choices } = await contextOf(ctx, row.campaignId, row.system)
+    const { document, content, choices } = await contextOf(ctx, row.campaignId, row.system, row)
     const { type, document: doc } = playedDocument(document, content, choices, row.build as Build, row.play as Play)
     const options = { roller: cryptoRoller, settings: choices.settings, language: choices.language }
     try {

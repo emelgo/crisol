@@ -47,7 +47,7 @@ export const copyContent = defineAction({
   name: 'copyContent',
   kind: 'write',
   description:
-    'Copia una entrada entre las capas del compendio. Al mundo (to: world): una del sistema pasa a ser una entrada nueva del mundo, con otra clave, todo lo suyo y su origen (para avisar si el original cambia); su nombre, el que se dé o el suyo con «(copia)». Al sistema (to: system): una del mundo pasa al sistema de la cuenta para usarla en otros mundos, con la versión del sistema que se leyó; con remove, la del mundo se quita',
+    'Copia una entrada entre las capas del compendio. Al mundo (to: world): una del sistema pasa a ser una entrada nueva del mundo, con otra clave, todo lo suyo y su origen (para avisar si el original cambia); su nombre, el que se dé o el suyo con «(copia)». Al sistema (to: system): una del mundo pasa al sistema de la cuenta para usarla en otros mundos, con la versión del sistema que se leyó (la del mundo se queda; para quitarla, deleteWorldContent)',
   input: z.object({
     worldId: z.uuid(),
     systemId: z.uuid(),
@@ -55,7 +55,6 @@ export const copyContent = defineAction({
     to: z.enum(['world', 'system']),
     name: z.string().trim().min(1).max(200).optional().describe('El nombre de la copia'),
     newKey: z.string().max(100).optional().describe('La clave de la copia; sin ella, una nueva a partir del nombre'),
-    remove: z.boolean().optional().describe('Al llevarla al sistema, quitar la del mundo'),
     version: z.int().min(1).optional().describe('Al llevarla al sistema: la versión del sistema que se leyó')
   }),
   output: z.object({
@@ -81,7 +80,12 @@ export const getContentOrigin = defineAction({
         systemId: z.uuid(),
         key: z.string(),
         name: z.string().nullable(),
-        missing: z.boolean()
+        missing: z.boolean(),
+        changed: z.boolean().describe('Si ha cambiado desde que se copió (o se trajeron sus cambios)'),
+        fingerprint: z
+          .string()
+          .nullable()
+          .describe('La huella del original de ahora: pullContentOrigin la pide, para traer lo que se vio')
       })
       .nullable()
       .describe('Sin origen, no es una copia'),
@@ -101,12 +105,13 @@ export const pullContentOrigin = defineAction({
   name: 'pullContentOrigin',
   kind: 'write',
   description:
-    'Trae a una copia del mundo los cambios de su original: los campos elegidos (los de getContentOrigin; «mechanics», toda su mecánica). Lo demás se queda como está, y el aviso de que el original ha cambiado se va. Con la versión de la copia que se leyó',
+    'Trae a una copia del mundo los cambios de su original: los campos elegidos de los que da getContentOrigin («mechanics», toda su mecánica; ninguno, para darlo por visto). Lo demás se queda como está, y el aviso de que el original ha cambiado se va. Con la versión de la copia y la huella del original que se leyeron: si el original volvió a cambiar, ORIGIN_CHANGED',
   input: z.object({
     worldId: z.uuid(),
     systemId: z.uuid(),
     key,
     version: z.int().min(1),
+    fingerprint: z.string().max(40).describe('La huella del original que dio getContentOrigin'),
     fields: z.array(z.string().max(60)).max(200)
   }),
   output: z.object({ version: z.int() })

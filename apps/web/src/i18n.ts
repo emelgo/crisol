@@ -444,6 +444,8 @@ export const es = {
     pull_other: 'Traer los {{count}}',
     keepRest: 'Lo demás de tu copia se queda.',
     notNow: 'Ahora no',
+    dismiss: 'Darlo por visto',
+    pullColumn: 'Traer',
     noChanges: 'Ya no hay cambios que traer.',
     pickField: 'Traer «{{field}}»',
     mechanicsValue: 'Su mecánica',

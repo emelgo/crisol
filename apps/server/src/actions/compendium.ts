@@ -140,11 +140,13 @@ export const compendiumActions = [
     }
   }),
 
-  implement(searchCampaignContent, async (ctx, { campaignId, ...given }) => {
+  implement(searchCampaignContent, async (ctx, { campaignId, layer, ...given }) => {
     const found = await campaignSystem(ctx, campaignId)
     if (!found) return { items: [], total: 0 }
-    const { document, choices, entries } = found
-    const own = worldKeys(entries)
+    const { document, choices, entries: all } = found
+    const own = worldKeys(all)
+    // Solo una capa, si se pide: se filtra antes de paginar
+    const entries = layer ? all.filter((e) => own.has(e.key) === (layer === 'world')) : all
     const result = searchContent(document, entries, {
       sources: choices.sources,
       duplicates: choices.duplicates,
@@ -255,15 +257,28 @@ interface WorldView {
 /** De lo del mundo: su id, su versión y, si es una copia, cómo está su original */
 async function worldEntries(ctx: ActionContext, world: layers.WorldLayer, language: Language, keys: readonly string[]) {
   const rows = await worldContentRepo.contentByKeys(ctx.db, world.worldId, world.systemId, keys)
+  // Los originales de las copias, de una vez por sistema (los del mundo, uno a uno: son raros)
+  const bySystem = new Map<string, string[]>()
+  for (const row of rows)
+    if (row.origin?.layer === 'system')
+      bySystem.set(row.origin.systemId, [...(bySystem.get(row.origin.systemId) ?? []), row.origin.key])
+  const originals = new Map<string, { key: string; type: string; data: Record<string, unknown>; mechanics: unknown }>()
+  for (const [systemId, wanted] of bySystem)
+    for (const found of await systemsRepo.contentByKeys(ctx.db, systemId, wanted))
+      originals.set(`${systemId}:${found.key}`, found)
   const entries = new Map<string, WorldView>()
   for (const row of rows) {
     const origin = row.origin
     let view: WorldView['origin'] = null
     if (origin) {
-      const [original] =
+      const original =
         origin.layer === 'world'
-          ? await worldContentRepo.contentByKeys(ctx.db, origin.worldId ?? world.worldId, origin.systemId, [origin.key])
-          : await systemsRepo.contentByKeys(ctx.db, origin.systemId, [origin.key])
+          ? (
+              await worldContentRepo.contentByKeys(ctx.db, origin.worldId ?? world.worldId, origin.systemId, [
+                origin.key
+              ])
+            )[0]
+          : originals.get(`${origin.systemId}:${origin.key}`)
       view = {
         layer: origin.layer,
         systemId: origin.systemId,
