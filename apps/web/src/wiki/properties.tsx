@@ -1,6 +1,7 @@
 import type { Page, PageProperty } from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
+import { EyeOff } from 'lucide-react'
 import { type KeyboardEvent, type MutableRefObject, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
@@ -85,6 +86,8 @@ interface Draft {
   pending?: string
   /** Como estaba guardada: su campo de plantilla y su forma no se pierden al cambiar otra cosa */
   original?: PageProperty
+  /** «Oculto»: no les llega a los jugadores aunque vean la página (ADR-0017) */
+  hidden?: boolean
 }
 
 const toDraft = (property: PageProperty): Draft => ({
@@ -102,7 +105,8 @@ const toDraft = (property: PageProperty): Draft => ({
   options: property.type === 'choice' ? property.options : [],
   count: property.type === 'clock' ? property.value : 0,
   segments: property.type === 'clock' ? property.segments : CLOCK_SEGMENTS,
-  original: property
+  original: property,
+  hidden: property.hidden === true
 })
 
 /** Al cambiar de tipo a mano: lo que ya había escrito pasa al tipo nuevo como se pueda */
@@ -117,6 +121,11 @@ const retyped = (row: Draft, type: PropertyType): Partial<Draft> => {
 
 /** La propiedad que sale de un borrador, o null si su valor no se puede leer (un número que no lo es) */
 function fromDraft(draft: Draft): PageProperty | null {
+  const value = valueOf(draft)
+  return value && draft.hidden ? { ...value, hidden: true } : value
+}
+
+function valueOf(draft: Draft): PageProperty | null {
   const name = draft.name.trim()
   const original = draft.original?.type === draft.type ? draft.original : undefined
   // Lo de la plantilla (su campo, a qué apunta un enlace) se queda al cambiar el valor
@@ -225,6 +234,17 @@ function PropertyValue({ property, worldId }: { property: PageProperty; worldId:
 /** Añadir desde fuera (desde «Añadir bloque» del panel): las etiquetas o una propiedad nueva */
 export type PropertyAdder = (kind: 'tags' | 'property') => void
 
+/** «Oculto»: un campo o un bloque que no ven los jugadores (en lo del mundo no se dice «máster») */
+export function HiddenBadge() {
+  const { t } = useTranslation()
+  return (
+    <span className={styles.hiddenBadge}>
+      <EyeOff aria-hidden="true" size={11} />
+      {t('properties.hidden')}
+    </span>
+  )
+}
+
 export function PageProperties({
   page,
   adders = true,
@@ -243,7 +263,10 @@ export function PageProperties({
         <dl className={styles.list}>
           {page.properties.map((property) => (
             <div key={property.name} className={styles.row}>
-              <dt>{property.name}</dt>
+              <dt>
+                {property.name}
+                {property.hidden && <HiddenBadge />}
+              </dt>
               <dd>
                 <PropertyValue property={property} worldId={page.worldId} />
               </dd>
@@ -463,6 +486,7 @@ function PropertyRow({
           onBlur={onCommit}
           onKeyDown={(event) => keys(event, true)}
         />
+        {row.hidden && <HiddenBadge />}
       </div>
       <div className={styles.propValue}>
         <ValueField row={row} id={id} n={n} worldId={worldId} onChange={onChange} onCommit={onCommit} keys={keys} />
@@ -497,6 +521,16 @@ function PropertyRow({
       )}
 
       <div className={styles.propEnd}>
+        <button
+          type="button"
+          className={styles.hideProp}
+          aria-pressed={row.hidden === true}
+          aria-label={t('properties.hide', { name: label })}
+          title={t('properties.hide', { name: label })}
+          onClick={() => onChange({ hidden: !row.hidden }, true)}
+        >
+          <EyeOff aria-hidden="true" size={14} />
+        </button>
         <button
           type="button"
           className={styles.removeProp}

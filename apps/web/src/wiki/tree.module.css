@@ -141,3 +141,11 @@
   margin-inline: var(--space-2);
   color: var(--color-muted);
 }
+
+/* Lo que conoce alguna campaña: un ojo gris, discreto */
+.known {
+  flex: none;
+  margin-inline: var(--space-1) var(--space-2);
+  color: var(--color-muted);
+  opacity: 0.7;
+}

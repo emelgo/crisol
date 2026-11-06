@@ -95,6 +95,7 @@ describe('Actions', () => {
       getPageTables: true,
       getPageKnowledge: true,
       setKnowledge: true,
+      listKnownPages: true,
       createTemplate: true,
       updateTemplate: true,
       deleteTemplate: true,

@@ -44,7 +44,7 @@ import {
 import { importFoundry, inspectFoundry, putSystemImages } from './foundry.ts'
 import { listHistory, undoOperation } from './history.ts'
 import { getInvitation, regenerateInvitation, setInvitationsOpen } from './invitations.ts'
-import { getPageKnowledge, setKnowledge } from './knowledge.ts'
+import { getPageKnowledge, listKnownPages, setKnowledge } from './knowledge.ts'
 import { getBookPages, listLibrary, readBookAgain, searchLibrary } from './library.ts'
 import {
   createMapPin,
@@ -232,6 +232,7 @@ export const ACTIONS = [
   getPageTables,
   getPageKnowledge,
   setKnowledge,
+  listKnownPages,
   listFiles,
   listCommonFiles,
   renameFile,
@@ -395,6 +396,7 @@ export type Actions = {
   getPageTables: typeof getPageTables
   getPageKnowledge: typeof getPageKnowledge
   setKnowledge: typeof setKnowledge
+  listKnownPages: typeof listKnownPages
   listFiles: typeof listFiles
   listCommonFiles: typeof listCommonFiles
   renameFile: typeof renameFile

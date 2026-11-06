@@ -71,3 +71,12 @@ export const setKnowledge = defineAction({
   }),
   output: z.object({ page: pageKnowledge.nullable() })
 })
+
+export const listKnownPages = defineAction({
+  name: 'listKnownPages',
+  kind: 'read',
+  description:
+    'Las páginas de un mundo que conoce alguna campaña (toda o alguno de sus personajes) o todo el mundo: la marca del árbol de quien lleva la wiki',
+  input: z.object({ worldId: z.uuid() }),
+  output: z.object({ pageIds: z.array(z.uuid()) })
+})

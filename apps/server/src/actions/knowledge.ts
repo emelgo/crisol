@@ -2,9 +2,9 @@
  * Lo que sabe cada campaña (ADR-0017, docs/specs/conocimiento.md): «Quién la conoce» de una página y marcar lo que se
  * sabe. Solo quien lleva la wiki; marcar es de tipo «jugadores» (en copiloto, la IA espera la aprobación)
  */
-import { getPageKnowledge, type PageKnowledge, setKnowledge } from '@crisol/contracts'
+import { getPageKnowledge, listKnownPages, type PageKnowledge, setKnowledge } from '@crisol/contracts'
 import { campaignsRepo, charactersRepo, knowledgeRepo, pagesRepo } from '@crisol/db'
-import { explainPage, NotFoundError } from '@crisol/domain'
+import { explainPage, knowledgeFor, NotFoundError } from '@crisol/domain'
 import { knowledgeChanged } from '../realtime/events.ts'
 import { authorizedPage, authorizedWiki, type WikiTarget } from './access.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
@@ -62,6 +62,27 @@ async function pageKnowledgeOf(ctx: ActionContext, wiki: WikiTarget, pageId: str
 }
 
 export const knowledgeActions = [
+  implement(listKnownPages, async (ctx, { worldId }) => {
+    const wiki = await authorizedWiki(ctx, 'page.write', worldId)
+    const [campaigns, tree, marks] = await Promise.all([
+      campaignsRepo.listCampaigns(ctx.db, { worldId: wiki.worldId, userId: ctx.actor.userId, onlyMember: false }),
+      knowledgeRepo.worldTree(ctx.db, wiki.worldId),
+      knowledgeRepo.listMarks(ctx.db, { worldId: wiki.worldId, campaignIds: 'all', kinds: ['page'] })
+    ])
+    if (marks.length === 0) return { pageIds: [] }
+    const known = new Set<string>()
+    // Cada campaña con todos sus personajes: lo que conoce alguno de ellos cuenta
+    for (const campaign of campaigns) {
+      const characterIds = (await charactersRepo.listCharacters(ctx.db, campaign.id)).map((c) => c.id)
+      const reader = { kind: 'player' as const, campaignId: campaign.id, characterIds, knowsWorld: campaign.knowsWorld }
+      for (const id of knowledgeFor(reader, tree, marks).visiblePages()) known.add(id)
+    }
+    // Y lo que sabe todo el mundo, aunque no haya campañas
+    const world = { kind: 'player' as const, campaignId: '', characterIds: [], knowsWorld: true }
+    for (const id of knowledgeFor(world, tree, marks).visiblePages()) known.add(id)
+    return { pageIds: [...known] }
+  }),
+
   implement(getPageKnowledge, async (ctx, { pageId }) => {
     const { wiki } = await authorizedPage(ctx, 'page.write', pageId)
     return pageKnowledgeOf(ctx, wiki, pageId)

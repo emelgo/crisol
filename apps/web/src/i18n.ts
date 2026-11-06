@@ -183,6 +183,11 @@ export const es = {
     yourCampaigns: 'Tus campañas'
   },
   campaigns: {
+    start: 'Al empezar, los jugadores saben…',
+    startWorld: 'Lo que sabe el mundo',
+    startNone: 'Nada',
+    startSame: 'Lo mismo que «{{name}}»',
+    knowsWorld: 'Parte de lo que sabe el mundo',
     title: 'Campañas',
     empty: 'Aún no hay campañas',
     emptyHint: 'Cada campaña es un grupo de jugadores que juega en este mundo.',
@@ -695,6 +700,8 @@ export const es = {
     deleted: '«{{title}}» está en la papelera'
   },
   properties: {
+    hide: 'Ocultar «{{name}}» a los jugadores',
+    hidden: 'Oculto',
     title: 'Propiedades',
     add: 'Añadir propiedades',
     edit: 'Editar propiedades',
@@ -1009,6 +1016,7 @@ export const es = {
   // «Quién la conoce» de una página (ADR-0017)
   whoKnows: {
     title: 'Quién la conoce',
+    known: 'La conoce alguna campaña',
     close: 'Cerrar',
     world: 'El mundo',
     worldChoice: 'Lo que sabe el mundo de esta página',
