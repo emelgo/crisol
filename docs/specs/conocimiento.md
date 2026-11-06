@@ -100,7 +100,9 @@ y la IA de los dos.
 2. **Un enlace a lo oculto no dice el nombre del destino**: sale su texto propio si lo tiene (`[[Varn|el viejo]]`) y,
    si no, «desconocido», atenuado y sin enlace, como Kanka. El título se pinta al leer (se guarda el id): si el máster
    renombra una página oculta, su nombre nuevo saldría en todas las que la enlazan
-   (`research/worldanvil/visibilidad.md` y `research/kanka/visibilidad.md`).
+   (`research/worldanvil/visibilidad.md` y `research/kanka/visibilidad.md`). **Igual que un enlace a una página que no
+   existe**, sin id ni icono, para que no delate que hay algo (`research/foundry/visibilidad-y-revelar.md`: Foundry
+   pinta el nombre real de todo).
 3. **Subpáginas más abiertas que su madre**, permitidas, colgando de la primera antecesora visible.
 4. **Lo mismo que otra campaña**, como copia al crearla (no un enlace vivo entre campañas).
 5. **Por personaje, no por cuenta**: si el personaje pasa a otro jugador, el conocimiento pasa con él.
