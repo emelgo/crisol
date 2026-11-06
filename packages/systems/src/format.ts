@@ -542,6 +542,16 @@ function build(strict: boolean) {
       .max(4)
       .optional()
       .describe('Los campos del personaje que se ven en su tarjeta y su vista previa (el nivel, los PG, la CA)'),
+    party: obj({
+      items: key
+        .optional()
+        .describe('El campo de objetos del personaje (su inventario) al que va lo que coge del grupo'),
+      coins: key.optional().describe('El grupo de números del personaje con sus monedas (cobre, plata, oro…)')
+    })
+      .optional()
+      .describe(
+        'El inventario del grupo de una campaña: dónde lleva cada personaje lo que coge del grupo y sus monedas. Sin él, su primer campo de objetos y su primer grupo de números que se cambian jugando'
+      ),
     creation: z
       .array(step)
       .max(LIMITS.steps)
