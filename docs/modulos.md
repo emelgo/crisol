@@ -22,10 +22,11 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   `campaign_creatures` (migración 0044), las acciones (`apps/server/src/actions/creatures.ts`, con `applyRoll`), la web
   («Poner en juego», «En juego», la hoja genérica, «Aplicar» en el registro), la IA y el enlace `[[@Nombre]]` desde la
   wiki. E2E `criaturas.spec.ts` y sus fugas. Lo que queda, en `docs/specs/criaturas.md` § «Construido».
-- **PR #110** (las dos capacidades, revisadas y arregladas; batería entera en verde en local). Su CI arrancó sola al
-  abrirla; cancelarla y fusionar con `[skip ci]` necesita el visto bueno de Enrique (el modo automático lo frenó).
-  **Ahora**: fusionarla y desplegar staging (`scripts/desplegar-staging.sh`, migraciones 0043 y 0044) para que Enrique
-  lo pruebe (`tasks/probar.md` § «Módulo 4»). **Lo siguiente**: `imagenes`, `tablas-compendio`,
+- **PR #110, en `main` y en staging** (2026-11-06; su CI pasó entera; migraciones hasta la 0044): `compendio-mundo` y
+  `criaturas`. Enrique lo prueba con `tasks/probar.md` § «Módulo 4».
+- **`imagenes`, en marcha** (rama `modulo-4/imagenes`; `tasks/plan.md`, `tasks/todo.md`): hechas las tareas 1 a 4
+  (`img` en el contenido y `system_images`, migración 0045; el mapa de arte y las licencias; `putSystemImages` y
+  `/api/system-images`; el paso de las imágenes al traer de Foundry). **Lo siguiente**: `imagenes`, `tablas-compendio`,
   `grupo` y `biblioteca` (en este orden; `docs/specs/modulo-4.md`).
 - Pendiente de Enrique, sin bloquear: cerrar los tres avisos MCP como se le propuso (descartar `ver_escena`, «no se
   arregla» `query_document` de LightRAG por el parche de las palabras clave, dejar abierta la mejora de craft).

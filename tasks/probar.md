@@ -9,7 +9,7 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   de propietario.
 - **En local**, con los cambios al momento: http://localhost:5173 (lo arranco cuando haga falta).
 
-## Módulo 4: las criaturas en juego (rama `modulo-4/compendio`; en local, aún no en staging)
+## Módulo 4: las criaturas en juego (en staging: PR #110)
 
 Una criatura del compendio se pone en juego en la campaña: copias numeradas o una única (un PNJ que guarda sus PG). Hasta
 el módulo 5, solo tú (el máster).
@@ -27,7 +27,7 @@ el módulo 5, solo tú (el máster).
 - [ ] **La IA, desde claude.ai**: «pon en juego tres goblins y un jefe único», «tira la cimitarra del Goblin 2»,
   «aplica ese daño a los otros dos, mitad al jefe».
 
-## Módulo 4: el compendio del mundo (rama `modulo-4/compendio`; en local, aún no en staging)
+## Módulo 4: el compendio del mundo (en staging: PR #110)
 
 Cada mundo tiene su propio compendio, hecho para un sistema: lo ven sus campañas con ese sistema. Hasta el módulo 5,
 solo tú (quien lleva el mundo).
