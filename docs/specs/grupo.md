@@ -48,6 +48,11 @@ Como se propuso, con estas precisiones al construirlo:
   máster.
 - **Los movimientos** salen en «Grupo» para todos los de la campaña (las últimas operaciones del grupo, con quién).
 - **Con la IA**, mover, pasar monedas y repartir esperan al máster, como lo de los personajes.
+- **Lo gastado viaja con el objeto** (una varita con cargas gastadas): se mueve entero y no se junta con lo igual, ni
+  en el grupo ni en el personaje. Al mismo sitio no se mueve.
+- **Los movimientos los ve toda la campaña**, con los nombres de los personajes y cuántas monedas: el botín es de
+  todos (decidido al revisarlo; si molesta, se recorta para los jugadores).
+- **Topes**: 100.000 de lo mismo y 1.000.000.000 de cada moneda; leer el grupo nunca falla aunque una hoja pase de ellos.
 
 Queda: arrastrar (decisión 1), el peso de cada contenedor y la sintonía; y que una criatura o un PNJ del máster lleve
 cosas del grupo.

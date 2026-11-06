@@ -6,4 +6,4 @@
 - [x] 4. La IA: ver, cambiar y mover
 - [x] 5. La web: «Grupo» en la campaña
 - [x] 6. La web: «Mío | Del grupo» y «Mover» en la hoja
-- [ ] 7. E2E, documentación y revisión
+- [x] 7. E2E, documentación y revisión
