@@ -7,7 +7,7 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
-### Para retomar (2026-11-06, módulo 4 construido entero; lo siguiente, subirlo a staging y el módulo 5)
+### Para retomar (2026-11-06, módulo 4 terminado y en staging; lo siguiente, el módulo 5)
 
 - **Rama `modulo-4/compendio`** (sin PR aún). Entrevista con Enrique (abajo, § «### 4. Compendio, criaturas y
   biblioteca»); estudios `research/foundry/criaturas-y-capas.md` y `research/dndbeyond/criaturas-y-grupo.md`; el mapa
@@ -50,8 +50,11 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   desarrollo ya va con él), `multilingual-e5-small` en un hilo aparte (en desarrollo, en `datos-locales/modelos/`), la
   mezcla por rango y «También en las páginas». La imagen de la app pasa a Debian (el modelo nativo no carga en Alpine)
   con 1 GB. Cada servidor, su espacio de colas (`QUEUE_PREFIX`). E2E `biblioteca.spec.ts`.
-- **Lo siguiente**: abrir un PR con las cuatro ramas (imágenes, tablas, grupo y biblioteca), pasar la CI una vez y
-  desplegar staging (construye también Postgres con pgvector y aplica las migraciones 0045 a 0049). Luego, el módulo 5.
+- **PR #111, en `main` y en staging** (2026-11-06; su CI pasó entera): imágenes, tablas, grupo y biblioteca, con
+  Postgres propio con pgvector (0.8.1), la app en Debian con el modelo y 1 GB, y las migraciones 0045 a 0050. Al
+  arrancar, staging se puso a leer sus PDF y a calcular los vectores de la wiki. Planes en `tasks/<capacidad>/`.
+- **Lo siguiente**: que Enrique pruebe el módulo 4 (`tasks/probar.md` § «Módulo 4»: sobre todo, la calidad de la
+  búsqueda por significado con libros de verdad y «Descargar PDF» con el Chromium de Debian) y empezar el módulo 5.
 - Pendiente de Enrique, sin bloquear: cerrar los tres avisos MCP como se le propuso (descartar `ver_escena`, «no se
   arregla» `query_document` de LightRAG por el parche de las palabras clave, dejar abierta la mejora de craft).
 - Ojo: la API de desarrollo (`node --watch`) no siempre se recarga al añadir archivos; `touch apps/server/src/main.ts`.
