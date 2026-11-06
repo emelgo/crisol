@@ -468,7 +468,8 @@ export const fiveE = {
         conjuros: { kind: 'items', label: t('Conjuros', 'Spells'), of: ['conjuro'] },
         estados: { kind: 'items', label: t('Estados', 'Conditions'), of: ['estado'], play: true },
         notas: text('Notas', 'Notes', { lines: 6, play: true })
-      }
+      },
+      damage: { resist: 'resistencias', immune: 'inmunidades', vulnerable: 'vulnerabilidades' }
     },
     criatura: {
       document: 'actor',
@@ -486,7 +487,8 @@ export const fiveE = {
         ...shared({ saves: '', skills: '' }),
         ca: number('Clase de armadura', 'Armor Class', { min: 0, default: 10 }),
         pg_max: number('Puntos de golpe máximos', 'Hit point maximum', { min: 0, default: 1 }),
-        pg: { kind: 'resource', label: t('Puntos de golpe', 'Hit points'), max: '@pg_max' },
+        // Sus PG, por la media o tirados con sus dados de golpe al ponerla en juego
+        pg: { kind: 'resource', label: t('Puntos de golpe', 'Hit points'), max: '@pg_max', roll: '@dados_golpe' },
         dados_golpe: { kind: 'dice', label: t('Dados de golpe', 'Hit dice') },
         velocidad: number('Velocidad (pies)', 'Speed (feet)', { min: 0, default: 30 }),
         velocidades: text('Otras velocidades', 'Other speeds'),
@@ -496,6 +498,40 @@ export const fiveE = {
           of: ['arma', 'armadura', 'equipo', 'objeto_magico', 'rasgo', 'conjuro', 'estado']
         },
         descripcion: description
+      },
+      damage: { resist: 'resistencias', immune: 'inmunidades', vulnerable: 'vulnerabilidades' },
+      // Su hoja en partida, al estilo de su statblock: lo vital arriba, sus características y lo que hace
+      sheet: {
+        blocks: [
+          { kind: 'header' },
+          {
+            kind: 'stats',
+            fields: ['ca', 'iniciativa', 'velocidad', 'vd', 'competencia'],
+            rolls: { iniciativa: 'iniciativa' }
+          },
+          { kind: 'resource', field: 'pg' },
+          {
+            kind: 'columns',
+            blocks: [
+              { kind: 'set', field: 'caracteristicas', columns: ['puntuacion', 'mod'], roll: 'prueba' },
+              {
+                kind: 'set',
+                label: t('Salvaciones', 'Saving throws'),
+                field: 'caracteristicas',
+                columns: ['salvacion'],
+                roll: 'salvacion'
+              }
+            ]
+          },
+          {
+            kind: 'list',
+            fields: ['sentidos', 'idiomas', 'resistencias', 'inmunidades', 'vulnerabilidades', 'inmunidades_estados']
+          },
+          { kind: 'actions' },
+          { kind: 'uses' },
+          { kind: 'items', field: 'lleva' },
+          { kind: 'stats', fields: ['cansancio'] }
+        ]
       }
     },
     clase: {

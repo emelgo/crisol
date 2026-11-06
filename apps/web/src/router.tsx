@@ -2,6 +2,7 @@ import { createRootRoute, createRoute, createRouter, type RouterHistory } from '
 import { CompendiumScreen } from './campaign/compendium.tsx'
 import { CharacterScreen } from './characters/character.tsx'
 import { CharactersScreen } from './characters/characters.tsx'
+import { InPlayScreen } from './creatures/in-play.tsx'
 import { AiSettings } from './routes/ai-settings.tsx'
 import { Bootstrap } from './routes/bootstrap.tsx'
 import { CampaignPage } from './routes/campaign.tsx'
@@ -62,6 +63,14 @@ const compendiumRoute = createRoute({
   path: '/mundos/$worldId/campanas/$campaignId/compendio',
   component: CompendiumScreen,
   // ?ver=<clave>: lo abierto, para enlazarlo y que «atrás» vuelva a la lista
+  validateSearch: (search: Record<string, unknown>): { ver?: string } =>
+    typeof search.ver === 'string' && search.ver ? { ver: search.ver } : {}
+})
+const inPlayRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/mundos/$worldId/campanas/$campaignId/en-juego',
+  component: InPlayScreen,
+  // ?ver=<id>: la criatura abierta
   validateSearch: (search: Record<string, unknown>): { ver?: string } =>
     typeof search.ver === 'string' && search.ver ? { ver: search.ver } : {}
 })
@@ -143,6 +152,7 @@ const routeTree = rootRoute.addChildren([
   campaignsRoute,
   campaignRoute,
   compendiumRoute,
+  inPlayRoute,
   charactersRoute,
   characterRoute,
   wikiRoute,

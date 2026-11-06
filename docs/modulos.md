@@ -7,7 +7,29 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
-### Para retomar (2026-11-06, módulo 3 terminado; lo siguiente, el módulo 4 y, el 2026-11-07, la interfaz)
+### Para retomar (2026-11-06, módulo 4: `compendio-mundo` y `criaturas` construidos; lo siguiente, `imagenes`)
+
+- **Rama `modulo-4/compendio`** (sin PR aún). Entrevista con Enrique (abajo, § «### 4. Compendio, criaturas y
+  biblioteca»); estudios `research/foundry/criaturas-y-capas.md` y `research/dndbeyond/criaturas-y-grupo.md`; el mapa
+  `docs/specs/modulo-4.md` (con la medida del modelo de embeddings) y las specs de las seis capacidades; el lienzo
+  «Crisol: compendio y criaturas» (https://claude.ai/artifact/DwT92fPMmt25Dd8XyhmHqy; fuentes en `out/lienzo-compendio/`),
+  mandado a Enrique con fotos, sin respuesta aún.
+- **`compendio-mundo`, construido y revisado** (`tasks/compendio-mundo/`): `world_content` (migración 0043), la unión
+  de capas (`apps/server/src/actions/layers.ts`), copiar entre capas y el aviso del original con su huella, la web y la
+  IA. Arreglado lo de la revisión (sobre todo: un jugador no añade a su personaje lo del mundo por su clave).
+- **`criaturas`, construido** (`tasks/plan.md`, `tasks/todo.md`, las 9 tareas): el formato (`types[t].sheet`, `roll`,
+  `damage`; anotado en `docs/specs/sistemas.md`), el motor (`packages/systems/src/creatures.ts`, `playedSheet`),
+  `campaign_creatures` (migración 0044), las acciones (`apps/server/src/actions/creatures.ts`, con `applyRoll`), la web
+  («Poner en juego», «En juego», la hoja genérica, «Aplicar» en el registro), la IA y el enlace `[[@Nombre]]` desde la
+  wiki. E2E `criaturas.spec.ts` y sus fugas. Lo que queda, en `docs/specs/criaturas.md` § «Construido».
+- **Ahora**: la revisión del código de `criaturas` y la batería entera; después, PR a `main` y staging (migraciones 0043
+  y 0044) para que Enrique lo pruebe (`tasks/probar.md` § «Módulo 4»). **Lo siguiente**: `imagenes`, `tablas-compendio`,
+  `grupo` y `biblioteca` (en este orden; `docs/specs/modulo-4.md`).
+- Pendiente de Enrique, sin bloquear: cerrar los tres avisos MCP como se le propuso (descartar `ver_escena`, «no se
+  arregla» `query_document` de LightRAG por el parche de las palabras clave, dejar abierta la mejora de craft).
+- Ojo: la API de desarrollo (`node --watch`) no siempre se recarga al añadir archivos; `touch apps/server/src/main.ts`.
+
+### Antes (2026-11-06, módulo 3 terminado)
 
 - **Crisol vacío (ADR-0015, PR #108)**: de serie solo «En blanco». El 5e con el SRD pasa a `packages/systems/src/examples/`
   (fixture de las pruebas; su archivo, con `pnpm sistema-5e`); las pruebas del servidor y las e2e lo importan. Lo que
@@ -1282,7 +1304,7 @@ Estados: pendiente · en curso · hecho · descartado.
 | 1 | **Wiki**: páginas y subpáginas, editor de bloques, enlaces, menciones, vista previa, propiedades, secretos, búsqueda, marcadores, etiquetas, versiones, recursos y archivos, **hojas con estilo** (tipo Homebrewery, con PDF), exportación MD, sus herramientas MCP | construido (tareas 1 a 26 hechas); falta la revisión de Enrique en staging | Foundry: Journal; DDB: contenido y referencias; Homebrewery (MIT): formato de hoja y descarga |
 | 2 | **Tipos de página y plantillas**: «Desde plantilla» (de serie y propias), campos en el panel, tablas que se llenan solas (en lugar de Dataview) | construido (tareas 1 a 14, 2026-11-03); falta la revisión de Enrique en staging | Foundry: tipos de documento; Kanka, LegendKeeper y World Anvil (web pública) |
 | 3 | Sistemas de reglas, fichas de personaje (creación, subida de nivel), dados y dados 3D | **hecho** (2026-11-06, PR #95 a #108; Crisol vacío, ADR-0015); falta que Enrique lo pruebe (`tasks/probar.md`) | DDB: creador y hoja; Foundry: dnd5e, DataModel e instalar y crear sistemas |
-| 4 | Compendios (aparte de la wiki del mundo y **como los de Foundry**: antes, estudio a fondo con craft-anything), bestiario, statblocks, biblioteca; **las imágenes de lo traído de Foundry** (las de cada documento del zip); **buscar dentro de los PDF** (texto de cada página con pdf.js; el resultado abre el visor en esa página) **y por significado** (pgvector; antes, permiso para la imagen de Postgres y elegir quién calcula los embeddings) | pendiente | Foundry: compendium packs; DDB: listados |
+| 4 | Compendios (aparte de la wiki del mundo y **como los de Foundry**: antes, estudio a fondo con craft-anything), bestiario, statblocks, biblioteca; **las imágenes de lo traído de Foundry** (las de cada documento del zip); **buscar dentro de los PDF** (texto de cada página con pdf.js; el resultado abre el visor en esa página) **y por significado** (pgvector; antes, permiso para la imagen de Postgres y elegir quién calcula los embeddings) | **en curso** (2026-11-06: specs y diseño; `compendio-mundo` y `criaturas` construidos; `docs/specs/modulo-4.md`) | Foundry: compendium packs; DDB: listados |
 | 5 | Visibilidad por campaña: conocimiento de los jugadores, revelar, compartir | pendiente | Foundry: ownership |
 | 6 | **Mesa**: escenas, rejilla, fichas, medir y plantillas, niebla, muros, puertas, luz, visión, iniciativa, instantáneas, encuentros, UVTT; **las escenas, mapas y tokens de un zip de Foundry** | pendiente | Foundry: canvas, visión y muros; DDB Maps |
 | 7 | **Sala de jugadores**: presencia, chat y susurros, mostrar a jugadores, sonido (también **los de un zip de Foundry**), controles del máster | pendiente | Foundry: sockets y chat; DDB: game log |
@@ -1649,3 +1671,32 @@ Notas: `research/foundry/sistemas-y-su-api.md` y `research/dndbeyond/creador-y-h
   atribución CC BY 4.0 de cada uno y sin la marca «D&D» en la interfaz.
 - **Fuera de `srd-5e`**: el compendio (módulo 4), el creador y la hoja (`personajes`, `hoja`), el marketplace y los
   libros que no son SRD (solo el modelo preparado), el contenido de Fateforge (módulo 4) e importar de Foundry.
+
+### 4. Compendio, criaturas y biblioteca (entrevista con Enrique, 2026-11-06)
+
+- **Para cualquier mundo y cualquier sistema** (Enrique: «te centras mucho en eana pero será uno de los muchos mundos
+  que jugaré igual que fateforge uno de los muchos sistemas»). Eana y Fateforge, como mucho, de ejemplo.
+- **Los PDF, no tan importantes** («tampoco me parece super importante lo de pdf»), pero entran («ok, entra todo»).
+- **La wiki cuenta la historia; el statblock está en el compendio**: la página de un PNJ enlaza a su criatura del
+  compendio. «En partida se debe comportar como en Foundry o D&D Beyond».
+- **Tres capas de compendio**: la del sistema, la de la cuenta (para todos sus mundos) y **la del mundo**, como los
+  compendios de mundo de Foundry. Lo del mundo se hace para un sistema y solo sale en las campañas que lo usan; si se
+  quiere en otro mundo, se copia a la cuenta. (Hoy lo que se añade en la app va al sistema de la cuenta.)
+- **Las criaturas en juego, como en Foundry o D&D Beyond**: cada criatura tiene su hoja con sus acciones para tirar;
+  desde la campaña se pone en juego. Las genéricas, una copia por aparición (tres goblins, cada uno con sus PG, que se
+  van al acabar); las únicas (el jefe), la misma siempre, con sus PG y sus usos de una sesión a otra.
+- **Entra todo lo apuntado**: las imágenes de lo traído de Foundry, las tablas aleatorias en el compendio (las de
+  Foundry y las propias, para tirar), el inventario del grupo en la campaña y la biblioteca de PDF (buscar dentro y
+  abrir en la página; buscar por significado).
+- **Búsqueda por significado**: pgvector (permiso para cambiar la imagen de Postgres en desarrollo, la CI y staging;
+  la propuesta, una propia sobre la `postgres:17-alpine` de hoy, en `docs/specs/biblioteca.md`) y **un modelo propio
+  en el VPS** («modelo propio si puede correr en el vps»); si no
+  cabe, se le vuelve a preguntar.
+- **Hecho cuando**: un máster copia una criatura del sistema al compendio de su mundo, la cambia y la enlaza desde la
+  página de un PNJ; pone en juego tres copias y una única, tira sus ataques y les baja los PG, y la única los conserva
+  en la sesión siguiente; trae un sistema de Foundry con sus imágenes y sus tablas; sube un PDF, busca una palabra y se
+  abre en esa página; la IA hace todo esto por el MCP.
+- **Límites**: nada copyleft; lo de pago traído de Foundry, solo para uso privado (ADR-0014).
+- **Fuera**: los encuentros, la iniciativa y las fichas en el mapa (módulo 6); las escenas y los sonidos de un zip de
+  Foundry (6 y 7); el OCR de los PDF escaneados; el aspecto del sistema traído de Foundry (con la interfaz); lo que ven
+  los jugadores (módulo 5): hasta entonces, el compendio del mundo y lo que está en juego solo los ve el máster.

@@ -44,6 +44,8 @@ const body: JSONContent = {
       { type: 'pageLink', attrs: { pageId: null, title: 'Maela Varn', anchor: 'Historia', label: 'la jefa' } },
       text(' y '),
       { type: 'pageLink', attrs: { pageId: null, title: 'Lugares/Notas', anchor: '^k3x9a1b2', label: null } },
+      text(', su criatura '),
+      { type: 'contentLink', attrs: { name: 'Goblin jefe', label: 'el jefe' } },
       text('. La trampa: '),
       { type: 'diceRoll', attrs: { formula: '2d6+3', label: 'Trampa' } },
       text('.')

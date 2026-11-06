@@ -157,6 +157,11 @@ describe('authorize', () => {
     ['el máster de una campaña tampoco', master, 'page.read', wiki, 'no lo ve'],
     ['un miembro sin campaña, tampoco', member, 'page.write', wiki, 'no lo ve'],
     ['nadie de otra organización', outsider, 'page.read', wiki, 'no lo ve'],
+    ['el máster cambia el compendio de su mundo', owner, 'worldContent.write', wiki, 'permite'],
+    ['el propietario lo lee aunque no administre el mundo', ownerOnly, 'worldContent.read', wiki, 'permite'],
+    ['un jugador no ve el compendio del mundo (hasta el módulo 5)', player, 'worldContent.read', wiki, 'no lo ve'],
+    ['el máster de una campaña tampoco lo cambia', master, 'worldContent.write', wiki, 'no lo ve'],
+    ['nadie de otra organización lo lee', outsider, 'worldContent.read', wiki, 'no lo ve'],
     // Los archivos comunes de la organización (ADR-0005)
     ['el propietario ve los comunes', ownerOnly, 'commonFiles.read', { organizationId: ORG }, 'permite'],
     ['y los cambia', ownerOnly, 'commonFiles.write', { organizationId: ORG }, 'permite'],
@@ -186,6 +191,9 @@ describe('authorize', () => {
     ['el máster de la campaña las recibe', master, 'dice.private', campaign, 'permite'],
     ['el máster del mundo tira en cualquiera de sus campañas', owner, 'dice.roll', campaign, 'permite'],
     ['y recibe sus privadas', owner, 'dice.private', campaign, 'permite'],
+    ['el máster de la campaña lleva sus criaturas en juego', master, 'creatures.manage', campaign, 'permite'],
+    ['el máster del mundo también', owner, 'creatures.manage', campaign, 'permite'],
+    ['una jugadora no (hasta el módulo 5)', player, 'creatures.manage', campaign, 'prohíbe'],
     ['un jugador no tira en otra campaña', player, 'dice.roll', otherCampaign, 'no lo ve'],
     ['nadie de otra organización', outsider, 'dice.read', campaign, 'no lo ve']
   ]

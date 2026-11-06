@@ -19,6 +19,15 @@ import {
   rollForCharacter,
   updateCharacter
 } from './characters.ts'
+import {
+  applyRoll,
+  getInPlay,
+  listInPlay,
+  playCreature,
+  putInPlay,
+  removeFromPlay,
+  rollForCreature
+} from './creatures.ts'
 import { listRolls, rollDice, tryDice } from './dice.ts'
 import {
   createFolder,
@@ -115,12 +124,22 @@ import {
   restorePage,
   restoreWorld
 } from './trash.ts'
+import {
+  copyContent,
+  deleteWorldContent,
+  getContentOrigin,
+  getLinkedContent,
+  pullContentOrigin,
+  putWorldContent,
+  searchLinkableContent
+} from './world-content.ts'
 import { createWorld, ensureWorldHome, getWorldHome, listWorlds, renameWorld, updateWorld } from './worlds.ts'
 
 export * from './action.ts'
 export * from './ai.ts'
 export * from './campaigns.ts'
 export * from './characters.ts'
+export * from './creatures.ts'
 export * from './dice.ts'
 export * from './files.ts'
 export * from './foundry.ts'
@@ -139,6 +158,7 @@ export * from './tables.ts'
 export * from './tags.ts'
 export * from './templates.ts'
 export * from './trash.ts'
+export * from './world-content.ts'
 export * from './worlds.ts'
 
 /** Todas las acciones de la API */
@@ -251,6 +271,20 @@ export const ACTIONS = [
   searchCampaignContent,
   browseCampaignContent,
   rollContentTable,
+  putWorldContent,
+  deleteWorldContent,
+  copyContent,
+  getContentOrigin,
+  pullContentOrigin,
+  listInPlay,
+  getInPlay,
+  putInPlay,
+  playCreature,
+  rollForCreature,
+  removeFromPlay,
+  applyRoll,
+  searchLinkableContent,
+  getLinkedContent,
   listCharacters,
   getCharacter,
   createCharacter,
@@ -388,6 +422,20 @@ export type Actions = {
   searchCampaignContent: typeof searchCampaignContent
   browseCampaignContent: typeof browseCampaignContent
   rollContentTable: typeof rollContentTable
+  putWorldContent: typeof putWorldContent
+  deleteWorldContent: typeof deleteWorldContent
+  copyContent: typeof copyContent
+  getContentOrigin: typeof getContentOrigin
+  pullContentOrigin: typeof pullContentOrigin
+  listInPlay: typeof listInPlay
+  getInPlay: typeof getInPlay
+  putInPlay: typeof putInPlay
+  playCreature: typeof playCreature
+  rollForCreature: typeof rollForCreature
+  removeFromPlay: typeof removeFromPlay
+  applyRoll: typeof applyRoll
+  searchLinkableContent: typeof searchLinkableContent
+  getLinkedContent: typeof getLinkedContent
   listCharacters: typeof listCharacters
   getCharacter: typeof getCharacter
   createCharacter: typeof createCharacter

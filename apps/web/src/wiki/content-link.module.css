@@ -1,0 +1,72 @@
+/* El enlace a una entrada del compendio: como un enlace, con su libro delante; su tarjeta, flotando debajo */
+.wrapper {
+  position: relative;
+}
+
+.link {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.2em;
+  color: var(--color-link);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+
+.link svg {
+  align-self: center;
+}
+
+.link[data-state="missing"] {
+  color: var(--color-muted);
+  text-decoration-style: dashed;
+}
+
+.card {
+  position: absolute;
+  inset-block-start: calc(100% + 4px);
+  inset-inline-start: 0;
+  z-index: 40;
+  display: grid;
+  gap: var(--space-1);
+  inline-size: max-content;
+  max-inline-size: 18rem;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+  box-shadow: 0 8px 24px var(--color-shadow, rgb(0 0 0 / 0.25));
+  color: var(--color-text);
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.kind {
+  color: var(--color-muted);
+  font-size: 0.75rem;
+}
+
+.name {
+  font-size: 1rem;
+}
+
+.lines {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+}
+
+.label {
+  color: var(--color-muted);
+}
+
+.open {
+  justify-self: start;
+  min-block-size: var(--target);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-link);
+  font-weight: 600;
+  cursor: pointer;
+}

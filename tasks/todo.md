@@ -1,77 +1,25 @@
-# Tareas: personajes
+# Tareas: Módulo 4 — criaturas
 
-Plan: `tasks/plan.md`. Spec: `docs/specs/personajes.md`. Cada tarea, con TDD y en una porción que funciona; al acabar,
-`pnpm lint`, las pruebas de lo tocado y un commit.
+Plan: `tasks/plan.md` · Spec: `docs/specs/criaturas.md`. Cada tarea con sus pruebas antes (TDD) y su commit.
 
-## Fase 1: la campaña en su vista, con su compendio
-
-- [x] **1. Leer el contenido desde la campaña**: `searchCampaignContent` y `getCampaignContent` (permiso de leer la
-  campaña; solo lo de sus fuentes). Pruebas de integración y de fugas (quien no está en la campaña no ve nada).
-- [x] **2. La vista de la campaña**: rutas de inicio y compendio; la barra con Inicio (nombre de la campaña), Personajes,
-  Compendio y Dados al entrar, con su animación; la llama vuelve a Mis mundos.
-- [x] **3. El compendio**: tipos, buscador (sin tildes, en los dos idiomas), lista con «2024» / «2014 · Legado», la
-  lectura de cada tipo (conjuro, criatura, clase con sus rasgos por nivel, objeto, regla…) y el panel con la edición,
-  el nombre en inglés y la otra versión. En el móvil, lista y lectura una tras otra.
-
-## Fase 2: el personaje
-
-- [x] **4. El personaje en la base de datos**: tabla, versiones, permisos (dueño y máster), historial; acciones de
-  crear, listar, leer, cambiar, borrar y cambiar el dueño; fugas.
-- [x] **5. «Personajes» en la campaña**: tarjetas, «Personaje nuevo» (con quién lo juega, para el máster), su ventana,
-  la vista previa al pasar.
-- [x] **6. La ficha mínima**, calculada con `evaluate` desde sus elecciones.
-
-## Fase 3: los pasos
-
-- [x] **7. El formato de los pasos** (`creation`) y su validación (sus referencias; las fórmulas de `when`, al calcular).
-- [x] **8. El motor de lo pendiente**: pasos + `grants` por nivel, opciones válidas y su motivo, requisitos.
-- [ ] **9. Subir y bajar de nivel, multiclase y PG** (media o tirados en el servidor). Hechos subir, bajar y la multiclase con sus requisitos; **quedan los PG tirados** (por la media, ya).
-- [x] **10. Los pasos del 5e** y lo que su contenido necesita; los personajes de referencia, por los pasos.
-
-## Fase 4: el creador
-
-- [x] **11. La cabecera y la barra de pasos** con sus (!); clase con sus niveles y rasgos; elegir en el panel.
-- [x] **12. Especie, trasfondo, características (sus métodos), equipo y resumen.**
-- [x] **13. Las versiones**: al terminar y al confirmar cada nivel; verlas y restaurar.
-
-## Fase 5: tablas e IA
-
-- [x] **14. Las tablas**: el dato, su validación, la tirada con su registro, sin reemplazo por campaña; la pestaña
-  «Tabla»; las del SRD.
-- [x] **15. Las herramientas MCP** de personajes y tablas, con sus aprobaciones; los pasos en `formato_sistemas`.
-- [ ] **16. Cierre**: e2e (crear de nivel 1, subir a 5 con multiclase, restaurar, tirar en una tabla), axe, ritmo,
-  revisión, PR y staging.
-
-# Tareas: hoja
-
-Spec: `docs/specs/hoja.md` (en marcha, sin entrevista: Enrique, «termina el módulo 3 de una vez»). Rama
-`modulo-3/hoja`, desde `main` tras fusionar `personajes`.
-
-- [x] **H1. Lo de la partida en el cálculo**: `play` (valores, usos gastados, lo que lleva con su estado) entra en el
-  documento que monta el motor; daño y curación a un recurso; descansar (corto, largo).
-- [x] **H2. Los bloques de la hoja** en el formato (`sheet`), validados; la hoja por defecto; la del 5e.
-- [x] **H3. Tirar desde la hoja**: una tirada del sistema o una acción de lo que lleva, por el personaje, en el
-  servidor y al registro (`rollForCharacter`).
-- [x] **H4. La pantalla**: la ficha por bloques, el panel con el desglose de cada valor, los PG, los usos, el
-  inventario (añadir del compendio, equipar) y el móvil.
-- [x] **H5. La IA**: ver la hoja, tirar por el personaje, daño y curación, descansar.
-- [x] **H6. Cierre**: e2e (Atletismo y un ataque desde la hoja, daño, descanso, un escudo que sube la CA), axe,
-  revisión, PR y staging.
-
-# Pulido del módulo 3
-
-Revisión de su interfaz con las pautas (`web-design-guidelines`) y `docs/diseno.md`, 2026-11-05. Hecho en la rama
-`modulo-3/pulido-hoja` (PR #104): tutoriales de cada vista, sin dobles clics, «Guardado» de verdad, avisos de las
-tablas por i18n, la pantalla vacía de Personajes, cargas y errores. Queda, para pulirlo con Enrique en local:
-
-- [x] El creador: el foco se pierde al elegir, cambiar o quitar (llevarlo al título nuevo o al panel); abrir una
-  decisión no lleva el foco al panel (en lo estrecho queda debajo); «Terminar» y «Confirmar el nivel» con `BusyButton`.
-- [ ] El creador: quitar una clase (con sus decisiones) sin confirmar; se deshace desde el historial, pero ¿preguntar?
-- [x] El creador: lo concedido, al desplegarlo mientras carga o con error, no dice nada; un número inválido en un campo
-  se ignora sin aviso; el de idiomas, sin ejemplo en el placeholder.
-- [x] Ficha | Creador, y la búsqueda, el tipo y lo abierto del compendio, en la URL (enlazar un conjuro; «atrás» en el
-  móvil vuelve a la lista).
-- [x] El compendio en lo estrecho: al abrir un resultado y al volver, el foco.
-- [x] La tabla: el borrador se pierde al cambiar de pestaña de la página, sin avisar.
-- [x] Las tablas del texto del compendio: parten su texto y caben en su columna (sin desplazarse, no hace falta
-  enfocarlas; una región enfocable pedía una supresión de lint nueva).
+- [x] **1. El formato**: la hoja de cada tipo de actor (`types[t].sheet`, validada; `sheetOf` la usa y la del sistema
+  queda para el personaje), `roll` en un campo recurso (sus PG tirados) y `damage` en el tipo (sus campos de
+  resistencias, inmunidades y vulnerabilidades); `formato_sistemas` lo documenta. El 5e de ejemplo: la hoja de la
+  criatura, al estilo de su statblock, y sus PG con `@dados_golpe`.
+- [x] **2. El motor** (`@crisol/systems`, `creatures.ts`): `creatureView` (la entrada con lo de la partida, con la misma
+  forma que la hoja de personaje), los PG al ponerla (medios o tirados), los números de las copias y el daño con
+  multiplicador y resistencias.
+- [x] **3. La tabla `campaign_creatures`** (migración 0044), su repo, el historial y su aviso en tiempo real (al
+  máster).
+- [x] **4. Las acciones**: poner en juego (cuántas o una fórmula, o única; PG medios o tirados), la lista y una con su
+  hoja, lo de la partida (daño, curación, temporales, usos, recargas, otro máximo, tirar PG, descansar), tirar por
+  ella, quitar una o todas las copias. Permisos y fugas. **Punto de control 1.**
+- [x] **5. Aplicar una tirada**: el daño o la curación de una tirada del registro a varias criaturas en juego o
+  personajes, con nada, mitad, entero o doble y sus resistencias (`applyRoll`).
+- [x] **6. La web**: «Poner en juego» en una criatura del compendio; «En juego» en la barra de la campaña (el máster),
+  con las copias juntas y las únicas aparte; la hoja de la criatura (los bloques de la hoja de personaje) con daño y
+  curación; «Aplicar» en el registro de tiradas; el móvil. **Punto de control 2.**
+- [x] **7. La IA**: poner en juego, ver, partida, tirar, quitar y aplicar; las instrucciones del MCP.
+- [x] **8. La wiki**: enlazar una criatura (`[[@Nombre]]`, con «@» o «[[» al escribir), su tarjeta al pasar y al
+  tocar, y lo que la enlaza.
+- [x] **9. Cierre**: e2e `criaturas.spec.ts`, fugas, axe, `tasks/probar.md`, `docs/modulos.md`. **Punto de control 3.**

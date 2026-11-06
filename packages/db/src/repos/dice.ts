@@ -128,3 +128,13 @@ export async function listRolls(
   const page = rows.slice(0, ROLLS_PAGE)
   return { rolls: page.reverse(), next: rows.length > ROLLS_PAGE ? (page[0]?.id ?? null) : null }
 }
+
+/** Una tirada de una campaña, por su id (para aplicar su daño) */
+export async function findRoll(db: Database, campaignId: string, rollId: string) {
+  const [found] = await db
+    .select(view)
+    .from(diceRolls)
+    .innerJoin(user, eq(user.id, diceRolls.userId))
+    .where(and(eq(diceRolls.id, rollId), eq(diceRolls.campaignId, campaignId)))
+  return found ?? null
+}

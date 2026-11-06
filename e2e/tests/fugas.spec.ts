@@ -609,3 +609,125 @@ test('@fugas los personajes de otro y las tablas del máster: la jugadora no los
   await bruno.close()
   await player.close()
 })
+
+test('@fugas el compendio del mundo es del máster: la jugadora ni lo ve ni sabe que cambia (compendio-mundo)', async ({
+  page,
+  browser
+}) => {
+  const link = await campaignLink(page)
+  const campaignId = new URL(page.url()).pathname.split('/campanas/')[1] ?? ''
+  const worldId = new URL(page.url()).pathname.split('/')[2] ?? ''
+  const systemId = await import5e(page)
+  const chosen = await page.request.post('/api/actions/updateCampaign', { data: { campaignId, system: systemId } })
+  expect(chosen.status()).toBe(200)
+  let seen: ReturnType<typeof capture> | undefined
+  const player = await newPlayer(browser, link, 'Jugadora', (p) => {
+    seen = capture(p)
+  })
+  if (!seen) throw new Error('sin captura')
+  const captured = seen
+  await expect.poll(() => captured.frames.some((f) => f.includes('"hello"'))).toBe(true)
+
+  // El máster guarda algo propio del mundo y copia del sistema
+  const saved = await page.request.post('/api/actions/putWorldContent', {
+    data: {
+      worldId,
+      systemId,
+      items: [{ type: 'arma', key: 'hoja_secreta', data: { name: { es: 'Hoja Secreta del Valle' } } }]
+    }
+  })
+  expect(saved.status()).toBe(200)
+  const copied = await page.request.post('/api/actions/copyContent', {
+    data: { worldId, systemId, key: 'guerrero_goblin_2014', to: 'world', name: 'Jefe Escondido' }
+  })
+  expect(copied.status()).toBe(200)
+  const copyKey = (await copied.json()).key as string
+
+  // Lo que lee la campaña no lo trae; lo que lo cambia, para ella no existe
+  const compendium = await (
+    await player.request.post('/api/actions/getCampaignCompendium', { data: { campaignId } })
+  ).json()
+  expect(compendium.world).toBeNull()
+  const search = await player.request.post('/api/actions/searchCampaignContent', {
+    data: { campaignId, query: 'secreta' }
+  })
+  expect((await search.json()).items).toEqual([])
+  const read = await player.request.post('/api/actions/getCampaignContent', {
+    data: { campaignId, keys: ['hoja_secreta', copyKey] }
+  })
+  expect((await read.json()).items).toEqual([])
+  for (const [name, data] of [
+    ['putWorldContent', { worldId, systemId, items: [{ type: 'arma', key: 'x', data: { name: 'X' } }] }],
+    ['deleteWorldContent', { worldId, systemId, keys: ['hoja_secreta'] }],
+    ['copyContent', { worldId, systemId, key: 'guerrero_goblin_2014', to: 'world' }],
+    ['getContentOrigin', { worldId, systemId, key: copyKey }],
+    ['pullContentOrigin', { worldId, systemId, key: copyKey, version: 1, fingerprint: 'x', fields: [] }]
+  ] as const) {
+    const response = await player.request.post(`/api/actions/${name}`, { data })
+    expect(response.status(), name).toBe(404)
+  }
+
+  // Ni por su personaje: no puede ponerle algo del mundo aunque sepa su clave
+  const created = await player.request.post('/api/actions/createCharacter', { data: { campaignId, name: 'Curiosa' } })
+  const characterId = (await created.json()).character.id as string
+  const sneaked = await player.request.post('/api/actions/updateCharacter', {
+    data: { characterId, version: 1, play: { items: [{ id: 'x', key: 'hoja_secreta' }] } }
+  })
+  expect(sneaked.status()).toBe(400)
+  expect(await sneaked.text()).not.toContain('Hoja Secreta del Valle')
+
+  const everything = await captured.all()
+  for (const leak of ['Hoja Secreta del Valle', 'Jefe Escondido', 'hoja_secreta', copyKey, '"worldContent"'])
+    expect(everything).not.toContain(leak)
+  await player.close()
+})
+
+test('@fugas las criaturas en juego son del máster: la jugadora ni las ve ni sabe que cambian (criaturas)', async ({
+  page,
+  browser
+}) => {
+  const link = await campaignLink(page)
+  const campaignId = new URL(page.url()).pathname.split('/campanas/')[1] ?? ''
+  const systemId = await import5e(page)
+  const chosen = await page.request.post('/api/actions/updateCampaign', { data: { campaignId, system: systemId } })
+  expect(chosen.status()).toBe(200)
+  let seen: ReturnType<typeof capture> | undefined
+  const player = await newPlayer(browser, link, 'Jugadora', (p) => {
+    seen = capture(p)
+  })
+  if (!seen) throw new Error('sin captura')
+  const captured = seen
+  await expect.poll(() => captured.frames.some((f) => f.includes('"hello"'))).toBe(true)
+
+  // El máster pone en juego un jefe con un nombre secreto, le hace daño y tira por él (oculta)
+  const put = await page.request.post('/api/actions/putInPlay', {
+    data: { campaignId, key: 'guerrero_goblin_2014', unique: true, name: 'Señor Oculto' }
+  })
+  expect(put.status()).toBe(200)
+  const [boss] = (await put.json()).creatures
+  await page.request.post('/api/actions/playCreature', { data: { creatureId: boss.id, version: 1, damage: 2 } })
+  const rolled = await page.request.post('/api/actions/rollForCreature', {
+    data: { creatureId: boss.id, action: { item: null, key: 'cimitarra', part: 'damage' } }
+  })
+  const rollId = (await rolled.json()).roll.id as string
+
+  for (const [name, data] of [
+    ['listInPlay', { campaignId }],
+    ['getInPlay', { creatureId: boss.id }],
+    ['putInPlay', { campaignId, key: 'guerrero_goblin_2014' }],
+    ['playCreature', { creatureId: boss.id, version: 2, damage: 1 }],
+    ['rollForCreature', { creatureId: boss.id, action: { item: null, key: 'cimitarra', part: 'attack' } }],
+    ['applyRoll', { campaignId, rollId, targets: [{ creatureId: boss.id, multiplier: 1 }] }],
+    ['removeFromPlay', { campaignId, creatureIds: [boss.id] }]
+  ] as const) {
+    const response = await player.request.post(`/api/actions/${name}`, { data })
+    expect([403, 404], name).toContain(response.status())
+    expect(await response.text()).not.toContain('Señor Oculto')
+  }
+  const rolls = await player.request.post('/api/actions/listRolls', { data: { campaignId } })
+  expect(await rolls.text()).not.toContain('Señor Oculto')
+
+  const everything = await captured.all()
+  for (const leak of ['Señor Oculto', boss.id, '"creatures"']) expect(everything).not.toContain(leak)
+  await player.close()
+})

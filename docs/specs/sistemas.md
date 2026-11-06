@@ -335,3 +335,12 @@ Respondidas por Enrique (2026-11-04):
 3. Una copia del catálogo **es tuya y no cambia sola**; se ve de cuál salió y en qué versión.
 4. Los pasos del creador **van con `personajes`**: aquí solo su sitio en el formato.
 5. Una campaña puede no tener sistema, y los dados van como hoy (la propuesta, que no cambió).
+
+## Ampliaciones después (módulo 4, 2026-11-06)
+
+- **La hoja de cada tipo de actor** (`types[t].sheet`, con los mismos bloques): la de una criatura, al estilo de su
+  statblock. La del sistema (`sheet`) sigue siendo la del personaje (el primer actor). `docs/specs/criaturas.md`.
+- **`roll` en un campo recurso**: cómo se tira su máximo (los PG de una criatura al ponerla en juego: `@dados_golpe`).
+- **`damage` en el tipo**: sus campos de lista con los tipos de daño que resiste, que no le hacen nada y que le hacen
+  el doble, para aplicarle daño desde una tirada.
+

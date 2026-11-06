@@ -88,7 +88,12 @@ export function CharacterScreen() {
         <Creator character={character} state={state} save={save} busy={busy} campaignId={campaignId} />
       ) : (
         <div className={styles.sheetLayout}>
-          <PlaySheet character={character} state={state} save={save} />
+          <PlaySheet
+            subject={character}
+            state={state}
+            save={save}
+            rollWith={(input) => api.call('rollForCharacter', { characterId: character.id, ...input })}
+          />
           <Versions character={character} />
         </div>
       )}

@@ -18,6 +18,7 @@ import { FormatMenu, TableMenu } from './bubble-menu.tsx'
 import { withCalloutView } from './callout.tsx'
 import { renderCaret } from './carets.ts'
 import { useCollabDocument } from './collab.tsx'
+import { withContentLinkView } from './content-link.tsx'
 import { withPageEmbedView } from './embed.tsx'
 import find from './find-in-page.module.css'
 import { FindInPage, nestedFinds } from './find-in-page.tsx'
@@ -29,9 +30,11 @@ import { SlashMenu } from './slash-menu.tsx'
 const nestedView = (node: Node) =>
   node.name === 'pageLink'
     ? withPageLinkView(node)
-    : node.name === 'pageEmbed'
-      ? withPageEmbedView(node)
-      : withCalloutView(node)
+    : node.name === 'contentLink'
+      ? withContentLinkView(node)
+      : node.name === 'pageEmbed'
+        ? withPageEmbedView(node)
+        : withCalloutView(node)
 
 /** Esta pestaña: la que pega es la que hace la copia (las demás ven el bloque y esperan) */
 const TAB_ID = crypto.randomUUID()

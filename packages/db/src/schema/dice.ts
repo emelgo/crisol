@@ -12,6 +12,8 @@ export interface StoredRoll {
   dice: { sides: number | 'F'; value: number; kept: boolean }[]
   /** Si fue en una tabla aleatoria: su nombre y lo que salió (con lo de sus tablas anidadas) */
   table?: { name: string; results: { text: string; page: string | null }[] }
+  /** El daño (o la curación) de una acción, parte a parte con su tipo: para aplicarlo a quien lo recibe */
+  apply?: { kind: 'damage' | 'heal'; parts: { amount: number; type: string | null }[] }
 }
 
 /**

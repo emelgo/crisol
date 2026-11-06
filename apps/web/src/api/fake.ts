@@ -45,24 +45,34 @@ import {
   type Choices,
   type ContentItem,
   catalogSystem,
+  changeResource,
   characterView,
   compendiumEntry,
   compendiumSections,
   compendiumTypes,
+  contentDiff,
+  contentFingerprint,
   contentTables,
+  creatureView,
+  damageTaken,
+  defensesOf,
   fileName,
   type Mechanics,
   mechanicsText,
+  newContentKey,
+  nextNumbers,
   normalizeChoices,
   type Play,
   pickPaths,
   playedDocument,
+  pullFields,
   RollError,
   resourcePaths,
   rest,
   SYSTEM_FILE,
   type System,
   searchContent,
+  startingPlay,
   systemOverview,
   type Text,
   tableRowOf,
@@ -75,7 +85,8 @@ import {
   validateContent,
   validateFile,
   validateSystem,
-  visibleContent
+  visibleContent,
+  withWorld
 } from '@crisol/systems'
 import { readFoundryZip } from '../systems/foundry-zip.ts'
 import { type ActionInput, type ActionName, type ActionOutput, type ApiClient, ApiError } from './client.ts'
@@ -99,6 +110,8 @@ export function fakeApi(
     systems?: System[]
     /** El contenido de los de la cuenta, por su id */
     systemContent?: Record<string, ContentItem[]>
+    /** El compendio de los mundos: sus entradas, por mundo y sistema (copiadas, con el original del que salen) */
+    worldContent?: Array<{ worldId: string; systemId: string; item: ContentItem; copyOf?: ContentItem }>
     /** Las páginas de la wiki, en su orden entre hermanas */
     pages?: Array<{
       id?: string
@@ -472,6 +485,60 @@ export function fakeApi(
     content: structuredClone(options.systemContent?.[document.id] ?? []),
     deleted: false
   }))
+  // El compendio de los mundos (docs/specs/compendio-mundo.md), con el origen de las copias
+  type FakeOrigin = {
+    systemId: string
+    key: string
+    fingerprint: string
+    data: Record<string, unknown>
+    mechanics: unknown
+  }
+  const originOf = (systemId: string, original: ContentItem): FakeOrigin => ({
+    systemId,
+    key: original.key,
+    fingerprint: contentFingerprint(original),
+    data: structuredClone(original.data),
+    mechanics: structuredClone(original.mechanics ?? null)
+  })
+  const worldEntries: Array<{
+    id: string
+    worldId: string
+    systemId: string
+    item: ContentItem
+    version: number
+    origin: FakeOrigin | null
+  }> = (options.worldContent ?? []).map((each) => ({
+    id: crypto.randomUUID(),
+    worldId: each.worldId,
+    systemId: each.systemId,
+    item: { ...structuredClone(each.item), source: null },
+    version: 1,
+    origin: each.copyOf ? originOf(each.systemId, each.copyOf) : null
+  }))
+  const entriesOf = (worldId: string, systemId: string) =>
+    worldEntries.filter((e) => e.worldId === worldId && e.systemId === systemId)
+  /** Quien lleva el mundo: en la falsa, el propietario */
+  const leadsWorlds = () => organizations.some((o) => o.role === 'owner')
+  // Las criaturas en juego (docs/specs/criaturas.md), en la falsa: las del máster
+  const creatures: Array<{
+    id: string
+    campaignId: string
+    key: string
+    name: string
+    number: number | null
+    unique: boolean
+    play: Play
+    overrides: Record<string, number>
+    version: number
+  }> = []
+  const worldEntry = (worldId: string, systemId: string, key: string) => {
+    const found = entriesOf(worldId, systemId).find((e) => e.item.key === key)
+    if (!found) throw new ApiError('NOT_FOUND', 404)
+    return found
+  }
+  const originalNow = (origin: FakeOrigin) =>
+    ownSystems.find((s) => s.id === origin.systemId && !s.deleted)?.content.find((c) => c.key === origin.key) ?? null
+
   /** El documento de prueba: lo escrito y lo que viene del contenido de un sistema de la cuenta, por su clave */
   const testDocument = (
     systemId: string,
@@ -618,6 +685,76 @@ export function fakeApi(
     return table
   }
 
+  const creatureById = (id: string) => {
+    const found = creatures.find((c) => c.id === id)
+    if (!found || !leadsWorlds()) throw new ApiError('NOT_FOUND', 404)
+    return found
+  }
+  /** Su hoja y lo que se ve de ella en la lista, como en el servidor */
+  const creatureCard = (row: (typeof creatures)[number]) => {
+    const found = compendiumOf(row.campaignId)
+    const entry = found?.content.find((c) => c.key === row.key)
+    if (!found || !entry) throw new ApiError('ENTRY_GONE', 400)
+    const { view } = creatureView(found.document, found.content, found.choices, entry, row.play, row.overrides)
+    const [first] = resourcePaths(found.document.types[entry.type]?.fields ?? {})
+    const at = first
+      ? (view.sheet[first.path] as { value?: number; max?: number; temp?: number } | undefined)
+      : undefined
+    const life =
+      first && typeof at?.max === 'number'
+        ? { path: first.path, value: at.value ?? at.max, max: at.max, temp: at.temp ?? 0 }
+        : null
+    const statsBlock = view.layout.find((b) => b.kind === 'stats') as
+      | { fields?: { key: string; label: string }[] }
+      | undefined
+    const stats = (statsBlock?.fields ?? []).slice(0, 2).flatMap((f) => {
+      const value = view.sheet[f.key]
+      return typeof value === 'number' || typeof value === 'string'
+        ? [{ key: f.key, label: f.label, value: String(value) }]
+        : []
+    })
+    const condition: 'ok' | 'bloodied' | 'down' = !life
+      ? 'ok'
+      : life.value <= 0
+        ? 'down'
+        : life.value <= life.max / 2
+          ? 'bloodied'
+          : 'ok'
+    return {
+      view,
+      card: {
+        id: row.id,
+        key: row.key,
+        name: row.name,
+        number: row.number,
+        unique: row.unique,
+        type: entry.type,
+        version: row.version,
+        life,
+        stats,
+        condition,
+        play: row.play as Record<string, unknown>
+      }
+    }
+  }
+
+  const linkablesOf = (worldId: string) =>
+    campaigns
+      .filter((c) => c.worldId === worldId && c.system)
+      .flatMap((c) => {
+        const found = compendiumOf(c.id)
+        if (!found) return []
+        return found.content.map((item) => ({
+          key: item.key,
+          name: textOf(item.data.name as Text, 'es') || item.key,
+          type: item.type,
+          typeLabel: textOf(found.document.types[item.type]?.label as Text, 'es') || item.type,
+          world: found.worldKeys.has(item.key),
+          systemId: found.document.id,
+          campaignId: c.id
+        }))
+      })
+
   /** El sistema de una campaña, con lo que eligió y su contenido (en la falsa, el de los de la cuenta) */
   const compendiumOf = (campaignId: string) => {
     const campaign = campaigns.find((c) => c.id === campaignId)
@@ -625,8 +762,17 @@ export function fakeApi(
     const document = campaign.system ? systemById(campaign.system.id) : null
     if (!campaign.system || !document) return null
     const { choices } = normalizeChoices(document, (campaign.systemChoices ?? {}) as Partial<Choices>)
-    const content = ownSystems.find((s) => s.id === document.id && !s.deleted)?.content ?? []
-    return { document, choices, content }
+    const own = ownSystems.find((s) => s.id === document.id && !s.deleted)
+    const world = own && leadsWorlds() ? { worldId: campaign.worldId, systemId: own.id } : null
+    const system = own?.content ?? []
+    const content = world
+      ? withWorld(
+          system,
+          entriesOf(world.worldId, world.systemId).map((e) => e.item)
+        )
+      : system
+    const worldKeys = new Set(world ? entriesOf(world.worldId, world.systemId).map((e) => e.item.key) : [])
+    return { document, choices, content, world, worldKeys }
   }
 
   const handlers: { [N in ActionName]: (input: ActionInput<N>) => ActionOutput<N> } = {
@@ -1292,6 +1438,160 @@ export function fakeApi(
       for (const each of stored ? [out.roll, stored] : [out.roll]) each.label = `${character.name} · ${result.label}`
       return { roll: out.roll }
     },
+    listInPlay: ({ campaignId }) => ({
+      creatures: creatures.filter((c) => c.campaignId === campaignId).map((c) => creatureCard(c).card)
+    }),
+    getInPlay: ({ creatureId }) => {
+      const { card, view } = creatureCard(creatureById(creatureId))
+      return { creature: card, state: view }
+    },
+    putInPlay: ({ campaignId, key, count, unique, hp, name }) => {
+      const found = compendiumOf(campaignId)
+      const entry = found?.content.find((c) => c.key === key)
+      if (!found || !entry) throw new ApiError('NOT_FOUND', 404)
+      if (found.document.types[entry.type]?.document !== 'actor') throw new ApiError('NOT_A_CREATURE', 400)
+      if (unique && creatures.some((c) => c.campaignId === campaignId && c.key === key && c.unique))
+        throw new ApiError('UNIQUE_TAKEN', 400)
+      const base = name ?? textOf(entry.data.name as Text, found.choices.language)
+      const numbers = unique
+        ? [null]
+        : nextNumbers(
+            creatures
+              .filter((c) => c.campaignId === campaignId && c.key === key && c.number !== null)
+              .map((c) => c.number as number),
+            count ?? 1
+          )
+      const made = numbers.map((number) => {
+        const start = startingPlay(found.document, entry, { hp: hp ?? 'average' })
+        const row = {
+          id: crypto.randomUUID(),
+          campaignId,
+          key,
+          name: number === null ? base : `${base} ${number}`,
+          number,
+          unique: Boolean(unique),
+          play: start.play,
+          overrides: start.overrides,
+          version: 1
+        }
+        creatures.push(row)
+        return row
+      })
+      return { creatures: made.map((c) => creatureCard(c).card) }
+    },
+    playCreature: ({ creatureId, version, damage, heal, temp, max, name, play }) => {
+      const row = creatureById(creatureId)
+      if (row.version !== version) throw new ApiError('CREATURE_CHANGED', 400)
+      if (play) row.play = structuredClone(play) as Play
+      const { card } = creatureCard(row)
+      if (max) {
+        const path = max.resource ?? card.life?.path ?? ''
+        if (max.value === null) delete row.overrides[path]
+        else row.overrides[path] = max.value
+      }
+      if (damage !== undefined || heal !== undefined || temp !== undefined) {
+        const life = creatureCard(row).card.life
+        if (!life) throw new ApiError('BAD_PLAY', 400)
+        row.play = changeResource(row.play, life.path, life.max, {
+          ...(damage !== undefined ? { damage } : {}),
+          ...(heal !== undefined ? { heal } : {}),
+          ...(temp !== undefined ? { temp } : {})
+        })
+      }
+      if (name) row.name = name
+      row.version++
+      const after = creatureCard(row)
+      return { creature: after.card, state: after.view }
+    },
+    rollForCreature: ({ creatureId, action, roll, visibility = 'hidden' }) => {
+      const row = creatureById(creatureId)
+      const { view } = creatureCard(row)
+      const chosen = action ? view.actions.find((a) => a.item === action.item && a.key === action.key) : undefined
+      const formula =
+        action?.part === 'attack'
+          ? chosen?.attack
+          : action?.part === 'damage'
+            ? chosen?.damage.map((d) => d.formula).join(' + ')
+            : roll
+              ? '1d20'
+              : null
+      if (!formula) throw new ApiError('BAD_ROLL', 400)
+      const out = handlers.rollDice({ campaignId: row.campaignId, formula, visibility })
+      const stored = rolls.find((r) => r.id === out.roll.id)
+      const label = `${row.name} · ${chosen?.label ?? roll?.key ?? ''}${action?.part === 'damage' ? ' · daño' : ''}`
+      // Lo que se aplica de un daño: en la falsa, todo en una parte con el tipo de la primera
+      const apply =
+        action?.part === 'damage'
+          ? { kind: 'damage' as const, parts: [{ amount: out.roll.total, type: chosen?.damage[0]?.type ?? null }] }
+          : undefined
+      for (const each of stored ? [out.roll, stored] : [out.roll]) {
+        each.label = label
+        if (apply) each.apply = apply
+      }
+      return { roll: out.roll }
+    },
+    // Lo que se enlaza desde una página con [[@…]]: en la falsa, lo de los sistemas de sus campañas y de su mundo
+    searchLinkableContent: ({ worldId, query, limit }) => ({
+      items: linkablesOf(worldId)
+        .filter((each) => each.name.toLowerCase().includes(query.toLowerCase()))
+        .slice(0, limit ?? 20)
+        .map(({ campaignId: _, ...each }) => each)
+    }),
+    getLinkedContent: ({ worldId, name }) => {
+      const all = linkablesOf(worldId)
+      const found = all.find((e) => e.world && e.name === name) ?? all.find((e) => e.name === name)
+      if (!found) return { entry: null }
+      const { campaignId, ...entry } = found
+      return { entry: { ...entry, lines: [], campaignId } }
+    },
+    applyRoll: ({ campaignId, rollId, targets }) => {
+      const roll = rolls.find((r) => r.id === rollId && r.campaignId === campaignId)
+      if (!roll || !leadsWorlds()) throw new ApiError('NOT_FOUND', 404)
+      const apply = roll.apply
+      if (!apply) throw new ApiError('NOTHING_TO_APPLY', 400)
+      return {
+        applied: targets.map((target) => {
+          if (!target.creatureId) throw new ApiError('BAD_TARGET', 400)
+          const row = creatureById(target.creatureId)
+          const { card, view } = creatureCard(row)
+          const found = compendiumOf(row.campaignId)
+          if (!card.life || !found) throw new ApiError('BAD_TARGET', 400)
+          const amount =
+            apply.kind === 'heal'
+              ? apply.parts.reduce((n, p) => n + Math.floor(p.amount * target.multiplier), 0)
+              : damageTaken(
+                  apply.parts.map((p) => ({ amount: p.amount, type: p.type ?? undefined })),
+                  target.multiplier,
+                  defensesOf(found.document, card.type, view.sheet)
+                )
+          row.play = changeResource(row.play, card.life.path, card.life.max, {
+            [apply.kind === 'heal' ? 'heal' : 'damage']: amount
+          })
+          row.version++
+          const life = creatureCard(row).card.life
+          return {
+            id: row.id,
+            kind: 'creature' as const,
+            name: row.name,
+            amount,
+            life: life ? { value: life.value, max: life.max } : null
+          }
+        })
+      }
+    },
+    removeFromPlay: ({ campaignId, creatureIds, copiesOf }) => {
+      const removed = creatures
+        .filter(
+          (c) => c.campaignId === campaignId && (creatureIds?.includes(c.id) || (copiesOf === c.key && !c.unique))
+        )
+        .map((c) => c.id)
+      for (const id of removed)
+        creatures.splice(
+          creatures.findIndex((c) => c.id === id),
+          1
+        )
+      return { removed }
+    },
     playCharacter: ({ characterId, version, rest: kind }) => {
       const character = visibleCharacter(characterId)
       const state = stateOf(character)
@@ -1381,7 +1681,16 @@ export function fakeApi(
     // El compendio de una campaña: el contenido de su sistema (en la falsa, solo el de los de la cuenta)
     getCampaignCompendium: ({ campaignId }) => {
       const found = compendiumOf(campaignId)
-      if (!found) return { system: null, language: 'es' as const, sources: [], types: [], sections: [], editable: null }
+      if (!found)
+        return {
+          system: null,
+          language: 'es' as const,
+          sources: [],
+          types: [],
+          sections: [],
+          editable: null,
+          world: null
+        }
       const { document, choices, content } = found
       const say = (text: Text | undefined) => textOf(text, choices.language)
       const types = compendiumTypes(document, content, choices)
@@ -1405,6 +1714,20 @@ export function fakeApi(
                 types: compendiumTypes(document, content, choices, true).map(typeView)
               }
             : null,
+        world: found.world
+          ? {
+              ...found.world,
+              writable: true,
+              count: found.worldKeys.size,
+              byType: content
+                .filter((c) => found.worldKeys.has(c.key))
+                .reduce<Record<string, number>>((n, c) => {
+                  n[c.type] = (n[c.type] ?? 0) + 1
+                  return n
+                }, {}),
+              types: compendiumTypes(document, content, choices, true).map(typeView)
+            }
+          : null,
         language: choices.language,
         sources: (document.sources ?? [])
           .filter((each) => choices.sources.includes(each.key))
@@ -1444,33 +1767,58 @@ export function fakeApi(
     browseCampaignContent: ({ campaignId, type }) => {
       const found = compendiumOf(campaignId)
       if (!found) return { items: [], folders: [], filters: [] }
-      const { document, choices, content } = found
-      return browseContent(document, content, {
+      const { document, choices, content, worldKeys } = found
+      const result = browseContent(document, content, {
         type,
         sources: choices.sources,
         duplicates: choices.duplicates,
         language: choices.language
       })
+      return { ...result, items: result.items.map((i) => (worldKeys.has(i.key) ? { ...i, world: true } : i)) }
     },
-    searchCampaignContent: ({ campaignId, ...options }) => {
+    searchCampaignContent: ({ campaignId, layer, ...options }) => {
       const found = compendiumOf(campaignId)
       if (!found) return { items: [], total: 0 }
-      const { document, choices, content } = found
-      const entries = content.map((item) => ({ ...item, concept: item.concept ?? null, name: item.data.name }))
-      return searchContent(document, entries, {
+      const { document, choices, content, worldKeys } = found
+      const entries = content
+        .filter((item) => !layer || worldKeys.has(item.key) === (layer === 'world'))
+        .map((item) => ({ ...item, concept: item.concept ?? null, name: item.data.name }))
+      const result = searchContent(document, entries, {
         sources: choices.sources,
         duplicates: choices.duplicates,
         language: choices.language,
         ...options
       })
+      return { ...result, items: result.items.map((h) => (worldKeys.has(h.key) ? { ...h, world: true } : h)) }
     },
     getCampaignContent: ({ campaignId, keys }) => {
       const wanted = [...new Set(keys)]
       const found = compendiumOf(campaignId)
       if (!found) return { items: [], missing: wanted }
-      const { document, choices, content } = found
+      const { document, choices, content, world } = found
       const entries = content.map((item) => ({ ...item, name: item.data.name }))
       const seen = visibleContent(document, entries, choices)
+      const worldView = (key: string) => {
+        const own = world ? entriesOf(world.worldId, world.systemId).find((e) => e.item.key === key) : undefined
+        if (!own) return {}
+        const original = own.origin ? originalNow(own.origin) : null
+        return {
+          world: {
+            id: own.id,
+            version: own.version,
+            origin: own.origin
+              ? {
+                  layer: 'system' as const,
+                  systemId: own.origin.systemId,
+                  key: own.origin.key,
+                  name: original ? textOf(original.data.name as Text, choices.language) : null,
+                  changed: original ? contentFingerprint(original) !== own.origin.fingerprint : false,
+                  missing: !original
+                }
+              : null
+          }
+        }
+      }
       const items = wanted.flatMap((k) => {
         const item = seen.find((each) => each.item.key === k)?.item
         if (!item) return []
@@ -1485,11 +1833,126 @@ export function fakeApi(
               'choose' in g
                 ? { level: g.level, choose: textOf(g.choose, choices.language), count: g.count }
                 : { level: g.level, key: g.key, type: g.type, name: textOf(g.name as Text, choices.language) }
-            )
+            ),
+            ...worldView(k)
           }
         ]
       })
       return { items, missing: wanted.filter((k) => !items.some((item) => item.key === k)) }
+    },
+    putWorldContent: ({ worldId, systemId, items }) => {
+      const own = ownSystems.find((s) => s.id === systemId && !s.deleted)
+      if (!own || !leadsWorlds()) throw new ApiError('NOT_FOUND', 404)
+      const given = items.map(({ version: _, ...item }) => ({ ...item, source: null })) as unknown as ContentItem[]
+      if (validateContent(own.document, given).some((p) => p.severity === 'error'))
+        throw new ApiError('SYSTEM_INVALID', 400)
+      for (const item of items)
+        if (item.version !== undefined && worldEntry(worldId, systemId, item.key).version !== item.version)
+          throw new ApiError('CONTENT_CHANGED', 400)
+      let created = 0
+      const saved = given.map((item) => {
+        const found = entriesOf(worldId, systemId).find((e) => e.item.key === item.key)
+        if (found) {
+          found.item = structuredClone(item)
+          found.version++
+          return { key: item.key, version: found.version }
+        }
+        created++
+        worldEntries.push({
+          id: crypto.randomUUID(),
+          worldId,
+          systemId,
+          item: structuredClone(item),
+          version: 1,
+          origin: null
+        })
+        return { key: item.key, version: 1 }
+      })
+      return { saved, created, warnings: [] }
+    },
+    deleteWorldContent: ({ worldId, systemId, keys }) => {
+      const deleted = keys.filter((k) => entriesOf(worldId, systemId).some((e) => e.item.key === k))
+      for (const key of deleted) worldEntries.splice(worldEntries.indexOf(worldEntry(worldId, systemId, key)), 1)
+      return { deleted, missing: keys.filter((k) => !deleted.includes(k)) }
+    },
+    copyContent: ({ worldId, systemId, key, to, name, newKey, version }) => {
+      const own = ownSystems.find((s) => s.id === systemId && !s.deleted)
+      if (!own || !leadsWorlds()) throw new ApiError('NOT_FOUND', 404)
+      const rename = (value: unknown) =>
+        value && typeof value === 'object'
+          ? Object.fromEntries(
+              Object.entries(value as Record<string, string>).map(([l, v]) => [
+                l,
+                name ?? `${v} (${l === 'en' ? 'copy' : 'copia'})`
+              ])
+            )
+          : (name ?? `${String(value ?? '')} (copia)`)
+      if (to === 'world') {
+        const original = own.content.find((c) => c.key === key)
+        if (!original) throw new ApiError('NOT_FOUND', 404)
+        const copyKey = newKey ?? newContentKey(name ?? textOf(original.data.name as Text))
+        const { concept: _, ...rest } = structuredClone(original)
+        worldEntries.push({
+          id: crypto.randomUUID(),
+          worldId,
+          systemId,
+          item: { ...rest, key: copyKey, source: null, data: { ...rest.data, name: rename(original.data.name) } },
+          version: 1,
+          origin: originOf(systemId, original)
+        })
+        return { key: copyKey, to, version: 1 }
+      }
+      if (own.version !== version) throw new ApiError('SYSTEM_CHANGED', 400)
+      const entry = worldEntry(worldId, systemId, key)
+      const systemKey = newKey ?? entry.item.key
+      if (own.content.some((c) => c.key === systemKey)) throw new ApiError('KEY_TAKEN', 400)
+      own.content.push({ ...structuredClone(entry.item), key: systemKey })
+      own.version++
+      return { key: systemKey, to, version: own.version }
+    },
+    getContentOrigin: ({ worldId, systemId, key }) => {
+      const entry = worldEntry(worldId, systemId, key)
+      if (!entry.origin) return { origin: null, changes: [] }
+      const original = originalNow(entry.origin)
+      const fingerprint = original ? contentFingerprint(original) : null
+      const origin = {
+        layer: 'system' as const,
+        systemId: entry.origin.systemId,
+        key: entry.origin.key,
+        name: original ? textOf(original.data.name as Text) : null,
+        missing: !original,
+        changed: fingerprint !== null && fingerprint !== entry.origin.fingerprint,
+        fingerprint
+      }
+      if (!original) return { origin, changes: [] }
+      const fields = systemById(systemId)?.types[entry.item.type]?.fields ?? {}
+      const changes = contentDiff({ data: entry.origin.data, mechanics: entry.origin.mechanics }, original).map(
+        (c) => ({
+          key: c.key,
+          label:
+            c.key === 'name'
+              ? 'Nombre'
+              : c.key === 'mechanics'
+                ? 'Mecánica'
+                : textOf(fields[c.key]?.label as Text) || c.key,
+          before: c.before ?? null,
+          after: c.after ?? null,
+          copy: (c.key === 'mechanics' ? entry.item.mechanics : entry.item.data[c.key]) ?? null
+        })
+      )
+      return { origin, changes }
+    },
+    pullContentOrigin: ({ worldId, systemId, key, version, fingerprint, fields }) => {
+      const entry = worldEntry(worldId, systemId, key)
+      if (entry.version !== version) throw new ApiError('CONTENT_CHANGED', 400)
+      const original = entry.origin ? originalNow(entry.origin) : null
+      if (!entry.origin || !original) throw new ApiError('ORIGIN_MISSING', 400)
+      if (contentFingerprint(original) !== fingerprint) throw new ApiError('ORIGIN_CHANGED', 400)
+      const pulled = pullFields(entry.item, original, fields)
+      entry.item = { ...pulled, mechanics: (pulled.mechanics ?? undefined) as Mechanics | undefined }
+      entry.origin = originOf(entry.origin.systemId, original)
+      entry.version++
+      return { version: entry.version }
     },
     getSystemParts: ({ systemId, parts }) => {
       const document = systemById(systemId)

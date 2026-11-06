@@ -151,7 +151,7 @@ interface View {
 
 /** Lo que se ve del contenido con unas fuentes, una vez por contenido (el de serie es siempre el mismo) */
 const views = new WeakMap<readonly ContentItem[], Map<string, View>>()
-function viewOf(
+export function viewOf(
   system: System,
   content: readonly ContentItem[],
   choices: Pick<Choices, 'sources' | 'duplicates'>
@@ -546,22 +546,7 @@ export function characterView(
   const built = buildCharacter(system, content, choices, build)
   const { byKey } = viewOf(system, content, choices)
   const fields = system.types[built.type]?.fields ?? {}
-  // Lo de la partida, encima: los PG, lo gastado, lo que lleva y lo activo
-  const played = withPlay(system, built.type, built.document, play, byKey, language)
-  let values: Record<string, Value> = {}
-  let resources: Resource[] = []
-  let itemValues: Record<string, Record<string, Value>> = {}
-  let actions: ReturnType<typeof actionsOf> = []
-  try {
-    const evaluated = evaluate(system, built.type, played.document, { settings: choices.settings ?? {}, language })
-    values = evaluated.values
-    resources = evaluated.resources
-    itemValues = evaluated.items
-    actions = actionsOf(system, built.type, played.document, { language, settings: choices.settings ?? {} })
-  } catch {
-    values = {}
-  }
-  fillResources(fields, values, play)
+  const { played, values, sheetParts } = playedSheet(system, built.type, built.document, play, byKey, choices)
   const option = (o: BuildOption) => ({
     value: o.value,
     label: say(o.label),
@@ -644,37 +629,7 @@ export function characterView(
       complete: built.complete,
       missing: built.missing,
       summary: summarize(system, content, choices, build, built, values, language),
-      sheet: values,
-      resources,
-      // Los valores calculados de cada cosa que lleva (el ataque de una espada), por su id
-      itemValues,
-      actions: actions.map((a) => ({
-        item: a.item,
-        key: a.key,
-        label: a.label,
-        ...(a.activation ? { activation: a.activation } : {}),
-        attack: a.attack,
-        bonus: a.bonus,
-        save: a.save,
-        damage: a.damage.map((d) => ({ formula: d.formula, ...(d.type ? { type: d.type } : {}) })),
-        heal: a.heal?.formula ?? null,
-        ...(a.error ? { error: a.error } : {})
-      })),
-      // Los bloques de su hoja, con sus nombres
-      layout: sheetView(system, built.type, language),
-      rolls: rollsOf(system, built.type, language, played.document).map((r) => ({
-        key: r.key,
-        label: r.label,
-        elements: r.elements,
-        modes: r.modes
-      })),
-      // Lo que lleva del compendio (su estado) y lo que ya no está en él
-      carried: (play.items ?? []).map((it) => ({
-        ...it,
-        name: byKey.get(it.key) ? say(labelOf(byKey.get(it.key) as ContentItem)) : it.key,
-        type: byKey.get(it.key)?.type ?? null
-      })),
-      playMissing: played.missing,
+      ...sheetParts,
       // Los campos del personaje, con sus nombres: para pintar su ficha mínima en cualquier sistema
       fields: Object.entries(fields).map(([key, f]) => ({
         key,
@@ -708,6 +663,84 @@ export function characterView(
 }
 
 export type CharacterView = ReturnType<typeof characterView>['view']
+
+/**
+ * Lo de la hoja en partida de un documento (un personaje montado o una criatura): lo de la partida encima, calculado
+ * (sus valores, sus recursos, lo de cada cosa que lleva y sus acciones), sus bloques, sus tiradas y lo que lleva.
+ * `overrides` cambia el máximo de unos recursos (otro máximo o los PG tirados de una criatura)
+ */
+export function playedSheet(
+  system: System,
+  type: string,
+  document: SystemDocument,
+  play: Play,
+  byKey: ReadonlyMap<string, ContentItem>,
+  choices: Pick<Choices, 'language'> & { settings?: Record<string, unknown> },
+  overrides: Record<string, number> = {}
+) {
+  const language = choices.language
+  const say = sayIn(language)
+  const fields = system.types[type]?.fields ?? {}
+  // Lo de la partida, encima: los PG, lo gastado, lo que lleva y lo activo
+  const played = withPlay(system, type, document, play, byKey, language)
+  let values: Record<string, Value> = {}
+  let resources: Resource[] = []
+  let itemValues: Record<string, Record<string, Value>> = {}
+  let actions: ReturnType<typeof actionsOf> = []
+  try {
+    const evaluated = evaluate(system, type, played.document, { settings: choices.settings ?? {}, language })
+    values = evaluated.values
+    resources = evaluated.resources
+    itemValues = evaluated.items
+    actions = actionsOf(system, type, played.document, { language, settings: choices.settings ?? {} })
+  } catch {
+    values = {}
+  }
+  for (const [path, max] of Object.entries(overrides)) {
+    const at = path.split('.').reduce<unknown>((v, k) => (v as Record<string, unknown> | undefined)?.[k], values) as
+      | { max?: Value }
+      | undefined
+    if (at && typeof at === 'object') at.max = max
+  }
+  fillResources(fields, values, play)
+  return {
+    played,
+    values,
+    sheetParts: {
+      sheet: values,
+      resources,
+      // Los valores calculados de cada cosa que lleva (el ataque de una espada), por su id
+      itemValues,
+      actions: actions.map((a) => ({
+        item: a.item,
+        key: a.key,
+        label: a.label,
+        ...(a.activation ? { activation: a.activation } : {}),
+        attack: a.attack,
+        bonus: a.bonus,
+        save: a.save,
+        damage: a.damage.map((d) => ({ formula: d.formula, ...(d.type ? { type: d.type } : {}) })),
+        heal: a.heal?.formula ?? null,
+        ...(a.error ? { error: a.error } : {})
+      })),
+      // Los bloques de su hoja, con sus nombres
+      layout: sheetView(system, type, language),
+      rolls: rollsOf(system, type, language, played.document).map((r) => ({
+        key: r.key,
+        label: r.label,
+        elements: r.elements,
+        modes: r.modes
+      })),
+      // Lo que lleva del compendio (su estado) y lo que ya no está en él
+      carried: (play.items ?? []).map((it) => ({
+        ...it,
+        name: byKey.get(it.key) ? say(labelOf(byKey.get(it.key) as ContentItem)) : it.key,
+        type: byKey.get(it.key)?.type ?? null
+      })),
+      playMissing: played.missing
+    }
+  }
+}
 
 /** Elegir por partes (para la IA): añadir, cambiar de nivel, quitar, decidir, puntuaciones y campos */
 export interface Choose {

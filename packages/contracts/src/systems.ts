@@ -374,14 +374,15 @@ export const contentHit = z.object({
   edition: z.string().nullable(),
   concept: z.string().nullable().describe('Lo que une sus versiones entre ediciones'),
   legacy: z.boolean().describe('De una edición vieja, con versión en una más nueva que también se ve'),
-  automation: z.string().nullable().describe('full, partial o text: cuánto lo calcula Crisol')
+  automation: z.string().nullable().describe('full, partial o text: cuánto lo calcula Crisol'),
+  world: z.boolean().optional().describe('Del compendio del mundo de la campaña')
 })
 
 export const searchSystemContent = defineAction({
   name: 'searchSystemContent',
   kind: 'read',
   description:
-    'Busca en el contenido de un sistema (de serie o de la cuenta): por su nombre en cualquier idioma y sin tildes, por tipo, por edición y, de lo que está en las dos ediciones, las dos versiones (both) o solo la más nueva (newest). Da su clave para leerlo con getSystemContent',
+    'Busca en el contenido de un sistema (de serie o de la cuenta): por su nombre en cualquier idioma y sin tildes, por tipo, por edición y, de lo que está en las dos ediciones, las dos versiones (both) o solo la más nueva (newest). Da su clave para leerlo con getSystemContent. Con campaignId, también el compendio del mundo de la campaña (para quien lo lleva), marcado con world',
   input: z.object({
     systemId: systemRef,
     organizationId: z.uuid().optional(),
@@ -471,7 +472,18 @@ export const getCampaignCompendium = defineAction({
       .nullable()
       .describe(
         'Si quien lo ve puede cambiar sus entradas (un sistema de la cuenta, y es su propietario): con su versión'
-      )
+      ),
+    world: z
+      .object({
+        worldId: z.uuid(),
+        systemId: z.uuid(),
+        writable: z.boolean().describe('Si puede crear, cambiar y borrar lo del mundo'),
+        count: z.int().describe('Cuántas entradas tiene el mundo para este sistema'),
+        byType: z.record(z.string(), z.int()).describe('Cuántas de cada tipo'),
+        types: z.array(compendiumType).describe('Los tipos del sistema, para crear en el mundo')
+      })
+      .nullable()
+      .describe('El compendio del mundo, si quien lo ve puede verlo (hasta el módulo 5, quien lleva el mundo)')
   })
 })
 
@@ -489,7 +501,8 @@ export const browseCampaignContent = defineAction({
         edition: z.string().nullable(),
         legacy: z.boolean(),
         folder: z.string().nullable(),
-        values: z.record(z.string(), z.array(z.string())).describe('Sus valores en los campos que se filtran')
+        values: z.record(z.string(), z.array(z.string())).describe('Sus valores en los campos que se filtran'),
+        world: z.boolean().optional().describe('Del compendio del mundo')
       })
     ),
     folders: z.array(z.object({ key: z.string(), label: z.string() })),
@@ -514,6 +527,7 @@ export const searchCampaignContent = defineAction({
     campaignId: z.uuid(),
     query: z.string().trim().max(100).optional(),
     type: z.string().max(60).optional(),
+    layer: z.enum(['system', 'world']).optional().describe('Solo lo del sistema o solo lo del mundo'),
     limit: z.int().min(1).max(200).optional(),
     offset: z.int().min(0).max(10_000).optional()
   }),
@@ -542,7 +556,25 @@ export const compendiumItem = contentItem.extend({
   legacy: z.boolean(),
   versions: z.array(z.object({ key: z.string(), edition: z.string().nullable(), legacy: z.boolean() })),
   granted: z.array(granted),
-  play: mechanicsText.nullable().describe('Su mecánica, en palabras')
+  play: mechanicsText.nullable().describe('Su mecánica, en palabras'),
+  world: z
+    .object({
+      id: z.uuid(),
+      version: z.int().describe('La de la entrada, para cambiarla'),
+      origin: z
+        .object({
+          layer: z.enum(['system', 'world']),
+          systemId: z.uuid(),
+          key: z.string(),
+          name: z.string().nullable().describe('El nombre del original, si sigue estando'),
+          changed: z.boolean().describe('Si el original ha cambiado desde que se copió (o se trajeron sus cambios)'),
+          missing: z.boolean().describe('Si el original ya no está')
+        })
+        .nullable()
+        .describe('De dónde se copió')
+    })
+    .optional()
+    .describe('Si es del compendio del mundo: su id, su versión y su origen')
 })
 
 export const getCampaignContent = defineAction({

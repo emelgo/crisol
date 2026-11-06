@@ -415,6 +415,49 @@ describe('conector MCP con OAuth', () => {
       if (!one) throw new Error('sin personaje')
       return one
     }
+    // El compendio del mundo: guardar en él, encontrarlo desde la campaña, copiar del sistema y quitar
+    const own = await call('guardar_contenido', {
+      systemId: system.id,
+      worldId: world.id,
+      items: [{ type: 'don', key: 'fuego_del_valle', data: { name: 'Fuego del valle', descripcion: 'Arde.' } }]
+    })
+    expect(own.isError, own.text).toBeFalsy()
+    const found = await call<{ items: { key: string; world?: boolean }[] }>('buscar_contenido', {
+      systemId: system.id,
+      campaignId: campaign.id,
+      query: 'fuego'
+    })
+    expect(found.data.items).toEqual([expect.objectContaining({ key: 'fuego_del_valle', world: true })])
+    const copied = await call<{ key: string }>('copiar_contenido', {
+      worldId: world.id,
+      systemId: system.id,
+      key: 'ojo_avizor',
+      to: 'world',
+      name: 'Ojo de halcón'
+    })
+    expect(copied.isError, copied.text).toBeFalsy()
+    const read = await call<{ items: { data: { name: unknown }; world?: { origin: { key: string } } }[] }>(
+      'leer_compendio',
+      { campaignId: campaign.id, keys: [copied.data.key] }
+    )
+    expect(read.data.items[0]).toMatchObject({
+      data: { name: 'Ojo de halcón' },
+      world: { origin: { key: 'ojo_avizor' } }
+    })
+    const origin = await call<{ changes: unknown[] }>('origen_contenido', {
+      worldId: world.id,
+      systemId: system.id,
+      key: copied.data.key
+    })
+    expect(origin.data.changes).toEqual([])
+    // Quitar, en copiloto, espera al máster
+    await asMaster('borrar_contenido', { systemId: system.id, worldId: world.id, keys: ['fuego_del_valle'] })
+    const gone = await call<{ items: unknown[] }>('buscar_contenido', {
+      systemId: system.id,
+      campaignId: campaign.id,
+      query: 'fuego'
+    })
+    expect(gone.data.items).toEqual([])
     await asMaster('crear_personaje', { campaignId: campaign.id, name: 'Ária' })
     const { id } = await current()
     await asMaster('elegir_personaje', {
@@ -581,6 +624,42 @@ describe('conector MCP con OAuth', () => {
     const bad = await call('tirar_dados', { formula: '1d20+' })
     expect(bad.isError).toBe(true)
     expect(bad.text).toContain('No se entiende «1d20+» al final')
+  })
+
+  it('la IA y las criaturas en juego: pone goblins, tira por uno, aplica el daño y los quita', async () => {
+    const { cookie, call } = await connected()
+    const five = (await api<{ system: SystemFull }>(cookie, 'importSystem', { file: exampleFile('5e') })).system.id
+    const world = (await call<World>('crear_mundo', { name: 'Valdren' })).data
+    const campaign = (await call<Campaign>('crear_campana', { worldId: world.id, name: 'La Marca', system: five })).data
+    const put = await call<{ creatures: { id: string; name: string }[] }>('poner_en_juego', {
+      campaignId: campaign.id,
+      key: 'guerrero_goblin_2014',
+      count: 2
+    })
+    expect(put.isError, put.text).toBeFalsy()
+    const [one, two] = put.data.creatures
+    if (!one || !two) throw new Error('sin goblins')
+    const sheet = await call<{ state: { actions: { key: string }[] } }>('ver_criatura', { creatureId: one.id })
+    expect(sheet.data.state.actions.map((a) => a.key)).toEqual(['cimitarra', 'arco_corto'])
+    const rolled = await call<{ roll: { id: string; label: string; visibility: string; ai: boolean } }>(
+      'tirar_por_criatura',
+      { creatureId: one.id, action: { item: null, key: 'cimitarra', part: 'damage' } }
+    )
+    expect(rolled.data.roll).toMatchObject({ label: 'Goblin 1 · Cimitarra · daño', visibility: 'hidden', ai: true })
+    const applied = await call<{ applied: { name: string }[] }>('aplicar_tirada', {
+      campaignId: campaign.id,
+      rollId: rolled.data.roll.id,
+      targets: [{ creatureId: two.id, multiplier: 1 }]
+    })
+    expect(applied.isError, applied.text).toBeFalsy()
+    expect(applied.data.applied.map((a) => a.name)).toEqual(['Goblin 2'])
+    const listed = await call<{ creatures: { name: string; life: { value: number } }[] }>('ver_en_juego', {
+      campaignId: campaign.id
+    })
+    expect(listed.data.creatures.map((c) => c.name)).toEqual(['Goblin 1', 'Goblin 2'])
+    // Quitar, en copiloto, espera al máster
+    const removed = await call('quitar_de_juego', { campaignId: campaign.id, copiesOf: 'guerrero_goblin_2014' })
+    expect(removed.text.startsWith('PENDING_APPROVAL')).toBe(true)
   })
 
   it('criterio 1: la IA hace un sistema de 2d6, lo valida, prueba una tirada y una fórmula, y sale en «Sistemas»', async () => {

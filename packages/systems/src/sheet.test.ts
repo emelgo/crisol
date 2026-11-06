@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { fiveE } from './examples/5e/system.ts'
 import { fronteras } from './fixtures/fronteras.ts'
 import type { System } from './format.ts'
-import { defaultSheet, sheetView } from './sheet.ts'
+import { defaultSheet, sheetOf, sheetView } from './sheet.ts'
 import { validateSystem } from './validate.ts'
 
 describe('la hoja por bloques', () => {
@@ -113,5 +113,51 @@ describe('la hoja por bloques', () => {
         'sheet.blocks[5].field: «vigor» no es de los que van aquí (group)'
       ])
     )
+  })
+
+  it('cada tipo de actor puede tener su hoja; sin ella, la del sistema es solo del personaje', () => {
+    const system = structuredClone(fronteras) as System
+    system.sheet = { blocks: [{ kind: 'header' }, { kind: 'stats', fields: ['defensa'] }] }
+    system.types.bestia = {
+      document: 'actor',
+      label: 'Bestia',
+      fields: { fuerza: { kind: 'number', label: 'Fuerza' }, aguante: { kind: 'resource', label: 'Aguante', max: 5 } }
+    }
+    // Sin hoja propia: la de por defecto de sus campos, no la del personaje
+    expect(sheetOf(system, 'bestia').map((b) => b.kind)).toEqual(['header', 'stats', 'resource', 'actions', 'uses'])
+    expect(sheetOf(system, 'personaje')).toEqual(system.sheet.blocks)
+    system.types.bestia.sheet = { blocks: [{ kind: 'resource', field: 'aguante' }] }
+    expect(sheetOf(system, 'bestia')).toEqual([{ kind: 'resource', field: 'aguante' }])
+    expect(validateSystem(system).problems.filter((p) => p.severity === 'error')).toEqual([])
+  })
+
+  it('la hoja de un tipo nombra sus campos; su daño, sus campos de lista; y solo los actores tienen hoja', () => {
+    const system = structuredClone(fronteras) as System
+    system.types.bestia = {
+      document: 'actor',
+      label: 'Bestia',
+      fields: { fuerza: { kind: 'number', label: 'Fuerza' }, resiste: { kind: 'list', label: 'Resiste' } },
+      sheet: {
+        blocks: [
+          { kind: 'resource', field: 'fuerza' },
+          { kind: 'stats', fields: ['defensa'] }
+        ]
+      },
+      damage: { resist: 'resiste', immune: 'fuerza', vulnerable: 'nada' }
+    }
+    const objeto = system.types.objeto
+    if (!objeto) throw new Error('sin objeto')
+    objeto.sheet = { blocks: [{ kind: 'header' }] }
+    const messages = validateSystem(system).problems.map((p) => `${p.path}: ${p.message}`)
+    expect(messages).toEqual(
+      expect.arrayContaining([
+        'types.bestia.sheet.blocks[0].field: «fuerza» no es de los que van aquí (resource)',
+        'types.bestia.sheet.blocks[1].fields[0]: bestia no tiene el campo «defensa»',
+        'types.bestia.damage.immune: «fuerza» no es de los que van aquí (list)',
+        'types.bestia.damage.vulnerable: bestia no tiene el campo «nada»',
+        'types.objeto.sheet: Solo los actores (personajes y criaturas) tienen hoja'
+      ])
+    )
+    expect(messages.some((m) => m.startsWith('types.bestia.damage.resist'))).toBe(false)
   })
 })

@@ -87,6 +87,35 @@ const createSystemInput = z.object({
   file: z.record(z.string(), z.unknown()).optional().describe('Un archivo de bajar un sistema, con su contenido')
 })
 
+/** Una entrada del contenido: en el sistema, con su fuente; en el mundo, sin ella y con la versión que se leyó */
+const contentEntry = z.object({
+  type: z.string(),
+  key: z.string(),
+  source: z.string().nullable().optional().describe('En el sistema: su fuente (null, ninguna). En el mundo no va'),
+  concept: z.string().optional(),
+  data: z.record(z.string(), z.unknown()),
+  mechanics: z.record(z.string(), z.unknown()).optional(),
+  ref: z.record(z.string(), z.unknown()).optional(),
+  version: z.int().min(1).optional().describe('En el mundo: la versión de la entrada que se leyó, para cambiarla')
+})
+
+const saveContentInput = z.object({
+  systemId: z.uuid(),
+  worldId: z
+    .uuid()
+    .optional()
+    .describe('Para guardarlas en el compendio de ese mundo (hechas para este sistema), en lugar de en el sistema'),
+  version: z.int().min(1).optional().describe('En el sistema: la versión del sistema que se leyó (obligatoria)'),
+  items: z.array(contentEntry).min(1).max(100)
+})
+
+const deleteContentInput = z.object({
+  systemId: z.uuid(),
+  worldId: z.uuid().optional().describe('Para quitarlas del compendio de ese mundo, en lugar de del sistema'),
+  version: z.int().min(1).optional().describe('En el sistema: la versión del sistema que se leyó (obligatoria)'),
+  keys: z.array(z.string().max(100)).min(1).max(100)
+})
+
 const linksInput = z.object({
   pageId: z
     .uuid()
@@ -228,14 +257,57 @@ export const MCP_TOOLS: Record<string, McpTool> = {
   // Su hoja en partida: tirar por él (a su registro) y lo de la partida (daño, curación, usos, descansar)
   tirar_por_personaje: { action: 'rollForCharacter' },
   partida_personaje: { action: 'playCharacter' },
-  // El compendio de una campaña: lo que ven sus jugadores
+  // El compendio de una campaña: lo de su sistema y, para quien lleva el mundo, lo de su mundo
   compendio_campana: { action: 'getCampaignCompendium' },
+  leer_compendio: { action: 'getCampaignContent' },
   tirar_tabla_compendio: { action: 'rollContentTable' },
-  // Su contenido (las clases, los conjuros, las armas…), con su mecánica
+  // Su contenido (las clases, los conjuros, las armas…), con su mecánica; y el compendio de cada mundo
   buscar_contenido: { action: 'searchSystemContent' },
   leer_contenido: { action: 'getSystemContent' },
-  guardar_contenido: { action: 'putSystemContent' },
-  borrar_contenido: { action: 'deleteSystemContent' }
+  guardar_contenido: {
+    description:
+      'Guarda entradas del contenido con su mecánica (efectos, recursos, acciones, escalado: su formato, en formato_sistemas): en un sistema de la cuenta (con la versión del sistema que leíste) o, con worldId, en el compendio de ese mundo, hechas para ese sistema (con la versión de cada entrada que leíste, para cambiar una). Las que ya están, por su clave, se cambian. Se validan con el sistema: con un error no se guarda ninguna',
+    input: saveContentInput,
+    actions: ['putSystemContent', 'putWorldContent'],
+    route: (input) => {
+      const { systemId, worldId, version, items } = saveContentInput.parse(input)
+      if (worldId)
+        return {
+          action: 'putWorldContent',
+          input: { worldId, systemId, items: items.map(({ source: _, ...item }) => item) }
+        }
+      return {
+        action: 'putSystemContent',
+        input: {
+          systemId,
+          version,
+          items: items.map(({ version: _, ...item }) => ({ ...item, source: item.source ?? null }))
+        }
+      }
+    }
+  },
+  borrar_contenido: {
+    description:
+      'Quita entradas del contenido por su clave: de un sistema de la cuenta (con la versión del sistema que leíste) o, con worldId, del compendio de ese mundo. Se deshace desde el historial',
+    input: deleteContentInput,
+    actions: ['deleteSystemContent', 'deleteWorldContent'],
+    route: (input) => {
+      const { systemId, worldId, version, keys } = deleteContentInput.parse(input)
+      if (worldId) return { action: 'deleteWorldContent', input: { worldId, systemId, keys } }
+      return { action: 'deleteSystemContent', input: { systemId, version, keys } }
+    }
+  },
+  copiar_contenido: { action: 'copyContent' },
+  // Las criaturas en juego de una campaña (del máster): ponerlas, su hoja, la partida, tirar, aplicar y quitarlas
+  ver_en_juego: { action: 'listInPlay' },
+  ver_criatura: { action: 'getInPlay' },
+  poner_en_juego: { action: 'putInPlay' },
+  partida_criatura: { action: 'playCreature' },
+  tirar_por_criatura: { action: 'rollForCreature' },
+  aplicar_tirada: { action: 'applyRoll' },
+  quitar_de_juego: { action: 'removeFromPlay' },
+  origen_contenido: { action: 'getContentOrigin' },
+  traer_original: { action: 'pullContentOrigin' }
 }
 
 const INSTRUCTIONS =
@@ -264,6 +336,18 @@ const INSTRUCTIONS =
   'contenido (clases, conjuros, armas, criaturas) se busca con buscar_contenido (con campaignId, lo que eligió la ' +
   'campaña: sus ediciones) y se lee con leer_contenido; en uno de la cuenta se escribe con su mecánica (efectos, ' +
   'recursos, acciones, escalado: su formato, en formato_sistemas) con guardar_contenido y se quita con borrar_contenido. ' +
+  'Cada mundo tiene además su propio compendio, hecho para un sistema: lo que es solo de ese mundo (sus criaturas, sus ' +
+  'objetos, un PNJ con su statblock). Sale en el compendio de sus campañas con ese sistema (buscar_contenido con ' +
+  'campaignId, leer_compendio), marcado con world; se guarda y se quita con worldId en guardar_contenido y ' +
+  'borrar_contenido. Para cambiar algo del sistema solo en un mundo, cópialo con copiar_contenido (to world) y cambia ' +
+  'la copia; si su original cambia, origen_contenido dice qué cambió (con la huella del original) y traer_original ' +
+  'trae lo que elijas, con esa huella. ' +
+  'En partida, una criatura del compendio se pone en juego en la campaña con poner_en_juego: copias numeradas ' +
+  '(«Goblin 1», «Goblin 2»; count o una tirada) o una única (unique: un PNJ que guarda sus PG de una sesión a otra), ' +
+  'con sus PG medios o tirados. ver_en_juego las lista con su vida; ver_criatura da su hoja; tirar_por_criatura tira ' +
+  'por ella (oculta, salvo que pidan que la vean todos); partida_criatura le hace daño, la cura, gasta usos o descansa; ' +
+  'aplicar_tirada aplica el daño de una tirada del registro a varias criaturas o personajes (nada, mitad, entero o ' +
+  'doble, con sus resistencias); quitar_de_juego quita unas o todas las copias. ' +
   'Los personajes de una campaña (listar_personajes) se hacen por pasos: crear_personaje y luego elegir_personaje (lo de ' +
   'cada paso por su clave del contenido, y lo pendiente por el id de cada decisión, varias cosas de una vez); ' +
   'ver_personaje dice lo que falta con sus opciones válidas y el motivo de las que no. Terminarlo (confirm created) y ' +

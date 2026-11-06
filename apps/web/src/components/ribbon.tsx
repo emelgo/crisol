@@ -14,6 +14,7 @@ import {
   ScrollText,
   Settings,
   Shield,
+  Swords,
   Trash2,
   User,
   Users
@@ -96,6 +97,12 @@ export function Ribbon() {
     enabled: Boolean(account && worldId && campaignId)
   })
   const campaign = campaigns.data?.campaigns.find((c) => c.id === campaignId)
+  // Su papel en la campaña: las criaturas en juego, solo del máster
+  const campaignRole = useQuery({
+    queryKey: ['campaign', campaignId],
+    queryFn: () => api.call('getCampaign', { campaignId: campaignId ?? '' }),
+    enabled: Boolean(account && campaignId)
+  }).data?.campaign.role
   // La wiki es solo de quien administra el mundo (hasta el módulo 5); dentro de él, su historial y su papelera
   const master = world?.role === 'master'
   // Historial y Papelera se piden en cuanto el ratón (o el foco) llega a su botón: al abrirlos, ya están
@@ -193,7 +200,11 @@ export function Ribbon() {
     <div className={styles.ribbon}>
       <MobileMenu
         world={inWorld && world ? world : null}
-        campaign={inWorld && world && campaignId ? { id: campaignId, name: campaign?.name ?? '' } : null}
+        campaign={
+          inWorld && world && campaignId
+            ? { id: campaignId, name: campaign?.name ?? '', master: campaignRole === 'master' }
+            : null
+        }
         master={master}
         isOwner={isOwner}
       />
@@ -299,7 +310,12 @@ export function Ribbon() {
             data-tour="barra-mundo"
           >
             {panelsCampaign ? (
-              <CampaignPanels worldId={panelsWorld} campaignId={panelsCampaign} name={campaign?.name ?? ''} />
+              <CampaignPanels
+                worldId={panelsWorld}
+                campaignId={panelsCampaign}
+                name={campaign?.name ?? ''}
+                master={campaignRole === 'master'}
+              />
             ) : (
               <WorldPanels worldId={panelsWorld} worldName={world?.name ?? ''} master={panelsMaster} />
             )}
@@ -381,7 +397,18 @@ function WorldPanels({ worldId, worldName, master }: { worldId: string; worldNam
  * Lo de una campaña, en su propia vista (como un mundo): su inicio (con su nombre), su compendio y los dados, que
  * tiran en ella
  */
-function CampaignPanels({ worldId, campaignId, name }: { worldId: string; campaignId: string; name: string }) {
+function CampaignPanels({
+  worldId,
+  campaignId,
+  name,
+  master
+}: {
+  worldId: string
+  campaignId: string
+  name: string
+  /** Quien la dirige: también lo que está en juego */
+  master: boolean
+}) {
   const { t } = useTranslation()
   const { setCampaign } = useDice()
   useEffect(() => setCampaign(worldId, campaignId), [setCampaign, worldId, campaignId])
@@ -415,6 +442,17 @@ function CampaignPanels({ worldId, campaignId, name }: { worldId: string; campai
       >
         <Label icon={BookOpen} text={t('ribbon.compendium')} />
       </Link>
+      {master && (
+        <Link
+          to="/mundos/$worldId/campanas/$campaignId/en-juego"
+          params={{ worldId, campaignId }}
+          className={styles.item}
+          viewTransition={SECTION}
+          data-tour="barra-en-juego"
+        >
+          <Label icon={Swords} text={t('ribbon.inPlay')} />
+        </Link>
+      )}
       <DiceButton />
     </>
   )
@@ -511,7 +549,7 @@ function MobileMenu({
   isOwner
 }: {
   world: { id: string; name: string } | null
-  campaign: { id: string; name: string } | null
+  campaign: { id: string; name: string; master: boolean } | null
   master: boolean
   isOwner: boolean
 }) {
@@ -577,6 +615,18 @@ function MobileMenu({
             current: path.startsWith(`/mundos/${world.id}/campanas/${campaign.id}/compendio`),
             run: go(`/mundos/${world.id}/campanas/${campaign.id}/compendio`)
           },
+          // Las criaturas en juego: del máster (hasta el módulo 5)
+          ...(campaign.master
+            ? [
+                {
+                  key: 'en-juego',
+                  icon: Swords,
+                  text: t('ribbon.inPlay'),
+                  current: path.startsWith(`/mundos/${world.id}/campanas/${campaign.id}/en-juego`),
+                  run: go(`/mundos/${world.id}/campanas/${campaign.id}/en-juego`)
+                }
+              ]
+            : []),
           diceEntry
         ]
       : world

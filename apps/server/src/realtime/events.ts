@@ -52,6 +52,18 @@ export const systemsChanged = (organizationId: string): RealtimeEvent => ({
   message: { type: 'changed', what: 'systems', organizationId }
 })
 
+/** Las criaturas en juego de una campaña: al máster (hasta el módulo 5, los jugadores no las ven) */
+export const creaturesChanged = (scope: CampaignScope): RealtimeEvent => ({
+  to: { capability: 'creatures.manage', target: scope },
+  message: { type: 'changed', what: 'creatures', campaignId: scope.campaignId }
+})
+
+/** El compendio de un mundo: a quien lo ve (hasta el módulo 5, quien lo lleva; las hojas de los jugadores, al volver a pedirlas) */
+export const worldContentChanged = (wiki: { worldId: string; organizationId: string }): RealtimeEvent => ({
+  to: { capability: 'worldContent.read', target: wiki },
+  message: { type: 'changed', what: 'worldContent', worldId: wiki.worldId }
+})
+
 /** El texto de una página se guardó: a quien la ve (lo que la enseña en otra se vuelve a pedir) */
 export const pageContentChanged = (
   wiki: { worldId: string; organizationId: string },
@@ -138,6 +150,12 @@ export function undoEvents(
       case 'systems':
       case 'system_content':
         if (context.organizationId) events.push(systemsChanged(String(row.organization_id ?? context.organizationId)))
+        break
+      case 'campaign_creatures':
+        events.push(creaturesChanged(campaignScope))
+        break
+      case 'world_content':
+        events.push(worldContentChanged({ worldId, organizationId: context.organizationId }))
         break
       case 'files':
       case 'file_folders':

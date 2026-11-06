@@ -2,6 +2,7 @@ import { aiActions } from './ai.ts'
 import { campaignActions } from './campaigns.ts'
 import { characterActions } from './characters.ts'
 import { compendiumActions } from './compendium.ts'
+import { creatureActions } from './creatures.ts'
 import { diceActions } from './dice.ts'
 import { fileActions } from './files.ts'
 import { foundryActions } from './foundry.ts'
@@ -23,6 +24,7 @@ import { tagActions } from './tags.ts'
 import { templateActions } from './templates.ts'
 import { trashActions } from './trash.ts'
 import { versionActions } from './versions.ts'
+import { worldContentActions } from './world-content.ts'
 import { worldActions } from './worlds.ts'
 
 /** Los servicios de todas las acciones del contrato: los usan la API y el MCP */
@@ -48,7 +50,9 @@ export const IMPLEMENTATIONS: Implementation[] = [
   ...systemActions,
   ...foundryActions,
   ...compendiumActions,
+  ...worldContentActions,
   ...characterActions,
+  ...creatureActions,
   ...tableActions,
   ...mapActions,
   ...preferenceActions

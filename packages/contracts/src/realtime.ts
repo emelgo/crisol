@@ -30,7 +30,11 @@ export type RealtimeMessage =
   | { type: 'changed'; what: 'templates'; organizationId: string }
   /** Los sistemas de la cuenta */
   | { type: 'changed'; what: 'systems'; organizationId: string }
+  /** El compendio de ese mundo (lo que ven sus campañas en su compendio y en las hojas) */
+  | { type: 'changed'; what: 'worldContent'; worldId: string }
   | { type: 'changed'; what: 'members' | 'invitation'; campaignId: string }
+  /** Las criaturas en juego de esa campaña (al máster) */
+  | { type: 'changed'; what: 'creatures'; campaignId: string }
   /** Alguien ha entrado en la campaña con el enlace (al máster, con «Expulsar» a mano) */
   | { type: 'joined'; worldId: string; campaignId: string; campaign: string; member: { userId: string; name: string } }
   /** La cuenta ya no está en la campaña: la han expulsado o ha salido desde otra pestaña */

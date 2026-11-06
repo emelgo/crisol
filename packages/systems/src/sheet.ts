@@ -32,22 +32,53 @@ export function defaultSheet(fields: Record<string, Field>): SheetBlock[] {
   return blocks
 }
 
-/** La hoja de un tipo: la de su sistema o la de por defecto */
+/** El tipo del personaje: el primer actor (la hoja del sistema es la suya) */
+const firstActor = (system: System) => Object.entries(system.types).find(([, t]) => t.document === 'actor')?.[0]
+
+/**
+ * La hoja de un tipo: la suya (la de una criatura); la del sistema, si es el personaje; si no, una por defecto de sus
+ * campos
+ */
 export function sheetOf(system: System, type: string): SheetBlock[] {
-  return system.sheet?.blocks ?? defaultSheet(system.types[type]?.fields ?? {})
+  const own = system.types[type]?.sheet?.blocks
+  if (own) return own
+  if (system.sheet && type === firstActor(system)) return system.sheet.blocks
+  return defaultSheet(system.types[type]?.fields ?? {})
 }
 
 /** Lo que no vale de la hoja de un sistema: lo que nombra cada bloque, que exista y sea de su clase */
 export function checkSheet(system: System, add: (path: (string | number)[], message: string) => void) {
   const blocks = system.sheet?.blocks
-  if (!blocks) return
-  const actor = Object.entries(system.types).find(([, t]) => t.document === 'actor')
-  if (!actor) {
-    add(['sheet'], 'La hoja es de un personaje: el sistema no tiene ningún tipo de personaje (actor)')
-    return
+  if (blocks) {
+    const actor = firstActor(system)
+    if (!actor) add(['sheet'], 'La hoja es de un personaje: el sistema no tiene ningún tipo de personaje (actor)')
+    else checkBlocks(system, actor, blocks, ['sheet'], add)
   }
-  const [actorKey, type] = actor
-  const fields = type.fields
+  for (const [key, type] of Object.entries(system.types)) {
+    if (type.sheet) {
+      if (type.document !== 'actor')
+        add(['types', key, 'sheet'], 'Solo los actores (personajes y criaturas) tienen hoja')
+      else checkBlocks(system, key, type.sheet.blocks, ['types', key, 'sheet'], add)
+    }
+    // Su daño: campos de lista (los tipos de daño)
+    for (const [which, field] of Object.entries(type.damage ?? {})) {
+      if (!field) continue
+      const f = type.fields[field]
+      if (!f) add(['types', key, 'damage', which], `${key} no tiene el campo «${field}»`)
+      else if (f.kind !== 'list') add(['types', key, 'damage', which], `«${field}» no es de los que van aquí (list)`)
+    }
+  }
+}
+
+/** Lo que nombran unos bloques de la hoja de un tipo: que exista y sea de su clase */
+function checkBlocks(
+  system: System,
+  actorKey: string,
+  blocks: readonly SheetBlock[],
+  prefix: (string | number)[],
+  add: (path: (string | number)[], message: string) => void
+) {
+  const fields = system.types[actorKey]?.fields ?? {}
   const rolls = system.rolls ?? {}
   const field = (path: (string | number)[], key: string, kinds: readonly Field['kind'][]) => {
     const f = fields[key]
@@ -100,7 +131,7 @@ export function checkSheet(system: System, add: (path: (string | number)[], mess
     }
   }
   for (const [i, b] of blocks.entries()) {
-    const at = ['sheet', 'blocks', i]
+    const at = [...prefix, 'blocks', i]
     if (b.kind === 'columns') for (const [j, inner] of b.blocks.entries()) leaf(inner, [...at, 'blocks', j])
     else if (b.kind === 'tabs')
       for (const [j, tab] of b.tabs.entries())

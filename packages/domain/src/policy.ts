@@ -88,6 +88,9 @@ const RULES = {
   // La wiki de un mundo: los jugadores no la ven hasta el módulo 5
   'page.read': { sees: managesWiki, allows: managesWiki },
   'page.write': { sees: managesWiki, allows: managesWiki },
+  // El compendio del mundo (docs/specs/compendio-mundo.md), como la wiki: hasta el módulo 5, solo quien la lleva
+  'worldContent.read': { sees: managesWiki, allows: managesWiki },
+  'worldContent.write': { sees: managesWiki, allows: managesWiki },
   // Los archivos comunes de la organización, que comparten sus mundos: verlos y usarlos; subirlos y cambiarlos
   'commonFiles.read': { sees: seesCommonFiles, allows: seesCommonFiles },
   'commonFiles.write': { sees: seesCommonFiles, allows: isOrganizationOwner },
@@ -105,7 +108,9 @@ const RULES = {
   // al máster del mundo o de la campaña
   'dice.roll': { sees: seesCampaign, allows: seesCampaign },
   'dice.read': { sees: seesCampaign, allows: seesCampaign },
-  'dice.private': { sees: seesCampaign, allows: any(isWorldMaster, isCampaignMaster) }
+  'dice.private': { sees: seesCampaign, allows: any(isWorldMaster, isCampaignMaster) },
+  // Las criaturas en juego de una campaña (docs/specs/criaturas.md): hasta el módulo 5, solo el máster
+  'creatures.manage': { sees: seesCampaign, allows: any(isWorldMaster, isCampaignMaster) }
 } satisfies Record<string, { sees: Predicate; allows: Predicate }>
 
 export type Capability = keyof typeof RULES

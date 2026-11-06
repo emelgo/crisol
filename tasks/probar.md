@@ -9,6 +9,43 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   de propietario.
 - **En local**, con los cambios al momento: http://localhost:5173 (lo arranco cuando haga falta).
 
+## Módulo 4: las criaturas en juego (rama `modulo-4/compendio`; en local, aún no en staging)
+
+Una criatura del compendio se pone en juego en la campaña: copias numeradas o una única (un PNJ que guarda sus PG). Hasta
+el módulo 5, solo tú (el máster).
+- [ ] **Poner en juego**: en el compendio de una campaña, abre una criatura (el Goblin); a la derecha, «Poner en
+  juego»: 3 copias (o una tirada, `1d4+1`), o la única; PG medios o tirados.
+- [ ] **«En juego»** (en la barra de la campaña): las copias juntas con su vida en barra, la única aparte con su
+  estrella; malherida y fuera de combate marcadas.
+- [ ] **Su hoja**: tirar un ataque y su daño (a su nombre, ocultos), bajarle los PG, «Tirar PG», «Otro máximo» y
+  «Quitar de juego». Una única conserva sus PG al salir y volver a entrar.
+- [ ] **Aplicar el daño** desde el registro de tiradas («Aplicar» en una tirada de daño): a varias criaturas o
+  personajes, con nada, mitad, entero o doble (sus resistencias cuentan).
+- [ ] **Quitar las copias** de una vez (la única se queda) y deshacerlo desde el historial.
+- [ ] **Enlazar desde una página**: en la página de un PNJ, escribe `[[@gob` y elige el Goblin; al pasar el ratón
+  (o al tocarlo en el móvil) sale su tarjeta, y «Abrir en el compendio» lo abre en una campaña con su sistema.
+- [ ] **La IA, desde claude.ai**: «pon en juego tres goblins y un jefe único», «tira la cimitarra del Goblin 2»,
+  «aplica ese daño a los otros dos, mitad al jefe».
+
+## Módulo 4: el compendio del mundo (rama `modulo-4/compendio`; en local, aún no en staging)
+
+Cada mundo tiene su propio compendio, hecho para un sistema: lo ven sus campañas con ese sistema. Hasta el módulo 5,
+solo tú (quien lleva el mundo).
+- [ ] **Copiar al mundo**: en el compendio de una campaña, abre algo del sistema (el Goblin) y «Copiar al mundo». Se
+  abre para cambiarlo, con «(copia)» en el nombre; cámbialo y guarda. Sale con «Del mundo» y, a la derecha, «Copia de
+  Goblin».
+- [ ] **Todo · Del sistema · Del mundo**: el selector bajo el buscador; en «Todo», lo del mundo va en su estante
+  arriba.
+- [ ] **Nueva entrada**: crea en el mundo (y en el sistema si lo eliges en «Dónde»).
+- [ ] **El original cambia**: cambia el Goblin del sistema (por ejemplo, con la IA); la copia dice «El original ha
+  cambiado». «Ver cambios» enseña cada campo (en tu copia y en el original); marca los que quieras y «Traer».
+- [ ] **Llevar al sistema**: en una entrada del mundo, para usarla en otros mundos (con «Quitarla del mundo» o no).
+- [ ] **Deshacer**: borrar una entrada del mundo y deshacerlo desde el historial.
+- [ ] **La jugadora** no ve nada del mundo en el compendio, pero un objeto del mundo que lleve su personaje sí sale en
+  su hoja.
+- [ ] **La IA, desde claude.ai**: «guarda en el compendio de mi mundo una criatura…» (guardar_contenido con worldId),
+  «copia el ogro al mundo y súbele los PG» (copiar_contenido), «¿qué cambió en el original?» (origen_contenido).
+
 ## Módulo 3 limpio: Crisol vacío, importar y cambiar (ADR-0015, PR #108)
 
 Crisol ya no trae el 5e: de serie solo «En blanco». Las campañas de staging que lo usaban siguen igual, con una copia
