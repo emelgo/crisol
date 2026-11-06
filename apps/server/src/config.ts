@@ -21,7 +21,9 @@ const schema = z.object({
   // Donde se guardan los datos que no van en Postgres (los bytes de los archivos, en archivos/)
   DATA_DIR: z.string().default('datos-locales'),
   // El Chromium del sistema para sacar los PDF de las hojas (en la imagen); sin él, el que instala Playwright
-  CHROMIUM_PATH: z.string().optional()
+  CHROMIUM_PATH: z.string().optional(),
+  // El modelo de la búsqueda por significado (model.onnx y sentencepiece.bpe.model); sin él, solo por palabras
+  MODEL_DIR: z.string().default('datos-locales/modelos/multilingual-e5-small')
 })
 
 export type Config = z.infer<typeof schema>

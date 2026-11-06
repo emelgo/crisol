@@ -13,6 +13,7 @@ describe('startServer contra Postgres y Valkey reales', () => {
       DATABASE_URL: await freshTestDatabase('crisol_test_server'),
       VALKEY_URL: process.env.TEST_VALKEY_URL ?? 'redis://127.0.0.1:63790',
       QUEUE_PREFIX: 'crisol-test',
+      MODEL_DIR: '/sin-modelo',
       AUTH_SECRET: TEST_AUTH_SECRET,
       PUBLIC_URL: 'http://127.0.0.1:8130',
       DATA_DIR: testDataDir()

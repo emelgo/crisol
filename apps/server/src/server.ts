@@ -6,6 +6,7 @@ import { createAuth } from './auth/auth.ts'
 import type { Config } from './config.ts'
 import { diskStorage } from './files/storage.ts'
 import { startPurges } from './jobs/purges.ts'
+import { modelEmbedder } from './library/embedder.ts'
 import { queuedLibrary } from './library/jobs.ts'
 import { deriveSealKey } from './secrets.ts'
 import { serviceChecks } from './services.ts'
@@ -25,9 +26,12 @@ export async function startServer(
   const pdf = config.WEB_DIR ? pdfRenderer({ baseUrl: internalUrl, executablePath: config.CHROMIUM_PATH }) : null
   // El texto de los PDF, en segundo plano (el registro de la app aún no existe: se avisa por consola)
   let logError = (error: unknown) => console.error(error)
+  // El modelo, en su hilo: se carga al usarlo (si están sus archivos)
+  const embedder = modelEmbedder({ dir: config.MODEL_DIR })
   const library = queuedLibrary({
     db: db.db,
     storage,
+    embedder,
     valkeyUrl: config.VALKEY_URL,
     prefix: config.QUEUE_PREFIX,
     onError: (e) => logError(e)
@@ -41,7 +45,8 @@ export async function startServer(
     storage,
     ...(pdf ? { pdf: { renderer: pdf, internalUrl } } : {}),
     ...(options.approvalWaitMs ? { approvalWaitMs: options.approvalWaitMs } : {}),
-    library
+    library,
+    ...(embedder ? { embedder } : {})
   })
   logError = (error) => app.log.error(error, 'Falló leer un PDF')
   // Lo aprobado que se quedó haciéndose al pararse el anterior ya no se va a acabar
@@ -63,6 +68,7 @@ export async function startServer(
     async stop() {
       await purges.close()
       await library.close()
+      await embedder?.close()
       await app.close()
       await pdf?.close()
       await db.close()

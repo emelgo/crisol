@@ -3,6 +3,7 @@ import type { Database, OperationContext } from '@crisol/db'
 import { type Actor, ForbiddenError, NotFoundError } from '@crisol/domain'
 import type { Collab } from '../collab/server.ts'
 import type { Storage } from '../files/storage.ts'
+import type { Embedder } from '../library/embedder.ts'
 import type { LibraryJobs } from '../library/jobs.ts'
 import type { Realtime } from '../realtime/hub.ts'
 
@@ -29,6 +30,8 @@ export interface ActionEnv {
   storage?: Storage
   /** Leer el texto de los PDF en segundo plano (docs/specs/biblioteca.md) */
   library?: LibraryJobs
+  /** El modelo de la búsqueda por significado; sin él, solo por palabras */
+  embedder?: Embedder
 }
 
 /** Con qué se ejecuta una acción: el servidor y quién la pide, por dónde */

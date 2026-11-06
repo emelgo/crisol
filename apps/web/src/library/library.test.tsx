@@ -45,7 +45,8 @@ function renderLibrary() {
       { id: REGLAS, worldId: null, name: 'Reglas.pdf', kind: 'pdf', mime: 'application/pdf' },
       { worldId: WORLD.id, name: 'Mapa.png' }
     ],
-    bookPages: { [GUIA]: ['Guía de Valdren', 'La guardia de la ciudad viste capas grises.'] }
+    bookPages: { [GUIA]: ['Guía de Valdren', 'La guardia de la ciudad viste capas grises.'] },
+    pages: [{ worldId: WORLD.id, title: 'La guardia de Puertoceniza' }]
   })
   const router = createAppRouter(
     createMemoryHistory({ initialEntries: [`/mundos/${WORLD.id}/campanas/${CAMPAIGN.id}/biblioteca`] })
@@ -81,6 +82,8 @@ describe('la biblioteca (docs/specs/biblioteca.md)', () => {
     await userEvent.type(screen.getByRole('searchbox', { name: 'Buscar en los libros' }), 'guardia')
     const results = within(await screen.findByRole('region', { name: 'Lo encontrado' }))
     const hit = await results.findByRole('button', { name: /Página 2/ })
+    // También en las páginas de la wiki, con su enlace
+    expect(results.getByRole('link', { name: 'La guardia de Puertoceniza' })).toBeDefined()
     await userEvent.click(hit)
     await waitFor(() => expect(router.state.location.search).toMatchObject({ libro: GUIA, pagina: 2, q: 'guardia' }))
     // El libro, abierto al lado (y su grupo de resultados)

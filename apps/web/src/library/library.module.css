@@ -243,3 +243,9 @@
     max-block-size: none;
   }
 }
+
+.alsoIn {
+  margin: var(--space-4) 0 0;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}

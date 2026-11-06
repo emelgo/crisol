@@ -532,6 +532,7 @@ export const es = {
     meta_one: 'Una página · {{scope}}',
     page: 'Página {{page}}',
     semantic: 'Por significado',
+    alsoIn: 'También en las páginas:',
     reading: 'Leyendo… {{percent}} %',
     status: {
       pending: 'En cola',

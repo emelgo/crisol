@@ -24,6 +24,8 @@ if (import.meta.main) {
     AUTH_SECRET: randomBytes(32).toString('hex'),
     PUBLIC_URL: `http://127.0.0.1:${E2E_PORT}`,
     WEB_DIR: join(import.meta.dirname, '..', 'apps', 'web', 'dist'),
+    // El modelo de la búsqueda por significado, si está en datos-locales (en la CI no: se busca por palabras)
+    MODEL_DIR: join(import.meta.dirname, '..', 'datos-locales', 'modelos', 'multilingual-e5-small'),
     // Los bytes de los archivos, en una carpeta nueva cada vez
     DATA_DIR: mkdtempSync(join(tmpdir(), 'crisol-e2e-'))
   })

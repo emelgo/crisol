@@ -35,7 +35,7 @@ export const searchLibrary = defineAction({
   name: 'searchLibrary',
   kind: 'read',
   description:
-    'Busca dentro de los libros (PDF) de un mundo y de los comunes de su cuenta, en español sin tildes: por libro (el que más, antes), sus mejores páginas con un fragmento (lo encontrado entre **). Con fileId, solo en ese libro',
+    'Busca dentro de los libros (PDF) de un mundo y de los comunes de su cuenta, por sus palabras (en español, sin tildes) y por su significado («qué hace la guardia» encuentra «los vigilantes patrullan»): por libro (el que más, antes), sus mejores páginas con un fragmento (lo encontrado entre **), y las páginas de la wiki que también hablan de ello. Con fileId, solo en ese libro',
   input: z.object({
     worldId: z.uuid(),
     query: z.string().trim().min(1).max(200),
@@ -56,7 +56,11 @@ export const searchLibrary = defineAction({
           })
         )
       })
-    )
+    ),
+    pages: z
+      .array(z.object({ pageId: z.uuid(), title: z.string() }))
+      .describe('También en las páginas de la wiki del mundo (por sus palabras o su significado)'),
+    semantic: z.boolean().describe('Si se buscó también por significado (si no, el modelo no está)')
   })
 })
 

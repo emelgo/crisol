@@ -4,7 +4,7 @@
  * centro, el libro abierto en la página del resultado, con lo buscado marcado. Del máster, hasta el módulo 5
  */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { getRouteApi, Navigate } from '@tanstack/react-router'
+import { getRouteApi, Link, Navigate } from '@tanstack/react-router'
 import { BookOpen, RotateCcw, Search } from 'lucide-react'
 import { Fragment, useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -28,17 +28,7 @@ type Book = ActionOutput<'listLibrary'>['books'][number]
 function Excerpt({ text }: { text: string }) {
   const parts = text.split(/\*\*(.+?)\*\*/)
   return (
-    <>
-      {parts.map((part, i) =>
-        i % 2 === 1 ? (
-          // biome-ignore lint/suspicious/noArrayIndexKey: los trozos de un texto fijo no se reordenan
-          <mark key={i}>{part}</mark>
-        ) : (
-          // biome-ignore lint/suspicious/noArrayIndexKey: los trozos de un texto fijo no se reordenan
-          <Fragment key={i}>{part}</Fragment>
-        )
-      )}
-    </>
+    <>{parts.map((part, i) => (i % 2 === 1 ? <mark key={i}>{part}</mark> : <Fragment key={i}>{part}</Fragment>))}</>
   )
 }
 
@@ -113,7 +103,9 @@ export function LibraryScreen() {
         </search>
         {wanted ? (
           <section aria-label={t('library.results')} aria-busy={found.isFetching}>
-            {found.data?.books.length === 0 && <p className={styles.muted}>{t('library.nothing')}</p>}
+            {found.data?.books.length === 0 && found.data.pages.length === 0 && (
+              <p className={styles.muted}>{t('library.nothing')}</p>
+            )}
             {found.data?.books.map((book) => (
               <section key={book.fileId} className={styles.group} aria-label={book.name}>
                 <div className={styles.groupHead}>
@@ -142,6 +134,19 @@ export function LibraryScreen() {
                 </ul>
               </section>
             ))}
+            {found.data && found.data.pages.length > 0 && (
+              <p className={styles.alsoIn}>
+                {t('library.alsoIn')}{' '}
+                {found.data.pages.map((page, i) => (
+                  <Fragment key={page.pageId}>
+                    {i > 0 && ', '}
+                    <Link to="/mundos/$worldId/wiki/$pageId" params={{ worldId, pageId: page.pageId }}>
+                      {page.title}
+                    </Link>
+                  </Fragment>
+                ))}
+              </p>
+            )}
           </section>
         ) : (
           <section aria-labelledby={`${searchId}-books`} data-tour="biblioteca-libros">

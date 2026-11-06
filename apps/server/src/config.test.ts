@@ -16,7 +16,8 @@ describe('loadConfig', () => {
       PORT: 8130,
       NODE_ENV: 'development',
       DATA_DIR: 'datos-locales',
-      QUEUE_PREFIX: 'crisol'
+      QUEUE_PREFIX: 'crisol',
+      MODEL_DIR: 'datos-locales/modelos/multilingual-e5-small'
     })
   })
 

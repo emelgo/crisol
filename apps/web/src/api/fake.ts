@@ -2450,7 +2450,15 @@ export function fakeApi(
           return pages.length > 0
             ? [{ fileId: book.fileId, name: book.name, common: book.common, pages: pages.slice(0, 3) }]
             : []
-        })
+        }),
+        // También en las páginas: las del mundo cuyo título lleva lo buscado
+        pages: fileId
+          ? []
+          : pages
+              .filter((p) => p.worldId === worldId && words.every((w) => fold(p.title).includes(w)))
+              .slice(0, 5)
+              .map((p) => ({ pageId: p.id, title: p.title })),
+        semantic: false
       }
     },
     getBookPages: ({ fileId, from, to }) => {

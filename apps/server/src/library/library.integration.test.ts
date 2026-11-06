@@ -6,10 +6,24 @@ import { buildApp } from '../app.ts'
 import type { Auth } from '../auth/auth.ts'
 import { diskStorage, type Storage } from '../files/storage.ts'
 import { createTestAuth, signUpTestUser, TEST_SEAL_KEY, testDataDir } from '../testing.ts'
+import { type Embedder, modelEmbedder } from './embedder.ts'
 import { textPdf } from './fixture.ts'
 import { inlineLibrary, type LibraryJobs } from './jobs.ts'
 
 const BASE_URL = 'https://crisol.test'
+
+/** Un modelo de mentira: lo que habla de vigilar va a un lado; lo demás, a otro (sin palabras en común) */
+const fakeEmbedder: Embedder = {
+  async embed(texts) {
+    return texts.map((text) => {
+      const v = new Array(384).fill(0)
+      v[/vigil|guard|seguridad|patrull/i.test(text) ? 0 : 1] = 1
+      return v
+    })
+  },
+  async close() {}
+}
+const MODEL_DIR = new URL('../../../../datos-locales/modelos/multilingual-e5-small', import.meta.url).pathname
 const ok = async () => undefined
 
 const GUIA = textPdf([
@@ -24,6 +38,7 @@ describe('la biblioteca (docs/specs/biblioteca.md)', () => {
   let app: FastifyInstance
   let storage: Storage
   let library: LibraryJobs
+  let embedder: Embedder | null = null
   let owner: { userId: string; cookie: string }
   let organizationId: string
   let worldId: string
@@ -54,12 +69,13 @@ describe('la biblioteca (docs/specs/biblioteca.md)', () => {
     await resetDatabase(conn.sql)
     auth = createTestAuth(conn.db, BASE_URL)
     storage = diskStorage(testDataDir())
-    library = inlineLibrary(conn.db, storage)
+    library = inlineLibrary(conn.db, storage, embedder)
     app = buildApp({
       checks: { postgres: ok, valkey: ok },
       accounts: { auth, db: conn.db, publicUrl: BASE_URL, sealKey: TEST_SEAL_KEY },
       storage,
-      library
+      library,
+      ...(embedder ? { embedder } : {})
     })
     owner = await signUpTestUser(auth, { name: 'Enrique', email: 'enrique@crisol.test' })
     const [org] = await conn.db.insert(schema.organizations).values({ name: 'Mesa' }).returning()
@@ -156,4 +172,76 @@ describe('la biblioteca (docs/specs/biblioteca.md)', () => {
     await library.idle()
     expect((await ok200('listLibrary', { worldId })).books[0]).toMatchObject({ status: 'done', pages: 1 })
   })
+
+  it('por significado: lo que dice lo mismo con otras palabras, marcado; también en las páginas de la wiki', async () => {
+    embedder = fakeEmbedder
+    // Se monta de nuevo con el modelo de mentira
+    await app.close()
+    library = inlineLibrary(conn.db, storage, embedder)
+    app = buildApp({
+      checks: { postgres: ok, valkey: ok },
+      accounts: { auth, db: conn.db, publicUrl: BASE_URL, sealKey: TEST_SEAL_KEY },
+      storage,
+      library,
+      embedder
+    })
+    await upload(
+      `worldId=${worldId}`,
+      'Guía.pdf',
+      textPdf([
+        'Recetas de la posada: pan y queso de cabra.',
+        'Los vigilantes patrullan de noche las murallas y tocan la campana.'
+      ])
+    )
+    await ok200('createPages', {
+      worldId,
+      parentId: null,
+      pages: [
+        { key: 'h', title: 'Capitán Hesk', markdown: 'Dirige la guardia de Puertoceniza desde hace veinte años.' }
+      ]
+    })
+    await library.idle()
+    const found = await ok200('searchLibrary', { worldId, query: 'seguridad nocturna' })
+    expect(found.semantic).toBe(true)
+    expect(found.books).toEqual([
+      expect.objectContaining({ name: 'Guía.pdf', pages: [expect.objectContaining({ page: 2, semantic: true })] })
+    ])
+    expect(found.books[0].pages[0].excerpt).toContain('vigilantes')
+    expect(found.pages).toEqual([expect.objectContaining({ title: 'Capitán Hesk' })])
+    // Lo que sale por sus palabras no lleva la marca
+    const byWords = await ok200('searchLibrary', { worldId, query: 'campana' })
+    expect(byWords.books[0].pages[0]).toMatchObject({ page: 2, semantic: false })
+    embedder = null
+  })
+
+  // Con el modelo de verdad (datos-locales/modelos, fuera de git)
+  it.skipIf(!modelEmbedder({ dir: MODEL_DIR }))(
+    'con el modelo de verdad: «qué hace la guardia de la ciudad» encuentra la página de la vigilancia',
+    async () => {
+      const real = modelEmbedder({ dir: MODEL_DIR }) as Embedder
+      await app.close()
+      library = inlineLibrary(conn.db, storage, real)
+      app = buildApp({
+        checks: { postgres: ok, valkey: ok },
+        accounts: { auth, db: conn.db, publicUrl: BASE_URL, sealKey: TEST_SEAL_KEY },
+        storage,
+        library,
+        embedder: real
+      })
+      await upload(
+        `worldId=${worldId}`,
+        'Guía.pdf',
+        textPdf([
+          'Recetas de la posada: el pan se cuece al alba y el queso de cabra se cura en la bodega.',
+          'Los vigilantes recorren las murallas de noche, en parejas, y tocan una campana cada hora.',
+          'Los barcos que llegan al puerto pagan un diezmo por cada barril de vino.'
+        ])
+      )
+      await library.idle()
+      const found = await ok200('searchLibrary', { worldId, query: '¿qué hace la guardia de la ciudad?' })
+      expect(found.books[0].pages[0]).toMatchObject({ page: 2, semantic: true })
+      await real.close()
+    },
+    120_000
+  )
 })

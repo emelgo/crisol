@@ -17,6 +17,7 @@ import type { Storage } from './files/storage.ts'
 import { type HealthChecks, registerHealth } from './health.ts'
 import { redactSecrets, registerOriginGuard } from './http.ts'
 import { registerJoinRoutes } from './join.ts'
+import type { Embedder } from './library/embedder.ts'
 import type { LibraryJobs } from './library/jobs.ts'
 import { registerMcpRoutes } from './mcp/routes.ts'
 import { createRealtime } from './realtime/hub.ts'
@@ -53,6 +54,8 @@ export interface AppDeps {
   pdf?: { renderer: PdfRenderer; internalUrl: string }
   /** Leer el texto de los PDF en segundo plano; sin ello, no se leen */
   library?: LibraryJobs
+  /** El modelo de la búsqueda por significado; sin él, solo por palabras */
+  embedder?: Embedder
 }
 
 export function buildApp(deps: AppDeps): FastifyInstance {
@@ -93,7 +96,8 @@ export function buildApp(deps: AppDeps): FastifyInstance {
       collab,
       actions: implementationsByName,
       ...(deps.storage ? { storage: deps.storage } : {}),
-      ...(deps.library ? { library: deps.library } : {})
+      ...(deps.library ? { library: deps.library } : {}),
+      ...(deps.embedder ? { embedder: deps.embedder } : {})
     }
     // Límite de intentos solo donde se pide (las rutas de Better Auth tienen el suyo)
     app.register(fastifyRateLimit, { global: false })
