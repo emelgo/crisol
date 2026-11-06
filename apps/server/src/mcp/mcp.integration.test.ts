@@ -310,6 +310,134 @@ describe('conector MCP con OAuth', () => {
     // Con la cobertura y la máquina cargada, más de 20 s
   }, 60_000)
 
+  it('desde cero (ADR-0015): la IA hace un sistema con su hoja, su creador y su compendio, y un personaje con él', async () => {
+    const { userId, cookie, call } = await connected()
+    await aiRepo.setAiMode(conn.db, userId, 'copilot')
+    const document = {
+      format: 1,
+      id: 'ceniza',
+      name: 'Ceniza',
+      summary: 'Un juego pequeño, hecho desde cero.',
+      version: '1',
+      languages: ['es'],
+      types: {
+        personaje: {
+          document: 'actor',
+          label: 'Personaje',
+          fields: {
+            atributos: {
+              kind: 'set',
+              label: 'Atributos',
+              elements: [
+                { key: 'fuerza', label: 'Fuerza' },
+                { key: 'ingenio', label: 'Ingenio' },
+                { key: 'temple', label: 'Temple' }
+              ],
+              fields: { valor: { kind: 'number', label: 'Valor', default: 0, integer: true, min: 0, max: 5 } }
+            },
+            sendas: { kind: 'items', label: 'Sendas', of: ['senda'] },
+            dones: { kind: 'items', label: 'Dones', of: ['don'] },
+            nivel: { kind: 'derived', label: 'Nivel', formula: 'sum(@sendas.nivel)' },
+            aguante: { kind: 'derived', label: 'Aguante', formula: '6 + @atributos.temple.valor * 2 + @nivel' }
+          }
+        },
+        senda: {
+          document: 'item',
+          label: 'Senda',
+          fields: {
+            nivel: { kind: 'number', label: 'Nivel', default: 1, integer: true, min: 1, max: 10 },
+            descripcion: { kind: 'text', label: 'Descripción', lines: 6 }
+          }
+        },
+        don: { document: 'item', label: 'Don', fields: { descripcion: { kind: 'text', label: 'Descripción' } } }
+      },
+      rolls: {
+        atributo: {
+          label: 'Atributo',
+          formula: '1d10 + @este.valor',
+          for: { set: 'atributos' },
+          bands: [
+            { if: '@total >= 10', label: 'Éxito', tone: 'success' },
+            { if: 'true', label: 'Fallo', tone: 'failure' }
+          ]
+        }
+      },
+      dice: { default: '1d10', critical: 'none' },
+      card: ['nivel', 'aguante'],
+      creation: [
+        { key: 'senda', kind: 'content', type: 'senda', label: 'Senda', levels: true },
+        {
+          key: 'atributos',
+          kind: 'scores',
+          label: 'Atributos',
+          set: 'atributos',
+          field: 'valor',
+          creation: true,
+          methods: [{ key: 'reparto', kind: 'array', label: 'Reparto', values: [3, 2, 1] }]
+        },
+        { key: 'dones', kind: 'content', type: 'don', label: 'Dones', min: 1, max: 2, creation: true },
+        { key: 'resumen', kind: 'summary', label: 'Resumen' }
+      ],
+      compendium: { sections: [{ key: 'personajes', label: 'Personajes', types: ['senda', 'don'] }], types: {} }
+    }
+    const system = (await call<SystemFull>('crear_sistema', { document })).data
+    expect(system).toMatchObject({ name: 'Ceniza', builtIn: false, version: 1 })
+    const saved = await call('guardar_contenido', {
+      systemId: system.id,
+      version: 1,
+      items: [
+        { type: 'senda', key: 'guerrera', source: null, data: { name: 'Guerrera', descripcion: 'Golpea primero.' } },
+        { type: 'don', key: 'ojo_avizor', source: null, data: { name: 'Ojo avizor', descripcion: 'Ves de lejos.' } }
+      ]
+    })
+    expect(saved.isError, saved.text).toBeFalsy()
+    const world = (await call<World>('crear_mundo', { name: 'Cenizas' })).data
+    const campaign = (await call<Campaign>('crear_campana', { worldId: world.id, name: 'Brasas', system: system.id }))
+      .data
+    // Lo de los personajes (cosa de jugadores) espera al máster aun en copiloto: lo aprueba en Crisol
+    const asMaster = async (tool: string, args: Record<string, unknown>) => {
+      const asked = await call(tool, args)
+      expect(asked.isError, asked.text).toBeFalsy()
+      if (!asked.text.startsWith('PENDING_APPROVAL')) return
+      const { pending } = (await call<Approvals>('pendientes')).data
+      const approved = await fetch(new URL('/api/actions/approve', BASE), {
+        method: 'POST',
+        headers: { cookie, origin: BASE, 'content-type': 'application/json' },
+        body: JSON.stringify({ approvalId: pending[0]?.id })
+      })
+      expect(await approved.json()).toMatchObject({ status: 'done' })
+    }
+    const current = async () => {
+      const { characters } = (
+        await call<{ characters: { id: string; version: number }[] }>('listar_personajes', { campaignId: campaign.id })
+      ).data
+      const [one] = characters
+      if (!one) throw new Error('sin personaje')
+      return one
+    }
+    await asMaster('crear_personaje', { campaignId: campaign.id, name: 'Ária' })
+    const { id } = await current()
+    await asMaster('elegir_personaje', {
+      characterId: id,
+      version: (await current()).version,
+      add: [
+        { step: 'senda', key: 'guerrera' },
+        { step: 'dones', key: 'ojo_avizor' }
+      ],
+      scores: { method: 'reparto', base: { fuerza: 3, ingenio: 1, temple: 2 } }
+    })
+    await asMaster('elegir_personaje', { characterId: id, version: (await current()).version, confirm: 'created' })
+    const seen = await call<{
+      character: { status: string; summary: { stats: { key: string; value: string }[] } }
+    }>('ver_personaje', { characterId: id })
+    expect(seen.data.character.status).toBe('ready')
+    // Su hoja, calculada con lo elegido: nivel 1 y aguante 6 + 2 × 2 + 1
+    expect(seen.data.character.summary.stats).toEqual([
+      { key: 'nivel', label: 'Nivel', value: '1' },
+      { key: 'aguante', label: 'Aguante', value: '11' }
+    ])
+  }, 60_000)
+
   it('en copiloto, Claude crea una campaña sin preguntar y regenerar el enlace espera; al aprobarlo se hace', async () => {
     const { cookie, call } = await connected()
     const world = (await call<World>('crear_mundo', { name: 'Eana' })).data
