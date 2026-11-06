@@ -1,0 +1,70 @@
+# Spec: revelar (módulo 5)
+
+Estado: **en marcha** (2026-11-06). Segunda capacidad del módulo 5 (`docs/specs/modulo-5.md`), después de
+`conocimiento`. Entrevista: `docs/modulos.md` § «### 5. Visibilidad por campaña». ADR-0017.
+
+## Objetivo
+
+Que el máster **revele en partida** lo que descubren los jugadores, con un clic y desde donde está: un secreto de una
+página, una página entera o una entrada. Los jugadores **se enteran** (un aviso y lo nuevo marcado hasta que lo abren)
+y el máster tiene a mano **lo que sabe cada grupo**, para repasarlo, deshacerlo u ocultarlo otra vez.
+
+Para quién: el máster en partida (en el ordenador y en el móvil); los jugadores, que reciben lo revelado; la IA del
+máster.
+
+## Requisitos
+
+### Revelar
+
+- **Un secreto** (`> [!secreto]`) lleva, para el máster, «Revelar» en su cabecera: a toda la campaña o a unos
+  personajes. Revelado, dice a quién («Lo saben: Lía, Bram») y se puede ampliar o volver a ocultar.
+- **Una página**: «Revelar» en su cabecera hace lo mismo que «Lo sabe toda la campaña» de `conocimiento`, con el aviso.
+- **Qué campaña**: si el máster está dentro de una campaña, se revela en esa; si no, elige entre las del mundo (si
+  solo hay una, esa).
+- Revelar un secreto de una página que la campaña no ve **avisa** («La página no la conocen: ¿revelarla también?»):
+  un secreto solo se ve en su página.
+- Cada revelación es una **operación del historial** (`reveal`), se deshace, y su frase dice qué, a quién y en qué
+  campaña. El texto del secreto nunca entra en el historial.
+
+### Los jugadores se enteran
+
+- Al revelarle algo, a cada jugador afectado le llega **un aviso** en la app («Nuevo: El pacto de Varn»), que lleva a
+  ello, si la tiene abierta. Si no, lo ve al entrar.
+- **Lo nuevo sale marcado** hasta que lo abre: la página en el árbol, el secreto en la página («Nuevo»). La campaña
+  dice cuántas novedades hay.
+- Lo que se oculta otra vez **desaparece** sin aviso.
+
+### Lo que sabe el grupo
+
+- En la campaña, para el máster, **«Lo que sabe el grupo»**: lo revelado, de lo más reciente a lo más antiguo, con a
+  quién y cuándo; filtrar por personaje y por tipo (páginas, secretos, mapas, compendio). Desde cada uno: abrirlo,
+  ampliar o reducir a quién, ocultarlo otra vez.
+- Las marcas heredadas del mundo salen aparte («Lo que sabe todo el mundo»), sin mezclarse con lo de la campaña.
+
+### La IA
+
+- `revelar` (un secreto, una página, una pestaña, un pin o una entrada; a la campaña o a unos personajes) y `ocultar`
+  (lo contrario); tipo «jugadores»: en copiloto esperan la aprobación.
+- `lo_que_sabe` (lo revelado de una campaña, con su público).
+- `leer_pagina` con `ids` señala los secretos por su `^s-id`, como hasta ahora.
+
+## Decisiones (propuestas de los estudios, por confirmar al ver las pantallas)
+
+1. **El aviso, en la app**, sin correo ni notificaciones del navegador; lo nuevo se apunta por cuenta y se borra al
+   abrirlo.
+2. **Revelar un secreto no saca versión** de la página (ADR-0003 y `research/foundry/journal.md`: es cambiar quién ve
+   su documento, no tocar el texto).
+3. **Ocultar otra vez** quita el acceso, pero la operación queda en el historial: el máster sabe que lo vieron.
+
+## Pruebas
+
+- Servidor: revelar un secreto a un personaje lo ve su dueño y nadie más (API, búsqueda, MCP); ocultarlo lo quita al
+  momento; deshacer la revelación; el aviso solo les llega a los afectados y sin el texto del secreto en el evento.
+- E2E: el máster revela un secreto a la pícara durante la partida; la jugadora de la pícara recibe el aviso y lo lee;
+  el otro jugador no lo ve ni en la búsqueda; «Lo que sabe el grupo» lo enseña y lo oculta otra vez.
+- La prueba de fugas: un secreto revelado a uno no le llega al otro por ninguna vía.
+
+## Fuera
+
+- «Mostrar a los jugadores» una imagen o una página en pantalla, al momento (módulo 7, la sala de jugadores).
+- Las notas de los jugadores sobre lo que saben (módulo 7).
