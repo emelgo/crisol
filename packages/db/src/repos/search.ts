@@ -204,10 +204,13 @@ export async function searchPages(db: Database, options: SearchOptions) {
       -- El título y las propiedades cuentan como el título de una sección, y el doble
       ${
         options.player
-          ? sql`select p.id, 2 * ts_rank(${visibleTsv}, q.query)
+          ? // Lo que ve está en lo de todos: se busca con el índice y, solo si tiene campos ocultos, se mira sin ellos
+            sql`select p.id, 2 * ts_rank(
+                case when p.properties @> '[{"hidden": true}]'::jsonb then ${visibleTsv} else p.search_tsv end, q.query)
               from pages p, q
-              where p.world_id = ${options.worldId} and p.deleted_at is null and p.id = any(${ids(options.player.pages)})
-                and ${visibleTsv} @@ q.query`
+              where p.world_id = ${options.worldId} and p.deleted_at is null and p.search_tsv @@ q.query
+                and p.id = any(${ids(options.player.pages)})
+                and (not p.properties @> '[{"hidden": true}]'::jsonb or ${visibleTsv} @@ q.query)`
           : sql`select p.id, 2 * ts_rank(p.search_tsv, q.query)
               from pages p, q
               where p.world_id = ${options.worldId} and p.deleted_at is null and p.search_tsv @@ q.query`

@@ -42,6 +42,8 @@ export interface Knowledge {
   visiblePages(): ReadonlySet<string>
   /** La primera antecesora que ve (donde cuelga en su árbol), o null: arriba del todo */
   visibleParent(pageId: string): string | null
+  /** Si en su árbol le cuelga alguna página */
+  hasVisibleChildren(pageId: string): boolean
   seesSecret(documentId: string, pageId: string): boolean
   seesTab(tab: { id: string; pageId: string; hidden: boolean }): boolean
   /** Un pin o un elemento (región, ruta, etiqueta) de un mapa de esa página */
@@ -69,6 +71,7 @@ const ALL: Knowledge = {
   seesPage: () => true,
   visiblePages: () => new Set(),
   visibleParent: () => null,
+  hasVisibleChildren: () => false,
   seesSecret: () => true,
   seesTab: () => true,
   seesMapItem: () => true,
@@ -114,8 +117,15 @@ function decider(
 
 export function knowledgeFor(reader: Reader, tree: readonly TreePage[], marks: readonly KnowledgeMark[]): Knowledge {
   const parents = new Map(tree.map((p) => [p.id, p.parentId]))
-  if (reader.kind === 'master')
-    return { ...ALL, visiblePages: () => new Set(parents.keys()), visibleParent: (id) => parents.get(id) ?? null }
+  if (reader.kind === 'master') {
+    const withChildren = new Set([...parents.values()].filter((id): id is string => id !== null))
+    return {
+      ...ALL,
+      visiblePages: () => new Set(parents.keys()),
+      visibleParent: (id) => parents.get(id) ?? null,
+      hasVisibleChildren: (id) => withChildren.has(id)
+    }
+  }
 
   const byKey = indexMarks(marks)
   const { campaignId, characterIds, knowsWorld } = reader
@@ -135,20 +145,27 @@ export function knowledgeFor(reader: Reader, tree: readonly TreePage[], marks: r
     return own ? admits(own, characterIds) : !hidden
   }
   let visible: Set<string> | null = null
+  let withChildren: Set<string> | null = null
+  const visibleParent = (pageId: string) => {
+    let current = parents.get(pageId) ?? null
+    for (let steps = 0; current !== null && steps <= MAX_PAGE_DEPTH * 2; steps++) {
+      if (seesPage(current)) return current
+      current = parents.get(current) ?? null
+    }
+    return null
+  }
+  const visiblePages = () => {
+    visible ??= new Set([...parents.keys()].filter(seesPage))
+    return visible
+  }
 
   return {
     seesPage,
-    visiblePages() {
-      visible ??= new Set([...parents.keys()].filter(seesPage))
-      return visible
-    },
-    visibleParent(pageId) {
-      let current = parents.get(pageId) ?? null
-      for (let steps = 0; current !== null && steps <= MAX_PAGE_DEPTH * 2; steps++) {
-        if (seesPage(current)) return current
-        current = parents.get(current) ?? null
-      }
-      return null
+    visiblePages,
+    visibleParent,
+    hasVisibleChildren(pageId) {
+      withChildren ??= new Set([...visiblePages()].map(visibleParent).filter((id): id is string => id !== null))
+      return withChildren.has(pageId)
     },
     seesSecret(documentId, pageId) {
       const own = flat('secret', documentId)

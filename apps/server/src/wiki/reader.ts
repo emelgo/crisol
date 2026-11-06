@@ -58,6 +58,11 @@ export class WikiView {
     return this.knowledge ? [...this.knowledge.visiblePages()] : null
   }
 
+  /** Si en su árbol le cuelga alguna (solo para quien no lo ve todo) */
+  hasChildren(pageId: string): boolean {
+    return this.knowledge?.hasVisibleChildren(pageId) ?? false
+  }
+
   /** Dónde cuelga una página en su árbol: su madre o, si no la ve, la primera antecesora que ve */
   parentOf(pageId: string, parentId: string | null): string | null {
     return this.knowledge ? this.knowledge.visibleParent(pageId) : parentId
@@ -109,9 +114,11 @@ export async function readerFor(ctx: ActionContext, wiki: WikiTarget, as: ReadAs
   const campaignId = as.campaignId ?? (mine.length === 1 ? mine[0] : undefined)
   if (!campaignId) throw new InvalidRequestError('CAMPAIGN_REQUIRED')
   if (!mine.includes(campaignId)) throw new NotFoundError('campaign')
-  const knows = (await knowledgeRepo.knowsWorld(ctx.db, [campaignId])).get(campaignId) ?? true
-  const characterIds = await knowledgeRepo.characterIdsOf(ctx.db, campaignId, ctx.actor.userId)
-  return { kind: 'player', campaignId, characterIds, knowsWorld: knows }
+  const [knows, characterIds] = await Promise.all([
+    knowledgeRepo.knowsWorld(ctx.db, [campaignId]),
+    knowledgeRepo.characterIdsOf(ctx.db, campaignId, ctx.actor.userId)
+  ])
+  return { kind: 'player', campaignId, characterIds, knowsWorld: knows.get(campaignId) ?? true }
 }
 
 /** Lo que ve ese lector en el mundo: carga el árbol y las marcas una vez */

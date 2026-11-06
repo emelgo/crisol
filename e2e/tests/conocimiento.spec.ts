@@ -24,9 +24,12 @@ test('lo que sabe cada campaña: el máster da a conocer «Aldoria» a La Marca;
   // Otra campaña del mundo, con su jugador
   await toWorlds(page)
   await createCampaign(page, 'Los del norte', 'Eana')
-  const campaigns = (await (await page.request.post('/api/actions/listCampaigns', { data: { worldId } })).json()).campaigns
+  const campaigns = (await (await page.request.post('/api/actions/listCampaigns', { data: { worldId } })).json())
+    .campaigns
   const norte = campaigns.find((c: { name: string }) => c.name === 'Los del norte').id as string
-  const norteLink = (await (await page.request.post('/api/actions/getInvitation', { data: { campaignId: norte } })).json()).url
+  const norteLink = (
+    await (await page.request.post('/api/actions/getInvitation', { data: { campaignId: norte } })).json()
+  ).url
 
   // Las páginas: Reinos del sur › Aldoria (con un secreto y un campo oculto) › La capital; y Varn, aparte
   const created = await (
@@ -70,14 +73,18 @@ test('lo que sabe cada campaña: el máster da a conocer «Aldoria» a La Marca;
   await page.getByRole('button', { name: 'Quién la conoce' }).click()
   const who = page.getByRole('dialog', { name: 'Quién la conoce' })
   await expect(who.getByRole('region', { name: 'La Marca' })).toContainText('No la ve')
-  await who.getByRole('combobox', { name: 'Lo que sabe «La Marca» de esta página' }).selectOption({ label: 'Lo sabe toda la campaña' })
+  await who
+    .getByRole('combobox', { name: 'Lo que sabe «La Marca» de esta página' })
+    .selectOption({ label: 'Lo sabe toda la campaña' })
   await expect(who.getByRole('region', { name: 'La Marca' })).toContainText('La ve toda la campaña')
   await expect(who.getByRole('region', { name: 'La Marca' })).toContainText('Marcada aquí')
   await expect(who.getByRole('region', { name: 'Los del norte' })).toContainText('No la ve')
   await page.screenshot({ path: test.info().outputPath('quien-la-conoce.png'), fullPage: false })
   // El ojo en el árbol, en ella y en su subpágina
   await page.keyboard.press('Escape')
-  await expect(page.getByRole('treeitem', { name: /Aldoria/ }).getByRole('img', { name: 'La conoce alguna campaña' })).toBeVisible()
+  await expect(
+    page.getByRole('treeitem', { name: /Aldoria/ }).getByRole('img', { name: 'La conoce alguna campaña' })
+  ).toBeVisible()
 
   // La jugadora de La Marca: en su campaña, las páginas del mundo, con Aldoria y su capital
   const ana = await newPlayer(browser, link, 'Ana')

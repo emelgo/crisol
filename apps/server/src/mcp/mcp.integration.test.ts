@@ -923,11 +923,13 @@ describe('conector MCP con OAuth', () => {
       details: { kind: 'page', name: 'Aldoria', known: true, campaign: 'La Marca', world: 'Valdren' }
     })
     await api(cookie, 'approve', { approvalId: pending[0]?.id })
-    const known = (await call<{ campaigns: { name: string; audience: unknown }[] }>('quien_conoce', { pageId: aldoria }))
-      .data
+    const known = (
+      await call<{ campaigns: { name: string; audience: unknown }[] }>('quien_conoce', { pageId: aldoria })
+    ).data
     expect(known.campaigns).toEqual([expect.objectContaining({ name: 'La Marca', audience: 'all' })])
-    const asCampaign = (await call<{ markdown: string }>('ver_como_jugador', { campaignId: campaign.id, pageId: aldoria }))
-      .data
+    const asCampaign = (
+      await call<{ markdown: string }>('ver_como_jugador', { campaignId: campaign.id, pageId: aldoria })
+    ).data
     expect(asCampaign.markdown).toContain('Un reino.')
     expect(asCampaign.markdown).not.toContain('El rey ha muerto')
     const tree = (await call<{ pages: { title: string }[] }>('ver_arbol', { worldId: world.id })).data
@@ -948,7 +950,9 @@ describe('conector MCP con OAuth', () => {
     expect(read.markdown).toContain('Un reino.')
     expect(read.markdown).not.toContain('El rey ha muerto')
     expect((await player.call('leer_pagina', { pageId: varn })).isError).toBe(true)
-    expect((await player.call('buscar_paginas', { worldId: world.id, query: 'rey' })).data).toMatchObject({ results: [] })
+    expect((await player.call('buscar_paginas', { worldId: world.id, query: 'rey' })).data).toMatchObject({
+      results: []
+    })
     const write = await player.call('editar_pagina', { pageId: aldoria, body: { mode: 'append', markdown: 'Mío' } })
     expect(write.text).toMatch(/^READ_ONLY/)
     expect((await player.call('quien_conoce', { pageId: aldoria })).isError).toBe(true)

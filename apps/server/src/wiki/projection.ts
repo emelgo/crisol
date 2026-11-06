@@ -67,11 +67,10 @@ export async function viewTree(ctx: ActionContext, wiki: WikiTarget, view: WikiV
 export async function pageViewFor(ctx: ActionContext, wiki: WikiTarget, view: WikiView, pageId: string): Promise<Page> {
   const page = await pageView(ctx, pageId)
   if (view.full) return page
-  const tree = await viewTree(ctx, wiki, view)
   return {
     ...page,
     parentId: view.parentOf(page.id, page.parentId),
-    hasChildren: tree.some((row) => row.parentId === page.id),
+    hasChildren: view.hasChildren(page.id),
     properties: visibleProperties(page.properties, view),
     panel: visiblePanel(page.panel, view),
     path: page.path.filter((step) => step.id === page.id || view.seesPage(step.id)),
@@ -96,7 +95,9 @@ export function filterBody(node: JSONContent, view: WikiView, pageId: string): J
     const target = node.attrs?.pageId
     if (typeof target === 'string' && !view.seesPage(target)) {
       if (node.type === 'pageEmbed') return null
-      return { ...node, attrs: { ...node.attrs, pageId: null, anchor: null } }
+      // Con su texto propio, solo eso: el título del destino no va
+      const label = node.attrs?.label
+      return { ...node, attrs: { ...node.attrs, pageId: null, anchor: null, ...(label ? { title: '' } : {}) } }
     }
   }
   if (!node.content) return node

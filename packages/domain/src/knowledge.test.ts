@@ -137,6 +137,19 @@ describe('dónde cuelga una página en el árbol del jugador', () => {
   it('para el máster, su madre de verdad', () => {
     expect(knowledgeFor({ kind: 'master' }, tree, []).visibleParent('taberna')).toBe('capital')
   })
+
+  it('si le cuelga alguna en su árbol (también una nieta que ve bajo una hija que no ve)', () => {
+    const k = knowledgeFor(player('marca'), tree, [
+      page('marca', 'sur', true),
+      page('marca', 'aldoria', false),
+      page('marca', 'taberna', true)
+    ])
+    expect(k.hasVisibleChildren('sur')).toBe(true)
+    expect(k.hasVisibleChildren('taberna')).toBe(false)
+    const master = knowledgeFor({ kind: 'master' }, tree, [])
+    expect(master.hasVisibleChildren('aldoria')).toBe(true)
+    expect(master.hasVisibleChildren('varn')).toBe(false)
+  })
 })
 
 describe('secretos, pestañas, pines y entradas del mundo', () => {

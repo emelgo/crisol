@@ -424,7 +424,7 @@ describe('lo que lee un jugador (docs/specs/conocimiento.md)', () => {
     expect(links.map((l: { attrs: object }) => l.attrs)).toEqual([
       expect.objectContaining({ pageId: page['La capital'], title: 'La capital' }),
       expect.objectContaining({ pageId: null, title: 'Varn', label: null, anchor: null }),
-      expect.objectContaining({ pageId: null, title: 'Varn', label: 'el viejo', anchor: null })
+      expect.objectContaining({ pageId: null, title: '', label: 'el viejo', anchor: null })
     ])
     // Revelado a Lía, lo ve su dueña; a Bram, no
     const [rey, heredero] = await secretsOf(page.Aldoria ?? '')
@@ -585,4 +585,112 @@ describe('lo que lee un jugador (docs/specs/conocimiento.md)', () => {
     expect(await get(cover.id, bruno.cookie)).toBe(404)
     expect(await get(loose.id, master.cookie)).toBe(200)
   })
+})
+
+describe('rendimiento de lo que lee un jugador (ADR-0017)', () => {
+  let conn: ReturnType<typeof connect>
+  let app: FastifyInstance
+
+  beforeAll(async () => {
+    conn = connect(await freshTestDatabase('crisol_test_knowledge_scale'), { max: 4 })
+  })
+
+  afterAll(async () => {
+    await app?.close()
+    await conn?.close()
+  })
+
+  it('con 5.000 páginas, el árbol, la página, la búsqueda y las recientes de un jugador: p95 < 300 ms', async () => {
+    await resetDatabase(conn.sql)
+    const auth = createTestAuth(conn.db, BASE_URL)
+    app = buildApp({
+      checks: { postgres: ok, valkey: ok },
+      accounts: { auth, db: conn.db, publicUrl: BASE_URL, sealKey: TEST_SEAL_KEY }
+    })
+    const master = await signUpTestUser(auth, { name: 'Enrique', email: 'enrique@crisol.test' })
+    const ana = await signUpTestUser(auth, { name: 'Ana', email: 'ana@crisol.test' })
+    const [org] = await conn.db.insert(schema.organizations).values({ name: 'Mesa' }).returning()
+    if (!org) throw new Error('sin organización')
+    await conn.db
+      .insert(schema.organizationMembers)
+      .values({ organizationId: org.id, userId: master.userId, role: 'owner' })
+    const call = async (name: string, payload: object, cookie: string) => {
+      const response = await app.inject({
+        method: 'POST',
+        url: `/api/actions/${name}`,
+        payload,
+        headers: { origin: BASE_URL, cookie }
+      })
+      expect(response.statusCode, `${name}: ${response.body}`).toBe(200)
+      return response.json()
+    }
+    const worldId = (await call('createWorld', { name: 'Valdren' }, master.cookie)).id
+    const campaignId = (await call('createCampaign', { worldId, name: 'La Marca' }, master.cookie)).id
+    await conn.db.insert(schema.campaignMembers).values({ campaignId, userId: ana.userId, role: 'player' })
+    // 50 regiones con 99 páginas cada una (5.000), sus documentos y sus secciones; la campaña conoce 25 regiones
+    const words = ['faro', 'puerto', 'dragón', 'montaña', 'ciudad', 'guerra', 'elfos', 'barco', 'cueva', 'reina']
+    const roots = await conn.sql<{ id: string }[]>`
+      insert into pages (world_id, position, title, properties)
+      select ${worldId}, 'b' || lpad(r::text, 2, '0'), 'Región ' || r, '[]'::jsonb from generate_series(1, 50) r returning id`
+    await conn.sql`
+      with p as (
+        insert into pages (world_id, parent_id, position, title, properties)
+        select ${worldId}, root.id, 'b' || lpad(i::text, 2, '0'), 'Lugar ' || i || ' de ' || (${conn.sql.array(words)}::text[])[1 + i % 10], '[]'::jsonb
+        from unnest(${conn.sql.array(roots.map((r) => r.id))}::uuid[]) as root(id), generate_series(1, 99) i
+        returning id
+      ), d as (
+        insert into documents (world_id, page_id, kind, state, text)
+        select ${worldId}, p.id, 'body', '\\x'::bytea, '' from p returning id, page_id
+      )
+      insert into search_sections (world_id, page_id, document_id, kind, position, heading, body)
+      select ${worldId}, d.page_id, d.id, 'body', s, 'Sección ' || s,
+        repeat((${conn.sql.array(words)}::text[])[1 + (s * 7 + length(d.id::text)) % 10] || ' en la costa del norte ', 20)
+      from d, generate_series(0, 1) s`
+    for (const root of roots.slice(0, 25)) {
+      await call('setKnowledge', { worldId, campaignId, kind: 'page', targetId: root.id, known: true }, master.cookie)
+    }
+    await conn.sql`analyze`
+    // Dos de verdad (con su texto en Yjs), en una región que conoce la campaña
+    const real = await call(
+      'createPages',
+      {
+        worldId,
+        parentId: roots[0]?.id,
+        pages: [
+          { key: 'a', title: 'El faro', markdown: 'Un faro en la costa.\n\n> [!secreto]\n> Lo guarda un dragón.' },
+          { key: 'b', title: 'El puerto', markdown: 'Barcos y [[El faro]].' }
+        ]
+      },
+      master.cookie
+    )
+    for (const p of real.pages as { id: string }[])
+      await call('setKnowledge', { worldId, campaignId, kind: 'page', targetId: p.id, known: true }, master.cookie)
+    const some = (real.pages as { id: string }[]).map((p) => p.id)
+    const times: number[] = []
+    const byName = new Map<string, number[]>()
+    const timed = async (name: string, payload: object) => {
+      const start = performance.now()
+      await call(name, payload, ana.cookie)
+      const took = performance.now() - start
+      times.push(took)
+      byName.set(name, [...(byName.get(name) ?? []), Math.round(took)])
+    }
+    for (let round = 0; round < 3; round++) {
+      await timed('listPageTree', { worldId, levels: 6 })
+      await timed('listPageChildren', { worldId, parentId: null })
+      await timed('listRecentPages', { worldId, limit: 10 })
+      for (const query of ['faro', 'montana norte', 'reina guerra'])
+        await timed('searchWiki', { worldId, query, page: 1 })
+      for (const pageId of some.slice(0, 2)) {
+        await timed('getPage', { pageId })
+        await timed('getPageContent', { pageId })
+      }
+    }
+    times.sort((a, b) => a - b)
+    const p95 = times[Math.floor(times.length * 0.95)] ?? 0
+    process.stdout.write(
+      `conocimiento: 5.000 páginas, p95 ${Math.round(p95)} ms ${JSON.stringify(Object.fromEntries(byName))}\n`
+    )
+    expect(p95).toBeLessThan(300)
+  }, 180_000)
 })
