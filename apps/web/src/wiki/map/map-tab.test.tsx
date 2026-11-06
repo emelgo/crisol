@@ -466,8 +466,10 @@ describe('el visor del mapa', () => {
     fireEvent.pointerMove(pin, { pointerId: 1, clientX: 500, clientY: 300 })
     expect(pin.style.insetInlineStart).toBe('50%')
     fireEvent.click(pin)
-    const fields = (await screen.findByRole('region', { name: 'Pin' })).querySelector('fieldset')
-    expect(fields?.disabled).toBe(true)
+    // Una ficha con su nombre, sin nada que cambiar
+    const card = await screen.findByRole('region', { name: 'Pin' })
+    expect(card.textContent).toContain('Torre')
+    expect(card.querySelector('input, fieldset')).toBeNull()
   })
 })
 
