@@ -88,6 +88,9 @@ const RULES = {
   // La wiki de un mundo: los jugadores no la ven hasta el módulo 5
   'page.read': { sees: managesWiki, allows: managesWiki },
   'page.write': { sees: managesWiki, allows: managesWiki },
+  // El compendio del mundo (docs/specs/compendio-mundo.md), como la wiki: hasta el módulo 5, solo quien la lleva
+  'worldContent.read': { sees: managesWiki, allows: managesWiki },
+  'worldContent.write': { sees: managesWiki, allows: managesWiki },
   // Los archivos comunes de la organización, que comparten sus mundos: verlos y usarlos; subirlos y cambiarlos
   'commonFiles.read': { sees: seesCommonFiles, allows: seesCommonFiles },
   'commonFiles.write': { sees: seesCommonFiles, allows: isOrganizationOwner },

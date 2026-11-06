@@ -52,6 +52,12 @@ export const systemsChanged = (organizationId: string): RealtimeEvent => ({
   message: { type: 'changed', what: 'systems', organizationId }
 })
 
+/** El compendio de un mundo: a quien lo ve (lo que ven las hojas de sus personajes se vuelve a pedir con él) */
+export const worldContentChanged = (wiki: { worldId: string; organizationId: string }): RealtimeEvent => ({
+  to: { capability: 'worldContent.read', target: wiki },
+  message: { type: 'changed', what: 'worldContent', worldId: wiki.worldId }
+})
+
 /** El texto de una página se guardó: a quien la ve (lo que la enseña en otra se vuelve a pedir) */
 export const pageContentChanged = (
   wiki: { worldId: string; organizationId: string },
@@ -138,6 +144,9 @@ export function undoEvents(
       case 'systems':
       case 'system_content':
         if (context.organizationId) events.push(systemsChanged(String(row.organization_id ?? context.organizationId)))
+        break
+      case 'world_content':
+        events.push(worldContentChanged({ worldId, organizationId: context.organizationId }))
         break
       case 'files':
       case 'file_folders':

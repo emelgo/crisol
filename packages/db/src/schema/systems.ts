@@ -1,6 +1,7 @@
 import { index, jsonb, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core'
 import { organizations } from './organizations.ts'
 import { trackedColumns } from './tracked.ts'
+import { worlds } from './worlds.ts'
 
 /**
  * Los sistemas de reglas de una cuenta (ADR-0011): el documento entero (validado con @crisol/systems), hechos desde cero,
@@ -41,4 +42,44 @@ export const systemContent = pgTable(
     ref: jsonb().$type<Record<string, unknown>>()
   },
   (t) => [uniqueIndex().on(t.systemId, t.key), index().on(t.systemId, t.type)]
+)
+
+/** De dónde sale una entrada copiada: su capa, su sistema, su clave y cómo era al copiarla (para ver lo que cambió) */
+export interface ContentOrigin {
+  /** «system»: del contenido de un sistema; «world»: del compendio de un mundo */
+  layer: 'system' | 'world'
+  systemId: string
+  key: string
+  worldId?: string
+  /** La huella del original al copiarlo o al traer sus cambios (`contentFingerprint`) */
+  fingerprint: string
+  /** El original de entonces (sus datos y su mecánica), para enseñar las diferencias por campo */
+  data: Record<string, unknown>
+  mechanics?: Record<string, unknown> | null
+}
+
+/**
+ * El compendio de un mundo (docs/specs/compendio-mundo.md): contenido hecho para un sistema, que ven las campañas del
+ * mundo que lo usan. Aparte de `system_content`, para que lo que lee o cuenta el contenido de un sistema no lo vea; cada
+ * entrada lleva su versión (la de la fila), y cambiarla no cambia la del sistema
+ */
+export const worldContent = pgTable(
+  'world_content',
+  {
+    ...trackedColumns(),
+    worldId: uuid()
+      .notNull()
+      .references(() => worlds.id, { onDelete: 'cascade' }),
+    systemId: uuid()
+      .notNull()
+      .references(() => systems.id, { onDelete: 'cascade' }),
+    type: text().notNull(),
+    key: text().notNull(),
+    data: jsonb().$type<Record<string, unknown>>().notNull(),
+    concept: text(),
+    mechanics: jsonb().$type<Record<string, unknown>>(),
+    ref: jsonb().$type<Record<string, unknown>>(),
+    origin: jsonb().$type<ContentOrigin>()
+  },
+  (t) => [uniqueIndex().on(t.worldId, t.systemId, t.key), index().on(t.worldId, t.systemId, t.type)]
 )

@@ -36,7 +36,10 @@ les aplica daño.
   campaña; ponerla otra vez abre la que ya está. Una única puede volver al compendio (quitarla de juego) sin perder su
   entrada.
 - **Los PG al ponerla**: los medios, o tirados con su fórmula en el servidor (uno por copia), según el ajuste de la
-  campaña.
+  campaña. En juego, «Tirar PG» y «Otro máximo» en cada una; los temporales, como en la hoja (el daño los gasta
+  primero; un valor nuevo sustituye al de antes).
+- **Lo vital, a la vista** en «En juego» y arriba de su hoja: CA, PG con dañar y curar, estados, y la marca de
+  malherida (a la mitad de sus PG) y de fuera de combate (a 0).
 - **La hoja de la criatura** reutiliza los bloques, el cálculo (`evaluate`), las tiradas (`tryRoll`, `tryAction`) y lo
   de la partida (`changeResource`, `spend`, `rest`) de la hoja de personaje: nada se calcula en la web.
 - **Lo que hace la criatura en partida** sale de su mecánica (ADR-0012): sus acciones, recursos (usos por día,
@@ -57,6 +60,10 @@ les aplica daño.
    iniciativa (módulo 6). Lo mismo reponer las legendarias.
 5. **La hoja de criatura es del sistema** (`sheet` en cada tipo de actor); la del 5e de ejemplo, al estilo de su
    statblock.
+6. **Copias numeradas al ponerlas en juego** («Goblin 1», «Goblin 2»), como Foundry; D&D Beyond las nombra con letras
+   («Goblin A») y solo al empezar el combate. El número no se reutiliza mientras haya copias.
+7. **El compendio es para leer**: la entrada no lleva estado ni tiradas a nombre de nadie; su botón es «Poner en
+   juego» (D&D Beyond hace lo mismo). Lo que se tira es la criatura en juego.
 
 ## Pruebas
 

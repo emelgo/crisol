@@ -44,6 +44,8 @@ function changedBy(message: RealtimeMessage): QueryKey[] {
       if (message.what === 'tags') return [['tags']]
       if (message.what === 'templates') return [['templates']]
       if (message.what === 'systems') return [['systems']]
+      // Lo del mundo sale en el compendio de sus campañas y en lo que llevan sus personajes
+      if (message.what === 'worldContent') return [['compendium'], ['characters'], ['character']]
       // El texto de una página: lo que la enseña en otra y los enlaces (sus trozos)
       if (message.what === 'pageContent') {
         return [

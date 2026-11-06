@@ -12,7 +12,7 @@ import { invitationLinks } from './schema/invitations.ts'
 import { mapElements, mapPins, maps, pageTabs } from './schema/maps.ts'
 import { organizationMembers, organizations } from './schema/organizations.ts'
 import { pages } from './schema/pages.ts'
-import { systemContent, systems } from './schema/systems.ts'
+import { systemContent, systems, worldContent } from './schema/systems.ts'
 import { randomTables } from './schema/tables.ts'
 import { tags } from './schema/tags.ts'
 import { pageTemplates } from './schema/templates.ts'
@@ -36,6 +36,7 @@ export const TRACKED_TABLES = {
   page_templates: pageTemplates,
   systems,
   system_content: systemContent,
+  world_content: worldContent,
   page_tabs: pageTabs,
   maps,
   map_pins: mapPins,
