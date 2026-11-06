@@ -19,7 +19,7 @@ const MODES: AiMode[] = ['readOnly', 'assistant', 'copilot']
 
 /** Los ajustes de IA de la cuenta: la dirección del conector, el modo y cómo acabaron sus últimas peticiones */
 /** Los ajustes de la IA: el conector, el modo y lo último que pidió. En «Ajustes» va dentro, con su título */
-export function AiSettings({ embedded = false }: { embedded?: boolean }) {
+export function AiSettings({ embedded = false, player = false }: { embedded?: boolean; player?: boolean }) {
   const { t, i18n } = useTranslation()
   const api = useApi()
   const queryClient = useQueryClient()
@@ -57,29 +57,32 @@ export function AiSettings({ embedded = false }: { embedded?: boolean }) {
             <CopyField label={t('ai.connector')} value={current.data.connectorUrl} />
           </section>
 
-          <fieldset className={settings.modes}>
-            <legend>{t('ai.modeTitle')}</legend>
-            {MODES.map((option) => (
-              <label key={option} className={settings.mode}>
-                <input
-                  type="radio"
-                  name="mode"
-                  value={option}
-                  checked={mode === option}
-                  onChange={() => {
-                    // Mientras se guarda otro, se ignora: deshabilitarlas sacaría el foco y no se podría seguir con flechas
-                    if (setMode.isPending) return
-                    setPendingMode(option)
-                    setMode.mutate(option)
-                  }}
-                />
-                <span>
-                  <strong>{t(`ai.modes.${option}`)}</strong>
-                  <span className={styles.role}>{t(`ai.modeHints.${option}`)}</span>
-                </span>
-              </label>
-            ))}
-          </fieldset>
+          {player && <p>{t('ai.playerReads')}</p>}
+          {!player && (
+            <fieldset className={settings.modes}>
+              <legend>{t('ai.modeTitle')}</legend>
+              {MODES.map((option) => (
+                <label key={option} className={settings.mode}>
+                  <input
+                    type="radio"
+                    name="mode"
+                    value={option}
+                    checked={mode === option}
+                    onChange={() => {
+                      // Mientras se guarda otro, se ignora: deshabilitarlas sacaría el foco y no se podría seguir con flechas
+                      if (setMode.isPending) return
+                      setPendingMode(option)
+                      setMode.mutate(option)
+                    }}
+                  />
+                  <span>
+                    <strong>{t(`ai.modes.${option}`)}</strong>
+                    <span className={styles.role}>{t(`ai.modeHints.${option}`)}</span>
+                  </span>
+                </label>
+              ))}
+            </fieldset>
+          )}
           {setMode.isSuccess && <p>{t('ai.saved')}</p>}
         </>
       )}

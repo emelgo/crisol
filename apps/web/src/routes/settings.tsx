@@ -19,11 +19,17 @@ export function Settings() {
     queryFn: () => api.call('listOrganizations', {}),
     enabled: Boolean(account)
   })
+  // Quien juega en alguna campaña también conecta su IA, que solo lee lo que sabe su campaña (ADR-0017)
+  const worlds = useQuery({
+    queryKey: ['worlds', 'campaigns'],
+    queryFn: () => api.call('listWorldsWithCampaigns', {}),
+    enabled: Boolean(account)
+  })
   const [theme, setThemeState] = useState<Theme>(currentTheme)
   if (pending) return null
   if (!account) return <Navigate to="/entrar" replace />
-  // La IA solo se conecta con la cuenta del propietario (módulo 0)
   const isOwner = organizations.data?.organizations.some((o) => o.role === 'owner') ?? false
+  const plays = worlds.data?.worlds.some((w) => w.campaigns.some((c) => c.role === 'player')) ?? false
   return (
     <section className={styles.page}>
       <PageTitle>{t('settings.title')}</PageTitle>
@@ -48,7 +54,7 @@ export function Settings() {
           ))}
         </fieldset>
       </section>
-      {isOwner && <AiSettings embedded />}
+      {isOwner ? <AiSettings embedded /> : plays && <AiSettings embedded player />}
     </section>
   )
 }

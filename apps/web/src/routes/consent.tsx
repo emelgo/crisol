@@ -40,6 +40,12 @@ export function Consent() {
     queryFn: () => api.call('listOrganizations', {}),
     enabled: Boolean(account)
   })
+  // Quien juega en alguna campaña también puede (su IA solo lee, ADR-0017)
+  const worlds = useQuery({
+    queryKey: ['worlds', 'campaigns'],
+    queryFn: () => api.call('listWorldsWithCampaigns', {}),
+    enabled: Boolean(account)
+  })
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
@@ -53,9 +59,11 @@ export function Consent() {
       </section>
     )
   }
-  if (name.isPending || organizations.isPending) return <Loading />
+  if (name.isPending || organizations.isPending || worlds.isPending) return <Loading />
   const client = clientLabel(clientId, name.data ?? null)
-  const isOwner = organizations.data?.organizations.some((o) => o.role === 'owner') ?? false
+  const isOwner =
+    (organizations.data?.organizations.some((o) => o.role === 'owner') ?? false) ||
+    (worlds.data?.worlds.some((w) => w.campaigns.length > 0) ?? false)
 
   const answer = async (accept: boolean) => {
     setBusy(true)

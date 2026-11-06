@@ -88,7 +88,12 @@ export function mcpTestHelpers(
 
   const connected = async () => {
     const owner = await account('owner')
-    const token = await accessToken(owner.cookie, await oauthClient(owner.cookie))
+    return connectAs(owner, owner.cookie)
+  }
+
+  /** Conecta la IA de una cuenta cualquiera (una jugadora), con un cliente que registra un propietario */
+  const connectAs = async <P extends { cookie: string }>(person: P, ownerCookie: string) => {
+    const token = await accessToken(person.cookie, await oauthClient(ownerCookie))
     const client = new Client({ name: 'pruebas', version: '1' })
     await client.connect(
       new StreamableHTTPClientTransport(new URL('/mcp', BASE), {
@@ -102,7 +107,7 @@ export function mcpTestHelpers(
       const text = (result.content as Array<{ text?: string }>).map((c) => c.text ?? '').join('\n')
       return { ...result, text, data: result.structuredContent as T }
     }
-    return { ...owner, call }
+    return { ...person, call }
   }
   const clients: Client[] = []
 
@@ -118,5 +123,5 @@ export function mcpTestHelpers(
 
   /** Cierra los clientes conectados */
   const closeClients = () => Promise.all(clients.splice(0).map((client) => client.close()))
-  return { account, oauthClient, accessToken, connected, api, closeClients }
+  return { account, oauthClient, accessToken, connected, connectAs, api, closeClients }
 }

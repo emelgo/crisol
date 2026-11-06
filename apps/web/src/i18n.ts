@@ -1013,6 +1013,15 @@ export const es = {
     zoomIn: 'Acercar más',
     zoomOut: 'Alejar'
   },
+  // Lo que se marca en lo que sabe una campaña, en una frase (el historial y la cola de la IA)
+  knowledgeTargets: {
+    page: '«{{name}}»',
+    secret: 'un secreto de «{{name}}»',
+    tab: 'la pestaña «{{name}}»',
+    pin: 'el pin «{{name}}»',
+    element: '«{{name}}» del mapa',
+    content: '«{{name}}» del compendio del mundo'
+  },
   // «Quién la conoce» de una página (ADR-0017)
   whoKnows: {
     title: 'Quién la conoce',
@@ -1740,6 +1749,12 @@ export const es = {
       deleteSystemContent: 'quitó {{count}} documentos del contenido de «{{name}}»',
       deleteSystemContent_one: 'quitó un documento del contenido de «{{name}}»',
       regenerateInvitation: 'generó un enlace nuevo para {{campaign}}',
+      knowledgeKnown: 'dio a conocer {{what}} a {{who}}',
+      knowledgeWorld: 'dio a conocer {{what}} a todo el mundo',
+      knowledgeHidden: 'ocultó {{what}} a {{who}}',
+      knowledgeNobody: 'ocultó {{what}} a todo el mundo',
+      knowledgeCleared: 'dejó que {{what}} herede en {{where}}',
+      knowledgeClearedWorld: 'dejó que {{what}} herede en el mundo',
       openInvitations: 'abrió las invitaciones de {{campaign}}',
       closeInvitations: 'cerró las invitaciones de {{campaign}}',
       joinCampaign: 'entró en {{campaign}}',
@@ -1872,6 +1887,12 @@ export const es = {
       deleteSystemContent: 'quitar {{count}} documentos del contenido de «{{name}}»',
       deleteSystemContent_one: 'quitar un documento del contenido de «{{name}}»',
       regenerateInvitation: 'generar un enlace nuevo para {{campaign}}',
+      knowledgeKnown: 'dar a conocer {{what}} a {{who}}',
+      knowledgeWorld: 'dar a conocer {{what}} a todo el mundo',
+      knowledgeHidden: 'ocultar {{what}} a {{who}}',
+      knowledgeNobody: 'ocultar {{what}} a todo el mundo',
+      knowledgeCleared: 'dejar que {{what}} herede en {{where}}',
+      knowledgeClearedWorld: 'dejar que {{what}} herede en el mundo',
       openInvitations: 'abrir las invitaciones de {{campaign}}',
       closeInvitations: 'cerrar las invitaciones de {{campaign}}',
       joinCampaign: 'entrar en {{campaign}}',
@@ -1939,6 +1960,7 @@ export const es = {
     }
   },
   ai: {
+    playerReads: 'Tu IA solo lee lo que sabe tu campaña.',
     link: 'IA',
     title: 'Ajustes de IA',
     connectorTitle: 'Conectar una IA',
@@ -2001,7 +2023,7 @@ export const es = {
     title: 'Conectar {{client}}',
     body: '{{client}} quiere usar tu cuenta de Crisol: ver y cambiar tus mundos en tu nombre.',
     history: 'Lo que haga quedará en el historial y podrás deshacerlo.',
-    ownerOnly: 'De momento solo el propietario puede conectar una IA.',
+    ownerOnly: 'Esta cuenta aún no puede conectar una IA: entra antes en una campaña.',
     allow: 'Permitir',
     deny: 'No permitir',
     expiredTitle: 'Tu sesión ha caducado',

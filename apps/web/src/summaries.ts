@@ -148,6 +148,30 @@ export function summaryOf(
     case 'restoreCampaign':
       return say('restoreCampaign', { name: text(details.name), world: text(details.world) })
     // De la wiki: lo hecho guarda los títulos; lo que pide la IA trae su entrada y los nombres (page, parent)
+    // Lo que sabe una campaña (ADR-0017): qué, a quién, en qué campaña (o todo el mundo)
+    case 'setKnowledge': {
+      const kind = text(details.kind)
+      const what = t(
+        `knowledgeTargets.${['page', 'secret', 'tab', 'pin', 'element', 'content'].includes(kind) ? kind : 'page'}` as 'knowledgeTargets.page',
+        {
+          name: text(details.name)
+        }
+      )
+      const who =
+        Array.isArray(details.characters) && details.characters.length > 0
+          ? (details.characters as unknown[]).map(text).join(', ')
+          : details.campaign
+            ? text(details.campaign)
+            : null
+      if (details.known === true) return who ? say('knowledgeKnown', { what, who }) : say('knowledgeWorld', { what })
+      if (details.known === false)
+        return details.campaign
+          ? say('knowledgeHidden', { what, who: text(details.campaign) })
+          : say('knowledgeNobody', { what })
+      return details.campaign
+        ? say('knowledgeCleared', { what, where: text(details.campaign) })
+        : say('knowledgeClearedWorld', { what })
+    }
     case 'createPage':
       return details.parent
         ? say('createSubpage', { title: text(details.title), parent: text(details.parent) })

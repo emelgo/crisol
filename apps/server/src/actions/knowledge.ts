@@ -124,3 +124,20 @@ export const knowledgeActions = [
     return { page: kind === 'page' ? await pageKnowledgeOf(ctx, wiki, targetId) : null }
   })
 ]
+
+/** Lo que pide la IA al marcar, para la cola de aprobación: qué, si lo conocen y a quién (como en el historial) */
+export async function knowledgeRequest(ctx: ActionContext, action: string, input: Record<string, unknown>) {
+  if (action !== 'setKnowledge' || typeof input.worldId !== 'string' || typeof input.targetId !== 'string') return {}
+  const wiki = await authorizedWiki(ctx, 'page.write', input.worldId)
+  const kind = String(input.kind) as Parameters<typeof knowledgeRepo.findTarget>[2]
+  const target = await knowledgeRepo.findTarget(ctx.db, wiki.worldId, kind, input.targetId)
+  if (!target) throw new NotFoundError(kind)
+  const ids = Array.isArray(input.characters) ? input.characters.map(String) : []
+  const names =
+    ids.length > 0 && typeof input.campaignId === 'string'
+      ? (await charactersRepo.listCharacters(ctx.db, input.campaignId))
+          .filter((c) => ids.includes(c.id))
+          .map((c) => c.name)
+      : []
+  return { kind, name: target.name, known: input.known ?? null, ...(names.length > 0 ? { characters: names } : {}) }
+}

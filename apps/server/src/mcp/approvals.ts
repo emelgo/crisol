@@ -5,7 +5,14 @@
  */
 import type { RealtimeMessage } from '@crisol/contracts'
 import { aiRepo, historyRepo, loadMemberships, worldsRepo } from '@crisol/db'
-import { actorFrom, aiDecision, authorize, MAX_PENDING_APPROVALS, NotFoundError } from '@crisol/domain'
+import {
+  actorFrom,
+  aiDecision,
+  authorize,
+  MAX_PENDING_APPROVALS,
+  NotFoundError,
+  ownedOrganizations
+} from '@crisol/domain'
 import { authorizedCampaign, authorizedPage } from '../actions/access.ts'
 import {
   type ActionContext,
@@ -14,6 +21,7 @@ import {
   type Implementation,
   InvalidRequestError
 } from '../actions/context.ts'
+import { knowledgeRequest } from '../actions/knowledge.ts'
 import { partyRequest } from '../actions/party.ts'
 import { systemRequest, visibleSystemName } from '../actions/systems.ts'
 import { approvalsChanged } from '../realtime/events.ts'
@@ -37,6 +45,8 @@ const failure = (message: string): ToolResult => ({ isError: true, content: text
 const READ_ONLY =
   'READ_ONLY: el modo de IA de esta cuenta es «solo lectura». El máster lo cambia en Crisol, en los ajustes de IA'
 const REJECTED = 'REJECTED: el máster lo ha rechazado. No insistas: pregúntale qué prefiere'
+const PLAYER_READS =
+  'READ_ONLY: la IA de un jugador solo lee lo que sabe su campaña. Lo demás lo hace el jugador en Crisol'
 const PENDING =
   'PENDING_APPROVAL: espera la aprobación del máster en Crisol. Se hará en cuanto la apruebe (caduca a las 24 h): no lo repitas'
 const TOO_MANY = `TOO_MANY_PENDING: ya hay ${MAX_PENDING_APPROVALS} peticiones esperando la aprobación del máster. Espera a que las decida`
@@ -66,6 +76,10 @@ export async function callAsAi(env: ActionEnv, call: AiCall): Promise<ToolResult
   // Las pertenencias y el modo se leen en cada llamada, como en la API
   const ctx: ActionContext = { ...env, actor: actorFrom(userId, await loadMemberships(db, userId)), via: 'ai', tool }
   try {
+    // La IA de quien solo juega (no lleva ninguna cuenta ni ningún mundo) solo lee (ADR-0017)
+    const playerOnly =
+      ownedOrganizations(ctx.actor).length === 0 && ![...ctx.actor.worlds.values()].some((w) => w.role === 'master')
+    if (playerOnly && impl.action.kind !== 'read') return failure(PLAYER_READS)
     const decision = aiDecision(await aiRepo.findAiMode(db, userId), impl.action.kind)
     if (decision === 'refuse') return failure(READ_ONLY)
     if (decision === 'run') {
@@ -112,6 +126,8 @@ async function describe(ctx: ActionContext, action: string, input: Record<string
   Object.assign(details, await systemRequest(ctx, action, input))
   // El grupo: qué, cuánto y los nombres (como en el historial)
   Object.assign(details, await partyRequest(ctx, action, input))
+  // Lo que sabe una campaña: qué se marca y a quién (como en el historial)
+  Object.assign(details, await knowledgeRequest(ctx, action, input))
   if (action === 'updateCampaign' && typeof input.system === 'string')
     details.system = await visibleSystemName(ctx, input.system)
   if (typeof input.operationId === 'string') {

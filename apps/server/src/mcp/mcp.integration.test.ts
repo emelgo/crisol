@@ -9,7 +9,7 @@ import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/cli
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { startServer } from '../server.ts'
-import { TEST_AUTH_SECRET, testDataDir } from '../testing.ts'
+import { signUpTestUser, TEST_AUTH_SECRET, testDataDir } from '../testing.ts'
 import { mcpTestHelpers } from './test-client.ts'
 
 type History = { entries: HistoryEntry[] }
@@ -49,7 +49,7 @@ describe('conector MCP con OAuth', () => {
     await conn?.close()
   })
 
-  const { account, oauthClient, accessToken, connected, api, closeClients } = mcpTestHelpers(
+  const { account, oauthClient, accessToken, connected, connectAs, api, closeClients } = mcpTestHelpers(
     BASE,
     () => server,
     () => conn
@@ -891,6 +891,67 @@ describe('conector MCP con OAuth', () => {
       expect(result.text).not.toContain('nadie más sabe')
     }
     expect((await mine.call('pendientes')).data).toEqual({ pending: [], recent: [] })
+  })
+
+  it('lo que sabe cada campaña (ADR-0017): la IA del máster marca con aprobación y ve como jugador; la de una jugadora solo lee lo suyo', async () => {
+    const { cookie, call } = await connected()
+    const world = (await call<World>('crear_mundo', { name: 'Valdren' })).data
+    const campaign = (await call<Campaign>('crear_campana', { worldId: world.id, name: 'La Marca' })).data
+    const created = await api<{ pages: { id: string; title: string }[] }>(cookie, 'createPages', {
+      worldId: world.id,
+      parentId: null,
+      pages: [
+        { key: 'a', title: 'Aldoria', markdown: 'Un reino.\n\n> [!secreto]\n> El rey ha muerto.' },
+        { key: 'v', title: 'Varn' }
+      ]
+    })
+    const aldoria = created.pages.find((p) => p.title === 'Aldoria')?.id ?? ''
+    const varn = created.pages.find((p) => p.title === 'Varn')?.id ?? ''
+
+    // Marcar pide aprobación (copiloto): lo revelado no se puede «des-saber»
+    const asked = await call('marcar_conocimiento', {
+      worldId: world.id,
+      campaignId: campaign.id,
+      kind: 'page',
+      targetId: aldoria,
+      known: true
+    })
+    expect(asked.text).toMatch(/^PENDING_APPROVAL/)
+    const { pending } = (await call<Approvals>('pendientes')).data
+    expect(pending[0]).toMatchObject({
+      tool: 'marcar_conocimiento',
+      details: { kind: 'page', name: 'Aldoria', known: true, campaign: 'La Marca', world: 'Valdren' }
+    })
+    await api(cookie, 'approve', { approvalId: pending[0]?.id })
+    const known = (await call<{ campaigns: { name: string; audience: unknown }[] }>('quien_conoce', { pageId: aldoria }))
+      .data
+    expect(known.campaigns).toEqual([expect.objectContaining({ name: 'La Marca', audience: 'all' })])
+    const asCampaign = (await call<{ markdown: string }>('ver_como_jugador', { campaignId: campaign.id, pageId: aldoria }))
+      .data
+    expect(asCampaign.markdown).toContain('Un reino.')
+    expect(asCampaign.markdown).not.toContain('El rey ha muerto')
+    const tree = (await call<{ pages: { title: string }[] }>('ver_arbol', { worldId: world.id })).data
+    expect(tree.pages.map((p) => p.title)).toEqual(['Aldoria', 'Varn'])
+
+    // Una jugadora de La Marca conecta su IA: ve lo que sabe su campaña, y no escribe
+    const ana = await signUpTestUser(server.auth, { name: 'Ana', email: `ana-${Date.now()}@crisol.test` })
+    const link = await api<{ url: string }>(cookie, 'getInvitation', { campaignId: campaign.id })
+    await fetch(new URL('/api/join', BASE), {
+      method: 'POST',
+      headers: { cookie: ana.cookie, origin: BASE, 'content-type': 'application/json' },
+      body: JSON.stringify({ secret: link.url.split('/unirse/')[1] })
+    })
+    const player = await connectAs(ana, cookie)
+    const own = (await player.call<{ pages: { title: string }[] }>('ver_arbol', { worldId: world.id })).data
+    expect(own.pages.map((p) => p.title)).toEqual(['Aldoria'])
+    const read = (await player.call<{ markdown: string }>('leer_pagina', { pageId: aldoria })).data
+    expect(read.markdown).toContain('Un reino.')
+    expect(read.markdown).not.toContain('El rey ha muerto')
+    expect((await player.call('leer_pagina', { pageId: varn })).isError).toBe(true)
+    expect((await player.call('buscar_paginas', { worldId: world.id, query: 'rey' })).data).toMatchObject({ results: [] })
+    const write = await player.call('editar_pagina', { pageId: aldoria, body: { mode: 'append', markdown: 'Mío' } })
+    expect(write.text).toMatch(/^READ_ONLY/)
+    expect((await player.call('quien_conoce', { pageId: aldoria })).isError).toBe(true)
   })
 
   it('lo de la papelera no sale en listar_mundos', async () => {
