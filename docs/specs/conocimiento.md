@@ -65,7 +65,8 @@ y la IA de los dos.
   - **la página**: título, icono, portada, propiedades y panel (sin lo oculto), etiquetas, pestañas (las que ve,
     `mapas-jugadores`), y el cuerpo **sin los secretos que no ve y sin las notas ocultas**, en lectura. Se recarga sola
     cuando cambia;
-  - **los enlaces** a lo que ve llevan a la página; a lo que no ve, se pintan como texto, sin enlace ni vista previa;
+  - **los enlaces** a lo que ve llevan a la página; a lo que no ve, sin enlace ni vista previa y sin el nombre del
+    destino (decisión 2);
   - **la vista previa** al pasar el ratón y **los incrustados**, filtrados igual;
   - **los enlaces entrantes**, solo desde lo que ve;
   - **las tablas que se llenan solas** del panel («Miembros»), solo con las páginas que ve;
@@ -96,10 +97,20 @@ y la IA de los dos.
 
 1. **El jugador lee por la API, no por Yjs** (ADR-0017): abrir el cuerpo en Yjs le enseñaría dónde hay secretos,
    aunque no su texto. Le llega el cuerpo ya filtrado y un aviso en tiempo real para recargarlo.
-2. **Un enlace a lo oculto, como texto**: el texto está en una página que ve; si no debe leerse, va en un secreto.
+2. **Un enlace a lo oculto no dice el nombre del destino**: sale su texto propio si lo tiene (`[[Varn|el viejo]]`) y,
+   si no, «desconocido», atenuado y sin enlace, como Kanka. El título se pinta al leer (se guarda el id): si el máster
+   renombra una página oculta, su nombre nuevo saldría en todas las que la enlazan
+   (`research/worldanvil/visibilidad.md` y `research/kanka/visibilidad.md`).
 3. **Subpáginas más abiertas que su madre**, permitidas, colgando de la primera antecesora visible.
 4. **Lo mismo que otra campaña**, como copia al crearla (no un enlace vivo entre campañas).
 5. **Por personaje, no por cuenta**: si el personaje pasa a otro jugador, el conocimiento pasa con él.
+6. **Una subpágina nueva bajo una página que alguna campaña conoce nace oculta** (con «No lo sabe nadie» en el mundo)
+   y su cabecera lo dice, con «Revelar». Con herencia viva nacería visible, y crear «El plan secreto del rey» bajo
+   «Aldoria» lo enseñaría al momento (`research/legendkeeper/visibilidad.md`: lo nuevo visible por defecto es una
+   fuente de fugas). Bajo una que nadie conoce, sin marca: sigue heredando.
+7. **Al dar a conocer una página con subpáginas**, el cuadro dice cuántas heredan («y 12 subpáginas») y deja verlas.
+8. **Solo la campaña desde la que lee**: un jugador con personajes en dos campañas de un mundo ve lo de la campaña en
+   la que está, no la suma.
 
 ## Pruebas
 
@@ -108,6 +119,9 @@ y la IA de los dos.
   enlaces, entrantes, vista previa, incrustados, tablas del panel, archivos, hoja, exportar, tiempo real, colaboración
   y MCP): un jugador de la campaña A ve lo suyo y uno de la B no; lo oculto no sale; quitar surte efecto al
   momento.
+- **Una prueba por vía de fuga** (`research/legendkeeper/visibilidad.md`: las que corrigieron en siete años):
+  «Mencionado en», el bloque de subpáginas y las tablas del panel, la vista previa de un enlace, exportar, las versiones
+  y las recientes.
 - **La prueba de fugas** (e2e) se amplía: dos jugadores de dos campañas leen la wiki y ninguno recibe ni un byte de lo
   que no ve (secretos sin revelar, notas, campos ocultos, títulos de páginas ocultas), ni por la API, ni por
   `/api/collab`, ni por `/api/realtime`, ni por el MCP.
