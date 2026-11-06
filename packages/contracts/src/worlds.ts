@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { defineAction } from './action.ts'
+import { readAs } from './read-as.ts'
 
 const worldName = z.string().trim().min(1).max(120)
 
@@ -65,8 +66,9 @@ export const renameWorld = defineAction({
 export const getWorldHome = defineAction({
   name: 'getWorldHome',
   kind: 'read',
-  description: 'La página de portada de un mundo, donde se abre (null si aún no tiene: ensureWorldHome la crea)',
-  input: z.object({ worldId: z.uuid() }),
+  description:
+    'La página de portada de un mundo, donde se abre (null si aún no tiene: ensureWorldHome la crea; un jugador, si no la conoce)',
+  input: z.object({ worldId: z.uuid(), ...readAs }),
   output: z.object({ pageId: z.uuid().nullable(), chosen: z.boolean().describe('Si es la elegida a propósito') })
 })
 

@@ -24,12 +24,12 @@ export const searchActions = [
           `${template.name} no tiene ningún campo de enlace «${wanted}». Sus campos: ${fieldsText(template)}`
         )
       }
-      const pageId = (await pageResolver(ctx, wiki.worldId)).resolve(input.field.page)
-      // Un jugador no busca por lo que no ve
-      if (!view.seesPage(pageId))
-        throw new InvalidRequestError('BAD_FIELD', `No hay ninguna página «${input.field.page}»`)
+      // Un jugador, solo entre lo que ve: lo oculto es como lo que no existe
+      const pageId = (await pageResolver(ctx, wiki.worldId, view.full ? undefined : view)).resolve(input.field.page)
       link = { field: field.field, pageId }
     }
+    // Una rama que no ve no existe
+    if (input.branchId && !view.seesPage(input.branchId)) throw new InvalidRequestError('PAGE_NOT_FOUND')
     return searchWorld(ctx, { ...input, worldId: wiki.worldId, template: template?.id ?? null, link, view })
   })
 ]

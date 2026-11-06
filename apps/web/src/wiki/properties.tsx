@@ -11,7 +11,7 @@ import { useTemplates } from '../templates/picker.tsx'
 import fieldStyles from './field-controls.module.css'
 import { ChoiceSelect, ClockField } from './field-controls.tsx'
 import styles from './properties.module.css'
-import { PageLink } from './read-as.tsx'
+import { PageLink, readAsInput, readAsKey, useReadAs } from './read-as.tsx'
 import tagStyles from './tags.module.css'
 import { TagsField, tagDot, useTagColor } from './tags.tsx'
 
@@ -28,9 +28,11 @@ const RESERVED = [{ name: 'etiquetas', type: 'list' }] as const
 /** Los títulos de las páginas de la wiki por su id (para las propiedades que enlazan páginas) */
 function usePageTitles(worldId: string) {
   const api = useApi()
+  // Leyendo como jugador, los de lo que ve (ADR-0017)
+  const readAs = useReadAs()
   const tree = useQuery({
-    queryKey: ['pages', worldId, 'tree', 6],
-    queryFn: () => api.call('listPageTree', { worldId, levels: 6 })
+    queryKey: ['pages', worldId, 'tree', 32, ...readAsKey(readAs)],
+    queryFn: () => api.call('listPageTree', { worldId, levels: 32, ...readAsInput(readAs) })
   })
   return tree.data?.pages ?? []
 }

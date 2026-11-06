@@ -35,9 +35,9 @@ import { pagesChanged } from '../realtime/events.ts'
 import { readDocument, stateOf, writeDocument } from '../wiki/content.ts'
 import { fileNames, worldFiles } from '../wiki/file-embeds.ts'
 import { linkName, linksOfNewPages, resolveIncoming, resolvePending, worldNames } from '../wiki/links.ts'
-import { filterBody, pageViewFor, unresolvedAsText, viewedPage } from '../wiki/projection.ts'
+import { filterBody, pageViewFor, unresolvedAsText, viewedPage, visibleProperties } from '../wiki/projection.ts'
 import { propertiesOf } from '../wiki/properties.ts'
-import { knownBySomeone } from '../wiki/reader.ts'
+import { knownBySomeone, type WikiView } from '../wiki/reader.ts'
 import { pageTables } from '../wiki/tables.ts'
 import { fieldsText, findTemplate, newBlockId } from '../wiki/templates.ts'
 import { snapshotPage, versionOf } from '../wiki/versions.ts'
@@ -83,7 +83,12 @@ const separateDoc = (content: JSONContent[]): JSONContent =>
 const fold = (name: string) => name.trim().toLocaleLowerCase('es')
 
 /** Encuentra páginas del mundo por su título, un alias o su id (sin mirar mayúsculas) */
-export async function pageResolver(ctx: ActionContext, worldId: string) {
+export async function pageResolver(
+  ctx: ActionContext,
+  worldId: string,
+  /** Un jugador (ADR-0017): solo entre las páginas que ve, con sus alias que no estén ocultos */
+  view?: WikiView
+) {
   const byName = new Map<string, Map<string, string>>()
   const ids = new Set<string>()
   const add = (id: string, title: string, aliases: readonly string[] = []) => {
@@ -95,7 +100,9 @@ export async function pageResolver(ctx: ActionContext, worldId: string) {
     }
   }
   for (const row of await pagesRepo.pageNames(ctx.db, worldId)) {
-    add(row.id, row.title, reservedList(propertiesOf(row.properties), 'alias'))
+    if (view && !view.seesPage(row.id)) continue
+    const properties = propertiesOf(row.properties)
+    add(row.id, row.title, reservedList(view ? visibleProperties(properties, view) : properties, 'alias'))
   }
   const resolve = (name: string): string => {
     if (ids.has(name)) return name
@@ -362,7 +369,7 @@ async function createBatch(
 export const pageContentActions = [
   implement(readPage, async (ctx, { pageId, ids, ...as }) => {
     const { page, wiki, view: reading } = await viewedPage(ctx, pageId, as)
-    const view = await pageViewFor(ctx, wiki, reading, pageId)
+    const view = pageViewFor(reading, await pageView(ctx, pageId))
     // Un jugador: sin lo que no ve, y los enlaces a lo que no conoce, como texto (lo que se escribió)
     const read = filterBody(await readDocument(ctx, { kind: 'body', pageId }), reading, pageId) ?? { type: 'doc' }
     const body = reading.full ? read : (unresolvedAsText(read) ?? { type: 'doc' })
@@ -373,7 +380,10 @@ export const pageContentActions = [
     const contents = new Map<string, JSONContent[]>()
     for (const { documentId } of separatesIn(body).values()) {
       if (!documentId || !own.has(documentId)) continue
-      contents.set(documentId, (await readDocument(ctx, { kind: 'separate', documentId, pageId })).content ?? [])
+      // Lo de dentro, filtrado como el cuerpo (un jugador: sus enlaces a lo que no ve, como texto)
+      const read = filterBody(await readDocument(ctx, { kind: 'separate', documentId, pageId }), reading, pageId)
+      const shown = read && !reading.full ? unresolvedAsText(read) : read
+      contents.set(documentId, shown?.content ?? [])
     }
     const linked = view.properties.flatMap((property) => (property.type === 'pages' ? property.value : []))
     const titles = await pagesRepo.titlesOf(ctx.db, wiki.worldId, linked)

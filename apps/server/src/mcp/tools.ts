@@ -214,9 +214,12 @@ export const MCP_TOOLS: Record<string, McpTool> = {
       return { action: 'listUnresolvedLinks', input: { worldId } }
     }
   },
-  // Lo que sabe cada campaña (ADR-0017)
+  // Lo que sabe cada campaña (ADR-0017) y revelar en partida (docs/specs/revelar.md)
   quien_conoce: { action: 'getPageKnowledge' },
   marcar_conocimiento: { action: 'setKnowledge' },
+  revelar: { action: 'reveal' },
+  ocultar: { action: 'hide' },
+  lo_que_sabe: { action: 'listCampaignKnowledge' },
   ver_como_jugador: {
     description:
       'Lo que ve un jugador: una página en Markdown (sin los secretos que no se le revelaron, ni las notas, ni los campos ocultos) o, sin pageId, el árbol de lo que conoce, como lo ve un personaje de la campaña (o la campaña sin excepciones). Solo quien lleva la wiki',
@@ -418,7 +421,9 @@ const INSTRUCTIONS =
   'sus subpáginas, un secreto por su documento, una pestaña, un pin o una entrada del compendio del mundo; para toda la ' +
   'campaña, unos personajes o todo el mundo; pide aprobación: lo que se revela no se puede «des-saber»); ' +
   'quien_conoce dice qué ve cada campaña de una página y por qué, y ver_como_jugador la enseña como la lee un ' +
-  'personaje. Un campo o un bloque del panel con hidden no les llega nunca. Si quien te conecta es un jugador, ' +
+  'personaje. En partida, revelar da a conocer algo con aviso a sus jugadores (con alsoPage, también su página), ' +
+  'ocultar lo quita y lo_que_sabe lista lo revelado. ' +
+  'Un campo o un bloque del panel con hidden no les llega nunca. Si quien te conecta es un jugador, ' +
   'solo ves lo que sabe su campaña (las herramientas de leer, con campaignId si juega más de una del mundo). ' +
   'Para pasar una wiki entera: crear_paginas de 50 en 50, en cualquier orden (los enlaces se resuelven solos), y al ' +
   'final enlaces_pagina con worldId para ver lo que quede sin resolver; los archivos los sube el máster y se enlazan ' +

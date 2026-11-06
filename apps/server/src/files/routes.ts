@@ -215,6 +215,7 @@ export function registerFileRoutes(
     const params = fileParams.safeParse(request.params)
     if (!params.success || !env.storage) return reply.code(404).send({ code: 'NOT_FOUND' })
     let file: Awaited<ReturnType<typeof authorizedFile>>['file']
+    let player = false
     try {
       ;({ file } = await authorizedFile(ctx, 'page.read', params.data.id))
     } catch (error) {
@@ -222,6 +223,7 @@ export function registerFileRoutes(
       const found = await playerFile(ctx, params.data.id)
       if (!found) return fail(reply, error)
       file = found
+      player = true
     }
     const etag = `"${file.hash}"`
     // Privada: solo el navegador de quien la pidió. Con su versión en la dirección (?v=), esos bytes no cambian nunca:
@@ -231,7 +233,12 @@ export function registerFileRoutes(
     reply
       .header(
         'cache-control',
-        versioned ? 'private, max-age=31536000, immutable' : 'private, max-age=0, stale-while-revalidate=604800'
+        // A un jugador, sin guardar: si se lo ocultan, la próxima vez ya no lo tiene (con la huella, no se vuelve a bajar)
+        player
+          ? 'private, no-cache'
+          : versioned
+            ? 'private, max-age=31536000, immutable'
+            : 'private, max-age=0, stale-while-revalidate=604800'
       )
       .header('etag', etag)
       .header('x-content-type-options', 'nosniff')

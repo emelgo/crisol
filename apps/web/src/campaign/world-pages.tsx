@@ -67,7 +67,7 @@ function useTree(worldId: string) {
   const readAs = useReadAs() as ReadAs
   return useQuery({
     queryKey: playerKey(worldId, readAs, 'tree'),
-    queryFn: () => api.call('listPageTree', { worldId, levels: 6, ...readAsInput(readAs) })
+    queryFn: () => api.call('listPageTree', { worldId, levels: 32, ...readAsInput(readAs) })
   })
 }
 
@@ -85,9 +85,16 @@ export function WorldPagesHome() {
 function FirstPage({ worldId }: { worldId: string }) {
   const { t } = useTranslation()
   const readAs = useReadAs() as ReadAs
+  const api = useApi()
   const tree = useTree(worldId)
-  if (!tree.data) return failed(tree) ? <LoadError error={tree.error} onRetry={() => tree.refetch()} /> : <Loading />
-  const first = tree.data.pages[0]
+  // La portada del mundo, si la conocen; si no, la primera que ven
+  const home = useQuery({
+    queryKey: playerKey(worldId, readAs, 'home'),
+    queryFn: () => api.call('getWorldHome', { worldId, ...readAsInput(readAs) })
+  })
+  if (!tree.data || !home.data)
+    return failed(tree) ? <LoadError error={tree.error} onRetry={() => tree.refetch()} /> : <Loading />
+  const first = home.data.pageId ? { id: home.data.pageId } : tree.data.pages[0]
   if (!first) return <p className={styles.nothing}>{t('playerPages.nothing')}</p>
   return (
     <Navigate

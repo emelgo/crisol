@@ -7,8 +7,8 @@ import { type Actor, type Capability, can, type Target } from '@crisol/domain'
  */
 export type Audience = { userId: string } | { capability: Capability; target: Target; page?: string }
 
-/** Si un jugador ve una página de un mundo (lo que sabe alguna de sus campañas allí) */
-export type SeesPage = (actor: Actor, worldId: string, pageId: string) => Promise<boolean>
+/** Qué páginas de un mundo ve un jugador (lo que sabe alguna de sus campañas allí): se calcula una vez por entrega */
+export type SeesPage = (actor: Actor, worldId: string) => Promise<(pageId: string) => boolean>
 
 export interface RealtimeEvent {
   to: Audience
@@ -38,7 +38,7 @@ export interface Realtime {
 export function createRealtime(
   loadActor: (userId: string) => Promise<Actor>,
   onError: (error: unknown) => void = () => {},
-  seesPage: SeesPage = async () => false
+  seesPage: SeesPage = async () => () => false
 ): Realtime {
   const sockets = new Map<string, Set<RealtimeSocket>>()
   let queue = Promise.resolve()
@@ -50,15 +50,15 @@ export function createRealtime(
       actors.set(userId, loaded)
       return loaded
     }
-    const seen = new Map<string, Promise<boolean>>()
+    const views = new Map<string, Promise<(pageId: string) => boolean>>()
     /** Si le llega lo de esa página: quien lleva la wiki, siempre; un jugador, si la ve */
     const pageFor = async (userId: string, actor: Actor, target: Target, pageId: string) => {
       if (can(actor, 'page.read', target)) return true
       const worldId = 'worldId' in target ? target.worldId : ''
-      const key = `${userId}|${worldId}|${pageId}`
-      const known = seen.get(key) ?? seesPage(actor, worldId, pageId)
-      seen.set(key, known)
-      return known
+      const key = `${userId}|${worldId}`
+      const view = views.get(key) ?? seesPage(actor, worldId)
+      views.set(key, view)
+      return (await view)(pageId)
     }
     for (const event of events) {
       const data = JSON.stringify(event.message)

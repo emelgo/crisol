@@ -2,13 +2,14 @@
  * Lo que sabe cada campaña (ADR-0017): qué páginas, secretos, pestañas, pines y entradas del mundo ve quien lee.
  *
  * - Dos capas: la del mundo (marcas sin campaña: lo que sabe todo el mundo) y la de cada campaña, que manda sobre la
- *   del mundo en la misma cosa. Una campaña que empieza de cero no mira la del mundo.
+ *   del mundo en la misma cosa. Una campaña que empieza de cero no mira lo que el mundo conoce, pero sí lo que oculta
+ *   («No lo sabe nadie»: lo nuevo bajo una página conocida nace así).
  * - Páginas: se sube desde la página y manda la primera marca que se encuentre. Sin ninguna, solo el máster. La
  *   herencia es viva porque se calcula al leer.
  * - Por personajes: una marca «la conocen» con personajes la ve la cuenta de sus dueños. En la capa del mundo y en las
  *   marcas «no la conocen», el público no cuenta.
- * - Secretos: su página y su marca. Pestañas, pines y regiones: siguen a su página, salvo su marca o `hidden` (la marca
- *   del mundo que ya tenían). Entradas del mundo: solo con su marca.
+ * - Secretos: su página y su marca. Pestañas, pines y regiones: siguen a su página, salvo su marca (de la campaña o del
+ *   mundo) o `hidden` (la marca del mundo que ya tenían). Entradas del mundo: solo con su marca.
  */
 import { MAX_PAGE_DEPTH } from './tree.ts'
 
@@ -51,14 +52,19 @@ export interface Knowledge {
   seesContent(key: string): boolean
 }
 
+// La capa del mundo, con una marca que no puede ser el id de una campaña
 const keyOf = (campaignId: string | null, kind: KnowledgeKind, targetId: string) =>
-  `${campaignId ?? ''}|${kind}|${targetId}`
+  `${campaignId ?? '*'}|${kind}|${targetId}`
 
 function indexMarks(marks: readonly KnowledgeMark[]) {
   const byKey = new Map<string, KnowledgeMark>()
   for (const mark of marks) byKey.set(keyOf(mark.campaignId, mark.kind, mark.targetId), mark)
   return byKey
 }
+
+/** La marca del mundo, si cuenta: siempre lo que oculta; lo que conoce, solo si la campaña parte del mundo */
+const worldMark = (mark: KnowledgeMark | undefined, knowsWorld: boolean) =>
+  mark && (knowsWorld || !mark.known) ? mark : undefined
 
 /** Si una marca deja ver a quien tiene esos personajes */
 function admits(mark: KnowledgeMark, characterIds: readonly string[]): boolean {
@@ -102,7 +108,7 @@ function decider(
       path.push(current)
       const own =
         (campaignId !== null ? byKey.get(keyOf(campaignId, 'page', current)) : undefined) ??
-        (knowsWorld ? byKey.get(keyOf(null, 'page', current)) : undefined)
+        worldMark(byKey.get(keyOf(null, 'page', current)), knowsWorld)
       if (own) {
         found = { mark: own, pageId: current }
         break
@@ -137,11 +143,11 @@ export function knowledgeFor(reader: Reader, tree: readonly TreePage[], marks: r
   }
   /** La marca propia de algo que no hereda: la de la campaña y, si parte del mundo, la del mundo */
   const flat = (kind: KnowledgeKind, targetId: string) =>
-    byKey.get(keyOf(campaignId, kind, targetId)) ?? (knowsWorld ? byKey.get(keyOf(null, kind, targetId)) : undefined)
+    byKey.get(keyOf(campaignId, kind, targetId)) ?? worldMark(byKey.get(keyOf(null, kind, targetId)), knowsWorld)
   /** Lo que sigue a su página: su marca o, sin ella, visible salvo oculto */
   const follows = (kind: KnowledgeKind, id: string, pageId: string, hidden: boolean) => {
     if (!seesPage(pageId)) return false
-    const own = byKey.get(keyOf(campaignId, kind, id))
+    const own = flat(kind, id)
     return own ? admits(own, characterIds) : !hidden
   }
   let visible: Set<string> | null = null

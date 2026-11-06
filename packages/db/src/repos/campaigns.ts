@@ -74,12 +74,20 @@ export function createCampaignWithMaster(
 ) {
   return operation(db, context, async (w) => {
     const start = input.knowledge ?? { start: 'world' }
+    // «Lo mismo que otra»: también si parte del mundo, como ella
+    const [source] =
+      start.start === 'campaign'
+        ? await w.read
+            .select({ knowsWorld: campaigns.knowsWorld })
+            .from(campaigns)
+            .where(eq(campaigns.id, start.campaignId))
+        : []
     const campaign = await w.insert(campaigns, {
       worldId: input.worldId,
       name: input.name,
       system: input.system ?? null,
       systemChoices: input.systemChoices ?? null,
-      knowsWorld: start.start !== 'none'
+      knowsWorld: start.start === 'campaign' ? (source?.knowsWorld ?? true) : start.start !== 'none'
     })
     await w.insert(campaignMembers, { campaignId: campaign.id, userId: input.masterId, role: 'master' })
     await writeInvitation(w, campaign.id, input.invitation)

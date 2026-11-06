@@ -90,7 +90,11 @@ async function mapView(ctx: ActionContext, tabId: string, pageId: string, view?:
       ? all
       : all
           .filter((pin) => view.seesMapItem({ kind: 'pin', id: pin.id, pageId, hidden: pin.hidden }))
-          .map((pin) => (pin.pageId && !view.seesPage(pin.pageId) ? { ...pin, pageId: null, pageTitle: null } : pin))
+          .map((pin) => ({
+            ...pin,
+            hidden: false,
+            ...(pin.pageId && !view.seesPage(pin.pageId) ? { pageId: null, pageTitle: null } : {})
+          }))
   const hasImage = map.fileId && map.fileName && map.width && map.height
   return {
     id: map.id,
@@ -130,7 +134,8 @@ export const mapActions = [
       // Un jugador (ADR-0017): las que ve; las tablas aleatorias de la wiki siguen siendo del máster
       (tab) => view.full || (tab.kind !== 'table' && view.seesTab({ id: tab.id, pageId, hidden: tab.hidden }))
     )
-    return { tabs: tabs.map(tabView) }
+    // Lo que se le reveló, para él no está oculto
+    return { tabs: tabs.map((tab) => (view.full ? tabView(tab) : { ...tabView(tab), hidden: false })) }
   }),
 
   implement(createPageTab, async (ctx, { pageId, kind, name }) => {

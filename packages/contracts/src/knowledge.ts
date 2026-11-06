@@ -51,7 +51,7 @@ export const setKnowledge = defineAction({
   name: 'setKnowledge',
   kind: 'players',
   description:
-    'Marca lo que sabe una campaña (o todo el mundo): una página (sus subpáginas la heredan), un secreto (su id de documento), una pestaña, un pin, una región o una entrada del compendio del mundo (su clave). La conocen (toda la campaña o unos personajes), no la conocen, o se quita la marca para que herede',
+    'Marca lo que sabe una campaña (o todo el mundo): una página (sus subpáginas la heredan), un secreto (su id de documento), una pestaña, un pin, una región o una entrada del compendio del mundo (su id, el de guardar_contenido). La conocen (toda la campaña o unos personajes), no la conocen, o se quita la marca para que herede',
   input: z.object({
     worldId: z.uuid(),
     campaignId: z
@@ -88,7 +88,7 @@ export const reveal = defineAction({
   name: 'reveal',
   kind: 'players',
   description:
-    'Revela algo a una campaña en partida, con aviso a sus jugadores: un secreto (su id de documento), una página, una pestaña, un pin, una región o una entrada del compendio del mundo; a toda la campaña o a unos personajes. Con alsoPage, si la campaña no conoce la página donde está, también. Sin campaignId, la única del mundo',
+    'Revela algo a una campaña en partida, con aviso a sus jugadores: un secreto (su id de documento), una página, una pestaña, un pin, una región o una entrada del compendio del mundo (su id); a toda la campaña o a unos personajes. Con alsoPage, si la campaña no conoce la página donde está, también. Sin campaignId, la única del mundo',
   input: z.object({
     worldId: z.uuid(),
     campaignId: z.uuid().optional(),

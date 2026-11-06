@@ -171,13 +171,10 @@ export async function findMark(
 
 /**
  * Copia lo que sabe una campaña a otra nueva (al crearla con «lo mismo que otra»), dentro de su operación. Lo que solo
- * saben unos personajes no pasa: son de la otra campaña
+ * saben unos personajes (que son de la otra) pasa como «no la conocen»: la campaña entera no lo sabía
  */
 export async function copyCampaignMarks(w: Writer, from: string, to: { worldId: string; campaignId: string }) {
-  const rows = await w.read
-    .select()
-    .from(knowledge)
-    .where(and(eq(knowledge.campaignId, from), isNull(knowledge.characters)))
+  const rows = await w.read.select().from(knowledge).where(eq(knowledge.campaignId, from))
   if (rows.length === 0) return
   await w.insertMany(
     knowledge,
@@ -186,7 +183,7 @@ export async function copyCampaignMarks(w: Writer, from: string, to: { worldId: 
       campaignId: to.campaignId,
       kind: row.kind,
       targetId: row.targetId,
-      known: row.known,
+      known: row.known && row.characters === null,
       characters: null
     }))
   )

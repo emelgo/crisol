@@ -9,7 +9,6 @@ import { NotFoundError, type PageProperty } from '@crisol/domain'
 import type { JSONContent } from '@tiptap/core'
 import type { WikiTarget } from '../actions/access.ts'
 import type { ActionContext } from '../actions/context.ts'
-import { pageView } from '../actions/pages.ts'
 import { authorizedView, type ReadAs, type WikiView } from './reader.ts'
 
 /** Las propiedades que ve: sin las ocultas y, en las de enlace, solo las páginas que ve */
@@ -64,8 +63,7 @@ export async function viewTree(ctx: ActionContext, wiki: WikiTarget, view: WikiV
 }
 
 /** La página como la ve quien la pide: para un jugador, sin lo oculto, colgando de donde la ve y con su ruta visible */
-export async function pageViewFor(ctx: ActionContext, wiki: WikiTarget, view: WikiView, pageId: string): Promise<Page> {
-  const page = await pageView(ctx, pageId)
+export function pageViewFor(view: WikiView, page: Page): Page {
   if (view.full) return page
   return {
     ...page,

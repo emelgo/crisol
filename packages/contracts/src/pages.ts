@@ -227,7 +227,7 @@ export const listPageTree = defineAction({
   input: z.object({
     worldId: z.uuid(),
     parentId: z.uuid().nullable().default(null).describe('La rama; sin ella, desde el primer nivel'),
-    levels: z.number().int().min(1).max(6).default(2).describe('Cuántos niveles por debajo'),
+    levels: z.number().int().min(1).max(32).default(2).describe('Cuántos niveles por debajo'),
     ...readAs
   }),
   output: z.object({

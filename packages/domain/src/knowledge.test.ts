@@ -74,8 +74,13 @@ describe('qué páginas ve un jugador', () => {
     ])
   })
 
-  it('una campaña que empieza de cero no mira el mundo', () => {
+  it('una campaña que empieza de cero no mira lo que el mundo conoce', () => {
     expect(visible(player('marca', ['lia'], false), [page(null, 'sur', true)])).toEqual([])
+  })
+
+  it('pero sí lo que oculta: lo nuevo bajo una página que conoce nace oculto también para ella', () => {
+    const marks = [page('marca', 'aldoria', true), page(null, 'oculta', false)]
+    expect(visible(player('marca', ['lia'], false), marks)).toEqual(['aldoria', 'capital', 'taberna'])
   })
 
   it('en la misma página, la campaña manda sobre el mundo', () => {
@@ -173,6 +178,17 @@ describe('secretos, pestañas, pines y entradas del mundo', () => {
     expect(lia.seesSecret('s3', 'aldoria')).toBe(false)
     // Revelado, pero su página no la ve
     expect(lia.seesSecret('s2', 'varn')).toBe(false)
+  })
+
+  it('una marca del mundo en una pestaña o un pin también cuenta', () => {
+    const withWorld: KnowledgeMark[] = [
+      ...marks,
+      { campaignId: null, kind: 'tab', targetId: 'diario', known: false, characters: null },
+      { campaignId: null, kind: 'pin', targetId: 'torre', known: true, characters: null }
+    ]
+    const k = knowledgeFor(player('marca'), tree, withWorld)
+    expect(k.seesTab({ id: 'diario', pageId: 'aldoria', hidden: false })).toBe(false)
+    expect(k.seesMapItem({ kind: 'pin', id: 'torre', pageId: 'aldoria', hidden: true })).toBe(true)
   })
 
   it('una pestaña sigue a su página, salvo que tenga su marca o esté oculta', () => {

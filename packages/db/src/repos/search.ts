@@ -165,21 +165,32 @@ const visibleTsv = sql`setweight(to_tsvector('es_unaccent'::regconfig, crisol_pa
   select coalesce(jsonb_agg(e order by n), '[]'::jsonb) from jsonb_array_elements(p.properties) with ordinality as x(e, n)
   where coalesce(e->>'hidden', '') <> 'true'))), 'A')`
 
-/** Las condiciones de plantilla y de campo, sobre la página p */
-const templateFilter = (options: Pick<SearchOptions, 'template' | 'link'>) => sql`
+/** Las condiciones de plantilla y de campo, sobre la página p (un jugador: un campo «Oculto» no cuenta) */
+const templateFilter = (options: Pick<SearchOptions, 'template' | 'link' | 'player'>) => sql`
   ${options.template ? sql`and p.template_line @> array[${options.template}]::text[]` : sql``}
   ${
     options.link
       ? sql`and p.properties @> ${JSON.stringify([{ field: options.link.field, value: [options.link.pageId] }])}::jsonb`
       : sql``
+  }
+  ${
+    options.link && options.player
+      ? sql`and exists (select 1 from jsonb_array_elements(p.properties) e
+          where e->>'field' = ${options.link.field} and e->'value' @> ${JSON.stringify([options.link.pageId])}::jsonb
+            and coalesce(e->>'hidden', '') <> 'true')`
+      : sql``
   }`
 
+/** Un campo que cuenta para quien busca: para un jugador, no si está «Oculto» */
+const shownField = (player: PlayerScope | null | undefined) =>
+  player ? sql`and coalesce(e->>'hidden', '') <> 'true'` : sql``
+
 /** Las de una etiqueta (o una hija suya), sobre la página p */
-const tagFilter = (tag: string) =>
+const tagFilter = (tag: string, player?: PlayerScope | null) =>
   tag
     ? sql`and exists (
         select 1 from jsonb_array_elements(p.properties) e, jsonb_array_elements_text(e->'value') v
-        where lower(e->>'name') = 'etiquetas' and jsonb_typeof(e->'value') = 'array'
+        where lower(e->>'name') = 'etiquetas' and jsonb_typeof(e->'value') = 'array' ${shownField(player)}
           and (lower(v) = ${tag} or lower(v) like ${`${tag}/%`}))`
     : sql``
 
@@ -188,7 +199,7 @@ export async function templatePages(db: Database, options: Omit<SearchOptions, '
   const rows = await db.execute<{ id: string; title: string; icon: string | null; total: number }>(sql`
     select p.id, p.title, p.icon, (count(*) over ())::int as total from pages p
     where p.world_id = ${options.worldId} and p.deleted_at is null ${templateFilter(options)}
-      ${tagFilter(options.tag?.trim().toLowerCase() ?? '')}
+      ${tagFilter(options.tag?.trim().toLowerCase() ?? '', options.player)}
       ${options.player ? sql`and p.id = any(${ids(options.player.pages)})` : sql``}
     order by lower(p.title), p.id
     offset ${options.offset} limit ${options.limit}`)
@@ -230,14 +241,7 @@ export async function searchPages(db: Database, options: SearchOptions) {
     select p.id, p.title, p.icon, scored.score::float8 as score, (count(*) over ())::int as total
     from scored join pages p on p.id = scored.page_id
     where p.deleted_at is null
-      ${
-        tag
-          ? sql`and exists (
-              select 1 from jsonb_array_elements(p.properties) e, jsonb_array_elements_text(e->'value') v
-              where lower(e->>'name') = 'etiquetas' and jsonb_typeof(e->'value') = 'array'
-                and (lower(v) = ${tag} or lower(v) like ${`${tag}/%`}))`
-          : sql``
-      }
+      ${tagFilter(tag, options.player)}
       ${templateFilter(options)}
       ${
         options.branchId

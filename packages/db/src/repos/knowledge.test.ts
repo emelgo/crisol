@@ -111,7 +111,7 @@ describe('lo que sabe cada campaña', () => {
     expect(await knowledgeRepo.listMarks(conn.db, { worldId, campaignIds: 'all' })).toEqual([])
   })
 
-  it('una campaña nueva empieza de cero, o con lo que sabe otra (sin lo de sus personajes)', async () => {
+  it('una campaña nueva empieza de cero, o con lo que sabe otra (lo de sus personajes, como «no la conocen»)', async () => {
     await mark({})
     await mark({ targetId: 'p2', known: false })
     await mark({ targetId: 'p3', characters: [crypto.randomUUID()] })
@@ -137,9 +137,16 @@ describe('lo que sabe cada campaña', () => {
       ])
     )
     const copied = await knowledgeRepo.listMarks(conn.db, { worldId, campaignIds: [copy.id] })
-    expect(copied.filter((m) => m.campaignId === copy.id).map((m) => [m.targetId, m.known])).toEqual([
+    // Lo que solo sabían unos personajes, como «no la conocen» para toda la copia
+    expect(
+      copied
+        .filter((m) => m.campaignId === copy.id)
+        .map((m) => [m.targetId, m.known])
+        .sort()
+    ).toEqual([
       ['p1', true],
-      ['p2', false]
+      ['p2', false],
+      ['p3', false]
     ])
   })
 

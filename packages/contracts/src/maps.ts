@@ -76,7 +76,7 @@ export const deletePageTab = defineAction({
   kind: 'delete',
   description:
     'Quita una pestaña de una página, con lo que tenga (un mapa, con sus pines). Se deshace desde el historial',
-  input: z.object({ tabId: z.uuid(), ...readAs }),
+  input: z.object({ tabId: z.uuid() }),
   output: z.object({ id: z.uuid() })
 })
 
@@ -136,7 +136,7 @@ export const getMap = defineAction({
   name: 'getMap',
   kind: 'read',
   description: 'El mapa de una pestaña: su imagen, su escala y sus pines (coordenadas de 0 a 1 sobre la imagen)',
-  input: z.object({ tabId: z.uuid() }),
+  input: z.object({ tabId: z.uuid(), ...readAs }),
   output: mapView
 })
 

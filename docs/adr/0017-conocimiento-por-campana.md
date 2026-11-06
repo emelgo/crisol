@@ -45,7 +45,9 @@ se calcula y por dónde pasa cada lectura.
   madre), las filas del mundo y de la campaña, si la campaña parte del mundo, y los personajes de quien lee. Responde
   qué páginas ve y, para cada secreto, pestaña, pin o entrada, si lo ve.
 - **Páginas**: se sube desde la página y manda la primera marca; en la misma página, la de la campaña antes que la del
-  mundo; sin marca hasta arriba, solo el máster. La herencia es viva porque se calcula al leer, nunca se copia.
+  mundo; sin marca hasta arriba, solo el máster. La herencia es viva porque se calcula al leer, nunca se copia. Una
+  campaña que empezó de cero no mira lo que el mundo conoce, pero sí lo que oculta (lo nuevo bajo una página conocida
+  nace oculto también para ella).
 - **Secretos**: los ve quien ve su página y además lo tiene revelado (su fila en la campaña). Las notas ocultas, nunca.
 - **Pestañas, pines, regiones y rutas**: siguen a su página salvo que tengan su marca. Un pin hacia una página que no
   se ve sale sin enlace.
@@ -79,6 +81,16 @@ se calcula y por dónde pasa cada lectura.
 - Marcar y revelar son acciones de tipo `players` (`packages/domain/src/ai-modes.ts`): en copiloto esperan la
   aprobación, porque lo revelado no se puede «des-saber».
 - La IA de un jugador entra con su cuenta por el mismo OAuth y usa las mismas acciones: ve lo que ve él.
+
+### Lo que se acepta (de la revisión, 2026-11-06)
+
+- **Canales laterales de tiempo**, sin contenido: un jugador sabe que «algo cambió» en el mundo (`pagesChanged`, sin
+  decir qué), que el texto de una página que ve se guardó aunque fuera en un secreto que no ve, y el orden de las
+  recientes y la versión de una página cambian con lo oculto. No delatan títulos, ids ni texto de lo que no ve.
+- **Los archivos de un jugador**: se le sirven sin guardar en su navegador (`no-cache`) y la vista que lo decide se
+  guarda en memoria 1,5 s (una página con varias imágenes las pide a la vez): revocar un archivo tarda eso como mucho.
+- **Quién conecta una IA**: el propietario de la cuenta, el máster de un mundo y quien juega en una campaña. La de
+  quien solo juega solo lee; la del máster actúa con sus permisos, como la del propietario.
 
 ## Alternativas descartadas
 

@@ -56,7 +56,9 @@ async function project(node: JSONContent, at: Context): Promise<JSONContent> {
   if (node.type === 'secret' || node.type === 'note') {
     const documentId = String(node.attrs?.documentId ?? '')
     const pageId = at.separates.get(documentId)
-    const content = pageId ? ((await readDocument(at.ctx, { kind: 'separate', documentId, pageId })).content ?? []) : []
+    // Lo de dentro, filtrado como el cuerpo: sus enlaces a lo que no ve, como sin resolver
+    const read = pageId ? await readDocument(at.ctx, { kind: 'separate', documentId, pageId }) : null
+    const content = (read && pageId ? filterBody(read, at.view, pageId)?.content : null) ?? []
     return { ...node, content: await Promise.all(content.map((child) => project(child, at))) }
   }
   if (node.type === 'pageLink' && typeof node.attrs?.pageId === 'string') {

@@ -26,7 +26,7 @@ import { registerWeb, webBuild } from './web.ts'
 import { jsonOfDoc } from './wiki/content.ts'
 import { linksOfStored } from './wiki/links.ts'
 import type { PdfRenderer } from './wiki/pdf.ts'
-import { actorSeesPage } from './wiki/reader.ts'
+import { actorPageView } from './wiki/reader.ts'
 import { registerWikiRoutes } from './wiki/routes.ts'
 import { closeSession, recoverSession } from './wiki/versions.ts'
 
@@ -73,7 +73,7 @@ export function buildApp(deps: AppDeps): FastifyInstance {
       async (userId) => actorFrom(userId, await loadMemberships(db, userId)),
       (error) => app.log.error(error),
       // Lo de una página, a un jugador solo si la ve (ADR-0017)
-      (actor, worldId, pageId) => actorSeesPage(db, actor, worldId, pageId)
+      (actor, worldId) => actorPageView(db, actor, worldId)
     )
     // Los documentos de Yjs de la wiki (ADR-0003)
     const collab = createCollab({

@@ -83,7 +83,10 @@ export const knowledgeChanged = (
   wiki: { worldId: string; organizationId: string },
   campaignId: string | null
 ): RealtimeEvent => ({
-  to: { capability: 'page.view', target: wiki },
+  // Lo de una campaña, a quien está en ella (y al máster del mundo); lo del mundo, a todos los que leen sus páginas
+  to: campaignId
+    ? { capability: 'campaign.read', target: { campaignId, worldId: wiki.worldId } }
+    : { capability: 'page.view', target: wiki },
   message: { type: 'changed', what: 'knowledge', worldId: wiki.worldId, campaignId }
 })
 

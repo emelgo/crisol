@@ -24,8 +24,9 @@ y la IA de los dos.
 - Cada página puede llevar, en cada capa, una marca: **la conocen** (con su público) o **no la conocen**. Sin marca,
   hereda.
 - Para un jugador de una campaña: se sube desde la página hacia arriba y **manda la primera marca que se encuentre**;
-  en una misma página, la de la campaña manda sobre la del mundo. Si la campaña empezó «de cero», la capa del mundo no
-  cuenta. Sin ninguna marca hasta arriba: **solo el máster** (una página nueva es del máster).
+  en una misma página, la de la campaña manda sobre la del mundo. Si la campaña empezó «de cero», no cuenta lo que el
+  mundo conoce, pero sí lo que oculta. Sin ninguna marca hasta arriba: **solo el máster** (una página nueva es del
+  máster).
 - **Herencia viva**: marcar una página marca a sus subpáginas mientras no tengan la suya. Mover una página cambia lo
   que hereda. La interfaz dice siempre de dónde viene («Por «Aldoria»», «Lo sabe el mundo»).
 - **Por personaje**: «la conocen» con unos personajes la ve la cuenta de sus dueños. Un jugador ve lo de todos sus
@@ -69,7 +70,7 @@ y la IA de los dos.
   - **la vista previa** al pasar el ratón y **los incrustados**, filtrados igual;
   - **los enlaces entrantes**, solo desde lo que ve;
   - **las tablas que se llenan solas** del panel («Miembros»), solo con las páginas que ve;
-  - **la búsqueda** (por palabras y por significado), solo en lo que ve; los secretos, solo los que ve;
+  - **la búsqueda** por palabras, solo en lo que ve; los secretos, solo los que ve (por significado, queda);
   - **los archivos** (imágenes, PDF): solo los que están en algo que ve (la portada o el panel de una página que ve, o
     incrustados en un documento que ve).
 - **No ve**: el historial, las versiones, la papelera, las notas ocultas, las plantillas, la lista de enlaces rotos ni
@@ -138,8 +139,15 @@ y la IA de los dos.
   el conector, también para quien juega en una campaña, y su IA solo lee.
 - **Pruebas**: el motor en tabla, `apps/server/src/actions/knowledge.integration.test.ts` (también rendimiento: p95
   199 ms con 5.000 páginas), el tiempo real, el MCP, la e2e `conocimiento.spec.ts` y tres pruebas de fugas.
-- **Queda**: la hoja para imprimir y el PDF de una página para el jugador (hoy solo del máster); la biblioteca de PDF
-  para el jugador (sus libros, solo los que estén en algo que ve); los mapas para el jugador en la web
+- **La revisión** (2026-11-06) encontró cinco fugas y varios fallos, arreglados con sus pruebas
+  (`apps/server/src/actions/knowledge-leaks.integration.test.ts`): lo de dentro de un secreto revelado, los enlaces
+  que salen de notas y secretos, los campos ocultos en los filtros (tablas, por campo, por etiqueta, alias), el
+  resolutor de nombres de la búsqueda, lo nuevo que nace oculto en una campaña de cero, «lo mismo que otra», las
+  marcas del mundo en pestañas y pines, `getMap` como jugador, los ciclos de dependencias y el rendimiento del tiempo
+  real y de los archivos. Una guarda (`apps/server/src/actions/read-as.test.ts`) exige que toda acción con `readAs`
+  pase por la proyección.
+- **Queda**: la búsqueda por significado del jugador (la biblioteca y «También en las páginas», hoy solo del
+  máster); la hoja para imprimir y el PDF de una página para el jugador; los mapas para el jugador en la web
   (`mapas-jugadores`); exportar como jugador (fuera).
 
 ## Pruebas

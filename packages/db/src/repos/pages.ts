@@ -516,7 +516,13 @@ export function relatedPages(
         sql`${pages.id} <> ${input.pageId}`,
         sql`${pages.templateLine} @> array[${input.template}]::text[]`,
         sql`${pages.properties} @> ${contains}::jsonb`,
-        input.within ? sql`${pages.id} = any(${uuidArray(input.within)})` : undefined
+        input.within ? sql`${pages.id} = any(${uuidArray(input.within)})` : undefined,
+        // Un jugador: un campo «Oculto» no cuenta (si no, la fila delataría la relación)
+        input.within
+          ? sql`exists (select 1 from jsonb_array_elements(${pages.properties}) e
+              where e->>'field' = ${input.field} and e->'value' @> ${JSON.stringify([input.pageId])}::jsonb
+                and coalesce(e->>'hidden', '') <> 'true')`
+          : undefined
       )
     )
     .orderBy(sql`lower(${pages.title})`, pages.id)

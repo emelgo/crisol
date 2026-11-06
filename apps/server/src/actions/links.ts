@@ -5,7 +5,7 @@
  */
 import { getPageLinks, linkMention, listUnresolvedLinks } from '@crisol/contracts'
 import { documentsRepo, linksRepo, pagesRepo } from '@crisol/db'
-import { foldName, NotFoundError } from '@crisol/domain'
+import { foldName, NotFoundError, reservedList } from '@crisol/domain'
 import { findName, fragmentAround, plainText, textBlocks } from '@crisol/editor'
 import type { JSONContent } from '@tiptap/core'
 import { documentJson, readDocument, writeDocument } from '../wiki/content.ts'
@@ -91,14 +91,8 @@ export const linkActions = [
     const seenSeparates = new Set(scope?.separates ?? [])
     const seesDocument = (kind: string, pageOf: string, documentId: string) =>
       !scope || (view.seesPage(pageOf) && (kind === 'body' || seenSeparates.has(documentId)))
-    const visiblePaths = scope ? await pagesRepo.pagePaths(ctx.db, [...(view.visiblePageIds() ?? [])]) : null
-    const pathOf = (id: string) =>
-      visiblePaths
-        ? view
-            .pages(visiblePaths.get(id) ?? [])
-            .slice(0, -1)
-            .map((step) => step.title)
-        : (byId.get(id)?.path.slice(0, -1) ?? [])
+    // Un jugador: la ruta, solo por las que ve (se rellena al final, solo de las que salen)
+    const pathOf = (id: string) => (scope ? [] : (byId.get(id)?.path.slice(0, -1) ?? []))
 
     // Entrantes: un trozo por página (el del primer bloque que la enlaza), de su cuerpo o de un secreto
     const incoming: { pageId: string; title: string; path: string[]; fragment: string; inSecret: boolean }[] = []
@@ -120,10 +114,12 @@ export const linkActions = [
 
     // Salientes, una vez cada destino
     const seen = new Set<string>()
+    const kinds = new Map((await documentsRepo.documentsOfPages(ctx.db, [page.id])).map((d) => [d.id, d.kind]))
     const outgoing = (await linksRepo.outgoing(ctx.db, page.id)).flatMap((link) => {
       const key = link.targetPageId ?? `nombre:${foldName(link.targetTitle)}`
       if (seen.has(key)) return []
-      // Un jugador: solo adonde puede ir
+      // Un jugador: solo desde lo que ve (ni notas, ni secretos sin revelar) y adonde puede ir
+      if (scope && !seesDocument(kinds.get(link.sourceDocumentId) ?? 'note', page.id, link.sourceDocumentId)) return []
       if (scope && !(link.targetPageId && view.seesPage(link.targetPageId))) return []
       seen.add(key)
       const target = link.targetPageId ? byId.get(link.targetPageId) : undefined
@@ -135,7 +131,9 @@ export const linkActions = [
 
     // Menciones sin enlazar: en páginas que no la enlazan, su título o un alias como palabra entera
     const own = byId.get(page.id)
-    const ownNames = own ? [own.title, ...own.aliases] : [page.title]
+    // Un jugador: sus alias, solo si no están ocultos
+    const visibleAliases = reservedList(visibleProperties(propertiesOf(page.properties), view), 'alias')
+    const ownNames = own ? [own.title, ...(scope ? visibleAliases : own.aliases)] : [page.title]
     await fillMissingText(ctx, wiki.worldId)
     const mentions: typeof incoming = []
     const mentioned = new Set<string>()
@@ -165,6 +163,18 @@ export const linkActions = [
         )
       }))
       .filter((other) => other.fields.length > 0)
+    if (scope) {
+      const listed = [...incoming, ...mentions, ...fields]
+      const paths = await pagesRepo.pagePaths(
+        ctx.db,
+        listed.map((item) => item.pageId)
+      )
+      for (const item of listed)
+        item.path = view
+          .pages(paths.get(item.pageId) ?? [])
+          .slice(0, -1)
+          .map((step) => step.title)
+    }
     return { incoming, outgoing, mentions, fields }
   }),
 

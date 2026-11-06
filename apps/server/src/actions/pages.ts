@@ -260,8 +260,8 @@ export const pageActions = [
   }),
 
   implement(getPage, async (ctx, { pageId, ...as }) => {
-    const { wiki, view } = await viewedPage(ctx, pageId, as)
-    return pageViewFor(ctx, wiki, view, pageId)
+    const { view } = await viewedPage(ctx, pageId, as)
+    return pageViewFor(view, await pageView(ctx, pageId))
   }),
 
   implement(getPageTables, async (ctx, { pageId, ...as }) => {
