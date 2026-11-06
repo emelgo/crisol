@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { catalogContent } from './catalog/content.ts'
 import { contentTables, diceTableOf, tableRowOf } from './content-tables.ts'
+import { exampleContent } from './examples/content.ts'
 
 describe('las tablas de tirar del texto de un documento', () => {
   it('las de un dado en su primera columna, con el rango de cada fila (y «00», el máximo)', () => {
@@ -41,7 +41,7 @@ describe('las tablas de tirar del texto de un documento', () => {
   })
 
   it('las del SRD: la Bolsa de trucos gris (1d8) y Confusión (1d10)', () => {
-    const content = catalogContent('5e')
+    const content = exampleContent('5e')
     const text = (key: string) =>
       (content.find((i) => i.key === key)?.data.descripcion as { es?: string } | undefined)?.es ?? ''
     const bag = contentTables(text('bolsa_de_trucos_2024'))

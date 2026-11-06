@@ -159,7 +159,7 @@ Los del módulo 0 (`docs/specs/fundacion.md` § Comandos).
 
 ```
 packages/systems/src/               El formato de los pasos y su motor (pendiente, requisitos, aplicar), y las tablas
-packages/systems/src/catalog/5e/    Los pasos del 5e y lo que su contenido necesita para el creador
+packages/systems/src/examples/5e/    Los pasos del 5e y lo que su contenido necesita para el creador
 packages/db/src/                    Los personajes, sus versiones, las tablas y lo sacado
 packages/contracts/src/             Las acciones de los personajes y las tablas
 apps/server/src/                    Sus acciones, sus permisos y sus herramientas MCP

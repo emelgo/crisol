@@ -1,12 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { catalogContent } from './catalog/content.ts'
-import { CATALOG } from './catalog/index.ts'
+import { fiveE } from './examples/5e/system.ts'
+import { exampleContent } from './examples/content.ts'
 import type { Mechanics } from './mechanics.ts'
 import { formulaText, mechanicsText } from './mechanics-text.ts'
 
-const fiveE = CATALOG.find((s) => s.id === '5e')
-if (!fiveE) throw new Error('Falta el 5e')
-const content = catalogContent('5e')
+const content = exampleContent('5e')
 const of = (key: string) => {
   const item = content.find((i) => i.key === key)
   if (!item) throw new Error(`Falta ${key}`)

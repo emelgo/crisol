@@ -7,10 +7,10 @@ import { describe, expect, it } from 'vitest'
 import { prepareAction } from '../../actions.ts'
 import { type DocumentItem, evaluate, type SystemDocument } from '../../evaluate.ts'
 import { validateContent } from '../../file.ts'
+import { catalogSystem } from '../../index.ts'
 import type { Mechanics } from '../../mechanics.ts'
 import { rollsOf, tryRoll } from '../../rolls.ts'
 import { validateSystem } from '../../validate.ts'
-import { catalogSystem } from '../index.ts'
 import { fiveE } from './system.ts'
 
 const fixed = (...values: number[]): DieRoller => {
@@ -103,9 +103,9 @@ const espada = item('espada_larga', 'arma', 'Espada larga', {
 })
 const estoque = item('estoque', 'arma', 'Estoque', { categoria: 'marcial', propiedades: ['sutil'], dano: '1d8' })
 
-describe('el 5e de serie', () => {
-  it('está en el catálogo y valida', () => {
-    expect(catalogSystem('5e')).toBe(fiveE)
+describe('el 5e de ejemplo', () => {
+  it('valida, y no viene de serie (ADR-0015): se importa desde su archivo', () => {
+    expect(catalogSystem('5e')).toBeNull()
     expect(validateSystem(fiveE).problems).toEqual([])
   })
 

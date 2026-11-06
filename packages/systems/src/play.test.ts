@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { buildCharacter } from './builder.ts'
-import { catalogContent } from './catalog/content.ts'
-import { CATALOG } from './catalog/index.ts'
 import { visibleContent } from './content.ts'
 import { evaluate } from './evaluate.ts'
+import { fiveE } from './examples/5e/system.ts'
+import { exampleContent } from './examples/content.ts'
 import {
   carriedTypes,
   changeResource,
@@ -17,9 +17,7 @@ import {
   withPlay
 } from './play.ts'
 
-const fiveE = CATALOG.find((s) => s.id === '5e')
-if (!fiveE) throw new Error('Falta el 5e')
-const content = catalogContent('5e')
+const content = exampleContent('5e')
 const campaign = { sources: ['srd521'], duplicates: 'newest' as const }
 const byKey = new Map(visibleContent(fiveE, content, campaign).map((s) => [s.item.key, s.item]))
 const base = buildCharacter(fiveE, content, campaign, {

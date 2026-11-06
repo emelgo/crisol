@@ -1,5 +1,5 @@
 /**
- * Saca el contenido del 5e de los cuatro PDF del SRD y lo escribe en `packages/systems/src/catalog/5e/content/`. Solo
+ * Saca el contenido del 5e de los cuatro PDF del SRD y lo escribe en `packages/systems/src/examples/5e/content/`. Solo
  * en local (los PDF no están en git): `node scripts/srd/extraer.ts`. Lo sacado se guarda en el repositorio
  */
 import { writeFileSync } from 'node:fs'
@@ -46,7 +46,7 @@ import { allClassDocs } from './rasgos.ts'
 import { boxesOf, type Edition, type Lang, pagesOf, widthOf } from './texto.ts'
 import { imperialTexts } from './unidades.ts'
 
-export const CONTENT_DIR = new URL('../../packages/systems/src/catalog/5e/content/', import.meta.url)
+export const CONTENT_DIR = new URL('../../packages/systems/src/examples/5e/content/', import.meta.url)
 
 /** Dónde está cada tabla y con qué grupo empieza (en el 5.1 inglés, la cabecera del primero no sale en el texto) */
 const TABLES = {

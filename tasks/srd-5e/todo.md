@@ -49,14 +49,14 @@ Plan: `tasks/plan.md`. Spec: `docs/specs/srd-5e.md`. Cada tarea, con TDD y en un
 
 ## Fase 2: Un 5e de punta a punta
 
-- [x] **5. El sistema 5e** — hecho (`catalog/5e/system.ts`; pruebas en `catalog/5e/system.test.ts`), con lo que pedía al motor: los valores de cada elemento de un conjunto, `@portador`, `first()` y las listas con opciones (tipos de daño, propiedades). Las clases suman al personaje con efectos (sus salvaciones, sus competencias, su nivel de lanzador, la magia de pacto); las distancias van en pies y los pesos en libras (enseñarlos en metros y kilos en español, con la hoja)
+- [x] **5. El sistema 5e** — hecho (`examples/5e/system.ts`; pruebas en `examples/5e/system.test.ts`), con lo que pedía al motor: los valores de cada elemento de un conjunto, `@portador`, `first()` y las listas con opciones (tipos de daño, propiedades). Las clases suman al personaje con efectos (sus salvaciones, sus competencias, su nivel de lanzador, la magia de pacto); las distancias van en pies y los pesos en libras (enseñarlos en metros y kilos en español, con la hoja)
   - Acepta: el 5e de serie (id `5e`), con sus tipos y campos, sus fórmulas, sus tiradas, sus fuentes (SRD 5.1 y 5.2.1,
     con su atribución) y sus ajustes (las reglas de 2014 o de 2024, la multiclase mixta), en los dos idiomas.
   - Comprueba: valida; con un personaje escrito a mano, sus características, competencia, salvaciones, habilidades,
     CA, PG, iniciativa, pasiva y lanzamiento de conjuros.
-  - Archivos: `packages/systems/src/catalog/5e/system.ts` (nuevo), `catalog/index.ts` (+ pruebas).
+  - Archivos: `packages/systems/src/examples/5e/system.ts` (nuevo), `catalog/index.ts` (+ pruebas).
 
-- [x] **6. El contenido de serie y las acciones para buscarlo** — hecha: `@crisol/systems/catalog/content` (JSON en `catalog/5e/content/`, que solo lee el servidor; la web tiene prohibido importarlo en `biome.json`), `searchSystemContent` y `getSystemContent`, y copiar, bajar y subir con el concepto, la mecánica y la página (migración 0040). Para empezar, cuatro documentos escritos a mano (la espada larga y la cota de malla de las dos ediciones), que la tarea 7 saca ya con los scripts
+- [x] **6. El contenido de serie y las acciones para buscarlo** — hecha: `@crisol/systems/catalog/content` (JSON en `examples/5e/content/`, que solo lee el servidor; la web tiene prohibido importarlo en `biome.json`), `searchSystemContent` y `getSystemContent`, y copiar, bajar y subir con el concepto, la mecánica y la página (migración 0040). Para empezar, cuatro documentos escritos a mano (la espada larga y la cota de malla de las dos ediciones), que la tarea 7 saca ya con los scripts
   - Acepta:
     - el contenido de los sistemas de serie, en una entrada aparte del paquete que solo usa el servidor;
     - las acciones para buscar en el contenido (por tipo, nombre, edición e idioma) y leer unos documentos;
@@ -72,7 +72,7 @@ Plan: `tasks/plan.md`. Spec: `docs/specs/srd-5e.md`. Cada tarea, con TDD y en un
       mecánica y su página;
     - `comprobar.ts` cuenta lo sacado contra lo medido.
   - Comprueba: todo valida, los dos idiomas en cada documento y las cuentas cuadran.
-  - Archivos: `scripts/srd/{extraer,comprobar,texto}.ts`, `packages/systems/src/catalog/5e/{equipo,clases}.json`
+  - Archivos: `scripts/srd/{extraer,comprobar,texto}.ts`, `packages/systems/src/examples/5e/{equipo,clases}.json`
     (+ pruebas).
 
 - [-] **8. «Probar»: añadir del contenido** — quitada: el editor de sistemas, con su «Probar», se quita entero al acabar
@@ -115,11 +115,11 @@ referencias en las dos ediciones).
 
 ## Fase 4: Las referencias y el cierre
 
-- [x] **20. Los personajes de referencia** — hechos (`catalog/5e/referencia.ts` y su prueba): los 96 (las 12 clases a nivel 1, 5, 11 y 20, en las dos ediciones) dan lo de las tablas del SRD (nivel, competencia, PG, nivel de lanzador y espacios de cada nivel, ataques, furias, ki, puntos de hechicería, imponer las manos, magia de pacto y ataque furtivo), y los 24 hechos a mano con su equipo, su CA, su ataque, su CD y sus PG. Arreglado lo que falló (imponer las manos de 2024). El ritmo: un mago de nivel 20 con sus rasgos, 40 conjuros y equipo, unos 5 ms; buscar en todo el contenido, unos 15 ms
+- [x] **20. Los personajes de referencia** — hechos (`examples/5e/referencia.ts` y su prueba): los 96 (las 12 clases a nivel 1, 5, 11 y 20, en las dos ediciones) dan lo de las tablas del SRD (nivel, competencia, PG, nivel de lanzador y espacios de cada nivel, ataques, furias, ki, puntos de hechicería, imponer las manos, magia de pacto y ataque furtivo), y los 24 hechos a mano con su equipo, su CA, su ataque, su CD y sus PG. Arreglado lo que falló (imponer las manos de 2024). El ritmo: un mago de nivel 20 con sus rasgos, 40 conjuros y equipo, unos 5 ms; buscar en todo el contenido, unos 15 ms
   - Acepta: 96 personajes (cada clase en los niveles 1, 5, 11 y 20, en las dos ediciones) dan lo que dicen las tablas del
     SRD; unos 24, hechos a mano con su equipo, dan su CA, su ataque, su CD y sus PG. Lo que falle, arreglado.
   - Comprueba: sus pruebas; el ritmo (nivel 20 con todo, < 20 ms; buscar, < 100 ms).
-  - Archivos: `packages/systems/src/catalog/5e/referencia/` (+ pruebas).
+  - Archivos: `packages/systems/src/examples/5e/referencia/` (+ pruebas).
 
 - [x] **21. El cierre** — hecho: revisión de código (con lo importante arreglado: el redondeo de `mul`, lo que se colaba entre textos, los rasgos sin mecánica; una prueba nueva compara las tablas de los dos idiomas), la batería entera en verde en local, una pasada de la CI (con un arreglo de gitleaks), PR #98, merge con `[skip ci]` y staging (el 5e, con sus 3170 documentos, comprobado desde la IA). Sin interfaz nueva, no hubo revisión de interfaz
   - Acepta: las revisiones de código, seguridad e interfaz, con lo importante arreglado; la batería entera en verde;

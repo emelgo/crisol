@@ -61,7 +61,6 @@ import {
   validateFile,
   validateSystem
 } from '@crisol/systems'
-import { catalogContent } from '@crisol/systems/catalog/content'
 import { systemsChanged } from '../realtime/events.ts'
 import { authorizedCampaign, targetOrganization } from './access.ts'
 import { type ActionContext, historyContext, InvalidRequestError, TooManyRequestsError } from './context.ts'
@@ -90,7 +89,7 @@ const builtIn = (document: System): SystemFull => ({
     builtIn: true,
     version: 1,
     basedOn: null,
-    content: catalogContent(document.id).length
+    content: 0
   }),
   document: structuredClone(document) as Record<string, unknown>
 })
@@ -149,11 +148,9 @@ export const contentOf = (row: {
     ...(row.ref !== null ? { ref: row.ref } : {})
   }) as ContentItem
 
-/** Todo el contenido de un sistema: el de serie, del código; el de la cuenta, de la base de datos */
+/** Todo el contenido de un sistema: el de la cuenta, de la base de datos (los de serie no traen) */
 async function allContent(ctx: ActionContext, found: { document: System; row: systemsRepo.SystemRow | null }) {
-  return found.row
-    ? (await systemsRepo.listContent(ctx.db, found.row.id)).map(contentOf)
-    : [...catalogContent(found.document.id)]
+  return found.row ? (await systemsRepo.listContent(ctx.db, found.row.id)).map(contentOf) : []
 }
 
 /** Lo que se guarda de un documento del contenido */
@@ -439,9 +436,7 @@ async function testDocument(
   if (keys.length > 0) {
     if (!found)
       throw new InvalidRequestError('BAD_TEST_DOCUMENT', 'con un borrador no hay contenido del que sacar documentos')
-    const items = found.row
-      ? (await systemsRepo.contentByKeys(ctx.db, found.row.id, keys)).map(contentOf)
-      : catalogContent(found.document.id).filter((c) => keys.includes(c.key))
+    const items = found.row ? (await systemsRepo.contentByKeys(ctx.db, found.row.id, keys)).map(contentOf) : []
     for (const c of items) content.set(c.key, c)
     const missing = keys.filter((k) => !content.has(k))
     if (missing.length > 0)
@@ -634,16 +629,7 @@ export const systemActions = [
       options = { sources: choices.sources, duplicates: choices.duplicates, language: choices.language, ...given }
     }
     // Para buscar basta lo de cada documento que se ve en la lista: el de la cuenta, sin leerlo entero
-    const entries = found.row
-      ? await systemsRepo.contentIndex(ctx.db, found.row.id)
-      : catalogContent(found.document.id).map((item) => ({
-          key: item.key,
-          type: item.type,
-          source: item.source,
-          concept: item.concept ?? null,
-          name: item.data.name,
-          automation: item.mechanics?.automation ?? null
-        }))
+    const entries = found.row ? await systemsRepo.contentIndex(ctx.db, found.row.id) : []
     return searchContent(found.document, entries, options)
   }),
 
@@ -651,9 +637,7 @@ export const systemActions = [
     const target = readableOrganization(ctx, organizationId)
     const found = await findReadable(ctx, target, systemId)
     const wanted = [...new Set(keys)]
-    const items = found.row
-      ? (await systemsRepo.contentByKeys(ctx.db, found.row.id, wanted)).map(contentOf)
-      : catalogContent(found.document.id).filter((item) => wanted.includes(item.key))
+    const items = found.row ? (await systemsRepo.contentByKeys(ctx.db, found.row.id, wanted)).map(contentOf) : []
     const byKey = new Map(items.map((item) => [item.key, item]))
     return {
       items: wanted.flatMap((k) => {

@@ -9,12 +9,12 @@ import type { Mechanics } from '../mechanics.ts'
 import { tryRoll } from '../rolls.ts'
 import { MEASURED } from './5e/measured.ts'
 import { fiveE, SKILLS } from './5e/system.ts'
-import { catalogContent } from './content.ts'
+import { exampleContent } from './content.ts'
 
 // Recorren el contenido entero del 5e (más de 3000 documentos): con la cobertura instrumentada, tardan varios segundos
 describe('el contenido de los sistemas de serie', { timeout: 60_000 }, () => {
   it('el del 5e valida, con sus dos idiomas y su página en cada documento', () => {
-    const content = catalogContent('5e')
+    const content = exampleContent('5e')
     expect(content.length).toBeGreaterThan(0)
     expect(validateContent(fiveE, content)).toEqual([])
     for (const item of content) {
@@ -25,7 +25,7 @@ describe('el contenido de los sistemas de serie', { timeout: 60_000 }, () => {
 
   it('trae lo medido en los PDF, por tipo y edición', () => {
     const counted: Record<string, Record<string, number>> = {}
-    for (const item of catalogContent('5e')) {
+    for (const item of exampleContent('5e')) {
       const edition = fiveE.sources?.find((s) => s.key === item.source)?.edition ?? '?'
       counted[item.type] = { ...counted[item.type], [edition]: (counted[item.type]?.[edition] ?? 0) + 1 }
     }
@@ -34,7 +34,7 @@ describe('el contenido de los sistemas de serie', { timeout: 60_000 }, () => {
 
   it('la mecánica del equipo da lo del SRD: la poción cura 2d4 + 2; el ácido de 2024, con su salvación', () => {
     const carry = (key: string): DocumentItem => {
-      const item = catalogContent('5e').find((c) => c.key === key)
+      const item = exampleContent('5e').find((c) => c.key === key)
       if (!item) throw new Error(key)
       return {
         id: key,
@@ -60,7 +60,7 @@ describe('el contenido de los sistemas de serie', { timeout: 60_000 }, () => {
   })
 
   it('cada concepto al que apunta algo (lo que concede, lo que se elige) existe en su edición', () => {
-    const content = catalogContent('5e')
+    const content = exampleContent('5e')
     const seen = visibleContent(fiveE, content, { sources: ['srd51', 'srd521'], duplicates: 'both' })
     const editionOf = (item: ContentItem) => fiveE.sources?.find((s) => s.key === item.source)?.edition
     const missing: string[] = []
@@ -82,7 +82,7 @@ describe('el contenido de los sistemas de serie', { timeout: 60_000 }, () => {
   })
 
   it('el guerrero de nivel 5 del contenido, con cota de malla y espada larga: CA 16, PG 44 y un ataque de +6', () => {
-    const content = catalogContent('5e')
+    const content = exampleContent('5e')
     const carry = (
       key: string,
       extra: Partial<DocumentItem> = {},
@@ -135,7 +135,7 @@ describe('el contenido de los sistemas de serie', { timeout: 60_000 }, () => {
   })
 
   it('los estados: envenenado da desventaja; el cansancio, lo de cada nivel con las reglas que elige la campaña', () => {
-    const content = catalogContent('5e')
+    const content = exampleContent('5e')
     const carry = (key: string, data: Record<string, unknown> = {}): DocumentItem => {
       const item = content.find((c) => c.key === key) as ContentItem
       return {
@@ -206,7 +206,7 @@ describe('el contenido de los sistemas de serie', { timeout: 60_000 }, () => {
   })
 
   it('los conjuros: su salvación, su daño y su escalado; la curación con su modificador; Armadura de mago', () => {
-    const content = catalogContent('5e')
+    const content = exampleContent('5e')
     const carry = (key: string, data: Record<string, unknown> = {}): DocumentItem => {
       const item = content.find((c) => c.key === key) as ContentItem
       return {
@@ -250,7 +250,7 @@ describe('el contenido de los sistemas de serie', { timeout: 60_000 }, () => {
   })
 
   it('los objetos mágicos: el Anillo de protección sintonizado da +1 a la CA y a las salvaciones; el Amuleto de salud, Con 19', () => {
-    const content = catalogContent('5e')
+    const content = exampleContent('5e')
     const carry = (key: string, data: Record<string, unknown> = {}): DocumentItem => {
       const item = content.find((c) => c.key === key) as ContentItem
       return {
@@ -283,7 +283,7 @@ describe('el contenido de los sistemas de serie', { timeout: 60_000 }, () => {
     const num = (text: string) => Number(text.replace('−', '-'))
     const ABBR: Record<string, string> = { str: 'fue', dex: 'des', con: 'con', int: 'int', wis: 'sab', cha: 'car' }
     const SKILL_KEYS: Record<string, string> = Object.fromEntries(SKILLS.map(([key, , en]) => [en.toLowerCase(), key]))
-    for (const item of catalogContent('5e').filter((c) => c.type === 'criatura')) {
+    for (const item of exampleContent('5e').filter((c) => c.type === 'criatura')) {
       const text = (item.data.descripcion as { en: string }).en
       const doc = { data: item.data, items: [], ...(item.mechanics ? { mechanics: item.mechanics as Mechanics } : {}) }
       const r = evaluate(fiveE, 'criatura', doc)
@@ -338,7 +338,7 @@ describe('el contenido de los sistemas de serie', { timeout: 60_000 }, () => {
   })
 
   it('las especies, los trasfondos y las dotes: un enano de las colinas con lo que le conceden; Alerta; el acólito', () => {
-    const content = catalogContent('5e')
+    const content = exampleContent('5e')
     const carry = (key: string, data: Record<string, unknown> = {}): DocumentItem => {
       const item = content.find((c) => c.key === key) as ContentItem
       return {
@@ -393,7 +393,7 @@ describe('el contenido de los sistemas de serie', { timeout: 60_000 }, () => {
   })
 
   it('las clases: un bárbaro con su furia, el nivel de lanzador de un mago, un paladín y un brujo, el ataque furtivo', () => {
-    const content = catalogContent('5e')
+    const content = exampleContent('5e')
     const carry = (key: string, data: Record<string, unknown> = {}): DocumentItem => {
       const item = content.find((c) => c.key === key) as ContentItem
       if (!item) throw new Error(key)
@@ -455,7 +455,7 @@ describe('el contenido de los sistemas de serie', { timeout: 60_000 }, () => {
   })
 
   it('el texto de las reglas: lo de 2014 con versión de 2024 se esconde con lo más nuevo; se busca en los dos idiomas', () => {
-    const content = catalogContent('5e')
+    const content = exampleContent('5e')
     const cover = (duplicates: 'newest' | 'both') =>
       visibleContent(fiveE, content, { sources: ['srd51', 'srd521'], duplicates })
         .filter((s) => s.item.concept === 'regla_cobertura')
@@ -484,7 +484,7 @@ describe('el contenido de los sistemas de serie', { timeout: 60_000 }, () => {
       'regla_trampas_2024'
     ]
     const tables = (text: string) => text.match(/^\| ---/gm)?.length ?? 0
-    const differ = catalogContent('5e')
+    const differ = exampleContent('5e')
       .filter((c) => {
         const text = c.data.descripcion as { es: string; en: string } | undefined
         return text && typeof text === 'object' && tables(text.en) !== tables(text.es)
@@ -495,14 +495,14 @@ describe('el contenido de los sistemas de serie', { timeout: 60_000 }, () => {
   })
 
   it('se lee una vez; sin contenido, ninguno; no sale en la entrada del paquete (la web no lo lleva)', () => {
-    expect(catalogContent('5e')).toBe(catalogContent('5e'))
-    expect(catalogContent('blank')).toEqual([])
-    expect(catalogContent('nada')).toEqual([])
-    expect(Object.keys(index)).not.toContain('catalogContent')
+    expect(exampleContent('5e')).toBe(exampleContent('5e'))
+    expect(exampleContent('blank')).toEqual([])
+    expect(exampleContent('nada')).toEqual([])
+    expect(Object.keys(index)).not.toContain('exampleContent')
   })
 
   it('se busca por su nombre en los dos idiomas, sin tildes, por tipo, por edición y con lo que está en las dos', () => {
-    const entries = catalogContent('5e').map(({ key, type, source, concept, data, mechanics }) => ({
+    const entries = exampleContent('5e').map(({ key, type, source, concept, data, mechanics }) => ({
       key,
       type,
       source,

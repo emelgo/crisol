@@ -13,7 +13,7 @@
       "!**/.turbo",
       "!research",
       "!datos-locales",
-      "!packages/systems/src/catalog/5e/content"
+      "!packages/systems/src/examples/5e/content"
     ]
   },
   "formatter": {
@@ -54,7 +54,7 @@
               "level": "error",
               "options": {
                 "paths": {
-                  "@crisol/systems/catalog/content": "El contenido de serie es del servidor: a la web llega por searchSystemContent y getSystemContent"
+                  "@crisol/systems/examples": "Los sistemas de ejemplo son para pruebas y scripts: no van en la web"
                 }
               }
             }

@@ -5,8 +5,11 @@
 import { and, asc, count, eq, inArray, isNull, sql } from 'drizzle-orm'
 import type { Database } from '../client.ts'
 import { type OperationContext, operation } from '../operation.ts'
+import { campaigns } from '../schema/campaigns.ts'
+import { characters } from '../schema/characters.ts'
 import { organizations } from '../schema/organizations.ts'
 import { systemContent, systems } from '../schema/systems.ts'
+import { worlds } from '../schema/worlds.ts'
 
 /** Una fila, con el documento ya leído */
 export type SystemRow = Omit<typeof systems.$inferSelect, 'document'> & { document: Record<string, unknown> }
@@ -271,4 +274,42 @@ export function deleteContent(
 /** Lo aparta: deja de salir; el historial lo devuelve */
 export function deleteSystem(db: Database, context: OperationContext, id: string) {
   return operation(db, context, async (w) => read(await w.update(systems, id, { deletedAt: new Date() })))
+}
+
+/**
+ * Quién usa un sistema por su id (uno de serie que se quita, ADR-0015): las campañas que lo eligieron y los personajes
+ * hechos con él, cada uno con su cuenta
+ */
+export async function systemUsers(db: Database, systemId: string) {
+  const usedBy = await db
+    .select({ id: campaigns.id, organizationId: worlds.organizationId })
+    .from(campaigns)
+    .innerJoin(worlds, eq(campaigns.worldId, worlds.id))
+    .where(eq(campaigns.system, systemId))
+  // Un personaje lleva el sistema con el que se hizo, aunque su campaña haya cambiado de sistema
+  const madeWith = await db
+    .select({ id: characters.id, organizationId: worlds.organizationId })
+    .from(characters)
+    .innerJoin(campaigns, eq(characters.campaignId, campaigns.id))
+    .innerJoin(worlds, eq(campaigns.worldId, worlds.id))
+    .where(eq(characters.system, systemId))
+  return { campaigns: usedBy, characters: madeWith }
+}
+
+/** Esas campañas y esos personajes, a otro sistema */
+export async function repointSystem(
+  db: Database,
+  ids: { campaigns: readonly string[]; characters: readonly string[] },
+  to: string
+) {
+  if (ids.campaigns.length > 0)
+    await db
+      .update(campaigns)
+      .set({ system: to })
+      .where(inArray(campaigns.id, [...ids.campaigns]))
+  if (ids.characters.length > 0)
+    await db
+      .update(characters)
+      .set({ system: to })
+      .where(inArray(characters.id, [...ids.characters]))
 }

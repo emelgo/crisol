@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { blank } from './catalog/blank.ts'
 import { CATALOG, catalogSystem } from './catalog/index.ts'
+import { fiveE } from './examples/5e/system.ts'
 import { cinco } from './fixtures/cinco.ts'
 import { fronteras } from './fixtures/fronteras.ts'
 import { FORMAT, LIMITS, type System } from './format.ts'
@@ -25,8 +26,8 @@ describe('el formato', () => {
     }
   })
 
-  it('el catálogo trae el 5e y «En blanco», con su id fijo', () => {
-    expect(CATALOG.map((s) => s.id)).toEqual(['5e', 'blank'])
+  it('el catálogo trae solo «En blanco», con su id fijo (ADR-0015)', () => {
+    expect(CATALOG.map((s) => s.id)).toEqual(['blank'])
     expect(catalogSystem('blank')?.dice?.critical).toBe('d20')
     expect(catalogSystem('nada')).toBeNull()
   })
@@ -412,7 +413,6 @@ describe('los pasos del creador', () => {
         'card[1]: personaje no tiene el campo «nada»'
       ])
     )
-    const fiveE = catalogSystem('5e')
     expect(validateSystem(fiveE).problems.filter((p) => p.severity === 'error')).toEqual([])
   })
 })

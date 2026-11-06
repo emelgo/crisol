@@ -678,6 +678,9 @@ importers:
       '@crisol/server':
         specifier: workspace:*
         version: link:../apps/server
+      '@crisol/systems':
+        specifier: workspace:*
+        version: link:../packages/systems
       '@playwright/test':
         specifier: 'catalog:'
         version: 1.64.1

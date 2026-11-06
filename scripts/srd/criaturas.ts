@@ -3,7 +3,7 @@
  * salvaciones, habilidades, defensas, VD) y sus acciones con su ataque, su salvación, su daño, su recarga y su coste, con
  * fórmulas que dan los valores del SRD (si ninguna los da, el valor tal cual). Su perfil, también como texto
  */
-import { ABILITIES, CONDITIONS, DAMAGE_TYPES, SKILLS } from '../../packages/systems/src/catalog/5e/system.ts'
+import { ABILITIES, CONDITIONS, DAMAGE_TYPES, SKILLS } from '../../packages/systems/src/examples/5e/system.ts'
 import { PROFILES, range } from './capitulos.ts'
 import { concepts, type Doc, pair } from './equipo.ts'
 import { CREATURE_PAIRS, CREATURE_RENAMES } from './pares.ts'

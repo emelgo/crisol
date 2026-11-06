@@ -3,8 +3,8 @@
  * documentos de cada tipo, con su página en cada PDF, su automatización y el principio de su texto. Siempre la misma
  * (con su semilla), para que se pueda volver a ella: `node scripts/srd/muestra.ts > tasks/muestra-srd-5e.md`
  */
-import { fiveE } from '../../packages/systems/src/catalog/5e/system.ts'
-import { catalogContent } from '../../packages/systems/src/catalog/content.ts'
+import { fiveE } from '../../packages/systems/src/examples/5e/system.ts'
+import { exampleContent } from '../../packages/systems/src/examples/content.ts'
 import type { ContentItem } from '../../packages/systems/src/file.ts'
 import { consoleIo, type Io } from '../io.ts'
 
@@ -67,7 +67,7 @@ export function report(content: readonly ContentItem[], perType = 20, seed = 202
 }
 
 export function main(io: Io = consoleIo) {
-  io.out(report(catalogContent('5e')))
+  io.out(report(exampleContent('5e')))
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) main()

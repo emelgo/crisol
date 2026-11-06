@@ -41,7 +41,7 @@ export const listSystems = defineAction({
   name: 'listSystems',
   kind: 'read',
   description:
-    'Los sistemas de reglas para las campañas: los de serie (que no se cambian; se copian) y los de la cuenta. Sin organización, la única de la que la cuenta es propietaria',
+    'Los sistemas de reglas para las campañas: «En blanco» (de serie: no se cambia; se copia para empezar de cero) y los de la cuenta. Sin organización, la única de la que la cuenta es propietaria',
   input: z.object({ organizationId: z.uuid().optional() }),
   output: z.object({ systems: z.array(systemSummary) })
 })

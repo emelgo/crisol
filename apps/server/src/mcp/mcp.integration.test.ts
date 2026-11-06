@@ -3,6 +3,7 @@ import type { Approval, Campaign, HistoryEntry, Invitation, SystemFull, World } 
 import { aiRepo, connect, schema } from '@crisol/db'
 import { freshTestDatabase } from '@crisol/db/testing'
 import { toFile } from '@crisol/systems'
+import { exampleFile } from '@crisol/systems/examples'
 import { fronteras } from '@crisol/systems/fixtures'
 import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/client'
 import { eq } from 'drizzle-orm'
@@ -203,6 +204,7 @@ describe('conector MCP con OAuth', () => {
     const { versions } = await api<{ versions: { id: string }[] }>(cookie, 'listPageVersions', { pageId: page.id })
     const own = await api<{ id: string }>(cookie, 'createTemplate', { name: 'Frente' })
     const system = (await api<{ system: SystemFull }>(cookie, 'importSystem', { file: toFile(fronteras, []) })).system
+    const five = (await api<{ system: SystemFull }>(cookie, 'importSystem', { file: exampleFile('5e') })).system.id
     const cases: Array<[string, Record<string, unknown>, 'read' | 'write' | 'players' | 'delete']> = [
       ['listar_mundos', {}, 'read'],
       ['ver_campana', { campaignId: campaign.id }, 'read'],
@@ -244,12 +246,12 @@ describe('conector MCP con OAuth', () => {
       ['probar_tirada', { systemId: system.id, roll: 'atributo', element: 'vigor' }, 'read'],
       ['crear_sistema', { name: 'Otro' }, 'write'],
       ['cambiar_sistema', { systemId: system.id, version: 1, changes: [{ path: 'summary', value: 'Otro' }] }, 'write'],
-      ['buscar_contenido', { systemId: '5e', query: 'espada larga' }, 'read'],
-      ['leer_contenido', { systemId: '5e', keys: ['espada_larga_2024'] }, 'read'],
+      ['buscar_contenido', { systemId: five, query: 'espada larga' }, 'read'],
+      ['leer_contenido', { systemId: five, keys: ['espada_larga_2024'] }, 'read'],
       [
         'probar_accion',
         {
-          systemId: '5e',
+          systemId: five,
           item: 'aliento',
           action: 'usar',
           document: {

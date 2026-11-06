@@ -56,7 +56,7 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   `getCampaignCompendium`, `searchCampaignContent` y `getCampaignContent`, que lee cualquiera de la campaña; e2e
   `compendio.spec.ts`). Hechas también la tarea 4 (tablas `characters` y `character_versions`, migración 0041, y sus
   acciones con permisos: cada uno los suyos, el máster todos) y el motor (tarea 8: `packages/systems/src/builder.ts`,
-  `buildCharacter`, `stepOptions`, `summarize` y `characterView`; los pasos del 5e en `catalog/5e/system.ts`,
+  `buildCharacter`, `stepOptions`, `summarize` y `characterView`; los pasos del 5e en `examples/5e/system.ts`,
   `creation`, y `card` para la tarjeta). El servidor monta el estado del personaje y lo devuelve en `getCharacter` y
   `updateCharacter` (sin bajar el contenido al navegador). **Hechas las pantallas** (tareas 5, 6 y 11–13:
   `apps/web/src/characters/`: la lista, la página con «Ficha | Creador», el creador por pasos con el panel de
@@ -81,7 +81,7 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   `datos-locales/srd/`). Revisión de código hecha, con lo importante arreglado. **Pendiente de Enrique**: el punto de
   control 4 (`tasks/muestra-srd-5e.md`) y la prueba final en staging desde claude.ai (`tasks/probar.md`). **Lo
   siguiente**: `personajes` (el creador), que empieza por su entrevista (`interview-me`) con Enrique; lo que concede
-  cada cosa por nivel ya va en los `grants` del contenido y `catalog/5e/referencia.ts` monta un personaje como lo hará
+  cada cosa por nivel ya va en los `grants` del contenido y `examples/5e/referencia.ts` monta un personaje como lo hará
   él.
 - **Importar de Foundry (Enrique, 2026-11-05)**: «el importador debería coger eso [el compendio del zip del
   manifiesto del sistema]; si no, es trabajo extra cada vez que se añade un sistema». Va a la capacidad `foundry`
@@ -112,7 +112,7 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   `duplicates` en lo que elige la campaña); `@ajustes` en todas las fórmulas. Los casos difíciles, escritos a mano
   (`fixtures/dificiles.ts`), dan lo del SRD. Hechas también la tarea 5 (el 5e de serie en el catálogo, con
   `@portador`, los valores de cada elemento de un conjunto, `first()` y las listas con opciones) y la 6 (su contenido en
-  `catalog/5e/content/`, que solo lee el servidor; buscar y leer el contenido; copiar, bajar y subir con su mecánica,
+  `examples/5e/content/`, que solo lee el servidor; buscar y leer el contenido; copiar, bajar y subir con su mecánica,
   migración 0040, ya en la base de desarrollo). **Ahora**: la tarea 7 (`tasks/todo.md` dice lo hecho y lo que falta):
   hecha también: los scripts de `scripts/srd/` (`node scripts/srd/extraer.ts` y `comprobar.ts`, con los PDF), todo el
   equipo de las dos ediciones y el guerrero con el campeón (474 documentos). Hechas también la 9 (las ediciones en la

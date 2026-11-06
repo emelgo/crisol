@@ -3,7 +3,7 @@
  * Markdown y su mecánica, sacada del texto en inglés: el ataque o la salvación, el daño por partes, la curación y el
  * escalado. Lo que no se saca solo (los efectos de un conjuro que dura) va escrito a mano en `SPELL_MECHANICS`
  */
-import { DAMAGE_TYPES } from '../../packages/systems/src/catalog/5e/system.ts'
+import { DAMAGE_TYPES } from '../../packages/systems/src/examples/5e/system.ts'
 import { PROFILES, range } from './capitulos.ts'
 import { concepts, type Doc, pair } from './equipo.ts'
 import { SPELL_PAIRS, SPELL_RENAMES } from './pares.ts'

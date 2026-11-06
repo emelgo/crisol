@@ -45,7 +45,6 @@ import {
   tryAction,
   tryRoll
 } from '@crisol/systems'
-import { catalogContent } from '@crisol/systems/catalog/content'
 import { authorizedCampaign } from './access.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
 import { saveRoll, storedOf } from './dice.ts'
@@ -110,7 +109,7 @@ async function systemOf(
 ): Promise<{ document: System; content: readonly ContentItem[] }> {
   const catalog = catalogSystem(systemId)
   // El de serie, tal cual (siempre el mismo): así el motor lo tiene ya preparado
-  if (catalog) return { document: catalog, content: catalogContent(catalog.id) }
+  if (catalog) return { document: catalog, content: [] }
   const row = await systemsRepo.findSystem(ctx.db, systemId)
   if (!row) throw new NotFoundError('system')
   return {

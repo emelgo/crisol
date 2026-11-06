@@ -8,15 +8,13 @@ import {
   stepOptions,
   summarize
 } from './builder.ts'
-import { referenceCharacter } from './catalog/5e/referencia.ts'
-import { catalogContent } from './catalog/content.ts'
-import { CATALOG } from './catalog/index.ts'
 import { evaluate } from './evaluate.ts'
+import { referenceCharacter } from './examples/5e/referencia.ts'
+import { fiveE } from './examples/5e/system.ts'
+import { exampleContent } from './examples/content.ts'
 import type { ContentItem } from './file.ts'
 
-const fiveE = CATALOG.find((s) => s.id === '5e')
-if (!fiveE) throw new Error('Falta el 5e')
-const content = catalogContent('5e')
+const content = exampleContent('5e')
 const campaign = { sources: ['srd51', 'srd521'], duplicates: 'both' as const }
 const scores = { fue: 15, des: 14, con: 13, int: 12, sab: 10, car: 8 }
 const build = (b: Build) => buildCharacter(fiveE, content, campaign, b)
