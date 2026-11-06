@@ -1,0 +1,73 @@
+/* Las copias del compendio del mundo: el aviso del original cambiado y la ventana de sus cambios */
+.notice {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-block: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid color-mix(in srgb, var(--color-warning) 55%, transparent);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--color-warning) 10%, transparent);
+  color: var(--color-text);
+}
+
+.notice > svg {
+  flex: none;
+  color: var(--color-warning);
+}
+
+.see {
+  margin-inline-start: auto;
+  min-block-size: var(--target);
+  padding: 0 var(--space-2);
+  border: 0;
+  background: none;
+  color: var(--color-link);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.dialog {
+  inline-size: min(44rem, calc(100vw - 2rem));
+}
+
+.changes {
+  inline-size: 100%;
+  border-collapse: collapse;
+}
+
+.changes th,
+.changes td {
+  padding: var(--space-2);
+  border-block-end: 1px solid var(--color-border);
+  text-align: start;
+  vertical-align: top;
+}
+
+.changes thead th {
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.changes tbody th {
+  font-weight: 700;
+}
+
+.copy {
+  color: var(--color-muted);
+}
+
+.note {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: var(--target);
+  font-weight: 600;
+}

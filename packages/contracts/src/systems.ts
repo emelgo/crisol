@@ -479,6 +479,7 @@ export const getCampaignCompendium = defineAction({
         systemId: z.uuid(),
         writable: z.boolean().describe('Si puede crear, cambiar y borrar lo del mundo'),
         count: z.int().describe('Cuántas entradas tiene el mundo para este sistema'),
+        byType: z.record(z.string(), z.int()).describe('Cuántas de cada tipo'),
         types: z.array(compendiumType).describe('Los tipos del sistema, para crear en el mundo')
       })
       .nullable()

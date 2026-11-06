@@ -1,13 +1,26 @@
 /**
  * El compendio de una campaña (docs/specs/personajes.md § campana): el contenido de su sistema, con las fuentes que
- * eligió. A la izquierda, el buscador (en sus dos idiomas, sin tildes), los tipos y la lista; en el centro, lo
- * elegido; a la derecha, su edición, su nombre en inglés, su otra versión y la atribución de su fuente
+ * eligió, y el del mundo (docs/specs/compendio-mundo.md), para quien lo lleva. A la izquierda, el buscador (en sus dos
+ * idiomas, sin tildes), los tipos y la lista; en el centro, lo elegido; a la derecha, su edición, su nombre en inglés,
+ * su otra versión, de dónde sale y la atribución de su fuente
  */
 import { visibilitiesFor } from '@crisol/contracts'
 import { type Text, textOf } from '@crisol/systems'
-import { useInfiniteQuery, useMutation, useQuery } from '@tanstack/react-query'
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getRouteApi, Navigate } from '@tanstack/react-router'
-import { ArrowLeft, ChevronRight, Pencil, Plus, Search, SlidersHorizontal, Trash2, X } from 'lucide-react'
+import {
+  ArrowLeft,
+  ChevronRight,
+  Copy,
+  Globe,
+  Pencil,
+  Plus,
+  Search,
+  SlidersHorizontal,
+  Trash2,
+  Upload,
+  X
+} from 'lucide-react'
 import { type ReactNode, useEffect, useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
@@ -26,7 +39,8 @@ import { useDice } from '../dice/context.tsx'
 import { useNarrow } from '../wiki/panel.tsx'
 import styles from './compendium.module.css'
 import { ContentText } from './content-text.tsx'
-import { DeleteEntry, type Editable, EntryEditor } from './entry-editor.tsx'
+import { DeleteEntry, EntryEditor, type EntryTarget } from './entry-editor.tsx'
+import { OriginNotice, ToSystem } from './origin.tsx'
 
 const route = getRouteApi('/mundos/$worldId/campanas/$campaignId/compendio')
 const PAGE = 100
@@ -35,6 +49,12 @@ type Language = 'es' | 'en'
 type CompendiumType = ActionOutput<'getCampaignCompendium'>['types'][number]
 type ContentHit = ActionOutput<'searchCampaignContent'>['items'][number]
 type Field = CompendiumType['fields'][number]
+type World = NonNullable<ActionOutput<'getCampaignCompendium'>['world']>
+/** Qué capas se enseñan: las dos, solo la del sistema o solo la del mundo */
+type Layer = 'all' | 'system' | 'world'
+const LAYERS: Layer[] = ['all', 'system', 'world']
+const inLayer = (layer: Layer, world: boolean | undefined) =>
+  layer === 'all' || (layer === 'world' ? Boolean(world) : !world)
 
 /** Una clave como texto: «trato_con_animales» → «Trato con animales» */
 const humanize = (key: string) => {
@@ -61,6 +81,12 @@ function valueText(field: Field, value: unknown, language: Language, yes: string
 }
 
 /** «2024» o «2014 · Legado» */
+/** Lo del compendio del mundo, marcado */
+function WorldTag() {
+  const { t } = useTranslation()
+  return <span className={`${styles.edition} ${styles.world}`}>{t('compendium.fromWorld')}</span>
+}
+
 function EditionTag({ edition, legacy }: { edition: string | null; legacy: boolean }) {
   const { t } = useTranslation()
   if (!edition) return null
@@ -113,6 +139,9 @@ export function CompendiumScreen() {
   }, [shown, lastShown, narrow])
 
   const [creating, setCreating] = useState(false)
+  const [layer, setLayer] = useState<Layer>('all')
+  // Lo recién copiado al mundo se abre para cambiarlo
+  const [editing, setEditing] = useState<string | null>(null)
   if (pending) return null
   if (!account) return <Navigate to="/entrar" replace />
   if (!compendium.data) {
@@ -122,7 +151,7 @@ export function CompendiumScreen() {
       <Loading />
     )
   }
-  const { system, types, sources, sections, language, editable } = compendium.data
+  const { system, types, sources, sections, language, editable, world } = compendium.data
   if (!system) {
     return (
       <section className={styles.empty}>
@@ -133,6 +162,17 @@ export function CompendiumScreen() {
   }
   const typeOf = (key: string) => types.find((each) => each.key === key)
   const editions = [...new Set(sources.map((s) => s.edition).filter((e): e is string => e !== null))]
+  const systemTarget: EntryTarget | null =
+    editable && editable.types.length > 0
+      ? { layer: 'system', systemId: editable.systemId, version: editable.version, types: editable.types }
+      : null
+  const worldTarget: EntryTarget | null =
+    world?.writable && world.types.length > 0
+      ? { layer: 'world', worldId: world.worldId, systemId: world.systemId, types: world.types }
+      : null
+  // Lo nuevo va al mundo; al sistema, si se elige y se puede
+  const newTargets = [worldTarget, systemTarget].filter((each): each is EntryTarget => each !== null)
+  const shownHits = items.filter((hit) => inLayer(layer, hit.world))
 
   return (
     <div className={styles.page} data-reading={narrow && shown ? '' : undefined}>
@@ -144,7 +184,7 @@ export function CompendiumScreen() {
               ? t('compendium.systemWith', { system: system.name, editions: editions.join(t('compendium.and')) })
               : system.name}
           </span>
-          {editable && editable.types.length > 0 && (
+          {newTargets.length > 0 && (
             <button type="button" className={styles.newEntry} onClick={() => setCreating(true)}>
               <Plus size={16} aria-hidden="true" />
               {t('compendium.newEntry')}
@@ -176,10 +216,21 @@ export function CompendiumScreen() {
             </button>
           )}
         </div>
+        {world && (
+          <fieldset className={styles.layers}>
+            <legend className={styles.hidden}>{t('compendium.layers')}</legend>
+            {LAYERS.map((each) => (
+              <label key={each} className={styles.layer}>
+                <input type="radio" name="capa" value={each} checked={layer === each} onChange={() => setLayer(each)} />
+                <span>{t(`compendium.layer.${each}`)}</span>
+              </label>
+            ))}
+          </fieldset>
+        )}
         {wanted ? (
           <>
             <ul className={styles.list} aria-label={t('compendium.results')} aria-busy={hits.isFetching}>
-              {items.map((hit) => (
+              {shownHits.map((hit) => (
                 <HitRow
                   key={hit.key}
                   hit={hit}
@@ -188,7 +239,7 @@ export function CompendiumScreen() {
                   onOpen={() => open(hit.key)}
                 />
               ))}
-              {hits.data && items.length === 0 && <li className={styles.none}>{t('compendium.none')}</li>}
+              {hits.data && shownHits.length === 0 && <li className={styles.none}>{t('compendium.none')}</li>}
             </ul>
             {hits.isError && <LoadError error={hits.error} onRetry={() => void hits.refetch()} />}
             {hits.hasNextPage && (
@@ -202,7 +253,15 @@ export function CompendiumScreen() {
             )}
           </>
         ) : (
-          <Library campaignId={campaignId} sections={sections} types={types} current={shown} onOpen={open} />
+          <Library
+            campaignId={campaignId}
+            sections={sections}
+            types={types}
+            layer={layer}
+            byWorld={world?.byType ?? {}}
+            current={shown}
+            onOpen={open}
+          />
         )}
       </aside>
       {shown ? (
@@ -213,7 +272,15 @@ export function CompendiumScreen() {
           types={types}
           sources={sources}
           language={language}
-          editable={editable}
+          systemTarget={systemTarget}
+          worldTarget={worldTarget}
+          world={world}
+          startEditing={editing === shown}
+          onEdited={() => setEditing(null)}
+          onCopied={(key) => {
+            setEditing(key)
+            open(key)
+          }}
           onOpen={open}
           onBack={narrow ? back : undefined}
           onGone={back}
@@ -225,10 +292,10 @@ export function CompendiumScreen() {
           </div>
         )
       )}
-      {creating && editable && (
+      {creating && newTargets.length > 0 && (
         <EntryEditor
           campaignId={campaignId}
-          editable={editable}
+          targets={newTargets}
           language={language}
           item={null}
           onSaved={open}
@@ -263,13 +330,18 @@ type Browsed = ActionOutput<'browseCampaignContent'>
 function Library({
   campaignId,
   sections,
-  types,
+  types: all,
+  layer,
+  byWorld,
   current,
   onOpen
 }: {
   campaignId: string
   sections: Section[]
   types: CompendiumType[]
+  layer: Layer
+  /** Cuántas hay del mundo de cada tipo */
+  byWorld: Record<string, number>
   current: string | null
   onOpen: (key: string) => void
 }) {
@@ -290,17 +362,27 @@ function Library({
       else next.add(id)
       return next
     })
+  // Lo del mundo va sin edición: se cuenta aparte, en su estante, y no en «Sin edición»
+  const types = all.map((type) => {
+    const own = byWorld[type.key] ?? 0
+    if (own === 0) return type
+    const loose = (type.editions[''] ?? 0) - own
+    const { '': _, ...rest } = type.editions
+    return { ...type, count: type.count - own, editions: loose > 0 ? { ...rest, '': loose } : rest }
+  })
   const editions = [...new Set(types.flatMap((type) => Object.keys(type.editions)))].sort((a, b) => b.localeCompare(a))
   const byEdition = editions.length > 1
   const newest = editions[0] ?? ''
-  const countOf = (typeKey: string, edition: string | null) => {
+  const worldCount = Object.values(byWorld).reduce((n, c) => n + c, 0)
+  const countOf = (typeKey: string, edition: string | null, only: 'system' | 'world') => {
+    if (only === 'world') return byWorld[typeKey] ?? 0
     const type = types.find((each) => each.key === typeKey)
     return edition === null ? (type?.count ?? 0) : (type?.editions[edition] ?? 0)
   }
-  const shelves = (edition: string | null, prefix: string) => (
+  const shelves = (edition: string | null, prefix: string, only: 'system' | 'world' = 'system') => (
     <ul className={styles.shelf}>
       {sections.map((section) => {
-        const count = section.types.reduce((n, type) => n + countOf(type.key, edition), 0)
+        const count = section.types.reduce((n, type) => n + countOf(type.key, edition, only), 0)
         if (count === 0) return null
         const id = `${prefix}${section.key}`
         return (
@@ -311,6 +393,7 @@ function Library({
                   campaignId={campaignId}
                   type={section.types[0].key}
                   edition={edition}
+                  only={only}
                   idPrefix={`${id}/`}
                   opened={opened}
                   onToggle={toggle}
@@ -321,7 +404,7 @@ function Library({
               ) : (
                 <ul className={styles.shelf}>
                   {section.types.map((type) => {
-                    const typeCount = countOf(type.key, edition)
+                    const typeCount = countOf(type.key, edition, only)
                     if (typeCount === 0) return null
                     const typeId = `${id}/${type.key}`
                     return (
@@ -336,6 +419,7 @@ function Library({
                             campaignId={campaignId}
                             type={type.key}
                             edition={edition}
+                            only={only}
                             idPrefix={`${typeId}/`}
                             opened={opened}
                             onToggle={toggle}
@@ -355,8 +439,29 @@ function Library({
       })}
     </ul>
   )
+  if (layer === 'world')
+    return (
+      <nav className={styles.library} aria-label={t('compendium.library')} data-tour="compendio-estantes">
+        {worldCount === 0 ? <p className={styles.none}>{t('compendium.noWorld')}</p> : shelves(null, 'w:', 'world')}
+      </nav>
+    )
   return (
     <nav className={styles.library} aria-label={t('compendium.library')} data-tour="compendio-estantes">
+      {layer === 'all' && worldCount > 0 && (
+        <ul className={styles.shelf}>
+          <li>
+            <Disclosure
+              label={t('compendium.layer.world')}
+              count={worldCount}
+              open={opened.has('w:')}
+              onToggle={() => toggle('w:')}
+              edition
+            >
+              {shelves(null, 'w:/', 'world')}
+            </Disclosure>
+          </li>
+        </ul>
+      )}
       {byEdition ? (
         <ul className={styles.shelf}>
           {editions.map((edition) => {
@@ -421,6 +526,7 @@ function TypeShelf({
   campaignId,
   type,
   edition,
+  only,
   idPrefix,
   opened,
   onToggle,
@@ -431,6 +537,8 @@ function TypeShelf({
   campaignId: string
   type: string
   edition: string | null
+  /** Solo lo del sistema o solo lo del mundo */
+  only: 'system' | 'world'
   idPrefix: string
   opened: ReadonlySet<string>
   onToggle: (id: string) => void
@@ -454,7 +562,9 @@ function TypeShelf({
   const inEdition = (item: Browsed['items'][number]) => edition === null || (item.edition ?? '') === edition
   const wanted = Object.entries(filtering.chosen[type] ?? {}).filter(([, value]) => value)
   const fits = (item: Browsed['items'][number]) => wanted.every(([field, value]) => item.values[field]?.includes(value))
-  const items = browsed.data.items.filter((item) => inEdition(item) && fits(item))
+  const items = browsed.data.items.filter(
+    (item) => inLayer(only, item.world) && (only === 'world' || inEdition(item)) && fits(item)
+  )
   const filters = browsed.data.filters.filter((f) => f.options.length > 1)
   const filtersOpen = opened.has(`${idPrefix}filtros`)
   const loose = items.filter((item) => item.folder === null)
@@ -468,7 +578,7 @@ function TypeShelf({
         onClick={() => onOpen(item.key)}
       >
         <span className={styles.entryName}>{item.name}</span>
-        {edition === null && <EditionTag edition={item.edition} legacy={item.legacy} />}
+        {edition === null && only === 'system' && <EditionTag edition={item.edition} legacy={item.legacy} />}
       </button>
     </li>
   )
@@ -549,7 +659,7 @@ function HitRow({
           <span className={styles.hitName}>{hit.name}</span>
           <span className={styles.hitType}>{typeLabel}</span>
         </span>
-        <EditionTag edition={hit.edition} legacy={hit.legacy} />
+        {hit.world ? <WorldTag /> : <EditionTag edition={hit.edition} legacy={hit.legacy} />}
       </button>
     </li>
   )
@@ -562,7 +672,12 @@ function Entry({
   types,
   sources,
   language,
-  editable,
+  systemTarget,
+  worldTarget,
+  world,
+  startEditing,
+  onEdited,
+  onCopied,
   onOpen,
   onBack,
   onGone
@@ -572,7 +687,14 @@ function Entry({
   types: CompendiumType[]
   sources: { key: string; name: string; edition: string | null; attribution: string }[]
   language: Language
-  editable: Editable | null
+  /** Dónde se puede escribir: el sistema (su propietario) y el mundo (quien lo lleva) */
+  systemTarget: EntryTarget | null
+  worldTarget: EntryTarget | null
+  world: World | null
+  /** Abrirla para cambiarla (lo recién copiado al mundo) */
+  startEditing: boolean
+  onEdited: () => void
+  onCopied: (key: string) => void
   onOpen: (key: string) => void
   onBack: (() => void) | undefined
   /** Al borrarla: de vuelta a la lista */
@@ -607,7 +729,18 @@ function Entry({
     queryFn: () => api.call('getCampaignContent', { campaignId, keys: [entryKey] })
   })
   const item = read.data?.items[0]
-  const [changing, setChanging] = useState<'edit' | 'delete' | null>(null)
+  const [changing, setChanging] = useState<'edit' | 'delete' | 'toSystem' | null>(startEditing ? 'edit' : null)
+  const client = useQueryClient()
+  const copy = useMutation({
+    mutationFn: () => {
+      if (!world) throw new Error('sin mundo')
+      return api.call('copyContent', { worldId: world.worldId, systemId: world.systemId, key: entryKey, to: 'world' })
+    },
+    onSuccess: async (out) => {
+      await client.invalidateQueries({ queryKey: ['compendium', campaignId] })
+      onCopied(out.key)
+    }
+  })
   // Al abrir otro, arriba; en lo estrecho (con «Volver a la lista»), el foco va a su título
   const narrow = Boolean(onBack)
   useEffect(() => {
@@ -633,6 +766,9 @@ function Entry({
     return text === null ? [] : [{ field, text }]
   })
   const body = type?.text ? textOf(item.data[type.text] as Text, language) : ''
+  const fromWorld = item.world ? { ...item, world: item.world } : null
+  const target = fromWorld ? worldTarget : systemTarget
+  const where = world ? { worldId: world.worldId, systemId: world.systemId } : null
   return (
     <>
       <article className={styles.reading} aria-labelledby={titleId}>
@@ -647,20 +783,46 @@ function Entry({
           <h2 id={titleId} className={styles.name} tabIndex={-1}>
             {name}
           </h2>
-          <EditionTag edition={item.edition} legacy={item.legacy} />
-          {editable && (
+          {fromWorld ? <WorldTag /> : <EditionTag edition={item.edition} legacy={item.legacy} />}
+          {(target || (!fromWorld && worldTarget) || (fromWorld && systemTarget)) && (
             <div className={styles.entryActions}>
-              <button type="button" className={styles.entryAction} onClick={() => setChanging('edit')}>
-                <Pencil size={14} aria-hidden="true" />
-                {t('compendium.edit')}
-              </button>
-              <button type="button" className={styles.entryAction} onClick={() => setChanging('delete')}>
-                <Trash2 size={14} aria-hidden="true" />
-                {t('compendium.delete')}
-              </button>
+              {!fromWorld && worldTarget && (
+                <BusyButton className={styles.entryAction} busy={copy.isPending} onClick={() => copy.mutate()}>
+                  <Copy size={14} aria-hidden="true" />
+                  {t('compendium.copyToWorld')}
+                </BusyButton>
+              )}
+              {target && (
+                <>
+                  <button type="button" className={styles.entryAction} onClick={() => setChanging('edit')}>
+                    <Pencil size={14} aria-hidden="true" />
+                    {t('compendium.edit')}
+                  </button>
+                  <button type="button" className={styles.entryAction} onClick={() => setChanging('delete')}>
+                    <Trash2 size={14} aria-hidden="true" />
+                    {t('compendium.delete')}
+                  </button>
+                </>
+              )}
+              {fromWorld && systemTarget && (
+                <button type="button" className={styles.entryAction} onClick={() => setChanging('toSystem')}>
+                  <Upload size={14} aria-hidden="true" />
+                  {t('compendium.toSystem')}
+                </button>
+              )}
             </div>
           )}
         </header>
+        <FormError message={copy.error ? errorText(copy.error) : null} />
+        {fromWorld && where && (
+          <OriginNotice
+            campaignId={campaignId}
+            where={where}
+            item={fromWorld}
+            language={language}
+            writable={Boolean(worldTarget)}
+          />
+        )}
         {fields.length > 0 && (
           <dl className={styles.fields}>
             {fields.map(({ field, text }) => (
@@ -698,6 +860,22 @@ function Entry({
       </article>
       <aside className={styles.about} aria-label={t('compendium.about')}>
         <dl className={styles.aboutList}>
+          {fromWorld && (
+            <div>
+              <dt>{t('compendium.origin')}</dt>
+              <dd>
+                <span className={styles.worldLine}>
+                  <Globe size={14} aria-hidden="true" />
+                  {t('compendium.worldCompendium')}
+                </span>
+                {fromWorld.world.origin && (
+                  <span className={styles.copyOf}>
+                    {t('compendium.copyOf', { name: fromWorld.world.origin.name ?? fromWorld.world.origin.key })}
+                  </span>
+                )}
+              </dd>
+            </div>
+          )}
           {item.edition && (
             <div>
               <dt>{t('compendium.edition')}</dt>
@@ -727,23 +905,39 @@ function Entry({
         </dl>
         {source && <p className={styles.attribution}>{source.attribution}</p>}
       </aside>
-      {changing === 'edit' && editable && (
+      {changing === 'edit' && target && (
         <EntryEditor
           campaignId={campaignId}
-          editable={editable}
+          targets={[target]}
           language={language}
           item={item}
           onSaved={() => undefined}
-          onClose={() => setChanging(null)}
+          onClose={() => {
+            setChanging(null)
+            onEdited()
+          }}
         />
       )}
-      {changing === 'delete' && editable && (
+      {changing === 'delete' && target && (
         <DeleteEntry
           campaignId={campaignId}
-          editable={editable}
+          target={target}
           item={item}
           name={name}
           onDeleted={onGone}
+          onClose={() => setChanging(null)}
+        />
+      )}
+      {changing === 'toSystem' && fromWorld && where && systemTarget?.layer === 'system' && (
+        <ToSystem
+          campaignId={campaignId}
+          where={where}
+          version={systemTarget.version}
+          item={item}
+          name={name}
+          onMoved={(removed) => {
+            if (removed) onGone()
+          }}
           onClose={() => setChanging(null)}
         />
       )}

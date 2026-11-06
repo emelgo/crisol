@@ -1,6 +1,7 @@
 /**
  * Cambiar el compendio en la app (ADR-0015): crear, cambiar y borrar sus entradas (el nombre, los campos de su tipo y
- * su texto). Solo en un sistema de la cuenta y para quien puede cambiarlo; su mecánica sigue siendo cosa de la IA
+ * su texto), en un sistema de la cuenta (su propietario) o en el compendio del mundo (quien lo lleva,
+ * docs/specs/compendio-mundo.md). Su mecánica sigue siendo cosa de la IA
  */
 import { type Language, type Text, textOf } from '@crisol/systems'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
@@ -19,6 +20,11 @@ import styles from './entry-editor.module.css'
 type Compendium = ActionOutput<'getCampaignCompendium'>
 export type Editable = NonNullable<Compendium['editable']>
 type EditableType = Editable['types'][number]
+
+/** Dónde se escribe: el sistema de la cuenta (con su versión) o el compendio del mundo */
+export type EntryTarget =
+  | { layer: 'system'; systemId: string; version: number; types: EditableType[] }
+  | { layer: 'world'; worldId: string; systemId: string; types: EditableType[] }
 type Item = ActionOutput<'getCampaignContent'>['items'][number]
 type Value = string | boolean | string[]
 
@@ -87,14 +93,15 @@ export function dataWith(
 
 export function EntryEditor({
   campaignId,
-  editable,
+  targets,
   language,
   item,
   onSaved,
   onClose
 }: {
   campaignId: string
-  editable: Editable
+  /** Dónde se puede escribir (la primera, de entrada); al cambiar una que ya está, solo la suya */
+  targets: EntryTarget[]
   language: Language
   /** La que se cambia; sin ella, una nueva */
   item: Item | null
@@ -108,42 +115,51 @@ export function EntryEditor({
   const dialog = useRef<HTMLDialogElement>(null)
   const titleId = useId()
   const typeId = useId()
+  const whereId = useId()
   const textId = useId()
-  const [typeKey, setTypeKey] = useState(item?.type ?? editable.types[0]?.key ?? '')
-  const type = editable.types.find((each) => each.key === typeKey)
+  const [where, setWhere] = useState(0)
+  const target = targets[where] ?? targets[0]
+  const types = target?.types ?? []
+  const [typeKey, setTypeKey] = useState(item?.type ?? types[0]?.key ?? '')
+  const type = types.find((each) => each.key === typeKey)
   const [name, setName] = useState(item ? textOf(item.data.name as Text, language) : '')
   const [values, setValues] = useState<Record<string, Value>>(() =>
     Object.fromEntries(
-      (editable.types.find((each) => each.key === item?.type)?.fields ?? []).map((field) => [
+      (types.find((each) => each.key === item?.type)?.fields ?? []).map((field) => [
         field.key,
         initialValue(field, item?.data[field.key], language)
       ])
     )
   )
   const [text, setText] = useState(() => {
-    const field = editable.types.find((each) => each.key === item?.type)?.text
+    const field = types.find((each) => each.key === item?.type)?.text
     return field ? textOf(item?.data[field] as Text | undefined, language) : ''
   })
   const save = useMutation({
     mutationFn: async () => {
-      if (!type) throw new Error('sin tipo')
+      if (!type || !target) throw new Error('sin tipo')
       const key = item?.key ?? keyFor(name)
       const data = dataWith(type, item?.data ?? {}, { name, values, text }, language)
-      await api.call('putSystemContent', {
-        systemId: editable.systemId,
-        version: editable.version,
-        items: [
-          {
-            type: type.key,
-            key,
-            source: item?.source ?? null,
-            ...(item?.concept ? { concept: item.concept } : {}),
-            data,
-            ...(item?.mechanics ? { mechanics: item.mechanics } : {}),
-            ...(item?.ref ? { ref: item.ref } : {})
-          }
-        ]
-      })
+      const kept = {
+        type: type.key,
+        key,
+        ...(item?.concept ? { concept: item.concept } : {}),
+        data,
+        ...(item?.mechanics ? { mechanics: item.mechanics } : {}),
+        ...(item?.ref ? { ref: item.ref } : {})
+      }
+      if (target.layer === 'world')
+        await api.call('putWorldContent', {
+          worldId: target.worldId,
+          systemId: target.systemId,
+          items: [{ ...kept, ...(item?.world ? { version: item.world.version } : {}) }]
+        })
+      else
+        await api.call('putSystemContent', {
+          systemId: target.systemId,
+          version: target.version,
+          items: [{ ...kept, source: item?.source ?? null }]
+        })
       return key
     },
     onSuccess: async (key) => {
@@ -168,6 +184,18 @@ export function EntryEditor({
         }}
       >
         <h2 id={titleId}>{item ? t('compendium.editTitle', { name }) : t('compendium.newTitle')}</h2>
+        {!item && targets.length > 1 && (
+          <div className={formStyles.field}>
+            <label htmlFor={whereId}>{t('compendium.where')}</label>
+            <select id={whereId} value={where} onChange={(event) => setWhere(Number(event.currentTarget.value))}>
+              {targets.map((each, i) => (
+                <option key={each.layer} value={i}>
+                  {each.layer === 'world' ? t('compendium.whereWorld') : t('compendium.whereSystem')}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
         {!item && (
           <div className={formStyles.field}>
             <label htmlFor={typeId}>{t('compendium.type')}</label>
@@ -179,7 +207,7 @@ export function EntryEditor({
                 setValues({})
               }}
             >
-              {editable.types.map((each) => (
+              {types.map((each) => (
                 <option key={each.key} value={each.key}>
                   {each.label}
                 </option>
@@ -307,14 +335,14 @@ function FieldInput({
 /** Borrar una entrada: se pregunta antes */
 export function DeleteEntry({
   campaignId,
-  editable,
+  target,
   item,
   name,
   onDeleted,
   onClose
 }: {
   campaignId: string
-  editable: Editable
+  target: EntryTarget
   item: Item
   name: string
   onDeleted: () => void
@@ -328,7 +356,9 @@ export function DeleteEntry({
   const titleId = useId()
   const remove = useMutation({
     mutationFn: () =>
-      api.call('deleteSystemContent', { systemId: editable.systemId, version: editable.version, keys: [item.key] }),
+      target.layer === 'world'
+        ? api.call('deleteWorldContent', { worldId: target.worldId, systemId: target.systemId, keys: [item.key] })
+        : api.call('deleteSystemContent', { systemId: target.systemId, version: target.version, keys: [item.key] }),
     onSuccess: async () => {
       await client.invalidateQueries({ queryKey: ['compendium', campaignId] })
       onDeleted()
@@ -339,7 +369,9 @@ export function DeleteEntry({
     <Modal ref={dialog} aria-labelledby={titleId} className={dialogStyles.dialog} onClose={onClose}>
       <div className={dialogStyles.body}>
         <h2 id={titleId}>{t('compendium.deleteTitle', { name })}</h2>
-        <p className={dialogStyles.description}>{t('compendium.deleteText')}</p>
+        <p className={dialogStyles.description}>
+          {target.layer === 'world' ? t('compendium.deleteWorldText') : t('compendium.deleteText')}
+        </p>
         <FormError message={remove.error ? errorText(remove.error) : null} />
         <div className={dialogStyles.actions}>
           <BusyButton

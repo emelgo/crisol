@@ -160,13 +160,17 @@ const CAMPAIGN: Campaign = {
   systemChoices: { sources: ['viejo', 'nuevo'], duplicates: 'both', language: 'es', settings: {} }
 }
 
-function renderCompendium(campaign: Campaign = CAMPAIGN) {
+function renderCompendium(
+  campaign: Campaign = CAMPAIGN,
+  worldContent: NonNullable<Parameters<typeof fakeApi>[0]>['worldContent'] = []
+) {
   const api = fakeApi({
     organizations: [ORG],
     worlds: [WORLD],
     campaigns: [campaign],
     systems: [SYSTEM],
-    systemContent: { [SYSTEM.id]: CONTENT }
+    systemContent: { [SYSTEM.id]: CONTENT },
+    worldContent
   })
   const router = createAppRouter(
     createMemoryHistory({ initialEntries: [`/mundos/${WORLD.id}/campanas/${campaign.id}/compendio`] })
@@ -316,5 +320,41 @@ describe('el compendio de una campaña', () => {
     expect(
       await screen.findByText('Esta campaña aún no tiene sistema: el máster lo elige en sus ajustes.')
     ).toBeDefined()
+  })
+
+  it('lo del mundo: marcado y en su estante; copiar al mundo, y el aviso cuando cambia el original', async () => {
+    const original = CONTENT.find((c) => c.key === 'detectar_magia_2024')
+    if (!original) throw new Error('sin original')
+    const copy: ContentItem = {
+      ...structuredClone(original),
+      key: 'detectar_magia_del_valle',
+      source: null,
+      data: { ...original.data, name: { es: 'Detectar magia del valle' } }
+    }
+    // Su original ya no es como cuando se copió: la copia lo avisa
+    const then: ContentItem = { ...original, data: { ...original.data, nivel: 2 } }
+    renderCompendium(CAMPAIGN, [{ worldId: WORLD.id, systemId: SYSTEM.id, item: copy, copyOf: then }])
+    const layers = await screen.findByRole('group', { name: 'Qué enseñar' })
+    await userEvent.click(within(layers).getByRole('radio', { name: 'Del mundo' }))
+    const library = within(screen.getByRole('navigation', { name: 'Biblioteca del compendio' }))
+    await userEvent.click(library.getByRole('button', { name: /^Conjuros/ }))
+    await userEvent.click(await library.findByRole('button', { name: 'Detectar magia del valle' }))
+    const article = await screen.findByRole('article', { name: 'Detectar magia del valle' })
+    expect(within(article).getByText('Del mundo')).toBeDefined()
+    expect(within(article).getByRole('status').textContent).toContain('El original ha cambiado.')
+    await userEvent.click(within(article).getByRole('button', { name: 'Ver cambios' }))
+    const changes = await screen.findByRole('dialog', { name: 'Cambios del original' })
+    const row = within(changes).getByRole('row', { name: /Nivel/ })
+    expect(row.textContent).toContain('1')
+    await userEvent.click(within(changes).getByRole('button', { name: 'Traer 1' }))
+    await waitFor(() => expect(screen.queryByText('El original ha cambiado.')).toBeNull())
+
+    // Copiar al mundo algo del sistema: se abre para cambiarlo
+    await userEvent.click(within(layers).getByRole('radio', { name: 'Todo' }))
+    await userEvent.type(screen.getByRole('searchbox', { name: 'Buscar en el compendio' }), 'confusion')
+    await userEvent.click(await screen.findByRole('button', { name: /^Confusión/ }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Copiar al mundo' }))
+    const editor = await screen.findByRole('dialog', { name: 'Editar «Confusión (copia)»' })
+    expect(within(editor).getByLabelText('Nombre')).toBeDefined()
   })
 })

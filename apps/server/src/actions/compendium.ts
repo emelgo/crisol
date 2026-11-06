@@ -64,6 +64,13 @@ async function campaignSystem(ctx: ActionContext, campaignId: string) {
   return { document, row, choices, entries, world, wiki }
 }
 
+/** Cuántas hay de cada tipo */
+const countByType = (entries: readonly ContentEntry[]) => {
+  const counts: Record<string, number> = {}
+  for (const entry of entries) counts[entry.type] = (counts[entry.type] ?? 0) + 1
+  return counts
+}
+
 /** Las claves de lo del mundo, para marcarlo en lo que sale */
 const worldKeys = (entries: readonly (ContentEntry & { world?: true })[]) =>
   new Set(entries.filter((e) => e.world).map((e) => e.key))
@@ -126,6 +133,7 @@ export const compendiumActions = [
             systemId: world.systemId,
             writable: can(ctx.actor, 'worldContent.write', wiki),
             count: worldKeys(entries).size,
+            byType: countByType(entries.filter((e) => (e as { world?: true }).world)),
             types: compendiumTypes(document, entries, choices, true).map(typeView)
           }
         : null
