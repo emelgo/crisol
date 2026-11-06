@@ -5,7 +5,7 @@
  */
 import type { Page, PanelBlock } from '@crisol/contracts'
 import { useQuery } from '@tanstack/react-query'
-import { getRouteApi, Link, Navigate } from '@tanstack/react-router'
+import { getRouteApi, Link, Navigate, useNavigate } from '@tanstack/react-router'
 import { ChevronDown, ChevronRight, Eye, FileText } from 'lucide-react'
 import { type ReactNode, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -237,7 +237,16 @@ function PlayerEntry({ page }: { page: Page }) {
   })
   // De sus pestañas, por ahora las de texto (los mapas, con mapas-jugadores)
   const texts = (tabs.data?.tabs ?? []).filter((tab) => tab.kind === 'text')
-  const [tabId, setTabId] = useState<string | null>(null)
+  const { pestana } = pageRoute.useSearch()
+  const navigate = useNavigate()
+  const tabId = pestana ?? null
+  const setTabId = (id: string | null) =>
+    void navigate({
+      to: '/mundos/$worldId/campanas/$campaignId/paginas/$pageId',
+      params: { worldId: page.worldId, campaignId: readAs.campaignId, pageId: page.id },
+      search: { ...(readAs.asCharacterId ? { como: readAs.asCharacterId } : {}), ...(id ? { pestana: id } : {}) },
+      replace: true
+    })
   const active = texts.find((tab) => tab.id === tabId) ?? null
   const content = usePageContent(page.worldId, page.id, null, false, active?.id)
   return (
@@ -256,16 +265,16 @@ function PlayerEntry({ page }: { page: Page }) {
             </div>
           </header>
           {texts.length > 0 && (
-            <div role="tablist" aria-label={t('playerPages.tabs')} className={styles.tabs}>
-              <button type="button" role="tab" aria-selected={!active} onClick={() => setTabId(null)}>
+            // biome-ignore lint/a11y/useSemanticElements: un grupo de botones que eligen qué se ve, no un formulario
+            <div role="group" aria-label={t('playerPages.tabs')} className={styles.tabs}>
+              <button type="button" aria-pressed={!active} onClick={() => setTabId(null)}>
                 {t('playerPages.text')}
               </button>
               {texts.map((tab) => (
                 <button
                   key={tab.id}
                   type="button"
-                  role="tab"
-                  aria-selected={active?.id === tab.id}
+                  aria-pressed={active?.id === tab.id}
                   onClick={() => setTabId(tab.id)}
                 >
                   {tab.name}
@@ -314,7 +323,7 @@ function ReadBlock({ page, block }: { page: Page; block: PanelBlock }) {
     case 'image':
       return block.fileId ? (
         <figure className={styles.figure}>
-          <img src={`/api/files/${block.fileId}`} alt={block.caption} />
+          <img src={`/api/files/${block.fileId}`} alt={block.caption} loading="lazy" />
           {block.caption && <figcaption>{block.caption}</figcaption>}
         </figure>
       ) : null
@@ -367,7 +376,7 @@ function ReadTagged({ page, tag }: { page: Page; tag: string }) {
   const readAs = useReadAs() as ReadAs
   const found = useQuery({
     queryKey: playerKey(page.worldId, readAs, 'tagged', tag),
-    queryFn: () => api.call('searchWiki', { worldId: page.worldId, tag, query: tag, page: 1, ...readAsInput(readAs) }),
+    queryFn: () => api.call('searchWiki', { worldId: page.worldId, tag, page: 1, ...readAsInput(readAs) }),
     enabled: Boolean(tag)
   })
   const list = (found.data?.results ?? []).filter((result) => result.id !== page.id)

@@ -475,6 +475,14 @@ describe('lo que lee un jugador (docs/specs/conocimiento.md)', () => {
     expect((await ok200('getPageTables', { pageId: liga })).tables[0].rows).toHaveLength(2)
   })
 
+  it('por etiqueta, sin texto que buscar: las páginas con ella que ve', async () => {
+    for (const pageId of [page.Aldoria, page.Varn])
+      await ok200('setPageProperties', { pageId, properties: [{ name: 'etiquetas', type: 'list', value: ['reino'] }] })
+    const seen = await ok200('searchWiki', { worldId, tag: 'reino', page: 1 }, ana.cookie)
+    expect(titles(seen.results)).toEqual(['Aldoria'])
+    expect(titles((await ok200('searchWiki', { worldId, tag: 'reino', page: 1 })).results)).toEqual(['Aldoria', 'Varn'])
+  })
+
   it('ver como un personaje: el máster lee lo que lee su dueño', async () => {
     const [rey] = await secretsOf(page.Aldoria ?? '')
     await mark({ kind: 'secret', targetId: rey?.id, characters: [lia] })

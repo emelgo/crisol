@@ -96,9 +96,12 @@ const libraryRoute = createRoute({
     }
   }
 })
-// Las páginas del mundo desde una campaña, con lo que sabe (ADR-0017); ?como=<personaje>: el máster, como él
-const asSearch = (search: Record<string, unknown>): { como?: string } =>
-  typeof search.como === 'string' && search.como ? { como: search.como } : {}
+// Las páginas del mundo desde una campaña, con lo que sabe (ADR-0017); ?como=<personaje>: el máster, como él;
+// ?pestana=<id>: una pestaña de la página que no es su texto
+const asSearch = (search: Record<string, unknown>): { como?: string; pestana?: string } => ({
+  ...(typeof search.como === 'string' && search.como ? { como: search.como } : {}),
+  ...(typeof search.pestana === 'string' && search.pestana ? { pestana: search.pestana } : {})
+})
 const worldPagesRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/mundos/$worldId/campanas/$campaignId/paginas',

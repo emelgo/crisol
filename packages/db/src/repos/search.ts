@@ -174,11 +174,21 @@ const templateFilter = (options: Pick<SearchOptions, 'template' | 'link'>) => sq
       : sql``
   }`
 
-/** Sin nada que buscar: las páginas de una plantilla (y de un campo), por título, con el total */
+/** Las de una etiqueta (o una hija suya), sobre la página p */
+const tagFilter = (tag: string) =>
+  tag
+    ? sql`and exists (
+        select 1 from jsonb_array_elements(p.properties) e, jsonb_array_elements_text(e->'value') v
+        where lower(e->>'name') = 'etiquetas' and jsonb_typeof(e->'value') = 'array'
+          and (lower(v) = ${tag} or lower(v) like ${`${tag}/%`}))`
+    : sql``
+
+/** Sin nada que buscar: las páginas de una plantilla (y de un campo) o de una etiqueta, por título, con el total */
 export async function templatePages(db: Database, options: Omit<SearchOptions, 'terms'>) {
   const rows = await db.execute<{ id: string; title: string; icon: string | null; total: number }>(sql`
     select p.id, p.title, p.icon, (count(*) over ())::int as total from pages p
     where p.world_id = ${options.worldId} and p.deleted_at is null ${templateFilter(options)}
+      ${tagFilter(options.tag?.trim().toLowerCase() ?? '')}
       ${options.player ? sql`and p.id = any(${ids(options.player.pages)})` : sql``}
     order by lower(p.title), p.id
     offset ${options.offset} limit ${options.limit}`)

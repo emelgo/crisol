@@ -62,7 +62,11 @@
   cursor: pointer;
 }
 
-.tabs button[aria-selected="true"] {
+.tabs button:hover {
+  color: var(--color-text);
+}
+
+.tabs button[aria-pressed="true"] {
   border-block-end-color: var(--color-accent);
   color: var(--color-text);
 }

@@ -97,7 +97,7 @@ export async function searchWorld(env: ActionEnv, input: SearchInput) {
     player
   }
   const { total, pages } =
-    input.query === undefined && input.template
+    input.query === undefined && (input.template || input.tag)
       ? await searchRepo.templatePages(env.db, options)
       : await searchRepo.searchPages(env.db, { ...options, terms })
   const sections = await withBodyHeadings(
