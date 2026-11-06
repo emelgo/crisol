@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router'
 import {
+  Backpack,
   BookOpen,
   Dices,
   Folder,
@@ -9,6 +10,7 @@ import {
   History,
   House,
   LayoutTemplate,
+  Library,
   LogOut,
   type LucideIcon,
   ScrollText,
@@ -442,6 +444,15 @@ function CampaignPanels({
       >
         <Label icon={BookOpen} text={t('ribbon.compendium')} />
       </Link>
+      <Link
+        to="/mundos/$worldId/campanas/$campaignId/grupo"
+        params={{ worldId, campaignId }}
+        className={styles.item}
+        viewTransition={SECTION}
+        data-tour="barra-grupo"
+      >
+        <Label icon={Backpack} text={t('ribbon.party')} />
+      </Link>
       {master && (
         <Link
           to="/mundos/$worldId/campanas/$campaignId/en-juego"
@@ -451,6 +462,17 @@ function CampaignPanels({
           data-tour="barra-en-juego"
         >
           <Label icon={Swords} text={t('ribbon.inPlay')} />
+        </Link>
+      )}
+      {master && (
+        <Link
+          to="/mundos/$worldId/campanas/$campaignId/biblioteca"
+          params={{ worldId, campaignId }}
+          className={styles.item}
+          viewTransition={SECTION}
+          data-tour="barra-biblioteca"
+        >
+          <Label icon={Library} text={t('ribbon.library')} />
         </Link>
       )}
       <DiceButton />
@@ -615,7 +637,14 @@ function MobileMenu({
             current: path.startsWith(`/mundos/${world.id}/campanas/${campaign.id}/compendio`),
             run: go(`/mundos/${world.id}/campanas/${campaign.id}/compendio`)
           },
-          // Las criaturas en juego: del máster (hasta el módulo 5)
+          {
+            key: 'grupo',
+            icon: Backpack,
+            text: t('ribbon.party'),
+            current: path.startsWith(`/mundos/${world.id}/campanas/${campaign.id}/grupo`),
+            run: go(`/mundos/${world.id}/campanas/${campaign.id}/grupo`)
+          },
+          // Las criaturas en juego y la biblioteca: del máster (hasta el módulo 5)
           ...(campaign.master
             ? [
                 {
@@ -624,6 +653,13 @@ function MobileMenu({
                   text: t('ribbon.inPlay'),
                   current: path.startsWith(`/mundos/${world.id}/campanas/${campaign.id}/en-juego`),
                   run: go(`/mundos/${world.id}/campanas/${campaign.id}/en-juego`)
+                },
+                {
+                  key: 'biblioteca',
+                  icon: Library,
+                  text: t('ribbon.library'),
+                  current: path.startsWith(`/mundos/${world.id}/campanas/${campaign.id}/biblioteca`),
+                  run: go(`/mundos/${world.id}/campanas/${campaign.id}/biblioteca`)
                 }
               ]
             : []),

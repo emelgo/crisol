@@ -36,7 +36,7 @@ compose() {
   docker compose --project-directory "$DESTINO" -f "$DESTINO/compose.prod.yaml" --env-file "$ENV_FILE" "$@"
 }
 
-compose build --quiet app
+compose build --quiet app postgres
 compose up -d --wait postgres valkey
 compose run --rm --no-deps app node packages/db/src/migrate.ts
 compose up -d --wait app

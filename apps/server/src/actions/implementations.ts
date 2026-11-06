@@ -8,12 +8,14 @@ import { fileActions } from './files.ts'
 import { foundryActions } from './foundry.ts'
 import { historyActions } from './history.ts'
 import { invitationActions } from './invitations.ts'
+import { libraryActions } from './library.ts'
 import { linkActions } from './links.ts'
 import { mapActions } from './maps.ts'
 import { memberActions } from './members.ts'
 import { organizationActions } from './organizations.ts'
 import { pageContentActions } from './page-content.ts'
 import { pageActions } from './pages.ts'
+import { partyActions } from './party.ts'
 import { preferenceActions } from './preferences.ts'
 import { previewActions } from './preview.ts'
 import type { Implementation } from './registry.ts'
@@ -53,6 +55,8 @@ export const IMPLEMENTATIONS: Implementation[] = [
   ...worldContentActions,
   ...characterActions,
   ...creatureActions,
+  ...partyActions,
+  ...libraryActions,
   ...tableActions,
   ...mapActions,
   ...preferenceActions

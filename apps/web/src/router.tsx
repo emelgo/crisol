@@ -3,6 +3,8 @@ import { CompendiumScreen } from './campaign/compendium.tsx'
 import { CharacterScreen } from './characters/character.tsx'
 import { CharactersScreen } from './characters/characters.tsx'
 import { InPlayScreen } from './creatures/in-play.tsx'
+import { LibraryScreen } from './library/library.tsx'
+import { PartyScreen } from './party/route.tsx'
 import { AiSettings } from './routes/ai-settings.tsx'
 import { Bootstrap } from './routes/bootstrap.tsx'
 import { CampaignPage } from './routes/campaign.tsx'
@@ -73,6 +75,25 @@ const inPlayRoute = createRoute({
   // ?ver=<id>: la criatura abierta
   validateSearch: (search: Record<string, unknown>): { ver?: string } =>
     typeof search.ver === 'string' && search.ver ? { ver: search.ver } : {}
+})
+const partyRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/mundos/$worldId/campanas/$campaignId/grupo',
+  component: PartyScreen
+})
+const libraryRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/mundos/$worldId/campanas/$campaignId/biblioteca',
+  component: LibraryScreen,
+  // ?libro=<id>&pagina=<n>&q=<lo buscado>: el libro abierto, en su página, con lo buscado marcado
+  validateSearch: (search: Record<string, unknown>): { libro?: string; pagina?: number; q?: string } => {
+    const page = Number(search.pagina)
+    return {
+      ...(typeof search.libro === 'string' && search.libro ? { libro: search.libro } : {}),
+      ...(Number.isInteger(page) && page > 0 ? { pagina: page } : {}),
+      ...(typeof search.q === 'string' && search.q ? { q: search.q } : {})
+    }
+  }
 })
 const wikiRoute = createRoute({ getParentRoute: () => rootRoute, path: '/mundos/$worldId/wiki', component: WikiHome })
 const wikiPageRoute = createRoute({
@@ -153,6 +174,8 @@ const routeTree = rootRoute.addChildren([
   campaignRoute,
   compendiumRoute,
   inPlayRoute,
+  partyRoute,
+  libraryRoute,
   charactersRoute,
   characterRoute,
   wikiRoute,

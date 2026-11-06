@@ -4,11 +4,13 @@ export {
   contentKeyOf,
   convertFoundry,
   FOUNDRY_DOCUMENTS,
+  type FoundryArt,
   type FoundryInput,
   keyOf,
   mergeFoundry
 } from './convert.ts'
 export { decodeEntities, htmlToLine, htmlToMarkdown, plainEnrichers } from './html.ts'
+export { type ImageLicense, imagesOf, licenseOf, zipPathOf } from './images.ts'
 export {
   cleanPath,
   FOUNDRY_MANIFESTS,

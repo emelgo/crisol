@@ -1,0 +1,258 @@
+/* «Biblioteca»: buscar y los libros a la izquierda, el libro abierto en el centro (como el compendio) */
+.page {
+  display: grid;
+  grid-template-columns: minmax(17rem, 22rem) minmax(0, 1fr);
+  gap: var(--space-6);
+  align-items: start;
+  padding: var(--space-6);
+}
+
+.side {
+  position: sticky;
+  inset-block-start: var(--space-6);
+  display: grid;
+  gap: var(--space-4);
+  max-block-size: calc(100dvh - 2 * var(--space-6));
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+  overflow: auto;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.hidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.small {
+  margin: 0 0 var(--space-2);
+  color: var(--color-muted);
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.muted,
+.pick {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+.pick {
+  padding: var(--space-8) var(--space-6);
+}
+
+.search {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-field-border);
+  border-radius: 6px;
+  background: var(--color-bg);
+  color: var(--color-muted);
+}
+
+.search input {
+  flex: 1;
+  min-inline-size: 0;
+  min-block-size: var(--target);
+  border: 0;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  outline: none;
+}
+
+.search:focus-within {
+  border-color: var(--color-accent);
+  outline: 2px solid color-mix(in srgb, var(--color-accent) 40%, transparent);
+}
+
+.group + .group {
+  margin-block-start: var(--space-4);
+}
+
+.groupHead,
+.readerHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.bookName {
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.scope {
+  color: var(--color-muted);
+  font-size: 0.75rem;
+}
+
+.hits,
+.books {
+  display: grid;
+  gap: 2px;
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hit,
+.book {
+  display: grid;
+  gap: 2px;
+  inline-size: 100%;
+  padding: var(--space-2);
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.book {
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-2);
+}
+
+.hit:hover,
+.book:hover,
+.hit[aria-current="true"],
+.book[aria-current="true"] {
+  background: var(--color-raised);
+}
+
+.hitHead {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  color: var(--color-link);
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.semantic {
+  padding: 0 var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  color: var(--color-muted);
+  font-size: 0.6875rem;
+  font-weight: 600;
+}
+
+.excerpt {
+  color: var(--color-muted);
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+@media (forced-colors: active) {
+  .excerpt mark {
+    background: Mark;
+    color: MarkText;
+  }
+}
+
+.excerpt mark {
+  border-radius: 2px;
+  background: color-mix(in srgb, #f5c400 40%, transparent);
+  color: var(--color-text);
+}
+
+.bookText {
+  display: grid;
+  gap: 2px;
+}
+
+.meta {
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+}
+
+.done {
+  color: var(--color-muted);
+}
+
+.busy,
+.pending {
+  color: var(--color-link);
+}
+
+.empty,
+.failed {
+  color: var(--color-danger);
+}
+
+.again {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-block-size: 2rem;
+  margin-inline-start: calc(18px + 2 * var(--space-2));
+  padding: 0 var(--space-2);
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--color-link);
+  font: inherit;
+  font-size: 0.8125rem;
+  cursor: pointer;
+}
+
+.again:hover {
+  background: var(--color-raised);
+}
+
+.reader {
+  min-inline-size: 0;
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+}
+
+.readerHead {
+  margin-block-end: var(--space-2);
+}
+
+.openApart {
+  margin-inline-start: auto;
+  font-size: 0.875rem;
+}
+
+@media (max-width: 52rem) {
+  .page {
+    grid-template-columns: minmax(0, 1fr);
+    padding: var(--space-4);
+  }
+
+  .side {
+    position: static;
+    max-block-size: none;
+  }
+}
+
+.alsoIn {
+  margin: var(--space-4) 0 0;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}

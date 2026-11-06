@@ -25,6 +25,16 @@ export function listOperations(db: Database, query: HistoryScope & { before?: st
     .limit(query.limit)
 }
 
+/** Las últimas operaciones que tocaron una fila (los movimientos del grupo de una campaña), de la más reciente */
+export function operationsOfRow(db: Database, tableName: string, rowId: string, limit: number) {
+  return selectOperations(db)
+    .where(
+      sql`${operations.id} in (select c.operation_id from changes c where c.table_name = ${tableName} and c.row_id = ${rowId})`
+    )
+    .orderBy(desc(operations.createdAt), desc(operations.id))
+    .limit(limit)
+}
+
 /** Una operación, con el nombre de quien la hizo y su organización (para decidir quién puede deshacerla) */
 export async function getOperation(db: Database, operationId: string) {
   const [found] = await selectOperations(db).where(eq(operations.id, operationId))

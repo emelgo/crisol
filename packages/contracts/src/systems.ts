@@ -239,6 +239,32 @@ export const trySystemRoll = defineAction({
   })
 })
 
+/** Las filas de una tabla del compendio (docs/specs/tablas-compendio.md), como la pestaña «Tabla» de la wiki */
+export const contentTable = z.object({
+  formula: z.string().max(200).nullable().optional().describe('Sin ella, 1dN por la última fila'),
+  replacement: z
+    .boolean()
+    .optional()
+    .describe('Con reemplazo (lo de siempre): lo sacado puede volver a salir; sin él, no hasta reiniciarla'),
+  rows: z
+    .array(
+      z.object({
+        id: z.string().min(1).max(40),
+        from: z.int(),
+        to: z.int(),
+        text: z.string().max(2000).describe('Lo que sale; puede llevar tiradas'),
+        key: z
+          .string()
+          .max(100)
+          .nullable()
+          .optional()
+          .describe('La entrada del compendio a la que lleva; si es otra tabla, se tira también (hasta 5 niveles)')
+      })
+    )
+    .min(1)
+    .max(500)
+})
+
 /** Un documento del contenido entero: sus valores (con sus textos en cada idioma), su mecánica y su página */
 export const contentItem = z.object({
   type: z.string(),
@@ -247,7 +273,9 @@ export const contentItem = z.object({
   concept: z.string().optional(),
   data: z.record(z.string(), z.unknown()),
   mechanics: z.record(z.string(), z.unknown()).optional(),
-  ref: z.record(z.string(), z.unknown()).optional()
+  ref: z.record(z.string(), z.unknown()).optional(),
+  img: z.string().max(500).optional().describe('Su imagen: su ruta entre las del sistema'),
+  table: contentTable.optional().describe('Si es una tabla (tipo «tabla», de Crisol en todo sistema): sus filas')
 })
 
 export const trySystemAction = defineAction({
@@ -502,7 +530,8 @@ export const browseCampaignContent = defineAction({
         legacy: z.boolean(),
         folder: z.string().nullable(),
         values: z.record(z.string(), z.array(z.string())).describe('Sus valores en los campos que se filtran'),
-        world: z.boolean().optional().describe('Del compendio del mundo')
+        world: z.boolean().optional().describe('Del compendio del mundo'),
+        img: z.string().optional().describe('Su imagen (si el sistema la tiene): /api/system-images/<sistema>?path=…')
       })
     ),
     folders: z.array(z.object({ key: z.string(), label: z.string() })),
@@ -557,6 +586,14 @@ export const compendiumItem = contentItem.extend({
   versions: z.array(z.object({ key: z.string(), edition: z.string().nullable(), legacy: z.boolean() })),
   granted: z.array(granted),
   play: mechanicsText.nullable().describe('Su mecánica, en palabras'),
+  image: z
+    .object({ credit: z.string().nullable(), license: z.string() })
+    .optional()
+    .describe('Su imagen, si el sistema la tiene (por su img): su crédito y su licencia'),
+  drawn: z
+    .array(z.string())
+    .optional()
+    .describe('Si es una tabla sin reemplazo: las filas ya sacadas en esta campaña (por su id)'),
   world: z
     .object({
       id: z.uuid(),
@@ -590,17 +627,32 @@ export const rollContentTable = defineAction({
   name: 'rollContentTable',
   kind: 'write',
   description:
-    'Tira en una tabla del texto de un documento del compendio de una campaña (la Bolsa de trucos, Confusión, las Fichas de pluma): su dado, en el servidor y a su registro, con lo que salió. La tabla, por su orden entre las de tirar de su texto (desde 0)',
+    'Tira en una tabla del compendio de una campaña, en el servidor y a su registro, con lo que salió. Sin «table», una entrada de tipo «tabla» (sus filas: sin reemplazo no repite hasta reiniciarla con resetContentTable, y la fila que lleva a otra tabla la tira también); con «table», una de las tablas de tirar del texto de un documento (la Bolsa de trucos, Confusión), por su orden entre ellas (desde 0)',
   input: z.object({
     campaignId: z.uuid(),
     key: z.string().max(100),
-    table: z.int().min(0).max(50),
+    table: z
+      .int()
+      .min(0)
+      .max(50)
+      .optional()
+      .describe('Una tabla del texto, por su orden; sin ella, la entrada «tabla»'),
     visibility: z.enum(['all', 'self', 'master', 'hidden']).default('all')
   }),
   output: z.object({
     roll: diceRoll,
-    row: z.int().nullable().describe('La fila que salió, por su orden en la tabla; si ninguna abarca el total, null')
+    row: z.int().nullable().describe('La fila que salió, por su orden en la tabla; si ninguna abarca el total, null'),
+    drawn: z.array(z.string()).describe('En una entrada «tabla» sin reemplazo, las filas ya sacadas (por su id)')
   })
+})
+
+export const resetContentTable = defineAction({
+  name: 'resetContentTable',
+  kind: 'write',
+  description:
+    'Vuelve a empezar una tabla del compendio sin reemplazo en una campaña: lo sacado puede volver a salir. Solo el máster',
+  input: z.object({ campaignId: z.uuid(), key: z.string().max(100) }),
+  output: z.object({ ok: z.literal(true) })
 })
 
 export const getSystemFormat = defineAction({

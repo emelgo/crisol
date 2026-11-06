@@ -9,7 +9,49 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   de propietario.
 - **En local**, con los cambios al momento: http://localhost:5173 (lo arranco cuando haga falta).
 
-## Módulo 4: las criaturas en juego (rama `modulo-4/compendio`; en local, aún no en staging)
+## Módulo 4: la biblioteca (rama `modulo-4/biblioteca`; en local, aún no en staging)
+
+- [ ] **Un libro de verdad**: sube a los archivos del mundo (o a los comunes) un PDF con texto, como un manual. En una
+  campaña, «Biblioteca»: sale el libro «Leyendo…» y, al poco, «Se puede buscar» con sus páginas.
+- [ ] **Buscar dentro**: busca una palabra que sepas que está (con o sin tildes): sale el libro con sus páginas y el
+  fragmento; al pulsar una, el visor abre en esa página con la línea marcada.
+- [ ] **Por significado**: busca una idea con otras palabras («cómo se recupera la vida», «qué pasa al caer a 0»): lo
+  que sale solo por significado lleva «Por significado». Dime si lo que encuentra tiene sentido.
+- [ ] **También en las páginas**: si la wiki habla de lo mismo, sale debajo con su enlace.
+- [ ] **La IA**: pídele que busque algo en tus libros y te diga en qué página está.
+- [ ] **El PDF de una hoja**, tras subir esto a staging: la imagen de la app pasa a Debian (con otro Chromium). En una
+  página con hoja, «Descargar PDF» tiene que seguir funcionando.
+
+## Módulo 4: el inventario del grupo (rama `modulo-4/grupo`; en local, aún no en staging)
+
+- [ ] **«Grupo» en la campaña**: en la barra de una campaña, «Grupo». Añade algo del compendio y algo escrito a mano,
+  crea un contenedor («El carro») y mueve cosas entre ellos.
+- [ ] **Mover a un personaje y de vuelta**: «Mover» → «A Thora» (con cuántas); en la hoja de Thora, Inventario, sale
+  en «Mío»; «Mover» → «Al grupo» lo devuelve. Nada se duplica, y deshacer en el historial lo deja como estaba.
+- [ ] **Las monedas**: pon monedas al grupo y, en «Gestionar», dáselas a un personaje o repártelas entre varios (lo
+  que sobra se queda en el grupo).
+- [ ] **Con una jugadora**: ve el grupo y lo cambia, mueve con su personaje pero no con los de otros, y no reparte.
+- [ ] **La IA**: pídele que reparta el botín de la última sesión entre los personajes (espera tu aprobación).
+
+## Módulo 4: las tablas aleatorias del compendio (rama `modulo-4/tablas`; en local, aún no en staging)
+
+- [ ] **Una tabla del mundo**: en el compendio de una campaña, «Nueva entrada» → En el mundo, tipo «Tabla»; escribe la
+  fórmula, marca «Sin reemplazo» y unas filas. Al abrirla, pulsa el dado: sale una fila marcada, va al registro y no se
+  repite hasta «Reiniciar».
+- [ ] **Las tablas del dnd5e**: vuelve a traer el dnd5e con sus tablas (`tables24`); en el compendio, abre «Mysterious
+  Deck» o «Standard Languages» y tira: las filas que llevan a otra entrada se abren al pulsarlas, y las que llevan a
+  otra tabla la tiran también.
+- [ ] **La IA**: pídele que cree una tabla de encuentros para tu mundo y que tire en ella.
+
+## Módulo 4: las imágenes de lo traído de Foundry (rama `modulo-4/imagenes`; en local, aún no en staging)
+
+- [ ] **Traer el dnd5e con sus imágenes**: en Sistemas → «Sistema nuevo», suelta el .zip del dnd5e; tras «Traer de
+  Foundry», dice cuántas imágenes trae con cada licencia (las de uso restringido, marcadas) y «Subir N imágenes».
+- [ ] **Verlas**: en el compendio de una campaña con ese sistema, la miniatura en la lista y el retrato en la entrada,
+  con su crédito; en «En juego», la miniatura de cada criatura y su retrato en la hoja.
+- [ ] Sin imagen (los objetos y conjuros con iconos de serie de Foundry), nada.
+
+## Módulo 4: las criaturas en juego (en staging: PR #110)
 
 Una criatura del compendio se pone en juego en la campaña: copias numeradas o una única (un PNJ que guarda sus PG). Hasta
 el módulo 5, solo tú (el máster).
@@ -27,7 +69,7 @@ el módulo 5, solo tú (el máster).
 - [ ] **La IA, desde claude.ai**: «pon en juego tres goblins y un jefe único», «tira la cimitarra del Goblin 2»,
   «aplica ese daño a los otros dos, mitad al jefe».
 
-## Módulo 4: el compendio del mundo (rama `modulo-4/compendio`; en local, aún no en staging)
+## Módulo 4: el compendio del mundo (en staging: PR #110)
 
 Cada mundo tiene su propio compendio, hecho para un sistema: lo ven sus campañas con ese sistema. Hasta el módulo 5,
 solo tú (quien lleva el mundo).

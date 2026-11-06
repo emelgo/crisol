@@ -41,9 +41,10 @@ import {
   restoreFile,
   updateFolder
 } from './files.ts'
-import { importFoundry, inspectFoundry } from './foundry.ts'
+import { importFoundry, inspectFoundry, putSystemImages } from './foundry.ts'
 import { listHistory, undoOperation } from './history.ts'
 import { getInvitation, regenerateInvitation, setInvitationsOpen } from './invitations.ts'
+import { getBookPages, listLibrary, readBookAgain, searchLibrary } from './library.ts'
 import {
   createMapPin,
   createPageTab,
@@ -87,6 +88,7 @@ import {
   sortPageChildren,
   updatePage
 } from './pages.ts'
+import { getParty, moveCoins, moveItem, splitCoins, updateParty } from './party.ts'
 import { searchWiki } from './search.ts'
 import {
   browseCampaignContent,
@@ -104,6 +106,7 @@ import {
   importSystem,
   listSystems,
   putSystemContent,
+  resetContentTable,
   rollContentTable,
   searchCampaignContent,
   searchSystemContent,
@@ -145,12 +148,14 @@ export * from './files.ts'
 export * from './foundry.ts'
 export * from './history.ts'
 export * from './invitations.ts'
+export * from './library.ts'
 export * from './maps.ts'
 export * from './members.ts'
 export * from './openapi.ts'
 export * from './organizations.ts'
 export * from './pages.ts'
 export * from './panel.ts'
+export * from './party.ts'
 export type * from './realtime.ts'
 export * from './search.ts'
 export * from './systems.ts'
@@ -271,6 +276,7 @@ export const ACTIONS = [
   searchCampaignContent,
   browseCampaignContent,
   rollContentTable,
+  resetContentTable,
   putWorldContent,
   deleteWorldContent,
   copyContent,
@@ -283,6 +289,15 @@ export const ACTIONS = [
   rollForCreature,
   removeFromPlay,
   applyRoll,
+  getParty,
+  updateParty,
+  moveItem,
+  moveCoins,
+  splitCoins,
+  listLibrary,
+  searchLibrary,
+  getBookPages,
+  readBookAgain,
   searchLinkableContent,
   getLinkedContent,
   listCharacters,
@@ -308,7 +323,8 @@ export const ACTIONS = [
   trySystemRoll,
   getSystemFormat,
   inspectFoundry,
-  importFoundry
+  importFoundry,
+  putSystemImages
 ]
 
 /** Las acciones por nombre, solo como tipo: la web las usa sin cargar zod */
@@ -422,6 +438,7 @@ export type Actions = {
   searchCampaignContent: typeof searchCampaignContent
   browseCampaignContent: typeof browseCampaignContent
   rollContentTable: typeof rollContentTable
+  resetContentTable: typeof resetContentTable
   putWorldContent: typeof putWorldContent
   deleteWorldContent: typeof deleteWorldContent
   copyContent: typeof copyContent
@@ -434,6 +451,15 @@ export type Actions = {
   rollForCreature: typeof rollForCreature
   removeFromPlay: typeof removeFromPlay
   applyRoll: typeof applyRoll
+  getParty: typeof getParty
+  updateParty: typeof updateParty
+  moveItem: typeof moveItem
+  moveCoins: typeof moveCoins
+  splitCoins: typeof splitCoins
+  listLibrary: typeof listLibrary
+  searchLibrary: typeof searchLibrary
+  getBookPages: typeof getBookPages
+  readBookAgain: typeof readBookAgain
   searchLinkableContent: typeof searchLinkableContent
   getLinkedContent: typeof getLinkedContent
   listCharacters: typeof listCharacters
@@ -459,4 +485,5 @@ export type Actions = {
   getSystemFormat: typeof getSystemFormat
   inspectFoundry: typeof inspectFoundry
   importFoundry: typeof importFoundry
+  putSystemImages: typeof putSystemImages
 }

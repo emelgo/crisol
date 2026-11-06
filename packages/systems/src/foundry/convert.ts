@@ -5,8 +5,10 @@
  * valores sueltos de `system` que comparten bastantes de su tipo. Formato de los documentos de Foundry VTT, leído de sus
  * compendios (ADR-0014)
  */
+import { boundsOf } from '@crisol/dice'
 import { type ContentItem, FILE_BYTES, type SystemFile, toFile } from '../file.ts'
 import { type Field, FORMAT, LIMITS, type System } from '../format.ts'
+import { TABLE_BYTES } from '../table-entries.ts'
 import type { Language, Text } from '../text.ts'
 import { dnd5eContext, dnd5eEdition } from './dnd5e.ts'
 import { type HtmlContext, htmlToLine, htmlToMarkdown } from './html.ts'
@@ -20,12 +22,27 @@ export interface FoundryInput {
   packs: FoundryPack[]
   /** El idioma de sus textos */
   language: Language
+  /** Sus mapas de arte, ya leídos del zip: el retrato de cada actor por su paquete («dnd5e.monsters») y su id */
+  art?: FoundryArt
+}
+
+export interface FoundryArt {
+  credit: string | null
+  map: Record<string, Record<string, { actor?: string }>>
 }
 
 export interface Converted {
   file: SystemFile
   /** Lo que conviene saber: lo que se dejó fuera o se recortó */
   notes: string[]
+}
+
+/** Una imagen del propio paquete (systems/<id>/… o modules/<id>/…); las de Foundry o de otros paquetes, fuera */
+function ownImage(path: string | null | undefined, manifest: FoundryManifest): string | null {
+  if (!path) return null
+  const clean = path.replace(/^\/+/, '')
+  const prefix = `${manifest.kind === 'module' ? 'modules' : 'systems'}/${manifest.id}/`
+  return clean.startsWith(prefix) && clean.length <= 500 && !clean.includes('..') ? clean : null
 }
 
 /** Las clases de documento que se traen */
@@ -180,7 +197,20 @@ interface Entry {
   text: string
   values: Map<string, Raw>
   folder: string | null
+  /** Su imagen: la del documento o, en un actor, su retrato del mapa de arte; solo si es del propio paquete */
+  img?: string | null
+  /** Si es una tabla de tirar: sus filas, con el id del documento de Foundry al que lleva cada una */
+  table?: FoundryTable
 }
+
+interface FoundryTable {
+  formula: string | null
+  replacement: boolean
+  rows: { id: string; from: number; to: number; text: string; link: string | null }[]
+}
+
+/** Las filas de una tabla, como mucho */
+const TABLE_ROWS = 500
 
 /** Un campo que sale de `system`: su clave, su campo y cómo se guarda su valor */
 interface Column {
@@ -274,28 +304,58 @@ function pagesOf(doc: FoundryDocument, html: (text: string) => string): { id: st
   })
 }
 
-/** Una tabla de tirar en Markdown: la fórmula en su primera columna y cada fila con su rango (1–5) */
-function tableText(doc: FoundryDocument, line: (text: string) => string, language: Language): string {
-  const results = (Array.isArray(doc.results) ? doc.results : [])
+/**
+ * El documento al que lleva un resultado: su id y, si se sabe, su paquete (de su uuid,
+ * Compendium.<ámbito>.<paquete>.<Tipo>.<id>, o de su colección, <ámbito>.<paquete>)
+ */
+function linkedRef(r: Record<string, unknown>): string | null {
+  const uuid = str(r.documentUuid)
+  if (uuid) {
+    const parts = uuid.split('.')
+    const id = parts.at(-1)
+    if (!id) return null
+    return parts[0] === 'Compendium' && parts.length >= 5 ? `${parts[2]}/${id}` : id
+  }
+  const id = str(r.documentId) ?? str(r.resultId)
+  if (!id) return null
+  const collection = (str(r.documentCollection) ?? str(r.collection))?.split('.')
+  return collection && collection.length === 2 ? `${collection[1]}/${id}` : id
+}
+
+/** Una tabla de tirar: su fórmula (sin ella, 1dN por la última fila), si repite y sus filas con su rango */
+function tableOf(doc: FoundryDocument, line: (text: string) => string): FoundryTable | null {
+  const ids = new Set<string>()
+  const bound = (n: number) => Math.min(100_000, Math.max(-1000, Math.round(n)))
+  const rows = (Array.isArray(doc.results) ? doc.results : [])
     .filter(isObject)
-    .map((r) => {
+    .map((r, i) => {
       const range = Array.isArray(r.range) ? r.range.map(Number) : []
-      const from = Number.isFinite(range[0]) ? (range[0] as number) : 0
-      const to = Number.isFinite(range[1]) ? (range[1] as number) : from
+      const from = bound(Number.isFinite(range[0]) ? (range[0] as number) : 0)
+      const to = bound(Number.isFinite(range[1]) ? (range[1] as number) : from)
       // De un documento, su nombre; de texto, su texto
       const linked =
         r.type === 'document' || r.type === 'pack' || r.type === 'compendium' || r.type === 1 || r.type === 2
       const candidates = linked ? [r.name, r.text, r.description] : [r.description, r.text, r.name]
-      const html = candidates.map(str).find(Boolean) ?? ''
-      return { from, to, text: line(html).replace(/\|/g, '\\|') }
+      const text = line(candidates.map(str).find(Boolean) ?? '').slice(0, 2000)
+      let id = (str(r._id) ?? `r${i + 1}`).slice(0, 40)
+      for (let n = 2; ids.has(id); n++) id = `r${i + 1}_${n}`
+      ids.add(id)
+      return { id, from, to: Math.max(from, to), text, link: linked ? linkedRef(r) : null }
     })
     .sort((a, b) => a.from - b.from)
-  if (results.length === 0) return ''
-  const top = Math.max(...results.map((r) => r.to))
-  const formula = (str(doc.formula) ?? `1d${Math.max(1, top)}`).replace(/\s+/g, '')
-  const head = `| ${formula} | ${language === 'es' ? 'Resultado' : 'Result'} |`
-  const rows = results.map((r) => `| ${r.from === r.to ? r.from : `${r.from}–${r.to}`} | ${r.text} |`)
-  return [head, '| --- | --- |', ...rows].join('\n')
+  if (rows.length === 0) return null
+  // Una fórmula que no se entiende (con valores de Foundry, @prof+1d4), sin ella: 1dN por la última fila
+  const given = str(doc.formula)?.replace(/\s+/g, '').slice(0, 200) ?? null
+  const formula = given && boundsOf(given) ? given : null
+  // Las que caben (sus textos, en JSON, con algo de margen)
+  const kept: typeof rows = []
+  let size = 0
+  for (const row of rows.slice(0, TABLE_ROWS)) {
+    size += new TextEncoder().encode(JSON.stringify(row)).length + 40
+    if (size > TABLE_BYTES - 1024) break
+    kept.push(row)
+  }
+  return { formula, replacement: doc.replacement !== false, rows: kept }
 }
 
 /** Recorta un texto hasta que el documento quepa */
@@ -412,9 +472,24 @@ export function convertFoundry(input: FoundryInput): Converted {
       if (document === 'RollTable') {
         const type = 'tabla'
         typeInfo.set(type, { document: 'item', label: both('Tabla', 'Table'), plural: both('Tablas', 'Tables') })
-        const description = str(doc.description) ? md(doc.description as string, contextOf(null, null, name)) : ''
-        const text = [description, tableText(doc, line, language)].filter(Boolean).join('\n\n')
-        entries.push({ pack, type, where, name, text, values: new Map(), folder: folderOf(doc) })
+        const text = str(doc.description) ? md(doc.description as string, contextOf(null, null, name)) : ''
+        const table = tableOf(doc, line)
+        const total = Array.isArray(doc.results) ? doc.results.length : 0
+        if (table && table.rows.length < total)
+          notes.push(`«${name}» tiene ${total} filas: se traen ${table.rows.length}`)
+        const given = str(doc.formula)
+        if (table && given && !table.formula)
+          notes.push(`«${name}»: su fórmula (${given}) no se entiende; se tira por sus filas`)
+        entries.push({
+          pack,
+          type,
+          where,
+          name,
+          text,
+          values: new Map(),
+          folder: folderOf(doc),
+          ...(table ? { table } : {})
+        })
         continue
       }
       const subtype = doc.type ?? 'base'
@@ -453,6 +528,7 @@ export function convertFoundry(input: FoundryInput): Converted {
         const parts = [...groups].map(([heading, list]) => `## ${heading}\n\n${list.join('\n\n')}`)
         text = [text, ...parts].filter(Boolean).join('\n\n')
       }
+      const art = document === 'Actor' ? input.art?.map[`${manifest.id}.${pack.name}`]?.[doc._id]?.actor : undefined
       entries.push({
         pack,
         type,
@@ -460,7 +536,8 @@ export function convertFoundry(input: FoundryInput): Converted {
         name,
         text,
         values: flatten(doc.system, new Set(htmlFields)),
-        folder: folderOf(doc)
+        folder: folderOf(doc),
+        img: ownImage(art ?? str(doc.img), manifest)
       })
     }
   }
@@ -516,10 +593,24 @@ export function convertFoundry(input: FoundryInput): Converted {
     })
   }
 
-  // El contenido
+  // El contenido: primero sus claves, para las filas de las tablas que llevan a otro documento del zip
   let trimmed = 0
   const usedKeys = new Set<string>()
-  const content: ContentItem[] = entries.map((e) => {
+  const keys = entries.map((e) => {
+    let key = contentKeyOf(e.name, e.where)
+    for (let n = 2; usedKeys.has(key); n++) key = contentKeyOf(e.name, `${e.where}#${n}`)
+    usedKeys.add(key)
+    return key
+  })
+  // Por su paquete y su id (pack/id) y, si el enlace no dice paquete, solo por su id
+  const keyById = new Map<string, string>()
+  for (const [i, e] of entries.entries()) {
+    const [pack, id] = e.where.split('/')
+    if (!id) continue
+    if (!keyById.has(`${pack}/${id}`)) keyById.set(`${pack}/${id}`, keys[i] as string)
+    if (!keyById.has(id)) keyById.set(id, keys[i] as string)
+  }
+  const content: ContentItem[] = entries.map((e, i) => {
     const data: Record<string, unknown> = { name: at(e.name) }
     for (const c of columns.get(e.type) ?? []) {
       const raw = e.values.get(c.path)
@@ -530,10 +621,26 @@ export function convertFoundry(input: FoundryInput): Converted {
     if (e.folder) data.folder = e.folder.slice(0, 200)
     if (e.text) data.description = { [language]: e.text }
     if (fit(data, 'description', language)) trimmed++
-    let key = contentKeyOf(e.name, e.where)
-    for (let n = 2; usedKeys.has(key); n++) key = contentKeyOf(e.name, `${e.where}#${n}`)
-    usedKeys.add(key)
-    return { type: e.type, key, source: sourceOf.get(e.pack.name) ?? null, data }
+    const key = keys[i] as string
+    const table = e.table
+      ? {
+          ...(e.table.formula ? { formula: e.table.formula } : {}),
+          ...(e.table.replacement ? {} : { replacement: false }),
+          // Lo que lleva a un documento del zip, por su clave; lo de fuera se queda en su texto
+          rows: e.table.rows.map(({ link, ...row }) => {
+            const linked = link ? keyById.get(link) : undefined
+            return linked ? { ...row, key: linked } : row
+          })
+        }
+      : null
+    return {
+      type: e.type,
+      key,
+      source: sourceOf.get(e.pack.name) ?? null,
+      data,
+      ...(e.img ? { img: e.img } : {}),
+      ...(table ? { table } : {})
+    }
   })
   if (trimmed > 0) notes.push(`Se recortó el texto de ${trimmed} documento${trimmed === 1 ? '' : 's'}: no cabía entero`)
 

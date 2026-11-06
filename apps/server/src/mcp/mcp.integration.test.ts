@@ -33,6 +33,8 @@ describe('conector MCP con OAuth', () => {
         PORT,
         DATABASE_URL: url,
         VALKEY_URL: process.env.TEST_VALKEY_URL ?? 'redis://127.0.0.1:63790',
+        QUEUE_PREFIX: 'crisol-test',
+        MODEL_DIR: '/sin-modelo',
         AUTH_SECRET: TEST_AUTH_SECRET,
         PUBLIC_URL: BASE,
         DATA_DIR: testDataDir()
@@ -624,6 +626,88 @@ describe('conector MCP con OAuth', () => {
     const bad = await call('tirar_dados', { formula: '1d20+' })
     expect(bad.isError).toBe(true)
     expect(bad.text).toContain('No se entiende «1d20+» al final')
+  })
+
+  it('la IA crea una tabla del mundo y tira en ella: oculta por defecto; luego la reinicia', async () => {
+    const { cookie, call } = await connected()
+    const system = (await api<{ system: SystemFull }>(cookie, 'importSystem', { file: toFile(fronteras, []) })).system
+    const world = (await call<World>('crear_mundo', { name: 'Eana' })).data
+    const campaign = (await call<Campaign>('crear_campana', { worldId: world.id, name: 'La Marca', system: system.id }))
+      .data
+    const saved = await call('guardar_contenido', {
+      systemId: system.id,
+      worldId: world.id,
+      items: [
+        {
+          type: 'tabla',
+          key: 'encuentros',
+          data: { name: 'Encuentros' },
+          table: { replacement: false, rows: [{ id: 'a', from: 1, to: 1, text: 'Lobos' }] }
+        }
+      ]
+    })
+    expect(saved.isError, saved.text).toBeFalsy()
+    const rolled = await call<{ roll: { visibility: string; ai: boolean }; drawn: string[] }>('tirar_tabla_compendio', {
+      campaignId: campaign.id,
+      key: 'encuentros'
+    })
+    expect(rolled.data).toMatchObject({ roll: { visibility: 'hidden', ai: true }, drawn: ['a'] })
+    expect((await call('tirar_tabla_compendio', { campaignId: campaign.id, key: 'encuentros' })).text).toContain(
+      'TABLE_EMPTY'
+    )
+    expect(
+      (await call('reiniciar_tabla_compendio', { campaignId: campaign.id, key: 'encuentros' })).isError
+    ).toBeFalsy()
+  })
+
+  it('la IA reparte el botín: lo pone en el grupo, pasa una poción a un personaje y reparte las monedas', async () => {
+    const { cookie, call } = await connected()
+    const five = (await api<{ system: SystemFull }>(cookie, 'importSystem', { file: exampleFile('5e') })).system.id
+    const world = (await call<World>('crear_mundo', { name: 'Valdren' })).data
+    const campaign = (await call<Campaign>('crear_campana', { worldId: world.id, name: 'La Marca', system: five })).data
+    const thora = (
+      await api<{ character: { id: string } }>(cookie, 'createCharacter', { campaignId: campaign.id, name: 'Thora' })
+    ).character.id
+    // Lo de los jugadores espera al máster: lo aprueba en Crisol
+    const asMaster = async (tool: string, args: Record<string, unknown>) => {
+      const asked = await call(tool, args)
+      expect(asked.isError, asked.text).toBeFalsy()
+      if (!asked.text.startsWith('PENDING_APPROVAL')) return
+      const { pending } = (await call<Approvals>('pendientes')).data
+      expect(await api(cookie, 'approve', { approvalId: pending[0]?.id })).toMatchObject({ status: 'done' })
+    }
+    type PartyView = {
+      party: { version: number; items: { id: string; quantity: number }[]; coins: Record<string, number> }
+    }
+    const seen = async () => (await call<PartyView>('ver_grupo', { campaignId: campaign.id })).data
+    await asMaster('cambiar_grupo', {
+      campaignId: campaign.id,
+      version: 0,
+      add: { key: 'pocion_de_curacion_2024', quantity: 2 }
+    })
+    await asMaster('cambiar_grupo', {
+      campaignId: campaign.id,
+      version: (await seen()).party.version,
+      coins: { po: 30 }
+    })
+    const pocion = (await seen()).party.items[0]
+    await asMaster('mover_en_grupo', {
+      campaignId: campaign.id,
+      from: { party: pocion?.id },
+      to: { character: thora },
+      quantity: 1
+    })
+    await asMaster('monedas_grupo', { campaignId: campaign.id, split: [thora] })
+    const after = await seen()
+    expect(after.party.items[0]?.quantity).toBe(1)
+    expect(after.party.coins).toEqual({ po: 0 })
+    const character = await api<{ character: { play: { items: { key: string }[]; values: Record<string, unknown> } } }>(
+      cookie,
+      'getCharacter',
+      { characterId: thora }
+    )
+    expect(character.character.play.items.map((i) => i.key)).toEqual(['pocion_de_curacion_2024'])
+    expect(character.character.play.values.monedas).toEqual({ po: 30 })
   })
 
   it('la IA y las criaturas en juego: pone goblins, tira por uno, aplica el daño y los quita', async () => {

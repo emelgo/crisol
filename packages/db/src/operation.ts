@@ -13,6 +13,7 @@ import { invitationLinks } from './schema/invitations.ts'
 import { mapElements, mapPins, maps, pageTabs } from './schema/maps.ts'
 import { organizationMembers, organizations } from './schema/organizations.ts'
 import { pages } from './schema/pages.ts'
+import { campaignParty } from './schema/party.ts'
 import { systemContent, systems, worldContent } from './schema/systems.ts'
 import { randomTables } from './schema/tables.ts'
 import { tags } from './schema/tags.ts'
@@ -45,7 +46,8 @@ export const TRACKED_TABLES = {
   characters,
   character_versions: characterVersions,
   random_tables: randomTables,
-  campaign_creatures: campaignCreatures
+  campaign_creatures: campaignCreatures,
+  campaign_party: campaignParty
 }
 
 export type TrackedTable = (typeof TRACKED_TABLES)[keyof typeof TRACKED_TABLES]

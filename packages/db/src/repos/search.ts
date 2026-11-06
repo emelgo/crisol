@@ -119,7 +119,7 @@ export async function similarWords(db: Database, worldId: string, words: readonl
 }
 
 /** La consulta: cada palabra con sus alternativas (la que se está escribiendo, también por su principio) */
-function tsQuery(terms: readonly string[][]): SQL {
+export function tsQuery(terms: readonly string[][]): SQL {
   return sql.join(
     terms.map((alternatives, i) => {
       const last = i === terms.length - 1

@@ -13,14 +13,16 @@ Para quién: el máster que trae un sistema de Foundry o hace su contenido; quie
 
 ## Requisitos
 
-- **Traer el zip entero de Foundry** (hoy solo se sube lo necesario, hasta 30 MB): se sube por la subida de archivos
-  (hasta 250 MB) y el servidor lo convierte **en segundo plano** (BullMQ, como la purga), con su avance a la vista y
-  el aviso al acabar. Elegir compendios e idioma sigue igual.
-- **Qué imágenes**: las de cada documento (`img`), y para los actores el retrato y la ficha del **mapa de arte del
-  manifiesto** (de dnd5e salen así 674 criaturas con imagen). Solo las que vienen dentro del zip: las rutas a lo que
+- **Traer las imágenes con el zip de Foundry** (decidido al planearlo, 2026-11-06): el navegador ya abre el zip para
+  elegir compendios e idioma; con eso mismo saca las imágenes que nombran los documentos elegidos y, tras importar el
+  sistema, las sube en tandas (`putSystemImages`). No hace falta subir el zip entero (137 MB el de dnd5e) ni convertirlo
+  en segundo plano; el avance se ve en la misma ventana.
+- **Qué imágenes**: las de cada documento (`img`), y para los actores el retrato del **mapa de arte del manifiesto**
+  (`flags.compendiumArtMappings`: de dnd5e salen así 674 criaturas con imagen), con su crédito. Solo las que vienen dentro del zip: las rutas a lo que
   trae Foundry de serie (`icons/…`, el 92 % de los objetos y conjuros de dnd5e) no se pueden traer y llevan el icono
   del tipo.
-- **La licencia de cada imagen**: se leen los avisos de licencia de cada carpeta del zip (y el LICENSE del paquete) y,
+- **La licencia de cada imagen**: se leen los avisos de licencia de cada carpeta del zip (el `LICENSE` más cercano; si
+  nombra el archivo, su línea) y,
   antes de importar, se enseña cuántas imágenes van con cada licencia («760 solo para usar en Foundry», «125 CC BY
   3.0»…), con la opción de no traer las que no se quieran. Cada imagen guarda su crédito y su licencia, que se ven en
   la entrada. Lo «solo para Foundry» o de pago, solo para uso privado (ADR-0014), y nunca de serie en Crisol.

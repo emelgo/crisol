@@ -94,18 +94,41 @@ describe('un sistema de Foundry, en un sistema de Crisol', () => {
     )
   })
 
-  it('una tabla: su texto y la tabla de tirar, con la fórmula y los rangos', () => {
-    expect(textIn(named(file.content, 'Botín'))).toBe(
-      [
-        'Lo que llevan.',
-        '',
-        '| 1d6 | Resultado |',
-        '| --- | --- |',
-        '| 1–3 | Nada \\| vacío |',
-        '| 4 | Daga |',
-        '| 5–6 | Una *gema* |'
-      ].join('\n')
-    )
+  it('una tabla: su texto, y sus filas de verdad, con la fórmula, si repite y lo que lleva a otro documento', () => {
+    const botin = named(file.content, 'Botín')
+    expect(textIn(botin)).toBe('Lo que llevan.')
+    expect(botin?.table).toEqual({
+      formula: '1d8',
+      replacement: false,
+      rows: [
+        { id: 'r1', from: 1, to: 3, text: 'Nada | vacío' },
+        { id: 'r2', from: 4, to: 4, text: 'Daga', key: named(file.content, 'Daga')?.key },
+        { id: 'r3', from: 5, to: 6, text: 'Una *gema*' },
+        // Lo que está fuera del zip, solo su texto
+        { id: 'r4', from: 7, to: 8, text: 'Espada de otro' }
+      ]
+    })
+    expect(validateFile(file).problems.filter((p) => p.severity === 'error')).toEqual([])
+  })
+
+  it('una tabla con una fórmula de Foundry que no se entiende, por sus filas; un enlace, por su paquete y su id', () => {
+    const input = foundryFixture()
+    const tablas = input.packs.find((p) => p.name === 'tablas')
+    const botin = tablas?.documents[0] as Record<string, unknown>
+    botin.formula = '@prof + 1d4'
+    // Otro documento con el mismo id en otro paquete: el enlace dice el suyo
+    ;(botin.results as Record<string, unknown>[])[2] = {
+      _id: 'r2',
+      type: 'document',
+      range: [4, 4],
+      name: 'Botín',
+      documentUuid: 'Compendium.prueba.tablas.RollTable.tabla00000000001'
+    }
+    const { file: converted, notes } = convertFoundry(input)
+    const table = named(converted.content, 'Botín')?.table
+    expect(table?.formula).toBeUndefined()
+    expect(table?.rows[1]?.key).toBe(named(converted.content, 'Botín')?.key)
+    expect(notes).toContain('«Botín»: su fórmula (@prof + 1d4) no se entiende; se tira por sus filas')
   })
 
   it('cada paquete, una fuente; el compendio, en el orden de los paquetes, con las carpetas', () => {

@@ -39,6 +39,8 @@ export interface FoundryManifest {
   htmlFields: Record<string, Record<string, string[]>>
   /** Los archivos de sus idiomas: lang/en.json */
   languages: { lang: string; path: string }[]
+  /** Sus mapas de arte (flags.compendiumArtMappings): el retrato de cada actor de sus compendios, con su crédito */
+  artMappings: { mapping: string; credit: string | null }[]
 }
 
 /** Una carpeta de documentos dentro de un paquete */
@@ -145,7 +147,17 @@ export function readManifest(json: unknown, kind: 'system' | 'module'): FoundryM
       const lang = str(l.lang)
       const path = str(l.path)
       return lang && path ? [{ lang, path: cleanPath(path) }] : []
-    })
+    }),
+    artMappings: Object.values(
+      isObject(json.flags) && isObject(json.flags.compendiumArtMappings) ? json.flags.compendiumArtMappings : {}
+    )
+      .filter(isObject)
+      .flatMap((m) => {
+        const mapping = str(m.mapping)
+        const credit = str(m.credit)
+        // El crédito viene en HTML: su texto
+        return mapping ? [{ mapping, credit: credit ? credit.replace(/<[^>]*>/g, '').trim() || null : null }] : []
+      })
   }
 }
 

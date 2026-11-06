@@ -21,7 +21,7 @@ import {
   Upload,
   X
 } from 'lucide-react'
-import { type ReactNode, useEffect, useId, useState } from 'react'
+import { createContext, type ReactNode, useContext, useEffect, useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import type { ActionOutput } from '../api/client.ts'
@@ -34,6 +34,7 @@ import { FormError } from '../components/field.tsx'
 import { failed, LoadError } from '../components/load-error.tsx'
 import { PageTitle } from '../components/page-title.tsx'
 import { useSettled } from '../components/settled.ts'
+import { SystemImage } from '../components/system-image.tsx'
 import { Tour } from '../components/tour.tsx'
 import { PutInPlay } from '../creatures/put-in-play.tsx'
 import { useDice } from '../dice/context.tsx'
@@ -41,9 +42,12 @@ import { useNarrow } from '../wiki/panel.tsx'
 import styles from './compendium.module.css'
 import { ContentText } from './content-text.tsx'
 import { DeleteEntry, EntryEditor, type EntryTarget } from './entry-editor.tsx'
+import { EntryTable } from './entry-table.tsx'
 import { OriginNotice, ToSystem } from './origin.tsx'
 
 const route = getRouteApi('/mundos/$worldId/campanas/$campaignId/compendio')
+/** El sistema del compendio abierto: de él salen sus imágenes */
+const SystemIdContext = createContext<string | null>(null)
 const PAGE = 100
 
 type Language = 'es' | 'en'
@@ -182,141 +186,149 @@ export function CompendiumScreen() {
   const newTargets = [worldTarget, systemTarget].filter((each): each is EntryTarget => each !== null)
 
   return (
-    <div className={styles.page} data-reading={narrow && shown ? '' : undefined}>
-      <aside className={styles.side} aria-label={t('compendium.title')}>
-        <div className={styles.sideHead}>
-          <PageTitle className={styles.title}>{t('compendium.title')}</PageTitle>
-          <span className={styles.system}>
-            {editions.length > 0
-              ? t('compendium.systemWith', { system: system.name, editions: editions.join(t('compendium.and')) })
-              : system.name}
-          </span>
-          {newTargets.length > 0 && (
-            <button type="button" className={styles.newEntry} onClick={() => setCreating(true)}>
-              <Plus size={16} aria-hidden="true" />
-              {t('compendium.newEntry')}
-            </button>
-          )}
-        </div>
-        {types.length === 0 && <p className={styles.none}>{t('compendium.emptySystem')}</p>}
-        <div className={styles.search} data-tour="compendio-buscar">
-          <Search size={16} aria-hidden="true" />
-          <label htmlFor={searchId} className={styles.hidden}>
-            {t('compendium.search')}
-          </label>
-          <input
-            id={searchId}
-            type="search"
-            placeholder={t('compendium.searchHint')}
-            value={query}
-            autoComplete="off"
-            onChange={(event) => setQuery(event.currentTarget.value)}
-          />
-          {query && (
-            <button
-              type="button"
-              className={styles.clear}
-              aria-label={t('compendium.clear')}
-              onClick={() => setQuery('')}
-            >
-              <X size={14} aria-hidden="true" />
-            </button>
-          )}
-        </div>
-        {world && (
-          <fieldset className={styles.layers}>
-            <legend className={styles.hidden}>{t('compendium.layers')}</legend>
-            {LAYERS.map((each) => (
-              <label key={each} className={styles.layer}>
-                <input type="radio" name="capa" value={each} checked={layer === each} onChange={() => setLayer(each)} />
-                <span>{t(`compendium.layer.${each}`)}</span>
-              </label>
-            ))}
-          </fieldset>
-        )}
-        {wanted ? (
-          <>
-            <ul className={styles.list} aria-label={t('compendium.results')} aria-busy={hits.isFetching}>
-              {items.map((hit) => (
-                <HitRow
-                  key={hit.key}
-                  hit={hit}
-                  typeLabel={typeOf(hit.type)?.label ?? hit.type}
-                  current={hit.key === shown}
-                  onOpen={() => open(hit.key)}
-                />
-              ))}
-              {hits.data && items.length === 0 && <li className={styles.none}>{t('compendium.none')}</li>}
-            </ul>
-            {hits.isError && <LoadError error={hits.error} onRetry={() => void hits.refetch()} />}
-            {hits.hasNextPage && (
-              <BusyButton
-                className={styles.more}
-                busy={hits.isFetchingNextPage}
-                onClick={() => void hits.fetchNextPage()}
-              >
-                {hits.isFetchingNextPage ? t('compendium.loadingMore') : t('compendium.more')}
-              </BusyButton>
+    <SystemIdContext.Provider value={system.id}>
+      <div className={styles.page} data-reading={narrow && shown ? '' : undefined}>
+        <aside className={styles.side} aria-label={t('compendium.title')}>
+          <div className={styles.sideHead}>
+            <PageTitle className={styles.title}>{t('compendium.title')}</PageTitle>
+            <span className={styles.system}>
+              {editions.length > 0
+                ? t('compendium.systemWith', { system: system.name, editions: editions.join(t('compendium.and')) })
+                : system.name}
+            </span>
+            {newTargets.length > 0 && (
+              <button type="button" className={styles.newEntry} onClick={() => setCreating(true)}>
+                <Plus size={16} aria-hidden="true" />
+                {t('compendium.newEntry')}
+              </button>
             )}
-          </>
-        ) : (
-          <Library
+          </div>
+          {types.length === 0 && <p className={styles.none}>{t('compendium.emptySystem')}</p>}
+          <div className={styles.search} data-tour="compendio-buscar">
+            <Search size={16} aria-hidden="true" />
+            <label htmlFor={searchId} className={styles.hidden}>
+              {t('compendium.search')}
+            </label>
+            <input
+              id={searchId}
+              type="search"
+              placeholder={t('compendium.searchHint')}
+              value={query}
+              autoComplete="off"
+              onChange={(event) => setQuery(event.currentTarget.value)}
+            />
+            {query && (
+              <button
+                type="button"
+                className={styles.clear}
+                aria-label={t('compendium.clear')}
+                onClick={() => setQuery('')}
+              >
+                <X size={14} aria-hidden="true" />
+              </button>
+            )}
+          </div>
+          {world && (
+            <fieldset className={styles.layers}>
+              <legend className={styles.hidden}>{t('compendium.layers')}</legend>
+              {LAYERS.map((each) => (
+                <label key={each} className={styles.layer}>
+                  <input
+                    type="radio"
+                    name="capa"
+                    value={each}
+                    checked={layer === each}
+                    onChange={() => setLayer(each)}
+                  />
+                  <span>{t(`compendium.layer.${each}`)}</span>
+                </label>
+              ))}
+            </fieldset>
+          )}
+          {wanted ? (
+            <>
+              <ul className={styles.list} aria-label={t('compendium.results')} aria-busy={hits.isFetching}>
+                {items.map((hit) => (
+                  <HitRow
+                    key={hit.key}
+                    hit={hit}
+                    typeLabel={typeOf(hit.type)?.label ?? hit.type}
+                    current={hit.key === shown}
+                    onOpen={() => open(hit.key)}
+                  />
+                ))}
+                {hits.data && items.length === 0 && <li className={styles.none}>{t('compendium.none')}</li>}
+              </ul>
+              {hits.isError && <LoadError error={hits.error} onRetry={() => void hits.refetch()} />}
+              {hits.hasNextPage && (
+                <BusyButton
+                  className={styles.more}
+                  busy={hits.isFetchingNextPage}
+                  onClick={() => void hits.fetchNextPage()}
+                >
+                  {hits.isFetchingNextPage ? t('compendium.loadingMore') : t('compendium.more')}
+                </BusyButton>
+              )}
+            </>
+          ) : (
+            <Library
+              campaignId={campaignId}
+              sections={sections}
+              types={types}
+              layer={layer}
+              byWorld={world?.byType ?? {}}
+              current={shown}
+              onOpen={open}
+            />
+          )}
+        </aside>
+        {shown ? (
+          <Entry
+            key={shown}
             campaignId={campaignId}
-            sections={sections}
+            entryKey={shown}
             types={types}
-            layer={layer}
-            byWorld={world?.byType ?? {}}
-            current={shown}
+            sources={sources}
+            language={language}
+            systemTarget={systemTarget}
+            worldTarget={worldTarget}
+            world={world}
+            startEditing={editing === shown}
+            onEdited={() => setEditing(null)}
+            onCopied={(key) => {
+              setEditing(key)
+              open(key)
+            }}
             onOpen={open}
+            onBack={narrow ? back : undefined}
+            onGone={back}
+          />
+        ) : (
+          !narrow && (
+            <div className={styles.reading}>
+              <p className={styles.pick}>{t('compendium.pick')}</p>
+            </div>
+          )
+        )}
+        {creating && newTargets.length > 0 && (
+          <EntryEditor
+            campaignId={campaignId}
+            targets={newTargets}
+            language={language}
+            item={null}
+            onSaved={open}
+            onClose={() => setCreating(false)}
           />
         )}
-      </aside>
-      {shown ? (
-        <Entry
-          key={shown}
-          campaignId={campaignId}
-          entryKey={shown}
-          types={types}
-          sources={sources}
-          language={language}
-          systemTarget={systemTarget}
-          worldTarget={worldTarget}
-          world={world}
-          startEditing={editing === shown}
-          onEdited={() => setEditing(null)}
-          onCopied={(key) => {
-            setEditing(key)
-            open(key)
-          }}
-          onOpen={open}
-          onBack={narrow ? back : undefined}
-          onGone={back}
+        <Tour
+          id="compendio"
+          steps={[
+            { target: '[data-tour="compendio-buscar"]', text: t('tour.compendium.search') },
+            { target: '[data-tour="compendio-estantes"]', text: t('tour.compendium.types') }
+          ]}
         />
-      ) : (
-        !narrow && (
-          <div className={styles.reading}>
-            <p className={styles.pick}>{t('compendium.pick')}</p>
-          </div>
-        )
-      )}
-      {creating && newTargets.length > 0 && (
-        <EntryEditor
-          campaignId={campaignId}
-          targets={newTargets}
-          language={language}
-          item={null}
-          onSaved={open}
-          onClose={() => setCreating(false)}
-        />
-      )}
-      <Tour
-        id="compendio"
-        steps={[
-          { target: '[data-tour="compendio-buscar"]', text: t('tour.compendium.search') },
-          { target: '[data-tour="compendio-estantes"]', text: t('tour.compendium.types') }
-        ]}
-      />
-    </div>
+      </div>
+    </SystemIdContext.Provider>
   )
 }
 
@@ -556,6 +568,7 @@ function TypeShelf({
   const { t } = useTranslation()
   const api = useApi()
   const filtersId = useId()
+  const systemId = useContext(SystemIdContext)
   const browsed = useQuery({
     queryKey: ['compendium', campaignId, 'browse', type],
     queryFn: () => api.call('browseCampaignContent', { campaignId, type })
@@ -584,6 +597,7 @@ function TypeShelf({
         aria-current={item.key === current ? 'true' : undefined}
         onClick={() => onOpen(item.key)}
       >
+        {item.img && <SystemImage systemId={systemId} path={item.img} className={styles.thumb} />}
         <span className={styles.entryName}>{item.name}</span>
         {edition === null && only === 'system' && <EditionTag edition={item.edition} legacy={item.legacy} />}
       </button>
@@ -774,6 +788,7 @@ function Entry({
   })
   const body = type?.text ? textOf(item.data[type.text] as Text, language) : ''
   const fromWorld = item.world ? { ...item, world: item.world } : null
+  const systemId = useContext(SystemIdContext)
   const target = fromWorld ? worldTarget : systemTarget
   const where = world ? { worldId: world.worldId, systemId: world.systemId } : null
   return (
@@ -785,7 +800,8 @@ function Entry({
             {t('compendium.back')}
           </button>
         )}
-        <header className={styles.head}>
+        <header className={item.img ? `${styles.head} ${styles.withPortrait}` : styles.head}>
+          {item.img && <SystemImage systemId={systemId} path={item.img} className={styles.portrait} />}
           <p className={styles.kind}>{type?.label ?? item.type}</p>
           <h2 id={titleId} className={styles.name} tabIndex={-1}>
             {name}
@@ -843,6 +859,18 @@ function Entry({
         {item.play && <InPlay play={item.play} titleId={titleId} />}
         <FormError message={rolling.error ? errorText(rolling.error) : null} />
         {body && <ContentText text={body} onRoll={roll} />}
+        {item.table && (
+          <EntryTable
+            campaignId={campaignId}
+            entryKey={item.key}
+            name={name}
+            table={item.table}
+            drawn={item.drawn ?? []}
+            master={campaign.data?.campaign.role === 'master'}
+            visibility={visibility}
+            onOpen={onOpen}
+          />
+        )}
         {item.granted.length > 0 && (
           <section className={styles.granted} aria-labelledby={`${titleId}-granted`}>
             <h3 id={`${titleId}-granted`}>{t('compendium.byLevel')}</h3>
@@ -881,6 +909,12 @@ function Entry({
                   </span>
                 )}
               </dd>
+            </div>
+          )}
+          {item.image?.credit && (
+            <div>
+              <dt>{t('compendium.imageCredit')}</dt>
+              <dd>{item.image.credit}</dd>
             </div>
           )}
           {item.edition && (

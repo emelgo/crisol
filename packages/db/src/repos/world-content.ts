@@ -27,6 +27,8 @@ export interface WorldContentValues {
   concept?: string | null
   mechanics?: Record<string, unknown> | null
   ref?: Record<string, unknown> | null
+  img?: string | null
+  table?: Record<string, unknown> | null
   /** Sin tocar, se queda el que tenía; null lo quita */
   origin?: ContentOrigin | null
   /** La versión que se leyó, para cambiar una que ya está (sin ella, se cambia sin mirar) */

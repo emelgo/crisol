@@ -1,4 +1,4 @@
-import { ACTIONS, FOUNDRY_ZIP_BYTES, openApi } from '@crisol/contracts'
+import { ACTIONS, FOUNDRY_ZIP_BYTES, openApi, SYSTEM_IMAGES_BYTES } from '@crisol/contracts'
 import { loadMemberships } from '@crisol/db'
 import { actorFrom, ForbiddenError, NotFoundError } from '@crisol/domain'
 import { FILE_BYTES } from '@crisol/systems'
@@ -66,5 +66,6 @@ export const BIG_ACTIONS: Readonly<Record<string, number>> = {
   trySystemRoll: SYSTEM_BODY,
   createSystem: SYSTEM_BODY,
   inspectFoundry: FOUNDRY_BODY,
-  importFoundry: FOUNDRY_BODY
+  importFoundry: FOUNDRY_BODY,
+  putSystemImages: Math.ceil(SYSTEM_IMAGES_BYTES / 3) * 4 + MB
 }

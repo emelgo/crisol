@@ -23,10 +23,13 @@ services:
       valkey:
         condition: service_healthy
     restart: unless-stopped
-    mem_limit: 512m
+    # Con el modelo de la búsqueda por significado cargado (unos 300 MB): permiso de Enrique, 2026-11-06
+    mem_limit: 1g
 
   postgres:
-    image: postgres:17-alpine
+    # El de Alpine con pgvector (docker/postgres): la búsqueda por significado
+    build: docker/postgres
+    image: crisol-postgres:17
     environment:
       POSTGRES_USER: crisol
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?falta POSTGRES_PASSWORD}

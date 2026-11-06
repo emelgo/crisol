@@ -1,0 +1,53 @@
+/* Las imágenes de lo traído de Foundry: el resumen de licencias y la subida */
+.images {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-raised);
+}
+
+.head {
+  margin: 0;
+  font-weight: 700;
+}
+
+.licenses {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.licenses li[data-restricted] {
+  color: var(--color-warning);
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: var(--target);
+}
+
+.progress {
+  margin: 0;
+  color: var(--color-muted);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.skip {
+  min-block-size: var(--target);
+  border: 0;
+  background: none;
+  color: var(--color-muted);
+  font-weight: 600;
+  cursor: pointer;
+}

@@ -145,11 +145,12 @@ interface Stored {
  * lleva el mundo, con todo lo suyo (lo da a un personaje y el creador lo ofrece); un jugador, hasta el módulo 5, solo
  * con lo del mundo que su personaje ya tiene guardado: ni lo ve en el creador ni lo añade por su clave
  */
-async function contextOf(ctx: ActionContext, campaignId: string, systemId: string, stored: Stored) {
+async function contextOf(ctx: ActionContext, campaignId: string, systemId: string, stored: Stored, everything = false) {
   const campaign = await campaignsRepo.findCampaign(ctx.db, campaignId)
   if (!campaign) throw new NotFoundError('campaign')
   const wiki = { worldId: campaign.worldId, organizationId: campaign.organizationId }
-  const only = can(ctx.actor, 'worldContent.read', wiki) ? undefined : namedIn(stored.build, stored.play)
+  // Todo lo del mundo para quien lo ve (o para calcular en el servidor); si no, solo lo que ya tiene el personaje
+  const only = everything || can(ctx.actor, 'worldContent.read', wiki) ? undefined : namedIn(stored.build, stored.play)
   const { document, content } = await systemOf(ctx, systemId, campaign.worldId, only)
   const { choices } = normalizeChoices(document, (campaign.systemChoices ?? {}) as Partial<Choices>)
   return { document, content, choices }
@@ -167,8 +168,23 @@ async function stateOf(
   return { ...characterView(document, content, choices, build as Build, play as Play), document }
 }
 
+/**
+ * Lo que hace falta para montar los personajes de una campaña con su sistema (todo su contenido, con lo del mundo, y
+ * lo que elige la campaña): se carga una vez, antes de bloquear nada (al mover algo con el grupo)
+ */
+export async function charactersContext(ctx: ActionContext, campaignId: string, systemId: string) {
+  return contextOf(ctx, campaignId, systemId, { build: {} }, true)
+}
+
+/** El resumen de un personaje (su tarjeta) con otro «play», con lo ya cargado */
+export const summaryIn = (
+  context: Awaited<ReturnType<typeof charactersContext>>,
+  build: Record<string, unknown>,
+  play: Record<string, unknown>
+) => characterView(context.document, context.content, context.choices, build as Build, play as Play).view.summary
+
 /** Lo de la partida nuevo, con su forma y su tamaño (antes de montarlo) */
-function parsedPlay(given: unknown): Play {
+export function parsedPlay(given: unknown): Play {
   const parsed = playSchema.safeParse(given)
   if (!parsed.success)
     throw new InvalidRequestError(

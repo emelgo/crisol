@@ -1,3 +1,4 @@
+import { join } from 'node:path'
 import { z } from 'zod'
 
 const schema = z.object({
@@ -7,6 +8,11 @@ const schema = z.object({
   PORT: z.coerce.number().int().min(1).max(65535).default(8130),
   DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }),
   VALKEY_URL: z.url({ protocol: /^rediss?$/ }),
+  // El espacio de nombres de las colas en Valkey: dos servidores con el mismo Valkey (desarrollo y e2e), cada uno el suyo
+  QUEUE_PREFIX: z
+    .string()
+    .regex(/^[a-z0-9-]+$/)
+    .default('crisol'),
   // Firma las sesiones de Better Auth: largo y aleatorio (openssl rand -hex 32)
   AUTH_SECRET: z.string().min(32),
   // Dirección pública del sitio (en desarrollo, la de Vite)
@@ -16,7 +22,11 @@ const schema = z.object({
   // Donde se guardan los datos que no van en Postgres (los bytes de los archivos, en archivos/)
   DATA_DIR: z.string().default('datos-locales'),
   // El Chromium del sistema para sacar los PDF de las hojas (en la imagen); sin él, el que instala Playwright
-  CHROMIUM_PATH: z.string().optional()
+  CHROMIUM_PATH: z.string().optional(),
+  // El modelo de la búsqueda por significado (model.onnx y sentencepiece.bpe.model); sin él, solo por palabras
+  MODEL_DIR: z
+    .string()
+    .default(join(import.meta.dirname, '..', '..', '..', 'datos-locales', 'modelos', 'multilingual-e5-small'))
 })
 
 export type Config = z.infer<typeof schema>

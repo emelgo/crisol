@@ -2,12 +2,13 @@
  * Las tablas aleatorias del máster: la de una pestaña, cambiarla con su versión, y lo sacado por campaña (las que
  * van sin reemplazo)
  */
-import { and, eq, isNull, sql } from 'drizzle-orm'
+import { and, eq, inArray, isNull, sql } from 'drizzle-orm'
 import type { Database } from '../client.ts'
 import { type OperationContext, operation } from '../operation.ts'
+import { campaigns } from '../schema/campaigns.ts'
 import { pageTabs } from '../schema/maps.ts'
 import { pages } from '../schema/pages.ts'
-import { randomTableDraws, randomTables, type TableRow } from '../schema/tables.ts'
+import { contentTableDraws, randomTableDraws, randomTables, type TableRow } from '../schema/tables.ts'
 
 export class TableChangedError extends Error {
   constructor() {
@@ -86,4 +87,56 @@ export async function resetDraws(db: Database, campaignId: string, tableId: stri
   await db
     .delete(randomTableDraws)
     .where(and(eq(randomTableDraws.campaignId, campaignId), eq(randomTableDraws.tableId, tableId)))
+}
+
+/** Lo sacado de una tabla del compendio sin reemplazo en una campaña, por su clave */
+export async function contentDrawsOf(db: Database, campaignId: string, key: string) {
+  const [found] = await db
+    .select({ rows: contentTableDraws.rows })
+    .from(contentTableDraws)
+    .where(and(eq(contentTableDraws.campaignId, campaignId), eq(contentTableDraws.key, key)))
+  return found?.rows ?? []
+}
+
+/** Lo sacado de unas tablas del compendio, de una vez (para leerlas) */
+export async function contentDrawsByKeys(db: Database, campaignId: string, keys: readonly string[]) {
+  if (keys.length === 0) return new Map<string, string[]>()
+  const found = await db
+    .select({ key: contentTableDraws.key, rows: contentTableDraws.rows })
+    .from(contentTableDraws)
+    .where(and(eq(contentTableDraws.campaignId, campaignId), inArray(contentTableDraws.key, [...keys])))
+  return new Map(found.map((f) => [f.key, f.rows]))
+}
+
+/** Apunta lo sacado de una tabla del compendio */
+export async function addContentDraws(db: Database, campaignId: string, key: string, rows: readonly string[]) {
+  if (rows.length === 0) return
+  await db
+    .insert(contentTableDraws)
+    .values({ campaignId, key, rows: [...rows] })
+    .onConflictDoUpdate({
+      target: [contentTableDraws.campaignId, contentTableDraws.key],
+      set: {
+        rows: sql`(select jsonb_agg(distinct v) from jsonb_array_elements(${contentTableDraws.rows} || ${JSON.stringify(rows)}::jsonb) v)`
+      }
+    })
+}
+
+/** Vuelve a empezar una tabla del compendio en una campaña */
+export async function resetContentDraws(db: Database, campaignId: string, key: string) {
+  await db
+    .delete(contentTableDraws)
+    .where(and(eq(contentTableDraws.campaignId, campaignId), eq(contentTableDraws.key, key)))
+}
+
+/** Olvida lo sacado de unas tablas del compendio de un mundo (al quitarlas) en sus campañas con ese sistema */
+export async function forgetContentDraws(db: Database, worldId: string, systemId: string, keys: readonly string[]) {
+  if (keys.length === 0) return
+  const inWorld = db
+    .select({ id: campaigns.id })
+    .from(campaigns)
+    .where(and(eq(campaigns.worldId, worldId), eq(campaigns.system, systemId)))
+  await db
+    .delete(contentTableDraws)
+    .where(and(inArray(contentTableDraws.campaignId, inWorld), inArray(contentTableDraws.key, [...keys])))
 }

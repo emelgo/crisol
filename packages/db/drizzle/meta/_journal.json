@@ -316,6 +316,48 @@
       "when": 1793962873881,
       "tag": "0044_criaturas_en_juego",
       "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1793966277881,
+      "tag": "0045_imagenes_del_contenido",
+      "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "7",
+      "when": 1793968881273,
+      "tag": "0046_tablas_del_compendio",
+      "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1793972981791,
+      "tag": "0047_grupo",
+      "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1793981259418,
+      "tag": "0048_biblioteca_texto",
+      "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "7",
+      "when": 1793982291818,
+      "tag": "0049_busqueda_por_significado",
+      "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1793985447913,
+      "tag": "0050_trozos_clase_y_fallos",
+      "breakpoints": true
     }
   ]
 }

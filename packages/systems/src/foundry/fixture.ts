@@ -43,7 +43,15 @@ export function foundryFixture(): FoundryInput {
         { name: 'reglas', label: 'Reglas', type: 'JournalEntry', path: 'packs/reglas' },
         { name: 'tablas', label: 'Tablas', type: 'RollTable', path: 'packs/tablas' }
       ],
-      packFolders: [{ name: 'Reglas', packs: ['reglas', 'tablas'] }]
+      packFolders: [{ name: 'Reglas', packs: ['reglas', 'tablas'] }],
+      flags: {
+        compendiumArtMappings: {
+          mazmorra: {
+            mapping: 'systems/mazmorra/json/arte.json',
+            credit: '<em>Fichas de <a href="#">Alguien</a>.</em>'
+          }
+        }
+      }
     },
     'system'
   )
@@ -51,6 +59,11 @@ export function foundryFixture(): FoundryInput {
   return {
     manifest,
     language: 'es',
+    // El mapa de arte del manifiesto, ya leído: el retrato de cada actor por su paquete y su id
+    art: {
+      credit: 'Fichas de Alguien.',
+      map: { 'mazmorra.monstruos': { monstruo00000001: { actor: 'systems/mazmorra/tokens/trasgo.webp' } } }
+    },
     names: { 'TYPES.Item.weapon': 'Arma', 'TYPES.Item.weaponPl': 'Armas', 'TYPES.Actor.monstruo': 'Monstruo' },
     packs: [
       { ...def('efectos'), documents: [{ _id: 'efecto0000000001', name: 'Aturdido' }], folders: [] },
@@ -77,6 +90,7 @@ export function foundryFixture(): FoundryInput {
             _id: 'conjuro000000001',
             name: 'Bola de fuego',
             type: 'spell',
+            img: 'systems/mazmorra/icons/fuego.webp',
             system: {
               description: {
                 value:
@@ -95,6 +109,7 @@ export function foundryFixture(): FoundryInput {
             _id: 'monstruo00000001',
             name: 'Trasgo',
             type: 'monstruo',
+            img: 'icons/svg/mystery-man.svg',
             system: { notas: { publicas: '<p>Pequeño y [[lookup @name lowercase]].</p>' }, pg: { max: 7 }, cr: 0.25 },
             items: [
               {
@@ -142,12 +157,26 @@ export function foundryFixture(): FoundryInput {
           {
             _id: 'tabla00000000001',
             name: 'Botín',
-            formula: '1d6',
+            formula: '1d8 ',
+            replacement: false,
             description: '<p>Lo que llevan.</p>',
             results: [
               { _id: 'r3', type: 'text', range: [5, 6], text: '<p>Una <em>gema</em></p>' },
               { _id: 'r1', type: 'text', range: [1, 3], text: 'Nada | vacío' },
-              { _id: 'r2', type: 'document', range: [4, 4], name: 'Daga', text: 'Daga' }
+              {
+                _id: 'r2',
+                type: 'document',
+                range: [4, 4],
+                name: 'Daga',
+                documentUuid: 'Compendium.prueba.armas.Item.arma000000000001'
+              },
+              {
+                _id: 'r4',
+                type: 'document',
+                range: [7, 8],
+                name: 'Espada de otro',
+                documentUuid: 'Compendium.otro.armas.Item.zzzzzzzzzzzzzzzz'
+              }
             ]
           }
         ]

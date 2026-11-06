@@ -7,7 +7,7 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
-### Para retomar (2026-11-06, módulo 4: `compendio-mundo` y `criaturas` construidos; lo siguiente, `imagenes`)
+### Para retomar (2026-11-06, módulo 4 construido entero; lo siguiente, subirlo a staging y el módulo 5)
 
 - **Rama `modulo-4/compendio`** (sin PR aún). Entrevista con Enrique (abajo, § «### 4. Compendio, criaturas y
   biblioteca»); estudios `research/foundry/criaturas-y-capas.md` y `research/dndbeyond/criaturas-y-grupo.md`; el mapa
@@ -22,9 +22,36 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   `campaign_creatures` (migración 0044), las acciones (`apps/server/src/actions/creatures.ts`, con `applyRoll`), la web
   («Poner en juego», «En juego», la hoja genérica, «Aplicar» en el registro), la IA y el enlace `[[@Nombre]]` desde la
   wiki. E2E `criaturas.spec.ts` y sus fugas. Lo que queda, en `docs/specs/criaturas.md` § «Construido».
-- **Ahora**: la revisión del código de `criaturas` y la batería entera; después, PR a `main` y staging (migraciones 0043
-  y 0044) para que Enrique lo pruebe (`tasks/probar.md` § «Módulo 4»). **Lo siguiente**: `imagenes`, `tablas-compendio`,
-  `grupo` y `biblioteca` (en este orden; `docs/specs/modulo-4.md`).
+- **PR #110, en `main` y en staging** (2026-11-06; su CI pasó entera; migraciones hasta la 0044): `compendio-mundo` y
+  `criaturas`. Enrique lo prueba con `tasks/probar.md` § «Módulo 4».
+- **`imagenes`, construido** (rama `modulo-4/imagenes`, sin PR aún; `tasks/plan.md`, `tasks/todo.md`): `img` en el
+  contenido y `system_images` (migración 0045, ya en la base de desarrollo); el mapa de arte y las licencias por los
+  avisos del zip; `putSystemImages` y `/api/system-images`; el paso de las imágenes al traer de Foundry (el navegador
+  saca del zip solo lo que hace falta, sin subirlo entero); verlas en el compendio y en «En juego». E2E
+  `imagenes.spec.ts`. Queda: subir una imagen a una entrada propia desde su editor, la miniatura aparte (hoy la misma
+  imagen, escalada) y la ficha redonda para la mesa (módulo 6). Planes en `tasks/imagenes/`.
+- **`tablas-compendio`, construido** (rama `modulo-4/tablas`, sobre la de imágenes, sin PR aún; `tasks/plan.md`,
+  `tasks/todo.md`): «Tabla» es un tipo de Crisol en todo sistema (`withTables`), con sus filas en `table` (migración
+  0046, ya en la base de desarrollo); `rollContentTable` sin orden la tira con el motor de la wiki (`pickRows`: como en
+  Foundry, salen todas las filas que abarcan el total), anidada hasta 5 niveles, y lo sacado va por campaña
+  (`content_table_draws`, `resetContentTable`); los RollTable de Foundry llegan con sus filas (dnd5e real: 97 tablas,
+  906 filas, sin errores ni avisos); la vista y el editor de filas en el compendio; la IA
+  (`reiniciar_tabla_compendio`, `table` en `guardar_contenido`). E2E `tablas-compendio.spec.ts`. Las tablas de un
+  sistema ya importado pasan a filas al volver a importarlo. Planes en `tasks/tablas-compendio/`.
+- **`grupo`, construido** (rama `modulo-4/grupo`, sobre la de tablas, sin PR aún; `tasks/plan.md`, `tasks/todo.md`):
+  `party` en el formato (o deducido), el motor (`packages/systems/src/party.ts`), `campaign_party` (migración 0047, con
+  historial), las acciones (mover en una sola operación con el personaje y su resumen), la IA (`ver_grupo`,
+  `cambiar_grupo`, `mover_en_grupo`, `monedas_grupo`), «Grupo» en la barra de la campaña y «Mío | Del grupo» en la hoja.
+  E2E `grupo.spec.ts`. Planes en `tasks/grupo/`.
+- **`biblioteca`, construido** (rama `modulo-4/biblioteca`, sobre la del grupo; `tasks/plan.md`, `tasks/todo.md`;
+  ADR-0016 con el permiso de Enrique): el texto de los PDF con pdf.js en segundo plano (`file_texts`, `file_pages`,
+  migración 0048), buscar en los libros y el visor en la página marcada («Biblioteca» en la barra de la campaña), y la
+  búsqueda por significado: Postgres propio con pgvector (`docker/postgres`; `search_chunks`, migración 0049; el de
+  desarrollo ya va con él), `multilingual-e5-small` en un hilo aparte (en desarrollo, en `datos-locales/modelos/`), la
+  mezcla por rango y «También en las páginas». La imagen de la app pasa a Debian (el modelo nativo no carga en Alpine)
+  con 1 GB. Cada servidor, su espacio de colas (`QUEUE_PREFIX`). E2E `biblioteca.spec.ts`.
+- **Lo siguiente**: abrir un PR con las cuatro ramas (imágenes, tablas, grupo y biblioteca), pasar la CI una vez y
+  desplegar staging (construye también Postgres con pgvector y aplica las migraciones 0045 a 0049). Luego, el módulo 5.
 - Pendiente de Enrique, sin bloquear: cerrar los tres avisos MCP como se le propuso (descartar `ver_escena`, «no se
   arregla» `query_document` de LightRAG por el parche de las palabras clave, dejar abierta la mejora de craft).
 - Ojo: la API de desarrollo (`node --watch`) no siempre se recarga al añadir archivos; `touch apps/server/src/main.ts`.

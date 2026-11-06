@@ -19,9 +19,13 @@ if (import.meta.main) {
     PORT: E2E_PORT,
     DATABASE_URL: await freshTestDatabase(E2E_DATABASE),
     VALKEY_URL: process.env.TEST_VALKEY_URL ?? 'redis://127.0.0.1:63790',
+    // Sus colas, aparte de las del servidor de desarrollo (mismo Valkey)
+    QUEUE_PREFIX: 'crisol-e2e',
     AUTH_SECRET: randomBytes(32).toString('hex'),
     PUBLIC_URL: `http://127.0.0.1:${E2E_PORT}`,
     WEB_DIR: join(import.meta.dirname, '..', 'apps', 'web', 'dist'),
+    // El modelo de la búsqueda por significado, si está en datos-locales (en la CI no: se busca por palabras)
+    MODEL_DIR: join(import.meta.dirname, '..', 'datos-locales', 'modelos', 'multilingual-e5-small'),
     // Los bytes de los archivos, en una carpeta nueva cada vez
     DATA_DIR: mkdtempSync(join(tmpdir(), 'crisol-e2e-'))
   })

@@ -26,7 +26,8 @@ import { saveFile } from '../components/save-file.ts'
 import { Tour } from '../components/tour.tsx'
 import cards from '../routes/world-card.module.css'
 import screen from '../templates/screen.module.css'
-import { type FoundryZip, readFoundryZip, slimZip, toBase64 } from './foundry-zip.ts'
+import { FoundryImages } from './foundry-images.tsx'
+import { type FoundryZip, imagesFromZip, readFoundryZip, slimZip, toBase64, type ZipImage } from './foundry-zip.ts'
 import styles from './screen.module.css'
 
 export function useSystems() {
@@ -246,6 +247,8 @@ export function NewSystemDialog({ onClose }: { onClose: () => void }) {
     chosen: string[]
     language: 'es' | 'en'
   } | null>(null)
+  // Tras traerlo de Foundry, sus imágenes: se sacan del zip y se suben aparte
+  const [images, setImages] = useState<{ systemId: string; images: ZipImage[] } | null>(null)
   const upload = useMutation({
     mutationFn: async () => {
       if (!foundry) return api.call('importSystem', { file: file?.content ?? {} })
@@ -253,9 +256,12 @@ export function NewSystemDialog({ onClose }: { onClose: () => void }) {
       const zip = toBase64(slimZip(foundry.bytes, foundry.read, foundry.chosen))
       return api.call('importFoundry', { zip, packs: foundry.chosen, language: foundry.language })
     },
-    onSuccess: async () => {
+    onSuccess: async (out) => {
       await queryClient.invalidateQueries({ queryKey: ['systems'] })
-      dialog.current?.close()
+      const named = 'images' in out ? (out.images as { path: string; credit: string | null }[]) : []
+      const found = foundry && named.length > 0 ? imagesFromZip(foundry.bytes, foundry.read, named) : []
+      if (found.length > 0) setImages({ systemId: out.system.id, images: found })
+      else dialog.current?.close()
     }
   })
   const blank = useDownload('blank')
@@ -348,14 +354,18 @@ export function NewSystemDialog({ onClose }: { onClose: () => void }) {
           />
         )}
         <FormError message={upload.error ? errorText(upload.error) : null} />
-        <BusyButton
-          type="submit"
-          className={form.button}
-          busy={upload.isPending}
-          disabled={foundry ? foundry.chosen.length === 0 : !file?.content}
-        >
-          {foundry ? t('systems.foundryImport') : t('systems.upload')}
-        </BusyButton>
+        {images ? (
+          <FoundryImages systemId={images.systemId} images={images.images} onDone={() => dialog.current?.close()} />
+        ) : (
+          <BusyButton
+            type="submit"
+            className={form.button}
+            busy={upload.isPending}
+            disabled={foundry ? foundry.chosen.length === 0 : !file?.content}
+          >
+            {foundry ? t('systems.foundryImport') : t('systems.upload')}
+          </BusyButton>
+        )}
         <p className={styles.blank}>
           <BusyButton type="button" className={styles.rowAction} busy={blank.isPending} onClick={() => blank.mutate()}>
             <Download size={14} aria-hidden="true" />

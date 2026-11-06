@@ -47,6 +47,7 @@ import {
   catalogSystem,
   changeResource,
   characterView,
+  coinsOf,
   compendiumEntry,
   compendiumSections,
   compendiumTypes,
@@ -59,23 +60,34 @@ import {
   fileName,
   type Mechanics,
   mechanicsText,
+  moveCoins as movedCoins,
   newContentKey,
   nextNumbers,
   normalizeChoices,
+  PARTY_CONTAINER,
+  PartyError,
+  type Party as PartyValues,
   type Play,
+  partyContainers,
+  partyFields,
   pickPaths,
   playedDocument,
   pullFields,
+  putInParty,
+  putInPlay,
   RollError,
   resourcePaths,
   rest,
   SYSTEM_FILE,
   type System,
   searchContent,
+  splitCoins as splitEvenly,
   startingPlay,
   systemOverview,
   type Text,
   tableRowOf,
+  takeFromParty,
+  takeFromPlay,
   textFieldOf,
   textOf,
   toFile,
@@ -86,6 +98,7 @@ import {
   validateFile,
   validateSystem,
   visibleContent,
+  withCoins,
   withWorld
 } from '@crisol/systems'
 import { readFoundryZip } from '../systems/foundry-zip.ts'
@@ -110,6 +123,10 @@ export function fakeApi(
     systems?: System[]
     /** El contenido de los de la cuenta, por su id */
     systemContent?: Record<string, ContentItem[]>
+    /** El texto de los PDF, por el id del archivo (una página por elemento); sin él, aún sin leer */
+    bookPages?: Record<string, string[]>
+    /** Las imágenes que nombra lo que se importa de Foundry */
+    foundryImages?: Array<{ path: string; credit: string | null }>
     /** El compendio de los mundos: sus entradas, por mundo y sistema (copiadas, con el original del que salen) */
     worldContent?: Array<{ worldId: string; systemId: string; item: ContentItem; copyOf?: ContentItem }>
     /** Las páginas de la wiki, en su orden entre hermanas */
@@ -519,6 +536,8 @@ export function fakeApi(
     worldEntries.filter((e) => e.worldId === worldId && e.systemId === systemId)
   /** Quien lleva el mundo: en la falsa, el propietario */
   const leadsWorlds = () => organizations.some((o) => o.role === 'owner')
+  // Las imágenes subidas de los sistemas (en la falsa, sin sus bytes)
+  const systemImages: Array<{ systemId: string; path: string; license: string }> = []
   // Las criaturas en juego (docs/specs/criaturas.md), en la falsa: las del máster
   const creatures: Array<{
     id: string
@@ -729,6 +748,7 @@ export function fakeApi(
         number: row.number,
         unique: row.unique,
         type: entry.type,
+        img: entry.img ?? null,
         version: row.version,
         life,
         stats,
@@ -773,6 +793,59 @@ export function fakeApi(
       : system
     const worldKeys = new Set(world ? entriesOf(world.worldId, world.systemId).map((e) => e.item.key) : [])
     return { document, choices, content, world, worldKeys }
+  }
+
+  // El inventario del grupo de cada campaña, con el mismo motor que el servidor (sin historial de verdad)
+  const parties = new Map<string, PartyValues & { version: number; moves: ActionOutput<'getParty'>['moves'] }>()
+  const partyOf = (campaignId: string) => {
+    if (!campaigns.some((c) => c.id === campaignId)) throw new ApiError('NOT_FOUND', 404)
+    return parties.get(campaignId) ?? { version: 0, containers: [], items: [], coins: {}, moves: [] }
+  }
+  const partyView = (p: PartyValues & { version: number }) => ({
+    version: p.version,
+    containers: partyContainers(p),
+    items: p.items.map((i) => ({ ...i, note: i.note ?? null })),
+    coins: p.coins
+  })
+  const partyFieldsOf = (campaignId: string) => {
+    const found = compendiumOf(campaignId)
+    return found ? partyFields(found.document) : { items: null, coins: null }
+  }
+  /** Cambia el grupo (y lo que llevan unos personajes): los fallos del motor, como los del servidor */
+  const changeParty = (
+    campaignId: string,
+    action: string,
+    details: Record<string, unknown>,
+    fn: (party: PartyValues) => PartyValues
+  ) => {
+    const before = partyOf(campaignId)
+    let next: PartyValues
+    try {
+      next = fn(before)
+    } catch (error) {
+      if (error instanceof PartyError) throw new ApiError(error.code, 400)
+      throw error
+    }
+    const saved = {
+      ...next,
+      version: before.version + 1,
+      moves: [
+        { id: crypto.randomUUID(), action, details, by: 'Enrique', ai: false, at: new Date().toISOString() },
+        ...before.moves
+      ].slice(0, 10)
+    }
+    parties.set(campaignId, saved)
+    return partyView(saved)
+  }
+  const movableCharacter = (campaignId: string, characterId: string) => {
+    const character = visibleCharacter(characterId)
+    if (character.campaignId !== campaignId) throw new ApiError('NOT_FOUND', 404)
+    return character
+  }
+  const contentName = (campaignId: string, key: string) => {
+    const found = compendiumOf(campaignId)
+    const item = found?.content.find((each) => each.key === key)
+    return (item && textOf(item.data.name as Text, found?.choices.language ?? 'es')) || key
   }
 
   const handlers: { [N in ActionName]: (input: ActionInput<N>) => ActionOutput<N> } = {
@@ -1438,6 +1511,184 @@ export function fakeApi(
       for (const each of stored ? [out.roll, stored] : [out.roll]) each.label = `${character.name} · ${result.label}`
       return { roll: out.roll }
     },
+    getParty: ({ campaignId }) => {
+      const p = partyOf(campaignId)
+      const campaign = campaigns.find((c) => c.id === campaignId)
+      const fields = partyFieldsOf(campaignId)
+      const language = compendiumOf(campaignId)?.choices.language ?? 'es'
+      return {
+        party: partyView(p),
+        coins: (fields.coins?.coins ?? []).map((coin) => ({ key: coin.key, label: textOf(coin.label, language) })),
+        types: fields.items?.types ?? [],
+        characters: characters
+          .filter((c) => c.campaignId === campaignId && (campaign?.role === 'master' || c.owner?.id === 'yo'))
+          .map((c) => ({
+            id: c.id,
+            name: c.name,
+            mine: c.owner?.id === 'yo',
+            coins: fields.coins ? coinsOf(c.play as Play, fields.coins.field) : {}
+          })),
+        master: campaign?.role === 'master',
+        moves: structuredClone(p.moves)
+      }
+    },
+    updateParty: ({
+      campaignId,
+      version,
+      add,
+      remove,
+      edit,
+      addContainer,
+      renameContainer,
+      removeContainer,
+      coins
+    }) => {
+      if (coins !== undefined && partyOf(campaignId).version !== version) throw new ApiError('PARTY_CHANGED', 400)
+      const id = () => crypto.randomUUID().slice(0, 8)
+      return {
+        party: changeParty(campaignId, 'updateParty', { change: 'edit' }, (party) => {
+          if (add) {
+            const thing = add.key
+              ? { key: add.key, name: contentName(campaignId, add.key), note: add.note }
+              : { key: null, name: add.name ?? '', note: add.note }
+            return putInParty(party, thing, add.quantity ?? 1, add.container ?? PARTY_CONTAINER, id)
+          }
+          if (remove) {
+            const item = party.items.find((i) => i.id === remove.item)
+            if (!item) throw new PartyError('NOT_IN_PARTY', '')
+            return takeFromParty(party, item.id, remove.quantity ?? item.quantity).party
+          }
+          if (edit)
+            return {
+              ...party,
+              items: party.items.map((i) =>
+                i.id === edit.item
+                  ? {
+                      ...i,
+                      ...(edit.name !== undefined ? { name: edit.name } : {}),
+                      ...(edit.note !== undefined ? { note: edit.note } : {}),
+                      ...(edit.container !== undefined ? { container: edit.container } : {})
+                    }
+                  : i
+              )
+            }
+          if (addContainer)
+            return { ...party, containers: [...party.containers, { id: id(), name: addContainer.name }] }
+          if (renameContainer)
+            return {
+              ...party,
+              containers: partyContainers(party).map((c) =>
+                c.id === renameContainer.id ? { ...c, name: renameContainer.name } : c
+              )
+            }
+          if (removeContainer)
+            return {
+              ...party,
+              containers: party.containers.filter((c) => c.id !== removeContainer.id),
+              items: party.items.map((i) =>
+                i.container === removeContainer.id ? { ...i, container: PARTY_CONTAINER } : i
+              )
+            }
+          return { ...party, coins: { ...party.coins, ...(coins ?? {}) } }
+        })
+      }
+    },
+    moveItem: ({ campaignId, from, to, quantity }) => {
+      const id = () => crypto.randomUUID().slice(0, 8)
+      const changed: Array<{ character: Character; play: Play }> = []
+      const details: Record<string, unknown> = {}
+      const view = changeParty(campaignId, 'moveItem', details, (party) => {
+        let next = party
+        let thing: { key: string | null; name: string; quantity: number }
+        if ('party' in from) {
+          const item = party.items.find((i) => i.id === from.party)
+          if (!item) throw new PartyError('NOT_IN_PARTY', '')
+          const taken = takeFromParty(party, item.id, quantity ?? item.quantity)
+          next = taken.party
+          thing = taken.taken
+        } else {
+          const source = movableCharacter(campaignId, from.character)
+          const has = ((source.play as Play).items ?? []).find((i) => i.id === from.item)
+          if (!has) throw new PartyError('NOT_CARRIED', '')
+          const taken = takeFromPlay(source.play as Play, has.id, quantity ?? has.quantity ?? 1)
+          changed.push({ character: source, play: taken.play })
+          thing = {
+            key: taken.taken.key,
+            name: contentName(campaignId, taken.taken.key),
+            quantity: taken.taken.quantity ?? 1
+          }
+        }
+        const source = 'character' in from ? movableCharacter(campaignId, from.character).name : null
+        if ('container' in to) {
+          const container = partyContainers(next).find((c) => c.id === to.container)?.name ?? ''
+          Object.assign(details, { name: thing.name, quantity: thing.quantity, from: source, to: null, container })
+          return putInParty(next, thing, thing.quantity, to.container, id)
+        }
+        if (!thing.key) throw new PartyError('HANDWRITTEN_STAYS', '')
+        const target = movableCharacter(campaignId, to.character)
+        Object.assign(details, { name: thing.name, quantity: thing.quantity, from: source, to: target.name })
+        const base = changed.find((c) => c.character.id === target.id)?.play ?? (target.play as Play)
+        const put = putInPlay(base, thing.key, thing.quantity, id)
+        const already = changed.find((c) => c.character.id === target.id)
+        if (already) already.play = put
+        else changed.push({ character: target, play: put })
+        return next
+      })
+      for (const c of changed) {
+        c.character.play = c.play as Record<string, unknown>
+        c.character.version += 1
+      }
+      return {
+        party: view,
+        characters: changed.map((c) => ({ id: c.character.id, version: c.character.version, play: c.character.play }))
+      }
+    },
+    moveCoins: ({ campaignId, character, toParty, coins }) => {
+      const field = partyFieldsOf(campaignId).coins
+      if (!field) throw new ApiError('NO_COINS', 400)
+      const target = movableCharacter(campaignId, character)
+      const allowed = field.coins.map((c) => c.key)
+      let mine: Record<string, number> = {}
+      const view = changeParty(campaignId, 'moveCoins', { toParty }, (party) => {
+        const own = coinsOf(target.play as Play, field.field)
+        const moved = toParty
+          ? movedCoins(own, party.coins, coins, allowed)
+          : movedCoins(party.coins, own, coins, allowed)
+        mine = toParty ? moved.from : moved.to
+        return { ...party, coins: toParty ? moved.to : moved.from }
+      })
+      target.play = withCoins(target.play as Play, field.field, mine) as Record<string, unknown>
+      target.version += 1
+      return { party: view, characters: [{ id: target.id, version: target.version, play: target.play }] }
+    },
+    splitCoins: ({ campaignId, characters: ids, coins, amounts }) => {
+      const field = partyFieldsOf(campaignId).coins
+      if (!field) throw new ApiError('NO_COINS', 400)
+      if (campaigns.find((c) => c.id === campaignId)?.role !== 'master') throw new ApiError('NOT_FOUND', 404)
+      const targets = [...new Set(ids)].map((characterId) => movableCharacter(campaignId, characterId))
+      let each: Record<string, number> = {}
+      const view = changeParty(campaignId, 'splitCoins', { count: targets.length }, (party) => {
+        const wanted = (amounts ??
+          Object.fromEntries(Object.entries(party.coins).filter(([coin]) => !coins || coins.includes(coin)))) as Record<
+          string,
+          number
+        >
+        const split = splitEvenly(wanted, targets.length)
+        each = split.each
+        return { ...party, coins: { ...party.coins, ...split.left } }
+      })
+      for (const target of targets) {
+        const own = coinsOf(target.play as Play, field.field)
+        const sum = Object.fromEntries(Object.entries(each).map(([coin, n]) => [coin, (own[coin] ?? 0) + n]))
+        target.play = withCoins(target.play as Play, field.field, sum) as Record<string, unknown>
+        target.version += 1
+      }
+      return {
+        party: view,
+        each,
+        characters: targets.map((c) => ({ id: c.id, version: c.version, play: c.play }))
+      }
+    },
     listInPlay: ({ campaignId }) => ({
       creatures: creatures.filter((c) => c.campaignId === campaignId).map((c) => creatureCard(c).card)
     }),
@@ -1750,20 +2001,34 @@ export function fakeApi(
       const found = compendiumOf(campaignId)
       const item = found?.content.find((each) => each.key === key)
       if (!found || !item) throw new ApiError('NOT_FOUND', 404)
+      const name = textOf(item.data.name as Text, found.choices.language) || item.key
+      if (table === undefined) {
+        // Una entrada «Tabla»: sus filas (aquí, sin apuntar lo sacado)
+        if (!item.table) throw new ApiError('NOT_A_TABLE', 400)
+        const rows = item.table.rows
+        const out = handlers.rollDice({ campaignId, formula: tableFormula(item.table.formula, rows), visibility })
+        const hits = rows.filter((r) => r.from <= out.roll.total && out.roll.total <= r.to)
+        const stored = rolls.find((r) => r.id === out.roll.id)
+        for (const each of stored ? [out.roll, stored] : [out.roll]) {
+          each.label = name
+          each.table = { name, results: hits.map((r) => ({ text: r.text, page: null })) }
+        }
+        return { roll: out.roll, row: hits[0] ? rows.indexOf(hits[0]) : null, drawn: [] }
+      }
       const field = textFieldOf(found.document, item.type)
       const text = field ? textOf(item.data[field] as Text, found.choices.language) : ''
       const chosen = contentTables(text)[table]
       if (!chosen) throw new ApiError('BAD_TABLE', 400)
       const out = handlers.rollDice({ campaignId, formula: chosen.formula, visibility })
       const hit = tableRowOf(chosen, out.roll.total)
-      const name = textOf(item.data.name as Text, found.choices.language) || item.key
       const stored = rolls.find((r) => r.id === out.roll.id)
       for (const each of stored ? [out.roll, stored] : [out.roll]) {
         each.label = name
         each.table = { name, results: hit ? [{ text: hit.cells.slice(1).join(' · '), page: null }] : [] }
       }
-      return { roll: out.roll, row: hit ? chosen.rows.indexOf(hit) : null }
+      return { roll: out.roll, row: hit ? chosen.rows.indexOf(hit) : null, drawn: [] }
     },
+    resetContentTable: () => ({ ok: true as const }),
     browseCampaignContent: ({ campaignId, type }) => {
       const found = compendiumOf(campaignId)
       if (!found) return { items: [], folders: [], filters: [] }
@@ -2091,7 +2356,13 @@ export function fakeApi(
       const id = crypto.randomUUID()
       const document = { ...structuredClone(blank), id, name: { es: read.title, en: read.title } }
       ownSystems.push({ id, version: 1, basedOn: null, document, content: [], deleted: false })
-      return { system: systemView(id), warnings: [] }
+      return { system: systemView(id), warnings: [], images: options.foundryImages ?? [] }
+    },
+    // Las imágenes subidas de un sistema, en la falsa: solo se apuntan
+    putSystemImages: ({ systemId, images }) => {
+      if (!ownSystems.some((s) => s.id === systemId && !s.deleted)) throw new ApiError('NOT_FOUND', 404)
+      for (const image of images) systemImages.push({ systemId, path: image.path, license: image.license })
+      return { saved: images.length, skipped: [] }
     },
     importSystem: ({ file, into }) => {
       const { file: valid, problems } = validateFile(file)
@@ -2140,6 +2411,69 @@ export function fakeApi(
       }
     },
     // Los del mundo y los comunes de su organización, como el servidor
+    listLibrary: ({ worldId }) => {
+      const usable = (f: FileView) =>
+        f.kind === 'pdf' &&
+        (f.worldId === worldId || (f.worldId === null && f.organizationId === organizationOf(worldId)))
+      return {
+        books: files
+          .filter(usable)
+          .sort((a, b) => a.name.localeCompare(b.name, 'es'))
+          .map((f) => {
+            const pages = options.bookPages?.[f.id]
+            return {
+              fileId: f.id,
+              name: f.name,
+              url: f.url,
+              common: f.worldId === null,
+              size: f.size,
+              status: pages ? (pages.length > 0 ? ('done' as const) : ('empty' as const)) : ('pending' as const),
+              pages: pages?.length ?? 0,
+              read: pages?.length ?? 0,
+              error: null
+            }
+          })
+      }
+    },
+    searchLibrary: ({ worldId, query, fileId }) => {
+      const fold = (text: string) => text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()
+      const words = fold(query)
+        .split(/[^a-z0-9]+/)
+        .filter(Boolean)
+      const books = handlers.listLibrary({ worldId }).books.filter((b) => !fileId || b.fileId === fileId)
+      return {
+        books: books.flatMap((book) => {
+          const pages = (options.bookPages?.[book.fileId] ?? []).flatMap((text, i) =>
+            words.every((w) => fold(text).includes(w))
+              ? [{ page: i + 1, excerpt: text.slice(0, 160), semantic: false }]
+              : []
+          )
+          return pages.length > 0
+            ? [{ fileId: book.fileId, name: book.name, common: book.common, pages: pages.slice(0, 3) }]
+            : []
+        }),
+        // También en las páginas: las del mundo cuyo título lleva lo buscado
+        pages: fileId
+          ? []
+          : pages
+              .filter((p) => p.worldId === worldId && words.every((w) => fold(p.title).includes(w)))
+              .slice(0, 5)
+              .map((p) => ({ pageId: p.id, title: p.title })),
+        semantic: false
+      }
+    },
+    getBookPages: ({ fileId, from, to }) => {
+      const file = files.find((f) => f.id === fileId && f.kind === 'pdf')
+      if (!file) throw new ApiError('NOT_FOUND', 404)
+      const pages = options.bookPages?.[fileId] ?? []
+      return {
+        name: file.name,
+        status: pages.length > 0 ? 'done' : 'pending',
+        pages: pages.length,
+        text: pages.slice(from - 1, to).map((text, i) => ({ page: from + i, text }))
+      }
+    },
+    readBookAgain: () => ({ status: 'pending' as const }),
     listFiles: ({ worldId }) => {
       const usable = (f: { worldId: string | null; organizationId: string }) =>
         f.worldId === worldId || (f.worldId === null && f.organizationId === organizationOf(worldId))

@@ -12,7 +12,7 @@ import {
   putWorldContent,
   searchLinkableContent
 } from '@crisol/contracts'
-import { campaignsRepo, type schema, systemsRepo, worldContentRepo } from '@crisol/db'
+import { campaignsRepo, type schema, systemsRepo, tablesRepo, worldContentRepo } from '@crisol/db'
 import { foldName, NotFoundError } from '@crisol/domain'
 import {
   type ContentItem,
@@ -25,14 +25,16 @@ import {
   type System,
   type Text,
   textOf,
-  validateContent
+  validateContent,
+  withTables
 } from '@crisol/systems'
 import { systemsChanged, worldContentChanged } from '../realtime/events.ts'
 import { authorizedWiki, type WikiTarget } from './access.ts'
+import { contentOf } from './content-of.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
 import * as layers from './layers.ts'
 import { implement } from './registry.ts'
-import { contentOf, invalid, ownWritable } from './systems.ts'
+import { invalid, ownWritable } from './systems.ts'
 
 type Origin = typeof schema.worldContent.$inferSelect.origin
 
@@ -46,7 +48,7 @@ async function worldAndSystem(
   const wiki = await authorizedWiki(ctx, capability, worldId)
   const row = await systemsRepo.findSystem(ctx.db, systemId)
   if (!row || row.deletedAt || row.organizationId !== wiki.organizationId) throw new NotFoundError('system')
-  return { wiki, system: row.document as unknown as System, row }
+  return { wiki, system: withTables(row.document as unknown as System), row }
 }
 
 const changedEntry = (key: string) =>
@@ -71,6 +73,7 @@ function copyName(name: unknown, given: string | undefined): unknown {
 function fieldLabel(system: System, type: string, key: string, language: Language): string {
   if (key === 'name') return language === 'en' ? 'Name' : 'Nombre'
   if (key === 'mechanics') return language === 'en' ? 'Mechanics' : 'Mecánica'
+  if (key === 'table') return language === 'en' ? 'Rows' : 'Filas'
   const label = system.types[type]?.fields[key]?.label
   return label ? textOf(label as Text, language) || key : key
 }
@@ -148,6 +151,8 @@ export const worldContentActions = [
           concept: item.concept ?? null,
           mechanics: item.mechanics ?? null,
           ref: item.ref ?? null,
+          img: item.img ?? null,
+          table: item.table ?? null,
           ...(item.version !== undefined ? { version: item.version } : {})
         }))
       )
@@ -173,6 +178,8 @@ export const worldContentActions = [
       systemId,
       wanted
     )
+    // Lo sacado de las que eran tablas: otra con su clave empieza de cero
+    await tablesRepo.forgetContentDraws(ctx.db, worldId, systemId, done.deleted)
     if (done.deleted.length > 0) ctx.realtime.publish(worldContentChanged(wiki))
     return { deleted: done.deleted, missing: wanted.filter((k) => !done.deleted.includes(k)) }
   }),
@@ -205,13 +212,16 @@ export const worldContentActions = [
               concept: null,
               mechanics: original.mechanics ? structuredClone(original.mechanics) : null,
               ref: original.ref,
+              img: original.img,
+              table: original.table,
               origin: {
                 layer: 'system',
                 systemId: row.id,
                 key: original.key,
                 fingerprint: contentFingerprint(original),
                 data: original.data,
-                mechanics: original.mechanics
+                mechanics: original.mechanics,
+                table: original.table
               }
             }
           ]
@@ -236,7 +246,9 @@ export const worldContentActions = [
       data,
       concept: entry.concept,
       mechanics: entry.mechanics,
-      ref: entry.ref
+      ref: entry.ref,
+      img: entry.img,
+      table: entry.table
     }
     // Como putSystemContent: validada con el sistema de ahora (la clave también) y con su límite
     const problems = validateContent(system, [contentOf(values)])
@@ -285,13 +297,22 @@ export const worldContentActions = [
       fingerprint
     }
     if (!original) return { origin, changes: [] }
-    const then = { data: entry.origin.data, mechanics: entry.origin.mechanics ?? null }
+    const then = {
+      data: entry.origin.data,
+      mechanics: entry.origin.mechanics ?? null,
+      table: entry.origin.table ?? null
+    }
     const changes = contentDiff(then, original).map((change) => ({
       key: change.key,
       label: fieldLabel(system, entry.type, change.key, language),
       before: change.before ?? null,
       after: change.after ?? null,
-      copy: (change.key === 'mechanics' ? entry.mechanics : entry.data[change.key]) ?? null
+      copy:
+        (change.key === 'mechanics'
+          ? entry.mechanics
+          : change.key === 'table'
+            ? entry.table
+            : entry.data[change.key]) ?? null
     }))
     return { origin, changes }
   }),
@@ -307,16 +328,26 @@ export const worldContentActions = [
       throw new InvalidRequestError('ORIGIN_CHANGED', 'el original ha vuelto a cambiar: míralo otra vez')
     // Solo los campos que de verdad cambiaron
     const changed = new Set(
-      contentDiff({ data: entry.origin.data, mechanics: entry.origin.mechanics ?? null }, original).map((c) => c.key)
+      contentDiff(
+        { data: entry.origin.data, mechanics: entry.origin.mechanics ?? null, table: entry.origin.table ?? null },
+        original
+      ).map((c) => c.key)
     )
     const pulled = pullFields(
-      { data: entry.data, mechanics: entry.mechanics },
+      { data: entry.data, mechanics: entry.mechanics, table: entry.table },
       original,
       fields.filter((field) => changed.has(field))
     )
     const problems = validateContent(system, [
-      { type: entry.type, key: entry.key, source: null, data: pulled.data, mechanics: pulled.mechanics ?? undefined }
-    ])
+      {
+        type: entry.type,
+        key: entry.key,
+        source: null,
+        data: pulled.data,
+        mechanics: pulled.mechanics ?? undefined,
+        table: pulled.table ?? undefined
+      }
+    ] as ContentItem[])
     if (problems.some((p) => p.severity === 'error')) invalid(problems)
     let saved: Awaited<ReturnType<typeof worldContentRepo.putContent>>
     try {
@@ -331,12 +362,14 @@ export const worldContentActions = [
             key: entry.key,
             data: pulled.data,
             mechanics: (pulled.mechanics as Record<string, unknown> | null | undefined) ?? null,
+            table: (pulled.table as Record<string, unknown> | null | undefined) ?? null,
             // El original de ahora pasa a ser el de referencia: el aviso se va
             origin: {
               ...entry.origin,
               fingerprint: contentFingerprint(original),
               data: original.data,
-              mechanics: original.mechanics
+              mechanics: original.mechanics,
+              table: original.table
             },
             version
           }
@@ -404,7 +437,7 @@ async function linkables(ctx: ActionContext, worldId: string): Promise<Linkable[
   for (const [systemId, campaignId] of bySystem) {
     const row = await systemsRepo.findSystem(ctx.db, systemId)
     if (!row || row.deletedAt || row.organizationId !== wiki.organizationId) continue
-    const system = row.document as unknown as System
+    const system = withTables(row.document as unknown as System)
     for (const entry of await layers.contentIndex(ctx, row.id, { worldId, systemId: row.id })) {
       const label = system.types[entry.type]?.label
       out.push({

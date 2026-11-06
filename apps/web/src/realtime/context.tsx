@@ -55,6 +55,14 @@ function changedBy(message: RealtimeMessage): QueryKey[] {
       }
       // Las criaturas en juego: la lista y la abierta
       if (message.what === 'creatures') return [['creatures', message.campaignId], ['creature']]
+      // El grupo: su inventario y lo que llevan sus personajes (si se movió algo)
+      if (message.what === 'party')
+        return [
+          ['party', message.campaignId],
+          // Solo los personajes que cambiaron (al deshacer no se sabe: todos)
+          ...(message.characters ? message.characters.map((id) => ['character', id]) : [['character']]),
+          ['characters', message.campaignId]
+        ]
       return [[message.what, message.campaignId]]
     case 'joined':
       return [

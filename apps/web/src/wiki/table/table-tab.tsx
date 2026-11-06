@@ -300,7 +300,7 @@ export function TableTab({ page, tab }: { page: Page; tab: PageTabView }) {
 }
 
 /** Reiniciar lo sacado en la campaña: no se deshace, así que se pregunta */
-function ResetDialog({
+export function ResetDialog({
   busy,
   error,
   onConfirm,

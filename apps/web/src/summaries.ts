@@ -61,6 +61,56 @@ export function summaryOf(
     case 'deleteCharacter':
     case 'restoreCharacterVersion':
       return say(action, { name: text(details.name) })
+    // El inventario del grupo: qué, cuánto, de dónde y a dónde
+    case 'updateParty': {
+      const values = {
+        name: text(details.name),
+        quantity: Number(details.quantity ?? 1),
+        // El contenedor de serie no tiene nombre propio
+        from: text(details.from) || t('party.common')
+      }
+      switch (details.change) {
+        case 'add':
+          return say('partyAdd', values)
+        case 'remove':
+          return say('partyRemove', values)
+        case 'addContainer':
+          return say('partyAddContainer', values)
+        case 'renameContainer':
+          return say('partyRenameContainer', values)
+        case 'removeContainer':
+          return say('partyRemoveContainer', values)
+        case 'coins':
+          return say('partyCoins')
+        default:
+          return say('partyEdit', values)
+      }
+    }
+    case 'moveItem': {
+      const values = {
+        name: text(details.name),
+        quantity: Number(details.quantity ?? 1),
+        from: text(details.from),
+        to: text(details.to),
+        container: text(details.container) || t('party.common')
+      }
+      if (details.from && details.to) return say('partyBetweenCharacters', values)
+      if (details.to) return say('partyToCharacter', values)
+      if (details.from) return say('partyFromCharacter', values)
+      return say('partyToContainer', values)
+    }
+    case 'moveCoins': {
+      const coins = Object.entries((details.coins ?? {}) as Record<string, number>)
+        .filter(([, n]) => n > 0)
+        .map(([coin, n]) => `${n} ${coin}`)
+        .join(', ')
+      return say(details.toParty ? 'partyCoinsToParty' : 'partyCoinsToCharacter', {
+        coins,
+        character: text(details.character)
+      })
+    }
+    case 'splitCoins':
+      return say('partySplit', { count: Number(details.count ?? 0) })
     case 'createSystem':
     case 'importSystem':
       return say(action, { name: systemName(details) })

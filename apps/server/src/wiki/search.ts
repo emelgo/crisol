@@ -10,15 +10,16 @@ import { documentJson } from './content.ts'
 
 export const SEARCH_PAGE_SIZE = 20
 
-/** Guarda lo que se busca de un documento: su texto plano y sus secciones */
-export async function indexDocument(env: Pick<ActionEnv, 'db'>, documentId: string, json: JSONContent) {
+/** Guarda lo que se busca de un documento: su texto plano y sus secciones (y pide poner al día sus trozos) */
+export async function indexDocument(env: Pick<ActionEnv, 'db' | 'library'>, documentId: string, json: JSONContent) {
   await documentsRepo.setText(env.db, documentId, plainText(json))
   await searchRepo.replaceSections(env.db, documentId, sectionsOf(json))
+  await env.library?.refresh([documentId])
 }
 
 /** Lo mismo para muchos documentos de una vez (los de una tanda de páginas nuevas): en dos consultas */
 export async function indexDocuments(
-  env: Pick<ActionEnv, 'db'>,
+  env: Pick<ActionEnv, 'db' | 'library'>,
   docs: readonly { documentId: string; json: JSONContent }[]
 ) {
   if (docs.length === 0) return
@@ -30,6 +31,7 @@ export async function indexDocuments(
     env.db,
     docs.map((doc) => ({ documentId: doc.documentId, sections: sectionsOf(doc.json) }))
   )
+  await env.library?.refresh(docs.map((doc) => doc.documentId))
 }
 
 /** Indexa lo que falte en el mundo (los documentos de antes de la búsqueda, o de antes de guardar su texto) */

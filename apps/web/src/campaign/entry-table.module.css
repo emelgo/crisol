@@ -1,0 +1,203 @@
+/* Una entrada «Tabla»: sus filas (con el aspecto de las tablas del texto), lo sacado y su editor */
+.box {
+  margin: 0 0 var(--space-4);
+}
+
+.range {
+  color: var(--color-muted);
+  white-space: nowrap;
+}
+
+/* Las ya sacadas (sin reemplazo), apagadas */
+.out td {
+  color: var(--color-muted);
+}
+
+.link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-link);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.link {
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.link:hover {
+  text-decoration-thickness: 2px;
+}
+
+.tag {
+  display: inline-block;
+  margin-inline-start: var(--space-2);
+  padding: 0 0.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  color: var(--color-muted);
+  font-size: 0.6875rem;
+  font-weight: 700;
+}
+
+/* La que acaba de salir */
+.now {
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+.drawn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+.reset,
+.icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  min-inline-size: 2.25rem;
+  block-size: 2.25rem;
+  padding: 0 var(--space-2);
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--color-link);
+  font: inherit;
+  cursor: pointer;
+}
+
+.icon {
+  color: var(--color-muted);
+}
+
+.reset:hover:not(:disabled),
+.icon:hover:not(:disabled) {
+  background: var(--color-raised);
+}
+
+.reset:disabled,
+.icon:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+/* El editor de sus filas */
+.editor {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: var(--space-3) 0 0;
+  border: 0;
+  border-block-start: 1px solid var(--color-border);
+}
+
+.editor legend {
+  padding: 0;
+  font-weight: 600;
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.formula,
+.rows input {
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--color-field-border);
+  border-radius: 6px;
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.formula {
+  inline-size: 8rem;
+  font-family: var(--font-mono, monospace);
+}
+
+.check {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: 2.75rem;
+}
+
+.rows {
+  border-collapse: collapse;
+  inline-size: 100%;
+}
+
+.rows th,
+.rows td {
+  padding: var(--space-1) var(--space-2) var(--space-1) 0;
+  border-block-end: 1px solid var(--color-border);
+  text-align: start;
+}
+
+.rows thead th {
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.rows input[type="number"] {
+  inline-size: 4.5rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.text,
+.text input {
+  inline-size: 100%;
+}
+
+.add {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1px dashed var(--color-frame);
+  border-radius: 6px;
+  background: none;
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.add:hover {
+  border-color: var(--color-accent);
+}
+
+.problems {
+  margin: 0;
+  padding-inline-start: var(--space-5);
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+/* Lo que impide guardarla */
+.blocking {
+  color: var(--color-danger);
+}
+
+.hidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

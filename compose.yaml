@@ -3,7 +3,9 @@ name: crisol-dev
 
 services:
   postgres:
-    image: postgres:17-alpine
+    # El de Alpine con pgvector (docker/postgres): la búsqueda por significado
+    build: docker/postgres
+    image: crisol-postgres:17
     environment:
       POSTGRES_USER: crisol
       POSTGRES_PASSWORD: crisol

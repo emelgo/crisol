@@ -5,7 +5,8 @@
   "type": "module",
   "exports": {
     "./server": "./src/server.ts",
-    "./bootstrap": "./src/bootstrap.ts"
+    "./bootstrap": "./src/bootstrap.ts",
+    "./pdf-de-prueba": "./src/library/fixture.ts"
   },
   "scripts": {
     "dev": "node --env-file-if-exists=../../.env --watch src/main.ts",
@@ -32,6 +33,7 @@
     "@fastify/websocket": "catalog:",
     "@hocuspocus/server": "catalog:",
     "@modelcontextprotocol/server": "catalog:",
+    "@sctg/sentencepiece-js": "catalog:",
     "@tiptap/core": "catalog:",
     "@tiptap/pm": "catalog:",
     "@tiptap/y-tiptap": "catalog:",
@@ -42,6 +44,8 @@
     "fastify": "catalog:",
     "fflate": "catalog:",
     "ioredis": "catalog:",
+    "onnxruntime-node": "catalog:",
+    "pdfjs-dist": "catalog:",
     "playwright-core": "catalog:",
     "y-protocols": "catalog:",
     "yjs": "catalog:",
