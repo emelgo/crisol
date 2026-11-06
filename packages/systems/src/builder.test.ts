@@ -249,18 +249,6 @@ describe('el creador: montar un personaje de sus elecciones', () => {
     // Una clave de otro tipo no vale aunque exista
     expect(carried(at(1, ['bola_de_fuego_2024']))).toBe(0)
   })
-
-  it('a nivel 20, lo pendiente se calcula en menos de 20 ms', () => {
-    const b: Build = {
-      scores: { base: scores },
-      picks: [{ id: 'c1', step: 'clase', key: 'mago_2024', level: 20 }],
-      decisions: { 'c1>subclase@3': ['evocador'] }
-    }
-    build(b)
-    const start = performance.now()
-    for (let i = 0; i < 5; i++) build(b)
-    expect((performance.now() - start) / 5).toBeLessThan(20)
-  })
 })
 
 describe('el creador de otro juego: el de 2d6, con sus pasos', () => {

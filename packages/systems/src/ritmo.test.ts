@@ -4,6 +4,7 @@
  * test:coverage va aparte y sin la cobertura: el código instrumentado tarda varias veces más y no es el que se usa
  */
 import { describe, expect, it } from 'vitest'
+import { type Build, buildCharacter } from './builder.ts'
 import { searchContent } from './content.ts'
 import { type DocumentItem, evaluate } from './evaluate.ts'
 import { referenceCharacter } from './examples/5e/referencia.ts'
@@ -53,7 +54,7 @@ function big(): System {
 }
 
 describe('el ritmo', () => {
-  it('el 5e de serie: un mago de nivel 20 con todo (rasgos, 40 conjuros y equipo), en menos de 20 ms', () => {
+  it('el 5e de ejemplo: un mago de nivel 20 con todo (rasgos, 40 conjuros y equipo), en menos de 20 ms', () => {
     const content = exampleContent('5e')
     const doc = referenceCharacter(content, {
       klass: 'mago',
@@ -77,7 +78,19 @@ describe('el ritmo', () => {
     expect(median(() => evaluate(fiveE, 'personaje', doc), 15)).toBeLessThan(20)
   })
 
-  it('buscar en todo el contenido del 5e de serie (más de 3000 documentos), en menos de 100 ms', () => {
+  it('el creador: lo pendiente de un mago de nivel 20 del 5e, en menos de 20 ms', () => {
+    const content = exampleContent('5e')
+    const campaign = { sources: ['srd51', 'srd521'], duplicates: 'both' as const }
+    const build: Build = {
+      scores: { base: { fue: 15, des: 14, con: 13, int: 12, sab: 10, car: 8 } },
+      picks: [{ id: 'c1', step: 'clase', key: 'mago_2024', level: 20 }],
+      decisions: { 'c1>subclase@3': ['evocador'] }
+    }
+    buildCharacter(fiveE, content, campaign, build)
+    expect(median(() => buildCharacter(fiveE, content, campaign, build), 9)).toBeLessThan(20)
+  })
+
+  it('buscar en todo el contenido del 5e de ejemplo (más de 3000 documentos), en menos de 100 ms', () => {
     const entries = exampleContent('5e').map((c) => ({
       ...c,
       name: c.data.name,
