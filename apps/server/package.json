@@ -37,6 +37,7 @@
     "@tiptap/y-tiptap": "catalog:",
     "better-auth": "catalog:",
     "bullmq": "catalog:",
+    "classic-level": "catalog:",
     "drizzle-orm": "catalog:",
     "fastify": "catalog:",
     "fflate": "catalog:",

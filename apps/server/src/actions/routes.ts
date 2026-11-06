@@ -1,4 +1,4 @@
-import { ACTIONS, openApi } from '@crisol/contracts'
+import { ACTIONS, FOUNDRY_ZIP_BYTES, openApi } from '@crisol/contracts'
 import { loadMemberships } from '@crisol/db'
 import { actorFrom, ForbiddenError, NotFoundError } from '@crisol/domain'
 import { FILE_BYTES } from '@crisol/systems'
@@ -39,11 +39,11 @@ export function registerActionRoutes(app: FastifyInstance, env: ActionEnv, auth:
     run(request.params.name, request, reply)
   )
 
-  // Un sistema entero (hasta 2 MB) y el archivo de uno con su contenido (hasta 10 MB): con más sitio, y solo con sesión,
-  // que se mira antes de leer el cuerpo
-  for (const name of BIG_ACTIONS)
+  // Un sistema entero (hasta 2 MB), el archivo de uno con su contenido (hasta 10 MB) y el zip de uno de Foundry: con
+  // más sitio, y solo con sesión, que se mira antes de leer el cuerpo
+  for (const [name, bodyLimit] of Object.entries(BIG_ACTIONS))
     app.post(`/api/actions/${name}`, {
-      bodyLimit: FILE_BYTES + 1024 * 1024,
+      bodyLimit,
       onRequest: async (request, reply) => {
         if (!(await auth.api.getSession({ headers: toHeaders(request.headers) })))
           return reply.code(401).send({ code: 'UNAUTHENTICATED' })
@@ -52,5 +52,19 @@ export function registerActionRoutes(app: FastifyInstance, env: ActionEnv, auth:
     })
 }
 
-/** Las acciones que llevan un sistema entero o su archivo */
-export const BIG_ACTIONS = ['updateSystem', 'importSystem', 'checkSystem', 'trySystemRoll', 'createSystem'] as const
+const MB = 1024 * 1024
+/** Un sistema entero o su archivo, con un poco de margen */
+const SYSTEM_BODY = FILE_BYTES + MB
+/** El zip de Foundry en base64 (un tercio más), con margen */
+const FOUNDRY_BODY = Math.ceil(FOUNDRY_ZIP_BYTES / 3) * 4 + MB
+
+/** Las acciones que llevan un sistema entero, su archivo o un zip de Foundry, con lo que cabe en cada una */
+export const BIG_ACTIONS: Readonly<Record<string, number>> = {
+  updateSystem: SYSTEM_BODY,
+  importSystem: SYSTEM_BODY,
+  checkSystem: SYSTEM_BODY,
+  trySystemRoll: SYSTEM_BODY,
+  createSystem: SYSTEM_BODY,
+  inspectFoundry: FOUNDRY_BODY,
+  importFoundry: FOUNDRY_BODY
+}

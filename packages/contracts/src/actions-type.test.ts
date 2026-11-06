@@ -111,6 +111,8 @@ describe('Actions', () => {
       getSystemContent: true,
       searchSystemContent: true,
       importSystem: true,
+      inspectFoundry: true,
+      importFoundry: true,
       getSystemParts: true,
       checkSystem: true,
       tryFormula: true,

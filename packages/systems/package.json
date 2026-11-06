@@ -6,7 +6,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./fixtures": "./src/fixtures/index.ts",
-    "./examples": "./src/examples/index.ts"
+    "./examples": "./src/examples/index.ts",
+    "./foundry": "./src/foundry/index.ts"
   },
   "scripts": {
     "typecheck": "tsc -p .",
