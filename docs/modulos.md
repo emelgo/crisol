@@ -21,9 +21,16 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   **Aprovechar el resto del zip** (Enrique, 2026-11-06), hoy se descarta al subir: las imágenes de cada documento
   (`img` de objetos, conjuros y criaturas; retratos y fichas) van con el módulo 4; las escenas, los mapas, los tokens y
   los sonidos, con el 6 y el 7; el aspecto del sistema (colores, fuentes y fondos de su CSS, como tema de su hoja y su
-  compendio), con la interfaz. Su CSS y su código no se reutilizan tal cual (van con sus plantillas de Foundry); se
-  saca de ellos lo que sirve. Para eso hará falta subir el zip entero (el dnd5e pesa 137 MB) por la subida de archivos
-  (hasta 250 MB) en vez de en la acción, y mirar la licencia de cada recurso (`docs/terceros.md`).
+  compendio), con la interfaz. **A tener en cuenta**:
+  - Su CSS y su código no se reutilizan tal cual: van con sus plantillas de Foundry (Handlebars) y su JavaScript. Se
+    saca de ellos lo que sirve (la paleta, las fuentes, las texturas) y se aplica a nuestra hoja por bloques.
+  - Hoy `apps/web/src/systems/foundry-zip.ts` (`slimZip`) quita todo lo que no es manifiesto, idiomas o compendios, y
+    `importFoundry` admite como mucho 30 MB (`FOUNDRY_ZIP_BYTES`). Para traer imágenes y escenas hará falta subir el zip
+    entero (el dnd5e pesa 137 MB) por la subida de archivos (hasta 250 MB) y convertirlo desde ahí, en segundo plano.
+  - Las rutas de las imágenes en los documentos (`img`, `systems/dnd5e/icons/…`) apuntan dentro del zip o a lo que
+    trae Foundry de serie (`icons/…`, que no viene en el zip): estas últimas no se pueden traer.
+  - La licencia de cada recurso: el código de dnd5e es MIT, pero sus imágenes y las de los módulos pueden tener otra
+    (las de pago, solo para uso privado, ADR-0014); cada una, con su entrada en `docs/terceros.md`.
 - **Cambiar el compendio en la app (PR #108)**: «Nueva entrada», «Editar» y «Borrar» en el compendio de la campaña,
   para el propietario de un sistema de la cuenta (`getCampaignCompendium.editable`; `entry-editor.tsx`).
 - **El creador pregunta antes de quitar una clase (PR #107)**, como D&D Beyond.
