@@ -7,7 +7,23 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
-### Para retomar (2026-11-05, módulo 3 hecho salvo `foundry`; ahora, que lo pruebe Enrique y pulir)
+### Para retomar (2026-11-06, módulo 3 terminado; lo siguiente, el módulo 4 y, el 2026-11-07, la interfaz)
+
+- **Crisol vacío (ADR-0015, PR #108)**: de serie solo «En blanco». El 5e con el SRD pasa a `packages/systems/src/examples/`
+  (fixture de las pruebas; su archivo, con `pnpm sistema-5e`); las pruebas del servidor y las e2e lo importan. Lo que
+  usaba el 5e de serie pasa a una copia en su cuenta con `pnpm crisol sistema-5e` (corrido en staging tras desplegar).
+- **Traer de Foundry (PR #108)**: en «Sistema nuevo», el .zip de un sistema o módulo de Foundry; se eligen sus
+  compendios y el idioma de sus textos, se sube solo lo necesario (`apps/web/src/systems/foundry-zip.ts`) y el
+  servidor lo convierte (`importFoundry`, `inspectFoundry`; lectura LevelDB/NeDB en `apps/server/src/foundry/`,
+  conversión en `packages/systems/src/foundry/`, prueba con el dnd5e real: `node scripts/foundry/probar.ts`). Con los 8
+  compendios de 2024 del dnd5e: 2.121 documentos, valida. **Pendiente**: la mecánica de dnd5e en lo importado (hoy van
+  sus tiradas en el texto), los nombres de los campos (salen de su ruta: «Activation type») y el idioma de los tipos.
+- **Cambiar el compendio en la app (PR #108)**: «Nueva entrada», «Editar» y «Borrar» en el compendio de la campaña,
+  para el propietario de un sistema de la cuenta (`getCampaignCompendium.editable`; `entry-editor.tsx`).
+- **El creador pregunta antes de quitar una clase (PR #107)**, como D&D Beyond.
+- La IA hace sistemas enteros (hoja, creador, compendio): lo dicen las instrucciones del MCP; prueba en `tasks/probar.md`.
+
+### Antes (2026-11-05)
 
 - **`hoja`, en `main` y en staging (PR #102)**: lo de la partida (`packages/systems/src/play.ts`: solo lo marcado con
   `play` y los recursos, validado), la hoja por bloques en el formato (`sheet.ts`; la del 5e con inspiración,
