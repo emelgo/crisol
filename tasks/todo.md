@@ -6,7 +6,7 @@ Plan: `tasks/plan.md` · Spec: `docs/specs/criaturas.md`. Cada tarea con sus pru
   queda para el personaje), `roll` en un campo recurso (sus PG tirados) y `damage` en el tipo (sus campos de
   resistencias, inmunidades y vulnerabilidades); `formato_sistemas` lo documenta. El 5e de ejemplo: la hoja de la
   criatura, al estilo de su statblock, y sus PG con `@dados_golpe`.
-- [ ] **2. El motor** (`@crisol/systems`, `creatures.ts`): `creatureView` (la entrada con lo de la partida, con la misma
+- [x] **2. El motor** (`@crisol/systems`, `creatures.ts`): `creatureView` (la entrada con lo de la partida, con la misma
   forma que la hoja de personaje), los PG al ponerla (medios o tirados), los números de las copias y el daño con
   multiplicador y resistencias.
 - [ ] **3. La tabla `campaign_creatures`** (migración 0044), su repo, el historial y su aviso en tiempo real (al
