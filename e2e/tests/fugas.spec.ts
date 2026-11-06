@@ -403,15 +403,14 @@ test('@fugas lo que su campaña sabe, sin lo demás: ni secretos sin revelar, ni
   })
   await master('setKnowledge', { worldId, campaignId, kind: 'page', targetId: aldoria, known: true })
   const plan = await master('createPage', { worldId, title: 'El plan del rey', parentId: aldoria })
-  // Un secreto revelado a Bram (no a Lía); el otro, sin revelar
+  // Un secreto revelado en partida a Bram (no a Lía), con su aviso; el otro, sin revelar
   const { blocks } = await master('getPageContent', { pageId: aldoria })
   const secrets = (blocks as { type: string; attrs?: { documentId?: string } }[]).filter((b) => b.type === 'secret')
-  await master('setKnowledge', {
+  await master('reveal', {
     worldId,
     campaignId,
     kind: 'secret',
     targetId: secrets[1]?.attrs?.documentId,
-    known: true,
     characters: [other]
   })
   // Lo que lee la jugadora, por todas las vías
@@ -461,7 +460,10 @@ test('@fugas lo que su campaña sabe, sin lo demás: ni secretos sin revelar, ni
     'Quemar el puerto',
     'La Liga Escondida',
     plan.id,
-    liga
+    liga,
+    // El aviso de lo revelado a Bram es solo para su dueño
+    '"revealed"',
+    secrets[1]?.attrs?.documentId ?? 'sin-secreto'
   ]) {
     expect(everything, leak).not.toContain(leak)
   }

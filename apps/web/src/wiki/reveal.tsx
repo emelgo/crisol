@@ -29,10 +29,15 @@ export function useSecretsKnowledge(worldId: string, pageId: string, enabled = t
   })
 }
 
-/** Abre y cierra un desplegable que flota junto a su botón; pulsar fuera lo cierra */
+/**
+ * Abre y cierra un desplegable que flota junto a su botón: pulsar fuera lo cierra; al cerrarlo desde dentro (Escape,
+ * revelar) el foco vuelve a su botón. `toggle` va en el botón, con lo que dice que abre un cuadro
+ */
 function usePopover() {
   const [open, setOpen] = useState(false)
   const wrap = useRef<HTMLDivElement>(null)
+  const trigger = useRef<HTMLButtonElement>(null)
+  const menuId = useId()
   useEffect(() => {
     if (!open) return
     const outside = (event: Event) => {
@@ -41,14 +46,25 @@ function usePopover() {
     document.addEventListener('pointerdown', outside)
     return () => document.removeEventListener('pointerdown', outside)
   }, [open])
-  return { open, setOpen, wrap }
+  const close = () => {
+    setOpen(false)
+    trigger.current?.focus()
+  }
+  const toggle = {
+    ref: trigger,
+    'aria-expanded': open,
+    'aria-haspopup': 'dialog' as const,
+    'aria-controls': open ? menuId : undefined,
+    onClick: () => setOpen(!open)
+  }
+  return { open, wrap, toggle, menuId, close }
 }
 
 /** La cabecera de un secreto, para quien lleva la wiki: a quién se le ha revelado y «Revelar» (o «Revelar…», a más) */
 export function SecretReveal({ worldId, pageId, documentId }: { worldId: string; pageId: string; documentId: string }) {
   const { t } = useTranslation()
   const known = useSecretsKnowledge(worldId, pageId)
-  const { open, setOpen, wrap } = usePopover()
+  const { open, wrap, toggle, menuId, close } = usePopover()
   if (!known.data || known.data.campaigns.length === 0) return null
   const secret = known.data.secrets.find((s) => s.documentId === documentId)
   const shown = (secret?.campaigns ?? []).filter((c) => c.audience !== 'none')
@@ -60,7 +76,7 @@ export function SecretReveal({ worldId, pageId, documentId }: { worldId: string;
   return (
     <div ref={wrap} className={styles.wrap} contentEditable={false}>
       {names.length > 0 && <span className={styles.who}>{t('reveal.knownBy', { names: names.join(', ') })}</span>}
-      <button type="button" className={styles.link} aria-expanded={open} onClick={() => setOpen(!open)}>
+      <button type="button" className={styles.link} {...toggle}>
         {t(names.length > 0 ? 'reveal.revealMore' : 'reveal.reveal')}
       </button>
       {open && (
@@ -70,7 +86,8 @@ export function SecretReveal({ worldId, pageId, documentId }: { worldId: string;
           targetId={documentId}
           campaigns={known.data.campaigns}
           current={(campaignId) => secret?.campaigns.find((c) => c.campaignId === campaignId)?.audience ?? 'none'}
-          onDone={() => setOpen(false)}
+          id={menuId}
+          onDone={close}
         />
       )}
     </div>
@@ -91,11 +108,11 @@ export function TargetReveal({
 }) {
   const { t } = useTranslation()
   const known = useSecretsKnowledge(worldId, pageId)
-  const { open, setOpen, wrap } = usePopover()
+  const { open, wrap, toggle, menuId, close } = usePopover()
   if (!known.data || known.data.campaigns.length === 0) return null
   return (
     <div ref={wrap} className={styles.wrapInline}>
-      <button type="button" className={styles.link} aria-expanded={open} onClick={() => setOpen(!open)}>
+      <button type="button" className={styles.link} {...toggle}>
         {t('reveal.revealMore')}
       </button>
       {open && (
@@ -105,7 +122,8 @@ export function TargetReveal({
           targetId={targetId}
           campaigns={known.data.campaigns}
           current={() => 'none'}
-          onDone={() => setOpen(false)}
+          id={menuId}
+          onDone={close}
           inline
         />
       )}
@@ -117,7 +135,7 @@ export function TargetReveal({
 export function PageRevealButton({ page }: { page: Page }) {
   const { t } = useTranslation()
   const known = useSecretsKnowledge(page.worldId, page.id)
-  const { open, setOpen, wrap } = usePopover()
+  const { open, wrap, toggle, menuId, close } = usePopover()
   if (!known.data || known.data.campaigns.length === 0) return null
   return (
     <div ref={wrap} className={styles.wrap} data-action-wrap="">
@@ -126,8 +144,7 @@ export function PageRevealButton({ page }: { page: Page }) {
         className={list.secondary}
         aria-label={t('reveal.page')}
         title={t('reveal.page')}
-        aria-expanded={open}
-        onClick={() => setOpen(!open)}
+        {...toggle}
       >
         <Eye aria-hidden="true" size={18} />
       </button>
@@ -138,7 +155,8 @@ export function PageRevealButton({ page }: { page: Page }) {
           targetId={page.id}
           campaigns={known.data.campaigns}
           current={(campaignId) => known.data?.campaigns.find((c) => c.campaignId === campaignId)?.seesPage ?? 'none'}
-          onDone={() => setOpen(false)}
+          id={menuId}
+          onDone={close}
           floating
         />
       )}
@@ -149,6 +167,7 @@ export function PageRevealButton({ page }: { page: Page }) {
 type Campaigns = NonNullable<ReturnType<typeof useSecretsKnowledge>['data']>['campaigns']
 
 function RevealMenu({
+  id: menuId,
   worldId,
   kind,
   targetId,
@@ -158,6 +177,7 @@ function RevealMenu({
   floating = false,
   inline = false
 }: {
+  id: string
   worldId: string
   kind: 'secret' | 'page' | 'pin' | 'tab'
   targetId: string
@@ -215,8 +235,15 @@ function RevealMenu({
   })
   const toggle = (characterId: string) =>
     setPicked((now) => (now.includes(characterId) ? now.filter((c) => c !== characterId) : [...now, characterId]))
+  // Al abrirse, el foco entra en él (lo primero que se elige)
+  const menu = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    menu.current?.querySelector<HTMLElement>('select, button')?.focus()
+  }, [])
   return (
     <div
+      ref={menu}
+      id={menuId}
       role="dialog"
       aria-labelledby={`${id}-title`}
       className={inline ? styles.menuInline : floating ? styles.menuRight : styles.menu}
