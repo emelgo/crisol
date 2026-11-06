@@ -25,7 +25,7 @@ import { useErrorText } from '../api/errors.ts'
 import { FormError } from '../components/field.tsx'
 import { useSettled } from '../components/settled.ts'
 import { useDice } from '../dice/context.tsx'
-import { MoveMenu, type MoveTarget, PartyInventory, useParty } from '../party/party.tsx'
+import { MoveMenu, type MoveTarget, PartyInventory, partyKey, useParty } from '../party/party.tsx'
 import styles from './play-sheet.module.css'
 import { type Change, pickId } from './save.ts'
 
@@ -461,7 +461,16 @@ function ItemsBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'it
   const [adding, setAdding] = useState(false)
   // Lo que se cambia jugando de un personaje (su inventario) va junto a lo del grupo: «Mío | Del grupo»
   const characterId = ctx.subject.id
-  const withParty = Boolean(characterId) && block.play
+  const api = useApi()
+  const party = useQuery({
+    queryKey: partyKey(ctx.subject.campaignId),
+    queryFn: () => api.call('getParty', { campaignId: ctx.subject.campaignId }),
+    enabled: Boolean(characterId) && block.play
+  })
+  // Solo el inventario del grupo (no los estados, que también se cambian jugando)
+  const partyTypes = party.data?.types ?? []
+  const withParty =
+    Boolean(characterId) && block.play && partyTypes.length > 0 && block.types.every((x) => partyTypes.includes(x))
   const [view, setView] = useState<'mine' | 'party'>('mine')
   const granted = (ctx.state.items ?? []).filter((it) => block.types.includes(it.type) && it.from !== null)
   // Lo que lleva, tal como se acaba de guardar (equipar se ve al momento); su nombre y su tipo, del estado
@@ -549,54 +558,56 @@ function ItemsBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'it
           }}
         />
       )}
-      <ul className={styles.items} hidden={view === 'party'}>
-        {granted.map((it) => row(it.id, it.name))}
-        {carried.map((it) =>
-          row(
-            `p:${it.id}`,
-            it.name,
-            <span className={styles.itemControls}>
-              <label className={styles.check}>
-                <input
-                  type="checkbox"
-                  checked={it.equipped === true}
-                  onChange={(event) => {
-                    const equipped = event.currentTarget.checked
-                    update(it.id, (x) => ({ ...x, equipped }))
-                  }}
+      {view === 'mine' && (
+        <ul className={styles.items}>
+          {granted.map((it) => row(it.id, it.name))}
+          {carried.map((it) =>
+            row(
+              `p:${it.id}`,
+              it.name,
+              <span className={styles.itemControls}>
+                <label className={styles.check}>
+                  <input
+                    type="checkbox"
+                    checked={it.equipped === true}
+                    onChange={(event) => {
+                      const equipped = event.currentTarget.checked
+                      update(it.id, (x) => ({ ...x, equipped }))
+                    }}
+                  />
+                  {t('playSheet.equipped')}
+                </label>
+                <Stepper
+                  label={it.name}
+                  value={String(it.quantity ?? 1)}
+                  onLess={
+                    (it.quantity ?? 1) > 1
+                      ? () => update(it.id, (x) => ({ ...x, quantity: (x.quantity ?? 1) - 1 }))
+                      : undefined
+                  }
+                  onMore={() => update(it.id, (x) => ({ ...x, quantity: (x.quantity ?? 1) + 1 }))}
                 />
-                {t('playSheet.equipped')}
-              </label>
-              <Stepper
-                label={it.name}
-                value={String(it.quantity ?? 1)}
-                onLess={
-                  (it.quantity ?? 1) > 1
-                    ? () => update(it.id, (x) => ({ ...x, quantity: (x.quantity ?? 1) - 1 }))
-                    : undefined
-                }
-                onMore={() => update(it.id, (x) => ({ ...x, quantity: (x.quantity ?? 1) + 1 }))}
-              />
-              {withParty && characterId && (
-                <CarriedMove
-                  campaignId={ctx.subject.campaignId}
-                  characterId={characterId}
-                  item={{ id: it.id, name: it.name, quantity: it.quantity ?? 1 }}
-                />
-              )}
-              <button
-                type="button"
-                className={styles.icon}
-                aria-label={t('playSheet.remove', { what: it.name })}
-                onClick={() => update(it.id, () => null)}
-              >
-                <Trash2 size={14} aria-hidden="true" />
-              </button>
-            </span>
-          )
-        )}
-        {granted.length === 0 && carried.length === 0 && <li className={styles.none}>{t('playSheet.nothing')}</li>}
-      </ul>
+                {withParty && characterId && (
+                  <CarriedMove
+                    campaignId={ctx.subject.campaignId}
+                    characterId={characterId}
+                    item={{ id: it.id, name: it.name, quantity: it.quantity ?? 1 }}
+                  />
+                )}
+                <button
+                  type="button"
+                  className={styles.icon}
+                  aria-label={t('playSheet.remove', { what: it.name })}
+                  onClick={() => update(it.id, () => null)}
+                >
+                  <Trash2 size={14} aria-hidden="true" />
+                </button>
+              </span>
+            )
+          )}
+          {granted.length === 0 && carried.length === 0 && <li className={styles.none}>{t('playSheet.nothing')}</li>}
+        </ul>
+      )}
     </section>
   )
 }

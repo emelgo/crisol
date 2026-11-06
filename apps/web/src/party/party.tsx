@@ -329,7 +329,7 @@ export function MoveMenu({
 
 /** Lo último que se ha movido o cambiado en el grupo, con quién lo hizo */
 export function PartyMoves({ campaignId }: { campaignId: string }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const { loaded } = useParty(campaignId)
   if (!loaded.data) return null
   const { moves } = loaded.data
@@ -344,7 +344,7 @@ export function PartyMoves({ campaignId }: { campaignId: string }) {
             what: summaryOf(t, { action: m.action, details: m.details })
           })}
           <time className={styles.when} dateTime={m.at}>
-            {new Date(m.at).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}
+            {new Date(m.at).toLocaleDateString(i18n.language, { day: 'numeric', month: 'short' })}
           </time>
         </li>
       ))}

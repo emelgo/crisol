@@ -133,6 +133,7 @@ export async function skipTours(page: Page, email: string) {
           'personaje',
           'compendio',
           'en-juego',
+          'grupo',
           'tabla',
           'archivos',
           'etiquetas',
