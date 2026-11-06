@@ -3,6 +3,7 @@
  * su documento, y aquí se pinta con un editor anidado conectado a ese documento por el mismo WebSocket.
  */
 import { editorExtensions, fillMissingIds, type SeparateKind } from '@crisol/editor'
+import { useParams } from '@tanstack/react-router'
 import { type Editor, Extension, type JSONContent, type Node } from '@tiptap/core'
 import { Collaboration } from '@tiptap/extension-collaboration'
 import { CollaborationCaret } from '@tiptap/extension-collaboration-caret'
@@ -23,6 +24,7 @@ import { withPageEmbedView } from './embed.tsx'
 import find from './find-in-page.module.css'
 import { FindInPage, nestedFinds } from './find-in-page.tsx'
 import { LinkSuggest, useLinksRef, withPageLinkView } from './page-links.tsx'
+import { SecretReveal } from './reveal.tsx'
 import styles from './separate.module.css'
 import { SlashMenu } from './slash-menu.tsx'
 
@@ -141,6 +143,7 @@ function SeparateView({ node, editor, getPos, updateAttributes, selected }: Node
   const links = useLinksRef()
   const pageId = useContext(SeparatePageContext)
   const options = useContext(NestedOptionsContext)
+  const worldId = (useParams({ strict: false }) as { worldId?: string }).worldId
   const kind = node.type.name as SeparateKind
   const documentId: string | null = node.attrs.documentId
   const copying = useRef(false)
@@ -275,6 +278,10 @@ function SeparateView({ node, editor, getPos, updateAttributes, selected }: Node
           </svg>
           {t(kind === 'secret' ? 'separate.secretHint' : 'separate.noteHint')}
         </span>
+        {/* A quién se le ha revelado, y «Revelar» (docs/specs/revelar.md) */}
+        {kind === 'secret' && documentId && pageId && worldId && editor.isEditable && (
+          <SecretReveal worldId={worldId} pageId={pageId} documentId={documentId} />
+        )}
         {editor.isEditable && (
           <button
             type="button"

@@ -37,7 +37,8 @@ export const es = {
     inPlay: 'En juego',
     party: 'Grupo',
     library: 'Biblioteca',
-    characters: 'Personajes'
+    characters: 'Personajes',
+    revealed: 'Revelado'
   },
   // Una tirada escrita en una página
   diceRoll: {
@@ -1022,6 +1023,50 @@ export const es = {
     element: '«{{name}}» del mapa',
     content: '«{{name}}» del compendio del mundo'
   },
+  // El aviso de lo revelado, a quien juega
+  revealNotice: {
+    region: 'Lo nuevo',
+    title: 'Nuevo: {{title}}',
+    read: 'Leerlo',
+    close: 'Cerrar el aviso',
+    kinds: {
+      page: 'Una página',
+      secret: 'Un secreto',
+      tab: 'Una pestaña',
+      pin: 'Un lugar del mapa',
+      element: 'Algo del mapa',
+      content: 'Del compendio'
+    }
+  },
+  // «Lo que sabe el grupo» (docs/specs/revelar.md)
+  group: {
+    title: 'Lo que sabe el grupo',
+    byCharacter: 'Personaje',
+    byKind: 'Qué',
+    all: 'Todo',
+    everyone: 'Toda la campaña',
+    notKnown: 'Oculto',
+    hide: 'Ocultar otra vez',
+    hidden: '«{{name}}», oculto otra vez',
+    empty: 'Aún no se les ha revelado nada.',
+    world: 'Lo que sabe todo el mundo',
+    kinds: { page: 'Página', secret: 'Secreto', tab: 'Pestaña', pin: 'Pin', element: 'Del mapa', content: 'Compendio' }
+  },
+  // Revelar en partida (docs/specs/revelar.md)
+  reveal: {
+    reveal: 'Revelar',
+    change: 'Cambiar',
+    knownBy: 'Lo saben: {{names}}',
+    page: 'Revelar la página',
+    secret: 'Revelar el secreto',
+    campaign: 'Campaña',
+    to: 'A quién',
+    everyone: 'Toda la campaña',
+    alsoPage: 'Revelar también la página',
+    hideAgain: 'Ocultar otra vez',
+    done: 'Revelado a «{{campaign}}»',
+    hidden: 'Oculto otra vez a «{{campaign}}»'
+  },
   // «Quién la conoce» de una página (ADR-0017)
   whoKnows: {
     title: 'Quién la conoce',
@@ -1054,6 +1099,9 @@ export const es = {
   // Las páginas del mundo desde una campaña (ADR-0017)
   playerPages: {
     nothing: 'Aún no sabéis nada de este mundo.',
+    new: 'Nuevo',
+    newCount_one: '{{count}} novedad',
+    newCount_other: '{{count}} novedades',
     empty: 'Nada por ahora.',
     gone: 'Esta página ya no está a tu alcance.',
     expand: 'Abrir «{{title}}»',
@@ -2052,6 +2100,7 @@ export const es = {
     papelera: 'Papelera',
     ajustes: 'Ajustes',
     perfil: 'Perfil',
+    revelado: 'Lo que sabe el grupo',
     close: 'Cerrar'
   },
   // El tutorial guiado de cada vista: la primera vez que se entra, qué es cada cosa
@@ -2101,7 +2150,8 @@ export const es = {
       compendium: 'Las reglas y el contenido del juego de la campaña.',
       inPlay: 'Las criaturas que has puesto en juego, con su hoja.',
       party: 'Lo que es de todo el grupo: el botín y sus monedas.',
-      library: 'Los libros del mundo, para buscar dentro.'
+      library: 'Los libros del mundo, para buscar dentro.',
+      revealed: 'Lo que le has revelado al grupo, para repasarlo u ocultarlo otra vez.'
     },
     characters: {
       create: 'Cada personaje se hace con las reglas de la campaña, paso a paso.',

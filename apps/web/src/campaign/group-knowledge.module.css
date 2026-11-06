@@ -1,0 +1,101 @@
+/* «Lo que sabe el grupo»: una columna, como Historial */
+.page {
+  display: grid;
+  gap: var(--space-4);
+  max-inline-size: 48rem;
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+}
+
+.filters label {
+  display: grid;
+  gap: var(--space-1);
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+}
+
+.filters select {
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+}
+
+.day {
+  margin: 0 0 var(--space-2);
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.list {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: grid;
+  grid-template-columns: 6rem minmax(0, 1fr) minmax(0, 12rem) auto;
+  gap: var(--space-3);
+  align-items: center;
+  padding: var(--space-2) 0;
+  border-block-end: 1px solid var(--color-border);
+}
+
+.kind {
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+}
+
+.name {
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+
+.where,
+.who {
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+.who {
+  overflow-wrap: anywhere;
+}
+
+.hide {
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: none;
+  font-size: 0.8125rem;
+  cursor: pointer;
+}
+
+.hide:hover {
+  border-color: var(--color-frame);
+}
+
+.empty {
+  color: var(--color-muted);
+}
+
+@media (width < 40rem) {
+  .item {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .kind,
+  .who {
+    grid-column: 1;
+  }
+}

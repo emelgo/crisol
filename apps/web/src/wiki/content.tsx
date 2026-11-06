@@ -4,7 +4,7 @@
  */
 
 import type { JSONContent } from '@tiptap/core'
-import type { ReactNode } from 'react'
+import { createContext, type ReactNode, useContext } from 'react'
 import { useTranslation } from 'react-i18next'
 import callout from './callout.module.css'
 import styles from './content.module.css'
@@ -125,17 +125,7 @@ export function Block({ node, worldId }: { node: JSONContent; worldId: string })
       return <div className={styles.box}>{children}</div>
     case 'secret':
     case 'note':
-      return (
-        <section
-          aria-label={t(node.type === 'secret' ? 'separate.secret' : 'separate.note')}
-          className={node.type === 'secret' ? separate.secret : separate.note}
-        >
-          <div className={separate.label}>
-            {t(node.type === 'secret' ? 'separate.secretHint' : 'separate.noteHint')}
-          </div>
-          {children}
-        </section>
-      )
+      return <SeparateBlock node={node}>{children}</SeparateBlock>
     case 'pageEmbed':
       return <EmbeddedFrame node={node} worldId={worldId} />
     case 'fileEmbed':
@@ -165,6 +155,28 @@ export function Block({ node, worldId }: { node: JSONContent; worldId: string })
     default:
       return null
   }
+}
+
+/** Los secretos recién revelados a quien lee (docs/specs/revelar.md): salen con «Nuevo» */
+export const NewSecretsContext = createContext<ReadonlySet<string>>(new Set())
+
+function SeparateBlock({ node, children }: { node: JSONContent; children: ReactNode }) {
+  const { t } = useTranslation()
+  const fresh = useContext(NewSecretsContext)
+  const isNew = node.type === 'secret' && fresh.has(String(node.attrs?.documentId ?? ''))
+  return (
+    <section
+      aria-label={t(node.type === 'secret' ? 'separate.secret' : 'separate.note')}
+      className={node.type === 'secret' ? separate.secret : separate.note}
+      data-new={isNew || undefined}
+    >
+      <div className={separate.label}>
+        {t(node.type === 'secret' ? 'separate.secretHint' : 'separate.noteHint')}
+        {isNew && <span className={styles.newBadge}>{t('playerPages.new')}</span>}
+      </div>
+      {children}
+    </section>
+  )
 }
 
 /** Un incrustado dentro de lo que se enseña: lo abrió el servidor, o dice por qué no */

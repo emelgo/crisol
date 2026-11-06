@@ -30,6 +30,7 @@ import { useWikiPanel } from './panel.tsx'
 import { PanelBlocks } from './panel-blocks.tsx'
 import { PageProperties, type PropertyAdder } from './properties.tsx'
 import { QuickSwitcher } from './quick-switcher.tsx'
+import { PageRevealButton } from './reveal.tsx'
 import { SheetMenu, SheetPaper } from './sheet/controls.tsx'
 import { TableTab } from './table/table-tab.tsx'
 import { PageTabs, usePageTabs } from './tabs/page-tabs.tsx'
@@ -760,6 +761,7 @@ export function EntryView({
             actions={
               <>
                 <WhoKnowsButton page={page} />
+                <PageRevealButton page={page} />
                 <BookmarkButton page={page} />
                 <LockButton page={page} />
                 <MoreActions page={page} />

@@ -2,11 +2,13 @@ import { Link, Outlet, useRouter, useRouterState } from '@tanstack/react-router'
 import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
+import { GroupKnowledge } from '../campaign/group-knowledge.tsx'
 import { AccountMenu } from '../components/account-menu.tsx'
 import { ApprovalQueue } from '../components/approval-queue.tsx'
 import { CrisolMark, Loading } from '../components/brand.tsx'
 import { Notices } from '../components/notices.tsx'
 import { PageTitle, useFocusHeading } from '../components/page-title.tsx'
+import { RevealNotices } from '../components/reveal-notices.tsx'
 import { Ribbon, useMasteredWorld } from '../components/ribbon.tsx'
 import { ThemeToggle } from '../components/theme-toggle.tsx'
 import { type WindowKind, WindowProvider } from '../components/window.tsx'
@@ -93,6 +95,7 @@ export function RootLayout() {
               <main id="contenido" className={wide ? styles.wide : styles.main}>
                 <ApprovalQueue />
                 <Notices />
+                <RevealNotices />
                 <Outlet />
               </main>
               <DicePanel />
@@ -113,7 +116,15 @@ function WindowContent({ kind }: { kind: WindowKind }) {
   if (kind === 'historial') return worldId ? <WorldHistoryWindow worldId={worldId} /> : <OrganizationHistory />
   if (kind === 'papelera') return worldId ? <WorldTrashWindow worldId={worldId} /> : <OrganizationTrash />
   if (kind === 'ajustes') return <Settings />
+  if (kind === 'revelado') return <GroupKnowledgeWindow />
   return <Profile />
+}
+
+/** «Lo que sabe el grupo» de la campaña en la que se está (docs/specs/revelar.md) */
+function GroupKnowledgeWindow() {
+  const path = useRouterState({ select: (state) => state.location.pathname })
+  const match = /^\/mundos\/([^/]+)\/campanas\/([^/]+)/.exec(path)
+  return match?.[1] && match[2] ? <GroupKnowledge worldId={match[1]} campaignId={match[2]} /> : null
 }
 
 export function NotFound() {

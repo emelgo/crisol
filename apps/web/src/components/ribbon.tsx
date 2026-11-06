@@ -4,6 +4,7 @@ import {
   Backpack,
   BookOpen,
   Dices,
+  Eye,
   Folder,
   Globe,
   Hash,
@@ -486,6 +487,7 @@ function CampaignPanels({
           <Label icon={Swords} text={t('ribbon.inPlay')} />
         </Link>
       )}
+      {master && <RevealedButton />}
       {master && (
         <Link
           to="/mundos/$worldId/campanas/$campaignId/biblioteca"
@@ -499,6 +501,24 @@ function CampaignPanels({
       )}
       <DiceButton />
     </>
+  )
+}
+
+/** «Revelado»: abre «Lo que sabe el grupo» de la campaña como ventana (docs/specs/revelar.md) */
+function RevealedButton() {
+  const { t } = useTranslation()
+  const windows = useWindow()
+  return (
+    <button
+      type="button"
+      className={styles.item}
+      aria-haspopup="dialog"
+      aria-pressed={windows?.opened === 'revelado'}
+      data-tour="barra-revelado"
+      onClick={(event) => windows?.open('revelado', event.currentTarget)}
+    >
+      <Label icon={Eye} text={t('ribbon.revealed')} />
+    </button>
   )
 }
 
@@ -682,6 +702,13 @@ function MobileMenu({
                   text: t('ribbon.inPlay'),
                   current: path.startsWith(`/mundos/${world.id}/campanas/${campaign.id}/en-juego`),
                   run: go(`/mundos/${world.id}/campanas/${campaign.id}/en-juego`)
+                },
+                {
+                  key: 'revelado',
+                  icon: Eye,
+                  text: t('ribbon.revealed'),
+                  current: false,
+                  run: then(() => windows?.open('revelado', trigger.current))
                 },
                 {
                   key: 'biblioteca',

@@ -80,6 +80,11 @@ export function CampaignPage() {
                   placement: 'right' as const
                 },
                 {
+                  target: '[data-tour="barra-revelado"]',
+                  text: t('tour.campaign.revealed'),
+                  placement: 'right' as const
+                },
+                {
                   target: '[data-tour="barra-biblioteca"]',
                   text: t('tour.campaign.library'),
                   placement: 'right' as const

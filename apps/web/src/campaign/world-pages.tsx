@@ -4,10 +4,10 @@
  * jugador»), con la franja que lo dice
  */
 import type { Page, PanelBlock } from '@crisol/contracts'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { getRouteApi, Link, Navigate, useNavigate } from '@tanstack/react-router'
 import { ChevronDown, ChevronRight, Eye, FileText } from 'lucide-react'
-import { type ReactNode, useMemo, useState } from 'react'
+import { type ReactNode, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { ApiError } from '../api/client.ts'
@@ -17,7 +17,7 @@ import { failed, LoadError } from '../components/load-error.tsx'
 import { PageTitle } from '../components/page-title.tsx'
 import { Tour } from '../components/tour.tsx'
 import { Backlinks } from '../wiki/backlinks.tsx'
-import { ContentView } from '../wiki/content.tsx'
+import { ContentView, NewSecretsContext } from '../wiki/content.tsx'
 import { PageCoverImage } from '../wiki/cover.tsx'
 import panelStyles from '../wiki/panel-blocks.module.css'
 import { usePageContent } from '../wiki/preview.tsx'
@@ -40,6 +40,8 @@ const playerKey = (worldId: string, readAs: ReadAs, ...rest: unknown[]) => [
   ...rest
 ]
 
+const EMPTY: ReadonlySet<string> = new Set()
+
 type TreeRow = {
   id: string
   parentId: string | null
@@ -47,6 +49,17 @@ type TreeRow = {
   icon: string | null
   level: number
   hasChildren: boolean
+}
+
+/** Lo nuevo de quien juega (no del máster viendo como alguien) */
+function useNews(worldId: string) {
+  const api = useApi()
+  const readAs = useReadAs() as ReadAs
+  return useQuery({
+    queryKey: playerKey(worldId, readAs, 'news'),
+    queryFn: () => api.call('listNews', { campaignId: readAs.campaignId }),
+    enabled: !readAs.asCharacterId
+  })
 }
 
 function useTree(worldId: string) {
@@ -151,6 +164,8 @@ function PlayerTree({ worldId, currentId }: { worldId: string; currentId?: strin
   const readAs = useReadAs() as ReadAs
   const tree = useTree(worldId)
   const rows = tree.data?.pages ?? []
+  const news = useNews(worldId).data?.news ?? []
+  const isNew = (id: string) => news.some((n) => n.pageId === id || (n.kind === 'page' && n.targetId === id))
   // Abiertas: las de encima de la página abierta, y las que se abran a mano
   const above = useMemo(() => {
     const parents = new Map(rows.map((row) => [row.id, row.parentId]))
@@ -199,6 +214,7 @@ function PlayerTree({ worldId, currentId }: { worldId: string; currentId?: strin
               {row.icon ?? <FileText size={14} />}
             </span>
             {row.title}
+            {isNew(row.id) && <span className={styles.newBadge}>{t('playerPages.new')}</span>}
           </Link>
         </div>
         {row.hasChildren && isOpen(row.id) && <ul className={treeStyles.tree}>{render(row.id)}</ul>}
@@ -249,6 +265,19 @@ function PlayerEntry({ page }: { page: Page }) {
     })
   const active = texts.find((tab) => tab.id === tabId) ?? null
   const content = usePageContent(page.worldId, page.id, null, false, active?.id)
+  // Lo nuevo de esta página, tal como estaba al abrirla (luego deja de serlo)
+  const news = useNews(page.worldId)
+  const queryClient = useQueryClient()
+  const [fresh, setFresh] = useState<ReadonlySet<string> | null>(null)
+  useEffect(() => {
+    if (fresh || !news.data || readAs.asCharacterId) return
+    const mine = news.data.news.filter((n) => n.pageId === page.id || (n.kind === 'page' && n.targetId === page.id))
+    setFresh(new Set(mine.filter((n) => n.kind === 'secret').map((n) => n.targetId)))
+    if (mine.length > 0)
+      void api
+        .call('seeNews', { campaignId: readAs.campaignId, pageId: page.id })
+        .then(() => queryClient.invalidateQueries({ queryKey: playerKey(page.worldId, readAs, 'news') }))
+  }, [fresh, news.data, page.id, page.worldId, readAs, api, queryClient])
   return (
     <>
       <div className={wiki.entryBanner} data-cover={page.cover ? '' : undefined}>
@@ -284,7 +313,9 @@ function PlayerEntry({ page }: { page: Page }) {
           )}
           <div className={wiki.column}>
             {content.data ? (
-              <ContentView blocks={content.data.blocks} worldId={page.worldId} />
+              <NewSecretsContext.Provider value={fresh ?? EMPTY}>
+                <ContentView blocks={content.data.blocks} worldId={page.worldId} />
+              </NewSecretsContext.Provider>
             ) : failed(content) ? (
               <LoadError error={content.error} onRetry={() => content.refetch()} />
             ) : null}
