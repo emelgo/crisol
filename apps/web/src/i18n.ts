@@ -399,6 +399,8 @@ export const es = {
     noMatch: 'Nada con esos filtros',
     rollTable: 'Tirar {{formula}} en «{{what}}»',
     rolledTable: 'Salió {{total}}: {{text}}',
+    tableRows: 'Filas de «{{name}}»',
+    rows: 'Filas',
     searchHint: 'Un conjuro, una criatura…',
     otherVersion: 'Otra versión',
     clear: 'Borrar la búsqueda',

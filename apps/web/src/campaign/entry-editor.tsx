@@ -3,7 +3,7 @@
  * su texto), en un sistema de la cuenta (su propietario) o en el compendio del mundo (quien lo lleva,
  * docs/specs/compendio-mundo.md). Su mecánica sigue siendo cosa de la IA
  */
-import { type Language, type Text, textOf } from '@crisol/systems'
+import { type Language, TABLE_TYPE, type TableEntry, type Text, textOf } from '@crisol/systems'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -16,6 +16,7 @@ import { Field, FormError } from '../components/field.tsx'
 import formStyles from '../components/form.module.css'
 import { Modal } from '../components/modal.tsx'
 import styles from './entry-editor.module.css'
+import { emptyTable, TableRowsField } from './entry-table.tsx'
 
 type Compendium = ActionOutput<'getCampaignCompendium'>
 export type Editable = NonNullable<Compendium['editable']>
@@ -135,6 +136,8 @@ export function EntryEditor({
     const field = types.find((each) => each.key === item?.type)?.text
     return field ? textOf(item?.data[field] as Text | undefined, language) : ''
   })
+  // Una tabla: sus filas (si la entrada no las tenía, una para empezar)
+  const [table, setTable] = useState<TableEntry>(() => item?.table ?? emptyTable())
   const save = useMutation({
     mutationFn: async () => {
       if (!type || !target) throw new Error('sin tipo')
@@ -146,7 +149,17 @@ export function EntryEditor({
         ...(item?.concept ? { concept: item.concept } : {}),
         data,
         ...(item?.mechanics ? { mechanics: item.mechanics } : {}),
-        ...(item?.ref ? { ref: item.ref } : {})
+        ...(item?.ref ? { ref: item.ref } : {}),
+        ...(item?.img ? { img: item.img } : {}),
+        ...(type.key === TABLE_TYPE
+          ? {
+              table: {
+                ...(table.formula?.trim() ? { formula: table.formula.trim() } : {}),
+                ...(table.replacement === false ? { replacement: false } : {}),
+                rows: table.rows
+              }
+            }
+          : {})
       }
       if (target.layer === 'world')
         await api.call('putWorldContent', {
@@ -255,12 +268,13 @@ export function EntryEditor({
             <textarea
               id={textId}
               className={styles.text}
-              rows={12}
+              rows={type.key === TABLE_TYPE ? 4 : 12}
               value={text}
               onChange={(event) => setText(event.currentTarget.value)}
             />
           </div>
         )}
+        {type?.key === TABLE_TYPE && <TableRowsField table={table} onChange={setTable} />}
         <FormError message={save.error ? errorText(save.error) : null} />
         <div className={dialogStyles.actions}>
           <BusyButton type="submit" className={formStyles.button} busy={save.isPending}>

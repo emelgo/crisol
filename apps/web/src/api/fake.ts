@@ -1755,20 +1755,34 @@ export function fakeApi(
       const found = compendiumOf(campaignId)
       const item = found?.content.find((each) => each.key === key)
       if (!found || !item) throw new ApiError('NOT_FOUND', 404)
+      const name = textOf(item.data.name as Text, found.choices.language) || item.key
+      if (table === undefined) {
+        // Una entrada «Tabla»: sus filas (aquí, sin apuntar lo sacado)
+        if (!item.table) throw new ApiError('NOT_A_TABLE', 400)
+        const rows = item.table.rows
+        const out = handlers.rollDice({ campaignId, formula: tableFormula(item.table.formula, rows), visibility })
+        const hits = rows.filter((r) => r.from <= out.roll.total && out.roll.total <= r.to)
+        const stored = rolls.find((r) => r.id === out.roll.id)
+        for (const each of stored ? [out.roll, stored] : [out.roll]) {
+          each.label = name
+          each.table = { name, results: hits.map((r) => ({ text: r.text, page: null })) }
+        }
+        return { roll: out.roll, row: hits[0] ? rows.indexOf(hits[0]) : null, drawn: [] }
+      }
       const field = textFieldOf(found.document, item.type)
       const text = field ? textOf(item.data[field] as Text, found.choices.language) : ''
       const chosen = contentTables(text)[table]
       if (!chosen) throw new ApiError('BAD_TABLE', 400)
       const out = handlers.rollDice({ campaignId, formula: chosen.formula, visibility })
       const hit = tableRowOf(chosen, out.roll.total)
-      const name = textOf(item.data.name as Text, found.choices.language) || item.key
       const stored = rolls.find((r) => r.id === out.roll.id)
       for (const each of stored ? [out.roll, stored] : [out.roll]) {
         each.label = name
         each.table = { name, results: hit ? [{ text: hit.cells.slice(1).join(' · '), page: null }] : [] }
       }
-      return { roll: out.roll, row: hit ? chosen.rows.indexOf(hit) : null }
+      return { roll: out.roll, row: hit ? chosen.rows.indexOf(hit) : null, drawn: [] }
     },
+    resetContentTable: () => ({ ok: true as const }),
     browseCampaignContent: ({ campaignId, type }) => {
       const found = compendiumOf(campaignId)
       if (!found) return { items: [], folders: [], filters: [] }

@@ -42,6 +42,7 @@ import { useNarrow } from '../wiki/panel.tsx'
 import styles from './compendium.module.css'
 import { ContentText } from './content-text.tsx'
 import { DeleteEntry, EntryEditor, type EntryTarget } from './entry-editor.tsx'
+import { EntryTable } from './entry-table.tsx'
 import { OriginNotice, ToSystem } from './origin.tsx'
 
 const route = getRouteApi('/mundos/$worldId/campanas/$campaignId/compendio')
@@ -858,6 +859,18 @@ function Entry({
         {item.play && <InPlay play={item.play} titleId={titleId} />}
         <FormError message={rolling.error ? errorText(rolling.error) : null} />
         {body && <ContentText text={body} onRoll={roll} />}
+        {item.table && (
+          <EntryTable
+            campaignId={campaignId}
+            entryKey={item.key}
+            name={name}
+            table={item.table}
+            drawn={item.drawn ?? []}
+            master={campaign.data?.campaign.role === 'master'}
+            visibility={visibility}
+            onOpen={onOpen}
+          />
+        )}
         {item.granted.length > 0 && (
           <section className={styles.granted} aria-labelledby={`${titleId}-granted`}>
             <h3 id={`${titleId}-granted`}>{t('compendium.byLevel')}</h3>
