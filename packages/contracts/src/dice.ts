@@ -43,6 +43,13 @@ export const diceRoll = z.object({
     })
     .optional()
     .describe('Si fue en una tabla aleatoria: su nombre y lo que salió (con lo de sus tablas anidadas)'),
+  apply: z
+    .object({
+      kind: z.enum(['damage', 'heal']),
+      parts: z.array(z.object({ amount: z.number(), type: z.string().nullable() }))
+    })
+    .optional()
+    .describe('El daño o la curación de una acción, parte a parte con su tipo: se aplica con applyRoll'),
   createdAt: z.string()
 })
 

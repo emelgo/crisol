@@ -54,6 +54,8 @@ import {
   contentFingerprint,
   contentTables,
   creatureView,
+  damageTaken,
+  defensesOf,
   fileName,
   type Mechanics,
   mechanicsText,
@@ -1498,8 +1500,51 @@ export function fakeApi(
       const out = handlers.rollDice({ campaignId: row.campaignId, formula, visibility })
       const stored = rolls.find((r) => r.id === out.roll.id)
       const label = `${row.name} · ${chosen?.label ?? roll?.key ?? ''}${action?.part === 'damage' ? ' · daño' : ''}`
-      for (const each of stored ? [out.roll, stored] : [out.roll]) each.label = label
+      // Lo que se aplica de un daño: en la falsa, todo en una parte con el tipo de la primera
+      const apply =
+        action?.part === 'damage'
+          ? { kind: 'damage' as const, parts: [{ amount: out.roll.total, type: chosen?.damage[0]?.type ?? null }] }
+          : undefined
+      for (const each of stored ? [out.roll, stored] : [out.roll]) {
+        each.label = label
+        if (apply) each.apply = apply
+      }
       return { roll: out.roll }
+    },
+    applyRoll: ({ campaignId, rollId, targets }) => {
+      const roll = rolls.find((r) => r.id === rollId && r.campaignId === campaignId)
+      if (!roll || !leadsWorlds()) throw new ApiError('NOT_FOUND', 404)
+      const apply = roll.apply
+      if (!apply) throw new ApiError('NOTHING_TO_APPLY', 400)
+      return {
+        applied: targets.map((target) => {
+          if (!target.creatureId) throw new ApiError('BAD_TARGET', 400)
+          const row = creatureById(target.creatureId)
+          const { card, view } = creatureCard(row)
+          const found = compendiumOf(row.campaignId)
+          if (!card.life || !found) throw new ApiError('BAD_TARGET', 400)
+          const amount =
+            apply.kind === 'heal'
+              ? apply.parts.reduce((n, p) => n + Math.floor(p.amount * target.multiplier), 0)
+              : damageTaken(
+                  apply.parts.map((p) => ({ amount: p.amount, type: p.type ?? undefined })),
+                  target.multiplier,
+                  defensesOf(found.document, card.type, view.sheet)
+                )
+          row.play = changeResource(row.play, card.life.path, card.life.max, {
+            [apply.kind === 'heal' ? 'heal' : 'damage']: amount
+          })
+          row.version++
+          const life = creatureCard(row).card.life
+          return {
+            id: row.id,
+            kind: 'creature' as const,
+            name: row.name,
+            amount,
+            life: life ? { value: life.value, max: life.max } : null
+          }
+        })
+      }
     },
     removeFromPlay: ({ campaignId, creatureIds, copiesOf }) => {
       const removed = creatures

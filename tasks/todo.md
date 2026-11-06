@@ -14,7 +14,7 @@ Plan: `tasks/plan.md` · Spec: `docs/specs/criaturas.md`. Cada tarea con sus pru
 - [x] **4. Las acciones**: poner en juego (cuántas o una fórmula, o única; PG medios o tirados), la lista y una con su
   hoja, lo de la partida (daño, curación, temporales, usos, recargas, otro máximo, tirar PG, descansar), tirar por
   ella, quitar una o todas las copias. Permisos y fugas. **Punto de control 1.**
-- [ ] **5. Aplicar una tirada**: el daño o la curación de una tirada del registro a varias criaturas en juego o
+- [x] **5. Aplicar una tirada**: el daño o la curación de una tirada del registro a varias criaturas en juego o
   personajes, con nada, mitad, entero o doble y sus resistencias (`applyRoll`).
 - [ ] **6. La web**: «Poner en juego» en una criatura del compendio; «En juego» en la barra de la campaña (el máster),
   con las copias juntas y las únicas aparte; la hoja de la criatura (los bloques de la hoja de personaje) con daño y

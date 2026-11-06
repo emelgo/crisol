@@ -133,6 +133,7 @@ describe('Actions', () => {
       playCreature: true,
       rollForCreature: true,
       removeFromPlay: true,
+      applyRoll: true,
       getCampaignContent: true,
       listCharacters: true,
       getCharacter: true,

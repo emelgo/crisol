@@ -183,6 +183,100 @@ describe('las criaturas en juego (docs/specs/criaturas.md)', () => {
     expect(again.number).toBe(1)
   })
 
+  it('aplicar una tirada: a varias, con su multiplicador y sus resistencias, y a un personaje', async () => {
+    const [one, two] = (await ok200('putInPlay', { campaignId, key: GOBLIN, count: 2 })).creatures
+    // Un goblin del mundo que resiste lo cortante
+    const [original] = (await ok200('getSystemContent', { systemId: five, keys: [GOBLIN] })).items
+    await ok200('putWorldContent', {
+      worldId,
+      systemId: five,
+      items: [
+        {
+          type: 'criatura',
+          key: 'goblin_duro',
+          data: { ...original.data, name: 'Goblin duro', resistencias: ['cortante'] }
+        }
+      ]
+    })
+    const [hard] = (await ok200('putInPlay', { campaignId, key: 'goblin_duro', unique: true })).creatures
+    // Thora, de la jugadora, completa: el máster le aplica el daño
+    const thora = (await ok200('createCharacter', { campaignId, name: 'Thora' }, ana.cookie)).character
+    const built = await ok200(
+      'updateCharacter',
+      {
+        characterId: thora.id,
+        version: 1,
+        build: {
+          scores: { method: 'matriz', base: { fue: 15, des: 14, con: 13, int: 12, sab: 10, car: 8 } },
+          picks: [
+            { id: 'c1', step: 'clase', key: 'guerrero_2024', level: 1 },
+            { id: 'e1', step: 'especie', key: 'enano_2024' },
+            { id: 't1', step: 'trasfondo', key: 'acolito_2024' }
+          ]
+        }
+      },
+      ana.cookie
+    )
+    const thoraMax = built.state.sheet.pg.max as number
+
+    const { roll } = await ok200('rollForCreature', {
+      creatureId: one.id,
+      action: { item: null, key: 'cimitarra', part: 'damage' }
+    })
+    expect(roll.apply).toEqual({ kind: 'damage', parts: [{ amount: roll.total, type: 'cortante' }] })
+    const { applied } = await ok200('applyRoll', {
+      campaignId,
+      rollId: roll.id,
+      targets: [
+        { creatureId: one.id, multiplier: 1 },
+        { creatureId: two.id, multiplier: 0.5 },
+        { creatureId: hard.id, multiplier: 1 },
+        { characterId: thora.id, multiplier: 2 }
+      ]
+    })
+    expect(applied).toEqual([
+      {
+        id: one.id,
+        kind: 'creature',
+        name: 'Goblin 1',
+        amount: roll.total,
+        life: { value: Math.max(0, 7 - roll.total), max: 7 }
+      },
+      expect.objectContaining({ id: two.id, amount: Math.floor(roll.total / 2) }),
+      expect.objectContaining({ id: hard.id, amount: Math.floor(roll.total / 2) }),
+      expect.objectContaining({
+        id: thora.id,
+        kind: 'character',
+        name: 'Thora',
+        amount: roll.total * 2,
+        life: { value: Math.max(0, thoraMax - roll.total * 2), max: thoraMax }
+      })
+    ])
+    // Una tirada sin daño no se aplica; la jugadora no aplica nada
+    const attack = await ok200('rollForCreature', {
+      creatureId: one.id,
+      action: { item: null, key: 'cimitarra', part: 'attack' }
+    })
+    expect(
+      (
+        await code('applyRoll', {
+          campaignId,
+          rollId: attack.roll.id,
+          targets: [{ creatureId: two.id, multiplier: 1 }]
+        })
+      ).code
+    ).toBe('NOTHING_TO_APPLY')
+    expect(
+      (
+        await code(
+          'applyRoll',
+          { campaignId, rollId: roll.id, targets: [{ creatureId: two.id, multiplier: 1 }] },
+          ana.cookie
+        )
+      ).status
+    ).toBe(403)
+  })
+
   it('la jugadora no ve ni cambia nada (hasta el módulo 5)', async () => {
     const [one] = (await ok200('putInPlay', { campaignId, key: GOBLIN })).creatures
     for (const [name, payload] of [

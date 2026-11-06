@@ -377,7 +377,19 @@ export const characterActions = [
           total: stored.reduce((n, p) => n + p.total, 0),
           detail: stored.map((p) => p.detail).join(' + '),
           critical: action.part === 'attack' ? (stored[0]?.critical ?? null) : null,
-          dice: stored.flatMap((p) => p.dice)
+          dice: stored.flatMap((p) => p.dice),
+          // Lo que se aplica después a quien lo recibe: cada parte con su tipo
+          ...(action.part === 'attack'
+            ? {}
+            : {
+                apply: {
+                  kind: action.part === 'heal' ? ('heal' as const) : ('damage' as const),
+                  parts: parts.map((p, i) => ({
+                    amount: stored[i]?.total ?? 0,
+                    type: (p as { type?: string }).type ?? null
+                  }))
+                }
+              })
         }
       })
       return { roll: view }

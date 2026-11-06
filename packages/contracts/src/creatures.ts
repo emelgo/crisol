@@ -138,3 +138,35 @@ export const removeFromPlay = defineAction({
   }),
   output: z.object({ removed: z.array(z.uuid()) })
 })
+
+export const applyRoll = defineAction({
+  name: 'applyRoll',
+  kind: 'write',
+  description:
+    'Aplica el daño (o la curación) de una tirada del registro de la campaña (de una acción: lleva apply) a criaturas en juego o personajes, cada uno con su multiplicador (0 nada, 0.5 mitad al superar la salvación, 1 entero, 2 doble). El daño tiene en cuenta sus resistencias, inmunidades y vulnerabilidades, parte a parte. Va a su primer recurso (sus PG)',
+  input: z.object({
+    campaignId: z.uuid(),
+    rollId: z.uuid(),
+    targets: z
+      .array(
+        z.object({
+          creatureId: z.uuid().optional(),
+          characterId: z.uuid().optional(),
+          multiplier: z.union([z.literal(0), z.literal(0.5), z.literal(1), z.literal(2)])
+        })
+      )
+      .min(1)
+      .max(50)
+  }),
+  output: z.object({
+    applied: z.array(
+      z.object({
+        id: z.uuid(),
+        kind: z.enum(['creature', 'character']),
+        name: z.string(),
+        amount: z.number().describe('Lo que recibió, con su multiplicador y sus defensas'),
+        life: z.object({ value: z.number(), max: z.number() }).nullable()
+      })
+    )
+  })
+})

@@ -4,6 +4,7 @@
  * y quitarlas. Hasta el módulo 5, solo el máster (`creatures.manage`)
  */
 import {
+  applyRoll,
   type CreatureInPlay,
   getInPlay,
   listInPlay,
@@ -12,7 +13,7 @@ import {
   removeFromPlay,
   rollForCreature
 } from '@crisol/contracts'
-import { creaturesRepo, systemsRepo } from '@crisol/db'
+import { creaturesRepo, diceRepo, systemsRepo } from '@crisol/db'
 import { cryptoRoller, rollDice } from '@crisol/dice'
 import { authorize, NotFoundError } from '@crisol/domain'
 import {
@@ -20,6 +21,8 @@ import {
   type ContentItem,
   changeResource,
   creatureView,
+  damageTaken,
+  defensesOf,
   nextNumbers,
   normalizeChoices,
   type Play,
@@ -38,6 +41,7 @@ import {
 } from '@crisol/systems'
 import { creaturesChanged } from '../realtime/events.ts'
 import { authorizedCampaign } from './access.ts'
+import { characterActions } from './characters.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
 import { saveRoll, storedOf } from './dice.ts'
 import * as layers from './layers.ts'
@@ -357,7 +361,19 @@ export const creatureActions = [
           total: stored.reduce((n, p) => n + p.total, 0),
           detail: stored.map((p) => p.detail).join(' + '),
           critical: action.part === 'attack' ? (stored[0]?.critical ?? null) : null,
-          dice: stored.flatMap((p) => p.dice)
+          dice: stored.flatMap((p) => p.dice),
+          // Lo que se aplica después a quien lo recibe: cada parte con su tipo
+          ...(action.part === 'attack'
+            ? {}
+            : {
+                apply: {
+                  kind: action.part === 'heal' ? ('heal' as const) : ('damage' as const),
+                  parts: parts.map((p, i) => ({
+                    amount: stored[i]?.total ?? 0,
+                    type: (p as { type?: string }).type ?? null
+                  }))
+                }
+              })
         }
       })
       return { roll: view }
@@ -385,5 +401,94 @@ export const creatureActions = [
         : []
     if (removed.length > 0) ctx.realtime.publish(creaturesChanged({ campaignId, worldId: campaign.worldId }))
     return { removed }
+  }),
+
+  implement(applyRoll, async (ctx, { campaignId, rollId, targets }) => {
+    const at = await campaignOf(ctx, campaignId)
+    const roll = await diceRepo.findRoll(ctx.db, campaignId, rollId)
+    if (!roll) throw new NotFoundError('roll')
+    const apply = roll.result.apply
+    if (!apply) throw new InvalidRequestError('NOTHING_TO_APPLY', 'esa tirada no es de daño ni de curación')
+    const total = (multiplier: number) =>
+      apply.parts.reduce((n, p) => n + Math.floor(Math.max(0, p.amount) * multiplier), 0)
+    const applied = []
+    for (const target of targets) {
+      if (Boolean(target.creatureId) === Boolean(target.characterId))
+        throw new InvalidRequestError('BAD_TARGET', 'cada objetivo, una criatura o un personaje')
+      if (target.creatureId) {
+        const { row } = await readable(ctx, target.creatureId)
+        if (row.campaignId !== campaignId) throw new NotFoundError('creature')
+        const content = await contentFor(ctx, at, row.key, row.play as Play)
+        const { entry, card, played } = viewOf(at, row, content)
+        if (!card.life) throw new InvalidRequestError('BAD_TARGET', `«${row.name}» no tiene vida que cambiar`)
+        const amount =
+          apply.kind === 'heal'
+            ? total(target.multiplier)
+            : damageTaken(
+                apply.parts.map((p) => ({ amount: p.amount, type: p.type ?? undefined })),
+                target.multiplier,
+                defensesOf(at.document, entry.type, played.view.sheet)
+              )
+        const play = changeResource(row.play as Play, card.life.path, card.life.max, {
+          [apply.kind === 'heal' ? 'heal' : 'damage']: amount
+        })
+        const saved = await creaturesRepo.updateCreature(
+          ctx.db,
+          historyContext(ctx, 'applyRoll', { name: row.name, amount, kind: apply.kind }, at.campaign),
+          row.id,
+          row.version,
+          { play: play as Record<string, unknown> }
+        )
+        const after = viewOf(at, { ...saved, worldId: row.worldId }, content).card
+        applied.push({
+          id: row.id,
+          kind: 'creature' as const,
+          name: row.name,
+          amount,
+          life: after.life ? { value: after.life.value, max: after.life.max } : null
+        })
+      } else if (target.characterId) {
+        // Un personaje: con su hoja y su acción de partida (el máster puede con todos)
+        const read = handlerOf('getCharacter')
+        const play = handlerOf('playCharacter')
+        const { character, state } = (await read(ctx, { characterId: target.characterId })) as {
+          character: { id: string; name: string; campaignId: string; version: number }
+          state: { sheet: Record<string, unknown> }
+        }
+        if (character.campaignId !== campaignId) throw new NotFoundError('character')
+        const type = Object.entries(at.document.types).find(([, t]) => t.document === 'actor')?.[0] ?? ''
+        const amount =
+          apply.kind === 'heal'
+            ? total(target.multiplier)
+            : damageTaken(
+                apply.parts.map((p) => ({ amount: p.amount, type: p.type ?? undefined })),
+                target.multiplier,
+                defensesOf(at.document, type, state.sheet as Record<string, never>)
+              )
+        const done = (await play(ctx, {
+          characterId: character.id,
+          version: character.version,
+          [apply.kind === 'heal' ? 'heal' : 'damage']: amount
+        })) as { state: { sheet: Record<string, unknown> } }
+        const [life] = resourcePaths(at.document.types[type]?.fields ?? {})
+        const now = life ? (done.state.sheet[life.path] as { value?: number; max?: number } | undefined) : undefined
+        applied.push({
+          id: character.id,
+          kind: 'character' as const,
+          name: character.name,
+          amount,
+          life: typeof now?.max === 'number' ? { value: now.value ?? now.max, max: now.max } : null
+        })
+      }
+    }
+    ctx.realtime.publish(creaturesChanged({ campaignId, worldId: at.campaign.worldId }))
+    return { applied }
   })
 ]
+
+/** El servicio de una acción de los personajes (para aplicarles una tirada con sus mismas reglas) */
+function handlerOf(name: 'getCharacter' | 'playCharacter') {
+  const found = characterActions.find((impl) => impl.action.name === name)
+  if (!found) throw new Error(`no está ${name}`)
+  return found.handler
+}

@@ -19,7 +19,15 @@ import {
   rollForCharacter,
   updateCharacter
 } from './characters.ts'
-import { getInPlay, listInPlay, playCreature, putInPlay, removeFromPlay, rollForCreature } from './creatures.ts'
+import {
+  applyRoll,
+  getInPlay,
+  listInPlay,
+  playCreature,
+  putInPlay,
+  removeFromPlay,
+  rollForCreature
+} from './creatures.ts'
 import { listRolls, rollDice, tryDice } from './dice.ts'
 import {
   createFolder,
@@ -272,6 +280,7 @@ export const ACTIONS = [
   playCreature,
   rollForCreature,
   removeFromPlay,
+  applyRoll,
   listCharacters,
   getCharacter,
   createCharacter,
@@ -420,6 +429,7 @@ export type Actions = {
   playCreature: typeof playCreature
   rollForCreature: typeof rollForCreature
   removeFromPlay: typeof removeFromPlay
+  applyRoll: typeof applyRoll
   listCharacters: typeof listCharacters
   getCharacter: typeof getCharacter
   createCharacter: typeof createCharacter

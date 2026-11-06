@@ -45,6 +45,7 @@ export const present = (row: Row): DiceRoll => ({
   dice: row.result.dice,
   visibility: row.visibility,
   ...(row.result.table ? { table: row.result.table } : {}),
+  ...(row.result.apply ? { apply: row.result.apply } : {}),
   createdAt: row.createdAt.toISOString()
 })
 
