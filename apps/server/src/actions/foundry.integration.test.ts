@@ -132,7 +132,20 @@ describe('traer un sistema de Foundry', () => {
     expect(daga.data).toMatchObject({ weight: 1, description: { es: 'Corta' } })
     const tabla = (await ok200('searchSystemContent', { systemId: system.id, type: 'tabla' })).items[0]
     const read = (await ok200('getSystemContent', { systemId: system.id, keys: [tabla.key] })).items[0]
-    expect(read.data.description.es).toBe('| 1d4 | Resultado |\n| --- | --- |\n| 1–2 | Nada |\n| 3–4 | Oro |')
+    // La tabla, de verdad: sus filas, que se tiran en una campaña con ese sistema
+    expect(read.data.description).toBeUndefined()
+    expect(read.table).toEqual({
+      formula: '1d4',
+      rows: [
+        { id: 'a', from: 1, to: 2, text: 'Nada' },
+        { id: 'b', from: 3, to: 4, text: 'Oro' }
+      ]
+    })
+    const world = await ok200('createWorld', { name: 'Valdren' })
+    const campaign = await ok200('createCampaign', { worldId: world.id, name: 'La Marca', system: system.id })
+    const rolled = await ok200('rollContentTable', { campaignId: campaign.id, key: tabla.key })
+    expect(rolled.roll.table.name).toBe('Botín')
+    expect(rolled.roll.table.results[0].text).toBe(rolled.roll.total <= 2 ? 'Nada' : 'Oro')
   })
 
   it('solo los paquetes que se piden; uno que no tiene, un error', async () => {

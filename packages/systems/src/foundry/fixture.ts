@@ -157,12 +157,26 @@ export function foundryFixture(): FoundryInput {
           {
             _id: 'tabla00000000001',
             name: 'Botín',
-            formula: '1d6',
+            formula: '1d8 ',
+            replacement: false,
             description: '<p>Lo que llevan.</p>',
             results: [
               { _id: 'r3', type: 'text', range: [5, 6], text: '<p>Una <em>gema</em></p>' },
               { _id: 'r1', type: 'text', range: [1, 3], text: 'Nada | vacío' },
-              { _id: 'r2', type: 'document', range: [4, 4], name: 'Daga', text: 'Daga' }
+              {
+                _id: 'r2',
+                type: 'document',
+                range: [4, 4],
+                name: 'Daga',
+                documentUuid: 'Compendium.prueba.armas.Item.arma000000000001'
+              },
+              {
+                _id: 'r4',
+                type: 'document',
+                range: [7, 8],
+                name: 'Espada de otro',
+                documentUuid: 'Compendium.otro.armas.Item.zzzzzzzzzzzzzzzz'
+              }
             ]
           }
         ]

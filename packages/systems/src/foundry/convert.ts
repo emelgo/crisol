@@ -197,7 +197,18 @@ interface Entry {
   folder: string | null
   /** Su imagen: la del documento o, en un actor, su retrato del mapa de arte; solo si es del propio paquete */
   img?: string | null
+  /** Si es una tabla de tirar: sus filas, con el id del documento de Foundry al que lleva cada una */
+  table?: FoundryTable
 }
+
+interface FoundryTable {
+  formula: string | null
+  replacement: boolean
+  rows: { id: string; from: number; to: number; text: string; link: string | null }[]
+}
+
+/** Las filas de una tabla, como mucho */
+const TABLE_ROWS = 500
 
 /** Un campo que sale de `system`: su clave, su campo y cómo se guarda su valor */
 interface Column {
@@ -291,28 +302,37 @@ function pagesOf(doc: FoundryDocument, html: (text: string) => string): { id: st
   })
 }
 
-/** Una tabla de tirar en Markdown: la fórmula en su primera columna y cada fila con su rango (1–5) */
-function tableText(doc: FoundryDocument, line: (text: string) => string, language: Language): string {
-  const results = (Array.isArray(doc.results) ? doc.results : [])
+/** El id del documento al que lleva un resultado (de su uuid o, en versiones viejas, de su id y su colección) */
+function linkedId(r: Record<string, unknown>): string | null {
+  const uuid = str(r.documentUuid)
+  if (uuid) return uuid.split('.').at(-1) ?? null
+  return str(r.documentId) ?? str(r.resultId) ?? null
+}
+
+/** Una tabla de tirar: su fórmula (sin ella, 1dN por la última fila), si repite y sus filas con su rango */
+function tableOf(doc: FoundryDocument, line: (text: string) => string): FoundryTable | null {
+  const ids = new Set<string>()
+  const bound = (n: number) => Math.min(100_000, Math.max(-1000, Math.round(n)))
+  const rows = (Array.isArray(doc.results) ? doc.results : [])
     .filter(isObject)
-    .map((r) => {
+    .map((r, i) => {
       const range = Array.isArray(r.range) ? r.range.map(Number) : []
-      const from = Number.isFinite(range[0]) ? (range[0] as number) : 0
-      const to = Number.isFinite(range[1]) ? (range[1] as number) : from
+      const from = bound(Number.isFinite(range[0]) ? (range[0] as number) : 0)
+      const to = bound(Number.isFinite(range[1]) ? (range[1] as number) : from)
       // De un documento, su nombre; de texto, su texto
       const linked =
         r.type === 'document' || r.type === 'pack' || r.type === 'compendium' || r.type === 1 || r.type === 2
       const candidates = linked ? [r.name, r.text, r.description] : [r.description, r.text, r.name]
-      const html = candidates.map(str).find(Boolean) ?? ''
-      return { from, to, text: line(html).replace(/\|/g, '\\|') }
+      const text = line(candidates.map(str).find(Boolean) ?? '').slice(0, 2000)
+      let id = (str(r._id) ?? `r${i + 1}`).slice(0, 40)
+      for (let n = 2; ids.has(id); n++) id = `r${i + 1}_${n}`
+      ids.add(id)
+      return { id, from, to: Math.max(from, to), text, link: linked ? linkedId(r) : null }
     })
     .sort((a, b) => a.from - b.from)
-  if (results.length === 0) return ''
-  const top = Math.max(...results.map((r) => r.to))
-  const formula = (str(doc.formula) ?? `1d${Math.max(1, top)}`).replace(/\s+/g, '')
-  const head = `| ${formula} | ${language === 'es' ? 'Resultado' : 'Result'} |`
-  const rows = results.map((r) => `| ${r.from === r.to ? r.from : `${r.from}–${r.to}`} | ${r.text} |`)
-  return [head, '| --- | --- |', ...rows].join('\n')
+  if (rows.length === 0) return null
+  const formula = str(doc.formula)?.replace(/\s+/g, '').slice(0, 200) ?? null
+  return { formula, replacement: doc.replacement !== false, rows: rows.slice(0, TABLE_ROWS) }
 }
 
 /** Recorta un texto hasta que el documento quepa */
@@ -429,9 +449,20 @@ export function convertFoundry(input: FoundryInput): Converted {
       if (document === 'RollTable') {
         const type = 'tabla'
         typeInfo.set(type, { document: 'item', label: both('Tabla', 'Table'), plural: both('Tablas', 'Tables') })
-        const description = str(doc.description) ? md(doc.description as string, contextOf(null, null, name)) : ''
-        const text = [description, tableText(doc, line, language)].filter(Boolean).join('\n\n')
-        entries.push({ pack, type, where, name, text, values: new Map(), folder: folderOf(doc) })
+        const text = str(doc.description) ? md(doc.description as string, contextOf(null, null, name)) : ''
+        const table = tableOf(doc, line)
+        if (table && Array.isArray(doc.results) && doc.results.length > TABLE_ROWS)
+          notes.push(`«${name}» tiene ${doc.results.length} filas: se traen ${TABLE_ROWS}`)
+        entries.push({
+          pack,
+          type,
+          where,
+          name,
+          text,
+          values: new Map(),
+          folder: folderOf(doc),
+          ...(table ? { table } : {})
+        })
         continue
       }
       const subtype = doc.type ?? 'base'
@@ -535,10 +566,21 @@ export function convertFoundry(input: FoundryInput): Converted {
     })
   }
 
-  // El contenido
+  // El contenido: primero sus claves, para las filas de las tablas que llevan a otro documento del zip
   let trimmed = 0
   const usedKeys = new Set<string>()
-  const content: ContentItem[] = entries.map((e) => {
+  const keys = entries.map((e) => {
+    let key = contentKeyOf(e.name, e.where)
+    for (let n = 2; usedKeys.has(key); n++) key = contentKeyOf(e.name, `${e.where}#${n}`)
+    usedKeys.add(key)
+    return key
+  })
+  const keyById = new Map<string, string>()
+  for (const [i, e] of entries.entries()) {
+    const id = e.where.split('/')[1]
+    if (id && !keyById.has(id)) keyById.set(id, keys[i] as string)
+  }
+  const content: ContentItem[] = entries.map((e, i) => {
     const data: Record<string, unknown> = { name: at(e.name) }
     for (const c of columns.get(e.type) ?? []) {
       const raw = e.values.get(c.path)
@@ -549,10 +591,26 @@ export function convertFoundry(input: FoundryInput): Converted {
     if (e.folder) data.folder = e.folder.slice(0, 200)
     if (e.text) data.description = { [language]: e.text }
     if (fit(data, 'description', language)) trimmed++
-    let key = contentKeyOf(e.name, e.where)
-    for (let n = 2; usedKeys.has(key); n++) key = contentKeyOf(e.name, `${e.where}#${n}`)
-    usedKeys.add(key)
-    return { type: e.type, key, source: sourceOf.get(e.pack.name) ?? null, data, ...(e.img ? { img: e.img } : {}) }
+    const key = keys[i] as string
+    const table = e.table
+      ? {
+          ...(e.table.formula ? { formula: e.table.formula } : {}),
+          ...(e.table.replacement ? {} : { replacement: false }),
+          // Lo que lleva a un documento del zip, por su clave; lo de fuera se queda en su texto
+          rows: e.table.rows.map(({ link, ...row }) => {
+            const linked = link ? keyById.get(link) : undefined
+            return linked ? { ...row, key: linked } : row
+          })
+        }
+      : null
+    return {
+      type: e.type,
+      key,
+      source: sourceOf.get(e.pack.name) ?? null,
+      data,
+      ...(e.img ? { img: e.img } : {}),
+      ...(table ? { table } : {})
+    }
   })
   if (trimmed > 0) notes.push(`Se recortó el texto de ${trimmed} documento${trimmed === 1 ? '' : 's'}: no cabía entero`)
 

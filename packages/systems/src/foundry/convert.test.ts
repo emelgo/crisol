@@ -94,18 +94,21 @@ describe('un sistema de Foundry, en un sistema de Crisol', () => {
     )
   })
 
-  it('una tabla: su texto y la tabla de tirar, con la fórmula y los rangos', () => {
-    expect(textIn(named(file.content, 'Botín'))).toBe(
-      [
-        'Lo que llevan.',
-        '',
-        '| 1d6 | Resultado |',
-        '| --- | --- |',
-        '| 1–3 | Nada \\| vacío |',
-        '| 4 | Daga |',
-        '| 5–6 | Una *gema* |'
-      ].join('\n')
-    )
+  it('una tabla: su texto, y sus filas de verdad, con la fórmula, si repite y lo que lleva a otro documento', () => {
+    const botin = named(file.content, 'Botín')
+    expect(textIn(botin)).toBe('Lo que llevan.')
+    expect(botin?.table).toEqual({
+      formula: '1d8',
+      replacement: false,
+      rows: [
+        { id: 'r1', from: 1, to: 3, text: 'Nada | vacío' },
+        { id: 'r2', from: 4, to: 4, text: 'Daga', key: named(file.content, 'Daga')?.key },
+        { id: 'r3', from: 5, to: 6, text: 'Una *gema*' },
+        // Lo que está fuera del zip, solo su texto
+        { id: 'r4', from: 7, to: 8, text: 'Espada de otro' }
+      ]
+    })
+    expect(validateFile(file).problems.filter((p) => p.severity === 'error')).toEqual([])
   })
 
   it('cada paquete, una fuente; el compendio, en el orden de los paquetes, con las carpetas', () => {

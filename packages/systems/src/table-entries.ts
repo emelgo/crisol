@@ -3,7 +3,7 @@
  * todo sistema aunque no lo declare, y sus filas en `table`. Se tiran con el mismo cálculo que la pestaña «Tabla» de
  * la wiki; una fila puede llevar a otra entrada del compendio y, si es otra tabla, se tira también
  */
-import { tableProblems } from '@crisol/dice'
+import { describeTableProblem, tableProblemList } from '@crisol/dice'
 import { z } from 'zod'
 import type { System } from './format.ts'
 import { own } from './own.ts'
@@ -69,7 +69,7 @@ export function withTables(system: System): System {
   return { ...system, types: { ...system.types, [TABLE_TYPE]: tableType } }
 }
 
-/** Lo que está mal en una tabla: su forma (errores) y sus rangos (avisos: se tira igual, como en Foundry) */
+/** Lo que está mal en una tabla: su forma (errores) y sus huecos (avisos: se tira igual, como en Foundry) */
 export function tableEntryProblems(table: unknown): {
   errors: { path: (string | number)[]; message: string }[]
   warnings: string[]
@@ -87,5 +87,9 @@ export function tableEntryProblems(table: unknown): {
     if (ids.has(r.id)) errors.push({ path: ['rows', i, 'id'], message: `La fila «${r.id}» está repetida` })
     ids.add(r.id)
   }
-  return { errors, warnings: tableProblems(formula, rows) }
+  // Como en Foundry, las filas que se pisan salen juntas: no es un problema
+  const warnings = tableProblemList(formula, rows)
+    .filter((p) => p.code !== 'overlap')
+    .map(describeTableProblem)
+  return { errors, warnings }
 }

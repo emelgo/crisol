@@ -5,7 +5,7 @@
  */
 import { getRandomTable, type RandomTable, resetTableDraws, rollOnTable, updateRandomTable } from '@crisol/contracts'
 import { pagesRepo, tablesRepo } from '@crisol/db'
-import { cryptoRoller, type RangeRow, rowFor, tableFormula, tableProblems } from '@crisol/dice'
+import { cryptoRoller, type RangeRow, tableFormula, tableProblems } from '@crisol/dice'
 import { NotFoundError } from '@crisol/domain'
 import { authorizedCampaign } from './access.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
@@ -54,26 +54,26 @@ function amongLeft<R extends RangeRow>(rows: readonly R[]) {
   return null
 }
 
-/** Tirar en una tabla (y en las suyas), sin apuntar nada: lo sacado se apunta al guardar la tirada */
 /**
- * Tira en una tabla (la pestaña «Tabla» de la wiki o una del compendio): su fórmula y la fila de lo que sale, entre las
- * que no se han sacado. Si lo tirado ya salió (o no cae en ninguna), una de las que quedan, por lo que ocupa
+ * Tira en una tabla (la pestaña «Tabla» de la wiki o una del compendio): su fórmula y las filas de lo que sale, entre
+ * las que no se han sacado. Como en Foundry, si varias abarcan el total, salen todas (en la wiki no se pisan). Si lo
+ * tirado ya salió (o no cae en ninguna), una de las que quedan, por lo que ocupa
  */
-export function pickRow<R extends RangeRow>(
+export function pickRows<R extends RangeRow>(
   table: { name: string; formula?: string | null; rows: readonly R[] },
   drawn: readonly string[]
-): { result: Drawn['result']; row: R } {
+): { result: Drawn['result']; rows: R[] } {
   const left = table.rows.filter((r) => !drawn.includes(r.id))
   if (left.length === 0)
     throw new InvalidRequestError('TABLE_EMPTY', `ya ha salido todo en «${table.name}»: reiníciala`)
   const formula = tableFormula(table.formula, table.rows)
   const rolledResult = rolled(formula)
-  const row = rowFor(left, rolledResult.total)
-  if (row) return { result: { ...storedOf(rolledResult), formula: rolledResult.formula }, row }
+  const hits = left.filter((r) => r.from <= rolledResult.total && rolledResult.total <= r.to)
+  if (hits.length > 0) return { result: { ...storedOf(rolledResult), formula: rolledResult.formula }, rows: hits }
   const picked = amongLeft(left)
   if (!picked) throw new InvalidRequestError('TABLE_EMPTY', 'la tabla no tiene filas')
   return {
-    row: picked.row,
+    rows: [picked.row],
     result: {
       formula,
       total: picked.value,
@@ -84,6 +84,7 @@ export function pickRow<R extends RangeRow>(
   }
 }
 
+/** Tirar en una tabla (y en las suyas), sin apuntar nada: lo sacado se apunta al guardar la tirada */
 async function draw(
   ctx: ActionContext,
   table: tablesRepo.TableOfTab,
@@ -91,10 +92,13 @@ async function draw(
   depth: number
 ): Promise<Drawn> {
   const drawn = table.replacement ? [] : await tablesRepo.drawsOf(ctx.db, campaignId, table.id)
-  const { result, row } = pickRow(table, drawn)
-  const results = [{ text: row.text, page: row.page ?? null }]
-  const draws = table.replacement ? [] : [{ tableId: table.id, rowId: row.id }]
-  if (row.table && depth < MAX_DEPTH) {
+  const { result, rows } = pickRows(table, drawn)
+  const results: Drawn['results'] = []
+  const draws: Drawn['draws'] = []
+  for (const row of rows) {
+    results.push({ text: row.text, page: row.page ?? null })
+    if (!table.replacement) draws.push({ tableId: table.id, rowId: row.id })
+    if (!row.table || depth >= MAX_DEPTH) continue
     const nested = await tablesRepo.tableOfTab(ctx.db, row.table)
     if (nested && nested.worldId === table.worldId) {
       const inner = await draw(ctx, nested, campaignId, depth + 1)

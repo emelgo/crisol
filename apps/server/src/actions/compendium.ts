@@ -48,7 +48,7 @@ import { type ActionContext, InvalidRequestError } from './context.ts'
 import { rolled, saveRoll, storedOf } from './dice.ts'
 import * as layers from './layers.ts'
 import { implement } from './registry.ts'
-import { type Drawn, pickRow } from './tables.ts'
+import { type Drawn, pickRows } from './tables.ts'
 
 /**
  * El sistema de una campaña que se puede leer, con lo que eligió de él y, si quien lo pide puede verlo, el compendio de
@@ -71,8 +71,8 @@ async function campaignSystem(ctx: ActionContext, campaignId: string) {
 }
 
 /**
- * Tira en una entrada «Tabla» (con el cálculo de la pestaña «Tabla» de la wiki): la fila que sale entre las que no
- * se han sacado y, si lleva a otra tabla que se ve, lo que sale en ella (hasta TABLE_DEPTH niveles)
+ * Tira en una entrada «Tabla» (con el cálculo de la pestaña «Tabla» de la wiki): las filas que salen entre las que no
+ * se han sacado y, si alguna lleva a otra tabla que se ve, lo que sale en ella (hasta TABLE_DEPTH niveles)
  */
 async function drawEntry(
   ctx: ActionContext,
@@ -89,12 +89,13 @@ async function drawEntry(
 }> {
   const repeats = entry.table.replacement !== false
   const drawn = repeats ? [] : await tablesRepo.contentDrawsOf(ctx.db, campaignId, entry.key)
-  const { result, row } = pickRow({ name: entry.name, formula: entry.table.formula, rows: entry.table.rows }, drawn)
-  const results: { text: string; page: null; content?: string }[] = [
-    { text: row.text, page: null, ...(row.key ? { content: row.key } : {}) }
-  ]
-  const draws = repeats ? [] : [{ key: entry.key, rowId: row.id }]
-  if (row.key && depth < TABLE_DEPTH) {
+  const { result, rows } = pickRows({ name: entry.name, formula: entry.table.formula, rows: entry.table.rows }, drawn)
+  const results: { text: string; page: null; content?: string }[] = []
+  const draws: { key: string; rowId: string }[] = []
+  for (const row of rows) {
+    results.push({ text: row.text, page: null, ...(row.key ? { content: row.key } : {}) })
+    if (!repeats) draws.push({ key: entry.key, rowId: row.id })
+    if (!row.key || depth >= TABLE_DEPTH) continue
     const nested = await open(row.key)
     if (nested?.type === TABLE_TYPE && nested.table) {
       const name = nameOf(nested)
@@ -110,7 +111,7 @@ async function drawEntry(
       draws.push(...inner.draws)
     }
   }
-  return { result, row: row.id, results, draws }
+  return { result, row: rows[0]?.id ?? '', results, draws }
 }
 
 /** Cuántas hay de cada tipo */
