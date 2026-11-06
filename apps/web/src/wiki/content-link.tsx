@@ -110,7 +110,7 @@ function ContentLinkView({ node, selected }: NodeViewProps) {
         </span>
       )}
       {show && entry && (
-        <span id={cardId} role="group" aria-label={entry.name} className={styles.card} contentEditable={false}>
+        <span id={cardId} className={styles.card} data-content-card="" contentEditable={false}>
           <span className={styles.kind}>
             {entry.world ? t('contentLink.world', { type: entry.typeLabel }) : entry.typeLabel}
           </span>

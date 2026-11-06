@@ -112,7 +112,7 @@ test('enlazar una criatura desde la página de un PNJ: [[@ la sugiere, su tarjet
   const link = body.getByRole('link', { name: 'Goblin' })
   await expect(link).toBeVisible()
   await link.hover()
-  const card = page.getByRole('group', { name: 'Goblin' })
+  const card = page.locator('[data-content-card]')
   await expect(card).toContainText('Criatura')
   await expect(card).toContainText('Clase de armadura 15')
   await page.screenshot({ path: test.info().outputPath('enlace-criatura.png'), fullPage: false })
