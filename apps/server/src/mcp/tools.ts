@@ -298,6 +298,14 @@ export const MCP_TOOLS: Record<string, McpTool> = {
     }
   },
   copiar_contenido: { action: 'copyContent' },
+  // Las criaturas en juego de una campaña (del máster): ponerlas, su hoja, la partida, tirar, aplicar y quitarlas
+  ver_en_juego: { action: 'listInPlay' },
+  ver_criatura: { action: 'getInPlay' },
+  poner_en_juego: { action: 'putInPlay' },
+  partida_criatura: { action: 'playCreature' },
+  tirar_por_criatura: { action: 'rollForCreature' },
+  aplicar_tirada: { action: 'applyRoll' },
+  quitar_de_juego: { action: 'removeFromPlay' },
   origen_contenido: { action: 'getContentOrigin' },
   traer_original: { action: 'pullContentOrigin' }
 }
@@ -334,6 +342,12 @@ const INSTRUCTIONS =
   'borrar_contenido. Para cambiar algo del sistema solo en un mundo, cópialo con copiar_contenido (to world) y cambia ' +
   'la copia; si su original cambia, origen_contenido dice qué cambió (con la huella del original) y traer_original ' +
   'trae lo que elijas, con esa huella. ' +
+  'En partida, una criatura del compendio se pone en juego en la campaña con poner_en_juego: copias numeradas ' +
+  '(«Goblin 1», «Goblin 2»; count o una tirada) o una única (unique: un PNJ que guarda sus PG de una sesión a otra), ' +
+  'con sus PG medios o tirados. ver_en_juego las lista con su vida; ver_criatura da su hoja; tirar_por_criatura tira ' +
+  'por ella (oculta, salvo que pidan que la vean todos); partida_criatura le hace daño, la cura, gasta usos o descansa; ' +
+  'aplicar_tirada aplica el daño de una tirada del registro a varias criaturas o personajes (nada, mitad, entero o ' +
+  'doble, con sus resistencias); quitar_de_juego quita unas o todas las copias. ' +
   'Los personajes de una campaña (listar_personajes) se hacen por pasos: crear_personaje y luego elegir_personaje (lo de ' +
   'cada paso por su clave del contenido, y lo pendiente por el id de cada decisión, varias cosas de una vez); ' +
   'ver_personaje dice lo que falta con sus opciones válidas y el motivo de las que no. Terminarlo (confirm created) y ' +
