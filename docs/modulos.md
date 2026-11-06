@@ -18,6 +18,12 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   conversión en `packages/systems/src/foundry/`, prueba con el dnd5e real: `node scripts/foundry/probar.ts`). Con los 8
   compendios de 2024 del dnd5e: 2.121 documentos, valida. **Pendiente**: la mecánica de dnd5e en lo importado (hoy van
   sus tiradas en el texto), los nombres de los campos (salen de su ruta: «Activation type») y el idioma de los tipos.
+  **Aprovechar el resto del zip** (Enrique, 2026-11-06), hoy se descarta al subir: las imágenes de cada documento
+  (`img` de objetos, conjuros y criaturas; retratos y fichas) van con el módulo 4; las escenas, los mapas, los tokens y
+  los sonidos, con el 6 y el 7; el aspecto del sistema (colores, fuentes y fondos de su CSS, como tema de su hoja y su
+  compendio), con la interfaz. Su CSS y su código no se reutilizan tal cual (van con sus plantillas de Foundry); se
+  saca de ellos lo que sirve. Para eso hará falta subir el zip entero (el dnd5e pesa 137 MB) por la subida de archivos
+  (hasta 250 MB) en vez de en la acción, y mirar la licencia de cada recurso (`docs/terceros.md`).
 - **Cambiar el compendio en la app (PR #108)**: «Nueva entrada», «Editar» y «Borrar» en el compendio de la campaña,
   para el propietario de un sistema de la cuenta (`getCampaignCompendium.editable`; `entry-editor.tsx`).
 - **El creador pregunta antes de quitar una clase (PR #107)**, como D&D Beyond.
@@ -1268,10 +1274,10 @@ Estados: pendiente · en curso · hecho · descartado.
 | 1 | **Wiki**: páginas y subpáginas, editor de bloques, enlaces, menciones, vista previa, propiedades, secretos, búsqueda, marcadores, etiquetas, versiones, recursos y archivos, **hojas con estilo** (tipo Homebrewery, con PDF), exportación MD, sus herramientas MCP | construido (tareas 1 a 26 hechas); falta la revisión de Enrique en staging | Foundry: Journal; DDB: contenido y referencias; Homebrewery (MIT): formato de hoja y descarga |
 | 2 | **Tipos de página y plantillas**: «Desde plantilla» (de serie y propias), campos en el panel, tablas que se llenan solas (en lugar de Dataview) | construido (tareas 1 a 14, 2026-11-03); falta la revisión de Enrique en staging | Foundry: tipos de documento; Kanka, LegendKeeper y World Anvil (web pública) |
 | 3 | Sistemas de reglas, fichas de personaje (creación, subida de nivel), dados y dados 3D | en marcha: mapa aprobado (`docs/specs/modulo-3.md`); `dados` en `main` y en staging (PR #95); spec, diseño y plan de `sistemas` aprobados; construyéndose | DDB: creador y hoja; Foundry: dnd5e, DataModel e instalar y crear sistemas |
-| 4 | Compendios (aparte de la wiki del mundo y **como los de Foundry**: antes, estudio a fondo con craft-anything), bestiario, statblocks, biblioteca; **buscar dentro de los PDF** (texto de cada página con pdf.js; el resultado abre el visor en esa página) **y por significado** (pgvector; antes, permiso para la imagen de Postgres y elegir quién calcula los embeddings) | pendiente | Foundry: compendium packs; DDB: listados |
+| 4 | Compendios (aparte de la wiki del mundo y **como los de Foundry**: antes, estudio a fondo con craft-anything), bestiario, statblocks, biblioteca; **las imágenes de lo traído de Foundry** (las de cada documento del zip); **buscar dentro de los PDF** (texto de cada página con pdf.js; el resultado abre el visor en esa página) **y por significado** (pgvector; antes, permiso para la imagen de Postgres y elegir quién calcula los embeddings) | pendiente | Foundry: compendium packs; DDB: listados |
 | 5 | Visibilidad por campaña: conocimiento de los jugadores, revelar, compartir | pendiente | Foundry: ownership |
-| 6 | **Mesa**: escenas, rejilla, fichas, medir y plantillas, niebla, muros, puertas, luz, visión, iniciativa, instantáneas, encuentros, UVTT | pendiente | Foundry: canvas, visión y muros; DDB Maps |
-| 7 | **Sala de jugadores**: presencia, chat y susurros, mostrar a jugadores, sonido, controles del máster | pendiente | Foundry: sockets y chat; DDB: game log |
+| 6 | **Mesa**: escenas, rejilla, fichas, medir y plantillas, niebla, muros, puertas, luz, visión, iniciativa, instantáneas, encuentros, UVTT; **las escenas, mapas y tokens de un zip de Foundry** | pendiente | Foundry: canvas, visión y muros; DDB Maps |
+| 7 | **Sala de jugadores**: presencia, chat y susurros, mostrar a jugadores, sonido (también **los de un zip de Foundry**), controles del máster | pendiente | Foundry: sockets y chat; DDB: game log |
 | 8 | Calendario, clima, viajes, líneas temporales | pendiente | — |
 | 9 | Mapas de mundo con pines y capas; pizarras | pendiente | DDB Maps |
 | 10 | Otras herramientas: tableros, gráficos, grafo de relaciones, nombres, centro de actividad | pendiente | — |
@@ -1305,6 +1311,9 @@ y el plan (ver `CLAUDE.md`).
 
 Lo que a Enrique no le convence (apuntarlo aquí según lo diga). Se repasa al acabar el módulo 1, no al final de la
 app: el 2026-10-30 dijo «luego apuntaremos por donde vamos y nos dedicaremos a la UI, que es horrible».
+
+- **El aspecto de un sistema traído de Foundry** (2026-11-06): sacar de su CSS sus colores, fuentes y fondos como tema
+  de su hoja y su compendio (no su CSS tal cual).
 
 - **2026-10-30, al empezar la etapa**: «No me gusta casi nada de la interfaz actual, es horrible y no se entiende nada!!
   […] el crisol antiguo era más bonito y profesional, la nuestra parece una app de ia. Me refiero a la interfaz en
