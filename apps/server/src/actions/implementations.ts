@@ -14,6 +14,7 @@ import { memberActions } from './members.ts'
 import { organizationActions } from './organizations.ts'
 import { pageContentActions } from './page-content.ts'
 import { pageActions } from './pages.ts'
+import { partyActions } from './party.ts'
 import { preferenceActions } from './preferences.ts'
 import { previewActions } from './preview.ts'
 import type { Implementation } from './registry.ts'
@@ -53,6 +54,7 @@ export const IMPLEMENTATIONS: Implementation[] = [
   ...worldContentActions,
   ...characterActions,
   ...creatureActions,
+  ...partyActions,
   ...tableActions,
   ...mapActions,
   ...preferenceActions

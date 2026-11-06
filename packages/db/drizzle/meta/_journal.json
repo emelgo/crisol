@@ -330,6 +330,13 @@
       "when": 1793968881273,
       "tag": "0046_tablas_del_compendio",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1793972981791,
+      "tag": "0047_grupo",
+      "breakpoints": true
     }
   ]
 }

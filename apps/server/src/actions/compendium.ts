@@ -54,7 +54,7 @@ import { type Drawn, pickRows } from './tables.ts'
  * El sistema de una campaña que se puede leer, con lo que eligió de él y, si quien lo pide puede verlo, el compendio de
  * su mundo; sin sistema, null
  */
-async function campaignSystem(ctx: ActionContext, campaignId: string) {
+export async function campaignSystem(ctx: ActionContext, campaignId: string) {
   const campaign = await authorizedCampaign(ctx, 'campaign.read', campaignId)
   if (!campaign.system) return null
   const catalog = catalogSystem(campaign.system)

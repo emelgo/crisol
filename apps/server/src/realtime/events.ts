@@ -58,6 +58,12 @@ export const creaturesChanged = (scope: CampaignScope): RealtimeEvent => ({
   message: { type: 'changed', what: 'creatures', campaignId: scope.campaignId }
 })
 
+/** El inventario del grupo de una campaña (y lo que llevan sus personajes): a todos los de la campaña */
+export const partyChanged = (scope: CampaignScope): RealtimeEvent => ({
+  to: { capability: 'campaign.read', target: scope },
+  message: { type: 'changed', what: 'party', campaignId: scope.campaignId }
+})
+
 /** El compendio de un mundo: a quien lo ve (hasta el módulo 5, quien lo lleva; las hojas de los jugadores, al volver a pedirlas) */
 export const worldContentChanged = (wiki: { worldId: string; organizationId: string }): RealtimeEvent => ({
   to: { capability: 'worldContent.read', target: wiki },
@@ -153,6 +159,9 @@ export function undoEvents(
         break
       case 'campaign_creatures':
         events.push(creaturesChanged(campaignScope))
+        break
+      case 'campaign_party':
+        events.push(partyChanged(campaignScope))
         break
       case 'world_content':
         events.push(worldContentChanged({ worldId, organizationId: context.organizationId }))

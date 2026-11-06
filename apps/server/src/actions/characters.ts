@@ -167,6 +167,16 @@ async function stateOf(
   return { ...characterView(document, content, choices, build as Build, play as Play), document }
 }
 
+/** El resumen de un personaje (su tarjeta) con otro «play»: al mover algo con el grupo */
+export async function summaryWith(
+  ctx: ActionContext,
+  character: { campaignId: string; system: string; build: Record<string, unknown> },
+  play: Record<string, unknown>
+) {
+  const { view } = await stateOf(ctx, character.campaignId, character.system, character.build, play)
+  return view.summary
+}
+
 /** Lo de la partida nuevo, con su forma y su tamaño (antes de montarlo) */
 function parsedPlay(given: unknown): Play {
   const parsed = playSchema.safeParse(given)

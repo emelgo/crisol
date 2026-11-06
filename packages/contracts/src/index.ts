@@ -87,6 +87,7 @@ import {
   sortPageChildren,
   updatePage
 } from './pages.ts'
+import { getParty, moveCoins, moveItem, splitCoins, updateParty } from './party.ts'
 import { searchWiki } from './search.ts'
 import {
   browseCampaignContent,
@@ -152,6 +153,7 @@ export * from './openapi.ts'
 export * from './organizations.ts'
 export * from './pages.ts'
 export * from './panel.ts'
+export * from './party.ts'
 export type * from './realtime.ts'
 export * from './search.ts'
 export * from './systems.ts'
@@ -285,6 +287,11 @@ export const ACTIONS = [
   rollForCreature,
   removeFromPlay,
   applyRoll,
+  getParty,
+  updateParty,
+  moveItem,
+  moveCoins,
+  splitCoins,
   searchLinkableContent,
   getLinkedContent,
   listCharacters,
@@ -438,6 +445,11 @@ export type Actions = {
   rollForCreature: typeof rollForCreature
   removeFromPlay: typeof removeFromPlay
   applyRoll: typeof applyRoll
+  getParty: typeof getParty
+  updateParty: typeof updateParty
+  moveItem: typeof moveItem
+  moveCoins: typeof moveCoins
+  splitCoins: typeof splitCoins
   searchLinkableContent: typeof searchLinkableContent
   getLinkedContent: typeof getLinkedContent
   listCharacters: typeof listCharacters
