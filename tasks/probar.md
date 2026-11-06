@@ -9,6 +9,22 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   de propietario.
 - **En local**, con los cambios al momento: http://localhost:5173 (lo arranco cuando haga falta).
 
+## Módulo 4: las criaturas en juego (rama `modulo-4/compendio`; en local, aún no en staging)
+
+Una criatura del compendio se pone en juego en la campaña: copias numeradas o una única (un PNJ que guarda sus PG). Hasta
+el módulo 5, solo tú (el máster).
+- [ ] **Poner en juego**: en el compendio de una campaña, abre una criatura (el Goblin); a la derecha, «Poner en
+  juego»: 3 copias (o una tirada, `1d4+1`), o la única; PG medios o tirados.
+- [ ] **«En juego»** (en la barra de la campaña): las copias juntas con su vida en barra, la única aparte con su
+  estrella; malherida y fuera de combate marcadas.
+- [ ] **Su hoja**: tirar un ataque y su daño (a su nombre, ocultos), bajarle los PG, «Tirar PG», «Otro máximo» y
+  «Quitar de juego». Una única conserva sus PG al salir y volver a entrar.
+- [ ] **Aplicar el daño** desde el registro de tiradas («Aplicar» en una tirada de daño): a varias criaturas o
+  personajes, con nada, mitad, entero o doble (sus resistencias cuentan).
+- [ ] **Quitar las copias** de una vez (la única se queda) y deshacerlo desde el historial.
+- [ ] **La IA, desde claude.ai**: «pon en juego tres goblins y un jefe único», «tira la cimitarra del Goblin 2»,
+  «aplica ese daño a los otros dos, mitad al jefe».
+
 ## Módulo 4: el compendio del mundo (rama `modulo-4/compendio`; en local, aún no en staging)
 
 Cada mundo tiene su propio compendio, hecho para un sistema: lo ven sus campañas con ese sistema. Hasta el módulo 5,

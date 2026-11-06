@@ -681,3 +681,53 @@ test('@fugas el compendio del mundo es del máster: la jugadora ni lo ve ni sabe
     expect(everything).not.toContain(leak)
   await player.close()
 })
+
+test('@fugas las criaturas en juego son del máster: la jugadora ni las ve ni sabe que cambian (criaturas)', async ({
+  page,
+  browser
+}) => {
+  const link = await campaignLink(page)
+  const campaignId = new URL(page.url()).pathname.split('/campanas/')[1] ?? ''
+  const systemId = await import5e(page)
+  const chosen = await page.request.post('/api/actions/updateCampaign', { data: { campaignId, system: systemId } })
+  expect(chosen.status()).toBe(200)
+  let seen: ReturnType<typeof capture> | undefined
+  const player = await newPlayer(browser, link, 'Jugadora', (p) => {
+    seen = capture(p)
+  })
+  if (!seen) throw new Error('sin captura')
+  const captured = seen
+  await expect.poll(() => captured.frames.some((f) => f.includes('"hello"'))).toBe(true)
+
+  // El máster pone en juego un jefe con un nombre secreto, le hace daño y tira por él (oculta)
+  const put = await page.request.post('/api/actions/putInPlay', {
+    data: { campaignId, key: 'guerrero_goblin_2014', unique: true, name: 'Señor Oculto' }
+  })
+  expect(put.status()).toBe(200)
+  const [boss] = (await put.json()).creatures
+  await page.request.post('/api/actions/playCreature', { data: { creatureId: boss.id, version: 1, damage: 2 } })
+  const rolled = await page.request.post('/api/actions/rollForCreature', {
+    data: { creatureId: boss.id, action: { item: null, key: 'cimitarra', part: 'damage' } }
+  })
+  const rollId = (await rolled.json()).roll.id as string
+
+  for (const [name, data] of [
+    ['listInPlay', { campaignId }],
+    ['getInPlay', { creatureId: boss.id }],
+    ['putInPlay', { campaignId, key: 'guerrero_goblin_2014' }],
+    ['playCreature', { creatureId: boss.id, version: 2, damage: 1 }],
+    ['rollForCreature', { creatureId: boss.id, action: { item: null, key: 'cimitarra', part: 'attack' } }],
+    ['applyRoll', { campaignId, rollId, targets: [{ creatureId: boss.id, multiplier: 1 }] }],
+    ['removeFromPlay', { campaignId, creatureIds: [boss.id] }]
+  ] as const) {
+    const response = await player.request.post(`/api/actions/${name}`, { data })
+    expect([403, 404], name).toContain(response.status())
+    expect(await response.text()).not.toContain('Señor Oculto')
+  }
+  const rolls = await player.request.post('/api/actions/listRolls', { data: { campaignId } })
+  expect(await rolls.text()).not.toContain('Señor Oculto')
+
+  const everything = await captured.all()
+  for (const leak of ['Señor Oculto', boss.id, '"creatures"']) expect(everything).not.toContain(leak)
+  await player.close()
+})
