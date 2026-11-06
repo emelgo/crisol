@@ -382,7 +382,7 @@ export const searchSystemContent = defineAction({
   name: 'searchSystemContent',
   kind: 'read',
   description:
-    'Busca en el contenido de un sistema (de serie o de la cuenta): por su nombre en cualquier idioma y sin tildes, por tipo, por edición y, de lo que está en las dos ediciones, las dos versiones (both) o solo la más nueva (newest). Da su clave para leerlo con getSystemContent',
+    'Busca en el contenido de un sistema (de serie o de la cuenta): por su nombre en cualquier idioma y sin tildes, por tipo, por edición y, de lo que está en las dos ediciones, las dos versiones (both) o solo la más nueva (newest). Da su clave para leerlo con getSystemContent. Con campaignId, también el compendio del mundo de la campaña (para quien lo lleva), marcado con world',
   input: z.object({
     systemId: systemRef,
     organizationId: z.uuid().optional(),

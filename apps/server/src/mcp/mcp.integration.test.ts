@@ -415,6 +415,49 @@ describe('conector MCP con OAuth', () => {
       if (!one) throw new Error('sin personaje')
       return one
     }
+    // El compendio del mundo: guardar en él, encontrarlo desde la campaña, copiar del sistema y quitar
+    const own = await call('guardar_contenido', {
+      systemId: system.id,
+      worldId: world.id,
+      items: [{ type: 'don', key: 'fuego_del_valle', data: { name: 'Fuego del valle', descripcion: 'Arde.' } }]
+    })
+    expect(own.isError, own.text).toBeFalsy()
+    const found = await call<{ items: { key: string; world?: boolean }[] }>('buscar_contenido', {
+      systemId: system.id,
+      campaignId: campaign.id,
+      query: 'fuego'
+    })
+    expect(found.data.items).toEqual([expect.objectContaining({ key: 'fuego_del_valle', world: true })])
+    const copied = await call<{ key: string }>('copiar_contenido', {
+      worldId: world.id,
+      systemId: system.id,
+      key: 'ojo_avizor',
+      to: 'world',
+      name: 'Ojo de halcón'
+    })
+    expect(copied.isError, copied.text).toBeFalsy()
+    const read = await call<{ items: { data: { name: unknown }; world?: { origin: { key: string } } }[] }>(
+      'leer_compendio',
+      { campaignId: campaign.id, keys: [copied.data.key] }
+    )
+    expect(read.data.items[0]).toMatchObject({
+      data: { name: 'Ojo de halcón' },
+      world: { origin: { key: 'ojo_avizor' } }
+    })
+    const origin = await call<{ changes: unknown[] }>('origen_contenido', {
+      worldId: world.id,
+      systemId: system.id,
+      key: copied.data.key
+    })
+    expect(origin.data.changes).toEqual([])
+    // Quitar, en copiloto, espera al máster
+    await asMaster('borrar_contenido', { systemId: system.id, worldId: world.id, keys: ['fuego_del_valle'] })
+    const gone = await call<{ items: unknown[] }>('buscar_contenido', {
+      systemId: system.id,
+      campaignId: campaign.id,
+      query: 'fuego'
+    })
+    expect(gone.data.items).toEqual([])
     await asMaster('crear_personaje', { campaignId: campaign.id, name: 'Ária' })
     const { id } = await current()
     await asMaster('elegir_personaje', {

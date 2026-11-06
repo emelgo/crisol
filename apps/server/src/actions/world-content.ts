@@ -29,7 +29,7 @@ import { worldContentChanged } from '../realtime/events.ts'
 import { authorizedWiki, type WikiTarget } from './access.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
 import { implement } from './registry.ts'
-import { invalid, ownWritable } from './systems.ts'
+import { contentOf, invalid, ownWritable } from './systems.ts'
 
 type Origin = typeof schema.worldContent.$inferSelect.origin
 
@@ -169,7 +169,8 @@ export const worldContentActions = [
       const copyKey = newKey ?? newContentKey(name ?? nameOf(original.data, 'es', original.key))
       if ((await worldContentRepo.contentByKeys(ctx.db, worldId, systemId, [copyKey])).length > 0)
         throw new InvalidRequestError('KEY_TAKEN', `ya hay una entrada «${copyKey}» en el mundo`)
-      const problems = validateContent(system, [{ ...original, key: copyKey, data, concept: undefined }])
+      const { concept: _, ...candidate } = contentOf({ ...original, source: null })
+      const problems = validateContent(system, [{ ...candidate, key: copyKey, data }])
       if (problems.some((p) => p.severity === 'error')) invalid(problems)
       await checkRoom(ctx, worldId, systemId, 1)
       const saved = await worldContentRepo.putContent(

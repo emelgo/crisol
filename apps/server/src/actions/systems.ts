@@ -65,6 +65,7 @@ import {
 import { systemsChanged } from '../realtime/events.ts'
 import { authorizedCampaign, targetOrganization } from './access.ts'
 import { type ActionContext, historyContext, InvalidRequestError, TooManyRequestsError } from './context.ts'
+import * as layers from './layers.ts'
 import { implement } from './registry.ts'
 import { tooManyTries } from './tries.ts'
 
@@ -679,15 +680,22 @@ export const systemActions = [
     const found = await findReadable(ctx, target, systemId)
     // Con una campaña de ese sistema: sus fuentes, lo repetido y su idioma, salvo lo que se diga
     let options: Parameters<typeof searchContent>[2] = given
+    let world: layers.WorldLayer | null = null
     if (campaignId) {
       const campaign = await authorizedCampaign(ctx, 'campaign.read', campaignId)
       if (campaign.system !== systemId) throw new InvalidRequestError('BAD_CAMPAIGN', 'esa campaña no usa este sistema')
       const { choices } = normalizeChoices(found.document, (campaign.systemChoices ?? {}) as Record<string, unknown>)
       options = { sources: choices.sources, duplicates: choices.duplicates, language: choices.language, ...given }
+      // Con campaña, también el compendio de su mundo, si se puede ver
+      const wiki = { worldId: campaign.worldId, organizationId: campaign.organizationId }
+      if (found.row && can(ctx.actor, 'worldContent.read', wiki))
+        world = { worldId: campaign.worldId, systemId: found.row.id }
     }
     // Para buscar basta lo de cada documento que se ve en la lista: el de la cuenta, sin leerlo entero
-    const entries = found.row ? await systemsRepo.contentIndex(ctx.db, found.row.id) : []
-    return searchContent(found.document, entries, options)
+    const entries = found.row ? await layers.contentIndex(ctx, found.row.id, world) : []
+    const own = new Set(entries.filter((e) => e.world).map((e) => e.key))
+    const result = searchContent(found.document, entries, options)
+    return { ...result, items: result.items.map((hit) => (own.has(hit.key) ? { ...hit, world: true } : hit)) }
   }),
 
   implement(getSystemContent, async (ctx, { systemId, organizationId, keys }) => {
