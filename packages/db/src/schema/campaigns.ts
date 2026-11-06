@@ -26,6 +26,8 @@ export const campaigns = pgTable(
     } | null>(),
     /** Si parte de lo que sabe el mundo (ADR-0017); si no, empezó de cero */
     knowsWorld: boolean().notNull().default(true),
+    /** Los tipos del compendio de su sistema que no ven sus jugadores (docs/specs/compendio-jugadores.md) */
+    hiddenTypes: text().array().notNull().default(sql`'{}'::text[]`),
     /** En la papelera desde entonces: no sale en ninguna vista y a los 30 días se purga */
     deletedAt: timestamp({ withTimezone: true })
   },

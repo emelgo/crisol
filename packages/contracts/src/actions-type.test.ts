@@ -96,6 +96,8 @@ describe('Actions', () => {
       getPageKnowledge: true,
       setKnowledge: true,
       listKnownPages: true,
+      listVisibleInPlay: true,
+      setCreatureHidden: true,
       reveal: true,
       hide: true,
       listCampaignKnowledge: true,

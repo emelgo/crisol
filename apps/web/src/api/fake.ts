@@ -549,6 +549,7 @@ export function fakeApi(
     play: Play
     overrides: Record<string, number>
     version: number
+    hidden?: boolean
   }> = []
   const worldEntry = (worldId: string, systemId: string, key: string) => {
     const found = entriesOf(worldId, systemId).find((e) => e.item.key === key)
@@ -747,6 +748,7 @@ export function fakeApi(
         name: row.name,
         number: row.number,
         unique: row.unique,
+        hidden: Boolean(row.hidden),
         type: entry.type,
         img: entry.img ?? null,
         version: row.version,
@@ -1753,11 +1755,39 @@ export function fakeApi(
     listInPlay: ({ campaignId }) => ({
       creatures: creatures.filter((c) => c.campaignId === campaignId).map((c) => creatureCard(c).card)
     }),
+    // Lo que ven los jugadores: las que están a la vista, con su estado en palabras
+    listVisibleInPlay: ({ campaignId }) => ({
+      creatures: creatures
+        .filter((c) => c.campaignId === campaignId && !c.hidden)
+        .map((c) => {
+          const { card } = creatureCard(c)
+          const life = card.life
+          const state =
+            !life || life.max <= 0
+              ? null
+              : life.value <= 0
+                ? ('down' as const)
+                : life.value >= life.max
+                  ? ('unhurt' as const)
+                  : life.value <= life.max / 4
+                    ? ('dying' as const)
+                    : life.value <= life.max / 2
+                      ? ('bloodied' as const)
+                      : ('hurt' as const)
+          return { id: card.id, name: card.name, img: card.img, state }
+        })
+    }),
+    setCreatureHidden: ({ creatureId, hidden }) => {
+      const row = creatureById(creatureId)
+      row.hidden = hidden
+      row.version++
+      return { ok: true as const }
+    },
     getInPlay: ({ creatureId }) => {
       const { card, view } = creatureCard(creatureById(creatureId))
       return { creature: card, state: view }
     },
-    putInPlay: ({ campaignId, key, count, unique, hp, name }) => {
+    putInPlay: ({ campaignId, key, count, unique, hp, name, hidden }) => {
       const found = compendiumOf(campaignId)
       const entry = found?.content.find((c) => c.key === key)
       if (!found || !entry) throw new ApiError('NOT_FOUND', 404)
@@ -1784,7 +1814,8 @@ export function fakeApi(
           unique: Boolean(unique),
           play: start.play,
           overrides: start.overrides,
-          version: 1
+          version: 1,
+          hidden: Boolean(hidden)
         }
         creatures.push(row)
         return row

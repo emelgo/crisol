@@ -830,12 +830,13 @@ test('@fugas el compendio del mundo es del máster: la jugadora ni lo ve ni sabe
   await player.close()
 })
 
-test('@fugas las criaturas en juego son del máster: la jugadora ni las ve ni sabe que cambian (criaturas)', async ({
+test('@fugas las criaturas en juego: la jugadora solo ve las que están a la vista, sin sus números; ni el compendio del mundo sin revelar ni los tipos ocultos (compendio-jugadores)', async ({
   page,
   browser
 }) => {
   const link = await campaignLink(page)
   const campaignId = new URL(page.url()).pathname.split('/campanas/')[1] ?? ''
+  const worldId = new URL(page.url()).pathname.split('/')[2] ?? ''
   const systemId = await import5e(page)
   const chosen = await page.request.post('/api/actions/updateCampaign', { data: { campaignId, system: systemId } })
   expect(chosen.status()).toBe(200)
@@ -847,23 +848,40 @@ test('@fugas las criaturas en juego son del máster: la jugadora ni las ve ni sa
   const captured = seen
   await expect.poll(() => captured.frames.some((f) => f.includes('"hello"'))).toBe(true)
 
-  // El máster pone en juego un jefe con un nombre secreto, le hace daño y tira por él (oculta)
+  // El máster pone en juego un goblin a la vista y un jefe oculto con un nombre secreto, les hace daño y tira (oculta)
+  const goblin = (
+    await (
+      await page.request.post('/api/actions/putInPlay', { data: { campaignId, key: 'guerrero_goblin_2014' } })
+    ).json()
+  ).creatures[0]
   const put = await page.request.post('/api/actions/putInPlay', {
-    data: { campaignId, key: 'guerrero_goblin_2014', unique: true, name: 'Señor Oculto' }
+    data: { campaignId, key: 'guerrero_goblin_2014', unique: true, name: 'Señor Oculto', hidden: true }
   })
   expect(put.status()).toBe(200)
   const [boss] = (await put.json()).creatures
   await page.request.post('/api/actions/playCreature', { data: { creatureId: boss.id, version: 1, damage: 2 } })
+  await page.request.post('/api/actions/playCreature', { data: { creatureId: goblin.id, version: 1, damage: 2 } })
   const rolled = await page.request.post('/api/actions/rollForCreature', {
     data: { creatureId: boss.id, action: { item: null, key: 'cimitarra', part: 'damage' } }
   })
   const rollId = (await rolled.json()).roll.id as string
 
+  // Lo que ve: el goblin, con su estado en palabras; ni el jefe ni ningún número
+  const visible = await player.request.post('/api/actions/listVisibleInPlay', { data: { campaignId } })
+  expect(visible.status()).toBe(200)
+  const shown = await visible.text()
+  expect(shown).toContain('Goblin 1')
+  expect(shown).toContain('"hurt"')
+  for (const leak of ['Señor Oculto', boss.id, '"life"', '"stats"', '"play"', '"version"'])
+    expect(shown).not.toContain(leak)
+
   for (const [name, data] of [
     ['listInPlay', { campaignId }],
     ['getInPlay', { creatureId: boss.id }],
+    ['getInPlay', { creatureId: goblin.id }],
     ['putInPlay', { campaignId, key: 'guerrero_goblin_2014' }],
     ['playCreature', { creatureId: boss.id, version: 2, damage: 1 }],
+    ['setCreatureHidden', { creatureId: boss.id, hidden: false }],
     ['rollForCreature', { creatureId: boss.id, action: { item: null, key: 'cimitarra', part: 'attack' } }],
     ['applyRoll', { campaignId, rollId, targets: [{ creatureId: boss.id, multiplier: 1 }] }],
     ['removeFromPlay', { campaignId, creatureIds: [boss.id] }]
@@ -875,7 +893,37 @@ test('@fugas las criaturas en juego son del máster: la jugadora ni las ve ni sa
   const rolls = await player.request.post('/api/actions/listRolls', { data: { campaignId } })
   expect(await rolls.text()).not.toContain('Señor Oculto')
 
+  // El compendio: una entrada del mundo sin revelar y un tipo oculto no le llegan por ningún lado
+  const world = await page.request.post('/api/actions/putWorldContent', {
+    data: {
+      worldId,
+      systemId,
+      items: [{ type: 'arma', key: 'hoja_secreta', data: { name: { es: 'Hoja Secreta' }, categoria: 'marcial' } }]
+    }
+  })
+  expect(world.status()).toBe(200)
+  await page.request.post('/api/actions/updateCampaign', { data: { campaignId, hiddenTypes: ['criatura'] } })
+  for (const [name, data] of [
+    ['getCampaignCompendium', { campaignId }],
+    ['searchCampaignContent', { campaignId, query: 'secreta' }],
+    ['searchCampaignContent', { campaignId, query: 'goblin' }],
+    ['browseCampaignContent', { campaignId, type: 'arma' }],
+    ['browseCampaignContent', { campaignId, type: 'criatura' }],
+    ['getCampaign', { campaignId }]
+  ] as const) {
+    const response = await player.request.post(`/api/actions/${name}`, { data })
+    expect(response.status(), name).toBe(200)
+    const text = await response.text()
+    for (const leak of ['Hoja Secreta', 'hoja_secreta', 'guerrero_goblin', '"criatura"'])
+      expect(text, `${name}: ${leak}`).not.toContain(leak)
+  }
+  const read = await player.request.post('/api/actions/getCampaignContent', {
+    data: { campaignId, keys: ['hoja_secreta', 'guerrero_goblin_2014'] }
+  })
+  expect(await read.json()).toEqual({ items: [], missing: ['hoja_secreta', 'guerrero_goblin_2014'] })
+
+  // En tiempo real le llega que cambian, sin nombres ni números
   const everything = await captured.all()
-  for (const leak of ['Señor Oculto', boss.id, '"creatures"']) expect(everything).not.toContain(leak)
+  for (const leak of ['Señor Oculto', boss.id, 'Hoja Secreta', '"life"']) expect(everything).not.toContain(leak)
   await player.close()
 })

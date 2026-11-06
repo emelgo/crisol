@@ -23,10 +23,12 @@ import {
   applyRoll,
   getInPlay,
   listInPlay,
+  listVisibleInPlay,
   playCreature,
   putInPlay,
   removeFromPlay,
-  rollForCreature
+  rollForCreature,
+  setCreatureHidden
 } from './creatures.ts'
 import { listRolls, rollDice, tryDice } from './dice.ts'
 import {
@@ -243,6 +245,8 @@ export const ACTIONS = [
   getPageKnowledge,
   setKnowledge,
   listKnownPages,
+  listVisibleInPlay,
+  setCreatureHidden,
   reveal,
   hide,
   listCampaignKnowledge,
@@ -413,6 +417,8 @@ export type Actions = {
   getPageKnowledge: typeof getPageKnowledge
   setKnowledge: typeof setKnowledge
   listKnownPages: typeof listKnownPages
+  listVisibleInPlay: typeof listVisibleInPlay
+  setCreatureHidden: typeof setCreatureHidden
   reveal: typeof reveal
   hide: typeof hide
   listCampaignKnowledge: typeof listCampaignKnowledge

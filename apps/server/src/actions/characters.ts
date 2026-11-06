@@ -45,6 +45,7 @@ import {
   tryAction,
   tryRoll
 } from '@crisol/systems'
+import { contentSeen } from '../wiki/reader.ts'
 import { authorizedCampaign } from './access.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
 import { saveRoll, storedOf } from './dice.ts'
@@ -107,8 +108,8 @@ async function systemOf(
   ctx: ActionContext,
   systemId: string,
   worldId?: string,
-  /** De lo del mundo, solo esto (lo que ya tiene el personaje de un jugador); sin ello, todo */
-  only?: ReadonlySet<string>
+  /** De lo del mundo, solo esto (lo que ya tiene el personaje de un jugador y lo que se le reveló); sin ello, todo */
+  only?: (key: string) => boolean
 ): Promise<{ document: System; content: readonly ContentItem[] }> {
   const catalog = catalogSystem(systemId)
   // El de serie, tal cual (siempre el mismo): así el motor lo tiene ya preparado
@@ -118,7 +119,7 @@ async function systemOf(
   const content = await layers.allContent(ctx, row.id, worldId ? { worldId, systemId: row.id } : null)
   return {
     document: row.document as unknown as System,
-    content: only ? content.filter((item) => !item.world || only.has(item.key)) : content
+    content: only ? content.filter((item) => !item.world || only(item.key)) : content
   }
 }
 
@@ -142,15 +143,21 @@ interface Stored {
 
 /**
  * Monta un personaje de sus elecciones, con lo que eligió su campaña de su sistema y el compendio de su mundo. Quien
- * lleva el mundo, con todo lo suyo (lo da a un personaje y el creador lo ofrece); un jugador, hasta el módulo 5, solo
- * con lo del mundo que su personaje ya tiene guardado: ni lo ve en el creador ni lo añade por su clave
+ * lleva el mundo, con todo lo suyo (lo da a un personaje y el creador lo ofrece); un jugador, con lo del mundo que su
+ * personaje ya tiene guardado y lo que se le reveló (docs/specs/compendio-jugadores.md): lo demás ni lo ve en el
+ * creador ni lo añade por su clave
  */
 async function contextOf(ctx: ActionContext, campaignId: string, systemId: string, stored: Stored, everything = false) {
   const campaign = await campaignsRepo.findCampaign(ctx.db, campaignId)
   if (!campaign) throw new NotFoundError('campaign')
   const wiki = { worldId: campaign.worldId, organizationId: campaign.organizationId }
   // Todo lo del mundo para quien lo ve (o para calcular en el servidor); si no, solo lo que ya tiene el personaje
-  const only = everything || can(ctx.actor, 'worldContent.read', wiki) ? undefined : namedIn(stored.build, stored.play)
+  let only: ((key: string) => boolean) | undefined
+  if (!everything && !can(ctx.actor, 'worldContent.read', wiki)) {
+    const named = namedIn(stored.build, stored.play)
+    const seen = await contentSeen(ctx, wiki, campaignId)
+    only = (key) => named.has(key) || (seen?.(key) ?? false)
+  }
   const { document, content } = await systemOf(ctx, systemId, campaign.worldId, only)
   const { choices } = normalizeChoices(document, (campaign.systemChoices ?? {}) as Partial<Choices>)
   return { document, content, choices }

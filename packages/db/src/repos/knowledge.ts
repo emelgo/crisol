@@ -196,8 +196,9 @@ export async function findTarget(
   kind: KnowledgeKind,
   targetId: string
 ): Promise<{ pageId: string | null; name: string; hidden?: boolean } | null> {
+  // Todo va por su id, salvo una entrada del compendio del mundo: por su clave
   const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetId)
-  if (!uuid) return null
+  if (!uuid && kind !== 'content') return null
   const live = and(eq(pages.worldId, worldId), isNull(pages.deletedAt))
   switch (kind) {
     case 'page': {
@@ -245,10 +246,20 @@ export async function findTarget(
     }
     case 'content': {
       const [row] = await db
-        .select({ name: sql<string>`coalesce(${worldContent.data}->>'name', ${worldContent.key})` })
+        .select({ name: worldContent.data, key: worldContent.key })
         .from(worldContent)
-        .where(and(eq(worldContent.id, targetId), eq(worldContent.worldId, worldId)))
-      return row ? { pageId: null, name: row.name } : null
+        .where(and(eq(worldContent.key, targetId), eq(worldContent.worldId, worldId)))
+        .limit(1)
+      if (!row) return null
+      // Su nombre, en español si lo tiene (o el primero que tenga)
+      const name = (row.name as { name?: unknown }).name
+      const text =
+        typeof name === 'string'
+          ? name
+          : name && typeof name === 'object'
+            ? ((name as Record<string, string>).es ?? Object.values(name as Record<string, string>)[0])
+            : undefined
+      return { pageId: null, name: text || row.key }
     }
   }
 }

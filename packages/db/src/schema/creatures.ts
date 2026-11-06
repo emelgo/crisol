@@ -25,7 +25,9 @@ export const campaignCreatures = pgTable(
     number: integer(),
     unique: boolean().notNull().default(false),
     play: jsonb().$type<Record<string, unknown>>().notNull().default({}),
-    overrides: jsonb().$type<Record<string, number>>().notNull().default({})
+    overrides: jsonb().$type<Record<string, number>>().notNull().default({}),
+    // Oculta a los jugadores (docs/specs/compendio-jugadores.md): por defecto, a la vista
+    hidden: boolean().notNull().default(false)
   },
   (t) => [
     index().on(t.campaignId),

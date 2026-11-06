@@ -57,6 +57,8 @@ export interface CreatureValues {
   unique: boolean
   play: Record<string, unknown>
   overrides: Record<string, number>
+  /** Oculta a los jugadores */
+  hidden?: boolean
 }
 
 /** Pone en juego unas cuantas (o una única) en una sola operación */
@@ -135,4 +137,9 @@ export function deleteCreatures(db: Database, context: OperationContext, campaig
     for (const row of found) await w.remove(campaignCreatures, row.id)
     return found.map((r) => r.id)
   })
+}
+
+/** A la vista u oculta a los jugadores (en su propia operación, con su historial) */
+export function setCreatureHidden(db: Database, context: OperationContext, id: string, hidden: boolean) {
+  return operation(db, context, (w) => w.update(campaignCreatures, id, { hidden }))
 }

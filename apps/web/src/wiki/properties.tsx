@@ -123,11 +123,11 @@ const retyped = (row: Draft, type: PropertyType): Partial<Draft> => {
 
 /** La propiedad que sale de un borrador, o null si su valor no se puede leer (un número que no lo es) */
 function fromDraft(draft: Draft): PageProperty | null {
-  const value = valueOf(draft)
+  const value = propertyOfDraft(draft)
   return value && draft.hidden ? { ...value, hidden: true } : value
 }
 
-function valueOf(draft: Draft): PageProperty | null {
+function propertyOfDraft(draft: Draft): PageProperty | null {
   const name = draft.name.trim()
   const original = draft.original?.type === draft.type ? draft.original : undefined
   // Lo de la plantilla (su campo, a qué apunta un enlace) se queda al cambiar el valor

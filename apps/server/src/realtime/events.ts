@@ -55,9 +55,9 @@ export const systemsChanged = (organizationId: string): RealtimeEvent => ({
   message: { type: 'changed', what: 'systems', organizationId }
 })
 
-/** Las criaturas en juego de una campaña: al máster (hasta el módulo 5, los jugadores no las ven) */
+/** Las criaturas en juego de una campaña: a todos los de ella (los jugadores ven las que están a la vista, sin números) */
 export const creaturesChanged = (scope: CampaignScope): RealtimeEvent => ({
-  to: { capability: 'creatures.manage', target: scope },
+  to: { capability: 'campaign.read', target: scope },
   message: { type: 'changed', what: 'creatures', campaignId: scope.campaignId }
 })
 

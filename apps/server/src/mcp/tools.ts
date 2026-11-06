@@ -404,6 +404,9 @@ export const MCP_TOOLS: Record<string, McpTool> = {
   ver_en_juego: { action: 'listInPlay' },
   ver_criatura: { action: 'getInPlay' },
   poner_en_juego: { action: 'putInPlay' },
+  // Lo que ven los jugadores de ellas (docs/specs/compendio-jugadores.md): la IA de un jugador, esta
+  ver_a_la_vista: { action: 'listVisibleInPlay' },
+  ocultar_criatura: { action: 'setCreatureHidden' },
   partida_criatura: { action: 'playCreature' },
   tirar_por_criatura: { action: 'rollForCreature' },
   aplicar_tirada: { action: 'applyRoll' },
@@ -457,7 +460,9 @@ const INSTRUCTIONS =
   'con sus PG medios o tirados. ver_en_juego las lista con su vida; ver_criatura da su hoja; tirar_por_criatura tira ' +
   'por ella (oculta, salvo que pidan que la vean todos); partida_criatura le hace daño, la cura, gasta usos o descansa; ' +
   'aplicar_tirada aplica el daño de una tirada del registro a varias criaturas o personajes (nada, mitad, entero o ' +
-  'doble, con sus resistencias); quitar_de_juego quita unas o todas las copias. ' +
+  'doble, con sus resistencias); quitar_de_juego quita unas o todas las copias. Salen a la vista de los jugadores ' +
+  '(hidden en poner_en_juego las oculta; ocultar_criatura lo cambia) y ellos solo ven su nombre, su imagen y cómo ' +
+  'están en palabras: ver_a_la_vista (lo que usa la IA de un jugador). ' +
   'Los personajes de una campaña (listar_personajes) se hacen por pasos: crear_personaje y luego elegir_personaje (lo de ' +
   'cada paso por su clave del contenido, y lo pendiente por el id de cada decisión, varias cosas de una vez); ' +
   'ver_personaje dice lo que falta con sus opciones válidas y el motivo de las que no. Terminarlo (confirm created) y ' +

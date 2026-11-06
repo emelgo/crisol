@@ -31,7 +31,9 @@ function presentCampaign<T extends CampaignRow>(row: T, systems: ReadonlyMap<str
     color: color.success ? color.data : null,
     system: row.system ? (systems.get(row.system) ?? null) : null,
     // Lo elegido del sistema (fuentes, ajustes) es del máster; un jugador solo ve el sistema, para sus dados
-    systemChoices: (row.system && player(row) === false ? row.systemChoices : null) as Campaign['systemChoices']
+    systemChoices: (row.system && player(row) === false ? row.systemChoices : null) as Campaign['systemChoices'],
+    // Lo que se les oculta del compendio, igual: solo el máster
+    ...('hiddenTypes' in row ? { hiddenTypes: player(row) ? [] : (row.hiddenTypes as string[]) } : {})
   }
 }
 
@@ -92,6 +94,7 @@ export const campaignActions = [
         system: found.system,
         systemChoices: found.systemChoices,
         knowsWorld: found.knowsWorld,
+        hiddenTypes: found.hiddenTypes,
         role,
         version: found.version
       }),
@@ -161,7 +164,8 @@ export const campaignActions = [
       ...(patch.cover !== undefined ? { cover: patch.cover !== null } : {}),
       ...(chosen && chosen.system !== current.system ? { system: chosen.name ?? null } : {}),
       ...(chosen && chosen.system === current.system ? { systemChoices: true } : {}),
-      ...(patch.knowsWorld !== undefined ? { knowsWorld: patch.knowsWorld } : {})
+      ...(patch.knowsWorld !== undefined ? { knowsWorld: patch.knowsWorld } : {}),
+      ...(patch.hiddenTypes !== undefined ? { hiddenTypes: patch.hiddenTypes.length } : {})
     }
     const campaign = await campaignsRepo.updateCampaign(
       ctx.db,

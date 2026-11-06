@@ -13,7 +13,8 @@ const appearance = {
   cover: campaigns.cover,
   system: campaigns.system,
   systemChoices: campaigns.systemChoices,
-  knowsWorld: campaigns.knowsWorld
+  knowsWorld: campaigns.knowsWorld,
+  hiddenTypes: campaigns.hiddenTypes
 }
 
 /**
@@ -112,6 +113,8 @@ export type CampaignAppearance = Partial<{
   systemChoices: { sources: string[]; language: 'es' | 'en'; settings: Record<string, unknown> } | null
   /** Si parte de lo que sabe el mundo */
   knowsWorld: boolean
+  /** Los tipos del compendio que no ven sus jugadores */
+  hiddenTypes: string[]
 }>
 
 export function updateCampaign(db: Database, context: OperationContext, campaignId: string, patch: CampaignAppearance) {

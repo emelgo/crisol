@@ -158,6 +158,21 @@ export async function authorizedView(
   return { wiki, view: await viewFor(ctx, worldId, await readerFor(ctx, wiki, as), undefined, tree) }
 }
 
+/**
+ * De lo del compendio del mundo, lo que ve quien lo pide en su campaña: lo que se le reveló (ADR-0017). Sin el árbol:
+ * las marcas de contenido no dependen de las páginas. null: quien lleva el mundo, todo
+ */
+export async function contentSeen(
+  ctx: ActionContext,
+  wiki: WikiTarget,
+  campaignId: string
+): Promise<((key: string) => boolean) | null> {
+  if (managesWiki(ctx, wiki)) return null
+  const reader = await readerFor(ctx, wiki, { campaignId })
+  const view = await viewFor(ctx, wiki.worldId, reader, ['content'], Promise.resolve([]))
+  return (key) => view.seesContent(key)
+}
+
 /** Si alguna campaña del mundo (o todo el mundo) ve esa página: lo que se crea debajo nace oculto (ADR-0017) */
 export async function knownBySomeone(ctx: ActionContext, worldId: string, pageId: string): Promise<boolean> {
   const [tree, marks, campaigns] = await Promise.all([

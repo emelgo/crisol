@@ -277,7 +277,7 @@ describe('las criaturas en juego (docs/specs/criaturas.md)', () => {
     ).toBe(403)
   })
 
-  it('la jugadora no ve ni cambia nada (hasta el módulo 5)', async () => {
+  it('la jugadora no ve la lista del máster ni cambia nada', async () => {
     const [one] = (await ok200('putInPlay', { campaignId, key: GOBLIN })).creatures
     for (const [name, payload] of [
       ['listInPlay', { campaignId }],

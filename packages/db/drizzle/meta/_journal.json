@@ -372,6 +372,13 @@
       "when": 1794001048228,
       "tag": "0052_lo_nuevo",
       "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1794004893335,
+      "tag": "0053_compendio_jugadores",
+      "breakpoints": true
     }
   ]
 }
