@@ -1333,8 +1333,8 @@ Estados: pendiente · en curso · hecho · descartado.
 | 1 | **Wiki**: páginas y subpáginas, editor de bloques, enlaces, menciones, vista previa, propiedades, secretos, búsqueda, marcadores, etiquetas, versiones, recursos y archivos, **hojas con estilo** (tipo Homebrewery, con PDF), exportación MD, sus herramientas MCP | construido (tareas 1 a 26 hechas); falta la revisión de Enrique en staging | Foundry: Journal; DDB: contenido y referencias; Homebrewery (MIT): formato de hoja y descarga |
 | 2 | **Tipos de página y plantillas**: «Desde plantilla» (de serie y propias), campos en el panel, tablas que se llenan solas (en lugar de Dataview) | construido (tareas 1 a 14, 2026-11-03); falta la revisión de Enrique en staging | Foundry: tipos de documento; Kanka, LegendKeeper y World Anvil (web pública) |
 | 3 | Sistemas de reglas, fichas de personaje (creación, subida de nivel), dados y dados 3D | **hecho** (2026-11-06, PR #95 a #108; Crisol vacío, ADR-0015); falta que Enrique lo pruebe (`tasks/probar.md`) | DDB: creador y hoja; Foundry: dnd5e, DataModel e instalar y crear sistemas |
-| 4 | Compendios (aparte de la wiki del mundo y **como los de Foundry**: antes, estudio a fondo con craft-anything), bestiario, statblocks, biblioteca; **las imágenes de lo traído de Foundry** (las de cada documento del zip); **buscar dentro de los PDF** (texto de cada página con pdf.js; el resultado abre el visor en esa página) **y por significado** (pgvector; antes, permiso para la imagen de Postgres y elegir quién calcula los embeddings) | **en curso** (2026-11-06: specs y diseño; `compendio-mundo` y `criaturas` construidos; `docs/specs/modulo-4.md`) | Foundry: compendium packs; DDB: listados |
-| 5 | Visibilidad por campaña: conocimiento de los jugadores, revelar, compartir | pendiente | Foundry: ownership |
+| 4 | Compendios (aparte de la wiki del mundo y **como los de Foundry**: antes, estudio a fondo con craft-anything), bestiario, statblocks, biblioteca; **las imágenes de lo traído de Foundry** (las de cada documento del zip); **buscar dentro de los PDF** (texto de cada página con pdf.js; el resultado abre el visor en esa página) **y por significado** (pgvector; antes, permiso para la imagen de Postgres y elegir quién calcula los embeddings) | **hecho** (2026-11-06, PR #110 y #111; `docs/specs/modulo-4.md`); falta que Enrique lo pruebe (`tasks/probar.md`) | Foundry: compendium packs; DDB: listados |
+| 5 | Visibilidad por campaña: conocimiento de los jugadores, revelar, compartir | **en curso** (2026-11-06: entrevista hecha) | Foundry: ownership |
 | 6 | **Mesa**: escenas, rejilla, fichas, medir y plantillas, niebla, muros, puertas, luz, visión, iniciativa, instantáneas, encuentros, UVTT; **las escenas, mapas y tokens de un zip de Foundry** | pendiente | Foundry: canvas, visión y muros; DDB Maps |
 | 7 | **Sala de jugadores**: presencia, chat y susurros, mostrar a jugadores, sonido (también **los de un zip de Foundry**), controles del máster | pendiente | Foundry: sockets y chat; DDB: game log |
 | 8 | Calendario, clima, viajes, líneas temporales | pendiente | — |
@@ -1729,3 +1729,35 @@ Notas: `research/foundry/sistemas-y-su-api.md` y `research/dndbeyond/creador-y-h
 - **Fuera**: los encuentros, la iniciativa y las fichas en el mapa (módulo 6); las escenas y los sonidos de un zip de
   Foundry (6 y 7); el OCR de los PDF escaneados; el aspecto del sistema traído de Foundry (con la interfaz); lo que ven
   los jugadores (módulo 5): hasta entonces, el compendio del mundo y lo que está en juego solo los ve el máster.
+
+### 5. Visibilidad por campaña (entrevista con Enrique, 2026-11-06)
+
+- **El conocimiento va por campaña, con excepciones por personaje** («esto solo lo sabe la pícara»), como en el Crisol
+  actual. Al empezar, una campaña sabe lo que el mundo marca como conocido, nada, o lo mismo que otra campaña.
+- **Los jugadores leen; no escriben** en este módulo. Como mucho, el máster deja editar una página concreta (el diario
+  del grupo). Las notas personales, el diario y el chat, con la sala de jugadores (módulo 7).
+- **Las piezas**:
+  - la página entera: una nueva es solo del máster; las subpáginas heredan de su padre, con herencia viva (cambia el
+    padre, cambian ellas; se ve de dónde viene) y excepciones en cualquiera;
+  - los secretos (`> [!secreto]`) de una página visible, cada uno por separado;
+  - las pestañas y los pines de un mapa, cada uno por separado (como «descubierto» en el Crisol actual);
+  - los campos y bloques del panel, con una marca de «solo máster», sin revelarlos uno a uno (para eso, el secreto).
+- **Revelar en partida**: «Revelar» en el secreto, la página o el pin, a toda la campaña o a unos personajes; dentro
+  de una campaña, en esa; fuera, se elige (un mundo puede tener varias). Los jugadores reciben un aviso («Nuevo: …») y
+  lo revelado sale marcado como nuevo hasta que lo abren. «Lo que sabe el grupo», por campaña, para repasarlo,
+  deshacerlo u ocultarlo otra vez. «Ver como jugador»: la página como la ve un personaje, sin cambiar de cuenta.
+- **El compendio y las criaturas**:
+  - el del sistema lo ven entero, como un libro; el máster oculta en una campaña un tipo o una sección (el bestiario);
+  - el del mundo es del máster hasta que revela una entrada, como una página (el objeto que encontraron);
+  - las criaturas en juego se ven con su nombre, su imagen y su estado en palabras («Ilesa», «Herida», «Malherida»,
+    «A punto de caer»), sin PG ni hoja; sus tiradas siguen ocultas salvo que el máster las enseñe.
+- **La IA**: la del máster revela, oculta y mira como jugador; revelar pide aprobación en copiloto (no se puede
+  «des-saber»). Un jugador conecta la suya y solo lee lo que ve él.
+- **Límite**: el servidor filtra todo (API, búsqueda, enlaces, vista previa, exportar, la edición en vivo, el tiempo
+  real y el MCP); nada se manda para esconderlo en la interfaz, al revés que Foundry. Revocar es inmediato.
+- **Hecho cuando**: un jugador de la campaña A lee una página con sus subpáginas y uno de la B no; ninguno recibe ni un
+  byte de un secreto sin revelar; el máster revela un secreto solo a la pícara (ella recibe el aviso, los demás no lo
+  ven), un pin y una entrada del compendio del mundo; los goblins salen como «Herido»; un jugador con su IA solo ve lo
+  suyo.
+- **Fuera**: que los jugadores escriban (salvo la página que se les deje); notas, diario y chat (módulo 7); la mesa,
+  la niebla y la visión (módulo 6); una web pública sin cuenta; co-máster y espectador.
