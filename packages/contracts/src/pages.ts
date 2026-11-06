@@ -16,7 +16,8 @@ const propertyName = z.string().trim().min(1).max(60)
 export const fieldId = z.string().regex(/^[a-z0-9][a-z0-9-]{0,39}$/)
 /** Una plantilla: el id legible de una de serie o el de una propia */
 export const templateRef = z.union([z.uuid(), z.string().regex(/^[a-z][a-z0-9-]{0,39}$/)])
-const field = { name: propertyName, field: fieldId.optional() }
+// hidden: «Oculto», no les llega a los jugadores aunque vean la página (ADR-0017)
+const field = { name: propertyName, field: fieldId.optional(), hidden: z.literal(true).optional() }
 const optionText = z.string().trim().max(100)
 const choiceOptions = z.array(optionText.min(1)).max(50)
 const clockSegments = z.number().int().min(2).max(12)

@@ -4,6 +4,7 @@ import { type OperationContext, operation } from '../operation.ts'
 import { campaignMembers, campaigns } from '../schema/campaigns.ts'
 import { worlds } from '../schema/worlds.ts'
 import { type PreparedSecret, writeInvitation } from './invitations.ts'
+import { copyCampaignMarks } from './knowledge.ts'
 
 /** Lo que se ve de una campaña en su tarjeta, además del nombre */
 const appearance = {
@@ -11,7 +12,8 @@ const appearance = {
   color: campaigns.color,
   cover: campaigns.cover,
   system: campaigns.system,
-  systemChoices: campaigns.systemChoices
+  systemChoices: campaigns.systemChoices,
+  knowsWorld: campaigns.knowsWorld
 }
 
 /**
@@ -66,17 +68,23 @@ export function createCampaignWithMaster(
     invitation: PreparedSecret
     system?: string | null
     systemChoices?: CampaignAppearance['systemChoices']
+    /** Lo que saben los jugadores al empezar (ADR-0017): lo del mundo (por defecto), nada o lo de otra campaña */
+    knowledge?: { start: 'world' } | { start: 'none' } | { start: 'campaign'; campaignId: string }
   }
 ) {
   return operation(db, context, async (w) => {
+    const start = input.knowledge ?? { start: 'world' }
     const campaign = await w.insert(campaigns, {
       worldId: input.worldId,
       name: input.name,
       system: input.system ?? null,
-      systemChoices: input.systemChoices ?? null
+      systemChoices: input.systemChoices ?? null,
+      knowsWorld: start.start !== 'none'
     })
     await w.insert(campaignMembers, { campaignId: campaign.id, userId: input.masterId, role: 'master' })
     await writeInvitation(w, campaign.id, input.invitation)
+    if (start.start === 'campaign')
+      await copyCampaignMarks(w, start.campaignId, { worldId: input.worldId, campaignId: campaign.id })
     return campaign
   })
 }
@@ -94,6 +102,8 @@ export type CampaignAppearance = Partial<{
   /** Su sistema de reglas y lo que elige de él */
   system: string | null
   systemChoices: { sources: string[]; language: 'es' | 'en'; settings: Record<string, unknown> } | null
+  /** Si parte de lo que sabe el mundo */
+  knowsWorld: boolean
 }>
 
 export function updateCampaign(db: Database, context: OperationContext, campaignId: string, patch: CampaignAppearance) {

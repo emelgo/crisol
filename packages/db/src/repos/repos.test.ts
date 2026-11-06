@@ -142,6 +142,7 @@ describe('repositorios', () => {
           cover: null,
           system: null,
           systemChoices: null,
+          knowsWorld: true,
           version: 1,
           role: 'master'
         }

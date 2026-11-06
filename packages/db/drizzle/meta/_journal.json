@@ -358,6 +358,13 @@
       "when": 1793985447913,
       "tag": "0050_trozos_clase_y_fallos",
       "breakpoints": true
+    },
+    {
+      "idx": 51,
+      "version": "7",
+      "when": 1793994120380,
+      "tag": "0051_conocimiento",
+      "breakpoints": true
     }
   ]
 }
