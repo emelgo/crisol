@@ -264,4 +264,41 @@ describe('revelar en partida (docs/specs/revelar.md)', () => {
       expect(news.news.map((n: { kind: string }) => n.kind)).toEqual(['page'])
     })
   })
+  it('«Lo que sabe el grupo» con 600 marcas (300 páginas y sus secretos) contesta rápido', async () => {
+    const pages = Array.from({ length: 300 }, (_, i) => ({
+      key: `p${i}`,
+      title: `Página ${i}`,
+      markdown: `## Sección ${i}\n\n> [!secreto]\n> s${i}`
+    }))
+    for (let i = 0; i < 6; i++)
+      await ok200('createPages', { worldId, parentId: null, pages: pages.slice(i * 50, i * 50 + 50) })
+    const docs = (await conn.db.select().from(schema.documents)).filter((d) => d.kind === 'secret')
+    const all = await conn.db.select().from(schema.pages)
+    await conn.db
+      .insert(schema.knowledge)
+      .values([
+        ...docs.map((d) => ({ worldId, campaignId: marca, kind: 'secret' as const, targetId: d.id, known: true })),
+        ...all.map((p) => ({ worldId, campaignId: marca, kind: 'page' as const, targetId: p.id, known: true }))
+      ])
+    const times: number[] = []
+    let items = 0
+    for (let i = 0; i < 3; i++) {
+      const started = performance.now()
+      items = (await ok200('listCampaignKnowledge', { campaignId: marca })).campaign.length
+      times.push(performance.now() - started)
+    }
+    expect(items).toBeGreaterThanOrEqual(600)
+    expect(Math.min(...times)).toBeLessThan(800)
+    const known = await ok200('listCampaignKnowledge', { campaignId: marca })
+    expect(known.campaign.find((item: { name: string }) => item.name === 'Sección 7')).toMatchObject({
+      kind: 'secret',
+      pageTitle: 'Página 7'
+    })
+  })
+  it('ocultar una página se lleva lo nuevo de sus secretos', async () => {
+    await ok200('reveal', { worldId, kind: 'secret', targetId: secrets[0]?.id ?? '', alsoPage: true })
+    expect((await ok200('listNews', { campaignId: marca }, ana.cookie)).news.length).toBeGreaterThan(0)
+    await ok200('hide', { campaignId: marca, kind: 'page', targetId: aldoria })
+    expect((await ok200('listNews', { campaignId: marca }, ana.cookie)).news).toEqual([])
+  })
 })

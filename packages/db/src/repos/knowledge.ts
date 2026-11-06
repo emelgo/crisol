@@ -190,78 +190,121 @@ export async function copyCampaignMarks(w: Writer, from: string, to: { worldId: 
 }
 
 /** Lo que se marca, si es del mundo: su página (la de un secreto, una pestaña o un mapa) y un nombre para el historial */
+export interface MarkTarget {
+  pageId: string | null
+  name: string
+  hidden?: boolean
+}
+
 export async function findTarget(
   db: Database,
   worldId: string,
   kind: KnowledgeKind,
   targetId: string
-): Promise<{ pageId: string | null; name: string; hidden?: boolean } | null> {
+): Promise<MarkTarget | null> {
+  return (await findTargets(db, worldId, kind, [targetId])).get(targetId) ?? null
+}
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+/** Su nombre, en español si lo tiene (o el primero que tenga) */
+function contentName(data: unknown, key: string) {
+  const name = (data as { name?: unknown } | null)?.name
+  const text =
+    typeof name === 'string'
+      ? name
+      : name && typeof name === 'object'
+        ? ((name as Record<string, string>).es ?? Object.values(name as Record<string, string>)[0])
+        : undefined
+  return text || key
+}
+
+/** Lo mismo que findTarget, de varios de un tipo a la vez (por su id; lo que no está, no sale) */
+export async function findTargets(
+  db: Database,
+  worldId: string,
+  kind: KnowledgeKind,
+  targetIds: readonly string[]
+): Promise<Map<string, MarkTarget>> {
   // Todo va por su id, salvo una entrada del compendio del mundo: por su clave
-  const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetId)
-  if (!uuid && kind !== 'content') return null
+  const ids = [...new Set(kind === 'content' ? targetIds : targetIds.filter((id) => UUID.test(id)))]
+  const found = new Map<string, MarkTarget>()
+  if (ids.length === 0) return found
   const live = and(eq(pages.worldId, worldId), isNull(pages.deletedAt))
+  const put = (rows: { id: string; pageId: string; name: string; hidden?: boolean }[]) => {
+    for (const { id, ...target } of rows) found.set(id, target)
+  }
   switch (kind) {
-    case 'page': {
-      const [row] = await db
-        .select({ pageId: pages.id, name: pages.title })
-        .from(pages)
-        .where(and(eq(pages.id, targetId), live))
-      return row ?? null
-    }
-    case 'secret': {
-      const [row] = await db
-        .select({ pageId: pages.id, name: pages.title })
-        .from(documents)
-        .innerJoin(pages, eq(pages.id, documents.pageId))
-        .where(and(eq(documents.id, targetId), eq(documents.kind, 'secret'), live))
-      return row ?? null
-    }
-    case 'tab': {
-      const [row] = await db
-        .select({ pageId: pages.id, name: pageTabs.name, hidden: pageTabs.hidden })
-        .from(pageTabs)
-        .innerJoin(pages, eq(pages.id, pageTabs.pageId))
-        .where(and(eq(pageTabs.id, targetId), live))
-      return row ?? null
-    }
-    case 'pin': {
-      const [row] = await db
-        .select({ pageId: pages.id, name: sql<string>`coalesce(${mapPins.label}, '')`, hidden: mapPins.hidden })
-        .from(mapPins)
-        .innerJoin(maps, eq(maps.id, mapPins.mapId))
-        .innerJoin(pageTabs, eq(pageTabs.id, maps.tabId))
-        .innerJoin(pages, eq(pages.id, pageTabs.pageId))
-        .where(and(eq(mapPins.id, targetId), live))
-      return row ?? null
-    }
-    case 'element': {
-      const [row] = await db
-        .select({ pageId: pages.id, name: sql<string>`coalesce(${mapElements.label}, '')`, hidden: mapElements.hidden })
-        .from(mapElements)
-        .innerJoin(maps, eq(maps.id, mapElements.mapId))
-        .innerJoin(pageTabs, eq(pageTabs.id, maps.tabId))
-        .innerJoin(pages, eq(pages.id, pageTabs.pageId))
-        .where(and(eq(mapElements.id, targetId), live))
-      return row ?? null
-    }
+    case 'page':
+      put(
+        await db
+          .select({ id: pages.id, pageId: pages.id, name: pages.title })
+          .from(pages)
+          .where(and(inArray(pages.id, ids), live))
+      )
+      break
+    case 'secret':
+      put(
+        await db
+          .select({ id: documents.id, pageId: pages.id, name: pages.title })
+          .from(documents)
+          .innerJoin(pages, eq(pages.id, documents.pageId))
+          .where(and(inArray(documents.id, ids), eq(documents.kind, 'secret'), live))
+      )
+      break
+    case 'tab':
+      put(
+        await db
+          .select({ id: pageTabs.id, pageId: pages.id, name: pageTabs.name, hidden: pageTabs.hidden })
+          .from(pageTabs)
+          .innerJoin(pages, eq(pages.id, pageTabs.pageId))
+          .where(and(inArray(pageTabs.id, ids), live))
+      )
+      break
+    case 'pin':
+      put(
+        await db
+          .select({
+            id: mapPins.id,
+            pageId: pages.id,
+            name: sql<string>`coalesce(${mapPins.label}, '')`,
+            hidden: mapPins.hidden
+          })
+          .from(mapPins)
+          .innerJoin(maps, eq(maps.id, mapPins.mapId))
+          .innerJoin(pageTabs, eq(pageTabs.id, maps.tabId))
+          .innerJoin(pages, eq(pages.id, pageTabs.pageId))
+          .where(and(inArray(mapPins.id, ids), live))
+      )
+      break
+    case 'element':
+      put(
+        await db
+          .select({
+            id: mapElements.id,
+            pageId: pages.id,
+            name: sql<string>`coalesce(${mapElements.label}, '')`,
+            hidden: mapElements.hidden
+          })
+          .from(mapElements)
+          .innerJoin(maps, eq(maps.id, mapElements.mapId))
+          .innerJoin(pageTabs, eq(pageTabs.id, maps.tabId))
+          .innerJoin(pages, eq(pages.id, pageTabs.pageId))
+          .where(and(inArray(mapElements.id, ids), live))
+      )
+      break
     case 'content': {
-      const [row] = await db
-        .select({ name: worldContent.data, key: worldContent.key })
+      // Una clave puede estar en el compendio del mundo para varios sistemas: vale la primera
+      const rows = await db
+        .select({ key: worldContent.key, data: worldContent.data })
         .from(worldContent)
-        .where(and(eq(worldContent.key, targetId), eq(worldContent.worldId, worldId)))
-        .limit(1)
-      if (!row) return null
-      // Su nombre, en español si lo tiene (o el primero que tenga)
-      const name = (row.name as { name?: unknown }).name
-      const text =
-        typeof name === 'string'
-          ? name
-          : name && typeof name === 'object'
-            ? ((name as Record<string, string>).es ?? Object.values(name as Record<string, string>)[0])
-            : undefined
-      return { pageId: null, name: text || row.key }
+        .where(and(inArray(worldContent.key, ids), eq(worldContent.worldId, worldId)))
+      for (const row of rows)
+        if (!found.has(row.key)) found.set(row.key, { pageId: null, name: contentName(row.data, row.key) })
+      break
     }
   }
+  return found
 }
 
 /** Los secretos y las pestañas de texto del mundo, con su página (y la pestaña, si está oculta): para filtrar lo que se busca */
@@ -397,9 +440,11 @@ export async function seeContentNews(db: Database, userId: string, campaignId: s
 
 /** Oculto otra vez: deja de ser nuevo para todos */
 export async function dropNews(db: Database, campaignId: string, kind: KnowledgeKind, targetId: string) {
+  const own = and(eq(knowledgeNews.kind, kind), eq(knowledgeNews.targetId, targetId))
+  // Una página oculta se lleva también lo nuevo de dentro (sus secretos, sus pines)
   await db
     .delete(knowledgeNews)
     .where(
-      and(eq(knowledgeNews.campaignId, campaignId), eq(knowledgeNews.kind, kind), eq(knowledgeNews.targetId, targetId))
+      and(eq(knowledgeNews.campaignId, campaignId), kind === 'page' ? or(own, eq(knowledgeNews.pageId, targetId)) : own)
     )
 }

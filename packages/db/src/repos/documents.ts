@@ -119,6 +119,15 @@ export async function documentsOfPages(db: Database, pageIds: readonly string[])
     .where(inArray(documents.pageId, [...pageIds]))
 }
 
+/** Los cuerpos de estas páginas con su estado (los que ya tienen) */
+export async function bodiesOf(db: Database, pageIds: readonly string[]) {
+  if (pageIds.length === 0) return []
+  return db
+    .select({ pageId: documents.pageId, state: documents.state })
+    .from(documents)
+    .where(and(inArray(documents.pageId, [...pageIds]), eq(documents.kind, 'body')))
+}
+
 /** Los documentos de estas páginas con su estado (para exportarlas de una vez) */
 export async function documentsWithState(db: Database, pageIds: readonly string[]) {
   if (pageIds.length === 0) return []

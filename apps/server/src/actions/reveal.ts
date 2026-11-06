@@ -119,32 +119,55 @@ async function nameFor(ctx: ActionContext, kind: KnowledgeKind, targetId: string
   return place?.heading ?? target.name
 }
 
-/** Lo que sabe una campaña de cada cosa con marca, lista para enseñarla («Lo que sabe el grupo») */
+/**
+ * Lo que sabe una campaña de cada cosa con marca, lista para enseñarla («Lo que sabe el grupo»). De una vez: lo marcado
+ * de cada tipo, los títulos de sus páginas y, de los secretos, el título de su sección (cada cuerpo se lee una vez)
+ */
 async function describeMarks(
   ctx: ActionContext,
   wiki: WikiTarget,
   rows: knowledgeRepo.KnowledgeRow[],
   names: Map<string, string>
 ) {
-  const items = []
-  for (const row of rows) {
-    const target = await knowledgeRepo.findTarget(ctx.db, wiki.worldId, row.kind, row.targetId)
-    if (!target) continue
-    const pageTitle = target.pageId
-      ? ((await pagesRepo.titlesOf(ctx.db, wiki.worldId, [target.pageId])).get(target.pageId) ?? null)
-      : null
-    items.push({
-      kind: row.kind,
-      targetId: row.targetId,
-      name: await nameFor(ctx, row.kind, row.targetId, target),
-      pageId: target.pageId,
-      pageTitle,
-      known: row.known,
-      audience: row.characters ? row.characters.map((id) => ({ id, name: names.get(id) ?? '' })) : ('all' as const),
-      at: row.updatedAt.toISOString()
+  const byKind = new Map<KnowledgeKind, string[]>()
+  for (const row of rows) byKind.set(row.kind, [...(byKind.get(row.kind) ?? []), row.targetId])
+  const targets = new Map<string, Target>()
+  await Promise.all(
+    [...byKind].map(async ([kind, ids]) => {
+      for (const [id, target] of await knowledgeRepo.findTargets(ctx.db, wiki.worldId, kind, ids))
+        targets.set(`${kind}|${id}`, target)
     })
+  )
+  const pageIds = [...new Set([...targets.values()].flatMap((t) => (t.pageId ? [t.pageId] : [])))]
+  const withSecrets = [
+    ...new Set(rows.flatMap((r) => (r.kind === 'secret' ? [targets.get(`secret|${r.targetId}`)?.pageId ?? ''] : [])))
+  ].filter(Boolean)
+  const [titles, bodies] = await Promise.all([
+    pageIds.length > 0 ? pagesRepo.titlesOf(ctx.db, wiki.worldId, pageIds) : new Map<string, string>(),
+    documentsRepo.bodiesOf(ctx.db, withSecrets)
+  ])
+  const headings = new Map<string, string>()
+  for (const body of bodies) {
+    if (!body.pageId) continue
+    const doc = documentJson(ctx, { kind: 'body', pageId: body.pageId }, body.state)
+    for (const [id, place] of separateHeadings(doc)) if (place.heading) headings.set(id, place.heading)
   }
-  return items
+  return rows.flatMap((row) => {
+    const target = targets.get(`${row.kind}|${row.targetId}`)
+    if (!target) return []
+    return [
+      {
+        kind: row.kind,
+        targetId: row.targetId,
+        name: (row.kind === 'secret' ? headings.get(row.targetId) : undefined) ?? target.name,
+        pageId: target.pageId,
+        pageTitle: target.pageId ? (titles.get(target.pageId) ?? null) : null,
+        known: row.known,
+        audience: row.characters ? row.characters.map((id) => ({ id, name: names.get(id) ?? '' })) : ('all' as const),
+        at: row.updatedAt.toISOString()
+      }
+    ]
+  })
 }
 
 export const revealActions = [
@@ -286,9 +309,13 @@ export const revealActions = [
     const names = new Map((await charactersRepo.listCharacters(ctx.db, campaign.id)).map((c) => [c.id, c.name]))
     const own = await knowledgeRepo.campaignRows(ctx.db, campaign.id)
     const world = campaign.knowsWorld ? await knowledgeRepo.worldRows(ctx.db, wiki.worldId) : []
+    const [campaignItems, worldItems] = await Promise.all([
+      describeMarks(ctx, wiki, own, names),
+      describeMarks(ctx, wiki, world, names)
+    ])
     return {
-      campaign: await describeMarks(ctx, wiki, own, names),
-      world: await describeMarks(ctx, wiki, world, names),
+      campaign: campaignItems,
+      world: worldItems,
       knowsWorld: campaign.knowsWorld
     }
   }),
