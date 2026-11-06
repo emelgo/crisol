@@ -9,6 +9,18 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   de propietario.
 - **En local**, con los cambios al momento: http://localhost:5173 (lo arranco cuando haga falta).
 
+## Módulo 5: revelar en partida (rama `modulo-5/visibilidad`; en local, aún no en staging)
+
+- [ ] **Revelar un secreto**: en el secreto, «Revelar» → elige a quién (toda la campaña o unos personajes) → «Revelar».
+  Si la campaña no conoce la página, marca «Revelar también la página». La cabecera dice «Lo saben: …».
+- [ ] **A la jugadora le llega**: abajo a la derecha, «Nuevo: …» con «Leerlo»; el secreto sale con «Nuevo» y en su
+  barra, el número de novedades. Al abrirla deja de ser nuevo.
+- [ ] **Revelar una página**: el ojo de la cabecera de la página.
+- [ ] **Lo que sabe el grupo**: en la barra de la campaña, «Revelado»: lo revelado por días, con filtros; «Ocultar otra
+  vez» se lo quita al momento.
+- [ ] **Deshacer** una revelación desde el historial.
+- [ ] **La IA**: pídele que revele algo en partida (espera tu aprobación) y que te diga lo que sabe el grupo.
+
 ## Módulo 5: lo que sabe cada campaña (rama `modulo-5/visibilidad`; en local, aún no en staging)
 
 - [ ] **Quién la conoce**: en una página, el icono de dos personas, junto a «Marcar». Sale lo que sabe el mundo y cada

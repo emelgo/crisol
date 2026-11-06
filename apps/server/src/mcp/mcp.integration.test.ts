@@ -956,6 +956,19 @@ describe('conector MCP con OAuth', () => {
     const write = await player.call('editar_pagina', { pageId: aldoria, body: { mode: 'append', markdown: 'Mío' } })
     expect(write.text).toMatch(/^READ_ONLY/)
     expect((await player.call('quien_conoce', { pageId: aldoria })).isError).toBe(true)
+
+    // Revelar en partida (con aviso): también espera aprobación; lo_que_sabe lo lista
+    const reveal = await call('revelar', { worldId: world.id, kind: 'page', targetId: varn })
+    expect(reveal.text).toMatch(/^PENDING_APPROVAL/)
+    const waiting = (await call<Approvals>('pendientes')).data.pending
+    expect(waiting[0]).toMatchObject({ tool: 'revelar', details: { kind: 'page', name: 'Varn', known: true } })
+    await api(cookie, 'approve', { approvalId: waiting[0]?.id })
+    const group = (await call<{ campaign: { name: string }[] }>('lo_que_sabe', { campaignId: campaign.id })).data
+    expect(group.campaign.map((k) => k.name)).toEqual(['Varn', 'Aldoria'])
+    expect((await player.call('leer_pagina', { pageId: varn })).isError).toBeFalsy()
+    expect((await player.call('revelar', { worldId: world.id, kind: 'page', targetId: aldoria })).text).toMatch(
+      /^READ_ONLY/
+    )
   })
 
   it('lo de la papelera no sale en listar_mundos', async () => {

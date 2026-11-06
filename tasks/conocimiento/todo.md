@@ -11,4 +11,4 @@
 - [x] 9. «Ver como jugador»
 - [x] 10. La IA: marcar, quién conoce, ver como jugador; leer la wiki como jugador (punto de control 3)
 - [x] 11. Los tutoriales guiados de las vistas nuevas y los textos
-- [~] 12. E2E: el flujo, la prueba de fugas ampliada, el rendimiento con 5.000 páginas; documentación y revisión
+- [x] 12. E2E: el flujo, la prueba de fugas ampliada, el rendimiento con 5.000 páginas; documentación y revisión
