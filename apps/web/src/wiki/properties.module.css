@@ -135,8 +135,19 @@
 .propName {
   grid-area: name;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
+  row-gap: 0.125rem;
   min-inline-size: 0;
+}
+
+/* Con la marca «Oculto», el nombre ocupa su línea y la marca va debajo */
+.propName:has(.hiddenBadge) .nameInput {
+  flex: 1 0 100%;
+}
+
+.propName .hiddenBadge {
+  margin-inline-start: 0;
 }
 
 .propValue {
