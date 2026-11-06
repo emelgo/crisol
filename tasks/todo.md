@@ -2,11 +2,11 @@
 
 Plan: `tasks/plan.md` · Spec: `docs/specs/compendio-mundo.md`. Cada tarea con sus pruebas antes (TDD) y su commit.
 
-- [ ] **1. La tabla `world_content`** (migración 0043): mundo, sistema, tipo, clave, datos, concepto, mecánica, página
+- [x] **1. La tabla `world_content`** (migración 0043): mundo, sistema, tipo, clave, datos, concepto, mecánica, página
   y origen; única por mundo, sistema y clave. En `TRACKED_TABLES` (historial y deshacer) y sus eventos en tiempo real
   (a quien ve el mundo). Repo `worldContentRepo`: índice, por claves, por tipo, guardar (con la versión de cada fila),
   quitar.
-- [ ] **2. La unión de las capas en `@crisol/systems`**: lo del mundo sin fuente, marcado y mandando en las claves; la
+- [x] **2. La unión de las capas en `@crisol/systems`**: lo del mundo sin fuente, marcado y mandando en las claves; la
   huella de una entrada (`contentFingerprint`) y sus diferencias por campo (`contentDiff`).
 - [ ] **3. La campaña con las dos capas**: el compendio (tipos y cuentas, buscar, carpetas, leer, tablas del texto) y
   lo que leen los personajes; lo del mundo solo para quien puede cambiar el mundo (y, dentro de su hoja, lo que lleva
