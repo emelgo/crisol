@@ -46,7 +46,10 @@ Como se propuso, con dos precisiones al construirlo: **las filas que se pisan sa
 una tirada da todas las filas que abarcan su total: así funcionan «Standard Languages» o «Teleport Mishap» del dnd5e),
 así que en una tabla del compendio no es un problema; y una fila **lleva a una entrada por su clave** (si esa entrada es
 una tabla, se tira también), en lugar de distinguir página y tabla como la pestaña de la wiki. Lo sacado lo reinicia
-el máster. Queda: elegir a qué entrada lleva una fila desde el editor (hoy, con la IA o de Foundry), tirar desde un
+el máster, y se olvida al quitar la tabla del mundo. Tras la revisión: una tirada no repite dentro de sí misma, no
+vuelve a una tabla de su camino y da como mucho 100 resultados; una anidada agotada deja la fila de arriba; la IA tira
+oculta por defecto; una fórmula que no se entiende o una fila al revés no se guardan (de Foundry, la fórmula se quita
+con una nota); y una «Tabla» de antes, con su tabla en el texto, se tira por su clave. Queda: elegir a qué entrada lleva una fila desde el editor (hoy, con la IA o de Foundry), tirar desde un
 enlace en la wiki, y el enlace del registro a la entrada que salió (la tirada ya la guarda, `content`).
 
 ## Pruebas

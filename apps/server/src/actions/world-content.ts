@@ -30,10 +30,11 @@ import {
 } from '@crisol/systems'
 import { systemsChanged, worldContentChanged } from '../realtime/events.ts'
 import { authorizedWiki, type WikiTarget } from './access.ts'
+import { contentOf } from './content-of.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
 import * as layers from './layers.ts'
 import { implement } from './registry.ts'
-import { contentOf, invalid, ownWritable } from './systems.ts'
+import { invalid, ownWritable } from './systems.ts'
 
 type Origin = typeof schema.worldContent.$inferSelect.origin
 

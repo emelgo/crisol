@@ -64,6 +64,7 @@ import {
 } from '@crisol/systems'
 import { systemsChanged } from '../realtime/events.ts'
 import { authorizedCampaign, targetOrganization } from './access.ts'
+import { contentOf } from './content-of.ts'
 import { type ActionContext, historyContext, InvalidRequestError, TooManyRequestsError } from './context.ts'
 import * as layers from './layers.ts'
 import { implement } from './registry.ts'
@@ -129,30 +130,6 @@ async function findReadable(ctx: ActionContext, organizationId: string, systemId
   if (!row || row.deletedAt || row.organizationId !== organizationId) throw new NotFoundError('system')
   return { document: row.document as unknown as System, row }
 }
-
-/** Un documento del contenido guardado, con lo que tenga (su concepto, su mecánica y su página, si los hay) */
-export const contentOf = (row: {
-  type: string
-  key: string
-  source: string | null
-  data: Record<string, unknown>
-  concept: string | null
-  mechanics: Record<string, unknown> | null
-  ref: Record<string, unknown> | null
-  img?: string | null
-  table?: Record<string, unknown> | null
-}): ContentItem =>
-  ({
-    type: row.type,
-    key: row.key,
-    source: row.source,
-    data: row.data,
-    ...(row.concept !== null ? { concept: row.concept } : {}),
-    ...(row.mechanics !== null ? { mechanics: row.mechanics } : {}),
-    ...(row.ref !== null ? { ref: row.ref } : {}),
-    ...(row.img ? { img: row.img } : {}),
-    ...(row.table ? { table: row.table } : {})
-  }) as ContentItem
 
 /** Todo el contenido de un sistema: el de la cuenta, de la base de datos (los de serie no traen) */
 async function allContent(ctx: ActionContext, found: { document: System; row: systemsRepo.SystemRow | null }) {

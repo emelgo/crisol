@@ -5,8 +5,8 @@
  */
 import { systemsRepo, worldContentRepo } from '@crisol/db'
 import { type ContentEntry, type ContentItem, type Layered, withWorld } from '@crisol/systems'
+import { contentOf } from './content-of.ts'
 import type { ActionContext } from './context.ts'
-import { contentOf } from './systems.ts'
 
 /** El compendio de un mundo para un sistema */
 export interface WorldLayer {
