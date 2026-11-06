@@ -77,6 +77,7 @@ import {
   validateSystem,
   visibleContent
 } from '@crisol/systems'
+import { readFoundryZip } from '../systems/foundry-zip.ts'
 import { type ActionInput, type ActionName, type ActionOutput, type ApiClient, ApiError } from './client.ts'
 
 export function fakeApi(
@@ -1619,8 +1620,15 @@ export function fakeApi(
     inspectFoundry: () => {
       throw new ApiError('NOT_AVAILABLE', 400)
     },
-    importFoundry: () => {
-      throw new ApiError('NOT_AVAILABLE', 400)
+    // En la falsa, un sistema «En blanco» con el nombre del manifiesto: la conversión es cosa del servidor
+    importFoundry: ({ zip }) => {
+      const read = readFoundryZip(Uint8Array.from(atob(zip), (c) => c.charCodeAt(0)))
+      const blank = catalogSystem('blank')
+      if (!read || !blank) throw new ApiError('FOUNDRY_INVALID', 400)
+      const id = crypto.randomUUID()
+      const document = { ...structuredClone(blank), id, name: { es: read.title, en: read.title } }
+      ownSystems.push({ id, version: 1, basedOn: null, document, content: [], deleted: false })
+      return { system: systemView(id), warnings: [] }
     },
     importSystem: ({ file, into }) => {
       const { file: valid, problems } = validateFile(file)
