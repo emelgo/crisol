@@ -52,6 +52,9 @@ test('las criaturas en juego: tres goblins desde el compendio, su hoja, tirar su
   // Su cimitarra: el ataque y el daño, a su nombre
   await sheet.getByRole('button', { name: /^Ataque con Cimitarra/ }).click()
   await expect(sheet.getByRole('status').filter({ hasText: 'Goblin 2 · Cimitarra' })).toBeVisible()
+  // Desde su hoja, oculta de entrada (solo la ve el máster)
+  const listed = await page.request.post('/api/actions/listRolls', { data: { campaignId } })
+  expect((await listed.json()).rolls.at(-1)).toMatchObject({ label: 'Goblin 2 · Cimitarra', visibility: 'hidden' })
   await sheet.getByRole('button', { name: 'Daño de Cimitarra' }).click()
   await expect(sheet.getByRole('status').filter({ hasText: 'daño' })).toBeVisible()
   await page.screenshot({ path: test.info().outputPath('en-juego.png'), fullPage: false })
@@ -109,7 +112,7 @@ test('enlazar una criatura desde la página de un PNJ: [[@ la sugiere, su tarjet
   const link = body.getByRole('link', { name: 'Goblin' })
   await expect(link).toBeVisible()
   await link.hover()
-  const card = page.getByRole('tooltip')
+  const card = page.getByRole('group', { name: 'Goblin' })
   await expect(card).toContainText('Criatura')
   await expect(card).toContainText('Clase de armadura 15')
   await page.screenshot({ path: test.info().outputPath('enlace-criatura.png'), fullPage: false })

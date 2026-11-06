@@ -95,5 +95,16 @@ describe('las criaturas en juego (docs/specs/criaturas.md)', () => {
     expect(damageTaken([{ amount: 7, type: 'frio' }], 2, { ...defenses, vulnerable: ['frio'] })).toBe(28)
     expect(damageTaken([{ amount: 6, type: 'fuego' }, { amount: 4 }], 1, defenses)).toBe(7)
     expect(damageTaken([{ amount: 9 }], 0, defenses)).toBe(0)
+    // Lo del mismo tipo, junto antes de redondear
+    expect(
+      damageTaken(
+        [
+          { amount: 7, type: 'frio' },
+          { amount: 5, type: 'frio' }
+        ],
+        0.5,
+        defenses
+      )
+    ).toBe(6)
   })
 })

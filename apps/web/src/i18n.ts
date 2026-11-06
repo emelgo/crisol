@@ -476,6 +476,7 @@ export const es = {
     log: 'Registro de tiradas',
     rollHp: 'Tirar PG',
     otherMax: 'Otro máximo',
+    ownMax: 'Volver al suyo',
     remove: 'Quitar de juego',
     condition: { bloodied: 'Malherida', down: 'Fuera de combate' },
     put: {

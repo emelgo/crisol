@@ -179,7 +179,7 @@ function CreatureRow({ creature, current, onOpen }: { creature: Creature; curren
         <span className={styles.chips}>
           {creature.stats.slice(0, 1).map((s) => (
             <span key={s.key} className={styles.chip}>
-              {s.label.length > 4 ? s.key.toUpperCase() : s.label} {s.value}
+              {s.label} {s.value}
             </span>
           ))}
           {creature.condition !== 'ok' && (
@@ -280,6 +280,9 @@ function CreatureSheet({
                   onChange={(event) => setMax(event.currentTarget.value)}
                 />
               </form>
+              <button type="button" className={styles.action} onClick={() => change.mutate({ max: { value: null } })}>
+                {t('inPlay.ownMax')}
+              </button>
             </>
           )}
           <BusyButton className={styles.action} busy={remove.isPending} onClick={() => remove.mutate()}>
@@ -294,6 +297,7 @@ function CreatureSheet({
         state={state}
         save={save}
         rollWith={(input) => api.call('rollForCreature', { creatureId, ...input })}
+        defaultVisibility="hidden"
       />
     </article>
   )

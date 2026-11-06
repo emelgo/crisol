@@ -121,11 +121,16 @@ export function damageTaken(
   multiplier: number,
   defenses: Defenses
 ): number {
-  return parts.reduce((total, part) => {
-    let amount = Math.floor(Math.max(0, part.amount) * multiplier)
-    if (part.type && defenses.immune.includes(part.type)) amount = 0
-    else if (part.type && defenses.resist.includes(part.type)) amount = Math.floor(amount / 2)
-    else if (part.type && defenses.vulnerable.includes(part.type)) amount *= 2
-    return total + amount
-  }, 0)
+  // Lo de un mismo tipo, junto antes de redondear (7 de fuego y 5 de frío a la mitad: 3 + 2, no 2 + 2)
+  const byType = new Map<string, number>()
+  for (const part of parts) byType.set(part.type ?? '', (byType.get(part.type ?? '') ?? 0) + Math.max(0, part.amount))
+  let total = 0
+  for (const [type, sum] of byType) {
+    let amount = Math.floor(sum * multiplier)
+    if (type && defenses.immune.includes(type)) amount = 0
+    else if (type && defenses.resist.includes(type)) amount = Math.floor(amount / 2)
+    else if (type && defenses.vulnerable.includes(type)) amount *= 2
+    total += amount
+  }
+  return total
 }

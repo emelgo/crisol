@@ -104,6 +104,27 @@ export function updateCreature(
   })
 }
 
+/** Lo de la partida de varias a la vez (aplicar una tirada), en una sola operación: todas o ninguna */
+export function updateCreaturesPlay(
+  db: Database,
+  context: OperationContext,
+  updates: readonly { id: string; version: number; play: Record<string, unknown> }[]
+) {
+  return operation(db, context, async (w) => {
+    const saved = []
+    for (const update of updates) {
+      const [current] = await w.read
+        .select({ version: campaignCreatures.version })
+        .from(campaignCreatures)
+        .where(eq(campaignCreatures.id, update.id))
+        .for('update')
+      if (!current || current.version !== update.version) throw new CreatureChangedError()
+      saved.push(await w.update(campaignCreatures, update.id, { play: update.play }))
+    }
+    return saved
+  })
+}
+
 /** Quita unas de juego (las que no están, no cuentan) */
 export function deleteCreatures(db: Database, context: OperationContext, campaignId: string, ids: readonly string[]) {
   return operation(db, context, async (w) => {

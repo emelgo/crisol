@@ -72,7 +72,8 @@ async function contentFor(ctx: ActionContext, at: Context, key: string, play: Pl
 
 /** Su hoja y lo que se ve de ella en la lista */
 function viewOf(at: Context, row: creaturesRepo.CreatureRow, content: readonly ContentItem[]) {
-  const entry = content.find((c) => c.key === row.key)
+  // De otro sistema (la campaña cambió de sistema): su entrada ya no está, aunque haya otra con su clave
+  const entry = row.systemId === at.row.id ? content.find((c) => c.key === row.key) : undefined
   if (!entry) throw new InvalidRequestError('ENTRY_GONE', 'su entrada ya no está en el compendio de la campaña')
   const played = creatureView(at.document, content, at.choices, entry, row.play as Play, row.overrides)
   return { entry, played, card: cardOf(at.document, row, entry, played.view) }
@@ -130,7 +131,7 @@ async function readable(ctx: ActionContext, creatureId: string) {
 
 /** Lo de la partida sin lo guardado de unos recursos (por su ruta): así vuelven a estar llenos */
 function setValues(play: Play, paths: readonly string[]): Play {
-  let values = structuredClone(play.values ?? {})
+  const values = structuredClone(play.values ?? {})
   for (const path of paths) {
     const parts = path.split('.')
     const last = parts.pop()
@@ -140,7 +141,6 @@ function setValues(play: Play, paths: readonly string[]): Play {
     )
     if (parent && last) delete parent[last]
   }
-  values = Object.fromEntries(Object.entries(values))
   return { ...play, values }
 }
 
@@ -221,7 +221,11 @@ export const creatureActions = [
         values
       )
     } catch (error) {
-      if (error instanceof creaturesRepo.UniqueTakenError)
+      // También dos a la vez: la segunda tropieza con el índice único
+      const code =
+        (error as { code?: string; cause?: { code?: string } }).code ??
+        (error as { cause?: { code?: string } }).cause?.code
+      if (error instanceof creaturesRepo.UniqueTakenError || code === '23505')
         throw new InvalidRequestError('UNIQUE_TAKEN', `«${base}» ya está en juego`)
       throw error
     }
@@ -260,10 +264,18 @@ export const creatureActions = [
           entry,
           parsed.data
         )
-        const wrong = [...tried.played.missing, ...tried.played.refused]
+        // Como un personaje: solo cuenta lo que se añade o se cambia (lo que ya llevaba y ya no está, se queda)
+        const before = row.play as Play
+        const had = new Set((before.items ?? []).map((i) => i.key))
+        const wrong = [...tried.played.missing, ...tried.played.refused].filter((k) => !had.has(k))
         if (wrong.length > 0) throw new InvalidRequestError('BAD_PLAY', `no se lleva: ${wrong.join(', ')}`)
         const values = { ...(parsed.data.values ?? {}) }
-        for (const problem of tried.played.problems) delete values[problem.key]
+        for (const problem of tried.played.problems) {
+          const old = (before.values ?? {})[problem.key]
+          if (JSON.stringify(old) !== JSON.stringify(values[problem.key]))
+            throw new InvalidRequestError('BAD_PLAY', `${problem.key}: ${problem.message}`)
+          delete values[problem.key]
+        }
         play = { ...parsed.data, values }
       }
       let overrides = { ...row.overrides }
@@ -434,77 +446,98 @@ export const creatureActions = [
     if (!apply) throw new InvalidRequestError('NOTHING_TO_APPLY', 'esa tirada no es de daño ni de curación')
     const total = (multiplier: number) =>
       apply.parts.reduce((n, p) => n + Math.floor(Math.max(0, p.amount) * multiplier), 0)
-    const applied = []
+    const parts = apply.parts.map((p) => ({ amount: p.amount, type: p.type ?? undefined }))
+    const amountFor = (multiplier: number, sheet: Record<string, unknown>, type: string) =>
+      apply.kind === 'heal'
+        ? total(multiplier)
+        : damageTaken(parts, multiplier, defensesOf(at.document, type, sheet as never))
+    const lifeAt = (sheet: Record<string, unknown>, path: string) =>
+      path.split('.').reduce<unknown>((v, k) => (v as Record<string, unknown> | undefined)?.[k], sheet) as
+        | { value?: number; max?: number }
+        | undefined
+    // Primero se comprueba todo (de quién es, que tenga vida); después, las criaturas en una sola operación
+    const creatures: {
+      row: creaturesRepo.CreatureRow
+      content: ContentItem[]
+      amount: number
+      play: Play
+    }[] = []
+    const characters: { id: string; name: string; version: number; amount: number }[] = []
+    const characterType = Object.entries(at.document.types).find(([, t]) => t.document === 'actor')?.[0] ?? ''
     for (const target of targets) {
       if (Boolean(target.creatureId) === Boolean(target.characterId))
         throw new InvalidRequestError('BAD_TARGET', 'cada objetivo, una criatura o un personaje')
       if (target.creatureId) {
-        const { row } = await readable(ctx, target.creatureId)
-        if (row.campaignId !== campaignId) throw new NotFoundError('creature')
+        const row = await creaturesRepo.findCreature(ctx.db, target.creatureId)
+        if (!row || row.campaignId !== campaignId) throw new NotFoundError('creature')
         const content = await contentFor(ctx, at, row.key, row.play as Play)
         const { entry, card, played } = viewOf(at, row, content)
         if (!card.life) throw new InvalidRequestError('BAD_TARGET', `«${row.name}» no tiene vida que cambiar`)
-        const amount =
-          apply.kind === 'heal'
-            ? total(target.multiplier)
-            : damageTaken(
-                apply.parts.map((p) => ({ amount: p.amount, type: p.type ?? undefined })),
-                target.multiplier,
-                defensesOf(at.document, entry.type, played.view.sheet)
-              )
+        const amount = amountFor(target.multiplier, played.view.sheet, entry.type)
         const play = changeResource(row.play as Play, card.life.path, card.life.max, {
           [apply.kind === 'heal' ? 'heal' : 'damage']: amount
         })
-        const saved = await creaturesRepo.updateCreature(
-          ctx.db,
-          historyContext(ctx, 'applyRoll', { name: row.name, amount, kind: apply.kind }, at.campaign),
-          row.id,
-          row.version,
-          { play: play as Record<string, unknown> }
-        )
-        const after = viewOf(at, { ...saved, worldId: row.worldId }, content).card
-        applied.push({
-          id: row.id,
-          kind: 'creature' as const,
-          name: row.name,
-          amount,
-          life: after.life ? { value: after.life.value, max: after.life.max } : null
-        })
+        creatures.push({ row, content, amount, play })
       } else if (target.characterId) {
         // Un personaje: con su hoja y su acción de partida (el máster puede con todos)
-        const read = handlerOf('getCharacter')
-        const play = handlerOf('playCharacter')
-        const { character, state } = (await read(ctx, { characterId: target.characterId })) as {
+        const { character, state } = (await handlerOf('getCharacter')(ctx, { characterId: target.characterId })) as {
           character: { id: string; name: string; campaignId: string; version: number }
           state: { sheet: Record<string, unknown> }
         }
         if (character.campaignId !== campaignId) throw new NotFoundError('character')
-        const type = Object.entries(at.document.types).find(([, t]) => t.document === 'actor')?.[0] ?? ''
-        const amount =
-          apply.kind === 'heal'
-            ? total(target.multiplier)
-            : damageTaken(
-                apply.parts.map((p) => ({ amount: p.amount, type: p.type ?? undefined })),
-                target.multiplier,
-                defensesOf(at.document, type, state.sheet as Record<string, never>)
-              )
-        const done = (await play(ctx, {
-          characterId: character.id,
-          version: character.version,
-          [apply.kind === 'heal' ? 'heal' : 'damage']: amount
+        characters.push({ ...character, amount: amountFor(target.multiplier, state.sheet, characterType) })
+      }
+    }
+    const applied = []
+    try {
+      if (creatures.length > 0) {
+        const saved = await creaturesRepo
+          .updateCreaturesPlay(
+            ctx.db,
+            historyContext(
+              ctx,
+              'applyRoll',
+              { names: creatures.map((c) => c.row.name), kind: apply.kind, count: creatures.length },
+              at.campaign
+            ),
+            creatures.map((c) => ({ id: c.row.id, version: c.row.version, play: c.play as Record<string, unknown> }))
+          )
+          .catch((error) => {
+            if (error instanceof creaturesRepo.CreatureChangedError) throw changed()
+            throw error
+          })
+        for (const [i, c] of creatures.entries()) {
+          const fresh = saved[i]
+          const after = fresh ? viewOf(at, { ...fresh, worldId: c.row.worldId }, c.content).card : null
+          applied.push({
+            id: c.row.id,
+            kind: 'creature' as const,
+            name: c.row.name,
+            amount: c.amount,
+            life: after?.life ? { value: after.life.value, max: after.life.max } : null
+          })
+        }
+      }
+      // Los personajes, con su acción de partida (cada uno, su operación)
+      const [life] = resourcePaths(at.document.types[characterType]?.fields ?? {})
+      for (const c of characters) {
+        const done = (await handlerOf('playCharacter')(ctx, {
+          characterId: c.id,
+          version: c.version,
+          [apply.kind === 'heal' ? 'heal' : 'damage']: c.amount
         })) as { state: { sheet: Record<string, unknown> } }
-        const [life] = resourcePaths(at.document.types[type]?.fields ?? {})
-        const now = life ? (done.state.sheet[life.path] as { value?: number; max?: number } | undefined) : undefined
+        const now = life ? lifeAt(done.state.sheet, life.path) : undefined
         applied.push({
-          id: character.id,
+          id: c.id,
           kind: 'character' as const,
-          name: character.name,
-          amount,
+          name: c.name,
+          amount: c.amount,
           life: typeof now?.max === 'number' ? { value: now.value ?? now.max, max: now.max } : null
         })
       }
+    } finally {
+      ctx.realtime.publish(creaturesChanged({ campaignId, worldId: at.campaign.worldId }))
     }
-    ctx.realtime.publish(creaturesChanged({ campaignId, worldId: at.campaign.worldId }))
     return { applied }
   })
 ]

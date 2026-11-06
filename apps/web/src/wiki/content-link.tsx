@@ -8,7 +8,7 @@ import { useNavigate } from '@tanstack/react-router'
 import type { Node } from '@tiptap/core'
 import { type NodeViewProps, NodeViewWrapper, ReactNodeViewRenderer } from '@tiptap/react'
 import { BookOpen } from 'lucide-react'
-import { useContext, useId, useRef, useState } from 'react'
+import { type FocusEvent, type KeyboardEvent, useContext, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import styles from './content-link.module.css'
@@ -42,7 +42,9 @@ function ContentLinkView({ node, selected }: NodeViewProps) {
   })
   const entry = linked.data?.entry ?? null
   const missing = linked.data !== undefined && !entry
-  const show = Boolean(entry) && (hovering || pinned || selected)
+  const [focused, setFocused] = useState(false)
+  const [closed, setClosed] = useState(false)
+  const show = Boolean(entry) && !closed && (hovering || pinned || selected || focused)
   const hover = (inside: boolean) => {
     clearTimeout(timer.current)
     timer.current = setTimeout(() => setHovering(inside), inside ? 300 : 200)
@@ -59,8 +61,26 @@ function ContentLinkView({ node, selected }: NodeViewProps) {
     <NodeViewWrapper
       as="span"
       className={styles.wrapper}
-      onMouseEnter={() => hover(true)}
+      onMouseEnter={() => {
+        setClosed(false)
+        hover(true)
+      }}
       onMouseLeave={() => hover(false)}
+      onFocus={() => {
+        setClosed(false)
+        setFocused(true)
+      }}
+      onBlur={(event: FocusEvent<HTMLElement>) => {
+        if (!event.currentTarget.contains(event.relatedTarget as globalThis.Node | null)) setFocused(false)
+      }}
+      onKeyDown={(event: KeyboardEvent) => {
+        // Escape la cierra (WCAG 1.4.13), sin salir de lo que se escribe
+        if (event.key === 'Escape' && show) {
+          event.stopPropagation()
+          setClosed(true)
+          setPinned(false)
+        }
+      }}
     >
       {entry?.campaignId ? (
         <a
@@ -90,7 +110,7 @@ function ContentLinkView({ node, selected }: NodeViewProps) {
         </span>
       )}
       {show && entry && (
-        <span id={cardId} role="tooltip" className={styles.card} contentEditable={false}>
+        <span id={cardId} role="group" aria-label={entry.name} className={styles.card} contentEditable={false}>
           <span className={styles.kind}>
             {entry.world ? t('contentLink.world', { type: entry.typeLabel }) : entry.typeLabel}
           </span>

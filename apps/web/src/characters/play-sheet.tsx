@@ -75,7 +75,8 @@ export function PlaySheet({
   state,
   save,
   rollWith,
-  rests = true
+  rests = true,
+  defaultVisibility
 }: {
   subject: SheetSubject
   state: State
@@ -84,6 +85,8 @@ export function PlaySheet({
   rollWith: (input: SheetRoll) => Promise<{ roll: DiceRoll }>
   /** Con los botones de descansar */
   rests?: boolean
+  /** A quién van sus tiradas de entrada, sin seguir lo elegido en los dados (las de una criatura: ocultas) */
+  defaultVisibility?: SheetRoll['visibility']
 }) {
   const { t } = useTranslation()
   const api = useApi()
@@ -96,8 +99,9 @@ export function PlaySheet({
     queryFn: () => api.call('getCampaign', { campaignId: subject.campaignId })
   })
   const options = visibilitiesFor(campaign.data?.campaign.role ?? 'player')
-  // Quién la ve: lo elegido en los dados, si vale en esta campaña
-  const visibility = options.includes(dice.visibility) ? dice.visibility : 'all'
+  // Quién la ve: lo elegido en los dados, si vale en esta campaña; o lo suyo, si la hoja lo trae (una criatura)
+  const [own, setOwn] = useState(defaultVisibility)
+  const visibility = own && options.includes(own) ? own : options.includes(dice.visibility) ? dice.visibility : 'all'
   // Los modos (ventaja, desventaja) de sus tiradas
   const modes = [...new Map(state.rolls.flatMap((r) => r.modes).map((m) => [m.key, m.label] as const)).entries()].map(
     ([key, label]) => ({ key, label })
@@ -150,7 +154,11 @@ export function PlaySheet({
             <span>{t('dice.who')}</span>
             <select
               value={visibility}
-              onChange={(event) => dice.setVisibility(event.currentTarget.value as typeof visibility)}
+              onChange={(event) => {
+                const chosen = event.currentTarget.value as typeof visibility
+                if (defaultVisibility) setOwn(chosen)
+                else dice.setVisibility(chosen)
+              }}
             >
               {options.map((option) => (
                 <option key={option} value={option}>
