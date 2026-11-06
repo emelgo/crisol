@@ -1,31 +1,36 @@
-# Plan: Módulo 4 — compendio-mundo
+# Plan: Módulo 4 — criaturas
 
-Estado: en marcha (2026-11-06). Spec: `docs/specs/compendio-mundo.md` · Mapa del módulo: `docs/specs/modulo-4.md` ·
-Diseño: lienzo «Crisol: compendio y criaturas» (fuentes en `out/lienzo-compendio/`) · Tareas: `tasks/todo.md`. Los
-planes anteriores, en `tasks/<capacidad>/` (el último, `tasks/personajes/`).
+Estado: en marcha (2026-11-06). Spec: `docs/specs/criaturas.md` · Mapa del módulo: `docs/specs/modulo-4.md` · Diseño:
+lienzo «Crisol: compendio y criaturas» (tableros Criatura, En juego, Wiki y Móvil; fuentes en `out/lienzo-compendio/`)
+· Tareas: `tasks/todo.md`. El plan anterior, en `tasks/compendio-mundo/`.
 
 ## Cómo
 
-- **Una tabla aparte, `world_content`**, con las mismas columnas que `system_content` más el mundo y el origen. Así
-  nada de lo que ya lee el contenido de un sistema (bajarlo, contarlo, subirlo encima) ve lo del mundo por accidente.
-  Cada entrada lleva su propia versión (la de la fila): cambiar lo del mundo no sube la versión del sistema.
-- **Las dos capas se unen en el servidor**, en el sitio donde hoy se lee el contenido de la campaña (`campaignSystem`
-  en `actions/compendium.ts` y el contexto de los personajes): lo del mundo va sin fuente (sale siempre), marcado, y
-  manda en las claves. El paquete `@crisol/systems` da la unión, la huella y las diferencias, puras y probadas.
-- **Hasta el módulo 5, lo del mundo solo para quien puede cambiar el mundo**; un jugador lo recibe solo dentro de lo
-  que lleva su personaje (su hoja). La prueba de fugas lo comprueba.
-- **De abajo arriba y en porciones que funcionan**: la tabla y su repo → la unión en el paquete → la campaña con las dos
-  capas → las acciones nuevas → la web → el aviso del original → la IA → el cierre.
+- **Una criatura en juego es una fila de la campaña** (`campaign_creatures`): la clave de su entrada del compendio
+  (del sistema o del mundo, por las capas de `compendio-mundo`), su nombre, su número de copia, si es única y lo de la
+  partida (`play`, la misma forma que la de un personaje). Su hoja es la entrada calculada con eso encima: si el máster
+  cambia la entrada, las copias lo notan salvo en lo que ya tocaron.
+- **El mismo motor que la hoja de personaje**: `creatureView` en `@crisol/systems` monta el documento de la entrada
+  (sus datos, su mecánica y lo que lleva), le pone lo de la partida (`withPlay`), lo calcula (`evaluate`, `actionsOf`)
+  y devuelve la misma forma que `characterView` (sin el creador). Así la web pinta la criatura con los bloques de la
+  hoja y el servidor tira con `tryRoll` y `tryAction`, y aplica daño y descansos con `changeResource`, `spend` y `rest`.
+- **Lo que el formato aún no dice** (ampliación pequeña de ADR-0011, en la spec de `sistemas`): la hoja de cada tipo de
+  actor (`types[t].sheet`; la del sistema sigue siendo la del personaje), cómo se tiran los PG de una criatura
+  (`roll` en un campo recurso: `@dados_golpe`) y qué campos son sus resistencias, inmunidades y vulnerabilidades
+  (`damage` en el tipo), para aplicar daño.
+- **Hasta el módulo 5, solo el máster**: las criaturas en juego, sus avisos en tiempo real y sus tiradas (ocultas por
+  defecto). La prueba de fugas lo comprueba.
 
 ## Riesgos
 
-- Lo que hoy pide la versión del sistema para guardar (el editor de entradas) cambia de forma para lo del mundo: el
-  editor tiene que saber a qué capa escribe.
-- Los personajes leen el contenido por clave: si una clave del mundo coincide con una del sistema, cambia lo que lleva
-  un personaje. Es lo que dice la spec (manda la del mundo), con su prueba.
+- `characterView` está pensada para personajes (pasos del creador, nivel): separar lo común sin romper la hoja.
+- Aplicar daño a personajes desde el registro toca `playCharacter`: los permisos (el máster sí; un jugador, solo a los
+  suyos) y el tiempo real.
+- El enlace desde la wiki (`[[@…]]`) toca el editor, el Markdown y la resolución de enlaces: va al final y puede ir
+  en una tanda aparte.
 
 ## Puntos de control
 
-1. Tras la tarea 3: la campaña ve lo del mundo (creado por la API) en su compendio; el jugador no.
-2. Tras la 6: el flujo entero en la web (copiar al mundo, cambiar, el aviso del original).
-3. Tras la 8: e2e, la IA desde claude.ai y `tasks/probar.md`.
+1. Tras la tarea 4: poner en juego por la API tres goblins y un jefe, dañarlos y tirar por ellos.
+2. Tras la 6: el flujo en la web (poner en juego, «En juego», la hoja, aplicar desde el registro).
+3. Tras la 9: e2e, fugas, la IA y `tasks/probar.md`.
