@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { average, dnd5eContext } from './dnd5e.ts'
+import { average, dnd5eContext, dnd5eEdition } from './dnd5e.ts'
 import { htmlToMarkdown } from './html.ts'
 
 /** Una criatura hecha a mano, con la forma de las de dnd5e: un arma sutil, un aliento y su VD */
@@ -144,5 +144,17 @@ describe('lo de dnd5e en los textos', () => {
     expect(label('line')).toBe('30-foot-long, 10-foot-wide Line')
     expect(label('cylinder')).toBe('30-foot-radius, 40-foot-high Cylinder')
     expect(label('cube')).toBe('30-foot Cube')
+  })
+})
+
+describe('la edición de un paquete de dnd5e', () => {
+  const doc = (rules: string) => ({ _id: rules, system: { source: { rules } } })
+  it('la de sus documentos, la de su libro o, en el propio dnd5e, por su nombre', () => {
+    expect(dnd5eEdition({ name: 'p', documents: [doc('2014'), doc('2024'), doc('2024')] }, false)).toBe('2024')
+    expect(dnd5eEdition({ name: 'p', documents: [], flags: { dnd5e: { sourceBook: 'SRD 5.1' } } }, false)).toBe('2014')
+    expect(dnd5eEdition({ name: 'p', documents: [], flags: { dnd5e: { sourceBook: 'SRD 5.2' } } }, false)).toBe('2024')
+    expect(dnd5eEdition({ name: 'tables24', documents: [] }, true)).toBe('2024')
+    expect(dnd5eEdition({ name: 'rules', documents: [] }, true)).toBe('2014')
+    expect(dnd5eEdition({ name: 'rules', documents: [] }, false)).toBeNull()
   })
 })

@@ -5,7 +5,7 @@
  * de sus compendios y sus textos (ADR-0014)
  */
 import type { HtmlContext, InlineRoll } from './html.ts'
-import type { FoundryDocument } from './manifest.ts'
+import type { FoundryDocument, FoundryPack } from './manifest.ts'
 
 const ABILITIES: Record<string, string> = {
   str: 'Strength',
@@ -300,4 +300,23 @@ export function dnd5eContext(
     }
   }
   return { lookup, roll }
+}
+
+/**
+ * La edición de un paquete de dnd5e: la de la mayoría de sus documentos (source.rules) o la de su libro (SRD 5.1 o
+ * 5.2); en el propio dnd5e, los de 2024 acaban en «24» (content24, tables24)
+ */
+export function dnd5eEdition(pack: Pick<FoundryPack, 'name' | 'flags' | 'documents'>, own: boolean): string | null {
+  const counts = new Map<string, number>()
+  for (const d of pack.documents) {
+    const rules = get(d.system, 'source.rules')
+    if (rules === '2014' || rules === '2024') counts.set(rules, (counts.get(rules) ?? 0) + 1)
+  }
+  const most = [...counts].sort((a, b) => b[1] - a[1])[0]
+  if (most) return most[0]
+  const book = String(get(pack.flags, 'dnd5e.sourceBook') ?? '')
+  if (/5\.2/.test(book)) return '2024'
+  if (/5\.1/.test(book)) return '2014'
+  if (own) return /24$/.test(pack.name) ? '2024' : '2014'
+  return null
 }

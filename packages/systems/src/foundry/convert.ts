@@ -8,7 +8,7 @@
 import { type ContentItem, FILE_BYTES, type SystemFile, toFile } from '../file.ts'
 import { type Field, FORMAT, LIMITS, type System } from '../format.ts'
 import type { Language, Text } from '../text.ts'
-import { dnd5eContext } from './dnd5e.ts'
+import { dnd5eContext, dnd5eEdition } from './dnd5e.ts'
 import { type HtmlContext, htmlToLine, htmlToMarkdown } from './html.ts'
 import { type FoundryDocument, FoundryError, type FoundryManifest, type FoundryPack, packOrder } from './manifest.ts'
 
@@ -506,11 +506,13 @@ export function convertFoundry(input: FoundryInput): Converted {
     if (!entries.some((e) => e.pack === pack)) continue
     const key = unique(keyOf(pack.name, 'p'), usedSources)
     sourceOf.set(pack.name, key)
+    const edition = dnd5e ? dnd5eEdition(pack, manifest.id === 'dnd5e') : null
     sources.push({
       key,
       name: at(pack.label),
       license: (manifest.license ?? 'Sin indicar').slice(0, 200),
-      attribution: attribution.slice(0, 4000)
+      attribution: attribution.slice(0, 4000),
+      ...(edition ? { edition } : {})
     })
   }
 
