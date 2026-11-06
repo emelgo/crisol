@@ -9,6 +9,27 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   de propietario.
 - **En local**, con los cambios al momento: http://localhost:5173 (lo arranco cuando haga falta).
 
+## Módulo 5: lo que sabe cada campaña (rama `modulo-5/visibilidad`; en local, aún no en staging)
+
+- [ ] **Quién la conoce**: en una página, el icono de dos personas, junto a «Marcar». Sale lo que sabe el mundo y cada
+  campaña, y por qué. Da a conocer una página a una campaña: sus subpáginas lo heredan (míralo en una de ellas: «Por
+  «…»»). En el árbol sale un ojo gris en lo que conoce alguna campaña.
+- [ ] **Por personajes**: «Lo saben…» y elige un personaje; solo su dueño la ve.
+- [ ] **Lo que sabe todo el mundo**: marca una página en «El mundo»; la ven las campañas que parten del mundo y no
+  una creada con «Nada».
+- [ ] **Oculto**: en un campo del panel (el ojo tachado, al acercarte) y en el menú de un bloque. La jugadora no lo ve.
+- [ ] **Una subpágina nueva** bajo una página que conoce una campaña nace oculta («No lo sabe nadie»).
+- [ ] **Con una jugadora**: en la barra de su campaña, el nombre del mundo: las páginas que conoce, en lectura. Ni los
+  secretos, ni las notas ocultas, ni lo oculto; un enlace a una página que no conoce sale como texto. Búscalo también
+  con su buscador de páginas.
+- [ ] **Quitársela**: con ella mirando la página, quítasela: le sale «Esta página ya no está a tu alcance».
+- [ ] **Ver como**: al pie de «Quién la conoce», «Ver como» un personaje: la franja «Viendo como …» y su vista.
+- [ ] **Nueva campaña**: «Al empezar, los jugadores saben…» (lo del mundo, nada o lo mismo que otra); en sus ajustes,
+  «Parte de lo que sabe el mundo».
+- [ ] **La IA**: pídele que dé a conocer una página a una campaña (espera tu aprobación) y que te diga quién la conoce
+  y qué ve un personaje. **La IA de una jugadora**: con su cuenta, en Ajustes sale el conector; conéctala en claude.ai
+  y comprueba que solo ve lo suyo y no puede escribir.
+
 ## Módulo 4: la biblioteca (rama `modulo-4/biblioteca`; en local, aún no en staging)
 
 - [ ] **Un libro de verdad**: sube a los archivos del mundo (o a los comunes) un PDF con texto, como un manual. En una

@@ -1,6 +1,6 @@
 # Spec: conocimiento (módulo 5)
 
-Estado: **en marcha** (2026-11-06). Primera capacidad del módulo 5 (`docs/specs/modulo-5.md`). Entrevista:
+Estado: **construido** (2026-11-06; en la rama `modulo-5/visibilidad`, aún sin PR). Primera capacidad del módulo 5 (`docs/specs/modulo-5.md`). Entrevista:
 `docs/modulos.md` § «### 5. Visibilidad por campaña». ADR-0017. Estudios: `research/foundry/visibilidad-y-revelar.md`,
 `research/{legendkeeper,worldanvil,kanka}/visibilidad.md`, y de antes `research/foundry/journal.md` y
 `research/foundry/usuarios-y-permisos.md`.
@@ -118,6 +118,29 @@ y la IA de los dos.
    «Empezó de cero», «Marcada aquí»). En el árbol del máster, un ojo gris en lo que conoce alguna campaña. «Ver
    como…», al pie de «Quién la conoce». En la barra de la campaña, el nombre del mundo («Valdren») lleva a sus
    páginas.
+
+## Construido (2026-11-06) y lo que queda
+
+- **Motor** `packages/domain/src/knowledge.ts` (capas, herencia, personajes, secretos, pestañas, pines, entradas,
+  `explainPage`); **tabla** `knowledge` y `campaigns.knows_world` (0051); **servidor**: `page.view` (las vías que
+  proyectan) y `page.read` (lo demás, solo del máster), `apps/server/src/wiki/{reader,projection}.ts`, `readAs` en
+  los contratos de leer (`campaignId`, `asCharacterId`), `setKnowledge`, `getPageKnowledge`, `listKnownPages`.
+- **Vías de lectura filtradas**: el árbol, los hijos, las recientes, la página, el cuerpo (`getPageContent`, también de
+  una pestaña de texto con `tabId`), `readPage`, la vista previa y los incrustados, los enlaces y «Mencionado en», las
+  tablas del panel, la búsqueda por palabras (con el índice; sin campos ocultos al buscar ni al puntuar) y los trozos
+  por significado, las pestañas y los pines, los archivos (`/api/files/:id`: lo que está en algo que ve, o la portada
+  de su mundo o de su campaña) y el tiempo real (`pagesChanged` sin qué; `pageContentChanged` solo si ve la página;
+  `knowledge` al cambiar lo que sabe). `/api/collab` sigue negándole todo.
+- **Web**: las páginas del mundo en la barra de la campaña (`apps/web/src/campaign/world-pages.tsx`, en lectura, con
+  `ReadAs` y `PageLink`), «Quién la conoce» (`apps/web/src/wiki/who-knows.tsx`), el ojo en el árbol, «Oculto» en
+  campos y bloques, «Ver como…» con su franja, cómo empieza una campaña y su ajuste, los tutoriales.
+- **IA**: `quien_conoce`, `marcar_conocimiento` (tipo «jugadores»: espera aprobación en copiloto), `ver_como_jugador`;
+  el conector, también para quien juega en una campaña, y su IA solo lee.
+- **Pruebas**: el motor en tabla, `apps/server/src/actions/knowledge.integration.test.ts` (también rendimiento: p95
+  199 ms con 5.000 páginas), el tiempo real, el MCP, la e2e `conocimiento.spec.ts` y tres pruebas de fugas.
+- **Queda**: la hoja para imprimir y el PDF de una página para el jugador (hoy solo del máster); la biblioteca de PDF
+  para el jugador (sus libros, solo los que estén en algo que ve); los mapas para el jugador en la web
+  (`mapas-jugadores`); exportar como jugador (fuera).
 
 ## Pruebas
 
