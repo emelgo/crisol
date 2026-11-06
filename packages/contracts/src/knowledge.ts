@@ -88,7 +88,7 @@ export const reveal = defineAction({
   name: 'reveal',
   kind: 'players',
   description:
-    'Revela algo a una campaña en partida, con aviso a sus jugadores: un secreto (su id de documento), una página, una pestaña, un pin, una región o una entrada del compendio del mundo (su clave); a toda la campaña o a unos personajes. Con alsoPage, si la campaña no conoce la página donde está, también. Sin campaignId, la única del mundo',
+    'Revela algo a una campaña en partida, con aviso a sus jugadores: un secreto (su id de documento), una página, una pestaña, un pin, una región o una entrada del compendio del mundo (su clave); a toda la campaña o a unos personajes. Solo suma: a quien ya lo ve no se le quita (para eso, ocultar). Con alsoPage, si alguno de ellos no conoce la página donde está, también. Sin campaignId, la única del mundo',
   input: z.object({
     worldId: z.uuid(),
     campaignId: z.uuid().optional(),

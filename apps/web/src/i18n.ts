@@ -1082,7 +1082,6 @@ export const es = {
   // Revelar en partida (docs/specs/revelar.md)
   reveal: {
     reveal: 'Revelar',
-    change: 'Cambiar',
     knownBy: 'Lo saben: {{names}}',
     page: 'Revelar la página',
     secret: 'Revelar el secreto',

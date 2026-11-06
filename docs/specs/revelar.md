@@ -60,6 +60,10 @@ máster.
    otra vez»). Si la campaña no conoce la página, «Revelar también la página», marcado. Un secreto se nombra por el
    título de su sección («Nuevo: El pacto de Varn»). «Lo que sabe el grupo» se abre como ventana desde «Revelado», en la
    barra de la campaña del máster, agrupado por día. La barra de la jugadora dice cuántas novedades tiene.
+5. **Revelar solo suma** (2026-11-07, de la revisión): a quien ya lo ve, por su marca o heredado, no se le quita
+   nada; si ya lo ve toda la campaña (o todos los elegidos), no se escribe. Por eso, con algo ya revelado, el botón
+   dice «Revelar…» y no «Cambiar»; para quitárselo a alguien, «Ocultar otra vez» o «Quién la conoce». «Revelar también
+   la página» sale si alguno de los elegidos no la conoce, y la página también se suma.
 
 ## Construido (2026-11-06) y lo que queda
 
@@ -68,16 +72,15 @@ máster.
   `revealed` con el título de la página o de la sección del secreto), `hide` (quita la marca o, si lo seguirían viendo,
   «no la conocen»; quita lo nuevo), `listCampaignKnowledge`, `getSecretsKnowledge`, `listNews` y `seeNews`. Lo nuevo,
   en `knowledge_news` (0052), fuera del historial; tras deshacer, deja de salir porque ya no se ve.
-- **Web**: «Revelar» en la cabecera del secreto («Lo saben: Lía · Cambiar») y en la de la página, con su desplegable
+- **Web**: «Revelar» en la cabecera del secreto («Lo saben: Lía · Revelar…») y en la de la página, con su desplegable
   (`apps/web/src/wiki/reveal.tsx`); «Revelado» en la barra de la campaña del máster, que abre «Lo que sabe el grupo»
   (`apps/web/src/campaign/group-knowledge.tsx`); el aviso de la jugadora (`apps/web/src/components/reveal-notices.tsx`),
   lo nuevo en su árbol, en el secreto y en la barra.
 - **IA**: `revelar`, `ocultar` y `lo_que_sabe` (revelar y ocultar esperan aprobación en copiloto).
 - **Pruebas**: `reveal.integration.test.ts`, el aviso en `realtime.integration.test.ts`, el MCP y la e2e
   `revelar.spec.ts`.
-- **Queda**: «Cambiar a quién» desde «Lo que sabe el grupo» (hoy, desde la cabecera del secreto o volviendo a
-  revelar); los pines y las entradas del mundo se revelan por la API y la IA (su sitio en la web, con
-  `mapas-jugadores` y `compendio-jugadores`).
+- **Queda**: «Cambiar a quién» desde «Lo que sabe el grupo» (hoy, ocultar y volver a revelar, o «Quién la conoce»);
+  revelar una entrada del mundo desde la web (hoy, la IA y la API; ocultarla, desde «Lo que sabe el grupo»).
 
 ## Pruebas
 

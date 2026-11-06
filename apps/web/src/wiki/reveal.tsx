@@ -1,8 +1,8 @@
 /**
  * «Revelar» en partida (docs/specs/revelar.md): en la cabecera de un secreto («Secreto · Revelar» o «Lo saben: Lía y
- * Bram · Cambiar») y en la de una página. Su desplegable: la campaña (si hay varias), toda o unos personajes y, si no
- * conocen la página donde está, «Revelar también la página». Revelar avisa a quien le aparece; «Ocultar otra vez» se
- * lo quita
+ * Bram · Revelar…») y en la de una página. Su desplegable: la campaña (si hay varias), toda o unos personajes y, si
+ * alguno no conoce la página donde está, «Revelar también la página». Revelar solo suma (no le quita nada a nadie) y
+ * avisa a quien le aparece; «Ocultar otra vez» se lo quita
  */
 import type { Page } from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -44,7 +44,7 @@ function usePopover() {
   return { open, setOpen, wrap }
 }
 
-/** La cabecera de un secreto, para quien lleva la wiki: a quién se le ha revelado y «Revelar» o «Cambiar» */
+/** La cabecera de un secreto, para quien lleva la wiki: a quién se le ha revelado y «Revelar» (o «Revelar…», a más) */
 export function SecretReveal({ worldId, pageId, documentId }: { worldId: string; pageId: string; documentId: string }) {
   const { t } = useTranslation()
   const known = useSecretsKnowledge(worldId, pageId)
@@ -61,7 +61,7 @@ export function SecretReveal({ worldId, pageId, documentId }: { worldId: string;
     <div ref={wrap} className={styles.wrap} contentEditable={false}>
       {names.length > 0 && <span className={styles.who}>{t('reveal.knownBy', { names: names.join(', ') })}</span>}
       <button type="button" className={styles.link} aria-expanded={open} onClick={() => setOpen(!open)}>
-        {t(names.length > 0 ? 'reveal.change' : 'reveal.reveal')}
+        {t(names.length > 0 ? 'reveal.revealMore' : 'reveal.reveal')}
       </button>
       {open && (
         <RevealMenu
@@ -180,7 +180,12 @@ function RevealMenu({
   const [picked, setPicked] = useState<string[]>([])
   const [alsoPage, setAlsoPage] = useState(true)
   const already = current(campaignId)
-  const pageUnknown = kind !== 'page' && campaign?.seesPage === 'none'
+  // ¿Hay alguien de los elegidos (o de toda la campaña) que no sepa la página donde está?
+  const seesPage = campaign?.seesPage ?? 'none'
+  const pageUnknown =
+    kind !== 'page' &&
+    seesPage !== 'all' &&
+    (seesPage === 'none' || picked.length === 0 || picked.some((id) => !seesPage.some((c) => c.id === id)))
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['pages', worldId] })
   const reveal = useMutation({
     mutationFn: () =>
@@ -228,7 +233,14 @@ function RevealMenu({
       {campaigns.length > 1 && (
         <label className={styles.field}>
           <span>{t('reveal.campaign')}</span>
-          <select value={campaignId} onChange={(event) => setCampaignId(event.currentTarget.value)}>
+          <select
+            value={campaignId}
+            onChange={(event) => {
+              // Otra campaña, otros personajes
+              setCampaignId(event.currentTarget.value)
+              setPicked([])
+            }}
+          >
             {campaigns.map((c) => (
               <option key={c.campaignId} value={c.campaignId}>
                 {c.name}

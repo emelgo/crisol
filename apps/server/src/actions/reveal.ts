@@ -10,7 +10,8 @@ import {
   type KnowledgeKind,
   type KnowledgeMark,
   knowledgeFor,
-  NotFoundError
+  NotFoundError,
+  type Reader
 } from '@crisol/domain'
 import { separateHeadings } from '@crisol/editor'
 import { knowledgeChanged } from '../realtime/events.ts'
@@ -58,6 +59,36 @@ function sees(knowledge: Knowledge, kind: KnowledgeKind, targetId: string, targe
     case 'content':
       return knowledge.seesContent(targetId)
   }
+}
+
+/**
+ * Lo que se escribe al revelar: a quién lo verá, sumando lo pedido a quien ya lo ve (por su marca o heredado). Lo que
+ * está en una página se mira como si la página se viera (si no se ve, lo dice pageUnknown). null: no hay que escribir
+ * nada, porque ya lo ve toda la campaña o ya lo ven todos los pedidos
+ */
+function widened(
+  at: {
+    tree: { id: string; parentId: string | null }[]
+    marks: readonly KnowledgeMark[]
+    roster: readonly string[]
+    readerOf: (characterIds: readonly string[]) => Reader
+    campaignId: string
+  },
+  kind: KnowledgeKind,
+  targetId: string,
+  target: Target,
+  pageId: string | null,
+  wanted: readonly string[] | null
+): { characters: readonly string[] | null } | null {
+  const marks: readonly KnowledgeMark[] = pageId
+    ? [...at.marks, { campaignId: at.campaignId, kind: 'page', targetId: pageId, known: true, characters: null }]
+    : at.marks
+  const seen = (ids: readonly string[]) => sees(knowledgeFor(at.readerOf(ids), at.tree, marks), kind, targetId, target)
+  if (seen([])) return null
+  if (wanted === null) return { characters: null }
+  const seeing = at.roster.filter((id) => seen([id]))
+  const all = [...new Set([...seeing, ...wanted])]
+  return all.length === seeing.length ? null : { characters: all }
 }
 
 /** Si lo ve quien lee, con su vista (lo mismo que sees, desde el servidor) */
@@ -138,29 +169,47 @@ export const revealActions = [
       characterIds,
       knowsWorld: campaign.knowsWorld
     })
-    // ¿Conoce ese público la página donde está? (toda la campaña: sin personajes; si no, los elegidos)
+    // ¿Conoce ese público la página donde está? Toda la campaña, o cada uno de los elegidos
     const pageId = kind === 'page' ? null : target.pageId
-    const pageKnown = pageId ? knowledgeFor(readerOf(audience ?? []), tree, before).seesPage(pageId) : true
-    const mark = { worldId: wiki.worldId, campaignId: campaign.id, known: true, characters: audience }
-    const changes: knowledgeRepo.MarkChange[] = [{ ...mark, kind, targetId }]
-    if (pageId && !pageKnown && alsoPage) changes.push({ ...mark, kind: 'page', targetId: pageId })
+    const seesPage = (ids: readonly string[]) =>
+      pageId ? knowledgeFor(readerOf(ids), tree, before).seesPage(pageId) : true
+    const pageKnown = audience ? audience.every((id) => seesPage([id])) : seesPage([])
+    // Revelar solo suma: a quien ya lo ve (por su marca o heredado) no se le quita
+    const widen = (kind: KnowledgeKind, targetId: string, target: Target, page: string | null) =>
+      widened(
+        { tree, marks: before, roster: [...names.keys()], readerOf, campaignId: campaign.id },
+        kind,
+        targetId,
+        target,
+        page,
+        audience
+      )
+    const changes: knowledgeRepo.MarkChange[] = []
+    const mark = { worldId: wiki.worldId, campaignId: campaign.id, known: true }
+    const own = widen(kind, targetId, target, pageId)
+    if (own) changes.push({ ...mark, kind, targetId, characters: own.characters })
+    if (pageId && !pageKnown && alsoPage) {
+      const page = widen('page', pageId, { pageId: null, name: '' }, null)
+      if (page) changes.push({ ...mark, kind: 'page', targetId: pageId, characters: page.characters })
+    }
     const pageTitle = pageId ? ((await pagesRepo.titlesOf(ctx.db, wiki.worldId, [pageId])).get(pageId) ?? null) : null
-    await knowledgeRepo.setMarks(
-      ctx.db,
-      historyContext(
-        ctx,
-        'reveal',
-        {
-          kind,
-          name: target.name,
-          campaign: campaign.name,
-          ...(audience ? { characters: audience.map((id) => names.get(id) ?? '') } : {}),
-          ...(changes.length > 1 && pageTitle ? { page: pageTitle } : {})
-        },
-        wiki
-      ),
-      changes
-    )
+    if (changes.length > 0)
+      await knowledgeRepo.setMarks(
+        ctx.db,
+        historyContext(
+          ctx,
+          'reveal',
+          {
+            kind,
+            name: target.name,
+            campaign: campaign.name,
+            ...(audience ? { characters: audience.map((id) => names.get(id) ?? '') } : {}),
+            ...(changes.some((c) => c.kind === 'page' && c.targetId === pageId) && pageTitle ? { page: pageTitle } : {})
+          },
+          wiki
+        ),
+        changes
+      )
 
     // A quién le aparece ahora (y antes no lo veía): lo nuevo y su aviso
     const after = await knowledgeRepo.listMarks(ctx.db, { worldId: wiki.worldId, campaignIds: [campaign.id] })

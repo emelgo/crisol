@@ -19,6 +19,7 @@ describe('revelar en partida (docs/specs/revelar.md)', () => {
   let worldId: string
   let marca: string
   let lia: string
+  let bram: string
   let aldoria: string
   let varn: string
   let secrets: { id: string; text: string }[]
@@ -69,9 +70,11 @@ describe('revelar en partida (docs/specs/revelar.md)', () => {
       .values({ campaignId: marca, ownerId: ana.userId, name: 'Lía', system: 'blank', build: {}, play: {} })
       .returning()
     lia = row?.id ?? ''
-    await conn.db
+    const [other] = await conn.db
       .insert(schema.characters)
       .values({ campaignId: marca, ownerId: bruno.userId, name: 'Bram', system: 'blank', build: {}, play: {} })
+      .returning()
+    bram = other?.id ?? ''
     const created = await ok200('createPages', {
       worldId,
       parentId: null,
@@ -189,5 +192,76 @@ describe('revelar en partida (docs/specs/revelar.md)', () => {
     const response = await call('reveal', { worldId, kind: 'page', targetId: aldoria })
     expect(response.statusCode).toBe(400)
     expect(response.json().code).toBe('CAMPAIGN_REQUIRED')
+  })
+  describe('revelar solo suma: no le quita nada a nadie', () => {
+    const sees = async (pageId: string, cookie: string) =>
+      (await call('getPage', { pageId }, cookie)).statusCode === 200
+    const secret = () => secrets[0]?.id ?? ''
+
+    it('a Lía, una página que ya sabía toda la campaña: Bruno la sigue viendo y no se escribe nada', async () => {
+      await ok200('reveal', { worldId, kind: 'page', targetId: aldoria })
+      const again = await ok200('reveal', { worldId, kind: 'page', targetId: aldoria, characters: [lia] })
+      expect(again).toEqual({ told: 0, pageUnknown: false })
+      expect(await sees(aldoria, bruno.cookie)).toBe(true)
+      const marks = await conn.db.select().from(schema.knowledge)
+      expect(marks.filter((m) => m.campaignId === marca && m.targetId === aldoria)).toEqual([
+        expect.objectContaining({ known: true, characters: null })
+      ])
+    })
+
+    it('a Lía, una subpágina que la campaña sabía por su madre: Bruno la sigue viendo', async () => {
+      const child = (await ok200('createPage', { worldId, title: 'Puerto', parentId: aldoria })).id
+      await ok200('reveal', { worldId, kind: 'page', targetId: aldoria })
+      await ok200('reveal', { worldId, kind: 'page', targetId: child, characters: [lia] })
+      expect(await sees(child, bruno.cookie)).toBe(true)
+    })
+
+    it('un secreto de Lía, revelado también a Bram: lo ven los dos', async () => {
+      await ok200('reveal', { worldId, kind: 'page', targetId: aldoria })
+      await ok200('reveal', { worldId, kind: 'secret', targetId: secret(), characters: [lia] })
+      await ok200('reveal', { worldId, kind: 'secret', targetId: secret(), characters: [bram] })
+      expect(await content(ana.cookie)).toContain('Varn vendió')
+      expect(await content(bruno.cookie)).toContain('Varn vendió')
+    })
+
+    it('con la página, cuando la sabía Lía y el secreto es para Bram: Lía no pierde la página', async () => {
+      await ok200('reveal', { worldId, kind: 'page', targetId: aldoria, characters: [lia] })
+      const result = await ok200('reveal', {
+        worldId,
+        kind: 'secret',
+        targetId: secret(),
+        characters: [bram],
+        alsoPage: true
+      })
+      expect(result.pageUnknown).toBe(false)
+      expect(await sees(aldoria, ana.cookie)).toBe(true)
+      expect(await sees(aldoria, bruno.cookie)).toBe(true)
+      expect(await content(bruno.cookie)).toContain('Varn vendió')
+      expect(await content(ana.cookie)).not.toContain('Varn vendió')
+    })
+
+    it('si alguno de los elegidos no sabe la página, lo dice', async () => {
+      await ok200('reveal', { worldId, kind: 'page', targetId: aldoria, characters: [lia] })
+      const result = await ok200('reveal', { worldId, kind: 'secret', targetId: secret(), characters: [lia, bram] })
+      expect(result.pageUnknown).toBe(true)
+      // Bruno no sabe la página: ni la ve (ni el secreto); Lía sí
+      expect(await sees(aldoria, bruno.cookie)).toBe(false)
+      expect(await content(ana.cookie)).toContain('Varn vendió')
+      expect((await ok200('reveal', { worldId, kind: 'secret', targetId: secret() })).pageUnknown).toBe(true)
+    })
+
+    it('un secreto solo de Lía en una página de los dos: a Bruno no le llega por ningún lado', async () => {
+      await ok200('reveal', { worldId, kind: 'page', targetId: aldoria })
+      await ok200('reveal', { worldId, kind: 'secret', targetId: secret(), characters: [lia] })
+      expect(await content(ana.cookie)).toContain('Varn vendió')
+      expect(await content(bruno.cookie)).not.toContain('Varn vendió')
+      expect(JSON.stringify(await ok200('readPage', { pageId: aldoria }, bruno.cookie))).not.toContain('Varn vendió')
+      const searched = await ok200('searchWiki', { worldId, query: 'vendió', page: 1 }, bruno.cookie)
+      expect(JSON.stringify(searched)).not.toContain('vendió')
+      const hers = await ok200('searchWiki', { worldId, query: 'vendió', page: 1 }, ana.cookie)
+      expect(JSON.stringify(hers)).toContain('vendió')
+      const news = await ok200('listNews', { campaignId: marca }, bruno.cookie)
+      expect(news.news.map((n: { kind: string }) => n.kind)).toEqual(['page'])
+    })
   })
 })
