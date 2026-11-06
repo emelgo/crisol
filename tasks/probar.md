@@ -9,6 +9,16 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   de propietario.
 - **En local**, con los cambios al momento: http://localhost:5173 (lo arranco cuando haga falta).
 
+## Módulo 4: las tablas aleatorias del compendio (rama `modulo-4/tablas`; en local, aún no en staging)
+
+- [ ] **Una tabla del mundo**: en el compendio de una campaña, «Nueva entrada» → En el mundo, tipo «Tabla»; escribe la
+  fórmula, marca «Sin reemplazo» y unas filas. Al abrirla, pulsa el dado: sale una fila marcada, va al registro y no se
+  repite hasta «Reiniciar».
+- [ ] **Las tablas del dnd5e**: vuelve a traer el dnd5e con sus tablas (`tables24`); en el compendio, abre «Mysterious
+  Deck» o «Standard Languages» y tira: las filas que llevan a otra entrada se abren al pulsarlas, y las que llevan a
+  otra tabla la tiran también.
+- [ ] **La IA**: pídele que cree una tabla de encuentros para tu mundo y que tire en ella.
+
 ## Módulo 4: las imágenes de lo traído de Foundry (rama `modulo-4/imagenes`; en local, aún no en staging)
 
 - [ ] **Traer el dnd5e con sus imágenes**: en Sistemas → «Sistema nuevo», suelta el .zip del dnd5e; tras «Traer de

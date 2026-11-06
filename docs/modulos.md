@@ -7,7 +7,7 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
-### Para retomar (2026-11-06, módulo 4: `compendio-mundo` y `criaturas` construidos; lo siguiente, `imagenes`)
+### Para retomar (2026-11-06, módulo 4: `compendio-mundo`, `criaturas`, `imagenes` y `tablas-compendio` construidos; lo siguiente, `grupo`)
 
 - **Rama `modulo-4/compendio`** (sin PR aún). Entrevista con Enrique (abajo, § «### 4. Compendio, criaturas y
   biblioteca»); estudios `research/foundry/criaturas-y-capas.md` y `research/dndbeyond/criaturas-y-grupo.md`; el mapa
@@ -29,8 +29,16 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   avisos del zip; `putSystemImages` y `/api/system-images`; el paso de las imágenes al traer de Foundry (el navegador
   saca del zip solo lo que hace falta, sin subirlo entero); verlas en el compendio y en «En juego». E2E
   `imagenes.spec.ts`. Queda: subir una imagen a una entrada propia desde su editor, la miniatura aparte (hoy la misma
-  imagen, escalada) y la ficha redonda para la mesa (módulo 6). **Lo siguiente**: `tablas-compendio`, `grupo` y `biblioteca` (en este
-  orden; `docs/specs/modulo-4.md`).
+  imagen, escalada) y la ficha redonda para la mesa (módulo 6). Planes en `tasks/imagenes/`.
+- **`tablas-compendio`, construido** (rama `modulo-4/tablas`, sobre la de imágenes, sin PR aún; `tasks/plan.md`,
+  `tasks/todo.md`): «Tabla» es un tipo de Crisol en todo sistema (`withTables`), con sus filas en `table` (migración
+  0046, ya en la base de desarrollo); `rollContentTable` sin orden la tira con el motor de la wiki (`pickRows`: como en
+  Foundry, salen todas las filas que abarcan el total), anidada hasta 5 niveles, y lo sacado va por campaña
+  (`content_table_draws`, `resetContentTable`); los RollTable de Foundry llegan con sus filas (dnd5e real: 97 tablas,
+  906 filas, sin errores ni avisos); la vista y el editor de filas en el compendio; la IA
+  (`reiniciar_tabla_compendio`, `table` en `guardar_contenido`). E2E `tablas-compendio.spec.ts`. Las tablas de un
+  sistema ya importado pasan a filas al volver a importarlo. **Lo siguiente**: `grupo` y luego `biblioteca`
+  (`docs/specs/modulo-4.md`); abrir un PR con las dos ramas (imágenes y tablas) y pasar la CI una vez.
 - Pendiente de Enrique, sin bloquear: cerrar los tres avisos MCP como se le propuso (descartar `ver_escena`, «no se
   arregla» `query_document` de LightRAG por el parche de las palabras clave, dejar abierta la mejora de craft).
 - Ojo: la API de desarrollo (`node --watch`) no siempre se recarga al añadir archivos; `touch apps/server/src/main.ts`.
