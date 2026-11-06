@@ -47,6 +47,7 @@ import {
   catalogSystem,
   changeResource,
   characterView,
+  coinsOf,
   compendiumEntry,
   compendiumSections,
   compendiumTypes,
@@ -59,23 +60,34 @@ import {
   fileName,
   type Mechanics,
   mechanicsText,
+  moveCoins as movedCoins,
   newContentKey,
   nextNumbers,
   normalizeChoices,
+  PARTY_CONTAINER,
+  PartyError,
+  type Party as PartyValues,
   type Play,
+  partyContainers,
+  partyFields,
   pickPaths,
   playedDocument,
   pullFields,
+  putInParty,
+  putInPlay,
   RollError,
   resourcePaths,
   rest,
   SYSTEM_FILE,
   type System,
   searchContent,
+  splitCoins as splitEvenly,
   startingPlay,
   systemOverview,
   type Text,
   tableRowOf,
+  takeFromParty,
+  takeFromPlay,
   textFieldOf,
   textOf,
   toFile,
@@ -86,6 +98,7 @@ import {
   validateFile,
   validateSystem,
   visibleContent,
+  withCoins,
   withWorld
 } from '@crisol/systems'
 import { readFoundryZip } from '../systems/foundry-zip.ts'
@@ -780,6 +793,56 @@ export function fakeApi(
     return { document, choices, content, world, worldKeys }
   }
 
+  // El inventario del grupo de cada campaña, con el mismo motor que el servidor (sin historial de verdad)
+  const parties = new Map<string, PartyValues & { version: number; moves: ActionOutput<'getParty'>['moves'] }>()
+  const partyOf = (campaignId: string) => {
+    if (!campaigns.some((c) => c.id === campaignId)) throw new ApiError('NOT_FOUND', 404)
+    return parties.get(campaignId) ?? { version: 0, containers: [], items: [], coins: {}, moves: [] }
+  }
+  const partyView = (p: PartyValues & { version: number }) => ({
+    version: p.version,
+    containers: partyContainers(p),
+    items: p.items.map((i) => ({ ...i, note: i.note ?? null })),
+    coins: p.coins
+  })
+  const partyFieldsOf = (campaignId: string) => {
+    const found = compendiumOf(campaignId)
+    return found ? partyFields(found.document) : { items: null, coins: null }
+  }
+  /** Cambia el grupo (y lo que llevan unos personajes): los fallos del motor, como los del servidor */
+  const changeParty = (
+    campaignId: string,
+    action: string,
+    details: Record<string, unknown>,
+    fn: (party: PartyValues) => PartyValues
+  ) => {
+    const before = partyOf(campaignId)
+    let next: PartyValues
+    try {
+      next = fn(before)
+    } catch (error) {
+      if (error instanceof PartyError) throw new ApiError(error.code, 400)
+      throw error
+    }
+    const saved = {
+      ...next,
+      version: before.version + 1,
+      moves: [{ action, details, by: 'Enrique', ai: false, at: new Date().toISOString() }, ...before.moves].slice(0, 10)
+    }
+    parties.set(campaignId, saved)
+    return partyView(saved)
+  }
+  const movableCharacter = (campaignId: string, characterId: string) => {
+    const character = visibleCharacter(characterId)
+    if (character.campaignId !== campaignId) throw new ApiError('NOT_FOUND', 404)
+    return character
+  }
+  const contentName = (campaignId: string, key: string) => {
+    const found = compendiumOf(campaignId)
+    const item = found?.content.find((each) => each.key === key)
+    return (item && textOf(item.data.name as Text, found?.choices.language ?? 'es')) || key
+  }
+
   const handlers: { [N in ActionName]: (input: ActionInput<N>) => ActionOutput<N> } = {
     listOrganizations: () => ({ organizations }),
     // Copias, como las de la API real (JSON nuevo en cada respuesta)
@@ -1442,6 +1505,175 @@ export function fakeApi(
       const stored = rolls.find((r) => r.id === out.roll.id)
       for (const each of stored ? [out.roll, stored] : [out.roll]) each.label = `${character.name} · ${result.label}`
       return { roll: out.roll }
+    },
+    getParty: ({ campaignId }) => {
+      const p = partyOf(campaignId)
+      const campaign = campaigns.find((c) => c.id === campaignId)
+      const fields = partyFieldsOf(campaignId)
+      const language = compendiumOf(campaignId)?.choices.language ?? 'es'
+      return {
+        party: partyView(p),
+        coins: (fields.coins?.coins ?? []).map((coin) => ({ key: coin.key, label: textOf(coin.label, language) })),
+        types: fields.items?.types ?? [],
+        characters: characters
+          .filter((c) => c.campaignId === campaignId && (campaign?.role === 'master' || c.owner?.id === 'yo'))
+          .map((c) => ({
+            id: c.id,
+            name: c.name,
+            mine: c.owner?.id === 'yo',
+            coins: fields.coins ? coinsOf(c.play as Play, fields.coins.field) : {}
+          })),
+        master: campaign?.role === 'master',
+        moves: structuredClone(p.moves)
+      }
+    },
+    updateParty: ({
+      campaignId,
+      version,
+      add,
+      remove,
+      edit,
+      addContainer,
+      renameContainer,
+      removeContainer,
+      coins
+    }) => {
+      if (partyOf(campaignId).version !== version) throw new ApiError('PARTY_CHANGED', 400)
+      const id = () => crypto.randomUUID().slice(0, 8)
+      return {
+        party: changeParty(campaignId, 'updateParty', { change: 'edit' }, (party) => {
+          if (add) {
+            const thing = add.key
+              ? { key: add.key, name: contentName(campaignId, add.key), note: add.note }
+              : { key: null, name: add.name ?? '', note: add.note }
+            return putInParty(party, thing, add.quantity ?? 1, add.container ?? PARTY_CONTAINER, id)
+          }
+          if (remove) {
+            const item = party.items.find((i) => i.id === remove.item)
+            if (!item) throw new PartyError('NOT_IN_PARTY', '')
+            return takeFromParty(party, item.id, remove.quantity ?? item.quantity).party
+          }
+          if (edit)
+            return {
+              ...party,
+              items: party.items.map((i) =>
+                i.id === edit.item
+                  ? {
+                      ...i,
+                      ...(edit.name !== undefined ? { name: edit.name } : {}),
+                      ...(edit.note !== undefined ? { note: edit.note } : {}),
+                      ...(edit.container !== undefined ? { container: edit.container } : {})
+                    }
+                  : i
+              )
+            }
+          if (addContainer)
+            return { ...party, containers: [...party.containers, { id: id(), name: addContainer.name }] }
+          if (renameContainer)
+            return {
+              ...party,
+              containers: partyContainers(party).map((c) =>
+                c.id === renameContainer.id ? { ...c, name: renameContainer.name } : c
+              )
+            }
+          if (removeContainer)
+            return {
+              ...party,
+              containers: party.containers.filter((c) => c.id !== removeContainer.id),
+              items: party.items.map((i) =>
+                i.container === removeContainer.id ? { ...i, container: PARTY_CONTAINER } : i
+              )
+            }
+          return { ...party, coins: { ...party.coins, ...(coins ?? {}) } }
+        })
+      }
+    },
+    moveItem: ({ campaignId, from, to, quantity }) => {
+      const id = () => crypto.randomUUID().slice(0, 8)
+      const changed: Array<{ character: Character; play: Play }> = []
+      const details: Record<string, unknown> = {}
+      const view = changeParty(campaignId, 'moveItem', details, (party) => {
+        let next = party
+        let thing: { key: string | null; name: string; quantity: number }
+        if ('party' in from) {
+          const item = party.items.find((i) => i.id === from.party)
+          if (!item) throw new PartyError('NOT_IN_PARTY', '')
+          const taken = takeFromParty(party, item.id, quantity ?? item.quantity)
+          next = taken.party
+          thing = taken.taken
+        } else {
+          const source = movableCharacter(campaignId, from.character)
+          const has = ((source.play as Play).items ?? []).find((i) => i.id === from.item)
+          if (!has) throw new PartyError('NOT_CARRIED', '')
+          const taken = takeFromPlay(source.play as Play, has.id, quantity ?? has.quantity ?? 1)
+          changed.push({ character: source, play: taken.play })
+          thing = {
+            key: taken.taken.key,
+            name: contentName(campaignId, taken.taken.key),
+            quantity: taken.taken.quantity ?? 1
+          }
+        }
+        const source = 'character' in from ? movableCharacter(campaignId, from.character).name : null
+        if ('container' in to) {
+          const container = partyContainers(next).find((c) => c.id === to.container)?.name ?? ''
+          Object.assign(details, { name: thing.name, quantity: thing.quantity, from: source, to: null, container })
+          return putInParty(next, thing, thing.quantity, to.container, id)
+        }
+        if (!thing.key) throw new PartyError('HANDWRITTEN_STAYS', '')
+        const target = movableCharacter(campaignId, to.character)
+        Object.assign(details, { name: thing.name, quantity: thing.quantity, from: source, to: target.name })
+        const base = changed.find((c) => c.character.id === target.id)?.play ?? (target.play as Play)
+        const put = putInPlay(base, thing.key, thing.quantity, id)
+        const already = changed.find((c) => c.character.id === target.id)
+        if (already) already.play = put
+        else changed.push({ character: target, play: put })
+        return next
+      })
+      for (const c of changed) {
+        c.character.play = c.play as Record<string, unknown>
+        c.character.version += 1
+      }
+      return { party: view }
+    },
+    moveCoins: ({ campaignId, character, toParty, coins }) => {
+      const field = partyFieldsOf(campaignId).coins
+      if (!field) throw new ApiError('NO_COINS', 400)
+      const target = movableCharacter(campaignId, character)
+      const allowed = field.coins.map((c) => c.key)
+      let mine: Record<string, number> = {}
+      const view = changeParty(campaignId, 'moveCoins', { toParty }, (party) => {
+        const own = coinsOf(target.play as Play, field.field)
+        const moved = toParty
+          ? movedCoins(own, party.coins, coins, allowed)
+          : movedCoins(party.coins, own, coins, allowed)
+        mine = toParty ? moved.from : moved.to
+        return { ...party, coins: toParty ? moved.to : moved.from }
+      })
+      target.play = withCoins(target.play as Play, field.field, mine) as Record<string, unknown>
+      target.version += 1
+      return { party: view }
+    },
+    splitCoins: ({ campaignId, characters: ids, coins }) => {
+      const field = partyFieldsOf(campaignId).coins
+      if (!field) throw new ApiError('NO_COINS', 400)
+      if (campaigns.find((c) => c.id === campaignId)?.role !== 'master') throw new ApiError('NOT_FOUND', 404)
+      const targets = [...new Set(ids)].map((characterId) => movableCharacter(campaignId, characterId))
+      let each: Record<string, number> = {}
+      const view = changeParty(campaignId, 'splitCoins', { count: targets.length }, (party) => {
+        const wanted = Object.fromEntries(
+          Object.entries(party.coins).filter(([coin]) => !coins || coins.includes(coin))
+        ) as Record<string, number>
+        const split = splitEvenly(wanted, targets.length)
+        each = split.each
+        return { ...party, coins: { ...party.coins, ...split.left } }
+      })
+      for (const target of targets) {
+        const own = coinsOf(target.play as Play, field.field)
+        const sum = Object.fromEntries(Object.entries(each).map(([coin, n]) => [coin, (own[coin] ?? 0) + n]))
+        target.play = withCoins(target.play as Play, field.field, sum) as Record<string, unknown>
+        target.version += 1
+      }
+      return { party: view, each }
     },
     listInPlay: ({ campaignId }) => ({
       creatures: creatures.filter((c) => c.campaignId === campaignId).map((c) => creatureCard(c).card)

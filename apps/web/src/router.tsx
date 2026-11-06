@@ -3,6 +3,7 @@ import { CompendiumScreen } from './campaign/compendium.tsx'
 import { CharacterScreen } from './characters/character.tsx'
 import { CharactersScreen } from './characters/characters.tsx'
 import { InPlayScreen } from './creatures/in-play.tsx'
+import { PartyScreen } from './party/route.tsx'
 import { AiSettings } from './routes/ai-settings.tsx'
 import { Bootstrap } from './routes/bootstrap.tsx'
 import { CampaignPage } from './routes/campaign.tsx'
@@ -73,6 +74,11 @@ const inPlayRoute = createRoute({
   // ?ver=<id>: la criatura abierta
   validateSearch: (search: Record<string, unknown>): { ver?: string } =>
     typeof search.ver === 'string' && search.ver ? { ver: search.ver } : {}
+})
+const partyRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/mundos/$worldId/campanas/$campaignId/grupo',
+  component: PartyScreen
 })
 const wikiRoute = createRoute({ getParentRoute: () => rootRoute, path: '/mundos/$worldId/wiki', component: WikiHome })
 const wikiPageRoute = createRoute({
@@ -153,6 +159,7 @@ const routeTree = rootRoute.addChildren([
   campaignRoute,
   compendiumRoute,
   inPlayRoute,
+  partyRoute,
   charactersRoute,
   characterRoute,
   wikiRoute,

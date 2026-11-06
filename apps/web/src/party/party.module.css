@@ -1,0 +1,400 @@
+/* El inventario del grupo: sus monedas arriba, sus contenedores con lo de dentro y «Mover» en cada fila */
+.party {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.small {
+  margin: 0;
+  color: var(--color-muted);
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.muted {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+.hidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.coinsBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  padding-block-end: var(--space-3);
+  border-block-end: 1px solid var(--color-border);
+}
+
+.coins {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.coinKey {
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+}
+
+.link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-block-size: var(--target);
+  margin-inline-start: auto;
+  padding: 0 var(--space-2);
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--color-link);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.link:hover {
+  background: var(--color-raised);
+}
+
+.tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.tool,
+.toolQuiet {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: var(--target);
+  padding: 0 var(--space-3);
+  border: 1px dashed var(--color-frame);
+  border-radius: 6px;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.toolQuiet {
+  border-color: transparent;
+  color: var(--color-muted);
+  font-weight: 500;
+}
+
+.tool:hover,
+.toolQuiet:hover {
+  border-color: var(--color-accent);
+  color: var(--color-text);
+}
+
+.container {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.containerHead {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.count {
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.items {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: var(--target);
+  border-block-end: 1px solid var(--color-border);
+}
+
+.itemName {
+  display: grid;
+  flex: 1;
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+
+.note {
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+}
+
+.quantity {
+  color: var(--color-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.icon {
+  display: inline-grid;
+  place-items: center;
+  min-inline-size: 2.25rem;
+  block-size: 2.25rem;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+.icon:hover {
+  background: var(--color-raised);
+  color: var(--color-text);
+}
+
+/* «Mover»: su desplegable flota sobre lo demás, sin moverlo */
+.moveRoot {
+  position: relative;
+}
+
+.move {
+  min-block-size: 2.25rem;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.move:hover,
+.move[aria-expanded="true"] {
+  border-color: var(--color-accent);
+}
+
+.menu {
+  position: absolute;
+  margin: 0;
+  inset-block-start: calc(100% + var(--space-1));
+  inset-inline-end: 0;
+  z-index: 20;
+  display: grid;
+  gap: 1px;
+  min-inline-size: 13rem;
+  padding: var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 25%);
+}
+
+.howMany {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2) var(--space-2);
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+}
+
+.howMany input {
+  inline-size: 4.5rem;
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--color-field-border);
+  border-radius: 6px;
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.target {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-block-size: 2.25rem;
+  padding: 0 var(--space-2);
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.target:hover,
+.target:focus-visible {
+  background: var(--color-raised);
+}
+
+.hint {
+  margin-inline-start: var(--space-2);
+  color: var(--color-muted);
+  font-size: 0.75rem;
+}
+
+.moves {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.875rem;
+}
+
+.when {
+  display: block;
+  color: var(--color-muted);
+  font-size: 0.75rem;
+}
+
+/* Los cuadros: añadir, el contenedor, las monedas */
+.choice {
+  display: flex;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.choice label,
+.check {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: var(--target);
+}
+
+.results {
+  display: grid;
+  max-block-size: 14rem;
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  overflow: auto;
+  list-style: none;
+}
+
+.results button {
+  inline-size: 100%;
+  min-block-size: 2.25rem;
+  padding: 0 var(--space-2);
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.results button:hover,
+.results button[aria-pressed="true"] {
+  background: var(--color-raised);
+}
+
+.results button[aria-pressed="true"] {
+  font-weight: 700;
+}
+
+.pair,
+.coinInputs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+  gap: var(--space-3);
+}
+
+.secondary {
+  min-block-size: var(--target);
+  padding: 0 var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.secondary:hover:not(:disabled) {
+  border-color: var(--color-accent);
+}
+
+.split {
+  display: grid;
+  gap: var(--space-1);
+  margin: var(--space-3) 0 0;
+  padding: var(--space-3) 0 0;
+  border: 0;
+  border-block-start: 1px solid var(--color-border);
+}
+
+.split legend {
+  padding: 0;
+  font-weight: 600;
+}
+
+/* La pantalla «Grupo»: el inventario en el centro y los movimientos a la derecha */
+.page {
+  display: grid;
+  grid-template-columns: minmax(0, 46rem) minmax(14rem, 19rem);
+  justify-content: center;
+  gap: var(--space-6);
+  align-items: start;
+  padding: var(--space-6);
+}
+
+.main,
+.side {
+  padding: var(--space-5);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+}
+
+.side {
+  position: sticky;
+  inset-block-start: var(--space-6);
+  display: grid;
+  gap: var(--space-3);
+}
+
+.title {
+  margin: 0 0 var(--space-4);
+  font-size: 1.5rem;
+}
+
+@media (max-width: 52rem) {
+  .page {
+    grid-template-columns: minmax(0, 1fr);
+    padding: var(--space-4);
+  }
+
+  .side {
+    position: static;
+  }
+}

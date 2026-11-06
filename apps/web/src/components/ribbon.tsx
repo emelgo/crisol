@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router'
 import {
+  Backpack,
   BookOpen,
   Dices,
   Folder,
@@ -442,6 +443,15 @@ function CampaignPanels({
       >
         <Label icon={BookOpen} text={t('ribbon.compendium')} />
       </Link>
+      <Link
+        to="/mundos/$worldId/campanas/$campaignId/grupo"
+        params={{ worldId, campaignId }}
+        className={styles.item}
+        viewTransition={SECTION}
+        data-tour="barra-grupo"
+      >
+        <Label icon={Backpack} text={t('ribbon.party')} />
+      </Link>
       {master && (
         <Link
           to="/mundos/$worldId/campanas/$campaignId/en-juego"
@@ -614,6 +624,13 @@ function MobileMenu({
             text: t('ribbon.compendium'),
             current: path.startsWith(`/mundos/${world.id}/campanas/${campaign.id}/compendio`),
             run: go(`/mundos/${world.id}/campanas/${campaign.id}/compendio`)
+          },
+          {
+            key: 'grupo',
+            icon: Backpack,
+            text: t('ribbon.party'),
+            current: path.startsWith(`/mundos/${world.id}/campanas/${campaign.id}/grupo`),
+            run: go(`/mundos/${world.id}/campanas/${campaign.id}/grupo`)
           },
           // Las criaturas en juego: del máster (hasta el módulo 5)
           ...(campaign.master

@@ -70,6 +70,7 @@ export function CampaignPage() {
           { target: '[data-tour="barra-campana"]', text: t('tour.campaign.home'), placement: 'right' },
           { target: '[data-tour="barra-personajes"]', text: t('tour.campaign.characters'), placement: 'right' },
           { target: '[data-tour="barra-compendio"]', text: t('tour.campaign.compendium'), placement: 'right' },
+          { target: '[data-tour="barra-grupo"]', text: t('tour.campaign.party'), placement: 'right' },
           ...(campaign.role === 'master'
             ? [{ target: '[data-tour="barra-en-juego"]', text: t('tour.campaign.inPlay'), placement: 'right' as const }]
             : []),
