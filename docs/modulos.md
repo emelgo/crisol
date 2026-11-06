@@ -53,8 +53,9 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
 - **PR #111, en `main` y en staging** (2026-11-06; su CI pasó entera): imágenes, tablas, grupo y biblioteca, con
   Postgres propio con pgvector (0.8.1), la app en Debian con el modelo y 1 GB, y las migraciones 0045 a 0050. Al
   arrancar, staging se puso a leer sus PDF y a calcular los vectores de la wiki. Planes en `tasks/<capacidad>/`.
-- **Lo siguiente**: que Enrique pruebe el módulo 4 (`tasks/probar.md` § «Módulo 4»: sobre todo, la calidad de la
-  búsqueda por significado con libros de verdad y «Descargar PDF» con el Chromium de Debian) y empezar el módulo 5.
+- **Lo siguiente: el módulo 5.** Enrique probará todo cuando la app esté terminada (`tasks/probar.md`; del módulo 4,
+  sobre todo la calidad de la búsqueda por significado con libros de verdad y «Descargar PDF» con el Chromium de
+  Debian): no se espera a sus pruebas para seguir.
 - Ojo: la API de desarrollo (`node --watch`) no siempre se recarga al añadir archivos; `touch apps/server/src/main.ts`.
 
 ### Antes (2026-11-06, módulo 3 terminado)
