@@ -2076,6 +2076,7 @@ export const es = {
       wiki: 'El mundo: se abre en su portada; aquí se esconde o se ve su árbol.',
       search: 'Filtra el árbol por nombre o #etiqueta; con Intro, busca en el texto de todas.',
       panel: 'Datos de toda la página, a la vista: medidores, estrellas, notas…',
+      whoKnows: 'Qué sabe de esta página cada campaña, y lo que ven sus jugadores.',
       bookmarks: 'Tus páginas marcadas, a mano.',
       files: 'Las imágenes y documentos del mundo.',
       history: 'Lo que se ha hecho en este mundo, para deshacerlo si hace falta.',

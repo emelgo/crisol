@@ -10,5 +10,5 @@
 - [x] 8. La web del jugador: el mundo en la barra de la campaña, el árbol, la página en lectura, buscar y la vista previa, en tiempo real
 - [x] 9. «Ver como jugador»
 - [x] 10. La IA: marcar, quién conoce, ver como jugador; leer la wiki como jugador (punto de control 3)
-- [ ] 11. Los tutoriales guiados de las vistas nuevas y los textos
+- [x] 11. Los tutoriales guiados de las vistas nuevas y los textos
 - [ ] 12. E2E: el flujo, la prueba de fugas ampliada, el rendimiento con 5.000 páginas; documentación y revisión
