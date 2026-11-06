@@ -6,7 +6,7 @@ import { contentTable } from '@crisol/contracts'
 import { APPROVAL_WAIT_MS } from '@crisol/domain'
 import { McpServer } from '@modelcontextprotocol/server'
 import { z } from 'zod'
-import type { ActionEnv, Implementation } from '../actions/context.ts'
+import { type ActionEnv, type Implementation, InvalidRequestError } from '../actions/context.ts'
 import { implementationsByName } from '../actions/implementations.ts'
 import { formatDocs } from '../actions/systems.ts'
 import { callAsAi } from './approvals.ts'
@@ -315,17 +315,17 @@ export const MCP_TOOLS: Record<string, McpTool> = {
   mover_en_grupo: { action: 'moveItem' },
   monedas_grupo: {
     description:
-      'Las monedas del grupo de una campaña: pasarlas entre el grupo y un personaje (character, toParty y coins) o repartirlas a partes iguales entre unos personajes (split; solo el máster: lo que sobra se queda en el grupo, y sin coins se reparten todas)',
+      'Las monedas del grupo de una campaña: pasarlas entre el grupo y un personaje (character, toParty y coins) o repartirlas a partes iguales entre unos personajes (split, solo el máster: con coins, esas cantidades; sin coins, todas las del grupo; lo que sobra se queda en el grupo)',
     input: partyCoinsInput,
     actions: ['moveCoins', 'splitCoins'],
     route: (input) => {
       const { campaignId, coins, character, toParty, split } = partyCoinsInput.parse(input)
+      // Repartir: las cantidades dichas o, sin ellas, todas las del grupo
       if (split)
-        return {
-          action: 'splitCoins',
-          input: { campaignId, characters: split, ...(coins ? { coins: Object.keys(coins) } : {}) }
-        }
-      return { action: 'moveCoins', input: { campaignId, character, toParty: toParty ?? false, coins: coins ?? {} } }
+        return { action: 'splitCoins', input: { campaignId, characters: split, ...(coins ? { amounts: coins } : {}) } }
+      if (!character || toParty === undefined || !coins)
+        throw new InvalidRequestError('BAD_INPUT', 'para pasar monedas: character, toParty y coins')
+      return { action: 'moveCoins', input: { campaignId, character, toParty, coins } }
     }
   },
   // Su contenido (las clases, los conjuros, las armas…), con su mecánica; y el compendio de cada mundo

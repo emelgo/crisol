@@ -118,3 +118,47 @@ describe('las frases de la wiki', () => {
     ).toBe('crear la página «Costa Gris» dentro de «Lugares»')
   })
 })
+
+describe('las frases del grupo', () => {
+  const t = i18next.t.bind(i18next)
+  it('en el historial: qué, cuánto, de dónde y a dónde', () => {
+    const say = (action: string, details: Record<string, unknown>) => summaryOf(t, { action, details })
+    expect(say('updateParty', { change: 'add', name: 'Antorcha', quantity: 3 })).toBe('puso 3 × «Antorcha» en el grupo')
+    expect(say('updateParty', { change: 'renameContainer', from: '', name: 'La bolsa' })).toBe(
+      'renombró el contenedor «Del grupo» a «La bolsa»'
+    )
+    expect(say('moveItem', { name: 'Poción', quantity: 1, from: null, to: 'Thora' })).toBe(
+      'pasó 1 × «Poción» del grupo a Thora'
+    )
+    expect(say('moveItem', { name: 'Poción', quantity: 2, from: 'Thora', to: null, container: '' })).toBe(
+      'dejó 2 × «Poción» de Thora en el grupo'
+    )
+    expect(say('moveItem', { name: 'Poción', quantity: 1, from: 'Thora', to: 'Bram' })).toBe(
+      'pasó 1 × «Poción» de Thora a Bram'
+    )
+    expect(say('moveItem', { name: 'Llave', quantity: 1, from: null, to: null, container: 'El carro' })).toBe(
+      'guardó 1 × «Llave» en El carro'
+    )
+    expect(say('moveCoins', { toParty: false, coins: { po: 10, pp: 0 }, character: 'Thora' })).toBe(
+      'dio 10 po del grupo a Thora'
+    )
+    expect(say('splitCoins', { count: 3 })).toBe('repartió las monedas del grupo entre 3')
+  })
+
+  it('lo que pide la IA: los nombres que pone el servidor tapan los ids de la entrada', () => {
+    expect(
+      requestSummary(t, {
+        action: 'moveItem',
+        input: { campaignId: 'c', from: { party: 'p1' }, to: { character: 'uuid' }, quantity: 2 },
+        details: { campaign: 'La Marca', name: 'Poción', quantity: 2, from: null, to: 'Thora', container: null }
+      })
+    ).toBe('pasar 2 × «Poción» del grupo a Thora')
+    expect(
+      requestSummary(t, {
+        action: 'moveCoins',
+        input: { campaignId: 'c', character: 'uuid', toParty: true, coins: { po: 5 } },
+        details: { character: 'Thora' }
+      })
+    ).toBe('dejar 5 po de Thora en el grupo')
+  })
+})

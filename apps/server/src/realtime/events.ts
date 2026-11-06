@@ -59,9 +59,14 @@ export const creaturesChanged = (scope: CampaignScope): RealtimeEvent => ({
 })
 
 /** El inventario del grupo de una campaña (y lo que llevan sus personajes): a todos los de la campaña */
-export const partyChanged = (scope: CampaignScope): RealtimeEvent => ({
+export const partyChanged = (scope: CampaignScope, characters?: readonly string[]): RealtimeEvent => ({
   to: { capability: 'campaign.read', target: scope },
-  message: { type: 'changed', what: 'party', campaignId: scope.campaignId }
+  message: {
+    type: 'changed',
+    what: 'party',
+    campaignId: scope.campaignId,
+    ...(characters ? { characters: [...characters] } : {})
+  }
 })
 
 /** El compendio de un mundo: a quien lo ve (hasta el módulo 5, quien lo lleva; las hojas de los jugadores, al volver a pedirlas) */

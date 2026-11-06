@@ -2,7 +2,7 @@ import type { Campaign, World } from '@crisol/contracts'
 import type { ContentItem, System } from '@crisol/systems'
 import { fronteras } from '@crisol/systems/fixtures'
 import { createMemoryHistory } from '@tanstack/react-router'
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { fakeAccountClient } from '../account/fake.ts'
@@ -233,7 +233,14 @@ describe('el inventario del grupo (docs/specs/grupo.md)', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Del grupo' }))
     expect(await screen.findByText(/El grupo aún no tiene nada/)).toBeDefined()
     await userEvent.click(screen.getByRole('button', { name: 'Mío' }))
-    await userEvent.click(await screen.findByRole('button', { name: 'Mover «Escudo»' }))
+    // Con el teclado: Escape lo cierra y el foco vuelve a «Mover»
+    const trigger = await screen.findByRole('button', { name: 'Mover «Escudo»' })
+    await userEvent.click(trigger)
+    expect(screen.getByRole('group', { name: 'Mover «Escudo»' })).toBeDefined()
+    await userEvent.keyboard('{Escape}')
+    expect(screen.queryByRole('group', { name: 'Mover «Escudo»' })).toBeNull()
+    expect(document.activeElement).toBe(trigger)
+    await userEvent.click(trigger)
     const menu = within(screen.getByRole('group', { name: 'Mover «Escudo»' }))
     await userEvent.click(menu.getByRole('button', { name: 'Al grupo' }))
     await waitFor(async () =>

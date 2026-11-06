@@ -2,7 +2,7 @@
  * El inventario del grupo de una campaña (docs/specs/grupo.md): leerlo y cambiarlo en una sola operación, también
  * con lo que lleva un personaje (mover no duplica: sale de un sitio y entra en el otro a la vez)
  */
-import { eq } from 'drizzle-orm'
+import { and, eq, sql } from 'drizzle-orm'
 import type { Database } from '../client.ts'
 import { type OperationContext, operation, type Writer } from '../operation.ts'
 import { type CharacterSummary, characters } from '../schema/characters.ts'
@@ -50,11 +50,14 @@ export function changeParty<R>(
     lock: (characterId: string) => Promise<LockedCharacter | null>
   ) => Promise<{
     party: PartyValues
-    plays?: { id: string; play: Record<string, unknown>; summary: CharacterSummary }[]
+    plays?: { id: string; play: Record<string, unknown>; summary: CharacterSummary | null }[]
     result: R
   }>
 ) {
   return operation(db, context, async (w: Writer) => {
+    // Uno por campaña a la vez: el grupo aún sin fila no se crea dos veces, y mover entre dos personajes en sentidos
+    // contrarios no se bloquea (los personajes se bloquean ya en fila)
+    await w.read.execute(sql`select pg_advisory_xact_lock(hashtext(${`party:${campaignId}`}))`)
     const [current] = await w.read
       .select()
       .from(campaignParty)
@@ -73,9 +76,9 @@ export function changeParty<R>(
           play: characters.play
         })
         .from(characters)
-        .where(eq(characters.id, characterId))
+        .where(and(eq(characters.id, characterId), eq(characters.campaignId, campaignId)))
         .for('update')
-      return row && row.campaignId === campaignId ? (row as LockedCharacter) : null
+      return row ? (row as LockedCharacter) : null
     }
     const before: PartyValues = current
       ? { containers: current.containers, items: current.items, coins: current.coins }
@@ -84,7 +87,11 @@ export function changeParty<R>(
     const row = current
       ? await w.update(campaignParty, current.id, party)
       : await w.insert(campaignParty, { campaignId, ...party })
-    for (const p of plays) await w.update(characters, p.id, { play: p.play, summary: p.summary })
-    return { row, result }
+    const changed: { id: string; version: number; play: Record<string, unknown> }[] = []
+    for (const p of plays) {
+      const saved = await w.update(characters, p.id, { play: p.play, ...(p.summary ? { summary: p.summary } : {}) })
+      changed.push({ id: saved.id, version: saved.version, play: saved.play })
+    }
+    return { row, result, characters: changed }
   })
 }

@@ -27,6 +27,8 @@ export interface PartyItem {
   note?: string
   quantity: number
   container: string
+  /** Lo gastado de sus recursos (una varita con cargas gastadas), si vino así de un personaje: viaja con él */
+  uses?: Record<string, number>
 }
 
 export interface Party {
@@ -111,7 +113,7 @@ export function takeFromParty(party: Party, itemId: string, quantity: number): {
 /** Pone en un contenedor del grupo: lo del compendio se junta con lo igual (misma clave, sin nota) */
 export function putInParty(
   party: Party,
-  thing: { key: string | null; name: string; note?: string | undefined },
+  thing: { key: string | null; name: string; note?: string | undefined; uses?: Record<string, number> | undefined },
   quantity: number,
   container: string,
   newId: () => string
@@ -119,9 +121,13 @@ export function putInParty(
   positive(quantity, thing.name)
   if (!partyContainers(party).some((c) => c.id === container))
     throw new PartyError('NO_CONTAINER', 'ese contenedor no está en el grupo')
-  const same = thing.key
-    ? party.items.find((i) => i.key === thing.key && i.container === container && !i.note && !thing.note)
-    : undefined
+  // Lo gastado no se junta: cada uno, con sus usos
+  const fresh = (i: { note?: string | undefined; uses?: Record<string, number> | undefined }) =>
+    !i.note && !(i.uses && Object.keys(i.uses).length > 0)
+  const same =
+    thing.key && fresh(thing)
+      ? party.items.find((i) => i.key === thing.key && i.container === container && fresh(i))
+      : undefined
   if (same) {
     const total = same.quantity + quantity
     if (total > PARTY_LIMITS.quantity) throw new PartyError('BAD_QUANTITY', `demasiados «${same.name}»`)
@@ -135,18 +141,31 @@ export function putInParty(
     name: thing.name.trim().slice(0, 200) || thing.key || '—',
     ...(thing.note?.trim() ? { note: thing.note.trim().slice(0, 500) } : {}),
     quantity,
-    container
+    container,
+    ...(thing.uses && Object.keys(thing.uses).length > 0 ? { uses: thing.uses } : {})
   }
   return { ...party, items: [...party.items, item] }
 }
 
-/** Saca de lo que lleva un personaje (si es todo, deja de llevarlo y se van sus usos); da lo que sale */
-export function takeFromPlay(play: Play, itemId: string, quantity: number): { play: Play; taken: PlayItem } {
+/**
+ * Saca de lo que lleva un personaje; da lo que sale con lo gastado de sus recursos (que viaja con él). Lo que tiene
+ * usos gastados sale entero (los usos son del montón); si es todo, deja de llevarlo y deja de estar activo
+ */
+export function takeFromPlay(
+  play: Play,
+  itemId: string,
+  quantity: number
+): { play: Play; taken: PlayItem & { uses?: Record<string, number> } } {
   const item = (play.items ?? []).find((i) => i.id === itemId)
   if (!item) throw new PartyError('NOT_CARRIED', 'no lleva ese objeto')
   positive(quantity, item.key)
   const has = item.quantity ?? 1
   if (quantity > has) throw new PartyError('NOT_ENOUGH', `solo lleva ${has}`)
+  // Lo que lleva se nombra en sus usos y en lo activo con «p:» delante de su id (como en la hoja)
+  const ref = carriedRef(itemId)
+  const spent = play.uses?.[ref]
+  const used = spent && Object.values(spent).some((n) => n > 0) ? spent : undefined
+  if (used && quantity < has) throw new PartyError('PARTIAL_WITH_USES', 'lo que tiene usos gastados se mueve entero')
   if (quantity < has)
     return {
       play: {
@@ -155,35 +174,60 @@ export function takeFromPlay(play: Play, itemId: string, quantity: number): { pl
       },
       taken: { ...item, quantity }
     }
-  const { [itemId]: _, ...uses } = play.uses ?? {}
+  const { [ref]: _, ...uses } = play.uses ?? {}
   const rest: Play = { ...play, items: (play.items ?? []).filter((i) => i.id !== itemId) }
   if (play.uses) rest.uses = uses
-  if (play.active) rest.active = play.active.filter((a) => a !== itemId && !a.startsWith(`${itemId}:`))
-  return { play: rest, taken: { ...item, quantity } }
+  if (play.active) rest.active = play.active.filter((a) => a !== ref && !a.startsWith(`${ref}:`))
+  return { play: rest, taken: { ...item, quantity, ...(used ? { uses: { ...used } } : {}) } }
 }
 
-/** Pone en lo que lleva un personaje: se junta con lo igual que no lleve equipado ni tenga usos gastados */
-export function putInPlay(play: Play, key: string, quantity: number, newId: () => string): Play {
+/**
+ * Pone en lo que lleva un personaje, con lo gastado si lo trae: se junta con lo igual que no lleve equipado, ni esté
+ * activo, ni tenga usos gastados (y si trae usos, aparte). Su id, uno que no tenga ya
+ */
+export function putInPlay(
+  play: Play,
+  key: string,
+  quantity: number,
+  newId: () => string,
+  uses?: Record<string, number>
+): Play {
   positive(quantity, key)
   const items = play.items ?? []
-  const same = items.find((i) => i.key === key && !i.equipped && !i.attuned && !play.uses?.[i.id])
-  if (same)
-    return {
-      ...play,
-      items: items.map((i) => (i.id === same.id ? { ...i, quantity: (i.quantity ?? 1) + quantity } : i))
-    }
+  const spent = uses && Object.keys(uses).length > 0 ? uses : undefined
+  const active = play.active ?? []
+  const isActive = (id: string) => active.some((a) => a === carriedRef(id) || a.startsWith(`${carriedRef(id)}:`))
+  const same = spent
+    ? undefined
+    : items.find((i) => i.key === key && !i.equipped && !i.attuned && !play.uses?.[carriedRef(i.id)] && !isActive(i.id))
+  if (same) {
+    const total = (same.quantity ?? 1) + quantity
+    if (total > PARTY_LIMITS.quantity) throw new PartyError('BAD_QUANTITY', 'serían demasiados')
+    return { ...play, items: items.map((i) => (i.id === same.id ? { ...i, quantity: total } : i)) }
+  }
   if (items.length >= 500) throw new PartyError('PLAY_FULL', 'ese personaje ya lleva demasiadas cosas')
-  return { ...play, items: [...items, { id: newId(), key, quantity }] }
+  let id = newId()
+  for (let n = 2; items.some((i) => i.id === id); n++) id = n < 20 ? newId() : `${id}-${n}`
+  return {
+    ...play,
+    items: [...items, { id, key, quantity }],
+    ...(spent ? { uses: { ...(play.uses ?? {}), [carriedRef(id)]: { ...spent } } } : {})
+  }
 }
+
+/** Cómo se nombra en sus usos y en lo activo lo que lleva un personaje: «p:» y su id */
+export const carriedRef = (itemId: string) => `p:${itemId}`
 
 export type Coins = Record<string, number>
 
-/** Las monedas de un personaje, de su grupo de monedas */
-export const coinsOf = (play: Play, field: string): Coins => {
+/** Las monedas de un personaje, de su grupo de monedas: solo las del sistema (si se dicen) y enteras de 0 en adelante */
+export const coinsOf = (play: Play, field: string, allowed?: readonly string[]): Coins => {
   const value = play.values?.[field]
   if (!value || typeof value !== 'object') return {}
   return Object.fromEntries(
-    Object.entries(value as Record<string, unknown>).filter(([, n]) => typeof n === 'number' && Number.isFinite(n))
+    Object.entries(value as Record<string, unknown>)
+      .filter(([coin, n]) => typeof n === 'number' && Number.isFinite(n) && (!allowed || allowed.includes(coin)))
+      .map(([coin, n]) => [coin, Math.max(0, Math.floor(n as number))])
   ) as Coins
 }
 
@@ -209,8 +253,11 @@ export function moveCoins(
       throw new PartyError('BAD_QUANTITY', 'las monedas, en enteros de 0 en adelante')
     const has = nextFrom[coin] ?? 0
     if (amount > has) throw new PartyError('NOT_ENOUGH', `solo hay ${has} ${coin}`)
+    const total = (nextTo[coin] ?? 0) + amount
+    if (total > PARTY_LIMITS.coins)
+      throw new PartyError('TOO_MANY_COINS', `serían más de ${PARTY_LIMITS.coins} ${coin}`)
     nextFrom[coin] = has - amount
-    nextTo[coin] = (nextTo[coin] ?? 0) + amount
+    nextTo[coin] = total
   }
   return { from: nextFrom, to: nextTo }
 }

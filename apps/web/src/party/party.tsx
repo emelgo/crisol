@@ -5,22 +5,27 @@
  */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Coins, Pencil, Plus, Trash2 } from 'lucide-react'
-import { type ReactNode, useId, useRef, useState } from 'react'
+import { type ReactNode, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ActionInput, ActionOutput } from '../api/client.ts'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
+import { characterKey } from '../characters/save.ts'
+import { Loading } from '../components/brand.tsx'
 import { BusyButton } from '../components/busy-button.tsx'
 import dialogStyles from '../components/dialog.module.css'
 import { useDismiss } from '../components/dismiss.ts'
 import { Field, FormError } from '../components/field.tsx'
 import formStyles from '../components/form.module.css'
+import { failed, LoadError } from '../components/load-error.tsx'
 import { Modal } from '../components/modal.tsx'
 import { useSettled } from '../components/settled.ts'
 import { summaryOf } from '../summaries.ts'
 import styles from './party.module.css'
 
 type Loaded = ActionOutput<'getParty'>
+type CharacterLoaded = ActionOutput<'getCharacter'>
+type Changed = ActionOutput<'moveItem'>['characters'][number]
 type Item = Loaded['party']['items'][number]
 export const partyKey = (campaignId: string) => ['party', campaignId] as const
 
@@ -37,35 +42,40 @@ export function useParty(campaignId: string) {
   const api = useApi()
   const client = useQueryClient()
   const loaded = useQuery({ queryKey: partyKey(campaignId), queryFn: () => api.call('getParty', { campaignId }) })
-  const done = async (out: { party: Loaded['party'] }, characters: boolean) => {
+  const done = async (out: { party: Loaded['party']; characters?: Changed[] }) => {
     client.setQueryData<Loaded>(partyKey(campaignId), (old) => (old ? { ...old, party: out.party } : old))
-    // Los movimientos y las monedas de cada uno, de nuevo; los personajes que cambiaron, también
-    await client.invalidateQueries({ queryKey: partyKey(campaignId) })
-    if (characters) {
-      await client.invalidateQueries({ queryKey: ['character'] })
-      await client.invalidateQueries({ queryKey: ['characters', campaignId] })
-    }
+    // Los personajes que cambiaron, al momento (su versión nueva: la hoja sigue guardando sin chocar)
+    for (const changed of out.characters ?? [])
+      client.setQueryData<CharacterLoaded>(characterKey(changed.id), (old) =>
+        old ? { ...old, character: { ...old.character, version: changed.version, play: changed.play } } : old
+      )
+    // Y lo demás (los movimientos, las monedas de cada uno, lo calculado de su hoja), de nuevo, a la vez
+    await Promise.all([
+      client.invalidateQueries({ queryKey: partyKey(campaignId) }),
+      ...(out.characters ?? []).map((c) => client.invalidateQueries({ queryKey: characterKey(c.id) })),
+      ...(out.characters?.length ? [client.invalidateQueries({ queryKey: ['characters', campaignId] })] : [])
+    ])
   }
   const update = useMutation({
     mutationFn: (change: Omit<ActionInput<'updateParty'>, 'campaignId' | 'version'>) =>
       api.call('updateParty', { campaignId, version: loaded.data?.party.version ?? 0, ...change }),
-    onSuccess: (out) => done(out, false),
+    onSuccess: (out) => done(out),
     // Otro lo cambió mientras tanto: se vuelve a leer
     onError: () => client.invalidateQueries({ queryKey: partyKey(campaignId) })
   })
   const move = useMutation({
     mutationFn: (input: Omit<ActionInput<'moveItem'>, 'campaignId'>) => api.call('moveItem', { campaignId, ...input }),
-    onSuccess: (out) => done(out, true)
+    onSuccess: (out) => done(out)
   })
   const coins = useMutation({
     mutationFn: (input: Omit<ActionInput<'moveCoins'>, 'campaignId'>) =>
       api.call('moveCoins', { campaignId, ...input }),
-    onSuccess: (out) => done(out, true)
+    onSuccess: (out) => done(out)
   })
   const split = useMutation({
     mutationFn: (input: Omit<ActionInput<'splitCoins'>, 'campaignId'>) =>
       api.call('splitCoins', { campaignId, ...input }),
-    onSuccess: (out) => done(out, true)
+    onSuccess: (out) => done(out)
   })
   return { loaded, update, move, coins, split }
 }
@@ -85,8 +95,10 @@ export function PartyInventory({ campaignId, me }: { campaignId: string; me?: st
   const [dialog, setDialog] = useState<
     { kind: 'add' } | { kind: 'coins' } | { kind: 'container'; id?: string; name?: string } | null
   >(null)
-  if (!loaded.data) return null
+  if (!loaded.data)
+    return failed(loaded) ? <LoadError error={loaded.error} onRetry={() => loaded.refetch()} /> : <Loading />
   const { party, characters } = loaded.data
+  const busy = update.isPending || move.isPending
   const containerName = (c: { id: string; name: string }) => c.name || t('party.common')
   const error = [update, move, coins, split].find((m) => m.error)?.error
   const targetsFor = (item: Item): MoveTarget[] => [
@@ -129,7 +141,7 @@ export function PartyInventory({ campaignId, me }: { campaignId: string; me?: st
         )}
       </div>
       <div className={styles.tools}>
-        <button type="button" className={styles.tool} onClick={() => setDialog({ kind: 'add' })}>
+        <button type="button" className={styles.tool} disabled={busy} onClick={() => setDialog({ kind: 'add' })}>
           <Plus size={15} aria-hidden="true" />
           {t('party.add')}
         </button>
@@ -146,12 +158,15 @@ export function PartyInventory({ campaignId, me }: { campaignId: string; me?: st
         return (
           <section key={container.id} className={styles.container} aria-label={name}>
             <div className={styles.containerHead}>
-              <h3 className={styles.small}>{name}</h3>
+              <h3 id={`grupo-${container.id}`} className={styles.small} tabIndex={-1}>
+                {name}
+              </h3>
               <span className={styles.count}>{items.reduce((n, i) => n + i.quantity, 0)}</span>
               <button
                 type="button"
                 className={styles.icon}
                 aria-label={t('party.renameContainer', { name })}
+                disabled={busy}
                 onClick={() => setDialog({ kind: 'container', id: container.id, name: container.name })}
               >
                 <Pencil size={14} aria-hidden="true" />
@@ -161,6 +176,7 @@ export function PartyInventory({ campaignId, me }: { campaignId: string; me?: st
                   type="button"
                   className={styles.icon}
                   aria-label={t('party.removeContainer', { name })}
+                  disabled={busy}
                   onClick={() => update.mutate({ removeContainer: { id: container.id } })}
                 >
                   <Trash2 size={14} aria-hidden="true" />
@@ -185,13 +201,15 @@ export function PartyInventory({ campaignId, me }: { campaignId: string; me?: st
                       name={item.name}
                       max={item.quantity}
                       targets={targetsFor(item)}
-                      busy={move.isPending || update.isPending}
+                      busy={busy}
+                      fallback={`grupo-${container.id}`}
                       onMove={(to, quantity) => move.mutate({ from: { party: item.id }, to, quantity })}
                     />
                     <button
                       type="button"
                       className={styles.icon}
                       aria-label={t('party.remove', { name: item.name })}
+                      disabled={busy}
                       onClick={() => update.mutate({ remove: { item: item.id } })}
                     >
                       <Trash2 size={14} aria-hidden="true" />
@@ -257,12 +275,15 @@ export function MoveMenu({
   max,
   targets,
   busy,
+  fallback,
   onMove
 }: {
   name: string
   max: number
   targets: MoveTarget[]
   busy: boolean
+  /** Dónde va el foco si, tras mover, la fila ya no está (se movió todo) */
+  fallback?: string
   onMove: (to: MoveTarget['to'], quantity: number) => void
 }) {
   const { t } = useTranslation()
@@ -272,6 +293,16 @@ export function MoveMenu({
   const trigger = useRef<HTMLButtonElement>(null)
   const id = useId()
   useDismiss(open, () => setOpen(false), root, trigger)
+  // Salir con el tabulador lo cierra
+  useEffect(() => {
+    const node = root.current
+    if (!open || !node) return
+    const leave = (event: FocusEvent) => {
+      if (!node.contains(event.relatedTarget as Node | null)) setOpen(false)
+    }
+    node.addEventListener('focusout', leave)
+    return () => node.removeEventListener('focusout', leave)
+  }, [open])
   if (targets.length === 0) return null
   const quantity = Math.min(max, Math.max(1, Math.floor(count) || 1))
   return (
@@ -315,6 +346,10 @@ export function MoveMenu({
                 setOpen(false)
                 onMove(target.to, quantity)
                 trigger.current?.focus()
+                // Si se movió todo, la fila se va: el foco, a su contenedor
+                window.setTimeout(() => {
+                  if (!trigger.current?.isConnected && fallback) document.getElementById(fallback)?.focus()
+                }, 600)
               }}
             >
               {target.label}
@@ -338,13 +373,18 @@ export function PartyMoves({ campaignId }: { campaignId: string }) {
   ) : (
     <ul className={styles.moves}>
       {moves.map((m) => (
-        <li key={`${m.at}-${m.action}`}>
+        <li key={m.id}>
           {t('party.by', {
             who: m.ai ? t('party.ai') : (m.by ?? t('party.someone')),
             what: summaryOf(t, { action: m.action, details: m.details })
           })}
           <time className={styles.when} dateTime={m.at}>
-            {new Date(m.at).toLocaleDateString(i18n.language, { day: 'numeric', month: 'short' })}
+            {new Date(m.at).toLocaleString(i18n.language, {
+              day: 'numeric',
+              month: 'short',
+              hour: '2-digit',
+              minute: '2-digit'
+            })}
           </time>
         </li>
       ))}

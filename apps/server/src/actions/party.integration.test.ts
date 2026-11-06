@@ -199,7 +199,7 @@ describe('el inventario del grupo (docs/specs/grupo.md)', () => {
       code: 'NOT_ENOUGH'
     })
     // Repartir: solo el máster
-    expect((await call('splitCoins', { campaignId, characters: [thora, bram] }, ana.cookie)).statusCode).toBe(404)
+    expect((await call('splitCoins', { campaignId, characters: [thora, bram] }, ana.cookie)).statusCode).toBe(403)
     const split = await ok200('splitCoins', { campaignId, characters: [thora, bram] })
     expect(split.each).toEqual({ po: 45, pp: 3 })
     expect(split.party.coins).toEqual({ po: 0, pp: 1 })
@@ -209,5 +209,126 @@ describe('el inventario del grupo (docs/specs/grupo.md)', () => {
     expect(await coinsOf(bram)).toEqual({ po: 45, pp: 3 })
     p = await party(ana.cookie)
     expect(p.version).toBeGreaterThan(1)
+  })
+
+  it('muchas a la vez con pocas conexiones: ninguna se queda colgada; la primera fila, una sola', async () => {
+    // La primera fila del grupo, pedida a la vez: las dos entran
+    const adds = await Promise.all(
+      [1, 2, 3].map(() => call('updateParty', { campaignId, add: { name: 'Antorcha' } }, ana.cookie))
+    )
+    expect(adds.map((r) => r.statusCode)).toEqual([200, 200, 200])
+    expect((await party()).items).toHaveLength(3)
+    // Más operaciones a la vez que conexiones (4): todas acaban
+    await ok200('updateParty', { campaignId, version: (await party()).version, coins: { po: 100 } })
+    const moves = await Promise.all(
+      Array.from({ length: 8 }, (_, i) =>
+        call('moveCoins', { campaignId, character: i % 2 ? thora : bram, toParty: false, coins: { po: 1 } })
+      )
+    )
+    expect(moves.map((r) => r.statusCode)).toEqual(Array(8).fill(200))
+    expect((await party()).coins.po).toBe(92)
+    // Y de uno a otro en sentidos contrarios, a la vez: sin interbloqueo
+    await ok200('updateParty', { campaignId, add: { key: POCION, quantity: 2 } })
+    const pocion = (await party()).items.find((i: { key: string }) => i.key === POCION).id
+    await ok200('moveItem', { campaignId, from: { party: pocion }, to: { character: thora }, quantity: 1 })
+    await ok200('moveItem', { campaignId, from: { party: pocion }, to: { character: bram }, quantity: 1 })
+    const [t1] = await carried(thora)
+    const [b1] = await carried(bram)
+    const crossed = await Promise.all([
+      call('moveItem', { campaignId, from: { character: thora, item: t1?.id }, to: { character: bram } }),
+      call('moveItem', { campaignId, from: { character: bram, item: b1?.id }, to: { character: thora } })
+    ])
+    // Se ordenan: la una tras la otra, y nada se pierde ni se duplica
+    expect(crossed.map((r) => r.statusCode)).toEqual([200, 200])
+    const count = async (id: string) =>
+      (await carried(id)).reduce((n, i) => (i.key === POCION ? n + (i.quantity ?? 1) : n), 0)
+    expect((await count(thora)) + (await count(bram))).toBe(2)
+  })
+
+  it('los topes, el mismo sitio, lo gastado que viaja, y un personaje de otra campaña', async () => {
+    const insert = async (characterId: string, play: object) => {
+      const { character } = await ok200('getCharacter', { characterId })
+      await ok200('updateCharacter', { characterId, version: character.version, play })
+    }
+    // Útiles de sanador con usos gastados: van enteros, y vuelven con sus usos gastados
+    await insert(thora, {
+      items: [{ id: 'v1', key: 'utiles_de_sanador_2024', quantity: 2 }],
+      uses: { 'p:v1': { usos: 1 } }
+    })
+    expect(
+      await code(
+        'moveItem',
+        { campaignId, from: { character: thora, item: 'v1' }, to: { container: 'grupo' }, quantity: 1 },
+        ana.cookie
+      )
+    ).toEqual({ status: 400, code: 'PARTIAL_WITH_USES' })
+    const moved = await ok200(
+      'moveItem',
+      { campaignId, from: { character: thora, item: 'v1' }, to: { container: 'grupo' } },
+      ana.cookie
+    )
+    expect(moved.characters).toEqual([
+      expect.objectContaining({ id: thora, play: expect.objectContaining({ items: [] }) })
+    ])
+    const varita = (await party()).items[0]
+    expect(varita.uses).toEqual({ usos: 1 })
+    // Al mismo sitio, no
+    expect(await code('moveItem', { campaignId, from: { party: varita.id }, to: { container: 'grupo' } })).toEqual({
+      status: 400,
+      code: 'SAME_PLACE'
+    })
+    await ok200('moveItem', { campaignId, from: { party: varita.id }, to: { character: bram } })
+    const { character } = await ok200('getCharacter', { characterId: bram })
+    const back = character.play.items[0]
+    expect(character.play.uses[`p:${back.id}`]).toEqual({ usos: 1 })
+    expect(
+      await code('moveItem', { campaignId, from: { character: bram, item: back.id }, to: { character: bram } })
+    ).toEqual({
+      status: 400,
+      code: 'SAME_PLACE'
+    })
+
+    // Lo que lleva no pasa de 100.000 de lo mismo
+    await insert(thora, { items: [{ id: 'm1', key: POCION, quantity: 99_999 }] })
+    await ok200('updateParty', { campaignId, add: { key: POCION, quantity: 5 } })
+    const pila = (await party()).items.find((i: { key: string; uses?: object }) => i.key === POCION && !i.uses).id
+    expect(await code('moveItem', { campaignId, from: { party: pila }, to: { character: thora } })).toEqual({
+      status: 400,
+      code: 'BAD_QUANTITY'
+    })
+    // Ni las monedas de nadie de 1.000.000.000; una hoja con más, no rompe el grupo
+    await ok200('updateParty', { campaignId, version: (await party()).version, coins: { po: 1_000_000_000 } })
+    await insert(thora, { values: { monedas: { po: 5 } } })
+    expect(await code('moveCoins', { campaignId, character: thora, toParty: true, coins: { po: 5 } })).toEqual({
+      status: 400,
+      code: 'TOO_MANY_COINS'
+    })
+    await insert(bram, { values: { monedas: { po: 2_000_000_000 } } })
+    expect(
+      (await ok200('getParty', { campaignId })).characters.find((c: { id: string }) => c.id === bram).coins
+    ).toEqual({ po: 2_000_000_000 })
+
+    // Un personaje de otra campaña, ni para el máster
+    const other = (
+      await ok200('createCampaign', {
+        worldId,
+        name: 'Otra',
+        system: (await ok200('getCampaign', { campaignId })).campaign.system.id
+      })
+    ).id
+    const stranger = (await ok200('createCharacter', { campaignId: other, name: 'Fuera' })).character.id
+    expect(
+      (await call('moveCoins', { campaignId, character: stranger, toParty: false, coins: { po: 1 } })).statusCode
+    ).toBe(404)
+    expect((await call('splitCoins', { campaignId, characters: [stranger] })).statusCode).toBe(404)
+    // Repartir: cantidades dichas, y un jugador no puede
+    await ok200('updateParty', { campaignId, version: (await party()).version, coins: { po: 10 } })
+    expect((await call('splitCoins', { campaignId, characters: [thora] }, ana.cookie)).statusCode).toBe(403)
+    const split = await ok200('splitCoins', { campaignId, characters: [thora], amounts: { po: 4 } })
+    expect(split.each).toEqual({ po: 4 })
+    expect(split.party.coins.po).toBe(6)
+    // Borrar un personaje no toca el grupo
+    await ok200('deleteCharacter', { characterId: thora })
+    expect((await party()).coins.po).toBe(6)
   })
 })

@@ -68,11 +68,34 @@ describe('el inventario del grupo (docs/specs/grupo.md)', () => {
     // Lo que entra se junta con lo igual que no lleva equipado ni gastado
     play = putInPlay(play, 'pocion_de_curacion', 1, newId)
     expect(play.items).toEqual([{ id: 'c1', key: 'pocion_de_curacion', quantity: 3 }])
-    // Todo de vuelta: deja de llevarlo y sus usos se van
-    const used = { ...play, uses: { c1: { cargas: 1 } }, active: ['c1'] }
+    // Todo de vuelta: deja de llevarlo, deja de estar activo y lo gastado viaja con él
+    const used = { ...play, uses: { 'p:c1': { cargas: 1 } }, active: ['p:c1'] }
     const back = takeFromPlay(used, 'c1', 3)
     expect(back.play).toEqual({ items: [], uses: {}, active: [] })
-    expect(back.taken.quantity).toBe(3)
+    expect(back.taken).toMatchObject({ quantity: 3, uses: { cargas: 1 } })
+    // Lo gastado sale entero, y en el grupo y de vuelta no se junta: conserva sus usos
+    expect(code(() => takeFromPlay(used, 'c1', 1))).toBe('PARTIAL_WITH_USES')
+    const kept = putInParty(withPotions(), { ...pocion, uses: { cargas: 1 } }, 3, PARTY_CONTAINER, () => 'p9')
+    expect(kept.items.map((i) => [i.id, i.quantity, i.uses ?? null])).toEqual([
+      ['p1', 3, null],
+      ['p9', 3, { cargas: 1 }]
+    ])
+    const again = putInPlay(
+      { items: [{ id: 'x', key: 'pocion_de_curacion', quantity: 1 }] },
+      'pocion_de_curacion',
+      3,
+      () => 'x',
+      { cargas: 1 }
+    )
+    expect(again.items?.length).toBe(2)
+    const newcomer = again.items?.[1]?.id as string
+    expect(newcomer).not.toBe('x')
+    expect(again.uses?.[`p:${newcomer}`]).toEqual({ cargas: 1 })
+    // Lo activo tampoco se junta; y sin pasar del tope
+    expect(putInPlay({ items: [{ id: 'a', key: 'k' }], active: ['p:a'] }, 'k', 1, () => 'b').items).toHaveLength(2)
+    expect(code(() => putInPlay({ items: [{ id: 'a', key: 'k', quantity: 99_999 }] }, 'k', 2, newId))).toBe(
+      'BAD_QUANTITY'
+    )
     expect(code(() => takeFromParty(party, 'p1', 2))).toBe('NOT_ENOUGH')
     expect(code(() => takeFromPlay(play, 'otro', 1))).toBe('NOT_CARRIED')
   })
@@ -84,10 +107,16 @@ describe('el inventario del grupo (docs/specs/grupo.md)', () => {
     expect(code(() => moveCoins({ po: 1 }, {}, { po: 2 }, coins))).toBe('NOT_ENOUGH')
     expect(code(() => moveCoins({ po: 1 }, {}, { po: -1 }, coins))).toBe('BAD_QUANTITY')
     expect(code(() => moveCoins({ oro: 1 }, {}, { oro: 1 }, coins))).toBe('NO_COIN')
+    expect(code(() => moveCoins({ po: 5 }, { po: 999_999_999 }, { po: 5 }, coins))).toBe('TOO_MANY_COINS')
     expect(splitCoins({ po: 100, pp: 7, pc: 0 }, 3)).toEqual({ each: { po: 33, pp: 2 }, left: { po: 1, pp: 1 } })
     expect(code(() => splitCoins({ po: 1 }, 0))).toBe('NO_ONE')
     // Las de un personaje, en su grupo de monedas
     const play = withCoins({ values: { monedas: { po: 2, pp: 1 } } }, 'monedas', { po: 12 })
     expect(coinsOf(play, 'monedas')).toEqual({ po: 12, pp: 1 })
+    // Solo las del sistema, enteras y sin negativos
+    expect(coinsOf({ values: { monedas: { po: 2.7, pp: -3, oro: 4 } } }, 'monedas', ['po', 'pp'])).toEqual({
+      po: 2,
+      pp: 0
+    })
   })
 })

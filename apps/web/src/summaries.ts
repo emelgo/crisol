@@ -63,7 +63,12 @@ export function summaryOf(
       return say(action, { name: text(details.name) })
     // El inventario del grupo: qué, cuánto, de dónde y a dónde
     case 'updateParty': {
-      const values = { name: text(details.name), quantity: Number(details.quantity ?? 1), from: text(details.from) }
+      const values = {
+        name: text(details.name),
+        quantity: Number(details.quantity ?? 1),
+        // El contenedor de serie no tiene nombre propio
+        from: text(details.from) || t('party.common')
+      }
       switch (details.change) {
         case 'add':
           return say('partyAdd', values)

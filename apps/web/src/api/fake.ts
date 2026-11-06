@@ -827,7 +827,10 @@ export function fakeApi(
     const saved = {
       ...next,
       version: before.version + 1,
-      moves: [{ action, details, by: 'Enrique', ai: false, at: new Date().toISOString() }, ...before.moves].slice(0, 10)
+      moves: [
+        { id: crypto.randomUUID(), action, details, by: 'Enrique', ai: false, at: new Date().toISOString() },
+        ...before.moves
+      ].slice(0, 10)
     }
     parties.set(campaignId, saved)
     return partyView(saved)
@@ -1538,7 +1541,7 @@ export function fakeApi(
       removeContainer,
       coins
     }) => {
-      if (partyOf(campaignId).version !== version) throw new ApiError('PARTY_CHANGED', 400)
+      if (coins !== undefined && partyOf(campaignId).version !== version) throw new ApiError('PARTY_CHANGED', 400)
       const id = () => crypto.randomUUID().slice(0, 8)
       return {
         party: changeParty(campaignId, 'updateParty', { change: 'edit' }, (party) => {
@@ -1633,7 +1636,10 @@ export function fakeApi(
         c.character.play = c.play as Record<string, unknown>
         c.character.version += 1
       }
-      return { party: view }
+      return {
+        party: view,
+        characters: changed.map((c) => ({ id: c.character.id, version: c.character.version, play: c.character.play }))
+      }
     },
     moveCoins: ({ campaignId, character, toParty, coins }) => {
       const field = partyFieldsOf(campaignId).coins
@@ -1651,18 +1657,20 @@ export function fakeApi(
       })
       target.play = withCoins(target.play as Play, field.field, mine) as Record<string, unknown>
       target.version += 1
-      return { party: view }
+      return { party: view, characters: [{ id: target.id, version: target.version, play: target.play }] }
     },
-    splitCoins: ({ campaignId, characters: ids, coins }) => {
+    splitCoins: ({ campaignId, characters: ids, coins, amounts }) => {
       const field = partyFieldsOf(campaignId).coins
       if (!field) throw new ApiError('NO_COINS', 400)
       if (campaigns.find((c) => c.id === campaignId)?.role !== 'master') throw new ApiError('NOT_FOUND', 404)
       const targets = [...new Set(ids)].map((characterId) => movableCharacter(campaignId, characterId))
       let each: Record<string, number> = {}
       const view = changeParty(campaignId, 'splitCoins', { count: targets.length }, (party) => {
-        const wanted = Object.fromEntries(
-          Object.entries(party.coins).filter(([coin]) => !coins || coins.includes(coin))
-        ) as Record<string, number>
+        const wanted = (amounts ??
+          Object.fromEntries(Object.entries(party.coins).filter(([coin]) => !coins || coins.includes(coin)))) as Record<
+          string,
+          number
+        >
         const split = splitEvenly(wanted, targets.length)
         each = split.each
         return { ...party, coins: { ...party.coins, ...split.left } }
@@ -1673,7 +1681,11 @@ export function fakeApi(
         target.play = withCoins(target.play as Play, field.field, sum) as Record<string, unknown>
         target.version += 1
       }
-      return { party: view, each }
+      return {
+        party: view,
+        each,
+        characters: targets.map((c) => ({ id: c.id, version: c.version, play: c.play }))
+      }
     },
     listInPlay: ({ campaignId }) => ({
       creatures: creatures.filter((c) => c.campaignId === campaignId).map((c) => creatureCard(c).card)

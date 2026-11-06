@@ -14,6 +14,7 @@ import {
   type Implementation,
   InvalidRequestError
 } from '../actions/context.ts'
+import { partyRequest } from '../actions/party.ts'
 import { systemRequest, visibleSystemName } from '../actions/systems.ts'
 import { approvalsChanged } from '../realtime/events.ts'
 import { openJson } from '../secrets.ts'
@@ -109,6 +110,8 @@ async function describe(ctx: ActionContext, action: string, input: Record<string
   }
   // Un sistema: lo que se haría, comprobado ya; y el que elige una campaña
   Object.assign(details, await systemRequest(ctx, action, input))
+  // El grupo: qué, cuánto y los nombres (como en el historial)
+  Object.assign(details, await partyRequest(ctx, action, input))
   if (action === 'updateCampaign' && typeof input.system === 'string')
     details.system = await visibleSystemName(ctx, input.system)
   if (typeof input.operationId === 'string') {

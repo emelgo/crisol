@@ -7,6 +7,13 @@ import { z } from 'zod'
 import { defineAction } from './action.ts'
 
 const coins = z.record(z.string().max(60), z.int().min(0).max(1_000_000_000))
+/** Las que se devuelven: tal como estén (lo de una hoja puede pasar de los topes), para que leer nunca falle */
+const coinsOut = z.record(z.string(), z.number())
+
+/** Los personajes que cambiaron al mover (para ponerlos al día sin esperar) */
+const changedCharacters = z
+  .array(z.object({ id: z.uuid(), version: z.int(), play: z.record(z.string(), z.unknown()) }))
+  .describe('Los personajes que cambiaron, con su versión nueva y lo de su partida')
 
 export const partyItem = z.object({
   id: z.string(),
@@ -14,7 +21,11 @@ export const partyItem = z.object({
   name: z.string(),
   note: z.string().nullable(),
   quantity: z.int(),
-  container: z.string().describe('El id de su contenedor («grupo», el de serie)')
+  container: z.string().describe('El id de su contenedor («grupo», el de serie)'),
+  uses: z
+    .record(z.string(), z.number())
+    .optional()
+    .describe('Lo gastado de sus recursos, si vino así de un personaje (viaja con él)')
 })
 
 export const party = z.object({
@@ -23,7 +34,7 @@ export const party = z.object({
     .array(z.object({ id: z.string(), name: z.string().describe('El de serie, «grupo», sin nombre') }))
     .describe('Sus contenedores, con el de serie delante'),
   items: z.array(partyItem),
-  coins: coins.describe('Las monedas del grupo, por su clave (po, pp…)')
+  coins: coinsOut.describe('Las monedas del grupo, por su clave (po, pp…)')
 })
 
 export type Party = z.infer<typeof party>
@@ -46,13 +57,14 @@ export const getParty = defineAction({
         id: z.uuid(),
         name: z.string(),
         mine: z.boolean(),
-        coins: coins
+        coins: coinsOut
       })
     ),
     master: z.boolean().describe('Si quien pide es el máster: reparte las monedas'),
     moves: z
       .array(
         z.object({
+          id: z.uuid(),
           action: z.string(),
           details: z.record(z.string(), z.unknown()),
           by: z.string().nullable().describe('Quién lo hizo'),
@@ -68,10 +80,10 @@ export const updateParty = defineAction({
   name: 'updateParty',
   kind: 'players',
   description:
-    'Cambia el inventario del grupo, con la versión que se leyó (PARTY_CHANGED si otro lo cambió): añadir algo del compendio (su clave) o escrito a mano (su nombre y una nota), con su cantidad y su contenedor; quitar (todo o parte); cambiar su nota, su nombre (lo escrito a mano) o su contenedor; crear, renombrar o quitar contenedores (lo de dentro pasa al de serie); o poner las monedas del grupo. Una cosa por vez',
+    'Cambia el inventario del grupo: añadir algo del compendio (su clave) o escrito a mano (su nombre y una nota), con su cantidad y su contenedor; quitar (todo o parte); cambiar su nota, su nombre (lo escrito a mano) o su contenedor; crear, renombrar o quitar contenedores (lo de dentro pasa al de serie); o poner las monedas del grupo (con la versión que se leyó: PARTY_CHANGED si otro lo cambió). Una cosa por vez',
   input: z.object({
     campaignId: z.uuid(),
-    version: z.int().min(0),
+    version: z.int().min(0).optional().describe('La que se leyó: obligatoria para poner las monedas'),
     add: z
       .object({
         key: z.string().max(100).optional().describe('Del compendio de la campaña'),
@@ -117,7 +129,7 @@ export const moveItem = defineAction({
     ]),
     quantity: z.int().min(1).max(100_000).optional().describe('Sin ella, todo')
   }),
-  output: z.object({ party })
+  output: z.object({ party, characters: changedCharacters })
 })
 
 export const moveCoins = defineAction({
@@ -126,18 +138,19 @@ export const moveCoins = defineAction({
   description:
     'Pasa monedas entre el grupo y un personaje (su dueño o el máster): toParty, del personaje al grupo; si no, del grupo al personaje. Sin quedar en negativo',
   input: z.object({ campaignId: z.uuid(), character: z.uuid(), toParty: z.boolean(), coins }),
-  output: z.object({ party })
+  output: z.object({ party, characters: changedCharacters })
 })
 
 export const splitCoins = defineAction({
   name: 'splitCoins',
   kind: 'players',
   description:
-    'Reparte las monedas del grupo a partes iguales entre unos personajes de la campaña (solo el máster): las que se digan o, sin decirlas, todas. Lo que sobra se queda en el grupo',
+    'Reparte monedas del grupo a partes iguales entre unos personajes de la campaña (solo el máster): las cantidades que se digan (amounts), las clases que se digan (coins) o, sin decir nada, todas. Lo que sobra se queda en el grupo',
   input: z.object({
     campaignId: z.uuid(),
     characters: z.array(z.uuid()).min(1).max(20),
-    coins: z.array(z.string().max(60)).max(20).optional().describe('Qué monedas (po, pp…); sin ellas, todas')
+    coins: z.array(z.string().max(60)).max(20).optional().describe('Qué monedas (po, pp…); sin ellas, todas'),
+    amounts: coins.optional().describe('Cuántas de cada repartir (de las que hay); sin ellas, todas las elegidas')
   }),
-  output: z.object({ party, each: coins.describe('Lo que recibe cada uno') })
+  output: z.object({ party, each: coinsOut.describe('Lo que recibe cada uno'), characters: changedCharacters })
 })
