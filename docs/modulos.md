@@ -7,6 +7,21 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
+### Para retomar (2026-11-07, madrugada: módulo 5 con cuatro de cinco capacidades construidas)
+
+- **Rama `modulo-5/visibilidad`** (sin PR aún). Construidas y probadas: `conocimiento`, `revelar`, `mapas-jugadores` y
+  `compendio-jugadores` (lo hecho de cada una, en su spec § «Construido»; qué probar, `tasks/probar.md` § «Módulo 5»).
+  Migraciones hasta la 0053, ya en la base de desarrollo.
+- **Revisión de `revelar`, arreglada en lo grave**: revelar solo suma (no le quita nada a nadie; decisión 5 de
+  `docs/specs/revelar.md`), «Revelar también la página» si alguno de los elegidos no la sabe, «Lo que sabe el grupo» por
+  lotes (unos 200 ms con 600 marcas), lo nuevo del compendio se limpia al abrirlo, ocultar una página se lleva lo nuevo
+  de dentro, la prueba de fugas con revelar y el desplegable accesible. Queda de ella: «Cambiar a quién» desde «Lo que
+  sabe el grupo», que el desplegable parta de la campaña que se mira, que los avisos se vayan al ocultar o deshacer, el
+  número de novedades en el móvil y las carreras al revelar dos veces a la vez.
+- **Lo siguiente**: `pagina-de-jugadores` (`docs/specs/pagina-de-jugadores.md`), luego las suites enteras (de una en
+  una: a la vez fallan por carga), la revisión final, el PR a `main` (CI una vez) y staging; confirmar el ADR-0017 con
+  Enrique.
+
 ### Para retomar (2026-11-06, noche: módulo 5 en marcha, `conocimiento` construido)
 
 - **Rama `modulo-5/visibilidad`** (sin PR aún; sale de `modulo-4/cierre`, con sus commits de documentación).
