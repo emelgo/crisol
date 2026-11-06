@@ -11,8 +11,11 @@ export interface PageLinks {
   /** Crea la página que falta (con una plantilla, si se da) y da su id */
   create: (title: string, template?: string) => Promise<string>
   files: readonly WorldFile[]
+  /** Lo que se puede enlazar del compendio con `[[@`: del mundo y de los sistemas de sus campañas */
+  searchContent?: (query: string) => Promise<LinkableContent[]>
 }
 
 export type WorldFile = ActionOutput<'listFiles'>['files'][number]
+export type LinkableContent = ActionOutput<'searchLinkableContent'>['items'][number]
 
 export const PageLinksContext = createContext<PageLinks | null>(null)

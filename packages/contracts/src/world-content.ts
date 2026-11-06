@@ -116,3 +116,38 @@ export const pullContentOrigin = defineAction({
   }),
   output: z.object({ version: z.int() })
 })
+
+/** Lo que se puede enlazar desde una página: una entrada del compendio del mundo o de un sistema de sus campañas */
+const linkable = z.object({
+  key: z.string(),
+  name: z.string(),
+  type: z.string(),
+  typeLabel: z.string(),
+  world: z.boolean().describe('Del compendio del mundo'),
+  systemId: z.uuid()
+})
+
+export const searchLinkableContent = defineAction({
+  name: 'searchLinkableContent',
+  kind: 'read',
+  description:
+    'Busca por su nombre lo que se puede enlazar desde una página de un mundo con [[@Nombre]]: las entradas del compendio del mundo y de los sistemas de sus campañas (lo del mundo, primero)',
+  input: z.object({ worldId: z.uuid(), query: z.string().trim().max(100), limit: z.int().min(1).max(50).optional() }),
+  output: z.object({ items: z.array(linkable) })
+})
+
+export const getLinkedContent = defineAction({
+  name: 'getLinkedContent',
+  kind: 'read',
+  description:
+    'Lo que enlaza [[@Nombre]] desde una página de un mundo: la entrada con ese nombre (del compendio del mundo, si hay; si no, de un sistema de sus campañas), con unas cifras suyas y una campaña donde abrirla',
+  input: z.object({ worldId: z.uuid(), name: z.string().trim().min(1).max(200) }),
+  output: z.object({
+    entry: linkable
+      .extend({
+        lines: z.array(z.object({ label: z.string(), value: z.string() })).describe('Unas cifras suyas (CA, PG, VD)'),
+        campaignId: z.uuid().nullable().describe('Una campaña del mundo con su sistema, para abrirla en su compendio')
+      })
+      .nullable()
+  })
+})

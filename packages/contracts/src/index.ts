@@ -128,8 +128,10 @@ import {
   copyContent,
   deleteWorldContent,
   getContentOrigin,
+  getLinkedContent,
   pullContentOrigin,
-  putWorldContent
+  putWorldContent,
+  searchLinkableContent
 } from './world-content.ts'
 import { createWorld, ensureWorldHome, getWorldHome, listWorlds, renameWorld, updateWorld } from './worlds.ts'
 
@@ -281,6 +283,8 @@ export const ACTIONS = [
   rollForCreature,
   removeFromPlay,
   applyRoll,
+  searchLinkableContent,
+  getLinkedContent,
   listCharacters,
   getCharacter,
   createCharacter,
@@ -430,6 +434,8 @@ export type Actions = {
   rollForCreature: typeof rollForCreature
   removeFromPlay: typeof removeFromPlay
   applyRoll: typeof applyRoll
+  searchLinkableContent: typeof searchLinkableContent
+  getLinkedContent: typeof getLinkedContent
   listCharacters: typeof listCharacters
   getCharacter: typeof getCharacter
   createCharacter: typeof createCharacter

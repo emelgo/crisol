@@ -15,7 +15,7 @@ import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import { TEMPLATE_ICON } from '../templates/icons.tsx'
 import { useTemplates } from '../templates/picker.tsx'
-import { type PageLinks, PageLinksContext, type WorldFile } from './links-context.ts'
+import { type LinkableContent, type PageLinks, PageLinksContext, type WorldFile } from './links-context.ts'
 import styles from './page-links.module.css'
 import { LinkPreview } from './preview.tsx'
 import menu from './slash-menu.module.css'
@@ -37,6 +37,11 @@ export function usePageLinks(worldId: string): PageLinks {
     names,
     files: files.data?.files ?? [],
     byId: new Map(names.map((page) => [page.id, page])),
+    searchContent: (query) =>
+      api
+        .call('searchLinkableContent', { worldId, query, limit: 8 })
+        .then((out) => out.items)
+        .catch(() => []),
     create: async (title, template) => {
       const created = await api.call('createPage', {
         worldId,
@@ -303,6 +308,7 @@ type LinkChoice =
   | { kind: 'page'; page: NamedPage; name: string }
   | { kind: 'create'; title: string }
   | { kind: 'file'; file: WorldFile }
+  | { kind: 'content'; content: LinkableContent }
 
 export interface LinkSuggestOptions {
   /** Las páginas de ahora (cambian mientras el editor sigue abierto) */
@@ -331,6 +337,11 @@ export const LinkSuggest = Extension.create<LinkSuggestOptions>({
         items: ({ query, editor }) => {
           lastQuery = query
           const current = links()
+          // `[[@`: lo del compendio (del mundo y de los sistemas de sus campañas), que busca el servidor
+          if (char === '[[' && query.startsWith('@'))
+            return (current?.searchContent?.(query.slice(1).replace(/\]+$/, '').trim()) ?? Promise.resolve([])).then(
+              (found) => found.map((content): LinkChoice => ({ kind: 'content', content }))
+            )
           // `![[`: el «!» va justo antes de los corchetes
           const start = editor.state.selection.from - query.length - 2
           const embedding = char === '[[' && start > 1 && editor.state.doc.textBetween(start - 1, start) === '!'
@@ -370,7 +381,17 @@ export const LinkSuggest = Extension.create<LinkSuggestOptions>({
               .run()
             announce(title)
           }
-          if (choice.kind === 'file') {
+          if (choice.kind === 'content') {
+            editor
+              .chain()
+              .focus()
+              .insertContentAt(range, [
+                { type: 'contentLink', attrs: { name: choice.content.name } },
+                { type: 'text', text: ' ' }
+              ])
+              .run()
+            announce(choice.content.name)
+          } else if (choice.kind === 'file') {
             editor
               .chain()
               .focus()
@@ -421,7 +442,9 @@ const keyOf = (choice: LinkChoice) =>
     ? choice.page.id
     : choice.kind === 'file'
       ? `archivo:${choice.file.id}`
-      : `crear:${choice.title}`
+      : choice.kind === 'content'
+        ? `contenido:${choice.content.systemId}:${choice.content.key}`
+        : `crear:${choice.title}`
 
 const LinkList = forwardRef<ListHandle, LinkListProps>(function LinkList({ items, command, editor }, ref) {
   const { t } = useTranslation()
@@ -489,7 +512,16 @@ const LinkList = forwardRef<ListHandle, LinkListProps>(function LinkList({ items
               command(choice)
             }}
           >
-            {choice.kind === 'file' ? (
+            {choice.kind === 'content' ? (
+              <>
+                <span>{choice.content.name}</span>
+                <span className={menu.hint}>
+                  {choice.content.world
+                    ? t('links.contentWorld', { type: choice.content.typeLabel })
+                    : choice.content.typeLabel}
+                </span>
+              </>
+            ) : choice.kind === 'file' ? (
               <>
                 <span>{choice.file.name}</span>
                 <span className={menu.hint}>{t('links.file')}</span>

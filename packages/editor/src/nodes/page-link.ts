@@ -6,7 +6,7 @@
 import { mergeAttributes, Node } from '@tiptap/core'
 
 /** `[[Título]]`, `[[Título#Sección]]`, `[[Título#^id]]`, `[[Título|texto]]`. Con `!` delante es incrustar (tarea 15) */
-const LINK = /^(!?)\[\[([^[\]\n|#]+?)(#[^[\]\n|]*)?(?:\|([^[\]\n]*))?\]\]/
+const LINK = /^(!?)\[\[(?!@)([^[\]\n|#]+?)(#[^[\]\n|]*)?(?:\|([^[\]\n]*))?\]\]/
 
 export interface PageLinkAttrs {
   pageId: string | null

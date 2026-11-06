@@ -226,6 +226,27 @@ describe('el compendio del mundo (docs/specs/compendio-mundo.md)', () => {
     expect((await ok200('searchCampaignContent', { campaignId: far, query: 'valdren' })).items).toEqual([])
   })
 
+  it('enlazar desde una página: buscar en el compendio del mundo y en el del sistema, y leer lo enlazado', async () => {
+    await putWorld([{ ...espada, data: { ...espada.data, name: { es: 'Goblin del valle' } }, key: 'goblin_valle' }])
+    const found = await ok200('searchLinkableContent', { worldId, query: 'goblin' })
+    // Lo del mundo, primero
+    expect(found.items[0]).toMatchObject({ key: 'goblin_valle', name: 'Goblin del valle', world: true })
+    expect(found.items.some((i: { key: string }) => i.key === 'guerrero_goblin_2014')).toBe(true)
+    const linked = await ok200('getLinkedContent', { worldId, name: 'goblin' })
+    expect(linked.entry).toMatchObject({
+      key: 'guerrero_goblin_2014',
+      name: 'Goblin',
+      type: 'criatura',
+      typeLabel: 'Criatura',
+      world: false,
+      campaignId
+    })
+    expect(linked.entry.lines).toEqual(expect.arrayContaining([{ label: 'Clase de armadura', value: '15' }]))
+    expect((await ok200('getLinkedContent', { worldId, name: 'No existe' })).entry).toBeNull()
+    // La jugadora no lleva la wiki: ni busca ni lee
+    expect((await call('searchLinkableContent', { worldId, query: 'goblin' }, ana.cookie)).statusCode).toBe(404)
+  })
+
   describe('las acciones', () => {
     const code = async (name: string, payload: object, cookie = master.cookie) => {
       const response = await call(name, payload, cookie)

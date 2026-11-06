@@ -134,6 +134,8 @@ describe('Actions', () => {
       rollForCreature: true,
       removeFromPlay: true,
       applyRoll: true,
+      searchLinkableContent: true,
+      getLinkedContent: true,
       getCampaignContent: true,
       listCharacters: true,
       getCharacter: true,

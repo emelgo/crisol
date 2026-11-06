@@ -738,6 +738,23 @@ export function fakeApi(
     }
   }
 
+  const linkablesOf = (worldId: string) =>
+    campaigns
+      .filter((c) => c.worldId === worldId && c.system)
+      .flatMap((c) => {
+        const found = compendiumOf(c.id)
+        if (!found) return []
+        return found.content.map((item) => ({
+          key: item.key,
+          name: textOf(item.data.name as Text, 'es') || item.key,
+          type: item.type,
+          typeLabel: textOf(found.document.types[item.type]?.label as Text, 'es') || item.type,
+          world: found.worldKeys.has(item.key),
+          systemId: found.document.id,
+          campaignId: c.id
+        }))
+      })
+
   /** El sistema de una campaña, con lo que eligió y su contenido (en la falsa, el de los de la cuenta) */
   const compendiumOf = (campaignId: string) => {
     const campaign = campaigns.find((c) => c.id === campaignId)
@@ -1512,6 +1529,20 @@ export function fakeApi(
         if (apply) each.apply = apply
       }
       return { roll: out.roll }
+    },
+    // Lo que se enlaza desde una página con [[@…]]: en la falsa, lo de los sistemas de sus campañas y de su mundo
+    searchLinkableContent: ({ worldId, query, limit }) => ({
+      items: linkablesOf(worldId)
+        .filter((each) => each.name.toLowerCase().includes(query.toLowerCase()))
+        .slice(0, limit ?? 20)
+        .map(({ campaignId: _, ...each }) => each)
+    }),
+    getLinkedContent: ({ worldId, name }) => {
+      const all = linkablesOf(worldId)
+      const found = all.find((e) => e.world && e.name === name) ?? all.find((e) => e.name === name)
+      if (!found) return { entry: null }
+      const { campaignId, ...entry } = found
+      return { entry: { ...entry, lines: [], campaignId } }
     },
     applyRoll: ({ campaignId, rollId, targets }) => {
       const roll = rolls.find((r) => r.id === rollId && r.campaignId === campaignId)

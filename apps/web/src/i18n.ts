@@ -456,6 +456,11 @@ export const es = {
     whereSystem: 'En el sistema',
     deleteWorldText: 'Sale del compendio de este mundo.'
   },
+  contentLink: {
+    world: '{{type}} del mundo',
+    open: 'Abrir en el compendio',
+    missing: '{{name}}: no está en el compendio'
+  },
   inPlay: {
     title: 'En juego',
     count_one: '{{count}} criatura',
@@ -1273,6 +1278,7 @@ export const es = {
     create: 'Crear página «{{title}}»',
     file: 'archivo',
     aliasOf: 'por {{name}}',
+    contentWorld: '{{type}} del mundo',
     missing: '{{title}}: por crear, pulsa para crearla',
     broken: '{{title}}: en la papelera',
     inTrash: 'Está en la papelera.',

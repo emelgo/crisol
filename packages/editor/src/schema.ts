@@ -11,6 +11,7 @@ import { BlockIds } from './ids.ts'
 import { isExternalUrl } from './links.ts'
 import { Box } from './nodes/box.ts'
 import { Callout } from './nodes/callout.ts'
+import { ContentLink } from './nodes/content-link.ts'
 import { DiceRoll } from './nodes/dice-roll.ts'
 import { FileEmbed } from './nodes/file-embed.ts'
 import { PageEmbed } from './nodes/page-embed.ts'
@@ -88,6 +89,7 @@ export function editorExtensions(options: EditorOptions = {}): Extensions {
     TableKit.configure({ table: { resizable: false } }),
     view(Callout),
     Box,
+    view(ContentLink),
     view(PageLink),
     view(DiceRoll),
     view(PageEmbed),

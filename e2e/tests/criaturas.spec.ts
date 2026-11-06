@@ -79,3 +79,44 @@ test('las criaturas en juego: tres goblins desde el compendio, su hoja, tirar su
     player.getByRole('navigation', { name: 'Secciones' }).getByRole('link', { name: 'En juego' })
   ).toHaveCount(0)
 })
+
+test('enlazar una criatura desde la página de un PNJ: [[@ la sugiere, su tarjeta al pasar y abrirla en el compendio', async ({
+  page
+}) => {
+  test.slow()
+  await campaignLink(page)
+  const campaignId = new URL(page.url()).pathname.split('/campanas/')[1] ?? ''
+  const worldId = new URL(page.url()).pathname.split('/')[2] ?? ''
+  const systemId = await import5e(page)
+  const chosen = await page.request.post('/api/actions/updateCampaign', {
+    data: { campaignId, system: systemId, systemChoices: { sources: ['srd51'], duplicates: 'both' } }
+  })
+  expect(chosen.status()).toBe(200)
+  const created = await page.request.post('/api/actions/createPage', {
+    data: { worldId, title: 'Grak', parentId: null }
+  })
+  const pageId = (await created.json()).id as string
+  await page.goto(`/mundos/${worldId}/wiki/${pageId}`)
+  const body = page.getByRole('textbox', { name: 'Texto de la página' })
+  await body.click()
+  await page.keyboard.type('Su criatura: [[@gob')
+  const option = page
+    .getByRole('listbox', { name: 'Páginas' })
+    .getByRole('option', { name: /^Goblin/ })
+    .first()
+  await expect(option).toBeVisible()
+  await page.keyboard.press('Enter')
+  const link = body.getByRole('link', { name: 'Goblin' })
+  await expect(link).toBeVisible()
+  await link.hover()
+  const card = page.getByRole('tooltip')
+  await expect(card).toContainText('Criatura')
+  await expect(card).toContainText('Clase de armadura 15')
+  await page.screenshot({ path: test.info().outputPath('enlace-criatura.png'), fullPage: false })
+  await card.getByRole('button', { name: 'Abrir en el compendio' }).click()
+  await expect(page.getByRole('article', { name: 'Goblin' })).toBeVisible()
+  await expect(page).toHaveURL(/compendio\?ver=guerrero_goblin_2014/)
+  // En su Markdown, [[@Goblin]]
+  const read = await page.request.post('/api/actions/readPage', { data: { pageId } })
+  expect(await read.text()).toContain('[[@Goblin]]')
+})

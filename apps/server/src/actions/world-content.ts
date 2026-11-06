@@ -7,11 +7,13 @@ import {
   copyContent,
   deleteWorldContent,
   getContentOrigin,
+  getLinkedContent,
   pullContentOrigin,
-  putWorldContent
+  putWorldContent,
+  searchLinkableContent
 } from '@crisol/contracts'
-import { type schema, systemsRepo, worldContentRepo } from '@crisol/db'
-import { NotFoundError } from '@crisol/domain'
+import { campaignsRepo, type schema, systemsRepo, worldContentRepo } from '@crisol/db'
+import { foldName, NotFoundError } from '@crisol/domain'
 import {
   type ContentItem,
   contentDiff,
@@ -28,6 +30,7 @@ import {
 import { systemsChanged, worldContentChanged } from '../realtime/events.ts'
 import { authorizedWiki, type WikiTarget } from './access.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
+import * as layers from './layers.ts'
 import { implement } from './registry.ts'
 import { contentOf, invalid, ownWritable } from './systems.ts'
 
@@ -345,5 +348,75 @@ export const worldContentActions = [
     }
     ctx.realtime.publish(worldContentChanged(wiki))
     return { version: saved.saved[0]?.version ?? version }
+  }),
+
+  implement(searchLinkableContent, async (ctx, { worldId, query, limit = 20 }) => {
+    const wanted = foldName(query)
+    const found = (await linkables(ctx, worldId)).filter((each) => !wanted || foldName(each.name).includes(wanted))
+    // Lo que empieza por lo buscado, primero; y lo del mundo antes que lo del sistema
+    const rank = (each: Linkable) => (foldName(each.name).startsWith(wanted) ? 0 : 1) + (each.world ? 0 : 2)
+    found.sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name, 'es'))
+    return { items: found.slice(0, limit).map(({ campaignId: _, ...each }) => each) }
+  }),
+
+  implement(getLinkedContent, async (ctx, { worldId, name }) => {
+    const wanted = foldName(name)
+    const all = await linkables(ctx, worldId)
+    const match =
+      all.find((each) => each.world && foldName(each.name) === wanted) ??
+      all.find((each) => foldName(each.name) === wanted)
+    if (!match) return { entry: null }
+    const row = await systemsRepo.findSystem(ctx.db, match.systemId)
+    const system = row?.document as unknown as System | undefined
+    const [item] = await layers.contentByKeys(ctx, match.systemId, { worldId, systemId: match.systemId }, [match.key])
+    // Unas cifras suyas: sus primeros campos de número con valor (la CA, los PG, el VD)
+    const fields = system?.types[match.type]?.fields ?? {}
+    const lines = Object.entries(fields)
+      .filter(([key, f]) => f.kind === 'number' && typeof item?.data[key] === 'number')
+      .slice(0, 4)
+      .map(([key, f]) => ({ label: textOf(f.label as Text, 'es') || key, value: String(item?.data[key]) }))
+    const { campaignId, ...entry } = match
+    return { entry: { ...entry, lines, campaignId } }
   })
 ]
+
+interface Linkable {
+  key: string
+  name: string
+  type: string
+  typeLabel: string
+  world: boolean
+  systemId: string
+  campaignId: string
+}
+
+/**
+ * Lo que se puede enlazar desde las páginas de un mundo: lo de los sistemas de sus campañas (de la cuenta) y lo de su
+ * compendio, con una campaña de cada sistema para abrirlo. Solo quien lleva el mundo (hasta el módulo 5)
+ */
+async function linkables(ctx: ActionContext, worldId: string): Promise<Linkable[]> {
+  const wiki = await authorizedWiki(ctx, 'page.read', worldId)
+  const campaigns = await campaignsRepo.listCampaigns(ctx.db, { worldId, userId: ctx.actor.userId, onlyMember: false })
+  const bySystem = new Map<string, string>()
+  for (const campaign of campaigns)
+    if (campaign.system && !bySystem.has(campaign.system)) bySystem.set(campaign.system, campaign.id)
+  const out: Linkable[] = []
+  for (const [systemId, campaignId] of bySystem) {
+    const row = await systemsRepo.findSystem(ctx.db, systemId)
+    if (!row || row.deletedAt || row.organizationId !== wiki.organizationId) continue
+    const system = row.document as unknown as System
+    for (const entry of await layers.contentIndex(ctx, row.id, { worldId, systemId: row.id })) {
+      const label = system.types[entry.type]?.label
+      out.push({
+        key: entry.key,
+        name: textOf(entry.name as Text | undefined, 'es') || entry.key,
+        type: entry.type,
+        typeLabel: label ? textOf(label as Text, 'es') : entry.type,
+        world: Boolean(entry.world),
+        systemId: row.id,
+        campaignId
+      })
+    }
+  }
+  return out
+}
