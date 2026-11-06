@@ -108,7 +108,9 @@ const RULES = {
   // al máster del mundo o de la campaña
   'dice.roll': { sees: seesCampaign, allows: seesCampaign },
   'dice.read': { sees: seesCampaign, allows: seesCampaign },
-  'dice.private': { sees: seesCampaign, allows: any(isWorldMaster, isCampaignMaster) }
+  'dice.private': { sees: seesCampaign, allows: any(isWorldMaster, isCampaignMaster) },
+  // Las criaturas en juego de una campaña (docs/specs/criaturas.md): hasta el módulo 5, solo el máster
+  'creatures.manage': { sees: seesCampaign, allows: any(isWorldMaster, isCampaignMaster) }
 } satisfies Record<string, { sees: Predicate; allows: Predicate }>
 
 export type Capability = keyof typeof RULES

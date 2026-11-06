@@ -191,6 +191,9 @@ describe('authorize', () => {
     ['el máster de la campaña las recibe', master, 'dice.private', campaign, 'permite'],
     ['el máster del mundo tira en cualquiera de sus campañas', owner, 'dice.roll', campaign, 'permite'],
     ['y recibe sus privadas', owner, 'dice.private', campaign, 'permite'],
+    ['el máster de la campaña lleva sus criaturas en juego', master, 'creatures.manage', campaign, 'permite'],
+    ['el máster del mundo también', owner, 'creatures.manage', campaign, 'permite'],
+    ['una jugadora no (hasta el módulo 5)', player, 'creatures.manage', campaign, 'prohíbe'],
     ['un jugador no tira en otra campaña', player, 'dice.roll', otherCampaign, 'no lo ve'],
     ['nadie de otra organización', outsider, 'dice.read', campaign, 'no lo ve']
   ]

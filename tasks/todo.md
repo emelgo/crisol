@@ -9,7 +9,7 @@ Plan: `tasks/plan.md` · Spec: `docs/specs/criaturas.md`. Cada tarea con sus pru
 - [x] **2. El motor** (`@crisol/systems`, `creatures.ts`): `creatureView` (la entrada con lo de la partida, con la misma
   forma que la hoja de personaje), los PG al ponerla (medios o tirados), los números de las copias y el daño con
   multiplicador y resistencias.
-- [ ] **3. La tabla `campaign_creatures`** (migración 0044), su repo, el historial y su aviso en tiempo real (al
+- [x] **3. La tabla `campaign_creatures`** (migración 0044), su repo, el historial y su aviso en tiempo real (al
   máster).
 - [ ] **4. Las acciones**: poner en juego (cuántas o una fórmula, o única; PG medios o tirados), la lista y una con su
   hoja, lo de la partida (daño, curación, temporales, usos, recargas, otro máximo, tirar PG, descansar), tirar por

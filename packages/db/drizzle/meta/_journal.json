@@ -309,6 +309,13 @@
       "when": 1793958784962,
       "tag": "0043_compendio_del_mundo",
       "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1793962873881,
+      "tag": "0044_criaturas_en_juego",
+      "breakpoints": true
     }
   ]
 }
