@@ -4,6 +4,7 @@ import { characterActions } from './characters.ts'
 import { compendiumActions } from './compendium.ts'
 import { diceActions } from './dice.ts'
 import { fileActions } from './files.ts'
+import { foundryActions } from './foundry.ts'
 import { historyActions } from './history.ts'
 import { invitationActions } from './invitations.ts'
 import { linkActions } from './links.ts'
@@ -45,6 +46,7 @@ export const IMPLEMENTATIONS: Implementation[] = [
   ...tagActions,
   ...templateActions,
   ...systemActions,
+  ...foundryActions,
   ...compendiumActions,
   ...characterActions,
   ...tableActions,

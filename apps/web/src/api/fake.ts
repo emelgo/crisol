@@ -1584,6 +1584,13 @@ export function fakeApi(
         throw error
       }
     },
+    // Leer un zip de Foundry (LevelDB) solo se puede en el servidor
+    inspectFoundry: () => {
+      throw new ApiError('NOT_AVAILABLE', 400)
+    },
+    importFoundry: () => {
+      throw new ApiError('NOT_AVAILABLE', 400)
+    },
     importSystem: ({ file, into }) => {
       const { file: valid, problems } = validateFile(file)
       if (!valid) throw new ApiError('SYSTEM_INVALID', 400)

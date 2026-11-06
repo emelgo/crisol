@@ -49,6 +49,7 @@ import {
   SYSTEM_FILE,
   type System,
   type SystemDocument,
+  type SystemFile,
   searchContent,
   systemDocs,
   systemOverview,
@@ -112,7 +113,7 @@ function readableOrganization(ctx: ActionContext, organizationId: string | undef
 }
 
 /** Uno propio que se puede cambiar: de una organización que la cuenta administra, y no borrado */
-async function ownWritable(ctx: ActionContext, systemId: string) {
+export async function ownWritable(ctx: ActionContext, systemId: string) {
   const row = await systemsRepo.findSystem(ctx.db, systemId)
   if (!row || row.deletedAt) throw new NotFoundError('system')
   authorize(ctx.actor, 'systems.write', { organizationId: row.organizationId })
@@ -351,7 +352,7 @@ export async function chosenSystem(
 }
 
 /** Con errores no se guarda: la IA lee cada problema (dónde y por qué) en el detalle */
-function invalid(problems: readonly Problem[]): never {
+export function invalid(problems: readonly Problem[]): never {
   const errors = problems.filter((p) => p.severity === 'error')
   const detail = errors
     .slice(0, 20)
@@ -484,6 +485,62 @@ const withName = (current: unknown, name: string) =>
 /** Los problemas, como los da el contrato */
 const asProblems = (problems: readonly Problem[]) =>
   problems.map(({ path, where, message, severity }) => ({ path, where, message, severity }))
+
+/**
+ * Guarda un archivo de sistema ya validado (subido o traído de Foundry): uno nuevo en la cuenta o, con into, encima de
+ * uno propio (su documento y todo su contenido, con la versión que se tenía)
+ */
+export async function saveFile(
+  ctx: ActionContext,
+  valid: SystemFile,
+  warnings: Problem[],
+  {
+    organizationId,
+    into
+  }: { organizationId?: string | undefined; into?: { systemId: string; version: number } | undefined }
+) {
+  const name = textOf(valid.system.name)
+  if (into) {
+    const row = await ownWritable(ctx, into.systemId)
+    let updated: systemsRepo.SystemRow
+    try {
+      updated = await systemsRepo.updateSystem(
+        ctx.db,
+        historyContext(ctx, 'importSystem', { name }, { organizationId: row.organizationId }),
+        row.id,
+        into.version,
+        { ...valid.system, id: row.id } as unknown as Record<string, unknown>,
+        valid.content.map(toValues)
+      )
+    } catch (error) {
+      if (error instanceof systemsRepo.SystemChangedError) throw changed()
+      throw error
+    }
+    ctx.realtime.publish(systemsChanged(row.organizationId))
+    return { system: own(updated, valid.content.length, await namer(ctx, [updated])), warnings }
+  }
+  const target = targetOrganization(ctx, organizationId)
+  authorize(ctx.actor, 'systems.write', { organizationId: target })
+  if ((await systemsRepo.countSystems(ctx.db, target)) >= MAX_SYSTEMS)
+    throw new InvalidRequestError('TOO_MANY_SYSTEMS', `como mucho, ${MAX_SYSTEMS} por cuenta`)
+  const id = randomUUID()
+  const row = await atMost(() =>
+    systemsRepo.createSystem(
+      ctx.db,
+      historyContext(ctx, 'importSystem', { name }, { organizationId: target }),
+      {
+        id,
+        organizationId: target,
+        basedOn: null,
+        document: { ...valid.system, id } as unknown as Record<string, unknown>
+      },
+      valid.content.map(toValues),
+      MAX_SYSTEMS
+    )
+  )
+  ctx.realtime.publish(systemsChanged(target))
+  return { system: own(row, valid.content.length, await namer(ctx, [row])), warnings }
+}
 
 export const systemActions = [
   implement(listSystems, async (ctx, { organizationId }) => {
@@ -870,48 +927,11 @@ export const systemActions = [
   implement(importSystem, async (ctx, { organizationId, file, into }) => {
     const { file: valid, problems } = validateFile(file)
     if (!valid) return invalid(problems)
-    const warnings = problems.filter((p) => p.severity === 'warning')
-    const name = textOf(valid.system.name)
-    if (into) {
-      // Encima de uno propio: su documento y todo su contenido, con la versión que se tenía
-      const row = await ownWritable(ctx, into.systemId)
-      let updated: systemsRepo.SystemRow
-      try {
-        updated = await systemsRepo.updateSystem(
-          ctx.db,
-          historyContext(ctx, 'importSystem', { name }, { organizationId: row.organizationId }),
-          row.id,
-          into.version,
-          { ...valid.system, id: row.id } as unknown as Record<string, unknown>,
-          valid.content.map(toValues)
-        )
-      } catch (error) {
-        if (error instanceof systemsRepo.SystemChangedError) throw changed()
-        throw error
-      }
-      ctx.realtime.publish(systemsChanged(row.organizationId))
-      return { system: own(updated, valid.content.length, await namer(ctx, [updated])), warnings }
-    }
-    const target = targetOrganization(ctx, organizationId)
-    authorize(ctx.actor, 'systems.write', { organizationId: target })
-    if ((await systemsRepo.countSystems(ctx.db, target)) >= MAX_SYSTEMS)
-      throw new InvalidRequestError('TOO_MANY_SYSTEMS', `como mucho, ${MAX_SYSTEMS} por cuenta`)
-    const id = randomUUID()
-    const row = await atMost(() =>
-      systemsRepo.createSystem(
-        ctx.db,
-        historyContext(ctx, 'importSystem', { name }, { organizationId: target }),
-        {
-          id,
-          organizationId: target,
-          basedOn: null,
-          document: { ...valid.system, id } as unknown as Record<string, unknown>
-        },
-        valid.content.map(toValues),
-        MAX_SYSTEMS
-      )
+    return saveFile(
+      ctx,
+      valid,
+      problems.filter((p) => p.severity === 'warning'),
+      { organizationId, into }
     )
-    ctx.realtime.publish(systemsChanged(target))
-    return { system: own(row, valid.content.length, await namer(ctx, [row])), warnings }
   })
 ]
