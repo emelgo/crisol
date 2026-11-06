@@ -1,6 +1,8 @@
 /**
  * El compendio de una campaña (docs/specs/personajes.md § campana): el contenido del sistema que eligió, con sus
- * fuentes. Lo ve cualquiera de la campaña (no solo quien ve los sistemas de la cuenta), y solo lo de esas fuentes
+ * fuentes. Lo ve cualquiera de la campaña (no solo quien ve los sistemas de la cuenta), y solo lo de esas fuentes. Con
+ * el compendio de su mundo (docs/specs/compendio-mundo.md) para quien puede verlo: hasta el módulo 5, quien lleva el
+ * mundo
  */
 import {
   browseCampaignContent,
@@ -10,7 +12,7 @@ import {
   searchCampaignContent,
   visibilitiesFor
 } from '@crisol/contracts'
-import { systemsRepo } from '@crisol/db'
+import { systemsRepo, worldContentRepo } from '@crisol/db'
 import { can, NotFoundError } from '@crisol/domain'
 import {
   browseContent,
@@ -22,7 +24,9 @@ import {
   compendiumEntry,
   compendiumSections,
   compendiumTypes,
+  contentFingerprint,
   contentTables,
+  type Language,
   type Mechanics,
   mechanicsText,
   normalizeChoices,
@@ -37,10 +41,13 @@ import {
 import { authorizedCampaign } from './access.ts'
 import { type ActionContext, InvalidRequestError } from './context.ts'
 import { rolled, saveRoll, storedOf } from './dice.ts'
+import * as layers from './layers.ts'
 import { implement } from './registry.ts'
-import { contentOf } from './systems.ts'
 
-/** El sistema de una campaña que se puede leer, con lo que eligió de él; sin sistema, null */
+/**
+ * El sistema de una campaña que se puede leer, con lo que eligió de él y, si quien lo pide puede verlo, el compendio de
+ * su mundo; sin sistema, null
+ */
 async function campaignSystem(ctx: ActionContext, campaignId: string) {
   const campaign = await authorizedCampaign(ctx, 'campaign.read', campaignId)
   if (!campaign.system) return null
@@ -49,16 +56,32 @@ async function campaignSystem(ctx: ActionContext, campaignId: string) {
   if (!catalog && (!row || row.deletedAt)) throw new NotFoundError('system')
   const document = catalog ?? (row?.document as unknown as System)
   const { choices } = normalizeChoices(document, (campaign.systemChoices ?? {}) as Partial<Choices>)
+  const wiki = { worldId: campaign.worldId, organizationId: campaign.organizationId }
+  const world: layers.WorldLayer | null =
+    row && can(ctx.actor, 'worldContent.read', wiki) ? { worldId: campaign.worldId, systemId: row.id } : null
   // Para la lista y los tipos basta lo de cada documento que se ve en ella: el de la cuenta, sin leerlo entero
-  const entries: ContentEntry[] = row ? await systemsRepo.contentIndex(ctx.db, row.id) : []
-  return { document, row, choices, entries }
+  const entries: ContentEntry[] = row ? await layers.contentIndex(ctx, row.id, world) : []
+  return { document, row, choices, entries, world, wiki }
 }
+
+/** Las claves de lo del mundo, para marcarlo en lo que sale */
+const worldKeys = (entries: readonly (ContentEntry & { world?: true })[]) =>
+  new Set(entries.filter((e) => e.world).map((e) => e.key))
 
 export const compendiumActions = [
   implement(getCampaignCompendium, async (ctx, { campaignId }) => {
     const found = await campaignSystem(ctx, campaignId)
-    if (!found) return { system: null, language: 'es' as const, sources: [], types: [], sections: [], editable: null }
-    const { document, row, choices, entries } = found
+    if (!found)
+      return {
+        system: null,
+        language: 'es' as const,
+        sources: [],
+        types: [],
+        sections: [],
+        editable: null,
+        world: null
+      }
+    const { document, row, choices, entries, world, wiki } = found
     const language = choices.language
     const say = (text: Text | undefined) => textOf(text, language)
     const typeView = (type: CompendiumType) => ({
@@ -96,7 +119,16 @@ export const compendiumActions = [
         label: say(section.label),
         types: section.types.map((type) => ({ key: type.key, label: say(type.label) }))
       })),
-      types: compendiumTypes(document, entries, choices).map(typeView)
+      types: compendiumTypes(document, entries, choices).map(typeView),
+      world: world
+        ? {
+            worldId: world.worldId,
+            systemId: world.systemId,
+            writable: can(ctx.actor, 'worldContent.write', wiki),
+            count: worldKeys(entries).size,
+            types: compendiumTypes(document, entries, choices, true).map(typeView)
+          }
+        : null
     }
   }),
 
@@ -104,26 +136,30 @@ export const compendiumActions = [
     const found = await campaignSystem(ctx, campaignId)
     if (!found) return { items: [], total: 0 }
     const { document, choices, entries } = found
-    return searchContent(document, entries, {
+    const own = worldKeys(entries)
+    const result = searchContent(document, entries, {
       sources: choices.sources,
       duplicates: choices.duplicates,
       language: choices.language,
       ...given
     })
+    return { ...result, items: result.items.map((hit) => (own.has(hit.key) ? { ...hit, world: true } : hit)) }
   }),
 
   implement(browseCampaignContent, async (ctx, { campaignId, type }) => {
     const found = await campaignSystem(ctx, campaignId)
     if (!found) return { items: [], folders: [], filters: [] }
-    const { document, row, choices } = found
+    const { document, row, choices, world } = found
     // Las carpetas salen de sus valores: de un sistema de la cuenta, el contenido de ese tipo entero
-    const items: ContentItem[] = row ? (await systemsRepo.listContentOfType(ctx.db, row.id, type)).map(contentOf) : []
-    return browseContent(document, items, {
+    const items = row ? await layers.contentOfType(ctx, row.id, world, type) : []
+    const own = new Set(items.filter((i) => i.world).map((i) => i.key))
+    const result = browseContent(document, items, {
       type,
       sources: choices.sources,
       duplicates: choices.duplicates,
       language: choices.language
     })
+    return { ...result, items: result.items.map((item) => (own.has(item.key) ? { ...item, world: true } : item)) }
   }),
 
   implement(rollContentTable, async (ctx, { campaignId, key, table, visibility }) => {
@@ -134,9 +170,9 @@ export const compendiumActions = [
       throw new InvalidRequestError('VISIBILITY_NOT_ALLOWED')
     const found = await campaignSystem(ctx, campaignId)
     if (!found) throw new NotFoundError('content')
-    const { document, row, choices, entries } = found
+    const { document, row, choices, entries, world } = found
     if (!visibleContent(document, entries, choices).some((s) => s.item.key === key)) throw new NotFoundError('content')
-    const [item] = row ? (await systemsRepo.contentByKeys(ctx.db, row.id, [key])).map(contentOf) : []
+    const [item] = row ? await layers.contentByKeys(ctx, row.id, world, [key]) : []
     if (!item) throw new NotFoundError('content')
     const field = textFieldOf(document, item.type)
     const text = field ? textOf(item.data[field] as Text | undefined, choices.language) : ''
@@ -161,12 +197,13 @@ export const compendiumActions = [
     const wanted = [...new Set(keys)]
     const found = await campaignSystem(ctx, campaignId)
     if (!found) return { items: [], missing: wanted }
-    const { document, row, choices, entries } = found
+    const { document, row, choices, entries, world } = found
     const seen = visibleContent(document, entries, choices)
     const shown = new Set(seen.map((s) => s.item.key))
     const visible = wanted.filter((k) => shown.has(k))
-    const items: ContentItem[] = row ? (await systemsRepo.contentByKeys(ctx.db, row.id, visible)).map(contentOf) : []
+    const items: ContentItem[] = row ? await layers.contentByKeys(ctx, row.id, world, visible) : []
     const byKey = new Map(items.map((item) => [item.key, item]))
+    const own = world ? await worldEntries(ctx, world, choices.language, visible) : new Map<string, WorldView>()
     const name = (value: unknown) =>
       typeof value === 'string' ? value : textOf(value as Text | undefined, choices.language)
     return {
@@ -179,6 +216,7 @@ export const compendiumActions = [
             ...structuredClone(item),
             ...entry,
             play: mechanicsText(document, item.type, item.mechanics as Mechanics | undefined, choices.language),
+            ...(own.has(k) ? { world: own.get(k) } : {}),
             granted: entry.granted.map((g) =>
               'choose' in g
                 ? { level: g.level, choose: textOf(g.choose, choices.language), count: g.count }
@@ -191,3 +229,43 @@ export const compendiumActions = [
     }
   })
 ]
+
+/** Lo que se dice de una entrada del mundo al leerla */
+interface WorldView {
+  id: string
+  version: number
+  origin: {
+    layer: 'system' | 'world'
+    systemId: string
+    key: string
+    name: string | null
+    changed: boolean
+    missing: boolean
+  } | null
+}
+
+/** De lo del mundo: su id, su versión y, si es una copia, cómo está su original */
+async function worldEntries(ctx: ActionContext, world: layers.WorldLayer, language: Language, keys: readonly string[]) {
+  const rows = await worldContentRepo.contentByKeys(ctx.db, world.worldId, world.systemId, keys)
+  const entries = new Map<string, WorldView>()
+  for (const row of rows) {
+    const origin = row.origin
+    let view: WorldView['origin'] = null
+    if (origin) {
+      const [original] =
+        origin.layer === 'world'
+          ? await worldContentRepo.contentByKeys(ctx.db, origin.worldId ?? world.worldId, origin.systemId, [origin.key])
+          : await systemsRepo.contentByKeys(ctx.db, origin.systemId, [origin.key])
+      view = {
+        layer: origin.layer,
+        systemId: origin.systemId,
+        key: origin.key,
+        name: original ? textOf(original.data.name as Text | undefined, language) || original.key : null,
+        changed: original ? contentFingerprint(original) !== origin.fingerprint : false,
+        missing: !original
+      }
+    }
+    entries.set(row.key, { id: row.id, version: row.version, origin: view })
+  }
+  return entries
+}

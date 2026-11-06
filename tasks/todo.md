@@ -8,7 +8,7 @@ Plan: `tasks/plan.md` · Spec: `docs/specs/compendio-mundo.md`. Cada tarea con s
   quitar.
 - [x] **2. La unión de las capas en `@crisol/systems`**: lo del mundo sin fuente, marcado y mandando en las claves; la
   huella de una entrada (`contentFingerprint`) y sus diferencias por campo (`contentDiff`).
-- [ ] **3. La campaña con las dos capas**: el compendio (tipos y cuentas, buscar, carpetas, leer, tablas del texto) y
+- [x] **3. La campaña con las dos capas**: el compendio (tipos y cuentas, buscar, carpetas, leer, tablas del texto) y
   lo que leen los personajes; lo del mundo solo para quien puede cambiar el mundo (y, dentro de su hoja, lo que lleva
   un personaje). Pruebas de fugas. **Punto de control 1.**
 - [ ] **4. Las acciones nuevas**: guardar y quitar en el mundo (`putWorldContent`, `deleteWorldContent`), copiar entre

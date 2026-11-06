@@ -48,8 +48,8 @@ import {
 import { authorizedCampaign } from './access.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
 import { saveRoll, storedOf } from './dice.ts'
+import * as layers from './layers.ts'
 import { implement } from './registry.ts'
-import { contentOf } from './systems.ts'
 
 /** Sin nombre al crearlo */
 export const UNNAMED = 'Sin nombre'
@@ -105,7 +105,8 @@ async function updated<T>(write: () => Promise<T>) {
 /** El sistema de un personaje (de serie o de la cuenta) y todo su contenido */
 async function systemOf(
   ctx: ActionContext,
-  systemId: string
+  systemId: string,
+  worldId?: string
 ): Promise<{ document: System; content: readonly ContentItem[] }> {
   const catalog = catalogSystem(systemId)
   // El de serie, tal cual (siempre el mismo): así el motor lo tiene ya preparado
@@ -114,15 +115,18 @@ async function systemOf(
   if (!row) throw new NotFoundError('system')
   return {
     document: row.document as unknown as System,
-    content: (await systemsRepo.listContent(ctx.db, row.id)).map(contentOf)
+    content: await layers.allContent(ctx, row.id, worldId ? { worldId, systemId: row.id } : null)
   }
 }
 
-/** Monta un personaje de sus elecciones, con lo que eligió su campaña de su sistema */
+/**
+ * Monta un personaje de sus elecciones, con lo que eligió su campaña de su sistema y el compendio de su mundo (lo que
+ * lleva o eligió de él; el creador también lo ofrece)
+ */
 async function contextOf(ctx: ActionContext, campaignId: string, systemId: string) {
   const campaign = await campaignsRepo.findCampaign(ctx.db, campaignId)
   if (!campaign) throw new NotFoundError('campaign')
-  const { document, content } = await systemOf(ctx, systemId)
+  const { document, content } = await systemOf(ctx, systemId, campaign.worldId)
   const { choices } = normalizeChoices(document, (campaign.systemChoices ?? {}) as Partial<Choices>)
   return { document, content, choices }
 }

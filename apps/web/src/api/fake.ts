@@ -1381,7 +1381,16 @@ export function fakeApi(
     // El compendio de una campaña: el contenido de su sistema (en la falsa, solo el de los de la cuenta)
     getCampaignCompendium: ({ campaignId }) => {
       const found = compendiumOf(campaignId)
-      if (!found) return { system: null, language: 'es' as const, sources: [], types: [], sections: [], editable: null }
+      if (!found)
+        return {
+          system: null,
+          language: 'es' as const,
+          sources: [],
+          types: [],
+          sections: [],
+          editable: null,
+          world: null
+        }
       const { document, choices, content } = found
       const say = (text: Text | undefined) => textOf(text, choices.language)
       const types = compendiumTypes(document, content, choices)
@@ -1405,6 +1414,8 @@ export function fakeApi(
                 types: compendiumTypes(document, content, choices, true).map(typeView)
               }
             : null,
+        // El compendio del mundo, en la falsa: llega con su tarea (la web)
+        world: null,
         language: choices.language,
         sources: (document.sources ?? [])
           .filter((each) => choices.sources.includes(each.key))

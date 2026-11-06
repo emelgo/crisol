@@ -413,7 +413,8 @@ describe('los sistemas de reglas', () => {
       sources: [],
       types: [],
       sections: [],
-      editable: null
+      editable: null,
+      world: null
     })
     expect(await ok200('browseCampaignContent', { campaignId: none.id, type: 'conjuro' })).toEqual({
       items: [],

@@ -60,6 +60,9 @@ de la entrevista es la del sistema. Si un día hay sistemas compartidos que no s
    pide además poder cambiar los sistemas de la cuenta.
 4. **Colecciones del mundo** (los grupos de Foundry): no hacen falta todavía; lo del mundo se ordena con las secciones
    y carpetas del sistema. La visibilidad por colección o por entrada, con el módulo 5.
+5. **Los personajes montan con las dos capas** (decidido al construirlo): lo que lleva un personaje y lo que ofrece el
+   creador incluyen lo del mundo (una clase o un objeto propios del mundo), aunque el jugador no pueda hojear el
+   compendio del mundo hasta el módulo 5.
 
 ## Pruebas
 
