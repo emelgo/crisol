@@ -25,7 +25,13 @@ export async function startServer(
   const pdf = config.WEB_DIR ? pdfRenderer({ baseUrl: internalUrl, executablePath: config.CHROMIUM_PATH }) : null
   // El texto de los PDF, en segundo plano (el registro de la app aún no existe: se avisa por consola)
   let logError = (error: unknown) => console.error(error)
-  const library = queuedLibrary({ db: db.db, storage, valkeyUrl: config.VALKEY_URL, onError: (e) => logError(e) })
+  const library = queuedLibrary({
+    db: db.db,
+    storage,
+    valkeyUrl: config.VALKEY_URL,
+    prefix: config.QUEUE_PREFIX,
+    onError: (e) => logError(e)
+  })
   const app = buildApp({
     checks: serviceChecks(db, valkey),
     logger: options.logger ?? false,
@@ -44,6 +50,7 @@ export async function startServer(
   // La purga diaria de la papelera y del historial
   const purges = await startPurges({
     db: db.db,
+    prefix: config.QUEUE_PREFIX,
     valkeyUrl: config.VALKEY_URL,
     storage,
     onError: (error) => app.log.error(error, 'Falló la purga diaria')

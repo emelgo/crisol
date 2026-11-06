@@ -10,6 +10,7 @@ import {
   History,
   House,
   LayoutTemplate,
+  Library,
   LogOut,
   type LucideIcon,
   ScrollText,
@@ -463,6 +464,17 @@ function CampaignPanels({
           <Label icon={Swords} text={t('ribbon.inPlay')} />
         </Link>
       )}
+      {master && (
+        <Link
+          to="/mundos/$worldId/campanas/$campaignId/biblioteca"
+          params={{ worldId, campaignId }}
+          className={styles.item}
+          viewTransition={SECTION}
+          data-tour="barra-biblioteca"
+        >
+          <Label icon={Library} text={t('ribbon.library')} />
+        </Link>
+      )}
       <DiceButton />
     </>
   )
@@ -632,7 +644,7 @@ function MobileMenu({
             current: path.startsWith(`/mundos/${world.id}/campanas/${campaign.id}/grupo`),
             run: go(`/mundos/${world.id}/campanas/${campaign.id}/grupo`)
           },
-          // Las criaturas en juego: del máster (hasta el módulo 5)
+          // Las criaturas en juego y la biblioteca: del máster (hasta el módulo 5)
           ...(campaign.master
             ? [
                 {
@@ -641,6 +653,13 @@ function MobileMenu({
                   text: t('ribbon.inPlay'),
                   current: path.startsWith(`/mundos/${world.id}/campanas/${campaign.id}/en-juego`),
                   run: go(`/mundos/${world.id}/campanas/${campaign.id}/en-juego`)
+                },
+                {
+                  key: 'biblioteca',
+                  icon: Library,
+                  text: t('ribbon.library'),
+                  current: path.startsWith(`/mundos/${world.id}/campanas/${campaign.id}/biblioteca`),
+                  run: go(`/mundos/${world.id}/campanas/${campaign.id}/biblioteca`)
                 }
               ]
             : []),

@@ -30,7 +30,7 @@ export function RootLayout() {
   const wide = useRouterState({
     select: (state) =>
       /^\/mundos\/[^/]+\/(wiki|etiquetas|archivos|buscar)/.test(state.location.pathname) ||
-      /^\/mundos\/[^/]+\/campanas\/[^/]+\/(compendio|personajes)/.test(state.location.pathname) ||
+      /^\/mundos\/[^/]+\/campanas\/[^/]+\/(compendio|personajes|biblioteca)/.test(state.location.pathname) ||
       /^\/mundos\/[^/]+\/?$/.test(state.location.pathname) ||
       state.location.pathname === '/archivos' ||
       state.location.pathname === '/etiquetas' ||

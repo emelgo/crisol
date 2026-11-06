@@ -134,6 +134,7 @@ export async function skipTours(page: Page, email: string) {
           'compendio',
           'en-juego',
           'grupo',
+          'biblioteca',
           'tabla',
           'archivos',
           'etiquetas',

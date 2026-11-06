@@ -36,6 +36,7 @@ export const es = {
     compendium: 'Compendio',
     inPlay: 'En juego',
     party: 'Grupo',
+    library: 'Biblioteca',
     characters: 'Personajes'
   },
   // Una tirada escrita en una página
@@ -516,6 +517,32 @@ export const es = {
       go_one: 'Aplicar a {{count}}',
       go_other: 'Aplicar a {{count}}'
     }
+  },
+  // La biblioteca (docs/specs/biblioteca.md)
+  library: {
+    title: 'Biblioteca',
+    search: 'Buscar en los libros',
+    results: 'Lo encontrado',
+    nothing: 'Nada en los libros.',
+    books: 'Libros',
+    empty: 'Aún no hay PDF en el mundo ni en los comunes.',
+    world: 'del mundo',
+    common: 'comunes',
+    meta: '{{count}} páginas · {{scope}}',
+    meta_one: 'Una página · {{scope}}',
+    page: 'Página {{page}}',
+    semantic: 'Por significado',
+    reading: 'Leyendo… {{percent}} %',
+    status: {
+      pending: 'En cola',
+      reading: 'Leyendo…',
+      done: 'Se puede buscar',
+      empty: 'Sin texto',
+      failed: 'No se pudo leer'
+    },
+    again: 'Volver a leer',
+    againOf: 'Volver a leer «{{name}}»',
+    pick: 'Busca en los libros o abre uno.'
   },
   // El inventario del grupo (docs/specs/grupo.md)
   party: {
@@ -1993,13 +2020,18 @@ export const es = {
       characters: 'Los personajes de la campaña.',
       compendium: 'Las reglas y el contenido del juego de la campaña.',
       inPlay: 'Las criaturas que has puesto en juego, con su hoja.',
-      party: 'Lo que es de todo el grupo: el botín y sus monedas.'
+      party: 'Lo que es de todo el grupo: el botín y sus monedas.',
+      library: 'Los libros del mundo, para buscar dentro.'
     },
     characters: {
       create: 'Cada personaje se hace con las reglas de la campaña, paso a paso.',
       views: 'Su ficha, para jugar, y su creador, para hacerlo o subirlo de nivel.',
       roll: 'Se tira a un clic. Aquí, con ventaja o desventaja y quién lo ve.',
       versions: 'Al terminarlo y en cada nivel se guarda una versión, por si hay que volver atrás.'
+    },
+    library: {
+      search: 'Busca una palabra o una idea en todos los libros.',
+      books: 'Los libros del mundo y los comunes, y si ya se puede buscar en ellos.'
     },
     party: {
       items: 'Lo del grupo, por contenedores. «Mover» lo pasa a un personaje sin duplicarlo.',

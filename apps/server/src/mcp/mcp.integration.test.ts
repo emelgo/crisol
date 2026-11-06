@@ -33,6 +33,7 @@ describe('conector MCP con OAuth', () => {
         PORT,
         DATABASE_URL: url,
         VALKEY_URL: process.env.TEST_VALKEY_URL ?? 'redis://127.0.0.1:63790',
+        QUEUE_PREFIX: 'crisol-test',
         AUTH_SECRET: TEST_AUTH_SECRET,
         PUBLIC_URL: BASE,
         DATA_DIR: testDataDir()

@@ -15,7 +15,8 @@ describe('loadConfig', () => {
       HOST: '127.0.0.1',
       PORT: 8130,
       NODE_ENV: 'development',
-      DATA_DIR: 'datos-locales'
+      DATA_DIR: 'datos-locales',
+      QUEUE_PREFIX: 'crisol'
     })
   })
 

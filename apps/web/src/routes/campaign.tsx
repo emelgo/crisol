@@ -72,7 +72,18 @@ export function CampaignPage() {
           { target: '[data-tour="barra-compendio"]', text: t('tour.campaign.compendium'), placement: 'right' },
           { target: '[data-tour="barra-grupo"]', text: t('tour.campaign.party'), placement: 'right' },
           ...(campaign.role === 'master'
-            ? [{ target: '[data-tour="barra-en-juego"]', text: t('tour.campaign.inPlay'), placement: 'right' as const }]
+            ? [
+                {
+                  target: '[data-tour="barra-en-juego"]',
+                  text: t('tour.campaign.inPlay'),
+                  placement: 'right' as const
+                },
+                {
+                  target: '[data-tour="barra-biblioteca"]',
+                  text: t('tour.campaign.library'),
+                  placement: 'right' as const
+                }
+              ]
             : []),
           { target: '[data-tour="barra-dados"]', text: t('tour.world.dice'), placement: 'right' },
           { target: '[data-tour="barra-llama"]', text: t('tour.world.back'), placement: 'right' },

@@ -19,6 +19,8 @@ if (import.meta.main) {
     PORT: E2E_PORT,
     DATABASE_URL: await freshTestDatabase(E2E_DATABASE),
     VALKEY_URL: process.env.TEST_VALKEY_URL ?? 'redis://127.0.0.1:63790',
+    // Sus colas, aparte de las del servidor de desarrollo (mismo Valkey)
+    QUEUE_PREFIX: 'crisol-e2e',
     AUTH_SECRET: randomBytes(32).toString('hex'),
     PUBLIC_URL: `http://127.0.0.1:${E2E_PORT}`,
     WEB_DIR: join(import.meta.dirname, '..', 'apps', 'web', 'dist'),

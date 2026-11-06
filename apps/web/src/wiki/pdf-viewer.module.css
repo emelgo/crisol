@@ -54,3 +54,54 @@
   margin-inline: auto;
   background: #fff;
 }
+
+/* La página y su capa de texto encima (la de pdf.js: el texto se puede seleccionar y lo buscado se marca) */
+.stage {
+  position: relative;
+  inline-size: fit-content;
+  margin-inline: auto;
+}
+
+.textLayer {
+  position: absolute;
+  inset: 0;
+  overflow: clip;
+  line-height: 1;
+  text-align: initial;
+  transform-origin: 0 0;
+  forced-color-adjust: none;
+  --min-font-size: 1;
+  --text-scale-factor: calc(var(--total-scale-factor) * var(--min-font-size));
+  --min-font-size-inv: calc(1 / var(--min-font-size));
+}
+
+.textLayer :is(span, br) {
+  position: absolute;
+  color: transparent;
+  white-space: pre;
+  cursor: text;
+  transform-origin: 0% 0%;
+}
+
+.textLayer > :not(:global(.markedContent)),
+.textLayer :global(.markedContent) span:not(:global(.markedContent)) {
+  --font-height: 0;
+  --scale-x: 1;
+  --rotate: 0deg;
+  font-size: calc(var(--text-scale-factor) * var(--font-height));
+  transform: rotate(var(--rotate)) scaleX(var(--scale-x)) scale(var(--min-font-size-inv));
+}
+
+.textLayer :global(.markedContent) {
+  display: contents;
+}
+
+.textLayer ::selection {
+  background: color-mix(in srgb, var(--color-link) 35%, transparent);
+}
+
+/* Lo buscado */
+.textLayer .hit {
+  border-radius: 2px;
+  background: color-mix(in srgb, #f5c400 45%, transparent);
+}

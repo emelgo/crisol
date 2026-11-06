@@ -46,11 +46,31 @@ export function PdfViewer({ url, name, size, page }: { url: string; name: string
 
 type Loaded = { state: 'loading' } | { state: 'failed' } | { state: 'ready'; doc: PDFDocumentProxy }
 
-function PdfPages({ url, name, first }: { url: string; name: string; first: number }) {
+/** Para comparar: sin tildes ni mayúsculas */
+const folded = (text: string) => text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()
+
+/**
+ * Las páginas de un PDF, una a una, con su capa de texto (se puede seleccionar) y, si se dice, lo buscado marcado: las
+ * líneas que llevan alguna de esas palabras (sin tildes)
+ */
+export function PdfPages({
+  url,
+  name,
+  first,
+  highlight = []
+}: {
+  url: string
+  name: string
+  first: number
+  highlight?: readonly string[]
+}) {
   const { t } = useTranslation()
   const pageId = useId()
   const frame = useRef<HTMLElement>(null)
   const canvas = useRef<HTMLCanvasElement>(null)
+  const textLayer = useRef<HTMLDivElement>(null)
+  const words = highlight.map(folded).filter((word) => word.length >= 3)
+  const marked = words.join(' ')
   const [loaded, setLoaded] = useState<Loaded>({ state: 'loading' })
   const [current, setCurrent] = useState(first)
   const [typed, setTyped] = useState(String(first))
@@ -85,23 +105,47 @@ function PdfPages({ url, name, first }: { url: string; name: string; first: numb
     }
   }, [url, first])
 
-  // La página que toca, al ancho del visor
+  // La página que toca, al ancho del visor, con su capa de texto encima
   useEffect(() => {
     if (loaded.state !== 'ready') return
     let task: RenderTask | null = null
+    let layer: { cancel(): void } | null = null
     let cancelled = false
     const draw = async () => {
       const pdfPage = await loaded.doc.getPage(current)
       const target = canvas.current
+      const text = textLayer.current
       if (cancelled || !target) return
       const base = pdfPage.getViewport({ scale: 1 })
-      const width = frame.current?.clientWidth || base.width
+      const width = Math.min(frame.current?.clientWidth || base.width, 1100)
       const ratio = window.devicePixelRatio || 1
-      const viewport = pdfPage.getViewport({ scale: (width / base.width) * ratio })
+      const scale = width / base.width
+      const viewport = pdfPage.getViewport({ scale: scale * ratio })
       target.width = Math.floor(viewport.width)
       target.height = Math.floor(viewport.height)
       target.style.inlineSize = `${Math.floor(viewport.width / ratio)}px`
       task = pdfPage.render({ canvas: target, viewport })
+      if (text) {
+        const { TextLayer } = await import('pdfjs-dist')
+        text.replaceChildren()
+        const shown = pdfPage.getViewport({ scale })
+        text.style.setProperty('--total-scale-factor', String(scale))
+        text.style.setProperty('--scale-factor', String(scale))
+        const textLayerTask = new TextLayer({
+          textContentSource: pdfPage.streamTextContent(),
+          container: text,
+          viewport: shown
+        })
+        layer = textLayerTask
+        await textLayerTask.render()
+        // Lo buscado, marcado: las líneas que lo llevan
+        const wanted = marked ? marked.split(' ') : []
+        if (wanted.length > 0)
+          for (const span of text.querySelectorAll('span')) {
+            const line = folded(span.textContent ?? '')
+            if (wanted.some((word) => line.includes(word))) span.classList.add(styles.hit ?? 'hit')
+          }
+      }
       await task.promise
     }
     draw().catch(() => {
@@ -110,8 +154,9 @@ function PdfPages({ url, name, first }: { url: string; name: string; first: numb
     return () => {
       cancelled = true
       task?.cancel()
+      layer?.cancel()
     }
-  }, [loaded, current])
+  }, [loaded, current, marked])
 
   // El mismo contenedor mientras carga, si falla y con las páginas: el foco no se pierde al cambiar
   if (loaded.state !== 'ready')
@@ -170,12 +215,15 @@ function PdfPages({ url, name, first }: { url: string; name: string; first: numb
           {t('pdf.next')}
         </button>
       </div>
-      <canvas
-        ref={canvas}
-        className={styles.canvas}
-        role="img"
-        aria-label={t('pdf.canvas', { page: current, total, name })}
-      />
+      <div className={styles.stage}>
+        <canvas
+          ref={canvas}
+          className={styles.canvas}
+          role="img"
+          aria-label={t('pdf.canvas', { page: current, total, name })}
+        />
+        <div ref={textLayer} className={styles.textLayer} />
+      </div>
     </section>
   )
 }

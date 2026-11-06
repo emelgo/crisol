@@ -123,6 +123,8 @@ export function fakeApi(
     systems?: System[]
     /** El contenido de los de la cuenta, por su id */
     systemContent?: Record<string, ContentItem[]>
+    /** El texto de los PDF, por el id del archivo (una página por elemento); sin él, aún sin leer */
+    bookPages?: Record<string, string[]>
     /** Las imágenes que nombra lo que se importa de Foundry */
     foundryImages?: Array<{ path: string; credit: string | null }>
     /** El compendio de los mundos: sus entradas, por mundo y sistema (copiadas, con el original del que salen) */
@@ -2409,6 +2411,60 @@ export function fakeApi(
       }
     },
     // Los del mundo y los comunes de su organización, como el servidor
+    listLibrary: ({ worldId }) => {
+      const usable = (f: FileView) =>
+        f.kind === 'pdf' &&
+        (f.worldId === worldId || (f.worldId === null && f.organizationId === organizationOf(worldId)))
+      return {
+        books: files
+          .filter(usable)
+          .sort((a, b) => a.name.localeCompare(b.name, 'es'))
+          .map((f) => {
+            const pages = options.bookPages?.[f.id]
+            return {
+              fileId: f.id,
+              name: f.name,
+              common: f.worldId === null,
+              size: f.size,
+              status: pages ? (pages.length > 0 ? ('done' as const) : ('empty' as const)) : ('pending' as const),
+              pages: pages?.length ?? 0,
+              read: pages?.length ?? 0,
+              error: null
+            }
+          })
+      }
+    },
+    searchLibrary: ({ worldId, query, fileId }) => {
+      const fold = (text: string) => text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()
+      const words = fold(query)
+        .split(/[^a-z0-9]+/)
+        .filter(Boolean)
+      const books = handlers.listLibrary({ worldId }).books.filter((b) => !fileId || b.fileId === fileId)
+      return {
+        books: books.flatMap((book) => {
+          const pages = (options.bookPages?.[book.fileId] ?? []).flatMap((text, i) =>
+            words.every((w) => fold(text).includes(w))
+              ? [{ page: i + 1, excerpt: text.slice(0, 160), semantic: false }]
+              : []
+          )
+          return pages.length > 0
+            ? [{ fileId: book.fileId, name: book.name, common: book.common, pages: pages.slice(0, 3) }]
+            : []
+        })
+      }
+    },
+    getBookPages: ({ fileId, from, to }) => {
+      const file = files.find((f) => f.id === fileId && f.kind === 'pdf')
+      if (!file) throw new ApiError('NOT_FOUND', 404)
+      const pages = options.bookPages?.[fileId] ?? []
+      return {
+        name: file.name,
+        status: pages.length > 0 ? 'done' : 'pending',
+        pages: pages.length,
+        text: pages.slice(from - 1, to).map((text, i) => ({ page: from + i, text }))
+      }
+    },
+    readBookAgain: () => ({ status: 'pending' as const }),
     listFiles: ({ worldId }) => {
       const usable = (f: { worldId: string | null; organizationId: string }) =>
         f.worldId === worldId || (f.worldId === null && f.organizationId === organizationOf(worldId))
