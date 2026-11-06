@@ -1479,7 +1479,10 @@ export function fakeApi(
               count: found.worldKeys.size,
               byType: content
                 .filter((c) => found.worldKeys.has(c.key))
-                .reduce<Record<string, number>>((n, c) => ({ ...n, [c.type]: (n[c.type] ?? 0) + 1 }), {}),
+                .reduce<Record<string, number>>((n, c) => {
+                  n[c.type] = (n[c.type] ?? 0) + 1
+                  return n
+                }, {}),
               types: compendiumTypes(document, content, choices, true).map(typeView)
             }
           : null,
