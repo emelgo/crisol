@@ -20,12 +20,27 @@ export interface FoundryInput {
   packs: FoundryPack[]
   /** El idioma de sus textos */
   language: Language
+  /** Sus mapas de arte, ya leídos del zip: el retrato de cada actor por su paquete («dnd5e.monsters») y su id */
+  art?: FoundryArt
+}
+
+export interface FoundryArt {
+  credit: string | null
+  map: Record<string, Record<string, { actor?: string }>>
 }
 
 export interface Converted {
   file: SystemFile
   /** Lo que conviene saber: lo que se dejó fuera o se recortó */
   notes: string[]
+}
+
+/** Una imagen del propio paquete (systems/<id>/… o modules/<id>/…); las de Foundry o de otros paquetes, fuera */
+function ownImage(path: string | null | undefined, manifest: FoundryManifest): string | null {
+  if (!path) return null
+  const clean = path.replace(/^\/+/, '')
+  const prefix = `${manifest.kind === 'module' ? 'modules' : 'systems'}/${manifest.id}/`
+  return clean.startsWith(prefix) && clean.length <= 500 && !clean.includes('..') ? clean : null
 }
 
 /** Las clases de documento que se traen */
@@ -180,6 +195,8 @@ interface Entry {
   text: string
   values: Map<string, Raw>
   folder: string | null
+  /** Su imagen: la del documento o, en un actor, su retrato del mapa de arte; solo si es del propio paquete */
+  img?: string | null
 }
 
 /** Un campo que sale de `system`: su clave, su campo y cómo se guarda su valor */
@@ -453,6 +470,7 @@ export function convertFoundry(input: FoundryInput): Converted {
         const parts = [...groups].map(([heading, list]) => `## ${heading}\n\n${list.join('\n\n')}`)
         text = [text, ...parts].filter(Boolean).join('\n\n')
       }
+      const art = document === 'Actor' ? input.art?.map[`${manifest.id}.${pack.name}`]?.[doc._id]?.actor : undefined
       entries.push({
         pack,
         type,
@@ -460,7 +478,8 @@ export function convertFoundry(input: FoundryInput): Converted {
         name,
         text,
         values: flatten(doc.system, new Set(htmlFields)),
-        folder: folderOf(doc)
+        folder: folderOf(doc),
+        img: ownImage(art ?? str(doc.img), manifest)
       })
     }
   }
@@ -533,7 +552,7 @@ export function convertFoundry(input: FoundryInput): Converted {
     let key = contentKeyOf(e.name, e.where)
     for (let n = 2; usedKeys.has(key); n++) key = contentKeyOf(e.name, `${e.where}#${n}`)
     usedKeys.add(key)
-    return { type: e.type, key, source: sourceOf.get(e.pack.name) ?? null, data }
+    return { type: e.type, key, source: sourceOf.get(e.pack.name) ?? null, data, ...(e.img ? { img: e.img } : {}) }
   })
   if (trimmed > 0) notes.push(`Se recortó el texto de ${trimmed} documento${trimmed === 1 ? '' : 's'}: no cabía entero`)
 

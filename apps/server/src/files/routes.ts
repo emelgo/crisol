@@ -4,8 +4,8 @@
  */
 import type { Readable } from 'node:stream'
 import { FILE_NAME_FORBIDDEN, fileName } from '@crisol/contracts'
-import { filesRepo, loadMemberships } from '@crisol/db'
-import { actorFrom, MAX_FILE_BYTES, sniff, uploadable } from '@crisol/domain'
+import { campaignsRepo, filesRepo, loadMemberships, systemImagesRepo, systemsRepo } from '@crisol/db'
+import { actorFrom, can, MAX_FILE_BYTES, sniff, uploadable } from '@crisol/domain'
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
 import { z } from 'zod'
 import { authorizedWiki } from '../actions/access.ts'
@@ -163,6 +163,37 @@ export function registerFileRoutes(
     } catch (error) {
       return fail(reply, error)
     }
+  })
+
+  // Las imágenes de un sistema (docs/specs/imagenes.md), por su ruta: a quien lee el sistema (su cuenta) o juega en una
+  // campaña que lo usa. Sus bytes no cambian para una ruta hasta que se vuelve a importar (la huella va en la etiqueta)
+  app.get('/api/system-images/:systemId', async (request, reply) => {
+    const ctx = await contextOf(request)
+    if (!ctx) return reply.code(401).send({ code: 'UNAUTHENTICATED' })
+    const params = z.object({ systemId: z.uuid() }).safeParse(request.params)
+    const path = String((request.query as Record<string, unknown>).path ?? '')
+    if (!params.success || !path || !env.storage) return reply.code(404).send({ code: 'NOT_FOUND' })
+    const system = await systemsRepo.findSystem(ctx.db, params.data.systemId)
+    const reads =
+      system &&
+      (can(ctx.actor, 'systems.read', { organizationId: system.organizationId }) ||
+        (await campaignsRepo.campaignsUsingSystems(ctx.db, [system.id])).some((c) =>
+          can(ctx.actor, 'campaign.read', { campaignId: c.id, worldId: c.worldId })
+        ))
+    const image = reads ? await systemImagesRepo.findImage(ctx.db, params.data.systemId, path) : null
+    if (!image) return reply.code(404).send({ code: 'NOT_FOUND' })
+    const etag = `"${image.storageKey}"`
+    reply
+      .header('cache-control', 'private, max-age=86400, stale-while-revalidate=604800')
+      .header('etag', etag)
+      .header('x-content-type-options', 'nosniff')
+      .header('cross-origin-resource-policy', 'same-origin')
+      .header('content-type', image.mime)
+      .header('content-length', image.bytes)
+    if (image.mime === 'image/svg+xml')
+      reply.header('content-security-policy', "default-src 'none'; style-src 'unsafe-inline'; img-src data:; sandbox")
+    if (request.headers['if-none-match'] === etag) return reply.code(304).send()
+    return reply.send(env.storage.read(image.storageKey))
   })
 
   app.get('/api/files/:id', async (request, reply) => {

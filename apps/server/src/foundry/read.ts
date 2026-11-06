@@ -9,6 +9,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import {
   FOUNDRY_DOCUMENTS,
+  type FoundryArt,
   type FoundryDocument,
   FoundryError,
   type FoundryFolder,
@@ -34,6 +35,8 @@ export interface FoundryRead {
   manifest: FoundryManifest
   names: Record<string, string>
   packs: FoundryPack[]
+  /** Sus mapas de arte, si vienen en el zip: el retrato de cada actor */
+  art?: FoundryArt
 }
 
 /** Lo que hay en el zip: el nombre y el tamaño descomprimido de cada archivo, sin descomprimir nada */
@@ -239,7 +242,42 @@ export async function readFoundryZip(
     )
     packs.push({ ...def, ...(await readLevel(level, def.label)) })
   }
-  return { manifest, names, packs }
+  return { manifest, names, packs, ...artOf(zip, files, found.root, manifest) }
+}
+
+/** Los mapas de arte del manifiesto que vienen en el zip, juntos: { «dnd5e.monsters»: { id: { actor } } } */
+function artOf(
+  zip: Uint8Array,
+  files: Map<string, number>,
+  root: string,
+  manifest: FoundryManifest
+): { art?: FoundryArt } {
+  const prefix = `${manifest.kind === 'module' ? 'modules' : 'systems'}/${manifest.id}/`
+  const wanted = manifest.artMappings.flatMap((m) =>
+    m.mapping.startsWith(prefix) ? [{ path: `${root}${m.mapping.slice(prefix.length)}`, credit: m.credit }] : []
+  )
+  const present = wanted.filter((w) => (files.get(w.path) ?? Number.POSITIVE_INFINITY) <= 20 * 1024 * 1024)
+  if (present.length === 0) return {}
+  const unzipped = extract(zip, files, (n) => present.some((w) => w.path === n))
+  const map: FoundryArt['map'] = {}
+  for (const w of present) {
+    try {
+      const parsed = json(unzipped[w.path], w.path)
+      if (!parsed || typeof parsed !== 'object') continue
+      for (const [pack, byId] of Object.entries(parsed as Record<string, unknown>)) {
+        if (!byId || typeof byId !== 'object') continue
+        const entries: Record<string, { actor?: string }> = map[pack] ?? {}
+        map[pack] = entries
+        for (const [id, value] of Object.entries(byId as Record<string, unknown>)) {
+          const actor = (value as { actor?: unknown } | null)?.actor
+          if (typeof actor === 'string') entries[id] = { actor }
+        }
+      }
+    } catch {
+      // Un mapa que no se lee: sin retratos, sin más
+    }
+  }
+  return { art: { credit: present.find((w) => w.credit)?.credit ?? null, map } }
 }
 
 /** Cuántos documentos tiene cada paquete (los que se traen): para elegir cuáles */

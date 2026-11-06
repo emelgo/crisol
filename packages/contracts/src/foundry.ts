@@ -48,5 +48,39 @@ export const importFoundry = defineAction({
     packs: z.array(z.string().min(1).max(200)).min(1).max(200).optional(),
     language: z.enum(['es', 'en'])
   }),
-  output: z.object({ system: systemFull, warnings: z.array(systemProblem) })
+  output: z.object({
+    system: systemFull,
+    warnings: z.array(systemProblem),
+    images: z
+      .array(z.object({ path: z.string(), credit: z.string().nullable() }))
+      .describe('Las imágenes que nombra lo importado (con el crédito del mapa de arte): se suben con putSystemImages')
+  })
+})
+
+/** Lo que se sube de imágenes de una vez: unas pocas, para no pasar del cuerpo de una petición */
+export const SYSTEM_IMAGES_BYTES = 6 * 1024 * 1024
+
+export const putSystemImages = defineAction({
+  name: 'putSystemImages',
+  kind: 'write',
+  description:
+    'Sube imágenes de un sistema de la cuenta (las de un zip de Foundry), por su ruta (la que nombra su contenido en img), con su licencia y su crédito. Las que ya estaban se cambian. En tandas: como mucho 6 MB por petición. Solo imágenes (png, jpeg, webp, gif, avif o svg)',
+  input: z.object({
+    systemId: z.uuid(),
+    images: z
+      .array(
+        z.object({
+          path: z.string().min(1).max(500),
+          data: z
+            .string()
+            .max(Math.ceil(SYSTEM_IMAGES_BYTES / 3) * 4)
+            .describe('Sus bytes, en base64'),
+          license: z.enum(['foundry-only', 'cc-by', 'cc-by-nc-sa', 'mit', 'unknown']),
+          credit: z.string().max(500).nullable()
+        })
+      )
+      .min(1)
+      .max(100)
+  }),
+  output: z.object({ saved: z.int(), skipped: z.array(z.string()).describe('Las que no eran imágenes') })
 })

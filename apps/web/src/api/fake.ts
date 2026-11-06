@@ -110,6 +110,8 @@ export function fakeApi(
     systems?: System[]
     /** El contenido de los de la cuenta, por su id */
     systemContent?: Record<string, ContentItem[]>
+    /** Las imágenes que nombra lo que se importa de Foundry */
+    foundryImages?: Array<{ path: string; credit: string | null }>
     /** El compendio de los mundos: sus entradas, por mundo y sistema (copiadas, con el original del que salen) */
     worldContent?: Array<{ worldId: string; systemId: string; item: ContentItem; copyOf?: ContentItem }>
     /** Las páginas de la wiki, en su orden entre hermanas */
@@ -519,6 +521,8 @@ export function fakeApi(
     worldEntries.filter((e) => e.worldId === worldId && e.systemId === systemId)
   /** Quien lleva el mundo: en la falsa, el propietario */
   const leadsWorlds = () => organizations.some((o) => o.role === 'owner')
+  // Las imágenes subidas de los sistemas (en la falsa, sin sus bytes)
+  const systemImages: Array<{ systemId: string; path: string; license: string }> = []
   // Las criaturas en juego (docs/specs/criaturas.md), en la falsa: las del máster
   const creatures: Array<{
     id: string
@@ -2091,7 +2095,13 @@ export function fakeApi(
       const id = crypto.randomUUID()
       const document = { ...structuredClone(blank), id, name: { es: read.title, en: read.title } }
       ownSystems.push({ id, version: 1, basedOn: null, document, content: [], deleted: false })
-      return { system: systemView(id), warnings: [] }
+      return { system: systemView(id), warnings: [], images: options.foundryImages ?? [] }
+    },
+    // Las imágenes subidas de un sistema, en la falsa: solo se apuntan
+    putSystemImages: ({ systemId, images }) => {
+      if (!ownSystems.some((s) => s.id === systemId && !s.deleted)) throw new ApiError('NOT_FOUND', 404)
+      for (const image of images) systemImages.push({ systemId, path: image.path, license: image.license })
+      return { saved: images.length, skipped: [] }
     },
     importSystem: ({ file, into }) => {
       const { file: valid, problems } = validateFile(file)
