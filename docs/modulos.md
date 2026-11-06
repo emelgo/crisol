@@ -7,7 +7,7 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
-### Para retomar (2026-11-06, noche: módulo 5 en marcha, `conocimiento` con el servidor hecho)
+### Para retomar (2026-11-06, noche: módulo 5 en marcha, `conocimiento` construido)
 
 - **Rama `modulo-5/visibilidad`** (sin PR aún; sale de `modulo-4/cierre`, con sus commits de documentación).
 - **Hecho del ciclo**: la entrevista (abajo, § «### 5. Visibilidad por campaña»); los estudios
@@ -16,13 +16,16 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   `pagina-de-jugadores`) y sus specs; el ADR-0017 (propuesta); el lienzo «Crisol: lo que ven los jugadores»
   (https://claude.ai/artifact/CGqGeV5o6R7gtkrR4zBLKf; fuentes en `out/lienzo-jugadores/`), mandado a Enrique con
   fotos, sin respuesta aún.
-- **`conocimiento`** (`tasks/plan.md`, `tasks/todo.md`): hechas las tareas 1 a 6 (el motor
-  `packages/domain/src/knowledge.ts`; `knowledge` y `campaigns.knows_world`, migración 0051, ya en la base de
-  desarrollo; `page.view` y la proyección en `apps/server/src/wiki/{reader,projection}.ts`; `setKnowledge` y
-  `getPageKnowledge`; todas las vías de lectura y el tiempo real filtrados, con `readAs` en los contratos). Pruebas en
-  `apps/server/src/actions/knowledge.integration.test.ts`. **Lo siguiente**: la web (tareas 7 a 9), la IA (10).
+- **`conocimiento`, construido** (`tasks/plan.md`, `tasks/todo.md`; lo hecho, en `docs/specs/conocimiento.md` §
+  «Construido»): el motor, la tabla (0051, ya en la base de desarrollo), `page.view` y la proyección, todas las vías de
+  lectura y el tiempo real filtrados, la web del jugador y del máster, la IA (también la del jugador, que solo lee), la
+  e2e `conocimiento.spec.ts`, las fugas al día y el rendimiento (p95 199 ms con 5.000 páginas). Revisión de código en
+  marcha. Qué probar: `tasks/probar.md` § «Módulo 5».
+- **Lo siguiente**: los arreglos de la revisión y `revelar` (plan en borrador en el scratchpad; se pasa a
+  `tasks/plan.md`).
 - Decisión cambiada tras los estudios: un enlace a lo oculto sale como uno sin resolver, con lo que se escribió (no
-  «desconocido», ni el título de ahora).
+  «desconocido», ni el título de ahora); con texto propio, solo ese texto.
+- La e2e sirve la web compilada: `pnpm --filter @crisol/web build` antes de correrla tras cambiar la web.
 
 ### Para retomar (2026-11-06, módulo 4 terminado y en staging; lo siguiente, el módulo 5)
 
