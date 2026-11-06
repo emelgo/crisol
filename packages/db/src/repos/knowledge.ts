@@ -381,6 +381,20 @@ export async function seeNews(db: Database, userId: string, campaignId: string, 
     )
 }
 
+/** Una entrada del compendio del mundo, abierta: deja de ser nueva */
+export async function seeContentNews(db: Database, userId: string, campaignId: string, key: string) {
+  await db
+    .delete(knowledgeNews)
+    .where(
+      and(
+        eq(knowledgeNews.userId, userId),
+        eq(knowledgeNews.campaignId, campaignId),
+        eq(knowledgeNews.kind, 'content'),
+        eq(knowledgeNews.targetId, key)
+      )
+    )
+}
+
 /** Oculto otra vez: deja de ser nuevo para todos */
 export async function dropNews(db: Database, campaignId: string, kind: KnowledgeKind, targetId: string) {
   await db

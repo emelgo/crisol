@@ -16,12 +16,13 @@ import {
   Pencil,
   Plus,
   Search,
+  Settings,
   SlidersHorizontal,
   Trash2,
   Upload,
   X
 } from 'lucide-react'
-import { createContext, type ReactNode, useContext, useEffect, useId, useState } from 'react'
+import { createContext, type ReactNode, useContext, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import type { ActionOutput } from '../api/client.ts'
@@ -40,6 +41,7 @@ import { PutInPlay } from '../creatures/put-in-play.tsx'
 import { useDice } from '../dice/context.tsx'
 import { useNarrow } from '../wiki/panel.tsx'
 import styles from './compendium.module.css'
+import { CompendiumSettings } from './compendium-settings.tsx'
 import { ContentText } from './content-text.tsx'
 import { DeleteEntry, EntryEditor, type EntryTarget } from './entry-editor.tsx'
 import { EntryTable } from './entry-table.tsx'
@@ -102,9 +104,29 @@ function EditionTag({ edition, legacy }: { edition: string | null; legacy: boole
   )
 }
 
+/**
+ * Lo del mundo que se le reveló a quien juega es nuevo hasta que lo abre (docs/specs/compendio-jugadores.md): con la
+ * misma consulta que el número de novedades de la barra
+ */
+function useSeenEntry(worldId: string, campaignId: string, key: string | null, player: boolean) {
+  const api = useApi()
+  const client = useQueryClient()
+  const news = useQuery({
+    queryKey: ['pages', worldId, 'player', campaignId, null, 'news'],
+    queryFn: () => api.call('listNews', { campaignId }),
+    enabled: player
+  })
+  useEffect(() => {
+    if (!key || !news.data?.news.some((n) => n.kind === 'content' && n.targetId === key)) return
+    void api
+      .call('seeNews', { campaignId, content: key })
+      .then(() => client.invalidateQueries({ queryKey: ['pages', worldId, 'player', campaignId, null, 'news'] }))
+  }, [key, news.data, api, client, worldId, campaignId])
+}
+
 export function CompendiumScreen() {
   const { t } = useTranslation()
-  const { campaignId } = route.useParams()
+  const { worldId, campaignId } = route.useParams()
   const { ver } = route.useSearch()
   const navigate = route.useNavigate()
   const api = useApi()
@@ -154,6 +176,16 @@ export function CompendiumScreen() {
   const [creating, setCreating] = useState(false)
   // Lo recién copiado al mundo se abre para cambiarlo
   const [editing, setEditing] = useState<string | null>(null)
+  // Sus ajustes (lo que ven los jugadores): del máster
+  const campaign = useQuery({
+    queryKey: ['campaign', campaignId],
+    queryFn: () => api.call('getCampaign', { campaignId }),
+    enabled: Boolean(account)
+  })
+  const master = campaign.data?.campaign.role === 'master'
+  useSeenEntry(worldId, campaignId, shown, campaign.data?.campaign.role === 'player')
+  const [settings, setSettings] = useState(false)
+  const settingsButton = useRef<HTMLButtonElement>(null)
   if (pending) return null
   if (!account) return <Navigate to="/entrar" replace />
   if (!compendium.data) {
@@ -195,6 +227,18 @@ export function CompendiumScreen() {
               {editions.length > 0
                 ? t('compendium.systemWith', { system: system.name, editions: editions.join(t('compendium.and')) })
                 : system.name}
+              {master && (
+                <button
+                  ref={settingsButton}
+                  type="button"
+                  className={styles.settings}
+                  aria-label={t('compendium.settings.title')}
+                  title={t('compendium.settings.title')}
+                  onClick={() => setSettings(true)}
+                >
+                  <Settings size={14} aria-hidden="true" />
+                </button>
+              )}
             </span>
             {newTargets.length > 0 && (
               <button type="button" className={styles.newEntry} onClick={() => setCreating(true)}>
@@ -309,6 +353,16 @@ export function CompendiumScreen() {
               <p className={styles.pick}>{t('compendium.pick')}</p>
             </div>
           )
+        )}
+        {settings && (
+          <CompendiumSettings
+            campaignId={campaignId}
+            compendium={compendium.data}
+            onClose={() => {
+              setSettings(false)
+              settingsButton.current?.focus()
+            }}
+          />
         )}
         {creating && newTargets.length > 0 && (
           <EntryEditor

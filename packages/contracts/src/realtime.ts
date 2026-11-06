@@ -41,6 +41,8 @@ export type RealtimeMessage =
       worldId: string
       campaignId: string
       kind: 'page' | 'secret' | 'tab' | 'pin' | 'element' | 'content'
+      /** Lo revelado: su id (una entrada del compendio del mundo, su clave) */
+      targetId?: string
       pageId: string | null
       title: string
     }

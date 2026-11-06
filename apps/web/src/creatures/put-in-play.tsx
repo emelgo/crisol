@@ -31,6 +31,8 @@ export function PutInPlay({
   const [unique, setUnique] = useState(false)
   const [many, setMany] = useState('1')
   const [hp, setHp] = useState<'average' | 'rolled'>('average')
+  // A la vista de los jugadores, salvo que se oculte (un jefe que aún no ha salido)
+  const [hidden, setHidden] = useState(false)
   const list = useQuery({
     queryKey: ['creatures', campaignId],
     queryFn: () => api.call('listInPlay', { campaignId })
@@ -43,6 +45,7 @@ export function PutInPlay({
         campaignId,
         key: entryKey,
         hp,
+        ...(hidden ? { hidden: true } : {}),
         ...(unique ? { unique: true } : count !== null ? { count } : { formula: many.trim() })
       }),
     onSuccess: () => client.invalidateQueries({ queryKey: ['creatures', campaignId] })
@@ -85,6 +88,15 @@ export function PutInPlay({
           <label key={each} className={styles.option}>
             <input type="radio" name={`${titleId}-pg`} checked={hp === each} onChange={() => setHp(each)} />
             <span>{t(`inPlay.put.${each}`)}</span>
+          </label>
+        ))}
+      </fieldset>
+      <fieldset className={styles.toggle}>
+        <legend className={styles.legend}>{t('inPlay.put.players')}</legend>
+        {[false, true].map((each) => (
+          <label key={String(each)} className={styles.option}>
+            <input type="radio" name={`${titleId}-vista`} checked={hidden === each} onChange={() => setHidden(each)} />
+            <span>{each ? t('inPlay.hidden') : t('inPlay.visible')}</span>
           </label>
         ))}
       </fieldset>

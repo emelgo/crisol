@@ -140,6 +140,9 @@ describe('el compendio y la partida para los jugadores (docs/specs/compendio-jug
       expect((await ok200('getCampaignCompendium', { campaignId }, ana.cookie)).world).toBeNull()
       const news = await ok200('listNews', { campaignId }, ana.cookie)
       expect(news.news).toEqual([expect.objectContaining({ kind: 'content', targetId: 'espada_de_valdren' })])
+      // Abierta en el compendio, deja de ser nueva
+      await ok200('seeNews', { campaignId, content: 'espada_de_valdren' }, ana.cookie)
+      expect((await ok200('listNews', { campaignId }, ana.cookie)).news).toEqual([])
       const group = await ok200('listCampaignKnowledge', { campaignId })
       expect(JSON.stringify(group)).toContain('Espada de Valdren')
 
@@ -172,9 +175,9 @@ describe('el compendio y la partida para los jugadores (docs/specs/compendio-jug
       const seen = await call('listVisibleInPlay', { campaignId }, ana.cookie)
       expect(seen.statusCode).toBe(200)
       expect(seen.json().creatures).toEqual([
-        { id: goblins[0].id, name: 'Goblin 1', img: null, state: 'hurt' },
-        { id: goblins[1].id, name: 'Goblin 2', img: null, state: 'bloodied' },
-        { id: goblins[2].id, name: 'Goblin 3', img: null, state: 'down' }
+        { id: goblins[0].id, name: 'Goblin 1', number: 1, img: null, state: 'hurt' },
+        { id: goblins[1].id, name: 'Goblin 2', number: 2, img: null, state: 'bloodied' },
+        { id: goblins[2].id, name: 'Goblin 3', number: 3, img: null, state: 'down' }
       ])
       expect(seen.body).not.toContain('Jefe')
       expect(seen.body).not.toMatch(/"(life|stats|play|value|max|pg|ca)"/)

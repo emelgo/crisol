@@ -184,7 +184,16 @@ export const listNews = defineAction({
 export const seeNews = defineAction({
   name: 'seeNews',
   kind: 'read',
-  description: 'El jugador abrió esa página: lo nuevo de ella deja de serlo',
-  input: z.object({ campaignId: z.uuid(), pageId: z.uuid() }),
+  description:
+    'El jugador abrió esa página (pageId) o esa entrada del compendio del mundo (content, su clave): lo nuevo de ella deja de serlo',
+  input: z
+    .object({
+      campaignId: z.uuid(),
+      pageId: z.uuid().optional(),
+      content: z.string().trim().min(1).max(200).optional()
+    })
+    .refine((input) => (input.pageId === undefined) !== (input.content === undefined), {
+      message: 'pageId o content'
+    }),
   output: z.object({ ok: z.literal(true) })
 })

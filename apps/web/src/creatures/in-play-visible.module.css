@@ -1,0 +1,120 @@
+/* «En juego» de un jugador: tarjetas por grupo, con su imagen y su estado en palabras */
+.page {
+  max-inline-size: 72rem;
+  padding: var(--space-6);
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-3);
+  margin-block-end: var(--space-5);
+}
+
+.title {
+  margin: 0;
+}
+
+.count,
+.none {
+  color: var(--color-muted);
+}
+
+.group + .group {
+  margin-block-start: var(--space-5);
+}
+
+.groupHead {
+  margin: 0 0 var(--space-2);
+  padding: 0;
+  border: 0;
+  color: var(--color-muted);
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+}
+
+.card[data-state="down"] {
+  opacity: 0.6;
+}
+
+.portrait {
+  display: grid;
+  flex: none;
+  place-items: center;
+  inline-size: 4rem;
+  block-size: 4rem;
+  border-radius: 6px;
+  background: var(--color-raised);
+  color: var(--color-muted);
+  object-fit: cover;
+}
+
+.body {
+  display: grid;
+  gap: var(--space-1);
+  justify-items: start;
+  min-inline-size: 0;
+}
+
+.name {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-weight: 700;
+}
+
+.name svg {
+  color: var(--color-warning);
+}
+
+/* El estado, con el color de cómo está: bien, tocada, mal y fuera */
+.state {
+  padding: 0 var(--space-2);
+  border: 1px solid currentcolor;
+  border-radius: 999px;
+  color: var(--color-tip);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.card[data-state="hurt"] .state,
+.card[data-state="bloodied"] .state {
+  color: var(--color-warning);
+}
+
+.card[data-state="dying"] .state {
+  color: var(--color-danger);
+}
+
+.card[data-state="down"] .state {
+  color: var(--color-muted);
+}
+
+@media (max-width: 720px) {
+  .page {
+    padding: var(--space-3);
+  }
+}

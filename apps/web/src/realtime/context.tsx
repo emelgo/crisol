@@ -45,11 +45,13 @@ function changedBy(message: RealtimeMessage): QueryKey[] {
   switch (message.type) {
     case 'changed':
       if (message.what === 'worlds' || message.what === 'approvals') return [[message.what]]
-      if (message.what === 'campaigns') return [['campaigns', message.worldId]]
+      // Una campaña: su tarjeta y lo que se ve de su compendio (los tipos que oculta a sus jugadores)
+      if (message.what === 'campaigns') return [['campaigns', message.worldId], ['campaign'], ['compendium']]
       // Lo que lleva etiquetas cambia también su catálogo
       if (message.what === 'pages') return [['pages', message.worldId], ['tags']]
       // Lo que sabe una campaña (ADR-0017): todo lo de las páginas del mundo se vuelve a pedir, ya proyectado
-      if (message.what === 'knowledge') return [['pages', message.worldId]]
+      if (message.what === 'knowledge')
+        return [['pages', message.worldId], message.campaignId ? ['compendium', message.campaignId] : ['compendium']]
       if (message.what === 'files') return [['files', message.worldId], ['tags']]
       // Los comunes salen en los archivos de todos los mundos
       if (message.what === 'commonFiles') return [['files'], ['commonFiles'], ['tags']]
@@ -78,7 +80,10 @@ function changedBy(message: RealtimeMessage): QueryKey[] {
       return [[message.what, message.campaignId]]
     // Lo revelado: lo de las páginas del mundo (su árbol, lo nuevo) se vuelve a pedir
     case 'revealed':
-      return [['pages', message.worldId]]
+      return [
+        ['pages', message.worldId],
+        ['compendium', message.campaignId]
+      ]
     case 'joined':
       return [
         ['members', message.campaignId],

@@ -373,6 +373,15 @@ export const es = {
   // El compendio de una campaña: el contenido de su sistema
   compendium: {
     title: 'Compendio',
+    settings: {
+      title: 'Ajustes del compendio',
+      sources: 'Fuentes',
+      players: 'Lo que ven los jugadores',
+      visible: 'A la vista',
+      hidden: 'Oculto',
+      someHidden_one: '{{count}} oculto',
+      someHidden_other: '{{count}} ocultos'
+    },
     newEntry: 'Nueva entrada',
     newTitle: 'Nueva entrada',
     edit: 'Editar',
@@ -492,6 +501,23 @@ export const es = {
     ownMax: 'Volver al suyo',
     remove: 'Quitar de juego',
     condition: { bloodied: 'Malherida', down: 'Fuera de combate' },
+    // Lo que ven los jugadores (docs/specs/compendio-jugadores.md)
+    players: 'Los jugadores',
+    visible: 'A la vista',
+    hidden: 'Oculta',
+    visibleNote: 'Los jugadores la ven',
+    hiddenNote: 'Los jugadores no la ven',
+    hideFor: 'Oculta a los jugadores: {{name}}',
+    inSight_one: '{{count}} a la vista',
+    inSight_other: '{{count}} a la vista',
+    nothingInSight: 'No hay nada a la vista.',
+    state: {
+      unhurt: 'Ilesa',
+      hurt: 'Herida',
+      bloodied: 'Malherida',
+      dying: 'A punto de caer',
+      down: 'Fuera de combate'
+    },
     put: {
       title: 'Poner en juego',
       copies: 'Copias',
@@ -508,7 +534,8 @@ export const es = {
       goUnique: 'Poner la única en juego',
       now: 'En juego ahora',
       none: 'ninguna',
-      see: 'Ver en juego'
+      see: 'Ver en juego',
+      players: 'Los jugadores'
     },
     apply: {
       open: 'Aplicar',

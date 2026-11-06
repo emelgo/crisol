@@ -476,17 +476,15 @@ function CampaignPanels({
       >
         <Label icon={Backpack} text={t('ribbon.party')} />
       </Link>
-      {master && (
-        <Link
-          to="/mundos/$worldId/campanas/$campaignId/en-juego"
-          params={{ worldId, campaignId }}
-          className={styles.item}
-          viewTransition={SECTION}
-          data-tour="barra-en-juego"
-        >
-          <Label icon={Swords} text={t('ribbon.inPlay')} />
-        </Link>
-      )}
+      <Link
+        to="/mundos/$worldId/campanas/$campaignId/en-juego"
+        params={{ worldId, campaignId }}
+        className={styles.item}
+        viewTransition={SECTION}
+        data-tour="barra-en-juego"
+      >
+        <Label icon={Swords} text={t('ribbon.inPlay')} />
+      </Link>
       {master && <RevealedButton />}
       {master && (
         <Link
@@ -718,16 +716,17 @@ function MobileMenu({
             current: path.startsWith(`/mundos/${world.id}/campanas/${campaign.id}/grupo`),
             run: go(`/mundos/${world.id}/campanas/${campaign.id}/grupo`)
           },
-          // Las criaturas en juego y la biblioteca: del máster (hasta el módulo 5)
+          // Las criaturas en juego: el máster, todas; un jugador, las que están a la vista
+          {
+            key: 'en-juego',
+            icon: Swords,
+            text: t('ribbon.inPlay'),
+            current: path.startsWith(`/mundos/${world.id}/campanas/${campaign.id}/en-juego`),
+            run: go(`/mundos/${world.id}/campanas/${campaign.id}/en-juego`)
+          },
+          // Lo revelado y la biblioteca: del máster
           ...(campaign.master
             ? [
-                {
-                  key: 'en-juego',
-                  icon: Swords,
-                  text: t('ribbon.inPlay'),
-                  current: path.startsWith(`/mundos/${world.id}/campanas/${campaign.id}/en-juego`),
-                  run: go(`/mundos/${world.id}/campanas/${campaign.id}/en-juego`)
-                },
                 {
                   key: 'revelado',
                   icon: Eye,

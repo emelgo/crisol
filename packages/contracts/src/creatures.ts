@@ -183,6 +183,8 @@ export const applyRoll = defineAction({
 export const visibleCreature = z.object({
   id: z.uuid(),
   name: z.string(),
+  /** Su número entre las copias («Goblin 2»); una única, null */
+  number: z.number().int().nullable(),
   img: z.string().nullable(),
   /** Ilesa, herida (más de la mitad), malherida (la mitad o menos), a punto de caer (una cuarta parte o menos), fuera */
   state: z.enum(['unhurt', 'hurt', 'bloodied', 'dying', 'down']).nullable()

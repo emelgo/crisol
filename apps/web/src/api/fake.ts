@@ -794,7 +794,9 @@ export function fakeApi(
         )
       : system
     const worldKeys = new Set(world ? entriesOf(world.worldId, world.systemId).map((e) => e.item.key) : [])
-    return { document, choices, content, world, worldKeys }
+    // Un jugador no ve los tipos que la campaña le oculta (docs/specs/compendio-jugadores.md)
+    const hidden = campaign.role === 'player' ? (campaign.hiddenTypes ?? []) : []
+    return { document, choices, content: content.filter((c) => !hidden.includes(c.type)), world, worldKeys }
   }
 
   // El inventario del grupo de cada campaña, con el mismo motor que el servidor (sin historial de verdad)
@@ -954,6 +956,7 @@ export function fakeApi(
       if (patch.description !== undefined) campaign.description = patch.description.trim()
       if (patch.color !== undefined) campaign.color = patch.color
       if (patch.cover !== undefined) campaign.cover = patch.cover
+      if (patch.hiddenTypes !== undefined) campaign.hiddenTypes = [...patch.hiddenTypes]
       campaign.version++
       return { ...campaign }
     },
@@ -1774,7 +1777,7 @@ export function fakeApi(
                     : life.value <= life.max / 2
                       ? ('bloodied' as const)
                       : ('hurt' as const)
-          return { id: card.id, name: card.name, img: card.img, state }
+          return { id: card.id, name: card.name, number: card.number, img: card.img, state }
         })
     }),
     setCreatureHidden: ({ creatureId, hidden }) => {

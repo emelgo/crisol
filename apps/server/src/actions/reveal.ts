@@ -183,6 +183,7 @@ export const revealActions = [
           worldId: wiki.worldId,
           campaignId: campaign.id,
           kind,
+          targetId,
           pageId: target.pageId,
           title
         }
@@ -324,9 +325,10 @@ export const revealActions = [
     }
   }),
 
-  implement(seeNews, async (ctx, { campaignId, pageId }) => {
+  implement(seeNews, async (ctx, { campaignId, pageId, content }) => {
     await authorizedCampaign(ctx, 'campaign.read', campaignId)
-    await knowledgeRepo.seeNews(ctx.db, ctx.actor.userId, campaignId, pageId)
+    if (pageId) await knowledgeRepo.seeNews(ctx.db, ctx.actor.userId, campaignId, pageId)
+    if (content) await knowledgeRepo.seeContentNews(ctx.db, ctx.actor.userId, campaignId, content)
     return { ok: true as const }
   })
 ]

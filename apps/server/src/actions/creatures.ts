@@ -177,7 +177,7 @@ export const creatureActions = [
       creatures: rows.flatMap((row) => {
         try {
           const { card } = viewOf(at, row, content)
-          return [{ id: card.id, name: card.name, img: card.img, state: stateOf(card.life) }]
+          return [{ id: card.id, name: card.name, number: card.number, img: card.img, state: stateOf(card.life) }]
         } catch {
           return []
         }

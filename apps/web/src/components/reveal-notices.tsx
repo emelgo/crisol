@@ -39,6 +39,17 @@ export function RevealNotices() {
                 {t('revealNotice.read')}
               </Link>
             )}
+            {notice.kind === 'content' && notice.targetId && (
+              <Link
+                to="/mundos/$worldId/campanas/$campaignId/compendio"
+                params={{ worldId: notice.worldId, campaignId: notice.campaignId }}
+                search={{ ver: notice.targetId }}
+                className={styles.read}
+                onClick={() => dismissRevealed(notice.id)}
+              >
+                {t('revealNotice.read')}
+              </Link>
+            )}
           </div>
           <button
             type="button"
