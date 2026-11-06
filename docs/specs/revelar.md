@@ -55,6 +55,11 @@ máster.
 2. **Revelar un secreto no saca versión** de la página (ADR-0003 y `research/foundry/journal.md`: es cambiar quién ve
    su documento, no tocar el texto).
 3. **Ocultar otra vez** quita el acceso, pero la operación queda en el historial: el máster sabe que lo vieron.
+4. **Del diseño** (lienzo, tableros Revelar y Jugador): solo «Revelar» avisa; marcar desde «Quién la conoce» no. El
+   secreto, con su morado de rayas: «Secreto · Revelar» o «Lo saben: Lía y Bram · Cambiar» (en «Cambiar», «Ocultar
+   otra vez»). Si la campaña no conoce la página, «Revelar también la página», marcado. Un secreto se nombra por el
+   título de su sección («Nuevo: El pacto de Varn»). «Lo que sabe el grupo» se abre como ventana desde «Revelado», en la
+   barra de la campaña del máster, agrupado por día. La barra de la jugadora dice cuántas novedades tiene.
 
 ## Pruebas
 

@@ -113,6 +113,12 @@ y la IA de los dos.
 7. **Al dar a conocer una página con subpáginas**, el cuadro dice cuántas heredan («y 12 subpáginas») y deja verlas.
 8. **Solo la campaña desde la que lee**: un jugador con personajes en dos campañas de un mundo ve lo de la campaña en
    la que está, no la suma.
+9. **Del diseño** (lienzo «Crisol: lo que ven los jugadores», tablero QuienLaConoce): «Quién la conoce» y «Revelar»
+   son dos iconos de la cabecera de la página; marcar desde «Quién la conoce» es preparar y no avisa a nadie (solo
+   «Revelar» avisa, `revelar`). Una fila por capa con lo que ve y por qué («Por «Reinos del sur»», «Lo sabe el mundo»,
+   «Empezó de cero», «Marcada aquí»). En el árbol del máster, un ojo gris en lo que conoce alguna campaña. «Ver
+   como…», al pie de «Quién la conoce». En la barra de la campaña, el nombre del mundo («Valdren») lleva a sus
+   páginas.
 
 ## Pruebas
 
