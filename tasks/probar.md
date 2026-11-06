@@ -9,6 +9,25 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   de propietario.
 - **En local**, con los cambios al momento: http://localhost:5173 (lo arranco cuando haga falta).
 
+## Módulo 4: el compendio del mundo (rama `modulo-4/compendio`; en local, aún no en staging)
+
+Cada mundo tiene su propio compendio, hecho para un sistema: lo ven sus campañas con ese sistema. Hasta el módulo 5,
+solo tú (quien lleva el mundo).
+- [ ] **Copiar al mundo**: en el compendio de una campaña, abre algo del sistema (el Goblin) y «Copiar al mundo». Se
+  abre para cambiarlo, con «(copia)» en el nombre; cámbialo y guarda. Sale con «Del mundo» y, a la derecha, «Copia de
+  Goblin».
+- [ ] **Todo · Del sistema · Del mundo**: el selector bajo el buscador; en «Todo», lo del mundo va en su estante
+  arriba.
+- [ ] **Nueva entrada**: crea en el mundo (y en el sistema si lo eliges en «Dónde»).
+- [ ] **El original cambia**: cambia el Goblin del sistema (por ejemplo, con la IA); la copia dice «El original ha
+  cambiado». «Ver cambios» enseña cada campo (en tu copia y en el original); marca los que quieras y «Traer».
+- [ ] **Llevar al sistema**: en una entrada del mundo, para usarla en otros mundos (con «Quitarla del mundo» o no).
+- [ ] **Deshacer**: borrar una entrada del mundo y deshacerlo desde el historial.
+- [ ] **La jugadora** no ve nada del mundo en el compendio, pero un objeto del mundo que lleve su personaje sí sale en
+  su hoja.
+- [ ] **La IA, desde claude.ai**: «guarda en el compendio de mi mundo una criatura…» (guardar_contenido con worldId),
+  «copia el ogro al mundo y súbele los PG» (copiar_contenido), «¿qué cambió en el original?» (origen_contenido).
+
 ## Módulo 3 limpio: Crisol vacío, importar y cambiar (ADR-0015, PR #108)
 
 Crisol ya no trae el 5e: de serie solo «En blanco». Las campañas de staging que lo usaban siguen igual, con una copia

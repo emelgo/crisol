@@ -20,5 +20,5 @@ Plan: `tasks/plan.md` · Spec: `docs/specs/compendio-mundo.md`. Cada tarea con s
   campo y «Traer» (todas o las elegidas); si el original ya no está, lo dice. **Punto de control 2.**
 - [x] **7. La IA**: `guardar_contenido` y `borrar_contenido` con `worldId`, `copiar_contenido`, `origen_contenido` y
   `traer_original`; las instrucciones del MCP y `formato_sistemas`.
-- [ ] **8. Cierre**: e2e `compendio-mundo.spec.ts` (copiar el Goblin al mundo, cambiarlo, el aviso del original),
+- [x] **8. Cierre**: e2e `compendio-mundo.spec.ts` (copiar el Goblin al mundo, cambiarlo, el aviso del original),
   axe, `tasks/probar.md`, `docs/modulos.md`. **Punto de control 3.**

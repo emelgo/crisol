@@ -609,3 +609,66 @@ test('@fugas los personajes de otro y las tablas del máster: la jugadora no los
   await bruno.close()
   await player.close()
 })
+
+test('@fugas el compendio del mundo es del máster: la jugadora ni lo ve ni sabe que cambia (compendio-mundo)', async ({
+  page,
+  browser
+}) => {
+  const link = await campaignLink(page)
+  const campaignId = new URL(page.url()).pathname.split('/campanas/')[1] ?? ''
+  const worldId = new URL(page.url()).pathname.split('/')[2] ?? ''
+  const systemId = await import5e(page)
+  const chosen = await page.request.post('/api/actions/updateCampaign', { data: { campaignId, system: systemId } })
+  expect(chosen.status()).toBe(200)
+  let seen: ReturnType<typeof capture> | undefined
+  const player = await newPlayer(browser, link, 'Jugadora', (p) => {
+    seen = capture(p)
+  })
+  if (!seen) throw new Error('sin captura')
+  const captured = seen
+  await expect.poll(() => captured.frames.some((f) => f.includes('"hello"'))).toBe(true)
+
+  // El máster guarda algo propio del mundo y copia del sistema
+  const saved = await page.request.post('/api/actions/putWorldContent', {
+    data: {
+      worldId,
+      systemId,
+      items: [{ type: 'arma', key: 'hoja_secreta', data: { name: { es: 'Hoja Secreta del Valle' } } }]
+    }
+  })
+  expect(saved.status()).toBe(200)
+  const copied = await page.request.post('/api/actions/copyContent', {
+    data: { worldId, systemId, key: 'guerrero_goblin_2014', to: 'world', name: 'Jefe Escondido' }
+  })
+  expect(copied.status()).toBe(200)
+  const copyKey = (await copied.json()).key as string
+
+  // Lo que lee la campaña no lo trae; lo que lo cambia, para ella no existe
+  const compendium = await (
+    await player.request.post('/api/actions/getCampaignCompendium', { data: { campaignId } })
+  ).json()
+  expect(compendium.world).toBeNull()
+  const search = await player.request.post('/api/actions/searchCampaignContent', {
+    data: { campaignId, query: 'secreta' }
+  })
+  expect((await search.json()).items).toEqual([])
+  const read = await player.request.post('/api/actions/getCampaignContent', {
+    data: { campaignId, keys: ['hoja_secreta', copyKey] }
+  })
+  expect((await read.json()).items).toEqual([])
+  for (const [name, data] of [
+    ['putWorldContent', { worldId, systemId, items: [{ type: 'arma', key: 'x', data: { name: 'X' } }] }],
+    ['deleteWorldContent', { worldId, systemId, keys: ['hoja_secreta'] }],
+    ['copyContent', { worldId, systemId, key: 'guerrero_goblin_2014', to: 'world' }],
+    ['getContentOrigin', { worldId, systemId, key: copyKey }],
+    ['pullContentOrigin', { worldId, systemId, key: copyKey, version: 1, fields: [] }]
+  ] as const) {
+    const response = await player.request.post(`/api/actions/${name}`, { data })
+    expect(response.status(), name).toBe(404)
+  }
+
+  const everything = await captured.all()
+  for (const leak of ['Hoja Secreta del Valle', 'Jefe Escondido', 'hoja_secreta', copyKey, '"worldContent"'])
+    expect(everything).not.toContain(leak)
+  await player.close()
+})
