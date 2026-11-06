@@ -35,6 +35,7 @@ import { TableTab } from './table/table-tab.tsx'
 import { PageTabs, usePageTabs } from './tabs/page-tabs.tsx'
 import { PageTree } from './tree.tsx'
 import { Versions } from './versions.tsx'
+import { WhoKnowsButton } from './who-knows.tsx'
 import styles from './wiki.module.css'
 
 const homeRoute = getRouteApi('/mundos/$worldId/wiki')
@@ -758,6 +759,7 @@ export function EntryView({
             home={home}
             actions={
               <>
+                <WhoKnowsButton page={page} />
                 <BookmarkButton page={page} />
                 <LockButton page={page} />
                 <MoreActions page={page} />

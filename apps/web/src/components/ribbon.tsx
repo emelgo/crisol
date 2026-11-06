@@ -316,7 +316,9 @@ export function Ribbon() {
                 worldId={panelsWorld}
                 campaignId={panelsCampaign}
                 name={campaign?.name ?? ''}
+                worldName={world?.name ?? ''}
                 master={campaignRole === 'master'}
+                ownsWiki={master}
               />
             ) : (
               <WorldPanels worldId={panelsWorld} worldName={world?.name ?? ''} master={panelsMaster} />
@@ -403,13 +405,18 @@ function CampaignPanels({
   worldId,
   campaignId,
   name,
-  master
+  worldName,
+  master,
+  ownsWiki
 }: {
   worldId: string
   campaignId: string
   name: string
+  /** Las páginas del mundo: quien lo lleva va a ellas; quien juega, a lo que sabe su campaña (ADR-0017) */
+  worldName: string
   /** Quien la dirige: también lo que está en juego */
   master: boolean
+  ownsWiki: boolean
 }) {
   const { t } = useTranslation()
   const { setCampaign } = useDice()
@@ -426,6 +433,21 @@ function CampaignPanels({
       >
         <Label icon={Shield} text={name} />
       </Link>
+      {ownsWiki ? (
+        <Link to="/mundos/$worldId/wiki" params={{ worldId }} className={styles.item} data-tour="barra-paginas">
+          <Label icon={Globe} text={worldName} />
+        </Link>
+      ) : (
+        <Link
+          to="/mundos/$worldId/campanas/$campaignId/paginas"
+          params={{ worldId, campaignId }}
+          className={styles.item}
+          viewTransition={SECTION}
+          data-tour="barra-paginas"
+        >
+          <Label icon={Globe} text={worldName} />
+        </Link>
+      )}
       <Link
         to="/mundos/$worldId/campanas/$campaignId/personajes"
         params={{ worldId, campaignId }}
@@ -622,6 +644,13 @@ function MobileMenu({
             text: campaign.name,
             current: path === `/mundos/${world.id}/campanas/${campaign.id}`,
             run: go(`/mundos/${world.id}/campanas/${campaign.id}`)
+          },
+          {
+            key: 'paginas',
+            icon: Globe,
+            text: world.name,
+            current: path.startsWith(`/mundos/${world.id}/campanas/${campaign.id}/paginas`),
+            run: go(master ? `/mundos/${world.id}/wiki` : `/mundos/${world.id}/campanas/${campaign.id}/paginas`)
           },
           {
             key: 'personajes',

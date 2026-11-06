@@ -848,6 +848,41 @@ export function fakeApi(
     return (item && textOf(item.data.name as Text, found?.choices.language ?? 'es')) || key
   }
 
+  const marks = new Map<string, { known: boolean; characters: string[] | null }>()
+  const knowledgeOf = (page: { id: string; worldId: string }) => {
+    const own = (campaignId: string | null) => marks.get(`${campaignId ?? ''}|page|${page.id}`) ?? null
+    const world = own(null)
+    return {
+      pageId: page.id,
+      world: {
+        own: world ? world.known : null,
+        known: world?.known ?? false,
+        from: world ? { pageId: page.id, title: '', layer: 'world' as const } : null
+      },
+      campaigns: campaigns
+        .filter((c) => c.worldId === page.worldId)
+        .map((c) => {
+          const mark = own(c.id)
+          const decided = mark ?? (c.knowsWorld === false ? null : world)
+          return {
+            campaignId: c.id,
+            name: c.name,
+            knowsWorld: c.knowsWorld ?? true,
+            own: mark ? { known: mark.known, characters: mark.characters } : null,
+            audience: !decided?.known
+              ? ('none' as const)
+              : decided.characters
+                ? decided.characters.map((id) => ({ id, name: id }))
+                : ('all' as const),
+            from: decided
+              ? { pageId: page.id, title: '', layer: mark ? ('campaign' as const) : ('world' as const) }
+              : null,
+            characters: []
+          }
+        })
+    }
+  }
+
   const handlers: { [N in ActionName]: (input: ActionInput<N>) => ActionOutput<N> } = {
     listOrganizations: () => ({ organizations }),
     // Copias, como las de la API real (JSON nuevo en cada respuesta)
@@ -1168,6 +1203,14 @@ export function fakeApi(
       tables: tablesOf(pageById(pageId)).tables
     }),
     getPageTables: ({ pageId }) => tablesOf(pageById(pageId)),
+    // Lo que sabe cada campaña (ADR-0017): marcas propias de la página, sin herencia (basta para la interfaz)
+    getPageKnowledge: ({ pageId }) => knowledgeOf(pageById(pageId)),
+    setKnowledge: ({ campaignId, kind, targetId, known, characters }) => {
+      const key = `${campaignId ?? ''}|${kind}|${targetId}`
+      if (known === null) marks.delete(key)
+      else marks.set(key, { known, characters: campaignId && known ? (characters ?? null) : null })
+      return { page: kind === 'page' ? knowledgeOf(pageById(targetId)) : null }
+    },
     createPages: () => {
       throw new ApiError('UNSUPPORTED', 400)
     },

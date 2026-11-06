@@ -10,6 +10,7 @@ import { useTemplates } from '../templates/picker.tsx'
 import fieldStyles from './field-controls.module.css'
 import { ChoiceSelect, ClockField } from './field-controls.tsx'
 import styles from './properties.module.css'
+import { PageLink } from './read-as.tsx'
 import tagStyles from './tags.module.css'
 import { TagsField, tagDot, useTagColor } from './tags.tsx'
 
@@ -61,9 +62,9 @@ function LinkedPage({
     return <s className={fieldStyles.trashed}>{t('fields.trashed', { title: trashed })}</s>
   }
   return (
-    <Link to="/mundos/$worldId/wiki/$pageId" params={{ worldId, pageId }}>
+    <PageLink worldId={worldId} pageId={pageId}>
       {title ?? t('properties.unknownPage')}
-    </Link>
+    </PageLink>
   )
 }
 

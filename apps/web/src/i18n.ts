@@ -1006,6 +1006,48 @@ export const es = {
     zoomIn: 'Acercar más',
     zoomOut: 'Alejar'
   },
+  // «Quién la conoce» de una página (ADR-0017)
+  whoKnows: {
+    title: 'Quién la conoce',
+    close: 'Cerrar',
+    world: 'El mundo',
+    worldChoice: 'Lo que sabe el mundo de esta página',
+    campaignChoice: 'Lo que sabe «{{name}}» de esta página',
+    characters: 'Quién de «{{name}}» la conoce',
+    asParent: 'Como su madre',
+    asWorld: 'Como diga el mundo o su madre',
+    everyone: 'Lo sabe todo el mundo',
+    nobody: 'No lo sabe nadie',
+    campaignAll: 'Lo sabe toda la campaña',
+    campaignSome: 'Lo saben…',
+    campaignNone: 'No lo sabe',
+    sees: {
+      all: 'La ve toda la campaña',
+      none: 'No la ve',
+      some: 'La ven: {{names}}'
+    },
+    here: 'Marcada aquí',
+    by: 'Por «{{title}}»',
+    byWorld: 'Lo sabe el mundo',
+    fromScratch: 'Empezó de cero',
+    viewAs: 'Ver como',
+    viewAsPick: 'Elige…',
+    theCampaign: 'La campaña'
+  },
+  // Las páginas del mundo desde una campaña (ADR-0017)
+  playerPages: {
+    nothing: 'Aún no sabéis nada de este mundo.',
+    empty: 'Nada por ahora.',
+    gone: 'Esta página ya no está a tu alcance.',
+    expand: 'Abrir «{{title}}»',
+    collapse: 'Cerrar «{{title}}»',
+    tabs: 'Pestañas de la página',
+    text: 'Texto',
+    ofMax: '{{value}} de {{max}}',
+    viewingAs: 'Viendo como {{name}}',
+    theCampaign: 'la campaña',
+    back: 'Volver'
+  },
   panelBlocks: {
     empty: 'Panel vacío',
     emptyHint: 'Añade datos de toda la página: medidores, estrellas, notas…',
@@ -2021,6 +2063,7 @@ export const es = {
     },
     campaign: {
       home: 'La campaña y quién juega en ella.',
+      pages: 'Las páginas del mundo, con lo que sabe el grupo.',
       characters: 'Los personajes de la campaña.',
       compendium: 'Las reglas y el contenido del juego de la campaña.',
       inPlay: 'Las criaturas que has puesto en juego, con su hoja.',
@@ -2036,6 +2079,11 @@ export const es = {
     library: {
       search: 'Busca una palabra o una idea en todos los libros.',
       books: 'Los libros del mundo y los comunes, y si ya se puede buscar en ellos.'
+    },
+    // Las páginas del mundo, para quien juega
+    playerPages: {
+      tree: 'Lo que sabéis del mundo. Crece según lo vais descubriendo.',
+      page: 'Cada página, con lo que sabe tu grupo.'
     },
     party: {
       items: 'Lo del grupo, por contenedores. «Mover» lo pasa a un personaje sin duplicarlo.',

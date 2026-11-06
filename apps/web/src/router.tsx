@@ -1,5 +1,6 @@
 import { createRootRoute, createRoute, createRouter, type RouterHistory } from '@tanstack/react-router'
 import { CompendiumScreen } from './campaign/compendium.tsx'
+import { WorldPagesHome, WorldPageView } from './campaign/world-pages.tsx'
 import { CharacterScreen } from './characters/character.tsx'
 import { CharactersScreen } from './characters/characters.tsx'
 import { InPlayScreen } from './creatures/in-play.tsx'
@@ -95,6 +96,21 @@ const libraryRoute = createRoute({
     }
   }
 })
+// Las páginas del mundo desde una campaña, con lo que sabe (ADR-0017); ?como=<personaje>: el máster, como él
+const asSearch = (search: Record<string, unknown>): { como?: string } =>
+  typeof search.como === 'string' && search.como ? { como: search.como } : {}
+const worldPagesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/mundos/$worldId/campanas/$campaignId/paginas',
+  component: WorldPagesHome,
+  validateSearch: asSearch
+})
+const worldPageRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/mundos/$worldId/campanas/$campaignId/paginas/$pageId',
+  component: WorldPageView,
+  validateSearch: asSearch
+})
 const wikiRoute = createRoute({ getParentRoute: () => rootRoute, path: '/mundos/$worldId/wiki', component: WikiHome })
 const wikiPageRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -176,6 +192,8 @@ const routeTree = rootRoute.addChildren([
   inPlayRoute,
   partyRoute,
   libraryRoute,
+  worldPagesRoute,
+  worldPageRoute,
   charactersRoute,
   characterRoute,
   wikiRoute,

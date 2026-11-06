@@ -3,7 +3,6 @@
  * editor ni Yjs. Los títulos no son encabezados (no se meten en el índice de la página que los enseña)
  */
 
-import { Link } from '@tanstack/react-router'
 import type { JSONContent } from '@tiptap/core'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -11,6 +10,7 @@ import callout from './callout.module.css'
 import styles from './content.module.css'
 import editor from './editor.module.css'
 import { FileEmbedBlock } from './file-embed.tsx'
+import { PageLink } from './read-as.tsx'
 import separate from './separate.module.css'
 import sheet from './sheet-blocks.module.css'
 
@@ -51,9 +51,9 @@ function Inline({ nodes, worldId }: { nodes: JSONContent[]; worldId: string }) {
         if (node.type === 'pageLink') {
           const text = String(node.attrs?.label || node.attrs?.title || '')
           return typeof node.attrs?.pageId === 'string' ? (
-            <Link key={key} to="/mundos/$worldId/wiki/$pageId" params={{ worldId, pageId: node.attrs.pageId }}>
+            <PageLink key={key} worldId={worldId} pageId={node.attrs.pageId}>
               {text}
-            </Link>
+            </PageLink>
           ) : (
             <span key={key} className={styles.missing}>
               {text}
@@ -177,9 +177,9 @@ export function EmbeddedFrame({ node, worldId }: { node: JSONContent; worldId: s
     <section aria-label={t('embed.of', { title })} className={styles.embed}>
       <div className={styles.embedTitle}>
         {pageId ? (
-          <Link to="/mundos/$worldId/wiki/$pageId" params={{ worldId, pageId }}>
+          <PageLink worldId={worldId} pageId={pageId}>
             {title}
-          </Link>
+          </PageLink>
         ) : (
           title
         )}

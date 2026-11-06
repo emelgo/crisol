@@ -93,6 +93,8 @@ describe('Actions', () => {
       listTemplates: true,
       getTemplate: true,
       getPageTables: true,
+      getPageKnowledge: true,
+      setKnowledge: true,
       createTemplate: true,
       updateTemplate: true,
       deleteTemplate: true,

@@ -393,6 +393,8 @@ export type Actions = {
   getPageVersion: typeof getPageVersion
   restorePageVersion: typeof restorePageVersion
   getPageTables: typeof getPageTables
+  getPageKnowledge: typeof getPageKnowledge
+  setKnowledge: typeof setKnowledge
   listFiles: typeof listFiles
   listCommonFiles: typeof listCommonFiles
   renameFile: typeof renameFile

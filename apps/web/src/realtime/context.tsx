@@ -38,6 +38,8 @@ function changedBy(message: RealtimeMessage): QueryKey[] {
       if (message.what === 'campaigns') return [['campaigns', message.worldId]]
       // Lo que lleva etiquetas cambia también su catálogo
       if (message.what === 'pages') return [['pages', message.worldId], ['tags']]
+      // Lo que sabe una campaña (ADR-0017): todo lo de las páginas del mundo se vuelve a pedir, ya proyectado
+      if (message.what === 'knowledge') return [['pages', message.worldId]]
       if (message.what === 'files') return [['files', message.worldId], ['tags']]
       // Los comunes salen en los archivos de todos los mundos
       if (message.what === 'commonFiles') return [['files'], ['commonFiles'], ['tags']]

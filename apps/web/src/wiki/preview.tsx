@@ -6,7 +6,6 @@
 import type { PageCover } from '@crisol/contracts'
 import { autoUpdate, computePosition, flip, offset, shift } from '@floating-ui/dom'
 import { useQuery } from '@tanstack/react-query'
-import { Link } from '@tanstack/react-router'
 import type { JSONContent } from '@tiptap/core'
 import { type KeyboardEvent, type Ref, useEffect, useId, useLayoutEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
@@ -15,6 +14,7 @@ import { useApi } from '../api/context.tsx'
 import { ContentView } from './content.tsx'
 import { coverStyle } from './cover-look.ts'
 import styles from './preview.module.css'
+import { PageLink, readAsInput, readAsKey, useReadAs } from './read-as.tsx'
 
 /** La consulta de lo de dentro de una página (cuelga de ['pages', mundo, 'content', página]: la vacía el canal) */
 export const contentKey = (worldId: string, pageId: string, anchor: string | null, preview: boolean) => [
@@ -26,11 +26,25 @@ export const contentKey = (worldId: string, pageId: string, anchor: string | nul
   preview
 ]
 
-export function usePageContent(worldId: string, pageId: string | null, anchor: string | null, preview: boolean) {
+export function usePageContent(
+  worldId: string,
+  pageId: string | null,
+  anchor: string | null,
+  preview: boolean,
+  tabId?: string
+) {
   const api = useApi()
+  const readAs = useReadAs()
   return useQuery({
-    queryKey: contentKey(worldId, pageId ?? '', anchor, preview),
-    queryFn: () => api.call('getPageContent', { pageId: pageId ?? '', anchor, preview }),
+    queryKey: [...contentKey(worldId, pageId ?? '', anchor, preview), tabId ?? null, ...readAsKey(readAs)],
+    queryFn: () =>
+      api.call('getPageContent', {
+        pageId: pageId ?? '',
+        anchor,
+        preview,
+        ...(tabId ? { tabId } : {}),
+        ...readAsInput(readAs)
+      }),
     enabled: Boolean(pageId)
   })
 }
@@ -120,14 +134,9 @@ export function LinkPreview({ worldId, pageId, anchor, anchorElement, sheet, onC
         </div>
       )}
       <div className={styles.actions}>
-        <Link
-          to="/mundos/$worldId/wiki/$pageId"
-          params={{ worldId, pageId }}
-          className={styles.open}
-          onClick={() => onClose(false)}
-        >
+        <PageLink worldId={worldId} pageId={pageId} className={styles.open} onClick={() => onClose(false)}>
           {t(sheet ? 'preview.openPage' : 'preview.open')}
-        </Link>
+        </PageLink>
         {sheet && (
           <button type="button" className={styles.close} onClick={() => onClose(true)}>
             {t('preview.close')}
