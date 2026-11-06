@@ -45,6 +45,7 @@ import {
   type Choices,
   type ContentItem,
   catalogSystem,
+  changeResource,
   characterView,
   compendiumEntry,
   compendiumSections,
@@ -52,10 +53,12 @@ import {
   contentDiff,
   contentFingerprint,
   contentTables,
+  creatureView,
   fileName,
   type Mechanics,
   mechanicsText,
   newContentKey,
+  nextNumbers,
   normalizeChoices,
   type Play,
   pickPaths,
@@ -67,6 +70,7 @@ import {
   SYSTEM_FILE,
   type System,
   searchContent,
+  startingPlay,
   systemOverview,
   type Text,
   tableRowOf,
@@ -513,6 +517,18 @@ export function fakeApi(
     worldEntries.filter((e) => e.worldId === worldId && e.systemId === systemId)
   /** Quien lleva el mundo: en la falsa, el propietario */
   const leadsWorlds = () => organizations.some((o) => o.role === 'owner')
+  // Las criaturas en juego (docs/specs/criaturas.md), en la falsa: las del máster
+  const creatures: Array<{
+    id: string
+    campaignId: string
+    key: string
+    name: string
+    number: number | null
+    unique: boolean
+    play: Play
+    overrides: Record<string, number>
+    version: number
+  }> = []
   const worldEntry = (worldId: string, systemId: string, key: string) => {
     const found = entriesOf(worldId, systemId).find((e) => e.item.key === key)
     if (!found) throw new ApiError('NOT_FOUND', 404)
@@ -665,6 +681,58 @@ export function fakeApi(
       randomTables.set(tabId, table)
     }
     return table
+  }
+
+  const creatureById = (id: string) => {
+    const found = creatures.find((c) => c.id === id)
+    if (!found || !leadsWorlds()) throw new ApiError('NOT_FOUND', 404)
+    return found
+  }
+  /** Su hoja y lo que se ve de ella en la lista, como en el servidor */
+  const creatureCard = (row: (typeof creatures)[number]) => {
+    const found = compendiumOf(row.campaignId)
+    const entry = found?.content.find((c) => c.key === row.key)
+    if (!found || !entry) throw new ApiError('ENTRY_GONE', 400)
+    const { view } = creatureView(found.document, found.content, found.choices, entry, row.play, row.overrides)
+    const [first] = resourcePaths(found.document.types[entry.type]?.fields ?? {})
+    const at = first
+      ? (view.sheet[first.path] as { value?: number; max?: number; temp?: number } | undefined)
+      : undefined
+    const life =
+      first && typeof at?.max === 'number'
+        ? { path: first.path, value: at.value ?? at.max, max: at.max, temp: at.temp ?? 0 }
+        : null
+    const statsBlock = view.layout.find((b) => b.kind === 'stats') as
+      | { fields?: { key: string; label: string }[] }
+      | undefined
+    const stats = (statsBlock?.fields ?? []).slice(0, 2).flatMap((f) => {
+      const value = view.sheet[f.key]
+      return typeof value === 'number' || typeof value === 'string'
+        ? [{ key: f.key, label: f.label, value: String(value) }]
+        : []
+    })
+    const condition: 'ok' | 'bloodied' | 'down' = !life
+      ? 'ok'
+      : life.value <= 0
+        ? 'down'
+        : life.value <= life.max / 2
+          ? 'bloodied'
+          : 'ok'
+    return {
+      view,
+      card: {
+        id: row.id,
+        key: row.key,
+        name: row.name,
+        number: row.number,
+        unique: row.unique,
+        type: entry.type,
+        version: row.version,
+        life,
+        stats,
+        condition
+      }
+    }
   }
 
   /** El sistema de una campaña, con lo que eligió y su contenido (en la falsa, el de los de la cuenta) */
@@ -1349,6 +1417,102 @@ export function fakeApi(
       const stored = rolls.find((r) => r.id === out.roll.id)
       for (const each of stored ? [out.roll, stored] : [out.roll]) each.label = `${character.name} · ${result.label}`
       return { roll: out.roll }
+    },
+    listInPlay: ({ campaignId }) => ({
+      creatures: creatures.filter((c) => c.campaignId === campaignId).map((c) => creatureCard(c).card)
+    }),
+    getInPlay: ({ creatureId }) => {
+      const { card, view } = creatureCard(creatureById(creatureId))
+      return { creature: card, state: view }
+    },
+    putInPlay: ({ campaignId, key, count, unique, hp, name }) => {
+      const found = compendiumOf(campaignId)
+      const entry = found?.content.find((c) => c.key === key)
+      if (!found || !entry) throw new ApiError('NOT_FOUND', 404)
+      if (found.document.types[entry.type]?.document !== 'actor') throw new ApiError('NOT_A_CREATURE', 400)
+      if (unique && creatures.some((c) => c.campaignId === campaignId && c.key === key && c.unique))
+        throw new ApiError('UNIQUE_TAKEN', 400)
+      const base = name ?? textOf(entry.data.name as Text, found.choices.language)
+      const numbers = unique
+        ? [null]
+        : nextNumbers(
+            creatures
+              .filter((c) => c.campaignId === campaignId && c.key === key && c.number !== null)
+              .map((c) => c.number as number),
+            count ?? 1
+          )
+      const made = numbers.map((number) => {
+        const start = startingPlay(found.document, entry, { hp: hp ?? 'average' })
+        const row = {
+          id: crypto.randomUUID(),
+          campaignId,
+          key,
+          name: number === null ? base : `${base} ${number}`,
+          number,
+          unique: Boolean(unique),
+          play: start.play,
+          overrides: start.overrides,
+          version: 1
+        }
+        creatures.push(row)
+        return row
+      })
+      return { creatures: made.map((c) => creatureCard(c).card) }
+    },
+    playCreature: ({ creatureId, version, damage, heal, temp, max, name }) => {
+      const row = creatureById(creatureId)
+      if (row.version !== version) throw new ApiError('CREATURE_CHANGED', 400)
+      const { card } = creatureCard(row)
+      if (max) {
+        const path = max.resource ?? card.life?.path ?? ''
+        if (max.value === null) delete row.overrides[path]
+        else row.overrides[path] = max.value
+      }
+      if (damage !== undefined || heal !== undefined || temp !== undefined) {
+        const life = creatureCard(row).card.life
+        if (!life) throw new ApiError('BAD_PLAY', 400)
+        row.play = changeResource(row.play, life.path, life.max, {
+          ...(damage !== undefined ? { damage } : {}),
+          ...(heal !== undefined ? { heal } : {}),
+          ...(temp !== undefined ? { temp } : {})
+        })
+      }
+      if (name) row.name = name
+      row.version++
+      const after = creatureCard(row)
+      return { creature: after.card, state: after.view }
+    },
+    rollForCreature: ({ creatureId, action, roll, visibility = 'hidden' }) => {
+      const row = creatureById(creatureId)
+      const { view } = creatureCard(row)
+      const chosen = action ? view.actions.find((a) => a.item === action.item && a.key === action.key) : undefined
+      const formula =
+        action?.part === 'attack'
+          ? chosen?.attack
+          : action?.part === 'damage'
+            ? chosen?.damage.map((d) => d.formula).join(' + ')
+            : roll
+              ? '1d20'
+              : null
+      if (!formula) throw new ApiError('BAD_ROLL', 400)
+      const out = handlers.rollDice({ campaignId: row.campaignId, formula, visibility })
+      const stored = rolls.find((r) => r.id === out.roll.id)
+      const label = `${row.name} · ${chosen?.label ?? roll?.key ?? ''}${action?.part === 'damage' ? ' · daño' : ''}`
+      for (const each of stored ? [out.roll, stored] : [out.roll]) each.label = label
+      return { roll: out.roll }
+    },
+    removeFromPlay: ({ campaignId, creatureIds, copiesOf }) => {
+      const removed = creatures
+        .filter(
+          (c) => c.campaignId === campaignId && (creatureIds?.includes(c.id) || (copiesOf === c.key && !c.unique))
+        )
+        .map((c) => c.id)
+      for (const id of removed)
+        creatures.splice(
+          creatures.findIndex((c) => c.id === id),
+          1
+        )
+      return { removed }
     },
     playCharacter: ({ characterId, version, rest: kind }) => {
       const character = visibleCharacter(characterId)

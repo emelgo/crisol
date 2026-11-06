@@ -11,7 +11,7 @@ Plan: `tasks/plan.md` · Spec: `docs/specs/criaturas.md`. Cada tarea con sus pru
   multiplicador y resistencias.
 - [x] **3. La tabla `campaign_creatures`** (migración 0044), su repo, el historial y su aviso en tiempo real (al
   máster).
-- [ ] **4. Las acciones**: poner en juego (cuántas o una fórmula, o única; PG medios o tirados), la lista y una con su
+- [x] **4. Las acciones**: poner en juego (cuántas o una fórmula, o única; PG medios o tirados), la lista y una con su
   hoja, lo de la partida (daño, curación, temporales, usos, recargas, otro máximo, tirar PG, descansar), tirar por
   ella, quitar una o todas las copias. Permisos y fugas. **Punto de control 1.**
 - [ ] **5. Aplicar una tirada**: el daño o la curación de una tirada del registro a varias criaturas en juego o

@@ -19,6 +19,7 @@ import {
   rollForCharacter,
   updateCharacter
 } from './characters.ts'
+import { getInPlay, listInPlay, playCreature, putInPlay, removeFromPlay, rollForCreature } from './creatures.ts'
 import { listRolls, rollDice, tryDice } from './dice.ts'
 import {
   createFolder,
@@ -128,6 +129,7 @@ export * from './action.ts'
 export * from './ai.ts'
 export * from './campaigns.ts'
 export * from './characters.ts'
+export * from './creatures.ts'
 export * from './dice.ts'
 export * from './files.ts'
 export * from './foundry.ts'
@@ -264,6 +266,12 @@ export const ACTIONS = [
   copyContent,
   getContentOrigin,
   pullContentOrigin,
+  listInPlay,
+  getInPlay,
+  putInPlay,
+  playCreature,
+  rollForCreature,
+  removeFromPlay,
   listCharacters,
   getCharacter,
   createCharacter,
@@ -406,6 +414,12 @@ export type Actions = {
   copyContent: typeof copyContent
   getContentOrigin: typeof getContentOrigin
   pullContentOrigin: typeof pullContentOrigin
+  listInPlay: typeof listInPlay
+  getInPlay: typeof getInPlay
+  putInPlay: typeof putInPlay
+  playCreature: typeof playCreature
+  rollForCreature: typeof rollForCreature
+  removeFromPlay: typeof removeFromPlay
   listCharacters: typeof listCharacters
   getCharacter: typeof getCharacter
   createCharacter: typeof createCharacter
