@@ -22,6 +22,7 @@ import {
 } from '../actions/files.ts'
 import type { Auth } from '../auth/auth.ts'
 import { clientIp, toHeaders } from '../http.ts'
+import { playerOpensFile } from '../wiki/reader.ts'
 import { NotAStreamError, type Storage, TooLargeError } from './storage.ts'
 
 /** A un mundo (worldId) o, sin él, a los comunes de una organización (organizationId); folderId: a esa carpeta */
@@ -64,6 +65,15 @@ const disposition = (type: 'inline' | 'attachment', name: string) => {
       .replace(/[^\x20-\x7e]/g, '')
       .replace(/["\\]/g, '') || 'archivo'
   return `${type}; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(name)}`
+}
+
+/** El archivo, si un jugador lo puede abrir: del mundo en el que juega, o común, usado en alguno de sus mundos */
+async function playerFile(ctx: ActionContext, fileId: string) {
+  const file = await filesRepo.findFile(ctx.db, fileId)
+  if (!file) return null
+  const worlds = file.worldId ? [file.worldId] : [...new Set([...ctx.actor.campaigns.values()].map((c) => c.worldId))]
+  for (const worldId of worlds) if (await playerOpensFile(ctx, worldId, file.id)) return file
+  return null
 }
 
 export function registerFileRoutes(
@@ -208,7 +218,10 @@ export function registerFileRoutes(
     try {
       ;({ file } = await authorizedFile(ctx, 'page.read', params.data.id))
     } catch (error) {
-      return fail(reply, error)
+      // Un jugador (ADR-0017): si está en algo que ve en alguna de sus campañas
+      const found = await playerFile(ctx, params.data.id)
+      if (!found) return fail(reply, error)
+      file = found
     }
     const etag = `"${file.hash}"`
     // Privada: solo el navegador de quien la pidió. Con su versión en la dirección (?v=), esos bytes no cambian nunca:

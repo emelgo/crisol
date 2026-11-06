@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { defineAction } from './action.ts'
 import { pagePanel } from './panel.ts'
+import { readAs } from './read-as.ts'
 
 const pageTitle = z.string().trim().min(1).max(200)
 /** Un emoji (con sus modificadores y uniones), o una bandera */
@@ -45,21 +46,6 @@ export const pageProperty = z.discriminatedUnion('type', [
 ])
 
 export type PageProperty = z.infer<typeof pageProperty>
-
-/**
- * Para leer como jugador (ADR-0017): la campaña desde la que lee (si juega una sola del mundo, se deduce) y, quien
- * lleva la wiki, como qué personaje de esa campaña («Ver como jugador»; campaign: la campaña sin excepciones)
- */
-export const readAs = {
-  campaignId: z
-    .uuid()
-    .optional()
-    .describe('Leer desde esta campaña, con lo que sabe (un jugador; si juega una sola del mundo, se deduce)'),
-  asCharacterId: z
-    .union([z.uuid(), z.literal('campaign')])
-    .optional()
-    .describe('Quien lleva la wiki: leer como ese personaje de la campaña (campaign: la campaña, sin excepciones)')
-}
 
 /** Una página tal como sale en el árbol */
 export const pageSummary = z.object({
@@ -585,7 +571,7 @@ export const getPageLinks = defineAction({
   kind: 'read',
   description:
     'Los enlaces de una página: las páginas que la enlazan (con el trozo donde lo hacen), adónde enlaza ella (y si esos enlaces están bien, sin resolver o rotos), dónde se la nombra sin enlazarla y las páginas que la apuntan desde un campo',
-  input: z.object({ pageId: z.uuid() }),
+  input: z.object({ pageId: z.uuid(), ...readAs }),
   output: z.object({
     incoming: z.array(linkingPage),
     outgoing: z.array(
@@ -638,6 +624,7 @@ export const getPageContent = defineAction({
     pageId: z.uuid(),
     anchor: z.string().trim().min(1).max(200).nullable().optional(),
     preview: z.boolean().optional().describe('Solo el principio, sin abrir lo incrustado dentro'),
+    tabId: z.uuid().optional().describe('Lo de una pestaña de texto de la página, en lugar de su texto principal'),
     ...readAs
   }),
   output: z.object({

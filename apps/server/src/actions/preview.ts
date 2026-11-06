@@ -4,8 +4,8 @@
  * abre el documento de Yjs del otro para quien lo mira: se lee aquí
  */
 import { getPageContent } from '@crisol/contracts'
-import { documentsRepo, pagesRepo } from '@crisol/db'
-import { foldName } from '@crisol/domain'
+import { documentsRepo, mapsRepo, pagesRepo } from '@crisol/db'
+import { foldName, NotFoundError } from '@crisol/domain'
 import type { JSONContent } from '@tiptap/core'
 import { readDocument } from '../wiki/content.ts'
 import { linkName, worldNames } from '../wiki/links.ts'
@@ -91,9 +91,21 @@ async function contentOf(ctx: ActionContext, pageId: string, anchor: string | nu
   return Promise.all(blocks.map((block) => project(block, { ...at, separates })))
 }
 
+/** Lo de una pestaña de texto, proyectado como el cuerpo */
+async function tabContent(ctx: ActionContext, documentId: string, pageId: string, at: Omit<Context, 'separates'>) {
+  const read = await readDocument(ctx, { kind: 'separate', documentId, pageId })
+  const content = filterBody(read, at.view, pageId)?.content ?? []
+  return Promise.all(content.map((block) => project(block, { ...at, separates: new Map() })))
+}
+
 export const previewActions = [
-  implement(getPageContent, async (ctx, { pageId, anchor, preview, ...as }) => {
+  implement(getPageContent, async (ctx, { pageId, anchor, preview, tabId, ...as }) => {
     const { page, wiki, view } = await viewedPage(ctx, pageId, as)
+    // Una pestaña de texto: de esta página y que vea
+    const tab = tabId ? await mapsRepo.findTab(ctx.db, tabId) : null
+    if (tabId && (!tab || tab.pageId !== page.id || tab.kind !== 'text' || !tab.documentId))
+      throw new NotFoundError('tab')
+    if (tab && !view.seesTab({ id: tab.id, pageId: tab.pageId, hidden: tab.hidden })) throw new NotFoundError('tab')
     const linkTitle = linkName(await worldNames(ctx, wiki.worldId))
     const summary = visibleProperties(propertiesOf(page.properties), view).find((p) => foldName(p.name) === 'resumen')
     // En la vista previa, lo incrustado dentro no se abre (como si ya se hubiera llegado al último nivel)
@@ -105,7 +117,9 @@ export const previewActions = [
       above: new Set([page.id]),
       depth: preview ? MAX_EMBED_DEPTH : 0
     }
-    let blocks = (await contentOf(ctx, page.id, anchor ?? null, base)) ?? []
+    let blocks = tab?.documentId
+      ? await tabContent(ctx, tab.documentId, page.id, base)
+      : ((await contentOf(ctx, page.id, anchor ?? null, base)) ?? [])
     let truncated = false
     if (preview) {
       // Los párrafos vacíos no cuentan

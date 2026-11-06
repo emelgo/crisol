@@ -4,7 +4,8 @@ import type { FastifyInstance } from 'fastify'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { buildApp } from '../app.ts'
 import type { Auth } from '../auth/auth.ts'
-import { createTestAuth, signUpTestUser, TEST_SEAL_KEY } from '../testing.ts'
+import { diskStorage } from '../files/storage.ts'
+import { createTestAuth, signUpTestUser, TEST_SEAL_KEY, testDataDir } from '../testing.ts'
 
 const BASE_URL = 'http://localhost:5173'
 const ok = async () => undefined
@@ -306,7 +307,8 @@ describe('lo que lee un jugador (docs/specs/conocimiento.md)', () => {
     auth = createTestAuth(conn.db, BASE_URL)
     app = buildApp({
       checks: { postgres: ok, valkey: ok },
-      accounts: { auth, db: conn.db, publicUrl: BASE_URL, sealKey: TEST_SEAL_KEY }
+      accounts: { auth, db: conn.db, publicUrl: BASE_URL, sealKey: TEST_SEAL_KEY },
+      storage: diskStorage(testDataDir())
     })
     master = await signUpTestUser(auth, { name: 'Enrique', email: 'enrique@crisol.test' })
     const [org] = await conn.db.insert(schema.organizations).values({ name: 'Mesa' }).returning()
@@ -495,5 +497,92 @@ describe('lo que lee un jugador (docs/specs/conocimiento.md)', () => {
       ana.cookie
     )
     expect(JSON.stringify(asBram.blocks)).toContain('El rey ha muerto')
+  })
+
+  it('la búsqueda: solo en lo que ve; los secretos, revelados; nunca por un campo oculto', async () => {
+    await ok200('setPageProperties', {
+      pageId: page.Aldoria,
+      properties: [{ name: 'Lealtad real', type: 'text', value: 'Zafiro', hidden: true }]
+    })
+    const search = async (query: string, cookie = ana.cookie) =>
+      (await ok200('searchWiki', { worldId, query, page: 1 }, cookie)).results.map((r: { title: string }) => r.title)
+    expect(await search('capital')).toEqual(expect.arrayContaining(['Aldoria', 'La capital']))
+    expect(await search('Zafiro')).toEqual([])
+    expect(await search('Zafiro', master.cookie)).toEqual(['Aldoria'])
+    expect(await search('heredero')).toEqual([])
+    expect(await search('Reinos')).toEqual([])
+    expect(await search('capital', bruno.cookie)).toEqual([])
+    const [, heredero] = await secretsOf(page.Aldoria ?? '')
+    await mark({ kind: 'secret', targetId: heredero?.id })
+    const found = await ok200('searchWiki', { worldId, query: 'heredero', page: 1 }, ana.cookie)
+    expect(found.results.map((r: { title: string }) => r.title)).toEqual(['Aldoria'])
+    expect(found.results[0].sections[0]).toMatchObject({ secret: true })
+    expect(JSON.stringify(found)).not.toContain('Nota')
+  })
+
+  it('los enlaces y «Mencionado en», solo desde lo que ve', async () => {
+    const varn = await ok200('getPageLinks', { pageId: page['La capital'] }, ana.cookie)
+    expect(varn.incoming.map((l: { title: string }) => l.title)).toEqual(['Aldoria'])
+    const aldoria = await ok200('getPageLinks', { pageId: page.Aldoria }, ana.cookie)
+    expect(aldoria.outgoing.map((l: { title: string }) => l.title)).toEqual(['La capital'])
+    expect(await status('getPageLinks', { pageId: page.Varn }, ana.cookie)).toBe(404)
+    // El máster ve el enlace a Varn
+    expect((await ok200('getPageLinks', { pageId: page.Aldoria })).outgoing).toHaveLength(2)
+  })
+
+  it('las pestañas y los pines: los que ve; un pin a una página que no ve, sin ella', async () => {
+    const shown = await ok200('createPageTab', { pageId: page.Aldoria, kind: 'map', name: 'Mapa' })
+    const hidden = await ok200('createPageTab', { pageId: page.Aldoria, kind: 'map', name: 'Secreto' })
+    await ok200('updatePageTab', { tabId: hidden.id, hidden: true })
+    const text = await ok200('createPageTab', { pageId: page.Aldoria, kind: 'text', name: 'Notas' })
+    await ok200('createPageTab', { pageId: page.Aldoria, kind: 'table', name: 'Tabla' })
+    const tabs = await ok200('listPageTabs', { pageId: page.Aldoria }, ana.cookie)
+    expect(tabs.tabs.map((t: { name: string }) => t.name)).toEqual(['Mapa', 'Notas'])
+    expect(await status('getMap', { tabId: hidden.id }, ana.cookie)).toBe(404)
+    const map = await ok200('getMap', { tabId: shown.id })
+    await ok200('createMapPin', { mapId: map.id, x: 0.1, y: 0.1, pageId: page['La capital'] })
+    await ok200('createMapPin', { mapId: map.id, x: 0.2, y: 0.2, pageId: page.Varn, label: 'Torre' })
+    await ok200('createMapPin', { mapId: map.id, x: 0.3, y: 0.3, label: 'Cueva', hidden: true })
+    const seen = await ok200('getMap', { tabId: shown.id }, ana.cookie)
+    expect(
+      seen.pins.map((p: { label: string | null; pageId: string | null; pageTitle: string | null }) => [
+        p.label,
+        p.pageId,
+        p.pageTitle
+      ])
+    ).toEqual([
+      [null, page['La capital'], 'La capital'],
+      ['Torre', null, null]
+    ])
+    // Revelar la pestaña oculta a la campaña
+    await mark({ kind: 'tab', targetId: hidden.id })
+    expect((await ok200('listPageTabs', { pageId: page.Aldoria }, ana.cookie)).tabs).toHaveLength(3)
+    // La pestaña de texto, por la API
+    expect(await status('getPageContent', { pageId: page.Aldoria, tabId: text.id }, ana.cookie)).toBe(200)
+  })
+
+  it('los archivos: solo los que están en algo que ve', async () => {
+    const PNG = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.from('un mapa')])
+    const upload = async (name: string) =>
+      (
+        await app.inject({
+          method: 'POST',
+          url: `/api/files?worldId=${worldId}&name=${encodeURIComponent(name)}`,
+          payload: PNG,
+          headers: { origin: BASE_URL, cookie: master.cookie, 'content-type': 'application/octet-stream' }
+        })
+      ).json()
+    const get = async (fileId: string, cookie: string) =>
+      (await app.inject({ method: 'GET', url: `/api/files/${fileId}`, headers: { cookie } })).statusCode
+    const cover = await upload('portada.png')
+    const loose = await upload('suelta.png')
+    const secret = await upload('secreta.png')
+    await ok200('updatePage', { pageId: page.Aldoria, cover: { fileId: cover.id, x: 50, y: 50 } })
+    await ok200('updatePage', { pageId: page.Varn, cover: { fileId: secret.id, x: 50, y: 50 } })
+    expect(await get(cover.id, ana.cookie)).toBe(200)
+    expect(await get(loose.id, ana.cookie)).toBe(404)
+    expect(await get(secret.id, ana.cookie)).toBe(404)
+    expect(await get(cover.id, bruno.cookie)).toBe(404)
+    expect(await get(loose.id, master.cookie)).toBe(200)
   })
 })

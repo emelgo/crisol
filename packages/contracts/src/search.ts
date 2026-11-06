@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { defineAction } from './action.ts'
-import { readAs } from './pages.ts'
+import { readAs } from './read-as.ts'
 
 export const searchWiki = defineAction({
   name: 'searchWiki',

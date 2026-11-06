@@ -168,3 +168,28 @@ export async function searchScope(
   )
   return { pages, separates: separates.map((doc) => doc.id) }
 }
+
+/**
+ * Si un jugador puede abrir un archivo del mundo: si está en algo que ve en alguna de sus campañas de ese mundo (la
+ * portada o el panel de una página, un documento, un mapa) o es la portada del mundo o de una de sus campañas
+ */
+export async function playerOpensFile(ctx: ActionContext, worldId: string, fileId: string): Promise<boolean> {
+  const mine = campaignsIn(ctx, worldId)
+  if (mine.length === 0) return false
+  const uses = await knowledgeRepo.fileUses(ctx.db, worldId, fileId)
+  if (uses.worldCover || uses.campaignCovers.some((id) => mine.includes(id))) return true
+  const wiki = { worldId, organizationId: '' }
+  for (const campaignId of mine) {
+    const view = await viewFor(ctx, worldId, await readerFor(ctx, wiki, { campaignId }))
+    if ([...uses.covers, ...uses.panels].some((pageId) => view.seesPage(pageId))) return true
+    if (uses.maps.some((map) => view.seesTab({ id: map.tabId, pageId: map.pageId, hidden: map.hidden }))) return true
+    const seesEmbed = (e: (typeof uses.embeds)[number]) =>
+      e.kind === 'body'
+        ? view.seesPage(e.pageId)
+        : e.kind === 'secret'
+          ? view.seesSecret(e.documentId, e.pageId)
+          : e.kind === 'tab' && e.tabId !== null && view.seesTab({ id: e.tabId, pageId: e.pageId, hidden: e.hidden })
+    if (uses.embeds.some(seesEmbed)) return true
+  }
+  return false
+}

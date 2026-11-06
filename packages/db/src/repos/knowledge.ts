@@ -236,3 +236,49 @@ export function separatesOf(db: Database, worldId: string) {
     .leftJoin(pageTabs, eq(pageTabs.documentId, documents.id))
     .where(and(eq(documents.worldId, worldId), inArray(documents.kind, ['secret', 'tab'])))
 }
+
+/**
+ * Dónde se usa un archivo del mundo, para saber si un jugador lo puede abrir (ADR-0017): como portada o imagen del
+ * panel de una página, incrustado en un documento, como imagen de un mapa, o como portada del mundo o de una campaña
+ */
+export async function fileUses(db: Database, worldId: string, fileId: string) {
+  const [covers, panels, embeds, mapImages, campaignCovers, world] = await Promise.all([
+    db.execute<{ id: string }>(sql`
+      select id from pages where world_id = ${worldId} and deleted_at is null and cover->>'fileId' = ${fileId}`),
+    db.execute<{ id: string }>(sql`
+      select p.id from pages p, jsonb_array_elements(p.panel) b
+      where p.world_id = ${worldId} and p.deleted_at is null and b->>'type' = 'image' and b->>'fileId' = ${fileId}
+        and coalesce(b->>'hidden', '') <> 'true'`),
+    db.execute<{
+      page_id: string
+      document_id: string
+      kind: string
+      tab_id: string | null
+      hidden: boolean | null
+    }>(sql`
+      select e.source_page_id as page_id, e.source_document_id as document_id, d.kind, t.id as tab_id, t.hidden
+      from file_embeds e join documents d on d.id = e.source_document_id
+        left join page_tabs t on t.document_id = d.id
+      where e.world_id = ${worldId} and e.file_id = ${fileId}`),
+    db.execute<{ tab_id: string; page_id: string; hidden: boolean }>(sql`
+      select t.id as tab_id, t.page_id, t.hidden from maps m join page_tabs t on t.id = m.tab_id
+      where m.world_id = ${worldId} and m.file_id = ${fileId}`),
+    db.execute<{ id: string }>(sql`
+      select id from campaigns where world_id = ${worldId} and deleted_at is null and cover->>'fileId' = ${fileId}`),
+    db.execute<{ id: string }>(sql`select id from worlds where id = ${worldId} and cover->>'fileId' = ${fileId}`)
+  ])
+  return {
+    covers: [...covers].map((r) => r.id),
+    panels: [...panels].map((r) => r.id),
+    embeds: [...embeds].map((r) => ({
+      pageId: r.page_id,
+      documentId: r.document_id,
+      kind: r.kind,
+      tabId: r.tab_id,
+      hidden: r.hidden ?? false
+    })),
+    maps: [...mapImages].map((r) => ({ tabId: r.tab_id, pageId: r.page_id, hidden: r.hidden })),
+    campaignCovers: [...campaignCovers].map((r) => r.id),
+    worldCover: [...world].length > 0
+  }
+}

@@ -10,7 +10,9 @@ import { findName, fragmentAround, plainText, textBlocks } from '@crisol/editor'
 import type { JSONContent } from '@tiptap/core'
 import { documentJson, readDocument, writeDocument } from '../wiki/content.ts'
 import { worldNames } from '../wiki/links.ts'
+import { viewedPage, visibleProperties } from '../wiki/projection.ts'
 import { propertiesOf } from '../wiki/properties.ts'
+import { searchScope } from '../wiki/reader.ts'
 import { authorizedPage, authorizedWiki } from './access.ts'
 import type { ActionContext } from './context.ts'
 import { implement } from './registry.ts'
@@ -80,17 +82,30 @@ function withLink(
 }
 
 export const linkActions = [
-  implement(getPageLinks, async (ctx, { pageId }) => {
-    const { page, wiki } = await authorizedPage(ctx, 'page.read', pageId)
+  implement(getPageLinks, async (ctx, { pageId, ...as }) => {
+    const { page, wiki, view } = await viewedPage(ctx, pageId, as)
     const names = await worldNames(ctx, wiki.worldId)
     const byId = new Map(names.map((named) => [named.id, named]))
-    const pathOf = (id: string) => byId.get(id)?.path.slice(0, -1) ?? []
+    // Un jugador (ADR-0017): solo desde lo que ve (páginas, secretos y pestañas; nunca las notas), con su ruta visible
+    const scope = await searchScope(ctx, wiki.worldId, view)
+    const seenSeparates = new Set(scope?.separates ?? [])
+    const seesDocument = (kind: string, pageOf: string, documentId: string) =>
+      !scope || (view.seesPage(pageOf) && (kind === 'body' || seenSeparates.has(documentId)))
+    const visiblePaths = scope ? await pagesRepo.pagePaths(ctx.db, [...(view.visiblePageIds() ?? [])]) : null
+    const pathOf = (id: string) =>
+      visiblePaths
+        ? view
+            .pages(visiblePaths.get(id) ?? [])
+            .slice(0, -1)
+            .map((step) => step.title)
+        : (byId.get(id)?.path.slice(0, -1) ?? [])
 
     // Entrantes: un trozo por página (el del primer bloque que la enlaza), de su cuerpo o de un secreto
     const incoming: { pageId: string; title: string; path: string[]; fragment: string; inSecret: boolean }[] = []
     const linking = new Set<string>()
     for (const link of await linksRepo.incoming(ctx.db, page.id)) {
       if (link.sourcePageId === page.id || linking.has(link.sourcePageId)) continue
+      if (!seesDocument(link.documentKind, link.sourcePageId, link.sourceDocumentId)) continue
       const json = await readDocument(ctx, refOf(link.documentKind, link.sourcePageId, link.sourceDocumentId))
       const block = textBlocks(json).find((b) => b.links.includes(page.id))
       linking.add(link.sourcePageId)
@@ -108,6 +123,8 @@ export const linkActions = [
     const outgoing = (await linksRepo.outgoing(ctx.db, page.id)).flatMap((link) => {
       const key = link.targetPageId ?? `nombre:${foldName(link.targetTitle)}`
       if (seen.has(key)) return []
+      // Un jugador: solo adonde puede ir
+      if (scope && !(link.targetPageId && view.seesPage(link.targetPageId))) return []
       seen.add(key)
       const target = link.targetPageId ? byId.get(link.targetPageId) : undefined
       const state = !link.targetPageId ? 'missing' : target ? 'ok' : 'broken'
@@ -124,6 +141,7 @@ export const linkActions = [
     const mentioned = new Set<string>()
     for (const doc of await documentsRepo.mentioning(ctx.db, wiki.worldId, ownNames)) {
       if (doc.pageId === page.id || linking.has(doc.pageId) || mentioned.has(doc.pageId)) continue
+      if (!seesDocument(doc.kind, doc.pageId, doc.id)) continue
       const found = firstMention(doc.text ?? '', ownNames)
       if (!found) continue
       mentioned.add(doc.pageId)
@@ -136,16 +154,17 @@ export const linkActions = [
       })
     }
     // Las que la apuntan desde un campo de enlace, con el nombre de esos campos
-    const fields = (await pagesRepo.pagesPointingTo(ctx.db, { worldId: wiki.worldId, pageId: page.id })).map(
-      (other) => ({
+    const fields = view
+      .pages(await pagesRepo.pagesPointingTo(ctx.db, { worldId: wiki.worldId, pageId: page.id }))
+      .map((other) => ({
         pageId: other.id,
         title: other.title,
         path: [...pathOf(other.id)],
-        fields: propertiesOf(other.properties).flatMap((property) =>
+        fields: visibleProperties(propertiesOf(other.properties), view).flatMap((property) =>
           property.type === 'pages' && property.value.includes(page.id) ? [property.name] : []
         )
-      })
-    )
+      }))
+      .filter((other) => other.fields.length > 0)
     return { incoming, outgoing, mentions, fields }
   }),
 
