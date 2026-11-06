@@ -75,6 +75,15 @@ export const worldContentChanged = (wiki: { worldId: string; organizationId: str
   message: { type: 'changed', what: 'worldContent', worldId: wiki.worldId }
 })
 
+/** Lo que sabe una campaña (o todo el mundo) cambió: a quien lee la wiki del mundo, sin decir qué (ADR-0017) */
+export const knowledgeChanged = (
+  wiki: { worldId: string; organizationId: string },
+  campaignId: string | null
+): RealtimeEvent => ({
+  to: { capability: 'page.view', target: wiki },
+  message: { type: 'changed', what: 'knowledge', worldId: wiki.worldId, campaignId }
+})
+
 /** El texto de una página se guardó: a quien la ve (lo que la enseña en otra se vuelve a pedir) */
 export const pageContentChanged = (
   wiki: { worldId: string; organizationId: string },
@@ -167,6 +176,14 @@ export function undoEvents(
         break
       case 'campaign_party':
         events.push(partyChanged(campaignScope))
+        break
+      case 'knowledge':
+        events.push(
+          knowledgeChanged(
+            { worldId, organizationId: context.organizationId },
+            (row.campaign_id as string | null) ?? null
+          )
+        )
         break
       case 'world_content':
         events.push(worldContentChanged({ worldId, organizationId: context.organizationId }))

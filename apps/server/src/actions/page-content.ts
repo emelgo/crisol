@@ -35,7 +35,9 @@ import { pagesChanged } from '../realtime/events.ts'
 import { readDocument, stateOf, writeDocument } from '../wiki/content.ts'
 import { fileNames, worldFiles } from '../wiki/file-embeds.ts'
 import { linkName, linksOfNewPages, resolveIncoming, resolvePending, worldNames } from '../wiki/links.ts'
+import { filterBody, neutralAsText, pageViewFor, viewedPage } from '../wiki/projection.ts'
 import { propertiesOf } from '../wiki/properties.ts'
+import { knownBySomeone } from '../wiki/reader.ts'
 import { pageTables } from '../wiki/tables.ts'
 import { fieldsText, findTemplate, newBlockId } from '../wiki/templates.ts'
 import { snapshotPage, versionOf } from '../wiki/versions.ts'
@@ -317,12 +319,15 @@ async function createBatch(
     return { newPage, properties: read.properties }
   })
   const resolver = await pageResolver(ctx, wiki.worldId)
+  // Bajo una página que alguna campaña conoce, nacen ocultas
+  const hidden = parent ? await knownBySomeone(ctx, wiki.worldId, parent.id) : false
   const created = await pagesRepo.createPagesWithBodies(
     ctx.db,
-    historyContext(ctx, story.action, story.details, wiki),
+    historyContext(ctx, story.action, { ...story.details, ...(hidden ? { hidden } : {}) }, wiki),
     {
       worldId: wiki.worldId,
       parentId: parent?.id ?? null,
+      hidden,
       pages: prepared.map((page) => page.newPage),
       // Las de la tanda también se pueden enlazar, por su título o sus alias
       properties: (ids) => {
@@ -355,10 +360,12 @@ async function createBatch(
 }
 
 export const pageContentActions = [
-  implement(readPage, async (ctx, { pageId, ids }) => {
-    const { page, wiki } = await authorizedPage(ctx, 'page.read', pageId)
-    const view = await pageView(ctx, pageId)
-    const body = await readDocument(ctx, { kind: 'body', pageId })
+  implement(readPage, async (ctx, { pageId, ids, ...as }) => {
+    const { page, wiki, view: reading } = await viewedPage(ctx, pageId, as)
+    const view = await pageViewFor(ctx, wiki, reading, pageId)
+    // Un jugador: sin lo que no ve, y los enlaces a lo que no conoce, como texto
+    const read = filterBody(await readDocument(ctx, { kind: 'body', pageId }), reading, pageId) ?? { type: 'doc' }
+    const body = reading.full ? read : (neutralAsText(read) ?? { type: 'doc' })
     // Solo los secretos que son de esta página
     const own = new Set(
       (await documentsRepo.documentsOfPages(ctx.db, [pageId])).filter((d) => d.kind !== 'body').map((d) => d.id)
@@ -380,7 +387,7 @@ export const pageContentActions = [
       fileName: await fileNames(ctx, wiki.worldId),
       ids: ids ?? false
     })
-    return { page: view, markdown, tables: (await pageTables(ctx, wiki, page)).tables }
+    return { page: view, markdown, tables: (await pageTables(ctx, wiki, page, reading)).tables }
   }),
 
   implement(createPage, async (ctx, input) => {
@@ -411,10 +418,12 @@ export const pageContentActions = [
       if (blocker) throw new InvalidRequestError(blocker)
     }
     await checkNeighbour(ctx, wiki, input)
+    // Bajo una página que alguna campaña conoce, nace oculta
+    const hidden = parent ? await knownBySomeone(ctx, wiki.worldId, parent.id) : false
     const created = await pagesRepo.createPage(
       ctx.db,
-      historyContext(ctx, 'createPage', { title: input.title, parent: parent?.title ?? null }, wiki),
-      { worldId: wiki.worldId, title: input.title, placement: placementOf(input) }
+      historyContext(ctx, 'createPage', { title: input.title, parent: parent?.title ?? null, hidden }, wiki),
+      { worldId: wiki.worldId, title: input.title, placement: placementOf(input), hidden }
     )
     ctx.realtime.publish(pagesChanged(wiki))
     // Lo que la enlazaba antes de existir, ya la encuentra

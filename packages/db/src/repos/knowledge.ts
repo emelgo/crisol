@@ -8,8 +8,11 @@ import type { Database } from '../client.ts'
 import { type OperationContext, operation, type Writer } from '../operation.ts'
 import { campaigns } from '../schema/campaigns.ts'
 import { characters } from '../schema/characters.ts'
+import { documents } from '../schema/documents.ts'
 import { knowledge } from '../schema/knowledge.ts'
+import { mapElements, mapPins, maps, pageTabs } from '../schema/maps.ts'
 import { pages } from '../schema/pages.ts'
+import { worldContent } from '../schema/systems.ts'
 
 export type KnowledgeRow = typeof knowledge.$inferSelect
 
@@ -152,4 +155,68 @@ export async function copyCampaignMarks(w: Writer, from: string, to: { worldId: 
       characters: null
     }))
   )
+}
+
+/** Lo que se marca, si es del mundo: su página (la de un secreto, una pestaña o un mapa) y un nombre para el historial */
+export async function findTarget(
+  db: Database,
+  worldId: string,
+  kind: KnowledgeKind,
+  targetId: string
+): Promise<{ pageId: string | null; name: string } | null> {
+  const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetId)
+  if (!uuid) return null
+  const live = and(eq(pages.worldId, worldId), isNull(pages.deletedAt))
+  switch (kind) {
+    case 'page': {
+      const [row] = await db
+        .select({ pageId: pages.id, name: pages.title })
+        .from(pages)
+        .where(and(eq(pages.id, targetId), live))
+      return row ?? null
+    }
+    case 'secret': {
+      const [row] = await db
+        .select({ pageId: pages.id, name: pages.title })
+        .from(documents)
+        .innerJoin(pages, eq(pages.id, documents.pageId))
+        .where(and(eq(documents.id, targetId), eq(documents.kind, 'secret'), live))
+      return row ?? null
+    }
+    case 'tab': {
+      const [row] = await db
+        .select({ pageId: pages.id, name: pageTabs.name })
+        .from(pageTabs)
+        .innerJoin(pages, eq(pages.id, pageTabs.pageId))
+        .where(and(eq(pageTabs.id, targetId), live))
+      return row ?? null
+    }
+    case 'pin': {
+      const [row] = await db
+        .select({ pageId: pages.id, name: sql<string>`coalesce(${mapPins.label}, '')` })
+        .from(mapPins)
+        .innerJoin(maps, eq(maps.id, mapPins.mapId))
+        .innerJoin(pageTabs, eq(pageTabs.id, maps.tabId))
+        .innerJoin(pages, eq(pages.id, pageTabs.pageId))
+        .where(and(eq(mapPins.id, targetId), live))
+      return row ?? null
+    }
+    case 'element': {
+      const [row] = await db
+        .select({ pageId: pages.id, name: sql<string>`coalesce(${mapElements.label}, '')` })
+        .from(mapElements)
+        .innerJoin(maps, eq(maps.id, mapElements.mapId))
+        .innerJoin(pageTabs, eq(pageTabs.id, maps.tabId))
+        .innerJoin(pages, eq(pages.id, pageTabs.pageId))
+        .where(and(eq(mapElements.id, targetId), live))
+      return row ?? null
+    }
+    case 'content': {
+      const [row] = await db
+        .select({ name: sql<string>`coalesce(${worldContent.data}->>'name', ${worldContent.key})` })
+        .from(worldContent)
+        .where(and(eq(worldContent.id, targetId), eq(worldContent.worldId, worldId)))
+      return row ? { pageId: null, name: row.name } : null
+    }
+  }
 }

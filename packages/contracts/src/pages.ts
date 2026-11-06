@@ -46,6 +46,21 @@ export const pageProperty = z.discriminatedUnion('type', [
 
 export type PageProperty = z.infer<typeof pageProperty>
 
+/**
+ * Para leer como jugador (ADR-0017): la campaña desde la que lee (si juega una sola del mundo, se deduce) y, quien
+ * lleva la wiki, como qué personaje de esa campaña («Ver como jugador»; campaign: la campaña sin excepciones)
+ */
+export const readAs = {
+  campaignId: z
+    .uuid()
+    .optional()
+    .describe('Leer desde esta campaña, con lo que sabe (un jugador; si juega una sola del mundo, se deduce)'),
+  asCharacterId: z
+    .union([z.uuid(), z.literal('campaign')])
+    .optional()
+    .describe('Quien lleva la wiki: leer como ese personaje de la campaña (campaign: la campaña, sin excepciones)')
+}
+
 /** Una página tal como sale en el árbol */
 export const pageSummary = z.object({
   id: z.uuid(),
@@ -206,7 +221,7 @@ export const getPage = defineAction({
   name: 'getPage',
   kind: 'read',
   description: 'Una página de la wiki con su ruta en el árbol',
-  input: z.object({ pageId: z.uuid() }),
+  input: z.object({ pageId: z.uuid(), ...readAs }),
   output: page
 })
 
@@ -214,7 +229,7 @@ export const listPageChildren = defineAction({
   name: 'listPageChildren',
   kind: 'read',
   description: 'Las subpáginas de una página, o el primer nivel de la wiki de un mundo, en su orden',
-  input: z.object({ worldId: z.uuid(), parentId: z.uuid().nullable().default(null) }),
+  input: z.object({ worldId: z.uuid(), parentId: z.uuid().nullable().default(null), ...readAs }),
   output: z.object({ pages: z.array(pageSummary) })
 })
 
@@ -226,7 +241,8 @@ export const listPageTree = defineAction({
   input: z.object({
     worldId: z.uuid(),
     parentId: z.uuid().nullable().default(null).describe('La rama; sin ella, desde el primer nivel'),
-    levels: z.number().int().min(1).max(6).default(2).describe('Cuántos niveles por debajo')
+    levels: z.number().int().min(1).max(6).default(2).describe('Cuántos niveles por debajo'),
+    ...readAs
   }),
   output: z.object({
     pages: z.array(
@@ -248,7 +264,7 @@ export const listRecentPages = defineAction({
   kind: 'read',
   description:
     'Las páginas de la wiki de un mundo cambiadas hace poco (su texto o lo demás), de la última a la primera, con las páginas de encima',
-  input: z.object({ worldId: z.uuid(), limit: z.number().int().min(1).max(50).default(6) }),
+  input: z.object({ worldId: z.uuid(), limit: z.number().int().min(1).max(50).default(6), ...readAs }),
   output: z.object({
     pages: z.array(
       z.object({
@@ -366,7 +382,7 @@ export const getPageTables = defineAction({
   kind: 'read',
   description:
     'Las tablas que se llenan solas de una página, ya calculadas: las páginas de una plantilla (y sus copias) cuyo campo de enlace apunta a ella, con sus columnas',
-  input: z.object({ pageId: z.uuid() }),
+  input: z.object({ pageId: z.uuid(), ...readAs }),
   output: pageTables
 })
 
@@ -376,7 +392,8 @@ export const readPage = defineAction({
   description: `Lee una página de la wiki: sus propiedades y su cuerpo en ${MARKDOWN_HELP}. Con ids, cada bloque de primer nivel lleva al final su ^id (los secretos, ^s-id), para cambiarlo con editPage`,
   input: z.object({
     pageId: z.uuid(),
-    ids: z.boolean().optional().describe('Los ^id de los bloques de primer nivel, para cambiar uno con editPage')
+    ids: z.boolean().optional().describe('Los ^id de los bloques de primer nivel, para cambiar uno con editPage'),
+    ...readAs
   }),
   output: z.object({ page, markdown: z.string(), tables: pageTables.shape.tables })
 })
@@ -620,7 +637,8 @@ export const getPageContent = defineAction({
   input: z.object({
     pageId: z.uuid(),
     anchor: z.string().trim().min(1).max(200).nullable().optional(),
-    preview: z.boolean().optional().describe('Solo el principio, sin abrir lo incrustado dentro')
+    preview: z.boolean().optional().describe('Solo el principio, sin abrir lo incrustado dentro'),
+    ...readAs
   }),
   output: z.object({
     page: z.object({

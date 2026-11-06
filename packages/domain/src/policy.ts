@@ -85,8 +85,11 @@ const RULES = {
   'campaign.delete': { sees: seesCampaign, allows: any(isWorldMaster, isCampaignMaster) },
   'world.trash': { sees: seesWorld, allows: isWorldMaster },
   'organization.trash': { sees: isOrganizationMember, allows: isOrganizationOwner },
-  // La wiki de un mundo: los jugadores no la ven hasta el módulo 5
+  // La wiki de un mundo entera, sin filtrar: quien la lleva
   'page.read': { sees: managesWiki, allows: managesWiki },
+  // Leerla con lo que sabe cada uno (ADR-0017): también quien juega en el mundo, y lo que ve lo decide la proyección.
+  // Solo la usan las vías de lectura que la aplican; las demás siguen con page.read
+  'page.view': { sees: any(managesWiki, playsInWorld), allows: any(managesWiki, playsInWorld) },
   'page.write': { sees: managesWiki, allows: managesWiki },
   // El compendio del mundo (docs/specs/compendio-mundo.md), como la wiki: hasta el módulo 5, solo quien la lleva
   'worldContent.read': { sees: managesWiki, allows: managesWiki },

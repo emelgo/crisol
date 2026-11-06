@@ -44,6 +44,7 @@ import {
 import { importFoundry, inspectFoundry, putSystemImages } from './foundry.ts'
 import { listHistory, undoOperation } from './history.ts'
 import { getInvitation, regenerateInvitation, setInvitationsOpen } from './invitations.ts'
+import { getPageKnowledge, setKnowledge } from './knowledge.ts'
 import { getBookPages, listLibrary, readBookAgain, searchLibrary } from './library.ts'
 import {
   createMapPin,
@@ -148,6 +149,7 @@ export * from './files.ts'
 export * from './foundry.ts'
 export * from './history.ts'
 export * from './invitations.ts'
+export * from './knowledge.ts'
 export * from './library.ts'
 export * from './maps.ts'
 export * from './members.ts'
@@ -227,6 +229,8 @@ export const ACTIONS = [
   getPageVersion,
   restorePageVersion,
   getPageTables,
+  getPageKnowledge,
+  setKnowledge,
   listFiles,
   listCommonFiles,
   renameFile,

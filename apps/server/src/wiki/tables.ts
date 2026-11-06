@@ -7,7 +7,9 @@ import { pagesRepo } from '@crisol/db'
 import type { PageProperty, PageTemplate } from '@crisol/domain'
 import type { WikiTarget } from '../actions/access.ts'
 import { type ActionContext, InvalidRequestError } from '../actions/context.ts'
+import { visiblePanel, visibleProperties } from './projection.ts'
 import { propertiesOf } from './properties.ts'
+import type { WikiView } from './reader.ts'
 import { usableTemplates } from './templates.ts'
 
 /** Cuántas filas como mucho tiene una tabla (si hay más, lo dice) */
@@ -26,11 +28,15 @@ const sortText = (cell: PageProperty | null, title: (id: string) => string) => {
 export async function pageTables(
   ctx: ActionContext,
   wiki: WikiTarget,
-  page: { id: string; panel: unknown }
+  page: { id: string; panel: unknown },
+  /** Quien lee: un jugador solo ve las tablas que no están ocultas, con las páginas que ve (ADR-0017) */
+  view?: WikiView
 ): Promise<PageTables> {
-  const blocks = (pagePanel.safeParse(page.panel).data ?? []).filter(
+  const panel = pagePanel.safeParse(page.panel).data ?? []
+  const blocks = (view ? visiblePanel(panel, view) : panel).filter(
     (block): block is TableBlock => block.type === 'related'
   )
+  const within = view?.visiblePageIds() ?? null
   if (blocks.length === 0) return { tables: [], linked: [] }
   const templates = await usableTemplates(ctx, wiki.organizationId)
   const found = await Promise.all(
@@ -44,7 +50,8 @@ export async function pageTables(
             pageId: page.id,
             template: block.template,
             field: block.field,
-            limit: TABLE_ROWS
+            limit: TABLE_ROWS,
+            ...(within ? { within } : {})
           })
         : []
       return { block, template, usable, rows }
@@ -52,7 +59,7 @@ export async function pageTables(
   )
   // Los títulos de las páginas de las celdas, de una vez
   const cellsOf = (properties: unknown[], columns: readonly string[]) => {
-    const all = propertiesOf(properties)
+    const all = view ? visibleProperties(propertiesOf(properties), view) : propertiesOf(properties)
     return columns.map((column) => all.find((property) => property.field === column) ?? null)
   }
   const linkedIds = new Set<string>()

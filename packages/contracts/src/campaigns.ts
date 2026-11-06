@@ -45,7 +45,9 @@ export const campaign = z.object({
     })
     .nullable()
     .optional(),
-  systemChoices: systemChoices.nullable().optional()
+  systemChoices: systemChoices.nullable().optional(),
+  /** Si parte de lo que sabe el mundo (ADR-0017); si no, empezó de cero */
+  knowsWorld: z.boolean().optional()
 })
 
 export type Campaign = z.infer<typeof campaign>
@@ -66,7 +68,17 @@ export const createCampaign = defineAction({
     worldId: z.uuid(),
     name: campaignName,
     system: systemInput.optional(),
-    systemChoices: choicesInput.optional()
+    systemChoices: choicesInput.optional(),
+    knowledge: z
+      .discriminatedUnion('start', [
+        z.object({ start: z.literal('world') }),
+        z.object({ start: z.literal('none') }),
+        z.object({ start: z.literal('campaign'), campaignId: z.uuid() })
+      ])
+      .optional()
+      .describe(
+        'Lo que saben los jugadores al empezar: lo que sabe el mundo (world, por defecto), nada (none) o lo mismo que otra campaña del mundo (campaign, una copia)'
+      )
   }),
   output: campaign
 })
@@ -92,7 +104,8 @@ export const updateCampaign = defineAction({
       color: worldColor.nullable().optional(),
       cover: worldCover.nullable().optional(),
       system: systemInput.optional(),
-      systemChoices: choicesInput.optional().describe('Lo que se elige de su sistema; lo que no se dé, como estaba')
+      systemChoices: choicesInput.optional().describe('Lo que se elige de su sistema; lo que no se dé, como estaba'),
+      knowsWorld: z.boolean().optional().describe('Si parte de lo que sabe el mundo (ADR-0017)')
     })
     .refine(
       (input) =>
@@ -101,8 +114,9 @@ export const updateCampaign = defineAction({
         input.color !== undefined ||
         input.cover !== undefined ||
         input.system !== undefined ||
-        input.systemChoices !== undefined,
-      { message: 'name, description, color, cover, system o systemChoices' }
+        input.systemChoices !== undefined ||
+        input.knowsWorld !== undefined,
+      { message: 'name, description, color, cover, system, systemChoices o knowsWorld' }
     ),
   output: campaign
 })
