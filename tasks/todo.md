@@ -11,7 +11,7 @@ Plan: `tasks/plan.md` · Spec: `docs/specs/compendio-mundo.md`. Cada tarea con s
 - [x] **3. La campaña con las dos capas**: el compendio (tipos y cuentas, buscar, carpetas, leer, tablas del texto) y
   lo que leen los personajes; lo del mundo solo para quien puede cambiar el mundo (y, dentro de su hoja, lo que lleva
   un personaje). Pruebas de fugas. **Punto de control 1.**
-- [ ] **4. Las acciones nuevas**: guardar y quitar en el mundo (`putWorldContent`, `deleteWorldContent`), copiar entre
+- [x] **4. Las acciones nuevas**: guardar y quitar en el mundo (`putWorldContent`, `deleteWorldContent`), copiar entre
   capas (`copyContent`: del sistema al mundo y del mundo al sistema, quitando o no la del mundo), ver las diferencias
   con el original y traerlas (`getContentOrigin`, `pullContentOrigin`). Permisos, historial y deshacer.
 - [ ] **5. La web, el compendio con lo del mundo**: «Del mundo» marcado y su filtro, «Copiar al mundo», «Nueva entrada»

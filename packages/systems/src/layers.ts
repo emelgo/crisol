@@ -93,3 +93,15 @@ export function pullFields<T extends Compared>(copy: T, original: Compared, keys
   const mechanics = keys.includes('mechanics') ? structuredClone(original.mechanics ?? null) : copy.mechanics
   return { ...copy, data, mechanics }
 }
+
+/** Una clave nueva a partir de un nombre: sin tildes ni espacios, con algo al azar para no pisar otra */
+export function newContentKey(name: string): string {
+  const slug = name
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .slice(0, 80)
+  return `${slug || 'entrada'}-${Math.random().toString(36).slice(2, 6)}`
+}

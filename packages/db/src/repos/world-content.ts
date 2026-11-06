@@ -3,7 +3,7 @@
  * escribe pasa por operation(): queda en el historial y se deshace. Cada entrada lleva su versión: cambiar una pide la
  * que se tenía, y no cambia la del sistema
  */
-import { and, asc, eq, inArray, sql } from 'drizzle-orm'
+import { and, asc, count, eq, inArray, sql } from 'drizzle-orm'
 import type { Database } from '../client.ts'
 import { type OperationContext, operation } from '../operation.ts'
 import { type ContentOrigin, worldContent } from '../schema/systems.ts'
@@ -127,4 +127,10 @@ export function deleteContent(
     for (const row of found) await w.remove(worldContent, row.id)
     return { deleted: found.map((r) => r.key) }
   })
+}
+
+/** Cuántas tiene un mundo para un sistema */
+export async function countContent(db: Database, worldId: string, systemId: string) {
+  const [row] = await db.select({ n: count() }).from(worldContent).where(scope(worldId, systemId))
+  return row?.n ?? 0
 }
