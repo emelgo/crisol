@@ -5,6 +5,7 @@
 import { and, eq, inArray, isNull, sql } from 'drizzle-orm'
 import type { Database } from '../client.ts'
 import { type OperationContext, operation } from '../operation.ts'
+import { campaigns } from '../schema/campaigns.ts'
 import { pageTabs } from '../schema/maps.ts'
 import { pages } from '../schema/pages.ts'
 import { contentTableDraws, randomTableDraws, randomTables, type TableRow } from '../schema/tables.ts'
@@ -126,4 +127,16 @@ export async function resetContentDraws(db: Database, campaignId: string, key: s
   await db
     .delete(contentTableDraws)
     .where(and(eq(contentTableDraws.campaignId, campaignId), eq(contentTableDraws.key, key)))
+}
+
+/** Olvida lo sacado de unas tablas del compendio de un mundo (al quitarlas) en sus campañas con ese sistema */
+export async function forgetContentDraws(db: Database, worldId: string, systemId: string, keys: readonly string[]) {
+  if (keys.length === 0) return
+  const inWorld = db
+    .select({ id: campaigns.id })
+    .from(campaigns)
+    .where(and(eq(campaigns.worldId, worldId), eq(campaigns.system, systemId)))
+  await db
+    .delete(contentTableDraws)
+    .where(and(inArray(contentTableDraws.campaignId, inWorld), inArray(contentTableDraws.key, [...keys])))
 }

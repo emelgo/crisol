@@ -16,7 +16,7 @@ import { Field, FormError } from '../components/field.tsx'
 import formStyles from '../components/form.module.css'
 import { Modal } from '../components/modal.tsx'
 import styles from './entry-editor.module.css'
-import { emptyTable, TableRowsField } from './entry-table.tsx'
+import { emptyTable, TableRowsField, tableErrors } from './entry-table.tsx'
 
 type Compendium = ActionOutput<'getCampaignCompendium'>
 export type Editable = NonNullable<Compendium['editable']>
@@ -137,7 +137,15 @@ export function EntryEditor({
     return field ? textOf(item?.data[field] as Text | undefined, language) : ''
   })
   // Una tabla: sus filas (si la entrada no las tenía, una para empezar)
-  const [table, setTable] = useState<TableEntry>(() => item?.table ?? emptyTable())
+  const [table, setTableState] = useState<TableEntry>(() => item?.table ?? emptyTable())
+  // Una «Tabla» de antes (su tabla, en el texto) no gana filas si no se tocan
+  const [tableTouched, setTableTouched] = useState(false)
+  const setTable = (next: TableEntry) => {
+    setTableState(next)
+    setTableTouched(true)
+  }
+  const sendTable = !item || Boolean(item.table) || tableTouched
+  const blocked = typeKey === TABLE_TYPE && sendTable && tableErrors(table).length > 0
   const save = useMutation({
     mutationFn: async () => {
       if (!type || !target) throw new Error('sin tipo')
@@ -151,7 +159,7 @@ export function EntryEditor({
         ...(item?.mechanics ? { mechanics: item.mechanics } : {}),
         ...(item?.ref ? { ref: item.ref } : {}),
         ...(item?.img ? { img: item.img } : {}),
-        ...(type.key === TABLE_TYPE
+        ...(type.key === TABLE_TYPE && sendTable
           ? {
               table: {
                 ...(table.formula?.trim() ? { formula: table.formula.trim() } : {}),
@@ -277,7 +285,7 @@ export function EntryEditor({
         {type?.key === TABLE_TYPE && <TableRowsField table={table} onChange={setTable} />}
         <FormError message={save.error ? errorText(save.error) : null} />
         <div className={dialogStyles.actions}>
-          <BusyButton type="submit" className={formStyles.button} busy={save.isPending}>
+          <BusyButton type="submit" className={formStyles.button} busy={save.isPending} disabled={blocked}>
             {t('compendium.save')}
           </BusyButton>
           <button type="button" className={dialogStyles.cancel} onClick={() => dialog.current?.close()}>

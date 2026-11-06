@@ -39,7 +39,7 @@ test('una tabla del mundo: el máster la crea con sus filas, tira dos veces sin 
   await expect(rows.getByText('Ahora')).toBeVisible()
   await expect(rows).toContainText('Una sacada')
   await roll.click()
-  await expect(rows).toContainText('2 sacadas')
+  await expect(rows).toContainText('Ya ha salido todo')
   await expect(rows.getByText('Ya salió')).toHaveCount(1)
   await expect(rows.getByText('Ahora')).toHaveCount(1)
   await page.screenshot({ path: test.info().outputPath('tabla-tiradas.png'), fullPage: false })
@@ -49,8 +49,7 @@ test('una tabla del mundo: el máster la crea con sus filas, tira dos veces sin 
   expect(texts.sort()).toEqual(['Bandidos', 'Un mercader perdido'])
 
   // Una tercera, no: hay que reiniciarla
-  await roll.click()
-  await expect(article.getByRole('alert')).toContainText('reiníciala')
+  await expect(roll).toHaveAttribute('aria-disabled', 'true')
   await rows.getByRole('button', { name: 'Reiniciar' }).click()
   await page.getByRole('dialog', { name: '¿Reiniciar la tabla?' }).getByRole('button', { name: 'Reiniciar' }).click()
   await expect(rows).toContainText('0 sacadas')

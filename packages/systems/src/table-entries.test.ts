@@ -45,4 +45,17 @@ describe('las tablas del compendio (docs/specs/tablas-compendio.md)', () => {
     expect(errors({ rows: [{ ...rows[0], key: 'Con Espacios' }] })).toEqual(['content[0].table.rows[0].key'])
     expect(errors({ rows }, Object.keys(fronteras.types)[0])).toEqual(['content[0].table'])
   })
+
+  it('una fórmula que no se entiende, una fila al revés o unas filas enormes, un error: no se podría tirar', () => {
+    const errors = (table: unknown) =>
+      validateContent(fronteras, [tabla(table)])
+        .filter((p) => p.severity === 'error')
+        .map((p) => `${p.path}: ${p.message}`)
+    expect(errors({ formula: 'hola', rows })).toEqual(['content[0].table.formula: No se entiende la fórmula «hola»'])
+    expect(errors({ rows: [{ id: 'a', from: 3, to: 1, text: 'Al revés' }] })).toEqual([
+      'content[0].table.rows: La fila 3–1 empieza después de acabar'
+    ])
+    const big = Array.from({ length: 200 }, (_, i) => ({ id: `r${i}`, from: i + 1, to: i + 1, text: 'x'.repeat(2000) }))
+    expect(errors({ rows: big })).toEqual(['content[0].table.rows: Sus filas ocupan más de 256 KB'])
+  })
 })

@@ -23,8 +23,13 @@
   cursor: pointer;
 }
 
-.link:hover {
+.link {
   text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.link:hover {
+  text-decoration-thickness: 2px;
 }
 
 .tag {
@@ -181,6 +186,11 @@
   padding-inline-start: var(--space-5);
   color: var(--color-muted);
   font-size: 0.875rem;
+}
+
+/* Lo que impide guardarla */
+.blocking {
+  color: var(--color-danger);
 }
 
 .hidden {

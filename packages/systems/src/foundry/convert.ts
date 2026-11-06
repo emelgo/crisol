@@ -5,8 +5,10 @@
  * valores sueltos de `system` que comparten bastantes de su tipo. Formato de los documentos de Foundry VTT, leído de sus
  * compendios (ADR-0014)
  */
+import { boundsOf } from '@crisol/dice'
 import { type ContentItem, FILE_BYTES, type SystemFile, toFile } from '../file.ts'
 import { type Field, FORMAT, LIMITS, type System } from '../format.ts'
+import { TABLE_BYTES } from '../table-entries.ts'
 import type { Language, Text } from '../text.ts'
 import { dnd5eContext, dnd5eEdition } from './dnd5e.ts'
 import { type HtmlContext, htmlToLine, htmlToMarkdown } from './html.ts'
@@ -302,11 +304,22 @@ function pagesOf(doc: FoundryDocument, html: (text: string) => string): { id: st
   })
 }
 
-/** El id del documento al que lleva un resultado (de su uuid o, en versiones viejas, de su id y su colección) */
-function linkedId(r: Record<string, unknown>): string | null {
+/**
+ * El documento al que lleva un resultado: su id y, si se sabe, su paquete (de su uuid,
+ * Compendium.<ámbito>.<paquete>.<Tipo>.<id>, o de su colección, <ámbito>.<paquete>)
+ */
+function linkedRef(r: Record<string, unknown>): string | null {
   const uuid = str(r.documentUuid)
-  if (uuid) return uuid.split('.').at(-1) ?? null
-  return str(r.documentId) ?? str(r.resultId) ?? null
+  if (uuid) {
+    const parts = uuid.split('.')
+    const id = parts.at(-1)
+    if (!id) return null
+    return parts[0] === 'Compendium' && parts.length >= 5 ? `${parts[2]}/${id}` : id
+  }
+  const id = str(r.documentId) ?? str(r.resultId)
+  if (!id) return null
+  const collection = (str(r.documentCollection) ?? str(r.collection))?.split('.')
+  return collection && collection.length === 2 ? `${collection[1]}/${id}` : id
 }
 
 /** Una tabla de tirar: su fórmula (sin ella, 1dN por la última fila), si repite y sus filas con su rango */
@@ -327,12 +340,22 @@ function tableOf(doc: FoundryDocument, line: (text: string) => string): FoundryT
       let id = (str(r._id) ?? `r${i + 1}`).slice(0, 40)
       for (let n = 2; ids.has(id); n++) id = `r${i + 1}_${n}`
       ids.add(id)
-      return { id, from, to: Math.max(from, to), text, link: linked ? linkedId(r) : null }
+      return { id, from, to: Math.max(from, to), text, link: linked ? linkedRef(r) : null }
     })
     .sort((a, b) => a.from - b.from)
   if (rows.length === 0) return null
-  const formula = str(doc.formula)?.replace(/\s+/g, '').slice(0, 200) ?? null
-  return { formula, replacement: doc.replacement !== false, rows: rows.slice(0, TABLE_ROWS) }
+  // Una fórmula que no se entiende (con valores de Foundry, @prof+1d4), sin ella: 1dN por la última fila
+  const given = str(doc.formula)?.replace(/\s+/g, '').slice(0, 200) ?? null
+  const formula = given && boundsOf(given) ? given : null
+  // Las que caben (sus textos, en JSON, con algo de margen)
+  const kept: typeof rows = []
+  let size = 0
+  for (const row of rows.slice(0, TABLE_ROWS)) {
+    size += new TextEncoder().encode(JSON.stringify(row)).length + 40
+    if (size > TABLE_BYTES - 1024) break
+    kept.push(row)
+  }
+  return { formula, replacement: doc.replacement !== false, rows: kept }
 }
 
 /** Recorta un texto hasta que el documento quepa */
@@ -451,8 +474,12 @@ export function convertFoundry(input: FoundryInput): Converted {
         typeInfo.set(type, { document: 'item', label: both('Tabla', 'Table'), plural: both('Tablas', 'Tables') })
         const text = str(doc.description) ? md(doc.description as string, contextOf(null, null, name)) : ''
         const table = tableOf(doc, line)
-        if (table && Array.isArray(doc.results) && doc.results.length > TABLE_ROWS)
-          notes.push(`«${name}» tiene ${doc.results.length} filas: se traen ${TABLE_ROWS}`)
+        const total = Array.isArray(doc.results) ? doc.results.length : 0
+        if (table && table.rows.length < total)
+          notes.push(`«${name}» tiene ${total} filas: se traen ${table.rows.length}`)
+        const given = str(doc.formula)
+        if (table && given && !table.formula)
+          notes.push(`«${name}»: su fórmula (${given}) no se entiende; se tira por sus filas`)
         entries.push({
           pack,
           type,
@@ -575,10 +602,13 @@ export function convertFoundry(input: FoundryInput): Converted {
     usedKeys.add(key)
     return key
   })
+  // Por su paquete y su id (pack/id) y, si el enlace no dice paquete, solo por su id
   const keyById = new Map<string, string>()
   for (const [i, e] of entries.entries()) {
-    const id = e.where.split('/')[1]
-    if (id && !keyById.has(id)) keyById.set(id, keys[i] as string)
+    const [pack, id] = e.where.split('/')
+    if (!id) continue
+    if (!keyById.has(`${pack}/${id}`)) keyById.set(`${pack}/${id}`, keys[i] as string)
+    if (!keyById.has(id)) keyById.set(id, keys[i] as string)
   }
   const content: ContentItem[] = entries.map((e, i) => {
     const data: Record<string, unknown> = { name: at(e.name) }

@@ -12,7 +12,7 @@ import {
   putWorldContent,
   searchLinkableContent
 } from '@crisol/contracts'
-import { campaignsRepo, type schema, systemsRepo, worldContentRepo } from '@crisol/db'
+import { campaignsRepo, type schema, systemsRepo, tablesRepo, worldContentRepo } from '@crisol/db'
 import { foldName, NotFoundError } from '@crisol/domain'
 import {
   type ContentItem,
@@ -177,6 +177,8 @@ export const worldContentActions = [
       systemId,
       wanted
     )
+    // Lo sacado de las que eran tablas: otra con su clave empieza de cero
+    await tablesRepo.forgetContentDraws(ctx.db, worldId, systemId, done.deleted)
     if (done.deleted.length > 0) ctx.realtime.publish(worldContentChanged(wiki))
     return { deleted: done.deleted, missing: wanted.filter((k) => !done.deleted.includes(k)) }
   }),
@@ -434,7 +436,7 @@ async function linkables(ctx: ActionContext, worldId: string): Promise<Linkable[
   for (const [systemId, campaignId] of bySystem) {
     const row = await systemsRepo.findSystem(ctx.db, systemId)
     if (!row || row.deletedAt || row.organizationId !== wiki.organizationId) continue
-    const system = row.document as unknown as System
+    const system = withTables(row.document as unknown as System)
     for (const entry of await layers.contentIndex(ctx, row.id, { worldId, systemId: row.id })) {
       const label = system.types[entry.type]?.label
       out.push({

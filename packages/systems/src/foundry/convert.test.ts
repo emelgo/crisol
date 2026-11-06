@@ -111,6 +111,26 @@ describe('un sistema de Foundry, en un sistema de Crisol', () => {
     expect(validateFile(file).problems.filter((p) => p.severity === 'error')).toEqual([])
   })
 
+  it('una tabla con una fórmula de Foundry que no se entiende, por sus filas; un enlace, por su paquete y su id', () => {
+    const input = foundryFixture()
+    const tablas = input.packs.find((p) => p.name === 'tablas')
+    const botin = tablas?.documents[0] as Record<string, unknown>
+    botin.formula = '@prof + 1d4'
+    // Otro documento con el mismo id en otro paquete: el enlace dice el suyo
+    ;(botin.results as Record<string, unknown>[])[2] = {
+      _id: 'r2',
+      type: 'document',
+      range: [4, 4],
+      name: 'Botín',
+      documentUuid: 'Compendium.prueba.tablas.RollTable.tabla00000000001'
+    }
+    const { file: converted, notes } = convertFoundry(input)
+    const table = named(converted.content, 'Botín')?.table
+    expect(table?.formula).toBeUndefined()
+    expect(table?.rows[1]?.key).toBe(named(converted.content, 'Botín')?.key)
+    expect(notes).toContain('«Botín»: su fórmula (@prof + 1d4) no se entiende; se tira por sus filas')
+  })
+
   it('cada paquete, una fuente; el compendio, en el orden de los paquetes, con las carpetas', () => {
     expect(file.system.sources?.map((s) => s.key)).toEqual(['reglas', 'tablas', 'armas', 'conjuros', 'monstruos'])
     expect(file.system.sources?.[0]).toMatchObject({

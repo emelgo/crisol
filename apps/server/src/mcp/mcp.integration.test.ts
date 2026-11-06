@@ -626,6 +626,38 @@ describe('conector MCP con OAuth', () => {
     expect(bad.text).toContain('No se entiende «1d20+» al final')
   })
 
+  it('la IA crea una tabla del mundo y tira en ella: oculta por defecto; luego la reinicia', async () => {
+    const { cookie, call } = await connected()
+    const system = (await api<{ system: SystemFull }>(cookie, 'importSystem', { file: toFile(fronteras, []) })).system
+    const world = (await call<World>('crear_mundo', { name: 'Eana' })).data
+    const campaign = (await call<Campaign>('crear_campana', { worldId: world.id, name: 'La Marca', system: system.id }))
+      .data
+    const saved = await call('guardar_contenido', {
+      systemId: system.id,
+      worldId: world.id,
+      items: [
+        {
+          type: 'tabla',
+          key: 'encuentros',
+          data: { name: 'Encuentros' },
+          table: { replacement: false, rows: [{ id: 'a', from: 1, to: 1, text: 'Lobos' }] }
+        }
+      ]
+    })
+    expect(saved.isError, saved.text).toBeFalsy()
+    const rolled = await call<{ roll: { visibility: string; ai: boolean }; drawn: string[] }>('tirar_tabla_compendio', {
+      campaignId: campaign.id,
+      key: 'encuentros'
+    })
+    expect(rolled.data).toMatchObject({ roll: { visibility: 'hidden', ai: true }, drawn: ['a'] })
+    expect((await call('tirar_tabla_compendio', { campaignId: campaign.id, key: 'encuentros' })).text).toContain(
+      'TABLE_EMPTY'
+    )
+    expect(
+      (await call('reiniciar_tabla_compendio', { campaignId: campaign.id, key: 'encuentros' })).isError
+    ).toBeFalsy()
+  })
+
   it('la IA y las criaturas en juego: pone goblins, tira por uno, aplica el daño y los quita', async () => {
     const { cookie, call } = await connected()
     const five = (await api<{ system: SystemFull }>(cookie, 'importSystem', { file: exampleFile('5e') })).system.id

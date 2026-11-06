@@ -130,6 +130,11 @@ describe('las tablas del compendio (docs/specs/tablas-compendio.md)', () => {
     expect((await roll()).drawn).toHaveLength(1)
     // Las que repiten no apuntan nada
     expect((await ok200('rollContentTable', { campaignId, key: 'tesoros' })).drawn).toEqual([])
+    // Al quitarla, lo sacado se olvida: otra con su clave empieza de cero
+    await ok200('deleteWorldContent', { worldId, systemId: five, keys: ['encuentros'] })
+    await ok200('putWorldContent', { worldId, systemId: five, items: [encuentros] })
+    const [fresh] = (await ok200('getCampaignContent', { campaignId, keys: ['encuentros'] })).items
+    expect(fresh.drawn).toEqual([])
   })
 
   it('solo una tabla lleva filas, y solo una tabla se tira así; sus rangos con huecos, un aviso', async () => {
@@ -147,5 +152,78 @@ describe('las tablas del compendio (docs/specs/tablas-compendio.md)', () => {
     expect(saved.warnings.map((w: { message: string }) => w.message)).toEqual([
       'Con 1d4 puede salir 4, y la última fila acaba en 2'
     ])
+  })
+
+  it('una tabla que se apunta a sí misma con filas que se pisan: no se dispara, y una anidada agotada no la tumba', async () => {
+    const eco = {
+      type: 'tabla',
+      key: 'eco',
+      data: { name: { es: 'Eco' } },
+      table: {
+        formula: '1',
+        rows: Array.from({ length: 50 }, (_, i) => ({ id: `r${i}`, from: 1, to: 1, text: `Otra vez ${i}`, key: 'eco' }))
+      }
+    }
+    const once = { ...tesoros, table: { replacement: false, rows: [{ id: 'oro', from: 1, to: 1, text: 'Oro' }] } }
+    const camino = {
+      ...encuentros,
+      key: 'camino',
+      table: {
+        formula: '1',
+        rows: [
+          { id: 'a', from: 1, to: 1, text: 'Un cofre', key: 'tesoros' },
+          { id: 'b', from: 1, to: 1, text: 'Otro cofre', key: 'tesoros' }
+        ]
+      }
+    }
+    await ok200('putWorldContent', { worldId, systemId: five, items: [eco, once, camino] })
+    const echoed = await ok200('rollContentTable', { campaignId, key: 'eco' })
+    // Sus 50 filas, sin volver a abrirse
+    expect(echoed.roll.table.results).toHaveLength(50)
+    // Las dos filas llevan a la misma tabla sin reemplazo: solo una saca su única fila, y la otra se queda arriba
+    const both = await ok200('rollContentTable', { campaignId, key: 'camino' })
+    expect(both.roll.table.results.map((r: { text: string }) => r.text)).toEqual([
+      'Un cofre',
+      'Tesoros: Oro',
+      'Otro cofre'
+    ])
+    // Ya agotada, la de arriba sigue tirándose
+    const again = await ok200('rollContentTable', { campaignId, key: 'camino' })
+    expect(again.roll.table.results.map((r: { text: string }) => r.text)).toEqual(['Un cofre', 'Otro cofre'])
+  })
+
+  it('la jugadora tira una tabla del sistema que lleva a una del mundo: no llega a ella ni ve su clave', async () => {
+    await ok200('putWorldContent', { worldId, systemId: five, items: [tesoros] })
+    const system = await ok200('getSystem', { systemId: five })
+    const puerta = {
+      type: 'tabla',
+      key: 'puerta',
+      source: null,
+      data: { name: { es: 'Tras la puerta' } },
+      table: { rows: [{ id: 'a', from: 1, to: 1, text: 'Un tesoro', key: 'tesoros' }] }
+    }
+    await ok200('putSystemContent', { systemId: five, version: system.version, items: [puerta] })
+    const rolled = await ok200('rollContentTable', { campaignId, key: 'puerta' }, ana.cookie)
+    expect(rolled.roll.table.results).toEqual([{ text: 'Un tesoro', page: null }])
+    // El máster, sí
+    const mine = await ok200('rollContentTable', { campaignId, key: 'puerta' })
+    expect(mine.roll.table.results).toEqual([
+      { text: 'Un tesoro', page: null, content: 'tesoros' },
+      { text: 'Tesoros: [[/r 2d6]] monedas de oro', page: null }
+    ])
+  })
+
+  it('una «Tabla» de antes (su tabla, en el texto) se tira por su clave', async () => {
+    const vieja = {
+      type: 'tabla',
+      key: 'vieja',
+      data: {
+        name: { es: 'Vieja' },
+        description: { es: '| 1d2 | Resultado |\n| --- | --- |\n| 1 | Uno |\n| 2 | Dos |' }
+      }
+    }
+    await ok200('putWorldContent', { worldId, systemId: five, items: [vieja] })
+    const rolled = await ok200('rollContentTable', { campaignId, key: 'vieja' })
+    expect(rolled.roll.table.results[0].text).toBe(rolled.roll.total === 1 ? 'Uno' : 'Dos')
   })
 })

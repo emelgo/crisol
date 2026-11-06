@@ -103,6 +103,21 @@ const contentEntry = z.object({
   version: z.int().min(1).optional().describe('En el mundo: la versión de la entrada que se leyó, para cambiarla')
 })
 
+const contentTableInput = z.object({
+  campaignId: z.uuid(),
+  key: z.string().max(100).describe('La clave de la entrada'),
+  table: z
+    .int()
+    .min(0)
+    .max(50)
+    .optional()
+    .describe('Solo para una tabla del texto de un documento (la Bolsa de trucos): su orden entre ellas, desde 0'),
+  visibility: z
+    .enum(['all', 'hidden'])
+    .optional()
+    .describe('Por defecto, oculta (solo la ve el máster); all, a la vista de todos, solo si te lo pide')
+})
+
 const saveContentInput = z.object({
   systemId: z.uuid(),
   worldId: z
@@ -264,7 +279,16 @@ export const MCP_TOOLS: Record<string, McpTool> = {
   // El compendio de una campaña: lo de su sistema y, para quien lleva el mundo, lo de su mundo
   compendio_campana: { action: 'getCampaignCompendium' },
   leer_compendio: { action: 'getCampaignContent' },
-  tirar_tabla_compendio: { action: 'rollContentTable' },
+  tirar_tabla_compendio: {
+    description:
+      'Tira en una tabla del compendio de una campaña, a su registro: una entrada «tabla» por su clave (sin reemplazo no repite hasta reiniciarla; la fila que lleva a otra tabla la tira también) o, con table, una tabla del texto de un documento. Por defecto, oculta',
+    input: contentTableInput,
+    actions: ['rollContentTable'],
+    route: (input) => {
+      const { visibility, ...rest } = contentTableInput.parse(input)
+      return { action: 'rollContentTable', input: { ...rest, visibility: visibility ?? 'hidden' } }
+    }
+  },
   reiniciar_tabla_compendio: { action: 'resetContentTable' },
   // Su contenido (las clases, los conjuros, las armas…), con su mecánica; y el compendio de cada mundo
   buscar_contenido: { action: 'searchSystemContent' },

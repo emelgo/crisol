@@ -400,6 +400,8 @@ export const es = {
     rollTable: 'Tirar {{formula}} en «{{what}}»',
     rolledTable: 'Salió {{total}}: {{text}}',
     tableRows: 'Filas de «{{name}}»',
+    rowNumber: 'la fila {{n}}',
+    tableExhausted: 'Ya ha salido todo',
     rows: 'Filas',
     searchHint: 'Un conjuro, una criatura…',
     otherVersion: 'Otra versión',

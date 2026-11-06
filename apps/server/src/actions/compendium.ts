@@ -70,48 +70,73 @@ async function campaignSystem(ctx: ActionContext, campaignId: string) {
   return { document, row, choices, entries, world, wiki }
 }
 
+/** Lo que sale de una tirada, como mucho: las filas que se pisan y las tablas anidadas no la disparan */
+const TABLE_RESULTS = 100
+
+interface TableResult {
+  text: string
+  page: null
+  content?: string
+}
+
+/** Lo de una tirada mientras se tira: lo sacado en cada tabla (lo de antes y lo de ahora) y lo que va saliendo */
+interface Drawing {
+  campaignId: string
+  drawn: Map<string, Set<string>>
+  results: TableResult[]
+  draws: { key: string; rowId: string }[]
+  open: (key: string) => Promise<ContentItem | null>
+  shown: (key: string) => boolean
+  nameOf: (entry: ContentItem) => string
+}
+
 /**
  * Tira en una entrada «Tabla» (con el cálculo de la pestaña «Tabla» de la wiki): las filas que salen entre las que no
- * se han sacado y, si alguna lleva a otra tabla que se ve, lo que sale en ella (hasta TABLE_DEPTH niveles)
+ * se han sacado (ni en esta tirada) y, si alguna lleva a otra tabla que se ve, lo que sale en ella: hasta TABLE_DEPTH
+ * niveles, sin volver a una tabla del camino y con TABLE_RESULTS resultados como mucho. Lo que sale va a `drawing`
  */
 async function drawEntry(
   ctx: ActionContext,
-  campaignId: string,
+  drawing: Drawing,
   entry: { key: string; name: string; table: TableEntry },
-  open: (key: string) => Promise<ContentItem | null>,
-  nameOf: (entry: ContentItem) => string,
-  depth: number
-): Promise<{
-  result: Drawn['result']
-  row: string
-  results: { text: string; page: null; content?: string }[]
-  draws: { key: string; rowId: string }[]
-}> {
+  path: readonly string[],
+  prefix: string
+): Promise<{ result: Drawn['result']; rows: string[] }> {
   const repeats = entry.table.replacement !== false
-  const drawn = repeats ? [] : await tablesRepo.contentDrawsOf(ctx.db, campaignId, entry.key)
-  const { result, rows } = pickRows({ name: entry.name, formula: entry.table.formula, rows: entry.table.rows }, drawn)
-  const results: { text: string; page: null; content?: string }[] = []
-  const draws: { key: string; rowId: string }[] = []
+  let drawn = drawing.drawn.get(entry.key)
+  if (!drawn) {
+    drawn = new Set(repeats ? [] : await tablesRepo.contentDrawsOf(ctx.db, drawing.campaignId, entry.key))
+    drawing.drawn.set(entry.key, drawn)
+  }
+  const { result, rows } = pickRows({ name: entry.name, formula: entry.table.formula, rows: entry.table.rows }, [
+    ...drawn
+  ])
   for (const row of rows) {
-    results.push({ text: row.text, page: null, ...(row.key ? { content: row.key } : {}) })
-    if (!repeats) draws.push({ key: entry.key, rowId: row.id })
-    if (!row.key || depth >= TABLE_DEPTH) continue
-    const nested = await open(row.key)
-    if (nested?.type === TABLE_TYPE && nested.table) {
-      const name = nameOf(nested)
-      const inner = await drawEntry(
+    if (drawing.results.length >= TABLE_RESULTS) break
+    const linked = row.key && drawing.shown(row.key) ? row.key : null
+    drawing.results.push({ text: `${prefix}${row.text}`, page: null, ...(linked ? { content: linked } : {}) })
+    if (!repeats) {
+      drawn.add(row.id)
+      drawing.draws.push({ key: entry.key, rowId: row.id })
+    }
+    if (!linked || path.length > TABLE_DEPTH || path.includes(linked)) continue
+    const nested = await drawing.open(linked)
+    if (nested?.type !== TABLE_TYPE || !nested.table) continue
+    const name = drawing.nameOf(nested)
+    try {
+      await drawEntry(
         ctx,
-        campaignId,
+        drawing,
         { key: nested.key, name, table: nested.table },
-        open,
-        nameOf,
-        depth + 1
+        [...path, nested.key],
+        `${prefix}${name}: `
       )
-      results.push(...inner.results.map((r) => ({ ...r, text: `${name}: ${r.text}` })))
-      draws.push(...inner.draws)
+    } catch (error) {
+      // Una anidada ya agotada: queda la fila de arriba
+      if (!(error instanceof InvalidRequestError && error.code === 'TABLE_EMPTY')) throw error
     }
   }
-  return { result, row: rows[0]?.id ?? '', results, draws }
+  return { result, rows: rows.map((r) => r.id) }
 }
 
 /** Cuántas hay de cada tipo */
@@ -251,36 +276,47 @@ export const compendiumActions = [
     const [item] = row ? await layers.contentByKeys(ctx, row.id, world, [key]) : []
     if (!item) throw new NotFoundError('content')
     const nameOf = (entry: ContentItem) => textOf(entry.data.name as Text | undefined, choices.language) || entry.key
-    if (table === undefined) {
+    if (table === undefined && item.table) {
       // Una entrada «Tabla»: sus filas, sin repetir lo sacado si va sin reemplazo, y las tablas a las que lleva
-      if (item.type !== TABLE_TYPE || !item.table) throw new InvalidRequestError('NOT_A_TABLE', 'no es una tabla')
       const shown = new Set(visibleContent(document, entries, choices).map((s) => s.item.key))
-      const open = async (k: string) => {
-        if (!row || !shown.has(k)) return null
-        const [found] = await layers.contentByKeys(ctx, row.id, world, [k])
-        return found ?? null
+      const drawing: Drawing = {
+        campaignId,
+        drawn: new Map(),
+        results: [],
+        draws: [],
+        shown: (k) => shown.has(k),
+        open: async (k) => {
+          if (!row || !shown.has(k)) return null
+          const [found] = await layers.contentByKeys(ctx, row.id, world, [k])
+          return found ?? null
+        },
+        nameOf
       }
-      const drawnNow = await drawEntry(ctx, campaignId, { key, name: nameOf(item), table: item.table }, open, nameOf, 0)
-      const { formula, ...stored } = drawnNow.result
       const name = nameOf(item)
+      const drawnNow = await drawEntry(ctx, drawing, { key, name, table: item.table }, [key], '')
+      const { formula, ...stored } = drawnNow.result
       const roll = await saveRoll(ctx, campaign, {
         formula,
         label: name,
         visibility,
-        result: { ...stored, table: { name, results: drawnNow.results } }
+        result: { ...stored, table: { name, results: drawing.results } }
       })
       // Ya en el registro: lo sacado, apuntado (si la tirada no se guardó, nada se gastó)
-      for (const d of drawnNow.draws) await tablesRepo.addContentDraws(ctx.db, campaignId, d.key, [d.rowId])
+      const byTable = new Map<string, string[]>()
+      for (const d of drawing.draws) byTable.set(d.key, [...(byTable.get(d.key) ?? []), d.rowId])
+      for (const [k, rowIds] of byTable) await tablesRepo.addContentDraws(ctx.db, campaignId, k, rowIds)
       return {
         roll,
-        row: item.table.rows.findIndex((r) => r.id === drawnNow.row),
+        row: item.table.rows.findIndex((r) => r.id === drawnNow.rows[0]),
         drawn: item.table.replacement === false ? await tablesRepo.contentDrawsOf(ctx.db, campaignId, key) : []
       }
     }
     const field = textFieldOf(document, item.type)
     const text = field ? textOf(item.data[field] as Text | undefined, choices.language) : ''
-    const chosen = contentTables(text)[table]
-    if (!chosen) throw new InvalidRequestError('BAD_TABLE', `no tiene la tabla ${table}`)
+    // Sin orden: la tabla de su texto, si es una «Tabla» de antes (traída antes de que hubiera filas)
+    if (table === undefined && item.type !== TABLE_TYPE) throw new InvalidRequestError('NOT_A_TABLE', 'no es una tabla')
+    const chosen = contentTables(text)[table ?? 0]
+    if (!chosen) throw new InvalidRequestError('BAD_TABLE', `no tiene la tabla ${table ?? 0}`)
     const result = rolled(chosen.formula)
     const hit = tableRowOf(chosen, result.total)
     const name = textOf(item.data.name as Text | undefined, choices.language) || item.key

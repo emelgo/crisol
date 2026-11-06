@@ -69,7 +69,16 @@ export function withTables(system: System): System {
   return { ...system, types: { ...system.types, [TABLE_TYPE]: tableType } }
 }
 
-/** Lo que está mal en una tabla: su forma (errores) y sus huecos (avisos: se tira igual, como en Foundry) */
+/** Lo que ocupan sus filas, como mucho (en JSON) */
+export const TABLE_BYTES = 256 * 1024
+
+/** Lo que impide tirar en ella (la fórmula, las filas al revés): en la tabla, un error; lo demás, un aviso */
+const BLOCKING = new Set(['formula', 'backwards', 'notIntegers'])
+
+/**
+ * Lo que está mal en una tabla: su forma, su tamaño, su fórmula y las filas al revés (errores); y sus huecos (avisos:
+ * se tira igual, como en Foundry). Las filas que se pisan salen juntas, como en Foundry: eso no es un problema
+ */
 export function tableEntryProblems(table: unknown): {
   errors: { path: (string | number)[]; message: string }[]
   warnings: string[]
@@ -82,14 +91,19 @@ export function tableEntryProblems(table: unknown): {
     }
   const { formula, rows } = checked.data
   const errors: { path: (string | number)[]; message: string }[] = []
+  if (new TextEncoder().encode(JSON.stringify(table)).length > TABLE_BYTES)
+    errors.push({ path: ['rows'], message: `Sus filas ocupan más de ${TABLE_BYTES / 1024} KB` })
   const ids = new Set<string>()
   for (const [i, r] of rows.entries()) {
     if (ids.has(r.id)) errors.push({ path: ['rows', i, 'id'], message: `La fila «${r.id}» está repetida` })
     ids.add(r.id)
   }
-  // Como en Foundry, las filas que se pisan salen juntas: no es un problema
-  const warnings = tableProblemList(formula, rows)
-    .filter((p) => p.code !== 'overlap')
-    .map(describeTableProblem)
+  const warnings: string[] = []
+  for (const p of tableProblemList(formula, rows)) {
+    if (p.code === 'overlap') continue
+    if (BLOCKING.has(p.code))
+      errors.push({ path: p.code === 'formula' ? ['formula'] : ['rows'], message: describeTableProblem(p) })
+    else warnings.push(describeTableProblem(p))
+  }
   return { errors, warnings }
 }

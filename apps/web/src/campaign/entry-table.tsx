@@ -50,6 +50,8 @@ export function EntryTable({
   const rows = [...table.rows].sort((a, b) => a.from - b.from)
   const once = table.replacement === false
   const out = new Set(drawn)
+  // Sin reemplazo y ya todo sacado: hasta reiniciarla, no se tira
+  const exhausted = once && rows.every((r) => out.has(r.id))
   const entryQuery = ['compendium', campaignId, 'entry', entryKey]
   const roll = useMutation({
     mutationFn: () => api.call('rollContentTable', { campaignId, key: entryKey, visibility }),
@@ -84,9 +86,9 @@ export function EntryTable({
                     formula: tableFormula(table.formula, table.rows),
                     what: name
                   })}
-                  aria-disabled={roll.isPending || undefined}
+                  aria-disabled={roll.isPending || exhausted || undefined}
                   onClick={() => {
-                    if (!roll.isPending) roll.mutate()
+                    if (!roll.isPending && !exhausted) roll.mutate()
                   }}
                 >
                   <Dices size={14} aria-hidden="true" />
@@ -121,7 +123,7 @@ export function EntryTable({
       </div>
       {once && (
         <p className={styles.drawn}>
-          {t('tableTab.drawnCount', { count: out.size })}
+          {exhausted ? t('compendium.tableExhausted') : t('tableTab.drawnCount', { count: out.size })}
           {master && (
             <button type="button" className={styles.reset} onClick={() => setResetting(true)} disabled={out.size === 0}>
               <RotateCcw size={14} aria-hidden="true" />
@@ -151,10 +153,15 @@ const newId = () => crypto.randomUUID().slice(0, 8)
 /** Una tabla vacía, para empezar: una fila */
 export const emptyTable = (): TableEntry => ({ rows: [{ id: newId(), from: 1, to: 1, text: '' }] })
 
+/** Lo que impide tirar en ella (la fórmula, una fila al revés o a medias): no se guarda así */
+const BLOCKING = new Set(['formula', 'backwards', 'notIntegers'])
+
 /** Lo que dice de sus rangos (las filas que se pisan salen juntas, como en Foundry: eso no es un problema) */
 export function tableWarnings(table: TableEntry): TableProblem[] {
   return tableProblemList(table.formula, table.rows).filter((p) => p.code !== 'overlap')
 }
+
+export const tableErrors = (table: TableEntry) => tableWarnings(table).filter((p) => BLOCKING.has(p.code))
 
 /** Sus filas, en el editor de la entrada: la fórmula, si repite y cada fila con su rango y su texto */
 export function TableRowsField({ table, onChange }: { table: TableEntry; onChange: (table: TableEntry) => void }) {
@@ -204,13 +211,13 @@ export function TableRowsField({ table, onChange }: { table: TableEntry; onChang
           </tr>
         </thead>
         <tbody>
-          {table.rows.map((r) => (
+          {table.rows.map((r, i) => (
             <tr key={r.id}>
               <td>
                 <input
                   type="number"
                   autoComplete="off"
-                  aria-label={t('tableTab.fromOf', { text: r.text })}
+                  aria-label={t('tableTab.fromOf', { text: r.text || t('compendium.rowNumber', { n: i + 1 }) })}
                   value={Number.isNaN(r.from) ? '' : r.from}
                   onChange={(event) => setRow(r.id, { from: event.currentTarget.valueAsNumber })}
                 />
@@ -219,7 +226,7 @@ export function TableRowsField({ table, onChange }: { table: TableEntry; onChang
                 <input
                   type="number"
                   autoComplete="off"
-                  aria-label={t('tableTab.toOf', { text: r.text })}
+                  aria-label={t('tableTab.toOf', { text: r.text || t('compendium.rowNumber', { n: i + 1 }) })}
                   value={Number.isNaN(r.to) ? '' : r.to}
                   onChange={(event) => setRow(r.id, { to: event.currentTarget.valueAsNumber })}
                 />
@@ -261,8 +268,10 @@ export function TableRowsField({ table, onChange }: { table: TableEntry; onChang
       <div aria-live="polite">
         {problems.length > 0 && (
           <ul className={styles.problems}>
-            {problems.map((p) => (
-              <li key={say(p)}>{say(p)}</li>
+            {problems.map((p, i) => (
+              <li key={`${p.code}-${i}`} className={BLOCKING.has(p.code) ? styles.blocking : undefined}>
+                {say(p)}
+              </li>
             ))}
           </ul>
         )}
