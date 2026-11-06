@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { defineAction } from './action.ts'
+import { readAs } from './pages.ts'
 
 export const searchWiki = defineAction({
   name: 'searchWiki',
@@ -9,6 +10,7 @@ export const searchWiki = defineAction({
   input: z
     .object({
       worldId: z.uuid(),
+      ...readAs,
       query: z
         .string()
         .trim()

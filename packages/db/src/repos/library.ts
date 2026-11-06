@@ -6,6 +6,7 @@ import { and, asc, eq, gte, inArray, isNull, lte, notInArray, type SQL, sql } fr
 import type { Database } from '../client.ts'
 import { files } from '../schema/files.ts'
 import { filePages, fileTexts, searchChunks } from '../schema/library.ts'
+import type { PlayerScope } from './search.ts'
 import { tsQuery } from './search.ts'
 
 export type TextStatus = (typeof fileTexts.$inferSelect)['status']
@@ -297,14 +298,25 @@ export async function nearestBookChunks(db: Database, scope: LibraryScope, vecto
 }
 
 /** Las páginas de la wiki de un mundo más cercanas a un vector (por su mejor sección), fuera de la papelera */
-export async function nearestPages(db: Database, worldId: string, vector: readonly number[], limit: number) {
+export async function nearestPages(
+  db: Database,
+  worldId: string,
+  vector: readonly number[],
+  limit: number,
+  /** Un jugador: solo lo que ve (ADR-0017) */
+  player?: PlayerScope | null
+) {
   const target = sql`${vectorLiteral(vector)}::vector`
+  const own = player
+    ? sql`and c.page_id = any(string_to_array(${player.pages.join(',')}, ',')::uuid[])
+        and (c.kind = 'body' or c.document_id = any(string_to_array(${player.separates.join(',')}, ',')::uuid[]))`
+    : sql``
   const rows = await nearest<{ page_id: string; title: string; distance: number }>(
     db,
     sql`select page_id, title, min(distance)::float8 as distance from (
       select c.page_id, p.title, (c.embedding <=> ${target}) as distance
       from search_chunks c join pages p on p.id = c.page_id
-      where c.source = 'page' and c.world_id = ${worldId} and c.embedding is not null and p.deleted_at is null
+      where c.source = 'page' and c.world_id = ${worldId} and c.embedding is not null and p.deleted_at is null ${own}
       order by c.embedding <=> ${target}
       limit ${limit * 4}
     ) near group by page_id, title order by distance limit ${limit}`

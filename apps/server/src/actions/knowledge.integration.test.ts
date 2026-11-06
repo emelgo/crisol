@@ -409,18 +409,20 @@ describe('lo que lee un jugador (docs/specs/conocimiento.md)', () => {
     expect(full.panel).toHaveLength(2)
   })
 
-  it('el cuerpo: sin los secretos que no ve ni las notas; los enlaces a lo que no ve, sin destino ni título', async () => {
+  it('el cuerpo: sin los secretos que no ve ni las notas; los enlaces a lo que no ve, como sin resolver', async () => {
+    await ok200('updatePage', { pageId: page.Varn, title: 'Varn el traidor' })
     const content = await ok200('getPageContent', { pageId: page.Aldoria }, ana.cookie)
     const text = JSON.stringify(content.blocks)
     expect(text).not.toContain('El rey ha muerto')
     expect(text).not.toContain('Nota para mí')
     expect(text).not.toContain(page.Varn)
-    expect(text).not.toContain('"title":"Varn"')
+    // Con lo que se escribió, nunca con el título de ahora
+    expect(text).not.toContain('traidor')
     const links = content.blocks[0].content.filter((n: { type: string }) => n.type === 'pageLink')
     expect(links.map((l: { attrs: object }) => l.attrs)).toEqual([
       expect.objectContaining({ pageId: page['La capital'], title: 'La capital' }),
-      { pageId: null, title: '', anchor: null, label: null },
-      { pageId: null, title: '', anchor: null, label: 'el viejo' }
+      expect.objectContaining({ pageId: null, title: 'Varn', label: null, anchor: null }),
+      expect.objectContaining({ pageId: null, title: 'Varn', label: 'el viejo', anchor: null })
     ])
     // Revelado a Lía, lo ve su dueña; a Bram, no
     const [rey, heredero] = await secretsOf(page.Aldoria ?? '')
@@ -435,11 +437,11 @@ describe('lo que lee un jugador (docs/specs/conocimiento.md)', () => {
     expect(full).toContain('Nota para mí')
   })
 
-  it('en Markdown (su IA), igual: los enlaces a lo que no ve, como su texto o «desconocido»', async () => {
+  it('en Markdown (su IA), igual: los enlaces a lo que no ve, como lo que se escribió', async () => {
     const read = await ok200('readPage', { pageId: page.Aldoria }, ana.cookie)
     expect(read.markdown).toContain('[[La capital]]')
-    expect(read.markdown).toContain('al norte vive desconocido y más allá el viejo')
-    expect(read.markdown).not.toContain('Varn')
+    expect(read.markdown).toContain('al norte vive Varn y más allá el viejo')
+    expect(read.markdown).not.toContain('[[Varn')
     expect(read.markdown).not.toContain('secreto')
     expect(read.markdown).not.toContain('Nota')
   })

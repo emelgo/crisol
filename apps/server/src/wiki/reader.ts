@@ -152,3 +152,19 @@ export async function knownBySomeone(ctx: ActionContext, worldId: string, pageId
   const explained = explainPage(pageId, tree, marks, campaigns)
   return explained.world.known || explained.campaigns.some((c) => c.audience !== 'none')
 }
+
+/** Lo que un jugador puede encontrar al buscar: las páginas que ve y sus secretos y pestañas de texto visibles (null: todo) */
+export async function searchScope(
+  ctx: Pick<ActionContext, 'db'>,
+  worldId: string,
+  view: WikiView
+): Promise<{ pages: string[]; separates: string[] } | null> {
+  const pages = view.visiblePageIds()
+  if (!pages) return null
+  const separates = (await knowledgeRepo.separatesOf(ctx.db, worldId)).filter((doc) =>
+    doc.kind === 'secret'
+      ? view.seesSecret(doc.id, doc.pageId)
+      : doc.tabId !== null && view.seesTab({ id: doc.tabId, pageId: doc.pageId, hidden: doc.hidden ?? false })
+  )
+  return { pages, separates: separates.map((doc) => doc.id) }
+}

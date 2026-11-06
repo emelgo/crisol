@@ -65,8 +65,7 @@ y la IA de los dos.
   - **la página**: título, icono, portada, propiedades y panel (sin lo oculto), etiquetas, pestañas (las que ve,
     `mapas-jugadores`), y el cuerpo **sin los secretos que no ve y sin las notas ocultas**, en lectura. Se recarga sola
     cuando cambia;
-  - **los enlaces** a lo que ve llevan a la página; a lo que no ve, sin enlace ni vista previa y sin el nombre del
-    destino (decisión 2);
+  - **los enlaces** a lo que ve llevan a la página; a lo que no ve, como texto (decisión 2);
   - **la vista previa** al pasar el ratón y **los incrustados**, filtrados igual;
   - **los enlaces entrantes**, solo desde lo que ve;
   - **las tablas que se llenan solas** del panel («Miembros»), solo con las páginas que ve;
@@ -97,12 +96,12 @@ y la IA de los dos.
 
 1. **El jugador lee por la API, no por Yjs** (ADR-0017): abrir el cuerpo en Yjs le enseñaría dónde hay secretos,
    aunque no su texto. Le llega el cuerpo ya filtrado y un aviso en tiempo real para recargarlo.
-2. **Un enlace a lo oculto no dice el nombre del destino**: sale su texto propio si lo tiene (`[[Varn|el viejo]]`) y,
-   si no, «desconocido», atenuado y sin enlace, como Kanka. El título se pinta al leer (se guarda el id): si el máster
-   renombra una página oculta, su nombre nuevo saldría en todas las que la enlazan
-   (`research/worldanvil/visibilidad.md` y `research/kanka/visibilidad.md`). **Igual que un enlace a una página que no
-   existe**, sin id ni icono, para que no delate que hay algo (`research/foundry/visibilidad-y-revelar.md`: Foundry
-   pinta el nombre real de todo).
+2. **Un enlace a lo oculto, como un enlace sin resolver**: texto, sin enlace, sin id ni vista previa, con lo que se
+   escribió (su texto propio o el título que tenía al enlazarla), **nunca con el título de ahora**: si el máster renombra
+   una página oculta, no se nota (`research/worldanvil/visibilidad.md`, `research/kanka/visibilidad.md`). Igual que un
+   enlace a una página que no existe, para que no delate que hay algo (`research/foundry/visibilidad-y-revelar.md`:
+   Foundry pinta el nombre real de todo). Se descartó «desconocido» (como Kanka): el texto escrito ya está en la
+   página que ve y en lo que se busca; si no debe leerse, va en un secreto. Un incrustado de lo oculto no sale.
 3. **Subpáginas más abiertas que su madre**, permitidas, colgando de la primera antecesora visible.
 4. **Lo mismo que otra campaña**, como copia al crearla (no un enlace vivo entre campañas).
 5. **Por personaje, no por cuenta**: si el personaje pasa a otro jugador, el conocimiento pasa con él.

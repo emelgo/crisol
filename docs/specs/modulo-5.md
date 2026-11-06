@@ -30,8 +30,8 @@ es que un jugador pueda leer algo sin fugas; lo de la partida (revelar) va justo
    hay secretos aunque no su texto. Solo las páginas que puede editar (`pagina-de-jugadores`) se le abren en Yjs.
 4. **Una subpágina más abierta que su madre** sale en el árbol del jugador colgada de la primera antecesora que ve (o
    arriba del todo), sin delatar los títulos de las ocultas. La miga de pan, igual.
-5. **Un enlace a una página que no ve** no dice el nombre del destino: su texto propio si lo tiene y, si no,
-   «desconocido», sin enlace (`docs/specs/conocimiento.md`, decisión 2).
+5. **Un enlace a una página que no ve** queda como uno sin resolver: texto, con lo que se escribió y nunca con el título
+   de ahora (`docs/specs/conocimiento.md`, decisión 2).
 6. **Los archivos**: un jugador abre un archivo del mundo solo si está en algo que ve (la portada o el panel de una
    página visible, o incrustado en un documento que ve).
 7. **Las criaturas en juego** se ponen a la vista u ocultas (por defecto, a la vista); las ocultas no le llegan al

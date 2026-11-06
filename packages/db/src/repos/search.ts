@@ -143,7 +143,27 @@ export interface SearchOptions {
   link?: { field: string; pageId: string } | null
   offset: number
   limit: number
+  /** Un jugador (ADR-0017): las páginas que ve y los secretos y pestañas de texto que ve */
+  player?: PlayerScope | null
 }
+
+export interface PlayerScope {
+  pages: readonly string[]
+  separates: readonly string[]
+}
+
+const ids = (list: readonly string[]) => sql`string_to_array(${list.join(',')}, ',')::uuid[]`
+
+/** Las secciones s que ve un jugador: de sus páginas, el cuerpo y los secretos y pestañas que ve (nunca las notas) */
+export const playerSections = (player: PlayerScope | null | undefined) =>
+  player
+    ? sql`and s.page_id = any(${ids(player.pages)}) and (s.kind = 'body' or s.document_id = any(${ids(player.separates)}))`
+    : sql``
+
+/** El título y las propiedades que ve un jugador, sin las ocultas, como el vector de búsqueda de la página */
+const visibleTsv = sql`setweight(to_tsvector('es_unaccent'::regconfig, crisol_page_text(p.title, (
+  select coalesce(jsonb_agg(e order by n), '[]'::jsonb) from jsonb_array_elements(p.properties) with ordinality as x(e, n)
+  where coalesce(e->>'hidden', '') <> 'true'))), 'A')`
 
 /** Las condiciones de plantilla y de campo, sobre la página p */
 const templateFilter = (options: Pick<SearchOptions, 'template' | 'link'>) => sql`
@@ -159,6 +179,7 @@ export async function templatePages(db: Database, options: Omit<SearchOptions, '
   const rows = await db.execute<{ id: string; title: string; icon: string | null; total: number }>(sql`
     select p.id, p.title, p.icon, (count(*) over ())::int as total from pages p
     where p.world_id = ${options.worldId} and p.deleted_at is null ${templateFilter(options)}
+      ${options.player ? sql`and p.id = any(${ids(options.player.pages)})` : sql``}
     order by lower(p.title), p.id
     offset ${options.offset} limit ${options.limit}`)
   const pages = [...rows]
@@ -177,12 +198,20 @@ export async function searchPages(db: Database, options: SearchOptions) {
     with q as (select ${query} as query),
     hits as (
       select s.page_id, ts_rank(s.tsv, q.query) as rank
-        from search_sections s, q where s.world_id = ${options.worldId} and s.tsv @@ q.query and ${liveTab}
+        from search_sections s, q
+        where s.world_id = ${options.worldId} and s.tsv @@ q.query and ${liveTab} ${playerSections(options.player)}
       union all
       -- El título y las propiedades cuentan como el título de una sección, y el doble
-      select p.id, 2 * ts_rank(p.search_tsv, q.query)
-        from pages p, q
-        where p.world_id = ${options.worldId} and p.deleted_at is null and p.search_tsv @@ q.query
+      ${
+        options.player
+          ? sql`select p.id, 2 * ts_rank(${visibleTsv}, q.query)
+              from pages p, q
+              where p.world_id = ${options.worldId} and p.deleted_at is null and p.id = any(${ids(options.player.pages)})
+                and ${visibleTsv} @@ q.query`
+          : sql`select p.id, 2 * ts_rank(p.search_tsv, q.query)
+              from pages p, q
+              where p.world_id = ${options.worldId} and p.deleted_at is null and p.search_tsv @@ q.query`
+      }
     ),
     scored as (select page_id, max(rank) as score from hits group by page_id)
     select p.id, p.title, p.icon, scored.score::float8 as score, (count(*) over ())::int as total
@@ -213,7 +242,12 @@ export async function searchPages(db: Database, options: SearchOptions) {
 }
 
 /** De esas páginas, las secciones que coinciden (las tres mejores de cada una), con su extracto marcado con ** */
-export async function matchingSections(db: Database, pageIds: readonly string[], terms: readonly string[][]) {
+export async function matchingSections(
+  db: Database,
+  pageIds: readonly string[],
+  terms: readonly string[][],
+  player?: PlayerScope | null
+) {
   if (pageIds.length === 0 || terms.length === 0) return []
   const query = tsQuery(terms)
   const rows = await db.execute<{
@@ -234,7 +268,7 @@ export async function matchingSections(db: Database, pageIds: readonly string[],
       where s.page_id in (${sql.join(
         pageIds.map((id) => sql`${id}::uuid`),
         sql`, `
-      )}) and s.tsv @@ q.query and ${liveTab}
+      )}) and s.tsv @@ q.query and ${liveTab} ${playerSections(player)}
     ) ranked where n <= 3 order by page_id, n`)
   return [...rows].map((row) => ({
     pageId: row.page_id,

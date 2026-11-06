@@ -35,7 +35,7 @@ import { pagesChanged } from '../realtime/events.ts'
 import { readDocument, stateOf, writeDocument } from '../wiki/content.ts'
 import { fileNames, worldFiles } from '../wiki/file-embeds.ts'
 import { linkName, linksOfNewPages, resolveIncoming, resolvePending, worldNames } from '../wiki/links.ts'
-import { filterBody, neutralAsText, pageViewFor, viewedPage } from '../wiki/projection.ts'
+import { filterBody, pageViewFor, unresolvedAsText, viewedPage } from '../wiki/projection.ts'
 import { propertiesOf } from '../wiki/properties.ts'
 import { knownBySomeone } from '../wiki/reader.ts'
 import { pageTables } from '../wiki/tables.ts'
@@ -363,9 +363,9 @@ export const pageContentActions = [
   implement(readPage, async (ctx, { pageId, ids, ...as }) => {
     const { page, wiki, view: reading } = await viewedPage(ctx, pageId, as)
     const view = await pageViewFor(ctx, wiki, reading, pageId)
-    // Un jugador: sin lo que no ve, y los enlaces a lo que no conoce, como texto
+    // Un jugador: sin lo que no ve, y los enlaces a lo que no conoce, como texto (lo que se escribió)
     const read = filterBody(await readDocument(ctx, { kind: 'body', pageId }), reading, pageId) ?? { type: 'doc' }
-    const body = reading.full ? read : (neutralAsText(read) ?? { type: 'doc' })
+    const body = reading.full ? read : (unresolvedAsText(read) ?? { type: 'doc' })
     // Solo los secretos que son de esta página
     const own = new Set(
       (await documentsRepo.documentsOfPages(ctx.db, [pageId])).filter((d) => d.kind !== 'body').map((d) => d.id)

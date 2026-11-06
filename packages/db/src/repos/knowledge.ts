@@ -220,3 +220,19 @@ export async function findTarget(
     }
   }
 }
+
+/** Los secretos y las pestañas de texto del mundo, con su página (y la pestaña, si está oculta): para filtrar lo que se busca */
+export function separatesOf(db: Database, worldId: string) {
+  return db
+    .select({
+      id: documents.id,
+      pageId: documents.pageId,
+      kind: documents.kind,
+      tabId: pageTabs.id,
+      hidden: pageTabs.hidden
+    })
+    .from(documents)
+    .innerJoin(pages, and(eq(pages.id, documents.pageId), isNull(pages.deletedAt)))
+    .leftJoin(pageTabs, eq(pageTabs.documentId, documents.id))
+    .where(and(eq(documents.worldId, worldId), inArray(documents.kind, ['secret', 'tab'])))
+}

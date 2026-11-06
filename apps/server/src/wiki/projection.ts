@@ -81,8 +81,9 @@ export async function pageViewFor(ctx: ActionContext, wiki: WikiTarget, view: Wi
 }
 
 /**
- * El cuerpo que ve un jugador: sin los secretos que no ve ni las notas ocultas, y los enlaces y los incrustados a lo
- * que no ve (o a lo que no existe) iguales, sin id ni título: solo su texto propio, si lo tienen
+ * El cuerpo que ve un jugador: sin los secretos que no ve ni las notas ocultas. Un enlace a lo que no ve queda como un
+ * enlace sin resolver: sin id y con lo que se escribió (nunca con el título de ahora: renombrar una página oculta no se
+ * nota). Un incrustado de lo que no ve, fuera
  */
 export function filterBody(node: JSONContent, view: WikiView, pageId: string): JSONContent | null {
   if (view.full) return node
@@ -93,20 +94,22 @@ export function filterBody(node: JSONContent, view: WikiView, pageId: string): J
   }
   if (node.type === 'pageLink' || node.type === 'pageEmbed') {
     const target = node.attrs?.pageId
-    if (typeof target !== 'string' || !view.seesPage(target)) {
-      const label = node.type === 'pageLink' ? { label: (node.attrs?.label as string | null | undefined) ?? null } : {}
-      return { ...node, attrs: { pageId: null, title: '', anchor: null, ...label } }
+    if (typeof target === 'string' && !view.seesPage(target)) {
+      if (node.type === 'pageEmbed') return null
+      return { ...node, attrs: { ...node.attrs, pageId: null, anchor: null } }
     }
   }
   if (!node.content) return node
   return { ...node, content: node.content.flatMap((child) => filterBody(child, view, pageId) ?? []) }
 }
 
-/** Para leerlo en Markdown: los enlaces neutros, como su texto (o «desconocido»); los incrustados neutros, fuera */
-export function neutralAsText(node: JSONContent): JSONContent | null {
-  const neutral = node.attrs?.pageId === null && node.attrs?.title === ''
-  if (node.type === 'pageLink' && neutral) return { type: 'text', text: String(node.attrs?.label || 'desconocido') }
-  if (node.type === 'pageEmbed' && neutral) return null
+/** Para leerlo en Markdown: los enlaces sin destino, como lo que se escribió */
+export function unresolvedAsText(node: JSONContent): JSONContent | null {
+  if (node.type === 'pageLink' && !node.attrs?.pageId) {
+    const text = String(node.attrs?.label || node.attrs?.title || '')
+    return text ? { type: 'text', text } : null
+  }
+  if (node.type === 'pageEmbed' && !node.attrs?.pageId) return null
   if (!node.content) return node
-  return { ...node, content: node.content.flatMap((child) => neutralAsText(child) ?? []) }
+  return { ...node, content: node.content.flatMap((child) => unresolvedAsText(child) ?? []) }
 }
