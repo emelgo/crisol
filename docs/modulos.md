@@ -7,25 +7,24 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
-### Para retomar (2026-11-06, módulo 4: `compendio-mundo` construido; lo siguiente, `criaturas`)
+### Para retomar (2026-11-06, módulo 4: `compendio-mundo` y `criaturas` construidos; lo siguiente, `imagenes`)
 
-- **Rama `modulo-4/compendio`** (sin PR aún). Hecha la entrevista con Enrique (abajo, § «### 4. Compendio, criaturas y
-  biblioteca»): el compendio se juega como en Foundry o D&D Beyond, con la capa del mundo; las criaturas en juego
-  (copias y únicas); entra todo (imágenes, tablas, inventario del grupo, PDF). Permiso para pgvector; modelo de
-  embeddings propio, medido: cabe (`docs/specs/modulo-4.md` § «La medida»).
-- **Estudios**: `research/foundry/criaturas-y-capas.md` y `research/dndbeyond/criaturas-y-grupo.md`.
-- **Specs** (con las propuestas de los estudios marcadas): el mapa `docs/specs/modulo-4.md` y `compendio-mundo.md`,
-  `criaturas.md`, `imagenes.md`, `tablas-compendio.md`, `grupo.md` y `biblioteca.md`.
-- **Diseño**: el lienzo «Crisol: compendio y criaturas» (https://claude.ai/artifact/DwT92fPMmt25Dd8XyhmHqy; fuentes en
-  `out/lienzo-compendio/`), con fotos mandadas a Enrique; sin respuesta aún.
-- **`compendio-mundo`, construido** (`tasks/plan.md`, `tasks/todo.md`, las 8 tareas): la tabla `world_content`
-  (migración 0043, ya en la base de desarrollo), la unión de capas (`apps/server/src/actions/layers.ts`), las acciones
-  (`world-content.ts`), la web (compendio con «Del mundo», copiar al mundo, el aviso del original, llevar al sistema) y
-  la IA (`guardar_contenido`/`borrar_contenido` con `worldId`, `copiar_contenido`, `leer_compendio`,
-  `origen_contenido`, `traer_original`). E2E `compendio-mundo.spec.ts` y su fuga en `fugas.spec.ts`. Qué probar:
-  `tasks/probar.md` § «Módulo 4: el compendio del mundo».
-- **Lo siguiente**: la revisión de `compendio-mundo`, y después el plan de `criaturas` (la hoja de criatura, en juego,
-  aplicar daño, el enlace desde la wiki).
+- **Rama `modulo-4/compendio`** (sin PR aún). Entrevista con Enrique (abajo, § «### 4. Compendio, criaturas y
+  biblioteca»); estudios `research/foundry/criaturas-y-capas.md` y `research/dndbeyond/criaturas-y-grupo.md`; el mapa
+  `docs/specs/modulo-4.md` (con la medida del modelo de embeddings) y las specs de las seis capacidades; el lienzo
+  «Crisol: compendio y criaturas» (https://claude.ai/artifact/DwT92fPMmt25Dd8XyhmHqy; fuentes en `out/lienzo-compendio/`),
+  mandado a Enrique con fotos, sin respuesta aún.
+- **`compendio-mundo`, construido y revisado** (`tasks/compendio-mundo/`): `world_content` (migración 0043), la unión
+  de capas (`apps/server/src/actions/layers.ts`), copiar entre capas y el aviso del original con su huella, la web y la
+  IA. Arreglado lo de la revisión (sobre todo: un jugador no añade a su personaje lo del mundo por su clave).
+- **`criaturas`, construido** (`tasks/plan.md`, `tasks/todo.md`, las 9 tareas): el formato (`types[t].sheet`, `roll`,
+  `damage`; anotado en `docs/specs/sistemas.md`), el motor (`packages/systems/src/creatures.ts`, `playedSheet`),
+  `campaign_creatures` (migración 0044), las acciones (`apps/server/src/actions/creatures.ts`, con `applyRoll`), la web
+  («Poner en juego», «En juego», la hoja genérica, «Aplicar» en el registro), la IA y el enlace `[[@Nombre]]` desde la
+  wiki. E2E `criaturas.spec.ts` y sus fugas. Lo que queda, en `docs/specs/criaturas.md` § «Construido».
+- **Ahora**: la revisión del código de `criaturas` y la batería entera; después, PR a `main` y staging (migraciones 0043
+  y 0044) para que Enrique lo pruebe (`tasks/probar.md` § «Módulo 4»). **Lo siguiente**: `imagenes`, `tablas-compendio`,
+  `grupo` y `biblioteca` (en este orden; `docs/specs/modulo-4.md`).
 - Pendiente de Enrique, sin bloquear: cerrar los tres avisos MCP como se le propuso (descartar `ver_escena`, «no se
   arregla» `query_document` de LightRAG por el parche de las palabras clave, dejar abierta la mejora de craft).
 - Ojo: la API de desarrollo (`node --watch`) no siempre se recarga al añadir archivos; `touch apps/server/src/main.ts`.
@@ -1305,7 +1304,7 @@ Estados: pendiente · en curso · hecho · descartado.
 | 1 | **Wiki**: páginas y subpáginas, editor de bloques, enlaces, menciones, vista previa, propiedades, secretos, búsqueda, marcadores, etiquetas, versiones, recursos y archivos, **hojas con estilo** (tipo Homebrewery, con PDF), exportación MD, sus herramientas MCP | construido (tareas 1 a 26 hechas); falta la revisión de Enrique en staging | Foundry: Journal; DDB: contenido y referencias; Homebrewery (MIT): formato de hoja y descarga |
 | 2 | **Tipos de página y plantillas**: «Desde plantilla» (de serie y propias), campos en el panel, tablas que se llenan solas (en lugar de Dataview) | construido (tareas 1 a 14, 2026-11-03); falta la revisión de Enrique en staging | Foundry: tipos de documento; Kanka, LegendKeeper y World Anvil (web pública) |
 | 3 | Sistemas de reglas, fichas de personaje (creación, subida de nivel), dados y dados 3D | **hecho** (2026-11-06, PR #95 a #108; Crisol vacío, ADR-0015); falta que Enrique lo pruebe (`tasks/probar.md`) | DDB: creador y hoja; Foundry: dnd5e, DataModel e instalar y crear sistemas |
-| 4 | Compendios (aparte de la wiki del mundo y **como los de Foundry**: antes, estudio a fondo con craft-anything), bestiario, statblocks, biblioteca; **las imágenes de lo traído de Foundry** (las de cada documento del zip); **buscar dentro de los PDF** (texto de cada página con pdf.js; el resultado abre el visor en esa página) **y por significado** (pgvector; antes, permiso para la imagen de Postgres y elegir quién calcula los embeddings) | **en curso** (2026-11-06: specs y diseño; `compendio-mundo` construido; `docs/specs/modulo-4.md`) | Foundry: compendium packs; DDB: listados |
+| 4 | Compendios (aparte de la wiki del mundo y **como los de Foundry**: antes, estudio a fondo con craft-anything), bestiario, statblocks, biblioteca; **las imágenes de lo traído de Foundry** (las de cada documento del zip); **buscar dentro de los PDF** (texto de cada página con pdf.js; el resultado abre el visor en esa página) **y por significado** (pgvector; antes, permiso para la imagen de Postgres y elegir quién calcula los embeddings) | **en curso** (2026-11-06: specs y diseño; `compendio-mundo` y `criaturas` construidos; `docs/specs/modulo-4.md`) | Foundry: compendium packs; DDB: listados |
 | 5 | Visibilidad por campaña: conocimiento de los jugadores, revelar, compartir | pendiente | Foundry: ownership |
 | 6 | **Mesa**: escenas, rejilla, fichas, medir y plantillas, niebla, muros, puertas, luz, visión, iniciativa, instantáneas, encuentros, UVTT; **las escenas, mapas y tokens de un zip de Foundry** | pendiente | Foundry: canvas, visión y muros; DDB Maps |
 | 7 | **Sala de jugadores**: presencia, chat y susurros, mostrar a jugadores, sonido (también **los de un zip de Foundry**), controles del máster | pendiente | Foundry: sockets y chat; DDB: game log |
