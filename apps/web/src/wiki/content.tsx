@@ -10,7 +10,7 @@ import callout from './callout.module.css'
 import styles from './content.module.css'
 import editor from './editor.module.css'
 import { FileEmbedBlock } from './file-embed.tsx'
-import { PageLink } from './read-as.tsx'
+import { PageLink, useReadAs } from './read-as.tsx'
 import separate from './separate.module.css'
 import sheet from './sheet-blocks.module.css'
 
@@ -163,6 +163,7 @@ export const NewSecretsContext = createContext<ReadonlySet<string>>(new Set())
 function SeparateBlock({ node, children }: { node: JSONContent; children: ReactNode }) {
   const { t } = useTranslation()
   const fresh = useContext(NewSecretsContext)
+  const readAs = useReadAs()
   const isNew = node.type === 'secret' && fresh.has(String(node.attrs?.documentId ?? ''))
   return (
     <section
@@ -171,7 +172,8 @@ function SeparateBlock({ node, children }: { node: JSONContent; children: ReactN
       data-new={isNew || undefined}
     >
       <div className={separate.label}>
-        {t(node.type === 'secret' ? 'separate.secretHint' : 'separate.noteHint')}
+        {/* Leyendo como jugador, un secreto que se ve es uno revelado (no «solo lo ves tú») */}
+        {t(node.type === 'note' ? 'separate.noteHint' : readAs ? 'separate.revealedHint' : 'separate.secretHint')}
         {isNew && <span className={styles.newBadge}>{t('playerPages.new')}</span>}
       </div>
       {children}

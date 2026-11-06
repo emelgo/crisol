@@ -1564,6 +1564,7 @@ export const es = {
     deleted: 'Bloque borrado.'
   },
   separate: {
+    revealedHint: 'Secreto · revelado',
     secret: 'Secreto',
     note: 'Nota oculta',
     secretHint: 'Secreto · solo lo ves tú',

@@ -272,19 +272,20 @@ function PlayerEntry({ page }: { page: Page }) {
     })
   const active = texts.find((tab) => tab.id === tabId) ?? null
   const content = usePageContent(page.worldId, page.id, null, false, active?.id)
-  // Lo nuevo de esta página, tal como estaba al abrirla (luego deja de serlo)
+  // Lo nuevo de esta página, también lo que llega con ella abierta: se marca mientras se lee y deja de ser nuevo
   const news = useNews(page.worldId)
   const queryClient = useQueryClient()
-  const [fresh, setFresh] = useState<ReadonlySet<string> | null>(null)
+  const [fresh, setFresh] = useState<ReadonlySet<string>>(EMPTY)
   useEffect(() => {
-    if (fresh || !news.data || readAs.asCharacterId) return
+    if (!news.data || readAs.asCharacterId) return
     const mine = news.data.news.filter((n) => n.pageId === page.id || (n.kind === 'page' && n.targetId === page.id))
-    setFresh(new Set(mine.filter((n) => n.kind === 'secret').map((n) => n.targetId)))
-    if (mine.length > 0)
-      void api
-        .call('seeNews', { campaignId: readAs.campaignId, pageId: page.id })
-        .then(() => queryClient.invalidateQueries({ queryKey: playerKey(page.worldId, readAs, 'news') }))
-  }, [fresh, news.data, page.id, page.worldId, readAs, api, queryClient])
+    if (mine.length === 0) return
+    const secrets = mine.filter((n) => n.kind === 'secret').map((n) => n.targetId)
+    if (secrets.length > 0) setFresh((now) => new Set([...now, ...secrets]))
+    void api
+      .call('seeNews', { campaignId: readAs.campaignId, pageId: page.id })
+      .then(() => queryClient.invalidateQueries({ queryKey: playerKey(page.worldId, readAs, 'news') }))
+  }, [news.data, page.id, page.worldId, readAs, api, queryClient])
   return (
     <>
       <div className={wiki.entryBanner} data-cover={page.cover ? '' : undefined}>
@@ -320,7 +321,7 @@ function PlayerEntry({ page }: { page: Page }) {
           )}
           <div className={wiki.column}>
             {content.data ? (
-              <NewSecretsContext.Provider value={fresh ?? EMPTY}>
+              <NewSecretsContext.Provider value={fresh}>
                 <ContentView blocks={content.data.blocks} worldId={page.worldId} />
               </NewSecretsContext.Provider>
             ) : failed(content) ? (

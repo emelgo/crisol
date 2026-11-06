@@ -446,7 +446,7 @@ function CampaignPanels({
           viewTransition={SECTION}
           data-tour="barra-paginas"
         >
-          <Label icon={Globe} text={worldName} />
+          <NewsLabel worldId={worldId} campaignId={campaignId} text={worldName} />
         </Link>
       )}
       <Link
@@ -500,6 +500,31 @@ function CampaignPanels({
         </Link>
       )}
       <DiceButton />
+    </>
+  )
+}
+
+/** Las páginas del mundo de quien juega, con cuántas novedades tiene (lo revelado que aún no ha abierto) */
+function NewsLabel({ worldId, campaignId, text }: { worldId: string; campaignId: string; text: string }) {
+  const { t } = useTranslation()
+  const api = useApi()
+  const count =
+    useQuery({
+      queryKey: ['pages', worldId, 'player', campaignId, null, 'news'],
+      queryFn: () => api.call('listNews', { campaignId })
+    }).data?.news.length ?? 0
+  return (
+    <>
+      <span className={styles.badged}>
+        <Globe aria-hidden="true" size={20} strokeWidth={1.75} />
+        {count > 0 && (
+          <span aria-hidden="true" className={styles.badge}>
+            {count}
+          </span>
+        )}
+      </span>
+      <span className={styles.text}>{text}</span>
+      {count > 0 && <span className={styles.hidden}>{t('playerPages.newCount', { count })}</span>}
     </>
   )
 }

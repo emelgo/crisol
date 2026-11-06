@@ -33,8 +33,14 @@
 
 .title {
   margin: 0;
+  padding: 0;
+  border: 0;
+  color: var(--color-text);
+  font-family: inherit;
   font-size: 0.9375rem;
   font-weight: 600;
+  letter-spacing: normal;
+  text-transform: none;
 }
 
 .close {

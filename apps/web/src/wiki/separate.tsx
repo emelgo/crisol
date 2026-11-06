@@ -24,7 +24,7 @@ import { withPageEmbedView } from './embed.tsx'
 import find from './find-in-page.module.css'
 import { FindInPage, nestedFinds } from './find-in-page.tsx'
 import { LinkSuggest, useLinksRef, withPageLinkView } from './page-links.tsx'
-import { SecretReveal } from './reveal.tsx'
+import { SecretReveal, useSecretsKnowledge } from './reveal.tsx'
 import styles from './separate.module.css'
 import { SlashMenu } from './slash-menu.tsx'
 
@@ -146,6 +146,11 @@ function SeparateView({ node, editor, getPos, updateAttributes, selected }: Node
   const worldId = (useParams({ strict: false }) as { worldId?: string }).worldId
   const kind = node.type.name as SeparateKind
   const documentId: string | null = node.attrs.documentId
+  // Revelado a alguien: ya no es «solo lo ves tú»
+  const secrets = useSecretsKnowledge(worldId ?? '', pageId ?? '', kind === 'secret' && Boolean(documentId))
+  const revealed = Boolean(
+    secrets.data?.secrets.find((s) => s.documentId === documentId)?.campaigns.some((c) => c.audience !== 'none')
+  )
   const copying = useRef(false)
 
   // Una copia que pegó esta pestaña: se crea su documento y el bloque pasa a apuntar a él
@@ -276,7 +281,7 @@ function SeparateView({ node, editor, getPos, updateAttributes, selected }: Node
           <svg aria-hidden="true" viewBox="0 0 24 24">
             <path d="M3 3l18 18M10.6 6.1A9.6 9.6 0 0 1 12 6c5 0 9 6 9 6a17 17 0 0 1-3.1 3.6M6.3 7.8C4.2 9.4 3 12 3 12s4 6 9 6c1.4 0 2.7-.4 3.9-1" />
           </svg>
-          {t(kind === 'secret' ? 'separate.secretHint' : 'separate.noteHint')}
+          {t(kind === 'secret' ? (revealed ? 'separate.secret' : 'separate.secretHint') : 'separate.noteHint')}
         </span>
         {/* A quién se le ha revelado, y «Revelar» (docs/specs/revelar.md) */}
         {kind === 'secret' && documentId && pageId && worldId && editor.isEditable && (
