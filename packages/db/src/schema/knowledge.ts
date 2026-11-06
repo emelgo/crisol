@@ -1,6 +1,8 @@
 import { sql } from 'drizzle-orm'
-import { boolean, check, index, pgTable, text, unique, uuid } from 'drizzle-orm/pg-core'
+import { boolean, check, index, pgTable, text, timestamp, unique, uuid } from 'drizzle-orm/pg-core'
+import { user } from './auth.ts'
 import { campaigns } from './campaigns.ts'
+import { pages } from './pages.ts'
 import { trackedColumns } from './tracked.ts'
 import { worlds } from './worlds.ts'
 
@@ -33,4 +35,27 @@ export const knowledge = pgTable(
     index().on(t.campaignId),
     check('knowledge_kind', sql`${t.kind} in ('page', 'secret', 'tab', 'pin', 'element', 'content')`)
   ]
+)
+
+/**
+ * Lo nuevo de cada jugador (docs/specs/revelar.md): lo que se le reveló y aún no ha abierto, con la página donde está.
+ * No pasa por el historial (como los avisos): se borra al abrir esa página o al ocultarlo otra vez
+ */
+export const knowledgeNews = pgTable(
+  'knowledge_news',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    userId: text()
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    campaignId: uuid()
+      .notNull()
+      .references(() => campaigns.id, { onDelete: 'cascade' }),
+    kind: text({ enum: KNOWLEDGE_KINDS }).notNull(),
+    targetId: text().notNull(),
+    // La página donde está (la de un secreto, una pestaña o un pin); sin ella, una entrada del mundo
+    pageId: uuid().references(() => pages.id, { onDelete: 'cascade' }),
+    createdAt: timestamp({ withTimezone: true }).defaultNow().notNull()
+  },
+  (t) => [unique('knowledge_news_one').on(t.userId, t.campaignId, t.kind, t.targetId), index().on(t.campaignId)]
 )

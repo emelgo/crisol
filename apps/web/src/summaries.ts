@@ -149,6 +149,9 @@ export function summaryOf(
       return say('restoreCampaign', { name: text(details.name), world: text(details.world) })
     // De la wiki: lo hecho guarda los títulos; lo que pide la IA trae su entrada y los nombres (page, parent)
     // Lo que sabe una campaña (ADR-0017): qué, a quién, en qué campaña (o todo el mundo)
+    case 'reveal':
+    case 'hideKnowledge':
+    case 'hide':
     case 'setKnowledge': {
       const kind = text(details.kind)
       const what = t(
@@ -163,6 +166,9 @@ export function summaryOf(
           : details.campaign
             ? text(details.campaign)
             : null
+      if (action === 'reveal') return say('knowledgeRevealed', { what, who: who ?? '' })
+      if (action === 'hideKnowledge' || action === 'hide')
+        return say('knowledgeHidden', { what, who: text(details.campaign) })
       if (details.known === true) return who ? say('knowledgeKnown', { what, who }) : say('knowledgeWorld', { what })
       if (details.known === false)
         return details.campaign

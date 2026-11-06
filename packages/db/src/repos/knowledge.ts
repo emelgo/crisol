@@ -6,10 +6,10 @@ import type { KnowledgeKind, KnowledgeMark } from '@crisol/domain'
 import { and, eq, inArray, isNull, or, type SQL, sql } from 'drizzle-orm'
 import type { Database } from '../client.ts'
 import { type OperationContext, operation, type Writer } from '../operation.ts'
-import { campaigns } from '../schema/campaigns.ts'
+import { campaignMembers, campaigns } from '../schema/campaigns.ts'
 import { characters } from '../schema/characters.ts'
 import { documents } from '../schema/documents.ts'
-import { knowledge } from '../schema/knowledge.ts'
+import { knowledge, knowledgeNews } from '../schema/knowledge.ts'
 import { mapElements, mapPins, maps, pageTabs } from '../schema/maps.ts'
 import { pages } from '../schema/pages.ts'
 import { worldContent } from '../schema/systems.ts'
@@ -52,6 +52,15 @@ export function campaignRows(db: Database, campaignId: string) {
     .select()
     .from(knowledge)
     .where(eq(knowledge.campaignId, campaignId))
+    .orderBy(sql`${knowledge.updatedAt} desc`, knowledge.id)
+}
+
+/** Las marcas del mundo (lo que sabe todo el mundo), de la más reciente a la más antigua */
+export function worldRows(db: Database, worldId: string) {
+  return db
+    .select()
+    .from(knowledge)
+    .where(and(eq(knowledge.worldId, worldId), isNull(knowledge.campaignId)))
     .orderBy(sql`${knowledge.updatedAt} desc`, knowledge.id)
 }
 
@@ -134,6 +143,32 @@ export function setMark(db: Database, context: OperationContext, change: MarkCha
   return operation(db, context, (w) => writeMark(w, change))
 }
 
+/** Varias marcas en una sola operación (revelar un secreto y su página: se deshacen juntas) */
+export function setMarks(db: Database, context: OperationContext, changes: readonly MarkChange[]) {
+  return operation(db, context, async (w) => {
+    for (const change of changes) await writeMark(w, change)
+  })
+}
+
+/** La marca de una cosa en una campaña (o en el mundo), si tiene */
+export async function findMark(
+  db: Database,
+  input: { worldId: string; campaignId: string | null; kind: KnowledgeKind; targetId: string }
+) {
+  const [row] = await db
+    .select()
+    .from(knowledge)
+    .where(
+      and(
+        eq(knowledge.worldId, input.worldId),
+        input.campaignId === null ? isNull(knowledge.campaignId) : eq(knowledge.campaignId, input.campaignId),
+        eq(knowledge.kind, input.kind),
+        eq(knowledge.targetId, input.targetId)
+      )
+    )
+  return row ?? null
+}
+
 /**
  * Copia lo que sabe una campaña a otra nueva (al crearla con «lo mismo que otra»), dentro de su operación. Lo que solo
  * saben unos personajes no pasa: son de la otra campaña
@@ -163,7 +198,7 @@ export async function findTarget(
   worldId: string,
   kind: KnowledgeKind,
   targetId: string
-): Promise<{ pageId: string | null; name: string } | null> {
+): Promise<{ pageId: string | null; name: string; hidden?: boolean } | null> {
   const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetId)
   if (!uuid) return null
   const live = and(eq(pages.worldId, worldId), isNull(pages.deletedAt))
@@ -185,7 +220,7 @@ export async function findTarget(
     }
     case 'tab': {
       const [row] = await db
-        .select({ pageId: pages.id, name: pageTabs.name })
+        .select({ pageId: pages.id, name: pageTabs.name, hidden: pageTabs.hidden })
         .from(pageTabs)
         .innerJoin(pages, eq(pages.id, pageTabs.pageId))
         .where(and(eq(pageTabs.id, targetId), live))
@@ -193,7 +228,7 @@ export async function findTarget(
     }
     case 'pin': {
       const [row] = await db
-        .select({ pageId: pages.id, name: sql<string>`coalesce(${mapPins.label}, '')` })
+        .select({ pageId: pages.id, name: sql<string>`coalesce(${mapPins.label}, '')`, hidden: mapPins.hidden })
         .from(mapPins)
         .innerJoin(maps, eq(maps.id, mapPins.mapId))
         .innerJoin(pageTabs, eq(pageTabs.id, maps.tabId))
@@ -203,7 +238,7 @@ export async function findTarget(
     }
     case 'element': {
       const [row] = await db
-        .select({ pageId: pages.id, name: sql<string>`coalesce(${mapElements.label}, '')` })
+        .select({ pageId: pages.id, name: sql<string>`coalesce(${mapElements.label}, '')`, hidden: mapElements.hidden })
         .from(mapElements)
         .innerJoin(maps, eq(maps.id, mapElements.mapId))
         .innerJoin(pageTabs, eq(pageTabs.id, maps.tabId))
@@ -281,4 +316,68 @@ export async function fileUses(db: Database, worldId: string, fileId: string) {
     campaignCovers: [...campaignCovers].map((r) => r.id),
     worldCover: [...world].length > 0
   }
+}
+
+/** Los jugadores de una campaña con sus personajes (para saber a quién le aparece algo al revelarlo) */
+export async function campaignPlayers(db: Database, campaignId: string) {
+  const members = await db
+    .select({ userId: campaignMembers.userId })
+    .from(campaignMembers)
+    .where(and(eq(campaignMembers.campaignId, campaignId), eq(campaignMembers.role, 'player')))
+  const owned = await db
+    .select({ id: characters.id, ownerId: characters.ownerId })
+    .from(characters)
+    .where(eq(characters.campaignId, campaignId))
+  return members.map((m) => ({
+    userId: m.userId,
+    characterIds: owned.filter((c) => c.ownerId === m.userId).map((c) => c.id)
+  }))
+}
+
+export interface NewsItem {
+  userId: string
+  campaignId: string
+  kind: KnowledgeKind
+  targetId: string
+  pageId: string | null
+}
+
+/** Apunta lo nuevo de unos jugadores (si ya estaba, se queda como estaba) */
+export async function addNews(db: Database, items: readonly NewsItem[]) {
+  if (items.length === 0) return
+  await db
+    .insert(knowledgeNews)
+    .values([...items])
+    .onConflictDoNothing()
+}
+
+/** Lo nuevo de un jugador en una campaña, de lo más reciente a lo más antiguo */
+export function listNews(db: Database, userId: string, campaignId: string) {
+  return db
+    .select()
+    .from(knowledgeNews)
+    .where(and(eq(knowledgeNews.userId, userId), eq(knowledgeNews.campaignId, campaignId)))
+    .orderBy(sql`${knowledgeNews.createdAt} desc`, knowledgeNews.id)
+}
+
+/** Ya lo ha visto: lo nuevo de esa página (ella y lo que hay en ella) */
+export async function seeNews(db: Database, userId: string, campaignId: string, pageId: string) {
+  await db
+    .delete(knowledgeNews)
+    .where(
+      and(
+        eq(knowledgeNews.userId, userId),
+        eq(knowledgeNews.campaignId, campaignId),
+        or(eq(knowledgeNews.pageId, pageId), and(eq(knowledgeNews.kind, 'page'), eq(knowledgeNews.targetId, pageId)))
+      )
+    )
+}
+
+/** Oculto otra vez: deja de ser nuevo para todos */
+export async function dropNews(db: Database, campaignId: string, kind: KnowledgeKind, targetId: string) {
+  await db
+    .delete(knowledgeNews)
+    .where(
+      and(eq(knowledgeNews.campaignId, campaignId), eq(knowledgeNews.kind, kind), eq(knowledgeNews.targetId, targetId))
+    )
 }

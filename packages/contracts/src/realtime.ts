@@ -35,6 +35,15 @@ export type RealtimeMessage =
   | { type: 'changed'; what: 'members' | 'invitation'; campaignId: string }
   /** Las criaturas en juego de esa campaña (al máster) */
   | { type: 'changed'; what: 'creatures'; campaignId: string }
+  /** Se le reveló algo a quien lo recibe (solo a él): el aviso, con lo que ya ve (docs/specs/revelar.md) */
+  | {
+      type: 'revealed'
+      worldId: string
+      campaignId: string
+      kind: 'page' | 'secret' | 'tab' | 'pin' | 'element' | 'content'
+      pageId: string | null
+      title: string
+    }
   /** Lo que sabe una campaña (o todo el mundo, sin campaña) cambió: cada uno vuelve a pedir lo que tenga abierto */
   | { type: 'changed'; what: 'knowledge'; worldId: string; campaignId: string | null }
   /** El inventario del grupo de esa campaña (y lo que llevan sus personajes, si se movió algo) */

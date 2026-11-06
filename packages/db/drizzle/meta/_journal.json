@@ -365,6 +365,13 @@
       "when": 1793994120380,
       "tag": "0051_conocimiento",
       "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "7",
+      "when": 1794001048228,
+      "tag": "0052_lo_nuevo",
+      "breakpoints": true
     }
   ]
 }

@@ -1205,6 +1205,19 @@ export function fakeApi(
     getPageTables: ({ pageId }) => tablesOf(pageById(pageId)),
     // Lo que sabe cada campaña (ADR-0017): marcas propias de la página, sin herencia (basta para la interfaz)
     getPageKnowledge: ({ pageId }) => knowledgeOf(pageById(pageId)),
+    reveal: ({ campaignId, kind, targetId, characters }) => {
+      const id = campaignId ?? campaigns[0]?.id ?? ''
+      marks.set(`${id}|${kind}|${targetId}`, { known: true, characters: characters ?? null })
+      return { told: 1, pageUnknown: false }
+    },
+    hide: ({ campaignId, kind, targetId }) => {
+      marks.delete(`${campaignId}|${kind}|${targetId}`)
+      return { ok: true as const }
+    },
+    listCampaignKnowledge: () => ({ campaign: [], world: [], knowsWorld: true }),
+    getSecretsKnowledge: () => ({ secrets: [], campaigns: [] }),
+    listNews: () => ({ news: [] }),
+    seeNews: () => ({ ok: true as const }),
     listKnownPages: () => ({
       pageIds: [...marks].flatMap(([key, mark]) =>
         mark.known && key.split('|')[1] === 'page' ? [key.split('|')[2] ?? ''] : []

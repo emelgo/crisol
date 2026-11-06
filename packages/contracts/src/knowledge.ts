@@ -80,3 +80,111 @@ export const listKnownPages = defineAction({
   input: z.object({ worldId: z.uuid() }),
   output: z.object({ pageIds: z.array(z.uuid()) })
 })
+
+/** A quién: toda la campaña o unos personajes (con su nombre) */
+const audienceView = z.union([z.literal('all'), z.array(characterRef)])
+
+export const reveal = defineAction({
+  name: 'reveal',
+  kind: 'players',
+  description:
+    'Revela algo a una campaña en partida, con aviso a sus jugadores: un secreto (su id de documento), una página, una pestaña, un pin, una región o una entrada del compendio del mundo; a toda la campaña o a unos personajes. Con alsoPage, si la campaña no conoce la página donde está, también. Sin campaignId, la única del mundo',
+  input: z.object({
+    worldId: z.uuid(),
+    campaignId: z.uuid().optional(),
+    kind: knowledgeKind,
+    targetId: z.string().trim().min(1).max(200),
+    characters: z
+      .array(z.uuid())
+      .min(1)
+      .max(50)
+      .optional()
+      .describe('Solo estos personajes; sin ellos, toda la campaña'),
+    alsoPage: z.boolean().optional().describe('Si no conocen la página donde está, revelarla también')
+  }),
+  output: z.object({
+    /** A cuántos jugadores les aparece algo nuevo */
+    told: z.number().int(),
+    /** La página donde está no la conocen (y no se pidió alsoPage): no lo verán hasta que la conozcan */
+    pageUnknown: z.boolean()
+  })
+})
+
+export const hide = defineAction({
+  name: 'hide',
+  kind: 'players',
+  description:
+    'Oculta otra vez a una campaña algo que se le reveló (lo que dice lo_que_sabe): deja de verlo al momento; queda en el historial',
+  input: z.object({
+    campaignId: z.uuid(),
+    kind: knowledgeKind,
+    targetId: z.string().trim().min(1).max(200)
+  }),
+  output: z.object({ ok: z.literal(true) })
+})
+
+/** Una marca de lo que sabe una campaña (o todo el mundo), lista para enseñarla */
+const knownItem = z.object({
+  kind: knowledgeKind,
+  targetId: z.string(),
+  /** Su nombre: el título de la página, de la pestaña, la etiqueta del pin, el título de la sección del secreto… */
+  name: z.string(),
+  /** La página donde está, para abrirla */
+  pageId: z.uuid().nullable(),
+  pageTitle: z.string().nullable(),
+  known: z.boolean(),
+  audience: audienceView,
+  at: z.string()
+})
+
+export const listCampaignKnowledge = defineAction({
+  name: 'listCampaignKnowledge',
+  kind: 'read',
+  description:
+    'Lo que sabe el grupo: lo revelado (y lo ocultado) a una campaña, de lo más reciente a lo más antiguo, con a quién y cuándo; aparte, lo que sabe todo el mundo si la campaña parte de él',
+  input: z.object({ campaignId: z.uuid() }),
+  output: z.object({ campaign: z.array(knownItem), world: z.array(knownItem), knowsWorld: z.boolean() })
+})
+
+export const getSecretsKnowledge = defineAction({
+  name: 'getSecretsKnowledge',
+  kind: 'read',
+  description: 'Quién conoce cada secreto de una página, en cada campaña del mundo (para su cabecera)',
+  input: z.object({ pageId: z.uuid() }),
+  output: z.object({
+    secrets: z.array(
+      z.object({
+        documentId: z.uuid(),
+        campaigns: z.array(z.object({ campaignId: z.uuid(), audience: z.union([z.literal('none'), audienceView]) }))
+      })
+    ),
+    campaigns: z.array(
+      z.object({
+        campaignId: z.uuid(),
+        name: z.string(),
+        /** Si ve la página (si no, revelar un secreto pide revelarla también) */
+        seesPage: z.union([z.literal('none'), audienceView]),
+        characters: z.array(characterRef)
+      })
+    )
+  })
+})
+
+/** Lo nuevo de un jugador: lo que se le reveló y aún no ha abierto */
+export const listNews = defineAction({
+  name: 'listNews',
+  kind: 'read',
+  description: 'Lo nuevo del jugador en su campaña: lo que se le reveló y aún no ha abierto, con la página donde está',
+  input: z.object({ campaignId: z.uuid() }),
+  output: z.object({
+    news: z.array(z.object({ kind: knowledgeKind, targetId: z.string(), pageId: z.uuid().nullable(), at: z.string() }))
+  })
+})
+
+export const seeNews = defineAction({
+  name: 'seeNews',
+  kind: 'read',
+  description: 'El jugador abrió esa página: lo nuevo de ella deja de serlo',
+  input: z.object({ campaignId: z.uuid(), pageId: z.uuid() }),
+  output: z.object({ ok: z.literal(true) })
+})

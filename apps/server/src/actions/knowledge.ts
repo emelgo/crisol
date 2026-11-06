@@ -127,8 +127,15 @@ export const knowledgeActions = [
 
 /** Lo que pide la IA al marcar, para la cola de aprobación: qué, si lo conocen y a quién (como en el historial) */
 export async function knowledgeRequest(ctx: ActionContext, action: string, input: Record<string, unknown>) {
-  if (action !== 'setKnowledge' || typeof input.worldId !== 'string' || typeof input.targetId !== 'string') return {}
-  const wiki = await authorizedWiki(ctx, 'page.write', input.worldId)
+  if (!['setKnowledge', 'reveal', 'hide'].includes(action) || typeof input.targetId !== 'string') return {}
+  // Ocultar dice la campaña, no el mundo
+  const worldId =
+    typeof input.worldId === 'string'
+      ? input.worldId
+      : typeof input.campaignId === 'string'
+        ? ((await campaignsRepo.findCampaign(ctx.db, input.campaignId))?.worldId ?? '')
+        : ''
+  const wiki = await authorizedWiki(ctx, 'page.write', worldId)
   const kind = String(input.kind) as Parameters<typeof knowledgeRepo.findTarget>[2]
   const target = await knowledgeRepo.findTarget(ctx.db, wiki.worldId, kind, input.targetId)
   if (!target) throw new NotFoundError(kind)
@@ -139,5 +146,6 @@ export async function knowledgeRequest(ctx: ActionContext, action: string, input
           .filter((c) => ids.includes(c.id))
           .map((c) => c.name)
       : []
-  return { kind, name: target.name, known: input.known ?? null, ...(names.length > 0 ? { characters: names } : {}) }
+  const known = action === 'reveal' ? true : action === 'hide' ? false : (input.known ?? null)
+  return { kind, name: target.name, known, ...(names.length > 0 ? { characters: names } : {}) }
 }
