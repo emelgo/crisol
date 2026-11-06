@@ -9,6 +9,18 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   de propietario.
 - **En local**, con los cambios al momento: http://localhost:5173 (lo arranco cuando haga falta).
 
+## Módulo 5: el compendio y la partida para los jugadores (rama `modulo-5/visibilidad`; en local, aún no en staging)
+
+- [ ] **En juego, la jugadora**: ve las criaturas a la vista, juntas, con su imagen y cómo están en palabras («Ilesa»,
+  «Herida», «Malherida», «A punto de caer», «Fuera de combate»); ni sus PG ni su hoja.
+- [ ] **En juego, el máster**: al poner en juego, «A la vista» u «Oculta»; luego, el ojo de cada una en la lista o
+  «A la vista / Oculta» en su hoja. A ella le aparece o se le va al momento.
+- [ ] **Ajustes del compendio** (la ruedecita junto al sistema): oculta un tipo o una sección entera; a ella no le sale
+  ni al buscar ni en los estantes.
+- [ ] **Una entrada del mundo**: revelada (por la IA con `revelar`, o desde «Lo que sabe el grupo» para ocultarla), le
+  llega el aviso, «Leerlo» la abre en su compendio marcada «Del mundo» y la puede llevar su personaje.
+- [ ] **La IA de un jugador**: `ver_a_la_vista` le da las criaturas con su estado; `buscar_contenido` no da lo oculto.
+
 ## Módulo 5: los mapas para los jugadores (rama `modulo-5/visibilidad`; en local, aún no en staging)
 
 - [ ] **Un pin oculto**: en el panel de un pin, «Oculto a los jugadores»: lo ves atenuado. En el menú (▾) de una

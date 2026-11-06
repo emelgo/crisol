@@ -1,6 +1,6 @@
 # Spec: compendio-jugadores (módulo 5)
 
-Estado: **en marcha** (2026-11-06). Cuarta capacidad del módulo 5 (`docs/specs/modulo-5.md`). Entrevista:
+Estado: **construido** (2026-11-07; en la rama `modulo-5/visibilidad`, aún sin PR). Cuarta capacidad del módulo 5 (`docs/specs/modulo-5.md`). Entrevista:
 `docs/modulos.md` § «### 5. Visibilidad por campaña». ADR-0017. De antes: `docs/specs/compendio-mundo.md` y
 `docs/specs/criaturas.md` (hasta ahora, lo del mundo y lo que está en juego, solo para el máster).
 
@@ -53,6 +53,22 @@ Para quién: el jugador en su campaña; el máster, que decide; la IA de los dos
 1. **Los umbrales del estado** (arriba), como la marca de malherida al 50 % de D&D Beyond
    (`research/dndbeyond/criaturas-y-grupo.md`), con uno más fino para el final.
 2. **Las criaturas, a la vista por defecto**: se ponen en juego cuando empieza el combate.
+
+## Construido (2026-11-07) y lo que queda
+
+- **Servidor**: `updateCampaign` con `hiddenTypes` (solo el máster los ve en `getCampaign`); el compendio de un
+  jugador (`getCampaignCompendium`, `searchCampaignContent`, `browseCampaignContent`, `getCampaignContent`, tirar en una
+  tabla) sin esos tipos y, del mundo, solo lo revelado (marcas `content` por su clave, con `revelar`, aviso y «Lo que
+  sabe el grupo»); su personaje puede llevar lo revelado. Las criaturas: `putInPlay` con `hidden`, `setCreatureHidden`
+  y `listVisibleInPlay` (nombre, número, imagen y estado en palabras); su tiempo real llega a toda la campaña sin datos.
+- **Web**: «En juego» de la jugadora (tarjetas por grupo); el del máster con el ojo en cada fila, «Oculta» y
+  «A la vista / Oculta» en la hoja; «A la vista / Oculta» al poner en juego; «Ajustes del compendio» (fuentes y lo que
+  ven los jugadores, por sección y tipo); el aviso de una entrada revelada lleva a ella y, abierta, deja de ser nueva.
+- **IA**: `ver_a_la_vista` (la de un jugador) y `ocultar_criatura`; `cambiar_campana` con `hiddenTypes`. `ver_en_juego`
+  sigue siendo del máster (su salida lleva los PG).
+- **Pruebas**: `compendium-players.integration.test.ts`, la e2e `compendio-jugadores.spec.ts` y la de fugas ampliada.
+- **Decisión**: una sección se oculta ocultando sus tipos (no hay marca de sección aparte).
+- **Queda**: los estados (asustado, derribado) en las tarjetas, cuando las criaturas tengan condiciones.
 
 ## Pruebas
 
