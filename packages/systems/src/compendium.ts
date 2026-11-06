@@ -49,7 +49,9 @@ export const textFieldOf = (system: System, type: string) => longText(system.typ
 export function compendiumTypes(
   system: System,
   content: readonly Versioned[],
-  choices: Pick<Choices, 'sources' | 'duplicates'>
+  choices: Pick<Choices, 'sources' | 'duplicates'>,
+  /** También los que aún no tienen nada (para crear su primera entrada) */
+  all = false
 ): CompendiumType[] {
   const counts = new Map<string, number>()
   const editions = new Map<string, Record<string, number>>()
@@ -62,7 +64,7 @@ export function compendiumTypes(
   }
   return Object.entries(system.types).flatMap(([key, type]) => {
     const count = counts.get(key) ?? 0
-    if (count === 0) return []
+    if (count === 0 && !all) return []
     const text = longText(type.fields)
     // Una criatura (un documento de tipo actor) lleva su bloque de estadísticas en su texto: sus campos no se repiten
     const fields =

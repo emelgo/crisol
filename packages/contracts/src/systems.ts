@@ -461,7 +461,17 @@ export const getCampaignCompendium = defineAction({
       })
     ),
     types: z.array(compendiumType),
-    sections: z.array(compendiumSection).describe('Cómo se ordena: sus secciones, con sus tipos, en su orden')
+    sections: z.array(compendiumSection).describe('Cómo se ordena: sus secciones, con sus tipos, en su orden'),
+    editable: z
+      .object({
+        systemId: z.uuid(),
+        version: z.int(),
+        types: z.array(compendiumType).describe('Todos sus tipos, también los que aún no tienen nada')
+      })
+      .nullable()
+      .describe(
+        'Si quien lo ve puede cambiar sus entradas (un sistema de la cuenta, y es su propietario): con su versión'
+      )
   })
 })
 

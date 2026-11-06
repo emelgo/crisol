@@ -278,6 +278,39 @@ describe('el compendio de una campaña', () => {
     expect(marked.length).toBe(2)
   })
 
+  it('su propietario lo cambia en la app: una entrada nueva, editarla y borrarla', async () => {
+    const { api } = renderCompendium()
+    await userEvent.click(await screen.findByRole('button', { name: 'Nueva entrada' }))
+    const created = within(await screen.findByRole('dialog', { name: 'Nueva entrada' }))
+    await userEvent.selectOptions(created.getByRole('combobox', { name: 'Tipo' }), 'conjuro')
+    await userEvent.type(created.getByRole('textbox', { name: 'Nombre' }), 'Rayo de luna')
+    await userEvent.type(created.getByRole('spinbutton', { name: 'Nivel' }), '2')
+    await userEvent.selectOptions(created.getByRole('combobox', { name: 'Escuela' }), 'evocacion')
+    await userEvent.click(created.getByRole('checkbox', { name: 'Ritual' }))
+    await userEvent.type(created.getByRole('textbox', { name: 'Texto' }), 'Un haz de luz plateada.')
+    await userEvent.click(created.getByRole('button', { name: 'Guardar' }))
+    const article = within(await screen.findByRole('article', { name: 'Rayo de luna' }))
+    expect(article.getByText('Evocación')).toBeDefined()
+    expect(article.getByText('Un haz de luz plateada.')).toBeDefined()
+
+    await userEvent.click(article.getByRole('button', { name: 'Editar' }))
+    const edit = within(await screen.findByRole('dialog', { name: 'Editar «Rayo de luna»' }))
+    expect(edit.getByRole<HTMLInputElement>('spinbutton', { name: 'Nivel' }).value).toBe('2')
+    await userEvent.clear(edit.getByRole('textbox', { name: 'Nombre' }))
+    await userEvent.type(edit.getByRole('textbox', { name: 'Nombre' }), 'Rayo lunar')
+    await userEvent.click(edit.getByRole('button', { name: 'Guardar' }))
+    const renamed = within(await screen.findByRole('article', { name: 'Rayo lunar' }))
+    const { items } = await api.client.call('searchCampaignContent', { campaignId: CAMPAIGN.id, query: 'rayo' })
+    expect(items).toEqual([expect.objectContaining({ name: 'Rayo lunar', type: 'conjuro' })])
+
+    await userEvent.click(renamed.getByRole('button', { name: 'Borrar' }))
+    const ask = within(await screen.findByRole('dialog', { name: '¿Borrar «Rayo lunar»?' }))
+    await userEvent.click(ask.getByRole('button', { name: 'Borrar' }))
+    await waitFor(() => expect(screen.queryByRole('article', { name: 'Rayo lunar' })).toBeNull())
+    const after = await api.client.call('searchCampaignContent', { campaignId: CAMPAIGN.id, query: 'rayo' })
+    expect(after.total).toBe(0)
+  })
+
   it('sin sistema, lo dice', async () => {
     renderCompendium({ ...CAMPAIGN, system: null, systemChoices: null })
     expect(

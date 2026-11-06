@@ -15,6 +15,7 @@ import { can, NotFoundError } from '@crisol/domain'
 import {
   browseContent,
   type Choices,
+  type CompendiumType,
   type ContentEntry,
   type ContentItem,
   catalogSystem,
@@ -56,12 +57,30 @@ async function campaignSystem(ctx: ActionContext, campaignId: string) {
 export const compendiumActions = [
   implement(getCampaignCompendium, async (ctx, { campaignId }) => {
     const found = await campaignSystem(ctx, campaignId)
-    if (!found) return { system: null, language: 'es' as const, sources: [], types: [], sections: [] }
-    const { document, choices, entries } = found
+    if (!found) return { system: null, language: 'es' as const, sources: [], types: [], sections: [], editable: null }
+    const { document, row, choices, entries } = found
     const language = choices.language
     const say = (text: Text | undefined) => textOf(text, language)
+    const typeView = (type: CompendiumType) => ({
+      ...type,
+      label: say(type.label),
+      fields: type.fields.map(({ options, ...f }) => ({
+        ...f,
+        label: say(f.label),
+        ...(options ? { options: options.map((o) => ({ value: o.value, label: say(o.label) })) } : {})
+      }))
+    })
+    const editable =
+      row && can(ctx.actor, 'systems.write', { organizationId: row.organizationId })
+        ? {
+            systemId: row.id,
+            version: row.version,
+            types: compendiumTypes(document, entries, choices, true).map(typeView)
+          }
+        : null
     return {
       system: { id: document.id, name: say(document.name) },
+      editable,
       language,
       sources: (document.sources ?? [])
         .filter((s) => choices.sources.includes(s.key))
@@ -77,15 +96,7 @@ export const compendiumActions = [
         label: say(section.label),
         types: section.types.map((type) => ({ key: type.key, label: say(type.label) }))
       })),
-      types: compendiumTypes(document, entries, choices).map((type) => ({
-        ...type,
-        label: say(type.label),
-        fields: type.fields.map(({ options, ...f }) => ({
-          ...f,
-          label: say(f.label),
-          ...(options ? { options: options.map((o) => ({ value: o.value, label: say(o.label) })) } : {})
-        }))
-      }))
+      types: compendiumTypes(document, entries, choices).map(typeView)
     }
   }),
 

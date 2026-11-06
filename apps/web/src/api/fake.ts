@@ -1380,12 +1380,30 @@ export function fakeApi(
     // El compendio de una campaña: el contenido de su sistema (en la falsa, solo el de los de la cuenta)
     getCampaignCompendium: ({ campaignId }) => {
       const found = compendiumOf(campaignId)
-      if (!found) return { system: null, language: 'es' as const, sources: [], types: [], sections: [] }
+      if (!found) return { system: null, language: 'es' as const, sources: [], types: [], sections: [], editable: null }
       const { document, choices, content } = found
       const say = (text: Text | undefined) => textOf(text, choices.language)
       const types = compendiumTypes(document, content, choices)
+      const typeView = (type: (typeof types)[number]) => ({
+        ...type,
+        label: say(type.label),
+        fields: type.fields.map(({ options: given, ...field }) => ({
+          ...field,
+          label: say(field.label),
+          ...(given ? { options: given.map((o) => ({ value: o.value, label: say(o.label) })) } : {})
+        }))
+      })
+      const own = ownSystems.find((each) => each.id === document.id && !each.deleted)
       return {
         system: { id: document.id, name: say(document.name) },
+        editable:
+          own && organizations.some((o) => o.role === 'owner')
+            ? {
+                systemId: own.id,
+                version: own.version,
+                types: compendiumTypes(document, content, choices, true).map(typeView)
+              }
+            : null,
         language: choices.language,
         sources: (document.sources ?? [])
           .filter((each) => choices.sources.includes(each.key))
@@ -1401,15 +1419,7 @@ export function fakeApi(
           label: say(section.label),
           types: section.types.map((type) => ({ key: type.key, label: say(type.label) }))
         })),
-        types: types.map((type) => ({
-          ...type,
-          label: say(type.label),
-          fields: type.fields.map(({ options: given, ...field }) => ({
-            ...field,
-            label: say(field.label),
-            ...(given ? { options: given.map((o) => ({ value: o.value, label: say(o.label) })) } : {})
-          }))
-        }))
+        types: types.map(typeView)
       }
     },
     rollContentTable: ({ campaignId, key, table, visibility = 'all' }) => {

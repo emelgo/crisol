@@ -304,6 +304,11 @@ describe('los sistemas de reglas', () => {
     // La jugadora: los tipos, con sus nombres en el idioma de la campaña, y las fuentes con su atribución
     const compendium = await ok200('getCampaignCompendium', { campaignId: campaign.id }, player.cookie)
     expect(compendium.system).toEqual({ id: five, name: '5e' })
+    // Cambiar sus entradas, solo su propietario: con su versión y todos sus tipos
+    expect(compendium.editable).toBeNull()
+    const own = await ok200('getCampaignCompendium', { campaignId: campaign.id })
+    expect(own.editable).toMatchObject({ systemId: five, version: 1 })
+    expect(own.editable.types.length).toBeGreaterThan(own.types.length)
     expect(compendium.sources.map((s: { edition: string }) => s.edition)).toEqual(['2014', '2024'])
     expect(compendium.sources[0].attribution).toContain('Wizards of the Coast')
     const spells = compendium.types.find((t: { key: string }) => t.key === 'conjuro')
@@ -407,7 +412,8 @@ describe('los sistemas de reglas', () => {
       language: 'es',
       sources: [],
       types: [],
-      sections: []
+      sections: [],
+      editable: null
     })
     expect(await ok200('browseCampaignContent', { campaignId: none.id, type: 'conjuro' })).toEqual({
       items: [],
