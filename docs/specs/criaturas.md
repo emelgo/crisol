@@ -65,6 +65,20 @@ les aplica daño.
 7. **El compendio es para leer**: la entrada no lleva estado ni tiradas a nombre de nadie; su botón es «Poner en
    juego» (D&D Beyond hace lo mismo). Lo que se tira es la criatura en juego.
 
+## Construido (2026-11-06) y lo que queda
+
+Construido en la rama `modulo-4/compendio` (`tasks/plan.md`, `tasks/todo.md`): el formato (la hoja de cada tipo de
+actor, `roll` en un recurso y `damage` en el tipo; ampliación pequeña de ADR-0011), el motor (`creatureView`,
+`startingPlay`, `nextNumbers`, `damageTaken` en `@crisol/systems`), la tabla `campaign_creatures` (migración 0044), las
+acciones (poner en juego, la lista y la hoja, la partida, tirar, quitar y `applyRoll`), la web («Poner en juego» en el
+compendio, «En juego» en la barra de la campaña, la hoja genérica, «Aplicar» en el registro), la IA y el enlace
+`[[@Nombre]]` desde una página con su tarjeta. Queda para después:
+- que la criatura diga qué páginas la enlazan, y el bloque «Criatura» en el panel de la página de un PNJ (lienzo,
+  tablero Wiki);
+- el ajuste de la campaña para los PG tirados de entrada (hoy se elige al ponerla en juego; por defecto, medios);
+- los recursos propios de las criaturas que hoy solo están en su texto (las recargas y las legendarias del 5e de
+  ejemplo no van en su mecánica): con la ampliación de la mecánica (`research/foundry/compendio.md`, propuesta 9).
+
 ## Pruebas
 
 - `packages/systems`: la hoja de un tipo de actor (con y sin composición), lo de la partida de una criatura sobre su

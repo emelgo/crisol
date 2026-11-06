@@ -22,6 +22,8 @@ el módulo 5, solo tú (el máster).
 - [ ] **Aplicar el daño** desde el registro de tiradas («Aplicar» en una tirada de daño): a varias criaturas o
   personajes, con nada, mitad, entero o doble (sus resistencias cuentan).
 - [ ] **Quitar las copias** de una vez (la única se queda) y deshacerlo desde el historial.
+- [ ] **Enlazar desde una página**: en la página de un PNJ, escribe `[[@gob` y elige el Goblin; al pasar el ratón
+  (o al tocarlo en el móvil) sale su tarjeta, y «Abrir en el compendio» lo abre en una campaña con su sistema.
 - [ ] **La IA, desde claude.ai**: «pon en juego tres goblins y un jefe único», «tira la cimitarra del Goblin 2»,
   «aplica ese daño a los otros dos, mitad al jefe».
 

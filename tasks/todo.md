@@ -22,4 +22,4 @@ Plan: `tasks/plan.md` · Spec: `docs/specs/criaturas.md`. Cada tarea con sus pru
 - [x] **7. La IA**: poner en juego, ver, partida, tirar, quitar y aplicar; las instrucciones del MCP.
 - [x] **8. La wiki**: enlazar una criatura (`[[@Nombre]]`, con «@» o «[[» al escribir), su tarjeta al pasar y al
   tocar, y lo que la enlaza.
-- [ ] **9. Cierre**: e2e `criaturas.spec.ts`, fugas, axe, `tasks/probar.md`, `docs/modulos.md`. **Punto de control 3.**
+- [x] **9. Cierre**: e2e `criaturas.spec.ts`, fugas, axe, `tasks/probar.md`, `docs/modulos.md`. **Punto de control 3.**
