@@ -4,7 +4,7 @@
  * lanzamiento de conjuros) y la mecánica de los rasgos clave (la furia, la defensa sin armadura, los recursos de cada
  * clase) van escritos a mano aquí
  */
-import { SKILLS } from '../../packages/systems/src/catalog/5e/system.ts'
+import { SKILLS } from '../../packages/systems/src/examples/5e/system.ts'
 import { PROFILES, range } from './capitulos.ts'
 import type { Doc } from './equipo.ts'
 import { likeness } from './magicos.ts'

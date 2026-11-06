@@ -22,7 +22,8 @@
     "db:migrate": "pnpm --filter @crisol/db migrate",
     "build": "turbo run build",
     "e2e": "pnpm --filter @crisol/web build && pnpm --filter @crisol/e2e e2e && pnpm --filter @crisol/e2e e2e:fugas && pnpm --filter @crisol/e2e e2e:a11y",
-    "crisol": "pnpm --filter @crisol/server crisol"
+    "crisol": "pnpm --filter @crisol/server crisol",
+    "sistema-5e": "node scripts/sistemas/archivo-5e.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "catalog:",

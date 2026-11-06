@@ -6,6 +6,7 @@ import {
   connectClaude,
   createCampaign,
   gotoLive,
+  import5e,
   newPlayer,
   openWindow,
   rename,
@@ -520,7 +521,7 @@ test('@fugas los personajes de otro y las tablas del máster: la jugadora no los
   const campaignId = new URL(page.url()).pathname.split('/campanas/')[1] ?? ''
   const worldId = new URL(page.url()).pathname.split('/')[2] ?? ''
   const chosen = await page.request.post('/api/actions/updateCampaign', {
-    data: { campaignId, system: '5e', systemChoices: { sources: ['srd521'], duplicates: 'newest' } }
+    data: { campaignId, system: await import5e(page), systemChoices: { sources: ['srd521'], duplicates: 'newest' } }
   })
   expect(chosen.status()).toBe(200)
   let seen: ReturnType<typeof capture> | undefined

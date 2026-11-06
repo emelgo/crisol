@@ -45,8 +45,8 @@ puede llevar más de una sesión.
   (`level`), con su escalado.
 - **Los ajustes de la campaña, en las fórmulas** (`@ajustes.reglas`), y una función pura que dice qué contenido se ve
   con lo que eligió la campaña (ediciones y «lo que está en las dos»), con la marca «Legado».
-- **El contenido de serie, en el código, fuera de la web**: JSON por categorías en `packages/systems/src/catalog/5e/`,
-  en una entrada aparte del paquete (`@crisol/systems/catalog/5e`) que solo importa el servidor. A la web llega por
+- **El contenido de serie, en el código, fuera de la web**: JSON por categorías en `packages/systems/src/examples/5e/`,
+  en una entrada aparte del paquete (`@crisol/systems/examples/5e`) que solo importa el servidor. A la web llega por
   acciones nuevas (buscar en el contenido y leer unos documentos), no en su paquete.
 - **Sacar el contenido, con scripts de desarrollo** (`scripts/srd/`): `pdftotext` de los cuatro PDF (en
   `datos-locales/srd/`), un analizador por categoría (los conjuros, las criaturas y los objetos tienen forma fija), el

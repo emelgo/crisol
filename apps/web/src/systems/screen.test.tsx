@@ -4,6 +4,7 @@ import { cinco, fronteras } from '@crisol/systems/fixtures'
 import { createMemoryHistory } from '@tanstack/react-router'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { strToU8, zipSync } from 'fflate'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { fakeAccountClient } from '../account/fake.ts'
 import { fakeApi } from '../api/fake.ts'
@@ -61,7 +62,7 @@ describe('«Sistemas», en Mis mundos', () => {
     expect(mine.getByRole('button', { name: 'Fronteras' })).toBeDefined()
     expect(mine.getByText('Subido de un archivo')).toBeDefined()
     const builtIn = within(screen.getByRole('list', { name: 'De serie' }))
-    expect(builtIn.getAllByRole('button').map((a) => a.textContent)).toEqual(['5e', 'En blanco'])
+    expect(builtIn.getAllByRole('button').map((a) => a.textContent)).toEqual(['En blanco'])
     const blankItem = within(builtIn.getByRole('button', { name: 'En blanco' }).closest('li') as HTMLElement)
     expect(blankItem.getByLabelText('No se puede cambiar')).toBeDefined()
     expect(screen.queryByRole('button', { name: 'Copiar' })).toBeNull()
@@ -115,6 +116,39 @@ describe('«Sistemas», en Mis mundos', () => {
     expect(api.calls.filter((c) => c === 'importSystem')).toHaveLength(1)
   })
 
+  it('de Foundry: un zip dice qué trae, se eligen sus compendios y su idioma, y se trae', async () => {
+    const { api } = renderSystems()
+    await userEvent.click(await screen.findByRole('button', { name: 'Sistema nuevo' }))
+    const dialog = within(screen.getByRole('dialog', { name: 'Sistema nuevo' }))
+    const drop = (bytes: Uint8Array, name: string) =>
+      fireEvent.drop(dialog.getByRole('group', { name: 'Archivo' }), {
+        dataTransfer: { files: [new File([bytes as BlobPart], name, { type: 'application/zip' })] }
+      })
+    drop(zipSync({ 'nada.txt': strToU8('x') }), 'nada.zip')
+    expect(await dialog.findByText('Este zip no es un sistema ni un módulo de Foundry')).toBeDefined()
+    const manifest = {
+      id: 'mundo',
+      title: 'Mundo Oscuro',
+      version: '3.0',
+      packs: [
+        { name: 'conjuros', label: 'Conjuros', type: 'Item', path: 'packs/conjuros' },
+        { name: 'bestias', label: 'Bestias', type: 'Actor', path: 'packs/bestias' }
+      ]
+    }
+    drop(zipSync({ 'mundo/system.json': strToU8(JSON.stringify(manifest)) }), 'mundo.zip')
+    expect(await dialog.findByText('Mundo Oscuro 3.0')).toBeDefined()
+    expect(dialog.getByText('Sistema de Foundry')).toBeDefined()
+    const packs = within(dialog.getByRole('group', { name: 'Compendios que se traen' }))
+    await userEvent.click(packs.getByRole('checkbox', { name: /Bestias/ }))
+    await userEvent.selectOptions(dialog.getByRole('combobox', { name: 'Idioma de sus textos' }), 'es')
+    await userEvent.click(dialog.getByRole('button', { name: 'Traer de Foundry' }))
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Sistema nuevo' })).toBeNull())
+    expect(
+      await within(screen.getByRole('list', { name: 'Tuyos' })).findByRole('button', { name: 'Mundo Oscuro' })
+    ).toBeDefined()
+    expect(api.calls.filter((c) => c === 'importFoundry')).toHaveLength(1)
+  })
+
   it('su ventana, si es tuyo: renombrarlo, bajarlo y borrarlo', async () => {
     const { api } = renderSystems()
     const created = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:x')
@@ -140,8 +174,8 @@ describe('«Sistemas», en Mis mundos', () => {
     const { api } = renderSystems()
     const created = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:x')
     const builtIn = within(await screen.findByRole('list', { name: 'De serie' }))
-    await userEvent.click(builtIn.getByRole('button', { name: '5e' }))
-    const dialog = within(screen.getByRole('dialog', { name: '5e' }))
+    await userEvent.click(builtIn.getByRole('button', { name: 'En blanco' }))
+    const dialog = within(screen.getByRole('dialog', { name: 'En blanco' }))
     expect(dialog.getByText('En campañas')).toBeDefined()
     expect(dialog.queryByRole('textbox', { name: 'Nombre' })).toBeNull()
     expect(dialog.queryByText('Zona de peligro')).toBeNull()

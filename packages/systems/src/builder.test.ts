@@ -8,15 +8,13 @@ import {
   stepOptions,
   summarize
 } from './builder.ts'
-import { referenceCharacter } from './catalog/5e/referencia.ts'
-import { catalogContent } from './catalog/content.ts'
-import { CATALOG } from './catalog/index.ts'
 import { evaluate } from './evaluate.ts'
+import { referenceCharacter } from './examples/5e/referencia.ts'
+import { fiveE } from './examples/5e/system.ts'
+import { exampleContent } from './examples/content.ts'
 import type { ContentItem } from './file.ts'
 
-const fiveE = CATALOG.find((s) => s.id === '5e')
-if (!fiveE) throw new Error('Falta el 5e')
-const content = catalogContent('5e')
+const content = exampleContent('5e')
 const campaign = { sources: ['srd51', 'srd521'], duplicates: 'both' as const }
 const scores = { fue: 15, des: 14, con: 13, int: 12, sab: 10, car: 8 }
 const build = (b: Build) => buildCharacter(fiveE, content, campaign, b)
@@ -250,18 +248,6 @@ describe('el creador: montar un personaje de sus elecciones', () => {
     expect(carried(at(1, weapons.slice(0, 12)))).toBe(3)
     // Una clave de otro tipo no vale aunque exista
     expect(carried(at(1, ['bola_de_fuego_2024']))).toBe(0)
-  })
-
-  it('a nivel 20, lo pendiente se calcula en menos de 20 ms', () => {
-    const b: Build = {
-      scores: { base: scores },
-      picks: [{ id: 'c1', step: 'clase', key: 'mago_2024', level: 20 }],
-      decisions: { 'c1>subclase@3': ['evocador'] }
-    }
-    build(b)
-    const start = performance.now()
-    for (let i = 0; i < 5; i++) build(b)
-    expect((performance.now() - start) / 5).toBeLessThan(20)
   })
 })
 

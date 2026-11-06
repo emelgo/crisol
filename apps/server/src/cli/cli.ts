@@ -2,8 +2,9 @@
 import { parseArgs } from 'node:util'
 import type { Database } from '@crisol/db'
 import { BootstrapError, issueBootstrap } from '../bootstrap.ts'
+import { moveBuiltIn5e } from './sistema-5e.ts'
 
-const USAGE = 'Uso: pnpm crisol arranque [--org "Nombre de la organización"]'
+const USAGE = 'Uso: pnpm crisol arranque [--org "Nombre de la organización"] | pnpm crisol sistema-5e'
 
 const MESSAGES: Partial<Record<BootstrapError['code'], string>> = {
   OWNER_EXISTS: 'Ya hay propietario: el arranque solo sirve para crear la primera cuenta',
@@ -25,6 +26,13 @@ export async function runCli(argv: string[], { db, publicUrl, out, err }: CliDep
   } catch {
     err(USAGE)
     return 2
+  }
+  if (parsed.positionals[0] === 'sistema-5e') {
+    const moved = await moveBuiltIn5e(db)
+    out(
+      `El 5e, a una copia en ${moved.organizations} cuentas: ${moved.campaigns} campañas y ${moved.characters} personajes`
+    )
+    return 0
   }
   if (parsed.positionals[0] !== 'arranque') {
     err(USAGE)

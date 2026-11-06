@@ -177,7 +177,7 @@ export const MCP_TOOLS: Record<string, McpTool> = {
     }
   },
   ver_tiradas: { action: 'listRolls' },
-  // Los sistemas de reglas (ADR-0011): los de serie se copian; los de la cuenta se cambian por rutas
+  // Los sistemas de reglas (ADR-0011, ADR-0015): «En blanco» se copia; los de la cuenta se cambian por rutas
   formato_sistemas: { action: 'getSystemFormat' },
   listar_sistemas: { action: 'listSystems' },
   ver_sistema: {
@@ -254,9 +254,11 @@ const INSTRUCTIONS =
   '(«Miembros», «Habitantes»…) se llenan solas con las páginas cuyo campo apunta a esta; para buscarlas, ' +
   'buscar_paginas con template y field. Los dados los tira el servidor: tirar_dados (con campaignId, en su ' +
   'registro, oculta salvo que te pidan que la vean todos) y ver_tiradas; en una página, una tirada se escribe ' +
-  '`dice: 2d6+3 # Nombre` y en partida se pulsa. Las reglas de cada juego son un sistema (listar_sistemas; los de ' +
-  'serie se copian, y «blank» es empezar de cero) y cada campaña elige el suyo con cambiar_campana. Crisol no tiene ' +
-  'editor de sistemas: se hacen y se cambian contigo (el máster solo los sube y los baja en archivo). Antes de crear ' +
+  '`dice: 2d6+3 # Nombre` y en partida se pulsa. Las reglas de cada juego son un sistema (listar_sistemas) y cada ' +
+  'campaña elige el suyo con cambiar_campana. Crisol viene sin ninguno: «blank» es empezar de cero, y el máster puede ' +
+  'subir el archivo de uno o importarlo de Foundry. No tiene editor de sistemas: se hacen y se cambian contigo, ' +
+  'enteros: sus tipos y campos, sus tiradas, su hoja (sheet), su creador de personajes (creation: los pasos, elegir del ' +
+  'contenido, generar puntuaciones o escribir campos) y su compendio (compendium). Antes de crear ' +
   'o cambiar uno, lee su formato con formato_sistemas; crea con crear_sistema, cambia por rutas con cambiar_sistema ' +
   '(con la versión que leíste), comprueba con validar_sistema y prueba con probar_formula y probar_tirada. Su ' +
   'contenido (clases, conjuros, armas, criaturas) se busca con buscar_contenido (con campaignId, lo que eligió la ' +

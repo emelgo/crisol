@@ -32,6 +32,7 @@ import {
   restoreFile,
   updateFolder
 } from './files.ts'
+import { importFoundry, inspectFoundry } from './foundry.ts'
 import { listHistory, undoOperation } from './history.ts'
 import { getInvitation, regenerateInvitation, setInvitationsOpen } from './invitations.ts'
 import {
@@ -122,6 +123,7 @@ export * from './campaigns.ts'
 export * from './characters.ts'
 export * from './dice.ts'
 export * from './files.ts'
+export * from './foundry.ts'
 export * from './history.ts'
 export * from './invitations.ts'
 export * from './maps.ts'
@@ -270,7 +272,9 @@ export const ACTIONS = [
   checkSystem,
   tryFormula,
   trySystemRoll,
-  getSystemFormat
+  getSystemFormat,
+  inspectFoundry,
+  importFoundry
 ]
 
 /** Las acciones por nombre, solo como tipo: la web las usa sin cargar zod */
@@ -405,4 +409,6 @@ export type Actions = {
   tryFormula: typeof tryFormula
   trySystemRoll: typeof trySystemRoll
   getSystemFormat: typeof getSystemFormat
+  inspectFoundry: typeof inspectFoundry
+  importFoundry: typeof importFoundry
 }

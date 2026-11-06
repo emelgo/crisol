@@ -1,4 +1,4 @@
-import { connect } from '@crisol/db'
+import { connect, schema } from '@crisol/db'
 import { freshTestDatabase, resetDatabase } from '@crisol/db/testing'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { redeemBootstrap } from '../bootstrap.ts'
@@ -62,4 +62,36 @@ describe('pnpm crisol', () => {
     expect(await run('arranque', '--forzar')).toBe(2)
     expect(err[0]).toMatch(/^Uso:/)
   })
+
+  it('sistema-5e pasa las campañas y personajes del 5e de serie a una copia en su cuenta; sin ninguna, nada', async () => {
+    expect(await run('sistema-5e')).toBe(0)
+    expect(out.at(-1)).toBe('El 5e, a una copia en 0 cuentas: 0 campañas y 0 personajes')
+    const [org] = await conn.db.insert(schema.organizations).values({ name: 'Fateforge' }).returning()
+    const [user] = await conn.db
+      .insert(schema.user)
+      .values({ id: crypto.randomUUID(), name: 'Ana', email: 'ana@crisol.test', emailVerified: true })
+      .returning()
+    if (!org || !user) throw new Error('sin cuenta')
+    const [world] = await conn.db.insert(schema.worlds).values({ organizationId: org.id, name: 'Eana' }).returning()
+    if (!world) throw new Error('sin mundo')
+    const [old, other] = await conn.db
+      .insert(schema.campaigns)
+      .values([
+        { worldId: world.id, name: 'La Marca', system: '5e' },
+        { worldId: world.id, name: 'Otra', system: 'blank' }
+      ])
+      .returning()
+    if (!old || !other) throw new Error('sin campañas')
+    await conn.db
+      .insert(schema.characters)
+      .values({ campaignId: other.id, ownerId: user.id, name: 'Thora', system: '5e' })
+    expect(await run('sistema-5e')).toBe(0)
+    expect(out.at(-1)).toBe('El 5e, a una copia en 1 cuentas: 1 campañas y 1 personajes')
+    const [copy] = await conn.db.select().from(schema.systems)
+    expect(copy?.organizationId).toBe(org.id)
+    const campaigns = await conn.db.select().from(schema.campaigns)
+    expect(campaigns.find((c) => c.id === old.id)?.system).toBe(copy?.id)
+    expect(campaigns.find((c) => c.id === other.id)?.system).toBe('blank')
+    expect((await conn.db.select().from(schema.characters))[0]?.system).toBe(copy?.id)
+  }, 60_000)
 })

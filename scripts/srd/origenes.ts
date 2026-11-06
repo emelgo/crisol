@@ -3,7 +3,7 @@
  * revisada de abajo), con su texto, sus rasgos como documentos que concede y la mecánica que sale clara de su texto: los
  * aumentos de característica, la velocidad, las resistencias, las habilidades, la dote de origen y algunas dotes
  */
-import { ABILITIES, DAMAGE_TYPES, SKILLS } from '../../packages/systems/src/catalog/5e/system.ts'
+import { ABILITIES, DAMAGE_TYPES, SKILLS } from '../../packages/systems/src/examples/5e/system.ts'
 import { PROFILES, range } from './capitulos.ts'
 import type { Doc } from './equipo.ts'
 import { TRAIT_PAIRS } from './pares.ts'

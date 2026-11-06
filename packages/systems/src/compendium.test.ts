@@ -1,13 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { catalogContent } from './catalog/content.ts'
-import { CATALOG } from './catalog/index.ts'
 import { browseContent, compendiumEntry, compendiumSections, compendiumTypes } from './compendium.ts'
 import { visibleContent } from './content.ts'
+import { fiveE } from './examples/5e/system.ts'
+import { exampleContent } from './examples/content.ts'
 import { validateSystem } from './validate.ts'
 
-const fiveE = CATALOG.find((s) => s.id === '5e')
-if (!fiveE) throw new Error('Falta el 5e')
-const content = catalogContent('5e')
+const content = exampleContent('5e')
 const both = { sources: ['srd51', 'srd521'], duplicates: 'both' as const }
 
 describe('los tipos del compendio de una campaña', () => {

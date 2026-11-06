@@ -15,7 +15,7 @@ interface Ours {
   mechanics?: { actions?: { label: { es: string; en: string }; recharge?: string; uses?: string }[] }
 }
 
-const file = join(import.meta.dirname, '../../packages/systems/src/catalog/5e/content/criaturas.json')
+const file = join(import.meta.dirname, '../../packages/systems/src/examples/5e/content/criaturas.json')
 // Con `--nuevo`, las que saca ahora el extractor (sin escribirlas); si no, las guardadas
 const ours = (process.argv.includes('--nuevo') ? creatureDocs() : JSON.parse(readFileSync(file, 'utf8'))) as Ours[]
 const all = process.argv.includes('--todo')

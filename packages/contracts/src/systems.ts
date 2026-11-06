@@ -41,7 +41,7 @@ export const listSystems = defineAction({
   name: 'listSystems',
   kind: 'read',
   description:
-    'Los sistemas de reglas para las campañas: los de serie (que no se cambian; se copian) y los de la cuenta. Sin organización, la única de la que la cuenta es propietaria',
+    'Los sistemas de reglas para las campañas: «En blanco» (de serie: no se cambia; se copia para empezar de cero) y los de la cuenta. Sin organización, la única de la que la cuenta es propietaria',
   input: z.object({ organizationId: z.uuid().optional() }),
   output: z.object({ systems: z.array(systemSummary) })
 })
@@ -461,7 +461,17 @@ export const getCampaignCompendium = defineAction({
       })
     ),
     types: z.array(compendiumType),
-    sections: z.array(compendiumSection).describe('Cómo se ordena: sus secciones, con sus tipos, en su orden')
+    sections: z.array(compendiumSection).describe('Cómo se ordena: sus secciones, con sus tipos, en su orden'),
+    editable: z
+      .object({
+        systemId: z.uuid(),
+        version: z.int(),
+        types: z.array(compendiumType).describe('Todos sus tipos, también los que aún no tienen nada')
+      })
+      .nullable()
+      .describe(
+        'Si quien lo ve puede cambiar sus entradas (un sistema de la cuenta, y es su propietario): con su versión'
+      )
   })
 })
 

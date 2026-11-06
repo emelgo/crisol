@@ -5,11 +5,11 @@
 import { describe, expect, it } from 'vitest'
 import { prepareAction } from '../../actions.ts'
 import { evaluate } from '../../evaluate.ts'
-import { catalogContent } from '../content.ts'
+import { exampleContent } from '../content.ts'
 import { type Edition, referenceCharacter } from './referencia.ts'
 import { fiveE } from './system.ts'
 
-const content = catalogContent('5e')
+const content = exampleContent('5e')
 const LEVELS = [1, 5, 11, 20] as const
 const EDITIONS: Edition[] = ['2014', '2024']
 

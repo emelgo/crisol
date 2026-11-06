@@ -207,8 +207,8 @@ node scripts/srd/comprobar.ts             Cuenta lo sacado por categoría e idio
 
 ```
 packages/systems/src/                    La mecánica del formato (efectos, recursos, concesiones, escalado) y las fuentes
-packages/systems/src/catalog/5e/         El sistema 5e: su documento y su contenido, por categorías (JSON)
-packages/systems/src/catalog/5e/referencia/  Los personajes de referencia y lo que deben dar
+packages/systems/src/examples/5e/         El sistema 5e: su documento y su contenido, por categorías (JSON)
+packages/systems/src/examples/5e/referencia/  Los personajes de referencia y lo que deben dar
 scripts/srd/                             Los scripts para sacar el contenido de los PDF (solo desarrollo)
 datos-locales/srd/                       Los PDF oficiales y su texto (fuera de git)
 apps/server/src/mcp/tools.ts             Las herramientas del contenido

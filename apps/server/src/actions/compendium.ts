@@ -15,6 +15,7 @@ import { can, NotFoundError } from '@crisol/domain'
 import {
   browseContent,
   type Choices,
+  type CompendiumType,
   type ContentEntry,
   type ContentItem,
   catalogSystem,
@@ -33,7 +34,6 @@ import {
   textOf,
   visibleContent
 } from '@crisol/systems'
-import { catalogContent } from '@crisol/systems/catalog/content'
 import { authorizedCampaign } from './access.ts'
 import { type ActionContext, InvalidRequestError } from './context.ts'
 import { rolled, saveRoll, storedOf } from './dice.ts'
@@ -50,28 +50,37 @@ async function campaignSystem(ctx: ActionContext, campaignId: string) {
   const document = catalog ?? (row?.document as unknown as System)
   const { choices } = normalizeChoices(document, (campaign.systemChoices ?? {}) as Partial<Choices>)
   // Para la lista y los tipos basta lo de cada documento que se ve en ella: el de la cuenta, sin leerlo entero
-  const entries: ContentEntry[] = row
-    ? await systemsRepo.contentIndex(ctx.db, row.id)
-    : catalogContent(document.id).map((item) => ({
-        key: item.key,
-        type: item.type,
-        source: item.source,
-        concept: item.concept ?? null,
-        name: item.data.name,
-        automation: item.mechanics?.automation ?? null
-      }))
+  const entries: ContentEntry[] = row ? await systemsRepo.contentIndex(ctx.db, row.id) : []
   return { document, row, choices, entries }
 }
 
 export const compendiumActions = [
   implement(getCampaignCompendium, async (ctx, { campaignId }) => {
     const found = await campaignSystem(ctx, campaignId)
-    if (!found) return { system: null, language: 'es' as const, sources: [], types: [], sections: [] }
-    const { document, choices, entries } = found
+    if (!found) return { system: null, language: 'es' as const, sources: [], types: [], sections: [], editable: null }
+    const { document, row, choices, entries } = found
     const language = choices.language
     const say = (text: Text | undefined) => textOf(text, language)
+    const typeView = (type: CompendiumType) => ({
+      ...type,
+      label: say(type.label),
+      fields: type.fields.map(({ options, ...f }) => ({
+        ...f,
+        label: say(f.label),
+        ...(options ? { options: options.map((o) => ({ value: o.value, label: say(o.label) })) } : {})
+      }))
+    })
+    const editable =
+      row && can(ctx.actor, 'systems.write', { organizationId: row.organizationId })
+        ? {
+            systemId: row.id,
+            version: row.version,
+            types: compendiumTypes(document, entries, choices, true).map(typeView)
+          }
+        : null
     return {
       system: { id: document.id, name: say(document.name) },
+      editable,
       language,
       sources: (document.sources ?? [])
         .filter((s) => choices.sources.includes(s.key))
@@ -87,15 +96,7 @@ export const compendiumActions = [
         label: say(section.label),
         types: section.types.map((type) => ({ key: type.key, label: say(type.label) }))
       })),
-      types: compendiumTypes(document, entries, choices).map((type) => ({
-        ...type,
-        label: say(type.label),
-        fields: type.fields.map(({ options, ...f }) => ({
-          ...f,
-          label: say(f.label),
-          ...(options ? { options: options.map((o) => ({ value: o.value, label: say(o.label) })) } : {})
-        }))
-      }))
+      types: compendiumTypes(document, entries, choices).map(typeView)
     }
   }),
 
@@ -116,9 +117,7 @@ export const compendiumActions = [
     if (!found) return { items: [], folders: [], filters: [] }
     const { document, row, choices } = found
     // Las carpetas salen de sus valores: de un sistema de la cuenta, el contenido de ese tipo entero
-    const items: ContentItem[] = row
-      ? (await systemsRepo.listContentOfType(ctx.db, row.id, type)).map(contentOf)
-      : catalogContent(document.id).filter((item) => item.type === type)
+    const items: ContentItem[] = row ? (await systemsRepo.listContentOfType(ctx.db, row.id, type)).map(contentOf) : []
     return browseContent(document, items, {
       type,
       sources: choices.sources,
@@ -137,9 +136,7 @@ export const compendiumActions = [
     if (!found) throw new NotFoundError('content')
     const { document, row, choices, entries } = found
     if (!visibleContent(document, entries, choices).some((s) => s.item.key === key)) throw new NotFoundError('content')
-    const [item] = row
-      ? (await systemsRepo.contentByKeys(ctx.db, row.id, [key])).map(contentOf)
-      : catalogContent(document.id).filter((each) => each.key === key)
+    const [item] = row ? (await systemsRepo.contentByKeys(ctx.db, row.id, [key])).map(contentOf) : []
     if (!item) throw new NotFoundError('content')
     const field = textFieldOf(document, item.type)
     const text = field ? textOf(item.data[field] as Text | undefined, choices.language) : ''
@@ -168,9 +165,7 @@ export const compendiumActions = [
     const seen = visibleContent(document, entries, choices)
     const shown = new Set(seen.map((s) => s.item.key))
     const visible = wanted.filter((k) => shown.has(k))
-    const items: ContentItem[] = row
-      ? (await systemsRepo.contentByKeys(ctx.db, row.id, visible)).map(contentOf)
-      : catalogContent(document.id).filter((item) => visible.includes(item.key))
+    const items: ContentItem[] = row ? (await systemsRepo.contentByKeys(ctx.db, row.id, visible)).map(contentOf) : []
     const byKey = new Map(items.map((item) => [item.key, item]))
     const name = (value: unknown) =>
       typeof value === 'string' ? value : textOf(value as Text | undefined, choices.language)

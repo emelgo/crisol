@@ -30,7 +30,7 @@ Grado de certeza: **[O]** observado en la instancia en marcha (pantallas y docum
   armas, objetos mágicos, criaturas, clases, dotes, especies), y se hicieron capturas de la barra, de la ventana de un
   compendio, del explorador con filtros, de las fichas y de las páginas de diario. Esta vez no se usó craft-anything:
   bastó leer los datos desde la propia aplicación.
-- Crisol: los JSON de `packages/systems/src/catalog/5e/content/`, el formato de `mechanics.ts` y `docs.ts`, la
+- Crisol: los JSON de `packages/systems/src/examples/5e/content/`, el formato de `mechanics.ts` y `docs.ts`, la
   pantalla `compendium.tsx` y las capturas de `e2e/tests/compendio.spec.ts` y de una copia suya con más pasos (solo en
   el scratchpad).
 - Comparación por **nombre en inglés y edición**: los nombres coinciden en casi todo, así que la diferencia de cada

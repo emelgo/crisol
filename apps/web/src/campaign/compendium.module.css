@@ -31,6 +31,7 @@
 
 .sideHead {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
   justify-content: space-between;
   gap: var(--space-2);
@@ -606,4 +607,53 @@
   color: var(--color-text);
   font: inherit;
   font-size: 0.875rem;
+}
+
+/* Cambiarlo (un sistema de la cuenta, para su propietario): una entrada nueva y, en cada una, editarla o borrarla */
+.newEntry {
+  display: flex;
+  flex-basis: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-block-size: var(--target);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.newEntry:hover {
+  border-style: solid;
+  background: color-mix(in srgb, var(--color-text) 6%, transparent);
+}
+
+.entryActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-block-start: var(--space-3);
+}
+
+.entryAction {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-block-size: var(--target);
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.entryAction:hover {
+  background: color-mix(in srgb, var(--color-text) 8%, var(--color-surface));
 }

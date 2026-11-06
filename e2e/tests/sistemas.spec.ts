@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises'
 import AxeBuilder from '@axe-core/playwright'
 import { expect, type Page, test } from '@playwright/test'
-import { createCampaign, createWorld, freshOwner, settled, toWorlds } from './ayudas.ts'
+import { createCampaign, createWorld, freshOwner, import5e, settled, toWorlds } from './ayudas.ts'
 
 /** Que axe no encuentre fallos críticos ni graves, en claro y en oscuro */
 async function accessible(page: Page, include: string) {
@@ -76,8 +76,8 @@ test('«Sistemas»: se hacen con la IA; subir un archivo roto y uno bueno, bajar
   await expect(page).toHaveURL(/\/sistemas$/)
 
   // Uno de serie: su ventana, con bajarlo y sus campañas, sin cambiarlo ni borrarlo
-  await page.getByRole('list', { name: 'De serie' }).getByRole('button', { name: '5e' }).click()
-  const builtIn = page.getByRole('dialog', { name: '5e' })
+  await page.getByRole('list', { name: 'De serie' }).getByRole('button', { name: 'En blanco' }).click()
+  const builtIn = page.getByRole('dialog', { name: 'En blanco' })
   await expect(builtIn.getByRole('button', { name: 'Bajar' })).toBeVisible()
   await expect(builtIn.getByLabel('Nombre')).toHaveCount(0)
   await expect(builtIn.getByRole('button', { name: 'Borrar el sistema' })).toHaveCount(0)
@@ -134,6 +134,7 @@ test('elegir el sistema de una campaña: la ficha de dados propone su tirada por
 test('criterio 5: el 5e en una campaña, con sus ediciones, lo que está en las dos y sus reglas', async ({ page }) => {
   test.slow()
   await freshOwner(page)
+  const five = await import5e(page)
   await createWorld(page, 'Eana')
   await createCampaign(page, 'La Marca')
   await toWorlds(page)
@@ -158,5 +159,5 @@ test('criterio 5: el 5e en una campaña, con sus ediciones, lo que está en las 
   await dialog.getByRole('button', { name: 'Guardar' }).click()
   await expect(dialog.getByRole('button', { name: 'Guardar' })).toBeHidden()
   const saved = await (await page.request.post('/api/actions/listWorldsWithCampaigns', { data: {} })).json()
-  expect(saved.worlds[0].campaigns[0].system.id).toBe('5e')
+  expect(saved.worlds[0].campaigns[0].system.id).toBe(five)
 })

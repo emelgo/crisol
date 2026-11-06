@@ -77,6 +77,7 @@ import {
   validateSystem,
   visibleContent
 } from '@crisol/systems'
+import { readFoundryZip } from '../systems/foundry-zip.ts'
 import { type ActionInput, type ActionName, type ActionOutput, type ApiClient, ApiError } from './client.ts'
 
 export function fakeApi(
@@ -1380,12 +1381,30 @@ export function fakeApi(
     // El compendio de una campaña: el contenido de su sistema (en la falsa, solo el de los de la cuenta)
     getCampaignCompendium: ({ campaignId }) => {
       const found = compendiumOf(campaignId)
-      if (!found) return { system: null, language: 'es' as const, sources: [], types: [], sections: [] }
+      if (!found) return { system: null, language: 'es' as const, sources: [], types: [], sections: [], editable: null }
       const { document, choices, content } = found
       const say = (text: Text | undefined) => textOf(text, choices.language)
       const types = compendiumTypes(document, content, choices)
+      const typeView = (type: (typeof types)[number]) => ({
+        ...type,
+        label: say(type.label),
+        fields: type.fields.map(({ options: given, ...field }) => ({
+          ...field,
+          label: say(field.label),
+          ...(given ? { options: given.map((o) => ({ value: o.value, label: say(o.label) })) } : {})
+        }))
+      })
+      const own = ownSystems.find((each) => each.id === document.id && !each.deleted)
       return {
         system: { id: document.id, name: say(document.name) },
+        editable:
+          own && organizations.some((o) => o.role === 'owner')
+            ? {
+                systemId: own.id,
+                version: own.version,
+                types: compendiumTypes(document, content, choices, true).map(typeView)
+              }
+            : null,
         language: choices.language,
         sources: (document.sources ?? [])
           .filter((each) => choices.sources.includes(each.key))
@@ -1401,15 +1420,7 @@ export function fakeApi(
           label: say(section.label),
           types: section.types.map((type) => ({ key: type.key, label: say(type.label) }))
         })),
-        types: types.map((type) => ({
-          ...type,
-          label: say(type.label),
-          fields: type.fields.map(({ options: given, ...field }) => ({
-            ...field,
-            label: say(field.label),
-            ...(given ? { options: given.map((o) => ({ value: o.value, label: say(o.label) })) } : {})
-          }))
-        }))
+        types: types.map(typeView)
       }
     },
     rollContentTable: ({ campaignId, key, table, visibility = 'all' }) => {
@@ -1604,6 +1615,20 @@ export function fakeApi(
         if (error instanceof RollError) throw new ApiError('BAD_ROLL', 400)
         throw error
       }
+    },
+    // Leer un zip de Foundry (LevelDB) solo se puede en el servidor
+    inspectFoundry: () => {
+      throw new ApiError('NOT_AVAILABLE', 400)
+    },
+    // En la falsa, un sistema «En blanco» con el nombre del manifiesto: la conversión es cosa del servidor
+    importFoundry: ({ zip }) => {
+      const read = readFoundryZip(Uint8Array.from(atob(zip), (c) => c.charCodeAt(0)))
+      const blank = catalogSystem('blank')
+      if (!read || !blank) throw new ApiError('FOUNDRY_INVALID', 400)
+      const id = crypto.randomUUID()
+      const document = { ...structuredClone(blank), id, name: { es: read.title, en: read.title } }
+      ownSystems.push({ id, version: 1, basedOn: null, document, content: [], deleted: false })
+      return { system: systemView(id), warnings: [] }
     },
     importSystem: ({ file, into }) => {
       const { file: valid, problems } = validateFile(file)

@@ -39,6 +39,7 @@
     "@tiptap/y-tiptap": "catalog:",
     "better-auth": "catalog:",
     "cannon-es": "catalog:",
+    "fflate": "catalog:",
     "i18next": "catalog:",
     "lucide-react": "catalog:",
     "pdfjs-dist": "catalog:",

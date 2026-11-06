@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, type Page, test } from '@playwright/test'
-import { campaignLink, newPlayer, settled } from './ayudas.ts'
+import { campaignLink, import5e, newPlayer, settled } from './ayudas.ts'
 
 /** Que axe no encuentre fallos críticos ni graves, en claro y en oscuro */
 async function accessible(page: Page) {
@@ -24,7 +24,7 @@ test('una jugadora hace su personaje de 5e con el creador, lo termina y lo sube 
   const link = await campaignLink(page)
   const campaignId = new URL(page.url()).pathname.split('/campanas/')[1] ?? ''
   const chosen = await page.request.post('/api/actions/updateCampaign', {
-    data: { campaignId, system: '5e', systemChoices: { sources: ['srd521'], duplicates: 'newest' } }
+    data: { campaignId, system: await import5e(page), systemChoices: { sources: ['srd521'], duplicates: 'newest' } }
   })
   expect(chosen.status()).toBe(200)
 
@@ -103,10 +103,10 @@ test('una jugadora hace su personaje de 5e con el creador, lo termina y lo sube 
   await shot(page, 'personajes')
   await page.getByRole('link', { name: 'Thora' }).click()
   await page.getByRole('complementary', { name: 'Versiones' }).getByRole('button', { name: 'Restaurar' }).click()
-  await page
-    .getByRole('dialog', { name: /Restaurar/ })
-    .getByRole('button', { name: 'Restaurar' })
-    .click()
+  const restore = page.getByRole('dialog', { name: /Restaurar/ })
+  await restore.getByRole('button', { name: 'Restaurar' }).click()
   await expect(page.getByRole('main')).toContainText('Guerrero 1')
+  // El contraste, con el diálogo ya cerrado (al desvanecerse, sus colores no cuentan)
+  await expect(restore).toBeHidden()
   await accessible(page)
 })

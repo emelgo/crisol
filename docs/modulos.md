@@ -7,7 +7,36 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
-### Para retomar (2026-11-05, módulo 3 hecho salvo `foundry`; ahora, que lo pruebe Enrique y pulir)
+### Para retomar (2026-11-06, módulo 3 terminado; lo siguiente, el módulo 4 y, el 2026-11-07, la interfaz)
+
+- **Crisol vacío (ADR-0015, PR #108)**: de serie solo «En blanco». El 5e con el SRD pasa a `packages/systems/src/examples/`
+  (fixture de las pruebas; su archivo, con `pnpm sistema-5e`); las pruebas del servidor y las e2e lo importan. Lo que
+  usaba el 5e de serie pasa a una copia en su cuenta con `pnpm crisol sistema-5e` (corrido en staging tras desplegar).
+- **Traer de Foundry (PR #108)**: en «Sistema nuevo», el .zip de un sistema o módulo de Foundry; se eligen sus
+  compendios y el idioma de sus textos, se sube solo lo necesario (`apps/web/src/systems/foundry-zip.ts`) y el
+  servidor lo convierte (`importFoundry`, `inspectFoundry`; lectura LevelDB/NeDB en `apps/server/src/foundry/`,
+  conversión en `packages/systems/src/foundry/`, prueba con el dnd5e real: `node scripts/foundry/probar.ts`). Con los 8
+  compendios de 2024 del dnd5e: 2.121 documentos, valida. **Pendiente**: la mecánica de dnd5e en lo importado (hoy van
+  sus tiradas en el texto), los nombres de los campos (salen de su ruta: «Activation type») y el idioma de los tipos.
+  **Aprovechar el resto del zip** (Enrique, 2026-11-06), hoy se descarta al subir: las imágenes de cada documento
+  (`img` de objetos, conjuros y criaturas; retratos y fichas) van con el módulo 4; las escenas, los mapas, los tokens y
+  los sonidos, con el 6 y el 7; el aspecto del sistema (colores, fuentes y fondos de su CSS, como tema de su hoja y su
+  compendio), con la interfaz. **A tener en cuenta**:
+  - Su CSS y su código no se reutilizan tal cual: van con sus plantillas de Foundry (Handlebars) y su JavaScript. Se
+    saca de ellos lo que sirve (la paleta, las fuentes, las texturas) y se aplica a nuestra hoja por bloques.
+  - Hoy `apps/web/src/systems/foundry-zip.ts` (`slimZip`) quita todo lo que no es manifiesto, idiomas o compendios, y
+    `importFoundry` admite como mucho 30 MB (`FOUNDRY_ZIP_BYTES`). Para traer imágenes y escenas hará falta subir el zip
+    entero (el dnd5e pesa 137 MB) por la subida de archivos (hasta 250 MB) y convertirlo desde ahí, en segundo plano.
+  - Las rutas de las imágenes en los documentos (`img`, `systems/dnd5e/icons/…`) apuntan dentro del zip o a lo que
+    trae Foundry de serie (`icons/…`, que no viene en el zip): estas últimas no se pueden traer.
+  - La licencia de cada recurso: el código de dnd5e es MIT, pero sus imágenes y las de los módulos pueden tener otra
+    (las de pago, solo para uso privado, ADR-0014); cada una, con su entrada en `docs/terceros.md`.
+- **Cambiar el compendio en la app (PR #108)**: «Nueva entrada», «Editar» y «Borrar» en el compendio de la campaña,
+  para el propietario de un sistema de la cuenta (`getCampaignCompendium.editable`; `entry-editor.tsx`).
+- **El creador pregunta antes de quitar una clase (PR #107)**, como D&D Beyond.
+- La IA hace sistemas enteros (hoja, creador, compendio): lo dicen las instrucciones del MCP; prueba en `tasks/probar.md`.
+
+### Antes (2026-11-05)
 
 - **`hoja`, en `main` y en staging (PR #102)**: lo de la partida (`packages/systems/src/play.ts`: solo lo marcado con
   `play` y los recursos, validado), la hoja por bloques en el formato (`sheet.ts`; la del 5e con inspiración,
@@ -56,7 +85,7 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   `getCampaignCompendium`, `searchCampaignContent` y `getCampaignContent`, que lee cualquiera de la campaña; e2e
   `compendio.spec.ts`). Hechas también la tarea 4 (tablas `characters` y `character_versions`, migración 0041, y sus
   acciones con permisos: cada uno los suyos, el máster todos) y el motor (tarea 8: `packages/systems/src/builder.ts`,
-  `buildCharacter`, `stepOptions`, `summarize` y `characterView`; los pasos del 5e en `catalog/5e/system.ts`,
+  `buildCharacter`, `stepOptions`, `summarize` y `characterView`; los pasos del 5e en `examples/5e/system.ts`,
   `creation`, y `card` para la tarjeta). El servidor monta el estado del personaje y lo devuelve en `getCharacter` y
   `updateCharacter` (sin bajar el contenido al navegador). **Hechas las pantallas** (tareas 5, 6 y 11–13:
   `apps/web/src/characters/`: la lista, la página con «Ficha | Creador», el creador por pasos con el panel de
@@ -81,7 +110,7 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   `datos-locales/srd/`). Revisión de código hecha, con lo importante arreglado. **Pendiente de Enrique**: el punto de
   control 4 (`tasks/muestra-srd-5e.md`) y la prueba final en staging desde claude.ai (`tasks/probar.md`). **Lo
   siguiente**: `personajes` (el creador), que empieza por su entrevista (`interview-me`) con Enrique; lo que concede
-  cada cosa por nivel ya va en los `grants` del contenido y `catalog/5e/referencia.ts` monta un personaje como lo hará
+  cada cosa por nivel ya va en los `grants` del contenido y `examples/5e/referencia.ts` monta un personaje como lo hará
   él.
 - **Importar de Foundry (Enrique, 2026-11-05)**: «el importador debería coger eso [el compendio del zip del
   manifiesto del sistema]; si no, es trabajo extra cada vez que se añade un sistema». Va a la capacidad `foundry`
@@ -112,7 +141,7 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   `duplicates` en lo que elige la campaña); `@ajustes` en todas las fórmulas. Los casos difíciles, escritos a mano
   (`fixtures/dificiles.ts`), dan lo del SRD. Hechas también la tarea 5 (el 5e de serie en el catálogo, con
   `@portador`, los valores de cada elemento de un conjunto, `first()` y las listas con opciones) y la 6 (su contenido en
-  `catalog/5e/content/`, que solo lee el servidor; buscar y leer el contenido; copiar, bajar y subir con su mecánica,
+  `examples/5e/content/`, que solo lee el servidor; buscar y leer el contenido; copiar, bajar y subir con su mecánica,
   migración 0040, ya en la base de desarrollo). **Ahora**: la tarea 7 (`tasks/todo.md` dice lo hecho y lo que falta):
   hecha también: los scripts de `scripts/srd/` (`node scripts/srd/extraer.ts` y `comprobar.ts`, con los PDF), todo el
   equipo de las dos ediciones y el guerrero con el campeón (474 documentos). Hechas también la 9 (las ediciones en la
@@ -1252,10 +1281,10 @@ Estados: pendiente · en curso · hecho · descartado.
 | 1 | **Wiki**: páginas y subpáginas, editor de bloques, enlaces, menciones, vista previa, propiedades, secretos, búsqueda, marcadores, etiquetas, versiones, recursos y archivos, **hojas con estilo** (tipo Homebrewery, con PDF), exportación MD, sus herramientas MCP | construido (tareas 1 a 26 hechas); falta la revisión de Enrique en staging | Foundry: Journal; DDB: contenido y referencias; Homebrewery (MIT): formato de hoja y descarga |
 | 2 | **Tipos de página y plantillas**: «Desde plantilla» (de serie y propias), campos en el panel, tablas que se llenan solas (en lugar de Dataview) | construido (tareas 1 a 14, 2026-11-03); falta la revisión de Enrique en staging | Foundry: tipos de documento; Kanka, LegendKeeper y World Anvil (web pública) |
 | 3 | Sistemas de reglas, fichas de personaje (creación, subida de nivel), dados y dados 3D | en marcha: mapa aprobado (`docs/specs/modulo-3.md`); `dados` en `main` y en staging (PR #95); spec, diseño y plan de `sistemas` aprobados; construyéndose | DDB: creador y hoja; Foundry: dnd5e, DataModel e instalar y crear sistemas |
-| 4 | Compendios (aparte de la wiki del mundo y **como los de Foundry**: antes, estudio a fondo con craft-anything), bestiario, statblocks, biblioteca; **buscar dentro de los PDF** (texto de cada página con pdf.js; el resultado abre el visor en esa página) **y por significado** (pgvector; antes, permiso para la imagen de Postgres y elegir quién calcula los embeddings) | pendiente | Foundry: compendium packs; DDB: listados |
+| 4 | Compendios (aparte de la wiki del mundo y **como los de Foundry**: antes, estudio a fondo con craft-anything), bestiario, statblocks, biblioteca; **las imágenes de lo traído de Foundry** (las de cada documento del zip); **buscar dentro de los PDF** (texto de cada página con pdf.js; el resultado abre el visor en esa página) **y por significado** (pgvector; antes, permiso para la imagen de Postgres y elegir quién calcula los embeddings) | pendiente | Foundry: compendium packs; DDB: listados |
 | 5 | Visibilidad por campaña: conocimiento de los jugadores, revelar, compartir | pendiente | Foundry: ownership |
-| 6 | **Mesa**: escenas, rejilla, fichas, medir y plantillas, niebla, muros, puertas, luz, visión, iniciativa, instantáneas, encuentros, UVTT | pendiente | Foundry: canvas, visión y muros; DDB Maps |
-| 7 | **Sala de jugadores**: presencia, chat y susurros, mostrar a jugadores, sonido, controles del máster | pendiente | Foundry: sockets y chat; DDB: game log |
+| 6 | **Mesa**: escenas, rejilla, fichas, medir y plantillas, niebla, muros, puertas, luz, visión, iniciativa, instantáneas, encuentros, UVTT; **las escenas, mapas y tokens de un zip de Foundry** | pendiente | Foundry: canvas, visión y muros; DDB Maps |
+| 7 | **Sala de jugadores**: presencia, chat y susurros, mostrar a jugadores, sonido (también **los de un zip de Foundry**), controles del máster | pendiente | Foundry: sockets y chat; DDB: game log |
 | 8 | Calendario, clima, viajes, líneas temporales | pendiente | — |
 | 9 | Mapas de mundo con pines y capas; pizarras | pendiente | DDB Maps |
 | 10 | Otras herramientas: tableros, gráficos, grafo de relaciones, nombres, centro de actividad | pendiente | — |
@@ -1289,6 +1318,9 @@ y el plan (ver `CLAUDE.md`).
 
 Lo que a Enrique no le convence (apuntarlo aquí según lo diga). Se repasa al acabar el módulo 1, no al final de la
 app: el 2026-10-30 dijo «luego apuntaremos por donde vamos y nos dedicaremos a la UI, que es horrible».
+
+- **El aspecto de un sistema traído de Foundry** (2026-11-06): sacar de su CSS sus colores, fuentes y fondos como tema
+  de su hoja y su compendio (no su CSS tal cual).
 
 - **2026-10-30, al empezar la etapa**: «No me gusta casi nada de la interfaz actual, es horrible y no se entiende nada!!
   […] el crisol antiguo era más bonito y profesional, la nuestra parece una app de ia. Me refiero a la interfaz en

@@ -2,6 +2,7 @@ import { createHash, randomBytes } from 'node:crypto'
 import { connect } from '@crisol/db'
 import { resetDatabase } from '@crisol/db/testing'
 import { issueBootstrap } from '@crisol/server/bootstrap'
+import { exampleFile } from '@crisol/systems/examples'
 import { type Browser, expect, type Locator, type Page } from '@playwright/test'
 import { e2eDatabaseUrl } from '../servidor.ts'
 
@@ -195,6 +196,13 @@ export async function freshOwner(page: Page) {
   } finally {
     await conn.close()
   }
+}
+
+/** El 5e de ejemplo, importado en la cuenta de quien tiene la sesión en `page` (no viene de serie, ADR-0015): su id */
+export async function import5e(page: Page): Promise<string> {
+  const response = await page.request.post('/api/actions/importSystem', { data: { file: exampleFile('5e') } })
+  expect(response.status()).toBe(200)
+  return (await response.json()).system.id
 }
 
 /** El propietario crea Eana y La Marca; devuelve el enlace de invitación (con `page` en la campaña) */

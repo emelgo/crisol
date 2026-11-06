@@ -1,5 +1,6 @@
 import { connect, schema } from '@crisol/db'
 import { freshTestDatabase, resetDatabase } from '@crisol/db/testing'
+import { exampleFile } from '@crisol/systems/examples'
 import { eq } from 'drizzle-orm'
 import type { FastifyInstance } from 'fastify'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
@@ -28,6 +29,8 @@ describe('los personajes de una campaña', () => {
   let ana: { userId: string; cookie: string }
   let bruno: { userId: string; cookie: string }
   let campaignId: string
+  /** El 5e, importado de su archivo de ejemplo (ya no viene de serie, ADR-0015) */
+  let five: string
 
   const call = (name: string, payload: object, cookie: string) =>
     app.inject({ method: 'POST', url: `/api/actions/${name}`, payload, headers: { origin: BASE_URL, cookie } })
@@ -68,7 +71,8 @@ describe('los personajes de una campaña', () => {
       .insert(schema.organizationMembers)
       .values({ organizationId: org.id, userId: master.userId, role: 'owner' })
     const world = await ok200('createWorld', { name: 'Eana' })
-    campaignId = (await ok200('createCampaign', { worldId: world.id, name: 'La Marca', system: '5e' })).id
+    five = (await ok200('importSystem', { file: exampleFile('5e') })).system.id
+    campaignId = (await ok200('createCampaign', { worldId: world.id, name: 'La Marca', system: five })).id
     ana = await signUpTestUser(auth, { name: 'Ana', email: 'ana@crisol.test' })
     bruno = await signUpTestUser(auth, { name: 'Bruno', email: 'bruno@crisol.test' })
     await join(ana.cookie)
@@ -84,7 +88,7 @@ describe('los personajes de una campaña', () => {
     const thora = (await ok200('createCharacter', { campaignId, name: 'Thora' }, ana.cookie)).character
     expect(thora).toMatchObject({
       name: 'Thora',
-      system: '5e',
+      system: five,
       status: 'creating',
       owner: { id: ana.userId, name: 'Ana' },
       build: {},

@@ -1,11 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { CATALOG } from './catalog/index.ts'
+import { fiveE } from './examples/5e/system.ts'
 import { fronteras } from './fixtures/fronteras.ts'
 import type { System } from './format.ts'
 import { defaultSheet, sheetView } from './sheet.ts'
 import { validateSystem } from './validate.ts'
-
-const fiveE = CATALOG.find((s) => s.id === '5e') as System
 
 describe('la hoja por bloques', () => {
   it('la del 5e vale y sale con sus nombres: cifras con su tirada, conjuntos y pestañas', () => {

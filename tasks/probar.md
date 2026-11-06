@@ -4,10 +4,25 @@ Lista viva: todo lo que haya que probar se apunta aquí y se marca cuando lo pru
 final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interfaz.
 
 - **Staging**: https://neo.crisol.144-91-122-245.sslip.io, con el módulo 2, los arreglos del 2026-11-04, los dados,
-  los sistemas, srd-5e entero, los personajes y su hoja (PR #93 a #103).
+  los sistemas, srd-5e entero, los personajes y su hoja, el compendio y el módulo 3 limpio (PR #93 a #108).
 - **La IA**: el conector «Neo Crisol» de claude.ai (`https://neo.crisol.144-91-122-245.sslip.io/mcp`), con la cuenta
   de propietario.
 - **En local**, con los cambios al momento: http://localhost:5173 (lo arranco cuando haga falta).
+
+## Módulo 3 limpio: Crisol vacío, importar y cambiar (ADR-0015, PR #108)
+
+Crisol ya no trae el 5e: de serie solo «En blanco». Las campañas de staging que lo usaban siguen igual, con una copia
+en tu cuenta.
+- [ ] **El 5e, desde su archivo**: en Sistemas → «Sistema nuevo», sube `5e.crisol-system.json` (te lo paso; también
+  sale con `pnpm sistema-5e`). Sale en «Tuyos», con sus 3.170 documentos.
+- [ ] **Traer de Foundry**: en «Sistema nuevo», suelta el .zip de un sistema o de un módulo de Foundry (la carpeta de
+  `Data/systems/<id>`, comprimida); marca los compendios que quieras y el idioma de sus textos, y «Traer de Foundry».
+  Elígelo en una campaña y mira su compendio.
+- [ ] **Cambiar el compendio en la app**: en una campaña con un sistema tuyo, en Compendio, «Nueva entrada» (tipo,
+  nombre, sus campos y su texto); en una entrada, «Editar» y «Borrar» (pregunta antes). Una jugadora no ve esos botones.
+- [ ] **La IA, desde cero**: pídele a la IA un sistema nuevo para un juego que no esté (con su hoja, su creador de
+  personajes y algo de compendio) y haz un personaje con su creador.
+- [ ] **El creador pregunta antes de quitar una clase**: «¿Quitar «Bárbaro»?».
 
 ## Módulo 3: personajes (en staging: PR #100)
 

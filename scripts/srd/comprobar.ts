@@ -2,14 +2,14 @@
  * Comprueba lo sacado del SRD: que valida con el 5e, que cada documento lleva sus dos idiomas y su página, y que hay lo
  * medido de cada tipo en cada edición. `node scripts/srd/comprobar.ts`
  */
-import { MEASURED } from '../../packages/systems/src/catalog/5e/measured.ts'
-import { fiveE } from '../../packages/systems/src/catalog/5e/system.ts'
-import { catalogContent } from '../../packages/systems/src/catalog/content.ts'
+import { MEASURED } from '../../packages/systems/src/examples/5e/measured.ts'
+import { fiveE } from '../../packages/systems/src/examples/5e/system.ts'
+import { exampleContent } from '../../packages/systems/src/examples/content.ts'
 import { validateContent } from '../../packages/systems/src/file.ts'
 import { consoleIo, type Io } from '../io.ts'
 
 export function check(io: Io = consoleIo): boolean {
-  const content = catalogContent('5e')
+  const content = exampleContent('5e')
   let ok = true
   const fail = (text: string) => {
     ok = false

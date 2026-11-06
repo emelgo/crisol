@@ -3,7 +3,7 @@
  * reglas. Su texto en los dos idiomas y su mecánica, escrita a mano: lo que cambia de quien lo tiene (las tiradas con
  * desventaja, la velocidad a 0); lo que depende de quien ataca o de lo que no se calcula va en `manual`
  */
-import { CONDITIONS } from '../../packages/systems/src/catalog/5e/system.ts'
+import { CONDITIONS } from '../../packages/systems/src/examples/5e/system.ts'
 import { glossaryTexts } from './capitulos.ts'
 import { readingRows } from './clases.ts'
 import type { Doc } from './equipo.ts'

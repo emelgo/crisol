@@ -3,7 +3,7 @@
  * sacada del texto en inglés: los bonos a la CA y a las salvaciones, las características que fija, las resistencias,
  * las cargas y lo que cura al beberlo
  */
-import { ABILITIES, DAMAGE_TYPES } from '../../packages/systems/src/catalog/5e/system.ts'
+import { ABILITIES, DAMAGE_TYPES } from '../../packages/systems/src/examples/5e/system.ts'
 import { PROFILES, range } from './capitulos.ts'
 import { dnd5eItemMechanics } from './dnd5e.ts'
 import { concepts, type Doc } from './equipo.ts'

@@ -7,7 +7,7 @@ import { visibilitiesFor } from '@crisol/contracts'
 import { type Text, textOf } from '@crisol/systems'
 import { useInfiniteQuery, useMutation, useQuery } from '@tanstack/react-query'
 import { getRouteApi, Navigate } from '@tanstack/react-router'
-import { ArrowLeft, ChevronRight, Search, SlidersHorizontal, X } from 'lucide-react'
+import { ArrowLeft, ChevronRight, Pencil, Plus, Search, SlidersHorizontal, Trash2, X } from 'lucide-react'
 import { type ReactNode, useEffect, useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
@@ -26,6 +26,7 @@ import { useDice } from '../dice/context.tsx'
 import { useNarrow } from '../wiki/panel.tsx'
 import styles from './compendium.module.css'
 import { ContentText } from './content-text.tsx'
+import { DeleteEntry, type Editable, EntryEditor } from './entry-editor.tsx'
 
 const route = getRouteApi('/mundos/$worldId/campanas/$campaignId/compendio')
 const PAGE = 100
@@ -111,6 +112,7 @@ export function CompendiumScreen() {
     document.querySelector<HTMLElement>(`[data-entry="${CSS.escape(lastShown)}"]`)?.focus()
   }, [shown, lastShown, narrow])
 
+  const [creating, setCreating] = useState(false)
   if (pending) return null
   if (!account) return <Navigate to="/entrar" replace />
   if (!compendium.data) {
@@ -120,7 +122,7 @@ export function CompendiumScreen() {
       <Loading />
     )
   }
-  const { system, types, sources, sections, language } = compendium.data
+  const { system, types, sources, sections, language, editable } = compendium.data
   if (!system) {
     return (
       <section className={styles.empty}>
@@ -142,7 +144,14 @@ export function CompendiumScreen() {
               ? t('compendium.systemWith', { system: system.name, editions: editions.join(t('compendium.and')) })
               : system.name}
           </span>
+          {editable && editable.types.length > 0 && (
+            <button type="button" className={styles.newEntry} onClick={() => setCreating(true)}>
+              <Plus size={16} aria-hidden="true" />
+              {t('compendium.newEntry')}
+            </button>
+          )}
         </div>
+        {types.length === 0 && <p className={styles.none}>{t('compendium.emptySystem')}</p>}
         <div className={styles.search} data-tour="compendio-buscar">
           <Search size={16} aria-hidden="true" />
           <label htmlFor={searchId} className={styles.hidden}>
@@ -204,8 +213,10 @@ export function CompendiumScreen() {
           types={types}
           sources={sources}
           language={language}
+          editable={editable}
           onOpen={open}
           onBack={narrow ? back : undefined}
+          onGone={back}
         />
       ) : (
         !narrow && (
@@ -213,6 +224,16 @@ export function CompendiumScreen() {
             <p className={styles.pick}>{t('compendium.pick')}</p>
           </div>
         )
+      )}
+      {creating && editable && (
+        <EntryEditor
+          campaignId={campaignId}
+          editable={editable}
+          language={language}
+          item={null}
+          onSaved={open}
+          onClose={() => setCreating(false)}
+        />
       )}
       <Tour
         id="compendio"
@@ -541,16 +562,21 @@ function Entry({
   types,
   sources,
   language,
+  editable,
   onOpen,
-  onBack
+  onBack,
+  onGone
 }: {
   campaignId: string
   entryKey: string
   types: CompendiumType[]
   sources: { key: string; name: string; edition: string | null; attribution: string }[]
   language: Language
+  editable: Editable | null
   onOpen: (key: string) => void
   onBack: (() => void) | undefined
+  /** Al borrarla: de vuelta a la lista */
+  onGone: () => void
 }) {
   const { t } = useTranslation()
   const api = useApi()
@@ -581,6 +607,7 @@ function Entry({
     queryFn: () => api.call('getCampaignContent', { campaignId, keys: [entryKey] })
   })
   const item = read.data?.items[0]
+  const [changing, setChanging] = useState<'edit' | 'delete' | null>(null)
   // Al abrir otro, arriba; en lo estrecho (con «Volver a la lista»), el foco va a su título
   const narrow = Boolean(onBack)
   useEffect(() => {
@@ -621,6 +648,18 @@ function Entry({
             {name}
           </h2>
           <EditionTag edition={item.edition} legacy={item.legacy} />
+          {editable && (
+            <div className={styles.entryActions}>
+              <button type="button" className={styles.entryAction} onClick={() => setChanging('edit')}>
+                <Pencil size={14} aria-hidden="true" />
+                {t('compendium.edit')}
+              </button>
+              <button type="button" className={styles.entryAction} onClick={() => setChanging('delete')}>
+                <Trash2 size={14} aria-hidden="true" />
+                {t('compendium.delete')}
+              </button>
+            </div>
+          )}
         </header>
         {fields.length > 0 && (
           <dl className={styles.fields}>
@@ -688,6 +727,26 @@ function Entry({
         </dl>
         {source && <p className={styles.attribution}>{source.attribution}</p>}
       </aside>
+      {changing === 'edit' && editable && (
+        <EntryEditor
+          campaignId={campaignId}
+          editable={editable}
+          language={language}
+          item={item}
+          onSaved={() => undefined}
+          onClose={() => setChanging(null)}
+        />
+      )}
+      {changing === 'delete' && editable && (
+        <DeleteEntry
+          campaignId={campaignId}
+          editable={editable}
+          item={item}
+          name={name}
+          onDeleted={onGone}
+          onClose={() => setChanging(null)}
+        />
+      )}
     </>
   )
 }

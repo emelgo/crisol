@@ -1,0 +1,46 @@
+/* El editor de una entrada del compendio: más ancho que un cuadro de aviso, con sus campos en dos columnas */
+.dialog {
+  inline-size: min(46rem, calc(100vw - 2rem));
+}
+
+.fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(14rem, 100%), 1fr));
+  gap: var(--space-3) var(--space-4);
+  align-items: end;
+}
+
+.text {
+  min-block-size: 14rem;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.9375rem;
+  line-height: 1.5;
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: var(--target);
+  font-weight: 600;
+}
+
+.group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-4);
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.group legend {
+  margin-block-end: var(--space-1);
+  padding: 0;
+  font-weight: 600;
+}
+
+.group .check {
+  font-weight: 400;
+}

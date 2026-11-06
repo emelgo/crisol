@@ -4,7 +4,7 @@
  */
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { ABILITIES, DAMAGE_TYPES } from '../../packages/systems/src/catalog/5e/system.ts'
+import { ABILITIES, DAMAGE_TYPES } from '../../packages/systems/src/examples/5e/system.ts'
 import { slug } from './texto.ts'
 
 const DIR = join(import.meta.dirname, '../../datos-locales/dnd5e')
@@ -127,7 +127,7 @@ type Name = { es: string; en: string }
 
 /** Los conjuros nuestros de una edición, por su nombre en inglés: para nombrar en español lo que lanza un objeto */
 function spellNames(edition: '2014' | '2024'): Map<string, Name> {
-  const file = join(import.meta.dirname, '../../packages/systems/src/catalog/5e/content/conjuros.json')
+  const file = join(import.meta.dirname, '../../packages/systems/src/examples/5e/content/conjuros.json')
   const spells = JSON.parse(readFileSync(file, 'utf8')) as { key: string; data: { name: Name } }[]
   return new Map(
     spells.filter((s) => s.key.endsWith(`_${edition}`)).map((s) => [s.data.name.en.toLowerCase(), s.data.name])

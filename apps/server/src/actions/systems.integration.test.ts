@@ -2,6 +2,7 @@ import { systemFull } from '@crisol/contracts'
 import { connect, schema } from '@crisol/db'
 import { freshTestDatabase, resetDatabase } from '@crisol/db/testing'
 import { FILE_BYTES, FORMAT, toFile } from '@crisol/systems'
+import { exampleFile } from '@crisol/systems/examples'
 import { cinco, fronteras } from '@crisol/systems/fixtures'
 import type { FastifyInstance } from 'fastify'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
@@ -30,6 +31,9 @@ describe('los sistemas de reglas', () => {
     const response = await call(name, payload, cookie)
     return { status: response.statusCode, code: response.json().code as string }
   }
+  // El 5e ya no viene de serie (ADR-0015): se importa de su archivo de ejemplo
+  const import5e = async (cookie = owner.cookie): Promise<string> =>
+    (await ok200('importSystem', { file: exampleFile('5e') }, cookie)).system.id
   const organization = async (userId: string, name: string) => {
     const [org] = await conn.db.insert(schema.organizations).values({ name }).returning()
     if (!org) throw new Error('sin organización')
@@ -57,10 +61,9 @@ describe('los sistemas de reglas', () => {
     await conn?.close()
   })
 
-  it('los de serie: el 5e y «En blanco», enteros y de solo lectura', async () => {
+  it('de serie solo «En blanco», entero y de solo lectura (ADR-0015)', async () => {
     const { systems } = await ok200('listSystems', {})
     expect(systems).toEqual([
-      expect.objectContaining({ id: '5e', name: '5e', builtIn: true, version: 1, basedOn: null, campaigns: [] }),
       expect.objectContaining({
         id: 'blank',
         name: 'En blanco',
@@ -70,6 +73,7 @@ describe('los sistemas de reglas', () => {
         campaigns: []
       })
     ])
+    expect((await code('getSystem', { systemId: '5e' })).status).toBe(404)
     const blank = await ok200('getSystem', { systemId: 'blank' })
     expect(systemFull.safeParse(blank).success).toBe(true)
     expect(blank.document).toMatchObject({ id: 'blank', dice: { default: '1d20', critical: 'd20' } })
@@ -102,11 +106,12 @@ describe('los sistemas de reglas', () => {
     expect(copy.basedOn).toEqual({ id: created.id, name: 'Fronteras del norte', version: 3 })
     expect(copy.document.types).toEqual(system.document.types)
     const list = (await ok200('listSystems', {})).systems.map((s: { name: string }) => s.name)
-    expect(list).toEqual(['5e', 'En blanco', 'Fronteras del norte', 'Fronteras de Eana'])
+    expect(list).toEqual(['En blanco', 'Fronteras del norte', 'Fronteras de Eana'])
   })
 
   it('el contenido del 5e: buscarlo, leerlo, copiarlo con su mecánica y bajarlo', async () => {
-    const found = await ok200('searchSystemContent', { systemId: '5e', query: 'espada larga' })
+    const five = await import5e()
+    const found = await ok200('searchSystemContent', { systemId: five, query: 'espada larga' })
     expect(found).toEqual({
       total: 2,
       items: [
@@ -115,14 +120,14 @@ describe('los sistemas de reglas', () => {
       ]
     })
     const newest = await ok200('searchSystemContent', {
-      systemId: '5e',
+      systemId: five,
       type: 'armadura',
       duplicates: 'newest',
       language: 'en'
     })
     expect(newest.total).toBe(13)
     expect(newest.items.map((h: { name: string }) => h.name)).toContain('Chain Mail')
-    const read = await ok200('getSystemContent', { systemId: '5e', keys: ['cota_de_malla_2024', 'nada'] })
+    const read = await ok200('getSystemContent', { systemId: five, keys: ['cota_de_malla_2024', 'nada'] })
     expect(read.missing).toEqual(['nada'])
     expect(read.items).toEqual([
       expect.objectContaining({
@@ -132,12 +137,12 @@ describe('los sistemas de reglas', () => {
         mechanics: expect.objectContaining({ automation: 'full' })
       })
     ])
-    const total = (await ok200('listSystems', {})).systems[0].content
+    const total = (await ok200('getSystem', { systemId: five })).content
     expect(total).toBeGreaterThan(100)
 
     // La copia lleva todo el contenido, también su mecánica, y se busca igual (de la base de datos)
-    const copy = await ok200('createSystem', { name: 'Eana', from: '5e' })
-    expect(copy).toMatchObject({ content: total, basedOn: { id: '5e', version: 1 } })
+    const copy = await ok200('createSystem', { name: 'Eana', from: five })
+    expect(copy).toMatchObject({ content: total, basedOn: { id: five, version: 1 } })
     const inCopy = await ok200('searchSystemContent', { systemId: copy.id, query: 'cota de malla', editions: ['2014'] })
     expect(inCopy).toMatchObject({
       total: 1,
@@ -147,7 +152,7 @@ describe('los sistemas de reglas', () => {
     expect(copied.items[0].mechanics.effects).toHaveLength(3)
 
     // Bajarlo lleva el contenido; subirlo en otra cuenta, también con su mecánica
-    const exported = await ok200('exportSystem', { systemId: '5e' })
+    const exported = await ok200('exportSystem', { systemId: five })
     expect(exported.file.content).toHaveLength(total)
     const other = await signUpTestUser(auth, { name: 'Otra', email: 'otra@crisol.test' })
     await organization(other.userId, 'Otra')
@@ -228,6 +233,7 @@ describe('los sistemas de reglas', () => {
   })
 
   it('probar con el contenido del 5e: el guerrero de nivel 5, por sus claves, y su Tomar aliento', async () => {
+    const five = await import5e()
     const document = {
       data: { caracteristicas: { fue: { puntuacion: 16 }, des: { puntuacion: 12 }, con: { puntuacion: 14 } } },
       items: [
@@ -238,13 +244,13 @@ describe('los sistemas de reglas', () => {
         { id: 'espada', content: 'espada_larga_2024', data: { equipado: true } }
       ]
     }
-    const formula = (f: string) => ok200('tryFormula', { systemId: '5e', type: 'personaje', formula: f, document })
+    const formula = (f: string) => ok200('tryFormula', { systemId: five, type: 'personaje', formula: f, document })
     expect((await formula('@ca')).value).toBe(16)
     expect((await formula('@pg_max')).value).toBe(44)
     expect((await formula('@ataques')).value).toBe(2)
-    const roll = await ok200('trySystemRoll', { systemId: '5e', roll: 'ataque', element: 'espada', document })
+    const roll = await ok200('trySystemRoll', { systemId: five, roll: 'ataque', element: 'espada', document })
     expect(roll).toMatchObject({ label: 'Ataque · Espada larga', formula: expect.stringMatching(/^1d20\+6/) })
-    const action = await ok200('trySystemAction', { systemId: '5e', item: 'aliento', action: 'usar', document })
+    const action = await ok200('trySystemAction', { systemId: five, item: 'aliento', action: 'usar', document })
     expect(action).toMatchObject({
       label: 'Tomar aliento',
       activation: 'bonus',
@@ -252,7 +258,7 @@ describe('los sistemas de reglas', () => {
     })
     expect(
       await code('trySystemAction', {
-        systemId: '5e',
+        systemId: five,
         item: null,
         action: 'x',
         document: { items: [{ id: 'x', content: 'nada' }] }
@@ -261,14 +267,15 @@ describe('los sistemas de reglas', () => {
   })
 
   it('buscar con lo que eligió una campaña: sus fuentes y lo repetido', async () => {
+    const five = await import5e()
     const world = await ok200('createWorld', { name: 'Eana' })
     const campaign = await ok200('createCampaign', { worldId: world.id, name: 'Los Cuervos' })
     await ok200('updateCampaign', {
       campaignId: campaign.id,
-      system: '5e',
+      system: five,
       systemChoices: { sources: ['srd51'], duplicates: 'both' }
     })
-    const found = await ok200('searchSystemContent', { systemId: '5e', query: 'espada larga', campaignId: campaign.id })
+    const found = await ok200('searchSystemContent', { systemId: five, query: 'espada larga', campaignId: campaign.id })
     expect(found.items.map((h: { key: string }) => h.key)).toEqual(['espada_larga_2014'])
     expect((await code('searchSystemContent', { systemId: 'blank', campaignId: campaign.id })).code).toBe(
       'BAD_CAMPAIGN'
@@ -276,11 +283,12 @@ describe('los sistemas de reglas', () => {
   })
 
   it('el compendio de una campaña: lo leen el máster y sus jugadores, solo con sus fuentes; quien no está, nada', async () => {
+    const five = await import5e()
     const world = await ok200('createWorld', { name: 'Eana' })
     const campaign = await ok200('createCampaign', { worldId: world.id, name: 'La Marca' })
     await ok200('updateCampaign', {
       campaignId: campaign.id,
-      system: '5e',
+      system: five,
       systemChoices: { sources: ['srd51', 'srd521'], duplicates: 'both' }
     })
     const url = (await ok200('getInvitation', { campaignId: campaign.id })).url as string
@@ -295,7 +303,12 @@ describe('los sistemas de reglas', () => {
 
     // La jugadora: los tipos, con sus nombres en el idioma de la campaña, y las fuentes con su atribución
     const compendium = await ok200('getCampaignCompendium', { campaignId: campaign.id }, player.cookie)
-    expect(compendium.system).toEqual({ id: '5e', name: '5e' })
+    expect(compendium.system).toEqual({ id: five, name: '5e' })
+    // Cambiar sus entradas, solo su propietario: con su versión y todos sus tipos
+    expect(compendium.editable).toBeNull()
+    const own = await ok200('getCampaignCompendium', { campaignId: campaign.id })
+    expect(own.editable).toMatchObject({ systemId: five, version: 1 })
+    expect(own.editable.types.length).toBeGreaterThan(own.types.length)
     expect(compendium.sources.map((s: { edition: string }) => s.edition)).toEqual(['2014', '2024'])
     expect(compendium.sources[0].attribution).toContain('Wizards of the Coast')
     const spells = compendium.types.find((t: { key: string }) => t.key === 'conjuro')
@@ -371,7 +384,7 @@ describe('los sistemas de reglas', () => {
     // Con solo la de 2014, lo de 2024 no se lee
     await ok200('updateCampaign', {
       campaignId: campaign.id,
-      system: '5e',
+      system: five,
       systemChoices: { sources: ['srd51'], duplicates: 'both' }
     })
     const only = await ok200(
@@ -399,7 +412,8 @@ describe('los sistemas de reglas', () => {
       language: 'es',
       sources: [],
       types: [],
-      sections: []
+      sections: [],
+      editable: null
     })
     expect(await ok200('browseCampaignContent', { campaignId: none.id, type: 'conjuro' })).toEqual({
       items: [],
@@ -464,10 +478,7 @@ describe('los sistemas de reglas', () => {
       404
     )
     expect((await code('deleteSystem', { systemId: created.id }, other.cookie)).status).toBe(404)
-    expect((await ok200('listSystems', {}, other.cookie)).systems.map((s: { id: string }) => s.id)).toEqual([
-      '5e',
-      'blank'
-    ])
+    expect((await ok200('listSystems', {}, other.cookie)).systems.map((s: { id: string }) => s.id)).toEqual(['blank'])
   })
 
   it(`como mucho ${MAX_SYSTEMS} por cuenta`, async () => {
@@ -595,10 +606,11 @@ describe('los sistemas de reglas', () => {
     })
 
     it('el 5e, con sus ediciones, lo que está en las dos y sus reglas; sin ninguna fuente, no', async () => {
+      const five = await import5e()
       const campaign = await ok200('createCampaign', { worldId, name: 'La Marca' })
       const chosen = await ok200('updateCampaign', {
         campaignId: campaign.id,
-        system: '5e',
+        system: five,
         systemChoices: { sources: ['srd51'], duplicates: 'both', settings: { reglas: 'e2014' } }
       })
       expect(chosen.systemChoices).toEqual({

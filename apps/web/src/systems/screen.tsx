@@ -26,6 +26,7 @@ import { saveFile } from '../components/save-file.ts'
 import { Tour } from '../components/tour.tsx'
 import cards from '../routes/world-card.module.css'
 import screen from '../templates/screen.module.css'
+import { type FoundryZip, readFoundryZip, slimZip, toBase64 } from './foundry-zip.ts'
 import styles from './screen.module.css'
 
 export function useSystems() {
@@ -238,8 +239,20 @@ export function NewSystemDialog({ onClose }: { onClose: () => void }) {
     problems: Problem[]
   } | null>(null)
 
+  const [foundry, setFoundry] = useState<{
+    name: string
+    bytes: Uint8Array
+    read: FoundryZip
+    chosen: string[]
+    language: 'es' | 'en'
+  } | null>(null)
   const upload = useMutation({
-    mutationFn: () => api.call('importSystem', { file: file?.content ?? {} }),
+    mutationFn: async () => {
+      if (!foundry) return api.call('importSystem', { file: file?.content ?? {} })
+      // Solo lo que hace falta, y en base64: el servidor lo lee y crea el sistema con su compendio
+      const zip = toBase64(slimZip(foundry.bytes, foundry.read, foundry.chosen))
+      return api.call('importFoundry', { zip, packs: foundry.chosen, language: foundry.language })
+    },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['systems'] })
       dialog.current?.close()
@@ -250,6 +263,22 @@ export function NewSystemDialog({ onClose }: { onClose: () => void }) {
   /** Leer el archivo y validarlo aquí: si está roto, se dice qué falla sin subir nada */
   const read = async (picked: File | undefined) => {
     if (!picked) return
+    setFoundry(null)
+    if (picked.name.toLowerCase().endsWith('.zip')) {
+      const bytes = new Uint8Array(await picked.arrayBuffer())
+      const found = readFoundryZip(bytes)
+      if (!found) {
+        setFile({
+          name: picked.name,
+          content: null,
+          problems: [{ path: '', where: picked.name, message: t('systems.notFoundry'), severity: 'error' }]
+        })
+        return
+      }
+      setFile(null)
+      setFoundry({ name: picked.name, bytes, read: found, chosen: found.packs.map((p) => p.name), language: 'en' })
+      return
+    }
     let content: unknown
     try {
       content = JSON.parse(await picked.text())
@@ -272,7 +301,7 @@ export function NewSystemDialog({ onClose }: { onClose: () => void }) {
         className={cards.form}
         onSubmit={(event) => {
           event.preventDefault()
-          if (file?.content) upload.mutate()
+          if (file?.content || (foundry && foundry.chosen.length > 0)) upload.mutate()
         }}
       >
         <h2 id={titleId}>{t('systems.new')}</h2>
@@ -294,11 +323,11 @@ export function NewSystemDialog({ onClose }: { onClose: () => void }) {
           <label htmlFor={fileId} className={styles.pick}>
             {t('systems.pickFile')}
           </label>
-          {file && <span className={styles.picked}>{file.name}</span>}
+          {(file ?? foundry) && <span className={styles.picked}>{(file ?? foundry)?.name}</span>}
           <input
             id={fileId}
             type="file"
-            accept=".json,application/json"
+            accept=".json,application/json,.zip,application/zip"
             className={styles.fileInput}
             onChange={(event) => void read(event.currentTarget.files?.[0])}
           />
@@ -310,9 +339,22 @@ export function NewSystemDialog({ onClose }: { onClose: () => void }) {
           </div>
         )}
         {errors.length === 0 && (file?.problems.length ?? 0) > 0 && <ProblemList problems={file?.problems ?? []} />}
+        {foundry && (
+          <FoundryChoice
+            foundry={foundry.read}
+            chosen={foundry.chosen}
+            language={foundry.language}
+            onChange={(changes) => setFoundry({ ...foundry, ...changes })}
+          />
+        )}
         <FormError message={upload.error ? errorText(upload.error) : null} />
-        <BusyButton type="submit" className={form.button} busy={upload.isPending} disabled={!file?.content}>
-          {t('systems.upload')}
+        <BusyButton
+          type="submit"
+          className={form.button}
+          busy={upload.isPending}
+          disabled={foundry ? foundry.chosen.length === 0 : !file?.content}
+        >
+          {foundry ? t('systems.foundryImport') : t('systems.upload')}
         </BusyButton>
         <p className={styles.blank}>
           <BusyButton type="button" className={styles.rowAction} busy={blank.isPending} onClick={() => blank.mutate()}>
@@ -324,6 +366,64 @@ export function NewSystemDialog({ onClose }: { onClose: () => void }) {
         <FormError message={blank.error ? errorText(blank.error) : null} />
       </form>
     </Modal>
+  )
+}
+
+/** Lo que trae un zip de Foundry: qué es, sus compendios (todos marcados) y el idioma de sus textos */
+function FoundryChoice({
+  foundry,
+  chosen,
+  language,
+  onChange
+}: {
+  foundry: FoundryZip
+  chosen: string[]
+  language: 'es' | 'en'
+  onChange: (changes: { chosen?: string[]; language?: 'es' | 'en' }) => void
+}) {
+  const { t } = useTranslation()
+  const languageId = useId()
+  return (
+    <div className={styles.foundry}>
+      <p className={styles.foundryHead}>
+        <strong>{t('systems.foundryOf', { title: foundry.title, version: foundry.version })}</strong>
+        <span>{t(foundry.kind === 'module' ? 'systems.foundryModule' : 'systems.foundrySystem')}</span>
+      </p>
+      {foundry.packs.length === 0 ? (
+        <p role="alert" className={styles.notUploaded}>
+          {t('systems.foundryNone')}
+        </p>
+      ) : (
+        <fieldset className={styles.packs}>
+          <legend>{t('systems.foundryPacks')}</legend>
+          {foundry.packs.map((pack) => (
+            <label key={pack.name} className={styles.pack}>
+              <input
+                type="checkbox"
+                checked={chosen.includes(pack.name)}
+                onChange={(event) => {
+                  const on = event.currentTarget.checked
+                  onChange({ chosen: on ? [...chosen, pack.name] : chosen.filter((each) => each !== pack.name) })
+                }}
+              />
+              <span>{pack.label}</span>
+              <span className={styles.packType}>{t(`systems.packType.${pack.type}`, { defaultValue: pack.type })}</span>
+            </label>
+          ))}
+        </fieldset>
+      )}
+      <div className={form.field}>
+        <label htmlFor={languageId}>{t('systems.foundryLanguage')}</label>
+        <select
+          id={languageId}
+          value={language}
+          onChange={(event) => onChange({ language: event.currentTarget.value as 'es' | 'en' })}
+        >
+          <option value="en">{t('systems.languageName.en')}</option>
+          <option value="es">{t('systems.languageName.es')}</option>
+        </select>
+      </div>
+    </div>
   )
 }
 
