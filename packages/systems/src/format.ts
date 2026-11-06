@@ -61,7 +61,7 @@ export type SimpleField = FieldBase &
     | { kind: 'link'; to: string; multiple?: boolean }
     | { kind: 'clock'; segments: number; default?: number }
     | { kind: 'dice'; default?: string }
-    | { kind: 'resource'; max?: number | string; default?: number; recovery?: 'short' | 'long' }
+    | { kind: 'resource'; max?: number | string; default?: number; recovery?: 'short' | 'long'; roll?: string }
     | { kind: 'derived'; formula: string; signed?: boolean }
   )
 
@@ -158,7 +158,12 @@ function build(strict: boolean) {
       recovery: z
         .enum(['short', 'long'])
         .optional()
-        .describe('Con qué descanso se llena: short (el corto y el largo) o long (solo el largo, sin decirlo)')
+        .describe('Con qué descanso se llena: short (el corto y el largo) o long (solo el largo, sin decirlo)'),
+      roll: formula
+        .optional()
+        .describe(
+          'Una tirada para su máximo (los PG tirados de una criatura al ponerla en juego: @dados_golpe); sin ella, su máximo'
+        )
     }),
     obj({
       ...base,
@@ -478,7 +483,25 @@ function build(strict: boolean) {
       .omit({ key: true })
       .optional()
       .describe('De dónde sale el juego y con qué licencia (si sale de un libro o de un SRD)'),
-    types: recordOf(type, LIMITS.types).describe('Los tipos de documento, por su clave: los personajes y los objetos'),
+    types: recordOf(
+      type.extend({
+        sheet: obj({ blocks: z.array(block).max(60) })
+          .optional()
+          .describe(
+            'La hoja de este tipo de actor (la de una criatura, al estilo de su statblock), con los mismos bloques que la del personaje. Sin ella: la del sistema si es el personaje y, si no, una por defecto de sus campos'
+          ),
+        damage: obj({
+          resist: key.optional().describe('Su campo de lista con los tipos de daño que resiste (mitad)'),
+          immune: key.optional().describe('Los que no le hacen nada'),
+          vulnerable: key.optional().describe('Los que le hacen el doble')
+        })
+          .optional()
+          .describe(
+            'Para aplicarle daño desde una tirada: qué campos dicen sus resistencias, inmunidades y vulnerabilidades'
+          )
+      }),
+      LIMITS.types
+    ).describe('Los tipos de documento, por su clave: los personajes y los objetos'),
     rolls: recordOf(roll, LIMITS.rolls).optional().describe('Las tiradas del juego, por su clave'),
     dice: obj({
       default: formula.optional().describe('La tirada con la que empieza la ficha de dados (2d6), sin @'),

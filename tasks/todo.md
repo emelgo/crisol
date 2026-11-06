@@ -2,7 +2,7 @@
 
 Plan: `tasks/plan.md` · Spec: `docs/specs/criaturas.md`. Cada tarea con sus pruebas antes (TDD) y su commit.
 
-- [ ] **1. El formato**: la hoja de cada tipo de actor (`types[t].sheet`, validada; `sheetOf` la usa y la del sistema
+- [x] **1. El formato**: la hoja de cada tipo de actor (`types[t].sheet`, validada; `sheetOf` la usa y la del sistema
   queda para el personaje), `roll` en un campo recurso (sus PG tirados) y `damage` en el tipo (sus campos de
   resistencias, inmunidades y vulnerabilidades); `formato_sistemas` lo documenta. El 5e de ejemplo: la hoja de la
   criatura, al estilo de su statblock, y sus PG con `@dados_golpe`.
