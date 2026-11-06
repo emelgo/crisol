@@ -53,6 +53,8 @@ function changedBy(message: RealtimeMessage): QueryKey[] {
           ['pages', message.worldId, 'links']
         ]
       }
+      // Las criaturas en juego: la lista y la abierta
+      if (message.what === 'creatures') return [['creatures', message.campaignId], ['creature']]
       return [[message.what, message.campaignId]]
     case 'joined':
       return [

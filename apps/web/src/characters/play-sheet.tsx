@@ -1,7 +1,8 @@
 /**
- * La hoja de un personaje en partida (docs/specs/hoja.md § pantalla): los bloques que compone su sistema (o los de
- * por defecto) con sus valores calculados y lo de la partida. Tirar a un clic (el servidor tira por él, a su
- * registro), los PG con daño, curación y temporales, los usos, lo que lleva, las notas y descansar
+ * La hoja en partida de un personaje (docs/specs/hoja.md § pantalla) o de una criatura en juego
+ * (docs/specs/criaturas.md): los bloques que compone su sistema (o los de por defecto) con sus valores calculados y lo
+ * de la partida. Tirar a un clic (el servidor tira por él, a su registro), los PG con daño, curación y temporales, los
+ * usos, lo que lleva, las notas y descansar
  */
 
 import { visibilitiesFor } from '@crisol/contracts'
@@ -27,10 +28,24 @@ import { useDice } from '../dice/context.tsx'
 import styles from './play-sheet.module.css'
 import { type Change, pickId } from './save.ts'
 
-type Loaded = ActionOutput<'getCharacter'>
-type Character = Loaded['character']
-type State = Loaded['state']
+type CharacterState = ActionOutput<'getCharacter'>['state']
+/** Lo de la hoja: la de un personaje lleva además lo que le dan sus elecciones (`items`); la de una criatura, no */
+type State = Pick<
+  CharacterState,
+  'sheet' | 'resources' | 'itemValues' | 'actions' | 'layout' | 'rolls' | 'carried' | 'playMissing'
+> & { items?: CharacterState['items'] }
 type DiceRoll = ActionOutput<'rollForCharacter'>['roll']
+/** De quién es la hoja: su campaña y lo de la partida guardado */
+export interface SheetSubject {
+  campaignId: string
+  play: Record<string, unknown>
+}
+/** Lo que se tira desde la hoja: una tirada del sistema o una parte de una acción */
+export interface SheetRoll {
+  visibility: 'all' | 'self' | 'master' | 'hidden'
+  roll?: { key: string; element?: string; mode?: string }
+  action?: { item: string | null; key: string; part: 'attack' | 'damage' | 'heal'; mode?: string }
+}
 
 const signed = (n: number) => (n >= 0 ? `+${n}` : `−${-n}`)
 const get = (values: unknown, path: string): unknown =>
@@ -46,7 +61,7 @@ const shown = (value: unknown, signedWhen = false): string => {
 }
 
 interface Ctx {
-  character: Character
+  subject: SheetSubject
   state: State
   save: (change: Change) => Promise<void>
   roll: (input: {
@@ -56,13 +71,19 @@ interface Ctx {
 }
 
 export function PlaySheet({
-  character,
+  subject,
   state,
-  save
+  save,
+  rollWith,
+  rests = true
 }: {
-  character: Character
+  subject: SheetSubject
   state: State
   save: (change: Change) => Promise<void>
+  /** Tira a su nombre (un personaje o una criatura) */
+  rollWith: (input: SheetRoll) => Promise<{ roll: DiceRoll }>
+  /** Con los botones de descansar */
+  rests?: boolean
 }) {
   const { t } = useTranslation()
   const api = useApi()
@@ -71,8 +92,8 @@ export function PlaySheet({
   const [mode, setMode] = useState<string | null>(null)
   const dice = useDice()
   const campaign = useQuery({
-    queryKey: ['campaign', character.campaignId],
-    queryFn: () => api.call('getCampaign', { campaignId: character.campaignId })
+    queryKey: ['campaign', subject.campaignId],
+    queryFn: () => api.call('getCampaign', { campaignId: subject.campaignId })
   })
   const options = visibilitiesFor(campaign.data?.campaign.role ?? 'player')
   // Quién la ve: lo elegido en los dados, si vale en esta campaña
@@ -87,8 +108,7 @@ export function PlaySheet({
         ? state.rolls.find((r) => r.key === input.roll?.key)?.modes.some((m) => m.key === mode)
         : true
       const withMode = mode && fits ? { mode } : {}
-      return api.call('rollForCharacter', {
-        characterId: character.id,
+      return rollWith({
         visibility,
         ...(input.roll ? { roll: { ...input.roll, ...withMode } } : {}),
         ...(input.action ? { action: { ...input.action, ...(input.action.part === 'attack' ? withMode : {}) } } : {})
@@ -98,7 +118,7 @@ export function PlaySheet({
   })
   // Un doble clic no tira dos veces: mientras sale una, las demás esperan
   const ctx: Ctx = {
-    character,
+    subject,
     state,
     save,
     roll: (input) => {
@@ -153,7 +173,7 @@ export function PlaySheet({
       {layout.map((block, i) => (
         <Block key={`${block.kind}-${i.toString(36)}`} block={block} ctx={ctx} />
       ))}
-      <Rests ctx={ctx} label={t('playSheet.rest')} />
+      {rests && <Rests ctx={ctx} label={t('playSheet.rest')} />}
     </div>
   )
 }
@@ -428,10 +448,10 @@ function ItemsBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'it
   const { t } = useTranslation()
   const id = useId()
   const [adding, setAdding] = useState(false)
-  const granted = ctx.state.items.filter((it) => block.types.includes(it.type) && it.from !== null)
+  const granted = (ctx.state.items ?? []).filter((it) => block.types.includes(it.type) && it.from !== null)
   // Lo que lleva, tal como se acaba de guardar (equipar se ve al momento); su nombre y su tipo, del estado
   const known = new Map(ctx.state.carried.map((it) => [it.id, it]))
-  const carried = ((ctx.character.play as Play).items ?? [])
+  const carried = ((ctx.subject.play as Play).items ?? [])
     .map((it) => ({ ...it, name: known.get(it.id)?.name ?? it.key, type: known.get(it.id)?.type ?? null }))
     .filter((it) => it.type !== null && block.types.includes(it.type))
   const update = (itemId: string, change: (it: PlayItem) => PlayItem | null) =>
@@ -490,7 +510,7 @@ function ItemsBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'it
       </div>
       {adding && block.play && (
         <AddFromCompendium
-          campaignId={ctx.character.campaignId}
+          campaignId={ctx.subject.campaignId}
           types={block.types}
           onAdd={(key) => {
             setAdding(false)
@@ -661,7 +681,7 @@ function UsesBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'use
   const uses = ctx.state.resources.filter((r) => !r.error && r.max > 0)
   // De quién es cada uno (Tomar aliento, la Furia): lo que da, o lo que lleva
   const owners = new Map([
-    ...ctx.state.items.map((it) => [it.id, it.name] as const),
+    ...(ctx.state.items ?? []).map((it) => [it.id, it.name] as const),
     ...ctx.state.carried.map((it) => [`p:${it.id}`, it.name] as const)
   ])
   if (uses.length === 0) return null
@@ -751,7 +771,7 @@ function PlayValue({
   ctx: Ctx
 }) {
   // Lo recién cambiado se ve ya (lo de la partida, antes de que responda el servidor); si no, lo calculado
-  const stored = get((ctx.character.play as Play).values ?? {}, path)
+  const stored = get((ctx.subject.play as Play).values ?? {}, path)
   const value = stored !== undefined ? stored : computed
   const [draft, setDraft] = useDraft(value === undefined || value === null ? '' : String(value))
   if (field.kind === 'boolean')

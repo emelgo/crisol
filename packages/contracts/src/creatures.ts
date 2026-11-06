@@ -23,7 +23,8 @@ export const creatureInPlay = z.object({
   stats: z
     .array(z.object({ key: z.string(), label: z.string(), value: z.string() }))
     .describe('Sus primeras cifras (la CA)'),
-  condition: z.enum(['ok', 'bloodied', 'down']).describe('Malherida (a la mitad de su vida) o fuera de combate (a 0)')
+  condition: z.enum(['ok', 'bloodied', 'down']).describe('Malherida (a la mitad de su vida) o fuera de combate (a 0)'),
+  play: z.record(z.string(), z.unknown()).describe('Lo de la partida guardado (sus valores, lo gastado, lo que lleva)')
 })
 
 /** Su hoja en partida: la misma que la de un personaje, sin el creador */
@@ -96,7 +97,11 @@ export const playCreature = defineAction({
       .optional()
       .describe('Otro máximo para un recurso (sus PG); null vuelve al suyo'),
     rollHp: z.boolean().optional().describe('Tirar sus PG otra vez con sus dados (y llenarlos)'),
-    name: z.string().trim().min(1).max(120).optional()
+    name: z.string().trim().min(1).max(120).optional(),
+    play: z
+      .record(z.string(), z.unknown())
+      .optional()
+      .describe('Lo de la partida entero, como el de un personaje (la hoja lo cambia así): se valida con su tipo')
   }),
   output: z.object({ creature: creatureInPlay, state: creatureState })
 })

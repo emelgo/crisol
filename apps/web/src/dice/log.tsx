@@ -5,13 +5,14 @@
 import { type Campaign, type DiceRoll, visibilitiesFor } from '@crisol/contracts'
 import { describeFormula } from '@crisol/dice'
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Crown, EyeOff, List, Repeat } from 'lucide-react'
+import { Crown, EyeOff, List, Repeat, Swords } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
 import { useAnnounce } from '../components/announcer.tsx'
+import { ApplyRoll } from '../creatures/apply.tsx'
 import { useRolled } from '../realtime/context.tsx'
 import styles from './log.module.css'
 import { appendRoll, colorOf, isMine, type RollsPage, rollsKey } from './rolls.ts'
@@ -86,16 +87,34 @@ export function RollLog({ campaign }: { campaign: Campaign }) {
       )}
       <ol ref={list} className={styles.log} aria-label={t('dice.log')}>
         {all.map((roll) => (
-          <Entry key={roll.id} roll={roll} mine={isMine(roll, account)} onAgain={() => again.mutate(roll)} />
+          <Entry
+            key={roll.id}
+            roll={roll}
+            mine={isMine(roll, account)}
+            master={campaign.role === 'master'}
+            onAgain={() => again.mutate(roll)}
+          />
         ))}
       </ol>
     </div>
   )
 }
 
-function Entry({ roll, mine, onAgain }: { roll: DiceRoll; mine: boolean; onAgain: () => void }) {
+function Entry({
+  roll,
+  mine,
+  master,
+  onAgain
+}: {
+  roll: DiceRoll
+  mine: boolean
+  /** El máster aplica el daño de una tirada a las criaturas en juego y a los personajes */
+  master: boolean
+  onAgain: () => void
+}) {
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
+  const [applying, setApplying] = useState(false)
   const flag =
     roll.visibility === 'master'
       ? { text: t('dice.flag.master'), icon: Crown, cls: styles.flagMaster }
@@ -168,8 +187,15 @@ function Entry({ roll, mine, onAgain }: { roll: DiceRoll; mine: boolean; onAgain
           <Repeat size={13} aria-hidden="true" />
           {t('dice.again')}
         </button>
+        {master && roll.apply && (
+          <button type="button" onClick={() => setApplying(true)}>
+            <Swords size={13} aria-hidden="true" />
+            {t('inPlay.apply.open')}
+          </button>
+        )}
       </div>
       {open && <p className={styles.detail}>{roll.detail}</p>}
+      {applying && <ApplyRoll roll={roll} onClose={() => setApplying(false)} />}
     </li>
   )
 }

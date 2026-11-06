@@ -34,6 +34,7 @@ export const es = {
     theme: 'Tema',
     dice: 'Dados',
     compendium: 'Compendio',
+    inPlay: 'En juego',
     characters: 'Personajes'
   },
   // Una tirada escrita en una página
@@ -454,6 +455,55 @@ export const es = {
     whereWorld: 'En el mundo',
     whereSystem: 'En el sistema',
     deleteWorldText: 'Sale del compendio de este mundo.'
+  },
+  inPlay: {
+    title: 'En juego',
+    count_one: '{{count}} criatura',
+    count_other: '{{count}} criaturas',
+    removeCopies: 'Quitar las copias',
+    removeGroup_one: 'Quitar la copia',
+    removeGroup_other: 'Quitar las {{count}}',
+    uniques: 'Únicas',
+    unique: 'Única',
+    empty: 'Aún no hay nada en juego: ponlo desde el compendio.',
+    add: 'Poner en juego',
+    pick: 'Elige una criatura para ver su hoja.',
+    log: 'Registro de tiradas',
+    rollHp: 'Tirar PG',
+    otherMax: 'Otro máximo',
+    remove: 'Quitar de juego',
+    condition: { bloodied: 'Malherida', down: 'Fuera de combate' },
+    put: {
+      title: 'Poner en juego',
+      copies: 'Copias',
+      unique: 'Única',
+      how: 'Cómo',
+      many: 'Cuántas',
+      manyHint: 'Un número o una tirada: 1d4+1',
+      hp: 'PG',
+      average: 'Medios',
+      rolled: 'Tirados',
+      go_one: 'Poner {{count}} en juego',
+      go_other: 'Poner {{count}} en juego',
+      goRolled: 'Poner en juego',
+      goUnique: 'Poner la única en juego',
+      now: 'En juego ahora',
+      none: 'ninguna',
+      see: 'Ver en juego'
+    },
+    apply: {
+      open: 'Aplicar',
+      title: 'Aplicar {{total}} de daño',
+      healTitle: 'Aplicar {{total}} de curación',
+      none: 'No hay nadie en juego ni personajes en la campaña.',
+      how: 'Cuánto recibe {{name}}',
+      x0: 'Nada',
+      x05: 'Mitad',
+      x1: 'Entero',
+      x2: 'Doble',
+      go_one: 'Aplicar a {{count}}',
+      go_other: 'Aplicar a {{count}}'
+    }
   },
   campaign: {
     notFound: 'Esta campaña no existe',
@@ -1832,13 +1882,18 @@ export const es = {
     campaign: {
       home: 'La campaña y quién juega en ella.',
       characters: 'Los personajes de la campaña.',
-      compendium: 'Las reglas y el contenido del juego de la campaña.'
+      compendium: 'Las reglas y el contenido del juego de la campaña.',
+      inPlay: 'Las criaturas que has puesto en juego, con su hoja.'
     },
     characters: {
       create: 'Cada personaje se hace con las reglas de la campaña, paso a paso.',
       views: 'Su ficha, para jugar, y su creador, para hacerlo o subirlo de nivel.',
       roll: 'Se tira a un clic. Aquí, con ventaja o desventaja y quién lo ve.',
       versions: 'Al terminarlo y en cada nivel se guarda una versión, por si hay que volver atrás.'
+    },
+    inPlay: {
+      list: 'Lo que está en juego: las copias juntas, las únicas aparte, con su vida.',
+      log: 'Las tiradas: el daño de una se aplica desde aquí.'
     },
     compendium: {
       search: 'Busca en todo el contenido del juego.',

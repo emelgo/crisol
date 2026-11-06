@@ -732,7 +732,8 @@ export function fakeApi(
         version: row.version,
         life,
         stats,
-        condition
+        condition,
+        play: row.play as Record<string, unknown>
       }
     }
   }
@@ -1461,9 +1462,10 @@ export function fakeApi(
       })
       return { creatures: made.map((c) => creatureCard(c).card) }
     },
-    playCreature: ({ creatureId, version, damage, heal, temp, max, name }) => {
+    playCreature: ({ creatureId, version, damage, heal, temp, max, name, play }) => {
       const row = creatureById(creatureId)
       if (row.version !== version) throw new ApiError('CREATURE_CHANGED', 400)
+      if (play) row.play = structuredClone(play) as Play
       const { card } = creatureCard(row)
       if (max) {
         const path = max.resource ?? card.life?.path ?? ''

@@ -25,6 +25,7 @@ import {
   defensesOf,
   nextNumbers,
   normalizeChoices,
+  PLAY_BYTES,
   type Play,
   playSchema,
   RollError,
@@ -114,7 +115,8 @@ function cardOf(
     version: row.version,
     life,
     stats,
-    condition: !life ? 'ok' : life.value <= 0 ? 'down' : life.value <= life.max / 2 ? 'bloodied' : 'ok'
+    condition: !life ? 'ok' : life.value <= 0 ? 'down' : life.value <= life.max / 2 ? 'bloodied' : 'ok',
+    play: row.play
   }
 }
 
@@ -230,7 +232,10 @@ export const creatureActions = [
 
   implement(
     playCreature,
-    async (ctx, { creatureId, version, resource, damage, heal, temp, spend: used, rest: kind, max, rollHp, name }) => {
+    async (
+      ctx,
+      { creatureId, version, resource, damage, heal, temp, spend: used, rest: kind, max, rollHp, name, play: given }
+    ) => {
       const { row, at } = await readable(ctx, creatureId)
       const content = await contentFor(ctx, at, row.key, row.play as Play)
       const { entry, played } = viewOf(at, row, content)
@@ -243,6 +248,24 @@ export const creatureActions = [
         return path
       }
       let play = structuredClone(row.play) as Play
+      if (given) {
+        // Lo de la partida entero (la hoja): con su forma, y solo lo que se lleva y se cambia jugando
+        const parsed = playSchema.safeParse(given)
+        if (!parsed.success || JSON.stringify(parsed.data).length > PLAY_BYTES)
+          throw new InvalidRequestError('BAD_PLAY', 'lo de la partida no vale')
+        const tried = creatureView(
+          at.document,
+          await contentFor(ctx, at, row.key, parsed.data),
+          at.choices,
+          entry,
+          parsed.data
+        )
+        const wrong = [...tried.played.missing, ...tried.played.refused]
+        if (wrong.length > 0) throw new InvalidRequestError('BAD_PLAY', `no se lleva: ${wrong.join(', ')}`)
+        const values = { ...(parsed.data.values ?? {}) }
+        for (const problem of tried.played.problems) delete values[problem.key]
+        play = { ...parsed.data, values }
+      }
       let overrides = { ...row.overrides }
       if (max) {
         const path = pathOf(max.resource)

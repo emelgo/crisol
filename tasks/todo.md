@@ -16,7 +16,7 @@ Plan: `tasks/plan.md` · Spec: `docs/specs/criaturas.md`. Cada tarea con sus pru
   ella, quitar una o todas las copias. Permisos y fugas. **Punto de control 1.**
 - [x] **5. Aplicar una tirada**: el daño o la curación de una tirada del registro a varias criaturas en juego o
   personajes, con nada, mitad, entero o doble y sus resistencias (`applyRoll`).
-- [ ] **6. La web**: «Poner en juego» en una criatura del compendio; «En juego» en la barra de la campaña (el máster),
+- [x] **6. La web**: «Poner en juego» en una criatura del compendio; «En juego» en la barra de la campaña (el máster),
   con las copias juntas y las únicas aparte; la hoja de la criatura (los bloques de la hoja de personaje) con daño y
   curación; «Aplicar» en el registro de tiradas; el móvil. **Punto de control 2.**
 - [ ] **7. La IA**: poner en juego, ver, partida, tirar, quitar y aplicar; las instrucciones del MCP.

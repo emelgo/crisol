@@ -1,0 +1,95 @@
+/* Aplicar una tirada: cada objetivo con su casilla y su multiplicador */
+.dialog {
+  inline-size: min(36rem, calc(100vw - 2rem));
+}
+
+.targets {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.target {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding-block: var(--space-1);
+  border-block-end: 1px solid var(--color-border);
+}
+
+.who {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: var(--target);
+  font-weight: 600;
+}
+
+.life {
+  color: var(--color-muted);
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+
+.multipliers {
+  display: inline-grid;
+  grid-auto-flow: column;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.multipliers:disabled {
+  opacity: 0.5;
+}
+
+.multiplier {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-block-size: var(--target);
+  padding: 0 var(--space-2);
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+  cursor: pointer;
+}
+
+.multiplier + .multiplier {
+  border-inline-start: 1px solid var(--color-border);
+}
+
+.multiplier input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.multiplier:has(input:checked) {
+  background: var(--color-raised);
+  color: var(--color-text);
+  font-weight: 700;
+}
+
+.multiplier:has(input:focus-visible) {
+  outline: 2px solid var(--color-focus);
+  outline-offset: -2px;
+}
+
+.none {
+  color: var(--color-muted);
+}
+
+.hidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

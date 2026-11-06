@@ -35,6 +35,7 @@ import { failed, LoadError } from '../components/load-error.tsx'
 import { PageTitle } from '../components/page-title.tsx'
 import { useSettled } from '../components/settled.ts'
 import { Tour } from '../components/tour.tsx'
+import { PutInPlay } from '../creatures/put-in-play.tsx'
 import { useDice } from '../dice/context.tsx'
 import { useNarrow } from '../wiki/panel.tsx'
 import styles from './compendium.module.css'
@@ -910,6 +911,10 @@ function Entry({
           )}
         </dl>
         {source && <p className={styles.attribution}>{source.attribution}</p>}
+        {/* Una criatura (un actor): el máster la pone en juego desde aquí */}
+        {type?.document === 'actor' && campaign.data?.campaign.role === 'master' && (
+          <PutInPlay worldId={campaign.data.campaign.worldId} campaignId={campaignId} entryKey={item.key} />
+        )}
       </aside>
       {changing === 'edit' && target && (
         <EntryEditor
