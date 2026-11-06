@@ -50,6 +50,7 @@ describe('herramientas MCP', () => {
       'crear_pestana',
       'crear_plantilla',
       'crear_sistema',
+      'dejar_editar',
       'deshacer',
       'editar_pagina',
       'elegir_personaje',

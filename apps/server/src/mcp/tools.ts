@@ -219,6 +219,7 @@ export const MCP_TOOLS: Record<string, McpTool> = {
   marcar_conocimiento: { action: 'setKnowledge' },
   revelar: { action: 'reveal' },
   ocultar: { action: 'hide' },
+  dejar_editar: { action: 'setPageEditors' },
   lo_que_sabe: { action: 'listCampaignKnowledge' },
   ver_como_jugador: {
     description:
@@ -425,9 +426,11 @@ const INSTRUCTIONS =
   'campaña, unos personajes o todo el mundo; pide aprobación: lo que se revela no se puede «des-saber»); ' +
   'quien_conoce dice qué ve cada campaña de una página y por qué, y ver_como_jugador la enseña como la lee un ' +
   'personaje. En partida, revelar da a conocer algo con aviso a sus jugadores (con alsoPage, también su página), ' +
-  'ocultar lo quita y lo_que_sabe lista lo revelado. ' +
+  'ocultar lo quita (revelar solo suma: no le quita nada a nadie) y lo_que_sabe lista lo revelado. dejar_editar deja ' +
+  'a los jugadores escribir el texto de una página (el diario del grupo), que no puede llevar secretos. ' +
   'Un campo o un bloque del panel con hidden no les llega nunca. Si quien te conecta es un jugador, ' +
-  'solo ves lo que sabe su campaña (las herramientas de leer, con campaignId si juega más de una del mundo). ' +
+  'solo ves lo que sabe su campaña (las herramientas de leer, con campaignId si juega más de una del mundo) y solo ' +
+  'escribes, con editar_pagina, el texto de una página que su campaña puede editar. ' +
   'Para pasar una wiki entera: crear_paginas de 50 en 50, en cualquier orden (los enlaces se resuelven solos), y al ' +
   'final enlaces_pagina con worldId para ver lo que quede sin resolver; los archivos los sube el máster y se enlazan ' +
   'por su nombre (listar_archivos). Las etiquetas son de toda la cuenta: míralas con listar_etiquetas y usa las que ' +

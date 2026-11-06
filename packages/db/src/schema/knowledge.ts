@@ -59,3 +59,26 @@ export const knowledgeNews = pgTable(
   },
   (t) => [unique('knowledge_news_one').on(t.userId, t.campaignId, t.kind, t.targetId), index().on(t.campaignId)]
 )
+
+/**
+ * Quién de una campaña puede escribir en una página (docs/specs/pagina-de-jugadores.md): toda la campaña o unos
+ * personajes (sus dueños). Solo el cuerpo, en vivo; no se hereda a las subpáginas. Pasa por el historial
+ */
+export const pageEditors = pgTable(
+  'page_editors',
+  {
+    ...trackedColumns(),
+    worldId: uuid()
+      .notNull()
+      .references(() => worlds.id, { onDelete: 'cascade' }),
+    campaignId: uuid()
+      .notNull()
+      .references(() => campaigns.id, { onDelete: 'cascade' }),
+    pageId: uuid()
+      .notNull()
+      .references(() => pages.id, { onDelete: 'cascade' }),
+    // null: toda la campaña; si no, esos personajes
+    characters: uuid().array()
+  },
+  (t) => [unique('page_editors_one').on(t.campaignId, t.pageId), index().on(t.pageId)]
+)

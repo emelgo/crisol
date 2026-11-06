@@ -5,14 +5,16 @@
  */
 import { randomUUID } from 'node:crypto'
 import { createPage, createPages, editPage, type PageProperty, pagePanel, readPage } from '@crisol/contracts'
-import { documentsRepo, pagesRepo } from '@crisol/db'
+import { documentsRepo, knowledgeRepo, pagesRepo, worldsRepo } from '@crisol/db'
 import {
   applyTemplate,
+  ForbiddenError,
   fillTemplate,
   type Instance,
   instantiate,
   keepShapes,
   moveBlocker,
+  NotFoundError,
   type PageTemplate,
   propertiesProblem,
   propertyKey,
@@ -65,6 +67,28 @@ function separatesIn(body: JSONContent, found = new Map<string, { kind: string; 
   }
   for (const child of body.content ?? []) separatesIn(child, found)
   return found
+}
+
+/**
+ * La página que se escribe: quien lleva la wiki, cualquiera; un jugador, una que puede editar
+ * (docs/specs/pagina-de-jugadores.md), y solo su texto: ni el título, ni el icono, ni los campos, ni una plantilla
+ */
+async function writablePage(
+  ctx: ActionContext,
+  input: { pageId: string; title?: unknown; icon?: unknown; properties?: unknown; template?: unknown }
+) {
+  try {
+    return { ...(await authorizedPage(ctx, 'page.write', input.pageId)), player: false }
+  } catch (error) {
+    if (!(error instanceof ForbiddenError || error instanceof NotFoundError)) throw error
+    if (!(await knowledgeRepo.canEditPage(ctx.db, ctx.actor.userId, input.pageId))) throw error
+    const page = await pagesRepo.findPage(ctx.db, input.pageId)
+    const world = page ? await worldsRepo.findWorld(ctx.db, page.worldId) : null
+    if (!page || !world) throw new NotFoundError('page')
+    const others = [input.title, input.icon, input.properties, input.template].some((given) => given !== undefined)
+    if (others) throw new InvalidRequestError('PLAYER_PAGE', 'en una página de jugadores solo se escribe su texto')
+    return { page, wiki: { worldId: world.id, organizationId: world.organizationId }, player: true }
+  }
 }
 
 /** El cuerpo con el documento de cada secreto puesto (por su id de bloque) */
@@ -450,7 +474,7 @@ export const pageContentActions = [
   }),
 
   implement(editPage, async (ctx, input) => {
-    const { page, wiki } = await authorizedPage(ctx, 'page.write', input.pageId)
+    const { page, wiki, player } = await writablePage(ctx, input)
     // Lo que se estaba escribiendo queda en su sesión, antes de lo de Claude
     await ctx.collab?.closeSessions(page.id)
     // Con plantilla: lo que le falta (campos, bloques y apartados al final), sin borrar nada (ADR-0009)
@@ -497,6 +521,9 @@ export const pageContentActions = [
       const names = await worldNames(ctx, wiki.worldId)
       const files = await worldFiles(ctx, wiki.worldId)
       // Cada secreto: el que ya estaba (mismo id de bloque, de esta página) cambia su documento; uno nuevo, se crea
+      // Una página que escriben jugadores no lleva secretos ni notas ocultas (docs/specs/pagina-de-jugadores.md)
+      if (read.separates.length > 0 && (player || (await knowledgeRepo.isEdited(ctx.db, page.id))))
+        throw new InvalidRequestError('PLAYER_PAGE', 'una página de jugadores no lleva secretos ni notas ocultas')
       const existing = separatesIn(current)
       const own = new Set(
         (await documentsRepo.documentsOfPages(ctx.db, [page.id])).filter((d) => d.kind !== 'body').map((d) => d.id)

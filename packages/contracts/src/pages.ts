@@ -100,7 +100,11 @@ export const page = pageSummary.extend({
   /** El panel a su lado: bloques con datos de toda la página */
   panel: pagePanel,
   path: z.array(z.object({ id: z.uuid(), title: z.string() })),
-  updatedAt: z.string()
+  updatedAt: z.string(),
+  /** Para quien lleva la wiki: la escriben jugadores de alguna campaña (y por eso no lleva secretos) */
+  editedByPlayers: z.boolean().optional(),
+  /** Para un jugador: puede escribir en ella (docs/specs/pagina-de-jugadores.md) */
+  editable: z.boolean().optional()
 })
 
 export type Page = z.infer<typeof page>

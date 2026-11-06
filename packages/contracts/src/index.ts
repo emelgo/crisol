@@ -55,7 +55,8 @@ import {
   listNews,
   reveal,
   seeNews,
-  setKnowledge
+  setKnowledge,
+  setPageEditors
 } from './knowledge.ts'
 import { getBookPages, listLibrary, readBookAgain, searchLibrary } from './library.ts'
 import {
@@ -244,6 +245,7 @@ export const ACTIONS = [
   getPageTables,
   getPageKnowledge,
   setKnowledge,
+  setPageEditors,
   listKnownPages,
   listVisibleInPlay,
   setCreatureHidden,
@@ -416,6 +418,7 @@ export type Actions = {
   getPageTables: typeof getPageTables
   getPageKnowledge: typeof getPageKnowledge
   setKnowledge: typeof setKnowledge
+  setPageEditors: typeof setPageEditors
   listKnownPages: typeof listKnownPages
   listVisibleInPlay: typeof listVisibleInPlay
   setCreatureHidden: typeof setCreatureHidden

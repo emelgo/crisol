@@ -24,7 +24,7 @@ import { implement } from './registry.ts'
 type Target = NonNullable<Awaited<ReturnType<typeof knowledgeRepo.findTarget>>>
 
 /** La campaña de este mundo en la que se revela: la pedida o, si no se dice, la única */
-async function campaignIn(ctx: ActionContext, wiki: WikiTarget, campaignId: string | undefined) {
+export async function campaignIn(ctx: ActionContext, wiki: WikiTarget, campaignId: string | undefined) {
   if (campaignId) {
     const campaign = await campaignsRepo.findCampaign(ctx.db, campaignId)
     if (!campaign || campaign.worldId !== wiki.worldId) throw new NotFoundError('campaign')
@@ -66,7 +66,7 @@ function sees(knowledge: Knowledge, kind: KnowledgeKind, targetId: string, targe
  * está en una página se mira como si la página se viera (si no se ve, lo dice pageUnknown). null: no hay que escribir
  * nada, porque ya lo ve toda la campaña o ya lo ven todos los pedidos
  */
-function widened(
+export function widened(
   at: {
     tree: { id: string; parentId: string | null }[]
     marks: readonly KnowledgeMark[]

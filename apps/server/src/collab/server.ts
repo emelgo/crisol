@@ -2,7 +2,15 @@
  * Los documentos de Yjs de la wiki, con Hocuspocus dentro del servidor (ADR-0003). Cada documento decide su permiso al
  * abrirse; guardar es fusionar con lo que ya hay, nunca pisarlo.
  */
-import { type Database, documentsRepo, loadMemberships, mapsRepo, pagesRepo, worldsRepo } from '@crisol/db'
+import {
+  type Database,
+  documentsRepo,
+  knowledgeRepo,
+  loadMemberships,
+  mapsRepo,
+  pagesRepo,
+  worldsRepo
+} from '@crisol/db'
 import { actorFrom, authorize, can, NotFoundError } from '@crisol/domain'
 import { Hocuspocus } from '@hocuspocus/server'
 import * as Y from 'yjs'
@@ -107,8 +115,9 @@ export function createCollab({
     debounce: 2000,
     maxDebounce: 10_000,
 
-    // Cada documento, con la sesión de la conexión y las pertenencias de ahora. Sin escribir, en solo lectura. Un
-    // secreto tiene su propio permiso: ahora, el de su página; en el módulo 5, el suyo
+    // Cada documento, con la sesión de la conexión y las pertenencias de ahora. Sin escribir, en solo lectura. Es de
+    // quien lleva la wiki (ADR-0017: los jugadores leen lo proyectado), salvo el cuerpo de una página que un jugador
+    // puede escribir (docs/specs/pagina-de-jugadores.md), que no lleva secretos
     async onAuthenticate({ documentName, context, connectionConfig }) {
       const target = parseDocumentName(documentName)
       const pageId = target ? await pageOf(target) : null
@@ -116,9 +125,13 @@ export function createCollab({
       const world = page ? await worldsRepo.findWorld(db, page.worldId) : null
       const wiki = { worldId: world?.id ?? '', organizationId: world?.organizationId ?? '' }
       const actor = actorFrom(context.userId, await loadMemberships(db, context.userId))
-      authorize(actor, 'page.read', wiki)
+      const editor =
+        !can(actor, 'page.read', wiki) && target?.kind === 'body' && page
+          ? await knowledgeRepo.canEditPage(db, context.userId, page.id)
+          : false
+      if (!editor) authorize(actor, 'page.read', wiki)
       if (!page || !world) throw new NotFoundError('page')
-      connectionConfig.readOnly = !can(actor, 'page.write', wiki)
+      connectionConfig.readOnly = !editor && !can(actor, 'page.write', wiki)
       opened.set(documentName, { pageId: page.id, worldId: world.id })
       return { pageId: page.id, worldId: world.id }
     },

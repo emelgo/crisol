@@ -379,6 +379,13 @@
       "when": 1794004893335,
       "tag": "0053_compendio_jugadores",
       "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1794008069670,
+      "tag": "0054_pagina_de_jugadores",
+      "breakpoints": true
     }
   ]
 }

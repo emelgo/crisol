@@ -31,7 +31,9 @@ export const pageKnowledge = z.object({
       audience: z.union([z.literal('all'), z.literal('none'), z.array(characterRef)]),
       from: knowledgeSource,
       /** Sus personajes, para elegir a quién */
-      characters: z.array(characterRef)
+      characters: z.array(characterRef),
+      /** Quién de ella puede escribir en la página: nadie, toda la campaña o esos personajes */
+      editors: z.union([z.literal('all'), z.literal('none'), z.array(characterRef)])
     })
   )
 })
@@ -45,6 +47,20 @@ export const getPageKnowledge = defineAction({
     'Quién conoce una página: lo que sabe el mundo y lo que ve cada campaña (toda, nadie o unos personajes), con su marca propia y de qué página viene lo que hereda',
   input: z.object({ pageId: z.uuid() }),
   output: pageKnowledge
+})
+
+export const setPageEditors = defineAction({
+  name: 'setPageEditors',
+  kind: 'players',
+  description:
+    'Deja a los jugadores de una campaña escribir en una página (el diario del grupo, las pistas): toda la campaña ("all"), unos personajes o nadie (null). Quien puede editarla la ve. Solo su texto (ni el título, ni el panel, ni las pestañas) y sin heredar a sus subpáginas. Una página con secretos o notas ocultas no se puede dejar editar hasta quitarlos. Sin campaignId, la única del mundo',
+  input: z.object({
+    worldId: z.uuid(),
+    campaignId: z.uuid().optional(),
+    pageId: z.uuid(),
+    editors: z.union([z.literal('all'), z.array(z.uuid()).min(1).max(100)]).nullable()
+  }),
+  output: z.object({ ok: z.literal(true) })
 })
 
 export const setKnowledge = defineAction({

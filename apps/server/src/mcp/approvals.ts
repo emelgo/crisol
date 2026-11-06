@@ -4,7 +4,7 @@
  * si no llega, contesta que sigue esperando. Aprobarlo después lo hace igual (la acción approve).
  */
 import type { RealtimeMessage } from '@crisol/contracts'
-import { aiRepo, historyRepo, loadMemberships, worldsRepo } from '@crisol/db'
+import { aiRepo, historyRepo, knowledgeRepo, loadMemberships, worldsRepo } from '@crisol/db'
 import {
   actorFrom,
   aiDecision,
@@ -76,10 +76,15 @@ export async function callAsAi(env: ActionEnv, call: AiCall): Promise<ToolResult
   // Las pertenencias y el modo se leen en cada llamada, como en la API
   const ctx: ActionContext = { ...env, actor: actorFrom(userId, await loadMemberships(db, userId)), via: 'ai', tool }
   try {
-    // La IA de quien solo juega (no lleva ninguna cuenta ni ningún mundo) solo lee (ADR-0017)
+    // La IA de quien solo juega (no lleva ninguna cuenta ni ningún mundo) solo lee (ADR-0017), salvo el texto de una
+    // página que puede escribir (docs/specs/pagina-de-jugadores.md: lo comprueba editPage)
     const playerOnly =
       ownedOrganizations(ctx.actor).length === 0 && ![...ctx.actor.worlds.values()].some((w) => w.role === 'master')
-    if (playerOnly && impl.action.kind !== 'read') return failure(PLAYER_READS)
+    const ownPage =
+      playerOnly &&
+      impl.action.name === 'editPage' &&
+      (await knowledgeRepo.canEditPage(db, userId, String(input.pageId ?? '')))
+    if (playerOnly && impl.action.kind !== 'read' && !ownPage) return failure(PLAYER_READS)
     const decision = aiDecision(await aiRepo.findAiMode(db, userId), impl.action.kind)
     if (decision === 'refuse') return failure(READ_ONLY)
     if (decision === 'run') {

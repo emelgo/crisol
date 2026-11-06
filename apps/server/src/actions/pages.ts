@@ -16,7 +16,7 @@ import {
   sortPageChildren,
   updatePage
 } from '@crisol/contracts'
-import { documentsRepo, filesRepo, pagesRepo, worldsRepo } from '@crisol/db'
+import { documentsRepo, filesRepo, knowledgeRepo, pagesRepo, worldsRepo } from '@crisol/db'
 import {
   compareKeys,
   moveBlocker,
@@ -240,6 +240,8 @@ export const pageActions = [
 
   implement(createPageDocument, async (ctx, { pageId, kind, copyOf }) => {
     const { wiki } = await authorizedPage(ctx, 'page.write', pageId)
+    // Una página que escriben jugadores no lleva secretos ni notas ocultas (docs/specs/pagina-de-jugadores.md)
+    if (await knowledgeRepo.isEdited(ctx.db, pageId)) throw new InvalidRequestError('PLAYER_PAGE')
     let state = Y.encodeStateAsUpdate(new Y.Doc())
     if (copyOf) {
       // La copia sale de un secreto que quien pega puede leer: de esta wiki o de otra que también vea
@@ -261,7 +263,12 @@ export const pageActions = [
 
   implement(getPage, async (ctx, { pageId, ...as }) => {
     const { view } = await viewedPage(ctx, pageId, as)
-    return pageViewFor(view, await pageView(ctx, pageId))
+    const shown = pageViewFor(view, await pageView(ctx, pageId))
+    // Quien lleva la wiki: si la escriben jugadores (su editor, sin secretos); un jugador: si él puede escribir
+    if (view.full) return { ...shown, editedByPlayers: await knowledgeRepo.isEdited(ctx.db, pageId) }
+    const editable =
+      as.asCharacterId === undefined && (await knowledgeRepo.canEditPage(ctx.db, ctx.actor.userId, pageId))
+    return { ...shown, editable }
   }),
 
   implement(getPageTables, async (ctx, { pageId, ...as }) => {

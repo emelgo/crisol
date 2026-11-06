@@ -956,6 +956,21 @@ describe('conector MCP con OAuth', () => {
     const write = await player.call('editar_pagina', { pageId: aldoria, body: { mode: 'append', markdown: 'Mío' } })
     expect(write.text).toMatch(/^READ_ONLY/)
     expect((await player.call('quien_conoce', { pageId: aldoria })).isError).toBe(true)
+    // Salvo el texto de una página que su campaña puede escribir (docs/specs/pagina-de-jugadores.md)
+    const diary = await api<{ id: string }>(cookie, 'createPage', { worldId: world.id, title: 'Diario' })
+    await api(cookie, 'setPageEditors', {
+      worldId: world.id,
+      campaignId: campaign.id,
+      pageId: diary.id,
+      editors: 'all'
+    })
+    const written = await player.call('editar_pagina', {
+      pageId: diary.id,
+      body: { mode: 'append', markdown: 'Día 1.' }
+    })
+    expect(written.isError, written.text).toBeFalsy()
+    const titled = await player.call('editar_pagina', { pageId: diary.id, title: 'Otro' })
+    expect(titled.text).toMatch(/^PLAYER_PAGE/)
 
     // Revelar en partida (con aviso): también espera aprobación; lo_que_sabe lo lista
     const reveal = await call('revelar', { worldId: world.id, kind: 'page', targetId: varn })
@@ -964,7 +979,7 @@ describe('conector MCP con OAuth', () => {
     expect(waiting[0]).toMatchObject({ tool: 'revelar', details: { kind: 'page', name: 'Varn', known: true } })
     await api(cookie, 'approve', { approvalId: waiting[0]?.id })
     const group = (await call<{ campaign: { name: string }[] }>('lo_que_sabe', { campaignId: campaign.id })).data
-    expect(group.campaign.map((k) => k.name)).toEqual(['Varn', 'Aldoria'])
+    expect(group.campaign.map((k) => k.name)).toEqual(['Varn', 'Diario', 'Aldoria'])
     expect((await player.call('leer_pagina', { pageId: varn })).isError).toBeFalsy()
     expect((await player.call('revelar', { worldId: world.id, kind: 'page', targetId: aldoria })).text).toMatch(
       /^READ_ONLY/

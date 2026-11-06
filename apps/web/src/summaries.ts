@@ -178,6 +178,17 @@ export function summaryOf(
         ? say('knowledgeCleared', { what, where: text(details.campaign) })
         : say('knowledgeClearedWorld', { what })
     }
+    // Quién de una campaña escribe en una página (docs/specs/pagina-de-jugadores.md)
+    case 'setPageEditors': {
+      const title = text(details.title ?? details.page)
+      if (details.editors === null || details.editors === 'none')
+        return say('pageEditorsNone', { title, campaign: text(details.campaign) })
+      const who =
+        Array.isArray(details.characters) && details.characters.length > 0
+          ? (details.characters as unknown[]).map(text).join(', ')
+          : text(details.campaign)
+      return say('pageEditors', { title, who })
+    }
     case 'createPage':
       return details.parent
         ? say('createSubpage', { title: text(details.title), parent: text(details.parent) })

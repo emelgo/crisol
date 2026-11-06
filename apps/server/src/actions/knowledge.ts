@@ -2,21 +2,25 @@
  * Lo que sabe cada campaña (ADR-0017, docs/specs/conocimiento.md): «Quién la conoce» de una página y marcar lo que se
  * sabe. Solo quien lleva la wiki; marcar es de tipo «jugadores» (en copiloto, la IA espera la aprobación)
  */
-import { getPageKnowledge, listKnownPages, type PageKnowledge, setKnowledge } from '@crisol/contracts'
-import { campaignsRepo, charactersRepo, knowledgeRepo, pagesRepo } from '@crisol/db'
+import { getPageKnowledge, listKnownPages, type PageKnowledge, setKnowledge, setPageEditors } from '@crisol/contracts'
+import { campaignsRepo, charactersRepo, knowledgeRepo, operation, pagesRepo } from '@crisol/db'
 import { explainPage, knowledgeFor, NotFoundError } from '@crisol/domain'
 import { knowledgeChanged } from '../realtime/events.ts'
+import { readDocument } from '../wiki/content.ts'
 import { authorizedPage, authorizedWiki, type WikiTarget } from './access.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
 import { implement } from './registry.ts'
+import { campaignIn, widened } from './reveal.ts'
 
 /** Lo que ve cada campaña del mundo de una página, y por qué */
 async function pageKnowledgeOf(ctx: ActionContext, wiki: WikiTarget, pageId: string): Promise<PageKnowledge> {
-  const [campaigns, tree, marks] = await Promise.all([
+  const [campaigns, tree, marks, editors] = await Promise.all([
     campaignsRepo.listCampaigns(ctx.db, { worldId: wiki.worldId, userId: ctx.actor.userId, onlyMember: false }),
     knowledgeRepo.worldTree(ctx.db, wiki.worldId),
-    knowledgeRepo.listMarks(ctx.db, { worldId: wiki.worldId, campaignIds: 'all', kinds: ['page'] })
+    knowledgeRepo.listMarks(ctx.db, { worldId: wiki.worldId, campaignIds: 'all', kinds: ['page'] }),
+    knowledgeRepo.pageEditorsOf(ctx.db, pageId)
   ])
+  const editing = new Map(editors.map((e) => [e.campaignId, e.characters]))
   const explained = explainPage(pageId, tree, marks, campaigns)
   const characters = new Map(
     await Promise.all(
@@ -55,7 +59,12 @@ async function pageKnowledgeOf(ctx: ActionContext, wiki: WikiTarget, pageId: str
             ? c.audience
             : c.audience.map((id) => own.find((ch) => ch.id === id) ?? { id, name: '' }),
         from: source(c.from),
-        characters: own
+        characters: own,
+        editors: !editing.has(c.campaignId)
+          ? ('none' as const)
+          : (editing.get(c.campaignId) ?? null) === null
+            ? ('all' as const)
+            : (editing.get(c.campaignId) ?? []).map((id) => own.find((ch) => ch.id === id) ?? { id, name: '' })
       }
     })
   }
@@ -122,8 +131,74 @@ export const knowledgeActions = [
     })
     ctx.realtime.publish(knowledgeChanged(wiki, campaignId))
     return { page: kind === 'page' ? await pageKnowledgeOf(ctx, wiki, targetId) : null }
+  }),
+
+  // Quién de una campaña escribe en una página: la ve (se suma a quien ya la ve) y, en vivo, solo su texto
+  implement(setPageEditors, async (ctx, { worldId, campaignId: asked, pageId, editors }) => {
+    const wiki = await authorizedWiki(ctx, 'page.write', worldId)
+    const page = await pagesRepo.findPage(ctx.db, pageId)
+    if (!page || page.worldId !== wiki.worldId) throw new NotFoundError('page')
+    const campaign = await campaignIn(ctx, wiki, asked)
+    const roster = await charactersRepo.listCharacters(ctx.db, campaign.id)
+    const names = new Map(roster.map((c) => [c.id, c.name]))
+    const chosen = Array.isArray(editors) ? editors : null
+    const unknown = (chosen ?? []).filter((id) => !names.has(id))
+    if (unknown.length > 0) throw new InvalidRequestError('BAD_CHARACTERS', unknown.join(', '))
+    // Sin secretos ni notas ocultas: lo verían (el cuerpo va entero a quien lo edita)
+    if (editors !== null && hasSeparates(await readDocument(ctx, { kind: 'body', pageId })))
+      throw new InvalidRequestError('PAGE_HAS_SECRETS', 'quita antes sus secretos y notas ocultas')
+    // Quien puede editarla la ve: se suma a quien ya la ve
+    const [tree, marks] = await Promise.all([
+      knowledgeRepo.worldTree(ctx.db, wiki.worldId),
+      knowledgeRepo.listMarks(ctx.db, { worldId: wiki.worldId, campaignIds: [campaign.id] })
+    ])
+    const readerOf = (characterIds: readonly string[]) => ({
+      kind: 'player' as const,
+      campaignId: campaign.id,
+      characterIds,
+      knowsWorld: campaign.knowsWorld
+    })
+    const seen =
+      editors === null
+        ? null
+        : widened(
+            { tree, marks, roster: [...names.keys()], readerOf, campaignId: campaign.id },
+            'page',
+            pageId,
+            { pageId: null, name: page.title },
+            null,
+            chosen
+          )
+    const details = {
+      title: page.title,
+      campaign: campaign.name,
+      editors: editors === null ? 'none' : editors === 'all' ? 'all' : 'characters',
+      ...(chosen ? { characters: chosen.map((id) => names.get(id) ?? '') } : {})
+    }
+    await operation(ctx.db, historyContext(ctx, 'setPageEditors', details, wiki), async (w) => {
+      await knowledgeRepo.writeEditors(w, { worldId: wiki.worldId, campaignId: campaign.id, pageId, editors })
+      if (seen)
+        await knowledgeRepo.writeMark(w, {
+          worldId: wiki.worldId,
+          campaignId: campaign.id,
+          kind: 'page',
+          targetId: pageId,
+          known: true,
+          characters: seen.characters
+        })
+    })
+    // Quien ya no puede escribir deja de estar conectado para hacerlo (al volver, en lectura o sin entrar)
+    ctx.collab?.closePages([pageId])
+    ctx.realtime.publish(knowledgeChanged(wiki, campaign.id))
+    return { ok: true as const }
   })
 ]
+
+/** Si el cuerpo de una página tiene secretos o notas ocultas (una página de jugadores no puede: los verían) */
+export function hasSeparates(body: { type?: string; content?: unknown[] }): boolean {
+  if (body.type === 'secret' || body.type === 'note') return true
+  return (body.content ?? []).some((child) => hasSeparates(child as { type?: string; content?: unknown[] }))
+}
 
 /** Lo que pide la IA al marcar, para la cola de aprobación: qué, si lo conocen y a quién (como en el historial) */
 export async function knowledgeRequest(ctx: ActionContext, action: string, input: Record<string, unknown>) {

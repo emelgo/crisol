@@ -9,7 +9,7 @@ import { type OperationContext, operation, type Writer } from '../operation.ts'
 import { campaignMembers, campaigns } from '../schema/campaigns.ts'
 import { characters } from '../schema/characters.ts'
 import { documents } from '../schema/documents.ts'
-import { knowledge, knowledgeNews } from '../schema/knowledge.ts'
+import { knowledge, knowledgeNews, pageEditors } from '../schema/knowledge.ts'
 import { mapElements, mapPins, maps, pageTabs } from '../schema/maps.ts'
 import { pages } from '../schema/pages.ts'
 import { worldContent } from '../schema/systems.ts'
@@ -447,4 +447,76 @@ export async function dropNews(db: Database, campaignId: string, kind: Knowledge
     .where(
       and(eq(knowledgeNews.campaignId, campaignId), kind === 'page' ? or(own, eq(knowledgeNews.pageId, targetId)) : own)
     )
+}
+
+/** Quién puede escribir en una página, por campaña (docs/specs/pagina-de-jugadores.md) */
+export function pageEditorsOf(db: Database, pageId: string) {
+  return db
+    .select({ campaignId: pageEditors.campaignId, characters: pageEditors.characters })
+    .from(pageEditors)
+    .where(eq(pageEditors.pageId, pageId))
+}
+
+/** Las páginas de un mundo que alguna campaña puede editar */
+export async function editedPages(db: Database, worldId: string) {
+  const rows = await db
+    .selectDistinct({ pageId: pageEditors.pageId })
+    .from(pageEditors)
+    .where(eq(pageEditors.worldId, worldId))
+  return new Set(rows.map((row) => row.pageId))
+}
+
+/** Si alguna campaña puede editar esa página */
+export async function isEdited(db: Database, pageId: string) {
+  const [row] = await db.select({ id: pageEditors.id }).from(pageEditors).where(eq(pageEditors.pageId, pageId)).limit(1)
+  return Boolean(row)
+}
+
+/**
+ * Pone, cambia o quita quién de una campaña puede escribir en una página, dentro de una operación. editors: null, nadie;
+ * 'all', toda la campaña; si no, esos personajes
+ */
+export async function writeEditors(
+  w: Writer,
+  change: { worldId: string; campaignId: string; pageId: string; editors: 'all' | readonly string[] | null }
+) {
+  const [current] = await w.read
+    .select()
+    .from(pageEditors)
+    .where(and(eq(pageEditors.campaignId, change.campaignId), eq(pageEditors.pageId, change.pageId)))
+    .for('update')
+  if (change.editors === null || (Array.isArray(change.editors) && change.editors.length === 0)) {
+    if (current) await w.remove(pageEditors, current.id)
+    return null
+  }
+  const characters = change.editors === 'all' ? null : [...new Set(change.editors)]
+  if (current) {
+    const same = JSON.stringify(current.characters ?? null) === JSON.stringify(characters)
+    return same ? current : w.update(pageEditors, current.id, { characters })
+  }
+  return w.insert(pageEditors, {
+    worldId: change.worldId,
+    campaignId: change.campaignId,
+    pageId: change.pageId,
+    characters
+  })
+}
+
+/** Si esa cuenta puede escribir en esa página como jugadora: en una campaña suya, toda o con uno de sus personajes */
+export async function canEditPage(db: Database, userId: string, pageId: string) {
+  const rows = await db
+    .select({ campaignId: pageEditors.campaignId, characters: pageEditors.characters })
+    .from(pageEditors)
+    .innerJoin(
+      campaignMembers,
+      and(eq(campaignMembers.campaignId, pageEditors.campaignId), eq(campaignMembers.userId, userId))
+    )
+    .innerJoin(campaigns, and(eq(campaigns.id, pageEditors.campaignId), isNull(campaigns.deletedAt)))
+    .where(eq(pageEditors.pageId, pageId))
+  for (const row of rows) {
+    if (!row.characters) return true
+    const mine = await characterIdsOf(db, row.campaignId, userId)
+    if (mine.some((id) => row.characters?.includes(id))) return true
+  }
+  return false
 }

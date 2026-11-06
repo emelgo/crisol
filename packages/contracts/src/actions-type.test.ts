@@ -95,6 +95,7 @@ describe('Actions', () => {
       getPageTables: true,
       getPageKnowledge: true,
       setKnowledge: true,
+      setPageEditors: true,
       listKnownPages: true,
       listVisibleInPlay: true,
       setCreatureHidden: true,

@@ -10,7 +10,7 @@ import { campaignCreatures } from './schema/creatures.ts'
 import { fileFolders, files } from './schema/files.ts'
 import { changes, operations } from './schema/history.ts'
 import { invitationLinks } from './schema/invitations.ts'
-import { knowledge } from './schema/knowledge.ts'
+import { knowledge, pageEditors } from './schema/knowledge.ts'
 import { mapElements, mapPins, maps, pageTabs } from './schema/maps.ts'
 import { organizationMembers, organizations } from './schema/organizations.ts'
 import { pages } from './schema/pages.ts'
@@ -49,7 +49,8 @@ export const TRACKED_TABLES = {
   random_tables: randomTables,
   campaign_creatures: campaignCreatures,
   campaign_party: campaignParty,
-  knowledge
+  knowledge,
+  page_editors: pageEditors
 }
 
 export type TrackedTable = (typeof TRACKED_TABLES)[keyof typeof TRACKED_TABLES]
