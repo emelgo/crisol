@@ -5,6 +5,7 @@
 import { FORMAT, LIMITS, type System } from './format.ts'
 import { conceptSchema, type Mechanics, refSchema, validateMechanics } from './mechanics.ts'
 import { own } from './own.ts'
+import { TABLE_TYPE, type TableEntry, tableEntryProblems, withTables } from './table-entries.ts'
 import { type Language, textOf } from './text.ts'
 import { errorMap, type Problem, pathText, validateSystem } from './validate.ts'
 
@@ -28,6 +29,8 @@ export interface ContentItem {
   ref?: { pages?: { en?: number; es?: number } }
   /** Su imagen: su ruta entre las del sistema (la de un zip de Foundry: systems/dnd5e/tokens/…) */
   img?: string
+  /** Si es una tabla («Tabla», de Crisol): su fórmula, si repite y sus filas */
+  table?: TableEntry
 }
 
 export interface SystemFile {
@@ -59,17 +62,19 @@ const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'obj
 
 /** El contenido de un sistema: de sus tipos, con sus claves sin repetir, sus fuentes y su tamaño */
 export function validateContent(
-  system: System,
+  declared: System,
   content: unknown,
   prefix: (string | number)[] = ['content']
 ): Problem[] {
+  // Todo sistema tiene «Tabla», lo declare o no
+  const system = withTables(declared)
   const problems: Problem[] = []
-  const add = (path: (string | number)[], message: string) =>
+  const add = (path: (string | number)[], message: string, severity: Problem['severity'] = 'error') =>
     problems.push({
       path: pathText(path),
       where: whereOfContent(content, path.slice(prefix.length)),
       message,
-      severity: 'error'
+      severity
     })
   if (!Array.isArray(content)) {
     add(prefix, 'Tiene que ser una lista')
@@ -88,7 +93,15 @@ export function validateContent(
       add(at, 'Tiene que ser un documento')
       continue
     }
-    const { type, key, source, data, concept, mechanics, ref, img } = item
+    const { type, key, source, data, concept, mechanics, ref, img, table } = item
+    if (table !== undefined) {
+      if (type !== TABLE_TYPE) add([...at, 'table'], 'Solo una tabla lleva sus filas')
+      else {
+        const { errors, warnings } = tableEntryProblems(table)
+        for (const e of errors) add([...at, 'table', ...e.path], e.message)
+        for (const w of warnings) add([...at, 'table'], w, 'warning')
+      }
+    }
     if (img !== undefined && (typeof img !== 'string' || img.length === 0 || img.length > 500 || img.includes('..')))
       add([...at, 'img'], 'Su imagen va con su ruta, de hasta 500 caracteres')
     if (typeof type !== 'string' || !own(system.types, type))
@@ -141,6 +154,8 @@ function whereOfContent(content: unknown, path: (string | number)[]): string {
     name: 'Nombre',
     concept: 'Concepto',
     ref: 'Página',
+    table: 'Tabla',
+    rows: 'Filas',
     mechanics: 'Mecánica',
     effects: 'Efectos',
     resources: 'Recursos',

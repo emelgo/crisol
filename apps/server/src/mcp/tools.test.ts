@@ -80,6 +80,7 @@ describe('herramientas MCP', () => {
       'quitar_de_juego',
       'quitar_pin',
       'reiniciar_tabla',
+      'reiniciar_tabla_compendio',
       'restaurar_personaje',
       'restaurar_version',
       'tirar_dados',

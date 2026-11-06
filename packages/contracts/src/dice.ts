@@ -39,7 +39,13 @@ export const diceRoll = z.object({
   table: z
     .object({
       name: z.string(),
-      results: z.array(z.object({ text: z.string(), page: z.uuid().nullable() }))
+      results: z.array(
+        z.object({
+          text: z.string(),
+          page: z.uuid().nullable(),
+          content: z.string().optional().describe('La entrada del compendio a la que lleva, por su clave')
+        })
+      )
     })
     .optional()
     .describe('Si fue en una tabla aleatoria: su nombre y lo que salió (con lo de sus tablas anidadas)'),

@@ -107,6 +107,7 @@ export interface ContentValues {
   mechanics?: Record<string, unknown> | null
   ref?: Record<string, unknown> | null
   img?: string | null
+  table?: Record<string, unknown> | null
 }
 
 /**

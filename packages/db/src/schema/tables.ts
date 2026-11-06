@@ -53,3 +53,16 @@ export const randomTableDraws = pgTable(
   },
   (t) => [primaryKey({ columns: [t.campaignId, t.tableId] })]
 )
+
+/** Lo sacado de una tabla del compendio sin reemplazo, por campaña y por su clave (docs/specs/tablas-compendio.md) */
+export const contentTableDraws = pgTable(
+  'content_table_draws',
+  {
+    campaignId: uuid()
+      .notNull()
+      .references(() => campaigns.id, { onDelete: 'cascade' }),
+    key: text().notNull(),
+    rows: jsonb().$type<string[]>().notNull().default([])
+  },
+  (t) => [primaryKey({ columns: [t.campaignId, t.key] })]
+)

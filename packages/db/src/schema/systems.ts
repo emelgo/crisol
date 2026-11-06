@@ -41,7 +41,9 @@ export const systemContent = pgTable(
     mechanics: jsonb().$type<Record<string, unknown>>(),
     ref: jsonb().$type<Record<string, unknown>>(),
     // Su imagen, por su ruta entre las del sistema (system_images): la de un zip de Foundry o una subida
-    img: text()
+    img: text(),
+    // Si es una tabla (el tipo «Tabla» de Crisol): su fórmula, si repite y sus filas
+    table: jsonb().$type<Record<string, unknown>>()
   },
   (t) => [uniqueIndex().on(t.systemId, t.key), index().on(t.systemId, t.type)]
 )
@@ -81,6 +83,7 @@ export interface ContentOrigin {
   /** El original de entonces (sus datos y su mecánica), para enseñar las diferencias por campo */
   data: Record<string, unknown>
   mechanics?: Record<string, unknown> | null
+  table?: Record<string, unknown> | null
 }
 
 /**
@@ -105,6 +108,7 @@ export const worldContent = pgTable(
     mechanics: jsonb().$type<Record<string, unknown>>(),
     ref: jsonb().$type<Record<string, unknown>>(),
     img: text(),
+    table: jsonb().$type<Record<string, unknown>>(),
     origin: jsonb().$type<ContentOrigin>()
   },
   (t) => [uniqueIndex().on(t.worldId, t.systemId, t.key), index().on(t.worldId, t.systemId, t.type)]

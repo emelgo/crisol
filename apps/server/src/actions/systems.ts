@@ -140,6 +140,7 @@ export const contentOf = (row: {
   mechanics: Record<string, unknown> | null
   ref: Record<string, unknown> | null
   img?: string | null
+  table?: Record<string, unknown> | null
 }): ContentItem =>
   ({
     type: row.type,
@@ -149,7 +150,8 @@ export const contentOf = (row: {
     ...(row.concept !== null ? { concept: row.concept } : {}),
     ...(row.mechanics !== null ? { mechanics: row.mechanics } : {}),
     ...(row.ref !== null ? { ref: row.ref } : {}),
-    ...(row.img ? { img: row.img } : {})
+    ...(row.img ? { img: row.img } : {}),
+    ...(row.table ? { table: row.table } : {})
   }) as ContentItem
 
 /** Todo el contenido de un sistema: el de la cuenta, de la base de datos (los de serie no traen) */
@@ -166,7 +168,8 @@ const toValues = (item: ContentItem): systemsRepo.ContentValues => ({
   concept: item.concept ?? null,
   mechanics: (item.mechanics as Record<string, unknown> | undefined) ?? null,
   ref: (item.ref as Record<string, unknown> | undefined) ?? null,
-  img: item.img ?? null
+  img: item.img ?? null,
+  table: (item.table as Record<string, unknown> | undefined) ?? null
 })
 
 /**

@@ -51,21 +51,25 @@ export interface Fingerprinted {
   type: string
   data: Record<string, unknown>
   mechanics?: unknown
+  table?: unknown
 }
 
-/** La huella de una entrada: su tipo, sus datos y su mecánica, sin que cuente el orden de las claves */
+/** La huella de una entrada: su tipo, sus datos, su mecánica y sus filas, sin que cuente el orden de las claves */
 export function contentFingerprint(item: Fingerprinted): string {
-  return hash(canonical({ type: item.type, data: item.data, mechanics: item.mechanics ?? null }))
+  // Sin filas, como antes de que las hubiera (las huellas guardadas siguen valiendo)
+  const table = item.table ? { table: item.table } : {}
+  return hash(canonical({ type: item.type, data: item.data, mechanics: item.mechanics ?? null, ...table }))
 }
 
 /** Lo que se compara de una entrada */
 export interface Compared {
   data: Record<string, unknown>
   mechanics?: unknown
+  table?: unknown
 }
 
 export interface FieldChange {
-  /** La clave del campo en sus datos, o «mechanics» para toda su mecánica */
+  /** La clave del campo en sus datos, o «mechanics» para toda su mecánica y «table» para sus filas */
   key: string
   before: unknown
   after: unknown
@@ -79,6 +83,8 @@ export function contentDiff(before: Compared, after: Compared): FieldChange[] {
     .map((key) => ({ key, before: before.data[key], after: after.data[key] }))
   if (canonical(before.mechanics ?? null) !== canonical(after.mechanics ?? null))
     changes.push({ key: 'mechanics', before: before.mechanics ?? null, after: after.mechanics ?? null })
+  if (canonical(before.table ?? null) !== canonical(after.table ?? null))
+    changes.push({ key: 'table', before: before.table ?? null, after: after.table ?? null })
   return changes
 }
 
@@ -86,12 +92,13 @@ export function contentDiff(before: Compared, after: Compared): FieldChange[] {
 export function pullFields<T extends Compared>(copy: T, original: Compared, keys: readonly string[]): T {
   const data = { ...copy.data }
   for (const key of keys) {
-    if (key === 'mechanics') continue
+    if (key === 'mechanics' || key === 'table') continue
     if (Object.hasOwn(original.data, key)) data[key] = structuredClone(original.data[key])
     else delete data[key]
   }
   const mechanics = keys.includes('mechanics') ? structuredClone(original.mechanics ?? null) : copy.mechanics
-  return { ...copy, data, mechanics }
+  const table = keys.includes('table') ? structuredClone(original.table ?? null) : copy.table
+  return { ...copy, data, mechanics, table }
 }
 
 /** Una clave nueva a partir de un nombre: sin tildes ni espacios, con algo al azar para no pisar otra */

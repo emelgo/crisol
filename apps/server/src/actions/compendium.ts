@@ -8,11 +8,12 @@ import {
   browseCampaignContent,
   getCampaignCompendium,
   getCampaignContent,
+  resetContentTable,
   rollContentTable,
   searchCampaignContent,
   visibilitiesFor
 } from '@crisol/contracts'
-import { systemImagesRepo, systemsRepo, worldContentRepo } from '@crisol/db'
+import { systemImagesRepo, systemsRepo, tablesRepo, worldContentRepo } from '@crisol/db'
 import { can, NotFoundError } from '@crisol/domain'
 import {
   browseContent,
@@ -32,17 +33,22 @@ import {
   normalizeChoices,
   type System,
   searchContent,
+  TABLE_DEPTH,
+  TABLE_TYPE,
+  type TableEntry,
   type Text,
   tableRowOf,
   textFieldOf,
   textOf,
-  visibleContent
+  visibleContent,
+  withTables
 } from '@crisol/systems'
 import { authorizedCampaign } from './access.ts'
 import { type ActionContext, InvalidRequestError } from './context.ts'
 import { rolled, saveRoll, storedOf } from './dice.ts'
 import * as layers from './layers.ts'
 import { implement } from './registry.ts'
+import { type Drawn, pickRow } from './tables.ts'
 
 /**
  * El sistema de una campaña que se puede leer, con lo que eligió de él y, si quien lo pide puede verlo, el compendio de
@@ -54,7 +60,7 @@ async function campaignSystem(ctx: ActionContext, campaignId: string) {
   const catalog = catalogSystem(campaign.system)
   const row = catalog ? null : await systemsRepo.findSystem(ctx.db, campaign.system)
   if (!catalog && (!row || row.deletedAt)) throw new NotFoundError('system')
-  const document = catalog ?? (row?.document as unknown as System)
+  const document = withTables(catalog ?? (row?.document as unknown as System))
   const { choices } = normalizeChoices(document, (campaign.systemChoices ?? {}) as Partial<Choices>)
   const wiki = { worldId: campaign.worldId, organizationId: campaign.organizationId }
   const world: layers.WorldLayer | null =
@@ -62,6 +68,49 @@ async function campaignSystem(ctx: ActionContext, campaignId: string) {
   // Para la lista y los tipos basta lo de cada documento que se ve en ella: el de la cuenta, sin leerlo entero
   const entries: ContentEntry[] = row ? await layers.contentIndex(ctx, row.id, world) : []
   return { document, row, choices, entries, world, wiki }
+}
+
+/**
+ * Tira en una entrada «Tabla» (con el cálculo de la pestaña «Tabla» de la wiki): la fila que sale entre las que no
+ * se han sacado y, si lleva a otra tabla que se ve, lo que sale en ella (hasta TABLE_DEPTH niveles)
+ */
+async function drawEntry(
+  ctx: ActionContext,
+  campaignId: string,
+  entry: { key: string; name: string; table: TableEntry },
+  open: (key: string) => Promise<ContentItem | null>,
+  nameOf: (entry: ContentItem) => string,
+  depth: number
+): Promise<{
+  result: Drawn['result']
+  row: string
+  results: { text: string; page: null; content?: string }[]
+  draws: { key: string; rowId: string }[]
+}> {
+  const repeats = entry.table.replacement !== false
+  const drawn = repeats ? [] : await tablesRepo.contentDrawsOf(ctx.db, campaignId, entry.key)
+  const { result, row } = pickRow({ name: entry.name, formula: entry.table.formula, rows: entry.table.rows }, drawn)
+  const results: { text: string; page: null; content?: string }[] = [
+    { text: row.text, page: null, ...(row.key ? { content: row.key } : {}) }
+  ]
+  const draws = repeats ? [] : [{ key: entry.key, rowId: row.id }]
+  if (row.key && depth < TABLE_DEPTH) {
+    const nested = await open(row.key)
+    if (nested?.type === TABLE_TYPE && nested.table) {
+      const name = nameOf(nested)
+      const inner = await drawEntry(
+        ctx,
+        campaignId,
+        { key: nested.key, name, table: nested.table },
+        open,
+        nameOf,
+        depth + 1
+      )
+      results.push(...inner.results.map((r) => ({ ...r, text: `${name}: ${r.text}` })))
+      draws.push(...inner.draws)
+    }
+  }
+  return { result, row: row.id, results, draws }
 }
 
 /** Cuántas hay de cada tipo */
@@ -200,6 +249,33 @@ export const compendiumActions = [
     if (!visibleContent(document, entries, choices).some((s) => s.item.key === key)) throw new NotFoundError('content')
     const [item] = row ? await layers.contentByKeys(ctx, row.id, world, [key]) : []
     if (!item) throw new NotFoundError('content')
+    const nameOf = (entry: ContentItem) => textOf(entry.data.name as Text | undefined, choices.language) || entry.key
+    if (table === undefined) {
+      // Una entrada «Tabla»: sus filas, sin repetir lo sacado si va sin reemplazo, y las tablas a las que lleva
+      if (item.type !== TABLE_TYPE || !item.table) throw new InvalidRequestError('NOT_A_TABLE', 'no es una tabla')
+      const shown = new Set(visibleContent(document, entries, choices).map((s) => s.item.key))
+      const open = async (k: string) => {
+        if (!row || !shown.has(k)) return null
+        const [found] = await layers.contentByKeys(ctx, row.id, world, [k])
+        return found ?? null
+      }
+      const drawnNow = await drawEntry(ctx, campaignId, { key, name: nameOf(item), table: item.table }, open, nameOf, 0)
+      const { formula, ...stored } = drawnNow.result
+      const name = nameOf(item)
+      const roll = await saveRoll(ctx, campaign, {
+        formula,
+        label: name,
+        visibility,
+        result: { ...stored, table: { name, results: drawnNow.results } }
+      })
+      // Ya en el registro: lo sacado, apuntado (si la tirada no se guardó, nada se gastó)
+      for (const d of drawnNow.draws) await tablesRepo.addContentDraws(ctx.db, campaignId, d.key, [d.rowId])
+      return {
+        roll,
+        row: item.table.rows.findIndex((r) => r.id === drawnNow.row),
+        drawn: item.table.replacement === false ? await tablesRepo.contentDrawsOf(ctx.db, campaignId, key) : []
+      }
+    }
     const field = textFieldOf(document, item.type)
     const text = field ? textOf(item.data[field] as Text | undefined, choices.language) : ''
     const chosen = contentTables(text)[table]
@@ -216,7 +292,15 @@ export const compendiumActions = [
         table: { name, results: hit ? [{ text: hit.cells.slice(1).join(' · '), page: null }] : [] }
       }
     })
-    return { roll, row: hit ? chosen.rows.indexOf(hit) : null }
+    return { roll, row: hit ? chosen.rows.indexOf(hit) : null, drawn: [] }
+  }),
+
+  implement(resetContentTable, async (ctx, { campaignId, key }) => {
+    const campaign = await authorizedCampaign(ctx, 'campaign.read', campaignId)
+    // Lo sacado es de la partida: lo reinicia el máster
+    if (!can(ctx.actor, 'dice.private', { campaignId, worldId: campaign.worldId })) throw new NotFoundError('content')
+    await tablesRepo.resetContentDraws(ctx.db, campaignId, key)
+    return { ok: true as const }
   }),
 
   implement(getCampaignContent, async (ctx, { campaignId, keys }) => {
@@ -239,6 +323,9 @@ export const compendiumActions = [
       : new Map()
     const name = (value: unknown) =>
       typeof value === 'string' ? value : textOf(value as Text | undefined, choices.language)
+    // Las tablas sin reemplazo: lo ya sacado en esta campaña
+    const once = items.filter((i) => i.table?.replacement === false).map((i) => i.key)
+    const draws = await tablesRepo.contentDrawsByKeys(ctx.db, campaignId, once)
     return {
       items: visible.flatMap((k) => {
         const item = byKey.get(k)
@@ -258,6 +345,7 @@ export const compendiumActions = [
                 }
               : {}),
             ...(own.has(k) ? { world: own.get(k) } : {}),
+            ...(once.includes(k) ? { drawn: draws.get(k) ?? [] } : {}),
             granted: entry.granted.map((g) =>
               'choose' in g
                 ? { level: g.level, choose: textOf(g.choose, choices.language), count: g.count }

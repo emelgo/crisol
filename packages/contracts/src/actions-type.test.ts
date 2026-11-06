@@ -123,6 +123,7 @@ describe('Actions', () => {
       searchCampaignContent: true,
       browseCampaignContent: true,
       rollContentTable: true,
+      resetContentTable: true,
       putWorldContent: true,
       deleteWorldContent: true,
       copyContent: true,

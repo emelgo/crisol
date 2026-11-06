@@ -104,6 +104,7 @@ import {
   importSystem,
   listSystems,
   putSystemContent,
+  resetContentTable,
   rollContentTable,
   searchCampaignContent,
   searchSystemContent,
@@ -271,6 +272,7 @@ export const ACTIONS = [
   searchCampaignContent,
   browseCampaignContent,
   rollContentTable,
+  resetContentTable,
   putWorldContent,
   deleteWorldContent,
   copyContent,
@@ -423,6 +425,7 @@ export type Actions = {
   searchCampaignContent: typeof searchCampaignContent
   browseCampaignContent: typeof browseCampaignContent
   rollContentTable: typeof rollContentTable
+  resetContentTable: typeof resetContentTable
   putWorldContent: typeof putWorldContent
   deleteWorldContent: typeof deleteWorldContent
   copyContent: typeof copyContent

@@ -5,7 +5,7 @@
  */
 import { getRandomTable, type RandomTable, resetTableDraws, rollOnTable, updateRandomTable } from '@crisol/contracts'
 import { pagesRepo, tablesRepo } from '@crisol/db'
-import { cryptoRoller, rowFor, tableFormula, tableProblems } from '@crisol/dice'
+import { cryptoRoller, type RangeRow, rowFor, tableFormula, tableProblems } from '@crisol/dice'
 import { NotFoundError } from '@crisol/domain'
 import { authorizedCampaign } from './access.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
@@ -34,7 +34,7 @@ async function readableTable(ctx: ActionContext, tabId: string, capability: 'pag
   return { ...found, table }
 }
 
-interface Drawn {
+export interface Drawn {
   result: { formula: string; total: number; detail: string; critical: 'high' | 'low' | null; dice: StoredDie[] }
   results: { text: string; page: string | null }[]
   /** Lo que sale de cada tabla sin reemplazo: se apunta al guardar la tirada */
@@ -43,7 +43,7 @@ interface Drawn {
 type StoredDie = { sides: number | 'F'; value: number; kept: boolean }
 
 /** Una fila de las que quedan, al azar por lo que ocupa cada una (sin reemplazo, cuando lo tirado ya salió) */
-function amongLeft(rows: readonly tablesRepo.TableOfTab['rows'][number][]) {
+function amongLeft<R extends RangeRow>(rows: readonly R[]) {
   const width = (r: { from: number; to: number }) => Math.max(1, r.to - r.from + 1)
   const total = rows.reduce((n, r) => n + width(r), 0)
   let n = cryptoRoller(total) - 1
@@ -55,26 +55,26 @@ function amongLeft(rows: readonly tablesRepo.TableOfTab['rows'][number][]) {
 }
 
 /** Tirar en una tabla (y en las suyas), sin apuntar nada: lo sacado se apunta al guardar la tirada */
-async function draw(
-  ctx: ActionContext,
-  table: tablesRepo.TableOfTab,
-  campaignId: string,
-  depth: number
-): Promise<Drawn> {
-  const drawn = table.replacement ? [] : await tablesRepo.drawsOf(ctx.db, campaignId, table.id)
+/**
+ * Tira en una tabla (la pestaña «Tabla» de la wiki o una del compendio): su fórmula y la fila de lo que sale, entre las
+ * que no se han sacado. Si lo tirado ya salió (o no cae en ninguna), una de las que quedan, por lo que ocupa
+ */
+export function pickRow<R extends RangeRow>(
+  table: { name: string; formula?: string | null; rows: readonly R[] },
+  drawn: readonly string[]
+): { result: Drawn['result']; row: R } {
   const left = table.rows.filter((r) => !drawn.includes(r.id))
   if (left.length === 0)
     throw new InvalidRequestError('TABLE_EMPTY', `ya ha salido todo en «${table.name}»: reiníciala`)
   const formula = tableFormula(table.formula, table.rows)
   const rolledResult = rolled(formula)
-  let result: Drawn['result'] = { ...storedOf(rolledResult), formula: rolledResult.formula }
-  let row = rowFor(left, rolledResult.total)
-  // Lo tirado ya salió (o no cae en ninguna): una de las que quedan, por lo que ocupa, y el total es el suyo
-  if (!row) {
-    const picked = amongLeft(left)
-    if (!picked) throw new InvalidRequestError('TABLE_EMPTY', 'la tabla no tiene filas')
-    row = picked.row
-    result = {
+  const row = rowFor(left, rolledResult.total)
+  if (row) return { result: { ...storedOf(rolledResult), formula: rolledResult.formula }, row }
+  const picked = amongLeft(left)
+  if (!picked) throw new InvalidRequestError('TABLE_EMPTY', 'la tabla no tiene filas')
+  return {
+    row: picked.row,
+    result: {
       formula,
       total: picked.value,
       detail: `${rolledResult.detail} → ${picked.value} (sin repetir)`,
@@ -82,6 +82,16 @@ async function draw(
       dice: []
     }
   }
+}
+
+async function draw(
+  ctx: ActionContext,
+  table: tablesRepo.TableOfTab,
+  campaignId: string,
+  depth: number
+): Promise<Drawn> {
+  const drawn = table.replacement ? [] : await tablesRepo.drawsOf(ctx.db, campaignId, table.id)
+  const { result, row } = pickRow(table, drawn)
   const results = [{ text: row.text, page: row.page ?? null }]
   const draws = table.replacement ? [] : [{ tableId: table.id, rowId: row.id }]
   if (row.table && depth < MAX_DEPTH) {
