@@ -1,8 +1,10 @@
 /**
  * El zip de un sistema o un módulo de Foundry, leído aquí antes de subirlo (ADR-0015): su manifiesto dice sus
- * compendios, y de ellos se elige cuáles van. Se sube solo lo que hace falta (el manifiesto, sus idiomas y esos
- * compendios), sin imágenes ni código, para que pese poco
+ * compendios, y de ellos se elige cuáles van. Se sube solo lo que hace falta (el manifiesto, sus idiomas, sus mapas de
+ * arte y esos compendios), sin imágenes ni código, para que pese poco; las imágenes que nombra lo importado se sacan
+ * después de aquí mismo y se suben aparte (docs/specs/imagenes.md)
  */
+import { type ImageLicense, licenseOf, zipPathOf } from '@crisol/systems/foundry'
 import { strFromU8, unzipSync, zipSync } from 'fflate'
 
 export interface FoundryPack {
@@ -22,6 +24,16 @@ export interface FoundryZip {
   packs: FoundryPack[]
   /** Dónde está el manifiesto dentro del zip (la carpeta del sistema), con su barra final o vacío */
   root: string
+  /** Sus mapas de arte (el retrato de cada actor), dentro del zip */
+  art: string[]
+}
+
+/** Una imagen que nombra lo importado, sacada del zip, con su licencia */
+export interface ZipImage {
+  path: string
+  bytes: Uint8Array
+  license: ImageLicense
+  credit: string | null
 }
 
 /** Lo que Crisol sabe traer: objetos, actores, diarios y tablas */
@@ -59,14 +71,51 @@ export function readFoundryZip(bytes: Uint8Array): FoundryZip | null {
     const path = String(pack.path ?? `packs/${name}`).replace(/^\.?\//, '')
     return [{ name, label: String(pack.label ?? name), type, path }]
   })
+  const kind = found.endsWith('module.json') ? 'module' : 'system'
+  const id = String(manifest.id ?? manifest.name ?? '')
+  const flags = (manifest.flags ?? {}) as Record<string, unknown>
+  const mappings = Object.values((flags.compendiumArtMappings ?? {}) as Record<string, { mapping?: unknown }>)
+  const art = mappings.flatMap((m) => {
+    const inside = typeof m?.mapping === 'string' ? zipPathOf(m.mapping, { id, kind, root }) : null
+    return inside ? [inside] : []
+  })
   return {
-    kind: found.endsWith('module.json') ? 'module' : 'system',
-    id: String(manifest.id ?? manifest.name ?? ''),
+    kind,
+    id,
     title: String(manifest.title ?? manifest.id ?? ''),
     version: String(manifest.version ?? ''),
     packs,
-    root
+    root,
+    art
   }
+}
+
+/** Los avisos de licencia del zip (LICENSE, LICENSE.txt, LICENSE.md…), por su ruta */
+const NOTICE = /(^|\/)(licen[cs]e|copying|credits?)(\.(txt|md))?$/i
+
+/**
+ * Las imágenes que nombra lo importado, sacadas del zip con su licencia (por los avisos de sus carpetas); las que no
+ * vienen en él (las de serie de Foundry), fuera
+ */
+export function imagesFromZip(
+  bytes: Uint8Array,
+  foundry: FoundryZip,
+  wanted: readonly { path: string; credit: string | null }[]
+): ZipImage[] {
+  const inside = new Map(
+    wanted.flatMap((w) => {
+      const at = zipPathOf(w.path, foundry)
+      return at ? [[at, w] as const] : []
+    })
+  )
+  const files = unzipSync(bytes, { filter: (file) => inside.has(file.name) || NOTICE.test(file.name) })
+  const notices: Record<string, string> = {}
+  for (const [name, data] of Object.entries(files))
+    if (NOTICE.test(name)) notices[name] = strFromU8(data).slice(0, 100_000)
+  return [...inside].flatMap(([at, w]) => {
+    const data = files[at]
+    return data ? [{ path: w.path, bytes: data, license: licenseOf(at, notices), credit: w.credit }] : []
+  })
 }
 
 /** Un zip con solo lo que hace falta: el manifiesto, sus idiomas y los compendios elegidos */
@@ -75,6 +124,7 @@ export function slimZip(bytes: Uint8Array, foundry: FoundryZip, chosen: readonly
   const wanted = (name: string) =>
     MANIFESTS.some((m) => name === `${foundry.root}${m}`) ||
     (name.startsWith(`${foundry.root}lang/`) && name.endsWith('.json')) ||
+    foundry.art.includes(name) ||
     paths.some((path) => name === path || name.startsWith(`${path.replace(/\/$/, '')}/`))
   const files = unzipSync(bytes, { filter: (file) => wanted(file.name) })
   return zipSync(files, { level: 6 })

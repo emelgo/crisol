@@ -1103,6 +1103,22 @@ export const es = {
   },
   // Los sistemas de reglas de la cuenta (docs/specs/sistemas.md)
   systems: {
+    images: {
+      found_one: 'Trae {{count}} imagen:',
+      found_other: 'Trae {{count}} imágenes:',
+      license: {
+        'cc-by': 'con licencia CC BY',
+        mit: 'con licencia MIT',
+        'foundry-only': 'solo para usar en Foundry (para tu uso)',
+        'cc-by-nc-sa': 'CC BY-NC-SA (sin uso comercial; para tu uso)',
+        unknown: 'sin licencia conocida'
+      },
+      restricted: 'Traer también las de uso restringido',
+      sending: 'Subiendo {{sent}} de {{total}}…',
+      send_one: 'Subir {{count}} imagen',
+      send_other: 'Subir {{count}} imágenes',
+      skip: 'Sin imágenes'
+    },
     title: 'Sistemas',
     mine: 'Tuyos',
     builtIn: 'De serie',
