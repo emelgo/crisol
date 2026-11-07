@@ -67,6 +67,8 @@ export interface VisionInput {
   campaignId: string
   scene: SceneRow
   tokens: readonly VisionToken[]
+  /** Cómo estaba la mesa cuando se leyeron las fichas (`generation`): si algo cambió desde entonces, no vale para peek */
+  since?: string
   /** Los caminos recorridos por las fichas del grupo: se explora lo que se ve por ellos */
   walks?: readonly WalkedPath[]
 }
@@ -99,6 +101,8 @@ export interface Vision {
   view(input: VisionInput): Promise<VisionResult>
   /** La última vista calculada de una campaña en una escena, si la hay y nada ha cambiado desde entonces */
   peek(campaignId: string, sceneId: string): VisionResult | null
+  /** Cómo está ahora la mesa de una campaña en una escena (cambia con cada invalidate): para `since` */
+  generation(campaignId: string, sceneId: string): string
   /** Algo cambió en la mesa de una campaña o en una escena: sus vistas ya no valen para `peek` */
   invalidate(where: { campaignId?: string; sceneId?: string }): void
   /**
@@ -227,6 +231,16 @@ export function createVision(db: Database, onError: (error: unknown) => void = (
   const sent = new Set<string>()
   /** Las vistas que siguen valiendo tal cual (sin que haya cambiado nada desde que se calcularon) */
   const fresh = new Set<string>()
+  /**
+   * Cuándo cambió algo por última vez en cada campaña y en cada escena (un contador que solo sube): una vista que se
+   * empezó a calcular antes no se da por buena para `peek` al acabar
+   */
+  let changes = 0
+  const changedCampaigns = new Lru<string, number>(1024)
+  const changedScenes = new Lru<string, number>(1024)
+  let changedAll = 0
+  const generation = (campaignId: string, sceneId: string) =>
+    `${changedAll}:${changedCampaigns.peek(campaignId) ?? 0}:${changedScenes.peek(sceneId) ?? 0}`
 
   /** En orden por campaña y escena: dos vistas a la vez no se pisan lo explorado */
   const serial = <T>(key: string, work: () => Promise<T>): Promise<T> => {
@@ -260,9 +274,14 @@ export function createVision(db: Database, onError: (error: unknown) => void = (
     return made
   }
 
-  async function compute(input: VisionInput): Promise<VisionResult> {
+  /** `started`: cómo estaba la mesa cuando se pidió (antes de esperar su turno) */
+  async function compute(input: VisionInput, started: string): Promise<VisionResult> {
     const { scene, campaignId } = input
     const key = `${campaignId}:${scene.id}`
+    /** Vale para `peek` si nada cambió mientras se calculaba */
+    const stillFresh = () => {
+      if (generation(campaignId, scene.id) === started) fresh.add(key)
+    }
     const [{ geometry, walls }, state, fog] = await Promise.all([
       geometryOf(scene),
       visionRepo.findSceneState(db, campaignId, scene.id),
@@ -294,7 +313,7 @@ export function createVision(db: Database, onError: (error: unknown) => void = (
     const walks = input.walks ?? []
     const cached = results.get(key)
     if (cached && cached.hash === hash && walks.length === 0) {
-      fresh.add(key)
+      stillFresh()
       return cached.result
     }
     if (!explored.has(key)) {
@@ -361,22 +380,28 @@ export function createVision(db: Database, onError: (error: unknown) => void = (
       secretDoors: walls.filter((w) => w.door === 'secret').map((w) => ({ id: w.id, open: doors[w.id] ?? false }))
     }
     results.set(key, { hash, result })
-    fresh.add(key)
+    stillFresh()
     return result
   }
 
   return {
     view(input) {
-      return serial(`${input.campaignId}:${input.scene.id}`, () => compute(input))
+      const started = input.since ?? generation(input.campaignId, input.scene.id)
+      return serial(`${input.campaignId}:${input.scene.id}`, () => compute(input, started))
     },
     peek(campaignId, sceneId) {
       const key = `${campaignId}:${sceneId}`
       return fresh.has(key) ? (results.get(key)?.result ?? null) : null
     },
+    generation,
     memory() {
       return { views: results.size, explored: explored.size, walks: pendingWalks.size, scenes: geometries.size }
     },
     invalidate({ campaignId, sceneId }) {
+      changes += 1
+      if (campaignId !== undefined) changedCampaigns.set(campaignId, changes)
+      if (sceneId !== undefined) changedScenes.set(sceneId, changes)
+      if (campaignId === undefined && sceneId === undefined) changedAll = changes
       for (const key of fresh) {
         const [c, s] = key.split(':')
         if ((campaignId === undefined || c === campaignId) && (sceneId === undefined || s === sceneId))
@@ -388,6 +413,8 @@ export function createVision(db: Database, onError: (error: unknown) => void = (
       // Como mucho unos cuantos caminos por explorar (si nadie mira en mucho rato, los últimos)
       const list = [...(pendingWalks.get(key) ?? []), ...moves].slice(-200)
       pendingWalks.set(key, list)
+      changes += 1
+      changedCampaigns.set(campaignId, changes)
       fresh.delete(key)
     },
     takeWalked(campaignId, sceneId) {

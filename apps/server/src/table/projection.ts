@@ -373,10 +373,12 @@ export async function visionOf(
   loaded?: { views: TokenView[]; senses: ReadonlyMap<string, SenseRanges> }
 ): Promise<VisionResult | null> {
   if (!ctx.vision) return null
+  // Lo que cambie mientras se leen las fichas deja esta vista sin valer para peek (se calcula, pero no se guarda fresca)
+  const since = ctx.vision.generation(campaign.id, scene.id)
   const { views, senses } = loaded ?? (await tokensWithSenses(ctx, campaign, scene.id))
   const tokens = visionTokens(scene, views, senses)
   const walks = walkedPaths(ctx.vision.takeWalked(campaign.id, scene.id), tokens)
-  return ctx.vision.view({ campaignId: campaign.id, scene, tokens, ...(walks.length ? { walks } : {}) })
+  return ctx.vision.view({ campaignId: campaign.id, scene, tokens, since, ...(walks.length ? { walks } : {}) })
 }
 
 /** La visión de la escena abierta para el máster */
