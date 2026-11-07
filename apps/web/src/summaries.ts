@@ -316,6 +316,40 @@ export function summaryOf(
       return say(action, { name: text(details.name), title: text(details.title) })
     case 'placeScenePins':
       return say(action, { campaign: text(details.campaign) })
+    // La visión de la mesa (docs/specs/vision.md): lo del mundo, con su escena; lo de la campaña, con ella
+    case 'changeWalls':
+      return say(Number(details.walls ?? 1) === 0 && details.lights ? 'changeLights' : 'changeWalls', {
+        name: text(details.name),
+        title: text(details.title)
+      })
+    case 'placeImportedWalls':
+      return say(action, { name: text(details.name), title: text(details.title) })
+    case 'updateSceneVision': {
+      const key =
+        details.automaticVision === undefined
+          ? 'sceneDarkness'
+          : details.automaticVision
+            ? 'sceneAutoVisionOn'
+            : 'sceneAutoVisionOff'
+      return say(key, { name: text(details.name), title: text(details.title) })
+    }
+    case 'openDoor':
+    case 'closeDoor':
+    case 'setDoor':
+      return say(action === 'setDoor' ? (details.open ? 'openDoor' : 'closeDoor') : action, {
+        name: text(details.name),
+        campaign: text(details.campaign)
+      })
+    case 'revealFog':
+    case 'coverFog':
+    case 'changeFog':
+      return say(action === 'changeFog' ? (details.mode === 'cover' ? 'coverFog' : 'revealFog') : action, {
+        campaign: text(details.campaign)
+      })
+    case 'resetFog':
+      return say(action, { name: text(details.name), campaign: text(details.campaign) })
+    case 'setTileFit':
+      return say(action, { campaign: text(details.campaign) })
     // Las etiquetas de la cuenta (ADR-0006)
     case 'createTag':
     case 'colorTag':
