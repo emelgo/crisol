@@ -18,11 +18,10 @@ import { NotFoundError } from '@crisol/domain'
 import { cellCenter } from '@crisol/tabletop'
 import { creaturesChanged } from '../realtime/events.ts'
 import { tokenViews, viewsOfTokens, visionOf } from '../table/projection.ts'
-import { authorizedCampaign, authorizedWiki } from './access.ts'
+import { authorizedCampaign, authorizedWiki, sceneOfCampaign } from './access.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
 import { creaturesToPlay } from './creatures.ts'
 import { implement } from './registry.ts'
-import { sceneOfCampaign } from './scenes.ts'
 
 type Campaign = Awaited<ReturnType<typeof authorizedCampaign>>
 type Placed = {

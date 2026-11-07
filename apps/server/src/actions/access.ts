@@ -1,4 +1,4 @@
-import { campaignsRepo, pagesRepo, worldsRepo } from '@crisol/db'
+import { campaignsRepo, pagesRepo, scenesRepo, worldsRepo } from '@crisol/db'
 import { authorize, type Capability, NotFoundError, ownedOrganizations } from '@crisol/domain'
 import { type ActionContext, InvalidRequestError } from './context.ts'
 
@@ -41,4 +41,11 @@ export async function authorizedPage(ctx: ActionContext, capability: Capability,
   const wiki = await authorizedWiki(ctx, capability, page?.worldId ?? '')
   if (!page) throw new NotFoundError('page')
   return { page, wiki }
+}
+
+/** La escena para la mesa de una campaña: tiene que ser de su mundo (y la ve quien lleva la mesa) */
+export async function sceneOfCampaign(ctx: ActionContext, worldId: string, sceneId: string) {
+  const scene = await scenesRepo.findScene(ctx.db, sceneId)
+  if (!scene || scene.worldId !== worldId) throw new NotFoundError('scene')
+  return scene
 }

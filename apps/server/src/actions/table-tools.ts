@@ -47,10 +47,9 @@ import {
 } from '@crisol/tabletop'
 import { gridOf, markViewOf, tokensInside, widgetViewOf } from '../table/marks.ts'
 import { tokenViews } from '../table/projection.ts'
-import { authorizedCampaign } from './access.ts'
+import { authorizedCampaign, sceneOfCampaign } from './access.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
 import { implement } from './registry.ts'
-import { sceneOfCampaign } from './scenes.ts'
 import { pointIn } from './tokens.ts'
 
 type Campaign = Awaited<ReturnType<typeof authorizedCampaign>>

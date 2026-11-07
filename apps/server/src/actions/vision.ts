@@ -27,10 +27,9 @@ import { cellCenter, joinCollinear, type Point, type Wall } from '@crisol/tablet
 import type { z } from 'zod'
 import { pagesChanged } from '../realtime/events.ts'
 import { campaignTableView, sceneView, screenViewOf, tokensWithSenses, visionOf } from '../table/projection.ts'
-import { authorizedCampaign, authorizedPage } from './access.ts'
+import { authorizedCampaign, authorizedPage, sceneOfCampaign } from './access.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
 import { implement } from './registry.ts'
-import { sceneOfCampaign } from './scenes.ts'
 
 type SceneRow = scenesRepo.SceneWithPage
 type Campaign = Awaited<ReturnType<typeof authorizedCampaign>>

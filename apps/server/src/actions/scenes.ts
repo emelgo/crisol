@@ -23,7 +23,7 @@ import { NotFoundError, sniff } from '@crisol/domain'
 import { imageSize, svgProblem, svgSize } from '@crisol/tabletop'
 import { pagesChanged } from '../realtime/events.ts'
 import { campaignTableView, sceneView } from '../table/projection.ts'
-import { authorizedCampaign, authorizedPage, authorizedWiki } from './access.ts'
+import { authorizedCampaign, authorizedPage, authorizedWiki, sceneOfCampaign } from './access.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
 import { filesTouched, scopeOf, withFreeName } from './files.ts'
 import { placePrepared } from './foundry-scenes.ts'
@@ -43,13 +43,6 @@ async function readHead(stream: Readable) {
   const chunks: Buffer[] = []
   for await (const chunk of stream) chunks.push(chunk as Buffer)
   return new Uint8Array(Buffer.concat(chunks))
-}
-
-/** La escena para la mesa de una campaña: tiene que ser de su mundo (y la ve quien lleva la mesa) */
-export async function sceneOfCampaign(ctx: ActionContext, worldId: string, sceneId: string) {
-  const scene = await scenesRepo.findScene(ctx.db, sceneId)
-  if (!scene || scene.worldId !== worldId) throw new NotFoundError('scene')
-  return scene
 }
 
 /**
