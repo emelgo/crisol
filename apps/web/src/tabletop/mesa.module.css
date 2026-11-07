@@ -889,3 +889,20 @@
   font: inherit;
   font-size: 0.8125rem;
 }
+
+.backToCombat {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 0.6rem 0.875rem 0;
+  padding: 6px 10px;
+  border: 1px solid rgb(242 194 96 / 0.45);
+  border-radius: 8px;
+  background: rgb(242 194 96 / 0.08);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+}

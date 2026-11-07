@@ -58,7 +58,6 @@ export function TokenCard({
   const client = useQueryClient()
   const errorText = useErrorText()
   const ids = { amount: useId(), condition: useId(), rounds: useId(), label: useId(), faction: useId(), size: useId() }
-  const titleId = useId()
   const listId = useId()
   const { actor } = token
   const [amount, setAmount] = useState('')
@@ -144,13 +143,13 @@ export function TokenCard({
   }
 
   return (
-    <section ref={cardRef} className={styles.card} aria-labelledby={titleId} data-token-card="">
+    <section ref={cardRef} className={styles.card} aria-label={actor.name} data-token-card="">
       <header className={styles.cardHead}>
         <span className={styles.avatar} data-faction={token.faction} aria-hidden="true">
           {initialOf(token.label)}
         </span>
         <div className={styles.cardTitles}>
-          <h3 id={titleId}>{actor.name}</h3>
+          <h3>{actor.name}</h3>
           <span>
             {t(`tokens.kinds.${actor.kind}`)} · {token.label}
             {token.hidden ? ` · ${t('tokens.hidden')}` : ''}

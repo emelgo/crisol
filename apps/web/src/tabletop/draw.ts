@@ -15,7 +15,7 @@ function imageOf(token: { image: TokenView['image']; img: string | null }): Draw
 const pick = (image: NonNullable<TokenView['image']>) => ({ x: image.x, y: image.y, zoom: image.zoom })
 
 /** Una ficha del máster: con su barra de vida, oculta a medias, y la elegida con su aro */
-export function masterDraw(token: TokenView, grid: SceneGrid, selected: boolean, at?: Point): DrawToken {
+export function masterDraw(token: TokenView, grid: SceneGrid, selected: boolean, at?: Point, turn = false): DrawToken {
   const life = token.actor.life
   return {
     id: token.id,
@@ -28,6 +28,7 @@ export function masterDraw(token: TokenView, grid: SceneGrid, selected: boolean,
     image: imageOf({ image: token.image, img: token.actor.img }),
     hidden: token.hidden,
     selected,
+    turn,
     life: life && life.max > 0 ? life.value / life.max : null,
     state: null,
     conditions: token.actor.conditions.map((c) => c.name)
@@ -41,7 +42,8 @@ export function screenDraw(
   token: ScreenToken,
   grid: SceneGrid,
   words: (state: NonNullable<ScreenToken['state']>) => string,
-  at?: Point
+  at?: Point,
+  turn = false
 ): DrawToken {
   return {
     id: token.id,
@@ -54,6 +56,7 @@ export function screenDraw(
     image: imageOf(token),
     hidden: false,
     selected: false,
+    turn,
     life: null,
     state: token.state ? { text: words(token.state), tone: TONES[token.state] } : null,
     conditions: token.conditions.map((c) => c.name)

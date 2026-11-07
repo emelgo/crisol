@@ -50,8 +50,13 @@ export function TablePanel({
   selected,
   onOpen,
   onPlace,
-  onImage
+  onImage,
+  combatRound,
+  onCombat
 }: {
+  /** La ronda del combate, si hay uno: arriba, el botón para volver a él */
+  combatRound: number | null
+  onCombat: () => void
   worldId: string
   campaignId: string
   systemId: string | null
@@ -69,6 +74,12 @@ export function TablePanel({
   const canPlace = Boolean(table?.open?.image?.tiles)
   return (
     <aside className={styles.panel} aria-label={t('tabletop.panel')}>
+      {combatRound !== null && (
+        <button type="button" className={styles.backToCombat} onClick={onCombat}>
+          <Swords aria-hidden="true" size={15} />
+          {combatRound > 0 ? t('combat.back', { round: combatRound }) : t('combat.backNotStarted')}
+        </button>
+      )}
       <div className={styles.panelTabs} role="tablist" aria-label={t('tabletop.panel')}>
         {TABS.map(({ key, icon: Icon }) => (
           <button

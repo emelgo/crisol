@@ -73,7 +73,6 @@ export function TokenImageEditor({
       <div className={styles.imageBody}>
         <h2 id={titleId}>{t('tokens.imageOf', { name: token.label })}</h2>
         <div className={styles.imageRow}>
-          {/* biome-ignore lint/a11y/noStaticElementInteractions: arrastrar encuadra con el ratón; con el teclado, el deslizador */}
           <div
             className={styles.round}
             style={{ inlineSize: PREVIEW, blockSize: PREVIEW }}

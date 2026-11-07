@@ -617,14 +617,14 @@ export function fakeApi(
     id: crypto.randomUUID(),
     kind: token.actor.kind,
     actorId: token.actor.id,
-    name: token.label,
+    name: token.actor.name,
     img: token.actor.img,
     tokenId: token.id,
     initiative: null,
     modifier: null,
     group: null,
     sort: null,
-    generic: false,
+    generic: token.actor.kind === 'creature' && !creatureById(token.actor.id).unique,
     defeated: false,
     hidden: token.hidden,
     active: false,
@@ -633,6 +633,15 @@ export function fakeApi(
   })
   /** El orden: por iniciativa (de mayor a menor), su modificador y, si empatan, el orden a mano */
   const sortCombat = (combat: CombatView) => {
+    // Lo vital, el de ahora de cada uno
+    for (const c of combat.combatants) {
+      const row = c.tokenId ? tokens.find((t) => t.id === c.tokenId) : undefined
+      if (!row) continue
+      const { actor } = tokenOf(row)
+      c.life = actor.life
+      c.conditions = actor.conditions
+      c.defeated = Boolean(actor.life && actor.life.max > 0 && actor.life.value <= 0)
+    }
     combat.combatants.sort(
       (a, b) =>
         (b.initiative ?? Number.NEGATIVE_INFINITY) - (a.initiative ?? Number.NEGATIVE_INFINITY) ||
@@ -3350,10 +3359,19 @@ export function fakeApi(
       moveTurn(combat, -1)
       return sortCombat(combat)
     },
-    endCombat: ({ campaignId }) => {
-      combatOf(campaignId)
+    // Como el servidor: quita de juego (con sus fichas) las copias a 0, todas o ninguna
+    endCombat: ({ campaignId, remove }) => {
+      const combat = sortCombat(combatOf(campaignId))
+      const mode = remove ?? 'defeated'
+      const removed = combat.combatants
+        .filter((c) => c.generic && (mode === 'generic' || (mode === 'defeated' && c.defeated)))
+        .map((c) => c.actorId)
       combats.delete(campaignId)
-      return { removed: [] }
+      if (removed.length > 0) {
+        for (const row of tokens.filter((t) => removed.includes(t.actor.id))) tokens.splice(tokens.indexOf(row), 1)
+        handlers.removeFromPlay({ campaignId, creatureIds: removed })
+      }
+      return { removed }
     },
     setScreenCamera: ({ campaignId, camera }) => {
       campaignTableOf(campaignId).table.camera = structuredClone(camera)

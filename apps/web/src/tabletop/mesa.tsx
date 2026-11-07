@@ -19,7 +19,7 @@ import {
 } from '@crisol/tabletop'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getRouteApi, Link, Navigate } from '@tanstack/react-router'
-import { ChevronDown, ExternalLink, EyeOff, Layers, Maximize, Minus, Play, Plus, Search, Tv } from 'lucide-react'
+import { ChevronDown, ExternalLink, EyeOff, Maximize, Minus, Play, Plus, Swords, Tv } from 'lucide-react'
 import {
   type KeyboardEvent,
   type PointerEvent,
@@ -43,7 +43,9 @@ import { PageTitle } from '../components/page-title.tsx'
 import { Tour } from '../components/tour.tsx'
 import { canvasViewOf, framingOf, REFERENCE_ASPECT, sceneViewportOf, sceneViewportOfCanvas } from './camera.ts'
 import { connectTable, type DragMove, type TableChannel, type TableStatus } from './channel.ts'
+import { CombatPanel } from './combat-panel.tsx'
 import { masterDraw } from './draw.ts'
+import { GroupDamage } from './group-damage.tsx'
 import styles from './mesa.module.css'
 import { PLACING_TYPE, type Placing, TablePanel } from './panel.tsx'
 import { Preparing } from './preparing.tsx'
@@ -156,6 +158,27 @@ function Mesa({ worldId, campaignId, campaignName }: { worldId: string; campaign
     act.mutate(() => api.call('openScene', { campaignId, sceneId }))
   }
   const tokens = useMemo(() => (table?.tokens ?? []).filter((token) => token.sceneId === table?.open?.id), [table])
+  // El combate: su panel en lugar del de la mesa (con un botón para ir y volver)
+  const combat = table?.combat ?? null
+  const [panelView, setPanelView] = useState<'combat' | 'tabs'>('combat')
+  const [shownCombat, setShownCombat] = useState<string | null>(null)
+  if ((combat?.id ?? null) !== shownCombat) {
+    setShownCombat(combat?.id ?? null)
+    setPanelView('combat')
+  }
+  // Quien tiene el turno: su ficha lleva el aro y la mesa se centra en ella (si no se ve)
+  const turnTokens = useMemo(
+    () => new Set((combat?.combatants ?? []).filter((c) => c.active && c.tokenId).map((c) => c.tokenId as string)),
+    [combat]
+  )
+  const center = useRef<((tokenId: string, always: boolean) => void) | null>(null)
+  const turnId = combat?.turnId ?? null
+  const combatRef = useRef(combat)
+  combatRef.current = combat
+  useEffect(() => {
+    const first = combatRef.current?.combatants.find((c) => c.active && c.tokenId)?.tokenId
+    if (turnId && first) center.current?.(first, false)
+  }, [turnId])
   const byId = (id: string | null) => tokens.find((token) => token.id === id) ?? null
   // Lo que se suelta en el mapa (o, con su «+», en medio de lo que se ve)
   const [skipped, setSkipped] = useState<string[]>([])
@@ -236,7 +259,8 @@ function Mesa({ worldId, campaignId, campaignName }: { worldId: string; campaign
           selected={selected}
           onSelect={(ids) => {
             setSelected(ids)
-            if (!ids.includes(cardFor ?? '')) setCardFor(null)
+            // Con varias elegidas, en lugar de la tarjeta, el daño a varias
+            if (ids.length > 1 || !ids.includes(cardFor ?? '')) setCardFor(null)
           }}
           cardFor={cardFor}
           cardRef={cardRef}
@@ -244,6 +268,8 @@ function Mesa({ worldId, campaignId, campaignName }: { worldId: string; campaign
           onSheet={setSheetFor}
           onPlace={(placing, at) => place.mutate({ placing, at })}
           onUndo={() => undo.mutate()}
+          turnTokens={turnTokens}
+          center={center}
         />
         {byId(cardFor) && (
           <TokenCard
@@ -303,7 +329,16 @@ function Mesa({ worldId, campaignId, campaignName }: { worldId: string; campaign
           onAct={(run) => act.mutate(run)}
           busy={act.isPending}
           framing={() => (size.width > 0 ? sceneViewportOfCanvas(view.current, size) : null)}
+          selected={selected}
         />
+        {selected.length > 1 && (
+          <GroupDamage
+            key={selected.join()}
+            campaignId={campaignId}
+            tokens={tokens.filter((token) => selected.includes(token.id))}
+            onClose={() => setSelected([])}
+          />
+        )}
         {status === 'reconnecting' && (
           <p className={styles.reconnecting} role="status">
             {t('tabletop.reconnecting')}
@@ -328,16 +363,32 @@ function Mesa({ worldId, campaignId, campaignName }: { worldId: string; campaign
           )}
         </div>
       </div>
-      <TablePanel
-        worldId={worldId}
-        campaignId={campaignId}
-        systemId={systemId}
-        table={table}
-        selected={tokens.filter((token) => selected.includes(token.id))}
-        onOpen={openScene}
-        onPlace={(placing) => place.mutate({ placing, at: null })}
-        onImage={(fileId) => selected[0] && setImageFor({ tokenId: selected[0], fileId })}
-      />
+      {combat && panelView === 'combat' ? (
+        <CombatPanel
+          campaignId={campaignId}
+          combat={combat}
+          tokens={tokens}
+          selected={selected}
+          onPick={(tokenId) => {
+            setSelected([tokenId])
+            center.current?.(tokenId, true)
+          }}
+          onShowPanel={() => setPanelView('tabs')}
+        />
+      ) : (
+        <TablePanel
+          combatRound={combat ? combat.round : null}
+          onCombat={() => setPanelView('combat')}
+          worldId={worldId}
+          campaignId={campaignId}
+          systemId={systemId}
+          table={table}
+          selected={tokens.filter((token) => selected.includes(token.id))}
+          onOpen={openScene}
+          onPlace={(placing) => place.mutate({ placing, at: null })}
+          onImage={(fileId) => selected[0] && setImageFor({ tokenId: selected[0], fileId })}
+        />
+      )}
       <Tour
         id="mesa"
         steps={[
@@ -346,6 +397,7 @@ function Mesa({ worldId, campaignId, campaignName }: { worldId: string; campaign
           { target: '[data-tour="mesa-presentar"]', text: t('tour.tabletop.present'), placement: 'bottom' },
           { target: '[data-tour="mesa-pantalla"]', text: t('tour.tabletop.screen'), placement: 'bottom' },
           { target: '[data-tour="mesa-camara"]', text: t('tour.tabletop.camera'), placement: 'bottom' },
+          { target: '[data-tour="mesa-combate"]', text: t('tour.tabletop.combat'), placement: 'bottom' },
           { target: '[data-tour="mesa-zoom"]', text: t('tour.tabletop.zoom'), placement: 'top' }
         ]}
       />
@@ -376,8 +428,12 @@ function Stage({
   onCard,
   onSheet,
   onPlace,
-  onUndo
+  onUndo,
+  turnTokens,
+  center
 }: {
+  turnTokens: Set<string>
+  center: RefObject<((tokenId: string, always: boolean) => void) | null>
   view: RefObject<Viewport>
   tokens: TokenView[]
   remote: RefObject<Map<string, Point>>
@@ -432,15 +488,17 @@ function Stage({
     moves: DragMove[]
   } | null>(null)
   const [box, setBox] = useState<{ from: Point; to: Point } | null>(null)
-  const latest = useRef({ tokens, selected, cardFor, grid: open?.grid })
-  latest.current = { tokens, selected, cardFor, grid: open?.grid }
+  const latest = useRef({ tokens, selected, cardFor, grid: open?.grid, turnTokens })
+  latest.current = { tokens, selected, cardFor, grid: open?.grid, turnTokens }
 
   /** Las fichas en el lienzo, y la tarjeta de la elegida junto a la suya */
   const drawTokens = useCallback(() => {
-    const { tokens: all, selected: chosen, cardFor: carded, grid } = latest.current
+    const { tokens: all, selected: chosen, cardFor: carded, grid, turnTokens: turns } = latest.current
     if (!grid) return renderer.current?.setTokens([])
     const at = (token: TokenView) => moving.current.get(token.id) ?? remote.current.get(token.id)
-    renderer.current?.setTokens(all.map((token) => masterDraw(token, grid, chosen.includes(token.id), at(token))))
+    renderer.current?.setTokens(
+      all.map((token) => masterDraw(token, grid, chosen.includes(token.id), at(token), turns.has(token.id)))
+    )
     const card = cardRef.current
     const token = all.find((each) => each.id === carded)
     if (!card || !token) return
@@ -487,7 +545,26 @@ function Stage({
   useEffect(() => {
     if (!tokenDrag.current) moving.current.clear()
     drawTokens()
-  }, [tokens, selected, cardFor, remoteTick, drawTokens])
+  }, [tokens, selected, cardFor, remoteTick, turnTokens, drawTokens])
+
+  // Centrar la mesa en una ficha: siempre (al elegirla en el combate) o solo si no se ve (al cambiar el turno)
+  useEffect(() => {
+    center.current = (tokenId, always) => {
+      const token = latest.current.tokens.find((each) => each.id === tokenId)
+      const room = sizeRef.current
+      if (!token || room.width === 0) return
+      const { x, y, scale } = view.current
+      const sx = token.x * scale + x
+      const sy = token.y * scale + y
+      const inside = sx > 60 && sy > 80 && sx < room.width - 60 && sy < room.height - 60
+      if (inside && !always) return
+      view.current = { scale, x: room.width / 2 - token.x * scale, y: room.height / 2 - token.y * scale }
+      apply()
+    }
+    return () => {
+      center.current = null
+    }
+  }, [center, apply, view])
 
   const fit = useCallback(() => {
     if (!scene || sizeRef.current.width === 0) return
@@ -894,8 +971,11 @@ function TopBar({
   onOpen,
   onAct,
   busy,
-  framing
+  framing,
+  selected
 }: {
+  /** Las fichas elegidas: con ellas empieza el combate (sin ninguna, con todas) */
+  selected: string[]
   worldId: string
   campaignId: string
   table: CampaignTableView | null
@@ -953,6 +1033,25 @@ function TopBar({
             </button>
           )}
         </span>
+        {open && !table?.combat && (table?.tokens.length ?? 0) > 0 && (
+          <button
+            type="button"
+            className={styles.ghost}
+            disabled={busy}
+            data-tour="mesa-combate"
+            title={selected.length > 0 ? t('combat.startChosen', { count: selected.length }) : t('combat.startAll')}
+            onClick={() =>
+              onAct(() =>
+                api
+                  .call('startCombat', { campaignId, ...(selected.length > 0 ? { tokenIds: selected } : {}) })
+                  .then(() => api.call('getCampaignTable', { campaignId }))
+              )
+            }
+          >
+            <Swords aria-hidden="true" size={15} />
+            {selected.length > 0 ? t('combat.startChosen', { count: selected.length }) : t('combat.start')}
+          </button>
+        )}
         <button type="button" className={styles.ghost} onClick={openScreen} data-tour="mesa-pantalla">
           <Tv aria-hidden="true" size={15} />
           {t('tabletop.screen')}

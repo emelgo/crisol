@@ -33,6 +33,8 @@ export interface DrawToken {
   image: { url: string; x: number; y: number; zoom: number } | null
   hidden: boolean
   selected: boolean
+  /** Es su turno en el combate: un aro dorado */
+  turn: boolean
   /** La parte de su vida que le queda (la mesa); null sin vida o en la tele */
   life: number | null
   /** Su estado en palabras (la tele) */
@@ -227,6 +229,12 @@ export class TableRenderer {
       node.root.zIndex = index
       const color = FACTION_COLORS[token.faction]
       node.disc.clear()
+      if (token.turn)
+        node.disc
+          .circle(0, 0, r + ring + 9)
+          .fill({ color: 0xf2c260, alpha: 0.25 })
+          .circle(0, 0, r + ring + 4)
+          .fill({ color: 0xf2c260, alpha: 0.95 })
       if (token.selected) node.disc.circle(0, 0, r + ring + 3).fill({ color: 0xffffff, alpha: 0.9 })
       node.disc.circle(0, 0, r + ring / 2).fill(color)
       node.disc.circle(0, 0, r - ring / 2).fill(FACTION_FILLS[token.faction])
