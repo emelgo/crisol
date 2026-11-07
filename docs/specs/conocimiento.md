@@ -1,6 +1,6 @@
 # Spec: conocimiento (módulo 5)
 
-Estado: **construido** (2026-11-06; en la rama `modulo-5/visibilidad`, aún sin PR). Primera capacidad del módulo 5 (`docs/specs/modulo-5.md`). Entrevista:
+Estado: **construido** (2026-11-06; en `main` y en staging, PR #112). Primera capacidad del módulo 5 (`docs/specs/modulo-5.md`). Entrevista:
 `docs/modulos.md` § «### 5. Visibilidad por campaña». ADR-0017. Estudios: `research/foundry/visibilidad-y-revelar.md`,
 `research/{legendkeeper,worldanvil,kanka}/visibilidad.md`, y de antes `research/foundry/journal.md` y
 `research/foundry/usuarios-y-permisos.md`.

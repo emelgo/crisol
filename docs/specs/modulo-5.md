@@ -18,7 +18,7 @@ lectura, herencia viva o ninguna, revocar al momento).
 Orden: `conocimiento` → `revelar` → `mapas-jugadores` → `compendio-jugadores` → `pagina-de-jugadores`. Lo primero
 es que un jugador pueda leer algo sin fugas; lo de la partida (revelar) va justo después.
 
-**Estado (2026-11-07)**: las cinco, construidas en la rama `modulo-5/visibilidad` (lo hecho y lo que queda de cada
+**Estado (2026-11-07)**: las cinco, construidas, en `main` y en staging (PR #112; lo hecho y lo que queda de cada
 una, en su spec § «Construido»); qué probar, en `tasks/probar.md` § «Módulo 5».
 
 ## Lo que se da por hecho (propuesta de Claude, por confirmar al verla)
