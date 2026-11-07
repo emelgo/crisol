@@ -147,3 +147,15 @@
   color: var(--color-muted);
   font-size: 0.8125rem;
 }
+
+/* Quién la edita: debajo de lo que ve, a la misma altura */
+.editors {
+  display: grid;
+  gap: var(--space-1);
+  justify-items: start;
+  padding-inline-start: 1.4rem;
+}
+
+.editors .chips {
+  padding-inline-start: 0;
+}

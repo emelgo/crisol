@@ -23,14 +23,19 @@ import menu from './slash-menu.module.css'
 export { type PageLinks, PageLinksContext, type WorldFile } from './links-context.ts'
 
 /** Las páginas del mundo con sus nombres: al día con los avisos de páginas (su clave cuelga de ['pages', mundo]) */
-export function usePageLinks(worldId: string): PageLinks {
+export function usePageLinks(worldId: string, enabled = true): PageLinks {
   const api = useApi()
   const queryClient = useQueryClient()
   const { data } = useQuery({
     queryKey: ['pages', worldId, 'names'],
-    queryFn: () => api.call('listPageNames', { worldId })
+    queryFn: () => api.call('listPageNames', { worldId }),
+    enabled
   })
-  const files = useQuery({ queryKey: ['files', worldId], queryFn: () => api.call('listFiles', { worldId }) })
+  const files = useQuery({
+    queryKey: ['files', worldId],
+    queryFn: () => api.call('listFiles', { worldId }),
+    enabled
+  })
   const names = data?.pages ?? []
   return {
     worldId,

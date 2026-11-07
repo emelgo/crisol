@@ -263,12 +263,14 @@ export const pageActions = [
 
   implement(getPage, async (ctx, { pageId, ...as }) => {
     const { view } = await viewedPage(ctx, pageId, as)
-    const shown = pageViewFor(view, await pageView(ctx, pageId))
-    // Quien lleva la wiki: si la escriben jugadores (su editor, sin secretos); un jugador: si él puede escribir
+    const full = await pageView(ctx, pageId)
+    const shown = pageViewFor(view, full)
+    // Quien lleva la wiki: si la escriben jugadores (su editor, sin secretos); un jugador: si él puede escribir (con
+    // el candado de verdad, que en lo proyectado siempre está echado)
     if (view.full) return { ...shown, editedByPlayers: await knowledgeRepo.isEdited(ctx.db, pageId) }
     const editable =
       as.asCharacterId === undefined && (await knowledgeRepo.canEditPage(ctx.db, ctx.actor.userId, pageId))
-    return { ...shown, editable }
+    return { ...shown, editable, ...(editable ? { locked: full.locked } : {}) }
   }),
 
   implement(getPageTables, async (ctx, { pageId, ...as }) => {

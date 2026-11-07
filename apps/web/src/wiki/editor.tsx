@@ -27,7 +27,7 @@ import { FileDrop, type FileDropOptions } from './file-embed.tsx'
 import find from './find-in-page.module.css'
 import { FindBar, FindInPage } from './find-in-page.tsx'
 import { GhostLine } from './ghost-line.ts'
-import { LinkSuggest, PageLinksContext, useLinksRef, usePageLinks } from './page-links.tsx'
+import { LinkSuggest, type PageLinks, PageLinksContext, useLinksRef, usePageLinks } from './page-links.tsx'
 import { usePageContent } from './preview.tsx'
 import {
   CopySeparateOnPaste,
@@ -45,11 +45,21 @@ import { withNodeView } from './views.ts'
  * El cuerpo de la página: el editor de bloques sobre su documento de Yjs. Lo que se escribe llega a las demás pestañas
  * al momento y se guarda solo; sin conexión se sigue escribiendo y se sincroniza al volver
  */
-export function PageBody({ page, documentId }: { page: Page; documentId?: string | null }) {
+export function PageBody({
+  page,
+  documentId,
+  links: given
+}: {
+  page: Page
+  documentId?: string | null
+  /** Las páginas que se pueden enlazar, si no son las de toda la wiki (un jugador: las que conoce) */
+  links?: PageLinks
+}) {
   const { t } = useTranslation()
   const { session, synced, offline } = useCollabDocument(documentId ? `doc:${documentId}` : `page:${page.id}`)
   const nestedOptions = useNestedOptions(caretColor)
-  const links = usePageLinks(page.worldId)
+  const wikiLinks = usePageLinks(page.worldId, !given)
+  const links = given ?? wikiLinks
   const saving = useSaving(session?.provider ?? null)
   // Si el editor tarda en conectarse (más de lo que se nota), el texto guardado se enseña mientras; si no, no cuesta nada
   const [slow, setSlow] = useState(false)
@@ -100,14 +110,18 @@ export function PageBody({ page, documentId }: { page: Page; documentId?: string
                 el documento compartido, y cada vez que se abriera la página (o React lo montara dos veces) sumaría otra */}
             {(synced || offline) && (
               <BodyEditor
-                key={documentId ?? page.id}
-                nested={Boolean(documentId)}
+                // La escriben jugadores: sin secretos ni notas ocultas (y otro esquema: se vuelve a crear)
+                key={`${documentId ?? page.id}${page.editedByPlayers || page.editable ? ':jugadores' : ''}`}
+                nested={Boolean(documentId) || Boolean(page.editedByPlayers) || Boolean(page.editable)}
                 pageId={page.id}
                 document={session.document}
                 provider={session.provider}
                 editable={!page.locked}
                 ready={synced}
-                sheet={sheetOf(page)}
+                // Un jugador escribe en texto corrido, como lo lee (sin la maqueta de la hoja, que encoge la letra)
+                sheet={page.editable ? null : sheetOf(page)}
+                // Un jugador no sube archivos al mundo
+                uploads={!page.editable}
               />
             )}
           </NestedOptionsContext.Provider>
@@ -190,13 +204,16 @@ function BodyEditor({
   editable,
   ready,
   sheet,
-  nested = false
+  nested = false,
+  uploads = true
 }: {
   pageId: string
   document: Y.Doc
   provider: HocuspocusProvider
   editable: boolean
   ready: boolean
+  /** Si se pueden soltar o pegar archivos (se suben al mundo) */
+  uploads?: boolean
   /** Con hoja: el texto, maquetado en sus páginas; y los bloques de hoja en el menú «/» */
   sheet: SheetSettings | null
   /** El de una pestaña de texto: sin secretos dentro */
@@ -276,7 +293,7 @@ function BodyEditor({
           announce: (title) => announce(t('links.inserted', { title }))
         }),
         ...(nested ? [] : [CopySeparateOnPaste]),
-        FileDrop.configure({ upload, announce: announceFile }),
+        ...(uploads ? [FileDrop.configure({ upload, announce: announceFile })] : []),
         FindInPage.configure({ match: find.match ?? '', current: find.current ?? '' }),
         AiHighlight.configure({ className: styles.aiFlash ?? '' }),
         Collaboration.configure({ document, field: BODY_FIELD }),

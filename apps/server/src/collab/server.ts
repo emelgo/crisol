@@ -27,6 +27,8 @@ export interface CollabContext {
   worldId?: string
   /** Una conexión directa del servidor (Claude, deshacer, restaurar): no abre sesión de edición */
   server?: boolean
+  /** Un jugador que escribe en una página de jugadores (docs/specs/pagina-de-jugadores.md) */
+  player?: boolean
 }
 
 const UUID = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
@@ -54,6 +56,8 @@ export interface Collab {
   hocuspocus: Hocuspocus<CollabContext>
   /** Cierra las conexiones a los documentos de estas páginas (a la papelera): al reconectar, ya no se abren */
   closePages(pageIds: Iterable<string>): void
+  /** Cierra las de los jugadores que escriben en esa página (cambió quién puede): al volver, se mira otra vez */
+  closePlayers(pageId: string): void
   /** Las de toda la wiki de un mundo (el mundo, a la papelera) */
   closeWorld(worldId: string): void
   /** Las de un documento aparte (el de una pestaña de texto que se quita) */
@@ -133,7 +137,7 @@ export function createCollab({
       if (!page || !world) throw new NotFoundError('page')
       connectionConfig.readOnly = !editor && !can(actor, 'page.write', wiki)
       opened.set(documentName, { pageId: page.id, worldId: world.id })
-      return { pageId: page.id, worldId: world.id }
+      return { pageId: page.id, worldId: world.id, ...(editor ? { player: true } : {}) }
     },
 
     async onLoadDocument({ documentName, document }) {
@@ -222,6 +226,13 @@ export function createCollab({
     closePages(pageIds) {
       const gone = new Set(pageIds)
       for (const [name, place] of opened) if (gone.has(place.pageId)) hocuspocus.closeConnections(name)
+    },
+    closePlayers(pageId) {
+      for (const [name, place] of opened) {
+        if (place.pageId !== pageId) continue
+        for (const connection of hocuspocus.documents.get(name)?.getConnections() ?? [])
+          if ((connection.context as CollabContext | undefined)?.player) connection.close()
+      }
     },
     closeWorld(worldId) {
       for (const [name, place] of opened) if (place.worldId === worldId) hocuspocus.closeConnections(name)

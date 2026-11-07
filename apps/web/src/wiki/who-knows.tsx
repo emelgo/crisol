@@ -244,7 +244,80 @@ function CampaignLine({ page, row }: { page: Page; row: CampaignRow }) {
           <Source from={row.from} pageId={page.id} />
         )}
       </p>
+      <Editors page={page} row={row} />
     </section>
+  )
+}
+
+/**
+ * Quién de la campaña puede escribir en la página (docs/specs/pagina-de-jugadores.md): nadie, toda o unos personajes.
+ * Quien la edita la ve; una página con secretos no se deja (lo dice el servidor)
+ */
+function Editors({ page, row }: { page: Page; row: CampaignRow }) {
+  const { t } = useTranslation()
+  const api = useApi()
+  const queryClient = useQueryClient()
+  const announce = useAnnounce()
+  const errorText = useErrorText()
+  const now: Choice = row.editors === 'none' ? 'none' : row.editors === 'all' ? 'all' : 'some'
+  const [choice, setChoice] = useState<Choice>(now)
+  useEffect(() => setChoice(now), [now])
+  const save = useMutation({
+    mutationFn: (editors: 'all' | string[] | null) =>
+      api.call('setPageEditors', { worldId: page.worldId, campaignId: row.campaignId, pageId: page.id, editors }),
+    onSuccess: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: knowledgeKey(page.worldId, page.id) }),
+        queryClient.invalidateQueries({ queryKey: ['pages', page.worldId] })
+      ]),
+    onError: (error) => {
+      setChoice(now)
+      announce(errorText(error))
+    }
+  })
+  const picked = Array.isArray(row.editors) ? row.editors.map((c) => c.id) : []
+  const toggle = (characterId: string) => {
+    const next = picked.includes(characterId) ? picked.filter((c) => c !== characterId) : [...picked, characterId]
+    save.mutate(next.length > 0 ? next : null)
+  }
+  return (
+    <div className={styles.editors}>
+      <select
+        className={styles.select}
+        aria-label={t('whoKnows.editors', { name: row.name })}
+        value={choice}
+        disabled={save.isPending}
+        onChange={(event) => {
+          const next = event.target.value as Choice
+          setChoice(next)
+          if (next === 'some') return
+          save.mutate(next === 'all' ? 'all' : null)
+        }}
+      >
+        <option value="none">{t('whoKnows.editNobody')}</option>
+        <option value="all">{t('whoKnows.editAll')}</option>
+        <option value="some" disabled={row.characters.length === 0}>
+          {t('whoKnows.editSome')}
+        </option>
+      </select>
+      {choice === 'some' && (
+        // biome-ignore lint/a11y/useSemanticElements: un grupo de fichas que se marcan, no un formulario
+        <div className={styles.chips} role="group" aria-label={t('whoKnows.editorsOf', { name: row.name })}>
+          {row.characters.map((character) => (
+            <button
+              key={character.id}
+              type="button"
+              className={styles.chip}
+              aria-pressed={picked.includes(character.id)}
+              disabled={save.isPending}
+              onClick={() => toggle(character.id)}
+            >
+              {character.name}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   )
 }
 

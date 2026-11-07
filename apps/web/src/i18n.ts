@@ -1103,6 +1103,13 @@ export const es = {
   // «Quién la conoce» de una página (ADR-0017)
   whoKnows: {
     title: 'Quién la conoce',
+    editors: 'Quién de «{{name}}» puede editarla',
+    editorsChoice: 'Pueden editarla',
+    editNobody: 'No la editan',
+    editAll: 'La edita toda la campaña',
+    editSome: 'La editan…',
+    editorsOf: 'Quién de «{{name}}» la edita',
+    editing: 'La editan: {{names}}',
     known: 'La conoce alguna campaña',
     close: 'Cerrar',
     world: 'El mundo',
@@ -2356,6 +2363,8 @@ export const es = {
     BAD_PLAY: 'Eso no se puede cambiar así',
     BAD_FORMULA: 'Esa tirada no se entiende',
     VISIBILITY_NOT_ALLOWED: 'No puedes tirar así en esta campaña',
+    PAGE_HAS_SECRETS: 'Tiene secretos o notas ocultas: quítalos antes de dejar que la editen',
+    PLAYER_PAGE: 'La escriben los jugadores: no lleva secretos ni notas ocultas',
     UNKNOWN: 'Algo ha fallado. Vuelve a intentarlo.'
   },
   load: {

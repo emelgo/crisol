@@ -187,8 +187,8 @@ export const knowledgeActions = [
           characters: seen.characters
         })
     })
-    // Quien ya no puede escribir deja de estar conectado para hacerlo (al volver, en lectura o sin entrar)
-    ctx.collab?.closePages([pageId])
+    // Los jugadores conectados para escribir se cierran: al volver se mira otra vez si pueden
+    ctx.collab?.closePlayers(pageId)
     ctx.realtime.publish(knowledgeChanged(wiki, campaign.id))
     return { ok: true as const }
   })

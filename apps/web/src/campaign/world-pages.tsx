@@ -17,14 +17,18 @@ import { failed, LoadError } from '../components/load-error.tsx'
 import { PageTitle } from '../components/page-title.tsx'
 import { Tour } from '../components/tour.tsx'
 import { Backlinks } from '../wiki/backlinks.tsx'
+import { CollabSocket } from '../wiki/collab.tsx'
 import { ContentView, NewSecretsContext } from '../wiki/content.tsx'
 import { PageCoverImage } from '../wiki/cover.tsx'
+import { PageBody } from '../wiki/editor.tsx'
 import { MapTab } from '../wiki/map/map-tab.tsx'
+import type { PageLinks } from '../wiki/page-links.tsx'
 import panelStyles from '../wiki/panel-blocks.module.css'
 import { usePageContent } from '../wiki/preview.tsx'
 import { PageProperties } from '../wiki/properties.tsx'
 import { type ReadAs, ReadAsProvider, readAsInput, readAsKey, useReadAs } from '../wiki/read-as.tsx'
 import { RelatedBody } from '../wiki/related-block.tsx'
+import { SheetPaper } from '../wiki/sheet/controls.tsx'
 import treeStyles from '../wiki/tree.module.css'
 import wiki from '../wiki/wiki.module.css'
 import styles from './world-pages.module.css'
@@ -273,6 +277,18 @@ function PlayerEntry({ page }: { page: Page }) {
     })
   const active = texts.find((tab) => tab.id === tabId) ?? null
   const content = usePageContent(page.worldId, page.id, null, false, active?.kind === 'text' ? active.id : undefined)
+  // Para escribir en ella: se enlaza a lo que conoce (sin crear páginas ni subir archivos)
+  const tree = useTree(page.worldId)
+  const playerLinks = useMemo<PageLinks>(() => {
+    const names = (tree.data?.pages ?? []).map((row) => ({ id: row.id, title: row.title, aliases: [], path: [] }))
+    return {
+      worldId: page.worldId,
+      names,
+      byId: new Map(names.map((row) => [row.id, row])),
+      files: [],
+      create: () => Promise.reject(new Error('Un jugador no crea páginas'))
+    }
+  }, [tree.data, page.worldId])
   // Lo nuevo de esta página, también lo que llega con ella abierta: se marca mientras se lee y deja de ser nuevo
   const news = useNews(page.worldId)
   const queryClient = useQueryClient()
@@ -322,6 +338,15 @@ function PlayerEntry({ page }: { page: Page }) {
           )}
           {active?.kind === 'map' ? (
             <MapTab key={active.id} page={page} tab={active} />
+          ) : page.editable && !active ? (
+            // Una página que su campaña puede escribir (docs/specs/pagina-de-jugadores.md): el editor, en vivo
+            <div className={wiki.column}>
+              <CollabSocket>
+                <SheetPaper page={page}>
+                  <PageBody page={page} links={playerLinks} />
+                </SheetPaper>
+              </CollabSocket>
+            </div>
           ) : (
             <div className={wiki.column}>
               {content.data ? (

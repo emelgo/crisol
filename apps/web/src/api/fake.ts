@@ -853,6 +853,8 @@ export function fakeApi(
   }
 
   const marks = new Map<string, { known: boolean; characters: string[] | null }>()
+  // Quién de cada campaña escribe en cada página (docs/specs/pagina-de-jugadores.md): campaña|página → personajes o null
+  const editors = new Map<string, string[] | null>()
   const knowledgeOf = (page: { id: string; worldId: string }) => {
     const own = (campaignId: string | null) => marks.get(`${campaignId ?? ''}|page|${page.id}`) ?? null
     const world = own(null)
@@ -881,7 +883,12 @@ export function fakeApi(
             from: decided
               ? { pageId: page.id, title: '', layer: mark ? ('campaign' as const) : ('world' as const) }
               : null,
-            characters: []
+            characters: [],
+            editors: !editors.has(`${c.id}|${page.id}`)
+              ? ('none' as const)
+              : (editors.get(`${c.id}|${page.id}`) ?? null) === null
+                ? ('all' as const)
+                : (editors.get(`${c.id}|${page.id}`) ?? []).map((id) => ({ id, name: id }))
           }
         })
     }
@@ -1228,6 +1235,12 @@ export function fakeApi(
         mark.known && key.split('|')[1] === 'page' ? [key.split('|')[2] ?? ''] : []
       )
     }),
+    setPageEditors: ({ campaignId, pageId, editors: who }) => {
+      const id = campaignId ?? campaigns[0]?.id ?? ''
+      if (who === null) editors.delete(`${id}|${pageId}`)
+      else editors.set(`${id}|${pageId}`, who === 'all' ? null : [...who])
+      return { ok: true as const }
+    },
     setKnowledge: ({ campaignId, kind, targetId, known, characters }) => {
       const key = `${campaignId ?? ''}|${kind}|${targetId}`
       if (known === null) marks.delete(key)
