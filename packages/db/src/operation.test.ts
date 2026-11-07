@@ -188,6 +188,8 @@ describe('operation', () => {
     notTracked.add('knowledge_news')
     // La mesa de cada campaña (qué escena mira y enseña) es estado de la sesión; las teselas salen de la imagen (ADR-0018)
     notTracked.add('campaign_tables').add('scene_tiles')
+    // Lo explorado se llena solo con lo que ve el grupo: no se deshace (docs/specs/vision.md)
+    notTracked.add('scene_explored')
     const tables = await conn.sql<
       { name: string }[]
     >`select tablename as name from pg_tables where schemaname = 'public'`

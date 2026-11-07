@@ -178,6 +178,17 @@ import {
   restoreWorld
 } from './trash.ts'
 import {
+  changeFog,
+  changeWalls,
+  getSceneVision,
+  placeImportedWalls,
+  resetFog,
+  setDoor,
+  setTileFit,
+  updateSceneVision,
+  viewAsParty
+} from './vision.ts'
+import {
   copyContent,
   deleteWorldContent,
   getContentOrigin,
@@ -220,6 +231,7 @@ export * from './tags.ts'
 export * from './templates.ts'
 export * from './tokens.ts'
 export * from './trash.ts'
+export * from './vision.ts'
 export * from './world-content.ts'
 export * from './worlds.ts'
 
@@ -423,7 +435,16 @@ export const ACTIONS = [
   updateCombat,
   nextTurn,
   previousTurn,
-  endCombat
+  endCombat,
+  getSceneVision,
+  changeWalls,
+  placeImportedWalls,
+  updateSceneVision,
+  setDoor,
+  changeFog,
+  resetFog,
+  setTileFit,
+  viewAsParty
 ]
 
 /** Las acciones por nombre, solo como tipo: la web las usa sin cargar zod */
@@ -627,4 +648,13 @@ export type Actions = {
   nextTurn: typeof nextTurn
   previousTurn: typeof previousTurn
   endCombat: typeof endCombat
+  getSceneVision: typeof getSceneVision
+  changeWalls: typeof changeWalls
+  placeImportedWalls: typeof placeImportedWalls
+  updateSceneVision: typeof updateSceneVision
+  setDoor: typeof setDoor
+  changeFog: typeof changeFog
+  resetFog: typeof resetFog
+  setTileFit: typeof setTileFit
+  viewAsParty: typeof viewAsParty
 }

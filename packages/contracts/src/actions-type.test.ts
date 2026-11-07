@@ -203,7 +203,16 @@ describe('Actions', () => {
       updateCombat: true,
       nextTurn: true,
       previousTurn: true,
-      endCombat: true
+      endCombat: true,
+      getSceneVision: true,
+      changeWalls: true,
+      placeImportedWalls: true,
+      updateSceneVision: true,
+      setDoor: true,
+      changeFog: true,
+      resetFog: true,
+      setTileFit: true,
+      viewAsParty: true
     }
     expect(Object.keys(names).sort()).toEqual(ACTIONS.map((a) => a.name).sort())
   })

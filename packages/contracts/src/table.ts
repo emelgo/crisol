@@ -5,7 +5,7 @@
  */
 import { z } from 'zod'
 import { screenCombat } from './combat.ts'
-import { type campaignTableView, sceneGrid, sceneTiles, sceneViewport, screenCamera } from './scenes.ts'
+import { type campaignTableView, fogMask, sceneGrid, sceneTiles, sceneViewport, screenCamera } from './scenes.ts'
 import { screenToken } from './tokens.ts'
 
 export const TABLE_VIEWS = ['master', 'screen'] as const
@@ -44,6 +44,33 @@ export const screenScene = z.object({
 
 export type ScreenScene = z.infer<typeof screenScene>
 
+/** La niebla de la pantalla (docs/specs/vision.md): lo explorado y lo que ve el grupo, en máscaras pequeñas */
+export const screenFog = z.object({
+  width: z.int(),
+  height: z.int(),
+  cellSize: z.int(),
+  explored: fogMask,
+  visible: fogMask,
+  /** 0 de día, 1 noche cerrada */
+  darkness: z.number()
+})
+
+export type ScreenFog = z.infer<typeof screenFog>
+
+/** Una luz que alumbra algo de lo que ve el grupo: lo que alumbra de ello (cells) y su centro solo si se ve */
+export const screenLight = z.object({
+  id: z.uuid(),
+  color: z.string(),
+  intensity: z.number(),
+  /** Radios en píxeles de la imagen */
+  bright: z.number(),
+  dim: z.number(),
+  origin: z.object({ x: z.number(), y: z.number() }).nullable(),
+  cells: fogMask
+})
+
+export type ScreenLight = z.infer<typeof screenLight>
+
 export const screenView = z.object({
   campaignId: z.uuid(),
   campaignName: z.string(),
@@ -51,10 +78,14 @@ export const screenView = z.object({
   scene: screenScene.nullable(),
   hidden: z.boolean(),
   camera: screenCamera,
-  /** Las fichas de la escena presentada que no están ocultas */
+  /** Las fichas de la escena presentada que el grupo ve y no están ocultas */
   tokens: z.array(screenToken),
-  /** La franja de turnos, si hay combate y la pantalla enseña algo: sin los ocultos */
-  combat: screenCombat.nullable()
+  /** La franja de turnos, si hay combate y la pantalla enseña algo: sin los ocultos ni las criaturas que no ve */
+  combat: screenCombat.nullable(),
+  /** La niebla (llega con la escena; opcional hasta que lo dé la API de prueba de la web) */
+  fog: screenFog.nullable().optional(),
+  /** Las luces que alumbran lo que ve el grupo, recortadas a ello */
+  lights: z.array(screenLight).optional()
 })
 
 export type ScreenView = z.infer<typeof screenView>

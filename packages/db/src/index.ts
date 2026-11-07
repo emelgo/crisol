@@ -41,6 +41,7 @@ export * as trashRepo from './repos/trash.ts'
 export * as undoRepo from './repos/undo.ts'
 export * as usersRepo from './repos/users.ts'
 export * as versionsRepo from './repos/versions.ts'
+export * as visionRepo from './repos/vision.ts'
 export * as worldContentRepo from './repos/world-content.ts'
 export * as worldsRepo from './repos/worlds.ts'
 // Las tablas de Better Auth, para su adaptador

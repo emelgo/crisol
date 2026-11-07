@@ -10,6 +10,7 @@ import { mapElements, mapPins, maps, pageTabs } from '../schema/maps.ts'
 import { pages } from '../schema/pages.ts'
 import { DEFAULT_SCENE_GRID, sceneStates, scenes } from '../schema/scenes.ts'
 import { randomTables } from '../schema/tables.ts'
+import { sceneFog, sceneLights, sceneWalls } from '../schema/vision.ts'
 
 export type PageTabRow = typeof pageTabs.$inferSelect
 export type MapRow = typeof maps.$inferSelect
@@ -102,6 +103,14 @@ export function deleteTab(db: Database, context: OperationContext, tabId: string
         .from(sceneStates)
         .where(eq(sceneStates.sceneId, scene.id))
       for (const state of states) await w.remove(sceneStates, state.id)
+      // Sus muros, sus luces y la niebla a mano de cada campaña (docs/specs/vision.md)
+      for (const table of [sceneWalls, sceneLights, sceneFog]) {
+        const rows = await w.read.select({ id: table.id }).from(table).where(eq(table.sceneId, scene.id))
+        await w.removeMany(
+          table,
+          rows.map((r) => r.id)
+        )
+      }
       await w.remove(scenes, scene.id)
     }
     await w.remove(pageTabs, tabId)

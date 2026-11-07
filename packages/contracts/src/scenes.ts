@@ -93,7 +93,7 @@ export const sceneView = z.object({
   image: sceneImage.nullable(),
   grid: sceneGrid,
   initialView: sceneViewport.nullable(),
-  /** Trae muros, puertas o luces de un UVTT, aún sin poner en juego */
+  /** Trae muros, puertas o luces de un UVTT o de la IA (se ponen en juego con placeImportedWalls) */
   hasImported: z.boolean()
 })
 
@@ -182,6 +182,35 @@ export const screenCamera = z.discriminatedUnion('mode', [
 
 export type ScreenCamera = z.infer<typeof screenCamera>
 
+/** Las teselas del borde de lo que ve la pantalla: enteras (asoma como mucho una más) o recortadas con la niebla */
+export const TILE_FITS = ['whole', 'cropped'] as const
+export type TileFit = (typeof TILE_FITS)[number]
+
+/**
+ * Una máscara de la niebla (docs/specs/vision.md): la rejilla de bits comprimida (`FogGrid.encode` de
+ * `@crisol/tabletop`), en base64, de `cellSize` píxeles de la imagen por bit
+ */
+export const fogMask = z.string().max(4_000_000).describe('FogGrid.encode() en base64')
+
+/** La visión de la escena abierta, para el máster: lo que ve el grupo, lo explorado y el estado de sus puertas */
+export const tableVision = z.object({
+  sceneId: z.uuid(),
+  /** La de la escena: si cambia, cambiaron sus muros o sus luces (se vuelven a pedir con getSceneVision) */
+  version: z.int(),
+  automaticVision: z.boolean(),
+  darkness: z.number(),
+  tileFit: z.enum(TILE_FITS),
+  /** Si está abierta cada puerta, en esta campaña, por el id de su muro */
+  doors: z.record(z.string(), z.boolean()),
+  /** Lo explorado por el grupo y lo que ve ahora */
+  explored: fogMask,
+  visible: fogMask,
+  /** Las fichas de la escena que el grupo no ve (ocultas o fuera de su vista) */
+  notSeen: z.array(z.uuid())
+})
+
+export type TableVision = z.infer<typeof tableVision>
+
 export const campaignTableView = z.object({
   campaignId: z.uuid(),
   /** La que mira (o prepara) el máster */
@@ -193,7 +222,9 @@ export const campaignTableView = z.object({
   /** Las fichas de la escena abierta */
   tokens: z.array(tokenView),
   /** El combate de la campaña, si hay uno (llega siempre; opcional hasta que lo dé la API de prueba de la web) */
-  combat: combatView.nullable().optional()
+  combat: combatView.nullable().optional(),
+  /** La visión de la escena abierta (llega siempre; opcional hasta que lo dé la API de prueba de la web) */
+  vision: tableVision.nullable().optional()
 })
 
 export type CampaignTableView = z.infer<typeof campaignTableView>

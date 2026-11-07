@@ -96,10 +96,17 @@ export const scenes = pgTable(
     tiles: jsonb().$type<SceneTilesData>(),
     grid: jsonb().$type<SceneGridData>().notNull(),
     initialView: jsonb().$type<SceneViewData>(),
-    imported: jsonb().$type<SceneImportedData>()
+    imported: jsonb().$type<SceneImportedData>(),
+    /** La oscuridad (docs/specs/vision.md): 0 de día, 1 noche cerrada */
+    darkness: doublePrecision().notNull().default(0),
+    /** La niebla sale de lo que ven las fichas del grupo; sin ella (un mapa sin muros), solo vale la de a mano */
+    automaticVision: boolean().notNull().default(false)
   },
   (t) => [index().on(t.worldId)]
 )
+
+/** El estado de las puertas de una campaña, por el id de su muro */
+export type SceneDoorStates = Record<string, { open: boolean }>
 
 /**
  * El estado de una campaña en una escena (ADR-0018): se crea la primera vez que la abre. Las fichas, las puertas, la
@@ -117,7 +124,9 @@ export const sceneStates = pgTable(
       .references(() => campaigns.id, { onDelete: 'cascade' }),
     sceneId: uuid()
       .notNull()
-      .references(() => scenes.id, { onDelete: 'cascade' })
+      .references(() => scenes.id, { onDelete: 'cascade' }),
+    /** Las puertas que la campaña tiene distinto de como se dibujaron (docs/specs/vision.md), por el id de su muro */
+    doors: jsonb().$type<SceneDoorStates>().notNull().default({})
   },
   (t) => [unique().on(t.campaignId, t.sceneId), index().on(t.sceneId)]
 )
@@ -137,6 +146,10 @@ export const campaignTables = pgTable('campaign_tables', {
   presentedSceneId: uuid().references(() => scenes.id, { onDelete: 'set null' }),
   screenHidden: boolean().notNull().default(false),
   camera: jsonb().$type<ScreenCameraData>().notNull().default({ mode: 'follow' }),
+  /** Las teselas del borde de lo que ve la pantalla: enteras o recortadas con la niebla (docs/specs/vision.md) */
+  tileFit: text({ enum: ['whole', 'cropped'] })
+    .notNull()
+    .default('whole'),
   updatedAt: timestamp({ withTimezone: true }).defaultNow().notNull()
 })
 
