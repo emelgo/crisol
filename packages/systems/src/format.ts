@@ -503,6 +503,11 @@ function build(strict: boolean) {
       LIMITS.types
     ).describe('Los tipos de documento, por su clave: los personajes y los objetos'),
     rolls: recordOf(roll, LIMITS.rolls).optional().describe('Las tiradas del juego, por su clave'),
+    initiative: key
+      .optional()
+      .describe(
+        'La tirada de iniciativa (su clave en rolls): la que tira el combate por cada uno. Sin ella, se escribe a mano'
+      ),
     dice: obj({
       default: formula.optional().describe('La tirada con la que empieza la ficha de dados (2d6), sin @'),
       critical: z

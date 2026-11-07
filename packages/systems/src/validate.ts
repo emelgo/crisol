@@ -383,6 +383,11 @@ function checkReferences(
       }
     })
   }
+  if (system.initiative !== undefined) {
+    const roll = own(system.rolls ?? {}, system.initiative)
+    if (!roll) add(['initiative'], `No existe la tirada «${system.initiative}»`)
+    else if (roll.for) add(['initiative'], 'La de iniciativa es una sola tirada, no una por cada campo o elemento')
+  }
   if (system.dice?.default) diceFormula(system.dice.default, ['dice', 'default'], add)
   repeated(system.languages, (i, k) => add(['languages', i], `«${k}» está repetido`))
   repeated(system.sources?.map((s) => s.key) ?? [], (i, k) => add(['sources', i, 'key'], `«${k}» está repetida`))

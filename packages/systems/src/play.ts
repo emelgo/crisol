@@ -47,7 +47,8 @@ export const PLAY_BYTES = 256 * 1024
 
 export const playSchema = z.strictObject({
   values: z.record(z.string().max(60), z.unknown()).optional(),
-  uses: z.record(z.string().max(300), z.record(z.string().max(60), z.int().min(0).max(1000))).optional(),
+  // Por objeto, sus recursos (y sus acciones con recarga gastadas, con su marca: hasta 60 más la marca)
+  uses: z.record(z.string().max(300), z.record(z.string().max(70), z.int().min(0).max(1000))).optional(),
   items: z
     .array(
       z.strictObject({
@@ -417,4 +418,75 @@ export function tickConditions(play: Play): { play: Play; expired: PlayCondition
   }
   const { conditions: _, ...rest } = play
   return { play: kept.length ? { ...rest, conditions: kept } : rest, expired }
+}
+
+/** Una acción con recarga gastada («Recarga 5–6») va con lo gastado de lo que la lleva: su clave con esta marca */
+export const RECHARGE_MARK = 'recarga:'
+
+/** Gasta (spent) o recarga una acción con recarga (item null: la del propio documento) */
+export function setRecharge(play: Play, item: string | null, key: string, spent: boolean): Play {
+  const owner = item ?? ''
+  const mine = { ...(play.uses?.[owner] ?? {}) }
+  if (spent) mine[RECHARGE_MARK + key] = 1
+  else delete mine[RECHARGE_MARK + key]
+  const { [owner]: _, ...others } = play.uses ?? {}
+  return { ...play, uses: Object.keys(mine).length > 0 ? { ...others, [owner]: mine } : others }
+}
+
+/** Si una acción con recarga está gastada */
+export const rechargeSpent = (play: Play, item: string | null, key: string) =>
+  (play.uses?.[item ?? '']?.[RECHARGE_MARK + key] ?? 0) > 0
+
+/** Lo que hace falta de una acción al empezar el turno: de quién es, si se recarga y qué gasta si es legendaria */
+export interface TurnAction {
+  item: string | null
+  key: string
+  activation?: string
+  uses?: string
+  recharge?: string
+}
+
+export interface TurnStart {
+  play: Play
+  /** Los estados que se fueron */
+  expired: PlayCondition[]
+  /** Las acciones que se recargaron (sus claves) */
+  recharged: string[]
+  /** Los recursos de las legendarias que se repusieron (sus claves) */
+  restored: string[]
+}
+
+/**
+ * Empieza el turno de quien lleva esto (docs/specs/combate.md): sus estados con rondas pierden una (y se van los que
+ * llegan a cero); cada acción con recarga gastada tira su dado (d6) y vuelve si sale lo que pide («5-6», «6»); y lo
+ * que gastan sus acciones legendarias se repone
+ */
+export function startTurn(play: Play, actions: readonly TurnAction[], d6: () => number): TurnStart {
+  const ticked = tickConditions(play)
+  let next = ticked.play
+  const recharged: string[] = []
+  const restored: string[] = []
+  for (const action of actions) {
+    if (!action.recharge || !rechargeSpent(next, action.item, action.key)) continue
+    const from = Number.parseInt(action.recharge, 10)
+    if (d6() >= from) {
+      next = setRecharge(next, action.item, action.key, false)
+      recharged.push(action.key)
+    }
+  }
+  // Lo que gastan las legendarias, por quién lo lleva
+  const legendary = new Map<string, Set<string>>()
+  for (const a of actions)
+    if (a.activation === 'legendary' && a.uses)
+      legendary.set(a.item ?? '', (legendary.get(a.item ?? '') ?? new Set()).add(a.uses))
+  for (const [owner, keys] of legendary) {
+    const mine = { ...(next.uses?.[owner] ?? {}) }
+    const spent = [...keys].filter((key) => (mine[key] ?? 0) > 0)
+    if (spent.length === 0) continue
+    for (const key of spent) delete mine[key]
+    const { [owner]: _, ...others } = next.uses ?? {}
+    next = { ...next, uses: Object.keys(mine).length > 0 ? { ...others, [owner]: mine } : others }
+    restored.push(...spent)
+  }
+  return { play: next, expired: ticked.expired, recharged, restored }
 }

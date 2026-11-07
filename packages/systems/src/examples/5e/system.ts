@@ -857,6 +857,7 @@ export const fiveE = {
       for: { items: ['clase'] }
     }
   },
+  initiative: 'iniciativa',
   dice: { default: '1d20', critical: 'd20' },
   sources: [
     {
