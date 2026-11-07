@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { expect, test } from '@playwright/test'
-import { freshOwner, import5e } from './ayudas.ts'
+import { freshOwner, import5e, watchNetwork } from './ayudas.ts'
 
 /**
  * El repaso visual frente al lienzo «Crisol: la mesa»: la cripta de Varn con las fichas del tablero Mesa (Lía, Bram,
@@ -85,15 +85,17 @@ test('repaso visual: la mesa, la tele y el combate con la cripta del lienzo', as
   await expect
     .poll(async () => (await call('getScene', { sceneId })).image.tiles?.levels ?? 0, { timeout: 60_000 })
     .toBeGreaterThan(0)
+  const net = watchNetwork(page)
   const [tv] = await Promise.all([
     page.waitForEvent('popup'),
     page.getByRole('button', { name: 'Pantalla', exact: true }).click()
   ])
+  const tvNet = watchNetwork(tv)
   await tv.setViewportSize(SIZE)
   await tv.emulateMedia({ colorScheme: 'dark' })
   await expect(tv.getByRole('list', { name: 'Lo que hay en la mesa' }).getByRole('listitem')).toHaveCount(7)
   // Que acaben de llegar las teselas antes de cada foto
-  const settled = () => page.waitForLoadState('networkidle')
+  const settled = () => net.quiet()
 
   // La mesa con la tarjeta de Goblin 3 (como el tablero Mesa)
   // La lista de fichas del teclado: se elige con el foco y Intro
@@ -116,7 +118,7 @@ test('repaso visual: la mesa, la tele y el combate con la cripta del lienzo', as
 
   // La tele (fija, como el tablero Pantalla)
   await call('setScreenCamera', { campaignId, camera: { mode: 'fixed', view: { x: 1800, y: 800, scale: 0.933 } } })
-  await tv.waitForLoadState('networkidle')
+  await tvNet.quiet()
   await tv.screenshot({ path: '../out/capturas/repaso-pantalla.png' })
 
   // El combate (como el tablero Combate): la iniciativa del lienzo, cada goblin aparte, ronda 2 y turno de Lía
@@ -149,7 +151,7 @@ test('repaso visual: la mesa, la tele y el combate con la cripta del lienzo', as
   await expect(panel.getByText('Ronda 2')).toBeVisible()
   await settled()
   await page.screenshot({ path: '../out/capturas/repaso-combate.png' })
-  await tv.waitForLoadState('networkidle')
+  await tvNet.quiet()
   await tv.screenshot({ path: '../out/capturas/repaso-pantalla-combate.png' })
 
   // Daño a varias: tres elegidas en el mapa (la primera abre su tarjeta: se cierra y siguen con Mayús)

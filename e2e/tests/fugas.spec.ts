@@ -13,7 +13,8 @@ import {
   openWindow,
   rename,
   slash,
-  toWorlds
+  toWorlds,
+  watchNetwork
 } from './ayudas.ts'
 
 const BASE = `http://127.0.0.1:${E2E_PORT}`
@@ -1044,6 +1045,7 @@ test('@fugas la pantalla de la tele solo recibe lo que ve el grupo, y un jugador
   const answers: Array<Promise<string>> = []
   const served: string[] = []
   const asked: string[] = []
+  const tvNet = watchNetwork(tv)
   tv.on('websocket', (ws) => ws.on('framereceived', ({ payload }) => frames.push(String(payload))))
   tv.on('response', (response) => {
     const path = new URL(response.url()).pathname
@@ -1062,7 +1064,7 @@ test('@fugas la pantalla de la tele solo recibe lo que ve el grupo, y un jugador
   await call('moveTokens', { campaignId, moves: [{ tokenId: bossToken, x: 1700, y: 1500 }] })
   await call('changeMarks', { campaignId, add: [text(700, 1200, 'Ya se ve')] })
   await expect.poll(() => frames.some((f) => f.includes('Ya se ve'))).toBe(true)
-  await tv.waitForLoadState('networkidle')
+  await tvNet.quiet()
 
   const everything = [...frames, ...(await Promise.all(answers))].join('\n')
   expect(everything).toContain('A la vista')
@@ -1120,6 +1122,7 @@ test('@fugas la pantalla de la tele solo recibe lo que ve el grupo, y un jugador
   // Un jugador: ni teselas (de la pantalla ni de la escena) ni la sala de la mesa, con ninguna vista
   const player = await newPlayer(browser, link, 'Jugadora')
   const playerFrames: string[] = []
+  const playerNet = watchNetwork(player)
   player.on('websocket', (ws) => ws.on('framereceived', ({ payload }) => playerFrames.push(String(payload))))
   for (const path of [screenTile(0, 0, 1), `/api/scenes/${sceneId}/tiles/${tiles.version}/0/0/1`]) {
     const response = await player.request.get(path)
@@ -1144,7 +1147,7 @@ test('@fugas la pantalla de la tele solo recibe lo que ve el grupo, y un jugador
   // Ni abriendo la pantalla de la campaña en su navegador
   await player.goto(`/mundos/${worldId}/campanas/${campaignId}/pantalla`)
   await expect.poll(() => playerFrames.some((f) => f.includes('FORBIDDEN'))).toBe(true)
-  await player.waitForLoadState('networkidle')
+  await playerNet.quiet()
   const toPlayer = playerFrames.join('\n')
   for (const leak of ['"type":"screen"', '"type":"master"', 'Lía', 'A la vista', sceneId])
     expect(toPlayer, leak).not.toContain(leak)

@@ -359,6 +359,34 @@ export async function settled(page: Page) {
     .toBe(0)
 }
 
+/**
+ * Lo que tiene en curso una página: `quiet()` espera a que pase medio segundo sin ninguna petición abierta. Como
+ * `networkidle`, pero se mira en cada llamada (no una vez por carga) y, si algo no acaba, falla diciendo qué es
+ */
+export function watchNetwork(page: Page) {
+  const open = new Map<object, string>()
+  page.on('request', (r) => {
+    open.set(r, `${r.method()} ${r.url()}`)
+  })
+  page.on('requestfinished', (r) => {
+    open.delete(r)
+  })
+  page.on('requestfailed', (r) => {
+    open.delete(r)
+  })
+  return {
+    async quiet(timeout = 60_000) {
+      const end = Date.now() + timeout
+      let since = Date.now()
+      while (Date.now() - since < 500) {
+        if (open.size > 0) since = Date.now()
+        if (Date.now() > end) throw new Error(`La red no se calma; en curso:\n${[...open.values()].join('\n')}`)
+        await page.waitForTimeout(50)
+      }
+    }
+  }
+}
+
 /** Un PNG: sus trozos con su longitud y su CRC */
 export function png(width: number, height: number, pixel: (x: number, y: number) => [number, number, number]) {
   const chunk = (type: string, data: Buffer) => {

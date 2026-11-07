@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import AxeBuilder from '@axe-core/playwright'
 import { expect, type Locator, type Page, test } from '@playwright/test'
-import { freshOwner, import5e } from './ayudas.ts'
+import { freshOwner, import5e, watchNetwork } from './ayudas.ts'
 
 /**
  * Las herramientas de la mesa (docs/specs/herramientas-mesa.md) con la cripta de Varn del lienzo «Crisol: la mesa» y
@@ -121,15 +121,17 @@ test('las herramientas: medir y dejar un cono, dañar a las de dentro, un reloj 
   await expect
     .poll(async () => (await call('getScene', { sceneId })).image.tiles?.levels ?? 0, { timeout: 60_000 })
     .toBeGreaterThan(0)
+  const net = watchNetwork(page)
   const [tv] = await Promise.all([
     page.waitForEvent('popup'),
     page.getByRole('button', { name: 'Pantalla', exact: true }).click()
   ])
+  const tvNet = watchNetwork(tv)
   await tv.setViewportSize(SIZE)
   await tv.emulateMedia({ colorScheme: 'dark' })
   const tvHost = tv.locator('[data-screen]')
   await expect(tv.getByRole('list', { name: 'Lo que hay en la mesa' }).getByRole('listitem')).toHaveCount(7)
-  const settled = () => page.waitForLoadState('networkidle')
+  const settled = () => net.quiet()
   const tools = page.getByRole('toolbar', { name: 'Herramientas de la mesa' })
 
   // Medir: un camino con un punto de paso, de Sela a Goblin 2, que la tele ve
@@ -152,7 +154,7 @@ test('las herramientas: medir y dejar un cono, dañar a las de dentro, un reloj 
   await settled()
   await axe(page, 'medir')
   await page.screenshot({ path: '../out/capturas/herramientas-medir.png' })
-  await tv.waitForLoadState('networkidle')
+  await tvNet.quiet()
   await tv.screenshot({ path: '../out/capturas/herramientas-tele-medida.png' })
   await page.keyboard.press('Escape')
   await page.keyboard.press('Escape')
@@ -300,7 +302,7 @@ test('las herramientas: medir y dejar un cono, dañar a las de dentro, un reloj 
   await settled()
   await axe(page, 'los widgets')
   await page.screenshot({ path: '../out/capturas/herramientas-widgets.png' })
-  await tv.waitForLoadState('networkidle')
+  await tvNet.quiet()
   await axe(tv, 'la tele con los widgets')
   await tv.screenshot({ path: '../out/capturas/herramientas-tele.png' })
 

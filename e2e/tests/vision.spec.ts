@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import AxeBuilder from '@axe-core/playwright'
 import { expect, type Locator, type Page, test } from '@playwright/test'
-import { freshOwner, import5e } from './ayudas.ts'
+import { freshOwner, import5e, watchNetwork } from './ayudas.ts'
 
 /**
  * La visión (docs/specs/vision.md) con la cripta de Varn del lienzo «Crisol: la mesa», a 3000 × 2000 (casillas de
@@ -129,14 +129,16 @@ test('la visión: la cripta con su puerta secreta, el grupo que entra, la secret
   await expect
     .poll(async () => (await call('getScene', { sceneId })).image.tiles?.levels ?? 0, { timeout: 60_000 })
     .toBeGreaterThan(0)
+  const net = watchNetwork(page)
   const [tv] = await Promise.all([
     page.waitForEvent('popup'),
     page.getByRole('button', { name: 'Pantalla', exact: true }).click()
   ])
+  const tvNet = watchNetwork(tv)
   await tv.setViewportSize(SIZE)
   await tv.emulateMedia({ colorScheme: 'dark' })
   const onTv = tv.getByRole('list', { name: 'Lo que hay en la mesa' }).getByRole('listitem')
-  const settled = () => page.waitForLoadState('networkidle')
+  const settled = () => net.quiet()
 
   // La tele solo ve la sala de la entrada: ni el goblin ni su jefe
   await expect(onTv).toHaveCount(3)
@@ -225,7 +227,7 @@ test('la visión: la cripta con su puerta secreta, el grupo que entra, la secret
   // La tele de noche, con las antorchas: lo no explorado negro, lo explorado en gris y lo visible con su luz
   await call('updateSceneVision', { sceneId, darkness: 0.55 })
   await expect.poll(async () => (await call('getCampaignTable', { campaignId })).vision.darkness).toBe(0.55)
-  await tv.waitForLoadState('networkidle')
+  await tvNet.quiet()
   await axe(tv, 'la tele')
   await tv.screenshot({ path: '../out/capturas/vision-tele.png' })
 
