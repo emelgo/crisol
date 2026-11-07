@@ -172,4 +172,64 @@ describe('el canal de la mesa', () => {
       ]
     })
   })
+
+  it('la medida sale a su ritmo, siempre la última (también la de «ya no mide»)', () => {
+    const channel = open('master', { onMessage: () => {} })
+    last().open()
+    last().sent = []
+    const line = (x: number) => ({
+      shape: 'line' as const,
+      points: [
+        { x: 0, y: 0 },
+        { x, y: 0 }
+      ]
+    })
+    channel.sendMeasure(line(100))
+    channel.sendMeasure(line(200))
+    channel.sendMeasure(null)
+    expect(last().sent).toEqual([{ type: 'measure', measure: line(100) }])
+    vi.advanceTimersByTime(80)
+    expect(last().sent.at(-1)).toEqual({ type: 'measure', measure: null })
+    vi.advanceTimersByTime(200)
+    expect(last().sent).toHaveLength(2)
+  })
+
+  it('el láser junta sus puntos nuevos y manda como mucho 30, redondeados', () => {
+    const channel = open('master', { onMessage: () => {} })
+    last().open()
+    last().sent = []
+    channel.sendLaser([{ x: 1.4, y: 2.6 }])
+    for (let i = 0; i < 40; i++) channel.sendLaser([{ x: i, y: i }])
+    expect(last().sent).toEqual([{ type: 'laser', points: [{ x: 1, y: 3 }] }])
+    vi.advanceTimersByTime(80)
+    const sent = last().sent.at(-1) as { points: unknown[] }
+    expect(sent.points).toHaveLength(30)
+    expect(sent.points.at(-1)).toEqual({ x: 39, y: 39 })
+  })
+
+  it('si su temporizador se retrasa (una pestaña de fondo), lo que espera sale con lo siguiente', () => {
+    const channel = open('master', { onMessage: () => {} })
+    last().open()
+    last().sent = []
+    const now = Date.now()
+    const clock = vi.spyOn(Date, 'now')
+    clock.mockReturnValue(now)
+    channel.sendLaser([{ x: 1, y: 1 }])
+    clock.mockReturnValue(now + 10)
+    channel.sendLaser([{ x: 2, y: 2 }])
+    // El temporizador no llega; pasan 200 ms y se mueve otra vez
+    clock.mockReturnValue(now + 200)
+    channel.sendLaser([{ x: 3, y: 3 }])
+    expect(last().sent).toEqual([
+      { type: 'laser', points: [{ x: 1, y: 1 }] },
+      {
+        type: 'laser',
+        points: [
+          { x: 2, y: 2 },
+          { x: 3, y: 3 }
+        ]
+      }
+    ])
+    clock.mockRestore()
+  })
 })

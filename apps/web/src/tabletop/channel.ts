@@ -1,9 +1,9 @@
 /**
  * El canal de la mesa (ADR-0018): un WebSocket a /api/table que dice quién mira (el máster o la pantalla de la tele),
  * recibe su proyección y se reconecta solo, esperando cada vez más. El máster manda por él su encuadre en vivo, que la
- * tele sigue con «Seguir»
+ * tele sigue con «Seguir», la medida en curso y el láser
  */
-import type { SceneViewport, TableServerMessage, TableViewer } from '@crisol/contracts'
+import type { LiveMeasure, SceneViewport, TableServerMessage, TableViewer } from '@crisol/contracts'
 
 export type TableStatus = 'connecting' | 'open' | 'reconnecting' | 'forbidden' | 'ended'
 
@@ -19,6 +19,10 @@ export interface TableChannel {
   sendViewport(view: SceneViewport): void
   /** Unas fichas mientras se arrastran: como mucho uno cada `DRAG_MS`, con lo último de cada una */
   sendDrag(moves: DragMove[]): void
+  /** La medida en curso (null: ya no mide): como mucho una cada `LIVE_MS`, siempre la última */
+  sendMeasure(measure: LiveMeasure | null): void
+  /** Los puntos nuevos de la estela del láser: se juntan y salen como mucho cada `LIVE_MS` */
+  sendLaser(points: Array<{ x: number; y: number }>): void
   close(): void
 }
 
@@ -33,6 +37,10 @@ const VIEWPORT_MS = 50
 const DRAG_MS = 70
 /** Lo más que lleva un mensaje de arrastre */
 const MAX_DRAG_MOVES = 20
+/** La medida y el láser (comparten con lo demás los 30 mensajes por segundo) */
+const LIVE_MS = 80
+/** Lo más que lleva un mensaje del láser */
+const MAX_LASER_POINTS = 30
 
 type SocketLike = {
   readyState: number
@@ -67,6 +75,13 @@ export function connectTable(
   const dragging = new Map<string, DragMove>()
   let dragAt = Number.NEGATIVE_INFINITY
   let dragTimer: ReturnType<typeof setTimeout> | undefined
+  // La medida (undefined: nada que mandar) y los puntos del láser, esperando a su turno
+  let measure: LiveMeasure | null | undefined
+  let measureAt = Number.NEGATIVE_INFINITY
+  let measureTimer: ReturnType<typeof setTimeout> | undefined
+  let laser: Array<{ x: number; y: number }> = []
+  let laserAt = Number.NEGATIVE_INFINITY
+  let laserTimer: ReturnType<typeof setTimeout> | undefined
 
   const status = (value: TableStatus) => handlers.onStatus?.(value)
   const isOpen = () => socket !== null && socket.readyState === 1
@@ -85,6 +100,40 @@ export function connectTable(
     const moves = [...dragging.values()].slice(0, MAX_DRAG_MOVES)
     dragging.clear()
     socket?.send(JSON.stringify({ type: 'drag', moves }))
+  }
+
+  const flushMeasure = () => {
+    measureTimer = undefined
+    if (measure === undefined || !isOpen()) return
+    measureAt = Date.now()
+    socket?.send(JSON.stringify({ type: 'measure', measure }))
+    measure = undefined
+  }
+
+  const flushLaser = () => {
+    laserTimer = undefined
+    if (laser.length === 0 || !isOpen()) {
+      laser = []
+      return
+    }
+    laserAt = Date.now()
+    const points = laser.slice(-MAX_LASER_POINTS)
+    laser = []
+    socket?.send(JSON.stringify({ type: 'laser', points }))
+  }
+
+  /**
+   * Lo que sale como mucho cada `LIVE_MS`: ahora (aunque esperase su temporizador, que el navegador frena en una pestaña
+   * de fondo) o cuando le toque
+   */
+  const throttle = (at: number, timer: ReturnType<typeof setTimeout> | undefined, flushNow: () => void) => {
+    const since = Date.now() - at
+    if (since >= LIVE_MS) {
+      clearTimeout(timer)
+      flushNow()
+      return undefined
+    }
+    return timer ?? setTimeout(flushNow, LIVE_MS - since)
   }
 
   const open = () => {
@@ -138,11 +187,21 @@ export function connectTable(
       if (since >= DRAG_MS) flushDrag()
       else dragTimer = setTimeout(flushDrag, DRAG_MS - since)
     },
+    sendMeasure(next) {
+      measure = next
+      measureTimer = throttle(measureAt, measureTimer, flushMeasure)
+    },
+    sendLaser(points) {
+      laser.push(...points.map((p) => ({ x: Math.round(p.x), y: Math.round(p.y) })))
+      laserTimer = throttle(laserAt, laserTimer, flushLaser)
+    },
     close() {
       stopped = true
       clearTimeout(retry)
       clearTimeout(pending)
       clearTimeout(dragTimer)
+      clearTimeout(measureTimer)
+      clearTimeout(laserTimer)
       socket?.close()
     }
   }

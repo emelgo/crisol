@@ -2,8 +2,10 @@
  * El lienzo de la mesa con PixiJS (ADR-0018 § 9), para la mesa del máster y la tele: el mapa por teselas (las del
  * nivel que toca según el zoom, con las del siguiente debajo mientras llegan y el nivel más pequeño entero al fondo),
  * la rejilla encima, en píxeles de la pantalla, la niebla y el brillo de las luces (una imagen pequeña estirada con
- * suavizado), las formas de los editores (muros, luces, la niebla a mano) y las fichas. PixiJS se carga aparte
- * (import()), solo en la mesa y en la tele
+ * suavizado), las formas de los editores (muros, luces, la niebla a mano) y las fichas. Con las herramientas
+ * (docs/specs/herramientas-mesa.md): las imágenes sueltas (debajo o encima de las fichas), lo dejado en el mapa
+ * (plantillas, dibujos), lo que va en vivo (la medida, el láser) y sus rótulos. PixiJS se carga aparte (import()), solo
+ * en la mesa y en la tele
  */
 import type { SceneGrid, SceneTiles } from '@crisol/contracts'
 import { type Point, type Size, type TilePyramid, type TileRef, tileWorldRect, type Viewport } from '@crisol/tabletop'
@@ -35,8 +37,18 @@ export interface FogLayer {
  * en píxeles de la pantalla (no crecen con el zoom). `dash`: largo del trazo y del hueco, en píxeles de la pantalla
  */
 export type OverlayShape =
-  | { kind: 'line'; a: Point; b: Point; color: number; width: number; alpha?: number; dash?: readonly [number, number] }
-  | { kind: 'dot'; at: Point; color: number; radius: number; stroke?: number }
+  | {
+      kind: 'line'
+      a: Point
+      b: Point
+      color: number
+      width: number
+      alpha?: number
+      dash?: readonly [number, number]
+      /** El grosor, en píxeles del mapa (crece con el zoom) */
+      scaled?: boolean
+    }
+  | { kind: 'dot'; at: Point; color: number; radius: number; stroke?: number; alpha?: number }
   | {
       kind: 'circle'
       at: Point
@@ -56,7 +68,39 @@ export type OverlayShape =
       fill?: number
       closed?: boolean
       dash?: readonly [number, number]
+      scaled?: boolean
+      /** El color del relleno, si no es el del trazo */
+      fillColor?: number
     }
+
+/** Las capas de formas: lo dejado en el mapa (debajo de las fichas), los editores y lo que va en vivo (encima) */
+export type ShapeLayer = 'marks' | 'editor' | 'live'
+
+/** Un rótulo sobre el mapa (una medida): en un punto del mapa, con su letra fija en la pantalla */
+export interface MapLabel {
+  at: Point
+  text: string
+  /** El total de una medida, en oro lleno */
+  strong?: boolean
+  /** Su color (por defecto, el oro de las medidas) */
+  color?: number
+  /** Cuánto se aparta de su punto, en píxeles de la pantalla (para no tapar la ficha) */
+  offset?: { x: number; y: number }
+}
+
+/** Una imagen suelta en el mapa: su centro, su tamaño y su giro en píxeles del mapa */
+export interface MapImageDraw {
+  id: string
+  url: string
+  x: number
+  y: number
+  width: number
+  height: number
+  /** En grados */
+  rotation: number
+  above: boolean
+  alpha: number
+}
 
 /** Una ficha tal como se pinta (la mesa y la tele la preparan con lo suyo) */
 export interface DrawToken {
@@ -76,6 +120,8 @@ export interface DrawToken {
   selected: boolean
   /** Es su turno en el combate: un aro dorado */
   turn: boolean
+  /** Queda dentro de una plantilla: un aro naranja a trazos */
+  target?: boolean
   /** La parte de su vida que le queda (la mesa); null sin vida o en la tele */
   life: number | null
   /** Su estado en palabras (la tele) */
@@ -122,8 +168,14 @@ export class TableRenderer {
     sprite: null,
     canvas: null
   }
-  private readonly shapesLayer: Graphics
-  private shapes: readonly OverlayShape[] = []
+  private readonly shapeLayers: Record<ShapeLayer, Graphics>
+  private shapes: Record<ShapeLayer, readonly OverlayShape[]> = { marks: [], editor: [], live: [] }
+  private readonly labelLayer: Container
+  private labels: readonly MapLabel[] = []
+  /** Las imágenes sueltas: debajo de la rejilla y encima de las fichas */
+  private readonly imageLayers: { below: Container; above: Container }
+  private images: readonly MapImageDraw[] = []
+  private readonly imageSprites = new Map<string, { sprite: Sprite; url: string }>()
   private readonly tokenLayer: Container
   private readonly nodes = new Map<string, TokenNode>()
   private tokens: DrawToken[] = []
@@ -164,11 +216,24 @@ export class TableRenderer {
     this.world = new pixi.Container()
     this.layers = { base: new pixi.Container(), under: new pixi.Container(), top: new pixi.Container() }
     this.world.addChild(this.layers.base, this.layers.under, this.layers.top)
+    this.imageLayers = { below: new pixi.Container(), above: new pixi.Container() }
+    this.world.addChild(this.imageLayers.below)
     this.grid = new pixi.Graphics()
     this.fogLayer = new pixi.Container()
-    this.shapesLayer = new pixi.Graphics()
+    this.shapeLayers = { marks: new pixi.Graphics(), editor: new pixi.Graphics(), live: new pixi.Graphics() }
     this.tokenLayer = new pixi.Container()
-    app.stage.addChild(this.world, this.grid, this.fogLayer, this.shapesLayer, this.tokenLayer)
+    this.labelLayer = new pixi.Container()
+    app.stage.addChild(
+      this.world,
+      this.grid,
+      this.fogLayer,
+      this.shapeLayers.marks,
+      this.shapeLayers.editor,
+      this.tokenLayer,
+      this.imageLayers.above,
+      this.shapeLayers.live,
+      this.labelLayer
+    )
     // Sin ratón en PixiJS: los gestos los lleva la página
     app.stage.eventMode = 'none'
     // Se pinta solo cuando algo cambia (no a cada fotograma): la mesa y la tele pasan horas abiertas
@@ -216,10 +281,44 @@ export class TableRenderer {
     this.schedule()
   }
 
-  /** Lo que dibujan los editores, encima de la niebla y debajo de las fichas */
-  setShapes(shapes: readonly OverlayShape[]) {
-    this.shapes = shapes
+  /** Lo que dibujan los editores, encima de la niebla y debajo de las fichas (o en otra capa) */
+  setShapes(shapes: readonly OverlayShape[], layer: ShapeLayer = 'editor') {
+    this.shapes = { ...this.shapes, [layer]: shapes }
     this.schedule()
+  }
+
+  /** Los rótulos de las medidas, encima de todo */
+  setLabels(labels: readonly MapLabel[]) {
+    this.labels = labels
+    this.schedule()
+  }
+
+  /** Las imágenes sueltas del mapa */
+  setImages(images: readonly MapImageDraw[]) {
+    this.images = images
+    this.schedule()
+  }
+
+  /**
+   * Una captura pequeña de lo que se ve (el mapa entero encuadrado, sin la interfaz), en data URL de hasta `maxBytes`:
+   * para la miniatura de una instantánea. null si no se puede
+   */
+  async snapshot(maxSide: number, maxBytes: number): Promise<string | null> {
+    if (this.destroyed || !this.scene) return null
+    this.layout()
+    const source = this.app.renderer.extract.canvas({ target: this.app.stage }) as HTMLCanvasElement
+    const k = Math.min(1, maxSide / Math.max(source.width, source.height))
+    const canvas = document.createElement('canvas')
+    canvas.width = Math.max(1, Math.round(source.width * k))
+    canvas.height = Math.max(1, Math.round(source.height * k))
+    const context = canvas.getContext('2d')
+    if (!context) return null
+    context.drawImage(source, 0, 0, canvas.width, canvas.height)
+    for (const quality of [0.8, 0.6, 0.4, 0.25]) {
+      const url = canvas.toDataURL('image/webp', quality)
+      if (url.length <= maxBytes) return url
+    }
+    return null
   }
 
   destroy() {
@@ -249,6 +348,8 @@ export class TableRenderer {
     const { view, scene, pyramid } = this
     this.world.position.set(view.x, view.y)
     this.world.scale.set(view.scale)
+    this.imageLayers.above.position.set(view.x, view.y)
+    this.imageLayers.above.scale.set(view.scale)
     this.fogLayer.position.set(view.x, view.y)
     this.fogLayer.scale.set(view.scale)
     this.grid.clear()
@@ -256,7 +357,9 @@ export class TableRenderer {
       for (const sprite of this.sprites.values()) sprite.destroy()
       this.sprites.clear()
       this.fogLayer.visible = false
-      this.shapesLayer.clear()
+      for (const layer of Object.values(this.shapeLayers)) layer.clear()
+      for (const child of this.labelLayer.removeChildren()) child.destroy()
+      this.drawImages([])
       this.drawTokens([])
       return
     }
@@ -293,13 +396,17 @@ export class TableRenderer {
       layer.addChild(sprite)
       this.sprites.set(key, sprite)
     }
-    // Las imágenes de las fichas también están en uso
+    // Las imágenes de las fichas y las sueltas también están en uso
     const inUse = new Set(wanted.keys())
     for (const token of this.tokens) if (token.image) inUse.add(token.image.url)
+    for (const image of this.images) inUse.add(image.url)
     this.evict(inUse)
     this.drawGrid(scene)
-    this.drawShapes()
+    this.drawImages(this.images)
+    for (const layer of ['marks', 'editor', 'live'] as const)
+      this.drawShapes(this.shapeLayers[layer], this.shapes[layer])
     this.drawTokens(this.tokens)
+    this.drawLabels()
   }
 
   /** Las fichas, en píxeles de la pantalla: el disco crece con el mapa y los rótulos no */
@@ -323,6 +430,17 @@ export class TableRenderer {
           .circle(0, 0, r + ring + 4)
           .fill({ color: 0xf2c260, alpha: 0.95 })
       if (token.selected) node.disc.circle(0, 0, r + ring + 3).fill({ color: 0xffffff, alpha: 0.9 })
+      if (token.target) {
+        // A trazos, por fuera del borde
+        const radius = r + ring + 6
+        const dashes = Math.max(10, Math.round(radius / 3))
+        for (let i = 0; i < dashes; i++) {
+          const from = (i / dashes) * Math.PI * 2
+          const to = from + (Math.PI / dashes) * 1.1
+          node.disc.moveTo(radius * Math.cos(from), radius * Math.sin(from)).arc(0, 0, radius, from, to)
+        }
+        node.disc.stroke({ width: 2.5, color: 0xff8a4c, alpha: 0.95 })
+      }
       node.disc.circle(0, 0, r + ring / 2).fill(color)
       // El disco, con su luz arriba a la izquierda (como un degradado radial)
       const [light, dark] = token.colors
@@ -466,9 +584,69 @@ export class TableRenderer {
     return { layer, sprite, canvas }
   }
 
-  /** Las formas de los editores, en píxeles de la pantalla */
-  private drawShapes() {
-    const g = this.shapesLayer
+  /** Las imágenes sueltas: cada una con su sprite, centrada, con su tamaño y su giro */
+  private drawImages(images: readonly MapImageDraw[]) {
+    const seen = new Set<string>()
+    for (const image of images) {
+      const texture = this.texture(image.url)
+      if (!texture) continue
+      seen.add(image.id)
+      let entry = this.imageSprites.get(image.id)
+      if (!entry || entry.url !== image.url) {
+        entry?.sprite.destroy()
+        entry = { sprite: new this.pixi.Sprite(texture), url: image.url }
+        entry.sprite.anchor.set(0.5)
+        this.imageSprites.set(image.id, entry)
+      }
+      const { sprite } = entry
+      const layer = image.above ? this.imageLayers.above : this.imageLayers.below
+      if (sprite.parent !== layer) layer.addChild(sprite)
+      sprite.position.set(image.x, image.y)
+      sprite.width = image.width
+      sprite.height = image.height
+      sprite.rotation = (image.rotation * Math.PI) / 180
+      sprite.alpha = image.alpha
+    }
+    for (const [id, entry] of this.imageSprites) {
+      if (seen.has(id)) continue
+      entry.sprite.destroy()
+      this.imageSprites.delete(id)
+    }
+  }
+
+  /** Los rótulos, en píxeles de la pantalla: una placa oscura con borde de oro (o llena, el total) */
+  private drawLabels() {
+    for (const child of this.labelLayer.removeChildren()) child.destroy({ children: true })
+    const { x: vx, y: vy, scale } = this.view
+    for (const label of this.labels) {
+      const color = label.color ?? 0xf2c260
+      const text = new this.pixi.Text({
+        text: label.text,
+        style: {
+          fontFamily: 'Barlow, sans-serif',
+          fontWeight: '800',
+          fontSize: this.big ? 18 : 14,
+          fill: label.strong ? 0x1b1608 : color
+        }
+      })
+      text.anchor.set(0.5)
+      const plate = new this.pixi.Graphics()
+      const w = text.width + 16
+      const h = text.height + 4
+      plate.roundRect(-w / 2, -h / 2, w, h, 6).fill({ color: label.strong ? color : 0x111214, alpha: 0.95 })
+      if (!label.strong) plate.stroke({ width: 1, color })
+      const node = new this.pixi.Container()
+      node.addChild(plate, text)
+      node.position.set(
+        Math.round(label.at.x * scale + vx + (label.offset?.x ?? 0)),
+        Math.round(label.at.y * scale + vy + (label.offset?.y ?? 0))
+      )
+      this.labelLayer.addChild(node)
+    }
+  }
+
+  /** Unas formas, en píxeles de la pantalla */
+  private drawShapes(g: Graphics, shapes: readonly OverlayShape[]) {
     g.clear()
     const { x: vx, y: vy, scale } = this.view
     const sx = (p: Point) => p.x * scale + vx
@@ -518,10 +696,12 @@ export class TableRenderer {
       }
       g.stroke({ width, color, alpha, cap: 'round', join: 'round' })
     }
-    for (const shape of this.shapes) {
-      if (shape.kind === 'line') stroke([shape.a, shape.b], false, shape.color, shape.width, shape.dash, shape.alpha)
+    const widthOf = (shape: { width: number; scaled?: boolean }) =>
+      shape.scaled ? Math.max(0.5, shape.width * scale) : shape.width
+    for (const shape of shapes) {
+      if (shape.kind === 'line') stroke([shape.a, shape.b], false, shape.color, widthOf(shape), shape.dash, shape.alpha)
       else if (shape.kind === 'dot') {
-        g.circle(sx(shape.at), sy(shape.at), shape.radius).fill(shape.color)
+        g.circle(sx(shape.at), sy(shape.at), shape.radius).fill({ color: shape.color, alpha: shape.alpha ?? 1 })
         if (shape.stroke !== undefined) g.stroke({ width: 2, color: shape.stroke })
       } else if (shape.kind === 'circle') {
         const sides = Math.max(24, Math.min(160, Math.round(shape.radius * scale * 0.4)))
@@ -533,8 +713,12 @@ export class TableRenderer {
         stroke(points, true, shape.color, shape.width, shape.dash)
       } else {
         if (shape.fill && shape.points.length > 2)
-          g.poly(shape.points.flatMap((p) => [sx(p), sy(p)])).fill({ color: shape.color, alpha: shape.fill })
-        stroke([...shape.points], shape.closed ?? false, shape.color, shape.width, shape.dash, shape.alpha)
+          g.poly(shape.points.flatMap((p) => [sx(p), sy(p)])).fill({
+            color: shape.fillColor ?? shape.color,
+            alpha: shape.fill
+          })
+        if (shape.width > 0)
+          stroke([...shape.points], shape.closed ?? false, shape.color, widthOf(shape), shape.dash, shape.alpha)
       }
     }
   }
