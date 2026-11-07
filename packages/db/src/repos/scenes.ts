@@ -84,6 +84,7 @@ export async function campaignTable(db: Database, campaignId: string): Promise<C
       screenHidden: false,
       camera: { mode: 'follow' },
       tileFit: 'whole',
+      measureOnScreen: false,
       updatedAt: new Date(0)
     }
   )
@@ -99,6 +100,7 @@ export async function setCampaignTable(
     screenHidden: boolean
     camera: ScreenCameraData
     tileFit: 'whole' | 'cropped'
+    measureOnScreen: boolean
   }>
 ): Promise<CampaignTableRow> {
   const [row] = await db

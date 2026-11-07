@@ -150,6 +150,8 @@ export const campaignTables = pgTable('campaign_tables', {
   tileFit: text({ enum: ['whole', 'cropped'] })
     .notNull()
     .default('whole'),
+  /** «La tele ve lo que mides»: la medida en curso del máster va en vivo a la pantalla (docs/specs/herramientas-mesa.md) */
+  measureOnScreen: boolean().notNull().default(false),
   updatedAt: timestamp({ withTimezone: true }).defaultNow().notNull()
 })
 

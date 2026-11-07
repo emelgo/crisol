@@ -414,6 +414,13 @@
       "when": 1794059367183,
       "tag": "0058_vision",
       "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1794063488534,
+      "tag": "0059_herramientas",
+      "breakpoints": true
     }
   ]
 }

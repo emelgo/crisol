@@ -18,6 +18,7 @@ import { pages } from './schema/pages.ts'
 import { campaignParty } from './schema/party.ts'
 import { encounters, sceneStates, scenes, sceneTokens } from './schema/scenes.ts'
 import { systemContent, systems, worldContent } from './schema/systems.ts'
+import { campaignWidgets, sceneMarks, sceneSnapshots } from './schema/table-tools.ts'
 import { randomTables } from './schema/tables.ts'
 import { tags } from './schema/tags.ts'
 import { pageTemplates } from './schema/templates.ts'
@@ -62,7 +63,10 @@ export const TRACKED_TABLES = {
   combatants,
   scene_walls: sceneWalls,
   scene_lights: sceneLights,
-  scene_fog: sceneFog
+  scene_fog: sceneFog,
+  scene_marks: sceneMarks,
+  campaign_widgets: campaignWidgets,
+  scene_snapshots: sceneSnapshots
 }
 
 export type TrackedTable = (typeof TRACKED_TABLES)[keyof typeof TRACKED_TABLES]
