@@ -1,6 +1,6 @@
 # Spec: vision (módulo 6)
 
-Estado: **spec** (2026-11-07). Tercera capacidad del módulo 6 (`docs/specs/modulo-6.md`), después de `fichas`.
+Estado: **servidor construido** (2026-11-07; la web, pendiente). Tercera capacidad del módulo 6 (`docs/specs/modulo-6.md`), después de `fichas`.
 Entrevista: `docs/modulos.md` § «### 6. Mesa». ADR-0018 (puntos 4 a 7 y 12). Estudios:
 `research/foundry/vision-muros-y-niebla.md` (muros, puertas, luces, visión, niebla, rendimiento) y
 `research/uvtt/formato.md`; lo que se porta, `docs/mesa-crisol-actual.md` (§ 3: `vision.ts`, `luz.ts`,
@@ -103,6 +103,73 @@ Para quién: el máster; la tele; la IA.
   ficha fuera de la vista, ni una tesela sin explorar.
 - **E2E**: una cripta con una puerta secreta: la tele no la ve; el grupo entra por la puerta normal y la sala se
   descubre; el máster abre la secreta y se ve el hueco.
+
+## Construido (2026-11-07) y lo que queda
+
+El servidor, en la rama `modulo-6/mesa` (`tasks/vision/todo.md`, tareas 1 a 4); la web va después.
+
+- **Los sentidos** salen del sistema: `senses` en el formato (`list`, un campo de lista con los sentidos escritos,
+  «Visión en la oscuridad 60 pies» o «darkvision 60 ft.»; o `darkvision`, `blindsight`, `truesight`, `tremorsense`,
+  campos numéricos), con el alcance en la unidad de la rejilla (`sensesOf` en `@crisol/systems`; validar dice si el
+  campo no existe o no es del tipo). El 5e de ejemplo lee «Sentidos» (y lo pide en «Detalles» del creador). El
+  servidor los pasa a píxeles con la rejilla (`distanceToPixels`).
+- **Base de datos** (migración 0058): `scene_walls` y `scene_lights` (lo del mundo, una fila por tramo o luz, con su
+  historial: con miles de tramos, cambiar uno no copia todos al historial, como haría un JSONB en la escena; los de un
+  mapa entran de una vez con `insertMany`); en `scenes`, `darkness` y `automatic_vision` (nace en falso: una escena
+  nueva no tiene muros); en `scene_states`, `doors` (las puertas que la campaña tiene distinto de como se dibujaron,
+  con su historial); `scene_fog` (cada gesto de la niebla a mano, una fila con historial: se deshace); `scene_explored`
+  (lo explorado, `FogGrid.encode()` en `bytea`, fuera del historial); en `campaign_tables`, `tile_fit` (`whole` por
+  defecto o `cropped`). Quitar la pestaña quita también sus muros, luces y niebla (deshacer los devuelve). Cambiar
+  muros o luces sube la versión de la escena: de ella cuelga lo preparado en memoria.
+- **Acciones** (`packages/contracts/src/vision.ts`): `getSceneVision` (con `campaignId`, también sus puertas; sin ella,
+  solo quien lleva la wiki), `changeWalls` (añadir, cambiar y quitar muros, puertas y luces en una operación, en
+  píxeles o en casillas; tipos ya hechos: muro, bajo, invisible, ventana, objeto), `placeImportedWalls` (lo que trae
+  el mapa; con `replace`, encima de lo que haya), `updateSceneVision` (oscuridad y visión automática), `setDoor`,
+  `changeFog` (pincel, rectángulo, lazo, casillas o un área en casillas), `resetFog` (lo explorado no vuelve; lo de a
+  mano se deshace), `setTileFit` y `viewAsParty` (lo que recibiría la pantalla, las casillas a la vista, las fichas que
+  ve y las que no, las puertas secretas). Lo del mundo con `page.write`; lo de la campaña con `table.manage`.
+- **Lo que trae el mapa** (un UVTT o `dibujar_escena`) se pone en juego al poner la imagen si la escena no tenía muros
+  ni luces: los muros y objetos, unidos donde siguen rectos (`joinCollinear`); los portales, puertas (o ventanas); las
+  luces, con su alcance pasado a pies (tenue; brillante, la mitad); las horneadas, apagadas y la escena de día; la luz
+  ambiental, como oscuridad. La escena pasa a visión automática si trae muros.
+- **La vista del grupo** (`apps/server/src/table/vision.ts`): el grupo son los personajes de la campaña con ficha en la
+  escena (sin ocultar). Se calcula en un hilo (`vision-worker.ts`, con `prepareVision` guardado por escena, su versión
+  y las puertas de la campaña) y la última vista de cada campaña y escena se guarda mientras no cambie nada de lo que
+  la decide (la escena, las puertas, las fichas, la niebla a mano). Al soltar una ficha se explora también lo que se ve
+  desde cada casilla de su camino (desde donde estaba). Lo explorado se suma y se guarda; lo tapado a mano se quita al
+  enseñarlo (si se deshace el tapar, vuelve). **Las fichas del grupo se ven siempre** (su huella), también sin visión
+  automática.
+- **La pantalla** (`screenView`): `fog` (lo explorado y lo visible en máscaras: `FogGrid.encode()` en base64, y la
+  oscuridad), las fichas que el grupo ve sin las ocultas, `lights` (las que alumbran algo de lo visible: lo que alumbran
+  de ello y su centro solo si se ve) y el combate sin las criaturas cuya ficha no ve (las que no tienen ficha, sí). No
+  le llegan muros, puertas, luces apagadas ni fichas fuera de la vista; la sala filtra el arrastre con lo que ve (la
+  ficha y el punto por donde pasa). **El máster** recibe `vision` en `campaignTableView` (la versión de la escena para
+  volver a pedir sus muros, el estado de cada puerta, lo explorado, lo visible y las fichas que el grupo no ve).
+- **Las teselas de la pantalla**: solo las que tocan lo explorado o lo visible; enteras (con caché del navegador) o,
+  con `cropped`, las del borde recortadas en el servidor (lo de fuera, transparente; `private, no-store`; guardadas en
+  memoria por su huella). WebP con **`@jsquash/webp` 1.5.0** (libwebp en wasm: Apache-2.0 el paquete, BSD-3-Clause
+  libwebp; sin binarios nativos). `sharp` no valía (libvips, LGPL).
+- **Las reglas** (`apps/server/src/table/rules.ts`), para cuando muevan los jugadores: mover a través de un muro o de
+  una puerta cerrada (la secreta también) se rechaza; un jugador solo abre puertas normales, sin llave y a la vista. Por
+  ahora el máster puede con todo.
+- **La IA**: `ver_muros`, `cambiar_muros`, `abrir_puerta`, `niebla` (destapar, tapar o reiniciar), `ver_como_grupo` y
+  `oscuridad`, con su frase en las instrucciones.
+- **Pruebas**: los sentidos (`packages/systems/src/senses.test.ts`); las reglas; `vision.integration.test.ts` (muros,
+  puerta normal y secreta, oscuridad y luces, sentidos, lo explorado por el camino y tras reiniciar el servidor,
+  destapar, tapar, deshacer y reiniciar, teselas enteras y recortadas, el arrastre que no ve, sin muros, lo del mapa,
+  muros en casillas, un jugador que no puede nada y las fugas); y el rendimiento en `test:rendimiento` de
+  `apps/server`: soltar una ficha en la mazmorra de 2.496 tramos y 20 luces con seis personajes, desde la petición
+  hasta que la pantalla recibe su vista, **p50 68–70 ms y p95 92–99 ms** (2026-11-07, con la máquina cargada: carga
+  media 5–7 en 6 núcleos).
+- **Lo que hizo falta para el presupuesto**: la escena viaja al hilo solo si aún no la tiene preparada (clonar 2.500
+  muros en cada petición costaba unos 20 ms); el núcleo guarda lo que ve cada ficha por lo preparado (al mover una no
+  se rehacen las demás: `partyView`, sin cambiar su API); lo vital de cada personaje (su hoja montada con todo el
+  contenido del sistema) se guarda por su versión, la de su sistema y la de la campaña (un minuto como mucho para lo
+  del compendio del mundo); el camino recorrido se explora en la vista siguiente (la de la sala) en lugar de esperar al
+  mover; y lo explorado se guarda sin hacer esperar a la pantalla.
+
+**Queda**: la web (tarea 5); la E2E y la revisión (tarea 6); la prueba de fugas e2e (`e2e/tests/fugas.spec.ts`) con la
+pantalla; las criaturas aliadas que ven con el grupo; las luces encendidas o apagadas por campaña (hoy, del mundo).
 
 ## Fuera
 
