@@ -7,20 +7,25 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
-### Para retomar (2026-11-07, madrugada: módulo 5 con cuatro de cinco capacidades construidas)
+### Para retomar (2026-11-07: módulo 5 terminado, en su PR)
 
-- **Rama `modulo-5/visibilidad`** (sin PR aún). Construidas y probadas: `conocimiento`, `revelar`, `mapas-jugadores` y
-  `compendio-jugadores` (lo hecho de cada una, en su spec § «Construido»; qué probar, `tasks/probar.md` § «Módulo 5»).
-  Migraciones hasta la 0053, ya en la base de desarrollo.
-- **Revisión de `revelar`, arreglada en lo grave**: revelar solo suma (no le quita nada a nadie; decisión 5 de
-  `docs/specs/revelar.md`), «Revelar también la página» si alguno de los elegidos no la sabe, «Lo que sabe el grupo» por
-  lotes (unos 200 ms con 600 marcas), lo nuevo del compendio se limpia al abrirlo, ocultar una página se lleva lo nuevo
-  de dentro, la prueba de fugas con revelar y el desplegable accesible. Queda de ella: «Cambiar a quién» desde «Lo que
-  sabe el grupo», que el desplegable parta de la campaña que se mira, que los avisos se vayan al ocultar o deshacer, el
-  número de novedades en el móvil y las carreras al revelar dos veces a la vez.
-- **Lo siguiente**: `pagina-de-jugadores` (`docs/specs/pagina-de-jugadores.md`), luego las suites enteras (de una en
-  una: a la vez fallan por carga), la revisión final, el PR a `main` (CI una vez) y staging; confirmar el ADR-0017 con
-  Enrique.
+- **Rama `modulo-5/visibilidad`, en un PR a `main`** (la CI se pasa una vez en él). Las cinco capacidades,
+  construidas y revisadas: `conocimiento`, `revelar`, `mapas-jugadores`, `compendio-jugadores` y
+  `pagina-de-jugadores` (lo hecho y lo que queda de cada una, en su spec § «Construido»; el estado, en
+  `docs/specs/modulo-5.md`). Migraciones hasta la 0054. Qué probar: `tasks/probar.md` § «Módulo 5».
+- **Revisiones**: la de `conocimiento` y la de `revelar`, arregladas en lo grave (revelar solo suma: decisión 5 de
+  `docs/specs/revelar.md`); la última, de lo demás, encontró fugas en la página de jugadores (archivos y páginas por su
+  nombre, `editPage` sin proyectar, el permiso sin cortar al revocar) y quedaron arregladas con sus pruebas (la spec lo
+  cuenta).
+- **El rendimiento de lo que lee un jugador** se mide solo (`pnpm --filter @crisol/server test:rendimiento`, su paso
+  en la CI): dentro de la suite entera mide la carga. Sola: p95 252 ms con 5.000 páginas.
+- **Lo siguiente**: que la CI del PR pase, el merge y staging (migraciones 0051 a 0054 en su base); pedirle a Enrique
+  que pruebe el módulo 5 y confirme el ADR-0017 y las decisiones tomadas sin él (en la memoria `modulo-5`). Luego, el
+  módulo 6 (la mesa).
+- Queda de la revisión de `revelar` (menor): «Cambiar a quién» desde «Lo que sabe el grupo», que el desplegable parta
+  de la campaña que se mira, que los avisos se vayan al ocultar o deshacer, el número de novedades en el móvil.
+- Una prueba de la web, `apps/web/src/wiki/sheet/paged.test.tsx` («las páginas se escalan…»), falla a veces en la
+  suite entera y pasa sola: mirarla si vuelve.
 
 ### Para retomar (2026-11-06, noche: módulo 5 en marcha, `conocimiento` construido)
 
@@ -1369,7 +1374,7 @@ Estados: pendiente · en curso · hecho · descartado.
 | 2 | **Tipos de página y plantillas**: «Desde plantilla» (de serie y propias), campos en el panel, tablas que se llenan solas (en lugar de Dataview) | construido (tareas 1 a 14, 2026-11-03); falta la revisión de Enrique en staging | Foundry: tipos de documento; Kanka, LegendKeeper y World Anvil (web pública) |
 | 3 | Sistemas de reglas, fichas de personaje (creación, subida de nivel), dados y dados 3D | **hecho** (2026-11-06, PR #95 a #108; Crisol vacío, ADR-0015); falta que Enrique lo pruebe (`tasks/probar.md`) | DDB: creador y hoja; Foundry: dnd5e, DataModel e instalar y crear sistemas |
 | 4 | Compendios (aparte de la wiki del mundo y **como los de Foundry**: antes, estudio a fondo con craft-anything), bestiario, statblocks, biblioteca; **las imágenes de lo traído de Foundry** (las de cada documento del zip); **buscar dentro de los PDF** (texto de cada página con pdf.js; el resultado abre el visor en esa página) **y por significado** (pgvector; antes, permiso para la imagen de Postgres y elegir quién calcula los embeddings) | **hecho** (2026-11-06, PR #110 y #111; `docs/specs/modulo-4.md`); falta que Enrique lo pruebe (`tasks/probar.md`) | Foundry: compendium packs; DDB: listados |
-| 5 | Visibilidad por campaña: conocimiento de los jugadores, revelar, compartir | **en curso** (2026-11-06: entrevista hecha) | Foundry: ownership |
+| 5 | Visibilidad por campaña: conocimiento de los jugadores, revelar, compartir | **hecho** (2026-11-07, rama `modulo-5/visibilidad`, PR a `main`) | Foundry: ownership |
 | 6 | **Mesa**: escenas, rejilla, fichas, medir y plantillas, niebla, muros, puertas, luz, visión, iniciativa, instantáneas, encuentros, UVTT; **las escenas, mapas y tokens de un zip de Foundry** | pendiente | Foundry: canvas, visión y muros; DDB Maps |
 | 7 | **Sala de jugadores**: presencia, chat y susurros, mostrar a jugadores, sonido (también **los de un zip de Foundry**), controles del máster | pendiente | Foundry: sockets y chat; DDB: game log |
 | 8 | Calendario, clima, viajes, líneas temporales | pendiente | — |
