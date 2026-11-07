@@ -20,6 +20,9 @@ import { CLOSE_SESSION_ENDED } from '../realtime/routes.ts'
 import { visionOf } from './projection.ts'
 import type { TableRooms } from './rooms.ts'
 import { maskSignature, tileCoverage } from './tile-crop.ts'
+import type { VisionResult } from './vision.ts'
+
+type Campaign = NonNullable<Awaited<ReturnType<typeof campaignsRepo.findCampaign>>>
 
 export interface TableRouteOptions {
   /** Cada cuánto se vuelve a comprobar la sesión y el permiso (si caducan, la conexión se cierra) */
@@ -154,6 +157,22 @@ export function registerTableRoutes(
   })
 
   const cropped = new Map<string, Uint8Array>()
+  /**
+   * La vista que se está calculando para las teselas, por campaña y escena: las que llegan a la vez (la pantalla pide
+   * muchas al cargar) esperan a la misma en vez de calcular cada una la suya
+   */
+  const viewing = new Map<string, Promise<VisionResult | null>>()
+  const screenVision = (ctx: ActionContext, campaign: Campaign, scene: scenesRepo.SceneRow) => {
+    const fresh = env.vision?.peek(campaign.id, scene.id)
+    if (fresh) return Promise.resolve(fresh)
+    const key = `${campaign.id}:${scene.id}`
+    let running = viewing.get(key)
+    if (!running) {
+      running = visionOf(ctx, campaign, scene).finally(() => viewing.delete(key))
+      viewing.set(key, running)
+    }
+    return running
+  }
 
   // La pantalla de la tele: solo la escena presentada (sin ocultar), en su versión de ahora, y lo que su vista deja
   app.get('/api/campaigns/:campaignId/screen/tiles/:version/:level/:x/:y', async (request, reply) => {
@@ -177,7 +196,7 @@ export function registerTableRoutes(
     )
       return reply.code(404).send({ code: 'NOT_FOUND' })
     // Lo que ve el grupo: la vista guardada si nada ha cambiado desde entonces o, si no, calculada ahora
-    const vision = env.vision?.peek(campaignId, scene.id) ?? (await visionOf(ctx, campaign, scene))
+    const vision = await screenVision(ctx, campaign, scene)
     if (!vision) return reply.code(404).send({ code: 'NOT_FOUND' })
     const size = { width: scene.width, height: scene.height, tileSize: scene.tiles.size }
     const allowed = screenTileAllowed(vision.screenMask, size, at, mesa.tileFit)
