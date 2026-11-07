@@ -193,6 +193,21 @@ describe('la mesa: escenas, teselas y la sala', () => {
     expect(placed.body.image).toEqual({ width: 3000, height: 2000, tiles: null, fileId: file.json().id })
   })
 
+  it('un archivo de otro mundo de la organización no vale como imagen de la escena', async () => {
+    const tab = (await call('createPageTab', { pageId, kind: 'scene' })).body
+    const scene = (await call('getScene', { tabId: tab.id })).body
+    const other = (await call('createWorld', { name: 'Otro' })).body.id
+    const file = await app.inject({
+      method: 'POST',
+      url: `/api/files?worldId=${other}&name=ajena.png`,
+      payload: PNG,
+      headers: { origin: BASE_URL, cookie: owner.cookie, 'content-type': 'application/octet-stream' }
+    })
+    expect(file.statusCode).toBe(201)
+    const placed = await call('setSceneImage', { sceneId: scene.id, fileId: file.json().id })
+    expect(placed).toMatchObject({ status: 400, body: { code: 'BAD_SCENE_FILE' } })
+  })
+
   it('la IA dibuja una escena en SVG: archivo del mundo, sus medidas y sus muros; nada que ejecute código', async () => {
     const tab = (await call('createPageTab', { pageId, kind: 'scene' })).body
     const scene = (await call('getScene', { tabId: tab.id })).body

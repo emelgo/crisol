@@ -103,10 +103,12 @@ export const sceneActions = [
     const { scene, page, wiki } = await authorizedScene(ctx, 'page.write', sceneId)
     let size = { width, height }
     if (fileId) {
-      // Un archivo del mundo (o común de su organización) que sea una imagen; sus medidas, si no vienen con las teselas
+      // Un archivo del mundo (o común de su organización: sin mundo) que sea una imagen; sus medidas, si no vienen
+      // con las teselas. Uno de otro mundo de la organización, no
       const file = await filesRepo.findFile(ctx.db, fileId)
-      if (!file || file.deletedAt || (file.worldId !== wiki.worldId && file.organizationId !== wiki.organizationId))
-        throw new InvalidRequestError('BAD_SCENE_FILE')
+      const own = file?.worldId === wiki.worldId
+      const common = file?.worldId === null && file.organizationId === wiki.organizationId
+      if (!file || file.deletedAt || !(own || common)) throw new InvalidRequestError('BAD_SCENE_FILE')
       if (file.kind !== 'image') throw new InvalidRequestError('BAD_SCENE_FILE', 'no es una imagen')
       // Sin medidas (la IA no las sabe), las de su cabecera
       if ((!width || !height) && ctx.storage) {

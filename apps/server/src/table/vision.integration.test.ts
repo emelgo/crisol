@@ -459,9 +459,9 @@ describe('la visión de la mesa (docs/specs/vision.md)', () => {
     const view = await party()
     expect(view.screen.tokens.map((t) => t.id)).toEqual([own.id])
     expect(view.screen.marks?.map((m) => m.kind)).toEqual(['text'])
-    expect((await ok200('listSnapshots', { campaignId, sceneId })).snapshots.map((s: { id: string }) => s.id)).toEqual(
-      [snapshot.id]
-    )
+    expect((await ok200('listSnapshots', { campaignId, sceneId })).snapshots.map((s: { id: string }) => s.id)).toEqual([
+      snapshot.id
+    ])
     const tile = await app.inject({
       method: 'GET',
       url: `/api/scenes/${sceneId}/tiles/${version}/0/0/0`,
