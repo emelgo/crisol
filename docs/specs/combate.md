@@ -59,3 +59,51 @@ Para quién: el máster; la tele (la franja de turnos); la IA.
 
 Las plantillas de área en sí (`herramientas-mesa`; aquí solo «las de dentro» para aplicar el daño); el movimiento por
 turnos de los jugadores (módulo 7); las acciones preparadas y las reacciones como recurso aparte.
+
+## Construido (2026-11-07) y lo que queda
+
+El servidor, en la rama `modulo-6/mesa` (`tasks/combate/todo.md`); la web va después.
+
+- **Núcleo** (`packages/tabletop/src/initiative.ts`, portado de la mesa actual): el orden (iniciativa, modificador, a
+  mano y, a igualdad de todo, el nombre), los grupos (un turno), pasar turno y ronda hacia delante y hacia atrás,
+  saltar a quien está a 0 y de quién es el turno al sacar a alguien.
+- **El sistema marca su tirada de iniciativa** con `initiative` (su clave en `rolls`; el 5e de ejemplo, `iniciativa`).
+  Si no marca ninguna, vale la que se llame `iniciativa` o `initiative`; sin ella, se escribe a mano. Validar dice si
+  la marcada no existe o va «por cada uno».
+- **Al empezar un turno** (`startTurn` en `@crisol/systems`): los estados con rondas pierden una y se van los de cero;
+  cada acción con recarga gastada tira su d6 y vuelve con lo que pide; lo que gastan las acciones legendarias
+  (`activation: legendary`, su `uses`) se repone. A los personajes, solo los estados. Todo en la misma operación que
+  pasa el turno: deshacerlo lo devuelve.
+- **La recarga gastada** va con lo gastado de quien la lleva, con su marca (`uses[''][recarga:aliento]`). Tirar una
+  parte de una acción con recarga la deja gastada; `playCreature` con `spend` (by 1 o −1) la gasta o la recarga a mano.
+- **Base de datos** (migración 0057): `combats` (uno por campaña: escena, ronda, turno, saltar a los de 0) y
+  `combatants` (el personaje o la criatura, su iniciativa, su modificador, su grupo, su orden a mano), con historial.
+  Quitar criaturas de juego o borrar un personaje los saca también del combate (y de sus fichas), en su operación.
+- **Acciones**: `getCombat`, `startCombat` (unas fichas o todas las de la escena abierta; las copias, en grupo),
+  `addCombatants`, `removeCombatants`, `rollInitiative` (todos, las criaturas, los que no la tienen o unos; un grupo
+  tira una vez; al registro, ocultas las de las criaturas), `setInitiative`, `orderCombatants`, `groupCombatants`,
+  `updateCombat`, `nextTurn` (dice qué caducó, qué se recargó y qué se repuso), `previousTurn` y `endCombat` (las
+  copias a 0, todas o ninguna, con sus fichas, en una operación que se deshace). Todo con `table.manage`.
+- **La proyección**: el combate en la mesa del máster (`combat` en `campaignTableView`) y la franja en la pantalla
+  (`combat` en `screenView`: la ronda, el orden y de quién es el turno, sin los ocultos, sin vida y sin la iniciativa de
+  las criaturas; nada si la pantalla está oculta). Deshacer refresca la mesa de la campaña.
+- **La IA**: `empezar_combate`, `ver_combate`, `meter_en_combate`, `sacar_de_combate`, `tirar_iniciativa`,
+  `escribir_iniciativa`, `siguiente_turno`, `turno_anterior` y `acabar_combate`.
+- **Pruebas**: el núcleo, `startTurn` y la tirada del sistema; `apps/server/src/table/combat.integration.test.ts` (el
+  encuentro de goblins con la tirada del sistema y dos rondas, deshacer el paso de turno, saltar a los de 0 y acabar
+  con deshacer, las recargas y las legendarias, la pantalla, el sistema sin tirada, el jugador que no puede nada).
+
+Decisiones tomadas sin Enrique (por confirmar al verlas): la ronda 0 es «antes de empezar» (se tira y el primer
+«Siguiente» empieza la 1, como en Foundry); escribir la iniciativa de uno de un grupo la escribe a todo el grupo, y
+juntar en grupo les da la del primero; la tirada del d6 de la recarga no va al registro (lo dice `nextTurn`); un
+personaje a medio crear (sin vida máxima) no cuenta como fuera de combate.
+
+Queda:
+- la web: el tablero Combate (empezar, tirar, escribir, arrastrar los empates, «Siguiente», «Anterior», acabar con la
+  lista de las que se van), la marca del turno en la ficha y centrar la mesa en ella, la franja de la pantalla y el
+  aviso al máster de lo que caducó;
+- `campaignTableView.combat` es opcional hasta que la API de prueba de la web lo dé: luego, obligatorio;
+- con `vision`, que la franja quite también las criaturas que el grupo no ve (hoy, solo las ocultas);
+- el daño a varias desde la mesa (las de dentro de una plantilla, con `herramientas-mesa`; `applyRoll` ya lo hace);
+- E2E y la prueba de fugas (la franja no lleva ocultas, vida ni iniciativa de criaturas);
+- en la IA, juntar o separar grupos, el orden a mano y saltar a los de 0 (están en la API).
