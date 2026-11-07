@@ -19,7 +19,7 @@ Orden: `escenas` → `fichas` → `vision` → `combate` → `herramientas-mesa`
 abrir un mapa en la tele; luego, ponerle fichas; luego, la niebla (lo que más cuesta y lo que más se nota); el combate
 y las herramientas, después; Foundry, al final, porque se apoya en todo lo anterior.
 
-**Estado (2026-11-07)**: entrevista hecha; estudios hechos; este mapa y el ADR-0018, en propuesta. Teselas del borde
+**Estado (2026-11-07)**: las seis capacidades construidas y revisadas (`tasks/revision-modulo-6.md`); el ADR-0018, en propuesta. Teselas del borde
 de lo explorado: enteras o recortadas, un ajuste de cada campaña (Enrique; ADR-0018, punto 7). Los mapas que dibuja la
 IA en SVG, en `escenas`.
 

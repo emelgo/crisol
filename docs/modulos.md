@@ -7,27 +7,30 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
-### Para retomar (2026-11-07, noche: módulo 6 casi construido)
+### Para retomar (2026-11-07, noche: módulo 6 construido, PR y staging)
 
-- **Rama `modulo-6/mesa`** (sale de `main`, sin PR aún; migraciones hasta la 0061). Del ciclo: entrevista (abajo,
-  § «### 6. Mesa»), estudios, el mapa `docs/specs/modulo-6.md`, el ADR-0018 (propuesta), el lienzo «Crisol: la mesa»
-  (https://claude.ai/artifact/N28X9vvVaqwXGUTKdZzDph) y las seis specs, cada una con su «Construido».
-- **Hecho de punta a punta**: `escenas` (con la IA que dibuja mapas en SVG: `dibujar_escena`, `guia_mapas`), `fichas`,
-  `combate` y `escenas-foundry`. **Servidor hecho**: `vision` (p95 al soltar una ficha, 92–99 ms con la máquina
-  cargada: al borde de los 100; mirarlo en la revisión) y `herramientas-mesa`.
-- **Hecho también**: la web de `vision`. **A medias**: la web de `herramientas-mesa` (el agente se paró por el límite
-  de uso con la mesa hecha y la tele por hacer: «Now the TV: marks, widgets, live measure and laser»; ver su trabajo sin
-  commit con `git status`). **La revisión de código** encontró fugas graves: `tasks/revision-modulo-6.md` (arreglarlas
-  antes del PR). **El rendimiento de la visión**: un agente lo estaba mejorando (objetivo p95 < 60 ms); ojo, dejó
-  `console.error('PERF …')` sin commit en `apps/server/src/table/` y un perfilador en `vision.integration.test.ts`
-  que **no pueden entrar**. **Después**: la revisión del módulo entero (fugas, accesibilidad, rendimiento, comparar con el lienzo: las
-  capturas en oscuro con la cripta salen de `e2e/tests/repaso.spec.ts`), «Dónde estamos», el PR y la CI una sola vez.
+- **Rama `modulo-6/mesa` → PR a `main`** (migraciones hasta la 0062). El ciclo entero: entrevista (abajo, § «### 6.
+  Mesa»), estudios, el mapa `docs/specs/modulo-6.md`, el ADR-0018 (propuesta), el lienzo «Crisol: la mesa»
+  (https://claude.ai/artifact/N28X9vvVaqwXGUTKdZzDph) y las seis capacidades (`escenas`, `fichas`, `vision`, `combate`,
+  `herramientas-mesa`, `escenas-foundry`), construidas de punta a punta; lo hecho y lo que queda de cada una, en su
+  spec § «Construido». Qué probar: `tasks/probar.md` § «Módulo 6».
+- **La revisión** (`tasks/revision-modulo-6.md`): las cuatro fugas graves y los seis «hay que arreglar», hechos con su
+  prueba; la e2e `fugas.spec.ts` comprueba de punta a punta que la tele no recibe muros, la puerta secreta, fichas
+  ocultas, marcas del máster ni teselas sin ver, y que un jugador no entra en la mesa. Quedan dos menores apuntados.
+- **Todo en verde en local** antes de la CI (con `pnpm test:coverage --concurrency=3`; con todo a la vez, la sala
+  limpia y «en escenas al azar» de `vision.test.ts` se pasan de 5 s por la carga). Cobertura de lo cambiado: 80,8 %
+  (justo). El rendimiento: al soltar una ficha, p50 ~33 ms y p95 50–60 ms con la máquina libre; seis fichas por 30
+  casillas, p95 108–158 ms con la máquina muy cargada (casi todo es guardar el movimiento): si falla en la CI, se
+  optimiza `moveTokens`, no se toca el umbral.
 - **Ojo con las e2e**: comparten servidor y base de datos; dos agentes corriéndolas a la vez se pisan.
-- **Decisiones tomadas sin Enrique, por confirmar al probar**: un encuadre es centro y escala para una pantalla de
-  referencia de 1920 px; «Subir» un mapa no lo guarda en Archivos; en combate, la ronda 0 es «antes de empezar» y la
-  iniciativa escrita a uno de un grupo vale para todo el grupo; «Sentidos» en el creador del 5e de ejemplo; las
-  criaturas preparadas de una escena de Foundry salen solas al abrirla una campaña; volver a una instantánea no toca lo
-  explorado; cada spec lista las suyas.
+- **Por decidir con Enrique**: confirmar el ADR-0018 y las decisiones tomadas sin él (un encuadre es centro y escala
+  para una pantalla de referencia de 1920 px; «Subir» un mapa no lo guarda en Archivos; en combate, la ronda 0 es
+  «antes de empezar» y la iniciativa escrita a uno de un grupo vale para todo el grupo; «Sentidos» en el creador del 5e
+  de ejemplo; las criaturas preparadas de una escena de Foundry salen solas al abrirla una campaña; volver a una
+  instantánea no toca lo explorado; cada spec lista las suyas). Y **el máster de una campaña que no lo es del mundo**
+  no puede usar la mesa (escenas, encuentros y teselas piden `page.read`): decidirlo antes del módulo 7.
+- **Lo siguiente**: que Enrique pruebe los módulos 5 y 6; luego, el módulo 7 (la sala de jugadores: presencia, chat, mostrar a jugadores,
+  sonido; y lo que se dejó: que muevan sus fichas), empezando por su entrevista frente al inventario.
 
 ### Para retomar (2026-11-07: módulo 5 en `main` y en staging)
 
@@ -1396,7 +1399,7 @@ Estados: pendiente · en curso · hecho · descartado.
 | 3 | Sistemas de reglas, fichas de personaje (creación, subida de nivel), dados y dados 3D | **hecho** (2026-11-06, PR #95 a #108; Crisol vacío, ADR-0015); falta que Enrique lo pruebe (`tasks/probar.md`) | DDB: creador y hoja; Foundry: dnd5e, DataModel e instalar y crear sistemas |
 | 4 | Compendios (aparte de la wiki del mundo y **como los de Foundry**: antes, estudio a fondo con craft-anything), bestiario, statblocks, biblioteca; **las imágenes de lo traído de Foundry** (las de cada documento del zip); **buscar dentro de los PDF** (texto de cada página con pdf.js; el resultado abre el visor en esa página) **y por significado** (pgvector; antes, permiso para la imagen de Postgres y elegir quién calcula los embeddings) | **hecho** (2026-11-06, PR #110 y #111; `docs/specs/modulo-4.md`); falta que Enrique lo pruebe (`tasks/probar.md`) | Foundry: compendium packs; DDB: listados |
 | 5 | Visibilidad por campaña: conocimiento de los jugadores, revelar, compartir | **hecho** (2026-11-07, PR #112, en staging) | Foundry: ownership |
-| 6 | **Mesa**: escenas, rejilla, fichas, medir y plantillas, niebla, muros, puertas, luz, visión, iniciativa, instantáneas, encuentros, UVTT; **las escenas, mapas y tokens de un zip de Foundry** | pendiente | Foundry: canvas, visión y muros; DDB Maps |
+| 6 | **Mesa**: escenas, rejilla, fichas, medir y plantillas, niebla, muros, puertas, luz, visión, iniciativa, instantáneas, encuentros, UVTT; **las escenas, mapas y tokens de un zip de Foundry** | construido (PR del módulo 6) | Foundry: canvas, visión y muros; DDB Maps |
 | 7 | **Sala de jugadores**: presencia, chat y susurros, mostrar a jugadores, sonido (también **los de un zip de Foundry**), controles del máster | pendiente | Foundry: sockets y chat; DDB: game log |
 | 8 | Calendario, clima, viajes, líneas temporales | pendiente | — |
 | 9 | Mapas de mundo con pines y capas; pizarras | pendiente | DDB Maps |

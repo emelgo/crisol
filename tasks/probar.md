@@ -9,6 +9,25 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   de propietario.
 - **En local**, con los cambios al momento: http://localhost:5173 (lo arranco cuando haga falta).
 
+## Módulo 6: escenas, fichas, combate y escenas de Foundry (rama `modulo-6/mesa`, aún sin staging)
+
+- [ ] **Una escena**: en la página de un lugar, «Añadir pestaña» → «Escena»; subir un mapa (imagen o UVTT) o pedírselo
+  a la IA («dibújame una cripta…», con `dibujar_escena`); su rejilla (cuadrada, hexagonal o sin rejilla) y alinearla
+  con el mapa («Alinear con el mapa»).
+- [ ] **La mesa**: «Abrir en la mesa» desde la escena, en una campaña; moverse y acercar; cambiar de escena.
+- [ ] **La tele**: «Pantalla» abre la segunda ventana; «Presentar» y «Ocultar» (con fundido); las cámaras
+  (seguir tu vista, fija, encuadrar al grupo); si la tele enseña otra escena, la mesa lo avisa.
+- [ ] **Fichas**: ponerlas desde el panel (personajes de la campaña, el compendio, un encuentro con su formación);
+  moverlas (Mayús pega a la rejilla); su tamaño, rótulo y color de bando; ocultas (la tele no las ve).
+- [ ] **Al pulsar una ficha**: su hoja, sus tiradas, sus PG y sus estados (con caducidad). En la tele, su estado en
+  palabras, sin PG.
+- [ ] **Combate**: empezar con las fichas elegidas, tirar iniciativa (las criaturas de un grupo, juntas), pasar turnos
+  y rondas, daño a varias a la vez; la tele enseña el orden sin la iniciativa de las criaturas.
+- [ ] **La IA en la mesa**: abrir y presentar escenas, poner y mover fichas, combate, muros y luces, desde claude.ai.
+- [ ] **Escenas de Foundry**: «Traer de Foundry» con un zip de un módulo o una aventura con escenas: elegirlas, bajo
+  qué página; cada una llega con su mapa, rejilla, muros, puertas, luces y sus criaturas preparadas (salen solas la
+  primera vez que la campaña la abre). Traerlo otra vez no duplica.
+
 ## Módulo 6: las herramientas de la mesa (rama `modulo-6/mesa`, aún sin staging)
 
 - [ ] **Medir** (R): arrastrar mide de un punto a otro; un clic sin arrastrar sigue a clics, con un punto de paso por
