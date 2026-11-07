@@ -190,6 +190,8 @@ describe('operation', () => {
     notTracked.add('campaign_tables').add('scene_tiles')
     // Lo explorado se llena solo con lo que ve el grupo: no se deshace (docs/specs/vision.md)
     notTracked.add('scene_explored')
+    // De dónde salió lo traído de un zip: se va en cascada con lo que se deshace o se purga (docs/specs/escenas-foundry.md)
+    notTracked.add('foundry_origins')
     const tables = await conn.sql<
       { name: string }[]
     >`select tablename as name from pg_tables where schemaname = 'public'`

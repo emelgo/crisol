@@ -112,11 +112,13 @@ export function insertPinMarks(
   pins: readonly ScenePinData[]
 ) {
   return operation(db, context, async (w) => {
-    for (const pin of pins)
+    // En el orden en que venían (las de una vez se pintan por su sort)
+    for (const [sort, pin] of pins.entries())
       await w.insert(sceneMarks, {
         ...place,
         kind: 'pin',
         hidden: true,
+        sort,
         data: { x: pin.x, y: pin.y, pageId: pin.pageId, label: pin.label.slice(0, 60), icon: 'book-open' }
       })
   })
