@@ -3,13 +3,13 @@
 Lista viva: todo lo que haya que probar se apunta aquí y se marca cuando lo pruebe. Lo que diga va a «Lo que dijo» (al
 final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interfaz.
 
-- **Staging**: https://neo.crisol.144-91-122-245.sslip.io, con los módulos 1 a 5: el 5 (lo que ven los jugadores)
+- **Staging**: https://neo.crisol.144-91-122-245.sslip.io, con los módulos 1 a 6: el 6 (la mesa) desde el 2026-11-07, PR #114; el 5 (lo que ven los jugadores)
   desde el 2026-11-07, PR #112; el 4 (compendio, criaturas, imágenes, tablas, grupo y biblioteca), PR #110 y #111.
 - **La IA**: el conector «Neo Crisol» de claude.ai (`https://neo.crisol.144-91-122-245.sslip.io/mcp`), con la cuenta
   de propietario.
 - **En local**, con los cambios al momento: http://localhost:5173 (lo arranco cuando haga falta).
 
-## Módulo 6: escenas, fichas, combate y escenas de Foundry (rama `modulo-6/mesa`, aún sin staging)
+## Módulo 6: escenas, fichas, combate y escenas de Foundry (en staging, PR #114)
 
 - [ ] **Una escena**: en la página de un lugar, «Añadir pestaña» → «Escena»; subir un mapa (imagen o UVTT) o pedírselo
   a la IA («dibújame una cripta…», con `dibujar_escena`); su rejilla (cuadrada, hexagonal o sin rejilla) y alinearla
@@ -28,7 +28,7 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   qué página; cada una llega con su mapa, rejilla, muros, puertas, luces y sus criaturas preparadas (salen solas la
   primera vez que la campaña la abre). Traerlo otra vez no duplica.
 
-## Módulo 6: las herramientas de la mesa (rama `modulo-6/mesa`, aún sin staging)
+## Módulo 6: las herramientas de la mesa (en staging, PR #114)
 
 - [ ] **Medir** (R): arrastrar mide de un punto a otro; un clic sin arrastrar sigue a clics, con un punto de paso por
   clic (doble clic o Escape acaba); círculo, cono y cuadrado; la distancia en pies con la regla de diagonales (panel
@@ -52,7 +52,7 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   un clic) y la nota de la página de la escena (otra, desde su panel).
 - [ ] **El tutorial guiado de la mesa** tiene un paso nuevo para los paneles de abajo de la columna.
 
-## Módulo 6: la visión en la mesa (rama `modulo-6/mesa`, aún sin staging)
+## Módulo 6: la visión en la mesa (en staging, PR #114)
 
 - [ ] **Muros**: en la mesa, la herramienta de muros (M) dibuja muros seguidos clic a clic (Mayús, a las esquinas de
   la rejilla; Escape o doble clic acaba); un clic en un muro lo elige y lo cambia; arrastrar un extremo lo mueve.

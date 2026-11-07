@@ -7,9 +7,9 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
-### Para retomar (2026-11-07, noche: módulo 6 construido, PR y staging)
+### Para retomar (2026-11-07, noche: módulo 6 en `main` y en staging)
 
-- **Rama `modulo-6/mesa` → PR a `main`** (migraciones hasta la 0062). El ciclo entero: entrevista (abajo, § «### 6.
+- **PR #114, fusionado y desplegado en staging** (2026-11-07; migraciones hasta la 0062). El ciclo entero: entrevista (abajo, § «### 6.
   Mesa»), estudios, el mapa `docs/specs/modulo-6.md`, el ADR-0018 (propuesta), el lienzo «Crisol: la mesa»
   (https://claude.ai/artifact/N28X9vvVaqwXGUTKdZzDph) y las seis capacidades (`escenas`, `fichas`, `vision`, `combate`,
   `herramientas-mesa`, `escenas-foundry`), construidas de punta a punta; lo hecho y lo que queda de cada una, en su
@@ -22,6 +22,13 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   (justo). El rendimiento: al soltar una ficha, p50 ~33 ms y p95 50–60 ms con la máquina libre; seis fichas por 30
   casillas, p95 108–158 ms con la máquina muy cargada (casi todo es guardar el movimiento): si falla en la CI, se
   optimiza `moveTokens`, no se toca el umbral.
+- **La CI** pasó a la tercera: (1) la prueba de escenas al azar de la visión pasaba de 5 s con cobertura; al partirla
+  salió un fallo real (faltaba el vértice donde un muro cruza el borde del radio), arreglado; (2) la e2e de herramientas
+  se colgó 5 min en `networkidle` (no se reprodujo en local): las e2e de la mesa usan ahora `watchNetwork` de
+  `e2e/tests/ayudas.ts`, que dice qué petición no acaba; (3) el trabajo de e2e ya no cabía en 20 min (tarda ~25): topes
+  de 30 (e2e) y 25 (calidad) en `ci.yml`. Si vuelve a colgarse una e2e de la mesa, el error dice qué petición es.
+- **Esta rama `docs/tras-modulo-6`** (sin PR) solo lleva esta nota y el «en staging» de `tasks/probar.md`: que vaya con
+  el próximo PR.
 - **Ojo con las e2e**: comparten servidor y base de datos; dos agentes corriéndolas a la vez se pisan.
 - **Por decidir con Enrique**: confirmar el ADR-0018 y las decisiones tomadas sin él (un encuadre es centro y escala
   para una pantalla de referencia de 1920 px; «Subir» un mapa no lo guarda en Archivos; en combate, la ronda 0 es
@@ -1399,7 +1406,7 @@ Estados: pendiente · en curso · hecho · descartado.
 | 3 | Sistemas de reglas, fichas de personaje (creación, subida de nivel), dados y dados 3D | **hecho** (2026-11-06, PR #95 a #108; Crisol vacío, ADR-0015); falta que Enrique lo pruebe (`tasks/probar.md`) | DDB: creador y hoja; Foundry: dnd5e, DataModel e instalar y crear sistemas |
 | 4 | Compendios (aparte de la wiki del mundo y **como los de Foundry**: antes, estudio a fondo con craft-anything), bestiario, statblocks, biblioteca; **las imágenes de lo traído de Foundry** (las de cada documento del zip); **buscar dentro de los PDF** (texto de cada página con pdf.js; el resultado abre el visor en esa página) **y por significado** (pgvector; antes, permiso para la imagen de Postgres y elegir quién calcula los embeddings) | **hecho** (2026-11-06, PR #110 y #111; `docs/specs/modulo-4.md`); falta que Enrique lo pruebe (`tasks/probar.md`) | Foundry: compendium packs; DDB: listados |
 | 5 | Visibilidad por campaña: conocimiento de los jugadores, revelar, compartir | **hecho** (2026-11-07, PR #112, en staging) | Foundry: ownership |
-| 6 | **Mesa**: escenas, rejilla, fichas, medir y plantillas, niebla, muros, puertas, luz, visión, iniciativa, instantáneas, encuentros, UVTT; **las escenas, mapas y tokens de un zip de Foundry** | construido (PR del módulo 6) | Foundry: canvas, visión y muros; DDB Maps |
+| 6 | **Mesa**: escenas, rejilla, fichas, medir y plantillas, niebla, muros, puertas, luz, visión, iniciativa, instantáneas, encuentros, UVTT; **las escenas, mapas y tokens de un zip de Foundry** | **hecho** (2026-11-07, PR #114, en staging) | Foundry: canvas, visión y muros; DDB Maps |
 | 7 | **Sala de jugadores**: presencia, chat y susurros, mostrar a jugadores, sonido (también **los de un zip de Foundry**), controles del máster | pendiente | Foundry: sockets y chat; DDB: game log |
 | 8 | Calendario, clima, viajes, líneas temporales | pendiente | — |
 | 9 | Mapas de mundo con pines y capas; pizarras | pendiente | DDB Maps |
