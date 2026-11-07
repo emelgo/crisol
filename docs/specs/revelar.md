@@ -1,6 +1,6 @@
 # Spec: revelar (módulo 5)
 
-Estado: **construido** (2026-11-06; en la rama `modulo-5/visibilidad`, aún sin PR). Segunda capacidad del módulo 5 (`docs/specs/modulo-5.md`), después de
+Estado: **construido** (2026-11-06; en `main` y en staging, PR #112). Segunda capacidad del módulo 5 (`docs/specs/modulo-5.md`), después de
 `conocimiento`. Entrevista: `docs/modulos.md` § «### 5. Visibilidad por campaña». ADR-0017.
 
 ## Objetivo

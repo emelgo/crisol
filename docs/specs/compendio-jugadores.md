@@ -1,6 +1,6 @@
 # Spec: compendio-jugadores (módulo 5)
 
-Estado: **construido** (2026-11-07; en la rama `modulo-5/visibilidad`, aún sin PR). Cuarta capacidad del módulo 5 (`docs/specs/modulo-5.md`). Entrevista:
+Estado: **construido** (2026-11-07; en `main` y en staging, PR #112). Cuarta capacidad del módulo 5 (`docs/specs/modulo-5.md`). Entrevista:
 `docs/modulos.md` § «### 5. Visibilidad por campaña». ADR-0017. De antes: `docs/specs/compendio-mundo.md` y
 `docs/specs/criaturas.md` (hasta ahora, lo del mundo y lo que está en juego, solo para el máster).
 

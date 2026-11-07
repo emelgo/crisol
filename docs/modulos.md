@@ -7,28 +7,23 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
-### Para retomar (2026-11-07: módulo 5 terminado, en su PR)
+### Para retomar (2026-11-07: módulo 5 en `main` y en staging)
 
-- **Rama `modulo-5/visibilidad`, en un PR a `main`** (la CI se pasa una vez en él). Las cinco capacidades,
-  construidas y revisadas: `conocimiento`, `revelar`, `mapas-jugadores`, `compendio-jugadores` y
-  `pagina-de-jugadores` (lo hecho y lo que queda de cada una, en su spec § «Construido»; el estado, en
-  `docs/specs/modulo-5.md`). Migraciones hasta la 0054. Qué probar: `tasks/probar.md` § «Módulo 5».
-- **Revisiones**: la de `conocimiento` y la de `revelar`, arregladas en lo grave (revelar solo suma: decisión 5 de
-  `docs/specs/revelar.md`); la última, de lo demás, encontró fugas en la página de jugadores (archivos y páginas por su
-  nombre, `editPage` sin proyectar, el permiso sin cortar al revocar) y quedaron arregladas con sus pruebas (la spec lo
-  cuenta).
+- **PR #112, fusionado y desplegado en staging** (2026-11-07; migraciones hasta la 0054). Las cinco capacidades del
+  módulo 5 (`conocimiento`, `revelar`, `mapas-jugadores`, `compendio-jugadores`, `pagina-de-jugadores`): lo hecho y lo
+  que queda de cada una, en su spec § «Construido»; el estado, en `docs/specs/modulo-5.md`. Qué probar:
+  `tasks/probar.md` § «Módulo 5».
+- **La CI** pasó a la cuarta: gitleaks tomaba por secreto una lista de claves del 5e (excepción estrecha en
+  `.gitleaks.toml`) y dos e2e tenían carreras (`campanas.spec.ts` y el menú del bloque en `bloques.spec.ts`), ya
+  arregladas. Las e2e de la CI no reintentan: si salen más pruebas intermitentes, hablarlo con Enrique antes de tocar
+  nada (sería cambiar el listón).
 - **El rendimiento de lo que lee un jugador** se mide solo (`pnpm --filter @crisol/server test:rendimiento`, su paso
-  en la CI): dentro de la suite entera mide la carga. Sola: p95 252 ms con 5.000 páginas.
-- **La CI del PR #112** (2026-11-07, de madrugada): la primera pasada falló solo en gitleaks (falso positivo, arreglado
-  en `.gitleaks.toml`); la segunda pasó todo salvo una e2e, `campanas.spec.ts` («en Mis mundos, el máster crea
-  campañas…»), que en la primera pasada y en local pasa: mirar si es intermitente (su traza, en los artefactos de la
-  ejecución 42325640443) antes de volver a pasar la CI.
-- **Lo siguiente**: que la CI del PR pase, el merge y staging (migraciones 0051 a 0054 en su base); pedirle a Enrique
-  que pruebe el módulo 5 y confirme el ADR-0017 y las decisiones tomadas sin él (en la memoria `modulo-5`). Luego, el
-  módulo 6 (la mesa).
+  en la CI). Sola: p95 252 ms con 5.000 páginas.
+- **Lo siguiente**: que Enrique pruebe el módulo 5 y confirme el ADR-0017 y las decisiones tomadas sin él (memoria
+  `modulo-5`); luego, el módulo 6 (la mesa), empezando por su entrevista frente al inventario.
 - Queda de la revisión de `revelar` (menor): «Cambiar a quién» desde «Lo que sabe el grupo», que el desplegable parta
   de la campaña que se mira, que los avisos se vayan al ocultar o deshacer, el número de novedades en el móvil.
-- Una prueba de la web, `apps/web/src/wiki/sheet/paged.test.tsx` («las páginas se escalan…»), falla a veces en la
+- Una prueba de la web, `apps/web/src/wiki/sheet/paged.test.tsx` («las páginas se escalan…»), falló una vez en la
   suite entera y pasa sola: mirarla si vuelve.
 
 ### Para retomar (2026-11-06, noche: módulo 5 en marcha, `conocimiento` construido)
@@ -1378,7 +1373,7 @@ Estados: pendiente · en curso · hecho · descartado.
 | 2 | **Tipos de página y plantillas**: «Desde plantilla» (de serie y propias), campos en el panel, tablas que se llenan solas (en lugar de Dataview) | construido (tareas 1 a 14, 2026-11-03); falta la revisión de Enrique en staging | Foundry: tipos de documento; Kanka, LegendKeeper y World Anvil (web pública) |
 | 3 | Sistemas de reglas, fichas de personaje (creación, subida de nivel), dados y dados 3D | **hecho** (2026-11-06, PR #95 a #108; Crisol vacío, ADR-0015); falta que Enrique lo pruebe (`tasks/probar.md`) | DDB: creador y hoja; Foundry: dnd5e, DataModel e instalar y crear sistemas |
 | 4 | Compendios (aparte de la wiki del mundo y **como los de Foundry**: antes, estudio a fondo con craft-anything), bestiario, statblocks, biblioteca; **las imágenes de lo traído de Foundry** (las de cada documento del zip); **buscar dentro de los PDF** (texto de cada página con pdf.js; el resultado abre el visor en esa página) **y por significado** (pgvector; antes, permiso para la imagen de Postgres y elegir quién calcula los embeddings) | **hecho** (2026-11-06, PR #110 y #111; `docs/specs/modulo-4.md`); falta que Enrique lo pruebe (`tasks/probar.md`) | Foundry: compendium packs; DDB: listados |
-| 5 | Visibilidad por campaña: conocimiento de los jugadores, revelar, compartir | **hecho** (2026-11-07, rama `modulo-5/visibilidad`, PR a `main`) | Foundry: ownership |
+| 5 | Visibilidad por campaña: conocimiento de los jugadores, revelar, compartir | **hecho** (2026-11-07, PR #112, en staging) | Foundry: ownership |
 | 6 | **Mesa**: escenas, rejilla, fichas, medir y plantillas, niebla, muros, puertas, luz, visión, iniciativa, instantáneas, encuentros, UVTT; **las escenas, mapas y tokens de un zip de Foundry** | pendiente | Foundry: canvas, visión y muros; DDB Maps |
 | 7 | **Sala de jugadores**: presencia, chat y susurros, mostrar a jugadores, sonido (también **los de un zip de Foundry**), controles del máster | pendiente | Foundry: sockets y chat; DDB: game log |
 | 8 | Calendario, clima, viajes, líneas temporales | pendiente | — |

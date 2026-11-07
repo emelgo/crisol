@@ -1,6 +1,6 @@
 # Spec: mapas-jugadores (módulo 5)
 
-Estado: **construido** (2026-11-06; en la rama `modulo-5/visibilidad`, aún sin PR). Tercera capacidad del módulo 5 (`docs/specs/modulo-5.md`). Entrevista:
+Estado: **construido** (2026-11-06; en `main` y en staging, PR #112). Tercera capacidad del módulo 5 (`docs/specs/modulo-5.md`). Entrevista:
 `docs/modulos.md` § «### 5. Visibilidad por campaña». ADR-0017 y ADR-0007 (pestañas de página y mapas). Estudio:
 `research/foundry/visibilidad-y-revelar.md` (los pines de una escena).
 

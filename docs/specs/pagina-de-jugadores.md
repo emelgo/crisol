@@ -1,6 +1,6 @@
 # Spec: pagina-de-jugadores (módulo 5)
 
-Estado: **construido** (2026-11-07; en la rama `modulo-5/visibilidad`, aún sin PR). Última capacidad del módulo 5 (`docs/specs/modulo-5.md`). Entrevista:
+Estado: **construido** (2026-11-07; en `main` y en staging, PR #112). Última capacidad del módulo 5 (`docs/specs/modulo-5.md`). Entrevista:
 `docs/modulos.md` § «### 5. Visibilidad por campaña» («como mucho, el máster deja editar una página concreta, como el
 diario del grupo»). ADR-0017.
 

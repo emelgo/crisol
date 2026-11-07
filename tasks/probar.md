@@ -3,13 +3,13 @@
 Lista viva: todo lo que haya que probar se apunta aquí y se marca cuando lo pruebe. Lo que diga va a «Lo que dijo» (al
 final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interfaz.
 
-- **Staging**: https://neo.crisol.144-91-122-245.sslip.io, con el módulo 2, los arreglos del 2026-11-04, los dados,
-  los sistemas, srd-5e entero, los personajes y su hoja, el compendio y el módulo 3 limpio (PR #93 a #108).
+- **Staging**: https://neo.crisol.144-91-122-245.sslip.io, con los módulos 1 a 5: el 5 (lo que ven los jugadores)
+  desde el 2026-11-07, PR #112; el 4 (compendio, criaturas, imágenes, tablas, grupo y biblioteca), PR #110 y #111.
 - **La IA**: el conector «Neo Crisol» de claude.ai (`https://neo.crisol.144-91-122-245.sslip.io/mcp`), con la cuenta
   de propietario.
 - **En local**, con los cambios al momento: http://localhost:5173 (lo arranco cuando haga falta).
 
-## Módulo 5: la página que escriben los jugadores (rama `modulo-5/visibilidad`; en local, aún no en staging)
+## Módulo 5: la página que escriben los jugadores (en staging, PR #112)
 
 - [ ] **Dejar editar**: en «Quién la conoce» de una página sin secretos, «La edita toda la campaña» (o unos
   personajes). En una con secretos, no deja y lo dice.
@@ -18,7 +18,7 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
 - [ ] **Sin secretos**: en una página de jugadores no te ofrece «Secreto» ni notas ocultas.
 - [ ] **Su IA** escribe en ella con `editar_pagina` (y en otra página, no).
 
-## Módulo 5: el compendio y la partida para los jugadores (rama `modulo-5/visibilidad`; en local, aún no en staging)
+## Módulo 5: el compendio y la partida para los jugadores (en staging, PR #112)
 
 - [ ] **En juego, la jugadora**: ve las criaturas a la vista, juntas, con su imagen y cómo están en palabras («Ilesa»,
   «Herida», «Malherida», «A punto de caer», «Fuera de combate»); ni sus PG ni su hoja.
@@ -30,7 +30,7 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   llega el aviso, «Leerlo» la abre en su compendio marcada «Del mundo» y la puede llevar su personaje.
 - [ ] **La IA de un jugador**: `ver_a_la_vista` le da las criaturas con su estado; `buscar_contenido` no da lo oculto.
 
-## Módulo 5: los mapas para los jugadores (rama `modulo-5/visibilidad`; en local, aún no en staging)
+## Módulo 5: los mapas para los jugadores (en staging, PR #112)
 
 - [ ] **Un pin oculto**: en el panel de un pin, «Oculto a los jugadores»: lo ves atenuado. En el menú (▾) de una
   pestaña, «Oculta a los jugadores».
@@ -38,7 +38,7 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   nombre y sin «Abrir».
 - [ ] **Revelar…** un pin o una pestaña desde su panel o su menú: le aparece y le llega el aviso.
 
-## Módulo 5: revelar en partida (rama `modulo-5/visibilidad`; en local, aún no en staging)
+## Módulo 5: revelar en partida (en staging, PR #112)
 
 - [ ] **Revelar un secreto**: en el secreto, «Revelar» → elige a quién (toda la campaña o unos personajes) → «Revelar».
   Si la campaña no conoce la página, marca «Revelar también la página». La cabecera dice «Lo saben: …».
@@ -50,7 +50,7 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
 - [ ] **Deshacer** una revelación desde el historial.
 - [ ] **La IA**: pídele que revele algo en partida (espera tu aprobación) y que te diga lo que sabe el grupo.
 
-## Módulo 5: lo que sabe cada campaña (rama `modulo-5/visibilidad`; en local, aún no en staging)
+## Módulo 5: lo que sabe cada campaña (en staging, PR #112)
 
 - [ ] **Quién la conoce**: en una página, el icono de dos personas, junto a «Marcar». Sale lo que sabe el mundo y cada
   campaña, y por qué. Da a conocer una página a una campaña: sus subpáginas lo heredan (míralo en una de ellas: «Por
@@ -71,7 +71,7 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   y qué ve un personaje. **La IA de una jugadora**: con su cuenta, en Ajustes sale el conector; conéctala en claude.ai
   y comprueba que solo ve lo suyo y no puede escribir.
 
-## Módulo 4: la biblioteca (rama `modulo-4/biblioteca`; en local, aún no en staging)
+## Módulo 4: la biblioteca (en staging, PR #111)
 
 - [ ] **Un libro de verdad**: sube a los archivos del mundo (o a los comunes) un PDF con texto, como un manual. En una
   campaña, «Biblioteca»: sale el libro «Leyendo…» y, al poco, «Se puede buscar» con sus páginas.
@@ -84,7 +84,7 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
 - [ ] **El PDF de una hoja**, tras subir esto a staging: la imagen de la app pasa a Debian (con otro Chromium). En una
   página con hoja, «Descargar PDF» tiene que seguir funcionando.
 
-## Módulo 4: el inventario del grupo (rama `modulo-4/grupo`; en local, aún no en staging)
+## Módulo 4: el inventario del grupo (en staging, PR #111)
 
 - [ ] **«Grupo» en la campaña**: en la barra de una campaña, «Grupo». Añade algo del compendio y algo escrito a mano,
   crea un contenedor («El carro») y mueve cosas entre ellos.
@@ -95,7 +95,7 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
 - [ ] **Con una jugadora**: ve el grupo y lo cambia, mueve con su personaje pero no con los de otros, y no reparte.
 - [ ] **La IA**: pídele que reparta el botín de la última sesión entre los personajes (espera tu aprobación).
 
-## Módulo 4: las tablas aleatorias del compendio (rama `modulo-4/tablas`; en local, aún no en staging)
+## Módulo 4: las tablas aleatorias del compendio (en staging, PR #111)
 
 - [ ] **Una tabla del mundo**: en el compendio de una campaña, «Nueva entrada» → En el mundo, tipo «Tabla»; escribe la
   fórmula, marca «Sin reemplazo» y unas filas. Al abrirla, pulsa el dado: sale una fila marcada, va al registro y no se
@@ -105,7 +105,7 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   otra tabla la tiran también.
 - [ ] **La IA**: pídele que cree una tabla de encuentros para tu mundo y que tire en ella.
 
-## Módulo 4: las imágenes de lo traído de Foundry (rama `modulo-4/imagenes`; en local, aún no en staging)
+## Módulo 4: las imágenes de lo traído de Foundry (en staging, PR #111)
 
 - [ ] **Traer el dnd5e con sus imágenes**: en Sistemas → «Sistema nuevo», suelta el .zip del dnd5e; tras «Traer de
   Foundry», dice cuántas imágenes trae con cada licencia (las de uso restringido, marcadas) y «Subir N imágenes».
