@@ -300,6 +300,8 @@ export const revealActions = [
     )
     await knowledgeRepo.dropNews(ctx.db, campaign.id, kind, targetId)
     ctx.realtime.publish(knowledgeChanged(wiki, campaign.id))
+    // Lo que escriben los jugadores se vuelve a mirar (una página que ya no ven no la abren)
+    ctx.collab?.closeWorldPlayers(wiki.worldId)
     return { ok: true as const }
   }),
 

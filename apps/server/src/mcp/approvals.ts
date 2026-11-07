@@ -4,7 +4,7 @@
  * si no llega, contesta que sigue esperando. Aprobarlo después lo hace igual (la acción approve).
  */
 import type { RealtimeMessage } from '@crisol/contracts'
-import { aiRepo, historyRepo, knowledgeRepo, loadMemberships, worldsRepo } from '@crisol/db'
+import { aiRepo, historyRepo, loadMemberships, worldsRepo } from '@crisol/db'
 import {
   actorFrom,
   aiDecision,
@@ -26,6 +26,8 @@ import { partyRequest } from '../actions/party.ts'
 import { systemRequest, visibleSystemName } from '../actions/systems.ts'
 import { approvalsChanged } from '../realtime/events.ts'
 import { openJson } from '../secrets.ts'
+import { playerEdits } from '../wiki/player-pages.ts'
+import { viewedPage } from '../wiki/projection.ts'
 
 /** Lo que contesta una herramienta */
 export interface ToolResult {
@@ -81,9 +83,7 @@ export async function callAsAi(env: ActionEnv, call: AiCall): Promise<ToolResult
     const playerOnly =
       ownedOrganizations(ctx.actor).length === 0 && ![...ctx.actor.worlds.values()].some((w) => w.role === 'master')
     const ownPage =
-      playerOnly &&
-      impl.action.name === 'editPage' &&
-      (await knowledgeRepo.canEditPage(db, userId, String(input.pageId ?? '')))
+      playerOnly && impl.action.name === 'editPage' && (await playerEdits(env, userId, String(input.pageId ?? '')))
     if (playerOnly && impl.action.kind !== 'read' && !ownPage) return failure(PLAYER_READS)
     const decision = aiDecision(await aiRepo.findAiMode(db, userId), impl.action.kind)
     if (decision === 'refuse') return failure(READ_ONLY)
@@ -118,7 +118,12 @@ async function describe(ctx: ActionContext, action: string, input: Record<string
     details.campaign = (await authorizedCampaign(ctx, 'campaign.read', input.campaignId)).name
   }
   if (typeof input.pageId === 'string') {
-    details.page = (await authorizedPage(ctx, 'page.read', input.pageId)).page.title
+    // Un jugador pide escribir en su página: la ve (docs/specs/pagina-de-jugadores.md)
+    details.page = (
+      action === 'editPage' && (await playerEdits(ctx, ctx.actor.userId, input.pageId))
+        ? await viewedPage(ctx, input.pageId)
+        : await authorizedPage(ctx, 'page.read', input.pageId)
+    ).page.title
   }
   if (typeof input.parentId === 'string') {
     details.parent = (await authorizedPage(ctx, 'page.read', input.parentId)).page.title

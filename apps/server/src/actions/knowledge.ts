@@ -7,6 +7,8 @@ import { campaignsRepo, charactersRepo, knowledgeRepo, operation, pagesRepo } fr
 import { explainPage, knowledgeFor, NotFoundError } from '@crisol/domain'
 import { knowledgeChanged } from '../realtime/events.ts'
 import { readDocument } from '../wiki/content.ts'
+import { linksIn } from '../wiki/links.ts'
+import { hasSeparates } from '../wiki/player-pages.ts'
 import { authorizedPage, authorizedWiki, type WikiTarget } from './access.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
 import { implement } from './registry.ts'
@@ -130,6 +132,8 @@ export const knowledgeActions = [
       characters: audience
     })
     ctx.realtime.publish(knowledgeChanged(wiki, campaignId))
+    // Lo que escriben los jugadores se vuelve a mirar (una página que ya no ven no la abren)
+    ctx.collab?.closeWorldPlayers(worldId)
     return { page: kind === 'page' ? await pageKnowledgeOf(ctx, wiki, targetId) : null }
   }),
 
@@ -145,7 +149,8 @@ export const knowledgeActions = [
     const unknown = (chosen ?? []).filter((id) => !names.has(id))
     if (unknown.length > 0) throw new InvalidRequestError('BAD_CHARACTERS', unknown.join(', '))
     // Sin secretos ni notas ocultas: lo verían (el cuerpo va entero a quien lo edita)
-    if (editors !== null && hasSeparates(await readDocument(ctx, { kind: 'body', pageId })))
+    const body = editors === null ? null : await readDocument(ctx, { kind: 'body', pageId })
+    if (body && hasSeparates(body))
       throw new InvalidRequestError('PAGE_HAS_SECRETS', 'quita antes sus secretos y notas ocultas')
     // Quien puede editarla la ve: se suma a quien ya la ve
     const [tree, marks] = await Promise.all([
@@ -158,6 +163,20 @@ export const knowledgeActions = [
       characterIds,
       knowsWorld: campaign.knowsWorld
     })
+    // Ni enlaces a páginas que no conocen: en el cuerpo en vivo verían su título (cada uno de los que la editan)
+    if (body) {
+      const withPage = [
+        ...marks,
+        { campaignId: campaign.id, kind: 'page' as const, targetId: pageId, known: true, characters: chosen }
+      ]
+      const readers = (chosen ?? [null]).map((id) => knowledgeFor(readerOf(id ? [id] : []), tree, withPage))
+      const hidden = linksIn(body).filter((link) => link.pageId && readers.some((r) => !r.seesPage(link.pageId ?? '')))
+      if (hidden.length > 0)
+        throw new InvalidRequestError(
+          'PAGE_HAS_HIDDEN_LINKS',
+          `enlaza páginas que no conocen: ${[...new Set(hidden.map((link) => link.title))].join(', ')}`
+        )
+    }
     const seen =
       editors === null
         ? null
@@ -193,12 +212,6 @@ export const knowledgeActions = [
     return { ok: true as const }
   })
 ]
-
-/** Si el cuerpo de una página tiene secretos o notas ocultas (una página de jugadores no puede: los verían) */
-export function hasSeparates(body: { type?: string; content?: unknown[] }): boolean {
-  if (body.type === 'secret' || body.type === 'note') return true
-  return (body.content ?? []).some((child) => hasSeparates(child as { type?: string; content?: unknown[] }))
-}
 
 /** Lo que pide la IA al marcar, para la cola de aprobación: qué, si lo conocen y a quién (como en el historial) */
 export async function knowledgeRequest(ctx: ActionContext, action: string, input: Record<string, unknown>) {

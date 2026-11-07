@@ -3,7 +3,7 @@
  * los enlaces. Los que nombran un archivo que aún no está se quedan sin resolver, por su nombre; al subir (o renombrar,
  * o restaurar) uno que se llame así, se resuelven solos, también en el texto
  */
-import { filesRepo, linksRepo } from '@crisol/db'
+import { filesRepo, knowledgeRepo, linksRepo } from '@crisol/db'
 import { foldName } from '@crisol/domain'
 import type { JSONContent } from '@tiptap/core'
 import type { ActionEnv } from '../actions/context.ts'
@@ -59,7 +59,9 @@ export async function rebuildFileEmbeds(
   source: { worldId: string; pageId: string; documentId: string },
   json: JSONContent,
   /** Un documento recién creado: sin nada que quitar */
-  fresh = false
+  fresh = false,
+  /** Si se resuelven por su nombre (en una página de jugadores, no: sería sacar cualquier archivo del mundo) */
+  byNames = true
 ) {
   const embeds = fileEmbedsIn(json)
   const byName = new Map<string, string>()
@@ -79,7 +81,7 @@ export async function rebuildFileEmbeds(
     ).map((row) => row.id)
   )
   const pending = embeds.some((embed) => !embed.fileId || !ids.has(embed.fileId))
-  const named = pending ? await worldFiles(env, source.worldId) : new Map<string, string>()
+  const named = pending && byNames ? await worldFiles(env, source.worldId) : new Map<string, string>()
   await linksRepo.replaceFileEmbeds(
     env.db,
     source,
@@ -100,7 +102,11 @@ export async function rebuildFileEmbeds(
  */
 export async function resolvePendingFiles(env: ActionEnv, worldId: string, actorId: string, names: readonly string[]) {
   const keys = [...new Set(names.map(foldName))].filter(Boolean)
-  const waiting = await linksRepo.unresolvedFileEmbeds(env.db, worldId, keys)
+  // Las páginas de jugadores no resuelven archivos por su nombre
+  const edited = await knowledgeRepo.editedPages(env.db, worldId)
+  const waiting = (await linksRepo.unresolvedFileEmbeds(env.db, worldId, keys)).filter(
+    (embed) => !edited.has(embed.sourcePageId)
+  )
   if (waiting.length === 0) return
   const files = await worldFiles(env, worldId)
   const byDocument = new Map<string, { kind: string; pageId: string; resolved: Map<string, string> }>()

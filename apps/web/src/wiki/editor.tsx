@@ -89,7 +89,7 @@ export function PageBody({
       {/* Se guarda solo: abajo a la derecha, discreto, si aún falta por guardar o ya está (sin anunciarlo a cada letra) */}
       {!offline &&
         synced &&
-        !page.locked &&
+        (!page.locked || page.editable) &&
         saveSlot &&
         createPortal(
           <p className={styles.saveState} aria-hidden="true">
@@ -116,7 +116,8 @@ export function PageBody({
                 pageId={page.id}
                 document={session.document}
                 provider={session.provider}
-                editable={!page.locked}
+                // Un jugador escribe en su página aunque lo demás de ella siga cerrado para él
+                editable={!page.locked || Boolean(page.editable)}
                 ready={synced}
                 // Un jugador escribe en texto corrido, como lo lee (sin la maqueta de la hoja, que encoge la letra)
                 sheet={page.editable ? null : sheetOf(page)}

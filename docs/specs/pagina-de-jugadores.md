@@ -47,8 +47,17 @@ Para quién: el máster, que lo permite; los jugadores, que escriben; la IA de l
 - **IA**: `dejar_editar`; la IA de un jugador escribe con `editar_pagina` en una página suya (solo el texto).
 - **Pruebas**: `player-pages.integration.test.ts`, la de la colaboración en vivo, la del MCP y la e2e
   `pagina-de-jugadores.spec.ts`.
-- **Queda**: si una página que editan deja de verse (se oculta), el permiso sigue pero no la abre: el máster se lo
-  quita aparte; una marca «La escribe tu grupo» en la página de la jugadora.
+- **De la revisión (2026-11-07)**: el permiso solo vale si la ve desde esa campaña (oculta, no la abre ni la
+  escribe) y desde la campaña que lee; con el candado, ni la jugadora. Lo que se escribe en ella se resuelve solo
+  contra las páginas que ven todos los que la editan (sin alias ni rutas) y los archivos no se resuelven por su nombre
+  (sería sacar cualquiera del mundo); no se deja editar si el texto enlaza páginas que no conocen
+  (`PAGE_HAS_HIDDEN_LINKS`). Un jugador no cambia campos ni con el YAML, y `editPage` le devuelve su página proyectada.
+  Una versión con secretos no vuelve a una página de jugadores. Al ocultar, sacar a alguien de la campaña, borrar la
+  campaña o un personaje, cambiar su dueño o deshacer, se cierran las conexiones de los jugadores y se vuelve a mirar.
+- **Se acepta**: si dos campañas editan la misma página, comparten su texto y se ven los cursores con los nombres de
+  los de la otra; lo que el máster enlaza a mano en ella (por su id) lo ven los que la editan, como lo demás que
+  escribe allí.
+- **Queda**: una marca «La escribe tu grupo» en la página de la jugadora.
 
 ## Pruebas
 

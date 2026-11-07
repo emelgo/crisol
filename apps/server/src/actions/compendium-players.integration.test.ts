@@ -108,6 +108,44 @@ describe('el compendio y la partida para los jugadores (docs/specs/compendio-jug
       expect((await ok200('getCampaign', { campaignId }, ana.cookie)).campaign.hiddenTypes).toEqual([])
     })
 
+    it('lo de un tipo oculto no lo añade a su personaje (lo que ya lleva, se queda)', async () => {
+      const thora = (await ok200('createCharacter', { campaignId, name: 'Thora' }, ana.cookie)).character
+      const given = await ok200('updateCharacter', {
+        characterId: thora.id,
+        version: 1,
+        play: { items: [{ id: 'd1', key: 'daga_2024' }] }
+      })
+      await ok200('updateCampaign', { campaignId, hiddenTypes: ['arma'] })
+      const more = await call(
+        'updateCharacter',
+        {
+          characterId: thora.id,
+          version: given.character.version,
+          play: {
+            items: [
+              { id: 'd1', key: 'daga_2014' },
+              { id: 'd2', key: 'daga_2024' }
+            ]
+          }
+        },
+        ana.cookie
+      )
+      expect(more.statusCode).toBe(400)
+      const hers = await ok200('getCharacter', { characterId: thora.id }, ana.cookie)
+      expect(hers.state.carried).toMatchObject([{ id: 'd1' }])
+      // El máster sí se lo da
+      await ok200('updateCharacter', {
+        characterId: thora.id,
+        version: given.character.version,
+        play: {
+          items: [
+            { id: 'd1', key: 'daga_2024' },
+            { id: 'd2', key: 'garrote_2024' }
+          ]
+        }
+      })
+    })
+
     it('ocultar tipos es del máster', async () => {
       const response = await call('updateCampaign', { campaignId, hiddenTypes: [] }, ana.cookie)
       expect([403, 404]).toContain(response.statusCode)

@@ -153,12 +153,20 @@ async function contextOf(ctx: ActionContext, campaignId: string, systemId: strin
   const wiki = { worldId: campaign.worldId, organizationId: campaign.organizationId }
   // Todo lo del mundo para quien lo ve (o para calcular en el servidor); si no, solo lo que ya tiene el personaje
   let only: ((key: string) => boolean) | undefined
-  if (!everything && !can(ctx.actor, 'worldContent.read', wiki)) {
-    const named = namedIn(stored.build, stored.play)
+  const player = !everything && !can(ctx.actor, 'worldContent.read', wiki)
+  const named = player ? namedIn(stored.build, stored.play) : new Set<string>()
+  if (player) {
     const seen = await contentSeen(ctx, wiki, campaignId)
     only = (key) => named.has(key) || (seen?.(key) ?? false)
   }
-  const { document, content } = await systemOf(ctx, systemId, campaign.worldId, only)
+  const found = await systemOf(ctx, systemId, campaign.worldId, only)
+  // Un jugador no ve los tipos que su campaña le oculta (docs/specs/compendio-jugadores.md), salvo lo que ya lleva
+  const hidden = player ? (campaign.hiddenTypes ?? []) : []
+  const content =
+    hidden.length > 0
+      ? found.content.filter((item) => !hidden.includes(item.type) || named.has(item.key))
+      : found.content
+  const document = found.document
   const { choices } = normalizeChoices(document, (campaign.systemChoices ?? {}) as Partial<Choices>)
   return { document, content, choices }
 }
@@ -289,6 +297,8 @@ async function save(
   )
   const fresh = await charactersRepo.findCharacter(ctx.db, saved.id)
   if (!fresh) throw new NotFoundError('character')
+  // Otro dueño: lo que el de antes escribía por él (una página de jugadores) se vuelve a mirar
+  if (patch.ownerId !== undefined) ctx.collab?.closeWorldPlayers(row.worldId)
   return { character: characterOf(fresh), state: view }
 }
 
@@ -469,6 +479,8 @@ export const characterActions = [
       historyContext(ctx, 'deleteCharacter', { name: row.name }, row),
       characterId
     )
+    // Con él se va lo que su dueño escribía por él (una página de jugadores para unos personajes)
+    ctx.collab?.closeWorldPlayers(row.worldId)
     return { ok: true as const }
   }),
 

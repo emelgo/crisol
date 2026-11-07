@@ -971,6 +971,13 @@ describe('conector MCP con OAuth', () => {
     expect(written.isError, written.text).toBeFalsy()
     const titled = await player.call('editar_pagina', { pageId: diary.id, title: 'Otro' })
     expect(titled.text).toMatch(/^PLAYER_PAGE/)
+    // En modo asistente, su petición espera a que ella la apruebe
+    await api(ana.cookie, 'setAiMode', { mode: 'assistant' })
+    const awaiting = await player.call('editar_pagina', {
+      pageId: diary.id,
+      body: { mode: 'append', markdown: 'Día 2.' }
+    })
+    expect(awaiting.text).toMatch(/^PENDING_APPROVAL/)
 
     // Revelar en partida (con aviso): también espera aprobación; lo_que_sabe lo lista
     const reveal = await call('revelar', { worldId: world.id, kind: 'page', targetId: varn })

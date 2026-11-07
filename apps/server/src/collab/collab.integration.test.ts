@@ -195,6 +195,31 @@ describe('la edición en vivo (/api/collab)', () => {
     await until(() => again.events.failed !== '', 'el rechazo al volver')
   })
 
+  it('si se le oculta la página o sale de la campaña, se le cierra y no vuelve a entrar', async () => {
+    const diary = await call('createPage', { worldId, title: 'Diario' })
+    const campaign = await call('createCampaign', { worldId, name: 'La Marca' })
+    const player = await signUpTestUser(auth, { name: 'Jugadora', email: 'jugadora@crisol.test' })
+    await conn.db.insert(schema.organizationMembers).values({ organizationId, userId: player.userId, role: 'member' })
+    await conn.db
+      .insert(schema.campaignMembers)
+      .values({ campaignId: campaign.id, userId: player.userId, role: 'player' })
+    await call('setPageEditors', { worldId, campaignId: campaign.id, pageId: diary.id, editors: 'all' })
+    const first = client(`page:${diary.id}`, player.cookie)
+    await until(() => first.events.synced, 'la primera conexión')
+    await call('hide', { campaignId: campaign.id, kind: 'page', targetId: diary.id })
+    await until(() => first.events.closed > 0, 'el cierre al ocultarla')
+    const hidden = client(`page:${diary.id}`, player.cookie)
+    await until(() => hidden.events.failed !== '', 'el rechazo con la página oculta')
+
+    await call('setKnowledge', { worldId, campaignId: campaign.id, kind: 'page', targetId: diary.id, known: true })
+    const second = client(`page:${diary.id}`, player.cookie)
+    await until(() => second.events.synced, 'la segunda conexión')
+    await call('removeMember', { campaignId: campaign.id, userId: player.userId })
+    await until(() => second.events.closed > 0, 'el cierre al sacarla')
+    const gone = client(`page:${diary.id}`, player.cookie)
+    await until(() => gone.events.failed !== '', 'el rechazo fuera de la campaña')
+  })
+
   it('un nombre que no es de ningún documento, o una página que no existe, no se abren', async () => {
     const unknown = client(`page:${crypto.randomUUID()}`)
     await until(() => unknown.events.failed !== '', 'el rechazo')

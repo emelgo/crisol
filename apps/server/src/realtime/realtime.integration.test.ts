@@ -230,6 +230,7 @@ describe('el canal en tiempo real', () => {
       worldId: world.id,
       campaignId: campaign.id,
       kind: 'secret',
+      targetId: secret?.id,
       pageId: aldoria,
       title: 'El pacto de Varn'
     })

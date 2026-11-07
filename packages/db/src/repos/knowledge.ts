@@ -502,10 +502,19 @@ export async function writeEditors(
   })
 }
 
-/** Si esa cuenta puede escribir en esa página como jugadora: en una campaña suya, toda o con uno de sus personajes */
-export async function canEditPage(db: Database, userId: string, pageId: string) {
+/**
+ * Lo que deja escribir en esa página a esa cuenta como jugadora: en cada campaña suya (no en la papelera) con permiso,
+ * si es para toda la campaña o para unos personajes, sus personajes en ella y si parte de lo que sabe el mundo (para
+ * mirar después si la ve)
+ */
+export async function editorGrants(db: Database, userId: string, pageId: string) {
   const rows = await db
-    .select({ campaignId: pageEditors.campaignId, characters: pageEditors.characters })
+    .select({
+      campaignId: pageEditors.campaignId,
+      characters: pageEditors.characters,
+      knowsWorld: campaigns.knowsWorld,
+      worldId: pageEditors.worldId
+    })
     .from(pageEditors)
     .innerJoin(
       campaignMembers,
@@ -513,10 +522,5 @@ export async function canEditPage(db: Database, userId: string, pageId: string) 
     )
     .innerJoin(campaigns, and(eq(campaigns.id, pageEditors.campaignId), isNull(campaigns.deletedAt)))
     .where(eq(pageEditors.pageId, pageId))
-  for (const row of rows) {
-    if (!row.characters) return true
-    const mine = await characterIdsOf(db, row.campaignId, userId)
-    if (mine.some((id) => row.characters?.includes(id))) return true
-  }
-  return false
+  return Promise.all(rows.map(async (row) => ({ ...row, mine: await characterIdsOf(db, row.campaignId, userId) })))
 }

@@ -37,6 +37,7 @@ import { pagesChanged } from '../realtime/events.ts'
 import { readDocument, stateOf, writeDocument } from '../wiki/content.ts'
 import { fileNames, worldFiles } from '../wiki/file-embeds.ts'
 import { linkName, linksOfNewPages, resolveIncoming, resolvePending, worldNames } from '../wiki/links.ts'
+import { editorsNames, hasSeparates, playerEdits } from '../wiki/player-pages.ts'
 import { filterBody, pageViewFor, unresolvedAsText, viewedPage, visibleProperties } from '../wiki/projection.ts'
 import { propertiesOf } from '../wiki/properties.ts'
 import { knownBySomeone, type WikiView } from '../wiki/reader.ts'
@@ -81,12 +82,13 @@ async function writablePage(
     return { ...(await authorizedPage(ctx, 'page.write', input.pageId)), player: false }
   } catch (error) {
     if (!(error instanceof ForbiddenError || error instanceof NotFoundError)) throw error
-    if (!(await knowledgeRepo.canEditPage(ctx.db, ctx.actor.userId, input.pageId))) throw error
+    if (!(await playerEdits(ctx, ctx.actor.userId, input.pageId))) throw error
     const page = await pagesRepo.findPage(ctx.db, input.pageId)
     const world = page ? await worldsRepo.findWorld(ctx.db, page.worldId) : null
     if (!page || !world) throw new NotFoundError('page')
     const others = [input.title, input.icon, input.properties, input.template].some((given) => given !== undefined)
     if (others) throw new InvalidRequestError('PLAYER_PAGE', 'en una página de jugadores solo se escribe su texto')
+    if (page.locked) throw new InvalidRequestError('PLAYER_PAGE', 'la página está cerrada con el candado')
     return { page, wiki: { worldId: world.id, organizationId: world.organizationId }, player: true }
   }
 }
@@ -483,6 +485,9 @@ export const pageContentActions = [
       input.body ??
       (applied?.applied.append ? { mode: 'append' as const, markdown: applied.applied.append } : undefined)
     const parsed = bodyInput ? parse(bodyInput.markdown) : null
+    // Un jugador no cambia los campos (ni con el YAML del texto)
+    if (player && parsed && parsed.properties.length > 0)
+      throw new InvalidRequestError('PLAYER_PAGE', 'en una página de jugadores solo se escribe su texto')
     // Las propiedades: las que se dan; o, al cambiar el cuerpo entero, las de su YAML
     const fromYaml =
       bodyInput?.mode === 'replace' && parsed && parsed.properties.length > 0 ? parsed.properties : undefined
@@ -518,12 +523,15 @@ export const pageContentActions = [
         edit.mode === 'block'
           ? keepBlockId(parsed, edit.blockId, current.content?.find((block) => block.attrs?.id === edit.blockId)?.type)
           : parsed
-      const names = await worldNames(ctx, wiki.worldId)
-      const files = await worldFiles(ctx, wiki.worldId)
-      // Cada secreto: el que ya estaba (mismo id de bloque, de esta página) cambia su documento; uno nuevo, se crea
-      // Una página que escriben jugadores no lleva secretos ni notas ocultas (docs/specs/pagina-de-jugadores.md)
-      if (read.separates.length > 0 && (player || (await knowledgeRepo.isEdited(ctx.db, page.id))))
+      // Una página que escriben jugadores (docs/specs/pagina-de-jugadores.md): sin secretos ni notas ocultas (tampoco
+      // si volvieron con una versión), y lo que se nombra se resuelve solo contra lo que ven todos los que la editan;
+      // un jugador no incrusta archivos por su nombre
+      const audience = await editorsNames(ctx, wiki.worldId, page.id)
+      if (audience && (read.separates.length > 0 || (player && hasSeparates(current))))
         throw new InvalidRequestError('PLAYER_PAGE', 'una página de jugadores no lleva secretos ni notas ocultas')
+      const names = audience ?? (await worldNames(ctx, wiki.worldId))
+      const files = player ? new Map<string, string>() : await worldFiles(ctx, wiki.worldId)
+      // Cada secreto: el que ya estaba (mismo id de bloque, de esta página) cambia su documento; uno nuevo, se crea
       const existing = separatesIn(current)
       const own = new Set(
         (await documentsRepo.documentsOfPages(ctx.db, [page.id])).filter((d) => d.kind !== 'body').map((d) => d.id)
@@ -605,6 +613,15 @@ export const pageContentActions = [
     const renamed = [...(input.title ? [input.title] : []), ...(aliases?.type === 'list' ? aliases.value : [])]
     if (renamed.length > 0) await resolvePending(ctx, wiki.worldId, ctx.actor.userId, renamed)
     ctx.realtime.publish(pagesChanged(wiki))
+    // Un jugador, su página como la ve (sin lo oculto)
+    if (player) {
+      const { view } = await viewedPage(ctx, page.id)
+      return {
+        page: { ...pageViewFor(view, await pageView(ctx, page.id)), editable: true },
+        changedBlocks,
+        changedSinceRequest
+      }
+    }
     return { page: await pageView(ctx, page.id), changedBlocks, changedSinceRequest }
   })
 ]

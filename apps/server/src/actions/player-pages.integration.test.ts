@@ -4,7 +4,8 @@ import type { FastifyInstance } from 'fastify'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { buildApp } from '../app.ts'
 import type { Auth } from '../auth/auth.ts'
-import { createTestAuth, signUpTestUser, TEST_SEAL_KEY } from '../testing.ts'
+import { diskStorage } from '../files/storage.ts'
+import { createTestAuth, signUpTestUser, TEST_SEAL_KEY, testDataDir } from '../testing.ts'
 
 const BASE_URL = 'http://localhost:5173'
 const ok = async () => undefined
@@ -51,7 +52,8 @@ describe('la página que escriben los jugadores (docs/specs/pagina-de-jugadores.
     auth = createTestAuth(conn.db, BASE_URL)
     app = buildApp({
       checks: { postgres: ok, valkey: ok },
-      accounts: { auth, db: conn.db, publicUrl: BASE_URL, sealKey: TEST_SEAL_KEY }
+      accounts: { auth, db: conn.db, publicUrl: BASE_URL, sealKey: TEST_SEAL_KEY },
+      storage: diskStorage(testDataDir())
     })
     master = await signUpTestUser(auth, { name: 'Enrique', email: 'enrique@crisol.test' })
     const [org] = await conn.db.insert(schema.organizations).values({ name: 'Mesa' }).returning()
@@ -177,5 +179,118 @@ describe('la página que escriben los jugadores (docs/specs/pagina-de-jugadores.
       ana.cookie
     )
     expect([403, 404]).toContain(response.statusCode)
+  })
+  describe('lo que escribe un jugador no le deja ver ni tocar más de lo suyo (revisión)', () => {
+    const grant = () => ok200('setPageEditors', { worldId, campaignId: marca, pageId: diary, editors: 'all' })
+    const append = (markdown: string, cookie = ana.cookie) =>
+      call('editPage', { pageId: diary, body: { mode: 'append', markdown } }, cookie)
+
+    it('un archivo por su nombre no se resuelve (ni se le sirve), aunque exista', async () => {
+      const uploaded = await app.inject({
+        method: 'POST',
+        url: `/api/files?worldId=${worldId}&name=plano-guarida.svg`,
+        payload: Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"/>'),
+        headers: { origin: BASE_URL, cookie: master.cookie, 'content-type': 'application/octet-stream' }
+      })
+      expect(uploaded.statusCode, uploaded.body).toBe(201)
+      const file = uploaded.json()
+      expect(file.id).toBeTruthy()
+      await grant()
+      expect((await append('![[plano-guarida.svg]]')).statusCode).toBe(200)
+      expect(await text()).not.toContain(file.id)
+      const served = await app.inject({ method: 'GET', url: `/api/files/${file.id}`, headers: { cookie: ana.cookie } })
+      expect(served.statusCode).toBe(404)
+    })
+
+    it('editPage le devuelve su página proyectada; ni campos con el YAML, ni con el candado', async () => {
+      const full = await ok200('getPage', { pageId: diary })
+      await ok200('setPageProperties', {
+        pageId: diary,
+        properties: [...full.properties, { name: 'Traidor', type: 'text', value: 'El Canciller', hidden: true }]
+      })
+      await grant()
+      const written = await append('Día 2.')
+      expect(written.statusCode).toBe(200)
+      expect(written.body).not.toContain('El Canciller')
+      expect(written.json().page.editable).toBe(true)
+      const yaml = await call(
+        'editPage',
+        { pageId: diary, body: { mode: 'replace', markdown: '---\nalias: Mío\n---\nTodo nuevo.' } },
+        ana.cookie
+      )
+      expect(yaml.json().code).toBe('PLAYER_PAGE')
+      await ok200('updatePage', { pageId: diary, locked: true })
+      expect((await append('Día 3.')).json().code).toBe('PLAYER_PAGE')
+      expect((await ok200('getPage', { pageId: diary }, ana.cookie)).editable).toBe(false)
+    })
+
+    it('un nombre solo se resuelve contra lo que conocen: ni a una página oculta, ni la delata un error', async () => {
+      await ok200('createPages', {
+        worldId,
+        parentId: null,
+        pages: [
+          { key: 'v', title: 'El Villano' },
+          { key: 't', title: 'Trama oculta' }
+        ]
+      })
+      const trama = (await ok200('listPageTree', { worldId, levels: 2 })).pages.find(
+        (p: { title: string }) => p.title === 'Trama oculta'
+      ).id
+      await ok200('createPage', { worldId, title: 'El Villano', parentId: trama })
+      await grant()
+      const written = await append('Creo que [[El Villano]] miente.')
+      expect(written.statusCode).toBe(200)
+      expect(written.body).not.toContain('Trama oculta')
+      // El enlace queda sin resolver: con lo que escribió y sin la página (ni en el texto ni en sus enlaces)
+      type Node = { type?: string; attrs?: Record<string, unknown>; content?: Node[] }
+      const found: Node[] = []
+      const walk = (node: Node) => {
+        if (node.type === 'pageLink') found.push(node)
+        for (const child of node.content ?? []) walk(child)
+      }
+      for (const block of (await ok200('getPageContent', { pageId: diary })).blocks as Node[]) walk(block)
+      expect(found).toEqual([expect.objectContaining({ attrs: expect.objectContaining({ title: 'El Villano' }) })])
+      expect(found[0]?.attrs?.pageId ?? null).toBeNull()
+      const stored = await conn.db.select().from(schema.pageLinks)
+      expect(stored.filter((link) => link.sourcePageId === diary).map((link) => link.targetPageId)).toEqual([null])
+    })
+
+    it('no se deja editar si el texto enlaza páginas que la campaña no conoce', async () => {
+      const villain = (await ok200('createPage', { worldId, title: 'El Villano' })).id
+      await ok200('editPage', { pageId: diary, body: { mode: 'append', markdown: `Ver [[El Villano]].` } })
+      const refused = await call('setPageEditors', { worldId, campaignId: marca, pageId: diary, editors: 'all' })
+      expect(refused.json().code).toBe('PAGE_HAS_HIDDEN_LINKS')
+      await ok200('setKnowledge', { worldId, campaignId: marca, kind: 'page', targetId: villain, known: true })
+      await grant()
+    })
+
+    it('si se le oculta la página, ya no la escribe; desde otra campaña suya, tampoco', async () => {
+      await grant()
+      await ok200('hide', { campaignId: marca, kind: 'page', targetId: diary })
+      expect((await call('getPage', { pageId: diary }, ana.cookie)).statusCode).toBe(404)
+      expect([403, 404]).toContain((await append('Día 4.')).statusCode)
+      // Otra campaña de Ana que la conoce, sin permiso para editarla
+      await ok200('setKnowledge', { worldId, campaignId: marca, kind: 'page', targetId: diary, known: true })
+      const norte = (await ok200('listCampaigns', { worldId })).campaigns.find(
+        (c: { name: string }) => c.name === 'Los del norte'
+      ).id
+      await join(norte, ana)
+      await ok200('setKnowledge', { worldId, campaignId: norte, kind: 'page', targetId: diary, known: true })
+      expect((await ok200('getPage', { pageId: diary, campaignId: marca }, ana.cookie)).editable).toBe(true)
+      expect((await ok200('getPage', { pageId: diary, campaignId: norte }, ana.cookie)).editable).toBe(false)
+    })
+
+    it('una versión con secretos no vuelve a una página de jugadores', async () => {
+      await ok200('editPage', {
+        pageId: diary,
+        body: { mode: 'append', markdown: '> [!secreto]\n> Algo del máster.' }
+      })
+      const versions = await ok200('listPageVersions', { pageId: diary })
+      await ok200('editPage', { pageId: diary, body: { mode: 'replace', markdown: 'Limpio.' } })
+      await grant()
+      const withSecret = versions.versions[0]
+      const restored = await call('restorePageVersion', { pageId: diary, versionId: withSecret.id })
+      expect(restored.json().code).toBe('PLAYER_PAGE')
+    })
   })
 })

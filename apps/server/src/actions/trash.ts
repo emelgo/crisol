@@ -53,6 +53,8 @@ export const trashActions = [
     const scope = { campaignId, worldId: campaign.worldId }
     for (const { userId } of people) ctx.realtime.revoke(userId, scope)
     ctx.realtime.publish(campaignsChanged(scope))
+    // Sus jugadores dejan de escribir en sus páginas
+    ctx.collab?.closeWorldPlayers(campaign.worldId)
     return {}
   }),
 

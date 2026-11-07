@@ -29,6 +29,7 @@ import {
 import * as Y from 'yjs'
 import { pagesChanged } from '../realtime/events.ts'
 import { resolvePending, worldNames } from '../wiki/links.ts'
+import { playerEdits } from '../wiki/player-pages.ts'
 import { pageViewFor, viewedPage, viewTree } from '../wiki/projection.ts'
 import { propertiesOf } from '../wiki/properties.ts'
 import { authorizedView } from '../wiki/reader.ts'
@@ -265,12 +266,14 @@ export const pageActions = [
     const { view } = await viewedPage(ctx, pageId, as)
     const full = await pageView(ctx, pageId)
     const shown = pageViewFor(view, full)
-    // Quien lleva la wiki: si la escriben jugadores (su editor, sin secretos); un jugador: si él puede escribir (con
-    // el candado de verdad, que en lo proyectado siempre está echado)
+    // Quien lleva la wiki: si la escriben jugadores (su editor, sin secretos); un jugador: si él puede escribir en ella
+    // desde la campaña que lee (y no está cerrada con el candado). Lo proyectado sigue «cerrado»: el resto no es suyo
     if (view.full) return { ...shown, editedByPlayers: await knowledgeRepo.isEdited(ctx.db, pageId) }
     const editable =
-      as.asCharacterId === undefined && (await knowledgeRepo.canEditPage(ctx.db, ctx.actor.userId, pageId))
-    return { ...shown, editable, ...(editable ? { locked: full.locked } : {}) }
+      as.asCharacterId === undefined &&
+      !full.locked &&
+      (await playerEdits(ctx, ctx.actor.userId, pageId, view.campaignId ?? undefined))
+    return { ...shown, editable }
   }),
 
   implement(getPageTables, async (ctx, { pageId, ...as }) => {
