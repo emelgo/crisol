@@ -1,4 +1,6 @@
 import { createHash, randomBytes } from 'node:crypto'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { expect, type Page, test } from '@playwright/test'
 import { E2E_PORT } from '../servidor.ts'
 import {
@@ -927,5 +929,224 @@ test('@fugas las criaturas en juego: la jugadora solo ve las que están a la vis
   // En tiempo real le llega que cambian, sin nombres ni números
   const everything = await captured.all()
   for (const leak of ['Señor Oculto', boss.id, 'Hoja Secreta', '"life"']) expect(everything).not.toContain(leak)
+  await player.close()
+})
+
+/** La cripta de Varn (como en vision.spec.ts), a 3000 × 2000: la sala de la entrada, cerrada, es lo único que se ve */
+const CRIPTA = readFileSync(join(import.meta.dirname, '..', 'fixtures', 'cripta.svg'), 'utf8')
+const at = (x: number, y: number) => ({ x, y })
+const CRIPTA_WALLS = [
+  [at(900, 900), at(900, 700), at(200, 700), at(200, 1300), at(900, 1300), at(900, 1100)],
+  [at(900, 900), at(1400, 900), at(1400, 400), at(2200, 400), at(2200, 680)],
+  [at(2200, 910), at(2200, 1200), at(1850, 1200)],
+  [at(1750, 1200), at(1400, 1200), at(1400, 1100), at(900, 1100)],
+  [at(1750, 1200), at(1750, 1300), at(1500, 1300), at(1500, 1800), at(2100, 1800), at(2100, 1300), at(1850, 1300)]
+]
+const CRIPTA_PORTALS = [
+  { a: at(900, 900), b: at(900, 1100), closed: true, window: false },
+  { a: at(2200, 680), b: at(2200, 910), closed: true, window: false }
+]
+/** La sala de la entrada (entre sus muros), con un margen por las celdas de la niebla que pisan la pared */
+const ROOM = { x0: 200 - 60, y0: 700 - 60, x1: 900 + 60, y1: 1300 + 60 }
+const TILE = 512
+/** Si una tesela (nivel, columna, fila) pisa la sala de la entrada */
+const touchesRoom = (level: number, x: number, y: number) => {
+  const span = TILE * 2 ** level
+  return x * span < ROOM.x1 && (x + 1) * span > ROOM.x0 && y * span < ROOM.y1 && (y + 1) * span > ROOM.y0
+}
+
+test('@fugas la pantalla de la tele solo recibe lo que ve el grupo, y un jugador no entra en la mesa (ADR-0018)', async ({
+  page,
+  browser
+}) => {
+  test.setTimeout(240_000)
+  const link = await campaignLink(page)
+  const campaignId = new URL(page.url()).pathname.split('/campanas/')[1] ?? ''
+  const worldId = new URL(page.url()).pathname.split('/')[2] ?? ''
+  const call = async (name: string, data: object) => {
+    const response = await page.request.post(`/api/actions/${name}`, { data })
+    expect(response.status(), `${name}: ${await response.text()}`).toBe(200)
+    return response.json()
+  }
+  const systemId = await import5e(page)
+  await call('updateCampaign', { campaignId, system: systemId })
+  const pageId = (await call('createPage', { worldId, title: 'Cripta de Varn' })).id
+  const tab = await call('createPageTab', { pageId, kind: 'scene', name: 'Cripta de Varn' })
+  const sceneId = (await call('getScene', { tabId: tab.id })).id as string
+  await call('drawScene', {
+    sceneId,
+    svg: CRIPTA,
+    name: 'Cripta de Varn',
+    walls: CRIPTA_WALLS,
+    portals: CRIPTA_PORTALS
+  })
+  // La puerta secreta de la cripta, cerrada: para el grupo, un muro más
+  const walls = await call('changeWalls', {
+    sceneId,
+    walls: { add: [{ a: at(1750, 1200), b: at(1850, 1200), door: 'secret' }] }
+  })
+  const secretId = (walls.walls as Array<{ id: string; door: string | null }>).find((w) => w.door === 'secret')?.id
+  if (!secretId) throw new Error('sin puerta secreta')
+  await call('openScene', { campaignId, sceneId })
+  await call('presentScene', { campaignId })
+
+  // El grupo en la sala de la entrada; Bram, oculto; un acechador oculto a su lado y el señor de la cripta, tras la secreta
+  const lia = (await call('createCharacter', { campaignId, name: 'Lía' })).character.id
+  const bram = (await call('createCharacter', { campaignId, name: 'Bram' })).character.id
+  await call('placeTokens', { campaignId, sceneId, tokens: [{ characterId: lia, x: 500, y: 1000 }] })
+  const hiddenTokens = (
+    await call('placeTokens', { campaignId, sceneId, hidden: true, tokens: [{ characterId: bram, x: 400, y: 850 }] })
+  ).tokens as Array<{ id: string }>
+  const lurker = (
+    await call('putInPlay', { campaignId, key: 'guerrero_goblin_2014', unique: true, name: 'Acechador Invisible' })
+  ).creatures[0].id as string
+  const boss = (
+    await call('putInPlay', { campaignId, key: 'jefe_goblin_2024', unique: true, name: 'Señor de la Cripta' })
+  ).creatures[0].id as string
+  await call('playCreature', { creatureId: boss, version: 1, damage: 2 })
+  hiddenTokens.push(
+    ...(
+      await call('placeTokens', { campaignId, sceneId, hidden: true, tokens: [{ creatureId: lurker, x: 700, y: 900 }] })
+    ).tokens
+  )
+  const bossToken = (
+    await call('placeTokens', { campaignId, sceneId, tokens: [{ creatureId: boss, x: 1800, y: 1600 }] })
+  ).tokens[0].id as string
+  // Una marca a la vista, una del máster a la vista y otra en la cueva, que nadie ha visto
+  const text = (x: number, y: number, words: string, hidden = false) => ({
+    kind: 'text',
+    x,
+    y,
+    text: words,
+    color: '#f1e8d8',
+    size: 30,
+    hidden
+  })
+  const marks = (
+    await call('changeMarks', {
+      campaignId,
+      add: [text(550, 1000, 'A la vista'), text(550, 1150, 'Nota del máster', true), text(2600, 1000, 'En la niebla')]
+    })
+  ).marks as Array<{ id: string; text: string }>
+  const markId = (words: string) => marks.find((m) => m.text === words)?.id ?? ''
+
+  // El máster abre la mesa: trocea el mapa y lo sube
+  await page.goto(`/mundos/${worldId}/campanas/${campaignId}/mesa`)
+  await expect(page.getByRole('application', { name: 'Mesa: Cripta de Varn' })).toBeVisible()
+  await expect
+    .poll(async () => (await call('getScene', { sceneId })).image.tiles?.levels ?? 0, { timeout: 60_000 })
+    .toBeGreaterThan(0)
+  const tiles = (await call('getScene', { sceneId })).image.tiles as { version: string; levels: number }
+
+  // La tele: lo que le llega por su canal y las teselas que pide
+  const tv = await page.context().newPage()
+  const frames: string[] = []
+  const answers: Array<Promise<string>> = []
+  const served: string[] = []
+  const asked: string[] = []
+  tv.on('websocket', (ws) => ws.on('framereceived', ({ payload }) => frames.push(String(payload))))
+  tv.on('response', (response) => {
+    const path = new URL(response.url()).pathname
+    if (!path.startsWith('/api/')) return
+    asked.push(path)
+    if (path.includes('/tiles/')) {
+      if (response.status() === 200) served.push(path)
+    } else answers.push(response.text().catch(() => ''))
+  })
+  await tv.goto(`/mundos/${worldId}/campanas/${campaignId}/pantalla`)
+  await expect.poll(() => frames.some((f) => f.includes('"type":"screen"') && f.includes('Lía'))).toBe(true)
+  await expect.poll(() => served.length, { timeout: 30_000 }).toBeGreaterThan(0)
+
+  // Lo que cambia con la tele abierta: otra nota del máster y el señor que se mueve por la cripta; y una marca a la vista
+  await call('changeMarks', { campaignId, add: [text(450, 1200, 'Otra nota', true), text(2700, 400, 'Más niebla')] })
+  await call('moveTokens', { campaignId, moves: [{ tokenId: bossToken, x: 1700, y: 1500 }] })
+  await call('changeMarks', { campaignId, add: [text(700, 1200, 'Ya se ve')] })
+  await expect.poll(() => frames.some((f) => f.includes('Ya se ve'))).toBe(true)
+  await tv.waitForLoadState('networkidle')
+
+  const everything = [...frames, ...(await Promise.all(answers))].join('\n')
+  expect(everything).toContain('A la vista')
+  for (const leak of [
+    // La puerta secreta, ni que existe; ni muros ni puertas
+    secretId,
+    '"secret"',
+    '"walls"',
+    '"door"',
+    // Las fichas ocultas y la criatura que no se ve, ni sus puntos de golpe
+    'Bram',
+    'Acechador Invisible',
+    lurker,
+    ...hiddenTokens.map((t) => t.id),
+    'Señor de la Cripta',
+    boss,
+    bossToken,
+    '"life"',
+    // Las marcas del máster y las de la niebla
+    'Nota del máster',
+    markId('Nota del máster'),
+    'Otra nota',
+    'En la niebla',
+    markId('En la niebla'),
+    'Más niebla',
+    // Ni su página ni su nombre
+    pageId,
+    'Cripta de Varn'
+  ])
+    expect(everything, leak).not.toContain(leak)
+
+  // Las teselas: solo de la escena presentada y que pisan lo que se ve; las demás, ni pidiéndolas
+  expect(asked.filter((path) => path.startsWith('/api/scenes/'))).toEqual([])
+  const screenTile = (level: number, x: number, y: number) =>
+    `/api/campaigns/${campaignId}/screen/tiles/${tiles.version}/${level}/${x}/${y}`
+  for (const path of served) {
+    const [level, x, y] = path.split('/').slice(-3).map(Number) as [number, number, number]
+    expect(path.startsWith(`/api/campaigns/${campaignId}/screen/tiles/`), path).toBe(true)
+    expect(touchesRoom(level, x, y), path).toBe(true)
+  }
+  let denied = 0
+  for (let level = 0; level < tiles.levels; level++) {
+    const span = TILE * 2 ** level
+    for (let x = 0; x * span < 3000; x++)
+      for (let y = 0; y * span < 2000; y++) {
+        if (touchesRoom(level, x, y)) continue
+        const response = await tv.request.get(screenTile(level, x, y))
+        expect(response.status(), screenTile(level, x, y)).toBe(404)
+        denied++
+      }
+  }
+  expect(denied).toBeGreaterThan(20)
+  await tv.close()
+
+  // Un jugador: ni teselas (de la pantalla ni de la escena) ni la sala de la mesa, con ninguna vista
+  const player = await newPlayer(browser, link, 'Jugadora')
+  const playerFrames: string[] = []
+  player.on('websocket', (ws) => ws.on('framereceived', ({ payload }) => playerFrames.push(String(payload))))
+  for (const path of [screenTile(0, 0, 1), `/api/scenes/${sceneId}/tiles/${tiles.version}/0/0/1`]) {
+    const response = await player.request.get(path)
+    expect([403, 404], path).toContain(response.status())
+    expect(response.headers()['content-type'] ?? '', path).not.toContain('image/webp')
+  }
+  for (const view of ['screen', 'master']) {
+    const answer = await player.evaluate(
+      ({ campaignId, view }) =>
+        new Promise<{ code: number; messages: string[] }>((resolve) => {
+          const messages: string[] = []
+          const socket = new WebSocket(`${location.origin.replace(/^http/, 'ws')}/api/table`)
+          socket.onopen = () => socket.send(JSON.stringify({ type: 'join', campaignId, view }))
+          socket.onmessage = (event) => messages.push(String(event.data))
+          socket.onclose = (event) => resolve({ code: event.code, messages })
+        }),
+      { campaignId, view }
+    )
+    expect(answer.code, view).toBe(4403)
+    expect(answer.messages, view).toEqual([JSON.stringify({ type: 'error', code: 'FORBIDDEN' })])
+  }
+  // Ni abriendo la pantalla de la campaña en su navegador
+  await player.goto(`/mundos/${worldId}/campanas/${campaignId}/pantalla`)
+  await expect.poll(() => playerFrames.some((f) => f.includes('FORBIDDEN'))).toBe(true)
+  await player.waitForLoadState('networkidle')
+  const toPlayer = playerFrames.join('\n')
+  for (const leak of ['"type":"screen"', '"type":"master"', 'Lía', 'A la vista', sceneId])
+    expect(toPlayer, leak).not.toContain(leak)
   await player.close()
 })
