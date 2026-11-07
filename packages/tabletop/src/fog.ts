@@ -31,14 +31,12 @@ const isPoints = (v: unknown): v is Point[] =>
 export function isFogOperation(value: unknown): value is FogOperation {
   if (typeof value !== 'object' || value === null) return false
   const op = value as Record<string, unknown>
-  if (typeof op['id'] !== 'string' || (op['mode'] !== 'reveal' && op['mode'] !== 'cover')) return false
+  if (typeof op.id !== 'string' || (op.mode !== 'reveal' && op.mode !== 'cover')) return false
   for (const key of ['timestamp', 'offsetX', 'offsetY']) if (op[key] !== undefined && !isNumber(op[key])) return false
-  const points = op['points']
-  if (op['shape'] === 'brush')
-    return isPoints(points) && points.length > 0 && isNumber(op['radius']) && op['radius'] > 0
-  if (op['shape'] === 'lasso') return isPoints(points) && points.length >= 3
-  if (op['shape'] === 'rectangle')
-    return isNumber(op['x']) && isNumber(op['y']) && isNumber(op['width']) && isNumber(op['height'])
+  const points = op.points
+  if (op.shape === 'brush') return isPoints(points) && points.length > 0 && isNumber(op.radius) && op.radius > 0
+  if (op.shape === 'lasso') return isPoints(points) && points.length >= 3
+  if (op.shape === 'rectangle') return isNumber(op.x) && isNumber(op.y) && isNumber(op.width) && isNumber(op.height)
   return false
 }
 

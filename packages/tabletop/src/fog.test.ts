@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { type FogOperation, fogInOrder, fogOperationAt, isFogOperation, manualFog, rectBetween } from './fog.ts'
 
-const rect = (id: string, x: number, mode: 'reveal' | 'cover' = 'reveal', timestamp?: number): FogOperation => ({
+const rect = (
+  id: string,
+  x: number,
+  mode: 'reveal' | 'cover' = 'reveal',
+  timestamp?: number
+): Extract<FogOperation, { shape: 'rectangle' }> => ({
   id,
   mode,
   shape: 'rectangle',
