@@ -61,8 +61,11 @@ export interface PartyView {
   /** Lo destapado y lo tapado a mano (lo tapado también se quita de lo explorado) */
   revealed: FogGrid
   covered: FogGrid
-  /** Las luces que alumbran algo de lo que se ve, con su área */
-  litPolygons: { id: string; polygon: Point[] }[]
+  /**
+   * Las luces que alumbran algo de lo que se ve: su área entera (`polygon`, que puede dibujar salas que no se ven: no
+   * se manda tal cual a la pantalla) y lo que alumbra de lo visible (`cells`)
+   */
+  litPolygons: { id: string; polygon: Point[]; cells: FogGrid }[]
   /** Lo que ve cada ficha del grupo */
   sights: TokenSight[]
   /** Las que el grupo ve (o nota con su sentido sísmico) de entre unas fichas: su centro o su borde, a la vista */
@@ -127,7 +130,7 @@ export function partyView(
   visible.union(revealed).subtract(covered)
   const litPolygons = prepared.lit
     .filter((area) => area.cells.intersects(visible))
-    .map((area) => ({ id: area.light.id, polygon: area.polygon }))
+    .map((area) => ({ id: area.light.id, polygon: area.polygon, cells: area.cells.clone().intersect(visible) }))
   const tokensSeen = <T extends Point & { radius?: number }>(targets: readonly T[]): T[] =>
     targets.filter((target) => {
       const r = (target.radius ?? 0) * 0.5

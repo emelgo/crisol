@@ -109,6 +109,10 @@ describe('lo que ve el grupo', () => {
     })
     expect(roomA(torch.visible)).toBeGreaterThan(roomA(dark.visible) + 50)
     expect(torch.litPolygons.map((l) => l.id)).toEqual(['antorcha'])
+    // Lo que alumbra de lo visible, sin salirse de ello
+    const [lit] = torch.litPolygons
+    expect(lit?.cells.count()).toBeGreaterThan(50)
+    expect(lit?.cells.clone().subtract(torch.visible).isEmpty()).toBe(true)
     const eyes = visibleForParty({
       ...scene({ darkness: 1 }),
       tokens: [{ ...ana, senses: { darkvision: 60 } }],
