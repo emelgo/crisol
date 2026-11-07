@@ -278,6 +278,8 @@ describe('la mesa: escenas, teselas y la sala', () => {
 
   it('una pantalla que entra (o se recarga) empieza en el último encuadre del máster', async () => {
     const { scene } = await sceneWithImage()
+    // El encuadre es de la escena abierta: se sigue si es la presentada
+    await call('openScene', { campaignId, sceneId: scene.id })
     await call('presentScene', { campaignId, sceneId: scene.id })
     const master = await join('master')
     await master.next()

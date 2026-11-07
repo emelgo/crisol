@@ -95,7 +95,12 @@ export function createTableRooms(load: LoadTable, onError: (error: unknown) => v
     const table = await load(campaignId)
     if (!table) return
     room.scenes = new Set([table.master.open?.id, table.master.presented?.id].filter((id): id is string => !!id))
-    room.follows = table.master.camera.mode === 'follow' && !table.screen.hidden && table.screen.scene !== null
+    // El encuadre del máster es de su escena abierta: la pantalla solo lo sigue si es la que enseña
+    room.follows =
+      table.master.camera.mode === 'follow' &&
+      !table.screen.hidden &&
+      table.screen.scene !== null &&
+      table.master.open?.id === table.screen.scene.id
     room.openTokens = new Set(table.master.tokens.map((t) => t.id))
     room.screenTokens = new Set(table.screen.tokens.map((t) => t.id))
     room.screenVisible = table.screenVisible ?? null
@@ -127,6 +132,15 @@ export function createTableRooms(load: LoadTable, onError: (error: unknown) => v
     for (const [socket, viewer] of room.sockets) if (viewer === 'master' && socket !== from) send(socket, message)
   }
 
+  /**
+   * Algo cambió y la sala aún no se ha puesto al día: hasta entonces, el arrastre no llega a la pantalla (la ficha pudo
+   * ocultarse o salir de lo que ve el grupo)
+   */
+  function stale(room: Room) {
+    room.screenTokens = new Set()
+    room.screenVisible = null
+  }
+
   /** En orden y sin dejar que un fallo pare a los demás */
   const enqueue = (work: () => Promise<void>) => {
     queue = queue.then(work).catch(onError)
@@ -156,10 +170,17 @@ export function createTableRooms(load: LoadTable, onError: (error: unknown) => v
       }
     },
     changed(campaignId) {
-      if (rooms.has(campaignId)) void enqueue(() => refresh(campaignId))
+      const room = rooms.get(campaignId)
+      if (!room) return
+      stale(room)
+      void enqueue(() => refresh(campaignId))
     },
     sceneChanged(sceneId) {
-      for (const [campaignId, room] of rooms) if (room.scenes.has(sceneId)) void enqueue(() => refresh(campaignId))
+      for (const [campaignId, room] of rooms)
+        if (room.scenes.has(sceneId)) {
+          stale(room)
+          void enqueue(() => refresh(campaignId))
+        }
     },
     viewport(campaignId, view) {
       const room = rooms.get(campaignId)
