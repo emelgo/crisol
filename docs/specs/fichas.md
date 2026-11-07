@@ -104,3 +104,37 @@ Para quién: el máster; la tele; la IA.
 
 La elevación, las auras y varias fichas por criatura; que los jugadores muevan su ficha (módulo 7); la visión y la
 niebla (`vision`); los turnos y la caducidad al pasar turno (`combate`); medir (`herramientas-mesa`).
+
+## Construido
+
+**Web (2026-11-07)**, en `apps/web/src/tabletop/` (y su e2e, `e2e/tests/fichas.spec.ts`):
+
+- **Las fichas en el lienzo** (PixiJS, `renderer.ts`): el disco crece con el mapa y los rótulos no; la imagen recortada
+  en redondo (la elegida, con su encuadre, o la de su personaje o su criatura) o un disco con la inicial; el borde del
+  color del bando (azul, naranja, amarillo, distintos también en luz); la mini barra de PG; un punto si tiene estados;
+  la elegida con su aro; las ocultas, a medias.
+- **Moverlas** (`tokens.ts`, `mesa.tsx`): arrastrar es libre y con Mayús pega a la rejilla según su tamaño
+  (`snapToken`); varias con un recuadro o Mayús + clic, y se mueven juntas; el arrastre va en vivo por el canal
+  (`drag`, a su ritmo) y al soltar, `moveTokens`; las flechas mueven las elegidas una casilla; Ctrl+Z deshace el
+  último `moveTokens` de la mesa (`undoOperation`). Para el teclado y los lectores de pantalla, una lista de las fichas
+  (fuera de la vista hasta que llega el foco) que las elige.
+- **Su tarjeta** (`token-card.tsx`), junto a la ficha: la vida con dañar y curar (`playCreature`/`playCharacter`),
+  sus datos, sus estados (los del tipo «estado» del compendio de la campaña, si lo hay, o uno escrito, con rondas),
+  «Abrir hoja» (en un panel al lado, `token-sheet.tsx`, con la hoja de «En juego» o la del personaje; también con doble
+  clic), su tirada principal (la primera acción con ataque), «Ocultar» y, en sus ajustes, rótulo, bando, tamaño, la
+  imagen y quitarla del mapa.
+- **El panel** (`panel.tsx`), con las pestañas del lienzo: Escenas; Encuentros (arrastrar = `placeEncounter`; con
+  fichas elegidas, «Guardar como encuentro», con su formación en casillas desde la de arriba a la izquierda);
+  Criaturas (las que están en juego sin ficha aquí y el compendio de la campaña, con cuántas); Personajes; Imágenes
+  (con una ficha elegida, el creador de fichas). Todo se arrastra al mapa; con el teclado, su «+» lo pone en medio de
+  lo que se ve.
+- **El creador de fichas** (`token-image.tsx`): una imagen del mundo en un círculo, que se arrastra y se acerca; se
+  guarda con `updateToken.image` (el centro de 0 a 1 y cuánto se acerca sobre «tapar el círculo»).
+- **En la tele** (`screen.tsx`): las fichas con su nombre, el estado en palabras de las criaturas (los textos del
+  módulo 5: «Ilesa», «Herida», «Malherida», «A punto de caer») y sus estados; el arrastre en vivo; y, para los
+  lectores de pantalla, la lista de lo que hay. **«Encuadrar al grupo»**: «Grupo» junto a «Seguir | Fija» en la mesa;
+  la tele encuadra las fichas del bando del grupo con `frameGroup`.
+
+Decisiones tomadas al construirla (por confirmar al verlas): «En juego» va dentro de la pestaña Criaturas; las
+fichas que se sueltan desde el panel caen libres (con Mayús, en su casilla); la tarjeta se pone a la derecha de la
+ficha (a la izquierda si no cabe); los encuentros se guardan con el sistema de la campaña.

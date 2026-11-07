@@ -1,34 +1,6 @@
-import { crc32, deflateSync } from 'node:zlib'
 import AxeBuilder from '@axe-core/playwright'
 import { expect, type Locator, type Page, test } from '@playwright/test'
-import { createCampaign, createWorld, freshOwner, openWiki } from './ayudas.ts'
-
-/** Un PNG: sus trozos con su longitud y su CRC */
-function png(width: number, height: number, pixel: (x: number, y: number) => [number, number, number]) {
-  const chunk = (type: string, data: Buffer) => {
-    const head = Buffer.alloc(4)
-    head.writeUInt32BE(data.length)
-    const body = Buffer.concat([Buffer.from(type), data])
-    const tail = Buffer.alloc(4)
-    tail.writeUInt32BE(crc32(body))
-    return Buffer.concat([head, body, tail])
-  }
-  const header = Buffer.alloc(13)
-  header.writeUInt32BE(width, 0)
-  header.writeUInt32BE(height, 4)
-  header.set([8, 2, 0, 0, 0], 8)
-  const rows = Buffer.alloc((width * 3 + 1) * height)
-  for (let y = 0; y < height; y++) {
-    const at = y * (width * 3 + 1)
-    for (let x = 0; x < width; x++) rows.set(pixel(x, y), at + 1 + x * 3)
-  }
-  return Buffer.concat([
-    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
-    chunk('IHDR', header),
-    chunk('IDAT', deflateSync(rows)),
-    chunk('IEND', Buffer.alloc(0))
-  ])
-}
+import { createCampaign, createWorld, freshOwner, openWiki, png } from './ayudas.ts'
 
 /** Un mapa de 1200 × 800 con una rejilla impresa de 50 px, desplazada 20 y 10 px, sobre losas de dos tonos */
 const GRID = { size: 50, x: 20, y: 10 }
@@ -118,7 +90,7 @@ test('una escena: su mapa en teselas, la rejilla alineada, la mesa y la tele que
   await page.mouse.click(a.x, a.y)
   await page.mouse.click(b.x, b.y)
   await expect(page.getByText(/Encaja: casillas de (49|50|51) px/)).toBeVisible()
-  expect(Math.abs(Number(await size.inputValue()) - 50)).toBeLessThan(2)
+  await expect(size).toHaveValue(/^(49|50|51)(\.\d)?$/)
   await axe(page, 'la pestaña')
   await page.screenshot({ path: '../out/capturas/escenas-pestana.png' })
 
@@ -186,7 +158,7 @@ test('una escena: su mapa en teselas, la rejilla alineada, la mesa y la tele que
   expect(centerOf(await viewOf(screen))).toEqual(fixed)
   // Alejado, para ver el marco entero
   for (let i = 0; i < 3; i++) await page.keyboard.press('-')
-  await page.getByRole('heading', { name: 'Escenas' }).click()
+  await page.getByRole('tab', { name: 'Escenas' }).click()
   await page.screenshot({ path: '../out/capturas/escenas-mesa-fija.png' })
 
   // Ocultar: la tele, a oscuras con el nombre de la campaña

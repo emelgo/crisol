@@ -1,4 +1,5 @@
 import { createHash, randomBytes } from 'node:crypto'
+import { crc32, deflateSync } from 'node:zlib'
 import { connect } from '@crisol/db'
 import { resetDatabase } from '@crisol/db/testing'
 import { issueBootstrap } from '@crisol/server/bootstrap'
@@ -356,4 +357,31 @@ export async function settled(page: Page) {
       )
     )
     .toBe(0)
+}
+
+/** Un PNG: sus trozos con su longitud y su CRC */
+export function png(width: number, height: number, pixel: (x: number, y: number) => [number, number, number]) {
+  const chunk = (type: string, data: Buffer) => {
+    const head = Buffer.alloc(4)
+    head.writeUInt32BE(data.length)
+    const body = Buffer.concat([Buffer.from(type), data])
+    const tail = Buffer.alloc(4)
+    tail.writeUInt32BE(crc32(body))
+    return Buffer.concat([head, body, tail])
+  }
+  const header = Buffer.alloc(13)
+  header.writeUInt32BE(width, 0)
+  header.writeUInt32BE(height, 4)
+  header.set([8, 2, 0, 0, 0], 8)
+  const rows = Buffer.alloc((width * 3 + 1) * height)
+  for (let y = 0; y < height; y++) {
+    const at = y * (width * 3 + 1)
+    for (let x = 0; x < width; x++) rows.set(pixel(x, y), at + 1 + x * 3)
+  }
+  return Buffer.concat([
+    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+    chunk('IHDR', header),
+    chunk('IDAT', deflateSync(rows)),
+    chunk('IEND', Buffer.alloc(0))
+  ])
 }
