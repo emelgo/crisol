@@ -9,6 +9,7 @@ import { connect, loadMemberships, schema } from '@crisol/db'
 import { freshTestDatabase, resetDatabase } from '@crisol/db/testing'
 import { actorFrom } from '@crisol/domain'
 import { exampleFile } from '@crisol/systems/examples'
+import { FogGrid } from '@crisol/tabletop'
 import type { FastifyInstance } from 'fastify'
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import type { ActionEnv } from '../actions/context.ts'
@@ -480,6 +481,59 @@ describe('las herramientas de la mesa (docs/specs/herramientas-mesa.md)', () => 
     // Una miniatura que no es una imagen no vale
     const bad = await call('saveSnapshot', { campaignId, name: 'x', thumbnail: 'javascript:alert(1)' })
     expect(bad.statusCode).toBe(400)
+  })
+
+  it('deshacer avisa a la mesa: la pantalla se pone al día (niebla, puerta, marcas, widgets, muros, luces y escena)', async () => {
+    await place([{ characterId: lia.id, x: 200, y: 150 }])
+    const screen = await join('screen')
+    await screen.next('screen')
+    const mesa = await join('master')
+    await mesa.next('master')
+    const sees = (s: ScreenView, x: number, y: number) =>
+      FogGrid.decode(new Uint8Array(Buffer.from(s.fog?.visible ?? '', 'base64'))).hasPoint({ x, y })
+    // La niebla a mano
+    await ok200('changeFog', { campaignId, mode: 'reveal', shape: 'area', column: 4, row: 0, columns: 4, rows: 3 })
+    await screen.screenWhere((s) => sees(s, 600, 150))
+    await undoLast('revealFog')
+    await screen.screenWhere((s) => !sees(s, 600, 150))
+    // Una puerta
+    const doorId = (await ok200('getSceneVision', { sceneId })).walls.find((w: { door: string | null }) => w.door).id
+    await ok200('setDoor', { campaignId, wallId: doorId, open: true })
+    await screen.screenWhere((s) => sees(s, 600, 150))
+    await undoLast('openDoor')
+    await screen.screenWhere((s) => !sees(s, 600, 150))
+    // Lo dejado en el mapa
+    await ok200('changeMarks', {
+      campaignId,
+      add: [{ kind: 'text', x: 150, y: 250, text: 'Aquí', color: '#ffffff', size: 24 }]
+    })
+    await screen.screenWhere((s) => (s.marks ?? []).length === 1)
+    await undoLast('changeMarks')
+    await screen.screenWhere((s) => (s.marks ?? []).length === 0)
+    // Un widget
+    await ok200('createWidget', { campaignId, kind: 'counter', label: 'Suerte' })
+    await screen.screenWhere((s) => (s.widgets ?? []).length === 1)
+    await undoLast('createWidget')
+    await screen.screenWhere((s) => (s.widgets ?? []).length === 0)
+    // Un muro (de la escena: a todas las campañas que la tienen)
+    await ok200('changeWalls', { sceneId, walls: { add: [{ a: { x: 300, y: 0 }, b: { x: 300, y: 300 } }] } })
+    await screen.screenWhere((s) => !sees(s, 350, 150))
+    await undoLast('changeWalls')
+    await screen.screenWhere((s) => sees(s, 350, 150))
+    // La escena a oscuras, y una luz
+    await ok200('updateSceneVision', { sceneId, darkness: 1 })
+    await screen.screenWhere((s) => s.fog?.darkness === 1)
+    await ok200('changeWalls', { sceneId, lights: { add: [{ x: 100, y: 100, bright: 10, dim: 20 }] } })
+    await screen.screenWhere((s) => (s.lights ?? []).length === 1)
+    await undoLast('changeWalls')
+    await screen.screenWhere((s) => (s.lights ?? []).length === 0)
+    await undoLast('updateSceneVision')
+    await screen.screenWhere((s) => s.fog?.darkness === 0)
+    // Una instantánea: la mesa del máster se refresca
+    await ok200('saveSnapshot', { campaignId, name: 'Antes' })
+    mesa.drain()
+    await undoLast('saveSnapshot')
+    await mesa.next('master')
   })
 
   it('la medida en curso y el láser van en vivo: a la pantalla, solo con el interruptor y en lo que ve el grupo', async () => {
