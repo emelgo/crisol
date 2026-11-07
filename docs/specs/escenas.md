@@ -22,9 +22,9 @@ Para quién: el máster, que prepara y dirige; la pantalla de la tele; la IA.
 - **La imagen, en teselas**: el navegador del máster la trocea en teselas WebP de 512 px, con niveles a media escala
   hasta que cabe en 1.024 px, y una miniatura; las sube y la escena guarda sus medidas. No salen en «Archivos» (son
   parte de la escena); el original, si era un archivo del mundo, sigue allí.
-- **La rejilla**: cuadrada, hexagonal (por filas o por columnas, con las pares o las impares desplazadas) o sin
-  rejilla; el tamaño de la casilla en píxeles y su desplazamiento; la distancia y la unidad de una casilla (las del
-  sistema de la campaña si las dice; si no, 1,5 m); la regla de diagonales (la del sistema; si no, todas iguales);
+- **La rejilla**: cuadrada, hexagonal (por filas o por columnas; las pares o impares desplazadas de Foundry son
+  lo mismo con otro desplazamiento) o sin rejilla; el tamaño de la casilla en píxeles y su desplazamiento; la distancia y la unidad de una casilla (las del
+  sistema de la campaña si las dice; si no, 5 pies: las medidas, siempre en las de D&D, `docs/diseno.md`); la regla de diagonales (la del sistema; si no, todas iguales);
   si se ve, su color y su opacidad.
 - **Alinear la rejilla con el mapa**: «Buscarla» la detecta sola en la imagen; si no encaja, se marcan dos esquinas de
   una casilla (o se escribe el tamaño). Lo que ya hace la mesa actual (`nucleo/deteccion.ts`, `nucleo/alineacion.ts`).
@@ -86,7 +86,7 @@ Para quién: el máster, que prepara y dirige; la pantalla de la tele; la IA.
 3. **Sin niebla en esta capacidad**: la tele enseña la escena entera hasta `vision`. El camino (la proyección y las
    teselas con permiso) ya está, para que la niebla solo cambie qué se deja pasar.
 4. **La distancia y la regla de diagonales**, del sistema: un campo opcional nuevo en su formato (`table.grid`), con
-   1,5 m y «todas iguales» si no lo dice; se cambian por escena.
+   5 pies y «todas iguales» si no lo dice; se cambian por escena.
 
 ## Pruebas
 
