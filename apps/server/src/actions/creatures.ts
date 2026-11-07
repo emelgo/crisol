@@ -45,6 +45,7 @@ import {
 import { creaturesChanged } from '../realtime/events.ts'
 import { authorizedCampaign } from './access.ts'
 import { characterActions } from './characters.ts'
+import { withCondition } from './conditions.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
 import { saveRoll, storedOf } from './dice.ts'
 import * as layers from './layers.ts'
@@ -164,6 +165,36 @@ function stateOf(life: { value: number; max: number } | null) {
   if (life.value <= life.max / 2) return 'bloodied' as const
   return 'hurt' as const
 }
+
+/**
+ * Las tarjetas de unas criaturas en juego de una campaña, para la mesa (ADR-0018). No autoriza: lo hace quien llama
+ * (la sala, que ya comprobó quién mira). Las que ya no tienen entrada, fuera
+ */
+export async function creatureCardsOf(
+  ctx: ActionContext,
+  campaign: Awaited<ReturnType<typeof authorizedCampaign>>,
+  ids: readonly string[]
+): Promise<Map<string, CreatureInPlay>> {
+  const cards = new Map<string, CreatureInPlay>()
+  if (ids.length === 0 || !campaign.system) return cards
+  const at = await systemOf(ctx, campaign).catch(() => null)
+  if (!at) return cards
+  const wanted = new Set(ids)
+  const rows = (await creaturesRepo.listCreatures(ctx.db, campaign.id)).filter((r) => wanted.has(r.id))
+  const keys = [...new Set(rows.flatMap((r) => [r.key, ...((r.play as Play).items ?? []).map((i) => i.key)]))]
+  const content = await layers.contentByKeys(ctx, at.row.id, at.world, keys)
+  for (const row of rows) {
+    try {
+      cards.set(row.id, viewOf(at, row, content).card)
+    } catch {
+      // Sin entrada en el compendio de la campaña: no se puede enseñar
+    }
+  }
+  return cards
+}
+
+/** Cómo está en palabras, para la pantalla de la tele y los jugadores */
+export const lifeStateOf = stateOf
 
 export const creatureActions = [
   // Lo que ve un jugador: las que están a la vista, con su nombre, su imagen y cómo están (sin números ni hoja)
@@ -288,7 +319,21 @@ export const creatureActions = [
     playCreature,
     async (
       ctx,
-      { creatureId, version, resource, damage, heal, temp, spend: used, rest: kind, max, rollHp, name, play: given }
+      {
+        creatureId,
+        version,
+        resource,
+        damage,
+        heal,
+        temp,
+        spend: used,
+        rest: kind,
+        max,
+        rollHp,
+        name,
+        play: given,
+        condition
+      }
     ) => {
       const { row, at } = await readable(ctx, creatureId)
       const content = await contentFor(ctx, at, row.key, row.play as Play)
@@ -376,6 +421,7 @@ export const creatureActions = [
         }
       }
       if (kind) play = rest(play, played.view.resources, kind, paths, roll)
+      play = withCondition(play, condition)
       const parsed = playSchema.safeParse(play)
       if (!parsed.success) throw new InvalidRequestError('BAD_PLAY', 'lo de la partida no vale')
       let saved: Awaited<ReturnType<typeof creaturesRepo.updateCreature>>

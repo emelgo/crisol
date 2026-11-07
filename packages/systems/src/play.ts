@@ -28,7 +28,20 @@ export interface Play {
   items?: PlayItem[]
   /** Lo que tiene activo (la Furia): por su id */
   active?: string[]
+  /** Sus estados (Derribado, Envenenado): del compendio por su clave o escritos a mano; con rondas, caducan */
+  conditions?: PlayCondition[]
 }
+
+/** Un estado puesto: rounds son las rondas que le quedan (las descuenta el combate al empezar su turno) */
+export interface PlayCondition {
+  id: string
+  name: string
+  key?: string
+  rounds?: number
+}
+
+/** Cuántos estados puede llevar a la vez */
+export const MAX_CONDITIONS = 30
 
 export const PLAY_BYTES = 256 * 1024
 
@@ -47,7 +60,18 @@ export const playSchema = z.strictObject({
     )
     .max(500)
     .optional(),
-  active: z.array(z.string().max(300)).max(200).optional()
+  active: z.array(z.string().max(300)).max(200).optional(),
+  conditions: z
+    .array(
+      z.strictObject({
+        id: z.string().min(1).max(60),
+        name: z.string().trim().min(1).max(60),
+        key: z.string().min(1).max(100).optional(),
+        rounds: z.int().min(1).max(1000).optional()
+      })
+    )
+    .max(MAX_CONDITIONS)
+    .optional()
 })
 
 const isCount = (v: unknown) => Number.isInteger(v) && (v as number) >= 0 && (v as number) <= 100_000
@@ -357,4 +381,40 @@ export function rest(
   for (const { path, recovery } of paths)
     if (kind === 'long' || recovery === 'short') values = setPath(values, path, undefined)
   return { ...play, uses, values }
+}
+
+/** Le pone un estado; si ya lo tenía (por su clave o su nombre), le cambia las rondas */
+export function addCondition(play: Play, condition: Omit<PlayCondition, 'id'>, id: string): Play {
+  const list = play.conditions ?? []
+  const same = (c: PlayCondition) =>
+    condition.key ? c.key === condition.key : !c.key && c.name.toLowerCase() === condition.name.toLowerCase()
+  const found = list.find(same)
+  const next: PlayCondition = {
+    ...(found ?? { id }),
+    name: condition.name,
+    ...(condition.key ? { key: condition.key } : {})
+  }
+  if (condition.rounds) next.rounds = condition.rounds
+  else delete next.rounds
+  return { ...play, conditions: found ? list.map((c) => (c === found ? next : c)) : [...list, next] }
+}
+
+/** Le quita un estado por su id */
+export function removeCondition(play: Play, id: string): Play {
+  const conditions = (play.conditions ?? []).filter((c) => c.id !== id)
+  const { conditions: _, ...rest } = play
+  return conditions.length ? { ...rest, conditions } : rest
+}
+
+/** Pasa una ronda de sus estados: los que tienen rondas pierden una, y se van los que llegan a cero */
+export function tickConditions(play: Play): { play: Play; expired: PlayCondition[] } {
+  const expired: PlayCondition[] = []
+  const kept: PlayCondition[] = []
+  for (const condition of play.conditions ?? []) {
+    if (condition.rounds === undefined) kept.push(condition)
+    else if (condition.rounds <= 1) expired.push(condition)
+    else kept.push({ ...condition, rounds: condition.rounds - 1 })
+  }
+  const { conditions: _, ...rest } = play
+  return { play: kept.length ? { ...rest, conditions: kept } : rest, expired }
 }

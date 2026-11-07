@@ -5,6 +5,7 @@
  */
 import { z } from 'zod'
 import { type campaignTableView, sceneGrid, sceneTiles, sceneViewport, screenCamera } from './scenes.ts'
+import { screenToken } from './tokens.ts'
 
 export const TABLE_VIEWS = ['master', 'screen'] as const
 export type TableViewer = (typeof TABLE_VIEWS)[number]
@@ -13,7 +14,21 @@ export type TableViewer = (typeof TABLE_VIEWS)[number]
 export const tableClientMessage = z.discriminatedUnion('type', [
   z.object({ type: z.literal('join'), campaignId: z.uuid(), view: z.enum(TABLE_VIEWS) }),
   /** El encuadre del máster en vivo: con «Seguir», la pantalla lo sigue (no se guarda) */
-  z.object({ type: z.literal('viewport'), view: sceneViewport })
+  z.object({ type: z.literal('viewport'), view: sceneViewport }),
+  /** Unas fichas mientras el máster las arrastra (no se guarda: al soltar, moveTokens) */
+  z.object({
+    type: z.literal('drag'),
+    moves: z
+      .array(
+        z.object({
+          tokenId: z.uuid(),
+          x: z.number().min(-100_000).max(100_000),
+          y: z.number().min(-100_000).max(100_000)
+        })
+      )
+      .min(1)
+      .max(20)
+  })
 ])
 
 export type TableClientMessage = z.infer<typeof tableClientMessage>
@@ -34,7 +49,9 @@ export const screenView = z.object({
   /** La escena presentada; null si no hay o si la pantalla está oculta */
   scene: screenScene.nullable(),
   hidden: z.boolean(),
-  camera: screenCamera
+  camera: screenCamera,
+  /** Las fichas de la escena presentada que no están ocultas */
+  tokens: z.array(screenToken)
 })
 
 export type ScreenView = z.infer<typeof screenView>
@@ -45,4 +62,6 @@ export type TableServerMessage =
   | { type: 'screen'; screen: ScreenView }
   /** El encuadre del máster, a la pantalla que lo sigue */
   | { type: 'viewport'; view: z.infer<typeof sceneViewport> }
+  /** Unas fichas mientras se arrastran (a la pantalla, solo las que ve) */
+  | { type: 'drag'; moves: Array<{ tokenId: string; x: number; y: number }> }
   | { type: 'error'; code: 'FORBIDDEN' | 'NOT_FOUND' | 'BAD_MESSAGE' | 'NOT_JOINED' }

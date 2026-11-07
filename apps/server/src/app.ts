@@ -20,10 +20,10 @@ import { registerJoinRoutes } from './join.ts'
 import type { Embedder } from './library/embedder.ts'
 import type { LibraryJobs } from './library/jobs.ts'
 import { registerMcpRoutes } from './mcp/routes.ts'
-import { createRealtime } from './realtime/hub.ts'
+import { createRealtime, type Realtime } from './realtime/hub.ts'
 import { type RealtimeRouteOptions, registerRealtimeRoutes } from './realtime/routes.ts'
 import { loadTable } from './table/projection.ts'
-import { createTableRooms } from './table/rooms.ts'
+import { createTableRooms, type LoadTable } from './table/rooms.ts'
 import { registerTableRoutes } from './table/routes.ts'
 import { registerWeb, webBuild } from './web.ts'
 import { jsonOfDoc } from './wiki/content.ts'
@@ -72,7 +72,7 @@ export function buildApp(deps: AppDeps): FastifyInstance {
   if (deps.accounts) {
     const { auth, db, publicUrl, sealKey } = deps.accounts
     // El bus del proceso: cada evento mira las pertenencias de quien lo recibiría, recién leídas
-    const realtime = createRealtime(
+    const bus = createRealtime(
       async (userId) => actorFrom(userId, await loadMemberships(db, userId)),
       (error) => app.log.error(error),
       // Lo de una página, a un jugador solo si la ve (ADR-0017)
@@ -94,8 +94,22 @@ export function buildApp(deps: AppDeps): FastifyInstance {
           onError: (error) => app.log.error(error)
         })
     })
-    // Las salas de la mesa: cada una vuelve a leer su mesa de la base cuando algo cambia (ADR-0018)
-    const table = createTableRooms(loadTable(db), (error) => app.log.error(error))
+    // Las salas de la mesa: cada una vuelve a leer su mesa de la base cuando algo cambia (ADR-0018). Lo que cambia en
+    // las criaturas en juego o en los personajes de una campaña (sus PG, sus estados) llega a sus fichas por el bus
+    let load: LoadTable = async () => null
+    const table = createTableRooms(
+      (campaignId) => load(campaignId),
+      (error) => app.log.error(error)
+    )
+    const realtime: Realtime = {
+      ...bus,
+      publish: (...events) => {
+        bus.publish(...events)
+        for (const { message } of events)
+          if (message.type === 'changed' && (message.what === 'creatures' || message.what === 'party'))
+            table.changed(message.campaignId)
+      }
+    }
     const env: ActionEnv = {
       db,
       publicUrl,
@@ -108,6 +122,7 @@ export function buildApp(deps: AppDeps): FastifyInstance {
       ...(deps.library ? { library: deps.library } : {}),
       ...(deps.embedder ? { embedder: deps.embedder } : {})
     }
+    load = loadTable(env)
     // Límite de intentos solo donde se pide (las rutas de Better Auth tienen el suyo)
     app.register(fastifyRateLimit, { global: false })
     // Lo más que manda un cliente: un cambio de un documento (el canal en tiempo real corta antes: no escucha)

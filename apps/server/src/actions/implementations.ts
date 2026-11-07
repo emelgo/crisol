@@ -27,6 +27,7 @@ import { systemActions } from './systems.ts'
 import { tableActions } from './tables.ts'
 import { tagActions } from './tags.ts'
 import { templateActions } from './templates.ts'
+import { tokenActions } from './tokens.ts'
 import { trashActions } from './trash.ts'
 import { versionActions } from './versions.ts'
 import { worldContentActions } from './world-content.ts'
@@ -60,6 +61,7 @@ export const IMPLEMENTATIONS: Implementation[] = [
   ...creatureActions,
   ...partyActions,
   ...sceneActions,
+  ...tokenActions,
   ...knowledgeActions,
   ...revealActions,
   ...libraryActions,

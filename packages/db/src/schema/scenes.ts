@@ -1,7 +1,24 @@
-import { boolean, index, integer, jsonb, pgTable, primaryKey, text, timestamp, unique, uuid } from 'drizzle-orm/pg-core'
+import { sql } from 'drizzle-orm'
+import {
+  boolean,
+  check,
+  doublePrecision,
+  index,
+  integer,
+  jsonb,
+  pgTable,
+  primaryKey,
+  text,
+  timestamp,
+  unique,
+  uuid
+} from 'drizzle-orm/pg-core'
 import { campaigns } from './campaigns.ts'
+import { characters } from './characters.ts'
+import { campaignCreatures } from './creatures.ts'
 import { files } from './files.ts'
 import { pageTabs } from './maps.ts'
+import { systems } from './systems.ts'
 import { trackedColumns } from './tracked.ts'
 import { worlds } from './worlds.ts'
 
@@ -106,7 +123,7 @@ export const sceneStates = pgTable(
 )
 
 /** La cámara de la pantalla de la tele: sigue al máster o se queda en un encuadre */
-export type ScreenCameraData = { mode: 'follow' } | { mode: 'fixed'; view: SceneViewData }
+export type ScreenCameraData = { mode: 'follow' } | { mode: 'group' } | { mode: 'fixed'; view: SceneViewData }
 
 /**
  * La mesa de una campaña: la escena que mira el máster, la que enseña la pantalla, si está oculta y su cámara. Es
@@ -141,4 +158,72 @@ export const sceneTiles = pgTable(
     bytes: integer().notNull()
   },
   (t) => [primaryKey({ columns: [t.sceneId, t.version, t.level, t.x, t.y] })]
+)
+
+/** El encuadre redondo de la imagen de una ficha: un archivo del mundo, o la imagen de su criatura si no hay */
+export interface TokenImageData {
+  fileId: string | null
+  x: number
+  y: number
+  zoom: number
+}
+
+/**
+ * Una ficha (docs/specs/fichas.md): dónde está, en una escena de una campaña, un personaje o una criatura en juego, y
+ * cómo se ve. Lo vital (PG, estados, hoja) es del personaje o de la criatura: aquí no se copia. Una por escena
+ */
+export const sceneTokens = pgTable(
+  'scene_tokens',
+  {
+    ...trackedColumns(),
+    worldId: uuid()
+      .notNull()
+      .references(() => worlds.id, { onDelete: 'cascade' }),
+    campaignId: uuid()
+      .notNull()
+      .references(() => campaigns.id, { onDelete: 'cascade' }),
+    sceneId: uuid()
+      .notNull()
+      .references(() => scenes.id, { onDelete: 'cascade' }),
+    characterId: uuid().references(() => characters.id, { onDelete: 'cascade' }),
+    creatureId: uuid().references(() => campaignCreatures.id, { onDelete: 'cascade' }),
+    /** El centro, en píxeles de la imagen */
+    x: doublePrecision().notNull(),
+    y: doublePrecision().notNull(),
+    /** En casillas */
+    size: doublePrecision().notNull().default(1),
+    label: text().notNull(),
+    faction: text({ enum: ['group', 'hostile', 'neutral'] }).notNull(),
+    hidden: boolean().notNull().default(false),
+    image: jsonb().$type<TokenImageData>()
+  },
+  (t) => [
+    index().on(t.sceneId),
+    index().on(t.campaignId),
+    unique().on(t.campaignId, t.sceneId, t.characterId),
+    unique().on(t.campaignId, t.sceneId, t.creatureId),
+    check('scene_tokens_one_actor', sql`(${t.characterId} is null) <> (${t.creatureId} is null)`)
+  ]
+)
+
+/** Una criatura de un encuentro: su entrada del compendio, si es la única, y dónde va cada copia (en casillas) */
+export interface EncounterMemberData {
+  key: string
+  unique: boolean
+  at: Array<{ dx: number; dy: number }>
+}
+
+/** Un encuentro del mundo (docs/specs/fichas.md): unas criaturas de un sistema con su formación */
+export const encounters = pgTable(
+  'encounters',
+  {
+    ...trackedColumns(),
+    worldId: uuid()
+      .notNull()
+      .references(() => worlds.id, { onDelete: 'cascade' }),
+    systemId: uuid().references(() => systems.id, { onDelete: 'set null' }),
+    name: text().notNull(),
+    members: jsonb().$type<EncounterMemberData[]>().notNull().default([])
+  },
+  (t) => [index().on(t.worldId)]
 )

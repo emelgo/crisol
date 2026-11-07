@@ -144,6 +144,16 @@ import { getRandomTable, resetTableDraws, rollOnTable, updateRandomTable } from 
 import { createTag, deleteTag, listAccountTags, setFileTags, updateTag } from './tags.ts'
 import { createTemplate, deleteTemplate, getTemplate, listTemplates, updateTemplate } from './templates.ts'
 import {
+  deleteEncounter,
+  listEncounters,
+  moveTokens,
+  placeEncounter,
+  placeTokens,
+  removeTokens,
+  saveEncounter,
+  updateToken
+} from './tokens.ts'
+import {
   deleteCampaign,
   deletePage,
   deleteWorld,
@@ -167,6 +177,7 @@ export * from './action.ts'
 export * from './ai.ts'
 export * from './campaigns.ts'
 export * from './characters.ts'
+export * from './conditions.ts'
 export * from './creatures.ts'
 export * from './dice.ts'
 export * from './files.ts'
@@ -191,6 +202,7 @@ export * from './table.ts'
 export * from './tables.ts'
 export * from './tags.ts'
 export * from './templates.ts'
+export * from './tokens.ts'
 export * from './trash.ts'
 export * from './world-content.ts'
 export * from './worlds.ts'
@@ -374,7 +386,15 @@ export const ACTIONS = [
   openScene,
   presentScene,
   hideScreen,
-  setScreenCamera
+  setScreenCamera,
+  placeTokens,
+  moveTokens,
+  updateToken,
+  removeTokens,
+  listEncounters,
+  saveEncounter,
+  deleteEncounter,
+  placeEncounter
 ]
 
 /** Las acciones por nombre, solo como tipo: la web las usa sin cargar zod */
@@ -557,4 +577,12 @@ export type Actions = {
   presentScene: typeof presentScene
   hideScreen: typeof hideScreen
   setScreenCamera: typeof setScreenCamera
+  placeTokens: typeof placeTokens
+  moveTokens: typeof moveTokens
+  updateToken: typeof updateToken
+  removeTokens: typeof removeTokens
+  listEncounters: typeof listEncounters
+  saveEncounter: typeof saveEncounter
+  deleteEncounter: typeof deleteEncounter
+  placeEncounter: typeof placeEncounter
 }

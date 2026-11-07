@@ -15,7 +15,7 @@ import { mapElements, mapPins, maps, pageTabs } from './schema/maps.ts'
 import { organizationMembers, organizations } from './schema/organizations.ts'
 import { pages } from './schema/pages.ts'
 import { campaignParty } from './schema/party.ts'
-import { sceneStates, scenes } from './schema/scenes.ts'
+import { encounters, sceneStates, scenes, sceneTokens } from './schema/scenes.ts'
 import { systemContent, systems, worldContent } from './schema/systems.ts'
 import { randomTables } from './schema/tables.ts'
 import { tags } from './schema/tags.ts'
@@ -53,7 +53,9 @@ export const TRACKED_TABLES = {
   knowledge,
   page_editors: pageEditors,
   scenes,
-  scene_states: sceneStates
+  scene_states: sceneStates,
+  scene_tokens: sceneTokens,
+  encounters
 }
 
 export type TrackedTable = (typeof TRACKED_TABLES)[keyof typeof TRACKED_TABLES]

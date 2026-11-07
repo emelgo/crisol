@@ -7,6 +7,7 @@ import type { Database } from '../client.ts'
 import { type OperationContext, operation } from '../operation.ts'
 import { campaigns } from '../schema/campaigns.ts'
 import { campaignCreatures } from '../schema/creatures.ts'
+import { sceneTokens } from '../schema/scenes.ts'
 
 export type CreatureRow = typeof campaignCreatures.$inferSelect & { worldId: string }
 
@@ -134,6 +135,19 @@ export function deleteCreatures(db: Database, context: OperationContext, campaig
       .select({ id: campaignCreatures.id })
       .from(campaignCreatures)
       .where(and(eq(campaignCreatures.campaignId, campaignId), inArray(campaignCreatures.id, [...ids])))
+    // Sus fichas en las escenas, en la misma operación: deshacer las devuelve con ellas (docs/specs/fichas.md)
+    if (found.length > 0) {
+      const tokens = await w.read
+        .select({ id: sceneTokens.id })
+        .from(sceneTokens)
+        .where(
+          inArray(
+            sceneTokens.creatureId,
+            found.map((r) => r.id)
+          )
+        )
+      for (const token of tokens) await w.remove(sceneTokens, token.id)
+    }
     for (const row of found) await w.remove(campaignCreatures, row.id)
     return found.map((r) => r.id)
   })

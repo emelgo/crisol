@@ -182,7 +182,15 @@ describe('Actions', () => {
       openScene: true,
       presentScene: true,
       hideScreen: true,
-      setScreenCamera: true
+      setScreenCamera: true,
+      placeTokens: true,
+      moveTokens: true,
+      updateToken: true,
+      removeTokens: true,
+      listEncounters: true,
+      saveEncounter: true,
+      deleteEncounter: true,
+      placeEncounter: true
     }
     expect(Object.keys(names).sort()).toEqual(ACTIONS.map((a) => a.name).sort())
   })

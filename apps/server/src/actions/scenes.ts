@@ -41,7 +41,7 @@ async function readHead(stream: Readable) {
 }
 
 /** La escena para la mesa de una campaña: tiene que ser de su mundo (y la ve quien lleva la mesa) */
-async function sceneOfCampaign(ctx: ActionContext, worldId: string, sceneId: string) {
+export async function sceneOfCampaign(ctx: ActionContext, worldId: string, sceneId: string) {
   const scene = await scenesRepo.findScene(ctx.db, sceneId)
   if (!scene || scene.worldId !== worldId) throw new NotFoundError('scene')
   return scene
@@ -120,7 +120,7 @@ export const sceneActions = [
 
   implement(getCampaignTable, async (ctx, { campaignId }) => {
     await authorizedCampaign(ctx, 'table.manage', campaignId)
-    return campaignTableView(ctx.db, campaignId)
+    return campaignTableView(ctx, campaignId)
   }),
 
   implement(openScene, async (ctx, { campaignId, sceneId }) => {
@@ -134,7 +134,7 @@ export const sceneActions = [
     )
     await scenesRepo.setCampaignTable(ctx.db, campaignId, { openSceneId: sceneId })
     ctx.table?.changed(campaignId)
-    return campaignTableView(ctx.db, campaignId)
+    return campaignTableView(ctx, campaignId)
   }),
 
   implement(presentScene, async (ctx, { campaignId, sceneId }) => {
@@ -149,20 +149,20 @@ export const sceneActions = [
     )
     await scenesRepo.setCampaignTable(ctx.db, campaignId, { presentedSceneId: target, screenHidden: false })
     ctx.table?.changed(campaignId)
-    return campaignTableView(ctx.db, campaignId)
+    return campaignTableView(ctx, campaignId)
   }),
 
   implement(hideScreen, async (ctx, { campaignId, hidden }) => {
     await authorizedCampaign(ctx, 'table.manage', campaignId)
     await scenesRepo.setCampaignTable(ctx.db, campaignId, { screenHidden: hidden })
     ctx.table?.changed(campaignId)
-    return campaignTableView(ctx.db, campaignId)
+    return campaignTableView(ctx, campaignId)
   }),
 
   implement(setScreenCamera, async (ctx, { campaignId, camera }) => {
     await authorizedCampaign(ctx, 'table.manage', campaignId)
     await scenesRepo.setCampaignTable(ctx.db, campaignId, { camera })
     ctx.table?.changed(campaignId)
-    return campaignTableView(ctx.db, campaignId)
+    return campaignTableView(ctx, campaignId)
   })
 ]

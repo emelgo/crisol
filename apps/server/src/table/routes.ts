@@ -23,9 +23,9 @@ export interface TableRouteOptions {
   heartbeatMs?: number
 }
 
-/** Lo más que manda un cliente por el canal de la mesa, y cuántos encuadres por segundo se reenvían */
-const MAX_TABLE_MESSAGE = 1024
-const MAX_VIEWPORTS_PER_SECOND = 30
+/** Lo más que manda un cliente por el canal de la mesa, y cuántos mensajes en vivo por segundo se reenvían */
+const MAX_TABLE_MESSAGE = 4096
+const MAX_LIVE_PER_SECOND = 60
 
 const tileParams = z.object({
   version: z.uuid(),
@@ -197,12 +197,13 @@ export function registerTableRoutes(
           return
         }
         if (!joined) return say({ type: 'error', code: 'NOT_JOINED' })
-        // El encuadre en vivo: solo del máster, y con un tope por segundo
+        // Lo que va en vivo (el encuadre, el arrastre): solo del máster, y con un tope por segundo
         if (joined.viewer !== 'master') return say({ type: 'error', code: 'BAD_MESSAGE' })
         const now = Date.now()
         if (now - window.start > 1000) window = { start: now, count: 0 }
-        if (++window.count > MAX_VIEWPORTS_PER_SECOND) return
-        table.viewport(joined.campaignId, message.view)
+        if (++window.count > MAX_LIVE_PER_SECOND) return
+        if (message.type === 'viewport') table.viewport(joined.campaignId, message.view)
+        else table.drag(joined.campaignId, message.moves, socket)
       })
 
       const headers = toHeaders(request.headers)

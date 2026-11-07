@@ -4,6 +4,7 @@
  */
 import { z } from 'zod'
 import { defineAction } from './action.ts'
+import { tokenView } from './tokens.ts'
 
 export const SCENE_GRID_TYPES = ['square', 'hex-rows', 'hex-columns', 'none'] as const
 /** Cómo cuentan las diagonales al medir: todas iguales, alternas (una sí y otra doble) o la distancia real */
@@ -154,6 +155,8 @@ export const setSceneImage = defineAction({
 /** La cámara de la pantalla de la tele: sigue al máster o se queda en un encuadre */
 export const screenCamera = z.discriminatedUnion('mode', [
   z.object({ mode: z.literal('follow') }),
+  /** Encuadra las fichas del grupo (docs/specs/fichas.md) */
+  z.object({ mode: z.literal('group') }),
   z.object({ mode: z.literal('fixed'), view: sceneViewport })
 ])
 
@@ -166,7 +169,9 @@ export const campaignTableView = z.object({
   /** La que enseña la pantalla */
   presented: sceneView.nullable(),
   screenHidden: z.boolean(),
-  camera: screenCamera
+  camera: screenCamera,
+  /** Las fichas de la escena abierta */
+  tokens: z.array(tokenView)
 })
 
 export type CampaignTableView = z.infer<typeof campaignTableView>
@@ -206,7 +211,7 @@ export const hideScreen = defineAction({
 export const setScreenCamera = defineAction({
   name: 'setScreenCamera',
   kind: 'write',
-  description: 'La cámara de la pantalla: seguir al máster o quedarse en un encuadre (view)',
+  description: 'La cámara de la pantalla: seguir al máster, quedarse en un encuadre (view) o encuadrar al grupo',
   input: z.object({ campaignId: z.uuid(), camera: screenCamera }),
   output: campaignTableView
 })

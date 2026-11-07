@@ -5,6 +5,7 @@
 import { z } from 'zod'
 import { defineAction } from './action.ts'
 import { characterState } from './characters.ts'
+import { conditionChange } from './conditions.ts'
 import { diceRoll } from './dice.ts'
 
 /** Lo que se ve de una en la lista: su nombre, su vida, unas cifras y cómo está */
@@ -83,7 +84,7 @@ export const playCreature = defineAction({
   name: 'playCreature',
   kind: 'write',
   description:
-    'Lo de la partida de una criatura en juego (con la versión que se leyó): daño, curación o temporales a un recurso (sin decirlo, el primero, sus PG), gastar o recuperar usos (spend; de lo suyo, item null), descansar, otro máximo para un recurso (max; null, el suyo), tirar sus PG otra vez (rollHp) o cambiarle el nombre. Devuelve su hoja',
+    'Lo de la partida de una criatura en juego (con la versión que se leyó): daño, curación o temporales a un recurso (sin decirlo, el primero, sus PG), gastar o recuperar usos (spend; de lo suyo, item null), descansar, otro máximo para un recurso (max; null, el suyo), tirar sus PG otra vez (rollHp), ponerle o quitarle un estado (condition) o cambiarle el nombre. Devuelve su hoja',
   input: z.object({
     creatureId: z.uuid(),
     version: z.int().min(1),
@@ -100,6 +101,7 @@ export const playCreature = defineAction({
       .optional()
       .describe('Otro máximo para un recurso (sus PG); null vuelve al suyo'),
     rollHp: z.boolean().optional().describe('Tirar sus PG otra vez con sus dados (y llenarlos)'),
+    condition: conditionChange.optional().describe('Ponerle o quitarle un estado'),
     name: z.string().trim().min(1).max(120).optional(),
     play: z
       .record(z.string(), z.unknown())
