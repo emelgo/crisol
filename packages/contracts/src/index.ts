@@ -104,6 +104,7 @@ import {
 } from './pages.ts'
 import { getParty, moveCoins, moveItem, splitCoins, updateParty } from './party.ts'
 import {
+  drawScene,
   getCampaignTable,
   getScene,
   hideScreen,
@@ -387,6 +388,7 @@ export const ACTIONS = [
   presentScene,
   hideScreen,
   setScreenCamera,
+  drawScene,
   placeTokens,
   moveTokens,
   updateToken,
@@ -577,6 +579,7 @@ export type Actions = {
   presentScene: typeof presentScene
   hideScreen: typeof hideScreen
   setScreenCamera: typeof setScreenCamera
+  drawScene: typeof drawScene
   placeTokens: typeof placeTokens
   moveTokens: typeof moveTokens
   updateToken: typeof updateToken

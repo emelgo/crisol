@@ -66,7 +66,7 @@ export interface SceneViewData {
 
 /** Lo que trajo un UVTT y que pondrá en juego `vision`, ya en píxeles de la imagen */
 export interface SceneImportedData {
-  source: 'uvtt'
+  source: 'uvtt' | 'ai'
   walls: Array<Array<{ x: number; y: number }>>
   objects: Array<Array<{ x: number; y: number }>>
   portals: Array<{ a: { x: number; y: number }; b: { x: number; y: number }; closed: boolean; window: boolean }>

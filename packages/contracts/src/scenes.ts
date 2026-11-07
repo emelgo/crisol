@@ -50,9 +50,9 @@ export const sceneTiles = z.object({
 
 export type SceneTiles = z.infer<typeof sceneTiles>
 
-/** Lo que trae un UVTT y que pondrá en juego `vision`, ya en píxeles de la imagen */
+/** Lo que trae un UVTT (o dibuja la IA con su mapa) y que pondrá en juego `vision`, ya en píxeles de la imagen */
 export const sceneImported = z.object({
-  source: z.literal('uvtt'),
+  source: z.enum(['uvtt', 'ai']),
   walls: z.array(z.array(point).max(5000)).max(20_000),
   objects: z.array(z.array(point).max(5000)).max(20_000),
   portals: z.array(z.object({ a: point, b: point, closed: z.boolean(), window: z.boolean() })).max(5000),
@@ -149,6 +149,22 @@ export const setSceneImage = defineAction({
       imported: sceneImported.nullable().optional()
     })
     .refine((input) => input.tiles !== undefined || input.fileId, { message: 'tiles o fileId' }),
+  output: sceneView
+})
+
+export const drawScene = defineAction({
+  name: 'drawScene',
+  kind: 'write',
+  description:
+    'Pone como imagen de una escena un mapa dibujado en SVG (lee antes la guía guia_mapas): se guarda como archivo del mundo y el máster lo trocea al abrirlo. Con walls, portals y lights (en píxeles del SVG), su niebla automática sabrá por dónde se ve',
+  input: z.object({
+    sceneId: z.uuid(),
+    svg: z.string().min(20).max(4 * 1024 * 1024),
+    name: z.string().trim().min(1).max(120).optional().describe('El nombre del archivo (sin .svg)'),
+    walls: sceneImported.shape.walls.optional().describe('Muros: polilíneas de puntos'),
+    portals: sceneImported.shape.portals.optional().describe('Puertas (window: ventana)'),
+    lights: sceneImported.shape.lights.optional().describe('Luces: range en píxeles, intensity de 0 a 1')
+  }),
   output: sceneView
 })
 

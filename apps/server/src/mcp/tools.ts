@@ -2,6 +2,7 @@
  * Las herramientas MCP salen de los contratos: mismo servicio, misma política, mismo historial que la API. El nombre va
  * en español porque lo ve el máster en claude.ai. Lo que no es leer pasa por el modo de IA de la cuenta (approvals.ts).
  */
+
 import { contentTable } from '@crisol/contracts'
 import { APPROVAL_WAIT_MS } from '@crisol/domain'
 import { McpServer } from '@modelcontextprotocol/server'
@@ -10,6 +11,7 @@ import { type ActionEnv, type Implementation, InvalidRequestError } from '../act
 import { implementationsByName } from '../actions/implementations.ts'
 import { formatDocs } from '../actions/systems.ts'
 import { callAsAi } from './approvals.ts'
+import { MAPS_GUIDE, MAPS_GUIDE_RESOURCE } from './maps-guide.ts'
 
 /** La documentación del formato de los sistemas, como recurso (la misma que da formato_sistemas) */
 export const FORMAT_RESOURCE = 'crisol://sistemas/formato'
@@ -418,6 +420,7 @@ export const MCP_TOOLS: Record<string, McpTool> = {
   ver_escenas: { action: 'listScenes' },
   ver_escena: { action: 'getScene' },
   imagen_escena: { action: 'setSceneImage' },
+  dibujar_escena: { action: 'drawScene' },
   cambiar_escena: { action: 'updateScene' },
   ver_mesa: { action: 'getCampaignTable' },
   abrir_escena: { action: 'openScene' },
@@ -501,7 +504,8 @@ const INSTRUCTIONS =
   'su versión): objetos del compendio por su clave o escritos a mano, contenedores y monedas; mover_en_grupo pasa un ' +
   'objeto entre el grupo y un personaje sin duplicarlo, y monedas_grupo pasa o reparte monedas. ' +
   'La mesa: una escena es una pestaña de tipo scene (crear_pestana) en la página del lugar, con su imagen (un ' +
-  'archivo del mundo por su id, con imagen_escena; el máster la trocea al abrirla) y su rejilla (cambiar_escena: ' +
+  'archivo del mundo por su id, con imagen_escena, o un mapa que dibujes tú en SVG con dibujar_escena: antes, lee ' +
+  'la guía guia_mapas; el máster la trocea al abrirla) y su rejilla (cambiar_escena: ' +
   'cuadrada o hexagonal, el tamaño de la casilla en píxeles, lo que mide en pies). ver_escenas las lista. En cada ' +
   'campaña, el máster abre una escena (abrir_escena) y la enseña en la pantalla de los jugadores (presentar_escena; ' +
   'ocultar_pantalla la deja a oscuras; camara_pantalla: seguir al máster, un encuadre fijo o el grupo); ver_mesa dice ' +
@@ -560,6 +564,16 @@ export function buildMcpServer(env: ActionEnv, userId: string, options: { approv
       mimeType: 'text/markdown'
     },
     async (uri) => ({ contents: [{ uri: uri.href, mimeType: 'text/markdown', text: formatDocs() }] })
+  )
+  server.registerResource(
+    'guia_mapas',
+    MAPS_GUIDE_RESOURCE,
+    {
+      title: 'Cómo dibujar un mapa de batalla',
+      description: 'Para dibujar_escena: el mapa en SVG, sus capas, la casilla y los muros y las luces para la niebla',
+      mimeType: 'text/markdown'
+    },
+    async (uri) => ({ contents: [{ uri: uri.href, mimeType: 'text/markdown', text: MAPS_GUIDE }] })
   )
   return server
 }

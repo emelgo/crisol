@@ -69,11 +69,24 @@ Para quién: el máster, que prepara y dirige; la pantalla de la tele; la IA.
   vista inicial, lo traído del UVTT), el estado de cada campaña en cada escena y la mesa de cada campaña (abierta,
   presentada, oculta, cámara).
 
+### Mapas dibujados por la IA
+
+- Enrique (2026-11-07, al ver el mapa del lienzo de la mesa): «me interesa como lo creaste, para poder crear mapas con
+  el mcp». La IA dibuja el mapa en **SVG** con la técnica de ese mapa (roca con ruido fractal, suelos con patrones,
+  muros con trazo grueso, luz pintada con degradados), siguiendo la guía `guia_mapas` del MCP, y lo manda con
+  `dibujar_escena`. Crisol lo guarda como archivo del mundo (sale en Archivos), lo mide por su `width`/`height` o su
+  `viewBox` y rechaza lo que podría ejecutar código o cargar algo de fuera; el máster lo trocea al abrirlo (el SVG se
+  pinta en el navegador como imagen).
+- Si la IA manda también los muros, las puertas y las luces que dibujó, se guardan como lo traído de un UVTT
+  (`source: 'ai'`) y la niebla automática (`vision`) los usará.
+
 ### La IA
 
 - `ver_escenas` (las del mundo), `ver_escena` (una: imagen, medidas en casillas, rejilla), `crear_escena` (una pestaña
   «Escena» en una página, con una imagen del mundo y su rejilla), `cambiar_escena` (la rejilla y la vista inicial),
-  `ver_mesa` (qué tiene abierto y presentado la campaña), `abrir_escena`, `presentar_escena` y `ocultar_pantalla`.
+  `ver_mesa` (qué tiene abierto y presentado la campaña), `abrir_escena`, `presentar_escena`, `ocultar_pantalla` y
+  `camara_pantalla`; `dibujar_escena` y su guía. Una escena se crea con `crear_pestana` (tipo scene); su imagen, con
+  `imagen_escena` (un archivo del mundo).
   Funcionan sin nadie conectado.
 
 ## Decisiones (propuestas de Claude, por confirmar al verlas)

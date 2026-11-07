@@ -59,7 +59,9 @@ Lo que enseñan los estudios:
 7. **El mapa, en teselas**: al subirlo o importarlo, el navegador del máster lo trocea en teselas WebP (como saca hoy
    las imágenes de un zip de Foundry, sin subir el original entero); el servidor las guarda como archivos del mundo y
    da a la pantalla solo las que tocan lo explorado o lo visible. Si las del borde se recortan en el servidor con la
-   máscara o se sirven enteras (asoma como mucho una tesela más allá de lo explorado), **lo decide Enrique**.
+   máscara o se sirven enteras (asoma como mucho una tesela más allá de lo explorado) es **un ajuste de cada campaña**
+   (Enrique, 2026-11-07: «me gusta lo de poder mostrar todo o recortar»): enteras por defecto, que basta jugando en
+   persona; recortadas, para jugar online. Se construye con `vision`.
 8. **La pantalla de la tele es una ruta de la web** que la mesa del máster abre con `window.open`; se conecta por su
    cuenta, con la sesión del máster, pidiendo la vista del grupo. Seguir al máster, quedarse fija o encuadrar al grupo
    son cámaras de esa vista; presentar y ocultar, distinto de abrir la escena.

@@ -19,7 +19,9 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   cámaras, teselas, UVTT e imagen; 74 pruebas), la base de datos (migración 0055), los contratos, el servidor (acciones,
   teselas, la sala con su WebSocket `/api/table`; punto de control 1 superado) y la IA. **Falta la web** (la pestaña
   «Escena», la mesa del máster con PixiJS 8.22 —MIT—, la pantalla de la tele), la e2e, las fugas y la revisión.
-- **Pendiente de Enrique**: si las teselas del borde de lo explorado se recortan en el servidor (ADR-0018, punto 7).
+- **Decidido por Enrique**: teselas enteras o recortadas, un ajuste de cada campaña; la IA dibuja mapas en SVG
+  (`dibujar_escena`, guía `guia_mapas`; hecho en el servidor).
+- **`fichas`**: spec y servidor hechos (`tasks/fichas/todo.md`, migración 0056); falta su web.
 
 ### Para retomar (2026-11-07: módulo 5 en `main` y en staging)
 
@@ -1845,6 +1847,10 @@ Notas: `research/foundry/sistemas-y-su-api.md` y `research/dndbeyond/creador-y-h
   visión; iniciativa; widgets (contador, reloj, temporizador); instantáneas; la pantalla del máster (statblocks de la
   escena y una nota); encuentros con su formación; la biblioteca con su creador de fichas desde imágenes; UVTT y las
   escenas de un zip de Foundry.
+- **Después, al ver el lienzo de la mesa** (2026-11-07): que la IA pueda **dibujar mapas por el MCP** como el de la
+  cripta del lienzo («me interesa como lo creaste, para poder crear mapas con el mcp»), y que el mapa en la pantalla se
+  pueda **servir entero o recortado** por lo explorado («me gusta lo de poder mostrar todo o recortar»): un ajuste de
+  cada campaña.
 - **Fuera**: el generador de botín (ya están las tablas del compendio), los paquetes de colección y la capa de clima
   (módulo 8); que cada jugador vea la mesa en su aparato con la visión de su ficha y mueva la suya, el chat y el sonido
   (la sala de jugadores, módulo 7; esta mesa lo deja preparado).

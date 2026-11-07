@@ -193,6 +193,34 @@ describe('la mesa: escenas, teselas y la sala', () => {
     expect(placed.body.image).toEqual({ width: 3000, height: 2000, tiles: null, fileId: file.json().id })
   })
 
+  it('la IA dibuja una escena en SVG: archivo del mundo, sus medidas y sus muros; nada que ejecute código', async () => {
+    const tab = (await call('createPageTab', { pageId, kind: 'scene' })).body
+    const scene = (await call('getScene', { tabId: tab.id })).body
+    const svg =
+      '<svg xmlns="http://www.w3.org/2000/svg" width="3000" height="2000"><defs><filter id="roca">' +
+      '<feTurbulence baseFrequency="0.02"/></filter></defs><rect width="3000" height="2000" filter="url(#roca)"/></svg>'
+    const drawn = await call('drawScene', {
+      sceneId: scene.id,
+      svg,
+      walls: [
+        [
+          { x: 100, y: 100 },
+          { x: 900, y: 100 }
+        ]
+      ],
+      portals: [{ a: { x: 400, y: 100 }, b: { x: 500, y: 100 }, closed: true, window: false }]
+    })
+    expect(drawn.status).toBe(200)
+    expect(drawn.body.image).toMatchObject({ width: 3000, height: 2000, tiles: null })
+    expect(drawn.body.hasImported).toBe(true)
+    const files = (await call('listFiles', { worldId })).body
+    const file = (files.files ?? files).find((f: { id: string }) => f.id === drawn.body.image.fileId)
+    expect(file).toMatchObject({ name: 'Cripta de Varn · Escena.svg' })
+    const bad = await call('drawScene', { sceneId: scene.id, svg: svg.replace('<defs>', '<script>x()</script><defs>') })
+    expect(bad.body.code).toBe('BAD_SVG')
+    expect((await call('drawScene', { sceneId: scene.id, svg }, player.cookie)).status).toBe(404)
+  })
+
   it('el máster abre y presenta; la pantalla lo recibe sin la página y sigue su encuadre', async () => {
     const { scene, version } = await sceneWithImage()
     const master = await join('master')

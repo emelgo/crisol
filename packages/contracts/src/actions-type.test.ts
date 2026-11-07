@@ -183,6 +183,7 @@ describe('Actions', () => {
       presentScene: true,
       hideScreen: true,
       setScreenCamera: true,
+      drawScene: true,
       placeTokens: true,
       moveTokens: true,
       updateToken: true,

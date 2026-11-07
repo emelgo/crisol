@@ -57,6 +57,7 @@ describe('herramientas MCP', () => {
       'crear_sistema',
       'dejar_editar',
       'deshacer',
+      'dibujar_escena',
       'editar_pagina',
       'elegir_personaje',
       'enlace_invitacion',

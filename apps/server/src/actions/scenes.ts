@@ -4,7 +4,9 @@
  */
 
 import type { Readable } from 'node:stream'
+import { Readable as ReadableStream } from 'node:stream'
 import {
+  drawScene,
   getCampaignTable,
   getScene,
   hideScreen,
@@ -17,12 +19,13 @@ import {
 } from '@crisol/contracts'
 import { filesRepo, scenesRepo } from '@crisol/db'
 import type { Capability } from '@crisol/domain'
-import { NotFoundError } from '@crisol/domain'
-import { imageSize } from '@crisol/tabletop'
+import { NotFoundError, sniff } from '@crisol/domain'
+import { imageSize, svgProblem, svgSize } from '@crisol/tabletop'
 import { pagesChanged } from '../realtime/events.ts'
 import { campaignTableView, sceneView } from '../table/projection.ts'
 import { authorizedCampaign, authorizedPage, authorizedWiki } from './access.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
+import { filesTouched, scopeOf, withFreeName } from './files.ts'
 import { implement } from './registry.ts'
 
 /** La escena, si la cuenta puede hacer eso en su página (404 si no existe o no la ve) */
@@ -111,6 +114,62 @@ export const sceneActions = [
         tiles: tiles ?? null,
         ...(fileId !== undefined ? { fileId } : {}),
         ...(imported !== undefined ? { imported } : {})
+      }
+    )
+    ctx.table?.sceneChanged(sceneId)
+    ctx.realtime.publish(pagesChanged(wiki))
+    return sceneView((await scenesRepo.findScene(ctx.db, sceneId)) as scenesRepo.SceneWithPage)
+  }),
+
+  implement(drawScene, async (ctx, { sceneId, svg, name, walls, portals, lights }) => {
+    const { scene, page, wiki } = await authorizedScene(ctx, 'page.write', sceneId)
+    const problem = svgProblem(svg)
+    if (problem) throw new InvalidRequestError('BAD_SVG', problem)
+    const size = svgSize(svg)
+    if (!size) throw new InvalidRequestError('BAD_SVG', 'no se saben sus medidas: pon width y height (o viewBox)')
+    if (!ctx.storage) throw new InvalidRequestError('NO_STORAGE')
+    // Un archivo del mundo como cualquier otro: sale en Archivos y se trocea al abrir la escena
+    const bytes = Buffer.from(svg, 'utf8')
+    const stored = await ctx.storage.write(wiki.worldId, ReadableStream.from([bytes]), bytes.length + 1)
+    const sniffed = sniff(stored.head, 'mapa.svg')
+    const place = { worldId: wiki.worldId, organizationId: wiki.organizationId }
+    const wanted = `${(name ?? `${page.title} · ${scene.name}`).replace(/[\\/:*?"<>|]/g, '-')}.svg`
+    const file = await withFreeName(ctx.db, { scope: scopeOf(place), name: wanted }, (free) =>
+      filesRepo.createFile(ctx.db, historyContext(ctx, 'uploadFile', { name: free }, wiki), {
+        organizationId: wiki.organizationId,
+        worldId: wiki.worldId,
+        folderId: null,
+        name: free,
+        ...sniffed,
+        size: stored.size,
+        hash: stored.hash,
+        storageKey: stored.key
+      })
+    )
+    await filesTouched(ctx, place, [file.name])
+    const geometry = walls || portals || lights
+    await scenesRepo.updateScene(
+      ctx.db,
+      historyContext(ctx, 'setSceneImage', { title: page.title, name: scene.name }, wiki),
+      sceneId,
+      {
+        fileId: file.id,
+        width: size.width,
+        height: size.height,
+        tiles: null,
+        ...(geometry
+          ? {
+              imported: {
+                source: 'ai' as const,
+                walls: walls ?? [],
+                objects: [],
+                portals: portals ?? [],
+                lights: lights ?? [],
+                ambientLight: null,
+                bakedLighting: false
+              }
+            }
+          : {})
       }
     )
     ctx.table?.sceneChanged(sceneId)
