@@ -30,6 +30,8 @@ function* sourceFiles(dir: string): Generator<string> {
 }
 
 function pointsToResearch(line: string): boolean {
+  // Sin la palabra no hay nada que mirar (así no se recorren las cadenas de los JSON grandes)
+  if (!line.includes('research')) return false
   for (const [, , content = ''] of line.matchAll(STRING_LITERAL)) {
     if (!URL.test(content) && RESEARCH_PATH.test(content)) return true
   }
