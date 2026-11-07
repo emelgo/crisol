@@ -221,29 +221,37 @@ const vitalsKept = new Map<string, { at: number; vitals: CharacterVitals }>()
 const VITALS_TTL_MS = 60_000
 const VITALS_KEEP = 2000
 
+/** Lo de la campaña que decide lo vital de sus personajes (si quien llama ya la tiene leída) */
+type VitalsCampaign = { id: string; version: number; system: string | null }
+
 /**
  * Lo vital de unos personajes de una campaña, para la mesa (ADR-0018). No autoriza: lo hace quien llama. Se carga el
- * contexto de cada sistema una vez
+ * contexto de cada sistema una vez. Con la campaña ya leída no se vuelve a leer
  */
 export async function characterVitalsOf(
   ctx: ActionContext,
-  campaignId: string,
-  ids: readonly string[]
+  of: string | VitalsCampaign,
+  ids: readonly string[] | Promise<readonly string[]>
 ): Promise<Map<string, CharacterVitals>> {
   const vitals = new Map<string, CharacterVitals>()
-  if (ids.length === 0) return vitals
-  const wanted = new Set(ids)
-  const [listed, campaign] = await Promise.all([
+  if (Array.isArray(ids) && ids.length === 0) return vitals
+  const given = typeof of === 'string' ? null : of
+  const campaignId = given?.id ?? (of as string)
+  // A la vez la lista, la versión del sistema de la campaña (el de casi todos sus personajes) y, si aún se están
+  // leyendo, los que se piden (las fichas de una escena): menos vueltas a la base
+  const [listed, campaign, guessed, asked] = await Promise.all([
     charactersRepo.listCharacters(ctx.db, campaignId),
-    campaignsRepo.findCampaign(ctx.db, campaignId)
+    given ?? campaignsRepo.findCampaign(ctx.db, campaignId),
+    systemsRepo.systemVersions(ctx.db, given?.system ? [given.system] : []),
+    ids
   ])
+  const wanted = new Set(asked)
   const rows = listed.filter((r) => wanted.has(r.id))
   const contexts = new Map<string, Awaited<ReturnType<typeof charactersContext>> | null>()
   // Lo que decide su hoja: él (su versión), su sistema (la suya) y lo que elige la campaña (la suya)
-  const systemIds = [...new Set(rows.map((r) => r.system))]
-  const systems = new Map(
-    (await systemsRepo.systemVersions(ctx.db, systemIds)).map((s) => [s.id, `${s.version}:${s.deletedAt ?? ''}`])
-  )
+  const missing = [...new Set(rows.map((r) => r.system))].filter((id) => id !== given?.system)
+  const versions = [...guessed, ...(await systemsRepo.systemVersions(ctx.db, missing))]
+  const systems = new Map(versions.map((s) => [s.id, `${s.version}:${s.deletedAt ?? ''}`]))
   const now = Date.now()
   for (const row of rows) {
     const key = `${campaignId}:${row.id}:${row.version}:${row.system}:${systems.get(row.system) ?? 'catalog'}:${campaign?.version ?? 0}`

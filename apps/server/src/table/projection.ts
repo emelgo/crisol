@@ -54,19 +54,38 @@ export async function tokenViews(ctx: ActionContext, campaign: Campaign, sceneId
 
 /** Las fichas y, las de los personajes, sus sentidos (en la unidad de la rejilla), por el id de la ficha */
 export async function tokensWithSenses(ctx: ActionContext, campaign: Campaign, sceneId: string) {
+  // Lo de los personajes se empieza a leer a la vez que las fichas
+  const listed = tokensRepo.listTokens(ctx.db, campaign.id, sceneId)
+  const vitals = characterVitalsOf(
+    ctx,
+    campaign,
+    listed.then((rows) => rows.flatMap((r) => (r.characterId ? [r.characterId] : [])))
+  )
+  // Si fallan las fichas, su fallo es el que sale (el de esto se recoge abajo)
+  vitals.catch(() => undefined)
+  return viewsOfTokens(ctx, campaign, await listed, vitals)
+}
+
+/** Unas fichas ya leídas, con lo vital de cada uno (o lo que ya se está leyendo) y, las de los personajes, sus sentidos */
+export async function viewsOfTokens(
+  ctx: ActionContext,
+  campaign: Campaign,
+  rows: readonly tokensRepo.TokenRow[],
+  vitals?: ReturnType<typeof characterVitalsOf>
+) {
   const senses = new Map<string, SenseRanges>()
-  const rows = await tokensRepo.listTokens(ctx.db, campaign.id, sceneId)
   const [creatures, characters] = await Promise.all([
     creatureCardsOf(
       ctx,
       campaign,
       rows.flatMap((r) => (r.creatureId ? [r.creatureId] : []))
     ),
-    characterVitalsOf(
-      ctx,
-      campaign.id,
-      rows.flatMap((r) => (r.characterId ? [r.characterId] : []))
-    )
+    vitals ??
+      characterVitalsOf(
+        ctx,
+        campaign,
+        rows.flatMap((r) => (r.characterId ? [r.characterId] : []))
+      )
   ])
   const views = rows.flatMap((row): TokenView[] => {
     const base = {
@@ -172,7 +191,7 @@ export async function combatViewOf(
   const [tokens, cards, vitals, creatures, initiative] = await Promise.all([
     combat.sceneId ? tokensRepo.listTokens(ctx.db, campaign.id, combat.sceneId) : Promise.resolve([]),
     creatureCardsOf(ctx, campaign, creatureIds),
-    characterVitalsOf(ctx, campaign.id, characterIds),
+    characterVitalsOf(ctx, campaign, characterIds),
     creatureIds.length ? creaturesRepo.listCreatures(ctx.db, campaign.id) : Promise.resolve([]),
     initiativeOf(ctx, campaign)
   ])
@@ -392,37 +411,39 @@ function tableVisionOf(
   }
 }
 
-/** La mesa de una campaña para su máster y, aparte, lo de la escena presentada (para la pantalla) */
-async function tableOf(ctx: ActionContext, campaign: Campaign) {
-  const table = await scenesRepo.campaignTable(ctx.db, campaign.id)
-  const open = table.openSceneId ? await scenesRepo.findScene(ctx.db, table.openSceneId) : null
-  const presented =
-    table.presentedSceneId === table.openSceneId
-      ? open
-      : table.presentedSceneId
-        ? await scenesRepo.findScene(ctx.db, table.presentedSceneId)
-        : null
+/**
+ * La mesa de una campaña para su máster y, aparte, lo de la escena presentada (para la pantalla). Se lee todo a la vez
+ * (las escenas, sus fichas, lo dejado en el mapa, el combate) y la vista del grupo de cada escena, también a la vez
+ */
+async function tableOf(ctx: ActionContext, campaign: Campaign, given?: scenesRepo.CampaignTableRow) {
+  const table = given ?? (await scenesRepo.campaignTable(ctx.db, campaign.id))
+  const openId = table.openSceneId
+  // La presentada, si es otra que la abierta
+  const otherId = table.presentedSceneId !== openId ? table.presentedSceneId : null
   const none = { views: [], senses: new Map<string, SenseRanges>() }
-  const [openLoaded, otherLoaded, combat, openMarks, otherMarks, widgetRows] = await Promise.all([
-    open ? tokensWithSenses(ctx, campaign, open.id) : none,
-    presented && presented.id !== open?.id ? tokensWithSenses(ctx, campaign, presented.id) : null,
+  const [open, other, openTokens, otherTokens, combat, openRows, otherRows, widgetRows] = await Promise.all([
+    openId ? scenesRepo.findScene(ctx.db, openId) : null,
+    otherId ? scenesRepo.findScene(ctx.db, otherId) : null,
+    openId ? tokensWithSenses(ctx, campaign, openId) : none,
+    otherId ? tokensWithSenses(ctx, campaign, otherId) : none,
     combatsRepo.findCombat(ctx.db, campaign.id),
-    open ? tableToolsRepo.listMarks(ctx.db, campaign.id, open.id) : Promise.resolve([]),
-    presented && presented.id !== open?.id
-      ? tableToolsRepo.listMarks(ctx.db, campaign.id, presented.id)
-      : Promise.resolve(null),
+    openId ? tableToolsRepo.listMarks(ctx.db, campaign.id, openId) : Promise.resolve([]),
+    otherId ? tableToolsRepo.listMarks(ctx.db, campaign.id, otherId) : Promise.resolve([]),
     tableToolsRepo.listWidgets(ctx.db, campaign.id)
   ])
-  const shownLoaded = otherLoaded ?? (presented ? openLoaded : none)
-  const shownMarks = otherMarks ?? (presented ? openMarks : [])
+  // Una escena que ya no está (su página, en la papelera) no tiene fichas ni marcas
+  const presented = table.presentedSceneId === openId ? open : other
+  const openLoaded = open ? openTokens : none
+  const openMarks = open ? openRows : []
+  const shownLoaded = other ? otherTokens : presented ? openLoaded : none
+  const shownMarks = other ? otherRows : presented ? openMarks : []
   const widgets = widgetRows.map(widgetViewOf)
-  const openVision = open ? await visionOf(ctx, campaign, open, openLoaded) : null
-  const shownVision =
-    presented && presented.id === open?.id
-      ? openVision
-      : presented
-        ? await visionOf(ctx, campaign, presented, shownLoaded)
-        : null
+  const [openVision, otherVision, combatView] = await Promise.all([
+    open ? visionOf(ctx, campaign, open, openLoaded) : null,
+    other ? visionOf(ctx, campaign, other, shownLoaded) : null,
+    combat ? combatViewOf(ctx, campaign, combat) : null
+  ])
+  const shownVision = other ? otherVision : presented ? openVision : null
   const master: CampaignTableView = {
     campaignId: campaign.id,
     open: open ? sceneView(open) : null,
@@ -430,7 +451,7 @@ async function tableOf(ctx: ActionContext, campaign: Campaign) {
     screenHidden: table.screenHidden,
     camera: table.camera,
     tokens: openLoaded.views,
-    combat: combat ? await combatViewOf(ctx, campaign, combat) : null,
+    combat: combatView,
     vision: open && openVision ? tableVisionOf(open, openVision, openLoaded.views, table.tileFit) : null,
     marks: open ? openMarks.map((row) => markViewOf(row, openLoaded.views, open.grid)) : [],
     widgets,
@@ -441,9 +462,12 @@ async function tableOf(ctx: ActionContext, campaign: Campaign) {
 
 /** La mesa de una campaña para su máster (la campaña ya autorizada) */
 export async function campaignTableView(ctx: ActionContext, campaignId: string): Promise<CampaignTableView> {
-  const campaign = await campaignsRepo.findCampaign(ctx.db, campaignId)
+  const [campaign, table] = await Promise.all([
+    campaignsRepo.findCampaign(ctx.db, campaignId),
+    scenesRepo.campaignTable(ctx.db, campaignId)
+  ])
   if (!campaign) throw new Error(`campaña ${campaignId}: no existe`)
-  return (await tableOf(ctx, campaign)).master
+  return (await tableOf(ctx, campaign, table)).master
 }
 
 /** Lo que enseña la pantalla de una escena (o de ninguna), con la vista del grupo en ella */
@@ -537,9 +561,12 @@ export function loadTable(env: ActionEnv): LoadTable {
     via: 'ui'
   }
   return async (campaignId) => {
-    const campaign = await campaignsRepo.findCampaign(env.db, campaignId)
+    const [campaign, table] = await Promise.all([
+      campaignsRepo.findCampaign(env.db, campaignId),
+      scenesRepo.campaignTable(env.db, campaignId)
+    ])
     if (!campaign) return null
-    const { master, shownTokens, shownVision, shownMarks, widgets } = await tableOf(ctx, campaign)
+    const { master, shownTokens, shownVision, shownMarks, widgets } = await tableOf(ctx, campaign, table)
     const screen = screenOfTable(master, campaign.name, {
       tokens: shownTokens,
       vision: shownVision,

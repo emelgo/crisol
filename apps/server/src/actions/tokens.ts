@@ -17,7 +17,7 @@ import {
 import { charactersRepo, creaturesRepo, filesRepo, scenesRepo, tokensRepo } from '@crisol/db'
 import { NotFoundError } from '@crisol/domain'
 import { cellCenter } from '@crisol/tabletop'
-import { tokenViews, visionOf } from '../table/projection.ts'
+import { tokenViews, viewsOfTokens, visionOf } from '../table/projection.ts'
 import { authorizedCampaign, authorizedWiki } from './access.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
 import { implement } from './registry.ts'
@@ -139,6 +139,14 @@ export function pointIn(grid: scenesRepo.SceneRow['grid'], where: Where) {
   return cellCenter({ type, size, ...offset }, { q: where.column, r: where.row })
 }
 
+/** El orden de las fichas en su escena (como `listTokens`): cuando se pusieron, su rótulo y su id */
+function placedOrder(a: tokensRepo.TokenRow, b: tokensRepo.TokenRow) {
+  const at = a.createdAt.getTime() - b.createdAt.getTime()
+  if (at !== 0) return at
+  if (a.label !== b.label) return a.label < b.label ? -1 : 1
+  return a.id < b.id ? -1 : a.id > b.id ? 1 : 0
+}
+
 /** Unas fichas de la campaña por su id; si falta alguna, 404 */
 async function ownTokens(ctx: ActionContext, campaignId: string, ids: readonly string[]) {
   const found = await tokensRepo.findTokens(ctx.db, campaignId, ids)
@@ -191,12 +199,15 @@ export const tokenActions = [
   }),
 
   implement(moveTokens, async (ctx, { campaignId, moves }) => {
-    const campaign = await authorizedCampaign(ctx, 'table.manage', campaignId)
-    const found = await ownTokens(
+    // Las fichas se leen a la vez que la campaña, pero solo se miran después de autorizar
+    const reading = ownTokens(
       ctx,
       campaignId,
       moves.map((m) => m.tokenId)
     )
+    reading.catch(() => undefined)
+    const campaign = await authorizedCampaign(ctx, 'table.manage', campaignId)
+    const found = await reading
     const sceneIds = new Set(found.map((t) => t.sceneId))
     const grids = new Map<string, scenesRepo.SceneRow['grid']>()
     for (const sceneId of sceneIds) {
@@ -204,7 +215,7 @@ export const tokenActions = [
       if (scene) grids.set(sceneId, scene.grid)
     }
     const sceneOf = new Map(found.map((t) => [t.id, t.sceneId]))
-    await tokensRepo.updateTokens(
+    const updated = await tokensRepo.updateTokens(
       ctx.db,
       historyContext(ctx, 'moveTokens', { campaign: campaign.name, count: moves.length }, campaign),
       moves.map((m) => {
@@ -238,10 +249,10 @@ export const tokenActions = [
           .then((scene) => (scene ? visionOf(ctx, campaign, scene) : null))
           .catch((error: unknown) => vision.report(error))
     }
-    const ids = new Set(moves.map((m) => m.tokenId))
-    const views = []
-    for (const sceneId of sceneIds) views.push(...(await tokenViews(ctx, campaign, sceneId)))
-    return { tokens: views.filter((t) => ids.has(t.id)) }
+    // Las movidas, como quedaron al guardarlas (sin volver a leer la escena), en el orden en que se pusieron
+    const rows = [...new Map(updated.map((row) => [row.id, row])).values()].sort(placedOrder)
+    const { views } = await viewsOfTokens(ctx, campaign, rows)
+    return { tokens: views }
   }),
 
   implement(updateToken, async (ctx, { tokenId, label, faction, size, hidden, image }) => {
