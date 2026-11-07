@@ -651,8 +651,10 @@ function Stage({
   const api = useApi()
   const open = table?.open ?? null
   const camera = table?.camera ?? { mode: 'follow' as const }
+  // La tele enseña la escena abierta (presentada y sin ocultar): solo entonces puede ir con el máster
+  const onScreen = Boolean(open && table?.presented?.id === open.id && !table?.screenHidden)
   // Con «Seguir» (o encuadrando al grupo, que llega con las fichas) la tele va con el máster
-  const following = camera.mode !== 'fixed'
+  const following = camera.mode !== 'fixed' && onScreen
   const sizeRef = useRef(size)
   sizeRef.current = size
   // La escena (y su versión del mapa) que ya se colocó: otra vuelve a su vista inicial
@@ -1159,7 +1161,7 @@ function Stage({
           />
         </section>
       )}
-      {scene && following && camera.mode === 'follow' && table?.presented && !table.screenHidden && (
+      {scene && following && camera.mode === 'follow' && (
         <div className={styles.followLine}>
           <span>{t('tabletop.following')}</span>
         </div>
@@ -1234,6 +1236,7 @@ function TopBar({
           <SceneMenu worldId={worldId} open={open} onOpen={onOpen} />
           {live && <span className={`${styles.chip} ${styles.live}`}>{t('tabletop.live')}</span>}
           {presented && table?.screenHidden && <span className={styles.chip}>{t('tabletop.dark')}</span>}
+          {showing && !live && <span className={styles.chip}>{t('tabletop.elsewhere')}</span>}
         </div>
       )}
       <span className={styles.grow} />

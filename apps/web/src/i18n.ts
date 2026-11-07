@@ -1628,6 +1628,7 @@ export const es = {
     changeScene: 'Cambiar de escena',
     live: 'En la tele',
     dark: 'Tele a oscuras',
+    elsewhere: 'La tele enseña otra escena',
     present: 'Presentar',
     hide: 'Ocultar',
     screen: 'Pantalla',

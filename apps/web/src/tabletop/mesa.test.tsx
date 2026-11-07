@@ -213,6 +213,27 @@ describe('la mesa del máster', () => {
     await waitFor(async () => expect((await camera()).mode).toBe('follow'))
   })
 
+  it('con otra escena en la tele no la sigue: lo dice y no manda su encuadre hasta presentar la abierta', async () => {
+    const user = userEvent.setup()
+    const { api, scenes, push, master } = await renderMesa()
+    await api.client.call('openScene', { campaignId: CAMPAIGN.id, sceneId: scenes[0]?.id ?? '' })
+    await api.client.call('presentScene', { campaignId: CAMPAIGN.id })
+    await api.client.call('openScene', { campaignId: CAMPAIGN.id, sceneId: scenes[1]?.id ?? '' })
+    await push()
+    const stage = await screen.findByRole('application', { name: 'Mesa: Faro de Brena' })
+    expect(screen.getByText('La tele enseña otra escena')).toBeDefined()
+    expect(screen.queryByText('La tele sigue tu vista')).toBeNull()
+    const channel = await master()
+    const before = channel.viewports.length
+    fireEvent.keyDown(stage, { key: 'ArrowRight' })
+    expect(channel.viewports.length).toBe(before)
+    // Al presentarla, la sigue y le manda ya dónde mira
+    await user.click(screen.getByRole('button', { name: 'Presentar' }))
+    expect(await screen.findByText('La tele sigue tu vista')).toBeDefined()
+    expect(screen.queryByText('La tele enseña otra escena')).toBeNull()
+    expect(channel.viewports.length).toBeGreaterThan(before)
+  })
+
   it('el nombre de la escena abre su menú: cambiar de escena o ir a su página', async () => {
     const user = userEvent.setup()
     const { api, scenes, push, router } = await renderMesa()
