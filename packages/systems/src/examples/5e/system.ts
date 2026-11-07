@@ -1082,7 +1082,13 @@ export const fiveE = {
         { key: 'mano', kind: 'manual', label: t('A mano', 'Manual'), min: 3, max: 20 }
       ]
     },
-    { key: 'detalles', kind: 'fields', label: t('Detalles', 'Details'), fields: ['idiomas', 'notas'], creation: true },
+    {
+      key: 'detalles',
+      kind: 'fields',
+      label: t('Detalles', 'Details'),
+      fields: ['idiomas', 'sentidos', 'notas'],
+      creation: true
+    },
     { key: 'resumen', kind: 'summary', label: t('Resumen', 'Summary') }
   ]
 } as unknown as System
