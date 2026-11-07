@@ -15,8 +15,12 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
 - **Hecho de punta a punta**: `escenas` (con la IA que dibuja mapas en SVG: `dibujar_escena`, `guia_mapas`), `fichas`,
   `combate` y `escenas-foundry`. **Servidor hecho**: `vision` (p95 al soltar una ficha, 92–99 ms con la máquina
   cargada: al borde de los 100; mirarlo en la revisión) y `herramientas-mesa`.
-- **En marcha**: la web de `vision` (un agente). **Después**: la web de `herramientas-mesa` (la columna de herramientas
-  la empieza `vision`), la revisión del módulo entero (fugas, accesibilidad, rendimiento, comparar con el lienzo: las
+- **Hecho también**: la web de `vision`. **A medias**: la web de `herramientas-mesa` (el agente se paró por el límite
+  de uso con la mesa hecha y la tele por hacer: «Now the TV: marks, widgets, live measure and laser»; ver su trabajo sin
+  commit con `git status`). **La revisión de código** encontró fugas graves: `tasks/revision-modulo-6.md` (arreglarlas
+  antes del PR). **El rendimiento de la visión**: un agente lo estaba mejorando (objetivo p95 < 60 ms); ojo, dejó
+  `console.error('PERF …')` sin commit en `apps/server/src/table/` y un perfilador en `vision.integration.test.ts`
+  que **no pueden entrar**. **Después**: la revisión del módulo entero (fugas, accesibilidad, rendimiento, comparar con el lienzo: las
   capturas en oscuro con la cripta salen de `e2e/tests/repaso.spec.ts`), «Dónde estamos», el PR y la CI una sola vez.
 - **Ojo con las e2e**: comparten servidor y base de datos; dos agentes corriéndolas a la vez se pisan.
 - **Decisiones tomadas sin Enrique, por confirmar al probar**: un encuadre es centro y escala para una pantalla de
