@@ -100,6 +100,19 @@ export function prepareVision(scene: VisionScene): PreparedVision {
   return { scene, sight, sightWithDarkness, light, lit, darknessCells, litCells }
 }
 
+/** Lo que ve cada ficha con lo preparado (las últimas que se han mirado), por la ficha tal cual */
+const sightsOf = new WeakMap<PreparedVision, Map<string, { sight: TokenSight; seen: FogGrid }>>()
+const KEPT_SIGHTS = 48
+
+function keptSights(prepared: PreparedVision) {
+  let kept = sightsOf.get(prepared)
+  if (!kept) {
+    kept = new Map()
+    sightsOf.set(prepared, kept)
+  }
+  return kept
+}
+
 /** Lo que ve el grupo con lo preparado de la escena, sus fichas y la niebla a mano */
 export function partyView(
   prepared: PreparedVision,
@@ -115,16 +128,26 @@ export function partyView(
     const sources = { plain: prepared.sight, withDarkness: prepared.sightWithDarkness }
     const line = litCells.empty()
     const seen = litCells.empty()
+    // Lo de cada ficha solo depende de lo preparado y de ella: se guarda, y al mover una no se rehacen las demás
+    const kept = keptSights(prepared)
     for (const token of tokens) {
-      const sight = tokenSight(token, sources, unlimited)
-      sights.push(sight)
-      line.fill(false).fillPolygon(sight.polygon)
-      seen.fill(false)
-      if (sight.darkvision > 0) seen.fillCircle(sight.origin, sight.darkvision).subtract(darknessCells)
-      seen.union(litCells)
-      seen.fillCircle(sight.origin, sight.beyondDarkness)
-      seen.fillCircle(sight.origin, sight.footprint)
-      visible.union(seen.intersect(line))
+      const key = JSON.stringify(token)
+      let own = kept.get(key)
+      if (own) kept.delete(key)
+      else {
+        const sight = tokenSight(token, sources, unlimited)
+        line.fill(false).fillPolygon(sight.polygon)
+        seen.fill(false)
+        if (sight.darkvision > 0) seen.fillCircle(sight.origin, sight.darkvision).subtract(darknessCells)
+        seen.union(litCells)
+        seen.fillCircle(sight.origin, sight.beyondDarkness)
+        seen.fillCircle(sight.origin, sight.footprint)
+        own = { sight, seen: seen.clone().intersect(line) }
+      }
+      kept.set(key, own)
+      while (kept.size > KEPT_SIGHTS) kept.delete(kept.keys().next().value as string)
+      sights.push(own.sight)
+      visible.union(own.seen)
     }
   }
   visible.union(revealed).subtract(covered)
