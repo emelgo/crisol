@@ -8,6 +8,7 @@ import { type OperationContext, operation } from '../operation.ts'
 import { files } from '../schema/files.ts'
 import { mapElements, mapPins, maps, pageTabs } from '../schema/maps.ts'
 import { pages } from '../schema/pages.ts'
+import { DEFAULT_SCENE_GRID, sceneStates, scenes } from '../schema/scenes.ts'
 import { randomTables } from '../schema/tables.ts'
 
 export type PageTabRow = typeof pageTabs.$inferSelect
@@ -44,7 +45,7 @@ export async function findTab(db: Database, tabId: string) {
   return found ?? null
 }
 
-/** Una pestaña nueva; si es un mapa, con su mapa vacío */
+/** Una pestaña nueva; si es un mapa o una escena, con su mapa o su escena vacía */
 export function createTab(
   db: Database,
   context: OperationContext,
@@ -61,6 +62,7 @@ export function createTab(
     const tab = await w.insert(pageTabs, values)
     if (values.kind === 'map') await w.insert(maps, { worldId: values.worldId, tabId: tab.id })
     if (values.kind === 'table') await w.insert(randomTables, { worldId: values.worldId, tabId: tab.id })
+    if (values.kind === 'scene') await w.insert(scenes, { worldId: values.worldId, tabId: tab.id, grid: DEFAULT_SCENE_GRID })
     return tab
   })
 }
@@ -91,6 +93,13 @@ export function deleteTab(db: Database, context: OperationContext, tabId: string
     // Su tabla aleatoria, al historial: deshacer la devuelve con sus filas
     const [table] = await w.read.select({ id: randomTables.id }).from(randomTables).where(eq(randomTables.tabId, tabId))
     if (table) await w.remove(randomTables, table.id)
+    // Su escena, con el estado de cada campaña en ella: deshacer devuelve las dos
+    const [scene] = await w.read.select({ id: scenes.id }).from(scenes).where(eq(scenes.tabId, tabId))
+    if (scene) {
+      const states = await w.read.select({ id: sceneStates.id }).from(sceneStates).where(eq(sceneStates.sceneId, scene.id))
+      for (const state of states) await w.remove(sceneStates, state.id)
+      await w.remove(scenes, scene.id)
+    }
     await w.remove(pageTabs, tabId)
   })
 }

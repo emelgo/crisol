@@ -386,6 +386,13 @@
       "when": 1794008069670,
       "tag": "0054_pagina_de_jugadores",
       "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "7",
+      "when": 1794052875561,
+      "tag": "0055_escenas",
+      "breakpoints": true
     }
   ]
 }

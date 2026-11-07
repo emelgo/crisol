@@ -7,7 +7,7 @@ import { defineAction } from './action.ts'
 import { readAs } from './read-as.ts'
 import { worldColor } from './worlds.ts'
 
-export const PAGE_TAB_KINDS = ['map', 'text', 'table'] as const
+export const PAGE_TAB_KINDS = ['map', 'text', 'table', 'scene'] as const
 
 const tabName = z.string().trim().min(1).max(60)
 
@@ -42,7 +42,8 @@ export const listPageTabs = defineAction({
 export const createPageTab = defineAction({
   name: 'createPageTab',
   kind: 'write',
-  description: 'Añade una pestaña a una página, al final: un mapa (vacío hasta que se le pone imagen con updateMap)',
+  description:
+    'Añade una pestaña a una página, al final: un mapa (vacío hasta que se le pone imagen con updateMap) o una escena de la mesa (con setSceneImage)',
   input: z.object({ pageId: z.uuid(), kind: z.enum(PAGE_TAB_KINDS), name: tabName.optional() }),
   output: pageTabView
 })

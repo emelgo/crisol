@@ -28,6 +28,7 @@ export { isOwner, listMemberOrganizations, loadMemberships, type Memberships, ma
 export * as pagesRepo from './repos/pages.ts'
 export * as partyRepo from './repos/party.ts'
 export * as preferencesRepo from './repos/preferences.ts'
+export * as scenesRepo from './repos/scenes.ts'
 export * as searchRepo from './repos/search.ts'
 export * as systemImagesRepo from './repos/system-images.ts'
 export * as systemsRepo from './repos/systems.ts'

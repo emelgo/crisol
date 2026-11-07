@@ -103,6 +103,17 @@ import {
   updatePage
 } from './pages.ts'
 import { getParty, moveCoins, moveItem, splitCoins, updateParty } from './party.ts'
+import {
+  getCampaignTable,
+  getScene,
+  hideScreen,
+  listScenes,
+  openScene,
+  presentScene,
+  setSceneImage,
+  setScreenCamera,
+  updateScene
+} from './scenes.ts'
 import { searchWiki } from './search.ts'
 import {
   browseCampaignContent,
@@ -173,8 +184,10 @@ export * from './panel.ts'
 export * from './party.ts'
 export * from './read-as.ts'
 export type * from './realtime.ts'
+export * from './scenes.ts'
 export * from './search.ts'
 export * from './systems.ts'
+export * from './table.ts'
 export * from './tables.ts'
 export * from './tags.ts'
 export * from './templates.ts'
@@ -352,7 +365,16 @@ export const ACTIONS = [
   getSystemFormat,
   inspectFoundry,
   importFoundry,
-  putSystemImages
+  putSystemImages,
+  listScenes,
+  getScene,
+  updateScene,
+  setSceneImage,
+  getCampaignTable,
+  openScene,
+  presentScene,
+  hideScreen,
+  setScreenCamera
 ]
 
 /** Las acciones por nombre, solo como tipo: la web las usa sin cargar zod */
@@ -526,4 +548,13 @@ export type Actions = {
   inspectFoundry: typeof inspectFoundry
   importFoundry: typeof importFoundry
   putSystemImages: typeof putSystemImages
+  listScenes: typeof listScenes
+  getScene: typeof getScene
+  updateScene: typeof updateScene
+  setSceneImage: typeof setSceneImage
+  getCampaignTable: typeof getCampaignTable
+  openScene: typeof openScene
+  presentScene: typeof presentScene
+  hideScreen: typeof hideScreen
+  setScreenCamera: typeof setScreenCamera
 }

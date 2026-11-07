@@ -173,7 +173,16 @@ describe('Actions', () => {
       getRandomTable: true,
       updateRandomTable: true,
       rollOnTable: true,
-      resetTableDraws: true
+      resetTableDraws: true,
+      listScenes: true,
+      getScene: true,
+      updateScene: true,
+      setSceneImage: true,
+      getCampaignTable: true,
+      openScene: true,
+      presentScene: true,
+      hideScreen: true,
+      setScreenCamera: true
     }
     expect(Object.keys(names).sort()).toEqual(ACTIONS.map((a) => a.name).sort())
   })

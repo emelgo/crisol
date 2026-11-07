@@ -17,6 +17,7 @@ import { pages } from './schema/pages.ts'
 import { campaignParty } from './schema/party.ts'
 import { systemContent, systems, worldContent } from './schema/systems.ts'
 import { randomTables } from './schema/tables.ts'
+import { sceneStates, scenes } from './schema/scenes.ts'
 import { tags } from './schema/tags.ts'
 import { pageTemplates } from './schema/templates.ts'
 import { pageBodies } from './schema/versions.ts'
@@ -50,7 +51,9 @@ export const TRACKED_TABLES = {
   campaign_creatures: campaignCreatures,
   campaign_party: campaignParty,
   knowledge,
-  page_editors: pageEditors
+  page_editors: pageEditors,
+  scenes,
+  scene_states: sceneStates
 }
 
 export type TrackedTable = (typeof TRACKED_TABLES)[keyof typeof TRACKED_TABLES]
