@@ -3,9 +3,10 @@
  * con su historial), el estado de las puertas y la niebla a mano de cada campaña (con su historial) y lo explorado
  * por su grupo (fuera del historial). Cambiar muros o luces toca también la escena: su versión dice que cambiaron
  */
-import { and, asc, eq } from 'drizzle-orm'
+import { and, asc, eq, sql } from 'drizzle-orm'
 import type { Database } from '../client.ts'
 import { type OperationContext, operation } from '../operation.ts'
+import { prepared } from '../prepared.ts'
 import { type SceneDoorStates, sceneStates, scenes } from '../schema/scenes.ts'
 import { type FogOperationData, sceneExplored, sceneFog, sceneLights, sceneWalls } from '../schema/vision.ts'
 
@@ -109,12 +110,22 @@ export function changeVision(db: Database, context: OperationContext, sceneId: s
 
 /** El estado de una campaña en una escena, si lo tiene */
 export async function findSceneState(db: Database, campaignId: string, sceneId: string) {
-  const [found] = await db
-    .select()
-    .from(sceneStates)
-    .where(and(eq(sceneStates.campaignId, campaignId), eq(sceneStates.sceneId, sceneId)))
+  const [found] = await stateOf(db).execute({ campaignId, sceneId })
   return found ?? null
 }
+
+const stateOf = prepared((db) =>
+  db
+    .select()
+    .from(sceneStates)
+    .where(
+      and(
+        eq(sceneStates.campaignId, sql.placeholder('campaignId')),
+        eq(sceneStates.sceneId, sql.placeholder('sceneId'))
+      )
+    )
+    .prepare('find_scene_state')
+)
 
 /** Cambia el estado de unas puertas en una campaña (las demás quedan como estaban) */
 export function setDoors(db: Database, context: OperationContext, stateId: string, doors: SceneDoorStates) {
@@ -127,12 +138,19 @@ export function setDoors(db: Database, context: OperationContext, stateId: strin
 
 /** La niebla a mano de una campaña en una escena, en el orden en que se hizo */
 export function listFog(db: Database, campaignId: string, sceneId: string): Promise<FogRow[]> {
-  return db
+  return fogOf(db).execute({ campaignId, sceneId })
+}
+
+const fogOf = prepared((db) =>
+  db
     .select()
     .from(sceneFog)
-    .where(and(eq(sceneFog.campaignId, campaignId), eq(sceneFog.sceneId, sceneId)))
+    .where(
+      and(eq(sceneFog.campaignId, sql.placeholder('campaignId')), eq(sceneFog.sceneId, sql.placeholder('sceneId')))
+    )
     .orderBy(asc(sceneFog.createdAt), asc(sceneFog.id))
-}
+    .prepare('list_fog')
+)
 
 /** Añade unas operaciones de niebla a mano, en una operación del historial */
 export function addFog(

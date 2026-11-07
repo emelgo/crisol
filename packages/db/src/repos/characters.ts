@@ -2,9 +2,10 @@
  * Los personajes de una campaña y sus versiones (ADR-0013). Toda escritura pasa por operation(): queda en el historial
  * y se deshace. Cambiar pide la versión que se tenía
  */
-import { and, asc, desc, eq, isNull } from 'drizzle-orm'
+import { and, asc, desc, eq, isNull, sql } from 'drizzle-orm'
 import type { Database } from '../client.ts'
 import { type OperationContext, operation } from '../operation.ts'
+import { prepared } from '../prepared.ts'
 import { user } from '../schema/auth.ts'
 import { campaigns } from '../schema/campaigns.ts'
 import { type CharacterSummary, characters, characterVersions } from '../schema/characters.ts'
@@ -38,13 +39,24 @@ export type CharacterRow = NonNullable<Awaited<ReturnType<typeof findCharacter>>
 
 /** Los de una campaña (de un dueño, si se dice), en el orden en que se crearon */
 export function listCharacters(db: Database, campaignId: string, ownerId?: string) {
+  if (ownerId === undefined) return charactersOf(db).execute({ campaignId })
   return db
     .select(columns)
     .from(characters)
     .leftJoin(user, eq(user.id, characters.ownerId))
-    .where(and(eq(characters.campaignId, campaignId), ownerId ? eq(characters.ownerId, ownerId) : undefined))
+    .where(and(eq(characters.campaignId, campaignId), eq(characters.ownerId, ownerId)))
     .orderBy(asc(characters.createdAt), asc(characters.id))
 }
+
+const charactersOf = prepared((db) =>
+  db
+    .select(columns)
+    .from(characters)
+    .leftJoin(user, eq(user.id, characters.ownerId))
+    .where(eq(characters.campaignId, sql.placeholder('campaignId')))
+    .orderBy(asc(characters.createdAt), asc(characters.id))
+    .prepare('list_characters')
+)
 
 /** Uno, con su campaña, su mundo y su organización (de una campaña y un mundo que no están en la papelera) */
 export async function findCharacter(db: Database, id: string) {

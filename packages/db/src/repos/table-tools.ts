@@ -3,9 +3,10 @@
  * dibujos, textos, sellos, pines e imágenes), los widgets de la campaña y las instantáneas. Todo pasa por operation():
  * se deshace desde el historial. Volver a una instantánea es una sola operación (deshacerla lo devuelve todo)
  */
-import { and, asc, desc, eq, inArray } from 'drizzle-orm'
+import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm'
 import type { Database } from '../client.ts'
 import { type OperationContext, operation } from '../operation.ts'
+import { prepared } from '../prepared.ts'
 import { characters } from '../schema/characters.ts'
 import { campaignCreatures } from '../schema/creatures.ts'
 import { sceneStates, sceneTokens } from '../schema/scenes.ts'
@@ -48,12 +49,19 @@ const inPlace = (campaignId: string, sceneId: string) =>
 
 /** Las marcas de una campaña en una escena, en el orden en que se pusieron */
 export function listMarks(db: Database, campaignId: string, sceneId: string): Promise<MarkRow[]> {
-  return db
+  return marksOf(db).execute({ campaignId, sceneId })
+}
+
+const marksOf = prepared((db) =>
+  db
     .select()
     .from(sceneMarks)
-    .where(inPlace(campaignId, sceneId))
+    .where(
+      and(eq(sceneMarks.campaignId, sql.placeholder('campaignId')), eq(sceneMarks.sceneId, sql.placeholder('sceneId')))
+    )
     .orderBy(asc(sceneMarks.createdAt), asc(sceneMarks.sort), asc(sceneMarks.id))
-}
+    .prepare('list_marks')
+)
 
 export async function findMark(db: Database, id: string): Promise<MarkRow | null> {
   const [found] = await db.select().from(sceneMarks).where(eq(sceneMarks.id, id))
@@ -96,12 +104,17 @@ export function changeMarks(db: Database, context: OperationContext, place: Plac
 
 /** Los widgets de una campaña, por su orden */
 export function listWidgets(db: Database, campaignId: string): Promise<WidgetRow[]> {
-  return db
+  return widgetsOf(db).execute({ campaignId })
+}
+
+const widgetsOf = prepared((db) =>
+  db
     .select()
     .from(campaignWidgets)
-    .where(eq(campaignWidgets.campaignId, campaignId))
+    .where(eq(campaignWidgets.campaignId, sql.placeholder('campaignId')))
     .orderBy(asc(campaignWidgets.sort), asc(campaignWidgets.createdAt), asc(campaignWidgets.id))
-}
+    .prepare('list_widgets')
+)
 
 export async function findWidget(db: Database, id: string): Promise<WidgetRow | null> {
   const [found] = await db.select().from(campaignWidgets).where(eq(campaignWidgets.id, id))

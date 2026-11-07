@@ -5,6 +5,7 @@
 import { and, asc, eq, getTableColumns, isNull, sql } from 'drizzle-orm'
 import type { Database } from '../client.ts'
 import { type OperationContext, operation } from '../operation.ts'
+import { prepared } from '../prepared.ts'
 import { pageTabs } from '../schema/maps.ts'
 import { pages } from '../schema/pages.ts'
 import { campaignTables, type ScreenCameraData, sceneStates, scenes, sceneTiles } from '../schema/scenes.ts'
@@ -24,14 +25,19 @@ export type SceneWithPage = SceneRow & { name: string; pageId: string; pageTitle
 
 /** Una escena con su pestaña y su página, si la página sigue fuera de la papelera */
 export async function findScene(db: Database, sceneId: string): Promise<SceneWithPage | null> {
-  const [found] = await db
+  const [found] = await sceneById(db).execute({ sceneId })
+  return found ?? null
+}
+
+const sceneById = prepared((db) =>
+  db
     .select(sceneColumns)
     .from(scenes)
     .innerJoin(pageTabs, eq(pageTabs.id, scenes.tabId))
     .innerJoin(pages, and(eq(pages.id, pageTabs.pageId), isNull(pages.deletedAt)))
-    .where(eq(scenes.id, sceneId))
-  return found ?? null
-}
+    .where(eq(scenes.id, sql.placeholder('sceneId')))
+    .prepare('find_scene')
+)
 
 /** La escena de una pestaña */
 export async function sceneOfTab(db: Database, tabId: string): Promise<SceneWithPage | null> {
@@ -75,7 +81,7 @@ export async function ensureSceneState(
 
 /** La mesa de una campaña; sin fila aún, la de por defecto (nada abierto, cámara siguiendo al máster) */
 export async function campaignTable(db: Database, campaignId: string): Promise<CampaignTableRow> {
-  const [found] = await db.select().from(campaignTables).where(eq(campaignTables.campaignId, campaignId))
+  const [found] = await tableOfCampaign(db).execute({ campaignId })
   return (
     found ?? {
       campaignId,
@@ -89,6 +95,14 @@ export async function campaignTable(db: Database, campaignId: string): Promise<C
     }
   )
 }
+
+const tableOfCampaign = prepared((db) =>
+  db
+    .select()
+    .from(campaignTables)
+    .where(eq(campaignTables.campaignId, sql.placeholder('campaignId')))
+    .prepare('campaign_table')
+)
 
 /** Cambia la mesa de una campaña (la crea si no la tenía) */
 export async function setCampaignTable(

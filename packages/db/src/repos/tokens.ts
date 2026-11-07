@@ -5,6 +5,7 @@
 import { and, asc, eq, inArray, sql } from 'drizzle-orm'
 import type { Database } from '../client.ts'
 import { type OperationContext, operation } from '../operation.ts'
+import { prepared } from '../prepared.ts'
 import { encounters, sceneTokens } from '../schema/scenes.ts'
 
 export type TokenRow = typeof sceneTokens.$inferSelect
@@ -16,13 +17,23 @@ type TokenValues = Omit<
 export type TokenPatch = Partial<Pick<TokenRow, 'x' | 'y' | 'size' | 'label' | 'faction' | 'hidden' | 'image'>>
 
 /** Las fichas de una campaña en una escena, en el orden en que se pusieron (las de una vez, por su rótulo) */
-export function listTokens(db: Database, campaignId: string, sceneId: string) {
-  return db
+export function listTokens(db: Database, campaignId: string, sceneId: string): Promise<TokenRow[]> {
+  return tokensOf(db).execute({ campaignId, sceneId })
+}
+
+const tokensOf = prepared((db) =>
+  db
     .select()
     .from(sceneTokens)
-    .where(and(eq(sceneTokens.campaignId, campaignId), eq(sceneTokens.sceneId, sceneId)))
+    .where(
+      and(
+        eq(sceneTokens.campaignId, sql.placeholder('campaignId')),
+        eq(sceneTokens.sceneId, sql.placeholder('sceneId'))
+      )
+    )
     .orderBy(asc(sceneTokens.createdAt), asc(sceneTokens.label), asc(sceneTokens.id))
-}
+    .prepare('list_tokens')
+)
 
 /** Unas fichas por su id, solo de esa campaña */
 export function findTokens(db: Database, campaignId: string, ids: readonly string[]) {

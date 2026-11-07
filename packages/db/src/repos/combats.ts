@@ -2,9 +2,10 @@
  * El combate de una campaña y sus combatientes (docs/specs/combate.md). Todo pasa por operation(): se deshace desde el
  * historial. Pasar el turno guarda en la misma operación lo que cambia en quien lo empieza (sus estados, sus recargas)
  */
-import { asc, eq } from 'drizzle-orm'
+import { asc, eq, sql } from 'drizzle-orm'
 import type { Database } from '../client.ts'
 import { type OperationContext, operation, type Writer } from '../operation.ts'
+import { prepared } from '../prepared.ts'
 import { characters } from '../schema/characters.ts'
 import { combatants, combats } from '../schema/combat.ts'
 import { campaignCreatures } from '../schema/creatures.ts'
@@ -34,9 +35,17 @@ export class CombatChangedError extends Error {
 }
 
 export async function findCombat(db: Database, campaignId: string): Promise<CombatRow | null> {
-  const [found] = await db.select().from(combats).where(eq(combats.campaignId, campaignId))
+  const [found] = await combatOf(db).execute({ campaignId })
   return found ?? null
 }
+
+const combatOf = prepared((db) =>
+  db
+    .select()
+    .from(combats)
+    .where(eq(combats.campaignId, sql.placeholder('campaignId')))
+    .prepare('find_combat')
+)
 
 /** Sus combatientes, en el orden en que entraron */
 export function listCombatants(db: Database, combatId: string) {

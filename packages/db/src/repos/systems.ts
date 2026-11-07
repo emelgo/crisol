@@ -5,6 +5,7 @@
 import { and, asc, count, eq, inArray, isNull, sql } from 'drizzle-orm'
 import type { Database } from '../client.ts'
 import { type OperationContext, operation } from '../operation.ts'
+import { prepared } from '../prepared.ts'
 import { campaigns } from '../schema/campaigns.ts'
 import { characters } from '../schema/characters.ts'
 import { organizations } from '../schema/organizations.ts'
@@ -68,11 +69,21 @@ export async function countSystems(db: Database, organizationId: string) {
 /** La versión de cada uno, sin leer su documento: para saber si lo que se tiene leído sigue valiendo */
 export function systemVersions(db: Database, ids: readonly string[]) {
   if (ids.length === 0) return Promise.resolve([])
+  // Uno solo (el de la campaña, en cada refresco de la mesa): preparada
+  if (ids.length === 1) return versionOf(db).execute({ id: ids[0] })
   return db
     .select({ id: systems.id, version: systems.version, deletedAt: systems.deletedAt })
     .from(systems)
     .where(inArray(systems.id, [...ids]))
 }
+
+const versionOf = prepared((db) =>
+  db
+    .select({ id: systems.id, version: systems.version, deletedAt: systems.deletedAt })
+    .from(systems)
+    .where(eq(systems.id, sql.placeholder('id')))
+    .prepare('system_version')
+)
 
 /** Cuántos documentos de contenido tiene cada sistema */
 export async function contentCounts(db: Database, ids: readonly string[]) {

@@ -1,6 +1,7 @@
 import { and, asc, eq, inArray, isNotNull, isNull, type SQL, sql } from 'drizzle-orm'
 import type { Database } from '../client.ts'
 import { type OperationContext, operation } from '../operation.ts'
+import { prepared } from '../prepared.ts'
 import { campaignMembers, campaigns } from '../schema/campaigns.ts'
 import { worlds } from '../schema/worlds.ts'
 import { type PreparedSecret, writeInvitation } from './invitations.ts'
@@ -43,7 +44,12 @@ export function listCampaigns(db: Database, query: { worldId: string; userId: st
 
 /** La campaña con su mundo y su organización (para decidir permisos e historial). En la papelera, no existe */
 export async function findCampaign(db: Database, campaignId: string) {
-  const [found] = await db
+  const [found] = await campaignById(db).execute({ campaignId })
+  return found ?? null
+}
+
+const campaignById = prepared((db) =>
+  db
     .select({
       id: campaigns.id,
       worldId: campaigns.worldId,
@@ -54,9 +60,9 @@ export async function findCampaign(db: Database, campaignId: string) {
     })
     .from(campaigns)
     .innerJoin(worlds, eq(worlds.id, campaigns.worldId))
-    .where(and(eq(campaigns.id, campaignId), isNull(campaigns.deletedAt), isNull(worlds.deletedAt)))
-  return found ?? null
-}
+    .where(and(eq(campaigns.id, sql.placeholder('campaignId')), isNull(campaigns.deletedAt), isNull(worlds.deletedAt)))
+    .prepare('find_campaign')
+)
 
 /** Crea la campaña, hace máster de ella a quien la crea y le deja su enlace de invitación, en una sola operación */
 export function createCampaignWithMaster(
