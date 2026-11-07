@@ -536,6 +536,23 @@ describe('las herramientas de la mesa (docs/specs/herramientas-mesa.md)', () => 
     await mesa.next('master')
   })
 
+  it('volver a una instantánea conserva el id de cada ficha (el combate y lo elegido siguen valiendo)', async () => {
+    const thora = (await ok200('createCharacter', { campaignId, name: 'Thora' })).character
+    const [own, other] = await place([
+      { characterId: lia.id, column: 1, row: 1 },
+      { characterId: thora.id, column: 2, row: 1 }
+    ])
+    const saved = await ok200('saveSnapshot', { campaignId, name: 'Antes' })
+    await ok200('moveTokens', { campaignId, moves: [{ tokenId: own.id, column: 3, row: 2 }] })
+    await ok200('removeTokens', { campaignId, tokenIds: [other.id] })
+    await ok200('restoreSnapshot', { campaignId, snapshotId: saved.id })
+    const after = (await table()).tokens.map((t: { id: string; x: number; y: number }) => [t.id, t.x, t.y])
+    expect(after).toEqual([
+      [own.id, 150, 150],
+      [other.id, 250, 150]
+    ])
+  })
+
   it('la medida en curso y el láser van en vivo: a la pantalla, solo con el interruptor y en lo que ve el grupo', async () => {
     await place([{ characterId: lia.id, x: 200, y: 150 }])
     const mesa = await join('master')

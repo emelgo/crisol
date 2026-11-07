@@ -79,6 +79,8 @@ export const campaignWidgets = pgTable(
 /** Lo que guarda una instantánea: lo de la campaña en la escena (fichas, puertas, niebla a mano y marcas) */
 export interface SnapshotData {
   tokens: Array<{
+    /** El id de la ficha, para que vuelva con el suyo (las instantáneas de antes no lo llevan) */
+    id?: string
     characterId: string | null
     creatureId: string | null
     x: number

@@ -104,7 +104,8 @@ export interface OperationContext {
 }
 
 export interface Writer {
-  insert<T extends TrackedTable>(table: T, values: Values<T>): Promise<InferSelectModel<T>>
+  /** Con `id`, la fila vuelve con el suyo (una ficha que vuelve con una instantánea); sin él, uno nuevo */
+  insert<T extends TrackedTable>(table: T, values: Values<T> & { id?: string }): Promise<InferSelectModel<T>>
   /** Muchas filas de una tabla, por tandas y en su orden (el contenido de un sistema): igual que insertar una a una */
   insertMany<T extends TrackedTable>(table: T, values: readonly Values<T>[]): Promise<InferSelectModel<T>[]>
   update<T extends TrackedTable>(table: T, id: string, patch: Partial<Values<T>>): Promise<InferSelectModel<T>>

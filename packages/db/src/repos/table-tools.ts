@@ -168,6 +168,7 @@ export async function captureSnapshot(db: Database, campaignId: string, sceneId:
   ])
   return {
     tokens: tokens.map((t) => ({
+      id: t.id,
       characterId: t.characterId,
       creatureId: t.creatureId,
       x: t.x,
@@ -206,7 +207,7 @@ export function restoreSnapshot(db: Database, context: OperationContext, place: 
     const { campaignId, sceneId } = place
     const [tokens, fog, marks] = await Promise.all([
       w.read
-        .select({ id: sceneTokens.id })
+        .select({ id: sceneTokens.id, characterId: sceneTokens.characterId, creatureId: sceneTokens.creatureId })
         .from(sceneTokens)
         .where(and(eq(sceneTokens.campaignId, campaignId), eq(sceneTokens.sceneId, sceneId))),
       w.read
@@ -215,10 +216,6 @@ export function restoreSnapshot(db: Database, context: OperationContext, place: 
         .where(and(eq(sceneFog.campaignId, campaignId), eq(sceneFog.sceneId, sceneId))),
       w.read.select({ id: sceneMarks.id }).from(sceneMarks).where(inPlace(campaignId, sceneId))
     ])
-    await w.removeMany(
-      sceneTokens,
-      tokens.map((r) => r.id)
-    )
     await w.removeMany(
       sceneFog,
       fog.map((r) => r.id)
@@ -245,12 +242,33 @@ export function restoreSnapshot(db: Database, context: OperationContext, place: 
         : Promise.resolve([])
     ])
     const alive = new Set([...liveCharacters, ...liveCreatures].map((r) => r.id))
-    const kept = data.tokens.filter((t) => alive.has(t.characterId ?? t.creatureId ?? ''))
-    const skipped = data.tokens.filter((t) => !alive.has(t.characterId ?? t.creatureId ?? '')).map((t) => t.label)
-    const restoredTokens = await w.insertMany(
+    const actor = (t: { characterId: string | null; creatureId: string | null }) => t.characterId ?? t.creatureId ?? ''
+    const kept = data.tokens.filter((t) => alive.has(actor(t)))
+    const skipped = data.tokens.filter((t) => !alive.has(actor(t))).map((t) => t.label)
+    // Cada ficha conserva su id (el combate y lo elegido en la mesa siguen valiendo): la que sigue en la escena se
+    // cambia; la que se quitó vuelve con el suyo; las que no estaban en la instantánea se quitan
+    const current = new Map(tokens.map((t) => [actor(t), t.id]))
+    const wanted = new Set(kept.map(actor))
+    await w.removeMany(
       sceneTokens,
-      kept.map((t) => ({ ...place, ...t, image: t.image as (typeof sceneTokens.$inferInsert)['image'] }))
+      tokens.filter((t) => !wanted.has(actor(t))).map((t) => t.id)
     )
+    const taken = new Set(
+      (
+        await w.read
+          .select({ id: sceneTokens.id })
+          .from(sceneTokens)
+          .where(inArray(sceneTokens.id, [...kept.flatMap((t) => (t.id ? [t.id] : [])), crypto.randomUUID()]))
+      ).map((r) => r.id)
+    )
+    let restoredTokens = 0
+    for (const { id, ...t } of kept) {
+      const values = { ...t, image: t.image as (typeof sceneTokens.$inferInsert)['image'] }
+      const existing = current.get(actor(t))
+      if (existing) await w.update(sceneTokens, existing, values)
+      else await w.insert(sceneTokens, { ...place, ...values, ...(id && !taken.has(id) ? { id } : {}) })
+      restoredTokens += 1
+    }
     await w.insertMany(
       sceneFog,
       data.fog.map((operation) => ({ ...place, operation: operation as FogOperationData }))
@@ -264,6 +282,6 @@ export function restoreSnapshot(db: Database, context: OperationContext, place: 
       .from(sceneStates)
       .where(and(eq(sceneStates.campaignId, campaignId), eq(sceneStates.sceneId, sceneId)))
     if (state) await w.update(sceneStates, state.id, { doors: data.doors })
-    return { tokens: restoredTokens.length, marks: restoredMarks.length, fog: data.fog.length, skipped }
+    return { tokens: restoredTokens, marks: restoredMarks.length, fog: data.fog.length, skipped }
   })
 }
