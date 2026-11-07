@@ -1,0 +1,99 @@
+/* La tele: el mapa sobre negro, nada más */
+.screen {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: #000000;
+  color: #f3f1ec;
+}
+
+.canvas {
+  position: absolute;
+  inset: 0;
+}
+
+.canvas canvas {
+  display: block;
+}
+
+/* Al presentar otra escena: desde negro */
+.fade {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: #000000;
+  pointer-events: none;
+  animation: fundido 1.6s ease-in-out forwards;
+}
+
+@keyframes fundido {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* Oculta: a oscuras, con la llama apagada y el nombre de la campaña */
+.dark {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.875rem;
+  background: #000000;
+}
+
+.flame {
+  opacity: 0.45;
+  filter: saturate(0.6);
+}
+
+.dark b {
+  color: #8a8a92;
+  font-family: var(--font-display);
+  font-size: 2.125rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* Pantalla completa: discreto, abajo a la derecha */
+.full {
+  position: absolute;
+  inset-block-end: 1rem;
+  inset-inline-end: 1rem;
+  z-index: 4;
+  display: grid;
+  place-items: center;
+  padding: 0.5rem;
+  border: 1px solid #333333;
+  border-radius: 8px;
+  background: rgb(20 20 22 / 0.8);
+  color: #dddddd;
+  opacity: 0.35;
+  cursor: pointer;
+}
+
+.full:hover,
+.full:focus-visible {
+  opacity: 1;
+}
+
+.full:focus-visible {
+  outline: 2px solid #f08b8e;
+  outline-offset: 2px;
+}
+
+.hidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

@@ -10,6 +10,7 @@ import {
   Hash,
   History,
   House,
+  Layers,
   LayoutTemplate,
   Library,
   LogOut,
@@ -485,6 +486,18 @@ function CampaignPanels({
       >
         <Label icon={Swords} text={t('ribbon.inPlay')} />
       </Link>
+      {/* La mesa (docs/specs/escenas.md): del máster */}
+      {master && (
+        <Link
+          to="/mundos/$worldId/campanas/$campaignId/mesa"
+          params={{ worldId, campaignId }}
+          className={styles.item}
+          viewTransition={SECTION}
+          data-tour="barra-mesa"
+        >
+          <Label icon={Layers} text={t('ribbon.table')} />
+        </Link>
+      )}
       {master && <RevealedButton />}
       {master && (
         <Link
@@ -724,9 +737,16 @@ function MobileMenu({
             current: path.startsWith(`/mundos/${world.id}/campanas/${campaign.id}/en-juego`),
             run: go(`/mundos/${world.id}/campanas/${campaign.id}/en-juego`)
           },
-          // Lo revelado y la biblioteca: del máster
+          // La mesa, lo revelado y la biblioteca: del máster
           ...(campaign.master
             ? [
+                {
+                  key: 'mesa',
+                  icon: Layers,
+                  text: t('ribbon.table'),
+                  current: path.startsWith(`/mundos/${world.id}/campanas/${campaign.id}/mesa`),
+                  run: go(`/mundos/${world.id}/campanas/${campaign.id}/mesa`)
+                },
                 {
                   key: 'revelado',
                   icon: Eye,

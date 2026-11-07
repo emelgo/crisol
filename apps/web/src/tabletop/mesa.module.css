@@ -1,0 +1,633 @@
+/* La mesa del máster: el lienzo a toda la altura, sus barras encima y el panel de escenas a la derecha */
+.mesa {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 18.75rem;
+  block-size: 100dvh;
+  overflow: hidden;
+}
+
+.stageBox {
+  position: relative;
+  min-inline-size: 0;
+  overflow: hidden;
+  background: #0b0b0c;
+}
+
+.stage {
+  position: absolute;
+  inset: 0;
+  cursor: default;
+  touch-action: none;
+  user-select: none;
+}
+
+.stage[data-panning] {
+  cursor: grab;
+}
+
+.stage[data-panning]:active {
+  cursor: grabbing;
+}
+
+.stage:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: -2px;
+}
+
+.stage canvas {
+  display: block;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 13;
+}
+
+.notice {
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-start: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  color: #a1a1aa;
+  text-align: center;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.notice p {
+  margin: 0;
+}
+
+.notice a {
+  pointer-events: auto;
+}
+
+.reconnecting {
+  position: absolute;
+  inset-block-end: var(--space-4);
+  inset-inline-start: 50%;
+  z-index: 14;
+  margin: 0;
+  padding: 0.25rem 0.75rem;
+  border-radius: 6px;
+  background: var(--color-surface);
+  color: var(--color-warning);
+  font-size: 0.875rem;
+  transform: translateX(-50%);
+}
+
+.errors {
+  position: absolute;
+  inset-block-start: 4.25rem;
+  inset-inline-end: var(--space-4);
+  z-index: 14;
+  max-inline-size: 22rem;
+}
+
+/* El marco «Tele»: lo que se ve en la tele con la cámara fija, discontinuo y dorado */
+.teleFrame {
+  position: absolute;
+  z-index: 10;
+  border: 2px dashed rgb(242 194 96 / 0.85);
+  border-radius: 4px;
+  box-shadow: 0 0 0 9999px rgb(0 0 0 / 0.18);
+  cursor: move;
+  touch-action: none;
+}
+
+.teleFrame:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 3px;
+}
+
+.teleTag {
+  position: absolute;
+  inset-block-start: -0.8rem;
+  inset-inline-start: 0.6rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 7px;
+  border-radius: 4px;
+  background: #f2c260;
+  color: #1b1608;
+  font-size: 0.6875rem;
+  font-weight: 800;
+}
+
+.teleHandle {
+  position: absolute;
+  inset-block-end: -7px;
+  inset-inline-end: -7px;
+  inline-size: 14px;
+  block-size: 14px;
+  border: 2px solid #1b1608;
+  border-radius: 3px;
+  background: #f2c260;
+  cursor: nwse-resize;
+}
+
+/* «Seguir»: un borde dorado alrededor de todo y el aviso abajo */
+.followLine {
+  position: absolute;
+  inset: 0;
+  z-index: 11;
+  border: 2px solid rgb(242 194 96 / 0.55);
+  pointer-events: none;
+}
+
+.followLine span {
+  position: absolute;
+  inset-block-end: 0.75rem;
+  inset-inline-start: 50%;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: #f2c260;
+  color: #1b1608;
+  font-size: 0.75rem;
+  font-weight: 800;
+  transform: translateX(-50%);
+}
+
+/* Las barras de encima: cristal oscuro, como en el lienzo */
+.topBar {
+  position: absolute;
+  inset-block-start: 0.75rem;
+  inset-inline: 0.75rem;
+  z-index: 12;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.6rem;
+  pointer-events: none;
+}
+
+.topBar > * {
+  pointer-events: auto;
+}
+
+.grow {
+  flex: 1;
+}
+
+.bar,
+.zoom {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 5px 6px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--color-bg) 88%, transparent);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.4);
+  backdrop-filter: blur(6px);
+  color: var(--color-text);
+}
+
+.barGroup {
+  display: contents;
+}
+
+.sceneBar {
+  max-inline-size: min(28rem, 100%);
+}
+
+.menuRoot {
+  position: relative;
+  min-inline-size: 0;
+}
+
+.sceneButton {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  max-inline-size: 100%;
+  padding: 3px 8px 3px 6px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.sceneButton:hover {
+  background: var(--color-raised);
+}
+
+.sceneButton b {
+  overflow: hidden;
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.menu {
+  position: absolute;
+  inset-block-start: calc(100% + 0.5rem);
+  inset-inline-start: 0;
+  z-index: 30;
+  inline-size: 17rem;
+  padding: 6px;
+  border: 1px solid var(--color-frame);
+  border-radius: 8px;
+  background: var(--color-surface);
+  box-shadow: 0 16px 40px rgb(0 0 0 / 0.45);
+  animation: abre 0.15s ease-out;
+}
+
+@keyframes abre {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.menu ul {
+  max-block-size: 18rem;
+  overflow-y: auto;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  scrollbar-width: thin;
+}
+
+.menu button,
+.pageLink {
+  display: flex;
+  flex-direction: column;
+  inline-size: 100%;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.875rem;
+  text-align: start;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.menu button span {
+  color: var(--color-muted);
+  font-size: 0.75rem;
+}
+
+.menu button:hover,
+.pageLink:hover {
+  background: var(--color-raised);
+}
+
+.menu button[aria-current] {
+  font-weight: 700;
+}
+
+.menuSep {
+  block-size: 1px;
+  margin: 5px 4px;
+  background: var(--color-border);
+}
+
+.notice .pageLink {
+  inline-size: auto;
+  color: var(--color-link);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 1px 8px;
+  border: 1px solid var(--color-frame);
+  border-radius: 999px;
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.live {
+  border-color: color-mix(in srgb, var(--color-tip) 55%, transparent);
+  color: var(--color-tip);
+}
+
+.live::before {
+  inline-size: 7px;
+  block-size: 7px;
+  border-radius: 50%;
+  background: var(--color-tip);
+  content: "";
+}
+
+.primary,
+.ghost,
+.small {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 11px;
+  border-radius: 6px;
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.primary {
+  border: 0;
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+.primary:hover {
+  filter: brightness(1.1);
+}
+
+.ghost,
+.small {
+  border: 1px solid var(--color-border);
+  background: none;
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.ghost:hover,
+.small:hover {
+  border-color: var(--color-frame);
+  background: var(--color-raised);
+}
+
+.primary:disabled,
+.ghost:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.small {
+  padding: 5px 9px;
+  font-size: 0.8125rem;
+}
+
+/* Seguir | Fija */
+.segments {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+}
+
+.segments:disabled {
+  opacity: 0.5;
+}
+
+.segment {
+  position: relative;
+  padding: 6px 11px;
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.segment + .segment {
+  border-inline-start: 1px solid var(--color-border);
+}
+
+.segment:has(input:checked) {
+  background: color-mix(in srgb, var(--color-accent) 16%, transparent);
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.segment:has(input:focus-visible) {
+  outline: 2px solid var(--color-focus);
+  outline-offset: -2px;
+}
+
+.segment input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: inherit;
+}
+
+.hidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* El zoom, abajo a la izquierda */
+.zoom {
+  position: absolute;
+  inset-block-end: 0.875rem;
+  inset-inline-start: 0.75rem;
+  z-index: 12;
+  gap: 2px;
+  padding: 4px;
+}
+
+.zoom button {
+  display: grid;
+  place-items: center;
+  inline-size: 2rem;
+  block-size: 2rem;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+.zoom button:hover {
+  background: var(--color-raised);
+  color: var(--color-text);
+}
+
+.zoomText {
+  min-inline-size: 3.25rem;
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+/* El panel de la mesa */
+.panel {
+  display: flex;
+  flex-direction: column;
+  min-block-size: 0;
+  border-inline-start: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.panelTitle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0.85rem var(--space-4) 0.7rem;
+  border-block-end: 1px solid var(--color-border);
+  font-family: var(--font-body);
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.panelBody {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  min-block-size: 0;
+  padding: 0.75rem 0.875rem;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.search {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0 6px 0 12px;
+  border-radius: 8px;
+  background: var(--color-raised);
+  color: var(--color-muted);
+}
+
+.search:focus-within {
+  box-shadow: 0 0 0 2px var(--color-link);
+}
+
+.search input {
+  flex: 1;
+  min-inline-size: 0;
+  padding: 8px 0;
+  border: 0;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.875rem;
+}
+
+.search input:focus-visible {
+  outline: none;
+}
+
+.muted {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+.scenes {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sceneRow {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 7px 8px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+}
+
+.sceneRow:hover {
+  background: var(--color-raised);
+}
+
+.sceneRow[data-open] {
+  border-color: var(--color-frame);
+  background: var(--color-raised);
+}
+
+.sceneName {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-inline-size: 0;
+}
+
+.sceneName b {
+  max-inline-size: 100%;
+  overflow: hidden;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sceneName > span:not(.chip) {
+  color: var(--color-muted);
+  font-size: 0.75rem;
+}
+
+.thumb {
+  position: relative;
+  display: grid;
+  flex: none;
+  place-items: center;
+  inline-size: 3.625rem;
+  block-size: 2.5rem;
+  overflow: hidden;
+  border-radius: 5px;
+  background: linear-gradient(135deg, #4a4139, #1d1916);
+}
+
+.thumbImage {
+  position: relative;
+  display: block;
+  inline-size: 100%;
+}
+
+.thumbImage img {
+  position: absolute;
+  display: block;
+}
+
+.missing {
+  padding: var(--space-8) var(--space-6);
+}
+
+/* Estrecho: el panel, debajo */
+@media (max-width: 48rem) {
+  .mesa {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(20rem, 1fr) auto;
+    block-size: auto;
+    min-block-size: calc(100dvh - 4.25rem);
+  }
+
+  .panel {
+    border-block-start: 1px solid var(--color-border);
+    border-inline-start: 0;
+  }
+}

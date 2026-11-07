@@ -141,7 +141,9 @@ export async function skipTours(page: Page, email: string) {
           'plantillas',
           'dados',
           'sistemas',
-          'paginas-jugador'
+          'paginas-jugador',
+          'escena',
+          'mesa'
         ]
       })
     )
