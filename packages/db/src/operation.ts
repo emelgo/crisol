@@ -6,6 +6,7 @@ import { eq, getTableName, type InferInsertModel, type InferSelectModel, inArray
 import type { Database } from './client.ts'
 import { campaignMembers, campaigns } from './schema/campaigns.ts'
 import { characters, characterVersions } from './schema/characters.ts'
+import { combatants, combats } from './schema/combat.ts'
 import { campaignCreatures } from './schema/creatures.ts'
 import { fileFolders, files } from './schema/files.ts'
 import { changes, operations } from './schema/history.ts'
@@ -55,7 +56,9 @@ export const TRACKED_TABLES = {
   scenes,
   scene_states: sceneStates,
   scene_tokens: sceneTokens,
-  encounters
+  encounters,
+  combats,
+  combatants
 }
 
 export type TrackedTable = (typeof TRACKED_TABLES)[keyof typeof TRACKED_TABLES]

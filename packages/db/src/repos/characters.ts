@@ -8,6 +8,8 @@ import { type OperationContext, operation } from '../operation.ts'
 import { user } from '../schema/auth.ts'
 import { campaigns } from '../schema/campaigns.ts'
 import { type CharacterSummary, characters, characterVersions } from '../schema/characters.ts'
+import { combatants } from '../schema/combat.ts'
+import { sceneTokens } from '../schema/scenes.ts'
 import { worlds } from '../schema/worlds.ts'
 
 export class CharacterChangedError extends Error {
@@ -118,6 +120,11 @@ export function deleteCharacter(db: Database, context: OperationContext, id: str
       characterVersions,
       versions.map((v) => v.id)
     )
+    // Sus fichas y su sitio en el combate, igual
+    const tokens = await w.read.select({ id: sceneTokens.id }).from(sceneTokens).where(eq(sceneTokens.characterId, id))
+    for (const token of tokens) await w.remove(sceneTokens, token.id)
+    const members = await w.read.select({ id: combatants.id }).from(combatants).where(eq(combatants.characterId, id))
+    for (const member of members) await w.remove(combatants, member.id)
     await w.remove(characters, id)
   })
 }
