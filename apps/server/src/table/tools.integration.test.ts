@@ -366,12 +366,16 @@ describe('las herramientas de la mesa (docs/specs/herramientas-mesa.md)', () => 
     expect(text).not.toContain(templateB.id)
     expect(text).not.toContain('Secreto')
     expect(text).not.toContain(pageId)
-    // Abierta la puerta, la B se ve: llega lo que había en ella
+    // Abierta la puerta, la B se ve por ella: llega lo que cae entero en lo que se ve (el texto); la plantilla, que
+    // asoma a lo que no se ve, no
     const doorId = (await ok200('getSceneVision', { sceneId })).walls.find((w: { door: string | null }) => w.door).id
     await ok200('setDoor', { campaignId, wallId: doorId, open: true })
     const opened = await screen.screenWhere((s) => (s.marks ?? []).some((m) => m.id === inB.id))
-    expect((opened.marks ?? []).map((m) => m.id)).toContain(templateB.id)
+    expect((opened.marks ?? []).map((m) => m.id)).not.toContain(templateB.id)
     expect((opened.marks ?? []).map((m) => m.id)).not.toContain(secret.id)
+    // Con la ficha en la B, la ve entera
+    await ok200('moveTokens', { campaignId, moves: [{ tokenId: (await table()).tokens[0].id, x: 600, y: 150 }] })
+    await screen.screenWhere((s) => (s.marks ?? []).some((m) => m.id === templateB.id))
   })
 
   it('widgets: contador con límites, reloj de progreso y temporizador; el ojo cerrado no llega a la pantalla', async () => {

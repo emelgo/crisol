@@ -10,9 +10,11 @@ import {
   type AreaTemplate,
   FOG_CELL_SIZE,
   type Grid,
+  insideTemplate,
   type Point,
   strokeInside,
   type TemplateShape,
+  templateBounds,
   toGrid,
   tokensInTemplate
 } from '@crisol/tabletop'
@@ -78,6 +80,62 @@ const lengthOf = (points: readonly Point[]) =>
 /** Lo más que se mira de un trazo para recortarlo con la niebla */
 const MAX_CLIP_SAMPLES = 20_000
 
+/** Cuántos puntos por lado se miran, como mucho, de la huella de una marca */
+const FOOTPRINT_SAMPLES = 16
+
+/**
+ * Unos puntos repartidos por una caja (cada celda de la niebla, o espaciados si es muy grande), con sus esquinas; media
+ * celda hacia dentro (lo que pisa justo el borde de lo visto, como una pared, no cuenta)
+ */
+function boxPoints(x: number, y: number, width: number, height: number, keep: (p: Point) => boolean = () => true) {
+  const inset = Math.min(FOG_CELL_SIZE / 2, width / 2, height / 2)
+  const [x0, y0, x1, y1] = [x + inset, y + inset, x + width - inset, y + height - inset]
+  const step = Math.max(FOG_CELL_SIZE, Math.max(width, height) / FOOTPRINT_SAMPLES)
+  const out: Point[] = []
+  for (let px = x0; px <= x1 + 1e-6; px += step)
+    for (let py = y0; py <= y1 + 1e-6; py += step) out.push({ x: Math.min(px, x1), y: Math.min(py, y1) })
+  out.push({ x: x1, y: y0 }, { x: x0, y: y1 }, { x: x1, y: y1 })
+  return out.filter(keep)
+}
+
+/** Lo que ocupa una marca de un punto (centrada en él, girada o no: la caja que la contiene en cualquier giro) */
+function aroundPoint(center: Point, halfWidth: number, halfHeight: number) {
+  const r = Math.hypot(halfWidth, halfHeight)
+  const inner = Math.max(0, r - FOG_CELL_SIZE / 2)
+  return [
+    center,
+    ...boxPoints(center.x - r, center.y - r, 2 * r, 2 * r, (p) => Math.hypot(p.x - center.x, p.y - center.y) <= inner)
+  ]
+}
+
+/** `b`, acercado a `a` esa distancia */
+function towards(a: Point, b: Point, by: number): Point {
+  const length = Math.hypot(b.x - a.x, b.y - a.y)
+  if (length <= by) return a
+  const k = (length - by) / length
+  return { x: a.x + (b.x - a.x) * k, y: a.y + (b.y - a.y) * k }
+}
+
+/** Los puntos que tienen que verse para que una marca llegue a la pantalla */
+function footprintOf(kind: tableToolsRepo.MarkRow['kind'], data: Record<string, unknown>): Point[] {
+  const center = { x: Number(data.x ?? 0), y: Number(data.y ?? 0) }
+  if (kind === 'template') {
+    // Lo de dentro de la plantilla, media celda hacia dentro de su borde (su punta y su borde pueden pisar una pared)
+    const template = templateOf(data)
+    const box = templateBounds(template)
+    const inner = { ...template, b: towards(template.a, template.b, FOG_CELL_SIZE / 2) }
+    return [template.a, ...boxPoints(box.x, box.y, box.width, box.height, (p) => insideTemplate(inner, p))]
+  }
+  if (kind === 'image') return aroundPoint(center, Number(data.width) / 2, Number(data.height) / 2)
+  if (kind === 'stamp') return aroundPoint(center, Number(data.size) / 2, Number(data.size) / 2)
+  if (kind === 'text') {
+    // Su caja, a ojo: unas seis décimas de la letra por carácter de ancho
+    const size = Number(data.size)
+    return aroundPoint(center, (size * String(data.text ?? '').length * 0.6) / 2, size / 2)
+  }
+  return [center]
+}
+
 /** Lo que la pantalla ve de las marcas: las que no son del máster y caen en lo que el grupo ve o vio */
 export function screenMarksOf(rows: readonly tableToolsRepo.MarkRow[], sight: Sight): ScreenMark[] {
   return rows.flatMap((row): ScreenMark[] => {
@@ -94,8 +152,8 @@ export function screenMarksOf(rows: readonly tableToolsRepo.MarkRow[], sight: Si
       // Recortado ya no es una forma cerrada: sin relleno
       return strokes.length > 0 ? [{ ...rest, ...head, fill: null, strokes } as ScreenMark] : []
     }
-    const anchor = row.kind === 'template' ? (data.a as Point) : { x: data.x as number, y: data.y as number }
-    if (!sight.hasPoint(anchor)) return []
+    // Entera en lo que ve o vio el grupo: una imagen grande o una plantilla no asoman a la niebla por su centro
+    if (!footprintOf(row.kind, data).every((p) => sight.hasPoint(p))) return []
     if (row.kind === 'pin') {
       const { pageId: _page, ...rest } = data
       return [{ ...rest, ...head } as ScreenMark]
