@@ -159,14 +159,32 @@ En la rama `modulo-6/mesa` (`tasks/vision/todo.md`): el servidor (tareas 1 a 4) 
   destapar, tapar, deshacer y reiniciar, teselas enteras y recortadas, el arrastre que no ve, sin muros, lo del mapa,
   muros en casillas, un jugador que no puede nada y las fugas); y el rendimiento en `test:rendimiento` de
   `apps/server`: soltar una ficha en la mazmorra de 2.496 tramos y 20 luces con seis personajes, desde la petición
-  hasta que la pantalla recibe su vista, **p50 68–70 ms y p95 92–99 ms** (2026-11-07, con la máquina cargada: carga
-  media 5–7 en 6 núcleos).
+  hasta que la pantalla recibe su vista, **p50 37–39 ms y p95 54–62 ms** (2026-11-07, carga media 4,7–5,6 en 6
+  núcleos; antes del margen, p50 68–70 ms y p95 92–99 ms con carga 5–7).
 - **Lo que hizo falta para el presupuesto**: la escena viaja al hilo solo si aún no la tiene preparada (clonar 2.500
   muros en cada petición costaba unos 20 ms); el núcleo guarda lo que ve cada ficha por lo preparado (al mover una no
   se rehacen las demás: `partyView`, sin cambiar su API); lo vital de cada personaje (su hoja montada con todo el
   contenido del sistema) se guarda por su versión, la de su sistema y la de la campaña (un minuto como mucho para lo
   del compendio del mundo); el camino recorrido se explora en la vista siguiente (la de la sala) en lugar de esperar al
   mover; y lo explorado se guarda sin hacer esperar a la pantalla.
+- **El margen** (2026-11-07): perfilado, el hilo y la codificación de máscaras pesaban poco (el hilo calcula en 2–3 ms;
+  con el viaje, 4 ms). El tiempo se iba en el hilo principal montando consultas de Drizzle (unos 8 ms de CPU por
+  vuelta: más que ir a la base, que contesta en 0,5 ms) y en vueltas a la base una tras otra. Con 100 vueltas y carga
+  3–4, de **p50 65 ms y p95 87 ms a p50 34 ms y p95 51 ms**. Por partes (p50, antes → después): la sesión 10 → 6 ms;
+  leer la campaña y las fichas antes de guardar, ~5 → 3,6 ms; guardar (la transacción con su historial) 12 → 9 ms;
+  el refresco de la sala 29 → 11 ms (lecturas ~17 → 5 ms, la vista del grupo ~8 → 5,6 ms); la respuesta de
+  `moveTokens` 10 → 2,5 ms (va a la vez que el refresco). Lo que se hizo: las lecturas que la mesa repite en cada
+  refresco y las pertenencias de cada petición, **preparadas** (`prepared` en `@crisol/db`: el SQL se monta una vez por
+  conexión y Postgres guarda su análisis); el refresco lee todo a la vez (la campaña con su mesa; las escenas, sus
+  fichas, lo de sus personajes, las marcas, los widgets y el combate; la vista de cada escena y el combate del máster);
+  lo vital de los personajes no vuelve a leer la campaña y pide la versión del sistema de la campaña a la vez que la
+  lista; `moveTokens` lee las fichas a la vez que autoriza (solo las mira después) y responde con las filas que dejó
+  la transacción, sin volver a leer la escena; `operation()` saca cómo queda una fila en el mismo `update` (`returning
+  to_jsonb`) y manda la operación y sus cambios de una tanda (el id de la operación se pone aquí); y la cabecera
+  `set-auth-jwt` del plugin JWT, que nadie usa, ya no se firma en cada lectura de la sesión. Lo que queda por bajar, si
+  hiciera falta: las lecturas de la sesión de better-auth (dos seguidas y la firma de la cookie), el `update` y los
+  `insert` del historial (Drizzle los monta cada vez: van en una transacción) y `findTokens` y `systemVersions` con
+  varios ids (no preparadas: su número de parámetros cambia).
 
 ### La web (tarea 5, 2026-11-07)
 
