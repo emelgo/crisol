@@ -9,6 +9,18 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   de propietario.
 - **En local**, con los cambios al momento: http://localhost:5173 (lo arranco cuando haga falta).
 
+## Módulo 6: la visión en la mesa (rama `modulo-6/mesa`, aún sin staging)
+
+- [ ] **Muros**: en la mesa, la herramienta de muros (M) dibuja muros seguidos clic a clic (Mayús, a las esquinas de
+  la rejilla; Escape o doble clic acaba); un clic en un muro lo elige y lo cambia; arrastrar un extremo lo mueve.
+- [ ] **Puertas**: un clic en su icono las abre y las cierra; la tele ve lo de detrás al momento (la secreta, como un
+  hueco).
+- [ ] **Luces**: la herramienta de luces (L) pone una con un clic; su radio, color y ángulo; la oscuridad de la escena.
+- [ ] **Niebla a mano** (N): destapar y tapar con pincel, rectángulo y lazo; «Reiniciar la niebla»; la tele, con los
+  bordes blandos y la luz cálida de las antorchas.
+- [ ] **Ver como el grupo**: lo que ve la tele y la lista de lo que no ve.
+- [ ] **Bordes en la tele**: enteros o recortados (al final del panel de la niebla).
+
 ## Módulo 5: la página que escriben los jugadores (en staging, PR #112)
 
 - [ ] **Dejar editar**: en «Quién la conoce» de una página sin secretos, «La edita toda la campaña» (o unos

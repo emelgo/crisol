@@ -1,6 +1,6 @@
 # Spec: vision (módulo 6)
 
-Estado: **servidor construido** (2026-11-07; la web, pendiente). Tercera capacidad del módulo 6 (`docs/specs/modulo-6.md`), después de `fichas`.
+Estado: **servidor y web construidos** (2026-11-07; faltan la prueba de fugas e2e con la pantalla y la revisión). Tercera capacidad del módulo 6 (`docs/specs/modulo-6.md`), después de `fichas`.
 Entrevista: `docs/modulos.md` § «### 6. Mesa». ADR-0018 (puntos 4 a 7 y 12). Estudios:
 `research/foundry/vision-muros-y-niebla.md` (muros, puertas, luces, visión, niebla, rendimiento) y
 `research/uvtt/formato.md`; lo que se porta, `docs/mesa-crisol-actual.md` (§ 3: `vision.ts`, `luz.ts`,
@@ -106,7 +106,7 @@ Para quién: el máster; la tele; la IA.
 
 ## Construido (2026-11-07) y lo que queda
 
-El servidor, en la rama `modulo-6/mesa` (`tasks/vision/todo.md`, tareas 1 a 4); la web va después.
+En la rama `modulo-6/mesa` (`tasks/vision/todo.md`): el servidor (tareas 1 a 4) y la web (tarea 5, abajo).
 
 - **Los sentidos** salen del sistema: `senses` en el formato (`list`, un campo de lista con los sentidos escritos,
   «Visión en la oscuridad 60 pies» o «darkvision 60 ft.»; o `darkvision`, `blindsight`, `truesight`, `tremorsense`,
@@ -168,7 +168,57 @@ El servidor, en la rama `modulo-6/mesa` (`tasks/vision/todo.md`, tareas 1 a 4); 
   del compendio del mundo); el camino recorrido se explora en la vista siguiente (la de la sala) en lugar de esperar al
   mover; y lo explorado se guarda sin hacer esperar a la pantalla.
 
-**Queda**: la web (tarea 5); la E2E y la revisión (tarea 6); la prueba de fugas e2e (`e2e/tests/fugas.spec.ts`) con la
+### La web (tarea 5, 2026-11-07)
+
+- **La columna de herramientas**, arriba a la izquierda del mapa (como el lienzo): elegir (V), la niebla (N), muros y
+  puertas (M) y luces (L), con su tecla; las de `herramientas-mesa` irán debajo, en su grupo (`TOOLS` en
+  `apps/web/src/tabletop/vision.tsx`). Con una herramienta, el botón izquierdo es suyo (las fichas no se mueven) y el
+  panel de la derecha es el suyo; moverse (botón central, espacio) y acercar siguen igual. El tutorial guiado de la
+  mesa tiene un paso para ella.
+- **El editor** (`vision.tsx`, `vision-panel.tsx`; la lógica pura, en `walls.ts`): muros encadenados clic a clic
+  (cerca de un extremo pega a él; con Mayús, a las esquinas de la rejilla; Escape, doble clic o volver al primer punto
+  acaban; Retroceso quita el último punto); un clic en un extremo empieza otro muro ahí y arrastrarlo lo mueve con los
+  muros que se tocan en él; un clic en un muro lo elige (su tipo, el estado de la puerta en la campaña —cerrada,
+  abierta, con llave—, lo que frena, el sentido y quitarlo; Supr lo quita). Los tipos: muro, puerta, puerta secreta,
+  ventana, invisible, bajo, objeto y de un sentido, cada uno con su color. «Poner los muros del mapa» sale si la escena
+  trae los de un UVTT o de la IA y no tiene ni muros ni luces. Las luces: un clic pone una (4 y 8 casillas de radio) y
+  la elige; se arrastran; sus radios en la unidad de la rejilla, su color (seis), su ángulo (con hacia dónde mira),
+  si la frenan los muros, encendida y oscuridad mágica; sus círculos (o su cono) se dibujan; la oscuridad de la escena,
+  un deslizador. Los muros se ven al editarlos y, apagados, viendo como el grupo.
+- **Las puertas en juego**: un icono pequeño en cada una (la secreta, morada con el ojo tachado; la de llave, con su
+  candado); un clic la abre o la cierra en la campaña (`setDoor`), al momento.
+- **La niebla a mano**: destapar o tapar con pincel (su tamaño, de 1 a 8 casillas), rectángulo o lazo, en la barra que
+  sale junto a la columna; destapar o tapar todo; «Reiniciar la niebla», con aviso; «Visión automática». En la mesa,
+  lo no explorado se ve atenuado y lo explorado que no se ve, algo menos (`fogImage` en `fog-paint.ts`); editando
+  muros o luces, sin niebla.
+- **«Ver como el grupo»**: la mesa enseña la niebla como la tele, sin las fichas que el grupo no ve (`notSeen`), con
+  el aviso arriba y «Volver»; el panel dice quién mira y lo que no ve (oculta o fuera de su vista, y las puertas
+  secretas cerradas).
+- **Los bordes de la tele** (enteros o recortados), al final del panel de la niebla, con una frase.
+- **La tele**: lo no explorado negro (el suavizado entra en lo visible, nunca aclara lo no explorado), lo explorado en
+  gris oscuro y lo visible con su luz: la oscuridad lo sombrea donde no llega ninguna luz y cada luz le da un brillo
+  cálido que se apaga hacia el borde de lo tenue. La máscara llega en celdas de 10 px y se pinta como una imagen
+  pequeña desenfocada y estirada con suavizado (bordes blandos, no casillas). Solo pide las teselas que tocan lo que
+  ve o vio; las de a medias, con una huella de lo que dejan ver en la dirección, para que una recortada se vuelva a
+  pedir al explorar.
+- **El lienzo** (`renderer.ts`): `setFog`, `setGlow` (se suma a lo de debajo) y `setShapes` (lo que dibujan los
+  editores, en píxeles de la pantalla, con trazos que siguen a lo largo de toda la línea); las teselas sin dirección
+  no se piden.
+- **Las frases del historial** (y de lo que pide la IA) de muros, luces, oscuridad, visión automática, puertas, niebla
+  y bordes de la tele.
+- **Pruebas**: `walls.test.ts` y `fog-paint.test.ts` (lo puro), `vision.test.tsx` (la mesa con la API falsa: las
+  herramientas y sus teclas, muros encadenados con Mayús, la puerta secreta con doble clic, mover un extremo, las
+  puertas, la niebla con su aviso, las luces, «Ver como el grupo» y la tele con su niebla, su luz y sus teselas) y la
+  E2E `e2e/tests/vision.spec.ts` con la cripta del lienzo: la IA dibuja sus muros y puertas con el mapa; el máster
+  dibuja en la mesa la puerta secreta; la tele no ve la sala de detrás; abre la puerta de la entrada con un clic y el
+  grupo entra; abre la secreta y se ve la cripta; destapa a mano la cueva; con axe; capturas
+  `out/capturas/vision-{muros,luces,niebla,grupo,tele}.png`.
+- **Distinto del lienzo**: «Luz del día», «Parpadea» y «Da visión a todos» no están (el contrato no los tiene: la luz
+  del día es la oscuridad a 0); «Ver como el grupo» enseña lo no explorado en negro, como la tele (el lienzo lo
+  atenuaba); hay ocho tipos de muro (también «Objeto») y «Frena el paso»; los bordes de la tele van en el panel de la
+  niebla.
+
+**Queda**: la revisión (tarea 6); la prueba de fugas e2e (`e2e/tests/fugas.spec.ts`) con la
 pantalla; las criaturas aliadas que ven con el grupo; las luces encendidas o apagadas por campaña (hoy, del mundo).
 
 ## Fuera
