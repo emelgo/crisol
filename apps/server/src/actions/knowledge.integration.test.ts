@@ -595,7 +595,9 @@ describe('lo que lee un jugador (docs/specs/conocimiento.md)', () => {
   })
 })
 
-describe('rendimiento de lo que lee un jugador (ADR-0017)', () => {
+// Se mide sola (CRISOL_RENDIMIENTO=1, su paso en la CI y `pnpm --filter @crisol/server test:rendimiento`): con las
+// demás pruebas a la vez, y con la cobertura, lo que se mide es la carga de la máquina
+describe.skipIf(!process.env.CRISOL_RENDIMIENTO)('rendimiento de lo que lee un jugador (ADR-0017)', () => {
   let conn: ReturnType<typeof connect>
   let app: FastifyInstance
 
