@@ -1,6 +1,6 @@
 # Spec: escenas (módulo 6)
 
-Estado: **spec** (2026-11-07). Primera capacidad del módulo 6 (`docs/specs/modulo-6.md`). Entrevista: `docs/modulos.md`
+Estado: **construido** (2026-11-07; falta la revisión). Primera capacidad del módulo 6 (`docs/specs/modulo-6.md`). Entrevista: `docs/modulos.md`
 § «### 6. Mesa». ADR-0018 (la mesa en el servidor) y ADR-0007 (pestañas de página). Estudios:
 `research/foundry/escenas-fichas-y-combate.md` (la escena y la rejilla), `research/dndbeyond/mapas.md` (la vista de
 espectador), `research/uvtt/formato.md`; lo que se porta, `docs/mesa-crisol-actual.md` (§ 3, § 5 y § 7).
@@ -100,6 +100,24 @@ Para quién: el máster, que prepara y dirige; la pantalla de la tele; la IA.
    teselas con permiso) ya está, para que la niebla solo cambie qué se deja pasar.
 4. **La distancia y la regla de diagonales**, del sistema: un campo opcional nuevo en su formato (`table.grid`), con
    5 pies y «todas iguales» si no lo dice; se cambian por escena.
+
+## Construido (2026-11-07) y lo que queda
+
+- **Núcleo** `packages/tabletop`: rejilla, alinear, detectar, cámaras, teselas, UVTT, medidas de imagen, SVG.
+- **Servidor**: migración 0055; las acciones de las escenas y de la mesa; las teselas (subir; el máster, todas; la
+  pantalla, las de la escena presentada); la sala por campaña con su WebSocket (`/api/table`); `drawScene` y la guía
+  `guia_mapas`; las herramientas MCP. Prueba: `apps/server/src/table/table.integration.test.ts`.
+- **Web** (`apps/web/src/wiki/scene/`, `apps/web/src/tabletop/`): la pestaña «Escena» (elegir del mundo, subir o UVTT;
+  trocear en un Web Worker; la rejilla, «Buscarla» y «Dos esquinas»; la vista inicial; «Abrir en la mesa»); la mesa del
+  máster con PixiJS 8.22 (teselas por nivel, la rejilla, moverse y acercar, el panel «Escenas», presentar y ocultar,
+  «Pantalla», «Seguir | Fija» con el marco de la tele); la pantalla (sigue con suavizado, fundido, oculta, pantalla
+  completa, reconecta); los SVG de la IA se pintan en el hilo principal y se trocean al abrirlos. E2E
+  `e2e/tests/escenas.spec.ts`; capturas en `out/capturas/escenas-*.png`.
+- **Decisiones tomadas al construir**: un encuadre (vista inicial, cámara fija, «Seguir») es centro y escala para una
+  pantalla de referencia de 1920 px de ancho en 16:9; cada pantalla lo enseña entero a su tamaño, y el marco «Tele» es
+  ese rectángulo. «Subir» trocea la imagen sin guardar el original en Archivos. La pestaña dibuja con el DOM, sin PixiJS.
+- **Queda**: la revisión (tarea 9: fugas, accesibilidad, rendimiento de un mapa grande); limpiar las teselas de
+  versiones viejas; que un máster de campaña que no lleva el mundo pueda listar sus escenas.
 
 ## Pruebas
 
