@@ -7,25 +7,23 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
-### Para retomar (2026-11-07, noche: módulo 6 muy avanzado)
+### Para retomar (2026-11-07, noche: módulo 6 casi construido)
 
-- **Rama `modulo-6/mesa`** (sale de `main`, sin PR aún; migraciones hasta la 0057, la 0058 de `vision` en marcha). Del
-  ciclo: entrevista (abajo, § «### 6. Mesa»), estudios, el mapa `docs/specs/modulo-6.md`, el ADR-0018 (propuesta), el
-  lienzo «Crisol: la mesa» (https://claude.ai/artifact/N28X9vvVaqwXGUTKdZzDph, mandado con fotos) y las specs de
-  `escenas`, `fichas`, `vision` y `combate`.
-- **`escenas`**: construida entera (núcleo, servidor, web, e2e `escenas.spec.ts`); falta su revisión (tarea 9 de
-  `tasks/todo.md`). Además, lo que pidió Enrique al ver el lienzo: **la IA dibuja mapas en SVG** (`dibujar_escena` y la
-  guía `guia_mapas`), y el mapa en la pantalla **entero o recortado** es un ajuste de cada campaña (ADR-0018, punto 7).
-- **`fichas`**: servidor hecho (`tasks/fichas/todo.md`); su web, en marcha (un agente).
-- **`vision`**: núcleo hecho en `packages/tabletop` (p95 31–49 ms con 6 fichas, 20 luces y ~2.500 tramos); su
-  servidor, en marcha (un agente). Tareas en `tasks/vision/todo.md`.
-- **`combate`**: servidor hecho (`tasks/combate/todo.md`; la iniciativa se marca en el sistema con `initiative`); falta
-  su web.
-- **Lo siguiente**: las webs de `vision` y `combate`; `herramientas-mesa` y `escenas-foundry` (sin spec aún); la
-  revisión de todo, la prueba de fugas y el PR (la CI una sola vez al final).
-- **Decisiones de los agentes, por confirmar con Enrique**: un encuadre es centro y escala para una pantalla de
-  referencia de 1920 px (16:9); «Subir» un mapa no lo guarda en Archivos; en combate, la ronda 0 es «antes de empezar»,
-  la iniciativa escrita a uno de un grupo vale para todo el grupo.
+- **Rama `modulo-6/mesa`** (sale de `main`, sin PR aún; migraciones hasta la 0061). Del ciclo: entrevista (abajo,
+  § «### 6. Mesa»), estudios, el mapa `docs/specs/modulo-6.md`, el ADR-0018 (propuesta), el lienzo «Crisol: la mesa»
+  (https://claude.ai/artifact/N28X9vvVaqwXGUTKdZzDph) y las seis specs, cada una con su «Construido».
+- **Hecho de punta a punta**: `escenas` (con la IA que dibuja mapas en SVG: `dibujar_escena`, `guia_mapas`), `fichas`,
+  `combate` y `escenas-foundry`. **Servidor hecho**: `vision` (p95 al soltar una ficha, 92–99 ms con la máquina
+  cargada: al borde de los 100; mirarlo en la revisión) y `herramientas-mesa`.
+- **En marcha**: la web de `vision` (un agente). **Después**: la web de `herramientas-mesa` (la columna de herramientas
+  la empieza `vision`), la revisión del módulo entero (fugas, accesibilidad, rendimiento, comparar con el lienzo: las
+  capturas en oscuro con la cripta salen de `e2e/tests/repaso.spec.ts`), «Dónde estamos», el PR y la CI una sola vez.
+- **Ojo con las e2e**: comparten servidor y base de datos; dos agentes corriéndolas a la vez se pisan.
+- **Decisiones tomadas sin Enrique, por confirmar al probar**: un encuadre es centro y escala para una pantalla de
+  referencia de 1920 px; «Subir» un mapa no lo guarda en Archivos; en combate, la ronda 0 es «antes de empezar» y la
+  iniciativa escrita a uno de un grupo vale para todo el grupo; «Sentidos» en el creador del 5e de ejemplo; las
+  criaturas preparadas de una escena de Foundry salen solas al abrirla una campaña; volver a una instantánea no toca lo
+  explorado; cada spec lista las suyas.
 
 ### Para retomar (2026-11-07: módulo 5 en `main` y en staging)
 
