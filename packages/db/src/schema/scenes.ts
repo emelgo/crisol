@@ -76,6 +76,33 @@ export interface SceneImportedData {
 }
 
 /**
+ * Una criatura preparada de una escena (docs/specs/escenas-foundry.md): una entrada del compendio (por su clave, del
+ * sistema donde se encontró) con su sitio, en píxeles de la imagen. Sale en juego y en el mapa la primera vez que una
+ * campaña abre la escena
+ */
+export interface PreparedCreatureData {
+  key: string
+  systemId: string
+  name: string
+  x: number
+  y: number
+  /** En casillas */
+  size: number
+  hidden: boolean
+  faction: 'hostile' | 'neutral'
+  /** La única (conserva su estado) o una copia numerada */
+  unique: boolean
+}
+
+/** Un pin de una escena (las notas de una de Foundry): su sitio en píxeles de la imagen y la página a la que lleva */
+export interface ScenePinData {
+  x: number
+  y: number
+  label: string
+  pageId: string | null
+}
+
+/**
  * La escena de una pestaña «Escena» (ADR-0018): lo del mundo, lo que se prepara una vez. La imagen va en teselas
  * (fuera de Archivos); fileId es el archivo del mundo del que salió, si salió de uno. Sin teselas, aún sin trocear
  */
@@ -100,7 +127,11 @@ export const scenes = pgTable(
     /** La oscuridad (docs/specs/vision.md): 0 de día, 1 noche cerrada */
     darkness: doublePrecision().notNull().default(0),
     /** La niebla sale de lo que ven las fichas del grupo; sin ella (un mapa sin muros), solo vale la de a mano */
-    automaticVision: boolean().notNull().default(false)
+    automaticVision: boolean().notNull().default(false),
+    /** Las criaturas preparadas (docs/specs/escenas-foundry.md): salen al abrirla una campaña por primera vez */
+    prepared: jsonb().$type<PreparedCreatureData[]>().notNull().default([]),
+    /** Sus pines a páginas (las notas de una escena de Foundry) */
+    pins: jsonb().$type<ScenePinData[]>().notNull().default([])
   },
   (t) => [index().on(t.worldId)]
 )
