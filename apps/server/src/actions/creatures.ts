@@ -19,6 +19,7 @@ import { creaturesRepo, diceRepo, systemsRepo } from '@crisol/db'
 import { cryptoRoller, rollDice } from '@crisol/dice'
 import { authorize, NotFoundError } from '@crisol/domain'
 import {
+  actionsOf,
   type Choices,
   type ContentItem,
   changeResource,
@@ -31,12 +32,15 @@ import {
   type Play,
   playSchema,
   RollError,
+  rechargeSpent,
   resourcePaths,
   rest,
   type System,
+  setRecharge,
   spend,
   startingPlay,
   type Text,
+  type TurnAction,
   textOf,
   tryAction,
   tryRoll,
@@ -195,6 +199,52 @@ export async function creatureCardsOf(
 
 /** Cómo está en palabras, para la pantalla de la tele y los jugadores */
 export const lifeStateOf = stateOf
+
+/** Lo que hace falta para empezar el turno de una criatura: su fila y sus acciones, con sus nombres */
+export interface CreatureForTurn {
+  row: creaturesRepo.CreatureRow
+  actions: Array<TurnAction & { label: string }>
+  /** Los nombres de sus recursos, por su clave */
+  resources: Map<string, string>
+}
+
+/**
+ * Para empezar el turno de unas criaturas en juego (docs/specs/combate.md): su fila (su versión y lo de su partida) y
+ * sus acciones (las recargas, las legendarias). No autoriza: lo hace quien llama. Las que ya no tienen entrada, fuera
+ */
+export async function creaturesForTurn(
+  ctx: ActionContext,
+  campaign: Awaited<ReturnType<typeof authorizedCampaign>>,
+  ids: readonly string[]
+): Promise<Map<string, CreatureForTurn>> {
+  const found = new Map<string, CreatureForTurn>()
+  if (ids.length === 0 || !campaign.system) return found
+  const at = await systemOf(ctx, campaign).catch(() => null)
+  if (!at) return found
+  const wanted = new Set(ids)
+  const rows = (await creaturesRepo.listCreatures(ctx.db, campaign.id)).filter((r) => wanted.has(r.id))
+  const keys = [...new Set(rows.flatMap((r) => [r.key, ...((r.play as Play).items ?? []).map((i) => i.key)]))]
+  const content = await layers.contentByKeys(ctx, at.row.id, at.world, keys)
+  const options = { language: at.choices.language, settings: at.choices.settings }
+  for (const row of rows) {
+    try {
+      const { entry, played } = viewOf(at, row, content)
+      const actions = actionsOf(at.document, entry.type, played.document, options).map((a) => ({
+        item: a.item,
+        key: a.key,
+        label: a.label,
+        ...(a.activation ? { activation: a.activation } : {}),
+        ...(a.uses ? { uses: a.uses } : {}),
+        ...(a.recharge ? { recharge: a.recharge } : {})
+      }))
+      const resources = new Map(played.view.resources.map((r) => [r.key, r.label]))
+      found.set(row.id, { row, actions, resources })
+    } catch {
+      // Sin entrada en el compendio de la campaña: su turno empieza sin más
+    }
+  }
+  return found
+}
 
 export const creatureActions = [
   // Lo que ve un jugador: las que están a la vista, con su nombre, su imagen y cómo están (sin números ni hoja)
@@ -409,8 +459,15 @@ export const creatureActions = [
       }
       if (used) {
         const found = played.view.resources.find((r) => r.item === used.item && r.key === used.key)
-        if (!found) throw new InvalidRequestError('BAD_PLAY', `no hay un uso «${used.key}»`)
-        play = spend(play, found, used.by)
+        // Una acción con recarga se gasta (by > 0) o se recarga (by < 0): el combate la tira al empezar su turno
+        const recharge = found
+          ? undefined
+          : actionsOf(at.document, entry.type, played.document).find(
+              (a) => a.item === used.item && a.key === used.key && a.recharge
+            )
+        if (found) play = spend(play, found, used.by)
+        else if (recharge) play = used.by === 0 ? play : setRecharge(play, used.item, used.key, used.by > 0)
+        else throw new InvalidRequestError('BAD_PLAY', `no hay un uso «${used.key}»`)
       }
       // Lo que vuelve con dados (una recarga) lo tira el servidor; si no se puede tirar, vuelve todo
       const roll = (formula: string) => {
@@ -507,6 +564,9 @@ export const creatureActions = [
               })
         }
       })
+      // Una acción con recarga, al usarla, queda gastada hasta que se recargue (al empezar su turno en un combate)
+      if (rolled.recharge && !rechargeSpent(row.play as Play, action.item, action.key))
+        await spendRecharge(ctx, at, row, action.item, action.key, rolled.label)
       return { roll: view }
     } catch (error) {
       if (error instanceof RollError) throw new InvalidRequestError('BAD_ROLL', error.message)
@@ -637,6 +697,30 @@ export const creatureActions = [
     return { applied }
   })
 ]
+
+/** Deja gastada una acción con recarga (si otro la cambió entre medias, se queda como esté: la tirada ya vale) */
+async function spendRecharge(
+  ctx: ActionContext,
+  at: Context,
+  row: creaturesRepo.CreatureRow,
+  item: string | null,
+  key: string,
+  label: string
+) {
+  try {
+    await creaturesRepo.updateCreature(
+      ctx.db,
+      historyContext(ctx, 'spendRecharge', { name: row.name, action: label }, at.campaign),
+      row.id,
+      row.version,
+      { play: setRecharge(row.play as Play, item, key, true) as Record<string, unknown> }
+    )
+  } catch (error) {
+    if (error instanceof creaturesRepo.CreatureChangedError) return
+    throw error
+  }
+  ctx.realtime.publish(creaturesChanged({ campaignId: row.campaignId, worldId: row.worldId }))
+}
 
 /** El servicio de una acción de los personajes (para aplicarles una tirada con sus mismas reglas) */
 function handlerOf(name: 'getCharacter' | 'playCharacter') {
