@@ -213,6 +213,43 @@ function forEachCorner(origin: Point, source: EdgeSource, far: number, visit: (x
   }
 }
 
+/** Los puntos donde los tramos cortan la circunferencia de `radius` alrededor de `origin` */
+function forEachRimCrossing(
+  origin: Point,
+  source: EdgeSource,
+  radius: number,
+  visit: (x: number, y: number) => void
+): void {
+  let edges: readonly Edge[] = source as readonly Edge[]
+  if (source instanceof WallIndex) {
+    if (source.items.length === 0) return
+    // Si el círculo abarca todos los tramos, ninguno lo cruza
+    const right = source.minX + source.columns * source.cellSize
+    const bottom = source.minY + source.rows * source.cellSize
+    const farX = Math.max(Math.abs(origin.x - source.minX), Math.abs(right - origin.x))
+    const farY = Math.max(Math.abs(origin.y - source.minY), Math.abs(bottom - origin.y))
+    if (Math.hypot(farX, farY) < radius) return
+    edges = source.queryCircle(origin, radius)
+  }
+  const r2 = radius * radius
+  for (const { a, b } of edges) {
+    // |a + t·(b − a) − origin|² = r², con t entre 0 y 1
+    const dx = b.x - a.x
+    const dy = b.y - a.y
+    const fx = a.x - origin.x
+    const fy = a.y - origin.y
+    const qa = dx * dx + dy * dy
+    if (qa === 0) continue
+    const qb = 2 * (fx * dx + fy * dy)
+    const qc = fx * fx + fy * fy - r2
+    const disc = qb * qb - 4 * qa * qc
+    if (disc < 0) continue
+    const root = Math.sqrt(disc)
+    for (const t of [(-qb - root) / (2 * qa), (-qb + root) / (2 * qa)])
+      if (t > 0 && t < 1) visit(a.x + dx * t, a.y + dy * t)
+  }
+}
+
 /**
  * El polígono de lo que se ve desde `origin` hasta `radius` (píxeles del mundo) entre los tramos. Con `cone`, solo lo
  * que cae en él (y el polígono empieza en el origen).
@@ -234,6 +271,8 @@ export function visibilityPolygon(origin: Point, source: EdgeSource, radius: num
     const a = Math.atan2(dy, dx)
     angles.push(wrap(a - GRAZE), wrap(a), wrap(a + GRAZE))
   })
+  // Donde un tramo cruza el borde del radio, el contorno pasa del tramo al arco: ese punto también es un vértice
+  forEachRimCrossing(origin, source, radius, (x, y) => angles.push(wrap(Math.atan2(y - origin.y, x - origin.x))))
   let from = Number.NEGATIVE_INFINITY
   let to = Number.POSITIVE_INFINITY
   if (cone && cone.angle > 0 && cone.angle < 360) {

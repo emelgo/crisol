@@ -114,40 +114,44 @@ const distanceToBoundary = (q: Point, polygon: readonly Point[]): number => {
 }
 
 describe('con el índice espacial', () => {
-  it('en escenas al azar (que se cruzan, con limitados y de un sentido), el polígono es justo lo que se ve', () => {
-    const r = random(42)
-    for (let scene = 0; scene < 8; scene++) {
-      const list: Edge[] = Array.from({ length: 150 }, () => {
-        const a = { x: r() * 1000, y: r() * 1000 }
-        const angle = r() * Math.PI * 2
-        const length = 20 + r() * 120
-        const kind = r()
-        return {
-          a,
-          b: { x: a.x + Math.cos(angle) * length, y: a.y + Math.sin(angle) * length },
-          limited: kind < 0.2,
-          pass: kind > 0.9 ? 'left' : kind > 0.85 ? 'right' : null
-        }
-      })
-      const index = new WallIndex(list)
-      for (let k = 0; k < 4; k++) {
-        const origin = { x: r() * 1000, y: r() * 1000 }
-        const radius = k === 0 ? 1e6 : 100 + r() * 400
-        const fast = visibilityPolygon(origin, index, radius)
-        // Cada punto del mapa está dentro si y solo si se ve (salvo a menos de un píxel del borde)
-        for (let p = 0; p < 500; p++) {
-          const q = { x: r() * 1000, y: r() * 1000 }
-          const distance = Math.hypot(q.x - origin.x, q.y - origin.y)
-          if (distanceToBoundary(q, fast) < 1 || Math.abs(distance - radius) < radius * 0.003) continue
-          expect(pointInPolygon(q, fast)).toBe(distance < radius && canSee(origin, q, list))
-        }
-        for (let p = 0; p < 20; p++) {
-          const target = { x: r() * 1000, y: r() * 1000 }
-          expect(canSee(origin, target, index)).toBe(canSee(origin, target, list))
+  // Una prueba por escena (ocho escenas, cada una con su semilla), para que ninguna roce el tiempo límite
+  it.each(Array.from({ length: 8 }, (_, scene) => scene))(
+    'en la escena al azar %i (que se cruzan, con limitados y de un sentido), el polígono es justo lo que se ve',
+    (scene) => {
+      const r = random(42 + scene)
+      {
+        const list: Edge[] = Array.from({ length: 150 }, () => {
+          const a = { x: r() * 1000, y: r() * 1000 }
+          const angle = r() * Math.PI * 2
+          const length = 20 + r() * 120
+          const kind = r()
+          return {
+            a,
+            b: { x: a.x + Math.cos(angle) * length, y: a.y + Math.sin(angle) * length },
+            limited: kind < 0.2,
+            pass: kind > 0.9 ? 'left' : kind > 0.85 ? 'right' : null
+          }
+        })
+        const index = new WallIndex(list)
+        for (let k = 0; k < 4; k++) {
+          const origin = { x: r() * 1000, y: r() * 1000 }
+          const radius = k === 0 ? 1e6 : 100 + r() * 400
+          const fast = visibilityPolygon(origin, index, radius)
+          // Cada punto del mapa está dentro si y solo si se ve (salvo a menos de un píxel del borde)
+          for (let p = 0; p < 500; p++) {
+            const q = { x: r() * 1000, y: r() * 1000 }
+            const distance = Math.hypot(q.x - origin.x, q.y - origin.y)
+            if (distanceToBoundary(q, fast) < 1 || Math.abs(distance - radius) < radius * 0.003) continue
+            expect(pointInPolygon(q, fast)).toBe(distance < radius && canSee(origin, q, list))
+          }
+          for (let p = 0; p < 20; p++) {
+            const target = { x: r() * 1000, y: r() * 1000 }
+            expect(canSee(origin, target, index)).toBe(canSee(origin, target, list))
+          }
         }
       }
     }
-  })
+  )
 
   it('en una mazmorra, los extremos de las otras salas no lanzan rayos', () => {
     // 6 × 6 salas cerradas de 100 px
