@@ -19,7 +19,7 @@ import { screenDraw } from './draw.ts'
 import { screenTileUrl } from './queries.ts'
 import type { RendererScene } from './renderer.ts'
 import styles from './screen.module.css'
-import { cellSide } from './tokens.ts'
+import { cellSide, initialOf } from './tokens.ts'
 import { useTableRenderer } from './use-renderer.ts'
 import { fitCanvas } from './view.ts'
 
@@ -107,8 +107,9 @@ export function TableScreen({ campaignId }: { campaignId: string }) {
   useEffect(() => {
     if (!ready) return
     const grid = presented?.grid
+    const turns = new Set((screen?.combat?.combatants ?? []).filter((c) => c.active).map((c) => c.tokenId))
     renderer.current?.setTokens(
-      grid ? visible.map((token) => screenDraw(token, grid, words, dragged.get(token.id))) : []
+      grid ? visible.map((token) => screenDraw(token, grid, words, dragged.get(token.id), turns.has(token.id))) : []
     )
   })
 
@@ -176,6 +177,7 @@ export function TableScreen({ campaignId }: { campaignId: string }) {
           ))}
         </ul>
       )}
+      {screen?.combat && !dark && <TurnStrip combat={screen.combat} />}
       {fade > 0 && !dark && <div key={fade} className={styles.fade} aria-hidden="true" />}
       {dark && (
         <div className={styles.dark} data-dark="">
@@ -193,5 +195,35 @@ export function TableScreen({ campaignId }: { campaignId: string }) {
         {full ? <Minimize aria-hidden="true" size={18} /> : <Maximize aria-hidden="true" size={18} />}
       </button>
     </div>
+  )
+}
+
+/** La franja de turnos, abajo: la ronda, el orden (sin las ocultas) y de quién es el turno */
+function TurnStrip({ combat }: { combat: NonNullable<ScreenView['combat']> }) {
+  const { t } = useTranslation()
+  const active = combat.combatants.filter((c) => c.active).map((c) => c.name)
+  const turn = active.length > 0 ? new Intl.ListFormat('es', { type: 'conjunction' }).format(active) : null
+  return (
+    <section className={styles.turns} aria-label={t('combat.strip')} data-turns="">
+      <span className={styles.roundLabel}>
+        {combat.round === 0 ? t('combat.notStarted') : t('combat.round', { round: combat.round })}
+      </span>
+      <ol className={styles.discs}>
+        {combat.combatants.map((c) => (
+          <li
+            key={c.id}
+            className={styles.disc}
+            data-kind={c.kind}
+            data-active={c.active || undefined}
+            data-defeated={c.defeated || undefined}
+            aria-current={c.active ? 'step' : undefined}
+          >
+            <span aria-hidden="true">{initialOf(c.name)}</span>
+            <span className={styles.hidden}>{c.name}</span>
+          </li>
+        ))}
+      </ol>
+      {turn && <b className={styles.turnOf}>{t('combat.stripTurn', { name: turn })}</b>}
+    </section>
   )
 }
