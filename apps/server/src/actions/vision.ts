@@ -278,7 +278,7 @@ async function targetScene(ctx: ActionContext, campaignId: string, sceneId: stri
 async function campaignScene(ctx: ActionContext, campaign: Campaign, sceneId: string | undefined) {
   const target = await targetScene(ctx, campaign.id, sceneId)
   const scene = await sceneOfCampaign(ctx, campaign.worldId, target)
-  const state = await scenes.ensureSceneState(
+  const { state } = await scenes.ensureSceneState(
     ctx.db,
     historyContext(ctx, 'openScene', { campaign: campaign.name, name: scene.name, title: scene.pageTitle }, campaign),
     { worldId: campaign.worldId, campaignId: campaign.id, sceneId: target }

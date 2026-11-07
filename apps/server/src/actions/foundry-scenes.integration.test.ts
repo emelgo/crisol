@@ -322,6 +322,25 @@ describe('traer las escenas de un zip de Foundry', () => {
     ])
   })
 
+  it('abrir la escena dos veces a la vez: su criatura preparada sale una sola vez, y nadie falla', async () => {
+    const { worldId, campaignId } = await setup()
+    const imported = await ok200('importFoundryScenes', {
+      worldId,
+      zip,
+      parentId: null,
+      scenes: [{ pack: 'escenas', id: 'cripta0000000001' }]
+    })
+    const sceneId = imported.scenes[0].sceneId
+    const both = await Promise.all([
+      call('openScene', { campaignId, sceneId }),
+      call('presentScene', { campaignId, sceneId })
+    ])
+    expect(both.map((r) => r.statusCode)).toEqual([200, 200])
+    const tokens = await conn.db.select().from(schema.sceneTokens).where(eq(schema.sceneTokens.sceneId, sceneId))
+    expect(tokens).toHaveLength(1)
+    expect(await conn.db.select().from(schema.campaignCreatures)).toHaveLength(1)
+  })
+
   it('reimportar el mismo zip no duplica: cambia lo que ya estaba en su sitio', async () => {
     const { worldId } = await setup()
     const input = {

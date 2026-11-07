@@ -16,7 +16,7 @@ import {
   importFoundryScenes,
   inspectFoundryScenes
 } from '@crisol/contracts'
-import { foundryRepo, pagesRepo, scenesRepo, systemsRepo, tokensRepo, visionRepo } from '@crisol/db'
+import { foundryRepo, pagesRepo, scenesRepo, systemsRepo, tokensRepo } from '@crisol/db'
 import { NotFoundError } from '@crisol/domain'
 import type { System } from '@crisol/systems'
 import {
@@ -538,9 +538,4 @@ export async function placePrepared(
       scene.pins
     )
   ctx.table?.changed(campaign.id)
-}
-
-/** Si la campaña aún no ha abierto nunca la escena (antes de crear su estado en ella) */
-export async function firstOpening(ctx: ActionContext, campaignId: string, sceneId: string) {
-  return (await visionRepo.findSceneState(ctx.db, campaignId, sceneId)) === null
 }

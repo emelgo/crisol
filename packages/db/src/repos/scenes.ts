@@ -65,18 +65,26 @@ export function updateScene(db: Database, context: OperationContext, sceneId: st
   return operation(db, context, (w) => w.update(scenes, sceneId, patch))
 }
 
-/** El estado de la campaña en la escena; si es la primera vez que la abre, se crea */
+/**
+ * El estado de la campaña en la escena; si es la primera vez que la abre, se crea (y `created` lo dice: solo quien lo
+ * crea pone lo preparado de la escena). Dos a la vez no chocan: la segunda espera a la primera y se encuentra el suyo
+ */
 export async function ensureSceneState(
   db: Database,
   context: OperationContext,
   values: { worldId: string; campaignId: string; sceneId: string }
-) {
-  const [found] = await db
-    .select()
-    .from(sceneStates)
-    .where(and(eq(sceneStates.campaignId, values.campaignId), eq(sceneStates.sceneId, values.sceneId)))
-  if (found) return found
-  return operation(db, context, (w) => w.insert(sceneStates, values))
+): Promise<{ state: typeof sceneStates.$inferSelect; created: boolean }> {
+  const where = and(eq(sceneStates.campaignId, values.campaignId), eq(sceneStates.sceneId, values.sceneId))
+  const [found] = await db.select().from(sceneStates).where(where)
+  if (found) return { state: found, created: false }
+  return operation(db, context, async (w) => {
+    await w.read.execute(
+      sql`select pg_advisory_xact_lock(hashtextextended(${`scene_state:${values.campaignId}:${values.sceneId}`}, 0))`
+    )
+    const [again] = await w.read.select().from(sceneStates).where(where)
+    if (again) return { state: again, created: false }
+    return { state: await w.insert(sceneStates, values), created: true }
+  })
 }
 
 /** La mesa de una campaña; sin fila aún, la de por defecto (nada abierto, cámara siguiendo al máster) */
