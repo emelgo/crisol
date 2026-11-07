@@ -2,7 +2,17 @@
  * El único camino de escritura de las tablas de dominio. Cada operación es una transacción que apunta en el historial
  * cada fila que toca, completa antes y después (to_jsonb de Postgres), y pone la versión y la autoría.
  */
-import { eq, getTableName, type InferInsertModel, type InferSelectModel, inArray, sql } from 'drizzle-orm'
+import { randomUUID } from 'node:crypto'
+import {
+  eq,
+  getTableColumns,
+  getTableName,
+  type InferInsertModel,
+  type InferSelectModel,
+  inArray,
+  sql
+} from 'drizzle-orm'
+import type { PgTable } from 'drizzle-orm/pg-core'
 import type { Database } from './client.ts'
 import { campaignMembers, campaigns } from './schema/campaigns.ts'
 import { characters, characterVersions } from './schema/characters.ts'
@@ -131,6 +141,9 @@ function generatedColumns(tx: Transaction, table: string) {
   return columns
 }
 
+/** La clave con que vuelve, al cambiar una fila, cómo queda en el historial */
+const AFTER = '__crisolAfter'
+
 const without = (row: Json, columns: ReadonlySet<string>) =>
   columns.size === 0 ? row : Object.fromEntries(Object.entries(row).filter(([column]) => !columns.has(column)))
 
@@ -209,13 +222,20 @@ export async function operation<R>(
       async update(table, id, patch) {
         const name = getTableName(table)
         const before = await existing(name, id)
-        const [row] = await tx
+        // Cómo queda, en la misma vuelta (to_jsonb de la fila nueva, como `snapshot`)
+        const [found] = await tx
           .update(table)
           .set({ ...patch, version: sql`${table.version} + 1`, updatedBy: context.actorId, updatedAt: new Date() })
           .where(eq(table.id, id))
-          .returning()
-        if (!row) throw new Error(`No existe ${name} ${id}`)
-        recorded.push({ tableName: name, rowId: id, before, after: await snapshot(name, id) })
+          .returning({ ...getTableColumns(table as PgTable), [AFTER]: sql<Json>`to_jsonb(${table}.*)` })
+        if (!found) throw new Error(`No existe ${name} ${id}`)
+        const { [AFTER]: after, ...row } = found as Json
+        recorded.push({
+          tableName: name,
+          rowId: id,
+          before,
+          after: without(after as Json, await generatedColumns(tx, name))
+        })
         return row as InferSelectModel<typeof table>
       },
       async remove(table, id) {
@@ -284,9 +304,13 @@ export async function operation<R>(
     if (recorded.length === 0) return result
     const organizationId = context.organizationId ?? scopeOf(recorded, 'organizations', 'organization_id')
     if (!organizationId) throw new Error(`No se sabe de qué organización es la operación ${context.action}`)
-    const [op] = await tx
-      .insert(operations)
-      .values({
+    // El id, aquí: así la operación, lo que deshace y sus cambios van de una tanda por la conexión de la transacción,
+    // en orden y sin esperar cada respuesta
+    const opId = randomUUID()
+    const writes: Promise<unknown>[] = []
+    writes.push(
+      tx.insert(operations).values({
+        id: opId,
         organizationId,
         worldId: context.worldId ?? scopeOf(recorded, 'worlds', 'world_id'),
         actorId: context.actorId,
@@ -299,13 +323,14 @@ export async function operation<R>(
         // lo tenía, y así el historial (y deshacer, que busca lo posterior) va en el orden en que pasaron las cosas
         createdAt: sql`clock_timestamp()`
       })
-      .returning({ id: operations.id })
-    if (!op) throw new Error('No se pudo guardar la operación')
-    if (context.undoes) await tx.update(operations).set({ undoneById: op.id }).where(eq(operations.id, context.undoes))
+    )
+    if (context.undoes)
+      writes.push(tx.update(operations).set({ undoneById: opId }).where(eq(operations.id, context.undoes)))
     // En tandas: una operación grande (subir un sistema con miles de documentos) no pasa del tope de parámetros
-    const rows = recorded.map((change, index) => ({ ...change, operationId: op.id, seq: index + 1 }))
+    const rows = recorded.map((change, index) => ({ ...change, operationId: opId, seq: index + 1 }))
     for (let i = 0; i < rows.length; i += CHANGES_PER_INSERT)
-      await tx.insert(changes).values(rows.slice(i, i + CHANGES_PER_INSERT))
+      writes.push(tx.insert(changes).values(rows.slice(i, i + CHANGES_PER_INSERT)))
+    await Promise.all(writes)
     return result
   })
 }
