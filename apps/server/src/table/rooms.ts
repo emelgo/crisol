@@ -77,6 +77,10 @@ interface Room {
   measureOnScreen: boolean
   /** La pantalla tiene una medida pintada (hay que quitársela si deja de valer) */
   measureShown: boolean
+  /** Su cola: lo que tiene que proyectar, en orden (cada campaña la suya: una lenta no hace esperar a las demás) */
+  chain: Promise<void>
+  /** Ya hay una vuelta en la cola sin empezar: los cambios que lleguen hasta entonces van en ella */
+  queued: boolean
 }
 
 type TokenMove = { tokenId: string; x: number; y: number }
@@ -86,7 +90,8 @@ const send = (socket: TableSocket, message: TableServerMessage) => socket.send(J
 
 export function createTableRooms(load: LoadTable, onError: (error: unknown) => void = () => {}): TableRooms {
   const rooms = new Map<string, Room>()
-  let queue = Promise.resolve()
+  /** Lo que está en cola en alguna sala (para `idle`) */
+  const running = new Set<Promise<void>>()
 
   /** Proyecta la mesa y la manda a las conexiones de la sala (a todas o a una) */
   async function refresh(campaignId: string, only?: TableSocket) {
@@ -141,10 +146,23 @@ export function createTableRooms(load: LoadTable, onError: (error: unknown) => v
     room.screenVisible = null
   }
 
-  /** En orden y sin dejar que un fallo pare a los demás */
-  const enqueue = (work: () => Promise<void>) => {
-    queue = queue.then(work).catch(onError)
-    return queue
+  /** En la cola de la sala, en orden y sin dejar que un fallo pare a los demás */
+  const enqueue = (room: Room, work: () => Promise<void>) => {
+    const next = room.chain.then(work).catch(onError)
+    room.chain = next
+    running.add(next)
+    void next.then(() => running.delete(next))
+    return next
+  }
+
+  /** Una vuelta para proyectar la sala entera, salvo que ya haya una en la cola sin empezar */
+  const refreshAll = (campaignId: string, room: Room) => {
+    if (room.queued) return
+    room.queued = true
+    void enqueue(room, () => {
+      room.queued = false
+      return refresh(campaignId)
+    })
   }
 
   return {
@@ -159,11 +177,13 @@ export function createTableRooms(load: LoadTable, onError: (error: unknown) => v
         screenVisible: null,
         sameSceneMask: null,
         measureOnScreen: false,
-        measureShown: false
+        measureShown: false,
+        chain: Promise.resolve(),
+        queued: false
       }
       rooms.set(campaignId, room)
       room.sockets.set(socket, viewer)
-      await enqueue(() => refresh(campaignId, socket))
+      await enqueue(room, () => refresh(campaignId, socket))
       return () => {
         room.sockets.delete(socket)
         if (room.sockets.size === 0) rooms.delete(campaignId)
@@ -173,13 +193,13 @@ export function createTableRooms(load: LoadTable, onError: (error: unknown) => v
       const room = rooms.get(campaignId)
       if (!room) return
       stale(room)
-      void enqueue(() => refresh(campaignId))
+      refreshAll(campaignId, room)
     },
     sceneChanged(sceneId) {
       for (const [campaignId, room] of rooms)
         if (room.scenes.has(sceneId)) {
           stale(room)
-          void enqueue(() => refresh(campaignId))
+          refreshAll(campaignId, room)
         }
     },
     viewport(campaignId, view) {
@@ -227,8 +247,8 @@ export function createTableRooms(load: LoadTable, onError: (error: unknown) => v
     size(campaignId) {
       return rooms.get(campaignId)?.sockets.size ?? 0
     },
-    idle() {
-      return queue
+    async idle() {
+      while (running.size > 0) await Promise.all([...running])
     }
   }
 }

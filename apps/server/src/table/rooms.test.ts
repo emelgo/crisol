@@ -129,4 +129,36 @@ describe('las salas de la mesa', () => {
     rooms.viewport(CAMPAIGN, { x: 100, y: 100, scale: 1 })
     expect(screen.got.filter((m) => m.type === 'viewport')).toEqual([])
   })
+
+  it('cada campaña, su cola: una mesa lenta no hace esperar a otra; y los cambios seguidos se juntan en una vuelta', async () => {
+    const OTHER = '00000000-0000-4000-8000-000000000002'
+    const sceneA = 'c0000000-0000-4000-8000-000000000001'
+    let release: () => void = () => {}
+    const gate = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    let slow = false
+    const loads = new Map<string, number>()
+    const rooms = createTableRooms(async (campaignId) => {
+      loads.set(campaignId, (loads.get(campaignId) ?? 0) + 1)
+      if (campaignId === CAMPAIGN && slow) await gate
+      return tableOf(sceneA, sceneA, true)
+    })
+    const [a, b] = [socket(), socket()]
+    await rooms.join(CAMPAIGN, 'screen', a)
+    await rooms.join(OTHER, 'screen', b)
+    slow = true
+    for (let i = 0; i < 5; i++) rooms.changed(CAMPAIGN)
+    rooms.changed(OTHER)
+    // La otra se pone al día sin esperar a la lenta
+    await new Promise((resolve) => setTimeout(resolve, 20))
+    expect(b.got.filter((m) => m.type === 'screen')).toHaveLength(2)
+    expect(a.got.filter((m) => m.type === 'screen')).toHaveLength(1)
+    // Mientras la lenta calcula, más cambios: una vuelta más, no cinco
+    for (let i = 0; i < 5; i++) rooms.changed(CAMPAIGN)
+    release()
+    await rooms.idle()
+    expect(loads.get(CAMPAIGN)).toBe(3)
+    expect(a.got.filter((m) => m.type === 'screen')).toHaveLength(3)
+  })
 })
