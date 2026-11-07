@@ -12,3 +12,8 @@ paths = ['''^packages/systems/src/catalog/5e/content/[a-z_]+\.json$''']
 description = "Una clave de documento en el código y sus pruebas (key: 'guerrero_tomar_aliento_2014', c.key === 'bola_de_fuego_2014')"
 regexTarget = "match"
 regexes = ['''key["']?\s*(?:===?|[:=])\s*["'][a-z0-9]+(?:_[a-z0-9]+)+["']''']
+
+[[allowlists]]
+description = "Una clave de documento del 5e en una lista (keys: ['guerrero_goblin_2014']): palabras en minúsculas que acaban en su edición"
+regexTarget = "match"
+regexes = ['''["'][a-z]+(?:_[a-z]+)*_20(?:14|24)["']''']
