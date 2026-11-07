@@ -1,7 +1,16 @@
 /**
  * Las medidas de una imagen por su cabecera, sin descodificarla: PNG, JPEG, WebP y GIF. Para la escena que crea la IA
- * con un archivo del mundo (su navegador no está para decirlas). null si no se reconoce
+ * con un archivo del mundo y para un UVTT, que la trae dentro. null si no se reconoce
  */
+/** El tipo de una imagen por sus primeros bytes */
+export function imageType(bytes: Uint8Array): 'png' | 'jpeg' | 'webp' | null {
+  if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47) return 'png'
+  if (bytes[0] === 0xff && bytes[1] === 0xd8) return 'jpeg'
+  const ascii = (at: number, length: number) => String.fromCharCode(...bytes.subarray(at, at + length))
+  if (ascii(0, 4) === 'RIFF' && ascii(8, 4) === 'WEBP') return 'webp'
+  return null
+}
+
 export function imageSize(bytes: Uint8Array): { width: number; height: number } | null {
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength)
   const ascii = (at: number, length: number) => String.fromCharCode(...bytes.subarray(at, at + length))

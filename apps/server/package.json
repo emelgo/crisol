@@ -29,6 +29,7 @@
     "@crisol/domain": "workspace:*",
     "@crisol/editor": "workspace:*",
     "@crisol/systems": "workspace:*",
+    "@crisol/tabletop": "workspace:*",
     "@fastify/rate-limit": "catalog:",
     "@fastify/static": "catalog:",
     "@fastify/websocket": "catalog:",

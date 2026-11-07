@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { imageSize } from './image-size.ts'
+import { imageSize } from './image.ts'
 
 const bytes = (...parts: Array<number[] | string>) =>
   new Uint8Array(parts.flatMap((part) => (typeof part === 'string' ? [...part].map((c) => c.charCodeAt(0)) : part)))

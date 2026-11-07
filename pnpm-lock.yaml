@@ -448,6 +448,9 @@ importers:
       '@crisol/systems':
         specifier: workspace:*
         version: link:../../packages/systems
+      '@crisol/tabletop':
+        specifier: workspace:*
+        version: link:../../packages/tabletop
       '@fastify/rate-limit':
         specifier: 'catalog:'
         version: 11.2.1
