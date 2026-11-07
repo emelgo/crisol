@@ -113,7 +113,8 @@ export function createAuth({ db, secret, baseURL, trustedOrigins = [] }: AuthOpt
     advanced: { useSecureCookies: baseURL.startsWith('https://') },
     // Conector MCP (ADR-0002): OAuth 2.1 con registro de clientes por CIMD, como prefiere claude.ai
     plugins: [
-      jwt(),
+      // Sin la cabecera set-auth-jwt en cada lectura de la sesión (nadie la usa): firmar un JWT en cada petición costaba
+      jwt({ disableSettingJwtHeader: true }),
       mcp({
         loginPage: '/entrar',
         consentPage: '/oauth/consentimiento',
