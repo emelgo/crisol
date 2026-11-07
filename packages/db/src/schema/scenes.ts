@@ -188,20 +188,21 @@ export const campaignTables = pgTable('campaign_tables', {
 
 /**
  * Las teselas de la imagen de una escena, por versión: dónde están sus bytes. Se sacan de la imagen (no van al
- * historial), y las de versiones viejas se guardan mientras la escena exista, para que deshacer la imagen las encuentre
+ * historial). Las de versiones viejas, y las de una escena quitada, se guardan mientras el historial pueda devolverlas
+ * (deshacer la imagen o el quitar la pestaña las encuentra): sin clave ajena a la escena; las recoge la purga
  */
 export const sceneTiles = pgTable(
   'scene_tiles',
   {
-    sceneId: uuid()
-      .notNull()
-      .references(() => scenes.id, { onDelete: 'cascade' }),
+    sceneId: uuid().notNull(),
     version: uuid().notNull(),
     level: integer().notNull(),
     x: integer().notNull(),
     y: integer().notNull(),
     storageKey: text().notNull(),
-    bytes: integer().notNull()
+    bytes: integer().notNull(),
+    /** Cuándo se subió: la purga no recoge las de una imagen que se está subiendo (aún sin poner en la escena) */
+    createdAt: timestamp({ withTimezone: true }).defaultNow().notNull()
   },
   (t) => [primaryKey({ columns: [t.sceneId, t.version, t.level, t.x, t.y] })]
 )

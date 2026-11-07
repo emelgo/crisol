@@ -5,11 +5,16 @@ import { user } from '../schema/auth.ts'
 import { campaigns } from '../schema/campaigns.ts'
 import { operations } from '../schema/history.ts'
 import { organizationMembers, organizations } from '../schema/organizations.ts'
+import { sceneTiles } from '../schema/scenes.ts'
+import { sceneExplored } from '../schema/vision.ts'
 import { worlds } from '../schema/worlds.ts'
 import { freshTestDatabase, resetDatabase } from '../testing.ts'
 import * as campaignsRepo from './campaigns.ts'
 import * as invitationsRepo from './invitations.ts'
+import * as mapsRepo from './maps.ts'
 import { loadMemberships } from './memberships.ts'
+import * as pagesRepo from './pages.ts'
+import * as scenesRepo from './scenes.ts'
 import * as trashRepo from './trash.ts'
 import { undoOperation } from './undo.ts'
 import * as worldsRepo from './worlds.ts'
@@ -203,6 +208,66 @@ describe('papelera', () => {
       expect(await trashRepo.purge(conn.db, now)).toMatchObject({ worlds: 1, operations: 3 })
       expect(await conn.db.select().from(campaigns)).toEqual([])
       expect((await conn.db.select().from(operations)).map((op) => op.action)).toEqual(['deleteWorld'])
+    })
+
+    it('las teselas de versiones viejas y de escenas quitadas, y lo explorado de estas, se quedan mientras el historial pueda devolverlas', async () => {
+      const { world, campaign } = await setup()
+      const page = await pagesRepo.createPage(conn.db, ctx('createPage'), {
+        worldId: world.id,
+        title: 'Cripta',
+        placement: { parentId: null }
+      })
+      const scene = async () => {
+        const tab = await mapsRepo.createTab(conn.db, ctx('createPageTab'), {
+          worldId: world.id,
+          pageId: page.id,
+          kind: 'scene',
+          name: 'Escena',
+          position: crypto.randomUUID()
+        })
+        const found = await scenesRepo.sceneOfTab(conn.db, tab.id)
+        return { tabId: tab.id, sceneId: found?.id ?? '' }
+      }
+      const [kept, removed] = [await scene(), await scene()]
+      const [old, current, uploading, gone] = [
+        crypto.randomUUID(),
+        crypto.randomUUID(),
+        crypto.randomUUID(),
+        crypto.randomUUID()
+      ]
+      const tile = (sceneId: string, version: string) =>
+        scenesRepo.putTile(conn.db, { sceneId, version, level: 0, x: 0, y: 0, storageKey: version, bytes: 1 })
+      await tile(kept.sceneId, old)
+      await tile(kept.sceneId, current)
+      await tile(kept.sceneId, uploading)
+      await tile(removed.sceneId, gone)
+      const image = (sceneId: string, version: string) =>
+        scenesRepo.updateScene(conn.db, ctx('setSceneImage'), sceneId, {
+          width: 100,
+          height: 100,
+          tiles: { version, size: 512, levels: 1 }
+        })
+      await image(kept.sceneId, old)
+      await image(kept.sceneId, current)
+      await image(removed.sceneId, gone)
+      await conn.db
+        .insert(sceneExplored)
+        .values({ campaignId: campaign.id, sceneId: removed.sceneId, data: new Uint8Array([1]) })
+      await mapsRepo.deleteTab(conn.db, ctx('deletePageTab'), removed.tabId)
+      const versions = async () => (await conn.db.select().from(sceneTiles)).map((t) => t.version).sort()
+      // Con todo en el historial, nada se va (deshacer puede volver a la imagen vieja o devolver la escena); tampoco la
+      // imagen que se está subiendo, aún sin poner
+      await conn.sql`update scene_tiles set created_at = ${ago(2).toISOString()} where version <> ${uploading}`
+      await conn.sql`update scene_tiles set created_at = ${now.toISOString()} where version = ${uploading}`
+      await trashRepo.purge(conn.db, now)
+      expect(await versions()).toEqual([old, current, uploading, gone].sort())
+      expect(await conn.db.select().from(sceneExplored)).toHaveLength(1)
+      // Pasados 90 días, solo la de ahora de la escena que sigue (y la que se está subiendo)
+      await conn.sql`update operations set created_at = ${ago(91).toISOString()}`
+      expect(await trashRepo.purge(conn.db, now)).toMatchObject({ tiles: 2, explored: 1 })
+      expect(await versions()).toEqual([current, uploading].sort())
+      expect(await conn.db.select().from(sceneExplored)).toEqual([])
+      expect(await trashRepo.liveStorageKeys(conn.db)).toEqual(new Set([current, uploading]))
     })
   })
 })

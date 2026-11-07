@@ -435,6 +435,13 @@
       "when": 1794064497110,
       "tag": "0061_marcas_orden",
       "breakpoints": true
+    },
+    {
+      "idx": 62,
+      "version": "7",
+      "when": 1794074703602,
+      "tag": "0062_escena_quitada_conserva",
+      "breakpoints": true
     }
   ]
 }

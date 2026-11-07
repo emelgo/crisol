@@ -443,6 +443,35 @@ describe('la visión de la mesa (docs/specs/vision.md)', () => {
     expect((await screenTile('0/1/0')).statusCode).toBe(404)
   })
 
+  it('quitar la pestaña «Escena» y deshacerlo la devuelve entera: fichas, marcas, instantáneas, teselas y lo explorado', async () => {
+    const [own] = await place([{ characterId: lia.id, x: 200, y: 150 }])
+    expect(share((await party()).explored, ...ROOM_A)).toBe(1)
+    await ok200('changeMarks', {
+      campaignId,
+      sceneId,
+      add: [{ kind: 'text', x: 150, y: 250, text: 'Aquí', color: '#ffffff', size: 24 }]
+    })
+    const snapshot = await ok200('saveSnapshot', { campaignId, sceneId, name: 'Antes' })
+    const { tabId } = await ok200('getScene', { sceneId })
+    await ok200('deletePageTab', { tabId })
+    const history = await ok200('listHistory', { worldId })
+    await ok200('undoOperation', { operationId: history.entries[0].id })
+    const view = await party()
+    expect(view.screen.tokens.map((t) => t.id)).toEqual([own.id])
+    expect(view.screen.marks?.map((m) => m.kind)).toEqual(['text'])
+    expect((await ok200('listSnapshots', { campaignId, sceneId })).snapshots.map((s: { id: string }) => s.id)).toEqual(
+      [snapshot.id]
+    )
+    const tile = await app.inject({
+      method: 'GET',
+      url: `/api/scenes/${sceneId}/tiles/${version}/0/0/0`,
+      headers: { cookie: master.cookie }
+    })
+    expect(tile.statusCode).toBe(200)
+    const explored = await conn.db.select().from(schema.sceneExplored)
+    expect(explored.map((e) => e.sceneId)).toEqual([sceneId])
+  })
+
   it('recortadas: la tesela del borde llega transparente fuera de lo explorado y sin guardarse en el navegador', async () => {
     await place([{ characterId: lia.id, x: 200, y: 150 }])
     await ok200('setTileFit', { campaignId, tileFit: 'cropped' })

@@ -99,7 +99,8 @@ export const sceneFog = pgTable(
 
 /**
  * Lo explorado por el grupo de una campaña en una escena: la rejilla de bits comprimida (`FogGrid.encode`). Se llena
- * sola con lo que ve el grupo: no va al historial (sería ruido); reiniciar la niebla la borra
+ * sola con lo que ve el grupo: no va al historial (sería ruido); reiniciar la niebla la borra. Sin clave ajena a la
+ * escena: si se quita su pestaña, se queda mientras el historial pueda devolverla (lo recoge la purga)
  */
 export const sceneExplored = pgTable(
   'scene_explored',
@@ -107,9 +108,7 @@ export const sceneExplored = pgTable(
     campaignId: uuid()
       .notNull()
       .references(() => campaigns.id, { onDelete: 'cascade' }),
-    sceneId: uuid()
-      .notNull()
-      .references(() => scenes.id, { onDelete: 'cascade' }),
+    sceneId: uuid().notNull(),
     data: bytea().notNull(),
     updatedAt: timestamp({ withTimezone: true }).defaultNow().notNull()
   },
