@@ -46,7 +46,9 @@ const isWebp = (head: Uint8Array) =>
 
 /**
  * Cómo puede cargar la pantalla una tesela de la escena presentada, con lo que puede ver (lo explorado y lo visible):
- * nada si no lo toca; entera si cae dentro o si la campaña las quiere enteras; recortada si pisa el borde
+ * nada si no lo toca; entera si cae dentro; recortada si pisa el borde. Con «enteras», las del borde van enteras solo
+ * en el nivel de más detalle (asoma como mucho una tesela): las de los niveles reducidos cubren mucho mapa (la de
+ * arriba, el mapa entero) y se recortan siempre, o la tele tendría el mapa entero en pequeño
  */
 export function screenTileAllowed(
   mask: FogGrid,
@@ -58,7 +60,7 @@ export function screenTileAllowed(
   if (!hasTile(pyramid, tile)) return 'deny'
   const coverage = tileCoverage(mask, tileWorldRect(pyramid, tile))
   if (coverage === 'none') return 'deny'
-  return coverage === 'full' || fit === 'whole' ? 'whole' : 'crop'
+  return coverage === 'full' || (fit === 'whole' && tile.level === 0) ? 'whole' : 'crop'
 }
 
 /** Las teselas recortadas que ya se hicieron, por tesela y huella de su máscara (las últimas) */
