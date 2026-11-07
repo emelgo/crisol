@@ -70,6 +70,15 @@ export const historyActions = [
       else ctx.realtime.publish(event)
     }
     await tellTrashChanges(ctx, result.applied)
+    // La mesa de las campañas que toca (sus fichas, su combate, lo de la partida de sus personajes)
+    const tables = ['scene_tokens', 'combats', 'combatants', 'characters']
+    const campaigns = new Set(
+      result.applied.flatMap((change) => {
+        const campaignId = (change.after ?? change.before)?.campaign_id
+        return tables.includes(change.tableName) && typeof campaignId === 'string' ? [campaignId] : []
+      })
+    )
+    for (const campaignId of campaigns) ctx.table?.changed(campaignId)
     // Lo que cambia quién escribe en una página de jugadores (el permiso, lo que se sabe, quién juega, sus personajes,
     // su texto): sus conexiones se vuelven a mirar
     const touches = ['page_editors', 'knowledge', 'campaign_members', 'campaigns', 'characters', 'page_bodies']

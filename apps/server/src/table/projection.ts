@@ -2,9 +2,21 @@
  * Lo que recibe cada quien mira la mesa (ADR-0018): el máster, todo; la pantalla de la tele, lo que ve el grupo. Hasta
  * que llegue la niebla (`vision`) la pantalla ve la escena presentada entera, pero ya sin su página ni su nombre
  */
-import type { CampaignTableView, SceneView, ScreenScene, ScreenToken, ScreenView, TokenView } from '@crisol/contracts'
-import { campaignsRepo, scenesRepo, tokensRepo } from '@crisol/db'
+import type {
+  CampaignTableView,
+  CombatantView,
+  CombatView,
+  SceneView,
+  ScreenCombat,
+  ScreenScene,
+  ScreenToken,
+  ScreenView,
+  TokenView
+} from '@crisol/contracts'
+import { campaignsRepo, combatsRepo, creaturesRepo, scenesRepo, systemsRepo, tokensRepo } from '@crisol/db'
 import { actorFrom } from '@crisol/domain'
+import { type Choices, initiativeRoll, normalizeChoices, type System, type Text, textOf } from '@crisol/systems'
+import { slotIndexOf, turnSlots } from '@crisol/tabletop'
 import { characterVitalsOf } from '../actions/characters.ts'
 import type { ActionContext, ActionEnv } from '../actions/context.ts'
 import { creatureCardsOf, lifeStateOf } from '../actions/creatures.ts'
@@ -98,6 +110,124 @@ export function screenTokens(tokens: readonly TokenView[]): ScreenToken[] {
     }))
 }
 
+/** Fuera de combate: a 0 de su vida (sin vida que contar, como un personaje a medio crear, no) */
+const isDown = (life: { value: number; max: number } | null) => life !== null && life.max > 0 && life.value <= 0
+
+/** La tirada de iniciativa del sistema de la campaña: su clave y su nombre (null si no tiene) */
+export async function initiativeOf(ctx: ActionContext, campaign: Campaign) {
+  const row = campaign.system ? await systemsRepo.findSystem(ctx.db, campaign.system) : null
+  if (!row || row.deletedAt) return null
+  const system = row.document as unknown as System
+  const key = initiativeRoll(system)
+  if (!key) return null
+  const { choices } = normalizeChoices(system, (campaign.systemChoices ?? {}) as Partial<Choices>)
+  return { key, label: textOf(system.rolls?.[key]?.label as Text | undefined, choices.language) || key }
+}
+
+/**
+ * El combate de una campaña tal como lo ve su máster: cada combatiente con lo suyo (leído de su personaje o su
+ * criatura, y su ficha en la escena del combate), en el orden en que actúan y con el turno marcado
+ */
+export async function combatViewOf(
+  ctx: ActionContext,
+  campaign: Campaign,
+  combat: combatsRepo.CombatRow
+): Promise<CombatView> {
+  const rows = await combatsRepo.listCombatants(ctx.db, combat.id)
+  const creatureIds = rows.flatMap((r) => (r.creatureId ? [r.creatureId] : []))
+  const characterIds = rows.flatMap((r) => (r.characterId ? [r.characterId] : []))
+  const [tokens, cards, vitals, creatures, initiative] = await Promise.all([
+    combat.sceneId ? tokensRepo.listTokens(ctx.db, campaign.id, combat.sceneId) : Promise.resolve([]),
+    creatureCardsOf(ctx, campaign, creatureIds),
+    characterVitalsOf(ctx, campaign.id, characterIds),
+    creatureIds.length ? creaturesRepo.listCreatures(ctx.db, campaign.id) : Promise.resolve([]),
+    initiativeOf(ctx, campaign)
+  ])
+  const creatureRows = new Map(creatures.map((c) => [c.id, c]))
+  const list = rows.flatMap((row): Omit<CombatantView, 'active'>[] => {
+    const token = tokens.find((t) =>
+      row.characterId ? t.characterId === row.characterId : t.creatureId === row.creatureId
+    )
+    const base = {
+      id: row.id,
+      tokenId: token?.id ?? null,
+      initiative: row.initiative,
+      modifier: row.modifier,
+      group: row.group,
+      sort: row.sort
+    }
+    if (row.creatureId) {
+      const card = cards.get(row.creatureId)
+      const creature = creatureRows.get(row.creatureId)
+      if (!creature) return []
+      const life = card?.life ? { value: card.life.value, max: card.life.max, temp: card.life.temp } : null
+      return [
+        {
+          ...base,
+          kind: 'creature',
+          actorId: row.creatureId,
+          name: creature.name,
+          img: card?.img ?? null,
+          generic: !creature.unique,
+          defeated: isDown(life),
+          hidden: creature.hidden || token?.hidden === true,
+          life,
+          conditions: ((creature.play as { conditions?: CombatantView['conditions'] }).conditions ?? []).slice()
+        }
+      ]
+    }
+    const character = row.characterId ? vitals.get(row.characterId) : undefined
+    if (!character || !row.characterId) return []
+    return [
+      {
+        ...base,
+        kind: 'character',
+        actorId: row.characterId,
+        name: character.name,
+        img: null,
+        generic: false,
+        defeated: isDown(character.life),
+        hidden: token?.hidden === true,
+        life: character.life,
+        conditions: character.conditions
+      }
+    ]
+  })
+  // A igualdad de todo, por su nombre («Goblin 2» antes que «Goblin 10»)
+  list.sort((a, b) => a.name.localeCompare(b.name, 'es', { numeric: true }))
+  const slots = turnSlots(list)
+  const current = combat.round > 0 ? slotIndexOf(slots, combat.turnId) : -1
+  return {
+    id: combat.id,
+    campaignId: combat.campaignId,
+    sceneId: combat.sceneId,
+    round: combat.round,
+    turnId: combat.turnId,
+    skipDefeated: combat.skipDefeated,
+    initiativeRoll: initiative?.label ?? null,
+    combatants: slots.flatMap((slot, i) => slot.members.map((member) => ({ ...member, active: i === current })))
+  }
+}
+
+/** La franja de turnos de la pantalla: sin los ocultos, ni la vida, ni la iniciativa de las criaturas */
+export function screenCombatOf(combat: CombatView): ScreenCombat {
+  return {
+    round: combat.round,
+    combatants: combat.combatants
+      .filter((c) => !c.hidden)
+      .map((c) => ({
+        id: c.id,
+        kind: c.kind,
+        tokenId: c.tokenId,
+        name: c.name,
+        img: c.img,
+        initiative: c.kind === 'character' ? c.initiative : null,
+        active: c.active,
+        defeated: c.defeated
+      }))
+  }
+}
+
 /** Una escena tal como la ve quien prepara el mundo */
 export function sceneView(row: scenesRepo.SceneWithPage): SceneView {
   return {
@@ -139,13 +269,15 @@ async function tableOf(ctx: ActionContext, campaign: Campaign) {
   const tokens = open ? await tokenViews(ctx, campaign, open.id) : []
   const shownTokens =
     presented && presented.id === open?.id ? tokens : presented ? await tokenViews(ctx, campaign, presented.id) : []
+  const combat = await combatsRepo.findCombat(ctx.db, campaign.id)
   const master: CampaignTableView = {
     campaignId: campaign.id,
     open: open ? sceneView(open) : null,
     presented: presented ? sceneView(presented) : null,
     screenHidden: table.screenHidden,
     camera: table.camera,
-    tokens
+    tokens,
+    combat: combat ? await combatViewOf(ctx, campaign, combat) : null
   }
   return { master, shownTokens }
 }
@@ -170,7 +302,8 @@ export function screenViewOf(
     scene: showing && master.presented ? screenScene(master.presented) : null,
     hidden: master.screenHidden,
     camera: master.camera,
-    tokens: showing ? screenTokens(shownTokens) : []
+    tokens: showing ? screenTokens(shownTokens) : [],
+    combat: showing && master.combat ? screenCombatOf(master.combat) : null
   }
 }
 

@@ -1,6 +1,7 @@
 import { aiActions } from './ai.ts'
 import { campaignActions } from './campaigns.ts'
 import { characterActions } from './characters.ts'
+import { combatActions } from './combat.ts'
 import { compendiumActions } from './compendium.ts'
 import { creatureActions } from './creatures.ts'
 import { diceActions } from './dice.ts'
@@ -62,6 +63,7 @@ export const IMPLEMENTATIONS: Implementation[] = [
   ...partyActions,
   ...sceneActions,
   ...tokenActions,
+  ...combatActions,
   ...knowledgeActions,
   ...revealActions,
   ...libraryActions,
