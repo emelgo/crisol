@@ -18,10 +18,10 @@ module.exports = {
     {
       name: 'dominio-sin-frameworks',
       comment:
-        'El dominio, los contratos, el esquema del editor, los dados y los sistemas no dependen de React ni de Fastify',
+        'El dominio, los contratos, el esquema del editor, los dados, los sistemas y el núcleo de la mesa no dependen de React, Fastify ni PixiJS',
       severity: 'error',
-      from: { path: '^packages/(domain|contracts|editor|dice|systems)/' },
-      to: { path: 'node_modules/(react|react-dom|fastify|@fastify|@tiptap/react)/' }
+      from: { path: '^packages/(domain|contracts|editor|dice|systems|tabletop)/' },
+      to: { path: 'node_modules/(react|react-dom|fastify|@fastify|@tiptap/react|pixi\\.js)/' }
     },
     {
       name: 'drizzle-solo-en-db',
@@ -32,9 +32,10 @@ module.exports = {
     },
     {
       name: 'dominio-puro',
-      comment: 'El dominio, los dados y los sistemas no dependen de la base de datos ni del servidor',
+      comment:
+        'El dominio, los dados, los sistemas y el núcleo de la mesa no dependen de la base de datos ni del servidor',
       severity: 'error',
-      from: { path: '^packages/(domain|dice|systems)/' },
+      from: { path: '^packages/(domain|dice|systems|tabletop)/' },
       to: { path: '^(packages/db|apps)/' }
     },
     {
