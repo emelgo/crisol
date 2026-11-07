@@ -184,6 +184,8 @@ describe('operation', () => {
     notTracked.add('file_texts').add('file_pages').add('search_chunks')
     // Las imágenes de un sistema: se rehacen al importarlo; sus bytes, en el almacenamiento (docs/specs/imagenes.md)
     notTracked.add('system_images')
+    // Lo nuevo de cada jugador: como los avisos, se borra al abrirlo (docs/specs/revelar.md)
+    notTracked.add('knowledge_news')
     const tables = await conn.sql<
       { name: string }[]
     >`select tablename as name from pg_tables where schemaname = 'public'`

@@ -143,6 +143,7 @@ describe('repositorios', () => {
           system: null,
           systemChoices: null,
           knowsWorld: true,
+          hiddenTypes: [],
           version: 1,
           role: 'master'
         }
