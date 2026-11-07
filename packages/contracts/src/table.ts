@@ -1,11 +1,12 @@
 /**
  * El canal de la mesa (ADR-0018): un WebSocket por conexión a la mesa de una campaña. Quien mira dice quién es al
  * entrar: el máster (todo) o la pantalla de la tele (lo que ve el grupo). Los cambios que se guardan van por la API;
- * aquí llega la proyección de cada uno y lo que va en vivo (el encuadre del máster que sigue la pantalla)
+ * aquí llega la proyección de cada uno y lo que va en vivo (el encuadre del máster, el arrastre, la medida y el láser)
  */
 import { z } from 'zod'
 import { screenCombat } from './combat.ts'
 import { type campaignTableView, fogMask, sceneGrid, sceneTiles, sceneViewport, screenCamera } from './scenes.ts'
+import { type LiveMeasure, laserPoints, liveMeasure, screenMark, screenWidget } from './table-tools.ts'
 import { screenToken } from './tokens.ts'
 
 export const TABLE_VIEWS = ['master', 'screen'] as const
@@ -29,7 +30,11 @@ export const tableClientMessage = z.discriminatedUnion('type', [
       )
       .min(1)
       .max(20)
-  })
+  }),
+  /** La medida en curso del máster (null: ya no mide): a la pantalla, solo con «la tele ve lo que mides» */
+  z.object({ type: z.literal('measure'), measure: liveMeasure.nullable() }),
+  /** La estela del láser: a la pantalla, lo que cae en lo que ve o vio el grupo */
+  z.object({ type: z.literal('laser'), points: laserPoints })
 ])
 
 export type TableClientMessage = z.infer<typeof tableClientMessage>
@@ -85,7 +90,11 @@ export const screenView = z.object({
   /** La niebla (llega con la escena; opcional hasta que lo dé la API de prueba de la web) */
   fog: screenFog.nullable().optional(),
   /** Las luces que alumbran lo que ve el grupo, recortadas a ello */
-  lights: z.array(screenLight).optional()
+  lights: z.array(screenLight).optional(),
+  /** Lo dejado en el mapa que el grupo puede ver (docs/specs/herramientas-mesa.md) */
+  marks: z.array(screenMark).optional(),
+  /** Los widgets de la campaña con el ojo abierto */
+  widgets: z.array(screenWidget).optional()
 })
 
 export type ScreenView = z.infer<typeof screenView>
@@ -98,4 +107,8 @@ export type TableServerMessage =
   | { type: 'viewport'; view: z.infer<typeof sceneViewport> }
   /** Unas fichas mientras se arrastran (a la pantalla, solo las que ve) */
   | { type: 'drag'; moves: Array<{ tokenId: string; x: number; y: number }> }
+  /** La medida en curso del máster (null: se acabó) */
+  | { type: 'measure'; measure: LiveMeasure | null }
+  /** La estela del láser (a la pantalla, solo sus puntos que ve o vio el grupo) */
+  | { type: 'laser'; points: Array<{ x: number; y: number }> }
   | { type: 'error'; code: 'FORBIDDEN' | 'NOT_FOUND' | 'BAD_MESSAGE' | 'NOT_JOINED' }

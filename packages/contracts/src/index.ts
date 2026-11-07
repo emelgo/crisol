@@ -155,6 +155,22 @@ import {
   trySystemRoll,
   updateSystem
 } from './systems.ts'
+import {
+  changeMarks,
+  createWidget,
+  deleteSnapshot,
+  deleteWidget,
+  getTemplateTokens,
+  listMarks,
+  listSnapshots,
+  listWidgets,
+  measureDistance,
+  placeTemplate,
+  restoreSnapshot,
+  saveSnapshot,
+  setMeasureOnScreen,
+  updateWidget
+} from './table-tools.ts'
 import { getRandomTable, resetTableDraws, rollOnTable, updateRandomTable } from './tables.ts'
 import { createTag, deleteTag, listAccountTags, setFileTags, updateTag } from './tags.ts'
 import { createTemplate, deleteTemplate, getTemplate, listTemplates, updateTemplate } from './templates.ts'
@@ -226,6 +242,7 @@ export * from './scenes.ts'
 export * from './search.ts'
 export * from './systems.ts'
 export * from './table.ts'
+export * from './table-tools.ts'
 export * from './tables.ts'
 export * from './tags.ts'
 export * from './templates.ts'
@@ -444,7 +461,21 @@ export const ACTIONS = [
   changeFog,
   resetFog,
   setTileFit,
-  viewAsParty
+  viewAsParty,
+  setMeasureOnScreen,
+  listMarks,
+  changeMarks,
+  placeTemplate,
+  getTemplateTokens,
+  measureDistance,
+  listWidgets,
+  createWidget,
+  updateWidget,
+  deleteWidget,
+  listSnapshots,
+  saveSnapshot,
+  restoreSnapshot,
+  deleteSnapshot
 ]
 
 /** Las acciones por nombre, solo como tipo: la web las usa sin cargar zod */
@@ -657,4 +688,18 @@ export type Actions = {
   resetFog: typeof resetFog
   setTileFit: typeof setTileFit
   viewAsParty: typeof viewAsParty
+  setMeasureOnScreen: typeof setMeasureOnScreen
+  listMarks: typeof listMarks
+  changeMarks: typeof changeMarks
+  placeTemplate: typeof placeTemplate
+  getTemplateTokens: typeof getTemplateTokens
+  measureDistance: typeof measureDistance
+  listWidgets: typeof listWidgets
+  createWidget: typeof createWidget
+  updateWidget: typeof updateWidget
+  deleteWidget: typeof deleteWidget
+  listSnapshots: typeof listSnapshots
+  saveSnapshot: typeof saveSnapshot
+  restoreSnapshot: typeof restoreSnapshot
+  deleteSnapshot: typeof deleteSnapshot
 }

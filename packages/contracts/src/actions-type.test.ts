@@ -212,7 +212,21 @@ describe('Actions', () => {
       changeFog: true,
       resetFog: true,
       setTileFit: true,
-      viewAsParty: true
+      viewAsParty: true,
+      setMeasureOnScreen: true,
+      listMarks: true,
+      changeMarks: true,
+      placeTemplate: true,
+      getTemplateTokens: true,
+      measureDistance: true,
+      listWidgets: true,
+      createWidget: true,
+      updateWidget: true,
+      deleteWidget: true,
+      listSnapshots: true,
+      saveSnapshot: true,
+      restoreSnapshot: true,
+      deleteSnapshot: true
     }
     expect(Object.keys(names).sort()).toEqual(ACTIONS.map((a) => a.name).sort())
   })

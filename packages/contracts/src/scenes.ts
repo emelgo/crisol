@@ -5,6 +5,7 @@
 import { z } from 'zod'
 import { defineAction } from './action.ts'
 import { combatView } from './combat.ts'
+import { markView, widgetView } from './table-tools.ts'
 import { tokenView } from './tokens.ts'
 
 export const SCENE_GRID_TYPES = ['square', 'hex-rows', 'hex-columns', 'none'] as const
@@ -224,7 +225,13 @@ export const campaignTableView = z.object({
   /** El combate de la campaña, si hay uno (null si no) */
   combat: combatView.nullable(),
   /** La visión de la escena abierta (llega siempre; opcional hasta que lo dé la API de prueba de la web) */
-  vision: tableVision.nullable().optional()
+  vision: tableVision.nullable().optional(),
+  /** Lo dejado en el mapa de la escena abierta (docs/specs/herramientas-mesa.md; opcional por la API de prueba de la web) */
+  marks: z.array(markView).optional(),
+  /** Los widgets de la campaña */
+  widgets: z.array(widgetView).optional(),
+  /** «La tele ve lo que mides» */
+  measureOnScreen: z.boolean().optional()
 })
 
 export type CampaignTableView = z.infer<typeof campaignTableView>
