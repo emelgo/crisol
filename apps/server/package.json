@@ -14,7 +14,7 @@
     "typecheck": "tsc -p .",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "test:rendimiento": "CRISOL_RENDIMIENTO=1 vitest run src/actions/knowledge.integration.test.ts -t rendimiento",
+    "test:rendimiento": "CRISOL_RENDIMIENTO=1 vitest run src/actions/knowledge.integration.test.ts src/table/vision.integration.test.ts -t rendimiento",
     "crisol": "node --env-file-if-exists=../../.env src/cli/main.ts",
     "auth:schema": "auth generate --config better-auth.config.ts --output ../../packages/db/src/schema/auth.ts --yes"
   },

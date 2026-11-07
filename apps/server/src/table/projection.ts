@@ -32,7 +32,7 @@ import { characterVitalsOf } from '../actions/characters.ts'
 import type { ActionContext, ActionEnv } from '../actions/context.ts'
 import { creatureCardsOf, lifeStateOf } from '../actions/creatures.ts'
 import type { LoadTable } from './rooms.ts'
-import type { VisionResult, VisionToken } from './vision.ts'
+import type { VisionResult, VisionToken, WalkedMove } from './vision.ts'
 
 type Campaign = NonNullable<Awaited<ReturnType<typeof campaignsRepo.findCampaign>>>
 
@@ -45,16 +45,18 @@ export async function tokenViews(ctx: ActionContext, campaign: Campaign, sceneId
 export async function tokensWithSenses(ctx: ActionContext, campaign: Campaign, sceneId: string) {
   const senses = new Map<string, SenseRanges>()
   const rows = await tokensRepo.listTokens(ctx.db, campaign.id, sceneId)
-  const creatures = await creatureCardsOf(
-    ctx,
-    campaign,
-    rows.flatMap((r) => (r.creatureId ? [r.creatureId] : []))
-  )
-  const characters = await characterVitalsOf(
-    ctx,
-    campaign.id,
-    rows.flatMap((r) => (r.characterId ? [r.characterId] : []))
-  )
+  const [creatures, characters] = await Promise.all([
+    creatureCardsOf(
+      ctx,
+      campaign,
+      rows.flatMap((r) => (r.creatureId ? [r.creatureId] : []))
+    ),
+    characterVitalsOf(
+      ctx,
+      campaign.id,
+      rows.flatMap((r) => (r.characterId ? [r.characterId] : []))
+    )
+  ])
   const views = rows.flatMap((row): TokenView[] => {
     const base = {
       id: row.id,
@@ -307,25 +309,54 @@ export function visionTokens(
   })
 }
 
+/** Lo más largo que se explora del camino de una ficha, en casillas */
+const MAX_PATH_STEPS = 60
+
 /**
- * La vista del grupo de una campaña en una escena: con las fichas ya leídas o, si no, leyéndolas. `paths`, los puntos
- * del camino de las fichas que se acaban de mover (se explora lo que se ve desde cada uno). Sin el servicio, null
+ * Los puntos de paso de las fichas del grupo que se movieron (desde donde estaban hasta antes de donde están, una
+ * casilla cada vez; en un camino muy largo, más espaciados), con sus sentidos de ahora
+ */
+export function walkedPaths(
+  scene: Pick<scenesRepo.SceneRow, 'grid'>,
+  moves: readonly WalkedMove[],
+  tokens: readonly VisionToken[]
+): PartyToken[] {
+  const byId = new Map(tokens.map((t) => [t.id, t]))
+  const step = scene.grid.size > 0 ? scene.grid.size : 100
+  return moves.flatMap(({ tokenId, from, to }) => {
+    const token = byId.get(tokenId)
+    if (!token?.party) return []
+    const distance = Math.hypot(to.x - from.x, to.y - from.y)
+    const stride = Math.max(step, distance / MAX_PATH_STEPS)
+    const count = Math.max(0, Math.ceil(distance / stride))
+    return Array.from({ length: count }, (_, i) => {
+      const k = (i * stride) / distance
+      return {
+        id: token.id,
+        x: from.x + (to.x - from.x) * k,
+        y: from.y + (to.y - from.y) * k,
+        radius: token.radius,
+        ...(token.senses ? { senses: token.senses } : {})
+      }
+    })
+  })
+}
+
+/**
+ * La vista del grupo de una campaña en una escena: con las fichas ya leídas o, si no, leyéndolas. Explora también el
+ * camino de las fichas que se acaban de mover (lo apuntado con `walked`). Sin el servicio, null
  */
 export async function visionOf(
   ctx: ActionContext,
   campaign: Campaign,
   scene: scenesRepo.SceneRow,
-  loaded?: { views: TokenView[]; senses: ReadonlyMap<string, SenseRanges> },
-  paths?: readonly PartyToken[]
+  loaded?: { views: TokenView[]; senses: ReadonlyMap<string, SenseRanges> }
 ): Promise<VisionResult | null> {
   if (!ctx.vision) return null
   const { views, senses } = loaded ?? (await tokensWithSenses(ctx, campaign, scene.id))
-  return ctx.vision.view({
-    campaignId: campaign.id,
-    scene,
-    tokens: visionTokens(scene, views, senses),
-    ...(paths?.length ? { paths } : {})
-  })
+  const tokens = visionTokens(scene, views, senses)
+  const paths = walkedPaths(scene, ctx.vision.takeWalked(campaign.id, scene.id), tokens)
+  return ctx.vision.view({ campaignId: campaign.id, scene, tokens, ...(paths.length ? { paths } : {}) })
 }
 
 /** La visión de la escena abierta para el máster */
@@ -358,13 +389,13 @@ async function tableOf(ctx: ActionContext, campaign: Campaign) {
       : table.presentedSceneId
         ? await scenesRepo.findScene(ctx.db, table.presentedSceneId)
         : null
-  const openLoaded = open ? await tokensWithSenses(ctx, campaign, open.id) : { views: [], senses: new Map() }
-  const shownLoaded =
-    presented && presented.id === open?.id
-      ? openLoaded
-      : presented
-        ? await tokensWithSenses(ctx, campaign, presented.id)
-        : { views: [], senses: new Map() }
+  const none = { views: [], senses: new Map<string, SenseRanges>() }
+  const [openLoaded, otherLoaded, combat] = await Promise.all([
+    open ? tokensWithSenses(ctx, campaign, open.id) : none,
+    presented && presented.id !== open?.id ? tokensWithSenses(ctx, campaign, presented.id) : null,
+    combatsRepo.findCombat(ctx.db, campaign.id)
+  ])
+  const shownLoaded = otherLoaded ?? (presented ? openLoaded : none)
   const openVision = open ? await visionOf(ctx, campaign, open, openLoaded) : null
   const shownVision =
     presented && presented.id === open?.id
@@ -372,7 +403,6 @@ async function tableOf(ctx: ActionContext, campaign: Campaign) {
       : presented
         ? await visionOf(ctx, campaign, presented, shownLoaded)
         : null
-  const combat = await combatsRepo.findCombat(ctx.db, campaign.id)
   const master: CampaignTableView = {
     campaignId: campaign.id,
     open: open ? sceneView(open) : null,

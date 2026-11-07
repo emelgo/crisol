@@ -41,6 +41,18 @@ function loadCodec(): Promise<Codec> {
   return codec
 }
 
+/** Una imagen RGBA en WebP (las pruebas hacen así sus teselas) */
+export async function encodeWebp(image: { data: Uint8ClampedArray; width: number; height: number }) {
+  const { encode } = await loadCodec()
+  return new Uint8Array(await encode(image, { quality: 90 }))
+}
+
+/** Los píxeles RGBA de un WebP */
+export async function decodeWebp(bytes: Uint8Array) {
+  const { decode } = await loadCodec()
+  return decode(bytes.slice().buffer)
+}
+
 export interface CropRequest {
   /** La tesela tal cual (WebP) */
   bytes: Uint8Array

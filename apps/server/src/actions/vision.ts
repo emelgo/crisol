@@ -297,6 +297,15 @@ function fogOperations(input: z.infer<typeof changeFog.input>, grid: SceneRow['g
     out.push({ ...base, shape: 'rectangle', x: input.x, y: input.y, width: input.width, height: input.height })
   else if (input.shape === 'brush') out.push({ ...base, shape: 'brush', points: input.points, radius: input.radius })
   else if (input.shape === 'lasso') out.push({ ...base, shape: 'lasso', points: input.points })
+  else if (input.shape === 'area' && square)
+    out.push({
+      ...base,
+      shape: 'rectangle',
+      x: offset.x + (input.column ?? 0) * size,
+      y: offset.y + (input.row ?? 0) * size,
+      width: (input.columns ?? 1) * size,
+      height: (input.rows ?? 1) * size
+    })
   else {
     const cells =
       input.shape === 'cells'

@@ -18,7 +18,7 @@ import {
   type Wall
 } from '@crisol/tabletop'
 import type { CropRequest } from './tile-crop.ts'
-import type { SceneGeometry, ViewRequest, ViewResponse } from './vision-compute.ts'
+import { MISSING_SCENE, type SceneGeometry, type ViewRequest, type ViewResponse } from './vision-compute.ts'
 
 /** El lado del mapa de una escena sin imagen, en píxeles: la niebla necesita un tamaño */
 export const NO_IMAGE_SIDE = 8192
@@ -38,6 +38,13 @@ type SceneRow = Pick<
   scenesRepo.SceneRow,
   'id' | 'worldId' | 'version' | 'width' | 'height' | 'grid' | 'darkness' | 'automaticVision'
 >
+
+/** Una ficha que se movió: de dónde a dónde */
+export interface WalkedMove {
+  tokenId: string
+  from: { x: number; y: number }
+  to: { x: number; y: number }
+}
 
 export interface VisionInput {
   campaignId: string
@@ -77,6 +84,15 @@ export interface Vision {
   peek(campaignId: string, sceneId: string): VisionResult | null
   /** Algo cambió en la mesa de una campaña o en una escena: sus vistas ya no valen para `peek` */
   invalidate(where: { campaignId?: string; sceneId?: string }): void
+  /**
+   * Unas fichas se acaban de mover de `from` a `to`: la próxima vista de la campaña en la escena explora también lo que
+   * se ve desde cada casilla de su camino (si son del grupo). Se apunta aquí para no esperar a calcularlo al moverlas
+   */
+  walked(campaignId: string, sceneId: string, moves: readonly WalkedMove[]): void
+  /** Lo que se apuntó con `walked` y aún no se ha explorado (se saca: lo explora quien lo pide) */
+  takeWalked(campaignId: string, sceneId: string): WalkedMove[]
+  /** Para lo que se calcula sin nadie esperando: su fallo, al registro */
+  report(error: unknown): void
   /** Recorta una tesela con la máscara (en el hilo) */
   crop(request: CropRequest): Promise<Uint8Array>
   /**
@@ -184,6 +200,11 @@ export function createVision(db: Database, onError: (error: unknown) => void = (
   const explored = new Map<string, Uint8Array | null>()
   const results = new Map<string, { hash: string; result: VisionResult }>()
   const locks = new Map<string, Promise<unknown>>()
+  const pendingWalks = new Map<string, WalkedMove[]>()
+  /** Lo explorado que se está guardando, por campaña y escena (para guardarlo en orden) */
+  const saving = new Map<string, Promise<void>>()
+  /** Las claves de lo preparado que ya tiene el hilo (si lo olvidó, contesta y se le vuelve a mandar) */
+  const sent = new Set<string>()
   /** Las vistas que siguen valiendo tal cual (sin que haya cambiado nada desde que se calcularon) */
   const fresh = new Set<string>()
 
@@ -262,10 +283,27 @@ export function createVision(db: Database, onError: (error: unknown) => void = (
       manual,
       explored: before
     }
-    const response = await views.call<ViewResponse>({ type: 'view', request })
+    // La escena (miles de muros) viaja al hilo solo si aún no la tiene preparada
+    const known = sent.has(request.key)
+    const response = await views
+      .call<ViewResponse>({ type: 'view', request: known ? { ...request, scene: null } : request })
+      .catch((error: unknown) => {
+        if (!(error instanceof Error) || error.message !== MISSING_SCENE) throw error
+        return views.call<ViewResponse>({ type: 'view', request })
+      })
+    sent.add(request.key)
+    if (sent.size > 64) sent.delete(sent.keys().next().value as string)
     if (response.exploredChanged || !before) {
       explored.set(key, response.explored)
-      await visionRepo.saveExplored(db, campaignId, scene.id, response.explored)
+      // Se guarda sin hacer esperar a la pantalla, en orden (la memoria ya lo tiene)
+      const data = response.explored
+      const write = (saving.get(key) ?? Promise.resolve())
+        .then(() => visionRepo.saveExplored(db, campaignId, scene.id, data))
+        .catch(onError)
+      saving.set(key, write)
+      void write.then(() => {
+        if (saving.get(key) === write) saving.delete(key)
+      })
     }
     const visible = FogGrid.decode(response.visible)
     const shown = FogGrid.decode(response.exploredShown)
@@ -316,6 +354,22 @@ export function createVision(db: Database, onError: (error: unknown) => void = (
           fresh.delete(key)
       }
     },
+    walked(campaignId, sceneId, moves) {
+      const key = `${campaignId}:${sceneId}`
+      // Como mucho unos cuantos caminos por explorar (si nadie mira en mucho rato, los últimos)
+      const list = [...(pendingWalks.get(key) ?? []), ...moves].slice(-200)
+      pendingWalks.set(key, list)
+      fresh.delete(key)
+    },
+    takeWalked(campaignId, sceneId) {
+      const key = `${campaignId}:${sceneId}`
+      const list = pendingWalks.get(key) ?? []
+      pendingWalks.delete(key)
+      return list
+    },
+    report(error) {
+      onError(error)
+    },
     crop(request) {
       const own = request.bytes.slice()
       return crops.call<Uint8Array>({ type: 'crop', request: { ...request, bytes: own } }, [own.buffer])
@@ -323,6 +377,7 @@ export function createVision(db: Database, onError: (error: unknown) => void = (
     reset(campaignId, sceneId, work) {
       const key = `${campaignId}:${sceneId}`
       return serial(key, async () => {
+        await saving.get(key)
         try {
           return await work()
         } finally {
@@ -333,6 +388,7 @@ export function createVision(db: Database, onError: (error: unknown) => void = (
       })
     },
     async close() {
+      await Promise.all([...saving.values()])
       await Promise.all([views.close(), crops.close()])
     }
   }

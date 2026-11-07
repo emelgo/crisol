@@ -213,6 +213,15 @@ export interface CharacterVitals {
 }
 
 /**
+ * Lo vital ya calculado de cada personaje, por lo que lo decide (ver abajo): montar su hoja con todo el contenido del
+ * sistema cuesta, y la mesa lo pide con cada cambio (al soltar una ficha, también). Lo del mundo no cuenta en la
+ * clave: un cambio en su compendio se ve, como mucho, al minuto
+ */
+const vitalsKept = new Map<string, { at: number; vitals: CharacterVitals }>()
+const VITALS_TTL_MS = 60_000
+const VITALS_KEEP = 2000
+
+/**
  * Lo vital de unos personajes de una campaña, para la mesa (ADR-0018). No autoriza: lo hace quien llama. Se carga el
  * contexto de cada sistema una vez
  */
@@ -224,9 +233,25 @@ export async function characterVitalsOf(
   const vitals = new Map<string, CharacterVitals>()
   if (ids.length === 0) return vitals
   const wanted = new Set(ids)
-  const rows = (await charactersRepo.listCharacters(ctx.db, campaignId)).filter((r) => wanted.has(r.id))
+  const [listed, campaign] = await Promise.all([
+    charactersRepo.listCharacters(ctx.db, campaignId),
+    campaignsRepo.findCampaign(ctx.db, campaignId)
+  ])
+  const rows = listed.filter((r) => wanted.has(r.id))
   const contexts = new Map<string, Awaited<ReturnType<typeof charactersContext>> | null>()
+  // Lo que decide su hoja: él (su versión), su sistema (la suya) y lo que elige la campaña (la suya)
+  const systemIds = [...new Set(rows.map((r) => r.system))]
+  const systems = new Map(
+    (await systemsRepo.systemVersions(ctx.db, systemIds)).map((s) => [s.id, `${s.version}:${s.deletedAt ?? ''}`])
+  )
+  const now = Date.now()
   for (const row of rows) {
+    const key = `${campaignId}:${row.id}:${row.version}:${row.system}:${systems.get(row.system) ?? 'catalog'}:${campaign?.version ?? 0}`
+    const kept = vitalsKept.get(key)
+    if (kept && now - kept.at < VITALS_TTL_MS) {
+      vitals.set(row.id, kept.vitals)
+      continue
+    }
     const play = row.play as Play
     let context = contexts.get(row.system)
     if (context === undefined) {
@@ -260,14 +285,10 @@ export async function characterVitalsOf(
         // Un personaje a medio crear: sin vida que enseñar
       }
     }
-    vitals.set(row.id, {
-      name: row.name,
-      version: row.version,
-      life,
-      stats,
-      conditions: play.conditions ?? [],
-      senses
-    })
+    const made = { name: row.name, version: row.version, life, stats, conditions: play.conditions ?? [], senses }
+    vitals.set(row.id, made)
+    vitalsKept.set(key, { at: now, vitals: made })
+    if (vitalsKept.size > VITALS_KEEP) vitalsKept.delete(vitalsKept.keys().next().value as string)
   }
   return vitals
 }

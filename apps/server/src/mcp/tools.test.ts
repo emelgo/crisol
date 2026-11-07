@@ -186,6 +186,23 @@ describe('herramientas MCP', () => {
     expect(() => route('borrar')).toThrow()
   })
 
+  it('niebla: destapar o tapar una zona, o reiniciarla (las dos, de las que ven los jugadores)', () => {
+    const tool = MCP_TOOLS.niebla
+    if (!tool) throw new Error('falta niebla')
+    const campaignId = crypto.randomUUID()
+    const area = { mode: 'reveal', shape: 'area', column: 1, row: 2, columns: 3, rows: 1 }
+    const reveal = routeCall(tool, { campaignId, ...area })
+    expect([reveal.impl.action.name, reveal.impl.action.kind, reveal.input]).toEqual([
+      'changeFog',
+      'players',
+      { campaignId, ...area }
+    ])
+    const reset = routeCall(tool, { campaignId, reset: true })
+    expect([reset.impl.action.name, reset.input]).toEqual(['resetFog', { campaignId }])
+    // Una forma sin sus datos no pasa
+    expect(() => routeCall(tool, { campaignId, mode: 'cover', shape: 'rectangle' })).toThrow()
+  })
+
   it('ver_sistema: entero o por partes; crear_sistema: copiando, con su documento o desde un archivo', () => {
     const { ver_sistema, crear_sistema } = MCP_TOOLS
     if (!ver_sistema || !crear_sistema) throw new Error('faltan herramientas de sistemas')

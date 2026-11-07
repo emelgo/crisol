@@ -37,7 +37,8 @@ export interface VisionTarget {
 export interface ViewRequest {
   /** La de lo preparado: escena, su versión y la del estado de la campaña (sus puertas) */
   key: string
-  scene: SceneGeometry
+  /** Solo hace falta si el hilo aún no tiene preparada esa clave (si falta, contesta `MISSING_SCENE`) */
+  scene: SceneGeometry | null
   doors: DoorStates
   party: PartyToken[]
   /** Los puntos de los caminos recorridos (cada ficha con sus sentidos): se explora lo que se ve desde cada uno */
@@ -62,6 +63,9 @@ export interface ViewResponse {
   seen: string[]
 }
 
+/** Lo que contesta el hilo si le piden una clave que no tiene preparada sin mandarle la escena */
+export const MISSING_SCENE = 'MISSING_SCENE'
+
 /** Cuántas escenas preparadas se guardan a la vez en el hilo */
 const PREPARED_KEEP = 24
 const prepared = new Map<string, PreparedVision>()
@@ -75,6 +79,7 @@ function preparedFor(request: ViewRequest): PreparedVision {
     return found
   }
   const { scene } = request
+  if (!scene) throw new Error(MISSING_SCENE)
   const made = prepareVision({
     width: scene.width,
     height: scene.height,
