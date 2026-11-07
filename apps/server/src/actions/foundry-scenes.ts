@@ -171,7 +171,8 @@ async function creatureFinder(
   systemId: string | undefined
 ) {
   const { worldId } = wiki
-  const ids = systemId ? [systemId] : await foundryRepo.worldSystems(ctx.db, worldId)
+  // El que se diga primero, y luego los de las campañas del mundo
+  const ids = [...new Set([...(systemId ? [systemId] : []), ...(await foundryRepo.worldSystems(ctx.db, worldId))])]
   const catalogs: Array<{ systemId: string; entries: Array<{ key: string; names: string[] }> }> = []
   for (const id of ids.filter((i) => UUID.test(i))) {
     const row = await systemsRepo.findSystem(ctx.db, id)

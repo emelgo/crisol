@@ -311,6 +311,11 @@ export function summaryOf(
     case 'deleteEncounter':
     case 'placeEncounter':
       return say(action, { name: text(details.name), campaign: text(details.campaign) })
+    // Lo traído de un zip (docs/specs/escenas-foundry.md)
+    case 'importFoundryScene':
+      return say(action, { name: text(details.name), title: text(details.title) })
+    case 'placeScenePins':
+      return say(action, { campaign: text(details.campaign) })
     // Las etiquetas de la cuenta (ADR-0006)
     case 'createTag':
     case 'colorTag':

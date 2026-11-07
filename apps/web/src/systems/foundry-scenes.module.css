@@ -1,0 +1,130 @@
+/* Las escenas de un zip, a un mundo: dónde van, cuáles (con su miniatura) y lo traído */
+.scenes {
+  display: grid;
+  gap: var(--space-3);
+  padding-block-start: var(--space-3);
+  border-block-start: 1px solid var(--color-border);
+}
+
+.title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.where {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: var(--space-3);
+}
+
+.note {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+.list {
+  display: grid;
+  gap: var(--space-1);
+  max-block-size: 20rem;
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  overflow-y: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.list legend {
+  padding: 0 var(--space-1);
+  font-weight: 600;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: var(--target);
+  padding-block: var(--space-1);
+}
+
+.thumb {
+  flex: none;
+  display: grid;
+  place-items: center;
+  inline-size: 4rem;
+  block-size: 2.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-raised);
+  color: var(--color-muted);
+  object-fit: cover;
+}
+
+.text {
+  display: grid;
+  min-inline-size: 0;
+}
+
+.name {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+  overflow-wrap: anywhere;
+}
+
+.meta {
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+}
+
+.badge {
+  padding: 0 var(--space-1);
+  border: 1px solid var(--color-frame);
+  border-radius: 4px;
+  color: var(--color-muted);
+  font-size: 0.75rem;
+}
+
+.adventure {
+  display: grid;
+}
+
+/* Las escenas de una aventura: van con ella */
+.inside {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0 0 var(--space-1) calc(1.25rem + var(--space-2));
+  list-style: none;
+}
+
+.inside li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.progress {
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+.result {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.result li {
+  display: grid;
+  gap: 2px;
+}
+
+.warn {
+  color: var(--color-warning);
+  font-size: 0.8125rem;
+}

@@ -1,6 +1,6 @@
 import { strToU8, unzipSync, zipSync } from 'fflate'
 import { describe, expect, it } from 'vitest'
-import { readFoundryZip, slimZip, toBase64 } from './foundry-zip.ts'
+import { filesFromZip, readFoundryZip, slimZip, toBase64 } from './foundry-zip.ts'
 
 const manifest = {
   id: 'fronteras',
@@ -20,6 +20,7 @@ const zip = (root: string) =>
     [`${root}packs/conjuros/000001.ldb`]: strToU8('a'),
     [`${root}packs/criaturas/000001.ldb`]: strToU8('b'),
     [`${root}packs/viejo`]: strToU8('c'),
+    [`${root}packs/escenas/000001.ldb`]: strToU8('d'),
     [`${root}assets/mapa.webp`]: new Uint8Array(1000),
     [`${root}packs/conjuros/sub/system.json`]: strToU8('{"id":"otro"}')
   })
@@ -39,6 +40,8 @@ describe('el zip de Foundry, antes de subirlo', () => {
       'criaturas:Actor:packs/criaturas',
       'viejo:Item:packs/viejo'
     ])
+    // Las escenas y aventuras, aparte: van a un mundo
+    expect(read?.scenePacks.map((p) => `${p.name}:${p.type}`)).toEqual(['escenas:Scene'])
   })
 
   it('lo que no es de Foundry, null', () => {
@@ -64,5 +67,20 @@ describe('el zip de Foundry, antes de subirlo', () => {
       'system.json'
     ])
     expect(toBase64(strToU8('Hola'))).toBe('SG9sYQ==')
+  })
+
+  it('para las escenas: sus paquetes, y sus imágenes por su ruta (las que vienen y no pasan del tope)', () => {
+    const bytes = zip('fronteras/')
+    const read = readFoundryZip(bytes)
+    if (!read) throw new Error('sin manifiesto')
+    expect(Object.keys(unzipSync(slimZip(bytes, read, ['escenas']))).sort()).toEqual([
+      'fronteras/lang/en.json',
+      'fronteras/packs/escenas/000001.ldb',
+      'fronteras/system.json'
+    ])
+    const files = filesFromZip(bytes, read, ['systems/fronteras/assets/mapa.webp', 'icons/svg/mystery-man.svg'])
+    expect([...files.keys()]).toEqual(['systems/fronteras/assets/mapa.webp'])
+    expect(files.get('systems/fronteras/assets/mapa.webp')).toHaveLength(1000)
+    expect(filesFromZip(bytes, read, ['systems/fronteras/assets/mapa.webp'], 500).size).toBe(0)
   })
 })

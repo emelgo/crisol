@@ -27,6 +27,7 @@ import { Tour } from '../components/tour.tsx'
 import cards from '../routes/world-card.module.css'
 import screen from '../templates/screen.module.css'
 import { FoundryImages } from './foundry-images.tsx'
+import { FoundryScenes } from './foundry-scenes.tsx'
 import { type FoundryZip, imagesFromZip, readFoundryZip, slimZip, toBase64, type ZipImage } from './foundry-zip.ts'
 import styles from './screen.module.css'
 
@@ -249,6 +250,8 @@ export function NewSystemDialog({ onClose }: { onClose: () => void }) {
   } | null>(null)
   // Tras traerlo de Foundry, sus imágenes: se sacan del zip y se suben aparte
   const [images, setImages] = useState<{ systemId: string; images: ZipImage[] } | null>(null)
+  // El sistema ya traído del zip: sus escenas buscan en él sus criaturas
+  const [created, setCreated] = useState<{ id: string; name: string } | null>(null)
   const upload = useMutation({
     mutationFn: async () => {
       if (!foundry) return api.call('importSystem', { file: file?.content ?? {} })
@@ -260,8 +263,10 @@ export function NewSystemDialog({ onClose }: { onClose: () => void }) {
       await queryClient.invalidateQueries({ queryKey: ['systems'] })
       const named = 'images' in out ? (out.images as { path: string; credit: string | null }[]) : []
       const found = foundry && named.length > 0 ? imagesFromZip(foundry.bytes, foundry.read, named) : []
+      setCreated({ id: out.system.id, name: out.system.name })
       if (found.length > 0) setImages({ systemId: out.system.id, images: found })
-      else dialog.current?.close()
+      // Si el zip trae escenas, el cuadro sigue abierto con ellas
+      else if (!foundry?.read.scenePacks.length) dialog.current?.close()
     }
   })
   const blank = useDownload('blank')
@@ -270,6 +275,7 @@ export function NewSystemDialog({ onClose }: { onClose: () => void }) {
   const read = async (picked: File | undefined) => {
     if (!picked) return
     setFoundry(null)
+    setCreated(null)
     if (picked.name.toLowerCase().endsWith('.zip')) {
       const bytes = new Uint8Array(await picked.arrayBuffer())
       const found = readFoundryZip(bytes)
@@ -300,6 +306,7 @@ export function NewSystemDialog({ onClose }: { onClose: () => void }) {
     setFile({ name: picked.name, content: valid ? (content as Record<string, unknown>) : null, problems })
   }
   const errors = file?.problems.filter((p) => p.severity === 'error') ?? []
+  const onlyScenes = foundry !== null && foundry.read.packs.length === 0 && foundry.read.scenePacks.length > 0
 
   return (
     <Modal ref={dialog} aria-labelledby={titleId} className={cards.dialog} onClose={onClose}>
@@ -345,7 +352,8 @@ export function NewSystemDialog({ onClose }: { onClose: () => void }) {
           </div>
         )}
         {errors.length === 0 && (file?.problems.length ?? 0) > 0 && <ProblemList problems={file?.problems ?? []} />}
-        {foundry && (
+        {/* Un zip solo de escenas no trae nada para un sistema: va directo a sus escenas */}
+        {foundry && !onlyScenes && !created && (
           <FoundryChoice
             foundry={foundry.read}
             chosen={foundry.chosen}
@@ -354,9 +362,21 @@ export function NewSystemDialog({ onClose }: { onClose: () => void }) {
           />
         )}
         <FormError message={upload.error ? errorText(upload.error) : null} />
+        {created && !images && foundry && (
+          <p className={styles.created} role="status">
+            {t('systems.scenes.systemCreated', { name: created.name })}
+          </p>
+        )}
         {images ? (
-          <FoundryImages systemId={images.systemId} images={images.images} onDone={() => dialog.current?.close()} />
-        ) : (
+          <FoundryImages
+            systemId={images.systemId}
+            images={images.images}
+            onDone={() => {
+              if (foundry?.read.scenePacks.length) setImages(null)
+              else dialog.current?.close()
+            }}
+          />
+        ) : onlyScenes || created ? null : (
           <BusyButton
             type="submit"
             className={form.button}
@@ -365,6 +385,14 @@ export function NewSystemDialog({ onClose }: { onClose: () => void }) {
           >
             {foundry ? t('systems.foundryImport') : t('systems.upload')}
           </BusyButton>
+        )}
+        {foundry && foundry.read.scenePacks.length > 0 && (
+          <FoundryScenes
+            bytes={foundry.bytes}
+            foundry={foundry.read}
+            {...(created ? { systemId: created.id } : {})}
+            onDone={() => dialog.current?.close()}
+          />
         )}
         <p className={styles.blank}>
           <BusyButton type="button" className={styles.rowAction} busy={blank.isPending} onClick={() => blank.mutate()}>

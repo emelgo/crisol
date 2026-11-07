@@ -22,6 +22,8 @@ export interface FoundryZip {
   title: string
   version: string
   packs: FoundryPack[]
+  /** Sus paquetes de escenas y de aventuras (docs/specs/escenas-foundry.md) */
+  scenePacks: FoundryPack[]
   /** Dónde está el manifiesto dentro del zip (la carpeta del sistema), con su barra final o vacío */
   root: string
   /** Sus mapas de arte (el retrato de cada actor), dentro del zip */
@@ -38,6 +40,8 @@ export interface ZipImage {
 
 /** Lo que Crisol sabe traer: objetos, actores, diarios y tablas */
 export const IMPORTED = new Set(['Item', 'Actor', 'JournalEntry', 'RollTable'])
+/** Y, a un mundo, sus escenas y aventuras */
+export const SCENES = new Set(['Scene', 'Adventure'])
 
 const MANIFESTS = ['system.json', 'module.json']
 
@@ -63,14 +67,16 @@ export function readFoundryZip(bytes: Uint8Array): FoundryZip | null {
     return null
   }
   const root = found.slice(0, found.length - (found.split('/').at(-1) ?? '').length)
-  const packs = (Array.isArray(manifest.packs) ? manifest.packs : []).flatMap((raw): FoundryPack[] => {
+  const all = (Array.isArray(manifest.packs) ? manifest.packs : []).flatMap((raw): FoundryPack[] => {
     const pack = raw as Record<string, unknown>
     const name = String(pack.name ?? '')
     const type = String(pack.type ?? pack.entity ?? '')
-    if (!name || !IMPORTED.has(type)) return []
+    if (!name) return []
     const path = String(pack.path ?? `packs/${name}`).replace(/^\.?\//, '')
     return [{ name, label: String(pack.label ?? name), type, path }]
   })
+  const packs = all.filter((p) => IMPORTED.has(p.type))
+  const scenePacks = all.filter((p) => SCENES.has(p.type))
   const kind = found.endsWith('module.json') ? 'module' : 'system'
   const id = String(manifest.id ?? manifest.name ?? '')
   const flags = (manifest.flags ?? {}) as Record<string, unknown>
@@ -85,6 +91,7 @@ export function readFoundryZip(bytes: Uint8Array): FoundryZip | null {
     title: String(manifest.title ?? manifest.id ?? ''),
     version: String(manifest.version ?? ''),
     packs,
+    scenePacks,
     root,
     art
   }
@@ -118,9 +125,11 @@ export function imagesFromZip(
   })
 }
 
-/** Un zip con solo lo que hace falta: el manifiesto, sus idiomas y los compendios elegidos */
+/** Un zip con solo lo que hace falta: el manifiesto, sus idiomas y los compendios elegidos (o los de escenas) */
 export function slimZip(bytes: Uint8Array, foundry: FoundryZip, chosen: readonly string[]): Uint8Array {
-  const paths = foundry.packs.filter((p) => chosen.includes(p.name)).map((p) => `${foundry.root}${p.path}`)
+  const paths = [...foundry.packs, ...foundry.scenePacks]
+    .filter((p) => chosen.includes(p.name))
+    .map((p) => `${foundry.root}${p.path}`)
   const wanted = (name: string) =>
     MANIFESTS.some((m) => name === `${foundry.root}${m}`) ||
     (name.startsWith(`${foundry.root}lang/`) && name.endsWith('.json')) ||
@@ -128,6 +137,26 @@ export function slimZip(bytes: Uint8Array, foundry: FoundryZip, chosen: readonly
     paths.some((path) => name === path || name.startsWith(`${path.replace(/\/$/, '')}/`))
   const files = unzipSync(bytes, { filter: (file) => wanted(file.name) })
   return zipSync(files, { level: 6 })
+}
+
+/** Unos archivos del zip por su ruta de Foundry (modules/…): los que vienen en él (y, con maxBytes, no pasan de eso) */
+export function filesFromZip(
+  bytes: Uint8Array,
+  foundry: FoundryZip,
+  paths: readonly string[],
+  maxBytes = Number.POSITIVE_INFINITY
+): Map<string, Uint8Array> {
+  const inside = new Map(
+    paths.flatMap((path) => {
+      const at = zipPathOf(path, foundry)
+      return at ? [[at, path] as const] : []
+    })
+  )
+  if (inside.size === 0) return new Map()
+  const files = unzipSync(bytes, { filter: (file) => inside.has(file.name) && file.originalSize <= maxBytes })
+  return new Map(
+    Object.entries(files).flatMap(([at, data]) => (inside.has(at) ? [[inside.get(at) as string, data]] : []))
+  )
 }
 
 /** Unos bytes en base64, a trozos (uno entero no cabe en la pila) */

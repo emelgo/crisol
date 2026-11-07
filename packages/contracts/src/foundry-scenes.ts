@@ -91,7 +91,7 @@ export const importFoundryScenes = defineAction({
       systemId: z
         .uuid()
         .optional()
-        .describe('El sistema en cuyo compendio se buscan las criaturas (sin él, los de sus campañas)')
+        .describe('El sistema en cuyo compendio se buscan antes las criaturas (después, en los de sus campañas)')
     })
     .refine((input) => input.scenes.length + input.adventures.length > 0, { message: 'scenes o adventures' }),
   output: z.object({

@@ -258,3 +258,10 @@
   color: var(--color-muted);
   font-size: 0.8125rem;
 }
+
+/* El sistema ya traído de un zip que trae escenas: el cuadro sigue con ellas */
+.created {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
