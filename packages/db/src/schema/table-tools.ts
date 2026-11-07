@@ -30,7 +30,9 @@ export const sceneMarks = pgTable(
       .references(() => scenes.id, { onDelete: 'cascade' }),
     kind: text({ enum: MARK_KINDS }).notNull(),
     hidden: boolean().notNull().default(false),
-    data: jsonb().$type<MarkData>().notNull()
+    data: jsonb().$type<MarkData>().notNull(),
+    /** Su orden entre las que se pusieron a la vez (se pintan en el orden en que se pusieron) */
+    sort: integer().notNull().default(0)
   },
   (t) => [index().on(t.campaignId, t.sceneId)]
 )

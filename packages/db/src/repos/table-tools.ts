@@ -52,7 +52,7 @@ export function listMarks(db: Database, campaignId: string, sceneId: string): Pr
     .select()
     .from(sceneMarks)
     .where(inPlace(campaignId, sceneId))
-    .orderBy(asc(sceneMarks.createdAt), asc(sceneMarks.id))
+    .orderBy(asc(sceneMarks.createdAt), asc(sceneMarks.sort), asc(sceneMarks.id))
 }
 
 export async function findMark(db: Database, id: string): Promise<MarkRow | null> {
@@ -88,7 +88,7 @@ export function changeMarks(db: Database, context: OperationContext, place: Plac
       )
     const added = await w.insertMany(
       sceneMarks,
-      (change.add ?? []).map((m) => ({ ...place, kind: m.kind, hidden: m.hidden, data: m.data }))
+      (change.add ?? []).map((m, sort) => ({ ...place, kind: m.kind, hidden: m.hidden, data: m.data, sort }))
     )
     return { added, updated, removed: remove }
   })
@@ -244,7 +244,7 @@ export function restoreSnapshot(db: Database, context: OperationContext, place: 
     )
     const restoredMarks = await w.insertMany(
       sceneMarks,
-      data.marks.map((m) => ({ ...place, ...m }))
+      data.marks.map((m, sort) => ({ ...place, ...m, sort }))
     )
     const [state] = await w.read
       .select({ id: sceneStates.id })

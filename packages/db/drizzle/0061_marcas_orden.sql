@@ -1,0 +1,1 @@
+ALTER TABLE "scene_marks" ADD COLUMN "sort" integer DEFAULT 0 NOT NULL;
