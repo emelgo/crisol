@@ -1,6 +1,6 @@
 # Spec: herramientas-mesa (módulo 6)
 
-Estado: **servidor construido** (2026-11-07; la web, después). Quinta capacidad del módulo 6
+Estado: **construido** (2026-11-07: el servidor y la web). Quinta capacidad del módulo 6
 (`docs/specs/modulo-6.md`). Entrevista: `docs/modulos.md` § «### 6. Mesa» (lo que entra de la mesa actual).
 ADR-0018. Estudios: `research/foundry/escenas-fichas-y-combate.md` (plantillas y regla de medir),
 `research/dndbeyond/mapas.md` (plantillas por tipo de daño); lo que se porta, `docs/mesa-crisol-actual.md`
@@ -58,7 +58,7 @@ La capa de clima (módulo 8); el sonido posicional (módulo 7); el generador de 
 
 ## Construido (2026-11-07) y lo que queda
 
-El servidor y el núcleo, en la rama `modulo-6/mesa` (`tasks/herramientas-mesa/todo.md`); la web va después.
+El servidor, el núcleo y la web, en la rama `modulo-6/mesa` (`tasks/herramientas-mesa/todo.md`).
 
 - **Núcleo** (`packages/tabletop`, portado de la mesa actual con sus pruebas): `measure.ts` (las casillas entre dos
   puntos con las tres reglas de diagonales y en hexagonal; un camino con puntos de paso, en el que las alternas siguen
@@ -101,8 +101,36 @@ pequeña, de hasta 200 KB en data URL) en vez de en Archivos; una marca llega a 
 plantilla, el centro de lo demás) cae en lo que el grupo ve o vio; «la tele ve lo que mides» se guarda en la mesa de
 la campaña.
 
-Lo que queda: **la web** (la columna de herramientas y sus atajos, medir y dejar la plantilla, la trama del tipo de
-daño, elegir las fichas de dentro y dañarlas con lo de `combate`, dibujar con goma, texto, sellos de Lucide o propios,
-pines, el láser, imágenes sueltas, los widgets en la mesa y en la tele, las instantáneas con su miniatura y su aviso,
-la pantalla del máster con los statblocks); la e2e; los sellos de Kenney (CC0, si se quieren); y la fuga de la
-pantalla en la prueba e2e de fugas.
+- **La web** (`apps/web/src/tabletop/`): la columna de herramientas (`vision.tsx`) con elegir (V), medir (R),
+  plantillas (A), láser (X), dibujar (D), texto (T), sellos (S), pines (P), imágenes (I) y la visión (N, M, L); abajo,
+  los widgets (W), la pantalla del máster (G) y las instantáneas (F), que abren su panel con la herramienta de elegir.
+  `use-table-tools.ts` lleva lo dejado en el mapa (con lo que devuelve cada acción hasta que llega la mesa) y lo que
+  hace cada herramienta; `tools.ts`, lo puro (dónde cae un punto al medir —en el centro o la esquina de casilla más
+  cerca; Alt, libre—, los rótulos de la medida con la regla de la escena, el contorno de cada plantilla, la trama de su
+  tipo de daño en rayas recortadas, la goma, girar, las fichas de dentro con el núcleo); `tools-panel.tsx`, la barra de
+  cada herramienta y su panel; `marks-layer.tsx`, los textos, sellos (de Lucide o una imagen del mundo) y pines encima
+  del lienzo; `widgets.tsx`, `snapshots.tsx` y `gm-screen.tsx`. El lienzo (`renderer.ts`) tiene capas de formas (lo
+  dejado, debajo de las fichas; lo que va en vivo, encima), rótulos, imágenes sueltas (debajo o encima de las fichas),
+  el aro a trazos de las fichas de dentro de una plantilla y la miniatura (`snapshot`: una captura pequeña en WebP de
+  hasta 200 KB). Medir: arrastrar (o un camino a clics, con doble clic o Escape para acabar), la medida en vivo por el
+  canal (`sendMeasure`, como mucho cada 80 ms) y lo que recorre una ficha al arrastrarla; «Dejar como plantilla» (o
+  Intro). La plantilla elegida dice cuántas fichas tiene dentro y «Elegirlas» abre el daño a varias con ellas
+  («Dentro de la plantilla: N»). La goma pasa en una sola operación (se quitan los trazos que toca y entran sus
+  trozos). Los pines nacen del máster, numerados, y llevan a una página por su título. La pantalla del máster recuerda
+  en el navegador, por escena, qué nota enseña y si van los statblocks (la hoja de la criatura en juego de cada nombre,
+  con cuántas hay). La tele pinta las marcas que llegan, los widgets de ojo abierto (sin botones), la medida y la
+  estela del láser. Textos en `i18n.ts` (`tools`), frases del historial y de lo que pide la IA, y un paso más en el
+  tutorial guiado de la mesa (los paneles de abajo). Pruebas: `tools.test.ts`, `channel.test.ts` y
+  `herramientas.test.tsx` (con la API falsa, que ya calcula las fichas de dentro y vuelve a una instantánea); e2e
+  `e2e/tests/herramientas.spec.ts` con la cripta del lienzo (capturas en `out/capturas/herramientas-*.png`).
+
+Distinto del lienzo (y por qué): la columna lleva además «Imágenes» y «Widgets» (el lienzo no tenía dónde abrirlos);
+los sellos son de Lucide (los de Kenney, si se quieren, siguen pendientes); el rótulo de la plantilla del lienzo
+(«Nube de niebla») no existe porque las plantillas no tienen nombre en el contrato: el panel las nombra por su forma y
+su largo; los textos, los sellos y los pines van encima del lienzo en HTML y por eso no salen en la miniatura de la
+instantánea; la nota de la pantalla del máster se elige por título (sin «Otra página…»); sus statblocks son la hoja de
+la criatura en juego (sin lo de gestionarla: `CreatureSheet` con `statblock`), más larga que la ficha corta del lienzo,
+y cada columna se desplaza; la plantilla dejada no lleva rótulo en el mapa (su nombre está en el panel).
+
+Lo que queda: los sellos de Kenney (CC0, si se quieren) y la fuga de la pantalla en la prueba e2e de fugas (las
+marcas del máster y las que caen en la niebla).
