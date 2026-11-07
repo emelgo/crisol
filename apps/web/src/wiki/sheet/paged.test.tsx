@@ -207,7 +207,7 @@ describe('la hoja al escribir', () => {
           .map((box) => box.top)
       ).toEqual([0, 400, 828])
     )
-    expect(marks()).toEqual(['Página 2'])
+    await waitFor(() => expect(marks()).toEqual(['Página 2']))
   })
 
   it('al quitar la hoja se deshace lo colocado', async () => {
@@ -242,7 +242,8 @@ describe('la hoja al escribir', () => {
     act(() => fire(341))
     await waitFor(() => expect(at(placed()[1] ?? '').width).toBe(341))
     expect(at(placed()[1] ?? '').top).toBe(400 + 28 / 2)
-    expect(marks()).toEqual(['Página 2'])
+    // Las rayas de página las pinta React al recibir lo colocado: pueden llegar un momento después
+    await waitFor(() => expect(marks()).toEqual(['Página 2']))
     vi.unstubAllGlobals()
   })
 
