@@ -93,46 +93,65 @@ function findManifest(files: Map<string, number>): { path: string; root: string;
   return { path: best.path, root: best.path.slice(0, best.path.length - `${best.kind}.json`.length), kind: best.kind }
 }
 
-/** Los documentos de una base LevelDB: los suyos (!items!id) con los de dentro (!actors.items!actor.item) */
+/**
+ * Los documentos de una base LevelDB: los suyos (!items!id) con los de dentro, a cualquier profundidad
+ * (!actors.items!actor.item, !scenes.tokens.delta!escena.ficha.delta). Lo de dentro va en el campo de su madre: en
+ * el orden de su lista de ids, o en su lugar si el campo guarda un solo id (el delta de una ficha)
+ */
 export function assemble(entries: Iterable<[string, unknown]>): {
   documents: FoundryDocument[]
   folders: FoundryFolder[]
 } {
   const top = new Map<string, FoundryDocument>()
   const folders: FoundryFolder[] = []
-  const embedded = new Map<string, Map<string, Map<string, Record<string, unknown>>>>()
+  // Lo de dentro, por la ruta de sus ids (escena.ficha), con su campo en la madre
+  const embedded = new Map<string, { doc: Record<string, unknown>; parent: string; field: string; id: string }>()
   for (const [key, value] of entries) {
     const m = /^!([^!]+)!(.+)$/.exec(key)
     if (!m || !isObject(value)) continue
     const collections = (m[1] as string).split('.')
     const ids = (m[2] as string).split('.')
-    if (collections.length === 1 && ids.length === 1) {
+    if (collections.length !== ids.length) continue
+    if (collections.length === 1) {
       if (collections[0] === 'folders') {
         if (typeof value.name === 'string')
           folders.push({ _id: ids[0] as string, name: value.name, folder: (value.folder as string | null) ?? null })
       } else top.set(ids[0] as string, { ...value, _id: ids[0] as string } as FoundryDocument)
-    } else if (collections.length === 2 && ids.length === 2) {
-      // Solo un nivel dentro: los objetos de un actor, las páginas de un diario, los resultados de una tabla
-      const [parent, child] = ids as [string, string]
-      const field = collections[1] as string
-      const byField = embedded.get(parent) ?? new Map()
-      const docs = byField.get(field) ?? new Map()
-      docs.set(child, { ...value, _id: child })
-      byField.set(field, docs)
-      embedded.set(parent, byField)
+      continue
     }
+    const id = ids.at(-1) as string
+    embedded.set(ids.join('.'), {
+      doc: { ...value, _id: id },
+      parent: ids.slice(0, -1).join('.'),
+      field: collections.at(-1) as string,
+      id
+    })
   }
-  for (const [parent, byField] of embedded) {
-    const doc = top.get(parent)
+  // Los hijos de cada madre, por campo
+  const children = new Map<string, Map<string, Map<string, Record<string, unknown>>>>()
+  for (const { doc, parent, field, id } of embedded.values()) {
+    const byField = children.get(parent) ?? new Map()
+    const docs = byField.get(field) ?? new Map()
+    docs.set(id, doc)
+    byField.set(field, docs)
+    children.set(parent, byField)
+  }
+  for (const [parent, byField] of children) {
+    const doc: Record<string, unknown> | undefined = parent.includes('.') ? embedded.get(parent)?.doc : top.get(parent)
     if (!doc) continue
     for (const [field, docs] of byField) {
+      const current = doc[field]
+      // Un solo id (el delta de una ficha): su documento en su lugar
+      if (typeof current === 'string') {
+        doc[field] = docs.get(current) ?? null
+        continue
+      }
       // En el orden de la lista de ids del documento, y luego los que no estén en ella
-      const listed = Array.isArray(doc[field]) ? (doc[field] as unknown[]).filter((id) => typeof id === 'string') : []
-      const ordered = [
+      const listed = Array.isArray(current) ? current.filter((id) => typeof id === 'string') : []
+      doc[field] = [
         ...listed.flatMap((id) => (docs.has(id as string) ? [docs.get(id as string)] : [])),
         ...[...docs].filter(([id]) => !listed.includes(id)).map(([, d]) => d)
       ]
-      doc[field] = ordered
     }
   }
   return { documents: [...top.values()], folders }
@@ -188,11 +207,15 @@ function locate(files: Map<string, number>, root: string, path: string) {
 
 /**
  * Lee el zip: el manifiesto, los nombres en el idioma que se pide (o en inglés) y los paquetes que se piden (sin
- * decirlo, todos); de los que no se traen (ActiveEffect, Adventure…), solo lo que son
+ * decirlo, todos); de los que no son de esas clases (documents; sin decirlo, las que trae un sistema), solo lo que son
  */
 export async function readFoundryZip(
   zip: Uint8Array,
-  { packs: wanted, language }: { packs?: readonly string[]; language: string }
+  {
+    packs: wanted,
+    language,
+    documents = FOUNDRY_DOCUMENTS
+  }: { packs?: readonly string[]; language: string; documents?: readonly string[] }
 ): Promise<FoundryRead> {
   const files = listing(zip)
   const found = findManifest(files)
@@ -202,7 +225,7 @@ export async function readFoundryZip(
     if (missing.length > 0) throw invalid(`No tiene los paquetes ${missing.map((m) => `«${m}»`).join(', ')}`)
   }
   const chosen = manifest.packs.filter((p) => !wanted || wanted.includes(p.name))
-  const readable = chosen.filter((p) => (FOUNDRY_DOCUMENTS as readonly string[]).includes(p.type))
+  const readable = chosen.filter((p) => documents.includes(p.type))
   const located = new Map(readable.map((p) => [p.name, locate(files, found.root, p.path)]))
   const langPath = [
     ...manifest.languages.filter((l) => l.lang === language),
