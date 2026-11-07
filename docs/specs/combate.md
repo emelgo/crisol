@@ -98,11 +98,31 @@ Decisiones tomadas sin Enrique (por confirmar al verlas): la ronda 0 es «antes 
 juntar en grupo les da la del primero; la tirada del d6 de la recarga no va al registro (lo dice `nextTurn`); un
 personaje a medio crear (sin vida máxima) no cuenta como fuera de combate.
 
+**La web (2026-11-07)**, en `apps/web/src/tabletop/` (y su e2e, `e2e/tests/combate.spec.ts`):
+
+- **Empezar**: «Combate» en la barra de arriba de la mesa, con las fichas elegidas o, sin ninguna, con todas las de la
+  escena. Mientras dura, el panel de la mesa es el del combate (con un botón para ir al de siempre y volver).
+- **El panel del combate** (`combat-panel.tsx`, como el tablero Combate): la ronda («Sin empezar» en la 0), «Anterior»
+  y «Siguiente turno» («Primer turno» en la 0), el dado de la iniciativa (de todos, de las criaturas o de los que
+  faltan), el orden con la iniciativa de cada uno escrita en su casilla, su vida y sus estados; los empates se
+  arrastran (o Alt y las flechas en su casilla); juntar las fichas elegidas en un grupo o separar a uno; sacar a
+  alguien y meter las elegidas que faltan; «Saltar derrotados»; «Acabar combate», que confirma y dice qué copias se van
+  (las de 0 PG, todas o ninguna).
+- **El aviso del turno**: al pasar, una línea breve con de quién es, qué caducó, qué se recargó y qué se repuso, que se
+  va sola.
+- **El turno en la ficha**: un aro dorado en la mesa y en la tele; la mesa se centra en ella si no se ve, y elegir a
+  alguien en la lista la centra siempre.
+- **El daño a varias** (`group-damage.tsx`): con varias fichas elegidas, una barra abajo con una cantidad (daño o
+  curación) para todas o una tirada del registro (`applyRoll`) con nada, mitad, entero o doble para cada una.
+- **La franja de la tele**: abajo, «Ronda N», los discos en su orden (el del turno, más grande y dorado; los
+  derrotados, apagados) y «Turno de X».
+- **`campaignTableView.combat`**, obligatorio en el contrato (con su prueba).
+
+Decisiones tomadas al construirla (por confirmar al verlas): «Combate» va en la barra de arriba (la columna de
+herramientas aún no existe); con varias fichas elegidas, la barra del daño sustituye a la tarjeta; la mesa solo se
+centra sola en el turno si su ficha no se ve.
+
 Queda:
-- la web: el tablero Combate (empezar, tirar, escribir, arrastrar los empates, «Siguiente», «Anterior», acabar con la
-  lista de las que se van), la marca del turno en la ficha y centrar la mesa en ella, la franja de la pantalla y el
-  aviso al máster de lo que caducó;
-- `campaignTableView.combat` es opcional hasta que la API de prueba de la web lo dé: luego, obligatorio;
 - con `vision`, que la franja quite también las criaturas que el grupo no ve (hoy, solo las ocultas);
 - el daño a varias desde la mesa (las de dentro de una plantilla, con `herramientas-mesa`; `applyRoll` ya lo hace);
 - E2E y la prueba de fugas (la franja no lleva ocultas, vida ni iniciativa de criaturas);
