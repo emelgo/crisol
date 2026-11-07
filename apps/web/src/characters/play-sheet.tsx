@@ -17,7 +17,7 @@ import {
 } from '@crisol/systems'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { Dices, Minus, Moon, Plus, Sun, Trash2 } from 'lucide-react'
-import { useId, useRef, useState } from 'react'
+import { createContext, type ReactNode, useContext, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ActionOutput } from '../api/client.ts'
 import { useApi } from '../api/context.tsx'
@@ -28,6 +28,34 @@ import { useDice } from '../dice/context.tsx'
 import { MoveMenu, type MoveTarget, PartyInventory, partyKey, useParty } from '../party/party.tsx'
 import styles from './play-sheet.module.css'
 import { type Change, pickId } from './save.ts'
+
+/**
+ * Varias hojas a la vez (la pantalla del máster): cada parte, un artículo en vez de una región, para no repetir las
+ * mismas regiones en la página
+ */
+const Grouped = createContext(false)
+export const SheetGroups = Grouped.Provider
+
+function Part({
+  className,
+  labelledBy,
+  children
+}: {
+  className?: string | undefined
+  labelledBy: string
+  children: ReactNode
+}) {
+  const grouped = useContext(Grouped)
+  return grouped ? (
+    <article className={className} aria-labelledby={labelledBy}>
+      {children}
+    </article>
+  ) : (
+    <section className={className} aria-labelledby={labelledBy}>
+      {children}
+    </section>
+  )
+}
 
 type CharacterState = ActionOutput<'getCharacter'>['state']
 /** Lo de la hoja: la de un personaje lleva además lo que le dan sus elecciones (`items`); la de una criatura, no */
@@ -268,7 +296,7 @@ function ResourceBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: 
     setAmount('')
   }
   return (
-    <section className={styles.resource} aria-labelledby={`${id}-t`}>
+    <Part className={styles.resource} labelledBy={`${id}-t`}>
       <h2 id={`${id}-t`} className={styles.blockTitle}>
         {block.label}
       </h2>
@@ -299,7 +327,7 @@ function ResourceBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: 
           {t('playSheet.setTemp')}
         </button>
       </div>
-    </section>
+    </Part>
   )
 }
 
@@ -309,7 +337,7 @@ function SetBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'set'
   const values = (ctx.state.sheet[block.field] ?? {}) as Record<string, Record<string, unknown>>
   const rollKey = block.roll
   return (
-    <section className={styles.block} aria-labelledby={id}>
+    <Part className={styles.block} labelledBy={id}>
       <h2 id={id} className={styles.blockTitle}>
         {block.label}
       </h2>
@@ -350,7 +378,7 @@ function SetBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'set'
           ))}
         </tbody>
       </table>
-    </section>
+    </Part>
   )
 }
 
@@ -365,7 +393,7 @@ function GroupBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'gr
   })
   if (fields.length === 0) return null
   return (
-    <section className={styles.block} aria-labelledby={id}>
+    <Part className={styles.block} labelledBy={id}>
       <h2 id={id} className={styles.blockTitle}>
         {block.label}
       </h2>
@@ -408,7 +436,7 @@ function GroupBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'gr
           )
         })}
       </ul>
-    </section>
+    </Part>
   )
 }
 
@@ -520,7 +548,7 @@ function ItemsBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'it
     )
   }
   return (
-    <section className={styles.block} aria-labelledby={id}>
+    <Part className={styles.block} labelledBy={id}>
       <div className={styles.blockHead}>
         <h2 id={id} className={styles.blockTitle}>
           {block.label}
@@ -608,7 +636,7 @@ function ItemsBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'it
           {granted.length === 0 && carried.length === 0 && <li className={styles.none}>{t('playSheet.nothing')}</li>}
         </ul>
       )}
-    </section>
+    </Part>
   )
 }
 
@@ -708,7 +736,7 @@ function ActionsBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: '
   const actions = ctx.state.actions.filter((a) => !a.error)
   if (actions.length === 0) return null
   return (
-    <section className={styles.block} aria-labelledby={id}>
+    <Part className={styles.block} labelledBy={id}>
       <h2 id={id} className={styles.blockTitle}>
         {block.label ?? t('playSheet.actions')}
       </h2>
@@ -754,7 +782,7 @@ function ActionsBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: '
           </li>
         ))}
       </ul>
-    </section>
+    </Part>
   )
 }
 
@@ -769,7 +797,7 @@ function UsesBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'use
   ])
   if (uses.length === 0) return null
   return (
-    <section className={styles.block} aria-labelledby={id}>
+    <Part className={styles.block} labelledBy={id}>
       <h2 id={id} className={styles.blockTitle}>
         {block.label ?? t('playSheet.uses')}
       </h2>
@@ -795,7 +823,7 @@ function UsesBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'use
           )
         })}
       </ul>
-    </section>
+    </Part>
   )
 }
 
@@ -816,12 +844,12 @@ function TextBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'tex
   const [text, setText] = useDraft(value)
   if (!block.play)
     return (
-      <section className={styles.text} aria-labelledby={id}>
+      <Part className={styles.text} labelledBy={id}>
         <h2 id={id} className={styles.blockTitle}>
           {block.label}
         </h2>
         <p className={styles.prose}>{value}</p>
-      </section>
+      </Part>
     )
   return (
     <div className={styles.text}>

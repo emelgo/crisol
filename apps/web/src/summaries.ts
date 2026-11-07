@@ -350,6 +350,18 @@ export function summaryOf(
       return say(action, { name: text(details.name), campaign: text(details.campaign) })
     case 'setTileFit':
       return say(action, { campaign: text(details.campaign) })
+    // Las herramientas de la mesa (docs/specs/herramientas-mesa.md)
+    case 'changeMarks':
+    case 'placeTemplate':
+      return say(action, { name: text(details.name), campaign: text(details.campaign) })
+    case 'createWidget':
+    case 'updateWidget':
+    case 'deleteWidget':
+      return say(action, { label: text(details.label), campaign: text(details.campaign) })
+    case 'saveSnapshot':
+    case 'restoreSnapshot':
+    case 'deleteSnapshot':
+      return say(action, { name: text(details.name), scene: text(details.scene), campaign: text(details.campaign) })
     // Las etiquetas de la cuenta (ADR-0006)
     case 'createTag':
     case 'colorTag':

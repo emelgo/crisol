@@ -22,6 +22,12 @@
   display: contents;
 }
 
+.toolGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
 .toolSep {
   block-size: 1px;
   margin: 3px 4px;
@@ -532,4 +538,9 @@
 .missing svg {
   flex: none;
   color: var(--color-muted);
+}
+
+/* Los iconos de una fila de opciones no se llevan el clic (lo recibe su opción) */
+.segments svg {
+  pointer-events: none;
 }

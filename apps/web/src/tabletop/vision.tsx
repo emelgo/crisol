@@ -7,7 +7,28 @@
 import type { CampaignTableView, SceneGrid, SceneVisionView, TileFit, WallView } from '@crisol/contracts'
 import type { Point, Viewport } from '@crisol/tabletop'
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { BrickWall, Cloud, DoorClosed, DoorOpen, EyeOff, Lightbulb, Lock, MousePointer2, Sun } from 'lucide-react'
+import {
+  BrickWall,
+  Camera,
+  Cloud,
+  Crosshair,
+  DoorClosed,
+  DoorOpen,
+  EyeOff,
+  Gauge,
+  ImageIcon,
+  LayoutPanelLeft,
+  Lightbulb,
+  Lock,
+  MapPin,
+  MousePointer2,
+  Pencil,
+  Ruler,
+  Shapes,
+  Stamp,
+  Sun,
+  Type
+} from 'lucide-react'
 import {
   type PointerEvent as ReactPointerEvent,
   type RefObject,
@@ -40,14 +61,49 @@ import {
   wallShapes
 } from './walls.ts'
 
-export type TableTool = 'select' | 'fog' | 'walls' | 'lights'
+export type TableTool =
+  | 'select'
+  | 'measure'
+  | 'template'
+  | 'laser'
+  | 'draw'
+  | 'text'
+  | 'stamp'
+  | 'pin'
+  | 'image'
+  | 'fog'
+  | 'walls'
+  | 'lights'
 
-/** Las herramientas de la columna, con su tecla (las de medir, dibujar… irán con herramientas-mesa) */
+/** Lo que abre un panel sin cambiar de herramienta: los widgets, la pantalla del máster y las instantáneas */
+export type SidePanel = 'widgets' | 'gm' | 'snapshots'
+
+const VISION_TOOLS: ReadonlySet<TableTool> = new Set(['fog', 'walls', 'lights'])
+export const isVisionTool = (tool: TableTool) => VISION_TOOLS.has(tool)
+
+/**
+ * Las herramientas de la columna, con su tecla (como el tablero Herramientas del lienzo): elegir, medir, plantillas y
+ * láser; dibujar, texto, sellos, pines e imágenes; la visión. Abajo, los paneles
+ */
 export const TOOLS: ReadonlyArray<{ key: TableTool; shortcut: string; icon: typeof Cloud; group: number }> = [
   { key: 'select', shortcut: 'V', icon: MousePointer2, group: 0 },
-  { key: 'fog', shortcut: 'N', icon: Cloud, group: 1 },
-  { key: 'walls', shortcut: 'M', icon: BrickWall, group: 1 },
-  { key: 'lights', shortcut: 'L', icon: Lightbulb, group: 1 }
+  { key: 'measure', shortcut: 'R', icon: Ruler, group: 0 },
+  { key: 'template', shortcut: 'A', icon: Shapes, group: 0 },
+  { key: 'laser', shortcut: 'X', icon: Crosshair, group: 0 },
+  { key: 'draw', shortcut: 'D', icon: Pencil, group: 1 },
+  { key: 'text', shortcut: 'T', icon: Type, group: 1 },
+  { key: 'stamp', shortcut: 'S', icon: Stamp, group: 1 },
+  { key: 'pin', shortcut: 'P', icon: MapPin, group: 1 },
+  { key: 'image', shortcut: 'I', icon: ImageIcon, group: 1 },
+  { key: 'fog', shortcut: 'N', icon: Cloud, group: 2 },
+  { key: 'walls', shortcut: 'M', icon: BrickWall, group: 2 },
+  { key: 'lights', shortcut: 'L', icon: Lightbulb, group: 2 }
+]
+
+export const SIDE_PANELS: ReadonlyArray<{ key: SidePanel; shortcut: string; icon: typeof Cloud }> = [
+  { key: 'widgets', shortcut: 'W', icon: Gauge },
+  { key: 'gm', shortcut: 'G', icon: LayoutPanelLeft },
+  { key: 'snapshots', shortcut: 'F', icon: Camera }
 ]
 
 /** Lo que hace la herramienta con el botón izquierdo en el mapa (en píxeles del mapa) */
@@ -116,8 +172,18 @@ export function fogInput(gesture: Gesture, mode: FogMode, radius: number): FogIn
   return null
 }
 
-/** La columna de herramientas, a la izquierda del mapa */
-export function ToolColumn({ tool, onTool }: { tool: TableTool; onTool: (tool: TableTool) => void }) {
+/** La columna de herramientas, a la izquierda del mapa; abajo, los paneles */
+export function ToolColumn({
+  tool,
+  onTool,
+  side,
+  onSide
+}: {
+  tool: TableTool
+  onTool: (tool: TableTool) => void
+  side: SidePanel | null
+  onSide: (side: SidePanel) => void
+}) {
   const { t } = useTranslation()
   return (
     <div
@@ -133,7 +199,7 @@ export function ToolColumn({ tool, onTool }: { tool: TableTool; onTool: (tool: T
           <button
             type="button"
             className={styles.tool}
-            aria-pressed={tool === key}
+            aria-pressed={tool === key && !side}
             aria-label={t(`vision.${key}`)}
             aria-keyshortcuts={shortcut}
             title={t('vision.tool', { name: t(`vision.${key}`), key: shortcut })}
@@ -143,6 +209,23 @@ export function ToolColumn({ tool, onTool }: { tool: TableTool; onTool: (tool: T
           </button>
         </span>
       ))}
+      <span className={styles.toolSep} aria-hidden="true" />
+      <span className={styles.toolGroup} data-tour="mesa-paneles">
+        {SIDE_PANELS.map(({ key, shortcut, icon: Icon }) => (
+          <button
+            key={key}
+            type="button"
+            className={styles.tool}
+            aria-pressed={side === key}
+            aria-label={t(`vision.${key}`)}
+            aria-keyshortcuts={shortcut}
+            title={t('vision.tool', { name: t(`vision.${key}`), key: shortcut })}
+            onClick={() => onSide(key)}
+          >
+            <Icon aria-hidden="true" size={18} />
+          </button>
+        ))}
+      </span>
     </div>
   )
 }
@@ -419,7 +502,7 @@ export function useVision({
   }, [changeWalls])
 
   const handlers = useMemo((): ToolHandlers | null => {
-    if (tool === 'select' || !grid) return null
+    if (!isVisionTool(tool) || !grid) return null
     const tolerance = (px: number) => px / (view.current?.scale ?? 1)
     const snap = (p: Point, shift: boolean, except?: Point) =>
       snapPoint(p, {

@@ -32,6 +32,8 @@ vi.mock('./use-renderer.ts', async () => {
         setFog: () => {},
         setGlow: () => {},
         setShapes: () => {},
+        setLabels: () => {},
+        setImages: () => {},
         setTokens: (tokens: DrawToken[]) => {
           drawn.tokens = tokens
         }

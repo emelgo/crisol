@@ -86,7 +86,7 @@ export function VisionPanel({
 }
 
 /** Un interruptor (como los del lienzo) */
-function Switch({
+export function Switch({
   checked,
   onChange,
   children
@@ -110,7 +110,7 @@ function Switch({
 }
 
 /** Unas opciones de las que se elige una, en una fila con borde */
-function Segments<T extends string>({
+export function Segments<T extends string>({
   label,
   value,
   options,
@@ -142,7 +142,7 @@ function Segments<T extends string>({
 }
 
 /** Un cuadro que pide confirmar algo que no se deshace del todo */
-function Confirm({
+export function Confirm({
   title,
   text,
   confirm,

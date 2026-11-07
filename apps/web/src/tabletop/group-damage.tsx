@@ -22,10 +22,13 @@ type Mode = 'damage' | 'heal' | 'roll'
 export function GroupDamage({
   campaignId,
   tokens,
+  title,
   onClose
 }: {
   campaignId: string
   tokens: TokenView[]
+  /** Lo que dice en vez de «N elegidas» (las de dentro de una plantilla) */
+  title?: string | undefined
   onClose: () => void
 }) {
   const { t } = useTranslation()
@@ -88,7 +91,7 @@ export function GroupDamage({
             </span>
           ))}
         </span>
-        <b className={styles.count}>{t('combat.chosen', { count: tokens.length })}</b>
+        <b className={styles.count}>{title ?? t('combat.chosen', { count: tokens.length })}</b>
         <fieldset className={styles.segments}>
           <legend className={styles.hidden}>{t('combat.damageMode')}</legend>
           {(['damage', 'heal', 'roll'] as const).map((each) => (

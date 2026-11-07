@@ -3,8 +3,10 @@
  * escenas del mundo y, arriba, lo que ve el grupo: presentar u ocultar, la pantalla de la tele en otra ventana y su
  * cámara (seguir la vista del máster o quedarse fija en un marco que se arrastra). A la izquierda, la columna de
  * herramientas (docs/specs/vision.md): la niebla a mano, los muros y puertas y las luces, cada una con su panel; la
- * niebla se ve atenuada y las puertas se abren con un clic. Lo de la campaña llega por el canal de la mesa; lo que se
- * cambia, por la API
+ * niebla se ve atenuada y las puertas se abren con un clic. Con las herramientas (docs/specs/herramientas-mesa.md):
+ * medir y dejar plantillas (y elegir las fichas de dentro para dañarlas), dibujar, textos, sellos, pines, imágenes y el
+ * láser; abajo en la columna, los widgets, la pantalla del máster y las instantáneas. Lo de la campaña llega por el
+ * canal de la mesa; lo que se cambia, por la API
  */
 import type { CampaignTableView, SceneView, SceneViewport, TokenView } from '@crisol/contracts'
 import {
@@ -48,21 +50,30 @@ import { connectTable, type DragMove, type TableChannel, type TableStatus } from
 import { CombatPanel } from './combat-panel.tsx'
 import { masterDraw } from './draw.ts'
 import { decodeMask, fogImage, fogLayerOf } from './fog-paint.ts'
+import { GmPanel, GmScreen, useGmSettings } from './gm-screen.tsx'
 import { GroupDamage } from './group-damage.tsx'
+import { MarksLayer, placeMarks } from './marks-layer.tsx'
 import styles from './mesa.module.css'
 import { PLACING_TYPE, type Placing, TablePanel } from './panel.tsx'
 import { Preparing } from './preparing.tsx'
 import { masterTileUrl, sceneListKey } from './queries.ts'
 import type { RendererScene } from './renderer.ts'
+import { SnapshotsPanel, THUMBNAIL_BYTES, THUMBNAIL_SIDE } from './snapshots.tsx'
 import { TokenCard } from './token-card.tsx'
 import { TokenImageEditor } from './token-image.tsx'
 import { TokenSheet } from './token-sheet.tsx'
 import { arrowMoves, cellSide, dragMoves, dropAt, tokenAt, tokenRadius, tokensIn } from './tokens.ts'
+import { TextInput, ToolBar, ToolsPanel } from './tools-panel.tsx'
 import { useScenePreparation } from './use-preparation.ts'
 import { useTableRenderer } from './use-renderer.ts'
+import { isMarkTool, useTableTools } from './use-table-tools.ts'
 import { fitCanvas } from './view.ts'
+import visionStyles from './vision.module.css'
 import {
+  isVisionTool,
   placeMarkers,
+  SIDE_PANELS,
+  type SidePanel,
   type TableTool,
   TOOLS,
   ToolColumn,
@@ -71,6 +82,7 @@ import {
   VisionMarkers
 } from './vision.tsx'
 import { AsGroupBanner, FogTools, VisionPanel } from './vision-panel.tsx'
+import { useWidgets, WidgetCards, WidgetsPanel } from './widgets.tsx'
 
 const route = getRouteApi('/mundos/$worldId/campanas/$campaignId/mesa')
 
@@ -248,13 +260,27 @@ function Mesa({ worldId, campaignId, campaignName }: { worldId: string; campaign
   // La visión: la herramienta de la columna, «Ver como el grupo» y los muros, puertas y luces de la escena
   const [tool, setTool] = useState<TableTool>('select')
   const [asGroup, setAsGroup] = useState(false)
+  // Los paneles de abajo de la columna (widgets, pantalla del máster, instantáneas): con la herramienta de elegir
+  const [side, setSide] = useState<SidePanel | null>(null)
   const returnTool = useRef<TableTool>('select')
   const pickTool = useCallback((next: TableTool) => {
     setAsGroup(false)
+    setSide(null)
     setTool(next)
   }, [])
+  const toggleSide = useCallback((next: SidePanel) => {
+    setAsGroup(false)
+    setTool('select')
+    setSide((current) => (current === next ? null : next))
+  }, [])
   const markers = useRef<HTMLDivElement | null>(null)
+  const marksLayer = useRef<HTMLDivElement | null>(null)
   const vision = useVision({ campaignId, table, tool, asGroup, view, renderer, ready, onTable: setTable })
+  const tools = useTableTools({ campaignId, table, tool, view, renderer, ready, channel, tokens })
+  const widgets = useWidgets(campaignId, table)
+  const gm = useGmSettings(campaignId, open)
+  // Las fichas de dentro de una plantilla, elegidas para el daño a varias
+  const [fromTemplate, setFromTemplate] = useState(false)
   const notSeen = useMemo(
     () => (table?.vision && table.vision.sceneId === open?.id ? table.vision.notSeen : []),
     [table?.vision, open?.id]
@@ -264,23 +290,28 @@ function Mesa({ worldId, campaignId, campaignName }: { worldId: string; campaign
     () => (asGroup ? tokens.filter((token) => !notSeen.includes(token.id)) : tokens),
     [asGroup, tokens, notSeen]
   )
-  // Las teclas de la columna (V, N, M, L) y las de la herramienta (Escape, Supr), fuera de los campos
+  // Las teclas de la columna (V, R, A, X, D, T, S, P, I, N, M, L; W, G, F) y las de la herramienta (Escape, Supr,
+  // Intro), fuera de los campos
   const visionKey = vision.key
+  const toolsKey = tools.key
   useEffect(() => {
     const onKey = (event: globalThis.KeyboardEvent) => {
       const target = event.target as HTMLElement | null
       if (event.ctrlKey || event.metaKey || event.altKey) return
       if (target?.closest('input, textarea, select, dialog, [contenteditable]')) return
-      if (visionKey(event)) {
+      if (visionKey(event) || toolsKey(event)) {
         event.preventDefault()
         return
       }
-      const picked = TOOLS.find((each) => each.shortcut.toLowerCase() === event.key.toLowerCase())
-      if (picked) pickTool(picked.key)
+      const key = event.key.toLowerCase()
+      const picked = TOOLS.find((each) => each.shortcut.toLowerCase() === key)
+      if (picked) return pickTool(picked.key)
+      const panel = SIDE_PANELS.find((each) => each.shortcut.toLowerCase() === key)
+      if (panel) toggleSide(panel.key)
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [visionKey, pickTool])
+  }, [visionKey, toolsKey, pickTool, toggleSide])
   // La niebla en la mesa: atenuada (lo que no ve la tele) o, viendo como el grupo, como la tele; editando muros o
   // luces, sin ella
   const tableVision = table?.vision && table.vision.sceneId === open?.id ? table.vision : null
@@ -318,14 +349,18 @@ function Mesa({ worldId, campaignId, campaignName }: { worldId: string; campaign
           onTable={setTable}
           view={view}
           tokens={shownTokens}
-          tool={vision.handlers}
+          tool={vision.handlers ?? tools.handlers}
           toolName={tool}
           markers={markers}
+          marksLayer={marksLayer}
+          targets={tools.targets}
+          onDragPath={tools.showDrag}
           remote={remote}
           remoteTick={remoteTick}
           selected={selected}
           onSelect={(ids) => {
             setSelected(ids)
+            setFromTemplate(false)
             // Con varias elegidas, en lugar de la tarjeta, el daño a varias
             if (ids.length > 1 || !ids.includes(cardFor ?? '')) setCardFor(null)
           }}
@@ -338,9 +373,23 @@ function Mesa({ worldId, campaignId, campaignName }: { worldId: string; campaign
           turnTokens={turnTokens}
           center={center}
         />
+        {scene && <MarksLayer layer={marksLayer} view={view} marks={tools.marks} />}
         {scene && <VisionMarkers layer={markers} view={view} vision={vision} tool={tool} />}
-        {scene && <ToolColumn tool={tool} onTool={pickTool} />}
+        {scene && <ToolColumn tool={tool} onTool={pickTool} side={side} onSide={toggleSide} />}
         {scene && tool === 'fog' && <FogTools vision={vision} />}
+        {scene && isMarkTool(tool) && <ToolBar tool={tool} tools={tools} />}
+        {scene && open && tools.writing && <TextInput tools={tools} view={view.current} scene={open} />}
+        {scene && <WidgetCards widgets={widgets.widgets} control={widgets} />}
+        {scene && side === 'gm' && (
+          <GmScreen
+            worldId={worldId}
+            campaignId={campaignId}
+            systemId={systemId}
+            tokens={tokens}
+            settings={gm.settings}
+            onClose={() => setSide(null)}
+          />
+        )}
         {asGroup && (
           <AsGroupBanner
             onBack={() => {
@@ -409,12 +458,16 @@ function Mesa({ worldId, campaignId, campaignName }: { worldId: string; campaign
           framing={() => (size.width > 0 ? sceneViewportOfCanvas(view.current, size) : null)}
           selected={selected}
         />
-        {selected.length > 1 && (
+        {(selected.length > 1 || (fromTemplate && selected.length > 0)) && (
           <GroupDamage
             key={selected.join()}
             campaignId={campaignId}
             tokens={tokens.filter((token) => selected.includes(token.id))}
-            onClose={() => setSelected([])}
+            title={fromTemplate ? t('tools.insideTemplate', { count: selected.length }) : undefined}
+            onClose={() => {
+              setSelected([])
+              setFromTemplate(false)
+            }}
           />
         )}
         {status === 'reconnecting' && (
@@ -441,7 +494,36 @@ function Mesa({ worldId, campaignId, campaignName }: { worldId: string; campaign
           )}
         </div>
       </div>
-      {tool !== 'select' || asGroup ? (
+      {side && open ? (
+        <aside className={styles.panel} aria-label={t(`vision.${side}`)}>
+          <div className={visionStyles.body}>
+            <h2 className={visionStyles.title}>{t(`vision.${side}`)}</h2>
+            {side === 'widgets' && <WidgetsPanel control={widgets} />}
+            {side === 'snapshots' && (
+              <SnapshotsPanel
+                key={open.id}
+                campaignId={campaignId}
+                sceneId={open.id}
+                capture={async () => (await renderer.current?.snapshot(THUMBNAIL_SIDE, THUMBNAIL_BYTES)) ?? null}
+              />
+            )}
+            {side === 'gm' && <GmPanel worldId={worldId} scene={open} settings={gm.settings} onChange={gm.change} />}
+          </div>
+        </aside>
+      ) : isMarkTool(tool) && tool !== 'laser' && open ? (
+        <ToolsPanel
+          tool={tool}
+          tools={tools}
+          scene={open}
+          worldId={worldId}
+          tokens={tokens}
+          onChoose={(ids) => {
+            setSelected(ids)
+            setCardFor(null)
+            setFromTemplate(true)
+          }}
+        />
+      ) : isVisionTool(tool) || asGroup ? (
         <VisionPanel
           mode={asGroup ? 'group' : (tool as 'walls' | 'lights' | 'fog')}
           vision={vision}
@@ -484,6 +566,7 @@ function Mesa({ worldId, campaignId, campaignName }: { worldId: string; campaign
         steps={[
           { target: '[data-tour="mesa-mapa"]', text: t('tour.tabletop.map') },
           { target: '[data-tour="mesa-herramientas"]', text: t('tour.tabletop.tools'), placement: 'right' },
+          { target: '[data-tour="mesa-paneles"]', text: t('tour.tabletop.panels'), placement: 'right' },
           { target: '[data-tour="mesa-escenas"]', text: t('tour.tabletop.scenes'), placement: 'left' },
           { target: '[data-tour="mesa-presentar"]', text: t('tour.tabletop.present'), placement: 'bottom' },
           { target: '[data-tour="mesa-pantalla"]', text: t('tour.tabletop.screen'), placement: 'bottom' },
@@ -524,13 +607,22 @@ function Stage({
   center,
   tool,
   toolName,
-  markers
+  markers,
+  marksLayer,
+  targets,
+  onDragPath
 }: {
   /** Lo que hace la herramienta de la columna con el botón izquierdo (null: elegir y mover fichas) */
   tool: ToolHandlers | null
   toolName: TableTool
   /** Las marcas de puertas y luces, que se colocan con la vista */
   markers: RefObject<HTMLDivElement | null>
+  /** Los textos, sellos y pines dejados en el mapa, que también se colocan con la vista */
+  marksLayer: RefObject<HTMLDivElement | null>
+  /** Las fichas que caen en una plantilla: llevan su aro a trazos */
+  targets: readonly string[]
+  /** Lo que recorre la ficha que se arrastra (null: se soltó) */
+  onDragPath: (from: Point | null, to?: Point) => void
   turnTokens: Set<string>
   center: RefObject<((tokenId: string, always: boolean) => void) | null>
   view: RefObject<Viewport>
@@ -587,16 +679,19 @@ function Stage({
     moves: DragMove[]
   } | null>(null)
   const [box, setBox] = useState<{ from: Point; to: Point } | null>(null)
-  const latest = useRef({ tokens, selected, cardFor, grid: open?.grid, turnTokens })
-  latest.current = { tokens, selected, cardFor, grid: open?.grid, turnTokens }
+  const latest = useRef({ tokens, selected, cardFor, grid: open?.grid, turnTokens, targets })
+  latest.current = { tokens, selected, cardFor, grid: open?.grid, turnTokens, targets }
 
   /** Las fichas en el lienzo, y la tarjeta de la elegida junto a la suya */
   const drawTokens = useCallback(() => {
-    const { tokens: all, selected: chosen, cardFor: carded, grid, turnTokens: turns } = latest.current
+    const { tokens: all, selected: chosen, cardFor: carded, grid, turnTokens: turns, targets: inside } = latest.current
     if (!grid) return renderer.current?.setTokens([])
     const at = (token: TokenView) => moving.current.get(token.id) ?? remote.current.get(token.id)
     renderer.current?.setTokens(
-      all.map((token) => masterDraw(token, grid, chosen.includes(token.id), at(token), turns.has(token.id)))
+      all.map((token) => ({
+        ...masterDraw(token, grid, chosen.includes(token.id), at(token), turns.has(token.id)),
+        target: inside.includes(token.id)
+      }))
     )
     const card = cardRef.current
     const token = all.find((each) => each.id === carded)
@@ -633,19 +728,20 @@ function Stage({
     renderer.current?.setView(view.current)
     placeFrame()
     placeMarkers(markers.current, view.current)
+    placeMarks(marksLayer.current, view.current)
     if (zoomText.current) zoomText.current.textContent = `${Math.round(view.current.scale * 100)} %`
     drawTokens()
     // Para las pruebas del navegador: dónde cae el mapa en el lienzo, sin leer sus píxeles
     if (host.current) host.current.dataset.view = JSON.stringify({ ...view.current, ...sizeRef.current })
     if (followingRef.current && sizeRef.current.width > 0)
       channel.current?.sendViewport(sceneViewportOfCanvas(view.current, sizeRef.current))
-  }, [renderer, placeFrame, channel, host, view, drawTokens, markers])
+  }, [renderer, placeFrame, channel, host, view, drawTokens, markers, marksLayer])
 
   // Llega la mesa (o cambia lo elegido): las fichas, otra vez; lo que se movía ya está en su sitio
   useEffect(() => {
     if (!tokenDrag.current) moving.current.clear()
     drawTokens()
-  }, [tokens, selected, cardFor, remoteTick, turnTokens, drawTokens])
+  }, [tokens, selected, cardFor, remoteTick, turnTokens, targets, drawTokens])
 
   // Centrar la mesa en una ficha: siempre (al elegirla en el combate) o solo si no se ve (al cambiar el turno)
   useEffect(() => {
@@ -823,6 +919,9 @@ function Stage({
       drag.moves = dragMoves(drag.group, drag.lead, to, grid, event.shiftKey)
       for (const move of drag.moves) moving.current.set(move.tokenId, { x: move.x, y: move.y })
       channel.current?.sendDrag(drag.moves)
+      // Lo que recorre la que se lleva
+      const lead = drag.moves.find((move) => move.tokenId === drag.lead.id)
+      if (lead) onDragPath({ x: drag.lead.x, y: drag.lead.y }, { x: lead.x, y: lead.y })
       drawTokens()
       return
     }
@@ -857,6 +956,7 @@ function Stage({
     const drag = tokenDrag.current
     if (drag) {
       tokenDrag.current = null
+      if (drag.moved) onDragPath(null)
       if (drag.moved && event.type !== 'pointercancel') moveTokens.mutate(drag.moves)
       else if (!drag.moved) {
         moving.current.clear()

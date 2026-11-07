@@ -3,10 +3,12 @@
  * Se conecta a la mesa de la campaña como «la pantalla» y enseña lo que ve el grupo: la escena presentada, con la
  * cámara del máster (sigue su vista, suave) o fija, ajustada a su tamaño; a oscuras, con el nombre de la campaña, si
  * está oculta. Con su niebla (docs/specs/vision.md): lo no explorado negro, lo explorado en gris y lo visible con su
- * luz, de bordes blandos; solo pide las teselas que tocan lo que ve o vio. Si se corta, vuelve sola a lo que enseñaba
+ * luz, de bordes blandos; solo pide las teselas que tocan lo que ve o vio. Con lo dejado en el mapa que el grupo puede
+ * ver, los widgets de ojo abierto y, en vivo, la medida del máster (con «La tele ve lo que mides») y su láser
+ * (docs/specs/herramientas-mesa.md). Si se corta, vuelve sola a lo que enseñaba
  */
-import type { SceneViewport, ScreenToken, ScreenView } from '@crisol/contracts'
-import { frameGroup, type Point, type Size } from '@crisol/tabletop'
+import type { LiveMeasure, SceneViewport, ScreenMark, ScreenToken, ScreenView } from '@crisol/contracts'
+import { frameGroup, liveTrail, type Point, type Size, type Viewport } from '@crisol/tabletop'
 import { getRouteApi, Navigate } from '@tanstack/react-router'
 import { Maximize, Minimize } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -18,12 +20,34 @@ import { canvasViewOf, sceneViewportOf, smoothToward } from './camera.ts'
 import { connectTable } from './channel.ts'
 import { cssDisc, screenDraw } from './draw.ts'
 import { decodeMask, type FogLight, fogImage, fogLayerOf, maskTileUrl } from './fog-paint.ts'
+import { MarksLayer, placeMarks } from './marks-layer.tsx'
 import { screenTileUrl } from './queries.ts'
-import type { RendererScene } from './renderer.ts'
+import type { MapImageDraw, OverlayShape, RendererScene } from './renderer.ts'
 import styles from './screen.module.css'
 import { cellSide, initialOf } from './tokens.ts'
+import toolStyles from './tools.module.css'
+import { markShapes, measureLabels, measureShapes } from './tools.ts'
 import { useTableRenderer } from './use-renderer.ts'
 import { fitCanvas, pyramidOf } from './view.ts'
+import { WidgetCards } from './widgets.tsx'
+
+const LASER_COLOR = 0xff3b3b
+
+/** Las imágenes sueltas que llegan, para el lienzo: las de debajo de las fichas primero */
+export function screenImages(marks: readonly ScreenMark[]): MapImageDraw[] {
+  const images = marks.filter((m): m is Extract<ScreenMark, { kind: 'image' }> => m.kind === 'image')
+  return [...images.filter((m) => !m.above), ...images.filter((m) => m.above)].map((m) => ({
+    id: m.id,
+    url: `/api/files/${m.fileId}`,
+    x: m.x,
+    y: m.y,
+    width: m.width,
+    height: m.height,
+    rotation: m.rotation,
+    above: m.above ?? false,
+    alpha: 1
+  }))
+}
 
 const route = getRouteApi('/mundos/$worldId/campanas/$campaignId/pantalla')
 
@@ -65,6 +89,13 @@ export function TableScreen({ campaignId }: { campaignId: string }) {
   const shownScene = useRef<string | null>(null)
   // Las fichas que el máster arrastra, en vivo (se olvidan al llegar la mesa)
   const [dragged, setDragged] = useState<Map<string, Point>>(new Map())
+  // La medida del máster y la estela de su láser, en vivo
+  const [measure, setMeasure] = useState<LiveMeasure | null>(null)
+  const laser = useRef<Array<Point & { t: number }>>([])
+  const [laserTick, setLaserTick] = useState(0)
+  // La vista de ahora (para colocar los textos, sellos y pines) y su capa
+  const shownView = useRef<Viewport>({ x: 0, y: 0, scale: 1 })
+  const marksLayer = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     const connection = connectTable(
@@ -81,6 +112,15 @@ export function TableScreen({ campaignId }: { campaignId: string }) {
               for (const move of message.moves) next.set(move.tokenId, { x: move.x, y: move.y })
               return next
             })
+          else if (message.type === 'measure') setMeasure(message.measure)
+          else if (message.type === 'laser') {
+            const now = performance.now()
+            laser.current = [
+              ...liveTrail(laser.current, now).map((p) => ({ x: p.x, y: p.y, t: now - (1 - p.life) * 700 })),
+              ...message.points.map((p) => ({ ...p, t: now }))
+            ].slice(-80)
+            setLaserTick((n) => n + 1)
+          }
         }
       }
     )
@@ -136,6 +176,56 @@ export function TableScreen({ campaignId }: { campaignId: string }) {
     )
   })
 
+  // Lo dejado en el mapa (plantillas y dibujos; las imágenes, en su capa) y lo que va en vivo (la medida, el láser)
+  const marks = screen && !screen.hidden && presented ? (screen.marks ?? []) : []
+  useEffect(() => {
+    if (!ready) return
+    const grid = presented?.grid
+    renderer.current?.setShapes(grid ? markShapes(marks, grid) : [], 'marks')
+    renderer.current?.setImages(screenImages(marks))
+  }, [ready, marks, presented?.grid, renderer])
+  useEffect(() => {
+    if (!ready) return
+    const grid = presented?.grid
+    let frame = 0
+    const paint = () => {
+      frame = 0
+      const live: OverlayShape[] = []
+      const current = grid && measure ? { shape: measure.shape, points: measure.points } : null
+      if (current && grid) live.push(...measureShapes(current, grid))
+      const trail = liveTrail(laser.current, performance.now())
+      for (let i = 1; i < trail.length; i++) {
+        const a = trail[i - 1] as Point & { life: number }
+        const b = trail[i] as Point & { life: number }
+        live.push({ kind: 'line', a, b, color: LASER_COLOR, width: 3 + 6 * b.life, alpha: b.life })
+      }
+      const head = trail.at(-1)
+      if (head) live.push({ kind: 'dot', at: head, color: LASER_COLOR, radius: 9, alpha: head.life })
+      renderer.current?.setShapes(live, 'live')
+      const labels = current && grid ? measureLabels(current, grid) : []
+      renderer.current?.setLabels(labels)
+      // Para las pruebas del navegador: lo que llega en vivo, sin leer los píxeles
+      if (host.current) {
+        host.current.dataset.laser = String(trail.length)
+        host.current.dataset.measure = labels.map((label) => label.text).join(' · ')
+      }
+      // La estela se apaga sola, a unos 25 repintados por segundo
+      if (trail.length > 0) frame = requestAnimationFrame(wait)
+      else laser.current = []
+    }
+    let painted = performance.now()
+    const wait = (now: number) => {
+      frame = 0
+      if (now - painted < 40) frame = requestAnimationFrame(wait)
+      else {
+        painted = now
+        paint()
+      }
+    }
+    paint()
+    return () => cancelAnimationFrame(frame)
+  }, [ready, measure, laserTick, presented?.grid, renderer, host])
+
   // Otra escena: fundido desde negro y la cámara salta (sin animar el viaje)
   const current = useRef<SceneViewport | null>(null)
   if ((presented?.id ?? null) !== shownScene.current) {
@@ -158,6 +248,8 @@ export function TableScreen({ campaignId }: { campaignId: string }) {
       if (!view) {
         const fitted = fitCanvas(scene, size)
         renderer.current?.setView(fitted)
+        shownView.current = fitted
+        placeMarks(marksLayer.current, fitted)
         if (host.current) host.current.dataset.view = JSON.stringify({ ...fitted, ...size })
         return
       }
@@ -166,6 +258,8 @@ export function TableScreen({ campaignId }: { campaignId: string }) {
       current.current = next
       const shown = canvasViewOf(next, size)
       renderer.current?.setView(shown)
+      shownView.current = shown
+      placeMarks(marksLayer.current, shown)
       // Para las pruebas del navegador: dónde cae el mapa en la tele, sin leer sus píxeles
       if (host.current) host.current.dataset.view = JSON.stringify({ ...shown, ...size })
       if (next !== view) frame = requestAnimationFrame(step)
@@ -189,6 +283,8 @@ export function TableScreen({ campaignId }: { campaignId: string }) {
     <div className={styles.screen}>
       {screen && <PageTitle className={styles.hidden}>{screen.campaignName}</PageTitle>}
       <div ref={host} className={styles.canvas} role="img" aria-label={t('screen.label')} data-screen="" />
+      {!dark && <MarksLayer layer={marksLayer} view={shownView} marks={marks} big />}
+      {!dark && screen?.widgets && <WidgetCards widgets={screen.widgets} className={toolStyles.screenWidgets} />}
       {visible.length > 0 && !screen?.hidden && (
         <ul className={styles.hidden} aria-label={t('screen.tokens')}>
           {visible.map((token) => (

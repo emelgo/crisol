@@ -49,7 +49,9 @@ vi.mock('./use-renderer.ts', async () => {
         setTokens: () => {},
         setFog: () => {},
         setGlow: () => {},
-        setShapes: () => {}
+        setShapes: () => {},
+        setLabels: () => {},
+        setImages: () => {}
       })
       return { host, renderer, ready: true, failed: false, size: { width: 800, height: 600 } }
     }

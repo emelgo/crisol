@@ -117,7 +117,7 @@ import {
   withCoins,
   withWorld
 } from '@crisol/systems'
-import { FogGrid } from '@crisol/tabletop'
+import { FogGrid, tokensInTemplate } from '@crisol/tabletop'
 import { readFoundryZip } from '../systems/foundry-zip.ts'
 import { type ActionInput, type ActionName, type ActionOutput, type ApiClient, ApiError } from './client.ts'
 
@@ -553,7 +553,12 @@ export function fakeApi(
       camera: structuredClone(table.camera),
       tokens: tokens.filter((token) => token.campaignId === campaignId && token.sceneId === table.open).map(tokenOf),
       combat: combats.has(campaignId) ? sortCombat(combats.get(campaignId) as CombatView) : null,
-      vision: table.open ? fakeTableVision(campaignId, table.open) : null
+      vision: table.open ? fakeTableVision(campaignId, table.open) : null,
+      marks: tableMarks
+        .filter((m) => m.campaignId === campaignId && m.sceneId === table.open)
+        .map((m) => withTargets(markOf(m))),
+      widgets: widgets.filter((w) => w.campaignId === campaignId).map(widgetOf),
+      measureOnScreen: measureOnScreen.has(campaignId)
     }
   }
   /**
@@ -773,6 +778,29 @@ export function fakeApi(
     return sceneOfCampaign(campaignId, target).id
   }
   const markOf = ({ campaignId: _, ...mark }: MarkView & { campaignId: string }): MarkView => structuredClone(mark)
+  /** Las fichas de la escena que caen en una plantilla (como el servidor, con el núcleo) */
+  const insideOf = (template: Extract<MarkView, { kind: 'template' }>) => {
+    const { grid } = sceneById(template.sceneId)
+    const core =
+      grid.type === 'none' ? null : { type: grid.type, size: grid.size, offsetX: grid.offsetX, offsetY: grid.offsetY }
+    const onScene = tokens.filter((t) => t.sceneId === template.sceneId)
+    return tokensInTemplate(template, onScene, core, grid.type === 'none' ? 100 : grid.size)
+  }
+  const withTargets = (mark: MarkView): MarkView =>
+    mark.kind === 'template' ? { ...mark, tokenIds: insideOf(mark).map((t) => t.id) } : mark
+  const targetOf = (row: TokenRow) => {
+    const token = tokenOf(row)
+    return {
+      tokenId: token.id,
+      label: token.label,
+      name: token.actor.name,
+      kind: token.actor.kind,
+      actorId: token.actor.id,
+      hidden: token.hidden
+    }
+  }
+  /** Lo que guarda cada instantánea: dónde estaba cada ficha y lo dejado en el mapa */
+  const snapshotData = new Map<string, { tokens: Array<{ id: string; x: number; y: number }>; marks: MarkView[] }>()
   const widgetOf = ({ campaignId: _, ...widget }: WidgetView & { campaignId: string }): WidgetView =>
     structuredClone(widget)
   /** Mover una marca: sus puntos y su sitio */
@@ -3362,7 +3390,7 @@ export function fakeApi(
           campaignId
         }
         tableMarks.push(mark as MarkView & { campaignId: string })
-        changed.push(markOf(mark as MarkView & { campaignId: string }))
+        changed.push(withTargets(markOf(mark as MarkView & { campaignId: string })))
       }
       for (const patch of update ?? []) {
         const index = tableMarks.findIndex((m) => m.id === patch.id)
@@ -3372,7 +3400,7 @@ export function fakeApi(
         if (patch.move) next = { ...(shifted(next, patch.move.dx, patch.move.dy) as typeof found), campaignId }
         next.version = found.version + 1
         tableMarks[index] = next as MarkView & { campaignId: string }
-        changed.push(markOf(tableMarks[index] as MarkView & { campaignId: string }))
+        changed.push(withTargets(markOf(tableMarks[index] as MarkView & { campaignId: string })))
       }
       const removed = (remove ?? []).filter((id) => tableMarks.some((m) => m.id === id))
       for (const id of removed)
@@ -3382,15 +3410,16 @@ export function fakeApi(
         )
       return { sceneId: target, marks: changed, removed }
     },
-    // Sin geometría en la API falsa: la plantilla queda, sin fichas dentro
+    // Hacia el este, con la casilla de la escena
     placeTemplate: ({ campaignId, sceneId, shape, from, size, color, hidden }) => {
       const target = sceneFor(campaignId, sceneId)
       const a = pointOf(target, from)
+      const { grid } = sceneById(target)
       const template = {
         kind: 'template' as const,
         shape,
         a,
-        b: { x: a.x + size * 20, y: a.y },
+        b: { x: a.x + (size / grid.distance) * grid.size, y: a.y },
         color: color ?? '#c9302c',
         id: crypto.randomUUID(),
         sceneId: target,
@@ -3400,11 +3429,13 @@ export function fakeApi(
         campaignId
       }
       tableMarks.push(template)
-      return { template: markOf(template), tokens: [] }
+      const inside = insideOf(template)
+      return { template: { ...markOf(template), tokenIds: inside.map((t) => t.id) }, tokens: inside.map(targetOf) }
     },
     getTemplateTokens: ({ templateId }) => {
-      if (!tableMarks.some((m) => m.id === templateId && m.kind === 'template')) throw new ApiError('NOT_FOUND', 404)
-      return { tokens: [] }
+      const template = tableMarks.find((m) => m.id === templateId)
+      if (template?.kind !== 'template') throw new ApiError('NOT_FOUND', 404)
+      return { tokens: insideOf(template).map(targetOf) }
     },
     // En casillas, con todas las diagonales iguales
     measureDistance: ({ campaignId, sceneId, points }) => {
@@ -3486,14 +3517,33 @@ export function fakeApi(
         marks: tableMarks.filter((m) => m.campaignId === campaignId && m.sceneId === target).length
       }
       snapshots.push(snapshot)
+      snapshotData.set(snapshot.id, {
+        tokens: tokens
+          .filter((t) => t.campaignId === campaignId && t.sceneId === target)
+          .map((t) => ({ id: t.id, x: t.x, y: t.y })),
+        marks: tableMarks.filter((m) => m.campaignId === campaignId && m.sceneId === target).map(markOf)
+      })
       const { campaignId: _, ...view } = snapshot
       return view
     },
-    // Sin guardar las fichas en la API falsa: vuelve con lo que hay
+    // Las fichas que siguen, a su sitio; lo dejado en el mapa, como estaba (sin la niebla: no la guarda)
     restoreSnapshot: ({ campaignId, snapshotId }) => {
       const snapshot = snapshots.find((s) => s.id === snapshotId && s.campaignId === campaignId)
-      if (!snapshot) throw new ApiError('NOT_FOUND', 404)
-      return { sceneId: snapshot.sceneId, tokens: snapshot.tokens, marks: snapshot.marks, fog: 0, skipped: [] }
+      const data = snapshotData.get(snapshotId)
+      if (!snapshot || !data) throw new ApiError('NOT_FOUND', 404)
+      let moved = 0
+      for (const saved of data.tokens) {
+        const token = tokens.find((t) => t.id === saved.id)
+        if (!token) continue
+        Object.assign(token, { x: saved.x, y: saved.y })
+        moved++
+      }
+      for (let i = tableMarks.length - 1; i >= 0; i--) {
+        const mark = tableMarks[i]
+        if (mark?.campaignId === campaignId && mark.sceneId === snapshot.sceneId) tableMarks.splice(i, 1)
+      }
+      for (const mark of data.marks) tableMarks.push({ ...structuredClone(mark), campaignId })
+      return { sceneId: snapshot.sceneId, tokens: moved, marks: data.marks.length, fog: 0, skipped: [] }
     },
     deleteSnapshot: ({ snapshotId }) => {
       const index = snapshots.findIndex((s) => s.id === snapshotId)

@@ -43,9 +43,12 @@ vi.mock('./use-renderer.ts', async () => {
         setTokens: () => {},
         setFog: (layer: FogLayer | null) => drawn.fog.push(layer),
         setGlow: (layer: FogLayer | null) => drawn.glow.push(layer),
-        setShapes: (shapes: OverlayShape[]) => {
-          drawn.shapes = shapes
-        }
+        // Las de los editores (las herramientas pintan en otras capas)
+        setShapes: (shapes: OverlayShape[], layer = 'editor') => {
+          if (layer === 'editor') drawn.shapes = shapes
+        },
+        setLabels: () => {},
+        setImages: () => {}
       })
       useEffect(() => {
         drawn.scene = scene
