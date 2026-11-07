@@ -7,6 +7,7 @@ import { creatureActions } from './creatures.ts'
 import { diceActions } from './dice.ts'
 import { fileActions } from './files.ts'
 import { foundryActions } from './foundry.ts'
+import { foundrySceneActions } from './foundry-scenes.ts'
 import { historyActions } from './history.ts'
 import { invitationActions } from './invitations.ts'
 import { knowledgeActions } from './knowledge.ts'
@@ -57,6 +58,7 @@ export const IMPLEMENTATIONS: Implementation[] = [
   ...templateActions,
   ...systemActions,
   ...foundryActions,
+  ...foundrySceneActions,
   ...compendiumActions,
   ...worldContentActions,
   ...characterActions,

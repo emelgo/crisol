@@ -26,6 +26,7 @@ import { campaignTableView, sceneView } from '../table/projection.ts'
 import { authorizedCampaign, authorizedPage, authorizedWiki } from './access.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
 import { filesTouched, scopeOf, withFreeName } from './files.ts'
+import { firstOpening, placePrepared } from './foundry-scenes.ts'
 import { implement } from './registry.ts'
 import { hasNoVision, placeImported } from './vision.ts'
 
@@ -203,12 +204,15 @@ export const sceneActions = [
   implement(openScene, async (ctx, { campaignId, sceneId }) => {
     const campaign = await authorizedCampaign(ctx, 'table.manage', campaignId)
     const scene = await sceneOfCampaign(ctx, campaign.worldId, sceneId)
+    const first = await firstOpening(ctx, campaignId, sceneId)
     // La primera vez que la campaña la abre, nace su estado en ella (al historial: deshacer lo quita)
     await scenesRepo.ensureSceneState(
       ctx.db,
       historyContext(ctx, 'openScene', { campaign: campaign.name, name: scene.name, title: scene.pageTitle }, campaign),
       { worldId: campaign.worldId, campaignId, sceneId }
     )
+    // Y salen sus criaturas preparadas y sus pines (docs/specs/escenas-foundry.md)
+    if (first) await placePrepared(ctx, campaign, sceneId)
     await scenesRepo.setCampaignTable(ctx.db, campaignId, { openSceneId: sceneId })
     ctx.table?.changed(campaignId)
     return campaignTableView(ctx, campaignId)
@@ -219,11 +223,13 @@ export const sceneActions = [
     const target = sceneId ?? (await scenesRepo.campaignTable(ctx.db, campaignId)).openSceneId
     if (!target) throw new InvalidRequestError('NO_OPEN_SCENE', 'abre una escena antes o di cuál')
     const scene = await sceneOfCampaign(ctx, campaign.worldId, target)
+    const first = await firstOpening(ctx, campaignId, target)
     await scenesRepo.ensureSceneState(
       ctx.db,
       historyContext(ctx, 'openScene', { campaign: campaign.name, name: scene.name, title: scene.pageTitle }, campaign),
       { worldId: campaign.worldId, campaignId, sceneId: target }
     )
+    if (first) await placePrepared(ctx, campaign, target)
     await scenesRepo.setCampaignTable(ctx.db, campaignId, { presentedSceneId: target, screenHidden: false })
     ctx.table?.changed(campaignId)
     return campaignTableView(ctx, campaignId)

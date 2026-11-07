@@ -95,7 +95,16 @@ export const sceneView = z.object({
   grid: sceneGrid,
   initialView: sceneViewport.nullable(),
   /** Trae muros, puertas o luces de un UVTT o de la IA (se ponen en juego con placeImportedWalls) */
-  hasImported: z.boolean()
+  hasImported: z.boolean(),
+  /**
+   * Sus criaturas preparadas (docs/specs/escenas-foundry.md): se ponen en juego y en el mapa la primera vez que una
+   * campaña abre la escena (opcional hasta que lo dé la API de prueba de la web)
+   */
+  prepared: z
+    .array(z.object({ key: z.string(), name: z.string(), unique: z.boolean(), hidden: z.boolean() }))
+    .optional(),
+  /** Cuántos pines trae (las notas de una escena de Foundry): salen como marcas del máster al abrirla una campaña */
+  pins: z.int().optional()
 })
 
 export type SceneView = z.infer<typeof sceneView>
@@ -111,7 +120,8 @@ export const listScenes = defineAction({
 export const getScene = defineAction({
   name: 'getScene',
   kind: 'read',
-  description: 'Una escena, por su id o por el de su pestaña: su imagen, sus medidas y su rejilla',
+  description:
+    'Una escena, por su id o por el de su pestaña: su imagen, sus medidas, su rejilla y sus criaturas preparadas (salen en juego y en el mapa la primera vez que una campaña la abre)',
   input: z
     .object({ sceneId: z.uuid().optional(), tabId: z.uuid().optional() })
     .refine((input) => (input.sceneId === undefined) !== (input.tabId === undefined), {

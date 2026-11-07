@@ -58,6 +58,7 @@ import {
   updateFolder
 } from './files.ts'
 import { importFoundry, inspectFoundry, putSystemImages } from './foundry.ts'
+import { importFoundryScenes, inspectFoundryScenes } from './foundry-scenes.ts'
 import { listHistory, undoOperation } from './history.ts'
 import { getInvitation, regenerateInvitation, setInvitationsOpen } from './invitations.ts'
 import {
@@ -225,6 +226,7 @@ export * from './creatures.ts'
 export * from './dice.ts'
 export * from './files.ts'
 export * from './foundry.ts'
+export * from './foundry-scenes.ts'
 export * from './history.ts'
 export * from './invitations.ts'
 export * from './knowledge.ts'
@@ -423,6 +425,8 @@ export const ACTIONS = [
   inspectFoundry,
   importFoundry,
   putSystemImages,
+  inspectFoundryScenes,
+  importFoundryScenes,
   listScenes,
   getScene,
   updateScene,
@@ -649,6 +653,8 @@ export type Actions = {
   inspectFoundry: typeof inspectFoundry
   importFoundry: typeof importFoundry
   putSystemImages: typeof putSystemImages
+  inspectFoundryScenes: typeof inspectFoundryScenes
+  importFoundryScenes: typeof importFoundryScenes
   listScenes: typeof listScenes
   getScene: typeof getScene
   updateScene: typeof updateScene

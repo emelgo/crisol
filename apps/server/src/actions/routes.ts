@@ -67,6 +67,8 @@ export const BIG_ACTIONS: Readonly<Record<string, number>> = {
   createSystem: SYSTEM_BODY,
   inspectFoundry: FOUNDRY_BODY,
   importFoundry: FOUNDRY_BODY,
+  inspectFoundryScenes: FOUNDRY_BODY,
+  importFoundryScenes: FOUNDRY_BODY,
   putSystemImages: Math.ceil(SYSTEM_IMAGES_BYTES / 3) * 4 + MB,
   // Un mapa en SVG dibujado por la IA, y lo que trae un UVTT (muros y luces) al poner su imagen
   drawScene: 6 * MB,

@@ -561,8 +561,10 @@ const INSTRUCTIONS =
   'La mesa: una escena es una pestaña de tipo scene (crear_pestana) en la página del lugar, con su imagen (un ' +
   'archivo del mundo por su id, con imagen_escena, o un mapa que dibujes tú en SVG con dibujar_escena: antes, lee ' +
   'la guía guia_mapas; el máster la trocea al abrirla) y su rejilla (cambiar_escena: ' +
-  'cuadrada o hexagonal, el tamaño de la casilla en píxeles, lo que mide en pies). ver_escenas las lista. En cada ' +
-  'campaña, el máster abre una escena (abrir_escena) y la enseña en la pantalla de los jugadores (presentar_escena; ' +
+  'cuadrada o hexagonal, el tamaño de la casilla en píxeles, lo que mide en pies). ver_escenas las lista; ver_escena ' +
+  'dice también sus criaturas preparadas (las de una escena traída de Foundry: salen en juego y en el mapa la ' +
+  'primera vez que una campaña la abre). En cada campaña, el máster abre una escena (abrir_escena) y la enseña en ' +
+  'la pantalla de los jugadores (presentar_escena; ' +
   'ocultar_pantalla la deja a oscuras; camara_pantalla: seguir al máster, un encuadre fijo o el grupo); ver_mesa dice ' +
   'qué hay, con las fichas de la escena abierta. Una ficha es un personaje o una criatura en juego en el mapa (lo ' +
   'vital es suyo: su vida y sus estados): poner_fichas las pone en una casilla (column y row, desde 0) o en píxeles, ' +

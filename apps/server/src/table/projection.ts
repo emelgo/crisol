@@ -273,7 +273,9 @@ export function sceneView(row: scenesRepo.SceneWithPage): SceneView {
         : null,
     grid: row.grid,
     initialView: row.initialView ?? null,
-    hasImported: row.imported !== null
+    hasImported: row.imported !== null,
+    prepared: (row.prepared ?? []).map((p) => ({ key: p.key, name: p.name, unique: p.unique, hidden: p.hidden })),
+    pins: (row.pins ?? []).length
   }
 }
 
