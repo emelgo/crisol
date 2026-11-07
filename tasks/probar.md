@@ -9,6 +9,15 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   de propietario.
 - **En local**, con los cambios al momento: http://localhost:5173 (lo arranco cuando haga falta).
 
+## Módulo 5: la página que escriben los jugadores (rama `modulo-5/visibilidad`; en local, aún no en staging)
+
+- [ ] **Dejar editar**: en «Quién la conoce» de una página sin secretos, «La edita toda la campaña» (o unos
+  personajes). En una con secretos, no deja y lo dice.
+- [ ] **La jugadora escribe** en esa página desde su campaña, en vivo: lo ves al momento; el título, el panel y las
+  pestañas siguen siendo tuyos. En el historial sale a su nombre y se deshace.
+- [ ] **Sin secretos**: en una página de jugadores no te ofrece «Secreto» ni notas ocultas.
+- [ ] **Su IA** escribe en ella con `editar_pagina` (y en otra página, no).
+
 ## Módulo 5: el compendio y la partida para los jugadores (rama `modulo-5/visibilidad`; en local, aún no en staging)
 
 - [ ] **En juego, la jugadora**: ve las criaturas a la vista, juntas, con su imagen y cómo están en palabras («Ilesa»,
