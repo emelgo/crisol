@@ -15,7 +15,7 @@ import { CrisolMark } from '../components/brand.tsx'
 import { PageTitle } from '../components/page-title.tsx'
 import { canvasViewOf, sceneViewportOf, smoothToward } from './camera.ts'
 import { connectTable } from './channel.ts'
-import { screenDraw } from './draw.ts'
+import { cssDisc, screenDraw } from './draw.ts'
 import { screenTileUrl } from './queries.ts'
 import type { RendererScene } from './renderer.ts'
 import styles from './screen.module.css'
@@ -217,6 +217,7 @@ function TurnStrip({ combat }: { combat: NonNullable<ScreenView['combat']> }) {
             data-active={c.active || undefined}
             data-defeated={c.defeated || undefined}
             aria-current={c.active ? 'step' : undefined}
+            style={{ background: cssDisc(c.name, c.kind === 'character' ? 'group' : 'hostile') }}
           >
             <span aria-hidden="true">{initialOf(c.name)}</span>
             <span className={styles.hidden}>{c.name}</span>

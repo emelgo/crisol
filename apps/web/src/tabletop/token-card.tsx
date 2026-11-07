@@ -14,6 +14,7 @@ import { useErrorText } from '../api/errors.ts'
 import { characterKey } from '../characters/save.ts'
 import { FormError } from '../components/field.tsx'
 import { creatureKey } from '../creatures/save.ts'
+import { cssDisc } from './draw.ts'
 import styles from './fichas.module.css'
 import { initialOf } from './tokens.ts'
 
@@ -145,7 +146,12 @@ export function TokenCard({
   return (
     <section ref={cardRef} className={styles.card} aria-label={actor.name} data-token-card="">
       <header className={styles.cardHead}>
-        <span className={styles.avatar} data-faction={token.faction} aria-hidden="true">
+        <span
+          className={styles.avatar}
+          data-faction={token.faction}
+          style={{ background: cssDisc(actor.name, token.faction) }}
+          aria-hidden="true"
+        >
           {initialOf(token.label)}
         </span>
         <div className={styles.cardTitles}>

@@ -29,6 +29,8 @@ export interface DrawToken {
   label: string
   initial: string
   faction: 'group' | 'hostile' | 'neutral'
+  /** El color de su disco: claro y oscuro */
+  colors: readonly [number, number]
   /** Su imagen y su encuadre redondo (el centro, de 0 a 1, y cuánto se acerca); sin ella, un disco con la inicial */
   image: { url: string; x: number; y: number; zoom: number } | null
   hidden: boolean
@@ -44,7 +46,6 @@ export interface DrawToken {
 
 /** El borde de cada bando: azul, naranja y amarillo, que se distinguen también por la luz */
 export const FACTION_COLORS = { group: 0x6fa8ff, hostile: 0xff8a4c, neutral: 0xd8c27a } as const
-const FACTION_FILLS = { group: 0x22406a, hostile: 0x5a2a14, neutral: 0x4f4524 } as const
 const STATE_COLORS = { ok: 0x9fd8bd, hurt: 0xf2c260, bad: 0xff9a6b, crit: 0xff7b7b, down: 0xb0b0b8 } as const
 
 type TokenNode = {
@@ -237,7 +238,15 @@ export class TableRenderer {
           .fill({ color: 0xf2c260, alpha: 0.95 })
       if (token.selected) node.disc.circle(0, 0, r + ring + 3).fill({ color: 0xffffff, alpha: 0.9 })
       node.disc.circle(0, 0, r + ring / 2).fill(color)
-      node.disc.circle(0, 0, r - ring / 2).fill(FACTION_FILLS[token.faction])
+      // El disco, con su luz arriba a la izquierda (como un degradado radial)
+      const [light, dark] = token.colors
+      node.disc.circle(0, 0, r - ring / 2).fill(dark)
+      for (const [k, alpha] of [
+        [0.85, 0.35],
+        [0.62, 0.45],
+        [0.4, 0.55]
+      ] as const)
+        node.disc.circle(-r * 0.22, -r * 0.27, (r - ring / 2) * k).fill({ color: light, alpha })
       if (token.life !== null) {
         const width = r * 1.3
         const tone = token.life > 0.6 ? 0x5fae8a : token.life > 0.3 ? 0xd9a441 : 0xd0574f

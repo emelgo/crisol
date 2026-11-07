@@ -18,8 +18,8 @@ export interface Placed {
 /** El lado de una casilla en píxeles del mapa (sin rejilla, uno razonable) */
 export const cellSide = (grid: SceneGrid) => (grid.type === 'none' ? 100 : grid.size)
 
-/** El radio de una ficha en píxeles del mapa: su tamaño en casillas, un poco menos que la casilla */
-export const tokenRadius = (token: Pick<Placed, 'size'>, grid: SceneGrid) => (token.size * cellSide(grid) * 0.92) / 2
+/** El radio de una ficha en píxeles del mapa: su tamaño en casillas, algo menos que la casilla (como el lienzo) */
+export const tokenRadius = (token: Pick<Placed, 'size'>, grid: SceneGrid) => (token.size * cellSide(grid) * 0.84) / 2
 
 /** La ficha que hay en un punto del mapa: la de encima (la última pintada) */
 export function tokenAt<T extends Placed>(tokens: readonly T[], point: Point, grid: SceneGrid): T | null {

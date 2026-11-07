@@ -297,6 +297,7 @@
   font-size: 0.6875rem;
   font-style: normal;
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .life {
@@ -366,13 +367,56 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
+  inline-size: 100%;
+  padding: var(--space-1) 0;
+  border: 0;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
   font-size: 0.875rem;
+  text-align: start;
+  cursor: pointer;
 }
 
-.switch input {
+.switch:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.toggle {
+  position: relative;
+  flex: none;
   inline-size: 2rem;
   block-size: 1.125rem;
-  accent-color: var(--color-accent);
+  border-radius: 9px;
+  background: var(--color-frame);
+  transition: background 0.15s;
+}
+
+.toggle::after {
+  position: absolute;
+  inset-block-start: 2px;
+  inset-inline-start: 2px;
+  inline-size: 14px;
+  block-size: 14px;
+  border-radius: 50%;
+  background: #d6d6dc;
+  content: "";
+  transition: inset-inline-start 0.15s;
+}
+
+.switch[aria-checked="true"] .toggle {
+  background: var(--color-accent);
+}
+
+.switch[aria-checked="true"] .toggle::after {
+  inset-inline-start: 16px;
+  background: #ffffff;
+}
+
+.staying {
+  margin: 0;
+  color: var(--color-muted);
 }
 
 .end {

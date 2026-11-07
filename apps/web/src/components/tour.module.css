@@ -103,7 +103,8 @@
 .help {
   position: fixed;
   inset-block-end: var(--space-4);
-  inset-inline-end: var(--space-4);
+  /* Una pantalla con un panel fijo a la derecha (la mesa) lo aparta con --tour-help-end */
+  inset-inline-end: var(--tour-help-end, var(--space-4));
   z-index: 30;
   display: grid;
   place-items: center;

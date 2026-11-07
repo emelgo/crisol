@@ -16,6 +16,7 @@ import { useDismiss } from '../components/dismiss.ts'
 import { FormError } from '../components/field.tsx'
 import { Modal } from '../components/modal.tsx'
 import styles from './combat.module.css'
+import { cssDisc } from './draw.ts'
 import { initialOf } from './tokens.ts'
 
 /** Lo que dice el aviso de un turno que empieza: de quién es, qué caducó, qué se recargó y qué se repuso */
@@ -61,7 +62,6 @@ export function CombatPanel({
   const [notice, setNotice] = useState<string | null>(null)
   const [dragging, setDragging] = useState<string | null>(null)
   const [ending, setEnding] = useState(false)
-  const skipId = useId()
   const refresh = () => client.invalidateQueries({ queryKey: ['creatures', campaignId] })
   const act = useMutation({
     mutationFn: (run: () => Promise<unknown>) => run(),
@@ -218,18 +218,16 @@ export function CombatPanel({
           )}
         </div>
       )}
-      <label className={styles.switch} htmlFor={skipId}>
+      <button
+        type="button"
+        role="switch"
+        className={styles.switch}
+        aria-checked={combat.skipDefeated}
+        onClick={() => act.mutate(() => api.call('updateCombat', { campaignId, skipDefeated: !combat.skipDefeated }))}
+      >
         {t('combat.skipDefeated')}
-        <input
-          id={skipId}
-          type="checkbox"
-          checked={combat.skipDefeated}
-          onChange={(event) => {
-            const skipDefeated = event.currentTarget.checked
-            act.mutate(() => api.call('updateCombat', { campaignId, skipDefeated }))
-          }}
-        />
-      </label>
+        <span className={styles.toggle} aria-hidden="true" />
+      </button>
       <FormError message={problem ? errorText(problem) : null} />
       <button type="button" className={styles.end} onClick={() => setEnding(true)}>
         <Flag aria-hidden="true" size={15} />
@@ -358,7 +356,12 @@ function CombatantRow({
         }}
       />
       <button type="button" className={styles.who} onClick={onPick} disabled={!combatant.tokenId}>
-        <span className={styles.avatar} data-kind={combatant.kind} aria-hidden="true">
+        <span
+          className={styles.avatar}
+          data-kind={combatant.kind}
+          style={{ background: cssDisc(combatant.name, combatant.kind === 'character' ? 'group' : 'hostile') }}
+          aria-hidden="true"
+        >
           {initialOf(combatant.name)}
         </span>
         <span className={styles.name}>
@@ -427,6 +430,7 @@ function EndCombat({ campaignId, combat, onClose }: { campaignId: string; combat
   const leaving = combat.combatants.filter(
     (c) => c.generic && (remove === 'generic' || (remove === 'defeated' && c.defeated))
   )
+  const staying = combat.combatants.filter((c) => c.kind === 'creature' && !leaving.includes(c))
   const end = useMutation({
     mutationFn: () => api.call('endCombat', { campaignId, remove }),
     onSuccess: () => {
@@ -459,6 +463,13 @@ function EndCombat({ campaignId, combat, onClose }: { campaignId: string; combat
                 list: new Intl.ListFormat('es', { type: 'conjunction' }).format(leaving.map((c) => c.name))
               })}
         </p>
+        {staying.length > 0 && (
+          <p className={styles.staying}>
+            {t('combat.staying', {
+              list: new Intl.ListFormat('es', { type: 'conjunction' }).format(staying.map((c) => c.name))
+            })}
+          </p>
+        )}
         <FormError message={end.error ? errorText(end.error) : null} />
         <div className={styles.dialogActs}>
           <button type="button" className={styles.danger} disabled={end.isPending} onClick={() => end.mutate()}>

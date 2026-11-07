@@ -30,13 +30,14 @@ const BIG = { id: 'c', x: 400, y: 400, size: 2 }
 
 describe('las fichas en la mesa', () => {
   it('su radio sale de su tamaño en casillas; la que hay en un punto es la de encima', () => {
-    expect(tokenRadius(A, GRID)).toBeCloseTo(46)
-    expect(tokenRadius(BIG, GRID)).toBeCloseTo(92)
+    expect(tokenRadius(A, GRID)).toBeCloseTo(42)
+    expect(tokenRadius(BIG, GRID)).toBeCloseTo(84)
     expect(tokenAt([A, B], { x: 160, y: 140 }, GRID)?.id).toBe('a')
     expect(tokenAt([A, B], { x: 200, y: 150 }, GRID)).toBeNull()
     // Una encima de otra: la última
     expect(tokenAt([A, { ...A, id: 'arriba' }], { x: 150, y: 150 }, GRID)?.id).toBe('arriba')
     expect(tokenAt([BIG], { x: 480, y: 400 }, GRID)?.id).toBe('c')
+    expect(tokenAt([A], { x: 195, y: 150 }, GRID)).toBeNull()
   })
 
   it('un recuadro elige las que tienen el centro dentro, se trace hacia donde se trace', () => {

@@ -664,6 +664,8 @@ function Stage({
       return true
     }
     event.currentTarget.setPointerCapture(event.pointerId)
+    // Lo elegido de ahora (dos clics seguidos pueden llegar antes de volver a pintar)
+    const selected = latest.current.selected
     let chosen = selected
     if (event.shiftKey) {
       chosen = selected.includes(hit.id) ? selected.filter((id) => id !== hit.id) : [...selected, hit.id]
@@ -909,13 +911,16 @@ function Stage({
           // biome-ignore lint/a11y/noNoninteractiveTabindex: el marco se mueve con las flechas
           tabIndex={0}
           data-frame=""
-          onPointerDown={(event) => onFrameDown(event, 'move')}
-          onPointerMove={onFrameMove}
-          onPointerUp={onFrameUp}
-          onPointerCancel={onFrameUp}
           onKeyDown={onFrameKey}
         >
-          <span className={styles.teleTag}>
+          {/* Se arrastra por su etiqueta (y por su esquina se agranda): por dentro, las fichas siguen a mano */}
+          <span
+            className={styles.teleTag}
+            onPointerDown={(event) => onFrameDown(event, 'move')}
+            onPointerMove={onFrameMove}
+            onPointerUp={onFrameUp}
+            onPointerCancel={onFrameUp}
+          >
             <Tv aria-hidden="true" size={12} />
             {t('tabletop.frame')}
           </span>

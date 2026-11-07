@@ -1,5 +1,7 @@
 /* La mesa del máster: el lienzo a toda la altura, sus barras encima y el panel de escenas a la derecha */
 .mesa {
+  /* El «?» del tutorial, en el mapa, no encima del panel (como el lienzo) */
+  --tour-help-end: calc(18.75rem + var(--space-4));
   display: grid;
   grid-template-columns: minmax(0, 1fr) 18.75rem;
   block-size: 100dvh;
@@ -96,8 +98,7 @@
   border: 2px dashed rgb(242 194 96 / 0.85);
   border-radius: 4px;
   box-shadow: 0 0 0 9999px rgb(0 0 0 / 0.18);
-  cursor: move;
-  touch-action: none;
+  pointer-events: none;
 }
 
 .teleFrame:focus-visible {
@@ -118,6 +119,9 @@
   color: #1b1608;
   font-size: 0.6875rem;
   font-weight: 800;
+  cursor: move;
+  pointer-events: auto;
+  touch-action: none;
 }
 
 .teleHandle {
@@ -130,6 +134,8 @@
   border-radius: 3px;
   background: #f2c260;
   cursor: nwse-resize;
+  pointer-events: auto;
+  touch-action: none;
 }
 
 /* «Seguir»: un borde dorado alrededor de todo y el aviso abajo */
@@ -608,6 +614,7 @@
 /* Estrecho: el panel, debajo */
 @media (max-width: 48rem) {
   .mesa {
+    --tour-help-end: var(--space-4);
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: minmax(20rem, 1fr) auto;
     block-size: auto;

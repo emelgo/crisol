@@ -1755,6 +1755,7 @@ export const es = {
     removeModes: { defeated: 'Las que están a 0 PG', generic: 'Todas', none: 'Ninguna' },
     leaving: 'Se quitan de la mesa y de «En juego»: {{list}}.',
     nobodyLeaves: 'No se quita nadie.',
+    staying: 'Se quedan, con sus PG: {{list}}.',
     endConfirm: 'Acabar',
     cancel: 'Cancelar',
     turnOf: 'Turno de {{name}}.',
