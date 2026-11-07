@@ -2,7 +2,8 @@
  * La pantalla de la tele (docs/specs/escenas.md, ADR-0018 § 8): solo el mapa, sobre negro, sin nada de la interfaz.
  * Se conecta a la mesa de la campaña como «la pantalla» y enseña lo que ve el grupo: la escena presentada, con la
  * cámara del máster (sigue su vista, suave) o fija, ajustada a su tamaño; a oscuras, con el nombre de la campaña, si
- * está oculta. Si se corta, vuelve sola a lo que enseñaba
+ * está oculta. Con su niebla (docs/specs/vision.md): lo no explorado negro, lo explorado en gris y lo visible con su
+ * luz, de bordes blandos; solo pide las teselas que tocan lo que ve o vio. Si se corta, vuelve sola a lo que enseñaba
  */
 import type { SceneViewport, ScreenToken, ScreenView } from '@crisol/contracts'
 import { frameGroup, type Point, type Size } from '@crisol/tabletop'
@@ -16,12 +17,13 @@ import { PageTitle } from '../components/page-title.tsx'
 import { canvasViewOf, sceneViewportOf, smoothToward } from './camera.ts'
 import { connectTable } from './channel.ts'
 import { cssDisc, screenDraw } from './draw.ts'
+import { decodeMask, type FogLight, fogImage, fogLayerOf, maskTileUrl } from './fog-paint.ts'
 import { screenTileUrl } from './queries.ts'
 import type { RendererScene } from './renderer.ts'
 import styles from './screen.module.css'
 import { cellSide, initialOf } from './tokens.ts'
 import { useTableRenderer } from './use-renderer.ts'
-import { fitCanvas } from './view.ts'
+import { fitCanvas, pyramidOf } from './view.ts'
 
 const route = getRouteApi('/mundos/$worldId/campanas/$campaignId/pantalla')
 
@@ -86,21 +88,42 @@ export function TableScreen({ campaignId }: { campaignId: string }) {
   }, [campaignId])
 
   const presented = screen?.scene ?? null
-  const scene: RendererScene | null = useMemo(
-    () =>
-      presented?.image?.tiles
-        ? {
-            id: presented.id,
-            width: presented.image.width,
-            height: presented.image.height,
-            tiles: presented.image.tiles,
-            grid: presented.grid,
-            tileUrl: screenTileUrl(campaignId, presented.image.tiles.version)
-          }
-        : null,
-    [presented, campaignId]
-  )
+  // La niebla: lo explorado y lo que ve el grupo (sin ella, la API de prueba, se ve todo)
+  const fog = screen?.fog ?? null
+  const masks = useMemo(() => {
+    if (!fog) return null
+    const explored = decodeMask(fog.explored)
+    const visible = decodeMask(fog.visible)
+    return { explored, visible, seen: explored.clone().union(visible) }
+  }, [fog])
+  const scene: RendererScene | null = useMemo(() => {
+    if (!presented?.image?.tiles) return null
+    const base = screenTileUrl(campaignId, presented.image.tiles.version)
+    const pyramid = pyramidOf(presented.image)
+    const fits = masks && pyramid && masks.seen.width === presented.image.width
+    return {
+      id: presented.id,
+      width: presented.image.width,
+      height: presented.image.height,
+      tiles: presented.image.tiles,
+      grid: presented.grid,
+      tileUrl: fits ? maskTileUrl(base, masks.seen, pyramid) : base
+    }
+  }, [presented, campaignId, masks])
   const { host, renderer, ready, size } = useTableRenderer(scene, { big: true })
+  const lights = screen?.lights
+  useEffect(() => {
+    if (!ready) return
+    if (!masks || !fog) {
+      renderer.current?.setFog(null)
+      renderer.current?.setGlow(null)
+      return
+    }
+    const glowing: FogLight[] = (lights ?? []).map((light) => ({ ...light, cells: decodeMask(light.cells) }))
+    const image = fogImage(masks.explored, masks.visible, 'screen', { darkness: fog.darkness, lights: glowing })
+    renderer.current?.setFog(fogLayerOf(image.pixels, masks.explored))
+    renderer.current?.setGlow(image.glow ? fogLayerOf(image.glow, masks.explored) : null)
+  }, [ready, masks, fog, lights, renderer])
   const words = (state: NonNullable<ScreenToken['state']>) => t(`inPlay.state.${state}`)
   const visible = presented && screen ? screen.tokens : []
   // Las fichas: con su nombre, su estado en palabras y lo que se arrastra

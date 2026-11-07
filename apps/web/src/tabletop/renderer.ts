@@ -1,10 +1,20 @@
 /**
  * El lienzo de la mesa con PixiJS (ADR-0018 § 9), para la mesa del máster y la tele: el mapa por teselas (las del
- * nivel que toca según el zoom, con las del siguiente debajo mientras llegan y el nivel más pequeño entero al fondo) y
- * la rejilla encima, en píxeles de la pantalla. PixiJS se carga aparte (import()), solo en la mesa y en la tele
+ * nivel que toca según el zoom, con las del siguiente debajo mientras llegan y el nivel más pequeño entero al fondo),
+ * la rejilla encima, en píxeles de la pantalla, la niebla y el brillo de las luces (una imagen pequeña estirada con
+ * suavizado), las formas de los editores (muros, luces, la niebla a mano) y las fichas. PixiJS se carga aparte
+ * (import()), solo en la mesa y en la tele
  */
 import type { SceneGrid, SceneTiles } from '@crisol/contracts'
-import { type Size, type TilePyramid, type TileRef, tileWorldRect, type Viewport } from '@crisol/tabletop'
+import {
+  dashSegment,
+  type Point,
+  type Size,
+  type TilePyramid,
+  type TileRef,
+  tileWorldRect,
+  type Viewport
+} from '@crisol/tabletop'
 import type { Application, Container, Graphics, Sprite, Text, Texture } from 'pixi.js'
 import { pyramidOf, screenGridLines, tilesToDraw } from './view.ts'
 
@@ -16,8 +26,45 @@ export interface RendererScene {
   height: number
   tiles: SceneTiles
   grid: SceneGrid
-  tileUrl: (level: number, x: number, y: number) => string
+  /** La dirección de una tesela; null si no se pide (la tele, fuera de lo que ve el grupo) */
+  tileUrl: (level: number, x: number, y: number) => string | null
 }
+
+/** Una capa de la niebla o del brillo: una imagen RGBA de una celda por píxel, que cubre `cellSize` píxeles del mapa */
+export interface FogLayer {
+  columns: number
+  rows: number
+  cellSize: number
+  pixels: Uint8ClampedArray<ArrayBuffer>
+}
+
+/**
+ * Lo que dibujan los editores encima del mapa: los puntos en píxeles del mapa; los grosores y el radio de un punto,
+ * en píxeles de la pantalla (no crecen con el zoom). `dash`: largo del trazo y del hueco, en píxeles de la pantalla
+ */
+export type OverlayShape =
+  | { kind: 'line'; a: Point; b: Point; color: number; width: number; alpha?: number; dash?: readonly [number, number] }
+  | { kind: 'dot'; at: Point; color: number; radius: number; stroke?: number }
+  | {
+      kind: 'circle'
+      at: Point
+      /** En píxeles del mapa */
+      radius: number
+      color: number
+      width: number
+      fill?: number
+      dash?: readonly [number, number]
+    }
+  | {
+      kind: 'polygon'
+      points: readonly Point[]
+      color: number
+      width: number
+      alpha?: number
+      fill?: number
+      closed?: boolean
+      dash?: readonly [number, number]
+    }
 
 /** Una ficha tal como se pinta (la mesa y la tele la preparan con lo suyo) */
 export interface DrawToken {
@@ -71,6 +118,20 @@ export class TableRenderer {
   private readonly layers: { base: Container; under: Container; top: Container }
   private readonly world: Container
   private readonly grid: Graphics
+  /** La niebla y el brillo, con la misma transformación que el mapa */
+  private readonly fogLayer: Container
+  private fog: { layer: FogLayer | null; sprite: Sprite | null; canvas: HTMLCanvasElement | null } = {
+    layer: null,
+    sprite: null,
+    canvas: null
+  }
+  private glow: { layer: FogLayer | null; sprite: Sprite | null; canvas: HTMLCanvasElement | null } = {
+    layer: null,
+    sprite: null,
+    canvas: null
+  }
+  private readonly shapesLayer: Graphics
+  private shapes: readonly OverlayShape[] = []
   private readonly tokenLayer: Container
   private readonly nodes = new Map<string, TokenNode>()
   private tokens: DrawToken[] = []
@@ -112,8 +173,10 @@ export class TableRenderer {
     this.layers = { base: new pixi.Container(), under: new pixi.Container(), top: new pixi.Container() }
     this.world.addChild(this.layers.base, this.layers.under, this.layers.top)
     this.grid = new pixi.Graphics()
+    this.fogLayer = new pixi.Container()
+    this.shapesLayer = new pixi.Graphics()
     this.tokenLayer = new pixi.Container()
-    app.stage.addChild(this.world, this.grid, this.tokenLayer)
+    app.stage.addChild(this.world, this.grid, this.fogLayer, this.shapesLayer, this.tokenLayer)
     // Sin ratón en PixiJS: los gestos los lleva la página
     app.stage.eventMode = 'none'
     // Se pinta solo cuando algo cambia (no a cada fotograma): la mesa y la tele pasan horas abiertas
@@ -149,6 +212,24 @@ export class TableRenderer {
     this.schedule()
   }
 
+  /** La niebla (null: sin niebla) */
+  setFog(layer: FogLayer | null) {
+    this.fog = this.placeLayer(this.fog, layer, false)
+    this.schedule()
+  }
+
+  /** El brillo de las luces, que se suma a lo de debajo (null: sin luces) */
+  setGlow(layer: FogLayer | null) {
+    this.glow = this.placeLayer(this.glow, layer, true)
+    this.schedule()
+  }
+
+  /** Lo que dibujan los editores, encima de la niebla y debajo de las fichas */
+  setShapes(shapes: readonly OverlayShape[]) {
+    this.shapes = shapes
+    this.schedule()
+  }
+
   destroy() {
     this.destroyed = true
     cancelAnimationFrame(this.frame)
@@ -176,19 +257,31 @@ export class TableRenderer {
     const { view, scene, pyramid } = this
     this.world.position.set(view.x, view.y)
     this.world.scale.set(view.scale)
+    this.fogLayer.position.set(view.x, view.y)
+    this.fogLayer.scale.set(view.scale)
     this.grid.clear()
     if (!scene || !pyramid || this.size.width === 0) {
       for (const sprite of this.sprites.values()) sprite.destroy()
       this.sprites.clear()
+      this.fogLayer.visible = false
+      this.shapesLayer.clear()
       this.drawTokens([])
       return
     }
+    this.fogLayer.visible = true
     this.tick++
     const draw = tilesToDraw(pyramid, view, this.size, window.devicePixelRatio || 1)
+    // Por su dirección: si cambia (la tele, al explorar), es otra tesela
     const wanted = new Map<string, { ref: TileRef; layer: Container }>()
-    for (const ref of draw.base) wanted.set(`${ref.level}/${ref.x}/${ref.y}`, { ref, layer: this.layers.base })
-    for (const ref of draw.under) wanted.set(`${ref.level}/${ref.x}/${ref.y}`, { ref, layer: this.layers.under })
-    for (const ref of draw.tiles) wanted.set(`${ref.level}/${ref.x}/${ref.y}`, { ref, layer: this.layers.top })
+    const want = (refs: TileRef[], layer: Container) => {
+      for (const ref of refs) {
+        const url = scene.tileUrl(ref.level, ref.x, ref.y)
+        if (url) wanted.set(url, { ref, layer })
+      }
+    }
+    want(draw.base, this.layers.base)
+    want(draw.under, this.layers.under)
+    want(draw.tiles, this.layers.top)
     // Las que ya no hacen falta se quitan (su textura se queda en la caché)
     for (const [key, sprite] of this.sprites) {
       if (wanted.has(key)) continue
@@ -197,7 +290,7 @@ export class TableRenderer {
     }
     for (const [key, { ref, layer }] of wanted) {
       if (this.sprites.has(key)) continue
-      const texture = this.texture(scene.tileUrl(ref.level, ref.x, ref.y))
+      const texture = this.texture(key)
       if (!texture) continue
       const rect = tileWorldRect(pyramid, ref)
       const sprite = new this.pixi.Sprite(texture)
@@ -209,10 +302,11 @@ export class TableRenderer {
       this.sprites.set(key, sprite)
     }
     // Las imágenes de las fichas también están en uso
-    const inUse = new Set([...wanted.values()].map(({ ref }) => scene.tileUrl(ref.level, ref.x, ref.y)))
+    const inUse = new Set(wanted.keys())
     for (const token of this.tokens) if (token.image) inUse.add(token.image.url)
     this.evict(inUse)
     this.drawGrid(scene)
+    this.drawShapes()
     this.drawTokens(this.tokens)
   }
 
@@ -345,6 +439,91 @@ export class TableRenderer {
     node.sprite.visible = true
     node.sprite.scale.set(k)
     node.sprite.position.set(-image.x * width * k, -image.y * height * k)
+  }
+
+  /** Pone (o quita) una capa de la niebla: un lienzo pequeño que PixiJS estira con suavizado */
+  private placeLayer(
+    current: { layer: FogLayer | null; sprite: Sprite | null; canvas: HTMLCanvasElement | null },
+    layer: FogLayer | null,
+    add: boolean
+  ) {
+    if (!layer || layer.columns <= 0 || layer.rows <= 0) {
+      current.sprite?.destroy(true)
+      return { layer: null, sprite: null, canvas: null }
+    }
+    const same = current.canvas && current.canvas.width === layer.columns && current.canvas.height === layer.rows
+    const canvas = same ? (current.canvas as HTMLCanvasElement) : document.createElement('canvas')
+    canvas.width = layer.columns
+    canvas.height = layer.rows
+    canvas.getContext('2d')?.putImageData(new ImageData(layer.pixels, layer.columns, layer.rows), 0, 0)
+    let sprite = current.sprite
+    if (same && sprite) sprite.texture.source.update()
+    else {
+      sprite?.destroy(true)
+      const texture = this.pixi.Texture.from(canvas)
+      texture.source.scaleMode = 'linear'
+      sprite = new this.pixi.Sprite(texture)
+      if (add) sprite.blendMode = 'add'
+      this.fogLayer.addChild(sprite)
+      // La niebla, debajo del brillo
+      if (!add) this.fogLayer.setChildIndex(sprite, 0)
+    }
+    sprite.position.set(0, 0)
+    sprite.width = layer.columns * layer.cellSize
+    sprite.height = layer.rows * layer.cellSize
+    return { layer, sprite, canvas }
+  }
+
+  /** Las formas de los editores, en píxeles de la pantalla */
+  private drawShapes() {
+    const g = this.shapesLayer
+    g.clear()
+    const { x: vx, y: vy, scale } = this.view
+    const sx = (p: Point) => p.x * scale + vx
+    const sy = (p: Point) => p.y * scale + vy
+    const stroke = (
+      points: Point[],
+      closed: boolean,
+      color: number,
+      width: number,
+      dash?: readonly [number, number],
+      alpha = 1
+    ) => {
+      const screen = points.map((p) => ({ x: sx(p), y: sy(p) }))
+      if (closed && screen.length > 2) screen.push(screen[0] as Point)
+      if (!dash) {
+        for (const [i, p] of screen.entries()) {
+          if (i === 0) g.moveTo(p.x, p.y)
+          else g.lineTo(p.x, p.y)
+        }
+      } else
+        for (let i = 1; i < screen.length; i++) {
+          const a = screen[i - 1] as Point
+          const b = screen[i] as Point
+          for (const [x1, y1, x2, y2] of dashSegment([a.x, a.y, b.x, b.y], dash[0], dash[1]))
+            g.moveTo(x1, y1).lineTo(x2, y2)
+        }
+      g.stroke({ width, color, alpha, cap: 'round', join: 'round' })
+    }
+    for (const shape of this.shapes) {
+      if (shape.kind === 'line') stroke([shape.a, shape.b], false, shape.color, shape.width, shape.dash, shape.alpha)
+      else if (shape.kind === 'dot') {
+        g.circle(sx(shape.at), sy(shape.at), shape.radius).fill(shape.color)
+        if (shape.stroke !== undefined) g.stroke({ width: 2, color: shape.stroke })
+      } else if (shape.kind === 'circle') {
+        const sides = Math.max(24, Math.min(160, Math.round(shape.radius * scale * 0.4)))
+        const points = Array.from({ length: sides }, (_, i) => ({
+          x: shape.at.x + shape.radius * Math.cos((i / sides) * Math.PI * 2),
+          y: shape.at.y + shape.radius * Math.sin((i / sides) * Math.PI * 2)
+        }))
+        if (shape.fill) g.poly(points.flatMap((p) => [sx(p), sy(p)])).fill({ color: shape.color, alpha: shape.fill })
+        stroke(points, true, shape.color, shape.width, shape.dash)
+      } else {
+        if (shape.fill && shape.points.length > 2)
+          g.poly(shape.points.flatMap((p) => [sx(p), sy(p)])).fill({ color: shape.color, alpha: shape.fill })
+        stroke([...shape.points], shape.closed ?? false, shape.color, shape.width, shape.dash, shape.alpha)
+      }
+    }
   }
 
   private drawGrid(scene: RendererScene) {
