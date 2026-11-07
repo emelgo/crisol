@@ -206,6 +206,9 @@ test('el menú del bloque: desde la barra con el teclado, y desde el asa con el 
   await menu.getByRole('menuitem', { name: 'Subir' }).click()
   await expect(body(page).locator('p').first()).toHaveText('Segundo')
   await expect(announced(page)).toHaveText('Bloque movido.')
+  // Al cerrarse, el menú devuelve el foco al editor con la selección de antes (en «Segundo»): se espera a que lo haya
+  // hecho, o devolvería el cursor ahí después de ponerlo en «Primero»
+  await expect(body(page)).toBeFocused()
 
   // Convertir en aviso, duplicar y borrar (con el cursor ya en «Primero»: en una máquina lenta, el clic justo tras
   // cerrar el menú puede llegar antes de que el editor recupere el foco)
