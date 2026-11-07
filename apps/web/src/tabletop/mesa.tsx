@@ -4,19 +4,20 @@
  * cámara (seguir la vista del máster o quedarse fija en un marco que se arrastra). Lo de la campaña llega por el canal
  * de la mesa; lo que se cambia, por la API
  */
-import type { CampaignTableView, SceneView, SceneViewport } from '@crisol/contracts'
+import type { CampaignTableView, SceneView, SceneViewport, TokenView } from '@crisol/contracts'
 import {
   framingRect,
   isTrackpadWheel,
   type Point,
   type Size,
+  toWorld,
   type Viewport,
   wheelZoomFactor,
   widthToCorner,
   zoomAt,
   zoomLimits
 } from '@crisol/tabletop'
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getRouteApi, Link, Navigate } from '@tanstack/react-router'
 import { ChevronDown, ExternalLink, EyeOff, Layers, Maximize, Minus, Play, Plus, Search, Tv } from 'lucide-react'
 import {
@@ -41,12 +42,17 @@ import { failed, LoadError } from '../components/load-error.tsx'
 import { PageTitle } from '../components/page-title.tsx'
 import { Tour } from '../components/tour.tsx'
 import { canvasViewOf, framingOf, REFERENCE_ASPECT, sceneViewportOf, sceneViewportOfCanvas } from './camera.ts'
-import { connectTable, type TableChannel, type TableStatus } from './channel.ts'
+import { connectTable, type DragMove, type TableChannel, type TableStatus } from './channel.ts'
+import { masterDraw } from './draw.ts'
 import styles from './mesa.module.css'
+import { PLACING_TYPE, type Placing, TablePanel } from './panel.tsx'
 import { Preparing } from './preparing.tsx'
 import { masterTileUrl, sceneListKey } from './queries.ts'
 import type { RendererScene } from './renderer.ts'
-import { SceneThumb } from './thumb.tsx'
+import { TokenCard } from './token-card.tsx'
+import { TokenImageEditor } from './token-image.tsx'
+import { TokenSheet } from './token-sheet.tsx'
+import { arrowMoves, cellSide, dragMoves, dropAt, tokenAt, tokenRadius, tokensIn } from './tokens.ts'
 import { useScenePreparation } from './use-preparation.ts'
 import { useTableRenderer } from './use-renderer.ts'
 import { fitCanvas } from './view.ts'
@@ -99,6 +105,21 @@ function Mesa({ worldId, campaignId, campaignName }: { worldId: string; campaign
   const preparation = useScenePreparation(worldId)
   // La vista del máster (dónde cae el mapa y a qué escala): es de su navegador
   const view = useRef<Viewport>({ x: 0, y: 0, scale: 1 })
+  // Las fichas: las elegidas, la de la tarjeta, la de la hoja abierta y la de su imagen
+  const [selected, setSelected] = useState<string[]>([])
+  const [cardFor, setCardFor] = useState<string | null>(null)
+  const [sheetFor, setSheetFor] = useState<string | null>(null)
+  const [imageFor, setImageFor] = useState<{ tokenId: string; fileId: string | null } | null>(null)
+  const cardRef = useRef<HTMLElement | null>(null)
+  // Lo que arrastra otra pestaña del máster, en vivo (se olvida al llegar la mesa)
+  const remote = useRef(new Map<string, Point>())
+  const [remoteTick, setRemoteTick] = useState(0)
+  const client = useQueryClient()
+  const campaign = useQuery({
+    queryKey: ['campaign', campaignId],
+    queryFn: () => api.call('getCampaign', { campaignId })
+  })
+  const systemId = campaign.data?.campaign.system?.id ?? null
 
   // El canal de la mesa: la del máster, al entrar y cada vez que cambia
   useEffect(() => {
@@ -106,7 +127,13 @@ function Mesa({ worldId, campaignId, campaignName }: { worldId: string; campaign
       { campaignId, view: 'master' },
       {
         onMessage: (message) => {
-          if (message.type === 'master') setTable(message.table)
+          if (message.type === 'master') {
+            remote.current.clear()
+            setTable(message.table)
+          } else if (message.type === 'drag') {
+            for (const move of message.moves) remote.current.set(move.tokenId, { x: move.x, y: move.y })
+            setRemoteTick((n) => n + 1)
+          }
         },
         onStatus: setStatus
       }
@@ -123,7 +150,48 @@ function Mesa({ worldId, campaignId, campaignName }: { worldId: string; campaign
     mutationFn: (run: () => Promise<CampaignTableView>) => run(),
     onSuccess: setTable
   })
-  const openScene = (sceneId: string) => act.mutate(() => api.call('openScene', { campaignId, sceneId }))
+  const openScene = (sceneId: string) => {
+    setSelected([])
+    setCardFor(null)
+    act.mutate(() => api.call('openScene', { campaignId, sceneId }))
+  }
+  const tokens = useMemo(() => (table?.tokens ?? []).filter((token) => token.sceneId === table?.open?.id), [table])
+  const byId = (id: string | null) => tokens.find((token) => token.id === id) ?? null
+  // Lo que se suelta en el mapa (o, con su «+», en medio de lo que se ve)
+  const [skipped, setSkipped] = useState<string[]>([])
+  const place = useMutation({
+    mutationFn: async ({ placing, at }: { placing: Placing; at: Point | null }) => {
+      const sceneId = open?.id
+      if (!sceneId) return
+      const point =
+        at ?? (size.width > 0 ? toWorld(view.current, { x: size.width / 2, y: size.height / 2 }) : { x: 0, y: 0 })
+      const where = { x: Math.round(point.x), y: Math.round(point.y) }
+      setSkipped([])
+      if (placing.kind === 'encounter') {
+        const out = await api.call('placeEncounter', { campaignId, sceneId, encounterId: placing.id, ...where })
+        setSkipped(out.skipped)
+        return
+      }
+      const token =
+        placing.kind === 'character'
+          ? { characterId: placing.id, ...where }
+          : placing.kind === 'creature'
+            ? { creatureId: placing.id, ...where }
+            : { content: { key: placing.key, count: placing.count }, ...where }
+      await api.call('placeTokens', { campaignId, sceneId, tokens: [token] })
+    },
+    onSuccess: () => client.invalidateQueries({ queryKey: ['creatures', campaignId] })
+  })
+  // Ctrl+Z: deshace el último movimiento de fichas hecho desde la mesa (el del historial del mundo)
+  const undo = useMutation({
+    mutationFn: async () => {
+      const history = await api.call('listHistory', { worldId, limit: 30 })
+      const last = history.entries.find(
+        (entry) => entry.action === 'moveTokens' && entry.via === 'ui' && !entry.undoneBy && !entry.undoes
+      )
+      if (last) await api.call('undoOperation', { operationId: last.id })
+    }
+  })
 
   const scene: RendererScene | null = useMemo(
     () =>
@@ -162,6 +230,56 @@ function Mesa({ worldId, campaignId, campaignName }: { worldId: string; campaign
           campaignId={campaignId}
           onTable={setTable}
           view={view}
+          tokens={tokens}
+          remote={remote}
+          remoteTick={remoteTick}
+          selected={selected}
+          onSelect={(ids) => {
+            setSelected(ids)
+            if (!ids.includes(cardFor ?? '')) setCardFor(null)
+          }}
+          cardFor={cardFor}
+          cardRef={cardRef}
+          onCard={setCardFor}
+          onSheet={setSheetFor}
+          onPlace={(placing, at) => place.mutate({ placing, at })}
+          onUndo={() => undo.mutate()}
+        />
+        {byId(cardFor) && (
+          <TokenCard
+            key={cardFor}
+            token={byId(cardFor) as TokenView}
+            campaignId={campaignId}
+            cardRef={cardRef}
+            onClose={() => setCardFor(null)}
+            onSheet={() => setSheetFor(cardFor)}
+            onImage={() => setImageFor({ tokenId: cardFor as string, fileId: null })}
+          />
+        )}
+        {byId(sheetFor) && (
+          <TokenSheet
+            key={sheetFor}
+            token={byId(sheetFor) as TokenView}
+            campaignId={campaignId}
+            systemId={systemId}
+            onClose={() => setSheetFor(null)}
+          />
+        )}
+        {imageFor && byId(imageFor.tokenId) && (
+          <TokenImageEditor
+            token={byId(imageFor.tokenId) as TokenView}
+            worldId={worldId}
+            fileId={imageFor.fileId}
+            onClose={() => setImageFor(null)}
+          />
+        )}
+        <TokenList
+          tokens={tokens}
+          selected={selected}
+          onPick={(id) => {
+            setSelected([id])
+            setCardFor(id)
+          }}
         />
         {preparation.state.status === 'preparing' ? (
           <div className={styles.overlay}>
@@ -196,14 +314,30 @@ function Mesa({ worldId, campaignId, campaignName }: { worldId: string; campaign
             message={
               act.error
                 ? errorText(act.error)
-                : preparation.state.status === 'failed'
-                  ? errorText(preparation.state.error)
-                  : null
+                : place.error
+                  ? errorText(place.error)
+                  : preparation.state.status === 'failed'
+                    ? errorText(preparation.state.error)
+                    : null
             }
           />
+          {skipped.length > 0 && (
+            <p className={styles.skipped} role="status">
+              {t('tabletop.skipped', { list: skipped.join(', ') })}
+            </p>
+          )}
         </div>
       </div>
-      <ScenesPanel worldId={worldId} table={table} onOpen={openScene} />
+      <TablePanel
+        worldId={worldId}
+        campaignId={campaignId}
+        systemId={systemId}
+        table={table}
+        selected={tokens.filter((token) => selected.includes(token.id))}
+        onOpen={openScene}
+        onPlace={(placing) => place.mutate({ placing, at: null })}
+        onImage={(fileId) => selected[0] && setImageFor({ tokenId: selected[0], fileId })}
+      />
       <Tour
         id="mesa"
         steps={[
@@ -231,9 +365,31 @@ function Stage({
   channel,
   campaignId,
   onTable,
-  view
+  view,
+  tokens,
+  remote,
+  remoteTick,
+  selected,
+  onSelect,
+  cardFor,
+  cardRef,
+  onCard,
+  onSheet,
+  onPlace,
+  onUndo
 }: {
   view: RefObject<Viewport>
+  tokens: TokenView[]
+  remote: RefObject<Map<string, Point>>
+  remoteTick: number
+  selected: string[]
+  onSelect: (ids: string[]) => void
+  cardFor: string | null
+  cardRef: RefObject<HTMLElement | null>
+  onCard: (id: string | null) => void
+  onSheet: (id: string) => void
+  onPlace: (placing: Placing, at: Point) => void
+  onUndo: () => void
   table: CampaignTableView | null
   scene: RendererScene | null
   host: RefObject<HTMLDivElement | null>
@@ -266,6 +422,40 @@ function Stage({
   if (!dragging.current) framing.current = camera.mode === 'fixed' ? framingOf(camera.view) : null
   const followingRef = useRef(following)
   followingRef.current = following
+  // Las fichas que se mueven (arrastrándolas o hasta que llega la mesa con su sitio nuevo)
+  const moving = useRef(new Map<string, Point>())
+  const tokenDrag = useRef<{
+    lead: TokenView
+    group: TokenView[]
+    grab: Point
+    moved: boolean
+    moves: DragMove[]
+  } | null>(null)
+  const [box, setBox] = useState<{ from: Point; to: Point } | null>(null)
+  const latest = useRef({ tokens, selected, cardFor, grid: open?.grid })
+  latest.current = { tokens, selected, cardFor, grid: open?.grid }
+
+  /** Las fichas en el lienzo, y la tarjeta de la elegida junto a la suya */
+  const drawTokens = useCallback(() => {
+    const { tokens: all, selected: chosen, cardFor: carded, grid } = latest.current
+    if (!grid) return renderer.current?.setTokens([])
+    const at = (token: TokenView) => moving.current.get(token.id) ?? remote.current.get(token.id)
+    renderer.current?.setTokens(all.map((token) => masterDraw(token, grid, chosen.includes(token.id), at(token))))
+    const card = cardRef.current
+    const token = all.find((each) => each.id === carded)
+    if (!card || !token) return
+    const p = at(token) ?? token
+    const { x, y, scale } = view.current
+    const sx = p.x * scale + x
+    const sy = p.y * scale + y
+    const r = tokenRadius(token, grid) * scale
+    const width = card.offsetWidth || 300
+    const height = card.offsetHeight || 240
+    const room = sizeRef.current
+    const left = sx + r + 14 + width > room.width - 8 ? sx - r - 14 - width : sx + r + 14
+    card.style.left = `${Math.max(8, left)}px`
+    card.style.top = `${Math.max(64, Math.min(sy - 60, room.height - height - 12))}px`
+  }, [renderer, remote, cardRef, view])
 
   /** Coloca el marco «Tele» sobre el mapa con la vista de ahora */
   const placeFrame = useCallback(() => {
@@ -286,11 +476,18 @@ function Stage({
     renderer.current?.setView(view.current)
     placeFrame()
     if (zoomText.current) zoomText.current.textContent = `${Math.round(view.current.scale * 100)} %`
+    drawTokens()
     // Para las pruebas del navegador: dónde cae el mapa en el lienzo, sin leer sus píxeles
     if (host.current) host.current.dataset.view = JSON.stringify({ ...view.current, ...sizeRef.current })
     if (followingRef.current && sizeRef.current.width > 0)
       channel.current?.sendViewport(sceneViewportOfCanvas(view.current, sizeRef.current))
-  }, [renderer, placeFrame, channel, host, view])
+  }, [renderer, placeFrame, channel, host, view, drawTokens])
+
+  // Llega la mesa (o cambia lo elegido): las fichas, otra vez; lo que se movía ya está en su sitio
+  useEffect(() => {
+    if (!tokenDrag.current) moving.current.clear()
+    drawTokens()
+  }, [tokens, selected, cardFor, remoteTick, drawTokens])
 
   const fit = useCallback(() => {
     if (!scene || sizeRef.current.width === 0) return
@@ -372,9 +569,44 @@ function Stage({
     return { x: event.clientX - (rect?.left ?? 0), y: event.clientY - (rect?.top ?? 0) }
   }
 
+  const moveTokens = useMutation({
+    mutationFn: (moves: DragMove[]) => api.call('moveTokens', { campaignId, moves })
+  })
+  const grid = open?.grid
+  const worldAt = (event: { clientX: number; clientY: number }) => toWorld(view.current, local(event))
+
+  /** Con el botón izquierdo (o un dedo): una ficha se elige y se arrastra; fuera de ellas, un recuadro elige varias */
+  const tokenDown = (event: PointerEvent<HTMLDivElement>) => {
+    if (!grid || !scene) return false
+    const world = worldAt(event)
+    const hit = tokenAt(tokens, world, grid)
+    if (!hit) {
+      if (event.pointerType !== 'mouse') return false
+      setBox({ from: local(event), to: local(event) })
+      event.currentTarget.setPointerCapture(event.pointerId)
+      return true
+    }
+    event.currentTarget.setPointerCapture(event.pointerId)
+    let chosen = selected
+    if (event.shiftKey) {
+      chosen = selected.includes(hit.id) ? selected.filter((id) => id !== hit.id) : [...selected, hit.id]
+      onSelect(chosen)
+    } else if (!selected.includes(hit.id)) {
+      chosen = [hit.id]
+      onSelect(chosen)
+    }
+    const group = tokens.filter((token) => chosen.includes(token.id) || token.id === hit.id)
+    tokenDrag.current = { lead: hit, group, grab: { x: world.x - hit.x, y: world.y - hit.y }, moved: false, moves: [] }
+    return true
+  }
+
   // Moverse: botón central, espacio + botón izquierdo o un dedo; dos dedos acercan
   const onPointerDown = (event: PointerEvent<HTMLDivElement>) => {
     const pans = event.pointerType !== 'mouse' || event.button === 1 || (event.button === 0 && space.current)
+    if (!space.current && event.button === 0 && pointers.current.size === 0 && tokenDown(event)) {
+      event.preventDefault()
+      return
+    }
     if (!pans) return
     event.preventDefault()
     event.currentTarget.setPointerCapture(event.pointerId)
@@ -387,6 +619,22 @@ function Stage({
     }
   }
   const onPointerMove = (event: PointerEvent<HTMLDivElement>) => {
+    const drag = tokenDrag.current
+    if (drag && grid) {
+      const world = worldAt(event)
+      const to = { x: world.x - drag.grab.x, y: world.y - drag.grab.y }
+      if (!drag.moved && Math.hypot(to.x - drag.lead.x, to.y - drag.lead.y) * view.current.scale < 4) return
+      drag.moved = true
+      drag.moves = dragMoves(drag.group, drag.lead, to, grid, event.shiftKey)
+      for (const move of drag.moves) moving.current.set(move.tokenId, { x: move.x, y: move.y })
+      channel.current?.sendDrag(drag.moves)
+      drawTokens()
+      return
+    }
+    if (box) {
+      setBox({ ...box, to: local(event) })
+      return
+    }
     const current = gesture.current
     if (!current || !pointers.current.has(event.pointerId)) return
     pointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY })
@@ -406,11 +654,48 @@ function Stage({
     apply()
   }
   const onPointerUp = (event: PointerEvent<HTMLDivElement>) => {
+    const drag = tokenDrag.current
+    if (drag) {
+      tokenDrag.current = null
+      if (drag.moved && event.type !== 'pointercancel') moveTokens.mutate(drag.moves)
+      else if (!drag.moved) {
+        moving.current.clear()
+        if (!event.shiftKey) onCard(drag.lead.id)
+      }
+      if (event.type === 'pointercancel') moving.current.clear()
+      drawTokens()
+      return
+    }
+    if (box) {
+      setBox(null)
+      const travel = Math.hypot(box.to.x - box.from.x, box.to.y - box.from.y)
+      if (travel < 4) {
+        if (!event.shiftKey) onSelect([])
+        return
+      }
+      const inside = tokensIn(tokens, toWorld(view.current, box.from), toWorld(view.current, box.to)).map((t) => t.id)
+      onSelect(event.shiftKey ? [...new Set([...selected, ...inside])] : inside)
+      return
+    }
     pointers.current.delete(event.pointerId)
     if (pointers.current.size === 0) gesture.current = null
   }
 
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') {
+      event.preventDefault()
+      return onUndo()
+    }
+    if (event.key === 'Escape') return onSelect([])
+    // Con fichas elegidas, las flechas las mueven una casilla
+    const chosen = tokens.filter((token) => selected.includes(token.id))
+    const arrows = grid ? arrowMoves(chosen, event.key, grid) : null
+    if (arrows) {
+      event.preventDefault()
+      for (const move of arrows) moving.current.set(move.tokenId, { x: move.x, y: move.y })
+      drawTokens()
+      return moveTokens.mutate(arrows)
+    }
     const step = 80
     const moves: Record<string, [number, number]> = {
       ArrowLeft: [step, 0],
@@ -433,7 +718,7 @@ function Stage({
     mutationFn: (view: SceneViewport) => api.call('setScreenCamera', { campaignId, camera: { mode: 'fixed', view } }),
     onSuccess: onTable
   })
-  const cell = open?.grid.type === 'none' || !open ? 50 : open.grid.size
+  const cell = open ? cellSide(open.grid) : 50
   const onFrameDown = (event: PointerEvent<HTMLElement>, kind: FrameDrag['kind']) => {
     const current = framing.current
     if (!current || event.button !== 0 || space.current) return
@@ -512,7 +797,32 @@ function Stage({
         onPointerCancel={onPointerUp}
         onKeyDown={onKeyDown}
         onAuxClick={(event) => event.preventDefault()}
+        onDoubleClick={(event) => {
+          const hit = grid ? tokenAt(tokens, worldAt(event), grid) : null
+          if (hit) onSheet(hit.id)
+        }}
+        onDragOver={(event) => {
+          if (scene && event.dataTransfer.types.includes(PLACING_TYPE)) event.preventDefault()
+        }}
+        onDrop={(event) => {
+          const data = event.dataTransfer.getData(PLACING_TYPE)
+          if (!data || !grid) return
+          event.preventDefault()
+          const placing = JSON.parse(data) as Placing
+          onPlace(placing, dropAt(worldAt(event), 1, grid, event.shiftKey))
+        }}
       />
+      {box && (
+        <div
+          className={styles.box}
+          style={{
+            left: Math.min(box.from.x, box.to.x),
+            top: Math.min(box.from.y, box.to.y),
+            width: Math.abs(box.to.x - box.from.x),
+            height: Math.abs(box.to.y - box.from.y)
+          }}
+        />
+      )}
       {scene && camera.mode === 'fixed' && (
         <section
           ref={frame}
@@ -660,7 +970,7 @@ function TopBar({
   )
 }
 
-/** «Seguir | Fija»: Fija se queda en lo que se ve ahora (su marco, en el mapa, se mueve) */
+/** «Seguir | Fija | Grupo»: Fija se queda en lo que se ve ahora (su marco se mueve); Grupo encuadra sus fichas */
 function CameraChoice({
   campaignId,
   camera,
@@ -677,7 +987,8 @@ function CameraChoice({
   const { t } = useTranslation()
   const api = useApi()
   const name = useId()
-  const fixed = camera.mode === 'fixed'
+  const mode = camera.mode
+  const fixed = mode === 'fixed'
   const fixHere = () => {
     const view = framing()
     if (!view) return
@@ -690,7 +1001,7 @@ function CameraChoice({
         <input
           type="radio"
           name={name}
-          checked={!fixed}
+          checked={mode === 'follow'}
           onChange={() => onAct(() => api.call('setScreenCamera', { campaignId, camera: { mode: 'follow' } }))}
         />
         {t('tabletop.follow')}
@@ -698,6 +1009,15 @@ function CameraChoice({
       <label className={styles.segment}>
         <input type="radio" name={name} checked={fixed} onChange={fixHere} />
         {t('tabletop.fixed')}
+      </label>
+      <label className={styles.segment}>
+        <input
+          type="radio"
+          name={name}
+          checked={mode === 'group'}
+          onChange={() => onAct(() => api.call('setScreenCamera', { campaignId, camera: { mode: 'group' } }))}
+        />
+        {t('tabletop.group')}
       </label>
     </fieldset>
   )
@@ -772,84 +1092,39 @@ function PageLink({ worldId, scene }: { worldId: string; scene: SceneView }) {
   )
 }
 
-/** El panel: las escenas del mundo, con su miniatura y un buscador; la abierta y la que está en la tele, marcadas */
-function ScenesPanel({
-  worldId,
-  table,
-  onOpen
+/**
+ * Las fichas, en una lista para el teclado y los lectores de pantalla (el lienzo no se lee): elegir una abre su
+ * tarjeta. No se ve; se llega a ella con el tabulador
+ */
+function TokenList({
+  tokens,
+  selected,
+  onPick
 }: {
-  worldId: string
-  table: CampaignTableView | null
-  onOpen: (sceneId: string) => void
+  tokens: TokenView[]
+  selected: string[]
+  onPick: (id: string) => void
 }) {
   const { t } = useTranslation()
-  const api = useApi()
-  const [query, setQuery] = useState('')
-  const scenes = useQuery({ queryKey: sceneListKey(worldId), queryFn: () => api.call('listScenes', { worldId }) })
-  // La mesa cambia (otra escena con mapa nuevo, por ejemplo): la lista, al día
-  const openId = table?.open?.id
-  const openVersion = table?.open?.image?.tiles?.version
-  const { refetch } = scenes
-  useEffect(() => {
-    if (openId) void refetch()
-  }, [openId, openVersion, refetch])
-  const words = query.trim().toLocaleLowerCase('es')
-  const all = scenes.data?.scenes ?? []
-  const shown = words
-    ? all.filter((scene) => `${scene.name} ${scene.pageTitle}`.toLocaleLowerCase('es').includes(words))
-    : all
-  const live = table?.presented && !table.screenHidden ? table.presented.id : null
+  if (tokens.length === 0) return null
   return (
-    <aside className={styles.panel} aria-label={t('tabletop.panel')} data-tour="mesa-escenas">
-      <h2 className={styles.panelTitle}>
-        <Layers aria-hidden="true" size={18} />
-        {t('tabletop.scenes')}
-      </h2>
-      <div className={styles.panelBody}>
-        <label className={styles.search}>
-          <Search aria-hidden="true" size={15} />
-          <input
-            type="search"
-            value={query}
-            placeholder={t('tabletop.searchScenes')}
-            aria-label={t('tabletop.searchScenes')}
-            onChange={(event) => setQuery(event.currentTarget.value)}
-          />
-        </label>
-        {!scenes.data ? (
-          failed(scenes) ? (
-            <LoadError error={scenes.error} onRetry={() => scenes.refetch()} />
-          ) : null
-        ) : shown.length === 0 ? (
-          <p className={styles.muted}>{all.length === 0 ? t('tabletop.noScenes') : t('tabletop.noMatches')}</p>
-        ) : (
-          <ul className={styles.scenes} aria-label={t('tabletop.scenes')}>
-            {shown.map((scene) => {
-              const isOpen = scene.id === openId
-              return (
-                <li key={scene.id} className={styles.sceneRow} data-open={isOpen || undefined}>
-                  <SceneThumb scene={scene} />
-                  <div className={styles.sceneName}>
-                    <b>{scene.name}</b>
-                    <span>{isOpen ? t('tabletop.opened') : scene.pageTitle}</span>
-                    {live === scene.id && <span className={`${styles.chip} ${styles.live}`}>{t('tabletop.live')}</span>}
-                  </div>
-                  {!isOpen && (
-                    <button
-                      type="button"
-                      className={styles.small}
-                      aria-label={`${t('tabletop.open')} ${scene.name}`}
-                      onClick={() => onOpen(scene.id)}
-                    >
-                      {t('tabletop.open')}
-                    </button>
-                  )}
-                </li>
-              )
-            })}
-          </ul>
-        )}
-      </div>
-    </aside>
+    <ul className={styles.tokenList} aria-label={t('tokens.list')}>
+      {tokens.map((token) => (
+        <li key={token.id}>
+          <button type="button" aria-pressed={selected.includes(token.id)} onClick={() => onPick(token.id)}>
+            {[
+              token.label,
+              token.actor.name,
+              token.actor.life
+                ? t('tokens.lifeValue', { value: token.actor.life.value, max: token.actor.life.max })
+                : null,
+              token.hidden ? t('tokens.hidden') : null
+            ]
+              .filter(Boolean)
+              .join(', ')}
+          </button>
+        </li>
+      ))}
+    </ul>
   )
 }

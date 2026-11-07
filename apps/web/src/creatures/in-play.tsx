@@ -257,7 +257,7 @@ function CreatureRow({
 }
 
 /** La hoja de una criatura en juego: su cabecera (su nombre, tirar sus PG, otro máximo, quitarla) y sus bloques */
-function CreatureSheet({
+export function CreatureSheet({
   creatureId,
   campaignId,
   systemId,

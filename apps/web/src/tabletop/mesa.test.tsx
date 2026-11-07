@@ -29,6 +29,7 @@ vi.mock('./channel.ts', () => ({
     handlers.onStatus?.('open')
     return {
       sendViewport: (view: unknown) => channel.viewports.push(view),
+      sendDrag: () => {},
       close: () => {
         channel.closed = true
       }
@@ -42,7 +43,7 @@ vi.mock('./use-renderer.ts', async () => {
   return {
     useTableRenderer: () => {
       const host = useRef<HTMLDivElement>(null)
-      const renderer = useRef({ setView: (view: unknown) => views.push(view), setScene: () => {} })
+      const renderer = useRef({ setView: (view: unknown) => views.push(view), setScene: () => {}, setTokens: () => {} })
       return { host, renderer, ready: true, failed: false, size: { width: 800, height: 600 } }
     }
   }

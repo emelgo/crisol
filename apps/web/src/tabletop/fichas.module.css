@@ -1,0 +1,479 @@
+/* La tarjeta de la ficha elegida, su hoja al lado y el creador de su imagen (como el lienzo de la mesa) */
+.card {
+  position: absolute;
+  inset-block-start: 4.5rem;
+  inset-inline-start: 1rem;
+  z-index: 14;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  inline-size: 19rem;
+  padding: 12px 14px 14px;
+  border: 1px solid var(--color-frame);
+  border-radius: 10px;
+  background: var(--color-surface);
+  box-shadow: 0 18px 44px rgb(0 0 0 / 0.55);
+  color: var(--color-text);
+  animation: abre 0.18s ease-out;
+}
+
+@keyframes abre {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.cardHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.avatar {
+  display: grid;
+  flex: none;
+  place-items: center;
+  inline-size: 2.5rem;
+  block-size: 2.5rem;
+  border: 3px solid #6fa8ff;
+  border-radius: 50%;
+  background: #22406a;
+  color: #ffffff;
+  font-family: var(--font-display);
+  font-size: 1.0625rem;
+  font-weight: 800;
+}
+
+.avatar[data-faction="hostile"] {
+  border-color: #ff8a4c;
+  background: #5a2a14;
+}
+
+.avatar[data-faction="neutral"] {
+  border-color: #d8c27a;
+  background: #4f4524;
+}
+
+.cardTitles {
+  flex: 1;
+  min-inline-size: 0;
+}
+
+.cardTitles h3 {
+  margin: 0;
+  overflow: hidden;
+  font-family: var(--font-display);
+  font-size: 1.375rem;
+  font-weight: 800;
+  line-height: 1;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.cardTitles span {
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+}
+
+.icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  inline-size: 2rem;
+  block-size: 2rem;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+.icon:hover,
+.icon[aria-expanded="true"] {
+  background: var(--color-raised);
+  color: var(--color-text);
+}
+
+.life {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 6px 12px;
+}
+
+.bar {
+  block-size: 6px;
+  overflow: hidden;
+  border-radius: 3px;
+  background: var(--color-border);
+}
+
+.bar i {
+  display: block;
+  block-size: 100%;
+  border-radius: 3px;
+  background: #5fae8a;
+  transition: inline-size 0.35s;
+}
+
+.bar i[data-tone="low"] {
+  background: #d9a441;
+}
+
+.bar i[data-tone="bad"] {
+  background: #d0574f;
+}
+
+.lifeText {
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.damage,
+.addCondition {
+  display: flex;
+  grid-column: 1 / -1;
+  gap: 6px;
+}
+
+.damage input,
+.addCondition input,
+.settings input,
+.settings select {
+  min-inline-size: 0;
+  min-block-size: 2rem;
+  padding: 0 0.5rem;
+  border: 1px solid var(--color-field-border);
+  border-radius: 6px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.875rem;
+}
+
+.damage input {
+  inline-size: 4.5rem;
+}
+
+.addCondition input {
+  flex: 1;
+}
+
+.addCondition .rounds {
+  flex: none;
+  inline-size: 4.5rem;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(5.5rem, 1fr));
+  gap: 4px 10px;
+  margin: 0;
+  font-size: 0.8125rem;
+}
+
+.stats div {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.stats dt {
+  color: var(--color-muted);
+}
+
+.stats dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.conditions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.conditions ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.condition {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 4px 1px 8px;
+  border: 1px solid rgb(142 123 176 / 0.6);
+  border-radius: 999px;
+  background: rgb(142 123 176 / 0.12);
+  color: var(--color-secret-text);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.condition em {
+  color: var(--color-muted);
+  font-style: normal;
+  font-weight: 500;
+}
+
+.condition button {
+  display: grid;
+  place-items: center;
+  padding: 2px;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.acts,
+.settingsActs,
+.imageActs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.primary,
+.ghost,
+.small {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.primary {
+  border: 0;
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+.ghost,
+.small {
+  border: 1px solid var(--color-border);
+  background: none;
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.ghost:hover,
+.small:hover:not(:disabled) {
+  border-color: var(--color-frame);
+  background: var(--color-raised);
+}
+
+.primary:disabled,
+.ghost:disabled,
+.small:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.total {
+  padding: 0 6px;
+  border-radius: 4px;
+  background: var(--color-raised);
+  font-variant-numeric: tabular-nums;
+}
+
+.settings {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  padding-block-start: 8px;
+  border-block-start: 1px solid var(--color-border);
+}
+
+.settingsActs {
+  grid-column: 1 / -1;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-inline-size: 0;
+}
+
+.field label {
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.hidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* La hoja, en un panel a la derecha del mapa */
+.sheet {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-end: 0;
+  z-index: 16;
+  inline-size: min(30rem, 100%);
+  overflow-y: auto;
+  padding: var(--space-4);
+  border-inline-start: 1px solid var(--color-border);
+  background: var(--color-bg);
+  box-shadow: -18px 0 44px rgb(0 0 0 / 0.4);
+  color: var(--color-text);
+  scrollbar-width: thin;
+  animation: entra 0.2s ease-out;
+}
+
+@keyframes entra {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.sheet:focus-visible {
+  outline: none;
+}
+
+.sheetClose {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 1;
+  margin-inline-start: auto;
+}
+
+.characterSheet h2 {
+  margin: 0 0 var(--space-3);
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+/* El creador de fichas: la imagen en redondo */
+.imageDialog {
+  inline-size: min(34rem, calc(100vw - 2rem));
+}
+
+.imageBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-5);
+}
+
+.imageBody h2 {
+  margin: 0 calc(var(--target) + var(--space-1)) 0 0;
+}
+
+.imageRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-5);
+}
+
+.imageRow .field {
+  flex: 1;
+}
+
+.round {
+  position: relative;
+  flex: none;
+  overflow: hidden;
+  border: 4px solid #6fa8ff;
+  border-radius: 50%;
+  background: #22406a;
+  cursor: grab;
+  touch-action: none;
+}
+
+.round[data-faction="hostile"] {
+  border-color: #ff8a4c;
+}
+
+.round[data-faction="neutral"] {
+  border-color: #d8c27a;
+}
+
+.round img {
+  position: absolute;
+  max-inline-size: none;
+  pointer-events: none;
+  user-select: none;
+}
+
+.imageList {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(6.5rem, 1fr));
+  gap: var(--space-2);
+  max-block-size: 13rem;
+  overflow-y: auto;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  scrollbar-width: thin;
+}
+
+.imageList button {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  inline-size: 100%;
+  padding: 4px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: none;
+  color: var(--color-muted);
+  font: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.imageList button[aria-pressed="true"] {
+  border-color: var(--color-accent);
+  color: var(--color-text);
+}
+
+.imageList img {
+  inline-size: 100%;
+  block-size: 3.25rem;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+.imageList span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

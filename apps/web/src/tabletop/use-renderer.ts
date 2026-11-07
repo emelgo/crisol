@@ -3,19 +3,20 @@ import type { Size } from '@crisol/tabletop'
 import { useEffect, useRef, useState } from 'react'
 import { type RendererScene, TableRenderer } from './renderer.ts'
 
-export function useTableRenderer(scene: RendererScene | null) {
+export function useTableRenderer(scene: RendererScene | null, options: { big?: boolean } = {}) {
   const host = useRef<HTMLDivElement>(null)
   const renderer = useRef<TableRenderer | null>(null)
   const [ready, setReady] = useState(false)
   const [failed, setFailed] = useState(false)
   const [size, setSize] = useState<Size>({ width: 0, height: 0 })
 
+  const big = options.big
   useEffect(() => {
     const element = host.current
     if (!element) return
     let alive = true
     let observer: ResizeObserver | null = null
-    TableRenderer.create(element).then(
+    TableRenderer.create(element, { big }).then(
       (made) => {
         if (!alive) return made.destroy()
         renderer.current = made
@@ -39,7 +40,7 @@ export function useTableRenderer(scene: RendererScene | null) {
       renderer.current?.destroy()
       renderer.current = null
     }
-  }, [])
+  }, [big])
 
   useEffect(() => {
     if (ready) renderer.current?.setScene(scene)
