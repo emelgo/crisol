@@ -85,7 +85,10 @@ test('repaso visual: la mesa, la tele y el combate con la cripta del lienzo', as
   await expect
     .poll(async () => (await call('getScene', { sceneId })).image.tiles?.levels ?? 0, { timeout: 60_000 })
     .toBeGreaterThan(0)
-  const [tv] = await Promise.all([page.waitForEvent('popup'), page.getByRole('button', { name: /Pantalla/ }).click()])
+  const [tv] = await Promise.all([
+    page.waitForEvent('popup'),
+    page.getByRole('button', { name: 'Pantalla', exact: true }).click()
+  ])
   await tv.setViewportSize(SIZE)
   await tv.emulateMedia({ colorScheme: 'dark' })
   await expect(tv.getByRole('list', { name: 'Lo que hay en la mesa' }).getByRole('listitem')).toHaveCount(7)

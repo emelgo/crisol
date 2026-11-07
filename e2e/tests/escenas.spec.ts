@@ -104,7 +104,10 @@ test('una escena: su mapa en teselas, la rejilla alineada, la mesa y la tele que
   await expect.poll(async () => (await viewOf(table))?.scale ?? 0).toBeGreaterThan(0)
 
   // La tele, en otra ventana: a oscuras con el nombre de la campaña hasta que se presenta
-  const [tv] = await Promise.all([page.waitForEvent('popup'), page.getByRole('button', { name: /Pantalla/ }).click()])
+  const [tv] = await Promise.all([
+    page.waitForEvent('popup'),
+    page.getByRole('button', { name: 'Pantalla', exact: true }).click()
+  ])
   await expect(tv.locator('[data-dark]')).toContainText('La Marca')
   await page.getByRole('button', { name: 'Presentar' }).click()
   await expect(page.getByText('En la tele').first()).toBeVisible()

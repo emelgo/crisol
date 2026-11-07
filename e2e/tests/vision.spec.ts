@@ -129,7 +129,10 @@ test('la visión: la cripta con su puerta secreta, el grupo que entra, la secret
   await expect
     .poll(async () => (await call('getScene', { sceneId })).image.tiles?.levels ?? 0, { timeout: 60_000 })
     .toBeGreaterThan(0)
-  const [tv] = await Promise.all([page.waitForEvent('popup'), page.getByRole('button', { name: /Pantalla/ }).click()])
+  const [tv] = await Promise.all([
+    page.waitForEvent('popup'),
+    page.getByRole('button', { name: 'Pantalla', exact: true }).click()
+  ])
   await tv.setViewportSize(SIZE)
   await tv.emulateMedia({ colorScheme: 'dark' })
   const onTv = tv.getByRole('list', { name: 'Lo que hay en la mesa' }).getByRole('listitem')

@@ -77,7 +77,10 @@ test('fichas: Lía y tres goblins de un encuentro, moverlos, dañar a uno, ocult
   await expect
     .poll(async () => (await call('getScene', { sceneId })).image.tiles?.levels ?? 0, { timeout: 30_000 })
     .toBe(2)
-  const [tv] = await Promise.all([page.waitForEvent('popup'), page.getByRole('button', { name: /Pantalla/ }).click()])
+  const [tv] = await Promise.all([
+    page.waitForEvent('popup'),
+    page.getByRole('button', { name: 'Pantalla', exact: true }).click()
+  ])
   const onTv = tv.getByRole('list', { name: 'Lo que hay en la mesa' })
 
   // Lía, desde «Personajes», arrastrada al mapa

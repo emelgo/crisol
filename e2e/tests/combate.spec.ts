@@ -62,7 +62,10 @@ test('combate: tirar la iniciativa, dos rondas (un estado de una ronda se va sol
   await expect
     .poll(async () => (await call('getScene', { sceneId })).image.tiles?.levels ?? 0, { timeout: 30_000 })
     .toBe(2)
-  const [tv] = await Promise.all([page.waitForEvent('popup'), page.getByRole('button', { name: /Pantalla/ }).click()])
+  const [tv] = await Promise.all([
+    page.waitForEvent('popup'),
+    page.getByRole('button', { name: 'Pantalla', exact: true }).click()
+  ])
   await tv.emulateMedia({ colorScheme: 'dark' })
 
   // Empezar con todas las fichas de la escena: el panel del combate, sin empezar
