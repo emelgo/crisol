@@ -20,7 +20,8 @@ jobs:
   calidad:
     name: Lint, tipos, pruebas, licencias y límites
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    # Un tope por si algo se cuelga, no un listón: con el módulo 6 tarda ~15 min
+    timeout-minutes: 25
     # Postgres y Valkey para las pruebas de integración (cada paquete crea su base desde cero)
     services:
       postgres:
@@ -80,7 +81,8 @@ jobs:
   e2e:
     name: Extremo a extremo y accesibilidad
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    # Un tope por si algo se cuelga, no un listón: con el módulo 6, ~23 min (e2e 16,5, fugas 2, accesibilidad)
+    timeout-minutes: 30
     services:
       postgres:
         # Con pgvector (docs/specs/biblioteca.md); el texto, ordenado por bytes como en el Postgres de Alpine
