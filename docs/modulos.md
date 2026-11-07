@@ -19,6 +19,10 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   cuenta).
 - **El rendimiento de lo que lee un jugador** se mide solo (`pnpm --filter @crisol/server test:rendimiento`, su paso
   en la CI): dentro de la suite entera mide la carga. Sola: p95 252 ms con 5.000 páginas.
+- **La CI del PR #112** (2026-11-07, de madrugada): la primera pasada falló solo en gitleaks (falso positivo, arreglado
+  en `.gitleaks.toml`); la segunda pasó todo salvo una e2e, `campanas.spec.ts` («en Mis mundos, el máster crea
+  campañas…»), que en la primera pasada y en local pasa: mirar si es intermitente (su traza, en los artefactos de la
+  ejecución 42325640443) antes de volver a pasar la CI.
 - **Lo siguiente**: que la CI del PR pase, el merge y staging (migraciones 0051 a 0054 en su base); pedirle a Enrique
   que pruebe el módulo 5 y confirme el ADR-0017 y las decisiones tomadas sin él (en la memoria `modulo-5`). Luego, el
   módulo 6 (la mesa).
