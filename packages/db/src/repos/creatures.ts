@@ -65,26 +65,29 @@ export interface CreatureValues {
 
 /** Pone en juego unas cuantas (o una única) en una sola operación */
 export function createCreatures(db: Database, context: OperationContext, values: readonly CreatureValues[]) {
-  return operation(db, context, async (w) => {
-    const created = []
-    for (const value of values) {
-      if (value.unique) {
-        const [taken] = await w.read
-          .select({ id: campaignCreatures.id })
-          .from(campaignCreatures)
-          .where(
-            and(
-              eq(campaignCreatures.campaignId, value.campaignId),
-              eq(campaignCreatures.key, value.key),
-              eq(campaignCreatures.unique, true)
-            )
+  return operation(db, context, (w) => insertCreatures(w, values))
+}
+
+/** Las pone en juego dentro de una operación que ya está en marcha (con sus fichas, por ejemplo) */
+export async function insertCreatures(w: Writer, values: readonly CreatureValues[]) {
+  const created = []
+  for (const value of values) {
+    if (value.unique) {
+      const [taken] = await w.read
+        .select({ id: campaignCreatures.id })
+        .from(campaignCreatures)
+        .where(
+          and(
+            eq(campaignCreatures.campaignId, value.campaignId),
+            eq(campaignCreatures.key, value.key),
+            eq(campaignCreatures.unique, true)
           )
-        if (taken) throw new UniqueTakenError()
-      }
-      created.push(await w.insert(campaignCreatures, value))
+        )
+      if (taken) throw new UniqueTakenError()
     }
-    return created
-  })
+    created.push(await w.insert(campaignCreatures, value))
+  }
+  return created
 }
 
 export type CreaturePatch = Partial<Pick<CreatureValues, 'name' | 'play' | 'overrides'>>

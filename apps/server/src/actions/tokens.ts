@@ -3,7 +3,6 @@
  * máster. Los encuentros son del mundo: los prepara quien lleva la wiki. Lo que cambia se avisa a la sala abierta
  */
 import {
-  type CreatureInPlay,
   deleteEncounter,
   type EncounterView,
   listEncounters,
@@ -17,9 +16,11 @@ import {
 import { charactersRepo, creaturesRepo, filesRepo, scenesRepo, tokensRepo } from '@crisol/db'
 import { NotFoundError } from '@crisol/domain'
 import { cellCenter } from '@crisol/tabletop'
+import { creaturesChanged } from '../realtime/events.ts'
 import { tokenViews, viewsOfTokens, visionOf } from '../table/projection.ts'
 import { authorizedCampaign, authorizedWiki } from './access.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
+import { creaturesToPlay } from './creatures.ts'
 import { implement } from './registry.ts'
 import { sceneOfCampaign } from './scenes.ts'
 
@@ -27,6 +28,8 @@ type Campaign = Awaited<ReturnType<typeof authorizedCampaign>>
 type Placed = {
   characterId?: string
   creatureId?: string
+  /** Una criatura que entra en juego con su ficha: su sitio en la tanda (`Newcomers`) */
+  fresh?: number
   x: number
   y: number
   label: string
@@ -50,68 +53,106 @@ const encounterView = (row: tokensRepo.EncounterRow): EncounterView => ({
   members: row.members
 })
 
-/** Pone en juego una criatura del compendio (copias o la única) con la acción de siempre; la única ya puesta, esa */
-async function putInPlay(
-  ctx: ActionContext,
-  campaign: Campaign,
-  key: string,
-  count: number,
-  unique: boolean,
-  hidden?: boolean
-) {
-  const impl = ctx.actions.get('putInPlay')
-  if (!impl) throw new Error('falta la acción putInPlay')
-  try {
-    const result = (await impl.handler(ctx, {
-      campaignId: campaign.id,
-      key,
-      ...(unique ? { unique: true } : { count }),
-      ...(hidden ? { hidden: true } : {})
-    })) as { creatures: CreatureInPlay[] }
-    return result.creatures
-  } catch (error) {
-    if (!(error instanceof InvalidRequestError) || error.code !== 'UNIQUE_TAKEN') throw error
-    const rows = await creaturesRepo.listCreatures(ctx.db, campaign.id)
-    const found = rows.find((r) => r.unique && r.key === key)
-    if (!found) throw error
-    return [{ id: found.id, name: found.name, number: found.number } as CreatureInPlay]
+/** Una criatura que va a tener ficha: ya en juego (su id) o entrando con ella (su sitio en la tanda) */
+export type Joining = { creatureId?: string; fresh?: number; name: string; number: number | null }
+
+/**
+ * Las criaturas del compendio que entran en juego al poner unas fichas: se guardan con ellas, en la misma operación
+ * (deshacerla lo quita todo). Las copias de una entrada se numeran seguidas aunque vengan en varias veces; la única que
+ * ya está en juego (o que ya va en la tanda) es esa
+ */
+export class Newcomers {
+  readonly values: creaturesRepo.CreatureValues[] = []
+  private inPlay: Promise<creaturesRepo.CreatureRow[]> | null = null
+  private readonly ctx: ActionContext
+  private readonly campaignId: string
+  constructor(ctx: ActionContext, campaignId: string) {
+    this.ctx = ctx
+    this.campaignId = campaignId
+  }
+
+  /** `reuse: false`: la única que ya está en juego (o en la tanda) no se pone otra vez (sin nada que poner) */
+  async add(key: string, count: number, unique: boolean, hidden?: boolean, reuse = true): Promise<Joining[]> {
+    if (unique) {
+      const queued = this.values.findIndex((v) => v.unique && v.key === key)
+      if (queued >= 0) return reuse ? [{ fresh: queued, name: this.values[queued]?.name ?? key, number: null }] : []
+      this.inPlay ??= creaturesRepo.listCreatures(this.ctx.db, this.campaignId)
+      const found = (await this.inPlay).find((r) => r.unique && r.key === key)
+      if (found) return reuse ? [{ creatureId: found.id, name: found.name, number: found.number }] : []
+    }
+    const reserved = this.values.flatMap((v) => (v.key === key && v.number !== null ? [v.number] : []))
+    const input = { campaignId: this.campaignId, key, ...(unique ? { unique: true } : { count }), hidden }
+    const { values } = await creaturesToPlay(this.ctx, input, reserved)
+    return values.map((value) => {
+      this.values.push(value)
+      return { fresh: this.values.length - 1, name: value.name, number: value.number }
+    })
   }
 }
 
-/** Guarda las fichas: las nuevas y, las que ya tenían ficha en la escena, movidas */
-async function store(ctx: ActionContext, campaign: Campaign, sceneId: string, placed: Placed[], hidden?: boolean) {
+/** Lo que no pudo guardarse porque la única ya entró en juego mientras tanto (dos a la vez) */
+function uniqueTaken(error: unknown) {
+  const code =
+    (error as { code?: string; cause?: { code?: string } }).code ?? (error as { cause?: { code?: string } }).cause?.code
+  return error instanceof creaturesRepo.UniqueTakenError || code === '23505'
+}
+
+/**
+ * Guarda las fichas en una operación: las criaturas que entran en juego con ellas, las nuevas y, las que ya tenían
+ * ficha en la escena, movidas. Si dos piden la misma, la última
+ */
+async function store(
+  ctx: ActionContext,
+  campaign: Campaign,
+  sceneId: string,
+  asked: Placed[],
+  hidden?: boolean,
+  newcomers?: Newcomers
+) {
+  const actor = (p: Placed) => p.characterId ?? p.creatureId ?? `fresh:${p.fresh}`
+  const placed = [...new Map(asked.map((p) => [actor(p), p])).values()]
   const existing = await tokensRepo.listTokens(ctx.db, campaign.id, sceneId)
   const holder = (p: Placed) =>
-    existing.find((t) => (p.characterId ? t.characterId === p.characterId : t.creatureId === p.creatureId))
+    p.fresh === undefined
+      ? existing.find((t) => (p.characterId ? t.characterId === p.characterId : t.creatureId === p.creatureId))
+      : undefined
   const moves = placed.flatMap((p) => {
     const found = holder(p)
     return found ? [{ id: found.id, patch: { x: p.x, y: p.y } }] : []
   })
   const fresh = placed.filter((p) => !holder(p))
   const context = historyContext(ctx, 'placeTokens', { campaign: campaign.name, count: placed.length }, campaign)
-  const inserted = fresh.length
-    ? await tokensRepo.insertTokens(
-        ctx.db,
-        context,
+  let saved: Awaited<ReturnType<typeof tokensRepo.placeTokens>>
+  try {
+    saved = await tokensRepo.placeTokens(ctx.db, context, {
+      creatures: newcomers?.values ?? [],
+      tokens: (created) =>
         fresh.map((p) => ({
           worldId: campaign.worldId,
           campaignId: campaign.id,
           sceneId,
           characterId: p.characterId ?? null,
-          creatureId: p.creatureId ?? null,
+          creatureId: (p.fresh !== undefined ? created[p.fresh]?.id : p.creatureId) ?? null,
           x: p.x,
           y: p.y,
           label: p.label,
           faction: p.faction,
           hidden: hidden ?? false
-        }))
-      )
-    : []
-  const moved = moves.length ? await tokensRepo.updateTokens(ctx.db, context, moves) : []
+        })),
+      moves
+    })
+  } catch (error) {
+    if (uniqueTaken(error)) throw new InvalidRequestError('UNIQUE_TAKEN', 'esa criatura única ya está en juego')
+    throw error
+  }
+  if (saved.creatures.length > 0)
+    ctx.realtime.publish(creaturesChanged({ campaignId: campaign.id, worldId: campaign.worldId }))
   ctx.table?.changed(campaign.id)
   // En el orden en que se pidieron
-  const order = new Map(placed.map((p, i) => [p.characterId ?? p.creatureId, i]))
-  const ids = new Set([...inserted, ...moved].map((t) => t.id))
+  const order = new Map(
+    placed.map((p, i) => [p.fresh !== undefined ? saved.creatures[p.fresh]?.id : (p.characterId ?? p.creatureId), i])
+  )
+  const ids = new Set([...saved.inserted, ...saved.moved].map((t) => t.id))
   return (await tokenViews(ctx, campaign, sceneId))
     .filter((t) => ids.has(t.id))
     .sort((a, b) => (order.get(a.actor.id) ?? 0) - (order.get(b.actor.id) ?? 0))
@@ -159,6 +200,7 @@ export const tokenActions = [
     const campaign = await authorizedCampaign(ctx, 'table.manage', campaignId)
     const { scene, cell } = await sceneFor(ctx, campaign, sceneId)
     const placed: Placed[] = []
+    const newcomers = new Newcomers(ctx, campaignId)
     for (const raw of tokens) {
       const item = { ...raw, ...pointIn(scene.grid, raw) }
       if ('characterId' in item) {
@@ -183,11 +225,11 @@ export const tokenActions = [
         })
       } else {
         const { key, count, unique } = item.content
-        const created = await putInPlay(ctx, campaign, key, count ?? 1, unique ?? false, hidden)
+        const joining = await newcomers.add(key, count ?? 1, unique ?? false, hidden)
         // Varias copias, en fila desde donde se soltaron (de cuatro en cuatro)
-        for (const [i, creature] of created.entries())
+        for (const [i, creature] of joining.entries())
           placed.push({
-            creatureId: creature.id,
+            ...(creature.creatureId ? { creatureId: creature.creatureId } : { fresh: creature.fresh }),
             x: item.x + (i % 4) * cell,
             y: item.y + Math.floor(i / 4) * cell,
             label: shortLabel(creature.name, creature.number),
@@ -195,7 +237,7 @@ export const tokenActions = [
           })
       }
     }
-    return { tokens: await store(ctx, campaign, sceneId, placed, hidden) }
+    return { tokens: await store(ctx, campaign, sceneId, placed, hidden, newcomers) }
   }),
 
   implement(moveTokens, async (ctx, { campaignId, moves }) => {
@@ -343,10 +385,11 @@ export const tokenActions = [
     const { x, y } = pointIn(scene.grid, where)
     const placed: Placed[] = []
     const skipped: string[] = []
+    const newcomers = new Newcomers(ctx, campaignId)
     for (const member of encounter.members) {
-      let created: CreatureInPlay[]
+      let joining: Joining[]
       try {
-        created = await putInPlay(ctx, campaign, member.key, member.at.length, member.unique)
+        joining = await newcomers.add(member.key, member.at.length, member.unique)
       } catch (error) {
         // Lo que el compendio de la campaña no tiene (otro sistema, una entrada borrada) se salta y se dice
         if (error instanceof InvalidRequestError || error instanceof NotFoundError) {
@@ -355,10 +398,10 @@ export const tokenActions = [
         }
         throw error
       }
-      created.forEach((creature, i) => {
+      joining.forEach((creature, i) => {
         const offset = member.at[i] ?? member.at[0] ?? { dx: 0, dy: 0 }
         placed.push({
-          creatureId: creature.id,
+          ...(creature.creatureId ? { creatureId: creature.creatureId } : { fresh: creature.fresh }),
           x: x + offset.dx * cell,
           y: y + offset.dy * cell,
           label: shortLabel(creature.name, creature.number),
@@ -366,6 +409,6 @@ export const tokenActions = [
         })
       })
     }
-    return { tokens: placed.length ? await store(ctx, campaign, sceneId, placed) : [], skipped }
+    return { tokens: placed.length ? await store(ctx, campaign, sceneId, placed, undefined, newcomers) : [], skipped }
   })
 ]

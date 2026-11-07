@@ -46,6 +46,7 @@ import {
   tryRoll,
   visibleContent
 } from '@crisol/systems'
+import type { z } from 'zod'
 import { creaturesChanged } from '../realtime/events.ts'
 import { authorizedCampaign } from './access.ts'
 import { characterActions } from './characters.ts'
@@ -74,6 +75,62 @@ async function systemOf(ctx: ActionContext, campaign: Awaited<ReturnType<typeof 
 }
 
 type Context = Awaited<ReturnType<typeof campaignOf>>
+
+/**
+ * Lo que se pone en juego de una entrada del compendio, validado y numerado, sin guardarlo: putInPlay lo guarda solo;
+ * poner fichas lo guarda con ellas, en la misma operación. `reserved`: los números de esa entrada que ya van en la
+ * misma tanda
+ */
+export async function creaturesToPlay(
+  ctx: ActionContext,
+  input: z.infer<typeof putInPlay.input>,
+  reserved: readonly number[] = []
+) {
+  const { campaignId, key, count, formula, unique, hp, name, hidden } = input
+  const at = await campaignOf(ctx, campaignId)
+  const [entry] = await layers.contentByKeys(ctx, at.row.id, at.world, [key])
+  // Que la vea la campaña (sus fuentes; lo del mundo, siempre) y sea una criatura (un actor)
+  const visible = entry && visibleContent(at.document, [entry], at.choices).length > 0
+  if (!entry || !visible) throw new NotFoundError('content')
+  if (at.document.types[entry.type]?.document !== 'actor')
+    throw new InvalidRequestError('NOT_A_CREATURE', 'solo se ponen en juego criaturas y personajes (actores)')
+  let many = unique ? 1 : (count ?? 1)
+  if (!unique && formula) {
+    try {
+      many = Math.max(1, Math.min(50, rollDice(formula, cryptoRoller).total))
+    } catch {
+      throw new InvalidRequestError('BAD_FORMULA', `«${formula}» no es una tirada`)
+    }
+  }
+  const base = name ?? nameOf(entry, at.choices.language)
+  const existing = await creaturesRepo.listCreatures(ctx.db, campaignId)
+  const numbers = unique
+    ? [null]
+    : nextNumbers(
+        [...existing.filter((r) => r.key === key && r.number !== null).map((r) => r.number as number), ...reserved],
+        many
+      )
+  const values: creaturesRepo.CreatureValues[] = numbers.map((number) => {
+    const start = startingPlay(at.document, entry, {
+      hp: hp ?? 'average',
+      roller: cryptoRoller,
+      language: at.choices.language,
+      settings: at.choices.settings
+    })
+    return {
+      campaignId,
+      systemId: at.row.id,
+      key,
+      name: number === null ? base : `${base} ${number}`,
+      number,
+      unique: Boolean(unique),
+      play: start.play as Record<string, unknown>,
+      overrides: start.overrides,
+      hidden: Boolean(hidden)
+    }
+  })
+  return { at, entry, base, values }
+}
 
 /** Su entrada y lo que lleva, del compendio de la campaña (las dos capas: quien la pide lleva el mundo) */
 async function contentFor(ctx: ActionContext, at: Context, key: string, play: Play) {
@@ -301,49 +358,9 @@ export const creatureActions = [
     return { creature: card, state: played.view }
   }),
 
-  implement(putInPlay, async (ctx, { campaignId, key, count, formula, unique, hp, name, hidden }) => {
-    const at = await campaignOf(ctx, campaignId)
-    const [entry] = await layers.contentByKeys(ctx, at.row.id, at.world, [key])
-    // Que la vea la campaña (sus fuentes; lo del mundo, siempre) y sea una criatura (un actor)
-    const visible = entry && visibleContent(at.document, [entry], at.choices).length > 0
-    if (!entry || !visible) throw new NotFoundError('content')
-    if (at.document.types[entry.type]?.document !== 'actor')
-      throw new InvalidRequestError('NOT_A_CREATURE', 'solo se ponen en juego criaturas y personajes (actores)')
-    let many = unique ? 1 : (count ?? 1)
-    if (!unique && formula) {
-      try {
-        many = Math.max(1, Math.min(50, rollDice(formula, cryptoRoller).total))
-      } catch {
-        throw new InvalidRequestError('BAD_FORMULA', `«${formula}» no es una tirada`)
-      }
-    }
-    const base = name ?? nameOf(entry, at.choices.language)
-    const existing = await creaturesRepo.listCreatures(ctx.db, campaignId)
-    const numbers = unique
-      ? [null]
-      : nextNumbers(
-          existing.filter((r) => r.key === key && r.number !== null).map((r) => r.number as number),
-          many
-        )
-    const values = numbers.map((number) => {
-      const start = startingPlay(at.document, entry, {
-        hp: hp ?? 'average',
-        roller: cryptoRoller,
-        language: at.choices.language,
-        settings: at.choices.settings
-      })
-      return {
-        campaignId,
-        systemId: at.row.id,
-        key,
-        name: number === null ? base : `${base} ${number}`,
-        number,
-        unique: Boolean(unique),
-        play: start.play as Record<string, unknown>,
-        overrides: start.overrides,
-        hidden: Boolean(hidden)
-      }
-    })
+  implement(putInPlay, async (ctx, input) => {
+    const { campaignId, unique } = input
+    const { at, entry, base, values } = await creaturesToPlay(ctx, input)
     let created: Awaited<ReturnType<typeof creaturesRepo.createCreatures>>
     try {
       created = await creaturesRepo.createCreatures(

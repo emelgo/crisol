@@ -7,7 +7,6 @@
  */
 import {
   type ActionDefinition,
-  type CreatureInPlay,
   createPages,
   createPageTab,
   editPage,
@@ -32,12 +31,12 @@ import {
 } from '@crisol/systems/foundry'
 import type { z } from 'zod'
 import { readFoundryZip } from '../foundry/read.ts'
-import { pagesChanged } from '../realtime/events.ts'
+import { creaturesChanged, pagesChanged } from '../realtime/events.ts'
 import { authorizedWiki } from './access.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
 import * as layers from './layers.ts'
 import { implement } from './registry.ts'
-import { shortLabel } from './tokens.ts'
+import { type Joining, Newcomers, shortLabel } from './tokens.ts'
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -490,46 +489,44 @@ export async function placePrepared(
 ) {
   const scene = await scenesRepo.findScene(ctx.db, sceneId)
   if (!scene || (scene.prepared.length === 0 && scene.pins.length === 0)) return
-  const putInPlay = ctx.actions.get('putInPlay')
-  if (!putInPlay) throw new Error('falta la acción putInPlay')
-  const values: Parameters<typeof tokensRepo.insertTokens>[2][number][] = []
+  // Las criaturas entran en juego con sus fichas, en una operación (deshacerla lo quita todo)
+  const newcomers = new Newcomers(ctx, campaign.id)
+  const joining: Array<{ creature: Joining; prepared: (typeof scene.prepared)[number] }> = []
   for (const p of scene.prepared) {
-    let created: CreatureInPlay[]
     try {
-      created = (
-        (await putInPlay.handler(ctx, {
-          campaignId: campaign.id,
-          key: p.key,
-          ...(p.unique ? { unique: true } : { count: 1 }),
-          ...(p.hidden ? { hidden: true } : {})
-        })) as { creatures: CreatureInPlay[] }
-      ).creatures
+      // La única que ya está en juego no se pone otra vez
+      for (const creature of await newcomers.add(p.key, 1, p.unique, p.hidden, false))
+        joining.push({ creature, prepared: p })
     } catch (error) {
-      // Lo que la campaña no tiene (otro sistema, la única ya en juego…) se salta
+      // Lo que la campaña no tiene (otro sistema…) se salta
       if (error instanceof InvalidRequestError || error instanceof NotFoundError) continue
       throw error
     }
-    for (const creature of created)
-      values.push({
-        worldId: campaign.worldId,
-        campaignId: campaign.id,
-        sceneId,
-        creatureId: creature.id,
-        x: p.x,
-        y: p.y,
-        size: p.size,
-        label: shortLabel(creature.name, creature.number),
-        faction: p.faction,
-        hidden: p.hidden
-      })
+  }
+  if (joining.length > 0) {
+    await tokensRepo.placeTokens(
+      ctx.db,
+      historyContext(ctx, 'placeTokens', { campaign: campaign.name, count: joining.length }, campaign),
+      {
+        creatures: newcomers.values,
+        tokens: (created) =>
+          joining.map(({ creature, prepared: p }) => ({
+            worldId: campaign.worldId,
+            campaignId: campaign.id,
+            sceneId,
+            creatureId: (creature.fresh !== undefined ? created[creature.fresh]?.id : creature.creatureId) ?? null,
+            x: p.x,
+            y: p.y,
+            size: p.size,
+            label: shortLabel(creature.name, creature.number),
+            faction: p.faction,
+            hidden: p.hidden
+          }))
+      }
+    )
+    ctx.realtime.publish(creaturesChanged({ campaignId: campaign.id, worldId: campaign.worldId }))
   }
   const place = { worldId: campaign.worldId, campaignId: campaign.id, sceneId }
-  if (values.length > 0)
-    await tokensRepo.insertTokens(
-      ctx.db,
-      historyContext(ctx, 'placeTokens', { campaign: campaign.name, count: values.length }, campaign),
-      values
-    )
   if (scene.pins.length > 0)
     await foundryRepo.insertPinMarks(
       ctx.db,

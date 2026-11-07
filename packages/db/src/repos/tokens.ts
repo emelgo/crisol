@@ -7,6 +7,7 @@ import type { Database } from '../client.ts'
 import { type OperationContext, operation } from '../operation.ts'
 import { prepared } from '../prepared.ts'
 import { encounters, sceneTokens } from '../schema/scenes.ts'
+import { type CreatureValues, insertCreatures } from './creatures.ts'
 
 export type TokenRow = typeof sceneTokens.$inferSelect
 export type EncounterRow = typeof encounters.$inferSelect
@@ -49,11 +50,26 @@ export async function findToken(db: Database, id: string) {
   return found ?? null
 }
 
-export function insertTokens(db: Database, context: OperationContext, values: readonly TokenValues[]) {
+/**
+ * Pone fichas en una sola operación: las criaturas que entran en juego con ellas (`tokens` recibe las creadas, en su
+ * orden, para poner sus fichas), las fichas nuevas y las que ya estaban, movidas. Deshacerla lo quita todo de una vez
+ */
+export function placeTokens(
+  db: Database,
+  context: OperationContext,
+  input: {
+    creatures: readonly CreatureValues[]
+    tokens: (created: ReadonlyArray<{ id: string }>) => TokenValues[]
+    moves?: ReadonlyArray<{ id: string; patch: TokenPatch }>
+  }
+) {
   return operation(db, context, async (w) => {
-    const rows: TokenRow[] = []
-    for (const value of values) rows.push(await w.insert(sceneTokens, value))
-    return rows
+    const creatures = await insertCreatures(w, input.creatures)
+    const inserted: TokenRow[] = []
+    for (const value of input.tokens(creatures)) inserted.push(await w.insert(sceneTokens, value))
+    const moved: TokenRow[] = []
+    for (const { id, patch } of input.moves ?? []) moved.push(await w.update(sceneTokens, id, patch))
+    return { creatures, inserted, moved }
   })
 }
 

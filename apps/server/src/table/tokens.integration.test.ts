@@ -129,6 +129,49 @@ describe('las fichas de la mesa (docs/specs/fichas.md)', () => {
     expect((await ok200('listInPlay', { campaignId })).creatures).toHaveLength(3)
   })
 
+  it('poner criaturas del compendio en el mapa es una sola operación: deshacerla las saca de juego y del mapa', async () => {
+    await ok200('openScene', { campaignId, sceneId })
+    const before = (await ok200('listHistory', { worldId })).entries.length
+    await ok200('placeTokens', {
+      campaignId,
+      sceneId,
+      tokens: [
+        { content: { key: GOBLIN, count: 2 }, x: 0, y: 0 },
+        { content: { key: GOBLIN, count: 1 }, x: 500, y: 0 }
+      ]
+    })
+    const history = (await ok200('listHistory', { worldId })).entries
+    expect(history.length - before).toBe(1)
+    // Las de la misma entrada en una vez, numeradas seguidas
+    expect((await ok200('getCampaignTable', { campaignId })).tokens.map((t: { label: string }) => t.label)).toEqual([
+      'G1',
+      'G2',
+      'G3'
+    ])
+    await ok200('undoOperation', { operationId: history[0].id })
+    expect((await ok200('listInPlay', { campaignId })).creatures).toEqual([])
+    expect((await ok200('getCampaignTable', { campaignId })).tokens).toEqual([])
+    // Y un encuentro, igual
+    const encounter = await ok200('saveEncounter', {
+      worldId,
+      systemId,
+      name: 'Pareja',
+      members: [
+        {
+          key: GOBLIN,
+          unique: false,
+          at: [
+            { dx: 0, dy: 0 },
+            { dx: 1, dy: 0 }
+          ]
+        }
+      ]
+    })
+    const count = (await ok200('listHistory', { worldId })).entries.length
+    await ok200('placeEncounter', { campaignId, sceneId, encounterId: encounter.id, column: 1, row: 1 })
+    expect((await ok200('listHistory', { worldId })).entries.length - count).toBe(1)
+  })
+
   it('un personaje y una criatura ya en juego; ponerlos otra vez los mueve, no los repite', async () => {
     const thora = (await ok200('createCharacter', { campaignId, name: 'Thora Piedra' })).character
     const goblin = (await ok200('putInPlay', { campaignId, key: GOBLIN, count: 1 })).creatures[0]
