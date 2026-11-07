@@ -23,6 +23,10 @@
   user-select: none;
 }
 
+.stage[data-tool] {
+  cursor: crosshair;
+}
+
 .stage[data-panning] {
   cursor: grab;
 }
@@ -164,7 +168,8 @@
 .topBar {
   position: absolute;
   inset-block-start: 0.75rem;
-  inset-inline: 0.75rem;
+  /* A la izquierda, la columna de herramientas */
+  inset-inline: 4.25rem 0.75rem;
   z-index: 12;
   display: flex;
   flex-wrap: wrap;

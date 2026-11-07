@@ -1,0 +1,535 @@
+/* La visión en la mesa del máster: la columna de herramientas, las marcas de puertas y luces, sus paneles y la barra
+   de la niebla a mano (como el tablero Visión del lienzo) */
+
+/* La columna de herramientas, arriba a la izquierda del mapa: cristal oscuro, como las barras */
+.tools {
+  position: absolute;
+  inset-block-start: 0.75rem;
+  inset-inline-start: 0.75rem;
+  z-index: 12;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 5px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--color-bg) 88%, transparent);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.4);
+  backdrop-filter: blur(6px);
+}
+
+.toolSlot {
+  display: contents;
+}
+
+.toolSep {
+  block-size: 1px;
+  margin: 3px 4px;
+  background: var(--color-border);
+}
+
+.tool {
+  display: grid;
+  place-items: center;
+  inline-size: 2.375rem;
+  block-size: 2.375rem;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: #b9b9c2;
+  cursor: pointer;
+}
+
+.tool:hover {
+  background: var(--color-raised);
+  color: var(--color-text);
+}
+
+.tool[aria-pressed="true"] {
+  background: color-mix(in srgb, var(--color-accent) 16%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-accent) 70%, transparent);
+  color: #ffffff;
+}
+
+.tool:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 1px;
+}
+
+/* La barra de la niebla a mano, a la derecha de la columna */
+.subtools {
+  position: absolute;
+  inset-block-start: 4rem;
+  inset-inline-start: 4.25rem;
+  z-index: 13;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--color-bg) 88%, transparent);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.4);
+  backdrop-filter: blur(6px);
+}
+
+.brush {
+  inline-size: 5.5rem;
+  accent-color: var(--color-accent);
+}
+
+/* «Viendo como el grupo», arriba en medio */
+.asGroup {
+  position: absolute;
+  inset-block-start: 4rem;
+  inset-inline-start: 50%;
+  z-index: 13;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px 6px 14px;
+  border-radius: 8px;
+  background: #f2c260;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.4);
+  color: #1b1608;
+  font-weight: 700;
+  transform: translateX(-50%);
+}
+
+.asGroup button {
+  padding: 4px 10px;
+  border: 0;
+  border-radius: 6px;
+  background: #1b1608;
+  color: #f2c260;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.asGroup button:focus-visible {
+  outline: 2px solid #1b1608;
+  outline-offset: 2px;
+}
+
+/* Las marcas encima del mapa: cada una se coloca con transform (placeMarkers) */
+.markers {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.door,
+.light {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  display: grid;
+  place-items: center;
+  inline-size: 24px;
+  block-size: 24px;
+  padding: 0;
+  border: 2px solid #0b0b0c;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.6);
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.door {
+  background: #f2c260;
+  color: #1b1608;
+}
+
+.door[data-kind="secret"] {
+  background: #c39bff;
+  color: #1a1226;
+}
+
+.door[data-kind="locked"] {
+  background: #e59a52;
+}
+
+.door[aria-pressed="true"] {
+  opacity: 0.75;
+}
+
+.light {
+  inline-size: 28px;
+  block-size: 28px;
+  background: #ffd36b;
+  color: #3a2600;
+}
+
+.light[data-off] {
+  background: #6b6b74;
+  color: #1b1b1f;
+}
+
+/* Editando, los gestos van al mapa (elegir un muro, arrastrar una luz); con el teclado, se eligen igual */
+.markers[data-editing] .door,
+.markers[data-editing] .light {
+  pointer-events: none;
+}
+
+.door[data-selected],
+.light[data-selected] {
+  box-shadow:
+    0 0 0 3px #ffffff,
+    0 0 14px rgb(255 255 255 / 0.5);
+}
+
+.door:focus-visible,
+.light:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+/* Los paneles */
+.body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.875rem;
+  min-block-size: 0;
+  padding: 1rem 0.875rem;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.title {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  color: var(--color-text);
+  font-family: var(--font-display);
+  font-size: 1.375rem;
+  font-weight: 800;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-inline-size: 0;
+}
+
+.field > span:first-child {
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.row > .field {
+  flex: 1;
+}
+
+.stat {
+  color: var(--color-muted);
+  font-size: 0.75rem;
+}
+
+.start {
+  align-self: flex-start;
+}
+
+.kinds {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.kinds button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 9px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.8125rem;
+  text-align: start;
+  cursor: pointer;
+}
+
+.kinds button:hover {
+  border-color: var(--color-frame);
+}
+
+.kinds button[aria-pressed="true"] {
+  border-color: var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 16%, transparent);
+}
+
+.kinds i {
+  flex: none;
+  inline-size: 16px;
+  border-radius: 2px;
+}
+
+.selected {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-block-start: 12px;
+  border-block-start: 1px solid var(--color-border);
+}
+
+.selected > b {
+  font-size: 0.9375rem;
+}
+
+.ghost,
+.danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border-radius: 6px;
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.ghost {
+  border: 1px solid var(--color-border);
+  background: none;
+  color: var(--color-text);
+}
+
+.ghost:hover:not(:disabled) {
+  border-color: var(--color-frame);
+  background: var(--color-raised);
+}
+
+.ghost:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.danger {
+  min-block-size: var(--target);
+  padding-inline: var(--space-4);
+  border: 0;
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  font-weight: 700;
+}
+
+.switch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  inline-size: 100%;
+  padding: var(--space-1) 0;
+  border: 0;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.875rem;
+  text-align: start;
+  cursor: pointer;
+}
+
+.switch:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.toggle {
+  position: relative;
+  flex: none;
+  inline-size: 2rem;
+  block-size: 1.125rem;
+  border-radius: 9px;
+  background: var(--color-frame);
+  transition: background 0.15s;
+}
+
+.toggle::after {
+  position: absolute;
+  inset-block-start: 2px;
+  inset-inline-start: 2px;
+  inline-size: 14px;
+  block-size: 14px;
+  border-radius: 50%;
+  background: #d6d6dc;
+  content: "";
+  transition: inset-inline-start 0.15s;
+}
+
+.switch[aria-checked="true"] .toggle {
+  background: var(--color-accent);
+}
+
+.switch[aria-checked="true"] .toggle::after {
+  inset-inline-start: 16px;
+  background: #ffffff;
+}
+
+.segments {
+  display: inline-flex;
+  flex: none;
+  align-self: flex-start;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+}
+
+.segments label {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 11px;
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.segments label + label {
+  border-inline-start: 1px solid var(--color-border);
+}
+
+.segments label:has(input:checked) {
+  background: color-mix(in srgb, var(--color-accent) 16%, transparent);
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.segments label:has(input:focus-visible) {
+  outline: 2px solid var(--color-focus);
+  outline-offset: -2px;
+}
+
+.segments input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: inherit;
+}
+
+.select,
+.input {
+  box-sizing: border-box;
+  inline-size: 100%;
+  min-inline-size: 0;
+  padding: 7px 10px;
+  border: 1px solid var(--color-field-border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.875rem;
+}
+
+.select option {
+  background: var(--color-surface);
+}
+
+.range {
+  inline-size: 100%;
+  accent-color: var(--color-accent);
+}
+
+.swatches {
+  display: flex;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.swatch {
+  position: relative;
+  inline-size: 26px;
+  block-size: 26px;
+  border: 2px solid transparent;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.swatches input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: inherit;
+}
+
+.swatch:has(input:checked) {
+  border-color: #ffffff;
+}
+
+.swatch:has(input:focus-visible) {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.tileFit {
+  margin-block-start: auto;
+  padding-block-start: 12px;
+  border-block-start: 1px solid var(--color-border);
+}
+
+.looking {
+  display: flex;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.looking li {
+  display: grid;
+  place-items: center;
+  inline-size: 30px;
+  block-size: 30px;
+  border: 2px solid #6fa8ff;
+  border-radius: 50%;
+  color: #ffffff;
+  font-family: var(--font-display);
+  font-weight: 800;
+}
+
+.missing {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  font-size: 0.875rem;
+  list-style: none;
+}
+
+.missing li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.missing svg {
+  flex: none;
+  color: var(--color-muted);
+}

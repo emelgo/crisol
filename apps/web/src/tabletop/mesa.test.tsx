@@ -43,7 +43,14 @@ vi.mock('./use-renderer.ts', async () => {
   return {
     useTableRenderer: () => {
       const host = useRef<HTMLDivElement>(null)
-      const renderer = useRef({ setView: (view: unknown) => views.push(view), setScene: () => {}, setTokens: () => {} })
+      const renderer = useRef({
+        setView: (view: unknown) => views.push(view),
+        setScene: () => {},
+        setTokens: () => {},
+        setFog: () => {},
+        setGlow: () => {},
+        setShapes: () => {}
+      })
       return { host, renderer, ready: true, failed: false, size: { width: 800, height: 600 } }
     }
   }

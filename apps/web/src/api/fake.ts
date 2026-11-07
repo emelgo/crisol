@@ -117,6 +117,7 @@ import {
   withCoins,
   withWorld
 } from '@crisol/systems'
+import { FogGrid } from '@crisol/tabletop'
 import { readFoundryZip } from '../systems/foundry-zip.ts'
 import { type ActionInput, type ActionName, type ActionOutput, type ApiClient, ApiError } from './client.ts'
 
@@ -551,7 +552,46 @@ export function fakeApi(
       screenHidden: table.hidden,
       camera: structuredClone(table.camera),
       tokens: tokens.filter((token) => token.campaignId === campaignId && token.sceneId === table.open).map(tokenOf),
-      combat: combats.has(campaignId) ? sortCombat(combats.get(campaignId) as CombatView) : null
+      combat: combats.has(campaignId) ? sortCombat(combats.get(campaignId) as CombatView) : null,
+      vision: table.open ? fakeTableVision(campaignId, table.open) : null
+    }
+  }
+  /**
+   * La visión de la escena abierta, sin calcular lo que ven las fichas: lo explorado y lo visible son lo destapado a mano
+   * (menos lo tapado); el grupo no ve las fichas ocultas
+   */
+  const fogOps = new Map<string, Array<ActionInput<'changeFog'>>>()
+  const tileFits = new Map<string, 'whole' | 'cropped'>()
+  const base64 = (bytes: Uint8Array) => {
+    let text = ''
+    for (const byte of bytes) text += String.fromCharCode(byte)
+    return btoa(text)
+  }
+  const fakeTableVision = (campaignId: string, sceneId: string): CampaignTableView['vision'] => {
+    const scene = scenes.find((s) => s.id === sceneId)
+    if (!scene?.image) return null
+    const vision = visionOf(sceneId)
+    const mask = new FogGrid(scene.image.width, scene.image.height)
+    for (const op of fogOps.get(`${campaignId}|${sceneId}`) ?? []) {
+      const value = op.mode === 'reveal'
+      if (op.shape === 'rectangle')
+        mask.fillRect({ x: op.x ?? 0, y: op.y ?? 0, width: op.width ?? 0, height: op.height ?? 0 }, value)
+      else if (op.shape === 'brush') mask.fillBrush(op.points ?? [], op.radius ?? 0, value)
+      else if (op.shape === 'lasso') mask.fillPolygon(op.points ?? [], value)
+    }
+    const encoded = base64(mask.encode())
+    return {
+      sceneId,
+      version: vision.version,
+      automaticVision: vision.automaticVision,
+      darkness: vision.darkness,
+      tileFit: tileFits.get(campaignId) ?? 'whole',
+      doors: Object.fromEntries(
+        vision.walls.filter((w) => w.door).map((w) => [w.id, doors.get(`${campaignId}|${w.id}`) ?? w.open])
+      ),
+      explored: encoded,
+      visible: encoded,
+      notSeen: tokens.filter((t) => t.campaignId === campaignId && t.sceneId === sceneId && t.hidden).map((t) => t.id)
     }
   }
   // Las fichas (de momento, solo de personajes de la campaña) y los encuentros de cada mundo
@@ -3233,17 +3273,25 @@ export function fakeApi(
       doors.set(`${campaignId}|${wallId}`, open)
       return { wallId, open }
     },
-    changeFog: ({ campaignId, sceneId }) => {
-      const target = sceneId ?? campaignTableOf(campaignId).table.open
+    changeFog: (input) => {
+      const target = input.sceneId ?? campaignTableOf(input.campaignId).table.open
       if (!target) throw new ApiError('NO_OPEN_SCENE', 400)
+      const key = `${input.campaignId}|${target}`
+      fogOps.set(key, [...(fogOps.get(key) ?? []), structuredClone(input)])
       return { sceneId: target, operations: 1 }
     },
     resetFog: ({ campaignId, sceneId }) => {
       const target = sceneId ?? campaignTableOf(campaignId).table.open
       if (!target) throw new ApiError('NO_OPEN_SCENE', 400)
-      return { sceneId: target, removed: 0 }
+      const removed = fogOps.get(`${campaignId}|${target}`)?.length ?? 0
+      fogOps.delete(`${campaignId}|${target}`)
+      return { sceneId: target, removed }
     },
-    setTileFit: ({ campaignId }) => tableView(campaignId),
+    setTileFit: ({ campaignId, tileFit }) => {
+      campaignTableOf(campaignId)
+      tileFits.set(campaignId, tileFit)
+      return tableView(campaignId)
+    },
     // Sin niebla en la API falsa: el grupo ve todas las fichas no ocultas
     viewAsParty: ({ campaignId, sceneId }) => {
       const { campaign, table } = campaignTableOf(campaignId)

@@ -29,6 +29,9 @@ vi.mock('./use-renderer.ts', async () => {
       const renderer = useRef({
         setView: () => {},
         setScene: () => {},
+        setFog: () => {},
+        setGlow: () => {},
+        setShapes: () => {},
         setTokens: (tokens: DrawToken[]) => {
           drawn.tokens = tokens
         }
