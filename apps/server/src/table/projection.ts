@@ -44,6 +44,7 @@ import { creatureCardsOf, lifeStateOf } from '../actions/creatures.ts'
 import { markViewOf, screenMarksOf, screenWidgetsOf, widgetViewOf } from './marks.ts'
 import type { LoadTable } from './rooms.ts'
 import type { VisionResult, VisionToken, WalkedMove } from './vision.ts'
+import type { WalkedPath } from './vision-compute.ts'
 
 type Campaign = NonNullable<Awaited<ReturnType<typeof campaignsRepo.findCampaign>>>
 
@@ -341,36 +342,23 @@ export function visionTokens(
   })
 }
 
-/** Lo más largo que se explora del camino de una ficha, en casillas */
-const MAX_PATH_STEPS = 60
-
 /**
- * Los puntos de paso de las fichas del grupo que se movieron (desde donde estaban hasta antes de donde están, una
- * casilla cada vez; en un camino muy largo, más espaciados), con sus sentidos de ahora
+ * Los caminos de las fichas del grupo que se movieron, con sus sentidos de ahora (el hilo de la visión los recorre: los
+ * corta en el primer muro y mira desde cada casilla)
  */
-export function walkedPaths(
-  scene: Pick<scenesRepo.SceneRow, 'grid'>,
-  moves: readonly WalkedMove[],
-  tokens: readonly VisionToken[]
-): PartyToken[] {
+export function walkedPaths(moves: readonly WalkedMove[], tokens: readonly VisionToken[]): WalkedPath[] {
   const byId = new Map(tokens.map((t) => [t.id, t]))
-  const step = scene.grid.size > 0 ? scene.grid.size : 100
   return moves.flatMap(({ tokenId, from, to }) => {
     const token = byId.get(tokenId)
     if (!token?.party) return []
-    const distance = Math.hypot(to.x - from.x, to.y - from.y)
-    const stride = Math.max(step, distance / MAX_PATH_STEPS)
-    const count = Math.max(0, Math.ceil(distance / stride))
-    return Array.from({ length: count }, (_, i) => {
-      const k = (i * stride) / distance
-      return {
-        id: token.id,
-        x: from.x + (to.x - from.x) * k,
-        y: from.y + (to.y - from.y) * k,
-        radius: token.radius,
-        ...(token.senses ? { senses: token.senses } : {})
-      }
-    })
+    const own: PartyToken = {
+      id: token.id,
+      x: to.x,
+      y: to.y,
+      radius: token.radius,
+      ...(token.senses ? { senses: token.senses } : {})
+    }
+    return [{ token: own, from, to }]
   })
 }
 
@@ -387,8 +375,8 @@ export async function visionOf(
   if (!ctx.vision) return null
   const { views, senses } = loaded ?? (await tokensWithSenses(ctx, campaign, scene.id))
   const tokens = visionTokens(scene, views, senses)
-  const paths = walkedPaths(scene, ctx.vision.takeWalked(campaign.id, scene.id), tokens)
-  return ctx.vision.view({ campaignId: campaign.id, scene, tokens, ...(paths.length ? { paths } : {}) })
+  const walks = walkedPaths(ctx.vision.takeWalked(campaign.id, scene.id), tokens)
+  return ctx.vision.view({ campaignId: campaign.id, scene, tokens, ...(walks.length ? { walks } : {}) })
 }
 
 /** La visión de la escena abierta para el máster */

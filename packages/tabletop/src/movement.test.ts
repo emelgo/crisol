@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import type { Point } from './geometry.ts'
-import { crossesWall, freeDestination, movementEdges } from './movement.ts'
+import { crossesWall, firstWallOnPath, freeDestination, movementEdges } from './movement.ts'
 import { WallIndex } from './wall-index.ts'
-import type { Wall } from './walls.ts'
+import { type Wall, wallEdges } from './walls.ts'
 
 // Un muro vertical en x = 100, de y = 0 a y = 200
 const wall = (extra: Partial<Wall> = {}): Wall => ({
@@ -73,5 +73,24 @@ describe('los muros frenan el paso', () => {
     const edges = movementEdges([wall()], {})
     expect(freeDestination({ x: 25, y: 225 }, { x: 180, y: 225 }, edges, cell)).toEqual({ x: 175, y: 225 })
     expect(freeDestination({ x: 95, y: 75 }, { x: 105, y: 75 }, edges)).toEqual({ x: 95, y: 75 })
+  })
+})
+
+describe('el primer muro de un camino', () => {
+  it('dice en qué parte del camino (0–1) está el primero que se cruza, con la lista o con el índice; sin muros, null', () => {
+    const edges = movementEdges([wall(), wall({ id: 'otro', a: { x: 150, y: 0 }, b: { x: 150, y: 200 } })], {})
+    expect(firstWallOnPath({ x: 50, y: 75 }, { x: 250, y: 75 }, edges)).toBeCloseTo(0.25)
+    expect(firstWallOnPath({ x: 250, y: 75 }, { x: 50, y: 75 }, new WallIndex(edges))).toBeCloseTo(0.5)
+    expect(firstWallOnPath({ x: 25, y: 225 }, { x: 180, y: 225 }, edges)).toBeNull()
+  })
+
+  it('para la vista, los limitados no cuentan (se ve a través de uno); las puertas abiertas, tampoco', () => {
+    const curtain = wallEdges([wall({ sight: 'limited' })], {}, 'sight')
+    expect(firstWallOnPath({ x: 50, y: 75 }, { x: 150, y: 75 }, curtain)).toBeNull()
+    const door = [wall({ door: 'door' })]
+    expect(firstWallOnPath({ x: 50, y: 75 }, { x: 150, y: 75 }, wallEdges(door, { m: { open: true } }, 'sight'))).toBe(
+      null
+    )
+    expect(firstWallOnPath({ x: 50, y: 75 }, { x: 150, y: 75 }, wallEdges(door, {}, 'sight'))).toBeCloseTo(0.5)
   })
 })

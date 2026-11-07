@@ -35,6 +35,27 @@ export function crossesWall(p: Point, q: Point, edges: readonly Edge[] | WallInd
 }
 
 /**
+ * En qué parte del camino de p a q (0–1) está el primer tramo que lo corta, o null si no cruza ninguno. Los limitados
+ * no cuentan (de la vista: a través de uno se ve). Para no explorar lo que hay tras un muro que una ficha atravesó
+ */
+export function firstWallOnPath(p: Point, q: Point, edges: readonly Edge[] | WallIndex<Edge>): number | null {
+  const near = edges instanceof WallIndex ? edges.querySegment(p, q) : edges
+  const dx = q.x - p.x
+  const dy = q.y - p.y
+  let first: number | null = null
+  for (const edge of near) {
+    if (edge.limited || !crosses(p, q, edge)) continue
+    const ex = edge.b.x - edge.a.x
+    const ey = edge.b.y - edge.a.y
+    const denominator = dx * ey - dy * ex
+    if (denominator === 0) continue
+    const t = ((edge.a.x - p.x) * ey - (edge.a.y - p.y) * ex) / denominator
+    if (first === null || t < first) first = t
+  }
+  return first === null ? null : Math.max(0, Math.min(1, first))
+}
+
+/**
  * Hasta dónde llega una ficha que se mueve de `from` a `to` sin atravesar muros: el destino (ajustado) si el camino está
  * libre; si no, el último punto libre del camino cada `step` píxeles, ajustado y sin cruzar ningún muro desde el origen.
  */

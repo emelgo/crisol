@@ -19,7 +19,13 @@ import {
   type Wall
 } from '@crisol/tabletop'
 import type { CropRequest } from './tile-crop.ts'
-import { MISSING_SCENE, type SceneGeometry, type ViewRequest, type ViewResponse } from './vision-compute.ts'
+import {
+  MISSING_SCENE,
+  type SceneGeometry,
+  type ViewRequest,
+  type ViewResponse,
+  type WalkedPath
+} from './vision-compute.ts'
 
 /** El lado del mapa de una escena sin imagen, en píxeles: la niebla necesita un tamaño */
 export const NO_IMAGE_SIDE = 8192
@@ -57,8 +63,8 @@ export interface VisionInput {
   campaignId: string
   scene: SceneRow
   tokens: readonly VisionToken[]
-  /** Los puntos de los caminos recorridos por las fichas del grupo: se explora lo que se ve desde cada uno */
-  paths?: readonly PartyToken[]
+  /** Los caminos recorridos por las fichas del grupo: se explora lo que se ve por ellos */
+  walks?: readonly WalkedPath[]
 }
 
 export interface VisionResult {
@@ -280,9 +286,9 @@ export function createVision(db: Database, onError: (error: unknown) => void = (
     const doorsDigest = createHash('sha1').update(openDoors.join(',')).digest('base64url')
     const stamp = sceneStamp(scene)
     const hash = JSON.stringify([stamp, doorsDigest, party, targets, fog.map((f) => f.id)])
-    const paths = input.paths ?? []
+    const walks = input.walks ?? []
     const cached = results.get(key)
-    if (cached && cached.hash === hash && paths.length === 0) {
+    if (cached && cached.hash === hash && walks.length === 0) {
       fresh.add(key)
       return cached.result
     }
@@ -293,7 +299,8 @@ export function createVision(db: Database, onError: (error: unknown) => void = (
       scene: geometry,
       doors: doorStates as DoorStates,
       party,
-      paths: [...paths],
+      walks: [...walks],
+      step: scene.grid.size,
       targets,
       manual,
       explored: before

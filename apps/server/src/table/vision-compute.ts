@@ -7,13 +7,18 @@
  */
 import {
   type DoorStates,
+  type Edge,
   FogGrid,
+  firstWallOnPath,
   type Light,
+  movementEdges,
   type PartyToken,
+  type Point,
   type PreparedVision,
   partyView,
   prepareVision,
-  type Wall
+  type Wall,
+  WallIndex
 } from '@crisol/tabletop'
 
 /** Lo de la escena que no cambia de una campaña a otra, ya en píxeles */
@@ -34,6 +39,13 @@ export interface VisionTarget {
   radius: number
 }
 
+/** Una ficha del grupo que se movió: con sus sentidos, de dónde a dónde (donde está ya lo ve) */
+export interface WalkedPath {
+  token: PartyToken
+  from: Point
+  to: Point
+}
+
 export interface ViewRequest {
   /** La de lo preparado: la escena (su versión y cuándo cambió) y las puertas abiertas de la campaña */
   key: string
@@ -41,8 +53,10 @@ export interface ViewRequest {
   scene: SceneGeometry | null
   doors: DoorStates
   party: PartyToken[]
-  /** Los puntos de los caminos recorridos (cada ficha con sus sentidos): se explora lo que se ve desde cada uno */
-  paths: PartyToken[]
+  /** Los caminos recorridos: se explora lo que se ve desde cada casilla, hasta el primer muro que frena el paso o la vista */
+  walks: WalkedPath[]
+  /** Cada cuánto se mira por el camino (una casilla), en píxeles */
+  step: number
   targets: VisionTarget[]
   manual: unknown[]
   /** Lo explorado hasta ahora (comprimido), o null */
@@ -68,9 +82,17 @@ export const MISSING_SCENE = 'MISSING_SCENE'
 
 /** Cuántas escenas preparadas se guardan a la vez en el hilo */
 const PREPARED_KEEP = 24
-const prepared = new Map<string, PreparedVision>()
+/** Lo preparado de la visión y, para cortar los caminos, los tramos que frenan el paso */
+export type Prepared = { vision: PreparedVision; move: WallIndex<Edge> }
+const prepared = new Map<string, Prepared>()
 
-function preparedFor(request: ViewRequest): PreparedVision {
+/**
+ * Cuántos puntos de los caminos se miran como mucho en una vista: cada uno es una vista entera desde allí (unos 3 ms
+ * con miles de muros). Si hay más, se espacian
+ */
+export const MAX_WALK_STEPS = 16
+
+function preparedFor(request: ViewRequest): Prepared {
   const found = prepared.get(request.key)
   if (found) {
     // La última usada, al final: se van primero las más viejas
@@ -80,15 +102,18 @@ function preparedFor(request: ViewRequest): PreparedVision {
   }
   const { scene } = request
   if (!scene) throw new Error(MISSING_SCENE)
-  const made = prepareVision({
-    width: scene.width,
-    height: scene.height,
-    walls: scene.walls,
-    doors: request.doors,
-    lights: scene.lights,
-    darkness: scene.darkness,
-    automatic: scene.automatic
-  })
+  const made = {
+    vision: prepareVision({
+      width: scene.width,
+      height: scene.height,
+      walls: scene.walls,
+      doors: request.doors,
+      lights: scene.lights,
+      darkness: scene.darkness,
+      automatic: scene.automatic
+    }),
+    move: new WallIndex(movementEdges(scene.walls, request.doors))
+  }
   prepared.set(request.key, made)
   while (prepared.size > PREPARED_KEEP) {
     const oldest = prepared.keys().next().value
@@ -111,8 +136,40 @@ function exploredOf(data: Uint8Array | null, template: FogGrid): FogGrid {
   return template.empty()
 }
 
+/**
+ * Los puntos desde los que se mira por los caminos: una casilla cada vez, desde donde estaba hasta antes de donde está
+ * o del primer muro que frena el paso o la vista (lo de detrás no lo vio: saltó). Como mucho `MAX_WALK_STEPS`
+ */
+export function walkSteps(walks: readonly WalkedPath[], step: number, ready: Prepared): PartyToken[] {
+  const usable = walks.flatMap(({ token, from, to }) => {
+    const distance = Math.hypot(to.x - from.x, to.y - from.y)
+    if (distance === 0) return []
+    const cuts = [firstWallOnPath(from, to, ready.move), firstWallOnPath(from, to, ready.vision.sight)]
+    const cut = Math.min(1, ...cuts.filter((t): t is number => t !== null))
+    // Hasta antes del muro (encima de él ya sería verlo desde el otro lado) o de donde está
+    const length = cut < 1 ? Math.max(0, cut * distance - 1) : distance
+    return [{ token, from, to, distance, length }]
+  })
+  const total = usable.reduce((sum, walk) => sum + walk.length, 0)
+  const stride = Math.max(step > 0 ? step : 100, total / MAX_WALK_STEPS)
+  const points = usable.flatMap(({ token, from, to, distance, length }) => {
+    const count = Math.max(1, Math.ceil(length / stride))
+    return Array.from({ length: count }, (_, i) => {
+      const k = (i * stride) / distance
+      return { ...token, x: from.x + (to.x - from.x) * k, y: from.y + (to.y - from.y) * k }
+    })
+  })
+  if (points.length <= MAX_WALK_STEPS) return points
+  // Muchos caminos cortos: los repartidos a lo largo de todos
+  return Array.from(
+    { length: MAX_WALK_STEPS },
+    (_, i) => points[Math.floor((i * points.length) / MAX_WALK_STEPS)]
+  ).filter((p): p is PartyToken => p !== undefined)
+}
+
 export function computeView(request: ViewRequest): ViewResponse {
-  const ready = preparedFor(request)
+  const own = preparedFor(request)
+  const ready = own.vision
   const view = partyView(ready, request.party, request.manual)
   // Las fichas del grupo se ven siempre, su huella al menos: también sin visión automática (con ella ya va dentro)
   if (ready.scene.automatic === false)
@@ -127,7 +184,8 @@ export function computeView(request: ViewRequest): ViewResponse {
   explored.union(view.sighted)
   // Lo que se vio desde cada punto del camino (sin la niebla a mano: lo tapado se quita al enseñarlo)
   if (ready.scene.automatic !== false)
-    for (const step of request.paths) explored.union(partyView(ready, [step], []).visible.subtract(view.covered))
+    for (const step of walkSteps(request.walks, request.step, own))
+      explored.union(partyView(ready, [step], []).sighted.subtract(view.covered))
   const shown = explored.clone().subtract(view.covered)
   return {
     visible: view.visible.encode(),

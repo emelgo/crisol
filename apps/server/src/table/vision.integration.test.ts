@@ -396,6 +396,16 @@ describe('la visión de la mesa (docs/specs/vision.md)', () => {
     expect((await party()).explored.hasPoint({ x: 400, y: 350 })).toBe(true)
   })
 
+  it('fugas: una ficha que salta a través de un muro no explora lo de detrás (su camino se corta en el muro)', async () => {
+    const [own] = await place([{ characterId: lia.id, x: 200, y: 150 }])
+    // De la sala A al pasillo en línea recta: cruza la pared de la B y la secreta cerrada
+    await ok200('moveTokens', { campaignId, moves: [{ tokenId: own.id, x: 700, y: 350 }] })
+    const view = await party()
+    expect(view.visible.hasPoint({ x: 700, y: 350 })).toBe(true)
+    expect(share(view.explored, ...ROOM_A)).toBe(1)
+    expect(share(view.explored, ...ROOM_B)).toBe(0)
+  })
+
   it('destapar y tapar a mano (lo tapado manda), deshacer, y reiniciar la niebla', async () => {
     await place([{ characterId: lia.id, x: 200, y: 150 }])
     await ok200('changeFog', { campaignId, mode: 'reveal', shape: 'area', column: 4, row: 0, columns: 4, rows: 3 })
@@ -625,6 +635,18 @@ describe('la visión de la mesa (docs/specs/vision.md)', () => {
   })
 })
 
+/** Llama a una acción como el máster y espera que vaya bien */
+const caller = (app: FastifyInstance, cookie: string) => async (name: string, payload: object) => {
+  const response = await app.inject({
+    method: 'POST',
+    url: `/api/actions/${name}`,
+    payload,
+    headers: { origin: BASE_URL, cookie }
+  })
+  expect(response.statusCode, response.body).toBe(200)
+  return response.json()
+}
+
 // Se mide sola (CRISOL_RENDIMIENTO=1, su paso en la CI y `pnpm --filter @crisol/server test:rendimiento`): con las
 // demás pruebas a la vez, lo que se mide es la carga de la máquina
 describe.skipIf(!process.env.CRISOL_RENDIMIENTO)(
@@ -632,19 +654,35 @@ describe.skipIf(!process.env.CRISOL_RENDIMIENTO)(
   () => {
     let conn: ReturnType<typeof connect>
     let app: FastifyInstance
+    let ok200: ReturnType<typeof caller>
+    let campaignId: string
+    let sceneId: string
     const sockets: WebSocket[] = []
+
+    /** Mide `times` veces lo que tarda `work` hasta que la pantalla recibe la vista; devuelve el p50 y el p95 */
+    const measure = async (screen: ReturnType<typeof inbox>, times: number, work: (i: number) => Promise<unknown>) => {
+      const all: number[] = []
+      for (let i = 0; i < times; i++) {
+        const start = performance.now()
+        await work(i)
+        await screen.next('screen')
+        all.push(performance.now() - start)
+      }
+      all.sort((a, b) => a - b)
+      return { p50: all[Math.floor(all.length / 2)] ?? 0, p95: all[Math.ceil(all.length * 0.95) - 1] ?? 0 }
+    }
+    const watch = async () => {
+      const ws = await app.injectWS('/api/table', { headers: { origin: BASE_URL, cookie: master.cookie } })
+      sockets.push(ws)
+      const screen = inbox(ws)
+      ws.send(JSON.stringify({ type: 'join', campaignId, view: 'screen' }))
+      await screen.next('screen')
+      return screen
+    }
+    let master: { userId: string; cookie: string }
 
     beforeAll(async () => {
       conn = connect(await freshTestDatabase('crisol_test_vision_scale'), { max: 4 })
-    })
-
-    afterAll(async () => {
-      for (const ws of sockets.splice(0)) ws.terminate()
-      await app?.close()
-      await conn?.close()
-    })
-
-    it('soltar una ficha con 2.500 tramos, 20 luces y seis del grupo: p95 < 100 ms hasta que la pantalla la recibe', async () => {
       await resetDatabase(conn.sql)
       const auth = createTestAuth(conn.db, BASE_URL)
       app = buildApp({
@@ -653,27 +691,18 @@ describe.skipIf(!process.env.CRISOL_RENDIMIENTO)(
         storage: diskStorage(testDataDir())
       })
       await app.ready()
-      const master = await signUpTestUser(auth, { name: 'Enrique', email: 'enrique@crisol.test' })
+      master = await signUpTestUser(auth, { name: 'Enrique', email: 'enrique@crisol.test' })
       const [org] = await conn.db.insert(schema.organizations).values({ name: 'Mesa' }).returning()
       await conn.db
         .insert(schema.organizationMembers)
         .values({ organizationId: org?.id ?? '', userId: master.userId, role: 'owner' })
-      const ok200 = async (name: string, payload: object) => {
-        const response = await app.inject({
-          method: 'POST',
-          url: `/api/actions/${name}`,
-          payload,
-          headers: { origin: BASE_URL, cookie: master.cookie }
-        })
-        expect(response.statusCode, response.body).toBe(200)
-        return response.json()
-      }
+      ok200 = caller(app, master.cookie)
       const worldId = (await ok200('createWorld', { name: 'Valdren' })).id
       const systemId = (await ok200('importSystem', { file: exampleFile('5e') })).system.id
-      const campaignId = (await ok200('createCampaign', { worldId, name: 'La Marca', system: systemId })).id
+      campaignId = (await ok200('createCampaign', { worldId, name: 'La Marca', system: systemId })).id
       const pageId = (await ok200('createPage', { worldId, title: 'Mazmorra' })).id
       const tab = await ok200('createPageTab', { pageId, kind: 'scene' })
-      const sceneId = (await ok200('getScene', { tabId: tab.id })).id
+      sceneId = (await ok200('getScene', { tabId: tab.id })).id
       const version = crypto.randomUUID()
       const tile = await app.inject({
         method: 'PUT',
@@ -685,6 +714,7 @@ describe.skipIf(!process.env.CRISOL_RENDIMIENTO)(
       await ok200('setSceneImage', { sceneId, width: 4800, height: 4800, tiles: { version, size: 512, levels: 4 } })
       await ok200('updateScene', { sceneId, grid: { size: 100, offsetX: 0, offsetY: 0, distance: 5 } })
       // Una mazmorra de 12 × 12 salas de 400 px con las paredes en tramos de 50 px y una puerta en cada pared interior
+      // (abiertas las de y 200–250, 1000–1050…: por esas filas se cruza la mazmorra de lado a lado)
       const walls: object[] = []
       for (let line = 0; line <= 12; line++)
         for (let k = 0; k < 96; k++) {
@@ -711,30 +741,54 @@ describe.skipIf(!process.env.CRISOL_RENDIMIENTO)(
       await ok200('updateSceneVision', { sceneId, darkness: 0.8, automaticVision: true })
       await ok200('openScene', { campaignId, sceneId })
       await ok200('presentScene', { campaignId })
+    }, 180_000)
+
+    afterAll(async () => {
+      for (const ws of sockets.splice(0)) ws.terminate()
+      await app?.close()
+      await conn?.close()
+    })
+
+    it('soltar una ficha con 2.500 tramos, 20 luces y seis del grupo: p95 < 100 ms hasta que la pantalla la recibe', async () => {
       const tokens = []
       for (let i = 0; i < 6; i++) {
         const character = (await ok200('createCharacter', { campaignId, name: `PJ ${i}` })).character
         tokens.push({ characterId: character.id, x: 1650 + i * 130, y: 2050 + (i % 2) * 120 })
       }
       const placed = (await ok200('placeTokens', { campaignId, sceneId, tokens })).tokens
-      const ws = await app.injectWS('/api/table', { headers: { origin: BASE_URL, cookie: master.cookie } })
-      sockets.push(ws)
-      const screen = inbox(ws)
-      ws.send(JSON.stringify({ type: 'join', campaignId, view: 'screen' }))
-      await screen.next('screen')
-      const times: number[] = []
-      for (let i = 0; i < 30; i++) {
+      const screen = await watch()
+      const { p50, p95 } = await measure(screen, 30, (i) => {
         // Cada una, una casilla a la derecha y, a la vuelta siguiente, otra vez a su sitio
         const k = i % 6
         const x = 1650 + k * 130 + (Math.floor(i / 6) % 2 === 0 ? 100 : 0)
-        const start = performance.now()
-        await ok200('moveTokens', { campaignId, moves: [{ tokenId: placed[k].id, x, y: 2050 + (k % 2) * 120 }] })
-        await screen.next('screen')
-        times.push(performance.now() - start)
+        return ok200('moveTokens', { campaignId, moves: [{ tokenId: placed[k].id, x, y: 2050 + (k % 2) * 120 }] })
+      })
+      console.info(`vista del grupo al soltar: p50 ${p50.toFixed(1)} ms, p95 ${p95.toFixed(1)} ms`)
+      expect(p95).toBeLessThan(100)
+      await ok200('removeTokens', { campaignId, tokenIds: placed.map((t: { id: string }) => t.id) })
+    }, 180_000)
+
+    it('seis fichas que recorren 30 casillas a la vez (por las puertas abiertas): p95 < 100 ms', async () => {
+      // Una por cada fila de puertas abiertas: de un lado a otro de la mazmorra sin chocar con nada
+      const rows = [225, 1025, 1825, 2625, 3425, 4225]
+      const tokens = []
+      for (const [i, y] of rows.entries()) {
+        const character = (await ok200('createCharacter', { campaignId, name: `Viajero ${i}` })).character
+        tokens.push({ characterId: character.id, x: 150, y })
       }
-      times.sort((a, b) => a - b)
-      const p95 = times[Math.ceil(times.length * 0.95) - 1] ?? 0
-      console.info(`vista del grupo al soltar: p50 ${times[15]?.toFixed(1)} ms, p95 ${p95.toFixed(1)} ms`)
+      const placed = (await ok200('placeTokens', { campaignId, sceneId, tokens })).tokens
+      const screen = await watch()
+      const { p50, p95 } = await measure(screen, 20, (i) =>
+        ok200('moveTokens', {
+          campaignId,
+          moves: placed.map((t: { id: string }, k: number) => ({
+            tokenId: t.id,
+            x: i % 2 === 0 ? 3150 : 150,
+            y: rows[k]
+          }))
+        })
+      )
+      console.info(`vista del grupo tras recorrer 30 casillas: p50 ${p50.toFixed(1)} ms, p95 ${p95.toFixed(1)} ms`)
       expect(p95).toBeLessThan(100)
     }, 180_000)
   }
