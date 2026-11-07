@@ -40,9 +40,10 @@ export interface FogImage {
 /** Cuánto oscurece la noche cerrada lo que se ve sin luz */
 const SHADE = 0.6
 /** Cuánto brilla una luz entera */
-const GLOW = 0.32
-/** Lo que alumbra una luz cuyo centro no se ve */
+const GLOW = 0.5
+/** Lo que alumbra una luz cuyo centro no se ve, y lo que brilla */
 const FAR_LIGHT = 0.6
+const FAR_GLOW = 0.08
 
 const hex = (color: string): [number, number, number] => {
   const value = Number.parseInt(color.replace('#', ''), 16)
@@ -58,27 +59,39 @@ function litBy(light: FogLight, x: number, y: number): number {
   return Math.max(0.5, 1 - (0.5 * (d - light.bright)) / span)
 }
 
-/** Lo que alumbra cada celda (la más fuerte de las luces que llegan) y de qué color */
+/** Cuánto brilla una luz en una celda: mucho junto a ella y nada en el borde de lo tenue (como una antorcha) */
+function glowBy(light: FogLight, x: number, y: number): number {
+  if (!light.origin) return FAR_GLOW
+  const d = Math.hypot(x - light.origin.x, y - light.origin.y)
+  const k = Math.max(0, 1 - d / Math.max(1, light.dim))
+  return k * k
+}
+
+/** Lo que alumbra cada celda (la más fuerte de las luces que llegan), lo que brilla y de qué color */
 function lighting(columns: number, rows: number, cellSize: number, lights: readonly FogLight[]) {
   const level = new Float32Array(columns * rows)
+  const glow = new Float32Array(columns * rows)
   const color = new Uint8ClampedArray(columns * rows * 3)
   for (const light of lights) {
     if (light.cells.columns !== columns || light.cells.rows !== rows) continue
     const [r, g, b] = hex(light.color)
+    const intensity = Math.max(0, Math.min(1, light.intensity))
     light.cells.forEachRun((row, c0, c1) => {
       for (let c = c0; c <= c1; c++) {
-        const lit =
-          litBy(light, (c + 0.5) * cellSize, (row + 0.5) * cellSize) * Math.max(0, Math.min(1, light.intensity))
+        const x = (c + 0.5) * cellSize
+        const y = (row + 0.5) * cellSize
         const i = row * columns + c
-        if (lit <= (level[i] as number)) continue
-        level[i] = lit
+        level[i] = Math.max(level[i] as number, litBy(light, x, y) * intensity)
+        const shine = glowBy(light, x, y) * intensity
+        if (shine <= (glow[i] as number)) continue
+        glow[i] = shine
         color[i * 3] = r
         color[i * 3 + 1] = g
         color[i * 3 + 2] = b
       }
     })
   }
-  return { level, color }
+  return { level, glow, color }
 }
 
 /** Un desenfoque de caja (en las dos direcciones, con el borde repetido) de una imagen RGBA */
@@ -152,7 +165,7 @@ export function fogImage(
     // Se desenfoca premultiplicado (el color por su alfa) para que el borde no se ensucie de negro
     const premultiplied = new Float32Array(columns * rows * 4)
     for (let i = 0; i < columns * rows; i++) {
-      const level = light.level[i] as number
+      const level = light.glow[i] as number
       if (level <= 0 || !visible.get(i % columns, Math.floor(i / columns))) continue
       const alpha = GLOW * level
       for (let k = 0; k < 3; k++) premultiplied[i * 4 + k] = (light.color[i * 3 + k] as number) * alpha

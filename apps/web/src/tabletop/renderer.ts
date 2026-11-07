@@ -6,15 +6,7 @@
  * (import()), solo en la mesa y en la tele
  */
 import type { SceneGrid, SceneTiles } from '@crisol/contracts'
-import {
-  dashSegment,
-  type Point,
-  type Size,
-  type TilePyramid,
-  type TileRef,
-  tileWorldRect,
-  type Viewport
-} from '@crisol/tabletop'
+import { type Point, type Size, type TilePyramid, type TileRef, tileWorldRect, type Viewport } from '@crisol/tabletop'
 import type { Application, Container, Graphics, Sprite, Text, Texture } from 'pixi.js'
 import { pyramidOf, screenGridLines, tilesToDraw } from './view.ts'
 
@@ -496,13 +488,34 @@ export class TableRenderer {
           if (i === 0) g.moveTo(p.x, p.y)
           else g.lineTo(p.x, p.y)
         }
-      } else
+      } else {
+        // A trazos a lo largo de toda la línea (el patrón sigue de un tramo al siguiente)
+        let on = true
+        let left = dash[0]
         for (let i = 1; i < screen.length; i++) {
           const a = screen[i - 1] as Point
           const b = screen[i] as Point
-          for (const [x1, y1, x2, y2] of dashSegment([a.x, a.y, b.x, b.y], dash[0], dash[1]))
-            g.moveTo(x1, y1).lineTo(x2, y2)
+          const length = Math.hypot(b.x - a.x, b.y - a.y)
+          let at = 0
+          while (at < length) {
+            const step = Math.min(left, length - at)
+            if (on) {
+              const k0 = at / length
+              const k1 = (at + step) / length
+              g.moveTo(a.x + (b.x - a.x) * k0, a.y + (b.y - a.y) * k0).lineTo(
+                a.x + (b.x - a.x) * k1,
+                a.y + (b.y - a.y) * k1
+              )
+            }
+            at += step
+            left -= step
+            if (left <= 1e-6) {
+              on = !on
+              left = on ? dash[0] : dash[1]
+            }
+          }
         }
+      }
       g.stroke({ width, color, alpha, cap: 'round', join: 'round' })
     }
     for (const shape of this.shapes) {
