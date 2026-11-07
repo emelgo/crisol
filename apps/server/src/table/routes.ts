@@ -1,12 +1,14 @@
 /**
  * Las rutas de la mesa (ADR-0018): su WebSocket (/api/table), por el que cada conexión recibe su proyección, y las
  * teselas de las escenas: subirlas (quien lleva la wiki), pedirlas el máster (todas) y pedirlas la pantalla de la tele
- * (solo las de la escena presentada, y las que su vista deje pasar)
+ * (solo las de la escena presentada que tocan lo explorado o lo visible; las del borde, recortadas si la campaña lo
+ * pide: docs/specs/vision.md)
  */
 import type { Readable } from 'node:stream'
 import { MAX_TILE_BYTES, type TableServerMessage, type TableViewer, tableClientMessage } from '@crisol/contracts'
 import { campaignsRepo, loadMemberships, scenesRepo } from '@crisol/db'
 import { actorFrom, can } from '@crisol/domain'
+import { type FogGrid, hasTile, type TileRef, tilePyramid, tileWorldRect } from '@crisol/tabletop'
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
 import { z } from 'zod'
 import { authorizedPage } from '../actions/access.ts'
@@ -15,7 +17,9 @@ import type { Auth } from '../auth/auth.ts'
 import { TooLargeError } from '../files/storage.ts'
 import { clientIp, toHeaders } from '../http.ts'
 import { CLOSE_SESSION_ENDED } from '../realtime/routes.ts'
+import { visionOf } from './projection.ts'
 import type { TableRooms } from './rooms.ts'
+import { maskSignature, tileCoverage } from './tile-crop.ts'
 
 export interface TableRouteOptions {
   /** Cada cuánto se vuelve a comprobar la sesión y el permiso (si caducan, la conexión se cierra) */
@@ -40,9 +44,31 @@ const isWebp = (head: Uint8Array) =>
   String.fromCharCode(...head.subarray(0, 4)) === 'RIFF' &&
   String.fromCharCode(...head.subarray(8, 12)) === 'WEBP'
 
-/** La pantalla puede cargar esta tesela: hasta que llegue la niebla (`vision`), todas las de la escena presentada */
-export function screenTileAllowed(_tile: { level: number; x: number; y: number }) {
-  return true
+/**
+ * Cómo puede cargar la pantalla una tesela de la escena presentada, con lo que puede ver (lo explorado y lo visible):
+ * nada si no lo toca; entera si cae dentro o si la campaña las quiere enteras; recortada si pisa el borde
+ */
+export function screenTileAllowed(
+  mask: FogGrid,
+  scene: { width: number; height: number; tileSize: number },
+  tile: TileRef,
+  fit: 'whole' | 'cropped'
+): 'deny' | 'whole' | 'crop' {
+  const pyramid = tilePyramid(scene.width, scene.height, scene.tileSize)
+  if (!hasTile(pyramid, tile)) return 'deny'
+  const coverage = tileCoverage(mask, tileWorldRect(pyramid, tile))
+  if (coverage === 'none') return 'deny'
+  return coverage === 'full' || fit === 'whole' ? 'whole' : 'crop'
+}
+
+/** Las teselas recortadas que ya se hicieron, por tesela y huella de su máscara (las últimas) */
+const CROPPED_KEEP = 256
+
+/** Los bytes de un flujo */
+async function readAll(stream: Readable) {
+  const chunks: Buffer[] = []
+  for await (const chunk of stream) chunks.push(chunk as Buffer)
+  return new Uint8Array(Buffer.concat(chunks))
 }
 
 export function registerTableRoutes(
@@ -125,6 +151,8 @@ export function registerTableRoutes(
     }
   })
 
+  const cropped = new Map<string, Uint8Array>()
+
   // La pantalla de la tele: solo la escena presentada (sin ocultar), en su versión de ahora, y lo que su vista deja
   app.get('/api/campaigns/:campaignId/screen/tiles/:version/:level/:x/:y', async (request, reply) => {
     const ctx = await contextOf(request)
@@ -137,8 +165,45 @@ export function registerTableRoutes(
       return reply.code(404).send({ code: 'NOT_FOUND' })
     const mesa = await scenesRepo.campaignTable(ctx.db, campaignId)
     const scene = mesa.presentedSceneId ? await scenesRepo.findScene(ctx.db, mesa.presentedSceneId) : null
-    const showing = scene && !mesa.screenHidden && scene.tiles?.version === at.version && screenTileAllowed(at)
-    return sendTile(reply, showing ? await scenesRepo.findTile(ctx.db, { sceneId: scene.id, ...at }) : null)
+    if (
+      !scene ||
+      mesa.screenHidden ||
+      !scene.tiles ||
+      scene.tiles.version !== at.version ||
+      !scene.width ||
+      !scene.height
+    )
+      return reply.code(404).send({ code: 'NOT_FOUND' })
+    // Lo que ve el grupo: la vista guardada si nada ha cambiado desde entonces o, si no, calculada ahora
+    const vision = env.vision?.peek(campaignId, scene.id) ?? (await visionOf(ctx, campaign, scene))
+    if (!vision) return reply.code(404).send({ code: 'NOT_FOUND' })
+    const size = { width: scene.width, height: scene.height, tileSize: scene.tiles.size }
+    const allowed = screenTileAllowed(vision.screenMask, size, at, mesa.tileFit)
+    if (allowed === 'deny') return reply.code(404).send({ code: 'NOT_FOUND' })
+    const found = await scenesRepo.findTile(ctx.db, { sceneId: scene.id, ...at })
+    if (allowed === 'whole') return sendTile(reply, found)
+    if (!found || !env.storage || !env.vision) return reply.code(404).send({ code: 'NOT_FOUND' })
+    // Recortada con la máscara: cambia según se explora, así que no se guarda en el navegador
+    const rect = tileWorldRect(tilePyramid(size.width, size.height, size.tileSize), at)
+    const key = `${scene.id}:${at.version}:${at.level}:${at.x}:${at.y}:${maskSignature(vision.screenMask, rect)}`
+    let bytes = cropped.get(key)
+    if (!bytes) {
+      bytes = await env.vision.crop({
+        bytes: await readAll(env.storage.read(found.storageKey)),
+        mask: vision.screenMaskData,
+        tile: at,
+        tileSize: size.tileSize
+      })
+      cropped.set(key, bytes)
+      if (cropped.size > CROPPED_KEEP) cropped.delete(cropped.keys().next().value as string)
+    }
+    return reply
+      .header('cache-control', 'private, no-store')
+      .header('x-content-type-options', 'nosniff')
+      .header('cross-origin-resource-policy', 'same-origin')
+      .header('content-type', 'image/webp')
+      .header('content-length', bytes.byteLength)
+      .send(Buffer.from(bytes))
   })
 
   // Lo que para cada conexión: al cerrar el servidor se para todo

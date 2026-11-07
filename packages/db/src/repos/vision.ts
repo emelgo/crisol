@@ -33,6 +33,12 @@ export function listLights(db: Database, sceneId: string): Promise<LightRow[]> {
     .orderBy(asc(sceneLights.createdAt), asc(sceneLights.id))
 }
 
+/** Un muro, por su id */
+export async function findWall(db: Database, wallId: string): Promise<WallRow | null> {
+  const [found] = await db.select().from(sceneWalls).where(eq(sceneWalls.id, wallId))
+  return found ?? null
+}
+
 /** Un muro o una luz que no es de la escena */
 export class NotInSceneError extends Error {
   readonly id: string

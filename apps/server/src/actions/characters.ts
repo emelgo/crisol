@@ -40,7 +40,9 @@ import {
   RollError,
   resourcePaths,
   rest,
+  type SenseRanges,
   type System,
+  sensesOf,
   spend,
   tryAction,
   tryRoll
@@ -206,6 +208,8 @@ export interface CharacterVitals {
   life: { value: number; max: number; temp: number } | null
   stats: Array<{ key: string; label: string; value: string }>
   conditions: NonNullable<Play['conditions']>
+  /** Sus sentidos para la niebla de la mesa, en la unidad de la rejilla (donde dice su sistema) */
+  senses: SenseRanges
 }
 
 /**
@@ -231,6 +235,7 @@ export async function characterVitalsOf(
     }
     let life: CharacterVitals['life'] = null
     let stats: CharacterVitals['stats'] = []
+    let senses: SenseRanges = {}
     if (context) {
       try {
         const { view, built } = characterView(
@@ -250,11 +255,19 @@ export async function characterVitalsOf(
           : undefined
         if (typeof at?.max === 'number') life = { value: at.value ?? at.max, max: at.max, temp: at.temp ?? 0 }
         stats = view.summary.stats ?? []
+        senses = sensesOf(context.document, view.sheet as Record<string, unknown>)
       } catch {
         // Un personaje a medio crear: sin vida que enseñar
       }
     }
-    vitals.set(row.id, { name: row.name, version: row.version, life, stats, conditions: play.conditions ?? [] })
+    vitals.set(row.id, {
+      name: row.name,
+      version: row.version,
+      life,
+      stats,
+      conditions: play.conditions ?? [],
+      senses
+    })
   }
   return vitals
 }

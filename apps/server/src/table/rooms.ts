@@ -10,8 +10,15 @@ export interface TableSocket {
   send(data: string): void
 }
 
+/** Lo que ve el grupo ahora en la escena presentada: para no mandar a la pantalla el arrastre fuera de su vista */
+export interface ScreenSight {
+  hasPoint(p: { x: number; y: number }): boolean
+}
+
 /** La mesa de una campaña, ya proyectada para cada quien mira; null si la campaña ya no existe */
-export type LoadTable = (campaignId: string) => Promise<{ master: CampaignTableView; screen: ScreenView } | null>
+export type LoadTable = (
+  campaignId: string
+) => Promise<{ master: CampaignTableView; screen: ScreenView; screenVisible?: ScreenSight | null } | null>
 
 export interface TableRooms {
   /** Una conexión ya autorizada mira la mesa de la campaña; devuelve con qué darla de baja */
@@ -24,7 +31,7 @@ export interface TableRooms {
   viewport(campaignId: string, view: SceneViewport): void
   /**
    * Unas fichas mientras el máster las arrastra: a las otras pestañas del máster, todas; a la pantalla, solo las que
-   * ve (las de la escena presentada que no están ocultas)
+   * ve el grupo (de la escena presentada, sin ocultar) y mientras pasan por lo que ve
    */
   drag(campaignId: string, moves: TokenMove[], from: TableSocket): void
   /** Cuántas conexiones mira cada campaña (para las pruebas y los registros) */
@@ -43,6 +50,7 @@ interface Room {
   /** Las fichas de la escena abierta (las que arrastra el máster) y las que ve la pantalla */
   openTokens: Set<string>
   screenTokens: Set<string>
+  screenVisible: ScreenSight | null
 }
 
 type TokenMove = { tokenId: string; x: number; y: number }
@@ -63,6 +71,7 @@ export function createTableRooms(load: LoadTable, onError: (error: unknown) => v
     room.follows = table.master.camera.mode === 'follow' && !table.screen.hidden && table.screen.scene !== null
     room.openTokens = new Set(table.master.tokens.map((t) => t.id))
     room.screenTokens = new Set(table.screen.tokens.map((t) => t.id))
+    room.screenVisible = table.screenVisible ?? null
     for (const [socket, viewer] of room.sockets) {
       if (only && socket !== only) continue
       if (viewer === 'master') send(socket, { type: 'master', table: table.master })
@@ -87,7 +96,8 @@ export function createTableRooms(load: LoadTable, onError: (error: unknown) => v
         follows: false,
         viewport: null,
         openTokens: new Set<string>(),
-        screenTokens: new Set<string>()
+        screenTokens: new Set<string>(),
+        screenVisible: null
       }
       rooms.set(campaignId, room)
       room.sockets.set(socket, viewer)
@@ -114,7 +124,8 @@ export function createTableRooms(load: LoadTable, onError: (error: unknown) => v
       const room = rooms.get(campaignId)
       if (!room) return
       const own = moves.filter((m) => room.openTokens.has(m.tokenId))
-      const seen = own.filter((m) => room.screenTokens.has(m.tokenId))
+      const sight = room.screenVisible
+      const seen = own.filter((m) => room.screenTokens.has(m.tokenId) && sight?.hasPoint(m) === true)
       for (const [socket, viewer] of room.sockets) {
         if (socket === from) continue
         const sent = viewer === 'master' ? own : seen

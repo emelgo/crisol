@@ -34,6 +34,7 @@
     "@fastify/static": "catalog:",
     "@fastify/websocket": "catalog:",
     "@hocuspocus/server": "catalog:",
+    "@jsquash/webp": "catalog:",
     "@modelcontextprotocol/server": "catalog:",
     "@sctg/sentencepiece-js": "catalog:",
     "@tiptap/core": "catalog:",

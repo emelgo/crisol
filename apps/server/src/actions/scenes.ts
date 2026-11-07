@@ -27,6 +27,7 @@ import { authorizedCampaign, authorizedPage, authorizedWiki } from './access.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
 import { filesTouched, scopeOf, withFreeName } from './files.ts'
 import { implement } from './registry.ts'
+import { hasNoVision, placeImported } from './vision.ts'
 
 /** La escena, si la cuenta puede hacer eso en su página (404 si no existe o no la ve) */
 async function authorizedScene(ctx: ActionContext, capability: Capability, sceneId: string) {
@@ -48,6 +49,21 @@ export async function sceneOfCampaign(ctx: ActionContext, worldId: string, scene
   const scene = await scenesRepo.findScene(ctx.db, sceneId)
   if (!scene || scene.worldId !== worldId) throw new NotFoundError('scene')
   return scene
+}
+
+/**
+ * Lo que trae el mapa (los muros, puertas y luces de un UVTT o de la IA) se pone en juego solo si la escena aún no
+ * tiene ninguno; si ya tenía, se ponen a mano con placeImportedWalls (docs/specs/vision.md)
+ */
+async function placeImportedIfEmpty(
+  ctx: ActionContext,
+  sceneId: string,
+  details: Record<string, unknown>,
+  wiki: { organizationId: string; worldId: string }
+) {
+  const scene = await scenesRepo.findScene(ctx.db, sceneId)
+  if (!scene?.imported || !(await hasNoVision(ctx, sceneId))) return
+  await placeImported(ctx, scene, historyContext(ctx, 'placeImportedWalls', details, wiki), false)
 }
 
 export const sceneActions = [
@@ -116,6 +132,7 @@ export const sceneActions = [
         ...(imported !== undefined ? { imported } : {})
       }
     )
+    await placeImportedIfEmpty(ctx, sceneId, { title: page.title, name: scene.name }, wiki)
     ctx.table?.sceneChanged(sceneId)
     ctx.realtime.publish(pagesChanged(wiki))
     return sceneView((await scenesRepo.findScene(ctx.db, sceneId)) as scenesRepo.SceneWithPage)
@@ -172,6 +189,7 @@ export const sceneActions = [
           : {})
       }
     )
+    if (geometry) await placeImportedIfEmpty(ctx, sceneId, { title: page.title, name: scene.name }, wiki)
     ctx.table?.sceneChanged(sceneId)
     ctx.realtime.publish(pagesChanged(wiki))
     return sceneView((await scenesRepo.findScene(ctx.db, sceneId)) as scenesRepo.SceneWithPage)

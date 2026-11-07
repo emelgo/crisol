@@ -181,6 +181,16 @@ describe('las fichas de la mesa (docs/specs/fichas.md)', () => {
   it('el daño y los estados de la criatura llegan a su ficha; la pantalla ve «Herida», sin PG ni las ocultas', async () => {
     await ok200('openScene', { campaignId, sceneId })
     await ok200('presentScene', { campaignId })
+    // Sin muros, la escena va «sin visión automática»: la pantalla ve lo que se destapa a mano (docs/specs/vision.md)
+    await ok200('changeFog', {
+      campaignId,
+      mode: 'reveal',
+      shape: 'rectangle',
+      x: -500,
+      y: -500,
+      width: 20_000,
+      height: 20_000
+    })
     const placed = (
       await ok200('placeTokens', { campaignId, sceneId, tokens: [{ content: { key: GOBLIN, count: 2 }, x: 0, y: 0 }] })
     ).tokens
@@ -210,6 +220,16 @@ describe('las fichas de la mesa (docs/specs/fichas.md)', () => {
   it('el arrastre en vivo llega a la pantalla solo de las fichas que ve', async () => {
     await ok200('openScene', { campaignId, sceneId })
     await ok200('presentScene', { campaignId })
+    // Sin muros, la escena va «sin visión automática»: la pantalla ve lo que se destapa a mano (docs/specs/vision.md)
+    await ok200('changeFog', {
+      campaignId,
+      mode: 'reveal',
+      shape: 'rectangle',
+      x: -500,
+      y: -500,
+      width: 20_000,
+      height: 20_000
+    })
     const placed = (
       await ok200('placeTokens', { campaignId, sceneId, tokens: [{ content: { key: GOBLIN, count: 2 }, x: 0, y: 0 }] })
     ).tokens

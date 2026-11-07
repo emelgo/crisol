@@ -16,8 +16,8 @@ import {
 } from '@crisol/contracts'
 import { charactersRepo, creaturesRepo, filesRepo, scenesRepo, tokensRepo } from '@crisol/db'
 import { NotFoundError } from '@crisol/domain'
-import { cellCenter } from '@crisol/tabletop'
-import { tokenViews } from '../table/projection.ts'
+import { cellCenter, type PartyToken } from '@crisol/tabletop'
+import { tokensWithSenses, tokenViews, visionOf, visionTokens } from '../table/projection.ts'
 import { authorizedCampaign, authorizedWiki } from './access.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
 import { implement } from './registry.ts'
@@ -139,6 +139,40 @@ function pointIn(grid: scenesRepo.SceneRow['grid'], where: Where) {
   return cellCenter({ type, size, ...offset }, { q: where.column, r: where.row })
 }
 
+/** Lo más largo que se explora del camino de una ficha, en casillas */
+const MAX_PATH_STEPS = 60
+
+/**
+ * Los puntos de paso de las fichas del grupo que se han movido (de donde estaban a donde están, una casilla cada
+ * vez, sin los extremos), con sus sentidos: desde cada uno se explora lo que se ve (el pasillo recorrido)
+ */
+function walkedPaths(
+  scene: scenesRepo.SceneRow,
+  before: ReadonlyArray<{ id: string; x: number; y: number; sceneId: string }>,
+  loaded: Awaited<ReturnType<typeof tokensWithSenses>>
+): PartyToken[] {
+  const now = new Map(visionTokens(scene, loaded.views, loaded.senses).map((t) => [t.id, t]))
+  const step = scene.grid.size > 0 ? scene.grid.size : 100
+  return before.flatMap((old) => {
+    const token = now.get(old.id)
+    if (old.sceneId !== scene.id || !token?.party) return []
+    const distance = Math.hypot(token.x - old.x, token.y - old.y)
+    // Una casilla cada vez; en un camino muy largo, más espaciados
+    const stride = Math.max(step, distance / MAX_PATH_STEPS)
+    const count = Math.max(0, Math.ceil(distance / stride) - 1)
+    return Array.from({ length: count }, (_, i) => {
+      const k = ((i + 1) * stride) / distance
+      return {
+        id: token.id,
+        x: old.x + (token.x - old.x) * k,
+        y: old.y + (token.y - old.y) * k,
+        radius: token.radius,
+        ...(token.senses ? { senses: token.senses } : {})
+      }
+    })
+  })
+}
+
 /** Unas fichas de la campaña por su id; si falta alguna, 404 */
 async function ownTokens(ctx: ActionContext, campaignId: string, ids: readonly string[]) {
   const found = await tokensRepo.findTokens(ctx.db, campaignId, ids)
@@ -212,10 +246,16 @@ export const tokenActions = [
         return { id: m.tokenId, patch: grid ? pointIn(grid, m) : { x: m.x ?? 0, y: m.y ?? 0 } }
       })
     )
-    ctx.table?.changed(campaignId)
     const ids = new Set(moves.map((m) => m.tokenId))
     const views = []
-    for (const sceneId of sceneIds) views.push(...(await tokenViews(ctx, campaign, sceneId)))
+    for (const sceneId of sceneIds) {
+      const loaded = await tokensWithSenses(ctx, campaign, sceneId)
+      views.push(...loaded.views)
+      // La vista del grupo al soltar, explorando también lo que se ve desde las casillas del camino
+      const scene = await scenesRepo.findScene(ctx.db, sceneId)
+      if (scene) await visionOf(ctx, campaign, scene, loaded, walkedPaths(scene, found, loaded))
+    }
+    ctx.table?.changed(campaignId)
     return { tokens: views.filter((t) => ids.has(t.id)) }
   }),
 

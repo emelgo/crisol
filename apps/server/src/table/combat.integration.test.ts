@@ -339,6 +339,16 @@ describe('el combate de la mesa (docs/specs/combate.md)', () => {
 
   it('la pantalla ve la franja de turnos sin las ocultas ni la iniciativa de las criaturas', async () => {
     await ok200('presentScene', { campaignId })
+    // Sin muros, la escena va «sin visión automática»: la pantalla ve lo que se destapa a mano (docs/specs/vision.md)
+    await ok200('changeFog', {
+      campaignId,
+      mode: 'reveal',
+      shape: 'rectangle',
+      x: -500,
+      y: -500,
+      width: 20_000,
+      height: 20_000
+    })
     const thora = (await ok200('createCharacter', { campaignId, name: 'Thora' })).character
     const placed = (
       await ok200('placeTokens', {

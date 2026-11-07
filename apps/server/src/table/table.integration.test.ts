@@ -287,6 +287,9 @@ describe('la mesa: escenas, teselas y la sala', () => {
     const url = (v = version) => `/api/campaigns/${campaignId}/screen/tiles/${v}/0/0/0`
     expect((await getTile(url())).statusCode).toBe(404)
     await call('presentScene', { campaignId, sceneId: scene.id })
+    // Sin muros, «sin visión automática»: nada hasta que se destapa a mano (docs/specs/vision.md)
+    expect((await getTile(url())).statusCode).toBe(404)
+    await call('changeFog', { campaignId, mode: 'reveal', shape: 'rectangle', x: 0, y: 0, width: 100, height: 100 })
     expect((await getTile(url())).statusCode).toBe(200)
     expect((await getTile(url(crypto.randomUUID()))).statusCode).toBe(404)
     expect((await getTile(url(), player.cookie)).statusCode).toBe(404)

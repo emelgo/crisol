@@ -31,6 +31,7 @@ import { templateActions } from './templates.ts'
 import { tokenActions } from './tokens.ts'
 import { trashActions } from './trash.ts'
 import { versionActions } from './versions.ts'
+import { visionActions } from './vision.ts'
 import { worldContentActions } from './world-content.ts'
 import { worldActions } from './worlds.ts'
 
@@ -64,6 +65,7 @@ export const IMPLEMENTATIONS: Implementation[] = [
   ...sceneActions,
   ...tokenActions,
   ...combatActions,
+  ...visionActions,
   ...knowledgeActions,
   ...revealActions,
   ...libraryActions,

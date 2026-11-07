@@ -1,31 +1,49 @@
 /**
- * Lo que recibe cada quien mira la mesa (ADR-0018): el máster, todo; la pantalla de la tele, lo que ve el grupo. Hasta
- * que llegue la niebla (`vision`) la pantalla ve la escena presentada entera, pero ya sin su página ni su nombre
+ * Lo que recibe cada quien mira la mesa (ADR-0018): el máster, todo; la pantalla de la tele, lo que ve el grupo
+ * (docs/specs/vision.md): lo explorado y lo visible en máscaras, las fichas que ve y no están ocultas, las luces
+ * recortadas a lo que ve y el combate sin las criaturas que no ve. Ni muros, ni puertas, ni luces apagadas
  */
 import type {
   CampaignTableView,
   CombatantView,
   CombatView,
   SceneView,
+  ScreenCamera,
   ScreenCombat,
   ScreenScene,
   ScreenToken,
   ScreenView,
+  TableVision,
   TokenView
 } from '@crisol/contracts'
 import { campaignsRepo, combatsRepo, creaturesRepo, scenesRepo, systemsRepo, tokensRepo } from '@crisol/db'
 import { actorFrom } from '@crisol/domain'
-import { type Choices, initiativeRoll, normalizeChoices, type System, type Text, textOf } from '@crisol/systems'
-import { slotIndexOf, turnSlots } from '@crisol/tabletop'
+import {
+  type Choices,
+  initiativeRoll,
+  normalizeChoices,
+  type SenseRanges,
+  type System,
+  type Text,
+  textOf
+} from '@crisol/systems'
+import { distanceToPixels, type FogGrid, type PartyToken, type Senses, slotIndexOf, turnSlots } from '@crisol/tabletop'
 import { characterVitalsOf } from '../actions/characters.ts'
 import type { ActionContext, ActionEnv } from '../actions/context.ts'
 import { creatureCardsOf, lifeStateOf } from '../actions/creatures.ts'
 import type { LoadTable } from './rooms.ts'
+import type { VisionResult, VisionToken } from './vision.ts'
 
 type Campaign = NonNullable<Awaited<ReturnType<typeof campaignsRepo.findCampaign>>>
 
 /** Las fichas de una campaña en una escena, con lo vital de cada uno leído de su personaje o de su criatura */
 export async function tokenViews(ctx: ActionContext, campaign: Campaign, sceneId: string): Promise<TokenView[]> {
+  return (await tokensWithSenses(ctx, campaign, sceneId)).views
+}
+
+/** Las fichas y, las de los personajes, sus sentidos (en la unidad de la rejilla), por el id de la ficha */
+export async function tokensWithSenses(ctx: ActionContext, campaign: Campaign, sceneId: string) {
+  const senses = new Map<string, SenseRanges>()
   const rows = await tokensRepo.listTokens(ctx.db, campaign.id, sceneId)
   const creatures = await creatureCardsOf(
     ctx,
@@ -37,7 +55,7 @@ export async function tokenViews(ctx: ActionContext, campaign: Campaign, sceneId
     campaign.id,
     rows.flatMap((r) => (r.characterId ? [r.characterId] : []))
   )
-  return rows.flatMap((row): TokenView[] => {
+  const views = rows.flatMap((row): TokenView[] => {
     const base = {
       id: row.id,
       sceneId: row.sceneId,
@@ -73,6 +91,7 @@ export async function tokenViews(ctx: ActionContext, campaign: Campaign, sceneId
     }
     const vitals = row.characterId ? characters.get(row.characterId) : undefined
     if (!vitals || !row.characterId) return []
+    senses.set(row.id, vitals.senses)
     return [
       {
         ...base,
@@ -89,12 +108,13 @@ export async function tokenViews(ctx: ActionContext, campaign: Campaign, sceneId
       }
     ]
   })
+  return { views, senses }
 }
 
-/** Lo que la pantalla ve de unas fichas: las que no están ocultas, sin números */
-export function screenTokens(tokens: readonly TokenView[]): ScreenToken[] {
+/** Lo que la pantalla ve de unas fichas: las que el grupo ve y no están ocultas, sin números */
+export function screenTokens(tokens: readonly TokenView[], seen: ReadonlySet<string>): ScreenToken[] {
   return tokens
-    .filter((token) => !token.hidden)
+    .filter((token) => !token.hidden && seen.has(token.id))
     .map((token) => ({
       id: token.id,
       x: token.x,
@@ -209,12 +229,21 @@ export async function combatViewOf(
   }
 }
 
-/** La franja de turnos de la pantalla: sin los ocultos, ni la vida, ni la iniciativa de las criaturas */
-export function screenCombatOf(combat: CombatView): ScreenCombat {
+/**
+ * La franja de turnos de la pantalla: sin los ocultos, ni la vida, ni la iniciativa de las criaturas, ni las criaturas
+ * cuya ficha no ve el grupo en la escena presentada (las que no tienen ficha, sí)
+ */
+export function screenCombatOf(
+  combat: CombatView,
+  presentedId: string | null,
+  seen: ReadonlySet<string>
+): ScreenCombat {
+  const shown = (c: CombatantView) =>
+    c.kind !== 'creature' || c.tokenId === null || (combat.sceneId === presentedId && seen.has(c.tokenId))
   return {
     round: combat.round,
     combatants: combat.combatants
-      .filter((c) => !c.hidden)
+      .filter((c) => !c.hidden && shown(c))
       .map((c) => ({
         id: c.id,
         kind: c.kind,
@@ -256,7 +285,70 @@ export function screenScene(scene: SceneView): ScreenScene {
   }
 }
 
-/** La mesa de una campaña para su máster y, aparte, las fichas de la escena presentada (para la pantalla) */
+/** Los sentidos en píxeles, con la rejilla de la escena */
+function sensesInPixels(ranges: SenseRanges | undefined, grid: SceneView['grid']): Senses | undefined {
+  if (!ranges) return undefined
+  const out: Senses = {}
+  for (const [kind, units] of Object.entries(ranges) as [keyof Senses, number][])
+    out[kind] = distanceToPixels(units, grid.distance, grid.size)
+  return Object.keys(out).length > 0 ? out : undefined
+}
+
+/** Las fichas de una escena para la visión: miran las de los personajes que no están ocultas, con sus sentidos */
+export function visionTokens(
+  scene: Pick<scenesRepo.SceneRow, 'grid'>,
+  tokens: readonly TokenView[],
+  senses: ReadonlyMap<string, SenseRanges>
+): VisionToken[] {
+  return tokens.map((t) => {
+    const party = t.actor.kind === 'character' && !t.hidden
+    const own = party ? sensesInPixels(senses.get(t.id), scene.grid) : undefined
+    return { id: t.id, x: t.x, y: t.y, radius: (t.size * scene.grid.size) / 2, party, ...(own ? { senses: own } : {}) }
+  })
+}
+
+/**
+ * La vista del grupo de una campaña en una escena: con las fichas ya leídas o, si no, leyéndolas. `paths`, los puntos
+ * del camino de las fichas que se acaban de mover (se explora lo que se ve desde cada uno). Sin el servicio, null
+ */
+export async function visionOf(
+  ctx: ActionContext,
+  campaign: Campaign,
+  scene: scenesRepo.SceneRow,
+  loaded?: { views: TokenView[]; senses: ReadonlyMap<string, SenseRanges> },
+  paths?: readonly PartyToken[]
+): Promise<VisionResult | null> {
+  if (!ctx.vision) return null
+  const { views, senses } = loaded ?? (await tokensWithSenses(ctx, campaign, scene.id))
+  return ctx.vision.view({
+    campaignId: campaign.id,
+    scene,
+    tokens: visionTokens(scene, views, senses),
+    ...(paths?.length ? { paths } : {})
+  })
+}
+
+/** La visión de la escena abierta para el máster */
+function tableVisionOf(
+  scene: scenesRepo.SceneRow,
+  vision: VisionResult,
+  tokens: readonly TokenView[],
+  tileFit: TableVision['tileFit']
+): TableVision {
+  return {
+    sceneId: scene.id,
+    version: scene.version,
+    automaticVision: scene.automaticVision,
+    darkness: scene.darkness,
+    tileFit,
+    doors: { ...vision.doors },
+    explored: vision.exploredData,
+    visible: vision.visibleData,
+    notSeen: tokens.filter((t) => t.hidden || !vision.seen.has(t.id)).map((t) => t.id)
+  }
+}
+
+/** La mesa de una campaña para su máster y, aparte, lo de la escena presentada (para la pantalla) */
 async function tableOf(ctx: ActionContext, campaign: Campaign) {
   const table = await scenesRepo.campaignTable(ctx.db, campaign.id)
   const open = table.openSceneId ? await scenesRepo.findScene(ctx.db, table.openSceneId) : null
@@ -266,9 +358,20 @@ async function tableOf(ctx: ActionContext, campaign: Campaign) {
       : table.presentedSceneId
         ? await scenesRepo.findScene(ctx.db, table.presentedSceneId)
         : null
-  const tokens = open ? await tokenViews(ctx, campaign, open.id) : []
-  const shownTokens =
-    presented && presented.id === open?.id ? tokens : presented ? await tokenViews(ctx, campaign, presented.id) : []
+  const openLoaded = open ? await tokensWithSenses(ctx, campaign, open.id) : { views: [], senses: new Map() }
+  const shownLoaded =
+    presented && presented.id === open?.id
+      ? openLoaded
+      : presented
+        ? await tokensWithSenses(ctx, campaign, presented.id)
+        : { views: [], senses: new Map() }
+  const openVision = open ? await visionOf(ctx, campaign, open, openLoaded) : null
+  const shownVision =
+    presented && presented.id === open?.id
+      ? openVision
+      : presented
+        ? await visionOf(ctx, campaign, presented, shownLoaded)
+        : null
   const combat = await combatsRepo.findCombat(ctx.db, campaign.id)
   const master: CampaignTableView = {
     campaignId: campaign.id,
@@ -276,10 +379,11 @@ async function tableOf(ctx: ActionContext, campaign: Campaign) {
     presented: presented ? sceneView(presented) : null,
     screenHidden: table.screenHidden,
     camera: table.camera,
-    tokens,
-    combat: combat ? await combatViewOf(ctx, campaign, combat) : null
+    tokens: openLoaded.views,
+    combat: combat ? await combatViewOf(ctx, campaign, combat) : null,
+    vision: open && openVision ? tableVisionOf(open, openVision, openLoaded.views, table.tileFit) : null
   }
-  return { master, shownTokens }
+  return { master, shownTokens: shownLoaded.views, shownVision }
 }
 
 /** La mesa de una campaña para su máster (la campaña ya autorizada) */
@@ -289,22 +393,72 @@ export async function campaignTableView(ctx: ActionContext, campaignId: string):
   return (await tableOf(ctx, campaign)).master
 }
 
-/** Lo que enseña la pantalla, sacado de la mesa del máster y de las fichas de la escena presentada */
-export function screenViewOf(
+/** Lo que enseña la pantalla de una escena (o de ninguna), con la vista del grupo en ella */
+export function screenViewOf(input: {
+  campaignId: string
+  campaignName: string
+  scene: SceneView | null
+  hidden: boolean
+  camera: ScreenCamera
+  tokens: readonly TokenView[]
+  combat: CombatView | null | undefined
+  vision: VisionResult | null
+}): ScreenView {
+  const { scene, vision } = input
+  // Sin la vista del grupo no se enseña nada (no debería pasar: el servidor siempre la tiene)
+  const showing = !input.hidden && scene !== null && vision !== null
+  const seen = vision?.seen ?? new Set<string>()
+  return {
+    campaignId: input.campaignId,
+    campaignName: input.campaignName,
+    scene: showing && scene ? screenScene(scene) : null,
+    hidden: input.hidden,
+    camera: input.camera,
+    tokens: showing ? screenTokens(input.tokens, seen) : [],
+    combat: showing && input.combat ? screenCombatOf(input.combat, scene?.id ?? null, seen) : null,
+    fog:
+      showing && vision
+        ? {
+            width: vision.width,
+            height: vision.height,
+            cellSize: vision.cellSize,
+            explored: vision.exploredData,
+            visible: vision.visibleData,
+            darkness: vision.darkness
+          }
+        : null,
+    lights:
+      showing && vision
+        ? vision.lit.map(({ light, cells, originVisible }) => ({
+            id: light.id,
+            color: light.color,
+            intensity: light.intensity,
+            bright: light.bright,
+            dim: light.dim,
+            origin: originVisible ? { x: light.x, y: light.y } : null,
+            cells
+          }))
+        : []
+  }
+}
+
+/** La pantalla de la mesa del máster: la escena presentada, con lo que ve el grupo */
+function screenOfTable(
   master: CampaignTableView,
   campaignName: string,
-  shownTokens: readonly TokenView[]
-): ScreenView {
-  const showing = !master.screenHidden && master.presented !== null
-  return {
+  shownTokens: readonly TokenView[],
+  vision: VisionResult | null
+) {
+  return screenViewOf({
     campaignId: master.campaignId,
     campaignName,
-    scene: showing && master.presented ? screenScene(master.presented) : null,
+    scene: master.presented,
     hidden: master.screenHidden,
     camera: master.camera,
-    tokens: showing ? screenTokens(shownTokens) : [],
-    combat: showing && master.combat ? screenCombatOf(master.combat) : null
-  }
+    tokens: shownTokens,
+    combat: master.combat,
+    vision
+  })
 }
 
 /**
@@ -320,7 +474,9 @@ export function loadTable(env: ActionEnv): LoadTable {
   return async (campaignId) => {
     const campaign = await campaignsRepo.findCampaign(env.db, campaignId)
     if (!campaign) return null
-    const { master, shownTokens } = await tableOf(ctx, campaign)
-    return { master, screen: screenViewOf(master, campaign.name, shownTokens) }
+    const { master, shownTokens, shownVision } = await tableOf(ctx, campaign)
+    const screen = screenOfTable(master, campaign.name, shownTokens, shownVision)
+    const screenVisible: FogGrid | null = screen.scene && shownVision ? shownVision.visible : null
+    return { master, screen, screenVisible }
   }
 }

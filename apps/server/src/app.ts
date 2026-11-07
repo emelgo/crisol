@@ -23,8 +23,9 @@ import { registerMcpRoutes } from './mcp/routes.ts'
 import { createRealtime, type Realtime } from './realtime/hub.ts'
 import { type RealtimeRouteOptions, registerRealtimeRoutes } from './realtime/routes.ts'
 import { loadTable } from './table/projection.ts'
-import { createTableRooms, type LoadTable } from './table/rooms.ts'
+import { createTableRooms, type LoadTable, type TableRooms } from './table/rooms.ts'
 import { registerTableRoutes } from './table/routes.ts'
+import { createVision } from './table/vision.ts'
 import { registerWeb, webBuild } from './web.ts'
 import { jsonOfDoc } from './wiki/content.ts'
 import { linksOfStored } from './wiki/links.ts'
@@ -97,10 +98,27 @@ export function buildApp(deps: AppDeps): FastifyInstance {
     // Las salas de la mesa: cada una vuelve a leer su mesa de la base cuando algo cambia (ADR-0018). Lo que cambia en
     // las criaturas en juego o en los personajes de una campaña (sus PG, sus estados) llega a sus fichas por el bus
     let load: LoadTable = async () => null
-    const table = createTableRooms(
+    // La vista del grupo: su hilo arranca la primera vez que hace falta y se para al cerrar
+    const vision = createVision(db, (error) => app.log.error(error))
+    app.addHook('onClose', async () => {
+      await vision.close()
+    })
+    const rooms = createTableRooms(
       (campaignId) => load(campaignId),
       (error) => app.log.error(error)
     )
+    // Lo que cambia en una mesa o en una escena deja sin valer su vista guardada (las teselas de la pantalla la miran)
+    const table: TableRooms = {
+      ...rooms,
+      changed(campaignId) {
+        vision.invalidate({ campaignId })
+        rooms.changed(campaignId)
+      },
+      sceneChanged(sceneId) {
+        vision.invalidate({ sceneId })
+        rooms.sceneChanged(sceneId)
+      }
+    }
     const realtime: Realtime = {
       ...bus,
       publish: (...events) => {
@@ -117,6 +135,7 @@ export function buildApp(deps: AppDeps): FastifyInstance {
       realtime,
       collab,
       table,
+      vision,
       actions: implementationsByName,
       ...(deps.storage ? { storage: deps.storage } : {}),
       ...(deps.library ? { library: deps.library } : {}),

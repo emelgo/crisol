@@ -7,6 +7,7 @@ import type { Embedder } from '../library/embedder.ts'
 import type { LibraryJobs } from '../library/jobs.ts'
 import type { Realtime } from '../realtime/hub.ts'
 import type { TableRooms } from '../table/rooms.ts'
+import type { Vision } from '../table/vision.ts'
 
 /** Una acción del contrato con su servicio */
 export interface Implementation {
@@ -35,6 +36,8 @@ export interface ActionEnv {
   embedder?: Embedder
   /** Las salas de la mesa abiertas (ADR-0018): se les avisa de lo que cambia en su campaña o en sus escenas */
   table?: TableRooms
+  /** La vista del grupo de cada campaña en sus escenas, calculada en un hilo aparte (docs/specs/vision.md) */
+  vision?: Vision
 }
 
 /** Con qué se ejecuta una acción: el servidor y quién la pide, por dónde */
