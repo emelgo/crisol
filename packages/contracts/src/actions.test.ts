@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
-import { ACTIONS, defineAction, openApi, updatePage, updateWorld } from './index.ts'
+import { ACTIONS, campaignTableView, defineAction, openApi, updatePage, updateWorld } from './index.ts'
 
 describe('acciones', () => {
   it('cada acción tiene un nombre único', () => {
@@ -68,5 +68,20 @@ describe('portadas', () => {
     expect(updateWorld.input.parse({ worldId, color: '#aa3355' }).color).toBe('#aa3355')
     expect(updateWorld.input.parse({ worldId, color: 'wine' }).color).toBe('wine')
     expect(() => updateWorld.input.parse({ worldId, color: 'rojo' })).toThrow()
+  })
+})
+
+describe('la mesa de una campaña', () => {
+  it('lleva siempre su combate: el que hay o null', () => {
+    const table = {
+      campaignId: crypto.randomUUID(),
+      open: null,
+      presented: null,
+      screenHidden: false,
+      camera: { mode: 'follow' },
+      tokens: []
+    }
+    expect(campaignTableView.safeParse(table).success).toBe(false)
+    expect(campaignTableView.safeParse({ ...table, combat: null }).success).toBe(true)
   })
 })

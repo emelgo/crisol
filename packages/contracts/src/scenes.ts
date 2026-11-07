@@ -221,8 +221,8 @@ export const campaignTableView = z.object({
   camera: screenCamera,
   /** Las fichas de la escena abierta */
   tokens: z.array(tokenView),
-  /** El combate de la campaña, si hay uno (llega siempre; opcional hasta que lo dé la API de prueba de la web) */
-  combat: combatView.nullable().optional(),
+  /** El combate de la campaña, si hay uno (null si no) */
+  combat: combatView.nullable(),
   /** La visión de la escena abierta (llega siempre; opcional hasta que lo dé la API de prueba de la web) */
   vision: tableVision.nullable().optional()
 })
