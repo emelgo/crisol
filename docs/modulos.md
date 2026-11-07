@@ -7,16 +7,19 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
-### Para retomar (2026-11-07, tarde: módulo 6 en marcha)
+### Para retomar (2026-11-07, tarde: módulo 6 en marcha, `escenas` a medias)
 
-- **Rama `modulo-6/mesa`** (sale de `main`). Hecha la entrevista del módulo 6 (abajo, § «### 6. Mesa»): se juega
-  sobre todo en persona, el máster lleva la mesa y una segunda ventana en la tele enseña lo que ve el grupo; niebla
-  automática y a mano; en combate, la mesa es el centro, como en Foundry o D&D Beyond; la escena es del mundo y el
-  estado, de cada campaña.
-- **Estudios en marcha**: `research/foundry/vision-muros-y-niebla.md`, `research/foundry/escenas-fichas-y-combate.md`,
-  `research/dndbeyond/mapas.md`, `research/uvtt/formato.md` y unas notas de lo que se puede portar de la mesa del
-  Crisol actual (`~/CrisolVTT/crisol/packages/mesa`, código nuestro).
-- **Lo siguiente**: el mapa `docs/specs/modulo-6.md` con sus capacidades, el ADR de la mesa autoritativa y las specs.
+- **Rama `modulo-6/mesa`** (sale de `main`, sin PR aún). Hecho del ciclo: la entrevista (abajo, § «### 6. Mesa»); los
+  estudios (`research/foundry/vision-muros-y-niebla.md`, `research/foundry/escenas-fichas-y-combate.md`,
+  `research/dndbeyond/mapas.md`, `research/uvtt/formato.md`) y lo que se porta de la mesa actual
+  (`docs/mesa-crisol-actual.md`); el mapa `docs/specs/modulo-6.md` (seis capacidades); el ADR-0018 (propuesta: la
+  mesa, una sala por campaña en el servidor); la spec `docs/specs/escenas.md`; el lienzo «Crisol: la mesa» (en marcha,
+  fuentes en `out/lienzo-mesa/`).
+- **`escenas`** (`tasks/plan.md`, `tasks/todo.md`): hechos el núcleo `packages/tabletop` (rejilla, alinear, detectar,
+  cámaras, teselas, UVTT e imagen; 74 pruebas), la base de datos (migración 0055), los contratos, el servidor (acciones,
+  teselas, la sala con su WebSocket `/api/table`; punto de control 1 superado) y la IA. **Falta la web** (la pestaña
+  «Escena», la mesa del máster con PixiJS 8.22 —MIT—, la pantalla de la tele), la e2e, las fugas y la revisión.
+- **Pendiente de Enrique**: si las teselas del borde de lo explorado se recortan en el servidor (ADR-0018, punto 7).
 
 ### Para retomar (2026-11-07: módulo 5 en `main` y en staging)
 
