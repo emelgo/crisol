@@ -107,6 +107,7 @@ describe('la visión de la mesa (docs/specs/vision.md)', () => {
   let doorId: string
   let secretId: string
   let lia: { id: string; version: number }
+  let systemId: string
   const sockets: WebSocket[] = []
 
   const call = (name: string, payload: object, cookie = master.cookie) =>
@@ -171,7 +172,7 @@ describe('la visión de la mesa (docs/specs/vision.md)', () => {
     const organizationId = org?.id ?? ''
     await conn.db.insert(schema.organizationMembers).values({ organizationId, userId: master.userId, role: 'owner' })
     worldId = (await ok200('createWorld', { name: 'Valdren' })).id
-    const systemId = (await ok200('importSystem', { file: exampleFile('5e') })).system.id
+    systemId = (await ok200('importSystem', { file: exampleFile('5e') })).system.id
     campaignId = (await ok200('createCampaign', { worldId, name: 'La Marca', system: systemId })).id
     pageId = (await ok200('createPage', { worldId, title: 'Cripta de Varn' })).id
     const tab = await ok200('createPageTab', { pageId, kind: 'scene' })
@@ -270,6 +271,60 @@ describe('la visión de la mesa (docs/specs/vision.md)', () => {
     const last = history.operations?.[0] ?? history.entries?.[0]
     await ok200('undoOperation', { operationId: last.id })
     expect((await party()).secretDoors).toEqual([{ id: secretId, open: false }])
+  })
+
+  it('fugas: la puerta secreta abierta en una campaña no se ve en otra de la misma escena (aunque su estado vaya igual)', async () => {
+    await place([{ characterId: lia.id, x: 600, y: 150 }])
+    await ok200('setDoor', { campaignId, wallId: secretId, open: true })
+    expect(share((await party()).visible, 580, 320, 40, 60)).toBe(1)
+    const other = (await ok200('createCampaign', { worldId, name: 'Otra', system: systemId })).id
+    const mia = (await ok200('createCharacter', { campaignId: other, name: 'Mía' })).character
+    await ok200('placeTokens', { campaignId: other, sceneId, tokens: [{ characterId: mia.id, x: 600, y: 150 }] })
+    // Su estado en la escena, en la misma versión que el de la primera, con la secreta cerrada
+    await ok200('setDoor', { campaignId: other, wallId: secretId, open: false })
+    const view = await ok200('viewAsParty', { campaignId: other, sceneId })
+    expect(share(mask(view.screen.fog.visible), ...ROOM_B)).toBe(1)
+    expect(share(mask(view.screen.fog.visible), 580, 320, 40, 60)).toBe(0)
+  })
+
+  it('fugas: abrir la secreta, deshacerlo y abrir otra puerta no deja ver lo de la secreta (mirando o no entre medias)', async () => {
+    await place([{ characterId: lia.id, x: 600, y: 150 }])
+    const undoLast = async () => {
+      const history = await ok200('listHistory', { worldId })
+      await ok200('undoOperation', { operationId: history.entries[0].id })
+    }
+    for (const lookBetween of [true, false]) {
+      await ok200('setDoor', { campaignId, wallId: secretId, open: true })
+      expect(share((await party()).visible, 580, 320, 40, 60)).toBe(1)
+      await undoLast()
+      if (lookBetween) expect(share((await party()).visible, 580, 320, 40, 60)).toBe(0)
+      await ok200('setDoor', { campaignId, wallId: doorId, open: true })
+      const view = await party()
+      expect(share(view.visible, 580, 320, 40, 60)).toBe(0)
+      expect(share(view.visible, ...ROOM_A)).toBeGreaterThan(0.3)
+      // Se cierra para la vuelta siguiente (y se deshace para que el estado vuelva a su versión)
+      await undoLast()
+      await ok200('resetFog', { campaignId })
+    }
+  })
+
+  it('poner un muro, deshacerlo y poner otro: la vista es la del muro nuevo (mirando o no entre medias)', async () => {
+    await place([{ characterId: lia.id, x: 200, y: 150 }])
+    const undoLast = async () => {
+      const history = await ok200('listHistory', { worldId })
+      await ok200('undoOperation', { operationId: history.entries[0].id })
+    }
+    for (const lookBetween of [true, false]) {
+      await ok200('changeWalls', { sceneId, walls: { add: [{ a: { x: 300, y: 0 }, b: { x: 300, y: 300 } }] } })
+      expect((await party()).visible.hasPoint({ x: 350, y: 150 })).toBe(false)
+      await undoLast()
+      if (lookBetween) expect((await party()).visible.hasPoint({ x: 350, y: 150 })).toBe(true)
+      await ok200('changeWalls', { sceneId, walls: { add: [{ a: { x: 100, y: 0 }, b: { x: 100, y: 300 } }] } })
+      const view = await party()
+      expect(view.visible.hasPoint({ x: 350, y: 150 })).toBe(true)
+      expect(view.visible.hasPoint({ x: 50, y: 150 })).toBe(false)
+      await undoLast()
+    }
   })
 
   it('de noche solo la huella; una luz alumbra su sala, recortada; las apagadas y las que no ve el grupo no llegan', async () => {

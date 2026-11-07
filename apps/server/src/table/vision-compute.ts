@@ -1,8 +1,8 @@
 /**
  * Lo que calcula el hilo de la visión (docs/specs/vision.md, ADR-0018 § 5): la vista del grupo de una campaña en una
  * escena con el núcleo de `@crisol/tabletop`. Lo que no depende de las fichas (`prepareVision`: los índices de los
- * muros y las áreas de las luces) se guarda por su clave (escena, su versión y las puertas de la campaña) hasta que
- * cambie. Lo explorado se va sumando: lo que ve el grupo ahora y lo que vio en cada punto del camino de una ficha.
+ * muros y las áreas de las luces) se guarda por su clave (la escena tal como está y las puertas abiertas de la campaña)
+ * hasta que cambie. Lo explorado se va sumando: lo que ve el grupo ahora y lo que vio en cada punto del camino de una ficha.
  * Puro salvo esa memoria: lo usa el hilo y, en las pruebas, quien quiera llamarlo directo
  */
 import {
@@ -35,7 +35,7 @@ export interface VisionTarget {
 }
 
 export interface ViewRequest {
-  /** La de lo preparado: escena, su versión y la del estado de la campaña (sus puertas) */
+  /** La de lo preparado: la escena (su versión y cuándo cambió) y las puertas abiertas de la campaña */
   key: string
   /** Solo hace falta si el hilo aún no tiene preparada esa clave (si falta, contesta `MISSING_SCENE`) */
   scene: SceneGeometry | null

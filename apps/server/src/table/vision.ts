@@ -5,6 +5,7 @@
  * campaña y escena: mientras no cambie nada de lo que la decide (la escena, las puertas, las fichas, la niebla a
  * mano), no se recalcula
  */
+import { createHash } from 'node:crypto'
 import { Worker } from 'node:worker_threads'
 import { type Database, type scenesRepo, visionRepo } from '@crisol/db'
 import {
@@ -36,8 +37,14 @@ export interface VisionToken {
 
 type SceneRow = Pick<
   scenesRepo.SceneRow,
-  'id' | 'worldId' | 'version' | 'width' | 'height' | 'grid' | 'darkness' | 'automaticVision'
+  'id' | 'worldId' | 'version' | 'updatedAt' | 'width' | 'height' | 'grid' | 'darkness' | 'automaticVision'
 >
+
+/**
+ * Lo que dice que la escena (sus muros y luces) es la misma: su versión y cuándo cambió. La versión sola no basta:
+ * deshacer la devuelve a la de antes, y otro cambio después la vuelve a subir con otro contenido
+ */
+const sceneStamp = (scene: Pick<SceneRow, 'version' | 'updatedAt'>) => `${scene.version}:${scene.updatedAt.getTime()}`
 
 /** Una ficha que se movió: de dónde a dónde */
 export interface WalkedMove {
@@ -196,7 +203,7 @@ export const visionSize = (scene: Pick<SceneRow, 'width' | 'height'>) => ({
 export function createVision(db: Database, onError: (error: unknown) => void = () => {}): Vision {
   const views = workerClient(onError)
   const crops = workerClient(onError)
-  const geometries = new Map<string, { version: number; geometry: SceneGeometry; walls: visionRepo.WallRow[] }>()
+  const geometries = new Map<string, { stamp: string; geometry: SceneGeometry; walls: visionRepo.WallRow[] }>()
   const explored = new Map<string, Uint8Array | null>()
   const results = new Map<string, { hash: string; result: VisionResult }>()
   const locks = new Map<string, Promise<unknown>>()
@@ -221,11 +228,12 @@ export function createVision(db: Database, onError: (error: unknown) => void = (
   }
 
   async function geometryOf(scene: SceneRow) {
+    const stamp = sceneStamp(scene)
     const found = geometries.get(scene.id)
-    if (found && found.version === scene.version) return found
+    if (found && found.stamp === stamp) return found
     const [walls, lights] = await Promise.all([visionRepo.listWalls(db, scene.id), visionRepo.listLights(db, scene.id)])
     const made = {
-      version: scene.version,
+      stamp,
       walls,
       geometry: {
         ...visionSize(scene),
@@ -264,7 +272,14 @@ export function createVision(db: Database, onError: (error: unknown) => void = (
       )
     const targets = input.tokens.map((t) => ({ id: t.id, x: t.x, y: t.y, radius: t.radius }))
     const manual = fog.map((row) => ({ ...row.operation, id: row.id }))
-    const hash = JSON.stringify([scene.version, state?.version ?? 0, party, targets, fog.map((f) => f.id)])
+    // Lo preparado y la vista dependen de lo que hay, no de versiones (deshacer las repite): la escena y las puertas
+    // abiertas de esta campaña
+    const openDoors = Object.keys(doors)
+      .filter((id) => doors[id])
+      .sort()
+    const doorsDigest = createHash('sha1').update(openDoors.join(',')).digest('base64url')
+    const stamp = sceneStamp(scene)
+    const hash = JSON.stringify([stamp, doorsDigest, party, targets, fog.map((f) => f.id)])
     const paths = input.paths ?? []
     const cached = results.get(key)
     if (cached && cached.hash === hash && paths.length === 0) {
@@ -274,7 +289,7 @@ export function createVision(db: Database, onError: (error: unknown) => void = (
     if (!explored.has(key)) explored.set(key, (await visionRepo.findExplored(db, campaignId, scene.id))?.data ?? null)
     const before = explored.get(key) ?? null
     const request: ViewRequest = {
-      key: `${scene.id}:${scene.version}:${state?.version ?? 0}`,
+      key: `${scene.id}:${stamp}:${doorsDigest}`,
       scene: geometry,
       doors: doorStates as DoorStates,
       party,
