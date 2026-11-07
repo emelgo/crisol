@@ -7,21 +7,25 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
-### Para retomar (2026-11-07, tarde: módulo 6 en marcha, `escenas` a medias)
+### Para retomar (2026-11-07, noche: módulo 6 muy avanzado)
 
-- **Rama `modulo-6/mesa`** (sale de `main`, sin PR aún). Hecho del ciclo: la entrevista (abajo, § «### 6. Mesa»); los
-  estudios (`research/foundry/vision-muros-y-niebla.md`, `research/foundry/escenas-fichas-y-combate.md`,
-  `research/dndbeyond/mapas.md`, `research/uvtt/formato.md`) y lo que se porta de la mesa actual
-  (`docs/mesa-crisol-actual.md`); el mapa `docs/specs/modulo-6.md` (seis capacidades); el ADR-0018 (propuesta: la
-  mesa, una sala por campaña en el servidor); la spec `docs/specs/escenas.md`; el lienzo «Crisol: la mesa» (en marcha,
-  fuentes en `out/lienzo-mesa/`).
-- **`escenas`** (`tasks/plan.md`, `tasks/todo.md`): hechos el núcleo `packages/tabletop` (rejilla, alinear, detectar,
-  cámaras, teselas, UVTT e imagen; 74 pruebas), la base de datos (migración 0055), los contratos, el servidor (acciones,
-  teselas, la sala con su WebSocket `/api/table`; punto de control 1 superado) y la IA. **Falta la web** (la pestaña
-  «Escena», la mesa del máster con PixiJS 8.22 —MIT—, la pantalla de la tele), la e2e, las fugas y la revisión.
-- **Decidido por Enrique**: teselas enteras o recortadas, un ajuste de cada campaña; la IA dibuja mapas en SVG
-  (`dibujar_escena`, guía `guia_mapas`; hecho en el servidor).
-- **`fichas`**: spec y servidor hechos (`tasks/fichas/todo.md`, migración 0056); falta su web.
+- **Rama `modulo-6/mesa`** (sale de `main`, sin PR aún; migraciones hasta la 0057, la 0058 de `vision` en marcha). Del
+  ciclo: entrevista (abajo, § «### 6. Mesa»), estudios, el mapa `docs/specs/modulo-6.md`, el ADR-0018 (propuesta), el
+  lienzo «Crisol: la mesa» (https://claude.ai/artifact/N28X9vvVaqwXGUTKdZzDph, mandado con fotos) y las specs de
+  `escenas`, `fichas`, `vision` y `combate`.
+- **`escenas`**: construida entera (núcleo, servidor, web, e2e `escenas.spec.ts`); falta su revisión (tarea 9 de
+  `tasks/todo.md`). Además, lo que pidió Enrique al ver el lienzo: **la IA dibuja mapas en SVG** (`dibujar_escena` y la
+  guía `guia_mapas`), y el mapa en la pantalla **entero o recortado** es un ajuste de cada campaña (ADR-0018, punto 7).
+- **`fichas`**: servidor hecho (`tasks/fichas/todo.md`); su web, en marcha (un agente).
+- **`vision`**: núcleo hecho en `packages/tabletop` (p95 31–49 ms con 6 fichas, 20 luces y ~2.500 tramos); su
+  servidor, en marcha (un agente). Tareas en `tasks/vision/todo.md`.
+- **`combate`**: servidor hecho (`tasks/combate/todo.md`; la iniciativa se marca en el sistema con `initiative`); falta
+  su web.
+- **Lo siguiente**: las webs de `vision` y `combate`; `herramientas-mesa` y `escenas-foundry` (sin spec aún); la
+  revisión de todo, la prueba de fugas y el PR (la CI una sola vez al final).
+- **Decisiones de los agentes, por confirmar con Enrique**: un encuadre es centro y escala para una pantalla de
+  referencia de 1920 px (16:9); «Subir» un mapa no lo guarda en Archivos; en combate, la ronda 0 es «antes de empezar»,
+  la iniciativa escrita a uno de un grupo vale para todo el grupo.
 
 ### Para retomar (2026-11-07: módulo 5 en `main` y en staging)
 
