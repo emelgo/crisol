@@ -186,6 +186,8 @@ describe('operation', () => {
     notTracked.add('system_images')
     // Lo nuevo de cada jugador: como los avisos, se borra al abrirlo (docs/specs/revelar.md)
     notTracked.add('knowledge_news')
+    // La mesa de cada campaña (qué escena mira y enseña) es estado de la sesión; las teselas salen de la imagen (ADR-0018)
+    notTracked.add('campaign_tables').add('scene_tiles')
     const tables = await conn.sql<
       { name: string }[]
     >`select tablename as name from pg_tables where schemaname = 'public'`
