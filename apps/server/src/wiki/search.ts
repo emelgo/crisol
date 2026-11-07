@@ -7,6 +7,7 @@ import { plainText, sectionsOf, separateHeadings } from '@crisol/editor'
 import type { JSONContent } from '@tiptap/core'
 import type { ActionEnv } from '../actions/context.ts'
 import { documentJson } from './content.ts'
+import { searchScope, type WikiView } from './reader.ts'
 
 export const SEARCH_PAGE_SIZE = 20
 
@@ -56,6 +57,8 @@ export interface SearchInput {
   template?: string | null
   link?: { field: string; pageId: string } | null
   page: number
+  /** Quien busca (ADR-0017): un jugador, solo en lo que ve */
+  view?: WikiView
 }
 
 /**
@@ -80,6 +83,7 @@ async function withBodyHeadings<
 /** Las páginas que coinciden, con su ruta y las secciones donde sale lo buscado */
 export async function searchWorld(env: ActionEnv, input: SearchInput) {
   await indexMissing(env, input.worldId)
+  const player = input.view ? await searchScope(env, input.worldId, input.view) : null
   const words = input.query ? searchRepo.searchTerms(input.query) : []
   const terms = words.length > 0 ? await searchRepo.similarWords(env.db, input.worldId, words) : []
   const options = {
@@ -89,10 +93,11 @@ export async function searchWorld(env: ActionEnv, input: SearchInput) {
     template: input.template ?? null,
     link: input.link ?? null,
     offset: (input.page - 1) * SEARCH_PAGE_SIZE,
-    limit: SEARCH_PAGE_SIZE
+    limit: SEARCH_PAGE_SIZE,
+    player
   }
   const { total, pages } =
-    input.query === undefined && input.template
+    input.query === undefined && (input.template || input.tag)
       ? await searchRepo.templatePages(env.db, options)
       : await searchRepo.searchPages(env.db, { ...options, terms })
   const sections = await withBodyHeadings(
@@ -100,7 +105,8 @@ export async function searchWorld(env: ActionEnv, input: SearchInput) {
     await searchRepo.matchingSections(
       env.db,
       pages.map((page) => page.id),
-      terms
+      terms,
+      player
     )
   )
   const paths = await pagesRepo.pagePaths(
@@ -115,7 +121,7 @@ export async function searchWorld(env: ActionEnv, input: SearchInput) {
       id: page.id,
       title: page.title,
       icon: page.icon,
-      path: paths.get(page.id) ?? [],
+      path: input.view ? input.view.pages(paths.get(page.id) ?? []) : (paths.get(page.id) ?? []),
       sections: sections
         .filter((section) => section.pageId === page.id)
         .map((section) => ({

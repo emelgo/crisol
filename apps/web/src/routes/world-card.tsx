@@ -36,12 +36,18 @@ export interface Look {
   /** De una campaña: su sistema de reglas y lo que elige de él */
   system?: Campaign['system']
   systemChoices?: Campaign['systemChoices']
+  /** De una campaña: si parte de lo que sabe el mundo (ADR-0017) */
+  knowsWorld?: boolean
 }
 
 type LookPatch = Partial<Pick<Look, 'name' | 'description' | 'color' | 'cover'>> & {
   system?: string | null
   systemChoices?: SystemDraft['choices']
+  knowsWorld?: boolean
 }
+
+/** Lo que saben los jugadores de una campaña al empezar: lo del mundo, nada o lo de otra campaña (su id) */
+type KnowledgeStart = 'world' | 'none' | string
 
 /**
  * Lo que cambia entre mundos y campañas: sus textos (worlds.* o campaigns.*), su lista de tarjetas, de qué mundo son las
@@ -57,7 +63,7 @@ export interface LookKind {
   /** El mundo de las imágenes de su portada; sin él (al crear un mundo, aún sin archivos), solo las comunes */
   worldOf: (look?: Look, place?: string) => string | undefined
   /** Crea uno con ese nombre (en ese mundo, si se elige): su id y el mundo al que subir su portada */
-  create: (name: string, place?: string) => Promise<{ id: string; worldId: string }>
+  create: (name: string, place?: string, start?: KnowledgeStart) => Promise<{ id: string; worldId: string }>
   /** Al crear, en qué mundo: se elige entre estos (las campañas desde Mis mundos) */
   places?: readonly { id: string; name: string }[]
   update: (id: string, patch: LookPatch) => Promise<unknown>
@@ -77,6 +83,12 @@ export function useWorldKind(): LookKind {
   }
 }
 
+/** Cómo empieza una campaña nueva, para la API (lo del mundo, por defecto, no se manda) */
+const knowledgeInput = (start?: KnowledgeStart) =>
+  !start || start === 'world'
+    ? {}
+    : { knowledge: start === 'none' ? { start: 'none' as const } : { start: 'campaign' as const, campaignId: start } }
+
 export function useCampaignKind(worldId: string): LookKind {
   const api = useApi()
   return {
@@ -85,7 +97,10 @@ export function useCampaignKind(worldId: string): LookKind {
     list: `campanas-${worldId}`,
     queryKey: ['campaigns', worldId],
     worldOf: () => worldId,
-    create: (name) => api.call('createCampaign', { worldId, name }).then((campaign) => ({ id: campaign.id, worldId })),
+    create: (name, _place, start) =>
+      api
+        .call('createCampaign', { worldId, name, ...knowledgeInput(start) })
+        .then((campaign) => ({ id: campaign.id, worldId })),
     update: (campaignId, patch) => api.call('updateCampaign', { campaignId, ...patch }),
     remove: (campaignId) => api.call('deleteCampaign', { campaignId })
   }
@@ -103,8 +118,8 @@ export function useAllCampaignsKind(places: readonly { id: string; name: string 
     list: 'campanas',
     queryKey: ['campaigns'],
     worldOf: (look, place) => (look as (Look & { worldId?: string }) | undefined)?.worldId ?? place,
-    create: (name, place) =>
-      api.call('createCampaign', { worldId: place ?? '', name }).then((campaign) => ({
+    create: (name, place, start) =>
+      api.call('createCampaign', { worldId: place ?? '', name, ...knowledgeInput(start) }).then((campaign) => ({
         id: campaign.id,
         worldId: campaign.worldId
       })),
@@ -125,7 +140,8 @@ const tint = (color: World['color']): CSSProperties | undefined => {
  * dirección sale de su id: se pide al momento, sin esperar a la lista de archivos
  */
 function useCoverImage(look: Look) {
-  return look.cover && look.role === 'master' ? { url: `/api/files/${look.cover.fileId}` } : undefined
+  // Quien juega también la ve: es la portada de su mundo o de su campaña (ADR-0017)
+  return look.cover ? { url: `/api/files/${look.cover.fileId}` } : undefined
 }
 
 /**
@@ -605,13 +621,18 @@ interface Draft {
   description: string
   color: World['color']
   system: SystemDraft
+  /** De una campaña: al crearla, lo que saben sus jugadores; ya creada, si parte de lo que sabe el mundo */
+  start: KnowledgeStart
+  knowsWorld: boolean
 }
 
 const draftOf = (look?: Look): Draft => ({
   name: look?.name ?? '',
   description: look?.description ?? '',
   color: look?.color ?? null,
-  system: { system: look?.system?.id ?? null, choices: (look?.systemChoices ?? {}) as SystemDraft['choices'] }
+  system: { system: look?.system?.id ?? null, choices: (look?.systemChoices ?? {}) as SystemDraft['choices'] },
+  start: 'world',
+  knowsWorld: look?.knowsWorld ?? true
 })
 
 /**
@@ -683,11 +704,13 @@ function LookDialog({
   const systemPatch = systemChanged
     ? { system: draft.system.system, systemChoices: draft.system.system ? draft.system.choices : undefined }
     : {}
+  const knowsChanged = Boolean(kind.systems) && Boolean(look) && draft.knowsWorld !== (look?.knowsWorld ?? true)
   const changed = look
     ? draft.name.trim() !== look.name ||
       draft.description.trim() !== look.description ||
       draft.color !== look.color ||
-      systemChanged
+      systemChanged ||
+      knowsChanged
     : true
   const createdId = useRef<string | null>(null)
   const save = useMutation({
@@ -698,7 +721,8 @@ function LookDialog({
         const updated = (await kind.update(look.id, {
           ...(name !== look.name ? { name } : {}),
           ...appearance,
-          ...withoutUndefined(systemPatch)
+          ...withoutUndefined(systemPatch),
+          ...(knowsChanged ? { knowsWorld: draft.knowsWorld } : {})
         })) as Partial<Look> | undefined
         // Lo que se elige del sistema vuelve completo (con sus valores iniciales): el borrador, como quedó
         if (systemChanged && updated)
@@ -709,7 +733,7 @@ function LookDialog({
             }
           })
       } else {
-        const created = await kind.create(name, place)
+        const created = await kind.create(name, place, kind.systems ? draft.start : undefined)
         // No sale en la lista hasta que su transición la enseña, saliendo de esta ventana
         holdCard(created.id)
         createdId.current = created.id
@@ -869,6 +893,9 @@ function LookDialog({
             onProblem={setSystemProblem}
           />
         )}
+        {kind.systems && (
+          <CampaignKnowledgeField worldId={filesWorld} look={look} draft={draft} onChange={(patch) => set(patch)} />
+        )}
         <FormError message={save.error ? errorText(save.error) : null} />
         <ChangesBar shown={changed}>
           <BusyButton type="submit" className={form.button} busy={save.isPending}>
@@ -899,6 +926,57 @@ function LookDialog({
         </div>
       )}
     </Modal>
+  )
+}
+
+/**
+ * Lo que saben los jugadores (ADR-0017): al crear la campaña, «Lo que sabe el mundo», «Nada» o «Lo mismo que» otra del
+ * mundo; ya creada, si parte de lo que sabe el mundo
+ */
+function CampaignKnowledgeField({
+  worldId,
+  look,
+  draft,
+  onChange
+}: {
+  worldId: string | undefined
+  look: Look | undefined
+  draft: Draft
+  onChange: (patch: Partial<Draft>) => void
+}) {
+  const { t } = useTranslation()
+  const api = useApi()
+  const id = useId()
+  const campaigns = useQuery({
+    queryKey: ['campaigns', worldId],
+    queryFn: () => api.call('listCampaigns', { worldId: worldId ?? '' }),
+    enabled: Boolean(worldId) && !look
+  })
+  if (look) {
+    return (
+      <label className={form.check}>
+        <input
+          type="checkbox"
+          checked={draft.knowsWorld}
+          onChange={(event) => onChange({ knowsWorld: event.currentTarget.checked })}
+        />
+        {t('campaigns.knowsWorld')}
+      </label>
+    )
+  }
+  return (
+    <div className={form.field}>
+      <label htmlFor={id}>{t('campaigns.start')}</label>
+      <select id={id} value={draft.start} onChange={(event) => onChange({ start: event.currentTarget.value })}>
+        <option value="world">{t('campaigns.startWorld')}</option>
+        <option value="none">{t('campaigns.startNone')}</option>
+        {(campaigns.data?.campaigns ?? []).map((campaign) => (
+          <option key={campaign.id} value={campaign.id}>
+            {t('campaigns.startSame', { name: campaign.name })}
+          </option>
+        ))}
+      </select>
+    </div>
   )
 }
 

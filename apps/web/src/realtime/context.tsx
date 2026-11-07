@@ -7,10 +7,20 @@ import type { RealtimeClient } from './client.ts'
 
 /** Alguien ha entrado en una campaña del máster */
 export type JoinNotice = Extract<RealtimeMessage, { type: 'joined' }> & { id: string }
+/** Lo que se le acaba de revelar a quien juega (docs/specs/revelar.md) */
+export type RevealNotice = Extract<RealtimeMessage, { type: 'revealed' }> & { id: string }
 
-const NoticesContext = createContext<{ notices: JoinNotice[]; dismiss(id: string): void; newVersion: boolean }>({
+const NoticesContext = createContext<{
+  notices: JoinNotice[]
+  dismiss(id: string): void
+  newVersion: boolean
+  revealed: RevealNotice[]
+  dismissRevealed(id: string): void
+}>({
   notices: [],
   dismiss: () => {},
+  revealed: [],
+  dismissRevealed: () => {},
   newVersion: false
 })
 
@@ -35,9 +45,13 @@ function changedBy(message: RealtimeMessage): QueryKey[] {
   switch (message.type) {
     case 'changed':
       if (message.what === 'worlds' || message.what === 'approvals') return [[message.what]]
-      if (message.what === 'campaigns') return [['campaigns', message.worldId]]
+      // Una campaña: su tarjeta y lo que se ve de su compendio (los tipos que oculta a sus jugadores)
+      if (message.what === 'campaigns') return [['campaigns', message.worldId], ['campaign'], ['compendium']]
       // Lo que lleva etiquetas cambia también su catálogo
       if (message.what === 'pages') return [['pages', message.worldId], ['tags']]
+      // Lo que sabe una campaña (ADR-0017): todo lo de las páginas del mundo se vuelve a pedir, ya proyectado
+      if (message.what === 'knowledge')
+        return [['pages', message.worldId], message.campaignId ? ['compendium', message.campaignId] : ['compendium']]
       if (message.what === 'files') return [['files', message.worldId], ['tags']]
       // Los comunes salen en los archivos de todos los mundos
       if (message.what === 'commonFiles') return [['files'], ['commonFiles'], ['tags']]
@@ -64,6 +78,12 @@ function changedBy(message: RealtimeMessage): QueryKey[] {
           ['characters', message.campaignId]
         ]
       return [[message.what, message.campaignId]]
+    // Lo revelado: lo de las páginas del mundo (su árbol, lo nuevo) se vuelve a pedir
+    case 'revealed':
+      return [
+        ['pages', message.worldId],
+        ['compendium', message.campaignId]
+      ]
     case 'joined':
       return [
         ['members', message.campaignId],
@@ -84,6 +104,7 @@ export function RealtimeProvider({ client, children }: { client: RealtimeClient;
   const accounts = useAccounts()
   const { account } = accounts.useAccount()
   const [notices, setNotices] = useState<JoinNotice[]>([])
+  const [revealed, setRevealed] = useState<RevealNotice[]>([])
   const [newVersion, setNewVersion] = useState(false)
   // Otra cuenta, otro canal (y los avisos de la anterior se van con AccountScope)
   const signedIn = account?.email ?? null
@@ -112,6 +133,8 @@ export function RealtimeProvider({ client, children }: { client: RealtimeClient;
       onMessage: (message) => {
         for (const queryKey of queriesFor(message)) void refresh(queryKey)
         if (message.type === 'joined') setNotices((current) => [...current, { ...message, id: crypto.randomUUID() }])
+        if (message.type === 'revealed')
+          setRevealed((current) => [...current, { ...message, id: crypto.randomUUID() }].slice(-3))
         if (message.type === 'rolled') {
           appendRoll(queryClient, message.roll)
           for (const listener of rollListeners.current) listener(message.roll)
@@ -126,7 +149,11 @@ export function RealtimeProvider({ client, children }: { client: RealtimeClient;
   }, [client, queryClient, accounts, signedIn])
 
   const dismiss = useCallback((id: string) => setNotices((current) => current.filter((n) => n.id !== id)), [])
-  const value = useMemo(() => ({ notices, dismiss, newVersion }), [notices, dismiss, newVersion])
+  const dismissRevealed = useCallback((id: string) => setRevealed((current) => current.filter((n) => n.id !== id)), [])
+  const value = useMemo(
+    () => ({ notices, dismiss, newVersion, revealed, dismissRevealed }),
+    [notices, dismiss, newVersion, revealed, dismissRevealed]
+  )
   return (
     <NoticesContext.Provider value={value}>
       <RollsContext.Provider value={rolls}>{children}</RollsContext.Provider>

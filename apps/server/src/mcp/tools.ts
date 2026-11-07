@@ -159,7 +159,19 @@ const linksInput = z.object({
     .uuid()
     .optional()
     .describe('Los enlaces de esta página: quién la enlaza, adónde enlaza y dónde se la nombra'),
-  worldId: z.uuid().optional().describe('Sin pageId: los enlaces sin resolver de la wiki de este mundo')
+  worldId: z.uuid().optional().describe('Sin pageId: los enlaces sin resolver de la wiki de este mundo'),
+  campaignId: z
+    .uuid()
+    .optional()
+    .describe('Un jugador: desde esta campaña, con lo que sabe (si juega una sola del mundo, se deduce)')
+})
+
+/** Ver una página (o el árbol) como la ve un personaje de una campaña, o la campaña sin excepciones (ADR-0017) */
+const viewAsInput = z.object({
+  campaignId: z.uuid(),
+  characterId: z.uuid().optional().describe('El personaje; sin él, la campaña sin excepciones de ningún personaje'),
+  pageId: z.uuid().optional().describe('La página, en Markdown, como la lee; sin ella, el árbol de lo que ve'),
+  worldId: z.uuid().optional().describe('Sin pageId: el mundo cuyo árbol se ve')
 })
 
 export const MCP_TOOLS: Record<string, McpTool> = {
@@ -197,9 +209,29 @@ export const MCP_TOOLS: Record<string, McpTool> = {
     input: linksInput,
     actions: ['getPageLinks', 'listUnresolvedLinks'],
     route: (input) => {
-      const { pageId, worldId } = linksInput.parse(input)
-      if (pageId) return { action: 'getPageLinks', input: { pageId } }
+      const { pageId, worldId, campaignId } = linksInput.parse(input)
+      if (pageId) return { action: 'getPageLinks', input: { pageId, ...(campaignId ? { campaignId } : {}) } }
       return { action: 'listUnresolvedLinks', input: { worldId } }
+    }
+  },
+  // Lo que sabe cada campaña (ADR-0017) y revelar en partida (docs/specs/revelar.md)
+  quien_conoce: { action: 'getPageKnowledge' },
+  marcar_conocimiento: { action: 'setKnowledge' },
+  revelar: { action: 'reveal' },
+  ocultar: { action: 'hide' },
+  dejar_editar: { action: 'setPageEditors' },
+  lo_que_sabe: { action: 'listCampaignKnowledge' },
+  ver_como_jugador: {
+    description:
+      'Lo que ve un jugador: una página en Markdown (sin los secretos que no se le revelaron, ni las notas, ni los campos ocultos) o, sin pageId, el árbol de lo que conoce, como lo ve un personaje de la campaña (o la campaña sin excepciones). Solo quien lleva la wiki',
+    input: viewAsInput,
+    actions: ['readPage', 'listPageTree'],
+    route: (input) => {
+      const { campaignId, characterId, pageId, worldId } = viewAsInput.parse(input)
+      const as = { campaignId, asCharacterId: characterId ?? 'campaign' }
+      if (pageId) return { action: 'readPage', input: { pageId, ...as } }
+      if (!worldId) throw new InvalidRequestError('BAD_INPUT', 'pageId o worldId')
+      return { action: 'listPageTree', input: { worldId, levels: 6, ...as } }
     }
   },
   listar_archivos: { action: 'listFiles' },
@@ -373,6 +405,9 @@ export const MCP_TOOLS: Record<string, McpTool> = {
   ver_en_juego: { action: 'listInPlay' },
   ver_criatura: { action: 'getInPlay' },
   poner_en_juego: { action: 'putInPlay' },
+  // Lo que ven los jugadores de ellas (docs/specs/compendio-jugadores.md): la IA de un jugador, esta
+  ver_a_la_vista: { action: 'listVisibleInPlay' },
+  ocultar_criatura: { action: 'setCreatureHidden' },
   partida_criatura: { action: 'playCreature' },
   tirar_por_criatura: { action: 'rollForCreature' },
   aplicar_tirada: { action: 'applyRoll' },
@@ -384,8 +419,18 @@ export const MCP_TOOLS: Record<string, McpTool> = {
 const INSTRUCTIONS =
   'Crisol: mundos de rol y su mesa virtual. Habla siempre en español. Una organización tiene mundos, y cada mundo, ' +
   'campañas con su máster y sus jugadores; a una campaña se entra con su enlace de invitación. Cada mundo tiene su ' +
-  'wiki: páginas con subpáginas, solo del máster, en Markdown de Obsidian (lee una con leer_pagina antes de cambiarla, ' +
+  'wiki: páginas con subpáginas, en Markdown de Obsidian (lee una con leer_pagina antes de cambiarla, ' +
   'y lo que solo debe saber el máster va en > [!secreto]). Antes de crear, busca con buscar_paginas para no repetir. ' +
+  'Los jugadores la leen desde su campaña con lo que sabe: lo marca el máster con marcar_conocimiento (una página y ' +
+  'sus subpáginas, un secreto por su documento, una pestaña, un pin o una entrada del compendio del mundo; para toda la ' +
+  'campaña, unos personajes o todo el mundo; pide aprobación: lo que se revela no se puede «des-saber»); ' +
+  'quien_conoce dice qué ve cada campaña de una página y por qué, y ver_como_jugador la enseña como la lee un ' +
+  'personaje. En partida, revelar da a conocer algo con aviso a sus jugadores (con alsoPage, también su página), ' +
+  'ocultar lo quita (revelar solo suma: no le quita nada a nadie) y lo_que_sabe lista lo revelado. dejar_editar deja ' +
+  'a los jugadores escribir el texto de una página (el diario del grupo), que no puede llevar secretos. ' +
+  'Un campo o un bloque del panel con hidden no les llega nunca. Si quien te conecta es un jugador, ' +
+  'solo ves lo que sabe su campaña (las herramientas de leer, con campaignId si juega más de una del mundo) y solo ' +
+  'escribes, con editar_pagina, el texto de una página que su campaña puede editar. ' +
   'Para pasar una wiki entera: crear_paginas de 50 en 50, en cualquier orden (los enlaces se resuelven solos), y al ' +
   'final enlaces_pagina con worldId para ver lo que quede sin resolver; los archivos los sube el máster y se enlazan ' +
   'por su nombre (listar_archivos). Las etiquetas son de toda la cuenta: míralas con listar_etiquetas y usa las que ' +
@@ -418,7 +463,9 @@ const INSTRUCTIONS =
   'con sus PG medios o tirados. ver_en_juego las lista con su vida; ver_criatura da su hoja; tirar_por_criatura tira ' +
   'por ella (oculta, salvo que pidan que la vean todos); partida_criatura le hace daño, la cura, gasta usos o descansa; ' +
   'aplicar_tirada aplica el daño de una tirada del registro a varias criaturas o personajes (nada, mitad, entero o ' +
-  'doble, con sus resistencias); quitar_de_juego quita unas o todas las copias. ' +
+  'doble, con sus resistencias); quitar_de_juego quita unas o todas las copias. Salen a la vista de los jugadores ' +
+  '(hidden en poner_en_juego las oculta; ocultar_criatura lo cambia) y ellos solo ven su nombre, su imagen y cómo ' +
+  'están en palabras: ver_a_la_vista (lo que usa la IA de un jugador). ' +
   'Los personajes de una campaña (listar_personajes) se hacen por pasos: crear_personaje y luego elegir_personaje (lo de ' +
   'cada paso por su clave del contenido, y lo pendiente por el id de cada decisión, varias cosas de una vez); ' +
   'ver_personaje dice lo que falta con sus opciones válidas y el motivo de las que no. Terminarlo (confirm created) y ' +

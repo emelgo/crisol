@@ -30,11 +30,13 @@ import { useWikiPanel } from './panel.tsx'
 import { PanelBlocks } from './panel-blocks.tsx'
 import { PageProperties, type PropertyAdder } from './properties.tsx'
 import { QuickSwitcher } from './quick-switcher.tsx'
+import { PageRevealButton } from './reveal.tsx'
 import { SheetMenu, SheetPaper } from './sheet/controls.tsx'
 import { TableTab } from './table/table-tab.tsx'
 import { PageTabs, usePageTabs } from './tabs/page-tabs.tsx'
 import { PageTree } from './tree.tsx'
 import { Versions } from './versions.tsx'
+import { WhoKnowsButton } from './who-knows.tsx'
 import styles from './wiki.module.css'
 
 const homeRoute = getRouteApi('/mundos/$worldId/wiki')
@@ -758,6 +760,8 @@ export function EntryView({
             home={home}
             actions={
               <>
+                <WhoKnowsButton page={page} />
+                <PageRevealButton page={page} />
                 <BookmarkButton page={page} />
                 <LockButton page={page} />
                 <MoreActions page={page} />

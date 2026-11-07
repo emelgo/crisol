@@ -11,9 +11,12 @@ test('en Mis mundos, el máster crea campañas eligiendo su mundo, renombra una 
 
   await createCampaign(page, 'La Marca')
   await createCampaign(page, 'Las Islas', 'Costa')
+  // Cada tarjeta por su nombre exacto: la fila de «Nueva campaña» lleva su cuadro, que al cerrarse aún lista
+  // «Lo mismo que «Las Islas»» en su desplegable
   const cards = page.getByRole('list', { name: 'Campañas' }).getByRole('listitem')
-  await expect(cards.filter({ hasText: 'La Marca' })).toContainText('Eana')
-  await expect(cards.filter({ hasText: 'Las Islas' })).toContainText('Costa')
+  const card = (name: string) => cards.filter({ has: page.getByText(name, { exact: true }) })
+  await expect(card('La Marca')).toContainText('Eana')
+  await expect(card('Las Islas')).toContainText('Costa')
 
   await rename(page, 'campaña', 'La Marca', 'La Marca del Este')
   const list = page.getByRole('list', { name: 'Campañas' })

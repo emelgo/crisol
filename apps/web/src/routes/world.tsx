@@ -74,6 +74,7 @@ export function WorldPage() {
               { target: '[data-tour="barra-wiki"]', text: t('tour.world.wiki'), placement: 'right' },
               { target: '[data-tour="buscador"]', text: t('tour.world.search'), placement: 'right' },
               { target: '[data-tour="panel-bloques"]', text: t('tour.world.panel'), placement: 'left' },
+              { target: '[data-tour="quien-la-conoce"]', text: t('tour.world.whoKnows'), placement: 'bottom' },
               { target: '[data-tour="barra-archivos-mundo"]', text: t('tour.world.files'), placement: 'right' },
               { target: '[data-tour="barra-dados"]', text: t('tour.world.dice'), placement: 'right' },
               { target: '[data-tour="barra-historial"]', text: t('tour.world.history'), placement: 'right' },

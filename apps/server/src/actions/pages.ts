@@ -16,7 +16,7 @@ import {
   sortPageChildren,
   updatePage
 } from '@crisol/contracts'
-import { documentsRepo, filesRepo, pagesRepo, worldsRepo } from '@crisol/db'
+import { documentsRepo, filesRepo, knowledgeRepo, pagesRepo, worldsRepo } from '@crisol/db'
 import {
   compareKeys,
   moveBlocker,
@@ -29,7 +29,10 @@ import {
 import * as Y from 'yjs'
 import { pagesChanged } from '../realtime/events.ts'
 import { resolvePending, worldNames } from '../wiki/links.ts'
+import { playerEdits } from '../wiki/player-pages.ts'
+import { pageViewFor, viewedPage, viewTree } from '../wiki/projection.ts'
 import { propertiesOf } from '../wiki/properties.ts'
+import { authorizedView } from '../wiki/reader.ts'
 import { checkTables, pageTables } from '../wiki/tables.ts'
 import { authorizedPage, authorizedWiki, type WikiTarget } from './access.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
@@ -238,6 +241,8 @@ export const pageActions = [
 
   implement(createPageDocument, async (ctx, { pageId, kind, copyOf }) => {
     const { wiki } = await authorizedPage(ctx, 'page.write', pageId)
+    // Una página que escriben jugadores no lleva secretos ni notas ocultas (docs/specs/pagina-de-jugadores.md)
+    if (await knowledgeRepo.isEdited(ctx.db, pageId)) throw new InvalidRequestError('PLAYER_PAGE')
     let state = Y.encodeStateAsUpdate(new Y.Doc())
     if (copyOf) {
       // La copia sale de un secreto que quien pega puede leer: de esta wiki o de otra que también vea
@@ -257,25 +262,70 @@ export const pageActions = [
     return { id }
   }),
 
-  implement(getPage, async (ctx, { pageId }) => {
-    await authorizedPage(ctx, 'page.read', pageId)
-    return pageView(ctx, pageId)
+  implement(getPage, async (ctx, { pageId, ...as }) => {
+    const { view } = await viewedPage(ctx, pageId, as)
+    const full = await pageView(ctx, pageId)
+    const shown = pageViewFor(view, full)
+    // Quien lleva la wiki: si la escriben jugadores (su editor, sin secretos); un jugador: si él puede escribir en ella
+    // desde la campaña que lee (y no está cerrada con el candado). Lo proyectado sigue «cerrado»: el resto no es suyo
+    if (view.full) return { ...shown, editedByPlayers: await knowledgeRepo.isEdited(ctx.db, pageId) }
+    const editable =
+      as.asCharacterId === undefined &&
+      !full.locked &&
+      (await playerEdits(ctx, ctx.actor.userId, pageId, view.campaignId ?? undefined))
+    return { ...shown, editable }
   }),
 
-  implement(getPageTables, async (ctx, { pageId }) => {
-    const { page, wiki } = await authorizedPage(ctx, 'page.read', pageId)
-    return pageTables(ctx, wiki, page)
+  implement(getPageTables, async (ctx, { pageId, ...as }) => {
+    const { page, wiki, view } = await viewedPage(ctx, pageId, as)
+    return pageTables(ctx, wiki, page, view)
   }),
 
-  implement(listPageChildren, async (ctx, { worldId, parentId }) => {
-    const wiki = await authorizedWiki(ctx, 'page.read', worldId)
+  implement(listPageChildren, async (ctx, { worldId, parentId, ...as }) => {
+    const { wiki, view } = await authorizedView(ctx, worldId, as)
+    if (!view.full) {
+      // Un jugador: las que cuelgan de ella en su árbol (una madre que no ve, no existe)
+      if (parentId && !view.seesPage(parentId)) throw new NotFoundError('page')
+      const tree = await viewTree(ctx, wiki, view)
+      return { pages: tree.filter((row) => row.parentId === parentId).map((row) => ({ ...row, worldId })) }
+    }
     await parentIn(ctx, wiki, parentId)
     const children = await pagesRepo.listChildren(ctx.db, worldId, parentId)
     return { pages: children.map(({ position: _, ...summary }) => summary) }
   }),
 
-  implement(listPageTree, async (ctx, { worldId, parentId, levels }) => {
-    const wiki = await authorizedWiki(ctx, 'page.read', worldId)
+  implement(listPageTree, async (ctx, { worldId, parentId, levels, ...as }) => {
+    const { wiki, view } = await authorizedView(ctx, worldId, as)
+    if (!view.full) {
+      if (parentId && !view.seesPage(parentId)) throw new NotFoundError('page')
+      const tree = await viewTree(ctx, wiki, view)
+      const byParent = Map.groupBy(tree, (row) => row.parentId)
+      const pages: {
+        id: string
+        parentId: string | null
+        title: string
+        icon: string | null
+        template: string | null
+        level: number
+        hasChildren: boolean
+      }[] = []
+      const visit = (from: string | null, level: number) => {
+        for (const row of byParent.get(from) ?? []) {
+          pages.push({
+            id: row.id,
+            parentId: row.parentId,
+            title: row.title,
+            icon: row.icon,
+            template: row.template,
+            level,
+            hasChildren: row.hasChildren
+          })
+          if (level < levels) visit(row.id, level + 1)
+        }
+      }
+      visit(parentId, 1)
+      return { pages }
+    }
     await parentIn(ctx, wiki, parentId)
     const rows = await pagesRepo.listBranch(ctx.db, worldId, parentId, levels)
     // En orden de lectura: cada página seguida de sus subpáginas
@@ -303,13 +353,16 @@ export const pageActions = [
     return { pages }
   }),
 
-  implement(listRecentPages, async (ctx, { worldId, limit }) => {
-    await authorizedWiki(ctx, 'page.read', worldId)
-    const rows = await pagesRepo.recentPages(ctx.db, worldId, limit)
+  implement(listRecentPages, async (ctx, { worldId, limit, ...as }) => {
+    const { view } = await authorizedView(ctx, worldId, as)
+    const visible = view.visiblePageIds()
+    const rows = await pagesRepo.recentPages(ctx.db, worldId, limit, visible ? { within: visible } : undefined)
     const paths = await pagesRepo.pagePaths(
       ctx.db,
       rows.map((row) => row.id)
     )
+    // La ruta, por las que ve
+    for (const [id, path] of paths) paths.set(id, view.pages(path))
     return {
       pages: rows.map((row) => ({
         id: row.id,

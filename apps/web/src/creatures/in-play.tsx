@@ -1,11 +1,12 @@
 /**
- * «En juego» (docs/specs/criaturas.md): las criaturas en juego de la campaña, para el máster. A la izquierda, la lista
- * (las copias juntas por su criatura, las únicas aparte) con su vida y cómo están; en el centro, la hoja de la elegida
- * (la misma hoja en partida que un personaje); a la derecha, el registro de tiradas, desde el que se aplica el daño
+ * «En juego» (docs/specs/criaturas.md): las criaturas en juego de la campaña. El máster: a la izquierda, la lista (las
+ * copias juntas por su criatura, las únicas aparte) con su vida, cómo están y si las ven los jugadores; en el centro,
+ * la hoja de la elegida (la misma hoja en partida que un personaje); a la derecha, el registro de tiradas, desde el que
+ * se aplica el daño. Un jugador, las que están a la vista (docs/specs/compendio-jugadores.md)
  */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getRouteApi, Link, Navigate } from '@tanstack/react-router'
-import { Dices, Plus, Star, Trash2 } from 'lucide-react'
+import { Dices, Eye, EyeOff, Plus, Star, Trash2 } from 'lucide-react'
 import { useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
@@ -22,6 +23,7 @@ import { SystemImage } from '../components/system-image.tsx'
 import { Tour } from '../components/tour.tsx'
 import { RollLog } from '../dice/log.tsx'
 import styles from './in-play.module.css'
+import { VisibleInPlay } from './in-play-visible.tsx'
 import { creatureKey, useCreatureSave } from './save.ts'
 
 const route = getRouteApi('/mundos/$worldId/campanas/$campaignId/en-juego')
@@ -30,7 +32,26 @@ type Creature = ActionOutput<'listInPlay'>['creatures'][number]
 /** Su nombre sin su número: el de su grupo («Goblin 3» → «Goblin») */
 const baseName = (c: Creature) => (c.number === null ? c.name : c.name.replace(new RegExp(`\\s*${c.number}$`), ''))
 
+type CampaignData = ActionOutput<'getCampaign'>['campaign']
+
 export function InPlayScreen() {
+  const { campaignId } = route.useParams()
+  const api = useApi()
+  const { account, pending } = useAccounts().useAccount()
+  const campaign = useQuery({
+    queryKey: ['campaign', campaignId],
+    queryFn: () => api.call('getCampaign', { campaignId }),
+    enabled: Boolean(account)
+  })
+  if (pending) return null
+  if (!account) return <Navigate to="/entrar" replace />
+  if (!campaign.data)
+    return failed(campaign) ? <LoadError error={campaign.error} onRetry={() => campaign.refetch()} /> : <Loading />
+  const data = campaign.data.campaign
+  return data.role === 'master' ? <MasterInPlay campaign={data} /> : <VisibleInPlay campaign={data} />
+}
+
+function MasterInPlay({ campaign }: { campaign: CampaignData }) {
   const { t } = useTranslation()
   const { worldId, campaignId } = route.useParams()
   const { ver } = route.useSearch()
@@ -38,26 +59,17 @@ export function InPlayScreen() {
   const api = useApi()
   const client = useQueryClient()
   const errorText = useErrorText()
-  const { account, pending } = useAccounts().useAccount()
   const list = useQuery({
     queryKey: ['creatures', campaignId],
-    queryFn: () => api.call('listInPlay', { campaignId }),
-    enabled: Boolean(account)
-  })
-  const campaign = useQuery({
-    queryKey: ['campaign', campaignId],
-    queryFn: () => api.call('getCampaign', { campaignId }),
-    enabled: Boolean(account)
+    queryFn: () => api.call('listInPlay', { campaignId })
   })
   const removing = useMutation({
     mutationFn: (input: { copiesOf?: string; creatureIds?: string[] }) =>
       api.call('removeFromPlay', { campaignId, ...input }),
     onSuccess: () => client.invalidateQueries({ queryKey: ['creatures', campaignId] })
   })
-  if (pending) return null
-  if (!account) return <Navigate to="/entrar" replace />
-  if (!list.data || !campaign.data)
-    return failed(list) ? <LoadError error={list.error} onRetry={() => list.refetch()} /> : <Loading />
+  const hiding = useHiding(campaignId)
+  if (!list.data) return failed(list) ? <LoadError error={list.error} onRetry={() => list.refetch()} /> : <Loading />
   const creatures = list.data.creatures
   const open = (id: string) => void navigate({ search: { ver: id } })
   const shown = creatures.find((c) => c.id === ver) ?? creatures[0]
@@ -65,9 +77,16 @@ export function InPlayScreen() {
   const groups = new Map<string, Creature[]>()
   for (const c of creatures.filter((each) => !each.unique)) groups.set(c.key, [...(groups.get(c.key) ?? []), c])
   const uniques = creatures.filter((c) => c.unique)
-  const systemId = campaign.data.campaign.system?.id ?? null
+  const systemId = campaign.system?.id ?? null
   const row = (c: Creature) => (
-    <CreatureRow key={c.id} creature={c} systemId={systemId} current={c.id === shown?.id} onOpen={() => open(c.id)} />
+    <CreatureRow
+      key={c.id}
+      creature={c}
+      systemId={systemId}
+      current={c.id === shown?.id}
+      onOpen={() => open(c.id)}
+      onHidden={(hidden) => hiding.mutate({ creatureId: c.id, hidden })}
+    />
   )
   return (
     <div className={styles.page}>
@@ -89,7 +108,9 @@ export function InPlayScreen() {
             </BusyButton>
           )}
         </div>
-        <FormError message={removing.error ? errorText(removing.error) : null} />
+        <FormError
+          message={removing.error ? errorText(removing.error) : hiding.error ? errorText(hiding.error) : null}
+        />
         {creatures.length === 0 && <p className={styles.none}>{t('inPlay.empty')}</p>}
         {[...groups.entries()].map(([key, copies]) => (
           <section key={key} className={styles.group} aria-label={baseName(copies[0] as Creature)}>
@@ -135,7 +156,7 @@ export function InPlayScreen() {
         </div>
       )}
       <aside className={styles.log} aria-label={t('inPlay.log')} data-tour="en-juego-registro">
-        <RollLog campaign={campaign.data.campaign} />
+        <RollLog campaign={campaign} />
       </aside>
       <Tour
         id="en-juego"
@@ -148,23 +169,41 @@ export function InPlayScreen() {
   )
 }
 
-/** Una en la lista: su nombre, su vida en barra y cómo está */
+/** Ponerla a la vista de los jugadores u ocultarla */
+function useHiding(campaignId: string) {
+  const api = useApi()
+  const client = useQueryClient()
+  return useMutation({
+    mutationFn: ({ creatureId, hidden }: { creatureId: string; hidden: boolean }) =>
+      api.call('setCreatureHidden', { creatureId, hidden }),
+    onSuccess: (_, { creatureId }) =>
+      Promise.all([
+        client.invalidateQueries({ queryKey: ['creatures', campaignId] }),
+        client.invalidateQueries({ queryKey: creatureKey(creatureId) })
+      ])
+  })
+}
+
+/** Una en la lista: su nombre, su vida en barra, cómo está y, al lado, si la ven los jugadores */
 function CreatureRow({
   creature,
   systemId,
   current,
-  onOpen
+  onOpen,
+  onHidden
 }: {
   creature: Creature
   systemId: string | null
   current: boolean
   onOpen: () => void
+  onHidden: (hidden: boolean) => void
 }) {
   const { t } = useTranslation()
   const life = creature.life
   const share = life && life.max > 0 ? Math.max(0, Math.min(1, life.value / life.max)) : 0
+  const hidden = Boolean(creature.hidden)
   return (
-    <li>
+    <li className={styles.item}>
       <button
         type="button"
         className={styles.row}
@@ -177,6 +216,7 @@ function CreatureRow({
             <SystemImage systemId={systemId} path={creature.img} className={styles.avatar} />
             {creature.unique && <Star size={14} aria-label={t('inPlay.unique')} />}
             {creature.name}
+            {hidden && <span className={styles.hiddenTag}>{t('inPlay.hidden')}</span>}
           </span>
           {life && (
             <span className={styles.life}>
@@ -200,6 +240,17 @@ function CreatureRow({
             <span className={`${styles.chip} ${styles.condition}`}>{t(`inPlay.condition.${creature.condition}`)}</span>
           )}
         </span>
+      </button>
+      <button
+        type="button"
+        className={styles.eye}
+        data-hidden={hidden ? '' : undefined}
+        aria-pressed={hidden}
+        aria-label={t('inPlay.hideFor', { name: creature.name })}
+        title={hidden ? t('inPlay.hiddenNote') : t('inPlay.visibleNote')}
+        onClick={() => onHidden(!hidden)}
+      >
+        {hidden ? <EyeOff size={16} aria-hidden="true" /> : <Eye size={16} aria-hidden="true" />}
       </button>
     </li>
   )
@@ -225,6 +276,7 @@ function CreatureSheet({
   const maxId = useId()
   const read = useQuery({ queryKey: creatureKey(creatureId), queryFn: () => api.call('getInPlay', { creatureId }) })
   const { save, error } = useCreatureSave(creatureId, campaignId)
+  const hiding = useHiding(campaignId)
   const [max, setMax] = useState('')
   const change = useMutation({
     mutationFn: (input: { rollHp?: true; max?: { value: number | null } }) => {
@@ -251,7 +303,8 @@ function CreatureSheet({
       </div>
     )
   const { creature, state } = read.data
-  const problem = error ?? change.error ?? remove.error
+  const problem = error ?? change.error ?? remove.error ?? hiding.error
+  const hidden = Boolean(creature.hidden)
   return (
     <article className={styles.reading} aria-labelledby={titleId}>
       <header className={styles.head}>
@@ -266,7 +319,28 @@ function CreatureSheet({
               {t('inPlay.unique')}
             </span>
           )}
+          {hidden && (
+            <span className={styles.note}>
+              <EyeOff size={12} aria-hidden="true" />
+              {t('inPlay.hiddenNote')}
+            </span>
+          )}
         </div>
+        <fieldset className={styles.seen}>
+          <legend className={styles.hiddenText}>{t('inPlay.players')}</legend>
+          {[false, true].map((each) => (
+            <label key={String(each)} className={styles.seenOption}>
+              <input
+                type="radio"
+                name={`${titleId}-vista`}
+                checked={hidden === each}
+                disabled={hiding.isPending}
+                onChange={() => hiding.mutate({ creatureId, hidden: each })}
+              />
+              <span>{each ? t('inPlay.hidden') : t('inPlay.visible')}</span>
+            </label>
+          ))}
+        </fieldset>
         <div className={styles.actions}>
           {creature.life && (
             <>

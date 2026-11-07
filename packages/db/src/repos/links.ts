@@ -125,7 +125,13 @@ export function incoming(db: Database, targetPageId: string) {
 /** Los enlaces que salen de una página (de su cuerpo y sus secretos) */
 export function outgoing(db: Database, sourcePageId: string) {
   return db
-    .select({ targetPageId: pageLinks.targetPageId, targetTitle: pageLinks.targetTitle, anchor: pageLinks.anchor })
+    .select({
+      targetPageId: pageLinks.targetPageId,
+      targetTitle: pageLinks.targetTitle,
+      anchor: pageLinks.anchor,
+      // De qué documento sale (un jugador solo ve los de lo que ve)
+      sourceDocumentId: pageLinks.sourceDocumentId
+    })
     .from(pageLinks)
     .where(and(eq(pageLinks.sourcePageId, sourcePageId), liveSource(pageLinks.sourceDocumentId)))
 }

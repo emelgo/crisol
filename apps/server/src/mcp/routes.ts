@@ -18,10 +18,10 @@ export interface McpDeps extends ActionEnv {
 }
 
 const forbidden = () =>
-  new Response(
-    JSON.stringify({ error: 'forbidden', error_description: 'De momento solo el propietario puede conectar Claude' }),
-    { status: 403, headers: { 'content-type': 'application/json' } }
-  )
+  new Response(JSON.stringify({ error: 'forbidden', error_description: 'Esta cuenta no puede conectar una IA' }), {
+    status: 403,
+    headers: { 'content-type': 'application/json' }
+  })
 
 /**
  * POST /mcp: Streamable HTTP. Atiende el protocolo 2026-07-28 y, sin sesión, el de 2025 (claude.ai puede usar
@@ -37,9 +37,9 @@ export function registerMcpRoutes(app: FastifyInstance, { auth, jwksUrl, approva
     async (request, claims) => {
       const userId = claims.sub
       if (!userId) return forbidden()
-      // Módulo 0: solo el propietario de una organización usa el conector. Se mira en cada petición
+      // El propietario de una organización o quien juega en una campaña (ADR-0017). Se mira en cada petición
       const actor = actorFrom(userId, await loadMemberships(db, userId))
-      if (ownedOrganizations(actor).length === 0) return forbidden()
+      if (ownedOrganizations(actor).length === 0 && actor.campaigns.size === 0) return forbidden()
       const scope = typeof claims.scope === 'string' ? claims.scope.split(' ') : []
       return handler.fetch(request, {
         authInfo: { token: '', clientId: String(claims.azp ?? ''), scopes: scope, extra: { userId } }

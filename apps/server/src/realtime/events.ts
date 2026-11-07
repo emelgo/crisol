@@ -18,9 +18,12 @@ export const campaignsChanged = (scope: CampaignScope): RealtimeEvent => ({
   message: { type: 'changed', what: 'campaigns', worldId: scope.worldId }
 })
 
-/** La wiki de un mundo: su árbol o la fila de una página. A quien la ve (el máster y el propietario) */
+/**
+ * La wiki de un mundo: su árbol o la fila de una página. A quien la lee (ADR-0017: también los jugadores, que vuelven a
+ * pedir lo suyo, ya proyectado; el aviso no dice qué cambió)
+ */
 export const pagesChanged = (wiki: { worldId: string; organizationId: string }): RealtimeEvent => ({
-  to: { capability: 'page.read', target: wiki },
+  to: { capability: 'page.view', target: wiki },
   message: { type: 'changed', what: 'pages', worldId: wiki.worldId }
 })
 
@@ -52,9 +55,9 @@ export const systemsChanged = (organizationId: string): RealtimeEvent => ({
   message: { type: 'changed', what: 'systems', organizationId }
 })
 
-/** Las criaturas en juego de una campaña: al máster (hasta el módulo 5, los jugadores no las ven) */
+/** Las criaturas en juego de una campaña: a todos los de ella (los jugadores ven las que están a la vista, sin números) */
 export const creaturesChanged = (scope: CampaignScope): RealtimeEvent => ({
-  to: { capability: 'creatures.manage', target: scope },
+  to: { capability: 'campaign.read', target: scope },
   message: { type: 'changed', what: 'creatures', campaignId: scope.campaignId }
 })
 
@@ -75,12 +78,25 @@ export const worldContentChanged = (wiki: { worldId: string; organizationId: str
   message: { type: 'changed', what: 'worldContent', worldId: wiki.worldId }
 })
 
+/** Lo que sabe una campaña (o todo el mundo) cambió: a quien lee la wiki del mundo, sin decir qué (ADR-0017) */
+export const knowledgeChanged = (
+  wiki: { worldId: string; organizationId: string },
+  campaignId: string | null
+): RealtimeEvent => ({
+  // Lo de una campaña, a quien está en ella (y al máster del mundo); lo del mundo, a todos los que leen sus páginas
+  to: campaignId
+    ? { capability: 'campaign.read', target: { campaignId, worldId: wiki.worldId } }
+    : { capability: 'page.view', target: wiki },
+  message: { type: 'changed', what: 'knowledge', worldId: wiki.worldId, campaignId }
+})
+
 /** El texto de una página se guardó: a quien la ve (lo que la enseña en otra se vuelve a pedir) */
 export const pageContentChanged = (
   wiki: { worldId: string; organizationId: string },
   pageId: string
 ): RealtimeEvent => ({
-  to: { capability: 'page.read', target: wiki },
+  // A un jugador, solo si ve esa página
+  to: { capability: 'page.view', target: wiki, page: pageId },
   message: { type: 'changed', what: 'pageContent', worldId: wiki.worldId, pageId }
 })
 
@@ -167,6 +183,14 @@ export function undoEvents(
         break
       case 'campaign_party':
         events.push(partyChanged(campaignScope))
+        break
+      case 'knowledge':
+        events.push(
+          knowledgeChanged(
+            { worldId, organizationId: context.organizationId },
+            (row.campaign_id as string | null) ?? null
+          )
+        )
         break
       case 'world_content':
         events.push(worldContentChanged({ worldId, organizationId: context.organizationId }))

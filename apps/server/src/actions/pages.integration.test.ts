@@ -299,7 +299,7 @@ describe('la wiki: páginas y árbol', () => {
     expect((await call('createPage', { worldId, title: 'Personajes' })).statusCode).toBe(200)
   })
 
-  it('un jugador no ve la wiki del mundo en el que juega: para él no existe', async () => {
+  it('un jugador no ve nada de la wiki mientras su campaña no conozca nada (ADR-0017), y no escribe en ella', async () => {
     const page = await create('Lugares')
     const campaign = (await call('createCampaign', { worldId, name: 'La Marca' })).json()
     const player = await signUpTestUser(auth, { name: 'Jugadora', email: 'jugadora@crisol.test' })
@@ -308,10 +308,13 @@ describe('la wiki: páginas y árbol', () => {
       .insert(schema.campaignMembers)
       .values({ campaignId: campaign.id, userId: player.userId, role: 'player' })
 
+    // Las listas, vacías
+    for (const name of ['listPageChildren', 'listPageTree', 'listRecentPages'] as const) {
+      const response = await call(name, { worldId }, player.cookie)
+      expect(response.statusCode, name).toBe(200)
+      expect(response.json().pages, name).toEqual([])
+    }
     for (const [name, payload] of [
-      ['listPageChildren', { worldId }],
-      ['listPageTree', { worldId }],
-      ['listRecentPages', { worldId }],
       ['getPage', { pageId: page.id }],
       ['createPage', { worldId, title: 'Mía' }],
       ['updatePage', { pageId: page.id, title: 'Mía' }],

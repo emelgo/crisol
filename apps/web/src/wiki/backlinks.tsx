@@ -4,7 +4,6 @@
  */
 import type { Page } from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Link } from '@tanstack/react-router'
 import { FileText, Link2 } from 'lucide-react'
 import { useId } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -13,6 +12,7 @@ import { useErrorText } from '../api/errors.ts'
 import { useAnnounce } from '../components/announcer.tsx'
 import { BusyButton } from '../components/busy-button.tsx'
 import styles from './backlinks.module.css'
+import { PageLink, readAsInput, readAsKey, useReadAs } from './read-as.tsx'
 
 /** La consulta de los enlaces de una página (cuelga de ['pages', mundo]: se pone al día con los avisos de páginas) */
 export const pageLinksKey = (worldId: string, pageId: string) => ['pages', worldId, 'links', pageId]
@@ -24,9 +24,10 @@ export function Backlinks({ page }: { page: Page }) {
   const announce = useAnnounce()
   const errorText = useErrorText()
   const id = useId()
+  const readAs = useReadAs()
   const links = useQuery({
-    queryKey: pageLinksKey(page.worldId, page.id),
-    queryFn: () => api.call('getPageLinks', { pageId: page.id })
+    queryKey: [...pageLinksKey(page.worldId, page.id), ...readAsKey(readAs)],
+    queryFn: () => api.call('getPageLinks', { pageId: page.id, ...readAsInput(readAs) })
   })
   const link = useMutation({
     mutationFn: (source: { pageId: string; title: string }) =>
@@ -58,10 +59,10 @@ export function Backlinks({ page }: { page: Page }) {
         <ul aria-labelledby={`${id}-title`} className={styles.list}>
           {data.incoming.map((item) => (
             <li key={item.pageId} className={styles.item} title={item.fragment ?? undefined}>
-              <Link to="/mundos/$worldId/wiki/$pageId" params={{ worldId: page.worldId, pageId: item.pageId }}>
+              <PageLink worldId={page.worldId} pageId={item.pageId}>
                 {pageIcon(null)}
                 <span className={styles.name}>{item.title}</span>
-              </Link>
+              </PageLink>
               {item.inSecret && <span className={styles.secret}>{t('backlinks.inSecret')}</span>}
             </li>
           ))}
@@ -75,18 +76,21 @@ export function Backlinks({ page }: { page: Page }) {
           <ul aria-labelledby={`${id}-mentions`} className={styles.list}>
             {data.mentions.map((item) => (
               <li key={item.pageId} className={styles.item} title={item.fragment}>
-                <Link to="/mundos/$worldId/wiki/$pageId" params={{ worldId: page.worldId, pageId: item.pageId }}>
+                <PageLink worldId={page.worldId} pageId={item.pageId}>
                   {pageIcon(null)}
                   <span className={styles.name}>{item.title}</span>
-                </Link>
-                <BusyButton
-                  className={styles.linkButton}
-                  busy={link.isPending && link.variables?.pageId === item.pageId}
-                  aria-label={t('backlinks.linkIn', { title: item.title })}
-                  onClick={() => link.mutate({ pageId: item.pageId, title: item.title })}
-                >
-                  {t('backlinks.link')}
-                </BusyButton>
+                </PageLink>
+                {/* Enlazar es escribir: no leyendo como jugador */}
+                {!readAs && (
+                  <BusyButton
+                    className={styles.linkButton}
+                    busy={link.isPending && link.variables?.pageId === item.pageId}
+                    aria-label={t('backlinks.linkIn', { title: item.title })}
+                    onClick={() => link.mutate({ pageId: item.pageId, title: item.title })}
+                  >
+                    {t('backlinks.link')}
+                  </BusyButton>
+                )}
               </li>
             ))}
           </ul>

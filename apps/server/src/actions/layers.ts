@@ -8,11 +8,16 @@ import { type ContentEntry, type ContentItem, type Layered, withWorld } from '@c
 import { contentOf } from './content-of.ts'
 import type { ActionContext } from './context.ts'
 
-/** El compendio de un mundo para un sistema */
+/** El compendio de un mundo para un sistema; `only`: un jugador, solo lo que se le reveló (por su clave) */
 export interface WorldLayer {
   worldId: string
   systemId: string
+  only?: ReadonlySet<string>
 }
+
+/** Lo del mundo que se ve de la capa */
+const seen = <T extends { key: string }>(world: WorldLayer, rows: readonly T[]) =>
+  world.only ? rows.filter((row) => world.only?.has(row.key)) : [...rows]
 
 /** Una entrada del mundo como contenido: sin fuente y marcada */
 export const worldItemOf = (row: worldContentRepo.WorldContentRow): Layered<ContentItem> => ({
@@ -28,7 +33,7 @@ export async function contentIndex(
 ): Promise<Layered<ContentEntry>[]> {
   const system = await systemsRepo.contentIndex(ctx.db, systemId)
   if (!world) return system
-  return withWorld(system, await worldContentRepo.contentIndex(ctx.db, world.worldId, systemId))
+  return withWorld(system, seen(world, await worldContentRepo.contentIndex(ctx.db, world.worldId, systemId)))
 }
 
 /** Unas entradas por su clave: si están en las dos, la del mundo */
@@ -39,7 +44,7 @@ export async function contentByKeys(
   keys: readonly string[]
 ): Promise<Layered<ContentItem>[]> {
   const own = world
-    ? (await worldContentRepo.contentByKeys(ctx.db, world.worldId, systemId, keys)).map(worldItemOf)
+    ? seen(world, await worldContentRepo.contentByKeys(ctx.db, world.worldId, systemId, keys)).map(worldItemOf)
     : []
   const found = new Set(own.map((item) => item.key))
   const rest = keys.filter((k) => !found.has(k))
@@ -58,7 +63,7 @@ export async function contentOfType(
   if (!world) return system
   return withWorld(
     system,
-    (await worldContentRepo.listContentOfType(ctx.db, world.worldId, systemId, type)).map(worldItemOf)
+    seen(world, await worldContentRepo.listContentOfType(ctx.db, world.worldId, systemId, type)).map(worldItemOf)
   )
 }
 
@@ -70,5 +75,8 @@ export async function allContent(
 ): Promise<Layered<ContentItem>[]> {
   const system = (await systemsRepo.listContent(ctx.db, systemId)).map(contentOf)
   if (!world) return system
-  return withWorld(system, (await worldContentRepo.listContent(ctx.db, world.worldId, systemId)).map(worldItemOf))
+  return withWorld(
+    system,
+    seen(world, await worldContentRepo.listContent(ctx.db, world.worldId, systemId)).map(worldItemOf)
+  )
 }

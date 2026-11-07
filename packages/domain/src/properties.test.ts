@@ -179,6 +179,13 @@ describe('dar a un valor la forma de un campo', () => {
       { name: 'Reloj', type: 'text', value: 'mucho' }
     ])
   })
+
+  it('lo oculto sigue oculto al reescribirlo (el YAML no lo dice)', () => {
+    const lealtad = { name: 'Lealtad real', type: 'text', value: 'Varn', hidden: true } satisfies PageProperty
+    expect(keepShapes([lealtad], [{ name: 'lealtad real', type: 'text', value: 'Nadie' }])).toEqual([
+      { name: 'lealtad real', type: 'text', value: 'Nadie', hidden: true }
+    ])
+  })
 })
 
 describe('el panel de etiquetas', () => {

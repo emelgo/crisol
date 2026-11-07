@@ -1,5 +1,6 @@
 export * from './ai-modes.ts'
 export * from './files.ts'
+export * from './knowledge.ts'
 export * from './links.ts'
 export * from './order.ts'
 export * from './paginate.ts'

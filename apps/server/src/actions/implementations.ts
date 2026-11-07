@@ -8,6 +8,7 @@ import { fileActions } from './files.ts'
 import { foundryActions } from './foundry.ts'
 import { historyActions } from './history.ts'
 import { invitationActions } from './invitations.ts'
+import { knowledgeActions } from './knowledge.ts'
 import { libraryActions } from './library.ts'
 import { linkActions } from './links.ts'
 import { mapActions } from './maps.ts'
@@ -19,6 +20,7 @@ import { partyActions } from './party.ts'
 import { preferenceActions } from './preferences.ts'
 import { previewActions } from './preview.ts'
 import type { Implementation } from './registry.ts'
+import { revealActions } from './reveal.ts'
 import { searchActions } from './search.ts'
 import { systemActions } from './systems.ts'
 import { tableActions } from './tables.ts'
@@ -56,6 +58,8 @@ export const IMPLEMENTATIONS: Implementation[] = [
   ...characterActions,
   ...creatureActions,
   ...partyActions,
+  ...knowledgeActions,
+  ...revealActions,
   ...libraryActions,
   ...tableActions,
   ...mapActions,

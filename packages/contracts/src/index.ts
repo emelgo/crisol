@@ -23,10 +23,12 @@ import {
   applyRoll,
   getInPlay,
   listInPlay,
+  listVisibleInPlay,
   playCreature,
   putInPlay,
   removeFromPlay,
-  rollForCreature
+  rollForCreature,
+  setCreatureHidden
 } from './creatures.ts'
 import { listRolls, rollDice, tryDice } from './dice.ts'
 import {
@@ -44,6 +46,18 @@ import {
 import { importFoundry, inspectFoundry, putSystemImages } from './foundry.ts'
 import { listHistory, undoOperation } from './history.ts'
 import { getInvitation, regenerateInvitation, setInvitationsOpen } from './invitations.ts'
+import {
+  getPageKnowledge,
+  getSecretsKnowledge,
+  hide,
+  listCampaignKnowledge,
+  listKnownPages,
+  listNews,
+  reveal,
+  seeNews,
+  setKnowledge,
+  setPageEditors
+} from './knowledge.ts'
 import { getBookPages, listLibrary, readBookAgain, searchLibrary } from './library.ts'
 import {
   createMapPin,
@@ -148,6 +162,7 @@ export * from './files.ts'
 export * from './foundry.ts'
 export * from './history.ts'
 export * from './invitations.ts'
+export * from './knowledge.ts'
 export * from './library.ts'
 export * from './maps.ts'
 export * from './members.ts'
@@ -156,6 +171,7 @@ export * from './organizations.ts'
 export * from './pages.ts'
 export * from './panel.ts'
 export * from './party.ts'
+export * from './read-as.ts'
 export type * from './realtime.ts'
 export * from './search.ts'
 export * from './systems.ts'
@@ -227,6 +243,18 @@ export const ACTIONS = [
   getPageVersion,
   restorePageVersion,
   getPageTables,
+  getPageKnowledge,
+  setKnowledge,
+  setPageEditors,
+  listKnownPages,
+  listVisibleInPlay,
+  setCreatureHidden,
+  reveal,
+  hide,
+  listCampaignKnowledge,
+  getSecretsKnowledge,
+  listNews,
+  seeNews,
   listFiles,
   listCommonFiles,
   renameFile,
@@ -388,6 +416,18 @@ export type Actions = {
   getPageVersion: typeof getPageVersion
   restorePageVersion: typeof restorePageVersion
   getPageTables: typeof getPageTables
+  getPageKnowledge: typeof getPageKnowledge
+  setKnowledge: typeof setKnowledge
+  setPageEditors: typeof setPageEditors
+  listKnownPages: typeof listKnownPages
+  listVisibleInPlay: typeof listVisibleInPlay
+  setCreatureHidden: typeof setCreatureHidden
+  reveal: typeof reveal
+  hide: typeof hide
+  listCampaignKnowledge: typeof listCampaignKnowledge
+  getSecretsKnowledge: typeof getSecretsKnowledge
+  listNews: typeof listNews
+  seeNews: typeof seeNews
   listFiles: typeof listFiles
   listCommonFiles: typeof listCommonFiles
   renameFile: typeof renameFile

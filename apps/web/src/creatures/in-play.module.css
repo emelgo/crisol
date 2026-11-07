@@ -318,3 +318,96 @@
   display: block;
   clear: both;
 }
+
+/* Si la ven los jugadores: el ojo al lado de cada una, y en su hoja, «A la vista / Oculta» */
+.item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.eye {
+  display: grid;
+  place-items: center;
+  inline-size: var(--target);
+  block-size: var(--target);
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+.eye:hover {
+  background: var(--color-raised);
+  color: var(--color-text);
+}
+
+.eye[data-hidden] {
+  color: var(--color-warning);
+}
+
+.hiddenTag {
+  padding: 0 var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  color: var(--color-muted);
+  font-size: 0.6875rem;
+  font-weight: 600;
+}
+
+.note {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+}
+
+.seen {
+  display: inline-flex;
+  float: inline-end;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.seenOption {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-block-size: var(--target);
+  padding: 0 var(--space-3);
+  color: var(--color-muted);
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.seenOption input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.seenOption:has(input:checked) {
+  background: var(--color-raised);
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.seenOption:has(input:focus-visible) {
+  outline: 2px solid var(--color-focus);
+  outline-offset: -2px;
+}
+
+.hiddenText {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

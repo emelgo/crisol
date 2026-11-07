@@ -70,13 +70,23 @@ export const historyActions = [
       else ctx.realtime.publish(event)
     }
     await tellTrashChanges(ctx, result.applied)
+    // Lo que cambia quién escribe en una página de jugadores (el permiso, lo que se sabe, quién juega, sus personajes,
+    // su texto): sus conexiones se vuelven a mirar
+    const touches = ['page_editors', 'knowledge', 'campaign_members', 'campaigns', 'characters', 'page_bodies']
+    if (target.worldId && result.applied.some((change) => touches.includes(change.tableName)))
+      ctx.collab?.closeWorldPlayers(target.worldId)
     // El texto vuelve a su versión, hacia delante (un editor abierto no lo deshace al reconectar)
     for (const change of result.applied) {
       if (change.tableName !== 'page_bodies') continue
       const row = (change.after ?? change.before) as { page_id?: string; world_id?: string } | null
       if (!row?.page_id || !row.world_id || !(await pagesRepo.findPage(ctx.db, row.page_id))) continue
       const versionId = change.after ? ((change.after.version_id as string | null) ?? null) : null
-      await applyVersion(ctx, { pageId: row.page_id, worldId: row.world_id, userId: ctx.actor.userId }, versionId)
+      try {
+        await applyVersion(ctx, { pageId: row.page_id, worldId: row.world_id, userId: ctx.actor.userId }, versionId)
+      } catch (error) {
+        // Una versión con secretos en una página de jugadores: el texto se queda como está
+        if (!(error instanceof InvalidRequestError && error.code === 'PLAYER_PAGE')) throw error
+      }
     }
     return { status: 'undone' as const, entry: entry(done) }
   })

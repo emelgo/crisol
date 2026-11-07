@@ -1,0 +1,175 @@
+# Spec: conocimiento (módulo 5)
+
+Estado: **construido** (2026-11-06; en la rama `modulo-5/visibilidad`, aún sin PR). Primera capacidad del módulo 5 (`docs/specs/modulo-5.md`). Entrevista:
+`docs/modulos.md` § «### 5. Visibilidad por campaña». ADR-0017. Estudios: `research/foundry/visibilidad-y-revelar.md`,
+`research/{legendkeeper,worldanvil,kanka}/visibilidad.md`, y de antes `research/foundry/journal.md` y
+`research/foundry/usuarios-y-permisos.md`.
+
+## Objetivo
+
+Que **los jugadores lean la wiki del mundo**, pero solo lo que sabe su campaña. Hasta ahora la wiki es solo del
+máster. Lo que se sabe va **por campaña**, con excepciones **por personaje** («esto solo lo sabe la pícara»), y cada
+campaña empieza sabiendo lo que el mundo marca como conocido, nada, o lo mismo que otra campaña del mundo.
+
+El servidor filtra **todo** lo que lee un jugador: nada se le manda para esconderlo en su navegador (al revés que
+Foundry, `research/foundry/journal.md`). Quitarle algo surte efecto al momento.
+
+Para quién: el máster, que marca lo que se sabe y comprueba lo que ve cada uno; el jugador, que lee desde su campaña;
+y la IA de los dos.
+
+## Cómo se decide si un jugador ve una página
+
+- **Dos capas**: la del **mundo** (lo que sabe todo el mundo; solo «todos» o «nadie») y la de **cada campaña** (todos
+  sus jugadores, unos personajes o nadie).
+- Cada página puede llevar, en cada capa, una marca: **la conocen** (con su público) o **no la conocen**. Sin marca,
+  hereda.
+- Para un jugador de una campaña: se sube desde la página hacia arriba y **manda la primera marca que se encuentre**;
+  en una misma página, la de la campaña manda sobre la del mundo. Si la campaña empezó «de cero», no cuenta lo que el
+  mundo conoce, pero sí lo que oculta. Sin ninguna marca hasta arriba: **solo el máster** (una página nueva es del
+  máster).
+- **Herencia viva**: marcar una página marca a sus subpáginas mientras no tengan la suya. Mover una página cambia lo
+  que hereda. La interfaz dice siempre de dónde viene («Por «Aldoria»», «Lo sabe el mundo»).
+- **Por personaje**: «la conocen» con unos personajes la ve la cuenta de sus dueños. Un jugador ve lo de todos sus
+  personajes de la campaña. Si un personaje cambia de dueño, lo que sabía pasa con él.
+- **El máster** (el del mundo y el propietario de la cuenta) lo ve todo, siempre.
+
+## Requisitos
+
+### Marcar (el máster)
+
+- En la página, **«Quién la conoce»**: lo que ve ahora cada campaña del mundo y por qué, y los cambios:
+  - **en el mundo**: «Lo sabe todo el mundo» / «No lo sabe nadie» / «Como su madre»;
+  - **en una campaña**: «Lo sabe toda la campaña» / «Lo saben…» (elegir personajes) / «No lo sabe» / «Como diga el
+    mundo o su madre».
+- Desde el árbol, lo mismo con el botón derecho en una página, y la página lleva una marca discreta si la ve alguna
+  campaña.
+- Cada cambio es una **operación del historial** (`setKnowledge`), con su frase («Dio a conocer «Aldoria» a «La
+  compañía del alba»») y se deshace.
+- **Campos y bloques ocultos**: un campo de las propiedades o un bloque del panel se marca **«Oculto»** (con un ojo
+  tachado; en lo del mundo no se dice «máster», `docs/diseno.md`) y no le llega a ningún jugador, aunque vea la página.
+  No se revela uno a uno: para eso está el secreto (`revelar`).
+
+### Cómo empieza una campaña
+
+- Al crearla: **«Al empezar, los jugadores saben…»**: «Lo que sabe el mundo» (por defecto), «Nada» o «Lo mismo que
+  «Otra campaña»». Lo último copia las marcas de esa campaña una vez; después cada una va por su lado.
+- Se cambia en los ajustes de la campaña («Parte de lo que sabe el mundo», sí o no). Las campañas que ya existen parten
+  del mundo.
+
+### El jugador lee la wiki
+
+- En la barra de su campaña, **«Mundo»**: la wiki con lo que sabe. Abre la portada del mundo si la ve; si no, la
+  primera página que ve; si no ve nada, «Aún no sabéis nada de este mundo».
+- **Lo que ve**, todo filtrado en el servidor:
+  - **el árbol**, solo con lo que ve; una subpágina que ve bajo una madre que no ve cuelga de la primera antecesora
+    que ve (o arriba), sin delatar las ocultas. La miga de pan, igual;
+  - **la página**: título, icono, portada, propiedades y panel (sin lo oculto), etiquetas, pestañas (las que ve,
+    `mapas-jugadores`), y el cuerpo **sin los secretos que no ve y sin las notas ocultas**, en lectura. Se recarga sola
+    cuando cambia;
+  - **los enlaces** a lo que ve llevan a la página; a lo que no ve, como texto (decisión 2);
+  - **la vista previa** al pasar el ratón y **los incrustados**, filtrados igual;
+  - **los enlaces entrantes**, solo desde lo que ve;
+  - **las tablas que se llenan solas** del panel («Miembros»), solo con las páginas que ve;
+  - **la búsqueda** por palabras, solo en lo que ve; los secretos, solo los que ve (por significado, queda);
+  - **los archivos** (imágenes, PDF): solo los que están en algo que ve (la portada o el panel de una página que ve, o
+    incrustados en un documento que ve).
+- **No ve**: el historial, las versiones, la papelera, las notas ocultas, las plantillas, la lista de enlaces rotos ni
+  nada que se edite. La hoja (vista para imprimir) de una página que ve, sí, filtrada.
+- **En tiempo real**: si el máster le da a conocer una página, aparece en su árbol; si se la quita, desaparece y, si la
+  tenía abierta, pasa a «Esta página ya no está a tu alcance».
+
+### «Ver como jugador»
+
+- En la wiki, dentro de una campaña, el máster elige **un personaje** (o «la campaña», un jugador sin excepciones) y
+  ve la wiki **tal como la ve**, calculada en el servidor con sus permisos, en lectura. Una franja dice «Viendo como
+  Lía» y «Volver».
+
+### La IA
+
+- **Del máster**: `marcar_conocimiento` (página, mundo o campaña, la marca y su público; tipo «jugadores»: en
+  copiloto espera aprobación), `quien_conoce` (lo que ve cada campaña de una página y por qué) y `ver_como_jugador`
+  (una página o el árbol como lo ve un personaje). `crear_campana` admite cómo empieza.
+- **Del jugador**: entra con su cuenta por el mismo OAuth; las herramientas de leer la wiki (`buscar_paginas`,
+  `leer_pagina`, `ver_arbol`, `enlaces_pagina`, `paginas_recientes`…) le dan solo lo que ve, con `campaignId` (si solo
+  juega una campaña de ese mundo, se deduce).
+
+## Decisiones (propuestas de los estudios, por confirmar al ver las pantallas)
+
+1. **El jugador lee por la API, no por Yjs** (ADR-0017): abrir el cuerpo en Yjs le enseñaría dónde hay secretos,
+   aunque no su texto. Le llega el cuerpo ya filtrado y un aviso en tiempo real para recargarlo.
+2. **Un enlace a lo oculto, como un enlace sin resolver**: texto, sin enlace, sin id ni vista previa, con lo que se
+   escribió (su texto propio o el título que tenía al enlazarla), **nunca con el título de ahora**: si el máster renombra
+   una página oculta, no se nota (`research/worldanvil/visibilidad.md`, `research/kanka/visibilidad.md`). Igual que un
+   enlace a una página que no existe, para que no delate que hay algo (`research/foundry/visibilidad-y-revelar.md`:
+   Foundry pinta el nombre real de todo). Se descartó «desconocido» (como Kanka): el texto escrito ya está en la
+   página que ve y en lo que se busca; si no debe leerse, va en un secreto. Un incrustado de lo oculto no sale.
+3. **Subpáginas más abiertas que su madre**, permitidas, colgando de la primera antecesora visible.
+4. **Lo mismo que otra campaña**, como copia al crearla (no un enlace vivo entre campañas).
+5. **Por personaje, no por cuenta**: si el personaje pasa a otro jugador, el conocimiento pasa con él.
+6. **Una subpágina nueva bajo una página que alguna campaña conoce nace oculta** (con «No lo sabe nadie» en el mundo)
+   y su cabecera lo dice, con «Revelar». Con herencia viva nacería visible, y crear «El plan secreto del rey» bajo
+   «Aldoria» lo enseñaría al momento (`research/legendkeeper/visibilidad.md`: lo nuevo visible por defecto es una
+   fuente de fugas). Bajo una que nadie conoce, sin marca: sigue heredando.
+7. **Al dar a conocer una página con subpáginas**, el cuadro dice cuántas heredan («y 12 subpáginas») y deja verlas.
+8. **Solo la campaña desde la que lee**: un jugador con personajes en dos campañas de un mundo ve lo de la campaña en
+   la que está, no la suma.
+9. **Del diseño** (lienzo «Crisol: lo que ven los jugadores», tablero QuienLaConoce): «Quién la conoce» y «Revelar»
+   son dos iconos de la cabecera de la página; marcar desde «Quién la conoce» es preparar y no avisa a nadie (solo
+   «Revelar» avisa, `revelar`). Una fila por capa con lo que ve y por qué («Por «Reinos del sur»», «Lo sabe el mundo»,
+   «Empezó de cero», «Marcada aquí»). En el árbol del máster, un ojo gris en lo que conoce alguna campaña. «Ver
+   como…», al pie de «Quién la conoce». En la barra de la campaña, el nombre del mundo («Valdren») lleva a sus
+   páginas.
+
+## Construido (2026-11-06) y lo que queda
+
+- **Motor** `packages/domain/src/knowledge.ts` (capas, herencia, personajes, secretos, pestañas, pines, entradas,
+  `explainPage`); **tabla** `knowledge` y `campaigns.knows_world` (0051); **servidor**: `page.view` (las vías que
+  proyectan) y `page.read` (lo demás, solo del máster), `apps/server/src/wiki/{reader,projection}.ts`, `readAs` en
+  los contratos de leer (`campaignId`, `asCharacterId`), `setKnowledge`, `getPageKnowledge`, `listKnownPages`.
+- **Vías de lectura filtradas**: el árbol, los hijos, las recientes, la página, el cuerpo (`getPageContent`, también de
+  una pestaña de texto con `tabId`), `readPage`, la vista previa y los incrustados, los enlaces y «Mencionado en», las
+  tablas del panel, la búsqueda por palabras (con el índice; sin campos ocultos al buscar ni al puntuar) y los trozos
+  por significado, las pestañas y los pines, los archivos (`/api/files/:id`: lo que está en algo que ve, o la portada
+  de su mundo o de su campaña) y el tiempo real (`pagesChanged` sin qué; `pageContentChanged` solo si ve la página;
+  `knowledge` al cambiar lo que sabe). `/api/collab` sigue negándole todo.
+- **Web**: las páginas del mundo en la barra de la campaña (`apps/web/src/campaign/world-pages.tsx`, en lectura, con
+  `ReadAs` y `PageLink`), «Quién la conoce» (`apps/web/src/wiki/who-knows.tsx`), el ojo en el árbol, «Oculto» en
+  campos y bloques, «Ver como…» con su franja, cómo empieza una campaña y su ajuste, los tutoriales.
+- **IA**: `quien_conoce`, `marcar_conocimiento` (tipo «jugadores»: espera aprobación en copiloto), `ver_como_jugador`;
+  el conector, también para quien juega en una campaña, y su IA solo lee.
+- **Pruebas**: el motor en tabla, `apps/server/src/actions/knowledge.integration.test.ts` (también rendimiento: p95
+  199 ms con 5.000 páginas), el tiempo real, el MCP, la e2e `conocimiento.spec.ts` y tres pruebas de fugas.
+- **La revisión** (2026-11-06) encontró cinco fugas y varios fallos, arreglados con sus pruebas
+  (`apps/server/src/actions/knowledge-leaks.integration.test.ts`): lo de dentro de un secreto revelado, los enlaces
+  que salen de notas y secretos, los campos ocultos en los filtros (tablas, por campo, por etiqueta, alias), el
+  resolutor de nombres de la búsqueda, lo nuevo que nace oculto en una campaña de cero, «lo mismo que otra», las
+  marcas del mundo en pestañas y pines, `getMap` como jugador, los ciclos de dependencias y el rendimiento del tiempo
+  real y de los archivos. Una guarda (`apps/server/src/actions/read-as.test.ts`) exige que toda acción con `readAs`
+  pase por la proyección.
+- **Queda**: la búsqueda por significado del jugador (la biblioteca y «También en las páginas», hoy solo del
+  máster); la hoja para imprimir y el PDF de una página para el jugador; los mapas para el jugador en la web
+  (`mapas-jugadores`); exportar como jugador (fuera).
+
+## Pruebas
+
+- **El motor** (`packages/domain`), en tabla: capas × herencia × público × «de cero» × mover × personaje de otro dueño.
+- **El servidor**, por cada vía de lectura (página, árbol, hijos, recientes, búsqueda por palabras y por significado,
+  enlaces, entrantes, vista previa, incrustados, tablas del panel, archivos, hoja, exportar, tiempo real, colaboración
+  y MCP): un jugador de la campaña A ve lo suyo y uno de la B no; lo oculto no sale; quitar surte efecto al
+  momento.
+- **Una prueba por vía de fuga** (`research/legendkeeper/visibilidad.md`: las que corrigieron en siete años):
+  «Mencionado en», el bloque de subpáginas y las tablas del panel, la vista previa de un enlace, exportar, las versiones
+  y las recientes.
+- **La prueba de fugas** (e2e) se amplía: dos jugadores de dos campañas leen la wiki y ninguno recibe ni un byte de lo
+  que no ve (secretos sin revelar, notas, campos ocultos, títulos de páginas ocultas), ni por la API, ni por
+  `/api/collab`, ni por `/api/realtime`, ni por el MCP.
+- **Rendimiento**: con 5.000 páginas, el árbol y la búsqueda de un jugador, p95 < 300 ms.
+- E2E: el máster marca «Aldoria» para la campaña A; el jugador de A la lee con sus subpáginas y el de B no; «Ver como
+  jugador».
+
+## Fuera
+
+- Revelar secretos, los avisos y «Lo que sabe el grupo» (`revelar`); los mapas (`mapas-jugadores`); el compendio y las
+  criaturas (`compendio-jugadores`); que los jugadores editen (`pagina-de-jugadores`).
+- Exportar la wiki como jugador.
+- Una web pública sin cuenta; co-máster y espectador.

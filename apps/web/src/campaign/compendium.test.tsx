@@ -357,4 +357,19 @@ describe('el compendio de una campaña', () => {
     const editor = await screen.findByRole('dialog', { name: 'Editar «Confusión (copia)»' })
     expect(within(editor).getByLabelText('Nombre')).toBeDefined()
   })
+  it('el máster oculta un tipo a los jugadores en los ajustes del compendio', async () => {
+    const user = userEvent.setup()
+    const { api } = renderCompendium({ ...CAMPAIGN, role: 'master' })
+    await user.click(await screen.findByRole('button', { name: 'Ajustes del compendio' }))
+    const settings = await screen.findByRole('dialog', { name: 'Ajustes del compendio' })
+    expect(within(settings).getByText(/Quinta · Viejo y Nuevo/)).toBeDefined()
+    const spells = within(settings).getByRole('switch', { name: 'Conjuros' })
+    expect(spells.getAttribute('aria-checked')).toBe('true')
+    await user.click(spells)
+    await waitFor(() =>
+      expect(within(settings).getByRole('switch', { name: 'Conjuros' }).getAttribute('aria-checked')).toBe('false')
+    )
+    const campaign = (await api.client.call('getCampaign', { campaignId: CAMPAIGN.id })).campaign
+    expect(campaign.hiddenTypes).toEqual(['conjuro'])
+  })
 })

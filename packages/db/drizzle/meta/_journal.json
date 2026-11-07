@@ -358,6 +358,34 @@
       "when": 1793985447913,
       "tag": "0050_trozos_clase_y_fallos",
       "breakpoints": true
+    },
+    {
+      "idx": 51,
+      "version": "7",
+      "when": 1793994120380,
+      "tag": "0051_conocimiento",
+      "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "7",
+      "when": 1794001048228,
+      "tag": "0052_lo_nuevo",
+      "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1794004893335,
+      "tag": "0053_compendio_jugadores",
+      "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1794008069670,
+      "tag": "0054_pagina_de_jugadores",
+      "breakpoints": true
     }
   ]
 }

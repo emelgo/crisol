@@ -4,6 +4,7 @@
  */
 import { z } from 'zod'
 import { defineAction } from './action.ts'
+import { readAs } from './read-as.ts'
 import { worldColor } from './worlds.ts'
 
 export const PAGE_TAB_KINDS = ['map', 'text', 'table'] as const
@@ -34,7 +35,7 @@ export const listPageTabs = defineAction({
   name: 'listPageTabs',
   kind: 'read',
   description: 'Las pestañas de una página además de su texto (mapas…), en orden',
-  input: z.object({ pageId: z.uuid() }),
+  input: z.object({ pageId: z.uuid(), ...readAs }),
   output: z.object({ tabs: z.array(pageTabView) })
 })
 
@@ -135,7 +136,7 @@ export const getMap = defineAction({
   name: 'getMap',
   kind: 'read',
   description: 'El mapa de una pestaña: su imagen, su escala y sus pines (coordenadas de 0 a 1 sobre la imagen)',
-  input: z.object({ tabId: z.uuid() }),
+  input: z.object({ tabId: z.uuid(), ...readAs }),
   output: mapView
 })
 

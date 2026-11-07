@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { defineAction } from './action.ts'
+import { readAs } from './read-as.ts'
 
 export const searchWiki = defineAction({
   name: 'searchWiki',
@@ -9,13 +10,16 @@ export const searchWiki = defineAction({
   input: z
     .object({
       worldId: z.uuid(),
+      ...readAs,
       query: z
         .string()
         .trim()
         .min(1)
         .max(200)
         .optional()
-        .describe('Lo que se busca; sin ello (con template), todas las páginas de la plantilla, por título'),
+        .describe(
+          'Lo que se busca; sin ello (con template o tag), todas las páginas de la plantilla o la etiqueta, por título'
+        ),
       tag: z
         .string()
         .trim()
@@ -40,7 +44,7 @@ export const searchWiki = defineAction({
         .describe('Con template: solo las páginas cuyo campo apunta a esa página («PNJ cuyo Lugar es Ciudad Libre»)'),
       page: z.number().int().min(1).max(500).default(1).describe('De 20 en 20')
     })
-    .refine((input) => input.query || input.template, { message: 'Hace falta query o template' })
+    .refine((input) => input.query || input.template || input.tag, { message: 'Hace falta query, template o tag' })
     .refine((input) => !input.field || input.template, { message: 'field necesita template' }),
   output: z.object({
     total: z.number().int(),

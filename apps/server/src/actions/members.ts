@@ -26,6 +26,8 @@ export const memberActions = [
     const scope = { campaignId, worldId: campaign.worldId }
     ctx.realtime.revoke(userId, scope)
     ctx.realtime.publish(membersChanged(scope))
+    // Si escribía en una página de jugadores, deja de hacerlo
+    ctx.collab?.closeWorldPlayers(campaign.worldId)
     return { members: await membersRepo.listCampaignMembers(ctx.db, campaignId) }
   }),
 
@@ -40,6 +42,7 @@ export const memberActions = [
     const scope = { campaignId, worldId: campaign.worldId }
     ctx.realtime.revoke(ctx.actor.userId, scope)
     ctx.realtime.publish(membersChanged(scope))
+    ctx.collab?.closeWorldPlayers(campaign.worldId)
     return {}
   })
 ]

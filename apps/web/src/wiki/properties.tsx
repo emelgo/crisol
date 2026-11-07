@@ -1,6 +1,7 @@
 import type { Page, PageProperty } from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
+import { EyeOff } from 'lucide-react'
 import { type KeyboardEvent, type MutableRefObject, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
@@ -10,6 +11,7 @@ import { useTemplates } from '../templates/picker.tsx'
 import fieldStyles from './field-controls.module.css'
 import { ChoiceSelect, ClockField } from './field-controls.tsx'
 import styles from './properties.module.css'
+import { PageLink, readAsInput, readAsKey, useReadAs } from './read-as.tsx'
 import tagStyles from './tags.module.css'
 import { TagsField, tagDot, useTagColor } from './tags.tsx'
 
@@ -26,9 +28,11 @@ const RESERVED = [{ name: 'etiquetas', type: 'list' }] as const
 /** Los títulos de las páginas de la wiki por su id (para las propiedades que enlazan páginas) */
 function usePageTitles(worldId: string) {
   const api = useApi()
+  // Leyendo como jugador, los de lo que ve (ADR-0017)
+  const readAs = useReadAs()
   const tree = useQuery({
-    queryKey: ['pages', worldId, 'tree', 6],
-    queryFn: () => api.call('listPageTree', { worldId, levels: 6 })
+    queryKey: ['pages', worldId, 'tree', 32, ...readAsKey(readAs)],
+    queryFn: () => api.call('listPageTree', { worldId, levels: 32, ...readAsInput(readAs) })
   })
   return tree.data?.pages ?? []
 }
@@ -61,9 +65,9 @@ function LinkedPage({
     return <s className={fieldStyles.trashed}>{t('fields.trashed', { title: trashed })}</s>
   }
   return (
-    <Link to="/mundos/$worldId/wiki/$pageId" params={{ worldId, pageId }}>
+    <PageLink worldId={worldId} pageId={pageId}>
       {title ?? t('properties.unknownPage')}
-    </Link>
+    </PageLink>
   )
 }
 
@@ -84,6 +88,8 @@ interface Draft {
   pending?: string
   /** Como estaba guardada: su campo de plantilla y su forma no se pierden al cambiar otra cosa */
   original?: PageProperty
+  /** «Oculto»: no les llega a los jugadores aunque vean la página (ADR-0017) */
+  hidden?: boolean
 }
 
 const toDraft = (property: PageProperty): Draft => ({
@@ -101,7 +107,8 @@ const toDraft = (property: PageProperty): Draft => ({
   options: property.type === 'choice' ? property.options : [],
   count: property.type === 'clock' ? property.value : 0,
   segments: property.type === 'clock' ? property.segments : CLOCK_SEGMENTS,
-  original: property
+  original: property,
+  hidden: property.hidden === true
 })
 
 /** Al cambiar de tipo a mano: lo que ya había escrito pasa al tipo nuevo como se pueda */
@@ -116,6 +123,11 @@ const retyped = (row: Draft, type: PropertyType): Partial<Draft> => {
 
 /** La propiedad que sale de un borrador, o null si su valor no se puede leer (un número que no lo es) */
 function fromDraft(draft: Draft): PageProperty | null {
+  const value = propertyOfDraft(draft)
+  return value && draft.hidden ? { ...value, hidden: true } : value
+}
+
+function propertyOfDraft(draft: Draft): PageProperty | null {
   const name = draft.name.trim()
   const original = draft.original?.type === draft.type ? draft.original : undefined
   // Lo de la plantilla (su campo, a qué apunta un enlace) se queda al cambiar el valor
@@ -224,6 +236,17 @@ function PropertyValue({ property, worldId }: { property: PageProperty; worldId:
 /** Añadir desde fuera (desde «Añadir bloque» del panel): las etiquetas o una propiedad nueva */
 export type PropertyAdder = (kind: 'tags' | 'property') => void
 
+/** «Oculto»: un campo o un bloque que no ven los jugadores (en lo del mundo no se dice «máster») */
+export function HiddenBadge() {
+  const { t } = useTranslation()
+  return (
+    <span className={styles.hiddenBadge}>
+      <EyeOff aria-hidden="true" size={11} />
+      {t('properties.hidden')}
+    </span>
+  )
+}
+
 export function PageProperties({
   page,
   adders = true,
@@ -242,7 +265,10 @@ export function PageProperties({
         <dl className={styles.list}>
           {page.properties.map((property) => (
             <div key={property.name} className={styles.row}>
-              <dt>{property.name}</dt>
+              <dt>
+                {property.name}
+                {property.hidden && <HiddenBadge />}
+              </dt>
               <dd>
                 <PropertyValue property={property} worldId={page.worldId} />
               </dd>
@@ -462,6 +488,7 @@ function PropertyRow({
           onBlur={onCommit}
           onKeyDown={(event) => keys(event, true)}
         />
+        {row.hidden && <HiddenBadge />}
       </div>
       <div className={styles.propValue}>
         <ValueField row={row} id={id} n={n} worldId={worldId} onChange={onChange} onCommit={onCommit} keys={keys} />
@@ -496,6 +523,16 @@ function PropertyRow({
       )}
 
       <div className={styles.propEnd}>
+        <button
+          type="button"
+          className={styles.hideProp}
+          aria-pressed={row.hidden === true}
+          aria-label={t('properties.hide', { name: label })}
+          title={t('properties.hide', { name: label })}
+          onClick={() => onChange({ hidden: !row.hidden }, true)}
+        >
+          <EyeOff aria-hidden="true" size={14} />
+        </button>
         <button
           type="button"
           className={styles.removeProp}

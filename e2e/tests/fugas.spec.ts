@@ -123,7 +123,7 @@ test('@fugas una jugadora no recibe nada de lo que no puede ver: ni la campaña 
   await player.close()
 })
 
-test('@fugas una jugadora no puede conectar Claude: no se le ofrece y, aunque fuerce el permiso, no se lo dan', async ({
+test('@fugas una jugadora conecta su IA (ADR-0017), y una cuenta sin campaña no: aunque fuerce el permiso, no se lo dan', async ({
   page,
   browser
 }) => {
@@ -133,8 +133,6 @@ test('@fugas una jugadora no puede conectar Claude: no se le ofrece y, aunque fu
     data: { redirect_uris: [REDIRECT], token_endpoint_auth_method: 'none', client_name: 'Claude de pruebas' }
   })
   const { client_id } = (await created.json()) as { client_id: string }
-  const player = await newPlayer(browser, link)
-
   const authorize = new URL('/api/auth/oauth2/authorize', BASE)
   authorize.search = new URLSearchParams({
     response_type: 'code',
@@ -146,21 +144,34 @@ test('@fugas una jugadora no puede conectar Claude: no se le ofrece y, aunque fu
     code_challenge_method: 'S256',
     resource: `${BASE}/mcp`
   }).toString()
-  await player.goto(authorize.toString())
-  await expect(player.getByText('De momento solo el propietario puede conectar una IA.')).toBeVisible()
-  await expect(player.getByRole('button', { name: 'Permitir', exact: true })).toHaveCount(0)
-
-  // Forzando el permiso con la consulta firmada de la página: el servidor no lo da
-  const status = await player.evaluate(async () => {
-    const response = await fetch('/api/auth/oauth2/consent', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ accept: true, oauth_query: window.location.search.slice(1) })
+  const forceConsent = (who: Page) =>
+    who.evaluate(async () => {
+      const response = await fetch('/api/auth/oauth2/consent', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ accept: true, oauth_query: window.location.search.slice(1) })
+      })
+      return response.status
     })
-    return response.status
-  })
-  expect(status).toBe(403)
+
+  // La jugadora: se le ofrece y se le da (su IA solo lee lo que sabe su campaña: mcp.integration.test.ts)
+  const player = await newPlayer(browser, link)
+  await player.goto(authorize.toString())
+  await expect(player.getByRole('button', { name: 'Permitir', exact: true })).toBeVisible()
+  expect(await forceConsent(player)).toBe(200)
   await player.close()
+
+  // Ella misma, fuera de la campaña: ya no
+  const outsider = await newPlayer(browser, link, 'Fuera')
+  const campaignId = new URL(outsider.url()).pathname.split('/campanas/')[1] ?? ''
+  expect((await outsider.request.post('/api/actions/leaveCampaign', { data: { campaignId } })).status()).toBe(200)
+  await outsider.goto(authorize.toString())
+  await expect(
+    outsider.getByText('Esta cuenta aún no puede conectar una IA: entra antes en una campaña.')
+  ).toBeVisible()
+  await expect(outsider.getByRole('button', { name: 'Permitir', exact: true })).toHaveCount(0)
+  expect(await forceConsent(outsider)).toBe(403)
+  await outsider.close()
 })
 
 test('@fugas lo que pide la IA del máster solo le llega a él: la cola, sus avisos y lo que se hace al aprobarlo', async ({
@@ -219,7 +230,7 @@ test('@fugas lo que pide la IA del máster solo le llega a él: la cola, sus avi
   await player.close()
 })
 
-test('@fugas la wiki es solo del máster: a la jugadora no le llegan ni sus páginas ni sus avisos', async ({
+test('@fugas lo que su campaña no conoce de la wiki no le llega a la jugadora: ni sus páginas, ni su texto, ni sus avisos', async ({
   page,
   browser
 }) => {
@@ -260,9 +271,18 @@ test('@fugas la wiki es solo del máster: a la jugadora no le llegan ni sus pág
   await page.keyboard.type('La Hermandad paga a los guardias.')
   await page.waitForTimeout(2500)
 
+  // Las listas, vacías: su campaña no conoce nada (ADR-0017)
   for (const [name, data] of [
     ['listPageChildren', { worldId }],
     ['listPageTree', { worldId }],
+    ['listRecentPages', { worldId }],
+    ['searchWiki', { worldId, query: 'torre' }],
+    ['searchWiki', { worldId, template: 'pnj' }]
+  ] as const) {
+    const response = await player.request.post(`/api/actions/${name}`, { data })
+    expect(response.status(), name).toBe(200)
+  }
+  for (const [name, data] of [
     ['getPage', { pageId: tower.id }],
     ['createPage', { worldId, title: 'Mía' }],
     ['movePage', { pageId: room.id, parentId: null }],
@@ -276,9 +296,10 @@ test('@fugas la wiki es solo del máster: a la jugadora no le llegan ni sus pág
     ['getPageContent', { pageId: tower.id }],
     ['getPageContent', { pageId: tower.id, preview: true }],
     ['listPageVersions', { pageId: tower.id }],
-    ['searchWiki', { worldId, query: 'torre' }],
     ['getPageTables', { pageId: tower.id }],
-    ['searchWiki', { worldId, template: 'pnj' }]
+    ['getPageKnowledge', { pageId: tower.id }],
+    ['listKnownPages', { worldId }],
+    ['listPageTabs', { pageId: tower.id }]
   ] as const) {
     const response = await player.request.post(`/api/actions/${name}`, { data })
     expect(response.status(), name).toBe(404)
@@ -313,9 +334,138 @@ test('@fugas la wiki es solo del máster: a la jugadora no le llegan ni sus pág
     'La Plantilla Secreta',
     tower.id,
     room.id,
-    '"pages"'
+    '"pageContent"'
   ]) {
     expect(everything).not.toContain(leak)
+  }
+  await player.close()
+})
+
+test('@fugas lo que su campaña sabe, sin lo demás: ni secretos sin revelar, ni notas, ni campos ocultos, ni lo de otros (ADR-0017)', async ({
+  page,
+  browser
+}) => {
+  const link = await campaignLink(page)
+  const worldId = new URL(page.url()).pathname.split('/')[2] ?? ''
+  const campaignId = new URL(page.url()).pathname.split('/campanas/')[1] ?? ''
+  let seen: ReturnType<typeof capture> | undefined
+  const player = await newPlayer(browser, link, 'Jugadora', (p) => {
+    seen = capture(p)
+  })
+  if (!seen) throw new Error('sin captura')
+  const captured = seen
+  await expect.poll(() => captured.frames.some((f) => f.includes('"hello"'))).toBe(true)
+  const master = async (name: string, data: Record<string, unknown>) => {
+    const response = await page.request.post(`/api/actions/${name}`, { data })
+    expect(response.status(), name).toBe(200)
+    return response.json()
+  }
+  // Un personaje suyo y otro del máster en la campaña (con un sistema, para poder hacerlos)
+  const systemId = await import5e(page)
+  await master('updateCampaign', { campaignId, system: systemId })
+  const mine = (
+    await (await player.request.post('/api/actions/createCharacter', { data: { campaignId, name: 'Lía' } })).json()
+  ).character.id
+  const other = (await master('createCharacter', { campaignId, name: 'Bram' })).character.id
+  // Aldoria (conocida) con secretos, una nota y un campo oculto; El plan del rey, debajo, nace oculto
+  const created = await master('createPages', {
+    worldId,
+    parentId: null,
+    pages: [
+      {
+        key: 'a',
+        title: 'Aldoria',
+        markdown: [
+          'Un reino antiguo, aliado de [[La Liga Escondida|unos amigos]].',
+          '',
+          '> [!secreto]',
+          '> El rey ha muerto.',
+          '',
+          '> [!secreto]',
+          '> Bram es el heredero.',
+          '',
+          '%%El máster duda del final%%'
+        ].join('\n')
+      },
+      { key: 'l', title: 'La Liga Escondida' }
+    ]
+  })
+  const aldoria = created.pages.find((p: { title: string }) => p.title === 'Aldoria').id
+  const liga = created.pages.find((p: { title: string }) => p.title === 'La Liga Escondida').id
+  const full = await master('getPage', { pageId: aldoria })
+  await master('setPageProperties', {
+    pageId: aldoria,
+    properties: [...full.properties, { name: 'Traidor', type: 'text', value: 'El Canciller Gris', hidden: true }]
+  })
+  await master('setPagePanel', {
+    pageId: aldoria,
+    blocks: [{ id: 'abcdefgh', type: 'text', title: 'Plan', text: 'Invadir el paso del norte', hidden: true }]
+  })
+  await master('setKnowledge', { worldId, campaignId, kind: 'page', targetId: aldoria, known: true })
+  const plan = await master('createPage', { worldId, title: 'El plan del rey', parentId: aldoria })
+  // Un secreto revelado en partida a Bram (no a Lía), con su aviso; el otro, sin revelar
+  const { blocks } = await master('getPageContent', { pageId: aldoria })
+  const secrets = (blocks as { type: string; attrs?: { documentId?: string } }[]).filter((b) => b.type === 'secret')
+  await master('reveal', {
+    worldId,
+    campaignId,
+    kind: 'secret',
+    targetId: secrets[1]?.attrs?.documentId,
+    characters: [other]
+  })
+  // Lo que lee la jugadora, por todas las vías
+  for (const [name, data] of [
+    ['listPageTree', { worldId, levels: 6 }],
+    ['listPageChildren', { worldId, parentId: null }],
+    ['listRecentPages', { worldId, limit: 20 }],
+    ['getPage', { pageId: aldoria }],
+    ['getPageContent', { pageId: aldoria }],
+    ['getPageContent', { pageId: aldoria, preview: true }],
+    ['readPage', { pageId: aldoria, ids: true }],
+    ['getPageLinks', { pageId: aldoria }],
+    ['getPageTables', { pageId: aldoria }],
+    ['listPageTabs', { pageId: aldoria }],
+    ['searchWiki', { worldId, query: 'rey' }],
+    ['searchWiki', { worldId, query: 'Canciller' }],
+    ['searchWiki', { worldId, query: 'heredero' }],
+    ['searchWiki', { worldId, query: 'Liga' }]
+  ] as const) {
+    const response = await player.request.post(`/api/actions/${name}`, { data })
+    expect(response.status(), name).toBe(200)
+  }
+  for (const pageId of [plan.id, liga]) {
+    expect((await player.request.post('/api/actions/getPage', { data: { pageId } })).status()).toBe(404)
+  }
+  // Y en la web, la página
+  await player.goto(`/mundos/${worldId}/campanas/${campaignId}/paginas/${aldoria}`)
+  await expect(player.getByRole('heading', { level: 1, name: 'Aldoria' })).toBeVisible()
+  await expect(player.getByRole('main')).toContainText('Un reino antiguo')
+  // El máster escribe en la página oculta: a ella no le llega
+  await master('editPage', { pageId: plan.id, body: { mode: 'append', markdown: 'Quemar el puerto' } })
+  // Lía no ve lo de Bram; como Bram, el máster sí
+  const asBram = await master('getPageContent', { pageId: aldoria, campaignId, asCharacterId: other })
+  expect(JSON.stringify(asBram.blocks)).toContain('Bram es el heredero')
+  expect(mine).toBeTruthy()
+
+  const everything = await captured.all()
+  expect(everything).toContain('Un reino antiguo')
+  for (const leak of [
+    'El rey ha muerto',
+    'Bram es el heredero',
+    'El máster duda',
+    'El Canciller Gris',
+    'Traidor',
+    'Invadir el paso',
+    'El plan del rey',
+    'Quemar el puerto',
+    'La Liga Escondida',
+    plan.id,
+    liga,
+    // El aviso de lo revelado a Bram es solo para su dueño
+    '"revealed"',
+    secrets[1]?.attrs?.documentId ?? 'sin-secreto'
+  ]) {
+    expect(everything, leak).not.toContain(leak)
   }
   await player.close()
 })
@@ -682,12 +832,13 @@ test('@fugas el compendio del mundo es del máster: la jugadora ni lo ve ni sabe
   await player.close()
 })
 
-test('@fugas las criaturas en juego son del máster: la jugadora ni las ve ni sabe que cambian (criaturas)', async ({
+test('@fugas las criaturas en juego: la jugadora solo ve las que están a la vista, sin sus números; ni el compendio del mundo sin revelar ni los tipos ocultos (compendio-jugadores)', async ({
   page,
   browser
 }) => {
   const link = await campaignLink(page)
   const campaignId = new URL(page.url()).pathname.split('/campanas/')[1] ?? ''
+  const worldId = new URL(page.url()).pathname.split('/')[2] ?? ''
   const systemId = await import5e(page)
   const chosen = await page.request.post('/api/actions/updateCampaign', { data: { campaignId, system: systemId } })
   expect(chosen.status()).toBe(200)
@@ -699,23 +850,40 @@ test('@fugas las criaturas en juego son del máster: la jugadora ni las ve ni sa
   const captured = seen
   await expect.poll(() => captured.frames.some((f) => f.includes('"hello"'))).toBe(true)
 
-  // El máster pone en juego un jefe con un nombre secreto, le hace daño y tira por él (oculta)
+  // El máster pone en juego un goblin a la vista y un jefe oculto con un nombre secreto, les hace daño y tira (oculta)
+  const goblin = (
+    await (
+      await page.request.post('/api/actions/putInPlay', { data: { campaignId, key: 'guerrero_goblin_2014' } })
+    ).json()
+  ).creatures[0]
   const put = await page.request.post('/api/actions/putInPlay', {
-    data: { campaignId, key: 'guerrero_goblin_2014', unique: true, name: 'Señor Oculto' }
+    data: { campaignId, key: 'guerrero_goblin_2014', unique: true, name: 'Señor Oculto', hidden: true }
   })
   expect(put.status()).toBe(200)
   const [boss] = (await put.json()).creatures
   await page.request.post('/api/actions/playCreature', { data: { creatureId: boss.id, version: 1, damage: 2 } })
+  await page.request.post('/api/actions/playCreature', { data: { creatureId: goblin.id, version: 1, damage: 2 } })
   const rolled = await page.request.post('/api/actions/rollForCreature', {
     data: { creatureId: boss.id, action: { item: null, key: 'cimitarra', part: 'damage' } }
   })
   const rollId = (await rolled.json()).roll.id as string
 
+  // Lo que ve: el goblin, con su estado en palabras; ni el jefe ni ningún número
+  const visible = await player.request.post('/api/actions/listVisibleInPlay', { data: { campaignId } })
+  expect(visible.status()).toBe(200)
+  const shown = await visible.text()
+  expect(shown).toContain('Goblin 1')
+  expect(shown).toContain('"hurt"')
+  for (const leak of ['Señor Oculto', boss.id, '"life"', '"stats"', '"play"', '"version"'])
+    expect(shown).not.toContain(leak)
+
   for (const [name, data] of [
     ['listInPlay', { campaignId }],
     ['getInPlay', { creatureId: boss.id }],
+    ['getInPlay', { creatureId: goblin.id }],
     ['putInPlay', { campaignId, key: 'guerrero_goblin_2014' }],
     ['playCreature', { creatureId: boss.id, version: 2, damage: 1 }],
+    ['setCreatureHidden', { creatureId: boss.id, hidden: false }],
     ['rollForCreature', { creatureId: boss.id, action: { item: null, key: 'cimitarra', part: 'attack' } }],
     ['applyRoll', { campaignId, rollId, targets: [{ creatureId: boss.id, multiplier: 1 }] }],
     ['removeFromPlay', { campaignId, creatureIds: [boss.id] }]
@@ -727,7 +895,37 @@ test('@fugas las criaturas en juego son del máster: la jugadora ni las ve ni sa
   const rolls = await player.request.post('/api/actions/listRolls', { data: { campaignId } })
   expect(await rolls.text()).not.toContain('Señor Oculto')
 
+  // El compendio: una entrada del mundo sin revelar y un tipo oculto no le llegan por ningún lado
+  const world = await page.request.post('/api/actions/putWorldContent', {
+    data: {
+      worldId,
+      systemId,
+      items: [{ type: 'arma', key: 'hoja_secreta', data: { name: { es: 'Hoja Secreta' }, categoria: 'marcial' } }]
+    }
+  })
+  expect(world.status()).toBe(200)
+  await page.request.post('/api/actions/updateCampaign', { data: { campaignId, hiddenTypes: ['criatura'] } })
+  for (const [name, data] of [
+    ['getCampaignCompendium', { campaignId }],
+    ['searchCampaignContent', { campaignId, query: 'secreta' }],
+    ['searchCampaignContent', { campaignId, query: 'goblin' }],
+    ['browseCampaignContent', { campaignId, type: 'arma' }],
+    ['browseCampaignContent', { campaignId, type: 'criatura' }],
+    ['getCampaign', { campaignId }]
+  ] as const) {
+    const response = await player.request.post(`/api/actions/${name}`, { data })
+    expect(response.status(), name).toBe(200)
+    const text = await response.text()
+    for (const leak of ['Hoja Secreta', 'hoja_secreta', 'guerrero_goblin', '"criatura"'])
+      expect(text, `${name}: ${leak}`).not.toContain(leak)
+  }
+  const read = await player.request.post('/api/actions/getCampaignContent', {
+    data: { campaignId, keys: ['hoja_secreta', 'guerrero_goblin_2014'] }
+  })
+  expect(await read.json()).toEqual({ items: [], missing: ['hoja_secreta', 'guerrero_goblin_2014'] })
+
+  // En tiempo real le llega que cambian, sin nombres ni números
   const everything = await captured.all()
-  for (const leak of ['Señor Oculto', boss.id, '"creatures"']) expect(everything).not.toContain(leak)
+  for (const leak of ['Señor Oculto', boss.id, 'Hoja Secreta', '"life"']) expect(everything).not.toContain(leak)
   await player.close()
 })

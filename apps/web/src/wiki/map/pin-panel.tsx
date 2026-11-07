@@ -5,7 +5,6 @@
  */
 import { type MapPinView, type Page, WORLD_COLORS } from '@crisol/contracts'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Link } from '@tanstack/react-router'
 import { Plus, X } from 'lucide-react'
 import { useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -15,6 +14,8 @@ import { FormError } from '../../components/field.tsx'
 import { focusOnMount } from '../../components/focus.ts'
 import list from '../../components/list.module.css'
 import { PRESET_COLORS } from '../../routes/world-look.ts'
+import { PageLink } from '../read-as.tsx'
+import { TargetReveal } from '../reveal.tsx'
 import styles from './map.module.css'
 import { PinShape, pinHex, SHAPE_NAMES } from './pin-shape.tsx'
 
@@ -51,9 +52,11 @@ export function PinPanel({
   const [error, setError] = useState<unknown>(null)
   const [label, setLabel] = useState(pin.label ?? '')
   const [pageName, setPageName] = useState(pin.pageTitle ?? '')
+  // Los nombres para elegir página, solo para quien puede cambiarlo (un jugador no los pide)
   const names = useQuery({
     queryKey: ['pages', page.worldId, 'names'],
-    queryFn: () => api.call('listPageNames', { worldId: page.worldId })
+    queryFn: () => api.call('listPageNames', { worldId: page.worldId }),
+    enabled: editable
   })
 
   const save = async (patch: Patch) => {
@@ -112,6 +115,34 @@ export function PinPanel({
 
   const custom = pin.color.startsWith('#') ? pin.color : null
 
+  // Quien no lo cambia (un jugador, una página con candado): una ficha con su nombre y su página
+  if (!editable) {
+    return (
+      <section className={styles.panel} aria-label={t('map.pin.title')}>
+        <header className={styles.panelHead}>
+          <h2>{pin.label ?? pin.pageTitle ?? t('map.untitledPin')}</h2>
+          <button
+            type="button"
+            className={styles.close}
+            aria-label={t('map.pin.close')}
+            title={t('map.pin.close')}
+            onClick={onClose}
+          >
+            <X aria-hidden="true" size={18} />
+          </button>
+        </header>
+        {pin.pageId && pin.pageTitle && (
+          <p className={styles.readPage}>
+            {pin.pageTitle}{' '}
+            <PageLink className={list.secondary} worldId={page.worldId} pageId={pin.pageId}>
+              {t('map.pin.open')}
+            </PageLink>
+          </p>
+        )}
+      </section>
+    )
+  }
+
   return (
     <section className={styles.panel} aria-label={t('map.pin.title')}>
       <header className={styles.panelHead}>
@@ -153,13 +184,9 @@ export function PinPanel({
                 onKeyDown={onEnter(commitPage)}
               />
               {pin.pageId && pin.pageTitle && (
-                <Link
-                  className={list.secondary}
-                  to="/mundos/$worldId/wiki/$pageId"
-                  params={{ worldId: page.worldId, pageId: pin.pageId }}
-                >
+                <PageLink className={list.secondary} worldId={page.worldId} pageId={pin.pageId}>
                   {t('map.pin.open')}
-                </Link>
+                </PageLink>
               )}
             </div>
             <datalist id={`${id}-pages`}>
@@ -168,6 +195,21 @@ export function PinPanel({
               ))}
             </datalist>
           </>
+        )}
+
+        {editable && (
+          // Los jugadores (ADR-0017): oculto, o revelarlo en partida
+          <div className={styles.players}>
+            <label className={styles.check}>
+              <input
+                type="checkbox"
+                checked={pin.hidden}
+                onChange={(event) => void save({ hidden: event.currentTarget.checked })}
+              />
+              {t('map.pin.hiddenFromPlayers')}
+            </label>
+            <TargetReveal worldId={page.worldId} pageId={page.id} kind="pin" targetId={pin.id} />
+          </div>
         )}
 
         <fieldset className={styles.choices}>

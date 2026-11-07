@@ -2,10 +2,20 @@
  * Los documentos de Yjs de la wiki, con Hocuspocus dentro del servidor (ADR-0003). Cada documento decide su permiso al
  * abrirse; guardar es fusionar con lo que ya hay, nunca pisarlo.
  */
-import { type Database, documentsRepo, loadMemberships, mapsRepo, pagesRepo, worldsRepo } from '@crisol/db'
+import {
+  type Database,
+  documentsRepo,
+  knowledgeRepo,
+  loadMemberships,
+  mapsRepo,
+  pagesRepo,
+  worldsRepo
+} from '@crisol/db'
 import { actorFrom, authorize, can, NotFoundError } from '@crisol/domain'
+import { BODY_FIELD } from '@crisol/editor'
 import { Hocuspocus } from '@hocuspocus/server'
 import * as Y from 'yjs'
+import { playerEdits } from '../wiki/player-pages.ts'
 import { createSessions, type SessionTimes } from './sessions.ts'
 
 /** Lo más que ocupa el estado de un documento, y un mensaje: lo que pase no se guarda */
@@ -19,6 +29,8 @@ export interface CollabContext {
   worldId?: string
   /** Una conexión directa del servidor (Claude, deshacer, restaurar): no abre sesión de edición */
   server?: boolean
+  /** Un jugador que escribe en una página de jugadores (docs/specs/pagina-de-jugadores.md) */
+  player?: boolean
 }
 
 const UUID = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
@@ -46,6 +58,10 @@ export interface Collab {
   hocuspocus: Hocuspocus<CollabContext>
   /** Cierra las conexiones a los documentos de estas páginas (a la papelera): al reconectar, ya no se abren */
   closePages(pageIds: Iterable<string>): void
+  /** Cierra las de los jugadores que escriben en esa página (cambió quién puede): al volver, se mira otra vez */
+  closePlayers(pageId: string): void
+  /** Las de los jugadores que escriben en las páginas de un mundo (cambió lo que saben o quién juega) */
+  closeWorldPlayers(worldId: string): void
   /** Las de toda la wiki de un mundo (el mundo, a la papelera) */
   closeWorld(worldId: string): void
   /** Las de un documento aparte (el de una pestaña de texto que se quita) */
@@ -98,6 +114,21 @@ export function createCollab({
     return separate?.pageId ?? null
   }
 
+  // Si lo guardado del cuerpo tiene secretos o notas ocultas (volvieron con una versión o al deshacer): un jugador no
+  // lo abre, que los vería
+  const bodyHasSeparates = async (pageId: string) => {
+    const stored = await documentsRepo.findBody(db, pageId)
+    if (!stored) return false
+    const doc = new Y.Doc()
+    Y.applyUpdate(doc, stored.state)
+    const walker = doc
+      .getXmlFragment(BODY_FIELD)
+      .createTreeWalker(
+        (node) => node instanceof Y.XmlElement && (node.nodeName === 'secret' || node.nodeName === 'note')
+      )
+    return !walker.next().done
+  }
+
   // Al cerrar: ya no se recupera nada más, y lo que esté en marcha se espera
   let closing = false
   const recovering = new Set<Promise<void>>()
@@ -107,8 +138,9 @@ export function createCollab({
     debounce: 2000,
     maxDebounce: 10_000,
 
-    // Cada documento, con la sesión de la conexión y las pertenencias de ahora. Sin escribir, en solo lectura. Un
-    // secreto tiene su propio permiso: ahora, el de su página; en el módulo 5, el suyo
+    // Cada documento, con la sesión de la conexión y las pertenencias de ahora. Sin escribir, en solo lectura. Es de
+    // quien lleva la wiki (ADR-0017: los jugadores leen lo proyectado), salvo el cuerpo de una página que un jugador
+    // puede escribir (docs/specs/pagina-de-jugadores.md), que no lleva secretos
     async onAuthenticate({ documentName, context, connectionConfig }) {
       const target = parseDocumentName(documentName)
       const pageId = target ? await pageOf(target) : null
@@ -116,11 +148,16 @@ export function createCollab({
       const world = page ? await worldsRepo.findWorld(db, page.worldId) : null
       const wiki = { worldId: world?.id ?? '', organizationId: world?.organizationId ?? '' }
       const actor = actorFrom(context.userId, await loadMemberships(db, context.userId))
-      authorize(actor, 'page.read', wiki)
+      const editor =
+        !can(actor, 'page.read', wiki) && target?.kind === 'body' && page
+          ? (await playerEdits({ db }, context.userId, page.id)) && !(await bodyHasSeparates(page.id))
+          : false
+      if (!editor) authorize(actor, 'page.read', wiki)
       if (!page || !world) throw new NotFoundError('page')
-      connectionConfig.readOnly = !can(actor, 'page.write', wiki)
+      // Un jugador, mientras la página no esté cerrada con el candado
+      connectionConfig.readOnly = editor ? page.locked : !can(actor, 'page.write', wiki)
       opened.set(documentName, { pageId: page.id, worldId: world.id })
-      return { pageId: page.id, worldId: world.id }
+      return { pageId: page.id, worldId: world.id, ...(editor ? { player: true } : {}) }
     },
 
     async onLoadDocument({ documentName, document }) {
@@ -201,6 +238,11 @@ export function createCollab({
     }
   })
 
+  const closePlayersOf = (name: string) => {
+    for (const connection of hocuspocus.documents.get(name)?.getConnections() ?? [])
+      if ((connection.context as CollabContext | undefined)?.player) connection.close()
+  }
+
   return {
     hocuspocus,
     closeDocument(documentId) {
@@ -209,6 +251,12 @@ export function createCollab({
     closePages(pageIds) {
       const gone = new Set(pageIds)
       for (const [name, place] of opened) if (gone.has(place.pageId)) hocuspocus.closeConnections(name)
+    },
+    closePlayers(pageId) {
+      for (const [name, place] of opened) if (place.pageId === pageId) closePlayersOf(name)
+    },
+    closeWorldPlayers(worldId) {
+      for (const [name, place] of opened) if (place.worldId === worldId) closePlayersOf(name)
     },
     closeWorld(worldId) {
       for (const [name, place] of opened) if (place.worldId === worldId) hocuspocus.closeConnections(name)

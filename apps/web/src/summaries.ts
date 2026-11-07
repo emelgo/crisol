@@ -148,6 +148,47 @@ export function summaryOf(
     case 'restoreCampaign':
       return say('restoreCampaign', { name: text(details.name), world: text(details.world) })
     // De la wiki: lo hecho guarda los títulos; lo que pide la IA trae su entrada y los nombres (page, parent)
+    // Lo que sabe una campaña (ADR-0017): qué, a quién, en qué campaña (o todo el mundo)
+    case 'reveal':
+    case 'hideKnowledge':
+    case 'hide':
+    case 'setKnowledge': {
+      const kind = text(details.kind)
+      const what = t(
+        `knowledgeTargets.${['page', 'secret', 'tab', 'pin', 'element', 'content'].includes(kind) ? kind : 'page'}` as 'knowledgeTargets.page',
+        {
+          name: text(details.name)
+        }
+      )
+      const who =
+        Array.isArray(details.characters) && details.characters.length > 0
+          ? (details.characters as unknown[]).map(text).join(', ')
+          : details.campaign
+            ? text(details.campaign)
+            : null
+      if (action === 'reveal') return say('knowledgeRevealed', { what, who: who ?? '' })
+      if (action === 'hideKnowledge' || action === 'hide')
+        return say('knowledgeHidden', { what, who: text(details.campaign) })
+      if (details.known === true) return who ? say('knowledgeKnown', { what, who }) : say('knowledgeWorld', { what })
+      if (details.known === false)
+        return details.campaign
+          ? say('knowledgeHidden', { what, who: text(details.campaign) })
+          : say('knowledgeNobody', { what })
+      return details.campaign
+        ? say('knowledgeCleared', { what, where: text(details.campaign) })
+        : say('knowledgeClearedWorld', { what })
+    }
+    // Quién de una campaña escribe en una página (docs/specs/pagina-de-jugadores.md)
+    case 'setPageEditors': {
+      const title = text(details.title ?? details.page)
+      if (details.editors === null || details.editors === 'none')
+        return say('pageEditorsNone', { title, campaign: text(details.campaign) })
+      const who =
+        Array.isArray(details.characters) && details.characters.length > 0
+          ? (details.characters as unknown[]).map(text).join(', ')
+          : text(details.campaign)
+      return say('pageEditors', { title, who })
+    }
     case 'createPage':
       return details.parent
         ? say('createSubpage', { title: text(details.title), parent: text(details.parent) })

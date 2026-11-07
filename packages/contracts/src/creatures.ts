@@ -25,6 +25,7 @@ export const creatureInPlay = z.object({
     .array(z.object({ key: z.string(), label: z.string(), value: z.string() }))
     .describe('Sus primeras cifras (la CA)'),
   condition: z.enum(['ok', 'bloodied', 'down']).describe('Malherida (a la mitad de su vida) o fuera de combate (a 0)'),
+  hidden: z.boolean().optional().describe('Oculta a los jugadores'),
   play: z.record(z.string(), z.unknown()).describe('Lo de la partida guardado (sus valores, lo gastado, lo que lleva)')
 })
 
@@ -66,6 +67,7 @@ export const putInPlay = defineAction({
   description:
     'Pone en juego una criatura del compendio de la campaña (por su clave; del sistema o del mundo): unas cuantas copias numeradas («Goblin 1», «Goblin 2»; count, o formula para tirarlas: 1d4+1) o una única (unique: la que conserva su estado entre sesiones; si ya está, UNIQUE_TAKEN). Sus PG, los medios (average, de entrada) o tirados con sus dados (rolled), uno por copia',
   input: z.object({
+    hidden: z.boolean().optional().describe('Oculta a los jugadores (por defecto, a la vista)'),
     campaignId: z.uuid(),
     key: z.string().max(100),
     count: z.int().min(1).max(50).optional(),
@@ -175,4 +177,32 @@ export const applyRoll = defineAction({
       })
     )
   })
+})
+
+/** Lo que ve un jugador de una criatura en juego: su nombre, su imagen y cómo está, en palabras */
+export const visibleCreature = z.object({
+  id: z.uuid(),
+  name: z.string(),
+  /** Su número entre las copias («Goblin 2»); una única, null */
+  number: z.number().int().nullable(),
+  img: z.string().nullable(),
+  /** Ilesa, herida (más de la mitad), malherida (la mitad o menos), a punto de caer (una cuarta parte o menos), fuera */
+  state: z.enum(['unhurt', 'hurt', 'bloodied', 'dying', 'down']).nullable()
+})
+
+export const listVisibleInPlay = defineAction({
+  name: 'listVisibleInPlay',
+  kind: 'read',
+  description:
+    'Las criaturas en juego de una campaña que ven sus jugadores (las que no están ocultas): su nombre, su imagen y cómo están en palabras, sin sus PG ni su hoja',
+  input: z.object({ campaignId: z.uuid() }),
+  output: z.object({ creatures: z.array(visibleCreature) })
+})
+
+export const setCreatureHidden = defineAction({
+  name: 'setCreatureHidden',
+  kind: 'players',
+  description: 'Pone una criatura en juego a la vista de los jugadores u oculta',
+  input: z.object({ creatureId: z.uuid(), hidden: z.boolean() }),
+  output: z.object({ ok: z.literal(true) })
 })

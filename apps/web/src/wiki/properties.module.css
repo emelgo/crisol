@@ -135,8 +135,19 @@
 .propName {
   grid-area: name;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
+  row-gap: 0.125rem;
   min-inline-size: 0;
+}
+
+/* Con la marca «Oculto», el nombre ocupa su línea y la marca va debajo */
+.propName:has(.hiddenBadge) .nameInput {
+  flex: 1 0 100%;
+}
+
+.propName .hiddenBadge {
+  margin-inline-start: 0;
 }
 
 .propValue {
@@ -250,6 +261,53 @@ textarea.valueInput {
 .removeProp:hover {
   background: color-mix(in srgb, var(--color-text) 10%, transparent);
   color: var(--color-text);
+}
+
+/* «Oculto»: el ojo tachado sale al acercarse (y queda marcado si lo está) */
+.hideProp {
+  display: grid;
+  place-items: center;
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--color-muted);
+  cursor: pointer;
+  opacity: 0;
+}
+
+.prop:hover .hideProp,
+.hideProp:focus,
+.prop:focus-within .hideProp,
+.hideProp[aria-pressed="true"] {
+  opacity: 1;
+}
+
+.hideProp:hover {
+  background: color-mix(in srgb, var(--color-text) 10%, transparent);
+  color: var(--color-text);
+}
+
+.hideProp[aria-pressed="true"] {
+  color: var(--color-text);
+}
+
+.hiddenBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  margin-inline-start: var(--space-2);
+  padding: 0 0.375rem;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  color: var(--color-muted);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  vertical-align: middle;
 }
 
 /* Las listas: pastillas y, detrás, el campo para añadir */

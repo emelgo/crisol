@@ -4,6 +4,7 @@ import {
   Backpack,
   BookOpen,
   Dices,
+  Eye,
   Folder,
   Globe,
   Hash,
@@ -316,7 +317,9 @@ export function Ribbon() {
                 worldId={panelsWorld}
                 campaignId={panelsCampaign}
                 name={campaign?.name ?? ''}
+                worldName={world?.name ?? ''}
                 master={campaignRole === 'master'}
+                ownsWiki={master}
               />
             ) : (
               <WorldPanels worldId={panelsWorld} worldName={world?.name ?? ''} master={panelsMaster} />
@@ -403,13 +406,18 @@ function CampaignPanels({
   worldId,
   campaignId,
   name,
-  master
+  worldName,
+  master,
+  ownsWiki
 }: {
   worldId: string
   campaignId: string
   name: string
+  /** Las páginas del mundo: quien lo lleva va a ellas; quien juega, a lo que sabe su campaña (ADR-0017) */
+  worldName: string
   /** Quien la dirige: también lo que está en juego */
   master: boolean
+  ownsWiki: boolean
 }) {
   const { t } = useTranslation()
   const { setCampaign } = useDice()
@@ -426,6 +434,21 @@ function CampaignPanels({
       >
         <Label icon={Shield} text={name} />
       </Link>
+      {ownsWiki ? (
+        <Link to="/mundos/$worldId/wiki" params={{ worldId }} className={styles.item} data-tour="barra-paginas">
+          <Label icon={Globe} text={worldName} />
+        </Link>
+      ) : (
+        <Link
+          to="/mundos/$worldId/campanas/$campaignId/paginas"
+          params={{ worldId, campaignId }}
+          className={styles.item}
+          viewTransition={SECTION}
+          data-tour="barra-paginas"
+        >
+          <NewsLabel worldId={worldId} campaignId={campaignId} text={worldName} />
+        </Link>
+      )}
       <Link
         to="/mundos/$worldId/campanas/$campaignId/personajes"
         params={{ worldId, campaignId }}
@@ -453,17 +476,16 @@ function CampaignPanels({
       >
         <Label icon={Backpack} text={t('ribbon.party')} />
       </Link>
-      {master && (
-        <Link
-          to="/mundos/$worldId/campanas/$campaignId/en-juego"
-          params={{ worldId, campaignId }}
-          className={styles.item}
-          viewTransition={SECTION}
-          data-tour="barra-en-juego"
-        >
-          <Label icon={Swords} text={t('ribbon.inPlay')} />
-        </Link>
-      )}
+      <Link
+        to="/mundos/$worldId/campanas/$campaignId/en-juego"
+        params={{ worldId, campaignId }}
+        className={styles.item}
+        viewTransition={SECTION}
+        data-tour="barra-en-juego"
+      >
+        <Label icon={Swords} text={t('ribbon.inPlay')} />
+      </Link>
+      {master && <RevealedButton />}
       {master && (
         <Link
           to="/mundos/$worldId/campanas/$campaignId/biblioteca"
@@ -477,6 +499,49 @@ function CampaignPanels({
       )}
       <DiceButton />
     </>
+  )
+}
+
+/** Las páginas del mundo de quien juega, con cuántas novedades tiene (lo revelado que aún no ha abierto) */
+function NewsLabel({ worldId, campaignId, text }: { worldId: string; campaignId: string; text: string }) {
+  const { t } = useTranslation()
+  const api = useApi()
+  const count =
+    useQuery({
+      queryKey: ['pages', worldId, 'player', campaignId, null, 'news'],
+      queryFn: () => api.call('listNews', { campaignId })
+    }).data?.news.length ?? 0
+  return (
+    <>
+      <span className={styles.badged}>
+        <Globe aria-hidden="true" size={20} strokeWidth={1.75} />
+        {count > 0 && (
+          <span aria-hidden="true" className={styles.badge}>
+            {count}
+          </span>
+        )}
+      </span>
+      <span className={styles.text}>{text}</span>
+      {count > 0 && <span className={styles.hidden}>{t('playerPages.newCount', { count })}</span>}
+    </>
+  )
+}
+
+/** «Revelado»: abre «Lo que sabe el grupo» de la campaña como ventana (docs/specs/revelar.md) */
+function RevealedButton() {
+  const { t } = useTranslation()
+  const windows = useWindow()
+  return (
+    <button
+      type="button"
+      className={styles.item}
+      aria-haspopup="dialog"
+      aria-pressed={windows?.opened === 'revelado'}
+      data-tour="barra-revelado"
+      onClick={(event) => windows?.open('revelado', event.currentTarget)}
+    >
+      <Label icon={Eye} text={t('ribbon.revealed')} />
+    </button>
   )
 }
 
@@ -624,6 +689,13 @@ function MobileMenu({
             run: go(`/mundos/${world.id}/campanas/${campaign.id}`)
           },
           {
+            key: 'paginas',
+            icon: Globe,
+            text: world.name,
+            current: path.startsWith(`/mundos/${world.id}/campanas/${campaign.id}/paginas`),
+            run: go(master ? `/mundos/${world.id}/wiki` : `/mundos/${world.id}/campanas/${campaign.id}/paginas`)
+          },
+          {
             key: 'personajes',
             icon: Users,
             text: t('ribbon.characters'),
@@ -644,15 +716,23 @@ function MobileMenu({
             current: path.startsWith(`/mundos/${world.id}/campanas/${campaign.id}/grupo`),
             run: go(`/mundos/${world.id}/campanas/${campaign.id}/grupo`)
           },
-          // Las criaturas en juego y la biblioteca: del máster (hasta el módulo 5)
+          // Las criaturas en juego: el máster, todas; un jugador, las que están a la vista
+          {
+            key: 'en-juego',
+            icon: Swords,
+            text: t('ribbon.inPlay'),
+            current: path.startsWith(`/mundos/${world.id}/campanas/${campaign.id}/en-juego`),
+            run: go(`/mundos/${world.id}/campanas/${campaign.id}/en-juego`)
+          },
+          // Lo revelado y la biblioteca: del máster
           ...(campaign.master
             ? [
                 {
-                  key: 'en-juego',
-                  icon: Swords,
-                  text: t('ribbon.inPlay'),
-                  current: path.startsWith(`/mundos/${world.id}/campanas/${campaign.id}/en-juego`),
-                  run: go(`/mundos/${world.id}/campanas/${campaign.id}/en-juego`)
+                  key: 'revelado',
+                  icon: Eye,
+                  text: t('ribbon.revealed'),
+                  current: false,
+                  run: then(() => windows?.open('revelado', trigger.current))
                 },
                 {
                   key: 'biblioteca',

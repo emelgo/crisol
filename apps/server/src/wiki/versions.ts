@@ -3,11 +3,12 @@
  * volver a una (deshacer, restaurar), siempre hacia delante: un editor abierto con lo de antes no lo puede deshacer
  */
 import { createHash } from 'node:crypto'
-import { documentsRepo, type OperationContext, pagesRepo, versionsRepo, worldsRepo } from '@crisol/db'
+import { documentsRepo, knowledgeRepo, type OperationContext, pagesRepo, versionsRepo, worldsRepo } from '@crisol/db'
 import type { JSONContent } from '@tiptap/core'
 import * as Y from 'yjs'
-import type { ActionEnv } from '../actions/context.ts'
+import { type ActionEnv, InvalidRequestError } from '../actions/context.ts'
 import { documentJson, jsonOfDoc, writeDocument } from './content.ts'
+import { hasSeparates } from './player-pages.ts'
 
 type Kind = 'body' | 'secret' | 'note' | 'tab'
 
@@ -108,10 +109,13 @@ export async function applyVersion(
   // Una versión que ya no está (no debería: la purga deja las que nombra el historial) no vacía la página
   if (versionId && documents.length === 0) return
   const body = documents.find((doc) => doc.kind === 'body')
+  const content = body ? contentOf('body', body.state) : { type: 'doc', content: [{ type: 'paragraph' }] }
+  // Una página que escriben jugadores no vuelve a tener secretos ni notas ocultas (los verían, y sus editores, sin
+  // esos bloques, los borrarían): esa versión no se pone
+  if (hasSeparates(content) && (await knowledgeRepo.isEdited(env.db, page.pageId)))
+    throw new InvalidRequestError('PLAYER_PAGE', 'esa versión tiene secretos y la página la escriben los jugadores')
   const place = { userId: page.userId, worldId: page.worldId }
-  await writeDocument(env, { kind: 'body', pageId: page.pageId }, place, () =>
-    body ? contentOf('body', body.state) : { type: 'doc', content: [{ type: 'paragraph' }] }
-  )
+  await writeDocument(env, { kind: 'body', pageId: page.pageId }, place, () => content)
   for (const doc of documents) {
     if (doc.kind === 'body') continue
     await writeDocument(env, refOf(doc.kind, page.pageId, doc.documentId), place, () => contentOf(doc.kind, doc.state))

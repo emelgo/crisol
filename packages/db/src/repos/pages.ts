@@ -2,10 +2,11 @@ import { keyBetween } from '@crisol/domain'
 import { and, eq, inArray, isNotNull, isNull, ne, type SQL, sql } from 'drizzle-orm'
 import { alias } from 'drizzle-orm/pg-core'
 import type { Database } from '../client.ts'
-import { type OperationContext, operation, type Transaction } from '../operation.ts'
+import { type OperationContext, operation, type Transaction, type Writer } from '../operation.ts'
 import { documents } from '../schema/documents.ts'
 import { pages } from '../schema/pages.ts'
 import { worlds } from '../schema/worlds.ts'
+import { writeMark } from './knowledge.ts'
 import { type DocumentState, recordVersion } from './versions.ts'
 
 const summaryColumns = {
@@ -23,6 +24,9 @@ const summaryColumns = {
 const hasChildren = sql<boolean>`exists (select 1 from pages c where c.parent_id = "pages"."id" and c.deleted_at is null)`
 /** El orden entre hermanas: la clave, comparada carácter a carácter */
 const byPosition = [sql`${pages.position} collate "C"`, pages.id]
+
+/** Una lista de ids como un solo parámetro (miles de páginas no son miles de parámetros) */
+export const uuidArray = (ids: readonly string[]) => sql`string_to_array(${ids.join(',')}, ',')::uuid[]`
 
 /** Dónde va una página entre sus hermanas: delante o detrás de una de ellas, o al final */
 export interface Placement {
@@ -179,13 +183,24 @@ async function placeKey(tx: Transaction, worldId: string, placement: Placement, 
 export function createPage(
   db: Database,
   context: OperationContext,
-  input: { worldId: string; title: string; placement: Placement }
+  input: { worldId: string; title: string; placement: Placement; hidden?: boolean }
 ) {
   return operation(db, context, async (w) => {
     const position = await placeKey(w.read, input.worldId, input.placement)
-    return w.insert(pages, { worldId: input.worldId, parentId: input.placement.parentId, position, title: input.title })
+    const page = await w.insert(pages, {
+      worldId: input.worldId,
+      parentId: input.placement.parentId,
+      position,
+      title: input.title
+    })
+    if (input.hidden) await hideFromPlayers(w, input.worldId, page.id)
+    return page
   })
 }
+
+/** Nace oculta (ADR-0017): bajo una página que alguna campaña conoce, «No lo sabe nadie» en el mundo */
+const hideFromPlayers = (w: Writer, worldId: string, pageId: string) =>
+  writeMark(w, { worldId, campaignId: null, kind: 'page', targetId: pageId, known: false, characters: null })
 
 /**
  * La página de portada de un mundo (como la «Home» de Everlore): la primera de lo más alto, y el mundo la apunta. En
@@ -413,6 +428,8 @@ export function createPagesWithBodies(
     parentId: string | null
     pages: readonly NewPage[]
     properties: (ids: ReadonlyMap<string, string>) => ReadonlyMap<string, unknown[]>
+    /** Las de arriba de la tanda nacen ocultas (sus subpáginas lo heredan) */
+    hidden?: boolean
   }
 ) {
   return operation(db, context, async (w) => {
@@ -449,6 +466,7 @@ export function createPagesWithBodies(
       })
       ids.set(page.key, row.id)
       created.push({ key: page.key, id: row.id, title: row.title, parentId })
+      if (input.hidden && !page.parentKey) await hideFromPlayers(w, input.worldId, row.id)
       const owner = { worldId: input.worldId, pageId: row.id, updatedBy: context.actorId }
       if (page.body)
         docs.push({ ...owner, kind: 'body', state: page.body, ...(page.bodyId ? { id: page.bodyId } : {}) })
@@ -477,7 +495,15 @@ export function createPagesWithBodies(
  */
 export function relatedPages(
   db: Database,
-  input: { worldId: string; pageId: string; template: string; field: string; limit: number }
+  input: {
+    worldId: string
+    pageId: string
+    template: string
+    field: string
+    limit: number
+    /** Solo estas (las que ve un jugador) */
+    within?: readonly string[]
+  }
 ) {
   const contains = JSON.stringify([{ field: input.field, value: [input.pageId] }])
   return db
@@ -489,7 +515,14 @@ export function relatedPages(
         isNull(pages.deletedAt),
         sql`${pages.id} <> ${input.pageId}`,
         sql`${pages.templateLine} @> array[${input.template}]::text[]`,
-        sql`${pages.properties} @> ${contains}::jsonb`
+        sql`${pages.properties} @> ${contains}::jsonb`,
+        input.within ? sql`${pages.id} = any(${uuidArray(input.within)})` : undefined,
+        // Un jugador: un campo «Oculto» no cuenta (si no, la fila delataría la relación)
+        input.within
+          ? sql`exists (select 1 from jsonb_array_elements(${pages.properties}) e
+              where e->>'field' = ${input.field} and e->'value' @> ${JSON.stringify([input.pageId])}::jsonb
+                and coalesce(e->>'hidden', '') <> 'true')`
+          : undefined
       )
     )
     .orderBy(sql`lower(${pages.title})`, pages.id)
@@ -511,6 +544,22 @@ export function pagesPointingTo(db: Database, input: { worldId: string; pageId: 
       )
     )
     .orderBy(sql`lower(${pages.title})`, pages.id)
+}
+
+/** El árbol entero del mundo, para montar el de un jugador (ADR-0017): lo justo de cada página, en su orden */
+export function treeRows(db: Database, worldId: string) {
+  return db
+    .select({
+      id: pages.id,
+      parentId: pages.parentId,
+      title: pages.title,
+      icon: pages.icon,
+      template: pages.template,
+      version: pages.version
+    })
+    .from(pages)
+    .where(and(eq(pages.worldId, worldId), isNull(pages.deletedAt)))
+    .orderBy(...byPosition)
 }
 
 /** Todas las páginas del mundo fuera de la papelera, en su orden (para exportar) */
@@ -542,13 +591,26 @@ export async function inWorld(db: Database, worldId: string, pageIds: readonly s
  * Las páginas del mundo fuera de la papelera cambiadas hace poco, de la última a la primera: su fila o alguno de sus
  * documentos (el cuerpo, un secreto, una nota), lo que sea más reciente
  */
-export function recentPages(db: Database, worldId: string, limit: number) {
+export function recentPages(
+  db: Database,
+  worldId: string,
+  limit: number,
+  /** Un jugador (ADR-0017): solo las que ve, y por su cuerpo (lo que cambie en un secreto no cuenta) */
+  player?: { within: readonly string[] }
+) {
   const editedAt = sql<Date>`greatest(${pages.updatedAt}, coalesce(max(${documents.updatedAt}), ${pages.updatedAt}))`
+  const docs = player ? and(eq(documents.pageId, pages.id), eq(documents.kind, 'body')) : eq(documents.pageId, pages.id)
   return db
     .select({ id: pages.id, title: pages.title, icon: pages.icon, cover: pages.cover, editedAt })
     .from(pages)
-    .leftJoin(documents, eq(documents.pageId, pages.id))
-    .where(and(eq(pages.worldId, worldId), isNull(pages.deletedAt)))
+    .leftJoin(documents, docs)
+    .where(
+      and(
+        eq(pages.worldId, worldId),
+        isNull(pages.deletedAt),
+        player ? sql`${pages.id} = any(${uuidArray(player.within)})` : undefined
+      )
+    )
     .groupBy(pages.id)
     .orderBy(sql`${editedAt} desc`, pages.id)
     .limit(limit)

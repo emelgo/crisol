@@ -23,6 +23,8 @@ import { documentsRepo, filesRepo, mapsRepo } from '@crisol/db'
 import { type Capability, keyBetween, NotFoundError } from '@crisol/domain'
 import * as Y from 'yjs'
 import { pagesChanged } from '../realtime/events.ts'
+import { viewedPage } from '../wiki/projection.ts'
+import type { WikiView } from '../wiki/reader.ts'
 import { authorizedPage, type WikiTarget } from './access.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
 import { implement } from './registry.ts'
@@ -78,10 +80,21 @@ async function authorizedPin(ctx: ActionContext, capability: Capability, pinId: 
   return { ...found, pin }
 }
 
-async function mapView(ctx: ActionContext, tabId: string, pageId: string): Promise<MapView> {
+async function mapView(ctx: ActionContext, tabId: string, pageId: string, view?: WikiView): Promise<MapView> {
   const map = await mapsRepo.mapOfTab(ctx.db, tabId)
   if (!map) throw new NotFoundError('map')
-  const pins = await mapsRepo.listPins(ctx.db, map.id)
+  const all = await mapsRepo.listPins(ctx.db, map.id)
+  // Un jugador (ADR-0017): los pines que ve; uno a una página que no ve, con su etiqueta y sin ella
+  const pins =
+    !view || view.full
+      ? all
+      : all
+          .filter((pin) => view.seesMapItem({ kind: 'pin', id: pin.id, pageId, hidden: pin.hidden }))
+          .map((pin) => ({
+            ...pin,
+            hidden: false,
+            ...(pin.pageId && !view.seesPage(pin.pageId) ? { pageId: null, pageTitle: null } : {})
+          }))
   const hasImage = map.fileId && map.fileName && map.width && map.height
   return {
     id: map.id,
@@ -115,9 +128,14 @@ async function checkPinPage(ctx: ActionContext, wiki: WikiTarget, pageId: string
 const pinName = (pin: { label: string | null; pageTitle?: string | null }) => pin.label ?? pin.pageTitle ?? null
 
 export const mapActions = [
-  implement(listPageTabs, async (ctx, { pageId }) => {
-    await authorizedPage(ctx, 'page.read', pageId)
-    return { tabs: (await mapsRepo.listTabs(ctx.db, pageId)).map(tabView) }
+  implement(listPageTabs, async (ctx, { pageId, ...as }) => {
+    const { view } = await viewedPage(ctx, pageId, as)
+    const tabs = (await mapsRepo.listTabs(ctx.db, pageId)).filter(
+      // Un jugador (ADR-0017): las que ve; las tablas aleatorias de la wiki siguen siendo del máster
+      (tab) => view.full || (tab.kind !== 'table' && view.seesTab({ id: tab.id, pageId, hidden: tab.hidden }))
+    )
+    // Lo que se le reveló, para él no está oculto
+    return { tabs: tabs.map((tab) => (view.full ? tabView(tab) : { ...tabView(tab), hidden: false })) }
   }),
 
   implement(createPageTab, async (ctx, { pageId, kind, name }) => {
@@ -194,9 +212,11 @@ export const mapActions = [
     return { id: tabId }
   }),
 
-  implement(getMap, async (ctx, { tabId }) => {
-    const { tab } = await authorizedTab(ctx, 'page.read', tabId)
-    return mapView(ctx, tabId, tab.pageId)
+  implement(getMap, async (ctx, { tabId, ...as }) => {
+    const tab = await mapsRepo.findTab(ctx.db, tabId)
+    const { view } = await viewedPage(ctx, tab?.pageId ?? '', as)
+    if (!tab || !view.seesTab({ id: tab.id, pageId: tab.pageId, hidden: tab.hidden })) throw new NotFoundError('tab')
+    return mapView(ctx, tabId, tab.pageId, view)
   }),
 
   implement(updateMap, async (ctx, { mapId, image, scale }) => {

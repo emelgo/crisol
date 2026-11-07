@@ -161,7 +161,7 @@ describe('el compendio del mundo (docs/specs/compendio-mundo.md)', () => {
     expect((await read())[0].world.origin.changed).toBe(true)
   })
 
-  it('la jugadora no ve el compendio del mundo (hasta el módulo 5)', async () => {
+  it('la jugadora no ve el compendio del mundo que no se le reveló', async () => {
     await putWorld([espada])
     const compendium = await ok200('getCampaignCompendium', { campaignId }, ana.cookie)
     expect(compendium.world).toBeNull()

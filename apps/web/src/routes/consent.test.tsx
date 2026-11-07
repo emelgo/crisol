@@ -85,9 +85,11 @@ describe('consentimiento OAuth', () => {
     expect(screen.queryByRole('button', { name: 'Permitir' })).toBeNull()
   })
 
-  it('quien no es propietario no puede permitirlo (módulo 0)', async () => {
+  it('quien no es propietario ni juega en ninguna campaña no puede permitirlo (ADR-0017)', async () => {
     renderConsent('member')
-    expect((await screen.findByRole('alert')).textContent).toBe('De momento solo el propietario puede conectar una IA.')
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'Esta cuenta aún no puede conectar una IA: entra antes en una campaña.'
+    )
     expect(screen.queryByRole('button', { name: 'Permitir' })).toBeNull()
     expect(screen.getByRole('button', { name: 'No permitir' })).toBeDefined()
   })

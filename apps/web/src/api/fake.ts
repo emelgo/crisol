@@ -549,6 +549,7 @@ export function fakeApi(
     play: Play
     overrides: Record<string, number>
     version: number
+    hidden?: boolean
   }> = []
   const worldEntry = (worldId: string, systemId: string, key: string) => {
     const found = entriesOf(worldId, systemId).find((e) => e.item.key === key)
@@ -747,6 +748,7 @@ export function fakeApi(
         name: row.name,
         number: row.number,
         unique: row.unique,
+        hidden: Boolean(row.hidden),
         type: entry.type,
         img: entry.img ?? null,
         version: row.version,
@@ -792,7 +794,9 @@ export function fakeApi(
         )
       : system
     const worldKeys = new Set(world ? entriesOf(world.worldId, world.systemId).map((e) => e.item.key) : [])
-    return { document, choices, content, world, worldKeys }
+    // Un jugador no ve los tipos que la campaña le oculta (docs/specs/compendio-jugadores.md)
+    const hidden = campaign.role === 'player' ? (campaign.hiddenTypes ?? []) : []
+    return { document, choices, content: content.filter((c) => !hidden.includes(c.type)), world, worldKeys }
   }
 
   // El inventario del grupo de cada campaña, con el mismo motor que el servidor (sin historial de verdad)
@@ -846,6 +850,48 @@ export function fakeApi(
     const found = compendiumOf(campaignId)
     const item = found?.content.find((each) => each.key === key)
     return (item && textOf(item.data.name as Text, found?.choices.language ?? 'es')) || key
+  }
+
+  const marks = new Map<string, { known: boolean; characters: string[] | null }>()
+  // Quién de cada campaña escribe en cada página (docs/specs/pagina-de-jugadores.md): campaña|página → personajes o null
+  const editors = new Map<string, string[] | null>()
+  const knowledgeOf = (page: { id: string; worldId: string }) => {
+    const own = (campaignId: string | null) => marks.get(`${campaignId ?? ''}|page|${page.id}`) ?? null
+    const world = own(null)
+    return {
+      pageId: page.id,
+      world: {
+        own: world ? world.known : null,
+        known: world?.known ?? false,
+        from: world ? { pageId: page.id, title: '', layer: 'world' as const } : null
+      },
+      campaigns: campaigns
+        .filter((c) => c.worldId === page.worldId)
+        .map((c) => {
+          const mark = own(c.id)
+          const decided = mark ?? (c.knowsWorld === false ? null : world)
+          return {
+            campaignId: c.id,
+            name: c.name,
+            knowsWorld: c.knowsWorld ?? true,
+            own: mark ? { known: mark.known, characters: mark.characters } : null,
+            audience: !decided?.known
+              ? ('none' as const)
+              : decided.characters
+                ? decided.characters.map((id) => ({ id, name: id }))
+                : ('all' as const),
+            from: decided
+              ? { pageId: page.id, title: '', layer: mark ? ('campaign' as const) : ('world' as const) }
+              : null,
+            characters: [],
+            editors: !editors.has(`${c.id}|${page.id}`)
+              ? ('none' as const)
+              : (editors.get(`${c.id}|${page.id}`) ?? null) === null
+                ? ('all' as const)
+                : (editors.get(`${c.id}|${page.id}`) ?? []).map((id) => ({ id, name: id }))
+          }
+        })
+    }
   }
 
   const handlers: { [N in ActionName]: (input: ActionInput<N>) => ActionOutput<N> } = {
@@ -917,6 +963,7 @@ export function fakeApi(
       if (patch.description !== undefined) campaign.description = patch.description.trim()
       if (patch.color !== undefined) campaign.color = patch.color
       if (patch.cover !== undefined) campaign.cover = patch.cover
+      if (patch.hiddenTypes !== undefined) campaign.hiddenTypes = [...patch.hiddenTypes]
       campaign.version++
       return { ...campaign }
     },
@@ -1168,6 +1215,38 @@ export function fakeApi(
       tables: tablesOf(pageById(pageId)).tables
     }),
     getPageTables: ({ pageId }) => tablesOf(pageById(pageId)),
+    // Lo que sabe cada campaña (ADR-0017): marcas propias de la página, sin herencia (basta para la interfaz)
+    getPageKnowledge: ({ pageId }) => knowledgeOf(pageById(pageId)),
+    reveal: ({ campaignId, kind, targetId, characters }) => {
+      const id = campaignId ?? campaigns[0]?.id ?? ''
+      marks.set(`${id}|${kind}|${targetId}`, { known: true, characters: characters ?? null })
+      return { told: 1, pageUnknown: false }
+    },
+    hide: ({ campaignId, kind, targetId }) => {
+      marks.delete(`${campaignId}|${kind}|${targetId}`)
+      return { ok: true as const }
+    },
+    listCampaignKnowledge: () => ({ campaign: [], world: [], knowsWorld: true }),
+    getSecretsKnowledge: () => ({ secrets: [], campaigns: [] }),
+    listNews: () => ({ news: [] }),
+    seeNews: () => ({ ok: true as const }),
+    listKnownPages: () => ({
+      pageIds: [...marks].flatMap(([key, mark]) =>
+        mark.known && key.split('|')[1] === 'page' ? [key.split('|')[2] ?? ''] : []
+      )
+    }),
+    setPageEditors: ({ campaignId, pageId, editors: who }) => {
+      const id = campaignId ?? campaigns[0]?.id ?? ''
+      if (who === null) editors.delete(`${id}|${pageId}`)
+      else editors.set(`${id}|${pageId}`, who === 'all' ? null : [...who])
+      return { ok: true as const }
+    },
+    setKnowledge: ({ campaignId, kind, targetId, known, characters }) => {
+      const key = `${campaignId ?? ''}|${kind}|${targetId}`
+      if (known === null) marks.delete(key)
+      else marks.set(key, { known, characters: campaignId && known ? (characters ?? null) : null })
+      return { page: kind === 'page' ? knowledgeOf(pageById(targetId)) : null }
+    },
     createPages: () => {
       throw new ApiError('UNSUPPORTED', 400)
     },
@@ -1692,11 +1771,39 @@ export function fakeApi(
     listInPlay: ({ campaignId }) => ({
       creatures: creatures.filter((c) => c.campaignId === campaignId).map((c) => creatureCard(c).card)
     }),
+    // Lo que ven los jugadores: las que están a la vista, con su estado en palabras
+    listVisibleInPlay: ({ campaignId }) => ({
+      creatures: creatures
+        .filter((c) => c.campaignId === campaignId && !c.hidden)
+        .map((c) => {
+          const { card } = creatureCard(c)
+          const life = card.life
+          const state =
+            !life || life.max <= 0
+              ? null
+              : life.value <= 0
+                ? ('down' as const)
+                : life.value >= life.max
+                  ? ('unhurt' as const)
+                  : life.value <= life.max / 4
+                    ? ('dying' as const)
+                    : life.value <= life.max / 2
+                      ? ('bloodied' as const)
+                      : ('hurt' as const)
+          return { id: card.id, name: card.name, number: card.number, img: card.img, state }
+        })
+    }),
+    setCreatureHidden: ({ creatureId, hidden }) => {
+      const row = creatureById(creatureId)
+      row.hidden = hidden
+      row.version++
+      return { ok: true as const }
+    },
     getInPlay: ({ creatureId }) => {
       const { card, view } = creatureCard(creatureById(creatureId))
       return { creature: card, state: view }
     },
-    putInPlay: ({ campaignId, key, count, unique, hp, name }) => {
+    putInPlay: ({ campaignId, key, count, unique, hp, name, hidden }) => {
       const found = compendiumOf(campaignId)
       const entry = found?.content.find((c) => c.key === key)
       if (!found || !entry) throw new ApiError('NOT_FOUND', 404)
@@ -1723,7 +1830,8 @@ export function fakeApi(
           unique: Boolean(unique),
           play: start.play,
           overrides: start.overrides,
-          version: 1
+          version: 1,
+          hidden: Boolean(hidden)
         }
         creatures.push(row)
         return row

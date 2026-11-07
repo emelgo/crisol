@@ -8,10 +8,12 @@ import {
   type CreatureInPlay,
   getInPlay,
   listInPlay,
+  listVisibleInPlay,
   playCreature,
   putInPlay,
   removeFromPlay,
-  rollForCreature
+  rollForCreature,
+  setCreatureHidden
 } from '@crisol/contracts'
 import { creaturesRepo, diceRepo, systemsRepo } from '@crisol/db'
 import { cryptoRoller, rollDice } from '@crisol/dice'
@@ -52,7 +54,11 @@ const changed = () => new InvalidRequestError('CREATURE_CHANGED', 'la ha cambiad
 
 /** La campaña (si quien pide lleva sus criaturas), su sistema de la cuenta y lo que eligió de él */
 async function campaignOf(ctx: ActionContext, campaignId: string) {
-  const campaign = await authorizedCampaign(ctx, 'creatures.manage', campaignId)
+  return systemOf(ctx, await authorizedCampaign(ctx, 'creatures.manage', campaignId))
+}
+
+/** El sistema de la campaña y su compendio (las dos capas), ya autorizada la campaña */
+async function systemOf(ctx: ActionContext, campaign: Awaited<ReturnType<typeof authorizedCampaign>>) {
   const row = campaign.system ? await systemsRepo.findSystem(ctx.db, campaign.system) : null
   // Las criaturas son del compendio: solo con un sistema de la cuenta (Crisol viene vacío, ADR-0015)
   if (!row || row.deletedAt) throw new InvalidRequestError('NO_SYSTEM', 'la campaña no tiene un sistema con compendio')
@@ -112,6 +118,7 @@ function cardOf(
     name: row.name,
     number: row.number,
     unique: row.unique,
+    hidden: row.hidden,
     type: entry.type,
     img: entry.img ?? null,
     version: row.version,
@@ -148,7 +155,48 @@ function setValues(play: Play, paths: readonly string[]): Play {
 const nameOf = (entry: ContentItem, language: 'es' | 'en') =>
   textOf(entry.data.name as Text | undefined, language) || entry.key
 
+/** Cómo está, en palabras, según su vida (docs/specs/compendio-jugadores.md) */
+function stateOf(life: { value: number; max: number } | null) {
+  if (!life || life.max <= 0) return null
+  if (life.value <= 0) return 'down' as const
+  if (life.value >= life.max) return 'unhurt' as const
+  if (life.value <= life.max / 4) return 'dying' as const
+  if (life.value <= life.max / 2) return 'bloodied' as const
+  return 'hurt' as const
+}
+
 export const creatureActions = [
+  // Lo que ve un jugador: las que están a la vista, con su nombre, su imagen y cómo están (sin números ni hoja)
+  implement(listVisibleInPlay, async (ctx, { campaignId }) => {
+    const campaign = await authorizedCampaign(ctx, 'campaign.read', campaignId)
+    if (!campaign.system) return { creatures: [] }
+    const at = await systemOf(ctx, campaign)
+    const rows = (await creaturesRepo.listCreatures(ctx.db, campaignId)).filter((r) => !r.hidden)
+    const content = await layers.contentByKeys(ctx, at.row.id, at.world, [...new Set(rows.map((r) => r.key))])
+    return {
+      creatures: rows.flatMap((row) => {
+        try {
+          const { card } = viewOf(at, row, content)
+          return [{ id: card.id, name: card.name, number: card.number, img: card.img, state: stateOf(card.life) }]
+        } catch {
+          return []
+        }
+      })
+    }
+  }),
+
+  implement(setCreatureHidden, async (ctx, { creatureId, hidden }) => {
+    const { row, at } = await readable(ctx, creatureId)
+    await creaturesRepo.setCreatureHidden(
+      ctx.db,
+      historyContext(ctx, 'setCreatureHidden', { name: row.name, hidden }, at.campaign),
+      creatureId,
+      hidden
+    )
+    ctx.realtime.publish(creaturesChanged({ campaignId: row.campaignId, worldId: at.campaign.worldId }))
+    return { ok: true as const }
+  }),
+
   implement(listInPlay, async (ctx, { campaignId }) => {
     const at = await campaignOf(ctx, campaignId)
     const rows = await creaturesRepo.listCreatures(ctx.db, campaignId)
@@ -158,7 +206,7 @@ export const creatureActions = [
     return {
       creatures: rows.flatMap((row) => {
         try {
-          return [viewOf(at, row, content).card]
+          return [{ ...viewOf(at, row, content).card, hidden: row.hidden }]
         } catch {
           return []
         }
@@ -172,7 +220,7 @@ export const creatureActions = [
     return { creature: card, state: played.view }
   }),
 
-  implement(putInPlay, async (ctx, { campaignId, key, count, formula, unique, hp, name }) => {
+  implement(putInPlay, async (ctx, { campaignId, key, count, formula, unique, hp, name, hidden }) => {
     const at = await campaignOf(ctx, campaignId)
     const [entry] = await layers.contentByKeys(ctx, at.row.id, at.world, [key])
     // Que la vea la campaña (sus fuentes; lo del mundo, siempre) y sea una criatura (un actor)
@@ -211,7 +259,8 @@ export const creatureActions = [
         number,
         unique: Boolean(unique),
         play: start.play as Record<string, unknown>,
-        overrides: start.overrides
+        overrides: start.overrides,
+        hidden: Boolean(hidden)
       }
     })
     let created: Awaited<ReturnType<typeof creaturesRepo.createCreatures>>

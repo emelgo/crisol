@@ -37,7 +37,8 @@ export const es = {
     inPlay: 'En juego',
     party: 'Grupo',
     library: 'Biblioteca',
-    characters: 'Personajes'
+    characters: 'Personajes',
+    revealed: 'Revelado'
   },
   // Una tirada escrita en una página
   diceRoll: {
@@ -183,6 +184,11 @@ export const es = {
     yourCampaigns: 'Tus campañas'
   },
   campaigns: {
+    start: 'Al empezar, los jugadores saben…',
+    startWorld: 'Lo que sabe el mundo',
+    startNone: 'Nada',
+    startSame: 'Lo mismo que «{{name}}»',
+    knowsWorld: 'Parte de lo que sabe el mundo',
     title: 'Campañas',
     empty: 'Aún no hay campañas',
     emptyHint: 'Cada campaña es un grupo de jugadores que juega en este mundo.',
@@ -367,6 +373,15 @@ export const es = {
   // El compendio de una campaña: el contenido de su sistema
   compendium: {
     title: 'Compendio',
+    settings: {
+      title: 'Ajustes del compendio',
+      sources: 'Fuentes',
+      players: 'Lo que ven los jugadores',
+      visible: 'A la vista',
+      hidden: 'Oculto',
+      someHidden_one: '{{count}} oculto',
+      someHidden_other: '{{count}} ocultos'
+    },
     newEntry: 'Nueva entrada',
     newTitle: 'Nueva entrada',
     edit: 'Editar',
@@ -486,6 +501,23 @@ export const es = {
     ownMax: 'Volver al suyo',
     remove: 'Quitar de juego',
     condition: { bloodied: 'Malherida', down: 'Fuera de combate' },
+    // Lo que ven los jugadores (docs/specs/compendio-jugadores.md)
+    players: 'Los jugadores',
+    visible: 'A la vista',
+    hidden: 'Oculta',
+    visibleNote: 'Los jugadores la ven',
+    hiddenNote: 'Los jugadores no la ven',
+    hideFor: 'Oculta a los jugadores: {{name}}',
+    inSight_one: '{{count}} a la vista',
+    inSight_other: '{{count}} a la vista',
+    nothingInSight: 'No hay nada a la vista.',
+    state: {
+      unhurt: 'Ilesa',
+      hurt: 'Herida',
+      bloodied: 'Malherida',
+      dying: 'A punto de caer',
+      down: 'Fuera de combate'
+    },
     put: {
       title: 'Poner en juego',
       copies: 'Copias',
@@ -502,7 +534,8 @@ export const es = {
       goUnique: 'Poner la única en juego',
       now: 'En juego ahora',
       none: 'ninguna',
-      see: 'Ver en juego'
+      see: 'Ver en juego',
+      players: 'Los jugadores'
     },
     apply: {
       open: 'Aplicar',
@@ -695,6 +728,8 @@ export const es = {
     deleted: '«{{title}}» está en la papelera'
   },
   properties: {
+    hide: 'Ocultar «{{name}}» a los jugadores',
+    hidden: 'Oculto',
     title: 'Propiedades',
     add: 'Añadir propiedades',
     edit: 'Editar propiedades',
@@ -1006,6 +1041,118 @@ export const es = {
     zoomIn: 'Acercar más',
     zoomOut: 'Alejar'
   },
+  // Lo que se marca en lo que sabe una campaña, en una frase (el historial y la cola de la IA)
+  knowledgeTargets: {
+    page: '«{{name}}»',
+    secret: 'un secreto de «{{name}}»',
+    tab: 'la pestaña «{{name}}»',
+    pin: 'el pin «{{name}}»',
+    element: '«{{name}}» del mapa',
+    content: '«{{name}}» del compendio del mundo'
+  },
+  // El aviso de lo revelado, a quien juega
+  revealNotice: {
+    region: 'Lo nuevo',
+    title: 'Nuevo: {{title}}',
+    read: 'Leerlo',
+    close: 'Cerrar el aviso',
+    kinds: {
+      page: 'Una página',
+      secret: 'Un secreto',
+      tab: 'Una pestaña',
+      pin: 'Un lugar del mapa',
+      element: 'Algo del mapa',
+      content: 'Del compendio'
+    }
+  },
+  // «Lo que sabe el grupo» (docs/specs/revelar.md)
+  group: {
+    title: 'Lo que sabe el grupo',
+    byCharacter: 'Personaje',
+    byKind: 'Qué',
+    all: 'Todo',
+    everyone: 'Toda la campaña',
+    notKnown: 'Oculto',
+    hide: 'Ocultar otra vez',
+    hidden: '«{{name}}», oculto otra vez',
+    empty: 'Aún no se les ha revelado nada.',
+    world: 'Lo que sabe todo el mundo',
+    kinds: { page: 'Página', secret: 'Secreto', tab: 'Pestaña', pin: 'Pin', element: 'Del mapa', content: 'Compendio' }
+  },
+  // Revelar en partida (docs/specs/revelar.md)
+  reveal: {
+    reveal: 'Revelar',
+    knownBy: 'Lo saben: {{names}}',
+    page: 'Revelar la página',
+    secret: 'Revelar el secreto',
+    revealMore: 'Revelar…',
+    titles: {
+      page: 'Revelar la página',
+      secret: 'Revelar el secreto',
+      pin: 'Revelar el pin',
+      tab: 'Revelar la pestaña'
+    },
+    campaign: 'Campaña',
+    to: 'A quién',
+    everyone: 'Toda la campaña',
+    alsoPage: 'Revelar también la página',
+    hideAgain: 'Ocultar otra vez',
+    done: 'Revelado a «{{campaign}}»',
+    hidden: 'Oculto otra vez a «{{campaign}}»'
+  },
+  // «Quién la conoce» de una página (ADR-0017)
+  whoKnows: {
+    title: 'Quién la conoce',
+    editors: 'Quién de «{{name}}» puede editarla',
+    editorsChoice: 'Pueden editarla',
+    editNobody: 'No la editan',
+    editAll: 'La edita toda la campaña',
+    editSome: 'La editan…',
+    editorsOf: 'Quién de «{{name}}» la edita',
+    editing: 'La editan: {{names}}',
+    known: 'La conoce alguna campaña',
+    close: 'Cerrar',
+    world: 'El mundo',
+    worldChoice: 'Lo que sabe el mundo de esta página',
+    campaignChoice: 'Lo que sabe «{{name}}» de esta página',
+    characters: 'Quién de «{{name}}» la conoce',
+    asParent: 'Como su madre',
+    asWorld: 'Como diga el mundo o su madre',
+    everyone: 'Lo sabe todo el mundo',
+    nobody: 'No lo sabe nadie',
+    campaignAll: 'Lo sabe toda la campaña',
+    campaignSome: 'Lo saben…',
+    campaignNone: 'No lo sabe',
+    sees: {
+      all: 'La ve toda la campaña',
+      none: 'No la ve',
+      some: 'La ven: {{names}}'
+    },
+    here: 'Marcada aquí',
+    by: 'Por «{{title}}»',
+    byWorld: 'Lo sabe el mundo',
+    fromScratch: 'Empezó de cero',
+    viewAs: 'Ver como',
+    viewAsPick: 'Elige…',
+    theCampaign: 'La campaña'
+  },
+  // Las páginas del mundo desde una campaña (ADR-0017)
+  playerPages: {
+    nothing: 'Aún no sabéis nada de este mundo.',
+    new: 'Nuevo',
+    newCount_one: '{{count}} novedad',
+    newCount_other: '{{count}} novedades',
+    empty: 'Nada por ahora.',
+    gone: 'Esta página ya no está a tu alcance.',
+    expand: 'Abrir «{{title}}»',
+    collapse: 'Cerrar «{{title}}»',
+    tabs: 'Pestañas de la página',
+    text: 'Texto',
+    ofMax: '{{value}} de {{max}}',
+    viewingAs: 'Viendo como {{name}}',
+    theCampaign: 'la campaña',
+    back: 'Volver'
+  },
   panelBlocks: {
     empty: 'Panel vacío',
     emptyHint: 'Añade datos de toda la página: medidores, estrellas, notas…',
@@ -1287,6 +1434,7 @@ export const es = {
     attributionPlain: 'Contiene material de {{sources}}, con licencia {{license}}.'
   },
   pageTabs: {
+    hiddenFromPlayers: 'Oculta a los jugadores',
     label: 'Pestañas de la página',
     text: 'Texto',
     add: 'Pestaña nueva',
@@ -1332,6 +1480,7 @@ export const es = {
     pins: 'Pines del mapa',
     loading: 'Cargando la imagen…',
     pin: {
+      hiddenFromPlayers: 'Oculto a los jugadores',
       title: 'Pin',
       name: 'Nombre',
       page: 'Página',
@@ -1457,6 +1606,7 @@ export const es = {
     deleted: 'Bloque borrado.'
   },
   separate: {
+    revealedHint: 'Secreto · revelado',
     secret: 'Secreto',
     note: 'Nota oculta',
     secretHint: 'Secreto · solo lo ves tú',
@@ -1690,6 +1840,15 @@ export const es = {
       deleteSystemContent: 'quitó {{count}} documentos del contenido de «{{name}}»',
       deleteSystemContent_one: 'quitó un documento del contenido de «{{name}}»',
       regenerateInvitation: 'generó un enlace nuevo para {{campaign}}',
+      knowledgeKnown: 'dio a conocer {{what}} a {{who}}',
+      knowledgeRevealed: 'reveló {{what}} a {{who}}',
+      pageEditors: 'dejó escribir en «{{title}}» a {{who}}',
+      pageEditorsNone: 'quitó a «{{campaign}}» el permiso de escribir en «{{title}}»',
+      knowledgeWorld: 'dio a conocer {{what}} a todo el mundo',
+      knowledgeHidden: 'ocultó {{what}} a {{who}}',
+      knowledgeNobody: 'ocultó {{what}} a todo el mundo',
+      knowledgeCleared: 'dejó que {{what}} herede en {{where}}',
+      knowledgeClearedWorld: 'dejó que {{what}} herede en el mundo',
       openInvitations: 'abrió las invitaciones de {{campaign}}',
       closeInvitations: 'cerró las invitaciones de {{campaign}}',
       joinCampaign: 'entró en {{campaign}}',
@@ -1822,6 +1981,15 @@ export const es = {
       deleteSystemContent: 'quitar {{count}} documentos del contenido de «{{name}}»',
       deleteSystemContent_one: 'quitar un documento del contenido de «{{name}}»',
       regenerateInvitation: 'generar un enlace nuevo para {{campaign}}',
+      knowledgeKnown: 'dar a conocer {{what}} a {{who}}',
+      knowledgeRevealed: 'revelar {{what}} a {{who}}',
+      pageEditors: 'dejar escribir en «{{title}}» a {{who}}',
+      pageEditorsNone: 'quitar a «{{campaign}}» el permiso de escribir en «{{title}}»',
+      knowledgeWorld: 'dar a conocer {{what}} a todo el mundo',
+      knowledgeHidden: 'ocultar {{what}} a {{who}}',
+      knowledgeNobody: 'ocultar {{what}} a todo el mundo',
+      knowledgeCleared: 'dejar que {{what}} herede en {{where}}',
+      knowledgeClearedWorld: 'dejar que {{what}} herede en el mundo',
       openInvitations: 'abrir las invitaciones de {{campaign}}',
       closeInvitations: 'cerrar las invitaciones de {{campaign}}',
       joinCampaign: 'entrar en {{campaign}}',
@@ -1889,6 +2057,7 @@ export const es = {
     }
   },
   ai: {
+    playerReads: 'Tu IA solo lee lo que sabe tu campaña.',
     link: 'IA',
     title: 'Ajustes de IA',
     connectorTitle: 'Conectar una IA',
@@ -1951,7 +2120,7 @@ export const es = {
     title: 'Conectar {{client}}',
     body: '{{client}} quiere usar tu cuenta de Crisol: ver y cambiar tus mundos en tu nombre.',
     history: 'Lo que haga quedará en el historial y podrás deshacerlo.',
-    ownerOnly: 'De momento solo el propietario puede conectar una IA.',
+    ownerOnly: 'Esta cuenta aún no puede conectar una IA: entra antes en una campaña.',
     allow: 'Permitir',
     deny: 'No permitir',
     expiredTitle: 'Tu sesión ha caducado',
@@ -1978,6 +2147,7 @@ export const es = {
     papelera: 'Papelera',
     ajustes: 'Ajustes',
     perfil: 'Perfil',
+    revelado: 'Lo que sabe el grupo',
     close: 'Cerrar'
   },
   // El tutorial guiado de cada vista: la primera vez que se entra, qué es cada cosa
@@ -2004,6 +2174,7 @@ export const es = {
       wiki: 'El mundo: se abre en su portada; aquí se esconde o se ve su árbol.',
       search: 'Filtra el árbol por nombre o #etiqueta; con Intro, busca en el texto de todas.',
       panel: 'Datos de toda la página, a la vista: medidores, estrellas, notas…',
+      whoKnows: 'Qué sabe de esta página cada campaña, y lo que ven sus jugadores.',
       bookmarks: 'Tus páginas marcadas, a mano.',
       files: 'Las imágenes y documentos del mundo.',
       history: 'Lo que se ha hecho en este mundo, para deshacerlo si hace falta.',
@@ -2021,11 +2192,13 @@ export const es = {
     },
     campaign: {
       home: 'La campaña y quién juega en ella.',
+      pages: 'Las páginas del mundo, con lo que sabe el grupo.',
       characters: 'Los personajes de la campaña.',
       compendium: 'Las reglas y el contenido del juego de la campaña.',
       inPlay: 'Las criaturas que has puesto en juego, con su hoja.',
       party: 'Lo que es de todo el grupo: el botín y sus monedas.',
-      library: 'Los libros del mundo, para buscar dentro.'
+      library: 'Los libros del mundo, para buscar dentro.',
+      revealed: 'Lo que le has revelado al grupo, para repasarlo u ocultarlo otra vez.'
     },
     characters: {
       create: 'Cada personaje se hace con las reglas de la campaña, paso a paso.',
@@ -2036,6 +2209,11 @@ export const es = {
     library: {
       search: 'Busca una palabra o una idea en todos los libros.',
       books: 'Los libros del mundo y los comunes, y si ya se puede buscar en ellos.'
+    },
+    // Las páginas del mundo, para quien juega
+    playerPages: {
+      tree: 'Lo que sabéis del mundo. Crece según lo vais descubriendo.',
+      page: 'Cada página, con lo que sabe tu grupo.'
     },
     party: {
       items: 'Lo del grupo, por contenedores. «Mover» lo pasa a un personaje sin duplicarlo.',
@@ -2185,6 +2363,8 @@ export const es = {
     BAD_PLAY: 'Eso no se puede cambiar así',
     BAD_FORMULA: 'Esa tirada no se entiende',
     VISIBILITY_NOT_ALLOWED: 'No puedes tirar así en esta campaña',
+    PAGE_HAS_SECRETS: 'Tiene secretos o notas ocultas: quítalos antes de dejar que la editen',
+    PLAYER_PAGE: 'La escriben los jugadores: no lleva secretos ni notas ocultas',
     UNKNOWN: 'Algo ha fallado. Vuelve a intentarlo.'
   },
   load: {

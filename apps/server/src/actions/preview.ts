@@ -1,16 +1,17 @@
 /**
- * Lo de dentro de una página para enseñarlo en otra: la vista previa de un enlace y los incrustados. Sale de la API,
- * que proyecta (el máster ve sus secretos; el módulo 5 quitará lo que no vea cada cual), y nunca abre el documento de
- * Yjs del otro para quien lo mira: se lee aquí
+ * Lo de dentro de una página para enseñarlo en otra (la vista previa de un enlace y los incrustados) y el cuerpo que lee
+ * un jugador. Sale de la API, que proyecta (el máster ve sus secretos; un jugador, solo lo que sabe: ADR-0017), y nunca
+ * abre el documento de Yjs del otro para quien lo mira: se lee aquí
  */
 import { getPageContent } from '@crisol/contracts'
-import { documentsRepo, pagesRepo } from '@crisol/db'
-import { foldName } from '@crisol/domain'
+import { documentsRepo, mapsRepo, pagesRepo } from '@crisol/db'
+import { foldName, NotFoundError } from '@crisol/domain'
 import type { JSONContent } from '@tiptap/core'
 import { readDocument } from '../wiki/content.ts'
 import { linkName, worldNames } from '../wiki/links.ts'
+import { filterBody, viewedPage, visibleProperties } from '../wiki/projection.ts'
 import { propertiesOf } from '../wiki/properties.ts'
-import { authorizedPage } from './access.ts'
+import type { WikiView } from '../wiki/reader.ts'
 import type { ActionContext } from './context.ts'
 import { implement } from './registry.ts'
 
@@ -40,6 +41,9 @@ function anchored(blocks: JSONContent[], anchor: string): JSONContent[] {
 
 interface Context {
   ctx: ActionContext
+  /** Quien lo mira (ADR-0017): un jugador no ve los secretos que no se le revelaron, ni las notas, ni lo que no conoce */
+  view: WikiView
+  worldId: string
   linkTitle: (id: string) => string
   /** Las páginas ya abiertas por encima: un incrustado de una de ellas sería un ciclo */
   above: ReadonlySet<string>
@@ -52,7 +56,9 @@ async function project(node: JSONContent, at: Context): Promise<JSONContent> {
   if (node.type === 'secret' || node.type === 'note') {
     const documentId = String(node.attrs?.documentId ?? '')
     const pageId = at.separates.get(documentId)
-    const content = pageId ? ((await readDocument(at.ctx, { kind: 'separate', documentId, pageId })).content ?? []) : []
+    // Lo de dentro, filtrado como el cuerpo: sus enlaces a lo que no ve, como sin resolver
+    const read = pageId ? await readDocument(at.ctx, { kind: 'separate', documentId, pageId }) : null
+    const content = (read && pageId ? filterBody(read, at.view, pageId)?.content : null) ?? []
     return { ...node, content: await Promise.all(content.map((child) => project(child, at))) }
   }
   if (node.type === 'pageLink' && typeof node.attrs?.pageId === 'string') {
@@ -77,12 +83,9 @@ async function project(node: JSONContent, at: Context): Promise<JSONContent> {
 
 /** Los bloques de una página (o de su sección), proyectados; null si no se ve */
 async function contentOf(ctx: ActionContext, pageId: string, anchor: string | null, at: Omit<Context, 'separates'>) {
-  try {
-    await authorizedPage(ctx, 'page.read', pageId)
-  } catch {
-    return null
-  }
-  const body = await readDocument(ctx, { kind: 'body', pageId })
+  const page = await pagesRepo.findPage(ctx.db, pageId)
+  if (!page || page.worldId !== at.worldId || !at.view.seesPage(pageId)) return null
+  const body = filterBody(await readDocument(ctx, { kind: 'body', pageId }), at.view, pageId) ?? { type: 'doc' }
   const blocks = anchor ? anchored(body.content ?? [], anchor) : (body.content ?? [])
   const separates = new Map(
     (await documentsRepo.documentsOfPages(ctx.db, [pageId])).filter((d) => d.kind !== 'body').map((d) => [d.id, pageId])
@@ -90,14 +93,35 @@ async function contentOf(ctx: ActionContext, pageId: string, anchor: string | nu
   return Promise.all(blocks.map((block) => project(block, { ...at, separates })))
 }
 
+/** Lo de una pestaña de texto, proyectado como el cuerpo */
+async function tabContent(ctx: ActionContext, documentId: string, pageId: string, at: Omit<Context, 'separates'>) {
+  const read = await readDocument(ctx, { kind: 'separate', documentId, pageId })
+  const content = filterBody(read, at.view, pageId)?.content ?? []
+  return Promise.all(content.map((block) => project(block, { ...at, separates: new Map() })))
+}
+
 export const previewActions = [
-  implement(getPageContent, async (ctx, { pageId, anchor, preview }) => {
-    const { page, wiki } = await authorizedPage(ctx, 'page.read', pageId)
+  implement(getPageContent, async (ctx, { pageId, anchor, preview, tabId, ...as }) => {
+    const { page, wiki, view } = await viewedPage(ctx, pageId, as)
+    // Una pestaña de texto: de esta página y que vea
+    const tab = tabId ? await mapsRepo.findTab(ctx.db, tabId) : null
+    if (tabId && (!tab || tab.pageId !== page.id || tab.kind !== 'text' || !tab.documentId))
+      throw new NotFoundError('tab')
+    if (tab && !view.seesTab({ id: tab.id, pageId: tab.pageId, hidden: tab.hidden })) throw new NotFoundError('tab')
     const linkTitle = linkName(await worldNames(ctx, wiki.worldId))
-    const summary = propertiesOf(page.properties).find((p) => foldName(p.name) === 'resumen')
+    const summary = visibleProperties(propertiesOf(page.properties), view).find((p) => foldName(p.name) === 'resumen')
     // En la vista previa, lo incrustado dentro no se abre (como si ya se hubiera llegado al último nivel)
-    const base = { ctx, linkTitle, above: new Set([page.id]), depth: preview ? MAX_EMBED_DEPTH : 0 }
-    let blocks = (await contentOf(ctx, page.id, anchor ?? null, base)) ?? []
+    const base = {
+      ctx,
+      view,
+      worldId: wiki.worldId,
+      linkTitle,
+      above: new Set([page.id]),
+      depth: preview ? MAX_EMBED_DEPTH : 0
+    }
+    let blocks = tab?.documentId
+      ? await tabContent(ctx, tab.documentId, page.id, base)
+      : ((await contentOf(ctx, page.id, anchor ?? null, base)) ?? [])
     let truncated = false
     if (preview) {
       // Los párrafos vacíos no cuentan
@@ -110,7 +134,7 @@ export const previewActions = [
         id: page.id,
         title: page.title,
         icon: page.icon,
-        path: await pagesRepo.pagePath(ctx.db, page.id),
+        path: view.pages(await pagesRepo.pagePath(ctx.db, page.id)),
         summary: summary?.type === 'text' && summary.value.trim() ? summary.value : null,
         cover: page.cover ?? null
       },

@@ -3,13 +3,14 @@
  * página que aún no existe se quedan sin resolver, por su nombre; cuando aparece una página con ese nombre (al crearla,
  * renombrarla o darle un alias), se resuelven solos, también en el texto
  */
-import { documentsRepo, linksRepo, pagesRepo, worldsRepo } from '@crisol/db'
+import { documentsRepo, knowledgeRepo, linksRepo, pagesRepo, worldsRepo } from '@crisol/db'
 import { foldName, type NamedPage, reservedList, resolveName } from '@crisol/domain'
 import type { JSONContent } from '@tiptap/core'
 import { type ActionEnv, InvalidRequestError } from '../actions/context.ts'
 import { pageContentChanged } from '../realtime/events.ts'
 import { documentJson, patchDocument, patchDocuments, writeDocument } from './content.ts'
 import { rebuildFileEmbeds, withResolvedFiles } from './file-embeds.ts'
+import { editorsNames } from './player-pages.ts'
 import { propertiesOf } from './properties.ts'
 import { indexDocument, indexDocuments } from './search.ts'
 
@@ -184,7 +185,11 @@ function withResolved(json: JSONContent, resolved: ReadonlyMap<string, string>):
  */
 export async function resolvePending(env: ActionEnv, worldId: string, actorId: string, names: readonly string[]) {
   const keys = [...new Set(names.map(foldName))].filter(Boolean)
-  const waiting = await linksRepo.unresolvedNamed(env.db, worldId, keys)
+  // Las páginas de jugadores se resuelven al guardarlas, contra lo que ven quienes las editan: aquí no
+  const edited = await knowledgeRepo.editedPages(env.db, worldId)
+  const waiting = (await linksRepo.unresolvedNamed(env.db, worldId, keys)).filter(
+    (link) => !edited.has(link.sourcePageId)
+  )
   if (waiting.length === 0) return
   const world = await worldNames(env, worldId)
   const byDocument = new Map<string, { kind: string; pageId: string; resolved: Map<string, string>; ids: string[] }>()
@@ -264,8 +269,10 @@ export async function linksOfStored(
   json: JSONContent,
   { kind, actorId, onError }: { kind: 'body' | 'separate'; actorId: string | null; onError: (error: unknown) => void }
 ) {
-  const byName = await rebuildLinks(env, source, json)
-  const filesByName = await rebuildFileEmbeds(env, source, json)
+  // Una página de jugadores: los nombres, contra lo que ven todos los que la editan; los archivos, nunca por su nombre
+  const audience = await editorsNames(env, source.worldId, source.pageId)
+  const byName = await rebuildLinks(env, source, json, audience ?? undefined)
+  const filesByName = await rebuildFileEmbeds(env, source, json, false, audience === null)
   await indexDocument(env, source.documentId, json)
   // Lo que la enseña en otra página (vista previa, incrustados) se vuelve a pedir
   const world = await worldsRepo.findWorld(env.db, source.worldId)

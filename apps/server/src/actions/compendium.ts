@@ -43,6 +43,7 @@ import {
   visibleContent,
   withTables
 } from '@crisol/systems'
+import { contentSeen } from '../wiki/reader.ts'
 import { authorizedCampaign } from './access.ts'
 import { type ActionContext, InvalidRequestError } from './context.ts'
 import { rolled, saveRoll, storedOf } from './dice.ts'
@@ -63,11 +64,25 @@ export async function campaignSystem(ctx: ActionContext, campaignId: string) {
   const document = withTables(catalog ?? (row?.document as unknown as System))
   const { choices } = normalizeChoices(document, (campaign.systemChoices ?? {}) as Partial<Choices>)
   const wiki = { worldId: campaign.worldId, organizationId: campaign.organizationId }
-  const world: layers.WorldLayer | null =
-    row && can(ctx.actor, 'worldContent.read', wiki) ? { worldId: campaign.worldId, systemId: row.id } : null
-  // Para la lista y los tipos basta lo de cada documento que se ve en ella: el de la cuenta, sin leerlo entero
-  const entries: ContentEntry[] = row ? await layers.contentIndex(ctx, row.id, world) : []
-  return { document, row, choices, entries, world, wiki }
+  // El compendio del mundo: entero para quien lo lleva; para un jugador, lo que se le reveló (docs/specs/compendio-jugadores.md)
+  const master = can(ctx.actor, 'worldContent.read', wiki)
+  let layer: layers.WorldLayer | null = null
+  if (row && master) layer = { worldId: campaign.worldId, systemId: row.id }
+  else if (row) {
+    const seen = await contentSeen(ctx, wiki, campaignId)
+    const keys = (await worldContentRepo.contentIndex(ctx.db, campaign.worldId, row.id))
+      .map((entry) => entry.key)
+      .filter((key) => seen?.(key) ?? true)
+    layer = keys.length > 0 ? { worldId: campaign.worldId, systemId: row.id, only: new Set(keys) } : null
+  }
+  // Para la lista y los tipos basta lo de cada documento que se ve en ella: el de la cuenta, sin leerlo entero.
+  // Un jugador no ve los tipos que la campaña le oculta
+  const hidden = master ? [] : (campaign.hiddenTypes ?? [])
+  const entries: ContentEntry[] = (row ? await layers.contentIndex(ctx, row.id, layer) : []).filter(
+    (entry) => !hidden.includes(entry.type)
+  )
+  // `layer`: lo que se lee del mundo; `world`: el compendio del mundo como tal (su id, sus copias), solo del máster
+  return { document, row, choices, entries, layer, world: master ? layer : null, wiki, hidden }
 }
 
 /** Lo que sale de una tirada, como mucho: las filas que se pisan y las tablas anidadas no la disparan */
@@ -163,8 +178,10 @@ export const compendiumActions = [
         editable: null,
         world: null
       }
-    const { document, row, choices, entries, world, wiki } = found
+    const { document, row, choices, entries, world, wiki, hidden } = found
     const language = choices.language
+    // Los tipos que la campaña oculta a sus jugadores no salen (ni en sus secciones)
+    const shownTypes = (types: CompendiumType[]) => types.filter((type) => !hidden.includes(type.key))
     const say = (text: Text | undefined) => textOf(text, language)
     const typeView = (type: CompendiumType) => ({
       ...type,
@@ -196,12 +213,14 @@ export const compendiumActions = [
           license: s.license,
           attribution: say(s.attribution)
         })),
-      sections: compendiumSections(document, compendiumTypes(document, entries, choices)).map((section) => ({
-        key: section.key,
-        label: say(section.label),
-        types: section.types.map((type) => ({ key: type.key, label: say(type.label) }))
-      })),
-      types: compendiumTypes(document, entries, choices).map(typeView),
+      sections: compendiumSections(document, shownTypes(compendiumTypes(document, entries, choices)))
+        .filter((section) => section.types.length > 0)
+        .map((section) => ({
+          key: section.key,
+          label: say(section.label),
+          types: section.types.map((type) => ({ key: type.key, label: say(type.label) }))
+        })),
+      types: shownTypes(compendiumTypes(document, entries, choices)).map(typeView),
       world: world
         ? {
             worldId: world.worldId,
@@ -234,9 +253,11 @@ export const compendiumActions = [
   implement(browseCampaignContent, async (ctx, { campaignId, type }) => {
     const found = await campaignSystem(ctx, campaignId)
     if (!found) return { items: [], folders: [], filters: [] }
-    const { document, row, choices, world } = found
-    // Las carpetas salen de sus valores: de un sistema de la cuenta, el contenido de ese tipo entero
-    const items = row ? await layers.contentOfType(ctx, row.id, world, type) : []
+    const { document, row, choices, hidden } = found
+    if (hidden.includes(type)) return { items: [], folders: [], filters: [] }
+    // Las carpetas salen de sus valores: de un sistema de la cuenta, el contenido de ese tipo entero (con lo del mundo
+    // que se ve: un jugador, lo revelado)
+    const items = row ? await layers.contentOfType(ctx, row.id, found.layer, type) : []
     const own = new Set(items.filter((i) => i.world).map((i) => i.key))
     // Su imagen, si el sistema la tiene
     const images = row
@@ -271,9 +292,9 @@ export const compendiumActions = [
       throw new InvalidRequestError('VISIBILITY_NOT_ALLOWED')
     const found = await campaignSystem(ctx, campaignId)
     if (!found) throw new NotFoundError('content')
-    const { document, row, choices, entries, world } = found
+    const { document, row, choices, entries, layer } = found
     if (!visibleContent(document, entries, choices).some((s) => s.item.key === key)) throw new NotFoundError('content')
-    const [item] = row ? await layers.contentByKeys(ctx, row.id, world, [key]) : []
+    const [item] = row ? await layers.contentByKeys(ctx, row.id, layer, [key]) : []
     if (!item) throw new NotFoundError('content')
     const nameOf = (entry: ContentItem) => textOf(entry.data.name as Text | undefined, choices.language) || entry.key
     if (table === undefined && item.table) {
@@ -287,7 +308,7 @@ export const compendiumActions = [
         shown: (k) => shown.has(k),
         open: async (k) => {
           if (!row || !shown.has(k)) return null
-          const [found] = await layers.contentByKeys(ctx, row.id, world, [k])
+          const [found] = await layers.contentByKeys(ctx, row.id, layer, [k])
           return found ?? null
         },
         nameOf
@@ -344,11 +365,11 @@ export const compendiumActions = [
     const wanted = [...new Set(keys)]
     const found = await campaignSystem(ctx, campaignId)
     if (!found) return { items: [], missing: wanted }
-    const { document, row, choices, entries, world } = found
+    const { document, row, choices, entries, layer, world } = found
     const seen = visibleContent(document, entries, choices)
     const shown = new Set(seen.map((s) => s.item.key))
     const visible = wanted.filter((k) => shown.has(k))
-    const items: ContentItem[] = row ? await layers.contentByKeys(ctx, row.id, world, visible) : []
+    const items: ContentItem[] = row ? await layers.contentByKeys(ctx, row.id, layer, visible) : []
     const byKey = new Map(items.map((item) => [item.key, item]))
     const own = world ? await worldEntries(ctx, world, choices.language, visible) : new Map<string, WorldView>()
     const images = row
@@ -368,9 +389,11 @@ export const compendiumActions = [
         const item = byKey.get(k)
         if (!item) return []
         const entry = compendiumEntry(document, seen, item)
+        // Lo del mundo como tal (su id, su origen) va en `world`, solo para el máster
+        const { world: _, ...copy } = structuredClone(item) as ContentItem & { world?: unknown }
         return [
           {
-            ...structuredClone(item),
+            ...copy,
             ...entry,
             play: mechanicsText(document, item.type, item.mechanics as Mechanics | undefined, choices.language),
             ...(item.img && images.has(item.img)

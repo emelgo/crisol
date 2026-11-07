@@ -3,14 +3,14 @@
  * editor ni Yjs. Los títulos no son encabezados (no se meten en el índice de la página que los enseña)
  */
 
-import { Link } from '@tanstack/react-router'
 import type { JSONContent } from '@tiptap/core'
-import type { ReactNode } from 'react'
+import { createContext, type ReactNode, useContext } from 'react'
 import { useTranslation } from 'react-i18next'
 import callout from './callout.module.css'
 import styles from './content.module.css'
 import editor from './editor.module.css'
 import { FileEmbedBlock } from './file-embed.tsx'
+import { PageLink, useReadAs } from './read-as.tsx'
 import separate from './separate.module.css'
 import sheet from './sheet-blocks.module.css'
 
@@ -51,9 +51,9 @@ function Inline({ nodes, worldId }: { nodes: JSONContent[]; worldId: string }) {
         if (node.type === 'pageLink') {
           const text = String(node.attrs?.label || node.attrs?.title || '')
           return typeof node.attrs?.pageId === 'string' ? (
-            <Link key={key} to="/mundos/$worldId/wiki/$pageId" params={{ worldId, pageId: node.attrs.pageId }}>
+            <PageLink key={key} worldId={worldId} pageId={node.attrs.pageId}>
               {text}
-            </Link>
+            </PageLink>
           ) : (
             <span key={key} className={styles.missing}>
               {text}
@@ -125,17 +125,7 @@ export function Block({ node, worldId }: { node: JSONContent; worldId: string })
       return <div className={styles.box}>{children}</div>
     case 'secret':
     case 'note':
-      return (
-        <section
-          aria-label={t(node.type === 'secret' ? 'separate.secret' : 'separate.note')}
-          className={node.type === 'secret' ? separate.secret : separate.note}
-        >
-          <div className={separate.label}>
-            {t(node.type === 'secret' ? 'separate.secretHint' : 'separate.noteHint')}
-          </div>
-          {children}
-        </section>
-      )
+      return <SeparateBlock node={node}>{children}</SeparateBlock>
     case 'pageEmbed':
       return <EmbeddedFrame node={node} worldId={worldId} />
     case 'fileEmbed':
@@ -167,6 +157,30 @@ export function Block({ node, worldId }: { node: JSONContent; worldId: string })
   }
 }
 
+/** Los secretos recién revelados a quien lee (docs/specs/revelar.md): salen con «Nuevo» */
+export const NewSecretsContext = createContext<ReadonlySet<string>>(new Set())
+
+function SeparateBlock({ node, children }: { node: JSONContent; children: ReactNode }) {
+  const { t } = useTranslation()
+  const fresh = useContext(NewSecretsContext)
+  const readAs = useReadAs()
+  const isNew = node.type === 'secret' && fresh.has(String(node.attrs?.documentId ?? ''))
+  return (
+    <section
+      aria-label={t(node.type === 'secret' ? 'separate.secret' : 'separate.note')}
+      className={node.type === 'secret' ? separate.secret : separate.note}
+      data-new={isNew || undefined}
+    >
+      <div className={separate.label}>
+        {/* Leyendo como jugador, un secreto que se ve es uno revelado (no «solo lo ves tú») */}
+        {t(node.type === 'note' ? 'separate.noteHint' : readAs ? 'separate.revealedHint' : 'separate.secretHint')}
+        {isNew && <span className={styles.newBadge}>{t('playerPages.new')}</span>}
+      </div>
+      {children}
+    </section>
+  )
+}
+
 /** Un incrustado dentro de lo que se enseña: lo abrió el servidor, o dice por qué no */
 export function EmbeddedFrame({ node, worldId }: { node: JSONContent; worldId: string }) {
   const { t } = useTranslation()
@@ -177,9 +191,9 @@ export function EmbeddedFrame({ node, worldId }: { node: JSONContent; worldId: s
     <section aria-label={t('embed.of', { title })} className={styles.embed}>
       <div className={styles.embedTitle}>
         {pageId ? (
-          <Link to="/mundos/$worldId/wiki/$pageId" params={{ worldId, pageId }}>
+          <PageLink worldId={worldId} pageId={pageId}>
             {title}
-          </Link>
+          </PageLink>
         ) : (
           title
         )}

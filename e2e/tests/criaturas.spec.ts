@@ -45,8 +45,8 @@ test('las criaturas en juego: tres goblins desde el compendio, su hoja, tirar su
   // «En juego», en la barra de la campaña
   await sections.getByRole('link', { name: 'En juego' }).click()
   const list = page.getByRole('complementary', { name: 'En juego' })
-  await expect(list.getByRole('button', { name: /Goblin 1/ })).toBeVisible()
-  await list.getByRole('button', { name: /Goblin 2/ }).click()
+  await expect(list.getByRole('button', { name: /^Goblin 1/ })).toBeVisible()
+  await list.getByRole('button', { name: /^Goblin 2/ }).click()
   const sheet = page.getByRole('article', { name: 'Goblin 2' })
   await expect(sheet).toBeVisible()
   // Su cimitarra: el ataque y el daño, a su nombre
@@ -70,17 +70,17 @@ test('las criaturas en juego: tres goblins desde el compendio, su hoja, tirar su
   await page.screenshot({ path: test.info().outputPath('aplicar.png'), fullPage: false })
   await apply.getByRole('button', { name: 'Aplicar a 2' }).click()
   await expect(apply).toBeHidden()
-  await expect(list.getByRole('button', { name: /Goblin 1/ })).not.toContainText('7 / 7')
+  await expect(list.getByRole('button', { name: /^Goblin 1/ })).not.toContainText('7 / 7')
 
   // Quitar las copias
   await list.getByRole('button', { name: 'Quitar las copias' }).click()
   await expect(page.getByText('Aún no hay nada en juego')).toBeVisible()
 
-  // La jugadora no tiene «En juego»
+  // La jugadora tiene su «En juego»: solo lo que está a la vista (ahora, nada), sin la lista del máster
   const player = await newPlayer(browser, link)
-  await expect(
-    player.getByRole('navigation', { name: 'Secciones' }).getByRole('link', { name: 'En juego' })
-  ).toHaveCount(0)
+  await player.getByRole('navigation', { name: 'Secciones' }).getByRole('link', { name: 'En juego' }).click()
+  await expect(player.getByText('No hay nada a la vista.')).toBeVisible()
+  await expect(player.getByRole('button', { name: 'Quitar las copias' })).toHaveCount(0)
 })
 
 test('enlazar una criatura desde la página de un PNJ: [[@ la sugiere, su tarjeta al pasar y abrirla en el compendio', async ({

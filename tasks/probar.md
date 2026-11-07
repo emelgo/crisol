@@ -9,6 +9,68 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   de propietario.
 - **En local**, con los cambios al momento: http://localhost:5173 (lo arranco cuando haga falta).
 
+## Módulo 5: la página que escriben los jugadores (rama `modulo-5/visibilidad`; en local, aún no en staging)
+
+- [ ] **Dejar editar**: en «Quién la conoce» de una página sin secretos, «La edita toda la campaña» (o unos
+  personajes). En una con secretos, no deja y lo dice.
+- [ ] **La jugadora escribe** en esa página desde su campaña, en vivo: lo ves al momento; el título, el panel y las
+  pestañas siguen siendo tuyos. En el historial sale a su nombre y se deshace.
+- [ ] **Sin secretos**: en una página de jugadores no te ofrece «Secreto» ni notas ocultas.
+- [ ] **Su IA** escribe en ella con `editar_pagina` (y en otra página, no).
+
+## Módulo 5: el compendio y la partida para los jugadores (rama `modulo-5/visibilidad`; en local, aún no en staging)
+
+- [ ] **En juego, la jugadora**: ve las criaturas a la vista, juntas, con su imagen y cómo están en palabras («Ilesa»,
+  «Herida», «Malherida», «A punto de caer», «Fuera de combate»); ni sus PG ni su hoja.
+- [ ] **En juego, el máster**: al poner en juego, «A la vista» u «Oculta»; luego, el ojo de cada una en la lista o
+  «A la vista / Oculta» en su hoja. A ella le aparece o se le va al momento.
+- [ ] **Ajustes del compendio** (la ruedecita junto al sistema): oculta un tipo o una sección entera; a ella no le sale
+  ni al buscar ni en los estantes.
+- [ ] **Una entrada del mundo**: revelada (por la IA con `revelar`, o desde «Lo que sabe el grupo» para ocultarla), le
+  llega el aviso, «Leerlo» la abre en su compendio marcada «Del mundo» y la puede llevar su personaje.
+- [ ] **La IA de un jugador**: `ver_a_la_vista` le da las criaturas con su estado; `buscar_contenido` no da lo oculto.
+
+## Módulo 5: los mapas para los jugadores (rama `modulo-5/visibilidad`; en local, aún no en staging)
+
+- [ ] **Un pin oculto**: en el panel de un pin, «Oculto a los jugadores»: lo ves atenuado. En el menú (▾) de una
+  pestaña, «Oculta a los jugadores».
+- [ ] **La jugadora** ve el mapa de una página que conoce, sin lo oculto; un pin a una página que no conoce, con su
+  nombre y sin «Abrir».
+- [ ] **Revelar…** un pin o una pestaña desde su panel o su menú: le aparece y le llega el aviso.
+
+## Módulo 5: revelar en partida (rama `modulo-5/visibilidad`; en local, aún no en staging)
+
+- [ ] **Revelar un secreto**: en el secreto, «Revelar» → elige a quién (toda la campaña o unos personajes) → «Revelar».
+  Si la campaña no conoce la página, marca «Revelar también la página». La cabecera dice «Lo saben: …».
+- [ ] **A la jugadora le llega**: abajo a la derecha, «Nuevo: …» con «Leerlo»; el secreto sale con «Nuevo» y en su
+  barra, el número de novedades. Al abrirla deja de ser nuevo.
+- [ ] **Revelar una página**: el ojo de la cabecera de la página.
+- [ ] **Lo que sabe el grupo**: en la barra de la campaña, «Revelado»: lo revelado por días, con filtros; «Ocultar otra
+  vez» se lo quita al momento.
+- [ ] **Deshacer** una revelación desde el historial.
+- [ ] **La IA**: pídele que revele algo en partida (espera tu aprobación) y que te diga lo que sabe el grupo.
+
+## Módulo 5: lo que sabe cada campaña (rama `modulo-5/visibilidad`; en local, aún no en staging)
+
+- [ ] **Quién la conoce**: en una página, el icono de dos personas, junto a «Marcar». Sale lo que sabe el mundo y cada
+  campaña, y por qué. Da a conocer una página a una campaña: sus subpáginas lo heredan (míralo en una de ellas: «Por
+  «…»»). En el árbol sale un ojo gris en lo que conoce alguna campaña.
+- [ ] **Por personajes**: «Lo saben…» y elige un personaje; solo su dueño la ve.
+- [ ] **Lo que sabe todo el mundo**: marca una página en «El mundo»; la ven las campañas que parten del mundo y no
+  una creada con «Nada».
+- [ ] **Oculto**: en un campo del panel (el ojo tachado, al acercarte) y en el menú de un bloque. La jugadora no lo ve.
+- [ ] **Una subpágina nueva** bajo una página que conoce una campaña nace oculta («No lo sabe nadie»).
+- [ ] **Con una jugadora**: en la barra de su campaña, el nombre del mundo: las páginas que conoce, en lectura. Ni los
+  secretos, ni las notas ocultas, ni lo oculto; un enlace a una página que no conoce sale como texto. Búscalo también
+  con su buscador de páginas.
+- [ ] **Quitársela**: con ella mirando la página, quítasela: le sale «Esta página ya no está a tu alcance».
+- [ ] **Ver como**: al pie de «Quién la conoce», «Ver como» un personaje: la franja «Viendo como …» y su vista.
+- [ ] **Nueva campaña**: «Al empezar, los jugadores saben…» (lo del mundo, nada o lo mismo que otra); en sus ajustes,
+  «Parte de lo que sabe el mundo».
+- [ ] **La IA**: pídele que dé a conocer una página a una campaña (espera tu aprobación) y que te diga quién la conoce
+  y qué ve un personaje. **La IA de una jugadora**: con su cuenta, en Ajustes sale el conector; conéctala en claude.ai
+  y comprueba que solo ve lo suyo y no puede escribir.
+
 ## Módulo 4: la biblioteca (rama `modulo-4/biblioteca`; en local, aún no en staging)
 
 - [ ] **Un libro de verdad**: sube a los archivos del mundo (o a los comunes) un PDF con texto, como un manual. En una

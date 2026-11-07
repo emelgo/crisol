@@ -1,30 +1,34 @@
-# Plan: Módulo 4 — biblioteca
+# Plan: Módulo 5 — revelar
 
-Estado: en marcha (2026-11-06). Spec: `docs/specs/biblioteca.md` · Diseño: lienzo «Crisol: compendio y criaturas»,
-tablero Biblioteca (`out/lienzo-compendio/project/Biblioteca.dc.html`) · Tareas: `tasks/todo.md`. Los planes
-anteriores, en `tasks/<capacidad>/`.
+Estado: en marcha (2026-11-06). Spec: `docs/specs/revelar.md` · ADR-0017 · Mapa: `docs/specs/modulo-5.md` · Diseño:
+lienzo «Crisol: lo que ven los jugadores», tableros Revelar y Jugador (`out/lienzo-jugadores/`) · Tareas:
+`tasks/todo.md`. Los planes anteriores, en `tasks/<capacidad>/`.
 
 ## Cómo
 
-- **El texto de cada página** de un PDF lo saca el servidor con pdf.js (`pdfjs-dist`, Apache-2.0) en segundo plano: al
-  subirlo y, para los ya subidos, al arrancar. En tablas fuera del historial (salen del archivo): `file_texts` (su
-  estado: pendiente, leyendo con su avance, hecho, sin texto o fallido; y sus páginas) y `file_pages` (el texto de cada
-  página con su vector de búsqueda en `es_unaccent`, como la wiki). La cola, en BullMQ; en las pruebas, en el proceso.
-- **Buscar dentro**: `searchLibrary` (los libros del mundo y los comunes que ve quien busca, por libro, con sus mejores
-  páginas y su fragmento) y `getBookPages` (el texto de unas páginas, para la IA).
-- **Por significado**: pgvector en una imagen propia de Postgres (`docker/postgres/`: `postgres:17-alpine` con pgvector
-  compilado; en la CI, `pgvector/pgvector`), `search_chunks` con trozos de unos 300 tokens (de los libros, por página;
-  de la wiki, por sección) y su vector de 384, con índice HNSW. El modelo (`multilingual-e5-small` cuantizado, MIT)
-  con `onnxruntime-node` y SentencePiece en wasm, en un hilo aparte que se carga al usarlo y se descarga tras un rato.
-  La búsqueda mezcla palabras y significado por rango (RRF); sin modelo, solo palabras.
-- **La imagen de la app pasa a Debian** (`node:24-bookworm-slim`): la librería de `onnxruntime-node` es para glibc y
-  no carga en Alpine (probado, también con `gcompat`); en wasm, el doble de lento y el triple de memoria (medido).
-  Postgres sigue en Alpine (no cambia el orden del texto de sus índices). Límite de la app, 1 GB (permiso de Enrique).
-- **Web**: «Biblioteca» en la barra de la campaña (del máster, como la wiki, hasta el módulo 5): buscar en los libros,
-  la lista de libros con su estado, y el visor en la página con lo buscado marcado.
-- **IA**: `buscar_libros` y `leer_libro`.
+- **Revelar** (`reveal`, tipo `players`): una marca «la conocen» en la campaña (toda o unos personajes) de un secreto,
+  una página, una pestaña, un pin o una entrada del mundo, y, si se pide, también de su página («Revelar también la
+  página»), en una sola operación (`reveal`, con su frase). Sin campaña y con una sola en el mundo, esa. A diferencia de
+  `setKnowledge` (preparar, en silencio), avisa.
+- **Lo nuevo** (`knowledge_news`, migración 0052, fuera del historial): una fila por jugador al que le aparece algo que
+  antes no veía (se calcula con el motor antes y después, para cada jugador de la campaña), con la página donde está.
+  Se borra al abrir esa página (`seeNews`) y al ocultarlo otra vez. El aviso en tiempo real (`revealed`) solo a esas
+  cuentas, con el título de la página (o de la sección del secreto: ya lo ven).
+- **Ocultar otra vez** (`hide`): quita la marca de la campaña; si con eso lo siguiera viendo (por el mundo o su madre),
+  la pone en «no la conocen».
+- **Lo que sabe el grupo** (`listCampaignKnowledge`): las marcas de la campaña, de la más reciente a la más antigua, con
+  qué es (y su página), a quién y cuándo; aparte, las del mundo si la campaña parte de él.
+- **Los secretos de una página** (`getSecretsKnowledge`): para cada secreto, quién lo conoce en cada campaña, para su
+  cabecera («Secreto · Revelar» o «Lo saben: Lía y Bram · Cambiar»).
+- **Web**: «Revelar» en la cabecera de un secreto (y en la de la página) con su desplegable (campaña, toda o
+  personajes, «Revelar también la página»); «Revelado» en la barra de la campaña del máster, que abre «Lo que sabe el
+  grupo» como ventana; el aviso del jugador («Nuevo: El pacto de Varn», con «Leerlo»), lo nuevo marcado en su árbol y en
+  la página, y el número en la barra.
+- **IA**: `revelar`, `ocultar`, `lo_que_sabe`.
 
 ## Puntos de control
 
-1. Tras la tarea 2: subir un PDF de prueba por la API, ver su estado y buscar una palabra de su página 3.
-2. Tras la 5: buscar «qué hace la guardia» y que salga lo que dice «vigilancia de la ciudad».
+1. Tras el servidor: por la API, revelar un secreto a Lía le llega a su dueña (aviso y lo nuevo) y a nadie más;
+   ocultarlo se lo quita; deshacer.
+2. Tras la web: revelar desde el secreto y verlo llegar en la ventana de la jugadora; «Lo que sabe el grupo».
+3. Al final: e2e, fugas (el aviso no lleva nada de lo que no ve), revisión.

@@ -20,6 +20,7 @@ import form from '../../components/form.module.css'
 import { Modal } from '../../components/modal.tsx'
 import { ColorChoices } from '../../routes/world-card.tsx'
 import { colorHex } from '../../routes/world-look.ts'
+import { TargetReveal } from '../reveal.tsx'
 import styles from './page-tabs.module.css'
 
 export const tabsKey = (worldId: string, pageId: string) => ['pages', worldId, 'tabs', pageId]
@@ -320,7 +321,7 @@ function TabMenu({
   useDismiss(open, close, root, trigger)
   const refresh = () => queryClient.invalidateQueries({ queryKey: tabsKey(page.worldId, page.id) })
   const update = useMutation({
-    mutationFn: (patch: { name?: string; color?: PageTabView['color'] }) =>
+    mutationFn: (patch: { name?: string; color?: PageTabView['color']; hidden?: boolean }) =>
       api.call('updatePageTab', { tabId: tab.id, ...patch }),
     // Se ve ya, sin esperar al servidor
     onMutate: (patch) =>
@@ -379,6 +380,18 @@ function TabMenu({
             }}
           />
           <ColorChoices value={tab.color} onChange={(color) => update.mutate({ color })} />
+          {/* Los jugadores (ADR-0017): oculta, o revelarla en partida */}
+          <div className={styles.players}>
+            <label className={styles.check}>
+              <input
+                type="checkbox"
+                checked={tab.hidden}
+                onChange={(event) => update.mutate({ hidden: event.currentTarget.checked })}
+              />
+              {t('pageTabs.hiddenFromPlayers')}
+            </label>
+            <TargetReveal worldId={page.worldId} pageId={page.id} kind="tab" targetId={tab.id} />
+          </div>
           {confirming ? (
             // Confirmar, en el mismo sitio y con la misma letra que el menú
             <div className={styles.confirm}>

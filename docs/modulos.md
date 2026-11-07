@@ -7,7 +7,51 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
-### Para retomar (2026-11-06, módulo 4 construido entero; lo siguiente, subirlo a staging y el módulo 5)
+### Para retomar (2026-11-07: módulo 5 terminado, en su PR)
+
+- **Rama `modulo-5/visibilidad`, en un PR a `main`** (la CI se pasa una vez en él). Las cinco capacidades,
+  construidas y revisadas: `conocimiento`, `revelar`, `mapas-jugadores`, `compendio-jugadores` y
+  `pagina-de-jugadores` (lo hecho y lo que queda de cada una, en su spec § «Construido»; el estado, en
+  `docs/specs/modulo-5.md`). Migraciones hasta la 0054. Qué probar: `tasks/probar.md` § «Módulo 5».
+- **Revisiones**: la de `conocimiento` y la de `revelar`, arregladas en lo grave (revelar solo suma: decisión 5 de
+  `docs/specs/revelar.md`); la última, de lo demás, encontró fugas en la página de jugadores (archivos y páginas por su
+  nombre, `editPage` sin proyectar, el permiso sin cortar al revocar) y quedaron arregladas con sus pruebas (la spec lo
+  cuenta).
+- **El rendimiento de lo que lee un jugador** se mide solo (`pnpm --filter @crisol/server test:rendimiento`, su paso
+  en la CI): dentro de la suite entera mide la carga. Sola: p95 252 ms con 5.000 páginas.
+- **La CI del PR #112** (2026-11-07, de madrugada): la primera pasada falló solo en gitleaks (falso positivo, arreglado
+  en `.gitleaks.toml`); la segunda pasó todo salvo una e2e, `campanas.spec.ts` («en Mis mundos, el máster crea
+  campañas…»), que en la primera pasada y en local pasa: mirar si es intermitente (su traza, en los artefactos de la
+  ejecución 42325640443) antes de volver a pasar la CI.
+- **Lo siguiente**: que la CI del PR pase, el merge y staging (migraciones 0051 a 0054 en su base); pedirle a Enrique
+  que pruebe el módulo 5 y confirme el ADR-0017 y las decisiones tomadas sin él (en la memoria `modulo-5`). Luego, el
+  módulo 6 (la mesa).
+- Queda de la revisión de `revelar` (menor): «Cambiar a quién» desde «Lo que sabe el grupo», que el desplegable parta
+  de la campaña que se mira, que los avisos se vayan al ocultar o deshacer, el número de novedades en el móvil.
+- Una prueba de la web, `apps/web/src/wiki/sheet/paged.test.tsx` («las páginas se escalan…»), falla a veces en la
+  suite entera y pasa sola: mirarla si vuelve.
+
+### Para retomar (2026-11-06, noche: módulo 5 en marcha, `conocimiento` construido)
+
+- **Rama `modulo-5/visibilidad`** (sin PR aún; sale de `modulo-4/cierre`, con sus commits de documentación).
+- **Hecho del ciclo**: la entrevista (abajo, § «### 5. Visibilidad por campaña»); los estudios
+  (`research/foundry/visibilidad-y-revelar.md` y `research/{legendkeeper,worldanvil,kanka}/visibilidad.md`); el mapa
+  `docs/specs/modulo-5.md` con cinco capacidades (`conocimiento`, `revelar`, `mapas-jugadores`, `compendio-jugadores`,
+  `pagina-de-jugadores`) y sus specs; el ADR-0017 (propuesta); el lienzo «Crisol: lo que ven los jugadores»
+  (https://claude.ai/artifact/CGqGeV5o6R7gtkrR4zBLKf; fuentes en `out/lienzo-jugadores/`), mandado a Enrique con
+  fotos, sin respuesta aún.
+- **`conocimiento`, construido** (`tasks/plan.md`, `tasks/todo.md`; lo hecho, en `docs/specs/conocimiento.md` §
+  «Construido»): el motor, la tabla (0051, ya en la base de desarrollo), `page.view` y la proyección, todas las vías de
+  lectura y el tiempo real filtrados, la web del jugador y del máster, la IA (también la del jugador, que solo lee), la
+  e2e `conocimiento.spec.ts`, las fugas al día y el rendimiento (p95 199 ms con 5.000 páginas). Revisión de código en
+  marcha. Qué probar: `tasks/probar.md` § «Módulo 5».
+- **Lo siguiente**: los arreglos de la revisión y `revelar` (plan en borrador en el scratchpad; se pasa a
+  `tasks/plan.md`).
+- Decisión cambiada tras los estudios: un enlace a lo oculto sale como uno sin resolver, con lo que se escribió (no
+  «desconocido», ni el título de ahora); con texto propio, solo ese texto.
+- La e2e sirve la web compilada: `pnpm --filter @crisol/web build` antes de correrla tras cambiar la web.
+
+### Para retomar (2026-11-06, módulo 4 terminado y en staging; lo siguiente, el módulo 5)
 
 - **Rama `modulo-4/compendio`** (sin PR aún). Entrevista con Enrique (abajo, § «### 4. Compendio, criaturas y
   biblioteca»); estudios `research/foundry/criaturas-y-capas.md` y `research/dndbeyond/criaturas-y-grupo.md`; el mapa
@@ -50,10 +94,12 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   desarrollo ya va con él), `multilingual-e5-small` en un hilo aparte (en desarrollo, en `datos-locales/modelos/`), la
   mezcla por rango y «También en las páginas». La imagen de la app pasa a Debian (el modelo nativo no carga en Alpine)
   con 1 GB. Cada servidor, su espacio de colas (`QUEUE_PREFIX`). E2E `biblioteca.spec.ts`.
-- **Lo siguiente**: abrir un PR con las cuatro ramas (imágenes, tablas, grupo y biblioteca), pasar la CI una vez y
-  desplegar staging (construye también Postgres con pgvector y aplica las migraciones 0045 a 0049). Luego, el módulo 5.
-- Pendiente de Enrique, sin bloquear: cerrar los tres avisos MCP como se le propuso (descartar `ver_escena`, «no se
-  arregla» `query_document` de LightRAG por el parche de las palabras clave, dejar abierta la mejora de craft).
+- **PR #111, en `main` y en staging** (2026-11-06; su CI pasó entera): imágenes, tablas, grupo y biblioteca, con
+  Postgres propio con pgvector (0.8.1), la app en Debian con el modelo y 1 GB, y las migraciones 0045 a 0050. Al
+  arrancar, staging se puso a leer sus PDF y a calcular los vectores de la wiki. Planes en `tasks/<capacidad>/`.
+- **Lo siguiente: el módulo 5.** Enrique probará todo cuando la app esté terminada (`tasks/probar.md`; del módulo 4,
+  sobre todo la calidad de la búsqueda por significado con libros de verdad y «Descargar PDF» con el Chromium de
+  Debian): no se espera a sus pruebas para seguir.
 - Ojo: la API de desarrollo (`node --watch`) no siempre se recarga al añadir archivos; `touch apps/server/src/main.ts`.
 
 ### Antes (2026-11-06, módulo 3 terminado)
@@ -1331,8 +1377,8 @@ Estados: pendiente · en curso · hecho · descartado.
 | 1 | **Wiki**: páginas y subpáginas, editor de bloques, enlaces, menciones, vista previa, propiedades, secretos, búsqueda, marcadores, etiquetas, versiones, recursos y archivos, **hojas con estilo** (tipo Homebrewery, con PDF), exportación MD, sus herramientas MCP | construido (tareas 1 a 26 hechas); falta la revisión de Enrique en staging | Foundry: Journal; DDB: contenido y referencias; Homebrewery (MIT): formato de hoja y descarga |
 | 2 | **Tipos de página y plantillas**: «Desde plantilla» (de serie y propias), campos en el panel, tablas que se llenan solas (en lugar de Dataview) | construido (tareas 1 a 14, 2026-11-03); falta la revisión de Enrique en staging | Foundry: tipos de documento; Kanka, LegendKeeper y World Anvil (web pública) |
 | 3 | Sistemas de reglas, fichas de personaje (creación, subida de nivel), dados y dados 3D | **hecho** (2026-11-06, PR #95 a #108; Crisol vacío, ADR-0015); falta que Enrique lo pruebe (`tasks/probar.md`) | DDB: creador y hoja; Foundry: dnd5e, DataModel e instalar y crear sistemas |
-| 4 | Compendios (aparte de la wiki del mundo y **como los de Foundry**: antes, estudio a fondo con craft-anything), bestiario, statblocks, biblioteca; **las imágenes de lo traído de Foundry** (las de cada documento del zip); **buscar dentro de los PDF** (texto de cada página con pdf.js; el resultado abre el visor en esa página) **y por significado** (pgvector; antes, permiso para la imagen de Postgres y elegir quién calcula los embeddings) | **en curso** (2026-11-06: specs y diseño; `compendio-mundo` y `criaturas` construidos; `docs/specs/modulo-4.md`) | Foundry: compendium packs; DDB: listados |
-| 5 | Visibilidad por campaña: conocimiento de los jugadores, revelar, compartir | pendiente | Foundry: ownership |
+| 4 | Compendios (aparte de la wiki del mundo y **como los de Foundry**: antes, estudio a fondo con craft-anything), bestiario, statblocks, biblioteca; **las imágenes de lo traído de Foundry** (las de cada documento del zip); **buscar dentro de los PDF** (texto de cada página con pdf.js; el resultado abre el visor en esa página) **y por significado** (pgvector; antes, permiso para la imagen de Postgres y elegir quién calcula los embeddings) | **hecho** (2026-11-06, PR #110 y #111; `docs/specs/modulo-4.md`); falta que Enrique lo pruebe (`tasks/probar.md`) | Foundry: compendium packs; DDB: listados |
+| 5 | Visibilidad por campaña: conocimiento de los jugadores, revelar, compartir | **hecho** (2026-11-07, rama `modulo-5/visibilidad`, PR a `main`) | Foundry: ownership |
 | 6 | **Mesa**: escenas, rejilla, fichas, medir y plantillas, niebla, muros, puertas, luz, visión, iniciativa, instantáneas, encuentros, UVTT; **las escenas, mapas y tokens de un zip de Foundry** | pendiente | Foundry: canvas, visión y muros; DDB Maps |
 | 7 | **Sala de jugadores**: presencia, chat y susurros, mostrar a jugadores, sonido (también **los de un zip de Foundry**), controles del máster | pendiente | Foundry: sockets y chat; DDB: game log |
 | 8 | Calendario, clima, viajes, líneas temporales | pendiente | — |
@@ -1727,3 +1773,35 @@ Notas: `research/foundry/sistemas-y-su-api.md` y `research/dndbeyond/creador-y-h
 - **Fuera**: los encuentros, la iniciativa y las fichas en el mapa (módulo 6); las escenas y los sonidos de un zip de
   Foundry (6 y 7); el OCR de los PDF escaneados; el aspecto del sistema traído de Foundry (con la interfaz); lo que ven
   los jugadores (módulo 5): hasta entonces, el compendio del mundo y lo que está en juego solo los ve el máster.
+
+### 5. Visibilidad por campaña (entrevista con Enrique, 2026-11-06)
+
+- **El conocimiento va por campaña, con excepciones por personaje** («esto solo lo sabe la pícara»), como en el Crisol
+  actual. Al empezar, una campaña sabe lo que el mundo marca como conocido, nada, o lo mismo que otra campaña.
+- **Los jugadores leen; no escriben** en este módulo. Como mucho, el máster deja editar una página concreta (el diario
+  del grupo). Las notas personales, el diario y el chat, con la sala de jugadores (módulo 7).
+- **Las piezas**:
+  - la página entera: una nueva es solo del máster; las subpáginas heredan de su padre, con herencia viva (cambia el
+    padre, cambian ellas; se ve de dónde viene) y excepciones en cualquiera;
+  - los secretos (`> [!secreto]`) de una página visible, cada uno por separado;
+  - las pestañas y los pines de un mapa, cada uno por separado (como «descubierto» en el Crisol actual);
+  - los campos y bloques del panel, con una marca de «solo máster», sin revelarlos uno a uno (para eso, el secreto).
+- **Revelar en partida**: «Revelar» en el secreto, la página o el pin, a toda la campaña o a unos personajes; dentro
+  de una campaña, en esa; fuera, se elige (un mundo puede tener varias). Los jugadores reciben un aviso («Nuevo: …») y
+  lo revelado sale marcado como nuevo hasta que lo abren. «Lo que sabe el grupo», por campaña, para repasarlo,
+  deshacerlo u ocultarlo otra vez. «Ver como jugador»: la página como la ve un personaje, sin cambiar de cuenta.
+- **El compendio y las criaturas**:
+  - el del sistema lo ven entero, como un libro; el máster oculta en una campaña un tipo o una sección (el bestiario);
+  - el del mundo es del máster hasta que revela una entrada, como una página (el objeto que encontraron);
+  - las criaturas en juego se ven con su nombre, su imagen y su estado en palabras («Ilesa», «Herida», «Malherida»,
+    «A punto de caer»), sin PG ni hoja; sus tiradas siguen ocultas salvo que el máster las enseñe.
+- **La IA**: la del máster revela, oculta y mira como jugador; revelar pide aprobación en copiloto (no se puede
+  «des-saber»). Un jugador conecta la suya y solo lee lo que ve él.
+- **Límite**: el servidor filtra todo (API, búsqueda, enlaces, vista previa, exportar, la edición en vivo, el tiempo
+  real y el MCP); nada se manda para esconderlo en la interfaz, al revés que Foundry. Revocar es inmediato.
+- **Hecho cuando**: un jugador de la campaña A lee una página con sus subpáginas y uno de la B no; ninguno recibe ni un
+  byte de un secreto sin revelar; el máster revela un secreto solo a la pícara (ella recibe el aviso, los demás no lo
+  ven), un pin y una entrada del compendio del mundo; los goblins salen como «Herido»; un jugador con su IA solo ve lo
+  suyo.
+- **Fuera**: que los jugadores escriban (salvo la página que se les deje); notas, diario y chat (módulo 7); la mesa,
+  la niebla y la visión (módulo 6); una web pública sin cuenta; co-máster y espectador.

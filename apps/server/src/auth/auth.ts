@@ -2,7 +2,7 @@ import { cimd } from '@better-auth/cimd'
 import { fetchClientMetadataResource } from '@better-auth/cimd/node'
 import { drizzleAdapter } from '@better-auth/drizzle-adapter'
 import { mcp } from '@better-auth/mcp'
-import { authSchema, type Database, isOwner, usersRepo } from '@crisol/db'
+import { authSchema, type Database, isOwner, mayUseAi, usersRepo } from '@crisol/db'
 import { betterAuth } from 'better-auth'
 import { APIError, createAuthMiddleware, getSessionFromCtx } from 'better-auth/api'
 import { jwt } from 'better-auth/plugins'
@@ -130,14 +130,15 @@ export function createAuth({ db, secret, baseURL, trustedOrigins = [] }: AuthOpt
       })
     ],
     hooks: {
-      // Módulo 0: solo el propietario autoriza el conector (y /mcp lo vuelve a mirar en cada petición)
+      // El propietario autoriza el conector, y también quien juega en una campaña (ADR-0017: su IA solo lee lo que
+      // sabe su campaña); /mcp lo vuelve a mirar en cada petición
       before: createAuthMiddleware(async (ctx) => {
         // Registro cerrado antes de buscar el email: si no, la respuesta diría qué emails tienen cuenta
         if (ctx.path === '/sign-up/email' && !signupAllowed()) throw signupClosed()
         if (ctx.path !== '/oauth2/consent' || ctx.body?.accept !== true) return
         const session = await getSessionFromCtx(ctx)
-        if (!session || !(await isOwner(db, session.user.id))) {
-          throw new APIError('FORBIDDEN', { message: 'Solo el propietario puede conectar Claude', code: 'OWNER_ONLY' })
+        if (!session || !(await mayUseAi(db, session.user.id))) {
+          throw new APIError('FORBIDDEN', { message: 'Esta cuenta no puede conectar una IA', code: 'OWNER_ONLY' })
         }
       })
     },

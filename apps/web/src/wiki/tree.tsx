@@ -2,7 +2,7 @@ import type { PageSummary } from '@crisol/contracts'
 import { useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { BookCopy, FileText, House } from 'lucide-react'
+import { BookCopy, Eye, FileText, House } from 'lucide-react'
 import { type CSSProperties, type DragEvent, type KeyboardEvent, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
@@ -90,6 +90,13 @@ export function PageTree({ worldId, currentId, path, onNavigate }: Props) {
     queryKey: ['pages', worldId, 'home'],
     queryFn: () => api.call('getWorldHome', { worldId })
   }).data?.pageId
+  // Las que conoce alguna campaña (ADR-0017): un ojo gris al lado, para quien lleva la wiki
+  const known = new Set(
+    useQuery({
+      queryKey: ['pages', worldId, 'known'],
+      queryFn: () => api.call('listKnownPages', { worldId })
+    }).data?.pageIds ?? []
+  )
   const childrenOf = new Map(
     parents.map((parentId, i) => {
       const pages = lists[i]?.data?.pages
@@ -421,6 +428,7 @@ export function PageTree({ worldId, currentId, path, onNavigate }: Props) {
         </span>
         {/* La portada del mundo, con su casa a la derecha (como en LegendKeeper) */}
         {page.id === homeId && <House aria-hidden="true" size={15} className={styles.home} />}
+        {known.has(page.id) && <Eye aria-label={t('whoKnows.known')} role="img" size={13} className={styles.known} />}
       </Link>
     )
   }

@@ -10,7 +10,7 @@ import {
 } from '@crisol/contracts'
 import { campaignsRepo, filesRepo, membersRepo, worldsRepo } from '@crisol/db'
 import { authorize, NotFoundError } from '@crisol/domain'
-import { campaignsChanged } from '../realtime/events.ts'
+import { campaignsChanged, knowledgeChanged } from '../realtime/events.ts'
 import { authorizedCampaign } from './access.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
 import { prepareSecret } from './invitations.ts'
@@ -31,7 +31,9 @@ function presentCampaign<T extends CampaignRow>(row: T, systems: ReadonlyMap<str
     color: color.success ? color.data : null,
     system: row.system ? (systems.get(row.system) ?? null) : null,
     // Lo elegido del sistema (fuentes, ajustes) es del máster; un jugador solo ve el sistema, para sus dados
-    systemChoices: (row.system && player(row) === false ? row.systemChoices : null) as Campaign['systemChoices']
+    systemChoices: (row.system && player(row) === false ? row.systemChoices : null) as Campaign['systemChoices'],
+    // Lo que se les oculta del compendio, igual: solo el máster
+    ...('hiddenTypes' in row ? { hiddenTypes: player(row) ? [] : (row.hiddenTypes as string[]) } : {})
   }
 }
 
@@ -91,6 +93,8 @@ export const campaignActions = [
         cover: found.cover,
         system: found.system,
         systemChoices: found.systemChoices,
+        knowsWorld: found.knowsWorld,
+        hiddenTypes: found.hiddenTypes,
         role,
         version: found.version
       }),
@@ -99,10 +103,15 @@ export const campaignActions = [
     }
   }),
 
-  implement(createCampaign, async (ctx, { worldId, name, system, systemChoices }) => {
+  implement(createCampaign, async (ctx, { worldId, name, system, systemChoices, knowledge }) => {
     authorize(ctx.actor, 'campaign.create', { worldId })
     const world = await worldsRepo.findWorld(ctx.db, worldId)
     if (!world) throw new NotFoundError('world')
+    // «Lo mismo que otra»: una campaña de este mundo
+    if (knowledge?.start === 'campaign') {
+      const from = await campaignsRepo.findCampaign(ctx.db, knowledge.campaignId)
+      if (!from || from.worldId !== worldId) throw new InvalidRequestError('BAD_KNOWLEDGE_CAMPAIGN')
+    }
     const chosen = await chosenSystem(ctx, world.organizationId, { system, systemChoices })
     const campaign = await campaignsRepo.createCampaignWithMaster(
       ctx.db,
@@ -113,7 +122,8 @@ export const campaignActions = [
         masterId: ctx.actor.userId,
         invitation: prepareSecret(ctx.sealKey),
         system: chosen?.system ?? null,
-        systemChoices: chosen?.systemChoices ?? null
+        systemChoices: chosen?.systemChoices ?? null,
+        ...(knowledge ? { knowledge } : {})
       }
     )
     ctx.realtime.publish(campaignsChanged({ campaignId: campaign.id, worldId }))
@@ -153,7 +163,9 @@ export const campaignActions = [
       ...(patch.color !== undefined ? { color: patch.color } : {}),
       ...(patch.cover !== undefined ? { cover: patch.cover !== null } : {}),
       ...(chosen && chosen.system !== current.system ? { system: chosen.name ?? null } : {}),
-      ...(chosen && chosen.system === current.system ? { systemChoices: true } : {})
+      ...(chosen && chosen.system === current.system ? { systemChoices: true } : {}),
+      ...(patch.knowsWorld !== undefined ? { knowsWorld: patch.knowsWorld } : {}),
+      ...(patch.hiddenTypes !== undefined ? { hiddenTypes: patch.hiddenTypes.length } : {})
     }
     const campaign = await campaignsRepo.updateCampaign(
       ctx.db,
@@ -162,6 +174,10 @@ export const campaignActions = [
       patch
     )
     ctx.realtime.publish(campaignsChanged({ campaignId, worldId: current.worldId }))
+    if (patch.knowsWorld !== undefined)
+      ctx.realtime.publish(
+        knowledgeChanged({ worldId: current.worldId, organizationId: current.organizationId }, campaignId)
+      )
     return presentOne(ctx, { ...campaign, role: ctx.actor.campaigns.get(campaignId)?.role ?? ('master' as const) })
   })
 ]

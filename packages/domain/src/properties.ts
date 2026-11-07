@@ -8,6 +8,8 @@ interface Field {
   name: string
   /** El id del campo de la plantilla de la que salió */
   field?: string | undefined
+  /** «Oculto»: no les llega a los jugadores aunque vean la página (ADR-0017) */
+  hidden?: true | undefined
 }
 
 export type PageProperty =
@@ -142,6 +144,14 @@ export function conformTo(shape: PageProperty, read: PageProperty): PageProperty
  * una que se llama igual que uno con id o con forma propia la conserva, si su valor cabe. Así las tablas no la pierden
  */
 export function keepShapes(before: readonly PageProperty[], after: readonly PageProperty[]): PageProperty[] {
+  // Lo oculto sigue oculto: el YAML no lo dice (se cambia desde el panel o con setPageProperties)
+  const hidden = new Set(before.filter((p) => p.hidden).map((p) => propertyKey(p.name)))
+  return keptShapes(before, after).map((p) =>
+    hidden.has(propertyKey(p.name)) && !p.hidden ? { ...p, hidden: true as const } : p
+  )
+}
+
+function keptShapes(before: readonly PageProperty[], after: readonly PageProperty[]): PageProperty[] {
   const shaped = new Map(
     before
       .filter(

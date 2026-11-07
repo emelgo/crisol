@@ -4,12 +4,12 @@
  */
 import type { Page, PageProperty, PanelBlock } from '@crisol/contracts'
 import { useQuery } from '@tanstack/react-query'
-import { Link } from '@tanstack/react-router'
 import { X } from 'lucide-react'
 import { useId } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import { useTemplates } from '../templates/picker.tsx'
+import { PageLink, readAsInput, readAsKey, useReadAs } from './read-as.tsx'
 import styles from './related-block.module.css'
 
 type RelatedBlock = Extract<PanelBlock, { type: 'related' }>
@@ -17,9 +17,10 @@ type RelatedBlock = Extract<PanelBlock, { type: 'related' }>
 /** Las tablas de una página: se ponen al día con los avisos de páginas (su clave cuelga de ['pages', mundo]) */
 export function usePageTables(page: Page) {
   const api = useApi()
+  const readAs = useReadAs()
   return useQuery({
-    queryKey: ['pages', page.worldId, 'tables', page.id, JSON.stringify(page.panel)],
-    queryFn: () => api.call('getPageTables', { pageId: page.id })
+    queryKey: ['pages', page.worldId, 'tables', page.id, JSON.stringify(page.panel), ...readAsKey(readAs)],
+    queryFn: () => api.call('getPageTables', { pageId: page.id, ...readAsInput(readAs) })
   })
 }
 
@@ -77,10 +78,10 @@ export function RelatedBody({ page, block, onFix }: { page: Page; block: Related
           {table.rows.map((row) => (
             <tr key={row.id}>
               <td>
-                <Link to="/mundos/$worldId/wiki/$pageId" params={{ worldId: page.worldId, pageId: row.id }}>
+                <PageLink worldId={page.worldId} pageId={row.id}>
                   {row.icon && <span aria-hidden="true">{row.icon} </span>}
                   {row.title}
-                </Link>
+                </PageLink>
               </td>
               {row.cells.map((cell, i) => (
                 <td key={table.columns[i]?.field ?? i}>

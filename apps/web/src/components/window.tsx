@@ -6,7 +6,7 @@ import { afterExit } from './modal.tsx'
 import styles from './window.module.css'
 
 /** Lo que se abre encima de la pantalla, sin dejarla: desde la barra lateral y desde el menú de la cuenta */
-export type WindowKind = 'historial' | 'papelera' | 'ajustes' | 'perfil'
+export type WindowKind = 'historial' | 'papelera' | 'ajustes' | 'perfil' | 'revelado'
 
 interface WindowState {
   /** returnTo: adónde vuelve el foco al cerrarla, si no es a lo que lo tenía (un menú que se cierra a la vez) */

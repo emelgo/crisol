@@ -150,6 +150,100 @@ describe('el canal en tiempo real', () => {
     expect(JSON.stringify(first)).not.toContain(created.body.id)
   })
 
+  it('lo de la wiki, a la jugadora solo si lo ve (ADR-0017): el aviso del texto, de lo que ve; lo que sabe, sin decir qué', async () => {
+    const { world, campaign, player } = await worldWithPlayer()
+    const create = async (title: string) =>
+      (await call('createPage', { worldId: world.id, title, parentId: null }, owner.cookie)).body.id as string
+    const known = await create('Aldoria')
+    const hidden = await create('El plan del rey')
+    const playerInbox = inbox(await open(player.cookie))
+    await call(
+      'setKnowledge',
+      { worldId: world.id, campaignId: campaign.id, kind: 'page', targetId: known, known: true },
+      owner.cookie
+    )
+    expect(await playerInbox.next()).toEqual({
+      type: 'changed',
+      what: 'knowledge',
+      worldId: world.id,
+      campaignId: campaign.id
+    })
+    const edit = (pageId: string, text: string) =>
+      call('editPage', { pageId, body: { mode: 'append', markdown: text } }, owner.cookie)
+    await edit(hidden, 'Invadir el norte')
+    await edit(known, 'Un reino antiguo')
+    const received: RealtimeMessage[] = []
+    for (;;) {
+      const message = await playerInbox.next()
+      received.push(message)
+      if (message.type === 'changed' && message.what === 'pageContent') break
+    }
+    expect(received.at(-1)).toEqual({ type: 'changed', what: 'pageContent', worldId: world.id, pageId: known })
+    const all = JSON.stringify(received)
+    expect(all).not.toContain(hidden)
+    expect(all).not.toContain('plan')
+    expect(all).not.toContain('Invadir')
+  })
+
+  it('al revelar, el aviso solo le llega a quien le aparece, con el título de la sección del secreto (revelar)', async () => {
+    const { world, campaign, player } = await worldWithPlayer()
+    const other = await signUpTestUser(auth, { name: 'Otro', email: 'otro@crisol.test' })
+    await conn.db
+      .insert(schema.campaignMembers)
+      .values({ campaignId: campaign.id, userId: other.userId, role: 'player' })
+    const [lia] = await conn.db
+      .insert(schema.characters)
+      .values({ campaignId: campaign.id, ownerId: player.userId, name: 'Lía', system: 'blank', build: {}, play: {} })
+      .returning()
+    const created = (
+      await call(
+        'createPages',
+        {
+          worldId: world.id,
+          parentId: null,
+          pages: [
+            { key: 'a', title: 'Aldoria', markdown: '## El pacto de Varn\n\n> [!secreto]\n> Varn vendió el paso.' }
+          ]
+        },
+        owner.cookie
+      )
+    ).body
+    const aldoria = created.pages[0].id as string
+    const secret = (await conn.db.select().from(schema.documents)).find(
+      (d) => d.pageId === aldoria && d.kind === 'secret'
+    )
+    const playerInbox = inbox(await open(player.cookie))
+    const otherInbox = inbox(await open(other.cookie))
+    await call(
+      'reveal',
+      { worldId: world.id, kind: 'secret', targetId: secret?.id, characters: [lia?.id], alsoPage: true },
+      owner.cookie
+    )
+    const got: RealtimeMessage[] = []
+    for (;;) {
+      const message = await playerInbox.next()
+      got.push(message)
+      if (message.type === 'revealed') break
+    }
+    expect(got.at(-1)).toEqual({
+      type: 'revealed',
+      worldId: world.id,
+      campaignId: campaign.id,
+      kind: 'secret',
+      targetId: secret?.id,
+      pageId: aldoria,
+      title: 'El pacto de Varn'
+    })
+    // Al otro, solo que lo que sabe la campaña cambió (sin qué)
+    expect(await otherInbox.next()).toEqual({
+      type: 'changed',
+      what: 'knowledge',
+      worldId: world.id,
+      campaignId: campaign.id
+    })
+    await expect(otherInbox.next()).rejects.toThrow('No llegó ningún mensaje')
+  })
+
   it('el enlace solo le llega al máster', async () => {
     const { world, campaign, player } = await worldWithPlayer()
     const master = inbox(await open(owner.cookie))

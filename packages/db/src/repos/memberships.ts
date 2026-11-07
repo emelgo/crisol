@@ -50,3 +50,17 @@ export async function isOwner(db: Database, userId: string): Promise<boolean> {
     .limit(1)
   return Boolean(found)
 }
+
+/**
+ * Si la cuenta puede conectar una IA (ADR-0017): la propietaria de una organización, o quien juega en alguna campaña
+ * (su IA solo lee lo que sabe su campaña)
+ */
+export async function mayUseAi(db: Database, userId: string): Promise<boolean> {
+  if (await isOwner(db, userId)) return true
+  const [found] = await db
+    .select({ id: campaignMembers.id })
+    .from(campaignMembers)
+    .where(eq(campaignMembers.userId, userId))
+    .limit(1)
+  return Boolean(found)
+}

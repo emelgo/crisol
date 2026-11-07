@@ -10,6 +10,7 @@ import {
   ChevronUp,
   Circle,
   CircleDot,
+  EyeOff,
   GripVertical,
   Hash,
   Image as ImageIcon,
@@ -32,6 +33,7 @@ import { FormError } from '../components/field.tsx'
 import { colorHex, PRESET_COLORS } from '../routes/world-look.ts'
 import { useWorldFiles } from './cover-look.ts'
 import styles from './panel-blocks.module.css'
+import { HiddenBadge } from './properties.tsx'
 import { RelatedBody, RelatedOptions } from './related-block.tsx'
 import { childrenKey } from './tree.tsx'
 
@@ -390,6 +392,7 @@ function BlockFrame({
         ) : (
           <span className={styles.kindLabel}>{t(`panelBlocks.kinds.${kind}`)}</span>
         )}
+        {block.hidden && <HiddenBadge />}
       </div>
       <BlockBody
         page={page}
@@ -553,6 +556,15 @@ function BlockMenu({
             </div>
           )}
           <div className={styles.menuActions}>
+            {/* «Oculto»: no les llega a los jugadores aunque vean la página (ADR-0017) */}
+            <button
+              type="button"
+              aria-pressed={block.hidden === true}
+              onClick={() => onChange({ hidden: block.hidden ? undefined : true })}
+            >
+              <EyeOff size={14} aria-hidden="true" />
+              {t('properties.hidden')}
+            </button>
             <button type="button" disabled={index === 0} onClick={() => onMove(index - 1)}>
               <ChevronUp size={14} aria-hidden="true" />
               {t('panelBlocks.up')}

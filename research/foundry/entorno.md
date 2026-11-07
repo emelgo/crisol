@@ -24,3 +24,13 @@ Instalado 2026-10-29 con la licencia de Enrique, solo para el REA (ver `research
 - Observar sin navegador: basta un script de Node con el cliente de socket.io que trae la propia instalación (MIT),
   guardado fuera del repo, para entrar como cualquier usuario y ver todo lo que llega por la red. El POST de entrada
   exige la cabecera `Origin` del mismo sitio.
+- Datos de prueba (estudio del módulo 5, visibilidad, 2026-11-06): jugadores «Vis Pícara» y «Vis Guerrero» (rol
+  jugador; sus contraseñas no se guardan aquí); la carpeta de diario «Vis Visibilidad» con «Vis Cripta» (ninguno, y
+  luego observador para la pícara), «Vis Torre» (limitado, con una página de imagen), «Vis Taberna» (observador, con
+  un secreto, ya revelado, y la página «Sótano» en ninguno), «Vis Gremio» (solo la pícara) y «Vis Enlaces» (enlaces a
+  todo lo anterior); los PNJ «Vis Goblin» (ninguno), «Vis Ogro» (limitado) y «Vis Asesino» (ninguno, ficha y
+  combatiente ocultos); los compendios del mundo «Vis Bestiario» (rol jugador: ninguno), «Vis Objetos» (limitado) y
+  «Vis Reglas» (observador, con una carpeta y una entrada con una página en ninguno); la escena «Vis Mapa» (ahora la
+  activa del mundo, sin visión, con ocho pines, las tres fichas y un combate) y «Vis Mapa Niebla» (con visión, un pin
+  con «global» y otro sin él). El combat tracker sigue los PG (ajuste del mundo) y el goblin quedó
+  a 3 de 7 PG, con su estado «Bloodied».

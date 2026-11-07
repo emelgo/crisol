@@ -12,6 +12,7 @@ import {
 import { filesRepo, pagesRepo, worldsRepo } from '@crisol/db'
 import { authorize, NotFoundError } from '@crisol/domain'
 import { pagesChanged, worldsChanged } from '../realtime/events.ts'
+import { authorizedView } from '../wiki/reader.ts'
 import { authorizedWiki, targetOrganization } from './access.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
 import { pageContentActions } from './page-content.ts'
@@ -46,10 +47,12 @@ async function homeOf(ctx: ActionContext, worldId: string) {
 }
 
 export const worldActions = [
-  implement(getWorldHome, async (ctx, { worldId }) => {
-    await authorizedWiki(ctx, 'page.read', worldId)
+  implement(getWorldHome, async (ctx, { worldId, ...as }) => {
+    const { view } = await authorizedView(ctx, worldId, as)
     const home = await homeOf(ctx, worldId)
-    return { pageId: home, chosen: home !== null }
+    // Un jugador: solo si la conoce (ADR-0017)
+    const shown = home && view.seesPage(home) ? home : null
+    return { pageId: shown, chosen: shown !== null }
   }),
 
   implement(ensureWorldHome, async (ctx, { worldId }) => {
