@@ -4,7 +4,8 @@
  * cámara del máster (sigue su vista, suave) o fija, ajustada a su tamaño; a oscuras, con el nombre de la campaña, si
  * está oculta. Si se corta, vuelve sola a lo que enseñaba
  */
-import type { SceneViewport, ScreenView } from '@crisol/contracts'
+import type { SceneViewport, ScreenToken, ScreenView } from '@crisol/contracts'
+import { frameGroup, type Point, type Size } from '@crisol/tabletop'
 import { getRouteApi, Navigate } from '@tanstack/react-router'
 import { Maximize, Minimize } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -12,11 +13,13 @@ import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { CrisolMark } from '../components/brand.tsx'
 import { PageTitle } from '../components/page-title.tsx'
-import { canvasViewOf, smoothToward } from './camera.ts'
+import { canvasViewOf, sceneViewportOf, smoothToward } from './camera.ts'
 import { connectTable } from './channel.ts'
+import { screenDraw } from './draw.ts'
 import { screenTileUrl } from './queries.ts'
 import type { RendererScene } from './renderer.ts'
 import styles from './screen.module.css'
+import { cellSide } from './tokens.ts'
 import { useTableRenderer } from './use-renderer.ts'
 import { fitCanvas } from './view.ts'
 
@@ -30,11 +33,24 @@ export function ScreenRoute() {
   return <TableScreen campaignId={campaignId} />
 }
 
-/** Lo que debe enseñar la cámara: el encuadre fijo, el último del máster o la vista inicial de la escena */
-export function cameraTarget(screen: ScreenView, followed: SceneViewport | null): SceneViewport | null {
-  if (!screen.scene) return null
+/**
+ * Lo que debe enseñar la cámara: el encuadre fijo, las fichas del grupo (con «Encuadrar al grupo»), el último del
+ * máster o la vista inicial de la escena
+ */
+export function cameraTarget(
+  screen: ScreenView,
+  followed: SceneViewport | null,
+  size: Size = { width: 16, height: 9 }
+): SceneViewport | null {
+  const scene = screen.scene
+  if (!scene) return null
   if (screen.camera.mode === 'fixed') return screen.camera.view
-  return followed ?? screen.scene.initialView
+  if (screen.camera.mode === 'group') {
+    const group = screen.tokens.filter((token) => token.faction === 'group').map((t) => ({ x: t.x, y: t.y }))
+    const framing = frameGroup(group, cellSide(scene.grid), size.height / Math.max(1, size.width))
+    if (framing) return sceneViewportOf(framing)
+  }
+  return followed ?? scene.initialView
 }
 
 export function TableScreen({ campaignId }: { campaignId: string }) {
@@ -45,14 +61,24 @@ export function TableScreen({ campaignId }: { campaignId: string }) {
   // El fundido al presentar otra escena: una capa negra que se desvanece
   const [fade, setFade] = useState(0)
   const shownScene = useRef<string | null>(null)
+  // Las fichas que el máster arrastra, en vivo (se olvidan al llegar la mesa)
+  const [dragged, setDragged] = useState<Map<string, Point>>(new Map())
 
   useEffect(() => {
     const connection = connectTable(
       { campaignId, view: 'screen' },
       {
         onMessage: (message) => {
-          if (message.type === 'screen') setScreen(message.screen)
-          else if (message.type === 'viewport') setFollowed(message.view)
+          if (message.type === 'screen') {
+            setScreen(message.screen)
+            setDragged(new Map())
+          } else if (message.type === 'viewport') setFollowed(message.view)
+          else if (message.type === 'drag')
+            setDragged((current) => {
+              const next = new Map(current)
+              for (const move of message.moves) next.set(move.tokenId, { x: move.x, y: move.y })
+              return next
+            })
         }
       }
     )
@@ -74,7 +100,17 @@ export function TableScreen({ campaignId }: { campaignId: string }) {
         : null,
     [presented, campaignId]
   )
-  const { host, renderer, ready, size } = useTableRenderer(scene)
+  const { host, renderer, ready, size } = useTableRenderer(scene, { big: true })
+  const words = (state: NonNullable<ScreenToken['state']>) => t(`inPlay.state.${state}`)
+  const visible = presented && screen ? screen.tokens : []
+  // Las fichas: con su nombre, su estado en palabras y lo que se arrastra
+  useEffect(() => {
+    if (!ready) return
+    const grid = presented?.grid
+    renderer.current?.setTokens(
+      grid ? visible.map((token) => screenDraw(token, grid, words, dragged.get(token.id))) : []
+    )
+  })
 
   // Otra escena: fundido desde negro y la cámara salta (sin animar el viaje)
   const current = useRef<SceneViewport | null>(null)
@@ -85,7 +121,7 @@ export function TableScreen({ campaignId }: { campaignId: string }) {
   }
 
   // La cámara: hacia su objetivo, suave, a cada fotograma mientras no ha llegado
-  const target = screen ? cameraTarget(screen, followed) : null
+  const target = screen ? cameraTarget(screen, followed, size) : null
   const targetRef = useRef(target)
   targetRef.current = target
   useEffect(() => {
@@ -129,6 +165,17 @@ export function TableScreen({ campaignId }: { campaignId: string }) {
     <div className={styles.screen}>
       {screen && <PageTitle className={styles.hidden}>{screen.campaignName}</PageTitle>}
       <div ref={host} className={styles.canvas} role="img" aria-label={t('screen.label')} data-screen="" />
+      {visible.length > 0 && !screen?.hidden && (
+        <ul className={styles.hidden} aria-label={t('screen.tokens')}>
+          {visible.map((token) => (
+            <li key={token.id}>
+              {[token.name, token.state ? words(token.state) : null, ...token.conditions.map((c) => c.name)]
+                .filter(Boolean)
+                .join(', ')}
+            </li>
+          ))}
+        </ul>
+      )}
       {fade > 0 && !dark && <div key={fade} className={styles.fade} aria-hidden="true" />}
       {dark && (
         <div className={styles.dark} data-dark="">

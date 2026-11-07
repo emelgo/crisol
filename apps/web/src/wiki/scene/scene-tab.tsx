@@ -71,6 +71,10 @@ export function SceneTabProvider({
   const update = useMutation({
     mutationFn: ({ sceneId, ...input }: { sceneId: string; grid?: GridPatch; initialView?: SceneViewport | null }) =>
       api.call('updateScene', { sceneId, ...input }),
+    // Lo guardado, salvo si ya hay algo más por guardar
+    onSuccess: (saved) => {
+      if (!pending.current) queryClient.setQueryData(key, saved)
+    },
     onError: () => queryClient.invalidateQueries({ queryKey: key })
   })
   const flush = () => {
@@ -83,6 +87,8 @@ export function SceneTabProvider({
   flushRef.current = flush
   const saveGrid = (patch: GridPatch, later = false) => {
     if (!scene) return
+    // Una lectura en camino (el aviso de un cambio anterior) no debe pisar lo que se acaba de poner
+    void queryClient.cancelQueries({ queryKey: key })
     queryClient.setQueryData<SceneView>(key, (current) =>
       current ? { ...current, grid: { ...current.grid, ...patch } } : current
     )
