@@ -15,6 +15,7 @@ import type {
   LightView,
   MapPinView,
   MapView,
+  MarkView,
   Member,
   Organization,
   Page,
@@ -28,10 +29,12 @@ import type {
   SceneView,
   SceneViewport,
   ScreenCamera,
+  SnapshotView,
   TagView,
   TokenView,
   TrashItem,
   WallView,
+  WidgetView,
   World
 } from '@crisol/contracts'
 import { DiceSyntaxError, rollDice as rollFormula, rowFor, tableFormula, tableProblems } from '@crisol/dice'
@@ -719,6 +722,26 @@ export function fakeApi(
     activeBelowAmbient: null,
     ...input
   })
+  // Lo dejado en el mapa (por campaña y escena), los widgets y las instantáneas de cada campaña
+  const tableMarks: Array<MarkView & { campaignId: string }> = []
+  const widgets: Array<WidgetView & { campaignId: string }> = []
+  const snapshots: Array<SnapshotView & { campaignId: string }> = []
+  const measureOnScreen = new Set<string>()
+  const sceneFor = (campaignId: string, sceneId?: string) => {
+    const target = sceneId ?? campaignTableOf(campaignId).table.open
+    if (!target) throw new ApiError('NO_OPEN_SCENE', 400)
+    return sceneOfCampaign(campaignId, target).id
+  }
+  const markOf = ({ campaignId: _, ...mark }: MarkView & { campaignId: string }): MarkView => structuredClone(mark)
+  const widgetOf = ({ campaignId: _, ...widget }: WidgetView & { campaignId: string }): WidgetView =>
+    structuredClone(widget)
+  /** Mover una marca: sus puntos y su sitio */
+  const shifted = (mark: MarkView, dx: number, dy: number): MarkView => {
+    const move = (p: { x: number; y: number }) => ({ x: p.x + dx, y: p.y + dy })
+    if (mark.kind === 'template') return { ...mark, a: move(mark.a), b: move(mark.b) }
+    if (mark.kind === 'drawing') return { ...mark, points: mark.points.map(move) }
+    return { ...mark, x: mark.x + dx, y: mark.y + dy }
+  }
   /** La escena tiene que ser del mundo de la campaña */
   const sceneOfCampaign = (campaignId: string, sceneId: string) => {
     const { campaign } = campaignTableOf(campaignId)
@@ -3270,6 +3293,180 @@ export function fakeApi(
           .walls.filter((w) => w.door === 'secret')
           .map((w) => ({ id: w.id, open: doors.get(`${campaignId}|${w.id}`) ?? w.open }))
       }
+    },
+    listMarks: ({ campaignId, sceneId }) => {
+      const target = sceneFor(campaignId, sceneId)
+      return {
+        sceneId: target,
+        marks: tableMarks.filter((m) => m.campaignId === campaignId && m.sceneId === target).map(markOf)
+      }
+    },
+    changeMarks: ({ campaignId, sceneId, add, update, remove }) => {
+      const target = sceneFor(campaignId, sceneId)
+      const changed: MarkView[] = []
+      for (const input of add ?? []) {
+        const mark = {
+          ...input,
+          id: crypto.randomUUID(),
+          sceneId: target,
+          hidden: input.hidden ?? false,
+          version: 1,
+          campaignId
+        }
+        tableMarks.push(mark as MarkView & { campaignId: string })
+        changed.push(markOf(mark as MarkView & { campaignId: string }))
+      }
+      for (const patch of update ?? []) {
+        const index = tableMarks.findIndex((m) => m.id === patch.id)
+        const found = tableMarks[index]
+        if (!found) throw new ApiError('NOT_FOUND', 404)
+        let next = { ...found, ...(patch.set ?? {}), ...(patch.hidden !== undefined ? { hidden: patch.hidden } : {}) }
+        if (patch.move) next = { ...(shifted(next, patch.move.dx, patch.move.dy) as typeof found), campaignId }
+        next.version = found.version + 1
+        tableMarks[index] = next as MarkView & { campaignId: string }
+        changed.push(markOf(tableMarks[index] as MarkView & { campaignId: string }))
+      }
+      const removed = (remove ?? []).filter((id) => tableMarks.some((m) => m.id === id))
+      for (const id of removed)
+        tableMarks.splice(
+          tableMarks.findIndex((m) => m.id === id),
+          1
+        )
+      return { sceneId: target, marks: changed, removed }
+    },
+    // Sin geometría en la API falsa: la plantilla queda, sin fichas dentro
+    placeTemplate: ({ campaignId, sceneId, shape, from, size, color, hidden }) => {
+      const target = sceneFor(campaignId, sceneId)
+      const a = pointOf(target, from)
+      const template = {
+        kind: 'template' as const,
+        shape,
+        a,
+        b: { x: a.x + size * 20, y: a.y },
+        color: color ?? '#c9302c',
+        id: crypto.randomUUID(),
+        sceneId: target,
+        hidden: hidden ?? false,
+        version: 1,
+        tokenIds: [],
+        campaignId
+      }
+      tableMarks.push(template)
+      return { template: markOf(template), tokens: [] }
+    },
+    getTemplateTokens: ({ templateId }) => {
+      if (!tableMarks.some((m) => m.id === templateId && m.kind === 'template')) throw new ApiError('NOT_FOUND', 404)
+      return { tokens: [] }
+    },
+    // En casillas, con todas las diagonales iguales
+    measureDistance: ({ campaignId, sceneId, points }) => {
+      const target = sceneFor(campaignId, sceneId)
+      const { grid } = sceneById(target)
+      const at = points.map((p) => pointOf(target, p))
+      const segments = at.slice(1).map((p, i) => {
+        const q = at[i] as { x: number; y: number }
+        return Math.max(Math.abs(p.x - q.x), Math.abs(p.y - q.y)) / grid.size
+      })
+      const cells = segments.reduce((sum, n) => sum + n, 0)
+      const distance = cells * grid.distance
+      return { sceneId: target, cells, distance, units: grid.units, text: `${distance} ${grid.units}`, segments }
+    },
+    listWidgets: ({ campaignId }) => {
+      campaignTableOf(campaignId)
+      return { widgets: widgets.filter((w) => w.campaignId === campaignId).map(widgetOf) }
+    },
+    createWidget: ({ campaignId, kind, ...fields }) => {
+      campaignTableOf(campaignId)
+      const widget = {
+        id: crypto.randomUUID(),
+        campaignId,
+        kind,
+        label: fields.label,
+        icon: fields.icon ?? null,
+        color: fields.color ?? '#c9302c',
+        shown: fields.shown ?? true,
+        sort: widgets.filter((w) => w.campaignId === campaignId).length,
+        value: fields.value ?? (kind === 'timer' ? (fields.duration ?? 300) : 0),
+        min: fields.min ?? null,
+        max: fields.max ?? null,
+        segments: kind === 'clock' ? (fields.segments ?? 4) : null,
+        showCount: fields.showCount ?? false,
+        duration: kind === 'timer' ? (fields.duration ?? 300) : null,
+        running: null,
+        version: 1
+      }
+      widgets.push(widget)
+      return widgetOf(widget)
+    },
+    updateWidget: ({ widgetId, step, timer, ...patch }) => {
+      const widget = widgets.find((w) => w.id === widgetId)
+      if (!widget) throw new ApiError('NOT_FOUND', 404)
+      for (const [key, value] of Object.entries(patch)) if (value !== undefined) Object.assign(widget, { [key]: value })
+      if (step !== undefined) widget.value += step
+      if (timer === 'start') widget.running = { since: Date.now(), remaining: widget.value }
+      if (timer === 'pause') widget.running = null
+      if (timer === 'reset') Object.assign(widget, { running: null, value: widget.duration ?? widget.value })
+      widget.version++
+      return widgetOf(widget)
+    },
+    deleteWidget: ({ widgetId }) => {
+      const index = widgets.findIndex((w) => w.id === widgetId)
+      if (index < 0) throw new ApiError('NOT_FOUND', 404)
+      widgets.splice(index, 1)
+      return { id: widgetId }
+    },
+    listSnapshots: ({ campaignId, sceneId }) => {
+      const target = sceneFor(campaignId, sceneId)
+      return {
+        sceneId: target,
+        snapshots: snapshots
+          .filter((s) => s.campaignId === campaignId && s.sceneId === target)
+          .map(({ campaignId: _, ...snapshot }) => ({ ...snapshot }))
+          .reverse()
+      }
+    },
+    saveSnapshot: ({ campaignId, sceneId, name, thumbnail }) => {
+      const target = sceneFor(campaignId, sceneId)
+      const snapshot = {
+        id: crypto.randomUUID(),
+        campaignId,
+        sceneId: target,
+        name,
+        thumbnail: thumbnail ?? null,
+        createdAt: new Date().toISOString(),
+        tokens: tokens.filter((t) => t.campaignId === campaignId && t.sceneId === target).length,
+        marks: tableMarks.filter((m) => m.campaignId === campaignId && m.sceneId === target).length
+      }
+      snapshots.push(snapshot)
+      const { campaignId: _, ...view } = snapshot
+      return view
+    },
+    // Sin guardar las fichas en la API falsa: vuelve con lo que hay
+    restoreSnapshot: ({ campaignId, snapshotId }) => {
+      const snapshot = snapshots.find((s) => s.id === snapshotId && s.campaignId === campaignId)
+      if (!snapshot) throw new ApiError('NOT_FOUND', 404)
+      return { sceneId: snapshot.sceneId, tokens: snapshot.tokens, marks: snapshot.marks, fog: 0, skipped: [] }
+    },
+    deleteSnapshot: ({ snapshotId }) => {
+      const index = snapshots.findIndex((s) => s.id === snapshotId)
+      if (index < 0) throw new ApiError('NOT_FOUND', 404)
+      snapshots.splice(index, 1)
+      return { id: snapshotId }
+    },
+    setMeasureOnScreen: ({ campaignId, on }) => {
+      campaignTableOf(campaignId)
+      if (on) measureOnScreen.add(campaignId)
+      else measureOnScreen.delete(campaignId)
+      return { measureOnScreen: on }
+    },
+    // La API falsa no lee los zips de escenas de Foundry (lo prueba el servidor): dice que no trae ninguna
+    inspectFoundryScenes: ({ worldId }) => {
+      if (!worlds.some((w) => w.id === worldId)) throw new ApiError('NOT_FOUND', 404)
+      throw new ApiError('NO_FOUNDRY_SCENES', 400)
+    },
+    importFoundryScenes: ({ worldId }) => {
+      if (!worlds.some((w) => w.id === worldId)) throw new ApiError('NOT_FOUND', 404)
+      throw new ApiError('NO_FOUNDRY_SCENES', 400)
     },
     getCombat: ({ campaignId }) => {
       campaignTableOf(campaignId)
