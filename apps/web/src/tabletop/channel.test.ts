@@ -151,4 +151,25 @@ describe('el canal de la mesa', () => {
       { type: 'viewport', view: { x: 4, y: 4, scale: 1 } }
     ])
   })
+
+  it('el arrastre sale a su ritmo, con lo último de cada ficha', () => {
+    const channel = open('master', { onMessage: () => {} })
+    last().open()
+    last().sent = []
+    channel.sendDrag([{ tokenId: 'a', x: 1, y: 1 }])
+    channel.sendDrag([
+      { tokenId: 'a', x: 2, y: 2 },
+      { tokenId: 'b', x: 5, y: 5 }
+    ])
+    channel.sendDrag([{ tokenId: 'a', x: 3, y: 3 }])
+    expect(last().sent).toEqual([{ type: 'drag', moves: [{ tokenId: 'a', x: 1, y: 1 }] }])
+    vi.advanceTimersByTime(70)
+    expect(last().sent.at(-1)).toEqual({
+      type: 'drag',
+      moves: [
+        { tokenId: 'a', x: 3, y: 3 },
+        { tokenId: 'b', x: 5, y: 5 }
+      ]
+    })
+  })
 })

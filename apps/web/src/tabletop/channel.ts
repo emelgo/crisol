@@ -12,9 +12,13 @@ export interface TableHandlers {
   onStatus?(status: TableStatus): void
 }
 
+export type DragMove = { tokenId: string; x: number; y: number }
+
 export interface TableChannel {
   /** El encuadre del máster: como mucho uno cada `VIEWPORT_MS`, siempre el último */
   sendViewport(view: SceneViewport): void
+  /** Unas fichas mientras se arrastran: como mucho uno cada `DRAG_MS`, con lo último de cada una */
+  sendDrag(moves: DragMove[]): void
   close(): void
 }
 
@@ -25,6 +29,10 @@ const FIRST_WAIT_MS = 500
 const MAX_WAIT_MS = 10_000
 /** 20 por segundo: la tele va suave sin llenar el canal */
 const VIEWPORT_MS = 50
+/** El arrastre, algo menos (el servidor admite 30 mensajes en vivo por segundo entre los dos) */
+const DRAG_MS = 70
+/** Lo más que lleva un mensaje de arrastre */
+const MAX_DRAG_MOVES = 20
 
 type SocketLike = {
   readyState: number
@@ -55,6 +63,10 @@ export function connectTable(
   let latest: SceneViewport | null = null
   let sentAt = Number.NEGATIVE_INFINITY
   let pending: ReturnType<typeof setTimeout> | undefined
+  // El arrastre: lo último de cada ficha, esperando a su turno
+  const dragging = new Map<string, DragMove>()
+  let dragAt = Number.NEGATIVE_INFINITY
+  let dragTimer: ReturnType<typeof setTimeout> | undefined
 
   const status = (value: TableStatus) => handlers.onStatus?.(value)
   const isOpen = () => socket !== null && socket.readyState === 1
@@ -64,6 +76,15 @@ export function connectTable(
     if (!latest || !isOpen()) return
     sentAt = Date.now()
     socket?.send(JSON.stringify({ type: 'viewport', view: latest }))
+  }
+
+  const flushDrag = () => {
+    dragTimer = undefined
+    if (dragging.size === 0 || !isOpen()) return dragging.clear()
+    dragAt = Date.now()
+    const moves = [...dragging.values()].slice(0, MAX_DRAG_MOVES)
+    dragging.clear()
+    socket?.send(JSON.stringify({ type: 'drag', moves }))
   }
 
   const open = () => {
@@ -110,10 +131,18 @@ export function connectTable(
       if (since >= VIEWPORT_MS) flush()
       else pending = setTimeout(flush, VIEWPORT_MS - since)
     },
+    sendDrag(moves) {
+      for (const move of moves) dragging.set(move.tokenId, move)
+      if (dragTimer) return
+      const since = Date.now() - dragAt
+      if (since >= DRAG_MS) flushDrag()
+      else dragTimer = setTimeout(flushDrag, DRAG_MS - since)
+    },
     close() {
       stopped = true
       clearTimeout(retry)
       clearTimeout(pending)
+      clearTimeout(dragTimer)
       socket?.close()
     }
   }

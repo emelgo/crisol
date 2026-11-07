@@ -300,6 +300,17 @@ export function summaryOf(
       return say(details.hidden === false ? 'showScreen' : 'hideScreen', { campaign: text(details.campaign) })
     case 'setScreenCamera':
       return say(action, { campaign: text(details.campaign) })
+    // Las fichas de la mesa y los encuentros del mundo (docs/specs/fichas.md)
+    case 'placeTokens':
+    case 'moveTokens':
+    case 'removeTokens':
+      return say(action, { count: Number(details.count ?? 1), campaign: text(details.campaign) })
+    case 'updateToken':
+      return say(action, { label: text(details.label), campaign: text(details.campaign) })
+    case 'saveEncounter':
+    case 'deleteEncounter':
+    case 'placeEncounter':
+      return say(action, { name: text(details.name), campaign: text(details.campaign) })
     // Las etiquetas de la cuenta (ADR-0006)
     case 'createTag':
     case 'colorTag':

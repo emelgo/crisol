@@ -41,3 +41,13 @@ describe('las frases del historial: las escenas y la mesa', () => {
     )
   })
 })
+
+describe('las frases del historial: las fichas', () => {
+  it('poner, mover, cambiar y quitar fichas; los encuentros', () => {
+    expect(say('placeTokens', { count: 3, campaign: 'La Marca' })).toBe('puso 3 fichas en la mesa de «La Marca»')
+    expect(say('moveTokens', { count: 1, campaign: 'La Marca' })).toBe('movió una ficha en la mesa de «La Marca»')
+    expect(say('updateToken', { label: 'G2', campaign: 'La Marca' })).toBe('cambió la ficha «G2» de «La Marca»')
+    expect(say('removeTokens', { count: 2, campaign: 'La Marca' })).toBe('quitó 2 fichas de la mesa de «La Marca»')
+    expect(say('saveEncounter', { name: 'Emboscada' })).toBe('guardó el encuentro «Emboscada»')
+  })
+})
