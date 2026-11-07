@@ -121,6 +121,32 @@ describe('las piezas', () => {
     expect(assemble([['!items!a', 3]]).documents).toEqual([])
   })
 
+  it('assemble junta lo de dentro a cualquier profundidad; un campo con un solo id, su documento', () => {
+    const { documents } = assemble([
+      ['!scenes!s', { name: 'Cripta', tokens: ['t'], levels: ['l'] }],
+      ['!scenes.levels!s.l', { name: 'Planta' }],
+      ['!scenes.tokens!s.t', { name: 'Goblin', delta: 'd' }],
+      ['!scenes.tokens.delta!s.t.d', { system: { hp: 3 }, effects: ['e'] }],
+      ['!scenes.tokens.delta.effects!s.t.d.e', { name: 'Apresado' }],
+      ['!scenes.regions.behaviors!s.r.b', { type: 'huérfano' }],
+      ['!scenes.tokens!s', { name: 'mal' }]
+    ])
+    expect(documents).toEqual([
+      {
+        _id: 's',
+        name: 'Cripta',
+        levels: [{ _id: 'l', name: 'Planta' }],
+        tokens: [
+          {
+            _id: 't',
+            name: 'Goblin',
+            delta: { _id: 'd', system: { hp: 3 }, effects: [{ _id: 'e', name: 'Apresado' }] }
+          }
+        ]
+      }
+    ])
+  })
+
   it('readNedb salta las líneas rotas y las que no tienen id', () => {
     expect(readNedb('{"_id":"a","name":"A"}\n{roto\n{"name":"sin id"}\n\n[1]')).toEqual([{ _id: 'a', name: 'A' }])
   })

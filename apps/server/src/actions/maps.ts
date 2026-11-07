@@ -131,8 +131,11 @@ export const mapActions = [
   implement(listPageTabs, async (ctx, { pageId, ...as }) => {
     const { view } = await viewedPage(ctx, pageId, as)
     const tabs = (await mapsRepo.listTabs(ctx.db, pageId)).filter(
-      // Un jugador (ADR-0017): las que ve; las tablas aleatorias de la wiki siguen siendo del máster
-      (tab) => view.full || (tab.kind !== 'table' && view.seesTab({ id: tab.id, pageId, hidden: tab.hidden }))
+      // Un jugador (ADR-0017): las que ve; las tablas aleatorias de la wiki siguen siendo del máster, y las escenas
+      // también: un jugador solo ve una escena en la mesa, proyectada (docs/specs/escenas.md, decisión 1)
+      (tab) =>
+        view.full ||
+        (tab.kind !== 'table' && tab.kind !== 'scene' && view.seesTab({ id: tab.id, pageId, hidden: tab.hidden }))
     )
     // Lo que se le reveló, para él no está oculto
     return { tabs: tabs.map((tab) => (view.full ? tabView(tab) : { ...tabView(tab), hidden: false })) }
@@ -142,7 +145,7 @@ export const mapActions = [
     const { page, wiki } = await authorizedPage(ctx, 'page.write', pageId)
     const tabs = await mapsRepo.listTabs(ctx.db, pageId)
     if (tabs.length >= MAX_PAGE_TABS) throw new InvalidRequestError('TOO_MANY_TABS', `como mucho ${MAX_PAGE_TABS}`)
-    const base = kind === 'text' ? 'Texto' : kind === 'table' ? 'Tabla' : 'Mapa'
+    const base = kind === 'text' ? 'Texto' : kind === 'table' ? 'Tabla' : kind === 'scene' ? 'Escena' : 'Mapa'
     const same = tabs.filter((tab) => tab.kind === kind).length
     // La de texto cuenta con la principal («Texto»): la primera añadida es «Texto 2»; el segundo mapa, «Mapa 2»
     const named = name ?? (kind === 'text' ? `${base} ${same + 2}` : same > 0 ? `${base} ${same + 1}` : base)

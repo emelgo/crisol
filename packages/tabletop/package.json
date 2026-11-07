@@ -1,0 +1,20 @@
+{
+  "name": "@crisol/tabletop",
+  "private": true,
+  "license": "UNLICENSED",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p .",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:rendimiento": "CRISOL_RENDIMIENTO=1 vitest run src/vision.perf.test.ts"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

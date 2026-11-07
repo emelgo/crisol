@@ -262,6 +262,8 @@ export function summaryOf(
     case 'createPageTab':
       if (details.kind === 'table')
         return say('createTableTab', { name: text(details.name), title: text(details.title) })
+      if (details.kind === 'scene')
+        return say('createSceneTab', { name: text(details.name), title: text(details.title) })
       return say(action, { name: text(details.name), title: text(details.title ?? details.page) })
     case 'updateRandomTable':
       return say('updateRandomTable', { name: text(details.name), title: text(details.title) })
@@ -280,6 +282,86 @@ export function summaryOf(
       const key = action === 'updateMapPin' && details.moved ? 'moveMapPin' : action
       return say(key, { pin, map: text(details.map), title: text(details.title) })
     }
+    // Las escenas de la mesa y la mesa de cada campaña (docs/specs/escenas.md)
+    case 'updateScene':
+      return say(details.view && !details.grid ? 'sceneView' : 'sceneGrid', {
+        name: text(details.name),
+        title: text(details.title)
+      })
+    case 'setSceneImage':
+    case 'drawScene':
+      return say(action, { name: text(details.name), title: text(details.title) })
+    case 'openScene':
+    case 'presentScene':
+      return details.name
+        ? say(action, { name: text(details.name), campaign: text(details.campaign) })
+        : say(action === 'openScene' ? 'openSomeScene' : 'presentSomeScene', { campaign: text(details.campaign) })
+    case 'hideScreen':
+      return say(details.hidden === false ? 'showScreen' : 'hideScreen', { campaign: text(details.campaign) })
+    case 'setScreenCamera':
+      return say(action, { campaign: text(details.campaign) })
+    // Las fichas de la mesa y los encuentros del mundo (docs/specs/fichas.md)
+    case 'placeTokens':
+    case 'moveTokens':
+    case 'removeTokens':
+      return say(action, { count: Number(details.count ?? 1), campaign: text(details.campaign) })
+    case 'updateToken':
+      return say(action, { label: text(details.label), campaign: text(details.campaign) })
+    case 'saveEncounter':
+    case 'deleteEncounter':
+    case 'placeEncounter':
+      return say(action, { name: text(details.name), campaign: text(details.campaign) })
+    // Lo traído de un zip (docs/specs/escenas-foundry.md)
+    case 'importFoundryScene':
+      return say(action, { name: text(details.name), title: text(details.title) })
+    case 'placeScenePins':
+      return say(action, { campaign: text(details.campaign) })
+    // La visión de la mesa (docs/specs/vision.md): lo del mundo, con su escena; lo de la campaña, con ella
+    case 'changeWalls':
+      return say(Number(details.walls ?? 1) === 0 && details.lights ? 'changeLights' : 'changeWalls', {
+        name: text(details.name),
+        title: text(details.title)
+      })
+    case 'placeImportedWalls':
+      return say(action, { name: text(details.name), title: text(details.title) })
+    case 'updateSceneVision': {
+      const key =
+        details.automaticVision === undefined
+          ? 'sceneDarkness'
+          : details.automaticVision
+            ? 'sceneAutoVisionOn'
+            : 'sceneAutoVisionOff'
+      return say(key, { name: text(details.name), title: text(details.title) })
+    }
+    case 'openDoor':
+    case 'closeDoor':
+    case 'setDoor':
+      return say(action === 'setDoor' ? (details.open ? 'openDoor' : 'closeDoor') : action, {
+        name: text(details.name),
+        campaign: text(details.campaign)
+      })
+    case 'revealFog':
+    case 'coverFog':
+    case 'changeFog':
+      return say(action === 'changeFog' ? (details.mode === 'cover' ? 'coverFog' : 'revealFog') : action, {
+        campaign: text(details.campaign)
+      })
+    case 'resetFog':
+      return say(action, { name: text(details.name), campaign: text(details.campaign) })
+    case 'setTileFit':
+      return say(action, { campaign: text(details.campaign) })
+    // Las herramientas de la mesa (docs/specs/herramientas-mesa.md)
+    case 'changeMarks':
+    case 'placeTemplate':
+      return say(action, { name: text(details.name), campaign: text(details.campaign) })
+    case 'createWidget':
+    case 'updateWidget':
+    case 'deleteWidget':
+      return say(action, { label: text(details.label), campaign: text(details.campaign) })
+    case 'saveSnapshot':
+    case 'restoreSnapshot':
+    case 'deleteSnapshot':
+      return say(action, { name: text(details.name), scene: text(details.scene), campaign: text(details.campaign) })
     // Las etiquetas de la cuenta (ADR-0006)
     case 'createTag':
     case 'colorTag':

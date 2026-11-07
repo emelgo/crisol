@@ -40,13 +40,16 @@ import {
   RollError,
   resourcePaths,
   rest,
+  type SenseRanges,
   type System,
+  sensesOf,
   spend,
   tryAction,
   tryRoll
 } from '@crisol/systems'
 import { contentSeen } from '../wiki/reader.ts'
 import { authorizedCampaign } from './access.ts'
+import { withCondition } from './conditions.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
 import { saveRoll, storedOf } from './dice.ts'
 import * as layers from './layers.ts'
@@ -198,6 +201,106 @@ export const summaryIn = (
   play: Record<string, unknown>
 ) => characterView(context.document, context.content, context.choices, build as Build, play as Play).view.summary
 
+/** Lo vital de un personaje para su ficha en la mesa: su vida (su primer recurso), sus primeras cifras y sus estados */
+export interface CharacterVitals {
+  name: string
+  version: number
+  life: { value: number; max: number; temp: number } | null
+  stats: Array<{ key: string; label: string; value: string }>
+  conditions: NonNullable<Play['conditions']>
+  /** Sus sentidos para la niebla de la mesa, en la unidad de la rejilla (donde dice su sistema) */
+  senses: SenseRanges
+}
+
+/**
+ * Lo vital ya calculado de cada personaje, por lo que lo decide (ver abajo): montar su hoja con todo el contenido del
+ * sistema cuesta, y la mesa lo pide con cada cambio (al soltar una ficha, también). Lo del mundo no cuenta en la
+ * clave: un cambio en su compendio se ve, como mucho, al minuto
+ */
+const vitalsKept = new Map<string, { at: number; vitals: CharacterVitals }>()
+const VITALS_TTL_MS = 60_000
+const VITALS_KEEP = 2000
+
+/** Lo de la campaña que decide lo vital de sus personajes (si quien llama ya la tiene leída) */
+type VitalsCampaign = { id: string; version: number; system: string | null }
+
+/**
+ * Lo vital de unos personajes de una campaña, para la mesa (ADR-0018). No autoriza: lo hace quien llama. Se carga el
+ * contexto de cada sistema una vez. Con la campaña ya leída no se vuelve a leer
+ */
+export async function characterVitalsOf(
+  ctx: ActionContext,
+  of: string | VitalsCampaign,
+  ids: readonly string[] | Promise<readonly string[]>
+): Promise<Map<string, CharacterVitals>> {
+  const vitals = new Map<string, CharacterVitals>()
+  if (Array.isArray(ids) && ids.length === 0) return vitals
+  const given = typeof of === 'string' ? null : of
+  const campaignId = given?.id ?? (of as string)
+  // A la vez la lista, la versión del sistema de la campaña (el de casi todos sus personajes) y, si aún se están
+  // leyendo, los que se piden (las fichas de una escena): menos vueltas a la base
+  const [listed, campaign, guessed, asked] = await Promise.all([
+    charactersRepo.listCharacters(ctx.db, campaignId),
+    given ?? campaignsRepo.findCampaign(ctx.db, campaignId),
+    systemsRepo.systemVersions(ctx.db, given?.system ? [given.system] : []),
+    ids
+  ])
+  const wanted = new Set(asked)
+  const rows = listed.filter((r) => wanted.has(r.id))
+  const contexts = new Map<string, Awaited<ReturnType<typeof charactersContext>> | null>()
+  // Lo que decide su hoja: él (su versión), su sistema (la suya) y lo que elige la campaña (la suya)
+  const missing = [...new Set(rows.map((r) => r.system))].filter((id) => id !== given?.system)
+  const versions = [...guessed, ...(await systemsRepo.systemVersions(ctx.db, missing))]
+  const systems = new Map(versions.map((s) => [s.id, `${s.version}:${s.deletedAt ?? ''}`]))
+  const now = Date.now()
+  for (const row of rows) {
+    const key = `${campaignId}:${row.id}:${row.version}:${row.system}:${systems.get(row.system) ?? 'catalog'}:${campaign?.version ?? 0}`
+    const kept = vitalsKept.get(key)
+    if (kept && now - kept.at < VITALS_TTL_MS) {
+      vitals.set(row.id, kept.vitals)
+      continue
+    }
+    const play = row.play as Play
+    let context = contexts.get(row.system)
+    if (context === undefined) {
+      context = await charactersContext(ctx, campaignId, row.system).catch(() => null)
+      contexts.set(row.system, context)
+    }
+    let life: CharacterVitals['life'] = null
+    let stats: CharacterVitals['stats'] = []
+    let senses: SenseRanges = {}
+    if (context) {
+      try {
+        const { view, built } = characterView(
+          context.document,
+          context.content,
+          context.choices,
+          row.build as Build,
+          play
+        )
+        const [first] = resourcePaths(context.document.types[built.type]?.fields ?? {})
+        const at = first
+          ? (first.path
+              .split('.')
+              .reduce<unknown>((v, k) => (v as Record<string, unknown> | undefined)?.[k], view.sheet) as
+              | { value?: number; max?: number; temp?: number }
+              | undefined)
+          : undefined
+        if (typeof at?.max === 'number') life = { value: at.value ?? at.max, max: at.max, temp: at.temp ?? 0 }
+        stats = view.summary.stats ?? []
+        senses = sensesOf(context.document, view.sheet as Record<string, unknown>)
+      } catch {
+        // Un personaje a medio crear: sin vida que enseñar
+      }
+    }
+    const made = { name: row.name, version: row.version, life, stats, conditions: play.conditions ?? [], senses }
+    vitals.set(row.id, made)
+    vitalsKept.set(key, { at: now, vitals: made })
+    if (vitalsKept.size > VITALS_KEEP) vitalsKept.delete(vitalsKept.keys().next().value as string)
+  }
+  return vitals
+}
+
 /** Lo de la partida nuevo, con su forma y su tamaño (antes de montarlo) */
 export function parsedPlay(given: unknown): Play {
   const parsed = playSchema.safeParse(given)
@@ -299,6 +402,8 @@ async function save(
   if (!fresh) throw new NotFoundError('character')
   // Otro dueño: lo que el de antes escribía por él (una página de jugadores) se vuelve a mirar
   if (patch.ownerId !== undefined) ctx.collab?.closeWorldPlayers(row.worldId)
+  // Su ficha en la mesa (sus PG, sus estados, su nombre)
+  ctx.table?.changed(row.campaignId)
   return { character: characterOf(fresh), state: view }
 }
 
@@ -434,7 +539,7 @@ export const characterActions = [
 
   implement(
     playCharacter,
-    async (ctx, { characterId, version, resource, damage, heal, temp, spend: used, rest: kind }) => {
+    async (ctx, { characterId, version, resource, damage, heal, temp, spend: used, rest: kind, condition }) => {
       const { row } = await readable(ctx, characterId)
       const { view, built, document } = await stateOf(ctx, row.campaignId, row.system, row.build, row.play)
       let play = structuredClone(row.play) as Play
@@ -468,6 +573,7 @@ export const characterActions = [
         }
       }
       if (kind) play = rest(play, view.resources, kind, paths, roll)
+      play = withCondition(play, condition)
       return save(ctx, row, version, { play: play as Record<string, unknown> }, undefined)
     }
   ),

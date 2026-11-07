@@ -32,14 +32,18 @@ export function RootLayout() {
   const wide = useRouterState({
     select: (state) =>
       /^\/mundos\/[^/]+\/(wiki|etiquetas|archivos|buscar)/.test(state.location.pathname) ||
-      /^\/mundos\/[^/]+\/campanas\/[^/]+\/(compendio|personajes|biblioteca)/.test(state.location.pathname) ||
+      /^\/mundos\/[^/]+\/campanas\/[^/]+\/(compendio|personajes|biblioteca|mesa)/.test(state.location.pathname) ||
       /^\/mundos\/[^/]+\/?$/.test(state.location.pathname) ||
       state.location.pathname === '/archivos' ||
       state.location.pathname === '/etiquetas' ||
       state.location.pathname === '/mundos'
   })
-  // Imprimir: solo la hoja, sin nada de la interfaz
-  const printing = useRouterState({ select: (state) => /^\/mundos\/[^/]+\/imprimir\//.test(state.location.pathname) })
+  // Imprimir: solo la hoja, sin nada de la interfaz; la pantalla de la tele, igual: solo el mapa
+  const printing = useRouterState({
+    select: (state) =>
+      /^\/mundos\/[^/]+\/imprimir\//.test(state.location.pathname) ||
+      /^\/mundos\/[^/]+\/campanas\/[^/]+\/pantalla\/?$/.test(state.location.pathname)
+  })
   // Al llegar a otra página (no al cargar la primera), el foco va a su título
   useEffect(
     () =>

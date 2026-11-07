@@ -4,9 +4,11 @@
  */
 import { and, asc, eq, getTableColumns, inArray } from 'drizzle-orm'
 import type { Database } from '../client.ts'
-import { type OperationContext, operation } from '../operation.ts'
+import { type OperationContext, operation, type Writer } from '../operation.ts'
 import { campaigns } from '../schema/campaigns.ts'
+import { combatants } from '../schema/combat.ts'
 import { campaignCreatures } from '../schema/creatures.ts'
+import { sceneTokens } from '../schema/scenes.ts'
 
 export type CreatureRow = typeof campaignCreatures.$inferSelect & { worldId: string }
 
@@ -63,26 +65,29 @@ export interface CreatureValues {
 
 /** Pone en juego unas cuantas (o una única) en una sola operación */
 export function createCreatures(db: Database, context: OperationContext, values: readonly CreatureValues[]) {
-  return operation(db, context, async (w) => {
-    const created = []
-    for (const value of values) {
-      if (value.unique) {
-        const [taken] = await w.read
-          .select({ id: campaignCreatures.id })
-          .from(campaignCreatures)
-          .where(
-            and(
-              eq(campaignCreatures.campaignId, value.campaignId),
-              eq(campaignCreatures.key, value.key),
-              eq(campaignCreatures.unique, true)
-            )
+  return operation(db, context, (w) => insertCreatures(w, values))
+}
+
+/** Las pone en juego dentro de una operación que ya está en marcha (con sus fichas, por ejemplo) */
+export async function insertCreatures(w: Writer, values: readonly CreatureValues[]) {
+  const created = []
+  for (const value of values) {
+    if (value.unique) {
+      const [taken] = await w.read
+        .select({ id: campaignCreatures.id })
+        .from(campaignCreatures)
+        .where(
+          and(
+            eq(campaignCreatures.campaignId, value.campaignId),
+            eq(campaignCreatures.key, value.key),
+            eq(campaignCreatures.unique, true)
           )
-        if (taken) throw new UniqueTakenError()
-      }
-      created.push(await w.insert(campaignCreatures, value))
+        )
+      if (taken) throw new UniqueTakenError()
     }
-    return created
-  })
+    created.push(await w.insert(campaignCreatures, value))
+  }
+  return created
 }
 
 export type CreaturePatch = Partial<Pick<CreatureValues, 'name' | 'play' | 'overrides'>>
@@ -129,14 +134,33 @@ export function updateCreaturesPlay(
 
 /** Quita unas de juego (las que no están, no cuentan) */
 export function deleteCreatures(db: Database, context: OperationContext, campaignId: string, ids: readonly string[]) {
-  return operation(db, context, async (w) => {
-    const found = await w.read
-      .select({ id: campaignCreatures.id })
-      .from(campaignCreatures)
-      .where(and(eq(campaignCreatures.campaignId, campaignId), inArray(campaignCreatures.id, [...ids])))
-    for (const row of found) await w.remove(campaignCreatures, row.id)
-    return found.map((r) => r.id)
-  })
+  return operation(db, context, (w) => removeCreaturesIn(w, campaignId, ids))
+}
+
+/**
+ * Quita unas de juego dentro de una operación, con sus fichas en las escenas y su sitio en el combate: deshacer las
+ * devuelve con ellas (docs/specs/fichas.md, docs/specs/combate.md). Devuelve las que quitó
+ */
+export async function removeCreaturesIn(w: Writer, campaignId: string, ids: readonly string[]) {
+  if (ids.length === 0) return []
+  const found = await w.read
+    .select({ id: campaignCreatures.id })
+    .from(campaignCreatures)
+    .where(and(eq(campaignCreatures.campaignId, campaignId), inArray(campaignCreatures.id, [...ids])))
+  if (found.length === 0) return []
+  const creatureIds = found.map((r) => r.id)
+  const tokens = await w.read
+    .select({ id: sceneTokens.id })
+    .from(sceneTokens)
+    .where(inArray(sceneTokens.creatureId, creatureIds))
+  for (const token of tokens) await w.remove(sceneTokens, token.id)
+  const members = await w.read
+    .select({ id: combatants.id })
+    .from(combatants)
+    .where(inArray(combatants.creatureId, creatureIds))
+  for (const member of members) await w.remove(combatants, member.id)
+  for (const id of creatureIds) await w.remove(campaignCreatures, id)
+  return creatureIds
 }
 
 /** A la vista u oculta a los jugadores (en su propia operación, con su historial) */

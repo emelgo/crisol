@@ -22,6 +22,8 @@ import { OrganizationTrash, WorldTrash } from './routes/trash.tsx'
 import { WorldPage } from './routes/world.tsx'
 import { Worlds } from './routes/worlds.tsx'
 import { SystemsScreen } from './systems/screen.tsx'
+import { MesaScreen } from './tabletop/mesa.tsx'
+import { ScreenRoute } from './tabletop/screen.tsx'
 import { TemplateView } from './templates/editor.tsx'
 import { TemplatesScreen } from './templates/screen.tsx'
 import { CommonFiles, WikiFiles } from './wiki/files.tsx'
@@ -81,6 +83,17 @@ const partyRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/mundos/$worldId/campanas/$campaignId/grupo',
   component: PartyScreen
+})
+// La mesa del máster y la pantalla de la tele (docs/specs/escenas.md)
+const tableRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/mundos/$worldId/campanas/$campaignId/mesa',
+  component: MesaScreen
+})
+const screenRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/mundos/$worldId/campanas/$campaignId/pantalla',
+  component: ScreenRoute
 })
 const libraryRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -194,6 +207,8 @@ const routeTree = rootRoute.addChildren([
   compendiumRoute,
   inPlayRoute,
   partyRoute,
+  tableRoute,
+  screenRoute,
   libraryRoute,
   worldPagesRoute,
   worldPageRoute,

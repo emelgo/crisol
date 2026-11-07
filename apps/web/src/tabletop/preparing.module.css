@@ -1,0 +1,120 @@
+/* «Preparando el mapa…»: la imagen y sus casillas, y la tarjeta en medio */
+.box {
+  position: relative;
+  display: grid;
+  place-items: center;
+  block-size: 100%;
+  min-block-size: 18rem;
+  overflow: hidden;
+  background: #0b0b0c;
+}
+
+.image {
+  position: relative;
+  max-inline-size: 100%;
+  max-block-size: 100%;
+  inline-size: 100%;
+}
+
+.image img {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: contain;
+}
+
+.cells {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(var(--columns), minmax(0, 1fr));
+  grid-template-rows: repeat(var(--rows), minmax(0, 1fr));
+}
+
+.cells i {
+  border: 1px solid rgb(255 255 255 / 0.04);
+  background: #121214;
+  transition: opacity 0.3s;
+}
+
+.cells i[data-done] {
+  opacity: 0;
+}
+
+.card {
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-start: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  inline-size: min(19rem, calc(100% - 2rem));
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-frame);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--color-surface) 92%, transparent);
+  color: var(--color-text);
+  text-align: center;
+  transform: translate(-50%, -50%);
+}
+
+.beat {
+  animation: latido 1.2s ease-in-out infinite;
+}
+
+@keyframes latido {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.18);
+    opacity: 1;
+  }
+}
+
+.card progress {
+  inline-size: 100%;
+  block-size: 6px;
+  border: 0;
+  border-radius: 3px;
+  background: var(--color-border);
+  overflow: hidden;
+  appearance: none;
+}
+
+.card progress::-webkit-progress-bar {
+  background: var(--color-border);
+}
+
+.card progress::-webkit-progress-value {
+  border-radius: 3px;
+  background: var(--color-tip);
+}
+
+.card progress::-moz-progress-bar {
+  border-radius: 3px;
+  background: var(--color-tip);
+}
+
+.parts {
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.cancel {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-link);
+  font: inherit;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.cancel:hover {
+  text-decoration: underline;
+}

@@ -25,3 +25,14 @@ export {
   packOrder,
   readManifest
 } from './manifest.ts'
+export {
+  actorOrigins,
+  type ConvertedLight,
+  type ConvertedNote,
+  type ConvertedScene,
+  type ConvertedToken,
+  type ConvertedWall,
+  convertFoundryScene,
+  type FoundryAdventure,
+  readAdventure
+} from './scene.ts'

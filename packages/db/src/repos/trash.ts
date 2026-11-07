@@ -179,6 +179,8 @@ export async function peopleOf(db: Database, scope: { worldId: string } | { camp
  */
 /** Las versiones de cada página que se guardan siempre, por viejas que sean */
 export const VERSIONS_KEPT = 40
+/** Cuánto se espera antes de recoger las teselas de una imagen que no está puesta (se sube antes de ponerla) */
+const TILES_UPLOAD_GRACE = 24 * 60 * 60 * 1000
 
 export function purge(db: Database, now: Date) {
   return db.transaction(async (tx) => {
@@ -232,6 +234,23 @@ export function purge(db: Database, now: Date) {
     await tx.execute(
       sql`delete from snapshots s where not exists (select 1 from version_documents d where d.snapshot_id = s.id)`
     )
+    // Las teselas: las de la imagen de ahora de cada escena y las que nombra el historial (deshacer la imagen, o el
+    // quitar su pestaña, las necesita); las de una imagen que se está subiendo, el primer día. Sus bytes se van con la
+    // limpieza del almacenamiento
+    const purgedTiles = await tx.execute<{ storage_key: string }>(sql`
+      delete from scene_tiles t
+      where t.created_at < ${new Date(now.getTime() - TILES_UPLOAD_GRACE).toISOString()}::timestamptz
+        and not exists (select 1 from scenes s where s.id = t.scene_id and s.tiles->>'version' = t.version::text)
+        and not exists (
+          select 1 from changes c where c.table_name = 'scenes' and c.row_id = t.scene_id
+            and (c.before->'tiles'->>'version' = t.version::text or c.after->'tiles'->>'version' = t.version::text))
+      returning t.storage_key`)
+    // Lo explorado de una escena quitada, cuando el historial ya no puede devolverla
+    const purgedExplored = await tx.execute<{ scene_id: string }>(sql`
+      delete from scene_explored e
+      where not exists (select 1 from scenes s where s.id = e.scene_id)
+        and not exists (select 1 from changes c where c.table_name = 'scenes' and c.row_id = e.scene_id)
+      returning e.scene_id`)
     const purgedApprovals = await tx
       .delete(approvals)
       .where(lt(approvals.createdAt, historyCutoff(now)))
@@ -250,6 +269,8 @@ export function purge(db: Database, now: Date) {
       memberships: memberships.length,
       operations: purgedOperations.length,
       versions: purgedVersions.length,
+      tiles: purgedTiles.length,
+      explored: purgedExplored.length,
       approvals: purgedApprovals.length,
       interrupted: interrupted.length
     }
@@ -261,6 +282,7 @@ export async function liveStorageKeys(db: Database) {
   const rows = await db.execute<{ key: string }>(sql`
     select storage_key as key from files
     union select storage_key from system_images
+    union select storage_key from scene_tiles
     union select c.before->>'storage_key' from changes c where c.table_name = 'files' and c.before is not null
     union select c.after->>'storage_key' from changes c where c.table_name = 'files' and c.after is not null`)
   return new Set([...rows].map((row) => row.key).filter(Boolean))

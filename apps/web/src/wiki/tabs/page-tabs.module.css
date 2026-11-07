@@ -212,6 +212,11 @@
   inline-size: min(28rem, calc(100vw - 2rem));
 }
 
+/* Una escena elige también su mapa: más ancho */
+.wideDialog {
+  inline-size: min(36rem, calc(100vw - 2rem));
+}
+
 .newForm {
   display: flex;
   flex-direction: column;

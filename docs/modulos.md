@@ -7,6 +7,31 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
+### Para retomar (2026-11-07, noche: módulo 6 construido, PR y staging)
+
+- **Rama `modulo-6/mesa` → PR a `main`** (migraciones hasta la 0062). El ciclo entero: entrevista (abajo, § «### 6.
+  Mesa»), estudios, el mapa `docs/specs/modulo-6.md`, el ADR-0018 (propuesta), el lienzo «Crisol: la mesa»
+  (https://claude.ai/artifact/N28X9vvVaqwXGUTKdZzDph) y las seis capacidades (`escenas`, `fichas`, `vision`, `combate`,
+  `herramientas-mesa`, `escenas-foundry`), construidas de punta a punta; lo hecho y lo que queda de cada una, en su
+  spec § «Construido». Qué probar: `tasks/probar.md` § «Módulo 6».
+- **La revisión** (`tasks/revision-modulo-6.md`): las cuatro fugas graves y los seis «hay que arreglar», hechos con su
+  prueba; la e2e `fugas.spec.ts` comprueba de punta a punta que la tele no recibe muros, la puerta secreta, fichas
+  ocultas, marcas del máster ni teselas sin ver, y que un jugador no entra en la mesa. Quedan dos menores apuntados.
+- **Todo en verde en local** antes de la CI (con `pnpm test:coverage --concurrency=3`; con todo a la vez, la sala
+  limpia y «en escenas al azar» de `vision.test.ts` se pasan de 5 s por la carga). Cobertura de lo cambiado: 80,8 %
+  (justo). El rendimiento: al soltar una ficha, p50 ~33 ms y p95 50–60 ms con la máquina libre; seis fichas por 30
+  casillas, p95 108–158 ms con la máquina muy cargada (casi todo es guardar el movimiento): si falla en la CI, se
+  optimiza `moveTokens`, no se toca el umbral.
+- **Ojo con las e2e**: comparten servidor y base de datos; dos agentes corriéndolas a la vez se pisan.
+- **Por decidir con Enrique**: confirmar el ADR-0018 y las decisiones tomadas sin él (un encuadre es centro y escala
+  para una pantalla de referencia de 1920 px; «Subir» un mapa no lo guarda en Archivos; en combate, la ronda 0 es
+  «antes de empezar» y la iniciativa escrita a uno de un grupo vale para todo el grupo; «Sentidos» en el creador del 5e
+  de ejemplo; las criaturas preparadas de una escena de Foundry salen solas al abrirla una campaña; volver a una
+  instantánea no toca lo explorado; cada spec lista las suyas). Y **el máster de una campaña que no lo es del mundo**
+  no puede usar la mesa (escenas, encuentros y teselas piden `page.read`): decidirlo antes del módulo 7.
+- **Lo siguiente**: que Enrique pruebe los módulos 5 y 6; luego, el módulo 7 (la sala de jugadores: presencia, chat, mostrar a jugadores,
+  sonido; y lo que se dejó: que muevan sus fichas), empezando por su entrevista frente al inventario.
+
 ### Para retomar (2026-11-07: módulo 5 en `main` y en staging)
 
 - **PR #112, fusionado y desplegado en staging** (2026-11-07; migraciones hasta la 0054). Las cinco capacidades del
@@ -1374,7 +1399,7 @@ Estados: pendiente · en curso · hecho · descartado.
 | 3 | Sistemas de reglas, fichas de personaje (creación, subida de nivel), dados y dados 3D | **hecho** (2026-11-06, PR #95 a #108; Crisol vacío, ADR-0015); falta que Enrique lo pruebe (`tasks/probar.md`) | DDB: creador y hoja; Foundry: dnd5e, DataModel e instalar y crear sistemas |
 | 4 | Compendios (aparte de la wiki del mundo y **como los de Foundry**: antes, estudio a fondo con craft-anything), bestiario, statblocks, biblioteca; **las imágenes de lo traído de Foundry** (las de cada documento del zip); **buscar dentro de los PDF** (texto de cada página con pdf.js; el resultado abre el visor en esa página) **y por significado** (pgvector; antes, permiso para la imagen de Postgres y elegir quién calcula los embeddings) | **hecho** (2026-11-06, PR #110 y #111; `docs/specs/modulo-4.md`); falta que Enrique lo pruebe (`tasks/probar.md`) | Foundry: compendium packs; DDB: listados |
 | 5 | Visibilidad por campaña: conocimiento de los jugadores, revelar, compartir | **hecho** (2026-11-07, PR #112, en staging) | Foundry: ownership |
-| 6 | **Mesa**: escenas, rejilla, fichas, medir y plantillas, niebla, muros, puertas, luz, visión, iniciativa, instantáneas, encuentros, UVTT; **las escenas, mapas y tokens de un zip de Foundry** | pendiente | Foundry: canvas, visión y muros; DDB Maps |
+| 6 | **Mesa**: escenas, rejilla, fichas, medir y plantillas, niebla, muros, puertas, luz, visión, iniciativa, instantáneas, encuentros, UVTT; **las escenas, mapas y tokens de un zip de Foundry** | construido (PR del módulo 6) | Foundry: canvas, visión y muros; DDB Maps |
 | 7 | **Sala de jugadores**: presencia, chat y susurros, mostrar a jugadores, sonido (también **los de un zip de Foundry**), controles del máster | pendiente | Foundry: sockets y chat; DDB: game log |
 | 8 | Calendario, clima, viajes, líneas temporales | pendiente | — |
 | 9 | Mapas de mundo con pines y capas; pizarras | pendiente | DDB Maps |
@@ -1800,3 +1825,41 @@ Notas: `research/foundry/sistemas-y-su-api.md` y `research/dndbeyond/creador-y-h
   suyo.
 - **Fuera**: que los jugadores escriban (salvo la página que se les deje); notas, diario y chat (módulo 7); la mesa,
   la niebla y la visión (módulo 6); una web pública sin cuenta; co-máster y espectador.
+
+### 6. Mesa (entrevista con Enrique, 2026-11-07)
+
+- **Se juega sobre todo en persona, con el mapa en una pantalla** («sobre todo en persona con el mapa en una pantalla
+  pero en el futuro tmb online»). Las fichas las mueve casi siempre el máster desde su ordenador; los jugadores miran la
+  pantalla y usan el móvil para su hoja y sus dados.
+- **La pantalla es una segunda ventana** que el máster abre desde su ordenador (por HDMI), como la «Ventana de
+  jugadores» del Crisol actual. Esa ventana pide su vista al servidor (la del grupo) en lugar de pintarse en la
+  pestaña del máster: así sirve igual cuando se juegue online.
+- **La niebla, de las dos maneras**: sola, por lo que ven todas las fichas del grupo juntas, con muros, puertas y luces
+  (que llegan hechos de UVTT y de Foundry), y a mano (pincel, rectángulo) para mapas sin muros o para destapar algo de
+  golpe.
+- **En combate, la mesa es el centro, «como en foundry o dndbeyond»**: la ficha es el personaje o la criatura en juego
+  del módulo 4 (no un dibujo suelto); al pulsarla se abre su hoja y se tira; el daño baja su barra; la iniciativa lleva
+  los turnos; un encuentro pone sus criaturas en juego y al acabar se van las genéricas; en la pantalla, las criaturas
+  enseñan su estado en palabras («Herida»), como en el módulo 5.
+- **La escena es del mundo y el estado, de cada campaña**: se prepara una vez (con sus muros y luces), se engancha a la
+  página del lugar y desde ella se abre en la mesa; cada campaña que pasa por allí tiene su niebla, sus fichas y sus
+  puertas abiertas.
+- **Hecho cuando**: el máster prepara una cripta (un UVTT o una escena de Foundry, con sus muros, puertas y luces)
+  enganchada a su página y la abre en una campaña; en la pantalla la niebla se descubre sola por lo que ven las fichas
+  y él destapa a mano una sala; pone un encuentro (tres goblins y el jefe), tira la iniciativa, ataca desde la ficha, el
+  daño baja la barra y en la pantalla sale «Herido»; mide un cono y lo deja como plantilla; otra campaña abre la misma
+  cripta con su propia niebla; la IA hace todo esto por el MCP.
+- **Límite**: a la ventana de la pantalla no le llega nada que el grupo no vea (ni puertas secretas, ni criaturas
+  ocultas, ni PG). Nada copyleft; lo de pago traído de Foundry, solo para uso privado (ADR-0014).
+- **Entra**: escenas; rejilla cuadrada y hexagonal; fichas (tamaños, estados con caducidad, barras); medir y plantillas
+  de área; dibujo, sellos, texto, puntero láser, imágenes; niebla a mano y automática con muros, puertas, luces y
+  visión; iniciativa; widgets (contador, reloj, temporizador); instantáneas; la pantalla del máster (statblocks de la
+  escena y una nota); encuentros con su formación; la biblioteca con su creador de fichas desde imágenes; UVTT y las
+  escenas de un zip de Foundry.
+- **Después, al ver el lienzo de la mesa** (2026-11-07): que la IA pueda **dibujar mapas por el MCP** como el de la
+  cripta del lienzo («me interesa como lo creaste, para poder crear mapas con el mcp»), y que el mapa en la pantalla se
+  pueda **servir entero o recortado** por lo explorado («me gusta lo de poder mostrar todo o recortar»): un ajuste de
+  cada campaña.
+- **Fuera**: el generador de botín (ya están las tablas del compendio), los paquetes de colección y la capa de clima
+  (módulo 8); que cada jugador vea la mesa en su aparato con la visión de su ficha y mueva la suya, el chat y el sonido
+  (la sala de jugadores, módulo 7; esta mesa lo deja preparado).

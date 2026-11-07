@@ -20,6 +20,20 @@ import {
   updateCharacter
 } from './characters.ts'
 import {
+  addCombatants,
+  endCombat,
+  getCombat,
+  groupCombatants,
+  nextTurn,
+  orderCombatants,
+  previousTurn,
+  removeCombatants,
+  rollInitiative,
+  setInitiative,
+  startCombat,
+  updateCombat
+} from './combat.ts'
+import {
   applyRoll,
   getInPlay,
   listInPlay,
@@ -44,6 +58,7 @@ import {
   updateFolder
 } from './files.ts'
 import { importFoundry, inspectFoundry, putSystemImages } from './foundry.ts'
+import { importFoundryScenes, inspectFoundryScenes } from './foundry-scenes.ts'
 import { listHistory, undoOperation } from './history.ts'
 import { getInvitation, regenerateInvitation, setInvitationsOpen } from './invitations.ts'
 import {
@@ -103,6 +118,18 @@ import {
   updatePage
 } from './pages.ts'
 import { getParty, moveCoins, moveItem, splitCoins, updateParty } from './party.ts'
+import {
+  drawScene,
+  getCampaignTable,
+  getScene,
+  hideScreen,
+  listScenes,
+  openScene,
+  presentScene,
+  setSceneImage,
+  setScreenCamera,
+  updateScene
+} from './scenes.ts'
 import { searchWiki } from './search.ts'
 import {
   browseCampaignContent,
@@ -129,9 +156,35 @@ import {
   trySystemRoll,
   updateSystem
 } from './systems.ts'
+import {
+  changeMarks,
+  createWidget,
+  deleteSnapshot,
+  deleteWidget,
+  getTemplateTokens,
+  listMarks,
+  listSnapshots,
+  listWidgets,
+  measureDistance,
+  placeTemplate,
+  restoreSnapshot,
+  saveSnapshot,
+  setMeasureOnScreen,
+  updateWidget
+} from './table-tools.ts'
 import { getRandomTable, resetTableDraws, rollOnTable, updateRandomTable } from './tables.ts'
 import { createTag, deleteTag, listAccountTags, setFileTags, updateTag } from './tags.ts'
 import { createTemplate, deleteTemplate, getTemplate, listTemplates, updateTemplate } from './templates.ts'
+import {
+  deleteEncounter,
+  listEncounters,
+  moveTokens,
+  placeEncounter,
+  placeTokens,
+  removeTokens,
+  saveEncounter,
+  updateToken
+} from './tokens.ts'
 import {
   deleteCampaign,
   deletePage,
@@ -141,6 +194,17 @@ import {
   restorePage,
   restoreWorld
 } from './trash.ts'
+import {
+  changeFog,
+  changeWalls,
+  getSceneVision,
+  placeImportedWalls,
+  resetFog,
+  setDoor,
+  setTileFit,
+  updateSceneVision,
+  viewAsParty
+} from './vision.ts'
 import {
   copyContent,
   deleteWorldContent,
@@ -156,10 +220,13 @@ export * from './action.ts'
 export * from './ai.ts'
 export * from './campaigns.ts'
 export * from './characters.ts'
+export * from './combat.ts'
+export * from './conditions.ts'
 export * from './creatures.ts'
 export * from './dice.ts'
 export * from './files.ts'
 export * from './foundry.ts'
+export * from './foundry-scenes.ts'
 export * from './history.ts'
 export * from './invitations.ts'
 export * from './knowledge.ts'
@@ -173,12 +240,17 @@ export * from './panel.ts'
 export * from './party.ts'
 export * from './read-as.ts'
 export type * from './realtime.ts'
+export * from './scenes.ts'
 export * from './search.ts'
 export * from './systems.ts'
+export * from './table.ts'
+export * from './table-tools.ts'
 export * from './tables.ts'
 export * from './tags.ts'
 export * from './templates.ts'
+export * from './tokens.ts'
 export * from './trash.ts'
+export * from './vision.ts'
 export * from './world-content.ts'
 export * from './worlds.ts'
 
@@ -352,7 +424,62 @@ export const ACTIONS = [
   getSystemFormat,
   inspectFoundry,
   importFoundry,
-  putSystemImages
+  putSystemImages,
+  inspectFoundryScenes,
+  importFoundryScenes,
+  listScenes,
+  getScene,
+  updateScene,
+  setSceneImage,
+  getCampaignTable,
+  openScene,
+  presentScene,
+  hideScreen,
+  setScreenCamera,
+  drawScene,
+  placeTokens,
+  moveTokens,
+  updateToken,
+  removeTokens,
+  listEncounters,
+  saveEncounter,
+  deleteEncounter,
+  placeEncounter,
+  getCombat,
+  startCombat,
+  addCombatants,
+  removeCombatants,
+  rollInitiative,
+  setInitiative,
+  orderCombatants,
+  groupCombatants,
+  updateCombat,
+  nextTurn,
+  previousTurn,
+  endCombat,
+  getSceneVision,
+  changeWalls,
+  placeImportedWalls,
+  updateSceneVision,
+  setDoor,
+  changeFog,
+  resetFog,
+  setTileFit,
+  viewAsParty,
+  setMeasureOnScreen,
+  listMarks,
+  changeMarks,
+  placeTemplate,
+  getTemplateTokens,
+  measureDistance,
+  listWidgets,
+  createWidget,
+  updateWidget,
+  deleteWidget,
+  listSnapshots,
+  saveSnapshot,
+  restoreSnapshot,
+  deleteSnapshot
 ]
 
 /** Las acciones por nombre, solo como tipo: la web las usa sin cargar zod */
@@ -526,4 +653,59 @@ export type Actions = {
   inspectFoundry: typeof inspectFoundry
   importFoundry: typeof importFoundry
   putSystemImages: typeof putSystemImages
+  inspectFoundryScenes: typeof inspectFoundryScenes
+  importFoundryScenes: typeof importFoundryScenes
+  listScenes: typeof listScenes
+  getScene: typeof getScene
+  updateScene: typeof updateScene
+  setSceneImage: typeof setSceneImage
+  getCampaignTable: typeof getCampaignTable
+  openScene: typeof openScene
+  presentScene: typeof presentScene
+  hideScreen: typeof hideScreen
+  setScreenCamera: typeof setScreenCamera
+  drawScene: typeof drawScene
+  placeTokens: typeof placeTokens
+  moveTokens: typeof moveTokens
+  updateToken: typeof updateToken
+  removeTokens: typeof removeTokens
+  listEncounters: typeof listEncounters
+  saveEncounter: typeof saveEncounter
+  deleteEncounter: typeof deleteEncounter
+  placeEncounter: typeof placeEncounter
+  getCombat: typeof getCombat
+  startCombat: typeof startCombat
+  addCombatants: typeof addCombatants
+  removeCombatants: typeof removeCombatants
+  rollInitiative: typeof rollInitiative
+  setInitiative: typeof setInitiative
+  orderCombatants: typeof orderCombatants
+  groupCombatants: typeof groupCombatants
+  updateCombat: typeof updateCombat
+  nextTurn: typeof nextTurn
+  previousTurn: typeof previousTurn
+  endCombat: typeof endCombat
+  getSceneVision: typeof getSceneVision
+  changeWalls: typeof changeWalls
+  placeImportedWalls: typeof placeImportedWalls
+  updateSceneVision: typeof updateSceneVision
+  setDoor: typeof setDoor
+  changeFog: typeof changeFog
+  resetFog: typeof resetFog
+  setTileFit: typeof setTileFit
+  viewAsParty: typeof viewAsParty
+  setMeasureOnScreen: typeof setMeasureOnScreen
+  listMarks: typeof listMarks
+  changeMarks: typeof changeMarks
+  placeTemplate: typeof placeTemplate
+  getTemplateTokens: typeof getTemplateTokens
+  measureDistance: typeof measureDistance
+  listWidgets: typeof listWidgets
+  createWidget: typeof createWidget
+  updateWidget: typeof updateWidget
+  deleteWidget: typeof deleteWidget
+  listSnapshots: typeof listSnapshots
+  saveSnapshot: typeof saveSnapshot
+  restoreSnapshot: typeof restoreSnapshot
+  deleteSnapshot: typeof deleteSnapshot
 }

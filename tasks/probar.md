@@ -9,6 +9,61 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   de propietario.
 - **En local**, con los cambios al momento: http://localhost:5173 (lo arranco cuando haga falta).
 
+## Módulo 6: escenas, fichas, combate y escenas de Foundry (rama `modulo-6/mesa`, aún sin staging)
+
+- [ ] **Una escena**: en la página de un lugar, «Añadir pestaña» → «Escena»; subir un mapa (imagen o UVTT) o pedírselo
+  a la IA («dibújame una cripta…», con `dibujar_escena`); su rejilla (cuadrada, hexagonal o sin rejilla) y alinearla
+  con el mapa («Alinear con el mapa»).
+- [ ] **La mesa**: «Abrir en la mesa» desde la escena, en una campaña; moverse y acercar; cambiar de escena.
+- [ ] **La tele**: «Pantalla» abre la segunda ventana; «Presentar» y «Ocultar» (con fundido); las cámaras
+  (seguir tu vista, fija, encuadrar al grupo); si la tele enseña otra escena, la mesa lo avisa.
+- [ ] **Fichas**: ponerlas desde el panel (personajes de la campaña, el compendio, un encuentro con su formación);
+  moverlas (Mayús pega a la rejilla); su tamaño, rótulo y color de bando; ocultas (la tele no las ve).
+- [ ] **Al pulsar una ficha**: su hoja, sus tiradas, sus PG y sus estados (con caducidad). En la tele, su estado en
+  palabras, sin PG.
+- [ ] **Combate**: empezar con las fichas elegidas, tirar iniciativa (las criaturas de un grupo, juntas), pasar turnos
+  y rondas, daño a varias a la vez; la tele enseña el orden sin la iniciativa de las criaturas.
+- [ ] **La IA en la mesa**: abrir y presentar escenas, poner y mover fichas, combate, muros y luces, desde claude.ai.
+- [ ] **Escenas de Foundry**: «Traer de Foundry» con un zip de un módulo o una aventura con escenas: elegirlas, bajo
+  qué página; cada una llega con su mapa, rejilla, muros, puertas, luces y sus criaturas preparadas (salen solas la
+  primera vez que la campaña la abre). Traerlo otra vez no duplica.
+
+## Módulo 6: las herramientas de la mesa (rama `modulo-6/mesa`, aún sin staging)
+
+- [ ] **Medir** (R): arrastrar mide de un punto a otro; un clic sin arrastrar sigue a clics, con un punto de paso por
+  clic (doble clic o Escape acaba); círculo, cono y cuadrado; la distancia en pies con la regla de diagonales (panel
+  «Plantillas»); arrastrar una ficha enseña lo que recorre.
+- [ ] **«La tele ve lo que mides»**: con él puesto, la tele ve la medida en vivo; sin él, no.
+- [ ] **Plantillas**: «Dejar como plantilla» (o Intro) o la herramienta de plantillas (A), que la deja al soltar; su
+  color o la trama de su tipo de daño; moverla arrastrándola, girarla por el asa de su punta, ocultarla de la tele y
+  quitarla (Supr). Las fichas de dentro llevan su aro naranja; «Elegirlas» saca el daño a varias con ellas.
+- [ ] **Dibujar** (D): a mano, línea, rectángulo y círculo, con su color y su grosor; la goma borra un trozo de un
+  trazo (y se deshace de una vez desde el historial); «Borrar los dibujos».
+- [ ] **Texto** (T), **sellos** (S) y **pines** (P): un clic pone uno (el texto, con su campo); arrastrarlos los mueve;
+  un pin lleva a una página (su panel); «Solo para mí» deja lo nuevo fuera de la tele.
+- [ ] **Imágenes** (I): elegir una del mundo y pulsar en el mapa; su tamaño por las esquinas y su giro por el asa de
+  arriba; encima o debajo de las fichas.
+- [ ] **Láser** (X): la estela se ve en la tele un momento.
+- [ ] **Widgets** (W): un contador, un reloj de progreso (pulsar sus segmentos; el botón derecho vacía uno) y un
+  temporizador (en marcha, parado y reiniciado), cada uno con su ojo para la tele.
+- [ ] **Instantáneas** (F): guardar una con su miniatura, mover fichas y «Volver a ella» (con aviso); se deshace desde
+  el historial.
+- [ ] **Pantalla del máster** (G): sube desde abajo con la hoja de cada criatura de la escena (sus ataques se tiran con
+  un clic) y la nota de la página de la escena (otra, desde su panel).
+- [ ] **El tutorial guiado de la mesa** tiene un paso nuevo para los paneles de abajo de la columna.
+
+## Módulo 6: la visión en la mesa (rama `modulo-6/mesa`, aún sin staging)
+
+- [ ] **Muros**: en la mesa, la herramienta de muros (M) dibuja muros seguidos clic a clic (Mayús, a las esquinas de
+  la rejilla; Escape o doble clic acaba); un clic en un muro lo elige y lo cambia; arrastrar un extremo lo mueve.
+- [ ] **Puertas**: un clic en su icono las abre y las cierra; la tele ve lo de detrás al momento (la secreta, como un
+  hueco).
+- [ ] **Luces**: la herramienta de luces (L) pone una con un clic; su radio, color y ángulo; la oscuridad de la escena.
+- [ ] **Niebla a mano** (N): destapar y tapar con pincel, rectángulo y lazo; «Reiniciar la niebla»; la tele, con los
+  bordes blandos y la luz cálida de las antorchas.
+- [ ] **Ver como el grupo**: lo que ve la tele y la lista de lo que no ve.
+- [ ] **Bordes en la tele**: enteros o recortados (al final del panel de la niebla).
+
 ## Módulo 5: la página que escriben los jugadores (en staging, PR #112)
 
 - [ ] **Dejar editar**: en «Quién la conoce» de una página sin secretos, «La edita toda la campaña» (o unos

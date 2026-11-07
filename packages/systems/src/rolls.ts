@@ -433,3 +433,16 @@ export function tryRoll(
     because: prepared.because
   }
 }
+
+/** Las claves con que se llama la de iniciativa en un sistema que no la marca (los de antes de `initiative`) */
+const INITIATIVE_KEYS = ['iniciativa', 'initiative']
+
+/**
+ * La tirada de iniciativa de un sistema (docs/specs/combate.md): la que marca con `initiative` o, si no marca ninguna,
+ * la que se llama así; ha de ser una sola tirada. Sin ella, null: el combate la escribe a mano
+ */
+export function initiativeRoll(system: Pick<System, 'rolls' | 'initiative'>): string | null {
+  const rolls = system.rolls ?? {}
+  const candidates = system.initiative !== undefined ? [system.initiative] : INITIATIVE_KEYS
+  return candidates.find((key) => Object.hasOwn(rolls, key) && !rolls[key]?.for) ?? null
+}

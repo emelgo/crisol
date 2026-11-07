@@ -5,7 +5,18 @@
 import type { Page, PageTabView } from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
-import { ChevronDown, Clock, Dices, FileText, Map as MapIcon, Network, PenTool, Plus, Trash2 } from 'lucide-react'
+import {
+  ChevronDown,
+  Clock,
+  Dices,
+  FileText,
+  Grid3x3,
+  Map as MapIcon,
+  Network,
+  PenTool,
+  Plus,
+  Trash2
+} from 'lucide-react'
 import { type CSSProperties, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../../api/context.tsx'
@@ -20,7 +31,10 @@ import form from '../../components/form.module.css'
 import { Modal } from '../../components/modal.tsx'
 import { ColorChoices } from '../../routes/world-card.tsx'
 import { colorHex } from '../../routes/world-look.ts'
+import type { SceneChoice } from '../../tabletop/use-preparation.ts'
 import { TargetReveal } from '../reveal.tsx'
+import { setPendingChoice } from '../scene/pending.ts'
+import { SourcePicker } from '../scene/source-picker.tsx'
 import styles from './page-tabs.module.css'
 
 export const tabsKey = (worldId: string, pageId: string) => ['pages', worldId, 'tabs', pageId]
@@ -138,6 +152,8 @@ export function PageTabs({ page, tabs, active }: { page: Page; tabs: PageTabView
                 <FileText aria-hidden="true" size={14} />
               ) : tab.kind === 'table' ? (
                 <Dices aria-hidden="true" size={14} />
+              ) : tab.kind === 'scene' ? (
+                <Grid3x3 aria-hidden="true" size={14} />
               ) : (
                 <MapIcon aria-hidden="true" size={14} />
               )}
@@ -166,11 +182,12 @@ export function PageTabs({ page, tabs, active }: { page: Page; tabs: PageTabView
   )
 }
 
-/** Los tipos de pestaña: texto y mapa ya; los demás, en las fases que vienen (ADR-0007) */
+/** Los tipos de pestaña: texto, mapa, tabla y escena ya; los demás, en las fases que vienen (ADR-0007) */
 const KINDS = [
   { kind: 'text', icon: FileText, ready: true },
   { kind: 'map', icon: MapIcon, ready: true },
   { kind: 'table', icon: Dices, ready: true },
+  { kind: 'scene', icon: Grid3x3, ready: true },
   { kind: 'board', icon: PenTool, ready: false },
   { kind: 'timeline', icon: Clock, ready: false },
   { kind: 'tree', icon: Network, ready: false }
@@ -185,7 +202,9 @@ function NewTab({ page }: { page: Page }) {
   const errorText = useErrorText()
   const [open, setOpen] = useState(false)
   const [name, setName] = useState('')
-  const [kind, setKind] = useState<'text' | 'map' | 'table'>('text')
+  const [kind, setKind] = useState<'text' | 'map' | 'table' | 'scene'>('text')
+  // Una escena puede nacer ya con su mapa: se prepara al abrirla
+  const [choice, setChoice] = useState<SceneChoice | null>(null)
   const titleId = useId()
   const dialog = useRef<HTMLDialogElement>(null)
   const trigger = useRef<HTMLButtonElement>(null)
@@ -193,6 +212,7 @@ function NewTab({ page }: { page: Page }) {
     mutationFn: () =>
       api.call('createPageTab', { pageId: page.id, kind, ...(name.trim() ? { name: name.trim() } : {}) }),
     onSuccess: async (tab) => {
+      if (tab.kind === 'scene' && choice) setPendingChoice(tab.id, choice)
       // Ya en la lista, sin esperar a pedirla otra vez
       queryClient.setQueryData<PageTabView[]>(tabsKey(page.worldId, page.id), (tabs) => [...(tabs ?? []), tab])
       void queryClient.invalidateQueries({ queryKey: tabsKey(page.worldId, page.id) })
@@ -221,11 +241,12 @@ function NewTab({ page }: { page: Page }) {
         <Modal
           ref={dialog}
           aria-labelledby={titleId}
-          className={`${dialogStyles.dialog} ${styles.newDialog}`}
+          className={`${dialogStyles.dialog} ${styles.newDialog}${kind === 'scene' ? ` ${styles.wideDialog}` : ''}`}
           onClose={() => {
             setOpen(false)
             setName('')
             setKind('text')
+            setChoice(null)
             // Se quita al acabar de irse: si ya se está en otro sitio (escribiendo en la nueva), el foco no se mueve
             const at = document.activeElement
             if (focusIsLost() || at === trigger.current || dialog.current?.contains(at)) trigger.current?.focus()
@@ -249,7 +270,7 @@ function NewTab({ page }: { page: Page }) {
                     disabled={!ready}
                     checked={kind === option}
                     onChange={() => {
-                      if (option === 'text' || option === 'map' || option === 'table') setKind(option)
+                      if (ready) setKind(option as typeof kind)
                     }}
                   />
                   <Icon aria-hidden="true" size={20} />
@@ -267,6 +288,7 @@ function NewTab({ page }: { page: Page }) {
               aria-label={t('pageTabs.name')}
               onChange={(event) => setName(event.currentTarget.value)}
             />
+            {kind === 'scene' && <SourcePicker worldId={page.worldId} value={choice} onChange={setChoice} />}
             <FormError message={add.error ? errorText(add.error) : null} />
             <BusyButton type="submit" className={form.button} busy={add.isPending}>
               {t('pageTabs.create')}

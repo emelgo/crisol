@@ -113,7 +113,10 @@ const RULES = {
   'dice.read': { sees: seesCampaign, allows: seesCampaign },
   'dice.private': { sees: seesCampaign, allows: any(isWorldMaster, isCampaignMaster) },
   // Las criaturas en juego de una campaña (docs/specs/criaturas.md): hasta el módulo 5, solo el máster
-  'creatures.manage': { sees: seesCampaign, allows: any(isWorldMaster, isCampaignMaster) }
+  'creatures.manage': { sees: seesCampaign, allows: any(isWorldMaster, isCampaignMaster) },
+  // La mesa de una campaña (ADR-0018): la lleva su máster, y la pantalla de la tele mira con su sesión. Los jugadores
+  // se conectarán con la sala de jugadores (módulo 7)
+  'table.manage': { sees: seesCampaign, allows: any(isWorldMaster, isCampaignMaster) }
 } satisfies Record<string, { sees: Predicate; allows: Predicate }>
 
 export type Capability = keyof typeof RULES

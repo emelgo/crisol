@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="3000" height="2000" viewBox="0 0 1500 1000">
+<title>La cripta de Varn</title>
+<!-- La cripta de Varn: el mapa del lienzo «Crisol: la mesa» (out/lienzo-mesa/project/Cripta.dc.html), sin la niebla ni la rejilla del
+     prototipo, a 3000 × 2000 px (casillas de 100 px). Dibujo propio de Crisol -->
+<defs>
+<filter id="rock" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="0.022" numOctaves="5" seed="7"></feTurbulence><feColorMatrix values="0 0 0 0 0.16  0 0 0 0 0.145  0 0 0 0 0.13  0.9 0 0 0 -0.3"></feColorMatrix></filter>
+<filter id="worn" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="0.07" numOctaves="2" seed="3" result="n"></feTurbulence><feColorMatrix in="n" type="saturate" values="0" result="g"></feColorMatrix><feComponentTransfer in="g" result="g2"><feFuncR type="linear" slope="0.7" intercept="0.5"></feFuncR><feFuncG type="linear" slope="0.7" intercept="0.5"></feFuncG><feFuncB type="linear" slope="0.7" intercept="0.5"></feFuncB></feComponentTransfer><feBlend in="SourceGraphic" in2="g2" mode="multiply" result="b"></feBlend><feComposite in="b" in2="SourceGraphic" operator="in"></feComposite></filter>
+<pattern id="flag" width="100" height="100" patternUnits="userSpaceOnUse"><rect width="100" height="100" fill="#2f2924"></rect><rect x="2" y="2" width="46" height="46" rx="3" fill="#6b6056"></rect><rect x="52" y="2" width="46" height="46" rx="3" fill="#5f554b"></rect><rect x="2" y="52" width="46" height="46" rx="3" fill="#585046"></rect><rect x="52" y="52" width="46" height="46" rx="3" fill="#706459"></rect><path d="M14 20l9 6M70 66l12-4M30 80l4 8" stroke="#3f3730" stroke-width="1.5" fill="none"></path></pattern>
+<pattern id="crypt" width="50" height="50" patternUnits="userSpaceOnUse"><rect width="50" height="50" fill="#2c2722"></rect><rect x="1.5" y="1.5" width="47" height="47" rx="2" fill="#4f4943"></rect><path d="M8 40l10-6" stroke="#38332e" stroke-width="1.2"></path></pattern>
+<radialGradient id="torch"><stop offset="0" stop-color="#ffb04a" stop-opacity="0.55"></stop><stop offset="0.45" stop-color="#ff8a2a" stop-opacity="0.2"></stop><stop offset="1" stop-color="#ff7a1a" stop-opacity="0"></stop></radialGradient>
+<radialGradient id="water" cx="0.45" cy="0.4"><stop offset="0" stop-color="#2f5d73"></stop><stop offset="1" stop-color="#132631"></stop></radialGradient>
+</defs>
+<g id="art">
+<rect width="1500" height="1000" fill="#151311"></rect>
+<rect width="1500" height="1000" filter="url(#rock)"></rect>
+<g fill="none" stroke-linejoin="round">
+<g stroke="#0a0908" stroke-width="36"><rect x="100" y="350" width="350" height="300"></rect><rect x="440" y="450" width="270" height="100"></rect><rect x="700" y="200" width="400" height="400"></rect><rect x="875" y="590" width="50" height="70"></rect><rect x="750" y="650" width="300" height="250"></rect><path d="M1095 340C1150 300 1170 220 1230 180C1290 140 1370 110 1420 150C1470 190 1440 260 1410 320C1380 380 1430 450 1420 540C1410 640 1450 720 1400 800C1350 880 1250 900 1200 850C1150 800 1210 720 1190 650C1170 580 1120 560 1140 500C1150 470 1120 460 1095 455Z"></path></g>
+<g stroke="#3a332c" stroke-width="22"><rect x="100" y="350" width="350" height="300"></rect><rect x="440" y="450" width="270" height="100"></rect><rect x="700" y="200" width="400" height="400"></rect><rect x="875" y="590" width="50" height="70"></rect><rect x="750" y="650" width="300" height="250"></rect><path d="M1095 340C1150 300 1170 220 1230 180C1290 140 1370 110 1420 150C1470 190 1440 260 1410 320C1380 380 1430 450 1420 540C1410 640 1450 720 1400 800C1350 880 1250 900 1200 850C1150 800 1210 720 1190 650C1170 580 1120 560 1140 500C1150 470 1120 460 1095 455Z"></path></g>
+<g stroke="#564b40" stroke-width="8"><rect x="100" y="350" width="350" height="300"></rect><rect x="440" y="450" width="270" height="100"></rect><rect x="700" y="200" width="400" height="400"></rect><rect x="875" y="590" width="50" height="70"></rect><rect x="750" y="650" width="300" height="250"></rect></g>
+</g>
+<g filter="url(#worn)">
+<rect x="100" y="350" width="350" height="300" fill="url(#flag)"></rect>
+<rect x="440" y="450" width="270" height="100" fill="url(#flag)"></rect>
+<rect x="700" y="200" width="400" height="400" fill="url(#flag)"></rect>
+<rect x="875" y="590" width="50" height="70" fill="url(#crypt)"></rect>
+<rect x="750" y="650" width="300" height="250" fill="url(#crypt)"></rect>
+<path d="M1095 340C1150 300 1170 220 1230 180C1290 140 1370 110 1420 150C1470 190 1440 260 1410 320C1380 380 1430 450 1420 540C1410 640 1450 720 1400 800C1350 880 1250 900 1200 850C1150 800 1210 720 1190 650C1170 580 1120 560 1140 500C1150 470 1120 460 1095 455Z" fill="#4a4136"></path>
+</g>
+<g opacity="0.55"><path d="M1180 260C1230 230 1300 200 1360 210M1330 380C1360 430 1390 470 1380 520M1230 760C1270 790 1330 800 1370 770M1160 520C1180 560 1200 600 1210 640" stroke="#2c261f" stroke-width="10" fill="none" stroke-linecap="round"></path></g>
+<g fill="#5f554a" stroke="#221d18" stroke-width="3"><path d="M1250 290l18-10 14 12-8 16-20 2z"></path><path d="M1372 410l22-6 8 18-18 12-14-8z"></path><path d="M1222 770l16-12 18 8-4 18-22 2z"></path><path d="M1340 196l14-6 10 10-8 12-14-2z"></path><path d="M1180 600l10-8 12 6-2 12-14 2z"></path></g>
+<path d="M1245 655C1250 610 1320 590 1370 615C1410 640 1395 700 1345 712C1295 724 1240 700 1245 655Z" fill="url(#water)" stroke="#4a7c92" stroke-width="4" opacity="0.95"></path>
+<path d="M1280 640c20-12 50-14 70-4" stroke="#8fc3d6" stroke-width="3" fill="none" opacity="0.5" stroke-linecap="round"></path>
+<g stroke="#2a221b" stroke-width="2"><path d="M112 372h56M112 392h56M112 412h56M112 432h56M112 452h56M112 472h56" stroke="#1d1814" stroke-width="3"></path><rect x="112" y="362" width="56" height="120" fill="#4a4139" opacity="0.5"></rect></g>
+<g stroke="#2a1a0e" stroke-width="3"><rect x="372" y="580" width="44" height="44" fill="#7a5532"></rect><path d="M372 602h44M394 580v44" fill="none"></path><rect x="330" y="600" width="36" height="36" fill="#6c4a2b"></rect><circle cx="400" cy="380" r="18" fill="#6b4a2c"></circle><circle cx="400" cy="380" r="11" fill="none"></circle></g>
+<g><rect x="452" y="452" width="62" height="11" rx="2" fill="#7a4e28" stroke="#2a1a0e" stroke-width="3"></rect><path d="M466 452v11M482 452v11M498 452v11" stroke="#4a2e16" stroke-width="2"></path></g>
+<g><rect x="1092" y="360" width="14" height="80" rx="2" fill="#6b4423" stroke="#21150b" stroke-width="3"></rect><path d="M1092 378h14M1092 422h14" stroke="#9a9a9a" stroke-width="3"></path></g>
+<rect x="866" y="589" width="68" height="22" fill="#3a332c"></rect>
+<path d="M880 600h40" stroke="#2a241f" stroke-width="2"></path>
+<g><rect x="856" y="314" width="88" height="64" rx="5" fill="#2b2620"></rect><rect x="862" y="318" width="76" height="54" rx="4" fill="#8b8178"></rect><rect x="872" y="326" width="56" height="38" rx="3" fill="#9d948a"></rect><path d="M886 345h28" stroke="#6e655c" stroke-width="3"></path><circle cx="878" cy="332" r="4" fill="#f6cf74"></circle><circle cx="922" cy="332" r="4" fill="#f6cf74"></circle></g>
+<g stroke="#1c1916" stroke-width="5"><circle cx="775" cy="275" r="22" fill="#7d7268"></circle><circle cx="1025" cy="275" r="22" fill="#7d7268"></circle><circle cx="775" cy="525" r="22" fill="#7d7268"></circle><circle cx="1025" cy="525" r="22" fill="#7d7268"></circle></g>
+<g fill="#958a7e"><circle cx="771" cy="270" r="12"></circle><circle cx="1021" cy="270" r="12"></circle><circle cx="771" cy="520" r="12"></circle><circle cx="1021" cy="520" r="12"></circle></g>
+<g stroke="#26211c" stroke-width="4"><rect x="790" y="700" width="46" height="94" rx="12" fill="#6f665c"></rect><rect x="877" y="700" width="46" height="94" rx="12" fill="#6f665c"></rect><rect x="964" y="700" width="46" height="94" rx="12" fill="#6f665c"></rect></g>
+<g stroke="#544c44" stroke-width="2.5" fill="none"><path d="M802 716h22M802 778h22M813 716v62M889 716h22M889 778h22M900 716v62M976 716h22M976 778h22M987 716v62"></path></g>
+<g stroke="#d9d0bf" stroke-width="3" stroke-linecap="round" opacity="0.75"><path d="M820 850l18 6M830 846l-4 14M1010 860l14-8M980 840l10 10"></path></g>
+<g><rect x="104" y="492" width="8" height="16" fill="#3b2b1c"></rect><circle cx="112" cy="500" r="6" fill="#ffd27a"></circle><rect x="752" y="204" width="16" height="8" fill="#3b2b1c"></rect><circle cx="760" cy="212" r="6" fill="#ffd27a"></circle><rect x="1032" y="204" width="16" height="8" fill="#3b2b1c"></rect><circle cx="1040" cy="212" r="6" fill="#ffd27a"></circle></g>
+<g style="mix-blend-mode: screen"><circle cx="112" cy="500" r="150" fill="url(#torch)"></circle><circle cx="760" cy="212" r="170" fill="url(#torch)"></circle><circle cx="1040" cy="212" r="170" fill="url(#torch)"></circle><circle cx="900" cy="345" r="80" fill="url(#torch)" opacity="0.6"></circle></g>
+</g>
+</svg>

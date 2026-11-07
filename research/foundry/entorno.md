@@ -34,3 +34,12 @@ Instalado 2026-10-29 con la licencia de Enrique, solo para el REA (ver `research
   activa del mundo, sin visión, con ocho pines, las tres fichas y un combate) y «Vis Mapa Niebla» (con visión, un pin
   con «global» y otro sin él). El combat tracker sigue los PG (ajuste del mundo) y el goblin quedó
   a 3 de 7 PG, con su estado «Bloodied».
+- Datos de prueba (estudio del módulo 6, la mesa, 2026-11-07): jugadores «Mesa Jugadora» y «Mesa Otro» (rol jugador;
+  sus contraseñas no se guardan aquí); los personajes «Mesa Heroína» y «Mesa Enana» (de «Mesa Jugadora») y los PNJ
+  «Mesa Goblin», «Mesa Acechador» y «Mesa Esqueleto»; la escena «Mesa Cripta» (sin activar: 19 muros con una puerta
+  normal abierta, una secreta cerrada y los cinco tipos especiales; las luces «Mesa Antorcha», «Mesa Luz oculta»,
+  «Mesa Luz que da visión» y «Mesa Oscuridad»; cinco fichas, el acechador oculto), con la niebla explorada de «Mesa
+  Jugadora»; la escena vacía «Mesa Banco de pruebas» (60×60 casillas); los compendios del mundo «Mesa Zip Escenas»
+  (las escenas «Mesa Zip Moderna» y «Mesa Zip Antigua») y «Mesa Zip Aventuras» (la aventura «Mesa Zip Aventura», con
+  los actores «Mesa Zip Goblin» y «Mesa Zip Jefe», el diario «Mesa Zip Diario», la carpeta «Mesa Zip Carpeta», el
+  efecto «Mesa Zip Apresado» y las regiones «Mesa Zip Cono» y «Mesa Zip Terreno»).

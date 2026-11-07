@@ -14,6 +14,9 @@ Para el módulo 2 se estudian además **Kanka**, **LegendKeeper** y **World Anvi
 (documentación, ayuda, changelogs, blogs y foros), sin cuenta y sin abrir su código, que en Kanka es copyleft (ver
 `research/kanka/`, `research/legendkeeper/` y `research/worldanvil/`).
 
+Para el módulo 6 se estudia además el formato **Universal VTT** (`.dd2vtt`, `.uvtt`, `.df2vtt`), por su
+documentación pública y unos mapas de ejemplo que no entran en el repo (ver `research/uvtt/formato.md`).
+
 ## Desde el ADR-0014 (2026-11-05)
 
 Crisol es, de momento, de uso privado: el código, los textos y los datos de lo estudiado se pueden llevar a `apps/` y

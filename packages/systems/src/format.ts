@@ -503,6 +503,26 @@ function build(strict: boolean) {
       LIMITS.types
     ).describe('Los tipos de documento, por su clave: los personajes y los objetos'),
     rolls: recordOf(roll, LIMITS.rolls).optional().describe('Las tiradas del juego, por su clave'),
+    initiative: key
+      .optional()
+      .describe(
+        'La tirada de iniciativa (su clave en rolls): la que tira el combate por cada uno. Sin ella, se escribe a mano'
+      ),
+    senses: obj({
+      list: key
+        .optional()
+        .describe(
+          'Un campo de lista con los sentidos escritos («Visión en la oscuridad 60 pies», «darkvision 60 ft.», «vista ciega 10 pies»): se leen el nombre y el alcance'
+        ),
+      darkvision: key.optional().describe('Un campo numérico con el alcance de su visión en la oscuridad'),
+      blindsight: key.optional().describe('El de su vista ciega'),
+      truesight: key.optional().describe('El de su visión verdadera'),
+      tremorsense: key.optional().describe('El de su sentido sísmico')
+    })
+      .optional()
+      .describe(
+        'Dónde dice la hoja de un personaje sus sentidos, con el alcance en la unidad de la rejilla (pies): la niebla de la mesa ve con ellos. Sin ellos, vista normal'
+      ),
     dice: obj({
       default: formula.optional().describe('La tirada con la que empieza la ficha de dados (2d6), sin @'),
       critical: z

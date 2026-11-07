@@ -70,6 +70,7 @@ export const historyActions = [
       else ctx.realtime.publish(event)
     }
     await tellTrashChanges(ctx, result.applied)
+    tellTables(ctx, result.applied)
     // Lo que cambia quién escribe en una página de jugadores (el permiso, lo que se sabe, quién juega, sus personajes,
     // su texto): sus conexiones se vuelven a mirar
     const touches = ['page_editors', 'knowledge', 'campaign_members', 'campaigns', 'characters', 'page_bodies']
@@ -102,6 +103,39 @@ function authorizeUndo(ctx: ActionContext, op: Scope) {
   if (can(ctx.actor, 'organization.undo', { organizationId: op.organizationId })) return
   if (op.worldId) authorize(ctx.actor, 'world.undo', { worldId: op.worldId })
   else authorize(ctx.actor, 'organization.undo', { organizationId: op.organizationId })
+}
+
+/** Lo de la mesa de una campaña: sus fichas, su combate, lo de la partida de sus personajes, su niebla, sus puertas… */
+const CAMPAIGN_TABLES = [
+  'scene_tokens',
+  'combats',
+  'combatants',
+  'characters',
+  'scene_fog',
+  'scene_states',
+  'scene_marks',
+  'campaign_widgets',
+  'scene_snapshots'
+]
+/** Lo de una escena, de todas las campañas que la tienen: ella, sus muros y sus luces */
+const SCENE_TABLES = ['scenes', 'scene_walls', 'scene_lights']
+
+/**
+ * Las mesas que toca lo deshecho se vuelven a proyectar (y su vista guardada deja de valer): las de las campañas
+ * cuyas cosas cambian y las que tienen abiertas o presentadas las escenas que cambian
+ */
+function tellTables(ctx: ActionContext, applied: undoRepo.AppliedChange[]) {
+  const campaigns = new Set<string>()
+  const scenes = new Set<string>()
+  for (const change of applied) {
+    const row = change.after ?? change.before
+    if (CAMPAIGN_TABLES.includes(change.tableName) && typeof row?.campaign_id === 'string')
+      campaigns.add(row.campaign_id)
+    if (change.tableName === 'scenes') scenes.add(change.rowId)
+    else if (SCENE_TABLES.includes(change.tableName) && typeof row?.scene_id === 'string') scenes.add(row.scene_id)
+  }
+  for (const campaignId of campaigns) ctx.table?.changed(campaignId)
+  for (const sceneId of scenes) ctx.table?.sceneChanged(sceneId)
 }
 
 /**

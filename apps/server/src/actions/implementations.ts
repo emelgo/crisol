@@ -1,11 +1,13 @@
 import { aiActions } from './ai.ts'
 import { campaignActions } from './campaigns.ts'
 import { characterActions } from './characters.ts'
+import { combatActions } from './combat.ts'
 import { compendiumActions } from './compendium.ts'
 import { creatureActions } from './creatures.ts'
 import { diceActions } from './dice.ts'
 import { fileActions } from './files.ts'
 import { foundryActions } from './foundry.ts'
+import { foundrySceneActions } from './foundry-scenes.ts'
 import { historyActions } from './history.ts'
 import { invitationActions } from './invitations.ts'
 import { knowledgeActions } from './knowledge.ts'
@@ -21,13 +23,17 @@ import { preferenceActions } from './preferences.ts'
 import { previewActions } from './preview.ts'
 import type { Implementation } from './registry.ts'
 import { revealActions } from './reveal.ts'
+import { sceneActions } from './scenes.ts'
 import { searchActions } from './search.ts'
 import { systemActions } from './systems.ts'
+import { tableToolActions } from './table-tools.ts'
 import { tableActions } from './tables.ts'
 import { tagActions } from './tags.ts'
 import { templateActions } from './templates.ts'
+import { tokenActions } from './tokens.ts'
 import { trashActions } from './trash.ts'
 import { versionActions } from './versions.ts'
+import { visionActions } from './vision.ts'
 import { worldContentActions } from './world-content.ts'
 import { worldActions } from './worlds.ts'
 
@@ -53,11 +59,17 @@ export const IMPLEMENTATIONS: Implementation[] = [
   ...templateActions,
   ...systemActions,
   ...foundryActions,
+  ...foundrySceneActions,
   ...compendiumActions,
   ...worldContentActions,
   ...characterActions,
   ...creatureActions,
   ...partyActions,
+  ...sceneActions,
+  ...tokenActions,
+  ...combatActions,
+  ...visionActions,
+  ...tableToolActions,
   ...knowledgeActions,
   ...revealActions,
   ...libraryActions,

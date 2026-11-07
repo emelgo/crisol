@@ -31,6 +31,7 @@ import { PanelBlocks } from './panel-blocks.tsx'
 import { PageProperties, type PropertyAdder } from './properties.tsx'
 import { QuickSwitcher } from './quick-switcher.tsx'
 import { PageRevealButton } from './reveal.tsx'
+import { SceneMain, SceneSide, SceneTabProvider } from './scene/scene-tab.tsx'
 import { SheetMenu, SheetPaper } from './sheet/controls.tsx'
 import { TableTab } from './table/table-tab.tsx'
 import { PageTabs, usePageTabs } from './tabs/page-tabs.tsx'
@@ -740,6 +741,33 @@ export function EntryView({
   const main = useRef<HTMLElement>(null)
   // Añadir etiquetas o una propiedad desde «Añadir bloque» del panel: lo hace la ficha de propiedades
   const addProperty = useRef<PropertyAdder | null>(null)
+  /** La página: la cabecera, sus pestañas y lo de la elegida en medio; a la derecha, su panel (o el de la pestaña) */
+  const body = (content: ReactNode, side: ReactNode) => (
+    <div className={styles.entry} data-entry="" data-entry-panel="">
+      <article ref={main} className={styles.entryMain}>
+        <PageHead
+          key={page.id}
+          page={page}
+          startEditing={nuevo}
+          home={home}
+          actions={
+            <>
+              <WhoKnowsButton page={page} />
+              <PageRevealButton page={page} />
+              <BookmarkButton page={page} />
+              <LockButton page={page} />
+              <MoreActions page={page} />
+            </>
+          }
+        />
+        <PageTabs page={page} tabs={tabs} active={active?.id ?? null} />
+        {content}
+      </article>
+      <aside aria-label={t('wiki.pagePanel')} className={styles.entryPanel} data-tour="panel-bloques">
+        {side}
+      </aside>
+    </div>
+  )
   return (
     <>
       {/* La portada, a todo lo ancho (la del mundo en su portada; si no, la de la página o «Añadir portada») */}
@@ -751,55 +779,42 @@ export function EntryView({
             !page.locked && <CoverButton page={page} className={styles.addCover} label={t('cover.add')} />
           ))}
       </div>
-      <div className={styles.entry} data-entry="" data-entry-panel="">
-        <article ref={main} className={styles.entryMain}>
-          <PageHead
-            key={page.id}
-            page={page}
-            startEditing={nuevo}
-            home={home}
-            actions={
+      {/* La escena: su mapa en medio y su rejilla en el sitio del panel de la página */}
+      <SceneTabProvider page={page} tab={active?.kind === 'scene' ? active : null}>
+        {active?.kind === 'scene'
+          ? body(<SceneMain key={active.id} />, <SceneSide />)
+          : body(
+              active?.kind === 'text' ? (
+                // Otra página de texto: la misma hoja y el mismo editor, con su propio documento
+                <div className={styles.column}>
+                  <SheetPaper page={page}>
+                    <PageBody key={active.id} page={page} documentId={active.documentId} />
+                  </SheetPaper>
+                </div>
+              ) : active?.kind === 'table' ? (
+                <TableTab key={active.id} page={page} tab={active} />
+              ) : active ? (
+                <MapTab key={active.id} page={page} tab={active} />
+              ) : (
+                <div className={styles.column}>
+                  <SheetPaper page={page}>
+                    <PageBody page={page} />
+                  </SheetPaper>
+                </div>
+              ),
               <>
-                <WhoKnowsButton page={page} />
-                <PageRevealButton page={page} />
-                <BookmarkButton page={page} />
-                <LockButton page={page} />
-                <MoreActions page={page} />
+                {/* «Mencionado en», arriba (como en Everlore); después, las propiedades y los bloques */}
+                <Backlinks key={`enlaces-${page.id}`} page={page} />
+                {/* Las propiedades, a un lado (como los bloques del panel de Everlore) */}
+                <PageProperties key={page.id} page={page} adders={false} adderRef={addProperty} />
+                <PanelBlocks
+                  key={`bloques-${page.id}`}
+                  page={page}
+                  onAddProperty={page.locked ? undefined : (kind) => addProperty.current?.(kind)}
+                />
               </>
-            }
-          />
-          <PageTabs page={page} tabs={tabs} active={active?.id ?? null} />
-          {active?.kind === 'text' ? (
-            // Otra página de texto: la misma hoja y el mismo editor, con su propio documento
-            <div className={styles.column}>
-              <SheetPaper page={page}>
-                <PageBody key={active.id} page={page} documentId={active.documentId} />
-              </SheetPaper>
-            </div>
-          ) : active?.kind === 'table' ? (
-            <TableTab key={active.id} page={page} tab={active} />
-          ) : active ? (
-            <MapTab key={active.id} page={page} tab={active} />
-          ) : (
-            <div className={styles.column}>
-              <SheetPaper page={page}>
-                <PageBody page={page} />
-              </SheetPaper>
-            </div>
-          )}
-        </article>
-        <aside aria-label={t('wiki.pagePanel')} className={styles.entryPanel} data-tour="panel-bloques">
-          {/* «Mencionado en», arriba (como en Everlore); después, las propiedades y los bloques */}
-          <Backlinks key={`enlaces-${page.id}`} page={page} />
-          {/* Las propiedades, a un lado (como los bloques del panel de Everlore) */}
-          <PageProperties key={page.id} page={page} adders={false} adderRef={addProperty} />
-          <PanelBlocks
-            key={`bloques-${page.id}`}
-            page={page}
-            onAddProperty={page.locked ? undefined : (kind) => addProperty.current?.(kind)}
-          />
-        </aside>
-      </div>
+            )}
+      </SceneTabProvider>
     </>
   )
 }

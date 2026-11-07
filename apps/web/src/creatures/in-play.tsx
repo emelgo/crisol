@@ -257,16 +257,19 @@ function CreatureRow({
 }
 
 /** La hoja de una criatura en juego: su cabecera (su nombre, tirar sus PG, otro máximo, quitarla) y sus bloques */
-function CreatureSheet({
+export function CreatureSheet({
   creatureId,
   campaignId,
   systemId,
-  onRemoved
+  onRemoved,
+  statblock = false
 }: {
   creatureId: string
   campaignId: string
   systemId: string | null
   onRemoved: () => void
+  /** Solo lo que se juega (la pantalla del máster): sin verla o no los jugadores, sus PG ni quitarla */
+  statblock?: boolean
 }) {
   const { t } = useTranslation()
   const api = useApi()
@@ -326,61 +329,65 @@ function CreatureSheet({
             </span>
           )}
         </div>
-        <fieldset className={styles.seen}>
-          <legend className={styles.hiddenText}>{t('inPlay.players')}</legend>
-          {[false, true].map((each) => (
-            <label key={String(each)} className={styles.seenOption}>
-              <input
-                type="radio"
-                name={`${titleId}-vista`}
-                checked={hidden === each}
-                disabled={hiding.isPending}
-                onChange={() => hiding.mutate({ creatureId, hidden: each })}
-              />
-              <span>{each ? t('inPlay.hidden') : t('inPlay.visible')}</span>
-            </label>
-          ))}
-        </fieldset>
-        <div className={styles.actions}>
-          {creature.life && (
-            <>
-              <BusyButton
-                className={styles.action}
-                busy={change.isPending}
-                onClick={() => change.mutate({ rollHp: true })}
-              >
-                <Dices size={14} aria-hidden="true" />
-                {t('inPlay.rollHp')}
-              </BusyButton>
-              <form
-                className={styles.maxForm}
-                onSubmit={(event) => {
-                  event.preventDefault()
-                  const value = Number(max)
-                  if (Number.isInteger(value) && value > 0) change.mutate({ max: { value } })
-                }}
-              >
-                <label htmlFor={maxId}>{t('inPlay.otherMax')}</label>
+        {!statblock && (
+          <fieldset className={styles.seen}>
+            <legend className={styles.hiddenText}>{t('inPlay.players')}</legend>
+            {[false, true].map((each) => (
+              <label key={String(each)} className={styles.seenOption}>
                 <input
-                  id={maxId}
-                  type="number"
-                  min={1}
-                  inputMode="numeric"
-                  placeholder={String(creature.life.max)}
-                  value={max}
-                  onChange={(event) => setMax(event.currentTarget.value)}
+                  type="radio"
+                  name={`${titleId}-vista`}
+                  checked={hidden === each}
+                  disabled={hiding.isPending}
+                  onChange={() => hiding.mutate({ creatureId, hidden: each })}
                 />
-              </form>
-              <button type="button" className={styles.action} onClick={() => change.mutate({ max: { value: null } })}>
-                {t('inPlay.ownMax')}
-              </button>
-            </>
-          )}
-          <BusyButton className={styles.action} busy={remove.isPending} onClick={() => remove.mutate()}>
-            <Trash2 size={14} aria-hidden="true" />
-            {t('inPlay.remove')}
-          </BusyButton>
-        </div>
+                <span>{each ? t('inPlay.hidden') : t('inPlay.visible')}</span>
+              </label>
+            ))}
+          </fieldset>
+        )}
+        {!statblock && (
+          <div className={styles.actions}>
+            {creature.life && (
+              <>
+                <BusyButton
+                  className={styles.action}
+                  busy={change.isPending}
+                  onClick={() => change.mutate({ rollHp: true })}
+                >
+                  <Dices size={14} aria-hidden="true" />
+                  {t('inPlay.rollHp')}
+                </BusyButton>
+                <form
+                  className={styles.maxForm}
+                  onSubmit={(event) => {
+                    event.preventDefault()
+                    const value = Number(max)
+                    if (Number.isInteger(value) && value > 0) change.mutate({ max: { value } })
+                  }}
+                >
+                  <label htmlFor={maxId}>{t('inPlay.otherMax')}</label>
+                  <input
+                    id={maxId}
+                    type="number"
+                    min={1}
+                    inputMode="numeric"
+                    placeholder={String(creature.life.max)}
+                    value={max}
+                    onChange={(event) => setMax(event.currentTarget.value)}
+                  />
+                </form>
+                <button type="button" className={styles.action} onClick={() => change.mutate({ max: { value: null } })}>
+                  {t('inPlay.ownMax')}
+                </button>
+              </>
+            )}
+            <BusyButton className={styles.action} busy={remove.isPending} onClick={() => remove.mutate()}>
+              <Trash2 size={14} aria-hidden="true" />
+              {t('inPlay.remove')}
+            </BusyButton>
+          </div>
+        )}
       </header>
       <FormError message={problem ? errorText(problem) : null} />
       <PlaySheet

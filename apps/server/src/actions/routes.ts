@@ -58,7 +58,7 @@ const SYSTEM_BODY = FILE_BYTES + MB
 /** El zip de Foundry en base64 (un tercio más), con margen */
 const FOUNDRY_BODY = Math.ceil(FOUNDRY_ZIP_BYTES / 3) * 4 + MB
 
-/** Las acciones que llevan un sistema entero, su archivo o un zip de Foundry, con lo que cabe en cada una */
+/** Las acciones que llevan un sistema entero, su archivo, un zip de Foundry o un mapa, con lo que cabe en cada una */
 export const BIG_ACTIONS: Readonly<Record<string, number>> = {
   updateSystem: SYSTEM_BODY,
   importSystem: SYSTEM_BODY,
@@ -67,5 +67,10 @@ export const BIG_ACTIONS: Readonly<Record<string, number>> = {
   createSystem: SYSTEM_BODY,
   inspectFoundry: FOUNDRY_BODY,
   importFoundry: FOUNDRY_BODY,
-  putSystemImages: Math.ceil(SYSTEM_IMAGES_BYTES / 3) * 4 + MB
+  inspectFoundryScenes: FOUNDRY_BODY,
+  importFoundryScenes: FOUNDRY_BODY,
+  putSystemImages: Math.ceil(SYSTEM_IMAGES_BYTES / 3) * 4 + MB,
+  // Un mapa en SVG dibujado por la IA, y lo que trae un UVTT (muros y luces) al poner su imagen
+  drawScene: 6 * MB,
+  setSceneImage: 6 * MB
 }

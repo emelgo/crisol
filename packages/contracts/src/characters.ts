@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { defineAction } from './action.ts'
+import { conditionChange } from './conditions.ts'
 import { diceRoll } from './dice.ts'
 
 /** Lo que se ve de un personaje en su tarjeta: su línea («Enano · Guerrero 4»), su nivel y unos valores de su hoja */
@@ -342,7 +343,8 @@ export const playCharacter = defineAction({
       .optional()
       .describe(
         'Descansar: el corto recupera lo de los descansos cortos (y la magia de pacto); el largo, todo y los PG. Lo que vuelve con dados lo tira el servidor'
-      )
+      ),
+    condition: conditionChange.optional().describe('Ponerle o quitarle un estado (Derribado, Envenenado)')
   }),
   output: z.object({ character, state: characterState })
 })

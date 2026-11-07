@@ -366,7 +366,10 @@ describe('el estado de un personaje para la pantalla y la IA (characterView)', (
       kind: 'scores',
       methods: expect.arrayContaining([expect.objectContaining({ label: 'Point buy' })])
     })
-    expect(details).toMatchObject({ kind: 'fields', fields: [{ key: 'idiomas' }, { key: 'notas', label: 'Notes' }] })
+    expect(details).toMatchObject({
+      kind: 'fields',
+      fields: [{ key: 'idiomas' }, { key: 'sentidos', label: 'Senses' }, { key: 'notas', label: 'Notes' }]
+    })
     expect(view.summary.line).toBe('Fighter 1')
     expect(view.items.find((i) => i.id === 'c1')).toMatchObject({ type: 'clase', key: 'guerrero_2024', from: null })
     expect(view.fields.find((f) => f.key === 'caracteristicas')?.elements?.length).toBe(6)

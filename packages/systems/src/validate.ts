@@ -383,6 +383,23 @@ function checkReferences(
       }
     })
   }
+  if (system.initiative !== undefined) {
+    const roll = own(system.rolls ?? {}, system.initiative)
+    if (!roll) add(['initiative'], `No existe la tirada «${system.initiative}»`)
+    else if (roll.for) add(['initiative'], 'La de iniciativa es una sola tirada, no una por cada campo o elemento')
+  }
+  // Los sentidos: un campo de los personajes, de lista o numérico
+  for (const [which, field] of Object.entries(system.senses ?? {})) {
+    if (typeof field !== 'string') continue
+    const kinds = actors.flatMap((t) => {
+      const f = own(t.fields, field)
+      return f ? [f.kind] : []
+    })
+    const wanted = which === 'list' ? ['list'] : ['number', 'derived']
+    if (kinds.length === 0) add(['senses', which], `No existe el campo «${field}»`)
+    else if (!kinds.some((k) => wanted.includes(k)))
+      add(['senses', which], `«${field}» no es ${which === 'list' ? 'de lista' : 'un número'}`)
+  }
   if (system.dice?.default) diceFormula(system.dice.default, ['dice', 'default'], add)
   repeated(system.languages, (i, k) => add(['languages', i], `«${k}» está repetido`))
   repeated(system.sources?.map((s) => s.key) ?? [], (i, k) => add(['sources', i, 'key'], `«${k}» está repetida`))

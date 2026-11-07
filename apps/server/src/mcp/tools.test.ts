@@ -17,22 +17,33 @@ describe('herramientas MCP', () => {
 
   it('las del módulo 0, las de la wiki, las de las plantillas, las de los dados y las de los sistemas (con su contenido)', () => {
     expect(Object.keys(MCP_TOOLS).sort()).toEqual([
+      'abrir_escena',
+      'abrir_puerta',
+      'acabar_combate',
       'aplicar_tirada',
       'borrar_contenido',
+      'borrar_encuentro',
       'borrar_etiqueta',
+      'borrar_instantanea',
       'borrar_pagina',
       'borrar_personaje',
       'borrar_pestana',
       'borrar_plantilla',
       'borrar_sistema',
+      'borrar_widget',
       'buscar_contenido',
       'buscar_libros',
       'buscar_paginas',
+      'camara_pantalla',
       'cambiar_campana',
+      'cambiar_escena',
       'cambiar_etiqueta',
+      'cambiar_ficha',
       'cambiar_grupo',
       'cambiar_mapa',
+      'cambiar_marcas',
       'cambiar_mundo',
+      'cambiar_muros',
       'cambiar_panel',
       'cambiar_personaje',
       'cambiar_pestana',
@@ -40,6 +51,7 @@ describe('herramientas MCP', () => {
       'cambiar_plantilla',
       'cambiar_sistema',
       'cambiar_tabla',
+      'cambiar_widget',
       'compendio_campana',
       'copiar_contenido',
       'crear_campana',
@@ -50,15 +62,23 @@ describe('herramientas MCP', () => {
       'crear_pestana',
       'crear_plantilla',
       'crear_sistema',
+      'crear_widget',
       'dejar_editar',
       'deshacer',
+      'dibujar_escena',
       'editar_pagina',
       'elegir_personaje',
+      'empezar_combate',
       'enlace_invitacion',
       'enlaces_pagina',
+      'escribir_iniciativa',
       'etiquetar_archivo',
+      'fichas_en_plantilla',
       'formato_sistemas',
       'guardar_contenido',
+      'guardar_encuentro',
+      'guardar_instantanea',
+      'imagen_escena',
       'leer_compendio',
       'leer_contenido',
       'leer_libro',
@@ -71,55 +91,81 @@ describe('herramientas MCP', () => {
       'listar_sistemas',
       'lo_que_sabe',
       'marcar_conocimiento',
+      'medir',
+      'meter_en_combate',
       'monedas_grupo',
       'mover_en_grupo',
+      'mover_fichas',
       'mover_pagina',
+      'niebla',
       'ocultar',
       'ocultar_criatura',
+      'ocultar_pantalla',
       'ordenar_subpaginas',
       'origen_contenido',
+      'oscuridad',
       'paginas_recientes',
       'partida_criatura',
       'partida_personaje',
       'pendientes',
       'poner_en_juego',
+      'poner_encuentro',
+      'poner_fichas',
       'poner_pin',
+      'poner_plantilla',
+      'presentar_escena',
       'probar_accion',
       'probar_formula',
       'probar_tirada',
       'quien_conoce',
       'quitar_de_juego',
+      'quitar_fichas',
       'quitar_pin',
       'reiniciar_tabla',
       'reiniciar_tabla_compendio',
       'restaurar_personaje',
       'restaurar_version',
       'revelar',
+      'sacar_de_combate',
+      'siguiente_turno',
       'tirar_dados',
       'tirar_en_tabla',
+      'tirar_iniciativa',
       'tirar_por_criatura',
       'tirar_por_personaje',
       'tirar_tabla_compendio',
       'traer_original',
+      'turno_anterior',
       'validar_sistema',
       'ver_a_la_vista',
       'ver_arbol',
       'ver_biblioteca',
       'ver_campana',
+      'ver_combate',
+      'ver_como_grupo',
       'ver_como_jugador',
       'ver_criatura',
       'ver_en_juego',
+      'ver_encuentros',
+      'ver_escena',
+      'ver_escenas',
       'ver_grupo',
       'ver_historial',
+      'ver_instantaneas',
       'ver_mapa',
+      'ver_marcas',
+      'ver_mesa',
+      'ver_muros',
       'ver_personaje',
       'ver_pestanas',
       'ver_plantilla',
       'ver_sistema',
       'ver_tabla',
       'ver_tiradas',
+      'ver_widgets',
       'versiones_pagina',
-      'versiones_personaje'
+      'versiones_personaje',
+      'volver_a_instantanea'
     ])
   })
 
@@ -151,6 +197,23 @@ describe('herramientas MCP', () => {
     expect(route('open')).toEqual(['setInvitationsOpen', 'players', { campaignId, open: true }])
     expect(route('close')).toEqual(['setInvitationsOpen', 'players', { campaignId, open: false }])
     expect(() => route('borrar')).toThrow()
+  })
+
+  it('niebla: destapar o tapar una zona, o reiniciarla (las dos, de las que ven los jugadores)', () => {
+    const tool = MCP_TOOLS.niebla
+    if (!tool) throw new Error('falta niebla')
+    const campaignId = crypto.randomUUID()
+    const area = { mode: 'reveal', shape: 'area', column: 1, row: 2, columns: 3, rows: 1 }
+    const reveal = routeCall(tool, { campaignId, ...area })
+    expect([reveal.impl.action.name, reveal.impl.action.kind, reveal.input]).toEqual([
+      'changeFog',
+      'players',
+      { campaignId, ...area }
+    ])
+    const reset = routeCall(tool, { campaignId, reset: true })
+    expect([reset.impl.action.name, reset.input]).toEqual(['resetFog', { campaignId }])
+    // Una forma sin sus datos no pasa
+    expect(() => routeCall(tool, { campaignId, mode: 'cover', shape: 'rectangle' })).toThrow()
   })
 
   it('ver_sistema: entero o por partes; crear_sistema: copiando, con su documento o desde un archivo', () => {

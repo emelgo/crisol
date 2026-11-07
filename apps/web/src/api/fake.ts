@@ -3,14 +3,19 @@ import type {
   AiMode,
   Approval,
   Campaign,
+  CampaignTableView,
   Character,
+  CombatView,
   DiceRoll,
+  EncounterView,
   FileView,
   FolderView,
   HistoryEntry,
   Invitation,
+  LightView,
   MapPinView,
   MapView,
+  MarkView,
   Member,
   Organization,
   Page,
@@ -19,8 +24,17 @@ import type {
   PageTabView,
   PageTemplate,
   RandomTable,
+  SceneGrid,
+  SceneImported,
+  SceneView,
+  SceneViewport,
+  ScreenCamera,
+  SnapshotView,
   TagView,
+  TokenView,
   TrashItem,
+  WallView,
+  WidgetView,
   World
 } from '@crisol/contracts'
 import { DiceSyntaxError, rollDice as rollFormula, rowFor, tableFormula, tableProblems } from '@crisol/dice'
@@ -36,6 +50,7 @@ import {
   uniqueTags
 } from '@crisol/domain'
 import {
+  addCondition,
   applyChanges,
   applyChoices,
   type Build,
@@ -76,6 +91,7 @@ import {
   putInParty,
   putInPlay,
   RollError,
+  removeCondition,
   resourcePaths,
   rest,
   SYSTEM_FILE,
@@ -101,6 +117,7 @@ import {
   withCoins,
   withWorld
 } from '@crisol/systems'
+import { FogGrid, tokensInTemplate } from '@crisol/tabletop'
 import { readFoundryZip } from '../systems/foundry-zip.ts'
 import { type ActionInput, type ActionName, type ActionOutput, type ApiClient, ApiError } from './client.ts'
 
@@ -485,6 +502,321 @@ export function fakeApi(
     throw new ApiError('NOT_FOUND', 404)
   }
   const copyMap = (map: MapView): MapView => ({ ...map, pins: map.pins.map((pin) => ({ ...pin })) })
+  // Las escenas (una por pestaña «Escena») y la mesa de cada campaña, como el servidor
+  type StoredScene = {
+    id: string
+    tabId: string
+    pageId: string
+    image: SceneView['image']
+    grid: SceneGrid
+    initialView: SceneViewport | null
+    imported: SceneImported | null
+  }
+  const scenes: StoredScene[] = []
+  const sceneById = (sceneId: string) => {
+    const scene = scenes.find((s) => s.id === sceneId)
+    if (!scene) throw new ApiError('NOT_FOUND', 404)
+    return scene
+  }
+  const sceneView = (scene: StoredScene): SceneView => ({
+    id: scene.id,
+    tabId: scene.tabId,
+    pageId: scene.pageId,
+    pageTitle: pageById(scene.pageId).title,
+    name: tabById(scene.tabId).name,
+    image: scene.image ? { ...scene.image } : null,
+    grid: { ...scene.grid },
+    initialView: scene.initialView ? { ...scene.initialView } : null,
+    hasImported: scene.imported !== null
+  })
+  type StoredTable = { open: string | null; presented: string | null; hidden: boolean; camera: ScreenCamera }
+  const tables = new Map<string, StoredTable>()
+  const campaignTableOf = (campaignId: string) => {
+    const campaign = campaigns.find((c) => c.id === campaignId)
+    if (!campaign) throw new ApiError('NOT_FOUND', 404)
+    if (campaign.role !== 'master') throw new ApiError('FORBIDDEN', 403)
+    const table = tables.get(campaignId) ?? { open: null, presented: null, hidden: false, camera: { mode: 'follow' } }
+    tables.set(campaignId, table)
+    return { campaign, table }
+  }
+  const tableView = (campaignId: string): CampaignTableView => {
+    const { table } = campaignTableOf(campaignId)
+    const of = (id: string | null) => {
+      const scene = id ? scenes.find((s) => s.id === id) : undefined
+      return scene ? sceneView(scene) : null
+    }
+    return {
+      campaignId,
+      open: of(table.open),
+      presented: of(table.presented),
+      screenHidden: table.hidden,
+      camera: structuredClone(table.camera),
+      tokens: tokens.filter((token) => token.campaignId === campaignId && token.sceneId === table.open).map(tokenOf),
+      combat: combats.has(campaignId) ? sortCombat(combats.get(campaignId) as CombatView) : null,
+      vision: table.open ? fakeTableVision(campaignId, table.open) : null,
+      marks: tableMarks
+        .filter((m) => m.campaignId === campaignId && m.sceneId === table.open)
+        .map((m) => withTargets(markOf(m))),
+      widgets: widgets.filter((w) => w.campaignId === campaignId).map(widgetOf),
+      measureOnScreen: measureOnScreen.has(campaignId)
+    }
+  }
+  /**
+   * La visión de la escena abierta, sin calcular lo que ven las fichas: lo explorado y lo visible son lo destapado a mano
+   * (menos lo tapado); el grupo no ve las fichas ocultas
+   */
+  const fogOps = new Map<string, Array<ActionInput<'changeFog'>>>()
+  const tileFits = new Map<string, 'whole' | 'cropped'>()
+  const base64 = (bytes: Uint8Array) => {
+    let text = ''
+    for (const byte of bytes) text += String.fromCharCode(byte)
+    return btoa(text)
+  }
+  const fakeTableVision = (campaignId: string, sceneId: string): CampaignTableView['vision'] => {
+    const scene = scenes.find((s) => s.id === sceneId)
+    if (!scene?.image) return null
+    const vision = visionOf(sceneId)
+    const mask = new FogGrid(scene.image.width, scene.image.height)
+    for (const op of fogOps.get(`${campaignId}|${sceneId}`) ?? []) {
+      const value = op.mode === 'reveal'
+      if (op.shape === 'rectangle')
+        mask.fillRect({ x: op.x ?? 0, y: op.y ?? 0, width: op.width ?? 0, height: op.height ?? 0 }, value)
+      else if (op.shape === 'brush') mask.fillBrush(op.points ?? [], op.radius ?? 0, value)
+      else if (op.shape === 'lasso') mask.fillPolygon(op.points ?? [], value)
+    }
+    const encoded = base64(mask.encode())
+    return {
+      sceneId,
+      version: vision.version,
+      automaticVision: vision.automaticVision,
+      darkness: vision.darkness,
+      tileFit: tileFits.get(campaignId) ?? 'whole',
+      doors: Object.fromEntries(
+        vision.walls.filter((w) => w.door).map((w) => [w.id, doors.get(`${campaignId}|${w.id}`) ?? w.open])
+      ),
+      explored: encoded,
+      visible: encoded,
+      notSeen: tokens.filter((t) => t.campaignId === campaignId && t.sceneId === sceneId && t.hidden).map((t) => t.id)
+    }
+  }
+  // Las fichas (de momento, solo de personajes de la campaña) y los encuentros de cada mundo
+  type TokenRow = Omit<TokenView, 'actor'> & {
+    campaignId: string
+    actor: { kind: 'character' | 'creature'; id: string }
+  }
+  const tokens: TokenRow[] = []
+  /** La ficha con lo vital de quien está en ella, leído de su personaje o su criatura en este momento */
+  const tokenOf = ({ campaignId: _, actor, ...token }: TokenRow): TokenView => {
+    if (actor.kind === 'character') {
+      const found = characters.find((c) => c.id === actor.id)
+      return structuredClone({
+        ...token,
+        actor: {
+          kind: 'character' as const,
+          id: actor.id,
+          name: found?.name ?? '',
+          img: null,
+          version: found?.version ?? 1,
+          life: null,
+          stats: [],
+          conditions: ((found?.play as Play | undefined)?.conditions ?? []).map((c) => ({ ...c }))
+        }
+      })
+    }
+    const row = creatureById(actor.id)
+    const { card } = creatureCard(row)
+    return structuredClone({
+      ...token,
+      actor: {
+        kind: 'creature' as const,
+        id: actor.id,
+        name: card.name,
+        img: card.img,
+        version: card.version,
+        life: card.life ? { value: card.life.value, max: card.life.max, temp: card.life.temp } : null,
+        stats: card.stats ?? [],
+        conditions: (row.play.conditions ?? []).map((c) => ({ ...c }))
+      }
+    })
+  }
+  const tokenById = (tokenId: string) => {
+    const token = tokens.find((t) => t.id === tokenId)
+    if (!token) throw new ApiError('NOT_FOUND', 404)
+    return token
+  }
+  const encounters: EncounterView[] = []
+  /** Dónde va: en píxeles o en una casilla de la rejilla de la escena */
+  const pointOf = (sceneId: string, p: { x?: number; y?: number; column?: number; row?: number }) => {
+    if (p.x !== undefined && p.y !== undefined) return { x: p.x, y: p.y }
+    const { grid } = sceneById(sceneId)
+    return {
+      x: grid.offsetX + ((p.column ?? 0) + 0.5) * grid.size,
+      y: grid.offsetY + ((p.row ?? 0) + 0.5) * grid.size
+    }
+  }
+  // El combate de cada campaña (uno a la vez), con sus fichas: sin tiradas (la iniciativa se escribe)
+  const combats = new Map<string, CombatView>()
+  const combatOf = (campaignId: string) => {
+    const combat = combats.get(campaignId)
+    if (!combat) throw new ApiError('NO_COMBAT', 400)
+    return combat
+  }
+  const combatantOf = (token: TokenView) => ({
+    id: crypto.randomUUID(),
+    kind: token.actor.kind,
+    actorId: token.actor.id,
+    name: token.actor.name,
+    img: token.actor.img,
+    tokenId: token.id,
+    initiative: null,
+    modifier: null,
+    group: null,
+    sort: null,
+    generic: token.actor.kind === 'creature' && !creatureById(token.actor.id).unique,
+    defeated: false,
+    hidden: token.hidden,
+    active: false,
+    life: token.actor.life,
+    conditions: []
+  })
+  /** El orden: por iniciativa (de mayor a menor), su modificador y, si empatan, el orden a mano */
+  const sortCombat = (combat: CombatView) => {
+    // Lo vital, el de ahora de cada uno
+    for (const c of combat.combatants) {
+      const row = c.tokenId ? tokens.find((t) => t.id === c.tokenId) : undefined
+      if (!row) continue
+      const { actor } = tokenOf(row)
+      c.life = actor.life
+      c.conditions = actor.conditions
+      c.defeated = Boolean(actor.life && actor.life.max > 0 && actor.life.value <= 0)
+    }
+    combat.combatants.sort(
+      (a, b) =>
+        (b.initiative ?? Number.NEGATIVE_INFINITY) - (a.initiative ?? Number.NEGATIVE_INFINITY) ||
+        (b.modifier ?? 0) - (a.modifier ?? 0) ||
+        (a.sort ?? 0) - (b.sort ?? 0)
+    )
+    for (const c of combat.combatants) c.active = c.id === combat.turnId
+    return structuredClone(combat)
+  }
+  /** Pasa el turno hacia delante (1) o hacia atrás (-1), saltando a los derrotados si se pide */
+  const moveTurn = (combat: CombatView, step: 1 | -1) => {
+    const order = combat.combatants.filter((c) => !(combat.skipDefeated && c.defeated))
+    if (order.length === 0) return
+    const at = order.findIndex((c) => c.id === combat.turnId)
+    if (at < 0) {
+      combat.turnId = order[0]?.id ?? null
+      combat.round = Math.max(1, combat.round)
+      return
+    }
+    const next = at + step
+    if (next >= order.length) combat.round++
+    if (next < 0) combat.round = Math.max(1, combat.round - 1)
+    combat.turnId = order[(next + order.length) % order.length]?.id ?? null
+  }
+  // La visión de cada escena (muros, puertas y luces) y las puertas abiertas en cada campaña; la niebla no se calcula
+  const visions = new Map<
+    string,
+    { version: number; darkness: number; automaticVision: boolean; walls: WallView[]; lights: LightView[] }
+  >()
+  const doors = new Map<string, boolean>()
+  const visionOf = (sceneId: string) => {
+    sceneById(sceneId)
+    const vision = visions.get(sceneId) ?? { version: 1, darkness: 0, automaticVision: true, walls: [], lights: [] }
+    visions.set(sceneId, vision)
+    return vision
+  }
+  const visionView = (sceneId: string, campaignId?: string) => {
+    const vision = visionOf(sceneId)
+    return {
+      sceneId,
+      ...structuredClone(vision),
+      ...(campaignId
+        ? {
+            doors: Object.fromEntries(
+              vision.walls.filter((w) => w.door).map((w) => [w.id, doors.get(`${campaignId}|${w.id}`) ?? w.open])
+            )
+          }
+        : {})
+    }
+  }
+  const wallOf = (input: Partial<WallView> & { a: WallView['a']; b: WallView['b'] }): WallView => ({
+    id: crypto.randomUUID(),
+    kind: 'wall',
+    sight: 'full',
+    light: 'full',
+    move: 'full',
+    sound: 'full',
+    direction: 'both',
+    door: null,
+    locked: false,
+    open: false,
+    ...input
+  })
+  const lightOf = (input: Partial<LightView> & { x: number; y: number }): LightView => ({
+    id: crypto.randomUUID(),
+    bright: 20,
+    dim: 40,
+    color: '#ffffff',
+    intensity: 1,
+    angle: 360,
+    rotation: 0,
+    walls: true,
+    darkness: false,
+    enabled: true,
+    activeBelowAmbient: null,
+    ...input
+  })
+  // Lo dejado en el mapa (por campaña y escena), los widgets y las instantáneas de cada campaña
+  const tableMarks: Array<MarkView & { campaignId: string }> = []
+  const widgets: Array<WidgetView & { campaignId: string }> = []
+  const snapshots: Array<SnapshotView & { campaignId: string }> = []
+  const measureOnScreen = new Set<string>()
+  const sceneFor = (campaignId: string, sceneId?: string) => {
+    const target = sceneId ?? campaignTableOf(campaignId).table.open
+    if (!target) throw new ApiError('NO_OPEN_SCENE', 400)
+    return sceneOfCampaign(campaignId, target).id
+  }
+  const markOf = ({ campaignId: _, ...mark }: MarkView & { campaignId: string }): MarkView => structuredClone(mark)
+  /** Las fichas de la escena que caen en una plantilla (como el servidor, con el núcleo) */
+  const insideOf = (template: Extract<MarkView, { kind: 'template' }>) => {
+    const { grid } = sceneById(template.sceneId)
+    const core =
+      grid.type === 'none' ? null : { type: grid.type, size: grid.size, offsetX: grid.offsetX, offsetY: grid.offsetY }
+    const onScene = tokens.filter((t) => t.sceneId === template.sceneId)
+    return tokensInTemplate(template, onScene, core, grid.type === 'none' ? 100 : grid.size)
+  }
+  const withTargets = (mark: MarkView): MarkView =>
+    mark.kind === 'template' ? { ...mark, tokenIds: insideOf(mark).map((t) => t.id) } : mark
+  const targetOf = (row: TokenRow) => {
+    const token = tokenOf(row)
+    return {
+      tokenId: token.id,
+      label: token.label,
+      name: token.actor.name,
+      kind: token.actor.kind,
+      actorId: token.actor.id,
+      hidden: token.hidden
+    }
+  }
+  /** Lo que guarda cada instantánea: dónde estaba cada ficha y lo dejado en el mapa */
+  const snapshotData = new Map<string, { tokens: Array<{ id: string; x: number; y: number }>; marks: MarkView[] }>()
+  const widgetOf = ({ campaignId: _, ...widget }: WidgetView & { campaignId: string }): WidgetView =>
+    structuredClone(widget)
+  /** Mover una marca: sus puntos y su sitio */
+  const shifted = (mark: MarkView, dx: number, dy: number): MarkView => {
+    const move = (p: { x: number; y: number }) => ({ x: p.x + dx, y: p.y + dy })
+    if (mark.kind === 'template') return { ...mark, a: move(mark.a), b: move(mark.b) }
+    if (mark.kind === 'drawing') return { ...mark, points: mark.points.map(move) }
+    return { ...mark, x: mark.x + dx, y: mark.y + dy }
+  }
+  /** La escena tiene que ser del mundo de la campaña */
+  const sceneOfCampaign = (campaignId: string, sceneId: string) => {
+    const { campaign } = campaignTableOf(campaignId)
+    const scene = sceneById(sceneId)
+    if (pageById(scene.pageId).worldId !== campaign.worldId) throw new ApiError('NOT_FOUND', 404)
+    return scene
+  }
 
   // Los sistemas de la cuenta: como en el servidor, validados enteros con @crisol/systems
   const ownSystems: Array<{
@@ -1838,10 +2170,12 @@ export function fakeApi(
       })
       return { creatures: made.map((c) => creatureCard(c).card) }
     },
-    playCreature: ({ creatureId, version, damage, heal, temp, max, name, play }) => {
+    playCreature: ({ creatureId, version, damage, heal, temp, max, name, play, condition }) => {
       const row = creatureById(creatureId)
       if (row.version !== version) throw new ApiError('CREATURE_CHANGED', 400)
       if (play) row.play = structuredClone(play) as Play
+      if (condition?.add) row.play = addCondition(row.play, condition.add, crypto.randomUUID())
+      if (condition?.remove) row.play = removeCondition(row.play, condition.remove)
       const { card } = creatureCard(row)
       if (max) {
         const path = max.resource ?? card.life?.path ?? ''
@@ -1951,10 +2285,12 @@ export function fakeApi(
         )
       return { removed }
     },
-    playCharacter: ({ characterId, version, rest: kind }) => {
+    playCharacter: ({ characterId, version, rest: kind, condition }) => {
       const character = visibleCharacter(characterId)
       const state = stateOf(character)
       let play = structuredClone(character.play) as Play
+      if (condition?.add) play = addCondition(play, condition.add, crypto.randomUUID())
+      if (condition?.remove) play = removeCondition(play, condition.remove)
       const fields = Object.values(systemById(character.system)?.types ?? {}).find(
         (t) => t.document === 'actor'
       )?.fields
@@ -2665,13 +3001,34 @@ export function fakeApi(
         id: crypto.randomUUID(),
         pageId,
         kind,
-        name: name ?? (kind === 'text' ? 'Texto 2' : 'Mapa'),
+        name: name ?? (kind === 'text' ? 'Texto 2' : kind === 'scene' ? 'Escena' : 'Mapa'),
         hidden: false,
         documentId: kind === 'text' ? crypto.randomUUID() : null,
         color: null
       }
       pageTabs.push(tab)
       maps.push({ id: crypto.randomUUID(), tabId: tab.id, pageId, image: null, scale: null, pins: [] })
+      if (kind === 'scene')
+        scenes.push({
+          id: crypto.randomUUID(),
+          tabId: tab.id,
+          pageId,
+          image: null,
+          grid: {
+            type: 'square',
+            size: 100,
+            offsetX: 0,
+            offsetY: 0,
+            distance: 5,
+            units: 'pies',
+            diagonals: 'equal',
+            visible: true,
+            color: '#000000',
+            opacity: 0.25
+          },
+          initialView: null,
+          imported: null
+        })
       return { ...tab }
     },
     updatePageTab: ({ tabId, name, hidden, after, color }) => {
@@ -2696,7 +3053,624 @@ export function fakeApi(
         maps.findIndex((m) => m.tabId === tabId),
         1
       )
+      const scene = scenes.findIndex((s) => s.tabId === tabId)
+      if (scene >= 0) scenes.splice(scene, 1)
       return { id: tabId }
+    },
+    listScenes: ({ worldId }) => ({
+      scenes: scenes.filter((s) => pageById(s.pageId).worldId === worldId).map(sceneView)
+    }),
+    getScene: ({ sceneId, tabId }) => {
+      const scene = sceneId ? scenes.find((s) => s.id === sceneId) : scenes.find((s) => s.tabId === tabId)
+      if (!scene) throw new ApiError('NOT_FOUND', 404)
+      return sceneView(scene)
+    },
+    updateScene: ({ sceneId, grid, initialView }) => {
+      const scene = sceneById(sceneId)
+      if (grid) scene.grid = { ...scene.grid, ...grid }
+      if (initialView !== undefined) scene.initialView = initialView
+      return sceneView(scene)
+    },
+    setSceneImage: ({ sceneId, width, height, fileId, tiles, imported }) => {
+      const scene = sceneById(sceneId)
+      if (fileId && files.find((f) => f.id === fileId)?.kind !== 'image') throw new ApiError('BAD_SCENE_FILE', 400)
+      // Sin medidas, las de un mapa cualquiera (el servidor las lee de la cabecera del archivo)
+      scene.image = {
+        width: width ?? 1600,
+        height: height ?? 1000,
+        tiles: tiles ?? null,
+        fileId: fileId !== undefined ? fileId : (scene.image?.fileId ?? null)
+      }
+      if (imported !== undefined) scene.imported = imported
+      return sceneView(scene)
+    },
+    // Como el servidor: el SVG pasa a ser un archivo del mundo y la escena queda sin trocear
+    drawScene: ({ sceneId, svg, name, walls, portals, lights }) => {
+      const scene = sceneById(sceneId)
+      const worldId = pageById(scene.pageId).worldId
+      const file = fileOf({ worldId, name: `${name ?? 'Mapa'}.svg`, mime: 'image/svg+xml', size: svg.length })
+      files.push(file)
+      const size = /width="(\d+)"[^>]*height="(\d+)"/.exec(svg)
+      scene.image = {
+        width: Number(size?.[1] ?? 1600),
+        height: Number(size?.[2] ?? 1000),
+        tiles: null,
+        fileId: file.id
+      }
+      if (walls || portals || lights)
+        scene.imported = {
+          source: 'uvtt',
+          walls: walls ?? [],
+          objects: [],
+          portals: portals ?? [],
+          lights: lights ?? [],
+          ambientLight: null,
+          bakedLighting: false
+        }
+      return sceneView(scene)
+    },
+    getCampaignTable: ({ campaignId }) => tableView(campaignId),
+    openScene: ({ campaignId, sceneId }) => {
+      sceneOfCampaign(campaignId, sceneId)
+      campaignTableOf(campaignId).table.open = sceneId
+      return tableView(campaignId)
+    },
+    presentScene: ({ campaignId, sceneId }) => {
+      const { table } = campaignTableOf(campaignId)
+      const target = sceneId ?? table.open
+      if (!target) throw new ApiError('NO_OPEN_SCENE', 400)
+      sceneOfCampaign(campaignId, target)
+      Object.assign(table, { presented: target, hidden: false })
+      return tableView(campaignId)
+    },
+    hideScreen: ({ campaignId, hidden }) => {
+      campaignTableOf(campaignId).table.hidden = hidden
+      return tableView(campaignId)
+    },
+    placeTokens: ({ campaignId, sceneId, tokens: wanted, hidden }) => {
+      sceneOfCampaign(campaignId, sceneId)
+      const cell = sceneById(sceneId).grid.size
+      const placeOne = (actor: TokenRow['actor'], name: string, at: { x: number; y: number }, label: string) => {
+        const existing = tokens.find((t) => t.sceneId === sceneId && t.actor.id === actor.id)
+        if (existing) return Object.assign(existing, at)
+        const token: TokenRow = {
+          id: crypto.randomUUID(),
+          campaignId,
+          sceneId,
+          ...at,
+          size: 1,
+          label: label.slice(0, 16) || name.slice(0, 16),
+          faction: actor.kind === 'character' ? 'group' : 'hostile',
+          hidden: hidden ?? false,
+          image: null,
+          actor
+        }
+        tokens.push(token)
+        return token
+      }
+      // El rótulo de una criatura: su inicial y su número de copia («G2»)
+      const creatureLabel = (id: string) => {
+        const row = creatureById(id)
+        return row.number === null ? row.name : `${row.name[0]?.toUpperCase() ?? ''}${row.number}`
+      }
+      const placed = wanted.flatMap((want) => {
+        const at = pointOf(sceneId, want)
+        if ('characterId' in want) {
+          const found = characters.find((c) => c.id === want.characterId && c.campaignId === campaignId)
+          if (!found) throw new ApiError('NOT_FOUND', 404)
+          return [placeOne({ kind: 'character', id: found.id }, found.name, at, found.name.split(' ')[0] ?? '')]
+        }
+        if ('creatureId' in want) {
+          const row = creatureById(want.creatureId)
+          return [placeOne({ kind: 'creature', id: row.id }, row.name, at, creatureLabel(row.id))]
+        }
+        // Del compendio: se ponen en juego y van en fila desde el punto
+        const made = handlers.putInPlay({
+          campaignId,
+          key: want.content.key,
+          count: want.content.count,
+          unique: want.content.unique
+        }).creatures
+        return made.map((creature, i) =>
+          placeOne(
+            { kind: 'creature', id: creature.id },
+            creature.name,
+            { x: at.x + i * cell, y: at.y },
+            creatureLabel(creature.id)
+          )
+        )
+      })
+      return { tokens: placed.map(tokenOf) }
+    },
+    moveTokens: ({ moves }) => ({
+      tokens: moves.map((move) => {
+        const token = tokenById(move.tokenId)
+        return tokenOf(Object.assign(token, pointOf(token.sceneId, move)))
+      })
+    }),
+    updateToken: ({ tokenId, ...patch }) => tokenOf(Object.assign(tokenById(tokenId), patch)),
+    removeTokens: ({ tokenIds }) => {
+      for (const id of tokenIds) tokens.splice(tokens.indexOf(tokenById(id)), 1)
+      return { removed: tokenIds }
+    },
+    listEncounters: ({ worldId }) => ({
+      encounters: encounters.filter((e) => e.worldId === worldId).map((e) => structuredClone(e))
+    }),
+    saveEncounter: ({ worldId, encounterId, systemId, name, members }) => {
+      const existing = encounterId ? encounters.find((e) => e.id === encounterId) : undefined
+      if (encounterId && !existing) throw new ApiError('NOT_FOUND', 404)
+      const encounter = existing ?? { id: crypto.randomUUID(), worldId, systemId, name, members }
+      Object.assign(encounter, { systemId, name, members })
+      if (!existing) encounters.push(encounter)
+      return structuredClone(encounter)
+    },
+    deleteEncounter: ({ encounterId }) => {
+      const index = encounters.findIndex((e) => e.id === encounterId)
+      if (index < 0) throw new ApiError('NOT_FOUND', 404)
+      encounters.splice(index, 1)
+      return { id: encounterId }
+    },
+    // Sus criaturas, en juego y en su formación desde el punto; lo que no está en el compendio se salta
+    placeEncounter: ({ campaignId, sceneId, encounterId, ...where }) => {
+      sceneOfCampaign(campaignId, sceneId)
+      const encounter = encounters.find((e) => e.id === encounterId)
+      if (!encounter) throw new ApiError('NOT_FOUND', 404)
+      const origin = pointOf(sceneId, where)
+      const cell = sceneById(sceneId).grid.size
+      const placed: TokenView[] = []
+      const skipped: string[] = []
+      for (const member of encounter.members) {
+        try {
+          for (const spot of member.at)
+            placed.push(
+              ...handlers.placeTokens({
+                campaignId,
+                sceneId,
+                tokens: [
+                  {
+                    content: { key: member.key, unique: member.unique },
+                    x: origin.x + spot.dx * cell,
+                    y: origin.y + spot.dy * cell
+                  }
+                ]
+              }).tokens
+            )
+        } catch {
+          skipped.push(member.key)
+        }
+      }
+      return { tokens: placed, skipped }
+    },
+    getSceneVision: ({ sceneId, campaignId }) => visionView(sceneId, campaignId),
+    changeWalls: ({ sceneId, walls, lights }) => {
+      const vision = visionOf(sceneId)
+      const removeWalls = new Set(walls?.remove ?? [])
+      vision.walls = vision.walls
+        .filter((w) => !removeWalls.has(w.id))
+        .map((w) => {
+          const patch = walls?.update?.find((u) => u.id === w.id)
+          return patch ? { ...w, ...patch } : w
+        })
+      vision.walls.push(...(walls?.add ?? []).map((w) => wallOf(w)))
+      const removeLights = new Set(lights?.remove ?? [])
+      vision.lights = vision.lights
+        .filter((l) => !removeLights.has(l.id))
+        .map((l) => {
+          const patch = lights?.update?.find((u) => u.id === l.id)
+          return patch ? { ...l, ...patch } : l
+        })
+      vision.lights.push(...(lights?.add ?? []).map((l) => lightOf(l)))
+      vision.version++
+      return visionView(sceneId)
+    },
+    // Lo que trajo el mapa: cada tramo de sus muros, un muro; sus puertas y sus luces
+    placeImportedWalls: ({ sceneId, replace }) => {
+      const vision = visionOf(sceneId)
+      const imported = sceneById(sceneId).imported
+      if (replace) {
+        vision.walls = []
+        vision.lights = []
+      }
+      for (const line of imported?.walls ?? [])
+        for (let i = 1; i < line.length; i++)
+          vision.walls.push(wallOf({ a: line[i - 1] as WallView['a'], b: line[i] as WallView['b'] }))
+      for (const portal of imported?.portals ?? [])
+        vision.walls.push(
+          wallOf({
+            a: portal.a,
+            b: portal.b,
+            ...(portal.window
+              ? { kind: 'window' as const, sight: 'none' as const, light: 'none' as const }
+              : { door: 'door' as const })
+          })
+        )
+      for (const light of imported?.lights ?? [])
+        vision.lights.push(lightOf({ x: light.x, y: light.y, color: light.color }))
+      vision.version++
+      return visionView(sceneId)
+    },
+    updateSceneVision: ({ sceneId, darkness, automaticVision }) => {
+      const vision = visionOf(sceneId)
+      if (darkness !== undefined) vision.darkness = darkness
+      if (automaticVision !== undefined) vision.automaticVision = automaticVision
+      vision.version++
+      return visionView(sceneId)
+    },
+    setDoor: ({ campaignId, wallId, open }) => {
+      campaignTableOf(campaignId)
+      doors.set(`${campaignId}|${wallId}`, open)
+      return { wallId, open }
+    },
+    changeFog: (input) => {
+      const target = input.sceneId ?? campaignTableOf(input.campaignId).table.open
+      if (!target) throw new ApiError('NO_OPEN_SCENE', 400)
+      const key = `${input.campaignId}|${target}`
+      fogOps.set(key, [...(fogOps.get(key) ?? []), structuredClone(input)])
+      return { sceneId: target, operations: 1 }
+    },
+    resetFog: ({ campaignId, sceneId }) => {
+      const target = sceneId ?? campaignTableOf(campaignId).table.open
+      if (!target) throw new ApiError('NO_OPEN_SCENE', 400)
+      const removed = fogOps.get(`${campaignId}|${target}`)?.length ?? 0
+      fogOps.delete(`${campaignId}|${target}`)
+      return { sceneId: target, removed }
+    },
+    setTileFit: ({ campaignId, tileFit }) => {
+      campaignTableOf(campaignId)
+      tileFits.set(campaignId, tileFit)
+      return tableView(campaignId)
+    },
+    // Sin niebla en la API falsa: el grupo ve todas las fichas no ocultas
+    viewAsParty: ({ campaignId, sceneId }) => {
+      const { campaign, table } = campaignTableOf(campaignId)
+      const target = sceneId ?? table.open
+      if (!target) throw new ApiError('NO_OPEN_SCENE', 400)
+      const scene = sceneView(sceneById(target))
+      const onScene = tokens.filter((t) => t.campaignId === campaignId && t.sceneId === target).map(tokenOf)
+      const seen = onScene.filter((t) => !t.hidden)
+      return {
+        sceneId: target,
+        automaticVision: visionOf(target).automaticVision,
+        screen: {
+          campaignId,
+          campaignName: campaign.name,
+          scene: {
+            id: scene.id,
+            image: scene.image
+              ? { width: scene.image.width, height: scene.image.height, tiles: scene.image.tiles }
+              : null,
+            grid: scene.grid,
+            initialView: scene.initialView
+          },
+          hidden: false,
+          camera: structuredClone(table.camera),
+          tokens: seen.map((t) => ({
+            id: t.id,
+            x: t.x,
+            y: t.y,
+            size: t.size,
+            label: t.label,
+            name: t.actor.name,
+            faction: t.faction,
+            img: t.actor.img,
+            image: t.image,
+            state: null,
+            conditions: t.actor.conditions.map((c) => ({ name: c.name }))
+          })),
+          combat: null
+        },
+        visibleCells: [],
+        visibleCount: 0,
+        tokensSeen: seen.map((t) => ({ id: t.id, label: t.label, name: t.actor.name })),
+        notSeen: onScene
+          .filter((t) => t.hidden)
+          .map((t) => ({ id: t.id, label: t.label, name: t.actor.name, hidden: true })),
+        secretDoors: visionOf(target)
+          .walls.filter((w) => w.door === 'secret')
+          .map((w) => ({ id: w.id, open: doors.get(`${campaignId}|${w.id}`) ?? w.open }))
+      }
+    },
+    listMarks: ({ campaignId, sceneId }) => {
+      const target = sceneFor(campaignId, sceneId)
+      return {
+        sceneId: target,
+        marks: tableMarks.filter((m) => m.campaignId === campaignId && m.sceneId === target).map(markOf)
+      }
+    },
+    changeMarks: ({ campaignId, sceneId, add, update, remove }) => {
+      const target = sceneFor(campaignId, sceneId)
+      const changed: MarkView[] = []
+      for (const input of add ?? []) {
+        const mark = {
+          ...input,
+          id: crypto.randomUUID(),
+          sceneId: target,
+          hidden: input.hidden ?? false,
+          version: 1,
+          campaignId
+        }
+        tableMarks.push(mark as MarkView & { campaignId: string })
+        changed.push(withTargets(markOf(mark as MarkView & { campaignId: string })))
+      }
+      for (const patch of update ?? []) {
+        const index = tableMarks.findIndex((m) => m.id === patch.id)
+        const found = tableMarks[index]
+        if (!found) throw new ApiError('NOT_FOUND', 404)
+        let next = { ...found, ...(patch.set ?? {}), ...(patch.hidden !== undefined ? { hidden: patch.hidden } : {}) }
+        if (patch.move) next = { ...(shifted(next, patch.move.dx, patch.move.dy) as typeof found), campaignId }
+        next.version = found.version + 1
+        tableMarks[index] = next as MarkView & { campaignId: string }
+        changed.push(withTargets(markOf(tableMarks[index] as MarkView & { campaignId: string })))
+      }
+      const removed = (remove ?? []).filter((id) => tableMarks.some((m) => m.id === id))
+      for (const id of removed)
+        tableMarks.splice(
+          tableMarks.findIndex((m) => m.id === id),
+          1
+        )
+      return { sceneId: target, marks: changed, removed }
+    },
+    // Hacia el este, con la casilla de la escena
+    placeTemplate: ({ campaignId, sceneId, shape, from, size, color, hidden }) => {
+      const target = sceneFor(campaignId, sceneId)
+      const a = pointOf(target, from)
+      const { grid } = sceneById(target)
+      const template = {
+        kind: 'template' as const,
+        shape,
+        a,
+        b: { x: a.x + (size / grid.distance) * grid.size, y: a.y },
+        color: color ?? '#c9302c',
+        id: crypto.randomUUID(),
+        sceneId: target,
+        hidden: hidden ?? false,
+        version: 1,
+        tokenIds: [],
+        campaignId
+      }
+      tableMarks.push(template)
+      const inside = insideOf(template)
+      return { template: { ...markOf(template), tokenIds: inside.map((t) => t.id) }, tokens: inside.map(targetOf) }
+    },
+    getTemplateTokens: ({ templateId }) => {
+      const template = tableMarks.find((m) => m.id === templateId)
+      if (template?.kind !== 'template') throw new ApiError('NOT_FOUND', 404)
+      return { tokens: insideOf(template).map(targetOf) }
+    },
+    // En casillas, con todas las diagonales iguales
+    measureDistance: ({ campaignId, sceneId, points }) => {
+      const target = sceneFor(campaignId, sceneId)
+      const { grid } = sceneById(target)
+      const at = points.map((p) => pointOf(target, p))
+      const segments = at.slice(1).map((p, i) => {
+        const q = at[i] as { x: number; y: number }
+        return Math.max(Math.abs(p.x - q.x), Math.abs(p.y - q.y)) / grid.size
+      })
+      const cells = segments.reduce((sum, n) => sum + n, 0)
+      const distance = cells * grid.distance
+      return { sceneId: target, cells, distance, units: grid.units, text: `${distance} ${grid.units}`, segments }
+    },
+    listWidgets: ({ campaignId }) => {
+      campaignTableOf(campaignId)
+      return { widgets: widgets.filter((w) => w.campaignId === campaignId).map(widgetOf) }
+    },
+    createWidget: ({ campaignId, kind, ...fields }) => {
+      campaignTableOf(campaignId)
+      const widget = {
+        id: crypto.randomUUID(),
+        campaignId,
+        kind,
+        label: fields.label,
+        icon: fields.icon ?? null,
+        color: fields.color ?? '#c9302c',
+        shown: fields.shown ?? true,
+        sort: widgets.filter((w) => w.campaignId === campaignId).length,
+        value: fields.value ?? (kind === 'timer' ? (fields.duration ?? 300) : 0),
+        min: fields.min ?? null,
+        max: fields.max ?? null,
+        segments: kind === 'clock' ? (fields.segments ?? 4) : null,
+        showCount: fields.showCount ?? false,
+        duration: kind === 'timer' ? (fields.duration ?? 300) : null,
+        running: null,
+        version: 1
+      }
+      widgets.push(widget)
+      return widgetOf(widget)
+    },
+    updateWidget: ({ widgetId, step, timer, ...patch }) => {
+      const widget = widgets.find((w) => w.id === widgetId)
+      if (!widget) throw new ApiError('NOT_FOUND', 404)
+      for (const [key, value] of Object.entries(patch)) if (value !== undefined) Object.assign(widget, { [key]: value })
+      if (step !== undefined) widget.value += step
+      if (timer === 'start') widget.running = { since: Date.now(), remaining: widget.value }
+      if (timer === 'pause') widget.running = null
+      if (timer === 'reset') Object.assign(widget, { running: null, value: widget.duration ?? widget.value })
+      widget.version++
+      return widgetOf(widget)
+    },
+    deleteWidget: ({ widgetId }) => {
+      const index = widgets.findIndex((w) => w.id === widgetId)
+      if (index < 0) throw new ApiError('NOT_FOUND', 404)
+      widgets.splice(index, 1)
+      return { id: widgetId }
+    },
+    listSnapshots: ({ campaignId, sceneId }) => {
+      const target = sceneFor(campaignId, sceneId)
+      return {
+        sceneId: target,
+        snapshots: snapshots
+          .filter((s) => s.campaignId === campaignId && s.sceneId === target)
+          .map(({ campaignId: _, ...snapshot }) => ({ ...snapshot }))
+          .reverse()
+      }
+    },
+    saveSnapshot: ({ campaignId, sceneId, name, thumbnail }) => {
+      const target = sceneFor(campaignId, sceneId)
+      const snapshot = {
+        id: crypto.randomUUID(),
+        campaignId,
+        sceneId: target,
+        name,
+        thumbnail: thumbnail ?? null,
+        createdAt: new Date().toISOString(),
+        tokens: tokens.filter((t) => t.campaignId === campaignId && t.sceneId === target).length,
+        marks: tableMarks.filter((m) => m.campaignId === campaignId && m.sceneId === target).length
+      }
+      snapshots.push(snapshot)
+      snapshotData.set(snapshot.id, {
+        tokens: tokens
+          .filter((t) => t.campaignId === campaignId && t.sceneId === target)
+          .map((t) => ({ id: t.id, x: t.x, y: t.y })),
+        marks: tableMarks.filter((m) => m.campaignId === campaignId && m.sceneId === target).map(markOf)
+      })
+      const { campaignId: _, ...view } = snapshot
+      return view
+    },
+    // Las fichas que siguen, a su sitio; lo dejado en el mapa, como estaba (sin la niebla: no la guarda)
+    restoreSnapshot: ({ campaignId, snapshotId }) => {
+      const snapshot = snapshots.find((s) => s.id === snapshotId && s.campaignId === campaignId)
+      const data = snapshotData.get(snapshotId)
+      if (!snapshot || !data) throw new ApiError('NOT_FOUND', 404)
+      let moved = 0
+      for (const saved of data.tokens) {
+        const token = tokens.find((t) => t.id === saved.id)
+        if (!token) continue
+        Object.assign(token, { x: saved.x, y: saved.y })
+        moved++
+      }
+      for (let i = tableMarks.length - 1; i >= 0; i--) {
+        const mark = tableMarks[i]
+        if (mark?.campaignId === campaignId && mark.sceneId === snapshot.sceneId) tableMarks.splice(i, 1)
+      }
+      for (const mark of data.marks) tableMarks.push({ ...structuredClone(mark), campaignId })
+      return { sceneId: snapshot.sceneId, tokens: moved, marks: data.marks.length, fog: 0, skipped: [] }
+    },
+    deleteSnapshot: ({ snapshotId }) => {
+      const index = snapshots.findIndex((s) => s.id === snapshotId)
+      if (index < 0) throw new ApiError('NOT_FOUND', 404)
+      snapshots.splice(index, 1)
+      return { id: snapshotId }
+    },
+    setMeasureOnScreen: ({ campaignId, on }) => {
+      campaignTableOf(campaignId)
+      if (on) measureOnScreen.add(campaignId)
+      else measureOnScreen.delete(campaignId)
+      return { measureOnScreen: on }
+    },
+    // La API falsa no lee los zips de escenas de Foundry (lo prueba el servidor): dice que no trae ninguna
+    inspectFoundryScenes: ({ worldId }) => {
+      if (!worlds.some((w) => w.id === worldId)) throw new ApiError('NOT_FOUND', 404)
+      throw new ApiError('NO_FOUNDRY_SCENES', 400)
+    },
+    importFoundryScenes: ({ worldId }) => {
+      if (!worlds.some((w) => w.id === worldId)) throw new ApiError('NOT_FOUND', 404)
+      throw new ApiError('NO_FOUNDRY_SCENES', 400)
+    },
+    getCombat: ({ campaignId }) => {
+      campaignTableOf(campaignId)
+      const combat = combats.get(campaignId)
+      return { combat: combat ? sortCombat(combat) : null }
+    },
+    startCombat: ({ campaignId, tokenIds, skipDefeated }) => {
+      const { table } = campaignTableOf(campaignId)
+      if (!table.open) throw new ApiError('NO_OPEN_SCENE', 400)
+      if (combats.has(campaignId)) throw new ApiError('COMBAT_RUNNING', 400)
+      const chosen = tokens.filter(
+        (t) => t.campaignId === campaignId && t.sceneId === table.open && (!tokenIds || tokenIds.includes(t.id))
+      )
+      const combat: CombatView = {
+        id: crypto.randomUUID(),
+        campaignId,
+        sceneId: table.open,
+        round: 0,
+        turnId: null,
+        skipDefeated: skipDefeated ?? true,
+        initiativeRoll: null,
+        combatants: chosen.map((row) => combatantOf(tokenOf(row)))
+      }
+      combats.set(campaignId, combat)
+      return sortCombat(combat)
+    },
+    addCombatants: ({ campaignId, tokenIds }) => {
+      const combat = combatOf(campaignId)
+      for (const id of tokenIds ?? []) {
+        if (combat.combatants.some((c) => c.tokenId === id)) continue
+        combat.combatants.push(combatantOf(tokenOf(tokenById(id))))
+      }
+      return sortCombat(combat)
+    },
+    removeCombatants: ({ campaignId, combatantIds }) => {
+      const combat = combatOf(campaignId)
+      if (combat.turnId && combatantIds.includes(combat.turnId)) moveTurn(combat, 1)
+      combat.combatants = combat.combatants.filter((c) => !combatantIds.includes(c.id))
+      return sortCombat(combat)
+    },
+    // Sin sistema con tirada de iniciativa en la API falsa: se escribe
+    rollInitiative: () => {
+      throw new ApiError('NO_INITIATIVE_ROLL', 400)
+    },
+    setInitiative: ({ campaignId, values }) => {
+      const combat = combatOf(campaignId)
+      for (const value of values) {
+        const found = combat.combatants.find((c) => c.id === value.combatantId)
+        if (!found) throw new ApiError('NOT_FOUND', 404)
+        found.initiative = value.initiative
+        if (value.modifier !== undefined) found.modifier = value.modifier
+      }
+      return sortCombat(combat)
+    },
+    orderCombatants: ({ campaignId, combatantIds }) => {
+      const combat = combatOf(campaignId)
+      combatantIds.forEach((id, index) => {
+        const found = combat.combatants.find((c) => c.id === id)
+        if (found) found.sort = index
+      })
+      return sortCombat(combat)
+    },
+    groupCombatants: ({ campaignId, combatantIds, together }) => {
+      const combat = combatOf(campaignId)
+      const group = together ? crypto.randomUUID() : null
+      for (const c of combat.combatants) if (combatantIds.includes(c.id)) c.group = group
+      return sortCombat(combat)
+    },
+    updateCombat: ({ campaignId, skipDefeated }) => {
+      const combat = combatOf(campaignId)
+      combat.skipDefeated = skipDefeated
+      return sortCombat(combat)
+    },
+    nextTurn: ({ campaignId }) => {
+      const combat = combatOf(campaignId)
+      sortCombat(combat)
+      moveTurn(combat, 1)
+      const current = combat.combatants.find((c) => c.id === combat.turnId)
+      return {
+        combat: sortCombat(combat),
+        started: current ? { names: [current.name], expired: [], recharged: [], restored: [] } : null
+      }
+    },
+    previousTurn: ({ campaignId }) => {
+      const combat = combatOf(campaignId)
+      sortCombat(combat)
+      moveTurn(combat, -1)
+      return sortCombat(combat)
+    },
+    // Como el servidor: quita de juego (con sus fichas) las copias a 0, todas o ninguna
+    endCombat: ({ campaignId, remove }) => {
+      const combat = sortCombat(combatOf(campaignId))
+      const mode = remove ?? 'defeated'
+      const removed = combat.combatants
+        .filter((c) => c.generic && (mode === 'generic' || (mode === 'defeated' && c.defeated)))
+        .map((c) => c.actorId)
+      combats.delete(campaignId)
+      if (removed.length > 0) {
+        for (const row of tokens.filter((t) => removed.includes(t.actor.id))) tokens.splice(tokens.indexOf(row), 1)
+        handlers.removeFromPlay({ campaignId, creatureIds: removed })
+      }
+      return { removed }
+    },
+    setScreenCamera: ({ campaignId, camera }) => {
+      campaignTableOf(campaignId).table.camera = structuredClone(camera)
+      return tableView(campaignId)
     },
     getMap: ({ tabId }) => {
       tabById(tabId)
