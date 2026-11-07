@@ -18,6 +18,7 @@ import {
   type Senses,
   type Wall
 } from '@crisol/tabletop'
+import { Lru } from './lru.ts'
 import type { CropRequest } from './tile-crop.ts'
 import {
   MISSING_SCENE,
@@ -26,6 +27,9 @@ import {
   type ViewResponse,
   type WalkedPath
 } from './vision-compute.ts'
+
+/** De cuántas campañas y escenas a la vez se guardan en memoria la vista, lo explorado y los caminos por explorar */
+export const VISION_KEEP = 64
 
 /** El lado del mapa de una escena sin imagen, en píxeles: la niebla necesita un tamaño */
 export const NO_IMAGE_SIDE = 8192
@@ -104,6 +108,8 @@ export interface Vision {
   walked(campaignId: string, sceneId: string, moves: readonly WalkedMove[]): void
   /** Lo que se apuntó con `walked` y aún no se ha explorado (se saca: lo explora quien lo pide) */
   takeWalked(campaignId: string, sceneId: string): WalkedMove[]
+  /** Cuánto guarda en memoria (con tope: `VISION_KEEP` campañas y escenas) */
+  memory(): { views: number; explored: number; walks: number; scenes: number }
   /** Para lo que se calcula sin nadie esperando: su fallo, al registro */
   report(error: unknown): void
   /** Recorta una tesela con la máscara (en el hilo) */
@@ -209,11 +215,12 @@ export const visionSize = (scene: Pick<SceneRow, 'width' | 'height'>) => ({
 export function createVision(db: Database, onError: (error: unknown) => void = () => {}): Vision {
   const views = workerClient(onError)
   const crops = workerClient(onError)
-  const geometries = new Map<string, { stamp: string; geometry: SceneGeometry; walls: visionRepo.WallRow[] }>()
-  const explored = new Map<string, Uint8Array | null>()
-  const results = new Map<string, { hash: string; result: VisionResult }>()
+  // Todo con tope (se va lo que lleva más tiempo sin usarse): lo explorado está en la base y se vuelve a leer
+  const geometries = new Lru<string, { stamp: string; geometry: SceneGeometry; walls: visionRepo.WallRow[] }>(32)
+  const explored = new Lru<string, Uint8Array | null>(VISION_KEEP)
+  const results = new Lru<string, { hash: string; result: VisionResult }>(VISION_KEEP, (key) => fresh.delete(key))
   const locks = new Map<string, Promise<unknown>>()
-  const pendingWalks = new Map<string, WalkedMove[]>()
+  const pendingWalks = new Lru<string, WalkedMove[]>(VISION_KEEP)
   /** Lo explorado que se está guardando, por campaña y escena (para guardarlo en orden) */
   const saving = new Map<string, Promise<void>>()
   /** Las claves de lo preparado que ya tiene el hilo (si lo olvidó, contesta y se le vuelve a mandar) */
@@ -250,8 +257,6 @@ export function createVision(db: Database, onError: (error: unknown) => void = (
       }
     }
     geometries.set(scene.id, made)
-    // Pocas escenas a la vez: se van las más viejas
-    if (geometries.size > 32) geometries.delete(geometries.keys().next().value as string)
     return made
   }
 
@@ -292,7 +297,11 @@ export function createVision(db: Database, onError: (error: unknown) => void = (
       fresh.add(key)
       return cached.result
     }
-    if (!explored.has(key)) explored.set(key, (await visionRepo.findExplored(db, campaignId, scene.id))?.data ?? null)
+    if (!explored.has(key)) {
+      // Lo que se estaba guardando, antes de leerlo (si se olvidó de la memoria, la base lo tiene)
+      await saving.get(key)
+      explored.set(key, (await visionRepo.findExplored(db, campaignId, scene.id))?.data ?? null)
+    }
     const before = explored.get(key) ?? null
     const request: ViewRequest = {
       key: `${scene.id}:${stamp}:${doorsDigest}`,
@@ -353,11 +362,6 @@ export function createVision(db: Database, onError: (error: unknown) => void = (
     }
     results.set(key, { hash, result })
     fresh.add(key)
-    if (results.size > 64) {
-      const oldest = results.keys().next().value as string
-      results.delete(oldest)
-      fresh.delete(oldest)
-    }
     return result
   }
 
@@ -368,6 +372,9 @@ export function createVision(db: Database, onError: (error: unknown) => void = (
     peek(campaignId, sceneId) {
       const key = `${campaignId}:${sceneId}`
       return fresh.has(key) ? (results.get(key)?.result ?? null) : null
+    },
+    memory() {
+      return { views: results.size, explored: explored.size, walks: pendingWalks.size, scenes: geometries.size }
     },
     invalidate({ campaignId, sceneId }) {
       for (const key of fresh) {
