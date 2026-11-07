@@ -858,6 +858,7 @@ export const fiveE = {
     }
   },
   initiative: 'iniciativa',
+  senses: { list: 'sentidos' },
   dice: { default: '1d20', critical: 'd20' },
   sources: [
     {
