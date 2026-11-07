@@ -27,6 +27,14 @@ describe('los mapas en SVG de la IA', () => {
     expect(svgProblem('<html><svg/></html>')).toMatch(/<svg>/)
   })
 
+  it('solo admite las etiquetas de dibujo (lista blanca): ni con prefijo, ni animaciones, ni enlaces', () => {
+    expect(svgProblem(map('<svg:script>alert(1)</svg:script>'))).toMatch(/svg:script/)
+    expect(svgProblem(map('<a xlink:href="#p"><rect/></a>'))).toMatch(/<a>/)
+    expect(svgProblem(map('<set attributeName="href" to="https://x"/>'))).toMatch(/<set>/)
+    expect(svgProblem(map('<rect><animate attributeName="x" to="10"/></rect>'))).toMatch(/<animate>/)
+    expect(svgProblem(map('<!-- un comentario --><g><path d="M0 0L10 10"/><text>Sala</text></g>'))).toBeNull()
+  })
+
   it('mide por width y height, o por su viewBox', () => {
     expect(svgSize(map())).toEqual({ width: 2000, height: 1400 })
     expect(svgSize(map('', 'width="1200px" height="800px"'))).toEqual({ width: 1200, height: 800 })

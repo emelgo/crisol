@@ -20,11 +20,74 @@ const FORBIDDEN: Array<[RegExp, string]> = [
   [/<!ENTITY/i, 'entidades XML']
 ]
 
+/**
+ * Las únicas etiquetas que puede llevar (lista blanca): las de dibujar formas, texto, degradados, patrones, recortes y
+ * filtros. Ni enlaces, ni animaciones (pueden cambiar un href), ni nada con prefijo (`svg:script`)
+ */
+const ALLOWED_TAGS = new Set(
+  [
+    'svg',
+    'g',
+    'defs',
+    'title',
+    'desc',
+    'metadata',
+    'symbol',
+    'use',
+    'style',
+    'path',
+    'rect',
+    'circle',
+    'ellipse',
+    'line',
+    'polyline',
+    'polygon',
+    'text',
+    'tspan',
+    'textPath',
+    'linearGradient',
+    'radialGradient',
+    'stop',
+    'pattern',
+    'clipPath',
+    'mask',
+    'marker',
+    'filter',
+    'feBlend',
+    'feColorMatrix',
+    'feComponentTransfer',
+    'feComposite',
+    'feConvolveMatrix',
+    'feDiffuseLighting',
+    'feDisplacementMap',
+    'feDistantLight',
+    'feDropShadow',
+    'feFlood',
+    'feFuncA',
+    'feFuncB',
+    'feFuncG',
+    'feFuncR',
+    'feGaussianBlur',
+    'feMerge',
+    'feMergeNode',
+    'feMorphology',
+    'feOffset',
+    'fePointLight',
+    'feSpecularLighting',
+    'feSpotLight',
+    'feTile',
+    'feTurbulence'
+  ].map((tag) => tag.toLowerCase())
+)
+
 /** Lo que el SVG no puede llevar; null si vale */
 export function svgProblem(text: string): string | null {
   if (new TextEncoder().encode(text).length > MAX_SVG_BYTES) return 'pasa de 4 MB'
   if (!/^\s*(<\?xml[^>]*>\s*)?<svg[\s>]/i.test(text)) return 'no empieza por <svg>'
   for (const [pattern, what] of FORBIDDEN) if (pattern.test(text)) return `no puede llevar ${what}`
+  // Cada etiqueta que abre (las de cierre, los comentarios y CDATA no cuentan)
+  for (const [, tag] of text.matchAll(/<([^\s/>!?][^\s/>]*)/g))
+    if (tag && !ALLOWED_TAGS.has(tag.toLowerCase())) return `no puede llevar <${tag}>`
   return null
 }
 
