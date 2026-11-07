@@ -420,6 +420,19 @@ describe('la visión de la mesa (docs/specs/vision.md)', () => {
     expect(share(view.visible, ...ROOM_A)).toBe(1)
   })
 
+  it('fugas: lo destapado a mano no pasa a explorado (deshacer el destapar lo vuelve a tapar)', async () => {
+    await place([{ characterId: lia.id, x: 200, y: 150 }])
+    await ok200('changeFog', { campaignId, mode: 'reveal', shape: 'area', column: 4, row: 0, columns: 4, rows: 3 })
+    expect(share((await party()).visible, ...ROOM_B)).toBe(1)
+    const history = await ok200('listHistory', { worldId })
+    await ok200('undoOperation', { operationId: history.entries[0].id })
+    const view = await party()
+    expect(share(view.visible, ...ROOM_B)).toBe(0)
+    expect(share(view.explored, ...ROOM_B)).toBe(0)
+    expect(share(view.explored, ...ROOM_A)).toBe(1)
+    expect((await screenTile('0/1/0')).statusCode).toBe(404)
+  })
+
   it('recortadas: la tesela del borde llega transparente fuera de lo explorado y sin guardarse en el navegador', async () => {
     await place([{ characterId: lia.id, x: 200, y: 150 }])
     await ok200('setTileFit', { campaignId, tileFit: 'cropped' })

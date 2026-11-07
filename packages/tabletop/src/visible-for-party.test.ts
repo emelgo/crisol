@@ -187,6 +187,15 @@ describe('la niebla a mano', () => {
     expect(view.revealed.count()).toBe(400)
   })
 
+  it('lo que ven las fichas va aparte, sin lo destapado ni lo tapado a mano (lo que se suma a lo explorado)', () => {
+    const view = visibleForParty({ ...scene(), tokens: [ana], manualFog: [reveal, { ...cover, timestamp: 1 }] })
+    expect(corridor(view.sighted)).toBe(0)
+    expect(roomA(view.sighted)).toBe(200)
+    expect(roomB(view.sighted)).toBe(0)
+    const blind = visibleForParty({ ...scene({ automatic: false }), tokens: [ana], manualFog: [reveal] })
+    expect(blind.sighted.count()).toBe(0)
+  })
+
   it('sin visión automática, solo vale la niebla a mano', () => {
     const view = visibleForParty({ ...scene({ automatic: false }), tokens: [ana], manualFog: [reveal] })
     expect(roomA(view.visible)).toBe(0)

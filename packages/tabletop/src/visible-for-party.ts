@@ -58,6 +58,11 @@ export interface PreparedVision {
 export interface PartyView {
   /** Lo que está a la vista del grupo ahora */
   visible: FogGrid
+  /**
+   * Lo que ven sus fichas, sin lo destapado a mano (y sin lo tapado, que manda): lo único que se suma a lo explorado,
+   * para que deshacer un destapar vuelva a tapar la zona
+   */
+  sighted: FogGrid
   /** Lo destapado y lo tapado a mano (lo tapado también se quita de lo explorado) */
   revealed: FogGrid
   covered: FogGrid
@@ -150,6 +155,8 @@ export function partyView(
       visible.union(own.seen)
     }
   }
+  visible.subtract(covered)
+  const sighted = visible.clone()
   visible.union(revealed).subtract(covered)
   const litPolygons = prepared.lit
     .filter((area) => area.cells.intersects(visible))
@@ -172,7 +179,7 @@ export function partyView(
         (s) => s.tremorsense > 0 && Math.hypot(s.origin.x - target.x, s.origin.y - target.y) <= s.tremorsense
       )
     })
-  return { visible, revealed, covered, litPolygons, sights, tokensSeen }
+  return { visible, sighted, revealed, covered, litPolygons, sights, tokensSeen }
 }
 
 /** Lo que ve el grupo, preparando la escena cada vez (para guardar lo preparado, `prepareVision` y `partyView`) */

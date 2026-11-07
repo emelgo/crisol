@@ -2,8 +2,8 @@
  * Lo que calcula el hilo de la visión (docs/specs/vision.md, ADR-0018 § 5): la vista del grupo de una campaña en una
  * escena con el núcleo de `@crisol/tabletop`. Lo que no depende de las fichas (`prepareVision`: los índices de los
  * muros y las áreas de las luces) se guarda por su clave (la escena tal como está y las puertas abiertas de la campaña)
- * hasta que cambie. Lo explorado se va sumando: lo que ve el grupo ahora y lo que vio en cada punto del camino de una ficha.
- * Puro salvo esa memoria: lo usa el hilo y, en las pruebas, quien quiera llamarlo directo
+ * hasta que cambie. Lo explorado se va sumando: lo que ven sus fichas ahora (no lo destapado a mano) y lo que vio cada
+ * una por su camino. Puro salvo esa memoria: lo usa el hilo y, en las pruebas, quien quiera llamarlo directo
  */
 import {
   type DoorStates,
@@ -116,10 +116,15 @@ export function computeView(request: ViewRequest): ViewResponse {
   const view = partyView(ready, request.party, request.manual)
   // Las fichas del grupo se ven siempre, su huella al menos: también sin visión automática (con ella ya va dentro)
   if (ready.scene.automatic === false)
-    for (const token of request.party) view.visible.fillCircle(token, Math.max(token.radius ?? 0, 1))
+    for (const token of request.party) {
+      const radius = Math.max(token.radius ?? 0, 1)
+      view.visible.fillCircle(token, radius)
+      view.sighted.fillCircle(token, radius)
+    }
   const explored = exploredOf(request.explored, view.visible)
   const before = explored.count()
-  explored.union(view.visible)
+  // Solo lo que ven las fichas: lo destapado a mano no (si se deshace, vuelve a taparse)
+  explored.union(view.sighted)
   // Lo que se vio desde cada punto del camino (sin la niebla a mano: lo tapado se quita al enseñarlo)
   if (ready.scene.automatic !== false)
     for (const step of request.paths) explored.union(partyView(ready, [step], []).visible.subtract(view.covered))
