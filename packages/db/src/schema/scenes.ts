@@ -1,4 +1,4 @@
-import { boolean, index, integer, jsonb, pgTable, timestamp, unique, uuid } from 'drizzle-orm/pg-core'
+import { boolean, index, integer, jsonb, pgTable, primaryKey, text, timestamp, unique, uuid } from 'drizzle-orm/pg-core'
 import { campaigns } from './campaigns.ts'
 import { files } from './files.ts'
 import { pageTabs } from './maps.ts'
@@ -122,3 +122,23 @@ export const campaignTables = pgTable('campaign_tables', {
   camera: jsonb().$type<ScreenCameraData>().notNull().default({ mode: 'follow' }),
   updatedAt: timestamp({ withTimezone: true }).defaultNow().notNull()
 })
+
+/**
+ * Las teselas de la imagen de una escena, por versión: dónde están sus bytes. Se sacan de la imagen (no van al
+ * historial), y las de versiones viejas se guardan mientras la escena exista, para que deshacer la imagen las encuentre
+ */
+export const sceneTiles = pgTable(
+  'scene_tiles',
+  {
+    sceneId: uuid()
+      .notNull()
+      .references(() => scenes.id, { onDelete: 'cascade' }),
+    version: uuid().notNull(),
+    level: integer().notNull(),
+    x: integer().notNull(),
+    y: integer().notNull(),
+    storageKey: text().notNull(),
+    bytes: integer().notNull()
+  },
+  (t) => [primaryKey({ columns: [t.sceneId, t.version, t.level, t.x, t.y] })]
+)

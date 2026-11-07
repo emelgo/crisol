@@ -1,5 +1,5 @@
 {
-  "id": "9391f0e8-4b6d-4404-b14f-dc14213021f9",
+  "id": "94801e00-4baf-40f4-a082-692f4368dad4",
   "prevId": "a94327e5-4b17-4919-93d9-d8db422a318e",
   "version": "7",
   "dialect": "postgresql",
@@ -6930,6 +6930,86 @@
           ]
         }
       },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.scene_tiles": {
+      "name": "scene_tiles",
+      "schema": "",
+      "columns": {
+        "scene_id": {
+          "name": "scene_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "version": {
+          "name": "version",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "level": {
+          "name": "level",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "x": {
+          "name": "x",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "y": {
+          "name": "y",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "storage_key": {
+          "name": "storage_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "bytes": {
+          "name": "bytes",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "scene_tiles_scene_id_scenes_id_fk": {
+          "name": "scene_tiles_scene_id_scenes_id_fk",
+          "tableFrom": "scene_tiles",
+          "tableTo": "scenes",
+          "columnsFrom": [
+            "scene_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "scene_tiles_scene_id_version_level_x_y_pk": {
+          "name": "scene_tiles_scene_id_version_level_x_y_pk",
+          "columns": [
+            "scene_id",
+            "version",
+            "level",
+            "x",
+            "y"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false

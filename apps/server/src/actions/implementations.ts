@@ -21,6 +21,7 @@ import { preferenceActions } from './preferences.ts'
 import { previewActions } from './preview.ts'
 import type { Implementation } from './registry.ts'
 import { revealActions } from './reveal.ts'
+import { sceneActions } from './scenes.ts'
 import { searchActions } from './search.ts'
 import { systemActions } from './systems.ts'
 import { tableActions } from './tables.ts'
@@ -58,6 +59,7 @@ export const IMPLEMENTATIONS: Implementation[] = [
   ...characterActions,
   ...creatureActions,
   ...partyActions,
+  ...sceneActions,
   ...knowledgeActions,
   ...revealActions,
   ...libraryActions,

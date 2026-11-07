@@ -6,6 +6,7 @@ import type { Storage } from '../files/storage.ts'
 import type { Embedder } from '../library/embedder.ts'
 import type { LibraryJobs } from '../library/jobs.ts'
 import type { Realtime } from '../realtime/hub.ts'
+import type { TableRooms } from '../table/rooms.ts'
 
 /** Una acción del contrato con su servicio */
 export interface Implementation {
@@ -32,6 +33,8 @@ export interface ActionEnv {
   library?: LibraryJobs
   /** El modelo de la búsqueda por significado; sin él, solo por palabras */
   embedder?: Embedder
+  /** Las salas de la mesa abiertas (ADR-0018): se les avisa de lo que cambia en su campaña o en sus escenas */
+  table?: TableRooms
 }
 
 /** Con qué se ejecuta una acción: el servidor y quién la pide, por dónde */

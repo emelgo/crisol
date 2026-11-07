@@ -4,7 +4,7 @@
  * aquí llega la proyección de cada uno y lo que va en vivo (el encuadre del máster que sigue la pantalla)
  */
 import { z } from 'zod'
-import { campaignTableView, sceneGrid, sceneTiles, sceneViewport, screenCamera } from './scenes.ts'
+import { type campaignTableView, sceneGrid, sceneTiles, sceneViewport, screenCamera } from './scenes.ts'
 
 export const TABLE_VIEWS = ['master', 'screen'] as const
 export type TableViewer = (typeof TABLE_VIEWS)[number]

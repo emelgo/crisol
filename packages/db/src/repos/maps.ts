@@ -62,7 +62,8 @@ export function createTab(
     const tab = await w.insert(pageTabs, values)
     if (values.kind === 'map') await w.insert(maps, { worldId: values.worldId, tabId: tab.id })
     if (values.kind === 'table') await w.insert(randomTables, { worldId: values.worldId, tabId: tab.id })
-    if (values.kind === 'scene') await w.insert(scenes, { worldId: values.worldId, tabId: tab.id, grid: DEFAULT_SCENE_GRID })
+    if (values.kind === 'scene')
+      await w.insert(scenes, { worldId: values.worldId, tabId: tab.id, grid: DEFAULT_SCENE_GRID })
     return tab
   })
 }
@@ -96,7 +97,10 @@ export function deleteTab(db: Database, context: OperationContext, tabId: string
     // Su escena, con el estado de cada campaña en ella: deshacer devuelve las dos
     const [scene] = await w.read.select({ id: scenes.id }).from(scenes).where(eq(scenes.tabId, tabId))
     if (scene) {
-      const states = await w.read.select({ id: sceneStates.id }).from(sceneStates).where(eq(sceneStates.sceneId, scene.id))
+      const states = await w.read
+        .select({ id: sceneStates.id })
+        .from(sceneStates)
+        .where(eq(sceneStates.sceneId, scene.id))
       for (const state of states) await w.remove(sceneStates, state.id)
       await w.remove(scenes, scene.id)
     }

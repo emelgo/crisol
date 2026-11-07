@@ -261,6 +261,7 @@ export async function liveStorageKeys(db: Database) {
   const rows = await db.execute<{ key: string }>(sql`
     select storage_key as key from files
     union select storage_key from system_images
+    union select storage_key from scene_tiles
     union select c.before->>'storage_key' from changes c where c.table_name = 'files' and c.before is not null
     union select c.after->>'storage_key' from changes c where c.table_name = 'files' and c.after is not null`)
   return new Set([...rows].map((row) => row.key).filter(Boolean))

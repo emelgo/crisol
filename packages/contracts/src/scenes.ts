@@ -54,9 +54,7 @@ export const sceneImported = z.object({
   source: z.literal('uvtt'),
   walls: z.array(z.array(point).max(5000)).max(20_000),
   objects: z.array(z.array(point).max(5000)).max(20_000),
-  portals: z
-    .array(z.object({ a: point, b: point, closed: z.boolean(), window: z.boolean() }))
-    .max(5000),
+  portals: z.array(z.object({ a: point, b: point, closed: z.boolean(), window: z.boolean() })).max(5000),
   lights: z
     .array(
       z.object({

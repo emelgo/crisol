@@ -22,6 +22,9 @@ import type { LibraryJobs } from './library/jobs.ts'
 import { registerMcpRoutes } from './mcp/routes.ts'
 import { createRealtime } from './realtime/hub.ts'
 import { type RealtimeRouteOptions, registerRealtimeRoutes } from './realtime/routes.ts'
+import { loadTable } from './table/projection.ts'
+import { createTableRooms } from './table/rooms.ts'
+import { registerTableRoutes } from './table/routes.ts'
 import { registerWeb, webBuild } from './web.ts'
 import { jsonOfDoc } from './wiki/content.ts'
 import { linksOfStored } from './wiki/links.ts'
@@ -91,12 +94,15 @@ export function buildApp(deps: AppDeps): FastifyInstance {
           onError: (error) => app.log.error(error)
         })
     })
+    // Las salas de la mesa: cada una vuelve a leer su mesa de la base cuando algo cambia (ADR-0018)
+    const table = createTableRooms(loadTable(db), (error) => app.log.error(error))
     const env: ActionEnv = {
       db,
       publicUrl,
       sealKey,
       realtime,
       collab,
+      table,
       actions: implementationsByName,
       ...(deps.storage ? { storage: deps.storage } : {}),
       ...(deps.library ? { library: deps.library } : {}),
@@ -121,6 +127,9 @@ export function buildApp(deps: AppDeps): FastifyInstance {
       registerRealtimeRoutes(scope, { auth, publicUrl, realtime, build, ...deps.realtimeTimers })
     )
     app.register(async (scope) => registerCollabRoutes(scope, { auth, publicUrl, collab }))
+    app.register(async (scope) =>
+      registerTableRoutes(scope, { ...env, table }, auth, { publicUrl, ...deps.realtimeTimers })
+    )
     if (deps.mcpJwksUrl) {
       const wait = deps.approvalWaitMs ? { approvalWaitMs: deps.approvalWaitMs } : {}
       registerMcpRoutes(app, { ...env, auth, jwksUrl: deps.mcpJwksUrl, ...wait })

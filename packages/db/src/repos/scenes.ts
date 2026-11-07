@@ -7,7 +7,7 @@ import type { Database } from '../client.ts'
 import { type OperationContext, operation } from '../operation.ts'
 import { pageTabs } from '../schema/maps.ts'
 import { pages } from '../schema/pages.ts'
-import { campaignTables, type ScreenCameraData, sceneStates, scenes } from '../schema/scenes.ts'
+import { campaignTables, type ScreenCameraData, sceneStates, scenes, sceneTiles } from '../schema/scenes.ts'
 
 export type SceneRow = typeof scenes.$inferSelect
 export type CampaignTableRow = typeof campaignTables.$inferSelect
@@ -106,4 +106,48 @@ export async function setCampaignTable(
     .returning()
   if (!row) throw new Error('campaign_tables: sin fila tras guardar')
   return row
+}
+
+type TileAt = { sceneId: string; version: string; level: number; x: number; y: number }
+
+const tileWhere = (at: TileAt) =>
+  and(
+    eq(sceneTiles.sceneId, at.sceneId),
+    eq(sceneTiles.version, at.version),
+    eq(sceneTiles.level, at.level),
+    eq(sceneTiles.x, at.x),
+    eq(sceneTiles.y, at.y)
+  )
+
+/** Guarda dónde está una tesela; si ya había otra en su sitio, da su clave para borrar sus bytes */
+export async function putTile(db: Database, at: TileAt & { storageKey: string; bytes: number }) {
+  return db.transaction(async (tx) => {
+    const [old] = await tx.select({ storageKey: sceneTiles.storageKey }).from(sceneTiles).where(tileWhere(at))
+    await tx
+      .insert(sceneTiles)
+      .values(at)
+      .onConflictDoUpdate({
+        target: [sceneTiles.sceneId, sceneTiles.version, sceneTiles.level, sceneTiles.x, sceneTiles.y],
+        set: { storageKey: at.storageKey, bytes: at.bytes }
+      })
+    return old && old.storageKey !== at.storageKey ? old.storageKey : null
+  })
+}
+
+/** Dónde están los bytes de una tesela, o null */
+export async function findTile(db: Database, at: TileAt) {
+  const [found] = await db
+    .select({ storageKey: sceneTiles.storageKey, bytes: sceneTiles.bytes })
+    .from(sceneTiles)
+    .where(tileWhere(at))
+  return found ?? null
+}
+
+/** Cuántas teselas tiene subidas una versión (para comprobar que está entera antes de ponerla) */
+export async function countTiles(db: Database, sceneId: string, version: string) {
+  const rows = await db
+    .select({ level: sceneTiles.level })
+    .from(sceneTiles)
+    .where(and(eq(sceneTiles.sceneId, sceneId), eq(sceneTiles.version, version)))
+  return rows.length
 }
