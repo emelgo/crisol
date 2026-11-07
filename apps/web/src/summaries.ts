@@ -262,6 +262,8 @@ export function summaryOf(
     case 'createPageTab':
       if (details.kind === 'table')
         return say('createTableTab', { name: text(details.name), title: text(details.title) })
+      if (details.kind === 'scene')
+        return say('createSceneTab', { name: text(details.name), title: text(details.title) })
       return say(action, { name: text(details.name), title: text(details.title ?? details.page) })
     case 'updateRandomTable':
       return say('updateRandomTable', { name: text(details.name), title: text(details.title) })
@@ -280,6 +282,24 @@ export function summaryOf(
       const key = action === 'updateMapPin' && details.moved ? 'moveMapPin' : action
       return say(key, { pin, map: text(details.map), title: text(details.title) })
     }
+    // Las escenas de la mesa y la mesa de cada campaña (docs/specs/escenas.md)
+    case 'updateScene':
+      return say(details.view && !details.grid ? 'sceneView' : 'sceneGrid', {
+        name: text(details.name),
+        title: text(details.title)
+      })
+    case 'setSceneImage':
+    case 'drawScene':
+      return say(action, { name: text(details.name), title: text(details.title) })
+    case 'openScene':
+    case 'presentScene':
+      return details.name
+        ? say(action, { name: text(details.name), campaign: text(details.campaign) })
+        : say(action === 'openScene' ? 'openSomeScene' : 'presentSomeScene', { campaign: text(details.campaign) })
+    case 'hideScreen':
+      return say(details.hidden === false ? 'showScreen' : 'hideScreen', { campaign: text(details.campaign) })
+    case 'setScreenCamera':
+      return say(action, { campaign: text(details.campaign) })
     // Las etiquetas de la cuenta (ADR-0006)
     case 'createTag':
     case 'colorTag':
