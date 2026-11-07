@@ -50,7 +50,7 @@ const isWebp = (head: Uint8Array) =>
 /**
  * Cómo puede cargar la pantalla una tesela de la escena presentada, con lo que puede ver (lo explorado y lo visible):
  * nada si no lo toca; entera si cae dentro; recortada si pisa el borde. Con «enteras», las del borde van enteras solo
- * en el nivel de más detalle (asoma como mucho una tesela): las de los niveles reducidos cubren mucho mapa (la de
+ * en el nivel de más detalle (asoma como mucho una tesela), sin guardarse en el navegador (`edge`): las de los niveles reducidos cubren mucho mapa (la de
  * arriba, el mapa entero) y se recortan siempre, o la tele tendría el mapa entero en pequeño
  */
 export function screenTileAllowed(
@@ -58,12 +58,14 @@ export function screenTileAllowed(
   scene: { width: number; height: number; tileSize: number },
   tile: TileRef,
   fit: 'whole' | 'cropped'
-): 'deny' | 'whole' | 'crop' {
+): 'deny' | 'whole' | 'edge' | 'crop' {
   const pyramid = tilePyramid(scene.width, scene.height, scene.tileSize)
   if (!hasTile(pyramid, tile)) return 'deny'
   const coverage = tileCoverage(mask, tileWorldRect(pyramid, tile))
   if (coverage === 'none') return 'deny'
-  return coverage === 'full' || (fit === 'whole' && tile.level === 0) ? 'whole' : 'crop'
+  if (coverage === 'full') return 'whole'
+  // La del borde, entera pero sin guardarse en el navegador: al pasar a «recortadas» se pide otra vez
+  return fit === 'whole' && tile.level === 0 ? 'edge' : 'crop'
 }
 
 /** Las teselas recortadas que ya se hicieron, por tesela y huella de su máscara (las últimas) */
@@ -102,11 +104,11 @@ export function registerTableRoutes(
     throw error
   }
 
-  const sendTile = async (reply: FastifyReply, found: { storageKey: string; bytes: number } | null) => {
+  const sendTile = async (reply: FastifyReply, found: { storageKey: string; bytes: number } | null, keep = true) => {
     if (!found || !env.storage) return reply.code(404).send({ code: 'NOT_FOUND' })
-    // Una tesela no cambia nunca: su versión va en la ruta
+    // Una tesela no cambia nunca: su versión va en la ruta (salvo la del borde de la pantalla, que puede recortarse)
     return reply
-      .header('cache-control', 'private, max-age=31536000, immutable')
+      .header('cache-control', keep ? 'private, max-age=31536000, immutable' : 'private, no-store')
       .header('x-content-type-options', 'nosniff')
       .header('cross-origin-resource-policy', 'same-origin')
       .header('content-type', 'image/webp')
@@ -202,7 +204,7 @@ export function registerTableRoutes(
     const allowed = screenTileAllowed(vision.screenMask, size, at, mesa.tileFit)
     if (allowed === 'deny') return reply.code(404).send({ code: 'NOT_FOUND' })
     const found = await scenesRepo.findTile(ctx.db, { sceneId: scene.id, ...at })
-    if (allowed === 'whole') return sendTile(reply, found)
+    if (allowed === 'whole' || allowed === 'edge') return sendTile(reply, found, allowed === 'whole')
     if (!found || !env.storage || !env.vision) return reply.code(404).send({ code: 'NOT_FOUND' })
     // Recortada con la máscara: cambia según se explora, así que no se guarda en el navegador
     const rect = tileWorldRect(tilePyramid(size.width, size.height, size.tileSize), at)

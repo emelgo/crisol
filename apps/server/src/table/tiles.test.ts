@@ -13,8 +13,9 @@ describe('las teselas que puede cargar la pantalla', () => {
     expect(screenTileAllowed(corner(), scene, { level: 0, x: 3, y: 2 }, 'whole')).toBe('deny')
   })
 
-  it('con «enteras», la del borde del nivel de más detalle va entera', () => {
-    expect(screenTileAllowed(corner(), scene, { level: 0, x: 0, y: 0 }, 'whole')).toBe('whole')
+  it('con «enteras», la del borde del nivel de más detalle va entera, pero sin guardarse en el navegador (edge)', () => {
+    // Si se guardara, al pasar a «recortadas» la tele seguiría pintándola entera
+    expect(screenTileAllowed(corner(), scene, { level: 0, x: 0, y: 0 }, 'whole')).toBe('edge')
     expect(screenTileAllowed(corner(), scene, { level: 0, x: 0, y: 0 }, 'cropped')).toBe('crop')
   })
 

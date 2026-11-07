@@ -221,10 +221,11 @@ describe('la visión de la mesa (docs/specs/vision.md)', () => {
     expect(text).not.toContain(doorId)
     expect(text).not.toContain(secretId)
     expect(text).not.toMatch(/"walls"|"doors"|secret/)
-    // La tesela de la sala A sí (entera: es el ajuste por defecto); la de la B, no
+    // La tesela de la sala A sí (entera: es el ajuste por defecto; del borde, sin guardarse en el navegador); la de
+    // la B, no
     const tile = await screenTile('0/0/0')
     expect(tile.statusCode).toBe(200)
-    expect(tile.headers['cache-control']).toContain('immutable')
+    expect(tile.headers['cache-control']).toBe('private, no-store')
     expect((await screenTile('0/1/0')).statusCode).toBe(404)
     // El máster sabe lo que el grupo no ve
     const table = await ok200('getCampaignTable', { campaignId })
@@ -485,8 +486,13 @@ describe('la visión de la mesa (docs/specs/vision.md)', () => {
     expect(alpha(470, 150)).toBe(0)
     expect(alpha(200, 380)).toBe(0)
     expect((await screenTile('0/1/0')).statusCode).toBe(404)
-    // Enteras otra vez: la misma, tal cual
+    // Enteras otra vez: la misma, tal cual, y tampoco se guarda (al volver a «recortadas» no puede salir entera)
     await ok200('setTileFit', { campaignId, tileFit: 'whole' })
+    const whole = await screenTile('0/0/0')
+    expect(whole.statusCode).toBe(200)
+    expect(whole.headers['cache-control']).toBe('private, no-store')
+    // Con todo explorado, entera y para siempre (su versión va en la ruta)
+    await ok200('changeFog', { campaignId, mode: 'reveal', shape: 'rectangle', x: 0, y: 0, width: 800, height: 400 })
     expect((await screenTile('0/0/0')).headers['cache-control']).toContain('immutable')
   })
 
