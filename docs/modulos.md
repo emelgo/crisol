@@ -7,6 +7,17 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
+### Para retomar (2026-11-07, tarde: módulo 6 en marcha)
+
+- **Rama `modulo-6/mesa`** (sale de `main`). Hecha la entrevista del módulo 6 (abajo, § «### 6. Mesa»): se juega
+  sobre todo en persona, el máster lleva la mesa y una segunda ventana en la tele enseña lo que ve el grupo; niebla
+  automática y a mano; en combate, la mesa es el centro, como en Foundry o D&D Beyond; la escena es del mundo y el
+  estado, de cada campaña.
+- **Estudios en marcha**: `research/foundry/vision-muros-y-niebla.md`, `research/foundry/escenas-fichas-y-combate.md`,
+  `research/dndbeyond/mapas.md`, `research/uvtt/formato.md` y unas notas de lo que se puede portar de la mesa del
+  Crisol actual (`~/CrisolVTT/crisol/packages/mesa`, código nuestro).
+- **Lo siguiente**: el mapa `docs/specs/modulo-6.md` con sus capacidades, el ADR de la mesa autoritativa y las specs.
+
 ### Para retomar (2026-11-07: módulo 5 en `main` y en staging)
 
 - **PR #112, fusionado y desplegado en staging** (2026-11-07; migraciones hasta la 0054). Las cinco capacidades del
@@ -1800,3 +1811,37 @@ Notas: `research/foundry/sistemas-y-su-api.md` y `research/dndbeyond/creador-y-h
   suyo.
 - **Fuera**: que los jugadores escriban (salvo la página que se les deje); notas, diario y chat (módulo 7); la mesa,
   la niebla y la visión (módulo 6); una web pública sin cuenta; co-máster y espectador.
+
+### 6. Mesa (entrevista con Enrique, 2026-11-07)
+
+- **Se juega sobre todo en persona, con el mapa en una pantalla** («sobre todo en persona con el mapa en una pantalla
+  pero en el futuro tmb online»). Las fichas las mueve casi siempre el máster desde su ordenador; los jugadores miran la
+  pantalla y usan el móvil para su hoja y sus dados.
+- **La pantalla es una segunda ventana** que el máster abre desde su ordenador (por HDMI), como la «Ventana de
+  jugadores» del Crisol actual. Esa ventana pide su vista al servidor (la del grupo) en lugar de pintarse en la
+  pestaña del máster: así sirve igual cuando se juegue online.
+- **La niebla, de las dos maneras**: sola, por lo que ven todas las fichas del grupo juntas, con muros, puertas y luces
+  (que llegan hechos de UVTT y de Foundry), y a mano (pincel, rectángulo) para mapas sin muros o para destapar algo de
+  golpe.
+- **En combate, la mesa es el centro, «como en foundry o dndbeyond»**: la ficha es el personaje o la criatura en juego
+  del módulo 4 (no un dibujo suelto); al pulsarla se abre su hoja y se tira; el daño baja su barra; la iniciativa lleva
+  los turnos; un encuentro pone sus criaturas en juego y al acabar se van las genéricas; en la pantalla, las criaturas
+  enseñan su estado en palabras («Herida»), como en el módulo 5.
+- **La escena es del mundo y el estado, de cada campaña**: se prepara una vez (con sus muros y luces), se engancha a la
+  página del lugar y desde ella se abre en la mesa; cada campaña que pasa por allí tiene su niebla, sus fichas y sus
+  puertas abiertas.
+- **Hecho cuando**: el máster prepara una cripta (un UVTT o una escena de Foundry, con sus muros, puertas y luces)
+  enganchada a su página y la abre en una campaña; en la pantalla la niebla se descubre sola por lo que ven las fichas
+  y él destapa a mano una sala; pone un encuentro (tres goblins y el jefe), tira la iniciativa, ataca desde la ficha, el
+  daño baja la barra y en la pantalla sale «Herido»; mide un cono y lo deja como plantilla; otra campaña abre la misma
+  cripta con su propia niebla; la IA hace todo esto por el MCP.
+- **Límite**: a la ventana de la pantalla no le llega nada que el grupo no vea (ni puertas secretas, ni criaturas
+  ocultas, ni PG). Nada copyleft; lo de pago traído de Foundry, solo para uso privado (ADR-0014).
+- **Entra**: escenas; rejilla cuadrada y hexagonal; fichas (tamaños, estados con caducidad, barras); medir y plantillas
+  de área; dibujo, sellos, texto, puntero láser, imágenes; niebla a mano y automática con muros, puertas, luces y
+  visión; iniciativa; widgets (contador, reloj, temporizador); instantáneas; la pantalla del máster (statblocks de la
+  escena y una nota); encuentros con su formación; la biblioteca con su creador de fichas desde imágenes; UVTT y las
+  escenas de un zip de Foundry.
+- **Fuera**: el generador de botín (ya están las tablas del compendio), los paquetes de colección y la capa de clima
+  (módulo 8); que cada jugador vea la mesa en su aparato con la visión de su ficha y mueva la suya, el chat y el sonido
+  (la sala de jugadores, módulo 7; esta mesa lo deja preparado).
