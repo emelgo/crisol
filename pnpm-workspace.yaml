@@ -79,6 +79,8 @@ catalog:
   happy-dom: ^21.0.4
   # El visor de PDF de la web (Apache-2.0), cargado solo al abrir uno
   pdfjs-dist: ^6.4.299
+  # La mesa (ADR-0018): el lienzo del mapa (MIT), cargado solo en la mesa y en la pantalla de la tele
+  pixi.js: 8.22.0
   "@floating-ui/dom": ^1.7.4
   "@fastify/rate-limit": ^11.2.1
   "@fontsource/barlow": ^5.3.0
