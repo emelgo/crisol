@@ -1,9 +1,17 @@
 /**
  * Las salas de la mesa (ADR-0018): una por campaña mientras alguien la mira. Cada conexión dice quién mira (el máster o
  * la pantalla de la tele) y recibe su proyección; cuando algo cambia, la sala la vuelve a calcular y la manda. El
- * encuadre del máster va en vivo a las pantallas que lo siguen, sin guardarse
+ * encuadre del máster va en vivo a las pantallas que lo siguen, sin guardarse, y también la medida en curso (con «la
+ * tele ve lo que mides») y el láser, solo en lo que el grupo ve o vio
  */
-import type { CampaignTableView, SceneViewport, ScreenView, TableServerMessage, TableViewer } from '@crisol/contracts'
+import type {
+  CampaignTableView,
+  LiveMeasure,
+  SceneViewport,
+  ScreenView,
+  TableServerMessage,
+  TableViewer
+} from '@crisol/contracts'
 
 /** Lo que la sala necesita de una conexión */
 export interface TableSocket {
@@ -15,10 +23,16 @@ export interface ScreenSight {
   hasPoint(p: { x: number; y: number }): boolean
 }
 
-/** La mesa de una campaña, ya proyectada para cada quien mira; null si la campaña ya no existe */
-export type LoadTable = (
-  campaignId: string
-) => Promise<{ master: CampaignTableView; screen: ScreenView; screenVisible?: ScreenSight | null } | null>
+/**
+ * La mesa de una campaña, ya proyectada para cada quien mira; null si la campaña ya no existe. Con lo que el grupo ve
+ * ahora de la escena presentada (el arrastre) y lo que ve o vio (la medida y el láser)
+ */
+export type LoadTable = (campaignId: string) => Promise<{
+  master: CampaignTableView
+  screen: ScreenView
+  screenVisible?: ScreenSight | null
+  screenMask?: ScreenSight | null
+} | null>
 
 export interface TableRooms {
   /** Una conexión ya autorizada mira la mesa de la campaña; devuelve con qué darla de baja */
@@ -34,6 +48,13 @@ export interface TableRooms {
    * ve el grupo (de la escena presentada, sin ocultar) y mientras pasan por lo que ve
    */
   drag(campaignId: string, moves: TokenMove[], from: TableSocket): void
+  /**
+   * La medida en curso del máster: a sus otras pestañas, siempre; a la pantalla, con «la tele ve lo que mides», si
+   * mira la misma escena y la medida cae entera en lo que el grupo ve o vio (si no, se le quita la que tuviera)
+   */
+  measure(campaignId: string, measure: LiveMeasure | null, from: TableSocket): void
+  /** La estela del láser: a las otras pestañas del máster, entera; a la pantalla, sus puntos en lo que ve o vio */
+  laser(campaignId: string, points: Point[], from: TableSocket): void
   /** Cuántas conexiones mira cada campaña (para las pruebas y los registros) */
   size(campaignId: string): number
   /** Cuando ya se ha mandado todo lo pendiente (para las pruebas) */
@@ -51,9 +72,15 @@ interface Room {
   openTokens: Set<string>
   screenTokens: Set<string>
   screenVisible: ScreenSight | null
+  /** Lo que el grupo ve o vio de la escena presentada, si es la abierta (la medida y el láser son de la abierta) */
+  sameSceneMask: ScreenSight | null
+  measureOnScreen: boolean
+  /** La pantalla tiene una medida pintada (hay que quitársela si deja de valer) */
+  measureShown: boolean
 }
 
 type TokenMove = { tokenId: string; x: number; y: number }
+type Point = { x: number; y: number }
 
 const send = (socket: TableSocket, message: TableServerMessage) => socket.send(JSON.stringify(message))
 
@@ -72,6 +99,14 @@ export function createTableRooms(load: LoadTable, onError: (error: unknown) => v
     room.openTokens = new Set(table.master.tokens.map((t) => t.id))
     room.screenTokens = new Set(table.screen.tokens.map((t) => t.id))
     room.screenVisible = table.screenVisible ?? null
+    const same = table.master.open !== null && table.master.open.id === table.screen.scene?.id
+    room.sameSceneMask = same ? (table.screenMask ?? null) : null
+    room.measureOnScreen = table.master.measureOnScreen === true
+    // Se apagó «la tele ve lo que mides» o cambió la escena: la medida pintada se va
+    if (room.measureShown && (!room.measureOnScreen || !room.sameSceneMask)) {
+      room.measureShown = false
+      toScreens(room, { type: 'measure', measure: null })
+    }
     for (const [socket, viewer] of room.sockets) {
       if (only && socket !== only) continue
       if (viewer === 'master') send(socket, { type: 'master', table: table.master })
@@ -80,6 +115,16 @@ export function createTableRooms(load: LoadTable, onError: (error: unknown) => v
         if (only && room.follows && room.viewport) send(socket, { type: 'viewport', view: room.viewport })
       }
     }
+  }
+
+  /** A las pantallas de la sala */
+  function toScreens(room: Room, message: TableServerMessage) {
+    for (const [socket, viewer] of room.sockets) if (viewer === 'screen') send(socket, message)
+  }
+
+  /** A las otras pestañas del máster */
+  function toOtherMasters(room: Room, message: TableServerMessage, from: TableSocket) {
+    for (const [socket, viewer] of room.sockets) if (viewer === 'master' && socket !== from) send(socket, message)
   }
 
   /** En orden y sin dejar que un fallo pare a los demás */
@@ -97,7 +142,10 @@ export function createTableRooms(load: LoadTable, onError: (error: unknown) => v
         viewport: null,
         openTokens: new Set<string>(),
         screenTokens: new Set<string>(),
-        screenVisible: null
+        screenVisible: null,
+        sameSceneMask: null,
+        measureOnScreen: false,
+        measureShown: false
       }
       rooms.set(campaignId, room)
       room.sockets.set(socket, viewer)
@@ -131,6 +179,29 @@ export function createTableRooms(load: LoadTable, onError: (error: unknown) => v
         const sent = viewer === 'master' ? own : seen
         if (sent.length > 0) send(socket, { type: 'drag', moves: sent })
       }
+    },
+    measure(campaignId, measure, from) {
+      const room = rooms.get(campaignId)
+      if (!room) return
+      toOtherMasters(room, { type: 'measure', measure }, from)
+      const mask = room.sameSceneMask
+      const fits =
+        measure !== null && room.measureOnScreen && mask !== null && measure.points.every((p) => mask.hasPoint(p))
+      if (fits) {
+        room.measureShown = true
+        toScreens(room, { type: 'measure', measure })
+      } else if (room.measureShown) {
+        room.measureShown = false
+        toScreens(room, { type: 'measure', measure: null })
+      }
+    },
+    laser(campaignId, points, from) {
+      const room = rooms.get(campaignId)
+      if (!room) return
+      toOtherMasters(room, { type: 'laser', points }, from)
+      const mask = room.sameSceneMask
+      const seen = mask ? points.filter((p) => mask.hasPoint(p)) : []
+      if (seen.length > 0) toScreens(room, { type: 'laser', points: seen })
     },
     size(campaignId) {
       return rooms.get(campaignId)?.sockets.size ?? 0

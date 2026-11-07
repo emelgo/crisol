@@ -1,7 +1,8 @@
 /**
  * Lo que recibe cada quien mira la mesa (ADR-0018): el máster, todo; la pantalla de la tele, lo que ve el grupo
  * (docs/specs/vision.md): lo explorado y lo visible en máscaras, las fichas que ve y no están ocultas, las luces
- * recortadas a lo que ve y el combate sin las criaturas que no ve. Ni muros, ni puertas, ni luces apagadas
+ * recortadas a lo que ve, el combate sin las criaturas que no ve, lo dejado en el mapa que cae en lo que ve o vio (sin
+ * lo del máster) y los widgets con el ojo abierto. Ni muros, ni puertas, ni luces apagadas
  */
 import type {
   CampaignTableView,
@@ -14,9 +15,18 @@ import type {
   ScreenToken,
   ScreenView,
   TableVision,
-  TokenView
+  TokenView,
+  WidgetView
 } from '@crisol/contracts'
-import { campaignsRepo, combatsRepo, creaturesRepo, scenesRepo, systemsRepo, tokensRepo } from '@crisol/db'
+import {
+  campaignsRepo,
+  combatsRepo,
+  creaturesRepo,
+  scenesRepo,
+  systemsRepo,
+  tableToolsRepo,
+  tokensRepo
+} from '@crisol/db'
 import { actorFrom } from '@crisol/domain'
 import {
   type Choices,
@@ -31,6 +41,7 @@ import { distanceToPixels, type FogGrid, type PartyToken, type Senses, slotIndex
 import { characterVitalsOf } from '../actions/characters.ts'
 import type { ActionContext, ActionEnv } from '../actions/context.ts'
 import { creatureCardsOf, lifeStateOf } from '../actions/creatures.ts'
+import { markViewOf, screenMarksOf, screenWidgetsOf, widgetViewOf } from './marks.ts'
 import type { LoadTable } from './rooms.ts'
 import type { VisionResult, VisionToken, WalkedMove } from './vision.ts'
 
@@ -392,12 +403,19 @@ async function tableOf(ctx: ActionContext, campaign: Campaign) {
         ? await scenesRepo.findScene(ctx.db, table.presentedSceneId)
         : null
   const none = { views: [], senses: new Map<string, SenseRanges>() }
-  const [openLoaded, otherLoaded, combat] = await Promise.all([
+  const [openLoaded, otherLoaded, combat, openMarks, otherMarks, widgetRows] = await Promise.all([
     open ? tokensWithSenses(ctx, campaign, open.id) : none,
     presented && presented.id !== open?.id ? tokensWithSenses(ctx, campaign, presented.id) : null,
-    combatsRepo.findCombat(ctx.db, campaign.id)
+    combatsRepo.findCombat(ctx.db, campaign.id),
+    open ? tableToolsRepo.listMarks(ctx.db, campaign.id, open.id) : Promise.resolve([]),
+    presented && presented.id !== open?.id
+      ? tableToolsRepo.listMarks(ctx.db, campaign.id, presented.id)
+      : Promise.resolve(null),
+    tableToolsRepo.listWidgets(ctx.db, campaign.id)
   ])
   const shownLoaded = otherLoaded ?? (presented ? openLoaded : none)
+  const shownMarks = otherMarks ?? (presented ? openMarks : [])
+  const widgets = widgetRows.map(widgetViewOf)
   const openVision = open ? await visionOf(ctx, campaign, open, openLoaded) : null
   const shownVision =
     presented && presented.id === open?.id
@@ -413,9 +431,12 @@ async function tableOf(ctx: ActionContext, campaign: Campaign) {
     camera: table.camera,
     tokens: openLoaded.views,
     combat: combat ? await combatViewOf(ctx, campaign, combat) : null,
-    vision: open && openVision ? tableVisionOf(open, openVision, openLoaded.views, table.tileFit) : null
+    vision: open && openVision ? tableVisionOf(open, openVision, openLoaded.views, table.tileFit) : null,
+    marks: open ? openMarks.map((row) => markViewOf(row, openLoaded.views, open.grid)) : [],
+    widgets,
+    measureOnScreen: table.measureOnScreen
   }
-  return { master, shownTokens: shownLoaded.views, shownVision }
+  return { master, shownTokens: shownLoaded.views, shownVision, shownMarks, widgets }
 }
 
 /** La mesa de una campaña para su máster (la campaña ya autorizada) */
@@ -435,6 +456,9 @@ export function screenViewOf(input: {
   tokens: readonly TokenView[]
   combat: CombatView | null | undefined
   vision: VisionResult | null
+  /** Lo dejado en el mapa de la escena (todo: aquí se quita lo del máster y lo que cae en la niebla) */
+  marks?: readonly tableToolsRepo.MarkRow[]
+  widgets?: readonly WidgetView[]
 }): ScreenView {
   const { scene, vision } = input
   // Sin la vista del grupo no se enseña nada (no debería pasar: el servidor siempre la tiene)
@@ -470,7 +494,10 @@ export function screenViewOf(input: {
             origin: originVisible ? { x: light.x, y: light.y } : null,
             cells
           }))
-        : []
+        : [],
+    marks: showing && vision ? screenMarksOf(input.marks ?? [], vision.screenMask) : [],
+    // Los widgets, mientras la pantalla no esté a oscuras (aunque no enseñe escena)
+    widgets: input.hidden ? [] : screenWidgetsOf(input.widgets ?? [])
   }
 }
 
@@ -478,8 +505,12 @@ export function screenViewOf(input: {
 function screenOfTable(
   master: CampaignTableView,
   campaignName: string,
-  shownTokens: readonly TokenView[],
-  vision: VisionResult | null
+  shown: {
+    tokens: readonly TokenView[]
+    vision: VisionResult | null
+    marks: readonly tableToolsRepo.MarkRow[]
+    widgets: readonly WidgetView[]
+  }
 ) {
   return screenViewOf({
     campaignId: master.campaignId,
@@ -487,9 +518,11 @@ function screenOfTable(
     scene: master.presented,
     hidden: master.screenHidden,
     camera: master.camera,
-    tokens: shownTokens,
+    tokens: shown.tokens,
     combat: master.combat,
-    vision
+    vision: shown.vision,
+    marks: shown.marks,
+    widgets: shown.widgets
   })
 }
 
@@ -506,9 +539,15 @@ export function loadTable(env: ActionEnv): LoadTable {
   return async (campaignId) => {
     const campaign = await campaignsRepo.findCampaign(env.db, campaignId)
     if (!campaign) return null
-    const { master, shownTokens, shownVision } = await tableOf(ctx, campaign)
-    const screen = screenOfTable(master, campaign.name, shownTokens, shownVision)
+    const { master, shownTokens, shownVision, shownMarks, widgets } = await tableOf(ctx, campaign)
+    const screen = screenOfTable(master, campaign.name, {
+      tokens: shownTokens,
+      vision: shownVision,
+      marks: shownMarks,
+      widgets
+    })
     const screenVisible: FogGrid | null = screen.scene && shownVision ? shownVision.visible : null
-    return { master, screen, screenVisible }
+    const screenMask: FogGrid | null = screen.scene && shownVision ? shownVision.screenMask : null
+    return { master, screen, screenVisible, screenMask }
   }
 }

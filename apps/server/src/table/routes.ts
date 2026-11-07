@@ -262,13 +262,15 @@ export function registerTableRoutes(
           return
         }
         if (!joined) return say({ type: 'error', code: 'NOT_JOINED' })
-        // Lo que va en vivo (el encuadre, el arrastre): solo del máster, y con un tope por segundo
+        // Lo que va en vivo (el encuadre, el arrastre, la medida, el láser): solo del máster, y con un tope por segundo
         if (joined.viewer !== 'master') return say({ type: 'error', code: 'BAD_MESSAGE' })
         const now = Date.now()
         if (now - window.start > 1000) window = { start: now, count: 0 }
         if (++window.count > MAX_LIVE_PER_SECOND) return
         if (message.type === 'viewport') table.viewport(joined.campaignId, message.view)
-        else table.drag(joined.campaignId, message.moves, socket)
+        else if (message.type === 'drag') table.drag(joined.campaignId, message.moves, socket)
+        else if (message.type === 'measure') table.measure(joined.campaignId, message.measure, socket)
+        else table.laser(joined.campaignId, message.points, socket)
       })
 
       const headers = toHeaders(request.headers)

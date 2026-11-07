@@ -26,6 +26,7 @@ import { revealActions } from './reveal.ts'
 import { sceneActions } from './scenes.ts'
 import { searchActions } from './search.ts'
 import { systemActions } from './systems.ts'
+import { tableToolActions } from './table-tools.ts'
 import { tableActions } from './tables.ts'
 import { tagActions } from './tags.ts'
 import { templateActions } from './templates.ts'
@@ -68,6 +69,7 @@ export const IMPLEMENTATIONS: Implementation[] = [
   ...tokenActions,
   ...combatActions,
   ...visionActions,
+  ...tableToolActions,
   ...knowledgeActions,
   ...revealActions,
   ...libraryActions,

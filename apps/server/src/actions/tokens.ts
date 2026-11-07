@@ -131,7 +131,7 @@ async function sceneFor(ctx: ActionContext, campaign: Campaign, sceneId: string)
 type Where = { x?: number | undefined; y?: number | undefined; column?: number | undefined; row?: number | undefined }
 
 /** El punto, en píxeles: el dado o el centro de la casilla (sin rejilla, casillas de 100 px desde la esquina) */
-function pointIn(grid: scenesRepo.SceneRow['grid'], where: Where) {
+export function pointIn(grid: scenesRepo.SceneRow['grid'], where: Where) {
   if (where.column === undefined || where.row === undefined) return { x: where.x ?? 0, y: where.y ?? 0 }
   const type = grid.type === 'none' ? 'square' : grid.type
   const size = grid.type === 'none' ? 100 : grid.size

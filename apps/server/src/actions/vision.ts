@@ -21,7 +21,7 @@ import {
   type wallInput,
   wallKindOf
 } from '@crisol/contracts'
-import { type OperationContext, scenesRepo as scenes, type scenesRepo, visionRepo } from '@crisol/db'
+import { type OperationContext, scenesRepo as scenes, type scenesRepo, tableToolsRepo, visionRepo } from '@crisol/db'
 import { NotFoundError } from '@crisol/domain'
 import { cellCenter, joinCollinear, type Point, type Wall } from '@crisol/tabletop'
 import type { z } from 'zod'
@@ -505,7 +505,7 @@ export const visionActions = [
     const vision = await visionOf(ctx, campaign, scene, loaded)
     if (!vision) throw new Error('sin el servicio de la visión')
     const table = await scenes.campaignTable(ctx.db, campaignId)
-    const combat = (await campaignTableView(ctx, campaignId)).combat ?? null
+    const master = await campaignTableView(ctx, campaignId)
     const screen = screenViewOf({
       campaignId,
       campaignName: campaign.name,
@@ -513,8 +513,10 @@ export const visionActions = [
       hidden: false,
       camera: table.camera,
       tokens: loaded.views,
-      combat,
-      vision
+      combat: master.combat ?? null,
+      vision,
+      marks: await tableToolsRepo.listMarks(ctx.db, campaignId, scene.id),
+      widgets: master.widgets ?? []
     })
     const cells = visibleCellsOf(scene.grid, vision.visible, vision)
     const seen = loaded.views.filter((t) => !t.hidden && vision.seen.has(t.id))
