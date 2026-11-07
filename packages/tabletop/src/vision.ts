@@ -74,18 +74,29 @@ class Stop {
   }
 }
 
+// El rayo en curso, sin cierres ni objetos nuevos por rayo: un barrido lanza miles
 const stop = new Stop()
+const rayDir = { x: 0, y: 0 }
+let rayOrigin: Point = { x: 0, y: 0 }
+let rayMax = 0
+
+function testEdge(edge: Edge): void {
+  if (!edgeBlocks(edge, rayOrigin)) return
+  const t = cut(rayOrigin, rayDir, edge.a, edge.b)
+  if (t !== null && t < rayMax) stop.add(t, edge.limited)
+}
+
+const stopAfter = (exit: number): boolean => stop.at <= exit
 
 /** Hasta dónde llega un rayo (dirección unitaria) antes de pararse, como mucho `radius` */
-function reach(origin: Point, dir: Point, source: EdgeSource, radius: number): number {
+function reach(origin: Point, dx: number, dy: number, source: EdgeSource, radius: number): number {
   stop.reset()
-  const test = (edge: Edge): void => {
-    if (!edgeBlocks(edge, origin)) return
-    const t = cut(origin, dir, edge.a, edge.b)
-    if (t !== null && t < radius) stop.add(t, edge.limited)
-  }
-  if (source instanceof WallIndex) source.walkRay(origin, dir, radius, test, (exit) => stop.at <= exit)
-  else for (const edge of source) test(edge)
+  rayOrigin = origin
+  rayDir.x = dx
+  rayDir.y = dy
+  rayMax = radius
+  if (source instanceof WallIndex) source.walkRay(origin, rayDir, radius, testEdge, stopAfter)
+  else for (const edge of source) testEdge(edge)
   return Math.min(radius, stop.at)
 }
 
@@ -107,43 +118,99 @@ function crossing(p: Edge, q: Edge): Point | null {
   return { x: p.a.x + rx * t, y: p.a.y + ry * t }
 }
 
-/** Los cruces de los tramos de un índice, calculados una vez (en ellos también cambia el tramo que para un rayo) */
-const crossingsCache = new WeakMap<WallIndex<Edge>, Point[]>()
-function crossingsOf(index: WallIndex<Edge>): Point[] {
-  const cached = crossingsCache.get(index)
-  if (cached) return cached
-  const out: Point[] = []
-  index.forEachPair((p, q) => {
-    const x = crossing(p, q)
-    if (x) out.push(x)
-  })
-  crossingsCache.set(index, out)
-  return out
+/** Las esquinas de un índice (los extremos sin repetir y los cruces entre tramos), por las celdas del índice */
+interface Corners {
+  xs: Float64Array
+  ys: Float64Array
+  starts: Uint32Array
 }
 
-/**
- * Los puntos que pueden dar un rayo: los extremos de los tramos, sin repetir; con índice, solo los cercanos y también
- * los cruces entre tramos
- */
-function corners(origin: Point, source: EdgeSource, radius: number): Point[] {
-  const far = radius * ENDPOINT_REACH
-  const near = (p: Point): boolean => Math.hypot(p.x - origin.x, p.y - origin.y) <= far
-  const indexed = source instanceof WallIndex
-  const edges = indexed
-    ? source.queryRect({ x: origin.x - far, y: origin.y - far, width: far * 2, height: far * 2 })
-    : source
-  const seen = new Set<string>()
-  const out: Point[] = []
-  for (const edge of edges)
-    for (const p of [edge.a, edge.b]) {
-      if (!near(p)) continue
-      const key = `${p.x},${p.y}`
-      if (seen.has(key)) continue
-      seen.add(key)
-      out.push(p)
+const cornersCache = new WeakMap<WallIndex<Edge>, Corners>()
+
+/** Las esquinas de un índice, calculadas una vez (en los cruces también cambia el tramo que para un rayo) */
+function cornersOf(index: WallIndex<Edge>): Corners {
+  const cached = cornersCache.get(index)
+  if (cached) return cached
+  const raw: Point[] = []
+  for (const edge of index.items) raw.push(edge.a, edge.b)
+  index.forEachPair((p, q) => {
+    const x = crossing(p, q)
+    if (x) raw.push(x)
+  })
+  const cellOf = (p: Point): number => {
+    const c = Math.min(index.columns - 1, Math.max(0, Math.floor((p.x - index.minX) / index.cellSize)))
+    const r = Math.min(index.rows - 1, Math.max(0, Math.floor((p.y - index.minY) / index.cellSize)))
+    return r * index.columns + c
+  }
+  // Por celdas y, en cada una, sin repetir (son pocas)
+  const cells = index.columns * index.rows
+  const counts = new Uint32Array(cells + 1)
+  for (const p of raw) {
+    const cell = cellOf(p) + 1
+    counts[cell] = (counts[cell] as number) + 1
+  }
+  for (let i = 1; i < counts.length; i++) counts[i] = (counts[i] as number) + (counts[i - 1] as number)
+  const fill = counts.slice()
+  const grouped: Point[] = new Array(raw.length)
+  for (const p of raw) {
+    const cell = cellOf(p)
+    grouped[fill[cell] as number] = p
+    fill[cell] = (fill[cell] as number) + 1
+  }
+  const xs = new Float64Array(raw.length)
+  const ys = new Float64Array(raw.length)
+  const starts = new Uint32Array(cells + 1)
+  let n = 0
+  for (let cell = 0; cell < cells; cell++) {
+    starts[cell] = n
+    const first = n
+    for (let k = counts[cell] as number; k < (counts[cell + 1] as number); k++) {
+      const p = grouped[k] as Point
+      let repeated = false
+      for (let j = first; j < n && !repeated; j++) repeated = xs[j] === p.x && ys[j] === p.y
+      if (repeated) continue
+      xs[n] = p.x
+      ys[n] = p.y
+      n += 1
     }
-  if (indexed) for (const p of crossingsOf(source)) if (near(p)) out.push(p)
-  return out
+  }
+  starts[cells] = n
+  const corners = { xs, ys, starts }
+  cornersCache.set(index, corners)
+  return corners
+}
+
+/** Cada punto que puede dar un rayo a `far` o menos del origen: con índice, sus esquinas; con lista, sus extremos */
+function forEachCorner(origin: Point, source: EdgeSource, far: number, visit: (x: number, y: number) => void): void {
+  const near = (x: number, y: number): boolean => Math.hypot(x - origin.x, y - origin.y) <= far
+  if (!(source instanceof WallIndex)) {
+    const seen = new Set<string>()
+    for (const edge of source)
+      for (const p of [edge.a, edge.b]) {
+        const key = `${p.x},${p.y}`
+        if (!near(p.x, p.y) || seen.has(key)) continue
+        seen.add(key)
+        visit(p.x, p.y)
+      }
+    return
+  }
+  if (source.items.length === 0) return
+  const { xs, ys, starts } = cornersOf(source)
+  const column = (x: number) =>
+    Math.min(source.columns - 1, Math.max(0, Math.floor((x - source.minX) / source.cellSize)))
+  const row = (y: number) => Math.min(source.rows - 1, Math.max(0, Math.floor((y - source.minY) / source.cellSize)))
+  const r1 = row(origin.y + far)
+  const c0 = column(origin.x - far)
+  const c1 = column(origin.x + far)
+  for (let r = row(origin.y - far); r <= r1; r++) {
+    const from = starts[r * source.columns + c0] as number
+    const to = starts[r * source.columns + c1 + 1] as number
+    for (let k = from; k < to; k++) {
+      const x = xs[k] as number
+      const y = ys[k] as number
+      if (near(x, y)) visit(x, y)
+    }
+  }
 }
 
 /**
@@ -151,24 +218,22 @@ function corners(origin: Point, source: EdgeSource, radius: number): Point[] {
  * que cae en él (y el polígono empieza en el origen).
  */
 export function visibilityPolygon(origin: Point, source: EdgeSource, radius: number, cone?: Cone): Point[] {
-  const angles = new Set<number>()
-  for (let i = 0; i < CONTOUR_SIDES; i++) angles.add(wrap((i / CONTOUR_SIDES) * Math.PI * 2))
+  const angles: number[] = []
+  for (let i = 0; i < CONTOUR_SIDES; i++) angles.push(wrap((i / CONTOUR_SIDES) * Math.PI * 2))
   const indexed = source instanceof WallIndex
-  for (const p of corners(origin, source, radius)) {
-    const dx = p.x - origin.x
-    const dy = p.y - origin.y
+  forEachCorner(origin, source, radius * ENDPOINT_REACH, (x, y) => {
+    const dx = x - origin.x
+    const dy = y - origin.y
     const distance = Math.hypot(dx, dy)
-    if (distance < 1e-9) continue
-    // Con índice, un extremo tapado no cambia el contorno: no lanza rayos
+    if (distance < 1e-9) return
+    // Con índice, una esquina tapada no cambia el contorno: no lanza rayos
     if (indexed) {
       const until = Math.min(distance, radius) - 1e-6
-      if (until > 0 && reach(origin, { x: dx / distance, y: dy / distance }, source, until) < until) continue
+      if (until > 0 && reach(origin, dx / distance, dy / distance, source, until) < until) return
     }
     const a = Math.atan2(dy, dx)
-    angles.add(wrap(a - GRAZE))
-    angles.add(wrap(a))
-    angles.add(wrap(a + GRAZE))
-  }
+    angles.push(wrap(a - GRAZE), wrap(a), wrap(a + GRAZE))
+  })
   let from = Number.NEGATIVE_INFINITY
   let to = Number.POSITIVE_INFINITY
   if (cone && cone.angle > 0 && cone.angle < 360) {
@@ -177,26 +242,26 @@ export function visibilityPolygon(origin: Point, source: EdgeSource, radius: num
     const half = (cone.angle * Math.PI) / 360
     from = center - half
     to = center + half
-    angles.add(from)
-    angles.add(to)
+    angles.push(from, to)
   }
-  const normal = (a: number): number => {
+  const sorted = Float64Array.from(angles, (a) => {
     if (from === Number.NEGATIVE_INFINITY) return a
     let x = a
     while (x < from) x += Math.PI * 2
     while (x > from + Math.PI * 2) x -= Math.PI * 2
     return x
+  }).sort()
+  const points: Point[] = from === Number.NEGATIVE_INFINITY ? [] : [origin]
+  let last = Number.NaN
+  for (const a of sorted) {
+    if (a === last || a > to + 1e-12) continue
+    last = a
+    const dx = Math.cos(a)
+    const dy = Math.sin(a)
+    const d = reach(origin, dx, dy, source, radius)
+    points.push({ x: origin.x + dx * d, y: origin.y + dy * d })
   }
-  const sorted = [...angles]
-    .map(normal)
-    .filter((a) => from === Number.NEGATIVE_INFINITY || a <= to + 1e-12)
-    .sort((x, y) => x - y)
-  const points = sorted.map((a) => {
-    const dir = { x: Math.cos(a), y: Math.sin(a) }
-    const d = reach(origin, dir, source, radius)
-    return { x: origin.x + dir.x * d, y: origin.y + dir.y * d }
-  })
-  return from === Number.NEGATIVE_INFINITY ? points : [origin, ...points]
+  return points
 }
 
 /** Si `p` se ve desde `origin` (nada lo para entre los dos) */
@@ -205,7 +270,7 @@ export function canSee(origin: Point, p: Point, source: EdgeSource): boolean {
   const dy = p.y - origin.y
   const length = Math.hypot(dx, dy)
   if (length < 1e-9) return true
-  return reach(origin, { x: dx / length, y: dy / length }, source, length) >= length - 1e-6
+  return reach(origin, dx / length, dy / length, source, length) >= length - 1e-6
 }
 
 /** El área de un polígono simple (fórmula del cordón), en píxeles cuadrados */

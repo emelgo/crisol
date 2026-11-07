@@ -13,7 +13,7 @@ import type { Point } from './geometry.ts'
 import { activeLights, ambientLight, LIT_THRESHOLD, type Light, lightPolygon } from './light.ts'
 import { darknessEdges, darknessZones, type PartyToken, type TokenSight, tokenSight } from './party-vision.ts'
 import { WallIndex } from './wall-index.ts'
-import { type DoorStates, type Edge, type Wall, wallEdges } from './walls.ts'
+import { type DoorStates, type Edge, gappedWallEdges, type Wall, withDoorGaps } from './walls.ts'
 
 export interface VisionScene {
   /** Tamaño del mapa, en píxeles */
@@ -72,9 +72,12 @@ export interface PartyView {
 export function prepareVision(scene: VisionScene): PreparedVision {
   const template = new FogGrid(Math.ceil(scene.width), Math.ceil(scene.height), scene.cellSize)
   const threshold = scene.threshold ?? LIT_THRESHOLD
-  const sightEdges = wallEdges(scene.walls, scene.doors, 'sight')
-  const light = new WallIndex(wallEdges(scene.walls, scene.doors, 'light'))
+  const gapped = withDoorGaps(scene.walls, scene.doors)
+  const sightEdges = gappedWallEdges(gapped, scene.doors, 'sight')
   const sight = new WallIndex(sightEdges)
+  // Si todos paran igual la vista y la luz (lo normal), un solo índice
+  const same = gapped.every((w) => w.sight === w.light)
+  const light = same ? sight : new WallIndex(gappedWallEdges(gapped, scene.doors, 'light'))
   const active = activeLights(scene.lights, scene.darkness, scene.lightsOff)
   const zones = darknessZones(active, light)
   const sightWithDarkness = zones.length > 0 ? new WallIndex([...sightEdges, ...darknessEdges(zones)]) : sight

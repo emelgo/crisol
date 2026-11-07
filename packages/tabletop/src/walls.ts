@@ -6,6 +6,7 @@
  * colineales y seguidos. Puro: sin DOM ni render.
  */
 import type { Point } from './geometry.ts'
+import { WallIndex } from './wall-index.ts'
 
 export type Restriction = 'none' | 'limited' | 'full'
 /** Por qué lado deja pasar un muro de un solo sentido: a la izquierda o a la derecha de a→b en pantalla (y hacia abajo) */
@@ -55,6 +56,9 @@ const MAX_TILT = Math.sin((12 * Math.PI) / 180)
 export function withDoorGaps(walls: readonly Wall[], doors: DoorStates): Wall[] {
   const open = walls.filter((w) => isDoorOpen(w, doors))
   if (open.length === 0) return [...walls]
+  // Cada pared mira solo las puertas abiertas que tiene cerca
+  const nearby = new WallIndex(open)
+  const reach = Math.max(...open.map((d) => Math.max(NEAR, Math.hypot(d.b.x - d.a.x, d.b.y - d.a.y) * NEAR_RELATIVE)))
   const out: Wall[] = []
   for (const wall of walls) {
     const dx = wall.b.x - wall.a.x
@@ -68,7 +72,13 @@ export function withDoorGaps(walls: readonly Wall[], doors: DoorStates): Wall[] 
     const gaps: [number, number][] = []
     const off = (q: Point): number => Math.abs((q.x - wall.a.x) * dy - (q.y - wall.a.y) * dx) / length
     const along = (q: Point): number => ((q.x - wall.a.x) * dx + (q.y - wall.a.y) * dy) / (length * length)
-    for (const door of open) {
+    const box = {
+      x: Math.min(wall.a.x, wall.b.x) - reach,
+      y: Math.min(wall.a.y, wall.b.y) - reach,
+      width: Math.abs(dx) + reach * 2,
+      height: Math.abs(dy) + reach * 2
+    }
+    for (const door of nearby.queryRect(box)) {
       const doorLength = Math.hypot(door.b.x - door.a.x, door.b.y - door.a.y)
       if (doorLength === 0) continue
       const tolerance = Math.max(NEAR, doorLength * NEAR_RELATIVE)
@@ -100,9 +110,13 @@ export function withDoorGaps(walls: readonly Wall[], doors: DoorStates): Wall[] 
  * Los tramos que paran un canal: sin las puertas abiertas (ni la pared que tapan) ni los que no lo paran. Para el paso,
  * «limitado» para del todo.
  */
-export function wallEdges(walls: readonly Wall[], doors: DoorStates, channel: Channel): Edge[] {
+export const wallEdges = (walls: readonly Wall[], doors: DoorStates, channel: Channel): Edge[] =>
+  gappedWallEdges(withDoorGaps(walls, doors), doors, channel)
+
+/** Los tramos que paran un canal de unos muros que ya llevan los huecos de sus puertas (`withDoorGaps`) */
+export function gappedWallEdges(walls: readonly Wall[], doors: DoorStates, channel: Channel): Edge[] {
   const out: Edge[] = []
-  for (const wall of withDoorGaps(walls, doors)) {
+  for (const wall of walls) {
     const restriction = wall[channel]
     if (restriction === 'none' || isDoorOpen(wall, doors)) continue
     if (wall.a.x === wall.b.x && wall.a.y === wall.b.y) continue

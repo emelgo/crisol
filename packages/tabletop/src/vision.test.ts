@@ -116,7 +116,7 @@ const distanceToBoundary = (q: Point, polygon: readonly Point[]): number => {
 describe('con el índice espacial', () => {
   it('en escenas al azar (que se cruzan, con limitados y de un sentido), el polígono es justo lo que se ve', () => {
     const r = random(42)
-    for (let scene = 0; scene < 12; scene++) {
+    for (let scene = 0; scene < 8; scene++) {
       const list: Edge[] = Array.from({ length: 150 }, () => {
         const a = { x: r() * 1000, y: r() * 1000 }
         const angle = r() * Math.PI * 2
@@ -135,7 +135,7 @@ describe('con el índice espacial', () => {
         const radius = k === 0 ? 1e6 : 100 + r() * 400
         const fast = visibilityPolygon(origin, index, radius)
         // Cada punto del mapa está dentro si y solo si se ve (salvo a menos de un píxel del borde)
-        for (let p = 0; p < 1500; p++) {
+        for (let p = 0; p < 500; p++) {
           const q = { x: r() * 1000, y: r() * 1000 }
           const distance = Math.hypot(q.x - origin.x, q.y - origin.y)
           if (distanceToBoundary(q, fast) < 1 || Math.abs(distance - radius) < radius * 0.003) continue

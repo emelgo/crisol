@@ -221,21 +221,23 @@ export class WallIndex<T extends SegmentLike> {
     // Recorta el rayo a la caja de la rejilla
     let t0 = 0
     let t1 = maxT
-    for (const [o, d, lo, hi] of [
-      [origin.x, dir.x, left, right],
-      [origin.y, dir.y, top, bottom]
-    ] as const) {
-      if (Math.abs(d) < 1e-12) {
-        if (o < lo || o > hi) return
-        continue
-      }
-      let near = (lo - o) / d
-      let far = (hi - o) / d
-      if (near > far) [near, far] = [far, near]
+    if (Math.abs(dir.x) < 1e-12) {
+      if (origin.x < left || origin.x > right) return
+    } else {
+      const near = ((dir.x > 0 ? left : right) - origin.x) / dir.x
+      const far = ((dir.x > 0 ? right : left) - origin.x) / dir.x
       t0 = Math.max(t0, near)
       t1 = Math.min(t1, far)
-      if (t0 > t1) return
     }
+    if (Math.abs(dir.y) < 1e-12) {
+      if (origin.y < top || origin.y > bottom) return
+    } else {
+      const near = ((dir.y > 0 ? top : bottom) - origin.y) / dir.y
+      const far = ((dir.y > 0 ? bottom : top) - origin.y) / dir.y
+      t0 = Math.max(t0, near)
+      t1 = Math.min(t1, far)
+    }
+    if (t0 > t1) return
     const stamp = this.nextStamp()
     const x = origin.x + dir.x * t0
     const y = origin.y + dir.y * t0
@@ -248,9 +250,16 @@ export class WallIndex<T extends SegmentLike> {
     let nextX =
       stepX === 0 ? Number.POSITIVE_INFINITY : (left + (column + (stepX > 0 ? 1 : 0)) * size - origin.x) / dir.x
     let nextY = stepY === 0 ? Number.POSITIVE_INFINITY : (top + (row + (stepY > 0 ? 1 : 0)) * size - origin.y) / dir.y
-    const onItem = (index: number): void => visit(this.items[index] as T, index)
+    const { starts, entries, stamps, items } = this
     for (;;) {
-      this.visitCell(row * this.columns + column, stamp, onItem)
+      const cell = row * this.columns + column
+      const end = starts[cell + 1] as number
+      for (let k = starts[cell] as number; k < end; k++) {
+        const index = entries[k] as number
+        if (stamps[index] === stamp) continue
+        stamps[index] = stamp
+        visit(items[index] as T, index)
+      }
       const exit = Math.min(nextX, nextY, t1)
       if (stopAfter(exit) || exit >= t1) return
       if (nextX < nextY) {
