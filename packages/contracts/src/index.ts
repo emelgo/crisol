@@ -20,6 +20,20 @@ import {
   updateCharacter
 } from './characters.ts'
 import {
+  addCombatants,
+  endCombat,
+  getCombat,
+  groupCombatants,
+  nextTurn,
+  orderCombatants,
+  previousTurn,
+  removeCombatants,
+  rollInitiative,
+  setInitiative,
+  startCombat,
+  updateCombat
+} from './combat.ts'
+import {
   applyRoll,
   getInPlay,
   listInPlay,
@@ -178,6 +192,7 @@ export * from './action.ts'
 export * from './ai.ts'
 export * from './campaigns.ts'
 export * from './characters.ts'
+export * from './combat.ts'
 export * from './conditions.ts'
 export * from './creatures.ts'
 export * from './dice.ts'
@@ -396,7 +411,19 @@ export const ACTIONS = [
   listEncounters,
   saveEncounter,
   deleteEncounter,
-  placeEncounter
+  placeEncounter,
+  getCombat,
+  startCombat,
+  addCombatants,
+  removeCombatants,
+  rollInitiative,
+  setInitiative,
+  orderCombatants,
+  groupCombatants,
+  updateCombat,
+  nextTurn,
+  previousTurn,
+  endCombat
 ]
 
 /** Las acciones por nombre, solo como tipo: la web las usa sin cargar zod */
@@ -588,4 +615,16 @@ export type Actions = {
   saveEncounter: typeof saveEncounter
   deleteEncounter: typeof deleteEncounter
   placeEncounter: typeof placeEncounter
+  getCombat: typeof getCombat
+  startCombat: typeof startCombat
+  addCombatants: typeof addCombatants
+  removeCombatants: typeof removeCombatants
+  rollInitiative: typeof rollInitiative
+  setInitiative: typeof setInitiative
+  orderCombatants: typeof orderCombatants
+  groupCombatants: typeof groupCombatants
+  updateCombat: typeof updateCombat
+  nextTurn: typeof nextTurn
+  previousTurn: typeof previousTurn
+  endCombat: typeof endCombat
 }

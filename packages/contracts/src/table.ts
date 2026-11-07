@@ -4,6 +4,7 @@
  * aquí llega la proyección de cada uno y lo que va en vivo (el encuadre del máster que sigue la pantalla)
  */
 import { z } from 'zod'
+import { screenCombat } from './combat.ts'
 import { type campaignTableView, sceneGrid, sceneTiles, sceneViewport, screenCamera } from './scenes.ts'
 import { screenToken } from './tokens.ts'
 
@@ -51,7 +52,9 @@ export const screenView = z.object({
   hidden: z.boolean(),
   camera: screenCamera,
   /** Las fichas de la escena presentada que no están ocultas */
-  tokens: z.array(screenToken)
+  tokens: z.array(screenToken),
+  /** La franja de turnos, si hay combate y la pantalla enseña algo: sin los ocultos */
+  combat: screenCombat.nullable()
 })
 
 export type ScreenView = z.infer<typeof screenView>

@@ -4,6 +4,7 @@
  */
 import { z } from 'zod'
 import { defineAction } from './action.ts'
+import { combatView } from './combat.ts'
 import { tokenView } from './tokens.ts'
 
 export const SCENE_GRID_TYPES = ['square', 'hex-rows', 'hex-columns', 'none'] as const
@@ -159,7 +160,10 @@ export const drawScene = defineAction({
     'Pone como imagen de una escena un mapa dibujado en SVG (lee antes la guía guia_mapas): se guarda como archivo del mundo y el máster lo trocea al abrirlo. Con walls, portals y lights (en píxeles del SVG), su niebla automática sabrá por dónde se ve',
   input: z.object({
     sceneId: z.uuid(),
-    svg: z.string().min(20).max(4 * 1024 * 1024),
+    svg: z
+      .string()
+      .min(20)
+      .max(4 * 1024 * 1024),
     name: z.string().trim().min(1).max(120).optional().describe('El nombre del archivo (sin .svg)'),
     walls: sceneImported.shape.walls.optional().describe('Muros: polilíneas de puntos'),
     portals: sceneImported.shape.portals.optional().describe('Puertas (window: ventana)'),
@@ -187,7 +191,9 @@ export const campaignTableView = z.object({
   screenHidden: z.boolean(),
   camera: screenCamera,
   /** Las fichas de la escena abierta */
-  tokens: z.array(tokenView)
+  tokens: z.array(tokenView),
+  /** El combate de la campaña, si hay uno (llega siempre; opcional hasta que lo dé la API de prueba de la web) */
+  combat: combatView.nullable().optional()
 })
 
 export type CampaignTableView = z.infer<typeof campaignTableView>

@@ -191,7 +191,19 @@ describe('Actions', () => {
       listEncounters: true,
       saveEncounter: true,
       deleteEncounter: true,
-      placeEncounter: true
+      placeEncounter: true,
+      getCombat: true,
+      startCombat: true,
+      addCombatants: true,
+      removeCombatants: true,
+      rollInitiative: true,
+      setInitiative: true,
+      orderCombatants: true,
+      groupCombatants: true,
+      updateCombat: true,
+      nextTurn: true,
+      previousTurn: true,
+      endCombat: true
     }
     expect(Object.keys(names).sort()).toEqual(ACTIONS.map((a) => a.name).sort())
   })
