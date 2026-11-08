@@ -143,8 +143,20 @@ function PlayerWiki({
     enabled: Boolean(account)
   })
   const world = worlds.data?.worlds.find((w) => w.id === worldId)
+  const campaign = useQuery({
+    queryKey: ['campaign', readAs.campaignId],
+    queryFn: () => api.call('getCampaign', { campaignId: readAs.campaignId }),
+    enabled: Boolean(account) && !readAs.asCharacterId
+  })
   if (pending) return null
   if (!account) return <Navigate to="/entrar" replace />
+  // El máster lo ve todo: sin «ver como», a la página en el mundo (donde se escribe), no a una lectura a medias
+  if (!readAs.asCharacterId && campaign.data?.campaign.role === 'master')
+    return currentId ? (
+      <Navigate to="/mundos/$worldId/wiki/$pageId" params={{ worldId, pageId: currentId }} replace />
+    ) : (
+      <Navigate to="/mundos/$worldId/wiki" params={{ worldId }} replace />
+    )
   return (
     <ReadAsProvider value={readAs}>
       {readAs.asCharacterId && <ViewingAs worldId={worldId} readAs={readAs} />}

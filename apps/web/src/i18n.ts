@@ -2856,7 +2856,9 @@ export const es = {
     map: {
       tabs: 'Las pestañas de la página: su texto y sus mapas.',
       tools: 'Pon pines, acerca y encuadra. También con el botón derecho sobre el mapa.',
-      pin: 'Pulsa un pin para cambiarlo; arrástralo para moverlo. Con doble clic, abre su página.'
+      pin: 'Pulsa un pin para cambiarlo; arrástralo para moverlo. Con doble clic, abre su página.',
+      readTools: 'Acerca y encuadra el mapa.',
+      readPin: 'Pulsa un pin para ver qué es. Con doble clic, abre su página.'
     },
     systems: {
       create: 'Los sistemas se hacen con la IA. Aquí se suben y se bajan.',

@@ -83,3 +83,8 @@
   letter-spacing: 0;
   text-transform: none;
 }
+
+/* El enlace a una entrada del compendio, como en el editor */
+.contentLink {
+  color: var(--color-link);
+}

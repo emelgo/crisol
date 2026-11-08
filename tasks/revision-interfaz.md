@@ -13,25 +13,26 @@ Cuentas: `enrique@revision.test`, `lucia@revision.test`, `marcos@revision.test` 
 **Decidido durante la revisión (Enrique)**: el móvil solo se cuida en la vista de la jugadora; el máster trabaja
 siempre en el PC (norma en `docs/diseno.md`). Los hallazgos de móvil de pantallas del máster se descartan.
 
-Estado: **por repasar con Enrique**. Nada arreglado aún.
+Estado: Enrique dijo «vamos» (2026-11-08) sin entrar en cada punto: se arregla todo con las propuestas de aquí, y lo
+que él decide de verdad (F, G1, G10) va con la opción por defecto apuntada en su sitio.
 
 ## A. Fallos (algo roto o que engaña)
 
-- [ ] A1. **El máster ve los secretos sin revelar como «Secreto · revelado»** en las páginas del mundo desde la campaña
+- [x] A1. **El máster ve los secretos sin revelar como «Secreto · revelado»** en las páginas del mundo desde la campaña
   (070). `apps/web/src/wiki/content.tsx:176`: con `readAs` puesto se da por revelado, pero el máster lo ve todo. La
   jugadora no lo ve (103): no es fuga, pero el máster puede creer que ya lo saben.
-- [ ] A2. **La jugadora que abre la Mesa lee «Esta campaña no existe»** (108). Debería decir que la mesa es del máster
+- [x] A2. **La jugadora que abre la Mesa lee «Esta campaña no existe»** (108). Debería decir que la mesa es del máster
   (o llevarla a su campaña).
-- [ ] A3. **API: un id de mapa que no existe da un 500 con la consulta SQL en el mensaje** (en vez de «no existe»).
+- [x] A3. **API: un id de mapa que no existe da un 500 con la consulta SQL en el mensaje** (en vez de «no existe»).
   `apps/server/src/actions/maps.ts:69` (`authorizedMap` llama a `authorizedTab` con `''` antes de comprobar el mapa);
   igual `getMap` (`viewedPage` con `''`) y `authorizedPin`. También le llega así a la IA por el MCP. Mirar si el mismo
   patrón (`?? ''`) está en otras acciones.
-- [ ] A4. **Al imprimir (y en el PDF) las tiradas `dice:` desaparecen** y dejan la puntuación suelta: «Mordisco. ·»
+- [x] A4. **Al imprimir (y en el PDF) las tiradas `dice:` desaparecen** y dejan la puntuación suelta: «Mordisco. ·»
   (050).
-- [ ] A5. **El tutorial del mapa le dice a la jugadora «Pon pines, acerca y encuadra»** (109): ella no puede poner pines.
-- [ ] A6. **La vista de la jugadora pide cosas del máster** en cada página: `listFiles` (404), `listAccountTags` (400),
+- [x] A5. **El tutorial del mapa le dice a la jugadora «Pon pines, acerca y encuadra»** (109): ella no puede poner pines.
+- [x] A6. **La vista de la jugadora pide cosas del máster** en cada página: `listFiles` (404), `listAccountTags` (400),
   `listTrash` (403). Errores en la consola y peticiones de más.
-- [ ] A7. (A comprobar) Tras muchas cargas seguidas, un 429 del límite de peticiones dejó la sesión en «Entrar» (402).
+- [x] A7. (A comprobar) Tras muchas cargas seguidas, un 429 del límite de peticiones dejó la sesión en «Entrar» (402).
   Si la comprobación de la sesión toma un 429 por «sin sesión», un máster con muchas pestañas podría verse fuera.
 
 ## B. Incoherencias entre módulos

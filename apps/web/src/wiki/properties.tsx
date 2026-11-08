@@ -40,10 +40,12 @@ function usePageTitles(worldId: string) {
 /** Las páginas del mundo en la papelera, por su id: un enlace a una de ellas sale tachado (sin llevar a ningún sitio) */
 function useTrashedTitles(worldId: string, wanted: boolean) {
   const api = useApi()
+  const readAs = useReadAs()
   const trash = useQuery({
     queryKey: ['trash', worldId],
     queryFn: () => api.call('listTrash', { worldId }),
-    enabled: wanted
+    // Un jugador no ve la papelera: lo que no conoce sale como lo que no está
+    enabled: wanted && !readAs
   })
   return new Map((trash.data?.items ?? []).filter((item) => item.kind === 'page').map((item) => [item.id, item.name]))
 }

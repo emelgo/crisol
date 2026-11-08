@@ -76,6 +76,9 @@ export function DiceProvider({ children }: { children: ReactNode }) {
   return <DiceContext.Provider value={value}>{children}</DiceContext.Provider>
 }
 
+/** Si hay dónde tirar (fuera de la app, al imprimir, no) */
+export const useHasDice = () => useContext(DiceContext) !== null
+
 export function useDice() {
   const dice = useContext(DiceContext)
   if (!dice) throw new Error('useDice fuera de DiceProvider')

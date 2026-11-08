@@ -179,6 +179,21 @@ describe('arranque del propietario', () => {
     expect(failures.at(-1)).toBe(429)
   })
 
+  it('mirar la sesión no se limita: con muchas pestañas en la misma red nadie se ve fuera', async () => {
+    const statuses = new Set<number>()
+    for (let i = 0; i < 110; i++)
+      statuses.add(
+        (
+          await app.inject({
+            method: 'GET',
+            url: '/api/auth/get-session',
+            headers: { origin: BASE_URL, 'x-forwarded-for': '203.0.113.9' }
+          })
+        ).statusCode
+      )
+    expect([...statuses]).toEqual([200])
+  })
+
   it('los intentos fallidos se cuentan por IP: uno que falla no bloquea a los demás', async () => {
     const { secret } = await issueBootstrap(conn.db, { organizationName: 'Crisol de Enrique' })
     await post('/api/bootstrap', { secret, ...owner })

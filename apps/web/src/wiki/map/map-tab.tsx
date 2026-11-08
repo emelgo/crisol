@@ -588,14 +588,26 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
       </div>
 
       {/* Fuera de la barra: sus botones no son de herramientas */}
-      <Tour
-        id="mapa"
-        steps={[
-          { target: '[data-tour="mapa-pestanas"]', text: t('tour.map.tabs') },
-          { target: '[data-tour="mapa-herramientas"]', text: t('tour.map.tools'), placement: 'right' },
-          { target: '[data-tour="mapa-pin"]', text: t('tour.map.pin') }
-        ]}
-      />
+      {/* Quien solo lo lee (un jugador) ni pone ni mueve pines: su propio tutorial */}
+      {readAs || !editable ? (
+        <Tour
+          id="mapa-lectura"
+          steps={[
+            { target: '[data-tour="mapa-pestanas"]', text: t('tour.map.tabs') },
+            { target: '[data-tour="mapa-herramientas"]', text: t('tour.map.readTools'), placement: 'right' },
+            { target: '[data-tour="mapa-pin"]', text: t('tour.map.readPin') }
+          ]}
+        />
+      ) : (
+        <Tour
+          id="mapa"
+          steps={[
+            { target: '[data-tour="mapa-pestanas"]', text: t('tour.map.tabs') },
+            { target: '[data-tour="mapa-herramientas"]', text: t('tour.map.tools'), placement: 'right' },
+            { target: '[data-tour="mapa-pin"]', text: t('tour.map.pin') }
+          ]}
+        />
+      )}
 
       {changingImage && (
         <div className={styles.imagePanel}>

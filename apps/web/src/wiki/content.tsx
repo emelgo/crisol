@@ -8,6 +8,7 @@ import { createContext, type ReactNode, useContext } from 'react'
 import { useTranslation } from 'react-i18next'
 import callout from './callout.module.css'
 import styles from './content.module.css'
+import { DiceChip } from './dice-roll.tsx'
 import editor from './editor.module.css'
 import { FileEmbedBlock } from './file-embed.tsx'
 import { PageLink, useReadAs } from './read-as.tsx'
@@ -48,6 +49,21 @@ function Inline({ nodes, worldId }: { nodes: JSONContent[]; worldId: string }) {
         const key = String(i)
         if (node.type === 'text') return <span key={key}>{withMarks(node.text ?? '', node.marks ?? [], key)}</span>
         if (node.type === 'hardBreak') return <br key={key} />
+        if (node.type === 'diceRoll')
+          return (
+            <DiceChip
+              key={key}
+              formula={String(node.attrs?.formula ?? '')}
+              label={(node.attrs?.label as string | null) || null}
+            />
+          )
+        // El enlace a una entrada del compendio: su nombre (la tarjeta, en el editor)
+        if (node.type === 'contentLink')
+          return (
+            <span key={key} className={styles.contentLink}>
+              {String(node.attrs?.label || node.attrs?.name || '')}
+            </span>
+          )
         if (node.type === 'pageLink') {
           const text = String(node.attrs?.label || node.attrs?.title || '')
           return typeof node.attrs?.pageId === 'string' ? (

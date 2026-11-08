@@ -102,13 +102,16 @@ export function MesaScreen() {
   if (!account) return <Navigate to="/entrar" replace />
   if (!campaigns.data)
     return failed(campaigns) ? <LoadError error={campaigns.error} onRetry={() => campaigns.refetch()} /> : <Loading />
-  if (campaign?.role !== 'master')
+  if (!campaign)
     return (
       <section className={styles.missing}>
         <PageTitle>{t('campaign.notFound')}</PageTitle>
         <Link to="/mundos">{t('worlds.title')}</Link>
       </section>
     )
+  // La mesa es del máster: un jugador vuelve a su campaña
+  if (campaign.role !== 'master')
+    return <Navigate to="/mundos/$worldId/campanas/$campaignId" params={{ worldId, campaignId }} replace />
   return <Mesa key={campaignId} worldId={worldId} campaignId={campaignId} campaignName={campaign.name} />
 }
 

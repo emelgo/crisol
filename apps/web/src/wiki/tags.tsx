@@ -23,6 +23,7 @@ import { ColorChoices } from '../routes/world-card.tsx'
 import { colorHex } from '../routes/world-look.ts'
 import files from './files.module.css'
 import { useNarrow } from './panel.tsx'
+import { useReadAs } from './read-as.tsx'
 import styles from './tags.module.css'
 
 /** El color de una etiqueta, para su punto */
@@ -37,7 +38,8 @@ export function useAccountTags(enabled = true) {
 
 /** El color de una etiqueta puesta, por su nombre (sin mirar mayúsculas); sin catálogo aún, ninguno */
 export function useTagColor() {
-  const tags = useAccountTags()
+  // Las etiquetas son de la cuenta del máster: leyendo desde una campaña, sin colores
+  const tags = useAccountTags(!useReadAs())
   return (name: string) => tags.data?.tags.find((tag) => tagKey(tag.name) === tagKey(name))?.color ?? null
 }
 
