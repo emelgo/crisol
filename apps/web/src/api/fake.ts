@@ -1184,6 +1184,8 @@ export function fakeApi(
     return (item && textOf(item.data.name as Text, found?.choices.language ?? 'es')) || key
   }
 
+  // Las páginas enseñadas (showPage), para las pruebas
+  const shownPages: { campaignId: string; pageId: string }[] = []
   const marks = new Map<string, { known: boolean; characters: string[] | null }>()
   // Quién de cada campaña escribe en cada página (docs/specs/pagina-de-jugadores.md): campaña|página → personajes o null
   const editors = new Map<string, string[] | null>()
@@ -1553,6 +1555,11 @@ export function fakeApi(
       const id = campaignId ?? campaigns[0]?.id ?? ''
       marks.set(`${id}|${kind}|${targetId}`, { known: true, characters: characters ?? null })
       return { told: 1, pageUnknown: false }
+    },
+    // Enseñar: lo conocen todos si la página está marcada para la campaña; si no, nadie
+    showPage: ({ campaignId, pageId }) => {
+      shownPages.push({ campaignId, pageId })
+      return marks.get(`${campaignId}|page|${pageId}`)?.known ? { shown: 2, unknown: 0 } : { shown: 0, unknown: 2 }
     },
     hide: ({ campaignId, kind, targetId }) => {
       marks.delete(`${campaignId}|${kind}|${targetId}`)
@@ -3896,5 +3903,5 @@ export function fakeApi(
       return { ...file }
     }
   }
-  return { client, calls, worlds, campaigns, history, approvals, pages, files }
+  return { client, calls, worlds, campaigns, history, approvals, pages, files, shownPages }
 }

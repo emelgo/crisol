@@ -3,11 +3,14 @@
  * cabecera, sus pestañas y su panel, la misma que en la wiki. Los enlaces de dentro abren otra ventana
  */
 import type { Page } from '@crisol/contracts'
-import { useQuery } from '@tanstack/react-query'
-import type { ReactNode } from 'react'
+import { useMutation, useQuery } from '@tanstack/react-query'
+import { Eye } from 'lucide-react'
+import { type ReactNode, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ApiError } from '../api/client.ts'
 import { useApi } from '../api/context.tsx'
+import { useErrorText } from '../api/errors.ts'
+import { useCurrentCampaign } from '../campaign/current-campaign.ts'
 import { failed, LoadError } from '../components/load-error.tsx'
 import { CollabSocket } from '../wiki/collab.tsx'
 import { usePageTabs } from '../wiki/tabs/page-tabs.tsx'
@@ -23,7 +26,8 @@ export function pageWindow(worldId: string, pageId: string, title: string): Wind
     // Ancha: el texto de la hoja se escala a su columna, como al imprimir
     width: 980,
     height: 680,
-    render: () => <PageWindow worldId={worldId} pageId={pageId} />
+    render: () => <PageWindow worldId={worldId} pageId={pageId} />,
+    actions: () => <ShowToPlayers worldId={worldId} pageId={pageId} />
   }
 }
 
@@ -60,4 +64,68 @@ function Opened({ page }: { page: Page }) {
 export function PageWindowsSocket({ children }: { children: ReactNode }) {
   const pages = useWindows()?.windows.some((w) => w.id.startsWith('page:')) ?? false
   return pages ? <CollabSocket>{children}</CollabSocket> : children
+}
+
+/**
+ * «Enseñar a los jugadores» (como el diario en la mesa): se la abre a los de la campaña que estén conectados y la
+ * conozcan. Si alguno no la conoce, lo dice y deja revelársela y enseñarla. Solo el máster, desde su Mesa
+ */
+function ShowToPlayers({ worldId, pageId }: { worldId: string; pageId: string }) {
+  const { t } = useTranslation()
+  const api = useApi()
+  const errorText = useErrorText()
+  const campaignId = useCurrentCampaign()
+  const campaigns = useQuery({
+    queryKey: ['campaigns', worldId],
+    queryFn: () => api.call('listCampaigns', { worldId }),
+    enabled: Boolean(campaignId)
+  })
+  const master = campaigns.data?.campaigns.find((c) => c.id === campaignId)?.role === 'master'
+  const [result, setResult] = useState<{ shown: number; unknown: number } | null>(null)
+  const show = useMutation({
+    mutationFn: async (alsoReveal: boolean) => {
+      if (!campaignId) throw new Error('sin campaña')
+      if (alsoReveal) await api.call('reveal', { worldId, campaignId, kind: 'page', targetId: pageId })
+      return api.call('showPage', { campaignId, pageId })
+    },
+    onSuccess: setResult
+  })
+  if (!campaignId || !master) return null
+  const error = show.error ? errorText(show.error) : null
+  return (
+    <span className={styles.show}>
+      {result && result.shown > 0 ? (
+        <button
+          type="button"
+          className={styles.showing}
+          title={t('pageWindow.showAgain')}
+          disabled={show.isPending}
+          onClick={() => show.mutate(false)}
+        >
+          <i aria-hidden="true" />
+          {t('pageWindow.showing', { count: result.shown })}
+        </button>
+      ) : (
+        <button
+          type="button"
+          className={styles.showButton}
+          disabled={show.isPending}
+          onClick={() => show.mutate(false)}
+        >
+          <Eye aria-hidden="true" size={15} />
+          {t('pageWindow.show')}
+        </button>
+      )}
+      {result && result.unknown > 0 && (
+        <button type="button" className={styles.revealToo} disabled={show.isPending} onClick={() => show.mutate(true)}>
+          {t('pageWindow.revealToo', { count: result.unknown })}
+        </button>
+      )}
+      {error && (
+        <span role="alert" className={styles.error}>
+          {error}
+        </span>
+      )}
+    </span>
+  )
 }

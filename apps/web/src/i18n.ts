@@ -1063,6 +1063,7 @@ export const es = {
   revealNotice: {
     region: 'Lo nuevo',
     title: 'Nuevo: {{title}}',
+    shown: 'Te enseñan: {{title}}',
     read: 'Leerlo',
     close: 'Cerrar el aviso',
     closeOne: 'Cerrar el aviso de «{{title}}»',
@@ -1629,6 +1630,15 @@ export const es = {
     }
   },
   // La mesa del máster (docs/specs/escenas.md, ADR-0018)
+  // Una página en su ventana sobre la Mesa (tabletop/page-window.tsx)
+  pageWindow: {
+    show: 'Enseñar a los jugadores',
+    showAgain: 'Enseñarla otra vez',
+    showing_one: 'Enseñando · la ve 1',
+    showing_other: 'Enseñando · la ven {{count}}',
+    revealToo_one: '1 no la conoce: revelar y enseñar',
+    revealToo_other: '{{count}} no la conocen: revelar y enseñar'
+  },
   // Las ventanas sobre la Mesa (tabletop/windows.tsx)
   windows: {
     minimized: 'Ventanas minimizadas',

@@ -100,6 +100,7 @@ describe('Actions', () => {
       listVisibleInPlay: true,
       setCreatureHidden: true,
       reveal: true,
+      showPage: true,
       hide: true,
       listCampaignKnowledge: true,
       getSecretsKnowledge: true,

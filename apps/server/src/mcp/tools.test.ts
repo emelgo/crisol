@@ -71,6 +71,7 @@ describe('herramientas MCP', () => {
       'empezar_combate',
       'enlace_invitacion',
       'enlaces_pagina',
+      'ensenar_pagina',
       'escribir_iniciativa',
       'etiquetar_archivo',
       'fichas_en_plantilla',

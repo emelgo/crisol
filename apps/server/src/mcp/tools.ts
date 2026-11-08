@@ -248,6 +248,7 @@ export const MCP_TOOLS: Record<string, McpTool> = {
   quien_conoce: { action: 'getPageKnowledge' },
   marcar_conocimiento: { action: 'setKnowledge' },
   revelar: { action: 'reveal' },
+  ensenar_pagina: { action: 'showPage' },
   ocultar: { action: 'hide' },
   dejar_editar: { action: 'setPageEditors' },
   lo_que_sabe: { action: 'listCampaignKnowledge' },
@@ -517,7 +518,8 @@ const INSTRUCTIONS =
   'campaña, unos personajes o todo el mundo; pide aprobación: lo que se revela no se puede «des-saber»); ' +
   'quien_conoce dice qué ve cada campaña de una página y por qué, y ver_como_jugador la enseña como la lee un ' +
   'personaje. En partida, revelar da a conocer algo con aviso a sus jugadores (con alsoPage, también su página), ' +
-  'ocultar lo quita (revelar solo suma: no le quita nada a nadie) y lo_que_sabe lista lo revelado. dejar_editar deja ' +
+  'ocultar lo quita (revelar solo suma: no le quita nada a nadie), ensenar_pagina se la abre al momento a los jugadores ' +
+  'conectados que ya la conocen (como enseñar un diario en la mesa) y lo_que_sabe lista lo revelado. dejar_editar deja ' +
   'a los jugadores escribir el texto de una página (el diario del grupo), que no puede llevar secretos. ' +
   'Un campo o un bloque del panel con hidden no les llega nunca. Si quien te conecta es un jugador, ' +
   'solo ves lo que sabe su campaña (las herramientas de leer, con campaignId si juega más de una del mundo) y solo ' +

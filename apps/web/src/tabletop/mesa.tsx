@@ -38,6 +38,7 @@ import {
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
+import { CurrentCampaignContext } from '../campaign/current-campaign.ts'
 import { useDismiss } from '../components/dismiss.ts'
 import { FormError } from '../components/field.tsx'
 import { PageTitle } from '../components/page-title.tsx'
@@ -323,251 +324,255 @@ export function Mesa({
   }, [open, start])
 
   return (
-    <WindowsProvider area={stageBox} onLink={openPageLinks}>
-      <div className={styles.mesa} data-mesa="">
-        <div ref={stageBox} className={styles.stageBox}>
-          <Stage
-            table={table}
-            scene={scene}
-            host={host}
-            ready={ready}
-            size={size}
-            renderer={renderer}
-            channel={channel}
-            campaignId={campaignId}
-            onTable={setTable}
-            view={view}
-            tokens={shownTokens}
-            tool={vision.handlers ?? tools.handlers}
-            toolName={tool}
-            markers={markers}
-            marksLayer={marksLayer}
-            targets={tools.targets}
-            onDragPath={tools.showDrag}
-            remote={remote}
-            remoteTick={remoteTick}
-            selected={selected}
-            onSelect={(ids) => {
-              setSelected(ids)
-              setFromTemplate(false)
-              // Con varias elegidas, en lugar de la tarjeta, el daño a varias
-              if (ids.length > 1 || !ids.includes(cardFor ?? '')) setCardFor(null)
-            }}
-            cardFor={cardFor}
-            cardRef={cardRef}
-            onCard={setCardFor}
-            onSheet={setSheetFor}
-            onPlace={(placing, at) => place.mutate({ placing, at })}
-            onUndo={() => undo.mutate()}
-            turnTokens={turnTokens}
-            center={center}
-          />
-          {scene && <MarksLayer layer={marksLayer} view={view} marks={tools.marks} />}
-          {scene && <VisionMarkers layer={markers} view={view} vision={vision} tool={tool} />}
-          {scene && <ToolColumn tool={tool} onTool={pickTool} side={side} onSide={toggleSide} />}
-          {scene && tool === 'fog' && <FogTools vision={vision} />}
-          {scene && isMarkTool(tool) && <ToolBar tool={tool} tools={tools} />}
-          {scene && open && tools.writing && <TextInput tools={tools} view={view.current} scene={open} />}
-          {scene && <WidgetCards widgets={widgets.widgets} control={widgets} />}
-          {scene && side === 'gm' && (
-            <GmScreen
-              worldId={worldId}
+    <CurrentCampaignContext.Provider value={campaignId}>
+      <WindowsProvider area={stageBox} onLink={openPageLinks}>
+        <div className={styles.mesa} data-mesa="">
+          <div ref={stageBox} className={styles.stageBox}>
+            <Stage
+              table={table}
+              scene={scene}
+              host={host}
+              ready={ready}
+              size={size}
+              renderer={renderer}
+              channel={channel}
               campaignId={campaignId}
-              systemId={systemId}
-              tokens={tokens}
-              settings={gm.settings}
-              onClose={() => setSide(null)}
-            />
-          )}
-          {asGroup && (
-            <AsGroupBanner
-              onBack={() => {
-                setAsGroup(false)
-                setTool(returnTool.current)
-              }}
-            />
-          )}
-          {byId(cardFor) && (
-            <TokenCard
-              key={`card-${cardFor}`}
-              token={byId(cardFor) as TokenView}
-              campaignId={campaignId}
-              cardRef={cardRef}
-              onClose={() => setCardFor(null)}
-              onSheet={() => setSheetFor(cardFor)}
-              onImage={() => setImageFor({ tokenId: cardFor as string, fileId: null })}
-            />
-          )}
-          {byId(sheetFor) && (
-            <TokenSheet
-              key={`sheet-${sheetFor}`}
-              token={byId(sheetFor) as TokenView}
-              campaignId={campaignId}
-              systemId={systemId}
-              onClose={() => setSheetFor(null)}
-            />
-          )}
-          {imageFor && byId(imageFor.tokenId) && (
-            <TokenImageEditor
-              token={byId(imageFor.tokenId) as TokenView}
-              worldId={worldId}
-              fileId={imageFor.fileId}
-              onClose={() => setImageFor(null)}
-            />
-          )}
-          <TokenList
-            tokens={shownTokens}
-            selected={selected}
-            onPick={(id) => {
-              setSelected([id])
-              setCardFor(id)
-            }}
-          />
-          {preparation.state.status === 'preparing' ? (
-            <div className={styles.overlay}>
-              <Preparing state={preparation.state} onCancel={preparation.cancel} />
-            </div>
-          ) : noCanvas ? (
-            <p className={styles.notice}>{t('tabletop.noCanvas')}</p>
-          ) : !open ? (
-            <p className={styles.notice}>{table ? t('tabletop.empty') : ''}</p>
-          ) : !open.image ? (
-            <div className={styles.notice}>
-              <p>{t('tabletop.noMap')}</p>
-              <PageLink worldId={worldId} scene={open} />
-            </div>
-          ) : null}
-          <TopBar
-            worldId={worldId}
-            campaignId={campaignId}
-            table={table}
-            onOpen={openScene}
-            onAct={(run) => act.mutate(run)}
-            busy={act.isPending}
-            framing={() => (size.width > 0 ? sceneViewportOfCanvas(view.current, size) : null)}
-          />
-          {(selected.length > 1 || (fromTemplate && selected.length > 0)) && (
-            <GroupDamage
-              key={selected.join()}
-              campaignId={campaignId}
-              tokens={tokens.filter((token) => selected.includes(token.id))}
-              title={fromTemplate ? t('tools.insideTemplate', { count: selected.length }) : undefined}
-              onClose={() => {
-                setSelected([])
+              onTable={setTable}
+              view={view}
+              tokens={shownTokens}
+              tool={vision.handlers ?? tools.handlers}
+              toolName={tool}
+              markers={markers}
+              marksLayer={marksLayer}
+              targets={tools.targets}
+              onDragPath={tools.showDrag}
+              remote={remote}
+              remoteTick={remoteTick}
+              selected={selected}
+              onSelect={(ids) => {
+                setSelected(ids)
                 setFromTemplate(false)
+                // Con varias elegidas, en lugar de la tarjeta, el daño a varias
+                if (ids.length > 1 || !ids.includes(cardFor ?? '')) setCardFor(null)
+              }}
+              cardFor={cardFor}
+              cardRef={cardRef}
+              onCard={setCardFor}
+              onSheet={setSheetFor}
+              onPlace={(placing, at) => place.mutate({ placing, at })}
+              onUndo={() => undo.mutate()}
+              turnTokens={turnTokens}
+              center={center}
+            />
+            {scene && <MarksLayer layer={marksLayer} view={view} marks={tools.marks} />}
+            {scene && <VisionMarkers layer={markers} view={view} vision={vision} tool={tool} />}
+            {scene && <ToolColumn tool={tool} onTool={pickTool} side={side} onSide={toggleSide} />}
+            {scene && tool === 'fog' && <FogTools vision={vision} />}
+            {scene && isMarkTool(tool) && <ToolBar tool={tool} tools={tools} />}
+            {scene && open && tools.writing && <TextInput tools={tools} view={view.current} scene={open} />}
+            {scene && <WidgetCards widgets={widgets.widgets} control={widgets} />}
+            {scene && side === 'gm' && (
+              <GmScreen
+                worldId={worldId}
+                campaignId={campaignId}
+                systemId={systemId}
+                tokens={tokens}
+                settings={gm.settings}
+                onClose={() => setSide(null)}
+              />
+            )}
+            {asGroup && (
+              <AsGroupBanner
+                onBack={() => {
+                  setAsGroup(false)
+                  setTool(returnTool.current)
+                }}
+              />
+            )}
+            {byId(cardFor) && (
+              <TokenCard
+                key={`card-${cardFor}`}
+                token={byId(cardFor) as TokenView}
+                campaignId={campaignId}
+                cardRef={cardRef}
+                onClose={() => setCardFor(null)}
+                onSheet={() => setSheetFor(cardFor)}
+                onImage={() => setImageFor({ tokenId: cardFor as string, fileId: null })}
+              />
+            )}
+            {byId(sheetFor) && (
+              <TokenSheet
+                key={`sheet-${sheetFor}`}
+                token={byId(sheetFor) as TokenView}
+                campaignId={campaignId}
+                systemId={systemId}
+                onClose={() => setSheetFor(null)}
+              />
+            )}
+            {imageFor && byId(imageFor.tokenId) && (
+              <TokenImageEditor
+                token={byId(imageFor.tokenId) as TokenView}
+                worldId={worldId}
+                fileId={imageFor.fileId}
+                onClose={() => setImageFor(null)}
+              />
+            )}
+            <TokenList
+              tokens={shownTokens}
+              selected={selected}
+              onPick={(id) => {
+                setSelected([id])
+                setCardFor(id)
               }}
             />
-          )}
-          {status === 'reconnecting' && (
-            <p className={styles.reconnecting} role="status">
-              {t('tabletop.reconnecting')}
-            </p>
-          )}
-          <div className={styles.errors}>
-            <FormError
-              message={
-                act.error
-                  ? errorText(act.error)
-                  : place.error
-                    ? errorText(place.error)
-                    : preparation.state.status === 'failed'
-                      ? errorText(preparation.state.error)
-                      : null
-              }
+            {preparation.state.status === 'preparing' ? (
+              <div className={styles.overlay}>
+                <Preparing state={preparation.state} onCancel={preparation.cancel} />
+              </div>
+            ) : noCanvas ? (
+              <p className={styles.notice}>{t('tabletop.noCanvas')}</p>
+            ) : !open ? (
+              <p className={styles.notice}>{table ? t('tabletop.empty') : ''}</p>
+            ) : !open.image ? (
+              <div className={styles.notice}>
+                <p>{t('tabletop.noMap')}</p>
+                <PageLink worldId={worldId} scene={open} />
+              </div>
+            ) : null}
+            <TopBar
+              worldId={worldId}
+              campaignId={campaignId}
+              table={table}
+              onOpen={openScene}
+              onAct={(run) => act.mutate(run)}
+              busy={act.isPending}
+              framing={() => (size.width > 0 ? sceneViewportOfCanvas(view.current, size) : null)}
             />
-            {skipped.length > 0 && (
-              <p className={styles.skipped} role="status">
-                {t('tabletop.skipped', { list: skipped.join(', ') })}
+            {(selected.length > 1 || (fromTemplate && selected.length > 0)) && (
+              <GroupDamage
+                key={selected.join()}
+                campaignId={campaignId}
+                tokens={tokens.filter((token) => selected.includes(token.id))}
+                title={fromTemplate ? t('tools.insideTemplate', { count: selected.length }) : undefined}
+                onClose={() => {
+                  setSelected([])
+                  setFromTemplate(false)
+                }}
+              />
+            )}
+            {status === 'reconnecting' && (
+              <p className={styles.reconnecting} role="status">
+                {t('tabletop.reconnecting')}
               </p>
             )}
-          </div>
-          <PageWindowsSocket>
-            <WindowLayer />
-          </PageWindowsSocket>
-        </div>
-        {side && open ? (
-          <aside className={styles.panel} aria-label={t(`vision.${side}`)}>
-            <div className={visionStyles.body}>
-              <h2 className={visionStyles.title}>{t(`vision.${side}`)}</h2>
-              {side === 'widgets' && <WidgetsPanel control={widgets} />}
-              {side === 'snapshots' && (
-                <SnapshotsPanel
-                  key={open.id}
-                  campaignId={campaignId}
-                  sceneId={open.id}
-                  capture={async () => (await renderer.current?.snapshot(THUMBNAIL_SIDE, THUMBNAIL_BYTES)) ?? null}
-                />
+            <div className={styles.errors}>
+              <FormError
+                message={
+                  act.error
+                    ? errorText(act.error)
+                    : place.error
+                      ? errorText(place.error)
+                      : preparation.state.status === 'failed'
+                        ? errorText(preparation.state.error)
+                        : null
+                }
+              />
+              {skipped.length > 0 && (
+                <p className={styles.skipped} role="status">
+                  {t('tabletop.skipped', { list: skipped.join(', ') })}
+                </p>
               )}
-              {side === 'gm' && <GmPanel worldId={worldId} scene={open} settings={gm.settings} onChange={gm.change} />}
             </div>
-          </aside>
-        ) : isMarkTool(tool) && tool !== 'laser' && open ? (
-          <ToolsPanel
-            tool={tool}
-            tools={tools}
-            scene={open}
-            worldId={worldId}
-            tokens={tokens}
-            onChoose={(ids) => {
-              setSelected(ids)
-              setCardFor(null)
-              setFromTemplate(true)
-            }}
+            <PageWindowsSocket>
+              <WindowLayer />
+            </PageWindowsSocket>
+          </div>
+          {side && open ? (
+            <aside className={styles.panel} aria-label={t(`vision.${side}`)}>
+              <div className={visionStyles.body}>
+                <h2 className={visionStyles.title}>{t(`vision.${side}`)}</h2>
+                {side === 'widgets' && <WidgetsPanel control={widgets} />}
+                {side === 'snapshots' && (
+                  <SnapshotsPanel
+                    key={open.id}
+                    campaignId={campaignId}
+                    sceneId={open.id}
+                    capture={async () => (await renderer.current?.snapshot(THUMBNAIL_SIDE, THUMBNAIL_BYTES)) ?? null}
+                  />
+                )}
+                {side === 'gm' && (
+                  <GmPanel worldId={worldId} scene={open} settings={gm.settings} onChange={gm.change} />
+                )}
+              </div>
+            </aside>
+          ) : isMarkTool(tool) && tool !== 'laser' && open ? (
+            <ToolsPanel
+              tool={tool}
+              tools={tools}
+              scene={open}
+              worldId={worldId}
+              tokens={tokens}
+              onChoose={(ids) => {
+                setSelected(ids)
+                setCardFor(null)
+                setFromTemplate(true)
+              }}
+            />
+          ) : isVisionTool(tool) || asGroup ? (
+            <VisionPanel
+              mode={asGroup ? 'group' : (tool as 'walls' | 'lights' | 'fog')}
+              vision={vision}
+              tokens={tokens}
+              notSeen={notSeen}
+              onAsGroup={() => {
+                returnTool.current = tool
+                setTool('select')
+                setAsGroup(true)
+              }}
+            />
+          ) : (
+            <MasterSidebar
+              worldId={worldId}
+              worldName={worldName}
+              campaign={current}
+              systemId={systemId}
+              table={table}
+              tokens={tokens}
+              selected={selected}
+              busy={act.isPending}
+              onAct={(run) => act.mutate(run)}
+              onOpen={openScene}
+              onPlace={(placing) => place.mutate({ placing, at: null })}
+              onImage={(fileId) => selected[0] && setImageFor({ tokenId: selected[0], fileId })}
+              onPickCombatant={(tokenId) => {
+                setSelected([tokenId])
+                center.current?.(tokenId, true)
+              }}
+              onPickToken={(tokenId) => {
+                setSelected([tokenId])
+                setCardFor(tokenId)
+                center.current?.(tokenId, true)
+              }}
+            />
+          )}
+          <Tour
+            id="mesa"
+            steps={[
+              { target: '[data-tour="mesa-mapa"]', text: t('tour.tabletop.map') },
+              { target: '[data-tour="mesa-herramientas"]', text: t('tour.tabletop.tools'), placement: 'right' },
+              { target: '[data-tour="mesa-paneles"]', text: t('tour.tabletop.panels'), placement: 'right' },
+              { target: '[data-tour="mesa-escenas"]', text: t('tour.tabletop.scenes'), placement: 'left' },
+              { target: '[data-tour="mesa-presentar"]', text: t('tour.tabletop.present'), placement: 'bottom' },
+              { target: '[data-tour="mesa-pantalla"]', text: t('tour.tabletop.screen'), placement: 'bottom' },
+              { target: '[data-tour="mesa-camara"]', text: t('tour.tabletop.camera'), placement: 'bottom' },
+              { target: '[data-tour="mesa-combate"]', text: t('tour.tabletop.combat'), placement: 'bottom' },
+              { target: '[data-tour="mesa-zoom"]', text: t('tour.tabletop.zoom'), placement: 'top' }
+            ]}
           />
-        ) : isVisionTool(tool) || asGroup ? (
-          <VisionPanel
-            mode={asGroup ? 'group' : (tool as 'walls' | 'lights' | 'fog')}
-            vision={vision}
-            tokens={tokens}
-            notSeen={notSeen}
-            onAsGroup={() => {
-              returnTool.current = tool
-              setTool('select')
-              setAsGroup(true)
-            }}
-          />
-        ) : (
-          <MasterSidebar
-            worldId={worldId}
-            worldName={worldName}
-            campaign={current}
-            systemId={systemId}
-            table={table}
-            tokens={tokens}
-            selected={selected}
-            busy={act.isPending}
-            onAct={(run) => act.mutate(run)}
-            onOpen={openScene}
-            onPlace={(placing) => place.mutate({ placing, at: null })}
-            onImage={(fileId) => selected[0] && setImageFor({ tokenId: selected[0], fileId })}
-            onPickCombatant={(tokenId) => {
-              setSelected([tokenId])
-              center.current?.(tokenId, true)
-            }}
-            onPickToken={(tokenId) => {
-              setSelected([tokenId])
-              setCardFor(tokenId)
-              center.current?.(tokenId, true)
-            }}
-          />
-        )}
-        <Tour
-          id="mesa"
-          steps={[
-            { target: '[data-tour="mesa-mapa"]', text: t('tour.tabletop.map') },
-            { target: '[data-tour="mesa-herramientas"]', text: t('tour.tabletop.tools'), placement: 'right' },
-            { target: '[data-tour="mesa-paneles"]', text: t('tour.tabletop.panels'), placement: 'right' },
-            { target: '[data-tour="mesa-escenas"]', text: t('tour.tabletop.scenes'), placement: 'left' },
-            { target: '[data-tour="mesa-presentar"]', text: t('tour.tabletop.present'), placement: 'bottom' },
-            { target: '[data-tour="mesa-pantalla"]', text: t('tour.tabletop.screen'), placement: 'bottom' },
-            { target: '[data-tour="mesa-camara"]', text: t('tour.tabletop.camera'), placement: 'bottom' },
-            { target: '[data-tour="mesa-combate"]', text: t('tour.tabletop.combat'), placement: 'bottom' },
-            { target: '[data-tour="mesa-zoom"]', text: t('tour.tabletop.zoom'), placement: 'top' }
-          ]}
-        />
-        <PageTitle className={styles.hidden}>{campaignName}</PageTitle>
-      </div>
-    </WindowsProvider>
+          <PageTitle className={styles.hidden}>{campaignName}</PageTitle>
+        </div>
+      </WindowsProvider>
+    </CurrentCampaignContext.Provider>
   )
 }
 

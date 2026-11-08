@@ -126,6 +126,18 @@ export const reveal = defineAction({
   })
 })
 
+export const showPage = defineAction({
+  name: 'showPage',
+  kind: 'players',
+  description:
+    'Enseña una página a los jugadores conectados de una campaña, como quien enseña un diario en la mesa: se les abre al momento. Solo a quien ya la conoce (si no, revélala antes con reveal)',
+  input: z.object({ campaignId: z.uuid(), pageId: z.uuid() }),
+  output: z.object({
+    shown: z.number().int().describe('A cuántos jugadores que la conocen se les ha mandado'),
+    unknown: z.number().int().describe('Cuántos no la conocen (a ellos no les llega)')
+  })
+})
+
 export const hide = defineAction({
   name: 'hide',
   kind: 'players',
