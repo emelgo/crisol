@@ -91,7 +91,10 @@ function D20() {
       <path d="M12 7.5 17 16H7z" />
       <path d="M12 2v5.5M21 7l-4 9M3 7l4 9M7 16l-4 1M17 16l4 1M7 16l5 6M17 16l-5 6" />
       {/* El «20», con trazos y no con texto: así no cuenta como texto de la página (axe le medía el contraste) */}
-      <path className={styles.digits} d="M10.05 11.45a0.9 0.9 0 0 1 1.75 0.25c0 0.45-0.3 0.75-0.65 1.1L10.05 14.1h1.8" />
+      <path
+        className={styles.digits}
+        d="M10.05 11.45a0.9 0.9 0 0 1 1.75 0.25c0 0.45-0.3 0.75-0.65 1.1L10.05 14.1h1.8"
+      />
       <ellipse className={styles.digits} cx="13.25" cy="12.6" rx="0.8" ry="1.45" />
     </svg>
   )
