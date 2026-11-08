@@ -347,10 +347,13 @@ export async function settled(page: Page) {
     .poll(() =>
       page.evaluate(
         () =>
-          document
-            .getAnimations()
-            .filter((a) => a.playState === 'running' && a.effect?.getTiming().iterations !== Number.POSITIVE_INFINITY)
-            .length
+          document.getAnimations().filter(
+            (a) =>
+              a.playState === 'running' &&
+              a.effect?.getTiming().iterations !== Number.POSITIVE_INFINITY &&
+              // El fondo de las pantallas de cuenta no para nunca (y es de adorno)
+              !((a.effect as KeyframeEffect | null)?.target as Element | null)?.closest('[data-fondo]')
+          ).length
       )
     )
     .toBe(0)

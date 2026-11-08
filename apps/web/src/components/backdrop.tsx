@@ -39,7 +39,7 @@ export function Backdrop() {
   // La de antes se queda debajo mientras la nueva aparece encima
   const layers = step > 0 ? [step - 1, step] : [step]
   return (
-    <div className={styles.backdrop}>
+    <div className={styles.backdrop} data-fondo="">
       {layers.map((n) => {
         const art = at(n)
         return (
