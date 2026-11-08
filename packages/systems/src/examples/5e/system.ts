@@ -479,7 +479,7 @@ export const fiveE = {
         tamano: { kind: 'choice', label: t('Tamaño', 'Size'), options: options(SIZES), default: 'mediana' },
         tipo: text('Tipo', 'Type'),
         alineamiento: text('Alineamiento', 'Alignment'),
-        vd: number('Valor de desafío', 'Challenge rating', { min: 0, max: 30 }),
+        vd: number('Valor de desafío', 'Challenge rating', { min: 0, max: 30, fraction: true }),
         px: number('Puntos de experiencia', 'Experience points', { min: 0, integer: true }),
         competencia: derived('Bonificador por competencia', 'Proficiency bonus', 'max(2, ceil(@vd / 4) + 1)', {
           signed: true

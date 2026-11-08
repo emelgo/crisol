@@ -402,6 +402,7 @@ export const es = {
     and: ' y ',
     search: 'Buscar en el compendio',
     library: 'Biblioteca del compendio',
+    missing: 'No está en el compendio de esta campaña.',
     pick: 'Abre algo del compendio para leerlo.',
     noEdition: 'Sin edición',
     inPlay: 'En juego',

@@ -83,8 +83,16 @@ const get = (values: unknown, path: string): unknown =>
   path
     .split('.')
     .reduce<unknown>((v, k) => (v && typeof v === 'object' ? (v as Record<string, unknown>)[k] : undefined), values)
-const shown = (value: unknown, signedWhen = false): string => {
-  if (typeof value === 'number') return signedWhen ? signed(value) : String(value)
+/** Las fracciones que se escriben así (el valor de desafío: 1/8, 1/4, 1/2) */
+const FRACTIONS: Record<number, string> = { 0.125: '1/8', 0.25: '1/4', 0.5: '1/2' }
+const decimal = new Intl.NumberFormat('es', { maximumFractionDigits: 3 })
+
+const shown = (value: unknown, signedWhen = false, fraction = false): string => {
+  if (typeof value === 'number') {
+    if (fraction && FRACTIONS[value]) return FRACTIONS[value]
+    // Con coma decimal, como se escribe en español
+    return signedWhen ? signed(value) : decimal.format(value)
+  }
   if (typeof value === 'boolean') return value ? '✓' : ''
   if (Array.isArray(value)) return value.join(', ')
   if (value && typeof value === 'object' && 'value' in value) return shown((value as { value: unknown }).value)
@@ -274,7 +282,7 @@ function Stats({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'stats' 
             ) : f.play ? (
               <PlayValue field={f} path={f.key} value={value} ctx={ctx} />
             ) : (
-              <span className={styles.statValue}>{shown(value, f.signed)}</span>
+              <span className={styles.statValue}>{shown(value, f.signed, f.fraction)}</span>
             )}
           </li>
         )

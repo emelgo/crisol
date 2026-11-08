@@ -148,10 +148,14 @@ function SearchPage({ worldId, world }: { worldId: string; world: string }) {
 function Excerpt({ text }: { text: string }) {
   return (
     <>
-      {text.split('**').map((part, i) =>
-        // Las partes impares son lo encontrado
-        i % 2 === 1 ? <mark key={String(i)}>{part}</mark> : <Fragment key={String(i)}>{part}</Fragment>
-      )}
+      {/* Cada bloque (una casilla, un elemento de lista) va en su línea: aquí, separados con « · » */}
+      {text
+        .replace(/\s*\n+\s*/g, ' · ')
+        .split('**')
+        .map((part, i) =>
+          // Las partes impares son lo encontrado
+          i % 2 === 1 ? <mark key={String(i)}>{part}</mark> : <Fragment key={String(i)}>{part}</Fragment>
+        )}
     </>
   )
 }

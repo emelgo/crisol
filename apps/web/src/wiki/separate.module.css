@@ -47,14 +47,15 @@
 }
 
 .unwrap {
+  /* Como «Revelar», a su lado (wiki/reveal.module.css): las dos acciones del recuadro, iguales */
   min-block-size: 2.25rem;
   padding: 0;
   border: 0;
   background: none;
-  color: var(--color-secret-text);
+  color: var(--color-link);
   font: inherit;
-  font-size: 0.9375rem;
-  font-weight: 600;
+  font-size: 0.8125rem;
+  font-weight: 400;
   text-decoration: underline;
   text-underline-offset: 3px;
   cursor: pointer;

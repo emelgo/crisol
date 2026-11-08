@@ -147,6 +147,8 @@ export interface ValueView {
   kind: string
   signed: boolean
   play: boolean
+  /** Se enseña en fracción (1/2, 1/4, 1/8) */
+  fraction?: boolean
   min?: number
   max?: number
 }
@@ -201,6 +203,7 @@ export function sheetView(system: System, type: string, language: Language = 'es
     kind: f?.kind ?? 'text',
     signed: f?.kind === 'derived' && f.signed === true,
     play: f?.kind !== 'derived' && (play || f?.play === true),
+    ...(f?.kind === 'number' && f.fraction ? { fraction: true } : {}),
     ...(f?.kind === 'number' && f.min !== undefined ? { min: f.min } : {}),
     ...(f?.kind === 'number' && f.max !== undefined ? { max: f.max } : {})
   })

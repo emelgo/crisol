@@ -834,7 +834,13 @@ function Entry({
       </div>
     )
   }
-  if (!item) return <div className={styles.reading} />
+  // Una entrada que ya no está (o que no ve la campaña): se dice, en vez de una ficha en blanco
+  if (!item)
+    return (
+      <div className={styles.reading}>
+        <p className={styles.pick}>{t('compendium.missing')}</p>
+      </div>
+    )
   const type = types.find((each) => each.key === item.type)
   const name = textOf(item.data.name as Text, language) || item.key
   const english = language === 'es' ? textOf(item.data.name as Text, 'en') : ''

@@ -130,6 +130,12 @@ h1[tabindex="-1"]:focus-visible {
   outline: none;
 }
 
+/* Lo desactivado se ve desactivado (una plantilla de serie, lo que no se puede cambiar) */
+:is(select, input, textarea):disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 /* Una sección con título es una caja de la hoja: marco de 1px con las esquinas cortadas */
 main section[aria-labelledby],
 dialog section[aria-labelledby] {

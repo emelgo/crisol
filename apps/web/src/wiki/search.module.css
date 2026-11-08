@@ -38,6 +38,8 @@
 }
 
 .title {
+  /* Un enlace a la página, en azul como los de la wiki */
+  color: var(--color-link);
   font-size: 1.125rem;
   font-weight: 700;
 }

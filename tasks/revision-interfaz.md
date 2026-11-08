@@ -106,19 +106,20 @@ que él decide de verdad (F, G1, G10) va con la opción por defecto apuntada en 
 
 ## E. Menores (textos, formato, detalles)
 
-- [ ] E1. Valor de desafío «0.25» (066): en D&D, «1/4»; y en español, coma decimal donde toque.
-- [ ] E2. «Población 12000» sin separador de miles (032); «Versión 1» y «Versión 1.0» (025).
-- [ ] E3. Los errores de Entrar dicen «Rellena este campo.» (001): mejor qué falta («Escribe tu email»).
-- [ ] E4. Historial: un pin que lleva a una página sale como «Pin sin nombre» (019); en el de la cuenta no dice de qué
+- [x] E1. Valor de desafío «0.25» (066): en D&D, «1/4»; y en español, coma decimal donde toque.
+- [x] E2. «Población 12000» sin separador de miles (032); «Versión 1» y «Versión 1.0» (025).
+- [x] E3. Los errores de Entrar dicen «Rellena este campo.» (001). **Se queda**: ya es un mensaje propio bajo el campo,
+  como pide la norma; decir qué falta obligaría a poner género a cada campo.
+- [x] E4. Historial: un pin que lleva a una página sale como «Pin sin nombre» (019); en el de la cuenta no dice de qué
   mundo es cada cosa.
 - [ ] E5. La campaña dice lo mismo tres veces: «2 Jugadores», «2 Han entrado» y «Han entrado 2 con este enlace» (060).
-- [ ] E6. Buscar: las casillas de una lista salen pegadas en el extracto («…Puerto Gris Encontrar la entrada…»), y los
+- [x] E6. Buscar: las casillas de una lista salen pegadas en el extracto («…Puerto Gris Encontrar la entrada…»), y los
   títulos de los resultados en blanco, no en azul (045).
-- [ ] E7. Plantilla de serie: sus desplegables están desactivados pero parecen activos (024).
-- [ ] E8. En un secreto, «Revelar» (pequeño y apagado) y «Convertir en texto normal» (negrita) juntos con estilos
+- [x] E7. Plantilla de serie: sus desplegables están desactivados pero parecen activos (024).
+- [x] E8. En un secreto, «Revelar» (pequeño y apagado) y «Convertir en texto normal» (negrita) juntos con estilos
   distintos (031).
-- [ ] E9. Compendio: un `?ver=` que no existe deja la ficha en blanco sin decir nada (065).
-- [ ] E10. Las tablas de Markdown no tienen estilo (sin bordes ni cabecera marcada): se leen mal (035).
+- [x] E9. Compendio: un `?ver=` que no existe deja la ficha en blanco sin decir nada (065).
+- [x] E10. Las tablas de Markdown no tienen estilo (sin bordes ni cabecera marcada): se leen mal (035).
 - [ ] E11. Statblock en la hoja: la fila de características descuadrada (037).
 - [ ] E12. El título tras `> [!aviso] Rumores` pasa a primer párrafo y no se distingue del resto (036, 049). Es una
   decisión documentada (`packages/editor/src/markdown/syntax.ts:56`); ¿al menos en negrita?

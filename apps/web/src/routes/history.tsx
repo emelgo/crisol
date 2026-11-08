@@ -65,10 +65,17 @@ function HistoryPage({ title, back, scope }: { title: string; back?: ReactNode; 
   const history = useInfiniteQuery({ ...historyQuery(api, scope), enabled: Boolean(account) })
   // Tras deshacer o rehacer, el botón de la operación nueva (arriba): el del deshecho ya no está
   const [focusEntry, setFocusEntry] = useState<string | null>(null)
+  // En el de la cuenta, de qué mundo es cada cosa
+  const worlds = useQuery({
+    queryKey: ['worlds'],
+    queryFn: () => api.call('listWorlds', {}),
+    enabled: Boolean(account) && !scope.worldId
+  })
 
   if (pending) return null
   if (!account) return <Navigate to="/entrar" replace />
   const date = new Intl.DateTimeFormat(i18n.language, { dateStyle: 'medium', timeStyle: 'short' })
+  const worldNames = new Map((worlds.data?.worlds ?? []).map((w) => [w.id, w.name]))
   const entries = history.data?.pages.flatMap((page) => page.entries) ?? []
   const undone = effectivelyUndone(entries)
 
@@ -90,6 +97,7 @@ function HistoryPage({ title, back, scope }: { title: string; back?: ReactNode; 
                 undone={undone(entry)}
                 date={date}
                 focus={entry.id === focusEntry}
+                worldName={scope.worldId ? undefined : worldNames.get(entry.worldId ?? '')}
                 onUndone={setFocusEntry}
               />
             ))}
@@ -132,9 +140,11 @@ function HistoryItem(props: {
   date: Intl.DateTimeFormat
   /** Llevar el foco a su botón (es la operación que se acaba de hacer al deshacer o rehacer) */
   focus: boolean
+  /** El mundo de la entrada, en el historial de la cuenta */
+  worldName?: string | undefined
   onUndone(entryId: string): void
 }) {
-  const { entry, undone, date } = props
+  const { entry, undone, date, worldName } = props
   const { t } = useTranslation()
   const api = useApi()
   const queryClient = useQueryClient()
@@ -171,6 +181,8 @@ function HistoryItem(props: {
         <strong>{actorOf(t, entry)}</strong> {summaryOf(t, entry)}
       </span>
       <span className={styles.role}>
+        {/* En el de la cuenta, de qué mundo es (dentro de un mundo, sobra) */}
+        {worldName && <>{worldName} · </>}
         <time dateTime={entry.at}>{date.format(new Date(entry.at))}</time> · {viaOf(t, entry)}
         {undone && ` · ${t('history.undone')}`}
       </span>
