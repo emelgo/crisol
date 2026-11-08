@@ -1346,7 +1346,7 @@ export const es = {
       license: {
         'cc-by': 'con licencia CC BY',
         mit: 'con licencia MIT',
-        'foundry-only': 'solo para usar en Foundry (para tu uso)',
+        'foundry-only': 'solo para usar en la mesa virtual de la que viene (para tu uso)',
         'cc-by-nc-sa': 'CC BY-NC-SA (sin uso comercial; para tu uso)',
         unknown: 'sin licencia conocida'
       },
@@ -1362,7 +1362,7 @@ export const es = {
     preview: 'Lo que trae',
     new: 'Sistema nuevo',
     withAi:
-      'Los sistemas se hacen con la IA: pídele el tuyo y saldrá aquí. También puedes subir su archivo o traerlo de Foundry.',
+      'Los sistemas se hacen con la IA: pídele el tuyo y saldrá aquí. También puedes subir su archivo o el .zip de otra mesa virtual.',
     blank: 'Bajar uno vacío',
     blankHint: 'Para empezar uno a mano',
     copyOf: 'Copia de {{name}}',
@@ -1371,15 +1371,15 @@ export const es = {
     name: 'Nombre',
     file: 'Archivo',
     pickFile: 'Elegir el archivo',
-    dropFile: 'Suelta aquí el .json de un sistema o el .zip de uno de Foundry, o',
-    notFoundry: 'Este zip no es un sistema ni un módulo de Foundry',
+    dropFile: 'Suelta aquí el .json de un sistema o el .zip de uno de otra mesa virtual, o',
+    notFoundry: 'Este zip no es un sistema ni un módulo que se pueda traer',
     foundryOf: '{{title}} {{version}}',
-    foundrySystem: 'Sistema de Foundry',
-    foundryModule: 'Módulo de Foundry',
+    foundrySystem: 'Sistema',
+    foundryModule: 'Módulo',
     foundryPacks: 'Compendios que se traen',
     foundryNone: 'No trae compendios que se puedan traer',
     foundryLanguage: 'Idioma de sus textos',
-    foundryImport: 'Traer de Foundry',
+    foundryImport: 'Traer el sistema',
     // Las escenas y aventuras de un zip, a un mundo (docs/specs/escenas-foundry.md)
     scenes: {
       title: 'Escenas',
@@ -2943,7 +2943,7 @@ export const es = {
     TOO_MANY_ROLLS: 'Demasiadas tiradas seguidas: espera un poco',
     SYSTEM_INVALID: 'El sistema tiene errores: no se ha guardado',
     SYSTEM_CHANGED: 'Lo ha cambiado alguien mientras tanto: vuelve a abrirlo',
-    FOUNDRY_INVALID: 'No se ha podido leer: no es un sistema o un módulo de Foundry, o le falta algo',
+    FOUNDRY_INVALID: 'No se ha podido leer: no es un sistema o un módulo que se pueda traer, o le falta algo',
     FOUNDRY_TOO_BIG: 'Trae demasiado: elige menos compendios',
     CHARACTER_CHANGED: 'Lo ha cambiado alguien mientras tanto: vuelve a abrirlo',
     BAD_CHOICE: 'Eso no se puede elegir',

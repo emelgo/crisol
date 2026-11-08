@@ -105,7 +105,7 @@ test('traer las escenas de un zip: elegir dónde, su mapa troceado, y abrirla en
   await expect(scenes).toContainText('Cuadrada · 5 muros · una puerta · una luz · una ficha')
 
   // Primero el bestiario: el sistema, en el que se buscarán sus criaturas; el cuadro sigue con las escenas
-  await dialog.getByRole('button', { name: 'Traer de Foundry' }).click()
+  await dialog.getByRole('button', { name: 'Traer el sistema' }).click()
   await expect(dialog.getByText('Sistema «La cripta de Varn» creado')).toBeVisible()
   const { systems } = await call('listSystems', {})
   const systemId = systems.find((s: { name: string }) => s.name === 'La cripta de Varn').id as string
