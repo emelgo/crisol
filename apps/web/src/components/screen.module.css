@@ -31,6 +31,22 @@
   margin: 0;
 }
 
+/* La portada de lo que se ve (una campaña), como franja bajo el título */
+.cover {
+  block-size: 9rem;
+  margin-block-end: var(--space-6);
+  overflow: hidden;
+  border: 1px solid var(--color-frame);
+  border-radius: 8px;
+}
+
+.cover img {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+}
+
 /* Lo que va bajo el título, pequeño (de qué mundo es una campaña) */
 .eyebrow {
   margin: 0 0 var(--space-1);

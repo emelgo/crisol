@@ -54,10 +54,12 @@ que él decide de verdad (F, G1, G10) va con la opción por defecto apuntada en 
   (017–020).
 - [x] B5. **Ajustes**: «Modo» con título grande y raya, el resto pequeños; cajas dentro de cajas (IA › Conectar, Modo)
   (017). Y la pantalla `/ia` repite lo mismo con «Últimas peticiones» (026): ¿se quita?
-- [ ] B6. **Controles nativos mezclados con los propios**: desplegables del navegador (Mundo y Sistema al crear una
+- [x] B6. (En parte) **Controles nativos mezclados con los propios**: desplegables del navegador (Mundo y Sistema al crear una
   campaña, Nivel en el creador, «Quién la ve», Etiqueta en Archivos y en Buscar, el bloque de imagen vacío del panel),
   casillas nativas en rojo (ediciones) y en azul (Invitaciones abiertas), radios nativos. Elegir uno y usarlo en todo.
-- [ ] B7. **Dos estilos de etiqueta de campo en el mismo cuadro** (014, 015): «Sistema», «Ediciones» y «Lo que está en
+  **Hecho**: todas las casillas y opciones del navegador, en el color de la marca. **Se quedan** los desplegables del
+  navegador (accesibles y con el tema); cambiarlos todos por uno propio es mucho riesgo para lo que se gana.
+- [x] B7. **Dos estilos de etiqueta de campo en el mismo cuadro** (014, 015): «Sistema», «Ediciones» y «Lo que está en
   las dos», pequeñas y grises; las demás, en negrita.
 - [x] B8. **Submenús con tres flechas distintas** (043, 044): ▸ pegada al texto, ▸ al borde y ›.
 - [x] B9. **La raya bajo el título de los cuadros no llega al borde** (acaba antes que los campos: 012, 013, 041).
@@ -66,7 +68,7 @@ que él decide de verdad (F, G1, G10) va con la opción por defecto apuntada en 
   las pestañas (035).
 - [x] B12. **Las pestañas abiertas ocupan dos y tres filas** cuando hay muchas y empujan toda la página hacia abajo
   (036, 038, 045): el título cambia de sitio según cuántas haya. Una sola fila que se desplace o encoja.
-- [ ] B13. **La cabecera de la campaña no usa su portada** (060), mientras que mundos y páginas sí.
+- [x] B13. **La cabecera de la campaña no usa su portada** (060), mientras que mundos y páginas sí.
 
 ## C. Normas de `docs/diseno.md` que no se cumplen
 
@@ -74,7 +76,7 @@ que él decide de verdad (F, G1, G10) va con la opción por defecto apuntada en 
 - [x] C2. **Rojo en lo corriente**: «Deshacer» en cada fila del Historial, «Restaurar» en la Papelera, «Expulsar» por
   jugador, las filas de ediciones del compendio en rojo oscuro (019, 020, 060, 064).
 - [x] C3. **«Expulsar» y «Dejar la campaña» sueltos**, sin zona de peligro ni confirmación a la vista (060, 101).
-- [ ] C4. **Filas de botones con borde, todos con el mismo peso**: Daño / Curar / Temporales (062); Tirar PG / Volver
+- [x] C4. **Filas de botones con borde, todos con el mismo peso**: Daño / Curar / Temporales (062); Tirar PG / Volver
   al suyo / Quitar de juego, uno bajo otro (066); «Quitar las copias».
 - [x] C5. **Textos de ayuda fijos**: los atajos al pie del menú «/» (042), «Pie (opcional)» bajo cada imagen (036),
   «Escrito a mano: se queda en el grupo» en cada objeto (067), «Panel vacío · Añade datos de toda la página:
@@ -99,7 +101,7 @@ que él decide de verdad (F, G1, G10) va con la opción por defecto apuntada en 
 
 ## D. Móvil de la jugadora
 
-- [ ] D1. **El «?» flota sobre el contenido junto a la llama** (220–222): tapa filas y botones.
+- [x] D1. **El «?» flota sobre el contenido junto a la llama** (220–222): tapa filas y botones.
 - [ ] D2. **La página de la jugadora sin portada deja un hueco vacío arriba** (221; es B2 en el móvil).
 - [ ] D3. Revisar en el móvil de la jugadora lo que no se capturó: el grupo, el compendio con una entrada abierta, lo
   revelado y el diario escribiendo.
@@ -120,8 +122,8 @@ que él decide de verdad (F, G1, G10) va con la opción por defecto apuntada en 
   distintos (031).
 - [x] E9. Compendio: un `?ver=` que no existe deja la ficha en blanco sin decir nada (065).
 - [x] E10. Las tablas de Markdown no tienen estilo (sin bordes ni cabecera marcada): se leen mal (035).
-- [ ] E11. Statblock en la hoja: la fila de características descuadrada (037).
-- [ ] E12. El título tras `> [!aviso] Rumores` pasa a primer párrafo y no se distingue del resto (036, 049). Es una
+- [x] E11. Statblock en la hoja: la fila de características descuadrada (037).
+- [x] E12. (Se queda, decisión tomada) El título tras `> [!aviso] Rumores` pasa a primer párrafo y no se distingue del resto (036, 049). Es una
   decisión documentada (`packages/editor/src/markdown/syntax.ts:56`); ¿al menos en negrita?
 
 ## F. Para decidir con Enrique

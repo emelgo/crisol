@@ -383,12 +383,16 @@ export function CreatureSheet({
                     onChange={(event) => setMax(event.currentTarget.value)}
                   />
                 </form>
-                <button type="button" className={styles.action} onClick={() => change.mutate({ max: { value: null } })}>
+                <button type="button" className={styles.quiet} onClick={() => change.mutate({ max: { value: null } })}>
                   {t('inPlay.ownMax')}
                 </button>
               </>
             )}
-            <BusyButton className={styles.action} busy={remove.isPending} onClick={() => remove.mutate()}>
+            <BusyButton
+              className={`${styles.quiet} ${styles.quietDanger}`}
+              busy={remove.isPending}
+              onClick={() => remove.mutate()}
+            >
               <Trash2 size={14} aria-hidden="true" />
               {t('inPlay.remove')}
             </BusyButton>

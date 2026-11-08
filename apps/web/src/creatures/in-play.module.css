@@ -247,6 +247,30 @@
   cursor: pointer;
 }
 
+/* Lo secundario de la criatura, en texto discreto: solo «Tirar PG» lleva borde (docs/diseno.md) */
+.quiet {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-block-size: 2.25rem;
+  padding: 0 var(--space-2);
+  border: 0;
+  background: none;
+  color: var(--color-muted);
+  font: inherit;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.quiet:hover {
+  color: var(--color-text);
+  text-decoration: underline;
+}
+
+.quietDanger:hover {
+  color: var(--color-accent-text);
+}
+
 .maxForm {
   display: inline-flex;
   align-items: center;

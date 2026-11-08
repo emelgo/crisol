@@ -18,8 +18,10 @@ import styles from '../components/list.module.css'
 import { failed, LoadError } from '../components/load-error.tsx'
 import { PageTitle } from '../components/page-title.tsx'
 import { RemovedMessage, RemoveMemberConfirm, useRemoveMember } from '../components/remove-member.tsx'
+import screen from '../components/screen.module.css'
 import { Screen } from '../components/screen.tsx'
 import { Tour } from '../components/tour.tsx'
+import { coverStyle } from '../wiki/cover-look.ts'
 
 const route = getRouteApi('/mundos/$worldId/campanas/$campaignId')
 
@@ -68,6 +70,12 @@ export function CampaignPage() {
         </Link>
       }
     >
+      {/* Su portada (la de su tarjeta), como franja bajo el título: el título no se mueve */}
+      {campaign.cover && (
+        <div className={screen.cover}>
+          <img src={`/api/files/${campaign.cover.fileId}`} alt="" style={coverStyle(campaign.cover)} />
+        </div>
+      )}
       <MembersPanel campaign={campaign} />
       {campaign.role === 'master' && <InvitationPanel campaignId={campaignId} />}
       <Tour

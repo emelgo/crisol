@@ -7,6 +7,8 @@
 /* Las barras de desplazamiento, del color de los bordes y sin flechas: que no desentonen (se hereda en toda la app) */
 :root {
   scrollbar-color: var(--color-frame) transparent;
+  /* Las casillas y los botones de opción del navegador, todos en el color de la marca (no unos rojos y otros azules) */
+  accent-color: var(--color-accent);
 }
 
 body {

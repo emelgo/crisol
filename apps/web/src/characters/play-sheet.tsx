@@ -325,13 +325,13 @@ function ResourceBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: 
           value={amount}
           onChange={(event) => setAmount(event.currentTarget.value)}
         />
-        <button type="button" onClick={() => apply({ damage: n })}>
+        <button type="button" className={styles.joined} onClick={() => apply({ damage: n })}>
           {t('playSheet.damage')}
         </button>
-        <button type="button" onClick={() => apply({ heal: n })}>
+        <button type="button" className={`${styles.joined} ${styles.joinedEnd}`} onClick={() => apply({ heal: n })}>
           {t('playSheet.heal')}
         </button>
-        <button type="button" onClick={() => apply({ temp: n })}>
+        <button type="button" className={styles.quiet} onClick={() => apply({ temp: n })}>
           {t('playSheet.setTemp')}
         </button>
       </div>
