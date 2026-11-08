@@ -171,7 +171,8 @@
 
 .pageActions {
   display: flex;
-  flex-wrap: wrap;
+  flex: none;
+  flex-wrap: nowrap;
   align-items: center;
   gap: var(--space-1);
 }
@@ -354,7 +355,8 @@
   inset-block-start: 0;
   z-index: 5;
   display: flex;
-  flex-wrap: wrap;
+  /* Un título largo se parte en su sitio: los iconos no bajan de línea (la cabecera no cambia de forma) */
+  flex-wrap: nowrap;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3);

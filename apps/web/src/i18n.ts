@@ -991,7 +991,6 @@ export const es = {
     none: 'Ninguna página se llama así.',
     noRecent: 'Aún no hay páginas recientes.',
     noCommand: 'Ninguna orden se llama así.',
-    help: '↑ ↓ para moverse · Intro para abrir · Esc para cerrar',
     commands: {
       newPage: 'Página nueva',
       search: 'Buscar en las páginas',

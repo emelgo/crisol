@@ -2,8 +2,11 @@
 /* Las páginas abiertas: pestañas sin fondo, la abierta subrayada sobre la línea de abajo (como las de la página), y el
    texto de la primera en la misma vertical que el título de la hoja */
 .tabs ul {
+  /* Una sola fila, como las del navegador: encogen hasta su mínimo y luego la tira se desplaza (no empuja la página) */
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: thin;
   gap: 2px;
   margin: 0 calc(-1 * var(--space-8)) var(--space-2);
   /* Con el margen de dentro de la página (--space-6) */
@@ -15,7 +18,9 @@
 
 .tabs li {
   display: flex;
+  flex: 0 1 auto;
   align-items: center;
+  min-inline-size: 7rem;
   max-inline-size: 13rem;
   margin-block-end: -1px;
   border-block-end: 2px solid transparent;

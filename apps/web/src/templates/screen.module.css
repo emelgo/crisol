@@ -110,6 +110,10 @@
 
 .name {
   margin: var(--space-3) 0 0.125rem;
+  /* Como el de las tarjetas de Mis mundos: en el color del texto, sin el del nivel de título ni su raya */
+  padding: 0;
+  border: 0;
+  color: var(--color-text);
   font-family: var(--font-display);
   font-size: 1.5rem;
   font-weight: 700;

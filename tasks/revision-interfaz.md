@@ -48,7 +48,7 @@ que él decide de verdad (F, G1, G10) va con la opción por defecto apuntada en 
   estrecha, títulos de sección en blanco (sin el rojo y el ocre de cada nivel), enlaces blancos subrayados (no azules),
   el árbol y el panel a distinta altura, y para la jugadora las propiedades en tabla (no el nombre pequeño encima),
   «etiquetas» en minúscula y la portada desaparece dejando un hueco vacío arriba (103, 221).
-- [ ] B3. **Tres colores de título en las tarjetas**: blanco (mundos y campañas), ocre (plantillas y sistemas), rojo con
+- [x] B3. **Tres colores de título en las tarjetas**: blanco (mundos y campañas), ocre (plantillas y sistemas), rojo con
   raya (personajes).
 - [x] B4. **Las ventanas no ponen el título en el mismo sitio**: Ajustes y Perfil más adentro que Historial y Papelera
   (017–020).
@@ -59,12 +59,12 @@ que él decide de verdad (F, G1, G10) va con la opción por defecto apuntada en 
   casillas nativas en rojo (ediciones) y en azul (Invitaciones abiertas), radios nativos. Elegir uno y usarlo en todo.
 - [ ] B7. **Dos estilos de etiqueta de campo en el mismo cuadro** (014, 015): «Sistema», «Ediciones» y «Lo que está en
   las dos», pequeñas y grises; las demás, en negrita.
-- [ ] B8. **Submenús con tres flechas distintas** (043, 044): ▸ pegada al texto, ▸ al borde y ›.
-- [ ] B9. **La raya bajo el título de los cuadros no llega al borde** (acaba antes que los campos: 012, 013, 041).
-- [ ] B10. **El botón de crear** a lo ancho en «Página nueva» y a la izquierda en «Nuevo mundo» o «Nueva campaña».
-- [ ] B11. **La cabecera de la página cambia de alto**: con un título largo, los iconos bajan a otra línea y empujan
+- [x] B8. **Submenús con tres flechas distintas** (043, 044): ▸ pegada al texto, ▸ al borde y ›.
+- [x] B9. **La raya bajo el título de los cuadros no llega al borde** (acaba antes que los campos: 012, 013, 041).
+- [x] B10. **El botón de crear** a lo ancho en «Página nueva» y a la izquierda en «Nuevo mundo» o «Nueva campaña».
+- [x] B11. **La cabecera de la página cambia de alto**: con un título largo, los iconos bajan a otra línea y empujan
   las pestañas (035).
-- [ ] B12. **Las pestañas abiertas ocupan dos y tres filas** cuando hay muchas y empujan toda la página hacia abajo
+- [x] B12. **Las pestañas abiertas ocupan dos y tres filas** cuando hay muchas y empujan toda la página hacia abajo
   (036, 038, 045): el título cambia de sitio según cuántas haya. Una sola fila que se desplace o encoja.
 - [ ] B13. **La cabecera de la campaña no usa su portada** (060), mientras que mundos y páginas sí.
 

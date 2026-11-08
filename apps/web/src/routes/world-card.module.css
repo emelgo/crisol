@@ -726,10 +726,9 @@
   padding: 0 var(--space-6) var(--space-6);
 }
 
-/* Su raya acaba antes de la X de cerrar, que va arriba a la derecha */
+/* La X de cerrar va arriba, sobre la portada: la raya del título llega al borde, como los campos */
 .form h2 {
   margin: 0;
-  margin-inline-end: var(--target);
 }
 
 /* La zona de peligro, al final, con el mismo margen que el formulario */

@@ -5,7 +5,7 @@
  */
 import type { Page, SheetSettings } from '@crisol/contracts'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { ScrollText } from 'lucide-react'
+import { ChevronRight, ScrollText } from 'lucide-react'
 import { type ReactNode, useEffect, useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../../api/context.tsx'
@@ -96,7 +96,7 @@ export function SheetMenu({ page }: { page: Page }) {
             onClick={() => setPrinting(!printing)}
           >
             {t('sheet.printing')}
-            <span aria-hidden="true">▸</span>
+            <ChevronRight aria-hidden="true" size={14} className={styles.chevron} />
           </button>
           {printing && (
             <div id={id} className={styles.printing}>

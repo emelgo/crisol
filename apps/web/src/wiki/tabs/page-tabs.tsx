@@ -290,7 +290,7 @@ function NewTab({ page }: { page: Page }) {
             />
             {kind === 'scene' && <SourcePicker worldId={page.worldId} value={choice} onChange={setChoice} />}
             <FormError message={add.error ? errorText(add.error) : null} />
-            <BusyButton type="submit" className={form.button} busy={add.isPending}>
+            <BusyButton type="submit" className={`${form.button} ${styles.submit}`} busy={add.isPending}>
               {t('pageTabs.create')}
             </BusyButton>
           </form>

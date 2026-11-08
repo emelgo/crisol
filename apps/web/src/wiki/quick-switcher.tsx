@@ -248,7 +248,6 @@ function SwitcherDialog({
           {commandMode ? t('switcher.noCommand') : query.trim() === '' ? t('switcher.noRecent') : t('switcher.none')}
         </p>
       )}
-      <p className={styles.help}>{t('switcher.help')}</p>
     </dialog>
   )
 }
